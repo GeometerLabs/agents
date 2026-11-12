@@ -9,6 +9,7 @@
 //    does a prepared action. A card is made from `prepare`, and on the tap `prepare` runs again and must give the same digest (cards.ts) before `execute` runs.
 import type { Language } from "../language/languages.ts";
 import type { LocalDate } from "../core/time.ts";
+import type { TimePhrase } from "../language/dates.ts";
 import type { CardAction } from "./state.ts";
 
 /** A skill's name. The record's `skill` ref carries it, so a line says which skill acted. */
@@ -74,6 +75,9 @@ export type PrepareRefusal =
   | "amount_not_on_record" // a message with an amount the case does not have
   | "busy" // the case is in the middle of something (a refund Guard holds, a check in progress)
 
+/** Why a booking cannot move there. words.ts words each one. */
+export type MoveRefusal = "no_case" | "not_live" | "outside_hours" | "taken" | "past" | "failed";
+
 /** What an executed action came to, for the owner's answer. `told`: the customer was told. */
 export interface Executed { ok: boolean; note: "done" | "held_by_guard" | "owed_by_owner" | "sent" | "failed" | "not_sent"; told?: boolean }
 
@@ -116,6 +120,10 @@ export interface OwnerSkill {
   closeDay?(date: LocalDate, notify: DayNotice): Promise<{ asked: string[] }>;
   /** Undo a close: the date is offered again; the skill tells the customers asked who are still booked that day that their booking stands. */
   reopenDay?(date: LocalDate, asked: readonly string[], notify: DayNotice): Promise<{ told: string[] }>;
+  /** Where a move would put a booking: the named date and/or time over the booking's own (Bookings). Pure. Left out: nothing moves. */
+  moveTarget?(caseId: string, to: { date?: LocalDate; time?: TimePhrase }): { ok: true; startMs: number } | { ok: false; why: MoveRefusal };
+  /** Move a booking to exactly this start, through the agent's own reschedule (both slot rules, the calendar, the customer told). Not money: done at once, undoable. */
+  move?(caseId: string, startMs: number): Promise<{ ok: true; fromMs: number; toMs: number } | { ok: false; why: MoveRefusal }>;
   /** The exact action for what the owner asked, read from the store as it is now. Pure: changes nothing. */
   prepare(p: Proposal): Prepared;
   /** Do a prepared action, exactly. Called only after a card's tap, with the card's saved action, and only when `prepare` gave the same digest again. */

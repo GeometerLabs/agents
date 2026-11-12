@@ -173,7 +173,7 @@ Try it end to end against a stub Guard: `npm run stack -- --refund-limit 100`. W
 
 With an `"assistant": {}` block in the settings, the owner can also write (or, once the voice notes job lands, speak) in their own words, in English, Hindi, Malayalam or
 Kannada, and the assistant answers in text: "bookings on Sunday", "what needs me", "close Sunday" (the customers that day are asked to pick another day; "undo" opens it
-again), "cancel b-14", "refund ₹100 b-14", "message b-14 Running 15 minutes late". Anything that moves money, and a message to a customer, comes back as a card showing the
+again), "move b-14 to 5pm" ("undo" moves it back), "cancel b-14", "refund ₹100 b-14", "message b-14 Running 15 minutes late". Anything that moves money, and a message to a customer, comes back as a card showing the
 exact change, and only a tap on it (or its exact code typed, "yes K7M2QX") does it. The fixed commands below keep working as they are. A short morning line goes to the owner
 from 08:00 (`"morning": {"at": "07:30"}` moves it, `false` turns it off), and the character has a name and a look (`"character"`). Limits are not changed from the chat.
 How it works: [modules/Explanation.md](../../../modules/Explanation.md#the-shops-assistant-item-11e-decision-43-12-nov-2026).

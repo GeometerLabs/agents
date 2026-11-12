@@ -7,20 +7,22 @@
 // of an amount written with a rupee sign, a message's own words) and is put back after the model answered (`merge`). A model never writes a value into an act. What a
 // value cannot be read from is asked for (conversation.ts), never guessed.
 import { findDatePhrase, findTimePhrase, wordRe } from "../language/dates.ts";
-import type { DatePhrase } from "../language/dates.ts";
+import type { DatePhrase, TimePhrase } from "../language/dates.ts";
 import { canon, languageOfScript } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import { chosenProbability, isObj } from "../understanding/model.ts";
 import type { DecisionPlan, IntentBase, ParseOptionsBase, Reading } from "../understanding/model.ts";
 
 /** What the owner can ask or ask for. Which of these a shop offers depends on its skills (OwnerContext.kinds). */
-export const OWNER_KINDS = ["day", "owes", "open_orders", "waiting", "money", "close_day", "reopen_day", "cancel", "refund", "message", "undo", "limit", "help"] as const;
+export const OWNER_KINDS = ["day", "owes", "open_orders", "waiting", "money", "close_day", "reopen_day", "move", "cancel", "refund", "message", "undo", "limit", "help"] as const;
 export type OwnerKind = (typeof OWNER_KINDS)[number] | "unknown";
 
 export interface OwnerIntent extends IntentBase {
   kind: OwnerKind;
   /** The day the words name ("Sunday", "16 Nov", "kal", "ഞായർ"), as written; resolved against the shop's clock by the caller. */
   date?: DatePhrase;
+  /** A time of day the words name ("5pm", "शाम 6 बजे"), as written; resolved against the shop's hours by the skill (a move). */
+  time?: TimePhrase;
   /** A case reference ("b-14", "q-2", "o-5"), lower case. */
   ref?: string;
   /** An amount written with a rupee sign or word ("₹1,200", "1200 rupees"), in paise. A bare number is never an amount. */
@@ -40,6 +42,7 @@ const KIND_WORDS: readonly [OwnerKind, readonly string[]][] = [
   ["open_orders", ["orders", "order", "open orders", "ऑर्डर", "आर्डर", "ഓർഡർ", "ಆರ್ಡರ್"]],
   ["reopen_day", ["reopen", "open again", "फिर से खोल", "खोल दो", "khol do", "kholo", "വീണ്ടും തുറ", "ಮತ್ತೆ ತೆರೆ"]],
   ["close_day", ["close", "closed", "shut", "holiday", "day off", "बंद", "band", "छुट्टी", "chutti", "chhutti", "അടച്ചിട", "അടയ്ക്ക", "അവധി", "ಮುಚ್ಚ", "ರಜೆ"]],
+  ["move", ["move", "shift", "reschedule", "postpone", "prepone", "change the time", "शिफ्ट", "समय बदल", "badal do", "time badlo", "മാറ്റുക", "സമയം മാറ്റ", "ಶಿಫ್ಟ್", "ಸಮಯ ಬದಲಾಯಿಸ"]],
   ["cancel", ["cancel", "रद्द", "कैंसल", "റദ്ദാക്ക", "ക്യാൻസൽ", "ರದ್ದು", "ಕ್ಯಾನ್ಸಲ್"]],
   ["refund", ["refund", "give back", "pay back", "रिफंड", "वापस दो", "वापस करो", "wapas do", "wapas karo", "paise wapas", "റീഫണ്ട്", "തിരികെ നൽക", "ರೀಫಂಡ್", "ಹಿಂತಿರುಗಿಸ"]],
   ["message", ["message", "msg", "tell", "inform", "let know", "मैसेज", "संदेश", "बोलो", "बोल दो", "बताओ", "बता दो", "bolo", "bol do", "batao", "bata do", "മെസ്സേജ്", "സന്ദേശം", "പറയ", "അറിയിക്ക", "ಮೆಸೇಜ್", "ಸಂದೇಶ", "ಹೇಳಿ", "ತಿಳಿಸಿ"]],
@@ -88,10 +91,11 @@ export function readOwnerRules(text: string, context: OwnerContext): OwnerIntent
   const ref = refHit ? `${refHit[1].toLowerCase()}-${Number(refHit[2])}` : undefined;
   const withoutRef = ref ? plainText.replace(REF_RE, " ") : plainText;
   const date = findDatePhrase(withoutRef);
+  const time = findTimePhrase(withoutRef);
   const amountPaise = amountOf(withoutRef);
   const script = languageOfScript(text);
   const language: Language | undefined = script === "en" ? undefined : script; // Latin letters may be English or Hindi typed in Latin letters: not clear
-  const base = { ...(language ? { language } : {}), ...(date ? { date } : {}), ...(ref ? { ref } : {}) };
+  const base = { ...(language ? { language } : {}), ...(date ? { date } : {}), ...(time ? { time } : {}), ...(ref ? { ref } : {}) };
   for (const [kind, re] of KIND_RES) {
     if (!re.test(withoutRef)) continue;
     // A message is only a message to a customer when it names one: "बताओ कल की बुकिंग" (tell me tomorrow's bookings) is a question, not something to send.
@@ -100,7 +104,7 @@ export function readOwnerRules(text: string, context: OwnerContext): OwnerIntent
     return { kind, ...base };
   }
   // A day and nothing else ("Sunday?", "16 Nov", "നാളെ") asks for that day's list. A time alone says nothing.
-  if (date && !findTimePhrase(withoutRef) && withoutRef.replace(/[\s?.!]/gu, "").length <= 24) return { kind: "day", ...base };
+  if (date && !time && withoutRef.replace(/[\s?.!]/gu, "").length <= 24) return { kind: "day", ...base };
   return { kind: "unknown", ...base };
 }
 
@@ -113,6 +117,7 @@ const KIND_MEANING: Record<Exclude<OwnerKind, "unknown">, string> = {
   money: "know how much money came in",
   close_day: "close the shop on a day (no bookings that day)",
   reopen_day: "open the shop again on a day that was closed",
+  move: "move a customer's booking to another day or time",
   cancel: "cancel a customer's booking or order",
   refund: "give a customer money back",
   message: "send a message to one customer",
@@ -135,6 +140,7 @@ export const ownerReading: Reading<OwnerIntent, OwnerContext, ParseOptionsBase> 
     const out: OwnerIntent = { kind };
     if (raw.language === "hi" || raw.language === "en" || raw.language === "ml" || raw.language === "kn") out.language = raw.language;
     if (isObj(raw.date) && typeof raw.date.kind === "string") out.date = raw.date as unknown as DatePhrase;
+    if (isObj(raw.time) && typeof raw.time.hour === "number" && typeof raw.time.minute === "number") out.time = raw.time as unknown as TimePhrase;
     if (typeof raw.ref === "string" && /^[bfqo]-\d{1,6}$/u.test(raw.ref)) out.ref = raw.ref;
     if (typeof raw.amountPaise === "number" && Number.isSafeInteger(raw.amountPaise) && raw.amountPaise > 0) out.amountPaise = raw.amountPaise;
     if (typeof raw.words === "string" && raw.words.trim() !== "" && raw.words.length <= 900) out.words = raw.words;
@@ -183,6 +189,7 @@ export const ownerReading: Reading<OwnerIntent, OwnerContext, ParseOptionsBase> 
       kind: modelIntent.kind,
       ...(ruled.language ? { language: ruled.language } : {}),
       ...(ruled.date ? { date: ruled.date } : {}),
+      ...(ruled.time ? { time: ruled.time } : {}),
       ...(ruled.ref ? { ref: ruled.ref } : {}),
       ...(ruled.amountPaise !== undefined && modelIntent.kind === "refund" ? { amountPaise: ruled.amountPaise } : {}),
       ...(words ? { words } : {}),

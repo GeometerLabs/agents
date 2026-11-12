@@ -103,6 +103,7 @@ export function kindsOf(skills: readonly OwnerSkill[]): OwnerKind[] {
   if (skills.some((s) => s.owes)) kinds.push("owes");
   if (skills.some((s) => s.open)) kinds.push("open_orders");
   if (skills.some((s) => s.closeDay)) kinds.push("close_day", "reopen_day");
+  if (skills.some((s) => s.move)) kinds.push("move");
   return kinds;
 }
 
@@ -335,10 +336,37 @@ export function createAssistant(deps: AssistantDeps) {
     await tell("reopened", { date, told: told.length });
   }
 
+  // ---- a booking moved by the owner (not money: done at once, said in passing, undoable) ----
+  async function move(intent: OwnerIntent): Promise<void> {
+    if (!intent.ref) { await tell("need_ref", { kind: "move", rows: candidates(intent) }); return; }
+    const skill = skillOf(intent.ref);
+    if (!skill) { await tell("refusal", { why: "no_case", ref: intent.ref }); return; }
+    if (!skill.move || !skill.moveTarget) { await tell("not_offered", {}); return; }
+    if (!intent.date && !intent.time) { await tell("need_when", { ref: intent.ref }); return; }
+    const target = skill.moveTarget(intent.ref, { ...(dateOf(intent) ? { date: dateOf(intent)! } : {}), ...(intent.time ? { time: intent.time } : {}) });
+    if (!target.ok) { await tell("move_failed", { ref: intent.ref, why: target.why }); return; }
+    const r = await skill.move(intent.ref, target.startMs);
+    if (!r.ok) { await tell("move_failed", { ref: intent.ref, why: r.why, toMs: target.startMs }); return; }
+    const s = state();
+    const undo = nextId(s, "u");
+    s.undo.push({ id: undo, kind: "move", skill: skill.name, date: isoDate(todayIn(r.fromMs, tz)), asked: [], case: intent.ref, fromMs: r.fromMs, toMs: r.toMs, atMs: clock.now(), untilMs: clock.now() + UNDO_FOR_MS });
+    logLine(intent.ref, "move_booking", "confirmed", { from: r.fromMs, to: r.toMs }, { skill: skill.name, from: new Date(r.fromMs).toISOString(), to: new Date(r.toMs).toISOString(), undo }, "the owner moved this booking; the customer was told by the agent's own reschedule message");
+    await tell("moved", { ref: intent.ref, toMs: r.toMs }, { caseId: intent.ref });
+  }
+
   async function undoLast(): Promise<void> {
     const now = clock.now();
     const last = [...state().undo].reverse().find((u) => !u.done && u.untilMs > now);
     if (!last) { await tell("undo_none", {}); return; }
+    if (last.kind === "move") {
+      const skill = skillNamed(last.skill);
+      const r = skill?.move ? await skill.move(last.case!, last.fromMs!) : { ok: false as const, why: "failed" as const };
+      if (!r.ok) { await tell("move_failed", { ref: last.case!, why: r.why, toMs: last.fromMs! }); return; }
+      last.done = true;
+      logLine(last.case!, "move_booking", "confirmed", { from: r.fromMs, to: r.toMs }, { skill: last.skill, undo: last.id }, "the owner undid their move: the booking is back at its old time");
+      await tell("moved_back", { ref: last.case!, toMs: r.toMs }, { caseId: last.case! });
+      return;
+    }
     const [y, m, d] = last.date.split("-").map(Number);
     await reopenDay({ year: y, month: m, day: d });
   }
@@ -375,6 +403,7 @@ export function createAssistant(deps: AssistantDeps) {
       case "close_day": { const date = dateOf(intent); if (!date) await tell("need_date", { kind: "close_day" }); else await closeDay(date); break; }
       case "reopen_day": { const date = dateOf(intent); if (!date) await tell("need_date", { kind: "reopen_day" }); else await reopenDay(date); break; }
       case "undo": await undoLast(); break;
+      case "move": await move(intent); break;
       case "cancel": case "refund": case "message": {
         if (!intent.ref) { await tell("need_ref", { kind: intent.kind, rows: candidates(intent) }); break; }
         if (intent.kind === "message" && !intent.words) { await tell("need_words", { ref: intent.ref }); break; }

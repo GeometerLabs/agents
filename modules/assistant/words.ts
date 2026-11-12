@@ -11,7 +11,7 @@ import type { LocalDate } from "../core/time.ts";
 import { formatDate, formatInr, formatSlot, formatTime } from "../language/format.ts";
 import type { CheckFacts } from "../language/check.ts";
 import type { Language } from "../language/languages.ts";
-import type { DayRow, OpenRow, OweRow, PrepareRefusal } from "./skill.ts";
+import type { DayRow, MoveRefusal, OpenRow, OweRow, PrepareRefusal } from "./skill.ts";
 
 /** Formats values in one language and remembers each one for the outgoing check. */
 export class Writer {
@@ -61,7 +61,11 @@ export interface MessageData {
   reopened: { date: LocalDate; told: number };
   past_day: { date: LocalDate };
   undo_none: Record<string, never>;
-  need_ref: { kind: "cancel" | "refund" | "message"; rows: DayRow[] };
+  need_ref: { kind: "cancel" | "refund" | "message" | "move"; rows: DayRow[] };
+  need_when: { ref: string };
+  moved: { ref: string; toMs: number };
+  moved_back: { ref: string; toMs: number };
+  move_failed: { ref: string; why: MoveRefusal; toMs?: number };
   need_date: { kind: "close_day" | "reopen_day" };
   need_words: { ref: string };
   refusal: { why: PrepareRefusal; ref: string; who?: string; paidPaise?: number };
@@ -90,10 +94,10 @@ const MORE: Record<Language, (n: string) => string> = { en: (n) => `and ${n} mor
 
 /** The short list of things to say, used by help and "didn't get that": only what this shop's skills offer. */
 const EXAMPLES: Record<Language, Record<string, string>> = {
-  en: { day: "tomorrow", waiting: "what needs me", money: "money today", close_day: "close Sunday", cancel: "cancel b-14", message: "message b-14 Running 15 minutes late", owes: "who owes fees", open_orders: "open orders", undo: "undo" },
-  hi: { day: "कल", waiting: "मेरे लिए क्या है", money: "आज कितना आया", close_day: "रविवार बंद", cancel: "b-14 रद्द करो", message: "b-14 को बोलो 15 मिनट देर होगी", owes: "किसकी फीस बाकी है", open_orders: "ऑर्डर", undo: "वापस लो" },
-  ml: { day: "നാളെ", waiting: "എനിക്ക് എന്താണ് ബാക്കി", money: "ഇന്ന് എത്ര കിട്ടി", close_day: "ഞായറാഴ്ച അടച്ചിടുക", cancel: "b-14 റദ്ദാക്കുക", message: "b-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും", owes: "ആരുടെ ഫീസ് ബാക്കി", open_orders: "ഓർഡറുകൾ", undo: "പഴയപടി" },
-  kn: { day: "ನಾಳೆ", waiting: "ನನಗೆ ಏನು ಬಾಕಿ", money: "ಇಂದು ಎಷ್ಟು ಬಂತು", close_day: "ಭಾನುವಾರ ಮುಚ್ಚಿ", cancel: "b-14 ರದ್ದು", message: "b-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ", owes: "ಯಾರ ಫೀಸ್ ಬಾಕಿ", open_orders: "ಆರ್ಡರ್‌ಗಳು", undo: "ಹಿಂದಿನಂತೆ" },
+  en: { day: "tomorrow", waiting: "what needs me", money: "money today", close_day: "close Sunday", cancel: "cancel b-14", message: "message b-14 Running 15 minutes late", move: "move b-14 to 5pm", owes: "who owes fees", open_orders: "open orders", undo: "undo" },
+  hi: { day: "कल", waiting: "मेरे लिए क्या है", money: "आज कितना आया", close_day: "रविवार बंद", cancel: "b-14 रद्द करो", message: "b-14 को बोलो 15 मिनट देर होगी", move: "b-14 शिफ्ट शाम 5 बजे", owes: "किसकी फीस बाकी है", open_orders: "ऑर्डर", undo: "वापस लो" },
+  ml: { day: "നാളെ", waiting: "എനിക്ക് എന്താണ് ബാക്കി", money: "ഇന്ന് എത്ര കിട്ടി", close_day: "ഞായറാഴ്ച അടച്ചിടുക", cancel: "b-14 റദ്ദാക്കുക", message: "b-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും", move: "b-14 വൈകുന്നേരം 5-ലേക്ക് മാറ്റുക", owes: "ആരുടെ ഫീസ് ബാക്കി", open_orders: "ഓർഡറുകൾ", undo: "പഴയപടി" },
+  kn: { day: "ನಾಳೆ", waiting: "ನನಗೆ ಏನು ಬಾಕಿ", money: "ಇಂದು ಎಷ್ಟು ಬಂತು", close_day: "ಭಾನುವಾರ ಮುಚ್ಚಿ", cancel: "b-14 ರದ್ದು", message: "b-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ", move: "b-14 ಸಂಜೆ 5 ಕ್ಕೆ ಶಿಫ್ಟ್", owes: "ಯಾರ ಫೀಸ್ ಬಾಕಿ", open_orders: "ಆರ್ಡರ್‌ಗಳು", undo: "ಹಿಂದಿನಂತೆ" },
 };
 /** The examples for the kinds offered, each on its own line. Their digits are part of the example, so they are literals. */
 const examples = (w: Writer, kinds: readonly string[]) => Object.entries(EXAMPLES[w.language]).filter(([k]) => kinds.includes(k)).map(([, e]) => `• ${w.lit(e)}`).join("\n");
@@ -260,11 +264,19 @@ const DONE: Record<Language, (w: Writer, d: MessageData["done"]) => string> = {
   })[d.note],
 };
 
+/** Why a move did not happen, in each language. */
+const MOVE_WHY: Record<Language, Record<MoveRefusal, string>> = {
+  en: { no_case: "no booking has that number", not_live: "only a confirmed booking can be moved", outside_hours: "the shop is closed then", taken: "that time is taken", past: "that time has passed", failed: "the calendar did not take the change (the customer was told it could not be moved)" },
+  hi: { no_case: "उस नंबर की कोई बुकिंग नहीं है", not_live: "सिर्फ़ पक्की बुकिंग ही बदली जा सकती है", outside_hours: "उस समय दुकान बंद है", taken: "वह समय पहले से भरा है", past: "वह समय बीत चुका है", failed: "कैलेंडर ने बदलाव नहीं लिया (ग्राहक को बताया गया कि बदलाव नहीं हो सका)" },
+  ml: { no_case: "ആ നമ്പറിൽ ബുക്കിംഗ് ഇല്ല", not_live: "ഉറപ്പായ ബുക്കിംഗ് മാത്രമേ മാറ്റാനാകൂ", outside_hours: "ആ സമയം കട അടച്ചിരിക്കും", taken: "ആ സമയം ഇതിനകം എടുത്തു", past: "ആ സമയം കഴിഞ്ഞുപോയി", failed: "കലണ്ടർ മാറ്റം സ്വീകരിച്ചില്ല (മാറ്റാനായില്ലെന്ന് ഉപഭോക്താവിനോട് പറഞ്ഞു)" },
+  kn: { no_case: "ಆ ಸಂಖ್ಯೆಯ ಬುಕಿಂಗ್ ಇಲ್ಲ", not_live: "ಖಚಿತ ಬುಕಿಂಗ್ ಮಾತ್ರ ಬದಲಾಯಿಸಬಹುದು", outside_hours: "ಆ ಸಮಯದಲ್ಲಿ ಅಂಗಡಿ ಮುಚ್ಚಿರುತ್ತದೆ", taken: "ಆ ಸಮಯ ಈಗಾಗಲೇ ತೆಗೆದುಕೊಳ್ಳಲಾಗಿದೆ", past: "ಆ ಸಮಯ ಕಳೆದಿದೆ", failed: "ಕ್ಯಾಲೆಂಡರ್ ಬದಲಾವಣೆ ತೆಗೆದುಕೊಳ್ಳಲಿಲ್ಲ (ಬದಲಾಯಿಸಲಾಗಲಿಲ್ಲ ಎಂದು ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ)" },
+};
+
 const NEED_REF: Record<Language, Record<MessageData["need_ref"]["kind"], string>> = {
-  en: { cancel: "Which one? Reply like this: cancel b-14.", refund: "Which one? Reply like this: refund b-14.", message: "Which customer? Reply like this: message b-14 Running 15 minutes late." },
-  hi: { cancel: "कौन-सी? ऐसे जवाब दें: cancel b-14।", refund: "कौन-सी? ऐसे जवाब दें: refund b-14।", message: "किस ग्राहक को? ऐसे जवाब दें: message b-14 15 मिनट देर होगी।" },
-  ml: { cancel: "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel b-14.", refund: "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: refund b-14.", message: "ഏത് ഉപഭോക്താവിന്? ഇങ്ങനെ മറുപടി നൽകുക: message b-14 15 മിനിറ്റ് വൈകും." },
-  kn: { cancel: "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel b-14.", refund: "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: refund b-14.", message: "ಯಾವ ಗ್ರಾಹಕರಿಗೆ? ಹೀಗೆ ಉತ್ತರಿಸಿ: message b-14 15 ನಿಮಿಷ ತಡ." },
+  en: { cancel: "Which one? Reply like this: cancel b-14.", refund: "Which one? Reply like this: refund b-14.", message: "Which customer? Reply like this: message b-14 Running 15 minutes late.", move: "Which booking? Reply like this: move b-14 to 5pm." },
+  hi: { cancel: "कौन-सी? ऐसे जवाब दें: cancel b-14।", refund: "कौन-सी? ऐसे जवाब दें: refund b-14।", message: "किस ग्राहक को? ऐसे जवाब दें: message b-14 15 मिनट देर होगी।", move: "कौन-सी बुकिंग? ऐसे जवाब दें: move b-14 to 5pm।" },
+  ml: { cancel: "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: cancel b-14.", refund: "ഏതാണ്? ഇങ്ങനെ മറുപടി നൽകുക: refund b-14.", message: "ഏത് ഉപഭോക്താവിന്? ഇങ്ങനെ മറുപടി നൽകുക: message b-14 15 മിനിറ്റ് വൈകും.", move: "ഏത് ബുക്കിംഗ്? ഇങ്ങനെ മറുപടി നൽകുക: move b-14 to 5pm." },
+  kn: { cancel: "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: cancel b-14.", refund: "ಯಾವುದು? ಹೀಗೆ ಉತ್ತರಿಸಿ: refund b-14.", message: "ಯಾವ ಗ್ರಾಹಕರಿಗೆ? ಹೀಗೆ ಉತ್ತರಿಸಿ: message b-14 15 ನಿಮಿಷ ತಡ.", move: "ಯಾವ ಬುಕಿಂಗ್? ಹೀಗೆ ಉತ್ತರಿಸಿ: move b-14 to 5pm." },
 };
 
 const W: Record<Language, Words> = {
@@ -283,6 +295,10 @@ const W: Record<Language, Words> = {
     undo_none: () => "There is nothing to undo.",
     need_ref: (d, w) => `${w.lit(NEED_REF.en[d.kind])}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
     need_date: (d) => (d.kind === "close_day" ? "Which day? For example: close Sunday." : "Which day? For example: reopen Sunday."),
+    need_when: (d, w) => `To when? For example: ${w.lit(`move ${d.ref} to 5pm`)}, or ${w.lit(`move ${d.ref} to Friday`)}.`,
+    moved: (d, w) => `Moved ${w.lit(d.ref)} to ${w.slot(d.toMs)}. I've told the customer. Reply undo to move it back.`,
+    moved_back: (d, w) => `${w.lit(d.ref)} is back at ${w.slot(d.toMs)}. I've told the customer.`,
+    move_failed: (d, w) => `I couldn't move ${w.lit(d.ref)}${d.toMs !== undefined ? ` to ${w.slot(d.toMs)}` : ""}: ${MOVE_WHY.en[d.why]}.`,
     need_words: (d, w) => `What should I tell them? For example: ${w.lit(`message ${d.ref} Running 15 minutes late`)}.`,
     refusal: (d, w) => REFUSAL.en[d.why](w, d),
     card: (d, w) => `${CARD_ASK.en(w, d)}\n${CARD_FOOT.en(w, d)}`,
@@ -315,6 +331,10 @@ const W: Record<Language, Words> = {
     undo_none: () => "वापस लेने को कुछ नहीं है।",
     need_ref: (d, w) => `${w.lit(NEED_REF.hi[d.kind])}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
     need_date: (d) => (d.kind === "close_day" ? "कौन-सा दिन? जैसे: रविवार बंद।" : "कौन-सा दिन? जैसे: रविवार फिर से खोल दो।"),
+    need_when: (d, w) => `कब पर? जैसे: ${w.lit(`move ${d.ref} to 5pm`)}, या ${w.lit(`move ${d.ref} to Friday`)}।`,
+    moved: (d, w) => `${w.lit(d.ref)} को ${w.slot(d.toMs)} पर कर दिया। ग्राहक को बता दिया। वापस करने के लिए undo लिखें।`,
+    moved_back: (d, w) => `${w.lit(d.ref)} फिर से ${w.slot(d.toMs)} पर है। ग्राहक को बता दिया।`,
+    move_failed: (d, w) => `${w.lit(d.ref)}${d.toMs !== undefined ? ` को ${w.slot(d.toMs)} पर` : ""} नहीं बदल सका: ${MOVE_WHY.hi[d.why]}।`,
     need_words: (d, w) => `उन्हें क्या बताऊँ? जैसे: ${w.lit(`message ${d.ref} 15 मिनट देर होगी`)}।`,
     refusal: (d, w) => REFUSAL.hi[d.why](w, d),
     card: (d, w) => `${CARD_ASK.hi(w, d)}\n${CARD_FOOT.hi(w, d)}`,
@@ -347,6 +367,10 @@ const W: Record<Language, Words> = {
     undo_none: () => "പഴയപടിയാക്കാൻ ഒന്നുമില്ല.",
     need_ref: (d, w) => `${w.lit(NEED_REF.ml[d.kind])}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
     need_date: (d) => (d.kind === "close_day" ? "ഏത് ദിവസം? ഉദാഹരണം: ഞായറാഴ്ച അടച്ചിടുക." : "ഏത് ദിവസം? ഉദാഹരണം: ഞായറാഴ്ച വീണ്ടും തുറക്കുക."),
+    need_when: (d, w) => `എപ്പോഴേക്ക്? ഉദാഹരണം: ${w.lit(`move ${d.ref} to 5pm`)}, അല്ലെങ്കിൽ ${w.lit(`move ${d.ref} to Friday`)}.`,
+    moved: (d, w) => `${w.lit(d.ref)} ${w.slot(d.toMs)}-ലേക്ക് മാറ്റി. ഉപഭോക്താവിനോട് പറഞ്ഞു. തിരികെ മാറ്റാൻ undo എന്ന് മറുപടി നൽകുക.`,
+    moved_back: (d, w) => `${w.lit(d.ref)} വീണ്ടും ${w.slot(d.toMs)}-ന്. ഉപഭോക്താവിനോട് പറഞ്ഞു.`,
+    move_failed: (d, w) => `${w.lit(d.ref)}${d.toMs !== undefined ? ` ${w.slot(d.toMs)}-ലേക്ക്` : ""} മാറ്റാനായില്ല: ${MOVE_WHY.ml[d.why]}.`,
     need_words: (d, w) => `അവരോട് എന്ത് പറയണം? ഉദാഹരണം: ${w.lit(`message ${d.ref} 15 മിനിറ്റ് വൈകും`)}.`,
     refusal: (d, w) => REFUSAL.ml[d.why](w, d),
     card: (d, w) => `${CARD_ASK.ml(w, d)}\n${CARD_FOOT.ml(w, d)}`,
@@ -379,6 +403,10 @@ const W: Record<Language, Words> = {
     undo_none: () => "ಹಿಂದಿನಂತೆ ಮಾಡಲು ಏನೂ ಇಲ್ಲ.",
     need_ref: (d, w) => `${w.lit(NEED_REF.kn[d.kind])}${d.rows.length > 0 ? `\n${d.rows.slice(0, LIST_ROWS).map((r) => `${w.slot(r.startMs)}: ${w.lit(r.what)}, ${w.lit(r.who)} (${w.lit(r.case)})`).join("\n")}` : ""}`,
     need_date: (d) => (d.kind === "close_day" ? "ಯಾವ ದಿನ? ಉದಾಹರಣೆಗೆ: ಭಾನುವಾರ ಮುಚ್ಚಿ." : "ಯಾವ ದಿನ? ಉದಾಹರಣೆಗೆ: ಭಾನುವಾರ ಮತ್ತೆ ತೆರೆ."),
+    need_when: (d, w) => `ಯಾವಾಗಕ್ಕೆ? ಉದಾಹರಣೆಗೆ: ${w.lit(`move ${d.ref} to 5pm`)}, ಅಥವಾ ${w.lit(`move ${d.ref} to Friday`)}.`,
+    moved: (d, w) => `${w.lit(d.ref)} ಅನ್ನು ${w.slot(d.toMs)} ಕ್ಕೆ ಬದಲಾಯಿಸಲಾಗಿದೆ. ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಹಿಂದಿನಂತೆ ಮಾಡಲು undo ಎಂದು ಉತ್ತರಿಸಿ.`,
+    moved_back: (d, w) => `${w.lit(d.ref)} ಮತ್ತೆ ${w.slot(d.toMs)} ಕ್ಕೆ ಇದೆ. ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ.`,
+    move_failed: (d, w) => `${w.lit(d.ref)}${d.toMs !== undefined ? ` ಅನ್ನು ${w.slot(d.toMs)} ಕ್ಕೆ` : ""} ಬದಲಾಯಿಸಲಾಗಲಿಲ್ಲ: ${MOVE_WHY.kn[d.why]}.`,
     need_words: (d, w) => `ಅವರಿಗೆ ಏನು ಹೇಳಲಿ? ಉದಾಹರಣೆಗೆ: ${w.lit(`message ${d.ref} 15 ನಿಮಿಷ ತಡ`)}.`,
     refusal: (d, w) => REFUSAL.kn[d.why](w, d),
     card: (d, w) => `${CARD_ASK.kn(w, d)}\n${CARD_FOOT.kn(w, d)}`,

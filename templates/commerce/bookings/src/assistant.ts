@@ -5,7 +5,9 @@
 //
 // A closed day (the owner's "close Sunday"): the date is in the assistant's closed days, which the free times and the within-hours limit read (src/agent.ts, src/limits.ts),
 // and each customer booked that day is told through the assistant's template and stays booked. Nothing is cancelled or refunded by closing a day.
-import { addDays, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
+import { addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
+import { resolveTime } from "../../../../modules/language/dates.ts";
+import type { Decision } from "../../../../modules/limits/limits.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import { checkWords, ownerReply } from "../../../../modules/assistant/wire.ts";
 import type { DayNotice, DayRow, Executed, OwnerSkill, Prepared, Proposal, WaitingItem } from "../../../../modules/assistant/skill.ts";
@@ -31,6 +33,10 @@ export interface BookingsActs {
   cancelWaiting(b: Booking, why: string): Promise<void>;
   /** Refund part or all of a paid deposit, the way "approve b-3" does. */
   refund(b: Booking, paymentId: string, amountInr: number, why: string): Promise<RefundResult | "owed">;
+  /** The two slot rules for a time (within the hours, closed days included; not on top of another booking), without telling anyone (`slotRules`). */
+  slotRules(b: Booking, startMs: number, endMs: number): Promise<{ hours: Decision; clash: Decision }>;
+  /** Move a confirmed booking to this time through the agent's own reschedule (the calendar, the customer's "rescheduled" message), as the customer's own yes does. */
+  applyMove(b: Booking, startMs: number, endMs: number): Promise<void>;
   /** The customer's line after the owner cancelled ("cancelled_no_deposit" when nothing was paid). */
   tellCancelled(b: Booking): Promise<boolean>;
   owner: string;
@@ -196,6 +202,30 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
         if (await notify({ case: b.id, phone: b.customer, startMs: b.startMs! })) told.push(b.id);
       }
       return { told };
+    },
+    moveTarget(caseId, to) {
+      const b = store.bookings.get(caseId);
+      if (!b) return { ok: false, why: "no_case" };
+      if (b.state !== "confirmed" || b.startMs === undefined) return { ok: false, why: "not_live" };
+      const was = localParts(b.startMs, tz);
+      const date = to.date ?? { year: was.year, month: was.month, day: was.day };
+      const time = to.time ? resolveTime(to.time, hoursOn(settings, weekdayOf(date))).time : { hour: was.hour, minute: was.minute };
+      return { ok: true, startMs: zonedToMs(date, time, tz) };
+    },
+    async move(caseId, startMs) {
+      const acts = deps.acts;
+      const b = store.bookings.get(caseId);
+      if (!acts || !b) return { ok: false, why: "no_case" };
+      if (b.state !== "confirmed" || b.startMs === undefined || b.endMs === undefined) return { ok: false, why: "not_live" };
+      const fromMs = b.startMs;
+      const endMs = startMs + (b.endMs - b.startMs);
+      if (startMs <= deps.nowMs()) return { ok: false, why: "past" };
+      // checked first without a word to anyone, so a time that cannot be had never reaches the customer as "that time is not free"
+      const { hours, clash } = await acts.slotRules(b, startMs, endMs);
+      if (hours.verdict === "block") return { ok: false, why: "outside_hours" };
+      if (clash.verdict === "block") return { ok: false, why: "taken" };
+      await acts.applyMove(b, startMs, endMs);
+      return b.startMs === startMs ? { ok: true, fromMs, toMs: startMs } : { ok: false, why: "failed" };
     },
     prepare,
     execute,

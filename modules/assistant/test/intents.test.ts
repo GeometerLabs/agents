@@ -34,6 +34,8 @@ test("acts, in four languages, with the values read from the words", () => {
   assert.deepEqual(readOwnerRules("message b-14 Running 15 minutes late", ALL), { kind: "message", ref: "b-14", words: "Running 15 minutes late" });
   assert.equal(readOwnerRules("b-14 ko bolo 15 min late hoga", ALL).words, "15 min late hoga");
   assert.equal(readOwnerRules('tell b-14: "we open at 11"', ALL).words, "we open at 11");
+  assert.deepEqual(readOwnerRules("move b-14 to 5pm", ALL), { kind: "move", time: { hour: 5, minute: 0, period: "pm" }, ref: "b-14" });
+  for (const text of ["b-14 शिफ्ट शाम 5 बजे", "shift b-14 to friday", "b-14 വൈകുന്നേരം 5-ലേക്ക് മാറ്റുക", "b-14 ಸಂಜೆ 5 ಕ್ಕೆ ಶಿಫ್ಟ್"]) assert.deepEqual([kind(text), readOwnerRules(text, ALL).ref], ["move", "b-14"], text);
   assert.equal(kind("undo"), "undo");
   assert.equal(kind("वापस लो"), "undo");
   assert.equal(kind("increase my refund limit to 1000"), "limit", "a limit is never read as a refund");
