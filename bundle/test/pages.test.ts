@@ -11,6 +11,9 @@ import { CLAIM_RETRY_MS, endOwnerSessions, pagesCopies, pagesFileFor, pagesStatu
 import { parseServer } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { readPagesFile } from "../../modules/channels/pages-file.ts";
+import { caddyfile, composeServer } from "../generate/compose.ts";
+import { doorConfig } from "../generate/configs.ts";
+import { serverConfig } from "./helpers.ts";
 
 const T0 = new Date("2026-11-12T05:00:00Z");
 const KEY = "geo_dep_testkey";
@@ -156,4 +159,25 @@ test("geometer.json: the pages domain is the partner server's setting, a list of
   assert.match(errors({ domain: "https://pages.example" }), /small letters/u);
   assert.match(errors({ domain: "pages.example", extraDomains: ["pages.example"] }), /twice/u);
   assert.match(errors({ domain: "pages.example" }, "own"), /partner server/u);
+});
+
+test("generated: the pages domain's site reaches only the door, the door is on its own network and egress with no secret, and a server without it has none", () => {
+  const hosted = serverConfig({ panel: { enabled: true, mode: "hosted" }, fleet: { url: "https://fleet.example", keyFile: "fleet.key" }, pages: { domain: "pages.example", extraDomains: ["old.example"] } });
+  const caddy = caddyfile(hosted, [], ["veena"]);
+  const site = caddy.slice(caddy.indexOf("pages.example, old.example {"));
+  assert.ok(site.startsWith("pages.example, old.example {"), caddy);
+  const block = site.slice(0, site.indexOf("\n}") + 2);
+  assert.deepEqual(block.split("\n").map((l) => l.trim()).filter(Boolean), ["pages.example, old.example {", "reverse_proxy door:8797", "}"], "nothing but the door: no /c, /s, /r, /g or panel");
+  const dirs = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", fleet: "/srv/fleet", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json", licence: "/srv/state/licence" };
+  const c = composeServer(hosted, dirs, [], {});
+  const door = c.services.door.block as { networks: Record<string, unknown>; volumes: string[] };
+  assert.deepEqual(Object.keys(door.networks).sort(), ["egress", "pages"]);
+  assert.ok(!door.volumes.some((v) => v.includes("/secrets")), "no secret is mounted into the door");
+  assert.ok(Object.keys((c.services.caddy.block as { networks: Record<string, unknown> }).networks).includes("pages"));
+  assert.match(c.compose, /\n  pages:\n    internal: true/u, "the pages network has no way out of its own");
+  assert.deepEqual(JSON.parse(doorConfig(hosted)!), { primary: "pages.example", extra: ["old.example"], deploymentId: "acme-vps-1", fleetUrl: "https://fleet.example", localUrl: "http://inbox:8788" });
+  const builder = serverConfig({ panel: { enabled: true } });
+  assert.equal(doorConfig(builder), undefined);
+  assert.ok(!caddyfile(builder).includes("door:"));
+  assert.equal(composeServer(builder, dirs, [], {}).services.door, undefined);
 });
