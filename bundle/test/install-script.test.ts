@@ -153,6 +153,30 @@ test("Node is installed only after its download matches release.json's sha256 an
   } finally { s.done(); }
 });
 
+test("Node's libatomic1 comes from Ubuntu's archive before Node is unpacked when the library list lacks it, and is left alone when it is there", async () => {
+  // install-in-container.sh (12 Nov 2026): on a minimal ubuntu:24.04, nodejs.org's Node stopped at once, "libatomic.so.1: cannot open shared object file"
+  const tarball = "a pretend node tarball";
+  const curl = 'out=""; while [ $# -gt 0 ]; do case "$1" in -o) out=$2; shift 2;; *) url=$1; shift;; esac; done; case "$url" in *SHASUMS256.txt) printf "%s  node-v26.13.0-linux-arm64.tar.xz\\n" "$LISTED" > "$out";; *) printf "%s" "${TARBALL}" > "$out";; esac';
+  const ldconfig = 'if [ -n "${HAVE_ATOMIC:-}" ]; then printf "\\tlibatomic.so.1 (libc6,AArch64) => /lib/aarch64-linux-gnu/libatomic.so.1\\n"; fi; printf "\\tlibc.so.6 (libc6,AArch64) => /lib/aarch64-linux-gnu/libc.so.6\\n"';
+  const install = "sudo apt-get install -y -qq --no-install-recommends libatomic1";
+  for (const have of [false, true]) {
+    const s = sandbox({ curl, ldconfig });
+    try {
+      const release = releaseWith(s.root, { node_version: "26.13.0", node_sha256_linux_arm64: sha(tarball) });
+      const r = await s.run("NODE_ARCH=arm64; install_node", { RELEASE_FILE: release, TARBALL: tarball, LISTED: sha(tarball), ...(have ? { HAVE_ATOMIC: "1" } : {}) });
+      assert.equal(r.code, 0, r.out);
+      const calls = s.calls().filter((c) => c.startsWith("sudo "));
+      if (have) assert.ok(!calls.some((c) => c.includes("libatomic1")), "already there: apt is not asked");
+      else {
+        const at = calls.indexOf(install);
+        assert.ok(at >= 0 && calls.indexOf("sudo apt-get update -qq") === at - 1, `apt's lists are read, then libatomic1 installed: ${calls.join(" | ")}`);
+        assert.ok(at < calls.findIndex((c) => c.startsWith("sudo tar -xJf")), "before Node is unpacked");
+        assert.match(r.out, /Installing libatomic1 from Ubuntu \(Node needs it to start\)/u);
+      }
+    } finally { s.done(); }
+  }
+});
+
 test("Docker: kept when it is there with a new enough Compose; otherwise Docker's key must have Docker's fingerprint before apt trusts it", async () => {
   const present = sandbox({ docker: 'if [ "$1 $2" = "compose version" ]; then echo "${COMPOSE:-2.29.1}"; else echo "Docker version 28.0.0"; fi' });
   try {
