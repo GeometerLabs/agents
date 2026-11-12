@@ -27,8 +27,11 @@ import { formatSlot } from "../../../../modules/language/format.ts";
 export interface BookingsActs {
   /** The fixed reply the owner could type or tap, handled by the agent exactly as if they had (`onOwnerMessage`). */
   answer(msg: InboundMessage): Promise<void>;
-  /** Release the slot of a paid booking and mark it cancelled by the owner, then refund its deposit the way the agent refunds (Guard holds it above the limit; a UPI shop's owner owes it). */
-  cancelPaid(b: Booking, why: string): Promise<RefundResult | "owed">;
+  /**
+   * Release the slot of a paid booking and mark it cancelled by the owner, then refund exactly `amountInr` (the card's amount: the deposit less what already went
+   * back) the way the agent refunds (Guard holds it above the limit; a UPI shop's owner owes it).
+   */
+  cancelPaid(b: Booking, amountInr: number, why: string): Promise<RefundResult | "owed">;
   /** Cancel a booking still waiting for its deposit: the hold and the link end, nothing was paid. */
   cancelWaiting(b: Booking, why: string): Promise<void>;
   /** Refund part or all of a paid deposit, the way "approve b-3" does. */
@@ -159,7 +162,7 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
     }
     if (a.kind === "cancel") {
       if (b.state === "awaiting_deposit") { await acts.cancelWaiting(b, "cancelled by the owner through the shop's assistant"); await acts.tellCancelled(b); return { ok: true, note: "done" }; }
-      return ofRefund(await acts.cancelPaid(b, "cancelled by the owner through the shop's assistant"));
+      return ofRefund(await acts.cancelPaid(b, Number(a.fields.amountPaise) / 100, "cancelled by the owner through the shop's assistant"));
     }
     if (a.kind === "refund") return ofRefund(await acts.refund(b, String(a.fields.paymentId), Number(a.fields.amountPaise) / 100, "refunded by the owner through the shop's assistant"));
     return { ok: false, note: "failed" };
@@ -186,12 +189,14 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
     problems: () => [...store.bookings.values()].reduce((n, b) => n + (b.refundIssues ?? []).length, 0),
     hours: (date) => hoursOn(settings, weekdayOf(date)),
     async closeDay(date, notify: DayNotice) {
-      const asked: string[] = [];
+      const booked: { case: string; who: string }[] = [];
+      const told: string[] = [];
       for (const b of store.bookings.values()) {
-        if (!COMING.includes(b.state) || !onDate(b, date) || deps.optedOut(b.customer)) continue;
-        if (await notify({ case: b.id, phone: b.customer, startMs: b.startMs! })) asked.push(b.id);
+        if (!COMING.includes(b.state) || !onDate(b, date)) continue;
+        booked.push({ case: b.id, who: whoOf(b) }); // every booking that day, told or not: the owner calls the ones the message could not reach
+        if (!deps.optedOut(b.customer) && (await notify({ case: b.id, phone: b.customer, startMs: b.startMs! }))) told.push(b.id);
       }
-      return { asked };
+      return { booked, told };
     },
     async reopenDay(date, asked, notify: DayNotice) {
       const told: string[] = [];

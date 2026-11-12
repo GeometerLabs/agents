@@ -115,9 +115,10 @@ export interface OwnerSkill {
   // ---- acts ----
   /**
    * Close a date: the date is already in the assistant's closed days (so the free times leave it out); the skill tells each customer booked that day, through `notify`
-   * (the assistant's words, a template so it reaches them outside their window), and returns the cases told. Nothing is cancelled or refunded. Left out: no days.
+   * (the assistant's words, a template so it reaches them outside their window), and returns every booking that day and the ones told. Nothing is cancelled or
+   * refunded. Left out: no days.
    */
-  closeDay?(date: LocalDate, notify: DayNotice): Promise<{ asked: string[] }>;
+  closeDay?(date: LocalDate, notify: DayNotice): Promise<{ booked: { case: string; who: string }[]; told: string[] }>;
   /** Undo a close: the date is offered again; the skill tells the customers asked who are still booked that day that their booking stands. */
   reopenDay?(date: LocalDate, asked: readonly string[], notify: DayNotice): Promise<{ told: string[] }>;
   /** Where a move would put a booking: the named date and/or time over the booking's own (Bookings). Pure. Left out: nothing moves. */

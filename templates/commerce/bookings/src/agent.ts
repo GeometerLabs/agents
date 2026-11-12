@@ -1427,8 +1427,7 @@ export function createAgent(deps: AgentDeps): Agent {
       owner, ownerRefunds,
       answer: (msg) => onOwnerMessage(msg),
       // the owner cancels a paid booking: the same steps as the owner's "approve b-3" on a booking the calendar could not confirm (above), then the deposit back
-      async cancelPaid(b, why) {
-        const back = b.depositInr ?? 0;
+      async cancelPaid(b, back, why) {
         b.pending = [];
         await releaseSlot(b, why);
         b.reminders = [];

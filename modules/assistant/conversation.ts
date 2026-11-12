@@ -243,9 +243,19 @@ export function createAssistant(deps: AssistantDeps) {
     if (v.verdict === "closed") { logLine(caseId, ASSISTANT_ACTIONS.card, "blocked", { card: card.id }, refs(card, reply.answer), `the card is already ${card.state}: nothing was done`); await tell("card_closed", {}, { caseId }); return; }
     if (v.verdict === "expired") { closeCard(s, card, "expired", now); logLine(caseId, ASSISTANT_ACTIONS.card, "blocked", { card: card.id }, refs(card, reply.answer), "the card ran out before the tap: nothing was done"); await tell("card_expired", {}, { caseId }); return; }
     if (v.verdict === "refuse") {
+      // A no to something already waiting (a late refund, a waiver, a big order) IS the owner's own "deny": it is sent to the skill, so the item stops waiting and the
+      // customer hears the answer. Only while the item is still the one the card showed (the same digest); otherwise nothing is sent. Any other no changes nothing.
+      const skill = skillNamed(card.action.skill);
+      const item = card.action.kind === "answer" ? skill?.waiting().find((i) => i.case === caseId && i.kind === card.action.fields.itemKind) : undefined;
+      let denied = false;
+      if (skill && item?.no) {
+        const now2 = skill.prepare(card.proposal as unknown as Proposal);
+        if (now2.ok && actionDigest(now2.action) === card.digest) { await skill.execute({ ...card.action, fields: { ...card.action.fields, answer: "no" } }); denied = true; }
+      }
       closeCard(s, card, "refused", now);
-      logLine(caseId, ASSISTANT_ACTIONS.card, "confirmed", { card: card.id }, refs(card, "no"), "the owner said no; the same action is not offered again for 24 hours");
-      await tell("refused", {}, { caseId });
+      logLine(caseId, ASSISTANT_ACTIONS.card, "confirmed", { card: card.id }, { ...refs(card, "no"), ...(denied ? { sent: item!.no! } : {}) },
+        denied ? `the owner said no; their "${item!.no}" was sent to the skill, so it no longer waits` : "the owner said no; the same action is not offered again for 24 hours");
+      if (!denied) await tell("refused", {}, { caseId });
       return;
     }
     if (v.verdict === "gone") {
@@ -315,12 +325,13 @@ export function createAssistant(deps: AssistantDeps) {
     if (isClosedDay(s, date)) { await tell("already_closed", { date }); return; }
     // Close first, so the free times stop offering the date in this same step, then ask the customers booked that day to pick another one.
     s.closedDays = [...s.closedDays, isoDate(date)].sort();
-    const { asked } = await skill.closeDay!(date, (c) => tellCustomer("day_closed", c.case, c.phone, date, c.startMs));
+    const { booked, told } = await skill.closeDay!(date, (c) => tellCustomer("day_closed", c.case, c.phone, date, c.startMs));
     const undo = nextId(s, "u");
-    s.undo.push({ id: undo, kind: "close_day", skill: skill.name, date: isoDate(date), asked, atMs: clock.now(), untilMs: clock.now() + UNDO_FOR_MS });
-    logLine(null, ASSISTANT_ACTIONS.closeDay, "confirmed", { date: isoDate(date) }, { skill: skill.name, date: isoDate(date), asked: String(asked.length), undo },
-      "the owner closed this date: it is no longer offered, and the customers booked that day were asked to pick another day; nothing was cancelled or refunded");
-    await tell("closed", { date, asked: asked.length });
+    s.undo.push({ id: undo, kind: "close_day", skill: skill.name, date: isoDate(date), asked: told, atMs: clock.now(), untilMs: clock.now() + UNDO_FOR_MS });
+    logLine(null, ASSISTANT_ACTIONS.closeDay, "confirmed", { date: isoDate(date) }, { skill: skill.name, date: isoDate(date), booked: String(booked.length), asked: String(told.length), undo },
+      "the owner closed this date: it is no longer offered, and the customers booked that day were asked to pick another day (those not reached are named to the owner); nothing was cancelled or refunded");
+    // the owner hears how many were booked, and by name the ones the message could not reach (STOP, or no approved template outside their window), to call them
+    await tell("closed", { date, booked: booked.length, missed: booked.filter((b) => !told.includes(b.case)) });
   }
 
   async function reopenDay(date: LocalDate): Promise<void> {

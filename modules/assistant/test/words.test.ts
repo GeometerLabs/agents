@@ -22,7 +22,7 @@ const SAMPLES: { [K in MessageId]: MessageData[K][] } = {
   open_list: [{ rows: [{ case: "o-5", who: "Ravi", what: "2 boxes", amountPaise: 480_000, state: "confirmed" }] }, { rows: [] }],
   waiting_head: [{ count: 2 }, { count: 0 }],
   money_in: [{ date: SUN, paise: 140_000, payments: 3 }, { date: SUN, paise: 0, payments: 0 }],
-  closed: [{ date: SUN, asked: 2 }, { date: SUN, asked: 0 }],
+  closed: [{ date: SUN, booked: 2, missed: [] }, { date: SUN, booked: 0, missed: [] }, { date: SUN, booked: 2, missed: [{ case: "b-15", who: "+919822222222" }] }],
   already_closed: [{ date: SUN }], weekday_closed: [{ date: SUN }], not_closed: [{ date: SUN }], reopened: [{ date: SUN, told: 2 }, { date: SUN, told: 0 }], past_day: [{ date: SUN }],
   undo_none: [{}],
   need_ref: [{ kind: "cancel", rows }, { kind: "message", rows: [] }, { kind: "refund", rows }, { kind: "move", rows }],
@@ -61,7 +61,7 @@ test("every message, in every language, states only the values it was written fr
 });
 
 test("a stray number in the words fails the check, so it would not be sent", () => {
-  const { text, facts } = write("closed", { date: SUN, asked: 2 }, "en", TZ);
+  const { text, facts } = write("closed", { date: SUN, booked: 2, missed: [] }, "en", TZ);
   assert.equal(checkText(`${text} Call 98765.`, facts).ok, false);
   assert.equal(checkText(text.replace("Sun 15 Nov", "Mon 16 Nov"), facts).ok, false);
 });
