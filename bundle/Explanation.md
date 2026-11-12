@@ -885,6 +885,6 @@ The owner dropped the idea of a voice agent that answers the shop's phone (telep
 - *The owner's voice notes are not listened to.* An owner's message is a command (approve, received...), and a misheard command is worse than a typed one.
 - *The setting is off, and refused.* No `speech` block means no change anywhere (a test pins the voice-off behaviour). The block is refused unless the speech key was handed in (`geometer speech-key`) and the Guards are placed; they are defined but not placed, so today it is always refused, and the check says why.
 
-**What the Guards can and cannot bind.** The speech Guard lists exactly two routes, pins the text-to-speech model, and caps calls a day. It cannot pin the speech-to-text model (a multipart field). The media Guard can read one thing, a voice note's media record. Neither is in Compose yet.
+**What the Guards can and cannot bind.** The speech Guard lists exactly two routes, pins the text-to-speech model, and caps calls a day. It cannot pin the speech-to-text model (a multipart field). The media Guard lists one GET route (`/{version}/{media_id}`) and cannot send or upload; a Guard rule can only allow exact values, so it cannot tell a media id from another id in that place (the shop's own phone number record, say), and a daily count bounds it. That is a looser fence than the WhatsApp Guard's. Neither is in Compose yet.
 
 **The research** (providers, prices, what fits a 2 vCPU / 4 GB server) is in the voice research notes the lead has; the numbers are the builder's setting, never written in code.
