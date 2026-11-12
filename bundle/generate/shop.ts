@@ -12,6 +12,7 @@ import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
 import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelProvider, modelSpec, gatewaySpec, whatsappGuardDef, whatsappSpec } from "./guards.ts";
 import type { WhatsAppRoute } from "./guards.ts";
+import { SPEECH_GUARDS_PLACED, speechProblem } from "./speech.ts";
 import { messagingConfigProblem } from "../../modules/messaging/providers.ts";
 import type { GuardDef, GuardKind } from "./guards.ts";
 
@@ -106,7 +107,7 @@ export function modelBaseUrl(model: ModelConfig): string {
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 /** The pieces of runtime.json the generator needs, checked. */
-function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, problems: Problem[], notes: string[], kind: Kind, settings: unknown) {
+function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, problems: Problem[], notes: string[], kind: Kind, settings: unknown, speechKeyHandedIn = false) {
   const hasCalendar = shopHasCalendar(kind, settings); // B72: a shop on its own booking list has none
   const services = isObj(panel.services) ? panel.services : {};
   // The ids the providers CONFIRMED (pins.json, written after the panel's connection checks) win over what runtime.json says, for the Guards AND for the
@@ -123,6 +124,12 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
   const providerProblem = messagingConfigProblem(messaging);
   if (providerProblem) problems.push({ rule: "whatsapp-provider", message: `runtime.json: ${providerProblem}` });
   const whatsappRoute: WhatsAppRoute | undefined = !providerProblem && messaging.provider === "gupshup" ? { provider: "gupshup", appId: messaging.appId as string } : undefined;
+
+  // B29: voice notes are OFF unless runtime.json has a `speech` block, and the block is refused unless the server holds the provider's key and places the speech Guards.
+  if (panel.speech !== undefined) {
+    const why = speechProblem({ keyHandedIn: speechKeyHandedIn, placed: SPEECH_GUARDS_PLACED });
+    if (why) problems.push({ rule: "voice-notes", message: `runtime.json "speech": ${why}` });
+  }
 
   // The runtime waits longer than Guard, or it gives up on a call Guard is still making and sends the same thing again.
   const timeoutMs = services.timeoutMs === undefined ? DEFAULT_RUNTIME_TIMEOUT_MS : services.timeoutMs;
@@ -258,13 +265,13 @@ export function withReport(runtime: Record<string, unknown>, facts: ReportFacts,
  * server's paper key was put where this shop's runtime reads it, as its own user's (lib/report-key.ts, which a deploy runs first), and if not `o.reportKeyWhy`.
  * Left out (the generator's own tests and goldens, and `check`, which places nothing): no key, and nothing said.
  */
-export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}, validate?: RuntimeValidator, o: { reportKeyReadable?: boolean; reportKeyWhy?: string; gupshupRenewed?: boolean } = {}): ShopPlan {
+export function planShop(server: ServerConfig, shop: ShopFolder, versions: Partial<Record<GuardKind, number>> = {}, validate?: RuntimeValidator, o: { reportKeyReadable?: boolean; reportKeyWhy?: string; gupshupRenewed?: boolean; /** B29: the speech provider's key has been handed in on this server (deploy.ts asks lib/secrets.ts speechKeyHandedIn). */ speechKeyHandedIn?: boolean } = {}): ShopPlan {
   // The template is the one the shop's pathway.lock names (a lock that is missing is a problem readShop already said; Bookings is assumed until it is fixed).
   const template: Kind = kindFor(shop.lock?.pathway) ?? KINDS.bookings;
   const check: RuntimeValidator = validate ?? template.validateRuntimeConfig;
   const problems: Problem[] = shop.problems.map((message) => ({ rule: "shop-folder", message }));
   const notes: string[] = [];
-  const facts = runtimeFacts(server, shop.runtime, shop.pins, problems, notes, template, shop.settings);
+  const facts = runtimeFacts(server, shop.runtime, shop.pins, problems, notes, template, shop.settings, o.speechKeyHandedIn === true);
   const guards: GuardPlan[] = [];
   let runtime: Record<string, unknown> = {};
 
