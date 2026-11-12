@@ -44,7 +44,9 @@ const openWindow = { lastInboundAt: () => 0 };
 const make = (url: string, extra: Record<string, unknown> = {}, clock = fakeClock(0)) => createGupshupSelfServeMessaging({ baseUrl: url, ...APP, agentToken: AGENT_TOKEN, ...extra }, { clock, window: openWindow });
 
 test("every session message type is one form post to /wa/api/v1/msg: the app's number and name, the digits of the customer, and the type's own JSON; the reply is 'accepted', not delivered", async () => {
-  const g = await guard();
+  // Gupshup's documented reply for the first message, then an id of its own for each later one
+  let n = 0;
+  const g = await guard({ send: () => ({ status: 200, body: n++ === 0 ? fixture("gupshup-selfserve-send-reply.json") : { status: "submitted", messageId: `gs-${n}` } }) });
   try {
     const m = make(g.url);
     const buttons = { body: "Which day?", buttons: [{ id: "d:1", title: "Monday" }, { id: "d:2", title: "Tuesday" }] };
@@ -73,8 +75,8 @@ test("every session message type is one form post to /wa/api/v1/msg: the app's n
     assert.notEqual(message[1].msgid, message[2].msgid, "each interactive message has its own id");
     assert.deepEqual(message[3], { type: "file", url: "https://shop.example/r.pdf", filename: "receipt.pdf", caption: "Your receipt" });
     assert.deepEqual(message[4], { type: "image", originalUrl: "https://shop.example/q.png", previewUrl: "https://shop.example/q.png", caption: "Scan to pay" });
-    assert.ok(sent.every((s) => s.id === "ee4a68a0-1203-4c85-8dc3-49d0b3226a35" && s.acceptedAs === "accepted"));
-    assert.equal((await m.getMessage(sent[0].id))?.kind, "text", "the read-back is the local copy of what Gupshup took");
+    assert.deepEqual(sent.map((s) => [s.id, s.acceptedAs]), [["ee4a68a0-1203-4c85-8dc3-49d0b3226a35", "accepted"], ...[2, 3, 4, 5].map((i) => [`gs-${i}`, "accepted"])]);
+    assert.deepEqual(await Promise.all(sent.map(async (s) => (await m.getMessage(s.id))?.kind)), ["text", "interactive", "interactive", "document", "image"], "the read-back is the local copy of what Gupshup took");
   } finally { await g.close(); }
 });
 
