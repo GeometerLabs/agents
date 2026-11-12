@@ -868,3 +868,111 @@ nothing at its WhatsApp Guard), and a reload of a real Guard's agent list from t
 - **No Google Calendar needed.** `hasOwnCalendar` and `guardsOf` (`lib/kinds.ts`) are the one place that decides it: settings `"calendar": {"module": "own"}` drop the calendar Guard, the Google key, the token refresher entry and the connection check (`panel/golive.ts`); runtime.json names no calendar. `generate/shop.ts` refuses a pinned older template that still needs one (`calendar-own-pinned`). The panel's accounts step has a tick for Google Calendar; unticked asks for nothing. Details: templates/commerce/bookings/Explanation.md.
 - **The "What to ask the shop for" card** is `modules/ask-card/list.ts` (the one list) with `render.ts` (the cards beside each template's sell guide, `--check` for drift). The panel hook `askCardFor` is not wired yet (Deferred.md).
 - **Shop terms on WhatsApp**, off by default. `geometer.json` `"panel": {"termsOnWhatsapp": true}` turns it on. Then: the panel's page `/shops/<shop>/terms` takes the partner's name, number and the two prices (`shops/<shop>/terms.json`); the deployer hands the runtime `client/terms.json` (`lib/terms.ts`, removed again when the setting is off); the owner writes `terms` and gets the text in their language with an "I agree" button; the agent records `terms_sent` and `terms_agreed` (digest of the exact text, version, language, the reply's message id) in the record, only if the same text was sent; the page finds the entry in the exported record and offers the copy (`panel/terms.ts`). The mechanism is `modules/terms/`, wired into Bookings, Orders and Fees the way the handover reply is. It changes no limit, no approval and no record rule. It has NOT had a legal check.
+
+## Every shop's page on the pages domain (plan item 11f, decision 44; 12 Nov 2026)
+
+A shop's page has three views: customers (public), the owner (private, signed in from WhatsApp) and the partner (a link). It is served at `https://<the pages domain>/<slug>`
+for partners' shops and for builders' clients who choose it, and at `https://<server>/s/<shop>/` for everyone (item 11d's address). The pages domain is not written in
+code: it is one setting, read by fleet (`pages.domain`, and `pages.extra_domains`) and by the server that answers for it (`geometer.json` `pages.domain` and
+`pages.extraDomains`). The docs call it "the pages domain"; tests use `pages.example` and `old.example`.
+
+**Why a domain of its own, apart from geometer.dev.** Shop pages carry other people's names, prices and (for builders' clients) another operator's server. On a separate
+registrable domain they share no cookies with geometer.dev (its account page and Firebase sign-in), and a shop page someone reports does not touch geometer.dev's mail or
+search reputation. The paper checker stays on geometer.dev/verify. `geometer.json` refuses a pages domain that is geometer.dev or under it.
+
+### The front door: a small `door` service on Geometer's partner server
+
+Caddy on the partner server already holds TLS for the server; DNS for the pages domain points at it, and a site block of its own sends every request for the pages
+domain (and the extra domains) to one small container, `door` (`services/door.ts`). That site block reaches only the door: no `/panel`, `/c`, `/g`, `/r` or `/s` on the
+pages domain. The door:
+
+- looks the slug up at fleet (`GET /v1/page-slugs/<slug>`, public, `max-age=60`), keeps the answer a minute (an unknown one 30 s) and, when fleet cannot be reached, keeps
+  using a known answer for up to a day, so a fleet outage does not take the partners' shop pages down;
+- for a shop on this server, forwards `/<slug>/<rest>` to the inbox process's front as `/s/<shop>/<rest>`, with `x-geometer-door: <slug>`; the front then writes its links,
+  redirects and form targets under `https://<pages domain>/<slug>` (only when the header names the slug the shop has claimed; anything else is ignored);
+- for a builder's client, forwards the customer view, the API and MCP to `https://<builder's server>/s/<shop>/<rest>` (a pure pass-through: nothing cached, no body
+  read beyond the size cap, nothing logged but the slug and the status), and REDIRECTS the owner's view (`/<slug>/owner...`, `/<slug>/o/...`) to the builder's own domain;
+- answers `/p/<id>` (below), `/`, `/robots.txt` (`Disallow: /*/owner`) and `/healthz` itself, and redirects an extra domain to the primary one, path kept;
+- holds no secret: the slug lookup is public (its answer is only what anyone learns by opening the page), and it never sees a channel or owner token of its own.
+
+It is its own container, not part of the inbox, because it fetches hosts that builders name: a fault there must not reach the inbox's tokens. Its outbound side is narrow:
+`https://` only, a DNS name (never an IP address), the name resolved by the door and refused when ANY answer is a loopback, private, link-local (the cloud metadata
+address included), CGNAT, multicast or unspecified address, connected to the address it checked, no redirect followed. A builder's server answers with its own headers,
+and only a short list passes (`content-type`, `content-length`, `cache-control`, `etag`, `last-modified`, `retry-after`, `allow`, `content-language`, `x-robots-tag`,
+`location` rewritten to the pages address or dropped); the door adds its own `content-security-policy` (no script, no frame, forms only to `/<slug>/`, connections only to
+`/<slug>/`), `x-content-type-options: nosniff` and `referrer-policy: no-referrer`. `Set-Cookie`, `Service-Worker-Allowed`, `Clear-Site-Data`, CORS headers and every
+other header from a builder's server are dropped.
+
+**Weighed against it.** A Cloudflare Worker or Firebase Hosting rewrites would put the front door with a third party: a paid account to approve (the owner's rule on paid
+services), the visitors' traffic and the owners' sign-in links passing through another company, and for Firebase a function or Cloud Run in front to read fleet's table,
+since its rewrites are static. Neither removes the work: they still need fleet's table and the same header rules. The partner server already terminates TLS for the
+partners' shops (most shops), so their pages cost no extra hop. A builder's client takes one hop more, through the partner server; if that traffic grows, the door moves
+to its own small machine with the same container (Deferred.md).
+
+### One origin for every shop: what keeps them apart
+
+Every shop on the pages domain shares one origin, so a cookie's `Path` is hygiene, not a boundary: a page of one slug that could run script, or a form posted from one
+slug to another, gets the browser's same-origin treatment, and SameSite=Lax does not stop it. What keeps shops apart is three things, each checked in code:
+
+1. **No script from anyone but Geometer's own code runs on the pages origin.** The partners' shops are served by item 11d's front (plain HTML, a policy with no script).
+   A builder's server is another operator, so the door replaces its policy with one that allows no script, and drops its cookies and service-worker headers.
+2. **Every owner POST carries a token tied to the session** (`csrf`, a hidden field or the `x-owner-csrf` header), derived from the session the browser holds and checked
+   in constant time. A form on another slug cannot read it. The Origin check stays as well.
+3. **The session is checked at that shop's runtime**, which made it: another shop's session, or a front that was taken over, gets nothing.
+
+A builder's client's owner view is never served on the pages origin (the door redirects it to the builder's own domain): no owner session or sign-in link of a builder's
+shop crosses Geometer's door, which also keeps "the front door stores nothing" true for the owner side.
+
+### Slugs, the stable page id, and why both (fleet)
+
+A slug is the shop's short name (`veena-salon`): 3 to 40 lowercase letters, digits and hyphens, unique, from a reserved list's complement, claimed at setup for one shop
+(fleet's README, "Shop pages"). It belongs to the shop, not the partner: a handover between partners on the same server (B38) keeps it. Renamed or removed, a slug cools
+for 90 days before anyone else may claim it, longer than an owner's session (30 days), so an old cookie is never sent to the next holder of the name; a renamed slug
+redirects to the new one while it cools.
+
+**A stable page id behind every slug** (owner, 12 Nov): QR codes printed for counters outlive names and domains. So the first claim gives the shop a 10-character id
+(lowercase, no look-alikes: `i`, `l`, `o`, `0`, `1` are left out) that never changes, is never reused, and moves with the shop in fleet's `slugs transfer`.
+`https://<pages domain>/p/<id>` always works: the door redirects it to the shop's current slug page, after a rename and after a freed slug has cooled; a suspended shop's id
+shows the suspended page and nothing else. The QR codes the panel and the shop page make use this address; messages may keep the friendly slug. The pages domain is one
+primary domain (new links) and a list of extra domains the door still answers for, by redirecting to the primary: a later country domain or a brand change serves the same
+ids and slugs, and printed codes keep working.
+
+**Claims go through the deployer**, which holds the deployment key (as for the paper signer's claim): the panel writes `shops/<shop>/page.json` (`pages`, `slug`, the
+WhatsApp number to show), the deployer's loop claims or releases at fleet and writes the answer for the panel (`status/pages/<shop>.json`), and writes each shop's
+`pages.json` (its addresses) to the two places that read it on every request: the runtime's client folder (to write the owner's sign-in link) and the inbox's folder for
+the shop (to accept the door's slug). Nothing restarts.
+
+### The owner's view: sign-in by a one-time link on WhatsApp
+
+At `<base>/owner` (base: `https://<pages domain>/<slug>` for a shop the door serves locally, `https://<server>/s/<shop>` otherwise):
+
+1. **Asking.** The owner sends "open my app" to the shop's own WhatsApp number (four languages; a fixed phrase the runtime reads before the agent or the assistant), or taps
+   "Send me a sign-in link" on the page. The page's form has no number field: the link goes only to the owner's number in the shop's settings, and anything posted with
+   the form is ignored. The page says the same thing whatever happened ("if you are this shop's owner, a link is on its way on WhatsApp; nothing came? send 'open my
+   app' to the shop's number"), so it tells a stranger nothing.
+2. **Sending** (`channels/owner-signin.ts`, run by the runtime core as a step, like the licence notice): the per-shop limit first, from the saved access store (3 a
+   quarter of an hour, 10 a day, every attempt counted, so neither the record nor the owner's phone can be flooded), then a fresh 32-byte link (only its SHA-256 is kept;
+   a new one replaces any unused older one), then the claim, save, send pattern with no token in the record (`owner_signin` lines name the link's short id). Inside the
+   owner's 24-hour window it goes as text with link previews off. Outside it, a link cannot go as free text and no sign-in template is approved yet (Meta's
+   authentication category carries codes, not links: Deferred.md), so nothing is sent and the page's words tell the owner what to do; the WhatsApp request always works,
+   because the owner's own message opens the window.
+3. **Opening the link.** `GET <base>/owner/in/<token>` only shows a page with one button (link scanners and previews fetch links, so a GET never uses one up);
+   `POST` uses it up once, at the runtime, in one SQLite statement (`issued` to `used` only if not expired and not replaced), and makes a session for the browser that
+   opened the link, never the one that asked. The link works for 10 minutes.
+4. **The session.** A new 32-byte token, only its hash kept at the runtime, 30 days, at most 5 per shop (the oldest ends). The cookie: `__Secure-geo-owner`, `HttpOnly`,
+   `Secure`, `SameSite=Lax`, `Path=<base path>/owner`, no `Domain` (the `__Host-` prefix forbids a path). A session is good only while its owner's number is the one in
+   the settings, its owner address is the shop's current one (a slug change ends it), and it was made after the panel's last "sign out every device"
+   (`shops/<shop>/owner-sessions.json`, copied to the runtime by the deployer like item 11d's link hash). The owner signs out from the page. The record has
+   `owner_signin` lines for a link sent, a sign-in, a sign-out and the panel's sign-out of every device.
+5. **What it opens.** Item 11d's owner page, with the session as the credential in place of the panel-made link: the runtime and the relay accept either (the relay asks the
+   runtime about a session, with its internal token, so the front is never trusted for it). The owner's app of item 11e mounts under the same `<base>/owner` when it lands.
+
+### The partner's view, and builders' choice
+
+The customer page's footer has one small line for whoever set the shop up: a link to their account page on geometer.dev and to the server's panel. There is no sign-in across
+the two domains in the first release: it would mean handing a token from geometer.dev to the pages domain, a second sign-in system to get right, for a person who already
+has the panel. The panel is where a partner works on a shop.
+
+A builder chooses per client: `"pages": "own"` (the default: the views at `https://<their domain>/s/<shop>/`, no slug, nothing at fleet) or `"hub"` (a slug and a page id on
+the pages domain, served through the door; the owner's view stays on the builder's domain). Geometer's partner server is always `"hub"`. The value is named `hub`, not after
+a domain, because the domain may change.
