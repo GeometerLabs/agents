@@ -1,0 +1,2 @@
+{ "app": "DemoApp", "timestamp": 1585344476000, "version": 2, "type": "message-event",
+  "payload": { "id": "wamid.HBgMOTE5ODAwMDAwMDAxFQIAERgSQTBCMw==", "gsId": "ee4a68a0-1203-4c85-8dc3-49d0b3226a35", "type": "delivered", "destination": "919800000001", "payload": { "ts": 1585344476 } } }

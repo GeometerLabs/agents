@@ -1,0 +1,13 @@
+{
+  "app": "DemoApp",
+  "timestamp": 1580228523976,
+  "version": 2,
+  "type": "message",
+  "payload": {
+    "id": "ABEGkYaYVSEEAhCzqobr15BdMPcRup1fIXAL",
+    "source": "919800000001",
+    "type": "quick_reply",
+    "payload": { "title": "First", "id": "qr1", "reply": "First 1" },
+    "sender": { "phone": "919800000001", "name": "CUSTOMER_NAME", "country_code": "91", "dial_code": "9800000001" }
+  }
+}

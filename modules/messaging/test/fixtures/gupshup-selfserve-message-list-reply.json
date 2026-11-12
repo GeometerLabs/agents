@@ -1,0 +1,20 @@
+{
+  "app": "DemoApp",
+  "timestamp": 1580228523976,
+  "version": 2,
+  "type": "message",
+  "payload": {
+    "id": "ABEGkYaYVSEEAhCzqobr15BdMPcRup1fIXAJ",
+    "source": "919800000001",
+    "type": "list_reply",
+    "payload": {
+      "title": "section 1 row 1",
+      "id": "list1",
+      "reply": "section 1 row 1 1",
+      "postbackText": "slot:2026-11-14T10:00",
+      "description": "first row of first section description"
+    },
+    "sender": { "phone": "919800000001", "name": "CUSTOMER_NAME", "country_code": "91", "dial_code": "9800000001" },
+    "context": { "id": "gBEGkYaYVSEEAgnPGGVYGg1uNU4", "gsId": "cbdafe39-1023-42a7-89d6-6c01a3388bb5" }
+  }
+}
