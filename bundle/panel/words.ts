@@ -226,6 +226,12 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
 };
 
 const t1 = (n: number, one: string, many: string) => (n === 1 ? one : many);
+/**
+ * When the server's Gupshup universal token ends, from the whole hours it has left (lib/renewals.ts rounds down, and says 0 once it has ended): in days from a day
+ * on, in hours under a day, and at 0 neither "in 0 days" nor "in 0 hours", which would be false. Each language has its own copy of this, in its own words.
+ */
+const credentialEnds = (hours: number) => hours >= 24 ? `ends in ${t1(Math.floor(hours / 24), "1 day", `${Math.floor(hours / 24)} days`)}. Hand in a new one before then`
+  : hours >= 1 ? `ends in ${t1(hours, "1 hour", `${hours} hours`)}. Hand in a new one before then` : "has less than an hour left, or has ended. Hand in a new one now";
 
 export const en: Words = {
   appName: "Geometer",
@@ -509,7 +515,7 @@ export const en: Words = {
       message_unanswered: (id) => `Work for ${id} was not finished while a service's connection was down: check it and answer the customer`,
       // follow-up 2: the shop's Gupshup token (not a case: `id` is "WhatsApp"); `hours` is how long the token in use, or the server's universal token, has left
       whatsapp_token_renewal: (_id, _amount, hours) => `WhatsApp through Gupshup: this shop's token could not be renewed. The one in use ends in ${hours} hours, and then no message goes out. Check the server (geometer logs refresher) or hand in a new Gupshup universal token.`,
-      whatsapp_token_credential: (_id, _amount, hours) => `WhatsApp through Gupshup: the server's Gupshup universal token ends in ${Math.floor(hours / 24)} days. Hand in a new one before then (geometer gupshup-token <file>).`,
+      whatsapp_token_credential: (_id, _amount, hours) => `WhatsApp through Gupshup: the server's Gupshup universal token ${credentialEnds(hours)} (geometer gupshup-token <file>).`,
       message_not_delivered: (id) => `A WhatsApp message for ${id} never reached the phone (WhatsApp reported it failed): reach the person another way`,
       upi_payment_unconfirmed: (id, amount) => `UPI payment of ${amount} for ${id} is not yet confirmed by the owner: ask the owner to check their UPI app`,
       upi_refund_owed: (id, amount) => `Refund of ${amount} for ${id} is owed by the owner and not yet marked done: remind the owner`,
