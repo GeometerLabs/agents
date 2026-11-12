@@ -101,7 +101,7 @@ export interface GuardInfo {
   code: string; // held_for_approval, refused_by_policy, conflict, unauthenticated, guard_unavailable, busy, provider_unreachable, outcome_unknown
   sent: string; // "no", or "unknown" for a lost answer
   retry: string; // after_approval, no, later, do_not_repeat
-  /** A finer reason beside `code`, when Guard gives one: limit_exceeded, self_check_failed, already_done. A client that does not read it behaves as before. */
+  /** A finer reason beside `code`, when Guard gives one: limit_exceeded, self_check_failed, already_done, subscription_suspended, denied_by_approver. A client that does not read it behaves as before. */
   reason_code?: string;
   reason?: string; // plain words, for a person
   detail?: unknown;
@@ -144,6 +144,32 @@ export class GuardRefusedError extends GuardError {
     this.name = "GuardRefusedError";
     this.kind = kind;
     this.ruleId = ruleId;
+  }
+}
+
+/**
+ * How long Guard refuses the identical call after a person denied it (monorepo ADR-0061, addendum of 12 Nov 2026: the owner's decision). Guard's own number
+ * (`DENIED_REPEAT_MS`); here for the stand-in Guard and for the approvals relay, which does not ask about such a call either.
+ */
+export const DENIED_REPEAT_MS = 24 * 3_600_000;
+
+/**
+ * The owner said no (403 `refused_by_policy` with `reason_code: "denied_by_approver"`; monorepo ADR-0061, addendum of 12 Nov 2026). A person denied this exact
+ * call less than 24 hours ago, so Guard refused the identical call at once and asked nobody again. It is the owner's no, not a broken rule: never sent again,
+ * never tried another way, and the customer is told the refund was not made. `approval` is the request that was denied, `untilMs` when the identical call
+ * would be held and asked about again. It is a GuardRefusedError, so code that does not know it still never retries it.
+ */
+export class GuardDeniedError extends GuardRefusedError {
+  approval?: string;
+  deniedAtMs?: number;
+  untilMs?: number;
+  constructor(status: number, message: string, guard: GuardInfo, call: SentCall) {
+    super(status, message, guard, call, "rule");
+    this.name = "GuardDeniedError";
+    const d = typeof guard.detail === "object" && guard.detail !== null ? guard.detail as Record<string, unknown> : {};
+    if (typeof d.approval === "string" && d.approval.length > 0) this.approval = d.approval.slice(0, 200);
+    if (typeof d.denied_at_ms === "number" && Number.isSafeInteger(d.denied_at_ms)) this.deniedAtMs = d.denied_at_ms;
+    if (typeof d.until_ms === "number" && Number.isSafeInteger(d.until_ms)) this.untilMs = d.until_ms;
   }
 }
 
@@ -239,6 +265,7 @@ export const mayHaveHappened = (e: unknown): boolean => e instanceof TimeoutErro
  *   GuardHeldError                               never waits: a person decides it. The agent keeps the held call and sends it only after approval.
  *   GuardRefusedError, GuardConflictError        never waits: a rule, a limit or a different action said no, and the same call gets the same answer.
  *   GuardAlreadyDoneError                        never waits: a person settled it as done, so nothing is left to do.
+ *   GuardDeniedError                             never waits: a person said no to this exact call, and Guard refuses it for a day without asking again.
  *   GuardUnauthenticatedError                    never waits: a mistake in this deployment's credential, not an outage.
  *   GuardError (any other)                       never waits: a decision this code does not know is not taken to mean "try later".
  *   ApiError, ConflictError, WindowClosedError   never waits: the service itself answered.

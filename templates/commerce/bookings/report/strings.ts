@@ -8,7 +8,7 @@
 // Claim rules, kept in code: a document counts and states facts; it never grades. BANNED lists, per language, the words
 // no document may contain (safe, guaranteed, certified, earnings and their translations). A test runs every document in
 // every language through it. The confirm verbs the packs already use (पक्का, ഉറപ്പിക്കാൻ, ಖಚಿತಪಡಿಸಲು) are not on it.
-import { INNOVATOR, CHECK_GENUINE, SCAN_SUMMARY } from "../../../../modules/report/text.ts";
+import { INNOVATOR, CHECK_GENUINE, SCAN_SUMMARY, SETTLED_BY_SOMEONE, SETTLED_BY_WORD } from "../../../../modules/report/text.ts";
 import { STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
 import type { RuleId } from "../../../../modules/record/record.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
@@ -25,6 +25,9 @@ export interface Strings {
   fullReport: string;
   /** The label before the check link in the WhatsApp message (modules/report/text.ts CHECK_GENUINE). */
   checkGenuine: string;
+  /** A refund a person settled as made, by their word (B75): "Settled by <who>, by their word", and the same without a name (modules/report/text.ts). */
+  settledByWord: (who: string) => string;
+  settledBySomeone: string;
   languageName: Record<Language, string>;
   /** The owner's lines: "label: number". */
   label: {
@@ -44,7 +47,7 @@ export interface Strings {
   /** The month's work and what it cost (plan B75): the three counts, what each means, and why a cost per job is sometimes not given. */
   work: {
     heading: string; jobs: string; completed: string; abandoned: string; unresolved: string; settledByPerson: string; cost: string; costUnknown: string; unitCost: string;
-    noCompleted: string; noCost: string; completedMeans: string; abandonedMeans: string; unresolvedMeans: string; abandonedNeverClears: string; refundsByPerson: string;
+    noCompleted: string; noCost: string; completedMeans: string; abandonedMeans: string; unresolvedMeans: string; abandonedNeverClears: string;
   };
   page: {
     numbers: string; item: string; count: string; amount: string; droppedBeforeBooked: string; givenBackDeposits: string; givenBackSecond: string; retried: string;
@@ -79,7 +82,7 @@ const standIn = `(${STAND_IN_SERVICES})`;
 const en: Strings = {
   agent: "Bookings agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", monthlyCertificate: "Monthly record certificate",
   innovator: INNOVATOR.en,
-  fullReport: "Full report", checkGenuine: CHECK_GENUINE.en,
+  fullReport: "Full report", checkGenuine: CHECK_GENUINE.en, settledByWord: SETTLED_BY_WORD.en, settledBySomeone: SETTLED_BY_SOMEONE.en,
   languageName: { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" },
   label: {
     bookingsMade: "Bookings made", cancelled: "Cancelled", moved: "Moved to a new time", depositsCollected: "Deposits collected", givenBack: "Given back",
@@ -123,7 +126,7 @@ const en: Strings = {
     completedMeans: "Completed means the calendar's own record shows the booking and the deposit was recorded first, and nothing about it is still open. A booking cancelled afterwards counts as completed once its refund is settled.",
     abandonedMeans: "Abandoned means the conversation stopped before the calendar confirmed a booking: nobody paid, the hold ran out, or the customer dropped it.",
     unresolvedMeans: "Unresolved means something is still open or not confirmed: a step a service never confirmed, a refund waiting for you or owed by you, or a payment the customer says they made that you have not marked.",
-    abandonedNeverClears: "A customer who stops replying never closes an unresolved item.", refundsByPerson: "Refunds a person settled by hand (their word, not the payment service's)",
+    abandonedNeverClears: "A customer who stops replying never closes an unresolved item.",
   },
   page: {
     numbers: "The numbers", item: "What", count: "How many", amount: "Amount", droppedBeforeBooked: "Asked for, then dropped before it was booked",
@@ -167,7 +170,7 @@ const en: Strings = {
 const hi: Strings = {
   agent: "बुकिंग एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", monthlyCertificate: "मासिक रिकॉर्ड प्रमाणपत्र",
   innovator: INNOVATOR.hi,
-  fullReport: "पूरी रिपोर्ट", checkGenuine: CHECK_GENUINE.hi,
+  fullReport: "पूरी रिपोर्ट", checkGenuine: CHECK_GENUINE.hi, settledByWord: SETTLED_BY_WORD.hi, settledBySomeone: SETTLED_BY_SOMEONE.hi,
   languageName: { hi: "हिंदी", en: "अंग्रेज़ी", ml: "मलयालम", kn: "कन्नड़" },
   label: {
     bookingsMade: "हुई बुकिंग", cancelled: "रद्द हुईं", moved: "समय बदला", depositsCollected: "जमा राशि मिली", givenBack: "वापस किया",
@@ -211,7 +214,7 @@ const hi: Strings = {
     completedMeans: "पूरा हुआ का मतलब: कैलेंडर के अपने रिकॉर्ड में बुकिंग दिखती है, उससे पहले जमा राशि दर्ज हुई, और उसमें कुछ भी खुला नहीं है। बाद में रद्द हुई बुकिंग तब पूरी गिनी जाती है जब उसका रिफंड निपट जाए।",
     abandonedMeans: "बीच में छूटा का मतलब: कैलेंडर के बुकिंग पक्की करने से पहले बातचीत रुक गई: किसी ने पैसे नहीं दिए, होल्ड खत्म हो गया, या ग्राहक ने छोड़ दिया।",
     unresolvedMeans: "अनसुलझा का मतलब: कुछ अभी खुला है या पक्का नहीं हुआ: जो कदम किसी सेवा ने पक्का नहीं किया, आपके इंतज़ार में या आपके देने वाला रिफंड, या ग्राहक का बताया पेमेंट जिसे आपने दर्ज नहीं किया।",
-    abandonedNeverClears: "जो ग्राहक जवाब देना बंद कर दे, उससे कोई अनसुलझी बात बंद नहीं होती।", refundsByPerson: "जो रिफंड किसी व्यक्ति ने हाथ से निपटाए (उनकी बात, पेमेंट सेवा की नहीं)",
+    abandonedNeverClears: "जो ग्राहक जवाब देना बंद कर दे, उससे कोई अनसुलझी बात बंद नहीं होती।",
   },
   page: {
     numbers: "आँकड़े", item: "क्या", count: "कितने", amount: "रकम", droppedBeforeBooked: "माँगी गई, पर बुक होने से पहले छोड़ दी गई",
@@ -255,7 +258,7 @@ const hi: Strings = {
 const ml: Strings = {
   agent: "ബുക്കിംഗ് ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", monthlyCertificate: "പ്രതിമാസ രേഖാ സർട്ടിഫിക്കറ്റ്",
   innovator: INNOVATOR.ml,
-  fullReport: "പൂർണ്ണ റിപ്പോർട്ട്", checkGenuine: CHECK_GENUINE.ml,
+  fullReport: "പൂർണ്ണ റിപ്പോർട്ട്", checkGenuine: CHECK_GENUINE.ml, settledByWord: SETTLED_BY_WORD.ml, settledBySomeone: SETTLED_BY_SOMEONE.ml,
   languageName: { hi: "ഹിന്ദി", en: "ഇംഗ്ലീഷ്", ml: "മലയാളം", kn: "കന്നഡ" },
   label: {
     bookingsMade: "ബുക്ക് ആയവ", cancelled: "റദ്ദാക്കിയവ", moved: "സമയം മാറ്റിയവ", depositsCollected: "ലഭിച്ച അഡ്വാൻസ്", givenBack: "തിരികെ നൽകിയത്",
@@ -299,7 +302,7 @@ const ml: Strings = {
     completedMeans: "പൂർത്തിയായത് എന്നാൽ: കലണ്ടറിന്റെ സ്വന്തം രേഖയിൽ ബുക്കിംഗ് കാണുന്നു, അതിനുമുമ്പ് അഡ്വാൻസ് രേഖപ്പെടുത്തി, ഇനി ഒന്നും തുറന്നിരിപ്പില്ല. പിന്നീട് റദ്ദാക്കിയ ബുക്കിംഗ് അതിന്റെ റീഫണ്ട് തീർന്നാൽ പൂർത്തിയായതായി കണക്കാക്കും.",
     abandonedMeans: "ഇടയ്ക്ക് നിന്നുപോയത് എന്നാൽ: കലണ്ടർ ബുക്കിംഗ് ഉറപ്പിക്കുംമുമ്പ് സംഭാഷണം നിന്നു: ആരും പണം അടച്ചില്ല, ഹോൾഡ് തീർന്നു, അല്ലെങ്കിൽ ഉപഭോക്താവ് ഉപേക്ഷിച്ചു.",
     unresolvedMeans: "പരിഹരിക്കാത്തത് എന്നാൽ: എന്തോ തുറന്നിരിക്കുന്നു അല്ലെങ്കിൽ ഉറപ്പായിട്ടില്ല: ഒരു സേവനം ഉറപ്പിക്കാത്ത ഘട്ടം, നിങ്ങൾക്കായി കാത്തിരിക്കുന്നതോ നിങ്ങൾ നൽകാനുള്ളതോ ആയ റീഫണ്ട്, അല്ലെങ്കിൽ ഉപഭോക്താവ് അടച്ചെന്ന് പറഞ്ഞ് നിങ്ങൾ രേഖപ്പെടുത്താത്ത പണം.",
-    abandonedNeverClears: "മറുപടി നിർത്തിയ ഉപഭോക്താവ് ഒരു പരിഹരിക്കാത്ത കാര്യവും അടയ്ക്കുന്നില്ല.", refundsByPerson: "ഒരാൾ കൈകൊണ്ട് തീർത്ത റീഫണ്ടുകൾ (അവരുടെ വാക്ക്, പേയ്മെന്റ് സേവനത്തിന്റേതല്ല)",
+    abandonedNeverClears: "മറുപടി നിർത്തിയ ഉപഭോക്താവ് ഒരു പരിഹരിക്കാത്ത കാര്യവും അടയ്ക്കുന്നില്ല.",
   },
   page: {
     numbers: "കണക്കുകൾ", item: "എന്ത്", count: "എത്ര", amount: "തുക", droppedBeforeBooked: "ചോദിച്ചു, പക്ഷേ ബുക്ക് ആകുംമുമ്പ് ഒഴിവാക്കി",
@@ -343,7 +346,7 @@ const ml: Strings = {
 const kn: Strings = {
   agent: "ಬುಕಿಂಗ್ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", monthlyCertificate: "ಮಾಸಿಕ ದಾಖಲೆ ಪ್ರಮಾಣಪತ್ರ",
   innovator: INNOVATOR.kn,
-  fullReport: "ಪೂರ್ಣ ವರದಿ", checkGenuine: CHECK_GENUINE.kn,
+  fullReport: "ಪೂರ್ಣ ವರದಿ", checkGenuine: CHECK_GENUINE.kn, settledByWord: SETTLED_BY_WORD.kn, settledBySomeone: SETTLED_BY_SOMEONE.kn,
   languageName: { hi: "ಹಿಂದಿ", en: "ಇಂಗ್ಲಿಷ್", ml: "ಮಲಯಾಳಂ", kn: "ಕನ್ನಡ" },
   label: {
     bookingsMade: "ಆದ ಬುಕಿಂಗ್", cancelled: "ರದ್ದಾದವು", moved: "ಸಮಯ ಬದಲಾದವು", depositsCollected: "ಬಂದ ಮುಂಗಡ ಹಣ", givenBack: "ಹಿಂತಿರುಗಿಸಿದ್ದು",
@@ -387,7 +390,7 @@ const kn: Strings = {
     completedMeans: "ಪೂರ್ಣಗೊಂಡದ್ದು ಎಂದರೆ: ಕ್ಯಾಲೆಂಡರ್‌ನ ಸ್ವಂತ ದಾಖಲೆಯಲ್ಲಿ ಬುಕಿಂಗ್ ಕಾಣುತ್ತದೆ, ಅದಕ್ಕಿಂತ ಮೊದಲು ಮುಂಗಡ ದಾಖಲಾಗಿದೆ, ಮತ್ತು ಇನ್ನೇನೂ ತೆರೆದಿಲ್ಲ. ನಂತರ ರದ್ದಾದ ಬುಕಿಂಗ್ ಅದರ ರೀಫಂಡ್ ಮುಗಿದಾಗ ಪೂರ್ಣಗೊಂಡದ್ದು ಎಂದು ಎಣಿಕೆಯಾಗುತ್ತದೆ.",
     abandonedMeans: "ಅರ್ಧಕ್ಕೆ ನಿಂತದ್ದು ಎಂದರೆ: ಕ್ಯಾಲೆಂಡರ್ ಬುಕಿಂಗ್ ಖಚಿತಪಡಿಸುವ ಮೊದಲೇ ಮಾತುಕತೆ ನಿಂತಿತು: ಯಾರೂ ಪಾವತಿಸಲಿಲ್ಲ, ಹೋಲ್ಡ್ ಮುಗಿಯಿತು, ಅಥವಾ ಗ್ರಾಹಕರು ಕೈಬಿಟ್ಟರು.",
     unresolvedMeans: "ಬಗೆಹರಿಯದ್ದು ಎಂದರೆ: ಏನೋ ಇನ್ನೂ ತೆರೆದಿದೆ ಅಥವಾ ಖಚಿತವಾಗಿಲ್ಲ: ಒಂದು ಸೇವೆ ಖಚಿತಪಡಿಸದ ಹಂತ, ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಅಥವಾ ನೀವು ಕೊಡಬೇಕಾದ ರೀಫಂಡ್, ಅಥವಾ ಗ್ರಾಹಕರು ಪಾವತಿಸಿದ್ದೇನೆ ಎಂದು ಹೇಳಿ ನೀವು ದಾಖಲಿಸದ ಹಣ.",
-    abandonedNeverClears: "ಉತ್ತರ ನಿಲ್ಲಿಸಿದ ಗ್ರಾಹಕರು ಯಾವುದೇ ಬಗೆಹರಿಯದ ವಿಷಯವನ್ನು ಮುಚ್ಚುವುದಿಲ್ಲ.", refundsByPerson: "ಒಬ್ಬ ವ್ಯಕ್ತಿ ಕೈಯಿಂದ ಮುಗಿಸಿದ ರೀಫಂಡ್‌ಗಳು (ಅವರ ಮಾತು, ಪಾವತಿ ಸೇವೆಯದ್ದಲ್ಲ)",
+    abandonedNeverClears: "ಉತ್ತರ ನಿಲ್ಲಿಸಿದ ಗ್ರಾಹಕರು ಯಾವುದೇ ಬಗೆಹರಿಯದ ವಿಷಯವನ್ನು ಮುಚ್ಚುವುದಿಲ್ಲ.",
   },
   page: {
     numbers: "ಲೆಕ್ಕಗಳು", item: "ಏನು", count: "ಎಷ್ಟು", amount: "ಮೊತ್ತ", droppedBeforeBooked: "ಕೇಳಿದರು, ಆದರೆ ಬುಕ್ ಆಗುವ ಮೊದಲು ಕೈಬಿಟ್ಟರು",

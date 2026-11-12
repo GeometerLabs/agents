@@ -15,6 +15,10 @@
 //      refund only when the runtime sends the identical call again. On "deny <code>", the same with a no.
 //   6. A reply that is not a code it issued is ignored without a word. A reply to a code that has run out is answered once, plainly.
 //   7. A hold with no approval to give (an uncertain outcome) is never shown to the owner; the builder is told.
+//   8. A refund the owner said no to is not asked about again for 24 hours (the owner's decision of 12 Nov 2026). Guard itself refuses the identical call since
+//      then (monorepo ADR-0061 addendum, `denied_by_approver`), so no new request appears; a Guard from before that opens one, and the relay sets aside a request
+//      with the same payment, amount and receipt (all it sees of a refund) and tells the builder instead of asking the owner again. An own API's held call has
+//      its approval id as its receipt, so it is never matched this way; Guard's refusal is what covers it.
 //
 // Several named people (B37, Guard's ADR-0061; the contract is the monorepo's Deferred D82). A shop may have other people who approve (`approvers`). Then a
 // held refund that Guard marks as needing several approvals, or as asked for by someone, carries `may_still_decide`, and the relay asks EXACTLY those
@@ -24,7 +28,7 @@
 // who asked never gets an ask, whether Guard or the runtime named them. A request without those keys is the owner's alone, handled exactly as above.
 import { randomUUID } from "node:crypto";
 import { newCode, parseCodeReply } from "./code.ts";
-import { ApiError, mayHaveHappened } from "../core/faults.ts";
+import { ApiError, DENIED_REPEAT_MS, mayHaveHappened } from "../core/faults.ts";
 import { WindowClosedError } from "../core/faults.ts";
 import type { Messaging } from "../messaging/messaging.ts";
 import type { Clock } from "../core/clock.ts";
@@ -238,6 +242,11 @@ export function createRelay(options: RelayOptions): Relay {
     return code;
   };
 
+  /** A no to this same refund (receipt, payment, amount) in the last 24 hours, by another approval: its id. The owner is not asked again (point 8 above). */
+  const deniedBefore = (held: Held, now: number): string | undefined =>
+    (held.receipt ? store.deniedCall({ receipt: held.receipt, paymentId: held.paymentId, amountPaise: held.amountPaise }, now - DENIED_REPEAT_MS) : undefined);
+  const deniedNote = (no: string): string => `The owner said no to this same refund (the same payment, amount and receipt: approval ${no}) less than 24 hours ago. Guard opened a new request for it: a Guard from before 12 Nov 2026 does (update it; since then Guard refuses the identical call itself), or the agent changed another part of the call.`;
+
   /** A held refund Guard shows, and what to do about it. */
   async function consider(held: Held): Promise<void> {
     if (held.group) return considerGroup(held, held.group);
@@ -251,6 +260,8 @@ export function createRelay(options: RelayOptions): Relay {
     if (held.youMayDecide !== true) return stop(held.id, "cannot_decide", "The reading credential is not an approver who may decide this refund, so an answer from the owner could not be recorded.");
     if (options.expectedAgent && held.agent !== options.expectedAgent) return stop(held.id, "other_agent", `Guard shows a refund held for "${held.agent}", not for this client's agent.`);
     if (!held.receipt) return stop(held.id, "no_receipt", "The held refund has no receipt, so it cannot be matched to a booking.");
+    const no = deniedBefore(held, now);
+    if (no) return stop(held.id, "denied_repeat", deniedNote(no));
     if (held.expiresAtMs - marginMs <= now) { store.moveAsk(held.id, ["waiting_context"], "expired"); return; }
 
     const found = await runtime.context(held.receipt);
@@ -300,6 +311,8 @@ export function createRelay(options: RelayOptions): Relay {
     if (store.outcome(held.id)) return; // decided here already; Guard may not have caught up in its queue
     if (options.expectedAgent && held.agent !== options.expectedAgent) return halt("other_agent", `Guard shows a refund held for "${held.agent}", not for this client's agent.`);
     if (!held.receipt) return halt("no_receipt", "The held refund has no receipt, so it cannot be matched to a booking.");
+    const no = deniedBefore(held, now);
+    if (no) return halt("denied_repeat", deniedNote(no));
     if (held.expiresAtMs - marginMs <= now) return;
 
     const found = await runtime.context(held.receipt);

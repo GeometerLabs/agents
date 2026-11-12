@@ -150,3 +150,9 @@ to contact the centre and the reminder passed over, never tried again at the nex
 - **The neutral interface** renamed what the agent reads: `pay_url` (was `short_url`), `request_id` (was `link_id`), the events `request.paid`, `payment.received`,
   `refund.done`. The Guard spec is written for the gateway the centre chose (`gatewayLimitsSpec`), byte for byte what it was for Razorpay.
 
+## Settled by <who>, by their word, on the report and the message (B75, 12 Nov 2026)
+
+A refund a person at the server settled as made (Guard's `already_done`) was already left out of "given back" in the report data. The report page now lists it
+one row per person after "given back" ("Settled by ravi, by their word"). The owner's WhatsApp message says it after the given-back amount, inside that value, so
+no approved template body changed. The longest form that fits WhatsApp's 1,024 characters is chosen, from the names down to none. How and why:
+modules/Explanation.md, "Settled by <who>, by their word on the documents". Machine-written hi/ml/kn, on the REVIEW sheets (section 6).

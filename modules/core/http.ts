@@ -11,7 +11,7 @@
 //  - a 200 with `Guard-Replayed: true`: the service's first reply, from Guard's record. It comes back marked `replayed`;
 //  - anything else is the service's own reply, passed through as it was: the adapters read it, and any other non-2xx is theirs to
 //    turn into an ApiError.
-import { GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardSuspendedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError } from "./faults.ts";
+import { GuardAlreadyDoneError, GuardConflictError, GuardDeniedError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardSuspendedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError } from "./faults.ts";
 import type { GuardInfo, SentCall } from "./faults.ts";
 
 export const DEFAULT_TIMEOUT_MS = 10_000;
@@ -111,6 +111,8 @@ export function classify(status: number, headers: { get(name: string): string | 
   // a settled repeat (ADR-0060): the same code as "the same action with other arguments", told apart by reason_code. Done, by a person's word.
   if (guard.code === "conflict" && guard.reason_code === "already_done") return new GuardAlreadyDoneError(status, words, guard, call);
   if (guard.code === "conflict") return new GuardConflictError(status, words, guard, call);
+  // a person said no to this exact call (monorepo ADR-0061 addendum, 12 Nov 2026): the same code as any refusal, told apart by reason_code. The owner's no.
+  if (guard.code === "refused_by_policy" && guard.reason_code === "denied_by_approver") return new GuardDeniedError(status, words, guard, call);
   if (guard.code === "refused_by_policy") {
     const { kind, ruleId } = refusalKind(reason);
     return new GuardRefusedError(status, words, guard, call, kind, ruleId);

@@ -71,6 +71,17 @@
                  "detail": { "intent": "intent:fa8690f73eaf", "state": "reconciled", "confirmed_by": "operator:owner", "provider_status": 500 } }
     }
   },
+  "denied_by_approver": {
+    "_about": "Added 12 Nov 2026 (Guard's ADR-0061 addendum, the owner's decision): the identical call within 24 hours of a person's no. Copied from docs/guard-for-pathways.md, \"Refused because a person said no\"; written from the code and tests/approvals.rs, not from an image.",
+    "status": 403,
+    "headers": { "content-type": "application/json" },
+    "body": {
+      "error": "refused by the Guard: the person asked to approve this exact call said no (approval ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3): it is refused without asking anyone again for 24 hours after the no; a call with other arguments is a new request",
+      "guard": { "decision": "deny", "code": "refused_by_policy", "sent": "no", "retry": "no", "reason_code": "denied_by_approver",
+                 "reason": "the person asked to approve this exact call said no (approval ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3): it is refused without asking anyone again for 24 hours after the no; a call with other arguments is a new request",
+                 "detail": { "approval": "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3", "status": "denied", "denied_at_ms": 1793712060824, "until_ms": 1793798460824 } }
+    }
+  },
   "unauthenticated": {
     "status": 401,
     "headers": { "content-type": "application/json" },

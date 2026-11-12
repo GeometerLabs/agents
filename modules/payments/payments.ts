@@ -3,7 +3,7 @@
 // Amounts are in paise and times in epoch seconds, snake_case, as JSON on the wire usually is; nothing here is any one provider's word.
 // The in-memory fake below is the stand-in gateway every crash test uses; its store is the record the agent reads back: "a deposit counts when the payment record shows it".
 import type { Clock } from "../core/clock.ts";
-import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, TimeoutError, createFaults } from "../core/faults.ts";
+import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardDeniedError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, TimeoutError, createFaults } from "../core/faults.ts";
 import type { FaultOptions, GuardInfo, SentCall } from "../core/faults.ts";
 import type { GuardModel } from "./guard-model.ts";
 
@@ -199,6 +199,7 @@ export function createFakePayments(clock: Clock, options: FakePaymentsOptions = 
         case "refused": throw new GuardRefusedError(403, `refused by the Guard: ${decision.reason}`, info("deny", "refused_by_policy", "no", decision.reason), sentCall, "rule", decision.ruleId);
         case "conflict": throw new GuardConflictError(409, `refused by the Guard: ${decision.reason}`, info("deny", "conflict", "no", decision.reason), sentCall);
         case "already_done": throw new GuardAlreadyDoneError(409, `refused by the Guard: ${decision.reason}`, { ...info("deny", "conflict", "no", decision.reason, decision.detail), reason_code: "already_done" }, sentCall);
+        case "denied_repeat": throw new GuardDeniedError(403, `refused by the Guard: ${decision.reason}`, { ...info("deny", "refused_by_policy", "no", decision.reason, decision.detail), reason_code: "denied_by_approver" }, sentCall);
         case "replay": return { ...(decision.reply as Refund), replayed: true };
         case "pass": break;
       }

@@ -91,6 +91,44 @@ run("deny <code>: Guard gets the no, nothing is refunded, the customer and the o
   assert.equal(w.model.reviews("x", true).length, 0, "and Guard holds nothing new");
 });
 
+// ---- the owner's no is not asked again (the owner's decision of 12 Nov 2026; monorepo ADR-0061 addendum) ------------------------------------------------------
+
+/** The owner asks the relay, says no, and then the identical refund is sent to Guard again (as a builder's agent does to find out). */
+async function deniedThenSentAgain(w: ApprovalsWorld) {
+  const first = await w.heldRefund();
+  await w.relay.poll();
+  await w.ownerWrites(`deny ${codeIn(w.toOwner()[0].text)}`);
+  assert.equal(w.toOwner().length, 2, "the ask and the answer to the owner's no");
+  const denied = w.model.approvals().find((a) => a.id === first)!;
+  w.clock.advance(5 * MINUTE);
+  return { first, again: w.model.decideRefund(denied.paymentId, { amount: denied.amountPaise, receipt: denied.fields.receipt }) };
+}
+
+run("Guard refuses the identical refund after the owner's no (denied_by_approver): no new request, so the relay has nothing to ask", async (w) => {
+  const { first, again } = await deniedThenSentAgain(w);
+  assert.equal(again.kind, "denied_repeat");
+  assert.equal(again.kind === "denied_repeat" ? again.detail.approval : "", first, "the refusal names the request the owner denied");
+  assert.equal(w.model.reviews("x", true).length, 0);
+  for (let i = 0; i < 3; i++) { w.clock.advance(HOUR); await w.relay.poll(); }
+  assert.equal(w.toOwner().length, 2, "the owner is not asked again");
+});
+
+run("a Guard from before 12 Nov 2026 opens a new request for the same refund after the no: the relay sets it aside, tells the builder, and does not ask the owner again", async (w) => {
+  const { first, again } = await deniedThenSentAgain(w);
+  assert.equal(again.kind, "hold", "the older Guard holds it again");
+  const second = again.kind === "hold" ? again.approval : "";
+  assert.notEqual(second, first);
+  for (let i = 0; i < 3; i++) { w.clock.advance(MINUTE); await w.relay.poll(); }
+  assert.equal(w.toOwner().length, 2, "the owner is not asked again");
+  const alert = w.store.alerts().find((a) => a.approval === second);
+  assert.equal(alert?.kind, "denied_repeat");
+  assert.match(alert?.note ?? "", new RegExp(`said no to this same refund \\(the same payment, amount and receipt: approval ${first}\\)`, "u"));
+  assert.equal(w.store.ask(second)?.state, "alerted");
+  // a day later it is a new question again, as it is for Guard
+  w.clock.advance(25 * HOUR);
+  assert.equal(w.store.deniedCall({ receipt: w.store.ask(first)!.receipt, paymentId: w.store.ask(first)!.paymentId, amountPaise: w.store.ask(first)!.amountPaise }, w.clock.now() - 24 * HOUR), undefined);
+}, { olderGuard: true });
+
 run("each ask gets its own fresh code; a code answers only its own refund", async (w) => {
   const first = await w.heldRefund(CUSTOMER);
   const second = await w.heldRefund(OTHER_CUSTOMER);

@@ -242,6 +242,8 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `goLiveCertificate` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ | Go-live certificate |  |
 | `fullReport` | ಪೂರ್ಣ ವರದಿ | Full report |  |
 | `checkGenuine` | ನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ | Check it is genuine |  |
+| `settledByWord` | asha ಅವರ ಮಾತಿನ ಮೇಲೆ ಇತ್ಯರ್ಥಪಡಿಸಿದ್ದು | Settled by asha, by their word |  |
+| `settledBySomeone` | ಒಬ್ಬ ವ್ಯಕ್ತಿ ತಮ್ಮ ಮಾತಿನ ಮೇಲೆ ಇತ್ಯರ್ಥಪಡಿಸಿದ್ದು | Settled by a person, by their word |  |
 | `label.collected` | ಸಂಗ್ರಹವಾದದ್ದು | Collected |  |
 | `label.stillToCollect` | ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು | Still to collect |  |
 | `label.givenBack` | ಮರಳಿ ಕೊಟ್ಟದ್ದು | Given back |  |

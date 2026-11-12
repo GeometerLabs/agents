@@ -7,9 +7,9 @@
 //   "book ..."    makes a deposit link (looking for it by reference if the answer was lost, never making a second) and sends it
 //   a payment     saves the booking in the calendar, LOOKS at the calendar to see that it is there, and only then says "Booked!"
 //   "cancel ..."  asks for the deposit back, for what Razorpay says was paid and no more. A refund Guard holds is sent again, identical, until the owner has answered: made
-//                 (200), or no (Guard names another request in its 202), or never (the request's end, expires_at_ms in the 202, passes: nothing is sent after it). The customer
-//                 is told each way, and never that a refund was made that was not. If the answer to a refund never came back, it LOOKS at Razorpay's refunds and never sends
-//                 the refund again.
+//                 (200), or no (Guard's 403 with reason_code denied_by_approver; a Guard from before 12 Nov 2026 names another request in its 202 instead), or never (the
+//                 request's end, expires_at_ms in the 202, passes: nothing is sent after it). The customer is told each way, and never that a refund was made that was not.
+//                 If the answer to a refund never came back, it LOOKS at Razorpay's refunds and never sends the refund again.
 //   anything else with a price in it gets the list price back
 //
 // With GEOMETER_UPI_URL set (UPI, B71) there is no gateway: "book" asks Geometer's desk for a request and sends its upi:// link; "I paid" (or a picture) only asks the owner
@@ -22,7 +22,7 @@
 //   GEOMETER_WHATSAPP_APP_SECRET, GEOMETER_RAZORPAY_WEBHOOK_SECRET, GEOMETER_DEPOSIT_INR, GEOMETER_PRICE_INR, GEOMETER_RETRY_MS (wait between sends of a held refund, default 5 minutes)
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
-import { LAST_SEND_MS, createAgent, credentialsFromEnv, heldOf } from "./agent.js";
+import { LAST_SEND_MS, createAgent, credentialsFromEnv, heldOf, saidNo } from "./agent.js";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const hmac = (secret, raw) => createHmac("sha256", secret).update(raw).digest("hex");
@@ -49,10 +49,11 @@ export async function retryWithNewKey({ agent, refund, done, giveUp }) {
  * example differ. Everything is kept in memory: it is an example.
  */
 /**
- * How a held refund is followed (the good way: both true). `watchRequest`: a 202 naming another request means the owner said no (or it ran out): stop. `watchEnd`: never send after
- * the request's end (expires_at_ms). The broken examples turn one off each (server-asks-again.js, server-past-end.js).
+ * How a held refund is followed (the good way: all true). `readNo`: Guard's 403 `denied_by_approver` is the owner's no: stop and say so. `watchRequest`: a 202 naming another
+ * request means the first ended without a yes (a Guard from before 12 Nov 2026 answers a no that way; any Guard after a request ran out): stop. `watchEnd`: never send after
+ * the request's end (expires_at_ms). The broken examples turn one thing off each (server-asks-again.js, server-past-end.js).
  */
-export const FOLLOW_HELD = { watchRequest: true, watchEnd: true };
+export const FOLLOW_HELD = { readNo: true, watchRequest: true, watchEnd: true };
 
 export function createApp({ agent, appSecret, webhookSecret, depositInr, priceInr, hasCalendar = true, retryMs = 5 * 60_000, onRefundUnknown = lookBeforeRetrying, held = FOLLOW_HELD, log = () => undefined, upi = false }) {
   const seenMessages = new Set();
@@ -161,6 +162,13 @@ export function createApp({ agent, appSecret, webhookSecret, depositInr, priceIn
     for (;;) {
       const result = await agent.refundOnce(money).catch(() => ({ status: 0 }));
       if (result.status === 200) return done(money.amountPaise);
+      // the owner said no (Guard refuses the identical call for a day after a no, and asks nobody again): stop, and say so
+      if (saidNo(result)) {
+        if (held.readNo) return giveUp(`The owner decided not to refund your Rs ${rupees} deposit. Please contact the shop if you have questions.`);
+        // the wrong way, on purpose (server-asks-again.js): the refusal is taken for "not yet", and the refund is sent again until the request's end
+        const end = asked?.until ?? ownClockEnd;
+        if (end - Date.now() > LAST_SEND_MS) { await sleep(Math.min(retryMs, end - Date.now() - LAST_SEND_MS)); continue; }
+      }
       if (result.status === 202) {
         // held for the owner: send the identical call again until it is made. A hold with no approval id cannot be approved on WhatsApp, so sending again is no use.
         if (!result.held) return giveUp("Your refund needs the owner. The owner will write to you.");

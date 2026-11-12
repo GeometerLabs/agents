@@ -63,3 +63,11 @@ Measured 9 November 2026. `templates/commerce/orders` code (src, server, inbox, 
 ## Two customers for the last item (checkpoint item 8, 11 November 2026)
 
 Orders already held stock in its own saved state, so nothing was changed here. What is left of an item for a day is worked out each time from the orders that hold it (`src/order.ts`, `takenOf` and `holdsStock`): a confirmed order always, one waiting for its advance until its hold ends or the cut-off, whichever is first. The check and the hold happen in one step (`proceedToHold`: `availability`, then the hold and the record's `hold_stock` line), and the runtime handles one message at a time (`modules/runtime/tasks.ts`), so no other customer's step can come between them. A hold nobody pays ends by itself (`expireHold`, which reads the payments record first and writes `release_stock`). `test/last-item.test.ts` pins it: with one veg thali left, two customers ordering it at the same moment get one hold and one link, and the other is told it is sold out; a step held half-way keeps the other customer's step from starting; and once the unpaid hold ends, the next customer gets the thali.
+
+## Settled by <who>, by their word, on the report and the message (B75, 12 Nov 2026)
+
+A refund a person at the server settled as made (Guard's `already_done`) was already left out of "given back" in the report data. The report page now lists it
+one row per person after "given back" ("Settled by ravi, by their word"). The owner's WhatsApp message says it after the given-back amount, inside that value, so
+no approved template body changed. The longest form that fits WhatsApp's 1,024 characters is chosen, from the names down to none: in the long-name Malayalam
+month with the badge there is no room, and the message is as before. How and why: modules/Explanation.md, "Settled by <who>, by their word on the documents".
+Machine-written hi/ml/kn, on the REVIEW sheets (section 6).

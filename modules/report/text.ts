@@ -32,6 +32,50 @@ export function periodLabel(period: { month: { year: number; month: number } | n
 export type Source = "stand-in" | "test-mode" | "live";
 export const SOURCES: readonly Source[] = ["stand-in", "test-mode", "live"];
 
+// ---- refunds a person settled by their word (B75, 12 Nov 2026) -------------------------------------------------------------------------------------------------
+// A refund a person at the server settled as made (Guard's `already_done`; settled-by-word.ts) is never counted as given back. Every document that shows the month's
+// money shows these apart, one per person: "Settled by <who>, by their word". Shared by the three templates and taken into each template's own strings, so the
+// native review sheets list them with the rest. The Hindi, Malayalam and Kannada are machine-written (12 Nov 2026) and must be read by a native speaker before a
+// real shop sees them.
+
+/** "Settled by asha, by their word": one person's settlements. `who` is as `settledWho` shows it. */
+export const SETTLED_BY_WORD: Record<Language, (who: string) => string> = {
+  en: (who) => `Settled by ${who}, by their word`,
+  hi: (who) => `${who} ने अपनी बात पर निपटाया`,
+  ml: (who) => `${who} സ്വന്തം വാക്കിൽ തീർപ്പാക്കിയത്`,
+  kn: (who) => `${who} ಅವರ ಮಾತಿನ ಮೇಲೆ ಇತ್ಯರ್ಥಪಡಿಸಿದ್ದು`,
+};
+
+/** The same without a name: the owner's WhatsApp message uses it when the names would not fit (the full report names them). */
+export const SETTLED_BY_SOMEONE: Record<Language, string> = {
+  en: "Settled by a person, by their word",
+  hi: "किसी व्यक्ति ने अपनी बात पर निपटाया",
+  ml: "ഒരാൾ സ്വന്തം വാക്കിൽ തീർപ്പാക്കിയത്",
+  kn: "ಒಬ್ಬ ವ್ಯಕ್ತಿ ತಮ್ಮ ಮಾತಿನ ಮೇಲೆ ಇತ್ಯರ್ಥಪಡಿಸಿದ್ದು",
+};
+
+/**
+ * Who settled it, as a document shows them. Guard names a person at the server `operator:<admin id>`; the documents show the id alone, on one line, and at most 40
+ * characters (the signed data keeps the whole name).
+ */
+export function settledWho(by: string): string {
+  const who = oneLine(by.replace(/^operator:/u, "")) || oneLine(by);
+  return who.length > 40 ? `${who.slice(0, 39)}\u2026` : who;
+}
+
+/**
+ * The words the owner's monthly WhatsApp message adds for refunds people settled by their word, or undefined when nobody did. The longest of these that keeps the
+ * message within WhatsApp's limit with the shortest check link (`fits` says): each person named, two at most and then `more(n)` ("Settled by asha, by their word:
+ * 1 (₹200) · …"); then without the names, with the count and the amount; then with the count alone. When not even that fits (a month whose message was already at
+ * the limit: long names in the shop's script, the badge), none: a message that fitted before these words existed still fits, and the full report names them.
+ */
+export function settledByWordWords(rows: readonly { by: string; count: number; paise: number }[] | undefined, language: Language, more: (n: number) => string, fits: (words: string) => boolean): string | undefined {
+  if (!rows || rows.length === 0) return undefined;
+  const named = [...rows.slice(0, 2).map((r) => `${SETTLED_BY_WORD[language](settledWho(r.by))}: ${r.count} (${rupees(r.paise)})`), ...(rows.length > 2 ? [more(rows.length - 2)] : [])].join(" \u00b7 ");
+  const total = rows.reduce((t, r) => ({ count: t.count + r.count, paise: t.paise + r.paise }), { count: 0, paise: 0 });
+  return [named, `${SETTLED_BY_SOMEONE[language]}: ${total.count} (${rupees(total.paise)})`, `${SETTLED_BY_SOMEONE[language]}: ${total.count}`].find(fits);
+}
+
 // ---- the signed summary's words (item 17b) -------------------------------------------------------------------------------------------------------------------
 // Shared by every template's report and certificates, and taken into each template's own strings (so the native review sheets list them with the rest).
 // The Hindi, Malayalam and Kannada are machine-written and must be read by a native speaker before a real shop sees them.
