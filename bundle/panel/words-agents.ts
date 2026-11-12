@@ -1,6 +1,6 @@
 // The words of the panel's own-agent pages (B51's rest, 12 Nov 2026: views-agents.ts), in the four languages. English is the source. Hindi, Malayalam and Kannada are
 // MACHINE-WRITTEN and WAIT FOR NATIVE REVIEW like the rest of the panel's: the pages carry the panel's draft note in those languages (languages.ts REVIEW_STATE), and every
-// line is on the review sheets, section 7 (review.ts adds them under the ids "agents.*"). Names stay in Latin letters (Guard, WhatsApp, Razorpay, Google Calendar, UPI).
+// line is on the review sheets, section 7 (review.ts adds them under the ids "agents.*"). Names stay in Latin letters (Guard, WhatsApp, a payment gateway's name, Google Calendar, UPI).
 // A sentence here says what is so; it never says anything is certain to be fine. The builder licence's line is the panel's own (words.ts plan.priceBuilder), with the
 // price read from the price list in force: no price is written here.
 import type { Language } from "../../modules/language/languages.ts";
