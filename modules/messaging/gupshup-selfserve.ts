@@ -20,7 +20,7 @@
 //              runtime.json also gives the app's `appId`, the newer GET /wa/app/{app_id}/template (https://docs.gupshup.io/reference/get-all-templates-for-an-app.md; query
 //              pageSize, templateStatus ...). The newer page shows { status: "success", templates: [{ id, elementName, languageCode, status, templateType, data, category }] };
 //              the older page shows no response body at all, so the same shape is read from both and a real app must confirm the older one (Deferred.md).
-//              The same read is the cheap Messaging.ping and the panel's connection check: it proves the key and the app name, never the number.
+//              The same read is the cheap Messaging.ping and the panel's connection check: it shows the key and the app name go together, never the number.
 //
 // The key: this file holds none and sends none. The base URL is a Guard in front of api.gupshup.io; Guard adds the `apikey` header from its own file
 // ([upstream_headers]); `agentToken` is Guard's credential for this agent. Not touched against the real service.
@@ -233,7 +233,7 @@ export function createGupshupSelfServeMessaging(config: GupshupSelfServeConfig, 
 
     async isWindowOpen(to) { return windowOpen(to); },
 
-    /** The template list is the cheap read: it proves the key and the app name. */
+    /** The template list is the cheap read: it shows the key and the app name go together. */
     async ping() { return http.request("GET", listPath, config.appId ? { query: { pageSize: 1 } } : {}); },
 
     async getMessage(id) {
