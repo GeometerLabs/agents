@@ -675,7 +675,15 @@ have forty items every month. A press does exactly what the owner's reply on Wha
 q-3" and the like.
 
 **The bundle.** Every pathway's shop now has a page (`generate/configs.ts` writes `channel` with its `kind` for Bookings, Orders and Fees; every runtime already had
-a channel token). The pages domain's `robots.txt` also keeps parents' pages, payments' and orders' pages out of search.
+a channel token). The panel shows an Orders shop's and a Fees centre's page block, owner's link, page name and "sign out every device", as it does a Bookings
+shop's, with words of their own. The pages domain's `robots.txt` also keeps parents' pages, payments' and orders' pages out of search.
+
+**Tests.** End to end through a real runtime and the real front over HTTP: `templates/commerce/orders/test/channels.test.ts` (an order paid in part on WhatsApp and
+the rest pressed on the owner's page; two customers for the last chicken meal; an MCP order and its refusals; the per-number limit and the owner's page against "what
+needs me") and `templates/education/fees/test/channels.test.ts` (a parent's link opens only their students, a typed number, a made-up link and a switched-off link open
+nothing, a new link survives a restart; "I have paid" and the confirmation page; a waiver on the owner's page). In the agent: `templates/education/fees/test/page-link.test.ts`
+(one link per parent, hash only, the wording within 1,024 characters, a centre without a page unchanged). The shared parts: `modules/channels/test/orders-fees.test.ts`.
+And `templates/commerce/orders/test/runtime.test.ts` checks a Guard-held refund's context, which item 11h touched.
 
 ## The shop's assistant (item 11e, decision 43; 12 Nov 2026)
 
