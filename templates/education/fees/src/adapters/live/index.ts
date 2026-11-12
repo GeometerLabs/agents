@@ -17,7 +17,7 @@ export type { WindowStore } from "../../../../../../modules/messaging/whatsapp.t
 export interface LiveServices {
   // Each Guard may ask the agent for its own credential (`agentToken`: what Guard calls the agent's token, never a service key).
   payments?: { baseUrl: string; agentToken?: string }; // Guard in front of the shop's gateway; left out for a shop with none (UPI, B33/B71)
-  messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string; provider?: MessagingProvider; appId?: string }; // Guard in front of the WhatsApp provider (Meta unless runtime.json names another)
+  messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string; provider?: MessagingProvider; appId?: string; appName?: string; sourceNumber?: string }; // Guard in front of the WhatsApp provider (Meta unless runtime.json names another)
   /** How long to wait for any one reply before treating it as lost. Default 10 seconds. */
   timeoutMs?: number;
 }

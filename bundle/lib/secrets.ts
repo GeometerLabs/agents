@@ -168,6 +168,11 @@ export const INTAKE: Record<string, { to: (shop: string) => string[]; make?: (te
     to: (shop) => [`g-${shop}-whatsapp`, "whatsapp_authorization"],
     check: (t) => (/^(?:[A-Za-z]+ )?[^\s]{16,}$/u.test(t.trim()) ? undefined : "gupshup_authorization must be the whole Authorization value Gupshup asks for, on one line: the partner app token as Gupshup shows it (or a word like Bearer, one space, and the token)."),
   },
+  // Item 11c: a shop on its OWN Gupshup account (self-serve). Its Guard sends this API key as the `apikey` header to api.gupshup.io; the file is the same one, a shop has one provider.
+  gupshup_apikey: {
+    to: (shop) => [`g-${shop}-whatsapp`, "whatsapp_authorization"],
+    check: (t) => (/^[^\s]{16,200}$/u.test(t.trim()) ? undefined : "gupshup_apikey must be the shop's Gupshup API key as Gupshup shows it, on one line, with no spaces."),
+  },
   // B71 step 6: an agent's own gateway API. Its Authorization header, whole and as handed in ("Bearer ..." or "Basic ..."), for that Guard only: no module here knows the API's key shape
   gateway_authorization: {
     to: (shop) => [`g-${shop}-${OWN_API}`, OWN_API_SECRET],

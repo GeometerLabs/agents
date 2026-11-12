@@ -83,7 +83,9 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
         ...(s.guards.some((g) => isGatewayKind(g.kind)) ? { relayUrl: `http://relay:${RELAY_PORT}/c/${s.name}` } : {}),
         ownerWhatsapp: s.ownerWhatsapp, phoneNumberId: s.phoneNumberId, verification: s.webhooks.verification,
         // a Gupshup callback names its app (gs_app_id): one that names another app is not this shop's
-        ...(s.whatsappRoute ? { gupshupAppId: s.whatsappRoute.appId } : {}),
+        ...(s.whatsappRoute?.provider === "gupshup" ? { gupshupAppId: s.whatsappRoute.appId } : {}),
+        // item 11c: a self-serve callback names its app by name (`app`)
+        ...(s.whatsappRoute?.provider === "gupshup-selfserve" ? { gupshupAppName: s.whatsappRoute.appName } : {}),
         // B37: the other approvers' replies go to the relay too (their codes are the relay's, never the runtime's)
         ...(s.approvers && s.approvers.length > 0 ? { approverWhatsapps: s.approvers.map((p) => p.whatsapp) } : {}),
         secretsDir: `/run/secrets/${s.name}`,
@@ -115,7 +117,8 @@ export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWh
         whatsappGuardUrl: url(addressing(server).adminIp(s.name, "whatsapp", s.index), GUARD_PORT),
         ownerWhatsapp: s.ownerWhatsapp, phoneNumberId: s.phoneNumberId,
         // the relay asks the owner through the shop's own WhatsApp Guard, so it speaks that Guard's provider
-        ...(s.whatsappRoute ? { provider: s.whatsappRoute.provider, appId: s.whatsappRoute.appId } : {}),
+        ...(s.whatsappRoute?.provider === "gupshup" ? { provider: "gupshup", appId: s.whatsappRoute.appId } : {}),
+        ...(s.whatsappRoute?.provider === "gupshup-selfserve" ? { provider: "gupshup-selfserve", appName: s.whatsappRoute.appName, sourceNumber: s.whatsappRoute.sourceNumber, ...(s.whatsappRoute.appId ? { appId: s.whatsappRoute.appId } : {}) } : {}),
         secretsDir: `/run/secrets/${s.name}`, stateDir: `/home/node/state/${s.name}`,
       }]),
       // An agent someone else wrote (B71): held calls are read from its money Guard and the owner is asked through its WhatsApp Guard, or, when the owner marks its
@@ -157,7 +160,7 @@ export function refresherConfig(server: ServerConfig, shops: (ShopDeploy & { web
     ...(renewed.length > 0 ? {
       gupshup: {
         outDir: REFRESHER_GUPSHUP_DIR, universalTokenFile: `/run/secrets/_server/${GUPSHUP_UNIVERSAL_TOKEN_FILE}`, header: server.gupshupTokenHeader ?? "bearer",
-        shops: Object.fromEntries(renewed.map((s) => [s.name, { appId: s.whatsappRoute!.appId, guardAdminUrl: guardAdmin(server, s, "whatsapp").adminUrl, adminTokenFile: `/run/secrets/${s.name}/${GUPSHUP_GUARD_ADMIN_FILE}` }])),
+        shops: Object.fromEntries(renewed.map((s) => [s.name, { appId: (s.whatsappRoute as { appId: string }).appId, guardAdminUrl: guardAdmin(server, s, "whatsapp").adminUrl, adminTokenFile: `/run/secrets/${s.name}/${GUPSHUP_GUARD_ADMIN_FILE}` }])),
       },
     } : {}),
   });

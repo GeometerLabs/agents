@@ -57,8 +57,11 @@ export interface RelayShopConfig {
   ownerWhatsapp: string;
   phoneNumberId: string;
   /** Item 11b: the shop's WhatsApp Guard fronts Gupshup (with the shop's Gupshup app id). Left out: Meta direct. */
-  provider?: "gupshup";
+  provider?: "gupshup" | "gupshup-selfserve";
   appId?: string;
+  /** Item 11c, Gupshup self-serve: the app's name and number. */
+  appName?: string;
+  sourceNumber?: string;
   /** Folder with internal_token, relay_token, owner_notify_secret, read_token and agent_whatsapp for this shop (B37: and approver_<id>_notify_secret for each other approver; B71: desk_token for a desk). */
   secretsDir: string;
   stateDir: string;
@@ -89,7 +92,7 @@ export function shopRelay(name: string, c: RelayShopConfig, read: (path: string)
     return v;
   };
   // the relay and the desk speak the shop's own WhatsApp Guard, so they use its provider (item 11b: Gupshup, or Meta direct when left out)
-  const whatsapp = (window: { lastInboundAt(phone: string): number | undefined }) => createLiveMessaging({ baseUrl: c.whatsappGuardUrl, phoneNumberId: c.phoneNumberId, ...(c.provider ? { provider: c.provider, appId: c.appId } : {}), agentToken: need("agent_whatsapp") }, { clock, window });
+  const whatsapp = (window: { lastInboundAt(phone: string): number | undefined }) => createLiveMessaging({ baseUrl: c.whatsappGuardUrl, phoneNumberId: c.phoneNumberId, ...(c.provider ? { provider: c.provider, appId: c.appId, appName: c.appName, sourceNumber: c.sourceNumber } : {}), agentToken: need("agent_whatsapp") }, { clock, window });
 
   // an own agent whose money the owner marks: the desk, and no relay (nothing is ever held for the owner: the owner sends every refund)
   if (c.desk) {
