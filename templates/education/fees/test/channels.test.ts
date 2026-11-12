@@ -184,9 +184,9 @@ test("\"I have paid\" on the page asks the owner to look and marks nothing; the 
     assert.match(done.headers.get("location") ?? "", /n=done/u);
     await w.client.runtime.idle();
     const confirmed = await (await w.page(`${confirmPath}?lang=en`)).text();
-    assert.match(confirmed, /Confirmed: the centre's record shows Rohan Mehta's Nov 2026 fee paid \(₹1,800\)/u);
+    assert.match(confirmed, /Confirmed: the centre&#39;s record shows Rohan Mehta&#39;s Nov 2026 fee paid \(₹1,800\)/u);
     const paidPage = await (await w.page(`/f/${link}?lang=en`)).text();
-    assert.match(paidPage, /Paid\. The centre's record shows it\./u);
+    assert.match(paidPage, /Paid\. The centre&#39;s record shows it\./u);
     const entries = w.record();
     assert.ok(entries.some((e) => e.action === "channel_fee" && e.outcome === "confirmed" && e.refs.op === "fee_paid"), "the record says the parent pressed it on their page");
     assert.ok(entries.some((e) => e.refs.markedBy === "owner" && e.booking === dueId), "marked by the owner, as from WhatsApp");
@@ -209,7 +209,7 @@ test("a waiver a parent asked for on WhatsApp waits on the owner's page and in \
     const skill = feesSkill({ settings: w.settings, store: w.store(), nowMs: () => w.clock.now(), optedOut: () => false });
     assert.deepEqual(skill.waiting().map((i) => [i.kind, i.case, i.amountPaise]), state.waiting.map((x) => [x.kind, x.case, x.amount_paise]));
     const ownerHtml = await w.ownerPage();
-    assert.match(ownerHtml, /Rohan Mehta's parent asked to take ₹300 off class 10, Nov 2026/u);
+    assert.match(ownerHtml, /Rohan Mehta&#39;s parent asked to take ₹300 off class 10, Nov 2026/u);
     const dueId = state.waiting[0].case;
     const pressed = await w.form(`/o/${w.ownerToken}/answer`, { source: "runtime", action: "deny", case: dueId, digest: digestOn(ownerHtml, "deny", dueId)! });
     assert.match(pressed.headers.get("location") ?? "", /n=done/u);
