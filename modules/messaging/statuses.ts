@@ -84,6 +84,7 @@ export function recordMessageStatus(record: ActionRecord, status: MessageStatus,
     notes: notesFor(status, listed, sent !== undefined),
     refs: {
       messageId, status: status.status, to,
+      ...(sent?.refs.audio === "voice" ? { audio: "voice" } : {}), // a spoken copy's report: the to-do list leaves it out (unfinished/builtin.ts)
       ...(sent ? { sent: String(sent.seq) } : {}),
       ...(status.timestamp > 0 ? { reportedAt: new Date(status.timestamp).toISOString() } : {}),
       ...(code !== undefined ? { errorCode: String(code) } : {}),

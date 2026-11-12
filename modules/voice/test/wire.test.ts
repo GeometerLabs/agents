@@ -66,7 +66,10 @@ test("the wire returns bytes intact, refuses a reply over the cap, reads a Guard
     await assert.rejects(wire.request("GET", "/audio", { maxBytes: 100 }), TimeoutError);
     await assert.rejects(wire.request("POST", "/guard"), GuardRefusedError);
   } finally { await s.close(); }
-  await assert.rejects(createWire("http://127.0.0.1:1", "Speech", 1500).request("GET", "/x"), NotSentError);
+  // a port nothing listens on: open one, note its number, close it
+  const closed = await standin(() => ({}));
+  await closed.close();
+  await assert.rejects(createWire(closed.url, "Speech", 3000).request("GET", "/x"), NotSentError);
 });
 
 test("the Sarvam adapter against the documented replies: speech to text, and text to speech decoded to the audio bytes", async () => {
