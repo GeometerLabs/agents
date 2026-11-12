@@ -124,7 +124,7 @@ test("a refund above the limit is held, the owner approves once on WhatsApp, the
     assert.equal(story.booked.status, 200);
     assert.equal(story.first.status, 202, "the refund above the limit was held, not sent");
     assert.match(story.first.held ?? "", /^ap-/u);
-    assert.equal(story.result.status, 200, "the identical call, sent again after the owner said yes, went through");
+    assert.equal(story.result.status, 200, `the identical call, sent again after the owner said yes, went through (the agent stopped with: ${JSON.stringify({ status: story.result.status, ended: story.result.ended, guard: story.result.json?.guard })}; relay: ${JSON.stringify(relay.status())})`);
     assert.equal(refunds().length, 1, "the refund was made once");
     assert.deepEqual([refunds()[0].amount, refunds()[0].receipt], [20000, "b-1"]);
     assert.equal(asked().length, 1, "and the owner was asked once");
