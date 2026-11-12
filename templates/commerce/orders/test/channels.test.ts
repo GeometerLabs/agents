@@ -22,6 +22,7 @@ import { startClient } from "../server/start.ts";
 import { parseStore } from "../server/snapshot.ts";
 import { ordersSkill } from "../src/assistant.ts";
 import { parseSettings } from "../src/settings.ts";
+import { exportShop } from "../../../../bundle/backup/export.ts";
 
 const INTERNAL = "internal-0123456789abcdef0123";
 const CHANNEL = "channel-0123456789abcdef01234";
@@ -224,5 +225,15 @@ test("the per-number limit holds on the page, and what waits for the owner is th
     assert.deepEqual(skill.waiting().map((i) => [i.kind, i.case, i.amountPaise]).sort(), state.waiting.map((x) => [x.kind, x.case, x.amount_paise]).sort(), "the assistant's list is the owner page's list");
     assert.equal(state.waiting.length, 2, "both advances wait for the owner's mark");
     assert.ok(skill.waiting().every((i) => i.who === "Asha"), "the owner knows the customer by the name they typed");
+
+    // the cases export leaves the shop's volume: a page order's typed number goes only as a fingerprint, and its name and handle not at all (bundle/backup/export.ts)
+    const out = join(w.folder, "export");
+    const key = join(w.folder, "person-key");
+    writeFileSync(key, "0f".repeat(32), { mode: 0o600 });
+    const exported = exportShop({ name: "annapurna", db: join(w.folder, "data", "agent.db"), out, personKeyFile: key });
+    assert.ok(exported.ok && exported.orders === 2, JSON.stringify(exported));
+    const orders = readFileSync(join(out, "orders.json"), "utf8");
+    assert.doesNotMatch(orders, /9811111111|Asha|"handle"/u, "no typed number, name or handle in the export");
+    assert.match(orders, /"contact":\s*\{\s*"phone":\s*"p-[0-9a-f]+"/u, "the number as a fingerprint, so a person's statement can still find it");
   } finally { await w.done(); }
 });

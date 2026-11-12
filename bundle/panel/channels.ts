@@ -1,4 +1,5 @@
-// Item 11d in the panel: a Bookings shop's booking page, its QR code, its MCP endpoint, and the owner's private approvals link. Used by the panel's shop page and its two
+// Item 11d in the panel: a shop's page (Bookings' booking page; item 11h: an Orders shop's menu, a Fees centre's page), its QR code, its MCP endpoint (not for
+// Fees), and the owner's private approvals link. Used by the panel's shop page and its two
 // owner-link routes (server.ts). The panel writes only the link's HASH, in shops/<shop>/owner-link.json; the deployer hands it to the shop's runtime and relay on its next
 // pass (bundle/lib/owner-link.ts). The token itself is shown once, on the page that made it, and kept nowhere.
 import { readFileSync, rmSync } from "node:fs";

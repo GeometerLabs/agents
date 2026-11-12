@@ -91,8 +91,10 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   const scrub = (text: unknown): unknown => (typeof text === "string" ? students.reduce((t, name) => t.split(name).join(hide("s", name)), text) : text);
   const entries = raw.map((e) => ({ ...e, conversation: hide("c", e.conversation), ...(isFees && "notes" in e ? { notes: scrub(e.notes) } : {}) }));
   // An order also carries the delivery address a customer wrote: it is the shop's, for the owner, and never leaves the shop's volume (only the place on the delivery list does).
+  // Item 11h: an order from the shop's page carries the name and number its customer typed and its handle's hash too: as for a page booking below, the name and the hash
+  // stay in the shop's volume and the number leaves only as a fingerprint.
   const cases = isOrders
-    ? (saved.orders ?? []).map(([, o]) => { const { address: _address, ...rest } = o; return { ...rest, customer: hide("p", o.customer) }; })
+    ? (saved.orders ?? []).map(([, o]) => { const { address: _address, contact, handle: _handle, ...rest } = o as Record<string, unknown> & { contact?: { phone?: string } }; return { ...rest, customer: hide("p", o.customer), ...(contact?.phone ? { contact: { phone: hide("p", contact.phone) } } : {}) }; })
     : isFees
     ? (saved.dues ?? []).map(([, d]) => ({ ...d, customer: hide("p", d.customer), studentName: hide("s", d.studentName) }))
     // item 11d: a booking from the page also carries the name and number its customer typed, and its handle's hash: the name and the hash stay in the shop's volume,
