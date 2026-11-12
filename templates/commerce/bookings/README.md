@@ -169,6 +169,17 @@ Guard's limits spec comes from the same settings: `node templates/commerce/booki
 Guard also refuses any refund above one deposit (rule `refund-at-most-deposit`), whatever the customer wrote and whatever the owner's limit is: a customer who paid ₹200 and asks for ₹500 back gets ₹200. If the owner lowers the deposit, Guard refuses the refunds of older, larger deposits that are still open: lower it once those bookings are over, or refund them by hand in Razorpay ([Deferred.md](Deferred.md), "A refund is never more than one deposit").
 Try it end to end against a stub Guard: `npm run stack -- --refund-limit 100`. Why and how: [Explanation.md](Explanation.md), "Approvals on WhatsApp".
 
+## The booking page, the booking API, MCP and the owner's page (item 11d)
+
+A customer can book without WhatsApp at `https://<server>/s/<shop>/` (a link, or the QR code the panel shows for the counter): choose a service, a day and a free time,
+give a name and a number, then pay the deposit by UPI (a "Pay in your UPI app" button and a QR code with the shop's own UPI ID and the amount; the owner marks it received
+as on WhatsApp) or on the gateway's link. The page is plain HTML in the shop's languages. The same six operations are a small JSON API (`/s/<shop>/api/v1`) and an MCP
+endpoint for AI assistants (`/s/<shop>/mcp`). Every booking goes through the same runtime step, limits, hold and deposit as a WhatsApp booking, under its own conversation;
+the record says `channel_booking` with `refs.channel` (`web` or `mcp`). The owner can answer what waits for them (UPI payments to mark, refunds, the calendar's retries,
+refunds Guard holds) on a private page whose link the partner makes in the panel. What it shows, the limits, and what a fake booking can and cannot do:
+[modules/Explanation.md](../../../modules/Explanation.md), "Not only WhatsApp". Run a runtime with `CHANNEL_TOKEN_FILE` set to have its channel routes; the front is
+`modules/channels/front.ts`. Tests: `test/channels.test.ts`.
+
 ## The monthly report and the certificates
 
 What a shop is given, in its language (Hindi, English, Malayalam, Kannada, or Hindi and English together): a five-line WhatsApp text it can read in ten seconds, a printable page behind it ("Show what we did ▸" for the detail), a go-live certificate before it switches on, and a monthly record certificate. Everything is counted from the action record; nothing is written by a model. They state facts and list what was **not** tested or not counted on every document; they never say "safe", "guaranteed" or "certified", and they make no earnings claim. Phase 1 documents say the checks were run by hand, and the go-live certificate says it was against stand-in services.

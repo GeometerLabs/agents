@@ -69,10 +69,14 @@ test("a booking from the page goes through the same hold and owner-marked deposi
     assert.ok(starts.length > 0, "free times are offered");
     assert.equal(starts[0], Date.UTC(2026, 10, 16, 5, 0), "the first is 10:30, the first grid time after the hour the customer needs to pay");
 
-    const posted = await w.form("/book", { service: "haircut", start: String(starts[0]), name: "Asha", phone: "98111 11111", lang: "en" });
+    const nonce = /name="nonce" value="([A-Za-z0-9_-]{32})"/u.exec(slots)?.[1] ?? "";
+    assert.ok(nonce, "the form carries its own nonce");
+    const posted = await w.form("/book", { service: "haircut", start: String(starts[0]), name: "Asha", phone: "98111 11111", lang: "en", nonce });
     assert.equal(posted.status, 303);
     const handle = handleOf(posted.headers.get("location"));
     assert.ok(handle, "the customer is sent to the booking's own page");
+    const twice = await w.form("/book", { service: "haircut", start: String(starts[0]), name: "Asha", phone: "98111 11111", lang: "en", nonce });
+    assert.equal(handleOf(twice.headers.get("location")), handle, "a second tap on the same form lands on the same booking");
     await w.client.runtime.idle();
     const held = await (await w.page(`/b/${handle}?lang=en`)).text();
     assert.match(held, /held until/u);
@@ -96,9 +100,13 @@ test("a booking from the page goes through the same hold and owner-marked deposi
     assert.match(ownerHtml, /Asha, \+919811111111 \(booking page\) should pay ₹200/u);
     const digest = /name="action" value="received"><input type="hidden" name="case" value="(b-\d+)"><input type="hidden" name="digest" value="([0-9a-f]{32})"/u.exec(ownerHtml);
     assert.ok(digest);
-    const stale = await w.form(`/o/${w.ownerToken}`, { source: "runtime", action: "received", case: digest[1], digest: "f".repeat(32) });
+    const state = await (await w.page(`/o/${w.ownerToken}/api/v1/state`)).json() as { version: number; waiting: { source: string; kind: string; case: string; digest: string; amount_paise: number }[] };
+    assert.equal(state.version, 1);
+    assert.deepEqual(state.waiting.map((x) => [x.source, x.kind, x.amount_paise]), [["runtime", "deposit", 20_000]], "the same state as JSON, for the owner's app");
+    assert.equal(state.waiting[0].digest, digest[2]);
+    const stale = await w.form(`/o/${w.ownerToken}/answer`, { source: "runtime", action: "received", case: digest[1], digest: "f".repeat(32) });
     assert.match(stale.headers.get("location") ?? "", /n=changed/u, "a digest that is not what waits now does nothing");
-    const pressed = await w.form(`/o/${w.ownerToken}`, { source: "runtime", action: "received", case: digest[1], digest: digest[2] });
+    const pressed = await w.form(`/o/${w.ownerToken}/answer`, { source: "runtime", action: "received", case: digest[1], digest: digest[2] });
     assert.match(pressed.headers.get("location") ?? "", /n=done/u);
     await w.client.runtime.idle();
     const booked = await (await w.page(`/b/${handle}?lang=en`)).text();
@@ -107,7 +115,7 @@ test("a booking from the page goes through the same hold and owner-marked deposi
     assert.ok(after.some((e) => e.action === "owner_page_action" && e.outcome === "confirmed" && e.refs.channel === "owner_page"), "the record says the owner answered on the page");
     assert.ok(after.some((e) => e.action === "upi_marked_received" || (e.refs.markedBy === "owner" && e.booking === made.booking)), "recorded as the owner's mark, as from WhatsApp");
     assert.ok(after.some((e) => e.action === "confirm_booking" && e.outcome === "confirmed" && e.booking === made.booking));
-    const again = await w.form(`/o/${w.ownerToken}`, { source: "runtime", action: "received", case: digest[1], digest: digest[2] });
+    const again = await w.form(`/o/${w.ownerToken}/answer`, { source: "runtime", action: "received", case: digest[1], digest: digest[2] });
     assert.match(again.headers.get("location") ?? "", /n=changed/u, "the same press again counts nothing");
 
     // revoked: the runtime refuses the link from its own file

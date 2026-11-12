@@ -8,19 +8,19 @@ import { ownerTokenMatches, readOwnerLink } from "../../../modules/channels/owne
 import { boot } from "./helpers.ts";
 
 test("the shop page shows the booking page, its QR, the MCP endpoint; the owner's link is made once, kept only as a hash, and switched off", async () => {
-  const b = await boot({ publicUrl: "https://shops.example.com" });
+  const b = await boot({ publicUrl: "http://shops.example.test" });
   try {
     const arjun = await b.account("arjun", "builder");
     b.addShop("glow-salon", { name: "Glow Salon" });
     const page = await arjun.get("/shops/glow-salon");
-    assert.ok(page.text.includes("https://shops.example.com/s/glow-salon/"), "the booking page's address");
-    assert.ok(page.text.includes("https://shops.example.com/s/glow-salon/mcp"), "the MCP endpoint");
-    assert.match(page.text, /<svg[^>]*aria-label="https:\/\/shops\.example\.com\/s\/glow-salon\/"/u, "the QR code of the booking page");
+    assert.ok(page.text.includes("http://shops.example.test/s/glow-salon/"), "the booking page's address");
+    assert.ok(page.text.includes("http://shops.example.test/s/glow-salon/mcp"), "the MCP endpoint");
+    assert.match(page.text, /<svg[^>]*aria-label="http:\/\/shops\.example\.test\/s\/glow-salon\/"/u, "the QR code of the booking page");
     assert.match(page.plain, /The owner's approvals link<\/b>: Off\./u);
 
     const made = await arjun.post("/shops/glow-salon/owner-link", {}, "/shops/glow-salon");
     assert.equal(made.status, 200);
-    const link = /https:\/\/shops\.example\.com\/s\/glow-salon\/o\/([A-Za-z0-9_-]{43})/u.exec(made.text);
+    const link = /http:\/\/shops\.example\.test\/s\/glow-salon\/o\/([A-Za-z0-9_-]{43})/u.exec(made.text);
     assert.ok(link, "the link is shown once");
     const file = join(b.dir, "shops", "glow-salon", "owner-link.json");
     const stored = readFileSync(file, "utf8");

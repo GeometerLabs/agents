@@ -30,10 +30,11 @@ function world() {
   const guard: GuardClient = { reviews: async () => ({ ok: true, items: [] }), notify: async (approval, decision, approver) => { notified.push([approval, decision, approver]); return guardAnswer; } };
   const runtime: RuntimeClient = { context: async () => ({ kind: "missing" }), decided: async (approval, decision) => { decided.push([approval, decision]); return true; } };
   const relay = createRelay({ voice: ownApiVoice, clock, guard, runtime, messaging: createFakeMessaging(clock), store, ownerWhatsapp: OWNER, approvers: [{ id: "ravi", whatsapp: "+919800000002", language: "en" }], ownerApproverId: "owner" });
-  /** An ask as a pass leaves it once the owner's WhatsApp message is out: its code live (only the hash kept), until an hour less a minute. */
+  /** An ask as a pass leaves it once the owner's WhatsApp message is out: its code live (only the hash kept), until an hour less a minute. Codes from the real alphabet. */
+  const CODES: Record<string, string> = { "ap-01": "KQ7M2X", "ap-02": "KQ7M2Y" };
   const asked = (approval: string, amountPaise: number, over: Record<string, unknown> = {}) => store.insertAsk({
     approval, state: "asked", receipt: `b-3:pay_1`, paymentId: "pay_1", amountPaise, firstSeenMs: START, guardExpiresAtMs: START + HOUR, approvalHours: 1,
-    codeHash: hashCode(`CODE${approval.slice(-2)}`), codeExpiresAtMs: START + HOUR - 60_000, booking: "b-3", customerPhone: "+919811111111", language: "en",
+    codeHash: hashCode(CODES[approval] ?? "KQ7M2Z"), codeExpiresAtMs: START + HOUR - 60_000, booking: "b-3", customerPhone: "+919811111111", language: "en",
     context: JSON.stringify({ booking: "b-3", customerPhone: "+919811111111", businessName: "Glow", timeZone: "Asia/Kolkata", ownerLanguage: "en", paymentId: "pay_1", amountPaise, approval, expiresAtMs: START + HOUR, serviceName: "Haircut", slotMs: START + 24 * HOUR }),
     ...over,
   });
@@ -44,11 +45,11 @@ test("the page lists the owner's own live asks, with what Guard holds and a dige
   const w = world();
   try {
     w.asked("ap-01", 30_000);
-    w.asked("ap-02", 45_000, { approver: "ravi", codeHash: hashCode("CODERV") });
+    w.asked("ap-02", 45_000, { approver: "ravi", codeHash: hashCode("RVRVRV") });
     const asks = w.relay.ownerAsks();
     assert.deepEqual(asks.map((a) => [a.approval, a.amountPaise, a.serviceName]), [["ap-01", 30_000, "Haircut"]]);
     assert.match(asks[0].digest, /^[0-9a-f]{32}$/u);
-    assert.ok(!JSON.stringify(asks).includes("CODE"), "no code on the page");
+    assert.ok(!JSON.stringify(asks).includes("KQ7M2X"), "no code on the page");
   } finally { w.done(); }
 });
 
@@ -66,9 +67,10 @@ test("a press is the ask's one use: a wrong digest does nothing; the right one g
     assert.equal(await w.relay.decideOnPage("ap-01", ask.digest, "approve"), "gone", "a no is final for that call: the page cannot turn it into a yes");
     assert.equal(w.notified.length, 1);
     // the WhatsApp code for the same ask is used up too
-    w.relay.receive([{ id: "wamid.1", from: OWNER, text: "approve CODE01", timestamp: w.clock.now() }]);
+    w.relay.receive([{ id: "wamid.1", from: OWNER, text: "approve KQ7M2X", timestamp: w.clock.now() }]);
     await w.relay.idle();
     assert.equal(w.notified.length, 1, "the WhatsApp reply after the page's answer counts nothing");
+    assert.equal(w.relay.status().ignored.reusedOrUnknownCode, 1, "it was read, as the code of an ask already answered");
   } finally { w.done(); }
 });
 
