@@ -7,7 +7,7 @@ import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
-import { fillBody, metaBody } from "../../../../modules/language/meta-templates.ts";
+import { META_LANGUAGE, fillBody, metaBody } from "../../../../modules/language/meta-templates.ts";
 import { bannedIn } from "../../../../modules/report/claims.ts";
 import { monthRange } from "../../../../modules/report/months.ts";
 import { esc } from "../../../../modules/report/page.ts";
@@ -25,7 +25,8 @@ import type { MonthlyReportContext } from "../report/monthly-job.ts";
 import { writeOrdersReport } from "../report/run.ts";
 import { STRINGS } from "../report/strings.ts";
 import { ownerText } from "../report/text.ts";
-import { REPORT_SLOTS, REPORT_TEMPLATES, REPORT_TEMPLATE_NAMES, monthlyReportMessage, reportParameters, reportSlotsOf, reportSubmissions, reportValues } from "../report/whatsapp.ts";
+import { REPORT_SLOTS, REPORT_TEMPLATES, REPORT_TEMPLATE_NAMES, monthlyReportMessage, reportParameters, reportSlotsOf, reportSubmissions, reportValues, sampleFor, sampleMessage, templateFor } from "../report/whatsapp.ts";
+import { sampleReport } from "../report/review.ts";
 import type { World } from "../src/harness.ts";
 import { annapurnaRazorpay, createWorld } from "../src/harness.ts";
 
@@ -307,6 +308,18 @@ test("the template follows Meta's rules: numbered values used once, fixed words 
     assert.ok(examples.every((e) => e !== ""));
     assert.doesNotMatch(s.components[0].text, FORBIDDEN);
   }
+});
+
+test("the sample is one shop, the UPI one the pilot starts with: the review sheets' message is the UPI template as Meta's example fills it, and every template's example is a month it is sent for", () => {
+  assert.equal(sampleReport().paidBy, "owner-marked", "the sample shop (Annapurna) takes UPI");
+  const upiBadge = REPORT_TEMPLATES.find((t) => t.badge && t.upi)!;
+  for (const language of LANGUAGES) {
+    const submission = reportSubmissions().find((x) => x.name === upiBadge.name && x.language === META_LANGUAGE[language])!;
+    assert.equal(sampleMessage(language), fillBody(submission.components[0].text, submission.components[0].example.body_text[0]), `${language}: the review sheet's message is Meta's example for ${upiBadge.name}, letter for letter`);
+    assert.ok(sampleMessage(language).includes(`${STRINGS[language].upiLabel.collected}: `), `${language}: with the UPI shop's money labels`);
+    assert.ok(!sampleMessage(language).includes(`${STRINGS[language].label.collected}: `), `${language}: not the gateway's`);
+  }
+  for (const t of REPORT_TEMPLATES) assert.equal(templateFor(sampleFor(t)), t, `${t.name}: its example month is one a shop of its kind sends it for`);
 });
 
 // ---- the monthly job -------------------------------------------------------------------------------------------------------
