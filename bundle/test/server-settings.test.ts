@@ -43,7 +43,7 @@ function bucket(o: { mayDelete?: boolean; failPut?: boolean } = {}) {
     calls.push(`${method} ${url.pathname}`);
     if (method === "PUT") { if (o.failPut) return new Response("AccessDenied", { status: 403 }); objects.set(url.pathname, Buffer.from(init!.body as Uint8Array)); return new Response("", { status: 200 }); }
     if (method === "GET") { const b = objects.get(url.pathname); return b ? new Response(b, { status: 200 }) : new Response("", { status: 404 }); }
-    if (method === "DELETE") { if (o.mayDelete === false) return new Response("AccessDenied", { status: 403 }); objects.delete(url.pathname); return new Response("", { status: 204 }); }
+    if (method === "DELETE") { if (o.mayDelete === false) return new Response("AccessDenied", { status: 403 }); objects.delete(url.pathname); return new Response(null, { status: 204 }); } // a 204 has no body: fetch's Response refuses even ""
     return new Response("", { status: 400 });
   }) as typeof fetch;
   return { objects, calls, restore: () => { globalThis.fetch = real; } };
