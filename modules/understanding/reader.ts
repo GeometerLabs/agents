@@ -8,7 +8,7 @@ import type { Language } from "../language/languages.ts";
 import type { Clock } from "../core/clock.ts";
 import { MINUTE } from "../core/time.ts";
 import type { Action, Outcome } from "../record/record.ts";
-import { DEFAULT_BREAKER, DEFAULT_PAUSE_MINUTES, dayLocal, modeOf, noteStep, pausedSteps, stateFor, takeAnnouncements } from "./ai-state.ts";
+import { DEFAULT_BREAKER, DEFAULT_PAUSE_MINUTES, addSpeech, dayLocal, modeOf, noteStep, pausedSteps, stateFor, takeAnnouncements } from "./ai-state.ts";
 import type { AiPolicy, AiStore, ButtonReason } from "./ai-state.ts";
 import { RULES } from "./model.ts";
 import type { IntentBase, IntentParser, ParseOptionsBase, Step, Understood } from "./model.ts";
@@ -79,6 +79,9 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
     }
   }
 
+  /** B29: add a voice note's listening cost, or a spoken reply's, to the month's AI spend (counts the cost in the allowance and in fleet's cap). */
+  const countSpeech = (kind: "notes" | "replies", costMicroInr: number): void => addSpeech(store, clock.now(), timeZone, kind, costMicroInr);
+
   /** Put the pauses and resumptions of a step in the record, once each. No customer and no owner is told: nothing they see changes, and the builder reads the record. */
   function announceSteps(): void {
     const month = stateFor(store, clock.now(), timeZone).month;
@@ -142,6 +145,12 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
     await deps.tellOwner(reason);
   }
 
-  return { readIntent, understandingRefs, countUnderstood, mode, announceButtonMode };
+  /**
+   * May a voice note be listened to right now? Voice is model spend, so it stops with the rest of it: in button mode (the allowance is used up, the shop was switched to
+   * buttons, or a model just failed) and under the AI cap (`model: "off"`) a voice note gets the line asking the customer to type, and the speech provider is not asked.
+   */
+  const voiceAllowed = (): boolean => !mode().buttons && policy.model?.() !== "off";
+
+  return { readIntent, understandingRefs, countUnderstood, countSpeech, voiceAllowed, mode, announceButtonMode };
 }
 

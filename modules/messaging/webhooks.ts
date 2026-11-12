@@ -11,7 +11,7 @@
 //    (the inbox's path-token mode). https://partner-docs.gupshup.io/docs/events (updated 30 Oct 2026), and the pass-through page's examples
 //    https://partner-docs.gupshup.io/docs/whatsapp-passthrough-apis-for-partners. The same parsers read both.
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { InboundMessage, MessageStatus } from "./messaging.ts";
+import type { InboundMessage, MessageStatus, VoiceMediaRef } from "./messaging.ts";
 import { asArray, isObject, num, str } from "../core/http.ts";
 
 // ---- signatures --------------------------------------------------------------------------------------------------------------
@@ -67,6 +67,24 @@ function replyOf(message: Record<string, unknown>): InboundMessage["reply"] {
 }
 
 /**
+ * Where a voice note's audio can be fetched, from Meta's `audio` object (`id`, `mime_type`) or Gupshup's (the same, plus a `url`). Each part is kept only if it has the
+ * shape of what it is (an id of plain characters, an https address, a type); anything else is dropped, and a note with neither an id nor an address has no media.
+ * The sha256 and `voice` flags are not kept: nothing here needs them.
+ */
+export function mediaOf(audio: unknown): VoiceMediaRef | undefined {
+  if (!isObject(audio)) return undefined;
+  const id = str(audio.id);
+  const url = str(audio.url);
+  const mime = str(audio.mime_type);
+  const ref: VoiceMediaRef = {
+    ...(id && /^[A-Za-z0-9_-]{1,128}$/u.test(id) ? { id } : {}),
+    ...(url && url.length <= 2048 && /^https:\/\/[^\s]+$/u.test(url) ? { url } : {}),
+    ...(mime && /^[a-z0-9.+-]+\/[a-z0-9.+-]+(;\s*[a-z0-9=. -]+)?$/iu.test(mime) && mime.length <= 80 ? { mime } : {}),
+  };
+  return ref.id || ref.url ? ref : undefined;
+}
+
+/**
  * The customer messages in a WhatsApp webhook. Delivery statuses are read by parseWhatsAppStatuses, not here.
  * Messages with no id, no sender number or no words are left out. The timestamp is epoch seconds as a string; ours is milliseconds.
  *
@@ -77,7 +95,7 @@ function replyOf(message: Record<string, unknown>): InboundMessage["reply"] {
  * A picture (`type: "image"`, a screenshot of a payment, say) is the same: empty text and `image: true`, and nothing of the picture or its caption is kept. The agent
  * decides what to say (a screenshot is never proof of a payment: with UPI the owner confirms). Before UPI (B33) pictures were left out here.
  */
-export function parseWhatsAppWebhook(body: unknown): InboundMessage[] {
+export function parseWhatsAppWebhook(body: unknown, options: { voiceMedia?: boolean } = {}): InboundMessage[] {
   if (!isObject(body)) return [];
   const out: InboundMessage[] = [];
   for (const entry of asArray(body.entry).filter(isObject)) {
@@ -87,12 +105,14 @@ export function parseWhatsAppWebhook(body: unknown): InboundMessage[] {
         const id = str(m.id);
         const from = toE164(m.from);
         const voiceNote = m.type === "audio";
+        // Only for a shop with voice on (B29): where the audio can be fetched. Otherwise nothing of the audio object is read, as before.
+        const media = voiceNote && options.voiceMedia === true ? mediaOf(m.audio) : undefined;
         const image = m.type === "image";
         const text = voiceNote || image ? "" : textOf(m);
         if (!id || !from || text === undefined || (text.length === 0 && !voiceNote && !image)) continue;
         const seconds = Number(str(m.timestamp) ?? m.timestamp);
         const reply = replyOf(m);
-        out.push({ id, from, text, timestamp: Number.isFinite(seconds) ? seconds * 1000 : 0, ...(voiceNote ? { voiceNote: true as const } : {}), ...(image ? { image: true as const } : {}), ...(reply ? { reply } : {}) });
+        out.push({ id, from, text, timestamp: Number.isFinite(seconds) ? seconds * 1000 : 0, ...(voiceNote ? { voiceNote: true as const } : {}), ...(media ? { media } : {}), ...(image ? { image: true as const } : {}), ...(reply ? { reply } : {}) });
       }
     }
   }

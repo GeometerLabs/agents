@@ -76,6 +76,7 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
 import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
+import type { Heard, NotHeard, VoiceService } from "../../../../modules/voice/voice.ts";
 
 export interface AgentDeps {
   settings: Settings;
@@ -93,6 +94,11 @@ export interface AgentDeps {
    * or null, the customer gets the link, the UPI ID and the amount as text, which is enough to pay. Handed in, so the agent never loads node:zlib (the browser demo has none).
    */
   qrImage?: (text: string) => Promise<string | null>;
+  /**
+   * B29, voice notes: listens to a customer's voice note (speech to text) and speaks a reply (text to speech); modules/voice. Handed in, so the agent never loads a provider or
+   * a node module. Left out: voice is off for this shop and a voice note gets the one line asking the customer to type, exactly as before.
+   */
+  voice?: VoiceService;
   /** The shop's licence right now (modules/licence; the runtime reads client/licence.json). Left out: never restricted. */
   licence?: () => LicenceNow;
   /** B72: the shop terms the owner can read and agree to on WhatsApp (modules/terms). Left out, or returning undefined: the feature is off for this shop. */
@@ -201,6 +207,7 @@ export function createAgent(deps: AgentDeps): Agent {
       matches: (text, facts) => checkMessageMatchesRecord({ text, facts }),
     },
     owner: { whatsapp: owner, language: settings.owner.language },
+    ...(deps.voice ? { speech: deps.voice, countSpeech: (micro: number) => reader.countSpeech("replies", micro) } : {}),
     languageOf: (phone, booking) => languageOf(phone, booking),
     optedOut: (phone) => customerOf(phone).optedOut,
     factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || a.offer?.kind === "services", ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.slots } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, day: a.day, dayBookings: a.dayBookings }),
@@ -215,8 +222,10 @@ export function createAgent(deps: AgentDeps): Agent {
     heldBack: async (a) => { await say({ booking: a.booking, phone: a.phone, to: "owner", templates: ["owner_message_held"] }); },
   });
 
+  // B29: the customer whose voice note is being answered right now; every reply to them in this turn is spoken as well as written. Order is shop-wide (one step at a time), so one name is enough.
+  let speakTo: string | null = null;
   const tellCustomer = (b: Booking | null, phone: string, templates: TemplateId[], more: { refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: SayArgs["image"]; markedInr?: number } = {}) =>
-    say({ booking: b, phone, to: "customer", templates, ...more });
+    say({ booking: b, phone, to: "customer", templates, ...(speakTo === phone ? { spoken: true } : {}), ...more });
   const tellOwner = (b: Booking | null, phone: string, template: TemplateId, more: { refundInr?: number; slotMs?: number; offer?: Offer; upiCode?: string; markedInr?: number; leftInr?: number } = {}) =>
     say({ booking: b, phone, to: "owner", templates: [template], ...more });
 
@@ -1180,21 +1189,46 @@ export function createAgent(deps: AgentDeps): Agent {
    * sent to a customer who opted out. The owner's messages are commands, so an owner's voice note gets the same line in the owner's language.
    * A reply that cannot go out is recorded as unconfirmed or failed by `say`, like any other, and the step does not fail.
    */
-  async function onVoiceNote(msg: InboundMessage): Promise<void> {
+  async function onVoiceNote(msg: InboundMessage, tried?: Heard): Promise<void> {
     const phone = msg.from;
     if (phone === owner) {
       await say({ booking: null, phone, to: "owner", templates: ["voice_note"], action: "voice_note_reply" });
       return;
     }
     const customer = customerOf(phone);
-    log(null, phone, "receive_message", "confirmed", { voiceNote: true, id: msg.id }, { notes: "a voice note: it is not listened to and nothing of it is kept", refs: { messageId: msg.id } });
+    // B29: when voice is on and the note could not be used, the record says why and what listening cost (a priced call is counted as a rules-read message, so fleet's meter sees the spend)
+    const why = tried && !tried.ok ? tried : undefined;
+    log(null, phone, "receive_message", "confirmed", { voiceNote: true, id: msg.id }, {
+      notes: why ? `a voice note that could not be used (${VOICE_WHY[why.reason]}); the audio was held in memory for the call only and nothing of it is kept` : "a voice note: it is not listened to and nothing of it is kept",
+      refs: { messageId: msg.id, ...(why ? { voice: why.reason, ...(why.costMicroInr > 0 ? { step: "rules", provider: why.provider, model: why.model, inputTokens: "0", outputTokens: "0", costMicroInr: String(why.costMicroInr), ...(why.seconds !== undefined ? { speechSeconds: why.seconds.toFixed(1) } : {}) } : {}) } : {}) },
+    });
     if (customer.optedOut) return; // STOP means STOP: nothing goes to them, even if they write again
     await tellCustomer(null, phone, ["voice_note"], { action: "voice_note_reply" });
   }
 
   // ---- events ------------------------------------------------------------------------------------------------------
 
-  async function onMessage(msg: InboundMessage): Promise<void> {
+  /** Why a voice note was not used, in the record's words (B29). */
+  const VOICE_WHY: Record<NotHeard, string> = {
+    failed: "it could not be fetched or the speech provider did not answer", too_long: "it is longer than the limit for voice notes", unreadable: "it is not a recording whose length could be read",
+    low_confidence: "the provider could not make out words it was sure of", daily_cap: "the day's limit for voice notes is reached",
+  };
+
+  /**
+   * B29: listen to a customer's voice note. Returns what was heard, or the reason it was not (the caller then sends the line asking to type). Nothing is asked of the speech
+   * provider when it must not be: no voice on for this shop, the owner or another approver (their messages are commands, typed), a customer who sent STOP, or a shop out of
+   * its AI allowance (button mode, or the AI cap). The cost of a call that was made is counted in the month's AI spend whether or not the note could be used.
+   */
+  async function listen(msg: InboundMessage): Promise<Heard | null> {
+    const voice = deps.voice;
+    if (!voice || !msg.media || msg.from === owner || approverDigits.has(msg.from.replace(/\D/gu, "")) || customerOf(msg.from).optedOut || !reader.voiceAllowed()) return null;
+    const heard = await voice.hear(msg.media);
+    if (heard.costMicroInr > 0) reader.countSpeech("notes", heard.costMicroInr);
+    return heard;
+  }
+
+  async function onMessage(original: InboundMessage): Promise<void> {
+    let msg = original;
     if (store.seenMessages.has(msg.id)) {
       log(null, msg.from, "receive_message", "blocked", { id: msg.id }, { notes: "the same WhatsApp message was delivered again, so it is ignored" });
       return;
@@ -1202,7 +1236,14 @@ export function createAgent(deps: AgentDeps): Agent {
     store.seenMessages.add(msg.id);
     // B37: another approver's "approve K7M2QX" is the approvals relay's (the inbox gives it a copy): no reply and no record here, as for the owner's
     if (approverDigits.has(msg.from.replace(/\D/gu, "")) && RELAY_CODE_REPLY.test(msg.text)) return;
-    if (msg.voiceNote) return onVoiceNote(msg);
+    // B29: a voice note is turned into the words it says and then read exactly like a typed message (rules first, then the models, then the same limits and checks).
+    let voiceHeard: Extract<Heard, { ok: true }> | undefined;
+    if (msg.voiceNote) {
+      const heard = await listen(msg);
+      if (!heard?.ok) return onVoiceNote(msg, heard ?? undefined);
+      voiceHeard = heard;
+      msg = { id: msg.id, from: msg.from, text: heard.text, timestamp: msg.timestamp };
+    }
     if (msg.from === owner) return onOwnerMessage(msg);
     if (msg.image) return onPicture(msg);
 
@@ -1221,8 +1262,17 @@ export function createAgent(deps: AgentDeps): Agent {
       : await readIntent(msg.text, { rulesOnly: mode.buttons || customer.optedOut, slots: () => candidateSlots(latestBooking(store, phone, ["enquiry", "confirming_details"])?.serviceId) }); // an opted-out customer gets no reply, so no model is paid to read it
     countUnderstood(understood);
     if (intent.language && settings.languages.includes(intent.language)) customer.language = intent.language;
+    else if (voiceHeard && !customer.language && settings.languages.includes(voiceHeard.language)) customer.language = voiceHeard.language; // the language they spoke, when the words do not say
     const notes = [note, intent.overrideAttempt ? "the message asked the agent to ignore its rules; it is treated as ordinary text and changes nothing" : undefined].filter(Boolean).join("; ");
-    log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}) }, { notes, refs: { messageId: msg.id, ...understandingRefs(understood, tapped ? msg.reply!.kind : undefined) } });
+    // B29: the record keeps what it keeps for typed text, plus that it came from a voice note, which provider and models listened, for how long, and what that cost; the
+    // cost is added to the message's own so the cost meter (which reads costMicroInr) counts it as model spend.
+    const understoodRefs = understandingRefs(understood, tapped ? msg.reply!.kind : undefined);
+    const voiceRefs: Record<string, string> = voiceHeard ? {
+      via: "voice", speechProvider: voiceHeard.provider, speechModel: voiceHeard.model, speechSeconds: voiceHeard.seconds.toFixed(1), speechMicroInr: String(voiceHeard.costMicroInr),
+      ...(understoodRefs.costMicroInr !== undefined ? { costMicroInr: String(Number(understoodRefs.costMicroInr) + voiceHeard.costMicroInr) } : {}),
+    } : {};
+    log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}), ...(voiceHeard ? { voice: true } : {}) }, { notes: [notes, voiceHeard ? "the customer sent a voice note; this is its transcript" : undefined].filter(Boolean).join("; "), refs: { messageId: msg.id, ...understoodRefs, ...voiceRefs } });
+    if (voiceHeard) speakTo = phone;
 
     try {
       if (intent.kind === "stop") return await onStop(phone);
@@ -1241,6 +1291,7 @@ export function createAgent(deps: AgentDeps): Agent {
         default: if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) });
       }
     } finally {
+      speakTo = null;
       await announceButtonMode(); // after the customer has their answer
     }
   }

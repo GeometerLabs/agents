@@ -22,6 +22,9 @@
 //  - image:   type "image", image: { link, caption }. Like a document, WhatsApp fetches the link itself (https, public; PNG or JPEG, at most 5 MB) and it is a session
 //             message: only inside the 24-hour window. Sending by `link` keeps the call one JSON body through Guard; an uploaded media id would need a second route.
 //             https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/image-messages.md
+//  - audio:   type "audio", audio: { link } (or { id }); Meta recommends an uploaded id but takes a link, as for the other media; MP3, AAC, M4A, AMR and Ogg Opus, at most
+//             16 MB. `voice: true` (the voice-message bubble) needs Ogg Opus; a reply made as MP3 goes without it. A session message: only inside the 24-hour window.
+//             https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/audio-messages.md (read 12 Nov 2026)
 //  - reply:   { messaging_product, contacts: [{ input, wa_id }], messages: [{ id: "wamid...", message_status? }] }. It means the API
 //             ACCEPTED the message. Delivery arrives later as a status webhook.
 //  - errors:  { error: { message, type, code, error_data: { details }, fbtrace_id } }. Code 131047: more than 24 hours since the customer
@@ -39,8 +42,8 @@ import { META_LANGUAGE } from "../language/meta-templates.ts";
 import { ApiError, WindowClosedError } from "../core/faults.ts";
 import { interactiveProblem, interactiveText } from "../language/interactive.ts";
 import type { InteractiveMessage } from "../language/interactive.ts";
-import { documentProblem, imageProblem } from "./messaging.ts";
-import type { DocumentMessage, ImageMessage, Messaging, OutboundMessage, TemplateMessage } from "./messaging.ts";
+import { audioProblem, documentProblem, imageProblem } from "./messaging.ts";
+import type { AudioMessage, DocumentMessage, ImageMessage, Messaging, OutboundMessage, TemplateMessage } from "./messaging.ts";
 import { asArray, createHttp, isObject, num, str } from "../core/http.ts";
 import type { Http, HttpReply, Json } from "../core/http.ts";
 
@@ -108,6 +111,11 @@ export function imageBody(to: string, image: ImageMessage): Json {
   return { messaging_product: "whatsapp", recipient_type: "individual", to, type: "image", image: { link: image.link, ...(image.caption ? { caption: image.caption } : {}) } };
 }
 
+/** The wire body for a spoken reply sent by its address (an audio message: `link`, no `voice` flag, because the reply is MP3 and a voice-message bubble needs Ogg Opus). */
+export function audioBody(to: string, audio: AudioMessage): Json {
+  return { messaging_product: "whatsapp", recipient_type: "individual", to, type: "audio", audio: { link: audio.link } };
+}
+
 /** Meta's Cloud API, direct (or through Meta's own test number): the default provider. */
 export function createWhatsAppMessaging(config: WhatsAppConfig, deps: { clock: Clock; window: WindowStore }): Messaging {
   const number = `/${GRAPH_VERSION}/${encodeURIComponent(config.phoneNumberId)}`;
@@ -172,6 +180,13 @@ export function createCloudApiMessaging(http: Http, wire: CloudApiWire, deps: { 
       const problem = imageProblem(image);
       if (problem) throw new ApiError(400, `The image cannot be sent: ${problem}.`);
       return send(imageBody(to, image), { to, kind: "image", text: image.caption ?? "", image: { ...image } });
+    },
+
+    async sendAudio(to, audio) {
+      if (!windowOpen(to)) throw new WindowClosedError(); // a spoken reply is a session message too (131047 otherwise)
+      const problem = audioProblem(audio);
+      if (problem) throw new ApiError(400, `The audio cannot be sent: ${problem}.`);
+      return send(audioBody(to, audio), { to, kind: "audio", text: audio.text, audio: { ...audio } });
     },
 
     async sendTemplate(to, template) {

@@ -47,6 +47,11 @@ export interface AiState {
   model: number;
   /** Estimated cost this month in micro-rupees, from the dated rate table: calls with a price only. */
   costMicroInr: number;
+  /**
+   * Voice (plan B29): voice notes listened to and replies spoken this month, as counts. Their cost is in `costMicroInr` above, so the allowance and fleet's cap see it as
+   * model spend and a runaway voice bill cannot hide. Left out until the first voice note (and in a store saved before it), so a shop with voice off saves the same bytes.
+   */
+  speech?: { notes: number; replies: number };
   /** Calls this month whose provider and model have no price in the table (their cost is not in the total). */
   unpriced: number;
   /** A model step failed: until this moment the agent reads with buttons and the rules only. */
@@ -105,6 +110,17 @@ export function stateFor(store: AiStore, nowMs: number, timeZone: string): AiSta
     store.ai = { month, rules: 0, decision: 0, model: 0, costMicroInr: 0, unpriced: 0, told: { override: now.told.override, fault: now.told.fault }, ...(now.pausedUntilMs !== undefined ? { pausedUntilMs: now.pausedUntilMs } : {}), ...(now.steps ? { steps: now.steps } : {}) };
   }
   return store.ai!;
+}
+
+/**
+ * Count a voice note listened to (`notes`) or a reply spoken (`replies`) and what it cost, in the month's AI spend. A cost is always known here: voice does not run
+ * without the builder's rate (runtime.json speech.rate), so nothing is added as unpriced.
+ */
+export function addSpeech(store: AiStore, nowMs: number, timeZone: string, kind: "notes" | "replies", costMicroInr: number): void {
+  const s = stateFor(store, nowMs, timeZone);
+  s.speech = { notes: s.speech?.notes ?? 0, replies: s.speech?.replies ?? 0 };
+  s.speech[kind] += 1;
+  s.costMicroInr += costMicroInr;
 }
 
 /** Messages handled by a model this month (steps 1 and 2): what the allowance counts. */
