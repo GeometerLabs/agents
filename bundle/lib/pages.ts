@@ -136,7 +136,11 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
     if (settings.pages === "hub" && settings.slug) {
       const wanted = settings.slug;
       const confirmed = status?.slug === wanted && status.url !== undefined;
-      const due = !confirmed || t - Date.parse(status!.at) >= DAY_MS;
+      // on the server that answers for the pages domain, an address on another domain (the domain was just changed) is asked again at once, not in a day:
+      // until then forms would post to the old domain and lose their POST on its redirect
+      let otherDomain = false;
+      try { otherDomain = confirmed && server.pages !== undefined && new URL(status!.url!).hostname !== server.pages.domain; } catch { otherDomain = true; }
+      const due = !confirmed || otherDomain || t - Date.parse(status!.at) >= DAY_MS;
       // a claim that was refused, or that found fleet unreachable, waits CLAIM_RETRY_MS before the same name is asked again
       const waiting = status?.tried?.slug === wanted && t - Date.parse(status.tried.at) < CLAIM_RETRY_MS;
       if (!server.fleet) {
@@ -146,6 +150,8 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
         const a = r.answer;
         if (r.status === 200 && a.ok === true && typeof a.url === "string" && /^https:\/\//u.test(a.url)) {
           status = { schema: 1, at, slug: wanted, url: a.url, ...(typeof a.page_id === "string" ? { pageId: a.page_id } : {}), ...(typeof a.page_url === "string" && /^https:\/\//u.test(a.page_url) ? { pageUrl: a.page_url } : {}) };
+          // fleet still answers another domain than this server's (its config and geometer.json disagree): kept, and not asked again for ten minutes
+          if (server.pages && new URL(a.url).hostname !== server.pages.domain) { status.tried = { slug: wanted, at }; lines.push(`${shop}: fleet gives its page on ${new URL(a.url).hostname}, but geometer.json's pages domain is ${server.pages.domain}. Make the two the same.`); }
           if (!confirmed) lines.push(`${shop}: its page is ${a.url}${status.pageUrl ? ` (stable address ${status.pageUrl})` : ""}.`);
         } else if (r.status === 0 && confirmed) {
           status = { ...status!, tried: { slug: wanted, at } }; // fleet unreachable: the confirmed name stands, and fleet is asked again in ten minutes
