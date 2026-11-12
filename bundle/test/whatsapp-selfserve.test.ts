@@ -210,17 +210,19 @@ test("the cost: a self-serve shop's two WhatsApp lines are an estimate paid from
   assert.deepEqual(other.find((i) => i.id === "whatsapp"), { id: "whatsapp", paise: null, notes: ["no-record"] });
 });
 
-test("the heartbeat keeps a self-serve shop's WhatsApp counts in its baseline but sends zero of them, so fleet's pass-through bills nothing for it; the other counts and other shops are unchanged", () => {
+test("the heartbeat sends a self-serve shop's real counts with usage.whatsapp_paid_by \"shop\", so fleet bills nothing for its WhatsApp; other shops send no flag and are unchanged", () => {
   const usage = (n: number) => ({ messages: 10 + n, byStep: { rules: 5, decision: 3, model: 2 }, modelMicroInr: 1000, whatsapp: { service: 4 + n, utility: 6 + n, marketing: 0, estMicroInr: 50_000 + n, estimated: true } });
   const shop = (id: string, extra: object, u: ReturnType<typeof usage>) => ({ id, pathway: "bookings", pathwayVersion: "1", up: true, ready: true, status: null, guards: [], usage: u, ...extra });
   const now = new Date("2026-11-12T10:00:00Z");
   const first = buildHeartbeat({ deploymentId: "d", bundleVersion: "1", now, baseline: {}, shops: [shop("own", { whatsappPaidBy: "shop" }, usage(0)), shop("hosted", {}, usage(0))] as any });
   const second = buildHeartbeat({ deploymentId: "d", bundleVersion: "1", now, baseline: first.next, usageBaseline: first.nextUsage, shops: [shop("own", { whatsappPaidBy: "shop" }, usage(3)), shop("hosted", {}, usage(3))] as any });
   const sent = Object.fromEntries((second.body as any).agents.map((a: any) => [a.id, a.usage]));
-  assert.deepEqual(sent.own.whatsapp, { service: 0, utility: 0, marketing: 0, est_micro_inr: 0 });
+  assert.equal(sent.own.whatsapp_paid_by, "shop", "fleet is told who pays");
+  assert.deepEqual(sent.own.whatsapp, { service: 3, utility: 3, marketing: 0, est_micro_inr: 3 }, "the real counts go, for the shop's own records");
+  assert.equal("whatsapp_paid_by" in sent.hosted, false, "a shop that is not self-serve sends no flag");
   assert.equal(sent.own.messages, 3, "the customers' messages are still counted for the plan");
   assert.deepEqual(sent.hosted.whatsapp, { service: 3, utility: 3, marketing: 0, est_micro_inr: 3 });
-  assert.equal(second.nextUsage.own.service, 7, "the baseline still follows the real count");
+  assert.equal(second.nextUsage.own.service, 7, "the baseline follows the real count");
 });
 
 test("deployed, the self-serve shop's WhatsApp Guard file carries the apikey header, Gupshup's host and the licence's recipient field 'destination'; its runtime and inbox are told the app", async () => {
