@@ -8,6 +8,10 @@
 // language, charge) are copied from the Malayalam column of docs/product/gtm-and-revenue.md. Nothing here says a shop is safe or guaranteed.
 import type { Words } from "./words.ts";
 
+/** When the server's Gupshup universal token ends, from the whole hours left: days from a day on, hours under a day, never "0 ദിവസം" (words.ts credentialEnds). */
+const credentialEnds = (hours: number) => hours >= 24 ? `${Math.floor(hours / 24)} ദിവസത്തിൽ തീരും. അതിനുമുമ്പ് പുതിയത് നൽകൂ`
+  : hours >= 1 ? `${hours} മണിക്കൂറിൽ തീരും. അതിനുമുമ്പ് പുതിയത് നൽകൂ` : "ഒരു മണിക്കൂറിനുള്ളിൽ തീരും, അല്ലെങ്കിൽ ഇതിനകം തീർന്നു. ഇപ്പോൾത്തന്നെ പുതിയത് നൽകൂ";
+
 export const ml: Words = {
   appName: "Geometer",
   languageName: "മലയാളം",
@@ -288,7 +292,7 @@ export const ml: Words = {
       refund_made_not_told: (id, amount, _hours, how) => `${id}-ന്റെ ${amount} റീഫണ്ട് നൽകി, പക്ഷേ ഉപഭോക്താവിനെ ഇതുവരെ അറിയിച്ചിട്ടില്ല: ${how}`,
       message_unanswered: (id) => `സേവനത്തിന്റെ കണക്ഷൻ നിലച്ചതിനാൽ ${id}-ന്റെ ജോലി പൂർത്തിയായില്ല: പരിശോധിച്ച് ഉപഭോക്താവിന് മറുപടി നൽകുക`,
       whatsapp_token_renewal: (_id, _amount, hours) => `Gupshup വഴിയുള്ള WhatsApp: ഈ കടയുടെ ടോക്കൺ പുതുക്കാനായില്ല. ഇപ്പോഴത്തേത് ${hours} മണിക്കൂറിൽ തീരും, അതിനുശേഷം ഒരു സന്ദേശവും പോകില്ല. സെർവർ നോക്കൂ (geometer logs refresher), അല്ലെങ്കിൽ പുതിയ Gupshup universal token നൽകൂ.`,
-      whatsapp_token_credential: (_id, _amount, hours) => `Gupshup വഴിയുള്ള WhatsApp: സെർവറിന്റെ Gupshup universal token ${Math.floor(hours / 24)} ദിവസത്തിൽ തീരും. അതിനുമുമ്പ് പുതിയത് നൽകൂ (geometer gupshup-token <file>).`,
+      whatsapp_token_credential: (_id, _amount, hours) => `Gupshup വഴിയുള്ള WhatsApp: സെർവറിന്റെ Gupshup universal token ${credentialEnds(hours)} (geometer gupshup-token <file>).`,
       message_not_delivered: (id) => `${id}-നുള്ള WhatsApp സന്ദേശം ഫോണിൽ എത്തിയില്ല (അത് പരാജയപ്പെട്ടെന്ന് WhatsApp അറിയിച്ചു): ആ വ്യക്തിയെ മറ്റൊരു വഴിക്ക് ബന്ധപ്പെടുക`,
       upi_payment_unconfirmed: (id, amount) => `${id}-നുള്ള ${amount} UPI പേയ്മെന്റ് ഉടമ ഇതുവരെ ഉറപ്പാക്കിയിട്ടില്ല: UPI ആപ്പ് നോക്കാൻ ഉടമയോട് പറയുക`,
       upi_refund_owed: (id, amount) => `${id}-ന്റെ ${amount} റീഫണ്ട് ഉടമ നൽകാനുണ്ട്, ഇതുവരെ ചെയ്തതായി രേഖപ്പെടുത്തിയിട്ടില്ല: ഉടമയെ ഓർമ്മിപ്പിക്കുക`,
