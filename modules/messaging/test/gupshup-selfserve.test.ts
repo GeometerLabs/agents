@@ -200,13 +200,15 @@ test("runtime.json picks the provider: gupshup-selfserve needs the app name and 
   assert.ok(createLiveMessaging({ baseUrl: "http://g", phoneNumberId: "1", provider: "gupshup-selfserve", ...APP }, { clock: fakeClock(0), window: openWindow }));
 });
 
-test("callbacks: text, a tapped button and a tapped list row come back as the id we gave them; without a postback the title is read as words; pictures and voice notes are the fact only", () => {
+test("callbacks: text, a tapped template button, a tapped list row (the id we gave it) and a tapped reply button; pictures and voice notes are the fact only", () => {
   const one = (name: string) => parseWhatsAppWebhook(fixture(name));
-  assert.deepEqual(one("gupshup-selfserve-message-text.json"), [{ id: "ABEGkYaYVSEEAhAL3SLAWwHKeKrt6s3FKB0c", from: "+919800000001", text: "Hi", timestamp: 1580227766370 }]);
-  assert.deepEqual(one("gupshup-selfserve-message-list-reply.json"), [{ id: "ABEGkYaYVSEEAhCzqobr15BdMPcRup1fIXAJ", from: "+919800000001", text: "section 1 row 1", timestamp: 1580228523976, reply: { id: "slot:2026-11-14T10:00", kind: "list" } }]);
-  assert.deepEqual(one("gupshup-selfserve-message-quick-reply.json")[0].reply, { id: "confirm:yes", kind: "button" });
-  const bare = one("gupshup-selfserve-message-quick-reply-no-postback.json");
-  assert.deepEqual([bare[0].text, bare[0].reply], ["First", undefined], "Gupshup's own id 'qr1' is not one of ours");
+  assert.deepEqual(one("gupshup-selfserve-message-text.json"), [{ id: "ABEGkZUTIXZ0Ago6jWqOZm-Sz0WD", from: "+919800000001", text: "Hi", timestamp: 1718007189549 }]);
+  assert.deepEqual(one("gupshup-selfserve-message-template-button.json").map((m) => [m.text, m.reply]), [["View Account Balance", undefined]], "a template's button arrives as a text message: read as words");
+  assert.deepEqual(one("gupshup-selfserve-message-list-reply-our-id.json"), [{ id: "ABEGkYaYVSEEAhCzqobr15BdMPcRup1fIXAJ", from: "+919800000001", text: "10:00", timestamp: 1580228523976, reply: { id: "slot:2026-11-14T10:00", kind: "list" } }]);
+  // the page's own list example has a postbackText that is no plain id, and its quick reply has none: the title is read as words, and Gupshup's own ids ('list1', 'qr1') are not ours
+  assert.deepEqual(one("gupshup-selfserve-message-list-reply.json").map((m) => [m.text, m.reply]), [["section 1 row 1", undefined]]);
+  assert.deepEqual(one("gupshup-selfserve-message-quick-reply.json").map((m) => [m.text, m.reply]), [["First", undefined]]);
+  assert.deepEqual(one("gupshup-selfserve-message-quick-reply-postback.json").map((m) => [m.text, m.reply]), [["Yes", { id: "confirm:yes", kind: "button" }]]);
   assert.deepEqual(one("gupshup-selfserve-message-image.json").map((m) => [m.text, m.image]), [["", true]]);
   assert.deepEqual(one("gupshup-selfserve-message-audio.json").map((m) => [m.text, m.voiceNote]), [["", true]]);
   assert.ok(!JSON.stringify(one("gupshup-selfserve-message-image.json")).includes("example.invalid"), "no media link is kept");
@@ -219,14 +221,18 @@ test("callbacks: text, a tapped button and a tapped list row come back as the id
   assert.deepEqual(parseWhatsAppStatuses(text), []);
 });
 
-test("statuses: delivered, read and failed are kept (with both ids), enqueued and sent are not; 'accepted' and 'delivered' stay two things", () => {
+test("statuses: delivered, read and failed are kept (with both ids), enqueued and sent are not; 'accepted' and 'delivered' stay two things; Gupshup's 470 is the closed 24-hour window", () => {
   const status = (name: string) => parseWhatsAppStatuses(fixture(name));
   assert.deepEqual(status("gupshup-selfserve-event-enqueued.json"), []);
   assert.deepEqual(status("gupshup-selfserve-event-sent.json"), []);
-  assert.deepEqual(status("gupshup-selfserve-event-delivered.json"), [{ ids: ["ee4a68a0-1203-4c85-8dc3-49d0b3226a35", "wamid.HBgMOTE5ODAwMDAwMDAxFQIAERgSQTBCMw=="], status: "delivered", to: "+919800000001", timestamp: 1585344476000 }]);
+  assert.deepEqual(status("gupshup-selfserve-event-delivered.json"), [{ ids: ["ee4a68a0-1203-4c85-8dc3-49d0b3226a35", "gBEGkYaYVSEEAgnZxQ3JmKK6Wvg"], status: "delivered", to: "+919800000001", timestamp: 1585344476000 }]);
   assert.equal(status("gupshup-selfserve-event-read.json")[0].status, "read");
-  assert.deepEqual(status("gupshup-selfserve-event-failed.json"), [{ ids: ["ee4a68a0-1203-4c85-8dc3-49d0b3226a35"], status: "failed", to: "+919800000001", timestamp: 1585344700000, error: { code: 1008, title: "User is not Opted in and Inactive" } }]);
+  assert.deepEqual(status("gupshup-selfserve-event-failed.json"), [{ ids: ["ee4a68a0-1203-4c85-8dc3-49d0b3226a35"], status: "failed", to: "+919800000001", timestamp: 1580311136040, error: { code: 1008, title: "User is not Opted in and Inactive" } }]);
+  const closed = status("gupshup-selfserve-event-failed-window.json")[0];
+  assert.deepEqual([closed.ids, closed.error?.code, closed.error?.title?.startsWith("Message failed to send because more than 24 hours")], [["72f61f22-5aa4-4615-a970-943edf6da01c", "9163a016-710e-41ee-978b-79a1adbd734e"], 470, true]);
   // the id the send call answered with (the Gupshup id) finds the line that sent it, in either of the report's two ids
   const sendLine = { seq: 7, action: "send_message", refs: { messageId: "ee4a68a0-1203-4c85-8dc3-49d0b3226a35" } } as any;
   for (const name of ["gupshup-selfserve-event-delivered.json", "gupshup-selfserve-event-failed.json"]) assert.equal(findSentEntry([sendLine], status(name)[0].ids)?.entry.seq, 7);
+  const asyncLine = { seq: 9, action: "send_message", refs: { messageId: "72f61f22-5aa4-4615-a970-943edf6da01c" } } as any;
+  assert.equal(findSentEntry([asyncLine], closed.ids)?.entry.seq, 9);
 });

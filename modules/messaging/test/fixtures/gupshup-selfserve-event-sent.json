@@ -1,2 +1,24 @@
-{ "app": "DemoApp", "timestamp": 1585344475000, "version": 2, "type": "message-event",
-  "payload": { "id": "wamid.HBgMOTE5ODAwMDAwMDAxFQIAERgSQTBCMw==", "gsId": "ee4a68a0-1203-4c85-8dc3-49d0b3226a35", "type": "sent", "destination": "919800000001", "payload": { "ts": 1585344475 } } }
+{
+  "app": "DemoAPI",
+  "timestamp": 1580546677791,
+  "version": 2,
+  "type": "message-event",
+  "payload": {
+    "id": "59f8db90-c37e-4408-90ab-cc54ef8246ad",
+    "gsId": "ee4a68a0-1203-4c85-8dc3-49d0b3226a35",
+    "type": "sent",
+    "destination": "919800000001",
+    "payload": {
+      "ts": 1585344475
+    },
+    "conversation": {
+      "id": "532b57b5f6e63595ccd74c6010e5c5c7",
+      "expiresAt": 1518780636,
+      "type": "service"
+    },
+    "pricing": {
+      "policy": "CBP/PMP",
+      "category": "service"
+    }
+  }
+}

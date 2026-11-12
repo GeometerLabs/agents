@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -19,16 +19,21 @@ import { INTAKE, readSecretFile, secretFile } from "../lib/secrets.ts";
 import { loadRouter } from "../services/inbox.ts";
 import { buildHeartbeat } from "../services/heartbeat.ts";
 import { serverConfig, panelRuntime, tempServer, PHONE_NUMBER_ID } from "./helpers.ts";
-import { checkShop } from "../deploy.ts";
-import { applyAccounts, keepWhatsAppProvider, newDraft } from "../panel/setup.ts";
+import { checkShop, deploy } from "../deploy.ts";
+import { kidOf } from "../../modules/licence/token.ts";
+import { PIN, TEST_PUBLIC_HEX } from "./licence-helpers.ts";
+import { applyAccounts, keepWhatsAppProvider, newDraft, whatsappDraftOf } from "../panel/setup.ts";
 import { checkSecret } from "../panel/secrets.ts";
 import { checkGupshupSelfServe, checkConnections } from "../panel/checks.ts";
 import { PRICES_DIR, loadPriceList, monthlyCost } from "../panel/cost.ts";
 import { glowSalon } from "../../templates/commerce/bookings/src/harness.ts";
 import { en } from "../panel/words.ts";
 import { runningCostItems } from "../panel/health.ts";
-import { secretsFor, world } from "./world.ts";
+import { read, secretsFor, world } from "./world.ts";
 import { BINARY, skipWithoutBinary } from "./real-guard.ts";
+import { BOOKINGS_SERVICES, readRuntimeConfig } from "../../modules/runtime/config.ts";
+import { createLiveMessaging } from "../../modules/messaging/providers.ts";
+import { fakeClock } from "../../modules/core/clock.ts";
 
 const SOURCE = "919876543210";
 const MESSAGING = { provider: "gupshup-selfserve", appName: "Glow_Salon", sourceNumber: SOURCE };
@@ -218,6 +223,48 @@ test("the heartbeat keeps a self-serve shop's WhatsApp counts in its baseline bu
   assert.equal(second.nextUsage.own.service, 7, "the baseline still follows the real count");
 });
 
+test("deployed, the self-serve shop's WhatsApp Guard file carries the apikey header, Gupshup's host and the licence's recipient field 'destination'; its runtime and inbox are told the app", async () => {
+  const shop = panelRuntime({ services: { payments: {}, calendar: { calendarId: "glow@example.com" }, messaging: { phoneNumberId: SOURCE, ...MESSAGING }, timeoutMs: 20_000 } });
+  const w = world({ "glow-salon": shop }, PIN);
+  try {
+    w.guardLicence.reads = true; w.guardLicence.kids = [kidOf(Buffer.from(TEST_PUBLIC_HEX, "hex"))];
+    const { whatsapp_token: _t, whatsapp_app_secret: _s, whatsapp_verify_token: _v, ...rest } = secretsFor("glow-salon");
+    w.handIn("glow-salon", { ...rest, gupshup_apikey: "gupshup-own-account-key-0123456789", whatsapp_path_token: "Zk3-mQ9_vT7xLp2Rw8YdNa5c" });
+    const [r] = await deploy(w.ctx);
+    assert.equal(r.shop, "glow-salon");
+    const toml = read(join(w.paths.generated, "guards", "g-glow-salon-whatsapp", "guard.toml"));
+    assert.match(toml, /^upstream = "api\.gupshup\.io:443"$/mu);
+    assert.match(toml, /^apikey = "\$\{file:\/run\/secrets\/whatsapp_authorization\}"$/mu);
+    assert.match(toml, /^recipient_field = "destination"$/mu, "the final stop reads Gupshup's recipient field");
+    assert.match(read(join(w.paths.generated, "guards", "g-razorpay".replace("g-razorpay", "g-glow-salon-razorpay"), "guard.toml")), /^recipient_field = "to"$/mu, "another Guard of the same shop is unchanged");
+    assert.equal(JSON.parse(read(join(w.paths.generated, "inbox", "inbox.json"))).shops["glow-salon"].gupshupAppName, "Glow_Salon");
+  } finally { w.done(); }
+});
+
+test("a runtime.json for a self-serve shop is read by the runtime (the app name and number are kept for the live adapter), and a key in it is refused by name", () => {
+  const messaging = (extra: Record<string, unknown>) => ({ baseUrl: "http://g:8080", phoneNumberId: SOURCE, ...MESSAGING, ...extra });
+  const config = (m: Record<string, unknown>) => readRuntimeConfig({ mode: "live", services: { payments: { baseUrl: "http://g:8080" }, calendar: { baseUrl: "http://g:8080", calendarId: "c" }, messaging: m } }, "/c", BOOKINGS_SERVICES);
+  const ok = config(messaging({}));
+  assert.ok(ok.ok, JSON.stringify(ok));
+  if (ok.ok) assert.deepEqual([(ok.config.services!.messaging as any).appName, (ok.config.services!.messaging as any).sourceNumber, (ok.config.services!.messaging as any).provider], ["Glow_Salon", SOURCE, "gupshup-selfserve"]);
+  assert.ok(!config(messaging({ appName: "bad name" })).ok);
+  const refused = config(messaging({ apikey: "secret-value" }));
+  assert.equal(refused.ok, false);
+  if (!refused.ok) assert.ok(!refused.errors.join(" ").includes("secret-value"));
+  // the same fields reach createLiveMessaging, which the relay's config also hands them to
+  assert.ok(createLiveMessaging({ ...messaging({}), provider: "gupshup-selfserve" } as any, { clock: fakeClock(0), window: { lastInboundAt: () => 0 } }));
+});
+
+test("an edited Fees or Orders shop on its own Gupshup account still shows that choice (the draft carries the provider and the app name), and Bookings' does too", () => {
+  const meta = { schema: 1, receipts: {}, whatsapp: { businessNumber: "+919876543210" } } as any;
+  const runtime = { services: { messaging: { phoneNumberId: SOURCE, ...MESSAGING } } };
+  assert.deepEqual(whatsappDraftOf(meta, runtime), { businessNumber: "+919876543210", numberId: SOURCE, provider: "gupshup-selfserve", appName: "Glow_Salon" });
+  assert.deepEqual(whatsappDraftOf(meta, { services: { messaging: { phoneNumberId: "123456789012" } } }), { businessNumber: "+919876543210", numberId: "123456789012" });
+  assert.deepEqual(whatsappDraftOf(meta, undefined), { businessNumber: "+919876543210", numberId: "" });
+  // Bookings, Fees and Orders each build their draft from an existing shop; all three must take the phone step's draft from this one function
+  for (const file of ["setup.ts", "fees.ts", "orders.ts"]) assert.match(readFileSync(new URL(`../panel/${file}`, import.meta.url), "utf8"), /whatsapp: whatsappDraftOf\(meta, runtime\)/u, `${file} reads the provider back`);
+});
+
 test("the real Guard compiles the self-serve spec (its three routes and both allowlists) and its tripwires hold", { skip: skipWithoutBinary }, () => {
   const wa = plan(MESSAGING).guards.find((g) => g.kind === "whatsapp")!;
   const dir = mkdtempSync(join(tmpdir(), "geo-gupshup-selfserve-"));
@@ -226,6 +273,9 @@ test("the real Guard compiles the self-serve spec (its three routes and both all
     const compiled = JSON.parse(execFileSync(BINARY, ["compile", "--spec", join(dir, "spec.json"), "--out", join(dir, "bundle.json")], { encoding: "utf8" })) as { digest: string; tool: string; tripwires: { passed: number; of: number } };
     assert.equal(compiled.tool, "whatsapp");
     assert.equal(compiled.tripwires.passed, compiled.tripwires.of);
+    // and the guard.toml the bundle writes for it: the apikey header, Gupshup's host and the recipient field are read by the binary's own check
+    writeFileSync(join(dir, "guard.toml"), guardToml({ def: wa.def, tenant: wa.tenant, deployment: wa.deployment, bundleDigest: compiled.digest, upstream: wa.upstream, adminSha: "b".repeat(64), agents: [{ id: "runtime-glow-salon", sha: "c".repeat(64) }] }));
+    assert.match(execFileSync(BINARY, ["verify-bundle", join(dir, "bundle.json"), "--config", join(dir, "guard.toml")], { encoding: "utf8" }), /tripwires: passed/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 

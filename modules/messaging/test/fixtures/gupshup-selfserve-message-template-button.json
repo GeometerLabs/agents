@@ -1,0 +1,25 @@
+{
+  "app": "docdeck",
+  "timestamp": 1718007189549,
+  "version": 2,
+  "type": "message",
+  "payload": {
+    "id": "ABEGkZUTIXZ0Ago6jWqOZm-Sz0WD",
+    "source": "919800000001",
+    "type": "text",
+    "payload": {
+      "text": "View Account Balance",
+      "type": "button"
+    },
+    "sender": {
+      "phone": "919800000001",
+      "name": "CUSTOMER_NAME",
+      "country_code": "91",
+      "dial_code": "9800000001"
+    },
+    "context": {
+      "id": "gBEGkYaYVSEEAgnPFrOLcjkFjL8",
+      "gsId": "9b71295f-f7af-4c1f-b2b4-31b4a4867bad"
+    }
+  }
+}

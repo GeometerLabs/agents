@@ -93,14 +93,22 @@ export function newDraft(id: string, accountId: string, template: Template, exam
   };
 }
 
+/**
+ * The phone step's draft from a shop that exists: its number, its number id and, for a shop on its own Gupshup account (item 11c), the provider and the app's name, so
+ * editing it shows that choice and saving it writes it back (keepWhatsAppProvider). Bookings, Fees and Orders drafts all use this one.
+ */
+export function whatsappDraftOf(meta: ShopMeta, runtime: Record<string, any> | undefined): Draft["whatsapp"] {
+  const m = runtime?.services?.messaging;
+  return { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(m?.phoneNumberId ?? ""), ...(m?.provider === "gupshup-selfserve" ? { provider: "gupshup-selfserve" as const, appName: String(m.appName ?? "") } : {}) };
+}
+
 /** A draft for a shop that already exists, so changing its settings is the same five steps. */
 export function draftFromShop(id: string, accountId: string, templateId: string, shopId: string, settings: Settings, runtime: Record<string, any> | undefined, meta: ShopMeta, now: string): Draft {
   return {
     id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: formFromSettings(settings), windowHours: String(settings.cancellation.windowHours),
     primaryLanguage: settings.languages[0], otherLanguages: settings.languages.slice(1), ownerLanguage: settings.owner.language, ownerNumber: settings.owner.whatsapp,
     ...approversDraftOf(settings.approvers),
-    whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? ""),
-      ...(runtime?.services?.messaging?.provider === "gupshup-selfserve" ? { provider: "gupshup-selfserve" as const, appName: String(runtime.services.messaging.appName ?? "") } : {}) },
+    whatsapp: whatsappDraftOf(meta, runtime),
     calendar: { id: String(runtime?.services?.calendar?.calendarId ?? ""), use: calendarModule(settings) }, gateway: { mode: meta.gateway?.mode ?? "live", keyId: meta.gateway?.keyId ?? "" },
     payment: paymentFromSettings(settings.payment),
     expectedBookings: meta.expectedBookings === undefined ? "" : String(meta.expectedBookings), done: Number.MAX_SAFE_INTEGER,

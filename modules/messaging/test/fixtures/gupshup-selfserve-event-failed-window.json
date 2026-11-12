@@ -1,0 +1,16 @@
+{
+  "app": "DemoAPI",
+  "timestamp": 1663138637856,
+  "version": 2,
+  "type": "message-event",
+  "payload": {
+    "id": "9163a016-710e-41ee-978b-79a1adbd734e",
+    "gsId": "72f61f22-5aa4-4615-a970-943edf6da01c",
+    "type": "failed",
+    "destination": "919800000001",
+    "payload": {
+      "code": 470,
+      "reason": "Message failed to send because more than 24 hours have passed since the customer last replied to this number"
+    }
+  }
+}

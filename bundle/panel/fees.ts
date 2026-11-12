@@ -7,7 +7,7 @@ import { batchName, validateSettings } from "../../templates/education/fees/src/
 import type { Settings } from "../../templates/education/fees/src/settings.ts";
 import { limitLinesOf, limitsOf } from "../../templates/education/fees/report/certificate.ts";
 import { payeeProblem, vpaProblem } from "../../modules/payments/providers/index.ts";
-import { approversDraftOf, approversFromDraft, newPayment, normalizePhone, PREVIEW_PAYMENT, paymentBlock, paymentFromSettings, paymentModuleOf } from "./setup.ts";
+import { approversDraftOf, approversFromDraft, newPayment, normalizePhone, PREVIEW_PAYMENT, paymentBlock, paymentFromSettings, paymentModuleOf, whatsappDraftOf } from "./setup.ts";
 import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
@@ -64,7 +64,7 @@ export function feesDraftFromShop(id: string, accountId: string, templateId: str
     id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: { ...emptyShopForm(), name: s.name }, windowHours: "",
     primaryLanguage: first, otherLanguages: s.languages.slice(1), ownerLanguage: s.owner.language, ownerNumber: s.owner.whatsapp,
     ...approversDraftOf(s.approvers),
-    whatsapp: { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(runtime?.services?.messaging?.phoneNumberId ?? "") },
+    whatsapp: whatsappDraftOf(meta, runtime),
     calendar: { id: "" }, gateway: { mode: meta.gateway?.mode ?? "live", keyId: meta.gateway?.keyId ?? "" }, payment: paymentFromSettings(s.payment), expectedBookings: "", done: Number.MAX_SAFE_INTEGER,
     fees: {
       address: s.address ?? "", batches, students,
