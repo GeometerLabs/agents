@@ -629,7 +629,7 @@ export function createAgent(deps: AgentDeps): Agent {
   function linkFor(parent: string, fresh = false): { token: string; url: string } | undefined {
     const base = deps.pageBase?.();
     if (!base) return undefined;
-    let token = madeThisStep.get(parent);
+    let token = fresh ? undefined : madeThisStep.get(parent);
     if (!token) {
       const remembered = deps.linkMemory?.get(parent);
       const saved = store.parentLinks?.[parent];

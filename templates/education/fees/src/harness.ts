@@ -104,6 +104,8 @@ export interface WorldOptions {
   qrImage?: (text: string) => Promise<string | null>;
   /** The licence right now (modules/licence): a test sets it to the wind-down or the final stop. Left out: never restricted. */
   licence?: () => LicenceNow;
+  /** Item 11h: the centre's page, so the reminders carry each parent's private link (src/agent.ts AgentDeps.pageBase). Left out: no page, the reminders as they were. */
+  pageBase?: () => string | undefined;
 }
 
 /** The tenant and builder named in the Guard spec the harness builds; they only label it. */
@@ -119,7 +121,7 @@ export function createWorld(options: WorldOptions = {}): World {
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
   const store = createStore();
-  const agent = createAgent({ settings, clock, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}) });
+  const agent = createAgent({ settings, clock, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}), ...(options.pageBase ? { pageBase: options.pageBase } : {}) });
   let deliveredEvents = 0;
   const PARENT = ROHAN_PARENT;
 
