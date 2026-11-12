@@ -5,6 +5,10 @@
 //   GET  /s/<shop>/qr.svg                a QR code of the booking page, for the counter
 //   ...  /s/<shop>/api/v1/...            the booking API (api.ts)                               POST /s/<shop>/mcp         the same operations for AI assistants (mcp.ts)
 //   GET  /s/<shop>/o/<owner token>       the owner's private approvals page                     POST /s/<shop>/o/<owner token>   an answer
+//   ...  /s/<shop>/owner/...             item 11f: the owner's view, signed in by a one-time link on WhatsApp (owner-session.ts)
+//
+// Item 11f: through the pages domain's front door (bundle/services/door.ts) the same views are at https://<pages domain>/<slug>/...; the door says so with
+// `x-geometer-door: <slug>`, and the front then writes every address under that base. Only the slug in the shop's own pages file counts: anything else is ignored.
 //
 // What it holds: for each shop, the runtime's CHANNEL token (backend.ts runtimeBackend) and, for a shop whose Guard holds refunds, the relay's token. Neither acts for
 // the owner without the owner's link: the runtime and the relay check it against their own copy of its hash. What it does before anything reaches a runtime: the
@@ -27,6 +31,12 @@ import { OWNER_TOKEN } from "./owner-link.ts";
 import { OWNER, PAGE } from "./words.ts";
 import { bookingPage, statusPage } from "./page.ts";
 import { ownerLinkGone, ownerPage } from "./owner-page.ts";
+import type { OwnerCred } from "./backend.ts";
+import { CSRF_HEADER, csrfMatches, ownerSessionRoute } from "./owner-session.ts";
+import type { PagesFile } from "./pages-file.ts";
+
+/** The header the pages domain's front door adds: the slug the visitor asked for (bundle/services/door.ts). */
+export const DOOR_HEADER = "x-geometer-door";
 
 export interface FrontShop {
   /** https://<server>/s/<shop>: every address the pages and answers give starts with it. */
@@ -34,6 +44,8 @@ export interface FrontShop {
   backend: ChannelBackend;
   /** Only for a shop whose Guard holds refunds for the owner (a gateway shop). */
   relay?: RelayBackend;
+  /** Item 11f: the shop's page addresses (pages.json), read on every request. Left out: no pages domain and no owner sign-in for this shop. */
+  pages?: () => PagesFile | undefined;
 }
 
 export interface FrontOptions {
@@ -80,11 +92,12 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
   const log = options.log ?? (() => undefined);
   const ops = new Map<string, { web: Ops; mcp: Ops; page: Ops }>();
   const opsOf = (name: string, shop: FrontShop) => {
-    let o = ops.get(name);
+    // by the address too: an answer through the pages domain names that domain's addresses (item 11f)
+    let o = ops.get(`${name} ${shop.publicUrl}`);
     if (!o) {
       const make = (channel: "web" | "mcp", waitMs?: number) => createOps({ backend: shop.backend, publicUrl: shop.publicUrl, channel, ...(waitMs !== undefined ? { waitMs } : {}) });
       o = { web: make("web", options.waitMs), mcp: make("mcp", options.waitMs), page: make("web", Math.min(options.waitMs ?? 2_000, 2_000)) };
-      ops.set(name, o);
+      ops.set(`${name} ${shop.publicUrl}`, o);
     }
     return o;
   };
@@ -115,8 +128,12 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
   async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", "http://front");
     const m = /^\/s\/([a-z0-9][a-z0-9-]{0,39})(\/.*)?$/u.exec(url.pathname);
-    const shop = m ? options.shops[m[1]] : undefined;
-    if (!m || !shop) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+    const found = m ? options.shops[m[1]] : undefined;
+    if (!m || !found) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+    // item 11f: through the front door, every address is written under the pages domain, but only for the slug this shop's own pages file names
+    const pages = found.pages?.();
+    const door = req.headers[DOOR_HEADER];
+    const shop: FrontShop = typeof door === "string" && pages?.slug !== undefined && pages.url !== undefined && door === pages.slug ? { ...found, publicUrl: pages.url } : found;
     const name = m[1];
     const rest = m[2] ?? "";
     const method = req.method ?? "GET";
@@ -163,12 +180,21 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
 
     // ---- the owner's page ----
     const owner = /^\/o\/([^/]+)(\/.*)?$/u.exec(rest);
-    if (owner) return ownerRoute(req, res, url, shop, owner[1], owner[2] ?? "", address);
+    if (owner) return ownerRoute(req, res, url, shop, owner[2] ?? "", address, { cred: owner[1], base: `${shop.publicUrl}/o/${owner[1]}` });
+    // item 11f: the owner's view signed in from WhatsApp, with item 11d's page behind the session
+    if (rest === "/owner" || rest.startsWith("/owner/")) {
+      return ownerSessionRoute({
+        limiter, sendHtml, sendJson, readBody,
+        ownerRoute: (sub, o) => ownerRoute(req, res, url, shop, sub, address, o),
+      }, { req, res, url, base: shop.publicUrl, sub: rest.slice("/owner".length), address, backend: shop.backend, pages, sameOrigin: sameOrigin(req, shop) });
+    }
 
     // ---- the booking page ----
     if (rest === "/qr.svg" && method === "GET") {
       if (!limiter.take("read", address)) return tooMany();
-      const svg = textQrSvg(`${shop.publicUrl}/`, { label: `${shop.publicUrl}/` });
+      // item 11f: the stable page address when the shop has one (it survives a rename and a new domain), else this page's own
+      const qrTarget = pages?.pageUrl ?? `${shop.publicUrl}/`;
+      const svg = textQrSvg(qrTarget, { label: qrTarget });
       res.writeHead(200, { "content-type": "image/svg+xml", "content-length": Buffer.byteLength(svg), "cache-control": "public, max-age=3600", "x-content-type-options": "nosniff", "content-security-policy": PAGE_POLICY });
       res.end(svg);
       return;
@@ -180,7 +206,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       // a week of days from today; the chosen date (if one of them) picks which day's times the form shows
       const offer = await shop.backend.offer({ ...(service && /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/u.test(service) ? { serviceId: service } : {}), days: 7 });
       const language = languageOf(req, url, offer.shop.languages);
-      return sendHtml(res, 200, bookingPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, ...(offer.serviceId ? { serviceId: offer.serviceId } : {}), ...(date ? { date } : {}), nonce: newHandle() }));
+      return sendHtml(res, 200, bookingPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, ...(offer.serviceId ? { serviceId: offer.serviceId } : {}), ...(date ? { date } : {}), nonce: newHandle(), ...(pages ? { pages } : {}) }));
     }
     if (rest === "/book" && method === "POST") {
       if (!sameOrigin(req, shop)) return sendHtml(res, 403, "<!doctype html><p>Forms from another site are refused.</p>");
@@ -190,7 +216,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       const service = form.get("service") ?? "";
       const again = async (error: string, status: number) => {
         const offer = await shop.backend.offer({ serviceId: service, days: 7 });
-        return sendHtml(res, status, bookingPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, serviceId: service, error, values: { name: form.get("name") ?? "", phone: form.get("phone") ?? "" }, nonce: newHandle() }));
+        return sendHtml(res, status, bookingPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, serviceId: service, error, values: { name: form.get("name") ?? "", phone: form.get("phone") ?? "" }, nonce: newHandle(), ...(pages ? { pages } : {}) }));
       };
       if (!limiter.take("book", address) || !limiter.take("shopStarts", `shop:${name}`)) return again(PAGE[language].tooMany, 429);
       // the same form sent twice (a double tap) is the same booking: its handle comes from the form's nonce and what it asks for
@@ -238,7 +264,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
   //   GET  /o/<token>/api/v1/state        the state as JSON    POST /o/<token>/api/v1/answer    the same answer as JSON: {"result": "done" | "changed" | ...}
 
   /** What waits for the owner: the runtime's asks and marks, and the relay's Guard-held refunds, in one list, each with where its answer goes. Null: the link is not valid. */
-  async function ownerState(shop: FrontShop, token: string) {
+  async function ownerState(shop: FrontShop, token: OwnerCred) {
     const view = await shop.backend.owner(token);
     if (!view) return null;
     let relayAsks: Awaited<ReturnType<RelayBackend["asks"]>> = [];
@@ -248,7 +274,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
 
   type OwnerResult = "done" | "sent" | "changed" | "expired" | "error" | "denied_link";
   /** One answer, to the authority it belongs to. The result names what happened; nothing is done unless the authority found exactly what was shown. */
-  async function ownerAnswer(shop: FrontShop, token: string, state: NonNullable<Awaited<ReturnType<typeof ownerState>>>, a: { source?: unknown; action?: unknown; case?: unknown; digest?: unknown }): Promise<OwnerResult> {
+  async function ownerAnswer(shop: FrontShop, token: OwnerCred, state: NonNullable<Awaited<ReturnType<typeof ownerState>>>, a: { source?: unknown; action?: unknown; case?: unknown; digest?: unknown }): Promise<OwnerResult> {
     const action = typeof a.action === "string" ? a.action : ""; const theCase = typeof a.case === "string" ? a.case : ""; const digest = typeof a.digest === "string" ? a.digest : "";
     if (!/^[0-9a-f]{32}$/u.test(digest)) return "changed";
     try {
@@ -281,15 +307,25 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     upcoming: state.view.upcoming,
   });
 
-  async function ownerRoute(req: IncomingMessage, res: ServerResponse, url: URL, shop: FrontShop, token: string, sub: string, address: string): Promise<void> {
+  /**
+   * One request of the owner's page, for a credential at a base: the panel-made link at /o/<token> (item 11d), or (item 11f) a session at <base>/owner, whose every
+   * POST must also carry the session's form token (`csrf`) and whose end (`onGone`) sends the owner back to sign in.
+   */
+  async function ownerRoute(req: IncomingMessage, res: ServerResponse, url: URL, shop: FrontShop, sub: string, address: string, o: { cred: OwnerCred; base: string; csrf?: string; signOut?: { action: string; label: string }; onGone?: () => void }): Promise<void> {
     const method = req.method ?? "GET";
-    const base = `${shop.publicUrl}/o/${token}`;
+    const token = o.cred;
+    const base = o.base;
     const json = sub.startsWith("/api/");
     const fallback: Language = (LANGUAGES.includes(url.searchParams.get("lang") as Language) ? url.searchParams.get("lang") : "en") as Language;
-    const gone = () => { limiter.take("wrong", address); return json ? sendJson(res, 403, { error: { code: "denied_link", message: OWNER.en.result.denied_link } }) : sendHtml(res, 403, ownerLinkGone(fallback), { "x-robots-tag": "noindex" }); };
+    const gone = () => {
+      if (o.onGone) return o.onGone(); // a session that ended is not a guess: no wrong count, back to sign in
+      limiter.take("wrong", address); return json ? sendJson(res, 403, { error: { code: "denied_link", message: OWNER.en.result.denied_link } }) : sendHtml(res, 403, ownerLinkGone(fallback), { "x-robots-tag": "noindex" });
+    };
     const slow = (retry: string) => (json ? sendJson(res, 429, { error: { code: "too_many", message: PAGE.en.tooMany } }, { "retry-after": retry }) : sendHtml(res, 429, `<!doctype html><meta charset="utf-8"><p>${PAGE.en.tooMany}</p>`, { "retry-after": retry }));
     if (limiter.over("wrong", address)) return slow("3600");
-    if (!OWNER_TOKEN.test(token)) return gone();
+    if (typeof token === "string" && !OWNER_TOKEN.test(token)) return gone();
+    /** A signed-in owner's POST must carry the session's form token; the panel's link is its own secret and needs none. */
+    const csrfOk = (given: unknown) => o.csrf === undefined || (typeof token === "object" && "session" in token && csrfMatches(token.session, given));
     const routes: Record<string, string> = { "": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST" };
     if (routes[sub] === undefined) return json ? sendJson(res, 404, { error: { code: "not_found", message: "GET /api/v1/state or POST /api/v1/answer." } }) : sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
     if (routes[sub] !== method) return json ? sendJson(res, 405, { error: { code: "bad_request", message: `Use ${routes[sub]} here.` } }, { allow: routes[sub] }) : sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: routes[sub] });
@@ -307,17 +343,19 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       let body: Record<string, unknown> | undefined;
       try { const text = await readBody(req, MAX_FORM); body = text === undefined ? undefined : JSON.parse(text) as Record<string, unknown>; } catch { body = undefined; }
       if (!body || typeof body !== "object") return sendJson(res, 400, { error: { code: "bad_request", message: 'Send {"source", "action", "case", "digest"} as the state gave them.' } });
+      if (!csrfOk(req.headers[CSRF_HEADER])) return sendJson(res, 403, { error: { code: "bad_request", message: `Send the session's form token in ${CSRF_HEADER}.` } });
       const result = await ownerAnswer(shop, token, state, body);
       return sendJson(res, result === "denied_link" ? 403 : 200, { result });
     }
     if (sub === "/answer") {
       const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
+      if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
       const result = await ownerAnswer(shop, token, state, { source: form.get("source"), action: form.get("action"), case: form.get("case"), digest: form.get("digest") });
       return redirect(res, `${base}?lang=${language}&n=${result}`);
     }
     const n = url.searchParams.get("n");
     const notice = n && n in w.result ? w.result[n as keyof typeof w.result] : undefined;
-    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(notice ? { notice } : {}) }), { "x-robots-tag": "noindex" });
+    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}) }), { "x-robots-tag": "noindex" });
   }
 
   return (req, res) => {

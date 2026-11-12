@@ -12,6 +12,7 @@ import type { Handler } from "../lib/router.ts";
 import { frontHandler } from "../../modules/channels/front.ts";
 import type { FrontShop } from "../../modules/channels/front.ts";
 import { relayBackend, runtimeBackend } from "../../modules/channels/backend.ts";
+import { PAGES_FILE, pagesReader } from "../../modules/channels/pages-file.ts";
 
 export interface InboxShopConfig {
   /** An agent someone else wrote has no runtime: its WhatsApp webhooks are checked here, the owner's replies kept, and the rest passed on to `forwardTo` (agent/inbox.ts). */
@@ -82,7 +83,9 @@ export function loadFront(config: { shops: Record<string, InboxShopConfig> }, re
     const token = read(`${c.secretsDir}/channel_token`);
     if (!token) { log(`${name}: no channel_token in ${c.secretsDir}, so its booking page is off until its next deploy.`); continue; }
     const relayToken = c.relayUrl ? read(`${c.secretsDir}/relay_token`) : undefined;
-    shops[name] = { publicUrl: c.channel.publicUrl, backend: runtimeBackend({ url: c.runtimeUrl, token }), ...(c.relayUrl && relayToken ? { relay: relayBackend({ url: c.relayUrl, token: relayToken }) } : {}) };
+    // item 11f: the shop's page addresses (its slug on the pages domain, the stable page address, the WhatsApp number), written by the deployer beside its
+    // secrets (lib/pages.ts) and read on every request, so a new slug takes effect without a restart
+    shops[name] = { publicUrl: c.channel.publicUrl, backend: runtimeBackend({ url: c.runtimeUrl, token }), ...(c.relayUrl && relayToken ? { relay: relayBackend({ url: c.relayUrl, token: relayToken }) } : {}), pages: pagesReader(`${c.secretsDir}/${PAGES_FILE}`) };
   }
   if (Object.keys(shops).length === 0) return undefined;
   // behind Caddy: the visitor's address is the last X-Forwarded-For entry Caddy adds
