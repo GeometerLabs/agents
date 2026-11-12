@@ -21,7 +21,7 @@ import { readFileSync } from "node:fs";
 const RATE = { sttInrPerMinute: 0.6 };
 const SECONDS = 12;
 
-function voiceWorld(o: { transcript?: { text: string; language: "hi" | "en" | "ml" | "kn" | null; confidence: number | null }; ai?: import("../../../../modules/understanding/ai-state.ts").AiPolicy; bytes?: Uint8Array } = {}) {
+function voiceWorld(o: { transcript?: { text: string; language: "hi" | "en" | "ml" | "kn" | null; confidence: number | null }; ai?: import("../../../../modules/understanding/ai-state.ts").AiPolicy; bytes?: Uint8Array; settings?: import("../src/settings.ts").Settings } = {}) {
   const speech = scriptedSpeech({ transcript: o.transcript ?? { text: "hello", language: "en", confidence: 0.94 } });
   const lookup = scriptedWire({ "/v26.0/MEDIA1": { json: { url: "https://media.stand-in/audio?mid=1", mime_type: "audio/ogg; codecs=opus", file_size: "300" } } });
   const download = scriptedWire({ "/audio": { bytes: o.bytes ?? fakeVoiceNote(SECONDS), contentType: "audio/ogg" } });
@@ -30,7 +30,7 @@ function voiceWorld(o: { transcript?: { text: string; language: "hi" | "en" | "m
     provider: speech, media: { lookup, download, version: "v26.0", downloadHosts: ["media.stand-in"] }, rate: RATE, languages: ["hi", "en", "ml", "kn"],
     clock: { now: () => world!.clock.now() },
   });
-  world = createWorld({ voice, ...(o.ai ? { ai: o.ai } : {}) });
+  world = createWorld({ voice, ...(o.ai ? { ai: o.ai } : {}), ...(o.settings ? { settings: o.settings } : {}) });
   return { w: world, speech, lookup, download };
 }
 /** The customer sends a voice note: the message the inbox would forward (voice on: it carries where the audio is). */
@@ -165,3 +165,59 @@ test("a voice note that says 'I paid' on a UPI shop is recorded as voice, with i
   assert.equal(summarizeUsage(world.record.entries(), {}).modelMicroInr >= sttCostMicroInr(RATE, SECONDS), true);
 });
 
+
+// ---- the owner's voice notes with the shop's assistant (B29 with item 11e) ----------------------------------------------------------------------------------
+const withAssistant = () => parseSettings({ ...JSON.parse(readFileSync(new URL("../settings/glow-salon.example.json", import.meta.url), "utf8")), assistant: {} });
+
+test("with the assistant, the owner's voice note is heard and read like their typed words: \"close tomorrow\" closes the day; the cost is in the month's spend and on an owner_assistant line", async () => {
+  const { w, speech } = voiceWorld({ settings: withAssistant(), transcript: { text: "close tomorrow", language: "en", confidence: 0.95 } });
+  await sendNote(w, w.owner);
+  assert.equal(speech.calls.length, 1, "the owner is listened to when the shop has the assistant");
+  assert.deepEqual(w.store.assistant?.closedDays, ["2026-11-04"], "the spoken words did what the typed words do");
+  assert.match(w.lastTextTo(w.owner), /^Closed Wed 4 Nov\./u, "the answer is text");
+  const listen = sttCostMicroInr(RATE, SECONDS);
+  const heard = w.record.entries().find((e) => e.action === "owner_assistant" && e.refs.intent === "voice_note")!;
+  assert.ok(heard, "the hearing is on an owner_assistant line");
+  assert.deepEqual([heard.outcome, heard.refs.via, heard.refs.costMicroInr, heard.refs.step], ["confirmed", "voice", String(listen), "rules"]);
+  assert.ok(!JSON.stringify(heard).includes("close tomorrow"), "the owner's words are not kept on the line");
+  assert.equal(w.store.ai!.costMicroInr, listen, "the month's AI spend has it");
+  assert.equal(w.store.ai!.speech!.notes, 1, "and the day's count of notes");
+  const usage = summarizeUsage(w.record.entries(), {});
+  assert.equal(usage.modelMicroInr, listen, "the cost meter counts it as the shop's AI spend");
+  assert.equal(usage.messages, 0, "an owner's note is never counted as a customer message");
+});
+
+test("a spoken fixed phrase goes through the fixed phrases first, and its cost is still on the owner_assistant line", async () => {
+  const { w } = voiceWorld({ settings: withAssistant(), transcript: { text: "today", language: "en", confidence: 0.95 } });
+  await sendNote(w, w.owner);
+  assert.equal(w.lastTextTo(w.owner), "No bookings today.", "the fixed \"today\" answered it");
+  assert.deepEqual(w.record.entries().filter((e) => e.action === "owner_assistant").map((e) => e.refs.intent), ["voice_note"], "the assistant did not read it: only the hearing is on its line");
+  assert.equal(summarizeUsage(w.record.entries(), {}).modelMicroInr, sttCostMicroInr(RATE, SECONDS));
+});
+
+test("the owner keeps the \"please type\" line, with no listening, when voice is off, when the assistant is off, and in button mode", async () => {
+  const line = TEMPLATES.en.voice_note({} as never);
+  // voice off, assistant on
+  const off = createWorld({ settings: withAssistant() });
+  await off.agent.handle({ kind: "message", message: off.messaging.receive(off.owner, "", { voiceNote: true, media: { id: "MEDIA1" } }) });
+  assert.equal(off.lastTextTo(off.owner), line);
+  // voice on, assistant off
+  const plain = voiceWorld();
+  await sendNote(plain.w, plain.w.owner);
+  assert.equal(plain.speech.calls.length, 0);
+  assert.equal(plain.w.lastTextTo(plain.w.owner), line);
+  // button mode, with both on: voice is model spend, so it stops with the rest
+  const buttons = voiceWorld({ settings: withAssistant(), ai: { override: () => "buttons" } });
+  await sendNote(buttons.w, buttons.w.owner);
+  assert.equal(buttons.speech.calls.length, 0);
+  assert.equal(buttons.w.lastTextTo(buttons.w.owner), line);
+});
+
+test("an owner's note that cannot be made out: they are asked to type it, and the call made is counted", async () => {
+  const { w, speech } = voiceWorld({ settings: withAssistant(), transcript: { text: "", language: "en", confidence: 0.2 } });
+  await sendNote(w, w.owner);
+  assert.equal(speech.calls.length, 1);
+  assert.equal(w.lastTextTo(w.owner), "I couldn't make out that voice note. Please type it.");
+  assert.deepEqual(w.store.assistant?.closedDays ?? [], []);
+  assert.equal(summarizeUsage(w.record.entries(), {}).modelMicroInr, sttCostMicroInr(RATE, SECONDS));
+});

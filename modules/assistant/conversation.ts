@@ -21,6 +21,8 @@ import type { Language } from "../language/languages.ts";
 import { createSay } from "../messaging/say.ts";
 import type { SayArgs } from "../messaging/say.ts";
 import type { InboundMessage, Messaging } from "../messaging/messaging.ts";
+import type { Heard } from "../voice/voice.ts";
+import { failedMarks, voiceMarks } from "../voice/turn.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { Outcome, RecordEntry } from "../record/record.ts";
 import { actionDigest, cardButtonId, cardByCode, cardById, cardHasNo, closeCard, expireCards, judgeCard, makeCard, openCards, parseCardReply, refusedBefore } from "./cards.ts";
@@ -82,10 +84,11 @@ export interface AssistantDeps {
   languageOf(phone: string): Language;
   optedOut(phone: string): boolean;
   /**
-   * The owner's voice note as words, through the voice notes job's service (modules/voice, `hear`). Left out: an owner's voice note gets the line asking to type, as
-   * before. The structure is the voice service's own, so it is handed in as it is.
+   * The owner's voice note as words: the shop's voice service through the agent's shared listener (modules/voice/turn.ts createListener), so the owner's notes are
+   * counted against the same day's limit and the month's AI spend as a customer's, and are not listened to in button mode or out of allowance (null: not tried).
+   * Left out (voice off for the shop): an owner's voice note gets the line asking to type, as before.
    */
-  hearing?: { hear(ref: unknown): Promise<{ ok: true; text: string; costMicroInr: number } | { ok: false; reason: string; costMicroInr: number }> };
+  hearing?: { hear(msg: InboundMessage): Promise<Heard | null> };
 }
 
 /** Everything a message to say carries here: the words, already written for the language say() picks (the owner's, or the customer's). */
@@ -499,10 +502,18 @@ export function createAssistant(deps: AssistantDeps) {
    * The owner's voice note as words, or null (no voice service for the owner, or the note could not be made out: the owner is then told to type it). The caller reads
    * the words as the owner's typed message. The audio is never kept; what it cost is the voice service's to count (modules/voice).
    */
-  async function hearOwner(msg: InboundMessage & { media?: unknown }): Promise<InboundMessage | null> {
-    if (!deps.hearing || msg.media === undefined) return null;
-    const heard = await deps.hearing.hear(msg.media);
-    if (!heard.ok) { logLine(null, ASSISTANT_ACTIONS.read, "blocked", { voiceNote: true }, { voice: heard.reason }, "the owner's voice note could not be made out"); await tell("voice_unheard", {}); return { ...msg, text: "" }; }
+  async function hearOwner(msg: InboundMessage): Promise<InboundMessage | null> {
+    if (!deps.hearing) return null;
+    const heard = await deps.hearing.hear(msg);
+    if (!heard) return null; // not listened to (no audio reference, button mode, no AI allowance left): the caller asks the owner to type, as before
+    // What listening cost goes on an owner_assistant line now, whatever the words turn out to be (a fixed phrase such as "today" never reaches the read line below),
+    // in the shape the cost meter prices (a rules read whose cost is the speech's: bundle/lib/usage.ts understandingOf). The listener already added it to the month's AI spend.
+    if (!heard.ok) {
+      logLine(null, ASSISTANT_ACTIONS.read, "confirmed", { voiceNote: true }, { intent: "voice_note", ...failedMarks(heard) }, "the owner's voice note could not be made out; they were asked to type it, and the audio was not kept");
+      await tell("voice_unheard", {});
+      return { ...msg, text: "" };
+    }
+    logLine(null, ASSISTANT_ACTIONS.read, "confirmed", { voiceNote: true }, { intent: "voice_note", ...voiceMarks(heard), ...speechRead(heard) }, "the owner's voice note, heard as words; they go on as if typed (the fixed phrases first, then the assistant), and the audio was not kept");
     return { id: msg.id, from: msg.from, text: heard.text, timestamp: msg.timestamp };
   }
 
@@ -520,6 +531,10 @@ export function createAssistant(deps: AssistantDeps) {
   return { onOwnerMessage, onPageCard, onPageMessage, hearOwner, onTick, mood, kinds: context.kinds };
 }
 export type Assistant = ReturnType<typeof createAssistant>;
+
+/** A heard note's cost as the cost meter prices a line: a rules read (no model tokens) whose cost is the speech's (bundle/lib/usage.ts understandingOf). */
+export const speechRead = (h: Extract<Heard, { ok: true }>): Record<string, string> =>
+  ({ step: "rules", provider: h.provider, model: h.model, inputTokens: "0", outputTokens: "0", costMicroInr: String(h.costMicroInr) });
 
 /** The shop's mood from its skills' reads, the assistant's cards and closed days, and the clock; and the sticker for it. Pure: the owner's app and the morning line call it. */
 export function shopMood(skills: readonly OwnerSkill[], state: AssistantState | undefined, nowMs: number, timeZone: string, settings: AssistantSettings): { mood: Mood; sticker: string } {
