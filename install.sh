@@ -218,6 +218,16 @@ with_docker() {
 
 # ---- Node ------------------------------------------------------------------------------------------------------------------------------------------------
 
+# nodejs.org's Linux builds of Node load libatomic.so.1 when they start. A minimal Ubuntu (the ubuntu:24.04 image, a slim cloud image) does not have it, and Node
+# then stops at once: "error while loading shared libraries: libatomic.so.1" (found by bundle/test/proof/install-in-container.sh, 12 Nov 2026). It comes from
+# Ubuntu's own archive, only when the system's library list does not show it already.
+need_libatomic() {
+  if ldconfig -p 2>/dev/null | grep -q 'libatomic\.so\.1 '; then return 0; fi
+  step "Installing libatomic1 from Ubuntu (Node needs it to start)"
+  as_root apt-get update -qq
+  as_root apt-get install -y -qq --no-install-recommends libatomic1
+}
+
 # Node from nodejs.org, the version release.json pins, checked twice: against release.json's sha256 (from this copy of the repository) and against the
 # SHASUMS256.txt nodejs.org publishes for that version. A Node 26 or newer already on the PATH is used as it is.
 install_node() {
@@ -242,6 +252,7 @@ install_node() {
     grep -qx "$want  $file" "$tmp/SHASUMS256.txt" || die "nodejs.org's SHASUMS256.txt does not list $want for $file. Nothing was installed."
     say "Node's download: sha256 $got, the one release.json pins and nodejs.org publishes."
   fi
+  need_libatomic
   as_root mkdir -p /usr/local/lib/nodejs
   as_root tar -xJf "$tmp/$file" -C /usr/local/lib/nodejs --no-same-owner
   as_root ln -sfn "/usr/local/lib/nodejs/node-v$version-linux-$NODE_ARCH/bin/node" /usr/local/bin/node
