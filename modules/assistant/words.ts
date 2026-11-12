@@ -54,7 +54,7 @@ export interface MessageData {
   open_list: { rows: OpenRow[] };
   waiting_head: { count: number };
   money_in: { date: LocalDate; paise: number; payments: number };
-  closed: { date: LocalDate; asked: number };
+  closed: { date: LocalDate; booked: number; missed: { case: string; who: string }[] };
   already_closed: { date: LocalDate };
   weekday_closed: { date: LocalDate };
   not_closed: { date: LocalDate };
@@ -286,7 +286,7 @@ const W: Record<Language, Words> = {
     open_list: (d, w) => (d.rows.length === 0 ? "No orders are open." : `Open orders: ${w.n(d.rows.length)}\n${d.rows.slice(0, LIST_ROWS).map((r) => openRow(w, r)).join("\n")}${more(w, d.rows.length, MORE)}`),
     waiting_head: (d, w) => (d.count === 0 ? "Nothing needs you right now." : `Things that need you: ${w.n(d.count)}. Each one is below.`),
     money_in: (d, w) => (d.payments === 0 ? `Nothing recorded on ${w.date(d.date)} yet.` : `Recorded on ${w.date(d.date)}: ${w.inr(d.paise)} from payments: ${w.n(d.payments)}.`),
-    closed: (d, w) => `Closed ${w.date(d.date)}. ${d.asked === 0 ? "No bookings that day." : `Bookings that day: ${w.n(d.asked)}. I've asked them to pick another day.`} Reply undo to open it again.`,
+    closed: (d, w) => `Closed ${w.date(d.date)}. ${d.booked === 0 ? "No bookings that day." : `Bookings that day: ${w.n(d.booked)}. I've asked them to pick another day.`}${d.missed.length > 0 ? ` I could not reach these, please call them: ${d.missed.map((m) => `${w.lit(m.case)} (${w.lit(m.who)})`).join(", ")}.` : ""} Reply undo to open it again.`,
     already_closed: (d, w) => `${w.date(d.date)} is already closed.`,
     weekday_closed: (d, w) => `The shop is always closed on that weekday (${w.date(d.date)}). Your opening hours are set by your partner.`,
     not_closed: (d, w) => `${w.date(d.date)} is not closed.`,
@@ -322,7 +322,7 @@ const W: Record<Language, Words> = {
     open_list: (d, w) => (d.rows.length === 0 ? "कोई ऑर्डर खुला नहीं है।" : `खुले ऑर्डर: ${w.n(d.rows.length)}\n${d.rows.slice(0, LIST_ROWS).map((r) => openRow(w, r)).join("\n")}${more(w, d.rows.length, MORE)}`),
     waiting_head: (d, w) => (d.count === 0 ? "अभी आपके लिए कुछ बाकी नहीं है।" : `आपके लिए बाकी काम: ${w.n(d.count)}। हर एक नीचे है।`),
     money_in: (d, w) => (d.payments === 0 ? `${w.date(d.date)} को अभी कुछ दर्ज नहीं हुआ।` : `${w.date(d.date)} को दर्ज: ${w.inr(d.paise)}, भुगतान: ${w.n(d.payments)}।`),
-    closed: (d, w) => `${w.date(d.date)} बंद कर दिया। ${d.asked === 0 ? "उस दिन कोई बुकिंग नहीं।" : `उस दिन की बुकिंग: ${w.n(d.asked)}। मैंने उनसे दूसरा दिन चुनने को कहा है।`} फिर से खोलने के लिए undo लिखें।`,
+    closed: (d, w) => `${w.date(d.date)} बंद कर दिया। ${d.booked === 0 ? "उस दिन कोई बुकिंग नहीं।" : `उस दिन की बुकिंग: ${w.n(d.booked)}। मैंने उनसे दूसरा दिन चुनने को कहा है।`}${d.missed.length > 0 ? ` इन तक मैसेज नहीं पहुँचा, कृपया इन्हें फ़ोन करें: ${d.missed.map((m) => `${w.lit(m.case)} (${w.lit(m.who)})`).join(", ")}.` : ""} फिर से खोलने के लिए undo लिखें।`,
     already_closed: (d, w) => `${w.date(d.date)} पहले से बंद है।`,
     weekday_closed: (d, w) => `उस दिन (${w.date(d.date)}) दुकान हमेशा बंद रहती है। आपके खुलने का समय आपका पार्टनर तय करता है।`,
     not_closed: (d, w) => `${w.date(d.date)} बंद नहीं है।`,
@@ -358,7 +358,7 @@ const W: Record<Language, Words> = {
     open_list: (d, w) => (d.rows.length === 0 ? "തുറന്ന ഓർഡറുകൾ ഇല്ല." : `തുറന്ന ഓർഡറുകൾ: ${w.n(d.rows.length)}\n${d.rows.slice(0, LIST_ROWS).map((r) => openRow(w, r)).join("\n")}${more(w, d.rows.length, MORE)}`),
     waiting_head: (d, w) => (d.count === 0 ? "ഇപ്പോൾ നിങ്ങൾക്കായി ഒന്നും കാത്തിരിക്കുന്നില്ല." : `നിങ്ങൾക്കായി കാത്തിരിക്കുന്നവ: ${w.n(d.count)}. ഓരോന്നും താഴെ.`),
     money_in: (d, w) => (d.payments === 0 ? `${w.date(d.date)}-ന് ഇതുവരെ ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല.` : `${w.date(d.date)}-ന് രേഖപ്പെടുത്തിയത്: ${w.inr(d.paise)}, പേയ്മെന്റുകൾ: ${w.n(d.payments)}.`),
-    closed: (d, w) => `${w.date(d.date)} അടച്ചു. ${d.asked === 0 ? "ആ ദിവസം ബുക്കിംഗുകൾ ഇല്ല." : `ആ ദിവസത്തെ ബുക്കിംഗുകൾ: ${w.n(d.asked)}. മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കാൻ ഞാൻ അവരോട് പറഞ്ഞു.`} വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക.`,
+    closed: (d, w) => `${w.date(d.date)} അടച്ചു. ${d.booked === 0 ? "ആ ദിവസം ബുക്കിംഗുകൾ ഇല്ല." : `ആ ദിവസത്തെ ബുക്കിംഗുകൾ: ${w.n(d.booked)}. മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കാൻ ഞാൻ അവരോട് പറഞ്ഞു.`}${d.missed.length > 0 ? ` ഇവരെ എനിക്ക് എത്തിക്കാനായില്ല, ദയവായി വിളിക്കുക: ${d.missed.map((m) => `${w.lit(m.case)} (${w.lit(m.who)})`).join(", ")}.` : ""} വീണ്ടും തുറക്കാൻ undo എന്ന് മറുപടി നൽകുക.`,
     already_closed: (d, w) => `${w.date(d.date)} ഇതിനകം അടച്ചിരിക്കുന്നു.`,
     weekday_closed: (d, w) => `ആ ആഴ്ചദിവസം (${w.date(d.date)}) കട എപ്പോഴും അടച്ചിരിക്കും. പ്രവർത്തന സമയം നിങ്ങളുടെ പാർട്ണറാണ് നിശ്ചയിക്കുന്നത്.`,
     not_closed: (d, w) => `${w.date(d.date)} അടച്ചിട്ടില്ല.`,
@@ -394,7 +394,7 @@ const W: Record<Language, Words> = {
     open_list: (d, w) => (d.rows.length === 0 ? "ಯಾವುದೇ ಆರ್ಡರ್ ತೆರೆದಿಲ್ಲ." : `ತೆರೆದ ಆರ್ಡರ್‌ಗಳು: ${w.n(d.rows.length)}\n${d.rows.slice(0, LIST_ROWS).map((r) => openRow(w, r)).join("\n")}${more(w, d.rows.length, MORE)}`),
     waiting_head: (d, w) => (d.count === 0 ? "ಈಗ ನಿಮಗಾಗಿ ಏನೂ ಕಾಯುತ್ತಿಲ್ಲ." : `ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವವು: ${w.n(d.count)}. ಪ್ರತಿಯೊಂದೂ ಕೆಳಗಿದೆ.`),
     money_in: (d, w) => (d.payments === 0 ? `${w.date(d.date)} ರಂದು ಇನ್ನೂ ಏನೂ ದಾಖಲಾಗಿಲ್ಲ.` : `${w.date(d.date)} ರಂದು ದಾಖಲಾದದ್ದು: ${w.inr(d.paise)}, ಪಾವತಿಗಳು: ${w.n(d.payments)}.`),
-    closed: (d, w) => `${w.date(d.date)} ಮುಚ್ಚಲಾಗಿದೆ. ${d.asked === 0 ? "ಆ ದಿನ ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ." : `ಆ ದಿನದ ಬುಕಿಂಗ್‌ಗಳು: ${w.n(d.asked)}. ಬೇರೆ ದಿನ ಆರಿಸಲು ಅವರನ್ನು ಕೇಳಿದ್ದೇನೆ.`} ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ.`,
+    closed: (d, w) => `${w.date(d.date)} ಮುಚ್ಚಲಾಗಿದೆ. ${d.booked === 0 ? "ಆ ದಿನ ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ." : `ಆ ದಿನದ ಬುಕಿಂಗ್‌ಗಳು: ${w.n(d.booked)}. ಬೇರೆ ದಿನ ಆರಿಸಲು ಅವರನ್ನು ಕೇಳಿದ್ದೇನೆ.`}${d.missed.length > 0 ? ` ಇವರನ್ನು ತಲುಪಲಾಗಲಿಲ್ಲ, ದಯವಿಟ್ಟು ಕರೆ ಮಾಡಿ: ${d.missed.map((m) => `${w.lit(m.case)} (${w.lit(m.who)})`).join(", ")}.` : ""} ಮತ್ತೆ ತೆರೆಯಲು undo ಎಂದು ಉತ್ತರಿಸಿ.`,
     already_closed: (d, w) => `${w.date(d.date)} ಈಗಾಗಲೇ ಮುಚ್ಚಿದೆ.`,
     weekday_closed: (d, w) => `ಆ ವಾರದ ದಿನ (${w.date(d.date)}) ಅಂಗಡಿ ಯಾವಾಗಲೂ ಮುಚ್ಚಿರುತ್ತದೆ. ತೆರೆಯುವ ಸಮಯವನ್ನು ನಿಮ್ಮ ಪಾರ್ಟ್‌ನರ್ ನಿಗದಿಪಡಿಸುತ್ತಾರೆ.`,
     not_closed: (d, w) => `${w.date(d.date)} ಮುಚ್ಚಿಲ್ಲ.`,

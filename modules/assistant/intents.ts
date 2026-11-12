@@ -96,6 +96,14 @@ export function readOwnerRules(text: string, context: OwnerContext): OwnerIntent
   const script = languageOfScript(text);
   const language: Language | undefined = script === "en" ? undefined : script; // Latin letters may be English or Hindi typed in Latin letters: not clear
   const base = { ...(language ? { language } : {}), ...(date ? { date } : {}), ...(time ? { time } : {}), ...(ref ? { ref } : {}) };
+  // A message to a customer is the owner's words to pass on, whatever they say: "message b-1 sorry, we are closed tomorrow" must never close tomorrow, and "tell b-1
+  // we can move you to 5pm" must never move the booking. So when the message command is the FIRST command word and a customer is named, it is a message (shown on
+  // a card before anything is sent), and the other kinds' words in its body are not read. "cancel b-14 and tell her" still starts with cancel.
+  if (ref) {
+    const first = (re: RegExp) => { const m = re.exec(withoutRef); return m ? m.index : Infinity; };
+    const at = first(KIND_RES.find(([k]) => k === "message")![1]);
+    if (at !== Infinity && KIND_RES.every(([k, re]) => k === "message" || first(re) > at)) { const words = messageWords(text, ref); return { kind: "message", ...base, ...(words ? { words } : {}) }; }
+  }
   for (const [kind, re] of KIND_RES) {
     if (!re.test(withoutRef)) continue;
     // A message is only a message to a customer when it names one: "बताओ कल की बुकिंग" (tell me tomorrow's bookings) is a question, not something to send.

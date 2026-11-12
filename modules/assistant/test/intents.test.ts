@@ -42,6 +42,14 @@ test("acts, in four languages, with the values read from the words", () => {
   assert.equal(kind("help"), "help");
 });
 
+test("a message's own words never act: closing, moving, cancelling or refunding words inside it are the owner's words to send", () => {
+  for (const text of ["message b-1 sorry, we are closed tomorrow", "message b-1 can we move you to 5pm?", "tell b-1 please cancel if you can't come", "b-1 ko bolo refund kal milega", "message b-1 help is on the way"]) {
+    assert.equal(kind(text), "message", text);
+  }
+  assert.equal(readOwnerRules("message b-1 sorry, we are closed tomorrow", ALL).words, "sorry, we are closed tomorrow");
+  assert.equal(kind("cancel b-14 and tell her"), "cancel", "a command that comes first is that command");
+});
+
 test("'tell me tomorrow's bookings' is a question: a message needs a customer's reference", () => {
   assert.equal(kind("बताओ कल की बुकिंग"), "day");
   assert.equal(kind("tell me tomorrow's bookings"), "day");

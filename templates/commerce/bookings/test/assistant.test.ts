@@ -196,6 +196,42 @@ test("what needs me: a late refund waiting comes as a card, and its tap is the o
   assert.equal(w.payments.refunds().length, 1);
 });
 
+test("Refuse on something waiting is the owner's own deny: it stops waiting and the customer hears the answer", async () => {
+  const w = withAssistant();
+  await bookAndPay(w);
+  await w.advance(10 * 60);
+  await w.say("cancel my booking");
+  await owner(w, "what needs me");
+  await tapOwner(w, lastCard(w).no!);
+  assert.ok(w.record.entries().some((e) => e.action === "owner_decision" && e.outcome === "confirmed" && e.refs.command === "deny"), "the deny was sent");
+  assert.equal(w.store.bookings.get("b-1")!.pending.length, 0, "nothing waits any more");
+  assert.equal(w.payments.refunds().length, 0);
+  await owner(w, "what needs me");
+  assert.equal(w.lastTextTo(w.owner), "Nothing needs you right now.");
+});
+
+test("a cancel refunds exactly what its card showed, after part of the deposit already went back", async () => {
+  const w = withAssistant();
+  await bookAndPay(w);
+  w.record.append({ conversation: CUSTOMER, booking: "b-1", action: "refund", outcome: "confirmed", inputs: {}, language: "en", refs: { paymentId: w.store.bookings.get("b-1")!.depositPaymentId!, amountPaise: "10000" } });
+  await owner(w, "cancel b-1");
+  const card = lastCard(w);
+  assert.match(card.text, /and refund the ₹100 deposit\?/u);
+  await tapOwner(w, card.yes);
+  assert.deepEqual(w.payments.refunds().map((r) => r.amount), [10_000], "not the whole ₹200");
+});
+
+test("closing a day names the customers the message could not reach, so the owner can call them", async () => {
+  const w = withAssistant();
+  await bookAndPay(w);
+  await w.say("haircut tomorrow at 4pm", { from: OTHER_CUSTOMER });
+  w.payments.customerPays(w.linkFor("b-2")!.id);
+  await w.deliverPaymentEvents();
+  await w.say("STOP", { from: OTHER_CUSTOMER });
+  await owner(w, "close tomorrow");
+  assert.equal(w.lastTextTo(w.owner), "Closed Wed 4 Nov. Bookings that day: 2. I've asked them to pick another day. I could not reach these, please call them: b-2 (+919822222222). Reply undo to open it again.");
+});
+
 test("message a customer: a preview card, the owner's words as typed, and never an amount that is not on the booking", async () => {
   const w = withAssistant();
   await bookAndPay(w);
