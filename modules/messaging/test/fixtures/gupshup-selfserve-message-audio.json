@@ -1,0 +1,13 @@
+{
+  "app": "DemoApp",
+  "timestamp": 1580227766370,
+  "version": 2,
+  "type": "message",
+  "payload": {
+    "id": "ABEGkYaYVSEEAhAL3SLAWwHKeKrt6s3FKB0e",
+    "source": "919800000001",
+    "type": "audio",
+    "payload": { "url": "https://example.invalid/media/audio.ogg", "contentType": "audio/ogg; codecs=opus", "urlExpiry": 1580231366370 },
+    "sender": { "phone": "919800000001", "name": "CUSTOMER_NAME", "country_code": "91", "dial_code": "9800000001" }
+  }
+}

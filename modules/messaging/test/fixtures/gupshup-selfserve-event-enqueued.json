@@ -1,0 +1,2 @@
+{ "app": "DemoApp", "timestamp": 1580227766370, "version": 2, "type": "message-event",
+  "payload": { "id": "ee4a68a0-1203-4c85-8dc3-49d0b3226a35", "type": "enqueued", "destination": "919800000001", "payload": { "whatsappMessageId": "wamid.HBgMOTE5ODAwMDAwMDAxFQIAERgSQTBCMw==", "type": "session" } } }

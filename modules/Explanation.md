@@ -537,3 +537,35 @@ The report data has kept a person's settlement apart since follow-up 5 (`money.s
 ## Adding to a module later
 
 Move a feature here when a second template needs it, in two commits: first move the file and fix its imports (the hand check and tests must be unchanged), then cut the template's knowledge out of it. The files in this folder that began as Bookings files (`check.ts`, `interactive.ts`, `meta-templates.ts`, `router.ts`) show how.
+
+## WhatsApp through Gupshup's self-serve API, for a shop's own account (item 11c, 12 Nov)
+
+`messaging/gupshup-selfserve.ts`, `providers.ts`, `webhooks.ts` (the version 2 callbacks), `core/http.ts` (a form body); `inbox/server.ts` (the app-name check); `bundle/generate/guards.ts`, `bundle/panel/checks.ts`, `setup.ts`, `cost.ts`, `bundle/services/heartbeat.ts`.
+
+**Why this exists.** Decision 42: the pilot goes through Gupshup, but Gupshup's partner API (item 11b) needs Geometer to be a Meta Tech Provider, which needs a registered company, which comes after the pilot. So each pilot shop is Gupshup's own self-serve customer with its own app and API key, and the agent speaks the self-serve API. 11b's partner file stays for the day Geometer is a partner; Meta direct stays the default.
+
+**Which API, and why (read 12 Nov 2026).** I looked for a Meta-format (v3) send for self-serve apps first, as asked. Gupshup's own index (https://docs.gupshup.io/llms.txt) lists one v3 page, "Send MM Lite Messages (v3)": `POST https://api.gupshup.io/wa/app/{appId}/v3/marketing/msg`, "only supports marketing template" ([page](https://docs.gupshup.io/reference/send-mm-lite-messages-v3.md)); the earlier look found v3 for group text as well. Nothing covers one-to-one text, utility templates, buttons, lists, documents or images, so every type is mapped to the v1 self-serve API:
+
+| Our message | Gupshup self-serve | Source |
+|---|---|---|
+| text | `POST /wa/api/v1/msg`, form fields `channel=whatsapp`, `source`, `destination`, `src.name`, `message={"type":"text","text":...}` | [text](https://docs.gupshup.io/reference/session-text-message.md), [session messages](https://docs.gupshup.io/docs/session-messages) |
+| reply buttons (1 to 3) | `message={"type":"quick_reply","content":{"type":"text","text":...},"options":[{"title","postbackText"}]}` | [quick replies](https://docs.gupshup.io/reference/quick-replies.md) |
+| list | `message={"type":"list","title","body","msgid","globalButtons":[...],"items":[{"options":[{"type":"text","title","description","postbackText"}]}]}` | [list](https://docs.gupshup.io/reference/post_wa-api-v1-msg-1.md) |
+| document | `message={"type":"file","url","filename","caption"}` | [document](https://docs.gupshup.io/reference/post_wa-api-v1-msg-5.md) |
+| image | `message={"type":"image","originalUrl","previewUrl","caption"}` | [image](https://docs.gupshup.io/reference/post_wa-api-v1-msg-3.md) |
+| template | `POST /wa/api/v1/template/msg`, `template={"id":<Gupshup id>,"params":[...]}` | [template messages](https://docs.gupshup.io/docs/template-messages.md) |
+| template list | `GET /sm/api/v1/template/list/{appname}` or `GET /wa/app/{app_id}/template` | [by name](https://docs.gupshup.io/reference/getalltemplatesforanapp), [by id](https://docs.gupshup.io/reference/get-all-templates-for-an-app.md) |
+
+Every send answers `{ "status": "submitted", "messageId" }` and "is processed asynchronously", so the id is kept as "accepted" and the later message-event is what says delivered, read or failed. A session message after the 24-hour window is refused by the adapter itself, because Gupshup would take it and fail it afterwards.
+
+**What does not map one to one.**
+- **Template names.** We have Meta template names in four languages (`whatsapp-templates.json`); Gupshup sends by its own template id. The adapter fetches the app's list through the Guard, keeps it, and refreshes it (at most every 30 seconds) when a send names a template it does not know or one that was not approved. A template missing from the app, or not approved there yet, is refused with the app's name and the status Gupshup shows, before anything is sent. The list's language codes are matched as `hi`, `ml`, `kn`, `en` or `xx_YY`.
+- **Button and row ids.** Gupshup's quick-reply and list options have a title and a `postbackText`, no id. Our ids travel as `postbackText` and are read back from the callback. If a tapped reply arrives without one, its title is read as ordinary words (what the agent does with any typed answer).
+- **The list's header.** Gupshup requires a `title` and a `description` on every row; we have neither, so the title is the list's button label and a row without a description repeats its title. Gupshup also wants a `msgid`; the adapter makes one.
+- **The Meta phone number id.** A self-serve shop has none, so its number (digits) stands in as `phoneNumberId` in runtime.json and the inbox's config.
+- **The recipient field.** The licence's final stop reads the recipient from the call; Gupshup's field is `destination`, not `to`, so that Guard's `[licence]` says `recipient_field = "destination"`.
+- **Callbacks** are Gupshup's version 2 shape (`{app, timestamp, version: 2, type: "message" | "message-event", payload}`), not Meta's. The same two parsers read both (`isGupshupSelfServe`), so the inbox has one path. They are not signed: the inbox's path token is the check, plus the app name each callback names (`app`).
+
+**Where the key is.** Nowhere in this code. The adapter's base URL is the shop's WhatsApp Guard; the Guard's `[upstream_headers]` adds `apikey = ${file:/run/secrets/whatsapp_authorization}` (the shop's API key, handed in as `gupshup_apikey`). The Guard lists three routes (both sends are one operation, `send`, so the hourly cap and the final stop hold templates too, and the template list is `read_number`) and allows only the shop's own app name and number on a send and the app on the read.
+
+**The panel and the money.** The phone step offers "Gupshup (the shop's own account)": two links, a short checklist (add the partner as admin; add and approve our templates in the app), the app name and two write-only boxes (the API key and the secret word of the callback address). The connection check reads the app's template list and says only what that shows: the key and the app name go together, and how many of the listed templates are approved; it does not name the number or send. The shop's own Gupshup wallet pays Meta's charges and Gupshup's fee, so for such a shop the cost lines say "an estimate, paid from the shop's own Gupshup wallet, not from Geometer's balance", the builder's running-cost list shows no WhatsApp cost for it, and the heartbeat sends zero WhatsApp counts (the baseline still follows the real count), so fleet's WhatsApp pass-through bills nothing for it. Fleet needs no change for this; if fleet later wants to show "own wallet" instead of zero, the heartbeat would need a flag.
