@@ -13,6 +13,7 @@ import { createWire } from "./wire.ts";
 import type { Wire } from "./wire.ts";
 import { folderAudioHost } from "./links.ts";
 import { createVoice } from "./voice.ts";
+import { opusEncoder } from "./encode.ts";
 import type { VoiceService } from "./voice.ts";
 import type { SpeechRate } from "./speech.ts";
 
@@ -36,13 +37,15 @@ export interface SpeechConfig {
   rate: SpeechRate;
   /** Spoken replies. Default true; false keeps listening and answers in text only. */
   replies?: boolean;
+  /** The name or path of an Ogg Opus encoder program (`opusenc`). With it the reply is a real voice-note bubble; without, an MP3 audio message. See bundle/README.md "Voice notes". */
+  opusEncoder?: string;
   maxSeconds?: number;
   notesPerDay?: number;
   replyCharacters?: number;
   timeoutMs?: number;
 }
 
-const KEYS = ["provider", "baseUrl", "agentTokenFile", "media", "sttModel", "ttsModel", "speaker", "rate", "replies", "maxSeconds", "notesPerDay", "replyCharacters", "timeoutMs"];
+const KEYS = ["provider", "baseUrl", "agentTokenFile", "media", "sttModel", "ttsModel", "speaker", "rate", "replies", "opusEncoder", "maxSeconds", "notesPerDay", "replyCharacters", "timeoutMs"];
 const NO_KEY = "No key goes in runtime.json: the base URL is a Guard in front of the provider, and the Guard holds the key.";
 
 function httpUrl(v: unknown, what: string, errors: string[]): boolean {
@@ -75,6 +78,7 @@ export function readSpeech(raw: unknown, folder: string, errors: string[]): Spee
   if (!isObj(r) || Object.keys(r).some((k) => k !== "sttInrPerMinute" && k !== "ttsInrPer1000Characters") || !price(r.sttInrPerMinute) || !price(r.ttsInrPer1000Characters)) {
     errors.push('speech.rate is needed: {"sttInrPerMinute": <rupees>, "ttsInrPer1000Characters": <rupees>}, the provider\'s price as the builder reads it on their invoice or the provider\'s price page. Voice does not run without a price, because then its cost could not be counted.');
   }
+  if (raw.opusEncoder !== undefined && !(isText(raw.opusEncoder) && /^[A-Za-z0-9._/-]{1,100}$/u.test(raw.opusEncoder))) errors.push('speech.opusEncoder must be the name or path of the encoder program, like "opusenc" (letters, digits and . _ / - only; no arguments).');
   if (raw.replies !== undefined && typeof raw.replies !== "boolean") errors.push("speech.replies must be true or false (default true).");
   for (const [k, max] of [["maxSeconds", 120], ["notesPerDay", 100_000], ["replyCharacters", 2500], ["timeoutMs", 60_000]] as const) {
     if (raw[k] !== undefined && (!Number.isInteger(raw[k]) || (raw[k] as number) < 1 || (raw[k] as number) > max)) errors.push(`speech.${k} must be a whole number from 1 to ${max}.`);
@@ -92,7 +96,7 @@ export function readSpeech(raw: unknown, folder: string, errors: string[]): Spee
     },
     ...(raw.sttModel !== undefined ? { sttModel: raw.sttModel as string } : {}), ...(raw.ttsModel !== undefined ? { ttsModel: raw.ttsModel as string } : {}), ...(raw.speaker !== undefined ? { speaker: raw.speaker as string } : {}),
     rate: { sttInrPerMinute: rr.sttInrPerMinute, ttsInrPer1000Characters: rr.ttsInrPer1000Characters },
-    ...(raw.replies !== undefined ? { replies: raw.replies as boolean } : {}),
+    ...(raw.replies !== undefined ? { replies: raw.replies as boolean } : {}), ...(raw.opusEncoder !== undefined ? { opusEncoder: raw.opusEncoder as string } : {}),
     ...(raw.maxSeconds !== undefined ? { maxSeconds: raw.maxSeconds as number } : {}), ...(raw.notesPerDay !== undefined ? { notesPerDay: raw.notesPerDay as number } : {}),
     ...(raw.replyCharacters !== undefined ? { replyCharacters: raw.replyCharacters as number } : {}), ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}),
   };
@@ -106,9 +110,9 @@ const tokenOf = (file: string | undefined): string | undefined => (file ? readFi
 /** The voice service for a shop whose runtime.json has a `speech` block. `languages` are the shop's; `report` is where the spoken replies are served from. */
 export function buildVoice(c: SpeechConfig, deps: { clock: Clock; languages: readonly Language[]; report: { dir: string; baseUrl: string }; log: (line: string) => void }): VoiceService {
   const timeout = c.timeoutMs ?? 8_000;
-  const provider = createSarvam({ baseUrl: c.baseUrl, agentToken: tokenOf(c.agentTokenFile), sttModel: c.sttModel, ttsModel: c.ttsModel, speaker: c.speaker, timeoutMs: timeout });
+  const provider = createSarvam({ baseUrl: c.baseUrl, agentToken: tokenOf(c.agentTokenFile), sttModel: c.sttModel, ttsModel: c.ttsModel, speaker: c.speaker, timeoutMs: timeout, ...(c.opusEncoder ? { codec: "wav" as const } : {}) });
   return createVoice({
-    provider, rate: c.rate, languages: deps.languages.filter((l) => LANGUAGES.includes(l)), clock: deps.clock, repliesOn: c.replies !== false,
+    provider, rate: c.rate, languages: deps.languages.filter((l) => LANGUAGES.includes(l)), clock: deps.clock, repliesOn: c.replies !== false, ...(c.opusEncoder ? { encoder: opusEncoder(c.opusEncoder) } : {}),
     host: folderAudioHost({ dir: deps.report.dir, baseUrl: deps.report.baseUrl, log: deps.log }),
     media: {
       lookup: c.media.lookupBaseUrl ? createWire(c.media.lookupBaseUrl, "WhatsApp", timeout, tokenOf(c.media.agentTokenFile)) : NO_LOOKUP,

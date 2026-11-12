@@ -62,6 +62,7 @@ const WHEN: Record<TemplateId, string> = {
   big_order_denied: "The owner said no to a big order",
   didnt_understand: "The message was not understood",
   voice_note: "A voice note: it cannot be listened to yet, so they are asked to type",
+  voice_note_retry: "The customer sent a voice note and the shop has voice on, but it could not be made out (too long, unclear, or the day's limit): they are asked to type instead",
   ask_cancel: "The customer tapped Cancel order: are you sure (Yes / No buttons)",
   kept: "The customer said no to cancelling: the order stays",
   told_owner: "The customer tapped Talk to the owner: the owner has been asked to message them",

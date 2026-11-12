@@ -130,13 +130,31 @@ test("hear: every failure is an answer and the provider is not asked when it sho
   assert.ok(!gone.ok && gone.reason === "failed");
 });
 
-test("hear: the daily cap stops further calls", async () => {
+test("hear: the day's limit is read from the caller's saved count; at the limit nothing is asked of the provider", async () => {
   const t = build({ notesPerDay: 2 });
-  assert.equal((await t.voice.hear({ id: "MEDIA1" })).ok, true);
-  assert.equal((await t.voice.hear({ id: "MEDIA1" })).ok, true);
-  const third = await t.voice.hear({ id: "MEDIA1" });
+  assert.equal((await t.voice.hear({ id: "MEDIA1" }, { notesToday: 0 })).ok, true);
+  assert.equal((await t.voice.hear({ id: "MEDIA2" }, { notesToday: 1 })).ok, false, "MEDIA2 is not on the stand-in's table, so the fetch fails; the limit is not the reason");
+  const third = await t.voice.hear({ id: "MEDIA3" }, { notesToday: 2 });
   assert.ok(!third.ok && third.reason === "daily_cap");
-  assert.equal(t.speech.calls.length, 2);
+  assert.equal(t.speech.calls.length, 1);
+});
+
+test("hear and speak: the same note, or the same reply, asked again (a step run again after a Guard wait) is answered from memory with no second call and the same cost", async () => {
+  const t = build();
+  const first = await t.voice.hear({ id: "MEDIA1" });
+  const again = await t.voice.hear({ id: "MEDIA1" });
+  assert.deepEqual(again, first);
+  assert.equal(t.speech.calls.filter((c) => c.kind === "transcribe").length, 1);
+  assert.equal(t.m.lookup.requests.length, 1, "not even fetched twice");
+  const a = await t.voice.speak("Your booking is confirmed.", "en");
+  const b = await t.voice.speak("Your booking is confirmed.", "en");
+  assert.deepEqual(b, a);
+  assert.equal(t.speech.calls.filter((c) => c.kind === "synthesize").length, 1);
+  // a failed fetch is not remembered (it may be transient and cost nothing)
+  const failing = build();
+  assert.ok(!(await failing.voice.hear({ id: "NOPE" })).ok);
+  assert.ok(!(await failing.voice.hear({ id: "NOPE" })).ok);
+  assert.equal(failing.m.lookup.requests.length, 2);
 });
 
 test("speak: links and payment addresses are not spoken; replies off, a language the model cannot speak, or nothing left give null with no call", async () => {

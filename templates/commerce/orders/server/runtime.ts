@@ -28,6 +28,8 @@ export type { RefundCounts };
 export interface Services { payments: Payments; messaging: Messaging; /** A UPI shop: where its QR pictures go (modules/payments/owner-marked/qr-image.ts). Left out: the words alone. */ qrImage?: (text: string) => Promise<string | null> }
 
 export interface RuntimeOptions {
+  /** B29: the shop's voice service (modules/voice), built from runtime.json `speech`. Not one of `services`. Left out: voice is off. */
+  voice?: import("../../../../modules/voice/voice.ts").VoiceService;
   settings: Settings;
   store: DurableStore;
   clock: Clock;
@@ -95,7 +97,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     keepCounters: keepStoreCounters,
     compactStore: compactFinishedOrders,
     services: services as unknown as Record<string, unknown>,
-    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}) }),
+    createAgent: ({ store, record, services: watched }) => createAgent({ settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}) }),
     countCases: countByState,
     casesOf: (store) => store.orders.values(),
     refundContext(store, _settings, receipt) {

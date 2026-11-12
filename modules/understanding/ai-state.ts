@@ -51,7 +51,7 @@ export interface AiState {
    * Voice (plan B29): voice notes listened to and replies spoken this month, as counts. Their cost is in `costMicroInr` above, so the allowance and fleet's cap see it as
    * model spend and a runaway voice bill cannot hide. Left out until the first voice note (and in a store saved before it), so a shop with voice off saves the same bytes.
    */
-  speech?: { notes: number; replies: number };
+  speech?: { notes: number; replies: number; /** The shop's local day the `today` count is for, and how many notes were listened to that day: the day's limit survives a restart because it is kept here. */ day?: string; today?: number };
   /** Calls this month whose provider and model have no price in the table (their cost is not in the total). */
   unpriced: number;
   /** A model step failed: until this moment the agent reads with buttons and the rules only. */
@@ -118,9 +118,17 @@ export function stateFor(store: AiStore, nowMs: number, timeZone: string): AiSta
  */
 export function addSpeech(store: AiStore, nowMs: number, timeZone: string, kind: "notes" | "replies", costMicroInr: number): void {
   const s = stateFor(store, nowMs, timeZone);
-  s.speech = { notes: s.speech?.notes ?? 0, replies: s.speech?.replies ?? 0 };
+  const day = dayLocal(nowMs, timeZone);
+  s.speech = { ...s.speech, notes: s.speech?.notes ?? 0, replies: s.speech?.replies ?? 0 };
   s.speech[kind] += 1;
+  if (kind === "notes") { s.speech.today = (s.speech.day === day ? s.speech.today ?? 0 : 0) + 1; s.speech.day = day; }
   s.costMicroInr += costMicroInr;
+}
+
+/** Voice notes listened to today (the shop's local day), from saved state. Read before each note so the day's limit holds across restarts. */
+export function speechNotesToday(store: AiStore, nowMs: number, timeZone: string): number {
+  const sp = store.ai?.speech;
+  return sp?.day === dayLocal(nowMs, timeZone) ? sp.today ?? 0 : 0;
 }
 
 /** Messages handled by a model this month (steps 1 and 2): what the allowance counts. */

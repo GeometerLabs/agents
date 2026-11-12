@@ -120,11 +120,11 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
       const spoke = await speech.speak(text, language);
       if (!spoke) return;
       deps.countSpeech?.(spoke.costMicroInr, spoke.characters); // the provider was paid whether or not WhatsApp takes the audio
-      const refs = { to: "customer", audio: "voice", provider: spoke.provider, model: spoke.model, characters: String(spoke.characters), costMicroInr: String(spoke.costMicroInr), templates: a.templates.join("+") };
+      const refs = { to: "customer", audio: "voice", provider: spoke.provider, model: spoke.model, characters: String(spoke.characters), ...(spoke.voice ? { bubble: "voice-note" } : {}), costMicroInr: String(spoke.costMicroInr), templates: a.templates.join("+") };
       const problem = audioProblem({ link: spoke.link, text });
       if (problem) { log(a.booking, a.phone, "send_message", "blocked", { ...inputs, audio: true }, { decisions, notes: problem, refs, language }); return; }
       try {
-        const sent = await messaging.sendAudio(toNumber, { link: spoke.link, text });
+        const sent = await messaging.sendAudio(toNumber, { link: spoke.link, text, ...(spoke.voice ? { voice: true as const } : {}) });
         const seen = await messaging.getMessage(sent.id);
         log(a.booking, a.phone, "send_message", seen ? "confirmed" : "unconfirmed", { ...inputs, audio: true }, { decisions, notes: "the same words, spoken: the customer wrote by voice note", refs: { ...refs, messageId: sent.id }, language });
       } catch (e) {
