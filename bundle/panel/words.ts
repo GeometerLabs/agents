@@ -217,7 +217,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "setup.checks.deployApplied": ["4 Nov 2026, 10:30"], "setup.checks.limitsProven": [9, 9], "setup.checks.guardWords": ["the route is not listed"], "setup.checks.notReady": [2],
   "inbox.count": [3], "inbox.asOf": ["4 Nov 2026, 10:30"], "inbox.since": ["4 Nov 2026, 10:30"], "inbox.fallback": ["upi_unconfirmed", "b-3"],
   "inbox.kinds.deposit_no_booking": ["b-3", "₹200"], "inbox.kinds.payment_unrecorded": ["f-3"], "inbox.kinds.approval_waiting_long": ["b-3", "", 14, "[what]"],
-  "inbox.kinds.refund_waiting": ["b-3", "₹200", 0, "[who]"], "inbox.kinds.refund_unknown": ["b-3"], "inbox.kinds.refund_failed": ["b-3"],
+  "inbox.kinds.refund_waiting": ["b-3", "₹200", 0, "[who]"], "inbox.kinds.refund_unknown": ["b-3"], "inbox.kinds.refund_failed": ["b-3"], "inbox.kinds.refund_made_not_told": ["b-3", "₹200", 0, "[how]"],
   "inbox.kinds.message_unanswered": ["#12"], "inbox.kinds.message_not_delivered": ["b-3"], "inbox.kinds.whatsapp_token_renewal": ["WhatsApp", "", 6], "inbox.kinds.whatsapp_token_credential": ["WhatsApp", "", 120], "inbox.kinds.upi_payment_unconfirmed": ["b-3", "₹200"], "inbox.kinds.upi_refund_owed": ["b-3", "₹200"], "upi.problems.idNoAt": ["glowsalon"], "upi.problems.idShape": ["glow salon@"],
   "handover.ask": ["K7M2QX"], "handover.waiting": ["Meera"], "handover.done": ["Meera"], "handover.historyLine": ["Divya", "Meera", "4 Nov 2026, 10:30", "[reason]"],
   "setup.checks.whatsapp.confirmed": ["+91 98765 43210"], "setup.checks.whatsapp.differs": ["3210"],
@@ -504,6 +504,8 @@ export const en: Words = {
       refund_waiting: (id, amount, _hours, who) => `The refund of ${amount} for ${id} is waiting ${who}`,
       refund_unknown: (id) => `Refund for ${id}: not sure it went through. Check it in {gateway}`,
       refund_failed: (id) => `The refund for ${id} did not go through: review it`,
+      // 12 Nov 2026: the provider's list settled a refund whose outcome was unknown, and the customer's "it is confirmed" message was not accepted (yet)
+      refund_made_not_told: (id, amount, _hours, how) => `Refund of ${amount} for ${id} is made, and the customer has not been told yet: ${how}`,
       message_unanswered: (id) => `Work for ${id} was not finished while a service's connection was down: check it and answer the customer`,
       // follow-up 2: the shop's Gupshup token (not a case: `id` is "WhatsApp"); `hours` is how long the token in use, or the server's universal token, has left
       whatsapp_token_renewal: (_id, _amount, hours) => `WhatsApp through Gupshup: this shop's token could not be renewed. The one in use ends in ${hours} hours, and then no message goes out. Check the server (geometer logs refresher) or hand in a new Gupshup universal token.`,
@@ -513,7 +515,7 @@ export const en: Words = {
       upi_refund_owed: (id, amount) => `Refund of ${amount} for ${id} is owed by the owner and not yet marked done: remind the owner`,
     },
     fallback: (kind, id) => `${id} needs a person (${kind})`,
-    variants: { guard_hold: "a refund", refund: "a refund", waiver: "a fee waiver", refund_request: "a refund request", calendar: "a calendar problem", owner: "for the owner's answer", agent: "to be sent again", big_order: "a big order" },
+    variants: { guard_hold: "a refund", refund: "a refund", waiver: "a fee waiver", refund_request: "a refund request", calendar: "a calendar problem", owner: "for the owner's answer", agent: "to be sent again", big_order: "a big order", tell_retry: "the agent tries again by itself", tell_person: "tell them yourself" },
     actions: { recheck_payment: "Check the payment again", retry_booking: "Try to confirm the booking again", ask_owner_again: "Ask the owner again", recheck_refund: "Check the refund again" },
     actionNote: "These only look again or ask again. They go through Guard and the same limits as everything else.",
     recover: { sent: "Asked. The shop's agent will do it within a minute or two. The list changes after the next record update, which can take a quarter of an hour.", refused: "That does not fit this item, so nothing was sent." },

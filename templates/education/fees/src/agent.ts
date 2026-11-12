@@ -47,7 +47,7 @@ import { createSay } from "../../../../modules/messaging/say.ts";
 import { detectLanguage } from "../../../../modules/understanding/rules.ts";
 import { ensureLink as makeLink } from "../../../../modules/payments/links.ts";
 import type { Payment, PaymentEvent, PaymentRequest, Payments } from "../../../../modules/payments/payments.ts";
-import { createRefunds } from "../../../../modules/payments/refunds.ts";
+import { createRefunds, recheckLine } from "../../../../modules/payments/refunds.ts";
 import type { Action, ActionRecord, Outcome } from "../../../../modules/record/record.ts";
 import { takeDue } from "../../../../modules/reminders/reminders.ts";
 import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
@@ -206,6 +206,8 @@ export function createAgent(deps: AgentDeps): Agent {
     limitInr: () => settings.refund.limitInr,
     log: (due, phone, action, outcome, inputs, more) => log(due, phone, action, outcome, inputs, more),
     tellCustomer: (due, phone, templates, more) => tellCustomer(due, phone, templates as TemplateId[], more),
+    // the confirmation after an unknown outcome is kept until WhatsApp accepts it, so the shared code needs to know how the send ended, not only whether it was read back
+    tellCustomerOutcome: (due, phone, template, more) => say.outcome({ booking: due, phone, to: "customer", templates: [template as TemplateId], ...more }),
     tellOwner: (due, phone, template, more) => tellOwner(due, phone, template as TemplateId, more),
     cases: () => store.dues.values(),
     ids: { checking: "fee_refund_checking", denied: "fee_refund_denied", approved: "fee_refund_approved", expired: "fee_refund_expired", settled: "owner_refund_settled", confirmed: "fee_refund_confirmed" },
@@ -904,7 +906,8 @@ export function createAgent(deps: AgentDeps): Agent {
       const due = dues.find((x) => x.payments.some((p) => p.id === paymentId));
       const refundId = event.payload.refund!.id;
       // The event only says to look: the payments service's own list must show the refund. When it is the refund an unknown outcome is open on (B75), that ORIGINAL
-      // attempt is settled as the provider's confirmation and the customer told (modules/payments/refunds.ts settleFromEvent); no refund is ever asked for again.
+      // attempt is settled as the provider's confirmation and the customer told, or kept on the to-do list until WhatsApp accepts that message (modules/payments/refunds.ts
+      // settleFromEvent); no refund is ever asked for again.
       const listed = (await payments.listRefunds(paymentId)).find((r) => r.id === refundId);
       const settles = due && listed ? refunds.openIssueFor(due, listed) !== undefined : false;
       log(due ?? null, due?.customer ?? owner, "receive_payment_event", listed ? "confirmed" : "unconfirmed", { id: event.id, event: event.event }, { refs: { refundId, paymentId }, notes: listed ? (settles ? "the refund is on the payments service's own list, and it is the one whose outcome was unknown: settled below" : "the refund is on the payments service's own list") : "the payments service's own list does not show this refund, so nothing is settled by it" });
@@ -948,7 +951,8 @@ export function createAgent(deps: AgentDeps): Agent {
   // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------
   //   recheck_payment   read the payments service's own list for this fee's links and count any payment not yet counted (the normal path, with its rules)
   //   ask_owner_again   the owner has not answered a waiver or a refund request: send the owner the same notice again
-  //   recheck_refund    look again, read-only, for a refund that may have gone (nothing is ever sent again; a refund the list shows settles it, and the customer is told)
+  //   recheck_refund    look again, read-only, for a refund that may have gone (nothing is ever sent again; a refund the list shows settles it, and the customer is told,
+  //                     or, if WhatsApp does not accept that message, it stays on the to-do list as "refund made, customer not yet told" until it does)
   // Nothing here widens a limit: every call is one the agent already makes, and Guard decides each as it does every day.
   async function onRecovery(e: { id: string; case: string; action: string }): Promise<void> {
     const due = store.dues.get(e.case);
@@ -976,7 +980,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (!(due.refundIssues ?? []).some((i) => ["unknown", "uncertain", "unconfirmed", "failed"].includes(i.kind))) return say("blocked", "no refund here is waiting on an unclear outcome");
       say("attempted", "looking again, read-only, for a refund that may have gone");
       const r = await refunds.recheck(due);
-      return say("confirmed", `${r.settled} of ${r.looked} refunds now show on the payments service's list, and the customer was told of each one that does; none was sent again`);
+      return say("confirmed", recheckLine(r)); // says how many customers were told: one whose message was not accepted stays on the to-do list
     }
     say("blocked", `the agent has no recovery called "${e.action}"`);
   }
