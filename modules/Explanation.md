@@ -607,7 +607,8 @@ the same as the typed `approve K7M2QX`.
 - **Act, not money** (close a day, reopen it, move a booking): done at once, said in passing, and **undoable** ("undo", for 24 hours; a move goes back only if the old
   time is still free). Closing a day takes the
   date out of the free times. The booking page and the WhatsApp offer read the same list. Each booking that day stays as it is, and its customer is asked to pick another
-  day. Nothing is cancelled or refunded by closing a day: a customer who cancels goes through the shop's usual rule. **Undo** reopens the day, and each customer who was
+  day. The owner is told how many were booked that day and, by reference and number, any customer the message could not reach (STOP, or outside their window before
+  the template is approved), to call them. Nothing is cancelled or refunded by closing a day: a customer who cancels goes through the shop's usual rule. **Undo** reopens the day, and each customer who was
   asked and has not moved or cancelled is told their booking stands.
 - **Act, money or a limit:** cancelling a paid booking, a refund, approving or refusing what waits (a late refund, a waiver, a big order, a deposit to mark). These come back as a **card**.
 - **A message to a customer** is not money, but it cannot be taken back, so it also comes as a card (a preview). The owner's words go to the customer as typed, under the
@@ -632,7 +633,9 @@ The owner's fixed phrases come first and are unchanged: `today`, `tomorrow`, `ap
 `move <code>`, `terms`, `I agree`, and the relay's `approve K7M2QX`. A card's yes on something waiting **is** the owner's fixed reply (`wire.ts ownerReply`): the agent handles it
 exactly as if the owner had typed it, so a card adds no new way to act.
 
-**A message to a customer** goes as the owner typed it, prefixed with the shop's name. It is the owner's speech, not the agent's, so the outgoing check reads the words as the
+**A message to a customer** is read first: when the message command ("message", "tell", "bolo", "പറയ", "ಹೇಳಿ") is the first command word and a customer is named, the
+rest is the owner's words, whatever they say ("message b-1 sorry, we are closed tomorrow" never closes tomorrow; "tell b-1 we can move you to 5pm" never moves the
+booking). It goes as the owner typed it, prefixed with the shop's name. It is the owner's speech, not the agent's, so the outgoing check reads the words as the
 owner's own (their dates and times are theirs to state), with one exception that keeps money on its own path: an amount in rupees must be one the case has (the deposit, the
 price, the fee, the order's total). "We'll give you ₹500 back" is refused with "to give money back, say: refund b-14".
 
@@ -647,13 +650,14 @@ There are **two issuers of cards, never mixed**:
 2. **What the runtime itself decides** (a refund within the limit, a cancellation, a late refund, a waiver, a big order, a message): the **runtime's** card
    (`cards.ts`). A card is a saved, immutable action: the skill, the case and the exact fields (amount in paise, payment id, recipient's number and name, the message's words).
    It carries a digest of those fields, a fresh one-use code (the approvals alphabet; only its hash is kept), and words written from those same fields. The buttons carry
-   the code (`card-yes:K7M2QX`, `card-no:K7M2QX`). The typed form is `yes K7M2QX` / `no K7M2QX`. It is a different verb from the relay's on purpose: the relay counts every
+   the code (`card-yes:K7M2QX`, `card-no:K7M2QX`). The typed form is `yes K7M2QX` / `no K7M2QX` (typed, only when a card has that code; "no thanks" is just words). It is a different verb from the relay's on purpose: the relay counts every
    code it never issued towards its lockout, so the two must never be confused.
 
    On a tap, the skill re-reads the action from the store **as it is now** and compares its digest with the card's. They match: the skill does exactly the saved action,
    in this step, and the card is closed. They differ (the amount, the payment or the customer changed): **nothing is done**, the card is void, and a new card is sent with
    the new fields. A second tap on a closed card does nothing. **A no is final for that action:** the card is closed as refused, and the same action (the same digest) proposed
-   again within 24 hours gets "You said no to this at 10:02" instead of a new card. Free text never executes: a typed "yes", "haan" or "ok" is a new message to read,
+   again within 24 hours gets "You said no to this at 10:02" instead of a new card. On something already waiting (a late refund, a waiver, a big order), Refuse **is**
+   the owner's own `deny`: it is sent to the skill while the item is still the one the card showed, so the item stops waiting and the customer hears the answer. Free text never executes: a typed "yes", "haan" or "ok" is a new message to read,
    not a tap. Nothing changes before the tap, including the cancel half of "cancel and refund".
 
    Above Guard's limit, the runtime's tap is not the authority: the skill asks Guard, Guard holds it, and the relay's card follows (issuer 1). The runtime's card
@@ -706,7 +710,10 @@ Written and run one file at a time (12 Nov): `assistant/test/cards.test.ts` (the
 `character-mood.test.ts`, `route.test.ts`, `app.test.ts`, and Bookings `test/assistant.test.ts` end to end on the fakes (the fixed phrases kept, a card's tap refunding
 exactly the amount shown, a changed amount voiding the card, a final no, free text never executing, a closed day and its undo, a move and its undo, the UPI marks and
 the handover phrase untouched, the morning line from the same store), Bookings `test/approvals-card.test.ts` (the relay's card: a tap is the typed code, once; a wrong
-code is a wrong guess) and `bundle/test/assistant-usage.test.ts` (the owner's model spend is metered, never as a customer message).
+code is a wrong guess), Fees and Orders `test/assistant.test.ts` (off without the block; who owes and open orders; a waiver's Approve and Refuse are the owner's
+own approve and deny; a big order's Refuse is their deny) and `bundle/test/assistant-usage.test.ts` (the owner's model spend is metered, never as a customer
+message). One existing test changed meaning and was updated: Bookings `test/approvals-relay.test.ts` asserted the relay's ask inside the owner's window was plain text;
+it is now a card with the same words.
 The templates' existing suites were not run by this job (a combined run was using the machine). The agents' changes are additive and off without an `assistant` block,
 except two that apply to every shop: every agent now also drops a tapped relay button (`isRelayReply`), and Bookings' within-hours limit takes the closed days (none
 without the assistant).
