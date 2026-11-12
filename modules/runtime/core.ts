@@ -145,6 +145,11 @@ export interface RuntimeCoreOptions<Store extends { ai?: AiState }, Settings ext
   /** The monthly report job, made from the template's report. Left out: none is made and nothing is sent. */
   monthly?: MonthlyRunner<Store, Settings>;
   /**
+   * Item 11e: the owner's morning line (modules/assistant/morning.ts), run on the tick after the monthly report, with the same `save` so its claim is on disk before it
+   * sends. Left out (a shop without the assistant): nothing is sent.
+   */
+  daily?: MonthlyRunner<Store, Settings>;
+  /**
    * The shop's licence right now (plan B13; modules/licence), read from client/licence.json with this runtime's clock. Left out: never restricted. In the final stop
    * the monthly report is not sent (the shop sends nothing more), and `licenceNotice` tells the owner, once for each `paid_through`.
    */
@@ -277,6 +282,10 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
         const same = (e as NodeJS.ErrnoException).code ?? (e as Error).message.replace(/\S*[\\/]\S*/gu, "…");
         if (same !== lastReportError.same || clock.now() - lastReportError.at >= HOUR) { log(`The monthly report could not be made: ${(e as Error).message}`); lastReportError = { same, at: clock.now() }; }
       }
+    }
+    if (event.kind === "tick" && options.daily && options.licence?.().state !== "stopped") {
+      try { await options.daily.run({ settings, clock, messaging, record, store, log, save: () => save(store, record) }); }
+      catch (e) { log(`The owner's morning line could not be made: ${(e as Error).message}`); }
     }
     save(store, record, taskId);
     if (!isTask) tickMemory.clear(); // what it sent is saved as sent now, so the memory of it is done with
