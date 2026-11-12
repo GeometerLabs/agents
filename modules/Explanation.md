@@ -585,8 +585,8 @@ and that cost is paid once, when the first two-skill shop needs it.
 
 1. a tapped button's id says whose it is: the assistant's own card buttons, the relay's card buttons, or a skill's (each skill names the id prefixes it issues);
 2. a case reference in the text (`b-14`, `f-3`/`q-2`, `o-5`) names the skill that owns it;
-3. the customer's open case: the skill whose case for this number is still live (a booking waiting for its deposit, an open fee);
-4. the words, by the skills' own few keywords in four languages ("book", "fees", "order" ...);
+3. the words, by the skills' own few keywords in four languages ("book", "fees", "order" ...), when they name exactly one skill;
+4. the customer's open case: the skill whose case for this number is still live (a booking waiting for its deposit, an open fee);
 5. a shop of one skill: that skill. Otherwise a menu of the skills as buttons, which costs nothing and asks the customer in their language.
 
 **The owner's words** (`intents.ts`) go through the same three steps as a customer's, through the shared router (`understanding/router.ts`) and reader (`reader.ts`), so they
@@ -614,6 +614,26 @@ the same as the typed `approve K7M2QX`.
   conversation only with an approved template, and a free text is not one.
 - **Loosening a limit** (a bigger refund limit, a lower deposit, more holds) is not possible from the owner's chat in the first release. The assistant says so, in the
   owner's language, and names the partner's panel.
+
+### What the owner can say, per skill (first release)
+
+The words are read in English, Hindi (also typed in Latin letters), Malayalam and Kannada (`intents.ts`; the tests hold examples in each language). The answers are written
+in the owner's language (`owner.language`).
+
+| | Bookings | Fees | Orders |
+| --- | --- | --- | --- |
+| **Ask** | a day's list ("tomorrow", "bookings on Sunday", "कल की बुकिंग"), money in, what needs me | who owes, money in, what needs me | open orders, money in, what needs me |
+| **Act, said in passing, undoable** | close a day, reopen it, undo | – | – |
+| **Act, as a card** | cancel a booking (with its deposit back), refund a cancelled booking's deposit (all or part), answer what waits (a late refund, a calendar retry, a UPI deposit to mark, a refund sent), message a customer | answer what waits (a waiver, a refund request), message a parent | answer what waits (a big order, a late refund), message a customer |
+| **Not from the chat** | loosening a limit (the partner's panel), moving a booking (Deferred) | loosening a limit, cancelling or refunding a fee (Deferred) | loosening a limit, cancelling or refunding an order (Deferred) |
+
+The owner's fixed phrases come first and are unchanged: `today`, `tomorrow`, `approve|deny|retry b-14` (Fees `q-N`, Orders `o-N`), `received K7M2QX` and its button,
+`move <code>`, `terms`, `I agree`, and the relay's `approve K7M2QX`. A card's yes on something waiting **is** the owner's fixed reply (`wire.ts ownerReply`): the agent handles it
+exactly as if the owner had typed it, so a card adds no new way to act.
+
+**A message to a customer** goes as the owner typed it, prefixed with the shop's name. It is the owner's speech, not the agent's, so the outgoing check reads the words as the
+owner's own (their dates and times are theirs to state), with one exception that keeps money on its own path: an amount in rupees must be one the case has (the deposit, the
+price, the fee, the order's total). "We'll give you ₹500 back" is refused with "to give money back, say: refund b-14".
 
 ### The card binding
 
@@ -643,11 +663,13 @@ page lands, in the owner's app with the same buttons (each posting the code's di
 
 ### The morning line
 
-One short message a day to the owner (`morning.ts`): today's bookings (how many, the first time), money recorded in yesterday, and how many things wait for them. It goes
+One short message a day to the owner (`morning.ts`): what today holds for each skill (Bookings: how many bookings and the first time; Fees: the fees not paid and how
+much; Orders: the open orders), money recorded yesterday (every confirmed payment line, the owner's UPI marks included as the owner's statement), and how many things wait for them. It goes
 in the owner's language, from 08:00 in the shop's time zone (`settings.assistant.morning.at`, or `false` for none). It uses the same **once, even if the process dies**
 protocol as the monthly report (`report/monthly-job.ts`): a claim saved before the send, then the ending. A claim with no ending is never sent again. It goes as the
-utility template `owner_morning` outside the owner's 24-hour window and as plain text inside it. It says nothing on a closed day (the weekday is closed in the opening hours,
-or the owner closed the date).
+utility template `owner_morning` outside the owner's 24-hour window and as plain text inside it, the template's body filled in either way. It says nothing on a closed day (the weekday
+is closed in the opening hours, or the owner closed the date) and nothing on a day with nothing to say (nothing today, nothing recorded yesterday, nothing waiting), and it is
+not sent more than four hours after its time. A month of morning lines is not activity for the monthly report (`report/monthly-job.ts` leaves them out, as its own lines).
 
 ### The character's hooks (the drawings are a separate exploration)
 
@@ -665,15 +687,26 @@ phone-first, in the owner's language. Its routes sit under the owner's link, whi
 
 | Route | What it is |
 | --- | --- |
-| `GET  /s/<shop>/o/<token>` | the app: the character and its mood, what needs you (the cards, each with its buttons), today's list, the talk box |
-| `GET  /s/<shop>/o/<token>/manifest.webmanifest` | the PWA manifest; `start_url` and `scope` are this link, so an installed app opens this shop's page only |
-| `GET  /s/<shop>/o/<token>/sw.js` | the service worker: caches the last page for **reading** offline. A tap or a message is never queued offline: it needs the live page's digest |
-| `POST /s/<shop>/o/<token>` | a card's button, as item 11d's page posts it (source, action, case, digest) |
+| `GET  /s/<shop>/o/<token>/` (and without the slash) | the app: the character and its mood, what needs you (the cards, each with its buttons), today's list, the talk box (`app/view.ts`, `app/talk.ts`) |
+| `GET  /s/<shop>/o/<token>/manifest.webmanifest` | the PWA manifest (`app/pwa.ts`); `start_url` and `scope` are `<link>/`, so an installed app opens this shop's page only (a service worker controls only pages inside its scope, hence the slash) |
+| `GET  /s/<shop>/o/<token>/sw.js` | the service worker: keeps the last page for **reading** offline, marked offline. A tap or a message is never kept or queued: it needs the live page's digest |
+| `POST /s/<shop>/o/<token>` | a waiting item's button, as item 11d's page posts it (source, action, case, digest); an assistant card's as `card_yes` / `card_no` with the card's id and digest (no code is ever on the page: the owner's link is the authority, checked at the runtime) |
 | `POST /s/<shop>/o/<token>/talk` | the talk box: the owner's words, an `owner_message` event read by the same assistant as a WhatsApp message; the answer is shown on the page, not sent to WhatsApp as well |
 | `POST /s/<shop>/o/<token>/voice` | a hold-to-record voice note (Ogg Opus), sent down the same path as a WhatsApp voice note (item 11d's voice service), then read as the talk box's words |
 
-The pieces that do not depend on item 11d are in `assistant/app/` (the manifest, the service worker, the talk box and the cards section). The wiring into item 11d's front waits
-for that branch to land (Deferred).
+The pieces that do not depend on item 11d are in `assistant/app/` (the manifest, the service worker, the talk box and the view). The wiring into item 11d's front waits
+for that branch to land (Deferred). The talk box works without JavaScript (a form); with it, a hold-to-record button appears only when the phone can record Ogg Opus, the
+format of a WhatsApp voice note, and stops at 30 seconds, the voice service's limit. The answer is shown as text.
+
+### Tests
+
+Written and run one file at a time (12 Nov): `assistant/test/cards.test.ts` (the binding), `intents.test.ts` (four languages; the models choose only the kind),
+`words.test.ts` (every message and template in every language against the outgoing check), `morning.test.ts` (once, silent days, the claim before the send),
+`character-mood.test.ts`, `route.test.ts`, `app.test.ts`, and Bookings `test/assistant.test.ts` end to end on the fakes (the fixed phrases kept, a card's tap refunding
+exactly the amount shown, a changed amount voiding the card, a final no, free text never executing, a closed day and its undo, the morning line from the same store).
+The templates' existing suites were not run by this job (a combined run was using the machine). The agents' changes are additive and off without an `assistant` block,
+except two that apply to every shop: every agent now also drops a tapped relay button (`isRelayReply`), and Bookings' within-hours limit takes the closed days (none
+without the assistant).
 
 ## Adding to a module later
 
