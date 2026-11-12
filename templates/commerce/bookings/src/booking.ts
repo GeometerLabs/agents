@@ -21,6 +21,7 @@ import type { MessageFacts, TemplateId } from "./language/templates.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
 import type { GuardHold, RefundIssue, RefundRetry, UntoldRefund } from "../../../../modules/payments/refunds.ts";
 import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
+import type { AssistantState } from "../../../../modules/assistant/state.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { ChannelState } from "../../../../modules/channels/state.ts";
 
@@ -135,6 +136,8 @@ export interface Store {
   calendarState?: { kind: "own" | "google" };
   /** Item 11d: the booking page's, the API's and the MCP endpoint's messages and requests (modules/channels/state.ts). Left out until the first one. */
   channel?: ChannelState;
+  /** Item 11e: the shop's assistant's own part (its cards, closed days, undo; modules/assistant/state.ts). Left out until the owner first talks to it. */
+  assistant?: AssistantState;
 }
 
 export function createStore(): Store {

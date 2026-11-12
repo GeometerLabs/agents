@@ -89,6 +89,8 @@ export function whatsappTypeOf(entry: unknown): WhatsappType | undefined {
 
 /** A customer's message the agent handled: logged `receive_message`, confirmed. A repeated delivery is logged `blocked` and is not a message. */
 export const isCustomerMessage = (entry: unknown): boolean => isObj(entry) && entry.action === "receive_message" && entry.outcome === "confirmed";
+/** Item 11e: the owner's words, read by the shop's assistant (modules/assistant, `owner_assistant`): what a model cost to read them is the shop's AI spend, but it is not a customer message. */
+export const isOwnerAssistantRead = (entry: unknown): boolean => isObj(entry) && entry.action === "owner_assistant" && entry.outcome === "confirmed";
 
 // ---- the estimate ------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -161,6 +163,12 @@ export function summarizeUsage(entries: readonly unknown[], rates: UsageRates): 
       t.byStep[u?.step ?? "rules"]++;
       if (u && u.costMicroInr === null) t.unpriced = (t.unpriced ?? 0) + 1; // unknown, never 0: counted apart, so the meter can say "and N calls with no price"
       else t.modelMicroInr += u?.costMicroInr ?? 0; // no understanding at all: the rules read it, for free
+      continue;
+    }
+    if (isOwnerAssistantRead(entry)) { // counted in the spend (or as unpriced) like a customer's message, never as one
+      const u = understandingOf(entry);
+      if (u && u.costMicroInr === null) t.unpriced = (t.unpriced ?? 0) + 1;
+      else t.modelMicroInr += u?.costMicroInr ?? 0;
       continue;
     }
     const type = whatsappTypeOf(entry);

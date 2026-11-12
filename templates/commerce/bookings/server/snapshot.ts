@@ -19,6 +19,8 @@ const codec = snapshotCodec<Store>(1, [
   { name: "calendarState", kind: "optional-object" },
   // Optional: item 11d, the booking page's and the API's messages and requests. A shop that never had one keeps its snapshot as it was.
   { name: "channel", kind: "optional-object" },
+  // Optional: the shop's assistant's cards, closed days and undo (item 11e). A shop without the assistant never has it, so its snapshot is as it was.
+  { name: "assistant", kind: "optional-object" },
 ]);
 
 export const serializeStore: (store: Store) => string = codec.serialize;

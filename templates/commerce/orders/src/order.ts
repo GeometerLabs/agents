@@ -17,6 +17,7 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { addDays, localParts, sameDate, zonedToMs, parseClock, timeFromMinutes } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { GuardHold, RefundIssue, RefundRetry, UntoldRefund } from "../../../../modules/payments/refunds.ts";
+import type { AssistantState } from "../../../../modules/assistant/state.ts";
 import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
@@ -120,6 +121,8 @@ export interface Store {
   ai?: AiState;
   /** An owner-marked shop's requests, the owner's marks and the refunds the owner owes (modules/payments/owner-marked/ledger.ts). Kept under `upi`, as it always was. Left out until the first request. */
   upi?: MarkState;
+  /** Item 11e: the shop's assistant's own part (its cards and undo; modules/assistant/state.ts). Left out until the owner first talks to it. */
+  assistant?: AssistantState;
 }
 
 export function createStore(): Store {

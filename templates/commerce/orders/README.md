@@ -35,6 +35,13 @@ The hand check prints `Held N of M. K failed. J not tested.`, a line for each si
 
 A message for each thing that needs them: a new order (what to prepare, for when, the total, what to collect, the address), an order above their approval line ("approve o-3"), a cancellation, a late cancellation to decide, a UPI payment to look for (with a code and a Received button), a refund to send, a customer who asked to talk. The monthly report, on WhatsApp on the 1st, and a page behind a link.
 
+## The shop's assistant (item 11e)
+
+With an `"assistant": {}` block in the settings, the owner can also write in their own words, in four languages, and the assistant answers in text: "open orders", "what needs me" (a big order or a late refund comes as a card), "message o-5 Your cake is ready".
+Anything that moves money, and a message to a customer, comes back as a card with the exact change, done only by a tap; a card's yes on something waiting is the owner's
+own fixed reply (`approve`/`deny`), which keeps working as before. Cancelling or refunding from the chat is not in the first release. A short morning line goes to the owner
+from 08:00. How it works: [modules/Explanation.md](../../../modules/Explanation.md#the-shops-assistant-item-11e-decision-43-12-nov-2026).
+
 ## The rules held outside the AI
 
 | Rule | Where |
