@@ -150,17 +150,30 @@ export interface ReportMessage {
 export function monthlyReportMessage(report: Envelope<OrdersReport>, language: Language, o: { link: string; check?: string }): ReportMessage {
   const r = report.document;
   if (!r.preparedBy || oneLine(r.preparedBy) === "") throw new Error("The report names no one who set the agent up, and the message says who did.");
-  const template = REPORT_TEMPLATES.find((t) => t.badge === (r.innovator === true) && (t.upi === true) === (r.paidBy === "owner-marked"))!;
+  const template = templateFor(r);
   const parameters = reportParameters(template, language, valuesWithCheck(template, language, r, { code: report.code, link: o.link, builder: r.preparedBy }, report, o.check));
   const text = fillBody(metaBody(template.bodies[language]), parameters);
   return { text, template: { name: template.name, language, text, parameters } };
 }
 
+/** The template a report goes out as: with the Innovator line or without, and a UPI shop's (its money marked paid by the owner) or a gateway shop's. */
+export const templateFor = (r: OrdersReport): ReportTemplate => REPORT_TEMPLATES.find((t) => t.badge === (r.innovator === true) && (t.upi === true) === (r.paidBy === "owner-marked"))!;
+
 // ---- the list to submit to Meta ------------------------------------------------------------------------------------------------
 
-/** Example values for Meta's review: the sample month the review sheets use, as a live report, with a believable address and builder. */
+/**
+ * The sample month as a shop of the kind this template is for. The sample shop (Annapurna, report/review.ts sampleReport) takes UPI, the pilot's way to pay, so the
+ * UPI templates show it as it is; a gateway template shows the same month at a gateway shop (no owner's mark), so its "what was not checked" names the gateway as a
+ * gateway shop's report does. Each example is then a message that template would really carry (templateFor gives this template back, badge aside).
+ */
+export function sampleFor(template: ReportTemplate): OrdersReport {
+  const { paidBy: _upi, ...month } = sampleReport();
+  return { ...month, ...(template.upi ? { paidBy: "owner-marked" as const } : {}), ...(template.badge ? { innovator: true as const } : {}) };
+}
+
+/** Example values for Meta's review: the sample month the review sheets use, as a live report at this template's kind of shop, with a believable address and builder. */
 function exampleValues(language: Language, template: ReportTemplate): Record<ReportSlot, string> {
-  const sample = { ...sampleReport(), source: "live" as const };
+  const sample = { ...sampleFor(template), source: "live" as const };
   // a real signed summary link (SAMPLE_SUMMARY_LINK) where the message has room for it, chosen as a real message's is
   return valuesWithCheck(template, language, sample, { code: "7K2M-9QXD", link: `https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-${language}.html`, builder: "Divya, Sri Sai Digital" }, { digest: SAMPLE_DIGEST, code: "7K2M-9QXD" }, SAMPLE_SUMMARY_LINK);
 }
@@ -174,9 +187,12 @@ function valuesWithCheck(template: ReportTemplate, language: Language, report: O
   return reportValues(report, language, { ...extras, ...(settled ? { settled } : {}), check: messageCheckLink((check) => fill(check, settled), envelope, summaryLink) });
 }
 
-/** The message as the review sheets show it: the sample month, with the Innovator line, so a native reader sees every word that is sent. */
+/**
+ * The message as the review sheets show it: the sample month, with the Innovator line, so a native reader sees every word that is sent. The sample shop takes UPI
+ * (the pilot is UPI-first), so it is the UPI template, the one its report really goes out as (templateFor), with the same values Meta's example for it has.
+ */
 export function sampleMessage(language: Language): string {
-  const template = REPORT_TEMPLATES.find((t) => t.badge && !t.upi)!;
+  const template = templateFor({ ...sampleReport(), innovator: true });
   return fillBody(metaBody(template.bodies[language]), reportParameters(template, language, exampleValues(language, template)));
 }
 
