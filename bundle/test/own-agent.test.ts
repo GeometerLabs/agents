@@ -98,8 +98,10 @@ test("a refund above the limit is held, the owner approves once on WhatsApp, the
     standins.fakes.messaging.receive(CUSTOMER, "hi"); // the customer wrote first, so a plain message can go back
     // the owner and the relay, while the agent waits: the relay asks once; a reply from another number and a badly signed one do nothing; the owner's own reply approves
     const owner = (async () => {
-      for (let i = 0; i < 200 && asked().length === 0; i++) { await relay.poll(); await sleep(50); }
-      assert.equal(asked().length, 1, "the relay asked the owner");
+      // The ask only exists once the agent has made the link, been paid, booked and sent the refund through three real Guards. In a full-suite run (files run side by side)
+      // that takes tens of seconds, so wait against a deadline and not a count of polls (200 polls were 10 s on an idle machine and ended before the refund was even held).
+      for (const deadline = Date.now() + 120_000; Date.now() < deadline && asked().length === 0;) { await relay.poll(); await sleep(50); }
+      assert.equal(asked().length, 1, `the relay asked the owner (relay: ${JSON.stringify(relay.status())})`);
       assert.equal(refunds().length, 0, "nothing was refunded while the owner had not answered");
       const text = asked()[0].text;
       const code = /"approve ([A-Z0-9]{6})"/u.exec(text)![1];
