@@ -105,3 +105,20 @@ for (const language of ["ml", "kn"] as const) {
     });
   });
 }
+
+test("the Gupshup credential line says days from a day on, hours under a day, and never \"in 0 days\" or \"in 0 hours\", in all four languages", () => {
+  const line = (l: Language, hours: number) => WORDS[l].inbox.kinds.whatsapp_token_credential("WhatsApp", "", hours, "");
+  const numbers = (text: string) => (text.match(/(?<![\w-])\d+(?![\w-])/gu) ?? []).map(Number); // whole figures, not the "<file>" or a word
+  for (const l of LANGUAGES) {
+    for (const [hours, shown] of [[120, 5], [48, 2], [47, 1], [24, 1], [23, 23], [5, 5], [1, 1]] as const) {
+      assert.deepEqual(numbers(line(l, hours)), [shown], `${l}: ${hours} hours left is said as ${shown}: ${line(l, hours)}`);
+    }
+    assert.deepEqual(numbers(line(l, 0)), [], `${l}: under an hour (or ended) says no number: ${line(l, 0)}`);
+    assert.notEqual(line(l, 23), line(l, 23 * 24), `${l}: 23 hours is not said like 23 days`);
+  }
+  assert.match(line("en", 120), /ends in 5 days\. Hand in a new one before then/u);
+  assert.match(line("en", 30), /ends in 1 day\. /u);
+  assert.match(line("en", 5), /ends in 5 hours\. /u);
+  assert.match(line("en", 1), /ends in 1 hour\. /u);
+  assert.match(line("en", 0), /has less than an hour left, or has ended\. Hand in a new one now/u);
+});
