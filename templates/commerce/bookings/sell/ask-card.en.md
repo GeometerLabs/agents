@@ -35,6 +35,8 @@ Take this to the visit and tick each item with the owner. Ask for these and noth
   Above this amount a refund waits for the owner's yes.
 - [ ] **(Optional) Google Calendar, only if the shop wants it: the owner's calendar, shared with the address Geometer gives you**
   Not needed to start. Bookings keeps its own booking list: the owner sends "today" or "tomorrow" on WhatsApp to the shop's number to see that day's bookings. A calendar can be added later, and the bookings already made are written to it.
+- [ ] **Nothing more for the shop's booking page: the panel gives its link, its QR code for the counter, and the owner's private approvals link**
+  From the day the shop is live, customers can also book and pay the deposit by UPI on the booking page, without WhatsApp, under the same limits; AI assistants can book there too. The owner can mark payments received and answer refunds on the private page. The shop's own WhatsApp number is still needed to put it live.
 
 > Do not promise how long setup takes, or that nothing else will be asked for. Meta decides what it needs, and it can change.
 

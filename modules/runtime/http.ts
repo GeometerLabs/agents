@@ -9,6 +9,15 @@
 //   GET  /healthz                               the process is up
 //   GET  /readyz                                the store can be read and the queue is going
 //
+// The shop's channels (modules/channels: the booking page, its API, the MCP endpoint, the owner's private page), with the CHANNEL token, which is not the inbox's.
+// It can send only a channel_request or an owner_action and read what the page shows: never a WhatsApp message, a payment event or an approval. Without a channel
+// token these routes do not exist.
+//   POST /internal/channel/events   {"events": [...]}   1 to 10 channel events; an owner_action also needs the owner's link (x-owner-link), checked here against the
+//                                                     hash in the client folder, read on every request so a revoked link stops at once
+//   GET  /internal/channel/offer?service=&from=YYYY-MM-DD&days=N   the services, prices and free times
+//   GET  /internal/channel/request?handle=<64 hex>    one request by its handle's hash
+//   GET  /internal/channel/owner                     what waits for the owner (x-owner-link needed)
+//
 // The runtime never holds a webhook secret: the inbox checked each provider's signature before it called us. The bearer
 // token only says the caller is our own inbox. Bind to 127.0.0.1 or a private network, never the open internet.
 import { createHash, timingSafeEqual } from "node:crypto";
@@ -16,6 +25,11 @@ import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { checkEvents, checkRecovery } from "./events.ts";
 import type { IncomingEvent } from "./events.ts";
+import { checkChannelEvent } from "../channels/events.ts";
+import { HANDLE_HASH } from "../channels/handle.ts";
+import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts";
+import type { OwnerLinkFile } from "../channels/owner-link.ts";
+import type { RuntimeChannel } from "./core.ts";
 
 /** What the server needs of a runtime: a template's runtime gives this much, whatever its cases are called. */
 export interface ServedRuntime {
@@ -25,6 +39,8 @@ export interface ServedRuntime {
   /** The held refund with this receipt, for the approvals relay to cross-check against what Guard says it holds; null if none is held. */
   refundContext(receipt: string): unknown | null;
   ready(): { ok: true } | { ok: false; reason: string };
+  /** The template's channel reads; left out when it has none. */
+  channel?: RuntimeChannel;
 }
 
 export const MAX_BODY_BYTES = 256 * 1024;
@@ -39,6 +55,10 @@ export interface ServerOptions {
   port?: number;
   maxBodyBytes?: number;
   log?: (line: string) => void;
+  /** The channel token, already read from its file (CHANNEL_TOKEN_FILE). Left out: the /internal/channel routes do not exist. */
+  channelToken?: string;
+  /** The owner's link as the client folder has it now (modules/channels/owner-link.ts), read on every call. Left out, or undefined: no owner page. */
+  ownerLink?: () => OwnerLinkFile | undefined;
 }
 
 export interface RunningServer {
@@ -83,6 +103,7 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
   const max = options.maxBodyBytes ?? MAX_BODY_BYTES;
   const log = options.log ?? (() => undefined);
   const wanted = sha256(options.token);
+  const channelWanted = options.channelToken ? sha256(options.channelToken) : undefined;
 
   /** Hashing both sides first makes the comparison the same length (timingSafeEqual needs that) and takes the same time for every guess. */
   const authorised = (req: IncomingMessage): boolean => {
@@ -90,8 +111,76 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
     return timingSafeEqual(sha256(given ?? ""), wanted) && given !== undefined;
   };
 
+  /** The channel token, compared the same way as the inbox's. */
+  const channelAuthorised = (req: IncomingMessage): boolean => {
+    const given = /^bearer\s+(\S+)$/i.exec(req.headers.authorization ?? "")?.[1];
+    return channelWanted !== undefined && given !== undefined && timingSafeEqual(sha256(given), channelWanted);
+  };
+  /** The owner's link, from the front, against the hash the client folder holds now. */
+  const ownerAuthorised = (req: IncomingMessage): boolean => {
+    const given = req.headers[OWNER_LINK_HEADER];
+    return ownerTokenMatches(typeof given === "string" ? given : undefined, options.ownerLink?.());
+  };
+
+  /** The channel's routes. Only with a channel token, and only for a runtime whose template has channels. */
+  async function channelRoute(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> {
+    const channel = runtime.channel;
+    if (!channelWanted || !channel) throw new HttpError(404, "There is nothing here.");
+    const only = (method: string) => { if (req.method !== method) throw new HttpError(405, `Use ${method} here.`, { allow: method }); };
+    if (!channelAuthorised(req)) return send(res, 401, { error: "A bearer token is needed." }, { "www-authenticate": "Bearer", connection: "close" });
+    const path = url.pathname;
+    if (path === "/internal/channel/events") {
+      only("POST");
+      let body: unknown;
+      try { body = JSON.parse(await readBody(req, 16 * 1024)); } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const list = typeof body === "object" && body !== null ? (body as { events?: unknown }).events : undefined;
+      if (!Array.isArray(list) || list.length === 0 || list.length > 10) return send(res, 400, { error: 'Send {"events": [...]} with 1 to 10 channel events.' });
+      const events: IncomingEvent[] = [];
+      for (const raw of list) {
+        const checked = checkChannelEvent(raw);
+        if (!checked.ok) return send(res, 400, { error: checked.error });
+        // the owner's link is checked HERE, at the runtime, against its own file: the front cannot act for the owner without it
+        if (checked.event.kind === "owner_action" && !ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+        events.push(checked.event);
+      }
+      const counts = runtime.submit(events); // on disk when this returns
+      send(res, 200, counts);
+      runtime.kick();
+      return;
+    }
+    if (path === "/internal/channel/offer") {
+      only("GET");
+      const q = url.searchParams;
+      const days = q.get("days") === null ? undefined : Number(q.get("days"));
+      if (days !== undefined && (!Number.isInteger(days) || days < 1 || days > 31)) return send(res, 400, { error: "days is 1 to 31." });
+      const from = q.get("from") ?? undefined;
+      if (from !== undefined && !/^\d{4}-\d{2}-\d{2}$/u.test(from)) return send(res, 400, { error: "from is a date: YYYY-MM-DD." });
+      const service = q.get("service") ?? undefined;
+      if (service !== undefined && !/^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/u.test(service)) return send(res, 400, { error: "service is a service id." });
+      return send(res, 200, await channel.offer({ ...(service ? { serviceId: service } : {}), ...(from ? { fromDate: from } : {}), ...(days ? { days } : {}) }));
+    }
+    if (path === "/internal/channel/request") {
+      only("GET");
+      const handle = url.searchParams.get("handle") ?? "";
+      if (!HANDLE_HASH.test(handle)) return send(res, 400, { error: "handle is the handle's hash: 64 hex digits." });
+      const view = channel.view(handle);
+      return view ? send(res, 200, view) : send(res, 404, { error: "No booking has this handle." });
+    }
+    if (path === "/internal/channel/owner") {
+      only("GET");
+      if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+      return send(res, 200, channel.owner());
+    }
+    throw new HttpError(404, "There is nothing here.");
+  }
+
   async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    const path = new URL(req.url ?? "/", "http://runtime").pathname;
+    const url = new URL(req.url ?? "/", "http://runtime");
+    const path = url.pathname;
+    if (path.startsWith("/internal/channel/")) return channelRoute(req, res, url);
     const only = (method: string) => { if (req.method !== method) throw new HttpError(405, `Use ${method} here.`, { allow: method }); };
     const closing = { connection: "close" }; // after a refusal the unread body is not worth waiting for
 

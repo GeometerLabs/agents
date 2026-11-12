@@ -534,6 +534,82 @@ The report data has kept a person's settlement apart since follow-up 5 (`money.s
   the unconfirmed row, every language and template of the message), Orders' and Fees' `test/report.test.ts` (the row and the message). The worst case in Bookings
   `test/report-whatsapp.test.ts` and the long-name months in the three `report-summary.test.ts` now include people who settled by their word.
 
+## Not only WhatsApp: the booking page, its API, MCP and the owner's page (item 11d, decision 42; 12 Nov 2026)
+
+`channels/` lets a customer book without WhatsApp, an AI assistant book through MCP, and the owner answer without WhatsApp. Bookings is the first template that has it
+(`templates/commerce/bookings/src/channel.ts`); the runtime pieces are shared (`runtime/core.ts` `ChannelKit`, `runtime/http.ts`).
+
+**Where things are.** Each shop of a server has, under its domain (Caddy sends `/s/*` to the inbox process, which runs `channels/front.ts`):
+
+| Address | What |
+| --- | --- |
+| `/s/<shop>/` | the booking page: services and prices, then a week of days and every free start, then name and number. Plain HTML, no script, four languages (`?lang=`) |
+| `/s/<shop>/b/<handle>` | a booking's own page: where it stands, how to pay (the `upi://pay` link as a button and its QR code, or the gateway's link), "I have paid", cancel, the shop's messages |
+| `/s/<shop>/qr.svg` | the booking page's QR code for the counter (the panel shows the same) |
+| `/s/<shop>/api/v1/...` | the booking API (`api.ts`): services, slots, bookings, a booking, its payment, cancel |
+| `/s/<shop>/mcp` | the same six operations as MCP tools (`mcp.ts`), streamable HTTP with JSON answers |
+| `/s/<shop>/o/<token>` | the owner's private page; `/answer` (a form), `/api/v1/state` and `/api/v1/answer` (JSON) behind the same link |
+
+**One booking engine.** Nothing on the front decides anything. A booking from the page, the API or an assistant is a `channel_request` event, saved as a task and run as
+one step of the shop's runtime like a WhatsApp message (`runtime/core.ts`: whole or not at all). The agent takes the same path as a WhatsApp booking from the hold on:
+the opening-hours and double-booking limits against the calendar and the shop's own holds, the hold in the shop's own list (and the calendar, through its Guard), the
+deposit request (through the gateway's Guard, or the owner-marked ledger), "booked" only when the record holds both. Only the way in differs: the request names an exact
+service and start, so no words are read and no model is asked, and the start must be on the shop's grid, far enough ahead to pay in the hold's time, and within 30 days.
+The record names the channel (`channel_booking`, `refs.channel` = `web` or `mcp`), and the panel and reports read the booking like any other. Free times come from the
+agent's own `freeOnDay`, which WhatsApp's list uses too; a time shown is checked again when it is booked, so two customers for the last slot get one hold (the steps run
+one at a time and the second finds the first's hold in the shop's own list).
+
+**A typed number is never trusted.** The number on a form is not verified (no SMS: Deferred.md). So a channel booking lives in its own conversation (`web:` or `mcp:` and
+16 hex digits of its handle's hash), never under the number: nothing typed on the page can find, change or cancel a WhatsApp customer's booking (the agent finds a
+customer's bookings by conversation). And nothing is ever sent to the typed number: the agent's messaging (`channels/outbox.ts`) keeps a channel conversation's messages in
+the step's own store, where its page shows them, so a fake booking cannot make the shop message a stranger at the shop's cost. The words still go through the one `say`
+(`messaging/say.ts`), with its checks (message matches record, "booked" only when recorded), and are marked `refs.channel`, so the cost meter never prices them as
+WhatsApp messages (`bundle/lib/usage.ts`). The owner hears about a page booking on WhatsApp as about any other, with the number the customer typed.
+
+**Handles.** A booking is reached only by its handle: 24 random bytes, which the front gives the customer (in the page's address) or the assistant (in the tool's answer).
+The runtime keeps its SHA-256 and never the handle. A form's handle is made from the form's own random nonce and what it asks for (`handle.ts handleFromNonce`), so a
+second tap on "Hold this time" is the same task and lands on the same booking.
+
+**Tokens.** The front reaches the runtime with the shop's CHANNEL token (`/internal/channel/*`), which can save only a `channel_request` or an `owner_action` and read the
+offer, a booking by its handle's hash, and (with the owner's link) the owner's list. It cannot send a WhatsApp message, a payment event or an approval: only the inbox's
+internal token can. The front runs in the inbox process, so today the isolation is per token, not per process: a fault in that process could reach both tokens. A front
+container of its own is in Deferred.md.
+
+**The owner's page.** The partner makes the link in the panel (shown once; only its hash is kept in `shops/<shop>/owner-link.json`). The deployer copies the hash to the
+runtime's client folder and the relay's secret folder on every pass of its loop (every 10 s), and removes both when the panel switches the link off; the runtime and the
+relay read their copy on every request. So the link is checked at the authority, not only at the front, and a revoked link stops within one pass, without a restart.
+The page lists, from the saved state and never from messages: a deposit to mark received (UPI), a refund the owner owes and marks sent, a late cancellation's refund the
+agent asked about, a paid booking the calendar would not confirm, and, for a gateway shop, the refunds Guard holds (from the relay). Each answer carries the digest of
+exactly what was shown (kind, case, ids, amount and how far it has got). The authority compares it with what waits now and does nothing when they differ:
+- the runtime turns a matching press into the owner's own WhatsApp reply (the one-use code's button for a UPI mark, so the amount marked is exactly what is still asked;
+  `approve b-3` and the like for its own asks) and handles it by the same code;
+- the relay answers a refund Guard holds inside its one-at-a-time chain with the same `finishDecision` a WhatsApp code takes (the owner's signed answer to Guard, then the
+  runtime, then the owner told), so a WhatsApp reply and a press can never both count. A changed amount is a new held call, a new approval and a new digest, so it needs
+  a new yes; a no is final for that call (Guard refuses the identical call since 12 Nov, and the page's answer is the ask's one use). The page shows only the owner's own
+  asks, never another approver's (B37).
+For a shop on WhatsApp the page is one more way to answer, never a replacement. The JSON pair is the same state and the same answer, for the owner's app another job builds.
+The link widens who can answer: on WhatsApp only the owner's phone can, while anyone who has seen the link can answer as the owner, the partner who made it included.
+So the panel shows it once, the page says not to share it, a shop that moves to another partner loses it (the new partner makes a new one), and the partner can switch
+it off at any time. An answer the page could not see done within a few seconds (the step waits for a Guard) is shown as "sent", never as "done".
+
+**Abuse, without a CAPTCHA.** At the front, per address (Caddy's view of the visitor): 6 booking starts and 20 cancels or claims per 10 minutes, 120 reads a minute, 10
+unknown handles or links an hour; and 60 starts per 10 minutes per shop from every address together. In the step, from saved state: 2 unpaid holds per number at once, 5
+starts per number per 24 hours, 6 unpaid holds from the page and the API per shop at once, 30 days ahead at most. Every hold ends by itself after the shop's hold time.
+Refused requests and finished ones are dropped with the shop's retention (30 days), so a flood of refusals does not grow the store for ever.
+
+**What a fake booking can and cannot do.** It can hold one free time until the hold ends (the shop's hold time, an hour in the example) and make the owner one "payment
+to check" notice. It can use up the number it typed: that number's two holds and five starts a day, which may be a real customer's number. One address typing three
+numbers, or many addresses, can keep the shop's cap of six unpaid page holds full for as long as they keep starting new ones; while it is full, real page customers are
+told to try later, and WhatsApp customers cannot have those six times either (they are held). The per-address and per-shop start limits slow this, and every hold ends by
+itself; a verified number (Deferred.md, SMS) is what would stop it. It cannot confirm a booking (only the deposit, which on a UPI shop only the owner marks), mark a payment,
+approve a refund, see or touch another booking, or send anything to anyone but the owner.
+
+**MCP.** The engine's conventions (`monorepo/apps/cli/src/mcp.rs`): the four protocol versions, the newest when a client asks for another, tools with JSON Schema and
+`readOnlyHint`, a refusal as a tool result with `isError` so the assistant can read it. POST only (no event stream, GET is 405), a notification is 202, no session. An
+Origin header from another site is refused. "Behind Guard" means what it means for a WhatsApp booking: each change is a runtime step, and each outside effect of that step
+goes through the shop's Guard for it. The endpoint is not a Guard itself, and a UPI shop on its own booking list can make a booking that touches no Guard at all: the
+hold, the limits and the owner's mark are then the runtime's.
+
 ## Adding to a module later
 
 Move a feature here when a second template needs it, in two commits: first move the file and fix its imports (the hand check and tests must be unchanged), then cut the template's knowledge out of it. The files in this folder that began as Bookings files (`check.ts`, `interactive.ts`, `meta-templates.ts`, `router.ts`) show how.

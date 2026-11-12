@@ -31,6 +31,7 @@ import { ownAgentRuntime, ownApiRuntime } from "../agent/relay-context.ts";
 import { createDeskHost, deskServer } from "./desk.ts";
 import type { DeskConfig, DeskHost } from "./desk.ts";
 import { createRouter } from "../lib/router.ts";
+import { OWNER_LINK_FILE, readOwnerLink } from "../../modules/channels/owner-link.ts";
 import type { Handler } from "../lib/router.ts";
 
 /** The words each template's relay asks the owner in. An agent someone else wrote on a gateway has none of its own, and is asked in Bookings' words. */
@@ -125,7 +126,9 @@ export function shopRelay(name: string, c: RelayShopConfig, read: (path: string)
   }
   need("owner_notify_secret"); // the reading credential is issued by the deployer once the Guard is up (and renewed before it expires), so it may not exist yet
   for (const p of c.approvers ?? []) need(names.approverSecretFile(p.id));
-  return { relay, handler: relayHandler(relay, need("relay_token")), close: () => store.close() };
+  // item 11d: the owner's private page may show and answer this shop's asks, with the owner's link, checked against the deployer's copy of its hash (lib/owner-link.ts)
+  const ownerLink = () => readOwnerLink(read(`${c.secretsDir}/${OWNER_LINK_FILE}`));
+  return { relay, handler: relayHandler(relay, need("relay_token"), { ownerLink }), close: () => store.close() };
 }
 
 const readFile = (path: string): string | undefined => (existsSync(path) ? readFileSync(path, "utf8").trim() : undefined);

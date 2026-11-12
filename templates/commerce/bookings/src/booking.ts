@@ -22,6 +22,7 @@ import type { AiState } from "../../../../modules/understanding/ai-state.ts";
 import type { GuardHold, RefundIssue, RefundRetry } from "../../../../modules/payments/refunds.ts";
 import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
+import type { ChannelState } from "../../../../modules/channels/state.ts";
 
 export type BookingState =
   | "enquiry" | "confirming_details" | "awaiting_deposit" | "needs_owner" | "confirmed" | "expired" | "cancelled" | "completed";
@@ -96,6 +97,15 @@ export interface Booking {
   reschedule?: { date: LocalDate; timePhrase: TimePhrase; startMs: number; endMs: number };
   /** UPI (B33): when the owner was last told that this customer says they paid (at most once an hour). */
   claimTellAtMs?: number;
+  /**
+   * Item 11d: a booking made on the shop's booking page or its API ("web") or by an AI assistant through the MCP endpoint ("mcp"). Left out: a WhatsApp booking. Its
+   * `customer` is then the channel's conversation ("web:<16 hex>", modules/channels/handle.ts), never the typed number, so nothing finds it by number.
+   */
+  channel?: "web" | "mcp";
+  /** The SHA-256 of the booking's handle: the only thing that reaches it from outside. Never the handle itself. */
+  handle?: string;
+  /** The name and number the customer typed (not verified): for the owner to call them. Never used to find the booking, and never messaged on WhatsApp. */
+  contact?: { name?: string; phone: string };
 }
 
 export interface Customer {
@@ -121,6 +131,8 @@ export interface Store {
   ownCalendar?: { events: Record<string, import("./adapters/calendar.ts").CalendarEvent>; next: number };
   /** Which calendar the bookings were last written to ("own" or "google"), so a calendar added later is filled from the booking list once (agent.ts, backfill). */
   calendarState?: { kind: "own" | "google" };
+  /** Item 11d: the booking page's, the API's and the MCP endpoint's messages and requests (modules/channels/state.ts). Left out until the first one. */
+  channel?: ChannelState;
 }
 
 export function createStore(): Store {

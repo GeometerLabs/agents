@@ -98,6 +98,22 @@ export interface MonthlyRunner<Store, Settings> {
   run(ctx: { settings: Settings; clock: Clock; messaging: Messaging; record: ActionRecord; store: Store; log: (line: string) => void; save: () => void }): Promise<unknown>;
 }
 
+/** What the booking page asks for: the shop's services, and the free start times of one service from a day on (a template that has no times answers its own way). */
+export interface OfferQuery { serviceId?: string; fromDate?: string; days?: number }
+
+/**
+ * What a template gives for its channels: the booking page, its API, the MCP endpoint and the owner's private page (modules/channels). Reads only, each from the last
+ * saved state: every change is an event (channel_request, owner_action) that runs as a step like any message, through the same limits and Guards.
+ */
+export interface ChannelKit<Store> {
+  /** The shop's public offer: its services and prices, and free times from the same source the agent books against. May read the calendar (through its Guard). */
+  offer(store: Store, query: OfferQuery): Promise<unknown>;
+  /** One request by its handle's hash, as its page may show it (an allowlist: never a code, never another customer); null when the saved state has none. */
+  view(store: Store, handleHash: string): unknown | null;
+  /** What waits for the owner, each with the digest of exactly what is shown, and the coming bookings. */
+  owner(store: Store): unknown;
+}
+
 /** What a template gives the runtime. */
 export interface RuntimeKit<Store extends { ai?: AiState }, Settings extends { timezone: string }, Context> {
   /** The pathway's name ("bookings", "fees"). */
@@ -126,6 +142,8 @@ export interface RuntimeKit<Store extends { ai?: AiState }, Settings extends { t
    * how many cases it changed. A template whose store keeps no such words has none.
    */
   compactStore?(store: Store, beforeMs: number): number;
+  /** The template's channels (modules/channels). Left out: the runtime has no booking page, API or owner page. */
+  channel?: ChannelKit<Store>;
 }
 
 /** How long the text of a finished conversation is kept, when the shop sets nothing else: the chat itself is on the customer's and the owner's WhatsApp. */
@@ -175,6 +193,18 @@ export interface Runtime<Status = BaseStatus, Context = unknown> {
   refundContext(receipt: string): Context | null;
   ready(): { ok: true } | { ok: false; reason: string };
   close(): Promise<void>;
+  /** The template's channel reads (modules/channels), from the last saved state. Left out when the template has none. */
+  channel?: RuntimeChannel;
+}
+
+/** A channel request's status when the saved state has no answer for it yet: its task is waiting, or it ended without its work done. */
+export type PendingView = { status: "pending" } | { status: "not_done" };
+
+export interface RuntimeChannel {
+  offer(query: OfferQuery): Promise<unknown>;
+  /** The request with this handle's hash, or where its task is; null when there is neither. */
+  view(handleHash: string): unknown | PendingView | null;
+  owner(): unknown;
 }
 
 export type { InboundMessage, Language };
@@ -355,6 +385,20 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     }) as BaseStatus & Record<string, unknown>,
 
     refundContext: (receipt) => kit.refundContext(kit.parse(snapshot), settings, receipt),
+
+    // Reads for the template's channels: each from a fresh parse of the last saved state, never a step in progress, and never one that saves anything.
+    ...(kit.channel ? {
+      channel: {
+        offer: (query: OfferQuery) => kit.channel!.offer(kit.parse(snapshot), query),
+        view(handleHash: string) {
+          const found = kit.channel!.view(kit.parse(snapshot), handleHash);
+          if (found) return found;
+          const task = db.taskState?.(`channel_book:${handleHash}`);
+          return task === "pending" ? { status: "pending" as const } : task === "failed" ? { status: "not_done" as const } : null;
+        },
+        owner: () => kit.channel!.owner(kit.parse(snapshot)),
+      } satisfies RuntimeChannel,
+    } : {}),
 
     ready() {
       try { db.ping(); } catch (e) { return { ok: false, reason: `The store cannot be read: ${(e as Error).message}` }; }
