@@ -13,6 +13,11 @@ export const FRONT_LIMITS = {
   act: { max: 20, perMs: 10 * 60_000 },
   /** Page views and reads, per address. */
   read: { max: 120, perMs: 60_000 },
+  /**
+   * Bookings started on one shop from every address together (counted under "shop:<name>"): what bounds a flood from many addresses, before the runtime's own per-shop
+   * cap on unpaid holds. A busy salon starts a few an hour; this leaves a wide margin.
+   */
+  shopStarts: { max: 60, perMs: 10 * 60_000 },
   /** Wrong owner links or booking handles, per address: someone guessing. */
   wrong: { max: 10, perMs: 60 * 60_000 },
 } as const satisfies Record<string, Window>;

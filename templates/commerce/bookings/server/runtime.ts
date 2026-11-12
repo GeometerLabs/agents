@@ -24,6 +24,7 @@ import type { BaseStatus, RefundCounts, Runtime as CoreRuntime, RuntimeKit } fro
 import { parseStore, serializeStore, keepStoreCounters, skipStoreCounters } from "./snapshot.ts";
 import { createRecord } from "../../../../modules/record/record.ts";
 import { channelMessaging } from "../../../../modules/channels/outbox.ts";
+import { isChannelConversation } from "../../../../modules/channels/conversation.ts";
 import { compactChannel, emptyChannelState } from "../../../../modules/channels/state.ts";
 import { bookingView, ownerView, publicServices, shopInfo } from "../src/channel.ts";
 import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
@@ -121,6 +122,12 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       for (const b of store.bookings.values()) {
         if (!b.contact?.name || !ended(b.id) || (b.endMs ?? 0) >= beforeMs) continue;
         delete b.contact.name;
+        changed++;
+      }
+      // a channel conversation is one booking's: once that booking is over and its request gone, its customer entry (its language) has nothing left to serve
+      for (const conversation of [...store.customers.keys()]) {
+        if (!isChannelConversation(conversation) || Object.values(store.channel?.requests ?? {}).some((r) => r.booking !== undefined && store.bookings.get(r.booking)?.customer === conversation)) continue;
+        store.customers.delete(conversation);
         changed++;
       }
       return changed;

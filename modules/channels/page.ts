@@ -57,7 +57,7 @@ function footer(shop: PageShop, language: Language): Raw {
  * The booking page: the services; with a service chosen, its free days and times; with a day, the form (a time, the name and the number). `offer` is the runtime's
  * answer for the chosen service (or the services alone). `error` is a plain line from the front (too many requests, a form to check).
  */
-export function bookingPage(o: { shop: PageShop; offer: Offer; language: Language; serviceId?: string; date?: string; error?: string; values?: { name?: string; phone?: string } }): string {
+export function bookingPage(o: { shop: PageShop; offer: Offer; language: Language; serviceId?: string; date?: string; error?: string; values?: { name?: string; phone?: string }; /** The form's random nonce (handle.ts handleFromNonce): a second tap is the same booking. */ nonce?: string }): string {
   const w = PAGE[o.language];
   const s = o.offer.shop;
   const tz = s.timezone;
@@ -78,7 +78,7 @@ export function bookingPage(o: { shop: PageShop; offer: Offer; language: Languag
       times = html`<h2>${w.pickTime}</h2>
 <p class="days">${days.map((d) => (d.date === day.date ? html`<b>${formatDate(dateOf(d.date), o.language)}</b>` : d.starts.length > 0 ? html`<a href="${q({ service: chosen.id, date: d.date })}">${formatDate(dateOf(d.date), o.language)}</a>` : ""))}</p>
 <form method="post" action="${o.shop.publicUrl}/book">
-<input type="hidden" name="service" value="${chosen.id}"><input type="hidden" name="lang" value="${o.language}">
+<input type="hidden" name="service" value="${chosen.id}"><input type="hidden" name="lang" value="${o.language}">${o.nonce ? html`<input type="hidden" name="nonce" value="${o.nonce}">` : ""}
 <div class="slots">${day.starts.map((t, i) => html`<label><input type="radio" name="start" value="${t}" required${i === 0 ? raw(" checked") : ""}>${formatTime(localParts(t, tz), o.language)}</label>`)}</div>
 <h2>${w.yourDetails}</h2>
 <label class="f" for="name">${w.name}</label><input type="text" id="name" name="name" required maxlength="60" autocomplete="name" value="${o.values?.name ?? ""}">

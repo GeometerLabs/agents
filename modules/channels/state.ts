@@ -35,16 +35,17 @@ export const CHANNEL_LIMITS = {
 } as const;
 
 /**
- * Words and numbers of conversations that ended before `beforeMs` are taken off (the shop's retention, modules/runtime/core.ts): the messages, and the number kept on
- * a request. What happened stays: the request's booking or its refusal. Returns how many it changed.
+ * What a channel keeps of conversations that ended before `beforeMs` (the shop's retention, modules/runtime/core.ts) is taken off: their messages, and the requests
+ * themselves once they were refused or their booking ended (with the number they carried). A request whose booking is still going stays, so its page still opens and
+ * its number still counts for the per-number limits. The record is never touched. Returns how many it changed.
  */
 export function compactChannel(state: ChannelState | undefined, beforeMs: number, ended: (bookingId: string) => boolean): number {
   if (!state) return 0;
   let changed = 0;
-  for (const r of Object.values(state.requests)) {
-    if (r.atMs >= beforeMs || r.phone === undefined) continue;
-    if (r.booking !== undefined && !ended(r.booking)) continue; // a booking still going keeps its number for the per-number limits
-    delete r.phone;
+  for (const [hash, r] of Object.entries(state.requests)) {
+    if (r.atMs >= beforeMs) continue;
+    if (r.booking !== undefined && !ended(r.booking)) continue;
+    delete state.requests[hash]; // a refused request, or one whose booking is over: a flood of refusals cannot grow the store for ever
     changed++;
   }
   const keep = state.outbox.filter((m) => m.atMs >= beforeMs); // the page of a booking still going shows its state, which is kept; only old words go
