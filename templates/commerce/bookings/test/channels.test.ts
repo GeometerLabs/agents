@@ -62,7 +62,7 @@ test("a booking from the page goes through the same hold and owner-marked deposi
   const w = await world();
   try {
     const home = await (await w.page("/?lang=en")).text();
-    assert.match(home, /Haircut/u);
+    assert.match(home, /haircut/u, "the service as the settings name it");
     assert.match(home, /₹450/u, "the price from the shop's settings");
     const slots = await (await w.page("/?lang=en&service=haircut")).text();
     const starts = startsOn(slots);
