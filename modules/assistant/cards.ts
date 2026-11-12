@@ -58,7 +58,7 @@ export function refusedBefore(state: AssistantState, digest: string, nowMs: numb
  * A new card for this action. Any open card for the same skill, kind and case is void first: the owner has one live card per thing, and an old one with an old amount
  * can never be tapped after a new one was shown. Returns the card and its code; the code goes into the message and is never saved.
  */
-export function makeCard(state: AssistantState, action: CardAction, nowMs: number): { card: CardRecord; code: string; voided: CardRecord[] } {
+export function makeCard(state: AssistantState, action: CardAction, proposal: Record<string, unknown>, nowMs: number): { card: CardRecord; code: string; voided: CardRecord[] } {
   const digest = actionDigest(action);
   const voided: CardRecord[] = [];
   const id = nextId(state, "c");
@@ -69,7 +69,7 @@ export function makeCard(state: AssistantState, action: CardAction, nowMs: numbe
   }
   let code = newCode();
   for (let tries = 0; state.cards.some((c) => c.state === "open" && c.codeHash === codeHash(code)) && tries < 20; tries++) code = newCode();
-  const card: CardRecord = { id, codeHash: codeHash(code), action: structuredClone(action), digest, state: "open", createdAtMs: nowMs, expiresAtMs: nowMs + CARD_FOR_MS };
+  const card: CardRecord = { id, codeHash: codeHash(code), action: structuredClone(action), proposal: structuredClone(proposal), digest, state: "open", createdAtMs: nowMs, expiresAtMs: nowMs + CARD_FOR_MS };
   state.cards.push(card);
   return { card, code, voided };
 }

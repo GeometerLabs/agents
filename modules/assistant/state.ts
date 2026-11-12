@@ -25,6 +25,8 @@ export interface CardRecord {
   /** The hash of the one-use code (cards.ts codeHash). The code itself is only in the message the owner got. */
   codeHash: string;
   action: CardAction;
+  /** What the owner asked, as the skill's `prepare` took it (skill.ts Proposal). On the tap it is prepared again from this, so "refund b-14" with no amount follows the deposit as it is then. */
+  proposal: Record<string, unknown>;
   digest: string;
   state: CardState;
   createdAtMs: number;
