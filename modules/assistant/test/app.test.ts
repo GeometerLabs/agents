@@ -29,7 +29,8 @@ test("the manifest opens this shop's owner page and nothing else, in the owner's
 test("the service worker keeps the page for reading only: a POST is never cached, kept or replayed", () => {
   assert.match(OWNER_APP_SW, /req\.method === "GET"/u);
   assert.match(OWNER_APP_SW, /if \(!isPage\) return;/u);
-  assert.ok(!/sync|indexedDB|postMessage|replay/u.test(OWNER_APP_SW), "no queue of taps");
+  // no queue of taps: no background-sync listener, no store to keep requests in, no messages to replay them ("async" in the code is not one of these)
+  assert.ok(!/addEventListener\("sync"|indexedDB|postMessage|\breplay/u.test(OWNER_APP_SW), "no queue of taps");
   assert.match(OWNER_APP_SW, /x-owner-app-offline/u);
 });
 
