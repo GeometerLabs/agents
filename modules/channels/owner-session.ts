@@ -196,7 +196,7 @@ export async function ownerSessionRoute(deps: OwnerSessionDeps, a: {
     if (method !== "POST") return deps.sendHtml(res, 405, "<!doctype html><p>Use the page's button.</p>", { allow: "POST" });
     const form = new URLSearchParams((await deps.readBody(req, 4096)) ?? "");
     const language = signinLanguage(req, url, form);
-    if (!deps.limiter.take("signin", address)) return slow(language);
+    if (!deps.limiter.take("signin", address) || !deps.limiter.take("shopSignins", `shop:${new URL(base).pathname}`)) return slow(language);
     // only the kind and a fresh id go to the runtime: whatever else the form carried (a number, an address) is never read
     await backend.submit([{ kind: "owner_signin", id: randomUUID() }]);
     return back(`${base}/owner?sent=1&lang=${language}`);

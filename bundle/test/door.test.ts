@@ -60,6 +60,13 @@ async function door(o: { remote?: (target: URL, init: Parameters<Transport>[1]) 
   return { call, calls, logs };
 }
 
+test("the container's health check, by address and with no pages Host, is answered", async () => {
+  const d = await door();
+  const r = await d.call("/healthz", { host: "127.0.0.1:8797" });
+  assert.deepEqual([r.status, r.body], [200, "ok"]);
+  assert.equal((await d.call("/veena-salon/", { host: "127.0.0.1:8797" })).status, 404, "nothing else answers without the pages Host");
+});
+
 test("an extra domain redirects to the primary one with the path kept; another host gets nothing", async () => {
   const d = await door();
   const r = await d.call("/p/k7m2qx9r4t?x=1", { host: "old.example" });

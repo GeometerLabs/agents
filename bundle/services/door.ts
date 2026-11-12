@@ -188,8 +188,12 @@ const HSTS = "max-age=31536000";
 /** The visitor's address as Caddy saw it: the LAST X-Forwarded-For entry (Caddy appends it; anything before it is the visitor's own claim). */
 const visitorOf = (req: IncomingMessage): string => String(req.headers["x-forwarded-for"] ?? "").split(",").map((x) => x.trim()).filter(Boolean).at(-1) ?? req.socket.remoteAddress ?? "unknown";
 
-/** A visitor's requests at the door: generous for pages (a booking takes a few), tight for unknown names (someone guessing slugs or ids costs fleet). */
-const LIMITS = { all: { max: 240, perMs: 60_000 }, posts: { max: 40, perMs: 10 * 60_000 }, unknown: { max: 30, perMs: 60 * 60_000 } } as const;
+/**
+ * A visitor's requests at the door: generous for pages (a booking takes a few), tight for unknown names (someone guessing slugs or ids costs fleet). `posts` is for
+ * a builder's client only: a builder's front sees the door as one address (Deferred.md), so the door limits each visitor first; this server's own shops are limited
+ * by their front, which sees the real address. AI assistants share addresses and call MCP by POST, so it is wide.
+ */
+const LIMITS = { all: { max: 240, perMs: 60_000 }, posts: { max: 120, perMs: 10 * 60_000 }, unknown: { max: 30, perMs: 60 * 60_000 } } as const;
 function doorLimiter(now: () => number) {
   const seen = new Map<string, number[]>();
   let swept = 0;
@@ -290,10 +294,11 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     const host = String(req.headers.host ?? "").toLowerCase().replace(/:\d+$/u, "");
     const url = new URL(req.url ?? "/", primaryOrigin);
     const method = req.method ?? "GET";
+    // the container's own health check asks from inside, by address, with no pages Host: it is answered before the host is looked at, and says only "ok"
+    if (url.pathname === "/healthz" && method === "GET") return own(res, 200, "ok", "text/plain; charset=utf-8");
     // an extra domain: the same path on the primary one, so old printed links and codes keep working after a domain change
     if (o.extra.includes(host)) return go(res, 301, `${primaryOrigin}${url.pathname}${url.search}`);
     if (host !== o.primary) return nothing(res);
-    if (url.pathname === "/healthz") return own(res, 200, "ok", "text/plain; charset=utf-8");
     if (method !== "GET" && method !== "HEAD" && method !== "POST") return own(res, 405, pageOf("Not here", "Use the page's links and buttons."), "text/html; charset=utf-8", { allow: "GET, HEAD, POST" });
     if (url.pathname === "/robots.txt") return own(res, 200, "User-agent: *\nDisallow: /*/owner\nDisallow: /*/o/\n", "text/plain; charset=utf-8", { "cache-control": "public, max-age=3600" });
     if (url.pathname === "/") return own(res, 200, pageOf("Shop pages", "Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local partner."), "text/html; charset=utf-8", { "cache-control": "public, max-age=3600" });
@@ -327,8 +332,8 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     if (a.state === "gone") return gone(res);
     if (a.state === "moved") return go(res, 301, `${primaryOrigin}/${a.to}${rest}${url.search}`);
 
-    if (method === "POST" && !take("posts", visitor)) return own(res, 429, pageOf("Too many requests", "Please wait a few minutes."), "text/html; charset=utf-8", { "retry-after": "300" });
     const isLocal = a.deployment_id === o.deploymentId;
+    if (method === "POST" && !isLocal && !take("posts", visitor)) return own(res, 429, pageOf("Too many requests", "Please wait a few minutes."), "text/html; charset=utf-8", { "retry-after": "300" });
     const shopPath = `/s/${encodeURIComponent(a.agent_id)}${rest}${url.search}`;
     if (!isLocal) {
       const problem = originProblem(a.origin);
