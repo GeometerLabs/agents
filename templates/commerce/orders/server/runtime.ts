@@ -165,7 +165,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       const hold = order?.pending.find((p) => p.kind === "guard_hold" && p.receipt === receipt);
       if (!order || !hold || hold.kind !== "guard_hold") return null;
       return {
-        booking: order.id, customerPhone: order.contact?.phone ?? order.customer, businessName: settings.name, // a page order's: the number its customer typed timeZone: settings.timezone, ownerLanguage: settings.owner.language,
+        // a page order's customer is the number they typed (item 11h), never its "web:..." conversation
+        booking: order.id, customerPhone: order.contact?.phone ?? order.customer, businessName: settings.name, timeZone: settings.timezone, ownerLanguage: settings.owner.language,
         slotMs: order.slotStartMs ?? 0,
         paymentId: hold.paymentId, amountPaise: hold.amountInr * 100, approval: hold.approval, expiresAtMs: hold.expiresAtMs, ...(hold.requestedBy ? { requestedBy: hold.requestedBy } : {}),
       };
