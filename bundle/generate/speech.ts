@@ -2,8 +2,10 @@
 // runtime and never carrying a key outside Guard:
 //  - the SPEECH Guard (one per server, like the model Guard): in front of api.sarvam.ai, adds Sarvam's `api-subscription-key` from its own file, lists exactly the two
 //    routes the voice adapter calls (modules/voice/sarvam.ts SARVAM_ROUTES), pins the text-to-speech model and caps calls a day for the whole server;
-//  - the MEDIA Guard (one per shop, since a shop's WhatsApp token is its own): reads ONE thing, a voice note's media record (GET /{version}/{media_id}), with the shop's
-//    own WhatsApp token. The download of the audio itself is a second host (Meta's page does not name it) and its route shape is not yet known, so its Guard spec waits for the
+//  - the MEDIA Guard (one per shop, since a shop's WhatsApp token is its own): lists ONE route, GET /{version}/{media_id}, with the shop's own WhatsApp token. A Guard rule
+//    can only allow exact values, and a media id is not known ahead, so this Guard CANNOT tell a media id from any other id in that position: the same route also reads the
+//    shop's own phone number record, for example. It cannot send, upload or delete (no other route is listed), and a daily count bounds it. That is a looser fence than
+//    the WhatsApp Guard's, and a decision for the owner (Deferred.md), not a thing to be called tight. The download of the audio itself is a second host (Meta's page does not name it) and its route shape is not yet known, so its Guard spec waits for the
 //    first sandbox call (Deferred.md); until then nothing here can fetch audio.
 // WHAT A GUARD CANNOT BIND, said plainly: the speech-to-text model is a field of a multipart body, and an `argument_allowlist` reads a JSON field, so the Guard cannot pin it.
 // The adapter names the model it asks for and the record writes it down; the daily call cap and the route list are what the Guard enforces for listening. The text-to-speech
@@ -43,7 +45,7 @@ export function mediaGuardDef(): GuardDef {
   return { kind: "media", tool: MEDIA_TOOL, upstream: "graph.facebook.com:443", secretFile: "whatsapp_authorization", headers: { Authorization: "${file:/run/secrets/whatsapp_authorization}" } };
 }
 
-/** The media Guard's spec: one read, a voice note's media record, and a count a day. No send, no upload, no other read. */
+/** The media Guard's spec: one GET route and a count a day. No send, no upload, no other route. It cannot tell a media id from another id in that place (see the head of this file). */
 export function mediaSpec(id: SpecIdentity, o: { readsPerDay: number }): LimitsSpec {
   return {
     ...base(mediaGuardDef(), id),

@@ -16,7 +16,7 @@ export const AUDIO_TTL_MS = 10 * 60_000;
 export const FOLDER_PREFIX = "voice-";
 const EXT: Record<string, string> = { "audio/mpeg": "mp3", "audio/aac": "aac", "audio/ogg": "ogg" };
 
-/** Delete every voice folder older than the life of a link. Safe to call any time. */
+/** Delete every voice folder older than the life of a link. It may be called at any time. */
 export function sweepAudio(dir: string, nowMs: number, ttlMs: number = AUDIO_TTL_MS): number {
   let removed = 0;
   let names: string[] = [];

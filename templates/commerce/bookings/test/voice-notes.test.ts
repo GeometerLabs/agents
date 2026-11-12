@@ -14,6 +14,11 @@ import { summarizeUsage } from "../../../../bundle/lib/usage.ts";
 import { parseWhatsAppWebhook } from "../../../../modules/messaging/webhooks.ts";
 import { checkEvents } from "../server/events.ts";
 import { TEMPLATES } from "../src/language/templates.ts";
+import { parseSettings } from "../src/settings.ts";
+import { parseStore, serializeStore } from "../server/snapshot.ts";
+import { recordMessageStatus } from "../../../../modules/messaging/statuses.ts";
+import { obligations, DEFAULT_OPTIONS } from "../../../../modules/unfinished/index.ts";
+import { readFileSync } from "node:fs";
 
 // The builder's price for the tests only (never a real provider's price; the real one is the builder's setting).
 const RATE = { sttInrPerMinute: 0.6, ttsInrPer1000Characters: 3 };
@@ -166,4 +171,63 @@ test("the inbox carries where the audio is only when voice is on, and the runtim
     assert.ok(!checkEvents({ events: [{ kind: "message", message: { id: "m", from: "+91", text: "", timestamp: 1, voiceNote: true, media } }] }).ok, JSON.stringify(media));
   }
   assert.ok(!checkEvents({ events: [{ kind: "message", message: { id: "m", from: "+91", text: "hi", timestamp: 1, media: { id: "MEDIA1" } } }] }).ok, "media is only for a voice note");
+});
+
+// ---- the seams the first tests did not touch ----------------------------------------------------------------------------------
+
+test("the month's voice counts and cost survive a restart: the saved state round-trips, and a store from before voice loads", async () => {
+  const { w } = voiceWorld();
+  await sendNote(w);
+  const back = parseStore(serializeStore(w.store));
+  assert.deepEqual(back.ai!.speech, { notes: 1, replies: 1 });
+  assert.equal(back.ai!.costMicroInr, w.store.ai!.costMicroInr);
+  const older = JSON.parse(serializeStore(w.store)); delete older.ai.speech;
+  assert.equal(parseStore(JSON.stringify(older)).ai!.speech, undefined);
+  assert.equal(serializeStore(createWorld().store).includes("speech"), false, "a shop with voice off saves the same bytes as before");
+});
+
+test("a voice note that says 'I paid' on a UPI shop is recorded as voice, with its cost, and the claim reply is spoken", async () => {
+  const upi = parseSettings(JSON.parse(readFileSync(new URL("../settings/glow-salon-upi.example.json", import.meta.url), "utf8")));
+  const speech = scriptedSpeech({ transcript: { text: "I have paid", language: "en", confidence: 0.95 } });
+  const m = (() => { const lookup = scriptedWire({ "/v26.0/MEDIA1": { json: { url: "https://media.stand-in/audio", file_size: "300" } } }); const download = scriptedWire({ "/audio": { bytes: fakeVoiceNote(SECONDS), contentType: "audio/ogg" } }); return { lookup, download }; })();
+  let world: World | undefined;
+  const voice = createVoice({ provider: speech, media: { ...m, version: "v26.0", downloadHosts: ["media.stand-in"] }, host: memoryAudioHost().host, rate: RATE, languages: ["hi", "en"], clock: { now: () => world!.clock.now() }, repliesOn: true });
+  world = createWorld({ settings: upi, voice });
+  await world.say("haircut tomorrow at 6pm");
+  await sendNote(world);
+  const claim = world.record.entries().filter((e) => e.action === "receive_message").at(-1)!;
+  assert.equal(claim.refs!.via, "voice");
+  assert.equal(claim.refs!.costMicroInr, String(sttCostMicroInr(RATE, SECONDS)), "the meter sees the listening");
+  assert.ok(world.messaging.sentTo(CUSTOMER).some((x) => x.kind === "audio"), "the reply to the claim is spoken too");
+  assert.equal(summarizeUsage(world.record.entries(), {}).modelMicroInr >= sttCostMicroInr(RATE, SECONDS), true);
+});
+
+test("a spoken copy that WhatsApp later reports failed is on the record but is not unfinished work; the same failure on the reply's words still is", async () => {
+  const { w } = voiceWorld({ transcript: { text: "haircut tomorrow at 6pm", language: "en", confidence: 0.95 } });
+  await w.say("hello"); // the customer's window and a first conversation
+  await sendNote(w);
+  const sent = w.messaging.sentTo(CUSTOMER);
+  const audio = sent.filter((m) => m.kind === "audio").at(-1)!;
+  const words = sent.filter((m) => m.kind !== "audio").at(-1)!;
+  const booking = w.record.entries().find((e) => e.refs?.audio === "voice")!.booking;
+  assert.ok(booking, "the spoken reply is about a booking, so a failed text WOULD be listed");
+  const listed = () => obligations.detect({ template: "bookings", entries: w.record.entries(), cases: [], nowMs: w.clock.now() + 60_000, options: DEFAULT_OPTIONS }).found.filter((o) => o.kind === "message_not_delivered");
+  recordMessageStatus(w.record, { ids: [audio.id], status: "failed", to: CUSTOMER, timestamp: w.clock.now(), error: { code: 131053, title: "Media upload error" } });
+  assert.equal(w.record.entries().at(-1)!.action, "message_status");
+  assert.equal(w.record.entries().at(-1)!.outcome, "failed", "it is on the record");
+  assert.deepEqual(listed(), [], "a courtesy copy is not a to-do");
+  recordMessageStatus(w.record, { ids: [words.id], status: "failed", to: CUSTOMER, timestamp: w.clock.now(), error: { code: 131047, title: "Re-engagement" } });
+  assert.equal(listed().length, 1, "the words failing still is");
+});
+
+test("the month's report counts a reply once: the spoken copy is not a second message to the customer", async () => {
+  const { w } = voiceWorld();
+  await sendNote(w);
+  const { buildMonthlyReport } = await import("../report/data.ts");
+  const { monthRange } = await import("../../../../modules/report/months.ts");
+  const { from, to } = monthRange("2026-11", w.settings.timezone);
+  const report = buildMonthlyReport({ settings: w.settings, entries: w.record.entries(), bookings: [...w.store.bookings.values()], from, to, source: "stand-in", madeAt: to });
+  const sentToCustomer = w.record.entries().filter((e) => e.action === "send_message" && e.outcome === "confirmed" && e.refs.to === "customer");
+  assert.equal(sentToCustomer.length, 2, "the record has the words and the spoken copy");
+  assert.equal(report.messages.toCustomers.total, 1, "the report counts the reply once");
 });

@@ -1227,6 +1227,9 @@ export function createAgent(deps: AgentDeps): Agent {
     return heard;
   }
 
+  /** The record's marks for a message that came by voice: which provider and models listened, for how long, and the cost (a string, as the record's refs are). */
+  const voiceMarks = (h: Extract<Heard, { ok: true }>): Record<string, string> => ({ via: "voice", speechProvider: h.provider, speechModel: h.model, speechSeconds: h.seconds.toFixed(1), speechMicroInr: String(h.costMicroInr) });
+
   async function onMessage(original: InboundMessage): Promise<void> {
     let msg = original;
     if (store.seenMessages.has(msg.id)) {
@@ -1252,8 +1255,10 @@ export function createAgent(deps: AgentDeps): Agent {
     const mode = reader.mode();
     // UPI: "I paid" while a deposit waits is read from a few plain words before any model; it is a claim, and the owner is asked to look. It marks nothing paid.
     if (ownerConfirms && !msg.reply && !customer.optedOut && PAID_CLAIM.test(msg.text) && !NOT_PAID.test(msg.text) && latestBooking(store, phone, ["awaiting_deposit"])) {
-      log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id }, { refs: { messageId: msg.id, step: "rules" } });
-      return onPaidClaim(phone, "words");
+      // B29: a voice note that says "I paid" is recorded as voice too, with what listening cost, so the cost meter does not miss it
+      log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(voiceHeard ? { voice: true } : {}) }, { refs: { messageId: msg.id, step: "rules", ...(voiceHeard ? { ...voiceMarks(voiceHeard), costMicroInr: String(voiceHeard.costMicroInr) } : {}) } });
+      if (voiceHeard) speakTo = phone;
+      try { return await onPaidClaim(phone, "words"); } finally { speakTo = null; }
     }
     // A tap on a button or a list row is read by looking its id up: no words are read, so no model is asked, whatever the mode. An id that is none of ours is read as words.
     const tapped = msg.reply ? intentFromReply(msg.reply.id, settings) : null;
@@ -1268,7 +1273,7 @@ export function createAgent(deps: AgentDeps): Agent {
     // cost is added to the message's own so the cost meter (which reads costMicroInr) counts it as model spend.
     const understoodRefs = understandingRefs(understood, tapped ? msg.reply!.kind : undefined);
     const voiceRefs: Record<string, string> = voiceHeard ? {
-      via: "voice", speechProvider: voiceHeard.provider, speechModel: voiceHeard.model, speechSeconds: voiceHeard.seconds.toFixed(1), speechMicroInr: String(voiceHeard.costMicroInr),
+      ...voiceMarks(voiceHeard),
       ...(understoodRefs.costMicroInr !== undefined ? { costMicroInr: String(Number(understoodRefs.costMicroInr) + voiceHeard.costMicroInr) } : {}),
     } : {};
     log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}), ...(voiceHeard ? { voice: true } : {}) }, { notes: [notes, voiceHeard ? "the customer sent a voice note; this is its transcript" : undefined].filter(Boolean).join("; "), refs: { messageId: msg.id, ...understoodRefs, ...voiceRefs } });

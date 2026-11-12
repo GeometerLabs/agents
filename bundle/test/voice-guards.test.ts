@@ -27,7 +27,7 @@ test("the speech Guard fronts Sarvam, adds its header from a file only it reads,
   assert.deepEqual(noSecretsIn({ "spec.json": JSON.stringify(spec), "def.json": JSON.stringify(def) }, []), []);
 });
 
-test("the media Guard can read one thing, a voice note's media record, with the shop's own WhatsApp token; it cannot send or upload", () => {
+test("the media Guard lists one GET route with the shop's own WhatsApp token and cannot send or upload; it cannot tell a media id from another id there (stated, not hidden)", () => {
   const def = mediaGuardDef();
   assert.equal(def.tool, MEDIA_TOOL);
   assert.equal(def.headers.Authorization, "${file:/run/secrets/whatsapp_authorization}");
