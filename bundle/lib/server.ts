@@ -145,6 +145,12 @@ export interface ServerConfig {
   limits: { razorpayLinksPerHour: number; whatsappMessagesPerHour: number; calendarEventsCreatedPerHour: number; calendarEventsDeletedPerDay: number };
   /** The open panel container. "own": a builder's server (invitations from the panel); "hosted": Geometer's partner server (the data key is required). */
   panel: { enabled: boolean; mode: "own" | "hosted"; /** B72: the shop terms can be sent to the owner and agreed on WhatsApp (modules/terms). OFF unless true: it needs the owner's legal check before it replaces signed paper. */ termsOnWhatsapp: boolean };
+  /**
+   * Geometer's speech-to-text service for voice notes (plan 11d, services/speech). OFF unless `enabled`: no container, no network, no model folder is made. When on, the
+   * service runs on its own internal network (no way out), reads its model files from `modelsDir` read-only (default <server folder>/speech-models, filled by the operator's
+   * `fetch-models`), and is reached only by the speech Guard. `image` is built once from bundle/services/speech/Dockerfile.
+   */
+  speech?: { enabled: boolean; image: string; modelsDir?: string };
   /** Publish Caddy's ports on these host ports. Default 80 and 443. */
   ports: { http: number; https: number };
   /** Seconds between heartbeats. Fleet's contract says 60; a test makes it shorter. */
@@ -186,6 +192,7 @@ function pagesProblems(raw: unknown, domain: string, hosted: boolean): string[] 
 
 export const DEFAULT_GUARD_IMAGE = "geo-guard:0.1.0-alpha.2-pathways.1";
 export const DEFAULT_APP_IMAGE = "node:26-alpine";
+export const DEFAULT_SPEECH_IMAGE = "geo-speech:0.1.0";
 export const CADDY_IMAGE = "caddy:2.8.4-alpine";
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -210,6 +217,8 @@ export function serverPaths(dir: string) {
     requests: join(root, "requests"),
     stopRequest: (name: string) => join(root, "requests", `${name}.stop.json`),
     exports: join(root, "exports"),
+    /** The speech service's model files (filled by the operator's fetch-models; mounted read-only into the service). */
+    speechModels: join(root, "speech-models"),
     exportsOf: (name: string) => join(root, "exports", name),
     panel: join(root, "panel"),
     statusFile: (name: string) => join(root, "status", `${name}.json`),
@@ -273,6 +282,8 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
   const licence = isObj(o.licence) ? o.licence : undefined;
   const licenceKeys = licence && Array.isArray(licence.keys) ? licence.keys : undefined;
   if (o.licence !== undefined && (!licenceKeys || licenceKeys.length === 0 || licenceKeys.length > 4 || !licenceKeys.every((k) => typeof k === "string" && /^[0-9a-f]{64}$/u.test(k)))) errors.push('"licence" must say {"keys": ["<64 hex characters>"]}: the public half of fleet\'s licence key, as fleet\'s `licence key show` prints it (one to four keys).');
+  const speech = isObj(o.speech) ? o.speech : undefined;
+  if (o.speech !== undefined && (!speech || (speech.enabled !== undefined && typeof speech.enabled !== "boolean") || (speech.image !== undefined && (typeof speech.image !== "string" || speech.image === "")) || (speech.modelsDir !== undefined && (typeof speech.modelsDir !== "string" || !speech.modelsDir.startsWith("/"))))) errors.push('"speech" must say {"enabled": true, "image": "<optional image name>", "modelsDir": "<optional absolute folder for the model files>"}.');
   const fleet = isObj(o.fleet) ? o.fleet : undefined;
   if (o.fleet !== undefined && (!fleet || typeof fleet.url !== "string" || typeof fleet.keyFile !== "string")) errors.push('"fleet" must say {"url": "https://...", "keyFile": "<a file that holds this server\'s deployment key>"}.');
   if (fleet && typeof fleet.url === "string" && !/^https:\/\//u.test(fleet.url) && !/^http:\/\/(localhost|127\.0\.0\.1|host\.docker\.internal)/u.test(fleet.url)) errors.push('"fleet.url" must be https:// (the deployment key is a bearer secret).');
@@ -288,6 +299,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     ...(o.gupshupTokenHeader === "bearer" || o.gupshupTokenHeader === "bare" ? { gupshupTokenHeader: o.gupshupTokenHeader } : {}),
     approvalHours: typeof approvalHours === "number" ? approvalHours : 24,
     model: (model ?? { wire: "openai", model: "" }) as unknown as ModelConfig,
+    ...(speech && speech.enabled === true ? { speech: { enabled: true, image: typeof speech.image === "string" && speech.image !== "" ? speech.image : DEFAULT_SPEECH_IMAGE, ...(typeof speech.modelsDir === "string" && speech.modelsDir.startsWith("/") ? { modelsDir: speech.modelsDir } : {}) } } : {}),
     ...(isObj(o.backup) ? { backup: o.backup as unknown as BackupConfig } : {}),
     network: { base },
     ...(isObj(o.upstreams) ? { upstreams: o.upstreams as ServerConfig["upstreams"] } : {}),

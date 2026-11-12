@@ -401,7 +401,9 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   ensureDir(p.fleet);
   const opsUser = panelUser();
   if (process.getuid?.() === 0) chownSync(p.fleet, opsUser.uid, opsUser.gid);
-  const composed = composeServer(server, dirsOf(ctx), shops, { opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}) });
+  // the speech models folder, if speech is on: made here so Docker does not make it as root; the operator's fetch-models fills it (services/speech/README.md)
+  if (server.speech?.enabled) ensureDir(server.speech.modelsDir ?? p.speechModels);
+  const composed = composeServer(server, dirsOf(ctx), shops, { opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}), ...(server.speech?.enabled ? { speech: { image: server.speech.image, modelsDir: server.speech.modelsDir ?? p.speechModels } } : {}) });
   writeAtomic(composeFile(ctx.dir), composed.compose);
   writeAtomic(join(p.generated, "Caddyfile"), composed.caddyfile);
   return composed;

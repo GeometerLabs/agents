@@ -1,0 +1,15 @@
+# Pinned with hashes (12 Nov 2026). Every version is at least two weeks old. Install: pip install --require-hashes --only-binary=:all: -r requirements.lock
+# Wheels for CPython 3.12 on Linux x86_64 and aarch64 (the image's two targets); the pure-Python ones are one wheel for both.
+# To change a pin: look up the new version's wheel hashes on pypi.org/pypi/<name>/<version>/json and replace the block; the tests do not need these packages except numpy.
+numpy==2.5.3 \
+    --hash=sha256:76c2c1e6bfa5c84adc6434dfbf013aa92096a7985221762c8f11fedfd20fff58 \
+    --hash=sha256:b7e18c623bb5c95acb3b3328861272816ba199fb531921c5d6d0b675f1fde9e3
+onnxruntime==1.31.1 \
+    --hash=sha256:0b9a492176886992e0e875f06bc0367e333f5fff11711a2d642e18b02f3009cc \
+    --hash=sha256:1f3dea47f2f0e5117c2404cea7d21fd253ae7836a3bf167a501cdfbb2600d536
+flatbuffers==25.12.19 \
+    --hash=sha256:7634f50c427838bb021c2d66a3d1168e9d199b0607e6329399f04846d42e20b4
+packaging==26.3 \
+    --hash=sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c
+protobuf==7.36.2 \
+    --hash=sha256:bdb3a345d48db958e6ce1f18e508beb0cc981d64f24088427549c866cd039f1e
