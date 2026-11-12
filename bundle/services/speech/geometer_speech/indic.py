@@ -46,6 +46,10 @@ class IndicConformer:
         for lang in self.languages:
             if lang not in self._vocab:
                 raise RuntimeError(f"vocab.json has no entry for {lang}")
+            # The blank symbol is taken to be the last selected slot, after the language's pieces. If the files are laid out differently the
+            # text would be silently wrong, so refuse to load rather than guess (Deferred.md "IndicConformer front end unchecked").
+            if len(self._masks[lang]) != len(self._vocab[lang]) + 1:
+                raise RuntimeError(f"language_masks.json selects {len(self._masks[lang])} slots for {lang} but vocab.json has {len(self._vocab[lang])} pieces (expected pieces + 1 blank). The model files are not laid out as this service expects.")
 
     # -- the model run -------------------------------------------------------------------------------------------------
 
@@ -63,7 +67,8 @@ class IndicConformer:
         logp = np.asarray(logp)
         if logp.ndim == 3:
             logp = logp[0]
-        return logp
+        # Make them true log-probabilities over the whole vocabulary whatever the graph ended with (a no-op if it already ends in log-softmax)
+        return _log_softmax(logp)
 
     def _decode(self, logp: np.ndarray, language: str) -> tuple[str, float | None, float]:
         """Decode under one language's mask. Returns (text, confidence, language_score)."""
@@ -74,13 +79,14 @@ class IndicConformer:
         sub = logp[:, idx]  # [frames, pieces of this language + blank]
         pieces = self._vocab[language]
         blank = len(pieces)
+        # language score: average log of the probability mass this language's pieces hold per frame (log-sum-exp over the mask).
+        # Speech in another language should leave its mass outside the mask. Unproven for this head: see Deferred.md.
+        m = sub.max(axis=1, keepdims=True)
+        score = float((m[:, 0] + np.log(np.exp(sub - m).sum(axis=1))).mean())
+        # decode and confidence on probabilities renormalised inside the language, so "how sure" is measured among this language's pieces
+        sub = _log_softmax(sub)
         best = sub.argmax(axis=1)
         top = sub.max(axis=1)
-        # language score: average log of the probability mass this language's pieces hold per frame. Speech in another
-        # language leaves its mass on pieces outside the mask, so the right language scores highest.
-        m = sub.max(axis=1, keepdims=True)
-        mass = (m[:, 0] + np.log(np.exp(sub - m).sum(axis=1)))
-        score = float(mass.mean())
         out: list[str] = []
         probs: list[float] = []
         prev = -1
@@ -110,6 +116,11 @@ class IndicConformer:
                 best = (score, Heard(text, lang, conf))
         assert best is not None
         return best[1]
+
+
+def _log_softmax(x: np.ndarray) -> np.ndarray:
+    z = x - x.max(axis=1, keepdims=True)
+    return z - np.log(np.exp(z).sum(axis=1, keepdims=True))
 
 
 def _as_index(mask) -> np.ndarray:

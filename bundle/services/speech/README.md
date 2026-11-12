@@ -13,7 +13,7 @@ It is **off** unless the server turns it on, and it has no model files until the
 | `GET /healthz` | 200 when at least one model is loaded, else 503; says which models are loaded. No token needed. |
 | `POST /v1/speak` | 501, "this service only listens". |
 
-Answer: `{"text": "...", "language": "hi", "seconds": 7.4, "model": "...", "confidence": 0.91}`. `seconds` is the length of the audio, `model` names what heard it, `confidence` (0 to 1) is left out when the engine cannot say. Errors are `{"error": "<a sentence a person can read>"}` with a status: 400 bad request or unknown language, 401 wrong token, 411 no length, 413 over 5 MB or over 30 seconds, 415 unusable content type, 422 not audio, 503 busy or a model not installed (with `Retry-After` when busy), 501 for `/v1/speak`.
+Answer: `{"text": "...", "language": "hi", "seconds": 7.4, "model": "...", "confidence": 0.91}`. `seconds` is the length of the audio, `model` names what heard it, `confidence` (0 to 1) is left out when the engine cannot say. Errors are `{"error": "<a sentence a person can read>"}` with a status: 400 bad request or unknown language, 401 wrong token, 411 no length (a chunked upload without a length is accepted), 413 over 5 MB or over 30 seconds, 415 unusable content type, 422 not audio, 503 busy or a model not installed (with `Retry-After` when busy), 501 for `/v1/speak`.
 
 **Limits (owner, 12 Nov):** 30 seconds (250 ms of grace for codec padding) and 5 MB. A note over the size is refused on its header, before the body is read. Audio is decoded with ffmpeg to 16 kHz mono, stopped two seconds past the limit so a long file cannot hold the box.
 
@@ -22,8 +22,8 @@ Answer: `{"text": "...", "language": "hi", "seconds": 7.4, "model": "...", "conf
 ## Which model hears a note
 
 - A language hint (`hi`, `ml`, `kn`, `en`; `hi-IN` style is fine) goes straight to that language's engine.
-- No hint (the adapter sends none today): Whisper **tiny** is asked "what language is this" (about a second, to be measured). If it says English with probability 0.6 or more (`SPEECH_EN_MIN_PROB`), Whisper **small.en** writes it. Anything else goes to IndicConformer, which encodes the note once and then scores Hindi, Malayalam and Kannada against each other (the language whose pieces hold the most probability on the audio wins; Whisper's guess among Indic languages is not used). This is a cheap first version; the bake-off's `--detect` mode measures how often it is right.
-- One model run at a time (a 4 vCPU box gains nothing from two); up to three more notes wait, up to 15 s, then "busy, try again".
+- No hint (the adapter sends none today): Whisper **tiny** is asked "what language is this" (about a second, to be measured). If it says English with probability 0.6 or more (`SPEECH_EN_MIN_PROB`), Whisper **small.en** writes it. If it names Hindi, Malayalam or Kannada with probability 0.5 or more, IndicConformer hears the note in that language. Otherwise (it may call Hindi "Urdu" or "Marathi") IndicConformer encodes the note once and scores the three against each other (the language whose pieces hold the most probability on the audio wins). `SPEECH_LANGUAGE_PICK=ctc` skips Whisper's word on the Indic languages and always scores them, so the bake-off's `--detect` can compare the two ways. This is a cheap first version, not a measured one.
+- One model run at a time (a 4 vCPU box gains nothing from two); up to three more notes wait, up to 5 s each, then "busy, try again" (the adapter gives up at 20 s, which has to cover the run too).
 
 ## The models
 
@@ -57,7 +57,7 @@ Read the licence text on each model's own page when you accept it; this table is
      python -m geometer_speech.fetch_models --models-dir /models --token-file /run/hf-token
    ```
 
-   (Without Docker: `python3 -m geometer_speech.fetch_models --models-dir DIR --token-file FILE` from `bundle/services/speech`; it needs only Python 3.) Every file is checked against the pinned commit and its sha256 or git id; a file that fails is deleted and the run stops. `--check` re-verifies what is on disk without any network; `--only whisper-english` fetches just the English files. The token goes to huggingface.co only (it is dropped when a download is redirected to the storage host) and is never printed or kept.
+   (Without Docker: `python3 -m geometer_speech.fetch_models --models-dir DIR --token-file FILE` from `bundle/services/speech`; it needs only Python 3.) Every file is hashed after download and checked against the pinned commit: for a large file its sha256 is put back into the small LFS pointer text the repository holds for it and that text's git id must equal the pin (so nothing depends on Hugging Face listing hashes, and `--check` works offline); a file that fails is deleted and the run stops. `--check` re-verifies what is on disk without any network; `--only whisper-english` fetches just the English files. The token goes to huggingface.co only (it is dropped when a download is redirected to the storage host) and is never printed or kept.
 4. **Turn speech on** in the server's `geometer.json`: `"speech": { "enabled": true }` (optional `"image"` and `"modelsDir"`). The next `deploy` adds the `geometer-speech` container on its own internal `speech` network (no route out, no published port, read-only root, models mounted read-only, 6 GB memory cap). The speech Guard is the only thing meant to call it (the voice-notes branch places the Guard; see `bundle/Deferred.md`).
 5. Check: `docker compose ... ps` shows it healthy; `/healthz` lists which models loaded. If a model file is missing the service still starts with the others and answers a plain 503 naming the missing step to requests that need it.
 6. **Before any shop uses it, run the bake-off** (next section).

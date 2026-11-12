@@ -47,11 +47,13 @@ class Settings:
     token: str = ""
     require_token: bool = False
     threads: int = 4
-    # How many requests may wait for the one model run at a time. More than this get "busy, try again" rather than a hung call.
+    # How many requests may wait for the one model run at a time, and for how long (kept well under the adapter's 20 s timeout, which also has to cover the run itself).
     max_waiting: int = 3
-    wait_seconds: float = 15.0
+    wait_seconds: float = 5.0
     # Below this probability Whisper's language guess is not trusted as "English" and the Indic model gets the note.
     english_min_probability: float = 0.6
+    # "whisper-first": when Whisper tiny names hi, ml or kn, believe it; otherwise score the three on the Indic model. "ctc": always score on the Indic model.
+    language_pick: str = "whisper-first"
     whisper_cli: str = "whisper-cli"
     ffmpeg: str = "ffmpeg"
     max_seconds: float = MAX_SECONDS
@@ -73,8 +75,9 @@ class Settings:
             require_token=os.environ.get("SPEECH_REQUIRE_TOKEN", "") == "1",
             threads=_int("SPEECH_THREADS", 4),
             max_waiting=_int("SPEECH_MAX_WAITING", 3),
-            wait_seconds=float(_int("SPEECH_WAIT_SECONDS", 15)),
+            wait_seconds=float(_int("SPEECH_WAIT_SECONDS", 5)),
             english_min_probability=_float("SPEECH_EN_MIN_PROB", 0.6),
+            language_pick="ctc" if os.environ.get("SPEECH_LANGUAGE_PICK", "") == "ctc" else "whisper-first",
             whisper_cli=os.environ.get("SPEECH_WHISPER_CLI", "whisper-cli"),
             ffmpeg=os.environ.get("SPEECH_FFMPEG", "ffmpeg"),
         )

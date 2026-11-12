@@ -4,12 +4,11 @@ Never run by Geometer's code or by the service. Why it exists: IndicConformer's 
 accepted its terms is needed to download it), so the files cannot be baked into the image or fetched anonymously.
 
 What "pinned" means here (models.lock.json): each model is fixed to ONE commit of its repository, and each file to the git object id
-it has at that commit. For a large file that id belongs to a small pointer text which spells out the file's sha256 and size, so:
-  1. with the operator's token the script asks Hugging Face for the file list AT THAT COMMIT and reads each large file's sha256;
-  2. it rebuilds the pointer text from that sha256 and checks its git id equals the pinned one (so Hugging Face cannot hand back a
-     different file without the pin noticing);
-  3. it downloads the file and checks the bytes against that sha256 (small files: against their git blob id).
-A file that fails any check is deleted and the script stops. Where the lock also holds a sha256 (the Whisper files) it must agree.
+it has at that commit. For a large file that id belongs to a small pointer text which spells out the file's sha256 and size. So after a
+file is downloaded the script hashes it, rebuilds that pointer text from the sha256 it just computed and the pinned size, and checks the
+pointer's git id equals the pinned one. A different file cannot pass without the commit's own record being different. Small files are
+checked against their git blob id. This needs no file listing from Hugging Face, and the same check runs offline for `--check`.
+A file that fails is deleted and the script stops. Where the lock also holds a sha256 (the Whisper files) it must agree as well.
 
 The token goes only to huggingface.co (it is stripped when the download is redirected to the storage host) and is never printed or stored.
 
@@ -73,44 +72,16 @@ def opener() -> urllib.request.OpenerDirector:
     return urllib.request.build_opener(StripAuthOnRedirect)
 
 
-def api_json(op: urllib.request.OpenerDirector, url: str, token: str | None) -> list:
-    """GET a JSON list from the Hub, following its `Link: rel=next` pages."""
-    out: list = []
-    while url:
-        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"} if token else {})
-        with op.open(req, timeout=60) as resp:
-            out += json.loads(resp.read().decode("utf-8"))
-            link = resp.headers.get("Link", "")
-        url = ""
-        for part in link.split(","):
-            if 'rel="next"' in part and "<" in part:
-                url = part[part.index("<") + 1:part.index(">")]
-    return out
-
-
-def expected_for(model: dict, listing: dict[str, dict]) -> dict[str, str | None]:
-    """sha256 for every large file of the model (lock first, else the token-authorised listing), checked against the pinned git ids."""
-    sha: dict[str, str | None] = {}
-    for f in model["files"]:
-        if not f.get("lfs"):
-            continue
-        listed = (listing.get(f["path"], {}).get("lfs") or {}).get("oid", "")
-        pinned = f.get("sha256")
-        if pinned and listed and pinned != listed:
-            raise SystemExit(f"{f['path']}: Hugging Face reports a different sha256 than the lock pins. Stopping: do not use these files.")
-        value = pinned or listed
-        if not value or "*" in value:
-            raise SystemExit(f"{f['path']}: Hugging Face did not show the file's sha256. Is the token valid and has this account accepted the model's terms at https://huggingface.co/{model['repo']} ?")
-        if git_blob_oid(pointer_text(value, f["size"])) != f["git"]:
-            raise SystemExit(f"{f['path']}: its sha256 does not match the pinned commit. Stopping: the repository is not the revision the lock pins.")
-        sha[f["path"]] = value
-    return sha
-
-
-def verify_file(path: Path, f: dict, sha256: str | None) -> bool:
+def verify_file(path: Path, f: dict) -> bool:
+    """True when the file on disk is exactly the one the pinned commit records (size, then the git id, rebuilt from the sha256 for large files)."""
     if not path.is_file() or path.stat().st_size != f["size"]:
         return False
-    return sha256_file(path) == sha256 if f.get("lfs") else git_blob_oid_file(path) == f["git"]
+    if not f.get("lfs"):
+        return git_blob_oid_file(path) == f["git"]
+    digest = sha256_file(path)
+    if f.get("sha256") and digest != f["sha256"]:
+        return False
+    return git_blob_oid(pointer_text(digest, f["size"])) == f["git"]
 
 
 def download(op: urllib.request.OpenerDirector, model: dict, f: dict, dest: Path, token: str | None) -> None:
@@ -147,37 +118,25 @@ def main(argv: list[str] | None = None) -> int:
             continue
         target = args.models_dir / model["target"]
         print(f"== {model['id']}: {model['repo']} @ {model['revision'][:12]} ({model['license']}, {len(model['files'])} files)")
-        sha: dict[str, str | None]
-        if args.check:
-            # offline: only the sha256 the lock itself holds is known; large files without one are checked by size and reported
-            sha = {f["path"]: f.get("sha256") for f in model["files"] if f.get("lfs")}
-        else:
-            if model.get("gated") and not token:
-                print(f"  {model['repo']} is gated: give your Hugging Face token (--token-file or HF_TOKEN) after accepting its terms at {HF}/{model['repo']}", file=sys.stderr)
-                return 2
-            listing = {e["path"]: e for e in api_json(op, f"{HF}/api/models/{model['repo']}/tree/{model['revision']}?recursive=true", token) if e.get("type") == "file"}
-            sha = expected_for(model, listing)
-        done = fetched = 0
+        if not args.check and model.get("gated") and not token:
+            print(f"  {model['repo']} is gated: give your Hugging Face token (--token-file or HF_TOKEN) after accepting its terms at {HF}/{model['repo']}", file=sys.stderr)
+            return 2
+        good = fetched = 0
         for f in model["files"]:
             dest = target / f["path"]
-            if f.get("lfs") and sha.get(f["path"]) is None:
-                ok = dest.is_file() and dest.stat().st_size == f["size"]
-                print(f"  {f['path']}: present, size ok, sha256 not in the lock (run without --check to verify)" if ok else f"  {f['path']}: MISSING")
-                bad += 0 if ok else 1
-                continue
-            if verify_file(dest, f, sha.get(f["path"])):
-                done += 1
+            if verify_file(dest, f):
+                good += 1
                 continue
             if args.check:
                 print(f"  {f['path']}: MISSING or WRONG")
                 bad += 1
                 continue
             download(op, model, f, dest, token)
-            if not verify_file(dest, f, sha.get(f["path"])):
+            if not verify_file(dest, f):
                 dest.unlink(missing_ok=True)
-                raise SystemExit(f"{f['path']}: the downloaded file failed its check and was deleted. Stopping.")
+                raise SystemExit(f"{f['path']}: the downloaded file failed its check against the pinned commit and was deleted. Stopping.")
             fetched += 1
-        print(f"  {done} already good, {fetched} downloaded and checked")
+        print(f"  {good} already good, {fetched} downloaded and checked")
     print("All files checked." if not bad else f"{bad} file(s) need attention.")
     return 1 if bad else 0
 

@@ -52,7 +52,7 @@ class IndicDecode(unittest.TestCase):
     def test_collapse_and_blank(self):
         text, conf, _ = self.model()._decode(self.frames([0, 0, 3, 1, 1, 3, 2]), "hi")
         self.assertEqual(text, "कल सु")
-        self.assertAlmostEqual(conf, 0.9, places=2)
+        self.assertGreater(conf, 0.9)  # confidence is measured inside the language, so it is at least the full-vocabulary 0.9
 
     def test_repeat_across_a_blank_is_two_letters(self):
         text, *_ = self.model()._decode(self.frames([1, 3, 1]), "hi")
@@ -158,25 +158,34 @@ class FetchModelsPins(unittest.TestCase):
                     checked += 1
         self.assertEqual(checked, 2)
 
-    def test_hub_answers_that_do_not_match_the_pin_stop_the_run(self):
-        ic = {"files": [{"path": "w.bin", "size": 10, "lfs": True, "git": "0" * 40}], "repo": "x/y"}
-        with self.assertRaises(SystemExit):
-            fetch_models.expected_for(ic, {"w.bin": {"lfs": {"oid": "a" * 64}}})       # pointer id would not match
-        with self.assertRaises(SystemExit):
-            fetch_models.expected_for(ic, {"w.bin": {"lfs": {"oid": "*" * 64}}})       # hidden: no token / terms not accepted
-        sha = "b" * 64
-        good = {"files": [{"path": "w.bin", "size": 10, "lfs": True, "git": fetch_models.git_blob_oid(fetch_models.pointer_text(sha, 10))}], "repo": "x/y"}
-        self.assertEqual(fetch_models.expected_for(good, {"w.bin": {"lfs": {"oid": sha}}}), {"w.bin": sha})
-
     def test_verify_file_small_and_large(self):
+        import hashlib
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "f"
             p.write_bytes(b"hello")
-            self.assertTrue(fetch_models.verify_file(p, {"size": 5, "git": fetch_models.git_blob_oid(b"hello")}, None))
-            import hashlib
-            self.assertTrue(fetch_models.verify_file(p, {"size": 5, "lfs": True, "git": ""}, hashlib.sha256(b"hello").hexdigest()))
-            self.assertFalse(fetch_models.verify_file(p, {"size": 5, "lfs": True, "git": ""}, "0" * 64))
-            self.assertFalse(fetch_models.verify_file(p, {"size": 6, "git": fetch_models.git_blob_oid(b"hello")}, None))
+            small = {"size": 5, "git": fetch_models.git_blob_oid(b"hello")}
+            self.assertTrue(fetch_models.verify_file(p, small))
+            self.assertFalse(fetch_models.verify_file(p, {**small, "size": 6}))
+            self.assertFalse(fetch_models.verify_file(p, {**small, "git": "0" * 40}))
+            self.assertFalse(fetch_models.verify_file(Path(d) / "absent", small))
+            sha = hashlib.sha256(b"hello").hexdigest()
+            large = {"size": 5, "lfs": True, "git": fetch_models.git_blob_oid(fetch_models.pointer_text(sha, 5))}
+            self.assertTrue(fetch_models.verify_file(p, large))                     # the pointer id is rebuilt from the file's own sha256
+            self.assertTrue(fetch_models.verify_file(p, {**large, "sha256": sha}))
+            self.assertFalse(fetch_models.verify_file(p, {**large, "sha256": "0" * 64}))
+            p.write_bytes(b"jello")
+            self.assertFalse(fetch_models.verify_file(p, large))                    # same size, different bytes: caught
+
+    def test_a_wrong_file_in_the_models_folder_is_reported_by_check(self):
+        with tempfile.TemporaryDirectory() as d:
+            lock = Path(d) / "lock.json"
+            lock.write_text(json.dumps({"models": [{"id": "m", "repo": "x/y", "revision": "0" * 40, "license": "MIT", "gated": False, "target": "m", "files": [{"path": "a.bin", "size": 3, "git": fetch_models.git_blob_oid(b"abc")}]}]}))
+            models = Path(d) / "models"
+            (models / "m").mkdir(parents=True)
+            (models / "m" / "a.bin").write_bytes(b"xyz")
+            self.assertEqual(fetch_models.main(["--models-dir", str(models), "--lock", str(lock), "--check"]), 1)
+            (models / "m" / "a.bin").write_bytes(b"abc")
+            self.assertEqual(fetch_models.main(["--models-dir", str(models), "--lock", str(lock), "--check"]), 0)
 
 
 if __name__ == "__main__":

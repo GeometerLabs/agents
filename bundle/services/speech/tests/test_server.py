@@ -107,6 +107,21 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(status, 501)
         self.assertIn("text", body["error"])
 
+    def test_chunked_upload_without_a_length_is_accepted(self):
+        import http.client
+        host, port = self.srv.httpd.server_address
+        body, ctype = multipart_body(tone_wav(1), "hi")
+        c = http.client.HTTPConnection(host, port, timeout=10)
+        c.request("POST", "/v1/transcribe", body=iter([body[:100], body[100:]]), headers={"Content-Type": ctype, "Transfer-Encoding": "chunked"}, encode_chunked=True)
+        r = c.getresponse()
+        self.assertEqual(r.status, 200)
+        self.assertEqual(json.loads(r.read())["language"], "hi")
+
+    def test_a_refusal_after_a_big_upload_still_reaches_the_client_as_words(self):
+        # the body is sent in full; the 404 must come back as readable JSON, not a reset connection
+        status, body, _ = self.srv.call("POST", "/nope", b"\0" * (3 * 1024 * 1024), {"Content-Type": "audio/ogg"})
+        self.assertEqual((status, body["error"]), (404, "No such route."))
+
     def test_no_length_header_411(self):
         import http.client
         host, port = self.srv.httpd.server_address
@@ -126,6 +141,11 @@ class AuthTests(unittest.TestCase):
     def post(self, headers):
         body, ctype = multipart_body(tone_wav(1), "hi")
         return self.srv.call("POST", "/v1/transcribe", body, {"Content-Type": ctype, **headers})
+
+    def test_unauthorised_big_upload_gets_the_sentence_not_a_reset(self):
+        status, body, _ = self.srv.call("POST", "/v1/transcribe", b"\0" * (2 * 1024 * 1024), {"Content-Type": "audio/ogg", "Authorization": "no"})
+        self.assertEqual(status, 401)
+        self.assertIn("token", body["error"])
 
     def test_token_required_when_set(self):
         self.assertEqual(self.post({})[0], 401)

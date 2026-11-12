@@ -49,6 +49,21 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(len(en.calls), 1)
         self.assertEqual(ic.calls, [])
 
+    def test_no_hint_whisper_naming_an_indic_language_is_believed(self):
+        svc, ic, en, g = make(guess=("kn", 0.8))
+        r = svc.transcribe(tone_wav(2), None)
+        self.assertEqual((r.language, ic.calls[0][1]), ("kn", "kn"))
+
+    def test_no_hint_whisper_unsure_about_an_indic_language_lets_the_indic_model_score(self):
+        svc, ic, en, g = make(guess=("kn", 0.3))
+        self.assertEqual(svc.transcribe(tone_wav(2), None).language, "ml")  # the fake model's own pick
+        self.assertIsNone(ic.calls[0][1])
+
+    def test_ctc_pick_mode_ignores_whisper_among_indic_languages(self):
+        svc, ic, en, g = make(guess=("kn", 0.99), language_pick="ctc")
+        svc.transcribe(tone_wav(2), None)
+        self.assertIsNone(ic.calls[0][1])
+
     def test_no_hint_unsure_english_goes_to_the_indic_model_which_picks(self):
         svc, ic, en, g = make(guess=("en", 0.40))
         r = svc.transcribe(tone_wav(2), None)
@@ -56,7 +71,7 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(ic.calls[0][1], None)
 
     def test_no_hint_other_language_names_go_to_the_indic_model(self):
-        for said in ("hi", "ur", "mr", "ta"):
+        for said in ("hi", "ur", "mr", "ta"):  # (hi is believed; the others are scored by the Indic model)
             svc, ic, en, g = make(guess=(said, 0.99))
             svc.transcribe(tone_wav(1), None)
             self.assertEqual(len(ic.calls), 1, said)
