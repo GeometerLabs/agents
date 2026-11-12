@@ -29,6 +29,7 @@ import { isChannelConversation } from "../../../../modules/channels/conversation
 import { compactChannel, emptyChannelState } from "../../../../modules/channels/state.ts";
 import { bookingView, ownerView, publicServices, shopInfo } from "../src/channel.ts";
 import { ownerAppView } from "../../../../modules/assistant/app/view.ts";
+import { createAudioDrop } from "../../../../modules/channels/owner-audio.ts";
 import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
 import { createMorningJob } from "../../../../modules/assistant/morning.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
@@ -108,6 +109,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
    * The agent over one step's store. Its messaging keeps a message to a booking page's conversation in that same store (item 11d, modules/channels/outbox.ts), so the
    * words a web customer is given are saved whole or not at all with the step, and never go to WhatsApp.
    */
+  // the owner's recordings from their page, in memory only until their step listens (only with a voice service and the assistant: otherwise there is no record button)
+  const pageAudio = options.voice && settings.assistant ? createAudioDrop({ now: () => clock.now() }) : undefined;
   const agentOver = (store: Store, record: ReturnType<typeof createRecord>, use: Services) => createAgent({
     settings, clock, ...use, messaging: channelMessaging(use.messaging, () => (store.channel ??= emptyChannelState()), clock),
     calendar: use.calendar ?? createOwnCalendar(store, () => clock.now()), parser, record, store, ai: policy,
@@ -116,6 +119,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}),
     // item 11e: how the shop's assistant reads the owner's words (only when the assistant is on)
     ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}),
+    ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}),
   });
   const kit: RuntimeKit<Store, Settings, RefundContext> = {
     pathway: PATHWAY,
@@ -160,11 +164,12 @@ export function createRuntime(options: RuntimeOptions): Runtime {
         catch { return { ...base, serviceId: query.serviceId, days: [], calendarUnread: true }; }
       },
       view: (store, handleHash) => bookingView(settings, store, handleHash),
+      ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
       // item 11e on item 11d's page: with the shop's assistant on, the owner's read also carries the app's view (its cards by id and digest, the mood, the talk),
       // read-only over the same saved state as the page's items, so the page's cards are exactly the ones a WhatsApp tap would answer
       owner: (store) => ({
         ...ownerView(settings, store, clock.now()),
-        ...(settings.assistant ? { app: ownerAppView({ skills: [bookingsSkill({ settings, store, nowMs: () => clock.now(), entries: () => [], optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false })], state: store.assistant, nowMs: clock.now(), timeZone: settings.timezone, settings: settings.assistant }) } : {}),
+        ...(settings.assistant ? { app: { ...ownerAppView({ skills: [bookingsSkill({ settings, store, nowMs: () => clock.now(), entries: () => [], optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false })], state: store.assistant, nowMs: clock.now(), timeZone: settings.timezone, settings: settings.assistant }), listen: pageAudio !== undefined } } : {}),
       }),
     },
     refundContext(store, _settings, receipt) {

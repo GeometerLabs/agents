@@ -16,12 +16,13 @@ import { TEMPLATES } from "../src/language/templates.ts";
 import { parseSettings } from "../src/settings.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";
 import { readFileSync } from "node:fs";
+import { createAudioDrop } from "../../../../modules/channels/owner-audio.ts";
 
 // The builder's price for the tests only (never a real provider's price; the real one is the builder's setting).
 const RATE = { sttInrPerMinute: 0.6 };
 const SECONDS = 12;
 
-function voiceWorld(o: { transcript?: { text: string; language: "hi" | "en" | "ml" | "kn" | null; confidence: number | null }; ai?: import("../../../../modules/understanding/ai-state.ts").AiPolicy; bytes?: Uint8Array; settings?: import("../src/settings.ts").Settings } = {}) {
+function voiceWorld(o: { transcript?: { text: string; language: "hi" | "en" | "ml" | "kn" | null; confidence: number | null }; ai?: import("../../../../modules/understanding/ai-state.ts").AiPolicy; bytes?: Uint8Array; settings?: import("../src/settings.ts").Settings; pageAudio?: (ref: string) => import("../../../../modules/voice/turn.ts").PageAudio | undefined } = {}) {
   const speech = scriptedSpeech({ transcript: o.transcript ?? { text: "hello", language: "en", confidence: 0.94 } });
   const lookup = scriptedWire({ "/v26.0/MEDIA1": { json: { url: "https://media.stand-in/audio?mid=1", mime_type: "audio/ogg; codecs=opus", file_size: "300" } } });
   const download = scriptedWire({ "/audio": { bytes: o.bytes ?? fakeVoiceNote(SECONDS), contentType: "audio/ogg" } });
@@ -30,7 +31,7 @@ function voiceWorld(o: { transcript?: { text: string; language: "hi" | "en" | "m
     provider: speech, media: { lookup, download, version: "v26.0", downloadHosts: ["media.stand-in"] }, rate: RATE, languages: ["hi", "en", "ml", "kn"],
     clock: { now: () => world!.clock.now() },
   });
-  world = createWorld({ voice, ...(o.ai ? { ai: o.ai } : {}), ...(o.settings ? { settings: o.settings } : {}) });
+  world = createWorld({ voice, ...(o.ai ? { ai: o.ai } : {}), ...(o.settings ? { settings: o.settings } : {}), ...(o.pageAudio ? { pageAudio: o.pageAudio } : {}) });
   return { w: world, speech, lookup, download };
 }
 /** The customer sends a voice note: the message the inbox would forward (voice on: it carries where the audio is). */
@@ -220,4 +221,23 @@ test("an owner's note that cannot be made out: they are asked to type it, and th
   assert.equal(w.lastTextTo(w.owner), "I couldn't make out that voice note. Please type it.");
   assert.deepEqual(w.store.assistant?.closedDays ?? [], []);
   assert.equal(summarizeUsage(w.record.entries(), {}).modelMicroInr, sttCostMicroInr(RATE, SECONDS));
+});
+
+test("a recording from the owner's page (items 11d and 11e): heard from memory by the same listener, read by the assistant, answered on the page; gone after a restart, the owner is asked to type", async () => {
+  const drop = createAudioDrop({ now: () => Date.UTC(2026, 10, 3, 4, 30) });
+  const ref = drop.put(fakeVoiceNote(SECONDS), "audio/ogg; codecs=opus");
+  const { w, speech, lookup, download } = voiceWorld({ settings: withAssistant(), transcript: { text: "close tomorrow", language: "en", confidence: 0.95 }, pageAudio: (r) => drop.get(r) });
+  const toOwner = w.messaging.sentTo(w.owner).length;
+  await w.agent.handle({ kind: "owner_message", id: "page-voice-1", text: "", voice: ref });
+  assert.equal(speech.calls.length, 1, "listened to once");
+  assert.equal(lookup.requests.length + download.requests.length, 0, "the audio was in hand: nothing fetched from WhatsApp");
+  assert.deepEqual(w.store.assistant?.closedDays, ["2026-11-04"]);
+  assert.deepEqual(w.store.assistant!.talk.map((l) => [l.from, l.text.split(".")[0]]), [["owner", "close tomorrow"], ["assistant", "Closed Wed 4 Nov"]], "the words and the answer are on the page");
+  assert.equal(w.messaging.sentTo(w.owner).length, toOwner, "nothing to the owner's WhatsApp");
+  assert.equal(summarizeUsage(w.record.entries(), {}).modelMicroInr, sttCostMicroInr(RATE, SECONDS), "the cost is counted as for a WhatsApp note");
+  assert.ok(!JSON.stringify(w.store).includes("OggS"), "the audio is nowhere in the saved state");
+  // a recording the runtime no longer holds (a restart): nothing is listened to, the owner is asked to type
+  await w.agent.handle({ kind: "owner_message", id: "page-voice-2", text: "", voice: "not-held" });
+  assert.equal(speech.calls.length, 1);
+  assert.equal(w.store.assistant!.talk.at(-1)?.text, "I couldn't make out that voice note. Please type it.");
 });

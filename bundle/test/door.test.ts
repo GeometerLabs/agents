@@ -24,11 +24,12 @@ const SLUGS: Record<string, SlugAnswer> = {
 };
 const IDS: Record<string, IdAnswer> = { "k7m2qx9r4t": { state: "active", slug: "veena-salon" }, "s2s2s2s2s2": { state: "suspended" }, "g3g3g3g3g3": { state: "gone" } };
 
-async function door(o: { remote?: (target: URL, init: Parameters<Transport>[1]) => Upstream; registryDown?: boolean } = {}) {
+async function door(o: { remote?: (target: URL, init: Parameters<Transport>[1]) => Upstream; local?: (target: URL, init: Parameters<Transport>[1]) => Upstream; registryDown?: boolean } = {}) {
   const calls: { kind: "local" | "remote" | "slug" | "id"; target?: string; headers?: Record<string, string>; body?: string }[] = [];
   const logs: string[] = [];
   const local: Transport = async (target, init) => {
     calls.push({ kind: "local", target: target.href, headers: init.headers, ...(init.body ? { body: init.body.toString() } : {}) });
+    if (o.local) return o.local(target, init);
     return { status: 200, headers: { "content-type": "text/html", "set-cookie": ["__Secure-geo-owner=abc; Path=/veena-salon/owner; HttpOnly; Secure; SameSite=Lax"], "content-security-policy": "default-src 'none'" }, body: Buffer.from("<p>our page</p>") };
   };
   const remote: Transport = async (target, init) => {
@@ -210,4 +211,22 @@ test("the pages domain is never written in the code: no literal of the owner's d
   };
   for (const top of ["bundle", "modules", "templates"]) walk(join(root, top));
   assert.ok(seen.length > 100);
+});
+
+test("the owner's app (items 11d and 11e): a shop of this server keeps its own page's nonce policy; a builder's page never gets script; only the local owner's recording may be bigger", async () => {
+  const ours = "default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-abc123'; worker-src https://pages.example/veena-salon/owner/sw.js";
+  const d = await door({
+    local: () => ({ status: 200, headers: { "content-type": "text/html", "content-security-policy": ours }, body: Buffer.from("<p>the owner's app</p>") }),
+    remote: () => ({ status: 200, headers: { "content-type": "text/html", "content-security-policy": "script-src 'nonce-abc123'" }, body: Buffer.from("<script nonce=\"abc123\">x</script>") }),
+  });
+  assert.equal((await d.call("/veena-salon/owner/")).headers["content-security-policy"], ours, "our own front's policy, with its nonce, passes as it is");
+  const builder = await d.call("/ravi-cuts/");
+  assert.equal(builder.headers["content-security-policy"], passThroughPolicy("pages.example", "ravi-cuts"), "a builder's page asking for a nonce still gets the door's no-script policy");
+  const recording = "x".repeat(150 * 1024);
+  const sized = { "content-length": String(recording.length) };
+  const voice = await d.call("/veena-salon/owner/voice", { method: "POST", headers: { "content-type": "audio/ogg", ...sized }, body: recording });
+  assert.equal(voice.status, 200, "a recording up to the front's own limit reaches this server's front");
+  assert.equal(d.calls.filter((c) => c.kind === "local").at(-1)!.body!.length, recording.length);
+  assert.equal((await d.call("/veena-salon/book", { method: "POST", headers: sized, body: recording })).status, 413, "any other post keeps the small limit");
+  assert.equal((await d.call("/ravi-cuts/owner/voice", { method: "POST", headers: sized, body: recording })).status, 302, "a builder's owner view is sent to its own domain, its body never read");
 });

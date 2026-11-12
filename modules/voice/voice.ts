@@ -14,7 +14,7 @@ import { oggOpusSeconds } from "./ogg.ts";
 import { fetchAudio } from "./media.ts";
 import type { MediaRef, MediaSource } from "./media.ts";
 import { lowConfidence, sttCostMicroInr } from "./speech.ts";
-import type { SpeechProvider, SpeechRate } from "./speech.ts";
+import type { Audio, SpeechProvider, SpeechRate } from "./speech.ts";
 
 export type NotHeard = "failed" | "too_long" | "unreadable" | "low_confidence" | "daily_cap";
 
@@ -30,6 +30,11 @@ export interface VoiceService {
    * no call: a step that runs again after a Guard wait must not pay twice.
    */
   hear(ref: MediaRef, o?: { notesToday?: number }): Promise<Heard>;
+  /**
+   * Listen to audio already in hand (integration of items 11d and 11e: the owner's hold-to-record on their page, which the runtime keeps in memory only, never
+   * on disk). The same limits, cost and answers as `hear`; `memo` names the recording, so a step that runs again gets the first answer and is not charged twice.
+   */
+  hearAudio(audio: Audio, o?: { notesToday?: number; memo?: string }): Promise<Heard>;
 }
 
 export interface VoiceDeps {
@@ -63,24 +68,41 @@ export function createVoice(deps: VoiceDeps): VoiceService {
     return heard;
   };
 
+  /** The answer given before for this note, if a step that runs again asks within half an hour. */
+  const answeredBefore = (memo: string): Heard | undefined => {
+    const before = memo ? heardBefore.get(memo) : undefined;
+    return before && deps.clock.now() - before.at < 30 * 60_000 ? before.heard : undefined;
+  };
   return {
     async hear(ref, o = {}) {
       const memo = ref.id ?? ref.url ?? "";
-      const before = memo ? heardBefore.get(memo) : undefined;
-      if (before && deps.clock.now() - before.at < 30 * 60_000) return before.heard;
+      const before = answeredBefore(memo);
+      if (before) return before;
       if ((o.notesToday ?? 0) >= perDay) return no("daily_cap");
       let audio;
       try { audio = await fetchAudio(deps.media, ref); } catch (e) { deps.log?.(`A voice note could not be fetched (${(e as Error).message}).`); return no("failed"); }
-      // The length is read from the audio itself: it is needed for the limit and for the cost, and nothing else gives it. A file with no readable length is not sent on.
-      const seconds = oggOpusSeconds(audio.bytes);
-      if (seconds === null) return no("unreadable");
-      if (seconds > maxSeconds) return remember(memo, no("too_long", { seconds }));
-      let transcript;
-      try { transcript = await provider.transcribe(audio, deps.languages); }
-      catch (e) { deps.log?.(`A voice note could not be transcribed (${(e as Error).message}).`); return no("failed", { seconds }); }
-      const cost = sttCostMicroInr(deps.rate, seconds);
-      if (lowConfidence(transcript)) return remember(memo, no("low_confidence", { costMicroInr: cost, seconds }));
-      return remember(memo, { ok: true, text: transcript.text, language: transcript.language!, seconds, costMicroInr: cost, provider: provider.name, model: provider.sttModel, confidence: transcript.confidence });
+      return listenTo(audio, memo);
+    },
+    async hearAudio(audio, o = {}) {
+      const memo = o.memo ? `audio:${o.memo}` : "";
+      const before = answeredBefore(memo);
+      if (before) return before;
+      if ((o.notesToday ?? 0) >= perDay) return no("daily_cap");
+      return listenTo(audio, memo);
     },
   };
+
+  /** The part both doors share once the audio is in hand: its length, the limit, the provider's words, the cost and the confidence. */
+  async function listenTo(audio: Audio, memo: string): Promise<Heard> {
+    // The length is read from the audio itself: it is needed for the limit and for the cost, and nothing else gives it. A file with no readable length is not sent on.
+    const seconds = oggOpusSeconds(audio.bytes);
+    if (seconds === null) return no("unreadable");
+    if (seconds > maxSeconds) return remember(memo, no("too_long", { seconds }));
+    let transcript;
+    try { transcript = await provider.transcribe(audio, deps.languages); }
+    catch (e) { deps.log?.(`A voice note could not be transcribed (${(e as Error).message}).`); return no("failed", { seconds }); }
+    const cost = sttCostMicroInr(deps.rate, seconds);
+    if (lowConfidence(transcript)) return remember(memo, no("low_confidence", { costMicroInr: cost, seconds }));
+    return remember(memo, { ok: true, text: transcript.text, language: transcript.language!, seconds, costMicroInr: cost, provider: provider.name, model: provider.sttModel, confidence: transcript.confidence });
+  }
 }

@@ -53,8 +53,11 @@ export interface OwnerView {
   services: OfferService[];
   items: OwnerItemView[];
   upcoming: { case: string; startMs: number; serviceId?: string; customer: { phone: string; name?: string }; channel: OwnerItemView["channel"]; state: string }[];
-  /** Item 11e: the shop's assistant's view (its open cards, answered by id and digest; the mood; the talk), when the shop has the assistant. Left out otherwise. */
-  app?: OwnerAppView;
+  /**
+   * Item 11e: the shop's assistant's view (its open cards, answered by id and digest; the mood; the talk), when the shop has the assistant. Left out otherwise.
+   * `listen`: the shop has a voice service, so the page offers hold-to-record.
+   */
+  app?: OwnerAppView & { listen?: boolean };
 }
 
 /** A refund Guard holds for the owner, as the relay shows it to the owner's page (modules/approvals/relay.ts ownerAsks). */
@@ -75,6 +78,11 @@ export interface ChannelBackend {
   signin?(link: string): Promise<{ session: string; expiresAtMs: number } | { state: Exclude<LinkState, "valid"> }>;
   /** Item 11f: end this session. */
   signout?(session: string): Promise<void>;
+  /**
+   * Items 11d and 11e: a recording from the owner's page, passed to the runtime as it came (the runtime holds it in memory only). "off": the shop's assistant has no
+   * voice service; "refused": the owner's credential is not good.
+   */
+  ownerVoice?(owner: OwnerCred, audio: { bytes: Buffer; mime: string }): Promise<"saved" | "refused" | "off">;
 }
 
 /** What the front asks of the approvals relay, for a shop whose Guard holds refunds for the owner (a gateway shop). */
@@ -134,6 +142,13 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     },
     async signout(session) {
       await json<unknown>(await call(`${o.url}/internal/channel/owner-signout`, { method: "POST", headers: headers({ session }) }, timeout));
+    },
+    async ownerVoice(owner, audio) {
+      const r = await call(`${o.url}/internal/channel/owner-voice`, { method: "POST", headers: headers(owner, { "content-type": audio.mime }), body: new Uint8Array(audio.bytes) }, timeout);
+      if (r.status === 403) return "refused";
+      if (r.status === 404) return "off";
+      if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`);
+      return "saved";
     },
   };
 }

@@ -113,6 +113,11 @@ export interface ChannelKit<Store> {
   view(store: Store, handleHash: string): unknown | null;
   /** What waits for the owner, each with the digest of exactly what is shown, and the coming bookings. */
   owner(store: Store): unknown;
+  /**
+   * Integration of items 11d and 11e: hold a recording the owner made on their page, in memory only, and give its reference for an `owner_message` event. Left out
+   * when the shop has no voice service or no assistant: the page then shows no record button, and the route answers that voice is off.
+   */
+  ownerVoice?(audio: { bytes: Uint8Array; mime: string }): string;
 }
 
 /** What a template gives the runtime. */
@@ -213,6 +218,8 @@ export interface RuntimeChannel {
   /** The request with this handle's hash, or where its task is; null when there is neither. */
   view(handleHash: string): unknown | PendingView | null;
   owner(): unknown;
+  /** The kit's ownerVoice (above), when it has one. */
+  ownerVoice?(audio: { bytes: Uint8Array; mime: string }): string;
 }
 
 export type { InboundMessage, Language };
@@ -417,6 +424,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
           return task === "pending" ? { status: "pending" as const } : task === "failed" ? { status: "not_done" as const } : null;
         },
         owner: () => kit.channel!.owner(kit.parse(snapshot)),
+        ...(kit.channel.ownerVoice ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => kit.channel!.ownerVoice!(audio) } : {}),
       } satisfies RuntimeChannel,
     } : {}),
 

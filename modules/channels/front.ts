@@ -6,6 +6,8 @@
 //   ...  /s/<shop>/api/v1/...            the booking API (api.ts)                               POST /s/<shop>/mcp         the same operations for AI assistants (mcp.ts)
 //   GET  /s/<shop>/o/<owner token>       the owner's private approvals page                     POST /s/<shop>/o/<owner token>   an answer
 //   ...  /s/<shop>/owner/...             item 11f: the owner's view, signed in by a one-time link on WhatsApp (owner-session.ts)
+//   With the shop's assistant (item 11e), both owner addresses are also the owner's app: <owner base>/ (the page), /manifest.webmanifest, /sw.js, /talk (the talk
+//   box's words) and /voice (a hold-to-record recording); the page's one script runs by a nonce in that response's content policy (appPolicy).
 //
 // Item 11f: through the pages domain's front door (bundle/services/door.ts) the same views are at https://<pages domain>/<slug>/...; the door says so with
 // `x-geometer-door: <slug>`, and the front then writes every address under that base. Only the slug in the shop's own pages file counts: anything else is ignored.
@@ -14,7 +16,7 @@
 // the owner without the owner's link: the runtime and the relay check it against their own copy of its hash. What it does before anything reaches a runtime: the
 // per-address limits (limits.ts), the shape of every field, and an Origin check on every form, so another site cannot post one for a visitor. It keeps nothing.
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { textQrSvg } from "../qr/svg.ts";
 import { LANGUAGES } from "../language/languages.ts";
 import type { Language } from "../language/languages.ts";
@@ -34,6 +36,9 @@ import { ownerLinkGone, ownerPage } from "./owner-page.ts";
 import type { OwnerCred } from "./backend.ts";
 import { CSRF_HEADER, csrfMatches, ownerSessionRoute } from "./owner-session.ts";
 import type { PagesFile } from "./pages-file.ts";
+import { MAX_VOICE_BYTES } from "./owner-audio.ts";
+import { OWNER_MESSAGE_MAX } from "./events.ts";
+import { OWNER_APP_SW, ownerAppManifest } from "../assistant/app/pwa.ts";
 
 /** The header the pages domain's front door adds: the slug the visitor asked for (bundle/services/door.ts). */
 export const DOOR_HEADER = "x-geometer-door";
@@ -61,6 +66,13 @@ export interface FrontOptions {
 /** The pages' content policy: no script at all, nothing loaded from anywhere, no frame, forms only to this site, no referrer. */
 export const PAGE_POLICY = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
 const HTML_HEADERS = { "content-type": "text/html; charset=utf-8", "content-security-policy": PAGE_POLICY, "x-content-type-options": "nosniff", "referrer-policy": "no-referrer", "cache-control": "no-store" };
+/**
+ * The owner's app page (item 11e, on the owner's link and the signed-in view): PAGE_POLICY and exactly what the app needs, each at its own address under the owner's
+ * base: its one inline script by this response's nonce, the recording's POST, its service worker and its manifest. The pages origin is shared by every shop on the
+ * pages domain, so nothing here says 'self': no other page there may run script, register a worker or be posted to. Every other page keeps PAGE_POLICY.
+ */
+export const appPolicy = (base: string, nonce: string): string =>
+  `${PAGE_POLICY}; script-src 'nonce-${nonce}'; connect-src ${base}/voice; worker-src ${base}/sw.js; manifest-src ${base}/manifest.webmanifest`;
 const MAX_FORM = 4 * 1024;
 const MAX_JSON = 16 * 1024;
 
@@ -82,6 +94,18 @@ function readBody(req: IncomingMessage, max: number): Promise<string | undefined
     let size = 0;
     req.on("data", (c: Buffer) => { size += c.length; if (size > max) { resolve(undefined); req.destroy(); return; } chunks.push(c); });
     req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    req.on("error", () => resolve(undefined));
+  });
+}
+
+/** A body as bytes (a recording), or undefined past `max`. */
+function readBytes(req: IncomingMessage, max: number): Promise<Buffer | undefined> {
+  return new Promise((resolve) => {
+    if (Number(req.headers["content-length"] ?? 0) > max) { resolve(undefined); return; }
+    const chunks: Buffer[] = [];
+    let size = 0;
+    req.on("data", (c: Buffer) => { size += c.length; if (size > max) { resolve(undefined); req.destroy(); return; } chunks.push(c); });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
     req.on("error", () => resolve(undefined));
   });
 }
@@ -305,6 +329,17 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     } catch (e) { log(`An owner's answer could not be passed on: ${(e as Error).message}`); return "error"; }
   }
 
+  /** After the owner's words went to the runtime: wait until the page's talk has the assistant's answer (or the wait is over), so the page that follows shows it. */
+  async function settleTalk(shop: FrontShop, token: OwnerCred, before: string, waitMs: number): Promise<"done" | "sent"> {
+    const deadline = Date.now() + waitMs;
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 200));
+      const talk = (await shop.backend.owner(token))?.app?.talk ?? [];
+      if (JSON.stringify(talk) !== before && talk.at(-1)?.from === "assistant") return "done";
+    }
+    return "sent";
+  }
+
   /** The state as the JSON endpoint gives it: one `waiting` list, each item saying where its answer goes (`source`), and the coming bookings. */
   const ownerJson = (state: NonNullable<Awaited<ReturnType<typeof ownerState>>>) => ({
     version: 1,
@@ -327,7 +362,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const method = req.method ?? "GET";
     const token = o.cred;
     const base = o.base;
-    const json = sub.startsWith("/api/");
+    const json = sub.startsWith("/api/") || sub === "/voice";
     const fallback: Language = (LANGUAGES.includes(url.searchParams.get("lang") as Language) ? url.searchParams.get("lang") : "en") as Language;
     const gone = () => {
       if (o.onGone) return o.onGone(); // a session that ended is not a guess: no wrong count, back to sign in
@@ -338,7 +373,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     if (typeof token === "string" && !OWNER_TOKEN.test(token)) return gone();
     /** A signed-in owner's POST must carry the session's form token; the panel's link is its own secret and needs none. */
     const csrfOk = (given: unknown) => o.csrf === undefined || (typeof token === "object" && "session" in token && csrfMatches(token.session, given));
-    const routes: Record<string, string> = { "": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST" };
+    // item 11e: the owner's app lives at the same base: the page also at "<base>/" (a service worker controls only pages inside its scope, <base>/), and its four routes
+    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST" };
     if (routes[sub] === undefined) return json ? sendJson(res, 404, { error: { code: "not_found", message: "GET /api/v1/state or POST /api/v1/answer." } }) : sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
     if (routes[sub] !== method) return json ? sendJson(res, 405, { error: { code: "bad_request", message: `Use ${routes[sub]} here.` } }, { allow: routes[sub] }) : sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: routes[sub] });
     if (!limiter.take(method === "POST" ? "act" : "read", address)) return slow("300");
@@ -350,6 +386,47 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const w = OWNER[language];
 
     if (sub === "/api/v1/state") return sendJson(res, 200, ownerJson(state), { "x-robots-tag": "noindex" });
+
+    // ---- item 11e: the owner's app (only for a shop with the assistant) ----
+    const app = state.view.app;
+    if (!app && (sub === "/manifest.webmanifest" || sub === "/sw.js" || sub === "/talk" || sub === "/voice")) return json ? sendJson(res, 404, { error: { code: "not_found", message: "This shop has no assistant." } }) : sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+    if (app && sub === "/manifest.webmanifest") {
+      const body = JSON.stringify(ownerAppManifest({ base, shop: state.view.shop.name, language, colour: app.character.look.colour }));
+      res.writeHead(200, { "content-type": "application/manifest+json; charset=utf-8", "content-length": Buffer.byteLength(body), "cache-control": "no-store", "x-content-type-options": "nosniff", "x-robots-tag": "noindex" });
+      res.end(body);
+      return;
+    }
+    if (app && sub === "/sw.js") {
+      // the worker may fetch only the page itself (it keeps the last one for reading offline); it never sends a tap or a message later (assistant/app/pwa.ts)
+      res.writeHead(200, { "content-type": "text/javascript; charset=utf-8", "content-length": Buffer.byteLength(OWNER_APP_SW), "cache-control": "no-cache", "content-security-policy": `default-src 'none'; connect-src ${base}/`, "x-content-type-options": "nosniff" });
+      res.end(OWNER_APP_SW);
+      return;
+    }
+    if (app && sub === "/talk") {
+      const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
+      if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
+      const text = (form.get("text") ?? "").trim();
+      if (text.length === 0 || text.length > OWNER_MESSAGE_MAX) return redirect(res, `${base}/?lang=${language}`);
+      const before = JSON.stringify(app.talk);
+      const r = await shop.backend.submit([{ kind: "owner_message", id: randomUUID(), text }], token);
+      if (r === "refused") return gone();
+      await settleTalk(shop, token, before, options.waitMs ?? 3_000);
+      return redirect(res, `${base}/?lang=${language}`);
+    }
+    if (app && sub === "/voice") {
+      if (!app.listen || !shop.backend.ownerVoice) return sendJson(res, 404, { error: { code: "not_found", message: "Voice is not on for this shop's assistant." } });
+      const type = String(req.headers["content-type"] ?? "");
+      if (!/^audio\/ogg\b/iu.test(type)) return sendJson(res, 415, { error: { code: "bad_request", message: "Send the recording as audio/ogg (Opus)." } });
+      if (!csrfOk(req.headers[CSRF_HEADER])) return sendJson(res, 403, { error: { code: "bad_request", message: `Send the session's form token in ${CSRF_HEADER}.` } });
+      const bytes = await readBytes(req, MAX_VOICE_BYTES);
+      if (!bytes || bytes.length === 0) return sendJson(res, 413, { error: { code: "bad_request", message: "A recording of at most 30 seconds." } });
+      const before = JSON.stringify(app.talk);
+      const r = await shop.backend.ownerVoice(token, { bytes, mime: type });
+      if (r === "refused") return gone();
+      if (r === "off") return sendJson(res, 404, { error: { code: "not_found", message: "Voice is not on for this shop's assistant." } });
+      // listening takes longer than a press: the page reloads to show the answer either way
+      return sendJson(res, 200, { result: await settleTalk(shop, token, before, (options.waitMs ?? 3_000) * 4) });
+    }
     if (sub === "/api/v1/answer") {
       if (!/^application\/json\b/iu.test(String(req.headers["content-type"] ?? ""))) return sendJson(res, 415, { error: { code: "bad_request", message: "Send JSON (content-type: application/json)." } });
       let body: Record<string, unknown> | undefined;
@@ -367,7 +444,9 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     }
     const n = url.searchParams.get("n");
     const notice = n && n in w.result ? w.result[n as keyof typeof w.result] : undefined;
-    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}) }), { "x-robots-tag": "noindex" });
+    // the owner's app runs one script of ours: a fresh nonce for this response, in its content policy and on that script, and nothing else may run
+    const nonce = app ? randomBytes(16).toString("base64") : undefined;
+    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
   }
 
   return (req, res) => {

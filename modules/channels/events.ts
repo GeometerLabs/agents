@@ -30,12 +30,22 @@ export const OWNER_ACTIONS = ["received", "refunded", "kept", "approve", "deny",
 export type OwnerActionName = (typeof OWNER_ACTIONS)[number];
 export interface OwnerAction { kind: "owner_action"; id: string; action: OwnerActionName; case: string; digest: string }
 
-export type ChannelEvent = ChannelRequest | OwnerAction | OwnerSigninEvent;
+/**
+ * Integration of items 11d and 11e: the owner's words from the talk box on their page, read by the shop's assistant (its answer is shown on the page). From the
+ * front only `text` is taken (1 to 900 characters). `voice` is set ONLY by the runtime's own HTTP layer for a recording the owner made on the page: the reference
+ * of the audio it holds in memory (owner-audio.ts), never the audio; a `voice` sent by the front is dropped like any other field.
+ */
+export interface OwnerMessage { kind: "owner_message"; id: string; text: string; voice?: string }
+/** The longest message the talk box takes (the box's own maxlength). */
+export const OWNER_MESSAGE_MAX = 900;
+
+export type ChannelEvent = ChannelRequest | OwnerAction | OwnerSigninEvent | OwnerMessage;
 
 /** The task key: a booking is made once per handle, however often it is sent; a cancel or a claim once per press (the front's own id for it). */
 export function channelEventKey(e: ChannelEvent): string {
   if (e.kind === "owner_action") return `owner_action:${e.id}`;
   if (e.kind === "owner_signin") return `owner_signin:${e.id}`; // one per press: the limits, not the key, bound how many
+  if (e.kind === "owner_message") return `owner_message:${e.id}`; // one per send from the page
   return e.op === "book" ? `channel_book:${e.handle}` : `channel_${e.op}:${e.handle}:${e.id}`;
 }
 
@@ -61,7 +71,13 @@ export function checkChannelEvent(raw: unknown): { ok: true; event: ChannelEvent
   }
   // item 11f: only the kind and the id are read; anything else sent with it (a number above all) is dropped, never used
   if (raw.kind === "owner_signin") return { ok: true, event: { kind: "owner_signin", id: raw.id } };
-  if (raw.kind !== "channel_request") return { ok: false, error: 'The kind must be "channel_request", "owner_action" or "owner_signin".' };
+  // the talk box: the words only; a `voice` reference is the runtime's own to set (owner-audio.ts), so one from here is never read
+  if (raw.kind === "owner_message") {
+    const text = typeof raw.text === "string" ? raw.text.trim() : "";
+    if (text.length === 0 || text.length > OWNER_MESSAGE_MAX) return { ok: false, error: `An owner_message carries the owner's words: 1 to ${OWNER_MESSAGE_MAX} characters.` };
+    return { ok: true, event: { kind: "owner_message", id: raw.id, text } };
+  }
+  if (raw.kind !== "channel_request") return { ok: false, error: 'The kind must be "channel_request", "owner_action", "owner_message" or "owner_signin".' };
   if (!CHANNELS.includes(raw.channel as ChannelName)) return { ok: false, error: 'A channel_request\'s channel is "web" or "mcp".' };
   if (typeof raw.handle !== "string" || !HANDLE_HASH.test(raw.handle)) return { ok: false, error: "A channel_request carries its handle's hash (64 hex digits), never the handle." };
   const base = { kind: "channel_request" as const, id: raw.id, channel: raw.channel as ChannelName, handle: raw.handle };

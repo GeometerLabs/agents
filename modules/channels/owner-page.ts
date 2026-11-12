@@ -5,6 +5,10 @@
 //
 // Each button posts the digest of exactly what the page showed. The authority (the runtime for its asks and marks, the relay for a refund Guard holds) compares it with
 // what waits now and does nothing when they differ: a changed amount needs a new yes, and an answer already given (here or on WhatsApp) cannot be given twice.
+//
+// With the shop's assistant (item 11e, wired here after items 11d and 11f): the same page is the owner's app. The character's line and mood at the top, the
+// assistant's cards among what waits (by card id and digest), the talk box at the bottom (modules/assistant/app/talk.ts), and the app's manifest and service worker
+// (served by front.ts next to this page). Its one script carries the response's nonce; front.ts puts the same nonce in that response's content policy.
 import { html, raw } from "../core/html.ts";
 import type { Raw } from "../core/html.ts";
 import { formatInr, formatSlot } from "../language/format.ts";
@@ -12,6 +16,8 @@ import type { Language } from "../language/languages.ts";
 import type { OwnerItemView, OwnerView, RelayAsk } from "./backend.ts";
 import { OWNER, PAGE } from "./words.ts";
 import { CARD_LABELS } from "../assistant/words.ts";
+import { characterLine, talkBox } from "../assistant/app/talk.ts";
+import { LOOK_COLOURS } from "../assistant/app/pwa.ts";
 
 const CSS = `
 :root{--ink:#10231a;--mute:#4b5d52;--line:#cfe3d6;--g9:#14532d;--g7:#15803d;--g1:#dcfce7;--amber:#92400e;--amber-bg:#fffbeb}
@@ -20,6 +26,8 @@ main{max-width:34rem;margin:0 auto;padding:0 16px 40px}header{background:var(--g
 .note{color:var(--mute);font-size:.9rem}.machine,.notice{background:var(--amber-bg);color:var(--amber);padding:8px 10px;border-radius:8px;font-size:.95rem}
 .item{border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 12px}.item form{display:inline}button{margin:10px 8px 0 0;font-size:1rem;padding:10px 14px;border-radius:10px;border:0;background:var(--g7);color:#fff;cursor:pointer}
 button.no{background:#fff;color:var(--g9);border:1px solid var(--line)}ul{padding-left:18px}
+.who-am-i{font-size:1.05rem}.dot{display:inline-block;width:.9em;height:.9em;border-radius:50%;vertical-align:middle}.sr{position:absolute;left:-9999px}
+.talk textarea{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px}.talk-owner{color:var(--mute)}
 `;
 
 export interface OwnerPageInput {
@@ -32,6 +40,8 @@ export interface OwnerPageInput {
   csrf?: string;
   /** Item 11f: where "Sign out" posts (with the form token), for a signed-in owner. */
   signOut?: { action: string; label: string };
+  /** Item 11e: the script nonce of this response, when the view has the assistant's app (front.ts puts it in the content policy). */
+  nonce?: string;
 }
 
 /** One answer button: posts what it stands for and the digest of what the page shows. */
@@ -68,8 +78,13 @@ export function ownerPage(o: OwnerPageInput): string {
   };
   const waiting = [...o.relayAsks.map(ask), ...v.items.map(item), ...(v.app?.cards ?? []).map(card)];
   const machine = PAGE[o.language].machine;
+  const app = v.app;
+  const colour = app ? LOOK_COLOURS[app.character.look.colour] ?? LOOK_COLOURS.teal : undefined;
+  // the manifest is behind the owner's cookie on the signed-in view, so it is fetched with the browser's credentials (a manifest fetch leaves them out otherwise)
+  const appHead = app ? html`<link rel="manifest" href="${o.base}/manifest.webmanifest" crossorigin="use-credentials"><meta name="theme-color" content="${colour}">` : "";
   return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
-<title>${w.title(v.shop.name)}</title><style>${raw(CSS)}</style></head><body><main><header><h1>${w.title(v.shop.name)}</h1></header>
+<title>${w.title(v.shop.name)}</title><style>${raw(CSS)}</style>${appHead}</head><body><main><header><h1>${w.title(v.shop.name)}</h1></header>
+${app ? raw(characterLine({ language: o.language, name: app.character.name, colour: colour!, mood: app.mood })) : ""}
 ${machine ? html`<p class="machine">${machine}</p>` : ""}
 ${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
 <p class="note">${w.privateNote}</p>
@@ -77,6 +92,7 @@ ${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
 ${waiting.length > 0 ? waiting : html`<p>${w.none}</p>`}
 <h2>${w.upcoming}</h2>
 ${v.upcoming.length > 0 ? html`<ul>${v.upcoming.map((u) => html`<li>${formatSlot(u.startMs, tz, o.language)}: ${service(u.serviceId)} · ${who(u.customer, u.channel)}</li>`)}</ul>` : html`<p>${w.noneComing}</p>`}
+${app ? raw(talkBox({ base: o.base, language: o.language, lines: app.talk, assistantName: app.character.name, ...(o.nonce ? { nonce: o.nonce } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), listen: app.listen === true })) : ""}
 ${o.signOut ? html`<form method="post" action="${o.signOut.action}">${o.csrf ? html`<input type="hidden" name="csrf" value="${o.csrf}">` : ""}<button class="no" type="submit">${o.signOut.label}</button></form>` : ""}
 </main></body></html>`.markup}`;
 }
