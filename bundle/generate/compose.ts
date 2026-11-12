@@ -14,7 +14,8 @@
 //
 // Networks. net-<shop> and admin are `internal: true`: no route out. egress and front are not. Only the Guards (and the services that must call out:
 // ops for the heartbeat, the refresher for Google) are on egress. Caddy is on front with the inbox, the relay and the panel, so
-// it can reach those three and nothing else; its Caddyfile sends /c/* to the inbox and /panel/* to the panel (the relay is for the inbox to call).
+// it can reach those three and nothing else; its Caddyfile sends /c/* to the inbox and /panel/* to the panel (the relay is for the inbox to call). Item 11d: /s/* goes to
+// the inbox too, where the shops' public booking pages and the owners' private pages are served (modules/channels/front.ts), each shop's with its own channel token.
 //
 // The monthly report pages. The runtime writes them into <data volume>/data/reports/<32 random hex digits>/. Caddy mounts that one folder of each shop's data volume,
 // read-only, at /srv/r/<shop> (and nothing else of the volume: the database and the record are not in Caddy's reach), and serves https://<domain>/r/<shop>/<hex>/<file>
@@ -257,7 +258,8 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     const own = shop.guards.map((g) => g.service);
     add(names.runtime(shop.name), node(["node", "/pathway/server/main.ts", "--client", "/client"], {
       // RECORD_KEY_FILE: the record's key (a key derived from the shop's own, B69; lib/secrets.ts): the runtime writes the inputs' digest and message ids with it, and never holds the key itself
-      environment: { INTERNAL_TOKEN_FILE: "/run/secrets/internal_token", RECORD_KEY_FILE: "/run/secrets/record_key" },
+      // CHANNEL_TOKEN_FILE (item 11d): what the public front presents for the shop's booking page and owner page, and nothing else (modules/channels)
+      environment: { INTERNAL_TOKEN_FILE: "/run/secrets/internal_token", RECORD_KEY_FILE: "/run/secrets/record_key", CHANNEL_TOKEN_FILE: "/run/secrets/channel_token" },
       volumes: [`${shop.pathwayDir}:/pathway:ro`, `${modulesOf(shop.pathwayDir)}:/modules:ro`, `${dirs.generated}/shops/${shop.name}/client:/client:ro`, `${secretDir(names.runtime(shop.name))}:/run/secrets:ro`, `${names.dataVolume(shop.name)}:/home/node`],
       networks: { [names.net(shop.name)]: {} },
       healthcheck: healthWget(RUNTIME_PORT, "/readyz"),
@@ -403,6 +405,8 @@ export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shop
     `${local ? "https://" : ""}${server.domain} {`,
     ...(local ? [`\ttls internal`] : []),
     `\thandle /c/* {`, `\t\treverse_proxy inbox:${INBOX_PORT}`, `\t}`,
+    // item 11d: each shop's public booking page, its API, its MCP endpoint and the owner's private page, served by the inbox process (modules/channels/front.ts)
+    ...(shops.length > 0 ? [`\thandle /s/* {`, `\t\treverse_proxy inbox:${INBOX_PORT}`, `\t}`] : []),
     ...reportsHandlers([...shops].sort()),
     // an agent someone else wrote calls Guard here, not the service: each of its Guards has its own path, and only that Guard's agent port is behind it
     ...agents.flatMap((a) => a.guards.flatMap((g) => [`\thandle_path /g/${a.name}/${g.kind}/* {`, `\t\treverse_proxy ${g.service}:${GUARD_PORT}`, `\t}`])),

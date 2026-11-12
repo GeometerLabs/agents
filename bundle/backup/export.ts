@@ -95,7 +95,9 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
     ? (saved.orders ?? []).map(([, o]) => { const { address: _address, ...rest } = o; return { ...rest, customer: hide("p", o.customer) }; })
     : isFees
     ? (saved.dues ?? []).map(([, d]) => ({ ...d, customer: hide("p", d.customer), studentName: hide("s", d.studentName) }))
-    : (saved.bookings ?? []).map(([, b]) => ({ ...b, customer: hide("p", b.customer) }));
+    // item 11d: a booking from the page also carries the name and number its customer typed, and its handle's hash: the name and the hash stay in the shop's volume,
+    // and the number leaves only as a fingerprint, the same as a WhatsApp customer's (so a person's statement can still find it)
+    : (saved.bookings ?? []).map(([, b]) => { const { contact, handle: _handle, ...rest } = b as Record<string, unknown> & { contact?: { phone?: string } }; return { ...rest, customer: hide("p", b.customer), ...(contact?.phone ? { contact: { phone: hide("p", contact.phone) } } : {}) }; });
   mkdirSync(shop.out, { recursive: true });
   let ledger: unknown[] | undefined;
   let ledgerSaid: Exported["ledger"];

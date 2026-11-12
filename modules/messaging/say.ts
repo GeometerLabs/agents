@@ -22,6 +22,7 @@ import type { Decision } from "../limits/limits.ts";
 import type { Action, Outcome } from "../record/record.ts";
 import { imageProblem } from "./messaging.ts";
 import type { Messaging, OutboundMessage, TemplateMessage } from "./messaging.ts";
+import { isChannelConversation } from "../channels/conversation.ts";
 
 /** What every message to say carries. A template adds its own fields (an amount, a time), which only its own `factsFor` reads. */
 export interface SayArgs {
@@ -175,7 +176,9 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
           : await messaging.sendTemplate(toNumber, voice.templateMessage({ ids: a.templates, language, facts, text, generic: !toCustomer ? voice.genericNames.owner : a.reminder ? voice.genericNames.reminder : voice.genericNames.customer }));
       }
       const seen = await messaging.getMessage(sent.id); // read back from the provider's own outbox
-      log(a.booking, a.phone, action, seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: (asButtons ? offer?.body ?? a.templates : a.templates).join("+"), to: a.to, ...(asButtons ? { interactive: interactive!.list ? "list" : "buttons" } : {}) }, language });
+      // item 11d: a message kept for a booking page (modules/channels/outbox.ts) names its channel, so nothing counts it as a WhatsApp message (bundle/lib/usage.ts)
+      const channel: Record<string, string> = isChannelConversation(toNumber) ? { channel: toNumber.slice(0, toNumber.indexOf(":")) } : {};
+      log(a.booking, a.phone, action, seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: (asButtons ? offer?.body ?? a.templates : a.templates).join("+"), to: a.to, ...(asButtons ? { interactive: interactive!.list ? "list" : "buttons" } : {}), ...channel }, language });
       return { went: seen !== null, outcome: "accepted" }; // the provider gave it an id: it was taken, whether or not the outbox shows it yet
     } catch (e) {
       // Guard held it back for the shop's licence (the final stop): nothing went out, and it is the runtime's own licence refusal, made outside it. Recorded once, plainly.

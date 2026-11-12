@@ -9,6 +9,9 @@ import type { InboxConfig } from "../../modules/inbox/server.ts";
 import { agentInboxHandler } from "../agent/inbox.ts";
 import { createRouter } from "../lib/router.ts";
 import type { Handler } from "../lib/router.ts";
+import { frontHandler } from "../../modules/channels/front.ts";
+import type { FrontShop } from "../../modules/channels/front.ts";
+import { relayBackend, runtimeBackend } from "../../modules/channels/backend.ts";
 
 export interface InboxShopConfig {
   /** An agent someone else wrote has no runtime: its WhatsApp webhooks are checked here, the owner's replies kept, and the rest passed on to `forwardTo` (agent/inbox.ts). */
@@ -26,8 +29,14 @@ export interface InboxShopConfig {
   /** Item 11c, a Gupshup self-serve shop: its Gupshup app NAME. A callback whose `app` names another app is not forwarded. */
   gupshupAppName?: string;
   verification: "meta-signature" | "path-token";
-  /** A folder with this shop's secrets: internal_token, relay_token, razorpay_webhook_secret, whatsapp_app_secret + whatsapp_verify_token or whatsapp_path_token. */
+  /** A folder with this shop's secrets: internal_token, relay_token, razorpay_webhook_secret, whatsapp_app_secret + whatsapp_verify_token or whatsapp_path_token (item 11d: and channel_token). */
   secretsDir: string;
+  /**
+   * Item 11d: the shop's public booking page, API, MCP endpoint and owner page, served by this process at its `publicUrl` (https://<server>/s/<shop>). The front talks to the
+   * runtime with the shop's CHANNEL token only (never the internal token above, which this process also holds for the webhooks: the isolation is per token, not per
+   * process; Explanation.md says what that means), and to the relay with the relay token, for a shop whose Guard holds refunds.
+   */
+  channel?: { publicUrl: string };
 }
 
 
@@ -64,13 +73,33 @@ export function loadRouter(config: { shops: Record<string, InboxShopConfig> }, r
   return createRouter(Object.fromEntries(Object.entries(config.shops).map(([name, c]) => [name, shopHandler(name, c, read, log)])), log);
 }
 
+/**
+ * Item 11d: the public front for every shop with a channel (modules/channels/front.ts), or undefined when none has one. Each shop's front reads its own channel_token.
+ * A missing one costs that shop its page, said once in the log, and never the inbox: every shop's webhooks go on (a shop deployed before item 11d has none until its next deploy).
+ */
+export function loadFront(config: { shops: Record<string, InboxShopConfig> }, read: (path: string) => string | undefined, log: (line: string) => void): Handler | undefined {
+  const shops: Record<string, FrontShop> = {};
+  for (const [name, c] of Object.entries(config.shops)) {
+    if (!c.channel || !c.runtimeUrl) continue;
+    const token = read(`${c.secretsDir}/channel_token`);
+    if (!token) { log(`${name}: no channel_token in ${c.secretsDir}, so its booking page is off until its next deploy.`); continue; }
+    const relayToken = c.relayUrl ? read(`${c.secretsDir}/relay_token`) : undefined;
+    shops[name] = { publicUrl: c.channel.publicUrl, backend: runtimeBackend({ url: c.runtimeUrl, token }), ...(c.relayUrl && relayToken ? { relay: relayBackend({ url: c.relayUrl, token: relayToken }) } : {}) };
+  }
+  if (Object.keys(shops).length === 0) return undefined;
+  // behind Caddy: the visitor's address is the last X-Forwarded-For entry Caddy adds
+  return frontHandler({ shops, sourceIpHeader: "x-forwarded-for", log: (line) => log(`[front] ${line}`) });
+}
+
 const readFile = (path: string): string | undefined => (existsSync(path) ? readFileSync(path, "utf8").trim() : undefined);
 
 if (import.meta.main) {
   const config = JSON.parse(readFileSync(process.env.CONFIG ?? "/etc/geometer/inbox.json", "utf8")) as { shops: Record<string, InboxShopConfig> };
   let handler: Handler;
-  try { handler = loadRouter(config, readFile, (line) => console.error(line)); } catch (e) { console.error((e as Error).message); process.exit(2); }
-  const server = createServer(handler);
+  let front: Handler | undefined;
+  try { handler = loadRouter(config, readFile, (line) => console.error(line)); front = loadFront(config, readFile, (line) => console.error(line)); } catch (e) { console.error((e as Error).message); process.exit(2); }
+  // /s/<shop>/... is the shops' public front (item 11d); everything else is the webhooks' router, as before
+  const server = createServer((req, res) => (front && (req.url ?? "").startsWith("/s/") ? front(req, res) : handler(req, res)));
   server.requestTimeout = 10_000;
   server.headersTimeout = 5_000;
   server.listen(Number(process.env.PORT ?? 8788), process.env.HOST ?? "127.0.0.1", () => console.error(`Inbox listening for ${Object.keys(config.shops).length} shop(s) at /c/<shop>/webhooks/...`));

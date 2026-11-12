@@ -150,6 +150,9 @@ function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar
   };
   const admin = Object.fromEntries((["razorpay", "whatsapp", "calendar"] as const).filter((k) => (k !== "calendar" || calendar) && (k !== "razorpay" || razorpay)).map((k) => [k, ensureSecret(secretFile(dir, "ops", shop, `admin_${k}`), mintGuardToken)])) as Credentials["admin"];
   for (const container of ["ops", "inbox", "relay"]) writeSecretFile(secretFile(dir, container, shop, "internal_token"), internal);
+  // item 11d: the channel token, the runtime's and the public front's (served by the inbox process). It can send only a booking-page request or an owner's press (which the
+  // runtime checks against the owner's link itself): never a WhatsApp message or a payment event, which only the internal token can.
+  writeSecretFile(secretFile(dir, "inbox", shop, "channel_token"), ensureSecret(secretFile(dir, rt, "channel_token"), mintSecret));
   writeSecretFile(secretFile(dir, "inbox", shop, "relay_token"), ensureSecret(secretFile(dir, "relay", shop, "relay_token"), mintSecret));
   if (razorpay) writeSecretFile(secretFile(dir, "relay", shop, "owner_notify_secret"), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, "owner_notify_secret"), mintSecret));
   // A UPI shop has no Razorpay webhook: its inbox still holds a secret for that route, made here and given to nobody, so a call to it can never be signed.

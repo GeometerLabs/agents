@@ -5,6 +5,7 @@ import { createFakeCalendar } from "../src/adapters/calendar.ts";
 import { createFakePayments } from "../../../../modules/payments/payments.ts";
 import type { Clock } from "../../../../modules/core/clock.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
+import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { REPORT_TEMPLATE_NAMES } from "../report/whatsapp.ts";
 import { loadLiveAdapters, readAgentTokens as readTokens, standInMessaging } from "../../../../modules/runtime/services.ts";
 import type { RuntimeConfig } from "./config.ts";
@@ -53,5 +54,5 @@ export async function buildServices(config: Pick<RuntimeConfig, "mode" | "servic
     const live = await (deps.loadLive ?? loadLiveModule)();
     return live.createLiveAdapters(readAgentTokens(config.services!), { clock: deps.clock, window: deps.window, ...(deps.payment ? { payment: deps.payment } : {}) });
   }
-  return { ...(deps.ownCalendar ? {} : { calendar: createFakeCalendar() }), payments: createFakePayments(deps.clock), messaging: standInMessaging(deps.clock, [...Object.values(TEMPLATE_NAMES), ...REPORT_TEMPLATE_NAMES], deps.say) };
+  return { ...(deps.ownCalendar ? {} : { calendar: createFakeCalendar() }), payments: createFakePayments(deps.clock), messaging: standInMessaging(deps.clock, [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES, ...REPORT_TEMPLATE_NAMES], deps.say) }; // every template the pathway can send, the owner's UPI notices (owner_upi_check, ...) included
 }
