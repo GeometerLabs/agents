@@ -537,3 +537,7 @@ The report data has kept a person's settlement apart since follow-up 5 (`money.s
 ## Adding to a module later
 
 Move a feature here when a second template needs it, in two commits: first move the file and fix its imports (the hand check and tests must be unchanged), then cut the template's knowledge out of it. The files in this folder that began as Bookings files (`check.ts`, `interactive.ts`, `meta-templates.ts`, `router.ts`) show how.
+
+## Voice notes (B29, 12 Nov 2026)
+
+`modules/voice/` listens to a customer's voice note and speaks a reply; the bundle's Explanation.md ("Voice notes") has the reasoning. The seams in the shared modules: `InboundMessage.media` (where the audio is, only when voice is on; `webhooks.ts` `mediaOf`, `runtime/events.ts`), `Messaging.sendAudio` (an audio message by link, the fake's and the Cloud API wire's), `say.ts` (`spoken`, `speech`, `countSpeech`: the spoken copy after the words were accepted), `ai-state.ts` `addSpeech` and `reader.ts` `voiceAllowed` (voice stops with the rest of the model spend). Where `voice` already means a template's wording in `say.ts`, the voice service is called `speech`.
