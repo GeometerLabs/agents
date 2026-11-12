@@ -6,6 +6,7 @@
 //   refund_waiting         a refund is on its way: with the owner, held by Guard for the owner, or being sent again
 //   refund_unknown         a refund whose outcome nobody can state: it may or may not have gone
 //   refund_failed          a refund that did not go, and will not go on its own (Guard said no, it ran out, it failed)
+//   refund_made_not_told   a refund the provider's list settled after an unknown outcome, and the customer has not been told yet (12 Nov 2026; refunds.ts refundsUntold)
 //   upi_payment_unconfirmed  a UPI shop: the customer says they paid, or the owner marked part, and the owner has not confirmed the rest (modules/payments/owner-marked, B33)
 //   upi_refund_owed        a UPI shop: a refund the owner owes and has not marked done (the agent never sends a UPI refund)
 //   message_unanswered     the wait for a Guard ended and the work of a message or payment event was not done (modules/runtime/guard-wait.ts)
@@ -168,4 +169,34 @@ function refundIssues(id: "refund_unknown" | "refund_failed", unknown: boolean):
   };
 }
 
-export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false), messageUnanswered, messageNotDelivered, ...MARK_OBLIGATION_KINDS];
+/** How long an untold refund the agent no longer tries by itself stays listed after its last try: as long as a message nobody answered (UNANSWERED_KEEP_MS). */
+const UNTOLD_KEEP_MS = UNANSWERED_KEEP_MS;
+
+/**
+ * A refund the payments service's list settled (modules/payments/refunds.ts settleIssue) whose customer has not been told yet: the refund is made, the "it is
+ * confirmed" message was not accepted. While nothing went out the agent tries again by itself (`retryAtMs`), and the item stays until a message is accepted, however
+ * long that takes (a template Meta has not approved yet). A try that may have gone out, or that a gate held back, is not tried again: a person tells the customer,
+ * and like the other items with no "done" the record can see, it leaves by age. `what` says which, for the sentence.
+ */
+const refundMadeNotTold: ObligationKind = {
+  id: "refund_made_not_told",
+  templates: "all",
+  detect(input) {
+    const out: Obligation[] = [];
+    for (const c of input.cases) {
+      const untold = (Array.isArray(c.refundsUntold) ? c.refundsUntold : []) as { amountInr?: unknown; sinceMs?: unknown; lastAtMs?: unknown; retryAtMs?: unknown }[];
+      const listed = untold.filter((u) => num(u.retryAtMs) !== undefined || input.nowMs - (num(u.lastAtMs) ?? input.nowMs) < UNTOLD_KEEP_MS);
+      if (listed.length === 0) continue;
+      const first = listed[0];
+      out.push({
+        kind: "refund_made_not_told", caseId: c.id, sinceMs: num(first.sinceMs) ?? null,
+        // one the agent no longer tries needs a person, which matters more than the ones it is still trying
+        facts: { case: c.id, amountInr: num(first.amountInr) ?? 0, count: listed.length, what: listed.some((u) => num(u.retryAtMs) === undefined) ? "tell_person" : "tell_retry" },
+        actions: [],
+      });
+    }
+    return out;
+  },
+};
+
+export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false), refundMadeNotTold, messageUnanswered, messageNotDelivered, ...MARK_OBLIGATION_KINDS];
