@@ -245,6 +245,8 @@ export interface ShopView {
   notice?: string;
   /** Item 11d: the booking page, its QR code, the MCP endpoint and the owner's link (views-channels.ts). Left out for a template without a booking page. */
   channels?: import("./channels.ts").ChannelsView;
+  /** Item 11h: which template's page the block describes (Bookings when left out). */
+  channelsKind?: "bookings" | "orders" | "fees";
   /** Item 11f: the shop's page on the pages domain and the owner's sessions (views-pages.ts). Left out for a template without a booking page. */
   pages?: import("./views-pages.ts").PagesView;
   pagesNotice?: "ended" | "bad";
@@ -362,7 +364,7 @@ ${v.liveCounts ? html`<ul class="plain">
 <p class="note">${c.w.common.counts}</p>
 
 ${v.inbox ? html`<h2>${c.w.inbox.title}</h2>${inboxItems(c, v.inbox)}` : ""}
-${v.channels ? channelsBlock(c, v.id, v.channels) : ""}
+${v.channels ? channelsBlock(c, v.id, v.channels, v.channelsKind) : ""}
 ${v.pages ? pagesBlock(c, v.id, v.pages, v.pagesNotice) : ""}
 
 <h2>${w.settings}</h2>
