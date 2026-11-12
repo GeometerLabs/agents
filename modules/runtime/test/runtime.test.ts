@@ -10,7 +10,7 @@ import { fakeClock } from "../../core/clock.ts";
 import { GuardSuspendedError } from "../../core/faults.ts";
 import { createFakeMessaging } from "../../messaging/messaging.ts";
 import { createRecord } from "../../record/record.ts";
-import { BOOKINGS_SERVICES, FEES_SERVICES, readRuntimeConfig } from "../config.ts";
+import { BOOKINGS_SERVICES, FEES_SERVICES, loadClientFolder, readRuntimeConfig } from "../config.ts";
 import { countRefunds, createRuntimeCore } from "../core.ts";
 import { checkEvents, eventKey } from "../events.ts";
 import { readRecordKey } from "../start.ts";
@@ -57,10 +57,13 @@ test("a runtime config is read the same way for every template; only the service
   assert.ok(fees.ok);
   if (fees.ok) assert.equal((fees.config.services as any).payments.agentTokenFile, "/client/tokens/payments", "a relative credential file is measured from the client folder");
   assert.ok(live({ payments, calendar: { baseUrl: "http://g-calendar:8080", calendarId: "c@x" }, messaging }).ok);
-  // the same services, read as Bookings: the calendar is missing, and said so
-  const asBookings = readRuntimeConfig({ mode: "live", services: { payments, messaging } }, "/client", BOOKINGS_SERVICES);
-  assert.ok(!asBookings.ok);
-  if (!asBookings.ok) assert.ok(asBookings.errors.some((e) => /add "calendar" with its "baseUrl" and "calendarId"/.test(e)), asBookings.errors.join("|"));
+  // the same services, read as Bookings: since B72 runtime.json may leave the calendar out (a shop on its own booking list has none), as a UPI shop leaves out
+  // payments; whether this shop needs one is decided by loadClientFolder from settings.json (checked below), not here
+  assert.ok(readRuntimeConfig({ mode: "live", services: { payments, messaging } }, "/client", BOOKINGS_SERVICES).ok);
+  // a calendar that is named still needs its calendar id
+  const noId = readRuntimeConfig({ mode: "live", services: { payments, messaging, calendar: { baseUrl: "http://g-calendar:8080" } } }, "/client", BOOKINGS_SERVICES);
+  assert.ok(!noId.ok);
+  if (!noId.ok) assert.ok(noId.errors.some((e) => /calendarId/u.test(e)), noId.errors.join("|"));
   // a calendar given to a template that has none is an unknown setting, not silently kept
   const asFees = readRuntimeConfig({ mode: "live", services: { payments, messaging, calendar: { baseUrl: "http://g:1", calendarId: "c" } } }, "/client", FEES_SERVICES);
   assert.ok(!asFees.ok);
@@ -69,6 +72,20 @@ test("a runtime config is read the same way for every template; only the service
   assert.match((readRuntimeConfig({ mode: "live" }, "/client", BOOKINGS_SERVICES) as { errors: string[] }).errors[0], /payments, the calendar and messaging/);
   // the settings every template shares are accepted by both shapes
   for (const shape of [FEES_SERVICES, BOOKINGS_SERVICES]) assert.ok(readRuntimeConfig({ mode: "fakes", ai: "buttons", allowance: { messages: 100 }, pauseMinutes: 5, report: { preparedBy: "Divya, local partner", pageBaseUrl: "https://reports.example.com/r" } }, "/client", shape).ok);
+});
+
+test("B72: a Google Calendar shop (settings say nothing, or google) in live mode is asked for its calendar service; one on its own booking list is not", () => {
+  const dir = mkdtempSync(join(tmpdir(), "geo-client-"));
+  try {
+    writeFileSync(join(dir, "pathway.lock"), "bookings@0.1.0\n");
+    writeFileSync(join(dir, "settings.json"), "{}"); // read from disk, then replaced by each case's settings through the template's validator
+    writeFileSync(join(dir, "runtime.json"), JSON.stringify({ mode: "live", services: { payments: { baseUrl: "http://g-payments:8080" }, messaging: { baseUrl: "http://g-messaging:8080", phoneNumberId: "123456789012345" } } }));
+    const load = (settings: unknown) => loadClientFolder(dir, { pathway: "bookings", version: "0.1.0" }, { validateSettings: () => ({ ok: true as const, settings }), services: BOOKINGS_SERVICES });
+    for (const settings of [{}, { calendar: { module: "google" } }]) {
+      assert.throws(() => load(settings), /add "calendar" with its "baseUrl" and "calendarId"/u, JSON.stringify(settings));
+    }
+    assert.equal(load({ calendar: { module: "own" } }).runtime.services?.calendar, undefined, "a shop on its own booking list loads without a calendar service");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("events are checked for shape before anything is saved, and an event's key is its own id", () => {
