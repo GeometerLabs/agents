@@ -2,7 +2,7 @@
 // check (templates/<...>/src/settings.ts) hands the block here, so the three templates read it the same way. Left out of a shop's settings: no assistant, and the
 // owner's fixed phrases work exactly as before (the agent answers anything else with its usual "I didn't understand").
 //
-//   "assistant": { "morning": { "at": "08:00" } | false, "character": { "name": "Mithra", "look": { ... }, "voice": "warm" } }
+//   "assistant": { "morning": { "at": "08:00" } | false, "character": { "name": "Mithra", "look": { ... } } }
 import { readCharacter, defaultCharacter } from "./character.ts";
 import type { Character } from "./character.ts";
 
