@@ -47,6 +47,8 @@ export interface InboxConfig {
   whatsappPhoneNumberId?: string;
   /** Optional, Gupshup: this shop's Gupshup app id. A body whose `gs_app_id` names another app is not forwarded; a body with none (Gupshup's own early failures) passes. */
   whatsappAppId?: string;
+  /** Plan B29: the shop has voice on, so a voice note carries where its audio can be fetched (`media`). Left out: only the fact of a voice note, as before. */
+  voiceMedia?: boolean;
   /** Optional: only these source addresses (IPs or CIDRs, for example 203.0.113.0/24) may post WhatsApp webhooks; anyone else is refused (403). */
   whatsappAllowedSources?: string[];
   /** Behind a reverse proxy the socket's address is the proxy's. Name the header your proxy sets (for example x-forwarded-for) and the LAST address in it is used. */
@@ -217,7 +219,7 @@ export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: S
   const messagesIn = (json: unknown): IncomingEvent[] | string => {
     if (!ownNumber(json)) return "it names another WhatsApp number id than this shop's";
     if (!ownApp(json)) return "it names another Gupshup app than this shop's";
-    return [...parseWhatsAppWebhook(json).map((message): IncomingEvent => ({ kind: "message", message })), ...parseWhatsAppStatuses(json).map((status): IncomingEvent => ({ kind: "message_status", status }))];
+    return [...parseWhatsAppWebhook(json, { voiceMedia: config.voiceMedia === true }).map((message): IncomingEvent => ({ kind: "message", message })), ...parseWhatsAppStatuses(json).map((status): IncomingEvent => ({ kind: "message_status", status }))];
   };
 
   /** The owner's messages in these events (B37: and the other approvers'): from those numbers, which the webhook's signature (or, for a provider that does not sign, the secret URL) vouches for. */

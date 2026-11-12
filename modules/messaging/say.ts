@@ -10,6 +10,8 @@
 //  - a lost reply may still have gone out, so it is not sent again, because there is no way to look it up;
 //  - a picture that goes with the words (a UPI QR code) is sent first, by its address, only while the window is open; its caption passes the same check, and if
 //    it cannot go the words still do (they carry everything the picture does);
+//  - a reply to a voice note (B29) is also spoken: the same final text, sent as an audio message AFTER the words were accepted, only to a customer, only while the
+//    window is open and never in place of the words (text is what is read back, checked and on record). A spoken reply that cannot be made or sent changes nothing;
 //  - buttons can go to the owner too (UPI's "Received" button): the template says which messages offer them.
 import type { Language } from "../language/languages.ts";
 import { interactiveProblem, interactiveText } from "../language/interactive.ts";
@@ -19,7 +21,8 @@ import { guardLicenceDecision } from "../licence/rules.ts";
 import { checkOptOut, strictest } from "../limits/limits.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { Action, Outcome } from "../record/record.ts";
-import { imageProblem } from "./messaging.ts";
+import { audioProblem, imageProblem } from "./messaging.ts";
+import type { VoiceService } from "../voice/voice.ts";
 import type { Messaging, OutboundMessage, TemplateMessage } from "./messaging.ts";
 
 /** What every message to say carries. A template adds its own fields (an amount, a time), which only its own `factsFor` reads. */
@@ -39,6 +42,8 @@ export interface SayArgs {
   action?: Action;
   /** Buttons or a list to go with the words; the template knows what its offers are. */
   offer?: { kind: string; body?: string[] };
+  /** B29: this customer wrote by voice note, so the reply is spoken as well as written. Set only by the agent, for the turn that answers a transcribed voice note. */
+  spoken?: boolean;
   /** A picture to send before the words (a UPI QR code): its https address, and the templates that make its caption. */
   image?: { link: string; caption: string[] };
 }
@@ -71,6 +76,10 @@ export interface SayDeps<A extends SayArgs, Facts extends { language: Language }
   /** What the record keeps of the request (not the text). */
   inputsOf?(a: A): Record<string, unknown>;
   log(booking: A["booking"], phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string>; language?: Language }): void;
+  /** B29: the voice service (modules/voice), given only when the shop has voice on and replies not turned off. Left out: nothing is ever spoken. */
+  speech?: Pick<VoiceService, "speak" | "repliesOn">;
+  /** B29: a spoken reply was made; the agent adds its cost to the month's AI spend. */
+  countSpeech?(costMicroInr: number, characters: number): void;
   /** A message to a customer was held back because it did not match the record: tell the owner. */
   heldBack(a: A): Promise<void>;
 }
@@ -97,6 +106,31 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
       if (e instanceof GuardSuspendedError) { log(a.booking, a.phone, "send_message", "blocked", { ...inputs, image: true }, { decisions: [...decisions, check, guardLicenceDecision(e.guard.reason)], notes: e.message, refs: { to: a.to, image: "qr" }, language }); return; }
       log(a.booking, a.phone, "send_message", mayHaveHappened(e) ? "unconfirmed" : "failed", { ...inputs, image: true }, { notes: (e as Error).message, refs: { to: a.to, image: "qr" }, language });
     }
+  }
+
+  /**
+   * The spoken copy of a reply, best effort. It runs only after the words were accepted by the provider inside the window as plain text (a template sent outside the window
+   * is never spoken, and neither is anything to the owner). It never throws and never changes whether the reply "went out": the words are the reply.
+   */
+  async function speakToo(a: A, toNumber: string, text: string, language: Language, inputs: Record<string, unknown>, decisions: Decision[]): Promise<void> {
+    const speech = deps.speech;
+    if (!a.spoken || a.to !== "customer" || !speech?.repliesOn || typeof messaging.sendAudio !== "function") return;
+    try {
+      if (!(await messaging.isWindowOpen(toNumber).catch(() => false))) return;
+      const spoke = await speech.speak(text, language);
+      if (!spoke) return;
+      deps.countSpeech?.(spoke.costMicroInr, spoke.characters); // the provider was paid whether or not WhatsApp takes the audio
+      const refs = { to: "customer", audio: "voice", provider: spoke.provider, model: spoke.model, characters: String(spoke.characters), costMicroInr: String(spoke.costMicroInr), templates: a.templates.join("+") };
+      const problem = audioProblem({ link: spoke.link, text });
+      if (problem) { log(a.booking, a.phone, "send_message", "blocked", { ...inputs, audio: true }, { decisions, notes: problem, refs, language }); return; }
+      try {
+        const sent = await messaging.sendAudio(toNumber, { link: spoke.link, text });
+        const seen = await messaging.getMessage(sent.id);
+        log(a.booking, a.phone, "send_message", seen ? "confirmed" : "unconfirmed", { ...inputs, audio: true }, { decisions, notes: "the same words, spoken: the customer wrote by voice note", refs: { ...refs, messageId: sent.id }, language });
+      } catch (e) {
+        log(a.booking, a.phone, "send_message", mayHaveHappened(e) ? "unconfirmed" : "failed", { ...inputs, audio: true }, { notes: `${(e as Error).message} (the words had gone as text)`, refs, language });
+      }
+    } catch { /* a spoken copy is a courtesy: nothing here may disturb the reply */ }
   }
 
   return async function say(a: A): Promise<boolean> {
@@ -143,6 +177,7 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
     try {
       let sent: OutboundMessage;
       let asButtons = false;
+      let asText = false; // the words went as a session message, not as an approved template
       if (interactive) {
         try {
           sent = await messaging.sendInteractive!(toNumber, interactive);
@@ -152,14 +187,18 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
           // Guard's licence refusal is not tried again in another form: it would be refused the same way.
           if (mayHaveHappened(e) || e instanceof WindowClosedError || e instanceof GuardSuspendedError || !(e instanceof ApiError) || e.status >= 500) throw e;
           sent = await messaging.sendText(toNumber, text);
+          asText = true;
         }
       } else {
-        sent = (await messaging.isWindowOpen(toNumber))
+        const open = await messaging.isWindowOpen(toNumber);
+        asText = open;
+        sent = open
           ? await messaging.sendText(toNumber, text)
           : await messaging.sendTemplate(toNumber, voice.templateMessage({ ids: a.templates, language, facts, text, generic: !toCustomer ? voice.genericNames.owner : a.reminder ? voice.genericNames.reminder : voice.genericNames.customer }));
       }
       const seen = await messaging.getMessage(sent.id); // read back from the provider's own outbox
       log(a.booking, a.phone, action, seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: (asButtons ? offer?.body ?? a.templates : a.templates).join("+"), to: a.to, ...(asButtons ? { interactive: interactive!.list ? "list" : "buttons" } : {}) }, language });
+      if (asText || asButtons) await speakToo(a, toNumber, text, language, inputs, decisions); // B29
       return seen !== null;
     } catch (e) {
       // Guard held it back for the shop's licence (the final stop): nothing went out, and it is the runtime's own licence refusal, made outside it. Recorded once, plainly.
