@@ -64,6 +64,24 @@ test("the fixed phrases keep working with the assistant on, and the relay's repl
   assert.equal(w.payments.refunds().length, 1);
 });
 
+test("on a UPI shop the owner's marks still work, typed or tapped, and \"move <code>\" is still the handover, with no word from the assistant", async () => {
+  const upi = JSON.parse(readFileSync(new URL("../settings/glow-salon-upi.example.json", import.meta.url), "utf8")) as Record<string, unknown>;
+  const w = createWorld({ settings: parseSettings({ ...upi, assistant: {} }) });
+  await w.say(BOOK);
+  await w.ownerMarksReceived("b-1");
+  assert.equal(w.store.bookings.get("b-1")!.state, "confirmed", "\"received <code>\" typed");
+  await w.say("haircut tomorrow at 4pm", { from: OTHER_CUSTOMER });
+  await w.ownerMarksReceived("b-2", { tap: true });
+  assert.equal(w.store.bookings.get("b-2")!.state, "confirmed", "the Received button");
+  const sent = w.messaging.sentTo(w.owner).length;
+  await owner(w, "move K7M2QX");
+  assert.equal(recordOf(w, "handover_agreed").length, 1);
+  assert.equal(w.messaging.sentTo(w.owner).length, sent);
+  assert.equal(recordOf(w, "owner_assistant").length, 0, "none of these reached the assistant");
+  await owner(w, "today");
+  assert.match(w.lastTextTo(w.owner), /^(Your bookings today:|No bookings today\.)/u);
+});
+
 test("asks: a day's list, money in, what needs me", async () => {
   const w = withAssistant();
   await bookAndPay(w);
