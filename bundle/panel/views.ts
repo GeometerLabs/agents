@@ -30,6 +30,7 @@ import type { Unmet, StoredChecks } from "./golive.ts";
 import type { Words } from "./words.ts";
 import { setupOf } from "./setups.ts";
 import { HEALTH_WORDS } from "./words-health.ts";
+import { channelsBlock } from "./views-channels.ts";
 
 const css = readFileSync(new URL("../../templates/commerce/bookings/demo/page.css", import.meta.url), "utf8") + readFileSync(new URL("./panel.css", import.meta.url), "utf8");
 
@@ -239,6 +240,8 @@ export interface ShopView {
   details?: { statusJson: string; pins: string; runtimeJson: string };
   limitsText: string[];
   notice?: string;
+  /** Item 11d: the booking page, its QR code, the MCP endpoint and the owner's link (views-channels.ts). Left out for a template without a booking page. */
+  channels?: import("./channels.ts").ChannelsView;
 }
 
 /**
@@ -353,6 +356,7 @@ ${v.liveCounts ? html`<ul class="plain">
 <p class="note">${c.w.common.counts}</p>
 
 ${v.inbox ? html`<h2>${c.w.inbox.title}</h2>${inboxItems(c, v.inbox)}` : ""}
+${v.channels ? channelsBlock(c, v.id, v.channels) : ""}
 
 <h2>${w.settings}</h2>
 ${v.own ? ownSummaryBlock(c, v) : ""}

@@ -18,6 +18,7 @@ import type { State } from "./lib/state.ts";
 import { OWN_API, isGatewayKind } from "../modules/payments/providers/index.ts";
 import { heldRulesOf } from "../modules/approvals/held-call.ts";
 import { syncAgentLicences, syncLicence } from "./lib/licence.ts";
+import { syncOwnerLinks } from "./lib/owner-link.ts";
 import { processAgentRequests } from "./agent/requests.ts";
 import { claimPaperSigner } from "./lib/signer-claim.ts";
 import { applyServerSettings } from "./server-settings.ts";
@@ -290,13 +291,24 @@ export function runLicence(ctx: Context): string[] {
   return lines;
 }
 
+/**
+ * Item 11d: the owner's approvals links, on every loop: each deployed shop's runtime and relay get the hash the panel wrote, or lose it when the panel revoked the link
+ * (lib/owner-link.ts). So a revoked link stops within one pass. Cheap: a file read per shop, written only when it changed.
+ */
+export function runOwnerLinks(ctx: Context): string[] {
+  const state = loadState(ctx.dir);
+  const lines = syncOwnerLinks(ctx.dir, Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n));
+  lines.forEach((l) => ctx.log(l));
+  return lines;
+}
+
 // The deployer's loop: each pass handles stop and recovery requests, server settings, then shops, then due jobs. Errors are caught per pass so one bad pass never ends the loop.
 export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   let lastRefresh = 0;
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);
   for (;;) {
     // the server's own settings first (the panel's first run): a shop deployed in the same pass then finds the model and its key in place
-    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); runLicence(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
+    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); runLicence(ctx); runOwnerLinks(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
     await ctx.sleep(everyMs);
   }
 }

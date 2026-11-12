@@ -81,6 +81,7 @@ export function whatsappTypeOf(entry: unknown): WhatsappType | undefined {
   if (!isObj(entry) || (entry.action !== "send_message" && entry.action !== "voice_note_reply")) return undefined;
   if (entry.outcome !== "confirmed" && entry.outcome !== "unconfirmed") return undefined;
   const refs = isObj(entry.refs) ? entry.refs : {};
+  if (refs.channel !== undefined) return undefined; // item 11d: kept for a booking page, never sent on WhatsApp, so never on Meta's bill
   if (refs.to === "owner") return "utility";
   const templates = typeof refs.templates === "string" ? refs.templates.split("+") : [];
   return templates.includes("reminder") ? "utility" : "service";
@@ -143,7 +144,7 @@ export const isReportSent = (entry: unknown): boolean => isObj(entry) && entry.a
 export function replyLanguageOf(entry: unknown): Language | undefined {
   if (!isObj(entry) || (entry.action !== "send_message" && entry.action !== "voice_note_reply") || entry.outcome !== "confirmed") return undefined;
   const refs = isObj(entry.refs) ? entry.refs : {};
-  if (refs.to !== "customer" || refs.image !== undefined) return undefined;
+  if (refs.to !== "customer" || refs.image !== undefined || refs.channel !== undefined) return undefined; // a booking page's words are not WhatsApp replies
   return (LANGUAGES as readonly unknown[]).includes(entry.language) ? (entry.language as Language) : undefined;
 }
 

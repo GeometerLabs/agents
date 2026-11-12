@@ -162,6 +162,8 @@ Hand each one in as a file in `secrets-inbox/<shop>/<name>`. The deployer moves 
 | `whatsapp_path_token` | the inbox | instead of the two above, for a provider that does not sign |
 | `google_service_account.json` | the token refresher | the key file of the service account the shop's calendar is shared with |
 
+The deployer also makes two tokens per shop that nobody hands in: `internal_token` (the inbox, the relay and ops reach the runtime with it) and `channel_token` (item 11d: the shop's public booking page and owner's page, served by the inbox process at `/s/<shop>/...`, reach the runtime with it, and it can do nothing else). The owner's approvals link is made in the panel (the shop's page, "The owner's approvals link"); only its hash is kept, in `shops/<shop>/owner-link.json`, and the deployer copies it to the shop's runtime and relay on every pass of its loop and removes both copies when the panel switches the link off.
+
 Nothing secret is in any generated file; the generator searches for the value of every secret and for the shape of keys, and refuses if it finds one. Folders under `secrets/` are 0755 and files 0644 so a container's own non-root user can read them; `secrets/` itself is 0700, so no other user of the machine gets to any of it. Docker mounts one container's folder into that container only.
 
 ## The model's price

@@ -89,6 +89,8 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
         // B37: the other approvers' replies go to the relay too (their codes are the relay's, never the runtime's)
         ...(s.approvers && s.approvers.length > 0 ? { approverWhatsapps: s.approvers.map((p) => p.whatsapp) } : {}),
         secretsDir: `/run/secrets/${s.name}`,
+        // item 11d: a Bookings shop's booking page, API, MCP endpoint and owner page are served by this process (/s/<shop>/...), with its channel_token
+        ...((s as { pathway?: string }).pathway === undefined || (s as { pathway?: string }).pathway === "bookings" ? { channel: { publicUrl: `${publicUrl(server)}/s/${s.name}` } } : {}),
       }]),
       // an agent someone else wrote has no runtime: its WhatsApp number's webhook comes here, the owner's replies go to the relay (when the relay has something
       // for it: a held call to ask about, or the desk), and the rest goes on to the agent itself

@@ -3,6 +3,8 @@
 // The inbox has already checked each provider's signature; this only makes sure a malformed body cannot reach the agent.
 import type { InboundMessage, MessageStatus } from "../messaging/messaging.ts";
 import type { PaymentEvent } from "../payments/payments.ts";
+import { channelEventKey } from "../channels/events.ts";
+import type { ChannelEvent } from "../channels/events.ts";
 
 /** Ticks come from our own clock, never from outside. */
 export type IncomingEvent =
@@ -16,7 +18,10 @@ export type IncomingEvent =
   | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string }
   // The panel's to-do list (plan B31) asks the agent to look again or ask again about one booking or fee. It carries no authority either: the agent does it the way it does
   // the same thing every day, through Guard and the same limits. It does not come in through /internal/events (the inbox cannot send one); it has its own endpoint.
-  | { kind: "recovery"; id: string; case: string; action: string };
+  | { kind: "recovery"; id: string; case: string; action: string }
+  // A customer on the shop's booking page, an AI assistant through its booking API, or the owner on their private approvals page (modules/channels/events.ts). Like a
+  // recovery, it never comes in through /internal/events: the public front sends it to /internal/channel/events with the channel's own token, which can send nothing else.
+  | ChannelEvent;
 
 /** What a runtime hands its agent: an incoming event, or time passing. */
 export type RuntimeEvent = IncomingEvent | { kind: "tick" };
@@ -29,7 +34,8 @@ export function eventKey(event: IncomingEvent): string {
   // The relay gives every delivery its own `id`, so an earlier event for the same approval (a forged one) cannot shadow the real one as a "repeat".
   // Handling is safe to repeat: the agent looks at the refunds first, and a decision for a hold it no longer has does nothing.
   if (event.kind === "approval_decision") return `approval_decision:${event.approval}:${event.decision}:${event.id ?? ""}`;
-  if (event.kind === "recovery") return `recovery:${event.id}`; // the panel gives each request its own id, so pressing a button twice is one request
+  if (event.kind === "recovery") return `recovery:${event.id}`;
+  if (event.kind === "channel_request" || event.kind === "owner_action") return channelEventKey(event); // the panel gives each request its own id, so pressing a button twice is one request
   // the same report sent again is one; a message's delivered and read are two
   if (event.kind === "message_status") return `message_status:${event.status.ids.join("|")}:${event.status.status}`;
   return `payment_event:${event.event.id}`;
