@@ -739,8 +739,9 @@ There are **two issuers of cards, never mixed**:
    Above Guard's limit, the runtime's tap is not the authority: the skill asks Guard, Guard holds it, and the relay's card follows (issuer 1). The runtime's card
    then says so before the tap ("Above your ₹1,000 limit: Guard will ask you to approve it once more").
 
-**Where the owner sees cards:** on WhatsApp (interactive buttons while the owner's window is open; outside it, the text with the typed form) and, once item 11d's private
-page lands, in the owner's app with the same buttons (each posting the code's digest, as item 11d's page does).
+**Where the owner sees cards:** on WhatsApp (interactive buttons while the owner's window is open; outside it, the text with the typed form) and in the owner's app
+on the shop's page, with the same question and buttons, answered by the card's id and digest (never its code). Both doors go through one verdict (`cards.ts judgeCard`),
+so a card answered at one is closed at the other.
 
 ### The morning line
 
@@ -761,23 +762,49 @@ never earned. In order: `something_wrong` (a refund needs the builder, a message
 `closed` (outside today's hours, or a closed day), `busy` (a booking within the hour, or a full day), `quiet`. The owner's app shows it, and the morning line names the
 sticker for it (`stickerFor`), so the look can follow the shop. There are no points, chores or streaks. The character always says it is the shop's assistant.
 
-### The owner's app (routes; built on item 11d's private page)
+### The owner's app, wired (items 11d, 11e and 11f together; 13 Nov)
 
 The app is the owner's private approvals page (item 11d, `channels/owner-page.ts`) grown into an installable web app. Plain HTML first and a little progressive JavaScript,
-phone-first, in the owner's language. Its routes sit under the owner's link, which is the authority, checked at the runtime as item 11d does:
+phone-first, in the owner's language. It answers wherever the owner's view does, behind the owner's credential, checked at the runtime: the signed-in view `<base>/owner`
+(item 11f: the one-use link from WhatsApp, a cookie scoped to that path, a form token on every POST) and the panel-made link `/s/<shop>/o/<token>` (item 11d). Below,
+`<owner>` is either. Only a shop whose settings have the `assistant` block has the app; without it the page is item 11d's, as before.
 
 | Route | What it is |
 | --- | --- |
-| `GET  /s/<shop>/o/<token>/` (and without the slash) | the app: the character and its mood, what needs you (the cards, each with its buttons), today's list, the talk box (`app/view.ts`, `app/talk.ts`) |
-| `GET  /s/<shop>/o/<token>/manifest.webmanifest` | the PWA manifest (`app/pwa.ts`); `start_url` and `scope` are `<link>/`, so an installed app opens this shop's page only (a service worker controls only pages inside its scope, hence the slash) |
-| `GET  /s/<shop>/o/<token>/sw.js` | the service worker: keeps the last page for **reading** offline, marked offline. A tap or a message is never kept or queued: it needs the live page's digest |
-| `POST /s/<shop>/o/<token>` | a waiting item's button, as item 11d's page posts it (source, action, case, digest); an assistant card's as `card_yes` / `card_no` with the card's id and digest (no code is ever on the page: the owner's link is the authority, checked at the runtime) |
-| `POST /s/<shop>/o/<token>/talk` | the talk box: the owner's words, an `owner_message` event read by the same assistant as a WhatsApp message; the answer is shown on the page, not sent to WhatsApp as well |
-| `POST /s/<shop>/o/<token>/voice` | a hold-to-record voice note (Ogg Opus), sent down the same path as a WhatsApp voice note (item 11d's voice service), then read as the talk box's words |
+| `GET  <owner>/` (and without the slash) | the page: the character's line and the mood, what needs you (the runtime's items, the relay's asks and the assistant's open cards, each with its buttons), the coming bookings, the talk box (`app/view.ts`, `app/talk.ts`) |
+| `GET  <owner>/manifest.webmanifest` | the PWA manifest (`app/pwa.ts`); `start_url` and `scope` are `<owner>/`, so an installed app opens this shop's page only (a service worker controls only pages inside its scope, hence the slash). The page links it with `crossorigin="use-credentials"`, since on the signed-in view it is behind the cookie |
+| `GET  <owner>/sw.js` | the service worker: keeps the last page for **reading** offline, marked offline. A tap or a message is never kept or queued: it needs the live page's digest. Its own policy lets it fetch the page and nothing else |
+| `POST <owner>/answer` | a waiting item's button, as item 11d's page posts it (source, action, case, digest); an assistant card's as `card_yes` / `card_no` with the card's id (`c-3`) and digest. The front refuses a card the page did not show; the runtime checks the credential, then the card's binding decides |
+| `POST <owner>/talk` | the talk box: an `owner_message` channel event (only the words) read by the same assistant as a WhatsApp message; the owner's line and the answer are kept in `state.talk` and shown on the page, never sent to WhatsApp as well |
+| `POST <owner>/voice` | a hold-to-record recording (Ogg Opus, at most 256 KB); see below |
 
-The pieces that do not depend on item 11d are in `assistant/app/` (the manifest, the service worker, the talk box and the view). The wiring into item 11d's front waits
-for that branch to land (Deferred). The talk box works without JavaScript (a form); with it, a hold-to-record button appears only when the phone can record Ogg Opus, the
-format of a WhatsApp voice note, and stops at 30 seconds, the voice service's limit. The answer is shown as text.
+**Its one script.** The pages origin is shared by every shop on the pages domain, and nothing there runs script but Geometer's own (bundle/Explanation.md, "One origin
+for every shop"). The app's page carries a policy of its own (`channels/front.ts appPolicy`): item 11d's no-script policy plus `script-src 'nonce-…'` (fresh for every
+response, on the page's one inline script), and `worker-src`, `connect-src` and `manifest-src` naming the app's own three addresses under `<owner>`, never `'self'`.
+Every other page keeps item 11d's policy. The door passes our front's policy through and still replaces a builder's with no script.
+
+**Talk on the page.** The talk box reads the assistant's words only: the fixed phrases ("today", "approve b-3", "received K7M2QX") are WhatsApp's, and their buttons
+are already on the page. While the owner acts from the page (the talk box, a card's button there), the assistant's answers go to the page's talk instead of WhatsApp;
+a new card is not written there, it shows in the page's list with its buttons (and its question without the code, `words.ts cardQuestion`). The answers pass the same
+outgoing check as a WhatsApp message. Lines to customers (a closed day, a message card's words) still go to them the usual way.
+
+**A recording.** The page posts it to the front, which passes it to the runtime's own route (`/internal/channel/owner-voice`, the owner's credential checked there).
+The runtime holds the audio **in memory only** (`channels/owner-audio.ts`, five minutes at most) and saves an `owner_message` that carries only its reference; the
+front can never set that reference (the event check drops it). The step hears it through the same listener as a WhatsApp note (`voice/turn.ts createListener`, with
+`voice.ts hearAudio`): the same switches (voice on, not button mode, allowance left), the same day's limit and month's spend, the cost on an `owner_assistant` line, then
+read as the talk box's words. A restart forgets a recording that was waiting: the owner is asked to type it. The record button shows only when the shop has a voice
+service and the phone can record Ogg Opus (Deferred.md: most Android phones record WebM).
+
+**The owner's WhatsApp voice notes.** The agents hand the assistant `hearing`: the shop's voice service through that same shared listener, with the owner not left
+out. The cost goes on an `owner_assistant` line when the note is heard (so a spoken fixed phrase is counted too), and the words then go through the fixed phrases
+first and the assistant after, as typed words do. Voice off, the assistant off, or button mode: the owner gets the "please type" line, as before.
+
+**One list.** Bookings' "what needs me", the morning line's count and the mood read the owner page's own list (`templates/commerce/bookings/src/channel.ts
+ownerItems`), so the chat and the page never disagree. A card's fields carry the page item's digest, so a part marked after the card was shown voids it on its tap,
+as a press on the page would be refused. One consequence: on a UPI shop a deposit waits for the owner from the hold on, as on the page.
+
+**A closed day.** The skip for a date the owner closed lives in Bookings' one per-day function (`freeOnDay`), so WhatsApp's list, the booking page, the API and MCP
+leave it out together; a booking asked for on it from the page or the API is refused as outside the hours before anything is held.
 
 ### Tests
 
@@ -790,7 +817,13 @@ code is a wrong guess), Fees and Orders `test/assistant.test.ts` (off without th
 own approve and deny; a big order's Refuse is their deny) and `bundle/test/assistant-usage.test.ts` (the owner's model spend is metered, never as a customer
 message). One existing test changed meaning and was updated: Bookings `test/approvals-relay.test.ts` asserted the relay's ask inside the owner's window was plain text;
 it is now a card with the same words.
-The templates' existing suites were not run by this job (a combined run was using the machine). The agents' changes are additive and off without an `assistant` block,
+Wired on 13 Nov (the integration of items 11d, 11e, 11f and B29), with tests: Bookings `test/channels.test.ts` (a closed day offered nowhere and a POST for it
+refused; a card answered through the owner's JSON pair; the app at `<base>/owner` after sign-in: the nonce, the manifest, the worker, the talk box answered on the
+page), `test/assistant.test.ts` (one list with the page; a card answered on the page is closed on WhatsApp and the reverse; a changed amount and a final no on the
+page), `test/voice-notes.test.ts` (the owner's spoken "close tomorrow", the cost in the month's spend and the cost meter, a spoken fixed phrase, the "please type"
+cases, a page recording heard from memory), `channels/test/channels.test.ts` (the new events), `assistant/test/app.test.ts` (the talk box's nonce and form token) and
+`bundle/test/door.test.ts` (our nonce policy passes, a builder's never; only the local recording is bigger).
+The templates' existing suites were not run by the 12 Nov job (a combined run was using the machine). The agents' changes are additive and off without an `assistant` block,
 except two that apply to every shop: every agent now also drops a tapped relay button (`isRelayReply`), and Bookings' within-hours limit takes the closed days (none
 without the assistant).
 
