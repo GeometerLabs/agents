@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (55)
+## 1. Messages to the customer (56)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -52,6 +52,7 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `big_order_denied` | The owner said no to a big order | ಕ್ಷಮಿಸಿ, ಗುರುವಾರ, 12 ನವೆಂಬರ್ ರ ನಿಮ್ಮ ಆರ್ಡರ್ ಅನ್ನು ಮಾಲೀಕರು ತೆಗೆದುಕೊಳ್ಳಲು ಆಗುವುದಿಲ್ಲ. ಯಾವುದೇ ಹಣ ಪಡೆದಿಲ್ಲ. | Sorry, the owner cannot take your order for Thu 12 Nov. Nothing was charged. |  |
 | `didnt_understand` | The message was not understood | ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಏನು ಆರ್ಡರ್ ಮಾಡಬೇಕು, ಎಷ್ಟು, ಯಾವ ದಿನ ತಿಳಿಸಿ. | Sorry, I didn't understand. Please tell me what you would like to order, how many, and which day. |  |
 | `voice_note` | A voice note: it cannot be listened to yet, so they are asked to type | ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ; ನನಗೆ ಈಗ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ. | Please type your message; I can't listen to voice notes yet. |  |
+| `voice_note_retry` | The customer sent a voice note and the shop has voice on, but it could not be made out (too long, unclear, or the day's limit): they are asked to type instead | ಆ ವಾಯ್ಸ್ ನೋಟ್ ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ. | I couldn't make out that voice note. Please type your message instead. |  |
 | `ask_cancel` | The customer tapped Cancel order: are you sure (Yes / No buttons) | ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ ರ ನಿಮ್ಮ ಆರ್ಡರ್ ರದ್ದು ಮಾಡಬೇಕೇ? | Do you want to cancel your order for Thu 12 Nov, 12:00 pm to 1:00 pm? |  |
 | `kept` | The customer said no to cancelling: the order stays | ಸರಿ, ಗುರುವಾರ, 12 ನವೆಂಬರ್, ಮಧ್ಯಾಹ್ನ 12:00 ರಿಂದ ಮಧ್ಯಾಹ್ನ 1:00 ವರೆಗೆ ರ ನಿಮ್ಮ ಆರ್ಡರ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ. | Okay, your order for Thu 12 Nov, 12:00 pm to 1:00 pm stays as it is. |  |
 | `told_owner` | The customer tapped Talk to the owner: the owner has been asked to message them | ನೀವು ಮಾತನಾಡಲು ಬಯಸುತ್ತೀರಿ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಅವರು ಇಲ್ಲಿಯೇ ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತಾರೆ. | I've told the owner that you would like to talk. They will message you here. |  |

@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (56)
+## 1. Messages to the customer (57)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -46,6 +46,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `refund_expired` | The owner did not answer a refund request in time: nothing was sent | ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಸರಿಯಾಗಿ ನಿಮ್ಮ ₹200 ರೀಫಂಡ್ ಬಗ್ಗೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು Glow Salon ಅವರನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ. | The owner did not answer in time about your ₹200 refund, so it has not been sent. Please contact Glow Salon directly. |  |
 | `didnt_understand` | The message was not understood | ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸೇವೆ, ದಿನ, ಸಮಯ ತಿಳಿಸಿ. | Sorry, I didn't understand. Please tell me the service, day and time you would like. |  |
 | `voice_note` | The customer sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead | ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ; ನನಗೆ ಈಗ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ. | Please type your message; I can't listen to voice notes yet. |  |
+| `voice_note_retry` | The customer sent a voice note and the shop has voice on, but it could not be made out (too long, unclear, or the day's limit): they are asked to type instead | ಆ ವಾಯ್ಸ್ ನೋಟ್ ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ. | I couldn't make out that voice note. Please type your message instead. |  |
 | `pick_service` | A list of the shop's services is shown (the first hello, or a message that was not understood), so the customer taps instead of typing | ನಮಸ್ಕಾರ! Glow Salon-ಗೆ ಸ್ವಾಗತ. ಯಾವ ಸೇವೆ ಬೇಕು? | Hello! Welcome to Glow Salon. Which service would you like? |  |
 | `pick_slot` | The service is known and the time is not: a list of free times from the calendar is shown | ಹೇರ್ ಕಟ್ ಯಾವಾಗ ಬೇಕು? ಕೆಳಗಿನಿಂದ ಒಂದು ಸಮಯ ಆಯ್ಕೆಮಾಡಿ, ಅಥವಾ ನಿಮಗೆ ಇಷ್ಟವಾದ ದಿನ ಮತ್ತು ಸಮಯ ಬರೆಯಿರಿ. | When would you like your haircut? Pick a time below, or write the day and time you prefer. |  |
 | `confirm_buttons` | The same read-back as confirm_details, with Yes and No buttons instead of asking the customer to type yes | ಖಚಿತಪಡಿಸಲು: ಹೇರ್ ಕಟ್, ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00. ಇದು ಸರಿಯೇ? | Just to be sure: haircut on Tue 10 Nov, 6:00 pm. Is that right? |  |

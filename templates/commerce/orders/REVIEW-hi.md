@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (55)
+## 1. Messages to the customer (56)
 
 | Template id | When it is sent | Text (Hindi) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -52,6 +52,7 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `big_order_denied` | The owner said no to a big order | माफ़ कीजिए, मालिक गुरुवार, 12 नवंबर का आपका ऑर्डर नहीं ले पाएँगे। कोई शुल्क नहीं लिया गया। | Sorry, the owner cannot take your order for Thu 12 Nov. Nothing was charged. |  |
 | `didnt_understand` | The message was not understood | माफ़ कीजिए, मैं समझ नहीं पाया। कृपया बताइए क्या ऑर्डर करना है, कितना और किस दिन। | Sorry, I didn't understand. Please tell me what you would like to order, how many, and which day. |  |
 | `voice_note` | A voice note: it cannot be listened to yet, so they are asked to type | कृपया अपना संदेश लिखकर भेजिए; मैं अभी वॉइस नोट नहीं सुन सकता। | Please type your message; I can't listen to voice notes yet. |  |
+| `voice_note_retry` | The customer sent a voice note and the shop has voice on, but it could not be made out (too long, unclear, or the day's limit): they are asked to type instead | मैं यह वॉइस नोट समझ नहीं पाया। कृपया अपना संदेश लिखकर भेजिए। | I couldn't make out that voice note. Please type your message instead. |  |
 | `ask_cancel` | The customer tapped Cancel order: are you sure (Yes / No buttons) | क्या आप गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक का अपना ऑर्डर रद्द करना चाहते हैं? | Do you want to cancel your order for Thu 12 Nov, 12:00 pm to 1:00 pm? |  |
 | `kept` | The customer said no to cancelling: the order stays | ठीक है, गुरुवार, 12 नवंबर, दोपहर 12:00 बजे से दोपहर 1:00 बजे तक का आपका ऑर्डर जैसा है वैसा ही रहेगा। | Okay, your order for Thu 12 Nov, 12:00 pm to 1:00 pm stays as it is. |  |
 | `told_owner` | The customer tapped Talk to the owner: the owner has been asked to message them | मैंने मालिक को बता दिया है कि आप बात करना चाहते हैं। वे यहीं आपको संदेश भेजेंगे। | I've told the owner that you would like to talk. They will message you here. |  |
