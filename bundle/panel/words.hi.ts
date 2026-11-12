@@ -13,6 +13,9 @@ const demo = uiFor("hi");
 
 /** One form for a count of 1, another for the rest (the same helper pattern words.ts uses). */
 const t1 = (n: number, one: string, many: string) => (n === 1 ? one : many);
+/** When the server's Gupshup universal token ends, from the whole hours left: days from a day on, hours under a day, never "0 दिन" (words.ts credentialEnds). */
+const credentialEnds = (hours: number) => hours >= 24 ? `${Math.floor(hours / 24)} दिन में ख़त्म होगा। उससे पहले नया दीजिए`
+  : hours >= 1 ? `${hours} घंटे में ख़त्म होगा। उससे पहले नया दीजिए` : "एक घंटे से कम में ख़त्म होगा, या ख़त्म हो चुका है। अभी नया दीजिए";
 
 export const hi: Words = {
   appName: "Geometer",
@@ -292,15 +295,16 @@ export const hi: Words = {
       refund_waiting: (id, amount, _hours, who) => `${id} का ${amount} का रिफंड ${who} रुका है`,
       refund_unknown: (id) => `${id} का रिफंड हुआ या नहीं, पता नहीं: {gateway} में देखिए`,
       refund_failed: (id) => `${id} का रिफंड नहीं हो पाया: देखिए`,
+      refund_made_not_told: (id, amount, _hours, how) => `${id} का ${amount} का रिफंड हो गया है, पर ग्राहक को अभी बताया नहीं गया: ${how}`,
       message_unanswered: (id) => `सेवा का कनेक्शन बंद होने से ${id} का काम पूरा नहीं हुआ: जाँचिए और ग्राहक को जवाब दीजिए`,
       whatsapp_token_renewal: (_id, _amount, hours) => `Gupshup से WhatsApp: इस दुकान का टोकन नया नहीं हो पाया। अभी वाला टोकन ${hours} घंटे में ख़त्म होगा, उसके बाद कोई संदेश नहीं जाएगा। सर्वर देखिए (geometer logs refresher) या Gupshup का नया universal token दीजिए।`,
-      whatsapp_token_credential: (_id, _amount, hours) => `Gupshup से WhatsApp: सर्वर का Gupshup universal token ${Math.floor(hours / 24)} दिन में ख़त्म होगा। उससे पहले नया दीजिए (geometer gupshup-token <file>)।`,
+      whatsapp_token_credential: (_id, _amount, hours) => `Gupshup से WhatsApp: सर्वर का Gupshup universal token ${credentialEnds(hours)} (geometer gupshup-token <file>)।`,
       message_not_delivered: (id) => `${id} के लिए भेजा गया WhatsApp संदेश फ़ोन तक नहीं पहुँचा (WhatsApp ने बताया कि वह विफल रहा): उस व्यक्ति से किसी और तरह संपर्क कीजिए`,
       upi_payment_unconfirmed: (id, amount) => `${id} के लिए ${amount} का UPI पेमेंट मालिक ने अभी पक्का नहीं किया: मालिक से अपना UPI ऐप देखने को कहिए`,
       upi_refund_owed: (id, amount) => `${id} का ${amount} का रिफंड मालिक पर बाकी है और अभी हो गया नहीं लिखा गया: मालिक को याद दिलाइए`,
     },
     fallback: (kind, id) => `${id} पर किसी इंसान को देखना है (${kind})`,
-    variants: { guard_hold: "रिफंड", refund: "रिफंड", waiver: "फ़ीस माफ़ी", refund_request: "रिफंड का अनुरोध", calendar: "कैलेंडर की दिक्कत", owner: "मालिक के जवाब के लिए", agent: "दोबारा भेजे जाने के लिए", big_order: "बड़ा ऑर्डर" },
+    variants: { guard_hold: "रिफंड", refund: "रिफंड", waiver: "फ़ीस माफ़ी", refund_request: "रिफंड का अनुरोध", calendar: "कैलेंडर की दिक्कत", owner: "मालिक के जवाब के लिए", agent: "दोबारा भेजे जाने के लिए", big_order: "बड़ा ऑर्डर", tell_retry: "एजेंट ख़ुद दोबारा कोशिश करेगा", tell_person: "आप ख़ुद ग्राहक को बताइए" },
     actions: { recheck_payment: "भुगतान दोबारा जाँचें", retry_booking: "बुकिंग दोबारा पक्की करने की कोशिश करें", ask_owner_again: "मालिक से दोबारा पूछें", recheck_refund: "रिफंड दोबारा जाँचें" },
     actionNote: "ये सिर्फ़ दोबारा देखते हैं या दोबारा पूछते हैं। ये बाकी सब की तरह Guard और उन्हीं सीमाओं से गुज़रते हैं।",
     recover: { sent: "भेज दिया। दुकान का एजेंट एक-दो मिनट में इसे करेगा। अगले रिकॉर्ड अपडेट के बाद सूची बदलेगी, जिसमें पंद्रह मिनट तक लग सकते हैं।", refused: "यह इस काम के लिए ठीक नहीं है, इसलिए कुछ नहीं भेजा गया।" },
