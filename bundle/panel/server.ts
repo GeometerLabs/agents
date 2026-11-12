@@ -43,6 +43,8 @@ import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
 import { createHandover } from "./handover.ts";
 import { createTerms } from "./terms.ts";
 import { termsLinkWord, termsPage } from "./views-terms.ts";
+import { applyVoice, keepSpeech, voiceFormOf, voiceOf } from "./voice.ts";
+import { voiceLinkWord, voicePage } from "./views-voice.ts";
 import { exportShop } from "./export.ts";
 import { PaperError, createPapers } from "./papers.ts";
 import type { MadePaper } from "./papers.ts";
@@ -284,6 +286,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     model: "Saved. The server applies it within a few seconds.",
     backup: "Saved. The server writes a test object to the bucket, reads it back and deletes it; the result shows here.",
     google: "Saved. The server puts the key in place within a few seconds.",
+    speech: "Saved. The server puts the key in place within a few seconds.",
     key: "Confirmed. This server deleted its copy of the backup key's secret half. Keep the copy you saved: it is the only key that opens a backup.",
   };
   const serverNotice = (r: Req) => { const k = new URL(r.req.url ?? "/", "http://x").searchParams.get("saved"); return k && Object.hasOwn(SAVED, k) ? { notice: SAVED[k] } : {}; };
@@ -307,6 +310,11 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     if (!ownServer(r)) return;
     if (!serverSetup.putGoogle(r.form.google ?? "").ok) return page(r, 400, serverPage(r.ctx(), serverSetup.view(), { problems: [{ field: "google", message: "That is not a Google service account's key file: paste the whole JSON file, from { to }." }] }));
     redirect(r, "/server?saved=google");
+  });
+  on("POST", /^\/server\/speech$/u, "builder", (r) => {
+    if (!ownServer(r)) return;
+    if (!serverSetup.putSpeechKey(r.form.speech ?? "").ok) return page(r, 400, serverPage(r.ctx(), serverSetup.view(), { problems: [{ field: "speech", message: "That is not a key's shape: one line with no spaces, as the provider shows it." }] }));
+    redirect(r, "/server?saved=speech");
   });
   on("GET", /^\/server\/backup-key$/u, "builder", (r) => {
     if (!ownServer(r)) return;
@@ -470,6 +478,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       inbox: inboxFor(shops, id, now(), unfinished),
       ...(counts ? { liveCounts: { bookings: counts[kindFor(kindId)!.casesName] ?? {}, waitingForOwner: Number(counts.refunds?.waitingForOwner ?? 0), needBuilder: Number(counts.refunds?.needBuilder?.total ?? 0) } } : {}),
       termsLink: terms.on() ? termsLinkWord(c.lang) : undefined,
+      voiceLink: voiceLinkWord(c.lang),
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
       isBuilder: r.account!.role === "builder",
       ...(r.account!.role === "builder" ? { details: { statusJson: read.ok ? JSON.stringify(read.status, null, 2) : "—", pins: JSON.stringify(shops.pins(id) ?? {}, null, 2), runtimeJson: JSON.stringify(counts ?? {}, null, 2) } } : {}),
@@ -564,6 +573,28 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const made = terms.copy(ref.id);
     if (made) log(`shop terms copy of ${ref.id} downloaded by ${r.account!.id}`);
     sendPaper(r, made);
+  });
+  // B29: the shop's voice-notes switch. A block in the shop's runtime.json; no block means off. The deployer refuses it unless the server holds the speech key and places the Guards.
+  const voicePageFor = (r: Req, id: string, problem = false): void => {
+    const c = r.ctx();
+    let keyInPlace = false;
+    try { keyInPlace = Boolean(serverSetup.view().status?.keys.speech); } catch { keyInPlace = false; }
+    page(r, problem ? 400 : 200, voicePage(c, { id, name: shops.settings(id)?.name ?? id, state: voiceOf(shops.runtime(id)), keyInPlace, problem }));
+  };
+  on("GET", /^\/shops\/([a-z0-9-]{1,40})\/voice$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    voicePageFor(r, ref.id);
+  });
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/voice$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    const runtime = ref ? shops.runtime(ref.id) : undefined;
+    if (!ref || !runtime) return notFound(r);
+    const applied = applyVoice(runtime, voiceFormOf(r.form));
+    if (!applied.ok) return voicePageFor(r, ref.id, true);
+    shops.writeRuntime(ref.id, applied.runtime);
+    log(`voice notes of ${ref.id} turned ${applied.runtime.speech ? "on" : "off"} by ${r.account!.id}`);
+    voicePageFor(r, ref.id);
   });
   // moving a shop to another partner or builder (B38), with the owner's agreement from their own number
   const handoverPageFor = (r: Req, id: string, extra: Partial<HandoverView> = {}): void => {
@@ -795,7 +826,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     // saving a Gupshup shop would turn it back to Meta's paths with Gupshup's token behind them
     // the model as geometer.json names it now: the panel's first run may have chosen it after the panel started
     const serverModel = readServerModel(config.serverDir) ?? config.serverModel;
-    const runtime = keepWhatsAppProvider(own ? own.runtime(d.whatsapp.numberId, serverModel, gateway) : runtimeFor(d.calendar.use === "google" ? d.calendar.id : "", d.whatsapp.numberId, serverModel, gateway), d.editing ? shops.runtime(d.shopId) : undefined);
+    const runtime = keepSpeech(keepWhatsAppProvider(own ? own.runtime(d.whatsapp.numberId, serverModel, gateway) : runtimeFor(d.calendar.use === "google" ? d.calendar.id : "", d.whatsapp.numberId, serverModel, gateway), d.editing ? shops.runtime(d.shopId) : undefined), d.editing ? shops.runtime(d.shopId) : undefined); // B29: an edit keeps the voice switch as it was
     // editing a shop that exists keeps the pin it has: only `geometer update` moves a shop to another version, after the hand check on its own settings
     const kept = d.editing ? shops.lock(d.shopId) : undefined;
     const lock = kept ?? `${template.id}@${own ? template.version : pathwayVersion()}`;

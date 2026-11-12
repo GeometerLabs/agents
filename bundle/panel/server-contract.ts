@@ -16,7 +16,7 @@ import { SELF_HOSTED_PROVIDER, isBuilderRate } from "../../modules/understanding
 import type { BuilderRate } from "../../modules/understanding/rates.ts";
 
 export const SERVER_NAME = "_server";
-export const SERVER_SECRET_NAMES = ["model_key", "backup_key", "google_service_account.json"] as const;
+export const SERVER_SECRET_NAMES = ["model_key", "backup_key", "google_service_account.json", "speech_key"] as const;
 export type ServerSecretName = (typeof SERVER_SECRET_NAMES)[number];
 
 // Folders for the server-settings requests, status and key inbox, from one root so panel and deployer name the same files.
@@ -60,7 +60,7 @@ export interface ServerStatus {
   updatedAt: string;
   requests: { model?: Outcome; backup?: Outcome };
   /** Which keys the deployer has put in place, and when. Never a key, and never any part of one. `google.clientEmail` is the address calendars are shared with. */
-  keys: { model?: { at: string }; backup?: { at: string }; google?: { at: string; clientEmail: string } };
+  keys: { model?: { at: string }; backup?: { at: string }; google?: { at: string; clientEmail: string }; /** Voice notes (B29): the speech provider's key is in place (never the key). */ speech?: { at: string } };
   /** A key handed in that the deployer could not use yet, or at all, said by name (never by value). */
   inbox?: { name: ServerSecretName; message: string }[];
   /** The bucket test: an object written, read back and deleted with the key handed in. */
@@ -123,8 +123,9 @@ export function backupChoiceProblems(raw: unknown): Problem[] {
 }
 
 /** A model or bucket key's shape, checked by name and never repeated in a message. Google's file is checked by the shops' intake (secrets.ts). */
-export function serverKeyShapeOk(name: "model_key" | "backup_key", value: string): boolean {
+export function serverKeyShapeOk(name: "model_key" | "backup_key" | "speech_key", value: string): boolean {
   const v = value.trim();
+  if (name === "speech_key") return /^[^\s]{8,400}$/u.test(v); // one line, no spaces: the speech provider's key as it shows it
   if (name === "model_key") return /^[^\s]{8,4000}$/u.test(v);
   return /^[^:\s]{3,200}:[^\s]{8,400}$/u.test(v);
 }

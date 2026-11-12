@@ -90,6 +90,16 @@ ${stateLine(c, { done: s?.keys.google ? `Shops share their calendar with ${s.key
   <label class="field"><span>The service account's key file (paste the whole JSON)</span><textarea name="google" rows="6" spellcheck="false" autocapitalize="none"></textarea></label>
   <button class="btn wide" type="submit">Save the Google key</button>
 </form>
+</section>
+
+<section class="step" aria-labelledby="s-speech">
+<h2 id="s-speech">4. Voice notes (optional)</h2>
+${stateLine(c, { done: s?.keys.speech ? `The speech provider's key is in place (${when(s.keys.speech.at, c.lang)}).` : v.receipts.speech_key ? "Handed in; the server is putting it in place." : undefined, todo: "Only if your shops will listen to voice notes and answer by voice. It needs your own account with the speech provider (Sarvam), which charges you per minute listened and per 1,000 characters spoken. Each shop then has its own switch, off until you turn it on." })}
+<form method="post" action="/server/speech" autocomplete="off">${csrf(c)}
+  ${field("The speech provider's key", "speech", { type: "password", placeholder: "paste the key once" })}
+  <button class="btn wide" type="submit">Save the speech key</button>
+</form>
+<p class="muted">The key goes to the speech Guard only and is never shown again.</p>
 </section>`);
 }
 
