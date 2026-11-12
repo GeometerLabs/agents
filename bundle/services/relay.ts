@@ -23,6 +23,7 @@ import type { HeldCallSpec } from "../../modules/approvals/held-call.ts";
 import { ownApiVoice } from "../../modules/approvals/own-api-voice.ts";
 import { names } from "../generate/shop.ts";
 import { relayHandler } from "../../modules/approvals/server.ts";
+import { ownerSessionChecker } from "../../modules/channels/owner-access.ts";
 import { openRelayStore } from "../../modules/approvals/store.ts";
 import { createLiveMessaging } from "../../modules/messaging/providers.ts";
 import { systemClock } from "../../modules/core/clock.ts";
@@ -131,7 +132,9 @@ export function shopRelay(name: string, c: RelayShopConfig, read: (path: string)
   for (const p of c.approvers ?? []) need(names.approverSecretFile(p.id));
   // item 11d: the owner's private page may show and answer this shop's asks, with the owner's link, checked against the deployer's copy of its hash (lib/owner-link.ts)
   const ownerLink = () => readOwnerLink(read(`${c.secretsDir}/${OWNER_LINK_FILE}`));
-  return { relay, handler: relayHandler(relay, need("relay_token"), { ownerLink }), close: () => store.close() };
+  // item 11f: an owner signed in on the shop's page answers with a session, which only the runtime can vouch for (with the internal token the relay already holds)
+  const ownerSession = c.runtimeUrl && c.kind !== "own-agent" ? ownerSessionChecker({ url: c.runtimeUrl, token: need("internal_token") }) : undefined;
+  return { relay, handler: relayHandler(relay, need("relay_token"), { ownerLink, ...(ownerSession ? { ownerSession } : {}) }), close: () => store.close() };
 }
 
 const readFile = (path: string): string | undefined => (existsSync(path) ? readFileSync(path, "utf8").trim() : undefined);

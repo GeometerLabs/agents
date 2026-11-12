@@ -14,7 +14,7 @@ import { chownSync, existsSync, readFileSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { composeServer } from "./generate/compose.ts";
 import type { Composed, Dirs, PanelOptions, ShopDeploy } from "./generate/compose.ts";
-import { GUPSHUP_GUARD_ADMIN_FILE, GUPSHUP_UNIVERSAL_TOKEN_FILE, inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
+import { GUPSHUP_GUARD_ADMIN_FILE, GUPSHUP_UNIVERSAL_TOKEN_FILE, doorConfig, inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
 import type { ShopWebhooks } from "./generate/configs.ts";
 import { PANEL_READS, guardToml, ownerNumbers } from "./generate/guards.ts";
 import type { GuardLicence } from "./generate/guards.ts";
@@ -388,6 +388,9 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   writeAtomic(join(p.generated, "relay", "relay.json"), relayConfig(server, shops, agents));
   writeAtomic(join(p.generated, "refresher", "refresher.json"), refresherConfig(server, shops, {}, agents));
   writeAtomic(join(p.generated, "ops", "ops.json"), opsConfig(server, shops, agents));
+  // item 11f: the pages domain's front door, on a server that answers for it (no secret in it: fleet's lookups are public)
+  const door = doorConfig(server);
+  if (door) writeAtomic(join(p.generated, "door", "door.json"), door);
   // the deployment key goes to the one container that sends heartbeats
   if (server.fleet) writeSecretFile(secretFile(ctx.dir, "ops", "fleet_key"), readSecretFile(resolve(ctx.dir, server.fleet.keyFile)) ?? "");
   // the continuous copy (Litestream) is gone since 9 Nov 2026: its config held a bucket key, and its own key is no longer read by anything, so neither is kept

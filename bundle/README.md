@@ -441,6 +441,37 @@ It is checked with the same pinned key. Until the date it names, no shop here pa
 
 **Guard and the agent both check it.** The shop's agent reads the lease and stops taking new work in the wind-down; Guard checks the same lease on its own, so a shop stays paused even if someone changes its agent or the agent's licence file. In the wind-down Guard refuses a new payment link and a new calendar event; in the final stop, a message too, except to the owner's number. `deploy` asks the Guard image whether it reads the block and refuses an image that does not. After the start, each Guard must report the same key ids that `geometer.json` pins (`licence.keys`). If one does not, the deploy is refused and says which. The shop keeps running and nothing is stopped, because refunds owed must still go through. Write to support. A person answers.
 
+## The shop's page
+
+Every Bookings shop has a page with three views (plan item 11f; the design is in Explanation.md, "Every shop's page on the pages domain"):
+
+| Address | Who | What |
+| --- | --- | --- |
+| `https://<the pages domain>/<slug>/` | customers | the shop's character, hours, services, booking and paying, "message us on WhatsApp", in the visitor's language |
+| `https://<the pages domain>/p/<id>` | anyone with the printed QR code | the shop's stable address: it always reaches the current slug, after a rename or a change of domain |
+| `https://<the pages domain>/<slug>/owner` | the owner | signed in by a one-time link sent to the owner's WhatsApp (no password); then item 11d's owner page |
+| `https://<server>/s/<shop>/` and `/s/<shop>/owner` | the same views | on the server's own address, for every shop (a builder's client with `"own"` has only these) |
+
+The partner's line at the bottom of the customer view links to their account on geometer.dev and to the panel; nobody signs in across the two domains.
+
+**In the panel** (the shop's page, "The shop's page"): the short name (3 to 40 small letters, digits and hyphens, like `veena-salon`), the WhatsApp number the page shows, and,
+on a builder's server, "On the shared pages domain" or "On your own domain only" (the default). The deployer claims the name at fleet within a pass and the panel
+shows the address, the stable address for QR codes and print, or why the name was not taken. "Sign out every device" ends every owner session at once.
+
+**The owner signs in** by sending "open my app" to the shop's WhatsApp number (the link comes back as a reply), or by tapping "Send me a sign-in link" on
+`.../owner` (the link goes to the owner's number in the settings, only while the owner has written to the shop in the last 24 hours, until a sign-in template is
+approved: Deferred.md). The link works once, for 10 minutes; the session lasts 30 days on that phone or computer.
+
+**On Geometer's partner server only**, `geometer.json` names the pages domain, and Caddy gives it a site that reaches only the front door:
+
+```json
+"pages": { "domain": "<the pages domain>", "extraDomains": ["<an older or a country domain>"] }
+```
+
+`domain` must be the same as fleet's `pages.domain`. An extra domain is answered by redirecting to `domain` with the path kept, so a later change of domain keeps
+every printed link working. Never geometer.dev or a name under it (shop pages keep their own cookies and reputation). **What the owner does once:** point the pages
+domain's DNS (an A record, and AAAA if the server has IPv6) at the partner server's address, then deploy; Caddy gets its certificate by itself.
+
 ## The owner's monthly report
 
 On the first morning of the month each shop's agent sends its owner last month's report on WhatsApp, with a link to the full page. The bundle turns this on for every shop it deploys. You do nothing for it. Three things make it work, and all three come from the bundle:

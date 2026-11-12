@@ -20,6 +20,13 @@ export const FRONT_LIMITS = {
   shopStarts: { max: 60, perMs: 10 * 60_000 },
   /** Wrong owner links or booking handles, per address: someone guessing. */
   wrong: { max: 10, perMs: 60 * 60_000 },
+  /**
+   * Item 11f: "send me a sign-in link" presses, per address. The runtime has its own per-shop limit (owner-access.ts LINK_LIMITS) whatever the address, so this
+   * only keeps one address from using up the shop's allowance.
+   */
+  signin: { max: 3, perMs: 10 * 60_000 },
+  /** Item 11f: sign-in link requests for one shop from every address together (under "shop:<name>"): many addresses cannot fill the runtime's task list with them. */
+  shopSignins: { max: 10, perMs: 10 * 60_000 },
 } as const satisfies Record<string, Window>;
 
 export type LimitKind = keyof typeof FRONT_LIMITS;

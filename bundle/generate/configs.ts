@@ -168,6 +168,15 @@ export function refresherConfig(server: ServerConfig, shops: (ShopDeploy & { web
   });
 }
 
+/**
+ * Item 11f: the front door's config (services/door.ts), only on a server that answers for the pages domain and is paired with fleet (fleet says where each slug
+ * lives). No secret: fleet's lookups are public, and the door reaches this server's shops through the inbox's front like any visitor.
+ */
+export function doorConfig(server: ServerConfig): string | undefined {
+  if (!server.pages || !server.fleet) return undefined;
+  return stableJson({ primary: server.pages.domain, extra: server.pages.extraDomains, deploymentId: fleetIdOf(server), fleetUrl: server.fleet.url, localUrl: `http://inbox:${INBOX_PORT}` });
+}
+
 // The ops container's config: where every Guard's admin port and every runtime is, plus the fleet link. Ops is the only place that holds all admin tokens, so this file names token FILES, never the tokens.
 export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVersion: string; pathway?: string } & Route)[], agents: AgentFacts[] = []): string {
   // follow-up 2: where ops asks how the Gupshup token renewals are doing (the refresher's /healthz, on the admin network); only on a server that renews any
