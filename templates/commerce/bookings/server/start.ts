@@ -64,7 +64,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
   return await startRuntimeClient<ClientFolder["settings"], Runtime>(options, {
     casesName: "bookings",
     loadClient,
-    async build(client, { store, clock, log, recordKey }) {
+    async build(client, { store, clock, log, recordKey, ownerSignin }) {
       const built = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive, payment: client.settings.payment, ownCalendar: calendarModule(client.settings) === "own" });
       // An owner-marked shop's QR pictures (UPI) go into the folder the monthly report's pages are served from (read-only, no listing), under random names (B33).
       const report = client.runtime.report;
@@ -72,7 +72,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       // The steps, the allowance and the outside switch (see buildUnderstanding). A model behind a Guard gets no provider key from here; with an `agentTokenFile` it
       // gets this agent's credential for that Guard; a provider reached directly gets the key its `keyEnv` names, from the environment, and nothing else.
       const reading = buildUnderstanding(client as ClientFolder, { clock, log });
-      return createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), log });
+      return createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), log });
     },
   }) as RunningClient;
 }

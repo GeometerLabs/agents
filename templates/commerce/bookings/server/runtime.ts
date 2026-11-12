@@ -18,6 +18,7 @@ import { serviceName } from "../src/settings.ts";
 import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { RETRY_DELAYS_MS, createRuntimeCore } from "../../../../modules/runtime/core.ts";
+import type { OwnerSignin } from "../../../../modules/channels/owner-signin.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { createBookingsLicenceNotice } from "./licence.ts";
 import type { BaseStatus, RefundCounts, Runtime as CoreRuntime, RuntimeKit } from "../../../../modules/runtime/core.ts";
@@ -47,6 +48,8 @@ export interface RuntimeOptions {
   ai?: AiPolicy;
   /** The record's key (B69, RECORD_KEY_FILE): the inputs' digest and message ids are written with it. Left out (fakes mode): written plain. */
   recordKey?: Buffer;
+  /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts), made by the shared start. Left out: none. */
+  ownerSignin?: OwnerSignin;
   /** The monthly report to the owner (report/monthly-job.ts). Left out: none is made and nothing is sent. */
   report?: MonthlyReportSetup;
   /** The shop's licence right now (modules/licence; the start reads client/licence.json). Left out: never restricted. */
@@ -165,6 +168,6 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     settings, store: options.store, clock, messaging: services.messaging, pathwayVersion: options.pathwayVersion, kit, ai: policy,
     monthly: options.report ? createMonthlyReport(options.report) : undefined,
     ...(options.licence ? { licence: options.licence, licenceNotice: createBookingsLicenceNotice(settings, options.licence) } : {}),
-    ...(options.recordKey ? { recordKey: options.recordKey } : {}), retryDelaysMs: options.retryDelaysMs, guardWaitMs: options.guardWaitMs, guardLookAgainMs: options.guardLookAgainMs, aroundStep: options.aroundStep as never, log: options.log,
+    ...(options.recordKey ? { recordKey: options.recordKey } : {}), ...(options.ownerSignin ? { ownerSignin: options.ownerSignin } : {}), retryDelaysMs: options.retryDelaysMs, guardWaitMs: options.guardWaitMs, guardLookAgainMs: options.guardLookAgainMs, aroundStep: options.aroundStep as never, log: options.log,
   }) as unknown as Runtime;
 }
