@@ -11,6 +11,7 @@ import { createFakePayments } from "../../../../modules/payments/payments.ts";
 import type { PaymentRequest } from "../../../../modules/payments/payments.ts";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import { CUSTOMER, glowSalon } from "../src/harness.ts";
+import { META_TEMPLATE_NAMES } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
@@ -45,7 +46,9 @@ export function createKit(): Kit {
   const calendar = createFakeCalendar();
   const payments = createFakePayments(clock);
   const messaging = createFakeMessaging(clock);
-  for (const name of Object.values(TEMPLATE_NAMES)) for (const language of LANGUAGES) messaging.approve(name, language);
+  // Every template the shop submits to Meta is approved here, the generic ones and the specific ones (src/language/meta-templates.ts), as in src/harness.ts: outside
+  // the 24-hour window the agent sends the specific one (deposit_refund_confirmed and the like), and a kit that approved only the generic three would refuse it.
+  for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
   const opened: { runtime: Runtime; db: DurableStore }[] = [];
   let delivered = 0;
 
