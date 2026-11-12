@@ -1,7 +1,8 @@
 // The Guards and the gate for a shop's voice notes (plan B29, decision 42), defined once like every Guard in guards.ts. Two Guards, both reached only by the shop's
 // runtime and never carrying a key outside Guard:
-//  - the SPEECH Guard (one per server, like the model Guard): in front of api.sarvam.ai, adds Sarvam's `api-subscription-key` from its own file, lists exactly the two
-//    routes the voice adapter calls (modules/voice/sarvam.ts SARVAM_ROUTES), pins the text-to-speech model and caps calls a day for the whole server;
+//  - the SPEECH Guard (one per server, like the model Guard): by default in front of the speech service Geometer runs on the server's private network (no key; a shared token
+//    only if it is elsewhere), or, as an optional paid adapter, in front of api.sarvam.ai with its key from a file. It lists exactly the two routes the adapter calls
+//    (modules/voice/geometer.ts, sarvam.ts), caps calls a day for the whole server, and (Sarvam) pins the text-to-speech model;
 //  - the MEDIA Guard (one per shop, since a shop's WhatsApp token is its own): lists ONE route, GET /{version}/{media_id}, with the shop's own WhatsApp token. A Guard rule
 //    can only allow exact values, and a media id is not known ahead, so this Guard CANNOT tell a media id from any other id in that position: the same route also reads the
 //    shop's own phone number record, for example. It cannot send, upload or delete (no other route is listed), and a daily count bounds it. That is a looser fence than
@@ -15,26 +16,47 @@
 // what refuses a shop's `speech` block until that is done.
 import { SARVAM_ROUTES, SARVAM_UPSTREAM } from "../../modules/voice/sarvam.ts";
 import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
+import { GEOMETER_SPEECH_ROUTES, GEOMETER_SPEECH_UPSTREAM } from "../../modules/voice/geometer.ts";
 import { SPEECH_SECRET } from "../lib/secrets.ts";
 import { base, count } from "./guards.ts";
 import type { GuardDef, SpecIdentity } from "./guards.ts";
 
 export const SPEECH_TOOL = "speech";
 export const MEDIA_TOOL = "whatsapp-media";
+/** The file a shared token for Geometer's speech service would be in (only when the service is not on the same private network). */
+export const SPEECH_TOKEN_SECRET = "speech_token";
 
-/** The speech Guard's definition: Sarvam's upstream and the one header it adds, from a file only this Guard reads. */
-export function speechGuardDef(): GuardDef {
-  return { kind: "speech", tool: SPEECH_TOOL, upstream: SARVAM_UPSTREAM, secretFile: SPEECH_SECRET, headers: { "api-subscription-key": `\${file:/run/secrets/${SPEECH_SECRET}}` } };
+export type SpeechProviderKind = "geometer" | "sarvam";
+
+/**
+ * The speech Guard's definition (one per server, like the model Guard).
+ *  - "geometer" (the default, owner's direction 12 Nov): in front of the speech service Geometer runs in a container on the server's own private network. No provider key; when the
+ *    service wants a shared token (it is not on the same private network) Guard adds it from a file (`withToken`). Plain HTTP on the private network (`plain`), as the desk's Guard.
+ *  - "sarvam" (optional, paid): in front of api.sarvam.ai, adds Sarvam's `api-subscription-key` from a file only this Guard reads.
+ */
+export function speechGuardDef(provider: SpeechProviderKind = "geometer", o: { upstream?: string; withToken?: boolean } = {}): GuardDef {
+  if (provider === "sarvam") return { kind: "speech", tool: SPEECH_TOOL, upstream: SARVAM_UPSTREAM, secretFile: SPEECH_SECRET, headers: { "api-subscription-key": `\${file:/run/secrets/${SPEECH_SECRET}}` } };
+  return {
+    kind: "speech", tool: SPEECH_TOOL, upstream: o.upstream ?? GEOMETER_SPEECH_UPSTREAM, plain: true,
+    ...(o.withToken ? { secretFile: SPEECH_TOKEN_SECRET, headers: { Authorization: `\${file:/run/secrets/${SPEECH_TOKEN_SECRET}}` } } : { headers: {} }),
+  };
 }
 
-export interface SpeechLimits { ttsModel: string; listensPerDay: number; speaksPerDay: number }
+export interface SpeechLimits { provider?: SpeechProviderKind; ttsModel?: string; listensPerDay: number; speaksPerDay: number }
 
-/** The speech Guard's spec: two routes, the text-to-speech model pinned, a daily count for each. */
+/**
+ * The speech Guard's spec: the provider's two routes, a daily count for each, and (Sarvam only, whose text-to-speech body is JSON with a model field) the speaking model pinned.
+ * Geometer's service has no model field in its contract: the service decides, so there is nothing to pin, and the routes and the counts are what Guard holds.
+ */
 export function speechSpec(id: SpecIdentity, o: SpeechLimits): LimitsSpec {
+  const provider = o.provider ?? "geometer";
+  const routes = provider === "sarvam"
+    ? [{ method: "POST", path: SARVAM_ROUTES.listen, operation: "transcribe" }, { method: "POST", path: SARVAM_ROUTES.speak, operation: "synthesize" }]
+    : [{ method: "POST", path: GEOMETER_SPEECH_ROUTES.listen, operation: "transcribe" }, { method: "POST", path: GEOMETER_SPEECH_ROUTES.speak, operation: "synthesize" }];
   return {
-    ...base(speechGuardDef(), id),
-    routes: [{ method: "POST", path: SARVAM_ROUTES.listen, operation: "transcribe" }, { method: "POST", path: SARVAM_ROUTES.speak, operation: "synthesize" }],
-    rules: [{ id: "speak-model-pin", kind: "argument_allowlist", operation: "synthesize", field: "model", match: "exact", allowed_values: [o.ttsModel] }],
+    ...base(speechGuardDef(provider), id),
+    routes,
+    rules: provider === "sarvam" ? [{ id: "speak-model-pin", kind: "argument_allowlist", operation: "synthesize", field: "model", match: "exact", allowed_values: [o.ttsModel ?? "bulbul:v3"] }] : [],
     limits: [count("listens-per-day", "transcribe", o.listensPerDay, 86_400), count("speaks-per-day", "synthesize", o.speaksPerDay, 86_400)],
     intents: [], fail_policy: [],
   };
@@ -56,12 +78,13 @@ export function mediaSpec(id: SpecIdentity, o: { readsPerDay: number }): LimitsS
 
 /**
  * Why a shop's `speech` block cannot be turned on yet, in plain words, or null. Voice is OFF unless the block is there, and the block is refused unless:
- *  - the speech provider's key has been handed in on this server through the write-only intake (`geometer speech-key`);
+ *  - for a paid provider (Sarvam), its key has been handed in on this server through the write-only intake (`geometer speech-key`); Geometer's own speech service needs no key
+ *    from the builder, so the default provider asks for none;
  *  - the Guards that carry it are placed on this server: today they are not (see the head of this file), so a block is always refused with that reason.
  * `placed` is a parameter so the day compose places the Guards the one line that says so changes, and a test shows the key check works on its own.
  */
-export function speechProblem(o: { keyHandedIn: boolean; placed: boolean }): string | null {
-  if (!o.keyHandedIn) return "voice notes need the speech provider's key on this server first: hand it in with `geometer speech-key <file>` (it goes to the speech Guard only and is never shown again).";
+export function speechProblem(o: { provider?: SpeechProviderKind; keyHandedIn: boolean; placed: boolean }): string | null {
+  if ((o.provider ?? "geometer") === "sarvam" && !o.keyHandedIn) return "this shop uses Sarvam for voice notes, and a Sarvam key must be on this server first: hand it in with `geometer speech-key <file>` (it goes to the speech Guard only and is never shown again). The default, Geometer's own speech service, needs no key.";
   if (!o.placed) return "voice notes cannot run on this server yet: the speech and media Guards are defined (bundle/generate/speech.ts) but this release does not place them in the server's Compose file. Leave \"speech\" out of runtime.json until it does.";
   return null;
 }

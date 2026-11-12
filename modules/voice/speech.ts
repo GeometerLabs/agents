@@ -18,7 +18,7 @@ export interface Transcript {
   confidence: number | null;
 }
 
-export interface Spoken { audio: Audio; /** Characters sent to the provider: what its price is counted in. */ characters: number }
+export interface Spoken { /** True when the provider already returned Ogg Opus (a voice-note bubble needs no conversion). */ opus?: true; audio: Audio; /** Characters sent to the provider: what its price is counted in. */ characters: number }
 
 export interface SpeechProvider {
   /** The provider's short name as the record and the cost meter write it: "sarvam". */
