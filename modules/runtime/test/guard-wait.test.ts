@@ -1,7 +1,7 @@
 // What a Guard outage does to a task (modules/runtime/guard-wait.ts). The first tests are the table from `waitsForGuard` in faults.ts, one row per error kind.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ApiError, ConflictError, GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardSuspendedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, WindowClosedError, waitsForGuard } from "../../core/faults.ts";
+import { ApiError, ConflictError, GuardAlreadyDoneError, GuardConflictError, GuardDeniedError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardSuspendedError, GuardUnauthenticatedError, GuardUnavailableError, NotSentError, TimeoutError, WindowClosedError, waitsForGuard } from "../../core/faults.ts";
 import type { GuardInfo, SentCall } from "../../core/faults.ts";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -41,6 +41,7 @@ const rows: [string, unknown, string][] = [
   ["refused by a limit", new GuardRefusedError(403, "x", guard("refused_by_policy", { retry: "no" }), call, "limit"), END],
   ["the same action with other arguments", new GuardConflictError(409, "x", guard("conflict", { retry: "no" }), call), END],
   ["settled as done by a person", new GuardAlreadyDoneError(409, "x", guard("conflict", { reason_code: "already_done", retry: "no" }), call), END],
+  ["a person said no to this exact call", new GuardDeniedError(403, "x", guard("refused_by_policy", { reason_code: "denied_by_approver", retry: "no" }), call), END],
   ["a wrong agent credential is a setup mistake", new GuardUnauthenticatedError(401, "x", guard("unauthenticated", { retry: "no" }), call), END],
   ["a decision this code does not know", new GuardError(500, "x", guard("something_new"), call), END],
   ["the service's own error", new ApiError(500, "x"), END],

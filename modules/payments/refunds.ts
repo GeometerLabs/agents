@@ -12,6 +12,10 @@
 // that a person at the server looked and settled the refund as made (Guard's ADR-0060). That one is DONE: recorded as done by that person's word,
 // never sent again, and the owner is told in plain words.
 //
+// A 403 is "refused, nothing was refunded", and one of them is the owner's own no: `reason_code: "denied_by_approver"` (Guard's ADR-0061 addendum, the owner's
+// decision of 12 Nov 2026). For 24 hours after a person denies a held refund, Guard refuses the identical call at once instead of asking again. The runtime
+// reads it exactly as the relay's "deny": the payment is never asked about again, nothing is raised for the builder, and the customer hears the owner's no.
+//
 // A refund whose outcome is not known is settled only by the payments service's own list: read by a person's look (the to-do list's recheck_refund) or after the
 // provider's own refund.done event (12 Nov 2026). Either way the ORIGINAL attempt is settled (matched by the refund id it was given, our receipt, or the payment and
 // the amount it asked for), nothing is ever sent again, and the customer, who was told "we will message you as soon as it is confirmed", is told, once.
@@ -20,7 +24,7 @@
 // customer about it, and where to find the case again from an approval. Everything about HOW a refund is asked for and read back is here, once.
 import { formatInr } from "../language/format.ts";
 import type { Clock } from "../core/clock.ts";
-import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, NotSentError, TimeoutError } from "../core/faults.ts";
+import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardDeniedError, GuardError, GuardHeldError, GuardOutcomeUnknownError, GuardRefusedError, GuardUnavailableError, NotSentError, TimeoutError } from "../core/faults.ts";
 import { MINUTE } from "../core/time.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { Action, Outcome } from "../record/record.ts";
@@ -81,7 +85,8 @@ export interface RefundCase {
   stoppedRefunds?: string[];
 }
 
-export type RefundResult = "done" | "held" | "retry" | "stopped";
+/** "denied": the owner said no, as Guard's own record shows it (a refusal with `denied_by_approver`): the customer hears the owner's no, nothing more is done. */
+export type RefundResult = "done" | "held" | "retry" | "stopped" | "denied";
 
 export interface RefundDeps<C extends RefundCase> {
   payments: Payments;
@@ -122,6 +127,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
   type Sorted =
     | { is: "already_done"; error: GuardAlreadyDoneError } // a person at the server settled it as made: done, never sent again
     | { is: "held"; error: GuardHeldError }
+    | { is: "owner_said_no"; error: GuardDeniedError } // a person denied this exact refund: the owner's no, never sent again
     | { is: "may_have_happened"; why: string } // look once, never send again
     | { is: "refused"; error: GuardRefusedError }
     | { is: "no_good"; why: string } // Guard said no and trying again will not change it
@@ -134,6 +140,8 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     if (e instanceof GuardAlreadyDoneError) return { is: "already_done", error: e };
     if (e instanceof GuardHeldError) return { is: "held", error: e };
     if (e instanceof GuardOutcomeUnknownError) return { is: "may_have_happened", why: "Guard says the outcome is unknown" };
+    // before "refused": it is a GuardRefusedError too, and any other refusal still means "a rule or a limit said no", which the builder must look at
+    if (e instanceof GuardDeniedError) return { is: "owner_said_no", error: e };
     if (e instanceof GuardRefusedError) return { is: "refused", error: e };
     if (e instanceof GuardUnavailableError) return { is: "not_sent", why: e.message };
     if (e instanceof GuardConflictError || e instanceof GuardError) return { is: "no_good", why: e.message };
@@ -159,6 +167,18 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     });
     if (!stoppedOf(b).includes(paymentId)) stoppedOf(b).push(paymentId); // asking Guard again would only get the same answer
     await tellOwner(b, b.customer, deps.ids.settled, { refundInr: amountInr });
+  }
+
+  /**
+   * Guard says a person already said no to this exact refund (403 `denied_by_approver`). It is the same no the relay reports with "deny" (onApprovalDecision),
+   * read from Guard's own record instead: the owner's decision is counted (owner_decision, confirmed, deny), the payment is never asked about again, and
+   * nothing is raised for the builder. The caller tells the customer. `approval` is the request the person denied, when Guard names it.
+   */
+  function ownerSaidNo(b: C, paymentId: string, amountInr: number, refs: Record<string, string>, e: GuardDeniedError, approval?: string): void {
+    const which = e.approval ?? approval;
+    if (which) log(b, owner, "owner_decision", "confirmed", { approval: which, decision: "deny" }, { refs: { command: "deny", approval: which }, notes: "Guard's record says the person asked denied this exact refund, so Guard refused it when it was sent again and asked nobody again" });
+    if (!stoppedOf(b).includes(paymentId)) stoppedOf(b).push(paymentId); // the identical call is refused for a day, and asking later would ask the owner again
+    log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs: { ...refs, ...(which ? { approval: which } : {}) }, notes: "the owner declined the refund (Guard: denied_by_approver). Nothing was refunded" });
   }
 
   const overLimit = (amountInr: number) => amountInr > deps.limitInr();
@@ -238,6 +258,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
             return "held";
           }
           case "may_have_happened": return await maybeDone(sorted.why);
+          case "owner_said_no": ownerSaidNo(b, paymentId, amountInr, refs, sorted.error); return "denied";
           case "refused": {
             const note = `Guard refused the refund (${sorted.error.kind === "limit" ? "a limit" : "a rule"}${sorted.error.ruleId ? `: ${sorted.error.ruleId}` : ""}): ${sorted.error.guard.reason ?? sorted.error.message}. Nothing was refunded.`;
             log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs, notes: note });
@@ -266,6 +287,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       return;
     }
     if (result === "held") { await tellCustomer(b, b.customer, [a.held], { refundInr: a.amountInr }); return; }
+    if (result === "denied") { await tellCustomer(b, b.customer, [deps.ids.denied]); return; } // the owner's no, as the relay's deny tells it
     if (result === "retry") holds(b).push({ kind: "refund_retry", amountInr: a.amountInr, paymentId: a.paymentId, tries: 0, retryAtMs: clock.now() + RETRY_MINUTES[0] * MINUTE, then: { ...a.done, held: a.held }, ...(a.requestedBy && a.requestedBy.length > 0 ? { requestedBy: a.requestedBy } : {}) } as RefundRetry);
     await tellCustomer(b, b.customer, [deps.ids.checking], { refundInr: a.amountInr });
   }
@@ -287,6 +309,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     }
     if (result === "done") { await tellCustomer(b, b.customer, [p.then.customer], { refundInr: p.amountInr }); if (p.then.owner) await tellOwner(b, b.customer, p.then.owner, { refundInr: p.amountInr }); }
     else if (result === "held") await tellCustomer(b, b.customer, [p.then.held], { refundInr: p.amountInr });
+    else if (result === "denied") await tellCustomer(b, b.customer, [deps.ids.denied]);
   }
 
   // ---- settling a refund whose outcome is not known: the payments service's own list, read by a person's look or after the provider's event --------------
@@ -462,6 +485,14 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
           hold.expiresAtMs = sorted.error.expiresAtMs;
           log(b, b.customer, "refund", "held_for_owner", { paymentId, amountInr }, { refs: { ...refs, approval: sorted.error.approval }, notes: "Guard held the call again under a new approval (the first was used up or no longer valid). The relay will ask the owner about the new one" });
           return;
+        case "owner_said_no": {
+          // the relay said approve, but Guard's record says a person denied this exact refund (one of several people said no, or the relay's word was wrong):
+          // Guard is the record, so it is the owner's no
+          dropHold(b, hold);
+          ownerSaidNo(b, paymentId, amountInr, refs, sorted.error, hold.approval);
+          await tellCustomer(b, b.customer, [deps.ids.denied]);
+          return;
+        }
         case "refused": {
           const reason = sorted.error.guard.reason ?? sorted.error.message;
           if (/expire/iu.test(reason)) return expireGuardHold(b, hold, reason);

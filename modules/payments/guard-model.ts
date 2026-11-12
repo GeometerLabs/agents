@@ -12,9 +12,12 @@
 //     a different value or type (`60000` against `"60000"`), or a different receipt, is a different call and a new hold;
 //   - an approved hold lets the identical call through ONCE; the approval is then used up, so the identical call again is held
 //     again under a new id, and only once that is approved is it answered from the record (replayed) instead of sent again;
-//   - a denied hold is final for that approval, and the same call again is held again under a new id;
+//   - a denied hold is final for that approval, and for 24 hours after the no the same call again is REFUSED (HTTP 403, reason_code denied_by_approver,
+//     the denied request in `detail`): no new request is made, so nobody is asked again (ADR-0061 addendum, the owner's decision of 12 Nov 2026). A changed
+//     call is a new hold, as before; after the 24 hours the same call is held again under a new id;
 //   - an approval can be used only until its expiry less the upstream timeout.
 import type { Clock } from "../core/clock.ts";
+import { DENIED_REPEAT_MS } from "../core/faults.ts";
 import { guardHoldsRefund, guardRefusesLink, guardRefusesRefund, linkBoundOf, refundRulesOf } from "./guard-limits.ts";
 import type { LimitsSpec } from "./guard-limits.ts";
 
@@ -83,6 +86,8 @@ export type RefundDecision =
   | { kind: "conflict"; reason: string }
   /** The identical call again after a person settled it as `happened` (409 conflict, reason_code already_done): `detail` is Guard's, as its docs show it. */
   | { kind: "already_done"; reason: string; detail: { intent: string; state: "reconciled"; confirmed_by: string; provider_status?: number } }
+  /** The identical call within 24 hours of a person's no (403 refused_by_policy, reason_code denied_by_approver): `detail` is Guard's, as its docs show it. */
+  | { kind: "denied_repeat"; reason: string; detail: { approval: string; status: "denied"; denied_at_ms: number; until_ms: number } }
   | { kind: "refused"; reason: string; ruleId: string };
 
 export interface GuardModel {
@@ -116,7 +121,11 @@ export function callKeyOf(paymentId: string, body: unknown): string {
 }
 
 // Built from the same generated spec as Guard so tests see the same holds and blocks, without a real Guard process; it is a model, not Guard.
-export function createGuardModel(spec: LimitsSpec, clock: Clock, options: { approvers?: ModelApprovers } = {}): GuardModel {
+/**
+ * `olderGuard`: a Guard from before 12 Nov 2026, which holds the identical call again after a no instead of refusing it. Only the tests use it, to show the
+ * approvals relay still does not ask the owner again.
+ */
+export function createGuardModel(spec: LimitsSpec, clock: Clock, options: { approvers?: ModelApprovers; olderGuard?: boolean } = {}): GuardModel {
   const directory = options.approvers;
   /** The role a new hold of this amount is assigned to, and how many approvals it needs (Guard: the covering role with the lowest ceiling). */
   const tierOf = (amount: number): { role: "shop-owner" | "shop-two"; needed?: number } => (directory?.twoAbovePaise !== undefined && amount > directory.twoAbovePaise ? { role: "shop-two", needed: 2 } : { role: "shop-owner" });
@@ -180,6 +189,16 @@ export function createGuardModel(spec: LimitsSpec, clock: Clock, options: { appr
             return { kind: "hold", approval: pending.id, expiresAtMs: pending.expiresAtMs };
           }
           const now = clock.now();
+          // a person said no to this exact call in the last 24 hours (Guard's hold_for_approval, after the pending request and before a new one): refused, nobody asked
+          const no = options.olderGuard ? undefined : approvals.filter((a) => a.callKey === callKey && a.state === "denied" && a.decidedAtMs !== undefined && a.decidedAtMs > now - DENIED_REPEAT_MS).at(-1);
+          if (no) {
+            const at = no.decidedAtMs as number;
+            return {
+              kind: "denied_repeat",
+              reason: `the person asked to approve this exact call said no (approval ${no.id}): it is refused without asking anyone again for 24 hours after the no; a call with other arguments is a new request`,
+              detail: { approval: no.id, status: "denied", denied_at_ms: at, until_ms: at + DENIED_REPEAT_MS },
+            };
+          }
           const fields = { ...(body as Record<string, unknown>), payment_id: paymentId };
           const tier = tierOf(amount);
           const created: Approval = {

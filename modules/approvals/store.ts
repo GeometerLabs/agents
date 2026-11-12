@@ -118,6 +118,12 @@ export interface RelayStore {
   updateAsk(key: AskKey, changes: Partial<Omit<Ask, "approval" | "approver">>): void;
   /** Move to `to` only if it is in `from` now. True if this call made the move: the one use of a code is this compare-and-set. */
   moveAsk(key: AskKey, from: AskState[], to: AskState, changes?: Partial<Omit<Ask, "approval" | "approver" | "state">>): boolean;
+  /**
+   * The owner's decision of 12 Nov 2026 (monorepo ADR-0061 addendum): an approval for the same refund (same receipt, payment and amount) that was answered
+   * with a no after `sinceMs`, if any. The owner's single ask counts from when the owner was asked (the relay keeps no time of the answer, which comes later);
+   * a refund several people decided counts from its outcome. Returns that approval's id.
+   */
+  deniedCall(call: { receipt: string; paymentId: string; amountPaise: number }, sinceMs: number): string | undefined;
   /** B37: record how a refund that needed several people ended. True if this call recorded it (the first word of it). */
   setOutcome(o: Omit<Outcome, "runtimeTold">): boolean;
   outcome(approval: string): Outcome | undefined;
@@ -183,6 +189,10 @@ export function openRelayStore(dir: string): RelayStore {
     moveAsk(key, from, to, changes = {}) {
       return set(key, { ...changes, state: to }, ` AND state IN (${from.map((s) => `'${s}'`).join(",")})`) === 1;
     },
+    deniedCall: (call, sinceMs) => (db.prepare(`SELECT approval FROM asks WHERE receipt = ? AND payment_id = ? AND amount_paise = ? AND (
+        (approver = '' AND state = 'decided' AND decision = 'deny' AND COALESCE(asked_at_ms, first_seen_ms) > ?)
+        OR approval IN (SELECT approval FROM outcomes WHERE decision = 'deny' AND at_ms > ?)) ORDER BY first_seen_ms DESC LIMIT 1`)
+      .get(call.receipt, call.paymentId, call.amountPaise, sinceMs, sinceMs) as { approval: string } | undefined)?.approval,
     setOutcome: (o) => Number(db.prepare("INSERT OR IGNORE INTO outcomes (approval, decision, guard_expires_at_ms, at_ms) VALUES (?, ?, ?, ?)").run(o.approval, o.decision, o.guardExpiresAtMs, o.atMs).changes) === 1,
     outcome: (approval) => { const r = db.prepare("SELECT * FROM outcomes WHERE approval = ?").get(approval) as Record<string, any> | undefined; return r ? toOutcome(r) : undefined; },
     outcomes: () => (db.prepare("SELECT * FROM outcomes ORDER BY at_ms").all() as Record<string, any>[]).map(toOutcome),

@@ -482,6 +482,26 @@ one-character change, forged and re-signed summaries, the list as the trust, the
 the WhatsApp rule, the claim) and each template's `test/report-summary.test.ts` (signed papers' summaries genuine and saying what the paper says, unsigned
 papers unchanged, every message variant and language with long names in the shop's script within 1,024 characters).
 
+## The owner's no, from Guard's record (12 Nov 2026, the owner's decision; monorepo ADR-0061 addendum)
+
+Guard now refuses the identical call for 24 hours after a person denied it: a 403 with `code: refused_by_policy`, `retry: no` and `reason_code: "denied_by_approver"`,
+whose `detail` names the denied request (`approval`, `denied_at_ms`, `until_ms`). No new request is opened, so nobody is asked again. This folder reads it as the owner's no:
+
+- **`core/`.** `http.ts` makes that answer a `GuardDeniedError` (`faults.ts`), which is a `GuardRefusedError`: code that does not know it still never retries it, and
+  `waitsForGuard` never waits on it. `DENIED_REPEAT_MS` (24 hours) is Guard's number, for the stand-in and the relay.
+- **`payments/refunds.ts`.** It is checked before any other refusal (which means "a rule or a limit said no", for the builder). In `requestRefund` the result is
+  `"denied"`. In `releaseHeld`, the relay said approve but Guard's record says no (one of several people said no, or the relay's word was wrong), and Guard is the
+  record. Either way `ownerSaidNo` counts the owner's decision (`owner_decision` confirmed, deny, with the request), stops the payment, raises nothing for the builder,
+  and the customer gets the template's "denied" message, never "we are checking".
+- **`approvals/relay.ts`.** With the new Guard there is no request to ask about. A Guard from before the change still opens one; the relay sets aside a request for a
+  refund (same receipt, payment and amount) the owner said no to in the last 24 hours (`store.deniedCall`) and tells the builder (`denied_repeat`), instead of asking
+  the owner again. The owner's single ask counts from when the owner was asked, because the relay keeps no time of the answer.
+- **The stand-ins.** `payments/guard-model.ts` refuses the identical refund for 24 hours after a no (`denied_repeat`, Guard's words and `detail`); `olderGuard: true`
+  is the behaviour before, for the relay's test. `standins/guard.ts` serves it as Guard's 403 and the payments fake throws `GuardDeniedError`.
+- **Tests** (written, not run): `payments/test/refund-denied.test.ts`, the classification in `templates/commerce/bookings/test/guard-responses.test.ts` (with the doc's
+  body as a fixture), a row in `runtime/test/guard-wait.test.ts`, one in `refund-held.test.ts` (Guard's no wins over the relay's approve), two in
+  `approvals-relay.test.ts` (no new request with Guard as it is; with an older Guard the relay does not ask again).
+
 ## Adding to a module later
 
 Move a feature here when a second template needs it, in two commits: first move the file and fix its imports (the hand check and tests must be unchanged), then cut the template's knowledge out of it. The files in this folder that began as Bookings files (`check.ts`, `interactive.ts`, `meta-templates.ts`, `router.ts`) show how.

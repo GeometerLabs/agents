@@ -146,6 +146,8 @@ export async function startStubGuard(config: StubGuardConfig): Promise<RunningSt
         return;
       case "conflict": json(res, 409, { error: `refused by the Guard: ${d.reason}`, guard: decision("conflict", "no", "no", d.reason) }); return;
       case "already_done": json(res, 409, { error: `refused by the Guard: ${d.reason}`, guard: { decision: "deny", code: "conflict", reason_code: "already_done", sent: "no", retry: "no", reason: d.reason, detail: d.detail } }); return;
+      // a person said no to this exact call less than 24 hours ago (ADR-0061 addendum): Guard's 403 with its reason_code
+      case "denied_repeat": json(res, 403, { error: `refused by the Guard: ${d.reason}`, guard: { decision: "deny", code: "refused_by_policy", reason_code: "denied_by_approver", sent: "no", retry: "no", reason: d.reason, detail: d.detail } }); return;
       case "refused": json(res, 403, { error: `refused by the Guard: ${d.reason}`, guard: decision("refused_by_policy", "no", "no", d.reason) }); return;
       case "pass": break;
     }
