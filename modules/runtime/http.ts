@@ -17,6 +17,9 @@
 //   GET  /internal/channel/offer?service=&from=YYYY-MM-DD&days=N   the services, prices and free times
 //   GET  /internal/channel/request?handle=<64 hex>    one request by its handle's hash
 //   GET  /internal/channel/owner                     what waits for the owner (x-owner-link needed)
+//   POST /internal/channel/owner-voice               items 11d and 11e: a recording from the owner's page (audio/ogg, at most 256 KB), with the owner's credential;
+//                                                     held in memory only, and an owner_message carrying its reference is saved (never the audio)
+// An owner_message (the owner's talk box) needs the owner's credential too, like an owner_action.
 //
 // Item 11f, the owner's sign-in on the shop's page (modules/channels/owner-access.ts, owner-signin.ts). The owner's credential above is the panel-made link
 // (x-owner-link) OR a session made here (x-owner-session); both are checked HERE, against this runtime's own files, never at the front.
@@ -34,6 +37,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { checkEvents, checkRecovery } from "./events.ts";
 import type { IncomingEvent } from "./events.ts";
 import { checkChannelEvent } from "../channels/events.ts";
+import { MAX_VOICE_BYTES } from "../channels/owner-audio.ts";
 import { HANDLE_HASH } from "../channels/handle.ts";
 import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts";
 import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "../channels/owner-access.ts";
@@ -109,6 +113,22 @@ function readBody(req: IncomingMessage, max: number): Promise<string> {
   });
 }
 
+/** A body as bytes (a recording), refused past `max`. */
+function readBytes(req: IncomingMessage, max: number): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    if (Number(req.headers["content-length"] ?? 0) > max) { reject(new HttpError(413, `That request is bigger than the ${max} bytes this endpoint takes.`)); return; }
+    const chunks: Buffer[] = [];
+    let size = 0;
+    req.on("data", (chunk: Buffer) => {
+      size += chunk.length;
+      if (size > max) { reject(new HttpError(413, `That request is bigger than the ${max} bytes this endpoint takes.`)); return; }
+      chunks.push(chunk);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
+}
+
 // Saves the event before answering 200, so the inbox only stops retrying once the message is durable.
 export function startServer(runtime: ServedRuntime, options: ServerOptions): Promise<RunningServer> {
   const host = options.host ?? "127.0.0.1";
@@ -166,7 +186,7 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
         const checked = checkChannelEvent(raw);
         if (!checked.ok) return send(res, 400, { error: checked.error });
         // the owner's link is checked HERE, at the runtime, against its own file: the front cannot act for the owner without it
-        if (checked.event.kind === "owner_action" && !ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+        if ((checked.event.kind === "owner_action" || checked.event.kind === "owner_message") && !ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
         events.push(checked.event);
       }
       const counts = runtime.submit(events); // on disk when this returns
@@ -209,6 +229,26 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       const ended = options.ownerSignin?.end(header(req, OWNER_SESSION_HEADER) ?? "");
       if (ended) recordAccess("signed_out", ended);
       return send(res, 200, { ended: ended !== undefined });
+    }
+    // Integration of items 11d and 11e: a recording the owner made on their page. The owner is checked HERE, as for every owner event; the audio is held in this
+    // process's memory only (the kit's ownerVoice, modules/channels/owner-audio.ts) and the saved event carries its reference, never the audio.
+    if (path === "/internal/channel/owner-voice") {
+      only("POST");
+      if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+      if (!channel.ownerVoice) return send(res, 404, { error: "Voice is not on for this shop's assistant." });
+      const type = header(req, "content-type") ?? "";
+      if (!/^audio\/ogg\b/iu.test(type)) return send(res, 415, { error: "Send the recording as audio/ogg (Opus)." });
+      let bytes: Buffer;
+      try { bytes = await readBytes(req, MAX_VOICE_BYTES); } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        throw e;
+      }
+      if (bytes.length === 0) return send(res, 400, { error: "The recording is empty." });
+      const ref = channel.ownerVoice({ bytes: new Uint8Array(bytes), mime: type.split(";")[0].trim().toLowerCase() === "audio/ogg" ? "audio/ogg; codecs=opus" : type });
+      const counts = runtime.submit([{ kind: "owner_message", id: randomUUID(), text: "", voice: ref }]);
+      send(res, 200, counts);
+      runtime.kick();
+      return;
     }
     if (path === "/internal/channel/owner") {
       only("GET");

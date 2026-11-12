@@ -26,11 +26,17 @@ import { lookup as dnsLookup } from "node:dns";
 import type { LookupAddress } from "node:dns";
 import { BlockList, isIP } from "node:net";
 import { readFileSync } from "node:fs";
+import { MAX_VOICE_BYTES } from "../../modules/channels/owner-audio.ts";
 
 export const DOOR_PORT = 8797;
 export const DOOR_HEADER = "x-geometer-door";
 /** A request body passed on: the front's forms are 4 KB and its JSON 16 KB; anything bigger is not one of them. */
 export const MAX_REQUEST_BYTES = 64 * 1024;
+/**
+ * The one larger body: a recording from the owner's app on a shop of THIS server (items 11d and 11e, <slug>/owner/voice or <slug>/o/<link>/voice), up to the front's
+ * own limit for it (modules/channels/owner-audio.ts). Never for a builder's server: its owner view is redirected to its own domain before any body is read.
+ */
+export const isOwnerVoice = (rest: string): boolean => /^\/(owner|o\/[^/]+)\/voice$/u.test(rest);
 /** A page passed back: the booking page is tens of KB; a builder's server that sends more is cut off, not streamed for ever. */
 export const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 
@@ -212,12 +218,12 @@ function doorLimiter(now: () => number) {
   };
 }
 
-function readRequestBody(req: IncomingMessage): Promise<Buffer | "too_big"> {
+function readRequestBody(req: IncomingMessage, max = MAX_REQUEST_BYTES): Promise<Buffer | "too_big"> {
   return new Promise((resolve, reject) => {
-    if (Number(req.headers["content-length"] ?? 0) > MAX_REQUEST_BYTES) { resolve("too_big"); return; }
+    if (Number(req.headers["content-length"] ?? 0) > max) { resolve("too_big"); return; }
     const chunks: Buffer[] = [];
     let size = 0;
-    req.on("data", (c: Buffer) => { size += c.length; if (size > MAX_REQUEST_BYTES) { resolve("too_big"); req.destroy(); return; } chunks.push(c); });
+    req.on("data", (c: Buffer) => { size += c.length; if (size > max) { resolve("too_big"); req.destroy(); return; } chunks.push(c); });
     req.on("end", () => resolve(Buffer.concat(chunks)));
     req.on("error", reject);
   });
@@ -343,7 +349,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     }
     let body: Buffer | undefined;
     if (method === "POST") {
-      const read = await readRequestBody(req);
+      const read = await readRequestBody(req, isLocal && isOwnerVoice(rest) ? MAX_VOICE_BYTES : MAX_REQUEST_BYTES);
       if (read === "too_big") return own(res, 413, pageOf("Too big", "That is more than a shop's page takes."));
       body = read;
     }

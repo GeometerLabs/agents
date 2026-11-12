@@ -51,6 +51,15 @@ test("a channel event is checked whole: a booking needs the hash (never the hand
   const act = checkChannelEvent({ kind: "owner_action", id: "o-1", action: "received", case: "b-3", digest: "0".repeat(32) });
   assert.ok(act.ok);
   assert.equal(checkChannelEvent({ kind: "owner_action", id: "o-1", action: "refund_everything", case: "b-3", digest: "0".repeat(32) }).ok, false);
+  // items 11d and 11e: a card's answer names the card, and the talk box's words are only words (a recording's reference is the runtime's own to set)
+  assert.ok(checkChannelEvent({ kind: "owner_action", id: "o-2", action: "card_yes", case: "c-4", digest: "a".repeat(32) }).ok);
+  assert.equal(checkChannelEvent({ kind: "owner_action", id: "o-2", action: "card_yes", case: "b-3", digest: "a".repeat(32) }).ok, false, "a card's answer names a card, not a booking");
+  const said = checkChannelEvent({ kind: "owner_message", id: "t-1", text: "  close Sunday  ", voice: "a-reference-the-front-made-up" });
+  assert.ok(said.ok);
+  assert.deepEqual(said.event, { kind: "owner_message", id: "t-1", text: "close Sunday" }, "a voice reference from the front is never taken");
+  assert.equal(channelEventKey(said.event), "owner_message:t-1");
+  assert.equal(checkChannelEvent({ kind: "owner_message", id: "t-2", text: "   " }).ok, false);
+  assert.equal(checkChannelEvent({ kind: "owner_message", id: "t-3", text: "x".repeat(901) }).ok, false);
 });
 
 test("a web customer's messages are kept for their page and read back from there; a WhatsApp number still goes to WhatsApp; with no WhatsApp, nothing goes", async () => {

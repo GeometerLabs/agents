@@ -1,8 +1,12 @@
 // The owner's app's talk box and its offline note (item 11e): plain HTML that works without JavaScript (a text box and a Send button posting to <link>/talk), and a
 // small script that adds a hold-to-record button when the phone can record (MediaRecorder): the voice note is posted to <link>/voice and goes down the same path as a
-// WhatsApp voice note (speech to text through the voice notes job's Guard), then is read like the typed words. The answer is shown on the page as text; the assistant
-// never speaks (owner, 12 Nov). Used by the owner page's front once item 11d lands (modules/Deferred.md).
+// WhatsApp voice note (the shop's voice service through the same listener), then is read like the typed words. The answer is shown on the page as text; the assistant
+// never speaks (owner, 12 Nov). Used by the owner's page (modules/channels/owner-page.ts) under the owner's link and the signed-in view (<base>/owner).
+//
+// The pages origin runs no script but Geometer's own: the script here carries the response's nonce (front.ts puts the same one in that response's content policy),
+// and a signed-in owner's posts carry the session's form token (the hidden field, or the x-owner-csrf header on the recording's POST).
 import type { Language } from "../../language/languages.ts";
+import type { Mood } from "../mood.ts";
 import type { TalkLine } from "../state.ts";
 
 const WORDS: Record<Language, { title: string; placeholder: string; send: string; hold: string; release: string; sending: string; failed: string; offline: string; you: string }> = {
@@ -18,15 +22,32 @@ const esc = (s: string) => s.replace(/[&<>"']/gu, (c) => ({ "&": "&amp;", "<": "
 /** The longest voice note the page records: the voice notes job listens to 30 seconds at most. */
 export const RECORD_MAX_SECONDS = 30;
 
-/** The talk box: the last lines of talk, a text form, and (with JavaScript and a microphone) the hold-to-record button. `base` is the owner's link. */
-export function talkBox(a: { base: string; language: Language; lines: readonly TalkLine[]; assistantName: string }): string {
+/**
+ * The talk box: the last lines of talk, a text form, and (with JavaScript and a microphone) the hold-to-record button. `base` is the owner's link (or the signed-in
+ * view's address). `nonce`: the response's script nonce. `csrf`: a signed-in owner's form token. `listen: false`: the shop has no voice service, so no record button.
+ */
+export function talkBox(a: { base: string; language: Language; lines: readonly TalkLine[]; assistantName: string; nonce?: string; csrf?: string; listen?: boolean }): string {
   const w = WORDS[a.language];
   const lines = a.lines.map((l) => `<p class="talk-${l.from}"><b>${esc(l.from === "owner" ? w.you : a.assistantName)}:</b> ${esc(l.text).replace(/\n/gu, "<br>")}</p>`).join("");
+  const csrf = a.csrf ? `<input type="hidden" name="csrf" value="${esc(a.csrf)}">` : "";
   return `<section class="talk" aria-labelledby="talk-h"><h2 id="talk-h">${esc(w.title)}</h2>${lines}
-<form method="post" action="${esc(a.base)}/talk"><label class="sr" for="talk-t">${esc(w.title)}</label><textarea id="talk-t" name="text" rows="2" maxlength="900" required placeholder="${esc(w.placeholder)}"></textarea><button type="submit">${esc(w.send)}</button></form>
-<button type="button" id="talk-rec" hidden data-hold="${esc(w.hold)}" data-release="${esc(w.release)}" data-sending="${esc(w.sending)}" data-failed="${esc(w.failed)}">${esc(w.hold)}</button>
+<form method="post" action="${esc(a.base)}/talk">${csrf}<label class="sr" for="talk-t">${esc(w.title)}</label><textarea id="talk-t" name="text" rows="2" maxlength="900" required placeholder="${esc(w.placeholder)}"></textarea><button type="submit">${esc(w.send)}</button></form>
+${a.listen === false ? "" : `<button type="button" id="talk-rec" hidden data-hold="${esc(w.hold)}" data-release="${esc(w.release)}" data-sending="${esc(w.sending)}" data-failed="${esc(w.failed)}"${a.csrf ? ` data-csrf="${esc(a.csrf)}"` : ""}>${esc(w.hold)}</button>`}
 <p id="talk-offline" class="notice" hidden>${esc(w.offline)}</p></section>
-<script>${talkScript(a.base)}</script>`;
+<script${a.nonce ? ` nonce="${esc(a.nonce)}"` : ""}>${talkScript(a.base)}</script>`;
+}
+
+/** The mood in a few words, beside the character's name (the drawings come later). Machine-written in Hindi, Malayalam and Kannada, like the rest of the page. */
+const MOOD_WORDS: Record<Language, Record<Mood, string>> = {
+  en: { something_wrong: "Something needs a look", waiting_for_owner: "Waiting for you", closed: "Closed now", busy: "Busy", quiet: "All quiet" },
+  hi: { something_wrong: "कुछ देखना ज़रूरी है", waiting_for_owner: "आपका इंतज़ार है", closed: "अभी बंद", busy: "व्यस्त", quiet: "सब शांत" },
+  ml: { something_wrong: "ഒന്ന് നോക്കേണ്ടതുണ്ട്", waiting_for_owner: "നിങ്ങൾക്കായി കാത്തിരിക്കുന്നു", closed: "ഇപ്പോൾ അടച്ചിരിക്കുന്നു", busy: "തിരക്കിലാണ്", quiet: "എല്ലാം ശാന്തം" },
+  kn: { something_wrong: "ಏನೋ ನೋಡಬೇಕಿದೆ", waiting_for_owner: "ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿದೆ", closed: "ಈಗ ಮುಚ್ಚಿದೆ", busy: "ಕಾರ್ಯನಿರತ", quiet: "ಎಲ್ಲವೂ ಶಾಂತ" },
+};
+
+/** The character's line at the top of the app: a dot in its colour, its name and the shop's mood now (from the shop's real state, mood.ts). */
+export function characterLine(a: { language: Language; name: string; colour: string; mood: Mood }): string {
+  return `<p class="who-am-i"><span class="dot" style="background:${esc(a.colour)}"></span> <b>${esc(a.name)}</b> · ${esc(MOOD_WORDS[a.language][a.mood])}</p>`;
 }
 
 /**
@@ -43,7 +64,7 @@ function talkScript(base: string): string {
   addEventListener("online", show); addEventListener("offline", show); show();
   const rec = document.getElementById("talk-rec");
   const type = "audio/ogg;codecs=opus";
-  if (!window.MediaRecorder || !MediaRecorder.isTypeSupported(type) || !navigator.mediaDevices) return;
+  if (!rec || !window.MediaRecorder || !MediaRecorder.isTypeSupported(type) || !navigator.mediaDevices) return;
   rec.hidden = false;
   let r = null, chunks = [], timer = null;
   const stop = () => { if (r && r.state === "recording") r.stop(); clearTimeout(timer); };
@@ -52,13 +73,15 @@ function talkScript(base: string): string {
     if (r) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      chunks = []; r = new MediaRecorder(stream, { mimeType: type });
+      chunks = []; r = new MediaRecorder(stream, { mimeType: type, audioBitsPerSecond: 24000 }); // about 90 KB for 30 seconds: under the page's limit for a recording
       r.ondataavailable = (x) => chunks.push(x.data);
       r.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
         rec.textContent = rec.dataset.sending;
         try {
-          const res = await fetch(base + "/voice", { method: "POST", headers: { "content-type": type }, body: new Blob(chunks, { type }) });
+          const headers = { "content-type": type };
+          if (rec.dataset.csrf) headers["x-owner-csrf"] = rec.dataset.csrf;
+          const res = await fetch(base + "/voice", { method: "POST", headers, body: new Blob(chunks, { type }) });
           if (!res.ok) throw new Error(String(res.status));
           location.reload();
         } catch { rec.textContent = rec.dataset.failed; }

@@ -12,6 +12,9 @@ export const VOICE_WHY: Record<NotHeard, string> = {
 
 export type HeardOk = Extract<Heard, { ok: true }>;
 
+/** A recording the owner made on their page: the bytes as the runtime holds them in memory, their type, and the reference its event carries (never the audio). */
+export interface PageAudio { ref: string; bytes: Uint8Array; mime: string }
+
 /** The record's marks for a message that came by voice (refs are strings). */
 export const voiceMarks = (h: HeardOk): Record<string, string> => ({ via: "voice", speechProvider: h.provider, speechModel: h.model, speechSeconds: h.seconds.toFixed(1), speechMicroInr: String(h.costMicroInr) });
 
@@ -35,9 +38,12 @@ export interface VoiceTurnDeps {
  * spend whether or not the note could be used.
  */
 export function createListener(d: VoiceTurnDeps) {
-  return async function listen(msg: InboundMessage): Promise<Heard | null> {
-    if (!d.voice || !msg.media || d.isCommander(msg.from) || d.optedOut(msg.from) || !d.reader.voiceAllowed()) return null;
-    const heard = await d.voice.hear(msg.media, { notesToday: d.reader.notesToday() });
+  return async function listen(msg: InboundMessage & { audio?: PageAudio }): Promise<Heard | null> {
+    if (!d.voice || (!msg.media && !msg.audio) || d.isCommander(msg.from) || d.optedOut(msg.from) || !d.reader.voiceAllowed()) return null;
+    // the owner's recording from their page (items 11d and 11e) is already in hand, kept in the runtime's memory only; a WhatsApp note is fetched by its reference
+    const heard = msg.audio
+      ? await d.voice.hearAudio({ bytes: msg.audio.bytes, mime: msg.audio.mime }, { notesToday: d.reader.notesToday(), memo: msg.audio.ref })
+      : await d.voice.hear(msg.media!, { notesToday: d.reader.notesToday() });
     // a cached answer (a step that ran again) was counted by the first run, whose state was thrown away; counting it here is what makes the surviving state right
     if (heard.ok || heard.costMicroInr > 0) d.reader.countSpeech(heard.costMicroInr);
     return heard;

@@ -1,7 +1,7 @@
-// The owner's app (item 11e): the pieces that make item 11d's private owner page an installable web app, and that do not depend on that page's code. Used by the owner
-// page's front (modules/channels, once item 11d lands; modules/Deferred.md) at the routes modules/Explanation.md lists:
+// The owner's app (item 11e): the pieces that make item 11d's private owner page an installable web app, and that do not depend on that page's code. Served by the
+// owner page's front (modules/channels/front.ts, ownerRoute) under the owner's link and the signed-in view (<base>/owner, item 11f), at the routes modules/Explanation.md lists:
 //   GET <link>/manifest.webmanifest   ownerAppManifest
-//   GET <link>/sw.js                  OWNER_APP_SW (served as text/javascript, with Service-Worker-Allowed: <link>/)
+//   GET <link>/sw.js                  OWNER_APP_SW (served as text/javascript; it sits at <link>/sw.js, so its scope <link>/ needs no Service-Worker-Allowed header)
 //
 // Offline means READING only. The service worker keeps the last page the owner saw and shows it when there is no network, marked as such. It never stores, replays or
 // queues a POST: a tap or a message needs the live page (its digests are checked at the runtime against what waits now), so offline it simply fails and says so.

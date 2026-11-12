@@ -45,6 +45,15 @@ test("the talk box works without JavaScript, posts to the link, hides the record
   }
 });
 
+test("on the owner's page (items 11d, 11e, 11f): the script carries the response's nonce, the form and the recording carry the session's form token, and no voice service means no record button", () => {
+  const html = talkBox({ base: BASE, language: "en", assistantName: "Mithra", lines: [], nonce: "bm9uY2Utb25l", csrf: "c".repeat(32) });
+  assert.ok(html.includes('<script nonce="bm9uY2Utb25l">'));
+  assert.ok(html.includes(`<input type="hidden" name="csrf" value="${"c".repeat(32)}">`));
+  assert.ok(html.includes(`data-csrf="${"c".repeat(32)}"`) && html.includes('headers["x-owner-csrf"] = rec.dataset.csrf'), "the recording's POST sends the form token as a header");
+  assert.ok(html.includes("audioBitsPerSecond: 24000"), "a recording small enough for the page's limit");
+  assert.ok(!talkBox({ base: BASE, language: "en", assistantName: "Mithra", lines: [], listen: false }).includes('id="talk-rec"'));
+});
+
 test("the view: the mood, today's list and the open cards by id and digest, never a code", () => {
   const tz = "Asia/Kolkata";
   const day = { year: 2026, month: 11, day: 12 };

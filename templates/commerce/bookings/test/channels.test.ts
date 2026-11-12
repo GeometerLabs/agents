@@ -13,6 +13,9 @@ import { frontHandler } from "../../../../modules/channels/front.ts";
 import type { FrontShop } from "../../../../modules/channels/front.ts";
 import { runtimeBackend } from "../../../../modules/channels/backend.ts";
 import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../../../../modules/channels/owner-link.ts";
+import { openOwnerAccess } from "../../../../modules/channels/owner-access.ts";
+import { PAGE_POLICY } from "../../../../modules/channels/front.ts";
+import { OWNER_APP_SW } from "../../../../modules/assistant/app/pwa.ts";
 import { openStore } from "../server/store.ts";
 import { startClient } from "../server/start.ts";
 
@@ -20,13 +23,15 @@ const INTERNAL = "internal-0123456789abcdef0123";
 const CHANNEL = "channel-0123456789abcdef01234";
 const UPI_SETTINGS = new URL("../settings/glow-salon-upi.example.json", import.meta.url);
 const TYPED = "+919811111111";
+/** Where the runtime's sign-in links point (its pages.json), for the owner-app test. */
+const RUNTIME_OWNER_BASE = "https://pages.example/glow-salon/owner";
 const OWNER = "+919000000000";
 
 /**
  * A UPI shop on its own booking list, its runtime on a free port with a fake clock (Monday 16 Nov 2026, 09:00 in Kochi), and the front in front of it. `extra` adds
- * settings (the shop's assistant, for the closed-day test).
+ * settings (the shop's assistant, for the closed-day and app tests). `pages`: the shop has a pages file (item 11f), so the owner can sign in at <base>/owner.
  */
-async function world(extra: Record<string, unknown> = {}) {
+async function world(extra: Record<string, unknown> = {}, o: { pages?: boolean } = {}) {
   const root = mkdtempSync(join(tmpdir(), "geo-channels-"));
   const folder = join(root, "glow");
   const settings = { ...JSON.parse(readFileSync(UPI_SETTINGS, "utf8")), calendar: { module: "own" }, ...extra };
@@ -37,14 +42,18 @@ async function world(extra: Record<string, unknown> = {}) {
   writeFileSync(join(folder, "pathway.lock"), "bookings@0.1.0\n");
   writeFileSync(join(root, "token"), INTERNAL);
   writeFileSync(join(root, "channel"), CHANNEL);
-  const clock = fakeClock(Date.UTC(2026, 10, 16, 3, 30));
-  const lines: string[] = [];
-  const client = await startClient({ clientFolder: folder, tokenFile: join(root, "token"), channelTokenFile: join(root, "channel"), clock, log: (l) => lines.push(l) });
+  // the front first, so its address is known for the pages file the runtime reads at start
   const shops: Record<string, FrontShop> = {};
   const front = createServer(frontHandler({ shops, waitMs: 1_500 }));
   const port = await new Promise<number>((r) => front.listen(0, "127.0.0.1", () => r((front.address() as { port: number }).port)));
   const origin = `http://127.0.0.1:${port}`;
-  shops.glow = { publicUrl: `${origin}/s/glow`, backend: runtimeBackend({ url: client.server.url, token: CHANNEL }) };
+  // the front's pages file names this test's own address; the runtime's (pages.json, https only) names where its sign-in links point, which a session is bound to
+  const pagesFile = { schema: 1, base: `${origin}/s/glow`, ownerBase: `${origin}/s/glow/owner`, slug: "glow-salon", url: "https://pages.example/glow-salon" };
+  if (o.pages) writeFileSync(join(folder, "pages.json"), JSON.stringify({ schema: 1, base: "https://partners.example/s/glow", ownerBase: RUNTIME_OWNER_BASE, slug: "glow-salon", url: "https://pages.example/glow-salon" }));
+  const clock = fakeClock(Date.UTC(2026, 10, 16, 3, 30));
+  const lines: string[] = [];
+  const client = await startClient({ clientFolder: folder, tokenFile: join(root, "token"), channelTokenFile: join(root, "channel"), clock, log: (l) => lines.push(l) });
+  shops.glow = { publicUrl: `${origin}/s/glow`, backend: runtimeBackend({ url: client.server.url, token: CHANNEL }), ...(o.pages ? { pages: () => pagesFile as never } : {}) };
   const page = (path: string, init: RequestInit = {}) => fetch(`${origin}/s/glow${path}`, { redirect: "manual", ...init });
   const form = (path: string, fields: Record<string, string>) => page(path, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", origin }, body: new URLSearchParams(fields).toString() });
   const api = (path: string, body?: unknown) => page(`/api/v1${path}`, body === undefined ? {} : { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
@@ -52,7 +61,7 @@ async function world(extra: Record<string, unknown> = {}) {
   const ownerToken = newOwnerToken();
   const linkOwner = () => writeFileSync(join(folder, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(ownerToken, new Date(clock.now()))));
   return {
-    origin, page, form, api, record, lines, client, clock, folder, ownerToken, linkOwner,
+    origin, page, form, api, record, lines, client, clock, folder, ownerToken, linkOwner, ownerBase: pagesFile.ownerBase,
     /** The owner's WhatsApp message, as the inbox would hand it to the runtime (the internal token), and the step run. */
     async ownerSays(text: string, id = `wamid.owner-${text.length}-${clock.now()}`) {
       const r = await fetch(`${client.server.url}/internal/events`, { method: "POST", headers: { authorization: `Bearer ${INTERNAL}` }, body: JSON.stringify({ events: [{ kind: "message", message: { id, from: OWNER, text, timestamp: clock.now() } }] }) });
@@ -319,5 +328,66 @@ test("the assistant's cards on the owner's page (item 11e on item 11d's page): t
     assert.deepEqual(after.cards, [], "the card is answered");
     assert.ok(after.waiting.some((x) => x.kind === "refund_owed"), "on a UPI shop the owner now owes the deposit back, and marks it sent like any other");
     assert.equal(((await (await answer(card.digest)).json()) as { result: string }).result, "changed", "a second press finds no such card");
+  } finally { await w.done(); }
+});
+
+test("the owner's app at <base>/owner after sign-in (items 11d, 11e, 11f): its one script by a fresh nonce, its manifest and service worker, the talk box answered on the page", async () => {
+  const w = await world({ assistant: {} }, { pages: true });
+  try {
+    // sign in as the owner would: the link from WhatsApp (issued here from the runtime's own access file), used once through the front, which sets the cookie
+    const access = openOwnerAccess(join(w.folder, "data", "owner-access.sqlite"));
+    const { token } = access.issue({ owner: OWNER, base: RUNTIME_OWNER_BASE, via: "page", now: w.clock.now() });
+    access.close();
+    const signed = await w.form(`/owner/in/${token}`, { lang: "en" });
+    assert.equal(signed.status, 303);
+    const cookie = String(signed.headers.get("set-cookie")).split(";")[0];
+    const asOwner = (path: string, init: RequestInit = {}) => w.page(path, { ...init, headers: { cookie, origin: w.origin, ...(init.headers as Record<string, string> | undefined) } });
+
+    const first = await asOwner("/owner/?lang=en");
+    assert.equal(first.status, 200);
+    const html = await first.text();
+    const policy = String(first.headers.get("content-security-policy"));
+    const nonce = /script-src 'nonce-([A-Za-z0-9+/=]+)'/u.exec(policy)?.[1] ?? "";
+    assert.ok(nonce.length >= 16, "a nonce in the page's policy");
+    assert.ok(html.includes(`<script nonce="${nonce}">`), "on the page's one script, the same nonce");
+    assert.equal(html.match(/<script/gu)?.length, 1, "and no other script");
+    assert.ok(policy.startsWith(PAGE_POLICY), "everything else as every page");
+    for (const part of [`worker-src ${w.ownerBase}/sw.js`, `connect-src ${w.ownerBase}/voice`, `manifest-src ${w.ownerBase}/manifest.webmanifest`]) assert.ok(policy.includes(part), part);
+    const directives = Object.fromEntries(policy.split(";").map((d) => d.trim().split(/\s+/u)).map(([k, ...v]) => [k, v]));
+    for (const d of ["script-src", "worker-src", "connect-src", "manifest-src"]) assert.ok(!directives[d].some((v: string) => v === "'self'" || v === "*" || v.startsWith("'unsafe")), `${d}: nothing another page on the shared origin could use`);
+    const again = String((await asOwner("/owner/")).headers.get("content-security-policy"));
+    assert.notEqual(again, policy, "a fresh nonce for every response");
+    assert.ok(html.includes(`<link rel="manifest" href="${w.ownerBase}/manifest.webmanifest" crossorigin="use-credentials">`));
+    const csrf = /name="csrf" value="([^"]+)"/u.exec(html)?.[1] ?? "";
+    assert.ok(html.includes(`<form method="post" action="${w.ownerBase}/talk"><input type="hidden" name="csrf" value="${csrf}">`), "the talk box posts with the session's form token");
+    assert.ok(!html.includes('id="talk-rec"'), "no record button: this shop has no voice service");
+    assert.ok(html.includes("Mithra"), "the character's name");
+
+    const manifest = await asOwner("/owner/manifest.webmanifest");
+    assert.match(String(manifest.headers.get("content-type")), /^application\/manifest\+json/u);
+    const m = await manifest.json() as { start_url: string; scope: string };
+    assert.deepEqual([m.start_url, m.scope], [`${w.ownerBase}/`, `${w.ownerBase}/`], "an installed app opens this shop's owner view and nothing else");
+    const sw = await asOwner("/owner/sw.js");
+    assert.match(String(sw.headers.get("content-type")), /^text\/javascript/u);
+    assert.equal(await sw.text(), OWNER_APP_SW);
+    assert.equal(sw.headers.get("content-security-policy"), `default-src 'none'; connect-src ${w.ownerBase}/`, "the worker may fetch the page and nothing else");
+    assert.equal((await w.page("/owner/manifest.webmanifest")).status, 303, "nothing of the app without the session: back to sign in");
+    assert.equal((await w.page("/?lang=en")).headers.get("content-security-policy"), PAGE_POLICY, "the customer's page runs no script at all");
+
+    // the talk box: the owner's words go to the assistant through the runtime, and the answer is on the page, not on WhatsApp
+    const toOwner = () => w.lines.filter((l) => l.startsWith(`[stand-in WhatsApp] to ${OWNER}`)).length;
+    const before = toOwner();
+    const refused = await asOwner("/owner/talk", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ text: "close tomorrow" }).toString() });
+    assert.equal(refused.status, 403, "no form token, no post");
+    const talked = await asOwner("/owner/talk", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ text: "close tomorrow", csrf }).toString() });
+    assert.equal(talked.status, 303);
+    assert.equal(talked.headers.get("location"), `${w.ownerBase}/?lang=en`);
+    await w.client.runtime.idle();
+    assert.ok(w.record().some((e) => e.action === "close_day" && e.outcome === "confirmed"), "the assistant closed the day");
+    const after = await (await asOwner("/owner/?lang=en")).text();
+    assert.match(after, /close tomorrow/u, "the owner's words on the page");
+    assert.match(after, /Closed Tue 17 Nov\./u, "and the assistant's answer");
+    assert.equal(toOwner(), before, "nothing to the owner's WhatsApp");
+    assert.equal((await asOwner("/owner/voice", { method: "POST", headers: { "content-type": "audio/ogg", "x-owner-csrf": csrf }, body: "OggS" })).status, 404, "no voice service: no recording is taken");
   } finally { await w.done(); }
 });

@@ -1,6 +1,6 @@
 // What the owner's app shows (item 11e), read from the step's store like every other read: the character and its mood, today's list, what needs the owner (each skill's
 // waiting items and the assistant's open cards, by id and digest so a press can be checked against what waits now), and the last lines of talk. Pure. Used by the
-// runtime's owner read once item 11d's owner page lands (it grows that page's `owner` read; modules/Deferred.md).
+// runtime's owner read (templates/commerce/bookings/server/runtime.ts), which adds it to item 11d's owner view as `app`.
 import type { Character } from "../character.ts";
 import { isClosedDay, shopMood } from "../conversation.ts";
 import { cardHasNo, openCards } from "../cards.ts";

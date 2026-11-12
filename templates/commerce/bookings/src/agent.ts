@@ -81,7 +81,8 @@ import { conversationOf } from "../../../../modules/channels/conversation.ts";
 import { phoneDigits } from "../../../../modules/channels/contact.ts";
 import { CHANNEL_LIMITS, DAY_MS, emptyChannelState } from "../../../../modules/channels/state.ts";
 import type { ChannelState } from "../../../../modules/channels/state.ts";
-import type { ChannelBook, ChannelEvent, OwnerAction } from "../../../../modules/channels/events.ts";
+import type { ChannelBook, ChannelEvent, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
+import type { PageAudio } from "../../../../modules/voice/turn.ts";
 import { ownerItems } from "./channel.ts";
 import type { Heard, VoiceService } from "../../../../modules/voice/voice.ts";
 import { VOICE_WHY, createListener, failedMarks, voiceMarks } from "../../../../modules/voice/turn.ts";
@@ -112,6 +113,11 @@ export interface AgentDeps {
    * a node module. Left out: voice is off for this shop and a voice note gets the one line asking the customer to type, exactly as before.
    */
   voice?: VoiceService;
+  /**
+   * Integration of items 11d and 11e: a recording the owner made on their page, by the reference its owner_message carries; the runtime holds the audio in memory
+   * only (modules/channels/owner-audio.ts). Left out: no recording is ever found, and the owner is asked to type.
+   */
+  pageAudio?: (ref: string) => PageAudio | undefined;
   /** The shop's licence right now (modules/licence; the runtime reads client/licence.json). Left out: never restricted. */
   licence?: () => LicenceNow;
   /** B72: the shop terms the owner can read and agree to on WhatsApp (modules/terms). Left out, or returning undefined: the feature is off for this shop. */
@@ -1572,11 +1578,24 @@ export function createAgent(deps: AgentDeps): Agent {
     await onOwnerMessage(msg);
   }
 
+  /**
+   * Integration of items 11d and 11e: the owner's talk box on their page (typed words, or a recording the runtime holds in memory). The shop's assistant reads it and
+   * answers on the page. The runtime checked the owner's link or session before the event was saved. A shop without the assistant has no talk box: nothing is read.
+   */
+  async function onOwnerPageMessage(e: OwnerMessage): Promise<void> {
+    if (!assistant) { log(null, owner, "owner_page_message", "blocked", { voice: e.voice !== undefined }, { refs: { channel: "owner_page" }, notes: "the owner's talk box is the shop's assistant's, and this shop has none: nothing was read" }); return; }
+    const base = { id: `owner-page:${e.id}`, from: owner, timestamp: clock.now() };
+    if (e.voice === undefined) return assistant.onPageMessage({ ...base, text: e.text });
+    const audio = deps.pageAudio?.(e.voice);
+    return assistant.onPageVoice({ ...base, text: "", voiceNote: true, ...(audio ? { audio } : {}) });
+  }
+
   async function handle(event: AgentEvent): Promise<void> {
     noteLicence();
     if (event.kind === "recovery") return onRecovery(event);
     if (event.kind === "channel_request") return onChannel(event);
     if (event.kind === "owner_action") return onOwnerAction(event);
+    if (event.kind === "owner_message") return onOwnerPageMessage(event);
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);
     if (event.kind === "approval_decision") return refunds.onApprovalDecision(event);

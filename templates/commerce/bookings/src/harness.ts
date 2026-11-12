@@ -111,6 +111,8 @@ export interface WorldOptions {
   ownCalendar?: boolean;
   /** B29: voice notes (modules/voice, usually with the stand-ins in modules/voice/standin.ts). Left out: voice is off and a voice note gets the one line asking the customer to type. */
   voice?: import("../../../../modules/voice/voice.ts").VoiceService;
+  /** Items 11d and 11e: the owner's recordings from their page, as the runtime holds them in memory (modules/channels/owner-audio.ts). Left out: none is ever found. */
+  pageAudio?: (ref: string) => import("../../../../modules/voice/turn.ts").PageAudio | undefined;
   /** B72: the shop terms the owner can agree to on WhatsApp (modules/terms). Left out: the feature is off. */
   terms?: () => import("../../../../modules/terms/terms.ts").TermsFile | undefined;
 }
@@ -130,7 +132,7 @@ export function createWorld(options: WorldOptions = {}): World {
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
-  const agent = createAgent({ settings, clock, ...(options.terms ? { terms: options.terms } : {}), calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}) });
+  const agent = createAgent({ settings, clock, ...(options.terms ? { terms: options.terms } : {}), calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}), ...(options.pageAudio ? { pageAudio: options.pageAudio } : {}) });
   let deliveredEvents = 0;
 
   const world: World = {

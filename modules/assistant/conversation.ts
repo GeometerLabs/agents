@@ -23,6 +23,7 @@ import type { SayArgs } from "../messaging/say.ts";
 import type { InboundMessage, Messaging } from "../messaging/messaging.ts";
 import type { Heard } from "../voice/voice.ts";
 import { failedMarks, voiceMarks } from "../voice/turn.ts";
+import type { PageAudio } from "../voice/turn.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { Outcome, RecordEntry } from "../record/record.ts";
 import { actionDigest, cardButtonId, cardByCode, cardById, cardHasNo, closeCard, expireCards, judgeCard, makeCard, openCards, parseCardReply, refusedBefore } from "./cards.ts";
@@ -88,7 +89,7 @@ export interface AssistantDeps {
    * counted against the same day's limit and the month's AI spend as a customer's, and are not listened to in button mode or out of allowance (null: not tried).
    * Left out (voice off for the shop): an owner's voice note gets the line asking to type, as before.
    */
-  hearing?: { hear(msg: InboundMessage): Promise<Heard | null> };
+  hearing?: { hear(msg: InboundMessage & { audio?: PageAudio }): Promise<Heard | null> };
 }
 
 /** Everything a message to say carries here: the words, already written for the language say() picks (the owner's, or the customer's). */
@@ -499,10 +500,25 @@ export function createAssistant(deps: AssistantDeps) {
   }
 
   /**
+   * Integration of items 11d and 11e: a recording the owner made on their page, heard by the same listener as their WhatsApp notes (the same switches, day's count
+   * and month's spend, and the cost on an owner_assistant line), then read like the talk box's words. `audio` is left out when the runtime no longer holds it (a
+   * restart): the owner is asked to type it. Everything is shown on the page.
+   */
+  async function onPageVoice(msg: InboundMessage & { audio?: PageAudio }): Promise<void> {
+    await onPage(async () => {
+      const heard = msg.audio ? await hearOwner(msg) : null;
+      if (!heard) { await tell("voice_unheard", {}); return; } // not listened to (the recording is gone, button mode, no allowance): type it
+      if (!heard.text) return; // could not be made out: hearOwner said so
+      talk("owner", heard.text);
+      await onOwnerMessage(heard);
+    });
+  }
+
+  /**
    * The owner's voice note as words, or null (no voice service for the owner, or the note could not be made out: the owner is then told to type it). The caller reads
    * the words as the owner's typed message. The audio is never kept; what it cost is the voice service's to count (modules/voice).
    */
-  async function hearOwner(msg: InboundMessage): Promise<InboundMessage | null> {
+  async function hearOwner(msg: InboundMessage & { audio?: PageAudio }): Promise<InboundMessage | null> {
     if (!deps.hearing) return null;
     const heard = await deps.hearing.hear(msg);
     if (!heard) return null; // not listened to (no audio reference, button mode, no AI allowance left): the caller asks the owner to type, as before
@@ -528,7 +544,7 @@ export function createAssistant(deps: AssistantDeps) {
   /** The mood now, from the skills' reads and the clock (mood.ts), and the sticker that shows it. */
   const mood = () => shopMood(skills, state(), clock.now(), tz, shop.settings);
 
-  return { onOwnerMessage, onPageCard, onPageMessage, hearOwner, onTick, mood, kinds: context.kinds };
+  return { onOwnerMessage, onPageCard, onPageMessage, onPageVoice, hearOwner, onTick, mood, kinds: context.kinds };
 }
 export type Assistant = ReturnType<typeof createAssistant>;
 
