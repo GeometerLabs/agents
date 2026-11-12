@@ -19,7 +19,7 @@ import type { Reminder } from "../../../../modules/reminders/reminders.ts";
 import type { TimePhrase } from "../../../../modules/language/dates.ts";
 import type { MessageFacts, TemplateId } from "./language/templates.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
-import type { GuardHold, RefundIssue, RefundRetry } from "../../../../modules/payments/refunds.ts";
+import type { GuardHold, RefundIssue, RefundRetry, UntoldRefund } from "../../../../modules/payments/refunds.ts";
 import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { ChannelState } from "../../../../modules/channels/state.ts";
@@ -93,6 +93,8 @@ export interface Booking {
   refundIssues?: RefundIssue[];
   /** Payments the agent must not ask Guard to refund again: the owner said no, the outcome is unclear, it failed for good, or the approval ran out. */
   stoppedRefunds?: string[];
+  /** Refunds the payments service's list settled whose customer has not been told yet (modules/payments/refunds.ts): listed on the to-do list until a message is accepted. */
+  refundsUntold?: UntoldRefund[];
   /** A move to a new time that is waiting for the customer's yes. */
   reschedule?: { date: LocalDate; timePhrase: TimePhrase; startMs: number; endMs: number };
   /** UPI (B33): when the owner was last told that this customer says they paid (at most once an hour). */
