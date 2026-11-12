@@ -136,15 +136,16 @@ export const PANEL_READS: Record<string, string[]> = { ...Object.fromEntries(GAT
  */
 export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number; route?: WhatsAppRoute }): LimitsSpec {
   if (o.route?.provider === "gupshup-selfserve") {
-    // Item 11c. The self-serve API carries the app in the BODY (`source`, `src.name`) of both send routes, as form fields, and in the PATH of the template list. Both
-    // sends are the one operation "send" so the licence's final stop and the hourly cap hold templates too; the read is the template list (the key and app name, never the number).
+    // Item 11c. The self-serve API carries the app in the BODY of both send routes, as form fields (`source`, the app's number, and `src.name`, its name), and in the PATH of
+    // the template list. Guard's compiler refuses an exact rule on a dotted field name ("a dotted (nested) name is not followed"), so `src.name` cannot be pinned: the send is
+    // pinned by `source`, the shop's own number, and the API key the Guard adds belongs to the shop's own app. Both sends are the one operation "send" so the licence's final
+    // stop and the hourly cap hold templates too; the read is the template list (the key and app name, never the number).
     const r = o.route;
     const read = r.appId ? { path: GUPSHUP_SELFSERVE_ROUTES.listById, field: "app_id", value: r.appId } : { path: GUPSHUP_SELFSERVE_ROUTES.listByName, field: "app_name", value: r.appName };
     return {
       ...base(whatsappGuardDef(r), id),
       routes: [{ method: "POST", path: GUPSHUP_SELFSERVE_ROUTES.send, operation: "send" }, { method: "POST", path: GUPSHUP_SELFSERVE_ROUTES.template, operation: "send" }, { method: "GET", path: read.path, operation: "read_number" }],
       rules: [
-        { id: "own-app-name-only", kind: "argument_allowlist", operation: "send", field: "src.name", match: "exact", allowed_values: [r.appName] },
         { id: "own-source-only", kind: "argument_allowlist", operation: "send", field: "source", match: "exact", allowed_values: [r.sourceNumber.replace(/\D/gu, "")] },
         { id: "own-app-read", kind: "argument_allowlist", operation: "read_number", field: read.field, match: "exact", allowed_values: [read.value] },
       ],

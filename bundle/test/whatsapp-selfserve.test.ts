@@ -37,8 +37,8 @@ const plan = (messaging: Record<string, unknown>, withNumberId = true) => {
   try { return planShop(serverConfig(), t.shop("glow-salon")); } finally { t.done(); }
 };
 
-test("the shop's WhatsApp Guard fronts api.gupshup.io and adds the key as the apikey header; its spec lists both send routes and the template list, and allows only the shop's own app name and number", () => {
-  const p = plan(MESSAGING);
+test("the shop's WhatsApp Guard fronts api.gupshup.io and adds the key as the apikey header; its spec lists both send routes and the template list, and allows only the shop's own number on a send and its own app on the read", () => {
+  const p = plan(MESSAGING, false); // a shop with no Meta number id: its number stands in
   assert.deepEqual(p.problems, []);
   const wa = p.guards.find((g) => g.kind === "whatsapp")!;
   assert.deepEqual(wa.def, { kind: "whatsapp", tool: "whatsapp", upstream: "api.gupshup.io:443", secretFile: "whatsapp_authorization", recipientField: "destination", headers: { apikey: "${file:/run/secrets/whatsapp_authorization}" } });
@@ -48,7 +48,6 @@ test("the shop's WhatsApp Guard fronts api.gupshup.io and adds the key as the ap
     { method: "GET", path: "/sm/api/v1/template/list/{app_name}", operation: "read_number" },
   ]);
   assert.deepEqual(wa.spec.rules, [
-    { id: "own-app-name-only", kind: "argument_allowlist", operation: "send", field: "src.name", match: "exact", allowed_values: ["Glow_Salon"] },
     { id: "own-source-only", kind: "argument_allowlist", operation: "send", field: "source", match: "exact", allowed_values: [SOURCE] },
     { id: "own-app-read", kind: "argument_allowlist", operation: "read_number", field: "app_name", match: "exact", allowed_values: ["Glow_Salon"] },
   ]);
@@ -68,7 +67,7 @@ test("with the app id given, the template list is read by id; a '+' in the numbe
   const id = "07c7c72d-20e3-4ff9-a5a1-14d1186eeec8";
   const wa = plan({ ...MESSAGING, sourceNumber: `+${SOURCE}`, appId: id }).guards.find((g) => g.kind === "whatsapp")!;
   assert.deepEqual(wa.spec.routes[2], { method: "GET", path: "/wa/app/{app_id}/template", operation: "read_number" });
-  assert.deepEqual(wa.spec.rules.map((x: any) => [x.field, x.allowed_values]), [["src.name", ["Glow_Salon"]], ["source", [SOURCE]], ["app_id", [id]]]);
+  assert.deepEqual(wa.spec.rules.map((x: any) => [x.field, x.allowed_values]), [["source", [SOURCE]], ["app_id", [id]]]);
   assert.deepEqual(plan({ ...MESSAGING, appName: "Glow Salon" }).problems.map((x) => x.rule), ["whatsapp-provider"]);
   assert.deepEqual(plan({ ...MESSAGING, sourceNumber: "n/a" }).problems.map((x) => x.rule), ["whatsapp-provider"]);
   assert.deepEqual(plan({ ...MESSAGING }, false).problems, [], "no Meta number id is needed with a number of its own");
@@ -219,7 +218,7 @@ test("the heartbeat keeps a self-serve shop's WhatsApp counts in its baseline bu
   assert.equal(second.nextUsage.own.service, 7, "the baseline still follows the real count");
 });
 
-test("the real Guard compiles the self-serve spec (routes, the dotted src.name field, both allowlists) and its tripwires hold", { skip: skipWithoutBinary }, () => {
+test("the real Guard compiles the self-serve spec (its three routes and both allowlists) and its tripwires hold", { skip: skipWithoutBinary }, () => {
   const wa = plan(MESSAGING).guards.find((g) => g.kind === "whatsapp")!;
   const dir = mkdtempSync(join(tmpdir(), "geo-gupshup-selfserve-"));
   try {
