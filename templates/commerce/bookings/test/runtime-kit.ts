@@ -39,7 +39,8 @@ export interface Kit {
   cleanup(): void;
 }
 
-export function createKit(): Kit {
+/** `notApproved`: template names Meta has not approved yet (a test of what happens until it does; approve them later with `kit.messaging.approve`). */
+export function createKit(o: { notApproved?: readonly string[] } = {}): Kit {
   const dir = mkdtempSync(join(tmpdir(), "geo-runtime-"));
   const settings = glowSalon();
   const clock = fakeClock(START);
@@ -48,7 +49,7 @@ export function createKit(): Kit {
   const messaging = createFakeMessaging(clock);
   // Every template the shop submits to Meta is approved here, the generic ones and the specific ones (src/language/meta-templates.ts), as in src/harness.ts: outside
   // the 24-hour window the agent sends the specific one (deposit_refund_confirmed and the like), and a kit that approved only the generic three would refuse it.
-  for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
+  for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) if (!o.notApproved?.includes(name)) for (const language of LANGUAGES) messaging.approve(name, language);
   const opened: { runtime: Runtime; db: DurableStore }[] = [];
   let delivered = 0;
 

@@ -1,5 +1,6 @@
 // The one way a message leaves an agent, for every template. It renders the templates from the record, runs the limits on the final text, sends only if
-// none blocks, and reads the message back from the messaging service. It returns whether the message went out.
+// none blocks, and reads the message back from the messaging service. It returns whether the message went out; `say.outcome()` sends the same way and says how it
+// ended (SaidOutcome), for the one message kept until it reaches the customer (a refund confirmed after an unknown outcome, modules/payments/refunds.ts).
 //
 // What a template gives this file: its words (`voice`), the facts those words are written from, the buttons or lists it can offer, and the gates of its own
 // (Bookings: no reminder after a cancellation, "booked" only when recorded; Fees: no reminder once paid). The care is the same for all:
@@ -75,8 +76,22 @@ export interface SayDeps<A extends SayArgs, Facts extends { language: Language }
   heldBack(a: A): Promise<void>;
 }
 
+/**
+ * How a message ended, for the caller that must know more than "it went out" (12 Nov 2026: the refund confirmed after an unknown outcome, which is kept until the
+ * customer is told; modules/payments/refunds.ts). Each matches the record line say() writes:
+ *  - "accepted":  the provider took it and gave its id (the line is confirmed, or unconfirmed when the outbox does not show it yet). Never send it again.
+ *  - "maybe":     no reply came back, or Guard says the outcome is unknown (the line is unconfirmed, with no message id). It may have gone out, so it is never sent again either.
+ *  - "not_sent":  the provider or Guard refused it or could not take it (the line is failed): nothing went out, and a later try may go.
+ *  - "held_back": a gate held it back (opted out, does not match the record, the template's own gate) or the licence stopped it (the line is blocked): trying again
+ *                 would be held back the same way, so a person decides.
+ */
+export type SaidOutcome = "accepted" | "maybe" | "not_sent" | "held_back";
+
+/** say(): whether the message went out and was read back, as every caller uses it; `say.outcome()`: the same send, saying how it ended (SaidOutcome). */
+export type SayFunction<A> = ((a: A) => Promise<boolean>) & { outcome(a: A): Promise<SaidOutcome> };
+
 // The one exit for outgoing text: limits run on the final rendered text, so nothing reaches a customer that skipped a check.
-export function createSay<A extends SayArgs, Facts extends { language: Language }>(deps: SayDeps<A, Facts>): (a: A) => Promise<boolean> {
+export function createSay<A extends SayArgs, Facts extends { language: Language }>(deps: SayDeps<A, Facts>): SayFunction<A> {
   const { messaging, voice, owner, log } = deps;
 
   /** The picture before the words: best effort. Inside the window only, with a caption that passes the check; whatever happens, the words go next. */
@@ -99,7 +114,8 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
     }
   }
 
-  return async function say(a: A): Promise<boolean> {
+  /** One send, and how it ended: `went` is what say() has always returned (out and read back), `outcome` the SaidOutcome its record line matches. */
+  async function send(a: A): Promise<{ went: boolean; outcome: SaidOutcome }> {
     const toCustomer = a.to === "customer";
     const action = a.action ?? "send_message";
     const toNumber = toCustomer ? a.phone : owner.whatsapp;
@@ -112,7 +128,7 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
       text = a.templates.map((id) => voice.render(id, facts)).join(" ");
     } catch (e) {
       log(a.booking, a.phone, action, "blocked", inputs, { notes: (e as Error).message, decisions: a.shown, refs: { to: a.to }, language });
-      return false;
+      return { went: false, outcome: "held_back" };
     }
 
     // Buttons and lists are a session message, like free text: only while the window is open, and only if they fit WhatsApp's limits. Otherwise: the plain words, as before.
@@ -135,7 +151,7 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
     if (worst.verdict !== "allow") {
       log(a.booking, a.phone, action, "blocked", inputs, { decisions, notes: worst.reason, refs: { to: a.to }, language });
       if (toCustomer && worst.ruleId === "message-matches-record") await deps.heldBack(a);
-      return false;
+      return { went: false, outcome: "held_back" };
     }
 
     if (a.image) await sendImage(a, toNumber, facts, language, inputs, decisions);
@@ -160,16 +176,20 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
       }
       const seen = await messaging.getMessage(sent.id); // read back from the provider's own outbox
       log(a.booking, a.phone, action, seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: (asButtons ? offer?.body ?? a.templates : a.templates).join("+"), to: a.to, ...(asButtons ? { interactive: interactive!.list ? "list" : "buttons" } : {}) }, language });
-      return seen !== null;
+      return { went: seen !== null, outcome: "accepted" }; // the provider gave it an id: it was taken, whether or not the outbox shows it yet
     } catch (e) {
       // Guard held it back for the shop's licence (the final stop): nothing went out, and it is the runtime's own licence refusal, made outside it. Recorded once, plainly.
       if (e instanceof GuardSuspendedError) {
         log(a.booking, a.phone, action, "blocked", inputs, { decisions: [...decisions, guardLicenceDecision(e.guard.reason)], notes: e.message, refs: { to: a.to }, language });
-        return false;
+        return { went: false, outcome: "held_back" };
       }
       // a lost reply may still have gone out; it is not sent again, because there is no way to look it up
-      log(a.booking, a.phone, action, mayHaveHappened(e) ? "unconfirmed" : "failed", inputs, { decisions, notes: (e as Error).message, refs: { to: a.to }, language });
-      return false;
+      const maybe = mayHaveHappened(e);
+      log(a.booking, a.phone, action, maybe ? "unconfirmed" : "failed", inputs, { decisions, notes: (e as Error).message, refs: { to: a.to }, language });
+      return { went: false, outcome: maybe ? "maybe" : "not_sent" };
     }
-  };
+  }
+
+  const say = async (a: A): Promise<boolean> => (await send(a)).went;
+  return Object.assign(say, { outcome: async (a: A): Promise<SaidOutcome> => (await send(a)).outcome });
 }
