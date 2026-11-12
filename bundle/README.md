@@ -122,6 +122,13 @@ This was refused, and nothing was started or changed:
 
 Nothing here has been tried on a real Gupshup app. The list of what only a real app can confirm is in `modules/Deferred.md` ("WhatsApp through Gupshup").
 
+**A shop on its own Gupshup account (the pilot's route until the company is registered; item 11c).** The shop signs up at Gupshup itself and is Gupshup's customer; the partner is added as an admin of the account. The agent speaks Gupshup's self-serve API (`api.gupshup.io`) with the shop's own API key. The shop's own Gupshup wallet pays Meta's charges and Gupshup's fee; Geometer never holds that money. Easiest: in the panel's phone step pick "Gupshup (the shop's own account)", type the app name, the API key and a secret word of your own, and add the address shown to the app's Webhooks tab. By hand:
+- **`runtime.json`:** `{"provider": "gupshup-selfserve", "appName": "<the app's name>", "sourceNumber": "<the app's number with its country code>"}` in `services.messaging` (optional `"appId"` to read the template list by id). A Meta number id is not needed: the number stands in for it.
+- **Secrets:** `gupshup_apikey` (the shop's Gupshup API key; the shop's Guard sends it as the `apikey` header) and `whatsapp_path_token` (the secret word that ends the callback address).
+- **Callback:** in the app's Webhooks tab add `https://shops.example.com/c/glow-salon/webhooks/whatsapp/<token>` with message events switched on (delivered, read, failed; enqueued and sent say no more than the send did).
+- **Templates:** our templates must be added in the shop's Gupshup app and show as approved there. The agent finds Gupshup's id for each from the app's template list and refuses, in plain words, a template that is not approved yet.
+- **Money in the panel and in fleet:** the WhatsApp cost lines for such a shop are an estimate paid from the shop's own Gupshup wallet, not from Geometer's balance, and the heartbeat sends its real counts with `usage.whatsapp_paid_by: "shop"`, so fleet counts and bills none of its WhatsApp (its cost line there reads "not ours: paid from the shop's own WhatsApp account"). **Deploy fleet first:** a fleet that does not know the flag refuses the whole heartbeat (an unknown key), which looks like a dead server. Fleet's deploy order puts it before any bundle that sends it.
+
 **8. Keep the deployer running.** It applies what the panel writes, renews the relay's reading credential every day, takes the nightly snapshot and runs the weekly restore drill.
 
 ```ini
@@ -149,6 +156,7 @@ Hand each one in as a file in `secrets-inbox/<shop>/<name>`. The deployer moves 
 | `razorpay_key` | the shop's Razorpay Guard | `key_id:key_secret`, one line |
 | `whatsapp_token` | the shop's WhatsApp Guard | Meta's access token (the Guard sends `Bearer <token>`) |
 | `gupshup_authorization` | the shop's WhatsApp Guard | instead of `whatsapp_token`, for a shop on Gupshup: the whole `Authorization` value Gupshup asks for, as it is (its partner app token has no `Bearer`) |
+| `gupshup_apikey` | the shop's WhatsApp Guard | instead of `whatsapp_token`, for a shop on its OWN Gupshup account (self-serve): the API key, sent as the `apikey` header |
 | `razorpay_webhook_secret` | the inbox | |
 | `whatsapp_app_secret` and `whatsapp_verify_token` | the inbox | Meta's signature, and its handshake token |
 | `whatsapp_path_token` | the inbox | instead of the two above, for a provider that does not sign |

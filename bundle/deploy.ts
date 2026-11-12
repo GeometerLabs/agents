@@ -117,13 +117,13 @@ export const ownNumbersOf = (folder: { settings?: unknown }): (string | undefine
 };
 
 /** What a shop needs before it can run, said by the name the panel hands it in under. `calendar`: whether the shop's template has one. */
-function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true, razorpay = true, gupshup = false, gupshupRenewed = false): Problem[] {
+function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true, razorpay = true, gupshup = false, gupshupRenewed = false, selfServe = false): Problem[] {
   const need = (container: string, file: string, handIn: string): Problem[] => have(dir, container, file) ? [] : [{ rule: `secret-missing:${handIn}`, message: `${shop}: ${handIn} has not been handed in. Put it in secrets-inbox/${shop}/${handIn} (the panel does this); it is moved to where only the right container can read it.` }];
   return [
     // a UPI shop (B33) has no Razorpay account: no key and no webhook secret are asked for
     ...(razorpay ? need(`g-${shop}-razorpay`, "razorpay_authorization", "razorpay_key") : []),
     // item 11b: a shop on Gupshup hands its token in under Gupshup's own name; it fills the same file. Follow-up 2: none is needed when the refresher renews one
-    ...(gupshupRenewed ? [] : need(`g-${shop}-whatsapp`, "whatsapp_authorization", gupshup ? "gupshup_authorization" : "whatsapp_token")),
+    ...(gupshupRenewed ? [] : need(`g-${shop}-whatsapp`, "whatsapp_authorization", selfServe ? "gupshup_apikey" : gupshup ? "gupshup_authorization" : "whatsapp_token")),
     ...(razorpay ? need("inbox", `${shop}/razorpay_webhook_secret`, "razorpay_webhook_secret") : []),
     ...(webhooks.verification === "path-token" ? need("inbox", `${shop}/whatsapp_path_token`, "whatsapp_path_token") : [...need("inbox", `${shop}/whatsapp_app_secret`, "whatsapp_app_secret"), ...need("inbox", `${shop}/whatsapp_verify_token`, "whatsapp_verify_token")]),
     // the shop's own Google key, or (hosted mode) the one the server holds for every shop: `geometer google-key <file>`
@@ -225,6 +225,8 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   // follow-up 2: whether the refresher renews this Gupshup shop's app token (the secrets on disk say; taken out of the inbox above)
   const gupshup = (folder.runtime as { services?: { messaging?: { provider?: unknown } } } | undefined)?.services?.messaging?.provider === "gupshup";
   const gupshupRenewed = gupshupRenewedFor(ctx.dir, name, gupshup);
+  // item 11c: a shop on its own Gupshup account hands in its API key under gupshup_apikey; nothing is renewed for it
+  const selfServe = (folder.runtime as { services?: { messaging?: { provider?: unknown } } } | undefined)?.services?.messaging?.provider === "gupshup-selfserve";
   const placed = o.placeReportKey ? await placeRuntimeReportKey({ runner: ctx.runner, docker: ctx.docker, image: server.appImage, dir: ctx.dir, runtimeFolder: names.runtime(name), panelOn: server.panel.enabled }) : undefined;
   const reportKey = placed === undefined ? {} : placed.readable ? { reportKeyReadable: true } : { reportKeyReadable: false, reportKeyWhy: placed.why };
   const planOptions = { ...reportKey, ...(gupshupRenewed ? { gupshupRenewed: true } : {}) };
@@ -232,7 +234,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   problems.push(...first.problems);
   notes.push(...first.notes);
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, folder.lock.pathway, folder.lock.version)}, or change the pin once that version has passed the crash test with this shop's settings.` });
-  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay, gupshup, gupshupRenewed));
+  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay, gupshup, gupshupRenewed, selfServe));
   // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch. The gateway, its credential file and
   // its key's shape are its folder's (B71); a pin for another gateway than the one the shop chose is not this shop's.
   const gateway = gatewayOf((folder.settings as { payment?: PaymentSettings } | undefined)?.payment);
@@ -302,7 +304,7 @@ export async function compileAndVerify(ctx: Context, server: ServerConfig, shop:
   if (!compiled.ok) return compiled.problems.map((p) => ({ ...p, message: `${g.plan.service}: ${p.message}` }));
   g.compiled = compiled.result;
   if (licence) g.licence = licence; else delete g.licence;
-  const block = licence ? { deployment: licence.deployment, shop: licence.shop, ownerNumbers: licence.ownerNumbers } : undefined;
+  const block = licence ? { deployment: licence.deployment, shop: licence.shop, ownerNumbers: licence.ownerNumbers, ...(g.plan.def.recipientField ? { recipientField: g.plan.def.recipientField } : {}) } : undefined;
   const approver = !shop ? undefined : isGatewayKind(g.plan.kind) ? approverOf(shop, g.plan.approvers) : approvalOperations && approvalOperations.length > 0 ? { ...approverOf(shop, undefined), operations: approvalOperations } : undefined;
   g.toml = guardToml({ def: g.plan.def, tenant: g.plan.tenant, deployment: g.plan.deployment, bundleDigest: compiled.result.digest, upstream: g.plan.upstream, adminSha: who.admin, agents: who.agents, ...(approver ? { approver } : {}), ...(block ? { licence: block } : {}) });
   g.tripwires = await ctx.tool.verify(compiled.result.text, g.toml);
@@ -355,10 +357,11 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   const shops = applied.map(([name, s]) => {
     const snap = s.applied!;
     const settings = JSON.parse(snap.settingsText) as { owner: { whatsapp: string }; approvers?: ApproversSettings };
-    const runtime = snap.runtime as { services: { messaging: { phoneNumberId: string; provider?: string; appId?: string } } };
+    const runtime = snap.runtime as { services: { messaging: { phoneNumberId: string; provider?: string; appId?: string; appName?: string; sourceNumber?: string } } };
     const m = runtime.services.messaging;
     // item 11b: a Gupshup shop's inbox checks the app id on each callback, and its relay asks the owner through Gupshup's paths
-    const whatsappRoute = m.provider === "gupshup" && m.appId ? { whatsappRoute: { provider: "gupshup" as const, appId: m.appId } } : {};
+    const whatsappRoute = m.provider === "gupshup" && m.appId ? { whatsappRoute: { provider: "gupshup" as const, appId: m.appId } }
+      : m.provider === "gupshup-selfserve" && m.appName && m.sourceNumber ? { whatsappRoute: { provider: "gupshup-selfserve" as const, appName: m.appName, sourceNumber: m.sourceNumber, ...(m.appId ? { appId: m.appId } : {}) } } : {};
     // follow-up 2: from the snapshot, so the compose file mounts the renewed token exactly when the applied Guard was compiled to read it
     return { ...deployOf(ctx, name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: m.phoneNumberId, ...whatsappRoute, ...(snap.whatsappTokens === "renewed" ? { gupshupRenewed: true } : {}), pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1], ...(settings.approvers ? { approvers: settings.approvers.people } : {}) };
   });

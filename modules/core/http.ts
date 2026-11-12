@@ -28,6 +28,8 @@ export interface HttpRequestOptions {
   body?: unknown;
   /** The exact bytes to send as the body, instead of serialising `body`. A call Guard held is sent again with the bytes it was held with: Guard binds an approval to the call's digest, and `60000` is not `"60000"`. */
   rawBody?: string;
+  /** Send these fields as an `application/x-www-form-urlencoded` body instead of JSON (Gupshup's self-serve API takes forms). Ignored when `body` or `rawBody` is given. */
+  form?: Record<string, string>;
   /** More request headers. Only words for Guard itself go here (`Geo-Requested-By`, which Guard strips before it forwards); never a key of the service. */
   headers?: Record<string, string>;
 }
@@ -143,6 +145,7 @@ export function createHttp(baseUrl: string, what: string, timeoutMs: number = DE
       let body: string | undefined;
       if (options.rawBody !== undefined) { body = options.rawBody; headers["content-type"] = "application/json"; }
       else if (options.body !== undefined) { body = JSON.stringify(options.body); headers["content-type"] = "application/json"; }
+      else if (options.form !== undefined) { body = new URLSearchParams(options.form).toString(); headers["content-type"] = "application/x-www-form-urlencoded"; }
       let response: Response;
       try {
         response = await fetch(url, { method, headers, body, signal: AbortSignal.timeout(timeoutMs) });

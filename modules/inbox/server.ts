@@ -24,7 +24,7 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { BlockList, isIP } from "node:net";
 import type { IncomingEvent } from "../runtime/events.ts";
-import { parseWhatsAppStatuses, parseWhatsAppWebhook, verifyMetaSignature } from "../messaging/webhooks.ts";
+import { parseWhatsAppStatuses, parseWhatsAppWebhook, selfServeAppName, verifyMetaSignature } from "../messaging/webhooks.ts";
 import { parseRazorpayEvent, verifyRazorpaySignature } from "../payments/providers/razorpay/webhook.ts";
 
 export interface InboxConfig {
@@ -47,6 +47,8 @@ export interface InboxConfig {
   whatsappPhoneNumberId?: string;
   /** Optional, Gupshup: this shop's Gupshup app id. A body whose `gs_app_id` names another app is not forwarded; a body with none (Gupshup's own early failures) passes. */
   whatsappAppId?: string;
+  /** Optional, Gupshup self-serve: this shop's Gupshup app NAME. A self-serve callback names its app (`app`); one that names another is not forwarded. */
+  whatsappAppName?: string;
   /** Optional: only these source addresses (IPs or CIDRs, for example 203.0.113.0/24) may post WhatsApp webhooks; anyone else is refused (403). */
   whatsappAllowedSources?: string[];
   /** Behind a reverse proxy the socket's address is the proxy's. Name the header your proxy sets (for example x-forwarded-for) and the LAST address in it is used. */
@@ -210,13 +212,18 @@ export function inboxHandler(config: InboxConfig): (req: IncomingMessage, res: S
     const app = (json as { gs_app_id?: unknown } | null)?.gs_app_id;
     return !config.whatsappAppId || app === undefined || app === config.whatsappAppId;
   };
+  /** Self-serve callbacks name the app by name (`app`), and always do: one that names another app is not this shop's. */
+  const ownAppName = (json: unknown): boolean => {
+    const app = selfServeAppName(json);
+    return !config.whatsappAppName || app === undefined || app === config.whatsappAppName;
+  };
   /**
    * The customers' messages first, then the reports on what the shop sent, as one body gives them. A body that names another number or another app is not this shop's:
    * it is answered 200 and dropped, and the log says why (a wrong number id in the shop's config would otherwise look like a quiet shop).
    */
   const messagesIn = (json: unknown): IncomingEvent[] | string => {
     if (!ownNumber(json)) return "it names another WhatsApp number id than this shop's";
-    if (!ownApp(json)) return "it names another Gupshup app than this shop's";
+    if (!ownApp(json) || !ownAppName(json)) return "it names another Gupshup app than this shop's";
     return [...parseWhatsAppWebhook(json).map((message): IncomingEvent => ({ kind: "message", message })), ...parseWhatsAppStatuses(json).map((status): IncomingEvent => ({ kind: "message_status", status }))];
   };
 

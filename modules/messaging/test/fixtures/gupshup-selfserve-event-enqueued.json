@@ -1,0 +1,15 @@
+{
+  "app": "DemoAPI",
+  "timestamp": 1580546677791,
+  "version": 2,
+  "type": "message-event",
+  "payload": {
+    "id": "59f8db90-c37e-4408-90ab-cc54ef8246ad",
+    "type": "enqueued",
+    "destination": "919800000001",
+    "payload": {
+      "whatsappMessageId": "gBEGkYaYVSEEAgkD7bRi9syGnBk",
+      "type": "session"
+    }
+  }
+}

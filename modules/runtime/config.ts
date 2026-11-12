@@ -31,7 +31,7 @@ export interface ServiceConfig { baseUrl: string; agentTokenFile?: string; [extr
 export type ServiceShape = readonly { name: string; extra?: string; payment?: true; /** The calendar (B72): runtime.json may leave it out, and `loadClientFolder` asks for it unless the settings say `"calendar": {"module": "own"}`. */ calendar?: true; /** Fields the service may also have, checked by `check`. */ optional?: readonly string[]; check?: (raw: Record<string, unknown>) => string | null }[];
 
 /** WhatsApp: the number's id always; `provider` and `appId` only to choose a provider other than Meta direct (modules/messaging/providers.ts). */
-const MESSAGING_SERVICE = { name: "messaging", extra: "phoneNumberId", optional: ["provider", "appId"], check: messagingConfigProblem } as const;
+const MESSAGING_SERVICE = { name: "messaging", extra: "phoneNumberId", optional: ["provider", "appId", "appName", "sourceNumber"], check: messagingConfigProblem } as const;
 export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "calendar", extra: "calendarId", calendar: true }, MESSAGING_SERVICE];
 export const FEES_SERVICES: ServiceShape = [{ name: "payments", payment: true }, MESSAGING_SERVICE];
 

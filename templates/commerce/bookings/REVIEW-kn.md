@@ -652,6 +652,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.lines.geometer` | Geometer ಪ್ಲಾನ್ | Geometer's plan |  |
 | `cost.lines.hosting` | ಹೋಸ್ಟಿಂಗ್ ಪಾಲು | Hosting share |  |
 | `cost.payer.builder-pays-whatsapp-provider` | ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ ತಮ್ಮ ಸ್ವಂತ WhatsApp ಪ್ರೊವೈಡರ್‌ಗೆ ಕೊಡುತ್ತಾರೆ | paid by the builder or partner to their own WhatsApp provider |  |
+| `cost.payer.shop-pays-gupshup-wallet` | ಅಂದಾಜು; ಅಂಗಡಿಯ ಸ್ವಂತ Gupshup ವ್ಯಾಲೆಟ್‌ನಿಂದ ಹೋಗುತ್ತದೆ, Geometer ಬ್ಯಾಲೆನ್ಸ್‌ನಿಂದ ಅಲ್ಲ | an estimate, paid from the shop's own Gupshup wallet, not from Geometer's balance |  |
 | `cost.payer.shop-pays-gateway` | ಅಂಗಡಿಯೇ {gateway} ಶುಲ್ಕ ಕಟ್ಟುತ್ತದೆ | paid by the shop to {gateway} |  |
 | `cost.payer.builder-pays-geometer` | ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ; AI ಮಾದರಿ ಇದರಲ್ಲಿ ಒಳಗೊಂಡಿದೆ | paid to Geometer by the builder or partner; the AI model is included |  |
 | `cost.payer.builder-pays-licence` | ಬಿಲ್ಡರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ, ಚಾಲನೆಯಲ್ಲಿರುವ ಪ್ರತಿ ಕ್ಲೈಂಟ್ ಬಿಸಿನೆಸ್‌ಗೆ ಒಮ್ಮೆ; AI ಕೀ ಬಿಲ್ಡರ್‌ನ ಸ್ವಂತದ್ದು | paid to Geometer by the builder, once for each live client business; the AI key is the builder's own |  |
@@ -870,6 +871,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.problems.twoAboveBad` | ಇಬ್ಬರ ಅನುಮತಿ ಬೇಕಾದ ಮೊತ್ತವನ್ನು ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 5000, ಅಥವಾ ಖಾಲಿ ಬಿಡಿ. | Write the two-person amount in whole rupees, for example 5000, or leave it empty. |  |
 | `setup.problems.twoAboveAlone` | ಕನಿಷ್ಠ ಇನ್ನೊಬ್ಬ ವ್ಯಕ್ತಿಯನ್ನು ಸೇರಿಸಿದರೆ ಮಾತ್ರ ಇಬ್ಬರು ಅನುಮತಿ ನೀಡಲು ಸಾಧ್ಯ. | Two people can only approve if you add at least one other person. |  |
 | `setup.problems.expectedBad` | ತಿಂಗಳಿಗೆ ಬುಕಿಂಗ್ ಎಷ್ಟು ಎಂದು ಪೂರ್ಣ ಸಂಖ್ಯೆಯಲ್ಲಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 40, ಅಥವಾ ಖಾಲಿ ಬಿಡಿ. | Write the bookings a month as a whole number, for example 40, or leave it empty. |  |
+| `setup.problems.appNameBad` | Gupshup ಆ್ಯಪ್ ಹೆಸರು ಅಕ್ಷರಗಳು, ಅಂಕಿಗಳು ಮತ್ತು ಅಂಡರ್‌ಸ್ಕೋರ್ ಆಗಿರುತ್ತದೆ, Gupshup ತೋರಿಸುವಂತೆ (ಉದಾಹರಣೆ Glow_Salon). | The Gupshup app name is letters, digits and underscores, as Gupshup shows it (for example Glow_Salon). |  |
 | `setup.problems.numberIdBad` | ಫೋನ್ ನಂಬರ್ ID ಅಂಕಿಗಳು ಮಾತ್ರ (6 ರಿಂದ 20 ಅಂಕಿ). | The phone number ID is digits only (6 to 20 of them). |  |
 | `setup.problems.businessNumberBad` | ಅಂಗಡಿಯ WhatsApp ನಂಬರ್ ಅನ್ನು ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ ಬರೆಯಿರಿ. | Write the shop's WhatsApp number with the country code. |  |
 | `setup.problems.secretMissing` | ಇದನ್ನು ತುಂಬಿ: the access token. | Fill in the access token. |  |
@@ -890,6 +892,21 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.accounts.whatsapp.numberId` | ಫೋನ್ ನಂಬರ್ ID | Phone number ID |  |
 | `setup.accounts.whatsapp.token` | ಆ್ಯಕ್ಸೆಸ್ ಟೋಕನ್ | Access token |  |
 | `setup.accounts.whatsapp.appSecret` | ಆ್ಯಪ್ ಸೀಕ್ರೆಟ್ | App secret |  |
+| `setup.accounts.whatsapp.selfServe.choiceMeta` | Meta ನೇರವಾಗಿ (ಅಂಗಡಿಯ ಸ್ವಂತ Meta ಆ್ಯಪ್) | Meta direct (the shop's own Meta app) |  |
+| `setup.accounts.whatsapp.selfServe.choiceGupshup` | Gupshup (ಅಂಗಡಿಯ ಸ್ವಂತ ಖಾತೆ) | Gupshup (the shop's own account) |  |
+| `setup.accounts.whatsapp.selfServe.title` | Gupshup (ಅಂಗಡಿಯ ಸ್ವಂತ ಖಾತೆ) | Gupshup (the shop's own account) |  |
+| `setup.accounts.whatsapp.selfServe.intro` | ಅಂಗಡಿಯೇ Gupshup ನಲ್ಲಿ ಸೈನ್ ಅಪ್ ಮಾಡುತ್ತದೆ, ಖಾತೆ ಅಂಗಡಿಯದೇ ಆಗಿರುತ್ತದೆ. Meta ಶುಲ್ಕ ಮತ್ತು Gupshup ಶುಲ್ಕ ಅಂಗಡಿಯ ಸ್ವಂತ Gupshup ವ್ಯಾಲೆಟ್‌ನಿಂದ ಹೋಗುತ್ತದೆ; ಆ ಹಣ Geometer ಬಳಿ ಎಂದೂ ಇರುವುದಿಲ್ಲ. | The shop signs up at Gupshup itself and keeps the account. The shop's own Gupshup wallet pays Meta's charges and Gupshup's fee; Geometer never holds that money. |  |
+| `setup.accounts.whatsapp.selfServe.signup` | Gupshup ನಲ್ಲಿ ಸೈನ್ ಅಪ್ ಮಾಡಿ | Sign up at Gupshup |  |
+| `setup.accounts.whatsapp.selfServe.guide` | ಆ್ಯಪ್ ಹೆಸರು ಮತ್ತು API key ಎಲ್ಲಿ ಸಿಗುತ್ತದೆ | How to find the app name and API key |  |
+| `setup.accounts.whatsapp.selfServe.steps.1` | ಅಂಗಡಿ Gupshup ನಲ್ಲಿ ಸೈನ್ ಅಪ್ ಮಾಡಿ ತನ್ನ ನಂಬರ್‌ಗಾಗಿ ಒಂದು WhatsApp ಆ್ಯಪ್ ರಚಿಸುತ್ತದೆ. | The shop signs up at Gupshup and makes a WhatsApp app for its number. |  |
+| `setup.accounts.whatsapp.selfServe.steps.2` | Gupshup ಖಾತೆಗೆ ಪಾರ್ಟ್ನರ್ ಅನ್ನು ಅಡ್ಮಿನ್ ಆಗಿ ಸೇರಿಸಿ. | Add the partner as an admin of the Gupshup account. |  |
+| `setup.accounts.whatsapp.selfServe.steps.3` | ಆ್ಯಪ್‌ನಲ್ಲಿ ನಮ್ಮ ಮೆಸೇಜ್ ಟೆಂಪ್ಲೇಟ್‌ಗಳನ್ನು ಸೇರಿಸಿ, Gupshup ಅವನ್ನು ಅನುಮೋದಿತ (approved) ಎಂದು ತೋರಿಸುವವರೆಗೆ ಕಾಯಿರಿ. | In the app, add our message templates and wait until Gupshup shows them as approved. |  |
+| `setup.accounts.whatsapp.selfServe.steps.4` | Gupshup ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನಿಂದ ಆ್ಯಪ್ ಹೆಸರು ಮತ್ತು API key ಕಾಪಿ ಮಾಡಿ ಕೆಳಗೆ ಟೈಪ್ ಮಾಡಿ, ಜೊತೆಗೆ ಕಾಲ್‌ಬ್ಯಾಕ್ ವಿಳಾಸಕ್ಕಾಗಿ ನಿಮ್ಮದೇ ಒಂದು ಗುಪ್ತ ಪದವನ್ನು ಆರಿಸಿ. | Copy the app's name and API key from the Gupshup dashboard and type them below, with a secret word of your own for the callback address. |  |
+| `setup.accounts.whatsapp.selfServe.steps.5` | ಆ್ಯಪ್‌ನ Webhooks ಟ್ಯಾಬ್‌ನಲ್ಲಿ ಕೆಳಗೆ ತೋರಿಸಿದ ವಿಳಾಸವನ್ನು ಸೇರಿಸಿ, ಕೊನೆಯಲ್ಲಿ ಆ ಗುಪ್ತ ಪದ ಇರಲಿ. | In the app's Webhooks tab, add the address shown below, ending with that secret word. |  |
+| `setup.accounts.whatsapp.selfServe.appName` | Gupshup ಆ್ಯಪ್ ಹೆಸರು | Gupshup app name |  |
+| `setup.accounts.whatsapp.selfServe.apiKey` | Gupshup API key | Gupshup API key |  |
+| `setup.accounts.whatsapp.selfServe.pathToken` | ಕಾಲ್‌ಬ್ಯಾಕ್ ವಿಳಾಸದ ಗುಪ್ತ ಪದ (16 ಅಥವಾ ಹೆಚ್ಚು ಅಕ್ಷರ, ಅಂಕಿ, _ ಅಥವಾ -) | Secret word for the callback address (16 or more letters, digits, _ or -) |  |
+| `setup.accounts.whatsapp.selfServe.callback` | ಈ ವಿಳಾಸವನ್ನು Gupshup ಆ್ಯಪ್‌ನ Webhooks ಟ್ಯಾಬ್‌ನಲ್ಲಿ ಸೇರಿಸಿ, SECRET-WORD ಬದಲಿಗೆ ನಿಮ್ಮ ಗುಪ್ತ ಪದ ಹಾಕಿ: | Add this address in the Gupshup app's Webhooks tab, with your secret word in place of SECRET-WORD: |  |
 | `setup.accounts.calendar.title` | ಕ್ಯಾಲೆಂಡರ್ | Calendar |  |
 | `setup.accounts.calendar.intro` | ಬುಕಿಂಗ್‌ಗಳು ಅಂಗಡಿಯದೇ ಆದ Google Calendar ಒಳಗೆ ಹೋಗುತ್ತವೆ. | Bookings go into the shop's own Google Calendar. |  |
 | `setup.accounts.calendar.steps.1` | ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ Google Calendar ತೆರೆಯಿರಿ, ನಂತರ ಆ ಕ್ಯಾಲೆಂಡರ್‌ನ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ. | Open Google Calendar on a computer, and open the calendar's settings. |  |
@@ -921,6 +938,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.whatsapp.confirmed` | ಇದು ಅಂಗಡಿಯ ನಂಬರ್ (+91 98765 43210). | This is the shop's number (+91 98765 43210). |  |
 | `setup.checks.whatsapp.differs` | ಸಿಕ್ಕ ನಂಬರ್‌ನ ಕೊನೆಯ ಅಂಕಿಗಳು: 3210. ಇದು ಅಂಗಡಿಯ ನಂಬರ್ ಅಲ್ಲ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | The number found ends in 3210, not the shop's. Nothing was changed. |  |
 | `setup.checks.whatsapp.notFound` | ಆ ಫೋನ್ ನಂಬರ್ ID ಈ ಖಾತೆಯಲ್ಲಿ ಇಲ್ಲ. | That phone number ID is not on this account. |  |
+| `setup.checks.whatsapp.selfServeConfirmed` | Gupshup ಆ್ಯಪ್ Glow_Salon ಗಾಗಿ ಉತ್ತರಿಸಿತು: key ಮತ್ತು ಆ್ಯಪ್ ಹೆಸರು ಒಟ್ಟಿಗೆ ಹೊಂದುತ್ತವೆ, ಪಟ್ಟಿಯಲ್ಲಿರುವ 5 ಟೆಂಪ್ಲೇಟ್‌ಗಳಲ್ಲಿ 4 ಅನುಮೋದಿತವಾಗಿವೆ. ಆ್ಯಪ್ ಯಾವ ನಂಬರ್‌ನಿಂದ ಕಳುಹಿಸುತ್ತದೆ ಎಂದು ಈ ಪರಿಶೀಲನೆ ತೋರಿಸುವುದಿಲ್ಲ, ಮತ್ತು ಇದು ಏನನ್ನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. | Gupshup answered for app Glow_Salon: the key and the app name go together, and 4 of the 5 templates listed are approved. This check does not show which number the app sends from, and it sends nothing. |  |
 | `setup.checks.whatsapp.gupshupConfirmed` | ಆ್ಯಪ್ 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8ಗಾಗಿ Gupshup ಉತ್ತರಿಸಿತು. ಆ್ಯಪ್ ಯಾವ ಸಂಖ್ಯೆಯಿಂದ ಕಳುಹಿಸುತ್ತದೆ ಎಂಬುದನ್ನು ಈ ಪರಿಶೀಲನೆ ತೋರಿಸುವುದಿಲ್ಲ. | Gupshup answered for app 07c7c72d-20e3-4ff9-a5a1-14d1186eeec8. This check does not show which number the app sends from. |  |
 | `setup.checks.whatsapp.gupshupNotFound` | ಈ ಟೋಕನ್‌ನೊಂದಿಗೆ Gupshup ಆ ಆ್ಯಪ್ ಅನ್ನು ಒಪ್ಪಲಿಲ್ಲ (ಅದು ಹೇಳಿದ್ದು: Invalid App Details). | Gupshup did not accept that app with this token (it said: Invalid App Details). |  |
 | `setup.checks.calendar.title` | ಕ್ಯಾಲೆಂಡರ್ | Calendar |  |
@@ -1104,6 +1122,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `health.cost.notes.builderLicence` | ಬಿಲ್ಡರ್ ಲೈಸೆನ್ಸ್ | Builder licence |  |
 | `health.cost.notes.included` | ಪ್ಲಾನ್ ಶುಲ್ಕದಲ್ಲಿ ಸೇರಿದೆ | Included in the plan fee |  |
 | `health.cost.notes.estimate` | ಈ ತಿಂಗಳ ಎಣಿಕೆಯಿಂದ ಅಂದಾಜು, ಉಚಿತ ಉತ್ತರಗಳ ಮೊದಲು | Estimate from this month's counts, before the free replies |  |
+| `health.cost.notes.shopWallet` | ಅಂಗಡಿಯ ಸ್ವಂತ Gupshup ವ್ಯಾಲೆಟ್‌ನಿಂದ ಹೋಗುತ್ತದೆ, Geometer ಬ್ಯಾಲೆನ್ಸ್‌ನಿಂದ ಅಲ್ಲ, ಆದ್ದರಿಂದ ಈ ವೆಚ್ಚದಲ್ಲಿ ಇಲ್ಲ | Paid from the shop's own Gupshup wallet, not from Geometer's balance, so it is not in this cost |  |
 | `health.cost.notes.noRecord` | ದಾಖಲೆ ಇನ್ನೂ ಹಂಚಿಕೊಂಡಿಲ್ಲ | No record shared yet |  |
 | `health.cost.notes.noPlan` | ಫ್ಲೀಟ್ ಪ್ಲಾನ್ ಹೊಂದಿಸಿಲ್ಲ | Fleet has not set a plan |  |
 | `health.cost.notes.noPrice` | ಪಟ್ಟಿಯಲ್ಲಿ ಬೆಲೆ ಇಲ್ಲ | No price in the list |  |
@@ -1202,4 +1221,3 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `agents.actions.rotateDone` | ಹೊಸ ಕ್ರೆಡೆನ್ಶಿಯಲ್‌ಗಳು ಸಿದ್ಧ. ಹಳೆಯವು 4 Nov 2026, 10:15 ಕ್ಕೆ ನಿಲ್ಲುತ್ತವೆ. | New credentials made. The old ones stop at 4 Nov 2026, 10:15. |  |
 | `agents.actions.rotateFailed` | ಹೊಸ ಕ್ರೆಡೆನ್ಶಿಯಲ್‌ಗಳ ಹಿಂದಿನ ವಿನಂತಿ ಆಗಲಿಲ್ಲ; ನಿಮ್ಮ ಏಜೆಂಟ್‌ಗೆ ಏನೂ ಬದಲಾಗಲಿಲ್ಲ. ಕಾರಣ ಸರ್ವರ್‌ನ ಲಾಗ್‌ನಲ್ಲಿದೆ. | The last request for new credentials was not done; nothing changed for your agent. The server's log says why. |  |
 | `agents.actions.cliOnly` | ಏಜೆಂಟ್ ಅನ್ನು ತೆಗೆದುಹಾಕುವುದು ಸರ್ವರ್‌ನಲ್ಲಿ ಮಾತ್ರ: geometer agent remove <name>. | Removing an agent is done on the server only: geometer agent remove <name>. |  |
-

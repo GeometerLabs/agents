@@ -20,6 +20,7 @@ import { DESK_GUARD } from "../../modules/payments/owner-marked/desk-guard.ts";
 export const OWNER_MARKED_KINDS: readonly string[] = PROVIDERS.filter((p) => p.ownerMarked !== undefined).map((p) => p.id);
 import { OWN_API_SECRET } from "../lib/secrets.ts";
 import { GUPSHUP_ROUTES, GUPSHUP_UPSTREAM } from "../../modules/messaging/gupshup.ts";
+import { GUPSHUP_API_KEY_HEADER, GUPSHUP_SELFSERVE_ROUTES, GUPSHUP_SELFSERVE_UPSTREAM } from "../../modules/messaging/gupshup-selfserve.ts";
 
 /** How long a Guard waits for its provider. The runtime must wait LONGER, or it gives up on a call Guard is still making (rules.ts). */
 export const GUARD_UPSTREAM_TIMEOUT_MS = 15_000;
@@ -36,6 +37,8 @@ export interface GuardDef {
   headers: Record<string, string>;
   /** The provider secret this Guard reads, as a file name under /run/secrets in its container (none for the calendar: the token refresher writes it). */
   secretFile?: string;
+  /** Item 11c: the argument of a send that names who it goes to, where it is not WhatsApp's `to` (Gupshup self-serve writes `destination`). Left out: `to`. Read by the licence block. */
+  recipientField?: string;
   /**
    * The upstream is a container on this server's own internal network (the owner-marked desk, B71 part 2), reached in plain HTTP: there is no certificate to check
    * on a Docker network. Left out: TLS to the provider, as for every provider on the internet.
@@ -80,7 +83,10 @@ export function guardDef(kind: GuardKind, model?: ModelConfig): GuardDef {
 }
 
 /** A shop's WhatsApp provider when it is not Meta direct (runtime.json services.messaging; modules/messaging/providers.ts). Left out: Meta, exactly as before. */
-export interface WhatsAppRoute { provider: "gupshup"; appId: string }
+export type WhatsAppRoute =
+  | { provider: "gupshup"; appId: string }
+  /** Item 11c: Gupshup's self-serve API, the shop's own app and key. `appId` (optional) picks the newer template list. */
+  | { provider: "gupshup-selfserve"; appName: string; sourceNumber: string; appId?: string };
 
 /**
  * The WhatsApp Guard: Meta's Graph API, or (item 11b) Gupshup's partner API, which takes Meta's bodies. Either way one credential file, sent as the whole
@@ -89,6 +95,8 @@ export interface WhatsAppRoute { provider: "gupshup"; appId: string }
  * The tool name stays "whatsapp", so the licence's final stop and the hourly cap read the same operation ("send") and the same recipient field ("to").
  */
 export function whatsappGuardDef(route?: WhatsAppRoute, renewed = false): GuardDef {
+  // item 11c: the shop's own Gupshup account. One credential file, sent as the `apikey` header (Gupshup's API key, as handed in); never renewed, never the runtime's
+  if (route?.provider === "gupshup-selfserve") return { kind: "whatsapp", tool: "whatsapp", upstream: GUPSHUP_SELFSERVE_UPSTREAM, secretFile: "whatsapp_authorization", recipientField: "destination", headers: { [GUPSHUP_API_KEY_HEADER]: "${file:/run/secrets/whatsapp_authorization}" } };
   // follow-up 2: a Gupshup shop whose token the refresher renews reads it from the refresher's volume, like the Calendar Guard reads Google's (services/gupshup-tokens.ts)
   if (route?.provider === "gupshup" && renewed) return { kind: "whatsapp", tool: "whatsapp", upstream: GUPSHUP_UPSTREAM, headers: { Authorization: `\${file:${GUPSHUP_TOKEN_FILE}}` } };
   return { kind: "whatsapp", tool: "whatsapp", upstream: route?.provider === "gupshup" ? GUPSHUP_UPSTREAM : "graph.facebook.com:443", secretFile: "whatsapp_authorization", headers: { Authorization: "${file:/run/secrets/whatsapp_authorization}" } };
@@ -127,6 +135,24 @@ export const PANEL_READS: Record<string, string[]> = { ...Object.fromEntries(GAT
  * answered for app <id>", never that the number is confirmed (panel/checks.ts checkGupshup).
  */
 export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number; route?: WhatsAppRoute }): LimitsSpec {
+  if (o.route?.provider === "gupshup-selfserve") {
+    // Item 11c. The self-serve API carries the app in the BODY of both send routes, as form fields (`source`, the app's number, and `src.name`, its name), and in the PATH of
+    // the template list. Guard's compiler refuses an exact rule on a dotted field name ("a dotted (nested) name is not followed"), so `src.name` cannot be pinned: the send is
+    // pinned by `source`, the shop's own number, and the API key the Guard adds belongs to the shop's own app. Both sends are the one operation "send" so the licence's final
+    // stop and the hourly cap hold templates too; the read is the template list (the key and app name, never the number).
+    const r = o.route;
+    const read = r.appId ? { path: GUPSHUP_SELFSERVE_ROUTES.listById, field: "app_id", value: r.appId } : { path: GUPSHUP_SELFSERVE_ROUTES.listByName, field: "app_name", value: r.appName };
+    return {
+      ...base(whatsappGuardDef(r), id),
+      routes: [{ method: "POST", path: GUPSHUP_SELFSERVE_ROUTES.send, operation: "send" }, { method: "POST", path: GUPSHUP_SELFSERVE_ROUTES.template, operation: "send" }, { method: "GET", path: read.path, operation: "read_number" }],
+      rules: [
+        { id: "own-source-only", kind: "argument_allowlist", operation: "send", field: "source", match: "exact", allowed_values: [r.sourceNumber.replace(/\D/gu, "")] },
+        { id: "own-app-read", kind: "argument_allowlist", operation: "read_number", field: read.field, match: "exact", allowed_values: [read.value] },
+      ],
+      limits: [count("messages-per-hour", "send", o.messagesPerHour, 3600)],
+      intents: [], fail_policy: [],
+    };
+  }
   if (o.route?.provider === "gupshup") {
     return {
       ...base(whatsappGuardDef(o.route), id),
@@ -244,6 +270,8 @@ export interface GuardLicence {
    * owner's notice; the relay asking about a refund Guard holds). Guard's field is `owner_numbers`. Only numbers Guard reads as numbers (`ownerNumbers`).
    */
   ownerNumbers: string[];
+  /** Item 11c: the argument that names the recipient, when it is not `to` (Gupshup self-serve: `destination`). */
+  recipientField?: string;
 }
 
 /** Where a per-shop Guard sees the server's state/licence/ folder (read-only; the folder, not single files, because the deployer replaces the lease by rename). */
@@ -281,7 +309,7 @@ function licenceLines(l: GuardLicence): string[] {
     `wind_down_refuses = ${list(LICENCE_WIND_DOWN_REFUSES)}`,
     `stopped_refuses = ${list(LICENCE_STOPPED_REFUSES)}`,
     `owner_numbers = ${list(l.ownerNumbers)}`,
-    `recipient_field = ${q(LICENCE_RECIPIENT_FIELD)}`,
+    `recipient_field = ${q(l.recipientField ?? LICENCE_RECIPIENT_FIELD)}`,
   ];
 }
 

@@ -99,7 +99,7 @@ export const hi: Words = {
     heading: "हर महीने चलाने का ख़र्च", early: "शुरुआती अंदाज़ा: अभी असली बुकिंग गिनी नहीं गई हैं।", fromRecord: (n) => `रिकॉर्ड की ${n} बुकिंग से निकाला गया।`, assumption: (n) => `हमने महीने में ${n} बुकिंग मानी हैं।`,
     lines: { whatsapp: "WhatsApp संदेश (Meta की फ़ीस)", "whatsapp-provider": "WhatsApp प्रोवाइडर की अपनी फ़ीस", gateway: "{gateway} की फ़ीस", geometer: "Geometer का प्लान", hosting: "होस्टिंग का हिस्सा" },
     payer: {
-      "builder-pays-whatsapp-provider": "बिल्डर या पार्टनर अपने WhatsApp प्रोवाइडर को देता है", "shop-pays-gateway": "दुकान सीधे {gateway} को देती है",
+      "builder-pays-whatsapp-provider": "बिल्डर या पार्टनर अपने WhatsApp प्रोवाइडर को देता है", "shop-pays-gupshup-wallet": "अनुमान; दुकान के अपने Gupshup वॉलेट से जाता है, Geometer के बैलेंस से नहीं", "shop-pays-gateway": "दुकान सीधे {gateway} को देती है",
       "builder-pays-geometer": "बिल्डर या पार्टनर Geometer को देता है; AI मॉडल इसमें शामिल है",
       "builder-pays-licence": "बिल्डर Geometer को देता है, हर चालू क्लाइंट बिज़नेस के लिए एक बार; AI कुंजी बिल्डर की अपनी है", hosting: "सर्वर का ख़र्च, बाँटकर",
     },
@@ -240,7 +240,7 @@ export const hi: Words = {
       approverNumberBad: (n) => `व्यक्ति ${n}: उनका नंबर देश कोड के साथ लिखिए, जैसे +91 98765 43210।`,
       approverNumberTaken: (n) => `व्यक्ति ${n}: यह नंबर पहले से आपका, दुकान का या किसी और व्यक्ति का है। हर कोई अपने ही फ़ोन से जवाब देता है।`,
       twoAboveBad: "दो लोगों वाली रकम पूरे रुपयों में लिखिए, जैसे 5000, या खाली छोड़ दीजिए।", twoAboveAlone: "दो लोगों की मंज़ूरी तभी हो सकती है जब आप कम से कम एक और व्यक्ति जोड़ें।",
-      expectedBad: "महीने की बुकिंग पूरी संख्या में लिखिए, जैसे 40, या खाली छोड़ दीजिए।", numberIdBad: "फ़ोन नंबर आईडी में सिर्फ़ अंक होते हैं (6 से 20)।", businessNumberBad: "दुकान का WhatsApp नंबर देश कोड के साथ लिखिए।",
+      expectedBad: "महीने की बुकिंग पूरी संख्या में लिखिए, जैसे 40, या खाली छोड़ दीजिए।", appNameBad: "Gupshup ऐप का नाम अक्षर, अंक और अंडरस्कोर होता है, जैसा Gupshup दिखाता है (जैसे Glow_Salon)।", numberIdBad: "फ़ोन नंबर आईडी में सिर्फ़ अंक होते हैं (6 से 20)।", businessNumberBad: "दुकान का WhatsApp नंबर देश कोड के साथ लिखिए।",
       secretMissing: (w) => `${w} भरिए।`, secretShape: (w) => `${w} में खाली जगह या नई लाइन है। इसे उनके बिना फिर से कॉपी कीजिए।`,
       calendarIdBad: "कैलेंडर की आईडी बिना खाली जगह के लिखिए।", jsonBad: "यह Google सर्विस-अकाउंट की कुंजी फ़ाइल नहीं है। पूरी फ़ाइल चिपकाइए।", modeBad: "लाइव या अभ्यास चुनिए।",
     },
@@ -251,6 +251,14 @@ export const hi: Words = {
         title: "WhatsApp", intro: "दुकान अपना ही नंबर और अपना ही WhatsApp Business ऐप रखती है। ग्राहक उसी नंबर पर लिखते हैं जिस पर पहले लिखते थे।",
         steps: ["दुकान के फ़ोन पर दुकान के नंबर के साथ WhatsApp Business ऐप चलाते रहिए।", "जिसने नंबर को हेल्पर से जोड़ा है, वह आपको तीन चीज़ें देगा: फ़ोन नंबर आईडी, एक एक्सेस टोकन और ऐप सीक्रेट।", "इन्हें नीचे लिखिए।"],
         number: "दुकान का WhatsApp नंबर", numberId: "फ़ोन नंबर आईडी (Phone number ID)", token: "एक्सेस टोकन (Access token)", appSecret: "ऐप सीक्रेट (App secret)",
+        selfServe: {
+          choiceMeta: "सीधे Meta से (दुकान का अपना Meta ऐप)", choiceGupshup: "Gupshup (दुकान का अपना अकाउंट)", title: "Gupshup (दुकान का अपना अकाउंट)",
+          intro: "दुकान खुद Gupshup पर साइन अप करती है और अकाउंट उसी का रहता है। Meta का शुल्क और Gupshup की फ़ीस दुकान के अपने Gupshup वॉलेट से जाती है; वह पैसा Geometer के पास कभी नहीं रहता।",
+          signup: "Gupshup पर साइन अप करें", guide: "ऐप का नाम और API key कहाँ मिलेगी",
+          steps: ["दुकान Gupshup पर साइन अप करके अपने नंबर के लिए एक WhatsApp ऐप बनाती है।", "Gupshup अकाउंट में पार्टनर को एडमिन के रूप में जोड़िए।", "ऐप में हमारे मैसेज टेम्पलेट जोड़िए और तब तक रुकिए जब तक Gupshup उन्हें मंज़ूर (approved) न दिखाए।", "Gupshup डैशबोर्ड से ऐप का नाम और API key कॉपी करके नीचे लिखिए, और कॉलबैक पते के लिए अपना एक गुप्त शब्द भी चुनिए।", "ऐप के Webhooks टैब में नीचे दिखा पता जोड़िए, जिसके अंत में वही गुप्त शब्द हो।"],
+          appName: "Gupshup ऐप का नाम", apiKey: "Gupshup API key", pathToken: "कॉलबैक पते का गुप्त शब्द (16 या ज़्यादा अक्षर, अंक, _ या -)",
+          callback: "यह पता Gupshup ऐप के Webhooks टैब में जोड़िए, SECRET-WORD की जगह अपना गुप्त शब्द रखकर:",
+        },
       },
       calendar: {
         title: "कैलेंडर", intro: "बुकिंग दुकान के अपने Google कैलेंडर में जाती हैं।",
@@ -267,6 +275,7 @@ export const hi: Words = {
       whatsapp: {
         title: "WhatsApp की जाँच", confirmed: (n) => `यह दुकान का ही नंबर है (${n})।`, differs: (e) => `जो नंबर मिला वह ${e} पर ख़त्म होता है, दुकान का नंबर नहीं है। कुछ भी बदला नहीं गया।`,
         notFound: "यह फ़ोन नंबर आईडी इस अकाउंट में नहीं है।",
+        selfServeConfirmed: (name, approved, listed) => `Gupshup ने ऐप ${name} के लिए जवाब दिया: key और ऐप का नाम एक साथ सही हैं, और सूची के ${listed} टेम्पलेट में से ${approved} मंज़ूर हैं। यह जाँच नहीं दिखाती कि ऐप किस नंबर से भेजता है, और यह कुछ भेजती नहीं।`,
         gupshupConfirmed: (id) => `Gupshup ने ऐप ${id} के लिए जवाब दिया। यह जाँच नहीं दिखाती कि ऐप किस नंबर से भेजता है।`,
         gupshupNotFound: (said) => (said ? `Gupshup ने इस टोकन के साथ वह ऐप स्वीकार नहीं किया (उसने कहा: ${said})।` : "Gupshup ने इस टोकन के साथ वह ऐप स्वीकार नहीं किया।"),
       },

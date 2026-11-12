@@ -1,0 +1,9 @@
+{
+  "templates": [
+    { "id": "312371e9-2771-463b-8cfd-cd8994b810cc", "elementName": "booking_confirmed", "languageCode": "en", "status": "APPROVED", "templateType": "TEXT", "data": "Your booking is confirmed, {{1}} at {{2}}.", "category": "UTILITY" },
+    { "id": "5a1b2c3d-0000-4000-8000-000000000002", "elementName": "booking_confirmed", "languageCode": "hi", "status": "APPROVED", "templateType": "TEXT", "data": "{{1}}, {{2}}", "category": "UTILITY" },
+    { "id": "5a1b2c3d-0000-4000-8000-000000000003", "elementName": "booking_reminder", "languageCode": "en_US", "status": "APPROVED", "templateType": "TEXT", "data": "Reminder {{1}}", "category": "UTILITY" },
+    { "id": "5a1b2c3d-0000-4000-8000-000000000004", "elementName": "booking_reminder", "languageCode": "ml", "status": "PENDING", "templateType": "TEXT", "data": "{{1}}", "category": "UTILITY" }
+  ],
+  "status": "success"
+}

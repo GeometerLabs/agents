@@ -67,10 +67,10 @@ export function shopIdFromName(name: string, taken: ReadonlySet<string>): string
 /** "payment" is how customers pay (B71): UPI asks for no secret; a gateway asks for the ones its folder names (providers/<name>/index.ts, setup.secrets). */
 export type AccountKind = "whatsapp" | "payment" | "calendar";
 const GATEWAY_SECRETS: readonly string[] = GATEWAYS.flatMap((g) => [g.gateway!.setup.secrets.key, g.gateway!.setup.secrets.webhook]);
-export const SECRET_NAMES: readonly string[] = ["whatsapp_token", "whatsapp_app_secret", "google_service_account.json", ...GATEWAY_SECRETS];
+export const SECRET_NAMES: readonly string[] = ["whatsapp_token", "whatsapp_app_secret", "gupshup_apikey", "whatsapp_path_token", "google_service_account.json", ...GATEWAY_SECRETS];
 export type SecretName = string;
 export const SECRETS_OF: Record<AccountKind, readonly SecretName[]> = {
-  whatsapp: ["whatsapp_token", "whatsapp_app_secret"],
+  whatsapp: ["whatsapp_token", "whatsapp_app_secret", "gupshup_apikey", "whatsapp_path_token"],
   payment: GATEWAY_SECRETS,
   calendar: ["google_service_account.json"],
 };

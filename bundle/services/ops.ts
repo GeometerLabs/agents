@@ -36,7 +36,7 @@ export interface OpsConfig {
    * <fleetDir>/_renewals.json for the panel's unfinished-work list (with or without a fleet), and the heartbeat counts one that needs a person as open work.
    */
   refresherUrl?: string;
-  shops: Record<string, { pathway: string; pathwayVersion: string; runtimeUrl: string; internalTokenFile: string; /** The deployer's status file for this shop (read-only here). Left out: no backup fields are sent. */ statusFile?: string; guards: OpsGuard[] }>;
+  shops: Record<string, { pathway: string; pathwayVersion: string; runtimeUrl: string; internalTokenFile: string; /** The deployer's status file for this shop (read-only here). Left out: no backup fields are sent. */ statusFile?: string; /** Item 11c: the shop's own Gupshup wallet pays WhatsApp ("shop"): the heartbeat then reports no WhatsApp counts, so fleet's pass-through bills nothing for it. */ whatsappPaidBy?: "shop"; guards: OpsGuard[] }>;
   model: OpsGuard;
   ownAgents?: Record<string, OpsOwnAgent>;
 }
@@ -136,7 +136,7 @@ export async function observeShop(id: string, c: OpsConfig["shops"][string], fet
   const backups = readBackups(c.statusFile);
   const usage = readUsage(c.statusFile);
   const obligations = readObligations(c.statusFile);
-  return { id, pathway: c.pathway, pathwayVersion: c.pathwayVersion, up: healthz.status === 200, ready: readyz.status === 200, status: status.status === 200 ? (status.json as RuntimeStatus) : null, guards, ...(backups ? { backups } : {}), ...(usage ? { usage } : {}), ...(obligations ? { obligations } : {}) };
+  return { id, ...(c.whatsappPaidBy === "shop" ? { whatsappPaidBy: "shop" as const } : {}), pathway: c.pathway, pathwayVersion: c.pathwayVersion, up: healthz.status === 200, ready: readyz.status === 200, status: status.status === 200 ? (status.json as RuntimeStatus) : null, guards, ...(backups ? { backups } : {}), ...(usage ? { usage } : {}), ...(obligations ? { obligations } : {}) };
 }
 
 type WithCounts = AdminStatus & { counts?: { decisions?: number } };

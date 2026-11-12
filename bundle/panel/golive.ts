@@ -56,7 +56,9 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     const hasCalendar = guardsOf(kindOf(shop), settings0).includes("calendar"); // B72: a shop on its own booking list has no calendar to check
     // A shop whose WhatsApp goes through Gupshup (runtime.json `provider`) has no Meta number read to make: its check is Gupshup's app read (checks.ts checkGupshup)
     const messaging = runtime?.services?.messaging;
-    const whatsapp = messaging?.provider === "gupshup"
+    const whatsapp = messaging?.provider === "gupshup-selfserve"
+      ? { gupshupSelfServe: { baseUrl: wa, appName: String(messaging.appName ?? ""), ...(messaging.appId ? { appId: String(messaging.appId) } : {}) } }
+      : messaging?.provider === "gupshup"
       ? { gupshup: { baseUrl: wa, appId: String(messaging.appId ?? "") } }
       : { whatsapp: { baseUrl: wa, phoneNumberId: String(messaging?.phoneNumberId ?? ""), businessNumber: meta.whatsapp?.businessNumber ?? "" } };
     return {
