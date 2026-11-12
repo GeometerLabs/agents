@@ -76,7 +76,9 @@ export function ownerPage(o: OwnerPageInput): string {
     const message = c.kind === "message";
     return html`<div class="item"><p>${c.question ?? `${c.case}: ${c.who}${c.amountPaise > 0 ? `, ${formatInr(c.amountPaise / 100)}` : ""}`}</p>${b("card_yes", message ? labels.send : labels.approve)}${c.hasNo ? b("card_no", message ? labels.dontSend : labels.refuse, true) : ""}</div>`;
   };
-  const waiting = [...o.relayAsks.map(ask), ...v.items.map(item), ...(v.app?.cards ?? []).map(card)];
+  // a card that answers something already waiting (kind "answer") is the same thing as that item, whose own buttons are right here: only the assistant's own acts
+  // (cancel, refund, a message) are shown as cards, so the page never lists one thing twice
+  const waiting = [...o.relayAsks.map(ask), ...v.items.map(item), ...(v.app?.cards ?? []).filter((c) => c.kind !== "answer").map(card)];
   const machine = PAGE[o.language].machine;
   const app = v.app;
   const colour = app ? LOOK_COLOURS[app.character.look.colour] ?? LOOK_COLOURS.teal : undefined;
