@@ -127,7 +127,7 @@ Nothing here has been tried on a real Gupshup app. The list of what only a real 
 - **Secrets:** `gupshup_apikey` (the shop's Gupshup API key; the shop's Guard sends it as the `apikey` header) and `whatsapp_path_token` (the secret word that ends the callback address).
 - **Callback:** in the app's Webhooks tab add `https://shops.example.com/c/glow-salon/webhooks/whatsapp/<token>` with message events switched on (delivered, read, failed; enqueued and sent say no more than the send did).
 - **Templates:** our templates must be added in the shop's Gupshup app and show as approved there. The agent finds Gupshup's id for each from the app's template list and refuses, in plain words, a template that is not approved yet.
-- **Money in the panel and in fleet:** the WhatsApp cost lines for such a shop are an estimate paid from the shop's own Gupshup wallet, not from Geometer's balance, and the heartbeat sends zero WhatsApp counts for it, so fleet's pass-through does not bill it.
+- **Money in the panel and in fleet:** the WhatsApp cost lines for such a shop are an estimate paid from the shop's own Gupshup wallet, not from Geometer's balance, and the heartbeat sends its real counts with `usage.whatsapp_paid_by: "shop"`, so fleet counts and bills none of its WhatsApp (its cost line there reads "not ours: paid from the shop's own WhatsApp account"). **Deploy fleet first:** a fleet that does not know the flag refuses the whole heartbeat (an unknown key), which looks like a dead server. Fleet's deploy order puts it before any bundle that sends it.
 
 **8. Keep the deployer running.** It applies what the panel writes, renews the relay's reading credential every day, takes the nightly snapshot and runs the weekly restore drill.
 
