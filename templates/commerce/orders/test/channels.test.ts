@@ -123,7 +123,7 @@ test("an order from the page holds at the shop's own prices in its own conversat
 
     // the owner's page: the advance still to mark, at what is left, bound to its digest
     const ownerHtml = await (await w.page(`/o/${w.ownerToken}?lang=en`)).text();
-    assert.match(ownerHtml, /Asha, \+919811111111 \(booking page\) should pay ₹70 for 2 × veg thali/u);
+    assert.match(ownerHtml, /Asha, \+919811111111 \(shop page\) should pay ₹70 for 2 × veg thali, Tue 17 Nov, 12:00 pm/u);
     const digest = /name="action" value="received"><input type="hidden" name="case" value="(o-\d+)"><input type="hidden" name="digest" value="([0-9a-f]{32})"/u.exec(ownerHtml);
     assert.ok(digest);
     const state = await (await w.page(`/o/${w.ownerToken}/api/v1/state`)).json() as { waiting: { kind: string; amount_paise: number; case: string }[] };
