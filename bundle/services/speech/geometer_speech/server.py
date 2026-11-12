@@ -30,6 +30,27 @@ log = logging.getLogger("geometer-speech")
 TRANSCRIBE_PATHS = ("/v1/transcribe", "/stt")
 # the multipart envelope around a 5 MB note is a few hundred bytes; this is generous without letting a body run on
 ENVELOPE_ALLOWANCE = 64 * 1024
+# A refusal is sent after the unread body has been read and thrown away, up to this size: answering and closing while the client is
+# still sending makes many HTTP clients see a reset instead of the sentence. Above it we just close.
+DRAIN_LIMIT = 16 * 1024 * 1024
+
+
+def read_chunked(rfile, cap: int) -> bytes:
+    """Read a `Transfer-Encoding: chunked` body (a proxy or Guard may stream a body without knowing its length), refusing more than `cap` bytes."""
+    out = bytearray()
+    try:
+        while True:
+            size = int(rfile.readline(1024).split(b";")[0].strip() or b"0", 16)
+            if size == 0:
+                while rfile.readline(1024) not in (b"\r\n", b"\n", b""):  # trailer lines, if any
+                    pass
+                return bytes(out)
+            if len(out) + size > cap:
+                raise SpeechError(413, "This audio is too large. Please send a shorter voice note.")
+            out += rfile.read(size)
+            rfile.readline(8)  # the CRLF after each chunk
+    except ValueError:
+        raise SpeechError(400, "The upload is not well formed.")
 
 
 def token_ok(header: str | None, token: str) -> bool:
@@ -72,8 +93,22 @@ def make_handler(service: SpeechService):
             self.wfile.write(data)
 
         def _fail(self, e: SpeechError) -> None:
-            self.close_connection = True  # an unread body may still be on the wire
+            # read away a body the client is still sending (bounded), so it can read our sentence; if it is too big or its length is unknown, close instead
+            try:
+                declared = int(self.headers.get("Content-Length", "0") or 0)
+            except ValueError:
+                declared = DRAIN_LIMIT + 1
+            if not self._consumed and 0 < declared <= DRAIN_LIMIT:
+                left = declared
+                while left > 0:
+                    got = self.rfile.read(min(left, 1024 * 1024))
+                    if not got:
+                        break
+                    left -= len(got)
+            self.close_connection = True
             self._send(e.status, {"error": e.message}, e.retry_after)
+
+        _consumed = False  # set once the request body has been read
 
         def do_GET(self) -> None:
             path = urlsplit(self.path).path
@@ -102,21 +137,29 @@ def make_handler(service: SpeechService):
                 raise SpeechError(401, "The speech service needs its shared token and did not get the right one.")
             if url.path == "/v1/speak":
                 raise SpeechError(501, "This service only listens. Replies to customers go out as text.")
-            length_header = self.headers.get("Content-Length")
-            if length_header is None:
-                raise SpeechError(411, "Send the audio with a Content-Length.")
-            try:
-                length = int(length_header)
-            except ValueError:
-                raise SpeechError(400, "The Content-Length is not a number.")
-            if length <= 0:
+            cap = settings.max_bytes + ENVELOPE_ALLOWANCE
+            if "chunked" in self.headers.get("Transfer-Encoding", "").lower():
+                body = read_chunked(self.rfile, cap)
+                self._consumed = True
+            else:
+                length_header = self.headers.get("Content-Length")
+                if length_header is None:
+                    raise SpeechError(411, "Send the audio with a Content-Length.")
+                try:
+                    length = int(length_header)
+                except ValueError:
+                    raise SpeechError(400, "The Content-Length is not a number.")
+                if length <= 0:
+                    raise SpeechError(400, "No audio came with the request.")
+                # refuse on the header, before reading a byte of the body
+                if length > cap:
+                    raise SpeechError(413, f"This audio is larger than {settings.max_bytes // (1024 * 1024)} MB. Please send a shorter voice note.")
+                body = self.rfile.read(length)
+                self._consumed = True
+                if len(body) != length:
+                    raise SpeechError(400, "The upload stopped before the audio was complete.")
+            if not body:
                 raise SpeechError(400, "No audio came with the request.")
-            # refuse on the header, before reading a byte of the body
-            if length > settings.max_bytes + ENVELOPE_ALLOWANCE:
-                raise SpeechError(413, f"This audio is larger than {settings.max_bytes // (1024 * 1024)} MB. Please send a shorter voice note.")
-            body = self.rfile.read(length)
-            if len(body) != length:
-                raise SpeechError(400, "The upload stopped before the audio was complete.")
             ctype = self.headers.get("Content-Type", "")
             query = parse_qs(url.query)
             hint = (query.get("language") or [None])[0] or self.headers.get("X-Language")

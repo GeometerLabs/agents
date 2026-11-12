@@ -3,8 +3,9 @@
 Used by server.py (HTTP) and by the tests, which hand it fake engines. The HTTP layer never touches a model and the engines never
 see HTTP; this file is the only place that knows the routing rules:
   - a language hint (hi, ml, kn, en) goes straight to that language's engine;
-  - no hint: Whisper tiny guesses the language. English with enough probability goes to Whisper; anything else goes to the Indic
-    model, which then scores Hindi, Malayalam and Kannada against each other on the note itself and keeps the best.
+  - no hint: Whisper tiny guesses the language. English with enough probability goes to Whisper; hi / ml / kn named with some confidence
+    goes to the Indic model in that language; anything else goes to the Indic model, which scores Hindi, Malayalam and Kannada against
+    each other on the note itself and keeps the best (config.py language_pick).
 One model run at a time (a 4 vCPU box gains nothing from two at once), with a short queue and a plain "busy" answer beyond it.
 """
 from __future__ import annotations
@@ -15,7 +16,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .audio import SAMPLE_RATE, decode
-from .config import LANGUAGES, SECONDS_GRACE, Settings
+from .config import INDIC_LANGUAGES, LANGUAGES, SECONDS_GRACE, Settings
 from .engines import Heard, LanguageGuesser, Transcriber
 from .errors import SpeechError
 
@@ -108,6 +109,10 @@ class SpeechService:
         guess = self.guesser.guess(samples)
         if guess.language == "en" and guess.probability >= self.settings.english_min_probability:
             return "en"
-        # Whisper may call Hindi 'ur' or 'mr', and Malayalam 'ta': whatever it says that is not confident English, the Indic model
-        # scores hi / ml / kn on the audio itself, which is a better judge among those three than Whisper tiny.
+        # Among the Indic languages, whisper-first (default) believes Whisper when it names hi / ml / kn with some confidence: the Indic model's own
+        # per-language scoring is unproven (a head trained with a per-language softmax gives probability outside a language's pieces no meaning).
+        # When Whisper says something else (it may call Hindi 'ur' or 'mr', Malayalam 'ta') the Indic model scores the three on the audio.
+        # SPEECH_LANGUAGE_PICK=ctc always scores, so the bake-off's --detect can compare the two.
+        if self.settings.language_pick == "whisper-first" and guess.language in INDIC_LANGUAGES and guess.probability >= 0.5 and self.indic is not None:
+            return guess.language
         return None
