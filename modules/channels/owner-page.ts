@@ -22,7 +22,7 @@ button.no{background:#fff;color:var(--g9);border:1px solid var(--line)}ul{paddin
 `;
 
 export interface OwnerPageInput {
-  base: string; // https://<server>/s/<shop>/o/<token>: the page posts to itself
+  base: string; // https://<server>/s/<shop>/o/<token>: the page posts its answers to <base>/answer
   language: Language;
   view: OwnerView;
   relayAsks: RelayAsk[];
@@ -31,7 +31,7 @@ export interface OwnerPageInput {
 
 /** One answer button: posts what it stands for and the digest of what the page shows. */
 function button(base: string, f: { source: "runtime" | "relay"; action: string; case: string; digest: string }, label: string, quiet = false): Raw {
-  return html`<form method="post" action="${base}"><input type="hidden" name="source" value="${f.source}"><input type="hidden" name="action" value="${f.action}"><input type="hidden" name="case" value="${f.case}"><input type="hidden" name="digest" value="${f.digest}"><button${quiet ? raw(' class="no"') : ""} type="submit">${label}</button></form>`;
+  return html`<form method="post" action="${base}/answer"><input type="hidden" name="source" value="${f.source}"><input type="hidden" name="action" value="${f.action}"><input type="hidden" name="case" value="${f.case}"><input type="hidden" name="digest" value="${f.digest}"><button${quiet ? raw(' class="no"') : ""} type="submit">${label}</button></form>`;
 }
 
 export function ownerPage(o: OwnerPageInput): string {

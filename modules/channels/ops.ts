@@ -20,7 +20,8 @@ export type OperationName = (typeof OPERATIONS)[number];
 
 /** A refusal with a stable code (for programs) and a plain sentence (for people). */
 export class OpError extends Error {
-  constructor(readonly code: "bad_request" | "not_found" | "paused" | "unavailable" | "too_many", message: string) { super(message); }
+  readonly code: "bad_request" | "not_found" | "paused" | "unavailable" | "too_many";
+  constructor(code: OpError["code"], message: string) { super(message); this.code = code; }
 }
 
 /** An epoch time as ISO 8601 in the shop's zone ("2026-11-14T16:00:00+05:30"), so a reader sees the shop's own clock. */
@@ -115,7 +116,8 @@ export function createOps(ctx: OpsContext) {
       return { service_id: args.service_id, timezone: tz, paused: offer.shop.paused, days: (offer.days ?? []).map((d) => ({ date: d.date, slots: d.starts.map((s) => ({ start: isoInZone(s, tz), start_ms: s })) })) };
     },
 
-    async start_booking(args: { service_id?: unknown; start?: unknown; name?: unknown; phone?: unknown; language?: unknown }) {
+    /** `fixed`: the page's form gives the handle it made from its nonce (handle.ts handleFromNonce), so the same form sent twice is one booking. */
+    async start_booking(args: { service_id?: unknown; start?: unknown; name?: unknown; phone?: unknown; language?: unknown }, fixed?: { handle: string }) {
       if (typeof args.service_id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/u.test(args.service_id)) throw new OpError("bad_request", "Give service_id: one of the ids list_services gives.");
       const startMs = parseStart(args.start);
       if (startMs === undefined) throw new OpError("bad_request", "Give start as one of the times free_slots gives (ISO 8601 with its zone).");
@@ -125,7 +127,7 @@ export function createOps(ctx: OpsContext) {
       if (!phone) throw new OpError("bad_request", "Give the customer's phone number: an Indian mobile number, or another country's in full with +.");
       const offer = await shopOffer();
       if (offer.shop.paused) throw new OpError("paused", "Online booking is paused just now: the customer should contact the shop.");
-      const handle = newHandle();
+      const handle = fixed && HANDLE.test(fixed.handle) ? fixed.handle : newHandle();
       await ctx.backend.submit([{ kind: "channel_request", id: randomUUID(), channel: ctx.channel, op: "book", handle: handleHash(handle), serviceId: args.service_id, startMs, name, phone, language: languageOf(args.language, offer.shop) }]);
       const v = await settle(handle, (x) => x.status !== "pending");
       return bookingOut(handle, v, offer.shop.timezone, languageOf(args.language, offer.shop));

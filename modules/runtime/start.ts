@@ -152,12 +152,13 @@ export function readToken(file: string | undefined): string {
  * The channel token (modules/channels): what the public front presents to reach this runtime's channel routes, and nothing else. Optional: without the file the shop has
  * no booking page. It is never the inbox's token, so the front cannot send a WhatsApp message or a payment event, and the inbox cannot book from the page.
  */
-export function readChannelToken(file: string | undefined): string | undefined {
+export function readChannelToken(file: string | undefined, log: (line: string) => void = () => undefined): string | undefined {
   if (!file) return undefined;
+  // Never a reason not to start: a shop deployed before the token existed, or one whose file went missing, keeps taking WhatsApp messages and simply has no booking page.
   let text: string;
-  try { text = readFileSync(file, "utf8"); } catch { throw new ClientError(`I could not read the channel token file ${file} (CHANNEL_TOKEN_FILE).`); }
+  try { text = readFileSync(file, "utf8"); } catch { log(`No channel token in ${file} (CHANNEL_TOKEN_FILE): this shop's booking page and owner's page are off until the next deploy makes one.`); return undefined; }
   const token = text.trim();
-  if (token.length < MIN_TOKEN_LENGTH) throw new ClientError(`The channel token in ${file} is too short to be safe (${token.length} characters; at least ${MIN_TOKEN_LENGTH}). Make a new one with: openssl rand -hex 32`);
+  if (token.length < MIN_TOKEN_LENGTH) { log(`The channel token in ${file} is too short to be safe (${token.length} characters; at least ${MIN_TOKEN_LENGTH}): the booking page is off. Make a new one with: openssl rand -hex 32`); return undefined; }
   return token;
 }
 
@@ -192,7 +193,7 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   const clock = options.clock ?? systemClock;
   const client = hooks.loadClient(options.clientFolder); // refuses a wrong pathway version before anything is opened
   const token = readToken(options.tokenFile);
-  const channelToken = readChannelToken(options.channelTokenFile ?? process.env.CHANNEL_TOKEN_FILE);
+  const channelToken = readChannelToken(options.channelTokenFile ?? process.env.CHANNEL_TOKEN_FILE, log);
   const recordKey = readRecordKey(client.runtime.mode, options.recordKeyFile ?? process.env.RECORD_KEY_FILE);
 
   const store = openStore(client.runtime.dataDir);

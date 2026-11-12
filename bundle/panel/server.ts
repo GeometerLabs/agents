@@ -100,8 +100,6 @@ interface Route { method: "GET" | "POST"; pattern: RegExp; access: "public" | "u
 // Opens the panel's data folder (private, mode 0700) with the vault, store and the session secret, which is created once and then kept; split out so tests can open the same stores.
 export function openStores(config: PanelConfig) {
   const paths = serverPaths(config.serverDir);
-  // item 11d: each Bookings shop's booking page, MCP endpoint and the owner's approvals link (channels.ts)
-  const channels = createChannels(config.serverDir, config.publicUrl);
   mkdirSync(paths.panel, { recursive: true, mode: 0o700 });
   let vault = plainVault;
   if (config.dataKeyFile) vault = createVault(loadKeyFile(config.dataKeyFile, paths.panel));
@@ -130,6 +128,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const confirmations = createConfirmations(store, now);
   const handover = createHandover(shops, accounts, store, now);
   const terms = createTerms(shops, config.serverDir); // B72: shop terms agreed on WhatsApp; off unless geometer.json says so
+  const channels = createChannels(config.serverDir, config.publicUrl); // item 11d: each Bookings shop's booking page, MCP endpoint and the owner's approvals link (channels.ts)
   const secure = isSecure(config);
   const sessions = createSessions(secret, { secure, now });
   const loginByAddress = createLimiter(20, 15 * 60_000, now);

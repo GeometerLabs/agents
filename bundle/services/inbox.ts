@@ -72,15 +72,15 @@ export function loadRouter(config: { shops: Record<string, InboxShopConfig> }, r
 }
 
 /**
- * Item 11d: the public front for every shop with a channel (modules/channels/front.ts), or undefined when none has one. Each shop's front reads its own channel_token;
- * a missing one stops the start with the file's name, like the webhook secrets.
+ * Item 11d: the public front for every shop with a channel (modules/channels/front.ts), or undefined when none has one. Each shop's front reads its own channel_token.
+ * A missing one costs that shop its page, said once in the log, and never the inbox: every shop's webhooks go on (a shop deployed before item 11d has none until its next deploy).
  */
 export function loadFront(config: { shops: Record<string, InboxShopConfig> }, read: (path: string) => string | undefined, log: (line: string) => void): Handler | undefined {
   const shops: Record<string, FrontShop> = {};
   for (const [name, c] of Object.entries(config.shops)) {
     if (!c.channel || !c.runtimeUrl) continue;
     const token = read(`${c.secretsDir}/channel_token`);
-    if (!token) throw new Error(`${name}: the secret file channel_token is missing or empty in ${c.secretsDir}.`);
+    if (!token) { log(`${name}: no channel_token in ${c.secretsDir}, so its booking page is off until its next deploy.`); continue; }
     const relayToken = c.relayUrl ? read(`${c.secretsDir}/relay_token`) : undefined;
     shops[name] = { publicUrl: c.channel.publicUrl, backend: runtimeBackend({ url: c.runtimeUrl, token }), ...(c.relayUrl && relayToken ? { relay: relayBackend({ url: c.relayUrl, token: relayToken }) } : {}) };
   }

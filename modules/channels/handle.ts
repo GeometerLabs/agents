@@ -15,18 +15,18 @@ export const HANDLE = /^[A-Za-z0-9_-]{32}$/u;
 /** The hash the runtime keeps and looks a booking up by (64 hex digits). The prefix keeps it apart from every other hash in the repo. */
 export const handleHash = (handle: string): string => createHash("sha256").update(`booking-handle:${handle}`).digest("hex");
 
+/**
+ * The handle of a booking started from the page's form, made from the form's own random nonce and what it asks for. A second tap on "Hold this time" (or the form sent
+ * again by a slow network) makes the SAME handle, so its task is the same task (events.ts channelEventKey) and the customer lands on the one booking, never on a second
+ * request that finds its own first hold in the way. Another time or number from the same form is another booking. As unguessable as the nonce, which only the visitor saw.
+ */
+export const handleFromNonce = (nonce: string, parts: readonly string[]): string => createHash("sha256").update(`booking-nonce:${nonce}|${parts.join("|")}`).digest("base64url").slice(0, 32);
+/** What a form's nonce looks like (newHandle's shape). */
+export const NONCE = HANDLE;
+
 /** A handle's hash, as the runtime accepts it. */
 export const HANDLE_HASH = /^[0-9a-f]{64}$/u;
 
-/** The two ways in that use a handle: the booking page and its JSON API ("web"), and the MCP endpoint for AI assistants ("mcp"). WhatsApp is not a channel here. */
-export type ChannelName = "web" | "mcp";
-export const CHANNELS: readonly ChannelName[] = ["web", "mcp"];
-
-/**
- * The conversation a booking from a channel lives in: "web:" or "mcp:" and 16 hex digits of its handle's hash. Never the typed number: the agent finds a customer's
- * bookings by their conversation (latestBooking, cancel, "I paid"), so a WhatsApp customer's bookings and a stranger's web booking with the same number never meet.
- */
-export const conversationOf = (channel: ChannelName, hash: string): string => `${channel}:${hash.slice(0, 16)}`;
-
-/** Is this conversation a channel's (its messages go to the booking's own page, never to WhatsApp)? */
-export const isChannelConversation = (conversation: string): boolean => /^(?:web|mcp):[0-9a-f]{16}$/u.test(conversation);
+// The channels' names and conversations are in conversation.ts (no imports, so an agent in the browser demo can use them); they are passed on from here too.
+export { CHANNELS, conversationOf, isChannelConversation } from "./conversation.ts";
+export type { ChannelName } from "./conversation.ts";

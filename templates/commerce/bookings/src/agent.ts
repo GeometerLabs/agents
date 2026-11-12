@@ -77,7 +77,7 @@ import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../.
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
-import { conversationOf } from "../../../../modules/channels/handle.ts";
+import { conversationOf } from "../../../../modules/channels/conversation.ts";
 import { phoneDigits } from "../../../../modules/channels/contact.ts";
 import { CHANNEL_LIMITS, DAY_MS, emptyChannelState } from "../../../../modules/channels/state.ts";
 import type { ChannelState } from "../../../../modules/channels/state.ts";
@@ -1442,14 +1442,14 @@ export function createAgent(deps: AgentDeps): Agent {
     const now = clock.now();
     const conversation = conversationOf(e.channel, e.handle);
     const digits = phoneDigits(e.phone);
-    customerOf(conversation).language = settings.languages.includes(e.language) ? e.language : settings.languages[0];
+    const language = settings.languages.includes(e.language) ? e.language : settings.languages[0];
     // the name and number are inputs only: the record keeps their keyed digest (B69), never the words, in refs or notes
     const inputs = { channel: e.channel, serviceId: e.serviceId, startMs: e.startMs, name: e.name, phone: e.phone };
     const refuse = async (reason: string, notes: string, decisions: Decision[] = []) => {
       state.requests[e.handle] = { atMs: now, channel: e.channel, refused: reason, phone: digits };
       log(null, conversation, "channel_booking", "blocked", inputs, { decisions, refs: { channel: e.channel, reason }, notes });
     };
-    if (!licence().takesNewWork) { await refuse("paused", "online booking is paused (the shop's licence): nothing is held and nothing is kept to do later"); return pausedReply(conversation, "book"); }
+    if (!licence().takesNewWork) { await refuse("paused", "online booking is paused (the shop's licence): nothing is held and nothing is kept to do later"); customerOf(conversation).language = language; return pausedReply(conversation, "book"); }
     const service = settings.services.find((x) => x.id === e.serviceId);
     if (!service) return refuse("unknown_service", "the shop has no such service");
     const timeProblem = channelTimeProblem(service, e.startMs);
@@ -1460,7 +1460,8 @@ export function createAgent(deps: AgentDeps): Agent {
     if (Object.values(state.requests).filter((r) => r.phone === digits && now - r.atMs < DAY_MS).length >= CHANNEL_LIMITS.startsPerPhonePerDay) return refuse("phone_day", `this number started ${CHANNEL_LIMITS.startsPerPhonePerDay} bookings from the booking page in the last 24 hours; no more today`);
     if (live.length >= CHANNEL_LIMITS.unpaidHoldsPerShop) return refuse("shop_busy", `the shop already has ${CHANNEL_LIMITS.unpaidHoldsPerShop} unpaid holds from the booking page and its API; nothing more is held until one is paid, cancelled or ends`);
 
-    const b = register(store, newDraft(conversation, customerOf(conversation).language!));
+    customerOf(conversation).language = language; // only now: a refused request leaves no customer behind
+    const b = register(store, newDraft(conversation, language));
     b.channel = e.channel;
     b.handle = e.handle;
     b.contact = { name: e.name, phone: e.phone };
