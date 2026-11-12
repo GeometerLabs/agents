@@ -5,6 +5,7 @@ import type { InboundMessage, MessageStatus } from "../messaging/messaging.ts";
 import type { PaymentEvent } from "../payments/payments.ts";
 import { channelEventKey } from "../channels/events.ts";
 import type { ChannelEvent } from "../channels/events.ts";
+import type { OwnerAccessEvent } from "../channels/owner-signin.ts";
 
 /** Ticks come from our own clock, never from outside. */
 export type IncomingEvent =
@@ -21,7 +22,9 @@ export type IncomingEvent =
   | { kind: "recovery"; id: string; case: string; action: string }
   // A customer on the shop's booking page, an AI assistant through its booking API, or the owner on their private approvals page (modules/channels/events.ts). Like a
   // recovery, it never comes in through /internal/events: the public front sends it to /internal/channel/events with the channel's own token, which can send nothing else.
-  | ChannelEvent;
+  | ChannelEvent
+  // Item 11f: the runtime's own HTTP layer says an owner's session started or ended, for the record. Never from outside: neither token can send it.
+  | OwnerAccessEvent;
 
 /** What a runtime hands its agent: an incoming event, or time passing. */
 export type RuntimeEvent = IncomingEvent | { kind: "tick" };
@@ -35,7 +38,8 @@ export function eventKey(event: IncomingEvent): string {
   // Handling is safe to repeat: the agent looks at the refunds first, and a decision for a hold it no longer has does nothing.
   if (event.kind === "approval_decision") return `approval_decision:${event.approval}:${event.decision}:${event.id ?? ""}`;
   if (event.kind === "recovery") return `recovery:${event.id}`;
-  if (event.kind === "channel_request" || event.kind === "owner_action") return channelEventKey(event); // the panel gives each request its own id, so pressing a button twice is one request
+  if (event.kind === "channel_request" || event.kind === "owner_action" || event.kind === "owner_signin") return channelEventKey(event); // the panel gives each request its own id, so pressing a button twice is one request
+  if (event.kind === "owner_access") return `owner_access:${event.id}`;
   // the same report sent again is one; a message's delivered and read are two
   if (event.kind === "message_status") return `message_status:${event.status.ids.join("|")}:${event.status.status}`;
   return `payment_event:${event.event.id}`;

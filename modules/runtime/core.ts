@@ -28,6 +28,7 @@ import { createRunner } from "./tasks.ts";
 import { WaitingForGuard, guardAnswers, sendMemory, watchStep } from "./guard-wait.ts";
 import { afterRestore, readRestoreNote, retireRestoreNote } from "./restored.ts";
 import { recordMessageStatus } from "../messaging/statuses.ts";
+import type { OwnerSignin } from "../channels/owner-signin.ts";
 import type { StatusContext } from "../messaging/statuses.ts";
 
 /** Wait before the first, second and third retry; so four tries in all. For a step that failed: a step that found its Guard down waits by guard-wait.ts instead. */
@@ -175,6 +176,8 @@ export interface RuntimeCoreOptions<Store extends { ai?: AiState }, Settings ext
   guardLookAgainMs?: number[];
   /** Days the text of a finished conversation is kept (CONVERSATION_RETENTION_DAYS when not given). The record is kept whole, always. */
   retentionDays?: number;
+  /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts). Left out: no sign-in links, and "open my app" goes to the agent. */
+  ownerSignin?: OwnerSignin;
   /** Runs around every agent step (`run` is the step itself). A seam for tests, to see order, hold a step or make one fail. */
   aroundStep?: (event: RuntimeEvent, run: () => Promise<void>) => Promise<void>;
   log?: (line: string) => void;
@@ -275,7 +278,15 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     const watch = watchStep(kit.services, { mode: isTask && !lastTry ? "wait" : "observe", givenUp, ...(isTask ? {} : { memory: tickMemory }) });
     const agent = kit.createAgent({ store, record, services: watch.services });
     // a status report is recorded against the message it is about and never handed to the agent (modules/messaging/statuses.ts)
-    const run = async () => { if (event.kind === "message_status") recordMessageStatus(record, event.status, statusContext); else await agent.handle(event); };
+    // Item 11f: the owner's sign-in (a link asked for on the page, the owner's "open my app", a session's line for the record) is the core's, like a status
+    // report: it changes no case, and the agent and the assistant never see it. A runtime without the owner's sign-in drops those events.
+    const signin = options.ownerSignin;
+    const run = async () => {
+      if (event.kind === "message_status") recordMessageStatus(record, event.status, statusContext);
+      else if (signin?.takes(event)) await signin.run(event as Parameters<typeof signin.run>[0], { messaging, record });
+      else if (event.kind === "owner_signin" || event.kind === "owner_access") log("A sign-in event came for a shop with no owner sign-in (no pages file yet); it was dropped.");
+      else await agent.handle(event);
+    };
     let thrown: { error: unknown } | undefined;
     try { await (options.aroundStep ? options.aroundStep(event, run) : run()); } catch (error) { thrown = { error }; }
     for (const service of watch.answered) givenUp.delete(service);
@@ -291,7 +302,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
       await agent.giveUp?.(event, { service: down!, tell: false });
       givenUp.add(down!);
     }
-    if (event.kind === "tick") compact(store);
+    if (event.kind === "tick") { compact(store); signin?.tick({ record }); }
 
     // The owner's licence notice rides on the clock's beat too, after the agent's own work, and saves around its send the same way (modules/licence/notice.ts).
     if (event.kind === "tick" && options.licenceNotice) {

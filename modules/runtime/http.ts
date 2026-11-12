@@ -10,7 +10,7 @@
 //   GET  /readyz                                the store can be read and the queue is going
 //
 // The shop's channels (modules/channels: the booking page, its API, the MCP endpoint, the owner's private page), with the CHANNEL token, which is not the inbox's.
-// It can send only a channel_request or an owner_action and read what the page shows: never a WhatsApp message, a payment event or an approval. Without a channel
+// It can send only a channel_request, an owner_action or (item 11f) an owner_signin, and read what the page shows: never a WhatsApp message, a payment event or an approval. Without a channel
 // token these routes do not exist.
 //   POST /internal/channel/events   {"events": [...]}   1 to 10 channel events; an owner_action also needs the owner's link (x-owner-link), checked here against the
 //                                                     hash in the client folder, read on every request so a revoked link stops at once
@@ -18,9 +18,17 @@
 //   GET  /internal/channel/request?handle=<64 hex>    one request by its handle's hash
 //   GET  /internal/channel/owner                     what waits for the owner (x-owner-link needed)
 //
+// Item 11f, the owner's sign-in on the shop's page (modules/channels/owner-access.ts, owner-signin.ts). The owner's credential above is the panel-made link
+// (x-owner-link) OR a session made here (x-owner-session); both are checked HERE, against this runtime's own files, never at the front.
+//   GET  /internal/channel/owner-signin   x-owner-signin: <link>     what the link is now (valid, used, expired, replaced, unknown); nothing is used up
+//   POST /internal/channel/owner-signin   x-owner-signin: <link>     use the link up (once) and make a session: {"session", "expires_at_ms"}, or 403 {"state"}
+//   POST /internal/channel/owner-signout  x-owner-session: <token>   end that session
+//   GET  /internal/owner-session          x-owner-session, with the INBOX's internal token: 204 when the session is good. The approvals relay asks this, so it
+//                                         never takes the front's word for who the owner is.
+//
 // The runtime never holds a webhook secret: the inbox checked each provider's signature before it called us. The bearer
 // token only says the caller is our own inbox. Bind to 127.0.0.1 or a private network, never the open internet.
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { checkEvents, checkRecovery } from "./events.ts";
@@ -28,6 +36,8 @@ import type { IncomingEvent } from "./events.ts";
 import { checkChannelEvent } from "../channels/events.ts";
 import { HANDLE_HASH } from "../channels/handle.ts";
 import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts";
+import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "../channels/owner-access.ts";
+import type { OwnerSignin } from "../channels/owner-signin.ts";
 import type { OwnerLinkFile } from "../channels/owner-link.ts";
 import type { RuntimeChannel } from "./core.ts";
 
@@ -59,6 +69,8 @@ export interface ServerOptions {
   channelToken?: string;
   /** The owner's link as the client folder has it now (modules/channels/owner-link.ts), read on every call. Left out, or undefined: no owner page. */
   ownerLink?: () => OwnerLinkFile | undefined;
+  /** Item 11f: the owner's sign-in (links and sessions), checked here on every call. Left out: no session is ever good, and the sign-in routes refuse. */
+  ownerSignin?: OwnerSignin["http"];
 }
 
 export interface RunningServer {
@@ -116,10 +128,21 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
     const given = /^bearer\s+(\S+)$/i.exec(req.headers.authorization ?? "")?.[1];
     return channelWanted !== undefined && given !== undefined && timingSafeEqual(sha256(given), channelWanted);
   };
-  /** The owner's link, from the front, against the hash the client folder holds now. */
+  /** The header's value when it was sent once, as text. */
+  const header = (req: IncomingMessage, name: string): string | undefined => { const v = req.headers[name]; return typeof v === "string" ? v : undefined; };
+  /**
+   * The owner, from the front: the panel-made link against the hash the client folder holds now, or (item 11f) a session this runtime made and still holds good
+   * (the owner's number and address unchanged, made after the panel's last "sign out every device").
+   */
   const ownerAuthorised = (req: IncomingMessage): boolean => {
-    const given = req.headers[OWNER_LINK_HEADER];
-    return ownerTokenMatches(typeof given === "string" ? given : undefined, options.ownerLink?.());
+    if (ownerTokenMatches(header(req, OWNER_LINK_HEADER), options.ownerLink?.())) return true;
+    const session = header(req, OWNER_SESSION_HEADER);
+    return session !== undefined && options.ownerSignin?.check(session) !== undefined;
+  };
+  /** A session's start or end, for the record: an event of the runtime's own, saved and run as a step like any other. */
+  const recordAccess = (what: "signed_in" | "signed_out", session: string): void => {
+    runtime.submit([{ kind: "owner_access", id: randomUUID(), what, session }]);
+    runtime.kick();
   };
 
   /** The channel's routes. Only with a channel token, and only for a runtime whose template has channels. */
@@ -169,6 +192,24 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       const view = channel.view(handle);
       return view ? send(res, 200, view) : send(res, 404, { error: "No booking has this handle." });
     }
+    // ---- item 11f: the owner's sign-in ----
+    if (path === "/internal/channel/owner-signin") {
+      const signin = options.ownerSignin;
+      const link = header(req, OWNER_SIGNIN_HEADER) ?? "";
+      if (req.method === "GET") return send(res, 200, { state: signin ? signin.linkState(link) : "unknown" });
+      only("POST");
+      if (!signin) return send(res, 403, { state: "unknown" });
+      const done = signin.consume(link);
+      if (!done.ok) return send(res, 403, { state: done.state });
+      recordAccess("signed_in", done.id);
+      return send(res, 200, { session: done.session, expires_at_ms: done.expiresAt });
+    }
+    if (path === "/internal/channel/owner-signout") {
+      only("POST");
+      const ended = options.ownerSignin?.end(header(req, OWNER_SESSION_HEADER) ?? "");
+      if (ended) recordAccess("signed_out", ended);
+      return send(res, 200, { ended: ended !== undefined });
+    }
     if (path === "/internal/channel/owner") {
       only("GET");
       if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
@@ -194,6 +235,14 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       only("GET");
       if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." }, { "www-authenticate": "Bearer", ...closing });
       return send(res, 200, runtime.status());
+    }
+    if (path === "/internal/owner-session") {
+      only("GET");
+      if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." }, { "www-authenticate": "Bearer", ...closing });
+      const session = header(req, OWNER_SESSION_HEADER);
+      const good = session !== undefined && options.ownerSignin?.check(session) !== undefined;
+      if (!good) return send(res, 403, { error: "That session is not good (it may have ended)." });
+      res.writeHead(204, { "cache-control": "no-store" }); res.end(); return;
     }
     if (path === "/internal/refund-context") {
       only("GET");
