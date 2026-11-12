@@ -28,14 +28,14 @@ const SAMPLES: { [K in MessageId]: MessageData[K][] } = {
   need_ref: [{ kind: "cancel", rows }, { kind: "message", rows: [] }, { kind: "refund", rows }],
   need_date: [{ kind: "close_day" }, { kind: "reopen_day" }],
   need_words: [{ ref: "b-14" }],
-  refusal: (["no_case", "not_yours", "not_live", "not_booked", "already_back", "cancel_first", "nothing_paid", "too_much", "nothing_waiting", "no_window", "opted_out", "amount_not_on_record", "busy"] as PrepareRefusal[])
+  refusal: (["no_case", "not_yours", "not_live", "not_booked", "already_back", "cancel_first", "nothing_paid", "too_much", "nothing_waiting", "no_window", "opted_out", "amount_not_on_record", "busy", "not_here"] as PrepareRefusal[])
     .map((why) => ({ why, ref: "b-14", who: "Priya", paidPaise: 20_000 })),
   card: [
     { kind: "cancel", who: "Priya", ref: "b-14", what: "Haircut, Sun 15 Nov, 4:00 pm", amountPaise: 20_000, code: "K7M2QX", hasNo: true },
     { kind: "cancel", who: "Priya", ref: "b-14", what: "Haircut", amountPaise: 0, code: "K7M2QX", hasNo: true },
     { kind: "refund", who: "Priya", ref: "b-14", what: "Haircut", amountPaise: 120_000, aboveLimit: true, code: "K7M2QX", hasNo: true },
     { kind: "message", who: "Priya", ref: "b-14", what: "Haircut", amountPaise: 0, words: "Running 15 minutes late", code: "K7M2QX", hasNo: true },
-    ...["late_refund", "calendar", "deposit", "refund_owed", "waiver", "big_order"].map((itemKind) => ({ kind: "answer", itemKind, who: "Priya", ref: "b-14", what: "Haircut", amountPaise: 20_000, code: "K7M2QX", hasNo: itemKind !== "deposit" })),
+    ...["late_refund", "calendar", "deposit", "refund_owed", "waiver", "refund_request", "big_order"].map((itemKind) => ({ kind: "answer", itemKind, who: "Priya", ref: "b-14", what: "Haircut", amountPaise: 20_000, code: "K7M2QX", hasNo: itemKind !== "deposit" })),
   ],
   done: (["cancelled", "refund_sent", "held_by_guard", "owed_by_owner", "sent", "answered", "failed", "not_sent"] as const).map((note) => ({ note, who: "Priya", ref: "b-14", amountPaise: 20_000 })),
   refused: [{}], refused_before: [{ atMs: AT_4PM }], card_changed: [{}], card_closed: [{}], card_expired: [{}], card_unknown: [{}], limit_no: [{}],
@@ -77,8 +77,8 @@ test("the buttons fit WhatsApp's limits in every language", () => {
 
 test("the three templates: the text is the approved body filled in, it passes its check, and outside the window it goes under its own name", () => {
   for (const language of LANGUAGES) {
-    const morning = morningFacts({ language, timeZone: TZ, shop: "Glow Salon", name: "Mithra", today: SUN, bookings: 6, firstMs: AT_4PM, moneyPaise: 140_000, waiting: 2 });
-    const quiet = morningFacts({ language, timeZone: TZ, shop: "Glow Salon", name: "Mithra", today: SUN, bookings: 0, moneyPaise: 0, waiting: 0 });
+    const morning = morningFacts({ language, timeZone: TZ, shop: "Glow Salon", name: "Mithra", today: SUN, parts: [{ bookings: 6, firstMs: AT_4PM }, { owes: 3, owedPaise: 450_000 }, { open: 2 }], moneyPaise: 140_000, waiting: 2 });
+    const quiet = morningFacts({ language, timeZone: TZ, shop: "Glow Salon", name: "Mithra", today: SUN, parts: [{ bookings: 0 }], moneyPaise: 0, waiting: 0 });
     const day = dayFacts({ language, timeZone: TZ, shop: "Glow Salon", date: SUN, startMs: AT_4PM });
     for (const [id, facts] of [["morning", morning], ["morning", quiet], ["day_closed", day], ["day_open", day]] as const) {
       const text = render(id, facts);

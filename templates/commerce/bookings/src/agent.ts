@@ -76,8 +76,8 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
 import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
-import { createAssistant, isoDate, kindsOf } from "../../../../modules/assistant/conversation.ts";
-import { createOwnerReader } from "../../../../modules/assistant/reading.ts";
+import { isoDate } from "../../../../modules/assistant/conversation.ts";
+import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { bookingsSkill } from "./assistant.ts";
 
@@ -1437,19 +1437,13 @@ export function createAgent(deps: AgentDeps): Agent {
       refund: (b, _paymentId, amountInr, why) => ownerCancelRefund(b, amountInr, why, { upi: "upi_refund_owed", done: "refund_approved", held: "cancelled_refund_pending" }),
     },
   });
-  const assistant = settings.assistant ? createAssistant({
-    shop: { name: settings.name, timezone: tz, owner: settings.owner, settings: settings.assistant },
-    store, skills: [assistantSkill], clock, messaging,
-    read: createOwnerReader({
-      ...(deps.ownerParser ? { parser: deps.ownerParser } : {}), kinds: kindsOf([assistantSkill]), policy, store, clock, timeZone: tz,
-      log: (action, outcome, inputs, more) => log(null, owner, action, outcome, inputs, more),
-      tellOwner: async (notice) => { await say({ booking: null, phone: owner, to: "owner", templates: [notice === "allowance" ? "owner_ai_allowance" : notice === "override" ? "owner_ai_off" : "owner_ai_fault"] }); },
-    }),
+  const assistant = assistantForAgent({
+    settings, store, skill: assistantSkill, clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
     log: (caseId, phone, action, outcome, inputs, more) => log(caseId ? store.bookings.get(caseId) ?? null : null, phone, action, outcome, inputs, more),
-    entries: () => record.entries(),
+    ownerNotice: async (notice) => { await say({ booking: null, phone: owner, to: "owner", templates: [notice === "allowance" ? "owner_ai_allowance" : notice === "override" ? "owner_ai_off" : "owner_ai_fault"] }); },
     languageOf: (phone) => languageOf(phone),
     optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false,
-  }) : undefined;
+  });
 
   return { handle, giveUp };
 }
