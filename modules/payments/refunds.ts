@@ -19,6 +19,10 @@
 // A refund whose outcome is not known is settled only by the payments service's own list: read by a person's look (the to-do list's recheck_refund) or after the
 // provider's own refund.done event (12 Nov 2026). Either way the ORIGINAL attempt is settled (matched by the refund id it was given, our receipt, or the payment and
 // the amount it asked for), nothing is ever sent again, and the customer, who was told "we will message you as soon as it is confirmed", is told, once.
+// The refund is settled as soon as the list shows it (it happened at the provider); "the customer was told" is only a fact once WhatsApp accepted the message. Until
+// then the case keeps it in `refundsUntold`: the to-do list shows "refund made, customer not yet told" (modules/unfinished `refund_made_not_told`), and the clock
+// tries again, at the next beat and then less often (as plain text inside the customer's 24-hour window, as the approved template outside it), while nothing went
+// out; a try that may have gone out, or that a gate held back, is left for a person. Once a message is accepted it is never sent again.
 //
 // What a template gives this file: the thing a refund belongs to (a booking, a student's fee) as a `RefundCase`, how to write to the record and to the
 // customer about it, and where to find the case again from an approval. Everything about HOW a refund is asked for and read back is here, once.
@@ -28,6 +32,7 @@ import { ApiError, GuardAlreadyDoneError, GuardConflictError, GuardDeniedError, 
 import { MINUTE } from "../core/time.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { Action, Outcome } from "../record/record.ts";
+import type { SaidOutcome } from "../messaging/say.ts";
 import { ATTEMPTS } from "./links.ts";
 import type { Payments, Refund } from "./payments.ts";
 
@@ -51,6 +56,30 @@ export const SETTLEABLE_ISSUES: readonly RefundIssueKind[] = ["unknown", "uncert
 
 /** Who settled an open refund from the provider's list: a person's look (`recheck`), or the provider's own refund.done event (its id). Never a person's word. */
 export type SettledThrough = { via: "recheck" } | { via: "refund.done"; eventId: string };
+
+/**
+ * A refund the payments service's own list settled (settleIssue) whose customer has not been told yet (12 Nov 2026): the refund is a fact, the telling is kept here
+ * until WhatsApp accepts a message. `last`: how the last try ended (SaidOutcome). `retryAtMs`: when the clock tries again; left out when the last try may have gone
+ * out ("maybe") or a gate held it back ("held_back"): sending again could reach the customer twice, or be held back the same way, so a person decides. The to-do
+ * list reads these (modules/unfinished `refund_made_not_told`); nothing in them names the customer.
+ */
+export interface UntoldRefund { paymentId: string; refundId: string; amountInr: number; sinceMs: number; tries: number; lastAtMs: number; last: Exclude<SaidOutcome, "accepted">; retryAtMs?: number }
+
+/**
+ * Minutes after a try that sent nothing before the next one: the first at the next beat, then less often, then every 6 hours for as long as it takes. Not a give-up
+ * list: a template Meta has not approved yet can refuse every try for days, and the customer must still hear it once it is approved; a line every beat would flood the record.
+ */
+export const TELL_RETRY_MINUTES = [0, 5, 15, 60, 180, 360];
+
+/**
+ * The record's line for a look (the to-do list's recheck_refund), from what happened: how many of the refunds looked at the list now shows, how many of those customers
+ * were told (WhatsApp accepted the message), and how many stay on the to-do list as "refund made, customer not yet told". One sentence for the three templates.
+ */
+export function recheckLine(r: { settled: number; looked: number; told: number }): string {
+  const untold = r.settled - r.told;
+  const told = r.settled === 0 ? "" : untold === 0 ? ", and the customer was told of each one that does" : `; the customer was told of ${r.told}, and ${untold} ${untold === 1 ? "stays" : "stay"} on the to-do list as "refund made, customer not yet told"`;
+  return `${r.settled} of ${r.looked} refunds now show on the payments service's list${told}; none was sent again`;
+}
 
 /**
  *  - guard_hold: a refund Guard is holding for the owner. It keeps the approval id and the EXACT bytes of the call that was held:
@@ -83,6 +112,8 @@ export interface RefundCase {
   refundIssues?: RefundIssue[];
   /** Payments the agent must not ask Guard to refund again: the owner said no, the outcome is unclear, it failed for good, the approval ran out, or a person settled it as made. */
   stoppedRefunds?: string[];
+  /** Refunds the provider's list settled whose customer has not been told yet (UntoldRefund). Read by the to-do list; never by the refund paths, which are done with them. */
+  refundsUntold?: UntoldRefund[];
 }
 
 /** "denied": the owner said no, as Guard's own record shows it (a refusal with `denied_by_approver`): the customer hears the owner's no, nothing more is done. */
@@ -98,6 +129,11 @@ export interface RefundDeps<C extends RefundCase> {
   /** Write to the record. `c` is null when no case is waiting on what was said. */
   log(c: C | null, phone: string, action: Action, outcome: Outcome, inputs: unknown, more?: { decisions?: Decision[]; notes?: string; refs?: Record<string, string> }): void;
   tellCustomer(c: C, phone: string, templates: string[], more?: { refundInr?: number }): Promise<boolean>;
+  /**
+   * The same as tellCustomer, saying how the message ended (modules/messaging/say.ts `say.outcome`). Used for the confirmation after an unknown outcome, which is kept
+   * until it is accepted: "accepted" only when WhatsApp took it, so a refused one is tried again and one that may have gone out is never sent twice.
+   */
+  tellCustomerOutcome(c: C, phone: string, template: string, more?: { refundInr?: number }): Promise<SaidOutcome>;
   tellOwner(c: C, phone: string, template: string, more?: { refundInr?: number }): Promise<boolean>;
   /** Every case, to find the one that waits on an approval, and to sweep the clock's work. */
   cases(): Iterable<C>;
@@ -114,6 +150,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
 
   const issuesOf = (b: C) => (b.refundIssues ??= []);
   const stoppedOf = (b: C) => (b.stoppedRefunds ??= []);
+  const untoldOf = (b: C) => (b.refundsUntold ??= []);
   const holds = (b: C) => b.pending as { kind: string }[];
   /**
    * The builder must look at this refund, not the owner. It is in the record (the entry's notes) and counted in the runtime's status. `of` is what the attempt asked
@@ -332,12 +369,33 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
   }
 
   /**
+   * Tell the customer their refund is confirmed (`ids.confirmed`), for a settled refund kept in `refundsUntold`. An accepted message ends it, and it is never sent
+   * again. A try that sent nothing ("not_sent", e.g. a 400 because Meta has not approved the template yet) is tried again by the clock (TELL_RETRY_MINUTES); one that
+   * may have gone out, or that a gate held back, is left on the to-do list for a person. Returns whether the customer was told.
+   */
+  async function tellConfirmed(b: C, u: UntoldRefund): Promise<boolean> {
+    const outcome = await deps.tellCustomerOutcome(b, b.customer, deps.ids.confirmed, { refundInr: u.amountInr });
+    if (outcome === "accepted") {
+      b.refundsUntold = untoldOf(b).filter((x) => x !== u);
+      return true;
+    }
+    u.tries++;
+    u.lastAtMs = clock.now();
+    u.last = outcome;
+    if (outcome === "not_sent") u.retryAtMs = clock.now() + TELL_RETRY_MINUTES[Math.min(u.tries - 1, TELL_RETRY_MINUTES.length - 1)] * MINUTE;
+    else delete u.retryAtMs; // it may have reached them, or it would be held back again: never sent again by itself
+    return false;
+  }
+
+  /**
    * Settle the ORIGINAL attempt from the payments service's own list: one `refund` / `confirmed` line with the provider's refund id and the amount its list shows (so
    * the monthly report counts it once, by that id, and marks the earlier unconfirmed line settled), and the issue is cleared. Nothing is sent to the payments service:
    * no refund is asked for again, and the payment stays in `stoppedRefunds`. Then the customer, who was told the refund is being checked and that they would hear
-   * when it is confirmed, is told, once (the issue is gone, so no later look or event tells them again). Never `confirmedBy`: that is a person's word, and this is not.
+   * when it is confirmed, is told (tellConfirmed): the refund is kept in `refundsUntold` until WhatsApp accepts that message, so a refused one stays on the to-do
+   * list and is tried again, and the issue is gone, so no later look or event settles or tells it again. Never `confirmedBy`: that is a person's word, and this is not.
+   * Returns whether the customer was told.
    */
-  async function settleIssue(b: C, issue: RefundIssue, r: Refund, through: SettledThrough): Promise<void> {
+  async function settleIssue(b: C, issue: RefundIssue, r: Refund, through: SettledThrough): Promise<boolean> {
     b.refundIssues = issuesOf(b).filter((x) => x !== issue);
     const inputs = through.via === "recheck" ? { paymentId: issue.paymentId, recheck: true } : { paymentId: issue.paymentId, event: through.eventId };
     log(b, b.customer, "refund", "confirmed", inputs, {
@@ -346,17 +404,22 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
         ? "looked again: the payments service's own list now shows the refund. It was not sent again"
         : "the payments service's own refund.done event names this refund, and its own list shows it: the attempt whose outcome was unknown is settled by the provider. It was not sent again",
     });
-    await tellCustomer(b, b.customer, [deps.ids.confirmed], { refundInr: r.amount / 100 });
+    const now = clock.now();
+    const untold: UntoldRefund = { paymentId: issue.paymentId, refundId: r.id, amountInr: r.amount / 100, sinceMs: now, tries: 0, lastAtMs: now, last: "not_sent" };
+    untoldOf(b).push(untold); // kept before the message goes, so it is listed until a message is accepted
+    return await tellConfirmed(b, untold);
   }
 
   /**
    * Look once more, read-only, at the payments service's own list of refunds for each payment whose refund may have gone (unknown, uncertain, unconfirmed, or failed after its
    * tries). A refund on the list that is this attempt's (isTheRefund) settles it (settleIssue: the record, and the customer told). Nothing is ever SENT: no refund is asked
-   * for again, and the payment stays in `stoppedRefunds`. Returns how many it settled, and how many it looked at.
+   * for again, and the payment stays in `stoppedRefunds`. Returns how many it settled, how many it looked at, and of those settled how many customers were told
+   * (WhatsApp accepted the message): the others stay on the to-do list as "refund made, customer not yet told" (recheckLine words it for the record).
    */
-  async function recheck(b: C): Promise<{ settled: number; looked: number }> {
+  async function recheck(b: C): Promise<{ settled: number; looked: number; told: number }> {
     let settled = 0;
     let looked = 0;
+    let told = 0;
     for (const issue of [...issuesOf(b)]) {
       if (!SETTLEABLE_ISSUES.includes(issue.kind)) continue;
       looked++;
@@ -368,19 +431,20 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
         continue;
       }
       if (found) {
-        await settleIssue(b, issue, found, { via: "recheck" });
+        if (await settleIssue(b, issue, found, { via: "recheck" })) told++;
         settled++;
       } else {
         log(b, b.customer, "refund", "unconfirmed", { paymentId: issue.paymentId, recheck: true }, { refs, notes: "looked again: the payments service's own list still does not show the refund. It was not sent again; check the payment gateway's own records" });
       }
     }
-    return { settled, looked };
+    return { settled, looked, told };
   }
 
   /**
    * The provider's own refund.done event, already checked by the template against the payments service's list (`listed`: the refund with the event's id, as the list
-   * shows it). When it is the refund an open issue on this case is about, that attempt is settled (settleIssue), and never a new refund. Returns whether it settled one;
-   * an event for a refund nothing is open on changes nothing (it was confirmed already, or it is not this agent's).
+   * shows it). When it is the refund an open issue on this case is about, that attempt is settled (settleIssue), and never a new refund. Returns whether it settled one
+   * (whether its customer was told yet is in `refundsUntold`); an event for a refund nothing is open on changes nothing (it was confirmed already, or it is not this
+   * agent's), and tells nobody again.
    */
   async function settleFromEvent(b: C, listed: Refund, eventId: string): Promise<boolean> {
     const issue = openIssueFor(b, listed);
@@ -537,9 +601,11 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
   /**
    * The clock's share of the work, refunds first, whatever state their case is in. A hold whose approval ran out is over; one the owner approved and that
    * could not be sent yet is sent again; a refund that could not be sent at all is tried again. A hold nobody answered is NOT sent again: it just waits.
+   * A settled refund whose customer was not told because nothing went out is told again when its try is due (tellConfirmed).
    */
   async function sweep(now: number): Promise<void> {
     for (const b of [...deps.cases()]) {
+      for (const u of [...(b.refundsUntold ?? [])]) if (u.retryAtMs !== undefined && u.retryAtMs <= now) await tellConfirmed(b, u);
       for (const p of [...b.pending]) {
         if (p.kind === "guard_hold") {
           const hold = p as GuardHold;
