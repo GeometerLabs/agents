@@ -3,12 +3,16 @@
 //   POST /internal/owner-messages   {"messages": [{id, from, text, timestamp}]}   the inbox, with the relay's own bearer token
 //   GET  /status                    counts only (bearer token): no phone number, no code, no message
 //   GET  /healthz                   the process is up
+//   GET  /owner/asks                item 11d: the owner's own live asks, for the owner's private page (bearer token AND the owner's link in x-owner-link)
+//   POST /owner/decide              {"approval", "digest", "decision"}: the owner's answer from that page (the same)
 //
 // The relay's token is not the runtime's. Bind to 127.0.0.1 or a private network.
 import { createHash, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Relay } from "./relay.ts";
+import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts";
+import type { OwnerLinkFile } from "../channels/owner-link.ts";
 
 const MAX_BODY = 64 * 1024;
 const sha256 = (t: string) => createHash("sha256").update(t).digest();
@@ -37,7 +41,7 @@ export interface RunningRelayServer { port: number; url: string; close(): Promis
  * What takes the owner's messages is anything with `receive` and `status`: the relay, or (B71 part 2) the owner-marked desk of an agent someone else wrote, which also
  * reads a tapped button's id (`reply.id`, the button that carries the one-use code). The relay ignores it.
  */
-export function relayHandler(relay: Pick<Relay, "receive" | "status"> | { receive: Relay["receive"]; status(): unknown }, token: string): (req: IncomingMessage, res: ServerResponse) => void {
+export function relayHandler(relay: Pick<Relay, "receive" | "status"> | { receive: Relay["receive"]; status(): unknown }, token: string, options: { /** Item 11d: the owner's link as the relay's own file has it now, read on every call. Left out: no owner page. */ ownerLink?: () => OwnerLinkFile | undefined } = {}): (req: IncomingMessage, res: ServerResponse) => void {
   const wanted = sha256(token);
   const authorised = (req: IncomingMessage) => {
     const given = /^bearer\s+(\S+)$/iu.exec(req.headers.authorization ?? "")?.[1];
@@ -48,6 +52,23 @@ export function relayHandler(relay: Pick<Relay, "receive" | "status"> | { receiv
       const path = new URL(req.url ?? "/", "http://relay").pathname;
       if (path === "/healthz" && req.method === "GET") return send(res, 200, { ok: true });
       if (path === "/status" && req.method === "GET") return authorised(req) ? send(res, 200, relay.status()) : send(res, 401, { error: "A bearer token is needed." });
+      // item 11d: the owner's private page. The relay's token says the caller is the server's front; the owner's link, checked HERE against the relay's own copy of its
+      // hash, says the owner sent it. Without both nothing is shown and nothing is decided.
+      if (path === "/owner/asks" || path === "/owner/decide") {
+        const pageRelay = relay as Partial<Pick<Relay, "ownerAsks" | "decideOnPage">>;
+        if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." });
+        const given = req.headers[OWNER_LINK_HEADER];
+        if (!options.ownerLink || !pageRelay.ownerAsks || !pageRelay.decideOnPage || !ownerTokenMatches(typeof given === "string" ? given : undefined, options.ownerLink())) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+        if (path === "/owner/asks" && req.method === "GET") return send(res, 200, { asks: pageRelay.ownerAsks() });
+        if (path === "/owner/decide" && req.method === "POST") {
+          const text = await readBody(req);
+          let body: Record<string, unknown> | undefined;
+          try { body = text === undefined ? undefined : JSON.parse(text) as Record<string, unknown>; } catch { body = undefined; }
+          if (!body || typeof body.approval !== "string" || body.approval.length > 200 || typeof body.digest !== "string" || !/^[0-9a-f]{32}$/u.test(body.digest) || (body.decision !== "approve" && body.decision !== "deny")) return send(res, 400, { error: 'Send {"approval", "digest", "decision": "approve" or "deny"}.' });
+          return send(res, 200, { result: await pageRelay.decideOnPage(body.approval, body.digest, body.decision) });
+        }
+        return send(res, 405, { error: "Use GET /owner/asks or POST /owner/decide." });
+      }
       if (path === "/internal/owner-messages" && req.method === "POST") {
         if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." });
         const text = await readBody(req);
