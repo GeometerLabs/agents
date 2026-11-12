@@ -29,6 +29,7 @@ import { WaitingForGuard, guardAnswers, sendMemory, watchStep } from "./guard-wa
 import { afterRestore, readRestoreNote, retireRestoreNote } from "./restored.ts";
 import { recordMessageStatus } from "../messaging/statuses.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
+import { channelStartKey } from "../channels/events.ts";
 import type { StatusContext } from "../messaging/statuses.ts";
 
 /** Wait before the first, second and third retry; so four tries in all. For a step that failed: a step that found its Guard down waits by guard-wait.ts instead. */
@@ -113,6 +114,11 @@ export interface ChannelKit<Store> {
   view(store: Store, handleHash: string): unknown | null;
   /** What waits for the owner, each with the digest of exactly what is shown, and the coming bookings. */
   owner(store: Store): unknown;
+  /**
+   * Item 11h (Fees): what a parent's private link opens, found by the link's HASH (modules/channels/handle.ts parentLinkHash): only that parent's students' fees.
+   * Null for a hash no parent has now (never made, replaced, or revoked). Left out by a template with no parent links.
+   */
+  parent?(store: Store, linkHash: string): unknown | null;
   /**
    * Integration of items 11d and 11e: hold a recording the owner made on their page, in memory only, and give its reference for an `owner_message` event. Left out
    * when the shop has no voice service or no assistant: the page then shows no record button, and the route answers that voice is off.
@@ -218,6 +224,8 @@ export interface RuntimeChannel {
   /** The request with this handle's hash, or where its task is; null when there is neither. */
   view(handleHash: string): unknown | PendingView | null;
   owner(): unknown;
+  /** The kit's parent read (above), when it has one. */
+  parent?(linkHash: string): unknown | null;
   /** The kit's ownerVoice (above), when it has one. */
   ownerVoice?(audio: { bytes: Uint8Array; mime: string }): string;
 }
@@ -420,10 +428,11 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
         view(handleHash: string) {
           const found = kit.channel!.view(kit.parse(snapshot), handleHash);
           if (found) return found;
-          const task = db.taskState?.(`channel_book:${handleHash}`);
+          const task = db.taskState?.(channelStartKey(handleHash));
           return task === "pending" ? { status: "pending" as const } : task === "failed" ? { status: "not_done" as const } : null;
         },
         owner: () => kit.channel!.owner(kit.parse(snapshot)),
+        ...(kit.channel.parent ? { parent: (linkHash: string) => kit.channel!.parent!(kit.parse(snapshot), linkHash) } : {}),
         ...(kit.channel.ownerVoice ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => kit.channel!.ownerVoice!(audio) } : {}),
       } satisfies RuntimeChannel,
     } : {}),

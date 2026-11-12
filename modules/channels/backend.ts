@@ -44,21 +44,80 @@ export type BookingView =
     canCancel: boolean; canSayPaid: boolean; messages: { atMs: number; text: string }[];
   };
 
+/**
+ * One thing waiting for the owner. Bookings' kinds, and item 11h's: Orders' `deposit` (the advance to mark), `big_order` and `late_refund`; Fees' `deposit` (a
+ * payment a parent says they made), `waiver` and `refund_request`. `what` is what it is about, already in the owner's language, for a kind no service names.
+ */
 export interface OwnerItemView {
-  kind: "deposit" | "refund_owed" | "late_refund" | "calendar"; case: string; digest: string; actions: string[]; amountPaise: number;
-  customer: { phone: string; name?: string }; channel: "whatsapp" | "web" | "mcp"; serviceId?: string; startMs?: number; why?: string;
+  kind: "deposit" | "refund_owed" | "late_refund" | "calendar" | "big_order" | "waiver" | "refund_request"; case: string; digest: string; actions: string[]; amountPaise: number;
+  customer: { phone: string; name?: string }; channel: "whatsapp" | "web" | "mcp"; serviceId?: string; startMs?: number; why?: string; what?: string;
 }
+/**
+ * Item 11h (Fees): a parent as the owner's page lists them, with their private link's state. `ref` names the parent without their number ("p-" and 12 hex digits
+ * of its hash); `digest` binds a press to the link state shown, so a "send a new link" pressed twice sends one.
+ */
+export interface OwnerParentView { ref: string; phone: string; students: string[]; link: "active" | "none"; sinceMs?: number; digest: string }
 export interface OwnerView {
   shop: { name: string; timezone: string; ownerLanguage: Language };
+  /** Item 11h: the template, for the page's headings. Left out: Bookings. */
+  kind?: "orders" | "fees";
   services: OfferService[];
   items: OwnerItemView[];
-  upcoming: { case: string; startMs: number; serviceId?: string; customer: { phone: string; name?: string }; channel: OwnerItemView["channel"]; state: string }[];
+  upcoming: { case: string; startMs: number; serviceId?: string; what?: string; customer: { phone: string; name?: string }; channel: OwnerItemView["channel"]; state: string }[];
+  /** Item 11h (Fees): the centre's parents and their private links. */
+  parents?: OwnerParentView[];
   /**
    * Item 11e: the shop's assistant's view (its open cards, answered by id and digest; the mood; the talk), when the shop has the assistant. Left out otherwise.
    * `listen`: the shop has a voice service, so the page offers hold-to-record.
    */
   app?: OwnerAppView & { listen?: boolean };
 }
+
+// ---- item 11h: Orders and Fees on the page ----------------------------------------------------------------------------------------------------------------
+
+/** An item of an Orders shop's menu as the page shows it: its first name in each language and the shop's own price, the only price ever quoted. */
+export interface OfferItem { id: string; names: Record<Language, string>; priceInr: number }
+/** A slot on a day: its window, whether orders for it are still open (its cut-off has not passed), and the names customers call it. */
+export interface OrderSlotView { id: string; mode: "pickup" | "delivery"; fromMs: number; toMs: number; open: boolean }
+/** What an Orders shop's page offers: the menu, the days with their slots and what is left of each item, and the shop's rules. Prices come from the settings only. */
+export interface OrderOffer {
+  kind: "orders";
+  shop: Pick<ShopInfo, "name" | "address" | "timezone" | "languages" | "payment" | "paused" | "character"> & { advance: { mode: "full" | "part"; percent: number; holdMinutes: number }; cancellation: { windowHours: number } };
+  items: OfferItem[];
+  /** Today and the days ahead the shop takes orders for. `left`: how many of each item are not held yet; `full`: the day's order count is reached. */
+  days: { date: string; slots: OrderSlotView[]; left: Record<string, number>; full: boolean }[];
+  delivery?: { areas: string[] };
+  maxItemsPerOrder: number;
+}
+/** An order by its handle, as its own page may show it (an allowlist: never the owner's code, never another customer, never the address as typed). */
+export type OrderView =
+  | { status: "pending" } | { status: "not_done" }
+  | { status: "refused"; reason: string; channel: string }
+  | {
+    status: "not_held" | "checking" | "held" | "confirmed" | "expired" | "cancelled" | "done"; ref: string; channel?: string;
+    lines: { itemId: string; names: Record<Language, string>; qty: number; priceInr: number }[];
+    totalInr?: number; advanceInr?: number; date?: string; mode?: "pickup" | "delivery"; slot?: { id: string; fromMs: number; toMs: number }; area?: string;
+    holdExpiresAt?: number; pay?: PayInstructions; canCancel: boolean; canSayPaid: boolean; messages: { atMs: number; text: string }[];
+  };
+
+/** A Fees centre's public page: only the centre itself. A parent's fees are on their private link, never found by a number. */
+export interface FeesOffer { kind: "fees"; shop: Pick<ShopInfo, "name" | "address" | "timezone" | "languages" | "payment" | "paused" | "character"> }
+/** One student's fee for one month, as the parent's page shows it. Money in whole rupees from the centre's record; `pay` only while something is owed. */
+export interface FeeLine {
+  id: string; student: string; batch: Record<Language, string>; month: string; dueMs: number;
+  feeInr: number; lateFeeInr: number; waivedInr: number; owedInr: number; paidInr: number; balanceInr: number;
+  state: "open" | "paid" | "closed"; pay?: PayInstructions; canSayPaid: boolean; claimed: boolean;
+}
+/** What a parent's private link opens: that parent's students and their fees, and nothing of anyone else's. */
+export interface ParentView { students: { name: string; batch: Record<Language, string> }[]; dues: FeeLine[] }
+/**
+ * A fee payment's confirmation page, by the handle the parent's press made. `confirmed` only when the centre's record shows the fee paid (the payments service's
+ * own list, or the owner's mark on a UPI centre); `waiting` after "I have paid" until then.
+ */
+export type FeeConfirmView =
+  | { status: "pending" } | { status: "not_done" }
+  | { status: "refused"; reason: string }
+  | { status: "open" | "waiting" | "part" | "confirmed" | "closed"; ref: string; op: "pay" | "paid"; atMs: number; due: FeeLine };
 
 /** A refund Guard holds for the owner, as the relay shows it to the owner's page (modules/approvals/relay.ts ownerAsks). */
 export interface RelayAsk { approval: string; digest: string; amountPaise: number; customerPhone: string | null; booking: string | null; serviceName?: string; slotMs?: number; untilMs: number }
@@ -83,6 +142,13 @@ export interface ChannelBackend {
    * voice service; "refused": the owner's credential is not good.
    */
   ownerVoice?(owner: OwnerCred, audio: { bytes: Buffer; mime: string }): Promise<"saved" | "refused" | "off">;
+  /** Item 11h: the same reads, for an Orders shop (its offer and an order by its handle's hash). */
+  orderOffer?(): Promise<OrderOffer>;
+  orderView?(handleHash: string): Promise<OrderView | null>;
+  /** Item 11h: the same reads, for a Fees centre: its page, a parent's link by its hash (null: no parent has it now), a confirmation page by its handle's hash. */
+  feesOffer?(): Promise<FeesOffer>;
+  parentView?(linkHash: string): Promise<ParentView | null>;
+  feeConfirmView?(handleHash: string): Promise<FeeConfirmView | null>;
 }
 
 /** What the front asks of the approvals relay, for a shop whose Guard holds refunds for the owner (a gateway shop). */
@@ -124,6 +190,21 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
       const r = await call(`${o.url}/internal/channel/request?handle=${handleHash}`, { headers: headers() }, timeout);
       if (r.status === 404) return null;
       return json<BookingView>(r);
+    },
+    // item 11h: the same two routes, read as an Orders shop's or a Fees centre's answer (the runtime's template decides what it answers)
+    async orderOffer() { return json<OrderOffer>(await call(`${o.url}/internal/channel/offer`, { headers: headers() }, timeout)); },
+    async orderView(handleHash) {
+      const r = await call(`${o.url}/internal/channel/request?handle=${handleHash}`, { headers: headers() }, timeout);
+      return r.status === 404 ? null : json<OrderView>(r);
+    },
+    async feesOffer() { return json<FeesOffer>(await call(`${o.url}/internal/channel/offer`, { headers: headers() }, timeout)); },
+    async parentView(linkHash) {
+      const r = await call(`${o.url}/internal/channel/parent?link=${linkHash}`, { headers: headers() }, timeout);
+      return r.status === 404 ? null : json<ParentView>(r);
+    },
+    async feeConfirmView(handleHash) {
+      const r = await call(`${o.url}/internal/channel/request?handle=${handleHash}`, { headers: headers() }, timeout);
+      return r.status === 404 ? null : json<FeeConfirmView>(r);
     },
     async owner(owner) {
       const r = await call(`${o.url}/internal/channel/owner`, { headers: headers(owner) }, timeout);

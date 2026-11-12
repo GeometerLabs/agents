@@ -21,6 +21,7 @@ import type { AssistantState } from "../../../../modules/assistant/state.ts";
 import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
+import type { ChannelState } from "../../../../modules/channels/state.ts";
 import { advanceFor, cutoffOf, itemName, itemOf, slotOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import type { MessageFacts } from "./language/templates.ts";
@@ -100,6 +101,15 @@ export interface Order {
   refundsUntold?: UntoldRefund[];
   /** UPI: when the owner was last told that this customer says they paid (at most once an hour). */
   claimTellAtMs?: number;
+  /**
+   * Item 11h: an order made on the shop's page or its API ("web") or through the MCP endpoint ("mcp"). Its `customer` is then the channel's conversation ("web:<16
+   * hex>", modules/channels/conversation.ts), never the typed number, so nothing finds it by number and nothing is sent to that number on WhatsApp.
+   */
+  channel?: "web" | "mcp";
+  /** Item 11h: the hash of the order's handle (modules/channels/handle.ts): the only thing that reaches it from the page, the API or MCP. */
+  handle?: string;
+  /** Item 11h: the name and number the customer typed (not verified): what the owner sees, and what the per-number limits count. */
+  contact?: { name?: string; phone: string };
 }
 
 export interface Customer {
@@ -123,6 +133,8 @@ export interface Store {
   upi?: MarkState;
   /** Item 11e: the shop's assistant's own part (its cards and undo; modules/assistant/state.ts). Left out until the owner first talks to it. */
   assistant?: AssistantState;
+  /** Item 11h: the shop page's, the API's and the MCP endpoint's messages and requests (modules/channels/state.ts). Left out until the first one. */
+  channel?: ChannelState;
 }
 
 export function createStore(): Store {

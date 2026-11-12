@@ -11,8 +11,17 @@
 //
 // A refusal is {"error": {"code", "message"}}: bad_request 400, not_found 404, paused 409, too_many 429, unavailable 503. Changes take JSON only (a browser cannot send it
 // from another site without asking first, and the API answers no such ask), so another site's page cannot book or cancel for someone.
+//
+// Item 11h: an Orders shop's API has the same shape over its own operations (order-ops.ts):
+//   GET  /api/v1/items[?language=hi]              list_items (the menu at the shop's own prices, the days, slots and what is left)
+//   POST /api/v1/orders  {items: [{item_id, qty}], date, way, slot_id, address?, name, phone, language?}   start_order (202 while the shop's system is still holding it)
+//   GET  /api/v1/orders/{handle}                  order_status
+//   GET  /api/v1/orders/{handle}/payment          payment_instructions
+//   POST /api/v1/orders/{handle}/cancel           cancel_order
+// A Fees centre has no API: a parent's fees are reached only by their private link (front-fees.ts).
 import type { Ops, OperationName } from "./ops.ts";
 import { OpError } from "./ops.ts";
+import type { OrderOperationName, OrderOps } from "./order-ops.ts";
 
 /** Which operation each API path is, for the test that keeps the API, the MCP tools and the operations the same. */
 export const API_ROUTES: Record<OperationName, { method: "GET" | "POST"; path: string }> = {
@@ -62,6 +71,57 @@ export async function apiRequest(ops: Ops, o: { method: string; path: string; qu
       case "booking_status": value = await ops.booking_status({ handle, language: o.query.get("language") ?? undefined }); break;
       case "payment_instructions": value = await ops.payment_instructions({ handle }); break;
       case "cancel_booking": value = await ops.cancel_booking({ handle, language: body.language }); break;
+    }
+    return { status: 200, body: value };
+  } catch (e) {
+    if (e instanceof OpError) return { status: STATUS[e.code], body: { error: { code: e.code, message: e.message } } };
+    return { status: 503, body: { error: { code: "unavailable", message: "The shop's system did not answer. Try again in a minute." } } };
+  }
+}
+
+// ---- item 11h: an Orders shop's API ----------------------------------------------------------------------------------------------------------------------
+
+/** Which operation each Orders API path is, for the test that keeps the API, the MCP tools and the operations the same. */
+export const ORDER_API_ROUTES: Record<OrderOperationName, { method: "GET" | "POST"; path: string }> = {
+  list_items: { method: "GET", path: "/api/v1/items" },
+  start_order: { method: "POST", path: "/api/v1/orders" },
+  payment_instructions: { method: "GET", path: "/api/v1/orders/{handle}/payment" },
+  order_status: { method: "GET", path: "/api/v1/orders/{handle}" },
+  cancel_order: { method: "POST", path: "/api/v1/orders/{handle}/cancel" },
+};
+
+/** Which Orders operation a request is (for the front's limits), or undefined for the index and anything unknown. */
+export function orderApiOperation(method: string, path: string): OrderOperationName | undefined {
+  if (method === "GET" && path === "/api/v1/items") return "list_items";
+  if (method === "POST" && path === "/api/v1/orders") return "start_order";
+  const m = /^\/api\/v1\/orders\/([^/]+)(\/payment|\/cancel)?$/u.exec(path);
+  if (!m) return undefined;
+  if (method === "GET" && m[2] === undefined) return "order_status";
+  if (method === "GET" && m[2] === "/payment") return "payment_instructions";
+  if (method === "POST" && m[2] === "/cancel") return "cancel_order";
+  return undefined;
+}
+
+/** One Orders API request, the same way as Bookings' apiRequest. */
+export async function orderApiRequest(ops: OrderOps, o: { method: string; path: string; query: URLSearchParams; body?: unknown; publicUrl: string }): Promise<ApiAnswer> {
+  if (o.path === "/api/v1" || o.path === "/api/v1/") {
+    return { status: 200, body: { version: 1, operations: Object.entries(ORDER_API_ROUTES).map(([name, r]) => ({ name, method: r.method, path: r.path })), mcp: `${o.publicUrl}/mcp`, page: `${o.publicUrl}/` } };
+  }
+  const op = orderApiOperation(o.method, o.path);
+  if (!op) return { status: 404, body: { error: { code: "not_found", message: "There is no such operation. GET /api/v1 lists them." } } };
+  const handle = /^\/api\/v1\/orders\/([^/]+)/u.exec(o.path)?.[1];
+  const body = (typeof o.body === "object" && o.body !== null ? o.body : {}) as Record<string, unknown>;
+  try {
+    let value: unknown;
+    switch (op) {
+      case "list_items": value = await ops.list_items({ ...(o.query.get("language") ? { language: o.query.get("language")! } : {}) }); break;
+      case "start_order": {
+        const v = await ops.start_order(body) as { status: string };
+        return { status: v.status === "pending" ? 202 : v.status === "refused" || v.status === "not_held" ? 409 : 201, body: v };
+      }
+      case "order_status": value = await ops.order_status({ handle, language: o.query.get("language") ?? undefined }); break;
+      case "payment_instructions": value = await ops.payment_instructions({ handle }); break;
+      case "cancel_order": value = await ops.cancel_order({ handle, language: body.language }); break;
     }
     return { status: 200, body: value };
   } catch (e) {

@@ -27,6 +27,13 @@ export const NONCE = HANDLE;
 /** A handle's hash, as the runtime accepts it. */
 export const HANDLE_HASH = /^[0-9a-f]{64}$/u;
 
+/**
+ * Item 11h: a parent's private fees link is a bearer string of the same shape as a handle (newHandle), and the Fees runtime keeps only this hash of it, in its saved
+ * state (templates/education/fees/src/due.ts `parentLinks`). The prefix keeps it apart from a booking's or an order's handle: a handle can never open a parent's page,
+ * and a parent's link can never open a booking.
+ */
+export const parentLinkHash = (link: string): string => createHash("sha256").update(`parent-link:${link}`).digest("hex");
+
 // The channels' names and conversations are in conversation.ts (no imports, so an agent in the browser demo can use them); they are passed on from here too.
 export { CHANNELS, conversationOf, isChannelConversation } from "./conversation.ts";
 export type { ChannelName } from "./conversation.ts";

@@ -32,8 +32,11 @@ button.quiet{background:#fff;color:var(--g9);border:1px solid var(--line)}.statu
 
 export interface PageShop { name: string; publicUrl: string }
 
-/** The whole page: head, header and the content, with the language links and, for a machine-written language, the note that says so. */
-function layout(o: { shop: Offer["shop"]; language: Language; title: string; body: Raw; refreshSeconds?: number; selfPath: string; query?: Record<string, string>; /** Item 11f: the shop's face and the partner's line (the booking page's front). */ face?: Raw; foot?: Raw }): string {
+/**
+ * The whole page: head, header and the content, with the language links and, for a machine-written language, the note that says so. Shared with item 11h's pages
+ * (order-page.ts, fee-page.ts), so every customer view of a shop looks and behaves the same.
+ */
+export function layout(o: { shop: Pick<Offer["shop"], "name" | "address" | "languages">; language: Language; title: string; body: Raw; refreshSeconds?: number; selfPath: string; query?: Record<string, string>; /** Item 11f: the shop's face and the partner's line (the booking page's front). */ face?: Raw; foot?: Raw }): string {
   const w = PAGE[o.language];
   const link = (l: Language) => { const q = new URLSearchParams({ ...(o.query ?? {}), lang: l }); return `${o.selfPath}?${q}`; };
   return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
@@ -45,7 +48,7 @@ ${o.face ?? ""}${o.body}${o.foot ?? ""}
 </main></body></html>`.markup}`;
 }
 
-const LANGUAGE_LABEL: Record<Language, string> = { en: "English", hi: "हिन्दी", ml: "മലയാളം", kn: "ಕನ್ನಡ" };
+export const LANGUAGE_LABEL: Record<Language, string> = { en: "English", hi: "हिन्दी", ml: "മലയാളം", kn: "ಕನ್ನಡ" };
 
 const dateOf = (iso: string) => { const [year, month, day] = iso.split("-").map(Number); return { year, month, day }; };
 

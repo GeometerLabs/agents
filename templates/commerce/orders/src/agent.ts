@@ -23,6 +23,11 @@
 // The licence (plan B13; modules/licence). While the shop's lease puts it in its WIND-DOWN, the agent takes no new orders: a customer who asks to order is answered "online
 // ordering is paused, please contact the shop", no hold or advance link is made, and nothing is kept to do later. Cancellations, refunds owed and payments from links sent
 // earlier go on as every day. In the FINAL STOP the agent also closes the open advance links (where the module can cancel one) and sends nothing more.
+//
+// Item 11h: an order from the shop's page, its API or the MCP endpoint (a channel_request) runs through the SAME `proceed` as a WhatsApp order: the size, the cut-off,
+// the stock, the day's count and the big-order line, then the hold and the advance. Only the way in differs (the request names exact items, a day, the way and its slot,
+// so no words are read), it lives in its own conversation ("web:..."), its messages are kept for its page (modules/channels/outbox.ts), and the per-number and per-shop
+// limits below bound what a typed, unverified number can start. The owner answers from their page (an owner_action) with the same code as on WhatsApp.
 import { isRelayReply } from "../../../../modules/approvals/buttons.ts"; // the relay's replies, typed or tapped (item 11e)
 import { approverNumbers, ownerAsked } from "../../../../modules/approvals/people.ts";
 import { HANDOVER_ACTION, handoverHash, parseHandoverReply } from "../../../../modules/approvals/handover.ts";
@@ -43,6 +48,14 @@ import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { ordersSkill } from "./assistant.ts";
+import { conversationOf } from "../../../../modules/channels/conversation.ts";
+import { phoneDigits } from "../../../../modules/channels/contact.ts";
+import { CHANNEL_LIMITS, DAY_MS, emptyChannelState } from "../../../../modules/channels/state.ts";
+import type { ChannelState } from "../../../../modules/channels/state.ts";
+import type { ChannelEvent, ChannelOrder, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
+import type { PageAudio } from "../../../../modules/channels/owner-audio.ts";
+import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
+import { dateOf, ownerItems } from "./channel.ts";
 import type { Decision } from "../../../../modules/limits/limits.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
 import { createSay } from "../../../../modules/messaging/say.ts";
@@ -97,6 +110,11 @@ export interface AgentDeps {
   terms?: () => TermsFile | undefined;
   /** Item 11e: how the shop's assistant reads the owner's words (modules/assistant/reading.ts). Left out: the rules alone. The assistant is on only with an "assistant" settings block. */
   ownerParser?: OwnerParser;
+  /**
+   * Items 11d, 11e and 11h: a recording the owner made on their page, by the reference its owner_message carries; the runtime holds the audio in memory only
+   * (modules/channels/owner-audio.ts). Left out: no recording is ever found, and the owner is asked to type.
+   */
+  pageAudio?: (ref: string) => PageAudio | undefined;
 }
 
 export type AgentEvent =
@@ -107,6 +125,8 @@ export type AgentEvent =
   | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string }
   // The panel's to-do list asks the agent to look again or ask again about one order (modules/unfinished). It carries no authority: the agent does what it does every day, through Guard.
   | { kind: "recovery"; id: string; case: string; action: string }
+  // Item 11h: the shop's page, its API or the MCP endpoint (a channel_request), or the owner's page (an owner_action, the talk box). modules/channels/events.ts.
+  | ChannelEvent
   | { kind: "tick" }; // time has passed: let holds expire and finish the day's orders
 
 export interface Agent {
@@ -160,6 +180,8 @@ export function createAgent(deps: AgentDeps): Agent {
     return c;
   };
   const languageOf = (phone: string, o?: Order | null): Language => o?.language ?? store.customers.get(phone)?.language ?? settings.languages[0];
+  /** The number a message names for this conversation: a page order's is the one its customer typed (item 11h), never its "web:..." conversation. */
+  const shownPhone = (phone: string, o: Order | null): string => (o?.channel && o.contact ? o.contact.phone : phone);
 
   function log(o: Order | null, phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string>; language?: Language } = {}) {
     return record.append({ conversation: phone, booking: o?.id || null, action, inputs, outcome, language: languageOf(phone, o), ...more });
@@ -192,7 +214,7 @@ export function createAgent(deps: AgentDeps): Agent {
     languageOf: (phone, order) => languageOf(phone, order),
     optedOut: (phone) => customerOf(phone).optedOut,
     factsFor: (a, language) => factsFor(settings, a.booking, language, {
-      customerPhone: a.phone, refundInr: a.refundInr, menu: a.templates.includes("menu") || a.offer?.kind === "items", areas: a.areas, itemId: a.itemId, leftCount: a.leftCount,
+      customerPhone: shownPhone(a.phone, a.booking), refundInr: a.refundInr, menu: a.templates.includes("menu") || a.offer?.kind === "items", areas: a.areas, itemId: a.itemId, leftCount: a.leftCount,
       ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.windows } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, nowMs: clock.now(),
     }),
     interactiveFor: (a, facts, language) => buildInteractive(a.offer!, a.templates, facts, language),
@@ -483,7 +505,8 @@ export function createAgent(deps: AgentDeps): Agent {
       if (!record.confirmedRefs(o.id, MARK_ACTIONS.request, "requestId").includes(request.id)) {
         log(o, phone, MARK_ACTIONS.request, "confirmed", { amountPaise: request.amountPaise }, { refs: { requestId: request.id, reference: o.id, amountPaise: String(request.amountPaise) }, notes: "a UPI request to the shop's own UPI ID; it counts as paid only when the owner marks it received" });
       }
-      await tellCustomer(o, phone, [...ctx.prefix, "quote_and_link"], { shown: [...ctx.shown, ...avail.decisions], itemId: ctx.itemId, offer: paidCancelOrOwner, image: await qrOf(request) });
+      // a page order's page draws its own QR code from the link (item 11h), so no picture is made for it
+      await tellCustomer(o, phone, [...ctx.prefix, "quote_and_link"], { shown: [...ctx.shown, ...avail.decisions], itemId: ctx.itemId, offer: paidCancelOrOwner, image: o.channel ? undefined : await qrOf(request) });
       await tellOwner(o, phone, "owner_upi_expected", { upiCode: request.code ?? undefined, offer: receivedButtons(request, request.amountPaise) });
       return;
     }
@@ -492,7 +515,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function tellAlreadyWaiting(waiting: Order): Promise<void> {
     const request = ownerConfirms ? requestOf(waiting) : undefined;
-    await tellCustomer(waiting, waiting.customer, ["already_waiting"], { offer: waitingOffer(), ...(request ? { image: await qrOf(request) } : {}) });
+    await tellCustomer(waiting, waiting.customer, ["already_waiting"], { offer: waitingOffer(), ...(request && !waiting.channel ? { image: await qrOf(request) } : {}) });
   }
 
   async function onOrder(phone: string, intent: Intent): Promise<void> {
@@ -1142,6 +1165,10 @@ export function createAgent(deps: AgentDeps): Agent {
   async function handle(event: AgentEvent): Promise<void> {
     noteLicence();
     if (event.kind === "recovery") return onRecovery(event);
+    if (event.kind === "channel_request") return onChannel(event);
+    if (event.kind === "owner_action") return onOwnerAction(event);
+    if (event.kind === "owner_message") return onOwnerPageMessage(event);
+    if (event.kind === "owner_signin") return; // the runtime core's own (modules/channels/owner-signin.ts): never an agent's
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);
     if (event.kind === "approval_decision") return refunds.onApprovalDecision(event);
@@ -1165,6 +1192,127 @@ export function createAgent(deps: AgentDeps): Agent {
     const told = event.kind === "message" && why.tell ? await tellCustomer(null, phone, ["wait_over"]) : false;
     const line = guardWaitLine(event, why, told);
     log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
+  }
+
+  // ---- item 11h: the shop's page, its API and the MCP endpoint; the owner's page -------------------------------------------------------------------
+  //
+  // A channel order goes through the SAME `proceed` as a WhatsApp order (the size, the day, the cut-off, the stock, the day's count, the big-order line; then the hold
+  // and the advance through its Guard or the owner-marked ledger; "confirmed" only when the record holds the whole advance). What differs:
+  //  - its conversation is its own ("web:<16 hex>"), never the typed number, so no WhatsApp order is ever found, changed or cancelled by it;
+  //  - its messages go to its page (modules/channels/outbox.ts), never to the typed number on WhatsApp;
+  //  - the request names exact items, a day, the way and its slot, and every one is checked against the settings here BEFORE `proceed`, so `proceed` never has to
+  //    ask for something (a page cannot answer a question): an unknown item, slot or day, a delivery outside the list or too many items is refused, nothing held;
+  //  - the per-number and per-shop limits below, which a WhatsApp order does not need (WhatsApp says whose number it is; a web form does not).
+
+  const channelState = (): ChannelState => (store.channel ??= emptyChannelState());
+
+  /** Why an order cannot be tried before anything is held: its items, its size, its day, its way and slot, its address. Null when `proceed` may take it. */
+  function channelOrderProblem(e: ChannelOrder): { reason: string; notes: string; decisions?: Decision[] } | null {
+    if (e.lines.some((l) => !itemOf(settings, l.itemId))) return { reason: "unknown_item", notes: "an item the shop's menu does not have" };
+    const size = checkOrderSize({ items: e.lines.reduce((n, l) => n + l.qty, 0), maxItems: settings.orders.maxItemsPerOrder });
+    if (size.verdict === "block") return { reason: "too_many_items", notes: "more items than the shop takes in one order", decisions: [size] };
+    const date = dateOf(e.date);
+    const ahead = date ? daysBetween(localParts(clock.now(), tz), date) : -1;
+    if (!date || ahead < 0 || ahead > settings.orders.daysAhead) return { reason: "bad_date", notes: `a day that is not one the shop takes orders for (today to ${settings.orders.daysAhead} days ahead)` };
+    if (e.mode === "delivery" && !settings.delivery) return { reason: "no_delivery", notes: "the shop does not deliver" };
+    if (slotOf(settings, e.slotId)?.mode !== e.mode) return { reason: "bad_slot", notes: "a slot the shop does not have for this way" };
+    if (e.mode === "delivery") {
+      const d = checkDeliveryArea({ address: e.address ?? "", area: settings.delivery?.area ?? [] });
+      if (d.verdict === "block") return { reason: "outside_area", notes: "the address names no place on the delivery list; it is not kept", decisions: [d] };
+    }
+    return null;
+  }
+
+  async function onChannelOrder(e: ChannelOrder): Promise<void> {
+    const state = channelState();
+    if (state.requests[e.handle]) return; // the same request again (its task key is the handle): one order, however often it is sent
+    const now = clock.now();
+    const conversation = conversationOf(e.channel, e.handle);
+    const digits = phoneDigits(e.phone);
+    const language = settings.languages.includes(e.language) ? e.language : settings.languages[0];
+    // the name, number and address are inputs only: the record keeps their keyed digest (B69), never the words, in refs or notes
+    const inputs = { channel: e.channel, lines: e.lines, date: e.date, mode: e.mode, slotId: e.slotId, name: e.name, phone: e.phone, ...(e.address ? { address: e.address } : {}) };
+    const refuse = async (reason: string, notes: string, decisions: Decision[] = []) => {
+      state.requests[e.handle] = { atMs: now, channel: e.channel, refused: reason, phone: digits };
+      log(null, conversation, "channel_order", "blocked", inputs, { decisions, refs: { channel: e.channel, reason }, notes });
+    };
+    if (!licence().takesNewWork) { await refuse("paused", "online ordering is paused (the shop's licence): nothing is held and nothing is kept to do later"); customerOf(conversation).language = language; return pausedReply(conversation, "order"); }
+    const problem = channelOrderProblem(e);
+    if (problem) return refuse(problem.reason, problem.notes, problem.decisions);
+    // The typed number is not verified, so these only slow one person down; the per-shop cap and the hold's own end are what bound a flood. An order waiting for the
+    // owner counts too: each one asks the owner.
+    const live = [...store.orders.values()].filter((o) => o.channel !== undefined && (o.state === "awaiting_advance" || o.state === "awaiting_owner"));
+    if (live.filter((o) => o.contact && phoneDigits(o.contact.phone) === digits).length >= CHANNEL_LIMITS.holdsPerPhone) return refuse("phone_busy", `this number already has ${CHANNEL_LIMITS.holdsPerPhone} unpaid orders from the shop's page; nothing more is held for it until one is paid, cancelled or ends`);
+    if (Object.values(state.requests).filter((r) => r.phone === digits && now - r.atMs < DAY_MS).length >= CHANNEL_LIMITS.startsPerPhonePerDay) return refuse("phone_day", `this number started ${CHANNEL_LIMITS.startsPerPhonePerDay} orders from the shop's page in the last 24 hours; no more today`);
+    if (live.length >= CHANNEL_LIMITS.unpaidHoldsPerShop) return refuse("shop_busy", `the shop already has ${CHANNEL_LIMITS.unpaidHoldsPerShop} unpaid orders from its page and its API; nothing more is held until one is paid, cancelled or ends`);
+
+    customerOf(conversation).language = language; // only now: a refused request leaves no customer behind
+    const o = register(store, newDraft(conversation, language));
+    o.channel = e.channel;
+    o.handle = e.handle;
+    o.contact = { name: e.name, phone: e.phone };
+    for (const l of e.lines) addLine(o.lines, l.itemId, l.qty);
+    o.date = dateOf(e.date);
+    o.mode = e.mode;
+    o.slotId = e.slotId;
+    let shown: Decision[] = [];
+    if (e.mode === "delivery") {
+      const d = checkDeliveryArea({ address: e.address ?? "", area: settings.delivery!.area });
+      o.area = areaOf(e.address ?? "", settings.delivery!.area)!;
+      o.address = e.address;
+      shown = [d];
+    }
+    state.requests[e.handle] = { atMs: now, channel: e.channel, booking: o.id, phone: digits };
+    log(o, conversation, "channel_order", "confirmed", inputs, { decisions: shown, refs: { channel: e.channel }, notes: `asked for on the ${e.channel === "mcp" ? "MCP endpoint, by an AI assistant for its user" : "shop's page or its API"}: exact items, a day, the way and its slot, so no words were read; the same checks, hold and advance as a WhatsApp order follow` });
+    await proceed(o, { prefix: [], shown });
+  }
+
+  /** The page's requests: an order, or a cancel or an "I have paid" for the order with this handle (the same as the same button on WhatsApp, in the order's own conversation). */
+  async function onChannel(e: ChannelEvent & { kind: "channel_request" }): Promise<void> {
+    if (e.op === "order") return onChannelOrder(e);
+    if (e.op !== "cancel" && e.op !== "paid") { log(null, owner, "channel_order", "blocked", { op: e.op }, { refs: { channel: e.channel, op: e.op }, notes: "a request this shop does not take (it is not a booking or fees shop): nothing was done" }); return; }
+    const request = channelState().requests[e.handle];
+    const o = request?.booking ? store.orders.get(request.booking) : undefined;
+    if (!o || o.handle !== e.handle) { log(null, owner, "channel_order", "blocked", { op: e.op }, { refs: { channel: e.channel, op: e.op }, notes: "no order has this handle, so nothing was done" }); return; }
+    log(o, o.customer, "channel_order", "confirmed", { op: e.op }, { refs: { channel: e.channel, op: e.op }, notes: e.op === "cancel" ? "the customer cancelled from the order's page" : "the customer says they paid, from the order's page; nothing is marked paid until the owner marks it" });
+    if (e.op === "cancel") return onCancel(o.customer); // its conversation holds only this order, so this cancels exactly it
+    return ownerConfirms ? onPaidClaim(o.customer, "button") : onPaidReadBack(o.customer);
+  }
+
+  /**
+   * The owner pressed a button on their page. The page showed an action with a digest of exactly what it showed (channel.ts ownerItems); if what waits now has another
+   * digest (a mark was made since, it was already answered) nothing is done. Otherwise it is handled by the same code as the owner's reply on WhatsApp: the one-use
+   * code's button for a UPI mark (bound to its request and the amount still asked), "approve o-3" / "deny o-3" for what the agent asked the owner. A refund Guard holds
+   * is never here: the approvals relay answers it.
+   */
+  async function onOwnerAction(e: OwnerAction): Promise<void> {
+    // item 11e on the page: an answer to one of the assistant's cards, bound by the card's own digest, exactly as a tap on WhatsApp
+    if (e.action === "card_yes" || e.action === "card_no") {
+      if (!assistant) { log(null, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "a card's answer came for a shop without the assistant: nothing was done" }); return; }
+      log(null, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "pressed by the owner on their page; the card's own binding decides, as for a tap on WhatsApp" });
+      return assistant.onPageCard({ card: e.case, digest: e.digest, answer: e.action === "card_yes" ? "yes" : "no" });
+    }
+    const item = ownerItems(settings, store, clock.now()).items.find((x) => x.case === e.case && x.digest === e.digest && x.actions.includes(e.action));
+    const o = store.orders.get(e.case) ?? null;
+    if (!item) {
+      log(o, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "what the owner's page showed is not what waits now (already answered, a new mark since, or gone): nothing was done" });
+      return;
+    }
+    log(o, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "pressed by the owner on their page; handled exactly as the same reply on WhatsApp" });
+    const base = { id: `owner-page:${e.id}`, from: owner, timestamp: clock.now() };
+    const msg: InboundMessage = item.code
+      ? { ...base, text: "", reply: { id: markButtonId(e.action === "received" ? "received" : e.action === "kept" ? "kept" : "refunded", item.code), kind: "button" } }
+      : { ...base, text: `${e.action} ${e.case}` };
+    await onOwnerMessage(msg);
+  }
+
+  /** The owner's talk box on their page (typed words, or a recording the runtime holds in memory), read by the shop's assistant. A shop without it reads nothing. */
+  async function onOwnerPageMessage(e: OwnerMessage): Promise<void> {
+    if (!assistant) { log(null, owner, "owner_page_message", "blocked", { voice: e.voice !== undefined }, { refs: { channel: "owner_page" }, notes: "the owner's talk box is the shop's assistant's, and this shop has none: nothing was read" }); return; }
+    const base = { id: `owner-page:${e.id}`, from: owner, timestamp: clock.now() };
+    if (e.voice === undefined) return assistant.onPageMessage({ ...base, text: e.text });
+    const audio = deps.pageAudio?.(e.voice);
+    return assistant.onPageVoice({ ...base, text: "", voiceNote: true, ...(audio ? { audio } : {}) });
   }
 
   // ---- item 11e: the shop's assistant (modules/assistant) -------------------------------------------------------------
