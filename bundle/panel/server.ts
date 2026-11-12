@@ -43,6 +43,8 @@ import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
 import { createHandover } from "./handover.ts";
 import { createTerms } from "./terms.ts";
 import { termsLinkWord, termsPage } from "./views-terms.ts";
+import { createChannels } from "./channels.ts";
+import { ownerLinkMadePage } from "./views-channels.ts";
 import { exportShop } from "./export.ts";
 import { PaperError, createPapers } from "./papers.ts";
 import type { MadePaper } from "./papers.ts";
@@ -98,6 +100,8 @@ interface Route { method: "GET" | "POST"; pattern: RegExp; access: "public" | "u
 // Opens the panel's data folder (private, mode 0700) with the vault, store and the session secret, which is created once and then kept; split out so tests can open the same stores.
 export function openStores(config: PanelConfig) {
   const paths = serverPaths(config.serverDir);
+  // item 11d: each Bookings shop's booking page, MCP endpoint and the owner's approvals link (channels.ts)
+  const channels = createChannels(config.serverDir, config.publicUrl);
   mkdirSync(paths.panel, { recursive: true, mode: 0o700 });
   let vault = plainVault;
   if (config.dataKeyFile) vault = createVault(loadKeyFile(config.dataKeyFile, paths.panel));
@@ -470,6 +474,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       inbox: inboxFor(shops, id, now(), unfinished),
       ...(counts ? { liveCounts: { bookings: counts[kindFor(kindId)!.casesName] ?? {}, waitingForOwner: Number(counts.refunds?.waitingForOwner ?? 0), needBuilder: Number(counts.refunds?.needBuilder?.total ?? 0) } } : {}),
       termsLink: terms.on() ? termsLinkWord(c.lang) : undefined,
+      // item 11d: only Bookings has a booking page (its runtime has the channel reads), and only a panel that knows the server's public address can show its links
+      ...(kindId === "bookings" && channels.view(id) ? { channels: channels.view(id)! } : {}),
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
       isBuilder: r.account!.role === "builder",
       ...(r.account!.role === "builder" ? { details: { statusJson: read.ok ? JSON.stringify(read.status, null, 2) : "—", pins: JSON.stringify(shops.pins(id) ?? {}, null, 2), runtimeJson: JSON.stringify(counts ?? {}, null, 2) } } : {}),
@@ -477,6 +483,24 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       ...(notice && NOTICES.has(notice) ? { notice: c.w.shop.reportMade } : {}),
     };
     page(r, 200, shopPage(c, view));
+  });
+
+  // item 11d: the owner's approvals link. Making one shows it once and keeps only its hash; a new one replaces the old; revoking removes the file. The deployer hands the
+  // hash to the shop's runtime and relay, or takes it away, at its next pass (every 10 s), and they check every request against their own copy.
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-link$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref || shops.kind(ref.id) !== "bookings") return notFound(r);
+    const link = channels.make(ref.id, new Date(now()));
+    if (!link) return notFound(r);
+    log(`owner's approvals link of ${ref.id} made by ${r.account!.id}`); // the link itself is never logged
+    page(r, 200, ownerLinkMadePage(r.ctx(), ref.id, link));
+  });
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-link\/revoke$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref) return notFound(r);
+    channels.revoke(ref.id);
+    log(`owner's approvals link of ${ref.id} switched off by ${r.account!.id}`);
+    redirect(r, `/shops/${ref.id}`);
   });
 
   // a recovery step from the to-do list: only an action the list itself offers for that case right now, and only as a request to the shop's own agent
