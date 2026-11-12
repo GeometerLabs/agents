@@ -588,6 +588,9 @@ exactly what was shown (kind, case, ids, amount and how far it has got). The aut
   a new yes; a no is final for that call (Guard refuses the identical call since 12 Nov, and the page's answer is the ask's one use). The page shows only the owner's own
   asks, never another approver's (B37).
 For a shop on WhatsApp the page is one more way to answer, never a replacement. The JSON pair is the same state and the same answer, for the owner's app another job builds.
+The link widens who can answer: on WhatsApp only the owner's phone can, while anyone who has seen the link can answer as the owner, the partner who made it included.
+So the panel shows it once, the page says not to share it, a shop that moves to another partner loses it (the new partner makes a new one), and the partner can switch
+it off at any time. An answer the page could not see done within a few seconds (the step waits for a Guard) is shown as "sent", never as "done".
 
 **Abuse, without a CAPTCHA.** At the front, per address (Caddy's view of the visitor): 6 booking starts and 20 cancels or claims per 10 minutes, 120 reads a minute, 10
 unknown handles or links an hour; and 60 starts per 10 minutes per shop from every address together. In the step, from saved state: 2 unpaid holds per number at once, 5
@@ -595,8 +598,10 @@ starts per number per 24 hours, 6 unpaid holds from the page and the API per sho
 Refused requests and finished ones are dropped with the shop's retention (30 days), so a flood of refusals does not grow the store for ever.
 
 **What a fake booking can and cannot do.** It can hold one free time until the hold ends (the shop's hold time, an hour in the example) and make the owner one "payment
-to check" notice. It can use up the number it typed: that number's two holds and five starts a day, which may be a real customer's number. Many fake bookings from many
-addresses can hold at most six times at once, until each hold ends. It cannot confirm a booking (only the deposit, which on a UPI shop only the owner marks), mark a payment,
+to check" notice. It can use up the number it typed: that number's two holds and five starts a day, which may be a real customer's number. One address typing three
+numbers, or many addresses, can keep the shop's cap of six unpaid page holds full for as long as they keep starting new ones; while it is full, real page customers are
+told to try later, and WhatsApp customers cannot have those six times either (they are held). The per-address and per-shop start limits slow this, and every hold ends by
+itself; a verified number (Deferred.md, SMS) is what would stop it. It cannot confirm a booking (only the deposit, which on a UPI shop only the owner marks), mark a payment,
 approve a refund, see or touch another booking, or send anything to anyone but the owner.
 
 **MCP.** The engine's conventions (`monorepo/apps/cli/src/mcp.rs`): the four protocol versions, the newest when a client asks for another, tools with JSON Schema and

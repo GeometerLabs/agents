@@ -190,3 +190,53 @@ test("an AI assistant books, reads the payment instructions and cancels through 
     assert.equal(wrong.isError, true, "an unknown handle is not found, whatever it is");
   } finally { await w.done(); }
 });
+
+test("money: a part marked on WhatsApp leaves the page asking for exactly the rest; a late cancel's refund and the refund owed are answered on the owner's JSON endpoint", async () => {
+  const w = await world();
+  try {
+    const slots = (await (await w.api("/slots?service=haircut")).json()) as { days: { slots: { start: string }[] }[] };
+    const started = await (await w.api("/bookings", { service_id: "haircut", start: slots.days[0].slots[0].start, name: "Asha", phone: "9811111111", language: "en" })).json() as { handle: string; status: string };
+    await w.client.runtime.idle();
+    // the owner marks ₹100 of the ₹200 on WhatsApp, with the code the agent sent only to them (here, read from the stand-in's log of what it sent)
+    const code = w.lines.filter((l) => l.startsWith(`[stand-in WhatsApp] to ${OWNER}`)).map((l) => /received ([A-HJKMNP-Z2-9]{6})/u.exec(l)?.[1]).find(Boolean);
+    assert.ok(code, "the owner was sent a one-use code");
+    const owned = await fetch(`${w.client.server.url}/internal/events`, { method: "POST", headers: { authorization: `Bearer ${INTERNAL}` }, body: JSON.stringify({ events: [{ kind: "message", message: { id: "wamid.owner-1", from: OWNER, text: `received ${code} 100`, timestamp: w.clock.now() } }] }) });
+    assert.equal(owned.status, 200);
+    await w.client.runtime.idle();
+    const pay = await (await w.api(`/bookings/${started.handle}/payment`)).json() as { status: string; payment: { amount_paise: number; upi_link: string } };
+    assert.equal(pay.status, "held", "part of the deposit does not book");
+    assert.equal(pay.payment.amount_paise, 10_000, "what is left");
+    assert.match(pay.payment.upi_link, /[?&]am=100\.00(&|$)/u, "and the link asks for exactly that, not the whole deposit");
+    const page = await (await w.page(`/b/${started.handle}?lang=en`)).text();
+    assert.match(page, /Pay ₹100 to Glow Salon/u);
+    assert.match(page, /am=100\.00/u);
+
+    // the rest, marked on the owner's page through the JSON endpoint
+    w.linkOwner();
+    const answer = async (kind: string, action: string) => {
+      const state = await (await w.page(`/o/${w.ownerToken}/api/v1/state`)).json() as { waiting: { source: string; kind: string; case: string; digest: string; amount_paise: number }[] };
+      const item = state.waiting.find((x) => x.kind === kind);
+      assert.ok(item, `${kind} waits for the owner: ${JSON.stringify(state.waiting)}`);
+      const r = await (await w.page(`/o/${w.ownerToken}/api/v1/answer`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ source: item.source, action, case: item.case, digest: item.digest }) })).json() as { result: string };
+      await w.client.runtime.idle();
+      return { item, result: r.result };
+    };
+    const rest = await answer("deposit", "received");
+    assert.deepEqual([rest.item.amount_paise, rest.result], [10_000, "done"]);
+    assert.equal(((await (await w.api(`/bookings/${started.handle}`)).json()) as { status: string }).status, "booked");
+
+    // cancelled from the page less than 24 hours before: a late cancellation, so the owner decides; on a UPI shop the owner then owes the refund and marks it sent
+    const cancelled = await (await w.api(`/bookings/${started.handle}/cancel`, {})).json() as { status: string };
+    assert.equal(cancelled.status, "cancelled");
+    const late = await answer("late_refund", "approve");
+    assert.deepEqual([late.item.amount_paise, late.result], [20_000, "done"]);
+    const owed = await answer("refund_owed", "refunded");
+    assert.deepEqual([owed.item.amount_paise, owed.result], [20_000, "done"]);
+    const after = await (await w.api(`/bookings/${started.handle}`)).json() as { messages: { text: string }[] };
+    assert.match(after.messages.map((m) => m.text).join(" "), /marked your ₹200 refund for booking b-1 as sent by UPI/u, "the customer's page says the refund was sent, only once the owner marked it");
+    const presses = w.record().filter((e) => e.action === "owner_page_action" && e.outcome === "confirmed").map((e) => e.refs.action);
+    assert.deepEqual(presses, ["received", "approve", "refunded"], "each press recorded as the owner's, from the page");
+    const state = await (await w.page(`/o/${w.ownerToken}/api/v1/state`)).json() as { waiting: unknown[] };
+    assert.deepEqual(state.waiting, [], "nothing waits any more");
+  } finally { await w.done(); }
+});

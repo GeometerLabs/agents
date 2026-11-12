@@ -58,7 +58,8 @@ export function bookingView(settings: Settings, store: Store, handleHash: string
   let pay: { kind: "upi"; link: string; payTo: { id: string; name: string }; amountPaise: number; leftPaise: number; note: string } | { kind: "link"; url: string } | undefined;
   if (status === "held") {
     const r = marked ? requestOf(store, b) : undefined;
-    if (marked && r) pay = { kind: "upi", link: r.link, payTo: marked.payTo, amountPaise: r.amountPaise, leftPaise: leftOn(r), note: r.reference };
+    // after a part was marked, the link (and its QR) asks for what is left, the same amount the page states; a whole deposit keeps the request's own link
+    if (marked && r) { const left = leftOn(r); pay = { kind: "upi", link: left > 0 && left < r.amountPaise ? marked.payLink({ amountPaise: left, note: r.reference }) : r.link, payTo: marked.payTo, amountPaise: r.amountPaise, leftPaise: left, note: r.reference }; }
     else if (!marked && b.linkUrl) pay = { kind: "link", url: b.linkUrl };
   }
   return {
