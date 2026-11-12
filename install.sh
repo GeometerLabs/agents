@@ -559,6 +559,12 @@ narrow_sudo() {
   local dir="${SUDOERS_DIR:-/etc/sudoers.d}" grant narrow tmp
   grant="$dir/90-cloud-init-users" narrow="$dir/geometer-$USER"
   [ "${KEEP_SUDO:-0}" = 1 ] && return 0
+  # A dry run runs nothing as root, not even the two read-only looks below, and so cannot know whether cloud-init's line is there: it says what the real run checks and does.
+  if [ "${DRY_RUN:-0}" = 1 ]; then
+    step "Taking away the passwordless sudo cloud-init gave $USER"
+    say "  would look in $grant for cloud-init's passwordless line for $USER and, if it is there, put in $narrow (only the geometer command's verbs and passwd, checked by visudo first) and take that line out (--keep-sudo keeps it)"
+    return 0
+  fi
   sudo -n test -f "$grant" 2>/dev/null || return 0
   sudo -n grep -Eq "^${USER}[[:space:]]+ALL=\(ALL(:ALL)?\)[[:space:]]+NOPASSWD:[[:space:]]*ALL[[:space:]]*\$" "$grant" 2>/dev/null || return 0
   step "Taking away the passwordless sudo cloud-init gave $USER"
