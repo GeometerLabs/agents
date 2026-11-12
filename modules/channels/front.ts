@@ -9,6 +9,9 @@
 //   With the shop's assistant (item 11e), both owner addresses are also the owner's app: <owner base>/ (the page), /manifest.webmanifest, /sw.js, /talk (the talk
 //   box's words) and /voice (a hold-to-record recording); the page's one script runs by a nonce in that response's content policy (appPolicy).
 //
+// Item 11h: a shop whose template is Orders or Fees has its own customer side (front-orders.ts: the menu, an order's page, the ordering API and MCP; front-fees.ts: the
+// centre's page, a parent's private page and a payment's confirmation page, and no API or MCP). The owner's page and the QR code are the same for every shop.
+//
 // Item 11f: through the pages domain's front door (bundle/services/door.ts) the same views are at https://<pages domain>/<slug>/...; the door says so with
 // `x-geometer-door: <slug>`, and the front then writes every address under that base. Only the slug in the shop's own pages file counts: anything else is ignored.
 //
@@ -39,6 +42,10 @@ import type { PagesFile } from "./pages-file.ts";
 import { MAX_VOICE_BYTES } from "./owner-audio.ts";
 import { OWNER_MESSAGE_MAX } from "./events.ts";
 import { OWNER_APP_SW, ownerAppManifest } from "../assistant/app/pwa.ts";
+import { createOrderOps } from "./order-ops.ts";
+import type { OrderOps } from "./order-ops.ts";
+import { orderRoute } from "./front-orders.ts";
+import { feeRoute } from "./front-fees.ts";
 
 /** The header the pages domain's front door adds: the slug the visitor asked for (bundle/services/door.ts). */
 export const DOOR_HEADER = "x-geometer-door";
@@ -51,7 +58,26 @@ export interface FrontShop {
   relay?: RelayBackend;
   /** Item 11f: the shop's page addresses (pages.json), read on every request. Left out: no pages domain and no owner sign-in for this shop. */
   pages?: () => PagesFile | undefined;
+  /** Item 11h: the shop's template, which decides its customer side. Left out: Bookings (every shop before item 11h). */
+  kind?: "bookings" | "orders" | "fees";
 }
+
+/** Item 11h: what front.ts lends the per-template routes (front-orders.ts, front-fees.ts), so every route answers, counts and checks the same way. */
+export interface FrontKit {
+  limiter: Limiter;
+  log: (line: string) => void;
+  waitMs?: number;
+  maxForm: number;
+  maxJson: number;
+  sendHtml(res: ServerResponse, status: number, body: string, extra?: Record<string, string>): void;
+  sendJson(res: ServerResponse, status: number, value: unknown, extra?: Record<string, string>): void;
+  redirect(res: ServerResponse, to: string): void;
+  readBody(req: IncomingMessage, max: number): Promise<string | undefined>;
+  languageOf(req: IncomingMessage, url: URL, offered: readonly Language[], form?: URLSearchParams): Language;
+  sameOrigin(req: IncomingMessage, shop: FrontShop): boolean;
+}
+/** One request, as front.ts has read it: the shop (its addresses already under the pages domain when the door sent it), its name, the path under it, the visitor. */
+export interface RouteArgs { req: IncomingMessage; res: ServerResponse; url: URL; shop: FrontShop; name: string; rest: string; method: string; address: string; pages?: PagesFile }
 
 export interface FrontOptions {
   shops: Record<string, FrontShop>;
@@ -115,6 +141,17 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
   const limiter = options.limiter ?? createLimiter();
   const log = options.log ?? (() => undefined);
   const ops = new Map<string, { web: Ops; mcp: Ops; page: Ops }>();
+  const orderOps = new Map<string, { web: OrderOps; mcp: OrderOps; page: OrderOps }>();
+  /** Item 11h: an Orders shop's operations, made once per shop and address, like Bookings' below. */
+  const orderOpsOf = (name: string, shop: FrontShop) => {
+    let o = orderOps.get(`${name} ${shop.publicUrl}`);
+    if (!o) {
+      const make = (channel: "web" | "mcp", waitMs?: number) => createOrderOps({ backend: shop.backend, publicUrl: shop.publicUrl, channel, ...(waitMs !== undefined ? { waitMs } : {}) });
+      o = { web: make("web", options.waitMs), mcp: make("mcp", options.waitMs), page: make("web", Math.min(options.waitMs ?? 2_000, 2_000)) };
+      orderOps.set(`${name} ${shop.publicUrl}`, o);
+    }
+    return o;
+  };
   const opsOf = (name: string, shop: FrontShop) => {
     // by the address too: an answer through the pages domain names that domain's addresses (item 11f)
     let o = ops.get(`${name} ${shop.publicUrl}`);
@@ -148,6 +185,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const origin = req.headers.origin;
     return origin === undefined || origin === new URL(shop.publicUrl).origin;
   };
+  const kit: FrontKit = { limiter, log, ...(options.waitMs !== undefined ? { waitMs: options.waitMs } : {}), maxForm: MAX_FORM, maxJson: MAX_JSON, sendHtml, sendJson, redirect, readBody, languageOf, sameOrigin };
 
   async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", "http://front");
@@ -166,6 +204,13 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const tooMany = () => sendHtml(res, 429, `<!doctype html><meta charset="utf-8"><p>${PAGE.en.tooMany}</p>`, { "retry-after": "300" });
 
     if (rest === "") { res.writeHead(301, { location: `${shop.publicUrl}/` }); res.end(); return; }
+
+    // item 11h: an Orders shop's and a Fees centre's customer side are their own; the owner's page and the QR code below are every shop's
+    const ownerPath = /^\/o\/[^/]+(\/.*)?$/u.test(rest) || rest === "/owner" || rest.startsWith("/owner/");
+    if ((shop.kind === "orders" || shop.kind === "fees") && !ownerPath && rest !== "/qr.svg") {
+      const args: RouteArgs = { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}) };
+      return shop.kind === "orders" ? orderRoute(kit, args, orderOpsOf(name, shop)) : feeRoute(kit, args);
+    }
 
     // ---- the API and the MCP endpoint ----
     if (rest.startsWith("/api/v1")) {

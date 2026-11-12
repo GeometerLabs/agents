@@ -16,6 +16,8 @@ const codec = snapshotCodec<Store>(1, [
   { name: "upi", kind: "optional-object" },
   // the shop's assistant's cards and undo (item 11e); a shop without the assistant never has it, so its snapshot is as it was
   { name: "assistant", kind: "optional-object" },
+  // item 11h: the shop page's requests (by their handles' hashes) and the messages its customers were given; a shop nobody ordered from on the page never has it
+  { name: "channel", kind: "optional-object" },
 ]);
 
 export const serializeStore: (store: Store) => string = codec.serialize;

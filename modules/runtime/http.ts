@@ -16,6 +16,7 @@
 //                                                     hash in the client folder, read on every request so a revoked link stops at once
 //   GET  /internal/channel/offer?service=&from=YYYY-MM-DD&days=N   the services, prices and free times
 //   GET  /internal/channel/request?handle=<64 hex>    one request by its handle's hash
+//   GET  /internal/channel/parent?link=<64 hex>       item 11h (Fees): what a parent's private link opens, by the link's hash; 404 for a hash no parent has now
 //   GET  /internal/channel/owner                     what waits for the owner (x-owner-link needed)
 //   POST /internal/channel/owner-voice               items 11d and 11e: a recording from the owner's page (audio/ogg, at most 256 KB), with the owner's credential;
 //                                                     held in memory only, and an owner_message carrying its reference is saved (never the audio)
@@ -211,6 +212,15 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (!HANDLE_HASH.test(handle)) return send(res, 400, { error: "handle is the handle's hash: 64 hex digits." });
       const view = channel.view(handle);
       return view ? send(res, 200, view) : send(res, 404, { error: "No booking has this handle." });
+    }
+    // item 11h: a parent's private page (Fees). The front sends only the link's hash; the runtime finds the parent whose saved hash it is NOW, so a replaced or
+    // revoked link opens nothing, at once and after a restart alike
+    if (path === "/internal/channel/parent") {
+      only("GET");
+      const link = url.searchParams.get("link") ?? "";
+      if (!HANDLE_HASH.test(link)) return send(res, 400, { error: "link is the link's hash: 64 hex digits." });
+      const view = channel.parent?.(link) ?? null;
+      return view ? send(res, 200, view) : send(res, 404, { error: "No parent has this link." });
     }
     // ---- item 11f: the owner's sign-in ----
     if (path === "/internal/channel/owner-signin") {

@@ -55,7 +55,7 @@ export function hoursLines(hours: NonNullable<ShopInfo["hours"]>, language: Lang
 export const waLink = (number: string): string => `https://wa.me/${number.replace(/\D/gu, "")}`;
 
 /** The head of the customer view: the character (placeholder), the hours, and the WhatsApp link when the shop's number is known. */
-export function shopFace(o: { shop: ShopInfo; language: Language; pages?: PagesFile }): Raw {
+export function shopFace(o: { shop: Pick<ShopInfo, "name" | "hours" | "character">; language: Language; pages?: PagesFile }): Raw {
   const w = WORDS[o.language];
   const c = o.shop.character;
   return html`<section class="face" aria-label="${o.shop.name}">${characterSvg(o.shop)}<div>
