@@ -59,7 +59,7 @@ export type TemplateId =
   | "fee_pay_link" | "fee_already_paid" | "fee_claim_partial" | "fee_claim_not_found" | "fee_nothing_due"
   | "fee_waiver_asked" | "fee_waiver_applied" | "fee_waiver_cleared" | "fee_waiver_denied" | "fee_discount_to_owner" | "fee_request_waiting"
   | "fee_refund_asked" | "fee_refund_too_much" | "fee_refund_none" | "fee_refund_done" | "fee_refund_pending" | "fee_refund_checking" | "fee_refund_confirmed" | "fee_refund_approved" | "fee_refund_denied" | "fee_refund_expired"
-  | "fee_link_failed" | "fee_menu" | "fee_didnt_understand" | "fee_told_owner" | "fee_couldnt_tell_owner" | "voice_note"
+  | "fee_link_failed" | "fee_menu" | "fee_didnt_understand" | "fee_told_owner" | "fee_couldnt_tell_owner" | "voice_note" | "voice_note_retry"
   // to the owner. Every line starts and ends with fixed words, because each one that goes out unasked is also a WhatsApp template (meta-templates.ts) and
   // Meta rejects a body that starts or ends with a value. The one exception is the reply to the owner's own message, which needs no template.
   | "owner_waiver_request" | "owner_waiver_applied" | "owner_refund_request" | "owner_discount_note" | "owner_payment_claim" | "owner_overpayment" | "owner_link_failed" | "owner_request_stale"
@@ -151,6 +151,7 @@ const en: BaseSet = {
   fee_told_owner: () => "I have told the owner that you would like to talk. They will message you here.",
   fee_couldnt_tell_owner: () => "Sorry, I could not reach the owner just now. Please try again in a few minutes.",
   voice_note: () => "Please type your message; I cannot listen to voice notes yet.",
+  voice_note_retry: () => "I couldn't make out that voice note. Please type your message instead.",
 
   owner_waiver_request: (f) => `Approval needed: ${need(f, "customerPhone")} asks to take ${inr(f, "waiverInr")} off ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")}. The fee is ${inr(f, "feeInr")} and ${inr(f, "balanceInr")} is to pay now. Reply "approve ${need(f, "requestRef")}" or "deny ${need(f, "requestRef")}".`,
   owner_waiver_applied: (f) => `Done within your ${inr(f, "waiverLimitInr")} limit: ${inr(f, "waiverInr")} taken off ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} (${need(f, "customerPhone")}). ${inr(f, "balanceInr")} is now to pay.`,
@@ -214,6 +215,7 @@ const hi: BaseSet = {
   fee_told_owner: () => "मैंने मालिक को बता दिया है कि आप बात करना चाहते हैं। वे आपको यहीं संदेश भेजेंगे।",
   fee_couldnt_tell_owner: () => "क्षमा करें, अभी मालिक तक बात नहीं पहुँच पाई। कृपया कुछ मिनट बाद फिर कोशिश करें।",
   voice_note: () => "कृपया अपना संदेश लिखकर भेजें; मैं अभी वॉइस नोट नहीं सुन सकता।",
+  voice_note_retry: () => "मैं यह वॉइस नोट समझ नहीं पाया। कृपया अपना संदेश लिखकर भेजिए।",
 
   owner_waiver_request: (f) => `मंज़ूरी चाहिए: ${need(f, "customerPhone")} ने ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस से ${inr(f, "waiverInr")} कम करने को कहा है। फीस ${inr(f, "feeInr")} है और अभी ${inr(f, "balanceInr")} भरने हैं। "approve ${need(f, "requestRef")}" या "deny ${need(f, "requestRef")}" लिखकर जवाब दें।`,
   owner_waiver_applied: (f) => `आपकी ${inr(f, "waiverLimitInr")} की सीमा के अंदर हो गया: ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस से ${inr(f, "waiverInr")} कम किए (${need(f, "customerPhone")})। अब ${inr(f, "balanceInr")} भरने हैं।`,
@@ -275,6 +277,7 @@ const ml: BaseSet = {
   fee_told_owner: () => "നിങ്ങൾക്ക് സംസാരിക്കണമെന്ന് ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. അവർ ഇവിടെ തന്നെ സന്ദേശം അയയ്ക്കും.",
   fee_couldnt_tell_owner: () => "ക്ഷമിക്കണം, ഇപ്പോൾ ഉടമയെ അറിയിക്കാൻ കഴിഞ്ഞില്ല. കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കൂ.",
   voice_note: () => "ദയവായി സന്ദേശം ടൈപ്പ് ചെയ്യൂ; എനിക്ക് ഇപ്പോൾ വോയ്സ് നോട്ട് കേൾക്കാൻ കഴിയില്ല.",
+  voice_note_retry: () => "ആ വോയ്‌സ് നോട്ട് എനിക്ക് മനസ്സിലായില്ല. ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ.",
 
   owner_waiver_request: (f) => `അനുമതി വേണം: ${need(f, "customerPhone")} ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിൽ നിന്ന് ${inr(f, "waiverInr")} കുറയ്ക്കാൻ ആവശ്യപ്പെടുന്നു. ഫീസ് ${inr(f, "feeInr")} ആണ്, ഇപ്പോൾ ${inr(f, "balanceInr")} അടയ്ക്കാനുണ്ട്. "approve ${need(f, "requestRef")}" അല്ലെങ്കിൽ "deny ${need(f, "requestRef")}" എന്ന് മറുപടി നൽകുക.`,
   owner_waiver_applied: (f) => `നിങ്ങളുടെ ${inr(f, "waiverLimitInr")} പരിധിക്കുള്ളിൽ ചെയ്തു: ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിൽ നിന്ന് ${inr(f, "waiverInr")} കുറച്ചു (${need(f, "customerPhone")}). ഇനി ${inr(f, "balanceInr")} അടയ്ക്കണം.`,
@@ -336,6 +339,7 @@ const kn: BaseSet = {
   fee_told_owner: () => "ನೀವು ಮಾತನಾಡಲು ಬಯಸುತ್ತೀರಿ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಅವರು ಇಲ್ಲಿಯೇ ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತಾರೆ.",
   fee_couldnt_tell_owner: () => "ಕ್ಷಮಿಸಿ, ಈಗ ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲು ಆಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
   voice_note: () => "ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ; ನನಗೆ ಇನ್ನೂ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ.",
+  voice_note_retry: () => "ಆ ವಾಯ್ಸ್ ನೋಟ್ ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ.",
 
   owner_waiver_request: (f) => `ಅನುಮತಿ ಬೇಕು: ${need(f, "customerPhone")} ಅವರು ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದಿಂದ ${inr(f, "waiverInr")} ಕಡಿಮೆ ಮಾಡಲು ಕೇಳಿದ್ದಾರೆ. ಶುಲ್ಕ ${inr(f, "feeInr")}, ಈಗ ${inr(f, "balanceInr")} ಪಾವತಿಸಬೇಕು. "approve ${need(f, "requestRef")}" ಅಥವಾ "deny ${need(f, "requestRef")}" ಎಂದು ಉತ್ತರಿಸಿ.`,
   owner_waiver_applied: (f) => `ನಿಮ್ಮ ${inr(f, "waiverLimitInr")} ಮಿತಿಯೊಳಗೆ ಮಾಡಲಾಗಿದೆ: ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದಿಂದ ${inr(f, "waiverInr")} ಕಡಿಮೆ ಮಾಡಲಾಗಿದೆ (${need(f, "customerPhone")}). ಈಗ ${inr(f, "balanceInr")} ಪಾವತಿಸಬೇಕು.`,

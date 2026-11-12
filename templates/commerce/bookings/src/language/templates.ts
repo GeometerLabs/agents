@@ -51,7 +51,7 @@ export type TemplateId =
   | "slot_unavailable" | "outside_hours" | "hold_failed" | "link_failed" | "booked" | "couldnt_confirm" | "hold_expired"
   | "slot_gone_refund" | "refund_unbooked" | "reschedule_failed" | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending"
   | "cancelled_late" | "cancelled_no_deposit" | "no_booking_found" | "refund_approved" | "refund_denied" | "rescheduled"
-  | "reminder" | "didnt_understand" | "refund_checking" | "refund_confirmed" | "refund_expired" | "voice_note"
+  | "reminder" | "didnt_understand" | "refund_checking" | "refund_confirmed" | "refund_expired" | "voice_note" | "voice_note_retry"
   // the turns that come with buttons or a list (language/interactive.ts): pick a service, pick a time, are you sure, "talk to the owner"
   | "pick_service" | "pick_slot" | "confirm_buttons" | "ask_cancel" | "kept" | "told_owner" | "couldnt_tell_owner"
   // to the owner. Every line starts and ends with fixed words, because each one is also a WhatsApp template (meta-templates.ts) and
@@ -149,6 +149,7 @@ const en: BaseSet = {
   reminder: (f) => `Reminder: your ${need(f, "serviceName")} at ${f.businessName} is on ${slot(f)}.`,
   didnt_understand: () => "Sorry, I didn't understand. Please tell me the service, day and time you would like.",
   voice_note: () => "Please type your message; I can't listen to voice notes yet.",
+  voice_note_retry: () => "I couldn't make out that voice note. Please type your message instead.",
   pick_service: (f) => `Hello! Welcome to ${f.businessName}. Which service would you like?`,
   pick_slot: (f) => `When would you like your ${need(f, "serviceName")}? Pick a time below, or write the day and time you prefer.`,
   confirm_buttons: (f) => `Just to be sure: ${need(f, "serviceName")} on ${slot(f)}. Is that right?`,
@@ -222,6 +223,7 @@ const hi: BaseSet = {
   refund_expired: (f) => `मालिक ने समय पर आपके ${inr(f, "refundInr")} के रिफंड पर जवाब नहीं दिया, इसलिए वह अभी नहीं भेजा गया है। कृपया ${f.businessName} से सीधे संपर्क करें।`,
   didnt_understand: () => "माफ़ कीजिए, मैं समझ नहीं पाया। कृपया सेवा, दिन और समय बताइए।",
   voice_note: () => "कृपया अपना संदेश लिखकर भेजिए; मैं अभी वॉइस नोट नहीं सुन सकता।",
+  voice_note_retry: () => "मैं यह वॉइस नोट समझ नहीं पाया। कृपया अपना संदेश लिखकर भेजिए।",
   pick_service: (f) => `नमस्ते! ${f.businessName} में आपका स्वागत है। आपको कौन सी सेवा चाहिए?`,
   pick_slot: (f) => `आपको ${need(f, "serviceName")} के लिए कब आना है? नीचे से समय चुनिए, या अपना पसंदीदा दिन और समय लिखिए।`,
   confirm_buttons: (f) => `पक्का करने के लिए: ${need(f, "serviceName")}, ${slot(f)}। क्या यह सही है?`,
@@ -295,6 +297,7 @@ const ml: BaseSet = {
   refund_expired: (f) => `ഉടമ സമയത്തിനുള്ളിൽ നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ടിനെക്കുറിച്ച് മറുപടി നൽകിയില്ല, അതിനാൽ അത് ഇതുവരെ അയച്ചിട്ടില്ല. ദയവായി ${f.businessName}-നെ നേരിട്ട് ബന്ധപ്പെടൂ.`,
   didnt_understand: () => "ക്ഷമിക്കണം, എനിക്ക് മനസ്സിലായില്ല. ദയവായി സേവനം, ദിവസം, സമയം എന്നിവ പറയൂ.",
   voice_note: () => "ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ; എനിക്ക് ഇപ്പോൾ വോയ്‌സ് നോട്ടുകൾ കേൾക്കാൻ കഴിയില്ല.",
+  voice_note_retry: () => "ആ വോയ്‌സ് നോട്ട് എനിക്ക് മനസ്സിലായില്ല. ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ.",
   pick_service: (f) => `നമസ്കാരം! ${f.businessName}-ലേക്ക് സ്വാഗതം. ഏത് സേവനമാണ് വേണ്ടത്?`,
   pick_slot: (f) => `${need(f, "serviceName")} എപ്പോൾ വേണം? താഴെ നിന്ന് ഒരു സമയം തിരഞ്ഞെടുക്കൂ, അല്ലെങ്കിൽ ഇഷ്ടമുള്ള ദിവസവും സമയവും എഴുതൂ.`,
   confirm_buttons: (f) => `ഉറപ്പിക്കാൻ: ${need(f, "serviceName")}, ${slot(f)}. ഇത് ശരിയാണോ?`,
@@ -364,6 +367,7 @@ const kn: BaseSet = {
   refund_expired: (f) => `ಮಾಲೀಕರು ಸಮಯಕ್ಕೆ ಸರಿಯಾಗಿ ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಬಗ್ಗೆ ಉತ್ತರಿಸಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಇನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು ${f.businessName} ಅವರನ್ನು ನೇರವಾಗಿ ಸಂಪರ್ಕಿಸಿ.`,
   didnt_understand: () => "ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಸೇವೆ, ದಿನ, ಸಮಯ ತಿಳಿಸಿ.",
   voice_note: () => "ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ; ನನಗೆ ಈಗ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ.",
+  voice_note_retry: () => "ಆ ವಾಯ್ಸ್ ನೋಟ್ ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ.",
   pick_service: (f) => `ನಮಸ್ಕಾರ! ${f.businessName}-ಗೆ ಸ್ವಾಗತ. ಯಾವ ಸೇವೆ ಬೇಕು?`,
   pick_slot: (f) => `${need(f, "serviceName")} ಯಾವಾಗ ಬೇಕು? ಕೆಳಗಿನಿಂದ ಒಂದು ಸಮಯ ಆಯ್ಕೆಮಾಡಿ, ಅಥವಾ ನಿಮಗೆ ಇಷ್ಟವಾದ ದಿನ ಮತ್ತು ಸಮಯ ಬರೆಯಿರಿ.`,
   confirm_buttons: (f) => `ಖಚಿತಪಡಿಸಲು: ${need(f, "serviceName")}, ${slot(f)}. ಇದು ಸರಿಯೇ?`,

@@ -38,6 +38,8 @@ export type { RefundCounts };
 export interface Services { /** Left out for a shop with no Google Calendar (B72): the agent then uses the shop's own booking list (src/adapters/own-calendar.ts). */ calendar?: Calendar; payments: Payments; messaging: Messaging; /** A UPI shop: where its QR pictures go (modules/payments/owner-marked/qr-image.ts). Left out: the words alone. */ qrImage?: (text: string) => Promise<string | null> }
 
 export interface RuntimeOptions {
+  /** B29: the shop's voice service (modules/voice), built from runtime.json `speech`. Not one of `services`: it never reaches a Guard the step waits on (it answers, it does not throw). Left out: voice is off. */
+  voice?: import("../../../../modules/voice/voice.ts").VoiceService;
   settings: Settings;
   store: DurableStore;
   clock: Clock;
@@ -103,6 +105,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   const agentOver = (store: Store, record: ReturnType<typeof createRecord>, use: Services) => createAgent({
     settings, clock, ...use, messaging: channelMessaging(use.messaging, () => (store.channel ??= emptyChannelState()), clock),
     calendar: use.calendar ?? createOwnCalendar(store, () => clock.now()), parser, record, store, ai: policy,
+    // B29: the shop's voice service reaches the agent here, so a voice note from WhatsApp is heard the same whichever path built the agent
+    ...(options.voice ? { voice: options.voice } : {}),
     ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}),
   });
   const kit: RuntimeKit<Store, Settings, RefundContext> = {

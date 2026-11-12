@@ -488,6 +488,22 @@ Good to know:
 - If you change the domain or the HTTPS port, run `deploy` again for each shop. The links already sent stay on the old address.
 - Nothing has deleted old pages yet. Each month adds one small folder per shop.
 
+## Voice notes (optional, off by default)
+
+Many customers send a voice note instead of typing. With voice on, the agent listens to it and reads the words exactly as if they had been typed (the same rules, the same limits, the same Guards). **It always replies in text**: the owner chose to listen in voice and reply in writing (12 Nov 2026), because a spoken reply is hard to hear well and can feel uncanny. Bookings, Orders and Fees all do this. The audio is held in memory for the length of the call and never saved; the record keeps what it keeps for typed text, plus that it came by voice, which provider listened, for how many seconds and what that cost. A note that is too long (over 30 seconds), cannot be made out, or arrives when the shop is out of its AI allowance for the month or at its day's limit gets one line asking the customer to type ("I couldn't make out that voice note"); where voice is off the line is the old one ("I can't listen to voice notes yet"). The owner's and the approvers' voice notes are never listened to: their messages are commands and are typed.
+
+**The default needs no account with anyone.** Listening is done by a speech-to-text service Geometer runs (open-source models in one container, `geometer-speech`, on the server's private network; the research chose AI4Bharat IndicConformer for Hindi, Malayalam and Kannada and Whisper for English). It has one route, `POST /stt` (audio in, text and the detected language out), written in `modules/voice/geometer.ts`; the service itself is not built here. It costs the shop nothing per minute; the seconds are still recorded on every line. Sarvam's speech-to-text stays as an optional paid adapter for a builder who wants it (their own account, key and price).
+
+**Today the setting is refused when a deploy plans it**, because the media download Guard cannot be defined yet (see `bundle/Deferred.md`, "Voice notes"). Everything else is built and tested against stand-ins.
+
+Turning it on, once the Guards are placed:
+
+1. Nothing for the default. *Only if a builder picks Sarvam:* open their own account, note its price per minute from its price page, and give the server the key: the panel's **Server** page, step 4 (write-only, never shown again), or `geometer speech-key <file>`.
+2. On the shop's page, **Voice notes**: the switch (off until ticked), the speech service (Geometer's own by default, or Sarvam), the price per minute (only for Sarvam), and the host the audio is downloaded from (Meta's pages do not name it; the first voice note on the test number shows it). The panel writes this to the shop's `runtime.json` `speech` block.
+3. For a partner's shop the listening cost counts in the shop's model spend, so the AI cap (`ai.cap`) stops it; for a builder it is their own bill.
+
+A rough bill with Sarvam, at its pay-as-you-go price read on 12 Nov 2026 (INR 0.49 a minute, excluding GST): 100 voice notes of about 20 seconds are about 33 minutes, so about INR 16. With Geometer's own service it is nothing per minute to the shop.
+
 ## Backups
 
 | Layer | How often | Where | Encrypted |

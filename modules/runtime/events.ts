@@ -88,9 +88,21 @@ function checkOne(raw: unknown): IncomingEvent | string {
     if (!isObj(m) || !isText(m.id) || !isText(m.from) || typeof m.text !== "string" || typeof m.timestamp !== "number" || !Number.isFinite(m.timestamp)) {
       return "a message needs message.id, message.from, message.text and message.timestamp (epoch milliseconds).";
     }
-    // A voice note carries the fact and nothing else: no words, and no audio id or link (the inbox never passes one on). Only the boolean true is accepted.
+    // A voice note carries the fact and no words; with voice on it also carries where the audio is (`media`, below), never the audio. Only the boolean true is accepted.
     if (m.voiceNote !== undefined && m.voiceNote !== true) return "message.voiceNote, if given, must be true (a voice note or audio file).";
     if (m.voiceNote === true && m.text !== "") return "a voice note has no words: send message.text as an empty string.";
+    // With voice on (B29) a voice note may carry where its audio can be fetched: an id and/or an https address and a type, as plain strings. Only a voice note may; nothing
+    // else of the payload is passed on.
+    let media: { id?: string; url?: string; mime?: string } | undefined;
+    if (m.media !== undefined) {
+      const r = m.media;
+      if (m.voiceNote !== true) return "message.media is only for a voice note.";
+      const okId = (v: unknown) => v === undefined || (typeof v === "string" && /^[A-Za-z0-9_-]{1,128}$/u.test(v));
+      const okUrl = (v: unknown) => v === undefined || (typeof v === "string" && v.length <= 2048 && /^https:\/\/[^\s]+$/u.test(v));
+      const okMime = (v: unknown) => v === undefined || (typeof v === "string" && v.length <= 80 && /^[a-z0-9.+-]+\/[a-z0-9.+-]+(;\s*[a-z0-9=. -]+)?$/iu.test(v));
+      if (!isObj(r) || Object.keys(r).some((k) => !["id", "url", "mime"].includes(k)) || !okId(r.id) || !okUrl(r.url) || !okMime(r.mime) || (r.id === undefined && r.url === undefined)) return 'message.media, if given, must be {"id": the media id and/or "url": an https address, "mime": the type}.';
+      media = { ...(r.id !== undefined ? { id: r.id as string } : {}), ...(r.url !== undefined ? { url: r.url as string } : {}), ...(r.mime !== undefined ? { mime: r.mime as string } : {}) };
+    }
     // A picture (a screenshot of a payment, B33) is the same: only the fact, no words and no media id.
     if (m.image !== undefined && m.image !== true) return "message.image, if given, must be true (a picture).";
     if (m.image === true && (m.text !== "" || m.voiceNote === true)) return "a picture has no words and is not a voice note: send message.text as an empty string.";
@@ -102,7 +114,7 @@ function checkOne(raw: unknown): IncomingEvent | string {
       if (m.voiceNote === true || m.image === true) return "a voice note or a picture cannot be a button or list reply.";
       reply = { id: r.id, kind: r.kind };
     }
-    return { kind: "message", message: { id: m.id, from: m.from, text: m.text, timestamp: m.timestamp, ...(m.voiceNote === true ? { voiceNote: true as const } : {}), ...(m.image === true ? { image: true as const } : {}), ...(reply ? { reply } : {}) } };
+    return { kind: "message", message: { id: m.id, from: m.from, text: m.text, timestamp: m.timestamp, ...(m.voiceNote === true ? { voiceNote: true as const } : {}), ...(media ? { media } : {}), ...(m.image === true ? { image: true as const } : {}), ...(reply ? { reply } : {}) } };
   }
   if (raw.kind === "payment_event") {
     const e = raw.event;

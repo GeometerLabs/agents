@@ -8,6 +8,9 @@ import type { InteractiveMessage } from "../language/interactive.ts";
 import { ApiError, TimeoutError, WindowClosedError, createFaults } from "../core/faults.ts";
 import type { FaultOptions } from "../core/faults.ts";
 
+/** Where the audio of a voice note can be fetched (modules/voice/media.ts reads it). Plain strings; checked when it is read from a webhook and again by the runtime's event check. */
+export interface VoiceMediaRef { id?: string; url?: string; mime?: string }
+
 export interface InboundMessage {
   id: string; // WhatsApp's message id (wamid...): the same id arriving twice is a duplicate delivery
   from: string; // E.164 number, for example +919811111111
@@ -18,6 +21,12 @@ export interface InboundMessage {
    * and no media id or link travels with the message. The agent answers it with one plain line asking the customer to type (plan B29 is the real voice module).
    */
   voiceNote?: true;
+  /**
+   * Only on a voice note, and only when the shop has turned voice on (the inbox is then told so: webhooks.ts parseWhatsAppWebhook `voiceMedia`): WHERE the audio can be
+   * fetched, never the audio. Meta's media id, or the url Gupshup's callback carries, and the type. The agent hands it to the voice service (modules/voice), which holds the
+   * audio in memory for one call. With voice off this is never set, so a shop without voice saves and records exactly what it did before.
+   */
+  media?: VoiceMediaRef;
   /**
    * True when the person sent a picture (a screenshot of a payment, say) instead of words. Like a voice note, only the fact is carried: the picture is never fetched,
    * looked at or kept, and no media id travels with the message. A picture is never proof of anything to the agent.
@@ -137,7 +146,7 @@ export interface FakeMessaging extends Messaging {
   sendDocument(to: string, doc: DocumentMessage): Promise<OutboundMessage>;
   sendImage(to: string, image: ImageMessage): Promise<OutboundMessage>;
   /** A person sends us a message (this opens their window). Pass the same `id` again, or call deliver twice, for a duplicate. `image`: they sent a picture (its words, if any, are `text`). */
-  receive(from: string, text: string, options?: { id?: string; reply?: { id: string; kind: "button" | "list" }; image?: boolean }): InboundMessage;
+  receive(from: string, text: string, options?: { id?: string; reply?: { id: string; kind: "button" | "list" }; image?: boolean; voiceNote?: boolean; media?: VoiceMediaRef }): InboundMessage;
   outbox(): OutboundMessage[];
   sentTo(number: string): OutboundMessage[];
   isOptedOut(number: string): boolean;
@@ -177,7 +186,7 @@ export function createFakeMessaging(clock: Clock): FakeMessaging {
     receive(from, text, options = {}) {
       lastInbound.set(from, clock.now());
       if (text.trim().toUpperCase() === "STOP") optedOut.add(from);
-      return { id: options.id ?? `wamid.in_${inboundSeq++}`, from, text, timestamp: clock.now(), ...(options.reply ? { reply: options.reply } : {}), ...(options.image ? { image: true as const } : {}) };
+      return { id: options.id ?? `wamid.in_${inboundSeq++}`, from, text, timestamp: clock.now(), ...(options.reply ? { reply: options.reply } : {}), ...(options.image ? { image: true as const } : {}), ...(options.voiceNote ? { voiceNote: true as const } : {}), ...(options.media ? { media: options.media } : {}) };
     },
 
     async sendText(to, text) {
