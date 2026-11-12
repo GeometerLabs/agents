@@ -9,6 +9,10 @@ import type { Words } from "./words.ts";
 // charge) are copied byte for byte from docs/product/gtm-and-revenue.md ("The same lines in Hindi, Malayalam and Kannada"), the one source; that table writes
 // the deposit as ಡೆಪಾಸಿಟ್, so the "booked" line says ಡೆಪಾಸಿಟ್ while the rest of this file says ಮುಂಗಡ ಹಣ, as the agent's own messages do.
 // Amounts, dates, numbers, names and addresses are passed in and shown as given, in Western digits; no case ending is glued to them.
+/** When the server's Gupshup universal token ends, from the whole hours left: days from a day on, hours under a day, never "0 ದಿನ" (words.ts credentialEnds). */
+const credentialEnds = (hours: number) => hours >= 24 ? `${Math.floor(hours / 24)} ${hours < 48 ? "ದಿನದಲ್ಲಿ" : "ದಿನಗಳಲ್ಲಿ"} ಮುಗಿಯುತ್ತದೆ. ಅದಕ್ಕೂ ಮೊದಲು ಹೊಸದನ್ನು ಕೊಡಿ`
+  : hours >= 1 ? `${hours} ${hours === 1 ? "ಗಂಟೆಯಲ್ಲಿ" : "ಗಂಟೆಗಳಲ್ಲಿ"} ಮುಗಿಯುತ್ತದೆ. ಅದಕ್ಕೂ ಮೊದಲು ಹೊಸದನ್ನು ಕೊಡಿ` : "ಒಂದು ಗಂಟೆಯೊಳಗೆ ಮುಗಿಯುತ್ತದೆ, ಅಥವಾ ಈಗಾಗಲೇ ಮುಗಿದಿದೆ. ಈಗಲೇ ಹೊಸದನ್ನು ಕೊಡಿ";
+
 export const kn: Words = {
   appName: "Geometer",
   languageName: "ಕನ್ನಡ",
@@ -291,7 +295,7 @@ export const kn: Words = {
       refund_made_not_told: (id, amount, _hours, how) => `${id} ರ ${amount} ರೀಫಂಡ್ ಆಗಿದೆ, ಆದರೆ ಗ್ರಾಹಕರಿಗೆ ಇನ್ನೂ ತಿಳಿಸಿಲ್ಲ: ${how}`,
       message_unanswered: (id) => `ಸೇವೆಯ ಸಂಪರ್ಕ ನಿಂತುಹೋದ ಕಾರಣ ${id} ರ ಕೆಲಸ ಪೂರ್ಣವಾಗಲಿಲ್ಲ: ಪರಿಶೀಲಿಸಿ ಗ್ರಾಹಕರಿಗೆ ಉತ್ತರಿಸಿ`,
       whatsapp_token_renewal: (_id, _amount, hours) => `Gupshup ಮೂಲಕ WhatsApp: ಈ ಅಂಗಡಿಯ ಟೋಕನ್ ಅನ್ನು ನವೀಕರಿಸಲು ಆಗಲಿಲ್ಲ. ಈಗಿನದು ${hours} ಗಂಟೆಗಳಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ, ಅದರ ನಂತರ ಯಾವ ಸಂದೇಶವೂ ಹೋಗುವುದಿಲ್ಲ. ಸರ್ವರ್ ನೋಡಿ (geometer logs refresher) ಅಥವಾ ಹೊಸ Gupshup universal token ಕೊಡಿ.`,
-      whatsapp_token_credential: (_id, _amount, hours) => `Gupshup ಮೂಲಕ WhatsApp: ಸರ್ವರ್‌ನ Gupshup universal token ${Math.floor(hours / 24)} ದಿನಗಳಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ. ಅದಕ್ಕೂ ಮೊದಲು ಹೊಸದನ್ನು ಕೊಡಿ (geometer gupshup-token <file>).`,
+      whatsapp_token_credential: (_id, _amount, hours) => `Gupshup ಮೂಲಕ WhatsApp: ಸರ್ವರ್‌ನ Gupshup universal token ${credentialEnds(hours)} (geometer gupshup-token <file>).`,
       message_not_delivered: (id) => `${id} ಗಾಗಿ ಕಳುಹಿಸಿದ WhatsApp ಸಂದೇಶ ಫೋನ್ ತಲುಪಲಿಲ್ಲ (ಅದು ವಿಫಲವಾಯಿತು ಎಂದು WhatsApp ತಿಳಿಸಿತು): ಆ ವ್ಯಕ್ತಿಯನ್ನು ಬೇರೆ ರೀತಿಯಲ್ಲಿ ಸಂಪರ್ಕಿಸಿ`,
       upi_payment_unconfirmed: (id, amount) => `${id} ಗಾಗಿ ${amount} UPI ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಇನ್ನೂ ಖಚಿತಪಡಿಸಿಲ್ಲ: UPI ಆ್ಯಪ್ ನೋಡಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿ`,
       upi_refund_owed: (id, amount) => `${id} ಗಾಗಿ ${amount} ರೀಫಂಡ್ ಮಾಲೀಕರು ನೀಡಬೇಕಿದೆ, ಇನ್ನೂ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿಲ್ಲ: ಮಾಲೀಕರಿಗೆ ನೆನಪಿಸಿ`,
