@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -124,7 +124,7 @@ test("init --pairing takes the id, fleet's address, the key file and the licence
     assert.match(r.out, /this server is ravi-abcdef/u);
     assert.match(r.out, /The trial lease is kept/u);
     const server = loadServer(dir);
-    assert.deepEqual({ id: server.id, fleet: server.fleet, licence: server.licence, panel: server.panel, model: server.model.model }, { id: "ravi-abcdef", fleet: { url: fleet.url, keyFile: join(dir, "fleet_key") }, licence: { keys: [TEST_PUBLIC_HEX] }, panel: { enabled: true, mode: "own" }, model: "" });
+    assert.deepEqual({ id: server.id, fleet: server.fleet, licence: server.licence, panel: server.panel, model: server.model.model }, { id: "ravi-abcdef", fleet: { url: fleet.url, keyFile: join(dir, "fleet_key") }, licence: { keys: [TEST_PUBLIC_HEX] }, panel: { enabled: true, mode: "own", termsOnWhatsapp: false }, model: "" }); // B72: the WhatsApp terms are off unless set
     assert.ok(existsSync(licencePaths(dir).lease), "the trial lease is in state/licence before the first start");
     assert.match(r.out, /choose the model/u);
   } finally { await fleet.close(); rmSync(root, { recursive: true, force: true }); }
@@ -255,6 +255,7 @@ test("the whole server has its own verbs: server stop asks for --confirm and nam
     const state = loadState(w.root);
     state.shops["glow-salon"] = { index: 1, guards: {}, lockHistory: [], applied: {} as never };
     saveState(w.root, state);
+    mkdirSync(join(w.root, "generated"), { recursive: true }); // a deployed server has its generated folder; the test world starts without one
     writeFileSync(join(w.root, "generated", "compose.yaml"), "services: {}\n");
     let ps = "caddy\trunning\tUp 2 minutes\npanel\trunning\tUp 2 minutes (healthy)\nops\trunning\tUp 2 minutes\ninbox\trunning\tUp 2 minutes (healthy)\nrelay\trunning\tUp 2 minutes (healthy)\nrefresher\trunning\tUp 2 minutes (healthy)\n";
     const runner = fakeRunner((_c, args) => (args.includes("ps") ? ok(ps) : args.includes("invite") ? ok("https://shops.example.com/join/abc\n") : ok()));
