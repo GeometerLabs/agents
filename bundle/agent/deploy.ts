@@ -160,12 +160,17 @@ export interface PreparedAgent { folder: AgentFolder; plan: AgentPlan; guards: P
 /** What an agent is asked to be: its two files, and an own gateway API's reviewed spec (its two files) when it has one, so a changed accept file is a change to deploy. */
 export const agentDesiredHash = (f: Pick<AgentFolder, "agentText" | "settingsText" | "ownApi">): string => sha256Hex(stableJson({ agent: agentGuardPart(f.agentText), settings: f.settingsText, ...(f.ownApi ? { ownApi: f.ownApi } : {}) }));
 
+/** Hand-in names a shop may use that an own agent never does: Gupshup's token (item 11b is for shops; an own agent's WhatsApp is Meta's API). */
+const OWN_AGENT_NOT_ASKED: ReadonlySet<string> = new Set(["gupshup_authorization"]);
+
 /** What an agent needs before it can run, said by the name `agent add` printed it under. */
 function missingSecrets(dir: string, name: string, f: AgentFolder): Problem[] {
   const need = (container: string, file: string, handIn: string): Problem[] => have(dir, container, ...file.split("/")) ? [] : [{ rule: `secret-missing:${handIn}`, message: `${name}: ${handIn} has not been handed in. Put it in secrets-inbox/${name}/${handIn}; it is moved to where only the right container can read it.` }];
   const kinds = f.agent?.upstreams ?? [];
-  // each Guard's own credential, by the name it is handed in under (lib/secrets.ts INTAKE says which container each goes to): one list, so a new kind of Guard is never skipped
-  const guardCredentials = Object.entries(INTAKE).flatMap(([handIn, rule]) => {
+  // each Guard's own credential, by the name it is handed in under (lib/secrets.ts INTAKE says which container each goes to): one list, so a new kind of Guard is never skipped.
+  // Gupshup's token fills the same WhatsApp file as Meta's, but an own agent's WhatsApp Guard talks to Meta only (plan.ts gives whatsappSpec no Gupshup route), so a
+  // builder is never told to hand in a Gupshup token for it.
+  const guardCredentials = Object.entries(INTAKE).filter(([handIn]) => !OWN_AGENT_NOT_ASKED.has(handIn)).flatMap(([handIn, rule]) => {
     const [container, ...file] = rule.to(name);
     return kinds.some((k) => container === names.guard(name, k)) ? need(container, file.join("/"), handIn) : [];
   });
