@@ -963,7 +963,8 @@ At `<base>/owner` (base: `https://<pages domain>/<slug>` for a shop the door ser
    `Secure`, `SameSite=Lax`, `Path=<base path>/owner`, no `Domain` (the `__Host-` prefix forbids a path). A session is good only while its owner's number is the one in
    the settings, its owner address is the shop's current one (a slug change ends it), and it was made after the panel's last "sign out every device"
    (`shops/<shop>/owner-sessions.json`, copied to the runtime by the deployer like item 11d's link hash). The owner signs out from the page. The record has
-   `owner_signin` lines for a link sent, a sign-in, a sign-out and the panel's sign-out of every device.
+   `owner_signin` lines for a link sent, a sign-in, a sign-out and the panel's sign-out of every device. A handover between partners (B38) keeps the owner's sessions:
+   they were made from the owner's own WhatsApp and no partner ever saw them (item 11d's panel-made link, which the old partner did see, is switched off by a handover).
 5. **What it opens.** Item 11d's owner page, with the session as the credential in place of the panel-made link: the runtime and the relay accept either (the relay asks the
    runtime about a session, with its internal token, so the front is never trusted for it). The owner's app of item 11e mounts under the same `<base>/owner` when it lands.
 
