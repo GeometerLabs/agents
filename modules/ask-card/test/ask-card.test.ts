@@ -6,9 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { LANGUAGES } from "../../language/languages.ts";
 import { bannedIn } from "../../report/claims.ts";
-import { KINDS } from "../../../bundle/lib/kinds.ts";
-import { REVIEW_STATE } from "../../../bundle/panel/languages.ts";
-import { CARD_REVIEW_STATE, CARD_TEMPLATES, HEADS, INTRO, LIST, NOTE, OPTIONAL_LABEL, TEMPLATE_NAMES, TITLE } from "../list.ts";
+import { CARD_TEMPLATES, HEADS, INTRO, LIST, NOTE, OPTIONAL_LABEL, TEMPLATE_NAMES, TITLE } from "../list.ts";
 import { REPO, askCardFor, askCardRows, cardFiles, cardPath, renderMarkdown, staleCards } from "../render.ts";
 
 const TRANSLATED = LANGUAGES.filter((l) => l !== "en");
@@ -17,8 +15,7 @@ const SITE_BANNED = [/\bearn/i, /\bincome\b/i, /side hustle/i, /\bpassive\b/i, /
 /** A promise the facts file says we must not make (docs/research/2026-11-11-whatsapp-onboarding-facts.md). */
 const PROMISE = /\bno documents\b|\bone visit\b|\bno paperwork\b|\bwithout (any )?documents\b/i;
 
-test("the card is made for exactly the templates the bundle can run", () => {
-  assert.deepEqual([...CARD_TEMPLATES].sort(), Object.keys(KINDS).sort());
+test("the list has a card for each of its templates (that these are the bundle's templates is checked in bundle/test/ask-card.test.ts)", () => {
   assert.deepEqual(Object.keys(LIST).sort(), [...CARD_TEMPLATES].sort());
 });
 
@@ -114,7 +111,7 @@ test("each template asks what its own settings ask, and nothing the code no long
 });
 
 test("Hindi, Malayalam and Kannada carry the machine-written marker, in the data and in the Markdown; English does not", () => {
-  assert.deepEqual(CARD_REVIEW_STATE, REVIEW_STATE, "the card's markers are the panel's REVIEW_STATE: change both together, when a named reader has signed");
+  // that CARD_REVIEW_STATE is the panel's REVIEW_STATE is checked in bundle/test/ask-card.test.ts (a shared module's test imports no bundle code)
   for (const t of CARD_TEMPLATES) {
     for (const l of TRANSLATED) {
       const card = askCardFor(t, l);
