@@ -42,12 +42,17 @@ export const REFUSED_FOR_MS = DAY;
 export interface UndoRecord {
   /** "u-2" */
   id: string;
-  kind: "close_day";
+  /** A closed day (undo: open it again) or a booking moved by the owner (undo: move it back, if that time is still free). */
+  kind: "close_day" | "move";
   skill: string;
-  /** The date closed, "2026-11-16". */
+  /** close_day: the date closed, "2026-11-16". move: the booking's date before the move. */
   date: string;
-  /** The cases whose customers were asked to pick another day. Undo tells those still on that day that their booking stands. */
+  /** close_day: the cases whose customers were asked to pick another day. Undo tells those still on that day that their booking stands. */
   asked: string[];
+  /** move: the booking, and where it was and went. */
+  case?: string;
+  fromMs?: number;
+  toMs?: number;
   atMs: number;
   untilMs: number;
   done?: boolean;

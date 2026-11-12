@@ -25,7 +25,10 @@ const SAMPLES: { [K in MessageId]: MessageData[K][] } = {
   closed: [{ date: SUN, asked: 2 }, { date: SUN, asked: 0 }],
   already_closed: [{ date: SUN }], weekday_closed: [{ date: SUN }], not_closed: [{ date: SUN }], reopened: [{ date: SUN, told: 2 }, { date: SUN, told: 0 }], past_day: [{ date: SUN }],
   undo_none: [{}],
-  need_ref: [{ kind: "cancel", rows }, { kind: "message", rows: [] }, { kind: "refund", rows }],
+  need_ref: [{ kind: "cancel", rows }, { kind: "message", rows: [] }, { kind: "refund", rows }, { kind: "move", rows }],
+  need_when: [{ ref: "b-14" }],
+  moved: [{ ref: "b-14", toMs: AT_4PM }], moved_back: [{ ref: "b-14", toMs: AT_4PM }],
+  move_failed: (["no_case", "not_live", "outside_hours", "taken", "past", "failed"] as const).map((why) => ({ ref: "b-14", why, toMs: AT_4PM })),
   need_date: [{ kind: "close_day" }, { kind: "reopen_day" }],
   need_words: [{ ref: "b-14" }],
   refusal: (["no_case", "not_yours", "not_live", "not_booked", "already_back", "cancel_first", "nothing_paid", "too_much", "nothing_waiting", "no_window", "opted_out", "amount_not_on_record", "busy", "not_here"] as PrepareRefusal[])
@@ -39,7 +42,7 @@ const SAMPLES: { [K in MessageId]: MessageData[K][] } = {
   ],
   done: (["cancelled", "refund_sent", "held_by_guard", "owed_by_owner", "sent", "answered", "failed", "not_sent"] as const).map((note) => ({ note, who: "Priya", ref: "b-14", amountPaise: 20_000 })),
   refused: [{}], refused_before: [{ atMs: AT_4PM }], card_changed: [{}], card_closed: [{}], card_expired: [{}], card_unknown: [{}], limit_no: [{}],
-  help: [{ name: "Mithra", shop: "Glow Salon", kinds: ["day", "waiting", "money", "close_day", "cancel", "message", "undo", "owes", "open_orders"] }],
+  help: [{ name: "Mithra", shop: "Glow Salon", kinds: ["day", "waiting", "money", "close_day", "move", "cancel", "message", "undo", "owes", "open_orders"] }],
   not_understood: [{ kinds: ["day", "waiting", "close_day"] }], not_offered: [{}], voice_unheard: [{}],
   owner_words: [{ shop: "Glow Salon", words: "Running 15 minutes late, sorry!" }],
 };

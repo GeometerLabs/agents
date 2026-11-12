@@ -210,6 +210,25 @@ test("close a day: said in passing, the customers that day are asked to move and
   assert.equal(w.lastTextTo(w.owner), "There is nothing to undo.");
 });
 
+test("move a booking: done at once through the agent's own reschedule, the customer told, and undo moves it back", async () => {
+  const w = withAssistant();
+  await bookAndPay(w);
+  await owner(w, "move b-1 to 7pm");
+  assert.equal(w.lastTextTo(w.owner), "Moved b-1 to Wed 4 Nov, 7:00 pm. I've told the customer. Reply undo to move it back.");
+  assert.equal(w.store.bookings.get("b-1")!.startMs, zonedToMs({ year: 2026, month: 11, day: 4 }, { hour: 19, minute: 0 }, w.settings.timezone));
+  assert.match(w.lastTextTo(CUSTOMER), /7:00 pm/u);
+  await owner(w, "undo");
+  assert.equal(w.lastTextTo(w.owner), "b-1 is back at Wed 4 Nov, 6:00 pm. I've told the customer.");
+  assert.equal(w.store.bookings.get("b-1")!.startMs, zonedToMs({ year: 2026, month: 11, day: 4 }, { hour: 18, minute: 0 }, w.settings.timezone));
+  // a time that cannot be had is said to the owner only: the customer hears nothing of it
+  const told = w.textsTo(CUSTOMER).length;
+  await owner(w, "move b-1 to 9pm");
+  assert.equal(w.lastTextTo(w.owner), "I couldn't move b-1 to Wed 4 Nov, 9:00 pm: the shop is closed then.");
+  assert.equal(w.textsTo(CUSTOMER).length, told);
+  await owner(w, "move b-1");
+  assert.equal(w.lastTextTo(w.owner), "To when? For example: move b-1 to 5pm, or move b-1 to Friday.");
+});
+
 test("closing a weekday that is always closed, or a day gone, is said plainly", async () => {
   const w = withAssistant();
   await owner(w, "close sunday");

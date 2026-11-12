@@ -1433,6 +1433,13 @@ export function createAgent(deps: AgentDeps): Agent {
         return ownerCancelRefund(b, back, why, { upi: "upi_cancelled_refund_owed", done: "cancelled_refund", held: "cancelled_refund_pending" });
       },
       cancelWaiting: (b, why) => cancelWaiting(b, why),
+      slotRules: (b, startMs, endMs) => slotRules(b, startMs, endMs),
+      // the owner's move, as the customer's own "yes" to a new time applies it: the same checks again, the calendar, and the customer's "rescheduled" message
+      async applyMove(b, startMs, endMs) {
+        const p = localParts(startMs, tz);
+        b.reschedule = { date: { year: p.year, month: p.month, day: p.day }, timePhrase: { hour: p.hour % 12 || 12, minute: p.minute, period: p.hour < 12 ? "am" : "pm" }, startMs, endMs };
+        await applyReschedule(b);
+      },
       tellCancelled: (b) => tellCustomer(b, b.customer, ["cancelled_no_deposit"]),
       refund: (b, _paymentId, amountInr, why) => ownerCancelRefund(b, amountInr, why, { upi: "upi_refund_owed", done: "refund_approved", held: "cancelled_refund_pending" }),
     },

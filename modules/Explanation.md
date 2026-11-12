@@ -604,7 +604,8 @@ the same as the typed `approve K7M2QX`.
 
 - **Ask** (no change to anything): tomorrow's bookings, today's list, any date's list, who owes fees, open orders, what needs me, money in today. Each skill answers from its
   own saved state (`skill.ts`: pure reads over the store), so the owner's app and the morning line read the same functions.
-- **Act, not money** (close a day, reopen it): done at once, said in passing, and **undoable** ("undo", or the card's Undo button, for 24 hours). Closing a day takes the
+- **Act, not money** (close a day, reopen it, move a booking): done at once, said in passing, and **undoable** ("undo", for 24 hours; a move goes back only if the old
+  time is still free). Closing a day takes the
   date out of the free times. The booking page and the WhatsApp offer read the same list. Each booking that day stays as it is, and its customer is asked to pick another
   day. Nothing is cancelled or refunded by closing a day: a customer who cancels goes through the shop's usual rule. **Undo** reopens the day, and each customer who was
   asked and has not moved or cancelled is told their booking stands.
@@ -623,9 +624,9 @@ in the owner's language (`owner.language`).
 | | Bookings | Fees | Orders |
 | --- | --- | --- | --- |
 | **Ask** | a day's list ("tomorrow", "bookings on Sunday", "कल की बुकिंग"), money in, what needs me | who owes, money in, what needs me | open orders, money in, what needs me |
-| **Act, said in passing, undoable** | close a day, reopen it, undo | – | – |
+| **Act, said in passing, undoable** | close a day, reopen it; move a booking ("move b-14 to 5pm", "shift b-14 to Friday"), through the agent's own reschedule with both slot rules checked first and the customer told; undo | – | – |
 | **Act, as a card** | cancel a booking (with its deposit back), refund a cancelled booking's deposit (all or part), answer what waits (a late refund, a calendar retry, a UPI deposit to mark, a refund sent), message a customer | answer what waits (a waiver, a refund request), message a parent | answer what waits (a big order, a late refund), message a customer |
-| **Not from the chat** | loosening a limit (the partner's panel), moving a booking (Deferred) | loosening a limit, cancelling or refunding a fee (Deferred) | loosening a limit, cancelling or refunding an order (Deferred) |
+| **Not from the chat** | loosening a limit (the partner's panel) | loosening a limit, cancelling or refunding a fee (Deferred) | loosening a limit, cancelling or refunding an order (Deferred) |
 
 The owner's fixed phrases come first and are unchanged: `today`, `tomorrow`, `approve|deny|retry b-14` (Fees `q-N`, Orders `o-N`), `received K7M2QX` and its button,
 `move <code>`, `terms`, `I agree`, and the relay's `approve K7M2QX`. A card's yes on something waiting **is** the owner's fixed reply (`wire.ts ownerReply`): the agent handles it
