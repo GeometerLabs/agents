@@ -77,3 +77,35 @@ test("a delivery address, as the customer wrote it, is taken off an order that i
   assert.deepEqual(left, [["o-1", false, "Indiranagar"], ["o-2", true, "Indiranagar"], ["o-3", true, "Indiranagar"], ["o-4", false, "Indiranagar"], ["o-5", true, "Indiranagar"]], "an order still being done, one whose slot is recent, and one with no slot keep it");
   assert.equal(compactFinishedOrders(store, 2_000), 0, "nothing twice");
 });
+
+// Item 11h touched the refund context (a page order names the number its customer typed): every field the approvals relay words its ask with must still be there.
+test("a refund Guard holds is found from its receipt with the shop's zone, the owner's language and the customer's number", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "geo-orders-refund-context-"));
+  const db = openStore(join(dir, "data"));
+  try {
+    const clock = fakeClock(START);
+    const guard = createGuardModel(gatewayLimitsSpec(settings, HARNESS_GUARD), clock);
+    const payments = createFakePayments(clock, { guard });
+    const messaging = createFakeMessaging(clock);
+    for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const l of LANGUAGES) messaging.approve(name, l);
+    const runtime = createRuntime({ settings, store: db, clock, services: { payments, messaging }, parser: createRuleParser(), pathwayVersion: "0.1.0", retryDelaysMs: [0, 0, 0] });
+    const say = async (text: string) => { runtime.submit([{ kind: "message", message: messaging.receive(AMIT, text) }]); runtime.kick(); await runtime.idle(); };
+    await say("4 chicken meal 10 nov 12:00 pm pickup");
+    payments.customerPays(payments.links()[0].id);
+    runtime.submit(payments.events.map((event) => ({ kind: "payment_event" as const, event })));
+    runtime.kick();
+    await runtime.idle();
+    assert.deepEqual(runtime.status().orders, { confirmed: 1 });
+    await say("cancel");
+    const held = guard.reviews(`runtime-${HARNESS_GUARD.tenant}`, true);
+    assert.equal(held.length, 1, "the advance is above the shop's refund limit, so Guard holds its refund for the owner");
+    const receipt = held[0].arguments[1].receipt?.[1] as string;
+    const context = runtime.refundContext(receipt);
+    assert.ok(context);
+    assert.equal(context.timeZone, settings.timezone);
+    assert.equal(context.ownerLanguage, settings.owner.language);
+    assert.equal(context.customerPhone, AMIT, "a WhatsApp order's customer is their number");
+    assert.equal(context.amountPaise, Number(held[0].amount));
+    await runtime.close();
+  } finally { try { db.close(); } catch { /* closed with the runtime */ } rmSync(dir, { recursive: true, force: true }); }
+});
