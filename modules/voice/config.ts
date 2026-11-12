@@ -1,6 +1,6 @@
 // The `speech` block of runtime.json (plan B29): voice notes for one shop, OFF unless the block is there. This file reads and checks it in plain words, and `buildVoice`
 // turns it into the service the agent is handed (voice.ts). The bundle refuses to write the block unless the server has the speech provider's key handed in through the
-// write-only intake (bundle/generate/guards.ts speechProblem); this file is the runtime's half: no key goes in the block (the Guards hold them), the builder's price is
+// write-only intake when the provider is a paid one (bundle/generate/speech.ts speechProblem); this file is the runtime's half: no key goes in the block (the Guards hold them), the builder's price is
 // required (so every call has a known cost), and the spoken replies need the folder the report pages are served from.
 import { readFileSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
@@ -9,6 +9,7 @@ import { LANGUAGES } from "../language/languages.ts";
 import type { Language } from "../language/languages.ts";
 import { GRAPH_VERSION } from "../messaging/whatsapp.ts";
 import { createSarvam } from "./sarvam.ts";
+import { createGeometerSpeech } from "./geometer.ts";
 import { createWire } from "./wire.ts";
 import type { Wire } from "./wire.ts";
 import { folderAudioHost } from "./links.ts";
@@ -21,9 +22,11 @@ type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
 const isText = (v: unknown): v is string => typeof v === "string" && v.trim() !== "";
 
-export const SPEECH_PROVIDERS = ["sarvam"] as const;
+/** "geometer": the speech service Geometer runs (the default, no per-minute charge to the shop); "sarvam": an optional paid adapter. */
+export const SPEECH_PROVIDERS = ["geometer", "sarvam"] as const;
 
 export interface SpeechConfig {
+  /** Left out: "geometer". */
   provider: (typeof SPEECH_PROVIDERS)[number];
   /** A Guard in front of the speech provider (never a key). */
   baseUrl: string;
@@ -58,10 +61,11 @@ function httpUrl(v: unknown, what: string, errors: string[]): boolean {
 
 /** `speech` as runtime.json gives it, checked. Every refusal is in plain words and none repeats what was written, in case it was a key. */
 export function readSpeech(raw: unknown, folder: string, errors: string[]): SpeechConfig | undefined {
-  if (!isObj(raw)) { errors.push('"speech" must be an object like {"provider": "sarvam", "baseUrl": "http://g-speech:8080", "media": {...}, "rate": {...}}. Leave it out and voice is off for this shop.'); return undefined; }
+  if (!isObj(raw)) { errors.push('"speech" must be an object like {"baseUrl": "http://g-speech:8080", "media": {...}, "rate": {...}}. Leave it out and voice is off for this shop.'); return undefined; }
   const before = errors.length;
   for (const k of Object.keys(raw)) if (!KEYS.includes(k)) errors.push(`I don't know what "${k}" means in speech. Allowed: ${KEYS.join(", ")}.${/key|secret|token(?!file)/iu.test(k) ? ` ${NO_KEY}` : ""}`);
-  if (!(SPEECH_PROVIDERS as readonly unknown[]).includes(raw.provider)) errors.push(`speech.provider must be one of ${SPEECH_PROVIDERS.map((p) => `"${p}"`).join(", ")}.`);
+  const provider = raw.provider ?? "geometer"; // the default: the speech service Geometer runs
+  if (!(SPEECH_PROVIDERS as readonly unknown[]).includes(provider)) errors.push(`speech.provider must be one of ${SPEECH_PROVIDERS.map((p) => `"${p}"`).join(", ")}.`);
   httpUrl(raw.baseUrl, "speech.baseUrl", errors);
   for (const k of ["agentTokenFile"]) if (raw[k] !== undefined && !isText(raw[k])) errors.push(`speech.${k} must be the path of a file that holds this agent's credential for that Guard.`);
   const m = raw.media;
@@ -75,7 +79,8 @@ export function readSpeech(raw: unknown, folder: string, errors: string[]): Spee
   }
   const r = raw.rate;
   const price = (v: unknown) => typeof v === "number" && Number.isFinite(v) && v >= 0;
-  if (!isObj(r) || Object.keys(r).some((k) => k !== "sttInrPerMinute" && k !== "ttsInrPer1000Characters") || !price(r.sttInrPerMinute) || !price(r.ttsInrPer1000Characters)) {
+  // a paid provider needs the builder's price; Geometer's own service counts zero rupees unless a price is given
+  if (r === undefined && provider === "geometer") { /* zero */ } else if (!isObj(r) || Object.keys(r).some((k) => k !== "sttInrPerMinute" && k !== "ttsInrPer1000Characters") || !price(r.sttInrPerMinute) || !price(r.ttsInrPer1000Characters)) {
     errors.push('speech.rate is needed: {"sttInrPerMinute": <rupees>, "ttsInrPer1000Characters": <rupees>}, the provider\'s price as the builder reads it on their invoice or the provider\'s price page. Voice does not run without a price, because then its cost could not be counted.');
   }
   if (raw.opusEncoder !== undefined && !(isText(raw.opusEncoder) && /^[A-Za-z0-9._/-]{1,100}$/u.test(raw.opusEncoder))) errors.push('speech.opusEncoder must be the name or path of the encoder program, like "opusenc" (letters, digits and . _ / - only; no arguments).');
@@ -87,9 +92,9 @@ export function readSpeech(raw: unknown, folder: string, errors: string[]): Spee
   if (errors.length > before) return undefined;
   const at = (p: string) => (isAbsolute(p) ? p : resolve(folder, p));
   const mm = m as Obj;
-  const rr = r as SpeechRate;
+  const rr = (r ?? { sttInrPerMinute: 0, ttsInrPer1000Characters: 0 }) as SpeechRate;
   return {
-    provider: raw.provider as SpeechConfig["provider"], baseUrl: raw.baseUrl as string, ...(raw.agentTokenFile !== undefined ? { agentTokenFile: at(raw.agentTokenFile as string) } : {}),
+    provider: provider as SpeechConfig["provider"], baseUrl: raw.baseUrl as string, ...(raw.agentTokenFile !== undefined ? { agentTokenFile: at(raw.agentTokenFile as string) } : {}),
     media: {
       ...(mm.lookupBaseUrl !== undefined ? { lookupBaseUrl: mm.lookupBaseUrl as string } : {}), downloadBaseUrl: mm.downloadBaseUrl as string, downloadHosts: mm.downloadHosts as string[],
       ...(mm.agentTokenFile !== undefined ? { agentTokenFile: at(mm.agentTokenFile as string) } : {}), ...(mm.downloadTokenFile !== undefined ? { downloadTokenFile: at(mm.downloadTokenFile as string) } : {}),
@@ -109,10 +114,10 @@ const tokenOf = (file: string | undefined): string | undefined => (file ? readFi
 
 /** The voice service for a shop whose runtime.json has a `speech` block. `languages` are the shop's; `report` is where the spoken replies are served from. */
 export function buildVoice(c: SpeechConfig, deps: { clock: Clock; languages: readonly Language[]; report: { dir: string; baseUrl: string }; log: (line: string) => void }): VoiceService {
-  const timeout = c.timeoutMs ?? 8_000;
-  const provider = createSarvam({ baseUrl: c.baseUrl, agentToken: tokenOf(c.agentTokenFile), sttModel: c.sttModel, ttsModel: c.ttsModel, speaker: c.speaker, timeoutMs: timeout, ...(c.opusEncoder ? { codec: "wav" as const } : {}) });
+  const timeout = c.timeoutMs ?? (c.provider === "sarvam" ? 8_000 : 20_000);
+  const speech = c.provider === "sarvam" ? createSarvam({ baseUrl: c.baseUrl, agentToken: tokenOf(c.agentTokenFile), sttModel: c.sttModel, ttsModel: c.ttsModel, speaker: c.speaker, timeoutMs: timeout, ...(c.opusEncoder ? { codec: "wav" as const } : {}) }) : createGeometerSpeech({ baseUrl: c.baseUrl, agentToken: tokenOf(c.agentTokenFile), timeoutMs: c.timeoutMs });
   return createVoice({
-    provider, rate: c.rate, languages: deps.languages.filter((l) => LANGUAGES.includes(l)), clock: deps.clock, repliesOn: c.replies !== false, ...(c.opusEncoder ? { encoder: opusEncoder(c.opusEncoder) } : {}),
+    provider: speech, rate: c.rate, languages: deps.languages.filter((l) => LANGUAGES.includes(l)), clock: deps.clock, repliesOn: c.replies !== false, ...(c.opusEncoder ? { encoder: opusEncoder(c.opusEncoder) } : {}),
     host: folderAudioHost({ dir: deps.report.dir, baseUrl: deps.report.baseUrl, log: deps.log }),
     media: {
       lookup: c.media.lookupBaseUrl ? createWire(c.media.lookupBaseUrl, "WhatsApp", timeout, tokenOf(c.media.agentTokenFile)) : NO_LOOKUP,

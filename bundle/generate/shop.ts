@@ -127,7 +127,7 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
 
   // B29: voice notes are OFF unless runtime.json has a `speech` block, and the block is refused unless the server holds the provider's key and places the speech Guards.
   if (panel.speech !== undefined) {
-    const why = speechProblem({ keyHandedIn: speechKeyHandedIn, placed: SPEECH_GUARDS_PLACED });
+    const why = speechProblem({ provider: (panel.speech as { provider?: unknown } | null)?.provider === "sarvam" ? "sarvam" : "geometer", keyHandedIn: speechKeyHandedIn, placed: SPEECH_GUARDS_PLACED });
     if (why) problems.push({ rule: "voice-notes", message: `runtime.json "speech": ${why}` });
   }
 

@@ -124,8 +124,8 @@ export function createVoice(deps: VoiceDeps): VoiceService {
       try {
         const spoken = await provider.synthesize(words, language);
         let audio = spoken.audio;
-        let voice = false;
-        if (deps.encoder) {
+        let voice = spoken.opus === true; // the provider's own Ogg Opus: sent as it is, as a voice message
+        if (deps.encoder && !voice) {
           const ogg = await deps.encoder(audio);
           if (!ogg) { deps.log?.("The spoken reply could not be encoded as Ogg Opus; the words went as text."); return null; } // a WAV is not an audio type WhatsApp plays
           audio = ogg; voice = true;
