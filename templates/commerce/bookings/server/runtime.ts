@@ -28,6 +28,7 @@ import { channelMessaging } from "../../../../modules/channels/outbox.ts";
 import { isChannelConversation } from "../../../../modules/channels/conversation.ts";
 import { compactChannel, emptyChannelState } from "../../../../modules/channels/state.ts";
 import { bookingView, ownerView, publicServices, shopInfo } from "../src/channel.ts";
+import { ownerAppView } from "../../../../modules/assistant/app/view.ts";
 import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
 import { createMorningJob } from "../../../../modules/assistant/morning.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
@@ -159,7 +160,12 @@ export function createRuntime(options: RuntimeOptions): Runtime {
         catch { return { ...base, serviceId: query.serviceId, days: [], calendarUnread: true }; }
       },
       view: (store, handleHash) => bookingView(settings, store, handleHash),
-      owner: (store) => ownerView(settings, store, clock.now()),
+      // item 11e on item 11d's page: with the shop's assistant on, the owner's read also carries the app's view (its cards by id and digest, the mood, the talk),
+      // read-only over the same saved state as the page's items, so the page's cards are exactly the ones a WhatsApp tap would answer
+      owner: (store) => ({
+        ...ownerView(settings, store, clock.now()),
+        ...(settings.assistant ? { app: ownerAppView({ skills: [bookingsSkill({ settings, store, nowMs: () => clock.now(), entries: () => [], optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false })], state: store.assistant, nowMs: clock.now(), timeZone: settings.timezone, settings: settings.assistant }) } : {}),
+      }),
     },
     refundContext(store, _settings, receipt) {
       const match = /^(b-\d+):/u.exec(receipt);

@@ -6,6 +6,7 @@ import type { ChannelEvent } from "./events.ts";
 import { OWNER_LINK_HEADER } from "./owner-link.ts";
 import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "./owner-access.ts";
 import type { LinkState } from "./owner-access.ts";
+import type { OwnerAppView } from "../assistant/app/view.ts";
 
 /**
  * Who is acting as the owner: the panel-made private link (item 11d), or a session the runtime made from a one-time WhatsApp link (item 11f). A bare string is a
@@ -52,6 +53,8 @@ export interface OwnerView {
   services: OfferService[];
   items: OwnerItemView[];
   upcoming: { case: string; startMs: number; serviceId?: string; customer: { phone: string; name?: string }; channel: OwnerItemView["channel"]; state: string }[];
+  /** Item 11e: the shop's assistant's view (its open cards, answered by id and digest; the mood; the talk), when the shop has the assistant. Left out otherwise. */
+  app?: OwnerAppView;
 }
 
 /** A refund Guard holds for the owner, as the relay shows it to the owner's page (modules/approvals/relay.ts ownerAsks). */

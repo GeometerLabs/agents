@@ -284,6 +284,16 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
         return r === "refused" ? "denied_link" : r === "recorded" ? "done" : r === "expired" ? "expired" : r === "failed" ? "error" : "changed";
       }
       if (a.source !== "runtime") return "changed";
+      // item 11e: one of the assistant's cards, by its id and digest (no code is ever on the page); the runtime's card binding decides what happens
+      if (action === "card_yes" || action === "card_no") {
+        const card = state.view.app?.cards.find((c) => c.id === theCase && c.digest === digest);
+        if (!card || (action === "card_no" && !card.hasNo)) return "changed";
+        const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action, case: theCase, digest }], token);
+        if (r === "refused") return "denied_link";
+        const deadline = Date.now() + (options.waitMs ?? 3_000);
+        while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !now.app?.cards.some((c) => c.id === theCase)) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
+        return "sent";
+      }
       const shown = state.view.items.find((i) => i.case === theCase && i.digest === digest && i.actions.includes(action));
       if (!shown) return "changed"; // already answered (here or on WhatsApp), or changed since it was shown: nothing is sent
       const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action: action as never, case: theCase, digest }], token);
@@ -305,6 +315,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       ...state.view.items.map((i) => ({ source: "runtime", kind: i.kind, case: i.case, digest: i.digest, actions: i.actions, amount_paise: i.amountPaise, customer: i.customer, channel: i.channel, ...(i.serviceId ? { service_id: i.serviceId } : {}), ...(i.startMs !== undefined ? { start_ms: i.startMs } : {}), ...(i.why ? { why: i.why } : {}) })),
     ],
     upcoming: state.view.upcoming,
+    // item 11e: the assistant's open cards, answered like the items: {"source": "runtime", "action": "card_yes" | "card_no", "case": <card id>, "digest"}
+    ...(state.view.app ? { cards: state.view.app.cards.map((c) => ({ source: "runtime", case: c.id, digest: c.digest, actions: c.hasNo ? ["card_yes", "card_no"] : ["card_yes"], kind: c.kind, booking: c.case, amount_paise: c.amountPaise, who: c.who, until_ms: c.expiresAtMs, ...(c.question ? { question: c.question } : {}) })) } : {}),
   });
 
   /**

@@ -433,5 +433,13 @@ export function write<K extends MessageId>(id: K, data: MessageData[K], language
   return { text, facts: w.check() };
 }
 
+/**
+ * A card's question alone, without the line that says how to answer it by its code: what the owner's page shows beside the card's buttons (the page answers a card by
+ * its id and digest, so its code is never on the page).
+ */
+export function cardQuestion(data: MessageData["card"], language: Language, timeZone: string): string {
+  return CARD_ASK[language](new Writer(language, timeZone), data);
+}
+
 /** The date of `ms` plus `days`, in the shop's zone. Lists and the morning line name days by this. */
 export const dayOf = (ms: number, timeZone: string, days = 0): LocalDate => addDays(localParts(ms, timeZone), days);
