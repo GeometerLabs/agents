@@ -8,6 +8,7 @@ import { CUSTOMER, OTHER_CUSTOMER, createWorld } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
 import { parseSettings, validateSettings } from "../src/settings.ts";
 import { bookingsSkill } from "../src/assistant.ts";
+import { ownerItems } from "../src/channel.ts";
 import { parseStore, serializeStore } from "../server/snapshot.ts";
 import { approvalButtonId } from "../../../../modules/approvals/buttons.ts";
 import { createMorningJob } from "../../../../modules/assistant/morning.ts";
@@ -302,6 +303,22 @@ test("the owner's language: the assistant answers in it", async () => {
   const w = createWorld({ settings });
   await owner(w, "ravivar band karo");
   assert.match(w.lastTextTo(w.owner), /हमेशा बंद रहती है/u);
+});
+
+test("what needs me is the owner page's list (one list): a deposit waiting on a UPI shop is on both, and its card's tap marks it as the page's press would", async () => {
+  const upi = JSON.parse(readFileSync(new URL("../settings/glow-salon-upi.example.json", import.meta.url), "utf8")) as Record<string, unknown>;
+  const w = createWorld({ settings: parseSettings({ ...upi, assistant: {} }) });
+  await w.say(BOOK);
+  const skill = bookingsSkill({ settings: w.settings, store: w.store, nowMs: () => w.clock.now(), entries: () => w.record.entries(), optedOut: () => false });
+  const page = ownerItems(w.settings, w.store, w.clock.now()).items;
+  assert.deepEqual(skill.waiting().map((i) => [i.case, i.kind, i.amountPaise]), page.map((i) => [i.case, i.kind, i.amountPaise]), "the assistant and the owner's page list the same things");
+  assert.deepEqual(page.map((i) => [i.case, i.kind]), [["b-1", "deposit"]], "a deposit to mark waits on the page from the start, so it is on the assistant's list too");
+  await owner(w, "what needs me");
+  const card = lastCard(w);
+  assert.equal(card.no, undefined, "a deposit to mark has only the one answer");
+  await tapOwner(w, card.yes);
+  assert.equal(w.store.bookings.get("b-1")!.state, "confirmed", "the tap is the owner's own Received button, with its code");
+  assert.deepEqual(ownerItems(w.settings, w.store, w.clock.now()).items, [], "and nothing waits on the page any more");
 });
 
 test("the morning line reads the same store: tomorrow's booking and the deposit recorded the day before", async () => {
