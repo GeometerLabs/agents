@@ -2,7 +2,7 @@
 // partner makes (shown once, only its hash kept) and switches off. Another partner's shop is a 404, as everywhere in the panel.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ownerTokenMatches, readOwnerLink } from "../../../modules/channels/owner-link.ts";
 import { boot } from "./helpers.ts";
@@ -40,5 +40,34 @@ test("the shop page shows the booking page, its QR, the MCP endpoint; the owner'
 
     const other = await b.account("meera", "partner");
     assert.equal((await other.post("/shops/glow-salon/owner-link", {}, "/shops")).status, 404, "not her shop");
+  } finally { await b.close(); }
+});
+
+// Item 11h: an Orders shop and a Fees centre have the same block, in their own words: Orders with its MCP endpoint, Fees without (a parent's fees are reached only by
+// their private link), and both with the owner's link the partner makes.
+test("an Orders shop's and a Fees centre's page block, and the owner's link for both", async () => {
+  const b = await boot({ publicUrl: "http://shops.example.test" });
+  try {
+    const arjun = await b.account("arjun", "builder");
+    const repo = join(import.meta.dirname, "..", "..", "..");
+    for (const [id, pathway, settings] of [["annapurna", "orders", "templates/commerce/orders/settings/annapurna-tiffins.example.json"], ["bright", "fees", "templates/education/fees/settings/bright-tuition-upi.example.json"]] as const) {
+      b.addShop(id);
+      writeFileSync(join(b.dir, "shops", id, "settings.json"), readFileSync(join(repo, settings), "utf8"));
+      writeFileSync(join(b.dir, "shops", id, "pathway.lock"), `${pathway}@0.1.0\n`);
+      writeFileSync(join(b.dir, "shops", id, "runtime.json"), JSON.stringify({ mode: "live", tickSeconds: 30, services: { payments: {}, messaging: { phoneNumberId: "123456789012345" }, timeoutMs: 20000 } }));
+    }
+    const orders = await arjun.get("/shops/annapurna");
+    assert.ok(orders.text.includes("http://shops.example.test/s/annapurna/"), "the shop page's address");
+    assert.ok(orders.text.includes("http://shops.example.test/s/annapurna/mcp"), "its MCP endpoint");
+    assert.match(orders.plain, /Shop page \(orders\)/u);
+    const fees = await arjun.get("/shops/bright");
+    assert.ok(fees.text.includes("http://shops.example.test/s/bright/"), "the centre's page");
+    assert.ok(!fees.text.includes("http://shops.example.test/s/bright/mcp"), "no MCP for fees");
+    assert.match(fees.plain, /never opens anyone's fees/u);
+    for (const id of ["annapurna", "bright"]) {
+      const made = await arjun.post(`/shops/${id}/owner-link`, {}, `/shops/${id}`);
+      assert.equal(made.status, 200, id);
+      assert.match(made.text, new RegExp(`/s/${id}/o/[A-Za-z0-9_-]{43}`, "u"), `${id}: the owner's link, shown once`);
+    }
   } finally { await b.close(); }
 });

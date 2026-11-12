@@ -143,6 +143,12 @@ test("each parent's link, from the reminder, opens only their own students; a ty
     await w.restart();
     const after = await (await w.page(`/f/${fresh}?lang=en`)).text();
     assert.match(after, /Aarav Sharma/u, "the link survives a restart");
+
+    // a handover moves the shop in the panel and switches the owner's link off (bundle/panel/handover.ts, channels.revoke); it never touches the runtime's saved
+    // state, where the parents' links are, so they keep working
+    rmSync(join(w.folder, OWNER_LINK_FILE));
+    assert.equal((await w.page(`/o/${w.ownerToken}`)).status, 403, "the owner's link is off after the move");
+    assert.equal((await w.page(`/f/${fresh}`)).status, 200, "a parent's link is not");
   } finally { await w.done(); }
 });
 

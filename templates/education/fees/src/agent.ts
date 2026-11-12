@@ -135,6 +135,8 @@ export interface Agent {
 }
 
 const MIDNIGHT = { hour: 0, minute: 0 };
+/** Item 11h: the confirmation pages kept for one fee and one parent (the newest); an older one then says nothing is known of it. */
+export const CONFIRMATIONS_PER_FEE = 5;
 const HOURLY = HOUR; // the owner is told about the same parent at most this often
 
 /** Buttons with words above them; `choices` are the owner's UPI buttons (each carries its one-use code) instead of the named ones. */
@@ -676,7 +678,12 @@ export function createAgent(deps: AgentDeps): Agent {
     };
     if (!parent) return refuse("link_gone", "the parent's link was replaced or switched off before this press was done: nothing was done");
     if (!due || due.customer !== parent) return refuse("unknown", "no fee of this parent's has that id: nothing was done (a link never reaches another parent's fees)");
-    if (e.op === "fee_paid") confirmations[e.handle] = { dueId: due.id, parent, atMs: now };
+    if (e.op === "fee_paid") {
+      confirmations[e.handle] = { dueId: due.id, parent, atMs: now };
+      // every page load has its own nonce, so each press is its own page: the newest few per fee stay, so presses cannot grow the store while a fee is open
+      const mine = Object.entries(confirmations).filter(([, c]) => c.dueId === due.id && c.parent === parent && c.refused === undefined).sort(([, a], [, b]) => b.atMs - a.atMs);
+      for (const [hash] of mine.slice(CONFIRMATIONS_PER_FEE)) delete confirmations[hash];
+    }
     log(due, parent, "channel_fee", "confirmed", { op: e.op }, { refs: { channel: "web", op: e.op }, notes: e.op === "fee_pay" ? "the parent asked, on their private page, how to pay" : "the parent says, on their private page, that the fee is paid; nothing is marked paid until the record shows it" });
     const { fresh } = await reconcile(due);
     await settle(due, fresh); // a payment already on the record counts first, and its receipt goes as usual
