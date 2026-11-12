@@ -363,6 +363,16 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
         while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !now.app?.cards.some((c) => c.id === theCase)) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
         return "sent";
       }
+      // item 11h (Fees): a parent's private link, sent anew or switched off, bound to the link's state as the page showed it
+      if (action === "send_link" || action === "revoke_link") {
+        const parent = state.view.parents?.find((p) => p.ref === theCase && p.digest === digest);
+        if (!parent || (action === "revoke_link" && parent.link !== "active")) return "changed";
+        const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action, case: theCase, digest }], token);
+        if (r === "refused") return "denied_link";
+        const deadline = Date.now() + (options.waitMs ?? 3_000);
+        while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !now.parents?.some((p) => p.digest === digest)) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
+        return "sent";
+      }
       const shown = state.view.items.find((i) => i.case === theCase && i.digest === digest && i.actions.includes(action));
       if (!shown) return "changed"; // already answered (here or on WhatsApp), or changed since it was shown: nothing is sent
       const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action: action as never, case: theCase, digest }], token);
@@ -392,9 +402,11 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     services: state.view.services,
     waiting: [
       ...state.relayAsks.map((x) => ({ source: "relay", kind: "guard_refund", case: x.approval, digest: x.digest, actions: ["approve", "deny"], amount_paise: x.amountPaise, customer: { phone: x.customerPhone }, booking: x.booking, ...(x.serviceName ? { service_name: x.serviceName } : {}), ...(x.slotMs !== undefined ? { start_ms: x.slotMs } : {}), until_ms: x.untilMs })),
-      ...state.view.items.map((i) => ({ source: "runtime", kind: i.kind, case: i.case, digest: i.digest, actions: i.actions, amount_paise: i.amountPaise, customer: i.customer, channel: i.channel, ...(i.serviceId ? { service_id: i.serviceId } : {}), ...(i.startMs !== undefined ? { start_ms: i.startMs } : {}), ...(i.why ? { why: i.why } : {}) })),
+      ...state.view.items.map((i) => ({ source: "runtime", kind: i.kind, case: i.case, digest: i.digest, actions: i.actions, amount_paise: i.amountPaise, customer: i.customer, channel: i.channel, ...(i.serviceId ? { service_id: i.serviceId } : {}), ...(i.what ? { what: i.what } : {}), ...(i.startMs !== undefined ? { start_ms: i.startMs } : {}), ...(i.why ? { why: i.why } : {}) })),
     ],
     upcoming: state.view.upcoming,
+    // item 11h (Fees): the parents and their private links, answered like the items: {"source": "runtime", "action": "send_link" | "revoke_link", "case": <ref>, "digest"}
+    ...(state.view.parents ? { parents: state.view.parents.map((p) => ({ source: "runtime", case: p.ref, digest: p.digest, phone: p.phone, students: p.students, link: p.link, ...(p.sinceMs !== undefined ? { since_ms: p.sinceMs } : {}), actions: p.link === "active" ? ["send_link", "revoke_link"] : ["send_link"] })) } : {}),
     // item 11e: the assistant's open cards, answered like the items: {"source": "runtime", "action": "card_yes" | "card_no", "case": <card id>, "digest"}
     ...(state.view.app ? { cards: state.view.app.cards.map((c) => ({ source: "runtime", case: c.id, digest: c.digest, actions: c.hasNo ? ["card_yes", "card_no"] : ["card_yes"], kind: c.kind, booking: c.case, amount_paise: c.amountPaise, who: c.who, until_ms: c.expiresAtMs, ...(c.question ? { question: c.question } : {}) })) } : {}),
   });

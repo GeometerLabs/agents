@@ -39,7 +39,7 @@ export interface InboxShopConfig {
    * runtime with the shop's CHANNEL token only (never the internal token above, which this process also holds for the webhooks: the isolation is per token, not per
    * process; Explanation.md says what that means), and to the relay with the relay token, for a shop whose Guard holds refunds.
    */
-  channel?: { publicUrl: string };
+  channel?: { publicUrl: string; /** Item 11h: the shop's template, which decides its customer side (modules/channels/front.ts). Left out: Bookings. */ kind?: "bookings" | "orders" | "fees" };
 }
 
 
@@ -90,7 +90,7 @@ export function loadFront(config: { shops: Record<string, InboxShopConfig> }, re
     const relayToken = c.relayUrl ? read(`${c.secretsDir}/relay_token`) : undefined;
     // item 11f: the shop's page addresses (its slug on the pages domain, the stable page address, the WhatsApp number), written by the deployer beside its
     // secrets (lib/pages.ts) and read on every request, so a new slug takes effect without a restart
-    shops[name] = { publicUrl: c.channel.publicUrl, backend: runtimeBackend({ url: c.runtimeUrl, token }), ...(c.relayUrl && relayToken ? { relay: relayBackend({ url: c.relayUrl, token: relayToken }) } : {}), pages: pagesReader(`${c.secretsDir}/${PAGES_FILE}`) };
+    shops[name] = { publicUrl: c.channel.publicUrl, backend: runtimeBackend({ url: c.runtimeUrl, token }), ...(c.relayUrl && relayToken ? { relay: relayBackend({ url: c.relayUrl, token: relayToken }) } : {}), pages: pagesReader(`${c.secretsDir}/${PAGES_FILE}`), ...(c.channel.kind ? { kind: c.channel.kind } : {}) };
   }
   if (Object.keys(shops).length === 0) return undefined;
   // behind Caddy: the visitor's address is the last X-Forwarded-For entry Caddy adds

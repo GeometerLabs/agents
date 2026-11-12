@@ -85,7 +85,25 @@ export interface Due {
   discountTellAtMs?: number; // the owner was told a parent asked for a discount without an amount
   linkFailTellAtMs?: number; // the owner was told the payment link could not be made
   readNoteAtMs?: number; // the record says a reminder is waiting because the payments service could not be read
+  /**
+   * Item 11h: when the parent last said this fee is paid (on WhatsApp, a screenshot, or their private page). On a UPI centre the owner's page lists the fee, with the
+   * Received button, from then until the owner marks it or it is settled: a fee nobody has claimed waits for the parent, not the owner.
+   */
+  claimAtMs?: number;
 }
+
+/**
+ * Item 11h: a parent's private link, kept by the parent's number. ONLY the hash of the link (modules/channels/handle.ts parentLinkHash), when it was made, and how:
+ * in a reminder or by the owner's "send a new link". One per parent: a new one replaces the old, which then opens nothing. Kept in the saved state, so it survives a
+ * restart and a handover (the state moves with the shop; the owner's panel-made link does not).
+ */
+export interface ParentLink { hash: string; atMs: number; via: "reminder" | "owner" }
+
+/**
+ * Item 11h: a payment's confirmation page, by the hash of the handle the parent's "I have paid" made (on their private page). It names the fee and the parent, so the
+ * page shows that one fee only, and "confirmed" only when the record shows it paid. `refused`: the press did nothing (the link was gone, the fee not theirs or not open).
+ */
+export interface FeeConfirmation { dueId: string; parent: string; atMs: number; refused?: string }
 
 export interface Customer {
   phone: string;
@@ -110,6 +128,10 @@ export interface Store {
   upi?: MarkState;
   /** Item 11e: the shop's assistant's own part (its cards and undo; modules/assistant/state.ts). Left out until the owner first talks to it. */
   assistant?: AssistantState;
+  /** Item 11h: each parent's private link, by the parent's number (hash only). Left out until the first one. */
+  parentLinks?: Record<string, ParentLink>;
+  /** Item 11h: the confirmation pages parents' presses made, by their handles' hashes. Left out until the first one. */
+  confirmations?: Record<string, FeeConfirmation>;
 }
 
 export function createStore(): Store {
@@ -154,7 +176,7 @@ export function monthLabel(due: { month: string }, language: Language): string {
 }
 
 /** The values of this fee's record that a message may use. Everything comes from the fee and the settings, never from message text. */
-export function factsFor(settings: Settings, due: Due | null, language: Language, extra: { customerPhone?: string; refundInr?: number; receivedInr?: number; waiverInr?: number; requestRef?: string; paidInr?: number; upiCode?: string } = {}): MessageFacts {
+export function factsFor(settings: Settings, due: Due | null, language: Language, extra: { customerPhone?: string; refundInr?: number; receivedInr?: number; waiverInr?: number; requestRef?: string; paidInr?: number; upiCode?: string; pageLink?: string } = {}): MessageFacts {
   const batch: Batch | undefined = due ? settings.batches.find((b) => b.id === due.batchId) : undefined;
   const payTo = ownerMarkedOf(settings.payment)?.payTo; // who the customer pays, when the owner marks payments (B71)
   return {
@@ -180,6 +202,7 @@ export function factsFor(settings: Settings, due: Due | null, language: Language
     customerPhone: extra.customerPhone ?? due?.customer,
     ...(payTo ? { upiId: payTo.id, payee: payTo.name } : {}),
     ...(extra.upiCode ? { upiCode: extra.upiCode } : {}),
+    ...(extra.pageLink ? { pageLink: extra.pageLink } : {}),
   };
 }
 

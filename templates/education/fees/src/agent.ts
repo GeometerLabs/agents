@@ -38,6 +38,11 @@ import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { feesSkill } from "./assistant.ts";
+import { newHandle, parentLinkHash } from "../../../../modules/channels/handle.ts";
+import type { ChannelEvent, ChannelFee, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
+import type { PageAudio } from "../../../../modules/channels/owner-audio.ts";
+import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
+import { ownerItems, parentOf, parentsList } from "./channel.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
@@ -97,6 +102,18 @@ export interface AgentDeps {
   terms?: () => TermsFile | undefined;
   /** Item 11e: how the shop's assistant reads the owner's words (modules/assistant/reading.ts). Left out: the rules alone. The assistant is on only with an "assistant" settings block. */
   ownerParser?: OwnerParser;
+  /**
+   * Item 11h: where the centre's page is (its pages file: the pages domain's address, else its own server's), so a reminder can carry the parent's private link
+   * (<base>/f/<link>). Left out, or undefined: no page, and every reminder is the one it always was.
+   */
+  pageBase?: () => string | undefined;
+  /**
+   * Item 11h: the links this process made and saved, by parent, in memory only (the store keeps only their hashes). A later reminder sends the same link while its
+   * hash is still the saved one, so a parent's link does not change with every reminder; after a restart the next reminder makes a new one, which replaces the old.
+   */
+  linkMemory?: Map<string, string>;
+  /** Items 11d, 11e and 11h: a recording the owner made on their page, by the reference its owner_message carries (modules/channels/owner-audio.ts). */
+  pageAudio?: (ref: string) => PageAudio | undefined;
 }
 
 export type AgentEvent =
@@ -107,6 +124,8 @@ export type AgentEvent =
   | { kind: "approval_decision"; approval: string; decision: "approve" | "deny"; id?: string }
   // The panel's to-do list asks the agent to look again or ask again about one fee (modules/unfinished). It carries no authority: the agent does what it does every day, through Guard.
   | { kind: "recovery"; id: string; case: string; action: string }
+  // Item 11h: a parent's press on their private page (a channel_request), or the owner's page (an owner_action, the talk box). modules/channels/events.ts.
+  | ChannelEvent
   | { kind: "tick" }; // time has passed: open the month's fees, add late fees and send due reminders
 
 export interface Agent {
@@ -120,7 +139,7 @@ const HOURLY = HOUR; // the owner is told about the same parent at most this oft
 
 /** Buttons with words above them; `choices` are the owner's UPI buttons (each carries its one-use code) instead of the named ones. */
 type Offer = { kind: "buttons"; buttons: ButtonId[]; dueId?: string; body?: TemplateId[]; choices?: Choice[] };
-interface SayArgs { booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string }
+interface SayArgs { booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; /** Item 11h: the parent's private page, in a message to that parent only. */ pageLink?: string }
 
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, messaging, parser, record, store } = deps;
@@ -174,7 +193,7 @@ export function createAgent(deps: AgentDeps): Agent {
     owner: { whatsapp: owner, language: settings.owner.language },
     languageOf: (phone, due) => languageOf(phone, due),
     optedOut: (phone) => customerOf(phone).optedOut,
-    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode }),
+    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode, ...(a.pageLink && a.to === "customer" ? { pageLink: a.pageLink } : {}) }),
     interactiveFor: (a, facts, language): InteractiveMessage => {
       const offer = a.offer!;
       return { body: (offer.body ?? a.templates).map((id) => render(id, facts)).join(" "), buttons: offer.choices ?? buttonsFor(language, offer.buttons, offer.dueId) };
@@ -258,14 +277,16 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /** "I have paid", the words, or a screenshot, with the fee still open: thanks, the owner will confirm, a screenshot is not proof. The owner is asked, once an hour. */
-  async function markClaim(due: Due, phone: string, via: "button" | "words" | "screenshot", linkOk: boolean): Promise<void> {
+  async function markClaim(due: Due, phone: string, via: "button" | "words" | "screenshot" | "page", linkOk: boolean): Promise<void> {
     const request = requestById(due.currentLinkId);
-    await tellCustomer(due, phone, ["fee_upi_claim"], linkOk ? { offer: feeButtons(due, ["pay", "owner"]) } : {});
+    // item 11h: a press on the parent's own page is answered on that page; only a WhatsApp claim gets the WhatsApp reply
+    if (via !== "page") await tellCustomer(due, phone, ["fee_upi_claim"], linkOk ? { offer: feeButtons(due, ["pay", "owner"]) } : {});
     const now = clock.now();
+    due.claimAtMs = now; // item 11h: from now until it is marked or settled, the owner's page lists this fee with the Received button
     const recently = due.claimTellAtMs !== undefined && now - due.claimTellAtMs < HOURLY;
     let told = recently;
     if (!recently && request?.code) { told = await tellOwner(due, phone, "owner_fee_upi_claim", { upiCode: request.code, offer: receivedButtons(request, balancePaise(due)) }); if (told) due.claimTellAtMs = now; }
-    log(due, phone, MARK_ACTIONS.claim, told ? "confirmed" : "failed", { claim: "paid", via }, { refs: { to: "owner", via, ...(request ? { requestId: request.id } : {}) }, notes: `the parent says the fee is paid (${via === "screenshot" ? "a screenshot, which is not proof" : via === "button" ? "the I have paid button" : "in words"}); nothing is marked paid until the owner marks it${recently ? "; the owner was already asked in the last hour" : ""}` });
+    log(due, phone, MARK_ACTIONS.claim, told ? "confirmed" : "failed", { claim: "paid", via }, { refs: { to: "owner", via, ...(request ? { requestId: request.id } : {}) }, notes: `the parent says the fee is paid (${via === "screenshot" ? "a screenshot, which is not proof" : via === "button" ? "the I have paid button" : via === "page" ? "the I have paid button on their private page" : "in words"}); nothing is marked paid until the owner marks it${recently ? "; the owner was already asked in the last hour" : ""}` });
   }
 
   /** A picture from a parent: never looked at or kept. On a UPI centre it is read as "I paid" (a screenshot is not proof); a centre whose gateway confirms by itself answers nothing, as before. */
@@ -586,9 +607,136 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     takeDue(due.reminders, now);
     const startOfToday = zonedToMs({ year: localParts(now, tz).year, month: localParts(now, tz).month, day: localParts(now, tz).day }, MIDNIGHT, tz);
-    const template: TemplateId = due.lateFeeInr > 0 ? "fee_overdue_late" : startOfToday > due.dueMs ? "fee_overdue" : "fee_reminder";
-    const sent = await tellCustomer(due, due.customer, [template], { reminder: true, readOk: true, offer: feeButtons(due), image: await qrOf(due) });
+    // item 11h: with a page, the reminder carries the parent's private link (the same one while its hash is the saved one, else a new one); without, it is as it was
+    const pageLink = linkFor(due.customer);
+    const kind = due.lateFeeInr > 0 ? "fee_overdue_late" : startOfToday > due.dueMs ? "fee_overdue" : "fee_reminder";
+    const template: TemplateId = pageLink ? `${kind}_page` : kind;
+    const sent = await tellCustomer(due, due.customer, [template], { reminder: true, readOk: true, offer: feeButtons(due), image: await qrOf(due), ...(pageLink ? { pageLink: pageLink.url } : {}) });
     if (sent) due.remindersSent += 1;
+    if (sent && pageLink) keepLink(due.customer, pageLink.token, "reminder");
+  }
+
+  // ---- item 11h: the parent's private link -------------------------------------------------------------------------------------------------------------
+  //
+  // One link per parent, made here and ONLY its hash kept (src/due.ts parentLinks). A link goes out in a reminder or by the owner's "send a new link"; it is saved
+  // as the parent's only when the message carrying it was accepted, so a reminder that did not go keeps the parent's old link working. While this process remembers a
+  // link whose hash is still the saved one, the reminders send that same link; otherwise a new one is made and replaces the old (which then opens nothing). Within one
+  // step, a parent with two students gets the same link in both reminders.
+  const madeThisStep = new Map<string, string>();
+  const parentLinks = () => (store.parentLinks ??= {});
+
+  /** The page's link for this parent now, or undefined when the centre has no page. */
+  function linkFor(parent: string, fresh = false): { token: string; url: string } | undefined {
+    const base = deps.pageBase?.();
+    if (!base) return undefined;
+    let token = madeThisStep.get(parent);
+    if (!token) {
+      const remembered = deps.linkMemory?.get(parent);
+      const saved = store.parentLinks?.[parent];
+      token = !fresh && remembered && saved && parentLinkHash(remembered) === saved.hash ? remembered : newHandle();
+      madeThisStep.set(parent, token);
+    }
+    return { token, url: `${base}/f/${token}` };
+  }
+
+  /** The link went out: it is the parent's link from now on (its hash only), and the one before opens nothing. Said in the record without the link. */
+  function keepLink(parent: string, token: string, via: "reminder" | "owner"): void {
+    const hash = parentLinkHash(token);
+    deps.linkMemory?.set(parent, token);
+    if (parentLinks()[parent]?.hash === hash) return; // the same link as before: nothing changes
+    const replaced = parentLinks()[parent] !== undefined;
+    parentLinks()[parent] = { hash, atMs: clock.now(), via };
+    log(null, parent, "parent_link", "confirmed", { via }, { refs: { via, ...(replaced ? { replaced: "yes" } : {}) }, notes: `the parent's private fees link was sent ${via === "owner" ? "at the owner's press on their page" : "in a fee reminder"}; only its hash is kept${replaced ? ", and the link it replaces opens nothing from now on" : ""}` });
+  }
+
+  /** The owner switched a parent's link off: it opens nothing from now on, and nor do the confirmation pages made through it. */
+  function revokeLink(parent: string): void {
+    delete parentLinks()[parent];
+    deps.linkMemory?.delete(parent);
+    let dropped = 0;
+    for (const [hash, c] of Object.entries(store.confirmations ?? {})) if (c.parent === parent) { delete store.confirmations![hash]; dropped++; }
+    log(null, parent, "parent_link", "confirmed", { revoked: true }, { refs: { revoked: "yes" }, notes: `the owner switched the parent's private fees link off from their page: it opens nothing from now on${dropped > 0 ? `, and nor do the ${dropped} confirmation page(s) made through it` : ""}` });
+  }
+
+  /**
+   * A parent's press on their private page. The link is checked again HERE, by its hash, against the parent it belongs to now: a link replaced or revoked since the
+   * page was drawn does nothing. The fee must be that parent's own. "Show how to pay" makes the request for what is owed (the same `currentLink` a reminder uses: the
+   * owner is told what to look for, with the code); "I have paid" is the same claim as on WhatsApp (the owner is asked to look, at most once an hour; nothing is
+   * marked paid) and records a confirmation page that says "confirmed" only when the record does. Neither sends the parent a WhatsApp message: the page is the answer.
+   */
+  async function onChannelFee(e: ChannelFee): Promise<void> {
+    const confirmations = (store.confirmations ??= {});
+    if (e.op === "fee_paid" && confirmations[e.handle]) return; // the same press again (its task key is the handle)
+    const now = clock.now();
+    const parent = parentOf(store, e.parent);
+    const due = store.dues.get(e.dueId);
+    const refuse = (reason: string, notes: string) => {
+      if (e.op === "fee_paid") confirmations[e.handle] = { dueId: e.dueId, parent: parent ?? "", atMs: now, refused: reason };
+      log(due && parent && due.customer === parent ? due : null, parent ?? owner, "channel_fee", "blocked", { op: e.op, dueId: e.dueId }, { refs: { channel: "web", op: e.op, reason }, notes });
+    };
+    if (!parent) return refuse("link_gone", "the parent's link was replaced or switched off before this press was done: nothing was done");
+    if (!due || due.customer !== parent) return refuse("unknown", "no fee of this parent's has that id: nothing was done (a link never reaches another parent's fees)");
+    if (e.op === "fee_paid") confirmations[e.handle] = { dueId: due.id, parent, atMs: now };
+    log(due, parent, "channel_fee", "confirmed", { op: e.op }, { refs: { channel: "web", op: e.op }, notes: e.op === "fee_pay" ? "the parent asked, on their private page, how to pay" : "the parent says, on their private page, that the fee is paid; nothing is marked paid until the record shows it" });
+    const { fresh } = await reconcile(due);
+    await settle(due, fresh); // a payment already on the record counts first, and its receipt goes as usual
+    if (due.state !== "open") return;
+    if (e.op === "fee_pay" && !licence().takesNewWork) return refuse("paused", "online fee payment is paused (the centre's licence): no link is made");
+    const link = await currentLink(due);
+    if (!link.ok && !link.paused && (due.linkFailTellAtMs === undefined || now - due.linkFailTellAtMs >= HOURLY)) { due.linkFailTellAtMs = now; await tellOwner(due, parent, "owner_link_failed"); }
+    if (e.op === "fee_pay") return;
+    if (ownerConfirms) { await markClaim(due, parent, "page", link.ok); return; }
+    // a gateway centre: the record was read above and shows nothing yet; the owner is told, once an hour, as for a claim on WhatsApp
+    due.claimAtMs = now;
+    log(due, parent, "ask_owner", "confirmed", { claim: "paid" }, { notes: "the parent says, on their private page, that the fee is paid and the payment record shows nothing yet; the fee stays open", refs: { to: "owner" } });
+    if (due.claimTellAtMs === undefined || now - due.claimTellAtMs >= HOURLY) { due.claimTellAtMs = now; await tellOwner(due, parent, "owner_payment_claim"); }
+  }
+
+  /**
+   * The owner pressed a button on their page. For what waits (channel.ts ownerItems) the page's digest must match what waits now, and it is then handled exactly as
+   * the owner's reply on WhatsApp: the UPI mark's button with its one-use code, or "approve q-3" / "deny q-3". For a parent's link (channel.ts parentsList) the digest
+   * binds the press to the link as shown: "send a new link" makes one, sends it to the parent's WhatsApp and keeps it only if the message was accepted; "switch it off"
+   * revokes it at once.
+   */
+  async function onOwnerAction(e: OwnerAction): Promise<void> {
+    if (e.action === "card_yes" || e.action === "card_no") {
+      if (!assistant) { log(null, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "a card's answer came for a shop without the assistant: nothing was done" }); return; }
+      log(null, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "pressed by the owner on their page; the card's own binding decides, as for a tap on WhatsApp" });
+      return assistant.onPageCard({ card: e.case, digest: e.digest, answer: e.action === "card_yes" ? "yes" : "no" });
+    }
+    if (e.action === "send_link" || e.action === "revoke_link") {
+      const shown = parentsList(settings, store).find((p) => p.ref === e.case && p.digest === e.digest);
+      if (!shown || (e.action === "revoke_link" && shown.link !== "active")) { log(null, owner, "owner_page_action", "blocked", { action: e.action }, { refs: { channel: "owner_page", action: e.action }, notes: "the parent's link is not as the owner's page showed it (already changed): nothing was done" }); return; }
+      log(null, owner, "owner_page_action", "confirmed", { action: e.action }, { refs: { channel: "owner_page", action: e.action }, notes: e.action === "send_link" ? "the owner asked, on their page, for a new private link to be sent to a parent" : "the owner switched a parent's private link off on their page" });
+      if (e.action === "revoke_link") return revokeLink(shown.phone);
+      const made = linkFor(shown.phone, true);
+      if (!made) { log(null, owner, "parent_link", "blocked", {}, { notes: "the centre has no page yet (no pages file), so no link can be made" }); return; }
+      const sent = await tellCustomer(null, shown.phone, ["fee_page_link"], { pageLink: made.url });
+      if (sent) keepLink(shown.phone, made.token, "owner");
+      else log(null, owner, "parent_link", "failed", {}, { notes: "the message with the new link was not accepted, so the parent's old link (if any) still works and nothing changed" });
+      return;
+    }
+    const item = ownerItems(settings, store).find((x) => x.case === e.case && x.digest === e.digest && x.actions.includes(e.action));
+    const due = store.dues.get(e.case) ?? null;
+    if (!item) {
+      log(due, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "what the owner's page showed is not what waits now (already answered, a new mark since, or gone): nothing was done" });
+      return;
+    }
+    log(due, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "pressed by the owner on their page; handled exactly as the same reply on WhatsApp" });
+    const base = { id: `owner-page:${e.id}`, from: owner, timestamp: clock.now() };
+    const msg: InboundMessage = item.code
+      ? { ...base, text: "", reply: { id: markButtonId(e.action === "received" ? "received" : "refunded", item.code), kind: "button" } }
+      : { ...base, text: `${e.action} ${item.request}` };
+    await onOwnerMessage(msg);
+  }
+
+  /** The owner's talk box on their page (typed words, or a recording held in memory), read by the shop's assistant. A shop without it reads nothing. */
+  async function onOwnerPageMessage(e: OwnerMessage): Promise<void> {
+    if (!assistant) { log(null, owner, "owner_page_message", "blocked", { voice: e.voice !== undefined }, { refs: { channel: "owner_page" }, notes: "the owner's talk box is the shop's assistant's, and this shop has none: nothing was read" }); return; }
+    const base = { id: `owner-page:${e.id}`, from: owner, timestamp: clock.now() };
+    if (e.voice === undefined) return assistant.onPageMessage({ ...base, text: e.text });
+    const audio = deps.pageAudio?.(e.voice);
+    return assistant.onPageVoice({ ...base, text: "", voiceNote: true, ...(audio ? { audio } : {}) });
   }
 
   // ---- which fee a message is about -----------------------------------------------------------------------------------
@@ -1013,6 +1161,14 @@ export function createAgent(deps: AgentDeps): Agent {
   async function handle(event: AgentEvent): Promise<void> {
     noteLicence();
     if (event.kind === "recovery") return onRecovery(event);
+    if (event.kind === "channel_request") {
+      if (event.op === "fee_pay" || event.op === "fee_paid") return onChannelFee(event as ChannelFee);
+      log(null, owner, "channel_fee", "blocked", { op: event.op }, { refs: { channel: event.channel, op: event.op }, notes: "a request this centre does not take (bookings and orders are other shops'): nothing was done" });
+      return;
+    }
+    if (event.kind === "owner_action") return onOwnerAction(event);
+    if (event.kind === "owner_message") return onOwnerPageMessage(event);
+    if (event.kind === "owner_signin") return; // the runtime core's own (modules/channels/owner-signin.ts): never an agent's
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);
     if (event.kind === "approval_decision") return refunds.onApprovalDecision(event);

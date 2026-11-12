@@ -20,6 +20,10 @@ const codec = snapshotCodec<Store>(1, [
   { name: "upi", kind: "optional-object" },
   // the shop's assistant's cards and undo (item 11e); a shop without the assistant never has it, so its snapshot is as it was
   { name: "assistant", kind: "optional-object" },
+  // item 11h: each parent's private link (its hash only), so a link survives a restart and a handover; and the confirmation pages parents' presses made. A centre
+  // that has sent no link never has them, so its snapshot is as it was
+  { name: "parentLinks", kind: "optional-object" },
+  { name: "confirmations", kind: "optional-object" },
 ]);
 
 export const serializeStore: (store: Store) => string = codec.serialize;

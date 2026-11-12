@@ -50,6 +50,11 @@ export interface MessageFacts {
   /** The licence's service notices (B13): who the owner should contact (the partner who set the centre up), and the count the final stop's notice states. */
   partner?: string;
   openFeesCount?: number;
+  /**
+   * Item 11h: the parent's private fees page (https://<the centre's page>/f/<link>): only in a message to that parent, made in the step that sends it. The record
+   * keeps only its hash (src/due.ts parentLinks); the outgoing check allows this link and the payment link, and no other.
+   */
+  pageLink?: string;
 }
 
 export type TemplateId =
@@ -72,7 +77,15 @@ export type TemplateId =
   | "owner_approval_waiting" | "owner_approval_closed" | "owner_approval_refused"
   // the agent: a person at the server settled an uncertain refund as made (Guard's already_done), so it is done and not sent again
   | "owner_refund_settled"
-  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId;
+  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PageTemplateId;
+
+/**
+ * Item 11h: the reminders with the parent's private page in them, used whenever the centre has a page (its pages file): the same words as the three reminders, and a
+ * line with the link and "do not share it". `fee_page_link` is the owner's "send a new link" from their page. Each is a WhatsApp template of its own (Meta's
+ * templates are not submitted yet, so adding the link to the wording now costs nothing). Hindi, Malayalam and Kannada are machine-written and wait for a native
+ * speaker's review (REVIEW-ml.md, REVIEW-kn.md).
+ */
+export type PageTemplateId = "fee_reminder_page" | "fee_overdue_page" | "fee_overdue_late_page" | "fee_page_link";
 
 /**
  * The licence's wind-down and final stop (plan B13; modules/licence). The parent's line answers a request to pay while online fee payment is paused; the owner's two
@@ -98,7 +111,8 @@ export const TEMPLATE_NAMES = { customer: "fee_update", reminder: "fee_reminder_
 
 type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
-type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId>, Template>;
+type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId | PageTemplateId>, Template>;
+type PageSet = Record<PageTemplateId, Template>;
 type UpiSet = Record<UpiTemplateId, Template>;
 type LicenceSet = Record<LicenceTemplateId, Template>;
 type GuardWaitSet = Record<GuardWaitTemplateId, Template>;
@@ -484,7 +498,38 @@ const waitKn: GuardWaitSet = {
   fee_wait_over: (f) => `ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಲು ಆಗಲಿಲ್ಲ: ಶುಲ್ಕ ವ್ಯವಸ್ಥೆ ಈಗ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತಿಲ್ಲ. ನಿಮ್ಮ ಸಂದೇಶ ಮಾಲೀಕರ ಮಾಡಬೇಕಾದ ಕೆಲಸಗಳ ಪಟ್ಟಿಯಲ್ಲಿದೆ. ದಯವಿಟ್ಟು ನಂತರ ಮತ್ತೆ ಬರೆಯಿರಿ, ಅಥವಾ ನೇರವಾಗಿ ${f.businessName} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.`,
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn } };
+// ---- item 11h: the parent's private page in the reminder ------------------------------------------------------------------------------------------------------
+// The same three reminders with one more line: the parent's private page, where they see every child's fees and pay, and that it is not to be shared. The link is
+// made for this message (src/agent.ts) and only its hash is kept. And the message the owner's "send a new link" sends. Plain words; Hindi, Malayalam and Kannada are
+// machine-written and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
+const page = (f: MessageFacts) => need(f, "pageLink");
+
+const pageEn: PageSet = {
+  fee_reminder_page: (f) => `Fee reminder from ${f.businessName}. ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} is ${inr(f, "balanceInr")}, due on ${dueDate(f)}. Pay here: ${payTo(f)} See your children's fees on your private page: ${page(f)} Please do not share it. Reply STOP if you do not want these reminders.`,
+  fee_overdue_page: (f) => `Fee reminder from ${f.businessName}. ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} was due on ${dueDate(f)}. ${inr(f, "balanceInr")} is still to pay: ${payTo(f)} See your children's fees on your private page: ${page(f)} Please do not share it. Reply STOP if you do not want these reminders.`,
+  fee_overdue_late_page: (f) => `Fee reminder from ${f.businessName}. ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")} was due on ${dueDate(f)}. A late fee of ${inr(f, "lateFeeInr")} has been added, so ${inr(f, "balanceInr")} is still to pay: ${payTo(f)} See your children's fees on your private page: ${page(f)} Please do not share it. Reply STOP if you do not want these reminders.`,
+  fee_page_link: (f) => `Your private fees page at ${f.businessName}: ${page(f)} It shows your children's fees and how to pay them. Please do not share it. Reply STOP if you do not want these messages.`,
+};
+const pageHi: PageSet = {
+  fee_reminder_page: (f) => `फीस की याद: ${f.businessName}। ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस ${inr(f, "balanceInr")} है, देय तारीख ${dueDate(f)}। यहाँ भुगतान करें: ${payTo(f)} अपने बच्चों की फीस अपने निजी पेज पर देखें: ${page(f)} कृपया इसे किसी से साझा न करें। ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
+  fee_overdue_page: (f) => `फीस की याद: ${f.businessName}। ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस ${dueDate(f)} तक देनी थी। ${inr(f, "balanceInr")} अभी बाकी है: ${payTo(f)} अपने बच्चों की फीस अपने निजी पेज पर देखें: ${page(f)} कृपया इसे किसी से साझा न करें। ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
+  fee_overdue_late_page: (f) => `फीस की याद: ${f.businessName}। ${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस ${dueDate(f)} तक देनी थी। ${inr(f, "lateFeeInr")} की देर की फीस जुड़ गई है, इसलिए ${inr(f, "balanceInr")} अभी बाकी है: ${payTo(f)} अपने बच्चों की फीस अपने निजी पेज पर देखें: ${page(f)} कृपया इसे किसी से साझा न करें। ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
+  fee_page_link: (f) => `आपका निजी फीस पेज (${f.businessName}): ${page(f)} इसमें आपके बच्चों की फीस और भुगतान का तरीक़ा है। कृपया इसे किसी से साझा न करें। ये संदेश नहीं चाहिए तो STOP लिखें।`,
+};
+const pageMl: PageSet = {
+  fee_reminder_page: (f) => `ഫീസ് ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}. ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസ് ${inr(f, "balanceInr")} ആണ്, അടയ്ക്കേണ്ട തീയതി ${dueDate(f)}. ഇവിടെ അടയ്ക്കാം: ${payTo(f)} നിങ്ങളുടെ കുട്ടികളുടെ ഫീസ് നിങ്ങളുടെ സ്വകാര്യ പേജിൽ കാണാം: ${page(f)} ദയവായി ഇത് ആരുമായും പങ്കുവയ്ക്കരുത്. ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
+  fee_overdue_page: (f) => `ഫീസ് ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}. ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസ് ${dueDate(f)}-ന് അടയ്ക്കേണ്ടതായിരുന്നു. ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്: ${payTo(f)} നിങ്ങളുടെ കുട്ടികളുടെ ഫീസ് നിങ്ങളുടെ സ്വകാര്യ പേജിൽ കാണാം: ${page(f)} ദയവായി ഇത് ആരുമായും പങ്കുവയ്ക്കരുത്. ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
+  fee_overdue_late_page: (f) => `ഫീസ് ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}. ${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസ് ${dueDate(f)}-ന് അടയ്ക്കേണ്ടതായിരുന്നു. ${inr(f, "lateFeeInr")} വൈകിയ ഫീസ് ചേർത്തിട്ടുണ്ട്, അതിനാൽ ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്: ${payTo(f)} നിങ്ങളുടെ കുട്ടികളുടെ ഫീസ് നിങ്ങളുടെ സ്വകാര്യ പേജിൽ കാണാം: ${page(f)} ദയവായി ഇത് ആരുമായും പങ്കുവയ്ക്കരുത്. ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
+  fee_page_link: (f) => `നിങ്ങളുടെ സ്വകാര്യ ഫീസ് പേജ് (${f.businessName}): ${page(f)} ഇതിൽ നിങ്ങളുടെ കുട്ടികളുടെ ഫീസും അടയ്ക്കേണ്ട വിധവും ഉണ്ട്. ദയവായി ഇത് ആരുമായും പങ്കുവയ്ക്കരുത്. ഈ സന്ദേശങ്ങൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
+};
+const pageKn: PageSet = {
+  fee_reminder_page: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕ ${inr(f, "balanceInr")}, ಕೊನೆಯ ದಿನಾಂಕ ${dueDate(f)}. ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${payTo(f)} ನಿಮ್ಮ ಮಕ್ಕಳ ಶುಲ್ಕವನ್ನು ನಿಮ್ಮ ಖಾಸಗಿ ಪುಟದಲ್ಲಿ ನೋಡಿ: ${page(f)} ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
+  fee_overdue_page: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕವನ್ನು ${dueDate(f)}ರಂದು ಪಾವತಿಸಬೇಕಿತ್ತು. ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: ${payTo(f)} ನಿಮ್ಮ ಮಕ್ಕಳ ಶುಲ್ಕವನ್ನು ನಿಮ್ಮ ಖಾಸಗಿ ಪುಟದಲ್ಲಿ ನೋಡಿ: ${page(f)} ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
+  fee_overdue_late_page: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕವನ್ನು ${dueDate(f)}ರಂದು ಪಾವತಿಸಬೇಕಿತ್ತು. ${inr(f, "lateFeeInr")} ತಡ ಶುಲ್ಕ ಸೇರಿಸಲಾಗಿದೆ, ಆದ್ದರಿಂದ ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: ${payTo(f)} ನಿಮ್ಮ ಮಕ್ಕಳ ಶುಲ್ಕವನ್ನು ನಿಮ್ಮ ಖಾಸಗಿ ಪುಟದಲ್ಲಿ ನೋಡಿ: ${page(f)} ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
+  fee_page_link: (f) => `ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟ (${f.businessName}): ${page(f)} ಇದರಲ್ಲಿ ನಿಮ್ಮ ಮಕ್ಕಳ ಶುಲ್ಕ ಮತ್ತು ಪಾವತಿಸುವ ವಿಧಾನ ಇದೆ. ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ಸಂದೇಶಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
+};
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...pageEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...pageHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...pageMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...pageKn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

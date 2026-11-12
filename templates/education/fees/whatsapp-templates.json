@@ -304,6 +304,402 @@
     ]
   },
   {
+    "name": "fee_reminder_page",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "फीस की याद: {{1}}। {{2}} की {{3}} की {{4}} की फीस {{5}} है, देय तारीख {{6}}। यहाँ भुगतान करें: {{7}} अपने बच्चों की फीस अपने निजी पेज पर देखें: {{8}} कृपया इसे किसी से साझा न करें। ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "₹1,200",
+              "गुरुवार, 5 नवंबर",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder_page",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Fee reminder from {{1}}. {{2}}'s {{3}} fee for {{4}} is {{5}}, due on {{6}}. Pay here: {{7}} See your children's fees on your private page: {{8}} Please do not share it. Reply STOP if you do not want these reminders.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "₹1,200",
+              "Thu 5 Nov",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder_page",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഫീസ് ഓർമ്മപ്പെടുത്തൽ: {{1}}. {{2}}-ന്റെ {{3}} {{4}} ഫീസ് {{5}} ആണ്, അടയ്ക്കേണ്ട തീയതി {{6}}. ഇവിടെ അടയ്ക്കാം: {{7}} നിങ്ങളുടെ കുട്ടികളുടെ ഫീസ് നിങ്ങളുടെ സ്വകാര്യ പേജിൽ കാണാം: {{8}} ദയവായി ഇത് ആരുമായും പങ്കുവയ്ക്കരുത്. ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "₹1,200",
+              "വ്യാഴം, 5 നവംബർ",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder_page",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಶುಲ್ಕದ ನೆನಪು: {{1}}. {{2}} ಅವರ {{3}} {{4}} ಶುಲ್ಕ {{5}}, ಕೊನೆಯ ದಿನಾಂಕ {{6}}. ಇಲ್ಲಿ ಪಾವತಿಸಿ: {{7}} ನಿಮ್ಮ ಮಕ್ಕಳ ಶುಲ್ಕವನ್ನು ನಿಮ್ಮ ಖಾಸಗಿ ಪುಟದಲ್ಲಿ ನೋಡಿ: {{8}} ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "₹1,200",
+              "ಗುರುವಾರ, 5 ನವೆಂಬರ್",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_page",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "फीस की याद: {{1}}। {{2}} की {{3}} की {{4}} की फीस {{5}} तक देनी थी। {{6}} अभी बाकी है: {{7}} अपने बच्चों की फीस अपने निजी पेज पर देखें: {{8}} कृपया इसे किसी से साझा न करें। ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "गुरुवार, 5 नवंबर",
+              "₹1,200",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_page",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Fee reminder from {{1}}. {{2}}'s {{3}} fee for {{4}} was due on {{5}}. {{6}} is still to pay: {{7}} See your children's fees on your private page: {{8}} Please do not share it. Reply STOP if you do not want these reminders.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "Thu 5 Nov",
+              "₹1,200",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_page",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഫീസ് ഓർമ്മപ്പെടുത്തൽ: {{1}}. {{2}}-ന്റെ {{3}} {{4}} ഫീസ് {{5}}-ന് അടയ്ക്കേണ്ടതായിരുന്നു. {{6}} ഇനിയും അടയ്ക്കാനുണ്ട്: {{7}} നിങ്ങളുടെ കുട്ടികളുടെ ഫീസ് നിങ്ങളുടെ സ്വകാര്യ പേജിൽ കാണാം: {{8}} ദയവായി ഇത് ആരുമായും പങ്കുവയ്ക്കരുത്. ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "വ്യാഴം, 5 നവംബർ",
+              "₹1,200",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_page",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಶುಲ್ಕದ ನೆನಪು: {{1}}. {{2}} ಅವರ {{3}} {{4}} ಶುಲ್ಕವನ್ನು {{5}}ರಂದು ಪಾವತಿಸಬೇಕಿತ್ತು. {{6}} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: {{7}} ನಿಮ್ಮ ಮಕ್ಕಳ ಶುಲ್ಕವನ್ನು ನಿಮ್ಮ ಖಾಸಗಿ ಪುಟದಲ್ಲಿ ನೋಡಿ: {{8}} ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "ಗುರುವಾರ, 5 ನವೆಂಬರ್",
+              "₹1,200",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_late_page",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "फीस की याद: {{1}}। {{2}} की {{3}} की {{4}} की फीस {{5}} तक देनी थी। {{6}} की देर की फीस जुड़ गई है, इसलिए {{7}} अभी बाकी है: {{8}} अपने बच्चों की फीस अपने निजी पेज पर देखें: {{9}} कृपया इसे किसी से साझा न करें। ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "नवंबर 2026",
+              "गुरुवार, 5 नवंबर",
+              "₹100",
+              "₹1,200",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_late_page",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Fee reminder from {{1}}. {{2}}'s {{3}} fee for {{4}} was due on {{5}}. A late fee of {{6}} has been added, so {{7}} is still to pay: {{8}} See your children's fees on your private page: {{9}} Please do not share it. Reply STOP if you do not want these reminders.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "class 8",
+              "Nov 2026",
+              "Thu 5 Nov",
+              "₹100",
+              "₹1,200",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_late_page",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഫീസ് ഓർമ്മപ്പെടുത്തൽ: {{1}}. {{2}}-ന്റെ {{3}} {{4}} ഫീസ് {{5}}-ന് അടയ്ക്കേണ്ടതായിരുന്നു. {{6}} വൈകിയ ഫീസ് ചേർത്തിട്ടുണ്ട്, അതിനാൽ {{7}} ഇനിയും അടയ്ക്കാനുണ്ട്: {{8}} നിങ്ങളുടെ കുട്ടികളുടെ ഫീസ് നിങ്ങളുടെ സ്വകാര്യ പേജിൽ കാണാം: {{9}} ദയവായി ഇത് ആരുമായും പങ്കുവയ്ക്കരുത്. ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "നവംബർ 2026",
+              "വ്യാഴം, 5 നവംബർ",
+              "₹100",
+              "₹1,200",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_overdue_late_page",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಶುಲ್ಕದ ನೆನಪು: {{1}}. {{2}} ಅವರ {{3}} {{4}} ಶುಲ್ಕವನ್ನು {{5}}ರಂದು ಪಾವತಿಸಬೇಕಿತ್ತು. {{6}} ತಡ ಶುಲ್ಕ ಸೇರಿಸಲಾಗಿದೆ, ಆದ್ದರಿಂದ {{7}} ಇನ್ನೂ ಬಾಕಿ ಇದೆ: {{8}} ನಿಮ್ಮ ಮಕ್ಕಳ ಶುಲ್ಕವನ್ನು ನಿಮ್ಮ ಖಾಸಗಿ ಪುಟದಲ್ಲಿ ನೋಡಿ: {{9}} ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ನವೆಂಬರ್ 2026",
+              "ಗುರುವಾರ, 5 ನವೆಂಬರ್",
+              "₹100",
+              "₹1,200",
+              "https://rzp.io/i/example",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_page_link",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपका निजी फीस पेज ({{1}}): {{2}} इसमें आपके बच्चों की फीस और भुगतान का तरीक़ा है। कृपया इसे किसी से साझा न करें। ये संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_page_link",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Your private fees page at {{1}}: {{2}} It shows your children's fees and how to pay them. Please do not share it. Reply STOP if you do not want these messages.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_page_link",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ സ്വകാര്യ ഫീസ് പേജ് ({{1}}): {{2}} ഇതിൽ നിങ്ങളുടെ കുട്ടികളുടെ ഫീസും അടയ്ക്കേണ്ട വിധവും ഉണ്ട്. ദയവായി ഇത് ആരുമായും പങ്കുവയ്ക്കരുത്. ഈ സന്ദേശങ്ങൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_page_link",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟ ({{1}}): {{2}} ಇದರಲ್ಲಿ ನಿಮ್ಮ ಮಕ್ಕಳ ಶುಲ್ಕ ಮತ್ತು ಪಾವತಿಸುವ ವಿಧಾನ ಇದೆ. ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ಸಂದೇಶಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "fee_received",
     "language": "hi",
     "category": "UTILITY",

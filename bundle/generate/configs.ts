@@ -13,6 +13,11 @@ import type { HeldCallSpec } from "../../modules/approvals/held-call.ts";
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import { OWNER_MARKED_KINDS } from "./guards.ts";
 
+
+/** Item 11h: the customer side of a shop's page, from its pathway (none for a pathway that has no page: an agent someone else wrote has no runtime of ours). */
+const channelKind = (pathway: string | undefined): "bookings" | "orders" | "fees" | undefined =>
+  pathway === undefined || pathway === "bookings" ? "bookings" : pathway === "orders" ? "orders" : pathway === "fees" ? "fees" : undefined;
+
 export interface ShopWebhooks {
   verification: "meta-signature" | "path-token";
   /** True when a Google service account key is available to this shop: its own, or the server-wide one. */
@@ -89,8 +94,9 @@ export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhook
         // B37: the other approvers' replies go to the relay too (their codes are the relay's, never the runtime's)
         ...(s.approvers && s.approvers.length > 0 ? { approverWhatsapps: s.approvers.map((p) => p.whatsapp) } : {}),
         secretsDir: `/run/secrets/${s.name}`,
-        // item 11d: a Bookings shop's booking page, API, MCP endpoint and owner page are served by this process (/s/<shop>/...), with its channel_token
-        ...((s as { pathway?: string }).pathway === undefined || (s as { pathway?: string }).pathway === "bookings" ? { channel: { publicUrl: `${publicUrl(server)}/s/${s.name}` } } : {}),
+        // item 11d: a shop's page, its API, MCP endpoint and owner page are served by this process (/s/<shop>/...), with its channel_token. Item 11h: every template
+        // has one now (Bookings' booking page; Orders' menu and orders; Fees' centre page and parents' private pages), and `kind` says which customer side it is
+        ...(channelKind((s as { pathway?: string }).pathway) ? { channel: { publicUrl: `${publicUrl(server)}/s/${s.name}`, kind: channelKind((s as { pathway?: string }).pathway)! } } : {}),
       }]),
       // an agent someone else wrote has no runtime: its WhatsApp number's webhook comes here, the owner's replies go to the relay (when the relay has something
       // for it: a held call to ask about, or the desk), and the rest goes on to the agent itself
