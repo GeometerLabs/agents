@@ -711,7 +711,9 @@ export function createAgent(deps: AgentDeps): Agent {
       if (e.action === "revoke_link") return revokeLink(shown.phone);
       const made = linkFor(shown.phone, true);
       if (!made) { log(null, owner, "parent_link", "blocked", {}, { notes: "the centre has no page yet (no pages file), so no link can be made" }); return; }
-      const sent = await tellCustomer(null, shown.phone, ["fee_page_link"], { pageLink: made.url });
+      // said about the parent's latest fee, so it goes in that fee's language (the student's, from the settings) like their reminders
+      const latest = openDues(store, shown.phone)[0] ?? duesOf(store, shown.phone)[0] ?? null;
+      const sent = await tellCustomer(latest, shown.phone, ["fee_page_link"], { pageLink: made.url });
       if (sent) keepLink(shown.phone, made.token, "owner");
       else log(null, owner, "parent_link", "failed", {}, { notes: "the message with the new link was not accepted, so the parent's old link (if any) still works and nothing changed" });
       return;
