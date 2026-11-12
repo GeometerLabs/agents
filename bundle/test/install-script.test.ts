@@ -324,6 +324,8 @@ test("a whole dry run says each step and changes nothing: no root command, no se
     uname: "echo x86_64",
     docker: 'case "$1" in compose) echo 2.29.1;; info) exit 0;; image) exit 1;; --version) echo "Docker version 28.0.0";; esac',
     node: 'case "$1" in --version) echo v26.13.0;; *) echo "node $*" >> "$STUB_LOG";; esac',
+    // the install names the reviewer from `id -un` (as on a server), so the sandbox's user is "builder" there too, whoever runs the test
+    id: 'case "$1" in -un) echo builder;; *) exec /usr/bin/id "$@";; esac',
   });
   try {
     const osFile = join(s.root, "os"); writeFileSync(osFile, "ID=ubuntu\nVERSION_ID=\"24.04\"\nVERSION_CODENAME=noble\n");
@@ -361,7 +363,12 @@ test("cloud-init's passwordless sudo is taken away at the end, leaving only the 
     const narrow = readFileSync(join(dir, "geometer-builder"), "utf8");
     assert.match(narrow, /^builder ALL=\(root\) NOPASSWD: \/usr\/bin\/systemctl start geometer-deployer\.service, \/usr\/bin\/systemctl stop geometer-deployer\.service, \/usr\/bin\/systemctl restart geometer-deployer\.service, \/usr\/bin\/journalctl -u geometer-deployer\.service -n 100 --no-pager, \/usr\/bin\/passwd builder$/mu);
     assert.match(r.out, /To put it back: sudo passwd builder \(choose a password\), then: echo 'builder ALL=\(ALL\) NOPASSWD:ALL' \| sudo tee /u);
-    assert.ok(s.calls().some((c) => c.startsWith("visudo -cqf")), "the narrow rule was checked before it went in");
+    // asked of sudo's visudo, before the rule is installed. (The sudo stub carries out only a command that writes inside the sandbox; macOS's mktemp ignores TMPDIR,
+    // so there the rule's temporary file is outside it and visudo itself is not run: the call to it is what is checked, on Linux and macOS alike.)
+    const calls = s.calls();
+    const checked = calls.findIndex((c) => /^(sudo )?visudo -cqf /u.test(c));
+    const installed = calls.findIndex((c) => c.startsWith("sudo install -m 0440"));
+    assert.ok(checked >= 0 && checked < installed, `the narrow rule was checked before it went in: ${calls.join("; ")}`);
     r = await s.run(`USER=builder SUDOERS_DIR=${JSON.stringify(dir)}; narrow_sudo; echo "rc=$?"`);
     assert.match(r.out, /^rc=0$/mu);
     assert.doesNotMatch(r.out, /Taking away/u, "a second run finds nothing to take away");

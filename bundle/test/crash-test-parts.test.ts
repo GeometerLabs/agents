@@ -173,7 +173,7 @@ test("the geo-guard program: --guard-bin, GEO_GUARD_BIN, the PATH, and on a Linu
 // ---- which situations these settings allow -----------------------------------------------------------------------------------------------------
 
 test("the situations are the same list for every agent, with the ones the settings cannot express named and left out of the counts", async () => {
-  const ids = ["booking-works", "payment-link-lost-reply", "refund-lost-reply", "duplicate-payment-event", "calendar-silent-failure", "razorpay-key-expired", "refund-above-limit", "refund-more-than-paid", "duplicate-inbound", "price-below-floor"];
+  const ids = ["booking-works", "payment-link-lost-reply", "refund-lost-reply", "duplicate-payment-event", "calendar-silent-failure", "razorpay-key-expired", "refund-above-limit", "owner-denies", "approval-expires", "refund-more-than-paid", "duplicate-inbound", "price-below-floor"];
   const a = server({ run: "node app.js" });
   try {
     const built = buildSituations((await planCrashTest(a.ctx, a.name, { guardBin: process.execPath })).plan);
@@ -182,14 +182,14 @@ test("the situations are the same list for every agent, with the ones the settin
     assert.equal(new Set(built.situations.map((s) => s.title)).size, ids.length, "titles are what an update matches on, so they are all different");
     assert.ok(built.situations.every((s) => !/\d|₹/u.test(s.title)), "and carry no version, amount or setting");
   } finally { a.done(); }
-  // a refund limit that is not below the deposit: no refund of the deposit can be above it
+  // a refund limit that is not below the deposit: no refund of the deposit can be above it, so nothing is held for the owner to refuse or leave unanswered either
   const b = server({ run: "node app.js", "refund-limit": "300", upstreams: "razorpay,whatsapp" });
   try {
     const built = buildSituations((await planCrashTest(b.ctx, b.name, { guardBin: process.execPath })).plan);
-    assert.deepEqual(built.skipped.map((s) => s.id), ["calendar-silent-failure", "refund-above-limit"]);
+    assert.deepEqual(built.skipped.map((s) => s.id), ["calendar-silent-failure", "refund-above-limit", "owner-denies", "approval-expires"]);
     assert.match(built.skipped.find((s) => s.id === "refund-above-limit")!.reason, /refund limit \(₹300\) is not below the deposit \(₹200\)/u);
     assert.match(built.skipped.find((s) => s.id === "calendar-silent-failure")!.reason, /does not use the calendar/u);
-    assert.equal(built.situations.length, ids.length - 2);
+    assert.equal(built.situations.length, ids.length - 4);
     assert.deepEqual(chooseSituations(built, ["booking-works", "refund-above-limit"]).skipped.map((s) => s.id), ["refund-above-limit"]);
     assert.throws(() => chooseSituations(built, ["booking-works", "nonsense"]), /I don't know the situation nonsense\. They are: booking-works, .*refund-above-limit/u);
   } finally { b.done(); }
