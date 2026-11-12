@@ -10,7 +10,7 @@ import type { InboundMessage, Messaging } from "../messaging/messaging.ts";
 import type { ActionRecord, Outcome } from "../record/record.ts";
 import type { AiPolicy, AiStore } from "../understanding/ai-state.ts";
 import { createAssistant, kindsOf } from "./conversation.ts";
-import type { Assistant } from "./conversation.ts";
+import type { Assistant, AssistantDeps } from "./conversation.ts";
 import { amountOf } from "./intents.ts";
 import { createOwnerReader } from "./reading.ts";
 import type { OwnerParser } from "./reading.ts";
@@ -27,6 +27,8 @@ export interface AgentAssistantDeps {
   record: ActionRecord;
   policy: AiPolicy;
   ownerParser?: OwnerParser;
+  /** The owner's voice notes, heard through the agent's shared listener (conversation.ts AssistantDeps.hearing). Left out: voice is off for the shop. */
+  hearing?: AssistantDeps["hearing"];
   /** The template's record writer, by case id. */
   log(caseId: string | null, phone: string, action: string, outcome: Outcome, inputs: unknown, more: { notes?: string; refs?: Record<string, string>; decisions?: Decision[]; language?: Language }): void;
   /** The template's own words to the owner when the AI allowance runs out or a model fails (the same notices its customers' reader sends). */
@@ -49,6 +51,7 @@ export function assistantForAgent(d: AgentAssistantDeps): Assistant | undefined 
       tellOwner: d.ownerNotice,
     }),
     log: d.log,
+    ...(d.hearing ? { hearing: d.hearing } : {}),
     entries: () => d.record.entries(),
     languageOf: d.languageOf,
     optedOut: d.optedOut,

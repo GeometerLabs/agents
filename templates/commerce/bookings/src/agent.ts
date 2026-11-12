@@ -1639,6 +1639,8 @@ export function createAgent(deps: AgentDeps): Agent {
   });
   const assistant = assistantForAgent({
     settings, store, skill: assistantSkill, clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
+    // the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out
+    ...(deps.voice ? { hearing: { hear: createListener({ voice: deps.voice, reader, isCommander: () => false, optedOut: () => false }) } } : {}),
     log: (caseId, phone, action, outcome, inputs, more) => log(caseId ? store.bookings.get(caseId) ?? null : null, phone, action, outcome, inputs, more),
     ownerNotice: async (notice) => { await say({ booking: null, phone: owner, to: "owner", templates: [notice === "allowance" ? "owner_ai_allowance" : notice === "override" ? "owner_ai_off" : "owner_ai_fault"] }); },
     languageOf: (phone) => languageOf(phone),
