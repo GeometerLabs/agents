@@ -704,7 +704,9 @@ format of a WhatsApp voice note, and stops at 30 seconds, the voice service's li
 Written and run one file at a time (12 Nov): `assistant/test/cards.test.ts` (the binding), `intents.test.ts` (four languages; the models choose only the kind),
 `words.test.ts` (every message and template in every language against the outgoing check), `morning.test.ts` (once, silent days, the claim before the send),
 `character-mood.test.ts`, `route.test.ts`, `app.test.ts`, and Bookings `test/assistant.test.ts` end to end on the fakes (the fixed phrases kept, a card's tap refunding
-exactly the amount shown, a changed amount voiding the card, a final no, free text never executing, a closed day and its undo, the morning line from the same store).
+exactly the amount shown, a changed amount voiding the card, a final no, free text never executing, a closed day and its undo, a move and its undo, the UPI marks and
+the handover phrase untouched, the morning line from the same store), Bookings `test/approvals-card.test.ts` (the relay's card: a tap is the typed code, once; a wrong
+code is a wrong guess) and `bundle/test/assistant-usage.test.ts` (the owner's model spend is metered, never as a customer message).
 The templates' existing suites were not run by this job (a combined run was using the machine). The agents' changes are additive and off without an `assistant` block,
 except two that apply to every shop: every agent now also drops a tapped relay button (`isRelayReply`), and Bookings' within-hours limit takes the closed days (none
 without the assistant).
