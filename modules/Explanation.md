@@ -536,7 +536,8 @@ The report data has kept a person's settlement apart since follow-up 5 (`money.s
 
 ## The shop's assistant (item 11e, decision 43; 12 Nov 2026)
 
-Decision 43: a shop gets **one assistant, not a set of agent templates**. Bookings, Fees and Orders become its skills; the owner talks to the assistant by text or voice note;
+Decision 43: a shop gets **one assistant, not a set of agent templates**. Bookings, Fees and Orders become its skills; the owner talks to the assistant by text or voice note
+(it listens to voice notes and always answers in text: the owner's decision of 12 Nov);
 anything touching money or a limit comes back as a card showing the exact change, done only by a tap. This section says where the assistant sits and why. The code is
 `assistant/`; what waits is in [Deferred.md](Deferred.md#the-shops-assistant-item-11e).
 
@@ -650,8 +651,9 @@ or the owner closed the date).
 
 ### The character's hooks (the drawings are a separate exploration)
 
-`character.ts`: one character per shop, in the shop's settings (`assistant.character`): a name, a look as a small JSON of options from a fixed list (base, colour,
-accessory for the trade), and a voice choice for spoken replies. Nothing is drawn here. `mood.ts`: **a mood computed only from the shop's real state**, never stored and
+`character.ts`: one character per shop, in the shop's settings (`assistant.character`): a name and a look as a small JSON of options from a fixed list (base, colour,
+accessory for the trade). Nothing is drawn here. There is no voice (the owner's decision, 12 Nov: "listen in voice, reply in text"): the assistant understands the
+owner's voice notes through the voice notes job's speech to text, and every reply, card and morning line is text, with the mood's sticker where one is planned. `mood.ts`: **a mood computed only from the shop's real state**, never stored and
 never earned. In order: `something_wrong` (a refund needs the builder, a message failed, a task gave up on a Guard), `waiting_for_owner` (a card or a waiting item),
 `closed` (outside today's hours, or a closed day), `busy` (a booking within the hour, or a full day), `quiet`. The owner's app shows it, and the morning line names the
 sticker for it (`stickerFor`), so the look can follow the shop. There are no points, chores or streaks. The character always says it is the shop's assistant.
