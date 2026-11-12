@@ -13,6 +13,8 @@ const english = flatWords(WORDS.en);
 const BLOCK: Record<string, RegExp> = { hi: /[ऀ-ॿ]/u, ml: /[ഀ-ൿ]/u, kn: /[ಀ-೿]/u };
 /** Lines that are the same in every language on purpose: a brand, an address, a number. */
 const SAME_ON_PURPOSE = new Set(["appName"]);
+/** A sample value a sentence says as another number on purpose, in every language: the Gupshup credential's hours left (120) are said as days (5). */
+const SHOWN_AS: Record<string, Map<unknown, string | number>> = { "inbox.kinds.whatsapp_token_credential": new Map([[120, "5"]]) };
 
 test("every language has exactly the sentences English has", () => {
   assert.ok(english.size > 250, `English has ${english.size} lines`);
@@ -28,18 +30,11 @@ test("a sentence that takes values says them exactly as given: amounts, numbers,
     for (const [path, args] of Object.entries(SAMPLE_ARGS)) {
       const text = mine.get(path);
       assert.ok(text !== undefined, `${l}: ${path} is missing`);
-      const en = english.get(path) ?? "";
       for (const a of args) {
         if (typeof a === "boolean" || a === "") continue;
-        // A number the English sentence itself turns into another (the Gupshup credential's hours, said as days) is checked as what English
-        // shows: every language writes the same figures English does, so a derived "5" is never translated either.
-        if (typeof a === "number" && !en.includes(String(a))) {
-          const figures = (t: string) => (t.match(/\d[\d,.]*/gu) ?? []).sort();
-          assert.ok(figures(en).length > 0, `en: ${path} drops ${a}: it must show it, or a number made from it, but says: ${en}`);
-          assert.deepEqual(figures(text), figures(en), `${l}: ${path} must show the figures English shows (${figures(en).join(", ")}), but says: ${text}`);
-          continue;
-        }
-        assert.ok(text.includes(String(a)), `${l}: ${path} must show ${JSON.stringify(a)} as given, but says: ${text}`);
+        const shown = SHOWN_AS[path]?.get(a);
+        if (shown !== undefined) assert.match(text, new RegExp(`(^|\\D)${shown}(\\D|$)`, "u"), `${l}: ${path} must show ${a} as ${shown}, written as given`);
+        else assert.ok(text.includes(String(a)), `${l}: ${path} must show ${JSON.stringify(a)} as given, but says: ${text}`);
       }
     }
   }
