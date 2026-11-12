@@ -5,6 +5,8 @@
 //     by the next customer's "look first" as their own.
 //   - (12 Nov 2026) the look that settles it, or the provider's own refund.done, tells the customer once, as "we will message you as soon as it is confirmed" promised,
 //     and the event settles the ORIGINAL attempt as the provider's confirmation, never a new refund.
+//   - (12 Nov 2026, the combined run's finding) while Meta has not approved deposit_refund_confirmed, the settled refund stays on the to-do list as "refund made,
+//     customer not yet told", the recovery line says so, and the clock tells the customer once the template is approved: once, and never again.
 // The map of what exists and what does not is in modules/Explanation.md, "Unknown outcomes".
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -12,6 +14,8 @@ import { CUSTOMER } from "../src/harness.ts";
 import { GUARD_WAIT_MS } from "../../../../modules/runtime/guard-wait.ts";
 import { outage } from "../../../../modules/runtime/test/outage.ts";
 import { DEFAULT_OPTIONS, obligations } from "../../../../modules/unfinished/index.ts";
+import { RECOVERY_ENTRY } from "../../../../modules/unfinished/registry.ts";
+import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import { parseStore } from "../server/snapshot.ts";
 import { createKit } from "./runtime-kit.ts";
 
@@ -101,6 +105,63 @@ test("the provider's own refund.done settles a refund whose outcome was unknown:
     assert.equal(event.outcome, "confirmed");
     assert.match(event.notes ?? "", /the one whose outcome was unknown/u);
     assert.equal(kit.messaging.sentTo(CUSTOMER).filter((m) => /refund is confirmed/u.test(m.text)).length, 1, "the customer is told once");
+  } finally { await runtime.close(); kit.cleanup(); }
+});
+
+test("a refund settled while Meta has not approved deposit_refund_confirmed: kept on the to-do list as made but not told, told once the template is approved, and never again", async () => {
+  const kit = createKit({ notApproved: ["deposit_refund_confirmed"] });
+  const { runtime, db } = kit.open();
+  const toldConfirmed = () => kit.messaging.sentTo(CUSTOMER).filter((m) => /refund is confirmed/u.test(m.text)).length;
+  const untold = () => {
+    const saved = parseStore(db.loadState().snapshot!);
+    return obligations.detect({ template: "bookings", entries: db.loadState().record, cases: [...saved.bookings.values()] as never, nowMs: kit.clock.now(), options: DEFAULT_OPTIONS }).found.filter((o) => o.kind === "refund_made_not_told");
+  };
+  try {
+    await kit.say(runtime, BOOK);
+    kit.payments.customerPays(kit.linkFor("b-1")!.id);
+    await kit.deliverPaymentEvents(runtime);
+    kit.payments.inject("refund", "outcomeUnknown");
+    const listRefunds = kit.payments.listRefunds;
+    kit.payments.listRefunds = async () => [];
+    await kit.say(runtime, "cancel my booking");
+    kit.clock.advance(2 * DAY); // the customer's 24-hour window closes: only an approved template reaches them now
+    await runtime.tick();
+
+    // A look settles it: the refund is made. The "it is confirmed" template is refused (not approved), so the customer is NOT told, and the record and the list say so.
+    kit.payments.listRefunds = listRefunds;
+    runtime.submit([{ kind: "recovery", id: "r-1", case: "b-1", action: "recheck_refund" }]);
+    runtime.kick();
+    await runtime.idle();
+    assert.equal(runtime.status().refunds.needBuilder.total, 0, "the refund is settled");
+    assert.equal(db.loadState().record.filter((e) => e.action === "refund" && e.outcome === "confirmed").length, 1);
+    assert.equal(toldConfirmed(), 0, "not told: the template was refused");
+    const record = db.loadState().record;
+    const looked = record.findLastIndex((e) => e.action === RECOVERY_ENTRY && e.outcome === "attempted");
+    assert.deepEqual(record.slice(looked).filter((e) => e.action === "send_message" && e.refs.to === "customer").map((e) => e.outcome), ["failed"], "the refused message is a failed line, not a confirmed one");
+    const line = db.loadState().record.filter((e) => e.action === RECOVERY_ENTRY && e.outcome === "confirmed").at(-1)!;
+    assert.match(line.notes ?? "", /the customer was told of 0, and 1 stays on the to-do list as "refund made, customer not yet told"/u, "the recovery line says what happened");
+    assert.doesNotMatch(line.notes ?? "", /told of each/u);
+    assert.deepEqual(untold().map((o) => [o.caseId, o.facts.amountInr, o.facts.what]), [["b-1", 200, "tell_retry"]], "on the to-do list: refund made, customer not yet told");
+
+    await runtime.tick(); // the next beat tries again: still refused
+    assert.equal(toldConfirmed(), 0);
+    assert.equal(untold().length, 1, "still listed");
+
+    // Meta approves the template; the next try that is due tells the customer, as the template.
+    for (const language of LANGUAGES) kit.messaging.approve("deposit_refund_confirmed", language);
+    kit.clock.advance(6 * 3_600_000);
+    await runtime.tick();
+    assert.equal(toldConfirmed(), 1, "told once the template is approved");
+    assert.equal(kit.messaging.sentTo(CUSTOMER).filter((m) => /refund is confirmed/u.test(m.text)).at(-1)!.templateName, "deposit_refund_confirmed");
+    assert.deepEqual(untold(), [], "off the to-do list");
+
+    for (let day = 0; day < 3; day++) { kit.clock.advance(DAY); await runtime.tick(); }
+    runtime.submit([{ kind: "recovery", id: "r-2", case: "b-1", action: "recheck_refund" }]);
+    runtime.kick();
+    await runtime.idle();
+    await kit.deliverPaymentEvents(runtime); // the provider's own refund.done arrives late: it settles nothing and tells nobody
+    assert.equal(toldConfirmed(), 1, "never told twice");
+    assert.equal(db.loadState().record.filter((e) => e.action === "refund" && e.outcome === "confirmed").length, 1, "and confirmed once");
   } finally { await runtime.close(); kit.cleanup(); }
 });
 

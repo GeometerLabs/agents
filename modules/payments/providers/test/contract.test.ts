@@ -79,6 +79,7 @@ function refundFlow(payments: Payments, clock: FakeClock) {
     payments, clock, owner: OWNER, limitInr: () => LIMIT_INR,
     log: (_c, _phone, action, outcome, _inputs, more) => { log.push({ action, outcome, ...(more?.notes ? { notes: more.notes } : {}) }); },
     tellCustomer: async (_c, _p, templates) => { told.push(...templates); return true; },
+    tellCustomerOutcome: async (_c, _p, id) => { told.push(id); return "accepted"; },
     tellOwner: async (_c, _p, template) => { told.push(template); return true; },
     cases: () => [b],
     ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired", settled: "refund_settled", confirmed: "refund_confirmed" },
