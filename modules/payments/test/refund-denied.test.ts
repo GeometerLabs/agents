@@ -38,6 +38,7 @@ function world() {
     payments, clock: fakeClock(Date.UTC(2026, 10, 12, 6)), owner: OWNER, limitInr: () => 100,
     log: (_c, _phone, action, outcome, inputs, more) => { lines.push({ action, outcome, inputs, refs: more?.refs ?? {}, ...(more?.notes ? { notes: more.notes } : {}) }); },
     tellCustomer: async (_c, _phone, ids) => { told.push(ids); return true; },
+    tellCustomerOutcome: async (_c, _phone, id) => { told.push([id]); return "accepted"; },
     tellOwner: async () => true,
     cases: () => [b],
     ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired", settled: "owner_refund_settled", confirmed: "refund_confirmed" },
