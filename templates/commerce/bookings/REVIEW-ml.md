@@ -974,6 +974,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.kinds.refund_waiting` | b-3-ന്റെ ₹200 റീഫണ്ട് [who] കാത്തിരിക്കുന്നു | The refund of ₹200 for b-3 is waiting [who] |  |
 | `inbox.kinds.refund_unknown` | b-3-ന്റെ റീഫണ്ട് നടന്നോ എന്ന് ഉറപ്പില്ല: {gateway}-യിൽ നോക്കുക | Refund for b-3: not sure it went through. Check it in {gateway} |  |
 | `inbox.kinds.refund_failed` | b-3-ന്റെ റീഫണ്ട് നടന്നില്ല: നോക്കുക | The refund for b-3 did not go through: review it |  |
+| `inbox.kinds.refund_made_not_told` | b-3-ന്റെ ₹200 റീഫണ്ട് നൽകി, പക്ഷേ ഉപഭോക്താവിനെ ഇതുവരെ അറിയിച്ചിട്ടില്ല: [how] | Refund of ₹200 for b-3 is made, and the customer has not been told yet: [how] |  |
 | `inbox.kinds.message_unanswered` | സേവനത്തിന്റെ കണക്ഷൻ നിലച്ചതിനാൽ #12-ന്റെ ജോലി പൂർത്തിയായില്ല: പരിശോധിച്ച് ഉപഭോക്താവിന് മറുപടി നൽകുക | Work for #12 was not finished while a service's connection was down: check it and answer the customer |  |
 | `inbox.kinds.whatsapp_token_renewal` | Gupshup വഴിയുള്ള WhatsApp: ഈ കടയുടെ ടോക്കൺ പുതുക്കാനായില്ല. ഇപ്പോഴത്തേത് 6 മണിക്കൂറിൽ തീരും, അതിനുശേഷം ഒരു സന്ദേശവും പോകില്ല. സെർവർ നോക്കൂ (geometer logs refresher), അല്ലെങ്കിൽ പുതിയ Gupshup universal token നൽകൂ. | WhatsApp through Gupshup: this shop's token could not be renewed. The one in use ends in 6 hours, and then no message goes out. Check the server (geometer logs refresher) or hand in a new Gupshup universal token. |  |
 | `inbox.kinds.whatsapp_token_credential` | Gupshup വഴിയുള്ള WhatsApp: സെർവറിന്റെ Gupshup universal token 5 ദിവസത്തിൽ തീരും. അതിനുമുമ്പ് പുതിയത് നൽകൂ (geometer gupshup-token <file>). | WhatsApp through Gupshup: the server's Gupshup universal token ends in 5 days. Hand in a new one before then (geometer gupshup-token <file>). |  |
@@ -989,6 +990,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.variants.owner` | ഉടമയുടെ മറുപടിക്കായി | for the owner's answer |  |
 | `inbox.variants.agent` | വീണ്ടും അയയ്ക്കാനായി | to be sent again |  |
 | `inbox.variants.big_order` | വലിയ ഓർഡർ | a big order |  |
+| `inbox.variants.tell_retry` | ഏജന്റ് സ്വയം വീണ്ടും ശ്രമിക്കും | the agent tries again by itself |  |
+| `inbox.variants.tell_person` | നിങ്ങൾ തന്നെ ഉപഭോക്താവിനെ അറിയിക്കുക | tell them yourself |  |
 | `inbox.actions.recheck_payment` | പണം വീണ്ടും പരിശോധിക്കുക | Check the payment again |  |
 | `inbox.actions.retry_booking` | ബുക്കിങ് വീണ്ടും ഉറപ്പിക്കാൻ ശ്രമിക്കുക | Try to confirm the booking again |  |
 | `inbox.actions.ask_owner_again` | ഉടമയോട് വീണ്ടും ചോദിക്കുക | Ask the owner again |  |

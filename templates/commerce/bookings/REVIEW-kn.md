@@ -974,6 +974,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.kinds.refund_waiting` | b-3 ರ ₹200 ರೀಫಂಡ್ [who] ಕಾಯುತ್ತಿದೆ | The refund of ₹200 for b-3 is waiting [who] |  |
 | `inbox.kinds.refund_unknown` | b-3 ರ ರೀಫಂಡ್ ಆಯಿತೋ ಇಲ್ಲವೋ ಗೊತ್ತಿಲ್ಲ: {gateway} ನಲ್ಲಿ ನೋಡಿ | Refund for b-3: not sure it went through. Check it in {gateway} |  |
 | `inbox.kinds.refund_failed` | b-3 ರ ರೀಫಂಡ್ ಆಗಲಿಲ್ಲ: ನೋಡಿ | The refund for b-3 did not go through: review it |  |
+| `inbox.kinds.refund_made_not_told` | b-3 ರ ₹200 ರೀಫಂಡ್ ಆಗಿದೆ, ಆದರೆ ಗ್ರಾಹಕರಿಗೆ ಇನ್ನೂ ತಿಳಿಸಿಲ್ಲ: [how] | Refund of ₹200 for b-3 is made, and the customer has not been told yet: [how] |  |
 | `inbox.kinds.message_unanswered` | ಸೇವೆಯ ಸಂಪರ್ಕ ನಿಂತುಹೋದ ಕಾರಣ #12 ರ ಕೆಲಸ ಪೂರ್ಣವಾಗಲಿಲ್ಲ: ಪರಿಶೀಲಿಸಿ ಗ್ರಾಹಕರಿಗೆ ಉತ್ತರಿಸಿ | Work for #12 was not finished while a service's connection was down: check it and answer the customer |  |
 | `inbox.kinds.whatsapp_token_renewal` | Gupshup ಮೂಲಕ WhatsApp: ಈ ಅಂಗಡಿಯ ಟೋಕನ್ ಅನ್ನು ನವೀಕರಿಸಲು ಆಗಲಿಲ್ಲ. ಈಗಿನದು 6 ಗಂಟೆಗಳಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ, ಅದರ ನಂತರ ಯಾವ ಸಂದೇಶವೂ ಹೋಗುವುದಿಲ್ಲ. ಸರ್ವರ್ ನೋಡಿ (geometer logs refresher) ಅಥವಾ ಹೊಸ Gupshup universal token ಕೊಡಿ. | WhatsApp through Gupshup: this shop's token could not be renewed. The one in use ends in 6 hours, and then no message goes out. Check the server (geometer logs refresher) or hand in a new Gupshup universal token. |  |
 | `inbox.kinds.whatsapp_token_credential` | Gupshup ಮೂಲಕ WhatsApp: ಸರ್ವರ್‌ನ Gupshup universal token 5 ದಿನಗಳಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ. ಅದಕ್ಕೂ ಮೊದಲು ಹೊಸದನ್ನು ಕೊಡಿ (geometer gupshup-token <file>). | WhatsApp through Gupshup: the server's Gupshup universal token ends in 5 days. Hand in a new one before then (geometer gupshup-token <file>). |  |
@@ -989,6 +990,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `inbox.variants.owner` | ಮಾಲೀಕರ ಉತ್ತರಕ್ಕಾಗಿ | for the owner's answer |  |
 | `inbox.variants.agent` | ಮತ್ತೆ ಕಳುಹಿಸಲು | to be sent again |  |
 | `inbox.variants.big_order` | ದೊಡ್ಡ ಆರ್ಡರ್ | a big order |  |
+| `inbox.variants.tell_retry` | ಏಜೆಂಟ್ ತಾನೇ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸುತ್ತದೆ | the agent tries again by itself |  |
+| `inbox.variants.tell_person` | ನೀವೇ ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿ | tell them yourself |  |
 | `inbox.actions.recheck_payment` | ಹಣವನ್ನು ಮತ್ತೆ ಪರಿಶೀಲಿಸಿ | Check the payment again |  |
 | `inbox.actions.retry_booking` | ಬುಕಿಂಗ್ ಅನ್ನು ಮತ್ತೆ ಖಚಿತಪಡಿಸಲು ಪ್ರಯತ್ನಿಸಿ | Try to confirm the booking again |  |
 | `inbox.actions.ask_owner_again` | ಮಾಲೀಕರನ್ನು ಮತ್ತೆ ಕೇಳಿ | Ask the owner again |  |
