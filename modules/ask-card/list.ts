@@ -91,6 +91,19 @@ const ALWAYS: ListItem[] = [
       "WhatsApp ಗೆ ಇದು ಬೇಕು. ಮಾಲೀಕರು ತಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ತಾವೇ ಲಾಗಿನ್ ಮಾಡುತ್ತಾರೆ: ನೀವು ಪಾಸ್‌ವರ್ಡ್ ಅಥವಾ ಕೋಡ್ ಅನ್ನು ಎಂದಿಗೂ ನೋಡುವುದಿಲ್ಲ."),
   },
   {
+    id: "gupshup-account", group: "always", optional: true,
+    what: w(
+      "Only if the shop uses its own Gupshup account (the pilot's route): the owner signs up at Gupshup, adds the partner as an admin, and the shop gives you the app name and the API key",
+      "सिर्फ़ तब जब दुकान अपना Gupshup अकाउंट इस्तेमाल करती है (पायलट का रास्ता): मालिक Gupshup पर साइन अप करते हैं, पार्टनर को एडमिन बनाते हैं, और दुकान आपको ऐप का नाम और API key देती है",
+      "കട സ്വന്തം Gupshup അക്കൗണ്ട് ഉപയോഗിക്കുന്നെങ്കിൽ മാത്രം (പൈലറ്റിന്റെ വഴി): ഉടമ Gupshup-ൽ സൈൻ അപ്പ് ചെയ്യും, പാർട്ണറെ അഡ്മിൻ ആയി ചേർക്കും, കട നിങ്ങൾക്ക് ആപ്പിന്റെ പേരും API key-യും തരും",
+      "ಅಂಗಡಿ ತನ್ನ ಸ್ವಂತ Gupshup ಖಾತೆ ಬಳಸುವುದಾದರೆ ಮಾತ್ರ (ಪೈಲಟ್‌ನ ದಾರಿ): ಮಾಲೀಕರು Gupshup ನಲ್ಲಿ ಸೈನ್ ಅಪ್ ಮಾಡುತ್ತಾರೆ, ಪಾರ್ಟ್ನರ್ ಅನ್ನು ಅಡ್ಮಿನ್ ಆಗಿ ಸೇರಿಸುತ್ತಾರೆ, ಮತ್ತು ಅಂಗಡಿ ನಿಮಗೆ ಆ್ಯಪ್ ಹೆಸರು ಮತ್ತು API key ಕೊಡುತ್ತದೆ"),
+    why: w(
+      "The shop keeps the account, and its own Gupshup wallet pays Meta's charges and Gupshup's fee. The API key goes into the panel's key box only; never write it on paper or send it in a chat. Our message templates must show as approved in the shop's Gupshup app before the first message.",
+      "अकाउंट दुकान का ही रहता है, और Meta का शुल्क तथा Gupshup की फ़ीस दुकान के अपने Gupshup वॉलेट से जाती है। API key सिर्फ़ पैनल के key बॉक्स में डालिए; उसे काग़ज़ पर मत लिखिए और चैट में मत भेजिए। पहला मैसेज जाने से पहले हमारे मैसेज टेम्पलेट दुकान के Gupshup ऐप में मंज़ूर (approved) दिखने चाहिए।",
+      "അക്കൗണ്ട് കടയുടേത് തന്നെയായി തുടരും, Meta-യുടെ ചാർജും Gupshup-ന്റെ ഫീസും കടയുടെ സ്വന്തം Gupshup വാലറ്റിൽ നിന്ന് പോകും. API key പാനലിലെ key ബോക്സിൽ മാത്രം ഇടൂ; കടലാസിൽ എഴുതരുത്, ചാറ്റിൽ അയയ്ക്കരുത്. ആദ്യ സന്ദേശം പോകുംമുമ്പ് ഞങ്ങളുടെ മെസേജ് ടെംപ്ലേറ്റുകൾ കടയുടെ Gupshup ആപ്പിൽ അംഗീകരിച്ചതായി (approved) കാണണം.",
+      "ಖಾತೆ ಅಂಗಡಿಯದೇ ಆಗಿರುತ್ತದೆ, Meta ಶುಲ್ಕ ಮತ್ತು Gupshup ಶುಲ್ಕ ಅಂಗಡಿಯ ಸ್ವಂತ Gupshup ವ್ಯಾಲೆಟ್‌ನಿಂದ ಹೋಗುತ್ತದೆ. API key ಅನ್ನು ಪ್ಯಾನೆಲ್‌ನ key ಬಾಕ್ಸ್‌ನಲ್ಲಿ ಮಾತ್ರ ಹಾಕಿ; ಕಾಗದದ ಮೇಲೆ ಬರೆಯಬೇಡಿ, ಚಾಟ್‌ನಲ್ಲಿ ಕಳುಹಿಸಬೇಡಿ. ಮೊದಲ ಮೆಸೇಜ್ ಹೋಗುವ ಮೊದಲು ನಮ್ಮ ಮೆಸೇಜ್ ಟೆಂಪ್ಲೇಟ್‌ಗಳು ಅಂಗಡಿಯ Gupshup ಆ್ಯಪ್‌ನಲ್ಲಿ ಅನುಮೋದಿತ (approved) ಎಂದು ಕಾಣಬೇಕು."),
+  },
+  {
     id: "public-name", group: "always",
     what: w(
       "The name the shop is known by in public (signboard, Google or Instagram page)",
