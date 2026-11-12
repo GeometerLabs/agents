@@ -534,6 +534,145 @@ The report data has kept a person's settlement apart since follow-up 5 (`money.s
   the unconfirmed row, every language and template of the message), Orders' and Fees' `test/report.test.ts` (the row and the message). The worst case in Bookings
   `test/report-whatsapp.test.ts` and the long-name months in the three `report-summary.test.ts` now include people who settled by their word.
 
+## The shop's assistant (item 11e, decision 43; 12 Nov 2026)
+
+Decision 43: a shop gets **one assistant, not a set of agent templates**. Bookings, Fees and Orders become its skills; the owner talks to the assistant by text or voice note;
+anything touching money or a limit comes back as a card showing the exact change, done only by a tap. This section says where the assistant sits and why. The code is
+`assistant/`; what waits is in [Deferred.md](Deferred.md#the-shops-assistant-item-11e).
+
+### What there is today
+
+A shop is one template. Its `pathway.lock` names one pathway (`bookings@0.1.0`), and the bundle runs one runtime for it (`rt-<shop>`, `bundle/generate/compose.ts`). The runtime sits
+on its own network with its own Guards (payments or the UPI desk, WhatsApp, calendar) and the model Guard, and can reach nothing else. Every webhook comes through the inbox
+(`/c/<shop>/...`), and the owner's messages are copied to the approvals relay. A business that wanted Bookings and Fees would be two shops today, with two WhatsApp numbers.
+
+Inside the runtime, one step (`runtime/core.ts`) builds a fresh store and record from the last saved state, lets the agent handle one event, and saves the new state,
+the record lines and the task's done mark in one transaction. The owner already talks to the agent with fixed phrases: `today`/`tomorrow`, `approve|deny|retry b-14`
+(Fees `q-N`, Orders `o-N`), the UPI marks `received K7M2QX` (and their buttons), `move <code>` for a handover, `terms` and `I agree`. The relay's `approve K7M2QX` is the
+relay's, and every agent drops it without a word. Anything else gets `owner_unknown_command`.
+
+### The choice: a module inside the runtime, with a shared router
+
+The assistant is **not a new process in front**. It is a module (`assistant/`) the runtime runs as the first thing in a step, for the owner's messages and the clock's
+tick, and a small pure router that says which skill a message is for. Why:
+
+1. **A card or an undo must be saved with the case it changes.** "Closed Sunday; I've asked the two customers to pick another day" changes the shop's closed days,
+   two bookings' messages and the record. Inside the runtime these go in the step's one transaction, so a crash leaves the day closed and the customers asked, or
+   nothing. A front process would have its own store, its own WhatsApp principal and a save split across two stores for every card. That makes the exactly-once rule
+   (B75) harder for no gain.
+2. **The record shows which skill acted, by construction.** The act runs in the skill's own agent and lands in that skill's record (`owner_assistant` lines for the
+   conversation, the skill's usual lines for what it did). A front process would have to copy that back.
+3. **No new authority and no new network path.** The runtime keeps reaching only its own Guards. The assistant holds no approver secret and no provider key. A refund above
+   the limit is still held by Guard and asked about by the relay. The assistant cannot do anything the owner's own fixed phrases cannot do today.
+4. **The first release has one skill per shop.** The pilot's shops are single-skill (a salon: Bookings; a tuition centre: Fees), and the bundle deploys one pathway per
+   shop. For them the router's answer is always "the one skill", and nothing in the bundle changes.
+
+**A shop with two skills** is the router's real job, and its home is the same: one runtime that hosts several skills' agents over one store (a composite kit, one
+`skills.<name>` part per skill plus the assistant's part), with the router as the first step. One WhatsApp number per shop, one record (each line tagged with its skill),
+one morning line, one character. The bundle cannot express that yet: a shop folder has one `pathway.lock`, one template mounted at `/pathway`, and Guard specs made
+from one template's limits. So the composite runtime and its deploy wait (Deferred, with its trigger). The router is built and tested now as a pure function
+(`assistant/route.ts`), so the decision is made in code, not only on paper.
+
+**What was weighed against it.** A small runtime in front would have left each template's deployment untouched and made cross-skill reads simple (HTTP reads of each skill's
+owner view). But it adds a trusted process that reaches every skill's door and the WhatsApp Guard, splits every act across two saves, and needs the record copied
+back. The composite runtime keeps the sandbox and the one transaction. Its cost is in the bundle (several pathways per shop, one Guard spec from several skills' limits),
+and that cost is paid once, when the first two-skill shop needs it.
+
+### How a message is read
+
+**The router** (`route.ts`, pure), in order, cheapest first, and never a model for a customer:
+
+1. a tapped button's id says whose it is: the assistant's own card buttons, the relay's card buttons, or a skill's (each skill names the id prefixes it issues);
+2. a case reference in the text (`b-14`, `f-3`/`q-2`, `o-5`) names the skill that owns it;
+3. the customer's open case: the skill whose case for this number is still live (a booking waiting for its deposit, an open fee);
+4. the words, by the skills' own few keywords in four languages ("book", "fees", "order" ...);
+5. a shop of one skill: that skill. Otherwise a menu of the skills as buttons, which costs nothing and asks the customer in their language.
+
+**The owner's words** (`intents.ts`) go through the same three steps as a customer's, through the shared router (`understanding/router.ts`) and reader (`reader.ts`), so they
+count in the same month's AI spend and fall back to rules in button mode. The steps are rules, then the decision model, then the small language model. The rules come
+first and catch most messages. The models only pick **what kind** of thing the owner wants (a day's list, who owes, close a day ...). **Every value comes from the words by
+rule, or from the record:** the day ("Sunday", "16 Nov", "kal", "ഞായർ" through `language/dates.ts`), the case reference, the amount's digits, and for a message to a
+customer the owner's own words after the reference, sent as written. A model never writes a value into an act. When a reference is missing or names nothing, the
+assistant asks, listing the candidates it found on the record. It does not guess.
+
+**The fixed phrases keep working exactly as before.** The assistant is called only where the agent used to answer `owner_unknown_command`, after every fixed phrase has had
+its turn, and a shop without the assistant (`settings.assistant` left out) behaves as before. The relay's new card buttons (below) are dropped by every agent without a word,
+the same as the typed `approve K7M2QX`.
+
+### Ask and act
+
+- **Ask** (no change to anything): tomorrow's bookings, today's list, any date's list, who owes fees, open orders, what needs me, money in today. Each skill answers from its
+  own saved state (`skill.ts`: pure reads over the store), so the owner's app and the morning line read the same functions.
+- **Act, not money** (close a day, reopen it): done at once, said in passing, and **undoable** ("undo", or the card's Undo button, for 24 hours). Closing a day takes the
+  date out of the free times. The booking page and the WhatsApp offer read the same list. Each booking that day stays as it is, and its customer is asked to pick another
+  day. Nothing is cancelled or refunded by closing a day: a customer who cancels goes through the shop's usual rule. **Undo** reopens the day, and each customer who was
+  asked and has not moved or cancelled is told their booking stands.
+- **Act, money or a limit:** cancelling a paid booking, a refund, approving or refusing what waits (a late refund, a waiver, a big order, a deposit to mark). These come back as a **card**.
+- **A message to a customer** is not money, but it cannot be taken back, so it also comes as a card (a preview). The owner's words go to the customer as typed, under the
+  shop's name, through the outgoing check and the customer's 24-hour window. STOP is STOP. When the window is closed, the card says so: WhatsApp lets a shop start a
+  conversation only with an approved template, and a free text is not one.
+- **Loosening a limit** (a bigger refund limit, a lower deposit, more holds) is not possible from the owner's chat in the first release. The assistant says so, in the
+  owner's language, and names the partner's panel.
+
+### The card binding
+
+There are **two issuers of cards, never mixed**:
+
+1. **A refund Guard holds** (a gateway shop, above the limit): the **relay's** card, because only the relay holds the owner's approver secret. Its words are the relay's ask
+   as today, written from Guard's held call. When the owner's window is open it now goes with two buttons whose ids carry the ask's one-use code (`appr-approve:K7M2QX`,
+   `appr-deny:K7M2QX`). The relay reads a tap exactly as the typed `approve K7M2QX`: the same code, the same one use, the same wrong-guess count, the same Guard answer.
+   A changed amount is a new held call, so a new approval and a new card. A no is final: Guard refuses the identical call for 24 hours (`denied_by_approver`).
+2. **What the runtime itself decides** (a refund within the limit, a cancellation, a late refund, a waiver, a big order, a message): the **runtime's** card
+   (`cards.ts`). A card is a saved, immutable action: the skill, the case and the exact fields (amount in paise, payment id, recipient's number and name, the message's words).
+   It carries a digest of those fields, a fresh one-use code (the approvals alphabet; only its hash is kept), and words written from those same fields. The buttons carry
+   the code (`card-yes:K7M2QX`, `card-no:K7M2QX`). The typed form is `yes K7M2QX` / `no K7M2QX`. It is a different verb from the relay's on purpose: the relay counts every
+   code it never issued towards its lockout, so the two must never be confused.
+
+   On a tap, the skill re-reads the action from the store **as it is now** and compares its digest with the card's. They match: the skill does exactly the saved action,
+   in this step, and the card is closed. They differ (the amount, the payment or the customer changed): **nothing is done**, the card is void, and a new card is sent with
+   the new fields. A second tap on a closed card does nothing. **A no is final for that action:** the card is closed as refused, and the same action (the same digest) proposed
+   again within 24 hours gets "You said no to this at 10:02" instead of a new card. Free text never executes: a typed "yes", "haan" or "ok" is a new message to read,
+   not a tap. Nothing changes before the tap, including the cancel half of "cancel and refund".
+
+   Above Guard's limit, the runtime's tap is not the authority: the skill asks Guard, Guard holds it, and the relay's card follows (issuer 1). The runtime's card
+   then says so before the tap ("Above your ₹1,000 limit: Guard will ask you to approve it once more").
+
+**Where the owner sees cards:** on WhatsApp (interactive buttons while the owner's window is open; outside it, the text with the typed form) and, once item 11d's private
+page lands, in the owner's app with the same buttons (each posting the code's digest, as item 11d's page does).
+
+### The morning line
+
+One short message a day to the owner (`morning.ts`): today's bookings (how many, the first time), money recorded in yesterday, and how many things wait for them. It goes
+in the owner's language, from 08:00 in the shop's time zone (`settings.assistant.morning.at`, or `false` for none). It uses the same **once, even if the process dies**
+protocol as the monthly report (`report/monthly-job.ts`): a claim saved before the send, then the ending. A claim with no ending is never sent again. It goes as the
+utility template `owner_morning` outside the owner's 24-hour window and as plain text inside it. It says nothing on a closed day (the weekday is closed in the opening hours,
+or the owner closed the date).
+
+### The character's hooks (the drawings are a separate exploration)
+
+`character.ts`: one character per shop, in the shop's settings (`assistant.character`): a name, a look as a small JSON of options from a fixed list (base, colour,
+accessory for the trade), and a voice choice for spoken replies. Nothing is drawn here. `mood.ts`: **a mood computed only from the shop's real state**, never stored and
+never earned. In order: `something_wrong` (a refund needs the builder, a message failed, a task gave up on a Guard), `waiting_for_owner` (a card or a waiting item),
+`closed` (outside today's hours, or a closed day), `busy` (a booking within the hour, or a full day), `quiet`. The owner's app shows it, and the morning line names the
+sticker for it (`stickerFor`), so the look can follow the shop. There are no points, chores or streaks. The character always says it is the shop's assistant.
+
+### The owner's app (routes; built on item 11d's private page)
+
+The app is the owner's private approvals page (item 11d, `channels/owner-page.ts`) grown into an installable web app. Plain HTML first and a little progressive JavaScript,
+phone-first, in the owner's language. Its routes sit under the owner's link, which is the authority, checked at the runtime as item 11d does:
+
+| Route | What it is |
+| --- | --- |
+| `GET  /s/<shop>/o/<token>` | the app: the character and its mood, what needs you (the cards, each with its buttons), today's list, the talk box |
+| `GET  /s/<shop>/o/<token>/manifest.webmanifest` | the PWA manifest; `start_url` and `scope` are this link, so an installed app opens this shop's page only |
+| `GET  /s/<shop>/o/<token>/sw.js` | the service worker: caches the last page for **reading** offline. A tap or a message is never queued offline: it needs the live page's digest |
+| `POST /s/<shop>/o/<token>` | a card's button, as item 11d's page posts it (source, action, case, digest) |
+| `POST /s/<shop>/o/<token>/talk` | the talk box: the owner's words, an `owner_message` event read by the same assistant as a WhatsApp message; the answer is shown on the page, not sent to WhatsApp as well |
+| `POST /s/<shop>/o/<token>/voice` | a hold-to-record voice note (Ogg Opus), sent down the same path as a WhatsApp voice note (item 11d's voice service), then read as the talk box's words |
+
+The pieces that do not depend on item 11d are in `assistant/app/` (the manifest, the service worker, the talk box and the cards section). The wiring into item 11d's front waits
+for that branch to land (Deferred).
+
 ## Adding to a module later
 
 Move a feature here when a second template needs it, in two commits: first move the file and fix its imports (the hand check and tests must be unchanged), then cut the template's knowledge out of it. The files in this folder that began as Bookings files (`check.ts`, `interactive.ts`, `meta-templates.ts`, `router.ts`) show how.
