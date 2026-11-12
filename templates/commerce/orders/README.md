@@ -35,9 +35,21 @@ The hand check prints `Held N of M. K failed. J not tested.`, a line for each si
 
 A message for each thing that needs them: a new order (what to prepare, for when, the total, what to collect, the address), an order above their approval line ("approve o-3"), a cancellation, a late cancellation to decide, a UPI payment to look for (with a code and a Received button), a refund to send, a customer who asked to talk. The monthly report, on WhatsApp on the 1st, and a page behind a link.
 
+## The shop's page, the ordering API, MCP and the owner's page (item 11h)
+
+A customer can order without WhatsApp at `https://<server>/s/<shop>/` (or the shop's address on the pages domain): choose a day, the items (the shop's own prices, and how
+many are left that day), pickup or delivery and a slot, give a name and a number (and an address naming a place on the delivery list), then pay the advance by UPI (a
+"Pay in your UPI app" button and a QR code; the owner marks it received as on WhatsApp) or on the gateway's link. The page sends item ids and quantities, never a price.
+The order runs through the agent's own `proceed` (the cut-off, the stock, the day's count, the big-order line, then the hold and the advance) in its own conversation, with
+two unpaid orders per typed number and six unpaid page orders per shop at most; the record says `channel_order` with `refs.channel` (`web` or `mcp`). Each order has its own
+page (`/s/<shop>/order/<handle>`): where it stands, how to pay, "I have paid", cancel, the shop's messages. The same five operations are a JSON API (`/s/<shop>/api/v1`) and an
+MCP endpoint for AI assistants (`/s/<shop>/mcp`); none can mark a payment received or approve a refund. The owner answers what waits (an advance to mark, a big order, a late
+refund, a refund owed) on their private page, and "what needs me" lists the same things. How it works: [modules/Explanation.md](../../../modules/Explanation.md), "Orders
+and Fees on the page". Tests: `test/channels.test.ts`.
+
 ## The shop's assistant (item 11e)
 
-With an `"assistant": {}` block in the settings, the owner can also write in their own words, in four languages, and the assistant answers in text: "open orders", "what needs me" (a big order or a late refund comes as a card), "message o-5 Your cake is ready".
+With an `"assistant": {}` block in the settings, the owner can also write in their own words, in four languages, and the assistant answers in text: "open orders", "what needs me" (an advance to mark, a refund owed, a big order or a late refund comes as a card), "message o-5 Your cake is ready".
 Anything that moves money, and a message to a customer, comes back as a card with the exact change, done only by a tap; a card's yes on something waiting is the owner's
 own fixed reply (`approve`/`deny`), which keeps working as before. Cancelling or refunding from the chat is not in the first release. A short morning line goes to the owner
 from 08:00. How it works: [modules/Explanation.md](../../../modules/Explanation.md#the-shops-assistant-item-11e-decision-43-12-nov-2026).
@@ -94,6 +106,7 @@ Hindi, English, Malayalam and Kannada, and the Hindi, Malayalam and Kannada peop
 | Path | What |
 | --- | --- |
 | `src/agent.ts`, `src/order.ts` | The agent (one event in, done, back) and the order as a state machine with the stock worked out from the orders |
+| `src/channel.ts` | Item 11h: what the shop's page, the API, MCP and the owner's page read (the menu and days, an order by its handle, what waits for the owner) |
 | `src/limits.ts`, `src/guard-limits.ts`, `src/settings.ts` | The pure limits, the Guard spec numbers, the settings and their checks |
 | `src/language/` | The messages in four languages, the buttons and lists, the Meta template list, the outgoing check's facts |
 | `src/adapters/` | The rule parser (items, quantities, day, slot, way), the intents, the reading steps |
