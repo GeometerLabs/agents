@@ -66,14 +66,14 @@ export type PrepareRefusal =
   | "not_booked" // still being asked about (no time agreed yet): nothing to cancel
   | "already_back" // the deposit is already going back: the booking cannot be cancelled with a refund from here
   | "cancel_first" // a refund of a booking that still stands: cancel it (its own card) to give the deposit back
-  | "not_here"; // the skill does not take this act from the chat in the first release (Fees and Orders: cancel and refund)
+  | "not_here" // the skill does not take this act from the chat in the first release (Fees and Orders: cancel and refund)
   | "nothing_paid" // a refund with nothing paid
   | "too_much" // more than was paid
   | "nothing_waiting" // no answer is waiting on that case
   | "no_window" // the customer has not written in 24 hours: WhatsApp allows only approved templates
   | "opted_out" // the customer sent STOP
   | "amount_not_on_record" // a message with an amount the case does not have
-  | "busy" // the case is in the middle of something (a refund Guard holds, a check in progress)
+  | "busy"; // the case is in the middle of something (a refund Guard holds, a check in progress)
 
 /** Why a booking cannot move there. words.ts words each one. */
 export type MoveRefusal = "no_case" | "not_live" | "outside_hours" | "taken" | "past" | "failed";
