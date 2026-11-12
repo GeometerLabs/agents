@@ -75,7 +75,9 @@ test("the cost is in the month's AI spend and in the cost meter's model spend, o
   const speak = ttsCostMicroInr(RATE, Number(w.record.entries().find((e) => e.refs?.audio === "voice")!.refs!.characters));
   assert.ok(spoken.audio);
   assert.equal(w.store.ai!.costMicroInr, listen + speak, "the allowance sees both");
-  assert.deepEqual(w.store.ai!.speech, { notes: 1, replies: 1 });
+  assert.equal(w.store.ai!.speech!.notes, 1);
+  assert.equal(w.store.ai!.speech!.replies, 1);
+  assert.equal(w.store.ai!.speech!.today, 1);
   const usage = summarizeUsage(w.record.entries(), {});
   assert.equal(usage.modelMicroInr, listen + speak, "fleet's AI cap reads this number");
   assert.equal(usage.messages, 1, "one customer message, not two");
@@ -179,7 +181,8 @@ test("the month's voice counts and cost survive a restart: the saved state round
   const { w } = voiceWorld();
   await sendNote(w);
   const back = parseStore(serializeStore(w.store));
-  assert.deepEqual(back.ai!.speech, { notes: 1, replies: 1 });
+  assert.deepEqual(back.ai!.speech, w.store.ai!.speech);
+  assert.equal(back.ai!.speech!.today, 1, "the day's count comes back with it");
   assert.equal(back.ai!.costMicroInr, w.store.ai!.costMicroInr);
   const older = JSON.parse(serializeStore(w.store)); delete older.ai.speech;
   assert.equal(parseStore(JSON.stringify(older)).ai!.speech, undefined);

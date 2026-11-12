@@ -29,15 +29,15 @@ export interface Harness<W extends AnyWorld> {
 export function voiceCases<W extends AnyWorld>(h: Harness<W>): void {
   const make = (o: { transcript?: { text: string; language: "hi" | "en" | "ml" | "kn" | null; confidence: number | null }; ai?: object; notesPerDay?: number } = {}) => {
     const speech = scriptedSpeech({ transcript: o.transcript ?? { text: h.greeting, language: "en", confidence: 0.94 } });
-    const lookup = scriptedWire({ "/v26.0/MEDIA1": { json: { url: "https://media.stand-in/audio", file_size: "300" } } });
+    const lookup = scriptedWire({ "/v26.0/MEDIA1": { json: { url: "https://media.stand-in/audio", file_size: "300" } }, "/v26.0/MEDIA2": { json: { url: "https://media.stand-in/audio", file_size: "300" } } });
     const download = scriptedWire({ "/audio": { bytes: fakeVoiceNote(SECONDS), contentType: "audio/ogg" } });
     let w: W | undefined;
     const voice = createVoice({ provider: speech, media: { lookup, download, version: "v26.0", downloadHosts: ["media.stand-in"] }, host: memoryAudioHost().host, rate: RATE, languages: ["hi", "en", "ml", "kn"], clock: { now: () => w!.clock.now() }, repliesOn: true, ...(o.notesPerDay ? { notesPerDay: o.notesPerDay } : {}) });
     w = h.create({ voice, ...(o.ai ? { ai: o.ai } : {}) });
     return { w, speech };
   };
-  const note = async (w: W, from = h.customer, id?: string) => {
-    const message = w.messaging.receive(from, "", { voiceNote: true, media: { id: "MEDIA1", mime: "audio/ogg; codecs=opus" }, ...(id ? { id } : {}) });
+  const note = async (w: W, from = h.customer, id?: string, mediaId = "MEDIA1") => {
+    const message = w.messaging.receive(from, "", { voiceNote: true, media: { id: mediaId, mime: "audio/ogg; codecs=opus" }, ...(id ? { id } : {}) });
     await w.agent.handle({ kind: "message", message });
   };
 
@@ -91,7 +91,7 @@ export function voiceCases<W extends AnyWorld>(h: Harness<W>): void {
     const reread = JSON.parse(JSON.stringify(w.store.ai));
     assert.equal(reread.speech.today, 1);
     assert.equal(reread.speech.day, w.store.ai!.speech!.day);
-    await note(w, h.customer, "wamid.b");
+    await note(w, h.customer, "wamid.b", "MEDIA2"); // a different note (the same note asked again is answered from memory)
     assert.equal(speech.calls.filter((c) => c.kind === "transcribe").length, 1, "the second note did not reach the provider");
     assert.equal(w.record.entries().filter((e) => e.refs?.voice === "daily_cap").length, 1);
   });
