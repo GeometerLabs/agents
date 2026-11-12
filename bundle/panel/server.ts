@@ -44,6 +44,7 @@ import { createHandover } from "./handover.ts";
 import { createTerms } from "./terms.ts";
 import { termsLinkWord, termsPage } from "./views-terms.ts";
 import { createChannels } from "./channels.ts";
+import { SLUG_SHAPE, WHATSAPP_NUMBER, endOwnerSessions, readPageSettings, readPagesStatus, writePageSettings } from "../lib/pages.ts";
 import { ownerLinkMadePage } from "./views-channels.ts";
 import { exportShop } from "./export.ts";
 import { PaperError, createPapers } from "./papers.ts";
@@ -461,6 +462,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const own = setupOf(kindId);
     const report = settings && data && !own ? monthlyFromExport(settings, data, month, "live", now()) : undefined;
     const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
+    const pagesNotice = new URL(r.req.url ?? "/", "http://x").searchParams.get("pages");
     const plan = planView(shops.fleet(id), prices, config.mode === "own"); // a panel on a builder's own server: the builder licence
     const licence = licenceView(read.ok ? read.status.licence : undefined, shops.fleet(id)?.licence, now());
     const view: ShopView = {
@@ -476,6 +478,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       termsLink: terms.on() ? termsLinkWord(c.lang) : undefined,
       // item 11d: only Bookings has a booking page (its runtime has the channel reads), and only a panel that knows the server's public address can show its links
       ...(kindId === "bookings" && channels.view(id) ? { channels: channels.view(id)! } : {}),
+      // item 11f: the shop's page on the pages domain (its short name, where it stands at fleet) and the owner's sessions; a builder chooses "hub" or "own"
+      ...(kindId === "bookings" ? { pages: { settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), ...(readPagesStatus(config.serverDir, id) ? { status: readPagesStatus(config.serverDir, id)! } : {}), canChoose: config.mode === "own" } } : {}),
+      ...(pagesNotice === "ended" || pagesNotice === "bad" ? { pagesNotice } : {}),
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
       isBuilder: r.account!.role === "builder",
       ...(r.account!.role === "builder" ? { details: { statusJson: read.ok ? JSON.stringify(read.status, null, 2) : "—", pins: JSON.stringify(shops.pins(id) ?? {}, null, 2), runtimeJson: JSON.stringify(counts ?? {}, null, 2) } } : {}),
@@ -501,6 +506,29 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     channels.revoke(ref.id);
     log(`owner's approvals link of ${ref.id} switched off by ${r.account!.id}`);
     redirect(r, `/shops/${ref.id}`);
+  });
+
+  // item 11f: the shop's page. The partner (or builder) picks the short name and the WhatsApp number the page shows; a builder also picks the pages domain or
+  // their own. Only the choice is written (shops/<shop>/page.json): the deployer claims the name at fleet within a pass and writes what came of it for this page.
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/page$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref || shops.kind(ref.id) !== "bookings") return notFound(r);
+    const slug = (r.form.slug ?? "").trim().toLowerCase();
+    const whatsapp = (r.form.whatsapp ?? "").replace(/[\s-]/gu, "");
+    if ((slug !== "" && !SLUG_SHAPE.test(slug)) || (whatsapp !== "" && !WHATSAPP_NUMBER.test(whatsapp))) return redirect(r, `/shops/${ref.id}?pages=bad`);
+    const pages = config.mode === "hosted" ? "hub" : r.form.pages === "hub" ? "hub" : "own"; // Geometer's partner server is always on the pages domain
+    writePageSettings(config.serverDir, ref.id, { pages, ...(slug ? { slug } : {}), ...(whatsapp ? { whatsapp } : {}) });
+    log(`page of ${ref.id} set by ${r.account!.id}: ${pages}${slug ? ` ${slug}` : ""}`);
+    redirect(r, `/shops/${ref.id}`);
+  });
+  // item 11f: "sign out every device". Every owner session made before now ends; the deployer hands the file to the shop's runtime, which refuses those sessions
+  // from its next request and says so once in the record.
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-sessions\/end$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref || shops.kind(ref.id) !== "bookings") return notFound(r);
+    endOwnerSessions(config.serverDir, ref.id, new Date(now()));
+    log(`every owner session of ${ref.id} signed out by ${r.account!.id}`);
+    redirect(r, `/shops/${ref.id}?pages=ended`);
   });
 
   // a recovery step from the to-do list: only an action the list itself offers for that case right now, and only as a request to the shop's own agent
