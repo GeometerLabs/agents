@@ -21,6 +21,7 @@ import type { MessageFacts, TemplateId } from "./language/templates.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
 import type { GuardHold, RefundIssue, RefundRetry } from "../../../../modules/payments/refunds.ts";
 import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
+import type { AssistantState } from "../../../../modules/assistant/state.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 
 export type BookingState =
@@ -121,6 +122,8 @@ export interface Store {
   ownCalendar?: { events: Record<string, import("./adapters/calendar.ts").CalendarEvent>; next: number };
   /** Which calendar the bookings were last written to ("own" or "google"), so a calendar added later is filled from the booking list once (agent.ts, backfill). */
   calendarState?: { kind: "own" | "google" };
+  /** Item 11e: the shop's assistant's own part (its cards, closed days, undo; modules/assistant/state.ts). Left out until the owner first talks to it. */
+  assistant?: AssistantState;
 }
 
 export function createStore(): Store {

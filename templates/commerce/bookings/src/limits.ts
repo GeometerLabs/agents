@@ -22,12 +22,15 @@ export function checkPriceAtOrAboveList(input: { serviceName: string; listInr: n
 }
 
 // within-hours: never book outside opening hours (and only on the slot grid)
-export function checkWithinHours(input: { settings: Settings; service: Service; startMs: number }): Decision {
+// `closedDays` (item 11e): dates the owner closed through the shop's assistant ("2026-11-16"); a booking on one is outside the hours like a closed weekday.
+export function checkWithinHours(input: { settings: Settings; service: Service; startMs: number; closedDays?: readonly string[] }): Decision {
   const { settings, service, startMs } = input;
   const start = localParts(startMs, settings.timezone);
   const end = localParts(startMs + service.durationMinutes * MINUTE, settings.timezone);
   const hours = hoursOn(settings, start.weekday);
   if (!hours) return block("within-hours", "The business is closed that day.");
+  const day = `${start.year}-${String(start.month).padStart(2, "0")}-${String(start.day).padStart(2, "0")}`;
+  if (input.closedDays?.includes(day)) return block("within-hours", "The owner closed the business that day.");
   const startMin = minutesOfDay(start);
   const endMin = minutesOfDay(end);
   if (startMin < hours.open) return block("within-hours", "That is before opening time.");

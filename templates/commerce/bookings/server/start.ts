@@ -23,6 +23,8 @@ import type { Runtime } from "./runtime.ts";
 import { buildServices } from "./services.ts";
 import { calendarModule } from "../src/settings.ts";
 import type { LiveModule } from "./services.ts";
+import { OWNER_UNDERSTANDING } from "../../../../modules/assistant/reading.ts";
+import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 
 export { parserArguments, readToken };
 
@@ -70,7 +72,9 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       // The steps, the allowance and the outside switch (see buildUnderstanding). A model behind a Guard gets no provider key from here; with an `agentTokenFile` it
       // gets this agent's credential for that Guard; a provider reached directly gets the key its `keyEnv` names, from the environment, and nothing else.
       const reading = buildUnderstanding(client as ClientFolder, { clock, log });
-      return createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), log });
+      // Item 11e: the shop's assistant reads the owner's words through the same steps, with the owner's reading (modules/assistant/reading.ts). Only when it is on.
+      const ownerParser = client.settings.assistant ? understanding(client as ClientFolder, { clock, log: () => undefined }, OWNER_UNDERSTANDING as never).parser as OwnerParser : undefined;
+      return createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), log });
     },
   }) as RunningClient;
 }

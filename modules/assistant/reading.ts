@@ -8,6 +8,8 @@ import type { AiPolicy, AiStore } from "../understanding/ai-state.ts";
 import type { IntentParser, ParseOptionsBase } from "../understanding/model.ts";
 import { createReader } from "../understanding/reader.ts";
 import { createRouter } from "../understanding/router.ts";
+import { createModelParser } from "../understanding/model-llm.ts";
+import type { ModelConfig } from "../understanding/model-llm.ts";
 import type { RouterOptions } from "../understanding/router.ts";
 import { ownerReading, readOwnerRules } from "./intents.ts";
 import type { OwnerContext, OwnerIntent, OwnerKind } from "./intents.ts";
@@ -20,6 +22,16 @@ export const ownerRulesParser: OwnerParser = { parse: async (text, context) => r
 
 /** The owner's router over the shop's model steps (the same decision model and language model the customers' router has, from runtime.json). */
 export const ownerRouter = (options: Omit<RouterOptions<OwnerIntent, OwnerContext, ParseOptionsBase>, "reading">): OwnerParser => createRouter({ ...options, reading: ownerReading });
+
+/**
+ * The hooks modules/runtime/start.ts `buildUnderstanding` takes, for the owner: the same runtime.json steps (and keys, and credential for the model's Guard) as the
+ * customers', with the owner's reading. A template's start calls it once more with these when the shop has an assistant.
+ */
+export const OWNER_UNDERSTANDING = {
+  createRuleParser: (): OwnerParser => ownerRulesParser,
+  createModelParser: (config: ModelConfig, fetchFn?: typeof fetch) => createModelParser(config, ownerReading, fetchFn),
+  createRouter: ownerRouter,
+};
 
 export interface OwnerReaderDeps {
   /** The owner's router, or left out for the rules alone. */

@@ -76,6 +76,10 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
 import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
+import { createAssistant, isoDate, kindsOf } from "../../../../modules/assistant/conversation.ts";
+import { createOwnerReader } from "../../../../modules/assistant/reading.ts";
+import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
+import { bookingsSkill } from "./assistant.ts";
 
 export interface AgentDeps {
   settings: Settings;
@@ -97,6 +101,11 @@ export interface AgentDeps {
   licence?: () => LicenceNow;
   /** B72: the shop terms the owner can read and agree to on WhatsApp (modules/terms). Left out, or returning undefined: the feature is off for this shop. */
   terms?: () => TermsFile | undefined;
+  /**
+   * Item 11e: how the shop's assistant reads the owner's words (modules/assistant/reading.ts): the owner's router over the shop's model steps. Left out: the rules alone.
+   * The assistant itself is on only when the settings have an "assistant" block.
+   */
+  ownerParser?: OwnerParser;
 }
 
 export type AgentEvent =
@@ -153,6 +162,8 @@ export function createAgent(deps: AgentDeps): Agent {
     return c;
   };
   const languageOf = (phone: string, b?: Booking | null) => b?.language ?? store.customers.get(phone)?.language ?? settings.languages[0];
+  /** Item 11e: the dates the owner closed through the shop's assistant; the free times and the within-hours limit leave them out. */
+  const closedDays = (): readonly string[] => store.assistant?.closedDays ?? [];
 
   function log(b: Booking | null, phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string>; language?: Language } = {}) {
     return record.append({ conversation: phone, booking: b?.id || null, action, inputs, outcome, language: languageOf(phone, b), ...more });
@@ -265,7 +276,7 @@ export function createAgent(deps: AgentDeps): Agent {
     for (let day = 0; day < OFFER_DAYS && out.length < limit; day++) {
       const date = addDays(today, day);
       const hours = hoursOn(settings, weekdayOf(date));
-      if (!hours) continue;
+      if (!hours || closedDays().includes(isoDate(date))) continue; // item 11e: a date the owner closed is not offered
       const free: number[] = [];
       for (let m = Math.ceil(hours.open / grid) * grid; m + service.durationMinutes <= hours.close; m += grid) {
         const startMs = zonedToMs(date, { hour: Math.floor(m / 60), minute: m % 60 }, tz);
@@ -601,7 +612,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const buffer = settings.bufferMinutes * MINUTE;
     const nearby = await calendar.conflicts(start - buffer, end + buffer);
     return {
-      hours: checkWithinHours({ settings, service: serviceOf(b)!, startMs: start }),
+      hours: checkWithinHours({ settings, service: serviceOf(b)!, startMs: start, closedDays: closedDays() }),
       clash: checkNoDoubleBooking({ startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(), others: [...nearby.map(busyOf), ...heldByBookings(b.id)] }),
     };
   }
@@ -1107,7 +1118,9 @@ export function createAgent(deps: AgentDeps): Agent {
     // B72: "today" / "tomorrow" (or "bookings") asks for that day's bookings, from the shop's own saved list. A reply to the owner's own message, so no template is needed.
     const dayAsked = parseDayRequest(msg.text);
     if (dayAsked) return tellDay(dayAsked);
-    const m = /^\s*(approve|deny|retry)\s+(b-\d+)\s*$/i.exec(msg.text);
+    // Item 11e: the shop's assistant reads what no fixed phrase is (this command is one). A shop without an "assistant" block: exactly as before.
+    if (assistant && !OWNER_COMMAND.test(msg.text) && (await assistant.onOwnerMessage(msg))) return;
+    const m = OWNER_COMMAND.exec(msg.text);
     const b = m ? store.bookings.get(m[2].toLowerCase()) : undefined;
     const command = m?.[1].toLowerCase();
     const pending = b?.pending[0];
@@ -1182,6 +1195,9 @@ export function createAgent(deps: AgentDeps): Agent {
    */
   async function onVoiceNote(msg: InboundMessage): Promise<void> {
     const phone = msg.from;
+    // Item 11e: with the shop's assistant and a voice service, the owner's voice note is read as their typed words (or they are told it could not be made out)
+    const heard = phone === owner && assistant ? await assistant.hearOwner(msg) : null;
+    if (heard) return heard.text ? onOwnerMessage(heard) : undefined;
     if (phone === owner) {
       await say({ booking: null, phone, to: "owner", templates: ["voice_note"], action: "voice_note_reply" });
       return;
@@ -1320,6 +1336,7 @@ export function createAgent(deps: AgentDeps): Agent {
         log(b, b.customer, "complete_booking", "confirmed", { endMs: b.endMs });
       }
     }
+    assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (modules/assistant/morning.ts)
   }
 
   // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------
@@ -1391,5 +1408,51 @@ export function createAgent(deps: AgentDeps): Agent {
     log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
   }
 
+  // ---- item 11e: the shop's assistant (modules/assistant) -------------------------------------------------------------
+  // On only when the settings have an "assistant" block. Bookings is its one skill here; the skill's acts are this agent's own paths (src/assistant.ts).
+  const ownerCancelRefund = async (b: Booking, amountInr: number, why: string, customer: { upi: TemplateId; done: TemplateId; held: TemplateId }) => {
+    const limit = checkRefundLimit({ amountInr, limitInr: settings.cancellation.refundLimitInr, paidInr: b.depositInr ?? amountInr, ownerApproved: true });
+    if (ownerRefunds) { await oweBack(b, b.depositPaymentId!, amountInr * 100, why, { customer: customer.upi, decisions: [limit] }); return "owed" as const; }
+    const result = await requestRefund(b, b.depositPaymentId!, amountInr, [limit], overLimit(amountInr), askedByOwner);
+    await afterRefund(b, result, { paymentId: b.depositPaymentId!, amountInr, done: { customer: customer.done }, held: customer.held, requestedBy: askedByOwner } as never);
+    return result;
+  };
+  const assistantSkill = bookingsSkill({
+    settings, store, nowMs: () => clock.now(), entries: () => record.entries(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false,
+    acts: {
+      owner, ownerRefunds,
+      answer: (msg) => onOwnerMessage(msg),
+      // the owner cancels a paid booking: the same steps as the owner's "approve b-3" on a booking the calendar could not confirm (above), then the deposit back
+      async cancelPaid(b, why) {
+        const back = b.depositInr ?? 0;
+        b.pending = [];
+        await releaseSlot(b, why);
+        b.reminders = [];
+        moveTo(b, "cancelled");
+        log(b, b.customer, "cancel_booking", "confirmed", { by: "owner" }, { refs: { by: "owner", via: "assistant" } });
+        return ownerCancelRefund(b, back, why, { upi: "upi_cancelled_refund_owed", done: "cancelled_refund", held: "cancelled_refund_pending" });
+      },
+      cancelWaiting: (b, why) => cancelWaiting(b, why),
+      tellCancelled: (b) => tellCustomer(b, b.customer, ["cancelled_no_deposit"]),
+      refund: (b, _paymentId, amountInr, why) => ownerCancelRefund(b, amountInr, why, { upi: "upi_refund_owed", done: "refund_approved", held: "cancelled_refund_pending" }),
+    },
+  });
+  const assistant = settings.assistant ? createAssistant({
+    shop: { name: settings.name, timezone: tz, owner: settings.owner, settings: settings.assistant },
+    store, skills: [assistantSkill], clock, messaging,
+    read: createOwnerReader({
+      ...(deps.ownerParser ? { parser: deps.ownerParser } : {}), kinds: kindsOf([assistantSkill]), policy, store, clock, timeZone: tz,
+      log: (action, outcome, inputs, more) => log(null, owner, action, outcome, inputs, more),
+      tellOwner: async (notice) => { await say({ booking: null, phone: owner, to: "owner", templates: [notice === "allowance" ? "owner_ai_allowance" : notice === "override" ? "owner_ai_off" : "owner_ai_fault"] }); },
+    }),
+    log: (caseId, phone, action, outcome, inputs, more) => log(caseId ? store.bookings.get(caseId) ?? null : null, phone, action, outcome, inputs, more),
+    entries: () => record.entries(),
+    languageOf: (phone) => languageOf(phone),
+    optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false,
+  }) : undefined;
+
   return { handle, giveUp };
 }
+
+/** The owner's fixed command about something the agent asked them ("approve b-3", "deny b-3", "retry b-3"). Item 11e names it so the assistant lets it pass. */
+const OWNER_COMMAND = /^\s*(approve|deny|retry)\s+(b-\d+)\s*$/i;

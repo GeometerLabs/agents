@@ -17,6 +17,8 @@ const codec = snapshotCodec<Store>(1, [
   // Optional: a shop with no Google Calendar keeps its calendar view here, and which calendar the bookings were last written to (B72). A Google shop's snapshot is as it was.
   { name: "ownCalendar", kind: "optional-object" },
   { name: "calendarState", kind: "optional-object" },
+  // Optional: the shop's assistant's cards, closed days and undo (item 11e). A shop without the assistant never has it, so its snapshot is as it was.
+  { name: "assistant", kind: "optional-object" },
 ]);
 
 export const serializeStore: (store: Store) => string = codec.serialize;
