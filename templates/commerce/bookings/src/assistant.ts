@@ -13,13 +13,14 @@ import { checkWords, ownerReply } from "../../../../modules/assistant/wire.ts";
 import type { DayNotice, DayRow, Executed, OwnerSkill, Prepared, Proposal, WaitingItem } from "../../../../modules/assistant/skill.ts";
 import type { CardAction } from "../../../../modules/assistant/state.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
-import { leftOn } from "../../../../modules/payments/owner-marked/ledger.ts";
 import type { InboundMessage } from "../../../../modules/messaging/messaging.ts";
 import type { RecordEntry } from "../../../../modules/record/record.ts";
 import type { RefundResult } from "../../../../modules/payments/refunds.ts";
 import { LIVE_STATES, latestBooking } from "./booking.ts";
 import type { Booking, Store } from "./booking.ts";
 import { hoursOn, serviceName } from "./settings.ts";
+import { ownerItems } from "./channel.ts";
+import type { OwnerItem } from "./channel.ts";
 import type { Settings } from "./settings.ts";
 import { formatSlot } from "../../../../modules/language/format.ts";
 
@@ -91,25 +92,28 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
   };
   const busy = (b: Booking): boolean => b.pending.some((p) => p.kind === "guard_hold" || p.kind === "refund_retry") || (b.refundIssues ?? []).length > 0;
   const aboveLimit = (paise: number): boolean => !deps.acts?.ownerRefunds && paise > settings.cancellation.refundLimitInr * 100;
-  const requestOf = (b: Booking) => store.upi?.requests.find((r) => r.reference === b.id && r.id === b.linkId);
 
-  /** What waits for the owner on one booking, as a card can show it (and the fields its digest is over). */
-  function waitingOn(b: Booking): (WaitingItem & { fields: Record<string, string | number | boolean>; reply: { id: string } | string })[] {
-    const out: (WaitingItem & { fields: Record<string, string | number | boolean>; reply: { id: string } | string })[] = [];
-    const p = b.pending[0];
-    if (p?.kind === "refund") out.push({ case: b.id, kind: "late_refund", amountPaise: p.amountInr * 100, who: whoOf(b), what: what(b), money: true, yes: "approve", no: "deny", fields: { paymentId: p.paymentId, amountPaise: p.amountInr * 100 }, reply: "approve" });
-    else if (p?.kind === "calendar" && b.depositInr !== undefined) out.push({ case: b.id, kind: "calendar", amountPaise: b.depositInr * 100, who: whoOf(b), what: what(b), money: true, yes: "retry", fields: { paymentId: b.depositPaymentId ?? "", startMs: b.startMs ?? 0, amountPaise: b.depositInr * 100 }, reply: "retry" });
-    // A deposit to mark only when there is a reason to think it came (the customer said so, or part is marked), as the unfinished-work list reads it.
-    const r = requestOf(b);
-    if (b.state === "awaiting_deposit" && r?.code && (r.status === "partially_paid" || b.claimTellAtMs !== undefined)) {
-      out.push({ case: b.id, kind: "deposit", amountPaise: leftOn(r), who: whoOf(b), what: what(b), money: true, yes: "received", fields: { request: r.id, amountPaise: leftOn(r), marks: r.marks.length, used: r.usedCodes.length }, reply: { id: markButtonId("received", r.code) } });
-    }
-    for (const o of store.upi?.refunds ?? []) {
-      if (o.caseId !== b.id || o.state !== "owed" || !o.code) continue;
-      out.push({ case: b.id, kind: "refund_owed", amountPaise: o.amountPaise, who: whoOf(b), what: what(b), money: true, yes: "refunded", fields: { refund: o.id, amountPaise: o.amountPaise, used: o.usedCodes.length }, reply: { id: markButtonId("refunded", o.code) } });
-    }
-    return out;
+  /**
+   * What waits for the owner, as a card can show it (and the fields its digest is over). Read from the owner page's own list (channel.ts ownerItems, integration of
+   * items 11d and 11e), so "what needs me", the morning line's count, the mood and the owner's page always show the same things. The card's fields carry the page
+   * item's digest, which covers exactly what is shown (the amount, the marks made, the codes used): a change there changes the card's digest, so a card made before
+   * a part was marked is void on its tap, as on the page.
+   */
+  type Waiting = WaitingItem & { fields: Record<string, string | number | boolean>; reply: { id: string } | string };
+  const ANSWERS: Record<OwnerItem["kind"], { yes: string; no?: string }> = { late_refund: { yes: "approve", no: "deny" }, calendar: { yes: "retry" }, deposit: { yes: "received" }, refund_owed: { yes: "refunded" } };
+  function waitingNow(): Waiting[] {
+    return ownerItems(settings, store, deps.nowMs()).items.map((i): Waiting => {
+      const b = store.bookings.get(i.case);
+      const a = ANSWERS[i.kind];
+      // a UPI mark is the same button the owner's WhatsApp message carries (with its one-use code); the agent's own asks are the typed "approve b-3" and the like
+      const reply = i.code && (i.kind === "deposit" || i.kind === "refund_owed") ? { id: markButtonId(i.kind === "deposit" ? "received" : "refunded", i.code) } : a.yes;
+      return {
+        case: i.case, kind: i.kind, amountPaise: i.amountPaise, who: b ? whoOf(b) : i.customer.name ?? i.customer.phone, what: b ? what(b) : "", money: true,
+        yes: a.yes, ...(a.no ? { no: a.no } : {}), fields: { pageDigest: i.digest, amountPaise: i.amountPaise }, reply,
+      };
+    });
   }
+  const waitingOn = (b: Booking): Waiting[] => waitingNow().filter((i) => i.case === b.id);
 
   const action = (kind: string, b: Booking, fields: CardAction["fields"]): CardAction => ({ kind, skill: "bookings", case: b.id, fields: { who: whoOf(b), ...fields } });
 
@@ -185,7 +189,7 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
       }
       return rows.sort((x, y) => x.startMs - y.startMs);
     },
-    waiting: () => [...store.bookings.values()].flatMap((b) => waitingOn(b).map(({ fields: _f, reply: _r, ...item }) => item)),
+    waiting: () => waitingNow().map(({ fields: _f, reply: _r, ...item }) => item),
     problems: () => [...store.bookings.values()].reduce((n, b) => n + (b.refundIssues ?? []).length, 0),
     hours: (date) => hoursOn(settings, weekdayOf(date)),
     async closeDay(date, notify: DayNotice) {
