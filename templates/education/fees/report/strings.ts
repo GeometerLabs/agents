@@ -3,7 +3,7 @@
 //
 // Machine-written Hindi, Malayalam and Kannada. They are listed in REVIEW-ml.md and REVIEW-kn.md for a native speaker, and no real centre should be given them before
 // that review. The claim rules (modules/report/claims.ts) apply: a document counts and states facts; it never grades.
-import { CHECK_GENUINE, SCAN_SUMMARY } from "../../../../modules/report/text.ts";
+import { CHECK_GENUINE, SCAN_SUMMARY, SETTLED_BY_SOMEONE, SETTLED_BY_WORD } from "../../../../modules/report/text.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { NotCountedId, NotTestedKey, Source } from "./data.ts";
 
@@ -15,6 +15,9 @@ export interface Strings {
   fullReport: string;
   /** The label before the check link in the WhatsApp message (modules/report/text.ts CHECK_GENUINE). */
   checkGenuine: string;
+  /** A refund a person settled as made, by their word (B75): "Settled by <who>, by their word", and the same without a name (modules/report/text.ts). */
+  settledByWord: (who: string) => string;
+  settledBySomeone: string;
   /** The owner's lines: "label: number". */
   label: { collected: string; stillToCollect: string; givenBack: string; takenOff: string; wasAsked: string; approved: string; saidNo: string; remindersSent: string; stoppedByLimits: string; notChecked: string; students: string };
   /** What each limit that stopped something is called. */
@@ -56,7 +59,7 @@ export interface Strings {
 }
 
 export const en: Strings = {
-  agent: "Fees agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", fullReport: "Full report", checkGenuine: CHECK_GENUINE.en,
+  agent: "Fees agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", fullReport: "Full report", checkGenuine: CHECK_GENUINE.en, settledByWord: SETTLED_BY_WORD.en, settledBySomeone: SETTLED_BY_SOMEONE.en,
   label: { collected: "Collected", stillToCollect: "Still to collect", givenBack: "Given back", takenOff: "Taken off fees", wasAsked: "You were asked", approved: "You approved", saidNo: "You said no", remindersSent: "Reminders sent", stoppedByLimits: "Stopped by your limits", notChecked: "Not checked", students: "students" },
   stop: {
     "no-reminder-once-paid": "Reminders after a payment", "reminder-cap": "More reminders than your cap", "waiver-limit": "Waivers for more than was owed", "fee-link-matches-record": "Links for the wrong amount", "refund-limit": "Refunds above what was paid",
@@ -130,7 +133,7 @@ export const en: Strings = {
 };
 
 export const hi: Strings = {
-  agent: "फीस एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", fullReport: "पूरी रिपोर्ट", checkGenuine: CHECK_GENUINE.hi,
+  agent: "फीस एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", fullReport: "पूरी रिपोर्ट", checkGenuine: CHECK_GENUINE.hi, settledByWord: SETTLED_BY_WORD.hi, settledBySomeone: SETTLED_BY_SOMEONE.hi,
   label: { collected: "जमा हुआ", stillToCollect: "अभी लेना बाकी", givenBack: "वापस किया", takenOff: "फीस से घटाया", wasAsked: "आपसे पूछा गया", approved: "आपने मंज़ूर किया", saidNo: "आपने मना किया", remindersSent: "भेजी गई याद", stoppedByLimits: "आपकी सीमाओं ने रोका", notChecked: "जाँचा नहीं गया", students: "विद्यार्थी" },
   stop: {
     "no-reminder-once-paid": "भुगतान के बाद याद", "reminder-cap": "सीमा से ज़्यादा याद", "waiver-limit": "बकाया से ज़्यादा की छूट", "fee-link-matches-record": "गलत रकम के लिंक", "refund-limit": "भरी रकम से ज़्यादा का रिफंड",
@@ -203,7 +206,7 @@ export const hi: Strings = {
 };
 
 export const ml: Strings = {
-  agent: "ഫീസ് ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", fullReport: "പൂർണ്ണ റിപ്പോർട്ട്", checkGenuine: CHECK_GENUINE.ml,
+  agent: "ഫീസ് ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", fullReport: "പൂർണ്ണ റിപ്പോർട്ട്", checkGenuine: CHECK_GENUINE.ml, settledByWord: SETTLED_BY_WORD.ml, settledBySomeone: SETTLED_BY_SOMEONE.ml,
   label: { collected: "പിരിഞ്ഞത്", stillToCollect: "ഇനിയും പിരിക്കാനുള്ളത്", givenBack: "തിരികെ നൽകിയത്", takenOff: "ഫീസിൽ നിന്ന് കുറച്ചത്", wasAsked: "നിങ്ങളോട് ചോദിച്ചു", approved: "നിങ്ങൾ അംഗീകരിച്ചു", saidNo: "നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു", remindersSent: "അയച്ച ഓർമ്മപ്പെടുത്തലുകൾ", stoppedByLimits: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", notChecked: "പരിശോധിക്കാത്തത്", students: "വിദ്യാർത്ഥികൾ" },
   stop: {
     "no-reminder-once-paid": "പണമടച്ചതിനു ശേഷമുള്ള ഓർമ്മപ്പെടുത്തൽ", "reminder-cap": "പരിധിയിൽ കൂടുതൽ ഓർമ്മപ്പെടുത്തൽ", "waiver-limit": "ബാക്കിയുള്ളതിലും കൂടുതലുള്ള ഇളവ്", "fee-link-matches-record": "തെറ്റായ തുകയുടെ ലിങ്ക്", "refund-limit": "അടച്ചതിൽ കൂടുതലുള്ള റീഫണ്ട്",
@@ -276,7 +279,7 @@ export const ml: Strings = {
 };
 
 export const kn: Strings = {
-  agent: "ಶುಲ್ಕ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", fullReport: "ಪೂರ್ಣ ವರದಿ", checkGenuine: CHECK_GENUINE.kn,
+  agent: "ಶುಲ್ಕ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", fullReport: "ಪೂರ್ಣ ವರದಿ", checkGenuine: CHECK_GENUINE.kn, settledByWord: SETTLED_BY_WORD.kn, settledBySomeone: SETTLED_BY_SOMEONE.kn,
   label: { collected: "ಸಂಗ್ರಹವಾದದ್ದು", stillToCollect: "ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು", givenBack: "ಮರಳಿ ಕೊಟ್ಟದ್ದು", takenOff: "ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು", wasAsked: "ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು", approved: "ನೀವು ಒಪ್ಪಿದ್ದು", saidNo: "ನೀವು ಬೇಡ ಎಂದದ್ದು", remindersSent: "ಕಳುಹಿಸಿದ ನೆನಪುಗಳು", stoppedByLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", notChecked: "ಪರಿಶೀಲಿಸದ್ದು", students: "ವಿದ್ಯಾರ್ಥಿಗಳು" },
   stop: {
     "no-reminder-once-paid": "ಪಾವತಿಯ ನಂತರದ ನೆನಪು", "reminder-cap": "ಮಿತಿಗಿಂತ ಹೆಚ್ಚಿನ ನೆನಪು", "waiver-limit": "ಬಾಕಿಗಿಂತ ಹೆಚ್ಚಿನ ರಿಯಾಯಿತಿ", "fee-link-matches-record": "ತಪ್ಪು ಮೊತ್ತದ ಲಿಂಕ್", "refund-limit": "ಪಾವತಿಸಿದ್ದಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್",

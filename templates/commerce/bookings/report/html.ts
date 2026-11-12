@@ -9,7 +9,7 @@ import { RULE_IDS } from "./data.ts";
 import type { GoLiveFinding, MonthlyReport } from "./data.ts";
 import type { Envelope } from "../../../../modules/report/sign.ts";
 import { STRINGS, moneyLabels } from "./strings.ts";
-import { badgeText } from "../../../../modules/report/text.ts";
+import { badgeText, settledWho } from "../../../../modules/report/text.ts";
 import type { Strings } from "./strings.ts";
 import { goLiveLines } from "./text.ts";
 import { languagesOf, periodLabel, rupees } from "../../../../modules/report/text.ts";
@@ -65,8 +65,8 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
     [esc(moneyLabels(language, r.paidBy).givenBack), ...amount(r.money.refunds)],
     [esc(p.givenBackDeposits), ...amount(r.money.refunds.ofDeposits)],
     [esc(p.givenBackSecond), ...amount(r.money.refunds.ofSecondPayments)],
-    // refunds a person settled by their word (B75): one row per person, never counted in the refunds above
-    ...(r.money.settledByWord ?? []).map((w) => [`${esc(s.work.refundsByPerson)}: ${esc(w.by)}`, ...amount(w)]),
+    // refunds a person settled by their word (B75): one row per person, "Settled by <who>, by their word", never counted in the refunds above
+    ...(r.money.settledByWord ?? []).map((w) => [esc(s.settledByWord(settledWho(w.by))), ...amount(w)]),
     [esc(s.label.wasAsked), String(r.owner.asked), ""],
     [esc(s.label.approved), String(r.owner.approved), ""],
     [esc(s.label.saidNo), String(r.owner.denied), ""],
@@ -81,7 +81,8 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
   ]);
   const unconfirmed = r.unconfirmed.rows.length === 0 ? `<p>${esc(p.nothing)}</p>`
     : table([{ text: p.colNo, n: true }, { text: p.colAction }, { text: p.colOutcome }, { text: p.colBooking }, { text: p.stillOpen }],
-      r.unconfirmed.rows.map((x) => [String(x.seq), `<code>${esc(x.action)}</code>`, `<code>${esc(x.outcome)}</code>`, esc(x.booking ?? "–"), esc(x.settledLater ? p.settledLater : p.stillOpen)]));
+      // a row a person settled by their word says who (B75); one a later step settled says so; the rest are still open
+      r.unconfirmed.rows.map((x) => [String(x.seq), `<code>${esc(x.action)}</code>`, `<code>${esc(x.outcome)}</code>`, esc(x.booking ?? "–"), esc(!x.settledLater ? p.stillOpen : x.settledByWord ? s.settledByWord(settledWho(x.settledByWord)) : p.settledLater)]));
   const missing = ([[p.missingDepositAmounts, r.missing.depositAmounts], [p.missingRefundAmounts, r.missing.refundAmounts], [p.missingOwnerCommands, r.missing.ownerCommands], [p.missingMessageTargets, r.missing.messageTargets]] as [string, number][])
     .filter(([, n]) => n > 0);
 

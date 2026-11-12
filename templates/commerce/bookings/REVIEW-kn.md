@@ -305,6 +305,8 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `innovator` | ಇನ್ನೋವೇಟರ್ | Innovator |  |
 | `fullReport` | ಪೂರ್ಣ ವರದಿ | Full report |  |
 | `checkGenuine` | ನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ | Check it is genuine |  |
+| `settledByWord` | asha ಅವರ ಮಾತಿನ ಮೇಲೆ ಇತ್ಯರ್ಥಪಡಿಸಿದ್ದು | Settled by asha, by their word |  |
+| `settledBySomeone` | ಒಬ್ಬ ವ್ಯಕ್ತಿ ತಮ್ಮ ಮಾತಿನ ಮೇಲೆ ಇತ್ಯರ್ಥಪಡಿಸಿದ್ದು | Settled by a person, by their word |  |
 | `languageName.hi` | ಹಿಂದಿ | Hindi |  |
 | `languageName.en` | ಇಂಗ್ಲಿಷ್ | English |  |
 | `languageName.ml` | ಮಲಯಾಳಂ | Malayalam |  |
@@ -379,7 +381,6 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `work.abandonedMeans` | ಅರ್ಧಕ್ಕೆ ನಿಂತದ್ದು ಎಂದರೆ: ಕ್ಯಾಲೆಂಡರ್ ಬುಕಿಂಗ್ ಖಚಿತಪಡಿಸುವ ಮೊದಲೇ ಮಾತುಕತೆ ನಿಂತಿತು: ಯಾರೂ ಪಾವತಿಸಲಿಲ್ಲ, ಹೋಲ್ಡ್ ಮುಗಿಯಿತು, ಅಥವಾ ಗ್ರಾಹಕರು ಕೈಬಿಟ್ಟರು. | Abandoned means the conversation stopped before the calendar confirmed a booking: nobody paid, the hold ran out, or the customer dropped it. |  |
 | `work.unresolvedMeans` | ಬಗೆಹರಿಯದ್ದು ಎಂದರೆ: ಏನೋ ಇನ್ನೂ ತೆರೆದಿದೆ ಅಥವಾ ಖಚಿತವಾಗಿಲ್ಲ: ಒಂದು ಸೇವೆ ಖಚಿತಪಡಿಸದ ಹಂತ, ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಅಥವಾ ನೀವು ಕೊಡಬೇಕಾದ ರೀಫಂಡ್, ಅಥವಾ ಗ್ರಾಹಕರು ಪಾವತಿಸಿದ್ದೇನೆ ಎಂದು ಹೇಳಿ ನೀವು ದಾಖಲಿಸದ ಹಣ. | Unresolved means something is still open or not confirmed: a step a service never confirmed, a refund waiting for you or owed by you, or a payment the customer says they made that you have not marked. |  |
 | `work.abandonedNeverClears` | ಉತ್ತರ ನಿಲ್ಲಿಸಿದ ಗ್ರಾಹಕರು ಯಾವುದೇ ಬಗೆಹರಿಯದ ವಿಷಯವನ್ನು ಮುಚ್ಚುವುದಿಲ್ಲ. | A customer who stops replying never closes an unresolved item. |  |
-| `work.refundsByPerson` | ಒಬ್ಬ ವ್ಯಕ್ತಿ ಕೈಯಿಂದ ಮುಗಿಸಿದ ರೀಫಂಡ್‌ಗಳು (ಅವರ ಮಾತು, ಪಾವತಿ ಸೇವೆಯದ್ದಲ್ಲ) | Refunds a person settled by hand (their word, not the payment service's) |  |
 | `page.numbers` | ಲೆಕ್ಕಗಳು | The numbers |  |
 | `page.item` | ಏನು | What |  |
 | `page.count` | ಎಷ್ಟು | How many |  |

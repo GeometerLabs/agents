@@ -10,7 +10,7 @@ import { ownerText } from "./text.ts";
 
 /** What each phrase that takes a number is shown with. */
 const SAMPLE: Record<string, unknown[]> = {
-  more: [12],
+  more: [12], settledByWord: ["asha"],
   "cert.held": [25, 26, 1, 12], "cert.menu": ["Veg thali ₹120 (12) · Curd ₹20 (30)"], "cert.orderLimits": [8, 10, 7], "cert.cutoff": [1, "20:00"], "cert.advance": [false, 50, 30],
   "cert.delivery": ["Kakkanad, Edappally, Infopark"], "cert.window": [6], "cert.refund": ["₹300"], "cert.approve": ["₹1,000"],
   "goLive.own": ["2 Nov 2026"], "goLive.example": ["2 Nov 2026"], "goLive.different": ["2 Nov 2026"], "goLive.signedWith": ["key-3f9a1c"],

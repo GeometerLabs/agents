@@ -3,7 +3,7 @@
 //
 // Machine-written Hindi, Malayalam and Kannada. They are listed in REVIEW-hi.md, REVIEW-ml.md and REVIEW-kn.md for a native speaker, and no real shop should be given them before
 // that review. The claim rules (modules/report/claims.ts) apply: a document counts and states facts; it never grades.
-import { CHECK_GENUINE, SCAN_SUMMARY } from "../../../../modules/report/text.ts";
+import { CHECK_GENUINE, SCAN_SUMMARY, SETTLED_BY_SOMEONE, SETTLED_BY_WORD } from "../../../../modules/report/text.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { NotCountedId, NotTestedKey, OrderRuleId, Source } from "./data.ts";
 
@@ -15,6 +15,9 @@ export interface Strings {
   fullReport: string;
   /** The label before the check link in the WhatsApp message (modules/report/text.ts CHECK_GENUINE). */
   checkGenuine: string;
+  /** A refund a person settled as made, by their word (B75): "Settled by <who>, by their word", and the same without a name (modules/report/text.ts). */
+  settledByWord: (who: string) => string;
+  settledBySomeone: string;
   /** The one help line every owner document ends with. */
   helpLine: string;
   /** The one assurance the documents make, and the only one. */
@@ -60,7 +63,7 @@ export interface Strings {
 }
 
 export const en: Strings = {
-  agent: "Orders agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", fullReport: "Full report", checkGenuine: CHECK_GENUINE.en,
+  agent: "Orders agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", fullReport: "Full report", checkGenuine: CHECK_GENUINE.en, settledByWord: SETTLED_BY_WORD.en, settledBySomeone: SETTLED_BY_SOMEONE.en,
   helpLine: "Write to support. A person answers.",
   promise: "No order confirmed without the payment record (or your confirmation for UPI); every refund tracked.",
   label: { collected: "Advance collected", stillToCollect: "To collect at pickup", givenBack: "Given back", ordersTaken: "Orders taken", cancelled: "Cancelled", wasAsked: "You were asked", approved: "You approved", saidNo: "You said no", stoppedByLimits: "Stopped by your limits", notChecked: "Not checked", orders: "orders" },
@@ -140,7 +143,7 @@ export const en: Strings = {
 };
 
 export const hi: Strings = {
-  agent: "ऑर्डर एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", fullReport: "पूरी रिपोर्ट", checkGenuine: CHECK_GENUINE.hi,
+  agent: "ऑर्डर एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", fullReport: "पूरी रिपोर्ट", checkGenuine: CHECK_GENUINE.hi, settledByWord: SETTLED_BY_WORD.hi, settledBySomeone: SETTLED_BY_SOMEONE.hi,
   helpLine: "सपोर्ट को लिखें। एक इंसान जवाब देता है।",
   promise: "भुगतान के रिकॉर्ड (या UPI में आपकी पुष्टि) के बिना कोई ऑर्डर पक्का नहीं; हर रिफंड का हिसाब।",
   label: { collected: "एडवांस जमा हुआ", stillToCollect: "पिकअप पर लेना बाकी", givenBack: "वापस किया", ordersTaken: "लिए गए ऑर्डर", cancelled: "रद्द हुए", wasAsked: "आपसे पूछा गया", approved: "आपने मंज़ूर किया", saidNo: "आपने मना किया", stoppedByLimits: "आपकी सीमाओं ने रोका", notChecked: "जाँचा नहीं गया", orders: "ऑर्डर" },
@@ -219,7 +222,7 @@ export const hi: Strings = {
 };
 
 export const ml: Strings = {
-  agent: "ഓർഡർ ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", fullReport: "പൂർണ്ണ റിപ്പോർട്ട്", checkGenuine: CHECK_GENUINE.ml,
+  agent: "ഓർഡർ ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", fullReport: "പൂർണ്ണ റിപ്പോർട്ട്", checkGenuine: CHECK_GENUINE.ml, settledByWord: SETTLED_BY_WORD.ml, settledBySomeone: SETTLED_BY_SOMEONE.ml,
   helpLine: "സപ്പോർട്ടിന് എഴുതുക. ഒരു വ്യക്തി മറുപടി നൽകും.",
   promise: "പേയ്മെന്റ് രേഖയില്ലാതെ (UPI-യിൽ നിങ്ങളുടെ സ്ഥിരീകരണമില്ലാതെ) ഒരു ഓർഡറും ഉറപ്പിക്കില്ല; ഓരോ റീഫണ്ടും രേഖപ്പെടുത്തുന്നു.",
   label: { collected: "പിരിഞ്ഞ അഡ്വാൻസ്", stillToCollect: "പിക്കപ്പിൽ വാങ്ങാനുള്ളത്", givenBack: "തിരികെ നൽകിയത്", ordersTaken: "എടുത്ത ഓർഡറുകൾ", cancelled: "റദ്ദാക്കിയത്", wasAsked: "നിങ്ങളോട് ചോദിച്ചു", approved: "നിങ്ങൾ അംഗീകരിച്ചു", saidNo: "നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു", stoppedByLimits: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", notChecked: "പരിശോധിക്കാത്തത്", orders: "ഓർഡറുകൾ" },
@@ -298,7 +301,7 @@ export const ml: Strings = {
 };
 
 export const kn: Strings = {
-  agent: "ಆರ್ಡರ್ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", fullReport: "ಪೂರ್ಣ ವರದಿ", checkGenuine: CHECK_GENUINE.kn,
+  agent: "ಆರ್ಡರ್ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", fullReport: "ಪೂರ್ಣ ವರದಿ", checkGenuine: CHECK_GENUINE.kn, settledByWord: SETTLED_BY_WORD.kn, settledBySomeone: SETTLED_BY_SOMEONE.kn,
   helpLine: "ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ.",
   promise: "ಪಾವತಿ ದಾಖಲೆ (ಅಥವಾ UPI ಯಲ್ಲಿ ನಿಮ್ಮ ದೃಢೀಕರಣ) ಇಲ್ಲದೆ ಯಾವ ಆರ್ಡರ್ ಅನ್ನೂ ಖಚಿತಪಡಿಸುವುದಿಲ್ಲ; ಪ್ರತಿ ರೀಫಂಡ್ ದಾಖಲಾಗುತ್ತದೆ.",
   label: { collected: "ಸಂಗ್ರಹವಾದ ಮುಂಗಡ", stillToCollect: "ಪಿಕಪ್‌ನಲ್ಲಿ ಪಡೆಯಬೇಕಾದದ್ದು", givenBack: "ಮರಳಿ ಕೊಟ್ಟದ್ದು", ordersTaken: "ತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಳು", cancelled: "ರದ್ದಾದವು", wasAsked: "ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು", approved: "ನೀವು ಒಪ್ಪಿದ್ದು", saidNo: "ನೀವು ಬೇಡ ಎಂದದ್ದು", stoppedByLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", notChecked: "ಪರಿಶೀಲಿಸದ್ದು", orders: "ಆರ್ಡರ್‌ಗಳು" },

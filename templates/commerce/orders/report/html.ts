@@ -6,7 +6,7 @@ import { localParts } from "../../../../modules/core/time.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { esc, list, page, sealBlock, table } from "../../../../modules/report/page.ts";
 import type { Envelope } from "../../../../modules/report/sign.ts";
-import { badgeText, languagesOf, periodLabel, rupees } from "../../../../modules/report/text.ts";
+import { badgeText, languagesOf, periodLabel, rupees, settledWho } from "../../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../../modules/report/text.ts";
 import { RULE_IDS } from "./data.ts";
 import type { OrdersReport, GoLiveFinding } from "./data.ts";
@@ -33,6 +33,8 @@ export function reportSection(envelope: Envelope<OrdersReport>, language: Langua
   const numbers = table([{ text: p.item }, { text: p.count, n: true }, { text: p.amount, n: true }], [
     [esc(labels.collected), ...amount(r.money.collected)],
     [esc(labels.givenBack), ...amount(r.money.givenBack)],
+    // refunds a person settled by their word (B75): one row per person, never counted as given back
+    ...(r.money.settledByWord ?? []).map((w) => [esc(s.settledByWord(settledWho(w.by))), ...amount(w)]),
     [esc(p.ordersTaken), String(r.orders.taken), ""],
     [esc(p.ordersCompleted), String(r.orders.completed), ""],
     [esc(p.ordersCancelled), String(r.orders.cancelled), ""],

@@ -22,12 +22,13 @@ import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { TemplateMessage } from "../../../../modules/messaging/messaging.ts";
 import type { Envelope } from "../../../../modules/report/sign.ts";
-import { badgeText, oneLine, periodLabel, rupees } from "../../../../modules/report/text.ts";
+import { badgeText, oneLine, periodLabel, rupees, settledByWordWords } from "../../../../modules/report/text.ts";
 import type { FeesReport } from "./data.ts";
 import { sampleReport } from "./review.ts";
 import { STRINGS } from "./strings.ts";
 import { notCheckedList } from "./text.ts";
-import { messageCheckLink } from "../../../../modules/report/summary-sign.ts";
+import { WHATSAPP_BODY_LIMIT, messageCheckLink } from "../../../../modules/report/summary-sign.ts";
+import { verifyCodeLink } from "../../../../modules/report/verify-link.ts";
 import { SAMPLE_DIGEST, SAMPLE_SUMMARY_LINK } from "../../../../modules/report/summary.ts";
 
 export interface ReportTemplate {
@@ -96,6 +97,11 @@ export interface ReportExtras {
   check: string;
   /** Who set the agent up, as they are named on the report. */
   builder: string;
+  /**
+   * B75: the words for refunds people settled by their word ("Settled by asha, by their word: 1 (₹200)"; modules/report/text.ts settledByWordWords), added after
+   * the given-back value. Left out when nobody did. They go inside an existing value, not on a line of their own, so the approved template bodies do not change.
+   */
+  settled?: string;
 }
 
 /** The value of every slot, as the owner reads it. */
@@ -105,7 +111,8 @@ export function reportValues(report: FeesReport, language: Language, extras: Rep
   return {
     title: [oneLine(report.shop.name), periodLabel(report.period, language), tag].filter(Boolean).join(" · "),
     collected: rupees(report.money.collected.paise),
-    givenBack: rupees(report.money.givenBack.paise),
+    // what the payment service confirmed given back, then what a person settled by their word (B75), which is never counted in it
+    givenBack: [rupees(report.money.givenBack.paise), extras.settled].filter(Boolean).join(" \u00b7 "),
     pending: report.fees.stillToCollect.count > 0 ? `${rupees(report.fees.stillToCollect.paise)} (${report.fees.stillToCollect.count} ${s.label.students})` : rupees(0),
     reminders: String(report.reminders.sent),
     takenOff: rupees(report.waivers.total.paise),
@@ -158,8 +165,11 @@ function exampleValues(language: Language, template: ReportTemplate): Record<Rep
 
 /** The values with the check link chosen for this template and language: the summary link if the filled message fits WhatsApp's limit, else the #digest link, else the #code link (messageCheckLink). */
 function valuesWithCheck(template: ReportTemplate, language: Language, report: FeesReport, extras: Omit<ReportExtras, "check">, envelope: { digest: string; code: string }, summaryLink?: string): Record<ReportSlot, string> {
-  const fill = (check: string) => fillBody(metaBody(template.bodies[language]), reportParameters(template, language, reportValues(report, language, { ...extras, check })));
-  return reportValues(report, language, { ...extras, check: messageCheckLink(fill, envelope, summaryLink) });
+  const fill = (check: string, settled?: string) => fillBody(metaBody(template.bodies[language]), reportParameters(template, language, reportValues(report, language, { ...extras, check, ...(settled ? { settled } : {}) })));
+  // B75: refunds people settled by their word, with each person named if the message still fits with the shortest check link; otherwise without the names
+  // (the full report names them). Chosen before the link, so a long month gives up the longer link before it gives up who settled what.
+  const settled = settledByWordWords(report.money.settledByWord, language, STRINGS[language].more, (words) => fill(verifyCodeLink(envelope), words).length <= WHATSAPP_BODY_LIMIT);
+  return reportValues(report, language, { ...extras, ...(settled ? { settled } : {}), check: messageCheckLink((check) => fill(check, settled), envelope, summaryLink) });
 }
 
 /** The message as the review sheets show it: the sample month, with the Innovator line, so a native reader sees every word that is sent. */

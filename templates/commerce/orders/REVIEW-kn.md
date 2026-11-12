@@ -246,6 +246,8 @@ Annapurna Tiffins · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ನ�
 | `goLiveCertificate` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ | Go-live certificate |  |
 | `fullReport` | ಪೂರ್ಣ ವರದಿ | Full report |  |
 | `checkGenuine` | ನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ | Check it is genuine |  |
+| `settledByWord` | asha ಅವರ ಮಾತಿನ ಮೇಲೆ ಇತ್ಯರ್ಥಪಡಿಸಿದ್ದು | Settled by asha, by their word |  |
+| `settledBySomeone` | ಒಬ್ಬ ವ್ಯಕ್ತಿ ತಮ್ಮ ಮಾತಿನ ಮೇಲೆ ಇತ್ಯರ್ಥಪಡಿಸಿದ್ದು | Settled by a person, by their word |  |
 | `helpLine` | ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Write to support. A person answers. |  |
 | `promise` | ಪಾವತಿ ದಾಖಲೆ (ಅಥವಾ UPI ಯಲ್ಲಿ ನಿಮ್ಮ ದೃಢೀಕರಣ) ಇಲ್ಲದೆ ಯಾವ ಆರ್ಡರ್ ಅನ್ನೂ ಖಚಿತಪಡಿಸುವುದಿಲ್ಲ; ಪ್ರತಿ ರೀಫಂಡ್ ದಾಖಲಾಗುತ್ತದೆ. | No order confirmed without the payment record (or your confirmation for UPI); every refund tracked. |  |
 | `label.collected` | ಸಂಗ್ರಹವಾದ ಮುಂಗಡ | Advance collected |  |
