@@ -514,7 +514,11 @@ async function deployerOutputs() {
   const exp = await runExports(ctx); exp.lines.forEach(say);
   const dir = join(SERVER, "exports", "glow-salon");
   const files = ["record.json", "bookings.json"].map((f) => { try { return JSON.parse(readFileSync(join(dir, f), "utf8")) as unknown[]; } catch { return undefined; } });
-  check("the record and the bookings are exported for the monthly report, as lists, with no phone number in them", files.every((f) => Array.isArray(f)) && !/\+?91\d{10}/u.test(JSON.stringify(files)), { record: files[0]?.length, bookings: files[1]?.length });
+  // A phone number standing on its own: not digits inside a longer token. A record entry's inputs digest is hex ("k-c615919191044749"), and so are the export's
+  // hidden numbers ("c-…", "p-…"); either can hold "91" and ten digits by chance, which is no phone number (the 12 Nov run failed on exactly that). A number in a
+  // field or a sentence has no letter, digit or hyphen right before it.
+  const phones = JSON.stringify(files).match(/(?<![0-9A-Za-z-])\+?91\d{10}(?!\d)/gu) ?? [];
+  check("the record and the bookings are exported for the monthly report, as lists, with no phone number in them", files.every((f) => Array.isArray(f)) && phones.length === 0, { record: files[0]?.length, bookings: files[1]?.length, phones: phones.length });
   mkdirSync(join(SERVER, "requests"), { recursive: true });
   const request = join(SERVER, "requests", "glow-salon.stop.json");
   writeFileSync(request, JSON.stringify({ schema: 1, requestId: "req-proof-1", shop: "glow-salon", requestedAt: new Date().toISOString(), requestedBy: { id: "acct-1", name: "Divya", role: "partner" } }));
@@ -1182,7 +1186,9 @@ async function heldRefundThroughRuntime() {
   const wrote = await customerWrites(shop, c.from, c.text);
   let link: { id: string; pay_url: string } | undefined;
   // the link's address exactly as the message gives it (plink3 is the start of plink381, so a "contains" would find the wrong one)
-  await waitFor("the deposit link", async () => { const s = await st(); const urls = ((s.outbox ?? []) as { to: string; text: string }[]).filter((m) => digits(m.to) === digits(c.from)).flatMap((m) => m.text.match(/https:\/\/rzp\.io\/l\/[A-Za-z0-9_]+/gu) ?? []); link = ((s.links ?? []) as { id: string; pay_url: string }[]).find((l) => urls.includes(l.pay_url)); return !!link; }, 60);
+  // Any https address in the customer's messages, compared whole with each link's own: the stand-in gateway's links are https://pay.example/<id> since B71 (b9e0976),
+  // no longer rzp.io, and a pattern for one provider's host found none of them.
+  await waitFor("the deposit link", async () => { const s = await st(); const urls = ((s.outbox ?? []) as { to: string; text: string }[]).filter((m) => digits(m.to) === digits(c.from)).flatMap((m) => m.text.match(/https:\/\/[^\s]+/gu) ?? []).map((u) => u.replace(/[.,;:!?)]+$/u, "")); link = ((s.links ?? []) as { id: string; pay_url: string }[]).find((l) => urls.includes(l.pay_url)); return !!link; }, 60);
   if (!link) { check("a booking through the runtime gets its deposit link (the start of the held-refund check)", false, { wrote }); return; }
   const refundsBefore = ((await st()).refunds ?? []).length;
   await control(shop, "/_standin/razorpay/pay", { request_id: link.id });
@@ -1224,10 +1230,13 @@ const PROOF_SHOPS = Array.from({ length: Math.max(1, ...SIZES) }, (_, i) => shop
 const inOrder = (id: string) => ({ id, plan: "business", state: "active", paid_through: nowS() + 30 * DAY_S, grace_days: 0, expires: nowS() + 30 * DAY_S, stop_at: null, export_until: null, notice: null });
 /**
  * A lease for this server, signed with RFC 8032's published test key (the key built into the proof's Guard), handed in as fleet's answer, and taken by the deployer.
- * It lists every proof shop in order; `glowEntry` puts glow-salon in another state (the licence phase's wind-down, stop and restore).
+ * It lists every proof shop in order, and the agent someone else wrote (the `agent` phase): an own agent's Guards are held to the lease by its name, as a shop's are
+ * (bundle/agent/deploy.ts, B13), and fleet lists it once a heartbeat reports it, as it does a shop (the heartbeat's `agents`, fleet's admitTrialShops). Without it
+ * every call the agent makes is refused with Guard's 402 subscription_suspended. `glowEntry` puts glow-salon in another state (the licence phase's wind-down,
+ * stop and restore). The runtimes' own licence files are written for the shops only: an own agent has no runtime of ours.
  */
 function handLease(serial: number, glowEntry?: Record<string, unknown>): string[] {
-  const shops = PROOF_SHOPS.map((id) => (id === "glow-salon" && glowEntry ? { id, plan: "business", grace_days: 30, ...glowEntry } : inOrder(id)));
+  const shops = [...PROOF_SHOPS, AGENT_NAME].map((id) => (id === "glow-salon" && glowEntry ? { id, plan: "business", grace_days: 30, ...glowEntry } : inOrder(id)));
   const token = signTest({ v: 1, kind: "lease", deployment: "proof", serial, issued_at: nowS(), shops });
   mkdirSync(join(SERVER, "fleet"), { recursive: true });
   writeFileSync(join(SERVER, "fleet", "lease"), `${token}\n`);
