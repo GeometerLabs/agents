@@ -108,8 +108,8 @@ export const GUPSHUP_TOKEN_FILE = `${GUPSHUP_TOKEN_MOUNT}/authorization`;
 
 export interface SpecIdentity { tenant: string; name: string; version: number; reviewedBy: string }
 
-const base = (def: GuardDef, id: SpecIdentity, approvalTtlSeconds = 900) => ({ schema: 1, tenant: id.tenant, tool: def.tool, name: id.name, version: id.version, reviewed_by: id.reviewedBy, approval_ttl_seconds: approvalTtlSeconds });
-const count = (id: string, operation: string, cap: number, windowSeconds: number) => ({ id, kind: "count", operation, scope: [], cap: String(cap), window_seconds: windowSeconds });
+export const base = (def: GuardDef, id: SpecIdentity, approvalTtlSeconds = 900) => ({ schema: 1, tenant: id.tenant, tool: def.tool, name: id.name, version: id.version, reviewed_by: id.reviewedBy, approval_ttl_seconds: approvalTtlSeconds });
+export const count = (id: string, operation: string, cap: number, windowSeconds: number) => ({ id, kind: "count", operation, scope: [], cap: String(cap), window_seconds: windowSeconds });
 
 /**
  * `caps` is for an agent we did not write, whose builder sets the daily refund caps too (agent.json); a shop passes none and gets the template's. `build` is the template's own

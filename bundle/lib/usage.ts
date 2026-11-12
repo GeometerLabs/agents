@@ -144,7 +144,7 @@ export const isReportSent = (entry: unknown): boolean => isObj(entry) && entry.a
 export function replyLanguageOf(entry: unknown): Language | undefined {
   if (!isObj(entry) || (entry.action !== "send_message" && entry.action !== "voice_note_reply") || entry.outcome !== "confirmed") return undefined;
   const refs = isObj(entry.refs) ? entry.refs : {};
-  if (refs.to !== "customer" || refs.image !== undefined || refs.channel !== undefined) return undefined; // a booking page's words are not WhatsApp replies
+  if (refs.to !== "customer" || refs.image !== undefined || refs.channel !== undefined) return undefined; // a picture goes beside the words (the reply counts once); a booking page's words are not WhatsApp replies
   return (LANGUAGES as readonly unknown[]).includes(entry.language) ? (entry.language as Language) : undefined;
 }
 

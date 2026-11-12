@@ -986,3 +986,25 @@ has the panel. The panel is where a partner works on a shop.
 A builder chooses per client: `"pages": "own"` (the default: the views at `https://<their domain>/s/<shop>/`, no slug, nothing at fleet) or `"hub"` (a slug and a page id on
 the pages domain, served through the door; the owner's view stays on the builder's domain). Geometer's partner server is always `"hub"`. The value is named `hub`, not after
 a domain, because the domain may change.
+
+## Voice notes (B29, decision 42; 12 Nov 2026)
+
+The owner dropped the idea of a voice agent that answers the shop's phone (telephony, call forwarding) and asked for the way people in these places already communicate: voice messages on WhatsApp. Then, the same day, he decided: **listen in voice, reply in text**. A spoken reply is hard to hear well and can feel uncanny, so the agent never speaks.
+
+**Where it sits.** `modules/voice/` is the whole feature: `speech.ts` (the provider interface and the cost arithmetic), `geometer.ts` (the default provider's client and its one-route contract), `sarvam.ts` (an optional paid adapter), `media.ts` (fetching the audio), `ogg.ts` (reading a note's length from the audio), `voice.ts` (the one service an agent is handed, like `qrImage`), `turn.ts` (what every template's agent does with a voice note, written once), `config.ts` (runtime.json `speech`). The agents change in one place each: a voice note becomes a message whose text is the transcript and goes down the same path as typed text.
+
+**Why these choices.**
+- *Transcript, then the same path.* A voice note becomes the text of an ordinary message, so the rules, the models, the limits, the checks and Guard see nothing new; there is no second way to book anything.
+- *Memory only.* The audio is fetched for one call and dropped; the saved event carries a media id or address, never audio, and only when voice is on.
+- *The cost cannot hide.* Voice does not run without a known price: a paid provider's price is required in the block; Geometer's own service is zero rupees per call by default (the server cost is covered elsewhere), and the seconds are recorded either way. The cost is added to the month's AI spend (the allowance) and to the record's `costMicroInr`, which is what the cost meter and fleet's AI cap read, so for a partner's shop it counts toward `ai.cap`. At the cap, in button mode or after STOP, the speech provider is not asked at all (a test counts the calls).
+- *The day's limit lives in the saved state* (`ai.speech.today`, the shop's local day), read by the agent before each note, so a restart cannot reset it.
+- *A step that runs again does not pay twice.* The service remembers an answer by the note's media id for half an hour.
+- *Never stalls the shop.* The voice service answers instead of throwing, its calls have a timeout, and it is not one of the services a step waits for a Guard on.
+- *The owner's voice notes are not listened to.* An owner's message is a command (approve, received...), and a misheard command is worse than a typed one.
+- *The could-not-make-out line* is its own template (`voice_note_retry`) in all three templates and four languages; `voice_note` stays for shops with voice off and for the owner.
+- *Open source by default.* Partners should not need an account with anyone: the default provider is a service Geometer runs. Sarvam stays optional.
+- *The setting is off, and refused.* No `speech` block means no change anywhere (a test pins the voice-off behaviour). The panel has a Voice notes page per shop (a switch off by default, in four languages, Hindi/Malayalam/Kannada machine-written) and a speech-key step on the Server page for the Sarvam case. The deployer still refuses the block until the Guards are placed.
+
+**What the Guards can and cannot bind.** The speech Guard lists exactly one route (`POST /stt` for Geometer's service, Sarvam's for the other) and caps calls a day. It cannot pin the model: Sarvam's is a multipart field and Geometer's service chooses its own. The media Guard lists one GET route (`/{version}/{media_id}`) and cannot send or upload; a Guard rule can only allow exact values, so it cannot tell a media id from another id in that place (the shop's own phone number record, say), and a daily count bounds it. That is a looser fence than the WhatsApp Guard's.
+
+**Why the Guards are still not placed.** A voice note's audio is downloaded from a host and a path that neither Meta's nor Gupshup's documents name. A Guard has one upstream and a fixed route list, so the download Guard's spec cannot be written until one sandbox voice note shows them; placing a half-set would look finished when it could not work. `bundle/Deferred.md` lists exactly what placing them takes.

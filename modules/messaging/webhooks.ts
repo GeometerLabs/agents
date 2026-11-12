@@ -15,7 +15,7 @@
 //    https://docs.gupshup.io/docs/what-is-an-inbound-message.md, .../docs/interactive, .../docs/message-events.md, .../reference/postback-text-support.md.
 //    The same two exported parsers read this shape (isGupshupSelfServe) so the inbox needs no second path.
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { InboundMessage, MessageStatus } from "./messaging.ts";
+import type { InboundMessage, MessageStatus, VoiceMediaRef } from "./messaging.ts";
 import { asArray, isObject, num, str } from "../core/http.ts";
 
 // ---- signatures --------------------------------------------------------------------------------------------------------------
@@ -71,6 +71,24 @@ function replyOf(message: Record<string, unknown>): InboundMessage["reply"] {
 }
 
 /**
+ * Where a voice note's audio can be fetched, from Meta's `audio` object (`id`, `mime_type`) or Gupshup's (the same, plus a `url`). Each part is kept only if it has the
+ * shape of what it is (an id of plain characters, an https address, a type); anything else is dropped, and a note with neither an id nor an address has no media.
+ * The sha256 and `voice` flags are not kept: nothing here needs them.
+ */
+export function mediaOf(audio: unknown): VoiceMediaRef | undefined {
+  if (!isObject(audio)) return undefined;
+  const id = str(audio.id);
+  const url = str(audio.url);
+  const mime = str(audio.mime_type);
+  const ref: VoiceMediaRef = {
+    ...(id && /^[A-Za-z0-9_-]{1,128}$/u.test(id) ? { id } : {}),
+    ...(url && url.length <= 2048 && /^https:\/\/[^\s]+$/u.test(url) ? { url } : {}),
+    ...(mime && /^[a-z0-9.+-]+\/[a-z0-9.+-]+(;\s*[a-z0-9=. -]+)?$/iu.test(mime) && mime.length <= 80 ? { mime } : {}),
+  };
+  return ref.id || ref.url ? ref : undefined;
+}
+
+/**
  * The customer messages in a WhatsApp webhook. Delivery statuses are read by parseWhatsAppStatuses, not here.
  * Messages with no id, no sender number or no words are left out. The timestamp is epoch seconds as a string; ours is milliseconds.
  *
@@ -81,9 +99,9 @@ function replyOf(message: Record<string, unknown>): InboundMessage["reply"] {
  * A picture (`type: "image"`, a screenshot of a payment, say) is the same: empty text and `image: true`, and nothing of the picture or its caption is kept. The agent
  * decides what to say (a screenshot is never proof of a payment: with UPI the owner confirms). Before UPI (B33) pictures were left out here.
  */
-export function parseWhatsAppWebhook(body: unknown): InboundMessage[] {
+export function parseWhatsAppWebhook(body: unknown, options: { voiceMedia?: boolean } = {}): InboundMessage[] {
   if (!isObject(body)) return [];
-  if (isGupshupSelfServe(body)) return parseSelfServeMessages(body);
+  if (isGupshupSelfServe(body)) return parseSelfServeMessages(body, options);
   const out: InboundMessage[] = [];
   for (const entry of asArray(body.entry).filter(isObject)) {
     for (const change of asArray(entry.changes).filter(isObject)) {
@@ -92,12 +110,14 @@ export function parseWhatsAppWebhook(body: unknown): InboundMessage[] {
         const id = str(m.id);
         const from = toE164(m.from);
         const voiceNote = m.type === "audio";
+        // Only for a shop with voice on (B29): where the audio can be fetched. Otherwise nothing of the audio object is read, as before.
+        const media = voiceNote && options.voiceMedia === true ? mediaOf(m.audio) : undefined;
         const image = m.type === "image";
         const text = voiceNote || image ? "" : textOf(m);
         if (!id || !from || text === undefined || (text.length === 0 && !voiceNote && !image)) continue;
         const seconds = Number(str(m.timestamp) ?? m.timestamp);
         const reply = replyOf(m);
-        out.push({ id, from, text, timestamp: Number.isFinite(seconds) ? seconds * 1000 : 0, ...(voiceNote ? { voiceNote: true as const } : {}), ...(image ? { image: true as const } : {}), ...(reply ? { reply } : {}) });
+        out.push({ id, from, text, timestamp: Number.isFinite(seconds) ? seconds * 1000 : 0, ...(voiceNote ? { voiceNote: true as const } : {}), ...(media ? { media } : {}), ...(image ? { image: true as const } : {}), ...(reply ? { reply } : {}) });
       }
     }
   }
@@ -160,9 +180,9 @@ export const selfServeAppName = (body: unknown): string | undefined => (isObject
 /**
  * The customers' messages in a self-serve callback. Text is its words. A tapped button or list row comes back as `postbackText`, the id we gave it when we sent it
  * (gupshup-selfserve.ts): it becomes `reply` only if it is a short plain id; without one (a button of a template, say) the row's title is read as ordinary words, as
- * the agent already does for any typed answer. Voice notes and pictures are the fact only, as for Meta; other types are left out.
+ * the agent already does for any typed answer. Voice notes and pictures are the fact only, as for Meta (a voice note also carries where its audio is when the shop has voice on, B29); other types are left out.
  */
-function parseSelfServeMessages(body: Record<string, unknown>): InboundMessage[] {
+function parseSelfServeMessages(body: Record<string, unknown>, options: { voiceMedia?: boolean } = {}): InboundMessage[] {
   const p = body.payload;
   if (!isObject(p) || body.type !== "message") return [];
   const id = str(p.id), from = toE164(p.source ?? (isObject(p.sender) ? p.sender.phone : undefined));
@@ -173,7 +193,12 @@ function parseSelfServeMessages(body: Record<string, unknown>): InboundMessage[]
   const plain = (text: string | undefined, extra: Partial<InboundMessage> = {}): InboundMessage[] => (text === undefined || text.length === 0 ? [] : [{ id, from, text, timestamp, ...extra }]);
   switch (p.type) {
     case "text": return plain(str(inner.text));
-    case "audio": return [{ id, from, text: "", timestamp, voiceNote: true }];
+    case "audio": {
+      // B29 (merged with item 11c): for a shop with voice on, a self-serve note carries where its audio is, as Meta's and Gupshup partner's do. Gupshup's self-serve
+      // callback names the file `url` and its type `contentType`; mediaOf keeps each only if it has the right shape. With voice off nothing of the audio is read.
+      const media = options.voiceMedia === true ? mediaOf({ url: inner.url, mime_type: inner.contentType }) : undefined;
+      return [{ id, from, text: "", timestamp, voiceNote: true, ...(media ? { media } : {}) }];
+    }
     case "image": return [{ id, from, text: "", timestamp, image: true }];
     case "button_reply": case "quick_reply": case "list_reply": {
       const text = str(inner.title) ?? str(inner.text) ?? str(inner.reply);

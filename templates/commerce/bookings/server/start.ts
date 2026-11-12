@@ -1,6 +1,7 @@
 // Start one client's agent: read its folder, open its store, wire the services, resume what was left pending, listen, and keep the clock ticking. main.ts is a thin command
 // line around this; the tests start it directly. The start itself, and the reading of messages and of the report block, are the same for every template
 // (modules/runtime/start.ts); this file gives them Bookings' reading, its report and its runtime.
+import { buildVoice } from "../../../../modules/voice/config.ts";
 import { folderQrImages } from "../../../../modules/payments/owner-marked/qr-image.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
@@ -72,7 +73,10 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       // The steps, the allowance and the outside switch (see buildUnderstanding). A model behind a Guard gets no provider key from here; with an `agentTokenFile` it
       // gets this agent's credential for that Guard; a provider reached directly gets the key its `keyEnv` names, from the environment, and nothing else.
       const reading = buildUnderstanding(client as ClientFolder, { clock, log });
-      return createRuntime({ settings: client.settings, store, clock, services, parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), log });
+      // B29: voice notes, only for a shop whose runtime.json has a `speech` block (the bundle writes it only when the server holds the provider's key).
+      const speech = client.runtime.speech;
+      const voice = speech ? buildVoice(speech, { clock, languages: client.settings.languages, log }) : undefined;
+      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), log });
     },
   }) as RunningClient;
 }

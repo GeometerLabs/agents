@@ -236,6 +236,8 @@ export interface ShopView {
   inbox?: ShopInbox;
   /** B72: the words of the link to the shop terms page; left out while the feature is off (the page does not exist then). */
   termsLink?: string;
+  /** B29: the word for the link to the shop's voice-notes page (always shown; the switch on it is off until turned on). */
+  voiceLink?: string;
   papers: { goLive: string[]; monthly: string[]; canMakeReport: boolean; month: string };
   isBuilder: boolean;
   details?: { statusJson: string; pins: string; runtimeJson: string };
@@ -388,6 +390,7 @@ ${v.papers.goLive.length === 0 ? html`<p class="note">${w.goLiveNone}</p>` : ""}
 ${v.papers.canMakeReport ? html`<form method="post" action="/shops/${v.id}/report">${csrf(c)}<input type="hidden" name="month" value="${v.papers.month}"><button class="btn" type="submit">${w.makeReport(v.papers.month)}</button></form>` : html`<p class="note">${w.reportNoRecord}</p>`}
 ${v.papers.canMakeReport ? html`<p><a class="btn" href="/shops/${v.id}/papers">${PAPERS_LINK[c.lang]}</a></p>` : ""}
 ${v.termsLink ? html`<p><a class="btn" href="/shops/${v.id}/terms">${v.termsLink}</a></p>` : ""}
+${v.voiceLink ? html`<p><a class="btn" href="/shops/${v.id}/voice">${v.voiceLink}</a></p>` : ""}
 
 <h2>${c.w.takeOut.heading}</h2>
 <p>${c.w.takeOut.text}</p>

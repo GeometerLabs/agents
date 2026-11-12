@@ -16,6 +16,7 @@
 //                                late: every local check first, the code sent once, then only a `fleet` section is added (the folder keeps its own id; fleet's goes in
 //                                fleet.deploymentId) and the trial lease taken. A pairing kept but not added is added by running it again, with no new code.
 //   model-key <file>             the model's API key, handed to the model Guard only
+//   speech-key <file>            the speech provider's key (voice notes, B29), handed to the speech Guard only
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
 //   gupshup-token <file>         the Gupshup partner's Universal Token (follow-up 2): the token refresher mints and renews each Gupshup shop's app token with it, for every
 //                                Gupshup shop that hands in no static gupshup_authorization. Only on a server run by that Gupshup partner: it acts for every app linked
@@ -109,7 +110,7 @@ import { writeAgentReport } from "./agent/report.ts";
 import { dockerGuardTool } from "./generate/verify.ts";
 import { exitCodeOf, runRollback, runUpdate, summary } from "./update.ts";
 import { realRunner } from "./lib/runner.ts";
-import { INTAKE, secretFile, writeModelKey, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
+import { INTAKE, secretFile, writeModelKey, writeSecretFile, writeSpeechKey, prepareSecretsRoot } from "./lib/secrets.ts";
 import { DEFAULT_APP_IMAGE, DEFAULT_GUARD_IMAGE, DEFAULT_PREPARED_BY, NO_MODEL, fleetIdOf, listShops, loadServer, modelChosen, parseServer, publicUrl, serverNotes, serverPaths } from "./lib/server.ts";
 import { guardsOf, kindFor } from "./lib/kinds.ts";
 import { COMPANY_LIMIT, companyOf, parseReportFile, preparedByOf } from "./panel/contract.ts";
@@ -184,6 +185,14 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       if (key.length < 8) throw new Error("That file is empty or too short to be an API key.");
       writeModelKey(dir, server.model.wire, key);
       console.log("The model's key is in place, for the model Guard only.");
+      return 0;
+    }
+
+    if (command === "speech-key") {
+      // B29: the speech provider's key (Sarvam's), for the speech Guard only. Handing it in is the first of the two things a shop's "speech" block needs (the other is that the Guards are placed).
+      const key = readFileSync(resolve(positionals[0] ?? ""), "utf8").trim();
+      writeSpeechKey(dir, key);
+      console.log("The speech provider's key is in place, for the speech Guard only.");
       return 0;
     }
 

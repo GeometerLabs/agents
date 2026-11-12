@@ -29,7 +29,7 @@ import { kidOf } from "../modules/licence/token.ts";
 import { KINDS, kindFor, guardsOf } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
-import { RECORD_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
+import { RECORD_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, speechKeyHandedIn, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
 import { placeRuntimeReportKey } from "./lib/report-key.ts";
 import { NO_MODEL, fleetIdOf, listShops, loadServer, modelChosen, readShop, serverPaths } from "./lib/server.ts";
 import type { ServerConfig, ShopFolder } from "./lib/server.ts";
@@ -232,7 +232,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   const selfServe = (folder.runtime as { services?: { messaging?: { provider?: unknown } } } | undefined)?.services?.messaging?.provider === "gupshup-selfserve";
   const placed = o.placeReportKey ? await placeRuntimeReportKey({ runner: ctx.runner, docker: ctx.docker, image: server.appImage, dir: ctx.dir, runtimeFolder: names.runtime(name), panelOn: server.panel.enabled }) : undefined;
   const reportKey = placed === undefined ? {} : placed.readable ? { reportKeyReadable: true } : { reportKeyReadable: false, reportKeyWhy: placed.why };
-  const planOptions = { ...reportKey, ...(gupshupRenewed ? { gupshupRenewed: true } : {}) };
+  const planOptions = { ...reportKey, ...(gupshupRenewed ? { gupshupRenewed: true } : {}), ...(speechKeyHandedIn(ctx.dir) ? { speechKeyHandedIn: true } : {}) };
   const first = planShop(server, folder, {}, check, planOptions);
   problems.push(...first.problems);
   notes.push(...first.notes);

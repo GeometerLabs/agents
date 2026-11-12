@@ -210,7 +210,9 @@ test("callbacks: text, a tapped template button, a tapped list row (the id we ga
   assert.deepEqual(one("gupshup-selfserve-message-quick-reply.json").map((m) => [m.text, m.reply]), [["First", undefined]]);
   assert.deepEqual(one("gupshup-selfserve-message-quick-reply-postback.json").map((m) => [m.text, m.reply]), [["Yes", { id: "confirm:yes", kind: "button" }]]);
   assert.deepEqual(one("gupshup-selfserve-message-image.json").map((m) => [m.text, m.image]), [["", true]]);
-  assert.deepEqual(one("gupshup-selfserve-message-audio.json").map((m) => [m.text, m.voiceNote]), [["", true]]);
+  assert.deepEqual(one("gupshup-selfserve-message-audio.json").map((m) => [m.text, m.voiceNote, m.media]), [["", true, undefined]], "voice off: nothing of the audio is read");
+  // B29 with item 11c: a shop with voice on gets where the audio is (the callback's url and contentType), as for Meta and Gupshup's partner API
+  assert.deepEqual(parseWhatsAppWebhook(fixture("gupshup-selfserve-message-audio.json"), { voiceMedia: true }).map((m) => m.media), [{ url: "https://example.invalid/media/audio.ogg", mime: "audio/ogg; codecs=opus" }]);
   assert.ok(!JSON.stringify(one("gupshup-selfserve-message-image.json")).includes("example.invalid"), "no media link is kept");
   // not ours to read: a message with no id or number, a wrong type, an event, a Meta body
   const text = fixture("gupshup-selfserve-message-text.json");

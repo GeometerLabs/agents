@@ -101,6 +101,7 @@ const WHEN: Record<TemplateId, string> = {
   reminder: "Reminder before the booking",
   didnt_understand: "The message was not understood",
   voice_note: "The customer sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead",
+  voice_note_retry: "The customer sent a voice note and the shop has voice on, but it could not be made out (too long, unclear, or the day's limit): they are asked to type instead",
   refund_checking: "A refund could not be sent yet (or its outcome is unclear): it is being checked, nobody is waiting on the owner",
   refund_confirmed: "A refund that was being checked now shows on the payment service's own list: the customer is told, once, as refund_checking promised",
   refund_expired: "The owner did not answer a refund request in time: nothing was sent",

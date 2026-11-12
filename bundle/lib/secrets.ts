@@ -2,7 +2,7 @@
 // handed into those folders. File modes: every folder under secrets/ is 0755 and every file 0644 so a container's own non-root user can read it, while
 // secrets/ itself is 0700, so no other user of the machine can get to any of them. Docker mounts one container's folder into that container only.
 import { hkdfSync } from "node:crypto";
-import { chownSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { chownSync, existsSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { serverPaths } from "./server.ts";
 import { OWN_API } from "../../modules/payments/providers/index.ts";
@@ -201,6 +201,24 @@ export function writeModelKey(dir: string, wire: "openai" | "anthropic", key: st
   prepareSecretsRoot(dir);
   if (wire === "anthropic") writeSecretFile(secretFile(dir, "g-model", "model_api_key"), key);
   else writeSecretFile(secretFile(dir, "g-model", "model_authorization"), `Bearer ${key}`);
+}
+
+/** The speech provider's key file (plan B29): Sarvam's `api-subscription-key` value as it is, for the server's speech Guard only. Handed in once for the whole server, like the model's. */
+export const SPEECH_GUARD = "g-speech";
+export const SPEECH_SECRET = "speech_subscription_key";
+
+/** Write the speech provider's key (write-only: nothing reads it back but the speech Guard). Used by `geometer speech-key` and, later, the panel's first run. */
+export function writeSpeechKey(dir: string, key: string): void {
+  const k = key.trim();
+  if (k.length < 8 || /\s/u.test(k)) throw new Error("The speech provider's key must be one line with no spaces, as the provider shows it.");
+  prepareSecretsRoot(dir);
+  writeSecretFile(secretFile(dir, SPEECH_GUARD, SPEECH_SECRET), k);
+}
+
+/** Has the speech key been handed in on this server? The one fact the "turn voice on" setting is refused without. Looks only at whether the file exists and has a size; never reads what it holds. */
+export function speechKeyHandedIn(dir: string): boolean {
+  const file = secretFile(dir, SPEECH_GUARD, SPEECH_SECRET);
+  return existsSync(file) && statSync(file).size > 0; // size only: the key itself is never read here
 }
 
 /** Move every file in secrets-inbox/<shop>/ to where it belongs and delete it from the inbox. A file that fails its check stays and is named. */

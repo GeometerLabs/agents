@@ -30,6 +30,8 @@ export interface InboxShopConfig {
   /** Item 11c, a Gupshup self-serve shop: its Gupshup app NAME. A callback whose `app` names another app is not forwarded. */
   gupshupAppName?: string;
   verification: "meta-signature" | "path-token";
+  /** B29: the shop has voice on, so a voice note carries where its audio is (modules/messaging/webhooks.ts mediaOf). The bundle writes it only when it places the speech Guards (generate/speech.ts). */
+  voiceMedia?: boolean;
   /** A folder with this shop's secrets: internal_token, relay_token, razorpay_webhook_secret, whatsapp_app_secret + whatsapp_verify_token or whatsapp_path_token (item 11d: and channel_token). */
   secretsDir: string;
   /**
@@ -62,6 +64,7 @@ export function shopHandler(name: string, c: InboxShopConfig, read: (path: strin
     // Several shops can share one Meta app, and so one app secret: a valid signature does not say whose message it is, the phone number does. A Gupshup shop's callbacks
     // name its Gupshup app, which is checked instead (item 11b): the app id is what its Guard allows, and Meta's number id is not something Gupshup shows a partner plainly.
     ...(c.gupshupAppName ? { whatsappAppName: c.gupshupAppName } : c.gupshupAppId ? { whatsappAppId: c.gupshupAppId } : { whatsappPhoneNumberId: c.phoneNumberId }),
+    ...(c.voiceMedia ? { voiceMedia: true } : {}),
     // a shop with no approvals relay (a UPI shop, B33) sends its owner's messages to the runtime only; B37: the other approvers' replies go to the relay too
     ...(c.relayUrl ? { relayUrl: c.relayUrl, relayToken: need("relay_token"), ownerWhatsapp: c.ownerWhatsapp, ...(c.approverWhatsapps && c.approverWhatsapps.length > 0 ? { approverWhatsapps: c.approverWhatsapps } : {}) } : {}),
     log: (line) => log(`[${name}] ${line}`),

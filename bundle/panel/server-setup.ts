@@ -29,7 +29,7 @@ export interface ServerSetupView {
   status?: ServerStatus;
   /** Requests written and not yet taken by the deployer (it looks every few seconds; longer means the deployer is not running). */
   pending: { model?: ServerModelRequest; backup?: ServerBackupRequest };
-  receipts: Partial<Record<"model_key" | "backup_key" | "google_service_account.json", string>>;
+  receipts: Partial<Record<"model_key" | "backup_key" | "google_service_account.json" | "speech_key", string>>;
   backupKey?: { recipient: string; madeAt: string; held: boolean; confirmedAt?: string; own: boolean };
   /** Every step done: a model and its key, the bucket tested, and no secret half left on the server. */
   done: boolean;
@@ -157,6 +157,13 @@ export function createServerSetup(config: PanelConfig, store: Store, now: () => 
       if (!checked.ok || !checked.clientEmail) return { ok: false };
       inbox.put("google_service_account.json", checked.text);
       return { ok: true, clientEmail: checked.clientEmail };
+    },
+
+    /** B29: the speech provider's key, through the write-only inbox (the deployer puts it where only the speech Guard reads it, `geometer speech-key`'s file). */
+    putSpeechKey(text: string): { ok: boolean } {
+      if (!serverKeyShapeOk("speech_key", text)) return { ok: false };
+      inbox.put("speech_key", text.trim());
+      return { ok: true };
     },
 
     /** The backup key's secret half, only while the panel still holds it (before the builder confirms it is elsewhere). */
