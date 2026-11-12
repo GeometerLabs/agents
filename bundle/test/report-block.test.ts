@@ -141,7 +141,8 @@ function keepOldVersion(w: ReturnType<typeof world>, version: string, edit?: (co
   // beside the server): the default edit takes "report" out of the settings that file knows. A test that wants the pathway's own file to fail gives its own edit.
   const config = edit ? join(dir, "server", "config.ts") : join(w.root, "modules", "runtime", "config.ts");
   const before = readFileSync(config, "utf8");
-  const after = (edit ?? ((t: string) => t.replace('"pauseMinutes", "report"]', '"pauseMinutes"]')))(before);
+  // B29 added "speech" after "report"; a version from before the report knew neither
+  const after = (edit ?? ((t: string) => t.replace('"pauseMinutes", "report", "speech"]', '"pauseMinutes"]')))(before);
   assert.notEqual(after, before, "the copy was changed, or this test tests nothing");
   writeFileSync(config, after);
   writeFileSync(join(w.paths.shop("glow-salon"), "pathway.lock"), `bookings@${version}\n`);
