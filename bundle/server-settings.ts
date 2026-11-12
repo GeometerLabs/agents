@@ -20,7 +20,7 @@ import type { Context } from "./deploy.ts";
 import { compose, composeFile, upServer } from "./deploy.ts";
 import { storeFor } from "./backup/snapshot.ts";
 import { loadServer, modelChosen, parseServer } from "./lib/server.ts";
-import { INTAKE, readSecretFile, secretFile, writeModelKey, writeSecretFile, prepareSecretsRoot } from "./lib/secrets.ts";
+import { INTAKE, readSecretFile, secretFile, writeModelKey, writeSecretFile, writeSpeechKey, prepareSecretsRoot } from "./lib/secrets.ts";
 import { loadState, saveState } from "./lib/state.ts";
 import { stableJson, writeAtomic } from "./lib/util.ts";
 import { backupChoiceProblems, modelChoiceProblems, parseBackupRequest, parseModelRequest, parseServerStatus, serverKeyShapeOk, serverSettingsPaths } from "./panel/server-contract.ts";
@@ -119,6 +119,14 @@ export async function applyServerSettings(ctx: Context): Promise<string[]> {
         status.keys.google = { at: nowIso(ctx), clientEmail: (JSON.parse(text) as { client_email: string }).client_email };
         refreshServices = true; // the panel names this address for calendars, and learns it when its container is made again
         say(`The server-wide Google key is in place (${status.keys.google.clientEmail}).`);
+      } else if (name === "speech_key") {
+        // B29: voice notes. The key goes to the speech Guard's folder only; a speech Guard already running reads its key at start, so it is restarted.
+        if (!serverKeyShapeOk("speech_key", text)) { rmSync(file, { force: true }); waiting.push({ name, message: "What was handed in as the speech key is not a key's shape (spaces, line breaks, or too short), so it was not used. Hand it in again." }); continue; }
+        writeSpeechKey(ctx.dir, text.trim());
+        rmSync(file, { force: true });
+        status.keys.speech = { at: nowIso(ctx) };
+        if (state.serviceHashes?.["g-speech"]) await compose(ctx, ["restart", "g-speech"], { timeoutMs: 120_000 });
+        say("The speech provider's key is in place, for the speech Guard only.");
       } else waiting.push({ name: name as ServerSecretName, message: "This is not a key the server takes, so it was left alone." });
     }
   }
