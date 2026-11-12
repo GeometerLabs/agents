@@ -13,6 +13,9 @@ const demo = uiFor("hi");
 
 /** One form for a count of 1, another for the rest (the same helper pattern words.ts uses). */
 const t1 = (n: number, one: string, many: string) => (n === 1 ? one : many);
+/** When the server's Gupshup universal token ends, from the whole hours left: days from a day on, hours under a day, never "0 दिन" (words.ts credentialEnds). */
+const credentialEnds = (hours: number) => hours >= 24 ? `${Math.floor(hours / 24)} दिन में ख़त्म होगा। उससे पहले नया दीजिए`
+  : hours >= 1 ? `${hours} घंटे में ख़त्म होगा। उससे पहले नया दीजिए` : "एक घंटे से कम में ख़त्म होगा, या ख़त्म हो चुका है। अभी नया दीजिए";
 
 export const hi: Words = {
   appName: "Geometer",
@@ -295,7 +298,7 @@ export const hi: Words = {
       refund_made_not_told: (id, amount, _hours, how) => `${id} का ${amount} का रिफंड हो गया है, पर ग्राहक को अभी बताया नहीं गया: ${how}`,
       message_unanswered: (id) => `सेवा का कनेक्शन बंद होने से ${id} का काम पूरा नहीं हुआ: जाँचिए और ग्राहक को जवाब दीजिए`,
       whatsapp_token_renewal: (_id, _amount, hours) => `Gupshup से WhatsApp: इस दुकान का टोकन नया नहीं हो पाया। अभी वाला टोकन ${hours} घंटे में ख़त्म होगा, उसके बाद कोई संदेश नहीं जाएगा। सर्वर देखिए (geometer logs refresher) या Gupshup का नया universal token दीजिए।`,
-      whatsapp_token_credential: (_id, _amount, hours) => `Gupshup से WhatsApp: सर्वर का Gupshup universal token ${Math.floor(hours / 24)} दिन में ख़त्म होगा। उससे पहले नया दीजिए (geometer gupshup-token <file>)।`,
+      whatsapp_token_credential: (_id, _amount, hours) => `Gupshup से WhatsApp: सर्वर का Gupshup universal token ${credentialEnds(hours)} (geometer gupshup-token <file>)।`,
       message_not_delivered: (id) => `${id} के लिए भेजा गया WhatsApp संदेश फ़ोन तक नहीं पहुँचा (WhatsApp ने बताया कि वह विफल रहा): उस व्यक्ति से किसी और तरह संपर्क कीजिए`,
       upi_payment_unconfirmed: (id, amount) => `${id} के लिए ${amount} का UPI पेमेंट मालिक ने अभी पक्का नहीं किया: मालिक से अपना UPI ऐप देखने को कहिए`,
       upi_refund_owed: (id, amount) => `${id} का ${amount} का रिफंड मालिक पर बाकी है और अभी हो गया नहीं लिखा गया: मालिक को याद दिलाइए`,
