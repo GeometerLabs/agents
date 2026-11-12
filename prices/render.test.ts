@@ -4,6 +4,7 @@ import { strict as assert } from "node:assert";
 import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { test } from "node:test";
+import { cardFiles } from "../modules/ask-card/render.ts";
 import { REPO, dayWords, formatRate, listInForce, render, sources, stale } from "./render.ts";
 
 const LIST = listInForce();
@@ -28,13 +29,19 @@ test("a placeholder the list does not have stops the render and names the file a
 
 test("every sell guide in the templates has a source file, and every source renders with the list in force", () => {
   const made = new Set(sources().map((s) => relative(REPO, s).replace(/\.src\.md$/u, ".md")));
+  // The "What to ask the shop for" cards (sell/ask-card.<lang>.md, B72) sit beside the guides but are made by another generator, from
+  // modules/ask-card/list.ts, with their own drift test. They carry no list price, so they need no {{id}} source here; if one ever names a
+  // rupee figure, it must come from the list and this exemption stops it.
+  const cards = cardFiles();
+  for (const c of cards) assert.doesNotMatch(c.text, /₹\s?\d/u, `${c.path} names a rupee figure: a price belongs in a guide's source with {{id}} placeholders`);
+  const byOtherGenerator = new Set(cards.map((c) => c.path));
   const guides: string[] = [];
   for (const domain of readdirSync(join(REPO, "templates"), { withFileTypes: true }).filter((e) => e.isDirectory())) {
     for (const name of readdirSync(join(REPO, "templates", domain.name), { withFileTypes: true }).filter((e) => e.isDirectory())) {
       const sell = join("templates", domain.name, name.name, "sell");
       let files: string[];
       try { files = readdirSync(join(REPO, sell), { recursive: true }) as string[]; } catch { continue; }
-      for (const f of files) if (/(^|\/)(guide|[a-z-]+)\.[a-z]{2}\.md$/u.test(f) && !f.endsWith(".src.md")) guides.push(join(sell, f));
+      for (const f of files) if (/(^|\/)(guide|[a-z-]+)\.[a-z]{2}\.md$/u.test(f) && !f.endsWith(".src.md") && !byOtherGenerator.has(join(sell, f))) guides.push(join(sell, f));
     }
   }
   assert.ok(guides.length >= 16, `${guides.length} guides`);
