@@ -610,6 +610,73 @@ Origin header from another site is refused. "Behind Guard" means what it means f
 goes through the shop's Guard for it. The endpoint is not a Guard itself, and a UPI shop on its own booking list can make a booking that touches no Guard at all: the
 hold, the limits and the owner's mark are then the runtime's.
 
+## Orders and Fees on the page (item 11h, decision 45; 13 Nov 2026)
+
+Item 11d built Bookings' page only. Item 11h gives Orders and Fees their parts of the same page, with the same pattern: nothing on the front decides anything,
+every change is an event the template's own agent runs as a step, and the owner answers from the same private page. The front picks a shop's customer side by its
+template (`front.ts` `FrontShop.kind`, written by the bundle from the shop's pathway): `front-orders.ts` for Orders, `front-fees.ts` for Fees. The owner's page and
+the QR code are every shop's.
+
+| Address | What |
+| --- | --- |
+| `/s/<shop>/` (Orders) | the menu: a day, the items at the shop's own prices with what is left that day, pickup or delivery and the slot, then name and number. Plain HTML, no script |
+| `/s/<shop>/order/<handle>` | an order's own page: where it stands, its lines and total, how to pay the advance (UPI button and QR, or the gateway's link), "I have paid", cancel, the shop's messages |
+| `/s/<shop>/api/v1/...`, `/s/<shop>/mcp` (Orders) | the ordering API and the same five operations as MCP tools (`order-ops.ts`): list the items, start an order, payment instructions, order status, cancel |
+| `/s/<shop>/` (Fees) | the centre's page: who it is, and that fees are paid from each parent's private link. No form: a number typed here opens nothing |
+| `/s/<shop>/f/<link>` | a parent's private page: their students and their fees, how to pay each, "I have paid" |
+| `/s/<shop>/fee/<handle>` | a payment's confirmation page, made by "I have paid" |
+
+**Orders: an exact order through `proceed`.** The page, the API and an assistant send item ids with quantities, a day, the way and a slot, and for a delivery the
+address as typed. No price, total or advance is read from a request: the event has no field for one, and the agent prices every line from the settings. Before
+`proceed`, the agent checks each value against the settings (an item the menu has, the shop's item limit, a day from today to the shop's last day, a slot of that
+way, an address naming a place on the delivery list), because `proceed` would otherwise ask for what is missing and a page cannot answer a question. A request that
+fails is refused with a reason the page words, and nothing is held. Then it is the WhatsApp order's own path: the cut-off, the stock of every item and the day's
+count (worked out from the orders themselves, so two customers for the last one get one hold: the steps run one at a time and the second finds the first's hold),
+the big-order line (the order waits for the owner, nothing held), then the hold and the advance through the gateway's Guard or the owner-marked ledger.
+"Confirmed" comes only when the record holds the whole advance. The order lives in its own conversation (`web:` or `mcp:` and 16 hex digits of its handle's
+hash), its messages are kept for its page (`outbox.ts`), and the owner's messages name the number the customer typed. The limits are Bookings': two unpaid orders
+per number, five starts per number a day, six unpaid page orders per shop (an order waiting for the owner counts too, since each one asks the owner), and the
+front's per-address and per-shop start limits. The delivery address as typed goes to the owner only; the page and the API show its place on the list.
+
+**Fees: a typed number never opens a student's fees.** The parent is known from the centre's settings, so the authority is a private link per parent, not a
+form:
+- **The link.** 24 random bytes (`handle.ts`), the same shape as a handle. The runtime keeps only its SHA-256, with a prefix of its own (`parentLinkHash`, so a
+  handle can never open a parent's page or the other way round), in the saved state by the parent's number (`due.ts` `parentLinks`). One per parent: a new link
+  replaces the old, which then opens nothing. Because it is in the saved state, it survives a restart and a handover (the state moves with the shop; the owner's
+  panel-made link, which lives in the client folder, does not).
+- **How a parent gets it.** In the fee reminder: when the centre has a page (its pages file), the three reminders become `fee_reminder_page`, `fee_overdue_page` and
+  `fee_overdue_late_page`, the same words with one more line, "see your children's fees on your private page: <link>. Please do not share it." Each is a WhatsApp
+  template of its own (Meta's are not submitted yet, so the wording costs nothing to change). And by the owner's "Send a new link" on their page, which sends
+  `fee_page_link`. A link is saved as the parent's only when the message carrying it was accepted, so a reminder that did not go keeps the old link working.
+- **Not a new link with every reminder.** The runtime remembers, in its process memory only, the links it made (`linkMemory`), and a reminder sends the same link
+  while its hash is still the saved one. A parent with two children gets one link in both reminders (made once in the step). After a restart the next reminder makes
+  a new link (Deferred.md says why, and what would change it).
+- **Checked at the runtime, twice.** The front sends only the link's hash. The runtime answers a page for the parent whose saved hash it is now, and a press on the
+  page carries the hash again, which the agent checks in the step: a link replaced or switched off since the page was drawn does nothing, and the fee must be that
+  parent's own. Wrong links count as guesses at the front.
+- **What a press does.** "Show how to pay" makes the request for what is owed (the same `currentLink` a reminder uses; the owner is told what to look for, with the
+  code). "I have paid" is the WhatsApp claim: the owner is asked to look (at most once an hour), nothing is marked paid. Neither sends the parent a WhatsApp message:
+  the page is the answer. The receipt still goes on WhatsApp when the owner's mark settles the fee, as it always did.
+- **The confirmation page.** "I have paid" makes a handle (from the page's nonce, so a double tap is one press) whose hash is saved with the fee and the parent. Its
+  page says "confirmed" only when the record shows the fee paid (the payments service's own list, or the owner's mark on a UPI centre); "waiting" before, "part" when
+  some is recorded. It survives a new link (it is the parent's own record of that payment); switching the link off removes the confirmation pages made through it.
+- **No API or MCP for fees.** An assistant has no way to be given a parent's link, and nothing else may find fees.
+
+**What a leaked parent link can do.** Whoever holds it sees that parent's children's fees, can ask for the payment details, and can say "I have paid", which only
+asks the owner to look. It cannot mark anything paid, change an amount, see another parent's children, or reach a booking or an order. The owner switches it off from
+their page, and a new one replaces it.
+
+**The owner's page and "what needs me" are one list.** Each template's `channel.ts ownerItems` is what the owner's page shows, what the owner's press is checked
+against (by its digest), and what the assistant's skill reads for "what needs me", the morning line's count and the mood, as Bookings' was in the integration of items
+11d and 11e. Orders: an advance to mark received (UPI), a refund the owner owes, a big order to accept or refuse, a late cancellation's refund. Fees: a payment a
+parent says they made (a UPI centre, from the claim until the owner marks it or the fee is settled), a refund the owner owes, a waiver or a refund a parent asked
+for; and the parents with their links. An open fee nobody has claimed is not on the list: it waits for the parent, and a centre of forty students would otherwise
+have forty items every month. A press does exactly what the owner's reply on WhatsApp does: the UPI mark's button with its one-use code, or "approve o-3" / "approve
+q-3" and the like.
+
+**The bundle.** Every pathway's shop now has a page (`generate/configs.ts` writes `channel` with its `kind` for Bookings, Orders and Fees; every runtime already had
+a channel token). The pages domain's `robots.txt` also keeps parents' pages, payments' and orders' pages out of search.
+
 ## The shop's assistant (item 11e, decision 43; 12 Nov 2026)
 
 Decision 43: a shop gets **one assistant, not a set of agent templates**. Bookings, Fees and Orders become its skills; the owner talks to the assistant by text or voice note

@@ -64,9 +64,20 @@ node templates/education/fees/approvals/main.ts    # the approvals relay: asks t
 - A message for each thing that needs them: an approval, a parent who says they paid with nothing on record, a payment link that could not be made, a message held back, a parent who sent STOP, a parent who asked to talk.
 - **The monthly report**, on WhatsApp on the 1st from 09:00, once: collected, still to collect, given back, reminders sent, what was taken off, what the owner was asked, approved and refused, what the limits stopped, and what was not checked. A page behind a link has the whole report, signed, in the owner's language (see The monthly report).
 
+## A parent's private page (item 11h)
+
+A typed phone number never opens a student's fees. When the centre has a page (its pages file), each fee reminder carries the parent's own private link
+(`https://<the centre's page>/f/<link>`, "please do not share it"): it opens only that parent's children's fees, with the amounts and due dates, how to pay each (UPI, or
+the gateway's link), "I have paid", and what the centre's record shows. One link per parent, random, kept by the runtime as a hash only, in the saved state, so it
+survives a restart and a handover; the same link goes in later reminders while the runtime runs, and a new one replaces the old. The owner can send a parent a new link
+or switch one off from their own page. "I have paid" asks the owner to look (nothing is marked paid) and gives the parent a confirmation page that says "confirmed" only
+when the record shows the fee paid. The centre's own page (`/s/<shop>/`) only says where the link comes from; there is no API or MCP for fees. The owner's page lists a
+fee a parent says they paid (a UPI centre), a refund owed, a waiver or a refund a parent asked for, and the parents with their links; "what needs me" lists the same.
+How it works: [modules/Explanation.md](../../../modules/Explanation.md), "Orders and Fees on the page". Tests: `test/channels.test.ts`, `test/page-link.test.ts`.
+
 ## The shop's assistant (item 11e)
 
-With an `"assistant": {}` block in the settings, the owner can also write in their own words, in four languages, and the assistant answers in text: "who owes fees", "what needs me" (a waiver or a refund request comes as a card), "message f-3 The class moves to 5 pm".
+With an `"assistant": {}` block in the settings, the owner can also write in their own words, in four languages, and the assistant answers in text: "who owes fees", "what needs me" (a payment a parent says they made, a refund owed, a waiver or a refund request comes as a card), "message f-3 The class moves to 5 pm".
 Anything that moves money, and a message to a customer, comes back as a card with the exact change, done only by a tap; a card's yes on something waiting is the owner's
 own fixed reply (`approve`/`deny`), which keeps working as before. Cancelling or refunding from the chat is not in the first release. A short morning line goes to the owner
 from 08:00. How it works: [modules/Explanation.md](../../../modules/Explanation.md#the-shops-assistant-item-11e-decision-43-12-nov-2026).
@@ -122,7 +133,8 @@ The limits are pure functions (`src/limits.ts`) so Guard can run the same ones. 
 | Path | What |
 | --- | --- |
 | `src/agent.ts` | The agent: one event in (a message, a payment event, an approvals answer, a tick), done, back |
-| `src/due.ts` | A student's fee for a month as a state machine (open, paid, closed), and the conversation store |
+| `src/due.ts` | A student's fee for a month as a state machine (open, paid, closed), and the conversation store (with each parent's link as a hash, item 11h) |
+| `src/channel.ts` | Item 11h: what the centre's page, a parent's private page, a confirmation page and the owner's page read |
 | `src/limits.ts`, `src/guard-limits.ts` | The pure limits; the Guard spec made from the settings |
 | `src/settings.ts` | The settings and their checks |
 | `src/language/` | The templates in four languages, the buttons, the Meta template list, the outgoing check's facts |
@@ -138,7 +150,7 @@ The limits are pure functions (`src/limits.ts`) so Guard can run the same ones. 
 | `scripts/` | Hand check, walkthrough, report example, review sheet, Guard spec, Meta template list, local stack, go-live certificate, client report |
 | `settings/` | Three example centres: UPI (the template's example), and two Razorpay |
 | `sell/` | The sell guide and the owner's one-page sheet, in four languages |
-| `whatsapp-templates.json` | The list to submit to Meta: 15 fee and owner templates and the 2 report templates, each in four languages (68 entries) |
+| `whatsapp-templates.json` | The list to submit to Meta: the fee and owner templates (with item 11h's three reminders that carry the parent's private link, and the new-link message) and the report templates, each in four languages |
 | `test/` | The tests |
 
 ## What is not done yet
