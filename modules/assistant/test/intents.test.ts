@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { OWNER_KINDS, amountOf, ownerReading, readOwnerRules } from "../intents.ts";
 import type { OwnerContext, OwnerIntent } from "../intents.ts";
-import { ownerRouter } from "../reading.ts";
+import { ownerRouter } from "../understanding.ts";
 import type { SystemOne } from "../../understanding/system-one.ts";
 import type { ModelParser } from "../../understanding/model-llm.ts";
 
