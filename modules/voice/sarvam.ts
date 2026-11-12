@@ -38,6 +38,8 @@ export interface SarvamConfig {
   /** Default "shubh", the documented default voice of bulbul:v3. The voice must belong to the model. */
   speaker?: string;
   timeoutMs?: number;
+  /** The audio format asked for: "mp3" (default, plays as a plain audio message) or "wav" (when an Ogg Opus encoder follows, encode.ts). */
+  codec?: "mp3" | "wav";
   /** For tests: the wire to use instead of a real one. */
   wire?: Wire;
 }
@@ -46,6 +48,7 @@ export function createSarvam(config: SarvamConfig): SpeechProvider {
   const sttModel = config.sttModel ?? "saaras:v4";
   const ttsModel = config.ttsModel ?? "bulbul:v3";
   const speaker = config.speaker ?? "shubh";
+  const codec = config.codec ?? "mp3";
   const wire = config.wire ?? createWire(config.baseUrl, "Sarvam", config.timeoutMs ?? 8_000, config.agentToken);
 
   return {
@@ -72,12 +75,12 @@ export function createSarvam(config: SarvamConfig): SpeechProvider {
 
     async synthesize(text: string, language: Language): Promise<Spoken> {
       const reply = await wire.request("POST", SARVAM_ROUTES.speak, {
-        json: { text, language_code: SARVAM_CODE[language], model: ttsModel, speaker, speech_sample_rate: 22050, output_audio_codec: "mp3" },
+        json: { text, language_code: SARVAM_CODE[language], model: ttsModel, speaker, speech_sample_rate: 22050, output_audio_codec: codec },
       });
       const audios = isObject(reply.json) && Array.isArray(reply.json.audios) ? reply.json.audios : [];
       const first = typeof audios[0] === "string" ? audios[0] : undefined;
       if (reply.status < 200 || reply.status >= 300 || !first) throw new ApiError(reply.status, `Sarvam gave no audio for the reply (${reply.status}).`);
-      return { audio: { bytes: new Uint8Array(Buffer.from(first, "base64")), mime: "audio/mpeg" }, characters: text.length };
+      return { audio: { bytes: new Uint8Array(Buffer.from(first, "base64")), mime: codec === "wav" ? "audio/wav" : "audio/mpeg" }, characters: text.length };
     },
   };
 }

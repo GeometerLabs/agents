@@ -121,7 +121,7 @@ export function imageProblem(image: ImageMessage): string | null {
  * because every provider here takes a link for media (Gupshup documents no upload), and a link keeps the call one JSON body through the WhatsApp Guard.
  * `text` is the words it says, kept for the record and the outgoing check; the same words always go as text too.
  */
-export interface AudioMessage { link: string; text: string }
+export interface AudioMessage { link: string; text: string; /** True for Ogg Opus: WhatsApp then shows the voice-note bubble (Meta's `voice: true`). Never set for MP3. */ voice?: true }
 
 /** Why a spoken reply cannot be sent, in plain words, or null. */
 export function audioProblem(audio: AudioMessage): string | null {

@@ -16,6 +16,7 @@ import type { MediaRef, MediaSource } from "./media.ts";
 import { lowConfidence, sttCostMicroInr, ttsCostMicroInr } from "./speech.ts";
 import type { SpeechProvider, SpeechRate } from "./speech.ts";
 import type { AudioHost } from "./links.ts";
+import type { Encoder } from "./encode.ts";
 
 export type NotHeard = "failed" | "too_long" | "unreadable" | "low_confidence" | "daily_cap";
 
@@ -24,10 +25,15 @@ export type Heard =
   /** `costMicroInr` is what was already spent on a note that still could not be used (a call was made); 0 when no call was. */
   | { ok: false; reason: NotHeard; costMicroInr: number; provider: string; model: string; seconds?: number };
 
-export interface Spoke { link: string; characters: number; costMicroInr: number; provider: string; model: string }
+export interface Spoke { /** True when the audio is Ogg Opus, so WhatsApp can show it as a voice-note bubble (`voice: true`). */ voice: boolean; link: string; characters: number; costMicroInr: number; provider: string; model: string }
 
 export interface VoiceService {
-  hear(ref: MediaRef): Promise<Heard>;
+  /**
+   * Listen to a note. `notesToday` is how many notes the shop has already listened to today, read by the caller from the shop's SAVED state (so the day's limit survives a
+   * restart); at the limit nothing is asked of the provider. The same note (same media id or address) asked twice within half an hour gets the first answer again with
+   * no call: a step that runs again after a Guard wait must not pay twice.
+   */
+  hear(ref: MediaRef, o?: { notesToday?: number }): Promise<Heard>;
   /** The words as audio at an https address, or null (not in this language, nothing to say, too long a failure, or the host could not serve it). Never throws. */
   speak(text: string, language: Language): Promise<Spoke | null>;
   /** Whether replies go as voice notes too (the shop can turn this off and keep listening). */
@@ -42,9 +48,11 @@ export interface VoiceDeps {
   languages: readonly Language[];
   clock: Clock;
   repliesOn: boolean;
+  /** Optional Ogg Opus encoder (encode.ts). With it the provider is asked for WAV and the reply is encoded; without, the reply stays as the provider made it (MP3). */
+  encoder?: Encoder;
   /** Longest voice note to listen to; Sarvam's plain endpoint is for under 30 seconds. */
   maxSeconds?: number;
-  /** Voice notes listened to in a day (UTC); default 200. */
+  /** Voice notes listened to in a day (the shop's local day); default 200. The count is kept in the shop's saved state (ai-state.ts addSpeech), not here. */
   notesPerDay?: number;
   /** Characters of one spoken reply; default 400, and never above what the provider takes. */
   replyCharacters?: number;
@@ -73,42 +81,60 @@ export function createVoice(deps: VoiceDeps): VoiceService {
   const maxSeconds = deps.maxSeconds ?? DEFAULT_MAX_SECONDS;
   const perDay = deps.notesPerDay ?? DEFAULT_NOTES_PER_DAY;
   const limit = Math.min(deps.replyCharacters ?? DEFAULT_REPLY_CHARACTERS, provider.maxCharacters);
-  let day = "";
-  let today = 0;
+  // Answers already given, for a step that runs again: keyed by the note's media id or address, kept half an hour (a spoken reply 8 minutes, because its file is deleted after 10), at most 200. A "failed" fetch is not kept (it may be
+  // transient and made no charge); every other answer is, with its cost, so the surviving run counts the money once.
+  const heardBefore = new Map<string, { at: number; heard: Heard }>();
+  const spokeBefore = new Map<string, { at: number; spoke: Spoke }>();
+  const keep = <T>(m: Map<string, { at: number; heard?: Heard; spoke?: Spoke } & T>, k: string, v: { at: number } & T) => { m.set(k, v); if (m.size > 200) m.delete(m.keys().next().value as string); };
+  const fresh = (at: number) => deps.clock.now() - at < 30 * 60_000;
   const no = (reason: NotHeard, extra: { costMicroInr?: number; seconds?: number } = {}): Heard =>
     ({ ok: false, reason, costMicroInr: extra.costMicroInr ?? 0, provider: provider.name, model: provider.sttModel, ...(extra.seconds !== undefined ? { seconds: extra.seconds } : {}) });
+
+  /** Keep an answer for a rerun, and hand it back. */
+  const remember = (memo: string, heard: Heard): Heard => { if (memo) keep(heardBefore as never, memo, { at: deps.clock.now(), heard } as never); return heard; };
 
   return {
     repliesOn: deps.repliesOn,
 
-    async hear(ref) {
-      const d = new Date(deps.clock.now()).toISOString().slice(0, 10);
-      if (d !== day) { day = d; today = 0; }
-      if (today >= perDay) return no("daily_cap");
+    async hear(ref, o = {}) {
+      const memo = ref.id ?? ref.url ?? "";
+      const before = memo ? heardBefore.get(memo) : undefined;
+      if (before && fresh(before.at)) return before.heard;
+      if ((o.notesToday ?? 0) >= perDay) return no("daily_cap");
       let audio;
       try { audio = await fetchAudio(deps.media, ref); } catch (e) { deps.log?.(`A voice note could not be fetched (${(e as Error).message}).`); return no("failed"); }
       // The length is read from the audio itself: it is needed for the limit and for the cost, and nothing else gives it. A file with no readable length is not sent on.
       const seconds = oggOpusSeconds(audio.bytes);
       if (seconds === null) return no("unreadable");
-      if (seconds > maxSeconds) return no("too_long", { seconds });
-      today += 1; // counted when a call is about to be made, so a failing provider cannot be hammered either
+      if (seconds > maxSeconds) return remember(memo, no("too_long", { seconds }));
       let transcript;
       try { transcript = await provider.transcribe(audio, deps.languages); }
       catch (e) { deps.log?.(`A voice note could not be transcribed (${(e as Error).message}).`); return no("failed", { seconds }); }
       const cost = sttCostMicroInr(deps.rate, seconds);
-      if (lowConfidence(transcript)) return no("low_confidence", { costMicroInr: cost, seconds });
-      return { ok: true, text: transcript.text, language: transcript.language!, seconds, costMicroInr: cost, provider: provider.name, model: provider.sttModel, confidence: transcript.confidence };
+      if (lowConfidence(transcript)) return remember(memo, no("low_confidence", { costMicroInr: cost, seconds }));
+      return remember(memo, { ok: true, text: transcript.text, language: transcript.language!, seconds, costMicroInr: cost, provider: provider.name, model: provider.sttModel, confidence: transcript.confidence });
     },
 
     async speak(text, language) {
       if (!deps.repliesOn || !provider.speaks.includes(language)) return null;
       const words = spokenForm(text, limit);
       if (words === "") return null;
+      const again = spokeBefore.get(`${language}|${words}`);
+      if (again && deps.clock.now() - again.at < 8 * 60_000) return again.spoke; // the same words in the same language within 8 minutes (the file lives 10): a rerun; the cost is counted again, never missed
       try {
         const spoken = await provider.synthesize(words, language);
-        const link = await deps.host(spoken.audio);
+        let audio = spoken.audio;
+        let voice = false;
+        if (deps.encoder) {
+          const ogg = await deps.encoder(audio);
+          if (!ogg) { deps.log?.("The spoken reply could not be encoded as Ogg Opus; the words went as text."); return null; } // a WAV is not an audio type WhatsApp plays
+          audio = ogg; voice = true;
+        }
+        const link = await deps.host(audio);
         if (!link) return null;
-        return { link, characters: spoken.characters, costMicroInr: ttsCostMicroInr(deps.rate, spoken.characters), provider: provider.name, model: provider.ttsModel };
+        const spoke: Spoke = { voice, link, characters: spoken.characters, costMicroInr: ttsCostMicroInr(deps.rate, spoken.characters), provider: provider.name, model: provider.ttsModel };
+        keep(spokeBefore as never, `${language}|${words}`, { at: deps.clock.now(), spoke } as never);
+        return spoke;
       } catch (e) {
         deps.log?.(`A spoken reply could not be made (${(e as Error).message}); the words went as text.`);
         return null;

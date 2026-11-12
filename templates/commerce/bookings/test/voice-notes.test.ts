@@ -85,7 +85,7 @@ test("the cost is in the month's AI spend and in the cost meter's model spend, o
 test("a note that cannot be made out gets the existing line, in text only, and the call that was made is still counted", async () => {
   const { w, speech } = voiceWorld({ transcript: { text: "", language: "hi", confidence: 0.2 } });
   await sendNote(w);
-  assert.deepEqual(w.messaging.sentTo(CUSTOMER).map((m) => [m.kind, m.text]), [["text", TEMPLATES.hi.voice_note({} as never)]]);
+  assert.deepEqual(w.messaging.sentTo(CUSTOMER).map((m) => [m.kind, m.text]), [["text", TEMPLATES.hi.voice_note_retry({} as never)]]);
   assert.deepEqual(speech.calls.map((c) => c.kind), ["transcribe"]);
   const entry = w.record.entries().find((e) => e.action === "receive_message")!;
   assert.equal(entry.refs!.voice, "low_confidence");
@@ -111,7 +111,7 @@ test("no call to the speech provider when it must not be made: the owner, STOP, 
   const c = voiceWorld({ ai: { override: () => "buttons" } });
   await sendNote(c.w);
   assert.equal(c.speech.calls.length, 0);
-  assert.equal(c.w.messaging.sentTo(CUSTOMER).filter((m) => m.kind === "text").map((m) => m.text)[0], TEMPLATES.hi.voice_note({} as never));
+  assert.equal(c.w.messaging.sentTo(CUSTOMER).filter((m) => m.kind === "text").map((m) => m.text)[0], TEMPLATES.hi.voice_note_retry({} as never));
   const d = voiceWorld({ ai: { model: () => "off" } });
   await sendNote(d.w);
   assert.equal(d.speech.calls.length, 0);

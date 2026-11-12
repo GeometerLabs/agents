@@ -76,7 +76,9 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
 import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
-import type { Heard, NotHeard, VoiceService } from "../../../../modules/voice/voice.ts";
+import type { Heard, VoiceService } from "../../../../modules/voice/voice.ts";
+import { VOICE_WHY, createListener, failedMarks, voiceMarks } from "../../../../modules/voice/turn.ts";
+import type { HeardOk } from "../../../../modules/voice/turn.ts";
 
 export interface AgentDeps {
   settings: Settings;
@@ -1200,35 +1202,16 @@ export function createAgent(deps: AgentDeps): Agent {
     const why = tried && !tried.ok ? tried : undefined;
     log(null, phone, "receive_message", "confirmed", { voiceNote: true, id: msg.id }, {
       notes: why ? `a voice note that could not be used (${VOICE_WHY[why.reason]}); the audio was held in memory for the call only and nothing of it is kept` : "a voice note: it is not listened to and nothing of it is kept",
-      refs: { messageId: msg.id, ...(why ? { voice: why.reason, ...(why.costMicroInr > 0 ? { step: "rules", provider: why.provider, model: why.model, inputTokens: "0", outputTokens: "0", costMicroInr: String(why.costMicroInr), ...(why.seconds !== undefined ? { speechSeconds: why.seconds.toFixed(1) } : {}) } : {}) } : {}) },
+      refs: { messageId: msg.id, ...(why ? failedMarks(why) : {}) },
     });
     if (customer.optedOut) return; // STOP means STOP: nothing goes to them, even if they write again
-    await tellCustomer(null, phone, ["voice_note"], { action: "voice_note_reply" });
+    await tellCustomer(null, phone, [deps.voice ? "voice_note_retry" : "voice_note"], { action: "voice_note_reply" }); // B29: where voice is on the line says it could not be made out; where it is off, that voice notes cannot be listened to
   }
 
   // ---- events ------------------------------------------------------------------------------------------------------
 
-  /** Why a voice note was not used, in the record's words (B29). */
-  const VOICE_WHY: Record<NotHeard, string> = {
-    failed: "it could not be fetched or the speech provider did not answer", too_long: "it is longer than the limit for voice notes", unreadable: "it is not a recording whose length could be read",
-    low_confidence: "the provider could not make out words it was sure of", daily_cap: "the day's limit for voice notes is reached",
-  };
-
-  /**
-   * B29: listen to a customer's voice note. Returns what was heard, or the reason it was not (the caller then sends the line asking to type). Nothing is asked of the speech
-   * provider when it must not be: no voice on for this shop, the owner or another approver (their messages are commands, typed), a customer who sent STOP, or a shop out of
-   * its AI allowance (button mode, or the AI cap). The cost of a call that was made is counted in the month's AI spend whether or not the note could be used.
-   */
-  async function listen(msg: InboundMessage): Promise<Heard | null> {
-    const voice = deps.voice;
-    if (!voice || !msg.media || msg.from === owner || approverDigits.has(msg.from.replace(/\D/gu, "")) || customerOf(msg.from).optedOut || !reader.voiceAllowed()) return null;
-    const heard = await voice.hear(msg.media);
-    if (heard.costMicroInr > 0) reader.countSpeech("notes", heard.costMicroInr);
-    return heard;
-  }
-
-  /** The record's marks for a message that came by voice: which provider and models listened, for how long, and the cost (a string, as the record's refs are). */
-  const voiceMarks = (h: Extract<Heard, { ok: true }>): Record<string, string> => ({ via: "voice", speechProvider: h.provider, speechModel: h.model, speechSeconds: h.seconds.toFixed(1), speechMicroInr: String(h.costMicroInr) });
+  // B29: listening, shared by every template (modules/voice/turn.ts). The owner and the other approvers' messages are commands and are typed.
+  const listen = createListener({ voice: deps.voice, reader, isCommander: (phone) => phone === owner || approverDigits.has(phone.replace(/\D/gu, "")), optedOut: (phone) => customerOf(phone).optedOut });
 
   async function onMessage(original: InboundMessage): Promise<void> {
     let msg = original;
@@ -1240,7 +1223,7 @@ export function createAgent(deps: AgentDeps): Agent {
     // B37: another approver's "approve K7M2QX" is the approvals relay's (the inbox gives it a copy): no reply and no record here, as for the owner's
     if (approverDigits.has(msg.from.replace(/\D/gu, "")) && RELAY_CODE_REPLY.test(msg.text)) return;
     // B29: a voice note is turned into the words it says and then read exactly like a typed message (rules first, then the models, then the same limits and checks).
-    let voiceHeard: Extract<Heard, { ok: true }> | undefined;
+    let voiceHeard: HeardOk | undefined;
     if (msg.voiceNote) {
       const heard = await listen(msg);
       if (!heard?.ok) return onVoiceNote(msg, heard ?? undefined);

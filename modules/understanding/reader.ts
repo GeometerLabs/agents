@@ -8,7 +8,7 @@ import type { Language } from "../language/languages.ts";
 import type { Clock } from "../core/clock.ts";
 import { MINUTE } from "../core/time.ts";
 import type { Action, Outcome } from "../record/record.ts";
-import { DEFAULT_BREAKER, DEFAULT_PAUSE_MINUTES, addSpeech, dayLocal, modeOf, noteStep, pausedSteps, stateFor, takeAnnouncements } from "./ai-state.ts";
+import { DEFAULT_BREAKER, DEFAULT_PAUSE_MINUTES, addSpeech, dayLocal, speechNotesToday, modeOf, noteStep, pausedSteps, stateFor, takeAnnouncements } from "./ai-state.ts";
 import type { AiPolicy, AiStore, ButtonReason } from "./ai-state.ts";
 import { RULES } from "./model.ts";
 import type { IntentBase, IntentParser, ParseOptionsBase, Step, Understood } from "./model.ts";
@@ -151,6 +151,9 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
    */
   const voiceAllowed = (): boolean => !mode().buttons && policy.model?.() !== "off";
 
-  return { readIntent, understandingRefs, countUnderstood, countSpeech, voiceAllowed, mode, announceButtonMode };
+  /** Voice notes listened to today, from the saved state. */
+  const notesToday = (): number => speechNotesToday(store, clock.now(), timeZone);
+
+  return { readIntent, understandingRefs, countUnderstood, countSpeech, voiceAllowed, notesToday, mode, announceButtonMode };
 }
 

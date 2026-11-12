@@ -74,7 +74,7 @@ export type TemplateId =
   | "quote_and_link" | "already_waiting" | "link_failed" | "order_confirmed" | "hold_expired" | "stock_gone_refund" | "cutoff_passed_refund" | "refund_unused"
   | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending" | "cancelled_late" | "cancelled_no_advance" | "cancelled_draft" | "no_order_found"
   | "refund_approved" | "refund_denied" | "refund_checking" | "refund_confirmed" | "refund_expired" | "big_order_asked" | "big_order_denied"
-  | "didnt_understand" | "voice_note" | "ask_cancel" | "kept" | "told_owner" | "couldnt_tell_owner"
+  | "didnt_understand" | "voice_note" | "voice_note_retry" | "ask_cancel" | "kept" | "told_owner" | "couldnt_tell_owner"
   // to the owner. Every line starts and ends with fixed words, because each one that goes out unasked is also a WhatsApp template (meta-templates.ts) and Meta rejects a body
   // that starts or ends with a value. The one exception is the reply to the owner's own message, which needs no template.
   | "owner_order_confirmed" | "owner_delivery_confirmed" | "owner_big_order" | "owner_order_cancelled" | "owner_late_cancellation" | "owner_duplicate_payment" | "owner_payment_unused" | "owner_link_failed"
@@ -206,6 +206,7 @@ const en: BaseSet = {
   big_order_denied: (f) => `Sorry, the owner cannot take your order for ${day(f)}. Nothing was charged.`,
   didnt_understand: () => "Sorry, I didn't understand. Please tell me what you would like to order, how many, and which day.",
   voice_note: () => "Please type your message; I can't listen to voice notes yet.",
+  voice_note_retry: () => "I couldn't make out that voice note. Please type your message instead.",
   ask_cancel: (f) => `Do you want to cancel your order for ${when(f)}?`,
   kept: (f) => `Okay, your order for ${when(f)} stays as it is.`,
   told_owner: () => "I've told the owner that you would like to talk. They will message you here.",
@@ -282,6 +283,7 @@ const hi: BaseSet = {
   big_order_denied: (f) => `माफ़ कीजिए, मालिक ${day(f)} का आपका ऑर्डर नहीं ले पाएँगे। कोई शुल्क नहीं लिया गया।`,
   didnt_understand: () => "माफ़ कीजिए, मैं समझ नहीं पाया। कृपया बताइए क्या ऑर्डर करना है, कितना और किस दिन।",
   voice_note: () => "कृपया अपना संदेश लिखकर भेजिए; मैं अभी वॉइस नोट नहीं सुन सकता।",
+  voice_note_retry: () => "मैं यह वॉइस नोट समझ नहीं पाया। कृपया अपना संदेश लिखकर भेजिए।",
   ask_cancel: (f) => `क्या आप ${when(f)} का अपना ऑर्डर रद्द करना चाहते हैं?`,
   kept: (f) => `ठीक है, ${when(f)} का आपका ऑर्डर जैसा है वैसा ही रहेगा।`,
   told_owner: () => "मैंने मालिक को बता दिया है कि आप बात करना चाहते हैं। वे यहीं आपको संदेश भेजेंगे।",
@@ -358,6 +360,7 @@ const ml: BaseSet = {
   big_order_denied: (f) => `ക്ഷമിക്കണം, ${day(f)}-ലെ നിങ്ങളുടെ ഓർഡർ ഉടമയ്ക്ക് എടുക്കാൻ കഴിയില്ല. പണം ഒന്നും ഈടാക്കിയിട്ടില്ല.`,
   didnt_understand: () => "ക്ഷമിക്കണം, എനിക്ക് മനസ്സിലായില്ല. ദയവായി എന്താണ് ഓർഡർ ചെയ്യേണ്ടത്, എത്ര, ഏത് ദിവസം എന്ന് പറയൂ.",
   voice_note: () => "ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ; എനിക്ക് ഇപ്പോൾ വോയ്‌സ് നോട്ടുകൾ കേൾക്കാൻ കഴിയില്ല.",
+  voice_note_retry: () => "ആ വോയ്‌സ് നോട്ട് എനിക്ക് മനസ്സിലായില്ല. ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ.",
   ask_cancel: (f) => `${when(f)}-ലെ നിങ്ങളുടെ ഓർഡർ റദ്ദാക്കണോ?`,
   kept: (f) => `ശരി, ${when(f)}-ലെ നിങ്ങളുടെ ഓർഡർ അതുപോലെ തന്നെ തുടരും.`,
   told_owner: () => "നിങ്ങൾക്ക് സംസാരിക്കണമെന്ന് ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. അവർ ഇവിടെ തന്നെ നിങ്ങൾക്ക് സന്ദേശം അയയ്ക്കും.",
@@ -434,6 +437,7 @@ const kn: BaseSet = {
   big_order_denied: (f) => `ಕ್ಷಮಿಸಿ, ${day(f)} ರ ನಿಮ್ಮ ಆರ್ಡರ್ ಅನ್ನು ಮಾಲೀಕರು ತೆಗೆದುಕೊಳ್ಳಲು ಆಗುವುದಿಲ್ಲ. ಯಾವುದೇ ಹಣ ಪಡೆದಿಲ್ಲ.`,
   didnt_understand: () => "ಕ್ಷಮಿಸಿ, ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಏನು ಆರ್ಡರ್ ಮಾಡಬೇಕು, ಎಷ್ಟು, ಯಾವ ದಿನ ತಿಳಿಸಿ.",
   voice_note: () => "ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ; ನನಗೆ ಈಗ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ.",
+  voice_note_retry: () => "ಆ ವಾಯ್ಸ್ ನೋಟ್ ನನಗೆ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ.",
   ask_cancel: (f) => `${when(f)} ರ ನಿಮ್ಮ ಆರ್ಡರ್ ರದ್ದು ಮಾಡಬೇಕೇ?`,
   kept: (f) => `ಸರಿ, ${when(f)} ರ ನಿಮ್ಮ ಆರ್ಡರ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ.`,
   told_owner: () => "ನೀವು ಮಾತನಾಡಲು ಬಯಸುತ್ತೀರಿ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಅವರು ಇಲ್ಲಿಯೇ ನಿಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತಾರೆ.",

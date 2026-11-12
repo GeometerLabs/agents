@@ -92,6 +92,8 @@ export interface World {
 }
 
 export interface WorldOptions {
+  /** B29: voice notes (modules/voice, usually the stand-ins in modules/voice/standin.ts). Left out: voice is off. */
+  voice?: import("../../../../modules/voice/voice.ts").VoiceService;
   settings?: Settings;
   /** The moment the world starts; default Mon 9 Nov 2026, 10:00 in India: today's lunch slot has closed (09:00), today's dinner slot has not (15:00). */
   nowMs?: number;
@@ -120,7 +122,7 @@ export function createWorld(options: WorldOptions = {}): World {
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
   const store = createStore();
-  const agent = createAgent({ settings, clock, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}) });
+  const agent = createAgent({ settings, clock, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}) });
   let deliveredEvents = 0;
   const CUSTOMER = AMIT;
 

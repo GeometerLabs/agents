@@ -111,9 +111,9 @@ export function imageBody(to: string, image: ImageMessage): Json {
   return { messaging_product: "whatsapp", recipient_type: "individual", to, type: "image", image: { link: image.link, ...(image.caption ? { caption: image.caption } : {}) } };
 }
 
-/** The wire body for a spoken reply sent by its address (an audio message: `link`, no `voice` flag, because the reply is MP3 and a voice-message bubble needs Ogg Opus). */
+/** The wire body for a spoken reply sent by its address (an audio message: `link`, plus `voice: true` only for an Ogg Opus reply, which is what WhatsApp needs to show the voice-note bubble; an MP3 reply goes without it). */
 export function audioBody(to: string, audio: AudioMessage): Json {
-  return { messaging_product: "whatsapp", recipient_type: "individual", to, type: "audio", audio: { link: audio.link } };
+  return { messaging_product: "whatsapp", recipient_type: "individual", to, type: "audio", audio: { link: audio.link, ...(audio.voice ? { voice: true } : {}) } };
 }
 
 /** Meta's Cloud API, direct (or through Meta's own test number): the default provider. */

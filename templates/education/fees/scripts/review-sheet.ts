@@ -57,6 +57,7 @@ const WHEN: Record<TemplateId, string> = {
   fee_couldnt_tell_owner: "The parent tapped Talk to the owner, but the owner could not be told just now: they are told so, not that the owner will write",
   fee_wait_over: "The shop's system did not answer for 15 minutes from the message (a Guard was down) and the request was not finished: the customer is told so, that the message is on the owner's to-do list, and to write again later or contact the shop. Nothing else is promised",
   voice_note: "The parent sent a voice note (or an audio file): it cannot be listened to yet, so they are asked to type instead",
+  voice_note_retry: "The parent sent a voice note and the shop has voice on, but it could not be made out (too long, unclear, or the day's limit): they are asked to type instead",
   owner_waiver_request: "A waiver above the agent's limit waits for the owner: approve or deny, with the request's reference",
   owner_waiver_applied: "A waiver within the limit was done on the agent's own; the owner is told",
   owner_refund_request: "A parent asked for a refund within the limit: the owner decides, with the request's reference",
