@@ -75,7 +75,7 @@ test("a web customer's messages are kept for their page and read back from there
   assert.equal(state.outbox.filter((x) => x.to === web).length, 20, "a conversation keeps its latest 20");
 });
 
-test("old words and numbers of finished conversations go with the retention; a booking still going keeps its number", () => {
+test("old words, refused requests and finished ones go with the retention; a booking still going keeps its request and number", () => {
   const state = emptyChannelState();
   state.outbox.push({ id: "ch-1", to: "web:aaaaaaaaaaaaaaaa", text: "old", atMs: 1 }, { id: "ch-2", to: "web:aaaaaaaaaaaaaaaa", text: "new", atMs: 100 });
   state.requests.a = { atMs: 1, channel: "web", booking: "b-1", phone: "919811111111" };
@@ -84,9 +84,9 @@ test("old words and numbers of finished conversations go with the retention; a b
   const changed = compactChannel(state, 50, (id) => id === "b-1");
   assert.equal(changed, 3);
   assert.deepEqual(state.outbox.map((x) => x.text), ["new"]);
-  assert.equal(state.requests.a.phone, undefined);
-  assert.equal(state.requests.b.phone, "919822222222");
-  assert.equal(state.requests.c.phone, undefined);
+  assert.equal(state.requests.a, undefined, "its booking is over");
+  assert.equal(state.requests.b.phone, "919822222222", "its booking is still going");
+  assert.equal(state.requests.c, undefined, "a refusal does not stay for ever");
 });
 
 test("the per-address limits count by kind and forget after their window", () => {
