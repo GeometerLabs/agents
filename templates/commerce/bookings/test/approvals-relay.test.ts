@@ -122,7 +122,7 @@ run("a Guard from before 12 Nov 2026 opens a new request for the same refund aft
   assert.equal(w.toOwner().length, 2, "the owner is not asked again");
   const alert = w.store.alerts().find((a) => a.approval === second);
   assert.equal(alert?.kind, "denied_repeat");
-  assert.match(alert?.note ?? "", new RegExp(`said no to this same refund \\(approval ${first}\\)`, "u"));
+  assert.match(alert?.note ?? "", new RegExp(`said no to this same refund \\(the same payment, amount and receipt: approval ${first}\\)`, "u"));
   assert.equal(w.store.ask(second)?.state, "alerted");
   // a day later it is a new question again, as it is for Guard
   w.clock.advance(25 * HOUR);

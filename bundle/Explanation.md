@@ -792,8 +792,9 @@ Item 17b put a signed summary in each paper's link (`#s1.`, modules/Explanation.
 The builder's own agents get what a long-lived service needs: credentials that can be changed without stopping it, a way off the server that keeps the record, a page in
 the panel, and the two held-refund endings the crash test did not try. **Guard is not changed** (monorepo untouched): Guard already lets one agent id have two credentials
 side by side and retires a configured one at a time it is told (monorepo ADR-0041 item 4, `adapters/boundaries/guard/tests/reload.rs`), reloads its agent list without a
-restart, and opens a new request when a call held for the owner is sent again after a no or after its end (`tests/approvals.rs`, `one_deny_refuses_and_nobody_who_asked_decides`).
-What that last rule costs is under "The owner's no", below.
+restart, and (until 12 Nov 2026) opened a new request when a call held for the owner was sent again after a no or after its end (`tests/approvals.rs`,
+`one_deny_refuses_and_nobody_who_asked_decides`). Since then Guard refuses the identical call for a day after a no (monorepo ADR-0061 addendum); after the end it
+still opens a new request. Both are under "The owner's no", below.
 
 **A credential per Guard** (`agent/credentials.ts`). `secrets/agents/<name>/<kind>_token` for each Guard, under the agent's one id (`agent-<name>`), so Guard keys its held
 calls (`pending_for`: tenant, principal, call, policy) and the record (`facts.ts` filters on the id) the same as before. **They reach the agent in one file**,

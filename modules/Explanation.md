@@ -494,8 +494,10 @@ whose `detail` names the denied request (`approval`, `denied_at_ms`, `until_ms`)
   record. Either way `ownerSaidNo` counts the owner's decision (`owner_decision` confirmed, deny, with the request), stops the payment, raises nothing for the builder,
   and the customer gets the template's "denied" message, never "we are checking".
 - **`approvals/relay.ts`.** With the new Guard there is no request to ask about. A Guard from before the change still opens one; the relay sets aside a request for a
-  refund (same receipt, payment and amount) the owner said no to in the last 24 hours (`store.deniedCall`) and tells the builder (`denied_repeat`), instead of asking
-  the owner again. The owner's single ask counts from when the owner was asked, because the relay keeps no time of the answer.
+  refund with the same receipt, payment and amount (all it sees of a refund) as one the owner said no to in the last 24 hours (`store.deniedCall`) and tells the
+  builder (`denied_repeat`), instead of asking the owner again. With the new Guard that can only be a call the agent changed in another field, and it is set aside
+  too: the owner said no to that money. An own API's held call has its approval id as its receipt, so it is never matched. The owner's single ask counts from when
+  the owner was asked, because the relay keeps no time of the answer.
 - **The stand-ins.** `payments/guard-model.ts` refuses the identical refund for 24 hours after a no (`denied_repeat`, Guard's words and `detail`); `olderGuard: true`
   is the behaviour before, for the relay's test. `standins/guard.ts` serves it as Guard's 403 and the payments fake throws `GuardDeniedError`.
 - **Tests** (written, not run): `payments/test/refund-denied.test.ts`, the classification in `templates/commerce/bookings/test/guard-responses.test.ts` (with the doc's
