@@ -269,8 +269,10 @@ export function createAssistant(deps: AssistantDeps) {
     const executed = card.action.kind === "message" ? await sendWords(card) : await skill.execute(card.action);
     closeCard(s, card, "done", now);
     logLine(caseId, ASSISTANT_ACTIONS.card, executed.ok ? "confirmed" : "failed", { card: card.id }, { ...refs(card, "yes"), result: executed.note }, "the owner tapped yes; the skill did the card's saved action");
-    const note = executed.note === "done" ? (card.action.kind === "cancel" ? "cancelled" : card.action.kind === "refund" ? "refund_sent" : card.action.kind === "message" ? "sent" : "answered") : executed.note;
     const amountPaise = typeof card.action.fields.amountPaise === "number" ? card.action.fields.amountPaise : 0;
+    // "done" in the owner's words: a cancel that gave money back says the money is on its way (the card asked for both), a cancel with nothing paid says cancelled
+    const kind = card.action.kind;
+    const note = executed.note !== "done" ? executed.note : kind === "refund" || (kind === "cancel" && amountPaise > 0) ? "refund_sent" : kind === "cancel" ? "cancelled" : kind === "message" ? "sent" : "answered";
     const who = typeof card.action.fields.who === "string" ? card.action.fields.who : caseId;
     await tell("done", { note, who, ref: caseId, amountPaise }, { caseId });
   }
