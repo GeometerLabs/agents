@@ -361,3 +361,13 @@ The panel keeps each innovator's vote on the next template in its own store (`bu
 | The panel page for the "What to ask the shop for" card (`askCardFor`) and its review-sheet rows (`askCardRows`) | Built by the card module; not wired into the panel or the review sheets in this wave | Before partners use the card in the panel | The shop-setup page links the card in the partner's language and the ml/kn sheets list its rows |
 | The terms page has no panel test, and the "terms" step is not part of the panel's go-live checks | Tests are run together at the end; the feature is off by default | Before the setting is turned on | `panel/test/terms.test.ts` covers save, status and the copy, and go-live shows the step when the setting is on |
 | A button reply on a window that has closed | The terms go out as plain text in the owner's open window (the owner starts it by writing "terms"); there is no Meta template for a full page | If partners want to send terms without the owner writing first | A short utility template that points the owner to write "terms" |
+
+## A shop on its own Gupshup account (item 11c, 12 Nov 2026): what is not done
+
+What only a real Gupshup self-serve app can confirm is in `modules/Deferred.md` ("WhatsApp through Gupshup's self-serve API"). Besides that:
+
+| What | Why not done | Trigger | Done when |
+|---|---|---|---|
+| **The callback address is typed by the partner.** The secret word that ends the callback address is a write-only box, so the panel cannot show the whole address back. | A path token must not be readable from the panel. | A partner finds it clumsy. | The panel makes the word, shows the whole address once, and keeps it write-only after. |
+| **Fleet must be deployed before a bundle that sends `usage.whatsapp_paid_by`.** The heartbeat now sends the flag for a self-serve shop (built 12 Nov); an older fleet refuses the unknown key and the whole heartbeat. Fleet's side is built on the monorepo branch `wa-paid-by-shop-12nov`. | No capability handshake exists in the heartbeat, so the bundle sends it always. | The first self-serve pilot shop on a real fleet. | Fleet with the flag is deployed, then the bundle is released (fleet's deploy order). |
+| **Switching a running shop between Meta, partner and self-serve** is a new deploy with new secrets; the panel does not migrate a shop's old key. | Not asked. | A pilot shop moves to Meta direct after the company is registered. | The panel's phone step moves a shop and says what to hand in. |

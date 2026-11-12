@@ -22,6 +22,7 @@ const noteWord = (h: HealthWords, n: CostNote, item: CostItem): string => {
     case "builder-licence": return w.builderLicence;
     case "included": return w.included;
     case "estimate": return w.estimate;
+    case "shop-wallet": return w.shopWallet;
     case "no-record": return w.noRecord;
     case "no-plan": return w.noPlan;
     case "no-price": return w.noPrice;

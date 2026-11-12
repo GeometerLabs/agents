@@ -63,6 +63,8 @@ export interface BackupFacts { lastCopyAt?: string | null; lastDrillAt?: string 
 
 export interface ShopObservation {
   id: string;
+  /** Item 11c: this shop's own Gupshup wallet pays Meta and Gupshup for WhatsApp. Its real counts are sent with `usage.whatsapp_paid_by: "shop"`, so fleet counts and bills none of its WhatsApp (nothing is passed on from the partner's balance). */
+  whatsappPaidBy?: "shop";
   pathway: string;
   pathwayVersion: string;
   up: boolean;
@@ -200,7 +202,9 @@ export function buildHeartbeat(input: { deploymentId: string; bundleVersion: str
       since_last: { ...delta, ...(used?.reportsSent !== undefined ? { reports_sent: used.reportsSent } : {}) },
       ...(snapshotAge !== undefined ? { backup_age_s: snapshotAge } : {}),
       ...(drillAge !== undefined && typeof drillOk === "boolean" ? { drill: { age_s: drillAge, ok: drillOk } } : {}),
-      ...(used?.send ? { usage: used.send } : {}),
+      // A shop on its own Gupshup account says so beside its real counts: fleet then counts and bills none of its WhatsApp (fleet's `usage.whatsapp_paid_by`, plan decision 42).
+      // The flag rides only on a heartbeat that carries `usage`; fleet keeps the latest value. Fleet must be deployed first: an older fleet refuses the unknown key whole.
+      ...(used?.send ? { usage: shop.whatsappPaidBy === "shop" ? { ...used.send, whatsapp_paid_by: "shop" as const } : used.send } : {}),
       ...(shop.obligations ? { open_obligations: obligationCounts(shop.obligations) } : {}),
     };
   });

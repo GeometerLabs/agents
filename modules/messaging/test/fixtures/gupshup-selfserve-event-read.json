@@ -1,0 +1,15 @@
+{
+  "app": "DemoAPI",
+  "timestamp": 1585344602933,
+  "version": 2,
+  "type": "message-event",
+  "payload": {
+    "id": "gBEGkYaYVSEEAgnZxQ3JmKK6Wvg",
+    "gsId": "ee4a68a0-1203-4c85-8dc3-49d0b3226a35",
+    "type": "read",
+    "destination": "919800000001",
+    "payload": {
+      "ts": 1585344602
+    }
+  }
+}

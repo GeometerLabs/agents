@@ -12,6 +12,8 @@ Take this to the visit and tick each item with the owner. Ask for these and noth
   This is where the helper asks for approvals, and where the monthly report goes. The owner replies "approve" or "deny". Practise one together.
 - [ ] **A Facebook login with admin access to the shop's Meta business portfolio**
   WhatsApp needs it. The owner logs in themselves, on their own phone: you never see a password or a code.
+- [ ] **(Optional) Only if the shop uses its own Gupshup account (the pilot's route): the owner signs up at Gupshup, adds the partner as an admin, and the shop gives you the app name and the API key**
+  The shop keeps the account, and its own Gupshup wallet pays Meta's charges and Gupshup's fee. The API key goes into the panel's key box only; never write it on paper or send it in a chat. Our message templates must show as approved in the shop's Gupshup app before the first message.
 - [ ] **The name the shop is known by in public (signboard, Google or Instagram page)**
   The name WhatsApp shows has to match what the shop calls itself in public.
 - [ ] **Be ready for Meta to ask the shop to verify its business later**

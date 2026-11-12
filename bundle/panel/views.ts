@@ -475,6 +475,8 @@ export interface StepView {
   receipts: Partial<Record<string, string>>;
   shareAddress: string | undefined;
   webhookUrl: string | undefined;
+  /** Item 11c: where a shop's own Gupshup app posts its WhatsApp callbacks, without the secret word that ends it. */
+  whatsappWebhookUrl?: string;
 }
 
 // One step of the phone setup (business, deposit, languages, accounts), each its own small page so a cheap phone loads little and an error only repeats that step.
@@ -529,8 +531,16 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
     const guide =(steps: string[]) => html`<ol class="guide">${steps.map((s) => html`<li>${s}</li>`)}</ol>`;
     body = html`<p>${a.intro}</p><form method="post" action="/setup/${d.id}/${v.now + 1}" autocomplete="off">${csrf(c)}
   ${t.accounts.includes("whatsapp") ? html`<h2>${a.whatsapp.title}</h2><p>${a.whatsapp.intro}</p>${guide(a.whatsapp.steps)}
-    ${text(a.whatsapp.number, "waNumber", d.whatsapp.businessNumber, { type: "tel", mode: "tel", max: 30 })}${text(a.whatsapp.numberId, "waNumberId", d.whatsapp.numberId, { mode: "numeric", max: 20 })}
-    ${secret(c, a.whatsapp.token, "waToken", v.receipts.whatsapp_token)}${secret(c, a.whatsapp.appSecret, "waAppSecret", v.receipts.whatsapp_app_secret)}` : ""}
+    ${text(a.whatsapp.number, "waNumber", d.whatsapp.businessNumber, { type: "tel", mode: "tel", max: 30 })}
+    <div class="field"><label><input type="radio" name="waProvider" value="meta" ${d.whatsapp.provider === undefined ? raw("checked") : ""}> ${a.whatsapp.selfServe.choiceMeta}</label>
+      <label><input type="radio" name="waProvider" value="gupshup-selfserve" ${d.whatsapp.provider === "gupshup-selfserve" ? raw("checked") : ""}> ${a.whatsapp.selfServe.choiceGupshup}</label></div>
+    ${text(a.whatsapp.numberId, "waNumberId", d.whatsapp.provider ? "" : d.whatsapp.numberId, { mode: "numeric", max: 20 })}
+    ${secret(c, a.whatsapp.token, "waToken", v.receipts.whatsapp_token)}${secret(c, a.whatsapp.appSecret, "waAppSecret", v.receipts.whatsapp_app_secret)}
+    <h3>${a.whatsapp.selfServe.title}</h3><p>${a.whatsapp.selfServe.intro}</p>
+    <p><a href="https://www.gupshup.io/" rel="noopener noreferrer" target="_blank">${a.whatsapp.selfServe.signup}</a> · <a href="https://docs.gupshup.io/docs/quickstart-create-and-configure-access-api" rel="noopener noreferrer" target="_blank">${a.whatsapp.selfServe.guide}</a></p>
+    ${guide(a.whatsapp.selfServe.steps)}
+    ${text(a.whatsapp.selfServe.appName, "waAppName", d.whatsapp.appName ?? "", { max: 64 })}${secret(c, a.whatsapp.selfServe.apiKey, "waApiKey", v.receipts.gupshup_apikey)}
+    ${secret(c, a.whatsapp.selfServe.pathToken, "waPathToken", v.receipts.whatsapp_path_token)}${v.whatsappWebhookUrl ? html`<p>${a.whatsapp.selfServe.callback}</p><code class="addr">${v.whatsappWebhookUrl}/SECRET-WORD</code>` : ""}` : ""}
   ${t.accounts.includes("calendar") ? html`<h2>${a.calendar.title}</h2><p>${a.calendar.useOwn}</p>
     <div class="field"><label><input type="checkbox" name="calUse" value="google" ${d.calendar.use === "google" ? raw("checked") : ""}> ${a.calendar.useGoogle}</label></div>
     <p>${a.calendar.intro}</p>${guide(a.calendar.steps)}
@@ -592,7 +602,8 @@ function checkLine(c: Ctx, r: CheckResult): Raw {
   if (r.service === "whatsapp" && r.notChecked.includes("which-number")) {
     // a shop on Gupshup: its check confirms the app Gupshup answered for, never a number (checks.ts checkGupshup), and its words say exactly that
     title = w.whatsapp.title;
-    text = r.code === "confirmed" ? w.whatsapp.gupshupConfirmed(found?.appId ?? "") : r.code === "not_found" ? w.whatsapp.gupshupNotFound(r.detail ?? "") : generic(r.code);
+    text = r.code === "confirmed" && found?.appName ? w.whatsapp.selfServeConfirmed(found.appName, found.templatesApproved ?? 0, found.templatesListed ?? 0)
+      : r.code === "confirmed" ? w.whatsapp.gupshupConfirmed(found?.appId ?? "") : r.code === "not_found" ? w.whatsapp.gupshupNotFound(r.detail ?? "") : generic(r.code);
   } else if (r.service === "whatsapp") {
     title = w.whatsapp.title;
     text = r.code === "confirmed" ? w.whatsapp.confirmed(found?.displayNumber ?? "") : r.code === "account_mismatch" ? w.whatsapp.differs(r.foundEnding ?? "") : r.code === "not_found" ? w.whatsapp.notFound : generic(r.code);

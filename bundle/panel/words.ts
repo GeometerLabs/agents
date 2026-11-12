@@ -136,11 +136,13 @@ export interface Words {
       nameEmpty: string; noService: string; priceBad(row: number): string; depositBad: string; depositTooBig(deposit: string, cheapest: string): string; windowBad: string;
       hoursBad: string; noDay: string; noLanguage: string; ownerNumberBad: string; sameNumber: string; serviceNameEmpty(row: number): string;
       approverNumberBad(n: number): string; approverNumberTaken(n: number): string; twoAboveBad: string; twoAboveAlone: string;
-      expectedBad: string; numberIdBad: string; businessNumberBad: string; secretMissing(what: string): string; secretShape(what: string): string; calendarIdBad: string; jsonBad: string; modeBad: string;
+      expectedBad: string; numberIdBad: string; businessNumberBad: string; appNameBad: string; secretMissing(what: string): string; secretShape(what: string): string; calendarIdBad: string; jsonBad: string; modeBad: string;
     };
     accounts: {
       intro: string; received(at: string): string; keepEmpty: string; neverShown: string;
-      whatsapp: { title: string; intro: string; steps: string[]; number: string; numberId: string; token: string; appSecret: string };
+      whatsapp: { title: string; intro: string; steps: string[]; number: string; numberId: string; token: string; appSecret: string;
+        /** Item 11c: the shop's own Gupshup account (self-serve): the choice, the links, the short checklist and the write-only fields. */
+        selfServe: { choiceMeta: string; choiceGupshup: string; title: string; intro: string; signup: string; guide: string; steps: string[]; appName: string; apiKey: string; pathToken: string; callback: string } };
       calendar: { title: string; intro: string; steps: string[]; shareAddress: string; noAddress: string; id: string; json: string; jsonHelp: string; /** B72: the shop's own booking list (default) and the choice to also use Google Calendar. */ useOwn: string; useGoogle: string };
     };
     checks: {
@@ -148,7 +150,7 @@ export interface Words {
       deploy: string; deployApplied(at: string): string; deployNot: string; limitsProven(proven: number, of: number): string; limitsNot: string;
       guardNotSet: string; readOnly: string;
       /** `gupshupConfirmed` and `gupshupNotFound`: a shop on Gupshup, whose check is Gupshup's app read: it confirms the app, never the number (checks.ts checkGupshup). */
-      whatsapp: { title: string; confirmed(number: string): string; differs(ending: string): string; notFound: string; gupshupConfirmed(appId: string): string; gupshupNotFound(said: string): string };
+      whatsapp: { title: string; confirmed(number: string): string; differs(ending: string): string; notFound: string; gupshupConfirmed(appId: string): string; selfServeConfirmed(appName: string, approved: number, listed: number): string; gupshupNotFound(said: string): string };
       calendar: { title: string; confirmed(name: string): string; differs: string; notFound: string; notWritable(role: string): string };
       generic: Record<Exclude<CheckCode, "confirmed" | "account_mismatch" | "wrong_mode" | "not_writable" | "not_found">, string>;
       guardWords(detail: string): string;
@@ -221,7 +223,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "inbox.kinds.message_unanswered": ["#12"], "inbox.kinds.message_not_delivered": ["b-3"], "inbox.kinds.whatsapp_token_renewal": ["WhatsApp", "", 6], "inbox.kinds.whatsapp_token_credential": ["WhatsApp", "", 120], "inbox.kinds.upi_payment_unconfirmed": ["b-3", "₹200"], "inbox.kinds.upi_refund_owed": ["b-3", "₹200"], "upi.problems.idNoAt": ["glowsalon"], "upi.problems.idShape": ["glow salon@"],
   "handover.ask": ["K7M2QX"], "handover.waiting": ["Meera"], "handover.done": ["Meera"], "handover.historyLine": ["Divya", "Meera", "4 Nov 2026, 10:30", "[reason]"],
   "setup.checks.whatsapp.confirmed": ["+91 98765 43210"], "setup.checks.whatsapp.differs": ["3210"],
-  "setup.checks.whatsapp.gupshupConfirmed": ["07c7c72d-20e3-4ff9-a5a1-14d1186eeec8"], "setup.checks.whatsapp.gupshupNotFound": ["Invalid App Details"],
+  "setup.checks.whatsapp.selfServeConfirmed": ["Glow_Salon", 4, 5], "setup.checks.whatsapp.gupshupConfirmed": ["07c7c72d-20e3-4ff9-a5a1-14d1186eeec8"], "setup.checks.whatsapp.gupshupNotFound": ["Invalid App Details"],
   "setup.checks.calendar.confirmed": ["Glow Salon bookings"], "setup.checks.calendar.notWritable": ["reader"],
 };
 
@@ -314,7 +316,7 @@ export const en: Words = {
     heading: "What it costs to run, each month", early: "Early estimate: no real bookings are counted yet.", fromRecord: (n) => `Worked out from ${n} bookings in the record.`, assumption: (n) => `We assumed ${n} bookings a month.`,
     lines: { whatsapp: "WhatsApp messages (Meta's fee)", "whatsapp-provider": "WhatsApp provider's own fee", gateway: "{gateway}'s fee", geometer: "Geometer's plan", hosting: "Hosting share" },
     payer: {
-      "builder-pays-whatsapp-provider": "paid by the builder or partner to their own WhatsApp provider", "shop-pays-gateway": "paid by the shop to {gateway}",
+      "builder-pays-whatsapp-provider": "paid by the builder or partner to their own WhatsApp provider", "shop-pays-gupshup-wallet": "an estimate, paid from the shop's own Gupshup wallet, not from Geometer's balance", "shop-pays-gateway": "paid by the shop to {gateway}",
       "builder-pays-geometer": "paid to Geometer by the builder or partner; the AI model is included",
       "builder-pays-licence": "paid to Geometer by the builder, once for each live client business; the AI key is the builder's own", hosting: "the server's cost, shared",
     },
@@ -455,7 +457,7 @@ export const en: Words = {
       approverNumberBad: (n) => `Person ${n}: write their number with the country code, for example +91 98765 43210.`,
       approverNumberTaken: (n) => `Person ${n}: that number is already yours, the shop's or another person's. Each person answers from their own phone.`,
       twoAboveBad: "Write the two-person amount in whole rupees, for example 5000, or leave it empty.", twoAboveAlone: "Two people can only approve if you add at least one other person.",
-      expectedBad: "Write the bookings a month as a whole number, for example 40, or leave it empty.", numberIdBad: "The phone number ID is digits only (6 to 20 of them).", businessNumberBad: "Write the shop's WhatsApp number with the country code.",
+      expectedBad: "Write the bookings a month as a whole number, for example 40, or leave it empty.", appNameBad: "The Gupshup app name is letters, digits and underscores, as Gupshup shows it (for example Glow_Salon).", numberIdBad: "The phone number ID is digits only (6 to 20 of them).", businessNumberBad: "Write the shop's WhatsApp number with the country code.",
       secretMissing: (w) => `Fill in ${w}.`, secretShape: (w) => `${w} has spaces or line breaks in it. Copy it again, without them.`,
       calendarIdBad: "Write the calendar's ID without spaces.", jsonBad: "That is not a Google service-account key file. Paste the whole file.", modeBad: "Choose live or practice.",
     },
@@ -466,6 +468,14 @@ export const en: Words = {
         title: "WhatsApp", intro: "The shop keeps its own number and its WhatsApp Business app. Customers write to the same number as before.",
         steps: ["Keep using the WhatsApp Business app on the shop's phone, with the shop's number.", "Whoever connected the number to the helper gives you three things: the phone number ID, an access token and the app secret.", "Type them below."],
         number: "The shop's WhatsApp number", numberId: "Phone number ID", token: "Access token", appSecret: "App secret",
+        selfServe: {
+          choiceMeta: "Meta direct (the shop's own Meta app)", choiceGupshup: "Gupshup (the shop's own account)", title: "Gupshup (the shop's own account)",
+          intro: "The shop signs up at Gupshup itself and keeps the account. The shop's own Gupshup wallet pays Meta's charges and Gupshup's fee; Geometer never holds that money.",
+          signup: "Sign up at Gupshup", guide: "How to find the app name and API key",
+          steps: ["The shop signs up at Gupshup and makes a WhatsApp app for its number.", "Add the partner as an admin of the Gupshup account.", "In the app, add our message templates and wait until Gupshup shows them as approved.", "Copy the app's name and API key from the Gupshup dashboard and type them below, with a secret word of your own for the callback address.", "In the app's Webhooks tab, add the address shown below, ending with that secret word."],
+          appName: "Gupshup app name", apiKey: "Gupshup API key", pathToken: "Secret word for the callback address (16 or more letters, digits, _ or -)",
+          callback: "Add this address in the Gupshup app's Webhooks tab, with your secret word in place of SECRET-WORD:",
+        },
       },
       calendar: {
         title: "Calendar", intro: "Bookings go into the shop's own Google Calendar.",
@@ -482,6 +492,7 @@ export const en: Words = {
       whatsapp: {
         title: "WhatsApp", confirmed: (n) => `This is the shop's number (${n}).`, differs: (e) => `The number found ends in ${e}, not the shop's. Nothing was changed.`,
         notFound: "That phone number ID is not on this account.",
+        selfServeConfirmed: (name, approved, listed) => `Gupshup answered for app ${name}: the key and the app name go together, and ${approved} of the ${listed} ${t1(listed, "template", "templates")} listed ${t1(approved, "is", "are")} approved. This check does not show which number the app sends from, and it sends nothing.`,
         gupshupConfirmed: (id) => `Gupshup answered for app ${id}. This check does not show which number the app sends from.`,
         gupshupNotFound: (said) => (said ? `Gupshup did not accept that app with this token (it said: ${said}).` : "Gupshup did not accept that app with this token."),
       },

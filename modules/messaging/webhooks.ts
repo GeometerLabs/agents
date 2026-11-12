@@ -10,6 +10,10 @@
 //  - Gupshup's "v3" callbacks (read 11 Nov 2026) are Meta's body with `gs_app_id` beside `object`, and a Gupshup id (`gs_id`) on each status. They are not signed
 //    (the inbox's path-token mode). https://partner-docs.gupshup.io/docs/events (updated 30 Oct 2026), and the pass-through page's examples
 //    https://partner-docs.gupshup.io/docs/whatsapp-passthrough-apis-for-partners. The same parsers read both.
+//  - Gupshup SELF-SERVE callbacks (item 11c, read 12 Nov 2026) are their own "version 2" shape, not Meta's: { app, timestamp (ms), version: 2, type: "message" | "message-event",
+//    payload }. A message has payload { id, source, type, payload, sender, context? }; an event has payload { id, gsId?, type, destination, payload }. Not signed either.
+//    https://docs.gupshup.io/docs/what-is-an-inbound-message.md, .../docs/interactive, .../docs/message-events.md, .../reference/postback-text-support.md.
+//    The same two exported parsers read this shape (isGupshupSelfServe) so the inbox needs no second path.
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { InboundMessage, MessageStatus } from "./messaging.ts";
 import { asArray, isObject, num, str } from "../core/http.ts";
@@ -79,6 +83,7 @@ function replyOf(message: Record<string, unknown>): InboundMessage["reply"] {
  */
 export function parseWhatsAppWebhook(body: unknown): InboundMessage[] {
   if (!isObject(body)) return [];
+  if (isGupshupSelfServe(body)) return parseSelfServeMessages(body);
   const out: InboundMessage[] = [];
   for (const entry of asArray(body.entry).filter(isObject)) {
     for (const change of asArray(entry.changes).filter(isObject)) {
@@ -120,6 +125,7 @@ function statusTime(raw: unknown): number {
  */
 export function parseWhatsAppStatuses(body: unknown): MessageStatus[] {
   if (!isObject(body)) return [];
+  if (isGupshupSelfServe(body)) return parseSelfServeStatuses(body);
   const out: MessageStatus[] = [];
   for (const entry of asArray(body.entry).filter(isObject)) {
     for (const change of asArray(entry.changes).filter(isObject)) {
@@ -139,4 +145,63 @@ export function parseWhatsAppStatuses(body: unknown): MessageStatus[] {
     }
   }
   return out;
+}
+
+// ---- Gupshup self-serve callbacks (item 11c) ----------------------------------------------------------------------------------
+
+/** A self-serve callback: Gupshup's version 2 envelope names the app by NAME (`app`) and has no `entry` (Meta's and Gupshup's v3 bodies do). */
+export function isGupshupSelfServe(body: Record<string, unknown>): boolean {
+  return body.version !== undefined && typeof body.app === "string" && (body.type === "message" || body.type === "message-event") && isObject(body.payload) && body.entry === undefined;
+}
+
+/** The app name a self-serve callback names, for the inbox's check that it is this shop's. */
+export const selfServeAppName = (body: unknown): string | undefined => (isObject(body) && isGupshupSelfServe(body) ? (body.app as string) : undefined);
+
+/**
+ * The customers' messages in a self-serve callback. Text is its words. A tapped button or list row comes back as `postbackText`, the id we gave it when we sent it
+ * (gupshup-selfserve.ts): it becomes `reply` only if it is a short plain id; without one (a button of a template, say) the row's title is read as ordinary words, as
+ * the agent already does for any typed answer. Voice notes and pictures are the fact only, as for Meta; other types are left out.
+ */
+function parseSelfServeMessages(body: Record<string, unknown>): InboundMessage[] {
+  const p = body.payload;
+  if (!isObject(p) || body.type !== "message") return [];
+  const id = str(p.id), from = toE164(p.source ?? (isObject(p.sender) ? p.sender.phone : undefined));
+  if (!id || !from) return [];
+  const inner = isObject(p.payload) ? p.payload : {};
+  const ms = Number(body.timestamp);
+  const timestamp = Number.isFinite(ms) && ms > 0 ? Math.trunc(ms) : 0;
+  const plain = (text: string | undefined, extra: Partial<InboundMessage> = {}): InboundMessage[] => (text === undefined || text.length === 0 ? [] : [{ id, from, text, timestamp, ...extra }]);
+  switch (p.type) {
+    case "text": return plain(str(inner.text));
+    case "audio": return [{ id, from, text: "", timestamp, voiceNote: true }];
+    case "image": return [{ id, from, text: "", timestamp, image: true }];
+    case "button_reply": case "quick_reply": case "list_reply": {
+      const text = str(inner.title) ?? str(inner.text) ?? str(inner.reply);
+      const postback = str(inner.postbackText);
+      const reply = postback && /^[A-Za-z0-9:_.-]{1,200}$/u.test(postback) ? { id: postback, kind: p.type === "list_reply" ? "list" as const : "button" as const } : undefined;
+      return plain(text, reply ? { reply } : {});
+    }
+    default: return [];
+  }
+}
+
+/**
+ * The delivered, read and failed reports in a self-serve message-event. `id` is Gupshup's id on enqueued and failed and WhatsApp's on sent, delivered and read, with
+ * `gsId` (Gupshup's) beside it on the latter: both are kept so the record is searched for either. `enqueued` and `sent` say no more than the accepted send did and are left out.
+ * A failed event carries { code, reason }; only those two are kept, never anything the person wrote.
+ */
+function parseSelfServeStatuses(body: Record<string, unknown>): MessageStatus[] {
+  const p = body.payload;
+  if (!isObject(p) || body.type !== "message-event") return [];
+  const status = p.type as MessageStatus["status"];
+  if (!KEPT_STATUSES.has(status)) return [];
+  const ids = [...new Set([str(p.gsId), str(p.id)].filter((x): x is string => x !== undefined && STATUS_ID.test(x)))];
+  if (ids.length === 0) return [];
+  const inner = isObject(p.payload) ? p.payload : {};
+  const to = toE164(p.destination);
+  const code = num(inner.code);
+  const title = str(inner.reason)?.replace(/\s+/gu, " ").trim().slice(0, 200);
+  // delivered and read carry Meta's time in seconds (`ts`); a failure has none, so Gupshup's own millisecond time stands
+  const timestamp = statusTime(inner.ts ?? body.timestamp);
+  return [{ ids, status, ...(to ? { to } : {}), timestamp, ...(status === "failed" ? { error: { ...(code !== undefined ? { code } : {}), ...(title ? { title } : {}) } } : {}) }];
 }

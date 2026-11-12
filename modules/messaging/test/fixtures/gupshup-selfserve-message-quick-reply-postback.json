@@ -1,0 +1,27 @@
+{
+  "app": "DemoApp",
+  "timestamp": 1580228523976,
+  "version": 2,
+  "type": "message",
+  "payload": {
+    "id": "ABEGkYaYVSEEAhCzqobr15BdMPcRup1fIXAK",
+    "source": "919800000001",
+    "type": "quick_reply",
+    "payload": {
+      "text": "Yes",
+      "type": "button",
+      "postbackText": "confirm:yes"
+    },
+    "sender": {
+      "phone": "919800000001",
+      "name": "CUSTOMER_NAME",
+      "country_code": "91",
+      "dial_code": "9800000001"
+    },
+    "context": {
+      "id": "gBEGkYaYVSEEAgkvE0f1ZkfXX78",
+      "forwarded": false,
+      "frequently_forwarded": false
+    }
+  }
+}

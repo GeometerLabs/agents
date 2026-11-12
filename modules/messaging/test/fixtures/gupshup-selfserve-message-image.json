@@ -1,0 +1,23 @@
+{
+  "app": "docdeck",
+  "timestamp": 1718003620228,
+  "version": 2,
+  "type": "message",
+  "payload": {
+    "id": "ABEGkZUTIXZ0Ago69N5XB9zTUbl-",
+    "source": "919800000001",
+    "type": "image",
+    "payload": {
+      "caption": "Sample image",
+      "url": "https://example.invalid/media/image.jpeg",
+      "contentType": "image/jpeg",
+      "urlExpiry": 1718608420228
+    },
+    "sender": {
+      "phone": "919800000001",
+      "name": "CUSTOMER_NAME",
+      "country_code": "91",
+      "dial_code": "9800000001"
+    }
+  }
+}

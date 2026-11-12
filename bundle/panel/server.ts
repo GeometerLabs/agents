@@ -192,7 +192,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const observed = data ? monthlyFromExport(settings, data, monthOf(now(), settings.timezone), "live", now()).bookings.made : undefined;
     return monthlyCost({
       settings, ...(shops.fleet(id)?.plan ? { plan: shops.fleet(id)!.plan! } : {}), builder: config.mode === "own", ...(observed !== undefined && observed > 0 ? { observedBookings: observed } : {}), assumptions: meta.expectedBookings !== undefined ? { bookingsPerMonth: meta.expectedBookings } : {},
-      ...(config.whatsappProvider ? { whatsappProvider: config.whatsappProvider } : {}), ...(config.hostingSharePaise !== undefined ? { hostingSharePaise: config.hostingSharePaise } : {}),
+      ...(config.whatsappProvider ? { whatsappProvider: config.whatsappProvider } : {}), ...(shops.runtime(id)?.services?.messaging?.provider === "gupshup-selfserve" ? { whatsappFromShopWallet: true } : {}), ...(config.hostingSharePaise !== undefined ? { hostingSharePaise: config.hostingSharePaise } : {}),
     }, prices);
   }
 
@@ -702,7 +702,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const meta = d.shopId ? shops.meta(d.shopId) : undefined;
     const own = setupOf(template.setup);
     return { draft: d, template, steps: template.steps, now: n - 1, problems, limits: limitList(c, d), ...(own ? { ownLines: own.limitLines(d, exampleOf(template), c.lang) } : {}), receipts: (meta?.receipts ?? {}) as Partial<Record<string, string>>,
-      shareAddress: config.calendarShareAddress ?? meta?.calendar?.shareAddress, webhookUrl: d.shopId && providerById(paymentModuleOf(d))?.gateway ? webhookUrlFor(config, d.shopId, paymentModuleOf(d)) : undefined };
+      shareAddress: config.calendarShareAddress ?? meta?.calendar?.shareAddress, whatsappWebhookUrl: d.shopId ? webhookUrlFor(config, d.shopId, "whatsapp") : undefined, webhookUrl: d.shopId && providerById(paymentModuleOf(d))?.gateway ? webhookUrlFor(config, d.shopId, paymentModuleOf(d)) : undefined };
   };
 
   function checksView(r: Req, d: Draft, template: Template, problems: string[]): ChecksView {
@@ -795,7 +795,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     // saving a Gupshup shop would turn it back to Meta's paths with Gupshup's token behind them
     // the model as geometer.json names it now: the panel's first run may have chosen it after the panel started
     const serverModel = readServerModel(config.serverDir) ?? config.serverModel;
-    const runtime = keepWhatsAppProvider(own ? own.runtime(d.whatsapp.numberId, serverModel, gateway) : runtimeFor(d.calendar.use === "google" ? d.calendar.id : "", d.whatsapp.numberId, serverModel, gateway), d.editing ? shops.runtime(d.shopId) : undefined);
+    const runtime = keepWhatsAppProvider(own ? own.runtime(d.whatsapp.numberId, serverModel, gateway) : runtimeFor(d.calendar.use === "google" ? d.calendar.id : "", d.whatsapp.numberId, serverModel, gateway), d.editing ? shops.runtime(d.shopId) : undefined, d.whatsapp);
     // editing a shop that exists keeps the pin it has: only `geometer update` moves a shop to another version, after the hand check on its own settings
     const kept = d.editing ? shops.lock(d.shopId) : undefined;
     const lock = kept ?? `${template.id}@${own ? template.version : pathwayVersion()}`;

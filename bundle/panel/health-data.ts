@@ -35,6 +35,7 @@ export function createHealthData(deps: { config: PanelConfig; shops: Shops; entr
 
       const items = runningCostItems({
         plan: planFeePaise({ plan, prices, builder: config.mode === "own" }), // a panel on a builder's own server: the builder licence
+        whatsappFromShopWallet: (shops.runtime(id) as { services?: { messaging?: { provider?: unknown } } } | undefined)?.services?.messaging?.provider === "gupshup-selfserve",
         usage: monthUsage(data, month, zone, prices), modelIncluded: config.mode === "hosted", entries: mine, month,
       });
       const margin = marginOf(mine?.pricePaise ?? null, items, mine?.setupFeePaise ?? null);

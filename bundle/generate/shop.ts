@@ -113,7 +113,10 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
   // runtime, so the two always agree. A runtime.json that differs is said so.
   const written = { calendar: isObj(services.calendar) ? services.calendar.calendarId : undefined, whatsapp: isObj(services.messaging) ? services.messaging.phoneNumberId : undefined };
   const calendarId = pins.calendar?.calendarId ?? written.calendar;
-  const phoneNumberId = pins.whatsapp?.phoneNumberId ?? written.whatsapp;
+  // Item 11c: Gupshup self-serve shows a shop no Meta phone number id; its number stands in (digits only), as the id the inbox and the runtime keep for the number
+  const m0 = isObj(services.messaging) ? services.messaging : {};
+  const ownNumber = m0.provider === "gupshup-selfserve" && typeof m0.sourceNumber === "string" ? m0.sourceNumber.replace(/\D/gu, "") : undefined;
+  const phoneNumberId = pins.whatsapp?.phoneNumberId ?? written.whatsapp ?? ownNumber;
   if (pins.calendar && written.calendar !== undefined && written.calendar !== pins.calendar.calendarId) notes.push("runtime.json names another calendar than the one the connection check confirmed (pins.json); the confirmed one is used.");
   if (pins.whatsapp && written.whatsapp !== undefined && written.whatsapp !== pins.whatsapp.phoneNumberId) notes.push("runtime.json names another WhatsApp number id than the one the connection check confirmed (pins.json); the confirmed one is used.");
   if (hasCalendar && (typeof calendarId !== "string" || calendarId.trim() === "")) problems.push({ rule: "calendar-id", message: 'runtime.json needs services.calendar.calendarId: the shop\'s own Google calendar. The calendar Guard allows exactly that one and refuses every other.' });
@@ -122,7 +125,10 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
   const messaging = isObj(services.messaging) ? services.messaging : {};
   const providerProblem = messagingConfigProblem(messaging);
   if (providerProblem) problems.push({ rule: "whatsapp-provider", message: `runtime.json: ${providerProblem}` });
-  const whatsappRoute: WhatsAppRoute | undefined = !providerProblem && messaging.provider === "gupshup" ? { provider: "gupshup", appId: messaging.appId as string } : undefined;
+  const whatsappRoute: WhatsAppRoute | undefined = providerProblem ? undefined
+    : messaging.provider === "gupshup" ? { provider: "gupshup", appId: messaging.appId as string }
+    : messaging.provider === "gupshup-selfserve" ? { provider: "gupshup-selfserve", appName: messaging.appName as string, sourceNumber: messaging.sourceNumber as string, ...(typeof messaging.appId === "string" ? { appId: messaging.appId } : {}) }
+    : undefined;
 
   // The runtime waits longer than Guard, or it gives up on a call Guard is still making and sends the same thing again.
   const timeoutMs = services.timeoutMs === undefined ? DEFAULT_RUNTIME_TIMEOUT_MS : services.timeoutMs;
@@ -298,7 +304,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     // Item 11b: the provider must be read by the runtime of the version the shop is pinned to. One from before 11 Nov 2026 refuses `provider` as an unknown key and would not
     // start; unlike `ai` or `report` there is nothing to fall back to (Meta's paths with Gupshup's token behind them), so the deploy is refused instead.
     if (facts.whatsappRoute && !check(runtime, "/").ok) {
-      const { provider: _p, appId: _a, ...meta } = (runtime.services as { messaging: Record<string, unknown> }).messaging;
+      const { provider: _p, appId: _a, appName: _n, sourceNumber: _s, ...meta } = (runtime.services as { messaging: Record<string, unknown> }).messaging;
       if (check({ ...runtime, services: { ...(runtime.services as object), messaging: meta } }, "/").ok) problems.push({ rule: "whatsapp-provider-pinned", message: `${shop.name} is pinned to ${shop.lock ? `${shop.lock.pathway}@${shop.lock.version}` : "a template version"}, whose runtime does not know services.messaging.provider, so it cannot send through Gupshup. Move the shop to a version from 11 Nov 2026 or later (geometer update).` });
     }
     // B72: a shop on its own booking list has no calendar service. A runtime pinned to a version from before 12 Nov 2026 insists on one (and would refuse the settings' "calendar"

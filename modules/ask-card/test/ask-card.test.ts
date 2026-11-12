@@ -86,7 +86,7 @@ test("no price and no percentage on the card (a price is written in prices/ only
   for (const t of CARD_TEMPLATES) for (const l of LANGUAGES) assert.ok(!/₹|\d\s?%/.test(renderMarkdown(askCardFor(t, l))), `${t}.${l}`);
 });
 
-test("Google Calendar is optional and only on Bookings; Razorpay is optional everywhere; nothing else is", () => {
+test("Google Calendar is optional and only on Bookings; Razorpay and the shop's own Gupshup account (11c) are optional everywhere; nothing else is", () => {
   const bookings = askCardFor("bookings", "en").items;
   const calendar = bookings.find((i) => i.id === "calendar")!;
   assert.equal(calendar.optional, true);
@@ -97,7 +97,7 @@ test("Google Calendar is optional and only on Bookings; Razorpay is optional eve
   for (const t of ["orders", "fees"] as const) assert.ok(!askCardFor(t, "en").items.some((i) => i.id === "calendar"), `${t}: no calendar on the card`);
   for (const t of CARD_TEMPLATES) {
     const optional = askCardFor(t, "en").items.filter((i) => i.optional).map((i) => i.id).sort();
-    assert.deepEqual(optional, ({ bookings: ["calendar", "razorpay"], orders: ["delivery-area", "razorpay"], fees: ["razorpay"] })[t]);
+    assert.deepEqual(optional, ({ bookings: ["calendar", "gupshup-account", "razorpay"], orders: ["delivery-area", "gupshup-account", "razorpay"], fees: ["gupshup-account", "razorpay"] })[t]);
   }
 });
 
