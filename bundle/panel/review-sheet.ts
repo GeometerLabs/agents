@@ -12,5 +12,5 @@ export const wholeSheet = (language: ReviewLanguage): string => `${reviewSheet(l
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const language = process.argv[2];
   if (language !== "ml" && language !== "kn") { console.error("Say which language: node bundle/panel/review-sheet.ts ml   (or kn)"); process.exitCode = 1; }
-  else console.log(wholeSheet(language));
+  else { try { console.log(wholeSheet(language)); } catch (e) { console.error((e as Error).message); process.exitCode = 1; } } // a template with no WHEN line is refused in words
 }
