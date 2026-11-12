@@ -32,7 +32,7 @@ export interface SpeechProvider {
 export interface SpeechRate { sttInrPerMinute: number }
 
 /** Micro-rupees (millionths) for listening to `seconds`, rounded up. */
-export const sttCostMicroInr = (rate: SpeechRate, seconds: number): number => Math.ceil(rate.sttInrPerMinute * (seconds / 60) * 1_000_000 - 1e-9);
+export const sttCostMicroInr = (rate: SpeechRate, seconds: number): number => Math.max(0, Math.ceil(rate.sttInrPerMinute * (seconds / 60) * 1_000_000 - 1e-9)) + 0; // + 0: never -0 for a zero rate
 
 /** A transcript below this probability is not trusted. A placeholder until real voice notes in Malayalam and Kannada have been listened to (Deferred.md). */
 export const LOW_CONFIDENCE_BELOW = 0.5;
