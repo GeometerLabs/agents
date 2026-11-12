@@ -21,8 +21,12 @@ export interface ChannelBook { kind: "channel_request"; id: string; channel: Cha
 export interface ChannelOther { kind: "channel_request"; id: string; channel: ChannelName; op: "cancel" | "paid"; handle: string }
 export type ChannelRequest = ChannelBook | ChannelOther;
 
-/** What the owner's page may ask: the owner-marked replies, and the owner's answers to what the agent asked them. */
-export const OWNER_ACTIONS = ["received", "refunded", "kept", "approve", "deny", "retry"] as const;
+/**
+ * What the owner's page may ask: the owner-marked replies, the owner's answers to what the agent asked them, and (item 11e) the answer to one of the assistant's
+ * cards: `card_yes` / `card_no`, whose case is the card's id ("c-3") and whose digest is the card's own. A card's answer goes through the same binding as a tap on
+ * WhatsApp (modules/assistant/cards.ts judgeCard): one use, and the action read again from the store must still have the card's digest.
+ */
+export const OWNER_ACTIONS = ["received", "refunded", "kept", "approve", "deny", "retry", "card_yes", "card_no"] as const;
 export type OwnerActionName = (typeof OWNER_ACTIONS)[number];
 export interface OwnerAction { kind: "owner_action"; id: string; action: OwnerActionName; case: string; digest: string }
 
@@ -39,6 +43,8 @@ const REQUEST_ID = /^[A-Za-z0-9-]{1,64}$/u;
 const CASE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/u;
 const SERVICE_ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/u;
 const DIGEST = /^[0-9a-f]{32}$/u;
+/** The assistant's card ids (modules/assistant/state.ts nextId). */
+const CARD_ID = /^c-\d{1,9}$/u;
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !Array.isArray(v);
 
@@ -49,6 +55,7 @@ export function checkChannelEvent(raw: unknown): { ok: true; event: ChannelEvent
   if (raw.kind === "owner_action") {
     if (!OWNER_ACTIONS.includes(raw.action as OwnerActionName)) return { ok: false, error: `An owner_action's action is one of ${OWNER_ACTIONS.join(", ")}.` };
     if (typeof raw.case !== "string" || !CASE_ID.test(raw.case)) return { ok: false, error: 'An owner_action names its case ("b-3").' };
+    if ((raw.action === "card_yes" || raw.action === "card_no") && !CARD_ID.test(raw.case)) return { ok: false, error: 'A card\'s answer names the card ("c-3").' };
     if (typeof raw.digest !== "string" || !DIGEST.test(raw.digest)) return { ok: false, error: "An owner_action carries the digest of the action as it was shown (32 hex digits)." };
     return { ok: true, event: { kind: "owner_action", id: raw.id, action: raw.action as OwnerActionName, case: raw.case, digest: raw.digest } };
   }

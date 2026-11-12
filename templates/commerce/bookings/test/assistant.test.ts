@@ -321,6 +321,71 @@ test("what needs me is the owner page's list (one list): a deposit waiting on a 
   assert.deepEqual(ownerItems(w.settings, w.store, w.clock.now()).items, [], "and nothing waits on the page any more");
 });
 
+/** The owner answers a card on their page: the front posts the card's id and the digest the page showed (item 11d's owner_action, card_yes / card_no). */
+const pagePress = (w: World, card: { id: string; digest: string }, answer: "yes" | "no", id = `page-${card.id}-${answer}-${w.clock.now()}`) =>
+  w.agent.handle({ kind: "owner_action", id, action: answer === "yes" ? "card_yes" : "card_no", case: card.id, digest: card.digest });
+const openCard = (w: World) => { const c = w.store.assistant!.cards.filter((x) => x.state === "open").at(-1); assert.ok(c, "an open card"); return c; };
+
+test("a card answered on the owner's page is the same binding as a WhatsApp tap: done once, its question without a code, the answer in the page's talk", async () => {
+  const w = withAssistant();
+  await bookAndPay(w);
+  await owner(w, "cancel b-1");
+  const card = openCard(w);
+  const tap = lastCard(w);
+  assert.equal(card.question, "Cancel b-1 (+919811111111, haircut, Wed 4 Nov, 6:00 pm) and refund the ₹200 deposit?", "the page's question is the WhatsApp card's, without the line with the code");
+  const toOwner = w.messaging.sentTo(w.owner).length;
+  await pagePress(w, card, "yes");
+  assert.equal(w.store.bookings.get("b-1")!.state, "cancelled");
+  assert.deepEqual(w.payments.refunds().map((r) => r.amount), [20_000], "the amount sent is the amount shown");
+  assert.equal(w.messaging.sentTo(w.owner).length, toOwner, "the answer is shown on the page, not sent to WhatsApp as well");
+  assert.equal(w.store.assistant!.talk.at(-1)?.text, "Done: ₹200 is on its way back to +919811111111 (b-1).");
+  assert.ok(recordOf(w, "owner_card").some((e) => e.outcome === "confirmed" && e.refs.via === "page"), "the record says the page answered it");
+  // the same card on WhatsApp afterwards: already answered, nothing more is sent back
+  await tapOwner(w, tap.yes);
+  assert.equal(w.lastTextTo(w.owner), "That card was already answered.");
+  assert.equal(w.payments.refunds().length, 1);
+  // and a second press on the page does nothing either
+  await pagePress(w, card, "yes", "page-again");
+  assert.equal(w.payments.refunds().length, 1);
+});
+
+test("a card tapped on WhatsApp is closed on the page; a press with another digest, or a no where the card has none, does nothing", async () => {
+  const w = withAssistant();
+  await bookAndPay(w);
+  await owner(w, "cancel b-1");
+  const card = openCard(w);
+  await pagePress(w, { id: card.id, digest: "0".repeat(32) }, "yes");
+  assert.equal(w.store.bookings.get("b-1")!.state, "confirmed", "a digest the card does not have is not the card the page showed");
+  assert.ok(recordOf(w, "owner_card").some((e) => e.outcome === "blocked" && e.refs.via === "page"));
+  await tapOwner(w, lastCard(w).yes);
+  assert.equal(w.payments.refunds().length, 1);
+  await pagePress(w, card, "yes");
+  assert.equal(w.payments.refunds().length, 1, "already answered on WhatsApp: the page's press does nothing");
+  assert.equal(w.store.assistant!.talk.at(-1)?.text, "That card was already answered.");
+});
+
+test("on the page too a changed amount voids the card and a new one shows the amount as it is now; a no there is final", async () => {
+  const w = withAssistant();
+  const paymentId = await cancelledLateAndKept(w);
+  await owner(w, "refund b-1");
+  const first = openCard(w);
+  w.record.append({ conversation: CUSTOMER, booking: "b-1", action: "refund", outcome: "confirmed", inputs: {}, language: "en", refs: { paymentId, amountPaise: "10000" } });
+  await pagePress(w, first, "yes");
+  assert.equal(w.payments.refunds().length, 0, "the old card did nothing");
+  assert.equal(w.store.assistant!.cards.find((c) => c.id === first.id)!.state, "void");
+  const second = openCard(w);
+  assert.notEqual(second.id, first.id);
+  assert.match(second.question ?? "", /^Refund ₹100 to \+919811111111 for b-1\?/u);
+  await pagePress(w, second, "no");
+  assert.equal(w.store.assistant!.cards.find((c) => c.id === second.id)!.state, "refused");
+  assert.equal(w.store.assistant!.talk.at(-1)?.text, "OK. Nothing was changed.");
+  // the new card was made on the page, so WhatsApp only ever had the first one, which stays void
+  await tapOwner(w, lastCard(w).yes);
+  assert.equal(w.payments.refunds().length, 0, "the old WhatsApp card does nothing after the page's no");
+  await pagePress(w, second, "yes", "page-yes-after-no");
+  assert.equal(w.payments.refunds().length, 0, "nor does a yes on the page after its no");
+});
+
 test("the morning line reads the same store: tomorrow's booking and the deposit recorded the day before", async () => {
   const w = withAssistant();
   await bookAndPay(w);

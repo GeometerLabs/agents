@@ -23,19 +23,19 @@ import type { SayArgs } from "../messaging/say.ts";
 import type { InboundMessage, Messaging } from "../messaging/messaging.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { Outcome, RecordEntry } from "../record/record.ts";
-import { actionDigest, cardButtonId, cardByCode, closeCard, expireCards, judgeReply, makeCard, openCards, parseCardReply, refusedBefore } from "./cards.ts";
+import { actionDigest, cardButtonId, cardByCode, cardById, cardHasNo, closeCard, expireCards, judgeCard, makeCard, openCards, parseCardReply, refusedBefore } from "./cards.ts";
 import type { CardReply } from "./cards.ts";
 import type { OwnerContext, OwnerIntent, OwnerKind } from "./intents.ts";
 import { moodOf, outsideHours, todayIn } from "./mood.ts";
 import type { Mood } from "./mood.ts";
 import { stickerFor } from "./character.ts";
 import type { AssistantSettings } from "./settings.ts";
-import { UNDO_FOR_MS, assistantOf, compactAssistant, nextId } from "./state.ts";
+import { TALK_LINES, UNDO_FOR_MS, assistantOf, compactAssistant, nextId } from "./state.ts";
 import type { AssistantState, CardRecord } from "./state.ts";
 import type { DayRow, OwnerSkill, Prepared, Proposal } from "./skill.ts";
 import { dayFacts, render as renderTemplate, templateMessageFor } from "./templates.ts";
 import type { AssistantTemplateId, TemplateFacts } from "./templates.ts";
-import { CARD_LABELS, write } from "./words.ts";
+import { CARD_LABELS, cardQuestion, write } from "./words.ts";
 import type { MessageData, MessageId } from "./words.ts";
 
 /** The record's names for what the assistant does. Each line also carries `skill` when a skill acted, so the record shows which one. */
@@ -145,8 +145,34 @@ export function createAssistant(deps: AssistantDeps) {
     heldBack: async () => undefined, // a line to a customer that fails the check is the assistant's own words: it is recorded as blocked, and the owner sees the result in the reply
   });
 
+  /**
+   * Integration of items 11d and 11e: while the owner is acting from their page (the talk box, a card's button there), the answers are shown on the page, in the
+   * talk (state.talk), and NOT sent to WhatsApp as well. A card is not written into the talk: it shows in the page's own list of cards with its buttons, and its code
+   * (which the WhatsApp text carries) is never on the page. Set only for the length of one page call (`onPage`), inside one step.
+   */
+  let toPage = false;
+  async function onPage<T>(fn: () => Promise<T>): Promise<T> {
+    toPage = true;
+    try { return await fn(); } finally { toPage = false; }
+  }
+  /** One line of talk, kept with the step; the oldest go once there are more than the page shows. */
+  function talk(from: "owner" | "assistant", text: string): void {
+    const s = state();
+    s.talk.push({ atMs: clock.now(), from, text });
+    if (s.talk.length > TALK_LINES) s.talk = s.talk.slice(-TALK_LINES);
+  }
+
   /** Tell the owner something, in their language. `buttons` make it a card (while their window is open; otherwise the text, which says how to answer). */
   async function tell<K extends MessageId>(id: K, data: MessageData[K], more: { caseId?: string | null; buttons?: Choice[] } = {}): Promise<boolean> {
+    if (toPage) {
+      if (id === "card") return true; // shown in the page's list of cards, with its own buttons
+      const w = write(id, data, shop.owner.language, tz);
+      // the same outgoing check as a WhatsApp message: every value in the words must be on the record
+      const checked = checkText(w.text, w.facts);
+      if (!checked.ok) { deps.log(more.caseId ?? null, owner, "send_message", "blocked", { templates: [`assistant_${id}`] }, { refs: { to: "owner", channel: "owner_page" }, notes: `the answer failed the outgoing check and was not shown: ${checked.problems.join(" ")}`, language: shop.owner.language }); return false; }
+      talk("assistant", w.text);
+      return true;
+    }
     return say({
       booking: more.caseId ?? null, phone: owner, to: "owner", templates: [`assistant_${id}`],
       write: (language) => { const w = write(id, data, language, tz); return { text: w.text, check: w.facts }; },
@@ -191,14 +217,17 @@ export function createAssistant(deps: AssistantDeps) {
     if (no) { await tell("refused_before", { atMs: no.atMs }, { caseId: proposal.case }); return false; }
     const { card, code } = makeCard(s, prepared.action, proposal as unknown as Record<string, unknown>, now);
     // A "no" is offered when it means something: a refusal. A deposit to mark and a refund sent have only the one answer (the owner taps when it is true).
-    const hasNo = !(proposal.kind === "answer" && (proposal.itemKind === "deposit" || proposal.itemKind === "refund_owed"));
+    const hasNo = cardHasNo(card);
     logLine(proposal.case, ASSISTANT_ACTIONS.card, "held_for_owner", { card: card.id, kind: proposal.kind },
       { card: card.id, skill: skill.name, kind: proposal.kind, digest, case: proposal.case, ...(prepared.shown.amountPaise > 0 ? { amountPaise: String(prepared.shown.amountPaise) } : {}) },
       "a card with the exact change was shown to the owner; nothing is done until they tap it");
-    await tell("card", {
+    const cardData = {
       kind: proposal.kind, ...(proposal.kind === "answer" ? { itemKind: proposal.itemKind } : {}), who: prepared.shown.who, ref: proposal.case, what: prepared.shown.what,
       amountPaise: prepared.shown.amountPaise, ...(prepared.shown.words !== undefined ? { words: prepared.shown.words } : {}), ...(prepared.aboveLimit ? { aboveLimit: true } : {}), code, hasNo,
-    }, { caseId: proposal.case, buttons: buttonsFor(proposal.kind, code, hasNo) });
+    };
+    // the owner's page shows the same question beside the card's buttons, without the code (items 11d and 11e together)
+    card.question = cardQuestion(cardData, shop.owner.language, tz);
+    await tell("card", cardData, { caseId: proposal.case, buttons: buttonsFor(proposal.kind, code, hasNo) });
     return true;
   }
 
@@ -226,7 +255,15 @@ export function createAssistant(deps: AssistantDeps) {
     return sent ? { ok: true, note: "sent" } : { ok: false, note: "not_sent" };
   }
 
-  async function onCardReply(reply: CardReply): Promise<void> {
+  /** A tap on WhatsApp, or the card's code typed: the card is found by its code. */
+  const onCardReply = (reply: CardReply): Promise<void> => answerCard(cardByCode(state(), reply.code), reply.answer, reply.via);
+
+  /**
+   * An answer to a card, whichever door it came through: WhatsApp (a tap, or the code typed) or the owner's page (by the card's id and digest). One verdict for both
+   * (cards.ts judgeCard): one use, a no is final, and a yes does the saved action only while the skill's action now has the card's digest.
+   */
+  async function answerCard(found: CardRecord | undefined, answer: "yes" | "no", via: CardReply["via"] | "page"): Promise<void> {
+    const reply = { answer, via };
     const now = clock.now();
     const s = state();
     const current = (card: CardRecord) => {
@@ -235,7 +272,7 @@ export function createAssistant(deps: AssistantDeps) {
       const p = skill.prepare(card.proposal as unknown as Proposal);
       return p.ok ? { ok: true as const, action: p.action } : { ok: false as const, why: p.why };
     };
-    const v = judgeReply(s, reply, now, current);
+    const v = judgeCard(found, answer, now, current);
     const refs = (card: CardRecord, decision: string) => ({ card: card.id, skill: card.action.skill, kind: card.action.kind, digest: card.digest, decision, via: reply.via });
     if (v.verdict === "unknown") { logLine(null, ASSISTANT_ACTIONS.card, "blocked", { via: reply.via }, { decision: reply.answer, via: reply.via }, "a reply with a card code no card has"); await tell("card_unknown", {}); return; }
     const card = v.card;
@@ -430,6 +467,35 @@ export function createAssistant(deps: AssistantDeps) {
   }
 
   /**
+   * Integration of items 11d and 11e: the owner answered a card on their page (an `owner_action` card_yes / card_no, checked at the runtime against the owner's link or
+   * session before it was saved). The page posts the card's id and the digest it showed; a card with another digest is not the one shown, and nothing is done. Then the
+   * same binding as a WhatsApp tap. The answer is shown in the page's talk.
+   */
+  async function onPageCard(a: { card: string; digest: string; answer: "yes" | "no" }): Promise<void> {
+    await onPage(async () => {
+      const card = cardById(state(), a.card);
+      if (!card || card.digest !== a.digest) {
+        logLine(card?.action.case ?? null, ASSISTANT_ACTIONS.card, "blocked", { card: a.card }, { card: a.card, decision: a.answer, via: "page" }, "the owner's page posted a card that is not one the assistant holds with that digest: nothing was done");
+        await tell("card_unknown", {});
+        return;
+      }
+      await answerCard(card, a.answer, "page");
+    });
+  }
+
+  /**
+   * Integration of items 11d and 11e: the owner's words from the talk box on their page (typed, or a voice note the runtime heard). Read by the same assistant as a
+   * WhatsApp message; the owner's line and the answer are kept in the page's talk, and nothing goes to WhatsApp. The fixed phrases ("today", "approve b-3", the
+   * UPI marks) are WhatsApp's: their buttons are already on the page.
+   */
+  async function onPageMessage(msg: InboundMessage): Promise<void> {
+    await onPage(async () => {
+      talk("owner", msg.text);
+      await onOwnerMessage(msg);
+    });
+  }
+
+  /**
    * The owner's voice note as words, or null (no voice service for the owner, or the note could not be made out: the owner is then told to type it). The caller reads
    * the words as the owner's typed message. The audio is never kept; what it cost is the voice service's to count (modules/voice).
    */
@@ -451,7 +517,7 @@ export function createAssistant(deps: AssistantDeps) {
   /** The mood now, from the skills' reads and the clock (mood.ts), and the sticker that shows it. */
   const mood = () => shopMood(skills, state(), clock.now(), tz, shop.settings);
 
-  return { onOwnerMessage, hearOwner, onTick, mood, kinds: context.kinds };
+  return { onOwnerMessage, onPageCard, onPageMessage, hearOwner, onTick, mood, kinds: context.kinds };
 }
 export type Assistant = ReturnType<typeof createAssistant>;
 

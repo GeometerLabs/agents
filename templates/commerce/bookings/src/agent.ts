@@ -1551,6 +1551,13 @@ export function createAgent(deps: AgentDeps): Agent {
    * for what the agent asked the owner. A refund Guard holds is never here: the approvals relay answers it (it alone holds the owner's approver secret).
    */
   async function onOwnerAction(e: OwnerAction): Promise<void> {
+    // Item 11e on the page: an answer to one of the assistant's cards. The card's own binding decides (modules/assistant/cards.ts judgeCard), exactly as for a tap on
+    // WhatsApp: the posted digest must be the card's, the card answers once, and a yes does the saved action only while the store still gives the card's digest.
+    if (e.action === "card_yes" || e.action === "card_no") {
+      if (!assistant) { log(null, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "a card's answer came for a shop without the assistant: nothing was done" }); return; }
+      log(null, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "pressed by the owner on their page; the card's own binding decides, as for a tap on WhatsApp" });
+      return assistant.onPageCard({ card: e.case, digest: e.digest, answer: e.action === "card_yes" ? "yes" : "no" });
+    }
     const item = ownerItems(settings, store, clock.now()).items.find((x) => x.case === e.case && x.digest === e.digest && x.actions.includes(e.action));
     const b = store.bookings.get(e.case) ?? null;
     if (!item) {

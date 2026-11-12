@@ -34,6 +34,11 @@ export interface CardRecord {
   closedAtMs?: number;
   /** A void card: the card made with the action as it is now. */
   replacedBy?: string;
+  /**
+   * The card's question in the owner's language, as the WhatsApp card asks it but without its code (words.ts cardQuestion): what the owner's page shows beside the
+   * card's buttons (integration of items 11d and 11e). Written from the same saved fields; it goes with the card when the card is compacted.
+   */
+  question?: string;
 }
 
 /** A no is final for that exact action (the same digest) for this long: the owner is not asked about it again. The relay's rule for Guard's holds is the same 24 hours. */

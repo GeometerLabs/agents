@@ -285,3 +285,39 @@ test("a day the owner closed through the assistant (item 11e) is offered nowhere
     assert.ok((await startsOnDay()).length > 0, "after undo the day is offered again");
   } finally { await w.done(); }
 });
+
+test("the assistant's cards on the owner's page (item 11e on item 11d's page): the question without its code, answered by id and digest through the card's own binding", async () => {
+  const w = await world({ assistant: {} });
+  try {
+    const slots = (await (await w.api("/slots?service=haircut")).json()) as { days: { slots: { start: string }[] }[] };
+    const started = await (await w.api("/bookings", { service_id: "haircut", start: slots.days[0].slots[0].start, name: "Asha", phone: "9811111111", language: "en" })).json() as { handle: string };
+    await w.client.runtime.idle();
+    const code = w.lines.filter((l) => l.startsWith(`[stand-in WhatsApp] to ${OWNER}`)).map((l) => /received ([A-HJKMNP-Z2-9]{6})/u.exec(l)?.[1]).find(Boolean);
+    assert.ok(code);
+    await w.ownerSays(`received ${code}`);
+    assert.equal(((await (await w.api(`/bookings/${started.handle}`)).json()) as { status: string }).status, "booked");
+
+    await w.ownerSays("cancel b-1");
+    w.linkOwner();
+    type Card = { source: string; case: string; digest: string; actions: string[]; question?: string; booking: string };
+    const state = await (await w.page(`/o/${w.ownerToken}/api/v1/state`)).json() as { cards?: Card[] };
+    assert.equal(state.cards?.length, 1, "the card the owner asked for in the chat waits on the page too");
+    const card = state.cards![0];
+    assert.deepEqual([card.source, card.booking, card.actions], ["runtime", "b-1", ["card_yes", "card_no"]]);
+    assert.match(card.question ?? "", /^Cancel b-1 \(Asha, haircut, .*\) and refund the ₹200 deposit\?$/u);
+    const html = await (await w.page(`/o/${w.ownerToken}?lang=en`)).text();
+    assert.ok(html.includes(`name="case" value="${card.case}"`) && html.includes('name="action" value="card_yes"'), "the page has the card's own buttons");
+    assert.ok(!/reply yes/iu.test(html), "never the card's code: the owner's link is the authority on the page");
+
+    const answer = (digest: string) => w.page(`/o/${w.ownerToken}/api/v1/answer`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ source: "runtime", action: "card_yes", case: card.case, digest }) });
+    assert.equal(((await (await answer("0".repeat(32))).json()) as { result: string }).result, "changed", "a digest the page did not show does nothing");
+    assert.equal(((await (await answer(card.digest)).json()) as { result: string }).result, "done");
+    await w.client.runtime.idle();
+    assert.equal(((await (await w.api(`/bookings/${started.handle}`)).json()) as { status: string }).status, "cancelled");
+    assert.ok(w.record().some((e) => e.action === "owner_card" && e.outcome === "confirmed" && e.refs.via === "page"), "the card's binding did it, from the page");
+    const after = await (await w.page(`/o/${w.ownerToken}/api/v1/state`)).json() as { cards?: Card[]; waiting: { kind: string }[] };
+    assert.deepEqual(after.cards, [], "the card is answered");
+    assert.ok(after.waiting.some((x) => x.kind === "refund_owed"), "on a UPI shop the owner now owes the deposit back, and marks it sent like any other");
+    assert.equal(((await (await answer(card.digest)).json()) as { result: string }).result, "changed", "a second press finds no such card");
+  } finally { await w.done(); }
+});

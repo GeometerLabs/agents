@@ -11,6 +11,7 @@ import { formatInr, formatSlot } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import type { OwnerItemView, OwnerView, RelayAsk } from "./backend.ts";
 import { OWNER, PAGE } from "./words.ts";
+import { CARD_LABELS } from "../assistant/words.ts";
 
 const CSS = `
 :root{--ink:#10231a;--mute:#4b5d52;--line:#cfe3d6;--g9:#14532d;--g7:#15803d;--g1:#dcfce7;--amber:#92400e;--amber-bg:#fffbeb}
@@ -58,7 +59,14 @@ export function ownerPage(o: OwnerPageInput): string {
     const detail = [a.serviceName, a.slotMs !== undefined ? formatSlot(a.slotMs, tz, o.language) : ""].filter(Boolean).join(", ");
     return html`<div class="item"><p>${w.guardRefund(a.customerPhone ?? "", formatInr(a.amountPaise / 100), detail || (a.booking ?? ""), formatSlot(a.untilMs, tz, o.language))}</p>${b("approve", w.approve)}${b("deny", w.deny, true)}</div>`;
   };
-  const waiting = [...o.relayAsks.map(ask), ...v.items.map(item)];
+  // item 11e: the assistant's open cards, with the same question and buttons as on WhatsApp, answered by the card's id and digest (never its code)
+  const labels = CARD_LABELS[o.language];
+  const card = (c: NonNullable<OwnerView["app"]>["cards"][number]): Raw => {
+    const b = (action: "card_yes" | "card_no", label: string, quiet = false) => button(o.base, { source: "runtime", action, case: c.id, digest: c.digest }, label, quiet, o.csrf);
+    const message = c.kind === "message";
+    return html`<div class="item"><p>${c.question ?? `${c.case}: ${c.who}${c.amountPaise > 0 ? `, ${formatInr(c.amountPaise / 100)}` : ""}`}</p>${b("card_yes", message ? labels.send : labels.approve)}${c.hasNo ? b("card_no", message ? labels.dontSend : labels.refuse, true) : ""}</div>`;
+  };
+  const waiting = [...o.relayAsks.map(ask), ...v.items.map(item), ...(v.app?.cards ?? []).map(card)];
   const machine = PAGE[o.language].machine;
   return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
 <title>${w.title(v.shop.name)}</title><style>${raw(CSS)}</style></head><body><main><header><h1>${w.title(v.shop.name)}</h1></header>

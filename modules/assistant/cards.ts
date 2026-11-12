@@ -93,11 +93,21 @@ export type CardVerdict =
   | { verdict: "gone"; card: CardRecord; why: string };
 
 export function judgeReply(state: AssistantState, reply: CardReply, nowMs: number, current: (card: CardRecord) => { ok: true; action: CardAction } | { ok: false; why: string }): CardVerdict {
-  const card = cardByCode(state, reply.code);
+  return judgeCard(cardByCode(state, reply.code), reply.answer, nowMs, current);
+}
+
+/** The card with this id ("c-3"), whatever its state; undefined when no card has it. The owner's page answers a card by its id and digest, never by its code. */
+export const cardById = (state: AssistantState, id: string): CardRecord | undefined => state.cards.find((c) => c.id === id);
+
+/**
+ * The one verdict for an answer to a card, however it came: a WhatsApp tap or a typed code (found by its code, judgeReply), or a press on the owner's page (found by
+ * its id, after the caller checked the posted digest is the card's own). The same rules for both doors, so a card answered at one is closed at the other.
+ */
+export function judgeCard(card: CardRecord | undefined, answer: "yes" | "no", nowMs: number, current: (card: CardRecord) => { ok: true; action: CardAction } | { ok: false; why: string }): CardVerdict {
   if (!card) return { verdict: "unknown" };
   if (card.state !== "open") return { verdict: "closed", card };
   if (nowMs >= card.expiresAtMs) return { verdict: "expired", card };
-  if (reply.answer === "no") return { verdict: "refuse", card }; // a no needs no fresh read: it changes nothing
+  if (answer === "no") return { verdict: "refuse", card }; // a no needs no fresh read: it changes nothing
   const now = current(card);
   if (!now.ok) return { verdict: "gone", card, why: now.why };
   if (actionDigest(now.action) !== card.digest) return { verdict: "changed", card, now: now.action };
@@ -116,6 +126,14 @@ export function expireCards(state: AssistantState, nowMs: number): CardRecord[] 
   const out: CardRecord[] = [];
   for (const c of state.cards) if (c.state === "open" && nowMs >= c.expiresAtMs) { c.state = "expired"; c.closedAtMs = nowMs; out.push(c); }
   return out;
+}
+
+/**
+ * Does this card offer a no? A deposit to mark and a refund sent have only the one answer (the owner taps when it is true); every other card's no means something.
+ * The WhatsApp card's buttons and the owner's page read it from here, so both doors offer the same answers.
+ */
+export function cardHasNo(card: { action: CardAction; proposal: Record<string, unknown> }): boolean {
+  return !(card.proposal.kind === "answer" && (card.proposal.itemKind === "deposit" || card.proposal.itemKind === "refund_owed"));
 }
 
 /** The open cards, oldest first: what the owner's app and "what needs me" show. */
