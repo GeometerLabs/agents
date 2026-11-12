@@ -4,8 +4,8 @@
 // panel at phone width: no inline style (the CSP never let one apply), the open tab marked.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { recipientOf } from "../../backup/age.ts";
 import { serverSettingsPaths } from "../server-contract.ts";
 import { boot } from "./helpers.ts";
@@ -66,7 +66,8 @@ test("the model is a request the deployer applies, and its key goes only to the 
     await arjun.post("/server/model", { kind: "other", model: "gemini-2.0-flash", upstream: "generativelanguage.googleapis.com:443", path: "/v1beta/openai/chat/completions" }, "/server");
     assert.deepEqual(JSON.parse(read(p.modelRequest)).model, { wire: "openai", model: "gemini-2.0-flash", upstream: "generativelanguage.googleapis.com:443", path: "/v1beta/openai/chat/completions" });
 
-    // what the deployer said, read from status/_server.json
+    // what the deployer said, read from status/_server.json (the deployer makes the status folder; a fresh panel folder has none yet)
+    mkdirSync(dirname(p.status), { recursive: true });
     writeFileSync(p.status, JSON.stringify({ schema: 1, updatedAt: "2026-11-04T05:00:00Z", requests: { model: { requestId: "model_x", state: "refused", at: "2026-11-04T05:00:00Z", message: "This server already runs glow-salon." } }, keys: {} }));
     rmSync(p.modelRequest); // the deployer took the request
     assert.match((await arjun.get("/server")).plain, /This server already runs glow-salon\./u);
