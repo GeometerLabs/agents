@@ -1,16 +1,15 @@
 // The voice-note cases every template must pass the same way (plan B29): Bookings, Orders and Fees each call `voiceCases` with their own harness. The harnesses differ in
-// names; the behaviour under test does not: a voice note is read like typed text, the reply is also spoken, the cost is counted, a note that cannot be used gets the "could
+// names; the behaviour under test does not: a voice note is read like typed text, the reply is text only, the cost is counted, a note that cannot be used gets the "could
 // not make out" line (and the old line when voice is off), nobody is listened to who must not be, and the day's limit lives in the saved state.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createVoice } from "../../voice.ts";
 import type { VoiceService } from "../../voice.ts";
 import { fakeVoiceNote, scriptedSpeech, scriptedWire } from "../../standin.ts";
-import { memoryAudioHost } from "../../links.ts";
 import { sttCostMicroInr } from "../../speech.ts";
 import { summarizeUsage } from "../../../../bundle/lib/usage.ts";
 
-export const RATE = { sttInrPerMinute: 0.6, ttsInrPer1000Characters: 3 };
+export const RATE = { sttInrPerMinute: 0.6 };
 const SECONDS = 12;
 
 interface Messaging { receive(from: string, text: string, o?: object): never; sentTo(n: string): { kind: string; text: string }[]; outbox(): unknown[] }
@@ -32,7 +31,7 @@ export function voiceCases<W extends AnyWorld>(h: Harness<W>): void {
     const lookup = scriptedWire({ "/v26.0/MEDIA1": { json: { url: "https://media.stand-in/audio", file_size: "300" } }, "/v26.0/MEDIA2": { json: { url: "https://media.stand-in/audio", file_size: "300" } } });
     const download = scriptedWire({ "/audio": { bytes: fakeVoiceNote(SECONDS), contentType: "audio/ogg" } });
     let w: W | undefined;
-    const voice = createVoice({ provider: speech, media: { lookup, download, version: "v26.0", downloadHosts: ["media.stand-in"] }, host: memoryAudioHost().host, rate: RATE, languages: ["hi", "en", "ml", "kn"], clock: { now: () => w!.clock.now() }, repliesOn: true, ...(o.notesPerDay ? { notesPerDay: o.notesPerDay } : {}) });
+    const voice = createVoice({ provider: speech, media: { lookup, download, version: "v26.0", downloadHosts: ["media.stand-in"] }, rate: RATE, languages: ["hi", "en", "ml", "kn"], clock: { now: () => w!.clock.now() }, ...(o.notesPerDay ? { notesPerDay: o.notesPerDay } : {}) });
     w = h.create({ voice, ...(o.ai ? { ai: o.ai } : {}) });
     return { w, speech };
   };
@@ -41,22 +40,20 @@ export function voiceCases<W extends AnyWorld>(h: Harness<W>): void {
     await w.agent.handle({ kind: "message", message });
   };
 
-  test(`${h.name}: a voice note is read like typed text, the reply is also spoken, and the cost is counted once`, async () => {
+  test(`${h.name}: a voice note is read like typed text, the reply is text only, and the cost is counted once`, async () => {
     const typed = h.create({});
     await typed.say(h.greeting);
     const { w, speech } = make();
     await note(w);
     const sent = w.messaging.sentTo(h.customer);
-    assert.deepEqual(sent.map((m) => m.kind), [...typed.messaging.sentTo(h.customer).map((m) => m.kind), "audio"]);
+    assert.deepEqual(sent.map((m) => m.kind), typed.messaging.sentTo(h.customer).map((m) => m.kind), "exactly what a typed message gets: no audio is ever sent");
     assert.equal(sent[0].text, typed.messaging.sentTo(h.customer)[0].text, "the words are what the typed message gets");
     const received = w.record.entries().find((e) => e.action === "receive_message")!;
     assert.equal(received.refs.via, "voice");
     assert.equal(received.refs.speechSeconds, "12.0");
-    const audio = w.record.entries().find((e) => e.refs?.audio === "voice")!;
-    assert.equal(audio.outcome, "confirmed");
-    assert.deepEqual(speech.calls.map((c) => c.kind), ["transcribe", "synthesize"]);
+    assert.deepEqual(speech.calls.map((c) => c.kind), ["transcribe"]);
     const spent = w.store.ai!.costMicroInr;
-    assert.equal(spent, sttCostMicroInr(RATE, SECONDS) + Math.ceil(RATE.ttsInrPer1000Characters * (Number(audio.refs.characters) / 1000) * 1_000_000 - 1e-9));
+    assert.equal(spent, sttCostMicroInr(RATE, SECONDS));
     assert.equal(summarizeUsage(w.record.entries() as never, {}).modelMicroInr, spent, "the cost meter and the allowance agree");
   });
 

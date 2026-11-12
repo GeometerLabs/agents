@@ -102,11 +102,6 @@ export function whatsappStandin(messaging: FakeMessaging, catalogue: TemplateCat
         const img = body.image;
         if (typeof img?.link !== "string" || (img.caption !== undefined && typeof img.caption !== "string")) return metaError(400, 131009, "Parameter value is not valid: an image needs a link.");
         id = (await messaging.sendImage(body.to, { link: img.link, ...(img.caption !== undefined ? { caption: img.caption } : {}) })).id;
-      } else if (body.type === "audio") {
-        // B29: a spoken reply by its address; Meta's body is { type: "audio", audio: { link } } (no words travel with it, so the stand-in keeps a fixed label for the outbox)
-        const a = body.audio;
-        if (typeof a?.link !== "string") return metaError(400, 131009, "Parameter value is not valid: an audio message needs a link.");
-        id = (await messaging.sendAudio(body.to, { link: a.link, text: "(spoken reply)", ...(a.voice === true ? { voice: true as const } : {}) })).id;
       } else if (body.type === "template" && typeof body.template?.name === "string") {
         const language = (Object.keys(META_LANGUAGE) as Language[]).find((l) => META_LANGUAGE[l] === body.template.language?.code);
         const template = catalogue.templates.find((t) => t.name === body.template.name);

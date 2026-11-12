@@ -62,7 +62,7 @@ export interface MessageStatus {
 export interface OutboundMessage {
   id: string;
   to: string;
-  kind: "text" | "template" | "interactive" | "document" | "image" | "audio";
+  kind: "text" | "template" | "interactive" | "document" | "image";
   /** For an interactive message, the body and then each option on its own line (interactiveText): what the outgoing check read. */
   text: string;
   /** Interactive only: the buttons or the list that went with the body. */
@@ -71,8 +71,6 @@ export interface OutboundMessage {
   document?: DocumentMessage;
   /** Image only: the picture WhatsApp was asked to fetch and show (`text` is its caption). */
   image?: ImageMessage;
-  /** Audio only: the spoken reply WhatsApp was asked to fetch and play (`text` is the words it says, which went as text beside it). */
-  audio?: AudioMessage;
   templateName?: string;
   language?: Language;
   sentAt: number;
@@ -115,21 +113,6 @@ export function imageProblem(image: ImageMessage): string | null {
   return null;
 }
 
-/**
- * A spoken reply sent by its address, like a picture: WhatsApp fetches `link` itself (https, reachable from the internet; MP3, AAC, M4A, AMR or Ogg Opus, at most 16 MB).
- * A session message like free text: only while the person's 24-hour window is open, and never an approved template. Sent by link and not by an uploaded media id
- * because every provider here takes a link for media (Gupshup documents no upload), and a link keeps the call one JSON body through the WhatsApp Guard.
- * `text` is the words it says, kept for the record and the outgoing check; the same words always go as text too.
- */
-export interface AudioMessage { link: string; text: string; /** True for Ogg Opus: WhatsApp then shows the voice-note bubble (Meta's `voice: true`). Never set for MP3. */ voice?: true }
-
-/** Why a spoken reply cannot be sent, in plain words, or null. */
-export function audioProblem(audio: AudioMessage): string | null {
-  if (!/^https:\/\/[^\s]+$/u.test(audio.link)) return "the link must start with https:// and hold no spaces";
-  if (audio.text.trim() === "") return "the words the audio says must be given";
-  return null;
-}
-
 export interface Messaging {
   /** Free-form text. Only allowed while the customer's 24-hour window is open. */
   sendText(to: string, text: string): Promise<OutboundMessage>;
@@ -144,8 +127,6 @@ export interface Messaging {
   sendDocument?(to: string, doc: DocumentMessage): Promise<OutboundMessage>;
   /** A picture by its address (see ImageMessage). Like free text, only while the person's 24-hour window is open. Optional: a provider without it is not asked, and the words go alone. */
   sendImage?(to: string, image: ImageMessage): Promise<OutboundMessage>;
-  /** A spoken reply by its address (see AudioMessage). Like free text, only while the person's 24-hour window is open. Optional: a provider without it is not asked, and the words go alone. */
-  sendAudio?(to: string, audio: AudioMessage): Promise<OutboundMessage>;
   /** Did this person message us in the last 24 hours? */
   isWindowOpen(to: string): Promise<boolean>;
   getMessage(id: string): Promise<OutboundMessage | null>;
@@ -158,13 +139,12 @@ export interface Messaging {
 
 /** lostReply: the message goes out, the reply is lost. error: the provider refuses. */
 export type MessagingFault = "lostReply" | "error";
-export type MessagingOp = "sendText" | "sendTemplate" | "sendInteractive" | "sendDocument" | "sendImage" | "sendAudio";
+export type MessagingOp = "sendText" | "sendTemplate" | "sendInteractive" | "sendDocument" | "sendImage";
 
 export interface FakeMessaging extends Messaging {
   sendInteractive(to: string, message: InteractiveMessage): Promise<OutboundMessage>;
   sendDocument(to: string, doc: DocumentMessage): Promise<OutboundMessage>;
   sendImage(to: string, image: ImageMessage): Promise<OutboundMessage>;
-  sendAudio(to: string, audio: AudioMessage): Promise<OutboundMessage>;
   /** A person sends us a message (this opens their window). Pass the same `id` again, or call deliver twice, for a duplicate. `image`: they sent a picture (its words, if any, are `text`). */
   receive(from: string, text: string, options?: { id?: string; reply?: { id: string; kind: "button" | "list" }; image?: boolean; voiceNote?: boolean; media?: VoiceMediaRef }): InboundMessage;
   outbox(): OutboundMessage[];
@@ -246,17 +226,6 @@ export function createFakeMessaging(clock: Clock): FakeMessaging {
       if (problem) throw new ApiError(400, `The image cannot be sent: ${problem}.`);
       const m = store({ to, kind: "image", text: image.caption ?? "", image: { ...image } });
       if (fault === "lostReply") throw new TimeoutError("send image");
-      return { ...m };
-    },
-
-    async sendAudio(to, audio) {
-      const fault = faults.take("sendAudio");
-      if (fault === "error") throw new ApiError(500, "The provider could not take the message.");
-      if (!windowOpen(to)) throw new WindowClosedError();
-      const problem = audioProblem(audio);
-      if (problem) throw new ApiError(400, `The audio cannot be sent: ${problem}.`);
-      const m = store({ to, kind: "audio", text: audio.text, audio: { ...audio } });
-      if (fault === "lostReply") throw new TimeoutError("send audio");
       return { ...m };
     },
 

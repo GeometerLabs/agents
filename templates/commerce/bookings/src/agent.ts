@@ -97,7 +97,7 @@ export interface AgentDeps {
    */
   qrImage?: (text: string) => Promise<string | null>;
   /**
-   * B29, voice notes: listens to a customer's voice note (speech to text) and speaks a reply (text to speech); modules/voice. Handed in, so the agent never loads a provider or
+   * B29, voice notes: listens to a customer's voice note (speech to text); modules/voice. The agent always replies in text. Handed in, so the agent never loads a provider or
    * a node module. Left out: voice is off for this shop and a voice note gets the one line asking the customer to type, exactly as before.
    */
   voice?: VoiceService;
@@ -209,7 +209,6 @@ export function createAgent(deps: AgentDeps): Agent {
       matches: (text, facts) => checkMessageMatchesRecord({ text, facts }),
     },
     owner: { whatsapp: owner, language: settings.owner.language },
-    ...(deps.voice ? { speech: deps.voice, countSpeech: (micro: number) => reader.countSpeech("replies", micro) } : {}),
     languageOf: (phone, booking) => languageOf(phone, booking),
     optedOut: (phone) => customerOf(phone).optedOut,
     factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || a.offer?.kind === "services", ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.slots } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, day: a.day, dayBookings: a.dayBookings }),
@@ -224,10 +223,8 @@ export function createAgent(deps: AgentDeps): Agent {
     heldBack: async (a) => { await say({ booking: a.booking, phone: a.phone, to: "owner", templates: ["owner_message_held"] }); },
   });
 
-  // B29: the customer whose voice note is being answered right now; every reply to them in this turn is spoken as well as written. Order is shop-wide (one step at a time), so one name is enough.
-  let speakTo: string | null = null;
   const tellCustomer = (b: Booking | null, phone: string, templates: TemplateId[], more: { refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: SayArgs["image"]; markedInr?: number } = {}) =>
-    say({ booking: b, phone, to: "customer", templates, ...(speakTo === phone ? { spoken: true } : {}), ...more });
+    say({ booking: b, phone, to: "customer", templates, ...more });
   const tellOwner = (b: Booking | null, phone: string, template: TemplateId, more: { refundInr?: number; slotMs?: number; offer?: Offer; upiCode?: string; markedInr?: number; leftInr?: number } = {}) =>
     say({ booking: b, phone, to: "owner", templates: [template], ...more });
 
@@ -1240,8 +1237,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (ownerConfirms && !msg.reply && !customer.optedOut && PAID_CLAIM.test(msg.text) && !NOT_PAID.test(msg.text) && latestBooking(store, phone, ["awaiting_deposit"])) {
       // B29: a voice note that says "I paid" is recorded as voice too, with what listening cost, so the cost meter does not miss it
       log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(voiceHeard ? { voice: true } : {}) }, { refs: { messageId: msg.id, step: "rules", ...(voiceHeard ? { ...voiceMarks(voiceHeard), costMicroInr: String(voiceHeard.costMicroInr) } : {}) } });
-      if (voiceHeard) speakTo = phone;
-      try { return await onPaidClaim(phone, "words"); } finally { speakTo = null; }
+      return onPaidClaim(phone, "words");
     }
     // A tap on a button or a list row is read by looking its id up: no words are read, so no model is asked, whatever the mode. An id that is none of ours is read as words.
     const tapped = msg.reply ? intentFromReply(msg.reply.id, settings) : null;
@@ -1260,7 +1256,6 @@ export function createAgent(deps: AgentDeps): Agent {
       ...(understoodRefs.costMicroInr !== undefined ? { costMicroInr: String(Number(understoodRefs.costMicroInr) + voiceHeard.costMicroInr) } : {}),
     } : {};
     log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}), ...(voiceHeard ? { voice: true } : {}) }, { notes: [notes, voiceHeard ? "the customer sent a voice note; this is its transcript" : undefined].filter(Boolean).join("; "), refs: { messageId: msg.id, ...understoodRefs, ...voiceRefs } });
-    if (voiceHeard) speakTo = phone;
 
     try {
       if (intent.kind === "stop") return await onStop(phone);
@@ -1279,7 +1274,6 @@ export function createAgent(deps: AgentDeps): Agent {
         default: if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) });
       }
     } finally {
-      speakTo = null;
       await announceButtonMode(); // after the customer has their answer
     }
   }

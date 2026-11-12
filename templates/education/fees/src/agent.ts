@@ -84,7 +84,7 @@ export interface AgentDeps {
   store: Store;
   /** The monthly AI allowance and the outside switch (modules/understanding/ai-state.ts). Left out: no limit, no switch; a model that fails still puts the agent in button mode for a few minutes. */
   ai?: AiPolicy;
-  /** B29, voice notes (modules/voice): listens to a customer's voice note and speaks a reply. Handed in so the agent loads no provider code. Left out: voice is off and a voice note gets the one line asking to type, as before. */
+  /** B29, voice notes (modules/voice): listens to a customer's voice note and turns it into text; the agent always replies in text. Handed in so the agent loads no provider code. Left out: voice is off and a voice note gets the one line asking to type, as before. */
   voice?: VoiceService;
   /** An owner-marked centre: make the QR picture of its pay link and put it where WhatsApp can fetch it (modules/payments/owner-marked/qr-image.ts). Left out, or null: the words carry the link and the UPI ID. */
   qrImage?: (text: string) => Promise<string | null>;
@@ -115,7 +115,7 @@ const HOURLY = HOUR; // the owner is told about the same parent at most this oft
 
 /** Buttons with words above them; `choices` are the owner's UPI buttons (each carries its one-use code) instead of the named ones. */
 type Offer = { kind: "buttons"; buttons: ButtonId[]; dueId?: string; body?: TemplateId[]; choices?: Choice[] };
-interface SayArgs { spoken?: boolean; booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string }
+interface SayArgs { booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string }
 
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, messaging, parser, record, store } = deps;
@@ -167,7 +167,6 @@ export function createAgent(deps: AgentDeps): Agent {
       matches: (text, facts) => checkMessageMatchesRecord({ text, facts }),
     },
     owner: { whatsapp: owner, language: settings.owner.language },
-    ...(deps.voice ? { speech: deps.voice, countSpeech: (micro: number) => reader.countSpeech("replies", micro) } : {}),
     languageOf: (phone, due) => languageOf(phone, due),
     optedOut: (phone) => customerOf(phone).optedOut,
     factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode }),
@@ -193,9 +192,7 @@ export function createAgent(deps: AgentDeps): Agent {
   });
 
   type More = Omit<SayArgs, "booking" | "phone" | "to" | "templates">;
-  // B29: the customer whose voice note is being answered right now; every reply to them in this turn is spoken as well as written (one step at a time, so one name is enough)
-  let speakTo: string | null = null;
-  const tellCustomer = (due: Due | null, phone: string, templates: TemplateId[], more: More = {}) => say({ booking: due, phone, to: "customer", templates, ...(speakTo === phone ? { spoken: true } : {}), ...more });
+  const tellCustomer = (due: Due | null, phone: string, templates: TemplateId[], more: More = {}) => say({ booking: due, phone, to: "customer", templates, ...more });
   const tellOwner = (due: Due | null, phone: string, template: TemplateId, more: More = {}) => say({ booking: due, phone, to: "owner", templates: [template], ...more });
 
   /** What goes with a message to a parent as tappable buttons: pay now, I have paid, talk to the owner. */
@@ -893,7 +890,6 @@ export function createAgent(deps: AgentDeps): Agent {
     const understoodRefs = understandingRefs(understood, tapped ? msg.reply!.kind : undefined);
     const voiceRefs: Record<string, string> = voiceHeard ? { ...voiceMarks(voiceHeard), ...(understoodRefs.costMicroInr !== undefined ? { costMicroInr: String(Number(understoodRefs.costMicroInr) + voiceHeard.costMicroInr) } : {}) } : {};
     log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}), ...(voiceHeard ? { voice: true } : {}) }, { notes, refs: { messageId: msg.id, ...understoodRefs, ...voiceRefs } });
-    if (voiceHeard) speakTo = phone;
 
     try {
       if (intent.kind === "stop") return await onStop(phone);
@@ -908,7 +904,6 @@ export function createAgent(deps: AgentDeps): Agent {
         default: await onMenu(phone, false);
       }
     } finally {
-      speakTo = null;
       await announceButtonMode(); // after the parent has their answer
     }
   }

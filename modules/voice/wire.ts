@@ -1,4 +1,4 @@
-// The HTTP the speech and media calls need and modules/core/http.ts does not do: a multipart body going out (the audio) and raw bytes coming back (the audio), with
+// The HTTP the speech and media calls need and modules/core/http.ts does not do: a multipart body going out (the audio) and raw bytes coming back (the downloaded audio), with
 // the same Guard classification as every other live adapter (core/http.ts `classify`): an answer with a `guard` object is Guard's decision, never the provider's reply.
 // Like core/http.ts it holds no key: the base URL is a Guard in front of the provider, `agentToken` is only this agent's credential for that Guard.
 // Short timeouts on purpose (voice calls never wait on a down Guard: see voice.ts), so a slow provider costs the customer one line asking to type, not the shop's queue.
@@ -10,8 +10,6 @@ export interface WireReply { status: number; contentType: string; bytes: Uint8Ar
 
 export interface WireOptions {
   query?: Record<string, string | number | undefined>;
-  /** Sent as a JSON body. */
-  json?: unknown;
   /** Sent as multipart/form-data (the audio is one part). */
   form?: FormData;
   /** The most bytes of a reply to accept; more is cut off as an error (a download is never allowed to fill memory). */
@@ -31,7 +29,6 @@ export function createWire(baseUrl: string, what: string, timeoutMs: number, age
       if (agentToken) headers.authorization = `Bearer ${agentToken}`;
       let body: string | FormData | undefined;
       if (o.form) body = o.form;
-      else if (o.json !== undefined) { body = JSON.stringify(o.json); headers["content-type"] = "application/json"; }
       let res: Response;
       try { res = await fetch(url, { method, headers, body, signal: AbortSignal.timeout(timeoutMs) }); }
       catch (e) {

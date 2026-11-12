@@ -86,16 +86,6 @@ export function whatsappTypeOf(entry: unknown): WhatsappType | undefined {
   return templates.includes("reminder") ? "utility" : "service";
 }
 
-/**
- * What a SPOKEN copy of a reply cost (plan B29): the record's `send_message` entry for the audio carries `refs.audio` = "voice" and the speech provider's charge in
- * `refs.costMicroInr`. It is model spend like listening is, so the cost meter adds it to `modelMicroInr` (fleet's AI cap reads that number). Null when the entry is not one,
- * or its cost is not a whole number: a missing cost is not 0, but a spoken copy is only made when the builder gave the rate, so it is simply not counted.
- */
-export function spokenCostOf(entry: unknown): number | null {
-  if (!isObj(entry) || entry.action !== "send_message" || !isObj(entry.refs) || entry.refs.audio !== "voice") return null;
-  return wholeOrNull(entry.refs.costMicroInr);
-}
-
 /** A customer's message the agent handled: logged `receive_message`, confirmed. A repeated delivery is logged `blocked` and is not a message. */
 export const isCustomerMessage = (entry: unknown): boolean => isObj(entry) && entry.action === "receive_message" && entry.outcome === "confirmed";
 
@@ -153,7 +143,7 @@ export const isReportSent = (entry: unknown): boolean => isObj(entry) && entry.a
 export function replyLanguageOf(entry: unknown): Language | undefined {
   if (!isObj(entry) || (entry.action !== "send_message" && entry.action !== "voice_note_reply") || entry.outcome !== "confirmed") return undefined;
   const refs = isObj(entry.refs) ? entry.refs : {};
-  if (refs.to !== "customer" || refs.image !== undefined || refs.audio !== undefined) return undefined; // a picture or a spoken copy goes beside the words: the reply counts once
+  if (refs.to !== "customer" || refs.image !== undefined) return undefined; // a picture goes beside the words: the reply counts once
   return (LANGUAGES as readonly unknown[]).includes(entry.language) ? (entry.language as Language) : undefined;
 }
 
@@ -172,8 +162,6 @@ export function summarizeUsage(entries: readonly unknown[], rates: UsageRates): 
       else t.modelMicroInr += u?.costMicroInr ?? 0; // no understanding at all: the rules read it, for free
       continue;
     }
-    const spoken = spokenCostOf(entry);
-    if (spoken !== null) t.modelMicroInr += spoken; // the provider's charge is paid whether or not WhatsApp took the audio
     const type = whatsappTypeOf(entry);
     if (type) t.whatsapp[type]++;
   }
