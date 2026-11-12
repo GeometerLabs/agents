@@ -160,8 +160,11 @@ export interface PreparedAgent { folder: AgentFolder; plan: AgentPlan; guards: P
 /** What an agent is asked to be: its two files, and an own gateway API's reviewed spec (its two files) when it has one, so a changed accept file is a change to deploy. */
 export const agentDesiredHash = (f: Pick<AgentFolder, "agentText" | "settingsText" | "ownApi">): string => sha256Hex(stableJson({ agent: agentGuardPart(f.agentText), settings: f.settingsText, ...(f.ownApi ? { ownApi: f.ownApi } : {}) }));
 
-/** Hand-in names a shop may use that an own agent never does: Gupshup's token (item 11b is for shops; an own agent's WhatsApp is Meta's API). */
-const OWN_AGENT_NOT_ASKED: ReadonlySet<string> = new Set(["gupshup_authorization"]);
+/**
+ * Hand-in names a shop may use that an own agent never does: Gupshup's token (item 11b) and a shop's own Gupshup API key (item 11c) are for shops; an own agent's
+ * WhatsApp is Meta's API ("Agents someone else wrote stay on Meta", modules/Deferred.md).
+ */
+const OWN_AGENT_NOT_ASKED: ReadonlySet<string> = new Set(["gupshup_authorization", "gupshup_apikey"]);
 
 /** What an agent needs before it can run, said by the name `agent add` printed it under. */
 function missingSecrets(dir: string, name: string, f: AgentFolder): Problem[] {
