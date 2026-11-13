@@ -14,6 +14,7 @@ import { textQrSvg } from "../qr/svg.ts";
 import type { BookingView, Offer } from "./backend.ts";
 import { PAGE } from "./words.ts";
 import { FACE_CSS, facePartnerLine, shopFace } from "./shop-face.ts";
+import { CONFIRM } from "./words-confirm.ts";
 import type { PagesFile } from "./pages-file.ts";
 
 const CSS = `
@@ -26,7 +27,7 @@ h2{font-size:1.1rem;margin:22px 0 8px}a{color:var(--g7)}.langs a,.langs b{margin
 .slots{display:flex;flex-wrap:wrap;gap:8px}.slots label{border:1px solid var(--line);border-radius:8px;padding:8px 10px}.slots input{margin-right:6px}
 label.f{display:block;margin:10px 0 4px;font-weight:600}input[type=text],input[type=tel]{width:100%;font-size:1.05rem;padding:10px;border:1px solid var(--line);border-radius:8px}
 button,.btn{display:inline-block;margin-top:14px;font-size:1.05rem;padding:12px 18px;border-radius:10px;border:0;background:var(--g7);color:#fff;text-decoration:none;cursor:pointer}
-button.quiet{background:#fff;color:var(--g9);border:1px solid var(--line)}.status{font-size:1.15rem;font-weight:600;margin:16px 0}.box{border:1px solid var(--line);border-radius:12px;padding:14px;margin:14px 0}
+button.quiet,.btn.quiet{background:#fff;color:var(--g9);border:1px solid var(--line)}.status{font-size:1.15rem;font-weight:600;margin:16px 0}.box{border:1px solid var(--line);border-radius:12px;padding:14px;margin:14px 0}
 .qr svg{width:220px;height:220px;display:block;margin:10px 0}.msgs li{border-left:3px solid var(--line);padding:4px 10px;margin:0 0 8px;white-space:pre-line}.warn{color:var(--amber)}footer{margin-top:28px;border-top:1px solid var(--line);padding-top:12px}
 `;
 
@@ -105,8 +106,12 @@ export function bookingPage(o: { shop: PageShop; offer: Offer; language: Languag
   });
 }
 
-/** A booking's own page: where it has got to, how to pay while it is held, cancel, and the shop's messages about it. Refreshes itself while something is still to come. */
-export function statusPage(o: { shop: PageShop; offer: Offer; language: Language; handle: string; view: BookingView | null; notice?: string }): string {
+/**
+ * A booking's own page: where it has got to, how to pay while it is held, cancel, and the shop's messages about it. Refreshes itself while something is still to come.
+ * Item 11h (decision 45): it is the customer's confirmation page without WhatsApp: the refund as the record holds it, a calendar file (`ics`), and (`alerts`, already
+ * drawn, with the push service's script) "Tell me on this phone".
+ */
+export function statusPage(o: { shop: PageShop; offer: Offer; language: Language; handle: string; view: BookingView | null; notice?: string; ics?: string; alerts?: string }): string {
   const w = PAGE[o.language];
   const s = o.offer.shop;
   const tz = s.timezone;
@@ -136,10 +141,13 @@ ${v.canSayPaid ? html`<form method="post" action="${self}/paid"><input type="hid
   }
   const cancel = v.canCancel ? html`<form method="post" action="${self}/cancel"><input type="hidden" name="lang" value="${o.language}"><button class="quiet" type="submit">${w.cancel}</button><p class="note">${w.cancelRule(s.cancellation.windowHours)}</p></form>` : "";
   const messages = v.messages.length > 0 ? html`<h2>${w.messages}</h2><ul class="list msgs">${[...v.messages].reverse().map((m) => html`<li>${m.text}<br><small class="note">${formatSlot(m.atMs, tz, o.language)}</small></li>`)}</ul>` : "";
+  const c = CONFIRM[o.language];
+  const refund = v.refund ? html`<p class="status" id="refund">${c.refund[v.refund.state](formatInr(v.refund.amountInr))}</p>` : "";
+  const calendar = o.ics ? html`<p><a class="btn quiet" href="${o.ics}" download>${c.ics}</a><br><small class="note">${c.icsNote}</small></p>` : "";
   return layout({
     shop: s, language: o.language, title, selfPath: self,
     // held: look again every 15 s, so "Booked" shows once the owner marks the payment; checking: every 30 s
     ...(v.status === "held" ? { refreshSeconds: 15 } : v.status === "checking" ? { refreshSeconds: 30 } : {}),
-    body: html`${o.notice ? html`<p class="note" role="status">${o.notice}</p>` : ""}<p class="status${v.status === "not_held" || v.status === "expired" ? " warn" : ""}">${line}</p>${what}${pay}${v.status === "not_held" || v.status === "expired" ? again : ""}${cancel}${messages}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
+    body: html`${o.notice ? html`<p class="note" role="status">${o.notice}</p>` : ""}<p class="status${v.status === "not_held" || v.status === "expired" ? " warn" : ""}">${line}</p>${refund}${what}${pay}${calendar}${o.alerts ? raw(o.alerts) : ""}${v.status === "not_held" || v.status === "expired" ? again : ""}${cancel}${messages}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
   });
 }

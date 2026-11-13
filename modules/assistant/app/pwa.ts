@@ -6,7 +6,12 @@
 // Offline means READING only. The service worker keeps the last page the owner saw and shows it when there is no network, marked as such. It never stores, replays or
 // queues a POST: a tap or a message needs the live page (its digests are checked at the runtime against what waits now), so offline it simply fails and says so.
 // The manifest's start_url and scope are the owner's own link (<link>/), so an installed app opens this shop's page and nothing else.
+//
+// Item 11h (decision 45): the same worker shows the owner's web push alerts (modules/push/pages.ts PUSH_HANDLERS) and, when one is tapped, opens this page. And the
+// manifest and the worker are now every shop's owner page's, not only a shop with the assistant's: an owner without WhatsApp needs the alerts (and an iPhone shows
+// push only to an app added to the home screen, which needs the manifest).
 import type { Language } from "../../language/languages.ts";
+import { PUSH_HANDLERS } from "../../push/pages.ts";
 import type { Look } from "../character.ts";
 
 /** The look's colour as a theme colour: the app's bar takes the character's colour. */
@@ -64,5 +69,4 @@ self.addEventListener("fetch", (e) => {
       return new Response(body, { status: 200, headers: { "content-type": "text/html; charset=utf-8", "x-owner-app-offline": "1" } });
     }
   })());
-});
-`;
+});${PUSH_HANDLERS}`;

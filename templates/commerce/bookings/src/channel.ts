@@ -74,7 +74,19 @@ export function bookingView(settings: Settings, store: Store, handleHash: string
     canCancel: status === "held" || status === "booked" || status === "checking",
     canSayPaid: status === "held" && pay?.kind === "upi",
     messages: messages(b.customer),
+    ...refundOf(store, b),
   };
+}
+
+/**
+ * Item 11h (decision 45): a refund on this booking as the record holds it, for its own page (a customer without WhatsApp sees it there): the owner's call on a late
+ * cancellation still open ("asked"), and on a UPI shop the refund the owner owes ("owed"), marked sent ("sent") or kept ("kept"). The newest refund counts.
+ */
+function refundOf(store: Store, b: Booking): { refund?: { state: "asked" | "owed" | "sent" | "kept"; amountInr: number } } {
+  const owed = (store.upi?.refunds ?? []).filter((r) => r.caseId === b.id).at(-1);
+  if (owed) return { refund: { state: owed.state === "done" ? "sent" : owed.state === "kept" ? "kept" : "owed", amountInr: owed.amountPaise / 100 } };
+  const asked = b.pending.find((p) => p.kind === "refund");
+  return asked && asked.kind === "refund" ? { refund: { state: "asked", amountInr: asked.amountInr } } : {};
 }
 
 /** What waits for the owner, as the owner's page shows it and the agent checks a press against. `code` is for the agent only and is never sent out (ownerView). */

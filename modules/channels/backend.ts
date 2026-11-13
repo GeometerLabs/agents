@@ -42,6 +42,8 @@ export type BookingView =
     status: "not_held" | "held" | "checking" | "booked" | "expired" | "cancelled" | "done"; ref: string; channel?: string;
     service?: OfferService; startMs?: number; endMs?: number; depositInr: number; holdExpiresAt?: number; pay?: PayInstructions;
     canCancel: boolean; canSayPaid: boolean; messages: { atMs: number; text: string }[];
+    /** Item 11h: a refund on this booking, as the shop's record holds it (the confirmation page shows it without WhatsApp). */
+    refund?: { state: "asked" | "owed" | "sent" | "kept"; amountInr: number };
   };
 
 /**
@@ -143,6 +145,11 @@ export interface ChannelBackend {
    */
   passkey?(body: Record<string, unknown>): Promise<{ status: number; body: Record<string, unknown> }>;
   /**
+   * Item 11h: one web push step (the shop's public key, the owner's subscription and choice with the owner's credential, a customer page's subscription by its
+   * handle's hash), passed to the runtime, which checks and keeps it (modules/runtime/http.ts "push").
+   */
+  push?(body: Record<string, unknown>, owner?: OwnerCred): Promise<{ status: number; body: Record<string, unknown> }>;
+  /**
    * Items 11d and 11e: a recording from the owner's page, passed to the runtime as it came (the runtime holds it in memory only). "off": the shop's assistant has no
    * voice service; "refused": the owner's credential is not good.
    */
@@ -225,6 +232,11 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
       if (r.status === 403) return { state: (await r.json() as { state: Exclude<LinkState, "valid"> }).state };
       const a = await json<{ session: string; expires_at_ms: number }>(r);
       return { session: a.session, expiresAtMs: a.expires_at_ms };
+    },
+    async push(body, owner) {
+      const r = await call(`${o.url}/internal/channel/push`, { method: "POST", headers: headers(owner), body: JSON.stringify(body) }, timeout);
+      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async passkey(body) {
       const r = await call(`${o.url}/internal/channel/owner-passkey`, { method: "POST", headers: headers(), body: JSON.stringify(body) }, timeout);

@@ -1,0 +1,21 @@
+{
+  "note": "Made by Chromium's virtual authenticator (Playwright, CDP WebAuthn), 14 Nov 2026, for modules/channels/test/passkeys.test.ts.",
+  "browser": "153.0.8010.12",
+  "origin": "http://localhost:59987",
+  "rpId": "localhost",
+  "registrationChallenge": "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc",
+  "signinChallenge": "CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk",
+  "userId": "AwMDAwMDAwMDAwMDAwMDAw",
+  "registration": {
+    "id": "e2tXXV7fU8tLyDvIHmtERHKJ4Qz4HvW336xNWMB3Les",
+    "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uY3JlYXRlIiwiY2hhbGxlbmdlIjoiQndjSEJ3Y0hCd2NIQndjSEJ3Y0hCd2NIQndjSEJ3Y0hCd2NIQndjSEJ3YyIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6NTk5ODciLCJjcm9zc09yaWdpbiI6ZmFsc2UsIm90aGVyX2tleXNfY2FuX2JlX2FkZGVkX2hlcmUiOiJkbyBub3QgY29tcGFyZSBjbGllbnREYXRhSlNPTiBhZ2FpbnN0IGEgdGVtcGxhdGUuIFNlZSBodHRwczovL2dvby5nbC95YWJQZXgifQ",
+    "attestationObject": "o2NmbXRkbm9uZWdhdHRTdG10oGhhdXRoRGF0YVikSZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2NFAAAAAQECAwQFBgcIAQIDBAUGBwgAIHtrV11e31PLS8g7yB5rRERyieEM-B71t9-sTVjAdy3rpQECAyYgASFYIBvm3CbTT2ZIz6qqFGFDSKWH-VxRw4UVVqrL874hvXcpIlgg3j7PQM4-FL0upasr4APcPcySWZzgUNLY7DIyOimtxe8"
+  },
+  "assertion": {
+    "id": "e2tXXV7fU8tLyDvIHmtERHKJ4Qz4HvW336xNWMB3Les",
+    "clientDataJSON": "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiQ1FrSkNRa0pDUWtKQ1FrSkNRa0pDUWtKQ1FrSkNRa0pDUWtKQ1FrSkNRayIsIm9yaWdpbiI6Imh0dHA6Ly9sb2NhbGhvc3Q6NTk5ODciLCJjcm9zc09yaWdpbiI6ZmFsc2V9",
+    "authenticatorData": "SZYN5YgOjGh0NBcPZHZgW4_krrmihjLHmVzzuoMdl2MFAAAAAg",
+    "signature": "MEYCIQCwGT-g2P1ogAi2vBjsXnJEXl27cTXOVKwzaWe7Xcy6PQIhAPloSWDQhf8faMMYeYohDbFE1n0rDhZRvt-XAunhGCa_",
+    "userHandle": "AwMDAwMDAwMDAwMDAwMDAw"
+  }
+}

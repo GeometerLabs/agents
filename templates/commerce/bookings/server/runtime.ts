@@ -57,6 +57,8 @@ export interface RuntimeOptions {
   recordKey?: Buffer;
   /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts), made by the shared start. Left out: none. */
   ownerSignin?: OwnerSignin;
+  /** Item 11h: the shop's web push. A message kept for a page's conversation is also pushed to the phones that allowed alerts on that page. Left out: none. */
+  push?: import("../../../../modules/push/push.ts").Push;
   /** The monthly report to the owner (report/monthly-job.ts). Left out: none is made and nothing is sent. */
   report?: MonthlyReportSetup;
   /** The shop's licence right now (modules/licence; the start reads client/licence.json). Left out: never restricted. */
@@ -112,7 +114,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   // the owner's recordings from their page, in memory only until their step listens (only with a voice service and the assistant: otherwise there is no record button)
   const pageAudio = options.voice && settings.assistant ? createAudioDrop({ now: () => clock.now() }) : undefined;
   const agentOver = (store: Store, record: ReturnType<typeof createRecord>, use: Services) => createAgent({
-    settings, clock, ...use, messaging: channelMessaging(use.messaging, () => (store.channel ??= emptyChannelState()), clock),
+    settings, clock, ...use, messaging: channelMessaging(use.messaging, () => (store.channel ??= emptyChannelState()), clock, options.push ? (to, text) => { options.push!.customer(to, text); } : undefined),
     calendar: use.calendar ?? createOwnCalendar(store, () => clock.now()), parser, record, store, ai: policy,
     // B29: the shop's voice service reaches the agent here, so a voice note from WhatsApp is heard the same whichever path built the agent
     ...(options.voice ? { voice: options.voice } : {}),

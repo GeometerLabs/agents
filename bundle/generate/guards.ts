@@ -20,6 +20,7 @@ import { DESK_GUARD } from "../../modules/payments/owner-marked/desk-guard.ts";
 export const OWNER_MARKED_KINDS: readonly string[] = PROVIDERS.filter((p) => p.ownerMarked !== undefined).map((p) => p.id);
 import { OWN_API_SECRET } from "../lib/secrets.ts";
 import { GUPSHUP_ROUTES, GUPSHUP_UPSTREAM } from "../../modules/messaging/gupshup.ts";
+import { PUSH_HOSTS, PUSH_OPERATIONS, PUSH_ROUTES } from "../../modules/push/hosts.ts";
 import { GUPSHUP_API_KEY_HEADER, GUPSHUP_SELFSERVE_ROUTES, GUPSHUP_SELFSERVE_UPSTREAM } from "../../modules/messaging/gupshup-selfserve.ts";
 
 /** How long a Guard waits for its provider. The runtime must wait LONGER, or it gives up on a call Guard is still making (rules.ts). */
@@ -186,20 +187,11 @@ export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messa
 // the real request to exactly the host Guard checked. The sender holds no secret and sees only ciphertext. One Guard per shop, so every push of a shop is counted
 // per day at that shop's own Guard and the shop's kill switch stops its pushes too (modules/Explanation.md, "Works without WhatsApp").
 
-/**
- * The push services the sender may reach, exactly. Chrome, Edge and Samsung Internet on Android (and Chrome on a computer) subscribe at Google's FCM; Firefox at
- * Mozilla's; Safari on an iPhone (iOS 16.4 or later, the app added to the home screen) and on a Mac at Apple's. Edge on Windows uses hosts that vary
- * (`*.notify.windows.com`), which an exact list cannot name: it is not covered (Deferred.md).
- */
-export const PUSH_HOSTS: readonly string[] = ["fcm.googleapis.com", "updates.push.services.mozilla.com", "web.push.apple.com"];
 /** Where the server's push sender listens, on the `push` network only the shops' push Guards share with it (compose.ts). */
 export const PUSH_PORT = 8797;
 /** The push sender's container name, and so the push Guard's upstream. */
 export const PUSH_SERVICE = "push";
-/** The two operations: a push to the owner, and one to a customer who allowed it. Two, so the licence can hold back the customers' and never the owner's. */
-export const PUSH_OPERATIONS = { owner: "push_owner", customer: "push_customer" } as const;
-/** The JSON routes the runtime posts to the push Guard (modules/push/sender.ts), one per operation. */
-export const PUSH_ROUTES = { owner: "/v1/push/owner", customer: "/v1/push/customer" } as const;
+export { PUSH_HOSTS, PUSH_OPERATIONS, PUSH_ROUTES };
 
 /** The push Guard: in front of the server's push sender, on a private network, in plain HTTP (there is no certificate on a Docker network), with no credential. */
 export function pushGuardDef(): GuardDef {
