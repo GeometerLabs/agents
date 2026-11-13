@@ -12,6 +12,7 @@ import { SAMPLE_ARGS } from "./words.ts";
 import { HEALTH_SAMPLE_ARGS, HEALTH_WORDS } from "./words-health.ts";
 import { AGENT_SAMPLE_ARGS, AGENT_WORDS } from "./words-agents.ts";
 import { loadVoteRound } from "./votes.ts";
+import { PERSONALITIES, SMALL_TALK } from "../../modules/assistant/personality.ts";
 
 export type ReviewLanguage = "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
@@ -52,10 +53,17 @@ function healthFlat(language: Language): Map<string, string> {
 /** The own-agent pages (words-agents.ts, 12 Nov 2026), under the ids "agents.*". */
 const agentsFlat = (language: Language): Map<string, string> => flatWords({ agents: AGENT_WORDS[language] }, AGENT_SAMPLE_ARGS);
 
+/**
+ * Item 11i: the shop assistant's small talk for each personality (modules/assistant/personality.ts: the greeting, and the morning summary's opening and sign-off,
+ * which are also in each personality's WhatsApp template), under the ids "personality.<personality>.*", so a native reader checks them with the rest. {name} and
+ * {shop} stay as they are: the assistant's name and the shop's.
+ */
+const personalityFlat = (language: Language): Map<string, string> => flatWords({ personality: Object.fromEntries(PERSONALITIES.map((p) => [p, SMALL_TALK[p][language]])) });
+
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

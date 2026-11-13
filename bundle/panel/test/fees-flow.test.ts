@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { validateSettings } from "../../../templates/education/fees/src/settings.ts";
 import { WORDS } from "../languages.ts";
 import { STEP3, setUp } from "./flow.ts";
+import { CHARACTER5 } from "./flow.ts";
 import { PHONE_ID, NOW, boot, papers } from "./helpers.ts";
 import type { Boot, Browser } from "./helpers.ts";
 
@@ -27,7 +28,8 @@ const applied = (o: Record<string, unknown> = {}) => ({
 });
 
 /** The five steps for a Fees centre, as a partner does them on a phone. */
-async function setUpFees(who: Browser, b: Boot, steps: Record<string, string>[] = [FEES1, FEES2, STEP3, FEES4]) {
+async function setUpFees(who: Browser, b: Boot, given: Record<string, string>[] = [FEES1, FEES2, STEP3, FEES4]) {
+  const steps = given.length === 4 ? [...given, CHARACTER5] : given; // item 11i: the Character step after the four
   const start = await who.post("/setup", { template: "fees" }, "/setup");
   assert.equal(start.status, 303, start.text.slice(0, 300));
   const draft = start.location!.split("/")[2];
@@ -39,8 +41,8 @@ async function setUpFees(who: Browser, b: Boot, steps: Record<string, string>[] 
     replies.push(r.text);
     assert.equal(r.status, 303, `step ${i + 1}: ${r.text.replace(/<[^>]+>/gu, " ").replace(/\s+/gu, " ").slice(0, 500)}`);
   }
-  const saved = await who.post(`/setup/${draft}/save`, {}, `/setup/${draft}/5`);
-  assert.equal(saved.location, `/setup/${draft}/5`, [...saved.plain.matchAll(/<li>([^<]*)<\/li>/gu)].map((m) => m[1]).join(" | ") || String(saved.status));
+  const saved = await who.post(`/setup/${draft}/save`, {}, `/setup/${draft}/6`);
+  assert.equal(saved.location, `/setup/${draft}/6`, [...saved.plain.matchAll(/<li>([^<]*)<\/li>/gu)].map((m) => m[1]).join(" | ") || String(saved.status));
   return { draft, replies };
 }
 
@@ -106,7 +108,7 @@ test("the checks for a Fees centre have no calendar, 'Ready to go live' makes th
     const divya = await b.account("divya", "partner");
     const { draft } = await setUpFees(divya, b);
     const shop = shopIdOf(b);
-    const checks = `/setup/${draft}/5`;
+    const checks = `/setup/${draft}/6`;
     const before = (await divya.get(checks)).plain;
     assert.ok(before.includes(WORDS.en.setup.fees.steps.business) || before.includes(WORDS.en.setup.checks.settingsOk));
     assert.ok(!before.includes(WORDS.en.cost.heading) && !before.includes(WORDS.en.setup.checks.bookingsExpected), "no bookings cost table or estimate for a Fees centre");
@@ -182,7 +184,7 @@ test("changing a Fees centre's settings is the same steps from what it has, and 
     assert.ok(first.includes("Sunrise Tuition") && first.includes("Aarav Sharma") && first.includes("Class 10"), "the form comes back as it was saved");
     assert.equal((await divya.post(`/setup/${d2}/1`, { ...FEES1, batch_fee_0: "1300" }, `/setup/${d2}/1`)).status, 303);
     for (const n of [2, 3, 4]) await divya.post(`/setup/${d2}/${n}`, n === 2 ? FEES2 : n === 3 ? STEP3 : { ...FEES4, waToken: "", waAppSecret: "", gwKeySecret: "", gwWebhook: "" }, `/setup/${d2}/${n}`);
-    assert.equal((await divya.post(`/setup/${d2}/save`, {}, `/setup/${d2}/5`)).status, 303);
+    assert.equal((await divya.post(`/setup/${d2}/save`, {}, `/setup/${d2}/6`)).status, 303);
     const settings = JSON.parse(readFileSync(join(b.dir, "shops", shop, "settings.json"), "utf8"));
     assert.equal(settings.batches[0].monthlyFeeInr, 1300);
     assert.equal(readFileSync(join(b.dir, "shops", shop, "pathway.lock"), "utf8").trim(), "fees@0.1.0");

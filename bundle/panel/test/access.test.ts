@@ -272,10 +272,10 @@ test("hosted mode seals the papers too: after a shop is set up, checked and made
   try {
     const divya = await h.account("divya.marker", "partner");
     const f = await setUp(h, divya);
-    await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/5`);
+    await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/6`);
     h.status(f.shop, { updatedAt: new Date(Date.parse("2026-11-04T10:00:00+05:30") - 60_000).toISOString(), deploy: { state: "applied", at: "2026-11-04T09:00:00Z" }, limits: { proven: 9, of: 9, unprovable: [] } });
-    await divya.post(`/setup/${f.draft}/check`, {}, `/setup/${f.draft}/5`);
-    assert.equal((await divya.post(`/setup/${f.draft}/ready`, {}, `/setup/${f.draft}/5`)).status, 303);
+    await divya.post(`/setup/${f.draft}/check`, {}, `/setup/${f.draft}/6`);
+    assert.equal((await divya.post(`/setup/${f.draft}/ready`, {}, `/setup/${f.draft}/6`)).status, 303);
     const doc = await divya.get(`/shops/${f.shop}/docs/go-live/go-live-certificate-ml.html`);
     assert.ok(doc.status === 200 && doc.text.includes("Hosahalli Beauty"), "the paper opens for its owner");
     assert.equal((await (await h.account("meena", "partner")).get(`/shops/${f.shop}/docs/go-live/go-live-certificate-ml.html`)).status, 404);
