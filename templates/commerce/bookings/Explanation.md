@@ -505,7 +505,7 @@ Why these numbers, because each one is a limit of the settings and not a taste:
 
 **Why.** A WhatsApp voice note used to vanish: `textOf` in `modules/messaging/webhooks.ts` returned nothing for any type but text, a button or a list row, so the inbox forwarded nothing and the customer heard nothing. A shop customer who sends a voice note and gets silence thinks the shop ignored them. Until a voice module exists (plan B29) the agent now answers with one plain line.
 
-**What it says, and to whom.** "Please type your message; I can't listen to voice notes yet." (template `voice_note`, in en, hi, ml and kn; the review sheets list it). The language is the one the conversation already has, taken from the customer's earlier messages if the store knows one, otherwise the shop's first language, the same way every other reply picks it. A voice note does not change that language. It is sent as a normal text reply: the customer has just written, so the 24-hour window is open. If the send fails or its reply is lost, `say` records it as `failed` or `unconfirmed` like any other message and the step goes on. A customer who sent STOP gets nothing: the agent returns before sending, the same place a text from an opted-out customer stops. The shop owner's voice note gets the same line in the owner's language, because the owner's messages are commands and a silent drop is worse than a line.
+**What it says, and to whom.** "Sorry, I can't listen to voice notes yet. Could you type your message?" (template `voice_note`, worded so since 14 Nov 2026, in en, hi, ml and kn; the review sheets list it). The language is the one the conversation already has, taken from the customer's earlier messages if the store knows one, otherwise the shop's first language, the same way every other reply picks it. A voice note does not change that language. It is sent as a normal text reply: the customer has just written, so the 24-hour window is open. If the send fails or its reply is lost, `say` records it as `failed` or `unconfirmed` like any other message and the step goes on. A customer who sent STOP gets nothing: the agent returns before sending, the same place a text from an opted-out customer stops. The shop owner's voice note gets the same line in the owner's language, because the owner's messages are commands and a silent drop is worse than a line.
 
 **How it travels.** Meta sends `type: "audio"` with an `audio` object (`voice: true` for a recorded voice note, absent or false for an audio file; both are treated the same). `parseWhatsAppWebhook` turns it into an `InboundMessage` with empty `text` and `voiceNote: true`, and reads nothing else of the `audio` object: the media id, the file type and the hash are left behind on purpose, so they cannot reach the saved events, the agent or the record. `checkEvents` accepts `voiceNote` only as the boolean `true`, and only with empty text; anything else is a 400, like any malformed event. The event key is still `message:<id>`, so a redelivered voice note is a duplicate in the store (one task) and, if it ever reached the agent twice, is ignored there by the seen-message list: one reply either way. The saved task holds the flag and no words.
 
@@ -692,7 +692,7 @@ Button mode is for when **no** step can read a message. The case between: the de
 | Service known, no time | A list of up to nine free times: the next week, at most three a day spread through it, on the shop's slot grid, inside its hours, clear of the calendar and of every hold, and at least the hold's length from now |
 | A time that cannot be had | The reason, and a list of other free times |
 | A read-back that needs a yes | The read-back with **Yes** and **No** buttons |
-| A quote, "already waiting", "Booked!", "moved" | **Cancel booking** and **Talk to the owner** |
+| A quote, "already waiting", "You're booked!", "moved" | **Cancel booking** and **Talk to the owner** |
 | Cancel booking | "Do you want to cancel your booking for ...?" with **Yes, cancel** and **No, keep it**. Nothing is cancelled by the first tap |
 | Talk to the owner | The owner is told (a new owner template, at most once an hour for the same customer) and so is the customer; if the owner cannot be told, the customer is told that and not that the owner will write |
 
@@ -804,8 +804,8 @@ does with it.
   Cancel booking and Talk to the owner. The owner gets "New booking to check", with a "Received ₹200" button and the one-use code once, at the end, as the typed
   stand-in for it (a WhatsApp template when the owner has not written today).
 - **Booked** only when the owner has marked the whole deposit received (`owner_marked_paid`), and the calendar shows it: `checkConfirmOnlyWhenRecorded` accepts the
-  owner's marks adding up to the deposit, and nothing a customer sends. The customer's words say the owner confirmed it ("Booked! ... The owner has confirmed your ₹200
-  deposit").
+  owner's marks adding up to the deposit, and nothing a customer sends. The customer's words say the owner confirmed it ("You're booked! ... The owner has confirmed your
+  ₹200 deposit").
 - **A different amount:** less is not booked; the hold stays; the owner is asked for the rest with a new code (the used one counts nothing again). If the hold runs out,
   the part is owed back by the owner. More books it, and the extra is owed back.
 - **Never confirmed:** the hold ends at `holdMinutes` (the UPI example shop holds for 60, since the owner looks in their app); the request is closed in the record and the
