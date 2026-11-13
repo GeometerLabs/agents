@@ -14,10 +14,10 @@ const plan = (runtime = panelRuntime(), serverChange: Record<string, unknown> = 
 };
 const rules = (p: ReturnType<typeof plan>) => p.problems.map((x) => x.rule);
 
-test("a good shop gives three Guards: Razorpay from the settings, WhatsApp and Calendar pinned exactly to the shop's own ids", () => {
+test("a good shop gives three Guards: Razorpay from the settings, WhatsApp and Calendar pinned exactly to the shop's own ids (and, item 11h, its push Guard)", () => {
   const p = plan();
   assert.deepEqual(p.problems, []);
-  assert.deepEqual(p.guards.map((g) => g.kind), ["razorpay", "whatsapp", "calendar"]);
+  assert.deepEqual(p.guards.map((g) => g.kind), ["razorpay", "whatsapp", "calendar", "push"]);
   const [razorpay, whatsapp, calendar] = p.guards;
   const deposit = razorpay.spec.rules.find((r: any) => r.id === "deposit-amount");
   assert.equal(deposit.min, deposit.max, "the only amount a link may be made for is the shop's deposit");
@@ -73,8 +73,10 @@ test("the runtime must wait longer than Guard: 15 s or less is refused by name, 
 });
 
 test("everything runtime.json must say is said all at once, in plain words, naming the rule", () => {
+  // item 11h: a runtime.json that names no messaging service is a shop with no WhatsApp, so no number is asked of it; one that names the service must give the number
   const p = plan({ mode: "fakes", services: { timeoutMs: 5000 } });
-  assert.deepEqual(rules(p).sort(), ["calendar-id", "runtime-mode-live", "runtime-timeout-exceeds-guard", "whatsapp-number-id"]);
+  assert.deepEqual(rules(p).sort(), ["calendar-id", "runtime-mode-live", "runtime-timeout-exceeds-guard"]);
+  assert.deepEqual(rules(plan({ mode: "fakes", services: { timeoutMs: 5000, messaging: {} } })).sort(), ["calendar-id", "runtime-mode-live", "runtime-timeout-exceeds-guard", "whatsapp-number-id"]);
   assert.match(p.problems.find((x) => x.rule === "runtime-mode-live")!.message, /fakes/);
   assert.deepEqual(p.guards, [], "nothing is generated for a shop that cannot be deployed");
 });

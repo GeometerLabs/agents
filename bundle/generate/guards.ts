@@ -76,6 +76,7 @@ export function guardDef(kind: GuardKind, model?: ModelConfig): GuardDef {
   switch (kind) {
     case "whatsapp": return whatsappGuardDef();
     case "calendar": return { kind, tool: "google-calendar", upstream: "www.googleapis.com:443", headers: { Authorization: "${file:/run/google/authorization}" } };
+    case "push": return pushGuardDef(); // item 11h
     case "model":
       if (model?.wire === "anthropic") return { kind, tool: "model", upstream: model.upstream ?? "api.anthropic.com:443", secretFile: "model_api_key", headers: { "x-api-key": "${file:/run/secrets/model_api_key}", "anthropic-version": ANTHROPIC_VERSION } };
       // a model the builder hosts (B73) is one more OpenAI-compatible upstream: the same tool, the same key file (`geometer model-key`), only its address differs
