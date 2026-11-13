@@ -126,7 +126,8 @@ export function partnerLine(language: Language, panelUrl?: string): Raw {
  */
 function page(language: Language, title: string, body: Raw, nonce?: string): string {
   const machine = PAGE[language].machine;
-  return `<!doctype html>${html`<html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer"><title>${title}</title><style>${raw(SIGNIN_CSS)}</style></head><body><main class="wrap signin">
+  // the referrer: the origin only (front.ts PAGE_REFERRER: "no-referrer" makes a browser post the sign-in forms with Origin: null, which are then refused)
+  return `<!doctype html>${html`<html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="strict-origin"><title>${title}</title><style>${raw(SIGNIN_CSS)}</style></head><body><main class="wrap signin">
 ${machine ? html`<p class="machine">${machine}</p>` : ""}${body}</main>${nonce ? html`<script nonce="${nonce}">${raw(PASSKEY_SCRIPT)}</script>` : ""}</body></html>`.markup}`;
 }
 

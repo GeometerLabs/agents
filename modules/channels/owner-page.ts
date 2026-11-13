@@ -121,7 +121,9 @@ ${v.upcoming.length > 0 ? html`<ul class="rows">${v.upcoming.map((u) => html`<li
   const head = app
     ? raw(characterLine({ language: o.language, shop: v.shop.name, ...(app.character.name ? { name: app.character.name } : {}), colour: colour!, face: app.face, ...(o.picture ? { picture: o.picture } : {}), title: v.shop.name }))
     : html`<h1>${v.shop.name}</h1>`;
-  return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
+  // the referrer: the origin only, never this page's address (it holds the owner's link); not "no-referrer", which makes a browser post forms with Origin: null
+  // (front.ts PAGE_REFERRER)
+  return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="strict-origin">
 <title>${w.title(v.shop.name)}</title><style>${raw(OWNER_CSS)}</style>${appHead}${script ? html`<script nonce="${o.nonce!}">${raw(script)}</script>` : ""}</head><body class="app">
 <header class="head"><div class="wrap"><div class="head-in">${head}</div>${o.nonce ? raw(themeSwitch(OWNER_LOOK[o.language].theme)) : ""}</div></header>
 <main class="wrap">${machine ? html`<p class="machine">${machine}</p>` : ""}
