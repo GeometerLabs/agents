@@ -1,6 +1,6 @@
 # Pitch and sell the Fees template
 
-For local partners (18 and over) and builders. Written 5 November 2026, in the pilot phase. The centre owner never reads this guide: they get the one-page sheet (`one-pager.en.html`) from you. The same guide exists in Hindi, Malayalam and Kannada. Use the language the owner speaks.
+For local partners (18 and over) and builders. Written 5 November 2026, in the pilot phase. The centre owner never reads this guide: they get the one-page sheet (`one-pager.en.html`) from you. The same guide exists in Hindi, Malayalam and Kannada. Use the language the owner speaks. Reworked on 14 November 2026 so that looking after the service is the centre of your role.
 
 **Read section 11 first.** Fees is not live in any centre yet, and it has no phone demo. Today you can explain it, show a printed walkthrough on your laptop, and ask for a letter of intent. You cannot promise a start date.
 

@@ -1,6 +1,6 @@
 # Pitch and sell the Bookings template
 
-For local partners (18 and over) and builders. Written 3 November 2026, in the pilot phase. The shop owner never reads this guide: they get the one-page sheet (`one-pager.en.html`) from you. The same guide exists in Hindi, Malayalam and Kannada. Use the language the owner speaks.
+For local partners (18 and over) and builders. Written 3 November 2026, in the pilot phase. The shop owner never reads this guide: they get the one-page sheet (`one-pager.en.html`) from you. The same guide exists in Hindi, Malayalam and Kannada. Use the language the owner speaks. Reworked on 14 November 2026 so that looking after the service is the centre of your role.
 
 **Your part, in one line.** You are the person who looks after this service with its owner: you know the shop, you tune its rules, you fix things when they go wrong, you bring customers when the street asks, and you are the person the owner calls. Setup is only the first step, never the pitch. What lasts is your care and your judgment, not access to the tool.
 
