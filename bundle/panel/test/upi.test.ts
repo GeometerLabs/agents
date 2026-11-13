@@ -10,7 +10,7 @@ import { LANGUAGES } from "../../../modules/language/languages.ts";
 import { WORDS } from "../languages.ts";
 import { latestPriceList, monthlyCost } from "../cost.ts";
 import { openStores } from "../server.ts";
-import { M, STEP1, STEP2, STEP3, STEP4, setUp } from "./flow.ts";
+import { CHARACTER5, M, STEP1, STEP2, STEP3, STEP4, setUp } from "./flow.ts";
 import { boot } from "./helpers.ts";
 
 const { gwMode: _m, gwKeyId: _k, gwKeySecret: _s, gwWebhook: _w, ...WITHOUT_RAZORPAY } = STEP4;
@@ -125,6 +125,7 @@ test("a Fees centre can take UPI too: the payment block is written and no Razorp
     }
     const { calId: _c, ...fees4 } = UPI4;
     assert.equal((await divya.post(`/setup/${d}/4`, fees4, `/setup/${d}/4`)).status, 303);
+    assert.equal((await divya.post(`/setup/${d}/5`, CHARACTER5, `/setup/${d}/5`)).status, 303, "the Character step (item 11i)");
     assert.equal((await divya.post(`/setup/${d}/save`, {}, `/setup/${d}/6`)).location, `/setup/${d}/6`);
     const shop = readdirSync(join(b.dir, "shops"))[0];
     assert.deepEqual(JSON.parse(readFileSync(join(b.dir, "shops", shop, "settings.json"), "utf8")).payment, { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } });
