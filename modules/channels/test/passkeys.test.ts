@@ -208,3 +208,18 @@ test("a lost phone: a code from the recovery card registers a new passkey once; 
     assert.equal(access.codesLocked(T0 + 24 * 60 * 60_000 + 100), false, "a day later");
   } finally { done(); }
 });
+
+test("a flood of challenges keeps the store small and never locks the owner out: the oldest open ones go, the newest always works", () => {
+  const { access, done } = store(); try {
+    const token = newSetupToken(); const file = grants({ token }); const g = { kind: "setup" as const, token };
+    const o = access.registrationOptions(g, file, OWNER, RP, "Glow", T0); assert.ok(o.ok);
+    const phone = newSoftPasskey(RP.rpId);
+    assert.ok(access.register(g, file, OWNER, RP, softRegister(phone, o.options as never, RP.origin), T0 + 1).ok);
+    // three addresses ask for 1,000 challenges in a few minutes
+    for (let i = 0; i < 1000; i++) access.signinOptions(OWNER, RP, T0 + 1000 + i);
+    // the owner, now: a fresh challenge, answered at once
+    const mine = access.signinOptions(OWNER, RP, T0 + 5000);
+    assert.ok(mine.options, "the owner still gets a challenge");
+    assert.ok(access.signin(softSignin(phone, mine.options as never, RP.origin), OWNER, RP, T0 + 5001).ok, "and signs in");
+  } finally { done(); }
+});

@@ -57,7 +57,7 @@ export interface RelayShopConfig {
   /** An own agent on a module the owner marks (UPI, B71 part 2): its desk. */
   desk?: DeskConfig;
   business?: { name: string; timeZone: string; ownerLanguage: "en" | "hi" | "ml" | "kn" };
-  /** Item 11h: left out for a shop with no WhatsApp: the relay then asks the owner on nothing, and the owner answers from their page, where the held refund is listed. */
+  /** Item 11h: left out for a shop with no WhatsApp. The bundle refuses a gateway shop with none (generate/shop.ts `whatsapp-none-gateway`), so today only an entry that has nothing to ask lacks it. */
   whatsappGuardUrl?: string;
   ownerWhatsapp: string;
   phoneNumberId: string;
@@ -96,8 +96,8 @@ export function shopRelay(name: string, c: RelayShopConfig, read: (path: string)
     if (!v) throw new Error(`${name}: the secret file ${file} is missing or empty in ${c.secretsDir}.`);
     return v;
   };
-  // the relay and the desk speak the shop's own WhatsApp Guard, so they use its provider (item 11b: Gupshup, or Meta direct when left out). Item 11h: a shop with
-  // no WhatsApp gets a messaging that sends nothing (each send is refused as not sent), so the relay records that it could not ask and the page carries the ask
+  // the relay and the desk speak the shop's own WhatsApp Guard, so they use its provider (item 11b: Gupshup, or Meta direct when left out). Item 11h: an entry with
+  // no WhatsApp gets a messaging that sends nothing (each send is refused as not sent and recorded so), never a crash at start
   const whatsapp = (window: { lastInboundAt(phone: string): number | undefined }) => c.whatsappGuardUrl
     ? createLiveMessaging({ baseUrl: c.whatsappGuardUrl, phoneNumberId: c.phoneNumberId, ...(c.provider ? { provider: c.provider, appId: c.appId, appName: c.appName, sourceNumber: c.sourceNumber } : {}), agentToken: need("agent_whatsapp") }, { clock, window })
     : channelMessaging(undefined, () => emptyChannelState(), clock);

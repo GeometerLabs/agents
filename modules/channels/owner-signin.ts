@@ -22,6 +22,7 @@ import type { Language } from "../language/languages.ts";
 import type { InboundMessage, Messaging, OutboundMessage } from "../messaging/messaging.ts";
 import type { ActionRecord, Outcome } from "../record/record.ts";
 import { nothingWasSent } from "../report/monthly-job.ts";
+import { whatsappOf } from "../push/push.ts";
 import type { AssertionResponse, OwnerAccess, OwnerNow, RegistrationResponse } from "./owner-access.ts";
 import type { Grant, OwnerGrants } from "./owner-grants.ts";
 import type { PagesFile } from "./pages-file.ts";
@@ -85,12 +86,22 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
   /** Is this the owner's "open my app"? Only from the owner's own number, only the fixed phrases, and only when the shop has an owner view to open. */
   const isOpenMyApp = (m: InboundMessage): boolean => sameNumber(m.from, owner.whatsapp) && !m.reply && m.text !== "" && OPEN_MY_APP.includes(phraseOf(m.text)) && who() !== undefined;
 
-  /** One link, if the shop's limits allow it: issued, sent in the owner's open window, and the outcome recorded under the link's short id. */
-  async function sendLink(via: "page" | "whatsapp", ctx: { messaging: Messaging; record: ActionRecord }): Promise<void> {
+  /**
+   * One link, if the shop's limits allow it: issued, sent in the owner's open window, and the outcome recorded under the link's short id. Item 11h: on WhatsApp only,
+   * never as a push (push.ts whatsappOf says why); a shop with no WhatsApp sends none, and its owner signs in with their passkey.
+   */
+  async function sendLink(via: "page" | "whatsapp", ctx0: { messaging: Messaging; record: ActionRecord }): Promise<void> {
     const now = clock.now();
     const w = who();
     if (!w) { log("A sign-in link was asked for, but this shop has no pages file yet (its next deploy writes one): none was sent."); return; }
     if (!access.tryAttempt(now)) { log("A sign-in link was asked for more often than the shop's limit (3 a quarter of an hour, 10 a day): none was sent."); return; }
+    // counted first, as every request is, so a shop with no WhatsApp cannot have its record flooded by asking either
+    const wa = whatsappOf(ctx0.messaging);
+    if (!wa) {
+      ctx0.record.append({ conversation: owner.whatsapp, action: "owner_signin", outcome: "blocked", inputs: { via }, language: owner.language, notes: "This shop has no WhatsApp, so no sign-in link is sent: the owner signs in with their passkey (or the partner's setup QR or recovery card).", refs: { to: "owner", via } });
+      return;
+    }
+    const ctx = { ...ctx0, messaging: wa };
     const language = owner.language;
     const base = { conversation: owner.whatsapp, action: "owner_signin" as const, language };
     // the window first: a link cannot go as free text when it is closed, and nothing is issued that could not be sent

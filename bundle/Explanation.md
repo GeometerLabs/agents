@@ -997,8 +997,8 @@ a domain, because the domain may change.
 **A shop with no WhatsApp number.** Decided in one place, `lib/kinds.ts runtimeHasWhatsApp`: the shop's `runtime.json` (the panel's) names no messaging service. The
 panel writes it so when the partner ticks "Start without WhatsApp for now" in the accounts step (`panel/setup.ts`). Such a shop gets no WhatsApp Guard, no WhatsApp
 credential, no WhatsApp key or webhook secret asked for (`deploy.ts missingSecrets`), no messaging in its runtime's config, and its inbox route keeps a WhatsApp app
-secret and verify token nobody was given (as a UPI shop's Razorpay route does), so nothing reaches it. Its relay (a gateway shop's) asks on nothing and the owner's
-page lists the ask. A runtime pinned to a version from before 14 Nov needs WhatsApp, so such a shop pinned there is refused by name (`whatsapp-none-pinned`). The
+secret and verify token nobody was given (as a UPI shop's Razorpay route does), so nothing reaches it. A gateway shop with no WhatsApp is refused by name (`whatsapp-none-gateway`): a refund its Guard holds is asked of the owner by
+the relay on WhatsApp, and the owner's page lists it only once that went out (Deferred.md); without WhatsApp a shop takes UPI. A runtime pinned to a version from before 14 Nov needs WhatsApp, so such a shop pinned there is refused by name (`whatsapp-none-pinned`). The
 owner's own number stays: it is who the owner is (sessions, the record's conversation, the licence's owner numbers), not a WhatsApp connection. The ask card's
 WhatsApp lines are optional now, and its booking-page line no longer says a WhatsApp number is needed to go live.
 

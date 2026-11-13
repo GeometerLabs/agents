@@ -18,6 +18,7 @@ import { runtimeBackend } from "../../../../modules/channels/backend.ts";
 import { OWNER_GRANTS_FILE, SETUP_MS, newSetupToken, setupHash } from "../../../../modules/channels/owner-grants.ts";
 import { OWNER_COOKIE, csrfFor } from "../../../../modules/channels/owner-session.ts";
 import { newSoftPasskey, softRegister, softSignin } from "../../../../modules/channels/test/soft-authenticator.ts";
+import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../../../../modules/channels/owner-link.ts";
 import { decryptPush, readVapidHeader, vapidVerifies } from "../../../../modules/push/crypto.ts";
 import { pushCallProblem } from "../../../../modules/push/hosts.ts";
 import type { PushCall } from "../../../../modules/push/hosts.ts";
@@ -41,7 +42,8 @@ function phone(endpoint: string) {
   };
 }
 
-async function world() {
+/** `whatsapp`: the shop also has (the stand-in) WhatsApp, so the owner's choice can be tried. */
+async function world(o: { whatsapp?: boolean } = {}) {
   const root = mkdtempSync(join(tmpdir(), "geo-nowa-"));
   const folder = join(root, "glow");
   mkdirSync(folder);
@@ -60,7 +62,7 @@ async function world() {
   const settings = { ...JSON.parse(readFileSync(UPI_SETTINGS, "utf8")), calendar: { module: "own" } };
   writeFileSync(join(folder, "settings.json"), JSON.stringify(settings));
   // no messaging service: no WhatsApp. A push Guard: every push goes through it
-  writeFileSync(join(folder, "runtime.json"), JSON.stringify({ mode: "fakes", port: 0, tickSeconds: 3600, services: { push: { baseUrl: `http://127.0.0.1:${guardPort}` } } }));
+  writeFileSync(join(folder, "runtime.json"), JSON.stringify({ mode: "fakes", port: 0, tickSeconds: 3600, services: { push: { baseUrl: `http://127.0.0.1:${guardPort}` }, ...(o.whatsapp ? { messaging: { baseUrl: "http://whatsapp.invalid", phoneNumberId: "123456789012345" } } : {}) } }));
   writeFileSync(join(folder, "pathway.lock"), "bookings@0.1.0\n");
   writeFileSync(join(folder, "pages.json"), JSON.stringify({ schema: 1, base: "https://partners.example/s/glow", ownerBase: RUNTIME_OWNER_BASE, slug: "glow-salon", url: "https://pages.example/glow-salon" }));
   // the partner's setup QR, as the deployer copies the panel's file (hashes only)
@@ -84,8 +86,10 @@ async function world() {
   const record = () => { const s = openStore(join(folder, "data")); try { return s.loadState().record; } finally { s.close(); } };
   /** Wait for the sender (it runs outside the steps) to hand `n` pushes to the Guard. */
   const pushed = async (n: number) => { for (let i = 0; i < 100 && pushes.length < n; i++) await new Promise((r) => setTimeout(r, 30)); return pushes; };
+  const ownerToken = newOwnerToken();
+  writeFileSync(join(folder, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(ownerToken, new Date(clock.now()))));
   return {
-    origin, page, json, form, record, lines, client, clock, setupToken, pushes, pushed,
+    origin, page, json, form, record, lines, client, clock, setupToken, pushes, pushed, ownerToken,
     setCookie(session: string) { cookie = `${OWNER_COOKIE}=${session}`; }, signOut() { cookie = ""; },
     async done() { await new Promise<void>((r) => { front.closeAllConnections(); front.close(() => r()); }); guard.close(); await client.stop(); rmSync(root, { recursive: true, force: true }); },
   };
@@ -242,5 +246,80 @@ test("with no phone allowing alerts and no WhatsApp, nothing is sent, the record
     const failed = w.record().filter((e) => e.refs.to === "owner" && e.action === "send_message");
     assert.ok(failed.length >= 1 && failed.every((e) => e.outcome === "failed" && /no WhatsApp number/u.test(e.notes ?? "")), "the record says the owner could not be told, and why");
     assert.match(await (await w.page(`/b/${handle}?lang=en`)).text(), /held until/u, "the confirmation page shows the state");
+  } finally { await w.done(); }
+});
+
+/** Book `service` at the first free start on `date` from the page; the handle. */
+async function book(w: Awaited<ReturnType<typeof world>>, date: string, name: string, phone: string, after = 0): Promise<string> {
+  const slots = await (await w.page(`/?lang=en&service=haircut&date=${date}`)).text();
+  const start = startsOn(slots).find((t) => t >= after)!;
+  const nonce = /name="nonce" value="([A-Za-z0-9_-]{32})"/u.exec(slots)?.[1] ?? "";
+  const r = await w.form("/book", { service: "haircut", start: String(start), name, phone, lang: "en", nonce });
+  await w.client.runtime.idle();
+  return handleOf(r.headers.get("location"));
+}
+/** The owner presses on their page (the panel-made link: no form token needed) and the step runs. */
+async function press(w: Awaited<ReturnType<typeof world>>, kind: string, action: string): Promise<void> {
+  const state = await (await w.page(`/o/${w.ownerToken}/api/v1/state`)).json() as { waiting: { kind: string; case: string; digest: string }[] };
+  const item = state.waiting.find((x) => x.kind === kind);
+  assert.ok(item, `the owner's page lists the ${kind}`);
+  assert.deepEqual(await (await w.json(`/o/${w.ownerToken}/api/v1/answer`, { source: "runtime", action, case: item!.case, digest: item!.digest })).json(), { result: "done" });
+  await w.client.runtime.idle();
+}
+
+test("the owner's choice is followed: the first phone gives both, then push alone, then WhatsApp alone", async () => {
+  const w = await world({ whatsapp: true });
+  try {
+    const ownerPhone = phone("https://fcm.googleapis.com/fcm/send/choice-phone");
+    assert.equal((await w.json(`/o/${w.ownerToken}/push/subscribe`, { subscription: ownerPhone.subscription })).status, 200);
+    const app = await (await w.page(`/o/${w.ownerToken}/?lang=en`)).text();
+    assert.match(app, /Where should alerts go\?/u, "with WhatsApp, the owner may choose");
+    assert.match(app, /value="both" checked/u, "the first phone with alerts: both");
+    const waTo = () => w.lines.filter((l) => l.startsWith("[stand-in WhatsApp] to +919000000000")).length;
+    const toOwner = () => w.pushes.filter((p) => p.route === "/v1/push/owner").length;
+    const step = async (date: string, n: string, ph: string) => { const wa = waTo(); const pu = toOwner(); await book(w, date, n, ph); await w.pushed(pu + 1); await new Promise((r) => setTimeout(r, 150)); return { wa: waTo() - wa, push: toOwner() - pu }; };
+    assert.deepEqual(await step("2026-11-18", "Asha", "98111 11111"), { wa: 1, push: 1 }, "both");
+    await w.form(`/o/${w.ownerToken}/push/choice`, { choice: "push" });
+    assert.deepEqual(await step("2026-11-18", "Ravi", "98222 22222"), { wa: 0, push: 1 }, "push alone");
+    await w.form(`/o/${w.ownerToken}/push/choice`, { choice: "whatsapp" });
+    const wa = waTo(); const pu = toOwner();
+    await book(w, "2026-11-19", "Meera", "98333 33333");
+    await new Promise((r) => setTimeout(r, 300));
+    assert.deepEqual({ wa: waTo() - wa, push: toOwner() - pu }, { wa: 1, push: 0 }, "WhatsApp alone");
+  } finally { await w.done(); }
+});
+
+test("a customer who allowed alerts gets the reminder by push; a late cancellation's refund is approved from the owner's alert and shown on the confirmation page", async () => {
+  const w = await world();
+  try {
+    const ownerPhone = phone("https://fcm.googleapis.com/fcm/send/late-owner");
+    assert.equal((await w.json(`/o/${w.ownerToken}/push/subscribe`, { subscription: ownerPhone.subscription })).status, 200);
+    // today, a few hours ahead: inside the 24-hour cancellation window
+    const handle = await book(w, "2026-11-16", "Asha", "98111 11111", Date.UTC(2026, 10, 16, 9, 0));
+    const customer = phone("https://web.push.apple.com/late-customer");
+    assert.equal((await w.json(`/b/${handle}/push`, { subscription: customer.subscription })).status, 200);
+    await press(w, "deposit", "received");
+    assert.match(await (await w.page(`/b/${handle}?lang=en`)).text(), /Booked: /u);
+    // the 2-hours-before reminder, by push only (there is no WhatsApp)
+    const before = w.pushes.length;
+    w.clock.advance(4 * 60 * 60_000);
+    await w.client.runtime.tick(); await w.client.runtime.idle();
+    const reminder = (await w.pushed(before + 1)).slice(before).find((p) => p.route === "/v1/push/customer");
+    assert.ok(reminder, "the reminder reached the customer's phone");
+    assert.equal(reminder!.call.host, "web.push.apple.com");
+    assert.match(customer.open(reminder!.call.body).body, /Haircut|haircut|today|reminder/iu);
+    // a late cancellation: the owner is asked, by push, whether to refund
+    const before2 = w.pushes.length;
+    await w.form(`/b/${handle}/cancel`, { lang: "en" });
+    await w.client.runtime.idle();
+    for (let i = 0; i < 100 && !w.pushes.slice(before2).some((p) => p.route === "/v1/push/owner"); i++) await new Promise((r) => setTimeout(r, 30));
+    const ask = w.pushes.slice(before2).find((p) => p.route === "/v1/push/owner");
+    assert.ok(ask, "the owner's alert");
+    assert.match(ownerPhone.open(ask!.call.body).body, /₹200/u);
+    assert.match(await (await w.page(`/b/${handle}?lang=en`)).text(), /The shop is deciding about a refund of ₹200\./u, "the page says the shop is deciding");
+    await press(w, "late_refund", "approve");
+    assert.match(await (await w.page(`/b/${handle}?lang=en`)).text(), /Your refund of ₹200 is on its way from the shop\./u, "approved: on its way");
+    await press(w, "refund_owed", "refunded");
+    assert.match(await (await w.page(`/b/${handle}?lang=en`)).text(), /The shop has sent your refund of ₹200\./u, "and sent");
   } finally { await w.done(); }
 });

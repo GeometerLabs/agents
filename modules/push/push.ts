@@ -55,6 +55,15 @@ export function createPush(o: { store: PushStore; sender: PushSender; shopName: 
 
 const sameNumber = (a: string, b: string) => a.replace(/\D/gu, "") === b.replace(/\D/gu, "");
 
+/** Where a wrapped messaging keeps the shop's own WhatsApp (undefined: the shop has none). */
+const WHATSAPP = Symbol("the shop's WhatsApp, under the owner's alerts");
+/**
+ * The shop's WhatsApp alone, never a push: for what must go on WhatsApp or not at all. The owner's one-use sign-in link is one (owner-signin.ts): pushed, it would sit
+ * in clear in the push queue (the sign-in store keeps hashes only) and show on a lock screen, and on a shop with no WhatsApp anyone could make one go by asking the
+ * page. A messaging that `pushMessaging` did not wrap is returned as it is.
+ */
+export const whatsappOf = (m: Messaging): Messaging | undefined => (WHATSAPP in m ? (m as unknown as Record<symbol, Messaging | undefined>)[WHATSAPP] : m);
+
 /**
  * Where a message to the owner goes now: the owner's choice, never push alone while no phone has alerts on (the owner would hear nothing), and push alone for a
  * shop with no WhatsApp. "none": a shop with no WhatsApp whose owner has no phone with alerts: nothing can be sent (the owner's app lists it).
@@ -117,5 +126,6 @@ export function pushMessaging(base: Messaging | undefined, push: Push | undefine
   if (base?.sendDocument) messaging.sendDocument = (to, doc) => base.sendDocument!(to, doc);
   if (base?.sendImage) messaging.sendImage = (to, image) => base.sendImage!(to, image);
   if (base?.ping) messaging.ping = () => base.ping!();
+  Object.defineProperty(messaging, WHATSAPP, { value: base, enumerable: false });
   return messaging;
 }

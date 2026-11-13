@@ -44,8 +44,8 @@ export const LINK_LIMITS = [{ max: 3, perMs: 15 * 60_000 }, { max: 10, perMs: 24
 export const CHALLENGE_MS = 5 * 60_000;
 /** Item 11h: wrong recovery codes a shop takes in a day before it stops looking (the front's per-address count comes first). */
 export const WRONG_CODE_LIMIT = 20;
-/** Item 11h: challenges a shop makes in an hour at most (an owner needs a handful; a flood is refused, not stored). */
-export const CHALLENGES_PER_HOUR = 300;
+/** Item 11h: open challenges a shop keeps at most (an owner needs one at a time; a flood pushes the oldest out, never the newest). */
+export const CHALLENGES_KEPT = 300;
 /** Item 11h: the most passkeys a shop's owner keeps (a phone, a new phone, a tablet ...). The oldest unused one goes first. */
 export const MAX_PASSKEYS = 8;
 /** A grant's state, for the setup page: what the file says, and whether this runtime has seen it used. */
@@ -138,10 +138,14 @@ export function openOwnerAccess(file: string) {
     db.prepare("INSERT INTO meta (name, value) VALUES ('webauthn_user', ?) ON CONFLICT(name) DO NOTHING").run(made);
     return (db.prepare("SELECT value FROM meta WHERE name = 'webauthn_user'").get() as { value: string }).value;
   }
-  /** A fresh challenge for one ceremony, kept as a hash; the challenge itself goes to the page once. At most CHALLENGES_PER_HOUR an hour, so a flood cannot grow the file. */
+  /**
+   * A fresh challenge for one ceremony, kept as a hash; the challenge itself goes to the page once. The store keeps at most CHALLENGES_KEPT open ones: past that
+   * the OLDEST open ones go, never the new one, so a flood cannot grow the file and cannot lock the owner out either (the owner's own challenge is always the newest,
+   * and lives only for the seconds their fingerprint takes).
+   */
   function newChallenge(kind: "register" | "signin", now: number, grant?: string): string {
     db.prepare("DELETE FROM challenges WHERE expires_at <= ?").run(now - 24 * 60 * 60_000);
-    if ((db.prepare("SELECT count(*) AS n FROM challenges WHERE made_at > ?").get(now - 60 * 60_000) as { n: number }).n >= CHALLENGES_PER_HOUR) throw new PasskeyError("Too many sign-in attempts this hour.");
+    db.prepare(`DELETE FROM challenges WHERE hash IN (SELECT hash FROM challenges WHERE used_at IS NULL ORDER BY made_at DESC LIMIT -1 OFFSET ?)`).run(CHALLENGES_KEPT - 1);
     const c = randomBytes(32).toString("base64url");
     db.prepare("INSERT INTO challenges (hash, kind, grant_hash, made_at, expires_at) VALUES (?, ?, ?, ?, ?)").run(challengeHash(c), kind, grant ?? null, now, now + CHALLENGE_MS);
     return c;
