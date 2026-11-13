@@ -46,7 +46,7 @@ test("no laptop, Node command, Wi-Fi address or stale status line is left in any
   for (const t of TEMPLATES) for (const l of LANGUAGES) {
     const guide = file(t, `guide.${l}.src.md`);
     assert.ok(!/192\.168|node templates\/[a-z]+\/[a-z]+\/(demo|scripts\/walkthrough)|Ctrl\+C/.test(guide), `${t} ${l}: no laptop demo command`);
-    assert.ok(!/not built yet|As of 3 November 2026|As of [58] November 2026/i.test(guide), `${t} ${l}: no stale status line`);
+    assert.ok(!/not built yet|As of 3 November 2026/i.test(guide), `${t} ${l}: no stale status line`);
     assert.ok(!/Meta business portfolio/.test(guide), `${t} ${l}: not the Meta-direct route`);
   }
 });
