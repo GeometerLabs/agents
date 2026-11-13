@@ -10,6 +10,9 @@
 //            https://partner-docs.gupshup.io/reference/post_partner-app-appid-v3-text-message (template: .../post_partner-app-appid-v3-message-14, updated 14 Oct 2026,
 //            whose body is { name, language: { code }, components }, exactly templateBody; interactive: .../post_partner-app-appid-v3-interactive-message;
 //            image: .../post_partner-app-appid-v3-image-message; document: .../senddocumentmessage). Each takes a `link` for media, as whatsapp.ts sends.
+//  - item 11i (read 14 Nov 2026): a template with an image header takes Meta's own header component with an image `link`
+//            (https://partner-docs.gupshup.io/reference/post_partner-app-appid-v3-message-12), so templateBody's header goes as it is. A sticker is documented
+//            only by an uploaded media `id` (.../post_partner-app-appid-v3-sticker-message), so this adapter offers no sticker (no `stickerByLink`).
 //  - reply:  { messages: [{ id: "GUPSHUP_MESSAGE_ID" }], messaging_product, contacts } (a Gupshup id, not a wamid). Read as GUPSHUP having taken the message: its
 //            self-serve send "is processed asynchronously" (https://docs.gupshup.io/docs/session-messages) and the partner events include its own failures after the
 //            answer, so Meta's refusals (131047, the closed window) are expected afterwards as a "failed" status (webhooks.ts parseWhatsAppStatuses). An inference

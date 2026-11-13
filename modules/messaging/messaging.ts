@@ -62,7 +62,7 @@ export interface MessageStatus {
 export interface OutboundMessage {
   id: string;
   to: string;
-  kind: "text" | "template" | "interactive" | "document" | "image";
+  kind: "text" | "template" | "interactive" | "document" | "image" | "sticker";
   /** For an interactive message, the body and then each option on its own line (interactiveText): what the outgoing check read. */
   text: string;
   /** Interactive only: the buttons or the list that went with the body. */
@@ -71,6 +71,10 @@ export interface OutboundMessage {
   document?: DocumentMessage;
   /** Image only: the picture WhatsApp was asked to fetch and show (`text` is its caption). */
   image?: ImageMessage;
+  /** Sticker only (item 11i): the WebP WhatsApp was asked to fetch (`text` is the mood in words, for the record and the check; a sticker carries no words). */
+  sticker?: StickerMessage;
+  /** Template only (item 11i): the image header's picture, when the template has one. */
+  headerImage?: string;
   templateName?: string;
   language?: Language;
   sentAt: number;
@@ -84,7 +88,14 @@ export interface OutboundMessage {
  * `text` is the whole rendered message (what the outgoing check read, and all the fake needs). A real provider sends the approved
  * template `name` with the numbered `parameters` ({{1}}, {{2}} ...) instead, and its approved wording must come out as `text`.
  */
-export interface TemplateMessage { name: string; language: Language; text: string; parameters?: string[] }
+export interface TemplateMessage {
+  name: string; language: Language; text: string; parameters?: string[];
+  /**
+   * Item 11i: for a template with an image header (meta-templates.ts `header: "image"`), the picture's https address. WhatsApp fetches it itself, as for an image
+   * message. Left out for a template without one. The fake keeps it with the message, so a test can read which picture went.
+   */
+  headerImage?: string;
+}
 
 /**
  * A file sent by its address: WhatsApp fetches `link` itself (it must be https and reachable from the internet) and shows it under `filename`. WhatsApp accepts only
@@ -113,6 +124,19 @@ export function imageProblem(image: ImageMessage): string | null {
   return null;
 }
 
+/**
+ * A sticker sent by its address (item 11i, the character's mood): WhatsApp fetches `link` itself (https, public). A static sticker is a WebP of at most 100 KB
+ * (Meta's sticker-messages page, read 14 Nov 2026; WhatsApp's own sticker rule is 512x512, which the character's are). A session message, like free text: only
+ * while the person's 24-hour window is open (Meta's send-messages page lists stickers among the service messages of an open window).
+ */
+export interface StickerMessage { link: string }
+
+/** Why a sticker cannot be sent, in plain words, or null: an https link to a .webp file (the character's pictures are served under that name). */
+export function stickerProblem(s: StickerMessage): string | null {
+  if (!/^https:\/\/[^\s?#]+\.webp(\?[^\s#]*)?$/u.test(s.link)) return "the link must start with https://, hold no spaces and name a .webp file";
+  return null;
+}
+
 export interface Messaging {
   /** Free-form text. Only allowed while the customer's 24-hour window is open. */
   sendText(to: string, text: string): Promise<OutboundMessage>;
@@ -127,6 +151,11 @@ export interface Messaging {
   sendDocument?(to: string, doc: DocumentMessage): Promise<OutboundMessage>;
   /** A picture by its address (see ImageMessage). Like free text, only while the person's 24-hour window is open. Optional: a provider without it is not asked, and the words go alone. */
   sendImage?(to: string, image: ImageMessage): Promise<OutboundMessage>;
+  /**
+   * Item 11i: a sticker by its address (see StickerMessage). Only while the person's 24-hour window is open. Optional: a provider whose documented contract has no
+   * sticker by link (Gupshup's partner API shows only an uploaded media id) does not have it, and nothing is sent in its place.
+   */
+  sendSticker?(to: string, sticker: StickerMessage): Promise<OutboundMessage>;
   /** Did this person message us in the last 24 hours? */
   isWindowOpen(to: string): Promise<boolean>;
   getMessage(id: string): Promise<OutboundMessage | null>;
@@ -139,12 +168,13 @@ export interface Messaging {
 
 /** lostReply: the message goes out, the reply is lost. error: the provider refuses. */
 export type MessagingFault = "lostReply" | "error";
-export type MessagingOp = "sendText" | "sendTemplate" | "sendInteractive" | "sendDocument" | "sendImage";
+export type MessagingOp = "sendText" | "sendTemplate" | "sendInteractive" | "sendDocument" | "sendImage" | "sendSticker";
 
 export interface FakeMessaging extends Messaging {
   sendInteractive(to: string, message: InteractiveMessage): Promise<OutboundMessage>;
   sendDocument(to: string, doc: DocumentMessage): Promise<OutboundMessage>;
   sendImage(to: string, image: ImageMessage): Promise<OutboundMessage>;
+  sendSticker(to: string, sticker: StickerMessage): Promise<OutboundMessage>;
   /** A person sends us a message (this opens their window). Pass the same `id` again, or call deliver twice, for a duplicate. `image`: they sent a picture (its words, if any, are `text`). */
   receive(from: string, text: string, options?: { id?: string; reply?: { id: string; kind: "button" | "list" }; image?: boolean; voiceNote?: boolean; media?: VoiceMediaRef }): InboundMessage;
   outbox(): OutboundMessage[];
@@ -229,11 +259,23 @@ export function createFakeMessaging(clock: Clock): FakeMessaging {
       return { ...m };
     },
 
+    async sendSticker(to, sticker) {
+      const fault = faults.take("sendSticker");
+      if (fault === "error") throw new ApiError(500, "The provider could not take the message.");
+      if (!windowOpen(to)) throw new WindowClosedError();
+      const problem = stickerProblem(sticker);
+      if (problem) throw new ApiError(400, `The sticker cannot be sent: ${problem}.`);
+      const m = store({ to, kind: "sticker", text: "", sticker: { ...sticker } });
+      if (fault === "lostReply") throw new TimeoutError("send sticker");
+      return { ...m };
+    },
+
     async sendTemplate(to, template) {
       const fault = faults.take("sendTemplate");
       if (fault === "error") throw new ApiError(500, "The provider could not take the message.");
       if (!approved.has(`${template.name}:${template.language}`)) throw new ApiError(400, `The template ${template.name} (${template.language}) is not approved.`);
-      const m = store({ to, kind: "template", text: template.text, templateName: template.name, language: template.language });
+      if (template.headerImage !== undefined && imageProblem({ link: template.headerImage }) !== null) throw new ApiError(400, "The template's header picture must be an https link.");
+      const m = store({ to, kind: "template", text: template.text, templateName: template.name, language: template.language, ...(template.headerImage ? { headerImage: template.headerImage } : {}) });
       if (fault === "lostReply") throw new TimeoutError("send template");
       return { ...m };
     },

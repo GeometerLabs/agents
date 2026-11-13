@@ -94,3 +94,20 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .shopcard .name { font-size: 18px; }
   table.cost td { padding: 8px; }
 }
+
+/* ---- Item 11i: the Character step and the shop page's character (views-character.ts). Pictures are DiceBear's own, shown as drawn: no filter, no frame on
+   the art. A picked choice has a thick ring AND a "Picked" word (never colour alone); every choice is at least 44 px to tap; rows wrap at 360-390 px. ---- */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+form.character fieldset.field { padding-bottom: 12px; }
+.styles, .strip, .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+button.pick { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; min-width: 44px; min-height: 44px; padding: 4px; background: var(--card); border: 1.5px solid var(--line); border-radius: 12px; color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; }
+button.pick img { display: block; border-radius: 10px; }
+button.pick[aria-pressed="true"] { border: 3px solid var(--green-dark); padding: 2.5px; background: var(--green-tint); }
+button.pick:focus-visible { outline: 3px solid var(--green-dark); outline-offset: 2px; }
+.strip button.pick img { width: 72px; height: 72px; }
+.styles button.pick img { width: 56px; height: 56px; }
+button.swatch .auto { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 36px; padding: 0 6px; border-radius: 18px; border: 1px dashed var(--line); font-size: 13px; }
+.picked { font-size: 12px; font-weight: 700; color: var(--green-dark); }
+ul.moods { list-style: none; padding: 0; margin: 8px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+ul.moods li { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; font-size: 14px; }
+ul.moods img { width: 100%; max-width: 96px; height: auto; border-radius: 12px; }
