@@ -419,7 +419,7 @@ test("409 already_done: a refund a person at the server settled as made is done 
   assert.deepEqual(issues(w), [], "nobody needs to look at it again");
   assert.deepEqual(w.store.bookings.get("b-1")!.stoppedRefunds, [pay], "and Guard is never asked about this payment again");
   assert.equal(w.textsTo(w.owner).at(-1), `Refund done: ₹200 to ${groupPhone(CUSTOMER)}. The person who set up your agent checked it and marked it as made, so it won't be sent a second time.`);
-  assert.match(w.lastTextTo(CUSTOMER), /deposit is being refunded/, "the customer is told it is done, never that it failed");
+  assert.match(w.lastTextTo(CUSTOMER), /We're refunding your ₹200 deposit/, "the customer is told it is done, never that it failed");
   const tries = w.payments.calls.length;
   await w.advance(60 * 60);
   await w.say("cancel my booking");

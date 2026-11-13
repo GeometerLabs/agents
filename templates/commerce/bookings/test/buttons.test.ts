@@ -299,7 +299,7 @@ test("where buttons cannot go, the same words go as plain text: no provider supp
   refused.messaging.sendInteractive = async () => { throw new ApiError(400, "Parameter value is not valid"); };
   await refused.say("hello");
   assert.equal(lastOf(refused).kind, "text");
-  assert.match(lastOf(refused).text, /We offer: haircut ₹450, beard trim ₹250, facial ₹900, hair colour ₹1,800/, "the plain menu names every service and price, so nothing is lost");
+  assert.match(lastOf(refused).text, /We do: haircut ₹450, beard trim ₹250, facial ₹900, hair colour ₹1,800/, "the plain menu names every service and price, so nothing is lost");
 
   const lost = createWorld();
   lost.messaging.inject("sendInteractive", "lostReply");

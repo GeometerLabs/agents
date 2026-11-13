@@ -182,7 +182,7 @@ test("time passes: an unpaid hold is released, and a paid booking gets its remin
   await b.do("/api/say", { text: BOOK });
   await b.do("/api/pay", { times: 1 });
   s = await b.do("/api/time", { minutes: 1440 });
-  assert.ok(customerSaid(s).some((t) => /^Reminder:/.test(t)), "the 24-hour reminder went out");
+  assert.ok(customerSaid(s).some((t) => /^Hi! Just a reminder:/.test(t)), "the 24-hour reminder went out");
   assert.equal(s.clock, "Wed 4 Nov, 10:00 am");
 });
 
