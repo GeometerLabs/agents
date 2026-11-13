@@ -65,8 +65,11 @@ export function createPushSender(o: { store: PushStore; guard: PushGuard | undef
     const at = o.clock.now();
     if (status >= 200 && status < 300) return o.store.settle(w.id, "sent", at, status);
     if (status === 404 || status === 410) { o.store.drop(w.sub.id, "gone", at); return o.store.settle(w.id, "gone", at, status); }
-    // Guard's refusal: its rules or a daily count. Not tried again (the count is the point); the owner's app still lists what waits.
-    if (status === 403) { log(`A push was refused by the push Guard (${reason ?? "refused"}).`); return o.store.settle(w.id, "refused", at, status); }
+    // Guard's refusal (its answer names a reason): its rules or a daily count. Not tried again (the count is the point); the owner's app still lists what waits.
+    if (status === 403 && reason) { log(`A push was refused by the push Guard (${reason}).`); return o.store.settle(w.id, "refused", at, status); }
+    // the push service's own 401 or 403: the subscription was made for another key (the shop's server restored, or set up again). The phone subscribes again
+    // when its page is opened next (pages.ts compares the keys); this one is forgotten
+    if (status === 401 || status === 403) { o.store.drop(w.sub.id, "key", at); return o.store.settle(w.id, "gone", at, status); }
     if (status === 400 || status === 413) return o.store.settle(w.id, "failed", at, status);
     return o.store.settle(w.id, "later", at, status);
   }

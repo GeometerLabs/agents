@@ -86,3 +86,19 @@ test("a shop with no WhatsApp: no WhatsApp check, and not ready to go live until
     void arjun;
   } finally { await b.close(); }
 });
+
+test("the accounts step's \"Start without WhatsApp for now\": nothing about WhatsApp is asked, and the shop's runtime.json names no messaging (Bookings)", async () => {
+  const { setUp, STEP1, STEP2, STEP3 } = await import("./flow.ts");
+  const b = await boot({ publicUrl: "https://shops.example.test" });
+  try {
+    const divya = await b.account("divya", "partner");
+    const f = await setUp(b, divya, [STEP1, STEP2, STEP3, { waNone: "1", payMod: "upi", upiId: "hosahalli@okicici", upiPayee: "Hosahalli Beauty" }]);
+    const saved = await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/6`);
+    assert.equal(saved.location, `/setup/${f.draft}/6`, saved.plain.slice(0, 300));
+    const runtime = JSON.parse(readFileSync(join(b.dir, "shops", f.shop, "runtime.json"), "utf8"));
+    assert.equal(runtime.services.messaging, undefined, "no WhatsApp: no messaging service");
+    assert.ok(!f.replies.some((r) => /secret-missing|WhatsApp token/u.test(r)), "no WhatsApp key was asked for");
+    const checks = await divya.get(`/setup/${f.draft}/6`);
+    assert.match(checks.plain, /No WhatsApp: the owner signs in with their fingerprint/u, "the checks step says what the owner needs instead");
+  } finally { await b.close(); }
+});
