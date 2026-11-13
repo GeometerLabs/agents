@@ -126,6 +126,6 @@ export function ownerSetupPage(c: Ctx, id: string, url: string, until: Date): st
 export function recoveryCardPage(c: Ctx, id: string, shopName: string, codes: readonly string[], recoverUrl: string): string {
   const w = WORDS[c.lang];
   return layout(c, w.cardTitle, html`<h1>${w.cardTitle}: ${shopName}</h1><div class="notice" role="note">${w.cardNote}</div>
-<ol class="codes" style="font:1.4rem/2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em">${codes.map((code) => html`<li>${printedCode(code)}</li>`)}</ol>
+<ol class="codes">${codes.map((code) => html`<li>${printedCode(code)}</li>`)}</ol>
 <p><b>${w.cardOwner(recoverUrl)}</b></p><p class="note">${w.printNote}</p><p><a href="/shops/${id}">${w.back}</a></p>`);
 }

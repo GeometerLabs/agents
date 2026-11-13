@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (57)
+## 1. Messages to the customer (58)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -58,6 +58,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `upi_slot_and_link` | UPI shop: straight after price_floor, the same without the price | ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ಖಾಲಿ ಇದೆ! ಬುಕ್ ಮಾಡಲು ₹200 ಮುಂಗಡ ಹಣ ಕಟ್ಟಿ, 15 ನಿಮಿಷ ಸ್ಲಾಟ್ ಕಾಯ್ದಿರಿಸುತ್ತೇನೆ. UPI ID: glowsalon@okicici (Glow Salon) ನಿಮ್ಮ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ಆಮೇಲೆ ನಾನು ನಿಮಗೆ ಮೆಸೇಜ್ ಮಾಡುತ್ತೇನೆ. | Tue 10 Nov, 6:00 pm is free! Pay a ₹200 deposit to book it, and I'll hold the slot for 15 minutes. UPI ID: glowsalon@okicici (Glow Salon) The owner will confirm your payment, then I'll message you. |  |
 | `upi_already_waiting` | UPI shop: the customer writes again while the slot is held | ನಿಮ್ಮ ಸ್ಲಾಟ್ (ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00) ಇನ್ನೂ ಕಾಯ್ದಿರಿಸಿದ್ದೇನೆ. ಬುಕ್ ಮಾಡಲು ₹200 ಮುಂಗಡ ಹಣ ಕಟ್ಟಿ. UPI ID: glowsalon@okicici (Glow Salon) ನಿಮ್ಮ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ಆಮೇಲೆ ನಾನು ನಿಮಗೆ ಮೆಸೇಜ್ ಮಾಡುತ್ತೇನೆ. | I'm still holding Tue 10 Nov, 6:00 pm for you. Pay the ₹200 deposit to book it. UPI ID: glowsalon@okicici (Glow Salon) The owner will confirm your payment, then I'll message you. |  |
 | `upi_qr_caption` | UPI shop: the words under the QR picture (no booking id) | UPI ಮೂಲಕ Glow Salon ಅವರಿಗೆ ₹200 ಮುಂಗಡ ಹಣ ಕಟ್ಟಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. | Scan to pay the ₹200 deposit to Glow Salon by UPI. |  |
+| `upi_page_link` | UPI shop, a booking made on WhatsApp: the last lines of the quote, with the private link to the booking's own page (made for this message) |  ಪಾವತಿಸಲು ಮತ್ತು ನಿಮ್ಮ ಬುಕಿಂಗ್ ನೋಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ (ನಿಮಗೆ ಮಾತ್ರ, ಯಾರಿಗೂ ಕಳುಹಿಸಬೇಡಿ): https://streetlist.in/glow-salon/b/Xy7Qm2LpR9vK4tW8nB3cD6fH1jZ5aE0s |  Tap to pay and see your booking (just for you, please don't share it): https://streetlist.in/glow-salon/b/Xy7Qm2LpR9vK4tW8nB3cD6fH1jZ5aE0s |  |
 | `upi_booked` | UPI shop: the owner marked the whole deposit received and the calendar shows the booking | ಬುಕ್ ಆಗಿದೆ! ಹೇರ್ ಕಟ್, ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00. ನಿಮ್ಮ ₹200 ಮುಂಗಡ ಹಣವನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದಾರೆ. ಬರಲು ಆಗದಿದ್ದರೆ ಕನಿಷ್ಠ 24 ಗಂಟೆ ಮೊದಲು ರದ್ದು ಮಾಡಿ, ಮುಂಗಡ ಹಣ ಮರಳಿ ಸಿಗುತ್ತದೆ. | You're booked! Haircut, Tue 10 Nov, 6:00 pm. The owner has confirmed your ₹200 deposit. Can't make it? Cancel at least 24 hours before and your deposit comes back. |  |
 | `upi_paid_claim` | UPI shop: the customer says they paid, taps I have paid, or sends a screenshot (nothing is marked paid) | ಧನ್ಯವಾದ! ಮಾಲೀಕರು ತಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ನಿಮ್ಮ ₹200 ನೋಡಿ ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ಆಮೇಲೆ ನಾನು ನಿಮಗೆ ಮೆಸೇಜ್ ಮಾಡುತ್ತೇನೆ. ಅಲ್ಲಿಯವರೆಗೆ ದಯವಿಟ್ಟು ಕಾಯಿರಿ: ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಒಂದೇ ಪಾವತಿಗೆ ಪುರಾವೆ ಆಗುವುದಿಲ್ಲ. | Thanks! The owner will check their UPI app for your ₹200, then I'll message you. Please wait for that message: a screenshot alone isn't proof of payment. |  |
 | `upi_nothing_waiting` | UPI shop: the customer says they paid and no UPI payment is waiting | ಧನ್ಯವಾದ! ಈಗ ನಿಮ್ಮ ಯಾವ UPI ಪಾವತಿಯೂ ಬಾಕಿ ಇಲ್ಲ, ಹಾಗಾಗಿ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಲು ಏನೂ ಇಲ್ಲ. ಬೇರೆ ಯಾವುದಕ್ಕಾದರೂ ಹಣ ಕಳುಹಿಸಿದ್ದರೆ ದಯವಿಟ್ಟು ಮಾಲೀಕರ ಜೊತೆ ಮಾತನಾಡಿ. | Thanks! I don't have a UPI payment waiting from you right now, so there's nothing for the owner to confirm. If you paid for something else, please talk to the owner. |  |
@@ -917,6 +918,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.accounts.received` | ಬಂದ ಸಮಯ: 4 Nov 2026, 10:30. | Received 4 Nov 2026, 10:30. |  |
 | `setup.accounts.keepEmpty` | ಹಾಗೆಯೇ ಇಡಲು ಖಾಲಿ ಬಿಡಿ. | Leave empty to keep it. |  |
 | `setup.accounts.neverShown` | ಉಳಿಸಿದ ಮೇಲೆ ಇದನ್ನು ಮತ್ತೆ ತೋರಿಸುವುದಿಲ್ಲ. | It is not shown again after you save. |  |
+| `setup.accounts.whatsapp.none` | ಈಗ WhatsApp ಇಲ್ಲದೆ ಶುರು ಮಾಡಿ | Start without WhatsApp for now |  |
+| `setup.accounts.whatsapp.noneHelp` | ಗ್ರಾಹಕರು ಅಂಗಡಿಯ ಪುಟದಲ್ಲಿ ಬುಕ್ ಮಾಡಿ ಪಾವತಿಸುತ್ತಾರೆ, ಮಾಲೀಕರು ಬೆರಳಚ್ಚಿನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ ತಮ್ಮ ಆ್ಯಪ್‌ನಲ್ಲಿ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಪಡೆಯುತ್ತಾರೆ. WhatsApp ನಂಬರ್ ಅನ್ನು ನಂತರ ಸೇರಿಸಬಹುದು. | Customers book and pay on the shop's page, and the owner signs in with their fingerprint and gets alerts in their app. You can add the WhatsApp number later. |  |
 | `setup.accounts.whatsapp.title` | WhatsApp | WhatsApp |  |
 | `setup.accounts.whatsapp.intro` | ಅಂಗಡಿ ತನ್ನ ನಂಬರ್ ಮತ್ತು WhatsApp Business ಆ್ಯಪ್ ಅನ್ನು ಹಾಗೆಯೇ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. ಗ್ರಾಹಕರು ಮೊದಲಿನ ನಂಬರ್‌ಗೇ ಬರೆಯುತ್ತಾರೆ. | The shop keeps its own number and its WhatsApp Business app. Customers write to the same number as before. |  |
 | `setup.accounts.whatsapp.steps.1` | ಅಂಗಡಿಯ ಫೋನ್‌ನಲ್ಲಿ, ಅಂಗಡಿಯ ನಂಬರ್‌ನೊಂದಿಗೆ WhatsApp Business ಆ್ಯಪ್ ಬಳಸುವುದನ್ನು ಮುಂದುವರಿಸಿ. | Keep using the WhatsApp Business app on the shop's phone, with the shop's number. |  |
@@ -961,6 +964,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.settingsOk` | ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಪೂರ್ಣವಾಗಿವೆ. | The settings are complete. |  |
 | `setup.checks.handCheck` | ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಬೆಲೆ ಮತ್ತು ಸಮಯದ ಮೇಲಿನ ಪರೀಕ್ಷೆಗಳು | The tests on this shop's own prices and hours |  |
 | `setup.checks.handNotRun` | ಇನ್ನೂ ನಡೆಸಿಲ್ಲ. | Not run yet. |  |
+| `setup.checks.ownerSigninWait` | WhatsApp ಇಲ್ಲ: ಮಾಲೀಕರು ಬೆರಳಚ್ಚಿನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತಾರೆ. ಅವರಿಗೆ ಸೆಟಪ್ QR ಕೋಡ್ ತೋರಿಸಿ (ಈ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಅಂಗಡಿಯ ಪುಟ, "ಮಾಲೀಕರ ಸೈನ್ ಇನ್"), ಮತ್ತು ಆ್ಯಪ್‌ನಲ್ಲಿ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಆನ್ ಮಾಡಲು ಹೇಳಿ. | No WhatsApp: the owner signs in with their fingerprint. Show them the setup QR code (the shop's page in this panel, "The owner's sign-in"), and ask them to turn on alerts in their app. |  |
+| `setup.checks.ownerSigninOk` | ಮಾಲೀಕರಿಗೆ ಸೆಟಪ್ QR ಕೋಡ್ ತೋರಿಸಲಾಗಿದೆ. | The owner's setup QR code has been shown. |  |
 | `setup.checks.deploy` | ಸರ್ವರ್‌ನ ಅಪ್‌ಡೇಟ್ | The server's update |  |
 | `setup.checks.deployApplied` | ಜಾರಿಯಾಗಿದೆ: 4 Nov 2026, 10:30. | Applied 4 Nov 2026, 10:30. |  |
 | `setup.checks.deployNot` | ಇನ್ನೂ ಜಾರಿಯಾಗಿಲ್ಲ. | Not applied yet. |  |
@@ -1267,3 +1272,4 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `personality.brief.greetingNamed` | ಇದು {name}, {shop} ನ ಸಹಾಯಕ. | This is {name}, {shop}'s assistant. |  |
 | `personality.brief.morningOpening` | ಬೆಳಗಿನ ಮಾಹಿತಿ: {shop} ನ ಸಹಾಯಕ. | Morning summary from the assistant of {shop}. |  |
 | `personality.brief.morningSignOff` | ಹೆಚ್ಚಿನದಕ್ಕೆ ಉತ್ತರಿಸಿ. | Reply for more. |  |
+

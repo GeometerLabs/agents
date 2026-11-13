@@ -160,7 +160,7 @@ test("a running Guard built with other licence keys than geometer.json pins refu
     w.guardLicence.reads = true; w.guardLicence.kids = ["0123456789abcdef"];
     w.handIn("glow-salon");
     const problems = await refusedWith(deploy(w.ctx));
-    assert.deepEqual([...new Set(problems.map((p) => p.rule))].sort(), ["licence:g-glow-salon-calendar", "licence:g-glow-salon-razorpay", "licence:g-glow-salon-whatsapp"]);
+    assert.deepEqual([...new Set(problems.map((p) => p.rule))].sort(), ["licence:g-glow-salon-calendar", "licence:g-glow-salon-push", "licence:g-glow-salon-razorpay", "licence:g-glow-salon-whatsapp"]);
     assert.match(problems[0].message, new RegExp(`0123456789abcdef built in, but geometer.json pins ${TEST_KID}`, "u"));
     assert.ok(!w.admin.some((a) => a.startsWith("stop glow-salon on")), "the kill switch was not engaged");
     const status = readStatus(w.root, "glow-salon")!;
