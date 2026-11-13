@@ -1071,5 +1071,7 @@ picture with its mood in words beside it and in its alt text, because the pages'
 placing the face in the page's design is the later design pass's, and it can use the addresses above once a policy names them. The owner's app shows the owner's real
 mood the same way, and its installed icon is the "All well" picture.
 
-**Sizes.** The tracked bundle (`bundle/`) was 4,584,145 bytes and is 8,221,075: 3,546,327 of it is `vendor/`, the rest the renderer, the step, the server side and
-their tests. Not counted: nothing is added to `node_modules` (there is none).
+**Sizes** (measured on the landing tree against main 7df41ee). The tracked bundle (`bundle/`) was 4,585,716 bytes and is 8,237,937: 3,546,327 of it is `vendor/`,
+the rest the renderer, the step, the server side and their tests. The whole repository goes from 16,485,530 to 20,241,175 bytes. Nothing is added to `node_modules`
+(there is none). The pictures' folder does not count toward a shop's desired state (`deploy.ts desiredOf` hashes the settings, runtime, lock and pins only), so drawing
+a set never redeploys the shop; saving a new character does, through its settings.
