@@ -797,8 +797,9 @@ misaligned; compact.
   padlock; the talk box's keyboard-mic hint with a microphone; Send and Hold to talk side by side.
 - **Budget phones**: the phone's own font (the pages' policy loads nothing, and Devanagari, Malayalam and Kannada are on every Android phone), more line height
   for those scripts, no fixed heights or `nowrap` on anything with words, 360 px first. Nothing moves after the first paint: the passkey button's place is kept,
-  the record button sits beside Send, the dark/light switch has its own spot in the head. The sheet is written readable and shrunk at start (`min`): about 7.5 KB
-  on a customer page, 7.9 KB on the owner's app. Pages are sent uncompressed today; Caddy's `encode` on the pages would take that to about 3 KB (Deferred.md).
+  the record button sits beside Send, the dark/light switch has its own spot in the head. The sheet is written readable and shrunk at start (`min`): about 8 KB
+  on a customer page and on the owner's app, 5.7 KB on the sign-in pages (each page carried about 2 KB before). Pages are sent uncompressed today; Caddy's
+  `encode` on the shops' pages would take a sheet to about 3 KB (Deferred.md).
 - **Light by default; dark only when picked.** The owner's app has a sun/moon switch. Its one script (`look.ts` `themeScript`, in the head with the response's
   nonce) sets a remembered dark pick on `<html>` before anything paints, then wires the switch and runs the talk box's and the alerts' code, so the page still runs
   exactly one script (the Bookings channels test counts it); `talkBox` and `ownerAlertsBox` take `bare` to leave their own script out. Customer pages run no
@@ -822,8 +823,8 @@ A recording made by MediaRecorder is written while it is made, so it has no tota
 its own length (from the Opus packet's first byte, RFC 6716 section 3.1) is the end. It only reads, steps over everything else by its size, and answers null for
 anything that is not WebM or Matroska with an Opus track. Tested on a real recording Chromium made (`voice/test/fixtures/chromium-recording.webm`), on files laid out
 the same way (`standin.ts` `fakeWebmVoiceNote`), and through the Bookings agent; Geometer's speech service decodes WebM with the same ffmpeg step (its Python
-tests). The real recording is short (1.2 KB): Chromium's test microphone is mostly silence, which the recorder leaves out, so its packets end at 2.49 s of the 3
-recorded; the reader says 2.49 s, as ffprobe's packet list does. Voice stays off until the owner's sandbox step; Sarvam with WebM is not tried.
+tests). The real recording is short (1.2 KB, from Chromium's test microphone, made on a busy machine): its packets have gaps (the cause was not looked into) and
+end at 2.49 s of the 3 recorded; the reader says 2.49 s, as ffprobe's packet list does. Voice stays off until the owner's sandbox step; Sarvam with WebM is not tried.
 
 ## The shop's assistant (item 11e, decision 43; 12 Nov 2026)
 
