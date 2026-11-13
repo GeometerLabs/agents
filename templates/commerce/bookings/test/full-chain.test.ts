@@ -215,7 +215,7 @@ test("a refund above the limit: the stub Guard holds it, the relay asks the owne
     assert.equal(owner().length, 1);
     assert.equal(owner()[0].templateName, "owner_approval_request");
     const code = /"approve ([A-Z0-9]{6})"/u.exec(owner()[0].text)![1];
-    assert.match(owner()[0].text, /^Approval needed: refund ₹200 for \+919811111111 \(/u);
+    assert.match(owner()[0].text, /^A refund needs your OK: ₹200 to \+91 98111 11111 \(/u);
 
     // another number sends the code: nothing. The owner sends it: the inbox gives it to the runtime AND the relay, and the refund goes once.
     await control(s, "/_standin/whatsapp/inbound", { from: "+919899999999", text: `approve ${code}`, id: "wamid.forged-1" });
@@ -229,8 +229,8 @@ test("a refund above the limit: the stub Guard holds it, the relay asks the owne
     assert.equal(w.refunds[0].receipt, `b-1:${w.captured[0].id}`);
     assert.equal(s.guard.accepted.length, 1);
     assert.equal(owner().filter((m) => m.templateName === "owner_approval_request").length, 1, "asked exactly once");
-    assert.equal(owner().at(-1)!.text, "Thank you. The ₹200 refund for +919811111111 is being sent, and they will be told.");
-    assert.ok(owner().every((m) => !/understand/u.test(m.text)), "the agent saw the code too, and said nothing");
+    assert.equal(owner().at(-1)!.text, "Thanks! The ₹200 refund to +91 98111 11111 is being sent, and I'll let them know.");
+    assert.ok(owner().every((m) => !/didn't get that/u.test(m.text)), "the agent saw the code too, and said nothing");
     assert.match(s.standins.fakes.messaging.sentTo(CUSTOMER).at(-1)!.text, /₹200/);
     assert.equal(languageOfScript(s.standins.fakes.messaging.sentTo(CUSTOMER).at(-1)!.text), "hi");
     // the same webhook delivered again, and time, change nothing

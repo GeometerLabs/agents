@@ -17,7 +17,7 @@ test("OFF by default: the owner's 'terms' is an unknown command and nothing is r
   const w = createWorld();
   await w.say("terms", { from: w.owner });
   assert.equal(entries(w, TERMS_SENT_ACTION).length, 0);
-  assert.match(w.lastTextTo(w.owner), /didn't understand/u);
+  assert.match(w.lastTextTo(w.owner), /didn't get that/u);
 });
 
 test("ON: terms are sent, the agreement is recorded with the digest, version, language and message id, and only once", async () => {

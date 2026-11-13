@@ -109,7 +109,7 @@ test("a booking from the page goes through the same hold and owner-marked deposi
     assert.ok(entries.some((e) => e.action === "hold_slot" && e.outcome === "confirmed" && e.booking === made.booking), "held by the same step a WhatsApp booking takes");
     assert.ok(!entries.some((e) => e.conversation === TYPED), "no conversation is the typed number");
     assert.ok(!w.lines.some((l) => l.includes(`to ${TYPED}`)), "nothing was sent to the typed number on WhatsApp");
-    assert.ok(w.lines.some((l) => l.startsWith(`[stand-in WhatsApp] to ${OWNER}`) && l.includes("+919811111111")), "the owner was told, with the number the customer typed");
+    assert.ok(w.lines.some((l) => l.startsWith(`[stand-in WhatsApp] to ${OWNER}`) && l.includes("+91 98111 11111")), "the owner was told, with the number the customer typed (grouped as people write it)");
 
     // the owner's page: refused without a link; with it, the deposit to mark, bound to its digest
     assert.equal((await w.page(`/o/${w.ownerToken}`)).status, 403, "no link file: no owner page");
@@ -251,7 +251,7 @@ test("money: a part marked on WhatsApp leaves the page asking for exactly the re
     const owed = await answer("refund_owed", "refunded");
     assert.deepEqual([owed.item.amount_paise, owed.result], [20_000, "done"]);
     const after = await (await w.api(`/bookings/${started.handle}`)).json() as { messages: { text: string }[] };
-    assert.match(after.messages.map((m) => m.text).join(" "), /marked your ₹200 refund for booking b-1 as sent by UPI/u, "the customer's page says the refund was sent, only once the owner marked it");
+    assert.match(after.messages.map((m) => m.text).join(" "), /marked your ₹200 refund as sent by UPI/u, "the customer's page says the refund was sent, only once the owner marked it");
     const presses = w.record().filter((e) => e.action === "owner_page_action" && e.outcome === "confirmed").map((e) => e.refs.action);
     assert.deepEqual(presses, ["received", "approve", "refunded"], "each press recorded as the owner's, from the page");
     const state = await (await w.page(`/o/${w.ownerToken}/api/v1/state`)).json() as { waiting: unknown[] };

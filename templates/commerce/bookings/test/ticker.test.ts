@@ -19,7 +19,7 @@ test("the ticker, on its own timer, expires a hold that ran out", async () => {
     kit.clock.advanceMinutes(kit.settings.deposit.holdMinutes + 1); // nobody writes; only time passes
     await until(() => runtime.status().bookings.expired === 1);
     assert.equal(kit.calendar.events().length, 0);
-    assert.ok(kit.messaging.sentTo("+919811111111").some((m) => /hold on .* has ended/.test(m.text)), "the customer was told the hold ran out");
+    assert.ok(kit.messaging.sentTo("+919811111111").some((m) => /let go of .*, as the deposit didn't come in time/.test(m.text)), "the customer was told the hold ran out");
   } finally {
     ticker.stop();
     await runtime.idle();

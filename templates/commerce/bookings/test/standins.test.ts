@@ -8,6 +8,7 @@ import { HOUR } from "../../../../modules/core/time.ts";
 import { createLiveAdapters } from "../src/adapters/live/index.ts";
 import { liveWorld, CUSTOMER, PHONE_NUMBER_ID } from "./helpers/live-world.ts";
 import type { LiveWorld } from "./helpers/live-world.ts";
+import { groupPhone } from "../../../../modules/language/format.ts";
 
 async function withWorld(run: (w: LiveWorld) => Promise<void>, options: Parameters<typeof liveWorld>[0] = {}) {
   const w = await liveWorld(options);
@@ -180,7 +181,7 @@ test("messaging: free text only while the 24-hour window is open (the runtime's 
     const t = await messaging.sendTemplate(PHONE, { name: "booking_reminder", language: "en", text: "ignored", parameters: ["haircut", "Glow Salon", "Tue 10 Nov, 6:00 pm"] });
     assert.equal(t.kind, "template");
     // what the customer would read is the approved wording filled in, not the text we passed along
-    assert.equal(w.fakes.messaging.outbox().at(-1)!.text, "Reminder: your haircut at Glow Salon is on Tue 10 Nov, 6:00 pm.");
+    assert.equal(w.fakes.messaging.outbox().at(-1)!.text, "Hi! Just a reminder: your haircut at Glow Salon is on Tue 10 Nov, 6:00 pm. See you then!");
     assert.equal(w.fakes.messaging.outbox().at(-1)!.templateName, "booking_reminder");
   });
 });
@@ -233,10 +234,10 @@ test("a normal booking over HTTP: held, link sent, paid, confirmed in the calend
     await w.deliverPaymentEvents();
     assert.equal(w.confirmedEvents().length, 1);
     assert.equal(w.linkFor("b-1")!.payments.length, 1);
-    assert.match(w.textsTo(CUSTOMER).at(-1)!, /Booked!/);
+    assert.match(w.textsTo(CUSTOMER).at(-1)!, /You're booked!/);
     assert.equal(w.fakes.payments.refunds().length, 0);
     await w.deliverPaymentEvents({ twice: true }); // the same events again change nothing
-    assert.equal(w.textsTo(CUSTOMER).filter((t) => /Booked!/.test(t)).length, 1);
+    assert.equal(w.textsTo(CUSTOMER).filter((t) => /You're booked!/.test(t)).length, 1);
   });
 });
 
@@ -259,7 +260,7 @@ test("the calendar saves nothing: the agent does not say booked, and tells the o
     await w.control("/_standin/razorpay/pay", { request_id: link.id, deliver: false });
     await w.deliverPaymentEvents();
     assert.equal(w.confirmedEvents().length, 0);
-    assert.ok(!w.textsTo(CUSTOMER).some((t) => /Booked!/.test(t)), w.textsTo(CUSTOMER).join(" | "));
+    assert.ok(!w.textsTo(CUSTOMER).some((t) => /You're booked!/.test(t)), w.textsTo(CUSTOMER).join(" | "));
     assert.ok(w.textsTo(w.owner).some((t) => /NOT booked/.test(t)), w.textsTo(w.owner).join(" | "));
   });
 });
@@ -333,7 +334,7 @@ test("a reminder sent after the 24-hour window goes as the real template, over H
     const last = w.fakes.messaging.sentTo(CUSTOMER).at(-1)!;
     assert.equal(last.kind, "template");
     assert.equal(last.templateName, "booking_reminder");
-    assert.equal(last.text, "Reminder: your haircut at Glow Salon is on Wed 4 Nov, 6:00 pm.");
+    assert.equal(last.text, "Hi! Just a reminder: your haircut at Glow Salon is on Wed 4 Nov, 6:00 pm. See you then!");
   });
 });
 
@@ -344,7 +345,7 @@ test("an owner who has not written in 24 hours is told by the real template, ove
     const told = w.fakes.messaging.sentTo(w.owner);
     assert.equal(told.length, 1);
     assert.deepEqual([told[0].kind, told[0].templateName, told[0].language], ["template", "owner_not_booked", "en"]);
-    assert.equal(told[0].text, `Could not set up ${CUSTOMER}'s haircut on Wed 4 Nov, 6:00 pm: the calendar or the payment link did not work. Nothing is booked.`);
+    assert.equal(told[0].text, `Heads up: I couldn't set up the haircut on Wed 4 Nov, 6:00 pm for ${groupPhone(CUSTOMER)}, because the calendar or the payment link didn't work. Nothing is booked.`);
     assert.ok(w.record.entries().some((e) => e.action === "send_message" && e.outcome === "confirmed" && e.refs.messageId === told[0].id), "read back as sent");
     assert.deepEqual(w.record.entries().filter((e) => e.action === "send_message" && e.outcome !== "confirmed").map((e) => [e.outcome, e.notes]), [], "it used to be recorded as failed: the provider did not know the generic template");
     assert.ok(w.textsTo(CUSTOMER).some((t) => /nothing is booked/.test(t)), "the customer is told as before");

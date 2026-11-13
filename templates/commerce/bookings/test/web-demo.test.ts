@@ -144,7 +144,7 @@ test("web build: a scripted session in the built modules books a slot with a dep
   assert.deepEqual(s.record.fakes.calendar.map((e: any) => [e.bookingRef, e.status, e.start]), [["b-1", "confirmed", "Wed 4 Nov, 6:00 pm"]], "booked, from the calendar's own list");
   assert.equal(s.record.fakes.payments[0].status, "paid");
   assert.equal(s.record.fakes.payments[0].paid[0].amountInr, 200);
-  assert.ok(said(s).some((t: string) => /Booked!/.test(t)));
+  assert.ok(said(s).some((t: string) => /You're booked!/.test(t)));
   assert.ok(s.owner.summary.some((l: any) => l.kind === "ok" && /in your calendar/.test(l.text)));
 
   // 2. A price below the list: refused. The link is for the deposit, never the offer.
@@ -199,7 +199,7 @@ test("web build: the agent's reply buttons and list reach the page, and tapping 
 
   let s = await act("/api/say", { text: "hello" });
   const menu = last(s);
-  assert.match(menu.text, /Which service would you like\?/);
+  assert.match(menu.text, /What would you like to book\?/);
   assert.ok(!menu.text.includes("₹450"), "the bubble is the message's body; the prices are on the rows under it");
   assert.deepEqual(menu.choices.list.rows.map((r: any) => r.id), ["svc:haircut", "svc:beard-trim", "svc:facial", "svc:hair-colour", "owner"], "the ids the rule step maps");
   assert.deepEqual(menu.choices.list.rows[0], { id: "svc:haircut", title: "haircut", description: "₹450" });

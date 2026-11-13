@@ -27,8 +27,10 @@ h2{font-size:1.1rem;margin:22px 0 8px}a{color:var(--g7)}.langs a,.langs b{margin
 label.f{display:block;margin:10px 0 4px;font-weight:600}input[type=text],input[type=tel]{width:100%;font-size:1.05rem;padding:10px;border:1px solid var(--line);border-radius:8px}
 button,.btn{display:inline-block;margin-top:14px;font-size:1.05rem;padding:12px 18px;border-radius:10px;border:0;background:var(--g7);color:#fff;text-decoration:none;cursor:pointer}
 button.quiet{background:#fff;color:var(--g9);border:1px solid var(--line)}.status{font-size:1.15rem;font-weight:600;margin:16px 0}.box{border:1px solid var(--line);border-radius:12px;padding:14px;margin:14px 0}
-.qr svg{width:220px;height:220px;display:block;margin:10px 0}.msgs li{border-left:3px solid var(--line);padding:4px 10px;margin:0 0 8px}.warn{color:var(--amber)}footer{margin-top:28px;border-top:1px solid var(--line);padding-top:12px}
+.qr svg{width:220px;height:220px;display:block;margin:10px 0}.msgs li{border-left:3px solid var(--line);padding:4px 10px;margin:0 0 8px;white-space:pre-line}.warn{color:var(--amber)}footer{margin-top:28px;border-top:1px solid var(--line);padding-top:12px}
 `;
+
+// `.msgs li` keeps a message's own line breaks (white-space: pre-line, 14 Nov 2026): Bookings' quote puts the UPI ID and who confirms on lines of their own.
 
 export interface PageShop { name: string; publicUrl: string }
 

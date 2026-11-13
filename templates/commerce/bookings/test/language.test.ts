@@ -53,10 +53,34 @@ test("drift check: every template, in all four languages, passes the outgoing ch
 });
 
 test("the product's own examples render exactly as written", () => {
-  assert.equal(render("quote_and_link", facts("en")), "Our haircut is ₹450. Tue 10 Nov, 6:00 pm is free. Pay a ₹200 deposit to confirm: https://rzp.io/l/plink3 (I'll hold the slot for 15 minutes.)");
-  assert.equal(render("quote_and_link", facts("hi")), "हमारा हेयरकट ₹450 है। मंगलवार, 10 नवंबर, शाम 6:00 बजे खाली है। ₹200 जमा करके पक्का करें: https://rzp.io/l/plink3 (स्लॉट 15 मिनट के लिए रोका गया है।)");
-  assert.equal(render("quote_and_link", facts("ml")), "ഹെയർകട്ട് വില ₹450 ആണ്. ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ഒഴിവുണ്ട്. ബുക്കിംഗ് ഉറപ്പിക്കാൻ ₹200 അഡ്വാൻസ് അടയ്ക്കൂ: https://rzp.io/l/plink3 (ഈ സമയം 15 മിനിറ്റ് നിങ്ങൾക്കായി മാറ്റിവച്ചിട്ടുണ്ട്.)");
-  assert.equal(render("quote_and_link", facts("kn")), "ಹೇರ್ ಕಟ್ ಬೆಲೆ ₹450. ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ಖಾಲಿ ಇದೆ. ಬುಕಿಂಗ್ ಖಚಿತಪಡಿಸಲು ₹200 ಮುಂಗಡ ಹಣ ಪಾವತಿಸಿ: https://rzp.io/l/plink3 (ಈ ಸಮಯವನ್ನು 15 ನಿಮಿಷ ನಿಮಗಾಗಿ ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ.)");
+  // 14 Nov 2026: the friendly wording (Explanation.md, "The words, short and friendly"): the offer first, then the payment link on a line of its own
+  assert.equal(render("quote_and_link", facts("en")), "Haircut on Tue 10 Nov, 6:00 pm is free! It's ₹450. Pay a ₹200 deposit to book it, and I'll hold the slot for 15 minutes.\nPay ₹200 here: https://rzp.io/l/plink3");
+  assert.equal(render("quote_and_link", facts("hi")), "हेयरकट के लिए मंगलवार, 10 नवंबर, शाम 6:00 बजे खाली है! कीमत ₹450 है। बुक करने के लिए ₹200 जमा करें, मैं स्लॉट 15 मिनट रोककर रखूँगा।\nयहाँ से ₹200 जमा करें: https://rzp.io/l/plink3");
+  assert.equal(render("quote_and_link", facts("ml")), "ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ഒഴിവുണ്ട്! വില ₹450. ബുക്ക് ചെയ്യാൻ ₹200 അഡ്വാൻസ് അടയ്ക്കൂ, 15 മിനിറ്റ് ഈ സ്ലോട്ട് ഞാൻ നിങ്ങൾക്കായി മാറ്റിവയ്ക്കാം.\n₹200 ഇവിടെ അടയ്ക്കൂ: https://rzp.io/l/plink3");
+  assert.equal(render("quote_and_link", facts("kn")), "ಹೇರ್ ಕಟ್ (ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00) ಖಾಲಿ ಇದೆ! ಬೆಲೆ ₹450. ಬುಕ್ ಮಾಡಲು ₹200 ಮುಂಗಡ ಹಣ ಕಟ್ಟಿ, 15 ನಿಮಿಷ ಸ್ಲಾಟ್ ಕಾಯ್ದಿರಿಸುತ್ತೇನೆ.\nಇಲ್ಲಿ ₹200 ಪಾವತಿಸಿ: https://rzp.io/l/plink3");
+});
+
+test("no message, in any language, carries a raw upi:// link, a booking id to a customer, or the owner's code to a customer (14 Nov 2026)", () => {
+  // WhatsApp does not make a upi:// link tappable, so it read as a long broken string: a UPI customer gets the UPI ID in words and the QR picture instead.
+  const upi = { upiId: "glowsalon@okicici", payee: "Glow Salon", upiCode: "P4XR9T", markedInr: 130, leftInr: 70, link: "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR" };
+  let read = 0;
+  for (const language of LANGUAGES) {
+    for (const id of ids) {
+      const f = { ...factsFor(language, id), ...(id.startsWith("upi_") || id.startsWith("owner_upi_") ? upi : {}) };
+      const text = render(id, f);
+      read++;
+      assert.ok(!text.includes("upi://"), `${language}/${id} carries a raw upi:// link: ${text}`);
+      if (id.startsWith("owner_")) continue;
+      assert.ok(!text.includes("b-3"), `${language}/${id} names the booking id to a customer: ${text}`);
+      assert.ok(!text.includes("P4XR9T"), `${language}/${id} carries the owner's code to a customer: ${text}`);
+    }
+  }
+  assert.equal(read, ids.length * LANGUAGES.length);
+  // the UPI quote still says how to pay: the UPI ID, the payee and the deposit, in every language
+  for (const language of LANGUAGES) {
+    const text = render("upi_quote_and_link", { ...factsFor(language, "upi_quote_and_link"), ...upi });
+    assert.ok(text.includes("glowsalon@okicici") && text.includes("Glow Salon") && text.includes("₹200"), `${language}: ${text}`);
+  }
 });
 
 test("the type system and the table agree: a language is a key of every per-language table", () => {
@@ -234,9 +258,9 @@ test("the agent answers in the language the customer wrote, and the date and tim
   const world = createWorld();
   await world.say("നാളെ വൈകുന്നേരം 6 മണിക്ക് ഹെയർകട്ട് വേണം");
   assert.match(world.lastTextTo(CUSTOMER), /ബുധൻ, 4 നവംബർ, വൈകുന്നേരം 6:00 ഒഴിവുണ്ട്/u);
-  assert.match(world.lastTextTo(CUSTOMER), /^ഹെയർകട്ട് വില ₹450 ആണ്\./u);
+  assert.match(world.lastTextTo(CUSTOMER), /^ഹെയർകട്ട്, ബുധൻ, 4 നവംബർ, വൈകുന്നേരം 6:00 ഒഴിവുണ്ട്! വില ₹450\./u);
   await world.say("ನಾಳೆ ಸಂಜೆ 7 ಗಂಟೆಗೆ ಹೇರ್ ಕಟ್ ಬೇಕು", { from: OTHER_CUSTOMER });
-  assert.match(world.lastTextTo(OTHER_CUSTOMER), /ಬುಧವಾರ, 4 ನವೆಂಬರ್, ಸಂಜೆ 7:00 ಖಾಲಿ ಇದೆ/u);
+  assert.match(world.lastTextTo(OTHER_CUSTOMER), /ಬುಧವಾರ, 4 ನವೆಂಬರ್, ಸಂಜೆ 7:00\) ಖಾಲಿ ಇದೆ/u);
   await world.say("ok"); // says nothing about language: a customer who wrote in Malayalam keeps getting Malayalam
   assert.equal(languageOfScript(world.lastTextTo(CUSTOMER)), "ml", world.lastTextTo(CUSTOMER));
   assert.match(world.lastTextTo(CUSTOMER), /pay\.example\/req_/u);

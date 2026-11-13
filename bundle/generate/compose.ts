@@ -407,12 +407,14 @@ export const REPORT_HEADERS: readonly (readonly [string, string])[] = [
 ];
 
 /**
- * The ONE address shape Caddy serves under /r: /r/<a shop of this server>/<32 hex digits>/<a plain file name ending .html, .json or .txt>, which is what the runtime
- * writes and nothing else. The folder itself, the shop's folder, a name with a slash or `..` in it, a hidden file, any other extension and any other shop do not match,
- * and Caddy answers 404 for everything under /r that does not (reportsHandlers). The 32 digits are written out, not `{32}`, so no curly brace sits in a Caddyfile word.
+ * The ONE address shape Caddy serves under /r: /r/<a shop of this server>/<32 hex digits>/<a plain file name ending .html, .json, .txt or .png>, which is what the
+ * runtime writes and nothing else. The folder itself, the shop's folder, a name with a slash or `..` in it, a hidden file, any other extension and any other shop do not
+ * match, and Caddy answers 404 for everything under /r that does not (reportsHandlers). The 32 digits are written out, not `{32}`, so no curly brace sits in a Caddyfile word.
+ * `.png` (14 Nov 2026): a UPI shop's QR picture is written into the same folder under its own 32-digit name (modules/payments/owner-marked/qr-image.ts) and WhatsApp
+ * fetches it by this address; without the extension here every QR picture was a 404 and the customer got the words alone.
  */
 export function reportsMatcher(shops: readonly string[]): string {
-  return `^${REPORTS_ROUTE}/(?:${shops.join("|")})/${"[0-9a-f]".repeat(32)}/[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:html|json|txt)$`;
+  return `^${REPORTS_ROUTE}/(?:${shops.join("|")})/${"[0-9a-f]".repeat(32)}/[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:html|json|txt|png)$`;
 }
 
 /**

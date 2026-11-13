@@ -60,8 +60,12 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const amountsIn = (text: string) => [...text.matchAll(/₹\s?(\d[\d,]*)/g)].map((m) => Number(m[1].replace(/,/g, "")));
 const confirmedEvents = (w: World) => w.calendar.events().filter((e) => e.status === "confirmed" && e.bookingRef !== "foreign");
 const bookingEvents = (w: World) => w.calendar.events().filter((e) => e.bookingRef !== "foreign");
-/** How many times the customer was told "Booked!" / "बुक हो गया" / "ബുക്ക് ആയി!" / "ಬುಕ್ ಆಗಿದೆ!", from the messaging service's outbox. */
-const toldBooked = (w: World, who = CUSTOMER) => w.messaging.sentTo(who).filter((m) => /Booked!|बुक हो गया|ബുക്ക് ആയി!|ಬುಕ್ ಆಗಿದೆ!/.test(m.text)).length;
+/**
+ * How many times the customer was told "You're booked!" / "बुक हो गया" / "ബുക്ക് ആയി!" / "ಬುಕ್ ಆಗಿದೆ!", from the messaging service's outbox. Written here by hand, not
+ * read from the templates, so the check does not agree with a template just because it uses it; only the booked messages carry these words (14 Nov 2026: English
+ * "Booked!" became "You're booked!").
+ */
+const toldBooked = (w: World, who = CUSTOMER) => w.messaging.sentTo(who).filter((m) => /You're booked!|बुक हो गया|ബുക്ക് ആയി!|ಬುಕ್ ಆಗಿದೆ!/.test(m.text)).length;
 const paidDeposit = (w: World, ref: string) => w.linkFor(ref)?.payments ?? [];
 const refundedPaise = (w: World) => w.payments.refunds().reduce((sum, r) => sum + r.amount, 0);
 
