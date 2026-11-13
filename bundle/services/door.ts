@@ -34,6 +34,16 @@ import type { PartnerCard } from "./card-page.ts";
 
 export const DOOR_PORT = 8797;
 export const DOOR_HEADER = "x-geometer-door";
+/**
+ * What the door's /robots.txt disallows. Caddy answers /robots.txt on the pages domain itself when the Streetlist home is served there (generate/compose.ts
+ * homeHandlers) and adds the home's own disallowed paths to these, so this list is the single place the door's lines are written.
+ */
+export const DOOR_ROBOTS_DISALLOW: readonly string[] = ["/*/owner", "/*/o/", "/*/f/", "/*/fee/", "/*/order/"];
+/**
+ * Set on the door's own "there is no page here" answers (an unknown name or address). Caddy, when it serves the Streetlist home on this domain, swaps such an answer
+ * for the home's friendly 404 page (the same one Firebase showed); the header is never set on a shop's own page or on any other status.
+ */
+export const NOTHING_HEADER = "x-geometer-nothing";
 /** A request body passed on: the front's forms are 4 KB and its JSON 16 KB; anything bigger is not one of them. */
 export const MAX_REQUEST_BYTES = 64 * 1024;
 /**
@@ -250,7 +260,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     res.end(body);
   };
   const go = (res: ServerResponse, status: 301 | 302 | 303, location: string) => { res.writeHead(status, { location, "cache-control": status === 301 ? "public, max-age=3600" : "no-store", "strict-transport-security": HSTS }); res.end(); };
-  const nothing = (res: ServerResponse, status = 404) => own(res, status, pageOf("There is no shop page here", "Check the address, or ask the shop for its link."));
+  const nothing = (res: ServerResponse, status = 404) => own(res, status, pageOf("There is no shop page here", "Check the address, or ask the shop for its link."), "text/html; charset=utf-8", { [NOTHING_HEADER]: "1" });
   const gone = (res: ServerResponse) => own(res, 410, pageOf("This shop page is closed", "The shop no longer has a page at this address."));
   const suspended = (res: ServerResponse) => own(res, 410, pageOf("This shop page is not available", "It has been taken down while a report about it is looked at."));
   const unreachable = (res: ServerResponse) => own(res, 503, pageOf("Shop pages are not reachable just now", "Please try again in a few minutes."), "text/html; charset=utf-8", { "retry-after": "120" });
@@ -312,7 +322,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     if (o.extra.includes(host)) return go(res, 301, `${primaryOrigin}${url.pathname}${url.search}`);
     if (host !== o.primary) return nothing(res);
     if (method !== "GET" && method !== "HEAD" && method !== "POST") return own(res, 405, pageOf("Not here", "Use the page's links and buttons."), "text/html; charset=utf-8", { allow: "GET, HEAD, POST" });
-    if (url.pathname === "/robots.txt") return own(res, 200, "User-agent: *\nDisallow: /*/owner\nDisallow: /*/o/\nDisallow: /*/f/\nDisallow: /*/fee/\nDisallow: /*/order/\n", "text/plain; charset=utf-8", { "cache-control": "public, max-age=3600" });
+    if (url.pathname === "/robots.txt") return own(res, 200, `User-agent: *\n${DOOR_ROBOTS_DISALLOW.map((d) => `Disallow: ${d}\n`).join("")}`, "text/plain; charset=utf-8", { "cache-control": "public, max-age=3600" });
     if (url.pathname === "/") return own(res, 200, pageOf("Shop pages", "Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local partner."), "text/html; charset=utf-8", { "cache-control": "public, max-age=3600" });
     const visitor = visitorOf(req);
     if (!take("all", visitor)) return own(res, 429, pageOf("Too many requests", "Please wait a minute."), "text/html; charset=utf-8", { "retry-after": "60" });

@@ -10,6 +10,11 @@
 //                                key taken from what `pair` kept in the folder, and the trial lease taken in. --guard-licence-kid: refuse when fleet's licence key is not the
 //                                one built into the Guard image (bundle/release.json names it), since every shop's deploy would be refused then. A pairing that brought no
 //                                licence key is refused like a missing --licence-key.
+//                                --pages-domain D [--pages-extra D2,D3]: Geometer's partner server only (panel mode hosted, with fleet): this server answers for the pages domain
+//                                (streetlist.in) with the front door, and serves the Streetlist home there (home, below). The extra domains are redirected to D.
+//   home pack <streetlist folder> [--out F] [--commit ID]   make the one file that carries a built Streetlist site (on your machine, after `npm run build` there)
+//   home install [<file or https address>] [--sha256 HEX]   check a pack against the pin (bundle/home.json), install it beside the one served and switch to it, atomically
+//   home rollback | home status   go back to the build before; say what is served and what is pinned
 //   pair <folder> --fleet-url U  pair a NEW server with Geometer's fleet: reads the one-time code from your account page (geometer.dev/account, "Add a server") on
 //                                standard input, never from the command line, exchanges it once, and keeps the answer in the folder (fleet_key, 0600, and pairing.json).
 //                                install.sh runs this, then `init --pairing`. On a folder set up with pairing skipped (geometer.json with no "fleet" section) it pairs
@@ -104,6 +109,7 @@ import { CRASH_SUBCOMMANDS, crashCommand } from "./agent/crash-test/cli.ts";
 import { MANAGE_SUBCOMMANDS, manageCommand } from "./agent/manage-cli.ts";
 import { recordAgent } from "./agent/records.ts";
 import { exportCommand } from "./export/cli.ts";
+import { homeCommand } from "./home-cli.ts";
 import { paperCommand } from "./backup/papers-cli.ts";
 import { runFingerprints } from "./backup/fingerprints.ts";
 import { writeAgentReport } from "./agent/report.ts";
@@ -167,6 +173,8 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       guard: { type: "string" }, "overlap-minutes": { type: "string" }, force: { type: "boolean" },
       // update / rollback
       to: { type: "string" }, shops: { type: "string" }, "dry-run": { type: "boolean" },
+      // home install / pack, init
+      sha256: { type: "string" }, commit: { type: "string" }, "pages-domain": { type: "string" }, "pages-extra": { type: "string" },
     },
   }) as { values: Record<string, string | boolean | undefined>; positionals: string[] };
   const str = (k: string) => (typeof values[k] === "string" ? values[k] as string : undefined);
@@ -177,6 +185,8 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     if (command === "init") return await init(positionals[0], values as Record<string, string | boolean | undefined>);
     if (command === "pair") return await pair(positionals[0], str("fleet-url"));
 
+    // packing a built Streetlist site happens on the owner's machine, with no server folder
+    if (command === "home" && positionals[0] === "pack") return await homeCommand("", positionals[0], positionals.slice(1), { ...(str("out") ? { out: str("out")! } : {}), ...(str("sha256") ? { sha256: str("sha256")! } : {}), ...(str("commit") ? { commit: str("commit")! } : {}) }, { log: (l) => console.log(l) });
     const dir = serverDir({ server: str("server") });
     if (command === "model-key") {
       const server = loadServer(dir);
@@ -389,6 +399,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       return 0;
     }
 
+    if (command === "home") return await homeCommand(dir, positionals[0], positionals.slice(1), { ...(str("out") ? { out: str("out")! } : {}), ...(str("sha256") ? { sha256: str("sha256")! } : {}), ...(str("commit") ? { commit: str("commit")! } : {}) }, { log: (l) => console.log(l) });
     if (command === "status") return await status(ctx);
     if (command === "up") return await up(ctx);
     if (command === "server") return await serverCommand(ctx, positionals[0], { wait: str("wait"), confirm: values.confirm === true });
@@ -551,6 +562,8 @@ async function init(folder: string | undefined, v: Record<string, string | boole
     ...(paired && paired.licenceKeys.length > 0 ? { licence: { keys: paired.licenceKeys } } : s("licence-key") ? { licence: { keys: s("licence-key")!.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean) } } : {}),
     ...(s("snapshots-url") && recipient ? { backup: { snapshots: { url: s("snapshots-url"), ...(s("snapshots-endpoint") ? { endpoint: s("snapshots-endpoint") } : {}), keepDays: 30 }, ageRecipient: recipient } } : {}),
     panel: { enabled: v.panel === true, mode: v["panel-mode"] === "hosted" ? "hosted" : "own" },
+    // the partner server's pages domain (item 11f; streetlist.in by default there, item 6 of before-launch.md): given by hand, never assumed; extra domains are redirected to it
+    ...(s("pages-domain") ? { pages: { domain: s("pages-domain"), extraDomains: (s("pages-extra") ?? "").split(",").map((d) => d.trim().toLowerCase()).filter(Boolean) } } : {}),
     ports: { http: s("http-port") ? Number(s("http-port")) : 80, https: s("https-port") ? Number(s("https-port")) : 443 },
   };
   const checked = parseServer(raw);
