@@ -15,7 +15,7 @@ import { goLiveLines } from "./text.ts";
 import { languagesOf, periodLabel, rupees } from "../../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../../modules/report/text.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
-import { esc, list, page, sealBlock as sharedSealBlock, table } from "../../../../modules/report/page.ts";
+import { esc, fig, list, page, sealBlock as sharedSealBlock, table } from "../../../../modules/report/page.ts";
 
 /** The verification block (modules/report/page.ts) with this template's words; `check` is the paper's signed summary link, when it is signed. */
 export const sealBlock = (s: Strings, envelope: Envelope, extra: [string, string][] = [], check?: string): string => sharedSealBlock(s.page, envelope, extra, check);
@@ -52,25 +52,25 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
   const s = STRINGS[language];
   const r = envelope.document;
   const p = s.page;
-  const amount = (a: { count: number; paise: number }) => [String(a.count), esc(rupees(a.paise))];
+  const amount = (a: { count: number; paise: number }) => [fig(a.count), fig(rupees(a.paise))];
   const made = localParts(Date.parse(r.madeAt), r.shop.timeZone);
   const madeOn = `${formatDate(made, language)} ${made.year}`;
 
   const numbers = table([{ text: p.item }, { text: p.count, n: true }, { text: p.amount, n: true }], [
-    [esc(s.label.bookingsMade), String(r.bookings.made), ""],
-    [esc(s.label.cancelled), String(r.bookings.cancelled), ""],
-    [esc(s.label.moved), String(r.bookings.moved), ""],
-    [esc(p.droppedBeforeBooked), String(r.bookings.droppedBeforeBooked), ""],
+    [esc(s.label.bookingsMade), fig(r.bookings.made), ""],
+    [esc(s.label.cancelled), fig(r.bookings.cancelled), ""],
+    [esc(s.label.moved), fig(r.bookings.moved), ""],
+    [esc(p.droppedBeforeBooked), fig(r.bookings.droppedBeforeBooked), ""],
     [esc(moneyLabels(language, r.paidBy).deposits), ...amount(r.money.deposits)],
     [esc(moneyLabels(language, r.paidBy).givenBack), ...amount(r.money.refunds)],
     [esc(p.givenBackDeposits), ...amount(r.money.refunds.ofDeposits)],
     [esc(p.givenBackSecond), ...amount(r.money.refunds.ofSecondPayments)],
     // refunds a person settled by their word (B75): one row per person, "Settled by <who>, by their word", never counted in the refunds above
     ...(r.money.settledByWord ?? []).map((w) => [esc(s.settledByWord(settledWho(w.by))), ...amount(w)]),
-    [esc(s.label.wasAsked), String(r.owner.asked), ""],
-    [esc(s.label.approved), String(r.owner.approved), ""],
-    [esc(s.label.saidNo), String(r.owner.denied), ""],
-    [esc(p.retried), String(r.owner.retried), ""],
+    [esc(s.label.wasAsked), fig(r.owner.asked), ""],
+    [esc(s.label.approved), fig(r.owner.approved), ""],
+    [esc(s.label.saidNo), fig(r.owner.denied), ""],
+    [esc(p.retried), fig(r.owner.retried), ""],
   ]);
   const rules = table([{ text: p.rule }, { text: p.times, n: true }], RULE_IDS.map((id) => [`${esc(s.stop[id])} <code>${esc(id)}</code>`, String(r.stopped.byRule[id])]));
   const languages = (["hi", "en", "ml", "kn"] as const);
@@ -96,10 +96,10 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
 <header class="head"><p class="kicker">${esc(s.agent)} · ${esc(s.monthlyReport)}</p><h1>${esc(r.shop.name)}</h1><p class="period">${esc(periodLabel(r.period, language))}</p>${s.sourceTag[r.source] ? `<p class="tag">${esc(s.sourceTag[r.source])}</p>` : ""}${r.innovator ? `<p class="badge">${esc(badgeText(language))}</p>` : ""}</header>
 <p class="note">${esc(s.sourceLong[r.source])} ${esc(s.handRun)}</p>
 <div class="cards">
-<div class="card"><b>${r.bookings.made}</b><span>${esc(s.label.bookingsMade)}</span></div>
-<div class="card"><b>${esc(rupees(r.money.deposits.paise))}</b><span>${esc(moneyLabels(language, r.paidBy).deposits)}</span></div>
-<div class="card"><b>${esc(rupees(r.money.refunds.paise))}</b><span>${esc(moneyLabels(language, r.paidBy).givenBack)}</span></div>
-<div class="card"><b>${r.stopped.total}</b><span>${esc(s.label.stoppedByLimits)}</span></div>
+<div class="card"><strong>${r.bookings.made}</strong><span>${esc(s.label.bookingsMade)}</span></div>
+<div class="card"><strong class="hi">${esc(rupees(r.money.deposits.paise))}</strong><span>${esc(moneyLabels(language, r.paidBy).deposits)}</span></div>
+<div class="card"><strong>${esc(rupees(r.money.refunds.paise))}</strong><span>${esc(moneyLabels(language, r.paidBy).givenBack)}</span></div>
+<div class="card"><strong>${r.stopped.total}</strong><span>${esc(s.label.stoppedByLimits)}</span></div>
 </div>
 <h2>${esc(p.numbers)}</h2>${numbers}
 ${workBlock(r, s)}

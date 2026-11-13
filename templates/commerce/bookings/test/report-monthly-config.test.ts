@@ -101,7 +101,7 @@ test("a started client sends last month's report on the 1st from the folder its 
     await first.stop();
     const sent = lines.filter((l) => l.includes("Monthly report: Glow Salon"));
     assert.equal(sent.length, 1, lines.join("\n"));
-    assert.ok(sent[0].startsWith("[stand-in WhatsApp] to +919000000000: ") && sent[0].includes("Bookings made: 0") && sent[0].includes("\n★ Innovator") && !sent[0].includes("test money"));
+    assert.ok(sent[0].startsWith("[stand-in WhatsApp] to +919000000000: ") && sent[0].includes("Bookings made: *0*") && sent[0].includes("\n★ Innovator") && !sent[0].includes("test money"));
     assert.ok(lines.some((l) => /monthly report for 2026-11 was sent/.test(l)));
 
     const reports = join(c.folder, "data", "reports");

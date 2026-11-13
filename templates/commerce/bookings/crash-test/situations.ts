@@ -1118,8 +1118,8 @@ function build(shop: Shop): Built[] {
           const sent = w.messaging.sentTo(owner).slice(ownerBefore);
           const paidPaise = w.payments.links().flatMap((l) => l.payments).reduce((sum, p) => sum + p.amount, 0);
           expect("The owner got exactly one message, the monthly report, as an approved template (the owner has not written today)", sent.length === 1 && sent[0].kind === "template" && sent[0].templateName === "monthly_report", JSON.stringify(sent.map((m) => [m.kind, m.templateName])));
-          expect("It is in the owner's language and names the shop", sent[0]?.text.startsWith(`${ownerWords.monthlyReport}: ${settings.name}`) === true, sent[0]?.text);
-          expect(`It counts the bookings the calendar holds (${confirmedEvents(w).length}) and the deposit the payments service holds (${money(paidPaise / 100)})`, sent[0]?.text.includes(`${ownerWords.label.bookingsMade}: ${confirmedEvents(w).length} ·`) === true && sent[0]?.text.includes(`${ownerWords.label.depositsCollected}: ${money(paidPaise / 100)}`) === true, sent[0]?.text);
+          expect("It is in the owner's language and names the shop", sent[0]?.text.startsWith(`*${ownerWords.monthlyReport}: ${settings.name}`) === true, sent[0]?.text);
+          expect(`It counts the bookings the calendar holds (${confirmedEvents(w).length}) and the deposit the payments service holds (${money(paidPaise / 100)})`, sent[0]?.text.includes(`${ownerWords.label.bookingsMade}: *${confirmedEvents(w).length}* ·`) === true && sent[0]?.text.includes(`${ownerWords.label.depositsCollected}: *${money(paidPaise / 100)}*`) === true, sent[0]?.text);
           expect("No customer was sent the report", w.messaging.sentTo(CUSTOMER).length === customerBefore);
           expect("The record holds the claim and then the ending, for this month", reportsFor(w).map((e) => e.outcome).join() === "attempted,confirmed", reportsFor(w).map((e) => e.outcome).join());
 

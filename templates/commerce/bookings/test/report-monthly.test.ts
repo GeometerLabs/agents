@@ -87,7 +87,7 @@ test("nothing before 09:00 on the 1st; at 09:00 the owner gets the month's repor
   assert.equal(sent.kind, "template", "the owner has not written today, so WhatsApp carries only a template");
   assert.equal(sent.templateName, "monthly_report");
   const deposit = w.linkFor("b-1")!.payments.reduce((sum, p) => sum + p.amount, 0) / 100; // what the payments fake holds, not what the agent said
-  assert.ok(sent.text.includes(`Bookings made: 1 · Deposits collected: ₹${deposit}`), sent.text);
+  assert.ok(sent.text.includes(`Bookings made: *1* · Deposits collected: *₹${deposit}*`), sent.text);
   assert.ok(sent.text.includes("Monthly report: Glow Salon · Nov 2026"), sent.text);
   assert.ok(sent.text.includes("Set up by: Divya, local partner · Geometer"), sent.text);
   assert.ok(sent.text.includes(`${BASE}/t1000000/report-2026-11-en.html`), sent.text);

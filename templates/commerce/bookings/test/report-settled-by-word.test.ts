@@ -25,7 +25,7 @@ function settledMonth(): MonthlyReport {
 
 test("the report page: one money row per person, 'Settled by ravi, by their word', and the unconfirmed row it settled says the same instead of 'Settled by a later step'", () => {
   const html = reportSection(seal(settledMonth()), "en");
-  assert.match(html, /<td>Settled by ravi, by their word<\/td><td[^>]*>1<\/td><td[^>]*>₹200<\/td>/u);
+  assert.match(html, /<td>Settled by ravi, by their word<\/td><td[^>]*><strong>1<\/strong><\/td><td[^>]*><strong>₹200<\/strong><\/td>/u);
   assert.ok(!html.includes("operator:ravi"), "who, as a person reads it: the id without Guard's operator: prefix");
   const row = html.split("<tr>").find((r) => r.includes("<code>refund</code>") && r.includes("b-4")) ?? "";
   assert.match(row, /Settled by ravi, by their word/u);
