@@ -120,7 +120,7 @@ test("a whole booking through every piece: WhatsApp message -> signed webhook ->
     await w.control("/_standin/razorpay/pay", { request_id: link.id });
     assert.equal(w.confirmedEvents().length, 1);
     assert.equal(w.linkFor("b-1")!.payments.length, 1);
-    assert.match(w.textsTo(CUSTOMER).at(-1)!, /Booked!/);
+    assert.match(w.textsTo(CUSTOMER).at(-1)!, /You're booked!/);
 
     // a second payment on the same link, and the provider sending its webhooks twice
     await w.control("/_standin/razorpay/pay", { request_id: link.id, twice: true });

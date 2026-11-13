@@ -105,7 +105,7 @@ test("a refund above the limit is held, the owner approves once on WhatsApp, the
       assert.equal(refunds().length, 0, "nothing was refunded while the owner had not answered");
       const text = asked()[0].text;
       const code = /"approve ([A-Z0-9]{6})"/u.exec(text)![1];
-      assert.match(text, /^Approval needed: refund ₹200 for \+919800000000 \(payment pmt_\d+, [A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}, \d{1,2}:\d{2} [ap]m\)\. Reply "approve [A-Z0-9]{6}" or "deny [A-Z0-9]{6}" within 24 hours\.$/u, "who paid and when are Razorpay's own record of the payment");
+      assert.match(text, /^A refund needs your OK: ₹200 to \+91 98000 00000 \(payment pmt_\d+, [A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}, \d{1,2}:\d{2} [ap]m\)\. Reply "approve [A-Z0-9]{6}" or "deny [A-Z0-9]{6}" within 24 hours\.$/u, "who paid and when are Razorpay's own record of the payment");
       assert.equal((await webhook("+919899999999", `approve ${code}`, "wamid.forged")).status, 200);
       assert.equal((await webhook(OWNER, `approve ${code}`, "wamid.badly-signed", "not the app secret")).status, 401);
       await relay.idle();

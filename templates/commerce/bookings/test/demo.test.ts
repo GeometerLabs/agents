@@ -120,7 +120,7 @@ test("message -> deposit link -> pay -> booked, judged from the calendar and the
   assert.equal(linksOf(s)[0].status, "paid");
   assert.equal(linksOf(s)[0].paid.length, 1);
   assert.deepEqual(refundsOf(s), []);
-  assert.ok(customerSaid(s).some((t) => /Booked!/.test(t)));
+  assert.ok(customerSaid(s).some((t) => /You're booked!/.test(t)));
   assert.ok(s.owner.summary.some((l: any) => l.kind === "ok" && /in your calendar/.test(l.text)), "the owner's summary says what was checked");
   const confirmed = s.record.rows.filter((r: any) => r.outcome === "confirmed").map((r: any) => r.action);
   assert.ok(confirmed.includes("Confirmed the booking in the calendar") && confirmed.includes("Recorded the deposit"));
@@ -162,7 +162,7 @@ test("a confusing date: it checks back first and holds nothing until the custome
   let s = await b.do("/api/say", { text: "I want a haircut next Tuesday at 6pm" });
   assert.deepEqual(calendarOf(s), [], "no slot held yet");
   assert.deepEqual(linksOf(s), [], "no payment link yet");
-  assert.ok(customerSaid(s).some((t) => /Just to be sure/.test(t) && /Tue 10 Nov, 6:00 pm/.test(t)), "it says the full date back");
+  assert.ok(customerSaid(s).some((t) => /Just checking/.test(t) && /Tue 10 Nov, 6:00 pm/.test(t)), "it says the full date back");
   s = await b.do("/api/say", { text: "yes" });
   assert.deepEqual(calendarOf(s).map((e) => [e.status, e.start]), [["tentative", "Tue 10 Nov, 6:00 pm"]]);
   assert.equal(linksOf(s).length, 1);
@@ -176,7 +176,7 @@ test("time passes: an unpaid hold is released, and a paid booking gets its remin
   assert.deepEqual(calendarOf(s), [], "the hold ran out and the calendar is free again");
   assert.equal(linksOf(s)[0].status, "cancelled");
   assert.equal(s.customer.canPay, false);
-  assert.ok(customerSaid(s).some((t) => /hold on .* has ended/.test(t)));
+  assert.ok(customerSaid(s).some((t) => /let go of .*, as the deposit didn't come in time/.test(t)));
 
   await b.do("/api/reset");
   await b.do("/api/say", { text: BOOK });
@@ -231,7 +231,7 @@ test("owner denial keeps the deposit; bad owner commands are refused or ignored"
   }
   const unknown = await b.do("/api/owner", { command: "approve", ref: "b-99" });
   assert.deepEqual(refundsOf(unknown), [], "approving a booking that is not waiting changes nothing");
-  assert.ok(unknown.owner.messages.some((m: any) => /didn't understand/.test(m.text)));
+  assert.ok(unknown.owner.messages.some((m: any) => /didn't get that/.test(m.text)));
 });
 
 test("the same tap three times at once is handled one at a time: one payment, one booking", async () => {

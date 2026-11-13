@@ -162,7 +162,7 @@ test("hello shows the services to tap; a service tap shows free times; a time ta
   await w.say("hello");
   assert.equal(lastOf(w).kind, "interactive");
   assert.deepEqual(rowIds(w), ["svc:haircut", "svc:beard-trim", "svc:facial", "svc:hair-colour", "owner"]);
-  assert.match(lastOf(w).text, /Welcome to Glow Salon\. Which service would you like\?/);
+  assert.match(lastOf(w).text, /Welcome to Glow Salon\. What would you like to book\?/);
   await w.tap("svc:haircut");
   const times = rowIds(w);
   assert.ok(times.length >= 3 && times.at(-1) === "owner" && times.slice(0, -1).every((id) => id.startsWith("slot:")), times.join());
@@ -242,7 +242,7 @@ test("Cancel booking asks once with two buttons and cancels nothing; Yes, cancel
   await w.tap(rowIds(w)[0]);
   w.payments.customerPays(w.linkFor("b-1")!.id);
   await w.deliverPaymentEvents();
-  assert.match(lastOf(w).text, /Booked!/);
+  assert.match(lastOf(w).text, /You're booked!/);
   assert.deepEqual((lastOf(w).interactive?.buttons ?? []).map((b) => b.id), ["cancel", "owner"]);
   await w.tap("cancel");
   assert.deepEqual((lastOf(w).interactive?.buttons ?? []).map((b) => b.id), ["cancel_yes", "keep"]);
@@ -266,7 +266,7 @@ test("Talk to the owner tells the owner, and the customer, and a second tap with
   await w.say("hello");
   await w.tap("owner");
   assert.equal(w.textsTo(w.owner).length, 1);
-  assert.match(w.textsTo(w.owner)[0], /Customer \+919811111111 would like to talk to you/);
+  assert.match(w.textsTo(w.owner)[0], /^A customer would like to talk to you: \+91 98111 11111\./);
   assert.match(lastOf(w).text, /told the owner/);
   await w.say("hello");
   await w.tap("owner");
@@ -293,7 +293,7 @@ test("where buttons cannot go, the same words go as plain text: no provider supp
   const none = createWorld({ interactive: false });
   await none.say("hello");
   assert.equal(lastOf(none).kind, "text");
-  assert.match(lastOf(none).text, /Hello! Welcome to Glow Salon\. We offer: haircut ₹450/, "the full menu, as before buttons existed");
+  assert.match(lastOf(none).text, /Hi! Welcome to Glow Salon\. We do: haircut ₹450/, "the full menu, as before buttons existed");
 
   const refused = createWorld();
   refused.messaging.sendInteractive = async () => { throw new ApiError(400, "Parameter value is not valid"); };
@@ -307,13 +307,13 @@ test("where buttons cannot go, the same words go as plain text: no provider supp
   assert.equal(lost.messaging.sentTo(CUSTOMER).length, 1, "a lost reply may have gone out, so it is not sent again as text");
   assert.equal(lost.record.entries().filter((e) => e.action === "send_message").at(-1)!.outcome, "unconfirmed");
 
-  // a payment that comes after the customer's 24 hours: "Booked!" would carry buttons, but outside the window only a template can go
+  // a payment that comes after the customer's 24 hours: "You're booked!" would carry buttons, but outside the window only a template can go
   const late = createWorld();
   await late.say("haircut tomorrow at 6pm");
   late.payments.customerPays(late.linkFor("b-1")!.id); // paid in time, but the notice does not arrive until the hold has ended
   await late.advance(25 * 60); // the hold ends, the payments record is read, and by then the customer's window has closed
   assert.equal(lastOf(late).kind, "template", "outside the window a message goes as its template, with no buttons");
-  assert.ok(lastOf(late).interactive === undefined && /Booked!/.test(lastOf(late).text));
+  assert.ok(lastOf(late).interactive === undefined && /You're booked!/.test(lastOf(late).text));
 });
 
 test("a tapped time that has since been taken is refused like a typed one, and the customer gets another list", async () => {

@@ -282,7 +282,7 @@ const ml: BaseSet = {
   menu: (f) => `നമസ്കാരം! ${f.businessName}-ലേക്ക് സ്വാഗതം. ഞങ്ങളുടെ സേവനങ്ങൾ: ${menuList(f)}. ഏത് സേവനമാണ് വേണ്ടത്, എപ്പോൾ വേണം?`,
   ask_when: (f) => `${need(f, "serviceName")} എപ്പോൾ വേണം? ദിവസവും സമയവും പറഞ്ഞാൽ മതി.`,
   ask_new_time: () => "പകരം ഏത് ദിവസവും സമയവും ആണ് സൗകര്യം?",
-  price_floor: (f) => `${need(f, "serviceName")} വില ${inr(f, "priceInr")} ആണ്. ക്ഷമിക്കണം, ഇതിൽ കുറയ്ക്കാൻ പറ്റില്ല.`,
+  price_floor: (f) => `${need(f, "serviceName")} വില ${inr(f, "priceInr")} ആണ്. ക്ഷമിക്കണം, ഇതിൽ കുറയ്ക്കാൻ കഴിയില്ല.`,
   confirm_details: (f) => `ഒന്ന് ഉറപ്പിക്കട്ടെ: ${need(f, "serviceName")}, ${slot(f)}. തുടരാൻ "ശരി" എന്ന് മറുപടി തരൂ.`,
   // The gateway's link is https and WhatsApp makes it tappable; it goes on a line of its own, after the words.
   quote_and_link: (f) => `${need(f, "serviceName")}, ${slot(f)} ഒഴിവുണ്ട്! വില ${inr(f, "priceInr")}. ബുക്ക് ചെയ്യാൻ ${inr(f, "depositInr")} അഡ്വാൻസ് അടയ്ക്കൂ, ${need(f, "holdMinutes")} മിനിറ്റ് ഈ സ്ലോട്ട് ഞാൻ നിങ്ങൾക്കായി മാറ്റിവയ്ക്കാം.\n${inr(f, "depositInr")} ഇവിടെ അടയ്ക്കൂ: ${need(f, "link")}`,
@@ -355,7 +355,7 @@ const kn: BaseSet = {
   menu: (f) => `ನಮಸ್ಕಾರ! ${f.businessName}-ಗೆ ಸ್ವಾಗತ. ನಮ್ಮ ಸೇವೆಗಳು: ${menuList(f)}. ನಿಮಗೆ ಯಾವುದು ಬೇಕು, ಯಾವಾಗ ಬೇಕು?`,
   ask_when: (f) => `${need(f, "serviceName")} ಯಾವಾಗ ಬೇಕು? ದಿನ ಮತ್ತು ಸಮಯ ತಿಳಿಸಿ.`,
   ask_new_time: () => "ಬೇರೆ ಯಾವ ದಿನ, ಯಾವ ಸಮಯ ನಿಮಗೆ ಆಗುತ್ತದೆ?",
-  price_floor: (f) => `${need(f, "serviceName")} ಬೆಲೆ ${inr(f, "priceInr")}. ಕ್ಷಮಿಸಿ, ಇದಕ್ಕಿಂತ ಕಡಿಮೆ ಮಾಡಲು ಆಗುವುದಿಲ್ಲ.`,
+  price_floor: (f) => `${need(f, "serviceName")} ಬೆಲೆ ${inr(f, "priceInr")}. ಕ್ಷಮಿಸಿ, ಇದಕ್ಕಿಂತ ಕಡಿಮೆ ಮಾಡಲು ಸಾಧ್ಯವಿಲ್ಲ.`,
   confirm_details: (f) => `ಒಮ್ಮೆ ಖಚಿತಪಡಿಸಿಕೊಳ್ಳುತ್ತೇನೆ: ${need(f, "serviceName")}, ${slot(f)}. ಮುಂದುವರಿಯಲು "ಹೌದು" ಎಂದು ಉತ್ತರಿಸಿ.`,
   // The gateway's link is https and WhatsApp makes it tappable; it goes on a line of its own, after the words, so the message reads first and the link is easy to tap.
   quote_and_link: (f) => `${need(f, "serviceName")} (${slot(f)}) ಖಾಲಿ ಇದೆ! ಬೆಲೆ ${inr(f, "priceInr")}. ಬುಕ್ ಮಾಡಲು ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಕಟ್ಟಿ, ${need(f, "holdMinutes")} ನಿಮಿಷ ಸ್ಲಾಟ್ ಕಾಯ್ದಿರಿಸುತ್ತೇನೆ.\nಇಲ್ಲಿ ${inr(f, "depositInr")} ಪಾವತಿಸಿ: ${need(f, "link")}`,
