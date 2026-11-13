@@ -554,7 +554,7 @@ const upcoming = (f: MessageFacts) => need(f, "upcomingCount");
 
 const licenceEn: LicenceSet = {
   booking_paused: (f) => `Sorry, online booking is paused for now. Please contact ${f.businessName} directly.`,
-  owner_licence_paused: (f) => `Heads up: online booking for ${f.businessName} is paused for now. Bookings you already have, cancellations and refunds still go through. Please contact ${partner(f)} about it.`,
+  owner_licence_paused: (f) => `Heads up: online booking for ${f.businessName} is paused for now. Bookings you already have, cancellations and refunds still go through. To sort it out, please contact ${partner(f)}.`,
   owner_licence_stopped: (f) => `Heads up: online booking for ${f.businessName} has stopped, because the service from ${partner(f)} has ended. Bookings still in your calendar after today: ${upcoming(f)}. To keep it going with another local partner, write to hello@geometer.dev and Geometer will put you in touch.`,
 };
 const licenceHi: LicenceSet = {

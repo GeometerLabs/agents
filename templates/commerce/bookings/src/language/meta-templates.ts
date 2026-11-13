@@ -267,7 +267,7 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   {
     name: "owner_service_paused", usedFor: "owner_licence_paused", audience: "owner",
     bodies: {
-      en: "Heads up: online booking for {business} is paused for now. Bookings you already have, cancellations and refunds still go through. Please contact {partner} about it.",
+      en: "Heads up: online booking for {business} is paused for now. Bookings you already have, cancellations and refunds still go through. To sort it out, please contact {partner}.",
       hi: "सूचना: {business} की ऑनलाइन बुकिंग अभी रुकी हुई है। पहले की बुकिंग, रद्द करना और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया {partner} से संपर्क करें।",
       ml: "അറിയിപ്പ്: {business}-ന്റെ ഓൺലൈൻ ബുക്കിംഗ് തൽക്കാലം നിർത്തിവച്ചിരിക്കുന്നു. നിലവിലുള്ള ബുക്കിംഗുകളും റദ്ദാക്കലുകളും റീഫണ്ടുകളും തുടർന്നും നടക്കും. ഇതിനെക്കുറിച്ച് ദയവായി {partner}-നെ ബന്ധപ്പെടൂ.",
       kn: "ಸೂಚನೆ: {business}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಬುಕಿಂಗ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು {partner} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.",
