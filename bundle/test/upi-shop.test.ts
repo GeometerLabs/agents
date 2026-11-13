@@ -23,7 +23,7 @@ test("planning a UPI shop: no Razorpay Guard, no payment service in its runtime,
     writeFileSync(join(t.paths.shop("glow-salon"), "settings.json"), UPI_SETTINGS);
     const p = planShop(serverConfig(), t.shop("glow-salon"));
     assert.deepEqual(p.problems, []);
-    assert.deepEqual(p.guards.map((g) => g.kind), ["whatsapp", "calendar"]);
+    assert.deepEqual(p.guards.map((g) => g.kind), ["whatsapp", "calendar", "push"]);
     const services = (p.runtime as { services: Record<string, unknown> }).services;
     assert.equal("payments" in services, false);
     assert.equal((p.runtime as { report?: { source: string } }).report?.source, "live");
@@ -70,7 +70,7 @@ test("a Fees centre that takes UPI: only the WhatsApp Guard, no payment service,
     writeFileSync(join(dir, "owner.json"), JSON.stringify({ schema: 1, accountId: "acc_test", accountName: "Divya", role: "partner", createdAt: "2026-11-01T10:00:00Z", template: "fees" }));
     const p = planShop(serverConfig(), readShop(w.root, "bright"));
     assert.deepEqual(p.problems, []);
-    assert.deepEqual(p.guards.map((g) => g.kind), ["whatsapp"]);
+    assert.deepEqual(p.guards.map((g) => g.kind), ["whatsapp", "push"]);
     assert.equal("payments" in (p.runtime as { services: Record<string, unknown> }).services, false);
     const { razorpay_key: _key, razorpay_webhook_secret: _hook, "google_service_account.json": _google, ...handIn } = secretsFor("bright");
     w.handIn("bright", handIn);

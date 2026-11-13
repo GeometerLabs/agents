@@ -158,11 +158,11 @@ test("three clients: one fails a situation at the new version, so two move and o
     assert.deepEqual([held.from, held.to, held.before, held.after], ["bookings@0.1.0", "bookings@0.2.0", { held: 4, of: 4 }, { held: 3, of: 4 }]);
     assert.deepEqual(held.failing, [{ title: "Deposit link paid twice", why: "The customer was charged twice: the payments service shows 2 captured payments for one booking: what the stand-in's own records hold" }]);
     assert.match(held.reason!, /Held 3 of 4 at bookings@0\.2\.0; 4 of 4 held at bookings@0\.1\.0\. Now failing: Deposit link paid twice\. It stays on bookings@0\.1\.0\./);
-    assert.match(run.steps["glow-salon"].proven!, /12 of 12 limits proven to bite/);
+    assert.match(run.steps["glow-salon"].proven!, /16 of 16 limits proven to bite/); // item 11h: with the push Guard
     // what a person reads
     assert.match(r.out, /✗ bright-tuition  HELD BACK\. Held 3 of 4 at bookings@0\.2\.0/);
     assert.match(r.out, /- Deposit link paid twice: The customer was charged twice/);
-    assert.match(r.out, /✓ glow-salon +moved from bookings@0\.1\.0 to bookings@0\.2\.0\. Held 4 of 4 on its own settings \(4 of 4 before\)\. 12 of 12 limits proven to bite/);
+    assert.match(r.out, /✓ glow-salon +moved from bookings@0\.1\.0 to bookings@0\.2\.0\. Held 4 of 4 on its own settings \(4 of 4 before\)\. 16 of 16 limits proven to bite/);
     assert.match(r.out, /Moved 2, held back 1, unchanged 0, skipped 0\./);
     assert.match(r.out, /A held-back client keeps running the version it runs now\./);
     // the held-back client was not touched: its status still says the old version, and no compose command was about it alone

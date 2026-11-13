@@ -41,6 +41,8 @@ export function sampleFacts(language: Language, id: TemplateId, dayList: DayList
     bookingRef: "b-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1,
     // a UPI shop's (B33) values: its UPI ID and name, the owner's code, and what the owner marked
     upiId: "glowsalon@okicici", payee: "Glow Salon", upiCode: "P4XR9T", markedInr: 150, leftInr: 50,
+    // item 11h: a sample of a WhatsApp booking's own page link (a real one is 24 random bytes, made for one message)
+    pageLink: "https://streetlist.in/glow-salon/b/Xy7Qm2LpR9vK4tW8nB3cD6fH1jZ5aE0s",
     // the licence's notices (B13): who set the shop up, and the bookings still to come at the final stop
     partner: "Divya, Sri Sai Digital", upcomingCount: 3,
     // the owner's day list (B72): two of the day's bookings, so the reviewer sees the heading and how each row reads (DAY_LIST_VARIANTS has the other forms)
@@ -141,6 +143,7 @@ const WHEN: Record<TemplateId, string> = {
   upi_slot_and_link: "UPI shop: straight after price_floor, the same without the price",
   upi_already_waiting: "UPI shop: the customer writes again while the slot is held",
   upi_qr_caption: "UPI shop: the words under the QR picture (no booking id)",
+  upi_page_link: "UPI shop, a booking made on WhatsApp: the last lines of the quote, with the private link to the booking's own page (made for this message)",
   upi_booked: "UPI shop: the owner marked the whole deposit received and the calendar shows the booking",
   upi_paid_claim: "UPI shop: the customer says they paid, taps I have paid, or sends a screenshot (nothing is marked paid)",
   upi_nothing_waiting: "UPI shop: the customer says they paid and no UPI payment is waiting",
