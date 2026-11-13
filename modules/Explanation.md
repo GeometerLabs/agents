@@ -685,6 +685,82 @@ nothing, a new link survives a restart; "I have paid" and the confirmation page;
 (one link per parent, hash only, the wording within 1,024 characters, a centre without a page unchanged). The shared parts: `modules/channels/test/orders-fees.test.ts`.
 And `templates/commerce/orders/test/runtime.test.ts` checks a Guard-held refund's context, which item 11h touched.
 
+## Works without WhatsApp: passkeys, web push, confirmation pages (item 11h's second half, decisions 45 and 46; 14 Nov 2026)
+
+If WhatsApp changed its rules tomorrow, a shop keeps working and loses only reach. WhatsApp stays the main channel. Three things depended on it, and each now has a
+way that does not: the owner's sign-in, the owner's alerts, and what a page customer hears.
+
+**The owner's sign-in: the partner's QR, then a passkey** (`channels/owner-grants.ts`, `owner-access.ts`, `webauthn.ts`, `owner-passkey-page.ts`). Nothing is mediated
+by Geometer or Firebase: the shop's own runtime checks every step.
+- At the setup visit the partner shows a **setup QR** from the panel: 32 random bytes, one use, that shop only, 15 minutes. The panel keeps only its hash, in
+  `shops/<shop>/owner-grants.json`, and the deployer copies the file to the runtime's client folder on each pass (as the owner's link and "sign out every device"
+  already travel). The owner scans it; the page (`<base>/owner/setup/<token>`, one script by a nonce) asks the runtime for options and hands them to the phone.
+- The runtime makes a **challenge** for that QR (32 bytes, kept as a hash, one use, 5 minutes), and checks the phone's answer itself (`webauthn.ts`, node:crypto, no
+  library): the ceremony's type, the challenge, the exact origin of the owner's view (the pages file's `ownerBase`), never a framed page; the RP ID's hash; the person
+  present AND verified (fingerprint or screen lock); attestation is not asked for (no vendor certificates to trust). ES256, EdDSA and RS256 keys are taken.
+- The QR is **used up only when the passkey is kept**, in the same transaction that keeps the credential and makes the session, so a cancelled fingerprint prompt
+  does not burn it and two phones racing for one QR get one passkey.
+- **Another shop's passkey is refused.** Every shop on the pages domain shares one origin and one RP ID, so the origin cannot tell shops apart: each runtime keeps its
+  own credentials (another shop's is simply unknown here), each shop has its own WebAuthn user id (so registering for a second shop never replaces the first shop's
+  passkey on the phone, and a returned user handle of another shop is refused), and the sign-in options list only this shop's credentials, so the phone offers the
+  right one.
+- **Signing in later**: `<base>/owner/passkey/options` and `/finish`. The counter: when either the stored or the new value is not 0, the new one must be higher (a
+  copied key shows itself); a synced passkey that always says 0 is accepted. A replayed answer finds its challenge used. A session is the same 30-day session a
+  WhatsApp link makes (item 11f), so everything behind it is unchanged.
+- **A lost phone**: the partner prints a **recovery card** (five one-use codes, about 48 bits each, no look-alike letters; hashes only), and the owner types one at
+  `<base>/owner/recover` to register a new passkey. Wrong codes are counted per address at the front and per shop at the runtime (20 a day). Or the partner shows a fresh
+  QR, and "Remove the owner's passkeys" (the panel) makes every passkey made before it stop working, with the QR and the card.
+- The WhatsApp sign-in link stays as one way in, offered only when the shop has a WhatsApp number on its page.
+- **Verified vs assumed.** A real Chromium authenticator's registration and sign-in (Playwright's virtual authenticator, kept as a fixture) verify; so does a software
+  authenticator through the real front and runtime. A real phone's fingerprint, Google Password Manager's sync to a second phone and an iPhone are not tried
+  (Deferred.md).
+
+**Web push** (`push/`). The owner's alerts (a payment to check, a refund to approve, "needs you", the morning summary, a sign-in link's answer) and, if they allow it,
+a page customer's (booked, a reminder, a refund notice).
+- **Who holds what.** The shop's runtime keeps its VAPID key pair (made on first use), the phones that allowed alerts and the owner's choice, in `push.sqlite` beside
+  its store. A subscription is a secret (whoever holds it can encrypt to that phone): it stays there, the record names it by a short id, nothing exports it.
+- **Encrypted end to end**: each push is RFC 8291 aes128gcm for its phone (padded to 128 bytes), signed by the shop's VAPID key (RFC 8292, ES256 JWT, 12 hours,
+  the shop's page as the contact, never a person's e-mail). Both are node:crypto and are tested against the RFCs' own examples byte for byte.
+- **Through a Guard.** Guard decides only on what it reads exactly, and a push's body is binary ciphertext, which it refuses; it also removes the caller's
+  Authorization header, where VAPID's signature goes (read in Guard's source). So the runtime posts a small JSON to the shop's own **push Guard** (the push service's
+  host, the subscription's path and short id, the VAPID header, the ciphertext); Guard allows only the three push services' hosts, exactly, and counts each push
+  against the shop's daily caps (owner 200, customers 500, any one phone 50); only then does the server's **push sender** (bundle/services/push.ts) make the real
+  request, building the address from the host Guard checked and nothing else. The sender holds no secret and sees only ciphertext. Chrome, Edge and Samsung Internet
+  on Android use FCM, Firefox Mozilla's service, Safari (iPhone from iOS 16.4, added to the home screen) Apple's; Edge on Windows is not covered.
+- **Sent outside the steps** (`push/sender.ts`): queued when a message is sent, drained on its own timer and at once. 2xx sent; 404/410 forgets the phone; the
+  Guard's 403 (its rules or a daily count) is never tried again; anything else is tried a few times over growing waits, then given up.
+- **The owner's choice** (`push/push.ts pushMessaging`, wrapping the shop's messaging for every template): WhatsApp, push or both. Never push alone while no phone has
+  alerts on (the owner would hear nothing); push alone for a shop with no WhatsApp. A push stands in for the send: its id is `push-...`, so the record says the alert
+  went and names it. With neither WhatsApp nor a phone, nothing goes and the record says so ("failed", with why); the owner's page lists what waits either way.
+- **A customer's alerts** (`channels/outbox.ts onKeep`): a message the shop keeps for a page's conversation is also pushed to the phones that allowed alerts on that
+  page. Only a booking made on the page or through MCP offers them (a WhatsApp customer hears on WhatsApp); an order's page does not offer the button yet (Deferred.md).
+- **Workers, scoped.** The owner's worker is `<owner base>/sw.js` (scope `<owner base>/`, the owner's app's worker, which now also shows alerts; the manifest and
+  worker are every shop's now, since an iPhone shows push only to an app on the home screen). A customer's is `<page>/sw.js` with scope `<page>/` (one booking's page
+  only). Each page's policy names its nonce and its exact addresses, never 'self'. Neither is ever served for a builder's pages on the shared origin: the door serves
+  those without script, and now refuses a worker's address outright.
+
+**What a customer without WhatsApp keeps** (`channels/page.ts`, `ics.ts`, `words-confirm.ts`). A booking's, an order's and a fee's own page was already its stable
+confirmation page (items 11d and 11h's first half). A booking's page now also says where a refund stands, from the record (asked, on its way, sent, kept), offers
+"Tell me on this phone", and offers a **calendar file** (RFC 5545: one event, UTC, a stable UID, escaped and folded; held is tentative, cancelled is cancelled). The file
+never carries the page's address: that is the booking's bearer link, and calendars sync to other companies' servers.
+
+**A WhatsApp booking's own page** (owner, 14 Nov: "simpler with hyperlinks and easy text"). Bookings' UPI quote on WhatsApp (and "still holding") now ends with a
+private link to the booking's own page, where the customer taps "Pay in your UPI app" (the same `upi://pay` link and QR) and later sees where it stands. The rules of
+a bearer link, as Fees' parent link: 24 random bytes made by the runtime for that one message (the agent is handed a maker, so it never loads node:crypto); only its
+hash is kept on the booking, and only once the message carrying it was accepted; the next message carries a fresh one and the old stops; a typed or guessed link opens
+nothing (and counts as a guess at the front); the link is never in the record (it is a message fact, never one of its inputs) or the saved state. The page cancels
+nothing and claims nothing for a WhatsApp booking (the customer does those on WhatsApp, where their number is known), and shows none of its WhatsApp messages. The
+QR picture and the UPI ID stay in the message as before.
+
+**Speaking without our cost.** The owner's talk box and the Orders address box say, in four languages, to tap the phone keyboard's mic: the words are typed on the
+phone and no recording reaches the shop. The customer pages have no other free-text box. Our speech service stays for recorded voice notes.
+
+**Tests.** `push/test/crypto.test.ts` (both RFCs' examples), `push/test/push.test.ts` (subscriptions, phones, the queue and every answer, the owner's routes),
+`channels/test/passkeys.test.ts` (the real browser's passkey, the QR's one use and expiry, another shop's passkey, replay, the counter, recovery),
+`channels/test/confirm.test.ts` (the calendar file, the refund line and the hint in four languages), Bookings `test/without-whatsapp.test.ts` (the whole flow
+through the real runtime and front: the QR, a passkey, alerts both ways opened with the phones' keys, a page booking and payment, a refund marked from the alert and
+shown on the confirmation page, the passkey again, nothing on WhatsApp, the record) and `test/page-link.test.ts`; the bundle's in bundle/Explanation.md.
+
 ## The shop's assistant (item 11e, decision 43; 12 Nov 2026)
 
 Decision 43: a shop gets **one assistant, not a set of agent templates**. Bookings, Fees and Orders become its skills; the owner talks to the assistant by text or voice note
