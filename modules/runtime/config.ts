@@ -44,6 +44,15 @@ export type ServiceShape = readonly {
 const MESSAGING_SERVICE = { name: "messaging", extra: "phoneNumberId", optional: ["provider", "appId", "appName", "sourceNumber"], check: messagingConfigProblem, mayLack: true } as const;
 /** Item 11h: the shop's push Guard (bundle/generate/guards.ts pushSpec), through which every web push goes. Left out: the shop sends no pushes. */
 const PUSH_SERVICE = { name: "push", mayLack: true } as const;
+/**
+ * Item 11h: does this shop have WhatsApp? A runtime.json whose `services` name no messaging service has none, in live mode and in fakes mode alike (fakes mode
+ * with no `services` at all keeps the stand-in WhatsApp, as a local run always had). The one place a runtime decides it.
+ */
+export const runtimeHasWhatsApp = (runtime: { mode?: string; services?: unknown }): boolean => {
+  const services = runtime.services as Record<string, unknown> | undefined;
+  return services === undefined ? runtime.mode !== "live" : services.messaging !== undefined;
+};
+
 export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "calendar", extra: "calendarId", calendar: true }, MESSAGING_SERVICE, PUSH_SERVICE];
 export const FEES_SERVICES: ServiceShape = [{ name: "payments", payment: true }, MESSAGING_SERVICE, PUSH_SERVICE];
 
