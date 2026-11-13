@@ -22,7 +22,7 @@ import { OWNER, PAGE } from "./words.ts";
 import { OWNER_MORE } from "./words-orders-fees.ts";
 import { CARD_LABELS } from "../assistant/words.ts";
 import { characterLine, talkBox } from "../assistant/app/talk.ts";
-import { LOOK_COLOURS } from "../assistant/app/pwa.ts";
+import { themeColour } from "../assistant/character.ts";
 
 const CSS = `
 :root{--ink:#10231a;--mute:#4b5d52;--line:#cfe3d6;--g9:#14532d;--g7:#15803d;--g1:#dcfce7;--amber:#92400e;--amber-bg:#fffbeb}
@@ -31,7 +31,7 @@ main{max-width:34rem;margin:0 auto;padding:0 16px 40px}header{background:var(--g
 .note{color:var(--mute);font-size:.9rem}.machine,.notice{background:var(--amber-bg);color:var(--amber);padding:8px 10px;border-radius:8px;font-size:.95rem}
 .item{border:1px solid var(--line);border-radius:12px;padding:12px;margin:0 0 12px}.item form{display:inline}button{margin:10px 8px 0 0;font-size:1rem;padding:10px 14px;border-radius:10px;border:0;background:var(--g7);color:#fff;cursor:pointer}
 button.no{background:#fff;color:var(--g9);border:1px solid var(--line)}ul{padding-left:18px}
-.who-am-i{font-size:1.05rem}.dot{display:inline-block;width:.9em;height:.9em;border-radius:50%;vertical-align:middle}.sr{position:absolute;left:-9999px}
+.who-am-i{font-size:1.05rem;display:flex;align-items:center;gap:8px}.who-am-i img{width:56px;height:56px;border-radius:12px;flex:none}.dot{display:inline-block;width:.9em;height:.9em;border-radius:50%;vertical-align:middle}.sr{position:absolute;left:-9999px}
 .talk textarea{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px}.talk-owner{color:var(--mute)}
 `;
 
@@ -47,6 +47,8 @@ export interface OwnerPageInput {
   signOut?: { action: string; label: string };
   /** Item 11e: the script nonce of this response, when the view has the assistant's app (front.ts puts it in the content policy). */
   nonce?: string;
+  /** Item 11i: the character's picture in the shop's mood now, as a data: address (front.ts reads it from the shop's own pictures). Left out: none drawn yet. */
+  picture?: string;
 }
 
 /** One answer button: posts what it stands for and the digest of what the page shows. */
@@ -102,12 +104,12 @@ ${v.upcoming.length > 0 ? html`<ul>${v.upcoming.map((u) => html`<li>${formatSlot
   const waiting = [...o.relayAsks.map(ask), ...v.items.map(item), ...(v.app?.cards ?? []).filter((c) => c.kind !== "answer").map(card)];
   const machine = PAGE[o.language].machine;
   const app = v.app;
-  const colour = app ? LOOK_COLOURS[app.character.look.colour] ?? LOOK_COLOURS.teal : undefined;
+  const colour = app ? themeColour(app.character) : undefined;
   // the manifest is behind the owner's cookie on the signed-in view, so it is fetched with the browser's credentials (a manifest fetch leaves them out otherwise)
   const appHead = app ? html`<link rel="manifest" href="${o.base}/manifest.webmanifest" crossorigin="use-credentials"><meta name="theme-color" content="${colour}">` : "";
   return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
 <title>${w.title(v.shop.name)}</title><style>${raw(CSS)}</style>${appHead}</head><body><main><header><h1>${w.title(v.shop.name)}</h1></header>
-${app ? raw(characterLine({ language: o.language, name: app.character.name, colour: colour!, mood: app.mood })) : ""}
+${app ? raw(characterLine({ language: o.language, name: app.character.name, colour: colour!, face: app.face, ...(o.picture ? { picture: o.picture } : {}) })) : ""}
 ${machine ? html`<p class="machine">${machine}</p>` : ""}
 ${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
 <p class="note">${w.privateNote}</p>
