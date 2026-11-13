@@ -431,6 +431,9 @@ const kn: BaseSet = {
 // The customer's words carry the UPI ID and the payee in plain text, and never the `upi://` link itself (WhatsApp does not open it): the QR picture of that link goes
 // just before the words when it can (agent.ts qrOf; a booking page draws its own button and QR). The owner's one-use code is written once, at the end, as the typed
 // stand-in for the button ("(or reply: received 7P52KF)"); no customer line carries it, and no customer line names the booking's id.
+// The owner's claim, part, marked, late, refund-marked and refund-kept lines name only the amount, the customer's number and the code: the UPI desk for an agent
+// someone else wrote (modules/payments/owner-marked/desk.ts, bundle/services/desk.ts) sends the same lines with no service or slot (and the last two with no number),
+// so a line that needed them would not be written at all and the owner would not be told.
 // Hindi, Malayalam and Kannada are machine-written, like the rest of those packs, and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
 
 const payee = (f: MessageFacts) => need(f, "payee");
@@ -455,16 +458,16 @@ const upiEn: UpiSet = {
   upi_refund_sent: (f) => `The owner has marked your ${inr(f, "refundInr")} refund as sent by UPI. Please check your UPI app.`,
 
   owner_upi_expected: (f) => `New booking to check: ${need(f, "serviceName")}, ${slot(f)}, ${phone(f)}. They'll pay a ${inr(f, "depositInr")} deposit by UPI. When you see it in your UPI app, tap Received (or reply: received ${code(f)}, adding the amount if it's different).`,
-  owner_upi_claim: (f) => `The customer says they've paid: ${inr(f, "depositInr")} for the ${need(f, "serviceName")} on ${slot(f)}, ${phone(f)}. Please check your UPI app first (a screenshot isn't proof), then tap Received (or reply: received ${code(f)}).`,
-  owner_upi_marked: (f) => `Got it: you marked ${marked(f)} as received for the ${need(f, "serviceName")} on ${slot(f)}. Thank you!`,
-  owner_upi_part: (f) => `You marked ${marked(f)}, but the deposit for the ${need(f, "serviceName")} on ${slot(f)} is ${inr(f, "depositInr")}, so it's not booked yet. I'll keep holding the slot until the hold ends. When the other ${left(f)} comes in, tap Received (or reply: received ${code(f)}).`,
+  owner_upi_claim: (f) => `A customer says they've paid: ${inr(f, "depositInr")} from ${phone(f)}. Please check your UPI app first (a screenshot isn't proof), then tap Received (or reply: received ${code(f)}).`,
+  owner_upi_marked: (f) => `Got it: you marked ${marked(f)} from ${phone(f)} as received. Thank you!`,
+  owner_upi_part: (f) => `You marked ${marked(f)} from ${phone(f)}, but the deposit is ${inr(f, "depositInr")}, so it's not booked yet. I'll keep holding the slot until the hold ends. When the other ${left(f)} comes in, tap Received (or reply: received ${code(f)}).`,
   owner_upi_already: () => "That payment is already marked, so it counts only once.",
   owner_upi_unknown: () => "Sorry, I don't recognise that code. Please use the one in my latest message about this payment.",
-  owner_upi_late: (f) => `You marked ${marked(f)} as received after the hold on ${slot(f)} had ended, so it wasn't booked by itself. Please book ${phone(f)} yourself, or send the ${inr(f, "refundInr")} back by UPI. Then tap Refund sent or Kept for booking (or reply: refunded ${code(f)} or kept ${code(f)}).`,
+  owner_upi_late: (f) => `You marked ${marked(f)} from ${phone(f)} as received after their hold had ended, so it wasn't booked by itself. Please book them yourself, or send the ${inr(f, "refundInr")} back by UPI. Then tap Refund sent or Kept for booking (or reply: refunded ${code(f)} or kept ${code(f)}).`,
   owner_upi_refund_owed: (f) => `Refund to send: ${inr(f, "refundInr")} by UPI to ${phone(f)}. I never send money myself. Once you've sent it, tap Refund sent (or reply: refunded ${code(f)}).`,
   owner_upi_refund_reminder: (f) => `Reminder: ${inr(f, "refundInr")} is still owed back to ${phone(f)}. Once you've sent it by UPI, tap Refund sent (or reply: refunded ${code(f)}).`,
-  owner_upi_refund_marked: (f) => `Thanks! The ${inr(f, "refundInr")} refund to ${phone(f)} is marked as sent, and the customer has been told.`,
-  owner_upi_refund_kept: (f) => `Noted: you're keeping the ${inr(f, "refundInr")} from ${phone(f)} for a booking you make yourself. Nothing more is owed back.`,
+  owner_upi_refund_marked: (f) => `Thanks! The ${inr(f, "refundInr")} refund is marked as sent, and the customer has been told.`,
+  owner_upi_refund_kept: (f) => `Noted: you're keeping the ${inr(f, "refundInr")} for a booking you make yourself. Nothing more is owed back.`,
 };
 
 const upiHi: UpiSet = {
@@ -483,16 +486,16 @@ const upiHi: UpiSet = {
   upi_refund_sent: (f) => `मालिक ने आपका ${inr(f, "refundInr")} का रिफंड UPI से भेजा हुआ दर्ज किया है। कृपया अपना UPI ऐप देख लीजिए।`,
 
   owner_upi_expected: (f) => `जाँचने के लिए नई बुकिंग: ${need(f, "serviceName")}, ${slot(f)}, ग्राहक ${phone(f)}। वे UPI से ${inr(f, "depositInr")} जमा भेजेंगे। अपने UPI ऐप में दिखे तो "मिल गया" दबाइए (या लिखिए: received ${code(f)}; रकम अलग हो तो उसे साथ में लिख दीजिए)।`,
-  owner_upi_claim: (f) => `ग्राहक कह रहे हैं कि पेमेंट कर दिया है: ${need(f, "serviceName")}, ${slot(f)} के लिए ${inr(f, "depositInr")}, ग्राहक ${phone(f)}। पहले अपना UPI ऐप देख लीजिए (स्क्रीनशॉट सबूत नहीं होता), फिर "मिल गया" दबाइए (या लिखिए: received ${code(f)})।`,
-  owner_upi_marked: (f) => `समझ गया: ${need(f, "serviceName")}, ${slot(f)} के लिए आपने ${marked(f)} मिला हुआ दर्ज कर दिया। शुक्रिया!`,
-  owner_upi_part: (f) => `आपने ${marked(f)} दर्ज किया, पर ${need(f, "serviceName")}, ${slot(f)} का जमा ${inr(f, "depositInr")} है, इसलिए अभी बुकिंग नहीं हुई। रोक खत्म होने तक मैं स्लॉट रोककर रखूँगा। बाकी ${left(f)} आ जाए तो "मिल गया" दबाइए (या लिखिए: received ${code(f)})।`,
+  owner_upi_claim: (f) => `ग्राहक कह रहे हैं कि पेमेंट कर दिया है: ${phone(f)} से ${inr(f, "depositInr")}। पहले अपना UPI ऐप देख लीजिए (स्क्रीनशॉट सबूत नहीं होता), फिर "मिल गया" दबाइए (या लिखिए: received ${code(f)})।`,
+  owner_upi_marked: (f) => `समझ गया: आपने ग्राहक ${phone(f)} के ${marked(f)} मिला हुआ दर्ज कर दिया। शुक्रिया!`,
+  owner_upi_part: (f) => `आपने ग्राहक ${phone(f)} के ${marked(f)} दर्ज किए, पर जमा ${inr(f, "depositInr")} है, इसलिए अभी बुकिंग नहीं हुई। रोक खत्म होने तक मैं स्लॉट रोककर रखूँगा। बाकी ${left(f)} आ जाए तो "मिल गया" दबाइए (या लिखिए: received ${code(f)})।`,
   owner_upi_already: () => "यह पेमेंट पहले ही दर्ज हो चुका है, इसलिए एक ही बार गिना जाएगा।",
   owner_upi_unknown: () => "माफ़ कीजिए, यह कोड मैं पहचान नहीं पाया। इस पेमेंट के बारे में मेरे सबसे नए मैसेज वाला कोड भेजिए।",
-  owner_upi_late: (f) => `${slot(f)} की रोक खत्म होने के बाद आपने ${marked(f)} मिला हुआ दर्ज किया, इसलिए बुकिंग अपने-आप नहीं हुई। कृपया ग्राहक ${phone(f)} की बुकिंग खुद कर दीजिए, या ${inr(f, "refundInr")} UPI से वापस भेज दीजिए। फिर "रिफंड भेज दिया" या "बुकिंग के लिए रखा" दबाइए (या लिखिए: refunded ${code(f)} या kept ${code(f)})।`,
+  owner_upi_late: (f) => `आपने ग्राहक ${phone(f)} के ${marked(f)} उनकी रोक खत्म होने के बाद मिला हुआ दर्ज किए, इसलिए बुकिंग अपने-आप नहीं हुई। कृपया उनकी बुकिंग खुद कर दीजिए, या ${inr(f, "refundInr")} UPI से वापस भेज दीजिए। फिर "रिफंड भेज दिया" या "बुकिंग के लिए रखा" दबाइए (या लिखिए: refunded ${code(f)} या kept ${code(f)})।`,
   owner_upi_refund_owed: (f) => `वापस भेजना है: ग्राहक ${phone(f)} को UPI से ${inr(f, "refundInr")}। मैं खुद कभी पैसे नहीं भेजता। आप भेज दें तो "रिफंड भेज दिया" दबाइए (या लिखिए: refunded ${code(f)})।`,
   owner_upi_refund_reminder: (f) => `याद दिलाना: ग्राहक ${phone(f)} को ${inr(f, "refundInr")} अभी भी वापस देना बाकी है। UPI से भेज दें तो "रिफंड भेज दिया" दबाइए (या लिखिए: refunded ${code(f)})।`,
-  owner_upi_refund_marked: (f) => `शुक्रिया! ग्राहक ${phone(f)} को ${inr(f, "refundInr")} का रिफंड भेजा हुआ दर्ज हो गया, और ग्राहक को बता दिया गया है।`,
-  owner_upi_refund_kept: (f) => `ठीक है: ग्राहक ${phone(f)} के ${inr(f, "refundInr")} आप अपनी खुद की बुकिंग के लिए रख रहे हैं। अब कुछ वापस देना बाकी नहीं है।`,
+  owner_upi_refund_marked: (f) => `शुक्रिया! ${inr(f, "refundInr")} का रिफंड भेजा हुआ दर्ज हो गया, और ग्राहक को बता दिया गया है।`,
+  owner_upi_refund_kept: (f) => `ठीक है: ${inr(f, "refundInr")} आप अपनी खुद की बुकिंग के लिए रख रहे हैं। अब कुछ वापस देना बाकी नहीं है।`,
 };
 
 const upiMl: UpiSet = {
@@ -511,16 +514,16 @@ const upiMl: UpiSet = {
   upi_refund_sent: (f) => `നിങ്ങളുടെ ${inr(f, "refundInr")} റീഫണ്ട് UPI വഴി അയച്ചതായി ഉടമ രേഖപ്പെടുത്തി. ദയവായി നിങ്ങളുടെ UPI ആപ്പ് ഒന്ന് നോക്കൂ.`,
 
   owner_upi_expected: (f) => `പുതിയ ബുക്കിംഗ് പരിശോധിക്കാനുണ്ട്: ${need(f, "serviceName")}, ${slot(f)}, ${phone(f)}. ${inr(f, "depositInr")} അഡ്വാൻസ് UPI വഴി അടയ്ക്കും. നിങ്ങളുടെ UPI ആപ്പിൽ കണ്ടാൽ "കിട്ടി" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: received ${code(f)}, തുക വേറെയാണെങ്കിൽ അതും കൂടെ എഴുതൂ).`,
-  owner_upi_claim: (f) => `കസ്റ്റമർ പണം അടച്ചെന്ന് പറയുന്നു: ${need(f, "serviceName")} (${slot(f)}), ${phone(f)}, ${inr(f, "depositInr")}. ആദ്യം നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ (സ്ക്രീൻഷോട്ട് തെളിവല്ല), എന്നിട്ട് "കിട്ടി" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: received ${code(f)}).`,
-  owner_upi_marked: (f) => `നന്ദി! ${need(f, "serviceName")} (${slot(f)}): ${marked(f)} കിട്ടിയതായി നിങ്ങൾ രേഖപ്പെടുത്തി.`,
-  owner_upi_part: (f) => `നിങ്ങൾ ${marked(f)} രേഖപ്പെടുത്തി, പക്ഷേ ${need(f, "serviceName")} (${slot(f)}) അഡ്വാൻസ് ${inr(f, "depositInr")} ആണ്, അതുകൊണ്ട് ഇതുവരെ ബുക്ക് ആയിട്ടില്ല. മാറ്റിവച്ച സമയം തീരുന്നത് വരെ ഞാൻ സ്ലോട്ട് പിടിച്ചുവയ്ക്കും. ബാക്കി ${left(f)} കൂടി കിട്ടിയാൽ "കിട്ടി" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: received ${code(f)}).`,
+  owner_upi_claim: (f) => `കസ്റ്റമർ പണം അടച്ചെന്ന് പറയുന്നു: ${phone(f)}, ${inr(f, "depositInr")}. ആദ്യം നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ (സ്ക്രീൻഷോട്ട് തെളിവല്ല), എന്നിട്ട് "കിട്ടി" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: received ${code(f)}).`,
+  owner_upi_marked: (f) => `നന്ദി! കസ്റ്റമർ ${phone(f)}: ${marked(f)} കിട്ടിയതായി നിങ്ങൾ രേഖപ്പെടുത്തി.`,
+  owner_upi_part: (f) => `നിങ്ങൾ ${marked(f)} രേഖപ്പെടുത്തി (കസ്റ്റമർ ${phone(f)}), പക്ഷേ അഡ്വാൻസ് ${inr(f, "depositInr")} ആണ്, അതുകൊണ്ട് ഇതുവരെ ബുക്ക് ആയിട്ടില്ല. മാറ്റിവച്ച സമയം തീരുന്നത് വരെ ഞാൻ സ്ലോട്ട് പിടിച്ചുവയ്ക്കും. ബാക്കി ${left(f)} കൂടി കിട്ടിയാൽ "കിട്ടി" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: received ${code(f)}).`,
   owner_upi_already: () => "ആ പേയ്മെന്റ് ഇതിനകം രേഖപ്പെടുത്തിയതാണ്, അതുകൊണ്ട് ഒരു തവണ മാത്രമേ കണക്കാക്കൂ.",
   owner_upi_unknown: () => "ക്ഷമിക്കണം, ആ കോഡ് എനിക്ക് മനസ്സിലായില്ല. ഈ പേയ്മെന്റിനെക്കുറിച്ചുള്ള എന്റെ ഏറ്റവും പുതിയ മെസ്സേജിലെ കോഡ് ഉപയോഗിക്കൂ.",
-  owner_upi_late: (f) => `സ്ലോട്ട് (${slot(f)}) മാറ്റിവച്ച സമയം കഴിഞ്ഞ ശേഷമാണ് നിങ്ങൾ ${marked(f)} കിട്ടിയതായി രേഖപ്പെടുത്തിയത്, അതുകൊണ്ട് തനിയെ ബുക്ക് ആയില്ല. കസ്റ്റമറുടെ (${phone(f)}) ബുക്കിംഗ് നിങ്ങൾ തന്നെ ചെയ്യൂ, അല്ലെങ്കിൽ ${inr(f, "refundInr")} UPI വഴി തിരികെ അയക്കൂ. എന്നിട്ട് "റീഫണ്ട് അയച്ചു" അല്ലെങ്കിൽ "ബുക്കിംഗിനായി വെച്ചു" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded ${code(f)} അല്ലെങ്കിൽ kept ${code(f)}).`,
+  owner_upi_late: (f) => `മാറ്റിവച്ച സമയം കഴിഞ്ഞ ശേഷമാണ് നിങ്ങൾ ${marked(f)} കിട്ടിയതായി രേഖപ്പെടുത്തിയത് (കസ്റ്റമർ ${phone(f)}), അതുകൊണ്ട് തനിയെ ബുക്ക് ആയില്ല. അവരുടെ ബുക്കിംഗ് നിങ്ങൾ തന്നെ ചെയ്യൂ, അല്ലെങ്കിൽ ${inr(f, "refundInr")} UPI വഴി തിരികെ അയക്കൂ. എന്നിട്ട് "റീഫണ്ട് അയച്ചു" അല്ലെങ്കിൽ "ബുക്കിംഗിനായി വെച്ചു" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded ${code(f)} അല്ലെങ്കിൽ kept ${code(f)}).`,
   owner_upi_refund_owed: (f) => `തിരികെ അയക്കാനുണ്ട്: കസ്റ്റമർ ${phone(f)}, UPI വഴി ${inr(f, "refundInr")}. പണം ഞാൻ ഒരിക്കലും സ്വയം അയക്കില്ല. നിങ്ങൾ അയച്ചുകഴിഞ്ഞാൽ "റീഫണ്ട് അയച്ചു" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded ${code(f)}).`,
   owner_upi_refund_reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: ${inr(f, "refundInr")} ഇനിയും തിരികെ നൽകാനുണ്ട് (കസ്റ്റമർ ${phone(f)}). UPI വഴി അയച്ചുകഴിഞ്ഞാൽ "റീഫണ്ട് അയച്ചു" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: refunded ${code(f)}).`,
-  owner_upi_refund_marked: (f) => `നന്ദി! ${inr(f, "refundInr")} റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി (കസ്റ്റമർ ${phone(f)}), കസ്റ്റമറെ അറിയിച്ചിട്ടുമുണ്ട്.`,
-  owner_upi_refund_kept: (f) => `ശരി, ${inr(f, "refundInr")} (കസ്റ്റമർ ${phone(f)}) നിങ്ങൾ തന്നെ ചെയ്യുന്ന ബുക്കിംഗിനായി വെച്ചു. ഇനി ഒന്നും തിരികെ നൽകാനില്ല.`,
+  owner_upi_refund_marked: (f) => `നന്ദി! ${inr(f, "refundInr")} റീഫണ്ട് അയച്ചതായി രേഖപ്പെടുത്തി, കസ്റ്റമറെ അറിയിച്ചിട്ടുമുണ്ട്.`,
+  owner_upi_refund_kept: (f) => `ശരി, ${inr(f, "refundInr")} നിങ്ങൾ തന്നെ ചെയ്യുന്ന ബുക്കിംഗിനായി വെച്ചു. ഇനി ഒന്നും തിരികെ നൽകാനില്ല.`,
 };
 
 const upiKn: UpiSet = {
@@ -539,16 +542,16 @@ const upiKn: UpiSet = {
   upi_refund_sent: (f) => `ನಿಮ್ಮ ${inr(f, "refundInr")} ರೀಫಂಡ್ UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ಮಾಲೀಕರು ಗುರುತಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ.`,
 
   owner_upi_expected: (f) => `ಚೆಕ್ ಮಾಡಬೇಕಾದ ಹೊಸ ಬುಕಿಂಗ್: ${need(f, "serviceName")}, ${slot(f)}, ${phone(f)}. ಅವರು UPI ಮೂಲಕ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಕಳುಹಿಸುತ್ತಾರೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಹಣ ಕಂಡಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: received ${code(f)}; ಬೇರೆ ಮೊತ್ತ ಬಂದಿದ್ದರೆ ಮೊತ್ತವನ್ನೂ ಸೇರಿಸಿ).`,
-  owner_upi_claim: (f) => `ಗ್ರಾಹಕರು ಹಣ ಕಟ್ಟಿದ್ದೇನೆ ಎನ್ನುತ್ತಿದ್ದಾರೆ: ${phone(f)}, ${need(f, "serviceName")} (${slot(f)}), ${inr(f, "depositInr")}. ಮೊದಲು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ (ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ), ಹಣ ಬಂದಿದ್ದರೆ "ಬಂದಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: received ${code(f)}).`,
-  owner_upi_marked: (f) => `ಸರಿ, ${need(f, "serviceName")} (${slot(f)}): ${marked(f)} ಬಂದಿದೆ ಎಂದು ನೀವು ಗುರುತಿಸಿದ್ದೀರಿ. ಧನ್ಯವಾದ!`,
-  owner_upi_part: (f) => `ನೀವು ${marked(f)} ಗುರುತಿಸಿದ್ದೀರಿ, ಆದರೆ ${need(f, "serviceName")} (${slot(f)}) ಮುಂಗಡ ಹಣ ${inr(f, "depositInr")}, ಹಾಗಾಗಿ ಇನ್ನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಕಾಯ್ದಿರಿಸುವ ಸಮಯ ಮುಗಿಯುವವರೆಗೆ ಸ್ಲಾಟ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ. ಉಳಿದ ${left(f)} ಬಂದಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: received ${code(f)}).`,
+  owner_upi_claim: (f) => `ಗ್ರಾಹಕರು ಹಣ ಕಟ್ಟಿದ್ದೇನೆ ಎನ್ನುತ್ತಿದ್ದಾರೆ: ${phone(f)}, ${inr(f, "depositInr")}. ಮೊದಲು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ (ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ), ಹಣ ಬಂದಿದ್ದರೆ "ಬಂದಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: received ${code(f)}).`,
+  owner_upi_marked: (f) => `ಸರಿ, ${phone(f)} ಅವರ ${marked(f)} ಬಂದಿದೆ ಎಂದು ನೀವು ಗುರುತಿಸಿದ್ದೀರಿ. ಧನ್ಯವಾದ!`,
+  owner_upi_part: (f) => `ನೀವು ${phone(f)} ಅವರ ${marked(f)} ಗುರುತಿಸಿದ್ದೀರಿ, ಆದರೆ ಮುಂಗಡ ಹಣ ${inr(f, "depositInr")}, ಹಾಗಾಗಿ ಇನ್ನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಕಾಯ್ದಿರಿಸುವ ಸಮಯ ಮುಗಿಯುವವರೆಗೆ ಸ್ಲಾಟ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ. ಉಳಿದ ${left(f)} ಬಂದಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: received ${code(f)}).`,
   owner_upi_already: () => "ಆ ಪಾವತಿ ಈಗಾಗಲೇ ಗುರುತಿಸಲಾಗಿದೆ, ಹಾಗಾಗಿ ಒಮ್ಮೆ ಮಾತ್ರ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ.",
   owner_upi_unknown: () => "ಕ್ಷಮಿಸಿ, ಆ ಕೋಡ್ ನನಗೆ ಗೊತ್ತಿಲ್ಲ. ಈ ಪಾವತಿಯ ಬಗ್ಗೆ ನನ್ನ ಇತ್ತೀಚಿನ ಮೆಸೇಜಿನಲ್ಲಿರುವ ಕೋಡ್ ಬಳಸಿ.",
-  owner_upi_late: (f) => `ನೀವು ${marked(f)} ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದಾಗ ${slot(f)} ಸ್ಲಾಟ್ ಕಾಯ್ದಿರಿಸಿದ ಸಮಯ ಮುಗಿದಿತ್ತು, ಹಾಗಾಗಿ ತಾನಾಗಿ ಬುಕ್ ಆಗಲಿಲ್ಲ. ${phone(f)} ಅವರಿಗೆ ನೀವೇ ಬುಕ್ ಮಾಡಿ, ಅಥವಾ ${inr(f, "refundInr")} UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸಿ. ಆಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಅಥವಾ "ಬುಕಿಂಗ್‌ಗೆ ಇಟ್ಟಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded ${code(f)} ಅಥವಾ kept ${code(f)}).`,
+  owner_upi_late: (f) => `ನೀವು ${phone(f)} ಅವರ ${marked(f)} ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದಾಗ ಸ್ಲಾಟ್ ಕಾಯ್ದಿರಿಸಿದ ಸಮಯ ಮುಗಿದಿತ್ತು, ಹಾಗಾಗಿ ತಾನಾಗಿ ಬುಕ್ ಆಗಲಿಲ್ಲ. ಅವರಿಗೆ ನೀವೇ ಬುಕ್ ಮಾಡಿ, ಅಥವಾ ${inr(f, "refundInr")} UPI ಮೂಲಕ ಮರಳಿ ಕಳುಹಿಸಿ. ಆಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಅಥವಾ "ಬುಕಿಂಗ್‌ಗೆ ಇಟ್ಟಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded ${code(f)} ಅಥವಾ kept ${code(f)}).`,
   owner_upi_refund_owed: (f) => `ಕಳುಹಿಸಬೇಕಾದ ರೀಫಂಡ್: ${phone(f)} ಅವರಿಗೆ UPI ಮೂಲಕ ${inr(f, "refundInr")}. ನಾನು ಯಾವತ್ತೂ ಹಣ ಕಳುಹಿಸುವುದಿಲ್ಲ. ನೀವು ಕಳುಹಿಸಿದ ಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded ${code(f)}).`,
   owner_upi_refund_reminder: (f) => `ನೆನಪಿಸುತ್ತಿದ್ದೇನೆ: ${phone(f)} ಅವರಿಗೆ ${inr(f, "refundInr")} ಇನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿದೆ. UPI ಮೂಲಕ ಕಳುಹಿಸಿದ ಮೇಲೆ "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: refunded ${code(f)}).`,
-  owner_upi_refund_marked: (f) => `ಧನ್ಯವಾದ! ${phone(f)} ಅವರಿಗೆ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ್ದೇನೆ, ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ.`,
-  owner_upi_refund_kept: (f) => `ಸರಿ: ${phone(f)} ಅವರ ${inr(f, "refundInr")} ಅನ್ನು ನೀವೇ ಮಾಡುವ ಬುಕಿಂಗ್‌ಗಾಗಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತಿದ್ದೀರಿ. ಇನ್ನು ಏನೂ ಮರಳಿ ಕೊಡಬೇಕಿಲ್ಲ.`,
+  owner_upi_refund_marked: (f) => `ಧನ್ಯವಾದ! ${inr(f, "refundInr")} ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ್ದೇನೆ, ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ.`,
+  owner_upi_refund_kept: (f) => `ಸರಿ: ${inr(f, "refundInr")} ಅನ್ನು ನೀವೇ ಮಾಡುವ ಬುಕಿಂಗ್‌ಗಾಗಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತಿದ್ದೀರಿ. ಇನ್ನು ಏನೂ ಮರಳಿ ಕೊಡಬೇಕಿಲ್ಲ.`,
 };
 
 // ---- the licence's wind-down and final stop (plan B13) --------------------------------------------------------------------------------------------------

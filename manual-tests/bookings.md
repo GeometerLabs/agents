@@ -101,17 +101,17 @@ Settings `glow-salon-upi.example.json` with deposit, price and refund at ₹1. C
 **B1. The quote.** C writes `haircut tomorrow 6pm`. C sees the QR picture (inside the window), then the words with the UPI ID written out (`UPI ID: <id> (<payee>)`), ₹1 and no `upi://` link, and the buttons I have paid, Cancel booking, Talk to the owner. O sees `New booking to check: haircut, <slot>, <C>. They'll pay a ₹1 deposit by UPI. When you see it in your UPI app, tap Received (or reply: received K7M2QX, adding the amount if it's different).`
 - Record: `hold_slot` confirmed; `upi_request` (refs.requestId, amountPaise).
 
-**B2. "I have paid" is not proof.** C pays ₹1, then sends a screenshot (or taps I have paid, or writes `I paid`). C sees that the owner will confirm. O sees `The customer says they've paid: ₹1 for the haircut on <slot>, <C>. Please check your UPI app first (a screenshot isn't proof), then tap Received (or reply: received K7M2QX).` (at most once an hour).
+**B2. "I have paid" is not proof.** C pays ₹1, then sends a screenshot (or taps I have paid, or writes `I paid`). C sees that the owner will confirm. O sees `A customer says they've paid: ₹1 from <C>. Please check your UPI app first (a screenshot isn't proof), then tap Received (or reply: received K7M2QX).` (at most once an hour).
 - Not booked yet. Record: `upi_paid_claim` (refs.via = screenshot, button or words); no `confirm_booking`.
 
 **B3. The owner marks it received.** O looks in the UPI app, sees ₹1, replies `received <code>` (or taps Received).
-- O sees `Got it: you marked ₹1 as received for the haircut on <slot>. Thank you!` C sees `You're booked! ...`.
+- O sees `Got it: you marked ₹1 from <C> as received. Thank you!` C sees `You're booked! ...`.
 - Record, **the owner's statement, not a provider confirmation:** `owner_marked_paid` confirmed with refs `markedBy`, `paymentId`, `requestId`, `amountPaise`, then `confirm_booking`. There must be **no** `receive_payment_event` from a provider for this payment. In the panel and report it reads "Deposits marked paid by owner". A screen that says Razorpay or a gateway confirmed a UPI mark is a finding.
 - Wrong amount: O replies `received <code> 0.50`: C is not booked; O sees `You marked ₹0.50 ... not booked yet. ... When the other ₹0.50 arrives ...`; record `upi_deposit_part` held_for_owner.
 
 **B4. The same mark twice.** O replies `received <code>` again: `That payment is already marked. It is counted once.` Record: no second `owner_marked_paid`. A wrong code: `I don't know that code...`
 
-**B5. The hold runs out, then the owner marks.** Set the hold to 2 minutes for this step; mark after it. O sees `You marked ₹1 as received after the hold on <slot> had ended, so it wasn't booked by itself...`. Record: `owner_marked_paid`, `upi_request_closed`, `upi_refund_owed`; no `confirm_booking`.
+**B5. The hold runs out, then the owner marks.** Set the hold to 2 minutes for this step; mark after it. O sees `You marked ₹1 from <C> as received after their hold had ended, so it wasn't booked by itself...`. Record: `owner_marked_paid`, `upi_request_closed`, `upi_refund_owed`; no `confirm_booking`.
 
 **B6. A UPI refund (and a retry of the owner's mark).** Cancel a paid booking inside the window. C is told the owner will send it; nothing says "sent". O sees `Refund to send: ₹1 by UPI to <C>. I never send money myself. Once you've sent it, tap Refund sent (or reply: refunded <code>).` O sends ₹1 back by hand and replies `refunded <code>`. Record: `upi_refund_owed` (held_for_owner), then `upi_refund_marked_done`. A repeated `refunded <code>` adds no second entry. No gateway, so Guard holds nothing here: the owner is the check.
 
