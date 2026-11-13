@@ -14,6 +14,8 @@ practise with a friend → a friendly shop → a stranger's shop → letter of i
 
 **The one claim you may make about money,** word for word: "No order confirmed without the payment record (or your confirmation for UPI); every refund tracked."
 
+**What the owner does today.** Most owners already manage orders somehow: they answer on their own phone late at night, keep a notebook, or have a relative or helper replying on WhatsApp. It is free and familiar, and it works on most days. Where money slips away, in the owner's own words: "that order got lost in the chat", "we delivered and the money never came". None of this is the owner's fault; it is a habit, and it is what you have to beat. What you do instead: you set up the rules once, then look after them with the owner, so every order and its advance sit in one record, not in a chat that scrolls away.
+
 ## 1. Is this shop a fit?
 
 | A good fit | Not a fit (for now) |

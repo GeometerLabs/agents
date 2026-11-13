@@ -12,6 +12,10 @@ practise with a friend → a friendly centre → a stranger's centre → letter 
 
 **What Fees does, in one breath.** Each month, on WhatsApp, it sends every parent a fee reminder with a Razorpay payment link, in the parent's own language: Hindi, English, Malayalam or Kannada. It is built so that a fee the payment record shows paid gets no reminder: paid is judged from Razorpay's own record, never from what a parent says. Part payments, a late fee, discounts and refunds all work inside limits the owner sets. On the 1st the owner gets a monthly report on WhatsApp.
 
+**What the owner does today.** Most centres already collect fees somehow: the owner or a helper messages parents from a personal phone and writes payments in a register or notebook. It is free and familiar, and it works on most months. Where money slips away, in the owner's own words: "it felt awkward to keep chasing", "I forgot to chase that fee", "I reminded a parent who had already paid". None of this is the owner's fault; it is a habit, and it is what you have to beat. What you do instead: you set up the rules once, then look after them with the owner, so every reminder goes out on time and only to the parents who have not paid.
+
+**Who to approach first.** Tuition and coaching centres that collect monthly fees. Other local services that bill every month come after.
+
 ## 1. Is this centre a fit?
 
 | A good fit | Not a fit (for now) |
