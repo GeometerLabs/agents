@@ -151,6 +151,8 @@ export async function passkeyRoute(deps: PasskeyDeps, a: { req: IncomingMessage;
   const json = async (max = 16 * 1024): Promise<Record<string, unknown>> => { try { return JSON.parse((await deps.readBody(req, max)) ?? "{}") as Record<string, unknown>; } catch { return {}; } };
   const tooMany = () => (method === "GET" || sub === "/recover" ? deps.sendHtml(res, 429, deps.page(language, w.recoverTitle, html`<p class="notice">${w.state.locked}</p>`), { "retry-after": "600" }) : deps.sendJson(res, 429, { message: w.state.locked }, { "retry-after": "600" }));
   if (deps.limiter.over("wrong", address)) return tooMany();
+  // every POST (a challenge asked for, an answer posted) counts as an act of this address, as a page's buttons do: a flood is slowed before the runtime is asked
+  if (method === "POST" && !deps.limiter.take("act", address)) return tooMany();
   /** The shop's name, for the setup page's words (the runtime says it with the grant's state). */
   let shop = "";
   /** A grant the runtime does not know is a guess: counted per address, as a wrong sign-in link is. */
