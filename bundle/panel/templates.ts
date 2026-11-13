@@ -5,8 +5,10 @@ import { join } from "node:path";
 import { isObj } from "./contract.ts";
 import type { AccountKind } from "./contract.ts";
 
-export type StepId = "business" | "deposit" | "languages" | "accounts" | "checks";
-export const STEP_IDS: readonly StepId[] = ["business", "deposit", "languages", "accounts", "checks"];
+// Item 11i: "character" (the shop's assistant: its face, colour, name and personality) comes after "accounts", because the accounts step can still change a new
+// shop's id (another shop may have taken the name) and the character's seed starts with the id; and before "checks", where the shop is saved.
+export type StepId = "business" | "deposit" | "languages" | "accounts" | "character" | "checks";
+export const STEP_IDS: readonly StepId[] = ["business", "deposit", "languages", "accounts", "character", "checks"];
 
 export interface Template {
   id: string;

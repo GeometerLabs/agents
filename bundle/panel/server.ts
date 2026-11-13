@@ -61,6 +61,13 @@ import { applyAccounts, applyBusiness, applyDeposit, applyLanguages, buildSettin
 import { gatewayOf, providerById } from "../../modules/payments/providers/index.ts";
 import { reportOf, setupOf } from "./setups.ts";
 import type { Body, Draft } from "./setup.ts";
+import { applyCharacter, characterDraftFromSettings, newCharacterDraft, withCharacter } from "./character.ts";
+import { ensureShopCharacter, characterDirOf } from "../lib/character.ts";
+import { drawSvg } from "../character/render.ts";
+import { CHARACTER_STYLES, FACES, SEED_RE, STYLE_INFO } from "../../modules/assistant/character.ts";
+import type { CharacterStyle, Face, PictureFormat } from "../../modules/assistant/character.ts";
+import { PICTURE_TYPES, characterReader } from "../../modules/channels/character-files.ts";
+import { readAssistantSettings } from "../../modules/assistant/settings.ts";
 import { createShops } from "./shops.ts";
 import { CONFIRM_TOKEN, createConfirmations, planLimits, rawSettings } from "./confirmations.ts";
 import { settingsDigest } from "../lib/limits-draft.ts";
@@ -491,6 +498,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       // item 11f: the shop's page on the pages domain (its short name, where it stands at fleet) and the owner's sessions; a builder chooses "hub" or "own"
       ...(hasPage(kindId) ? { pages: { settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), ...(readPagesStatus(config.serverDir, id) ? { status: readPagesStatus(config.serverDir, id)! } : {}), canChoose: config.mode === "own" } } : {}),
       ...(pagesNotice === "ended" || pagesNotice === "bad" ? { pagesNotice } : {}),
+      // item 11i: the shop's assistant, for a template with the Character step: its name and the version of its drawn pictures
+      ...(templates().find((t) => t.id === kindId)?.steps.includes("character") ? { character: (() => { const raw = rawSettings(shops, id); const name = raw?.assistant ? readAssistantSettings(raw.assistant, [])?.character.name : undefined; const version = characterReader(characterDirOf(config.serverDir, id))()?.version; return { ...(name ? { name } : {}), ...(version && name ? { version } : {}) }; })() } : {}),
       voiceLink: voiceLinkWord(c.lang),
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
       isBuilder: r.account!.role === "builder",
@@ -708,6 +717,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     store.write(`drafts/${id}.json`, setupOf(template.setup)
       ? setupOf(template.setup)!.draftFromShop(id, r.account!.id, template.id, ref.id, settings, shops.runtime(ref.id), shops.meta(ref.id), stamp)
       : draftFromShop(id, r.account!.id, template.id, ref.id, settings, shops.runtime(ref.id), shops.meta(ref.id), stamp));
+    // item 11i: the shop's saved character (or a fresh roll, for a shop that has none), so the Character step shows what the shop has
+    const made = store.read<Draft>(`drafts/${id}.json`);
+    if (made) store.write(`drafts/${id}.json`, { ...made, character: characterDraftFromSettings(rawSettings(shops, ref.id), ref.id) });
     redirect(r, `/setup/${id}/1`);
   });
 
@@ -773,6 +785,26 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   /** Steps cannot be skipped: a later step, or the save, goes back to the first one not filled in. */
   const firstOpen = (d: Draft, template: Template, n: number): string | undefined => (n > d.done + 1 ? `/setup/${d.id}/${Math.min(d.done + 1, template.steps.length)}` : undefined);
 
+  // ---- item 11i: the character's pictures ----
+  // The Character step's previews: one look in one mood ("face": the rolled face), drawn here as DiceBear draws it. Only the approved styles, palettes and moods, and a
+  // plain seed: nothing else can be asked of the renderer. The same address always gives the same picture, so the browser keeps it for a week.
+  on("GET", /^\/character\/preview\/([a-z]{3,10})\/(auto|[0-9a-f]{6})\/([a-z0-9-]{1,80})\/([a-z]{4,6})\.svg$/u, "user", (r) => {
+    const [style, colour, seed, mood] = r.params;
+    if (!(CHARACTER_STYLES as readonly string[]).includes(style) || (colour !== "auto" && !STYLE_INFO[style as CharacterStyle].palette.includes(colour)) || !SEED_RE.test(seed) || (mood !== "face" && !(FACES as readonly string[]).includes(mood))) return notFound(r);
+    const svg = drawSvg({ style: style as CharacterStyle, seed, ...(colour !== "auto" ? { colour } : {}) }, mood === "face" ? undefined : mood as Face);
+    body(r.res, 200, "image/svg+xml", svg, { "cache-control": "private, max-age=604800, immutable", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'" });
+  });
+  // A shop's saved pictures (shops/<shop>/character), for the shop page's row of moods and the "All well" PNG the partner puts on the WhatsApp profile by hand.
+  on("GET", /^\/shops\/([a-z0-9-]{1,40})\/character\/([a-z]{4,6})\.(svg|png|webp)$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    const face = r.params[1] as Face;
+    if (!ref || !(FACES as readonly string[]).includes(face)) return notFound(r);
+    const pic = characterReader(characterDirOf(config.serverDir, ref.id))()?.picture(face, r.params[2] as PictureFormat);
+    if (!pic) return notFound(r);
+    const download = new URL(r.req.url ?? "/", "http://x").searchParams.get("download") === "1";
+    body(r.res, 200, PICTURE_TYPES[r.params[2] as PictureFormat], pic.bytes, { "cache-control": "private, max-age=86400", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'", ...(download ? { "content-disposition": `attachment; filename="${ref.id}-whatsapp-photo.${r.params[2]}"` } : {}) });
+  });
+
   on("GET", /^\/setup$/u, "user", (r) => page(r, 200, setupStartPage(r.ctx(), templates())));
   on("POST", /^\/setup$/u, "user", async (r) => {
     const template = templates().find((t) => t.id === r.form.template && (t.setup === "bookings" || setupOf(t.setup)));
@@ -818,6 +850,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const back = firstOpen(d, template, n);
     if (back) return redirect(r, back);
     const step = template.steps[n - 1];
+    // item 11i: the Character step's first look rolls this shop's first row of faces, kept in the draft so a reload shows the same row
+    if (step === "character" && !d.character) { d.character = newCharacterDraft(d.shopId ?? "shop"); store.write(`drafts/${d.id}.json`, d); }
     page(r, 200, step === "checks" ? setupChecksPage(r.ctx(), checksView(r, d, template, [])) : setupStepPage(r.ctx(), stepView(r, d, template, n, []), step));
   });
 
@@ -837,7 +871,16 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       if (problems.length === 0 && !d.shopId) d.shopId = shopIdFromName(d.form.name, reservedIds(d.id));
     } else if (step === "deposit") problems = (own?.applyRules ?? applyDeposit)(d, r.form, w).problems;
     else if (step === "languages") problems = applyLanguages(d, r.form, w).problems;
-    else {
+    else if (step === "character") {
+      // item 11i: a style, a face, a colour or Roll comes back to this step with the choice made (and the name typed kept); only Next moves on
+      const pressed = applyCharacter(d, r.form, w);
+      if (pressed.stay) {
+        store.write(`drafts/${d.id}.json`, d);
+        if (pressed.problems.length > 0) return page(r, 400, setupStepPage(r.ctx(), stepView(r, d, template, n, pressed.problems), "character"));
+        return redirect(r, `/setup/${d.id}/${n}#${r.form.act === "roll" || r.form.pickFace ? "faces" : "main"}`);
+      }
+      problems = pressed.problems;
+    } else {
       if (!d.editing) d.shopId = unusedId(d, SECRET_NAMES as unknown as SecretName[]);
       const meta = shops.meta(d.shopId as string);
       const result = applyAccounts(d, r.form, template, meta, Boolean(config.calendarShareAddress), w, r.ctx().lang);
@@ -862,7 +905,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     redirect(r, `/setup/${d.id}/${n + 1}`);
   });
 
-  on("POST", /^\/setup\/([A-Za-z0-9_-]{12,40})\/save$/u, "user", (r) => {
+  on("POST", /^\/setup\/([A-Za-z0-9_-]{12,40})\/save$/u, "user", async (r) => {
     const d = loadDraft(r, r.params[0]);
     const template = d && templates().find((t) => t.id === d.template);
     if (!d || !template) return notFound(r);
@@ -873,7 +916,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const own = setupOf(template.setup);
     const built = own ? own.build(d, example) : buildSettings(d, example);
     // What is written is what a builder would write: Fees' settings are checked into another shape (a student's "batch" becomes "batchId"), so its form keeps the shape it was checked from.
-    const written = (b: typeof built): unknown => (b.ok ? ((b as { raw?: unknown }).raw ?? b.settings) : undefined);
+    // item 11i: the assistant block the shop had is kept as it was, with this step's character when the step was finished (character.ts withCharacter)
+    const before = d.editing ? rawSettings(shops, d.shopId) : undefined;
+    const written = (b: typeof built): unknown => (b.ok ? withCharacter((b as { raw?: unknown }).raw ?? b.settings, d.character, before, d.shopId as string) : undefined);
     const w = r.ctx().w;
     const gateway = providerById(paymentModuleOf(d))?.gateway !== undefined; // B71: a payments service is named only for a shop that chose a gateway
     // item 11b: the panel has no step for the WhatsApp provider yet, so an edit keeps the one runtime.json names (Gupshup and its app id, written by hand); without this,
@@ -892,6 +937,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       return page(r, 409, setupChecksPage(r.ctx(), { ...checksView(r, d, template, [w.setup.fallback("A shop with this name already exists on the server, so this one was not saved. Start the setup again with another name.")]), saved: false }));
     }
     shops.saveMeta(d.shopId, { ...shops.meta(d.shopId), ...(d.expectedBookings ? { expectedBookings: Number(d.expectedBookings) } : {}) });
+    // item 11i: every mood drawn once into the shop's own data (shops/<shop>/character), only when the look changed; the deployer draws it on its next pass if this fails
+    try { const drawn = await ensureShopCharacter(config.serverDir, d.shopId, written(built)); if (drawn?.drawn) log(`shop ${d.shopId}: its character's pictures drawn (${drawn.version})`); }
+    catch (e) { log(`shop ${d.shopId}: its character's pictures could not be drawn now (${(e as Error).message}); the deployer draws them`); }
     d.saved = true; d.editing = true;
     store.write(`drafts/${d.id}.json`, d);
     log(`shop ${d.shopId} saved by ${r.account!.id}`);

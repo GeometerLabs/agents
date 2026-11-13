@@ -86,8 +86,16 @@ export interface Words {
   };
   setup: {
     title: string; chooseTemplate: string; templateNames: Record<string, string>; templateElsewhere: string; start: string; progress(n: number, of: number): string;
-    steps: { business: string; deposit: string; languages: string; accounts: string; checks: string };
+    steps: { business: string; deposit: string; languages: string; accounts: string; character: string; checks: string };
     problemsTitle: string; fallback(english: string): string;
+    /** Item 11i: the Character step (views-character.ts) and the shop page's character block. The moods' words are modules/assistant/character.ts FACE_WORDS. */
+    character: {
+      intro: string; styleLegend: string; stripLegend: string; stripHelp: string; faceLabel(n: number, of: number): string; roll: string;
+      colourLegend: string; auto: string; autoLabel: string; colourLabel(n: number): string; moodsTitle: string; moodsHelp: string; name: string; nameHelp: string;
+      personalityLegend: string; personalityHelp: string; personalities: { warm: string; cheerful: string; brief: string }; saysLabel: string; chosenMark: string;
+      problems: { name: string; style: string; face: string; colour: string; personality: string };
+      shopTitle: string; shopNone: string; shopNotDrawn: string; profileTitle: string; profileHelp: string; download: string;
+    };
     business: { name: string; services: string; serviceName: string; also: string; price: string; minutes: string; opens: string; closes: string; openOn: string; hint: string; dayNames: string[] };
     depositStep: { amount: string; window: string; windowHint: string; whatThisMeans: string };
     limits: {
@@ -206,6 +214,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   // Getters: the list is read when a sample is used (the review sheet, the words test), not whenever the panel loads its words.
   get "plan.price"() { return [listRupees("plan.business.fee")]; }, get "plan.priceBuilder"() { return [listRupees("licence.builder.fee")]; },
   "licence.paidThrough": ["8 Dec 2026"], "licence.windDownOn": ["7 Jan 2027"], "licence.extended": ["21 Dec 2026"], "licence.stopOn": ["6 Feb 2027"], "licence.exportUntil": ["7 May 2027"], "licence.stale": ["5 Dec 2026"], "licence.trial": ["10 Dec 2026"],
+  "setup.character.faceLabel": [3, 8], "setup.character.colourLabel": [3],
   "setup.progress": [2, 5], "setup.fallback": ["The deposit is more than the cheapest service."],
   "setup.limits.deposit": ["₹200", 15], "setup.limits.refund": [24, "₹200"],
   "feesShop.studentsIn": [12], "feesShop.messages.ceiling": [40, 4, 200], "feesShop.messages.included": [3000],
@@ -369,8 +378,20 @@ export const en: Words = {
   setup: {
     title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { bookings: "Bookings with a deposit", fees: "Fee collection for classes", orders: "Pre-orders with an advance" },
     templateElsewhere: "A builder sets this one up with the plugin. The phone setup does not have it yet.", start: "Start", progress: (n, o) => `Step ${n} of ${o}`,
-    steps: { business: "The business", deposit: "Deposit and cancellation", languages: "Languages and your number", accounts: "Connect the shop's accounts", checks: "Checks" },
+    steps: { business: "The business", deposit: "Deposit and cancellation", languages: "Languages and your number", accounts: "Connect the shop's accounts", checks: "Checks", character: "The shop's assistant" },
     problemsTitle: "Please fix this:", fallback: (e) => `One thing needs fixing: ${e}`,
+    character: {
+      intro: "With the owner beside you, make the shop's assistant: a face, its colour, a name and how it talks. Customers see it on the shop's page. The owner sees its mood in their app and on WhatsApp.",
+      styleLegend: "Style", stripLegend: "Pick a face", stripHelp: "Each face is drawn for this shop only. Roll for eight new ones.", faceLabel: (n, o) => `Face ${n} of ${o}`, roll: "Roll new faces",
+      colourLegend: "Colour", auto: "Auto", autoLabel: "Auto: the style's own colour", colourLabel: (n) => `Colour ${n}`,
+      moodsTitle: "Its five moods", moodsHelp: "The owner sees all five. Customers see only All well, Busy and Closed.",
+      name: "Its name", nameHelp: "1 to 24 letters, in any language. For example Mithra or Golu.",
+      personalityLegend: "How it talks", personalityHelp: "This changes only its greeting and the first and last words of the morning summary. Amounts, cards, approvals and limits stay the same.",
+      personalities: { warm: "Warm", cheerful: "Cheerful", brief: "Brief" }, saysLabel: "It says:", chosenMark: "Picked",
+      problems: { name: "Give the assistant a name: 1 to 24 letters, no digits.", style: "Pick one of the five styles.", face: "Pick a face from the row.", colour: "Pick one of the colours shown, or Auto.", personality: "Pick how it talks." },
+      shopTitle: "The shop's assistant", shopNone: "This shop has no assistant yet. Make one in the setup's assistant step.", shopNotDrawn: "Its pictures are drawn on the server within a minute of saving.",
+      profileTitle: "WhatsApp profile photo", profileHelp: "Put this picture on the shop's WhatsApp profile yourself, wherever the shop's number is managed: the WhatsApp Business app, Meta's WhatsApp Manager or Gupshup's dashboard. The panel can't set it for you yet.", download: "Download the picture (PNG)",
+    },
     business: {
       name: demo.formName, services: demo.formServices, serviceName: demo.formServiceName, also: demo.formAlso, price: demo.formPrice, minutes: demo.formMinutes, opens: demo.formOpens, closes: demo.formCloses, openOn: demo.formDays,
       hint: "A service's price is also the lowest the agent will ever agree to.", dayNames: demo.dayNames,

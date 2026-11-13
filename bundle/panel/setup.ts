@@ -17,6 +17,7 @@ import type { SecretName } from "./contract.ts";
 import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
 import type { ShopMeta } from "./shops.ts";
+import type { CharacterDraft } from "./character.ts";
 
 export type Body = Record<string, string | undefined>;
 
@@ -49,6 +50,8 @@ export interface Draft {
   expectedBookings: string;
   /** How many steps have been filled in (0 for a new draft). A later step and the save need the earlier ones. A draft made from an existing shop starts with all of them done. */
   done: number;
+  /** Item 11i: the Character step's choices (character.ts). Made when the step is first shown; a draft from before has none. */
+  character?: CharacterDraft;
 }
 
 /** The module is a provider's id (modules/payments/providers): UPI's ID and payee are kept here, a gateway's key in `Draft.gateway`. */

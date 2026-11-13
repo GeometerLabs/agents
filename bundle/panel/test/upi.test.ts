@@ -37,8 +37,8 @@ test("a UPI shop saves the payment block, asks for no Razorpay key, writes none,
   try {
     const divya = await b.account("divya", "partner");
     const f = await setUp(b, divya, [STEP1, STEP2, STEP3, UPI4]);
-    const saved = await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/5`);
-    assert.equal(saved.location, `/setup/${f.draft}/5`);
+    const saved = await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/6`);
+    assert.equal(saved.location, `/setup/${f.draft}/6`);
     const folder = join(b.dir, "shops", f.shop);
     const settings = JSON.parse(readFileSync(join(folder, "settings.json"), "utf8"));
     assert.deepEqual(settings.payment, { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } });
@@ -46,7 +46,7 @@ test("a UPI shop saves the payment block, asks for no Razorpay key, writes none,
     const store = openStores(b.config).store;
     const meta = store.read<{ gateway?: unknown; whatsapp?: unknown }>(`meta/${f.shop}.json`)!;
     assert.ok(meta.whatsapp && meta.gateway === undefined);
-    await divya.post(`/setup/${f.draft}/check`, {}, `/setup/${f.draft}/5`);
+    await divya.post(`/setup/${f.draft}/check`, {}, `/setup/${f.draft}/6`);
     const checks = store.read<{ connections: { service: string }[] | null }>(`checks/${f.shop}.json`)!;
     assert.deepEqual(checks.connections!.map((c) => c.service).sort(), ["calendar", "whatsapp"], "no Razorpay check for a UPI shop");
     // Editing it keeps it a UPI shop with the same ID and name.
@@ -55,7 +55,7 @@ test("a UPI shop saves the payment block, asks for no Razorpay key, writes none,
     const page = await divya.get(`/setup/${again}/4`);
     assert.match(page.text, /name="payMod" value="upi" checked/u);
     assert.ok(page.text.includes('value="glowsalon@okicici"') && page.text.includes('value="Glow Salon"'));
-    await divya.post(`/setup/${again}/save`, {}, `/setup/${again}/5`);
+    await divya.post(`/setup/${again}/save`, {}, `/setup/${again}/6`);
     assert.deepEqual(JSON.parse(readFileSync(join(folder, "settings.json"), "utf8")), settings);
     assert.ok(!page.text.includes(M.secret));
   } finally { await b.close(); }
@@ -66,18 +66,18 @@ test("a Razorpay shop says so in its settings (B71: no block is never read as a 
   try {
     const divya = await b.account("divya", "partner");
     const f = await setUp(b, divya, [STEP1, STEP2, STEP3, { ...STEP4, payMod: "razorpay" }]);
-    await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/5`);
+    await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/6`);
     const settings = JSON.parse(readFileSync(join(b.dir, "shops", f.shop, "settings.json"), "utf8"));
     assert.deepEqual(settings.payment, { module: "razorpay" });
     assert.deepEqual(readdirSync(join(b.dir, "secrets-inbox", f.shop)).sort(), ["razorpay_key", "razorpay_webhook_secret", "whatsapp_app_secret", "whatsapp_token"]);
-    await divya.post(`/setup/${f.draft}/check`, {}, `/setup/${f.draft}/5`);
+    await divya.post(`/setup/${f.draft}/check`, {}, `/setup/${f.draft}/6`);
     const checks = openStores(b.config).store.read<{ connections: { service: string }[] }>(`checks/${f.shop}.json`)!;
     assert.deepEqual(checks.connections.map((c) => c.service).sort(), ["calendar", "razorpay", "whatsapp"]);
     // Editing it in the panel leaves it Razorpay with settings unchanged.
     const edit = await divya.post(`/shops/${f.shop}/edit`, {}, `/shops/${f.shop}`);
     const again = edit.location!.split("/")[2];
     assert.match((await divya.get(`/setup/${again}/4`)).text, /name="payMod" value="razorpay" checked/u);
-    await divya.post(`/setup/${again}/save`, {}, `/setup/${again}/5`);
+    await divya.post(`/setup/${again}/save`, {}, `/setup/${again}/6`);
     assert.deepEqual(JSON.parse(readFileSync(join(b.dir, "shops", f.shop, "settings.json"), "utf8")), settings);
   } finally { await b.close(); }
 });
@@ -125,7 +125,7 @@ test("a Fees centre can take UPI too: the payment block is written and no Razorp
     }
     const { calId: _c, ...fees4 } = UPI4;
     assert.equal((await divya.post(`/setup/${d}/4`, fees4, `/setup/${d}/4`)).status, 303);
-    assert.equal((await divya.post(`/setup/${d}/save`, {}, `/setup/${d}/5`)).location, `/setup/${d}/5`);
+    assert.equal((await divya.post(`/setup/${d}/save`, {}, `/setup/${d}/6`)).location, `/setup/${d}/6`);
     const shop = readdirSync(join(b.dir, "shops"))[0];
     assert.deepEqual(JSON.parse(readFileSync(join(b.dir, "shops", shop, "settings.json"), "utf8")).payment, { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } });
     assert.deepEqual(readdirSync(join(b.dir, "secrets-inbox", shop)).sort(), ["whatsapp_app_secret", "whatsapp_token"]);
@@ -150,8 +150,8 @@ test("the cost table on a UPI shop's page says there is no gateway fee, in the p
     for (const l of ["en", "kn"] as const) {
       const person = await b.account(`p${l}`, "partner", l);
       const f = await setUp(b, person, [STEP1, STEP2, STEP3, UPI4]);
-      await person.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/5`);
-      const page = await person.get(`/setup/${f.draft}/5`);
+      await person.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/6`);
+      const page = await person.get(`/setup/${f.draft}/6`);
       assert.ok(page.plain.includes(WORDS[l].upi.noGatewayFee), l);
       assert.ok(!page.plain.includes(WORDS[l].cost.lines.gateway), l);
     }

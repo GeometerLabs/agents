@@ -21,9 +21,9 @@ test("five steps write the client folder a builder would: valid settings, the ru
     const divya = await b.account("divya", "partner", "ml");
     const f = await setUp(b, divya);
     assert.equal(f.shop, "hosahalli-beauty");
-    assert.equal((await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/5`)).location, `/setup/${f.draft}/5`);
+    assert.equal((await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/6`)).location, `/setup/${f.draft}/6`);
     const folder = join(b.dir, "shops", f.shop);
-    assert.deepEqual(readdirSync(folder).sort(), ["owner.json", "pathway.lock", "runtime.json", "settings-history.jsonl", "settings.json"], "and the history of the settings (B38), which starts with this first save");
+    assert.deepEqual(readdirSync(folder).sort(), ["character", "owner.json", "pathway.lock", "runtime.json", "settings-history.jsonl", "settings.json"], "and the history of the settings (B38), which starts with this first save, and (item 11i) the character's pictures");
     const history = readFileSync(join(folder, "settings-history.jsonl"), "utf8").trim().split("\n").map((l) => JSON.parse(l));
     assert.equal(history.length, 1);
     assert.deepEqual(Object.keys(history[0].by).sort(), ["id", "name", "role"]);
@@ -56,7 +56,7 @@ test("five steps write the client folder a builder would: valid settings, the ru
     writeFileSync(join(folder, "pathway.lock"), "bookings@0.0.9\n");
     const arjun = await b.account("arjun", "builder");
     const edit = await arjun.post(`/shops/${f.shop}/edit`, {}, `/shops/${f.shop}`);
-    await arjun.post(`/setup/${edit.location!.split("/")[2]}/save`, {}, `/setup/${edit.location!.split("/")[2]}/5`);
+    await arjun.post(`/setup/${edit.location!.split("/")[2]}/save`, {}, `/setup/${edit.location!.split("/")[2]}/6`);
     assert.equal(JSON.parse(readFileSync(join(folder, "owner.json"), "utf8")).accountName, "DIVYA");
     assert.equal(readFileSync(join(folder, "pathway.lock"), "utf8").trim(), "bookings@0.0.9");
   } finally { await b.close(); }
@@ -150,8 +150,8 @@ test("the secrets: written once to the inbox, exactly as given, 0600; never in a
     // A changed key id needs its secret again; the old secret is never reused for it.
     const changed = await divya.post(`/setup/${f.draft}/4`, { ...STEP4, gwKeyId: "rzp_live_Another123456", gwKeySecret: "" }, `/setup/${f.draft}/4`);
     assert.equal(changed.status, 400);
-    const go = await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/5`);
-    all.push((await divya.get(`/setup/${f.draft}/5`)).text);
+    const go = await divya.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/6`);
+    all.push((await divya.get(`/setup/${f.draft}/6`)).text);
     assert.equal(go.status, 303);
 
     for (const reply of all) for (const m of MARKERS) assert.ok(!reply.includes(m), `a page showed ${m}`);
@@ -237,7 +237,7 @@ test("setup never writes into another shop: a name taken after step 1 gets a fre
     assert.equal(mine, "hosahalli-beauty-2");
     assert.equal(existsSync(join(b.dir, "secrets-inbox", "hosahalli-beauty")), false, "nothing went into the other shop's inbox");
     assert.ok(existsSync(join(b.dir, "secrets-inbox", mine, "whatsapp_token")));
-    await divya.post(`/setup/${d}/save`, {}, `/setup/${d}/5`);
+    await divya.post(`/setup/${d}/save`, {}, `/setup/${d}/6`);
     assert.equal(readFileSync(join(b.dir, "shops", "hosahalli-beauty", "settings.json"), "utf8"), theirs, "the other shop's settings are untouched");
     assert.ok(existsSync(join(b.dir, "shops", mine, "owner.json")));
 
@@ -259,7 +259,7 @@ test("setup never writes into another shop: a name taken after step 1 gets a fre
     for (const n of [2, 3, 4]) await divya.post(`/setup/${d3}/${n}`, n === 2 ? STEP2 : n === 3 ? STEP3 : STEP4, `/setup/${d3}/${n}`);
     b.addShop("late-arrival", { name: "Not Mine" });
     const before = readFileSync(join(b.dir, "shops", "late-arrival", "settings.json"), "utf8");
-    const refused = await divya.post(`/setup/${d3}/save`, {}, `/setup/${d3}/5`);
+    const refused = await divya.post(`/setup/${d3}/save`, {}, `/setup/${d3}/6`);
     assert.equal(refused.status, 409);
     assert.ok(refused.plain.includes("already exists"));
     assert.equal(readFileSync(join(b.dir, "shops", "late-arrival", "settings.json"), "utf8"), before);
