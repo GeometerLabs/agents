@@ -163,6 +163,8 @@ function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar
   if (razorpay) writeSecretFile(secretFile(dir, "relay", shop, "owner_notify_secret"), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, "owner_notify_secret"), mintSecret));
   // A UPI shop has no Razorpay webhook: its inbox still holds a secret for that route, made here and given to nobody, so a call to it can never be signed.
   else ensureSecret(secretFile(dir, "inbox", shop, "razorpay_webhook_secret"), mintSecret);
+  // Item 11h: the same for a shop with no WhatsApp: its WhatsApp route keeps a secret and a verify token nobody was given (and no number is its), so nothing reaches it
+  if (!whatsapp) for (const f of ["whatsapp_app_secret", "whatsapp_verify_token"]) ensureSecret(secretFile(dir, "inbox", shop, f), mintSecret);
   // B37: each other approver signs with their own secret, kept in the Razorpay Guard's folder and copied to the relay's, like the owner's (a UPI shop has neither)
   if (razorpay) for (const person of people) writeSecretFile(secretFile(dir, "relay", shop, names.approverSecretFile(person)), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, names.approverSecretFile(person)), mintSecret));
   if (calendar) {
