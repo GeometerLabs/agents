@@ -18,7 +18,7 @@
 //   GET  /internal/channel/request?handle=<64 hex>    one request by its handle's hash
 //   GET  /internal/channel/parent?link=<64 hex>       item 11h (Fees): what a parent's private link opens, by the link's hash; 404 for a hash no parent has now
 //   GET  /internal/channel/owner                     what waits for the owner (x-owner-link needed)
-//   POST /internal/channel/owner-voice               items 11d and 11e: a recording from the owner's page (audio/ogg, at most 256 KB), with the owner's credential;
+//   POST /internal/channel/owner-voice               items 11d and 11e: a recording from the owner's page (audio/ogg or audio/webm, at most 256 KB), with the owner's credential;
 //                                                     held in memory only, and an owner_message carrying its reference is saved (never the audio)
 // An owner_message (the owner's talk box) needs the owner's credential too, like an owner_action.
 //
@@ -354,14 +354,17 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
       if (!channel.ownerVoice) return send(res, 404, { error: "Voice is not on for this shop's assistant." });
       const type = header(req, "content-type") ?? "";
-      if (!/^audio\/ogg\b/iu.test(type)) return send(res, 415, { error: "Send the recording as audio/ogg (Opus)." });
+      // Ogg Opus, or (item 11i) WebM Opus, the only kind Android's Chrome records; nothing else reaches the drop
+      const kind = /^audio\/(ogg|webm)\b/iu.exec(type)?.[1]?.toLowerCase();
+      if (!kind) return send(res, 415, { error: "Send the recording as audio/ogg or audio/webm (Opus)." });
       let bytes: Buffer;
       try { bytes = await readBytes(req, MAX_VOICE_BYTES); } catch (e) {
         if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
         throw e;
       }
       if (bytes.length === 0) return send(res, 400, { error: "The recording is empty." });
-      const ref = channel.ownerVoice({ bytes: new Uint8Array(bytes), mime: type.split(";")[0].trim().toLowerCase() === "audio/ogg" ? "audio/ogg; codecs=opus" : type });
+      // the type is written by us, not copied from the request: the page records Opus in either box
+      const ref = channel.ownerVoice({ bytes: new Uint8Array(bytes), mime: `audio/${kind}; codecs=opus` });
       const counts = runtime.submit([{ kind: "owner_message", id: randomUUID(), text: "", voice: ref }]);
       send(res, 200, counts);
       runtime.kick();

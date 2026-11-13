@@ -11,6 +11,7 @@
 import type { Clock } from "../core/clock.ts";
 import type { Language } from "../language/languages.ts";
 import { oggOpusSeconds } from "./ogg.ts";
+import { webmOpusSeconds } from "./webm.ts";
 import { fetchAudio } from "./media.ts";
 import type { MediaRef, MediaSource } from "./media.ts";
 import { lowConfidence, sttCostMicroInr } from "./speech.ts";
@@ -95,7 +96,9 @@ export function createVoice(deps: VoiceDeps): VoiceService {
   /** The part both doors share once the audio is in hand: its length, the limit, the provider's words, the cost and the confidence. */
   async function listenTo(audio: Audio, memo: string): Promise<Heard> {
     // The length is read from the audio itself: it is needed for the limit and for the cost, and nothing else gives it. A file with no readable length is not sent on.
-    const seconds = oggOpusSeconds(audio.bytes);
+    // Ogg Opus (a WhatsApp voice note, a recording from Firefox) or, item 11i, WebM Opus (a recording from Android's Chrome, which cannot record Ogg); each reader
+    // checks the file's own first bytes, so the type a browser claimed decides nothing.
+    const seconds = oggOpusSeconds(audio.bytes) ?? webmOpusSeconds(audio.bytes);
     if (seconds === null) return no("unreadable");
     if (seconds > maxSeconds) return remember(memo, no("too_long", { seconds }));
     let transcript;

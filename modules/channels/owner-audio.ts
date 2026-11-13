@@ -6,7 +6,7 @@
 import { randomUUID } from "node:crypto";
 import type { PageAudio } from "../voice/turn.ts";
 
-/** The most a page recording may be: 30 seconds of Ogg Opus at the page's 24 kbps is about 90 KB; more is not one of the page's recordings. */
+/** The most a page recording may be: 30 seconds of Ogg or WebM Opus at the page's 24 kbps is about 90 KB; more is not one of the page's recordings. */
 export const MAX_VOICE_BYTES = 256 * 1024;
 /** How long a recording waits for its step: a step runs within seconds; a minute's Guard wait and a retry are well inside this. */
 export const AUDIO_HELD_MS = 5 * 60_000;
