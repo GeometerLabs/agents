@@ -79,7 +79,7 @@ test("with no parser in runtime.json the rules read the messages; with one the m
     await rules.runtime.idle();
     await rules.stop();
     assert.equal(stub.requests.length, 0, "no parser configured: nothing asked a model");
-    assert.ok(lines.some((l) => /I didn't understand/.test(l)), lines.join("\n"));
+    assert.ok(lines.some((l) => /I didn't catch that/.test(l)), lines.join("\n"));
     assert.ok(!lines.some((l) => /pay\.example/.test(l)), "the rules did not book it");
 
     lines.length = 0;

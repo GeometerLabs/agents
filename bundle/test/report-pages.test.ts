@@ -73,7 +73,7 @@ test("the Caddyfile is one handle for /r: the exact file shape is served from th
   for (const [k, v] of REPORT_HEADERS) assert.ok(text.includes(`${k} "${v}"`), k);
   assert.match(text, /Cache-Control "private, no-store"/u);
   assert.match(text, /Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; img-src data:;/u, "the policy the panel gives the same pages: no script, nothing external");
-  assert.equal(reportsMatcher(["glow-salon", "bright-tuition"]), `^/r/(?:glow-salon|bright-tuition)/${"[0-9a-f]".repeat(32)}/[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:html|json|txt)$`);
+  assert.equal(reportsMatcher(["glow-salon", "bright-tuition"]), `^/r/(?:glow-salon|bright-tuition)/${"[0-9a-f]".repeat(32)}/[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:html|json|txt|png)$`);
   assert.match(caddyfile(serverConfig(), [], ["b-shop", "a-shop"]), /\(\?:a-shop\|b-shop\)/u, "in sorted order, so the same shops are the same text");
 });
 
@@ -122,6 +122,20 @@ test("the address in the message is the address Caddy serves: https://<domain>/r
   assert.equal(reportBaseUrl(serverConfig(), "glow-salon"), "https://shops.example.com/r/glow-salon");
   assert.equal(reportBaseUrl(serverConfig({ ports: { https: 8443 } }), "glow-salon"), "https://shops.example.com:8443/r/glow-salon");
   assert.match(`${reportBaseUrl(serverConfig(), "glow-salon")}/${HEX}/report-2026-11-en.html`.replace("https://shops.example.com", ""), new RegExp(reportsMatcher(["glow-salon"])), "a link the job would build is a link the matcher serves");
+});
+
+test("a UPI shop's QR picture, written beside the reports, is served at the address WhatsApp is given (it was a 404 before 14 Nov 2026)", async () => {
+  const { folderQrImages } = await import("../../modules/payments/owner-marked/qr-image.ts");
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const dir = mkdtempSync(join(tmpdir(), "qr-"));
+  try {
+    const link = await folderQrImages({ dir, baseUrl: reportBaseUrl(serverConfig(), "glow-salon") })("upi://pay?pa=glowsalon@okicici&am=200.00&cu=INR");
+    assert.ok(link, "the picture was written");
+    assert.match(link!.replace("https://shops.example.com", ""), new RegExp(reportsMatcher(["glow-salon"])), "the matcher serves the QR picture's address");
+    assert.doesNotMatch(`/r/glow-salon/${HEX}/upi-qr.svg`, new RegExp(reportsMatcher(["glow-salon"])), "and still no other kind of file");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test("the folder the runtime is told to write is the folder Caddy mounts", () => {

@@ -40,7 +40,7 @@ const recordOf = (w: World, action: string) => w.record.entries().filter((e) => 
 test("without an \"assistant\" block nothing changes: the owner's free words get the usual answer", async () => {
   const w = createWorld();
   await owner(w, "close tomorrow");
-  assert.match(w.lastTextTo(w.owner), /^I didn't understand that\./u);
+  assert.match(w.lastTextTo(w.owner), /^Sorry, I didn't get that\./u);
   assert.equal(w.store.assistant, undefined);
   assert.equal(recordOf(w, "owner_assistant").length, 0);
 });
@@ -49,7 +49,7 @@ test("the fixed phrases keep working with the assistant on, and the relay's repl
   const w = withAssistant();
   await bookAndPay(w);
   await owner(w, "tomorrow");
-  assert.match(w.lastTextTo(w.owner), /^Your bookings tomorrow:/u);
+  assert.match(w.lastTextTo(w.owner), /^Tomorrow's bookings:/u);
   const before = w.messaging.sentTo(w.owner).length;
   const lines = w.record.entries().length;
   await owner(w, "approve K7M2QX");
@@ -80,7 +80,7 @@ test("on a UPI shop the owner's marks still work, typed or tapped, and \"move <c
   assert.equal(w.messaging.sentTo(w.owner).length, sent);
   assert.equal(recordOf(w, "owner_assistant").length, 0, "none of these reached the assistant");
   await owner(w, "today");
-  assert.match(w.lastTextTo(w.owner), /^(Your bookings today:|No bookings today\.)/u);
+  assert.match(w.lastTextTo(w.owner), /^(Today's bookings:|No bookings today\.)/u);
 });
 
 test("asks: a day's list, money in, what needs me", async () => {
@@ -107,7 +107,7 @@ test("cancel: a card with the exact change; nothing happens before the tap; the 
   assert.equal(w.store.bookings.get("b-1")!.state, "cancelled");
   assert.deepEqual(w.payments.refunds().map((r) => r.amount), [20_000], "the amount sent is the amount shown");
   assert.equal(w.lastTextTo(w.owner), "Done: ₹200 is on its way back to +919811111111 (b-1).");
-  assert.match(w.lastTextTo(CUSTOMER), /is cancelled\. Your ₹200 deposit is being refunded\./u);
+  assert.match(w.lastTextTo(CUSTOMER), /is cancelled\. We're refunding your ₹200 deposit\./u);
   const done = recordOf(w, "owner_card").filter((e) => e.outcome === "confirmed");
   assert.equal(done.length, 1);
   assert.equal(done[0].refs.skill, "bookings", "the record says which skill acted");

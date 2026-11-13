@@ -244,7 +244,7 @@ test("held → relay asks once → the owner approves → a signed notify → th
     assert.equal(asked.length, 1);
     assert.equal(asked[0].templateName, "owner_approval_request");
     const code = /"approve ([A-Z0-9]{6})"/u.exec(asked[0].text)![1];
-    assert.match(asked[0].text, /refund ₹200 for \+919811111111 \(haircut, Thu 5 Nov, 6:00 pm\)\. Reply "approve [A-Z0-9]{6}" or "deny [A-Z0-9]{6}" within 24 hours\.$/u);
+    assert.match(asked[0].text, /^A refund needs your OK: ₹200 to \+91 98111 11111 \(haircut, Thu 5 Nov, 6:00 pm\)\. Reply "approve [A-Z0-9]{6}" or "deny [A-Z0-9]{6}" within 24 hours\.$/u);
 
     // a forged notification: signed with the wrong secret, then a stale one; the real Guard refuses both
     const approval = (await (await admin(guard, "/admin/approvals?state=pending")).json() as any).approvals[0].id as string;
@@ -274,7 +274,7 @@ test("held → relay asks once → the owner approves → a signed notify → th
     assert.deepEqual(states, ["consumed"], "one approval, used once");
     assert.deepEqual(runtime.status().refunds, { waitingForOwner: 0, beingSentAgain: 0, needBuilder: { total: 0 } });
     assert.equal(whatsapp.sentTo(settings.owner.whatsapp).filter((m) => m.templateName === "owner_approval_request").length, 1, "the owner was asked exactly once");
-    assert.equal(whatsapp.sentTo(settings.owner.whatsapp).at(-1)!.text, "Thank you. The ₹200 refund for +919811111111 is being sent, and they will be told.");
+    assert.equal(whatsapp.sentTo(settings.owner.whatsapp).at(-1)!.text, "Thanks! The ₹200 refund to +91 98111 11111 is being sent, and I'll let them know.");
     assert.match(kit.messaging.sentTo("+919811111111").at(-1)!.text, /owner approved your refund/);
     // everything the relay and the agent did leaves no code or secret in a log line
     assert.ok(!lines.join("\n").includes(code) && !lines.join("\n").includes(guard.ownerSecret));
