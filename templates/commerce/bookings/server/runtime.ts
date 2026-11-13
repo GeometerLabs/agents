@@ -29,7 +29,8 @@ import { channelMessaging } from "../../../../modules/channels/outbox.ts";
 import { isChannelConversation } from "../../../../modules/channels/conversation.ts";
 import { compactChannel, emptyChannelState } from "../../../../modules/channels/state.ts";
 import { bookingView, ownerView, publicServices, shopInfo } from "../src/channel.ts";
-import { ownerAppView } from "../../../../modules/assistant/app/view.ts";
+import type { CharacterPictures } from "../../../../modules/assistant/character.ts";
+import { ownerAppView, publicCharacter } from "../../../../modules/assistant/app/view.ts";
 import { createAudioDrop } from "../../../../modules/channels/owner-audio.ts";
 import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
 import { createMorningJob } from "../../../../modules/assistant/morning.ts";
@@ -62,6 +63,8 @@ export interface RuntimeOptions {
   pageBase?: () => string | undefined;
   /** Item 11h: the shop's web push. A message kept for a page's conversation is also pushed to the phones that allowed alerts on that page. Left out: none. */
   push?: import("../../../../modules/push/push.ts").Push;
+  /** Item 11i: where the character's mood pictures are (pages.json, read on every use), for the morning line's picture and sticker. Left out: none sent. */
+  pictures?: () => CharacterPictures | undefined;
   /** The monthly report to the owner (report/monthly-job.ts). Left out: none is made and nothing is sent. */
   report?: MonthlyReportSetup;
   /** The shop's licence right now (modules/licence; the start reads client/licence.json). Left out: never restricted. */
@@ -162,7 +165,9 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     // (the shop's holds) and the calendar (through its Guard, a read). Nothing here is saved: a fresh parse each time.
     channel: {
       async offer(store, query) {
-        const shop = shopInfo(settings, !(options.licence?.() ?? UNRESTRICTED).takesNewWork);
+        // item 11i: with the shop's assistant on, the page's head shows its character in the mood the public sees now (the front adds the picture)
+        const character = publicCharacter({ skills: [bookingsSkill({ settings, store, nowMs: () => clock.now(), entries: () => [], optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false })], state: store.assistant, nowMs: clock.now(), timeZone: settings.timezone, settings: settings.assistant });
+        const shop = { ...shopInfo(settings, !(options.licence?.() ?? UNRESTRICTED).takesNewWork), ...(character ? { character } : {}) };
         const base = { shop, services: publicServices(settings) };
         if (!query.serviceId || !settings.services.some((x) => x.id === query.serviceId)) return base;
         const from = query.fromDate ? (([y, m, d]) => ({ year: y, month: m, day: d }))(query.fromDate.split("-").map(Number)) : undefined;
@@ -198,7 +203,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     monthly: options.report ? createMonthlyReport(options.report) : undefined,
     // Item 11e: the owner's morning line, from Bookings read-only over the store (no acts; the record's money lines are the job's own to read)
     ...(settings.assistant ? { daily: createMorningJob<Store>({
-      shop: { name: settings.name, timezone: settings.timezone, owner: settings.owner, settings: settings.assistant },
+      shop: { name: settings.name, timezone: settings.timezone, owner: settings.owner, settings: settings.assistant, ...(options.pictures ? { pictures: options.pictures } : {}) },
       skills: (store) => [bookingsSkill({ settings, store, nowMs: () => clock.now(), entries: () => [], optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false })],
     }) } : {}),
     ...(options.licence ? { licence: options.licence, licenceNotice: createBookingsLicenceNotice(settings, options.licence) } : {}),

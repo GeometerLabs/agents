@@ -1,6 +1,8 @@
 // Start one shop's agent: read its folder, open its store, wire the services, resume what was left pending, listen, and keep the clock ticking. main.ts is a thin command
 // line around this; the tests start it directly. The start itself, and the reading of messages and of the report block, are the same for every template
 // (modules/runtime/start.ts); this file gives them Orders' reading, its report and its runtime.
+import { join } from "node:path";
+import { PAGES_FILE, pagesReader, picturesOf } from "../../../../modules/channels/pages-file.ts";
 import { pushMessaging } from "../../../../modules/push/push.ts";
 import { runtimeHasWhatsApp } from "../../../../modules/runtime/config.ts";
 import type { Messaging } from "../../../../modules/messaging/messaging.ts";
@@ -83,7 +85,9 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       const voice = speech ? buildVoice(speech, { clock, languages: client.settings.languages, log }) : undefined;
       // Item 11e: the shop's assistant reads the owner's words through the same steps, with the owner's reading (modules/assistant/reading.ts). Only when it is on.
       const ownerParser = client.settings.assistant ? understanding(client as ClientFolder, { clock, log: () => undefined }, OWNER_UNDERSTANDING as never).parser as OwnerParser : undefined;
-      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), ...(push ? { push } : {}), log });
+      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), ...(push ? { push } : {}),
+        // item 11i: the character's pictures, as the deployer hands their version over in pages.json (read on every use)
+        pictures: () => picturesOf(pagesReader(join(client.folder, PAGES_FILE))()), log });
     },
   }) as RunningClient;
 }

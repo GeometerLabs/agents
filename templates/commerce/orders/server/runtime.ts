@@ -27,7 +27,8 @@ import { channelMessaging } from "../../../../modules/channels/outbox.ts";
 import { isChannelConversation } from "../../../../modules/channels/conversation.ts";
 import { compactChannel, emptyChannelState } from "../../../../modules/channels/state.ts";
 import { createAudioDrop } from "../../../../modules/channels/owner-audio.ts";
-import { ownerAppView } from "../../../../modules/assistant/app/view.ts";
+import type { CharacterPictures } from "../../../../modules/assistant/character.ts";
+import { ownerAppView, publicCharacter } from "../../../../modules/assistant/app/view.ts";
 import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
 import { orderOffer, orderView, ownerView } from "../src/channel.ts";
 import type { Order } from "../src/order.ts";
@@ -64,6 +65,8 @@ export interface RuntimeOptions {
   ownerSignin?: OwnerSignin;
   /** Item 11h: the shop's web push. A message kept for a page's conversation is also pushed to the phones that allowed alerts on that page. Left out: none. */
   push?: import("../../../../modules/push/push.ts").Push;
+  /** Item 11i: where the character's mood pictures are (pages.json, read on every use), for the morning line's picture and sticker. Left out: none sent. */
+  pictures?: () => CharacterPictures | undefined;
   retryDelaysMs?: number[];
   guardWaitMs?: number;
   guardLookAgainMs?: number[];
@@ -152,7 +155,12 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     casesOf: (store) => store.orders.values(),
     // Item 11h: what the shop's page, its API, the MCP endpoint and the owner's page read, each from the last saved state (nothing here is saved)
     channel: {
-      offer: async (store) => orderOffer(settings, store, clock.now(), !(options.licence?.() ?? UNRESTRICTED).takesNewWork),
+      offer: async (store) => {
+        // item 11i: with the shop's assistant on, the page's head shows its character in the mood the public sees now (the front adds the picture)
+        const offer = orderOffer(settings, store, clock.now(), !(options.licence?.() ?? UNRESTRICTED).takesNewWork);
+        const character = publicCharacter({ skills: [skillOver(store)], state: store.assistant, nowMs: clock.now(), timeZone: settings.timezone, settings: settings.assistant });
+        return character ? { ...offer, shop: { ...offer.shop, character } } : offer;
+      },
       view: (store, handleHash) => orderView(settings, store, handleHash),
       ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
       // with the shop's assistant on, the owner's read also carries the app's view (its cards, the mood, the talk), from the same saved state as the page's items
@@ -180,7 +188,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     monthly: options.report ? createMonthlyReport(options.report) : undefined,
     // Item 11e: the owner's morning line, from this template's skill read-only over the store
     ...(settings.assistant ? { daily: createMorningJob<Store>({
-      shop: { name: settings.name, timezone: settings.timezone, owner: settings.owner, settings: settings.assistant },
+      shop: { name: settings.name, timezone: settings.timezone, owner: settings.owner, settings: settings.assistant, ...(options.pictures ? { pictures: options.pictures } : {}) },
       skills: (store) => [skillOver(store)],
     }) } : {}),
     ...(options.licence ? { licence: options.licence, licenceNotice: createOrdersLicenceNotice(settings, options.licence) } : {}),

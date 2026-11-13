@@ -152,8 +152,20 @@ export const hi: Words = {
   setup: {
     title: "दुकान सेट करें", chooseTemplate: "यह क्या काम करेगा?", templateNames: { bookings: "जमा राशि के साथ बुकिंग", fees: "कक्षाओं की फीस वसूली", orders: "एडवांस के साथ प्री-ऑर्डर" },
     templateElsewhere: "इसे बिल्डर प्लगइन से सेट करता है। फ़ोन वाले सेटअप में यह अभी नहीं है।", start: "शुरू करें", progress: (n, o) => `कदम ${n} / ${o}`,
-    steps: { business: "दुकान की जानकारी", deposit: "जमा राशि और रद्द करना", languages: "भाषाएँ और आपका नंबर", accounts: "दुकान के अकाउंट जोड़ें", checks: "जाँच" },
+    steps: { business: "दुकान की जानकारी", deposit: "जमा राशि और रद्द करना", languages: "भाषाएँ और आपका नंबर", accounts: "दुकान के अकाउंट जोड़ें", checks: "जाँच", character: "दुकान का असिस्टेंट" },
     problemsTitle: "कृपया यह ठीक कीजिए:", fallback: (e) => `एक बात ठीक करनी है: ${e}`,
+    character: {
+      intro: "मालिक के साथ बैठकर दुकान का असिस्टेंट बनाइए: एक चेहरा, उसका रंग, एक नाम और बात करने का तरीका। ग्राहक इसे दुकान के पेज पर देखते हैं। मालिक इसका मूड अपने ऐप और WhatsApp पर देखते हैं।",
+      styleLegend: "स्टाइल", stripLegend: "एक चेहरा चुनिए", stripHelp: "हर चेहरा सिर्फ़ इसी दुकान के लिए बनता है। आठ नए चेहरों के लिए फिर से रोल कीजिए।", faceLabel: (n, o) => `चेहरा ${n} / ${o}`, roll: "नए चेहरे रोल करें",
+      colourLegend: "रंग", auto: "अपने-आप", autoLabel: "अपने-आप: स्टाइल का अपना रंग", colourLabel: (n) => `रंग ${n}`,
+      moodsTitle: "इसके पाँच मूड", moodsHelp: "मालिक पाँचों देखते हैं। ग्राहक सिर्फ़ सब ठीक, व्यस्त और बंद देखते हैं।",
+      name: "इसका नाम (ज़रूरी नहीं)", nameHelp: "ज़रूरी नहीं। ख़ाली छोड़ें तो यह दुकान के नाम से दुकान का असिस्टेंट रहेगा। किसी भी भाषा में 24 अक्षर तक, कोई अंक नहीं।",
+      personalityLegend: "बात करने का तरीका", personalityHelp: "इससे सिर्फ़ इसका अभिवादन और सुबह की जानकारी के पहले और आख़िरी शब्द बदलते हैं। रकम, कार्ड, मंज़ूरी और सीमाएँ वही रहती हैं।",
+      personalities: { warm: "आत्मीय", cheerful: "खुशमिज़ाज", brief: "संक्षिप्त" }, saysLabel: "यह कहता है:", chosenMark: "चुना गया",
+      problems: { name: "नाम 1 से 24 अक्षर का हो और उसमें अंक न हों, या उसे ख़ाली छोड़ दें।", style: "पाँच में से एक स्टाइल चुनिए।", face: "पंक्ति में से एक चेहरा चुनिए।", colour: "दिखाए गए रंगों में से एक चुनिए, या अपने-आप।", personality: "बात करने का तरीका चुनिए।" },
+      shopTitle: "दुकान का असिस्टेंट", shopNone: "इस दुकान का अभी कोई असिस्टेंट नहीं है। इसे सेटअप के असिस्टेंट वाले कदम में बनाइए।", shopNotDrawn: "सेव करने के एक मिनट के अंदर सर्वर पर इसकी तस्वीरें बन जाती हैं।",
+      profileTitle: "WhatsApp प्रोफ़ाइल फ़ोटो", profileHelp: "यह तस्वीर दुकान की WhatsApp प्रोफ़ाइल पर ख़ुद लगाइए, जहाँ भी दुकान का नंबर संभाला जाता है: WhatsApp Business ऐप, Meta का WhatsApp Manager या Gupshup का डैशबोर्ड। पैनल अभी इसे आपके लिए नहीं लगा सकता।", download: "तस्वीर डाउनलोड करें (PNG)",
+    },
     business: {
       name: demo.formName, services: demo.formServices, serviceName: demo.formServiceName, also: demo.formAlso, price: demo.formPrice, minutes: demo.formMinutes, opens: demo.formOpens, closes: demo.formCloses, openOn: demo.formDays,
       hint: "सेवा की जो कीमत आप लिखेंगे, एजेंट उससे कम में कभी राज़ी नहीं होगा।", dayNames: demo.dayNames,

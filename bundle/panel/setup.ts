@@ -1,5 +1,5 @@
 // The phone setup for a shop, as plain functions: what each step takes from the form, what it refuses (in the person's language), and how the steps
-// become the same client folder a builder would write. The shop form is the demo's (templates/commerce/bookings/demo/personalise.ts), grown into five steps; it is
+// become the same client folder a builder would write. The shop form is the demo's (templates/commerce/bookings/demo/personalise.ts), grown into six steps (item 11i added the shop's assistant); it is
 // not copied. It asks only for what the template's manifest says the template uses, and `validateSettings` is the last gate on everything.
 import { calendarModule, validateSettings } from "../../templates/commerce/bookings/src/settings.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
@@ -17,6 +17,7 @@ import type { SecretName } from "./contract.ts";
 import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
 import type { ShopMeta } from "./shops.ts";
+import type { CharacterDraft } from "./character.ts";
 
 export type Body = Record<string, string | undefined>;
 
@@ -50,6 +51,8 @@ export interface Draft {
   expectedBookings: string;
   /** How many steps have been filled in (0 for a new draft). A later step and the save need the earlier ones. A draft made from an existing shop starts with all of them done. */
   done: number;
+  /** Item 11i: the Character step's choices (character.ts). Made when the step is first shown; a draft from before has none. */
+  character?: CharacterDraft;
 }
 
 /** The module is a provider's id (modules/payments/providers): UPI's ID and payee are kept here, a gateway's key in `Draft.gateway`. */
@@ -105,7 +108,7 @@ export function whatsappDraftOf(meta: ShopMeta, runtime: Record<string, any> | u
   return { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(m?.phoneNumberId ?? ""), ...(m?.provider === "gupshup-selfserve" ? { provider: "gupshup-selfserve" as const, appName: String(m.appName ?? "") } : {}) };
 }
 
-/** A draft for a shop that already exists, so changing its settings is the same five steps. */
+/** A draft for a shop that already exists, so changing its settings is the same six steps. */
 export function draftFromShop(id: string, accountId: string, templateId: string, shopId: string, settings: Settings, runtime: Record<string, any> | undefined, meta: ShopMeta, now: string): Draft {
   return {
     id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: formFromSettings(settings), windowHours: String(settings.cancellation.windowHours),

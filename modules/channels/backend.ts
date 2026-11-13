@@ -7,6 +7,7 @@ import { OWNER_LINK_HEADER } from "./owner-link.ts";
 import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "./owner-access.ts";
 import type { LinkState } from "./owner-access.ts";
 import type { OwnerAppView } from "../assistant/app/view.ts";
+import type { Face } from "../assistant/character.ts";
 
 /**
  * Who is acting as the owner: the panel-made private link (item 11d), or a session the runtime made from a one-time WhatsApp link (item 11f). A bare string is a
@@ -29,8 +30,11 @@ export interface ShopInfo {
   paused: boolean;
   /** Item 11f: the week's opening hours ("10:00" to "20:00", null when closed), for the customer view. Left out by a template that has none. */
   hours?: Record<"sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat", { open: string; close: string } | null>;
-  /** Item 11f: the shop's character (item 11e's setting), when the template's settings carry one; the page draws a placeholder in its colour. */
-  character?: { name: string; look?: { colour?: string } };
+  /**
+   * Item 11f, 11i: the shop's character, when the shop has the assistant: its name (only when the partner gave one) and the mood the PUBLIC sees now (all well, busy or closed; character.ts
+   * publicFace), from the runtime. `picture` is added by the front, never by the runtime: that mood's SVG as a data: address (front.ts withFace).
+   */
+  character?: { name?: string; face?: Face; picture?: string };
 }
 export interface Offer { shop: ShopInfo; services: OfferService[]; serviceId?: string; days?: { date: string; starts: number[] }[]; calendarUnread?: boolean }
 

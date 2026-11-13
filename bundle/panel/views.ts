@@ -2,6 +2,9 @@
 // read, not copied) plus panel.css. No page needs JavaScript: a cheap phone loads plain forms and links. Every value goes through html``, which
 // escapes by default, so a shop named <script> is text everywhere. Words come from words.ts (four languages) and, for the certificate line and
 // "Show what we did", from the report's own strings.
+import { characterBlock, characterStepBody } from "./views-character.ts";
+import type { CharacterBlockView } from "./views-character.ts";
+import { newCharacterDraft } from "./character.ts";
 import { DEFAULT_PROVIDER, GATEWAYS, providerById } from "../../modules/payments/providers/index.ts";
 import { readFileSync } from "node:fs";
 import { LANGUAGES } from "../../modules/language/languages.ts";
@@ -243,6 +246,8 @@ export interface ShopView {
   details?: { statusJson: string; pins: string; runtimeJson: string };
   limitsText: string[];
   notice?: string;
+  /** Item 11i: the shop's assistant: its name and the version of its drawn pictures (views-character.ts). Left out for a template without a Character step. */
+  character?: CharacterBlockView;
   /** Item 11d: the booking page, its QR code, the MCP endpoint and the owner's link (views-channels.ts). Left out for a template without a booking page. */
   channels?: import("./channels.ts").ChannelsView;
   /** Item 11h: which template's page the block describes (Bookings when left out). */
@@ -365,6 +370,7 @@ ${v.liveCounts ? html`<ul class="plain">
 
 ${v.inbox ? html`<h2>${c.w.inbox.title}</h2>${inboxItems(c, v.inbox)}` : ""}
 ${v.channels ? channelsBlock(c, v.id, v.channels, v.channelsKind) : ""}
+${v.character ? characterBlock(c, v.id, v.character) : ""}
 ${v.pages ? pagesBlock(c, v.id, v.pages, v.pagesNotice) : ""}
 
 <h2>${w.settings}</h2>
@@ -494,7 +500,7 @@ export interface StepView {
 }
 
 // One step of the phone setup (business, deposit, languages, accounts), each its own small page so a cheap phone loads little and an error only repeats that step.
-export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" | "languages" | "accounts"): string {
+export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" | "languages" | "accounts" | "character"): string {
   const w = c.w.setup;
   const d = v.draft;
   const own = setupOf(v.template.setup);
@@ -506,6 +512,8 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
   let body: Raw;
   if (own && step === "business") body = own.businessBody(c, d, `/setup/${d.id}/${v.now + 1}`, back, next, shared);
   else if (own && step === "deposit") body = own.rulesBody(c, d, `/setup/${d.id}/${v.now + 1}`, back, next, v.ownLines ?? [], shared);
+  // item 11i: the shop's assistant, the same step for every template (views-character.ts)
+  else if (step === "character") body = characterStepBody(c, { id: d.id, ...(d.shopId ? { shopId: d.shopId } : {}), character: d.character ?? newCharacterDraft(d.shopId ?? "shop"), form: d.form }, `/setup/${d.id}/${v.now + 1}`, back, next, shared);
   else if (step === "business") {
     const b = w.business;
     body = html`<form method="post" action="/setup/${d.id}/${v.now + 1}">${csrf(c)}

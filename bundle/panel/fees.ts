@@ -54,7 +54,7 @@ export function newFeesDraft(id: string, accountId: string, template: Template, 
   };
 }
 
-/** A draft for a centre that already exists, so changing its settings is the same five steps. */
+/** A draft for a centre that already exists, so changing its settings is the same six steps. */
 export function feesDraftFromShop(id: string, accountId: string, templateId: string, shopId: string, s: Settings, runtime: Record<string, any> | undefined, meta: ShopMeta, now: string): Draft {
   const first = s.languages[0];
   const batches = blankBatches();

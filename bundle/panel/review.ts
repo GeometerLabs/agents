@@ -12,6 +12,7 @@ import { SAMPLE_ARGS } from "./words.ts";
 import { HEALTH_SAMPLE_ARGS, HEALTH_WORDS } from "./words-health.ts";
 import { AGENT_SAMPLE_ARGS, AGENT_WORDS } from "./words-agents.ts";
 import { loadVoteRound } from "./votes.ts";
+import { PERSONALITIES, SMALL_TALK } from "../../modules/assistant/personality.ts";
 
 export type ReviewLanguage = "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
@@ -52,10 +53,17 @@ function healthFlat(language: Language): Map<string, string> {
 /** The own-agent pages (words-agents.ts, 12 Nov 2026), under the ids "agents.*". */
 const agentsFlat = (language: Language): Map<string, string> => flatWords({ agents: AGENT_WORDS[language] }, AGENT_SAMPLE_ARGS);
 
+/**
+ * Item 11i: the shop assistant's small talk for each personality (modules/assistant/personality.ts: the greeting, and the morning summary's opening and sign-off,
+ * which are also in each personality's WhatsApp template), under the ids "personality.<personality>.*", so a native reader checks them with the rest. {name} and
+ * {shop} stay as they are: the assistant's name and the shop's.
+ */
+const personalityFlat = (language: Language): Map<string, string> => flatWords({ personality: Object.fromEntries(PERSONALITIES.map((p) => [p, SMALL_TALK[p][language]])) });
+
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 
@@ -68,7 +76,7 @@ export function panelReviewSection(language: ReviewLanguage): string {
   const rows = panelRows(language);
   return [
     "## 7. The panel and the phone setup", "",
-    `Everything a partner or builder reads in the panel, in ${name}: signing in, the shop's status and its monthly cost line, and the five setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the checks). Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.`, "",
+    `Everything a partner or builder reads in the panel, in ${name}: signing in, the shop's status and its monthly cost line, and the six setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the shop's assistant, the checks). The "personality.*" lines are the shop assistant's small talk in its three personalities: {shop} is the shop's name and {name} the assistant's own name, which the partner may leave out. Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.`, "",
     "What to look for first: (1) is each line something a shop owner or a young partner on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and a payment gateway read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, a payment gateway's name, Google Calendar, Guard, Geometer).", "",
     `| Id | Text (${name}) | Meaning (English) | ${REVIEWER} |`, "| --- | --- | --- | --- |",
     ...rows.map((r) => `| \`${r.id}\` | ${cell(r.text)} | ${cell(r.english)} |  |`), "",

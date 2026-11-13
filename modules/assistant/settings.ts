@@ -2,7 +2,9 @@
 // check (templates/<...>/src/settings.ts) hands the block here, so the three templates read it the same way. Left out of a shop's settings: no assistant, and the
 // owner's fixed phrases work exactly as before (the agent answers anything else with its usual "I didn't understand").
 //
-//   "assistant": { "morning": { "at": "08:00" } | false, "character": { "name": "Mithra", "look": { ... } } }
+//   "assistant": { "morning": { "at": "08:00" } | false, "character": { "name": "Mithra", "style": "clay", "seed": "veena-salon-3f2a1c-4", "colour": "c4795c", "personality": "warm" } }
+//
+// Item 11i: the panel's Character step writes `character` (and with it the block), so a shop set up in the panel has its assistant on.
 import { readCharacter, defaultCharacter } from "./character.ts";
 import type { Character } from "./character.ts";
 
@@ -32,4 +34,14 @@ export function readAssistantSettings(raw: unknown, errors: string[]): Assistant
   }
   const character = readCharacter(raw.character, errors) ?? defaultCharacter();
   return { morningAt, character };
+}
+
+/**
+ * The block as a settings file writes it, from its checked form: the inverse of `readAssistantSettings`. For code that copies a template's checked settings, changes
+ * one thing and checks them again (the crash tests' situations do): a checked block is not a settings block (`morningAt` against `morning`), so without this a shop
+ * with the assistant on (item 11i: every shop saved through the panel's Character step) could not be copied that way.
+ */
+export function assistantSettingsJson(a: AssistantSettings): Record<string, unknown> {
+  const two = (n: number) => String(n).padStart(2, "0");
+  return { morning: a.morningAt ? { at: `${two(a.morningAt.hour)}:${two(a.morningAt.minute)}` } : false, character: { ...a.character } };
 }
