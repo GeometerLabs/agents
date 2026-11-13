@@ -441,7 +441,7 @@ run("the owner's language: the ask and the answers are in it, the commands stay 
   assert.match(text, /"approve [A-Z0-9]{6}" या "deny [A-Z0-9]{6}"/);
   assert.match(text, /24 घंटे के अंदर/);
   await w.ownerWrites(`approve ${codeIn(text)}`);
-  assert.match(w.toOwner().at(-1)!.text, /^धन्यवाद। /);
+  assert.match(w.toOwner().at(-1)!.text, /^शुक्रिया! /);
 }, { ownerLanguage: "hi" });
 
 // ---- the relay's own HTTP face ------------------------------------------------------------------------------------------------------------
