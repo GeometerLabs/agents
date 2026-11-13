@@ -207,8 +207,16 @@ test("a shop with no WhatsApp: passkey sign-in from the partner's QR, push alert
     assert.ok(refundNotice, "the customer's refund notice arrives by push");
     assert.match(customerAlerts.open(refundNotice!.call.body).body, /refund/iu);
 
-    // ---- signing in again later: the passkey, no WhatsApp ----
+    // ---- asking the page for a sign-in link on a shop with no WhatsApp: nothing goes (never as a push), and the record says why ----
     w.signOut();
+    const pushesBefore = w.pushes.length;
+    await w.form("/owner/signin", { lang: "en" });
+    await w.client.runtime.idle();
+    await new Promise((r) => setTimeout(r, 200));
+    assert.equal(w.pushes.length, pushesBefore, "no sign-in link is pushed");
+    assert.ok(w.record().some((e) => e.action === "owner_signin" && e.outcome === "blocked" && /no WhatsApp/u.test(e.notes ?? "")), "the record says no link went, and why");
+
+    // ---- signing in again later: the passkey, no WhatsApp ----
     const signin = await w.page("/owner?lang=en");
     const signinHtml = await signin.text();
     assert.match(signinHtml, /Sign in with your fingerprint/u);
