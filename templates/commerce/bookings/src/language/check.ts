@@ -14,7 +14,8 @@ export function checkFactsOf(facts: MessageFacts): CheckFacts {
     counts: [facts.holdMinutes, facts.windowHours, facts.approvalHours, facts.upcomingCount, facts.approvalsLeft].filter((v): v is number => v !== undefined),
     shownMs: facts.slotMs,
     momentsMs: [...(facts.slotChoices ?? []), ...(facts.dayBookings ?? []).map((d) => d.slotMs)],
-    links: facts.link ? [facts.link] : [],
+    // item 11h: a WhatsApp booking's own page is a link the message may carry too (made for that message)
+    links: [...(facts.link ? [facts.link] : []), ...(facts.pageLink ? [facts.pageLink] : [])],
     literals: [facts.businessName, facts.serviceName, facts.bookingRef, facts.customerPhone, facts.customerPhone && groupPhone(facts.customerPhone), facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner, ...facts.services.map((s) => s.name), ...(facts.dayBookings ?? []).flatMap((d) => [d.serviceName, d.customerPhone, groupPhone(d.customerPhone), d.ref])],
   };
 }

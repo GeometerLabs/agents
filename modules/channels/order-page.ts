@@ -5,6 +5,7 @@
 //
 // Nothing on these pages is written from what the customer typed except their own name and address, escaped. No price comes from the form: the form sends item ids
 // and quantities, and every amount shown is the runtime's, from the shop's settings.
+import { MIC_HINT } from "./words-confirm.ts";
 import { html, raw } from "../core/html.ts";
 import type { Raw } from "../core/html.ts";
 import { localParts } from "../core/time.ts";
@@ -58,7 +59,7 @@ export function menuPage(o: { shop: PageShop; offer: OrderOffer; language: Langu
     })}</ul><p class="note">${w.maxItems(o.offer.maxItemsPerOrder)}</p>`;
     const chosenSlot = o.values?.slot ?? day.slots.find((x) => x.open)?.id;
     const slots = html`<h2>${w.pickSlot}</h2><div class="slots">${day.slots.map((x) => html`<label><input type="radio" name="slot" value="${x.id}" required${x.id === chosenSlot && x.open ? raw(" checked") : ""}${x.open ? "" : raw(" disabled")}>${x.mode === "pickup" ? w.pickup : w.delivery}: ${formatTime(localParts(x.fromMs, tz), o.language)}–${formatTime(localParts(x.toMs, tz), o.language)}${x.open ? "" : html` <small class="note">(${w.slotClosed})</small>`}</label>`)}</div>`;
-    const address = o.offer.delivery ? html`<label class="f" for="address">${w.address}</label><input type="text" id="address" name="address" maxlength="120" autocomplete="street-address" value="${o.values?.address ?? ""}"><p class="note">${w.addressNote(o.offer.delivery.areas.join(", "))}</p>` : "";
+    const address = o.offer.delivery ? html`<label class="f" for="address">${w.address}</label><input type="text" id="address" name="address" maxlength="120" autocomplete="street-address" value="${o.values?.address ?? ""}"><p class="note">${w.addressNote(o.offer.delivery.areas.join(", "))}</p><p class="note mic">${MIC_HINT[o.language]}</p>` : "";
     form = html`${days}<form method="post" action="${o.shop.publicUrl}/order">
 <input type="hidden" name="date" value="${day.date}"><input type="hidden" name="lang" value="${o.language}">${o.nonce ? html`<input type="hidden" name="nonce" value="${o.nonce}">` : ""}
 ${items}${slots}${address}

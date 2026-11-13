@@ -1,6 +1,7 @@
 // The runtime: the agent, the durable store and the task runner, wired so that every step is saved whole or not at all. How a step works, and why a crash leaves nothing
 // half done, is explained once for every template in modules/runtime/core.ts. This file gives it Bookings: its store, its agent, how its bookings are counted and how a
 // held refund is found from its receipt.
+import { handleHash, newHandle } from "../../../../modules/channels/handle.ts";
 import { createAgent } from "../src/agent.ts";
 import type { AgentEvent } from "../src/agent.ts";
 import { createStore } from "../src/booking.ts";
@@ -57,6 +58,8 @@ export interface RuntimeOptions {
   recordKey?: Buffer;
   /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts), made by the shared start. Left out: none. */
   ownerSignin?: OwnerSignin;
+  /** Item 11h (owner, 14 Nov): the shop's page address now (pages.json), for a WhatsApp booking's own page link. Left out, or undefined: no link is sent. */
+  pageBase?: () => string | undefined;
   /** Item 11h: the shop's web push. A message kept for a page's conversation is also pushed to the phones that allowed alerts on that page. Left out: none. */
   push?: import("../../../../modules/push/push.ts").Push;
   /** The monthly report to the owner (report/monthly-job.ts). Left out: none is made and nothing is sent. */
@@ -115,6 +118,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   const pageAudio = options.voice && settings.assistant ? createAudioDrop({ now: () => clock.now() }) : undefined;
   const agentOver = (store: Store, record: ReturnType<typeof createRecord>, use: Services) => createAgent({
     settings, clock, ...use, messaging: channelMessaging(use.messaging, () => (store.channel ??= emptyChannelState()), clock, options.push ? (to, text) => { options.push!.customer(to, text); } : undefined),
+    // item 11h: a WhatsApp booking's own page link, made here (the agent has no node:crypto): 24 random bytes, sent once, only the hash kept
+    ...(options.pageBase ? { pageLink: () => { const base = options.pageBase!(); if (!base) return undefined; const h = newHandle(); return { url: `${base}/b/${h}`, hash: handleHash(h) }; } } : {}),
     calendar: use.calendar ?? createOwnCalendar(store, () => clock.now()), parser, record, store, ai: policy,
     // B29: the shop's voice service reaches the agent here, so a voice note from WhatsApp is heard the same whichever path built the agent
     ...(options.voice ? { voice: options.voice } : {}),
