@@ -1,0 +1,6 @@
+{
+  "about": "The Streetlist home this bundle serves on the partner server (lib/home.ts). `commit` is the streetlist repository commit it was built from, `sha256` the checksum of the pack file `geometer home pack` made from it (the pin: `geometer home install` refuses any other file), `url` where the server may fetch it (https) or empty when it is copied onto the server. Empty until the owner makes the first pack: a change here is a reviewed commit, so one commit of this repository says which home a server serves.",
+  "commit": "",
+  "sha256": "",
+  "url": ""
+}
