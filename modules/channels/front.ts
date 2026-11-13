@@ -127,9 +127,17 @@ export interface FrontOptions {
   log?: (line: string) => void;
 }
 
-/** The pages' content policy: no script at all, nothing loaded from anywhere, no frame, forms only to this site, no referrer. */
+/** The pages' content policy: no script at all, nothing loaded from anywhere, no frame, forms only to this site. */
 export const PAGE_POLICY = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
-const HTML_HEADERS = { "content-type": "text/html; charset=utf-8", "content-security-policy": PAGE_POLICY, "x-content-type-options": "nosniff", "referrer-policy": "no-referrer", "cache-control": "no-store" };
+/**
+ * The pages' referrer policy: the origin only, never the address. An address here can be a secret (a booking's handle, the owner's link), so no page ever sends
+ * its path or query in a Referer. It is "strict-origin" and not "no-referrer" because, under "no-referrer", a browser sends `Origin: null` with every form it posts
+ * (the Fetch standard, "append a request Origin header"), and every form here is checked against its Origin (sameOrigin): a real browser's booking, cancel, "I have
+ * paid", the owner's answers and the sign-in were all refused with 403 (found by item 11i's design pass in headless Chromium; the tests post with fetch, which
+ * always sends the real Origin). The owner's pages say the same in a meta tag (owner-page.ts, owner-session.ts).
+ */
+export const PAGE_REFERRER = "strict-origin";
+const HTML_HEADERS = { "content-type": "text/html; charset=utf-8", "content-security-policy": PAGE_POLICY, "x-content-type-options": "nosniff", "referrer-policy": PAGE_REFERRER, "cache-control": "no-store" };
 /**
  * The owner's app page (item 11e, on the owner's link and the signed-in view): PAGE_POLICY and exactly what the app needs, each at its own address under the owner's
  * base: its one inline script by this response's nonce, the recording's POST, its service worker and its manifest. The pages origin is shared by every shop on the
