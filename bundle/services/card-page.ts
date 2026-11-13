@@ -109,7 +109,7 @@ export function cardPage(card: PartnerCard, primary: string): string {
   const wa = card.whatsapp && /^\d{8,15}$/u.test(card.whatsapp)
     ? `<a class="wa" href="https://wa.me/${card.whatsapp}?text=${encodeURIComponent("Hello, I found your page on Streetlist.")}">Message on WhatsApp</a>` : "";
   const services = card.services.length > 0
-    ? `<section><h2>What I set up</h2><ul class="rows">${card.services.map(serviceRow).join("")}</ul><p class="note">${esc(WHATSAPP_LINE)}</p></section>` : "";
+    ? `<section><h2>What I set up and look after</h2><ul class="rows">${card.services.map(serviceRow).join("")}</ul><p class="note">${esc(WHATSAPP_LINE)}</p></section>` : "";
   const named = card.shops.length > 0 ? `<ul class="rows">${card.shops.map((s) => `<li><a href="/${esc(encodeURIComponent(s.slug))}/">${esc(s.name)}</a></li>`).join("")}</ul>` : "";
   const count = card.shop_count > 0
     ? `<section><h2>Local services I look after</h2><p>${card.shop_count === 1 ? "1 local service" : `${card.shop_count} local services`} in all.${card.shops.length > 0 ? " These have said they are happy to be named here:" : " Each is named here only when it says yes."}</p>${named}</section>` : "";
@@ -119,5 +119,5 @@ export function cardPage(card: PartnerCard, primary: string): string {
     + `<section><h2>This page</h2><div class="qr">${textQrSvg(address, { label: `QR code for ${address}`, border: 2 })}<p>Scan to open this page, or share the address:<br><b>${esc(`${primary}/@${card.handle}`)}</b></p></div>`
     + `<p class="note">See how Geometer checks the work these assistants do: <a href="https://geometer.dev/verify">geometer.dev/verify</a></p></section>`
     + `<footer>Streetlist pages are run on Geometer. Questions: <a href="mailto:hello@geometer.dev">hello@geometer.dev</a></footer>`;
-  return shell(`${card.name} (@${card.handle}) on Streetlist`, card.intro || `${card.name}, a local partner on Streetlist.`, body);
+  return shell(`${card.name} (@${card.handle}) on Streetlist`, card.intro || `${card.name}, a local partner on Streetlist who looks after local services with their owners.`, body);
 }

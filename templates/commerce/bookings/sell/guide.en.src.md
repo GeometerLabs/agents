@@ -2,8 +2,10 @@
 
 For local partners (18 and over) and builders. Written 3 November 2026, in the pilot phase. The shop owner never reads this guide: they get the one-page sheet (`one-pager.en.html`) from you. The same guide exists in Hindi, Malayalam and Kannada. Use the language the owner speaks.
 
+**Your part, in one line.** You are the person who looks after this service with its owner: you know the shop, you tune its rules, you fix things when they go wrong, you bring customers when the street asks, and you are the person the owner calls. Setup is only the first step, never the pitch. What lasts is your care and your judgment, not access to the tool.
+
 ```text
-practise with a friend → a friendly shop → a stranger's shop → quote → first payment → still paying at month 3
+practise with a friend → a friendly shop → a stranger's shop → quote → first payment → first-month check-in → tuning and the monthly report, month after month
 ```
 
 ## 1. Is this shop a fit?
@@ -41,13 +43,15 @@ The card "What to ask the shop for" (`sell/ask-card.en.md`) lists what to ask th
 
 Say them in the owner's language, slowly.
 
-1. "Hello, I'm [your name] from [town], and I help shops with bookings on WhatsApp."
+1. "Hello, I'm [your name] from [town], and I help shops with bookings on WhatsApp, and I stay on afterwards to look after it with you."
 2. "It's a booking helper: it books the time and takes the deposit, only inside rules you set, so it can't go below your prices."
 3. "May I show you on your own phone, with test money, in 3 minutes?"
 
 Then stop talking. If they say yes, go to section 4. If they say no, say "Thank you. May I leave this sheet with you?" and leave.
 
 Don't open with "AI", with technology, or with the price. If they ask "Is this AI?", say yes (section 5).
+
+Setup is the first step, so it is never the pitch. What you offer is that you stay and look after it with them: you know their shop, you tune its rules, you fix things when they go wrong, and you are the person they call.
 
 ## 4. Show it on the owner's own phone
 
@@ -131,9 +135,13 @@ When it is live there will be alerts to you. They are not built yet (section 11)
 
 > "Yes, any time. Tell me with one message and I stop it. You can also disconnect it yourself from your phone: in the WhatsApp Business app, Settings, Account, Business Platform, Disconnect. The menu names can change. Your number and your chats stay."
 
+### "Why pay every month once it is set up?"
+
+> "Setup is only the first day. After that I look after it with you: I check in during the first month, I tune your rules when your shop changes, I fix things when they go wrong, I go through the monthly report with you, and I'm the person you call. That is what the monthly amount is for."
+
 ### "Who do I call?"
 
-> "Me. My name and number are on this sheet. I set it up, so I'm the one who answers for it."
+> "Me. My name and number are on this sheet. I look after it with you: I know your shop, and when something goes wrong I'm the one who sorts it out with you."
 
 Answer your phone, and reply the same day.
 
@@ -160,11 +168,13 @@ Three payments, three different people. Keep them apart. The amounts are from Ge
 | --- | --- | --- | --- |
 | You | Geometer | Each live shop, each month, before GST. Basic: no money moves. | {{plan.basic.fee}} |
 | You | Geometer | The same, Business: deposits, refunds and the monthly report | {{plan.business.fee}} |
-| The shop | You | The monthly service, Basic (a starting point; you decide) | {{guide.basic.shop-min}} to {{guide.basic.shop-max}} |
-| The shop | You | The monthly service, Business (a starting point; you decide) | {{guide.business.shop-min}} to {{guide.business.shop-max}} |
+| The shop | You | Looking after it each month, Basic (a starting point; you decide) | {{guide.basic.shop-min}} to {{guide.basic.shop-max}} |
+| The shop | You | Looking after it each month, Business (a starting point; you decide) | {{guide.business.shop-min}} to {{guide.business.shop-max}} |
 | The shop | You | Setup for Basic, once. You keep all of it. | {{guide.basic.setup-min}} to {{guide.basic.setup-max}} |
 | The shop | You | Setup for Business, once. You keep all of it. | {{guide.business.setup-min}} to {{guide.business.setup-max}} |
 | The shop, as its own line on your bill | WhatsApp, at cost, through your prepaid balance | Message fees | about {{guide.basic.whatsapp}} (Basic) or {{guide.business.whatsapp}} (Business) per shop per month |
+
+The monthly amount is the price of your care: the first-month check-in, the tuning, the fixes and the report. Setup is paid once; looking after it is what the shop keeps paying for.
 
 1. **Geometer's plan: Basic {{plan.basic.fee}} or Business {{plan.business.fee}} per live shop per month, before GST.** A shop counts for a month when it was live on 15 or more days. Basic holds bookings, reminders, prices and hours, no money moves, and includes {{plan.basic.allowance}} customer messages a month. Business adds deposits, refunds, the owner's OK on refunds above the limit and the monthly report, and includes {{plan.business.allowance}} messages. A Bookings shop that takes a deposit is Business; one where no money moves is Basic. A shop with several workflows or branches is Operations, {{plan.operations.fee}} a month with {{plan.operations.allowance}} messages: ask Geometer's support before you quote it. You pay nothing to join: no joining fee, no kit, no paid training. The plan starts when a shop goes live. A builder who runs it on their own server, with their own AI key and WhatsApp account, pays {{licence.builder.fee}} a month for each live client business instead, whatever the plan. The first {{innovator.places}} builders and partners with a shop live get the Innovator badge and a vote on the next template: a badge, not a discount.
 2. **Above the allowance, and WhatsApp.** Extra messages cost {{overage.extra}} for each 1,000, from your prepaid balance, and only with your yes; you get a warning at {{recharge.warn}}. Or you move the shop up a plan. Meta's and the provider's WhatsApp charges are passed on at cost, from the same balance, and so is the payment fee when you top it up ({{recharge.payment-fee}}). Geometer never handles the money of shops or their customers.
@@ -232,7 +242,7 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
    - Check that refunds owed are being sent: the owner sends each one from their own UPI app and marks it done.
 2. **End of the month: read the first report together.** It is 5 lines on WhatsApp, with a page behind it. Read every line, including the mistakes and "Not checked". If there is a mistake, you say it first.
 3. **Ask for one introduction.** "Do you know another shop owner who takes bookings on WhatsApp? Would you introduce me?" Ask only after the owner has seen the report and is happy. Never offer a reward, a discount or a gift for it.
-4. **Keep checking in.** A shop that is still paying at month 3 is the real result.
+4. **Keep looking after it.** Every month: read the report together, ask what the owner would change, and tune the rules when they ask. A limit gets wider only when the owner says so, and it is written down. A shop that is still being looked after at month 3 is the real result.
 
 ## 10. When something goes wrong
 
@@ -242,7 +252,7 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
 4. **Fix it, check it again, then switch it on.** If a customer was charged wrongly, sit with the owner while they refund it from their own Razorpay account. With UPI, the owner sends the refund from their own UPI app, and the helper tells the customer "sent" only after the owner marks it done.
 5. **Put it in the report.** It goes in the month's mistakes, and you tell Geometer's support the same day.
 
-You are the shop's named, accountable person. Your name is on the report and the certificate. Don't blame the software, and don't say "it won't happen again".
+You are the person the owner calls, and the shop's named, accountable person. Your name is on the report and the certificate. Putting it right with them is part of looking after it. Don't blame the software, and don't say "it won't happen again".
 
 ## 11. Be honest about what's true today
 
