@@ -33,6 +33,24 @@ class DecodeTests(unittest.TestCase):
             x = decode(out.read_bytes(), ffmpeg=FFMPEG, max_seconds=30, grace=0.25)
         self.assertAlmostEqual(x.size / SAMPLE_RATE, 3.0, delta=0.1)
 
+    def test_webm_opus_like_the_owners_talk_box_on_android(self):
+        # plan item 11i: Android's Chrome records only WebM Opus, written live (unknown sizes, no duration), and the owner's page sends it as it is
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "note.webm"
+            made = subprocess.run([FFMPEG, "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=300:duration=3", "-c:a", "libopus", "-b:a", "24k", "-live", "1", str(out)], capture_output=True)
+            if made.returncode != 0:
+                self.skipTest("this ffmpeg cannot write WebM Opus")
+            x = decode(out.read_bytes(), ffmpeg=FFMPEG, max_seconds=30, grace=0.25)
+        self.assertAlmostEqual(x.size / SAMPLE_RATE, 3.0, delta=0.1)
+
+    def test_a_real_chromium_recording(self):
+        # the recording Chromium's MediaRecorder made in the agents repo's tests (modules/voice/test/fixtures), read by the same ffmpeg step
+        fixture = Path(__file__).resolve().parents[4] / "modules" / "voice" / "test" / "fixtures" / "chromium-recording.webm"
+        if not fixture.exists():
+            self.skipTest("the Chromium recording is not next to this service")
+        x = decode(fixture.read_bytes(), ffmpeg=FFMPEG, max_seconds=30, grace=0.25)
+        self.assertGreater(x.size / SAMPLE_RATE, 1.0)
+
     def test_longer_than_30_seconds_is_refused_in_words(self):
         with self.assertRaises(SpeechError) as c:
             decode(tone_wav(33.0), ffmpeg=FFMPEG, max_seconds=30, grace=0.25)
