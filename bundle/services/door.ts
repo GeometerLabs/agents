@@ -346,6 +346,9 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
       if (problem) { log(`door: ${slug} has no address the door will call (${problem})`); return own(res, 502, pageOf("This shop's page is not answering", "Please try again later.")); }
       // the owner's view of a builder's client lives on the builder's own domain: no owner sign-in or session ever crosses this door
       if (/^\/(owner|o)(\/|$)/u.test(rest)) return go(res, 302, `${a.origin}${shopPath}`);
+      // item 11h: a service worker is Geometer's own only (the owner's app and a booking page's alerts, of this server's shops). A builder's page runs no script here
+      // (passThroughPolicy) and so could not register one; the address of one is refused as well, so nothing a builder's server sends can ever be a worker here
+      if (/(^|\/)sw\.js$/u.test(rest)) return own(res, 404, pageOf("There is nothing here", "This page has no such address."));
     }
     let body: Buffer | undefined;
     if (method === "POST") {
