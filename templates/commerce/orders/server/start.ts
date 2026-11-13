@@ -1,6 +1,8 @@
 // Start one shop's agent: read its folder, open its store, wire the services, resume what was left pending, listen, and keep the clock ticking. main.ts is a thin command
 // line around this; the tests start it directly. The start itself, and the reading of messages and of the report block, are the same for every template
 // (modules/runtime/start.ts); this file gives them Orders' reading, its report and its runtime.
+import { pushMessaging } from "../../../../modules/push/push.ts";
+import type { Messaging } from "../../../../modules/messaging/messaging.ts";
 import { buildVoice } from "../../../../modules/voice/config.ts";
 import { folderQrImages } from "../../../../modules/payments/owner-marked/qr-image.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
@@ -65,8 +67,10 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
   return await startRuntimeClient<ClientFolder["settings"], Runtime>(options, {
     casesName: "orders",
     loadClient,
-    async build(client, { store, clock, log, recordKey, ownerSignin }) {
-      const built = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive, payment: client.settings.payment });
+    async build(client, { store, clock, log, recordKey, ownerSignin, push }) {
+      const raw = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive, payment: client.settings.payment });
+      // item 11h: every message to the owner by the owner's choice of WhatsApp, push or both (push alone for a shop with no WhatsApp: modules/push/push.ts)
+      const built = { ...raw, messaging: pushMessaging(raw.messaging as Messaging | undefined, push, client.settings.owner.whatsapp, clock) };
       // An owner-marked shop's QR pictures (UPI) go into the folder the monthly report's pages are served from (read-only, no listing), under random names (B33).
       const report = client.runtime.report;
       const services = ownerMarkedOf((client.settings as { payment?: PaymentSettings }).payment) && report ? { ...built, qrImage: folderQrImages({ dir: report.pagesDir, baseUrl: report.pageBaseUrl, log }) } : built;
@@ -78,7 +82,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       const voice = speech ? buildVoice(speech, { clock, languages: client.settings.languages, log }) : undefined;
       // Item 11e: the shop's assistant reads the owner's words through the same steps, with the owner's reading (modules/assistant/reading.ts). Only when it is on.
       const ownerParser = client.settings.assistant ? understanding(client as ClientFolder, { clock, log: () => undefined }, OWNER_UNDERSTANDING as never).parser as OwnerParser : undefined;
-      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), log });
+      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), ...(push ? { push } : {}), log });
     },
   }) as RunningClient;
 }

@@ -30,12 +30,22 @@ export interface ServiceConfig { baseUrl: string; agentTokenFile?: string; [extr
  * "upi"}, plan B33) has none (no Razorpay account, no Razorpay Guard), so runtime.json may leave it out; `loadClientFolder`, which reads the settings too, still asks
  * a Razorpay shop for it.
  */
-export type ServiceShape = readonly { name: string; extra?: string; payment?: true; /** The calendar (B72): runtime.json may leave it out, and `loadClientFolder` asks for it unless the settings say `"calendar": {"module": "own"}`. */ calendar?: true; /** Fields the service may also have, checked by `check`. */ optional?: readonly string[]; check?: (raw: Record<string, unknown>) => string | null }[];
+export type ServiceShape = readonly {
+  name: string; extra?: string; payment?: true;
+  /** The calendar (B72): runtime.json may leave it out, and `loadClientFolder` asks for it unless the settings say `"calendar": {"module": "own"}`. */ calendar?: true;
+  /** Item 11h: a service a shop may simply not have (WhatsApp, decision 45: a shop can go live with only its page; push, before the bundle gives it a Guard). */ mayLack?: true;
+  /** Fields the service may also have, checked by `check`. */ optional?: readonly string[]; check?: (raw: Record<string, unknown>) => string | null;
+}[];
 
-/** WhatsApp: the number's id always; `provider` and `appId` only to choose a provider other than Meta direct (modules/messaging/providers.ts). */
-const MESSAGING_SERVICE = { name: "messaging", extra: "phoneNumberId", optional: ["provider", "appId", "appName", "sourceNumber"], check: messagingConfigProblem } as const;
-export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "calendar", extra: "calendarId", calendar: true }, MESSAGING_SERVICE];
-export const FEES_SERVICES: ServiceShape = [{ name: "payments", payment: true }, MESSAGING_SERVICE];
+/**
+ * WhatsApp: the number's id always; `provider` and `appId` only to choose a provider other than Meta direct (modules/messaging/providers.ts). Item 11h (decision 45):
+ * a shop may have no WhatsApp at all. It then keeps working on its page, and the owner hears by web push (modules/push); WhatsApp is reach, not a need.
+ */
+const MESSAGING_SERVICE = { name: "messaging", extra: "phoneNumberId", optional: ["provider", "appId", "appName", "sourceNumber"], check: messagingConfigProblem, mayLack: true } as const;
+/** Item 11h: the shop's push Guard (bundle/generate/guards.ts pushSpec), through which every web push goes. Left out: the shop sends no pushes. */
+const PUSH_SERVICE = { name: "push", mayLack: true } as const;
+export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "calendar", extra: "calendarId", calendar: true }, MESSAGING_SERVICE, PUSH_SERVICE];
+export const FEES_SERVICES: ServiceShape = [{ name: "payments", payment: true }, MESSAGING_SERVICE, PUSH_SERVICE];
 
 /** Where the live adapters should call: the services the template names, and how long to wait for any one of them. */
 export type LiveServicesConfig = { [service: string]: ServiceConfig | number | undefined } & { timeoutMs?: number };
@@ -305,8 +315,8 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
     if (!s) errors.push(`Live mode needs "services": where Guard stands in front of ${wanted.replace("calendar", "the calendar")}.`);
     else {
       unknownKeys(s, [...names, "timeoutMs"], "services", errors);
-      // the payment service may be left out (a UPI shop has none); everything else is needed
-      const present = shape.filter((x) => !((x.payment || x.calendar) && s[x.name] === undefined));
+      // the payment service may be left out (a UPI shop has none), and (item 11h) WhatsApp and push; everything else is needed
+      const present = shape.filter((x) => !((x.payment || x.calendar || x.mayLack) && s[x.name] === undefined));
       const read = present.map((x) => readService(s[x.name], x.name, x.extra, errors, x));
       if (s.timeoutMs !== undefined && (!Number.isInteger(s.timeoutMs) || (s.timeoutMs as number) < 1)) errors.push("services.timeoutMs must be a whole number of milliseconds.");
       const where = (o: Obj | undefined) => (o && isText(o.agentTokenFile) ? { ...o, agentTokenFile: isAbsolute(o.agentTokenFile) ? o.agentTokenFile : resolve(folder, o.agentTokenFile) } : o);

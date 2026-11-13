@@ -9,6 +9,10 @@ import { createOwnerSignin } from "../channels/owner-signin.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import { PAGES_FILE, pagesReader } from "../channels/pages-file.ts";
 import { OWNER_GRANTS_FILE, ownerGrantsReader } from "../channels/owner-grants.ts";
+import { PUSH_FILE, openPushStore } from "../push/store.ts";
+import { createPushSender } from "../push/sender.ts";
+import { createPush } from "../push/push.ts";
+import type { Push } from "../push/push.ts";
 import type { Language } from "../language/languages.ts";
 import { systemClock } from "../core/clock.ts";
 import type { Clock } from "../core/clock.ts";
@@ -188,7 +192,8 @@ export interface StartHooks<Settings, Rt extends StartableRuntime> {
   casesName: string;
   loadClient(folder: string): ClientFolder<Settings>;
   /** `ownerSignin` (item 11f): hand it to the runtime core (RuntimeCoreOptions.ownerSignin); left out for a shop without a channel token. */
-  build(client: ClientFolder<Settings>, ctx: { store: DurableStore; clock: Clock; log: (line: string) => void; recordKey?: Buffer; ownerSignin?: OwnerSignin }): Promise<Rt>;
+  /** `push` (item 11h): the shop's web push; the template wraps its messaging with it (modules/push/push.ts pushMessaging) and hands it to its channel outbox. */
+  build(client: ClientFolder<Settings>, ctx: { store: DurableStore; clock: Clock; log: (line: string) => void; recordKey?: Buffer; ownerSignin?: OwnerSignin; push?: Push }): Promise<Rt>;
 }
 
 /** The part of a runtime the start uses. */
@@ -214,12 +219,24 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
     grants: ownerGrantsReader(join(client.folder, OWNER_GRANTS_FILE)),
     owner, shopName: (client.settings as { name?: string }).name ?? "", clock, log,
   }) : undefined;
+  // Item 11h: web push, for a shop with a page. On only when runtime.json names the shop's push Guard (services.push): every push goes through it. The store (the
+  // shop's VAPID keys, the phones, the owner's choice, the queue) is a file of its own beside the store; the sender drains it outside the agent's steps.
+  const pushStore = channelToken ? openPushStore(join(client.runtime.dataDir, PUSH_FILE)) : undefined;
+  const pushGuard = (client.runtime.services as Record<string, { baseUrl?: string; agentTokenFile?: string } | undefined> | undefined)?.push;
+  const pages = pagesReader(join(client.folder, PAGES_FILE));
+  const pushSender = pushStore ? createPushSender({
+    store: pushStore, guard: pushGuard?.baseUrl ? { baseUrl: pushGuard.baseUrl, ...(pushGuard.agentTokenFile ? { agentToken: readFileSync(pushGuard.agentTokenFile, "utf8").trim() } : {}) } : undefined,
+    // the VAPID contact: the shop's page (never a person's e-mail)
+    subject: () => { const p = pages(); return p?.url ?? p?.base; }, clock, log,
+  }) : undefined;
+  const push = pushStore && pushSender ? createPush({ store: pushStore, sender: pushSender, shopName: (client.settings as { name?: string }).name ?? "", clock, on: pushGuard?.baseUrl !== undefined }) : undefined;
   let runtime: Rt;
   try {
-    runtime = await hooks.build(client, { store, clock, log, ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}) });
+    runtime = await hooks.build(client, { store, clock, log, ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), ...(push ? { push } : {}) });
   } catch (e) {
     store.close();
     ownerAccess?.close();
+    pushStore?.close();
     throw e;
   }
 
@@ -230,12 +247,14 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   let server: RunningServer;
   try {
     // the owner's link is read from the client folder on every request (the deployer writes and removes it), so a revoked link stops without a restart
-    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}), ...(ownerSignin ? { ownerSignin: ownerSignin.http } : {}) });
+    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}), ...(ownerSignin ? { ownerSignin: ownerSignin.http } : {}), ...(push ? { push, hasWhatsApp: (client.runtime.services as Record<string, unknown> | undefined)?.messaging !== undefined || client.runtime.mode === "fakes" } : {}) });
   } catch (e) {
     await runtime.close();
     ownerAccess?.close();
+    pushStore?.close();
     throw e;
   }
+  if (push?.on) pushSender!.start();
   runtime.kick(); // any task saved but not finished when the last process stopped runs now
   if (before.tasks.pending > 0) log(`Picking up ${before.tasks.pending} saved task(s) that had not finished.`);
   const ticker = startTicker(runtime, client.runtime.tickSeconds * 1000);
@@ -244,9 +263,11 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
     client, runtime, server,
     async stop() {
       ticker.stop();
+      await pushSender?.stop();
       await server.close();
       await runtime.close();
       ownerAccess?.close();
+      pushStore?.close();
     },
   };
 }

@@ -61,6 +61,8 @@ export interface RuntimeOptions {
   ownerParser?: OwnerParser;
   /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts), made by the shared start. Left out: none. */
   ownerSignin?: OwnerSignin;
+  /** Item 11h: the shop's web push. A message kept for a page's conversation is also pushed to the phones that allowed alerts on that page. Left out: none. */
+  push?: import("../../../../modules/push/push.ts").Push;
   /**
    * Item 11h: the centre's page addresses (its pages.json, read on every use), so a reminder can carry a parent's private link under the centre's page. Left out, or
    * no file: no page, and the reminders are as they were.

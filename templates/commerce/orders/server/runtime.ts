@@ -62,6 +62,8 @@ export interface RuntimeOptions {
   ownerParser?: OwnerParser;
   /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts), made by the shared start. Left out: none. */
   ownerSignin?: OwnerSignin;
+  /** Item 11h: the shop's web push. A message kept for a page's conversation is also pushed to the phones that allowed alerts on that page. Left out: none. */
+  push?: import("../../../../modules/push/push.ts").Push;
   retryDelaysMs?: number[];
   guardWaitMs?: number;
   guardLookAgainMs?: number[];
@@ -113,7 +115,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
    * words a page customer is given are saved whole or not at all with the step, and never go to WhatsApp.
    */
   const agentOver = (store: Store, record: Parameters<RuntimeKit<Store, Settings, RefundContext>["createAgent"]>[0]["record"], use: Services) => createAgent({
-    settings, clock, ...use, messaging: channelMessaging(use.messaging, () => (store.channel ??= emptyChannelState()), clock), parser, record, store, ai: policy,
+    settings, clock, ...use, messaging: channelMessaging(use.messaging, () => (store.channel ??= emptyChannelState()), clock, options.push ? (to, text) => { options.push!.customer(to, text); } : undefined), parser, record, store, ai: policy,
     ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}),
     ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}),
   });

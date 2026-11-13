@@ -35,6 +35,7 @@ import type { Ops } from "./ops.ts";
 import { OWNER_TOKEN } from "./owner-link.ts";
 import { OWNER, PAGE } from "./words.ts";
 import { bookingPage, statusPage } from "./page.ts";
+import { bookingIcs } from "./ics.ts";
 import { ownerLinkGone, ownerPage } from "./owner-page.ts";
 import type { OwnerCred } from "./backend.ts";
 import { CSRF_HEADER, csrfMatches, ownerSessionRoute } from "./owner-session.ts";
@@ -42,6 +43,8 @@ import type { PagesFile } from "./pages-file.ts";
 import { MAX_VOICE_BYTES } from "./owner-audio.ts";
 import { OWNER_MESSAGE_MAX } from "./events.ts";
 import { OWNER_APP_SW, ownerAppManifest } from "../assistant/app/pwa.ts";
+import { CUSTOMER_SW, customerAlertsBox, ownerAlertsBox, ALERT_WORDS } from "../push/pages.ts";
+import { OWNER_CHOICES } from "../push/store.ts";
 import { createOrderOps } from "./order-ops.ts";
 import type { OrderOps } from "./order-ops.ts";
 import { orderRoute } from "./front-orders.ts";
@@ -98,7 +101,12 @@ const HTML_HEADERS = { "content-type": "text/html; charset=utf-8", "content-secu
  * pages domain, so nothing here says 'self': no other page there may run script, register a worker or be posted to. Every other page keeps PAGE_POLICY.
  */
 export const appPolicy = (base: string, nonce: string): string =>
-  `${PAGE_POLICY}; script-src 'nonce-${nonce}'; connect-src ${base}/voice; worker-src ${base}/sw.js; manifest-src ${base}/manifest.webmanifest`;
+  `${PAGE_POLICY}; script-src 'nonce-${nonce}'; connect-src ${base}/voice ${base}/push/subscribe ${base}/push/unsubscribe; worker-src ${base}/sw.js; manifest-src ${base}/manifest.webmanifest`;
+/**
+ * Item 11h: a customer's booking or order page with its "Tell me on this phone" button: PAGE_POLICY and that page's own worker and its one POST, each at its own
+ * address under that page (`page`, no trailing slash), never 'self'.
+ */
+export const customerPagePolicy = (page: string, nonce: string): string => `${PAGE_POLICY}; script-src 'nonce-${nonce}'; connect-src ${page}/push; worker-src ${page}/sw.js`;
 const MAX_FORM = 4 * 1024;
 const MAX_JSON = 16 * 1024;
 
@@ -299,27 +307,66 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
         return again(e instanceof OpError && e.code === "paused" ? PAGE[language].paused : PAGE[language].badForm, 400);
       }
     }
-    const b = /^\/b\/([^/]+)(\/cancel|\/paid)?$/u.exec(rest);
+    // a booking's own page. Item 11h: also its calendar file, and (with web push) its worker and "Tell me on this phone"; "<page>/" is the page too, because a
+    // tapped alert opens its worker's scope, which ends in a slash
+    const b = /^\/b\/([^/]+)(\/|\/cancel|\/paid|\/booking\.ics|\/sw\.js|\/push)?$/u.exec(rest);
     if (b) {
       const handle = b[1];
+      const sub = b[2] === "/" ? undefined : b[2];
       if (limiter.over("wrong", address)) return tooMany();
       if (!HANDLE.test(handle)) { limiter.take("wrong", address); return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>"); }
       const offer = await shop.backend.offer({});
-      if (b[2] && method === "POST") {
+      const self = `${shop.publicUrl}/b/${handle}`;
+      if ((sub === "/cancel" || sub === "/paid") && method === "POST") {
         if (!sameOrigin(req, shop)) return sendHtml(res, 403, "<!doctype html><p>Forms from another site are refused.</p>");
         const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
         const language = languageOf(req, url, offer.shop.languages, form);
         if (!limiter.take("act", address)) return sendHtml(res, 429, statusPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view: await shop.backend.view(handleHash(handle)), notice: PAGE[language].tooMany }));
-        try { if (b[2] === "/cancel") await o.page.cancel_booking({ handle }); else await o.page.say_paid(handle); }
+        try { if (sub === "/cancel") await o.page.cancel_booking({ handle }); else await o.page.say_paid(handle); }
         catch (e) { if (e instanceof BackendError) throw e; limiter.take("wrong", address); }
-        return redirect(res, `${shop.publicUrl}/b/${handle}?lang=${language}`);
+        return redirect(res, `${self}?lang=${language}`);
       }
-      if (method !== "GET" || b[2]) return sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
+      // item 11h: a customer's alerts, on a page made on the page or through MCP (the runtime refuses any other)
+      if (sub === "/push") {
+        if (method !== "POST") return sendJson(res, 405, { error: "POST" }, { allow: "POST" });
+        if (!sameOrigin(req, shop)) return sendJson(res, 403, { error: "Calls from another site's page are refused." });
+        if (!shop.backend.push || !limiter.take("act", address)) return sendJson(res, shop.backend.push ? 429 : 404, { error: "Alerts are not on here." });
+        let body: Record<string, unknown>;
+        try { body = JSON.parse((await readBody(req, MAX_FORM)) ?? "") as Record<string, unknown>; } catch { return sendJson(res, 400, { error: "Send JSON." }); }
+        const r = await shop.backend.push({ op: "customer_subscribe", handle: handleHash(handle), subscription: body.subscription });
+        if (r.status === 404) limiter.take("wrong", address);
+        return sendJson(res, r.status === 200 ? 200 : r.status === 404 ? 404 : 400, r.status === 200 ? { result: "done" } : { error: String(r.body.error ?? "That was not taken.") });
+      }
+      if (method !== "GET") return sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
       if (!limiter.take("read", address)) return tooMany();
       const view = await shop.backend.view(handleHash(handle));
       if (!view) limiter.take("wrong", address);
       const language = languageOf(req, url, offer.shop.languages);
-      return sendHtml(res, view ? 200 : 404, statusPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view }), { "x-robots-tag": "noindex" });
+      // item 11h: the calendar file, made from the saved booking (never with the page's address in it: ics.ts)
+      if (sub === "/booking.ics") {
+        const ics = view ? bookingIcs({ view, shop: offer.shop, language, handleHash: handleHash(handle), host: new URL(shop.publicUrl).hostname, nowMs: Date.now() }) : undefined;
+        if (!ics) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+        res.writeHead(200, { "content-type": "text/calendar; charset=utf-8", "content-disposition": `attachment; filename="booking-${"ref" in view! ? view.ref : "b"}.ics"`, "content-length": Buffer.byteLength(ics), "cache-control": "no-store", "x-content-type-options": "nosniff", "x-robots-tag": "noindex" });
+        res.end(ics);
+        return;
+      }
+      // item 11h: the alerts' worker, scoped to this one page (its address is <page>/sw.js, so its scope can be no wider than <page>/)
+      const alertsOn = view !== null && "ref" in view && (view.channel === "web" || view.channel === "mcp") && shop.backend.push !== undefined;
+      const key = alertsOn ? await shop.backend.push!({ op: "key" }).catch(() => undefined) : undefined;
+      const publicKey = key?.body.on === true && typeof key.body.publicKey === "string" ? key.body.publicKey : undefined;
+      if (sub === "/sw.js") {
+        if (!publicKey) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+        res.writeHead(200, { "content-type": "text/javascript; charset=utf-8", "content-length": Buffer.byteLength(CUSTOMER_SW), "cache-control": "no-cache", "content-security-policy": "default-src 'none'", "x-content-type-options": "nosniff" });
+        res.end(CUSTOMER_SW);
+        return;
+      }
+      const live = view !== null && "ref" in view && (view.status === "held" || view.status === "booked" || view.status === "checking");
+      const nonce = publicKey && live ? randomBytes(16).toString("base64") : undefined;
+      let phones = 0;
+      if (nonce) { const st = await shop.backend.push!({ op: "customer_state", handle: handleHash(handle) }).catch(() => undefined); phones = Number(st?.body.phones ?? 0); }
+      const alerts = nonce ? customerAlertsBox({ page: self, language, key: publicKey!, phones, nonce }) : undefined;
+      const ics = view && "ref" in view && view.startMs !== undefined && view.status !== "expired" && view.status !== "not_held" ? `${self}/booking.ics?lang=${language}` : undefined;
+      return sendHtml(res, view ? 200 : 404, statusPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view, ...(ics ? { ics } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": customerPagePolicy(self, nonce) } : {}) });
     }
     return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
   }
@@ -419,7 +466,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const method = req.method ?? "GET";
     const token = o.cred;
     const base = o.base;
-    const json = sub.startsWith("/api/") || sub === "/voice";
+    const json = sub.startsWith("/api/") || sub === "/voice" || sub === "/push/subscribe" || sub === "/push/unsubscribe";
     const fallback: Language = (LANGUAGES.includes(url.searchParams.get("lang") as Language) ? url.searchParams.get("lang") : "en") as Language;
     const gone = () => {
       if (o.onGone) return o.onGone(); // a session that ended is not a guess: no wrong count, back to sign in
@@ -431,7 +478,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     /** A signed-in owner's POST must carry the session's form token; the panel's link is its own secret and needs none. */
     const csrfOk = (given: unknown) => o.csrf === undefined || (typeof token === "object" && "session" in token && csrfMatches(token.session, given));
     // item 11e: the owner's app lives at the same base: the page also at "<base>/" (a service worker controls only pages inside its scope, <base>/), and its four routes
-    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST" };
+    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST" };
     if (routes[sub] === undefined) return json ? sendJson(res, 404, { error: { code: "not_found", message: "GET /api/v1/state or POST /api/v1/answer." } }) : sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
     if (routes[sub] !== method) return json ? sendJson(res, 405, { error: { code: "bad_request", message: `Use ${routes[sub]} here.` } }, { allow: routes[sub] }) : sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: routes[sub] });
     if (!limiter.take(method === "POST" ? "act" : "read", address)) return slow("300");
@@ -444,17 +491,35 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
 
     if (sub === "/api/v1/state") return sendJson(res, 200, ownerJson(state), { "x-robots-tag": "noindex" });
 
-    // ---- item 11e: the owner's app (only for a shop with the assistant) ----
+    // ---- item 11e: the owner's app (the talk box and recordings only for a shop with the assistant; item 11h: the manifest and the worker for every shop) ----
     const app = state.view.app;
-    if (!app && (sub === "/manifest.webmanifest" || sub === "/sw.js" || sub === "/talk" || sub === "/voice")) return json ? sendJson(res, 404, { error: { code: "not_found", message: "This shop has no assistant." } }) : sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
-    if (app && sub === "/manifest.webmanifest") {
-      const body = JSON.stringify(ownerAppManifest({ base, shop: state.view.shop.name, language, colour: app.character.look.colour }));
+    if (!app && (sub === "/talk" || sub === "/voice")) return json ? sendJson(res, 404, { error: { code: "not_found", message: "This shop has no assistant." } }) : sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+    // ---- item 11h: the owner's alerts (web push). The runtime checks the owner's credential and keeps the subscription; the form token is checked here ----
+    if (sub === "/push/subscribe" || sub === "/push/unsubscribe") {
+      if (!shop.backend.push) return sendJson(res, 404, { error: { code: "not_found", message: "Alerts are not on for this shop." } });
+      if (!csrfOk(req.headers[CSRF_HEADER])) return sendJson(res, 403, { error: { code: "bad_request", message: `Send the session's form token in ${CSRF_HEADER}.` } });
+      let body: Record<string, unknown>;
+      try { body = JSON.parse((await readBody(req, MAX_FORM)) ?? "") as Record<string, unknown>; } catch { return sendJson(res, 400, { error: { code: "bad_request", message: "Send JSON." } }); }
+      const r = await shop.backend.push(sub === "/push/subscribe" ? { op: "owner_subscribe", subscription: body.subscription } : { op: "owner_unsubscribe", endpoint: body.endpoint }, token);
+      if (r.status === 403) return gone();
+      return sendJson(res, r.status === 200 ? 200 : 400, r.status === 200 ? { result: "done", phones: r.body.phones } : { error: { code: "bad_request", message: String(r.body.error ?? "That subscription was not taken.") } });
+    }
+    if (sub === "/push/choice") {
+      const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
+      if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
+      const choice = form.get("choice") ?? "";
+      if (shop.backend.push && (OWNER_CHOICES as readonly string[]).includes(choice)) { const r = await shop.backend.push({ op: "owner_choice", choice }, token); if (r.status === 403) return gone(); }
+      return redirect(res, `${base}/?lang=${language}&n=alerts`);
+    }
+    if (sub === "/manifest.webmanifest") {
+      const body = JSON.stringify(ownerAppManifest({ base, shop: state.view.shop.name, language, colour: app?.character.look.colour ?? "leaf" }));
       res.writeHead(200, { "content-type": "application/manifest+json; charset=utf-8", "content-length": Buffer.byteLength(body), "cache-control": "no-store", "x-content-type-options": "nosniff", "x-robots-tag": "noindex" });
       res.end(body);
       return;
     }
-    if (app && sub === "/sw.js") {
-      // the worker may fetch only the page itself (it keeps the last one for reading offline); it never sends a tap or a message later (assistant/app/pwa.ts)
+    if (sub === "/sw.js") {
+      // the worker may fetch only the page itself (it keeps the last one for reading offline); it never sends a tap or a message later (assistant/app/pwa.ts).
+      // Item 11h: it also shows the owner's alerts, and a tap opens this page
       res.writeHead(200, { "content-type": "text/javascript; charset=utf-8", "content-length": Buffer.byteLength(OWNER_APP_SW), "cache-control": "no-cache", "content-security-policy": `default-src 'none'; connect-src ${base}/`, "x-content-type-options": "nosniff" });
       res.end(OWNER_APP_SW);
       return;
@@ -500,10 +565,20 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       return redirect(res, `${base}?lang=${language}&n=${result}`);
     }
     const n = url.searchParams.get("n");
-    const notice = n && n in w.result ? w.result[n as keyof typeof w.result] : undefined;
-    // the owner's app runs one script of ours: a fresh nonce for this response, in its content policy and on that script, and nothing else may run
-    const nonce = app ? randomBytes(16).toString("base64") : undefined;
-    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
+    const notice = n === "alerts" ? ALERT_WORDS[language].saved : n && n in w.result ? w.result[n as keyof typeof w.result] : undefined;
+    // item 11h: the owner's alerts box, when the shop has push (its runtime says so, and its public key)
+    let pushState: { key: string; state: { choice: string; phones: number; whatsapp: boolean } } | undefined;
+    if (shop.backend.push) {
+      try {
+        const k = await shop.backend.push({ op: "key" });
+        const st = k.body.on === true ? await shop.backend.push({ op: "owner_state" }, token) : undefined;
+        if (k.body.on === true && typeof k.body.publicKey === "string" && st?.status === 200) pushState = { key: k.body.publicKey, state: { choice: String(st.body.choice), phones: Number(st.body.phones ?? 0), whatsapp: st.body.whatsapp === true } };
+      } catch (e) { log(`The shop's alerts could not be read: ${(e as Error).message}`); }
+    }
+    // the owner's app runs our scripts only: a fresh nonce for this response, in its content policy and on those scripts, and nothing else may run
+    const nonce = app || pushState ? randomBytes(16).toString("base64") : undefined;
+    const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), ...(nonce ? { nonce } : {}) }) : undefined;
+    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
   }
 
   return (req, res) => {

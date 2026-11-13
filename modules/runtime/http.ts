@@ -33,6 +33,10 @@
 //   POST /internal/channel/owner-passkey  {"op": "grant_state" | "register_options" | "register", "grant": {"kind": "setup", "token"} | {"kind": "recovery", "code"}, "response"?}
 //                                         {"op": "status"} | {"op": "signin_options"} | {"op": "signin", "response"}
 //                                         answers {state} | {options} | {session, expires_at_ms} | {count, options?}, or 403 {state | why}
+// Item 11h, web push (modules/push): one route, the step in the body. The owner's steps need the owner's credential, as an owner_action does; a customer's name
+// their page by its handle's hash, and only a page made on the page or through MCP (a WhatsApp customer hears on WhatsApp) can take alerts.
+//   POST /internal/channel/push  {"op": "key"} | {"op": "owner_state" | "owner_subscribe" | "owner_unsubscribe" | "owner_choice", ...} (owner's credential)
+//                                | {"op": "customer_state" | "customer_subscribe" | "customer_unsubscribe", "handle": <hash>, ...}
 //
 // The runtime never holds a webhook secret: the inbox checked each provider's signature before it called us. The bearer
 // token only says the caller is our own inbox. Bind to 127.0.0.1 or a private network, never the open internet.
@@ -48,6 +52,10 @@ import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts"
 import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "../channels/owner-access.ts";
 import type { AssertionResponse, RegistrationResponse } from "../channels/owner-access.ts";
 import type { Grant } from "../channels/owner-grants.ts";
+import type { Push } from "../push/push.ts";
+import { OWNER_CHOICES } from "../push/store.ts";
+import type { BrowserSubscription, OwnerChoice } from "../push/store.ts";
+import { conversationOf } from "../channels/conversation.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import type { OwnerLinkFile } from "../channels/owner-link.ts";
 import type { RuntimeChannel } from "./core.ts";
@@ -82,6 +90,9 @@ export interface ServerOptions {
   ownerLink?: () => OwnerLinkFile | undefined;
   /** Item 11f: the owner's sign-in (links and sessions), checked here on every call. Left out: no session is ever good, and the sign-in routes refuse. */
   ownerSignin?: OwnerSignin["http"];
+  /** Item 11h: the shop's web push (subscriptions and the owner's choice), and whether the shop has WhatsApp (the choice is offered only then). */
+  push?: Push;
+  hasWhatsApp?: boolean;
 }
 
 export interface RunningServer {
@@ -286,6 +297,55 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       const ended = options.ownerSignin?.end(header(req, OWNER_SESSION_HEADER) ?? "");
       if (ended) recordAccess("signed_out", ended);
       return send(res, 200, { ended: ended !== undefined });
+    }
+    // ---- item 11h: web push ----
+    if (path === "/internal/channel/push") {
+      only("POST");
+      let body: Record<string, unknown>;
+      try { body = JSON.parse(await readBody(req, 8 * 1024)) as Record<string, unknown>; } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const push = options.push;
+      const op = typeof body.op === "string" ? body.op : "";
+      if (!push || !push.on) return send(res, op === "key" ? 200 : 404, { on: false });
+      if (op === "key") return send(res, 200, { on: true, publicKey: push.publicKey() });
+      const whatsapp = options.hasWhatsApp === true;
+      if (op.startsWith("owner_")) {
+        if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+        if (op === "owner_subscribe") {
+          const r = push.subscribe("owner", body.subscription as BrowserSubscription);
+          if (!r.ok) return send(res, 400, { error: r.why });
+          // the first phone with alerts: both ways for a shop with WhatsApp (the owner can then pick), push alone for one without
+          if (push.ownerPhones() === 1 && push.choice() === "whatsapp") push.setChoice(whatsapp ? "both" : "push");
+        } else if (op === "owner_unsubscribe") {
+          if (typeof body.endpoint !== "string") return send(res, 400, { error: "Send the endpoint to stop." });
+          push.unsubscribe("owner", body.endpoint);
+        } else if (op === "owner_choice") {
+          if (!OWNER_CHOICES.includes(body.choice as OwnerChoice)) return send(res, 400, { error: `choice is one of ${OWNER_CHOICES.join(", ")}.` });
+          if (!whatsapp && body.choice !== "push") return send(res, 400, { error: "This shop has no WhatsApp: alerts come by push." });
+          push.setChoice(body.choice as OwnerChoice);
+        } else if (op !== "owner_state") return send(res, 400, { error: "op is not one this route knows." });
+        return send(res, 200, { on: true, whatsapp, choice: whatsapp ? push.choice() : "push", phones: push.ownerPhones() });
+      }
+      if (op.startsWith("customer_")) {
+        const handle = typeof body.handle === "string" ? body.handle : "";
+        if (!HANDLE_HASH.test(handle)) return send(res, 400, { error: "handle is the handle's hash: 64 hex digits." });
+        const view = channel.view(handle) as { channel?: unknown } | null;
+        // only a page made on the page or through MCP: a WhatsApp customer hears on WhatsApp, and a fee page belongs to a parent who does
+        const ch = view?.channel === "web" || view?.channel === "mcp" ? view.channel : undefined;
+        if (!ch) return send(res, 404, { error: "No page with alerts has this handle." });
+        const who = conversationOf(ch, handle);
+        if (op === "customer_subscribe") {
+          const r = push.subscribe(who, body.subscription as BrowserSubscription);
+          if (!r.ok) return send(res, 400, { error: r.why });
+        } else if (op === "customer_unsubscribe") {
+          if (typeof body.endpoint !== "string") return send(res, 400, { error: "Send the endpoint to stop." });
+          push.unsubscribe(who, body.endpoint);
+        } else if (op !== "customer_state") return send(res, 400, { error: "op is not one this route knows." });
+        return send(res, 200, { on: true, phones: push.phones(who) });
+      }
+      return send(res, 400, { error: "op is key, owner_* or customer_*." });
     }
     // Integration of items 11d and 11e: a recording the owner made on their page. The owner is checked HERE, as for every owner event; the audio is held in this
     // process's memory only (the kit's ownerVoice, modules/channels/owner-audio.ts) and the saved event carries its reference, never the audio.
