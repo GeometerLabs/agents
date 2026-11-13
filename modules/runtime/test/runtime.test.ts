@@ -68,8 +68,11 @@ test("a runtime config is read the same way for every template; only the service
   const asFees = readRuntimeConfig({ mode: "live", services: { payments, messaging, calendar: { baseUrl: "http://g:1", calendarId: "c" } } }, "/client", FEES_SERVICES);
   assert.ok(!asFees.ok);
   if (!asFees.ok) assert.ok(asFees.errors.some((e) => /"calendar" means in services/.test(e)));
-  assert.match((readRuntimeConfig({ mode: "live" }, "/client", FEES_SERVICES) as { errors: string[] }).errors[0], /payments and messaging/);
-  assert.match((readRuntimeConfig({ mode: "live" }, "/client", BOOKINGS_SERVICES) as { errors: string[] }).errors[0], /payments, the calendar and messaging/);
+  // item 11h: push is one of the services too, and (like WhatsApp) one a shop may lack
+  assert.match((readRuntimeConfig({ mode: "live" }, "/client", FEES_SERVICES) as { errors: string[] }).errors[0], /payments, messaging and push/);
+  assert.match((readRuntimeConfig({ mode: "live" }, "/client", BOOKINGS_SERVICES) as { errors: string[] }).errors[0], /payments, the calendar, messaging and push/);
+  assert.ok(readRuntimeConfig({ mode: "live", services: { payments } }, "/client", FEES_SERVICES).ok, "a shop with no WhatsApp and no push Guard: runtime.json names neither");
+  assert.ok(readRuntimeConfig({ mode: "live", services: { push: { baseUrl: "http://g-push:8080" } } }, "/client", BOOKINGS_SERVICES).ok, "a UPI shop on its own booking list with no WhatsApp: its push Guard alone");
   // the settings every template shares are accepted by both shapes
   for (const shape of [FEES_SERVICES, BOOKINGS_SERVICES]) assert.ok(readRuntimeConfig({ mode: "fakes", ai: "buttons", allowance: { messages: 100 }, pauseMinutes: 5, report: { preparedBy: "Divya, local partner", pageBaseUrl: "https://reports.example.com/r" } }, "/client", shape).ok);
 });
