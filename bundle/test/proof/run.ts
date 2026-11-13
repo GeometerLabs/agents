@@ -1263,8 +1263,8 @@ async function withoutWhatsApp() {
   const upi = JSON.parse(readFileSync(join(APP, "templates/commerce/bookings/settings/glow-salon-upi.example.json"), "utf8"));
   writeFileSync(join(client, "settings.json"), JSON.stringify({ ...upi, name: "Proof Salon (no WhatsApp)", calendar: { module: "own" } }));
   writeFileSync(join(client, "runtime.json"), JSON.stringify({ mode: "live", tickSeconds: 30, services: { timeoutMs: 20000 } }));
+  // the lease written at the start already lists this shop (PROOF_SHOPS), so its Guards have their licence
   if (await main(["shop", "add", shop, "--from", client, "--server", SERVER]) !== 0) throw new Error(`shop add ${shop} failed`);
-  handLease(5).forEach((l) => say(`   ${l}`));
   const res = await deploy(ctxFor());
   const mine = res.find((r) => r.shop === shop);
   check("a shop with no WhatsApp deploys: every tripwire of its Guards passes, its push Guard's included", !!mine && mine.proven.passed === mine.proven.of && mine.proven.of > 0, mine?.proven.line);
