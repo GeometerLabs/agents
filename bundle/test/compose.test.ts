@@ -27,7 +27,10 @@ test("a runtime is on ONE internal network, shared with its own Guards and the m
 test("only Guards (and the few services that must call out) are on the egress network; the runtime and Caddy never are", () => {
   const c = two();
   const onEgress = Object.keys(c.services).filter((s) => nets(c, s).includes("egress")).sort();
-  assert.deepEqual(onEgress, ["fwd-bright-tuition-calendar", "fwd-bright-tuition-razorpay", "fwd-bright-tuition-whatsapp", "fwd-glow-salon-calendar", "fwd-glow-salon-razorpay", "fwd-glow-salon-whatsapp", "fwd-model", "ops", "refresher"]);
+  // item 11h: the push sender reaches the push services; the push Guards (fwd-*-push) do not reach out at all: they are on `push` with the sender only
+  assert.deepEqual(onEgress, ["fwd-bright-tuition-calendar", "fwd-bright-tuition-razorpay", "fwd-bright-tuition-whatsapp", "fwd-glow-salon-calendar", "fwd-glow-salon-razorpay", "fwd-glow-salon-whatsapp", "fwd-model", "ops", "push", "refresher"]);
+  const onPush = Object.keys(c.services).filter((s) => nets(c, s).includes("push"));
+  assert.ok(onPush.includes("push") && onPush.every((s) => s === "push" || /^fwd-.+-push$/u.test(s)), `only the push sender and push Guards are on push: ${onPush.join(", ")}`);
   for (const g of ["g-glow-salon-razorpay", "g-model"]) assert.match(String(c.services[g].block.network_mode), /^service:fwd-/, `${g} joins its forwarder's namespace`);
   assert.deepEqual(nets(c, "caddy"), ["front"]);
   assert.deepEqual(nets(c, "inbox").sort(), ["admin", "front"]);
