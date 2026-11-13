@@ -94,7 +94,12 @@ test("the three templates: the text is the approved body filled in, it passes it
     }
   }
   const submissions = assistantSubmissions();
-  assert.equal(submissions.length, 3 * LANGUAGES.length);
-  assert.deepEqual([...new Set(submissions.map((s) => s.name))].sort(), ["booking_day_closed", "booking_day_open", "owner_morning"]);
-  for (const s of submissions) assert.match(s.components[0].text, /^[^{].*[^}]$/su, "a body neither starts nor ends with a value");
+  // item 11i: one morning template per personality, each with an image header before its body
+  assert.equal(submissions.length, 5 * LANGUAGES.length);
+  assert.deepEqual([...new Set(submissions.map((s) => s.name))].sort(), ["booking_day_closed", "booking_day_open", "owner_morning", "owner_morning_brief", "owner_morning_cheerful"]);
+  for (const s of submissions) {
+    const body = s.components.find((c) => c.type === "BODY")!;
+    assert.ok("text" in body);
+    assert.match(body.text, /^[^{].*[^}]$/su, "a body neither starts nor ends with a value");
+  }
 });
