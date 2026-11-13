@@ -2,6 +2,10 @@
 //
 //   PANEL_SERVER_DIR=/srv/geometer PANEL_PUBLIC_URL=https://shops.example.com node bundle/panel/main.ts            serve
 //   PANEL_SERVER_DIR=/srv/geometer node bundle/panel/main.ts invite --role builder --note "Arjun"                  an invitation link, once
+//   ... main.ts reset --handle divya [--hours 72]          a one-time link to choose a new passphrase (a forgotten one); every session of the account ends when it is used
+//   ... main.ts signout --handle divya                     end every session of one account now
+//   ... main.ts accounts                                   the accounts: sign-in name, role, how they sign in (one JSON line each; no hash, no token)
+//   ... main.ts link-partner --handle divya --partner p-x  hosted mode: an invited partner signs in with geometer.dev from now on and keeps their shops
 //
 // Everything else is set by environment variables (see README.md in this folder). Hosted mode (PANEL_MODE=hosted) is Geometer's own server for the
 // partners' shops: it refuses to start without PANEL_DATA_KEY_FILE, and invitations are made only here, on the command line.
@@ -13,7 +17,7 @@ import { createDocuments } from "./documents.ts";
 import { exportShop } from "./export.ts";
 import { createShops } from "./shops.ts";
 import { PaperError, createPapers } from "./papers.ts";
-import { makeConfirmLink, makeInviteLink, openStores, startPanel } from "./server.ts";
+import { linkFleetPartner, listAccounts, makeConfirmLink, makeInviteLink, makeResetLink, openStores, signOutAccount, startPanel } from "./server.ts";
 import { VaultError } from "./vault.ts";
 
 try {
@@ -26,6 +30,27 @@ try {
     if (!Number.isInteger(hours) || hours < 1 || hours > 720) throw new ConfigError("--hours must be a whole number from 1 to 720.");
     console.log(makeInviteLink(config, values.role, values.note ?? "", hours));
     console.log(`\nThis link works once and runs out in ${hours} hours. Send it only to that person. It is not kept anywhere else.`);
+  } else if (command === "reset") {
+    // a forgotten passphrase: a one-time link for the person, sent by whoever runs the server; an account that signs in with geometer.dev has none to reset
+    const { values } = parseArgs({ args: rest, options: { handle: { type: "string" }, hours: { type: "string" } } });
+    if (!values.handle) throw new ConfigError("Say whose passphrase: --handle <sign-in name> (main.ts accounts lists them).");
+    const hours = values.hours === undefined ? 72 : Number(values.hours);
+    if (!Number.isInteger(hours) || hours < 1 || hours > 720) throw new ConfigError("--hours must be a whole number from 1 to 720.");
+    const made = makeResetLink(config, values.handle, hours);
+    console.log(made.link);
+    console.log(`\nFor ${made.name}. This link works once and runs out ${made.expiresAt}. Send it only to that person: whoever opens it chooses the passphrase. Using it signs every session of the account out.`);
+  } else if (command === "signout") {
+    const { values } = parseArgs({ args: rest, options: { handle: { type: "string" } } });
+    if (!values.handle) throw new ConfigError("Say whose sessions: --handle <sign-in name> (main.ts accounts lists them).");
+    const a = signOutAccount(config, values.handle);
+    console.log(`Every session of ${a.handle} (${a.name}) has ended. They sign in again ${a.fleetPartner ? "with geometer.dev" : "with their passphrase"}.`);
+  } else if (command === "accounts") {
+    for (const a of listAccounts(config)) console.log(JSON.stringify(a));
+  } else if (command === "link-partner") {
+    const { values } = parseArgs({ args: rest, options: { handle: { type: "string" }, partner: { type: "string" } } });
+    if (!values.handle || !values.partner) throw new ConfigError("Say which account and which partner: --handle <sign-in name> --partner <partner id in fleet>.");
+    const a = linkFleetPartner(config, values.handle, values.partner);
+    console.log(`${a.handle} (${a.name}) now signs in with the geometer.dev account of partner ${a.fleetPartner}, and keeps their shops. Their passphrase no longer works, and every session of theirs has ended.`);
   } else if (command === "confirm-link") {
     // Asks for a person's yes (plan B11, the Claude Code plugin): prints one JSON line with a one-time link. It only ASKS; there is no command that applies anything.
     const { values } = parseArgs({ args: rest, options: { kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" }, note: { type: "string" } } });
@@ -79,7 +104,7 @@ try {
     const panel = await startPanel(config);
     console.log(`Geometer panel (${config.mode}) is open at ${panel.url}${config.publicUrl ? `, served to people as ${config.publicUrl}` : ""}.`);
     for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => { void panel.close().then(() => process.exit(0)); });
-  } else throw new ConfigError(`I don't know "${command}". Use serve (the default), invite, confirm-link, export, anchor or paper.`);
+  } else throw new ConfigError(`I don't know "${command}". Use serve (the default), invite, reset, signout, accounts, link-partner, confirm-link, export, anchor or paper.`);
 } catch (e) {
   if (e instanceof ConfigError || e instanceof VaultError) { console.error(e.message); process.exit(2); }
   throw e;

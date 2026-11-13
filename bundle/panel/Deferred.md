@@ -39,7 +39,16 @@ Not built, or built only as far as said. The first block needs another part of t
 
 ## Accounts and operations
 
-- No page to list or revoke invitations, change a passphrase, sign out everywhere (the version counter is there, the button is not), or reset a forgotten passphrase (the server's owner makes a new invitation). No second factor.
+- No page to list or revoke invitations, change a passphrase, or sign out everywhere (the version counter is there, the button is not). A forgotten passphrase
+  is reset by a one-use link that whoever runs the server makes on the command line (`geometer panel reset`, 14 Nov); there is no self-service reset by email
+  (the panel sends no mail). No second factor.
+- **Partners' geometer.dev sign-in (14 Nov, decision 53).** Not run against a deployed fleet and partner server, nor on a phone; the tests use fleet's fixed
+  vector and tickets signed with the same published test key. The panel does not hear of a pause until the partner's session ends (at most 12 hours, or at
+  once with `geometer panel signout`). Revisit when: a pause must bite sooner. Done when: fleet's heartbeat answer to the partner server lists the paused
+  partner ids and the panel refuses their sessions. The panel cannot list or remove the spent-ticket records by hand (they drop off as tickets run out).
+- **A shop a partner sets up here still needs Geometer's `shop plan` in fleet** before the lease lists it and it can take work: the panel does not tell fleet
+  which partner set a shop up. Revisit when: partners set up shops without the owner. Done when: the deployer claims a shop for the partner who set it up,
+  with the deployment key, and fleet applies the partner's live-shop limit there.
 - The login limit is in memory: a restart forgets it. Drafts of a setup that was never finished stay on disk.
 - Retention and deletion on request for the shops Geometer hosts (B25 names the data duties): no page or command yet; the panel's own data is accounts, invitations as hashes, drafts, which secrets arrived, the last checks, and the papers it made.
 - The monthly report is made on a button, in the owner's language. Sending it to the owner on WhatsApp, a schedule, the QR and the verify page (needs a deploy yes) are not here.

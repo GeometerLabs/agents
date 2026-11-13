@@ -4,7 +4,11 @@
 //
 // What every request goes through, in this order: the account is read from a signed cookie; the route says who may use it; a POST must carry the form's
 // CSRF token (and, when the browser sends one, an Origin that is this panel); a shop that is not yours is a 404 on every route; and the log line is
-// "METHOD path status ms" with no query, no cookie and no body, and an invitation's token blanked out.
+// "METHOD path status ms" with no query, no cookie and no body, and an invitation's, reset link's or geometer.dev ticket's token blanked out.
+//
+// Ways in: an invitation then a passphrase (both modes); a reset link for a forgotten passphrase (both modes, made on the command line); and, on Geometer's
+// partner server only, a local partner's geometer.dev sign-in (fleet-signin.ts, plan decision 53). A shop OWNER never signs in here: owners use their own view's
+// setup QR and passkey.
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomBytes } from "node:crypto";
@@ -19,10 +23,12 @@ import { pathwayVersion } from "../../templates/commerce/bookings/server/config.
 import { loadPrivateKey } from "../../modules/report/sign.ts";
 import { kindFor } from "../lib/kinds.ts";
 import { monthRange } from "../../modules/report/months.ts";
-import { createAccounts } from "./accounts.ts";
+import { AccountError, createAccounts } from "./accounts.ts";
+import { checkTicket, createTicketLedger, readFleetIdentity } from "./fleet-signin.ts";
+import type { Ticket } from "./fleet-signin.ts";
 import type { Account, Role } from "./accounts.ts";
 import { casesOf, monthOf, monthlyFromExport, readExport } from "./activity.ts";
-import { ConfigError, isSecure, readPagesDomain, readServerModel, webhookUrlFor } from "./config.ts";
+import { ConfigError, DEFAULT_ACCOUNT_URL, isSecure, readPagesDomain, readServerModel, webhookUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
 import { SECRET_NAMES, liveView, preparedByOf, serverPaths, shopIdFromName } from "./contract.ts";
 import type { SecretName } from "./contract.ts";
@@ -80,7 +86,7 @@ import { backupKeyFile, backupKeyPage, serverPage } from "./views-server.ts";
 import { discoverTemplates } from "./templates.ts";
 import type { Template } from "./templates.ts";
 import { createVault, loadKeyFile, plainVault } from "./vault.ts";
-import { errorPage, handoverPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, setupChecksPage, setupStartPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
+import { errorPage, handoverPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, resetPage, setupChecksPage, signinPage, setupStartPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
 import type { ChecksView, Ctx, HandoverView, ShopCardView, ShopView } from "./views.ts";
 import { WORDS, isDraftLanguage } from "./languages.ts";
 
@@ -133,6 +139,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const { paths, store, secret } = openStores(config);
   const prices = deps.prices ?? latestPriceList();
   const accounts = createAccounts(store, now);
+  // the geometer.dev tickets already used (fleet-signin.ts); only hosted mode takes tickets at all
+  const tickets = createTicketLedger(store, () => Math.floor(now() / 1000));
   const shops = createShops(config, store);
   const inbox = createInbox(shops, now);
   const goLive = createGoLive(config, shops, store);
@@ -178,7 +186,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     return "en";
   }
 
-  const redactPath = (path: string) => path.replace(/^\/join\/.+$/u, "/join/[invite]").replace(/^\/confirm\/.+$/u, "/confirm/[link]");
+  const redactPath = (path: string) => path.replace(/^\/join\/.+$/u, "/join/[invite]").replace(/^\/confirm\/.+$/u, "/confirm/[link]").replace(/^\/signin\/.+$/u, "/signin/[ticket]").replace(/^\/reset\/.+$/u, "/reset/[link]");
 
   function body(res: ServerResponse, status: number, type: string, content: string | Buffer, headers: Record<string, string | string[]> = {}) {
     res.writeHead(status, { "content-type": type, "cache-control": "no-store", "x-content-type-options": "nosniff", "referrer-policy": "no-referrer", "x-frame-options": "DENY", ...(secure ? { "strict-transport-security": "max-age=31536000" } : {}), ...headers });
@@ -250,17 +258,19 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   });
 
   // sign in
-  on("GET", /^\/login$/u, "public", (r) => r.account ? redirect(r, "/shops") : page(r, 200, loginPage(r.ctx(), { hostedNote: config.mode === "hosted" })));
+  // on Geometer's partner server, the sign-in page sends local partners to geometer.dev first (fleet-signin.ts)
+  const partnersUrl = config.mode === "hosted" ? { partnersUrl: config.accountUrl ?? DEFAULT_ACCOUNT_URL } : {};
+  on("GET", /^\/login$/u, "public", (r) => r.account ? redirect(r, "/shops") : page(r, 200, loginPage(r.ctx(), { hostedNote: config.mode === "hosted", ...partnersUrl })));
   on("POST", /^\/login$/u, "public", async (r) => {
     const handle = (r.form.handle ?? "").slice(0, 80);
     const ip = addressOf(r.req);
     const keys = [`ip:${ip}`, `user:${handle.toLowerCase()}|${ip}`];
     const wait = Math.max(loginByAddress.blocked(keys[0]), loginByName.blocked(keys[1]));
-    if (wait > 0) { r.extraHeaders["retry-after"] = String(wait); return page(r, 429, loginPage(r.ctx(), { error: r.ctx().w.login.wait(wait), handle, hostedNote: false })); }
+    if (wait > 0) { r.extraHeaders["retry-after"] = String(wait); return page(r, 429, loginPage(r.ctx(), { error: r.ctx().w.login.wait(wait), handle, hostedNote: false, ...partnersUrl })); }
     const account = await accounts.authenticate(handle, r.form.passphrase ?? "");
     if (!account) {
       loginByAddress.fail(keys[0]); loginByName.fail(keys[1]);
-      return page(r, 401, loginPage(r.ctx(), { error: r.ctx().w.login.wrong, handle, hostedNote: false }));
+      return page(r, 401, loginPage(r.ctx(), { error: r.ctx().w.login.wrong, handle, hostedNote: false, ...partnersUrl }));
     }
     loginByName.clear(keys[1]);
     redirect(r, "/shops", [sessions.issue(account.id, account.sessionVersion).setCookie]);
@@ -288,6 +298,56 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     }
     redirect(r, "/shops", [sessions.issue(result.account.id, result.account.sessionVersion).setCookie]);
   });
+  // ---- a local partner's geometer.dev sign-in (hosted mode only; fleet-signin.ts). Opening the link spends nothing; the button's same-origin POST does.
+  /** The ticket, checked against this server's pinned keys and id, and not spent yet; or why not, as "gone" (ran out, used) or "bad" (anything else). */
+  function ticketOf(ticket: string): { ok: true; ticket: Ticket } | { ok: false; why: "gone" | "bad" } {
+    const identity = readFleetIdentity(config.serverDir);
+    if (!identity) { log("a geometer.dev sign-in was refused: this server has no fleet licence key or id in geometer.json"); return { ok: false, why: "bad" }; }
+    const checked = checkTicket(ticket, { ...identity, nowS: Math.floor(now() / 1000) });
+    if (!checked.ok) { log(`a geometer.dev sign-in was refused: ${checked.problem}`); return { ok: false, why: checked.problem === "expired" ? "gone" : "bad" }; }
+    if (tickets.spent(checked.ticket.jti)) { log("a geometer.dev sign-in was refused: used"); return { ok: false, why: "gone" }; }
+    return checked;
+  }
+  const ticketRefused = (r: Req, why: "gone" | "bad") => page(r, why === "gone" ? 410 : 400, errorPage(r.ctx(), why === "gone" ? 410 : 400, r.ctx().w.signin.problems[why]));
+  on("GET", /^\/signin\/(gp1\.[0-9a-f]{16}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/u, "public", (r) => {
+    if (config.mode !== "hosted") return notFound(r);
+    const t = ticketOf(r.params[0]);
+    if (!t.ok) return ticketRefused(r, t.why);
+    const known = accounts.byFleetPartner(t.ticket.partner);
+    page(r, 200, signinPage(r.ctx(), { ticket: r.params[0], ...(known ? { returning: known.name } : {}), values: { name: "", company: "", language: r.lang } }));
+  });
+  on("POST", /^\/signin$/u, "public", (r) => {
+    if (config.mode !== "hosted") return notFound(r);
+    const f = r.form;
+    const t = ticketOf((f.ticket ?? "").slice(0, 2048));
+    if (!t.ok) return ticketRefused(r, t.why);
+    const found = accounts.fromFleet(t.ticket.partner, { name: f.name ?? "", company: f.company ?? "", language: f.language ?? r.lang });
+    if (!found.ok) return page(r, 400, signinPage(r.ctx(), { ticket: f.ticket ?? "", error: r.ctx().w.join.problems[found.reason], values: { name: (f.name ?? "").slice(0, 80), company: (f.company ?? "").slice(0, 60), language: f.language ?? r.lang } }));
+    if (!tickets.spend(t.ticket)) return ticketRefused(r, "gone");
+    log(`signed in with geometer.dev: ${found.account.id}${found.made ? ", its first visit" : ""}`);
+    redirect(r, "/shops", [sessions.issue(found.account.id, found.account.sessionVersion).setCookie]);
+  });
+
+  // ---- a new passphrase from a reset link (both modes; made on the command line by whoever runs the server)
+  on("GET", /^\/reset\/([A-Za-z0-9_-]{16,80})$/u, "public", (r) => {
+    const token = r.params[0];
+    const status = accounts.resetStatus(token);
+    const account = accounts.resetAccount(token);
+    if (status !== "ok" || !account) return page(r, status === "unknown" ? 404 : 410, errorPage(r.ctx(), status === "unknown" ? 404 : 410, r.ctx().w.reset.problems[`reset-${status === "ok" ? "unknown" : status}`]));
+    page(r, 200, resetPage(r.ctx(), { token, name: account.name }));
+  });
+  on("POST", /^\/reset$/u, "public", async (r) => {
+    const token = (r.form.token ?? "").slice(0, 80);
+    const result = await accounts.redeemReset(token, r.form.passphrase ?? "");
+    if (!result.ok) {
+      if (result.reason.startsWith("reset-")) return page(r, 410, errorPage(r.ctx(), 410, r.ctx().w.reset.problems[result.reason as "reset-unknown" | "reset-used" | "reset-expired"]));
+      const account = accounts.resetAccount(token);
+      return page(r, 400, resetPage(r.ctx(), { token, name: account?.name ?? "", error: r.ctx().w.join.problems[result.reason as "short" | "long" | "same-as-handle"] }));
+    }
+    log(`a passphrase was reset with a link: ${result.account.id}`);
+    redirect(r, "/shops", [sessions.issue(result.account.id, result.account.sessionVersion).setCookie]);
+  });
+
   on("GET", /^\/invite$/u, "user", (r) => r.account!.role !== "builder" ? notFound(r) : page(r, 200, invitePage(r.ctx(), { hostedOnly: !canInvite })));
   on("POST", /^\/invite$/u, "user", (r) => {
     if (r.account!.role !== "builder" || !canInvite) return notFound(r);
@@ -1129,6 +1189,38 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       resolve({ host: config.host, port, url: `http://${config.host.includes(":") ? `[${config.host}]` : config.host}:${port}`, close: () => new Promise<void>((done) => { server.closeAllConnections(); server.close(() => done()); }) });
     });
   });
+}
+
+/** A reset link made on the command line by whoever runs the server, for an account that signs in with a passphrase. Returns the link; only its sha256 is kept. */
+export function makeResetLink(config: PanelConfig, handle: string, hours = 72): { link: string; name: string; expiresAt: string } {
+  const { store } = openStores(config);
+  try {
+    const { token, reset, account } = createAccounts(store, config.now).createReset(handle, hours);
+    return { link: `${config.publicUrl ?? `http://${config.host}:${config.port}`}/reset/${token}`, name: account.name, expiresAt: reset.expiresAt };
+  } catch (e) { if (e instanceof AccountError) throw new ConfigError(e.message); throw e; }
+}
+
+/** Tie an existing partner account to a fleet partner id (hosted mode): from then on it signs in with geometer.dev only, and every session of it ends. */
+export function linkFleetPartner(config: PanelConfig, handle: string, partner: string): Account {
+  if (config.mode !== "hosted") throw new ConfigError("Only Geometer's partner server (PANEL_MODE=hosted) signs partners in with geometer.dev. A builder's own server keeps its invitations and passphrases.");
+  const { store } = openStores(config);
+  try { return createAccounts(store, config.now).linkFleet(handle, partner); } catch (e) { if (e instanceof AccountError) throw new ConfigError(e.message); throw e; }
+}
+
+/** End every session of one account now (a paused partner's open panel, a lost phone). The person signs in again the way their account allows. */
+export function signOutAccount(config: PanelConfig, handle: string): Account {
+  const { store } = openStores(config);
+  const accounts = createAccounts(store, config.now);
+  const account = accounts.byHandle(handle);
+  if (!account) throw new ConfigError(`There is no account "${handle}" on this panel. The sign-in names are listed by: geometer panel accounts`);
+  accounts.bumpSessions(account.id);
+  return account;
+}
+
+/** Every account, for whoever runs the server: sign-in name, role, how they sign in, and since when. Never a hash or a token. */
+export function listAccounts(config: PanelConfig): { handle: string; name: string; role: Role; signsIn: "passphrase" | "geometer.dev"; fleetPartner?: string; createdAt: string }[] {
+  const { store } = openStores(config);
+  return createAccounts(store, config.now).list().map((a) => ({ handle: a.handle, name: a.name, role: a.role, signsIn: a.fleetPartner !== undefined ? "geometer.dev" as const : "passphrase" as const, ...(a.fleetPartner ? { fleetPartner: a.fleetPartner } : {}), createdAt: a.createdAt }));
 }
 
 /** An invitation made on the command line by whoever runs the server. Returns the link; the token is not kept anywhere else. */

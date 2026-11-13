@@ -487,6 +487,22 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `login.wrong` | ಆ ಹೆಸರು ಅಥವಾ ಪಾಸ್‌ವರ್ಡ್ ಸರಿಯಿಲ್ಲ. | That name or passphrase is not right. |  |
 | `login.wait` | ತುಂಬಾ ಬಾರಿ ಪ್ರಯತ್ನಿಸಿದ್ದೀರಿ. 30 ಸೆಕೆಂಡ್ ಕಾದು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Too many tries. Wait 30 seconds and try again. |  |
 | `login.byInvitation` | ಖಾತೆಗಳನ್ನು ಆಹ್ವಾನದ ಮೂಲಕ ಮಾತ್ರ ಮಾಡಲಾಗುತ್ತದೆ. ಈ ಸರ್ವರ್ ನಡೆಸುವವರ ಬಳಿ ನಿಮ್ಮ ಲಿಂಕ್ ಕೇಳಿ. | Accounts are made by invitation. Ask the person who runs this server for your link. |  |
+| `login.forgot` | ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರಾ? ಈ ಸರ್ವರ್ ನಡೆಸುವವರ ಬಳಿ ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. ಅದು ಒಂದು ಬಾರಿ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ. | Forgot your passphrase? Ask the person who runs this server for a new link. It works once. |  |
+| `login.forgotHosted` | ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರಾ? ನೀವು ನಮಗೆ ಕೊಟ್ಟ ಇಮೇಲ್‌ನಿಂದ hello@geometer.dev ಗೆ ಬರೆದು ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. ಅದು ಒಂದು ಬಾರಿ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ. | Forgot your passphrase? Write to hello@geometer.dev from the email you gave us, and ask for a new link. It works once. |  |
+| `login.partners` | ಲೋಕಲ್ ಪಾರ್ಟ್ನರ್‌ಗಳು: geometer.dev ನಲ್ಲಿರುವ ನಿಮ್ಮ ಖಾತೆಯಿಂದ ಪ್ಯಾನೆಲ್ ತೆರೆಯಿರಿ. ಪಾಸ್‌ವರ್ಡ್ ಬೇಕಿಲ್ಲ. | Local partners: open your panel from your account on geometer.dev. You need no passphrase. |  |
+| `login.partnersLink` | geometer.dev ನಲ್ಲಿ ನನ್ನ ಖಾತೆಗೆ ಹೋಗಿ | Go to my account on geometer.dev |  |
+| `signin.title` | ನಿಮ್ಮ ಪ್ಯಾನೆಲ್ ತೆರೆಯಿರಿ | Open your panel |  |
+| `signin.intro` | ನೀವು geometer.dev ನಲ್ಲಿ ಸೈನ್ ಇನ್ ಆಗಿದ್ದೀರಿ. ನಿಮ್ಮ ಹೆಸರನ್ನು ಒಮ್ಮೆ ತಿಳಿಸಿ, ಮುಂದಿನ ಬಾರಿ ನೇರವಾಗಿ ಒಳಗೆ ಹೋಗುತ್ತೀರಿ. | You are signed in on geometer.dev. Tell us your name once, and next time you go straight in. |  |
+| `signin.welcomeBack` | ನೀವು geometer.dev ನಲ್ಲಿ Divya ಆಗಿ ಸೈನ್ ಇನ್ ಆಗಿದ್ದೀರಿ. | You are signed in on geometer.dev as Divya. |  |
+| `signin.button` | ನನ್ನ ಪ್ಯಾನೆಲ್ ತೆರೆಯಿರಿ | Open my panel |  |
+| `signin.problems.gone` | ಈ ಲಿಂಕ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ ಅಥವಾ ಈಗಾಗಲೇ ಬಳಕೆಯಾಗಿದೆ. geometer.dev ನಲ್ಲಿರುವ ನಿಮ್ಮ ಖಾತೆಯಿಂದ ಪ್ಯಾನೆಲ್ ಮತ್ತೆ ತೆರೆಯಿರಿ. | This link has run out or was already used. Open your panel again from your account on geometer.dev. |  |
+| `signin.problems.bad` | ಈ ಲಿಂಕ್ ಈ ಸರ್ವರ್‌ಗಾಗಿ ಮಾಡಿದ್ದಲ್ಲ. geometer.dev ನಲ್ಲಿರುವ ನಿಮ್ಮ ಖಾತೆಯಿಂದ ಪ್ಯಾನೆಲ್ ಮತ್ತೆ ತೆರೆಯಿರಿ. | This link was not made for this server. Open your panel again from your account on geometer.dev. |  |
+| `reset.title` | ಹೊಸ ಪಾಸ್‌ವರ್ಡ್ ಆರಿಸಿ | Choose a new passphrase |  |
+| `reset.intro` | Divya ಅವರಿಗಾಗಿ. ಈ ಲಿಂಕ್ ಒಂದು ಬಾರಿ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ, ಮತ್ತು ನಿಮ್ಮ ಹೆಸರಿನಲ್ಲಿ ಸೈನ್ ಇನ್ ಆಗಿರುವ ಎಲ್ಲ ಕಡೆಯಿಂದ ಸೈನ್ ಔಟ್ ಆಗುತ್ತದೆ. | For Divya. This link works once, and everyone signed in as you is signed out. |  |
+| `reset.button` | ಹೊಸ ಪಾಸ್‌ವರ್ಡ್ ಉಳಿಸಿ | Save the new passphrase |  |
+| `reset.problems.reset-unknown` | ಈ ಲಿಂಕ್ ನಾವು ಮಾಡಿದ್ದಲ್ಲ. ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. | This link is not one we made. Ask for a new one. |  |
+| `reset.problems.reset-used` | ಈ ಲಿಂಕ್ ಈಗಾಗಲೇ ಬಳಕೆಯಾಗಿದೆ. ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. | This link was already used. Ask for a new one. |  |
+| `reset.problems.reset-expired` | ಈ ಲಿಂಕ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. | This link has run out. Ask for a new one. |  |
 | `join.title` | ನಿಮ್ಮ partner ಖಾತೆ ತೆರೆಯಿರಿ | Create your partner account |  |
 | `join.intro` | ನಿಮ್ಮ ಆಹ್ವಾನ ಒಂದು ಬಾರಿ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಹೇಗೆ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತೀರಿ ಎಂದು ಆರಿಸಿ. | Your invitation works once. Choose how you sign in. |  |
 | `join.name` | ನಿಮ್ಮ ಹೆಸರು | Your name |  |
