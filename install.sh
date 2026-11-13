@@ -221,8 +221,10 @@ with_docker() {
 # nodejs.org's Linux builds of Node load libatomic.so.1 when they start. A minimal Ubuntu (the ubuntu:24.04 image, a slim cloud image) does not have it, and Node
 # then stops at once: "error while loading shared libraries: libatomic.so.1" (found by bundle/test/proof/install-in-container.sh, 12 Nov 2026). It comes from
 # Ubuntu's own archive, only when the system's library list does not show it already.
+# grep reads the whole list (no -q): under `set -o pipefail`, `grep -q` stops at the first match, ldconfig can then die of SIGPIPE (exit 141)
+# and the check reads as "missing", so apt was asked for a library that was there (seen as a flaky install-script test, 13 Nov 2026).
 need_libatomic() {
-  if ldconfig -p 2>/dev/null | grep -q 'libatomic\.so\.1 '; then return 0; fi
+  if ldconfig -p 2>/dev/null | grep 'libatomic\.so\.1 ' >/dev/null; then return 0; fi
   step "Installing libatomic1 from Ubuntu (Node needs it to start)"
   as_root apt-get update -qq
   as_root apt-get install -y -qq --no-install-recommends libatomic1
