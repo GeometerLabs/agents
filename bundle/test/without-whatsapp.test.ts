@@ -4,6 +4,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { PUSH_HOSTS, PUSH_LICENCE, PUSH_LIMITS, guardToml, pushGuardDef, pushSpec } from "../generate/guards.ts";
 import { PUSH_ADMIN_BASE, addressing } from "../generate/compose.ts";
 import { planShop } from "../generate/shop.ts";
@@ -12,14 +14,20 @@ import type { PushCall } from "../../modules/push/hosts.ts";
 import { runtimeHasWhatsApp } from "../lib/kinds.ts";
 import { panelRuntime, serverConfig, tempServer } from "./helpers.ts";
 
-const plan = (runtime: Record<string, unknown>) => {
+// A shop with no WhatsApp takes UPI (a gateway's Guard-held refund is asked of the owner on WhatsApp, so that pairing is refused by name; see the next lines).
+const UPI_SETTINGS = readFileSync(new URL("../../templates/commerce/bookings/settings/glow-salon-upi.example.json", import.meta.url), "utf8");
+const plan = (runtime: Record<string, unknown>, settings?: string) => {
   const t = tempServer({ "glow-salon": runtime });
-  try { return planShop(serverConfig(), t.shop("glow-salon")); } finally { t.done(); }
+  try {
+    if (settings) writeFileSync(join(t.paths.shop("glow-salon"), "settings.json"), settings);
+    return planShop(serverConfig(), t.shop("glow-salon"));
+  } finally { t.done(); }
 };
-const noWhatsApp = () => { const r = panelRuntime() as { services: Record<string, unknown> }; const { messaging: _m, ...services } = r.services; return { ...r, services }; };
+const without = (...names: string[]) => { const r = panelRuntime() as { services: Record<string, unknown> }; return { ...r, services: Object.fromEntries(Object.entries(r.services).filter(([k]) => !names.includes(k))) }; };
+const noWhatsApp = () => without("messaging", "payments");
 
 test("a shop whose runtime.json names no messaging has no WhatsApp: no number is asked, no WhatsApp Guard, no messaging in its runtime; its push Guard is there", () => {
-  const p = plan(noWhatsApp());
+  const p = plan(noWhatsApp(), UPI_SETTINGS);
   assert.deepEqual(p.problems, []);
   assert.equal(runtimeHasWhatsApp(noWhatsApp()), false);
   assert.equal(runtimeHasWhatsApp(panelRuntime()), true);
@@ -30,6 +38,8 @@ test("a shop whose runtime.json names no messaging has no WhatsApp: no number is
   assert.deepEqual(services.push, { baseUrl: "http://g-glow-salon-push:8080", agentTokenFile: "/run/secrets/agent_push" });
   const withIt = plan(panelRuntime());
   assert.ok(withIt.guards.some((g) => g.kind === "whatsapp") && withIt.guards.some((g) => g.kind === "push"), "a shop with WhatsApp keeps it, and gets push too");
+  const gateway = plan(without("messaging"));
+  assert.deepEqual(gateway.problems.map((x) => x.rule), ["whatsapp-none-gateway"], "a gateway shop with no WhatsApp is refused by name");
 });
 
 test("the push Guard: the push services' hosts exactly, a daily count per kind and per phone, its own licence lists (a customer's push held back in the final stop, never the owner's)", () => {
