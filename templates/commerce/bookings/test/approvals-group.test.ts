@@ -15,6 +15,7 @@ import { readApprovers } from "../../../../modules/approvals/people.ts";
 import { CUSTOMER } from "../src/harness.ts";
 import { MEENA, RAVI, READER_ID, startApprovalsWorld } from "./helpers/approvals-world.ts";
 import type { ApprovalsWorld } from "./helpers/approvals-world.ts";
+import { groupPhone } from "../../../../modules/language/format.ts";
 
 const codeIn = (text: string) => /"approve ([A-Z0-9]+)"/u.exec(text)?.[1] ?? "";
 const refunded = (w: ApprovalsWorld) => w.payments.refunds().length;
@@ -32,9 +33,9 @@ run("two of three: each person is asked once with their own code, in their own l
   assert.deepEqual([o.length, r.length, m.length], [1, 1, 1], "each person once");
   const codes = [codeIn(o[0]!.text), codeIn(r[0]!.text), codeIn(m[0]!.text)];
   assert.equal(new Set(codes).size, 3, "a fresh code each");
-  assert.match(o[0]!.text, /^Approval needed: refund ₹200/u, "the owner in English");
-  assert.match(r[0]!.text, /^मंज़ूरी चाहिए: /u, "Ravi in Hindi");
-  assert.match(m[0]!.text, /^Approval needed: refund ₹200/u);
+  assert.match(o[0]!.text, /^A refund needs your OK: ₹200/u, "the owner in English");
+  assert.match(r[0]!.text, /^रिफंड के लिए आपकी हाँ चाहिए: /u, "Ravi in Hindi");
+  assert.match(m[0]!.text, /^A refund needs your OK: ₹200/u);
   assert.equal(r[0]!.templateName, "owner_approval_request", "nobody has written today, so the ask is the approved template");
 
   // the owner approves: a vote, not a decision. The runtime is not told; nothing is refunded.
@@ -42,7 +43,7 @@ run("two of three: each person is asked once with their own code, in their own l
   assert.deepEqual(w.guard.accepted.map((a) => [a.approver, a.decision]), [["owner", "approve"]], "signed as the owner");
   assert.equal(w.model.approvals()[0]!.state, "pending");
   assert.equal(refunded(w), 0);
-  assert.equal(w.toOwner().at(-1)!.text, `Thank you. Your approval of the ₹200 refund for ${CUSTOMER} is recorded. Approvals still needed from the others: 1. It is sent only once they are given.`);
+  assert.equal(w.toOwner().at(-1)!.text, `Thanks, your OK for the ₹200 refund to ${groupPhone(CUSTOMER)} is saved. OKs still needed from the others: 1. It goes out only once they're in.`);
   assert.equal(w.toOwner().length, 2);
   for (let i = 0; i < 3; i++) { w.clock.advance(5_000); await w.relay.poll(); }
   assert.deepEqual([w.toPerson("ravi").length, w.toPerson("meena").length], [1, 1], "nobody is asked again");
@@ -53,10 +54,10 @@ run("two of three: each person is asked once with their own code, in their own l
   assert.equal(refunded(w), 1);
   assert.equal(w.payments.refunds()[0]!.amount, 20000);
   assert.match(w.kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /owner approved your refund/);
-  assert.match(w.toPerson("ravi").at(-1)!.text, /^धन्यवाद। /u, "Ravi is told it is being sent, in Hindi");
-  assert.equal(w.toPerson("meena").at(-1)!.text, `The ₹200 refund for ${CUSTOMER} has been approved by the others, so your answer is no longer needed. Thank you.`);
+  assert.match(w.toPerson("ravi").at(-1)!.text, /^शुक्रिया! /u, "Ravi is told it is being sent, in Hindi");
+  assert.equal(w.toPerson("meena").at(-1)!.text, `No need to answer: the others have approved the ₹200 refund to ${groupPhone(CUSTOMER)}. Thank you!`);
   assert.equal(w.toPerson("meena").at(-1)!.templateName, "owner_approval_closed", "Meena has not written today: the approved template");
-  assert.equal(w.toOwner().at(-1)!.text, `Thank you. The ₹200 refund for ${CUSTOMER} is being sent, and they will be told.`, "the owner, who approved first, hears it is being sent");
+  assert.equal(w.toOwner().at(-1)!.text, `Thanks! The ₹200 refund to ${groupPhone(CUSTOMER)} is being sent, and I'll let them know.`, "the owner, who approved first, hears it is being sent");
   // Meena's code is gone
   await w.personWrites("meena", `approve ${codes[2]}`);
   assert.equal(w.guard.accepted.length, 2);
@@ -76,9 +77,9 @@ run("one no refuses: the runtime is told deny, the customer is told, and the oth
   assert.equal(w.model.approvals()[0]!.state, "denied");
   assert.equal(refunded(w), 0);
   assert.match(w.kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /decided not to refund/);
-  assert.equal(w.toPerson("meena").at(-1)!.text, `Understood. The ₹200 refund for ${CUSTOMER} will not be sent, and they will be told.`);
-  assert.match(w.toPerson("ravi").at(-1)!.text, /^सूचना: .*मना कर दिया है/u, "Ravi, who had approved, hears it was refused");
-  assert.equal(w.toOwner().at(-1)!.text, `The ₹200 refund for ${CUSTOMER} was refused by one of the people who approve refunds, so it will not be sent, and they will be told.`);
+  assert.equal(w.toPerson("meena").at(-1)!.text, `Okay, the ₹200 refund to ${groupPhone(CUSTOMER)} won't be sent. I'll let them know.`);
+  assert.match(w.toPerson("ravi").at(-1)!.text, /^रिफंड मंज़ूर करने वालों में से एक ने .*मना कर दिया/u, "Ravi, who had approved, hears it was refused");
+  assert.equal(w.toOwner().at(-1)!.text, `One of the people who approve refunds said no to the ₹200 refund to ${groupPhone(CUSTOMER)}, so it won't be sent. I'll let the customer know.`);
   for (let i = 0; i < 3; i++) { w.clock.advance(60_000); await w.relay.poll(); await w.runtime.tick(); }
   assert.equal(w.model.reviews("x", true).length, 0, "Guard holds nothing new: the agent does not ask again");
 }, TWO);
@@ -109,7 +110,7 @@ run("the person who asked never approves: the owner's own command names the owne
   const item = w.model.reviews("runtime-glow-salon", true)[0]!;
   assert.deepEqual(item.may_still_decide, ["meena", "ravi"]);
   await w.relay.poll();
-  assert.equal(w.toOwner().filter((m) => /Approval needed/u.test(m.text)).length, 0, "the owner, who asked, is not asked");
+  assert.equal(w.toOwner().filter((m) => /A refund needs your OK/u.test(m.text)).length, 0, "the owner, who asked, is not asked");
   assert.deepEqual([w.toPerson("ravi").length, w.toPerson("meena").length], [1, 1]);
   await w.personWrites("ravi", `approve ${codeIn(w.toPerson("ravi")[0]!.text)}`);
   await w.personWrites("meena", `approve ${codeIn(w.toPerson("meena")[0]!.text)}`);
@@ -140,7 +141,7 @@ run("up to the two-person amount, when the owner asked: the others are asked, an
   assert.equal(w.store.asksOf(item.id).length, 2, "Ravi and Meena; the reading credential has no number");
   await w.personWrites("meena", `approve ${codeIn(w.toPerson("meena")[0]!.text)}`);
   assert.equal(refunded(w), 1);
-  assert.match(w.toPerson("ravi").at(-1)!.text, /^सूचना: .*दूसरों ने मंज़ूरी दे दी है/u, "Ravi's ask is closed");
+  assert.match(w.toPerson("ravi").at(-1)!.text, /^जवाब देने की ज़रूरत नहीं: दूसरों ने .*रिफंड मंज़ूर कर दिया है/u, "Ravi's ask is closed");
 }, ONE);
 
 run("the runtime names the owner but Guard's item names nobody (a Guard from before B37, or the header lost): the owner is not asked, and the builder is told", async (w) => {
@@ -169,7 +170,7 @@ run("an answer whose reply was lost is not a second answer: Guard's 409 'already
   assert.equal(w.model.decide(approval, true, "ravi").status, 200);
   await w.personWrites("ravi", `approve ${ravi}`);
   assert.equal(w.toPerson("ravi").at(-1)!.text.includes("1"), true);
-  assert.match(w.toPerson("ravi").at(-1)!.text, /^धन्यवाद। .*मंज़ूरी दर्ज हो गई है/u, "told it is recorded and waits for one more");
+  assert.match(w.toPerson("ravi").at(-1)!.text, /^शुक्रिया, .*आपकी हाँ दर्ज हो गई/u, "told it is recorded and waits for one more");
   assert.equal(w.relay.status().alerts.total, 0);
   assert.equal(refunded(w), 0);
 }, TWO);
@@ -183,7 +184,7 @@ run("Guard's queue is the only list of whom to ask: someone who already answered
   assert.equal(w.toPerson("ravi").length, 0);
   await w.personWrites("meena", `approve ${codeIn(w.toPerson("meena")[0]!.text)}`);
   assert.equal(refunded(w), 1);
-  assert.match(w.toOwner().at(-1)!.text, /has been approved by the others/u);
+  assert.match(w.toOwner().at(-1)!.text, /the others have approved/u);
 }, TWO);
 
 // ---- pieces ------------------------------------------------------------------------------------------------------------------------------

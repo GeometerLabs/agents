@@ -185,7 +185,7 @@ test("the AI cap (model: off) leaves the language model out: the rules and the d
   assert.deepEqual([unsure.state.decision, unsure.state.model], [1, 0], "the decision model was asked; the language model was not");
   const refs = received(w)[0].refs;
   assert.deepEqual([refs.step, refs.tried, refs.skipped, refs.failed], ["rules", "rules+decision", "model", undefined], "the rules' reading stands, and the record says the language model was skipped");
-  assert.match(w.lastTextTo(CUSTOMER), /understand/u, "the customer gets the menu, as button mode would send for that turn");
+  assert.match(w.lastTextTo(CUSTOMER), /didn't catch that/u, "the customer gets the menu, as button mode would send for that turn");
   assert.ok(w.messaging.sentTo(CUSTOMER).at(-1)!.interactive, "with the shop's services to tap");
   await w.say("hello", { from: OTHER_CUSTOMER }); // the rules are sure: nothing is asked
   await w.say(UNCLEAR, { from: OTHER_CUSTOMER });

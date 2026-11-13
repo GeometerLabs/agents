@@ -13,6 +13,7 @@ import { TEMPLATES, TEMPLATE_NAMES, render } from "../src/language/templates.ts"
 import type { TemplateId } from "../src/language/templates.ts";
 import { parseSettings } from "../src/settings.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import { groupPhone } from "../../../../modules/language/format.ts";
 
 const BOOK = "haircut tomorrow at 6pm"; // Wed 4 Nov, 6:00 pm, as the world's clock starts on Tue 3 Nov
 const WHEN = "Wed 4 Nov, 6:00 pm";
@@ -24,20 +25,20 @@ async function bookAndPay(w: World): Promise<void> {
 }
 
 interface Scenario { name: string; template: string; world?: () => World; run(w: World): Promise<void>; says: string }
-const customer = `\\${CUSTOMER}`; // +91... in a regular expression
+const customer = `\\${groupPhone(CUSTOMER)}`; // "+91 98111 11111" in a regular expression: the owner reads the number grouped (14 Nov 2026)
 
 const SCENARIOS: Scenario[] = [
-  { name: "the slot could not be held", template: "owner_not_booked", says: `^Could not set up ${customer}'s haircut on ${WHEN}: the calendar or the payment link did not work\\. Nothing is booked\\.$`,
+  { name: "the slot could not be held", template: "owner_not_booked", says: `^Heads up: I couldn't set up the haircut on ${WHEN} for ${customer}, because the calendar or the payment link didn't work\\. Nothing is booked\\.$`,
     run: async (w) => { w.calendar.inject("insert", "silentFailure", { times: 2 }); await w.say(BOOK); } },
-  { name: "the payment link could not be made", template: "owner_not_booked", says: `^Could not set up ${customer}'s haircut on ${WHEN}: `,
+  { name: "the payment link could not be made", template: "owner_not_booked", says: `^Heads up: I couldn't set up the haircut on ${WHEN} for ${customer}, `,
     run: async (w) => { w.payments.inject("createRequest", "error", { times: 10 }); await w.say(BOOK); } },
   { name: "the calendar will not confirm a paid booking", template: "owner_cant_confirm", says: `NOT booked\\..*Reply "retry b-1" .* "approve b-1" `,
     run: async (w) => { await w.say(BOOK); w.calendar.inject("update", "silentFailure", { times: 2 }); w.payments.customerPays(w.linkFor("b-1")!.id); await w.deliverPaymentEvents(); } },
-  { name: "a late cancellation, which is the owner's call", template: "owner_late_cancellation", says: `^Customer ${customer} cancelled haircut on ${WHEN} less than 24 hours before the start\\. Deposit ₹200\\. Reply "approve b-1" to refund it or "deny b-1" to keep it\\.$`,
+  { name: "a late cancellation, which is the owner's call", template: "owner_late_cancellation", says: `^Late cancellation: ${customer} cancelled the haircut on ${WHEN}, less than 24 hours before the start\\. Their deposit is ₹200\\. Reply "approve b-1" to refund it or "deny b-1" to keep it\\.$`,
     run: async (w) => { await bookAndPay(w); await w.advance(10 * 60); await w.say("cancel my booking"); } },
-  { name: "the deposit was paid twice", template: "owner_paid_twice", says: `^Customer ${customer} paid the deposit twice for haircut on ${WHEN}\\. The extra ₹200 was refunded\\.$`,
+  { name: "the deposit was paid twice", template: "owner_paid_twice", says: `^Heads up: ${customer} paid the deposit twice for the haircut on ${WHEN}\\. The extra ₹200 was refunded to them\\.$`,
     run: async (w) => { await w.say(BOOK); const id = w.linkFor("b-1")!.id; w.payments.customerPays(id); w.payments.customerPays(id); await w.deliverPaymentEvents(); } },
-  { name: "a payment arrived after the hold ended and the time was taken", template: "owner_payment_unused", says: `^A ₹200 payment from ${customer} arrived for ${WHEN}, but that booking was no longer active .* ₹200 was refunded\\.$`,
+  { name: "a payment arrived after the hold ended and the time was taken", template: "owner_payment_unused", says: `^Heads up: ${customer} paid ₹200 for ${WHEN}, but that booking was no longer open .* ₹200 was refunded to them\\.$`,
     run: async (w) => {
       w.payments.inject("cancelRequest", "error"); // the link stays open, so the customer can still pay it
       await w.say(BOOK);
@@ -46,9 +47,9 @@ const SCENARIOS: Scenario[] = [
       w.payments.customerPays(w.linkFor("b-1")!.id);
       await w.deliverPaymentEvents();
     } },
-  { name: "moving a booking could not be confirmed", template: "owner_move_failed", says: `^Could not confirm moving ${customer}'s haircut to .* in the calendar\\. Please check their booking\\.$`,
+  { name: "moving a booking could not be confirmed", template: "owner_move_failed", says: `^Heads up: I couldn't move the haircut for ${customer} to .* in the calendar\\. Please check their booking\\.$`,
     run: async (w) => { await bookAndPay(w); w.calendar.inject("update", "silentFailure", { times: 3 }); await w.say("reschedule to 7pm"); } },
-  { name: "a customer sends STOP", template: "owner_customer_stopped", says: `^Customer ${customer} sent STOP\\. No more messages will go to them\\.$`,
+  { name: "a customer sends STOP", template: "owner_customer_stopped", says: `^Heads up: ${customer} sent STOP, so I won't message them again\\.$`,
     run: async (w) => { await w.say("STOP"); } },
 ];
 

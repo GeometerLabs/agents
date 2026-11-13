@@ -1,4 +1,4 @@
-// A voice note gets one plain reply (until the voice module, plan B29, exists): "Please type your message; I can't listen to voice notes yet."
+// A voice note gets one plain reply (until the voice module, plan B29, exists): "Sorry, I can't listen to voice notes yet. Could you type your message?"
 // These tests follow it the whole way: Meta's webhook body -> the inbox's reader -> the runtime's event check -> the saved task -> the agent ->
 // the customer's chat and the record -> the monthly report. The audio itself is never fetched, kept or recorded.
 import { test } from "node:test";
@@ -20,11 +20,11 @@ import { fixture } from "./helpers/scripted-server.ts";
 import { createKit } from "./runtime-kit.ts";
 
 const LINE: Record<Language, string> = {
-  en: "Please type your message; I can't listen to voice notes yet.",
-  hi: "कृपया अपना संदेश लिखकर भेजिए; मैं अभी वॉइस नोट नहीं सुन सकता।",
-  ml: "ദയവായി നിങ്ങളുടെ സന്ദേശം ടൈപ്പ് ചെയ്ത് അയയ്ക്കൂ; എനിക്ക് ഇപ്പോൾ വോയ്‌സ് നോട്ടുകൾ കേൾക്കാൻ കഴിയില്ല.",
-  kn: "ದಯವಿಟ್ಟು ನಿಮ್ಮ ಸಂದೇಶವನ್ನು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸಿ; ನನಗೆ ಈಗ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ.",
-};
+  en: "Sorry, I can't listen to voice notes yet. Could you type your message?",
+  hi: "माफ़ कीजिए, मैं अभी वॉइस नोट नहीं सुन सकता। क्या आप लिखकर भेज देंगे?",
+  ml: "ക്ഷമിക്കണം, വോയ്സ് നോട്ട് ഇപ്പോൾ കേൾക്കാൻ പറ്റില്ല. ടൈപ്പ് ചെയ്ത് അയക്കാമോ?",
+  kn: "ಕ್ಷಮಿಸಿ, ನನಗೆ ಇನ್ನೂ ವಾಯ್ಸ್ ನೋಟ್ ಕೇಳಲು ಆಗುವುದಿಲ್ಲ. ದಯವಿಟ್ಟು ಟೈಪ್ ಮಾಡಿ ಕಳುಹಿಸುತ್ತೀರಾ?",
+}
 /** What Meta puts in an audio message besides who and when. None of it may travel on. */
 const MEDIA = { id: "MEDIA-ID-1623525315162", mime_type: "audio/ogg; codecs=opus", sha256: "MEDIA-SHA-9f86d081884c7d659a2feaa0c55ad015", voice: true };
 
@@ -105,7 +105,7 @@ test("the agent answers a voice note once, with the right line, in each of the f
     assert.deepEqual(reply.map((m) => [m.kind, m.text]), [["text", LINE[language]]], language);
     assert.equal(reply[0].text, TEMPLATES[language].voice_note({} as never), "the line is the template's, in this language");
   }
-  assert.equal(LINE.en, "Please type your message; I can't listen to voice notes yet.");
+  assert.equal(LINE.en, "Sorry, I can't listen to voice notes yet. Could you type your message?");
 });
 
 test("a customer who wrote in Malayalam gets Malayalam even though the shop's first language is Hindi; a stranger gets the shop's first language", async () => {

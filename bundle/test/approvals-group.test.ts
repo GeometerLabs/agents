@@ -108,7 +108,7 @@ test("the real Guard with the bundle's guard.toml: the owner's own command names
     assert.equal(item.waiting_for, "shop-two");
     assert.deepEqual([item.approvals_needed, item.approvals_given, item.requested_by, item.may_still_decide], [2, 0, ["owner"], ["meena", "ravi"]], "Guard heard Geo-Requested-By: owner; the reading credential does not hold shop-two");
     await w.relay.poll();
-    assert.equal(w.whatsapp.sentTo(w.owner).filter((m) => /Approval needed/u.test(m.text)).length, 0, "the owner, who asked, is not asked");
+    assert.equal(w.whatsapp.sentTo(w.owner).filter((m) => /A refund needs your OK/u.test(m.text)).length, 0, "the owner, who asked, is not asked" /* the Bookings ask's opening words since 14 Nov 2026 */);
     const [ravi, meena] = [w.whatsapp.sentTo(RAVI.whatsapp), w.whatsapp.sentTo(MEENA.whatsapp)];
     assert.deepEqual([ravi.length, meena.length], [1, 1]);
     assert.notEqual(codeIn(ravi[0].text), codeIn(meena[0].text));
@@ -116,7 +116,7 @@ test("the real Guard with the bundle's guard.toml: the owner's own command names
     // Ravi approves: Guard records the vote and waits for one more; the runtime is not told, nothing is sent
     await w.writes(RAVI.whatsapp, `approve ${codeIn(ravi[0].text)}`);
     assert.equal(w.standins.fakes.payments.refunds().length, 0);
-    assert.match(w.whatsapp.sentTo(RAVI.whatsapp).at(-1)!.text, /दूसरों से अभी इतनी मंज़ूरी और चाहिए: 1।/u);
+    assert.match(w.whatsapp.sentTo(RAVI.whatsapp).at(-1)!.text, /दूसरों से अभी और हाँ चाहिए: 1।/u);
     assert.deepEqual((await w.reviews())[0].may_still_decide, ["meena"]);
 
     // Meena approves with her own code and secret: approved, the runtime sends the identical call again, the refund is made once
@@ -127,7 +127,7 @@ test("the real Guard with the bundle's guard.toml: the owner's own command names
     const states = ((await (await w.admin("/admin/approvals")).json()) as { approvals: { state: string }[] }).approvals.map((a) => a.state);
     assert.deepEqual(states, ["consumed"], "one approval, of two people, used once");
     assert.match(w.kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /refund/);
-    assert.match(w.whatsapp.sentTo(RAVI.whatsapp).at(-1)!.text, /^धन्यवाद। /u);
+    assert.match(w.whatsapp.sentTo(RAVI.whatsapp).at(-1)!.text, /^शुक्रिया! /u);
     assert.ok(w.seen.length > 0 && w.seen.every((s) => s.headers["geo-requested-by"] === undefined), "Guard never forwarded Geo-Requested-By to Razorpay's side");
     for (let i = 0; i < 3; i++) { await w.relay.poll(); await w.runtime.tick(); }
     assert.equal(w.standins.fakes.payments.refunds().length, 1);
@@ -143,14 +143,14 @@ test("the real Guard: one no refuses a refund that needs two, whoever approved f
     assert.deepEqual([item.approvals_needed, item.requested_by, item.may_still_decide], [2, [], ["meena", "owner", "ravi"]]);
     await w.relay.poll();
     await w.writes(w.owner, `approve ${codeIn(w.whatsapp.sentTo(w.owner)[0].text)}`);
-    assert.match(w.whatsapp.sentTo(w.owner).at(-1)!.text, /Approvals still needed from the others: 1\./u);
+    assert.match(w.whatsapp.sentTo(w.owner).at(-1)!.text, /OKs still needed from the others: 1\./u);
     await w.writes(MEENA.whatsapp, `deny ${codeIn(w.whatsapp.sentTo(MEENA.whatsapp)[0].text)}`);
     assert.equal(w.standins.fakes.payments.refunds().length, 0);
     const states = ((await (await w.admin("/admin/approvals")).json()) as { approvals: { state: string }[] }).approvals.map((a) => a.state);
     assert.deepEqual(states, ["denied"]);
     assert.match(w.kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /decided not to refund/);
-    assert.match(w.whatsapp.sentTo(w.owner).at(-1)!.text, /was refused by one of the people who approve refunds/u);
-    assert.match(w.whatsapp.sentTo(RAVI.whatsapp).at(-1)!.text, /मना कर दिया है/u);
+    assert.match(w.whatsapp.sentTo(w.owner).at(-1)!.text, /One of the people who approve refunds said no/u);
+    assert.match(w.whatsapp.sentTo(RAVI.whatsapp).at(-1)!.text, /मना कर दिया/u);
     // Ravi's code is closed: his late answer reaches nobody
     await w.writes(RAVI.whatsapp, `approve ${codeIn(w.whatsapp.sentTo(RAVI.whatsapp)[0].text)}`);
     assert.equal(w.standins.fakes.payments.refunds().length, 0);

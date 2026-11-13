@@ -39,7 +39,7 @@ test("a refund whose outcome is unknown: kept through a restart, a fresh attempt
   await kit.say(first.runtime, "cancel my booking");
   assert.equal(refundCalls(), 1);
   assert.equal(first.runtime.status().refunds.needBuilder.unknown, 1);
-  assert.match(kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /checking your ₹200 refund/u, "the customer hears \"we're checking\"");
+  assert.match(kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /checking on your ₹200 refund/u, "the customer hears \"we're checking\"");
   await first.runtime.close(); // the process stops
 
   const second = kit.open();
@@ -66,7 +66,7 @@ test("a refund whose outcome is unknown: kept through a restart, a fresh attempt
     assert.match(confirmed[0].refs.refundId ?? "", /^rfd/u, "settled by the provider's own record, which names the refund");
     assert.equal(confirmed[0].refs.amountPaise, "20000", "with the amount the provider's list shows, so the monthly report counts it in full");
     // 12 Nov 2026 (follow-up 3): "we will message you as soon as it is confirmed" is kept, once
-    const toldConfirmed = () => kit.messaging.sentTo(CUSTOMER).filter((m) => /Your ₹200 refund is confirmed and is on its way back to you\./u.test(m.text)).length;
+    const toldConfirmed = () => kit.messaging.sentTo(CUSTOMER).filter((m) => /Your ₹200 refund is confirmed and on its way back to you\./u.test(m.text)).length;
     assert.equal(toldConfirmed(), 1, "the customer hears it is confirmed");
     second.runtime.submit([{ kind: "recovery", id: "r-2", case: "b-1", action: "recheck_refund" }]);
     second.runtime.kick();
@@ -180,7 +180,7 @@ test("a wait that ends with the step thrown away keeps its case number: the next
     runtime.kick();
     await runtime.idle();
     assert.equal(runtime.status().tasks.failed, 1);
-    assert.match(kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /could not finish your request/u);
+    assert.match(kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /couldn't finish that/u);
 
     calendar.up();
     await kit.say(runtime, BOOK, { from: OTHER });

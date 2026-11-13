@@ -8,6 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createWorld, CUSTOMER, OTHER_CUSTOMER } from "../src/harness.ts";
+import { groupPhone } from "../../../../modules/language/format.ts";
 import { createAgent } from "../src/agent.ts";
 import { createFakeCalendar } from "../src/adapters/calendar.ts";
 import { createRuleParser } from "../src/adapters/rule-parser.ts";
@@ -35,7 +36,7 @@ test("a booking is held, paid and confirmed on the shop's own list, with no Goog
   assert.equal(w.store.ownCalendar && Object.keys(w.store.ownCalendar.events).length, 1);
   const confirmed = w.record.entries().find((e) => e.action === "confirm_booking" && e.outcome === "confirmed");
   assert.match(confirmed?.notes ?? "", /shop's own booking list/u);
-  assert.match(w.textsTo(CUSTOMER).join("\n"), /Booked!/u);
+  assert.match(w.textsTo(CUSTOMER).join("\n"), /You're booked!/u);
 });
 
 test("the second customer cannot take the same time on the own list", async () => {
@@ -49,8 +50,8 @@ test("the owner asks for the day's bookings: tomorrow lists the booking, today s
   const w = await bookedWorld();
   await w.say("tomorrow", { from: w.owner });
   const listed = w.lastTextTo(w.owner);
-  assert.match(listed, /Your bookings tomorrow:/u);
-  assert.match(listed, new RegExp(`${CUSTOMER.replace("+", "\\+")} \\(b-1\\)`, "u"));
+  assert.match(listed, /^Tomorrow's bookings:/u);
+  assert.match(listed, new RegExp(`\\n- \\d{1,2}:\\d{2} [ap]m: haircut, ${groupPhone(CUSTOMER).replace("+", "\\+")}$`, "u")); // time, service, the number grouped (14 Nov 2026)
   await w.say("today", { from: w.owner });
   assert.equal(w.lastTextTo(w.owner), "No bookings today.");
   assert.ok(w.record.entries().some((e) => e.action === "owner_day_list" && e.outcome === "confirmed"), "the record keeps that the owner asked");

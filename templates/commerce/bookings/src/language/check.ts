@@ -1,5 +1,7 @@
 // The outgoing check for Bookings: the shared check (modules/language/check.ts) given the values a booking's record holds.
+// A customer's number may be written grouped ("+91 98111 11111", modules/language/format.ts groupPhone), so both forms of every number are literals.
 import { checkText } from "../../../../../modules/language/check.ts";
+import { groupPhone } from "../../../../../modules/language/format.ts";
 import type { CheckFacts, CheckResult } from "../../../../../modules/language/check.ts";
 import type { MessageFacts } from "./templates.ts";
 
@@ -13,7 +15,7 @@ export function checkFactsOf(facts: MessageFacts): CheckFacts {
     shownMs: facts.slotMs,
     momentsMs: [...(facts.slotChoices ?? []), ...(facts.dayBookings ?? []).map((d) => d.slotMs)],
     links: facts.link ? [facts.link] : [],
-    literals: [facts.businessName, facts.serviceName, facts.bookingRef, facts.customerPhone, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner, ...facts.services.map((s) => s.name), ...(facts.dayBookings ?? []).flatMap((d) => [d.serviceName, d.customerPhone, d.ref])],
+    literals: [facts.businessName, facts.serviceName, facts.bookingRef, facts.customerPhone, facts.customerPhone && groupPhone(facts.customerPhone), facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner, ...facts.services.map((s) => s.name), ...(facts.dayBookings ?? []).flatMap((d) => [d.serviceName, d.customerPhone, groupPhone(d.customerPhone), d.ref])],
   };
 }
 
