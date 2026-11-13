@@ -177,6 +177,57 @@ export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messa
   };
 }
 
+// ---- item 11h (decision 45): web push, through a Guard of its own ----------------------------------------------------------------------------------------------
+//
+// A web push is a POST of encrypted bytes (RFC 8291) to the browser's push service, signed with the shop's VAPID key (RFC 8292). Guard decides only on what it can
+// read exactly, and a binary body is not that (it refuses it as unlisted), and it removes the agent's Authorization header, where VAPID's signature goes. So the
+// runtime does not call the push service through Guard as it calls WhatsApp: it sends Guard a small JSON (the push service's host, the subscription's path, the
+// encrypted bytes in base64url, the VAPID header) and Guard, if its rules allow, passes it to the server's push sender (bundle/services/push.ts), which turns it into
+// the real request to exactly the host Guard checked. The sender holds no secret and sees only ciphertext. One Guard per shop, so every push of a shop is counted
+// per day at that shop's own Guard and the shop's kill switch stops its pushes too (modules/Explanation.md, "Works without WhatsApp").
+
+/**
+ * The push services the sender may reach, exactly. Chrome, Edge and Samsung Internet on Android (and Chrome on a computer) subscribe at Google's FCM; Firefox at
+ * Mozilla's; Safari on an iPhone (iOS 16.4 or later, the app added to the home screen) and on a Mac at Apple's. Edge on Windows uses hosts that vary
+ * (`*.notify.windows.com`), which an exact list cannot name: it is not covered (Deferred.md).
+ */
+export const PUSH_HOSTS: readonly string[] = ["fcm.googleapis.com", "updates.push.services.mozilla.com", "web.push.apple.com"];
+/** Where the server's push sender listens, on the `push` network only the shops' push Guards share with it (compose.ts). */
+export const PUSH_PORT = 8797;
+/** The push sender's container name, and so the push Guard's upstream. */
+export const PUSH_SERVICE = "push";
+/** The two operations: a push to the owner, and one to a customer who allowed it. Two, so the licence can hold back the customers' and never the owner's. */
+export const PUSH_OPERATIONS = { owner: "push_owner", customer: "push_customer" } as const;
+/** The JSON routes the runtime posts to the push Guard (modules/push/sender.ts), one per operation. */
+export const PUSH_ROUTES = { owner: "/v1/push/owner", customer: "/v1/push/customer" } as const;
+
+/** The push Guard: in front of the server's push sender, on a private network, in plain HTTP (there is no certificate on a Docker network), with no credential. */
+export function pushGuardDef(): GuardDef {
+  return { kind: "push", tool: "web-push", upstream: `${PUSH_SERVICE}:${PUSH_PORT}`, headers: {}, plain: true };
+}
+
+/** A count limited to one argument's value (a phone's subscription): `scope` names the argument. */
+const scopedCount = (id: string, operation: string, field: string, cap: number, windowSeconds: number) => ({ id, kind: "count", operation, scope: [field], cap: String(cap), window_seconds: windowSeconds });
+
+/**
+ * The push Guard's spec: the push service's host exactly from PUSH_HOSTS (the sender builds the address from that same field, so the list is what is reached), a
+ * daily count of each kind for the shop, and a daily count per phone (`sub`, the subscription's short id), so one phone is never flooded. Guard's day is a UTC day.
+ */
+export function pushSpec(id: SpecIdentity, o: { ownerPerDay: number; customerPerDay: number; perPhonePerDay: number }): LimitsSpec {
+  const ops = [PUSH_OPERATIONS.owner, PUSH_OPERATIONS.customer] as const;
+  return {
+    ...base(pushGuardDef(), id),
+    routes: [{ method: "POST", path: PUSH_ROUTES.owner, operation: PUSH_OPERATIONS.owner }, { method: "POST", path: PUSH_ROUTES.customer, operation: PUSH_OPERATIONS.customer }],
+    rules: ops.map((operation) => ({ id: `push-service-${operation === PUSH_OPERATIONS.owner ? "owner" : "customer"}`, kind: "argument_allowlist", operation, field: "host", match: "exact", allowed_values: [...PUSH_HOSTS] })),
+    limits: [
+      count("owner-pushes-per-day", PUSH_OPERATIONS.owner, o.ownerPerDay, 86_400),
+      count("customer-pushes-per-day", PUSH_OPERATIONS.customer, o.customerPerDay, 86_400),
+      ...ops.map((operation) => scopedCount(`pushes-per-phone-per-day-${operation === PUSH_OPERATIONS.owner ? "owner" : "customer"}`, operation, "sub", o.perPhonePerDay, 86_400)),
+    ],
+    intents: [], fail_policy: [],
+  };
+}
+
 const EVENT_OPERATIONS = ["insert", "list", "get", "patch", "delete"] as const;
 /** The calendar itself (not an event in it) can be read, to confirm it is the shop's own; nothing about a calendar can be changed. */
 const CALENDAR_READ = { operation: "get_calendar", ruleId: "own-calendar-get-calendar" } as const;
@@ -289,8 +340,14 @@ export const LICENCE_RECIPIENT_FIELD = "to";
 export const ownerNumbers = (numbers: readonly (string | undefined)[]): string[] =>
   numbers.filter((n): n is string => typeof n === "string" && /^[\d+ ()-]+$/u.test(n.trim()) && (n.match(/\d/gu)?.length ?? 0) >= 6 && (n.match(/\d/gu)?.length ?? 0) <= 15).map((n) => n.trim());
 
+/**
+ * Item 11h: what the licence holds back at the push Guard. Nothing in the wind-down (a push is a message, as a WhatsApp send is then); in the final stop, a push to a
+ * customer, as a WhatsApp send is, and never one to the owner (the owner's notice must still arrive). Its own lists, so every other Guard's file stays as it was.
+ */
+export const PUSH_LICENCE = { windDown: [] as string[], stopped: [PUSH_OPERATIONS.customer] as string[] };
+
 /** The `[licence]` lines of guard.toml (ADR-0062 decision 1). The paths are the mount's. */
-function licenceLines(l: GuardLicence): string[] {
+function licenceLines(l: GuardLicence, kind: GuardKind): string[] {
   const q = (s: string) => JSON.stringify(s);
   const list = (xs: readonly string[]) => `[${xs.map(q).join(", ")}]`;
   return [
@@ -306,8 +363,8 @@ function licenceLines(l: GuardLicence): string[] {
     `shop = ${q(l.shop)}`,
     `# In the wind-down, refused with reason subscription_suspended (not a policy denial); in the final stop, also a send, except to the owner's number.`,
     `# Never refused, in any state: refunds, cancel_link, reads, lists, patch, delete.`,
-    `wind_down_refuses = ${list(LICENCE_WIND_DOWN_REFUSES)}`,
-    `stopped_refuses = ${list(LICENCE_STOPPED_REFUSES)}`,
+    `wind_down_refuses = ${list(kind === "push" ? PUSH_LICENCE.windDown : LICENCE_WIND_DOWN_REFUSES)}`,
+    `stopped_refuses = ${list(kind === "push" ? PUSH_LICENCE.stopped : LICENCE_STOPPED_REFUSES)}`,
     `owner_numbers = ${list(l.ownerNumbers)}`,
     `recipient_field = ${q(l.recipientField ?? LICENCE_RECIPIENT_FIELD)}`,
   ];
@@ -363,7 +420,7 @@ export function guardToml(o: TomlOptions): string {
       ``, `[notify_secrets]`, `${o.approver.id} = ${q("${file:" + o.approver.secretFile + "}")}`,
     );
   }
-  if (o.licence && o.def.kind !== "model") lines.push(...licenceLines(o.licence));
+  if (o.licence && o.def.kind !== "model") lines.push(...licenceLines(o.licence, o.def.kind));
   return `${lines.join("\n")}\n`;
 }
 
