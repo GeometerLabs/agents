@@ -13,8 +13,8 @@ import { fakeVoiceNote, fakeWebmVoiceNote, scriptedSpeech, scriptedWire } from "
 const CHROMIUM = new Uint8Array(readFileSync(new URL("./fixtures/chromium-recording.webm", import.meta.url)));
 
 test("a real Chromium recording (MediaRecorder, audio/webm;codecs=opus: unknown sizes, no duration) is as long as its packets say", () => {
-  // Recorded for 3 seconds from Chromium's test microphone; the recorder started a little late and sent 60 ms packets with gaps for the silence. ffprobe lists
-  // the last packet at 2.43 s, lasting 60 ms: 2.49 s, which is what the reader must say.
+  // Recorded for 3 seconds from Chromium's test microphone on a busy machine: its 60 ms packets have gaps (cause not looked into). ffprobe lists the last packet
+  // at 2.43 s, lasting 60 ms: 2.49 s, which is what the reader must say.
   const seconds = webmOpusSeconds(CHROMIUM);
   assert.ok(seconds !== null && Math.abs(seconds - 2.49) < 0.005, `read ${seconds} s; its packets end at 2.49 s`);
   assert.equal(oggOpusSeconds(CHROMIUM), null, "it is not Ogg");

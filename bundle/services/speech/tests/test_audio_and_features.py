@@ -49,7 +49,7 @@ class DecodeTests(unittest.TestCase):
         if not fixture.exists():
             self.skipTest("the Chromium recording is not next to this service")
         x = decode(fixture.read_bytes(), ffmpeg=FFMPEG, max_seconds=30, grace=0.25)
-        # Chromium's test microphone is mostly silence, which the recorder leaves out as gaps: ffmpeg gives back the sound that is there
+        # the recording's packets have gaps (Chromium's test microphone on a busy machine; cause not looked into): ffmpeg gives back the sound that is there
         self.assertGreater(x.size, 0)
 
     def test_longer_than_30_seconds_is_refused_in_words(self):

@@ -82,10 +82,10 @@ button.yes { background: var(--yes); color: var(--yes-ink); }
 button:disabled { opacity: .6; cursor: default; }
 .full { display: flex; width: 100%; }
 
-/* ---- a state: a stamp in its meaning's colour and the sentence that says it ---- */
+/* ---- a state: a stamp in its meaning's colour and the sentence that says it. Mixed case, as Streetlist's tag: all-caps labels read as template chrome ---- */
 .state { margin: 4px 0 16px; padding: 12px 14px; border-radius: 14px; border-left: 6px solid var(--s); background: var(--s-bg); }
 .state .status { margin: 6px 0 0; font-size: 1.08rem; font-weight: 650; }
-.stamp { display: inline-block; padding: .2em .6em; border-radius: 7px; background: var(--s); color: var(--card); font-size: .8rem; font-weight: 750; letter-spacing: .02em; text-transform: uppercase; line-height: 1.4; }
+.stamp { display: inline-block; padding: .2em .6em; border-radius: 7px; background: var(--s); color: var(--card); font-size: .85rem; font-weight: 750; line-height: 1.4; }
 .s-wait { --s: var(--mari); --s-bg: var(--wait-bg); } .s-wait .stamp { color: #2a1a00; }
 .s-ok { --s: var(--ok); --s-bg: var(--ok-bg); }
 .s-bad { --s: var(--bad); --s-bg: var(--bad-bg); }
