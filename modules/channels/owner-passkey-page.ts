@@ -11,7 +11,8 @@
 //
 // Nothing is decided here: the runtime checks the grant, the challenge, the origin, the signature and the counter (owner-access.ts, webauthn.ts). This file only
 // draws the pages, counts wrong tokens and codes per address, and carries JSON. The pages origin runs no script but Geometer's own, so each page with the
-// script gets a policy naming its nonce and exactly the two addresses the script posts to (`passkeyPolicy`), never 'self'.
+// script gets a policy naming its nonce and exactly the two addresses the script posts to (`passkeyPolicy`), never 'self'. Their look is the shops' shared one
+// (look.ts, item 11i's design pass): no inline styles, the button's place kept so that showing it moves nothing.
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { randomBytes } from "node:crypto";
 import { html } from "../core/html.ts";
@@ -118,7 +119,8 @@ export const PASSKEY_SCRIPT = `(() => {
 /** The button and its message line, with the words the script shows. */
 export function passkeyButton(o: { mode: "register" | "signin"; options: string; finish: string; label: string; language: Language; code?: string }): Raw {
   const w = PASSKEY_WORDS[o.language];
-  return html`<p><button type="button" id="pk" hidden data-mode="${o.mode}" data-options="${o.options}" data-finish="${o.finish}" data-wait="${w.wait}" data-failed="${w.failed}" data-done="${w.done}"${o.code ? html` data-code="${o.code}"` : ""}>${o.label}</button></p>
+  // pk-slot keeps the button's place (look.ts), so showing it moves nothing; the button fills the width, the one way in on this page
+  return html`<p class="pk-slot"><button type="button" id="pk" class="full" hidden data-mode="${o.mode}" data-options="${o.options}" data-finish="${o.finish}" data-wait="${w.wait}" data-failed="${w.failed}" data-done="${w.done}"${o.code ? html` data-code="${o.code}"` : ""}>${o.label}</button></p>
 <p id="pk-msg" class="note" role="status" aria-live="polite"></p><noscript><p class="note">${w.noScript}</p></noscript>`;
 }
 
@@ -205,7 +207,7 @@ export async function passkeyRoute(deps: PasskeyDeps, a: { req: IncomingMessage;
   // ---- the recovery card ----
   if (sub === "/recover" && method === "GET") {
     return deps.sendHtml(res, 200, deps.page(language, w.recoverTitle, html`<h1>${w.recoverTitle}</h1><p>${w.recoverIntro}</p>
-<form method="post" action="${owner}/recover"><input type="hidden" name="lang" value="${language}"><label for="rc">${w.recoverField}</label><br><input id="rc" name="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="20" required style="font-size:1.2rem;letter-spacing:.1em;padding:8px;margin-top:6px"><br><button type="submit">${w.recoverButton}</button></form>
+<form method="post" action="${owner}/recover"><input type="hidden" name="lang" value="${language}"><label class="f" for="rc">${w.recoverField}</label><input id="rc" class="code" name="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="20" required><button type="submit" class="full">${w.recoverButton}</button></form>
 <p><a href="${owner}?lang=${language}">${w.signIn}</a></p>`), noindex);
   }
   const recover = /^\/recover(\/options|\/finish)?$/u.exec(sub);

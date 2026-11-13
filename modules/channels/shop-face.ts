@@ -5,9 +5,12 @@
 // The character (item 11i): the picture of the mood the public sees now (all well, busy or closed; character.ts publicFace), drawn by DiceBear on the shop's own
 // server and saved with the shop (bundle/character/render.ts). The front adds it to the offer as a data: address (front.ts withFace), because the pages load images
 // only from data. Its alt text and the line beside it say the mood in words. A shop whose pictures are not drawn yet shows its name and hours without a face: the
-// earlier placeholder (a coloured circle with a letter) is gone, by the owner's rule of DiceBear's own drawings only. Placing it in the page's design is the later
-// design pass's; this is the minimal placement in the head.
-import { html, raw } from "../core/html.ts";
+// earlier placeholder (a coloured circle with a letter) is gone, by the owner's rule of DiceBear's own drawings only.
+//
+// The design pass (item 11i, 14 Nov 2026) placed it: the face is the head's one bold element on every customer page (shopHead, drawn by page.ts layout), at
+// 84 px on its own DiceBear tile with one soft shadow (look.ts); the hours and WhatsApp stay on the front pages (shopFace). The face stays still: DiceBear's
+// motion would need a second, moving set of pictures per shop and twice the bytes on every page (Deferred.md).
+import { html } from "../core/html.ts";
 import type { Raw } from "../core/html.ts";
 import { WEEKDAY_NAMES } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
@@ -29,7 +32,7 @@ const WEEK = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 export function characterPicture(shop: Pick<ShopInfo, "name" | "character">, language: Language): Raw | "" {
   const c = shop.character;
   if (!c?.picture || !c.face) return "";
-  return html`<img class="face-c" src="${c.picture}" width="72" height="72" alt="${pictureWords(language, shop.name, c.face, c.name)}">`;
+  return html`<img class="face-c" src="${c.picture}" width="84" height="84" alt="${pictureWords(language, shop.name, c.face, c.name)}">`;
 }
 
 /** The week's hours as short lines ("Mon 10:00–20:00", "Sun closed"), Monday first as people read a shop's board. */
@@ -44,19 +47,26 @@ export function hoursLines(hours: NonNullable<ShopInfo["hours"]>, language: Lang
 /** wa.me with the shop's own number: WhatsApp's own link, opening a chat with the shop (nothing of ours in between). */
 export const waLink = (number: string): string => `https://wa.me/${number.replace(/\D/gu, "")}`;
 
-/** The head of the customer view: the character in its public mood (with the mood in words), the hours, and the WhatsApp link when the shop's number is known. */
-export function shopFace(o: { shop: Pick<ShopInfo, "name" | "hours" | "character">; language: Language; pages?: PagesFile }): Raw {
-  const w = WORDS[o.language];
+/**
+ * The head of every customer page (item 11i's design pass: layout() draws it on the front pages and on a booking's, order's or payment's own page alike): the
+ * character's tile in its public mood, the shop's name and address, and who the character is with the mood in words, as a chip in the mood's colour (a face never
+ * carries the mood alone). A shop whose pictures are not drawn yet shows its name without a face. `picture: false` leaves the face out and keeps the words: for a
+ * page that reloads itself every few seconds while it waits, which would fetch the picture again each time (a Pixel Bot face is about 24 KB inline).
+ */
+export function shopHead(o: { shop: Pick<ShopInfo, "name" | "address" | "character">; language: Language; picture?: boolean }): Raw {
   const c = o.shop.character;
-  return html`<section class="face" aria-label="${o.shop.name}">${characterPicture(o.shop, o.language)}<div>
-${c ? html`<p class="note">${ASSISTANT_OF[o.language](o.shop.name, c.name)}${c.face && c.picture ? ` · ${FACE_WORDS[o.language][c.face]}` : ""}</p>` : ""}
-${o.shop.hours ? html`<details><summary>${w.hours}</summary><ul class="list">${hoursLines(o.shop.hours, o.language).map((l) => html`<li>${l}</li>`)}</ul></details>` : ""}
-${o.pages?.whatsapp ? html`<p><a class="btn" href="${waLink(o.pages.whatsapp)}" rel="noopener">${w.whatsapp}</a></p>` : ""}
-</div></section>`;
+  const mood = c?.face && c.picture ? c.face : undefined;
+  return html`<div class="head-in">${o.picture === false ? "" : characterPicture(o.shop, o.language)}<div><h1>${o.shop.name}</h1>${o.shop.address ? html`<p class="where">${o.shop.address}</p>` : ""}
+${c ? html`<p class="mood${mood ? ` m-${mood}` : ""}">${ASSISTANT_OF[o.language](o.shop.name, c.name)}${mood ? ` · ${FACE_WORDS[o.language][mood]}` : ""}</p>` : ""}</div></div>`;
 }
 
-/** The face's few rules, added to the page's own style sheet. */
-export const FACE_CSS = raw(`.face{display:flex;gap:12px;align-items:flex-start;margin:0 0 12px}.face-c{flex:none;border-radius:14px}.face .btn{margin-top:6px}.face details{margin:4px 0}`);
+/** The front page's extras under the head: "message us on WhatsApp" when the shop's number is known, and the week's hours, folded. */
+export function shopFace(o: { shop: Pick<ShopInfo, "hours">; language: Language; pages?: PagesFile }): Raw {
+  const w = WORDS[o.language];
+  if (!o.pages?.whatsapp && !o.shop.hours) return html``;
+  return html`<section class="face-x">${o.pages?.whatsapp ? html`<a class="btn wa full" href="${waLink(o.pages.whatsapp)}" rel="noopener">${w.whatsapp}</a>` : ""}
+${o.shop.hours ? html`<details class="hours"><summary>${w.hours}</summary><ul>${hoursLines(o.shop.hours, o.language).map((l) => html`<li>${l}</li>`)}</ul></details>` : ""}</section>`;
+}
 
 /** The partner's line, for the bottom of the customer view (owner-session.ts writes it). */
 export const facePartnerLine = (language: Language, pages?: PagesFile): Raw => partnerLine(language, pages?.panelUrl);

@@ -179,7 +179,11 @@ test("the pages' own scripts and workers are well-formed JavaScript (their behav
   const { ALERTS_SCRIPT, CUSTOMER_SW } = await import("../pages.ts");
   const { PASSKEY_SCRIPT } = await import("../../channels/owner-passkey-page.ts");
   const { OWNER_APP_SW } = await import("../../assistant/app/pwa.ts");
-  for (const [name, code] of Object.entries({ ALERTS_SCRIPT, CUSTOMER_SW, PASSKEY_SCRIPT, OWNER_APP_SW })) assert.doesNotThrow(() => new Function(code), name);
+  // item 11i: the owner's app runs one script made of the dark/light switch, the talk box's part and the alerts' part (look.ts themeScript)
+  const { themeScript } = await import("../../channels/look.ts");
+  const { talkScript } = await import("../../assistant/app/talk.ts");
+  const OWNER_APP_SCRIPT = themeScript([talkScript("https://pages.example/glow/owner"), ALERTS_SCRIPT]);
+  for (const [name, code] of Object.entries({ ALERTS_SCRIPT, CUSTOMER_SW, PASSKEY_SCRIPT, OWNER_APP_SW, OWNER_APP_SCRIPT })) assert.doesNotThrow(() => new Function(code), name);
   assert.match(OWNER_APP_SW, /addEventListener\("push"/u);
   assert.match(OWNER_APP_SW, /addEventListener\("notificationclick"/u);
   assert.doesNotMatch(CUSTOMER_SW, /addEventListener\("fetch"/u, "a customer's worker keeps and fetches nothing");
