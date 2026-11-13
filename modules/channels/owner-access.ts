@@ -44,6 +44,8 @@ export const LINK_LIMITS = [{ max: 3, perMs: 15 * 60_000 }, { max: 10, perMs: 24
 export const CHALLENGE_MS = 5 * 60_000;
 /** Item 11h: wrong recovery codes a shop takes in a day before it stops looking (the front's per-address count comes first). */
 export const WRONG_CODE_LIMIT = 20;
+/** Item 11h: challenges a shop makes in an hour at most (an owner needs a handful; a flood is refused, not stored). */
+export const CHALLENGES_PER_HOUR = 300;
 /** Item 11h: the most passkeys a shop's owner keeps (a phone, a new phone, a tablet ...). The oldest unused one goes first. */
 export const MAX_PASSKEYS = 8;
 /** A grant's state, for the setup page: what the file says, and whether this runtime has seen it used. */
@@ -136,9 +138,10 @@ export function openOwnerAccess(file: string) {
     db.prepare("INSERT INTO meta (name, value) VALUES ('webauthn_user', ?) ON CONFLICT(name) DO NOTHING").run(made);
     return (db.prepare("SELECT value FROM meta WHERE name = 'webauthn_user'").get() as { value: string }).value;
   }
-  /** A fresh challenge for one ceremony, kept as a hash; the challenge itself goes to the page once. */
+  /** A fresh challenge for one ceremony, kept as a hash; the challenge itself goes to the page once. At most CHALLENGES_PER_HOUR an hour, so a flood cannot grow the file. */
   function newChallenge(kind: "register" | "signin", now: number, grant?: string): string {
     db.prepare("DELETE FROM challenges WHERE expires_at <= ?").run(now - 24 * 60 * 60_000);
+    if ((db.prepare("SELECT count(*) AS n FROM challenges WHERE made_at > ?").get(now - 60 * 60_000) as { n: number }).n >= CHALLENGES_PER_HOUR) throw new PasskeyError("Too many sign-in attempts this hour.");
     const c = randomBytes(32).toString("base64url");
     db.prepare("INSERT INTO challenges (hash, kind, grant_hash, made_at, expires_at) VALUES (?, ?, ?, ?, ?)").run(challengeHash(c), kind, grant ?? null, now, now + CHALLENGE_MS);
     return c;
@@ -267,10 +270,12 @@ export function openOwnerAccess(file: string) {
       const state = api.grantState(g, file, now);
       if (state !== "valid") return { ok: false, state };
       const have = (db.prepare("SELECT cred_id FROM passkeys WHERE removed_at IS NULL AND owner_key = ? AND rp_id = ?").all(ownerKey(who.owner), rp.rpId) as { cred_id: string }[]).map((r) => r.cred_id);
+      let challenge: string;
+      try { challenge = newChallenge("register", now, grantHash(g)); } catch (e) { if (e instanceof PasskeyError) return { ok: false, state: "locked" as never }; throw e; }
       return {
         ok: true,
         options: {
-          challenge: newChallenge("register", now, grantHash(g)),
+          challenge,
           rp: { id: rp.rpId, name: shopName },
           user: { id: userId(), name: shopName, displayName: shopName },
           pubKeyCredParams: ALGORITHMS.map((alg) => ({ type: "public-key", alg })),
@@ -322,7 +327,9 @@ export function openOwnerAccess(file: string) {
     signinOptions(who: OwnerNow, rp: RelyingParty, now: number, passkeysBefore?: number): { count: number; options?: Record<string, unknown> } {
       const rows = (db.prepare("SELECT * FROM passkeys WHERE removed_at IS NULL").all() as (PasskeyRow & { removed_at: number | null })[]).filter((r) => passkeyGood(r, who, rp, passkeysBefore));
       if (rows.length === 0) return { count: 0 };
-      return { count: rows.length, options: { challenge: newChallenge("signin", now), rpId: rp.rpId, userVerification: "required", timeout: CHALLENGE_MS, allowCredentials: rows.map((r) => ({ type: "public-key", id: r.cred_id })) } };
+      let challenge: string;
+      try { challenge = newChallenge("signin", now); } catch (e) { if (e instanceof PasskeyError) return { count: rows.length }; throw e; }
+      return { count: rows.length, options: { challenge, rpId: rp.rpId, userVerification: "required", timeout: CHALLENGE_MS, allowCredentials: rows.map((r) => ({ type: "public-key", id: r.cred_id })) } };
     },
 
     /**
