@@ -10,7 +10,10 @@ import { STRIP, applyCharacter, characterDraftFromSettings, characterSetting, ne
 import { STYLE_INFO } from "../../../modules/assistant/character.ts";
 import { readCharacterManifest } from "../../../modules/channels/character-files.ts";
 import { WORDS } from "../languages.ts";
-import { boot } from "./helpers.ts";
+import { NOW, boot } from "./helpers.ts";
+import { createShops } from "../shops.ts";
+import { openStores } from "../server.ts";
+import { HANDOVER_REASONS } from "../contract.ts";
 import { STEP1, STEP2, STEP3, STEP4 } from "./flow.ts";
 
 const w = WORDS.en;
@@ -139,6 +142,12 @@ test("the step on a phone: styles by DiceBear's names, the row of faces, colours
     assert.equal(png.headers.get("content-type"), "image/png");
     assert.match(png.headers.get("content-disposition") ?? "", /attachment; filename="hosahalli-beauty-whatsapp-photo\.png"/u);
     assert.match(shopPage.plain, /The panel can't set it for you yet/u);
+
+    // a handover moves the shop (assignment.json) and keeps every picture as it was
+    const pictures = readdirSync(join(folder, "character")).map((n) => [n, readFileSync(join(folder, "character", n)).toString("base64")]);
+    createShops(b.config, openStores(b.config).store).assign("hosahalli-beauty", { accountId: "acc_meera", accountName: "Meera", role: "partner" }, HANDOVER_REASONS[0], { at: new Date(NOW).toISOString(), codeHash: "0".repeat(64) });
+    assert.ok(existsSync(join(folder, "assignment.json")));
+    assert.deepEqual(readdirSync(join(folder, "character")).map((n) => [n, readFileSync(join(folder, "character", n)).toString("base64")]), pictures, "the handover keeps the pictures");
 
     // an edit that never opens the Character step keeps the character as it is
     const arjun = await b.account("arjun", "builder");

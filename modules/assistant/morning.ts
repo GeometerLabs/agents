@@ -15,7 +15,8 @@
 // the owner's 24-hour window is open, as the approved template outside it. The words are the template's body filled in, either way, and checked against the values first.
 // Item 11i, the character: outside the window the template's image header carries the picture of the shop's mood now (its PNG); inside it, the mood's sticker (its
 // WebP) goes just before the text, best effort: a sticker that fails is a line in the log, never a reason to send the morning line again. The record's lines name the
-// mood and its picture (`face`), and the ending says whether a sticker went.
+// mood and its picture (`face`), and the ending says which sticker went (`sticker`: the picture's name, never WhatsApp's message id, which the record keeps only as a
+// fingerprint, under `messageId`, B69).
 import { HOUR, addDays, zonedToMs } from "../core/time.ts";
 import type { Clock } from "../core/clock.ts";
 import { checkText } from "../language/check.ts";
@@ -150,7 +151,7 @@ export function createMorningJob<Store extends { assistant?: AssistantState }>(s
     }
 
     // ---- 3. say how it ended ----
-    ctx.record.append({ conversation: owner, action: "send_message", outcome, inputs: { to: "owner", morning: key }, language, ...(note ? { notes: note } : {}), refs: { ...refs, ...(sent ? { messageId: sent.id, via } : {}), ...(via === "template" && sent && pictures ? { picture: "header" } : {}), ...(sticker ? { sticker: sticker.id } : {}) } });
+    ctx.record.append({ conversation: owner, action: "send_message", outcome, inputs: { to: "owner", morning: key }, language, ...(note ? { notes: note } : {}), refs: { ...refs, ...(sent ? { messageId: sent.id, via } : {}), ...(via === "template" && sent && pictures ? { picture: "header" } : {}), ...(sticker ? { sticker: face } : {}) } });
     ctx.save();
     if (outcome === "failed") ctx.log(`The morning line could not be sent to the owner (${note}). ${refused.length + 1 < MAX_TRIES ? "It is tried again in an hour." : "That was the last try for today."}`);
     else finished = key;

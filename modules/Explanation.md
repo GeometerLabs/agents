@@ -861,9 +861,12 @@ is what `owner_morning` was, less "{name}, " (a test holds it), since a template
 **The pictures on WhatsApp.** The morning templates have an image header (`MetaTemplate.header: "image"`; submitted with a `HEADER` of format `IMAGE` whose example handle
 comes from Meta's Resumable Upload API at submission time). Outside the window the morning line carries the PNG of the owner's mood now as that header; inside it, the
 mood's sticker (the WebP) goes just before the words, best effort: a sticker that fails is a log line and never a reason to send the morning line again, and the ending's
-record line names the sticker's message id. The links are `<the shop's address>/character/<face>.<format>?v=<version>` (`pictureUrl`), where the address is the pages
-domain's (through the front door) when the shop has a page there, else its own server's, and the version comes from `pages.json` (`picturesOf`), written by the deployer
-once the pictures are drawn and handed to the front. With no pictures yet, no picture goes.
+record line names the sticker's picture (never WhatsApp's message id, which the record keeps only as a fingerprint). The links are
+`<the shop's own server>/s/<shop>/character/<face>.<format>?v=<version>` (`pictureUrl`), never the pages domain's: at 08:00 WhatsApp's fetchers ask for many shops'
+pictures from a few addresses, and the door limits each address and asks fleet about each name; the front does not count a fixed mood's picture against an address's
+reads for the same reason. The version comes from `pages.json` (`picturesOf`), written by the deployer once the pictures are drawn and handed to the front. With no
+pictures yet, no picture goes, and a morning template sent outside the window without its header is refused by the provider (recorded as failed, tried again
+within its hours).
 
 Provider contracts, read 14 Nov 2026 and cited in each adapter: Meta documents a sticker by `link` (a WebP, at most 100 KB static, a service message inside the window)
 and the template's image header as `{type: "header", parameters: [{type: "image", image: {link}}]}`; Gupshup's self-serve API documents `message={"type":"sticker","url"}`

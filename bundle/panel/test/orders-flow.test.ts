@@ -1,4 +1,4 @@
-// The Orders template in the panel: a partner sets up a tiffin service on a phone in the same five steps (UPI is the way customers pay unless the partner chooses Razorpay), and the
+// The Orders template in the panel: a partner sets up a tiffin service on a phone in the same six steps (UPI is the way customers pay unless the partner chooses Razorpay), and the
 // folder written is the one `geometer shop add --template orders` writes (Orders settings, a runtime.json with no calendar, orders@<version> in the lock). The checks, "Ready to go
 // live", the monthly report and the shop page work for it in four languages, and nothing of Bookings (a calendar, a cost table of bookings) leaks onto an Orders shop's pages.
 import { CHARACTER5 } from "./flow.ts";
@@ -31,7 +31,7 @@ const applied = (o: Record<string, unknown> = {}) => ({
   versions: { pathway: "0.1.0", bundle: "0.1.0", guard: "geo-guard:0.1.0-alpha.2-pathways.1" }, backups: { lastCopyAt: new Date(NOW - 60_000).toISOString() }, ...o,
 });
 
-/** The five steps for an Orders shop, as a partner does them on a phone. */
+/** The six steps for an Orders shop, as a partner does them on a phone. */
 async function setUpOrders(who: Browser, _b: Boot, given: Record<string, string>[] = [ORDERS1, ORDERS2, STEP3, ORDERS4]) {
   const steps = given.length === 4 ? [...given, CHARACTER5] : given; // item 11i: the Character step after the four
   const start = await who.post("/setup", { template: "orders" }, "/setup");
@@ -61,7 +61,7 @@ const exportEmpty = (b: Boot, shop: string) => {
   writeFileSync(join(b.dir, "exports", shop, "orders.json"), "[]");
 };
 
-test("the start page offers Orders with a button, and the five steps write the folder `shop add --template orders` writes: Orders settings with UPI, no calendar, orders@version, the partner as owner", async () => {
+test("the start page offers Orders with a button, and the six steps write the folder `shop add --template orders` writes: Orders settings with UPI, no calendar, orders@version, the partner as owner", async () => {
   const b = await boot({}, { standins: true });
   try {
     const divya = await b.account("divya", "partner");

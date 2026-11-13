@@ -124,9 +124,9 @@ test("the owner's app shows the owner's real mood (something wrong) with its wor
   assert.ok(!/Something wrong|Needs you/u.test(pub));
 });
 
-test("pages.json hands the runtime the set's version; the links go through the pages domain when the shop has a page there", () => {
+test("pages.json hands the runtime the set's version; WhatsApp's links are the shop's own server's, never the door's", () => {
   const p = readPagesFile(JSON.stringify({ schema: 1, base: SERVER, ownerBase: `${SERVER}/owner`, slug: "veena-salon", url: "https://pages.example/veena-salon", character: { version: "0123456789abcdef" } }));
-  assert.deepEqual(picturesOf(p), { base: "https://pages.example/veena-salon", version: "0123456789abcdef" });
+  assert.deepEqual(picturesOf(p), { base: SERVER, version: "0123456789abcdef" }, "even with a page on the pages domain");
   assert.deepEqual(picturesOf(readPagesFile(JSON.stringify({ schema: 1, base: SERVER, ownerBase: `${SERVER}/owner`, character: { version: "0123456789abcdef" } }))), { base: SERVER, version: "0123456789abcdef" });
   assert.equal(picturesOf(readPagesFile(JSON.stringify({ schema: 1, base: SERVER, ownerBase: `${SERVER}/owner`, character: { version: "../x" } }))), undefined, "a version that is not 16 hex digits is not read");
   assert.equal(readCharacterManifest("{}"), undefined);

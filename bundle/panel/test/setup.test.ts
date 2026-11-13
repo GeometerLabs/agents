@@ -1,4 +1,4 @@
-// The phone setup: five short steps that write the same client folder a builder would, refuse bad input in plain words, take the shop's secrets without
+// The phone setup: six short steps that write the same client folder a builder would, refuse bad input in plain words, take the shop's secrets without
 // ever showing, keeping or logging them, and end in checks and "Ready to go live".
 import { RAZORPAY_WORDS as RZW } from "../../../modules/payments/providers/razorpay/words.ts";
 import { test } from "node:test";
@@ -15,7 +15,7 @@ import { M, MARKERS, STEP1, STEP2, STEP3, STEP4, setUp } from "./flow.ts";
 const text = (html: string) => html.replace(/<[^>]+>/gu, " ").replace(/&[a-z#0-9]+;/gu, " ").replace(/\s+/gu, " ");
 const everythingOnDisk = (dir: string): string => readdirSync(dir, { recursive: true, withFileTypes: true }).filter((e) => e.isFile()).map((e) => `${join(e.parentPath, e.name)}\n${readFileSync(join(e.parentPath, e.name), "utf8")}`).join("\n----\n");
 
-test("five steps write the client folder a builder would: valid settings, the runtime's own ids, the pin, and the partner as the permanent owner", async () => {
+test("six steps write the client folder a builder would: valid settings, the runtime's own ids, the pin, and the partner as the permanent owner", async () => {
   const b = await boot({}, { standins: true });
   try {
     const divya = await b.account("divya", "partner", "ml");

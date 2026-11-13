@@ -372,7 +372,9 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
    */
   async function pictureRoute(req: IncomingMessage, res: ServerResponse, found: FrontShop, face: Face | "now", format: PictureFormat, method: string, address: string): Promise<void> {
     if (method !== "GET" && method !== "HEAD") { res.writeHead(405, { allow: "GET, HEAD", "cache-control": "no-store" }); res.end(); return; }
-    if (!limiter.take("read", address)) { res.writeHead(429, { "retry-after": "60", "cache-control": "no-store" }); res.end(); return; }
+    // only `now` asks the runtime, so only it counts against the address's reads; a fixed mood is a small file, and WhatsApp's fetchers (many shops' pictures from a
+    // few addresses at 08:00) must not be refused one, or the morning template whose header it is would not be delivered
+    if (face === "now" && !limiter.take("read", address)) { res.writeHead(429, { "retry-after": "60", "cache-control": "no-store" }); res.end(); return; }
     const files = found.character?.();
     let mood: Face | undefined = face === "now" ? undefined : face;
     if (face === "now" && files) mood = (await found.backend.offer({})).shop.character?.face; // the runtime's own answer: no picture is needed to pick one
