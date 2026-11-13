@@ -51,18 +51,23 @@ export interface ReportTemplate {
 export const REPORT_SLOTS = ["title", "made", "deposits", "stopped", "price", "double", "asked", "approved", "saidNo", "notConfirmed", "notChecked", "code", "link", "check", "builder"] as const;
 export type ReportSlot = (typeof REPORT_SLOTS)[number];
 
+/**
+ * 14 Nov: the figures are bold (*text*, which WhatsApp shows as bold), so a figure never looks like its label: every number or amount, and the title line. In "Not checked" only the
+ * label is bold; where a line has a count and reasons ("Stopped by your limits"), the numbers are bold, not the reasons. The asterisk is a fixed word on each side of a value, so the
+ * rules (never start or end with a value, never two values side by side) still hold. The plain summary text (text.ts) is not changed: the website bolds that itself.
+ */
 /** The words for one language. Starts and ends with fixed words, never two values side by side, one line per thing the owner reads. */
 function wording(language: Language, badge: boolean, upi = false): string {
   const s = STRINGS[language];
   const stop = s.stop;
   const dot = language === "hi" ? "।" : ".";
   return [
-    `${s.monthlyReport}: {title}`,
-    `${s.label.bookingsMade}: {made} · ${upi ? s.upiLabel.deposits : s.label.depositsCollected}: {deposits}`,
-    `${s.label.stoppedByLimits}: {stopped} (${stop["price-at-or-above-list"]}: {price} · ${stop["no-double-booking"]}: {double})`,
-    `${s.label.wasAsked}: {asked} · ${s.label.approved}: {approved} · ${s.label.saidNo}: {saidNo}`,
-    `${s.label.notConfirmed}: {notConfirmed}`,
-    `${s.label.notChecked}: {notChecked}${dot} ${s.handRun}`,
+    `*${s.monthlyReport}: {title}*`,
+    `${s.label.bookingsMade}: *{made}* · ${upi ? s.upiLabel.deposits : s.label.depositsCollected}: *{deposits}*`,
+    `${s.label.stoppedByLimits}: *{stopped}* (${stop["price-at-or-above-list"]}: *{price}* · ${stop["no-double-booking"]}: *{double}*)`,
+    `${s.label.wasAsked}: *{asked}* · ${s.label.approved}: *{approved}* · ${s.label.saidNo}: *{saidNo}*`,
+    `${s.label.notConfirmed}: *{notConfirmed}*`,
+    `*${s.label.notChecked}*: {notChecked}${dot} ${s.handRun}`,
     `${s.page.code}: {code} · ${s.fullReport}: {link}`,
     `${s.checkGenuine}: {check}`,
     `${s.page.setUpBy}: {builder} · Geometer`,

@@ -38,12 +38,12 @@ test("the message is the owner's lines in every language: counts and amounts fro
     const lines = text.split("\n");
     assert.equal(lines.length, 9, `${language}: ${lines.length} lines`);
     assert.ok(lines.every((l) => l.trim() !== ""));
-    assert.equal(lines[0], `${s.monthlyReport}: Glow Salon · ${MONTH_NAMES[language][1]} 2027`, "no tag for a live report");
-    assert.equal(lines[1], `${s.label.bookingsMade}: 38 · ${s.label.depositsCollected}: ₹17,600`);
-    assert.equal(lines[2], `${s.label.stoppedByLimits}: 5 (${s.stop["price-at-or-above-list"]}: 3 · ${s.stop["no-double-booking"]}: 1)`);
-    assert.equal(lines[3], `${s.label.wasAsked}: 3 · ${s.label.approved}: 2 · ${s.label.saidNo}: 1`);
-    assert.equal(lines[4], `${s.label.notConfirmed}: 1`);
-    assert.ok(lines[5].startsWith(`${s.label.notChecked}: `) && lines[5].endsWith(s.handRun), lines[5]);
+    assert.equal(lines[0], `*${s.monthlyReport}: Glow Salon · ${MONTH_NAMES[language][1]} 2027*`, "no tag for a live report; the title line is bold");
+    assert.equal(lines[1], `${s.label.bookingsMade}: *38* · ${s.label.depositsCollected}: *₹17,600*`);
+    assert.equal(lines[2], `${s.label.stoppedByLimits}: *5* (${s.stop["price-at-or-above-list"]}: *3* · ${s.stop["no-double-booking"]}: *1*)`);
+    assert.equal(lines[3], `${s.label.wasAsked}: *3* · ${s.label.approved}: *2* · ${s.label.saidNo}: *1*`);
+    assert.equal(lines[4], `${s.label.notConfirmed}: *1*`);
+    assert.ok(lines[5].startsWith(`*${s.label.notChecked}*: `) && !lines[5].slice(s.label.notChecked.length + 4).includes("*") && lines[5].endsWith(s.handRun), lines[5]);
     assert.equal(lines[6], `${s.page.code}: ${env.code} · ${s.fullReport}: ${LINK}`);
     assert.equal(lines[7], `${s.checkGenuine}: ${verifyLink(env)}`, "an unsigned report carries the #digest link (item 17b)");
     assert.equal(lines[8], `${s.page.setUpBy}: Divya, local partner · Geometer`);
@@ -54,7 +54,7 @@ test("the message is the owner's lines in every language: counts and amounts fro
 
 test("a report made in test mode or on stand-ins says so in the first line, like the owner text does", () => {
   const { text } = monthlyReportMessage(seal({ ...report(), source: "test-mode" }), "en", { link: LINK });
-  assert.equal(text.split("\n")[0], "Monthly report: Glow Salon · Feb 2027 · test mode, test money");
+  assert.equal(text.split("\n")[0], "*Monthly report: Glow Salon · Feb 2027 · test mode, test money*");
 });
 
 test("the Innovator badge is one more line, the last, and only when the report carries the flag", () => {
@@ -138,7 +138,7 @@ test("the worst message still fits what WhatsApp takes once the values are in: t
   // worst is 963 in Malayalam with the #digest link; with one person, named, 1010 (Malayalam, #digest link); with three, the names give way first (settledByWordWords),
   // 994 (Hindi, #code link). The longer signed summary link goes in only when the filled message still fits (messageCheckLink; report-summary.test.ts holds that).
   for (const [which, length] of lengths) assert.ok(length <= WHATSAPP_BODY_LIMIT, `${which}: ${length} characters, and the limit WhatsApp checks after the values are in is ${WHATSAPP_BODY_LIMIT}`);
-  for (const language of LANGUAGES) assert.match(monthlyReportMessage(seal(months[2]), language, { link }).text, new RegExp(`${STRINGS[language].label.notConfirmed}: 99999 · `, "u"), "the settled words are there, after what is still open");
+  for (const language of LANGUAGES) assert.match(monthlyReportMessage(seal(months[2]), language, { link }).text, new RegExp(`${STRINGS[language].label.notConfirmed}: \\*99999 · `, "u"), "the settled words are there, after what is still open");
 });
 
 test("the examples Meta reviews are a believable month, one line each, in the template's own language, and the checked-in list holds them", () => {
