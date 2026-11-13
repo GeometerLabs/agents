@@ -7,7 +7,8 @@
 //   shops/<shop>/owner-sessions.json  the panel's "sign out every device": {"schema": 1, "endBefore": "<ISO>"}
 //   status/pages/<shop>.json          RESULT, the deployer writes it for the panel: the slug fleet confirmed, its address, the stable page address, or the problem
 //   pages.json (two copies)           what the shop's runtime (client folder) and the inbox's front (the shop's secrets folder) read on every request
-//                                     (modules/channels/pages-file.ts): the shop's addresses, where the owner's view is, the WhatsApp number to show
+//                                     (modules/channels/pages-file.ts): the shop's addresses, where the owner's view is, the WhatsApp number to show, and (item 11i)
+//                                     the version of the character pictures the front serves (lib/character.ts)
 //   owner-sessions.json (one copy)    the panel's file, handed to the runtime's client folder (removed again when the panel's is gone)
 //
 // Fleet is asked only when something changed (a new slug, a choice of "own", a removed shop) or once a day (the claim is idempotent), and a refused claim is not
@@ -21,6 +22,7 @@ import { readSecretFile, secretFile } from "./secrets.ts";
 import { publicUrl, serverPaths } from "./server.ts";
 import type { ServerConfig } from "./server.ts";
 import { stableJson, writeAtomic } from "./util.ts";
+import { CHARACTER_DIR, CHARACTER_MANIFEST, readCharacterManifest } from "../../modules/channels/character-files.ts";
 
 export const PAGE_SETTINGS_FILE = "page.json";
 /** Fleet's routes (monorepo apps/fleet/src/page-slugs-api.ts). */
@@ -49,6 +51,11 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object
 
 export const pageSettingsFile = (dir: string, shop: string): string => join(serverPaths(dir).shop(shop), PAGE_SETTINGS_FILE);
 export const pagesStatusFile = (dir: string, shop: string): string => join(serverPaths(dir).status, "pages", `${shop}.json`);
+/** Item 11i: the front's copy of the shop's character pictures (lib/character.ts makes it), beside its pages.json. */
+export const frontCharacterDirOf = (dir: string, shop: string): string => secretFile(dir, "inbox", shop, CHARACTER_DIR);
+/** The version of the set the front serves for a shop now (what pages.json hands the runtime), or undefined when it serves none. */
+export const frontCharacterVersion = (dir: string, shop: string): string | undefined => readCharacterManifest(read(join(frontCharacterDirOf(dir, shop), CHARACTER_MANIFEST)))?.version;
+
 /** The two copies of pages.json the deployer keeps: the runtime's client folder and the inbox's folder for the shop. */
 export const pagesCopies = (dir: string, shop: string): string[] => [join(serverPaths(dir).generated, "shops", shop, "client", PAGES_FILE), secretFile(dir, "inbox", shop, PAGES_FILE)];
 
@@ -78,8 +85,11 @@ export function readPagesStatus(dir: string, shop: string): PageStatus | undefin
   try { const s = JSON.parse(read(pagesStatusFile(dir, shop)) ?? "") as PageStatus; return s.schema === 1 ? s : undefined; } catch { return undefined; }
 }
 
-/** The addresses a shop's runtime and front are handed (pages-file.ts). The owner's view is on the pages domain only for a shop this server's door serves. */
-export function pagesFileFor(server: ServerConfig, shop: string, settings: PageSettings, status: PageStatus | undefined): PagesFile {
+/**
+ * The addresses a shop's runtime and front are handed (pages-file.ts). The owner's view is on the pages domain only for a shop this server's door serves.
+ * `character`: item 11i, the version of the character pictures the front serves for the shop (lib/character.ts), so the runtime can link to them.
+ */
+export function pagesFileFor(server: ServerConfig, shop: string, settings: PageSettings, status: PageStatus | undefined, character?: string): PagesFile {
   const base = `${publicUrl(server)}/s/${shop}`;
   const claimed = settings.pages === "hub" && status?.slug !== undefined && status.slug === settings.slug && status.url !== undefined ? status : undefined;
   let served = false;
@@ -89,6 +99,7 @@ export function pagesFileFor(server: ServerConfig, shop: string, settings: PageS
     ...(claimed ? { slug: claimed.slug!, url: claimed.url!, ...(claimed.pageUrl ? { pageUrl: claimed.pageUrl } : {}) } : {}),
     ...(settings.whatsapp ? { whatsapp: settings.whatsapp } : {}),
     ...(server.panel.enabled ? { panelUrl: `${publicUrl(server)}/shops/${shop}` } : {}),
+    ...(character ? { character: { version: character } } : {}),
   };
 }
 
@@ -168,7 +179,7 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
       if (r.status === 200) { lines.push(`${shop}: its page name ${status.slug} is given back.`); status = { schema: 1, at }; writeStatus(shop, status); }
     }
     // the addresses, for the runtime (its owner's sign-in links) and the front (the door's slug, the QR's stable address)
-    const text = `${stableJson(pagesFileFor(server, shop, settings, status))}\n`;
+    const text = `${stableJson(pagesFileFor(server, shop, settings, status, frontCharacterVersion(dir, shop)))}\n`;
     if (readPagesFile(text) === undefined) { lines.push(`${shop}: its pages file would not read back; not written.`); continue; }
     for (const copy of pagesCopies(dir, shop)) if (keep(copy, text)) lines.push(`${shop}: its page addresses are handed to ${copy.includes(join("secrets", "inbox")) ? "the front" : "the runtime"}.`);
     // the panel's "sign out every device", to the runtime, which reads it on every request

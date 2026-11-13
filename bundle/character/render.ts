@@ -66,7 +66,7 @@ export function drawSvg(look: Look, face?: Face, o: { tile?: boolean } = {}): st
   if (face) { const [eyes, mouth] = EYES_AND_MOUTH[look.style][face]; options.eyesVariant = [eyes]; options.mouthVariant = [mouth]; }
   if (look.colour) options[`${info.colourOption}Color`] = [look.colour];
   if (o.tile === false) options.backgroundColor = [CLEAR];
-  let svg = new Avatar(styleOf(look.style), options as never).toString().replace(/<metadata>[\s\S]*?<\/metadata>/u, "");
+  let svg = new Avatar(styleOf(look.style), options as never).toString().replace(/<metadata[\s>][\s\S]*?<\/metadata>/u, "");
   if (o.tile === false) {
     const before = svg;
     svg = svg.replace(new RegExp(`<rect [^>]*fill="#${CLEAR}"[^>]*/>`, "u"), "");
