@@ -77,6 +77,14 @@ export function readServerModel(serverDir: string): { wire: "openai" | "anthropi
   return undefined;
 }
 
+/** Item 11h: the pages domain geometer.json names (Geometer's partner server), read when the owner's setup QR is made, so it names the owner's view's real address. */
+export function readPagesDomain(serverDir: string): string | undefined {
+  try {
+    const g = JSON.parse(readFileSync(join(resolve(serverDir), "geometer.json"), "utf8")) as { pages?: { domain?: unknown } };
+    return typeof g.pages?.domain === "string" && g.pages.domain !== "" ? g.pages.domain : undefined;
+  } catch { return undefined; }
+}
+
 // Turns the environment into a PanelConfig (everything comes from env so the compose file is the only place to set it); throws ConfigError on a missing or bad value, notably the data key on a hosted server.
 export function configFromEnv(env: Record<string, string | undefined>): PanelConfig {
   const serverDir = env.PANEL_SERVER_DIR;

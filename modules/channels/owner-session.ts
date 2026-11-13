@@ -10,12 +10,15 @@
 //   POST <base>/owner/answer       an answer from the owner's page (with the session's form token)
 //   GET  <base>/owner/api/v1/state, POST <base>/owner/api/v1/answer   item 11d's JSON pair, with the session (the answer with the form token in x-owner-csrf)
 //   POST <base>/owner/out          sign out on this browser
+//   Item 11h (decisions 45 and 46): <base>/owner/setup/<token>, /recover and /passkey/... are the passkey pages (owner-passkey-page.ts): the partner's setup QR or
+//   a recovery code registers a passkey, and the passkey signs the owner in with no WhatsApp at all. The sign-in page leads with it when the shop has one, and
+//   offers the WhatsApp link only when the shop has a WhatsApp number on its page.
 //
 // The cookie: OWNER_COOKIE, HttpOnly, Secure, SameSite=Lax, Path=<base path>/owner, no Domain (the __Host- prefix forbids a path, so __Secure- it is). Every shop on the
 // pages domain shares one origin, so the path is hygiene, not a wall: what keeps one shop's page from acting for another's owner is that no page there runs script
 // (the content policy), that every owner POST carries the form token (`csrfFor`, derived from the session the browser holds, compared in constant time), and that the
 // session is checked at the shop's own runtime. bundle/Explanation.md, "One origin for every shop", says it in full.
-import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { html, raw } from "../core/html.ts";
 import type { Raw } from "../core/html.ts";
@@ -27,6 +30,7 @@ import type { ChannelBackend, OwnerCred } from "./backend.ts";
 import type { Limiter } from "./limits.ts";
 import type { PagesFile } from "./pages-file.ts";
 import { PAGE } from "./words.ts";
+import { PASSKEY_SCRIPT, PASSKEY_WORDS, isPasskeyRoute, passkeyButton, passkeyPolicy, passkeyRoute } from "./owner-passkey-page.ts";
 
 export const OWNER_COOKIE = "__Secure-geo-owner";
 /** The header a JSON answer carries the form token in. */
@@ -119,27 +123,43 @@ export function partnerLine(language: Language, panelUrl?: string): Raw {
   return html`<footer><span>${w.partner}</span> <a href="${ACCOUNT_URL}" rel="noopener">${w.account}</a>${panelUrl ? html` · <a href="${panelUrl}" rel="noopener">${w.panel}</a>` : ""}</footer>`;
 }
 
-function page(language: Language, title: string, body: Raw): string {
+/** A sign-in page. `nonce`: the page carries the passkey script (item 11h), run by that nonce in the response's own policy. */
+function page(language: Language, title: string, body: Raw, nonce?: string): string {
   const machine = PAGE[language].machine;
   return `<!doctype html>${html`<html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer"><title>${title}</title><style>${raw(CSS)}</style></head><body><main>
-${machine ? html`<p class="notice">${machine}</p>` : ""}${body}</main></body></html>`.markup}`;
+${machine ? html`<p class="notice">${machine}</p>` : ""}${body}</main>${nonce ? html`<script nonce="${nonce}">${raw(PASSKEY_SCRIPT)}</script>` : ""}</body></html>`.markup}`;
 }
 
 /** "Open my app" on WhatsApp, as a wa.me link with the words filled in: the way to sign in that always works (the owner's message opens the window). */
 const waOpenMyApp = (number: string) => `https://wa.me/${number.replace(/\D/gu, "")}?text=${encodeURIComponent("open my app")}`;
 
-/** The sign-in page: one button, no number field. `sent` after a press: the same words whatever happened. */
-export function signinPage(o: { base: string; language: Language; pages: PagesFile | undefined; sent?: boolean; notice?: string }): string {
+/**
+ * The sign-in page: no number field. `sent` after a press: the same words whatever happened. Item 11h: `passkeys` when the shop has them on (`count` of the owner's
+ * passkeys here; `nonce` for the script), which then leads; the WhatsApp link and "open my app" only when the shop has a WhatsApp number on its page.
+ */
+export function signinPage(o: { base: string; language: Language; pages: PagesFile | undefined; sent?: boolean; notice?: string; passkeys?: { count: number; nonce: string } }): string {
   const w = SIGNIN_WORDS[o.language];
+  const p = PASSKEY_WORDS[o.language];
   const wa = o.pages?.whatsapp;
+  const owner = `${o.base}/owner`;
+  const passkey = o.passkeys
+    ? html`${o.passkeys.count > 0 ? passkeyButton({ mode: "signin", options: `${owner}/passkey/options`, finish: `${owner}/passkey/finish`, label: p.signIn, language: o.language }) : html`<p class="notice">${p.none}</p>`}
+<p class="note">${p.note}</p><p class="note"><a href="${owner}/recover?lang=${o.language}">${p.recoverLink}</a></p>`
+    : "";
+  const whatsapp = wa
+    ? html`<form method="post" action="${owner}/signin"><input type="hidden" name="lang" value="${o.language}"><button type="submit"${o.passkeys ? raw(' class="btn" style="background:#4b5d52"') : ""}>${w.send}</button></form>
+<p class="note">${w.nothingCame}</p><p><a class="btn" href="${waOpenMyApp(wa)}" rel="noopener">${w.askOnWhatsapp}</a></p>`
+    : o.passkeys ? "" : html`<p class="note">${w.noWhatsapp}</p>`;
+  const intro = o.sent ? html`<p class="notice" role="status">${w.sent}</p>` : html`<p>${wa || !o.passkeys ? w.intro : p.introNoWhatsapp}</p>`;
   return page(o.language, w.title, html`<h1>${w.title}</h1>
 ${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
-${o.sent ? html`<p class="notice" role="status">${w.sent}</p>` : html`<p>${w.intro}</p>`}
-<form method="post" action="${o.base}/owner/signin"><input type="hidden" name="lang" value="${o.language}"><button type="submit">${w.send}</button></form>
-<p class="note">${w.nothingCame}</p>
-${wa ? html`<p><a class="btn" href="${waOpenMyApp(wa)}" rel="noopener">${w.askOnWhatsapp}</a></p>` : html`<p class="note">${w.noWhatsapp}</p>`}
-${partnerLine(o.language, o.pages?.panelUrl)}`);
+${intro}${passkey}${whatsapp}
+${partnerLine(o.language, o.pages?.panelUrl)}`, o.passkeys && o.passkeys.count > 0 ? o.passkeys.nonce : undefined);
 }
+
+/** The sign-in page's policy: the plain one, or (with the passkey button) its nonce and the two addresses the script posts to. */
+const signinPolicy = (policy: string, base: string, passkeys?: { count: number; nonce: string }): Record<string, string> =>
+  passkeys && passkeys.count > 0 ? { "content-security-policy": passkeyPolicy(policy, passkeys.nonce, [`${base}/owner/passkey/options`, `${base}/owner/passkey/finish`]) } : {};
 
 /** The page a link from WhatsApp opens: a button to sign in (valid), or why not and a way to ask again. */
 export function linkPage(o: { base: string; link: string; language: Language; state: LinkState }): string {
@@ -154,11 +174,20 @@ export function linkPage(o: { base: string; link: string; language: Language; st
 /** What the session routes need from the front: its helpers, so the limits, the body caps and the Origin check are the front's own. */
 export interface OwnerSessionDeps {
   limiter: Limiter;
+  /** The pages' content policy (front.ts PAGE_POLICY), which a page with the passkey script extends by its nonce. */
+  policy: string;
   sendHtml(res: ServerResponse, status: number, body: string, extra?: Record<string, string>): void;
   sendJson(res: ServerResponse, status: number, value: unknown, extra?: Record<string, string>): void;
   readBody(req: IncomingMessage, max: number): Promise<string | undefined>;
   /** item 11d's owner page and its JSON pair, for a credential at a base, with the form token to check and to put in the page. */
   ownerRoute(sub: string, o: { cred: OwnerCred; base: string; csrf: string; signOut: { action: string; label: string }; onGone: () => void }): Promise<void>;
+}
+
+/** Item 11h: whether the shop has passkeys on and how many the owner has here (the sign-in page's button), with a fresh nonce; undefined when they are off. */
+async function passkeyStatus(backend: ChannelBackend): Promise<{ count: number; nonce: string } | undefined> {
+  if (!backend.passkey) return undefined;
+  const r = await backend.passkey({ op: "status" });
+  return r.status === 200 && typeof r.body.count === "number" ? { count: r.body.count, nonce: randomBytes(16).toString("base64") } : undefined;
 }
 
 /** The visitor's language for the sign-in pages: ?lang= (or the form's), else the browser's first of the four, else English (the owner's own is known only once signed in). */
@@ -178,6 +207,8 @@ function signinLanguage(req: IncomingMessage, url: URL, form?: URLSearchParams):
  */
 export async function ownerSessionRoute(deps: OwnerSessionDeps, a: {
   req: IncomingMessage; res: ServerResponse; url: URL; base: string; sub: string; address: string; backend: ChannelBackend; pages: PagesFile | undefined; sameOrigin: boolean;
+  /** Item 11h: the shop's name, for the passkey setup page. */
+  shopName?: string;
 }): Promise<void> {
   const { req, res, url, base, sub, address, backend, pages } = a;
   const method = req.method ?? "GET";
@@ -200,6 +231,15 @@ export async function ownerSessionRoute(deps: OwnerSessionDeps, a: {
     // only the kind and a fresh id go to the runtime: whatever else the form carried (a number, an address) is never read
     await backend.submit([{ kind: "owner_signin", id: randomUUID() }]);
     return back(`${base}/owner?sent=1&lang=${language}`);
+  }
+
+  // ---- item 11h: passkeys (the partner's setup QR, the recovery card, signing in) ----
+  if (isPasskeyRoute(sub)) {
+    if (method === "POST" && !a.sameOrigin) return deps.sendJson(res, 403, { message: "Calls from another site's page are refused." });
+    return passkeyRoute({
+      limiter: deps.limiter, sendHtml: deps.sendHtml, sendJson: deps.sendJson, readBody: deps.readBody, policy: deps.policy,
+      page: (language, title, body, nonce) => page(language, title, body, nonce), cookie: (session) => ownerCookie(cookiePath, session),
+    }, { req, res, base, sub, address, backend, language: signinLanguage(req, url) });
   }
 
   // ---- the link from WhatsApp ----
@@ -229,7 +269,10 @@ export async function ownerSessionRoute(deps: OwnerSessionDeps, a: {
   const session = sessionFromCookie(req.headers.cookie);
   const json = sub.startsWith("/api/");
   if (!session) {
-    if (sub === "" && method === "GET") return deps.sendHtml(res, 200, signinPage({ base, language: signinLanguage(req, url), pages, sent: url.searchParams.get("sent") === "1" }), htmlHeaders);
+    if (sub === "" && method === "GET") {
+      const passkeys = await passkeyStatus(backend);
+      return deps.sendHtml(res, 200, signinPage({ base, language: signinLanguage(req, url), pages, sent: url.searchParams.get("sent") === "1", ...(passkeys ? { passkeys } : {}) }), { ...htmlHeaders, ...signinPolicy(deps.policy, base, passkeys) });
+    }
     return json ? deps.sendJson(res, 401, { error: { code: "signed_out", message: "Sign in first: the page sends a link to the owner's WhatsApp." } }) : back(`${base}/owner`);
   }
   if (sub === "/out") {
@@ -238,7 +281,8 @@ export async function ownerSessionRoute(deps: OwnerSessionDeps, a: {
     if (!csrfMatches(session, form.get("csrf"))) return deps.sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
     await backend.signout(session);
     const language = signinLanguage(req, url, form);
-    return deps.sendHtml(res, 200, signinPage({ base, language, pages, notice: SIGNIN_WORDS[language].signedOut }), { ...htmlHeaders, "set-cookie": ownerCookie(cookiePath) });
+    const passkeys = await passkeyStatus(backend);
+    return deps.sendHtml(res, 200, signinPage({ base, language, pages, notice: SIGNIN_WORDS[language].signedOut, ...(passkeys ? { passkeys } : {}) }), { ...htmlHeaders, ...signinPolicy(deps.policy, base, passkeys), "set-cookie": ownerCookie(cookiePath) });
   }
   // the owner's page, its answers and the JSON pair: item 11d's, with the session as the credential and the form token checked on every POST
   return deps.ownerRoute(sub, {

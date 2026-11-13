@@ -28,6 +28,8 @@ export interface MessageFacts {
   /** The free times a list message offers, when it offers any (language/interactive.ts): each date and time in the message must be one of these, or the booking's own. */
   slotChoices?: number[];
   link?: string; // the payment link from the payments service's record
+  /** Item 11h: a WhatsApp booking's own page (https://<page>/b/<handle>), made fresh for one message; only its hash is kept (Booking.pageLink), never this. */
+  pageLink?: string;
   holdMinutes?: number;
   windowHours?: number;
   bookingRef?: string; // "b-3"
@@ -93,7 +95,7 @@ export type GuardWaitTemplateId = "wait_over";
 
 /** UPI shops only (B33): the deposit is paid to the shop's own UPI ID and marked paid by the owner; refunds are sent by the owner. */
 export type UpiTemplateId =
-  | "upi_quote_and_link" | "upi_slot_and_link" | "upi_already_waiting" | "upi_qr_caption" | "upi_booked" | "upi_paid_claim" | "upi_nothing_waiting" | "upi_hold_expired"
+  | "upi_quote_and_link" | "upi_slot_and_link" | "upi_already_waiting" | "upi_qr_caption" | "upi_page_link" | "upi_booked" | "upi_paid_claim" | "upi_nothing_waiting" | "upi_hold_expired"
   | "upi_late_received" | "upi_refund_owed" | "upi_cancelled_refund_owed" | "upi_extra_refund_owed" | "upi_refund_sent"
   | "owner_upi_expected" | "owner_upi_claim" | "owner_upi_marked" | "owner_upi_part" | "owner_upi_already" | "owner_upi_unknown" | "owner_upi_late"
   | "owner_upi_refund_owed" | "owner_upi_refund_reminder" | "owner_upi_refund_marked" | "owner_upi_refund_kept";
@@ -438,6 +440,8 @@ const kn: BaseSet = {
 
 const payee = (f: MessageFacts) => need(f, "payee");
 const upiId = (f: MessageFacts) => need(f, "upiId");
+/** Item 11h (owner, 14 Nov): the WhatsApp booking's own page, a bearer link made for this one message and never kept in clear (agent.ts sendMarkedRequest). */
+const pageLink = (f: MessageFacts) => need(f, "pageLink");
 const code = (f: MessageFacts) => need(f, "upiCode");
 const marked = (f: MessageFacts) => formatInr(need(f, "markedInr"));
 const left = (f: MessageFacts) => formatInr(need(f, "leftInr"));
@@ -447,6 +451,7 @@ const upiEn: UpiSet = {
   upi_slot_and_link: (f) => `${slot(f)} is free! Pay a ${inr(f, "depositInr")} deposit to book it, and I'll hold the slot for ${need(f, "holdMinutes")} minutes.\nUPI ID: ${upiId(f)} (${payee(f)})\nThe owner will confirm your payment, then I'll message you.`,
   upi_already_waiting: (f) => `I'm still holding ${slot(f)} for you. Pay the ${inr(f, "depositInr")} deposit to book it.\nUPI ID: ${upiId(f)} (${payee(f)})\nThe owner will confirm your payment, then I'll message you.`,
   upi_qr_caption: (f) => `Scan to pay the ${inr(f, "depositInr")} deposit to ${payee(f)} by UPI.`,
+  upi_page_link: (f) => `\nTap to pay and see your booking (just for you, please don't share it):\n${pageLink(f)}`,
   upi_booked: (f) => `You're booked! ${Service(f)}, ${slot(f)}. The owner has confirmed your ${inr(f, "depositInr")} deposit. Can't make it? Cancel at least ${need(f, "windowHours")} hours before and your deposit comes back.`,
   upi_paid_claim: (f) => `Thanks! The owner will check their UPI app for your ${inr(f, "depositInr")}, then I'll message you. Please wait for that message: a screenshot alone isn't proof of payment.`,
   upi_nothing_waiting: () => "Thanks! I don't have a UPI payment waiting from you right now, so there's nothing for the owner to confirm. If you paid for something else, please talk to the owner.",
@@ -475,6 +480,7 @@ const upiHi: UpiSet = {
   upi_slot_and_link: (f) => `${slot(f)} खाली है! बुक करने के लिए ${inr(f, "depositInr")} जमा करें, मैं स्लॉट ${need(f, "holdMinutes")} मिनट रोककर रखूँगा।\nUPI ID: ${upiId(f)} (${payee(f)})\nमालिक आपका पेमेंट पक्का करेंगे, फिर मैं आपको मैसेज करूँगा।`,
   upi_already_waiting: (f) => `आपका ${slot(f)} का स्लॉट अभी रोका हुआ है। बुक करने के लिए ${inr(f, "depositInr")} जमा कर दीजिए।\nUPI ID: ${upiId(f)} (${payee(f)})\nमालिक आपका पेमेंट पक्का करेंगे, फिर मैं आपको मैसेज करूँगा।`,
   upi_qr_caption: (f) => `${payee(f)} को UPI से ${inr(f, "depositInr")} जमा करने के लिए स्कैन करें।`,
+  upi_page_link: (f) => `\nपेमेंट करने और अपनी बुकिंग देखने के लिए टैप करें (सिर्फ़ आपके लिए, किसी को न भेजें):\n${pageLink(f)}`,
   upi_booked: (f) => `बुक हो गया! ${need(f, "serviceName")}, ${slot(f)}। मालिक ने आपका ${inr(f, "depositInr")} जमा पक्का कर दिया है। नहीं आ पा रहे? शुरू होने से कम से कम ${need(f, "windowHours")} घंटे पहले रद्द कर दीजिए, आपका जमा वापस मिल जाएगा।`,
   upi_paid_claim: (f) => `शुक्रिया! मालिक अपने UPI ऐप में आपके ${inr(f, "depositInr")} देखेंगे, फिर मैं आपको मैसेज करूँगा। कृपया उस मैसेज का इंतज़ार कीजिए, क्योंकि सिर्फ़ स्क्रीनशॉट से पेमेंट पक्का नहीं होता।`,
   upi_nothing_waiting: () => "शुक्रिया! अभी आपका कोई UPI पेमेंट पक्का होने का इंतज़ार नहीं कर रहा, इसलिए मालिक के पास पक्का करने को कुछ नहीं है। अगर आपने किसी और चीज़ के लिए पैसे भेजे हैं, तो मालिक से बात कर लीजिए।",
@@ -503,6 +509,7 @@ const upiMl: UpiSet = {
   upi_slot_and_link: (f) => `${slot(f)} ഒഴിവുണ്ട്! ബുക്ക് ചെയ്യാൻ ${inr(f, "depositInr")} അഡ്വാൻസ് അടയ്ക്കൂ, ${need(f, "holdMinutes")} മിനിറ്റ് ഈ സ്ലോട്ട് ഞാൻ നിങ്ങൾക്കായി മാറ്റിവയ്ക്കാം.\nUPI ID: ${upiId(f)} (${payee(f)})\nനിങ്ങളുടെ പേയ്മെന്റ് ഉടമ ഉറപ്പിക്കും, അതിനുശേഷം ഞാൻ മെസ്സേജ് അയക്കാം.`,
   upi_already_waiting: (f) => `${slot(f)} ഇപ്പോഴും നിങ്ങൾക്കായി മാറ്റിവച്ചിട്ടുണ്ട്. ബുക്ക് ചെയ്യാൻ ${inr(f, "depositInr")} അഡ്വാൻസ് അടയ്ക്കൂ.\nUPI ID: ${upiId(f)} (${payee(f)})\nനിങ്ങളുടെ പേയ്മെന്റ് ഉടമ ഉറപ്പിക്കും, അതിനുശേഷം ഞാൻ മെസ്സേജ് അയക്കാം.`,
   upi_qr_caption: (f) => `UPI വഴി ${inr(f, "depositInr")} അഡ്വാൻസ് അടയ്ക്കാൻ സ്കാൻ ചെയ്യൂ (${payee(f)}).`,
+  upi_page_link: (f) => `\nപണമടയ്ക്കാനും ബുക്കിംഗ് കാണാനും ടാപ്പ് ചെയ്യൂ (നിങ്ങൾക്ക് മാത്രം, ആർക്കും അയയ്ക്കരുത്):\n${pageLink(f)}`,
   upi_booked: (f) => `ബുക്ക് ആയി! ${need(f, "serviceName")}, ${slot(f)}. നിങ്ങളുടെ ${inr(f, "depositInr")} അഡ്വാൻസ് ഉടമ ഉറപ്പിച്ചു. വരാൻ പറ്റില്ലെങ്കിൽ ${need(f, "windowHours")} മണിക്കൂർ മുമ്പെങ്കിലും റദ്ദാക്കൂ, അഡ്വാൻസ് തിരികെ കിട്ടും.`,
   upi_paid_claim: (f) => `നന്ദി! ഉടമ അവരുടെ UPI ആപ്പിൽ നിങ്ങളുടെ ${inr(f, "depositInr")} നോക്കും, അതിനുശേഷം ഞാൻ മെസ്സേജ് അയക്കാം. ആ മെസ്സേജ് വരുന്നത് വരെ കാത്തിരിക്കൂ: സ്ക്രീൻഷോട്ട് മാത്രം പേയ്മെന്റിന്റെ തെളിവാകില്ല.`,
   upi_nothing_waiting: () => "നന്ദി! ഇപ്പോൾ നിങ്ങളുടെ UPI പേയ്മെന്റ് ഒന്നും കാത്തിരിക്കുന്നില്ല, അതുകൊണ്ട് ഉടമയ്ക്ക് ഉറപ്പിക്കാൻ ഒന്നുമില്ല. വേറെ എന്തിനെങ്കിലും പണം അടച്ചതാണെങ്കിൽ ദയവായി ഉടമയോട് സംസാരിക്കൂ.",
@@ -531,6 +538,7 @@ const upiKn: UpiSet = {
   upi_slot_and_link: (f) => `${slot(f)} ಖಾಲಿ ಇದೆ! ಬುಕ್ ಮಾಡಲು ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಕಟ್ಟಿ, ${need(f, "holdMinutes")} ನಿಮಿಷ ಸ್ಲಾಟ್ ಕಾಯ್ದಿರಿಸುತ್ತೇನೆ.\nUPI ID: ${upiId(f)} (${payee(f)})\nನಿಮ್ಮ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ಆಮೇಲೆ ನಾನು ನಿಮಗೆ ಮೆಸೇಜ್ ಮಾಡುತ್ತೇನೆ.`,
   upi_already_waiting: (f) => `ನಿಮ್ಮ ಸ್ಲಾಟ್ (${slot(f)}) ಇನ್ನೂ ಕಾಯ್ದಿರಿಸಿದ್ದೇನೆ. ಬುಕ್ ಮಾಡಲು ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಕಟ್ಟಿ.\nUPI ID: ${upiId(f)} (${payee(f)})\nನಿಮ್ಮ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ಆಮೇಲೆ ನಾನು ನಿಮಗೆ ಮೆಸೇಜ್ ಮಾಡುತ್ತೇನೆ.`,
   upi_qr_caption: (f) => `UPI ಮೂಲಕ ${payee(f)} ಅವರಿಗೆ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಕಟ್ಟಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ.`,
+  upi_page_link: (f) => `\nಪಾವತಿಸಲು ಮತ್ತು ನಿಮ್ಮ ಬುಕಿಂಗ್ ನೋಡಲು ಟ್ಯಾಪ್ ಮಾಡಿ (ನಿಮಗೆ ಮಾತ್ರ, ಯಾರಿಗೂ ಕಳುಹಿಸಬೇಡಿ):\n${pageLink(f)}`,
   upi_booked: (f) => `ಬುಕ್ ಆಗಿದೆ! ${need(f, "serviceName")}, ${slot(f)}. ನಿಮ್ಮ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣವನ್ನು ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಿದ್ದಾರೆ. ಬರಲು ಆಗದಿದ್ದರೆ ಕನಿಷ್ಠ ${need(f, "windowHours")} ಗಂಟೆ ಮೊದಲು ರದ್ದು ಮಾಡಿ, ಮುಂಗಡ ಹಣ ಮರಳಿ ಸಿಗುತ್ತದೆ.`,
   upi_paid_claim: (f) => `ಧನ್ಯವಾದ! ಮಾಲೀಕರು ತಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ನಿಮ್ಮ ${inr(f, "depositInr")} ನೋಡಿ ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ಆಮೇಲೆ ನಾನು ನಿಮಗೆ ಮೆಸೇಜ್ ಮಾಡುತ್ತೇನೆ. ಅಲ್ಲಿಯವರೆಗೆ ದಯವಿಟ್ಟು ಕಾಯಿರಿ: ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಒಂದೇ ಪಾವತಿಗೆ ಪುರಾವೆ ಆಗುವುದಿಲ್ಲ.`,
   upi_nothing_waiting: () => "ಧನ್ಯವಾದ! ಈಗ ನಿಮ್ಮ ಯಾವ UPI ಪಾವತಿಯೂ ಬಾಕಿ ಇಲ್ಲ, ಹಾಗಾಗಿ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸಲು ಏನೂ ಇಲ್ಲ. ಬೇರೆ ಯಾವುದಕ್ಕಾದರೂ ಹಣ ಕಳುಹಿಸಿದ್ದರೆ ದಯವಿಟ್ಟು ಮಾಲೀಕರ ಜೊತೆ ಮಾತನಾಡಿ.",

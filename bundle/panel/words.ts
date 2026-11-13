@@ -148,14 +148,14 @@ export interface Words {
     };
     accounts: {
       intro: string; received(at: string): string; keepEmpty: string; neverShown: string;
-      whatsapp: { title: string; intro: string; steps: string[]; number: string; numberId: string; token: string; appSecret: string;
+      whatsapp: { title: string; intro: string; steps: string[]; number: string; numberId: string; token: string; appSecret: string; /** Item 11h: "start without WhatsApp". */ none: string; noneHelp: string;
         /** Item 11c: the shop's own Gupshup account (self-serve): the choice, the links, the short checklist and the write-only fields. */
         selfServe: { choiceMeta: string; choiceGupshup: string; title: string; intro: string; signup: string; guide: string; steps: string[]; appName: string; apiKey: string; pathToken: string; callback: string } };
       calendar: { title: string; intro: string; steps: string[]; shareAddress: string; noAddress: string; id: string; json: string; jsonHelp: string; /** B72: the shop's own booking list (default) and the choice to also use Google Calendar. */ useOwn: string; useGoogle: string };
     };
     checks: {
       saveFirst: string; saveButton: string; saved: string; runButton: string; waiting: string; settingsOk: string; handCheck: string; handNotRun: string;
-      deploy: string; deployApplied(at: string): string; deployNot: string; limitsProven(proven: number, of: number): string; limitsNot: string;
+      deploy: string; deployApplied(at: string): string; deployNot: string; /** Item 11h: a shop with no WhatsApp: the owner's sign-in set up, or not yet. */ ownerSigninWait: string; ownerSigninOk: string; limitsProven(proven: number, of: number): string; limitsNot: string;
       guardNotSet: string; readOnly: string;
       /** `gupshupConfirmed` and `gupshupNotFound`: a shop on Gupshup, whose check is Gupshup's app read: it confirms the app, never the number (checks.ts checkGupshup). */
       whatsapp: { title: string; confirmed(number: string): string; differs(ending: string): string; notFound: string; gupshupConfirmed(appId: string): string; selfServeConfirmed(appName: string, approved: number, listed: number): string; gupshupNotFound(said: string): string };
@@ -486,6 +486,7 @@ export const en: Words = {
       intro: "Each account is the shop's own. Keys go to the server's key store, are never shown again, and are not kept in this panel.",
       received: (at) => `Received ${at}.`, keepEmpty: "Leave empty to keep it.", neverShown: "It is not shown again after you save.",
       whatsapp: {
+        none: "Start without WhatsApp for now", noneHelp: "Customers book and pay on the shop's page, and the owner signs in with their fingerprint and gets alerts in their app. You can add the WhatsApp number later.",
         title: "WhatsApp", intro: "The shop keeps its own number and its WhatsApp Business app. Customers write to the same number as before.",
         steps: ["Keep using the WhatsApp Business app on the shop's phone, with the shop's number.", "Whoever connected the number to the helper gives you three things: the phone number ID, an access token and the app secret.", "Type them below."],
         number: "The shop's WhatsApp number", numberId: "Phone number ID", token: "Access token", appSecret: "App secret",
@@ -507,6 +508,7 @@ export const en: Words = {
     checks: {
       saveFirst: "Save this shop to the server first.", saveButton: "Save and connect", saved: "Saved. The server will apply it, and this page shows when it has.", runButton: "Run the checks", waiting: "Waiting for the server to apply the shop.",
       settingsOk: "The settings are complete.", handCheck: "The tests on this shop's own prices and hours", handNotRun: "Not run yet.",
+      ownerSigninWait: "No WhatsApp: the owner signs in with their fingerprint. Show them the setup QR code (the shop's page in this panel, \"The owner's sign-in\"), and ask them to turn on alerts in their app.", ownerSigninOk: "The owner's setup QR code has been shown.",
       deploy: "The server's update", deployApplied: (at) => `Applied ${at}.`, deployNot: "Not applied yet.", limitsProven: (p, o) => `${p} of ${o} limits proven to hold on the running agent.`, limitsNot: "Limits not proven yet.",
       guardNotSet: "This server has not told the panel where to check the accounts yet, so they cannot be checked here.",
       readOnly: "Checks only read. They never send a message, take a payment or make a booking, so sending and payments are not tested here.",

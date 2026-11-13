@@ -47,6 +47,8 @@ export interface OwnerPageInput {
   signOut?: { action: string; label: string };
   /** Item 11e: the script nonce of this response, when the view has the assistant's app (front.ts puts it in the content policy). */
   nonce?: string;
+  /** Item 11h: the owner's "Alerts on this phone" box (modules/push/pages.ts), already drawn, when the shop has web push. */
+  alerts?: string;
   /** Item 11i: the character's picture in the shop's mood now, as a data: address (front.ts reads it from the shop's own pictures). Left out: none drawn yet. */
   picture?: string;
 }
@@ -106,7 +108,8 @@ ${v.upcoming.length > 0 ? html`<ul>${v.upcoming.map((u) => html`<li>${formatSlot
   const app = v.app;
   const colour = app ? themeColour(app.character) : undefined;
   // the manifest is behind the owner's cookie on the signed-in view, so it is fetched with the browser's credentials (a manifest fetch leaves them out otherwise)
-  const appHead = app ? html`<link rel="manifest" href="${o.base}/manifest.webmanifest" crossorigin="use-credentials"><meta name="theme-color" content="${colour}">` : "";
+  // item 11h: with alerts, the manifest too (an iPhone shows web push only to an app added to the home screen)
+  const appHead = app || o.alerts ? html`<link rel="manifest" href="${o.base}/manifest.webmanifest" crossorigin="use-credentials"><meta name="theme-color" content="${colour ?? themeColour(undefined)}">` : "";
   return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
 <title>${w.title(v.shop.name)}</title><style>${raw(CSS)}</style>${appHead}</head><body><main><header><h1>${w.title(v.shop.name)}</h1></header>
 ${app ? raw(characterLine({ language: o.language, shop: v.shop.name, ...(app.character.name ? { name: app.character.name } : {}), colour: colour!, face: app.face, ...(o.picture ? { picture: o.picture } : {}) })) : ""}
@@ -117,6 +120,7 @@ ${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
 ${waiting.length > 0 ? waiting : html`<p>${w.none}</p>`}
 ${coming}${parents}
 ${app ? raw(talkBox({ base: o.base, language: o.language, lines: app.talk, assistantName: app.character.name ?? ASSISTANT_OF[o.language](v.shop.name), ...(o.nonce ? { nonce: o.nonce } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), listen: app.listen === true })) : ""}
+${o.alerts ? raw(o.alerts) : ""}
 ${o.signOut ? html`<form method="post" action="${o.signOut.action}">${o.csrf ? html`<input type="hidden" name="csrf" value="${o.csrf}">` : ""}<button class="no" type="submit">${o.signOut.label}</button></form>` : ""}
 </main></body></html>`.markup}`;
 }

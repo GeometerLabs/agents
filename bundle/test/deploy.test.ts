@@ -19,14 +19,15 @@ test("a good deploy: files written, compose brought up, the running Guards asked
     w.handIn("glow-salon");
     const [r] = await deploy(w.ctx);
     assert.equal(r.shop, "glow-salon");
-    assert.equal(r.proven.line, "12 of 12 limits proven to bite (3 cannot be tested without writing, and are not counted)");
+    // item 11h: every shop has a push Guard too (3 tripwires, and its 4 counts that cannot be tested without writing)
+    assert.equal(r.proven.line, "16 of 16 limits proven to bite (4 cannot be tested without writing, and are not counted)");
     for (const f of ["compose.yaml", "Caddyfile", "guards/g-glow-salon-razorpay/guard.toml", "guards/g-glow-salon-razorpay/bundle.json", "guards/g-model/guard.toml", "shops/glow-salon/client/runtime.json", "inbox/inbox.json", "relay/relay.json", "refresher/refresher.json", "ops/ops.json"]) assert.ok(existsSync(join(w.paths.generated, f)), f);
     assert.ok(composeCalls(w).some((c) => c[0] === "up"), "docker compose up ran");
     const status = readStatus(w.root, "glow-salon")!;
-    assert.deepEqual([status.deploy.state, status.limits?.proven, status.limits?.of], ["applied", 12, 12]);
+    assert.deepEqual([status.deploy.state, status.limits?.proven, status.limits?.of], ["applied", 16, 16]); // item 11h: with the push Guard
     assert.ok(status.limits!.unprovable.length > 0 && status.limits!.unprovable.every((u) => !u.includes(":")), "what cannot be tested is named, and is not counted");
     assert.deepEqual([status.versions?.pathway, status.versions?.guard], ["bookings@0.1.0", "geo-guard:0.1.0-alpha.2-pathways.1"]);
-    assert.deepEqual(status.versions?.guards, { razorpay: 1, whatsapp: 1, calendar: 1 });
+    assert.deepEqual(status.versions?.guards, { razorpay: 1, whatsapp: 1, calendar: 1, push: 1 });
     assert.equal(status.webhooks?.razorpay, "https://shops.example.com/c/glow-salon/webhooks/razorpay");
     assert.ok(w.admin.includes("g-glow-salon-razorpay GET /admin/status"), "the running Guard was asked");
     // the secrets that were handed in left the inbox and are in the one container's folder that needs each
@@ -80,10 +81,10 @@ test("Guard's bundle version only goes up: the same content keeps its number, ch
     w.handIn("glow-salon");
     await deploy(w.ctx);
     const first = loadState(w.root).shops["glow-salon"].guards;
-    assert.deepEqual(Object.values(first).map((g) => g.version), [1, 1, 1]);
+    assert.deepEqual(Object.values(first).map((g) => g.version), [1, 1, 1, 1]); // item 11h: and its push Guard
     w.calls.length = 0;
     await deploy(w.ctx);
-    assert.deepEqual(Object.values(loadState(w.root).shops["glow-salon"].guards).map((g) => g.version), [1, 1, 1], "nothing changed, nothing re-versioned");
+    assert.deepEqual(Object.values(loadState(w.root).shops["glow-salon"].guards).map((g) => g.version), [1, 1, 1, 1], "nothing changed, nothing re-versioned");
     assert.ok(!composeCalls(w).some((c) => c[0] === "restart"), "and nothing restarted");
     // the owner's refund limit changes: only the Razorpay Guard's bundle changes
     const settings = JSON.parse(readFileSync(join(w.paths.shop("glow-salon"), "settings.json"), "utf8"));
@@ -197,7 +198,7 @@ test("adding a second shop recreates the model forwarder, so the model Guard tha
     assert.ok(recreated.includes("g-model") && recreated.includes("--no-deps"), recreated.join(" "));
     assert.ok(!recreated.includes("g-glow-salon-razorpay"), "only the Guard whose forwarder changed");
     const ops = JSON.parse(read(join(w.paths.generated, "ops", "ops.json")));
-    assert.deepEqual(ops.shops["bright-tuition"].guards.map((g: { id: string }) => g.id), ["guard-razorpay", "guard-whatsapp", "guard-calendar", "guard-model"]);
+    assert.deepEqual(ops.shops["bright-tuition"].guards.map((g: { id: string }) => g.id), ["guard-razorpay", "guard-whatsapp", "guard-calendar", "guard-push", "guard-model"]); // item 11h: ops watches the push Guard too
     assert.deepEqual([ops.shops["bright-tuition"].statusFile, ops.shops["glow-salon"].statusFile], ["/server/status/bright-tuition.json", "/server/status/glow-salon.json"], "where ops reads each shop's backup times");
   } finally { w.done(); }
 });

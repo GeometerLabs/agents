@@ -109,6 +109,11 @@ export interface AgentDeps {
    */
   qrImage?: (text: string) => Promise<string | null>;
   /**
+   * Item 11h (owner, 14 Nov): makes a fresh link to a WhatsApp booking's own page: the whole https address (sent once, in the message) and its hash (all that is
+   * kept). Handed in, so the agent never loads node:crypto (the browser demo has none). Left out, or undefined (the shop has no page yet): no link is sent.
+   */
+  pageLink?: () => { url: string; hash: string } | undefined;
+  /**
    * B29, voice notes: listens to a customer's voice note (speech to text); modules/voice. The agent always replies in text. Handed in, so the agent never loads a provider or
    * a node module. Left out: voice is off for this shop and a voice note gets the one line asking the customer to type, exactly as before.
    */
@@ -229,7 +234,7 @@ export function createAgent(deps: AgentDeps): Agent {
    * With an `offer`, the text the limits read is the whole message the customer will see: the words, then each option.
    * What is Bookings' own is given here: the facts, the offers, and the two gates (no reminder after a cancellation, "booked" only when recorded).
    */
-  interface SayArgs { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; markedInr?: number; leftInr?: number; day?: "today" | "tomorrow"; dayBookings?: MessageFacts["dayBookings"] }
+  interface SayArgs { booking: Booking | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; markedInr?: number; leftInr?: number; day?: "today" | "tomorrow"; dayBookings?: MessageFacts["dayBookings"]; /** item 11h: never in inputsOf, so never in the record */ pageLink?: string }
   const say = createSay<SayArgs, MessageFacts>({
     messaging,
     voice: {
@@ -241,7 +246,7 @@ export function createAgent(deps: AgentDeps): Agent {
     owner: { whatsapp: owner, language: settings.owner.language },
     languageOf: (phone, booking) => languageOf(phone, booking),
     optedOut: (phone) => customerOf(phone).optedOut,
-    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: shownPhone(a.phone, a.booking), refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || a.offer?.kind === "services", ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.slots } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, day: a.day, dayBookings: a.dayBookings }),
+    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: shownPhone(a.phone, a.booking), refundInr: a.refundInr, slotMs: a.slotMs, menu: a.templates.includes("menu") || a.offer?.kind === "services", ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.slots } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, day: a.day, dayBookings: a.dayBookings, ...(a.pageLink ? { pageLink: a.pageLink } : {}) }),
     interactiveFor: (a, facts, language) => buildInteractive(a.offer!, a.templates, facts, language),
     inputsOf: (a) => ({ refundInr: a.refundInr, slotMs: a.slotMs, ...(a.markedInr !== undefined ? { markedInr: a.markedInr } : {}) }), // never the owner's code
     gates: (a, optedOut) => [
@@ -253,7 +258,7 @@ export function createAgent(deps: AgentDeps): Agent {
     heldBack: async (a) => { await say({ booking: a.booking, phone: a.phone, to: "owner", templates: ["owner_message_held"] }); },
   });
 
-  const tellCustomer = (b: Booking | null, phone: string, templates: TemplateId[], more: { refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: SayArgs["image"]; markedInr?: number } = {}) =>
+  const tellCustomer = (b: Booking | null, phone: string, templates: TemplateId[], more: { refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: SayArgs["image"]; markedInr?: number; pageLink?: string } = {}) =>
     say({ booking: b, phone, to: "customer", templates, ...more });
   const tellOwner = (b: Booking | null, phone: string, template: TemplateId, more: { refundInr?: number; slotMs?: number; offer?: Offer; upiCode?: string; markedInr?: number; leftInr?: number } = {}) =>
     say({ booking: b, phone, to: "owner", templates: [template], ...more });
@@ -515,14 +520,25 @@ export function createAgent(deps: AgentDeps): Agent {
     if (!record.confirmedRefs(b.id, MARK_ACTIONS.request, "requestId").includes(request.id)) {
       log(b, b.customer, MARK_ACTIONS.request, "confirmed", { amountPaise: request.amountPaise }, { refs: { requestId: request.id, reference: b.id, amountPaise: String(request.amountPaise) }, notes: "a UPI request to the shop's own UPI ID; it counts as paid only when the owner marks it received" });
     }
-    await tellCustomer(b, b.customer, [...prefix, prefix.includes("price_floor") ? "upi_slot_and_link" : "upi_quote_and_link"], { shown, offer: paidCancelOrOwner, image: b.channel ? undefined : await qrOf(request) }); // a booking page draws its own QR
+    const page = pageLinkFor(b);
+    const sent = await tellCustomer(b, b.customer, [...prefix, prefix.includes("price_floor") ? "upi_slot_and_link" : "upi_quote_and_link", ...(page ? ["upi_page_link" as const] : [])], { shown, offer: paidCancelOrOwner, image: b.channel ? undefined : await qrOf(request), ...(page ? { pageLink: page.url } : {}) }); // a booking page draws its own QR
+    if (sent && page) b.pageLink = page.hash;
     await tellOwner(b, b.customer, "owner_upi_expected", { upiCode: request.code ?? undefined, offer: receivedButtons(request, request.amountPaise) });
   }
+
+  /**
+   * Item 11h (owner, 14 Nov): a fresh link to a WhatsApp booking's own page, where the customer taps "Pay in your UPI app" and later sees the booking. Only for a
+   * booking made on WhatsApp (a page's own booking has its handle already), and only when the runtime can make one (the shop has a page). It is saved, as its hash,
+   * only once the message carrying it was accepted, and it replaces the last one: a link sent again stops the old.
+   */
+  const pageLinkFor = (b: Booking): { url: string; hash: string } | undefined => (b.channel ? undefined : deps.pageLink?.());
 
   async function tellAlreadyWaiting(waiting: Booking): Promise<void> {
     const request = ownerConfirms ? requestOf(waiting) : undefined;
     if (!request) { await tellCustomer(waiting, waiting.customer, ["already_waiting"], { offer: cancelOrOwner }); return; }
-    await tellCustomer(waiting, waiting.customer, ["upi_already_waiting"], { offer: paidCancelOrOwner, image: waiting.channel ? undefined : await qrOf(request) });
+    const page = pageLinkFor(waiting);
+    const sent = await tellCustomer(waiting, waiting.customer, ["upi_already_waiting", ...(page ? ["upi_page_link" as const] : [])], { offer: paidCancelOrOwner, image: waiting.channel ? undefined : await qrOf(request), ...(page ? { pageLink: page.url } : {}) });
+    if (sent && page) waiting.pageLink = page.hash;
   }
 
   /**

@@ -992,6 +992,41 @@ A builder chooses per client: `"pages": "own"` (the default: the views at `https
 the pages domain, served through the door; the owner's view stays on the builder's domain). Geometer's partner server is always `"hub"`. The value is named `hub`, not after
 a domain, because the domain may change.
 
+## Works without WhatsApp: the bundle's half (item 11h, decision 45; 14 Nov 2026)
+
+**A shop with no WhatsApp number.** Decided in one place, `lib/kinds.ts runtimeHasWhatsApp`: the shop's `runtime.json` (the panel's) names no messaging service. The
+panel writes it so when the partner ticks "Start without WhatsApp for now" in the accounts step (`panel/setup.ts`). Such a shop gets no WhatsApp Guard, no WhatsApp
+credential, no WhatsApp key or webhook secret asked for (`deploy.ts missingSecrets`), no messaging in its runtime's config, and its inbox route keeps a WhatsApp app
+secret and verify token nobody was given (as a UPI shop's Razorpay route does), so nothing reaches it. A gateway shop with no WhatsApp is refused by name (`whatsapp-none-gateway`): a refund its Guard holds is asked of the owner by
+the relay on WhatsApp, and the owner's page lists it only once that went out (Deferred.md); without WhatsApp a shop takes UPI. A runtime pinned to a version from before 14 Nov needs WhatsApp, so such a shop pinned there is refused by name (`whatsapp-none-pinned`). The
+owner's own number stays: it is who the owner is (sessions, the record's conversation, the licence's owner numbers), not a WhatsApp connection. The ask card's
+WhatsApp lines are optional now, and its booking-page line no longer says a WhatsApp number is needed to go live.
+
+**The go-live without WhatsApp.** The WhatsApp connection check is not made for such a shop, and a condition takes its place: `owner-signin`, the owner's setup QR
+has been shown (the panel's grants file). A UPI shop whose owner cannot be reached would take deposits nobody marks. The panel cannot see the owner's phone, so it asks
+for what it can see; showing that a passkey and alerts are really on is in Deferred.md.
+
+**The push Guard and the push sender.** Every shop gets `g-<shop>-push` (generate/guards.ts `pushSpec`: the three push services' hosts exactly, on a body field
+`host`; a daily count for the owner's pushes (200), the customers' (500) and any one phone's (50); its own licence lists, so the final stop holds back a customer's push
+and never the owner's, and every other Guard's file is unchanged). Its upstream is the server's one `push` container (services/push.ts), on a network of its own
+(`push`, internal) with only the push Guards; the push Guards are not on egress, the sender is. Why a sender at all, and not a Guard per push service's host: Guard
+refuses a binary body and removes the caller's Authorization (modules/Explanation.md, "Works without WhatsApp"). The push Guards' admin addresses start at
+`PUSH_ADMIN_BASE` (2048) plus the shop's index, so every existing shop keeps the four addresses it had. Ops watches each push Guard like the others (the heartbeat
+lists `guard-push`, which fleet's id rule takes), and the deploy checks its tripwires. A test server sends every push to a stand-in through geometer.json's
+`upstreams` ("push-service"), the seam that already points Guards at stand-ins; it is never set on a real server.
+
+**The owner's sign-in files.** The panel's "The owner's sign-in" block shows the setup QR and prints the recovery card (each once, hashes only, in
+`shops/<shop>/owner-grants.json`) and removes the owner's passkeys; the deployer's pages pass hands the file to the runtime with `owner-sessions.json`
+(lib/pages.ts). The QR names the owner's view's own address, worked out by the same rule the deployer uses for the pages file (`ownerBaseOf`), because the runtime
+checks each passkey against that origin.
+
+**The door.** A worker's address (`.../sw.js`) on a builder's pages is refused before the builder's server is asked; a builder's page could not register one anyway
+(no script). This server's shops pass their owner's and booking pages' workers through with our front's own policy.
+
+**Tests.** `test/without-whatsapp.test.ts` (a shop planned without WhatsApp, the push Guard's spec and toml, its addresses, the push sender's address rule),
+`test/compose.test.ts` (who is on egress and on `push`), `test/generate.test.ts`, `test/pages.test.ts` (the grants file handed to the runtime), `test/door.test.ts`
+(workers), `panel/test/owner-signin.test.ts` (the QR, the card, removal, the go-live condition), and the Docker proof's `nowhatsapp` phase.
+
 ## Voice notes (B29, decision 42; 12 Nov 2026)
 
 The owner dropped the idea of a voice agent that answers the shop's phone (telephony, call forwarding) and asked for the way people in these places already communicate: voice messages on WhatsApp. Then, the same day, he decided: **listen in voice, reply in text**. A spoken reply is hard to hear well and can feel uncanny, so the agent never speaks.

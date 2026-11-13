@@ -121,8 +121,9 @@ export function relayConfig(server: ServerConfig, shops: (ShopDeploy & { ownerWh
         // B37: each other approver signs with approver_<id>_notify_secret in this shop's secrets folder
         ...(s.approvers && s.approvers.length > 0 ? { approvers: s.approvers.map((p) => ({ id: p.id, whatsapp: p.whatsapp, language: p.language })) } : {}),
         runtimeUrl: runtimeUrl(server, s),
-        // the relay is not on the shop's network: it reaches the WhatsApp Guard's agent port on the Guard's address on the admin network
-        whatsappGuardUrl: url(addressing(server).adminIp(s.name, "whatsapp", s.index), GUARD_PORT),
+        // the relay is not on the shop's network: it reaches the WhatsApp Guard's agent port on the Guard's address on the admin network (item 11h: a shop with no
+        // WhatsApp has no such Guard, and its relay asks the owner on nothing: the owner's page lists the held refund)
+        ...(s.guards.some((g) => g.kind === "whatsapp") ? { whatsappGuardUrl: url(addressing(server).adminIp(s.name, "whatsapp", s.index), GUARD_PORT) } : {}),
         ownerWhatsapp: s.ownerWhatsapp, phoneNumberId: s.phoneNumberId,
         // the relay asks the owner through the shop's own WhatsApp Guard, so it speaks that Guard's provider
         ...(s.whatsappRoute?.provider === "gupshup" ? { provider: "gupshup", appId: s.whatsappRoute.appId } : {}),
@@ -204,7 +205,8 @@ export function opsConfig(server: ServerConfig, shops: (ShopDeploy & { pathwayVe
       // where the deployer records the shop's backup times (the heartbeat reports their ages)
       statusFile: `${OPS_STATUS_DIR}/${s.name}.json`,
       // the shop's three Guards, and the server's model Guard (shared, so it is listed under every shop: if it is not ready, every shop says so)
-      guards: [...SHOP_GUARD_KINDS.filter((kind) => s.guards.some((g) => g.kind === kind)).map((kind) => ({ id: `guard-${kind}`, service: names.guard(s.name, kind), ...guardAdmin(server, s, kind), adminTokenFile: `/run/secrets/${s.name}/admin_${kind}` })), modelGuard],
+      // item 11h: and its push Guard (every shop has one)
+      guards: [...[...SHOP_GUARD_KINDS, "push" as const].filter((kind) => s.guards.some((g) => g.kind === kind)).map((kind) => ({ id: `guard-${kind}`, service: names.guard(s.name, kind), ...guardAdmin(server, s, kind as Three), adminTokenFile: `/run/secrets/${s.name}/admin_${kind}` })), modelGuard],
     }])),
     model: modelGuard,
     // Agents someone else wrote: their Guards only. `agentUrl` is where the reading agent (record-<name>) looks at the service's own state through the Guard.

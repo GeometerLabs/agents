@@ -128,7 +128,7 @@ function bundleServices(): string[] {
 function writeTestCompose(): void {
   const user = `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`;
   const services: Record<string, any> = {
-    standins: { image: "node:26-alpine", user: "1000:1000", init: true, restart: "unless-stopped", command: ["node", "/app/bundle/test/proof/standins.ts"], volumes: [`${APP}:/app:ro`], networks: ["egress", "front"], ports: ["127.0.0.1:18791:8790"],
+    standins: { image: "node:26-alpine", user: "1000:1000", init: true, restart: "unless-stopped", command: ["node", "/app/bundle/test/proof/standins.ts"], volumes: [`${APP}:/app:ro`], networks: ["egress", "front"], ports: ["127.0.0.1:18791:8790", "127.0.0.1:18792:8792"],
       healthcheck: { test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8791/_state"], interval: "3s", timeout: "3s", retries: 20, start_period: "3s" } },
     "panel-probe": { image: "node:26-alpine", user, command: ["sleep", "100000"], volumes: [`${join(SERVER, "secrets", "panel")}:/run/secrets:ro`], networks: ["panel"] },
     minio: { image: "minio/minio:latest", command: ["server", "/data"], environment: { MINIO_ROOT_USER: "proofkey", MINIO_ROOT_PASSWORD: "proofsecret123", MINIO_PROMETHEUS_AUTH_TYPE: "public" }, volumes: [`${join(SCRATCH, "minio")}:/data`], networks: ["egress"], ports: ["127.0.0.1:19000:9000"] },
@@ -274,7 +274,8 @@ async function main_(): Promise<void> {
     "--licence-key", TEST_PUBLIC_HEX]);
   if (code !== 0) throw new Error("init failed");
   const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
-  conf.upstreams = { razorpay: { host: "standins:8790", tls: false }, whatsapp: { host: "standins:8790", tls: false }, calendar: { host: "standins:8790", tls: false }, model: { host: "standins:8791", tls: false } };
+  // item 11h: "push-service" sends every push to the stand-ins' push service (the server's push sender reaches it on egress, as it would reach FCM)
+  conf.upstreams = { razorpay: { host: "standins:8790", tls: false }, whatsapp: { host: "standins:8790", tls: false }, calendar: { host: "standins:8790", tls: false }, model: { host: "standins:8791", tls: false }, "push-service": { host: "standins:8792", tls: false } };
   // the load must not meet the shops' own hourly caps (the proof measures the server, not the caps): every count is raised, and the report says so
   if (HEARTBEAT !== undefined) conf.heartbeatSeconds = HEARTBEAT;
   conf.panel = { enabled: true, mode: "own" }; conf.limits = { razorpayLinksPerHour: 1_000_000, whatsappMessagesPerHour: 1_000_000, calendarEventsCreatedPerHour: 1_000_000, calendarEventsDeletedPerDay: 1_000_000 };
@@ -344,6 +345,7 @@ async function main_(): Promise<void> {
     await phase("data", dataDuties);
     await phase("agent", ownAgent);
     await phase("model", modelGuard);
+    await phase("nowhatsapp", withoutWhatsApp);
     measure("1 shop (after the checks above)", 1);
     await phase("load", () => loadStep(1));
 
@@ -1222,10 +1224,158 @@ async function heldRefundThroughRuntime() {
   results.heldRefundThroughRuntime = { approval, recordBefore: before.length, recordAfterRestart: after.length, recordAtEnd: final.length, refunds };
 }
 
+// ---------------------------------------------------------------------------------------------------------------------------------- item 11h: works without WhatsApp
+//
+// A UPI shop with NO WhatsApp (its runtime.json names no messaging service), deployed beside glow-salon on the real bundle: no WhatsApp Guard is placed, and its push
+// Guard and the server's push sender are. The script plays the phones through Caddy, as a browser would: the owner registers a passkey from the partner's setup QR
+// (a software authenticator signing for https://localhost:18443) and allows alerts; a customer books and pays on the page and allows alerts on the booking's page;
+// the owner marks the deposit and, after the customer cancels, the refund, each from the page the push alert opens. Every push reaches the stand-in push service
+// through the shop's push Guard and the push sender, and the script opens it with the phone's own keys. Judged from the records: the runtime's, the push Guard's.
+
+const NOWA_INDEX = 80;
+const CADDY = "https://localhost:18443";
+
+/** One request through Caddy with curl (the proof's certificate is Caddy's own): the status, the headers, the body. A cookie and an Origin when given. */
+function viaCaddyFull(method: string, path: string, o: { headers?: Record<string, string>; body?: string; cookie?: string } = {}): { status: number; headers: Record<string, string>; body: string } {
+  const r = sh("curl", ["-sk", "-i", "-X", method, `${CADDY}${path}`, "-H", `origin: ${CADDY}`, ...(o.cookie ? ["-H", `cookie: ${o.cookie}`] : []), ...Object.entries(o.headers ?? {}).flatMap(([k, v]) => ["-H", `${k}: ${v}`]), ...(o.body !== undefined ? ["--data-binary", o.body] : []), "--max-time", "30"]);
+  const at = r.out.indexOf("\r\n\r\n");
+  const head = at < 0 ? r.out : r.out.slice(0, at);
+  const lines = head.split("\r\n");
+  const headers: Record<string, string> = {};
+  for (const l of lines.slice(1)) { const i = l.indexOf(":"); if (i > 0) headers[l.slice(0, i).trim().toLowerCase()] = l.slice(i + 1).trim(); }
+  return { status: Number(/^HTTP\/\S+ (\d+)/u.exec(lines[0] ?? "")?.[1] ?? 0), headers, body: at < 0 ? "" : r.out.slice(at + 4) };
+}
+const jsonVia = (path: string, value: unknown, o: { cookie?: string; headers?: Record<string, string> } = {}) => viaCaddyFull("POST", path, { ...o, headers: { "content-type": "application/json", ...o.headers }, body: JSON.stringify(value) });
+const formVia = (path: string, fields: Record<string, string>, cookie?: string) => viaCaddyFull("POST", path, { headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(fields).toString(), ...(cookie ? { cookie } : {}) });
+const pushesSeen = async (): Promise<{ host: string; path: string; ttl?: string; encoding?: string; authorization?: string; body: string }[]> => ((await (await fetch("http://127.0.0.1:18792/_push")).json()) as { pushes: [] }).pushes;
+
+async function withoutWhatsApp() {
+  const shop = shopName(NOWA_INDEX);
+  say(`\n== item 11h: a shop with no WhatsApp (${shop}): passkey sign-in, push both ways through the push Guard, a page booking, a refund marked from an alert ==`);
+  const { newSoftPasskey, softRegister, softSignin } = await import("../../../modules/channels/test/soft-authenticator.ts");
+  const { decryptPush, readVapidHeader, vapidVerifies } = await import("../../../modules/push/crypto.ts");
+  const { createECDH, randomBytes } = await import("node:crypto");
+  const { makeOwnerSetup, syncPages } = await import("../../lib/pages.ts");
+  // the shop: UPI on its own booking list, and no messaging service at all
+  const client = join(SCRATCH, "clients", shop);
+  rmSync(client, { recursive: true, force: true });
+  cpSync(EXAMPLE, client, { recursive: true });
+  const upi = JSON.parse(readFileSync(join(APP, "templates/commerce/bookings/settings/glow-salon-upi.example.json"), "utf8"));
+  writeFileSync(join(client, "settings.json"), JSON.stringify({ ...upi, name: "Proof Salon (no WhatsApp)", calendar: { module: "own" } }));
+  writeFileSync(join(client, "runtime.json"), JSON.stringify({ mode: "live", tickSeconds: 30, services: { timeoutMs: 20000 } }));
+  // the lease written at the start already lists this shop (PROOF_SHOPS), so its Guards have their licence
+  if (await main(["shop", "add", shop, "--from", client, "--server", SERVER]) !== 0) throw new Error(`shop add ${shop} failed`);
+  const res = await deploy(ctxFor());
+  const mine = res.find((r) => r.shop === shop);
+  check("a shop with no WhatsApp deploys: every tripwire of its Guards passes, its push Guard's included", !!mine && mine.proven.passed === mine.proven.of && mine.proven.of > 0, mine?.proven.line);
+  const services = bundleServices();
+  check("no WhatsApp Guard is placed for it; its push Guard and the server's push sender are", !services.includes(`g-${shop}-whatsapp`) && services.includes(`g-${shop}-push`) && services.includes("push"), services.filter((x) => x.includes(shop) || x === "push"));
+  await waitFor("its push Guard and runtime", () => healthy(`g-${shop}-push`) && healthy(`rt-${shop}`) && healthy("push"), 120);
+  // the partner shows the setup QR on the panel (its file, hashes only), and the deployer's pass hands it and the page addresses to the runtime
+  const qr = makeOwnerSetup(SERVER, shop, new Date());
+  (await syncPages({ dir: SERVER, server: loadServer(SERVER), shops: [shop], now: new Date() })).forEach((l) => say(`   ${l}`));
+
+  // ---- the owner: the setup QR, a passkey, a session ----
+  const optsR = jsonVia(`/s/${shop}/owner/setup/${qr.token}/options`, {});
+  const options = JSON.parse(optsR.body || "{}").options as { challenge: string; user: { id: string }; rp: { id: string } } | undefined;
+  check("the setup QR opens the passkey options, for the server's own domain as the RP ID", optsR.status === 200 && options?.rp.id === "localhost", { status: optsR.status, rp: options?.rp });
+  if (!options) return;
+  const phonePk = newSoftPasskey("localhost");
+  const reg = jsonVia(`/s/${shop}/owner/setup/${qr.token}/finish`, { response: softRegister(phonePk, options, CADDY) });
+  const session = /__Secure-geo-owner=([A-Za-z0-9_-]{43})/u.exec(reg.headers["set-cookie"] ?? "")?.[1];
+  check("the owner registers a passkey from the partner's QR and is signed in, with no WhatsApp message", reg.status === 200 && !!session, { status: reg.status });
+  if (!session) return;
+  const cookie = `__Secure-geo-owner=${session}`;
+  check("the QR works once", viaCaddyFull("GET", `/s/${shop}/owner/setup/${qr.token}`).status === 410, "");
+  const { csrfFor } = await import("../../../modules/channels/owner-session.ts");
+  const csrf = csrfFor(session);
+  const phone = (endpoint: string) => { const e = createECDH("prime256v1"); e.generateKeys(); const auth = randomBytes(16); return { sub: { endpoint, keys: { p256dh: e.getPublicKey().toString("base64url"), auth: auth.toString("base64url") } }, path: new URL(endpoint).pathname, open: (b: string) => JSON.parse(decryptPush(Buffer.from(b, "base64url"), { privateKey: e.getPrivateKey(), publicKey: e.getPublicKey(), auth }).toString()) as { body: string } }; };
+  const ownerPhone = phone(`https://fcm.googleapis.com/fcm/send/proof-owner-${randomBytes(4).toString("hex")}`);
+  const subR = jsonVia(`/s/${shop}/owner/push/subscribe`, { subscription: ownerPhone.sub }, { cookie, headers: { "x-owner-csrf": csrf } });
+  check("the owner's phone allows alerts (the owner's form token checked at the front, the subscription kept by the runtime)", subR.status === 200, subR.body.slice(0, 120));
+
+  // ---- a customer books and pays on the page, and allows alerts on their booking's page ----
+  const home = viaCaddyFull("GET", `/s/${shop}/?lang=en&service=haircut`);
+  const dates = [...new Set([...home.body.matchAll(/date=(\d{4}-\d{2}-\d{2})/gu)].map((m) => m[1]))].filter((d) => Date.parse(`${d}T00:00:00Z`) >= Date.now() + 2 * 86_400_000);
+  const day = viaCaddyFull("GET", `/s/${shop}/?lang=en&service=haircut&date=${dates[0]}`).body;
+  const start = /name="start" value="(\d+)"/u.exec(day)?.[1];
+  const nonce = /name="nonce" value="([A-Za-z0-9_-]{32})"/u.exec(day)?.[1] ?? "";
+  const before0 = (await pushesSeen()).length;
+  const booked = formVia(`/s/${shop}/book`, { service: "haircut", start: start ?? "", name: "Asha", phone: "98111 11111", lang: "en", nonce });
+  const handle = /\/b\/([A-Za-z0-9_-]{32})/u.exec(booked.headers.location ?? "")?.[1];
+  check("a customer books on the page (two days ahead or more), with no WhatsApp anywhere", booked.status === 303 && !!handle, { status: booked.status, date: dates[0] });
+  if (!handle) return;
+  await waitFor("the hold", () => /held until/u.test(viaCaddyFull("GET", `/s/${shop}/b/${handle}?lang=en`).body), 60);
+  const custPhone = phone(`https://updates.push.services.mozilla.com/wpush/v2/proof-customer-${randomBytes(4).toString("hex")}`);
+  check("the customer's phone allows alerts on the booking's own page", jsonVia(`/s/${shop}/b/${handle}/push`, { subscription: custPhone.sub }).status === 200, "");
+  const ics = viaCaddyFull("GET", `/s/${shop}/b/${handle}/booking.ics?lang=en`);
+  check("the booking's page gives a calendar file, without the page's address in it", ics.status === 200 && /BEGIN:VEVENT/u.test(ics.body) && !ics.body.includes(handle), { status: ics.status });
+  // the owner hears of the payment to look for, by push: through the shop's push Guard and the push sender to the push service, readable only by the owner's phone
+  await waitFor("the owner's alert", async () => (await pushesSeen()).slice(before0).some((p) => p.path === ownerPhone.path), 60);
+  const ownerAlert = (await pushesSeen()).slice(before0).find((p) => p.path === ownerPhone.path);
+  const vapid = ownerAlert?.authorization ? readVapidHeader(ownerAlert.authorization) : undefined;
+  check("the owner's alert reached the push service through the push Guard: aes128gcm ciphertext, VAPID-signed for FCM, opened only by the owner's phone", !!ownerAlert && ownerAlert.host === "fcm.googleapis.com" && ownerAlert.encoding === "aes128gcm" && !!vapid && vapidVerifies(vapid.t, vapid.k) && /₹200/u.test(ownerPhone.open(ownerAlert.body).body) && !Buffer.from(ownerAlert.body, "base64url").toString("latin1").includes("200"), { host: ownerAlert?.host, encoding: ownerAlert?.encoding });
+  formVia(`/s/${shop}/b/${handle}/paid`, { lang: "en" });
+
+  // ---- the owner opens the page the alert opens, with the passkey's session, and marks the deposit ----
+  const state = () => JSON.parse(viaCaddyFull("GET", `/s/${shop}/owner/api/v1/state`, { cookie }).body || "{}") as { waiting?: { kind: string; case: string; digest: string }[] };
+  const deposit = state().waiting?.find((x) => x.kind === "deposit");
+  const before1 = (await pushesSeen()).length;
+  const marked = deposit ? jsonVia(`/s/${shop}/owner/api/v1/answer`, { source: "runtime", action: "received", case: deposit.case, digest: deposit.digest }, { cookie, headers: { "x-owner-csrf": csrf } }) : undefined;
+  const isBooked = await waitFor("Booked", () => /Booked: /u.test(viaCaddyFull("GET", `/s/${shop}/b/${handle}?lang=en`).body), 60);
+  check("the owner marks the deposit from the page: the booking's page says Booked", !!marked && marked.status === 200 && isBooked, marked?.body.slice(0, 80));
+  await waitFor("the customer's alert", async () => (await pushesSeen()).slice(before1).some((p) => p.path === custPhone.path), 60);
+  const custAlert = (await pushesSeen()).slice(before1).find((p) => p.path === custPhone.path);
+  check("the customer hears \"booked\" by push (Mozilla's push service), readable only by their phone", !!custAlert && custAlert.host === "updates.push.services.mozilla.com" && /booked/iu.test(custPhone.open(custAlert.body).body), custAlert?.host);
+
+  // ---- the customer cancels early; the owner's alert; the refund marked sent from the page; the refund on the confirmation page and the customer's phone ----
+  const before2 = (await pushesSeen()).length;
+  formVia(`/s/${shop}/b/${handle}/cancel`, { lang: "en" });
+  await waitFor("the refund alert", async () => (await pushesSeen()).slice(before2).some((p) => p.path === ownerPhone.path), 60);
+  const refundAlert = (await pushesSeen()).slice(before2).find((p) => p.path === ownerPhone.path);
+  check("the refund to send reaches the owner as a push alert", !!refundAlert && /₹200/u.test(ownerPhone.open(refundAlert.body).body), "");
+  const owed = state().waiting?.find((x) => x.kind === "refund_owed");
+  const owedOnPage = /Your refund of ₹200 is on its way from the shop\./u.test(viaCaddyFull("GET", `/s/${shop}/b/${handle}?lang=en`).body);
+  const before3 = (await pushesSeen()).length;
+  const sent = owed ? jsonVia(`/s/${shop}/owner/api/v1/answer`, { source: "runtime", action: "refunded", case: owed.case, digest: owed.digest }, { cookie, headers: { "x-owner-csrf": csrf } }) : undefined;
+  const shown = await waitFor("the refund on the confirmation page", () => /The shop has sent your refund of ₹200\./u.test(viaCaddyFull("GET", `/s/${shop}/b/${handle}?lang=en`).body), 60);
+  check("the owner approves the refund from the alert's page (marks it sent); the customer's confirmation page shows it owed, then sent", !!sent && sent.status === 200 && owedOnPage && shown, { owedOnPage, shown });
+  await waitFor("the refund notice", async () => (await pushesSeen()).slice(before3).some((p) => p.path === custPhone.path), 60);
+  const notice = (await pushesSeen()).slice(before3).find((p) => p.path === custPhone.path);
+  check("the customer's refund notice arrives by push", !!notice && /refund/iu.test(custPhone.open(notice.body).body), "");
+
+  // ---- signing in again: the passkey, no WhatsApp ----
+  const o2 = JSON.parse(jsonVia(`/s/${shop}/owner/passkey/options`, {}).body || "{}").options as { challenge: string } | undefined;
+  const again = o2 ? jsonVia(`/s/${shop}/owner/passkey/finish`, { response: softSignin(phonePk, o2, CADDY) }) : undefined;
+  check("the owner signs in again with the passkey alone", !!again && again.status === 200 && /__Secure-geo-owner=/u.test(again.headers["set-cookie"] ?? ""), again?.status);
+
+  // ---- judged from the records ----
+  const record = recordOf(shop);
+  const ownerSends = record.filter((e) => e.action === "send_message" && e.refs.to === "owner");
+  // a live runtime writes message ids keyed with the record's key (B69), so the record cannot say "push-..." here; what it can say is that every alert went, and
+  // the push service saw one push to the owner's phone for each (with no WhatsApp Guard at all, nothing else could have carried it)
+  const toOwnerPhone = (await pushesSeen()).filter((p) => p.path === ownerPhone.path).length;
+  check("the runtime's record: every alert to the owner went (confirmed), and the push service carried one to the owner's phone for each; there is no WhatsApp to carry any", ownerSends.length >= 3 && ownerSends.every((e) => e.outcome === "confirmed") && toOwnerPhone >= ownerSends.length, { sends: ownerSends.map((e) => e.refs.templates), pushesToOwner: toOwnerPhone });
+  check("the record shows the page booking, the owner's marks from the page, the refund marked sent, and the passkey sign-ins", record.some((e) => e.action === "channel_booking" && e.outcome === "confirmed") && record.some((e) => e.action === "owner_page_action") && record.some((e) => e.action === "owner_session" && e.refs.how === "setup") && record.filter((e) => e.action === "owner_session" && e.refs.what === "signed_in" && e.refs.how === "passkey").length >= 2, { entries: record.length });
+  const text = JSON.stringify(record);
+  check("no push address, key or handle is in the record", !text.includes("proof-owner") && !text.includes("proof-customer") && !text.includes(handle), "");
+  const status = JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "admin", `g-${shop}-push`, "GET", "/admin/status"]).out.trim().split("\n").at(-1) ?? "{}");
+  check("the push Guard is ready, its tripwires hold, and it decided every push (its own record of them)", status.status === 200 && status.body?.tripwires?.ok !== false, { status: status.status, tripwires: status.body?.tripwires });
+  // the push Guard's daily count per phone, on the real Guard: 51 well-formed pushes from the shop's runtime to one made-up phone. Each of the first 50 reaches the push
+  // service (its 201 keeps the count: a 4xx would give it back); the 51st is refused by the Guard itself, before the push sender is asked
+  const token = readSecret(`rt-${shop}`, "agent_push");
+  const flood = nodeEval(`rt-${shop}`, `(async()=>{const call={host:'fcm.googleapis.com',path:'/fcm/send/proof-count',sub:'c0ffee000001',ttl:60,urgency:'normal',vapid:'vapid t=a.b.c, k=AAAA',body:'AAAA'};const out=[];for(let i=0;i<51;i++){const r=await fetch('http://g-${shop}-push:8080/v1/push/customer',{method:'POST',headers:{authorization:'Bearer ${token}','content-type':'application/json'},body:JSON.stringify(call)});const t=await r.text();out.push(r.status+(r.status===403?':'+(/"reason_code":"([a-z_]+)"/.exec(t)||[])[1]:''));}console.log(JSON.stringify(out))})()`, 180_000).out.trim().split("\n").at(-1) ?? "[]";
+  let statuses: string[] = [];
+  try { statuses = JSON.parse(flood); } catch { statuses = []; }
+  const reached = (await pushesSeen()).filter((p) => p.path === "/fcm/send/proof-count").length;
+  check("the push Guard counts on the real Guard: 50 pushes to one phone a day go (each reached the push service), the 51st is refused by the Guard's own count", statuses.length === 51 && statuses.slice(0, 50).every((x) => x === "201") && statuses[50] === "403:limit_exceeded" && reached === 50, { first: statuses[0], last: statuses[50], reached });
+  results.withoutWhatsApp = { shop, pushes: (await pushesSeen()).length, record: record.length, ownerPushes: ownerSends.length, countCheck: { last: statuses[50], reached } };
+}
+
 // ---------------------------------------------------------------------------------------------------------------------------------- item 5: the licence
 
 /** Every shop the proof may add, up to its largest load step: a lease must list each, or a release's Guard has no licence for it (decision 39). */
-const PROOF_SHOPS = Array.from({ length: Math.max(1, ...SIZES) }, (_, i) => shopName(i + 1));
+const PROOF_SHOPS = [...Array.from({ length: Math.max(1, ...SIZES) }, (_, i) => shopName(i + 1)), shopName(NOWA_INDEX)];
 /** A shop in order for 30 days, as fleet lists a shop its trial covers (monorepo ADR-0070). */
 const inOrder = (id: string) => ({ id, plan: "business", state: "active", paid_through: nowS() + 30 * DAY_S, grace_days: 0, expires: nowS() + 30 * DAY_S, stop_at: null, export_until: null, notice: null });
 /**

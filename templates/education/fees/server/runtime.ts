@@ -62,6 +62,8 @@ export interface RuntimeOptions {
   ownerParser?: OwnerParser;
   /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts), made by the shared start. Left out: none. */
   ownerSignin?: OwnerSignin;
+  /** Item 11h: the shop's web push. A message kept for a page's conversation is also pushed to the phones that allowed alerts on that page. Left out: none. */
+  push?: import("../../../../modules/push/push.ts").Push;
   /** Item 11i: where the character's mood pictures are (pages.json, read on every use), for the morning line's picture and sticker. Left out: none sent. */
   pictures?: () => CharacterPictures | undefined;
   /**

@@ -7,7 +7,8 @@
 import { readFileSync } from "node:fs";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
 import { gatewayOf } from "../../modules/payments/providers/index.ts";
-import { guardsOf, kindFor } from "../lib/kinds.ts";
+import { guardsOf, kindFor, runtimeHasWhatsApp } from "../lib/kinds.ts";
+import { ownerGrantsSummary } from "../lib/pages.ts";
 import type { HandCheckSummaryLike, Kind } from "../lib/kinds.ts";
 import { checkConnections } from "./checks.ts";
 import type { CheckResult, ConnectionTargets } from "./checks.ts";
@@ -26,7 +27,12 @@ export interface StoredChecks {
   connections: CheckResult[] | null;
 }
 
-export type Unmet = "hand-check" | "deploy" | "limits" | "connections" | "settings-changed";
+/**
+ * Item 11h (decision 45): "owner-signin": a shop with no WhatsApp whose owner has no way to hear yet. Without WhatsApp, the owner signs in with a passkey from the
+ * partner's setup QR and turns on alerts in their app; until the partner has shown that QR, a payment to mark or a refund to approve would reach nobody. The panel
+ * cannot see the owner's phone, so it asks for what it can see: the QR was made (bundle/Deferred.md says what would show more).
+ */
+export type Unmet = "hand-check" | "deploy" | "limits" | "connections" | "settings-changed" | "owner-signin";
 
 const iso = (ms: number) => new Date(ms).toISOString();
 
@@ -56,7 +62,8 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
     const hasCalendar = guardsOf(kindOf(shop), settings0).includes("calendar"); // B72: a shop on its own booking list has no calendar to check
     // A shop whose WhatsApp goes through Gupshup (runtime.json `provider`) has no Meta number read to make: its check is Gupshup's app read (checks.ts checkGupshup)
     const messaging = runtime?.services?.messaging;
-    const whatsapp = messaging?.provider === "gupshup-selfserve"
+    // item 11h: a shop with no WhatsApp has no WhatsApp to check
+    const whatsapp = !runtimeHasWhatsApp(runtime) ? {} : messaging?.provider === "gupshup-selfserve"
       ? { gupshupSelfServe: { baseUrl: wa, appName: String(messaging.appName ?? ""), ...(messaging.appId ? { appId: String(messaging.appId) } : {}) } }
       : messaging?.provider === "gupshup"
       ? { gupshup: { baseUrl: wa, appId: String(messaging.appId ?? "") } }
@@ -107,6 +114,7 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
       if (!read.ok || read.status.deploy?.state !== "applied") out.push("deploy");
       else if (!read.status.limits || read.status.limits.of === 0 || read.status.limits.proven < read.status.limits.of) out.push("limits");
       if (!checks?.connections || !checks.connections.every((c) => c.ok)) out.push("connections");
+      if (!runtimeHasWhatsApp(shops.runtime(shop)) && !ownerGrantsSummary(config.serverDir, shop).setupAt) out.push("owner-signin");
       return out;
     },
 

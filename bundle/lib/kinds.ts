@@ -51,6 +51,16 @@ export function guardsOf(kind: { guards: readonly ServiceKind[] }, settings: unk
  */
 export const hasOwnCalendar = (settings: unknown): boolean => (settings as { calendar?: { module?: string } } | undefined)?.calendar?.module === "own";
 
+/**
+ * Item 11h (decision 45): does this shop have WhatsApp? Its runtime.json (the panel's) names a messaging service. A shop set up without a WhatsApp number has none:
+ * no WhatsApp Guard, no WhatsApp secrets, no WhatsApp in its runtime; customers book on its page, and the owner signs in with a passkey and hears by web push.
+ * WhatsApp is reach, not a need. The one place that decides it, as `hasOwnCalendar` is for the calendar.
+ */
+export const runtimeHasWhatsApp = (runtime: unknown): boolean => {
+  const m = (runtime as { services?: { messaging?: unknown } } | undefined)?.services?.messaging;
+  return typeof m === "object" && m !== null && !Array.isArray(m);
+};
+
 /** Does this shop have a Google Calendar? Its template has one AND its settings did not choose the booking list. */
 export const hasCalendar = (kind: { guards: readonly ServiceKind[] }, settings: unknown): boolean => guardsOf(kind, settings).includes("calendar");
 
