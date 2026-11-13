@@ -800,8 +800,9 @@ does with it.
 
 - **The quote.** The slot is held as always; the request is made through the same "look first, write, read back" (`ensureLink`), but the "link" is a `upi://pay` link
   to the shop's own UPI ID for exactly the deposit, with the booking number as its note. The customer gets the QR picture of that link (inside the window), then the
-  words with the link, the UPI ID and the amount, and the buttons I have paid, Cancel booking and Talk to the owner. The owner gets "UPI payment to check", with the
-  one-use code and a "Received ₹200" button (a WhatsApp template when the owner has not written today, which asks them to reply "received <code>").
+  words with the UPI ID and the amount (since 14 Nov 2026 never the `upi://` link itself: see "The words, short and friendly" below), and the buttons I have paid,
+  Cancel booking and Talk to the owner. The owner gets "New booking to check", with a "Received ₹200" button and the one-use code once, at the end, as the typed
+  stand-in for it (a WhatsApp template when the owner has not written today).
 - **Booked** only when the owner has marked the whole deposit received (`owner_marked_paid`), and the calendar shows it: `checkConfirmOnlyWhenRecorded` accepts the
   owner's marks adding up to the deposit, and nothing a customer sends. The customer's words say the owner confirmed it ("Booked! ... The owner has confirmed your ₹200
   deposit").
@@ -957,3 +958,36 @@ row it settled says the same instead of "Settled by a later step". The owner's W
 approved template body changed. The longest form that fits WhatsApp's 1,024 characters is chosen: names, then totals, then the count, then none. The worst case
 is now 1,010 characters (Malayalam, one person named). How and why: modules/Explanation.md, "Settled by <who>, by their word on the documents". Machine-written
 hi/ml/kn, on REVIEW-ml.md and REVIEW-kn.md (section 6). The sample report has no such refund and did not change.
+
+## The words, short and friendly (14 November 2026)
+
+The owner saw the UPI story (the customer's and the owner's WhatsApp threads from this template's own run) and said: "This looks ugly and out of place, are we
+really sending such long links and text, it should be simpler with hyperlinks and easy text. Make the sentences more human." Every message in
+`src/language/templates.ts` and its WhatsApp template in `src/language/meta-templates.ts` was rewritten, in all four languages, to read like a helpful shop assistant
+on WhatsApp. What changed, and what did not:
+
+- **The shape.** One or two short sentences, then the one thing to do. Everyday words ("You're booked!", "Can't make it?", "Heads up:"). The quote puts the offer
+  first ("Haircut on Tue 10 Nov, 6:00 pm is free! It's ₹450."), then what to pay, then, on lines of their own, how to pay and who confirms.
+- **No raw `upi://` link in any message.** WhatsApp does not make it tappable, so it read as a long broken string. A UPI shop's customer gets the UPI ID and the payee
+  written out ("UPI ID: glowsalon@okicici (Glow Salon)") and the QR picture of the request just before the words (`upi_qr_caption`, now with no booking id). A
+  gateway's https link stays, on a line of its own ("Pay ₹200 here: https://..."), where WhatsApp makes it tappable. A test holds that no rendered message in any
+  language carries `upi://`; the outgoing check still refuses a UPI link that is not the record's own.
+- **The QR picture is reachable.** It is written into the reports folder, and Caddy served only `.html`, `.json` and `.txt` there, so on a deployed server every QR
+  picture was a 404 (bundle/generate/compose.ts `reportsMatcher` now serves `.png` too; bundle/Explanation.md says so).
+- **No internal id to a customer.** "booking b-1" is gone from every customer line; the service and the time name the booking. The owner keeps the reference only where
+  it is the argument of a typed command ("approve b-3", "retry b-3"). The owner's day list drops it too: time, service and number, the day in the heading.
+- **Numbers grouped.** The customer's number reaches the owner as "+91 98111 11111" (modules/language/format.ts `groupPhone`); the check holds both forms as literals.
+- **The owner's code once.** The UPI buttons (Received, Refund sent, Kept for booking) are the way to answer; the code is written once, at the end, as the typed
+  stand-in: "tap Received (or reply: received 7P52KF, adding the amount if it's different)". The one exception is the late mark, which offers two commands.
+- **The service capitalised** where it opens an English sentence (`sentenceStart`; the WhatsApp templates use a `{Service}` value for it).
+- **Values the check reads stay as values.** The slot is still `formatSlot`'s "Tue 10 Nov, 6:00 pm" and the hold is still "60 minutes", not "6 pm" or "an hour":
+  the outgoing check and the mutation test read exactly those forms, and `formatSlot` is shared with Orders and Fees.
+
+What every line still means, word for word or not: the agent never says it checked a payment (on UPI the owner checks their UPI app and confirms); nothing is booked
+until the record says so; a screenshot is not proof ("a screenshot alone isn't proof of payment"); the cancellation rule; a UPI refund is sent by the owner and the
+customer hears "sent" only after the owner marks it. `owner_upi_marked` says only what the owner marked ("Got it: you marked ₹200 as received ..."), not "booked":
+it is sent whenever the marks add up, whether or not the calendar then confirms, and a failed confirmation has its own notice. The crash test's fixed words
+(`crash-test/says.ts` MARKERS) are kept in every language.
+
+Hindi, Malayalam and Kannada were rewritten in the same style (machine-written, like the rest of those packs; REVIEW-ml.md and REVIEW-kn.md were made again from the
+new words for the native reader). Every changed WhatsApp template body needs Meta's approval again before it can carry the message outside the 24-hour window.
