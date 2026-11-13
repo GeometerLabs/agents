@@ -18,7 +18,7 @@ import type { LocalDate } from "../core/time.ts";
 import { Writer } from "./words.ts";
 
 export type AssistantTemplateId = "morning" | "morning_cheerful" | "morning_brief" | "day_closed" | "day_open";
-type Slot = "shop" | "name" | "date" | "time" | "today" | "money" | "waiting";
+type Slot = "shop" | "date" | "time" | "today" | "money" | "waiting";
 
 /** The middle of the morning line, the same for every personality: the values, with fixed words around each. */
 const MORNING_MIDDLE: Record<Language, string> = {
@@ -28,7 +28,10 @@ const MORNING_MIDDLE: Record<Language, string> = {
   kn: "ಇಂದು, {date}: {today}. ನಿನ್ನೆ ದಾಖಲಾದದ್ದು: {money}. ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವವು: {waiting}.",
 };
 
-/** Each personality's morning template (personality.ts): its opening, the middle and its sign-off. The warm one keeps the name and words `owner_morning` always had. */
+/**
+ * Each personality's morning template (personality.ts): its opening, the middle and its sign-off. The warm one keeps the template name `owner_morning` and its words,
+ * less the character's name (owner, 14 Nov: a character has a name only when the partner gives it one, and a template cannot leave a value out).
+ */
 export const MORNING_TEMPLATE_OF: Record<Personality, AssistantTemplateId> = { warm: "morning", cheerful: "morning_cheerful", brief: "morning_brief" };
 const morningTemplate = (p: Personality): MetaTemplate<AssistantTemplateId> => ({
   name: p === "warm" ? "owner_morning" : `owner_morning_${p}`, usedFor: MORNING_TEMPLATE_OF[p], audience: "owner",
@@ -70,7 +73,7 @@ const value = (slot: Slot) => (f: TemplateFacts): string => {
 
 export const assistantCatalogue = createMetaCatalogue<TemplateFacts, AssistantTemplateId, Slot>({
   templates: TEMPLATES,
-  values: { shop: value("shop"), name: value("name"), date: value("date"), time: value("time"), today: value("today"), money: value("money"), waiting: value("waiting") },
+  values: { shop: value("shop"), date: value("date"), time: value("time"), today: value("today"), money: value("money"), waiting: value("waiting") },
 });
 
 /** The text of a template in a language with these values: the body filled in, exactly as Meta would show it. */
@@ -98,14 +101,14 @@ const MORNING_PARTS: Record<Language, { bookings: (n: string, first: string) => 
 export type MorningToday = { bookings: number; firstMs?: number } | { owes: number; owedPaise: number } | { open: number };
 
 /** The morning line's facts: what today holds, money recorded yesterday, and how many things wait. */
-export function morningFacts(a: { language: Language; timeZone: string; shop: string; name: string; today: LocalDate; parts: MorningToday[]; moneyPaise: number; waiting: number }): TemplateFacts {
+export function morningFacts(a: { language: Language; timeZone: string; shop: string; today: LocalDate; parts: MorningToday[]; moneyPaise: number; waiting: number }): TemplateFacts {
   const w = new Writer(a.language, a.timeZone);
   const p = MORNING_PARTS[a.language];
   const part = (t: MorningToday): string =>
     "bookings" in t ? (t.bookings > 0 && t.firstMs !== undefined ? p.bookings(w.n(t.bookings), w.time(t.firstMs)) : p.noBookings)
       : "owes" in t ? (t.owes > 0 ? p.owes(w.n(t.owes), w.inr(t.owedPaise)) : p.nothing) : t.open > 0 ? p.open(w.n(t.open)) : p.nothing;
   const values = {
-    name: w.lit(a.name), shop: w.lit(a.shop), date: w.date(a.today),
+    shop: w.lit(a.shop), date: w.date(a.today),
     today: a.parts.length > 0 ? a.parts.map(part).join(", ") : p.nothing,
     money: a.moneyPaise > 0 ? w.inr(a.moneyPaise) : p.nothing,
     waiting: a.waiting > 0 ? w.n(a.waiting) : p.nothing,
@@ -123,7 +126,7 @@ export function dayFacts(a: { language: Language; timeZone: string; shop: string
 export function assistantSubmissions() {
   return assistantCatalogue.submissions((language) => {
     const today = { year: 2026, month: 11, day: 12 };
-    const facts = morningFacts({ language, timeZone: "Asia/Kolkata", shop: "Glow Salon", name: "Mithra", today, parts: [{ bookings: 6, firstMs: Date.UTC(2026, 10, 12, 4, 30) }], moneyPaise: 140_000, waiting: 2 });
+    const facts = morningFacts({ language, timeZone: "Asia/Kolkata", shop: "Glow Salon", today, parts: [{ bookings: 6, firstMs: Date.UTC(2026, 10, 12, 4, 30) }], moneyPaise: 140_000, waiting: 2 });
     const day = dayFacts({ language, timeZone: "Asia/Kolkata", shop: "Glow Salon", date: today, startMs: Date.UTC(2026, 10, 12, 10, 30) });
     return { ...facts, values: { ...facts.values, time: day.values.time } };
   });

@@ -109,7 +109,7 @@ export function createMorningJob<Store extends { assistant?: AssistantState }>(s
     if (!something && money.paise === 0 && waiting === 0) { finished = key; return { done: false, why: "quiet" }; }
 
     // ---- the words: the template's body filled in, and checked against its own values ----
-    const facts = morningFacts({ language, timeZone: tz, shop: shop.name, name: shop.settings.character.name, today, parts, moneyPaise: money.paise, waiting });
+    const facts = morningFacts({ language, timeZone: tz, shop: shop.name, today, parts, moneyPaise: money.paise, waiting });
     const template = MORNING_TEMPLATE_OF[shop.settings.character.personality];
     const text = render(template, facts);
     // the owner sees the shop's real mood (all five); only the public sees the softer face (character.ts publicFace)

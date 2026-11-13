@@ -737,8 +737,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.character.colourLabel` | ಬಣ್ಣ 3 | Colour 3 |  |
 | `setup.character.moodsTitle` | ಇದರ ಐದು ಮೂಡ್‌ಗಳು | Its five moods |  |
 | `setup.character.moodsHelp` | ಮಾಲೀಕರು ಐದನ್ನೂ ನೋಡುತ್ತಾರೆ. ಗ್ರಾಹಕರು ಎಲ್ಲವೂ ಸರಿ, ಕಾರ್ಯನಿರತ ಮತ್ತು ಮುಚ್ಚಿದೆ ಮಾತ್ರ ನೋಡುತ್ತಾರೆ. | The owner sees all five. Customers see only All well, Busy and Closed. |  |
-| `setup.character.name` | ಇದರ ಹೆಸರು | Its name |  |
-| `setup.character.nameHelp` | ಯಾವುದೇ ಭಾಷೆಯಲ್ಲಿ 1 ರಿಂದ 24 ಅಕ್ಷರಗಳು. ಉದಾಹರಣೆಗೆ Mithra ಅಥವಾ Golu. | 1 to 24 letters, in any language. For example Mithra or Golu. |  |
+| `setup.character.name` | ಇದರ ಹೆಸರು (ಬೇಕಿದ್ದರೆ) | Its name (optional) |  |
+| `setup.character.nameHelp` | ಬೇಕಿದ್ದರೆ ಮಾತ್ರ. ಖಾಲಿ ಬಿಟ್ಟರೆ ಇದು ಅಂಗಡಿಯ ಹೆಸರಿನಲ್ಲಿ ಅಂಗಡಿಯ ಸಹಾಯಕ. ಯಾವುದೇ ಭಾಷೆಯಲ್ಲಿ 24 ಅಕ್ಷರಗಳವರೆಗೆ, ಅಂಕೆಗಳಿಲ್ಲದೆ. | Optional. Left empty, it is the shop's assistant, under the shop's name. Up to 24 letters, in any language, no digits. |  |
 | `setup.character.personalityLegend` | ಮಾತನಾಡುವ ರೀತಿ | How it talks |  |
 | `setup.character.personalityHelp` | ಇದು ಇದರ ಶುಭಾಶಯ ಮತ್ತು ಬೆಳಗಿನ ಮಾಹಿತಿಯ ಮೊದಲ ಮತ್ತು ಕೊನೆಯ ಪದಗಳನ್ನು ಮಾತ್ರ ಬದಲಾಯಿಸುತ್ತದೆ. ಮೊತ್ತಗಳು, ಕಾರ್ಡ್‌ಗಳು, ಅನುಮೋದನೆಗಳು ಮತ್ತು ಮಿತಿಗಳು ಹಾಗೆಯೇ ಇರುತ್ತವೆ. | This changes only its greeting and the first and last words of the morning summary. Amounts, cards, approvals and limits stay the same. |  |
 | `setup.character.personalities.warm` | ಆತ್ಮೀಯ | Warm |  |
@@ -746,7 +746,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.character.personalities.brief` | ಸಂಕ್ಷಿಪ್ತ | Brief |  |
 | `setup.character.saysLabel` | ಇದು ಹೇಳುತ್ತದೆ: | It says: |  |
 | `setup.character.chosenMark` | ಆರಿಸಲಾಗಿದೆ | Picked |  |
-| `setup.character.problems.name` | ಸಹಾಯಕನಿಗೆ ಒಂದು ಹೆಸರು ಕೊಡಿ: 1 ರಿಂದ 24 ಅಕ್ಷರಗಳು, ಅಂಕೆಗಳಿಲ್ಲದೆ. | Give the assistant a name: 1 to 24 letters, no digits. |  |
+| `setup.character.problems.name` | ಹೆಸರು ಅಂಕೆಗಳಿಲ್ಲದ 1 ರಿಂದ 24 ಅಕ್ಷರಗಳಾಗಿರಬೇಕು, ಅಥವಾ ಖಾಲಿ ಬಿಡಿ. | The name must be 1 to 24 letters with no digits, or left empty. |  |
 | `setup.character.problems.style` | ಐದು ಶೈಲಿಗಳಲ್ಲಿ ಒಂದನ್ನು ಆರಿಸಿ. | Pick one of the five styles. |  |
 | `setup.character.problems.face` | ಸಾಲಿನಿಂದ ಒಂದು ಮುಖ ಆರಿಸಿ. | Pick a face from the row. |  |
 | `setup.character.problems.colour` | ತೋರಿಸಿದ ಬಣ್ಣಗಳಲ್ಲಿ ಒಂದನ್ನು ಅಥವಾ ತಾನಾಗಿ ಆರಿಸಿ. | Pick one of the colours shown, or Auto. |  |
@@ -1255,12 +1255,15 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `agents.actions.rotateDone` | ಹೊಸ ಕ್ರೆಡೆನ್ಶಿಯಲ್‌ಗಳು ಸಿದ್ಧ. ಹಳೆಯವು 4 Nov 2026, 10:15 ಕ್ಕೆ ನಿಲ್ಲುತ್ತವೆ. | New credentials made. The old ones stop at 4 Nov 2026, 10:15. |  |
 | `agents.actions.rotateFailed` | ಹೊಸ ಕ್ರೆಡೆನ್ಶಿಯಲ್‌ಗಳ ಹಿಂದಿನ ವಿನಂತಿ ಆಗಲಿಲ್ಲ; ನಿಮ್ಮ ಏಜೆಂಟ್‌ಗೆ ಏನೂ ಬದಲಾಗಲಿಲ್ಲ. ಕಾರಣ ಸರ್ವರ್‌ನ ಲಾಗ್‌ನಲ್ಲಿದೆ. | The last request for new credentials was not done; nothing changed for your agent. The server's log says why. |  |
 | `agents.actions.cliOnly` | ಏಜೆಂಟ್ ಅನ್ನು ತೆಗೆದುಹಾಕುವುದು ಸರ್ವರ್‌ನಲ್ಲಿ ಮಾತ್ರ: geometer agent remove <name>. | Removing an agent is done on the server only: geometer agent remove <name>. |  |
-| `personality.warm.greeting` | ನಾನು {name}, {shop} ನ ಸಹಾಯಕ. | I'm {name}, {shop}'s assistant. |  |
-| `personality.warm.morningOpening` | ಶುಭೋದಯ, ನಾನು {name}, {shop} ನ ಸಹಾಯಕ. | Good morning from {name}, the assistant of {shop}. |  |
+| `personality.warm.greeting` | ನಾನು {shop} ನ ಸಹಾಯಕ. | I'm {shop}'s assistant. |  |
+| `personality.warm.greetingNamed` | ನಾನು {name}, {shop} ನ ಸಹಾಯಕ. | I'm {name}, {shop}'s assistant. |  |
+| `personality.warm.morningOpening` | ಶುಭೋದಯ, ನಾನು {shop} ನ ಸಹಾಯಕ. | Good morning from the assistant of {shop}. |  |
 | `personality.warm.morningSignOff` | ಹೆಚ್ಚು ನೋಡಲು ಇಲ್ಲಿ ಉತ್ತರಿಸಿ. | Reply here to see more. |  |
-| `personality.cheerful.greeting` | ನಮಸ್ಕಾರ! ನಾನು {name}, {shop} ನ ಸಹಾಯಕ, ಸಹಾಯ ಮಾಡಲು ಸಂತೋಷ. | Hello! I'm {name}, {shop}'s assistant, happy to help. |  |
-| `personality.cheerful.morningOpening` | ಶುಭೋದಯ! ನಾನು {name}, {shop} ನ ಸಹಾಯಕ. | Good morning! {name} here, the assistant of {shop}. |  |
+| `personality.cheerful.greeting` | ನಮಸ್ಕಾರ! ನಾನು {shop} ನ ಸಹಾಯಕ, ಸಹಾಯ ಮಾಡಲು ಸಂತೋಷ. | Hello! I'm {shop}'s assistant, happy to help. |  |
+| `personality.cheerful.greetingNamed` | ನಮಸ್ಕಾರ! ನಾನು {name}, {shop} ನ ಸಹಾಯಕ, ಸಹಾಯ ಮಾಡಲು ಸಂತೋಷ. | Hello! I'm {name}, {shop}'s assistant, happy to help. |  |
+| `personality.cheerful.morningOpening` | ಶುಭೋದಯ! ನಾನು {shop} ನ ಸಹಾಯಕ. | Good morning! {shop}'s assistant here. |  |
 | `personality.cheerful.morningSignOff` | ಹೆಚ್ಚು ನೋಡಲು ಇಲ್ಲಿ ಉತ್ತರಿಸಿ. ನಿಮ್ಮ ದಿನ ಶುಭವಾಗಲಿ! | Reply here to see more. Have a lovely day! |  |
-| `personality.brief.greeting` | ಇದು {name}, {shop} ನ ಸಹಾಯಕ. | This is {name}, {shop}'s assistant. |  |
-| `personality.brief.morningOpening` | ಬೆಳಗಿನ ಮಾಹಿತಿ: {name}, {shop} ನ ಸಹಾಯಕ. | Morning summary from {name}, the assistant of {shop}. |  |
+| `personality.brief.greeting` | ಇದು {shop} ನ ಸಹಾಯಕ. | This is {shop}'s assistant. |  |
+| `personality.brief.greetingNamed` | ಇದು {name}, {shop} ನ ಸಹಾಯಕ. | This is {name}, {shop}'s assistant. |  |
+| `personality.brief.morningOpening` | ಬೆಳಗಿನ ಮಾಹಿತಿ: {shop} ನ ಸಹಾಯಕ. | Morning summary from the assistant of {shop}. |  |
 | `personality.brief.morningSignOff` | ಹೆಚ್ಚಿನದಕ್ಕೆ ಉತ್ತರಿಸಿ. | Reply for more. |  |

@@ -80,8 +80,8 @@ test("the buttons fit WhatsApp's limits in every language", () => {
 
 test("the three templates: the text is the approved body filled in, it passes its check, and outside the window it goes under its own name", () => {
   for (const language of LANGUAGES) {
-    const morning = morningFacts({ language, timeZone: TZ, shop: "Glow Salon", name: "Mithra", today: SUN, parts: [{ bookings: 6, firstMs: AT_4PM }, { owes: 3, owedPaise: 450_000 }, { open: 2 }], moneyPaise: 140_000, waiting: 2 });
-    const quiet = morningFacts({ language, timeZone: TZ, shop: "Glow Salon", name: "Mithra", today: SUN, parts: [{ bookings: 0 }], moneyPaise: 0, waiting: 0 });
+    const morning = morningFacts({ language, timeZone: TZ, shop: "Glow Salon", today: SUN, parts: [{ bookings: 6, firstMs: AT_4PM }, { owes: 3, owedPaise: 450_000 }, { open: 2 }], moneyPaise: 140_000, waiting: 2 });
+    const quiet = morningFacts({ language, timeZone: TZ, shop: "Glow Salon", today: SUN, parts: [{ bookings: 0 }], moneyPaise: 0, waiting: 0 });
     const day = dayFacts({ language, timeZone: TZ, shop: "Glow Salon", date: SUN, startMs: AT_4PM });
     for (const [id, facts] of [["morning", morning], ["morning", quiet], ["day_closed", day], ["day_open", day]] as const) {
       const text = render(id, facts);

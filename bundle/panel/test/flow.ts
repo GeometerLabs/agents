@@ -17,8 +17,8 @@ export const STEP2 = { deposit: "200", window: "24" };
 export const STEP3 = { primary: "ml", lang_en: "on", ownerLanguage: "ml", ownerNumber: "98765 43210" };
 export const STEP4 = { payMod: "razorpay", waNumber: "+91 90000 11111", waNumberId: PHONE_ID, waToken: M.token, waAppSecret: M.app, calUse: "google", calId: CALENDAR_ID, gwMode: "live", gwKeyId: "rzp_live_AbCdEf123456", gwKeySecret: M.secret, gwWebhook: M.hook };
 
-/** Item 11i: the Character step, finished with the face it first rolled: a name, the warm personality, Next. */
-export const CHARACTER5 = { act: "next", characterName: "Mithra", personality: "warm" };
+/** Item 11i: the Character step, finished with the face it first rolled: no name (owner, 14 Nov: optional), the warm personality, Next. */
+export const CHARACTER5 = { act: "next", characterName: "", personality: "warm" };
 
 export interface Flow { draft: string; shop: string; replies: string[] }
 

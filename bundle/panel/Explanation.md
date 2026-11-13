@@ -220,7 +220,7 @@ stay in Latin letters. Tests (written, not run): `test/agents.test.ts`.
 
 ## The Character step (14 Nov 2026, plan item 11i)
 
-Step 5 of 6 for every template: the shop's assistant, made with the owner beside the partner (a style, a face from a row rolled for this shop, a colour, a name, a
+Step 5 of 6 for every template: the shop's assistant, made with the owner beside the partner (a style, a face from a row rolled for this shop, a colour, a name if they want one, a
 personality), all with no script. Its logic is `character.ts`, its page `views-character.ts`; saving writes `assistant.character` (turning the shop's assistant on) and
 draws every mood into the shop's own data. The whole account, with why it comes after the accounts step and what the pictures are, is in bundle/Explanation.md
 ("The shop's character").

@@ -6,8 +6,8 @@
 // Everything runs here, from files in bundle/vendor (vendor.json lists each with its sha256 and licence): nothing is fetched from DiceBear's service or anywhere else.
 //  - DiceBear core 10.7.0 (MIT) with the five approved style definitions from @dicebear/styles 10.6.0 (CC0 1.0). The look is DiceBear's own: shape, top, details,
 //    palette and tile come from the seed, eyes and mouth from the approved mood table (modules/assistant/character.ts), and a swatch changes one colour. Owner,
-//    14 Nov: no filters and no hand-drawn additions. The SVG is DiceBear's output with its <metadata> block taken out (its licence notice, which CC0 does not ask
-//    for, and a style name the product's words never use); the drawing is untouched.
+//    14 Nov: no filters and no hand-drawn additions. The SVG is DiceBear's output with its <metadata> block taken out (its licence notice, about 0.9 KB of every
+//    file, which CC0 does not ask for; the credit stays in bundle/vendor); the drawing is untouched.
 //  - resvg (MPL-2.0) compiled to WebAssembly turns the SVG into pixels and PNG; libwebp (BSD) compiled to WebAssembly by jSquash (Apache-2.0) encodes the WebP.
 //    Why these (bundle/Explanation.md, "The character's renderer"): no native parts, so the same files run in every container and on the host's Node with no
 //    build step; together about 2.8 MB of WebAssembly, loaded only when a set is drawn; resvg draws DiceBear's paths, clips and opacities exactly; the WebP is

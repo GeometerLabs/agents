@@ -78,7 +78,7 @@ test("a look is DiceBear's drawing: the same seed gives the same SVG, another se
     }
     assert.ok(!/<rect width="100" height="100" fill="#010203"/u.test(drawSvg(look, "well", { tile: false })), "the sticker's clear background is taken out");
   }
-  assert.throws(() => drawSvg({ style: "clay", seed: "x", colour: "fda4af" }, "well"), /not one of the Golu colours/u);
+  assert.throws(() => drawSvg({ style: "clay", seed: "x", colour: "fda4af" }, "well"), /not one of the Clay colours/u);
   assert.throws(() => drawSvg({ style: "avataaars" as never, seed: "x" }), /no character style/u);
 });
 
@@ -139,7 +139,7 @@ test("on the server: the deployer draws from the settings, hands the front a cop
     const settings = (assistant?: unknown) => writeFileSync(join(shopDir, "settings.json"), JSON.stringify({ name: "Veena Salon", ...(assistant ? { assistant } : {}) }));
     settings({ character: { name: "Mithra", style: "moods", seed: "veena-3f2a1c-1", personality: "brief" } });
     assert.deepEqual(lookOf(JSON.parse(readFileSync(join(shopDir, "settings.json"), "utf8")), "veena"), { style: "moods", seed: "veena-3f2a1c-1" });
-    assert.deepEqual(lookOf({ assistant: {} }, "veena"), { style: "clay", seed: "veena" }, "an assistant with no character: Golu, seeded with the shop's id");
+    assert.deepEqual(lookOf({ assistant: {} }, "veena"), { style: "clay", seed: "veena" }, "an assistant with no character: Clay, seeded with the shop's id");
     assert.equal(lookOf({}, "veena"), undefined);
     // the front's folder exists once the shop is deployed (the deployer made it for its secrets)
     mkdirSync(join(frontCharacterDirOf(server, "veena"), ".."), { recursive: true });

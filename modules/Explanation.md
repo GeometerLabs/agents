@@ -830,30 +830,32 @@ not sent more than four hours after its time. A month of morning lines is not ac
 
 ### The character (decision 47; drawn and wired 14 Nov as item 11i's character half)
 
-`character.ts` is what every part shares about a shop's character, and it draws nothing. The setting, in the shop's settings (`assistant.character`), is a name (1 to
-24 letters, any script, no digits), one of the five DiceBear styles the owner approved (`clay` shown as "Golu", `critters`, `sprouts`, `moods`, `pixelbot` shown as
-"Pixel": the product's words never say "bot"), a seed (left out: the shop's id), a colour from that style's own palette (left out: "Auto", DiceBear's pick) and a
-personality. The hand-drawn "look" of 12 Nov (base, colour, accessory such as scissors or a spanner) is gone: the owner judged hand-drawn additions and home-made filters
-low quality on 14 Nov, so the pictures are DiceBear's own drawings only, and a settings file that still has `look` is refused in words. There is no voice (the owner's
-decision, 12 Nov: "listen in voice, reply in text").
+`character.ts` is what every part shares about a shop's character, and it draws nothing. The setting, in the shop's settings (`assistant.character`), is one of the
+five DiceBear styles the owner approved, called by DiceBear's own names (owner, 14 Nov: Clay, Critters, Sprouts, Moods, Pixel Bot; the panel is the only place a style is
+named), a seed (left out: the shop's id), a colour from that style's own palette (left out: "Auto", DiceBear's pick), a personality and, only if the partner gives one, a
+name (1 to 24 letters, any script, no digits). **No name by default** (owner, 14 Nov): the assistant is "<the shop>'s assistant" (`ASSISTANT_OF`), and the
+character's name appears beside the shop's only where one was set, and never in a WhatsApp template (a template cannot leave a value out). The hand-drawn "look" of
+12 Nov (base, colour, accessory such as scissors or a spanner) is gone: the owner judged hand-drawn additions and home-made filters low quality on 14 Nov, so the
+pictures are DiceBear's own drawings only, and a settings file that still has `look` is refused in words. There is no voice (the owner's decision, 12 Nov: "listen in
+voice, reply in text").
 
 `mood.ts` computes **a mood only from the shop's real state**, never stored and never earned. In order: `something_wrong` (a refund needs the builder, a message failed,
 a task gave up on a Guard), `waiting_for_owner` (a card or a waiting item), `closed` (outside today's hours, or a closed day), `busy` (a booking within the hour, or a
 full day), `quiet`. There are no points, chores or streaks. Each mood has one picture, named as Streetlist names them (`FACE_OF_MOOD`): `well`, `needs`, `wrong`,
 `closed`, `busy`, with DiceBear's eyes and mouth from the approved table (`EYES_AND_MOUTH`). Clay has no closed eyes; its Closed is its own happy eyes and flat mouth,
 with no dimming and no "zzz" (the approved page had both; the owner's 14 Nov rule of no filters and no hand-drawn additions wins, and the word "Closed" carries it).
-**A picture never carries a mood alone**: `FACE_WORDS` gives the mood in words in four languages, and every place that shows a picture puts the words beside it or in
-its alt text.
+**A picture never carries a mood alone**: `FACE_WORDS` gives the mood in words in four languages, and every place that shows a picture puts the words beside it, and
+the shop and the mood in its alt text (`pictureWords`: "Glow Salon's assistant, all well").
 
 **Who sees which mood.** The owner sees all five (the owner's app, the morning line). The public sees only `well`, `busy` or `closed` (`publicFace`): "needs you" and
 "something wrong" are the owner's business, so the shop's page, Streetlist and `now.svg` show the mood the shop would have with nothing waiting and nothing wrong.
 `conversation.ts shopMood` returns both from the same reads.
 
-**Personalities** (`personality.ts`): `warm` (today's words exactly), `cheerful` and `brief`. A personality changes only the assistant's own small talk: the greeting (the
-first sentence of its "help" answer, `words.ts`) and the morning summary's opening and sign-off. It never touches cards, amounts, approvals, limits or other fixed
+**Personalities** (`personality.ts`): `warm` (today's words, less the character's name), `cheerful` and `brief`. A personality changes only the assistant's own small
+talk: the greeting (the first sentence of its "help" answer, `words.ts`, with the character's name only when it has one) and the morning summary's opening and sign-off. It never touches cards, amounts, approvals, limits or other fixed
 wording. Because outside the 24-hour window the morning line can only be a template Meta approved word for word, and a body may not start or end with a value, each
 personality has its own morning template (`owner_morning`, `owner_morning_cheerful`, `owner_morning_brief`; `templates.ts` builds the three from the parts); the warm one
-is word for word what `owner_morning` was (a test holds it). Every line is machine-written in Hindi, Malayalam and Kannada and is on the review sheets (section 7, ids
+is what `owner_morning` was, less "{name}, " (a test holds it), since a template names only the shop. Every line is machine-written in Hindi, Malayalam and Kannada and is on the review sheets (section 7, ids
 `personality.*`).
 
 **The pictures on WhatsApp.** The morning templates have an image header (`MetaTemplate.header: "image"`; submitted with a `HEADER` of format `IMAGE` whose example handle

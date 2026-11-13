@@ -22,7 +22,7 @@ import { OWNER, PAGE } from "./words.ts";
 import { OWNER_MORE } from "./words-orders-fees.ts";
 import { CARD_LABELS } from "../assistant/words.ts";
 import { characterLine, talkBox } from "../assistant/app/talk.ts";
-import { themeColour } from "../assistant/character.ts";
+import { ASSISTANT_OF, themeColour } from "../assistant/character.ts";
 
 const CSS = `
 :root{--ink:#10231a;--mute:#4b5d52;--line:#cfe3d6;--g9:#14532d;--g7:#15803d;--g1:#dcfce7;--amber:#92400e;--amber-bg:#fffbeb}
@@ -109,14 +109,14 @@ ${v.upcoming.length > 0 ? html`<ul>${v.upcoming.map((u) => html`<li>${formatSlot
   const appHead = app ? html`<link rel="manifest" href="${o.base}/manifest.webmanifest" crossorigin="use-credentials"><meta name="theme-color" content="${colour}">` : "";
   return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
 <title>${w.title(v.shop.name)}</title><style>${raw(CSS)}</style>${appHead}</head><body><main><header><h1>${w.title(v.shop.name)}</h1></header>
-${app ? raw(characterLine({ language: o.language, name: app.character.name, colour: colour!, face: app.face, ...(o.picture ? { picture: o.picture } : {}) })) : ""}
+${app ? raw(characterLine({ language: o.language, shop: v.shop.name, ...(app.character.name ? { name: app.character.name } : {}), colour: colour!, face: app.face, ...(o.picture ? { picture: o.picture } : {}) })) : ""}
 ${machine ? html`<p class="machine">${machine}</p>` : ""}
 ${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
 <p class="note">${w.privateNote}</p>
 <h2>${w.waiting}</h2>
 ${waiting.length > 0 ? waiting : html`<p>${w.none}</p>`}
 ${coming}${parents}
-${app ? raw(talkBox({ base: o.base, language: o.language, lines: app.talk, assistantName: app.character.name, ...(o.nonce ? { nonce: o.nonce } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), listen: app.listen === true })) : ""}
+${app ? raw(talkBox({ base: o.base, language: o.language, lines: app.talk, assistantName: app.character.name ?? ASSISTANT_OF[o.language](v.shop.name), ...(o.nonce ? { nonce: o.nonce } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), listen: app.listen === true })) : ""}
 ${o.signOut ? html`<form method="post" action="${o.signOut.action}">${o.csrf ? html`<input type="hidden" name="csrf" value="${o.csrf}">` : ""}<button class="no" type="submit">${o.signOut.label}</button></form>` : ""}
 </main></body></html>`.markup}`;
 }

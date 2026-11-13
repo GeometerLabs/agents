@@ -361,7 +361,7 @@ test("the owner's app at <base>/owner after sign-in (items 11d, 11e, 11f): its o
     const csrf = /name="csrf" value="([^"]+)"/u.exec(html)?.[1] ?? "";
     assert.ok(html.includes(`<form method="post" action="${w.ownerBase}/talk"><input type="hidden" name="csrf" value="${csrf}">`), "the talk box posts with the session's form token");
     assert.ok(!html.includes('id="talk-rec"'), "no record button: this shop has no voice service");
-    assert.ok(html.includes("Mithra"), "the character's name");
+    assert.match(html, /Glow Salon(&#39;|')s assistant/u, "who the character is: the shop's assistant (a name only when the partner gives one)");
 
     const manifest = await asOwner("/owner/manifest.webmanifest");
     assert.match(String(manifest.headers.get("content-type")), /^application\/manifest\+json/u);

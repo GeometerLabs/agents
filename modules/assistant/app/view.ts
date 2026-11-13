@@ -42,10 +42,11 @@ export function ownerAppView(a: { skills: readonly OwnerSkill[]; state: Assistan
 }
 
 /**
- * Item 11i: the shop's character as its public pages show it (the offer's `shop.character`): the name and the mood the PUBLIC sees now (all well, busy or closed;
+ * Item 11i: the shop's character as its public pages show it (the offer's `shop.character`): its name when the partner gave one, and the mood the PUBLIC sees now (all well, busy or closed;
  * character.ts publicFace), from the same reads as the owner's app. Undefined for a shop without the assistant. The front adds the picture itself.
  */
-export function publicCharacter(a: { skills: readonly OwnerSkill[]; state: AssistantState | undefined; nowMs: number; timeZone: string; settings: AssistantSettings | undefined }): { name: string; face: Face } | undefined {
+export function publicCharacter(a: { skills: readonly OwnerSkill[]; state: AssistantState | undefined; nowMs: number; timeZone: string; settings: AssistantSettings | undefined }): { name?: string; face: Face } | undefined {
   if (!a.settings) return undefined;
-  return { name: a.settings.character.name, face: shopMood(a.skills, a.state, a.nowMs, a.timeZone).publicFace };
+  const name = a.settings.character.name;
+  return { ...(name ? { name } : {}), face: shopMood(a.skills, a.state, a.nowMs, a.timeZone).publicFace };
 }

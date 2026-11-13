@@ -1,11 +1,13 @@
 // The shop's character (item 11e, decision 47; built 14 Nov 2026 as item 11i's character half): one per shop, carried in the shop's settings
-// (`assistant.character`), rolled by the partner in the panel's Character step with the owner beside them. This file is what every part of the product shares
-// about it, and it draws nothing:
+// (`assistant.character`), rolled by the partner in the panel's Character step with the owner beside them. Owner, 14 Nov: the styles go by DiceBear's own names,
+// and a character has no name unless the partner gives it one: pages and WhatsApp say "<the shop>'s assistant", with the character's name only when one was set.
+// This file is what every part of the product shares about it, and it draws nothing:
 //  - the five DiceBear styles the owner approved (docs/product/characters/README.md), each with the one colour a partner may change and that colour's own DiceBear
 //    palette (its first eight values; a bundle test checks them against the vendored definitions);
 //  - the five moods a picture shows, by the names the pictures are served under (`well`, `needs`, `wrong`, `closed`, `busy`, as Streetlist names them), and the
 //    approved eyes and mouth for each style and mood;
-//  - the mood in words in four languages, because a picture never carries a mood alone (accessibility: the words go beside it or in its alt text);
+//  - the mood in words in four languages, because a picture never carries a mood alone (accessibility: the words go beside it or in its alt text), and the
+//    words every picture carries: the service, its assistant and the mood ("Glow Salon's assistant, all well");
 //  - the setting's shape and its check.
 // The drawings themselves are DiceBear's own, made on the shop's server by bundle/character/render.ts (the bundle may import this file; modules never import the
 // bundle). Owner, 14 Nov: DiceBear's own drawings only, crisp: no filters and no hand-drawn additions, so there is no "accessory" and no dimmed or "zzz" Closed face;
@@ -17,7 +19,7 @@ import type { Mood } from "./mood.ts";
 import { PERSONALITIES } from "./personality.ts";
 import type { Personality } from "./personality.ts";
 
-/** The five styles, in the order the panel offers them (Golu first: the owner's pick on the approved page). All CC0 1.0 in @dicebear/styles 10.6.0. */
+/** The five styles, in the order the panel offers them (Clay first: the owner's pick on the approved page). All CC0 1.0 in @dicebear/styles 10.6.0. */
 export const CHARACTER_STYLES = ["clay", "critters", "sprouts", "moods", "pixelbot"] as const;
 export type CharacterStyle = (typeof CHARACTER_STYLES)[number];
 
@@ -25,15 +27,15 @@ export type CharacterStyle = (typeof CHARACTER_STYLES)[number];
 const PASTELS = ["7dd3fc", "a5b4fc", "c4b5fd", "f0abfc", "fda4af", "fca5a5", "fdba74", "fcd34d"] as const;
 
 /**
- * Each style as the panel shows it: its name (Latin letters in every language, like a brand), the DiceBear colour a swatch changes (`<option>Color`), and the
- * first eight values of that colour in the style's own definition. "Pixel" for DiceBear's Pixelbot: the product's words never say "bot".
+ * Each style as the panel shows it: DiceBear's own name for it (owner, 14 Nov; Latin letters in every language, like a brand), the DiceBear colour a swatch changes
+ * (`<option>Color`), and the first eight values of that colour in the style's own definition. Only the partner's panel names a style; no customer or owner sees it.
  */
 export const STYLE_INFO: Record<CharacterStyle, { name: string; colourOption: "body" | "pot" | "face" | "glow"; palette: readonly string[] }> = {
-  clay: { name: "Golu", colourOption: "body", palette: ["c4795c", "d99277", "e0bd6a", "cf9f52", "a8b37e", "8ba06b", "83b0a4", "86a5c3"] },
+  clay: { name: "Clay", colourOption: "body", palette: ["c4795c", "d99277", "e0bd6a", "cf9f52", "a8b37e", "8ba06b", "83b0a4", "86a5c3"] },
   critters: { name: "Critters", colourOption: "body", palette: PASTELS },
   sprouts: { name: "Sprouts", colourOption: "pot", palette: PASTELS },
   moods: { name: "Moods", colourOption: "face", palette: PASTELS },
-  pixelbot: { name: "Pixel", colourOption: "glow", palette: ["7dd3fc", "5eead4", "86efac", "bef264", "fde68a", "fdba74", "f9a8d4", "c4b5fd"] },
+  pixelbot: { name: "Pixel Bot", colourOption: "glow", palette: ["7dd3fc", "5eead4", "86efac", "bef264", "fde68a", "fdba74", "f9a8d4", "c4b5fd"] },
 };
 
 /** The moods a picture shows, by the names the pictures are served under (<base>/character/<face>.svg). */
@@ -84,8 +86,8 @@ export interface CharacterPictures { base: string; version: string }
 export const pictureUrl = (p: CharacterPictures, face: Face, format: PictureFormat): string => `${p.base}/character/${face}.${format}?v=${p.version}`;
 
 export interface Character {
-  /** What the assistant calls itself: 1 to 24 letters in any script. */
-  name: string;
+  /** What the assistant calls itself, when the partner gave it a name: 1 to 24 letters in any script. Left out: it is "<the shop>'s assistant". */
+  name?: string;
   style: CharacterStyle;
   /** DiceBear's seed: decides the shape, top, details, colours and tile. The panel's Roll makes one that begins with the shop's id. Left out: the shop's id. */
   seed?: string;
@@ -100,8 +102,20 @@ const NAME_RE = /^[\p{L}\p{M}][\p{L}\p{M} '’-]{0,23}$/u;
 /** A seed: plain characters only, so it can sit in a file name, a form and a URL unchanged. */
 export const SEED_RE = /^[a-z0-9][a-z0-9-]{0,79}$/u;
 
-/** The character a shop has when its settings turn the assistant on but name none: Golu with the shop's id as its seed. The partner sets the real one at the visit. */
-export const defaultCharacter = (name = "Mithra"): Character => ({ name, style: "clay", personality: "warm" });
+/** The character a shop has when its settings turn the assistant on but name none: Clay with the shop's id as its seed, and no name. The partner sets the real one at the visit. */
+export const defaultCharacter = (): Character => ({ style: "clay", personality: "warm" });
+
+/** Who the assistant is, in words: "Glow Salon's assistant", or with a name the partner set, "<name>, Glow Salon's assistant". Machine-written beyond English. */
+export const ASSISTANT_OF: Record<Language, (shop: string, name?: string) => string> = {
+  en: (shop, name) => `${name ? `${name}, ` : ""}${shop}'s assistant`,
+  hi: (shop, name) => `${name ? `${name}, ` : ""}${shop} का असिस्टेंट`,
+  ml: (shop, name) => `${name ? `${name}, ` : ""}${shop}-ന്റെ അസിസ്റ്റന്റ്`,
+  kn: (shop, name) => `${name ? `${name}, ` : ""}${shop} ನ ಸಹಾಯಕ`,
+};
+
+/** The words a picture of the character carries (its alt text): the service, its assistant and the mood, "Glow Salon's assistant, all well". */
+export const pictureWords = (language: Language, shop: string, face: Face, name?: string): string =>
+  `${ASSISTANT_OF[language](shop, name)}, ${language === "en" ? FACE_WORDS.en[face].toLowerCase() : FACE_WORDS[language][face]}`;
 
 /** The seed a picture is drawn with: the character's own, or the shop's id. */
 export const seedOf = (c: Pick<Character, "seed">, shopId: string): string => c.seed ?? shopId;
@@ -115,16 +129,17 @@ const KEYS = ["name", "style", "seed", "colour", "personality"];
 /** Check a character setting. Every problem is a plain sentence the panel can show; a missing part takes its default. */
 export function readCharacter(raw: unknown, errors: string[]): Character | undefined {
   if (raw === undefined) return undefined;
-  if (!isObj(raw)) { errors.push('"assistant.character" must be an object with a name and a style.'); return undefined; }
+  if (!isObj(raw)) { errors.push('"assistant.character" must be an object with a style (and, if you like, a name).'); return undefined; }
   for (const k of Object.keys(raw)) {
     if (k === "look") errors.push('"assistant.character.look" is no longer a setting: the character is a DiceBear "style", a "seed" and a "colour" (decision 47). Make it again in the panel\'s Character step.');
     else if (!KEYS.includes(k)) errors.push(`"assistant.character" has "${k}", which is not a setting (${KEYS.join(", ")}). The assistant answers in text, so there is no voice to choose.`);
   }
-  const name = typeof raw.name === "string" ? raw.name.trim() : "";
-  if (!NAME_RE.test(name)) errors.push('The character\'s "name" must be 1 to 24 letters (spaces, hyphens and apostrophes are fine; no digits).');
+  // the name is optional (owner, 14 Nov): left out or empty, the assistant is "<the shop>'s assistant"
+  const name = typeof raw.name === "string" ? raw.name.trim() : raw.name === undefined ? "" : undefined;
+  if (name === undefined || (name !== "" && !NAME_RE.test(name))) errors.push('The character\'s "name" must be 1 to 24 letters (spaces, hyphens and apostrophes are fine; no digits), or left out.');
   const style = raw.style === undefined ? "clay" : raw.style;
   if (!(CHARACTER_STYLES as readonly unknown[]).includes(style)) errors.push(`The character's "style" must be one of: ${CHARACTER_STYLES.join(", ")}.`);
-  const out: Character = { name, style: (CHARACTER_STYLES as readonly unknown[]).includes(style) ? style as CharacterStyle : "clay", personality: "warm" };
+  const out: Character = { ...(name ? { name } : {}), style: (CHARACTER_STYLES as readonly unknown[]).includes(style) ? style as CharacterStyle : "clay", personality: "warm" };
   if (raw.seed !== undefined) {
     if (typeof raw.seed !== "string" || !SEED_RE.test(raw.seed)) errors.push('The character\'s "seed" must be 1 to 80 small letters, digits and hyphens.');
     else out.seed = raw.seed;

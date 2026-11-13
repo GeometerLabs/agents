@@ -13,23 +13,23 @@ import { WEEKDAY_NAMES } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import type { ShopInfo } from "./backend.ts";
 import { partnerLine } from "./owner-session.ts";
-import { FACE_WORDS } from "../assistant/character.ts";
+import { ASSISTANT_OF, FACE_WORDS, pictureWords } from "../assistant/character.ts";
 import type { PagesFile } from "./pages-file.ts";
 
-const WORDS: Record<Language, { whatsapp: string; hours: string; closed: string; assistant: (name: string) => string }> = {
-  en: { whatsapp: "Message us on WhatsApp", hours: "Opening hours", closed: "closed", assistant: (name) => `${name}, the shop's assistant` },
-  hi: { whatsapp: "WhatsApp पर हमें मैसेज करें", hours: "खुलने का समय", closed: "बंद", assistant: (name) => `${name}, दुकान का असिस्टेंट` },
-  ml: { whatsapp: "WhatsApp-ൽ ഞങ്ങൾക്ക് സന്ദേശം അയയ്ക്കൂ", hours: "പ്രവർത്തന സമയം", closed: "അടച്ചിരിക്കും", assistant: (name) => `${name}, കടയുടെ അസിസ്റ്റന്റ്` },
-  kn: { whatsapp: "WhatsApp ನಲ್ಲಿ ನಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ", hours: "ತೆರೆಯುವ ಸಮಯ", closed: "ಮುಚ್ಚಿರುತ್ತದೆ", assistant: (name) => `${name}, ಅಂಗಡಿಯ ಸಹಾಯಕ` },
+const WORDS: Record<Language, { whatsapp: string; hours: string; closed: string }> = {
+  en: { whatsapp: "Message us on WhatsApp", hours: "Opening hours", closed: "closed" },
+  hi: { whatsapp: "WhatsApp पर हमें मैसेज करें", hours: "खुलने का समय", closed: "बंद" },
+  ml: { whatsapp: "WhatsApp-ൽ ഞങ്ങൾക്ക് സന്ദേശം അയയ്ക്കൂ", hours: "പ്രവർത്തന സമയം", closed: "അടച്ചിരിക്കും" },
+  kn: { whatsapp: "WhatsApp ನಲ್ಲಿ ನಮಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ", hours: "ತೆರೆಯುವ ಸಮಯ", closed: "ಮುಚ್ಚಿರುತ್ತದೆ" },
 };
 
 const WEEK = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
-/** The character's picture with its mood in words (alt text), or nothing when the shop has no picture yet. */
+/** The character's picture with the shop and the mood in words as its alt text ("Glow Salon's assistant, all well"), or nothing when the shop has no picture yet. */
 export function characterPicture(shop: Pick<ShopInfo, "name" | "character">, language: Language): Raw | "" {
   const c = shop.character;
   if (!c?.picture || !c.face) return "";
-  return html`<img class="face-c" src="${c.picture}" width="72" height="72" alt="${`${WORDS[language].assistant(c.name)}: ${FACE_WORDS[language][c.face]}`}">`;
+  return html`<img class="face-c" src="${c.picture}" width="72" height="72" alt="${pictureWords(language, shop.name, c.face, c.name)}">`;
 }
 
 /** The week's hours as short lines ("Mon 10:00–20:00", "Sun closed"), Monday first as people read a shop's board. */
@@ -49,7 +49,7 @@ export function shopFace(o: { shop: Pick<ShopInfo, "name" | "hours" | "character
   const w = WORDS[o.language];
   const c = o.shop.character;
   return html`<section class="face" aria-label="${o.shop.name}">${characterPicture(o.shop, o.language)}<div>
-${c ? html`<p class="note">${w.assistant(c.name)}${c.face && c.picture ? ` · ${FACE_WORDS[o.language][c.face]}` : ""}</p>` : ""}
+${c ? html`<p class="note">${ASSISTANT_OF[o.language](o.shop.name, c.name)}${c.face && c.picture ? ` · ${FACE_WORDS[o.language][c.face]}` : ""}</p>` : ""}
 ${o.shop.hours ? html`<details><summary>${w.hours}</summary><ul class="list">${hoursLines(o.shop.hours, o.language).map((l) => html`<li>${l}</li>`)}</ul></details>` : ""}
 ${o.pages?.whatsapp ? html`<p><a class="btn" href="${waLink(o.pages.whatsapp)}" rel="noopener">${w.whatsapp}</a></p>` : ""}
 </div></section>`;
