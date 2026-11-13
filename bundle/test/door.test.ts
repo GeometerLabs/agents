@@ -8,7 +8,7 @@ import { createServer, request } from "node:http";
 import type { IncomingHttpHeaders, Server } from "node:http";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { addressAllowed, doorHandler, fleetRegistry, guardedLookup, originProblem, passThroughPolicy } from "../services/door.ts";
+import { DOOR_ROBOTS_DISALLOW, addressAllowed, doorHandler, fleetRegistry, guardedLookup, originProblem, passThroughPolicy } from "../services/door.ts";
 import type { CardAnswer, IdAnswer, SlugAnswer, Transport, Upstream } from "../services/door.ts";
 import { WHATSAPP_LINE, cardPage, esc, noCardPage, rupees } from "../services/card-page.ts";
 import type { PartnerCard } from "../services/card-page.ts";
@@ -347,4 +347,23 @@ test("the card page's own words pass the site's word rules, whatever the partner
   assert.doesNotMatch(text, BANNED);
   assert.doesNotMatch(text, /[A-Z0-9._%+-]+@(?!geometer\.dev)[A-Z0-9.-]+\.[A-Z]{2,}/iu, "the only public contact is hello@geometer.dev");
   assert.ok(text.includes("Each is named here only when it says yes."));
+});
+
+test("item 6 (the Streetlist home on this domain): only the door's own 'no page here' answers carry the marker Caddy swaps for the home's 404 page, and robots.txt is built from the shared list", async () => {
+  const d = await door();
+  for (const path of ["/no-such-shop/", "/p/zzzzzzzzzz", "/nope-nope/x"]) {
+    const r = await d.call(path);
+    assert.equal(r.status, 404, path);
+    assert.equal(r.headers["x-geometer-nothing"], "1", path);
+  }
+  // not on a shop's page, a card (its own friendly 404 stays), a redirect, a suspended or closed shop, or fleet being down
+  assert.equal((await d.call("/veena-salon/")).headers["x-geometer-nothing"], undefined);
+  assert.equal((await d.call("/@nobody")).headers["x-geometer-nothing"], undefined, "the card's own 404 page is kept");
+  assert.equal((await d.call("/closed-shop/")).headers["x-geometer-nothing"], undefined);
+  assert.equal((await d.call("/p/s2s2s2s2s2")).headers["x-geometer-nothing"], undefined);
+  assert.equal((await d.call("/veena-salon")).headers["x-geometer-nothing"], undefined);
+  const robots = await d.call("/robots.txt");
+  assert.equal(robots.body, `User-agent: *\n${DOOR_ROBOTS_DISALLOW.map((l) => `Disallow: ${l}\n`).join("")}`);
+  // the home's own names are the door's unknown shop names: reserved at fleet, so never a shop (fleet's test), and here a plain 404
+  for (const name of ["shops", "partners", "privacy", "examples", "assets"]) assert.equal((await d.call(`/${name}/`)).status, 404, name);
 });
