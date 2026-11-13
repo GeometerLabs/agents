@@ -6,6 +6,8 @@
 //   GET  /robots.txt              Disallow: /*/owner (an owner's page is nobody's search result), and (item 11h) a parent's page, a payment's and an order's
 //   GET  /healthz                 the process is up
 //   GET  /p/<id>                  the shop's STABLE page address (QR codes carry it): redirected to its current slug; "suspended" or "gone" otherwise
+//   GET  /@<handle>               a local partner's calling card (plan item 11g, services/card-page.ts): server-rendered HTML and CSS, no script, from fleet's
+//                                 published card (GET /v1/partner-cards/<handle>). A handle that is unknown, unpublished or junk is the same friendly 404.
 //   ...  /<slug>[/<rest>]         the shop's page. A shop on this server: forwarded to the inbox's front as /s/<shop>/<rest>, with `x-geometer-door: <slug>`.
 //                                 A builder's client: the customer view, the API and MCP forwarded to https://<their server>/s/<shop>/<rest> as a pure
 //                                 pass-through; the owner's view (/owner..., /o/...) redirected to their own domain, so no owner sign-in crosses this door.
@@ -27,6 +29,8 @@ import type { LookupAddress } from "node:dns";
 import { BlockList, isIP } from "node:net";
 import { readFileSync } from "node:fs";
 import { MAX_VOICE_BYTES } from "../../modules/channels/owner-audio.ts";
+import { cardPage, noCardPage } from "./card-page.ts";
+import type { PartnerCard } from "./card-page.ts";
 
 export const DOOR_PORT = 8797;
 export const DOOR_HEADER = "x-geometer-door";
@@ -99,7 +103,8 @@ export type SlugAnswer =
   | { state: "active"; deployment_id: string; agent_id: string; hosting: string; origin: string | null }
   | { state: "moved"; to: string } | { state: "gone" } | { state: "unknown" };
 export type IdAnswer = { state: "active"; slug: string } | { state: "suspended" } | { state: "gone" } | { state: "unknown" };
-export interface Registry { slug(slug: string): Promise<SlugAnswer | "unreachable">; id(id: string): Promise<IdAnswer | "unreachable"> }
+export type CardAnswer = ({ state: "active" } & PartnerCard) | { state: "unknown" };
+export interface Registry { slug(slug: string): Promise<SlugAnswer | "unreachable">; id(id: string): Promise<IdAnswer | "unreachable">; card(handle: string): Promise<CardAnswer | "unreachable"> }
 
 /**
  * Fleet's public lookups with a short memory: an answer is used for FRESH_MS (unknown and gone for UNKNOWN_MS), and when fleet cannot be reached a known answer
@@ -134,6 +139,7 @@ export function fleetRegistry(o: { fleetUrl: string; fetchImpl?: typeof fetch; n
   return {
     slug: (slug) => get<SlugAnswer>(`s:${slug}`, `/v1/page-slugs/${slug}`),
     id: (id) => get<IdAnswer>(`p:${id}`, `/v1/page-ids/${id}`),
+    card: (handle) => get<CardAnswer>(`c:${handle}`, `/v1/partner-cards/${handle}`),
   };
 }
 
@@ -310,6 +316,21 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     if (url.pathname === "/") return own(res, 200, pageOf("Shop pages", "Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local partner."), "text/html; charset=utf-8", { "cache-control": "public, max-age=3600" });
     const visitor = visitorOf(req);
     if (!take("all", visitor)) return own(res, 429, pageOf("Too many requests", "Please wait a minute."), "text/html; charset=utf-8", { "retry-after": "60" });
+
+    // a partner's calling card: /@handle (a browser or a QR reader may send the @ as %40). The shape is checked before fleet is asked, and anything fleet does not
+    // show (unknown, unpublished) is one and the same 404, counted against the visitor like an unknown shop name.
+    const c = /^\/(?:@|%40)([^/]*)(\/.*)?$/iu.exec(url.pathname);
+    if (c) {
+      if (method === "POST") return own(res, 405, pageOf("Not here", "Use the page's links and buttons."), "text/html; charset=utf-8", { allow: "GET, HEAD" });
+      if (limits.over("unknown", visitor)) return own(res, 429, pageOf("Too many requests", "Please wait a while."), "text/html; charset=utf-8", { "retry-after": "600" });
+      const handle = c[1];
+      if (!SLUG.test(handle) || (c[2] ?? "/") !== "/") { take("unknown", visitor); return own(res, 404, noCardPage()); }
+      const a = await o.registry.card(handle);
+      if (a === "unreachable") return unreachable(res);
+      if (a.state !== "active") { take("unknown", visitor); return own(res, 404, noCardPage()); }
+      // static-looking: a minute in the browser and at Caddy, so a busy card costs fleet nothing, and a change still shows within a minute
+      return own(res, 200, cardPage(a, o.primary), "text/html; charset=utf-8", { "cache-control": "public, max-age=60" });
+    }
 
     // the stable page address: always the shop's current slug, never another shop's
     const p = /^\/p\/([^/]+)\/?$/u.exec(url.pathname);
