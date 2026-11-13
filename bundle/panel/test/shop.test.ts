@@ -160,7 +160,7 @@ test("the checks, then 'Ready to go live': a different account stops it and is n
   try {
     const divya = await b.account("divya", "partner");
     const f = await setUp(b, divya);
-    const checks = `/setup/${f.draft}/5`;
+    const checks = `/setup/${f.draft}/6`;
     assert.equal((await divya.post(`/setup/${f.draft}/save`, {}, checks)).status, 303);
     const folder = join(b.dir, "shops", f.shop);
     const runtimeBefore = readFileSync(join(folder, "runtime.json"), "utf8");
@@ -174,15 +174,15 @@ test("the checks, then 'Ready to go live': a different account stops it and is n
     try {
       const w2 = await wrong.account("divya", "partner");
       const g = await setUp(wrong, w2, [STEP1, STEP2, STEP3, { ...STEP4, waNumber: "+91 80000 22222" }]);
-      await w2.post(`/setup/${g.draft}/save`, {}, `/setup/${g.draft}/5`);
+      await w2.post(`/setup/${g.draft}/save`, {}, `/setup/${g.draft}/6`);
       wrong.status(g.shop, applied());
-      await w2.post(`/setup/${g.draft}/check`, {}, `/setup/${g.draft}/5`);
-      const page = (await w2.get(`/setup/${g.draft}/5`)).plain;
+      await w2.post(`/setup/${g.draft}/check`, {}, `/setup/${g.draft}/6`);
+      const page = (await w2.get(`/setup/${g.draft}/6`)).plain;
       assert.ok(page.includes(WORDS.en.setup.checks.whatsapp.differs("1111")), "the number found ends in 1111");
       assert.ok(!page.includes(WORDS.en.setup.checks.readyButton) && page.includes(WORDS.en.setup.checks.notReady(1)));
       assert.equal(existsSync(join(wrong.dir, "shops", g.shop, "pins.json")), false, "a different account is never pinned");
       assert.equal(JSON.parse(readFileSync(join(wrong.dir, "shops", g.shop, "runtime.json"), "utf8")).services.messaging.phoneNumberId, STEP4.waNumberId);
-      assert.equal((await w2.post(`/setup/${g.draft}/ready`, {}, `/setup/${g.draft}/5`)).status, 409);
+      assert.equal((await w2.post(`/setup/${g.draft}/ready`, {}, `/setup/${g.draft}/6`)).status, 409);
     } finally { await wrong.close(); }
 
     // 2. The right accounts, once the server says it applied the shop.
@@ -223,8 +223,8 @@ test("the checks, then 'Ready to go live': a different account stops it and is n
     const d2 = edit.location!.split("/")[2];
     await divya.post(`/setup/${d2}/1`, { ...STEP1, svc_price_0: "500" }, `/setup/${d2}/1`);
     for (const n of [2, 3, 4]) await divya.post(`/setup/${d2}/${n}`, n === 2 ? STEP2 : n === 3 ? STEP3 : { ...STEP4, waToken: "", waAppSecret: "", gwKeySecret: "", gwWebhook: "" }, `/setup/${d2}/${n}`);
-    await divya.post(`/setup/${d2}/save`, {}, `/setup/${d2}/5`);
-    const changed = (await divya.get(`/setup/${d2}/5`)).plain;
+    await divya.post(`/setup/${d2}/save`, {}, `/setup/${d2}/6`);
+    const changed = (await divya.get(`/setup/${d2}/6`)).plain;
     assert.ok(!changed.includes(w.readyButton) && changed.includes(w.notReady(1)), "the settings changed after the checks ran");
   } finally { await b.close(); }
 });

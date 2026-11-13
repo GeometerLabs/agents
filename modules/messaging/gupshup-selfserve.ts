@@ -13,6 +13,10 @@
 //              Our button and row ids travel as `postbackText`, which Gupshup hands back on the tap.
 //  - template: POST https://api.gupshup.io/wa/api/v1/template/msg, same header, fields source, destination, src.name, template={"id":<Gupshup template id>,"params":[...]}
 //              (https://docs.gupshup.io/docs/template-messages.md). It names Gupshup's OWN template id, not Meta's name: see templateIds below.
+//              Item 11i, read 14 Nov 2026: a template with an image header adds message={"type":"image","image":{"link":<url>}}
+//              (https://docs.gupshup.io/reference/sending-image-template.md), and a sticker is message={"type":"sticker","url":<url>} on the send route
+//              (https://docs.gupshup.io/reference/post_wa-api-v1-msg-7.md). The business profile photo has its own documented call, PUT /wa/app/{appId}/business/profile/photo
+//              with a multipart `image` (https://docs.gupshup.io/reference/set-profile-photo.md): not used yet (bundle/Deferred.md, the profile photo).
 //  - reply:    { status: "submitted", messageId } (2xx). The call "is processed asynchronously": it means GUPSHUP took the message. Meta's refusals (the closed
 //              window, 131047) arrive later as a "failed" message-event (webhooks.ts), so "accepted" stays apart from "delivered".
 //  - errors:   { status: "error", message }: 400 "Invalid Destination" / "Invalid App Details", 401 authentication failed, 429 too many requests.
@@ -32,8 +36,8 @@ import type { Http, HttpReply } from "../core/http.ts";
 import { interactiveProblem, interactiveText } from "../language/interactive.ts";
 import type { InteractiveMessage } from "../language/interactive.ts";
 import { META_LANGUAGE } from "../language/meta-templates.ts";
-import { documentProblem, imageProblem } from "./messaging.ts";
-import type { DocumentMessage, ImageMessage, Messaging, OutboundMessage, TemplateMessage } from "./messaging.ts";
+import { documentProblem, imageProblem, stickerProblem } from "./messaging.ts";
+import type { DocumentMessage, ImageMessage, Messaging, OutboundMessage, StickerMessage, TemplateMessage } from "./messaging.ts";
 import { cleanParameter } from "./whatsapp.ts";
 import type { WindowStore } from "./whatsapp.ts";
 
@@ -116,9 +120,12 @@ export function interactiveForm(c: { appName: string; sourceNumber: string }, to
   return form(c, to, { message: JSON.stringify(payload) });
 }
 
-export function templateForm(c: { appName: string; sourceNumber: string }, to: string, id: string, parameters: readonly string[]) {
-  return form(c, to, { template: JSON.stringify({ id, params: parameters.map(cleanParameter) }) });
+export function templateForm(c: { appName: string; sourceNumber: string }, to: string, id: string, parameters: readonly string[], headerImage?: string) {
+  return form(c, to, { template: JSON.stringify({ id, params: parameters.map(cleanParameter) }), ...(headerImage ? { message: JSON.stringify({ type: "image", image: { link: headerImage } }) } : {}) });
 }
+
+/** Item 11i: a sticker by its address (the character's WebP). */
+export const stickerForm = (c: { appName: string; sourceNumber: string }, to: string, sticker: StickerMessage) => form(c, to, { message: JSON.stringify({ type: "sticker", url: sticker.link }) });
 
 // ---- Gupshup's own template ids ------------------------------------------------------------------------------------------------
 
@@ -226,9 +233,17 @@ export function createGupshupSelfServeMessaging(config: GupshupSelfServeConfig, 
       return post(GUPSHUP_SELFSERVE_ROUTES.send, imageForm(config, to, image), { to, kind: "image", text: image.caption ?? "", image: { ...image } });
     },
 
+    async sendSticker(to, sticker) {
+      if (!windowOpen(to)) throw new WindowClosedError();
+      const problem = stickerProblem(sticker);
+      if (problem) throw new ApiError(400, `The sticker cannot be sent: ${problem}.`);
+      return post(GUPSHUP_SELFSERVE_ROUTES.send, stickerForm(config, to, sticker), { to, kind: "sticker", text: "", sticker: { ...sticker } });
+    },
+
     async sendTemplate(to, template) {
+      if (template.headerImage !== undefined && imageProblem({ link: template.headerImage }) !== null) throw new ApiError(400, "The template's header picture must be an https link.");
       const id = await templateId(template); // refused here, in plain words, when the app has not approved it: nothing is sent
-      return post(GUPSHUP_SELFSERVE_ROUTES.template, templateForm(config, to, id, template.parameters ?? []), { to, kind: "template", text: template.text, templateName: template.name, language: template.language });
+      return post(GUPSHUP_SELFSERVE_ROUTES.template, templateForm(config, to, id, template.parameters ?? [], template.headerImage), { to, kind: "template", text: template.text, templateName: template.name, language: template.language, ...(template.headerImage ? { headerImage: template.headerImage } : {}) });
     },
 
     async isWindowOpen(to) { return windowOpen(to); },

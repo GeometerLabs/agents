@@ -2,7 +2,7 @@
   "schema": 1,
   "id": "bookings",
   "setup": "bookings",
-  "steps": ["business", "deposit", "languages", "accounts", "checks"],
+  "steps": ["business", "deposit", "languages", "accounts", "character", "checks"],
   "accounts": ["whatsapp", "calendar", "payment"],
   "settingsExample": "settings/glow-salon-upi.example.json"
 }

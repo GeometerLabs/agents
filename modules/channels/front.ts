@@ -9,6 +9,12 @@
 //   With the shop's assistant (item 11e), both owner addresses are also the owner's app: <owner base>/ (the page), /manifest.webmanifest, /sw.js, /talk (the talk
 //   box's words) and /voice (a hold-to-record recording); the page's one script runs by a nonce in that response's content policy (appPolicy).
 //
+// Item 11i, the shop's character: every shop's mood pictures (drawn on its server, bundle/character/render.ts) are public at stable addresses, for the shop's own
+// page, Streetlist and WhatsApp (which fetches the PNG and WebP itself):
+//   GET  /s/<shop>/character/<well|needs|wrong|closed|busy>.<svg|png|webp>   one mood's picture: an ETag (its sha256), a day's cache, `?v=` ignored (links carry it)
+//   GET  /s/<shop>/character/now.<svg|png|webp>                             the picture of the mood the PUBLIC sees now (all well, busy or closed: character.ts
+//                                                                           publicFace), a minute's cache
+// The shop's pages show the same public face in their head (shop-face.ts), as a data: address because the pages load images only from data.
 // Item 11h: a shop whose template is Orders or Fees has its own customer side (front-orders.ts: the menu, an order's page, the ordering API and MCP; front-fees.ts: the
 // centre's page, a parent's private page and a payment's confirmation page, and no API or MCP). The owner's page and the QR code are the same for every shop.
 //
@@ -49,6 +55,10 @@ import { createOrderOps } from "./order-ops.ts";
 import type { OrderOps } from "./order-ops.ts";
 import { orderRoute } from "./front-orders.ts";
 import { feeRoute } from "./front-fees.ts";
+import { svgDataUri } from "./character-files.ts";
+import type { CharacterFiles } from "./character-files.ts";
+import { FACES, PICTURE_FORMATS, themeColour } from "../assistant/character.ts";
+import type { Face, PictureFormat } from "../assistant/character.ts";
 
 /** The header the pages domain's front door adds: the slug the visitor asked for (bundle/services/door.ts). */
 export const DOOR_HEADER = "x-geometer-door";
@@ -63,6 +73,31 @@ export interface FrontShop {
   pages?: () => PagesFile | undefined;
   /** Item 11h: the shop's template, which decides its customer side. Left out: Bookings (every shop before item 11h). */
   kind?: "bookings" | "orders" | "fees";
+  /** Item 11i: the shop's character pictures (character-files.ts characterReader over its folder), read on every request. Left out: the shop shows no face. */
+  character?: () => CharacterFiles | undefined;
+}
+
+/** Item 11i: the picture addresses the front answers: one mood, or `now`, in one of the three formats. */
+const PICTURE_PATH = new RegExp(`^/character/(${[...FACES, "now"].join("|")})\\.(${PICTURE_FORMATS.join("|")})$`, "u");
+
+/**
+ * Item 11i: the offers a page is drawn from carry the shop's public face as a picture. The runtime says which mood the public sees (`character.face`); this adds
+ * that mood's SVG from the shop's own folder as a data: address (the pages load images only from data, PAGE_POLICY). Nothing is fetched, and a shop with no
+ * pictures yet simply has no face.
+ */
+export function withFace(backend: ChannelBackend, files: (() => CharacterFiles | undefined) | undefined): ChannelBackend {
+  if (!files) return backend;
+  const add = <T extends { shop: { character?: { name?: string; face?: Face; picture?: string } } }>(o: T): T => {
+    const c = o.shop.character;
+    const svg = c?.face ? files()?.picture(c.face, "svg") : undefined;
+    return svg ? { ...o, shop: { ...o.shop, character: { ...c!, picture: svgDataUri(svg.bytes) } } } : o;
+  };
+  return {
+    ...backend,
+    offer: async (q) => add(await backend.offer(q)),
+    ...(backend.orderOffer ? { orderOffer: async () => add(await backend.orderOffer!()) } : {}),
+    ...(backend.feesOffer ? { feesOffer: async () => add(await backend.feesOffer!()) } : {}),
+  };
 }
 
 /** Item 11h: what front.ts lends the per-template routes (front-orders.ts, front-fees.ts), so every route answers, counts and checks the same way. */
@@ -203,7 +238,9 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // item 11f: through the front door, every address is written under the pages domain, but only for the slug this shop's own pages file names
     const pages = found.pages?.();
     const door = req.headers[DOOR_HEADER];
-    const shop: FrontShop = typeof door === "string" && pages?.slug !== undefined && pages.url !== undefined && door === pages.slug ? { ...found, publicUrl: pages.url } : found;
+    const doorShop: FrontShop = typeof door === "string" && pages?.slug !== undefined && pages.url !== undefined && door === pages.slug ? { ...found, publicUrl: pages.url } : found;
+    // item 11i: every offer a page is drawn from carries the shop's public face (withFace)
+    const shop: FrontShop = found.character ? { ...doorShop, backend: withFace(doorShop.backend, found.character) } : doorShop;
     const name = m[1];
     const rest = m[2] ?? "";
     const method = req.method ?? "GET";
@@ -212,6 +249,10 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const tooMany = () => sendHtml(res, 429, `<!doctype html><meta charset="utf-8"><p>${PAGE.en.tooMany}</p>`, { "retry-after": "300" });
 
     if (rest === "") { res.writeHead(301, { location: `${shop.publicUrl}/` }); res.end(); return; }
+
+    // ---- item 11i: the character's pictures (every template's shop has them) ----
+    const picture = PICTURE_PATH.exec(rest);
+    if (picture) return pictureRoute(req, res, found, picture[1] as Face | "now", picture[2] as PictureFormat, method, address);
 
     // item 11h: an Orders shop's and a Fees centre's customer side are their own; the owner's page and the QR code below are every shop's
     const ownerPath = /^\/o\/[^/]+(\/.*)?$/u.test(rest) || rest === "/owner" || rest.startsWith("/owner/");
@@ -371,6 +412,31 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
   }
 
+  /**
+   * Item 11i: one of the shop's mood pictures. A fixed mood is cached a day (its address changes with the set's `?v=`, and its ETag with its bytes); `now` is the
+   * mood the public sees at this minute, asked of the runtime, and cached a minute. Images only, with their own strict policy (an SVG opened on its own runs no
+   * script and loads nothing). Readable from any site (Streetlist shows the faces), never framed.
+   */
+  async function pictureRoute(req: IncomingMessage, res: ServerResponse, found: FrontShop, face: Face | "now", format: PictureFormat, method: string, address: string): Promise<void> {
+    if (method !== "GET" && method !== "HEAD") { res.writeHead(405, { allow: "GET, HEAD", "cache-control": "no-store" }); res.end(); return; }
+    // only `now` asks the runtime, so only it counts against the address's reads; a fixed mood is a small file, and WhatsApp's fetchers (many shops' pictures from a
+    // few addresses at 08:00) must not be refused one, or the morning template whose header it is would not be delivered
+    if (face === "now" && !limiter.take("read", address)) { res.writeHead(429, { "retry-after": "60", "cache-control": "no-store" }); res.end(); return; }
+    const files = found.character?.();
+    let mood: Face | undefined = face === "now" ? undefined : face;
+    if (face === "now" && files) mood = (await found.backend.offer({})).shop.character?.face; // the runtime's own answer: no picture is needed to pick one
+    const pic = files && mood ? files.picture(mood, format) : undefined;
+    if (!pic) { res.writeHead(404, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" }); res.end(method === "HEAD" ? undefined : "There is no picture here."); return; }
+    const etag = `"${pic.sha256.slice(0, 32)}"`;
+    const headers: Record<string, string> = {
+      "cache-control": face === "now" ? "public, max-age=60" : "public, max-age=86400", etag, "x-content-type-options": "nosniff",
+      "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'", "cross-origin-resource-policy": "cross-origin",
+    };
+    if (req.headers["if-none-match"] === etag) { res.writeHead(304, headers); res.end(); return; }
+    res.writeHead(200, { ...headers, "content-type": pic.type, "content-length": String(pic.bytes.length) });
+    res.end(method === "HEAD" ? undefined : pic.bytes);
+  }
+
   // ---- the owner's private page ---------------------------------------------------------------------------------------------------------------------
   //
   // One state and one way to answer, behind the same private link, rendered two ways: the HTML page, and a small versioned JSON pair for the owner's app that another
@@ -512,7 +578,9 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       return redirect(res, `${base}/?lang=${language}&n=alerts`);
     }
     if (sub === "/manifest.webmanifest") {
-      const body = JSON.stringify(ownerAppManifest({ base, shop: state.view.shop.name, language, colour: app?.character.look.colour ?? "leaf" }));
+      // item 11i: the installed app's icon is the character in its "all well" picture when the shop has one (a data: address, so nothing is fetched)
+      const icon = app ? shop.character?.()?.picture("well", "svg") : undefined;
+      const body = JSON.stringify(ownerAppManifest({ base, shop: state.view.shop.name, language, colour: themeColour(app?.character), ...(icon ? { iconSvg: icon.bytes.toString("utf8") } : {}) }));
       res.writeHead(200, { "content-type": "application/manifest+json; charset=utf-8", "content-length": Buffer.byteLength(body), "cache-control": "no-store", "x-content-type-options": "nosniff", "x-robots-tag": "noindex" });
       res.end(body);
       return;
@@ -578,7 +646,9 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // the owner's app runs our scripts only: a fresh nonce for this response, in its content policy and on those scripts, and nothing else may run
     const nonce = app || pushState ? randomBytes(16).toString("base64") : undefined;
     const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), ...(nonce ? { nonce } : {}) }) : undefined;
-    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
+    // item 11i: the owner's app shows the character in the shop's real mood (all five moods: this is the owner's own view)
+    const facePic = state.view.app ? shop.character?.()?.picture(state.view.app.face, "svg") : undefined;
+    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
   }
 
   return (req, res) => {

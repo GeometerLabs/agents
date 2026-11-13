@@ -900,18 +900,55 @@ One short message a day to the owner (`morning.ts`): what today holds for each s
 much; Orders: the open orders), money recorded yesterday (every confirmed payment line, the owner's UPI marks included as the owner's statement), and how many things wait for them. It goes
 in the owner's language, from 08:00 in the shop's time zone (`settings.assistant.morning.at`, or `false` for none). It uses the same **once, even if the process dies**
 protocol as the monthly report (`report/monthly-job.ts`): a claim saved before the send, then the ending. A claim with no ending is never sent again. It goes as the
-utility template `owner_morning` outside the owner's 24-hour window and as plain text inside it, the template's body filled in either way. It says nothing on a closed day (the weekday
+utility template `owner_morning` (or its personality's, below) outside the owner's 24-hour window and as plain text inside it, the template's body filled in either way. It says nothing on a closed day (the weekday
 is closed in the opening hours, or the owner closed the date) and nothing on a day with nothing to say (nothing today, nothing recorded yesterday, nothing waiting), and it is
 not sent more than four hours after its time. A month of morning lines is not activity for the monthly report (`report/monthly-job.ts` leaves them out, as its own lines).
 
-### The character's hooks (the drawings are a separate exploration)
+### The character (decision 47; drawn and wired 14 Nov as item 11i's character half)
 
-`character.ts`: one character per shop, in the shop's settings (`assistant.character`): a name and a look as a small JSON of options from a fixed list (base, colour,
-accessory for the trade). Nothing is drawn here. There is no voice (the owner's decision, 12 Nov: "listen in voice, reply in text"): the assistant understands the
-owner's voice notes through the voice notes job's speech to text, and every reply, card and morning line is text, with the mood's sticker where one is planned. `mood.ts`: **a mood computed only from the shop's real state**, never stored and
-never earned. In order: `something_wrong` (a refund needs the builder, a message failed, a task gave up on a Guard), `waiting_for_owner` (a card or a waiting item),
-`closed` (outside today's hours, or a closed day), `busy` (a booking within the hour, or a full day), `quiet`. The owner's app shows it, and the morning line names the
-sticker for it (`stickerFor`), so the look can follow the shop. There are no points, chores or streaks. The character always says it is the shop's assistant.
+`character.ts` is what every part shares about a shop's character, and it draws nothing. The setting, in the shop's settings (`assistant.character`), is one of the
+five DiceBear styles the owner approved, called by DiceBear's own names (owner, 14 Nov: Clay, Critters, Sprouts, Moods, Pixel Bot; the panel is the only place a style is
+named), a seed (left out: the shop's id), a colour from that style's own palette (left out: "Auto", DiceBear's pick), a personality and, only if the partner gives one, a
+name (1 to 24 letters, any script, no digits). **No name by default** (owner, 14 Nov): the assistant is "<the shop>'s assistant" (`ASSISTANT_OF`), and the
+character's name appears beside the shop's only where one was set, and never in a WhatsApp template (a template cannot leave a value out). The hand-drawn "look" of
+12 Nov (base, colour, accessory such as scissors or a spanner) is gone: the owner judged hand-drawn additions and home-made filters low quality on 14 Nov, so the
+pictures are DiceBear's own drawings only, and a settings file that still has `look` is refused in words. There is no voice (the owner's decision, 12 Nov: "listen in
+voice, reply in text").
+
+`mood.ts` computes **a mood only from the shop's real state**, never stored and never earned. In order: `something_wrong` (a refund needs the builder, a message failed,
+a task gave up on a Guard), `waiting_for_owner` (a card or a waiting item), `closed` (outside today's hours, or a closed day), `busy` (a booking within the hour, or a
+full day), `quiet`. There are no points, chores or streaks. Each mood has one picture, named as Streetlist names them (`FACE_OF_MOOD`): `well`, `needs`, `wrong`,
+`closed`, `busy`, with DiceBear's eyes and mouth from the approved table (`EYES_AND_MOUTH`). Clay has no closed eyes; its Closed is its own happy eyes and flat mouth,
+with no dimming and no "zzz" (the approved page had both; the owner's 14 Nov rule of no filters and no hand-drawn additions wins, and the word "Closed" carries it).
+**A picture never carries a mood alone**: `FACE_WORDS` gives the mood in words in four languages, and every place that shows a picture puts the words beside it, and
+the shop and the mood in its alt text (`pictureWords`: "Glow Salon's assistant, all well").
+
+**Who sees which mood.** The owner sees all five (the owner's app, the morning line). The public sees only `well`, `busy` or `closed` (`publicFace`): "needs you" and
+"something wrong" are the owner's business, so the shop's page, Streetlist and `now.svg` show the mood the shop would have with nothing waiting and nothing wrong.
+`conversation.ts shopMood` returns both from the same reads.
+
+**Personalities** (`personality.ts`): `warm` (today's words, less the character's name), `cheerful` and `brief`. A personality changes only the assistant's own small
+talk: the greeting (the first sentence of its "help" answer, `words.ts`, with the character's name only when it has one) and the morning summary's opening and sign-off. It never touches cards, amounts, approvals, limits or other fixed
+wording. Because outside the 24-hour window the morning line can only be a template Meta approved word for word, and a body may not start or end with a value, each
+personality has its own morning template (`owner_morning`, `owner_morning_cheerful`, `owner_morning_brief`; `templates.ts` builds the three from the parts); the warm one
+is what `owner_morning` was, less "{name}, " (a test holds it), since a template names only the shop. Every line is machine-written in Hindi, Malayalam and Kannada and is on the review sheets (section 7, ids
+`personality.*`).
+
+**The pictures on WhatsApp.** The morning templates have an image header (`MetaTemplate.header: "image"`; submitted with a `HEADER` of format `IMAGE` whose example handle
+comes from Meta's Resumable Upload API at submission time). Outside the window the morning line carries the PNG of the owner's mood now as that header; inside it, the
+mood's sticker (the WebP) goes just before the words, best effort: a sticker that fails is a log line and never a reason to send the morning line again, and the ending's
+record line names the sticker's picture (never WhatsApp's message id, which the record keeps only as a fingerprint). The links are
+`<the shop's own server>/s/<shop>/character/<face>.<format>?v=<version>` (`pictureUrl`), never the pages domain's: at 08:00 WhatsApp's fetchers ask for many shops'
+pictures from a few addresses, and the door limits each address and asks fleet about each name; the front does not count a fixed mood's picture against an address's
+reads for the same reason. The version comes from `pages.json` (`picturesOf`), written by the deployer once the pictures are drawn and handed to the front. With no
+pictures yet, no picture goes, and a morning template sent outside the window without its header is refused by the provider (recorded as failed, tried again
+within its hours).
+
+Provider contracts, read 14 Nov 2026 and cited in each adapter: Meta documents a sticker by `link` (a WebP, at most 100 KB static, a service message inside the window)
+and the template's image header as `{type: "header", parameters: [{type: "image", image: {link}}]}`; Gupshup's self-serve API documents `message={"type":"sticker","url"}`
+and, for a template, `message={"type":"image","image":{"link"}}` beside its id; Gupshup's partner pass-through takes Meta's template body (the header included) but shows a
+sticker only by an uploaded media `id`, so that adapter has no `sendSticker` (`CloudApiWire.stickerByLink`). The fake and the Cloud API stand-in model the window for
+stickers and Meta's 132012 for a template sent with a header it was not made with, or without one it was.
 
 ### The owner's app, wired (items 11d, 11e and 11f together; 13 Nov)
 

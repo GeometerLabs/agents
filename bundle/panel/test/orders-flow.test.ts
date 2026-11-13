@@ -1,6 +1,7 @@
-// The Orders template in the panel: a partner sets up a tiffin service on a phone in the same five steps (UPI is the way customers pay unless the partner chooses Razorpay), and the
+// The Orders template in the panel: a partner sets up a tiffin service on a phone in the same six steps (UPI is the way customers pay unless the partner chooses Razorpay), and the
 // folder written is the one `geometer shop add --template orders` writes (Orders settings, a runtime.json with no calendar, orders@<version> in the lock). The checks, "Ready to go
 // live", the monthly report and the shop page work for it in four languages, and nothing of Bookings (a calendar, a cost table of bookings) leaks onto an Orders shop's pages.
+import { CHARACTER5 } from "./flow.ts";
 import { RAZORPAY_WORDS as RZW } from "../../../modules/payments/providers/razorpay/words.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -30,8 +31,9 @@ const applied = (o: Record<string, unknown> = {}) => ({
   versions: { pathway: "0.1.0", bundle: "0.1.0", guard: "geo-guard:0.1.0-alpha.2-pathways.1" }, backups: { lastCopyAt: new Date(NOW - 60_000).toISOString() }, ...o,
 });
 
-/** The five steps for an Orders shop, as a partner does them on a phone. */
-async function setUpOrders(who: Browser, _b: Boot, steps: Record<string, string>[] = [ORDERS1, ORDERS2, STEP3, ORDERS4]) {
+/** The six steps for an Orders shop, as a partner does them on a phone. */
+async function setUpOrders(who: Browser, _b: Boot, given: Record<string, string>[] = [ORDERS1, ORDERS2, STEP3, ORDERS4]) {
+  const steps = given.length === 4 ? [...given, CHARACTER5] : given; // item 11i: the Character step after the four
   const start = await who.post("/setup", { template: "orders" }, "/setup");
   assert.equal(start.status, 303, start.text.slice(0, 300));
   const draft = start.location!.split("/")[2];
@@ -43,8 +45,8 @@ async function setUpOrders(who: Browser, _b: Boot, steps: Record<string, string>
     replies.push(r.text);
     assert.equal(r.status, 303, `step ${i + 1}: ${r.text.replace(/<[^>]+>/gu, " ").replace(/\s+/gu, " ").slice(0, 500)}`);
   }
-  const saved = await who.post(`/setup/${draft}/save`, {}, `/setup/${draft}/5`);
-  assert.equal(saved.location, `/setup/${draft}/5`, [...saved.plain.matchAll(/<li>([^<]*)<\/li>/gu)].map((m) => m[1]).join(" | ") || String(saved.status));
+  const saved = await who.post(`/setup/${draft}/save`, {}, `/setup/${draft}/6`);
+  assert.equal(saved.location, `/setup/${draft}/6`, [...saved.plain.matchAll(/<li>([^<]*)<\/li>/gu)].map((m) => m[1]).join(" | ") || String(saved.status));
   return { draft, replies };
 }
 
@@ -59,7 +61,7 @@ const exportEmpty = (b: Boot, shop: string) => {
   writeFileSync(join(b.dir, "exports", shop, "orders.json"), "[]");
 };
 
-test("the start page offers Orders with a button, and the five steps write the folder `shop add --template orders` writes: Orders settings with UPI, no calendar, orders@version, the partner as owner", async () => {
+test("the start page offers Orders with a button, and the six steps write the folder `shop add --template orders` writes: Orders settings with UPI, no calendar, orders@version, the partner as owner", async () => {
   const b = await boot({}, { standins: true });
   try {
     const divya = await b.account("divya", "partner");
@@ -115,7 +117,7 @@ test("the checks for an Orders shop have no calendar and no Razorpay, 'Ready to 
     const divya = await b.account("divya", "partner");
     const { draft } = await setUpOrders(divya, b);
     const shop = shopIdOf(b);
-    const checks = `/setup/${draft}/5`;
+    const checks = `/setup/${draft}/6`;
     const before = (await divya.get(checks)).plain;
     assert.ok(!before.includes(WORDS.en.cost.heading) && !before.includes(WORDS.en.setup.checks.bookingsExpected), "no bookings cost table or estimate for an Orders shop");
     assert.ok(before.includes(WORDS.en.ordersShop.messages.heading), "the messages its rules allow are shown instead");
@@ -187,7 +189,7 @@ test("changing an Orders shop's settings is the same steps from what it has, and
     assert.ok(first.includes("Sunrise Tiffins") && first.includes("Chicken meal, 160, 8"), "the form comes back as it was saved");
     assert.equal((await divya.post(`/setup/${d2}/1`, { ...ORDERS1, menu: ORDERS1.menu.replace("Veg thali, 120", "Veg thali, 130") }, `/setup/${d2}/1`)).status, 303);
     for (const n of [2, 3, 4]) await divya.post(`/setup/${d2}/${n}`, n === 2 ? ORDERS2 : n === 3 ? STEP3 : { ...ORDERS4, waToken: "", waAppSecret: "" }, `/setup/${d2}/${n}`);
-    assert.equal((await divya.post(`/setup/${d2}/save`, {}, `/setup/${d2}/5`)).status, 303);
+    assert.equal((await divya.post(`/setup/${d2}/save`, {}, `/setup/${d2}/6`)).status, 303);
     const settings = JSON.parse(readFileSync(join(b.dir, "shops", shop, "settings.json"), "utf8"));
     assert.equal(settings.menu[0].priceInr, 130);
     assert.equal(settings.menu[0].id, "veg-thali");
