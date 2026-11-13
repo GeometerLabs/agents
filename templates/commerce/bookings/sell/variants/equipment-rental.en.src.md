@@ -36,13 +36,13 @@ Then stop talking, as in the main guide. Don't open with "AI", with technology o
 
 ## 4. Show it on the owner's own phone
 
-Set up the laptop and the phone as in section 4 of the main guide (same Wi-Fi, the address it prints, "Demo · test money · nothing real is sent"). Start the demo on the rental example, in the owner's language:
+Open the demo on your phone as in section 4 of the main guide: no laptop and no Wi-Fi are needed, and every screen says "Demo · test money · nothing real is sent". The steps below use the made-up rental example. A builder with a laptop can start that example from the agents folder, in the owner's language:
 
 ```sh
 node templates/commerce/bookings/demo/server.ts --settings templates/commerce/bookings/settings/equipment-rental.example.json --lang kn  # Kannada (or hi)
 ```
 
-The example speaks Kannada and Hindi. For a centre whose farmers write another language, tap "Set up for this shop" instead: the centre's name, the jobs in the farmers' own words with the owner's prices, the deposit, the opening hours and the language. It takes about 30 seconds.
+The example speaks Kannada and Hindi. For a centre whose farmers write another language, tap "Set up for this shop" instead (and do the same if the hosted demo does not have the rental example yet): the centre's name, the jobs in the farmers' own words with the owner's prices, the deposit, the opening hours and the language. It takes about 30 seconds.
 
 | Step | You tap | The owner sees | You say |
 | --- | --- | --- | --- |
@@ -122,7 +122,7 @@ Everything in the main table applies. Add these:
 
 ## 8. The setup visit
 
-Do the checklist in section 8 of the main guide (the WhatsApp check, Google Calendar only if the shop wants it, the shop's own Razorpay account only if it chooses Razorpay, the number for approvals, the test booking, the certificate and the terms). For rental, add these:
+Do the checklist in section 8 of the main guide (WhatsApp through the shop's own Gupshup account, Google Calendar only if the shop wants it, the shop's own Razorpay account only if it chooses Razorpay, the number for approvals, the test booking, the certificate and the terms). For rental, add these:
 
 - [ ] **One machine to start.** Choose the machine, with its attachments, that the helper will book. Each job is one service: "tractor with rotavator, half day", "tractor with rotavator, full day", "tractor with sprayer, half day", "tractor with trolley, full day".
 - [ ] **Each job's name in the farmers' own words.** Ask what farmers really say, in each language. Every name must be different from every other. A farmer who writes only "tractor" gets the price list and is asked which job: add the short names farmers really use.
@@ -131,7 +131,7 @@ Do the checklist in section 8 of the main guide (the WhatsApp check, Google Cale
 - [ ] **The reminder.** One reminder, 24 hours before, so it arrives at the same time of day as the booking. Reminders count hours before the start, so a 2-hour reminder for a 6 am booking would arrive at 4 am.
 - [ ] **The rest of the payment.** Agree how the farmer pays the rest (cash or UPI, to the owner). The helper doesn't record it.
 - [ ] **Only if the centre chooses Razorpay: its fee.** Razorpay's fee is written only here and in the main guide's Razorpay item. Tell the owner: "Razorpay keeps its fee even when you give a deposit back. On a ₹1,000 deposit that is about ₹24." Check Razorpay's current page. On UPI there is no gateway fee.
-- [ ] **Run the check on this shop's own settings.** From the agents folder: `node templates/commerce/bookings/scripts/hand-check.ts --settings <the shop's file>`. Read "Held N of M" aloud, and read the "NOT RUN" list if there is one.
+- [ ] **Run the check on this shop's own settings.** In the panel, fill in the centre's numbers and press "Run the checks". (A builder with a laptop can run it from the agents folder: `node templates/commerce/bookings/scripts/hand-check.ts --settings <the shop's file>`.) Read "Held N of M" aloud, and read the "NOT RUN" list if there is one.
 
   | Limit | Ask | Example (Hosahalli Farm Hiring Centre) |
   | --- | --- | --- |
@@ -142,4 +142,4 @@ Do the checklist in section 8 of the main guide (the WhatsApp check, Google Cale
 
 ## 11. Be honest about what's true today
 
-As of 3 November 2026 the rental example (a made-up centre) has been checked by hand on practice services with test money: 33 of 33 situations held, and the closed-day request was left out because the example is open every day. No hiring centre is live. It books one thing at a time for the whole business, a booking is one day at most (8 hours), prices are fixed per job, it doesn't record the field, the driver, the weather or the rest of the payment, and it does not listen to a voice note (it replies with one line asking the customer to type). Kannada and Hindi wording is machine-written and waits for a native speaker's review. Never say more than this.
+As of 3 November 2026 the rental example (a made-up centre) has been checked by hand on practice services with test money: 33 of 33 situations held, and the closed-day request was left out because the example is open every day. No hiring centre is live. It books one thing at a time for the whole business, a booking is one day at most (8 hours), prices are fixed per job, it doesn't record the field, the driver, the weather or the rest of the payment, and it does not listen to a voice note (it replies with one line asking the customer to type). Kannada and Hindi wording is machine-written and waits for a native speaker's review. What else is true today, including Gupshup, the stop button and the owner's alerts, is in section 11 of the main guide. Never say more than this.
