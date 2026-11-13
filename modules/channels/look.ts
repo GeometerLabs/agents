@@ -145,7 +145,7 @@ a.choice:hover { border-color: var(--line2); }
 .days b { background: var(--pill); color: var(--pill-ink); }
 /* a time or a slot is a tile: the radio stays in the page (keyboard, screen reader, no script) and its tile shows the pick */
 .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.4em, 1fr)); gap: 8px; }
-.slots.rows { grid-template-columns: 1fr; }
+.slots.wide { grid-template-columns: 1fr; }
 .slots label { position: relative; display: flex; }
 .slots input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .slots span { display: flex; flex: 1; align-items: center; justify-content: center; gap: .3em; flex-wrap: wrap; min-height: 48px; padding: 6px 10px; border: 1px solid var(--line2); border-radius: 12px; background: var(--card); text-align: center; cursor: pointer; }
@@ -192,8 +192,9 @@ const OWNER = `
 .acts button { flex: 1; margin: 0; }
 .calm { display: flex; gap: 10px; align-items: center; padding: 14px; border-radius: 16px; background: var(--ok-bg); color: var(--ink); }
 .calm::before { content: ""; flex: none; width: .8em; height: .8em; border-radius: 50%; background: var(--m-well); }
-.rows li { display: grid; grid-template-columns: minmax(7.5em, auto) 1fr; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
-.rows li > b { font-weight: 650; }
+/* the coming list: the time on its own line over what and who, so every row lines up whatever the language's date runs to */
+.rows li { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.rows li > b { display: block; font-weight: 650; }
 .talk-lines { display: grid; gap: 8px; margin: 0 0 12px; }
 .talk-lines p { max-width: 90%; margin: 0; padding: 9px 14px; border-radius: 18px; }
 .talk-lines b { display: block; font-size: .78rem; opacity: .85; }
