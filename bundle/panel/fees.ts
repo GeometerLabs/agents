@@ -208,7 +208,7 @@ export function feesLimitLines(draft: Draft, example: Settings, language: Langua
 export function runtimeForFees(phoneNumberId: string, serverModel?: { wire: string; model: string }, gateway = false): Record<string, unknown> {
   return {
     mode: "live", tickSeconds: 30,
-    services: { ...(gateway ? { payments: {} } : {}), messaging: { phoneNumberId }, timeoutMs: 20_000 },
+    services: { ...(gateway ? { payments: {} } : {}), ...(phoneNumberId !== "" ? { messaging: { phoneNumberId } } : {}), timeoutMs: 20_000 },
     ...(serverModel ? { parser: { wire: serverModel.wire, model: serverModel.model } } : {}),
   };
 }

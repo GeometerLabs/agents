@@ -3,6 +3,9 @@
 // (modules/runtime/start.ts); this file gives them Bookings' reading, its report and its runtime.
 import { join } from "node:path";
 import { PAGES_FILE, pagesReader, picturesOf } from "../../../../modules/channels/pages-file.ts";
+import { pushMessaging } from "../../../../modules/push/push.ts";
+import { runtimeHasWhatsApp } from "../../../../modules/runtime/config.ts";
+import type { Messaging } from "../../../../modules/messaging/messaging.ts";
 import { buildVoice } from "../../../../modules/voice/config.ts";
 import { folderQrImages } from "../../../../modules/payments/owner-marked/qr-image.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
@@ -69,8 +72,10 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
   return await startRuntimeClient<ClientFolder["settings"], Runtime>(options, {
     casesName: "bookings",
     loadClient,
-    async build(client, { store, clock, log, recordKey, ownerSignin }) {
-      const built = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive, payment: client.settings.payment, ownCalendar: calendarModule(client.settings) === "own" });
+    async build(client, { store, clock, log, recordKey, ownerSignin, push }) {
+      const raw = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive, payment: client.settings.payment, ownCalendar: calendarModule(client.settings) === "own" });
+      // item 11h: every message to the owner by the owner's choice of WhatsApp, push or both (push alone for a shop with no WhatsApp: modules/push/push.ts)
+      const built = { ...raw, messaging: pushMessaging(runtimeHasWhatsApp(client.runtime) ? raw.messaging as Messaging | undefined : undefined, push, client.settings.owner.whatsapp, clock) };
       // An owner-marked shop's QR pictures (UPI) go into the folder the monthly report's pages are served from (read-only, no listing), under random names (B33).
       const report = client.runtime.report;
       const services = ownerMarkedOf((client.settings as { payment?: PaymentSettings }).payment) && report ? { ...built, qrImage: folderQrImages({ dir: report.pagesDir, baseUrl: report.pageBaseUrl, log }) } : built;
@@ -82,7 +87,9 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       const voice = speech ? buildVoice(speech, { clock, languages: client.settings.languages, log }) : undefined;
       // Item 11e: the shop's assistant reads the owner's words through the same steps, with the owner's reading (modules/assistant/reading.ts). Only when it is on.
       const ownerParser = client.settings.assistant ? understanding(client as ClientFolder, { clock, log: () => undefined }, OWNER_UNDERSTANDING as never).parser as OwnerParser : undefined;
-      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}),
+      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), ...(push ? { push } : {}),
+        // item 11h (owner, 14 Nov): where a WhatsApp booking's own page lives, read fresh (the deployer's pages.json): the pages domain's address, else this server's
+        pageBase: () => { const p = pagesReader(join(client.folder, PAGES_FILE))(); return p?.url ?? p?.base; },
         // item 11i: the character's pictures, as the deployer hands their version over in pages.json (read on every use)
         pictures: () => picturesOf(pagesReader(join(client.folder, PAGES_FILE))()), log });
     },

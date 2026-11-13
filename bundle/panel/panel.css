@@ -111,3 +111,5 @@ button.swatch .auto { display: inline-flex; align-items: center; justify-content
 ul.moods { list-style: none; padding: 0; margin: 8px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
 ul.moods li { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; font-size: 14px; }
 ul.moods img { width: 100%; max-width: 96px; height: auto; border-radius: 12px; }
+/* item 11h: the owner's recovery card, printed: the codes large and spaced, in a typewriter face so 5 and S, 8 and B are told apart */
+.codes{font:1.4rem/2 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.08em}

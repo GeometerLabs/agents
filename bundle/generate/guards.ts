@@ -20,6 +20,7 @@ import { DESK_GUARD } from "../../modules/payments/owner-marked/desk-guard.ts";
 export const OWNER_MARKED_KINDS: readonly string[] = PROVIDERS.filter((p) => p.ownerMarked !== undefined).map((p) => p.id);
 import { OWN_API_SECRET } from "../lib/secrets.ts";
 import { GUPSHUP_ROUTES, GUPSHUP_UPSTREAM } from "../../modules/messaging/gupshup.ts";
+import { PUSH_HOSTS, PUSH_OPERATIONS, PUSH_ROUTES } from "../../modules/push/hosts.ts";
 import { GUPSHUP_API_KEY_HEADER, GUPSHUP_SELFSERVE_ROUTES, GUPSHUP_SELFSERVE_UPSTREAM } from "../../modules/messaging/gupshup-selfserve.ts";
 
 /** How long a Guard waits for its provider. The runtime must wait LONGER, or it gives up on a call Guard is still making (rules.ts). */
@@ -47,7 +48,7 @@ export interface GuardDef {
 }
 
 /** The Guards a shop can have. A desk Guard (OWNER_MARKED_KINDS) is only ever an agent's: a template shop on UPI runs the same ledger in its own runtime. */
-export const GUARD_KINDS: readonly GuardKind[] = [...GATEWAY_KINDS, "whatsapp", "calendar", "model"];
+export const GUARD_KINDS: readonly GuardKind[] = [...GATEWAY_KINDS, "whatsapp", "calendar", "push", "model"];
 
 /**
  * Where the owner-marked desk listens (B71 part 2): the approvals relay's container serves it on this port of its own (bundle/services/desk.ts), apart from the
@@ -75,6 +76,7 @@ export function guardDef(kind: GuardKind, model?: ModelConfig): GuardDef {
   switch (kind) {
     case "whatsapp": return whatsappGuardDef();
     case "calendar": return { kind, tool: "google-calendar", upstream: "www.googleapis.com:443", headers: { Authorization: "${file:/run/google/authorization}" } };
+    case "push": return pushGuardDef(); // item 11h
     case "model":
       if (model?.wire === "anthropic") return { kind, tool: "model", upstream: model.upstream ?? "api.anthropic.com:443", secretFile: "model_api_key", headers: { "x-api-key": "${file:/run/secrets/model_api_key}", "anthropic-version": ANTHROPIC_VERSION } };
       // a model the builder hosts (B73) is one more OpenAI-compatible upstream: the same tool, the same key file (`geometer model-key`), only its address differs
@@ -173,6 +175,51 @@ export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messa
       { id: "own-number-read", kind: "argument_allowlist", operation: "read_number", field: "phone_number_id", match: "exact", allowed_values: [o.phoneNumberId] },
     ],
     limits: [count("messages-per-hour", "send", o.messagesPerHour, 3600)],
+    intents: [], fail_policy: [],
+  };
+}
+
+// ---- item 11h (decision 45): web push, through a Guard of its own ----------------------------------------------------------------------------------------------
+//
+// A web push is a POST of encrypted bytes (RFC 8291) to the browser's push service, signed with the shop's VAPID key (RFC 8292). Guard decides only on what it can
+// read exactly, and a binary body is not that (it refuses it as unlisted), and it removes the agent's Authorization header, where VAPID's signature goes. So the
+// runtime does not call the push service through Guard as it calls WhatsApp: it sends Guard a small JSON (the push service's host, the subscription's path, the
+// encrypted bytes in base64url, the VAPID header) and Guard, if its rules allow, passes it to the server's push sender (bundle/services/push.ts), which turns it into
+// the real request to exactly the host Guard checked. The sender holds no secret and sees only ciphertext. One Guard per shop, so every push of a shop is counted
+// per day at that shop's own Guard and the shop's kill switch stops its pushes too (modules/Explanation.md, "Works without WhatsApp").
+
+/** Where the server's push sender listens, on the `push` network only the shops' push Guards share with it (compose.ts). */
+export const PUSH_PORT = 8798;
+/** The push sender's container name, and so the push Guard's upstream. */
+export const PUSH_SERVICE = "push";
+export { PUSH_HOSTS, PUSH_OPERATIONS, PUSH_ROUTES };
+
+/** The push Guard: in front of the server's push sender, on a private network, in plain HTTP (there is no certificate on a Docker network), with no credential. */
+export function pushGuardDef(): GuardDef {
+  return { kind: "push", tool: "web-push", upstream: `${PUSH_SERVICE}:${PUSH_PORT}`, headers: {}, plain: true };
+}
+
+/** Item 11h: a shop's daily push caps: its owner's alerts, its customers', and any one phone's. Generous for a small shop; a flood stops at Guard. */
+export const PUSH_LIMITS = { ownerPerDay: 200, customerPerDay: 500, perPhonePerDay: 50 } as const;
+
+/** A count limited to one argument's value (a phone's subscription): `scope` names the argument. */
+const scopedCount = (id: string, operation: string, field: string, cap: number, windowSeconds: number) => ({ id, kind: "count", operation, scope: [field], cap: String(cap), window_seconds: windowSeconds });
+
+/**
+ * The push Guard's spec: the push service's host exactly from PUSH_HOSTS (the sender builds the address from that same field, so the list is what is reached), a
+ * daily count of each kind for the shop, and a daily count per phone (`sub`, the subscription's short id), so one phone is never flooded. Guard's day is a UTC day.
+ */
+export function pushSpec(id: SpecIdentity, o: { ownerPerDay: number; customerPerDay: number; perPhonePerDay: number }): LimitsSpec {
+  const ops = [PUSH_OPERATIONS.owner, PUSH_OPERATIONS.customer] as const;
+  return {
+    ...base(pushGuardDef(), id),
+    routes: [{ method: "POST", path: PUSH_ROUTES.owner, operation: PUSH_OPERATIONS.owner }, { method: "POST", path: PUSH_ROUTES.customer, operation: PUSH_OPERATIONS.customer }],
+    rules: ops.map((operation) => ({ id: `push-service-${operation === PUSH_OPERATIONS.owner ? "owner" : "customer"}`, kind: "argument_allowlist", operation, field: "host", match: "exact", allowed_values: [...PUSH_HOSTS] })),
+    limits: [
+      count("owner-pushes-per-day", PUSH_OPERATIONS.owner, o.ownerPerDay, 86_400),
+      count("customer-pushes-per-day", PUSH_OPERATIONS.customer, o.customerPerDay, 86_400),
+      ...ops.map((operation) => scopedCount(`pushes-per-phone-per-day-${operation === PUSH_OPERATIONS.owner ? "owner" : "customer"}`, operation, "sub", o.perPhonePerDay, 86_400)),
+    ],
     intents: [], fail_policy: [],
   };
 }
@@ -289,8 +336,14 @@ export const LICENCE_RECIPIENT_FIELD = "to";
 export const ownerNumbers = (numbers: readonly (string | undefined)[]): string[] =>
   numbers.filter((n): n is string => typeof n === "string" && /^[\d+ ()-]+$/u.test(n.trim()) && (n.match(/\d/gu)?.length ?? 0) >= 6 && (n.match(/\d/gu)?.length ?? 0) <= 15).map((n) => n.trim());
 
+/**
+ * Item 11h: what the licence holds back at the push Guard. Nothing in the wind-down (a push is a message, as a WhatsApp send is then); in the final stop, a push to a
+ * customer, as a WhatsApp send is, and never one to the owner (the owner's notice must still arrive). Its own lists, so every other Guard's file stays as it was.
+ */
+export const PUSH_LICENCE = { windDown: [] as string[], stopped: [PUSH_OPERATIONS.customer] as string[] };
+
 /** The `[licence]` lines of guard.toml (ADR-0062 decision 1). The paths are the mount's. */
-function licenceLines(l: GuardLicence): string[] {
+function licenceLines(l: GuardLicence, kind: GuardKind): string[] {
   const q = (s: string) => JSON.stringify(s);
   const list = (xs: readonly string[]) => `[${xs.map(q).join(", ")}]`;
   return [
@@ -306,8 +359,8 @@ function licenceLines(l: GuardLicence): string[] {
     `shop = ${q(l.shop)}`,
     `# In the wind-down, refused with reason subscription_suspended (not a policy denial); in the final stop, also a send, except to the owner's number.`,
     `# Never refused, in any state: refunds, cancel_link, reads, lists, patch, delete.`,
-    `wind_down_refuses = ${list(LICENCE_WIND_DOWN_REFUSES)}`,
-    `stopped_refuses = ${list(LICENCE_STOPPED_REFUSES)}`,
+    `wind_down_refuses = ${list(kind === "push" ? PUSH_LICENCE.windDown : LICENCE_WIND_DOWN_REFUSES)}`,
+    `stopped_refuses = ${list(kind === "push" ? PUSH_LICENCE.stopped : LICENCE_STOPPED_REFUSES)}`,
     `owner_numbers = ${list(l.ownerNumbers)}`,
     `recipient_field = ${q(l.recipientField ?? LICENCE_RECIPIENT_FIELD)}`,
   ];
@@ -363,7 +416,7 @@ export function guardToml(o: TomlOptions): string {
       ``, `[notify_secrets]`, `${o.approver.id} = ${q("${file:" + o.approver.secretFile + "}")}`,
     );
   }
-  if (o.licence && o.def.kind !== "model") lines.push(...licenceLines(o.licence));
+  if (o.licence && o.def.kind !== "model") lines.push(...licenceLines(o.licence, o.def.kind));
   return `${lines.join("\n")}\n`;
 }
 

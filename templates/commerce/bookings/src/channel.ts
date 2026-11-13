@@ -49,11 +49,13 @@ const requestOf = (store: Store, b: Booking): MarkedRequest | undefined => store
  */
 export function bookingView(settings: Settings, store: Store, handleHash: string) {
   const request = store.channel?.requests[handleHash];
-  if (!request) return null;
+  // item 11h: a WhatsApp booking's own page, by the link last sent on WhatsApp (a newer one replaced any older, which then opens nothing)
+  const byLink = request ? undefined : [...store.bookings.values()].find((x) => x.pageLink === handleHash && !x.channel);
+  if (!request && !byLink) return null;
   const messages = (to: string) => (store.channel?.outbox ?? []).filter((m) => m.to === to).map((m) => ({ atMs: m.atMs, text: m.text }));
-  if (request.refused !== undefined || request.booking === undefined) return { status: "refused" as const, reason: request.refused ?? "unknown", channel: request.channel };
-  const b = store.bookings.get(request.booking);
-  if (!b || b.handle !== handleHash) return null;
+  if (request && (request.refused !== undefined || request.booking === undefined)) return { status: "refused" as const, reason: request.refused ?? "unknown", channel: request.channel };
+  const b = byLink ?? store.bookings.get(request!.booking!);
+  if (!b || (!byLink && b.handle !== handleHash)) return null;
   const status = STATUS[b.state];
   const service = settings.services.find((s) => s.id === b.serviceId);
   const marked = ownerMarkedOf(settings.payment);
@@ -71,10 +73,24 @@ export function bookingView(settings: Settings, store: Store, handleHash: string
     depositInr: b.depositInr ?? settings.deposit.amountInr,
     ...(status === "held" && b.holdExpiresAt !== undefined ? { holdExpiresAt: b.holdExpiresAt } : {}),
     ...(pay ? { pay } : {}),
-    canCancel: status === "held" || status === "booked" || status === "checking",
-    canSayPaid: status === "held" && pay?.kind === "upi",
-    messages: messages(b.customer),
+    // a WhatsApp booking's page shows and lets the customer pay; cancelling and "I have paid" stay on WhatsApp, where the customer is known by their number
+    canCancel: !byLink && (status === "held" || status === "booked" || status === "checking"),
+    canSayPaid: !byLink && status === "held" && pay?.kind === "upi",
+    // its messages are WhatsApp's, not kept here: the page shows none of them
+    messages: byLink ? [] : messages(b.customer),
+    ...refundOf(store, b),
   };
+}
+
+/**
+ * Item 11h (decision 45): a refund on this booking as the record holds it, for its own page (a customer without WhatsApp sees it there): the owner's call on a late
+ * cancellation still open ("asked"), and on a UPI shop the refund the owner owes ("owed"), marked sent ("sent") or kept ("kept"). The newest refund counts.
+ */
+function refundOf(store: Store, b: Booking): { refund?: { state: "asked" | "owed" | "sent" | "kept"; amountInr: number } } {
+  const owed = (store.upi?.refunds ?? []).filter((r) => r.caseId === b.id).at(-1);
+  if (owed) return { refund: { state: owed.state === "done" ? "sent" : owed.state === "kept" ? "kept" : "owed", amountInr: owed.amountPaise / 100 } };
+  const asked = b.pending.find((p) => p.kind === "refund");
+  return asked && asked.kind === "refund" ? { refund: { state: "asked", amountInr: asked.amountInr } } : {};
 }
 
 /** What waits for the owner, as the owner's page shows it and the agent checks a press against. `code` is for the agent only and is never sent out (ownerView). */

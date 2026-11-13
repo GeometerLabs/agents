@@ -21,7 +21,7 @@ export interface LiveModule {
 export type LiveServices = {
   payments: { baseUrl: string; agentToken?: string };
   calendar?: { baseUrl: string; calendarId: string; agentToken?: string }; // left out for a shop with no Google Calendar (B72)
-  messaging: { baseUrl: string; phoneNumberId: string; agentToken?: string; provider?: "meta" | "gupshup" | "gupshup-selfserve"; appId?: string; appName?: string; sourceNumber?: string }; // provider: modules/messaging/providers.ts
+  messaging?: { baseUrl: string; phoneNumberId: string; agentToken?: string; provider?: "meta" | "gupshup" | "gupshup-selfserve"; appId?: string; appName?: string; sourceNumber?: string }; // provider: modules/messaging/providers.ts
   timeoutMs?: number;
 };
 

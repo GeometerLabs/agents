@@ -26,7 +26,7 @@ import type { CompileResult, GuardTool, TripwireResult } from "./generate/verify
 import { licencePaths, syncLicence } from "./lib/licence.ts";
 import { syncTerms } from "./lib/terms.ts";
 import { kidOf } from "../modules/licence/token.ts";
-import { KINDS, kindFor, guardsOf } from "./lib/kinds.ts";
+import { KINDS, kindFor, guardsOf, runtimeHasWhatsApp } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { RECORD_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, speechKeyHandedIn, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
@@ -105,6 +105,8 @@ function gupshupRenewedFor(dir: string, shop: string, gupshup: boolean): boolean
 const hasCalendar = (guards: readonly { kind: string }[]): boolean => guards.some((g) => g.kind === "calendar");
 /** Does this shop take Razorpay? A UPI shop (B33) was planned with no Razorpay Guard, and so has no Razorpay key, webhook or approvals relay. */
 export const hasRazorpay = (guards: readonly { kind: string }[]): boolean => guards.some((g) => g.kind === "razorpay");
+/** Item 11h: a shop with no WhatsApp has no WhatsApp Guard in its plan. */
+const hasWhatsAppGuard = (guards: readonly { kind: string }[]): boolean => guards.some((g) => g.kind === "whatsapp");
 
 /**
  * The shop's own people's WhatsApp numbers in its (or an agent's) settings: the owner (Bookings and Fees both keep it at owner.whatsapp) and, B37, each other
@@ -117,38 +119,42 @@ export const ownNumbersOf = (folder: { settings?: unknown }): (string | undefine
 };
 
 /** What a shop needs before it can run, said by the name the panel hands it in under. `calendar`: whether the shop's template has one. */
-function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true, razorpay = true, gupshup = false, gupshupRenewed = false, selfServe = false): Problem[] {
+function missingSecrets(dir: string, shop: string, webhooks: ShopWebhooks, calendar = true, razorpay = true, gupshup = false, gupshupRenewed = false, selfServe = false, whatsapp = true): Problem[] {
   const need = (container: string, file: string, handIn: string): Problem[] => have(dir, container, file) ? [] : [{ rule: `secret-missing:${handIn}`, message: `${shop}: ${handIn} has not been handed in. Put it in secrets-inbox/${shop}/${handIn} (the panel does this); it is moved to where only the right container can read it.` }];
   return [
     // a UPI shop (B33) has no Razorpay account: no key and no webhook secret are asked for
     ...(razorpay ? need(`g-${shop}-razorpay`, "razorpay_authorization", "razorpay_key") : []),
     // item 11b: a shop on Gupshup hands its token in under Gupshup's own name; it fills the same file. Follow-up 2: none is needed when the refresher renews one
-    ...(gupshupRenewed ? [] : need(`g-${shop}-whatsapp`, "whatsapp_authorization", selfServe ? "gupshup_apikey" : gupshup ? "gupshup_authorization" : "whatsapp_token")),
+    // item 11h: a shop with no WhatsApp (runtime.json names no messaging) is asked for none of WhatsApp's keys or secrets
+    ...(gupshupRenewed || !whatsapp ? [] : need(`g-${shop}-whatsapp`, "whatsapp_authorization", selfServe ? "gupshup_apikey" : gupshup ? "gupshup_authorization" : "whatsapp_token")),
     ...(razorpay ? need("inbox", `${shop}/razorpay_webhook_secret`, "razorpay_webhook_secret") : []),
-    ...(webhooks.verification === "path-token" ? need("inbox", `${shop}/whatsapp_path_token`, "whatsapp_path_token") : [...need("inbox", `${shop}/whatsapp_app_secret`, "whatsapp_app_secret"), ...need("inbox", `${shop}/whatsapp_verify_token`, "whatsapp_verify_token")]),
+    ...(!whatsapp ? [] : webhooks.verification === "path-token" ? need("inbox", `${shop}/whatsapp_path_token`, "whatsapp_path_token") : [...need("inbox", `${shop}/whatsapp_app_secret`, "whatsapp_app_secret"), ...need("inbox", `${shop}/whatsapp_verify_token`, "whatsapp_verify_token")]),
     // the shop's own Google key, or (hosted mode) the one the server holds for every shop: `geometer google-key <file>`
     ...(!calendar || have(dir, "refresher", "_server/google_service_account.json") ? [] : need("refresher", `${shop}/google_service_account.json`, "google_service_account.json")),
   ];
 }
 
-type Three = "razorpay" | "whatsapp" | "calendar";
+type Three = "razorpay" | "whatsapp" | "calendar" | "push";
 interface Credentials { agent: Partial<Record<Three, string>> & Record<"model" | "relay", string>; admin: Partial<Record<Three, string>>; /** the panel's own agent at each Guard (only when the panel is on): the connection checks' reads, nothing else. One token: the panel reads ONE token file (golive.ts) and presents it to every Guard. */ panel?: string }
 
 /**
  * Every credential a shop's containers share: made once, kept in the file of the container that owns it, copied to the containers that must match. `calendar`: whether the shop's
  * template has a calendar. One that has none gets no calendar credentials, no folder for a calendar Guard, and nothing in the token refresher's folder.
  */
-function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar = true, razorpay = true, people: string[] = [], gupshupRenewed = false): Credentials {
+function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar = true, razorpay = true, people: string[] = [], gupshupRenewed = false, whatsapp = true): Credentials {
   const rt = names.runtime(shop);
   const internal = ensureSecret(secretFile(dir, rt, "internal_token"), mintSecret);
   const agent = {
     ...(razorpay ? { razorpay: ensureSecret(secretFile(dir, rt, "agent_razorpay"), mintGuardToken) } : {}),
-    whatsapp: ensureSecret(secretFile(dir, rt, "agent_whatsapp"), mintGuardToken),
+    // item 11h: no WhatsApp, no WhatsApp credential; every shop has a push Guard
+    ...(whatsapp ? { whatsapp: ensureSecret(secretFile(dir, rt, "agent_whatsapp"), mintGuardToken) } : {}),
     ...(calendar ? { calendar: ensureSecret(secretFile(dir, rt, "agent_calendar"), mintGuardToken) } : {}),
+    push: ensureSecret(secretFile(dir, rt, "agent_push"), mintGuardToken),
     model: ensureSecret(secretFile(dir, rt, "agent_model"), mintGuardToken),
     relay: ensureSecret(secretFile(dir, "relay", shop, "agent_whatsapp"), mintGuardToken),
   };
-  const admin = Object.fromEntries((["razorpay", "whatsapp", "calendar"] as const).filter((k) => (k !== "calendar" || calendar) && (k !== "razorpay" || razorpay)).map((k) => [k, ensureSecret(secretFile(dir, "ops", shop, `admin_${k}`), mintGuardToken)])) as Credentials["admin"];
+  const admin = Object.fromEntries((["razorpay", "whatsapp", "calendar", "push"] as const).filter((k) => (k !== "calendar" || calendar) && (k !== "razorpay" || razorpay) && (k !== "whatsapp" || whatsapp)).map((k) => [k, ensureSecret(secretFile(dir, "ops", shop, `admin_${k}`), mintGuardToken)])) as Credentials["admin"];
+  ensureDir(secretFile(dir, `g-${shop}-push`)); // the push Guard holds no secret, but Docker must find its folder to mount (a missing one it would make as root)
   for (const container of ["ops", "inbox", "relay"]) writeSecretFile(secretFile(dir, container, shop, "internal_token"), internal);
   // item 11d: the channel token, the runtime's and the public front's (served by the inbox process). It can send only a booking-page request or an owner's press (which the
   // runtime checks against the owner's link itself): never a WhatsApp message or a payment event, which only the internal token can.
@@ -157,6 +163,8 @@ function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar
   if (razorpay) writeSecretFile(secretFile(dir, "relay", shop, "owner_notify_secret"), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, "owner_notify_secret"), mintSecret));
   // A UPI shop has no Razorpay webhook: its inbox still holds a secret for that route, made here and given to nobody, so a call to it can never be signed.
   else ensureSecret(secretFile(dir, "inbox", shop, "razorpay_webhook_secret"), mintSecret);
+  // Item 11h: the same for a shop with no WhatsApp: its WhatsApp route keeps a secret and a verify token nobody was given (and no number is its), so nothing reaches it
+  if (!whatsapp) for (const f of ["whatsapp_app_secret", "whatsapp_verify_token"]) ensureSecret(secretFile(dir, "inbox", shop, f), mintSecret);
   // B37: each other approver signs with their own secret, kept in the Razorpay Guard's folder and copied to the relay's, like the owner's (a UPI shop has neither)
   if (razorpay) for (const person of people) writeSecretFile(secretFile(dir, "relay", shop, names.approverSecretFile(person)), ensureSecret(secretFile(dir, `g-${shop}-razorpay`, names.approverSecretFile(person)), mintSecret));
   if (calendar) {
@@ -182,8 +190,8 @@ const sha = (value: string) => sha256Hex(value);
 const agentsOf = (shop: string, kind: GuardPlan["kind"], c: Credentials) => [
   { id: names.agentId(shop), sha: sha(c.agent[kind as "razorpay"]) },
   ...(kind === "whatsapp" ? [{ id: names.relayAgentId(shop), sha: sha(c.agent.relay), operations: ["send"] }] : []),
-  // the panel's own agent: allowed the read operations of its connection checks at this Guard and nothing else
-  ...(c.panel && kind !== "model" ? [{ id: names.panelAgentId(shop), sha: sha(c.panel), operations: PANEL_READS[kind as Three] }] : []),
+  // the panel's own agent: allowed the read operations of its connection checks at this Guard and nothing else (item 11h: it checks nothing at a push Guard, so it is not one of its agents)
+  ...(c.panel && kind !== "model" && kind !== "push" ? [{ id: names.panelAgentId(shop), sha: sha(c.panel), operations: PANEL_READS[kind as Three] }] : []),
 ];
 
 // ---- preparing a shop -----------------------------------------------------------------------------------------------------------------------
@@ -237,7 +245,7 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   problems.push(...first.problems);
   notes.push(...first.notes);
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, folder.lock.pathway, folder.lock.version)}, or change the pin once that version has passed the crash test with this shop's settings.` });
-  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay, gupshup, gupshupRenewed, selfServe));
+  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay, gupshup, gupshupRenewed, selfServe, runtimeHasWhatsApp(folder.runtime)));
   // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch. The gateway, its credential file and
   // its key's shape are its folder's (B71); a pin for another gateway than the one the shop chose is not this shop's.
   const gateway = gatewayOf((folder.settings as { payment?: PaymentSettings } | undefined)?.payment);
@@ -335,7 +343,7 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
   problems.push(...await serverProblems(ctx, server));
   const lines: string[] = [];
   if (prepared) {
-    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)), hasRazorpay(prepared.guards.map((g) => g.plan)), peopleOf(prepared.guards), prepared.gupshupRenewed);
+    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)), hasRazorpay(prepared.guards.map((g) => g.plan)), peopleOf(prepared.guards), prepared.gupshupRenewed, hasWhatsAppGuard(prepared.guards.map((g) => g.plan)));
     const licence = await guardLicenceOn(ctx, server);
     if (!licence.on) problems.push(licence.problem);
     for (const g of prepared.guards) {
@@ -360,8 +368,9 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   const shops = applied.map(([name, s]) => {
     const snap = s.applied!;
     const settings = JSON.parse(snap.settingsText) as { owner: { whatsapp: string }; approvers?: ApproversSettings };
-    const runtime = snap.runtime as { services: { messaging: { phoneNumberId: string; provider?: string; appId?: string; appName?: string; sourceNumber?: string } } };
-    const m = runtime.services.messaging;
+    const runtime = snap.runtime as { services: { messaging?: { phoneNumberId: string; provider?: string; appId?: string; appName?: string; sourceNumber?: string } } };
+    // item 11h: a shop with no WhatsApp has no messaging service: its inbox takes no WhatsApp webhook for it (no number is its), and its relay sends nothing on WhatsApp
+    const m = runtime.services.messaging ?? { phoneNumberId: "" };
     // item 11b: a Gupshup shop's inbox checks the app id on each callback, and its relay asks the owner through Gupshup's paths
     const whatsappRoute = m.provider === "gupshup" && m.appId ? { whatsappRoute: { provider: "gupshup" as const, appId: m.appId } }
       : m.provider === "gupshup-selfserve" && m.appName && m.sourceNumber ? { whatsappRoute: { provider: "gupshup-selfserve" as const, appName: m.appName, sourceNumber: m.sourceNumber, ...(m.appId ? { appId: m.appId } : {}) } } : {};
@@ -488,7 +497,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   if (problems.length > 0) throw new Refused(problems);
 
   // 2. credentials, then compile and verify every Guard (the model Guard knows every shop's runtime, so it is verified again whenever a shop is added)
-  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)), peopleOf(p.guards), p.gupshupRenewed)]));
+  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)), peopleOf(p.guards), p.gupshupRenewed, hasWhatsAppGuard(p.guards.map((g) => g.plan)))]));
   const licence = await guardLicenceOn(ctx, server);
   if (!licence.on) problems.push(licence.problem);
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }, licenceFor(server, licence.on, g.plan.kind, p.folder.name, ownNumbersOf(p.folder))));

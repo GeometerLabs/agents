@@ -29,6 +29,14 @@
 //   POST /internal/channel/owner-signout  x-owner-session: <token>   end that session
 //   GET  /internal/owner-session          x-owner-session, with the INBOX's internal token: 204 when the session is good. The approvals relay asks this, so it
 //                                         never takes the front's word for who the owner is.
+// Item 11h, passkeys (owner-access.ts, webauthn.ts): one route, the step in the body. Every check is HERE; the front carries the browser's answers.
+//   POST /internal/channel/owner-passkey  {"op": "grant_state" | "register_options" | "register", "grant": {"kind": "setup", "token"} | {"kind": "recovery", "code"}, "response"?}
+//                                         {"op": "status"} | {"op": "signin_options"} | {"op": "signin", "response"}
+//                                         answers {state} | {options} | {session, expires_at_ms} | {count, options?}, or 403 {state | why}
+// Item 11h, web push (modules/push): one route, the step in the body. The owner's steps need the owner's credential, as an owner_action does; a customer's name
+// their page by its handle's hash, and only a page made on the page or through MCP (a WhatsApp customer hears on WhatsApp) can take alerts.
+//   POST /internal/channel/push  {"op": "key"} | {"op": "owner_state" | "owner_subscribe" | "owner_unsubscribe" | "owner_choice", ...} (owner's credential)
+//                                | {"op": "customer_state" | "customer_subscribe" | "customer_unsubscribe", "handle": <hash>, ...}
 //
 // The runtime never holds a webhook secret: the inbox checked each provider's signature before it called us. The bearer
 // token only says the caller is our own inbox. Bind to 127.0.0.1 or a private network, never the open internet.
@@ -42,6 +50,12 @@ import { MAX_VOICE_BYTES } from "../channels/owner-audio.ts";
 import { HANDLE_HASH } from "../channels/handle.ts";
 import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts";
 import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "../channels/owner-access.ts";
+import type { AssertionResponse, RegistrationResponse } from "../channels/owner-access.ts";
+import type { Grant } from "../channels/owner-grants.ts";
+import type { Push } from "../push/push.ts";
+import { OWNER_CHOICES } from "../push/store.ts";
+import type { BrowserSubscription, OwnerChoice } from "../push/store.ts";
+import { conversationOf } from "../channels/conversation.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import type { OwnerLinkFile } from "../channels/owner-link.ts";
 import type { RuntimeChannel } from "./core.ts";
@@ -76,6 +90,9 @@ export interface ServerOptions {
   ownerLink?: () => OwnerLinkFile | undefined;
   /** Item 11f: the owner's sign-in (links and sessions), checked here on every call. Left out: no session is ever good, and the sign-in routes refuse. */
   ownerSignin?: OwnerSignin["http"];
+  /** Item 11h: the shop's web push (subscriptions and the owner's choice), and whether the shop has WhatsApp (the choice is offered only then). */
+  push?: Push;
+  hasWhatsApp?: boolean;
 }
 
 export interface RunningServer {
@@ -161,8 +178,8 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
     return session !== undefined && options.ownerSignin?.check(session) !== undefined;
   };
   /** A session's start or end, for the record: an event of the runtime's own, saved and run as a step like any other. */
-  const recordAccess = (what: "signed_in" | "signed_out", session: string): void => {
-    runtime.submit([{ kind: "owner_access", id: randomUUID(), what, session }]);
+  const recordAccess = (what: "signed_in" | "signed_out" | "passkey_added", session: string, how?: "link" | "passkey" | "setup" | "recovery"): void => {
+    runtime.submit([{ kind: "owner_access", id: randomUUID(), what, session, ...(how ? { how } : {}) }]);
     runtime.kick();
   };
 
@@ -231,14 +248,104 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (!signin) return send(res, 403, { state: "unknown" });
       const done = signin.consume(link);
       if (!done.ok) return send(res, 403, { state: done.state });
-      recordAccess("signed_in", done.id);
+      recordAccess("signed_in", done.id, "link");
       return send(res, 200, { session: done.session, expires_at_ms: done.expiresAt });
+    }
+    // ---- item 11h: passkeys ----
+    if (path === "/internal/channel/owner-passkey") {
+      only("POST");
+      const signin = options.ownerSignin;
+      let body: Record<string, unknown>;
+      try { body = JSON.parse(await readBody(req, 32 * 1024)) as Record<string, unknown>; } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      if (!signin || !signin.passkeysOn()) return send(res, 403, { state: "unknown", why: "Passkeys are not on for this shop." });
+      const g = body.grant as { kind?: unknown; token?: unknown; code?: unknown } | undefined;
+      const grant: Grant | undefined = g?.kind === "setup" && typeof g.token === "string" ? { kind: "setup", token: g.token.slice(0, 64) }
+        : g?.kind === "recovery" && typeof g.code === "string" ? { kind: "recovery", code: g.code.slice(0, 40) } : undefined;
+      const op = body.op;
+      if (op === "grant_state" || op === "register_options" || op === "register") {
+        if (!grant) return send(res, 400, { error: 'Send "grant": {"kind": "setup", "token"} or {"kind": "recovery", "code"}.' });
+        // a recovery code is a guess until it matches: too many wrong ones today and none is looked at
+        if (grant.kind === "recovery" && signin.codesLocked()) return send(res, 403, { state: "locked" });
+        const state = signin.grantState(grant);
+        if (grant.kind === "recovery" && state === "unknown") signin.noteWrongCode();
+        if (op === "grant_state") return send(res, 200, { state, shop: signin.shopName });
+        if (op === "register_options") {
+          const r = signin.registrationOptions(grant);
+          return r.ok ? send(res, 200, { options: r.options }) : send(res, 403, { state: r.state });
+        }
+        const done = signin.register(grant, body.response as RegistrationResponse);
+        if (!done.ok) return send(res, 403, { state: done.state, ...("why" in done && done.why ? { why: done.why } : {}) });
+        recordAccess("passkey_added", done.passkey, grant.kind);
+        recordAccess("signed_in", done.id, "passkey");
+        return send(res, 200, { session: done.session, expires_at_ms: done.expiresAt });
+      }
+      if (op === "status") return send(res, 200, { count: signin.passkeys().length });
+      if (op === "signin_options") return send(res, 200, signin.signinOptions());
+      if (op === "signin") {
+        const done = signin.signin(body.response as AssertionResponse);
+        if (!done.ok) return send(res, 403, { why: done.why });
+        recordAccess("signed_in", done.id, "passkey");
+        return send(res, 200, { session: done.session, expires_at_ms: done.expiresAt });
+      }
+      return send(res, 400, { error: "op is grant_state, register_options, register, signin_options or signin." });
     }
     if (path === "/internal/channel/owner-signout") {
       only("POST");
       const ended = options.ownerSignin?.end(header(req, OWNER_SESSION_HEADER) ?? "");
       if (ended) recordAccess("signed_out", ended);
       return send(res, 200, { ended: ended !== undefined });
+    }
+    // ---- item 11h: web push ----
+    if (path === "/internal/channel/push") {
+      only("POST");
+      let body: Record<string, unknown>;
+      try { body = JSON.parse(await readBody(req, 8 * 1024)) as Record<string, unknown>; } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const push = options.push;
+      const op = typeof body.op === "string" ? body.op : "";
+      if (!push || !push.on) return send(res, op === "key" ? 200 : 404, { on: false });
+      if (op === "key") return send(res, 200, { on: true, publicKey: push.publicKey() });
+      const whatsapp = options.hasWhatsApp === true;
+      if (op.startsWith("owner_")) {
+        if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+        if (op === "owner_subscribe") {
+          const r = push.subscribe("owner", body.subscription as BrowserSubscription);
+          if (!r.ok) return send(res, 400, { error: r.why });
+          // the first phone with alerts: both ways for a shop with WhatsApp (the owner can then pick), push alone for one without
+          if (push.ownerPhones() === 1 && push.choice() === "whatsapp") push.setChoice(whatsapp ? "both" : "push");
+        } else if (op === "owner_unsubscribe") {
+          if (typeof body.endpoint !== "string") return send(res, 400, { error: "Send the endpoint to stop." });
+          push.unsubscribe("owner", body.endpoint);
+        } else if (op === "owner_choice") {
+          if (!OWNER_CHOICES.includes(body.choice as OwnerChoice)) return send(res, 400, { error: `choice is one of ${OWNER_CHOICES.join(", ")}.` });
+          if (!whatsapp && body.choice !== "push") return send(res, 400, { error: "This shop has no WhatsApp: alerts come by push." });
+          push.setChoice(body.choice as OwnerChoice);
+        } else if (op !== "owner_state") return send(res, 400, { error: "op is not one this route knows." });
+        return send(res, 200, { on: true, whatsapp, choice: whatsapp ? push.choice() : "push", phones: push.ownerPhones() });
+      }
+      if (op.startsWith("customer_")) {
+        const handle = typeof body.handle === "string" ? body.handle : "";
+        if (!HANDLE_HASH.test(handle)) return send(res, 400, { error: "handle is the handle's hash: 64 hex digits." });
+        const view = channel.view(handle) as { channel?: unknown } | null;
+        // only a page made on the page or through MCP: a WhatsApp customer hears on WhatsApp, and a fee page belongs to a parent who does
+        const ch = view?.channel === "web" || view?.channel === "mcp" ? view.channel : undefined;
+        if (!ch) return send(res, 404, { error: "No page with alerts has this handle." });
+        const who = conversationOf(ch, handle);
+        if (op === "customer_subscribe") {
+          const r = push.subscribe(who, body.subscription as BrowserSubscription);
+          if (!r.ok) return send(res, 400, { error: r.why });
+        } else if (op === "customer_unsubscribe") {
+          if (typeof body.endpoint !== "string") return send(res, 400, { error: "Send the endpoint to stop." });
+          push.unsubscribe(who, body.endpoint);
+        } else if (op !== "customer_state") return send(res, 400, { error: "op is not one this route knows." });
+        return send(res, 200, { on: true, phones: push.phones(who) });
+      }
+      return send(res, 400, { error: "op is key, owner_* or customer_*." });
     }
     // Integration of items 11d and 11e: a recording the owner made on their page. The owner is checked HERE, as for every owner event; the audio is held in this
     // process's memory only (the kit's ownerVoice, modules/channels/owner-audio.ts) and the saved event carries its reference, never the audio.

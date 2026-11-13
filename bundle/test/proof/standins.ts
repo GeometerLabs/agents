@@ -5,6 +5,8 @@
 //         /_proof/<shop>/_standin/... reaches that shop's control routes (play the customer, pay a link, read the state); /_standin/... with no prefix is glow-salon's.
 //         /_proof/totals counts every shop's calls, links, events, refunds and messages.
 //   8791  a Google token endpoint (a token names the shop whose service account asked) and a model endpoint.
+//   8792  item 11h: a push service, for the server's push sender (geometer.json `upstreams` "push-service"): it keeps what a push service is given (the host the push
+//         sender meant, in x-push-host, the path, the headers and the encrypted body) and answers 201; GET /_push lists them, for the proof to open as the phones do.
 // Test money, practice messages, a made-up model.
 import { createServer, request } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -76,4 +78,16 @@ createServer((req, res) => {
     json(res, 404, {});
   });
 }).listen(8791, "0.0.0.0");
-console.log("stand-ins on 8790 (one set per shop) and 8791");
+const pushes: { host: string; path: string; ttl?: string; encoding?: string; authorization?: string; urgency?: string; topic?: string; body: string }[] = [];
+createServer((req, res) => {
+  const chunks: Buffer[] = [];
+  req.on("data", (c: Buffer) => chunks.push(c));
+  req.on("end", () => {
+    if (req.method === "GET" && req.url === "/_push") return json(res, 200, { pushes });
+    if (req.method !== "POST") return json(res, 405, {});
+    const h = (n: string) => (typeof req.headers[n] === "string" ? req.headers[n] as string : undefined);
+    pushes.push({ host: h("x-push-host") ?? "", path: req.url ?? "", ttl: h("ttl"), encoding: h("content-encoding"), authorization: h("authorization"), urgency: h("urgency"), topic: h("topic"), body: Buffer.concat(chunks).toString("base64url") });
+    res.writeHead(201, { location: `/m/${pushes.length}` }); res.end();
+  });
+}).listen(8792, "0.0.0.0");
+console.log("stand-ins on 8790 (one set per shop), 8791 and 8792 (a push service)");

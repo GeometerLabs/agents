@@ -213,7 +213,7 @@ test("status/<shop>.json and the stop request are in the panel's own shape (its 
     const read1 = contract!.parseStatus(readFileSync(w.paths.statusFile("glow-salon"), "utf8"));
     assert.equal(read1.ok, true);
     const s = read1.status;
-    assert.deepEqual([s.deploy.state, s.limits.proven, s.limits.of, s.versions.pathway, typeof s.versions.guard, typeof s.versions.bundle], ["applied", 12, 12, "bookings@0.1.0", "string", "string"]);
+    assert.deepEqual([s.deploy.state, s.limits.proven, s.limits.of, s.versions.pathway, typeof s.versions.guard, typeof s.versions.bundle], ["applied", 16, 16, "bookings@0.1.0", "string", "string"]);
     assert.ok(s.limits.unprovable.length > 0 && s.updatedAt);
     assert.deepEqual(Object.keys(s.backups ?? {}).sort(), ["drillOk", "lastCopyAt", "lastDrillAt"]);
     mkdirSync(join(w.root, "requests"), { recursive: true });

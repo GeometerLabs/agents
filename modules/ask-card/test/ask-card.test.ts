@@ -52,7 +52,7 @@ test("every card has the always-asked items: UPI ID, shop number, owner's phone,
       const login = askCardFor(t, l).items.find((i) => i.id === "meta-login")!;
       assert.ok(login.what.includes("Facebook") && login.what.includes("Meta"), `${t}.${l}: the login line names Facebook and Meta`);
       assert.equal(login.group, "always");
-      assert.equal(login.optional, false, "the WhatsApp login is not optional");
+      assert.equal(login.optional, true, "item 11h: WhatsApp is reach, not a need, so its login is optional (a shop can go live with its page alone)");
     }
   }
 });
@@ -97,7 +97,8 @@ test("Google Calendar is optional and only on Bookings; Razorpay and the shop's 
   for (const t of ["orders", "fees"] as const) assert.ok(!askCardFor(t, "en").items.some((i) => i.id === "calendar"), `${t}: no calendar on the card`);
   for (const t of CARD_TEMPLATES) {
     const optional = askCardFor(t, "en").items.filter((i) => i.optional).map((i) => i.id).sort();
-    assert.deepEqual(optional, ({ bookings: ["calendar", "gupshup-account", "razorpay"], orders: ["delivery-area", "gupshup-account", "razorpay"], fees: ["gupshup-account", "razorpay"] })[t]);
+    // item 11h: the shop's WhatsApp number and its login are optional too (a shop can start with its page alone)
+    assert.deepEqual(optional, ({ bookings: ["calendar", "gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], orders: ["delivery-area", "gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], fees: ["gupshup-account", "meta-login", "razorpay", "shop-whatsapp"] })[t]);
   }
 });
 

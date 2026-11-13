@@ -9,6 +9,9 @@
 //
 // `base` left out: the shop has no WhatsApp (yet). A message to a WhatsApp number is then refused as definitely not sent (the record says "failed"), and the owner sees
 // what waits for them on their private approvals page (modules/channels/owner-page.ts), which is built from the saved state, never from messages.
+//
+// Item 11h: `onKeep` is told of each message kept for a page's conversation, so a customer who allowed alerts on that page gets the same words as a web push
+// (modules/push/push.ts `customer`). It is told after the message is kept, and what it does cannot fail the send.
 import type { Clock } from "../core/clock.ts";
 import { ApiError } from "../core/faults.ts";
 import type { Messaging, OutboundMessage } from "../messaging/messaging.ts";
@@ -16,7 +19,7 @@ import { isChannelConversation } from "./handle.ts";
 import { OUTBOX_PER_CONVERSATION } from "./state.ts";
 import type { ChannelState } from "./state.ts";
 
-export function channelMessaging(base: Messaging | undefined, state: () => ChannelState, clock: Clock): Messaging {
+export function channelMessaging(base: Messaging | undefined, state: () => ChannelState, clock: Clock, onKeep?: (to: string, text: string) => void): Messaging {
   /** Keep the message; the conversation keeps its latest OUTBOX_PER_CONVERSATION. */
   function keep(to: string, kind: OutboundMessage["kind"], text: string): OutboundMessage {
     const s = state();
@@ -24,6 +27,7 @@ export function channelMessaging(base: Messaging | undefined, state: () => Chann
     s.outbox.push(message);
     const mine = s.outbox.filter((m) => m.to === to);
     if (mine.length > OUTBOX_PER_CONVERSATION) { const drop = new Set(mine.slice(0, mine.length - OUTBOX_PER_CONVERSATION)); s.outbox = s.outbox.filter((m) => !drop.has(m)); }
+    try { onKeep?.(to, text); } catch { /* an alert that could not be queued never fails the page's message */ }
     return { id: message.id, to, kind, text, sentAt: message.atMs, afterOptOut: false };
   }
   const noWhatsApp = () => new ApiError(400, "This shop has no WhatsApp number yet, so nothing was sent; the owner's page shows what waits for them.");

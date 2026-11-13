@@ -76,7 +76,7 @@ test("a Fees centre gets two Guards from its settings (Razorpay and WhatsApp), n
     addFees(w);
     const p = plan(w);
     assert.deepEqual(p.problems, []);
-    assert.deepEqual(p.guards.map((g) => g.kind), ["razorpay", "whatsapp"]);
+    assert.deepEqual(p.guards.map((g) => g.kind), ["razorpay", "whatsapp", "push"]); // item 11h: every shop has its push Guard
     const razorpay = p.guards[0].spec;
     const rule = (id: string) => razorpay.rules.find((r: any) => r.id === id);
     assert.deepEqual([rule("fee-amount").min, rule("fee-amount").max], ["100", "190000"], "a link: ₹1 up to the dearest fee (₹1,800) with its late fee (₹100)");
@@ -93,7 +93,7 @@ test("the generated runtime.json is one Fees' own runtime accepts: payments and 
   const w = world({}); try {
     addFees(w);
     const p = plan(w);
-    assert.deepEqual(Object.keys(p.runtime.services as object), ["payments", "messaging", "timeoutMs"]);
+    assert.deepEqual(Object.keys(p.runtime.services as object), ["payments", "messaging", "push", "timeoutMs"]);
     const checked = validateRuntimeConfig(p.runtime, "/");
     assert.ok(checked.ok, JSON.stringify(checked));
     assert.ok("report" in p.runtime, "the monthly report block is there (a silently dropped block would mean no report and no note)");
@@ -136,7 +136,7 @@ test("the compose file: the centre's runtime waits for its two Guards, runs the 
     assert.ok(names.includes("g-bright-razorpay") && names.includes("g-bright-whatsapp") && names.includes("rt-bright"));
     assert.ok(!names.some((n) => n.includes("calendar")), names.join(","));
     const rt = composed.services["rt-bright"].block as any;
-    assert.deepEqual(Object.keys(rt.depends_on).sort(), ["g-bright-razorpay", "g-bright-whatsapp"]);
+    assert.deepEqual(Object.keys(rt.depends_on).sort(), ["g-bright-push", "g-bright-razorpay", "g-bright-whatsapp"]);
     assert.ok(rt.volumes.includes(`${deploy1.pathwayDir}:/pathway:ro`));
     assert.ok(rt.volumes.some((v: string) => v.endsWith("/modules:/modules:ro")));
     assert.deepEqual(rt.command, ["node", "/pathway/server/main.ts", "--client", "/client"]);
@@ -146,7 +146,7 @@ test("the compose file: the centre's runtime waits for its two Guards, runs the 
     const shops = [{ ...deploy1, webhooks: { verification: "meta-signature" as const, hasGoogle: false, ownGoogleKey: false }, ownerWhatsapp: "+919000000000", phoneNumberId: PHONE_NUMBER_ID, pathway: "fees", pathwayVersion: "0.1.0" }];
     const ops = JSON.parse(opsConfig(server, shops));
     assert.equal(ops.shops.bright.pathway, "fees");
-    assert.deepEqual(ops.shops.bright.guards.map((g: any) => g.id), ["guard-razorpay", "guard-whatsapp", "guard-model"]);
+    assert.deepEqual(ops.shops.bright.guards.map((g: any) => g.id), ["guard-razorpay", "guard-whatsapp", "guard-push", "guard-model"]);
     assert.equal(JSON.parse(relayConfig(server, shops)).shops.bright.pathway, "fees");
     assert.deepEqual(Object.keys(JSON.parse(refresherConfig(server, shops)).shops), [], "nothing for the token refresher to look after");
     assert.equal(JSON.parse(inboxConfig(server, shops)).shops.bright.runtimeUrl.endsWith(":8780"), true);
@@ -161,21 +161,21 @@ test("check and deploy a Fees centre: no Google key is asked for, even on a serv
     w.handIn("bright", feesSecrets("bright"));
     const checked = await checkShop(w.ctx, "bright");
     assert.deepEqual(checked.problems, [], checked.problems.map((x) => x.message).join("\n"));
-    assert.deepEqual(checked.lines.map((l) => l.split(":")[0]), ["g-bright-razorpay", "g-bright-whatsapp"]);
+    assert.deepEqual(checked.lines.map((l) => l.split(":")[0]), ["g-bright-razorpay", "g-bright-whatsapp", "g-bright-push"]);
 
     const [r] = await deploy(w.ctx, "bright");
-    assert.equal(r.proven.line, "8 of 8 limits proven to bite (2 cannot be tested without writing, and are not counted)");
-    assert.deepEqual(Object.keys(r.guards), ["razorpay", "whatsapp"]);
+    assert.equal(r.proven.line, "12 of 12 limits proven to bite (3 cannot be tested without writing, and are not counted)"); // item 11h: with the push Guard
+    assert.deepEqual(Object.keys(r.guards), ["razorpay", "whatsapp", "push"]);
     const status = readStatus(w.root, "bright")!;
     assert.deepEqual([status.deploy.state, status.versions?.pathway], ["applied", "fees@0.1.0"]);
-    assert.deepEqual(status.versions?.guards, { razorpay: 1, whatsapp: 1 });
+    assert.deepEqual(status.versions?.guards, { razorpay: 1, whatsapp: 1, push: 1 });
     const onDisk = JSON.parse(readFileSync(join(w.paths.generated, "shops", "bright", "client", "runtime.json"), "utf8"));
     assert.ok(validateRuntimeConfig(onDisk, "/").ok);
     assert.ok(!("calendar" in onDisk.services));
     assert.ok(!existsSync(join(w.paths.secrets, "refresher", "bright")) && !existsSync(join(w.paths.secrets, "g-bright-calendar")), "no calendar credentials or folders were made");
-    assert.deepEqual(readdirSync(join(w.paths.secrets, "ops", "bright")).filter((f) => f.startsWith("admin_")).sort(), ["admin_razorpay", "admin_whatsapp"]);
+    assert.deepEqual(readdirSync(join(w.paths.secrets, "ops", "bright")).filter((f) => f.startsWith("admin_")).sort(), ["admin_push", "admin_razorpay", "admin_whatsapp"]);
     // item 11d mints every runtime its channel token (one shape for every runtime); item 11h: the front presents it for the centre's page and parents' private pages
-    assert.deepEqual(readdirSync(join(w.paths.secrets, "rt-bright")).sort(), ["agent_model", "agent_razorpay", "agent_whatsapp", "channel_token", "internal_token", "record_key"]);
+    assert.deepEqual(readdirSync(join(w.paths.secrets, "rt-bright")).sort(), ["agent_model", "agent_push", "agent_razorpay", "agent_whatsapp", "channel_token", "internal_token", "record_key"]); // item 11h: and its push Guard's
     const ops = JSON.parse(readFileSync(join(w.paths.generated, "ops", "ops.json"), "utf8"));
     assert.equal(ops.shops.bright.pathway, "fees");
     const state = loadState(w.root);
@@ -189,7 +189,7 @@ test("a Fees centre and a Bookings salon on one server: each has its own Guards 
     w.handIn("glow-salon");
     w.handIn("bright", feesSecrets("bright"));
     const results = await deploy(w.ctx);
-    assert.deepEqual(results.map((r) => [r.shop, Object.keys(r.guards).join("+")]), [["bright", "razorpay+whatsapp"], ["glow-salon", "razorpay+whatsapp+calendar"]]);
+    assert.deepEqual(results.map((r) => [r.shop, Object.keys(r.guards).join("+")]), [["bright", "razorpay+whatsapp+push"], ["glow-salon", "razorpay+whatsapp+calendar+push"]]);
     const refresher = JSON.parse(readFileSync(join(w.paths.generated, "refresher", "refresher.json"), "utf8"));
     assert.deepEqual(Object.keys(refresher.shops), ["glow-salon"]);
     const relay = JSON.parse(readFileSync(join(w.paths.generated, "relay", "relay.json"), "utf8"));
@@ -197,8 +197,8 @@ test("a Fees centre and a Bookings salon on one server: each has its own Guards 
     assert.equal(relay.shops["glow-salon"].pathway, undefined, "Bookings' entry is as it always was");
     const ops = JSON.parse(readFileSync(join(w.paths.generated, "ops", "ops.json"), "utf8"));
     assert.deepEqual([ops.shops.bright.pathway, ops.shops["glow-salon"].pathway], ["fees", "bookings"]);
-    assert.equal(ops.shops["glow-salon"].guards.length, 4);
-    assert.equal(ops.shops.bright.guards.length, 3);
+    assert.equal(ops.shops["glow-salon"].guards.length, 5); // item 11h: each shop's push Guard too
+    assert.equal(ops.shops.bright.guards.length, 4);
     const compose = readFileSync(join(w.paths.generated, "compose.yaml"), "utf8");
     assert.ok(compose.includes("g-glow-salon-calendar") && !compose.includes("g-bright-calendar"));
   } finally { w.done(); }

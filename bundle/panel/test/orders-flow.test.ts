@@ -196,3 +196,13 @@ test("changing an Orders shop's settings is the same steps from what it has, and
     assert.equal(readFileSync(join(b.dir, "shops", shop, "pathway.lock"), "utf8").trim(), "orders@0.1.0");
   } finally { await b.close(); }
 });
+
+test("item 11h: an Orders shop started without WhatsApp: its runtime.json names no messaging, and nothing about WhatsApp is asked", async () => {
+  const b = await boot({ publicUrl: "https://shops.example.test" });
+  try {
+    const divya = await b.account("divya", "partner");
+    await setUpOrders(divya, b, [ORDERS1, ORDERS2, STEP3, { waNone: "1", payMod: "upi", upiId: "sunrise@okicici", upiPayee: "Sunrise Tiffins" }]);
+    const runtime = JSON.parse(readFileSync(join(b.dir, "shops", shopIdOf(b), "runtime.json"), "utf8"));
+    assert.equal(runtime.services.messaging, undefined);
+  } finally { await b.close(); }
+});
