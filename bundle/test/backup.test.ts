@@ -348,6 +348,31 @@ test("a failed drill is written where the panel and `status` show it, with the r
   } finally { w.done(); }
 });
 
+test("`restore` of a snapshot that holds the owner's passkeys and alerts merges them in after the swap, with the runtime still stopped, and says so; a failed import is said and never stops the shop starting", async () => {
+  const w = world({ "glow-salon": undefined as never }, { backup: { snapshots: { url: "s3://snaps/a" }, ageRecipient: generateIdentity().recipient } });
+  try {
+    writeSecretFile(secretFile(w.root, "backup", "snapshots"), "A:B");
+    writeFileSync(join(w.paths.shop("glow-salon"), "runtime.json"), JSON.stringify(panelRuntime()));
+    w.handIn("glow-salon"); await deploy(w.ctx);
+    const key = join(w.root, "owner-key"); writeFileSync(key, "AGE-SECRET-KEY-1X");
+    const run = async (imported: object) => {
+      const seen: string[][] = [];
+      w.ctx.runner = fakeRunner((_c, args) => { seen.push(args); return args.includes("--job") ? ok(JSON.stringify({ ok: true, stamp: STAMP, record: { records: 7, lastSeq: 7, lastEntryDigest: "d" }, ownerKeep: true })) : args.includes("/app/bundle/backup/owner-keep.ts") ? ok(JSON.stringify(imported)) : ok(""); });
+      const said = await restoreShop(w.ctx, "glow-salon", { identity: key });
+      const order = seen.map((a) => (a.includes("--job") ? "fetch" : a.includes("stop") ? `stop ${a.at(-1)}` : a.includes("start") ? `start ${a.at(-1)}` : a.includes("busybox:1.37.0") ? "swap" : a.includes("/app/bundle/backup/owner-keep.ts") ? "owner-keep" : "other")).filter((x) => x !== "other");
+      return { said, order, keep: seen.find((a) => a.includes("/app/bundle/backup/owner-keep.ts")) };
+    };
+    const good = await run({ ok: true, passkeys: 1, subscriptions: 2 });
+    assert.deepEqual(good.order, ["fetch", "stop rt-glow-salon", "swap", "owner-keep", "start rt-glow-salon"], "after the database, before the runtime starts");
+    assert.deepEqual(good.keep!.slice(good.keep!.indexOf("--user"), good.keep!.indexOf("--user") + 2), ["--user", "1000:1000"], "as the runtime's own user");
+    assert.deepEqual(good.keep!.slice(-3), ["import", "/data/glow-salon/data", "/in/owner-keep.json"]);
+    assert.match(good.said, /passkeys \(1 put back\) and alert subscriptions \(2\) were put back/);
+    const bad = await run({ ok: false, error: "disk full" });
+    assert.deepEqual(bad.order.slice(-1), ["start rt-glow-salon"], "the shop still starts");
+    assert.match(bad.said, /could NOT be put back \(disk full\).*sign in with a link and allow alerts again/);
+  } finally { w.done(); }
+});
+
 test("`restore` takes the owner's key from the person restoring, fetches the snapshot while the shop runs, then stops only the runtime, swaps the file in with the note, and starts it", async () => {
   const w = world({ "glow-salon": undefined as never }, { backup: { snapshots: { url: "s3://snaps/a" }, ageRecipient: generateIdentity().recipient } });
   try {
