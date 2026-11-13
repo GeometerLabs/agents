@@ -1012,7 +1012,7 @@ and never the owner's, and every other Guard's file is unchanged). Its upstream 
 (`push`, internal) with only the push Guards; the push Guards are not on egress, the sender is. Why a sender at all, and not a Guard per push service's host: Guard
 refuses a binary body and removes the caller's Authorization (modules/Explanation.md, "Works without WhatsApp"). The push Guards' admin addresses start at
 `PUSH_ADMIN_BASE` (2048) plus the shop's index, so every existing shop keeps the four addresses it had. Ops watches each push Guard like the others (the heartbeat
-lists `guard-push`, which fleet's id rule takes), and the deploy proves its tripwires. A test server sends every push to a stand-in through geometer.json's
+lists `guard-push`, which fleet's id rule takes), and the deploy checks its tripwires. A test server sends every push to a stand-in through geometer.json's
 `upstreams` ("push-service"), the seam that already points Guards at stand-ins; it is never set on a real server.
 
 **The owner's sign-in files.** The panel's "The owner's sign-in" block shows the setup QR and prints the recovery card (each once, hashes only, in
