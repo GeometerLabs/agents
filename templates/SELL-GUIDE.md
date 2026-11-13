@@ -2,6 +2,8 @@
 
 Owner's decision, 3 November 2026: every template comes with a guide to pitching and selling it locally, in every language the template speaks, and **a template isn't ready to sell until its guide is.** The Bookings template is the first; copy its shape from [`commerce/bookings/sell/`](commerce/bookings/sell/).
 
+**The partner looks after it with the owner.** Every guide carries this centre (owner, 14 November 2026): a partner is the person who looks after a local service with its owner, who knows the shop, tunes its rules, fixes things when they go wrong, brings customers when the street asks, and is the person the owner calls. Setup is only the first step and is never the pitch; what lasts is care and judgment, not access to the tool. So each guide has a short "Your part" paragraph before the ladder, a line after the first three sentences that keeps setup out of the pitch, and a price section that names the monthly amount as the price of looking after it.
+
 **Who reads what.** The guide is read by a young local partner (18 and over, maybe shy, pitching for the first time) and by a builder (a freelancer or micro-agency). The shop owner never reads the guide. The owner gets the one-page sheet.
 
 ## What a template ships
@@ -28,11 +30,11 @@ Number the headings `## 1.` to `## 11.` exactly. Short pages, one example each, 
 | 6 | Price | Who pays whom and how much; Geometer's plan and its price; the suggested shop price as "a starting point; you decide"; the setup fee the partner keeps; the price in the shop terms; pass-through fees; **any platform access the user pays for themselves** (for example X's paid API tiers for a social posting template) |
 | 7 | Never say | A table: phrase, why, what to say instead |
 | 8 | The setup visit | A checklist of everything done with the owner at the shop, ending with the go-live certificate read together and the shop terms signed. **Say what platform access the template needs and how long it takes** (for example Meta's app review before Instagram publishing), so nobody promises a start date the platform controls. |
-| 9 | The first month | A check in week 1, the first monthly report read together, one introduction asked for (never a reward) |
+| 9 | The first month | A check in week 1, the first monthly report read together, one introduction asked for (never a reward), then the monthly rhythm of looking after it: read the report together, tune the rules when the owner asks, and a service still looked after at month 3 |
 | 10 | When something goes wrong | Stop the agent, call the owner before they find out, look at the record, own it |
 | 11 | Be honest about what's true today | One short paragraph, dated: what exists, what isn't tested or built yet |
 
-**Section 5 must cover at least:** what if it makes a mistake; who sees my customers' messages; Meta gives AI for free, so why pay; will I lose my number or my app; what does it cost; what happens if it stops working; can I switch it off; who do I call. A template adds its own.
+**Section 5 must cover at least:** what if it makes a mistake; who sees my customers' messages; Meta gives AI for free, so why pay; will I lose my number or my app; what does it cost; what happens if it stops working; can I switch it off; why pay every month once it is set up; who do I call. A template adds its own.
 
 ## Variants
 
