@@ -99,7 +99,7 @@ button:disabled { opacity: .6; cursor: default; }
 /* a note right under a field, a wide button or the messages belongs to it: a little air, not a gap */
 input + .note, .full + .note, .msgs + .note { margin-top: 8px; }
 /* a link alone in its line is a tap target: 44 px tall */
-p > a:only-child:not(.btn) { display: inline-block; padding: 10px 0; }
+p > a:only-child:not(.btn) { display: inline-block; padding: 11px 0; }
 input:disabled { opacity: .45; background: var(--plain-bg); }
 #alerts-on, #alerts-off { width: 100%; }
 .sum p { margin: 0; }
@@ -112,8 +112,8 @@ textarea { min-height: 88px; resize: vertical; }
 footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--soft); font-size: .92rem; }
 footer + footer { margin-top: 0; border-top: 0; }
 /* a folded part keeps the browser's own triangle (list-item), and is still 44 px tall */
-footer summary { display: list-item; padding: 10px 0; cursor: pointer; font-weight: 650; color: var(--ink); }
-footer a { display: inline-block; padding: 10px 0; }
+footer summary { display: list-item; padding: 12px 0; cursor: pointer; font-weight: 650; color: var(--ink); }
+footer a { display: inline-block; padding: 11px 0; }
 
 /* a card with a stamp (a fee, a thing waiting on the owner), its edge in the stamp's colour; the padlock line for a private page */
 .private { display: flex; gap: 8px; align-items: flex-start; }

@@ -806,6 +806,14 @@ misaligned; compact.
 - **The face stays still.** DiceBear's "slow" animation would need a second, moving set of pictures per shop (the saved SVGs are still drawings) and twice the
   bytes inline on every page; the owner's 14 Nov rule also rejected CSS imitations of life. Streetlist moves only its large hero characters. Deferred.md.
 
+**Forms in a real browser: the origin only, not no-referrer** (`front.ts` `PAGE_REFERRER`). The pass's screenshots in headless Chromium found that a real browser's
+form never got through: the pages said `Referrer-Policy: no-referrer`, and under it a browser posts every form with `Origin: null` (the Fetch standard, "append
+a request Origin header"), which the front's Origin check refuses with 403. So the booking, cancel, "I have paid", the owner's answers and the sign-in all failed in
+a browser; the tests post with fetch, which always sends the real Origin, so none had caught it. The pages now say `strict-origin` (the header, and the meta tag
+on the owner's pages): a Referer carries the origin only, never a page's address (a booking's handle, the owner's link), and the Origin check is as strict as
+before (`test/referrer.test.ts`: `Origin: null` and another site's are still refused). The panel and the door's pass-through for a builder's pages say
+`no-referrer` too (Deferred.md).
+
 **Recordings in WebM** (`voice/webm.ts`). Android's Chrome records only WebM Opus, so the talk box's Hold to talk showed only on Firefox. The page now records
 Ogg Opus where it can and WebM Opus otherwise (`talk.ts`); the front (`front.ts` `/voice`) and the runtime (`runtime/http.ts` `owner-voice`) take `audio/ogg` or
 `audio/webm` and nothing else, the runtime writing the type itself; and the voice service reads the length from the bytes, Ogg first, then WebM (`voice.ts`).
@@ -814,7 +822,8 @@ A recording made by MediaRecorder is written while it is made, so it has no tota
 its own length (from the Opus packet's first byte, RFC 6716 section 3.1) is the end. It only reads, steps over everything else by its size, and answers null for
 anything that is not WebM or Matroska with an Opus track. Tested on a real recording Chromium made (`voice/test/fixtures/chromium-recording.webm`), on files laid out
 the same way (`standin.ts` `fakeWebmVoiceNote`), and through the Bookings agent; Geometer's speech service decodes WebM with the same ffmpeg step (its Python
-tests). Voice stays off until the owner's sandbox step; Sarvam with WebM is not tried.
+tests). The real recording is short (1.2 KB): Chromium's test microphone is mostly silence, which the recorder leaves out, so its packets end at 2.49 s of the 3
+recorded; the reader says 2.49 s, as ffprobe's packet list does. Voice stays off until the owner's sandbox step; Sarvam with WebM is not tried.
 
 ## The shop's assistant (item 11e, decision 43; 12 Nov 2026)
 
