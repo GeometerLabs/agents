@@ -29,7 +29,7 @@ const CORE = `
   --paper: #f7f8f4; --card: #ffffff; --ink: #1d2427; --soft: #4c585b; --line: #dde3dc; --line2: #b9c3bb;
   --green: #136650; --pill: #1d2427; --pill-ink: #ffffff; --focus: #1f5fd1; --head: #e2f2e9; --mari: #f6a609;
   --yes: #1f7a45; --yes-ink: #ffffff; --wa: #1f7a4d;
-  --ok: #1f7a45; --ok-bg: #e3f4ea; --wait: #7a4f00; --wait-bg: #fff2d1; --bad: #b3261e; --bad-bg: #fdecea; --info: #34449a; --info-bg: #e9ecf8; --plain: #4c585b; --plain-bg: #eceee9;
+  --ok: #1f7a45; --ok-bg: #e3f4ea; --wait: #7a4f00; --wait-bg: #fff2d1; --bad: #b3261e; --bad-bg: #fdecea; --info: #285ea8; --info-bg: #e7f0fb; --plain: #4c585b; --plain-bg: #eceee9;
   --bubble: #136650; --bubble-ink: #ffffff;
   --m-well: #2e9e5b; --m-needs: #f6a609; --m-wrong: #d4402a; --m-closed: #5763a8; --m-busy: #c4386f;
   --tile: 0 1px 2px rgb(29 36 39 / .08), 0 10px 22px -12px rgb(29 36 39 / .38);
@@ -74,8 +74,8 @@ main.wrap { padding-bottom: 40px; }
 .langs a { color: var(--ink); background: var(--card); border: 1px solid var(--line2); }
 .langs b { background: var(--pill); color: var(--pill-ink); }
 
-/* ---- buttons: the ink pill leads; a quiet outline for the other choice ---- */
-button, .btn { display: inline-flex; align-items: center; justify-content: center; gap: .45em; min-height: 48px; margin-top: 12px; padding: .55em 1.3em; border: 0; border-radius: 999px; background: var(--pill); color: var(--pill-ink); font: 650 1.02rem/1.3 var(--text); text-align: center; text-decoration: none; cursor: pointer; }
+/* ---- buttons: the ink pill leads; a quiet outline for the other choice. 24 px corners: a pill on one line, a rounded card when Malayalam wraps it to three ---- */
+button, .btn { display: inline-flex; align-items: center; justify-content: center; gap: .45em; min-height: 48px; margin-top: 12px; padding: .55em 1.3em; border: 0; border-radius: 24px; background: var(--pill); color: var(--pill-ink); font: 650 1.02rem/1.3 var(--text); text-align: center; text-decoration: none; cursor: pointer; }
 button.quiet, .btn.quiet, button.no { background: transparent; color: var(--ink); border: 1.5px solid var(--line2); }
 button.yes { background: var(--yes); color: var(--yes-ink); }
 .btn.wa { background: var(--wa); color: #ffffff; }
@@ -94,7 +94,14 @@ button:disabled { opacity: .6; cursor: default; }
 
 /* ---- cards and form fields ---- */
 .box, .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin: 14px 0; }
-.card > h2:first-child { margin-top: 0; }
+.card > h2:first-child, .card > .btn:first-child { margin-top: 0; }
+.list > .card { margin: 0; }
+/* a note right under a field, a wide button or the messages belongs to it: a little air, not a gap */
+input + .note, .full + .note, .msgs + .note { margin-top: 8px; }
+/* a link alone in its line is a tap target: 44 px tall */
+p > a:only-child:not(.btn) { display: inline-block; padding: 10px 0; }
+input:disabled { opacity: .45; background: var(--plain-bg); }
+#alerts-on, #alerts-off { width: 100%; }
 .sum p { margin: 0; }
 .sum b { font-size: 1.1rem; }
 label.f { display: block; margin: 16px 0 6px; font-weight: 650; }
@@ -104,7 +111,8 @@ textarea { min-height: 88px; resize: vertical; }
 /* ---- the foot: what an AI assistant can do (folded), the partner's line ---- */
 footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--soft); font-size: .92rem; }
 footer + footer { margin-top: 0; border-top: 0; }
-footer summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 650; color: var(--ink); }
+/* a folded part keeps the browser's own triangle (list-item), and is still 44 px tall */
+footer summary { display: list-item; padding: 10px 0; cursor: pointer; font-weight: 650; color: var(--ink); }
 footer a { display: inline-block; padding: 10px 0; }
 
 /* a card with a stamp (a fee, a thing waiting on the owner), its edge in the stamp's colour; the padlock line for a private page */
@@ -124,10 +132,10 @@ input.code { font-size: 1.25rem; letter-spacing: .12em; text-transform: uppercas
 /** The customer's pages: the front page's extras, services and items as choices, days and times as tiles, paying, the shop's messages. */
 const CUSTOMER = `
 /* the front page's extras: WhatsApp and the week's hours */
-.face-x { display: grid; gap: 10px; margin: 0 0 8px; }
+.face-x { display: grid; gap: 10px; margin: 0 0 16px; }
 .face-x .btn { margin: 0; }
 .hours { background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
-.hours summary { display: flex; align-items: center; min-height: 48px; padding: 0 14px; cursor: pointer; font-weight: 650; }
+.hours summary { display: list-item; padding: 12px 14px; cursor: pointer; font-weight: 650; }
 .hours ul { padding: 0 14px 12px; columns: 2; column-gap: 16px; font-size: .95rem; }
 .hours li { break-inside: avoid; padding: 2px 0; }
 
@@ -172,7 +180,7 @@ const OWNER = `
   --paper: #151d1b; --card: #1e2926; --ink: #eef3ee; --soft: #b3c0ba; --line: #2b3935; --line2: #4a5b55;
   --green: #74d6b1; --pill: #f2f5f0; --pill-ink: #151d1b; --focus: #ffc94d; --head: #1a2e27;
   --yes: #74dfa0; --yes-ink: #10231a;
-  --ok: #74dfa0; --ok-bg: #16301f; --wait: #ffd27a; --wait-bg: #33290f; --bad: #ff9d8f; --bad-bg: #3a1a17; --info: #b7c0ff; --info-bg: #20253f; --plain: #c4cec9; --plain-bg: #26302d;
+  --ok: #74dfa0; --ok-bg: #16301f; --wait: #ffd27a; --wait-bg: #33290f; --bad: #ff9d8f; --bad-bg: #3a1a17; --info: #a9cbff; --info-bg: #1b2a3d; --plain: #c4cec9; --plain-bg: #26302d;
   --bubble: #1f6f57;
   --tile: 0 0 0 2px rgb(255 255 255 / .16), 0 10px 22px -12px rgb(0 0 0 / .7);
 }
