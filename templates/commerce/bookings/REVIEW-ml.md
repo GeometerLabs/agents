@@ -487,6 +487,22 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `login.wrong` | ആ പേരോ പാസ്ഫ്രേസോ ശരിയല്ല. | That name or passphrase is not right. |  |
 | `login.wait` | ഒരുപാട് തവണ ശ്രമിച്ചു. 30 സെക്കൻഡ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Too many tries. Wait 30 seconds and try again. |  |
 | `login.byInvitation` | അക്കൗണ്ടുകൾ ക്ഷണം വഴി മാത്രമേ ഉണ്ടാക്കൂ. ഈ സെർവർ നടത്തുന്ന ആളോട് നിങ്ങളുടെ ലിങ്ക് ചോദിക്കൂ. | Accounts are made by invitation. Ask the person who runs this server for your link. |  |
+| `login.forgot` | പാസ്ഫ്രേസ് മറന്നോ? ഈ സെർവർ നടത്തുന്ന ആളോട് പുതിയ ലിങ്ക് ചോദിക്കൂ. അത് ഒരു തവണ മാത്രം പ്രവർത്തിക്കും. | Forgot your passphrase? Ask the person who runs this server for a new link. It works once. |  |
+| `login.forgotHosted` | പാസ്ഫ്രേസ് മറന്നോ? ഞങ്ങൾക്ക് തന്ന ഇമെയിലിൽ നിന്ന് hello@geometer.dev-ലേക്ക് എഴുതി പുതിയ ലിങ്ക് ചോദിക്കൂ. അത് ഒരു തവണ മാത്രം പ്രവർത്തിക്കും. | Forgot your passphrase? Write to hello@geometer.dev from the email you gave us, and ask for a new link. It works once. |  |
+| `login.partners` | ലോക്കൽ പാർട്ണർമാർ: geometer.dev-ലെ നിങ്ങളുടെ അക്കൗണ്ടിൽ നിന്ന് പാനൽ തുറക്കൂ. പാസ്ഫ്രേസ് വേണ്ട. | Local partners: open your panel from your account on geometer.dev. You need no passphrase. |  |
+| `login.partnersLink` | geometer.dev-ലെ എന്റെ അക്കൗണ്ടിലേക്ക് പോകൂ | Go to my account on geometer.dev |  |
+| `signin.title` | നിങ്ങളുടെ പാനൽ തുറക്കൂ | Open your panel |  |
+| `signin.intro` | നിങ്ങൾ geometer.dev-ൽ ലോഗിൻ ചെയ്തിട്ടുണ്ട്. നിങ്ങളുടെ പേര് ഒരിക്കൽ പറയൂ, അടുത്ത തവണ നേരെ അകത്തു കയറാം. | You are signed in on geometer.dev. Tell us your name once, and next time you go straight in. |  |
+| `signin.welcomeBack` | നിങ്ങൾ geometer.dev-ൽ Divya ആയി ലോഗിൻ ചെയ്തിട്ടുണ്ട്. | You are signed in on geometer.dev as Divya. |  |
+| `signin.button` | എന്റെ പാനൽ തുറക്കൂ | Open my panel |  |
+| `signin.problems.gone` | ഈ ലിങ്കിന്റെ സമയം കഴിഞ്ഞു, അല്ലെങ്കിൽ ഇത് മുമ്പേ ഉപയോഗിച്ചു. geometer.dev-ലെ നിങ്ങളുടെ അക്കൗണ്ടിൽ നിന്ന് പാനൽ വീണ്ടും തുറക്കൂ. | This link has run out or was already used. Open your panel again from your account on geometer.dev. |  |
+| `signin.problems.bad` | ഈ ലിങ്ക് ഈ സെർവറിനായി ഉണ്ടാക്കിയതല്ല. geometer.dev-ലെ നിങ്ങളുടെ അക്കൗണ്ടിൽ നിന്ന് പാനൽ വീണ്ടും തുറക്കൂ. | This link was not made for this server. Open your panel again from your account on geometer.dev. |  |
+| `reset.title` | പുതിയ പാസ്ഫ്രേസ് തിരഞ്ഞെടുക്കൂ | Choose a new passphrase |  |
+| `reset.intro` | Divya-നു വേണ്ടി. ഈ ലിങ്ക് ഒരു തവണ മാത്രം പ്രവർത്തിക്കും, നിങ്ങളായി ലോഗിൻ ചെയ്ത എല്ലായിടത്തുനിന്നും ലോഗൗട്ട് ആകും. | For Divya. This link works once, and everyone signed in as you is signed out. |  |
+| `reset.button` | പുതിയ പാസ്ഫ്രേസ് സേവ് ചെയ്യൂ | Save the new passphrase |  |
+| `reset.problems.reset-unknown` | ഈ ലിങ്ക് ഞങ്ങൾ ഉണ്ടാക്കിയതല്ല. പുതിയത് ചോദിക്കൂ. | This link is not one we made. Ask for a new one. |  |
+| `reset.problems.reset-used` | ഈ ലിങ്ക് മുമ്പേ ഉപയോഗിച്ചു. പുതിയത് ചോദിക്കൂ. | This link was already used. Ask for a new one. |  |
+| `reset.problems.reset-expired` | ഈ ലിങ്കിന്റെ സമയം കഴിഞ്ഞു. പുതിയത് ചോദിക്കൂ. | This link has run out. Ask for a new one. |  |
 | `join.title` | നിങ്ങളുടെ partner അക്കൗണ്ട് ഉണ്ടാക്കൂ | Create your partner account |  |
 | `join.intro` | നിങ്ങളുടെ ക്ഷണം ഒരു തവണ മാത്രമേ പ്രവർത്തിക്കൂ. എങ്ങനെ ലോഗിൻ ചെയ്യണമെന്ന് തിരഞ്ഞെടുക്കൂ. | Your invitation works once. Choose how you sign in. |  |
 | `join.name` | നിങ്ങളുടെ പേര് | Your name |  |

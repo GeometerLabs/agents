@@ -10,7 +10,8 @@ One panel, zero dependencies, pages rendered on the server with no JavaScript. A
 | `config.ts` | Everything is an environment variable (`PANEL_SERVER_DIR`, `PANEL_MODE`, `PANEL_PUBLIC_URL`, `PANEL_DATA_KEY_FILE`, `PANEL_SIGNING_KEY_FILE`, `PANEL_CALENDAR_SHARE_ADDRESS`, `PANEL_RUNTIME_URL` and `_TOKEN_FILE` with `{shop}`, `PANEL_GUARD_URL` and `_AGENT_TOKEN_FILE` with `{shop}` and `{kind}`, `PANEL_WEBHOOK_URL`, `PANEL_TRUST_PROXY`, and the cost line's settings). Reads the server's model from `geometer.json`. |
 | `contract.ts` | Every file shape shared with the deployer, with a checker for each: `ShopStatus`, the stop request, `owner.json`, `pins.json`, `report.json`, the secret names, `preparedByOf` (the one place "Divya, Sri Sai Digital" or "Divya, local partner" is made, for this panel and the deployer; the company is optional, from the account), and `liveView`, the one function that decides what a shop's life is called. |
 | `vault.ts`, `store.ts` | AES-256-GCM (node:crypto), a fresh nonce per write, the record's name as authenticated data, the key in a file named by the environment and refused if it sits inside the panel's folder or is readable by others. Everything the panel keeps (accounts, invitations as hashes, drafts, which secrets arrived, the last checks, and the papers it makes: certificates and monthly reports) is sealed when there is a key; in hosted mode there must be one, and a test sets a shop up, checks it and makes its certificate in hosted mode and then looks at every file under `panel/`. What is not the panel's own data and so is not sealed by it: `shops/<shop>/` (the deployer must read it), `secrets-inbox/` (transient, mode 0600, owned by the panel's user, so the deployer must run as root or as that user) and `requests/`. A changed file, a wrong key or a plain file where a sealed one belongs is an error, never "no accounts". |
-| `accounts.ts`, `session.ts`, `ratelimit.ts` | Roles `builder` and `partner`. scrypt passphrases. An account exists only through a one-use invitation link (only a hash of the token is kept; the link is a path the log blanks out). Sessions are signed cookies (HMAC-SHA256, `HttpOnly`, `SameSite=Strict`, `Secure` and `__Host-` over HTTPS) carrying the account's session version, so "sign out everywhere" kills them all. CSRF: a token derived from the cookie in every form, an anonymous signed one for the sign-in and invitation forms, and an Origin check. Login limit: 5 failures per name and address, 20 per address, in a sliding window; once over, even the right passphrase waits. |
+| `fleet-signin.ts` | Hosted mode: a local partner's geometer.dev sign-in, by a one-use ticket fleet signs with its licence key (see "Partners sign in with geometer.dev" below). |
+| `accounts.ts`, `session.ts`, `ratelimit.ts` | Roles `builder` and `partner`. scrypt passphrases. An account exists only through a one-use invitation link (or, on Geometer's partner server, a partner's geometer.dev sign-in; a one-use reset link chooses a new passphrase) (only a hash of the token is kept; the link is a path the log blanks out). Sessions are signed cookies (HMAC-SHA256, `HttpOnly`, `SameSite=Strict`, `Secure` and `__Host-` over HTTPS) carrying the account's session version, so "sign out everywhere" kills them all. CSRF: a token derived from the cookie in every form, an anonymous signed one for the sign-in and invitation forms, and an Origin check. Login limit: 5 failures per name and address, 20 per address, in a sliding window; once over, even the right passphrase waits. |
 | `shops.ts` | The only place that touches `shops/`, `status/`, `requests/`. `find(account, id)` is the one visibility rule (a builder sees all, a partner only shops whose `owner.json` names them); a shop that is not yours is a 404, exactly like one that does not exist. `owner.json` is written with flag `wx`: the first account to set a shop up is its attribution for good. `preparedBy(id)` is the name the shop's reports carry: `report.json` (a person's word, written by `geometer shop add --prepared-by`; the panel never writes it) first, then the attribution. The monthly report the panel makes uses it and fleet's Innovator badge for the shop (5 Nov), so the builder's copy says what the owner's WhatsApp message says. |
 | `server.ts`, `views.ts`, `html.ts`, `panel.css` | The routes and the pages. `html.ts` escapes every value by default. CSP with no script at all, no framing, no referrer, no caching. The log line is method, path, status and time: no query, cookie or body, and an invitation's token blanked. |
 | `setup.ts`, `secrets.ts` | The six steps (the business; deposit and cancellation; languages and the owner's number; the shop's accounts; the shop's assistant, `character.ts`; checks) as functions: each step's refusals in the person's language, then `buildSettings`, which is the demo's `settingsFromForm` with the chosen languages, owner and cancellation window on top and `validateSettings` last. The secrets intake writes a file per secret into `secrets-inbox/<shop>/` (0600, atomic) and notes that it arrived; it has no way to read anything back (a test checks the source), validates every box before writing any, and never puts a value in a message. |
@@ -224,3 +225,46 @@ Step 5 of 6 for every template: the shop's assistant, made with the owner beside
 personality), all with no script. Its logic is `character.ts`, its page `views-character.ts`; saving writes `assistant.character` (turning the shop's assistant on) and
 draws every mood into the shop's own data. The whole account, with why it comes after the accounts step and what the pictures are, is in bundle/Explanation.md
 ("The shop's character").
+
+## Partners sign in with geometer.dev; a reset link for a forgotten passphrase (14 Nov 2026, plan decision 53)
+
+Joining as a local partner is open to anyone signed in on geometer.dev (fleet makes the partner record; the monorepo's `apps/fleet/src/partner-programme.ts`).
+On **Geometer's partner server** (`PANEL_MODE=hosted`) that partner opens this panel with the same sign-in and no passphrase. A **builder's own server**
+(`own`) is unchanged: invitations and passphrases only, and `/signin/...` is a 404 there. A **shop owner** never signs in through Geometer or Firebase:
+owners keep the setup QR and their passkey on the shop's own view.
+
+**How it goes** (`fleet-signin.ts`). The account page asks fleet for a ticket (fleet checks, from its records, that the person is a partner and not paused)
+and opens `<panel>/signin/<ticket>`. That page spends nothing (a link preview may open it); its button is a same-origin POST with the form's CSRF token that
+checks the ticket again, spends it and signs the person in. The first visit asks the name, company and language the owner's monthly report shows (the
+ticket carries ids only); later visits say "You are signed in on geometer.dev as <name>" and just go in. The panel keeps **one account per fleet partner id**
+(`fleetPartner`), always role `partner`, with no passphrase (its hash is a marker scrypt never matches, and `authenticate` checks it against the dummy hash, so
+it takes as long as any wrong guess). A partner the server's owner invited before keeps their account and shops: `geometer panel link-partner <handle>
+<partner-id>` ties it to their fleet id, removes its passphrase and ends its sessions.
+
+**What is checked, offline.** A ticket is `gp1.<kid>.<payload>.<sig>`: an Ed25519 signature by fleet's **licence key** over the exact bytes before the last
+dot. The server pinned that key's public half at `init` (`geometer.json` `licence.keys`), the same key it checks leases with; so nothing new is shared, no new
+secret reaches the panel, and the panel never calls fleet. The payload must say `kind: "panel"`, `aud` = this server's id in fleet (`fleet.deploymentId`, else
+`id`), a partner id as `sub`, a random `jti`, and `iat`/`exp` within a minute of the panel's clock. Fleet's own monorepo vector
+(`apps/fleet/test/fixtures/panel-ticket-vector.json`) is checked byte for byte in `test/fleet-signin.test.ts`.
+
+**Threat model, in short.**
+- *Audience and expiry.* A ticket names one server; another server refuses it (`audience`). It lives a few minutes (fleet's setting), and the panel refuses
+  any ticket that claims to live longer than `MAX_LIFE_S` (15 minutes) even with a good signature. The account page's own fleet token (RS256, audience
+  `geometer-account`, a day long) is never taken here, and a lease or extension cannot pass as a ticket: the prefix is inside the signed bytes.
+- *A replayed ticket.* Each works once: its `jti` is spent on the first successful POST and kept (hashed, in the panel's encrypted store, so a restart does
+  not forget it) until the ticket would have run out anyway. A second POST, or opening the link afterwards, says "run out or already used". The ticket is in the
+  URL path: the panel's log blanks it (`/signin/[ticket]`), the partner server's Caddy keeps no access log, and pages send no referrer.
+- *A paused partner.* Fleet signs no ticket for them, so they cannot sign in again. The panel does not call fleet, so a panel session opened before the pause
+  lasts until it ends (sessions last at most 12 hours); whoever runs the server ends it at once with `geometer panel signout <handle>`. Their shops keep running.
+- *Reaching another partner's shop.* The ticket's `sub` picks the account, and only the account kept for that partner id; forging a ticket for someone else
+  needs fleet's licence key (whose theft would already forge leases, so it is guarded as it was). Which shops an account sees is unchanged (`shops.ts`: a
+  partner sees a shop only while its `owner.json`, or a handover's `assignment.json`, names them; anything else is a 404 that looks like no shop at all).
+- *Signing someone in as yourself.* The POST needs the panel's own form token and origin, so another site cannot post a ticket; a stranger can send a link to
+  their own ticket, but the page shows the name of the account it opens (or asks for one), and the ticket dies in minutes after one use.
+
+**The reset link** (both modes). Whoever runs the server makes one: `geometer panel reset <handle>` (or `main.ts reset --handle <h>`). It works once, runs out
+in 3 days (`--hours`), only its sha256 is kept, a new one replaces the last, and using it sets the new passphrase and signs every session of that account out.
+An account that signs in with geometer.dev has no passphrase, so it gets none. The sign-in page says how to ask for one: on a builder's server "ask the person
+who runs this server", on Geometer's server "write to hello@geometer.dev from the email you gave us". `geometer panel accounts` lists sign-in names and how each
+signs in (never a hash or a token); `geometer panel signout <handle>` ends one account's sessions now.
+

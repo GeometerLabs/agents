@@ -24,7 +24,15 @@ export interface Words {
   draftNote: string;
   nav: { shops: string; setUp: string; invite: string; signOut: string };
   common: { back: string; next: string; save: string; counts: string };
-  login: { title: string; handle: string; passphrase: string; button: string; wrong: string; wait(seconds: number): string; byInvitation: string };
+  /**
+   * `forgot` (a builder's own server) and `forgotHosted` (Geometer's partner server) are the "ask for a new link" line under the sign-in form; `partners` and
+   * `partnersLink` send a local partner on Geometer's server to geometer.dev, where they open the panel with no passphrase (fleet-signin.ts).
+   */
+  login: { title: string; handle: string; passphrase: string; button: string; wrong: string; wait(seconds: number): string; byInvitation: string; forgot: string; forgotHosted: string; partners: string; partnersLink: string };
+  /** The page a partner's geometer.dev link opens (fleet-signin.ts): the first visit asks name, company and language (join's labels); later visits greet them. */
+  signin: { title: string; intro: string; welcomeBack(name: string): string; button: string; problems: { gone: string; bad: string } };
+  /** The page a reset link opens: a new passphrase (join's help and problems for the passphrase itself). */
+  reset: { title: string; intro(name: string): string; button: string; problems: { "reset-unknown": string; "reset-used": string; "reset-expired": string } };
   join: { title(role: string): string; intro: string; name: string; company: string; companyHelp: string; handle: string; handleHelp: string; passphrase: string; passphraseHelp: string; language: string; button: string; problems: Record<JoinProblem, string> };
   roles: { builder: string; partner: string };
   invite: { title: string; role: string; note: string; button: string; made: string; copy: string; hostedOnly: string };
@@ -205,7 +213,7 @@ const listRupees = (id: string): string => `₹${(latestPriceList().rates[id].mi
 
 /** Sample arguments for the functions in a Words set, so the review sheet can show one real sentence per line. */
 export const SAMPLE_ARGS: Record<string, unknown[]> = {
-  "login.wait": [30], "join.title": ["partner"], "shops.version": ["bookings@0.1.0"], "shops.limits": [9, 9], "shops.setUpBy": ["Divya"],
+  "login.wait": [30], "join.title": ["partner"], "signin.welcomeBack": ["Divya"], "reset.intro": ["Divya"], "shops.version": ["bookings@0.1.0"], "shops.limits": [9, 9], "shops.setUpBy": ["Divya"],
   "shop.versions": ["0.1.0", "0.1.0"], "shop.hoursRange": ["10:00", "20:00"], "shop.lastDeploy": ["4 Nov 2026, 10:30"], "shop.unprovable": ["refund-limit"], "shop.backupCopy": ["4 Nov 2026, 10:30"], "shop.backupDrill": ["4 Nov 2026, 04:00", true],
   "shop.summaryDeposit": ["₹200", 15], "shop.summaryCancel": [24, "₹200"], "shop.waiting": [2], "shop.needBuilder": [1], "shop.approvalsLine": [3, 2, 1],
   "shop.makeReport": ["2026-11"], "shop.stopTitle": ["Glow Salon"], "shop.stopAsked": ["4 Nov 2026, 10:30"], "shop.detailsPrices": ["2026-11-03"],
@@ -253,6 +261,21 @@ export const en: Words = {
   login: {
     title: "Sign in", handle: "Your sign-in name", passphrase: "Passphrase", button: "Sign in", wrong: "That name or passphrase is not right.",
     wait: (s) => `Too many tries. Wait ${s} seconds and try again.`, byInvitation: "Accounts are made by invitation. Ask the person who runs this server for your link.",
+    forgot: "Forgot your passphrase? Ask the person who runs this server for a new link. It works once.",
+    forgotHosted: "Forgot your passphrase? Write to hello@geometer.dev from the email you gave us, and ask for a new link. It works once.",
+    partners: "Local partners: open your panel from your account on geometer.dev. You need no passphrase.", partnersLink: "Go to my account on geometer.dev",
+  },
+  signin: {
+    title: "Open your panel", intro: "You are signed in on geometer.dev. Tell us your name once, and next time you go straight in.",
+    welcomeBack: (name) => `You are signed in on geometer.dev as ${name}.`, button: "Open my panel",
+    problems: {
+      gone: "This link has run out or was already used. Open your panel again from your account on geometer.dev.",
+      bad: "This link was not made for this server. Open your panel again from your account on geometer.dev.",
+    },
+  },
+  reset: {
+    title: "Choose a new passphrase", intro: (name) => `For ${name}. This link works once, and everyone signed in as you is signed out.`, button: "Save the new passphrase",
+    problems: { "reset-unknown": "This link is not one we made. Ask for a new one.", "reset-used": "This link was already used. Ask for a new one.", "reset-expired": "This link has run out. Ask for a new one." },
   },
   join: {
     title: (role) => `Create your ${role} account`, intro: "Your invitation works once. Choose how you sign in.", name: "Your name", company: "Company or business name (optional)", companyHelp: "Shop owners read this after your name in their monthly report. Leave it empty and they read \"local partner\" or \"builder\" instead. Up to 60 characters.", handle: "Name to sign in with", handleHelp: "3 to 40 letters, digits, dots or dashes.",
