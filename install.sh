@@ -122,7 +122,8 @@ check_ports() {
   local port holder
   if ! have ss; then note "ss (iproute2) is not here, so ports $HTTP_PORT and $HTTPS_PORT were not checked."; return 0; fi
   for port in "$HTTP_PORT" "$HTTPS_PORT"; do
-    if ss -ltnH "( sport = :$port )" 2>/dev/null | grep -q .; then
+    # grep without -q reads to the end, so pipefail cannot read an early SIGPIPE as "the port is free" (see need_libatomic).
+    if ss -ltnH "( sport = :$port )" 2>/dev/null | grep . >/dev/null; then
       holder=""
       # whose it is: this server's own Caddy on a second run (asked as root if this shell has no docker group yet)
       if have docker; then holder=$( { docker ps --filter "publish=$port" --format '{{.Names}}' 2>/dev/null || sudo docker ps --filter "publish=$port" --format '{{.Names}}' 2>/dev/null; } | head -n 1 || true); fi
@@ -199,7 +200,8 @@ install_docker() {
 DOCKER_DIRECT=""
 docker_access() {
   if docker info >/dev/null 2>&1; then DOCKER_DIRECT=1; return 0; fi
-  if ! id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx docker; then
+  # grep without -q reads to the end, so pipefail cannot read an early SIGPIPE as "not in the group" (see need_libatomic).
+  if ! id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -x docker >/dev/null; then
     say "Adding $USER to the docker group, so the deployer can run containers as $USER."
     as_root usermod -aG docker "$USER"
   fi
