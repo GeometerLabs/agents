@@ -13,14 +13,14 @@ Phones: **O** = owner, **C** = customer, **C2** = second customer. Note the time
 
 **A1. Hello and the quote (happy path, first half).**
 1. C writes: `haircut tomorrow at 6pm`.
-- C sees: either `Just to be sure: haircut on <day>, 6:00 pm. Reply "yes" to continue.` (reply yes) or straight `Our haircut is ₹450. <slot> is free. Pay a ₹200 deposit to confirm: <link> (I'll hold the slot for 15 minutes.)`. Hindi, Malayalam and Kannada customers (typed in the language or in Latin letters) get the same words in their language.
+- C sees: either `Just checking: haircut on <slot>? Reply "yes" to go ahead.` (reply yes) or straight `Haircut on <slot> is free! It's ₹450. Pay a ₹200 deposit to book it, and I'll hold the slot for 15 minutes.` and, on its own line, `Pay ₹200 here: <link>`. Hindi, Malayalam and Kannada customers (typed in the language or in Latin letters) get the same words in their language.
 - Guard: allows the payment-link creation (an amount from ₹1 up to the deposit range), the calendar hold and the WhatsApp sends.
 - Record: `receive_message` confirmed; `hold_slot` attempted then confirmed (refs.eventId); `create_deposit_link` attempted then confirmed (refs.linkId).
 - Calendar: an event appears in GEOMETER TEST, marked tentative. Look at the calendar.
 
 **A2. Pay the deposit (happy path, second half).**
 2. C opens the link and pays with Razorpay's test UPI `success@razorpay` (or the test card). Never a real card.
-- C sees: `Booked! haircut on <slot>. Your ₹200 deposit is received. Cancel at least 24 hours before the start for a refund.`
+- C sees: `You're booked! Haircut, <slot>. We got your ₹200 deposit. Can't make it? Cancel at least 24 hours before and your deposit comes back.`
 - O sees: nothing needed in the happy path (the owner's messages are for exceptions).
 - Record: `receive_payment_event` confirmed; `record_deposit` confirmed (refs.paymentId); `confirm_booking` attempted then confirmed; the calendar event is now confirmed.
 - Pass only if the calendar event changed from tentative to confirmed **and** the Razorpay dashboard shows the payment.
@@ -34,7 +34,7 @@ Phones: **O** = owner, **C** = customer, **C2** = second customer. Note the time
 **A4. Owner approval of a refund.** (P2: set `cancellation.refundLimitInr` to 100.)
 4. C has a booking paid more than 24 hours ahead. C writes `cancel my booking` and answers yes.
 - C sees: `Your booking for <slot> is cancelled. The owner will confirm your ₹200 refund shortly.`
-- O sees: `Approval needed: refund ₹200 for <C's number> (haircut, <slot>). Reply "approve K7M2QX" or "deny K7M2QX" within <N> hours.` (the code differs).
+- O sees: `A refund needs your OK: ₹200 to <C's number, grouped like +91 98111 11111> (haircut, <slot>). Reply "approve K7M2QX" or "deny K7M2QX" within <N> hours.` (the code differs).
 - Guard: **holds** the refund (HTTP 202); it is not sent.
 - Record: `cancel_booking` confirmed; `refund` attempted then `held_for_owner`.
 5. O replies `approve <code>`.
@@ -51,7 +51,7 @@ Phones: **O** = owner, **C** = customer, **C2** = second customer. Note the time
 - Guard: nothing moves until O answers. Record: `cancel_booking` confirmed, no `refund` yet.
 
 **A7. An amount over a limit.**
-- 7a. C writes `haircut tomorrow 6pm, can you do it for ₹300?` C sees `Our haircut is ₹450, and I can't go lower than that.` and then the quote. Record: the rule `price-at-or-above-list` is in the decisions of `hold_slot` / `create_deposit_link`, allowing ₹450 only.
+- 7a. C writes `haircut tomorrow 6pm, can you do it for ₹300?` C sees `Our haircut is ₹450. Sorry, I can't go lower than that.` and then the quote. Record: the rule `price-at-or-above-list` is in the decisions of `hold_slot` / `create_deposit_link`, allowing ₹450 only.
 - 7b. A refund bigger than the deposit: with a ₹200 deposit paid, C asks `I want ₹500 back`. Expected: never more than ₹200 (rule `refund-at-most-deposit`); the record shows `refund` blocked or the amount limited; nothing larger reaches Razorpay.
 - 7c. A refund above the owner's limit: covered by A4 (held for the owner).
 
@@ -98,26 +98,26 @@ Phones: **O** = owner, **C** = customer, **C2** = second customer. Note the time
 
 Settings `glow-salon-upi.example.json` with deposit, price and refund at ₹1. C pays by hand from a UPI app of yours **₹1** to the shop's UPI ID. This is the only real-money step in the script, and it comes back to you. (UPI has no test mode.)
 
-**B1. The quote.** C writes `haircut tomorrow 6pm`. C sees the QR picture (inside the window), the UPI ID, ₹1, and the buttons I have paid, Cancel booking, Talk to the owner. O sees `UPI payment to check: customer <C> will pay the ₹1 deposit for haircut on <slot> (booking b-N). When it shows in your UPI app, tap Received or reply "received K7M2QX"...`
+**B1. The quote.** C writes `haircut tomorrow 6pm`. C sees the QR picture (inside the window), then the words with the UPI ID written out (`UPI ID: <id> (<payee>)`), ₹1 and no `upi://` link, and the buttons I have paid, Cancel booking, Talk to the owner. O sees `New booking to check: haircut, <slot>, <C>. They'll pay a ₹1 deposit by UPI. When you see it in your UPI app, tap Received (or reply: received K7M2QX, adding the amount if it's different).`
 - Record: `hold_slot` confirmed; `upi_request` (refs.requestId, amountPaise).
 
-**B2. "I have paid" is not proof.** C pays ₹1, then sends a screenshot (or taps I have paid, or writes `I paid`). C sees that the owner will confirm. O sees `Customer <C> says they have paid the ₹1 deposit for booking b-N. A screenshot is not proof: check your UPI app. When it is there, tap Received or reply "received K7M2QX".` (at most once an hour).
+**B2. "I have paid" is not proof.** C pays ₹1, then sends a screenshot (or taps I have paid, or writes `I paid`). C sees that the owner will confirm. O sees `The customer says they've paid: ₹1 for the haircut on <slot>, <C>. Please check your UPI app first (a screenshot isn't proof), then tap Received (or reply: received K7M2QX).` (at most once an hour).
 - Not booked yet. Record: `upi_paid_claim` (refs.via = screenshot, button or words); no `confirm_booking`.
 
 **B3. The owner marks it received.** O looks in the UPI app, sees ₹1, replies `received <code>` (or taps Received).
-- O sees `Thank you. ₹1 for booking b-N is marked paid by you.` C sees `Booked! ...`.
+- O sees `Got it: you marked ₹1 as received for the haircut on <slot>. Thank you!` C sees `You're booked! ...`.
 - Record, **the owner's statement, not a provider confirmation:** `owner_marked_paid` confirmed with refs `markedBy`, `paymentId`, `requestId`, `amountPaise`, then `confirm_booking`. There must be **no** `receive_payment_event` from a provider for this payment. In the panel and report it reads "Deposits marked paid by owner". A screen that says Razorpay or a gateway confirmed a UPI mark is a finding.
 - Wrong amount: O replies `received <code> 0.50`: C is not booked; O sees `You marked ₹0.50 ... not booked yet. ... When the other ₹0.50 arrives ...`; record `upi_deposit_part` held_for_owner.
 
 **B4. The same mark twice.** O replies `received <code>` again: `That payment is already marked. It is counted once.` Record: no second `owner_marked_paid`. A wrong code: `I don't know that code...`
 
-**B5. The hold runs out, then the owner marks.** Set the hold to 2 minutes for this step; mark after it. O sees `You marked ₹1 received for booking b-N after its hold had ended, so it was not booked again by itself...`. Record: `owner_marked_paid`, `upi_request_closed`, `upi_refund_owed`; no `confirm_booking`.
+**B5. The hold runs out, then the owner marks.** Set the hold to 2 minutes for this step; mark after it. O sees `You marked ₹1 as received after the hold on <slot> had ended, so it wasn't booked by itself...`. Record: `owner_marked_paid`, `upi_request_closed`, `upi_refund_owed`; no `confirm_booking`.
 
-**B6. A UPI refund (and a retry of the owner's mark).** Cancel a paid booking inside the window. C is told the owner will send it; nothing says "sent". O sees `Refund to send: ₹1 by UPI to customer <C> (booking b-N). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded <code>".` O sends ₹1 back by hand and replies `refunded <code>`. Record: `upi_refund_owed` (held_for_owner), then `upi_refund_marked_done`. A repeated `refunded <code>` adds no second entry. No gateway, so Guard holds nothing here: the owner is the check.
+**B6. A UPI refund (and a retry of the owner's mark).** Cancel a paid booking inside the window. C is told the owner will send it; nothing says "sent". O sees `Refund to send: ₹1 by UPI to <C>. I never send money myself. Once you've sent it, tap Refund sent (or reply: refunded <code>).` O sends ₹1 back by hand and replies `refunded <code>`. Record: `upi_refund_owed` (held_for_owner), then `upi_refund_marked_done`. A repeated `refunded <code>` adds no second entry. No gateway, so Guard holds nothing here: the owner is the check.
 
 **B7. Kept.** On another: reply `kept <code>`: `upi_refund_kept`; O sees `Noted. The ₹1 ... is kept for a booking you make yourself.`
 
-**B8. UPI and the outage/window steps.** Repeat A13a and A14 once on the UPI shop (WhatsApp Guard down: the owner's "UPI payment to check" waits and goes once).
+**B8. UPI and the outage/window steps.** Repeat A13a and A14 once on the UPI shop (WhatsApp Guard down: the owner's "New booking to check" waits and goes once).
 
 ## Monthly report
 
