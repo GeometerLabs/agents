@@ -19,6 +19,7 @@ import { systemOneFetch, systemOneStandin } from "../../../../modules/standins/s
 import type { SystemOneStandin } from "../../../../modules/standins/system-one.ts";
 import { MONTH_NAMES, WEEKDAY_NAMES, formatDate, formatInr, formatSlot, formatTime } from "../../../../modules/language/format.ts";
 import { hoursOn, parseSettings } from "../src/settings.ts";
+import { assistantSettingsJson } from "../../../../modules/assistant/settings.ts";
 import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
@@ -129,6 +130,8 @@ function sayings(shop: Shop, language: Language, slot: Slot, next?: Slot): Says 
 
 const withSettings = (shop: Shop, change: (raw: Record<string, any>) => void): Settings => {
   const raw = JSON.parse(JSON.stringify(shop.settings));
+  // item 11i: the assistant block back in the shape a settings file writes it (a shop saved through the panel's Character step has one)
+  if (shop.settings.assistant) raw.assistant = assistantSettingsJson(shop.settings.assistant);
   change(raw);
   return parseSettings(raw);
 };

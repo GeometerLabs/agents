@@ -35,3 +35,13 @@ export function readAssistantSettings(raw: unknown, errors: string[]): Assistant
   const character = readCharacter(raw.character, errors) ?? defaultCharacter();
   return { morningAt, character };
 }
+
+/**
+ * The block as a settings file writes it, from its checked form: the inverse of `readAssistantSettings`. For code that copies a template's checked settings, changes
+ * one thing and checks them again (the crash tests' situations do): a checked block is not a settings block (`morningAt` against `morning`), so without this a shop
+ * with the assistant on (item 11i: every shop saved through the panel's Character step) could not be copied that way.
+ */
+export function assistantSettingsJson(a: AssistantSettings): Record<string, unknown> {
+  const two = (n: number) => String(n).padStart(2, "0");
+  return { morning: a.morningAt ? { at: `${two(a.morningAt.hour)}:${two(a.morningAt.minute)}` } : false, character: { ...a.character } };
+}

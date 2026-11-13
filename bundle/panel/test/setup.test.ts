@@ -10,7 +10,7 @@ import { validateSettings } from "../../../templates/commerce/bookings/src/setti
 import { loadClient } from "../../../templates/commerce/bookings/server/config.ts";
 import { WORDS } from "../languages.ts";
 import { CALENDAR_ID, PHONE_ID, boot } from "./helpers.ts";
-import { M, MARKERS, STEP1, STEP2, STEP3, STEP4, setUp } from "./flow.ts";
+import { CHARACTER5, M, MARKERS, STEP1, STEP2, STEP3, STEP4, setUp } from "./flow.ts";
 
 const text = (html: string) => html.replace(/<[^>]+>/gu, " ").replace(/&[a-z#0-9]+;/gu, " ").replace(/\s+/gu, " ");
 const everythingOnDisk = (dir: string): string => readdirSync(dir, { recursive: true, withFileTypes: true }).filter((e) => e.isFile()).map((e) => `${join(e.parentPath, e.name)}\n${readFileSync(join(e.parentPath, e.name), "utf8")}`).join("\n----\n");
@@ -237,6 +237,7 @@ test("setup never writes into another shop: a name taken after step 1 gets a fre
     assert.equal(mine, "hosahalli-beauty-2");
     assert.equal(existsSync(join(b.dir, "secrets-inbox", "hosahalli-beauty")), false, "nothing went into the other shop's inbox");
     assert.ok(existsSync(join(b.dir, "secrets-inbox", mine, "whatsapp_token")));
+    assert.equal((await divya.post(`/setup/${d}/5`, CHARACTER5, `/setup/${d}/5`)).status, 303, "the Character step (item 11i)");
     await divya.post(`/setup/${d}/save`, {}, `/setup/${d}/6`);
     assert.equal(readFileSync(join(b.dir, "shops", "hosahalli-beauty", "settings.json"), "utf8"), theirs, "the other shop's settings are untouched");
     assert.ok(existsSync(join(b.dir, "shops", mine, "owner.json")));
@@ -256,7 +257,7 @@ test("setup never writes into another shop: a name taken after step 1 gets a fre
     const s3 = await divya.post("/setup", { template: "bookings" }, "/setup");
     const d3 = s3.location!.split("/")[2];
     await divya.post(`/setup/${d3}/1`, { ...STEP1, name: "Late Arrival" }, `/setup/${d3}/1`);
-    for (const n of [2, 3, 4]) await divya.post(`/setup/${d3}/${n}`, n === 2 ? STEP2 : n === 3 ? STEP3 : STEP4, `/setup/${d3}/${n}`);
+    for (const n of [2, 3, 4, 5]) await divya.post(`/setup/${d3}/${n}`, n === 2 ? STEP2 : n === 3 ? STEP3 : n === 4 ? STEP4 : CHARACTER5, `/setup/${d3}/${n}`);
     b.addShop("late-arrival", { name: "Not Mine" });
     const before = readFileSync(join(b.dir, "shops", "late-arrival", "settings.json"), "utf8");
     const refused = await divya.post(`/setup/${d3}/save`, {}, `/setup/${d3}/6`);
