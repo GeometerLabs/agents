@@ -395,7 +395,7 @@ test("the morning line reads the same store: tomorrow's booking and the deposit 
   w.clock.set(zonedToMs({ year: 2026, month: 11, day: 4 }, { hour: 8, minute: 5 }, settings.timezone));
   const r = await job.run({ clock: w.clock, messaging: w.messaging, record: w.record, store: w.store, log: () => undefined, save: () => undefined });
   assert.equal(r.done, true);
-  assert.equal(w.lastTextTo(w.owner), "Good morning from Mithra, the assistant of Glow Salon. Today, Wed 4 Nov: bookings: 1, the first at 6:00 pm. Recorded yesterday: ₹200. Waiting for you: nothing. Reply here to see more.");
+  assert.equal(w.lastTextTo(w.owner), "Good morning from the assistant of Glow Salon. Today, Wed 4 Nov: bookings: 1, the first at 6:00 pm. Recorded yesterday: ₹200. Waiting for you: nothing. Reply here to see more.");
   w.clock.advance(HOUR);
   assert.equal((await job.run({ clock: w.clock, messaging: w.messaging, record: w.record, store: w.store, log: () => undefined, save: () => undefined })).done, false);
 });
@@ -413,7 +413,7 @@ test("the assistant's part of the store survives a restart, and a shop without o
 });
 
 test("the settings: an \"assistant\" block is read; a voice for the character is refused (it answers in text)", () => {
-  assert.ok(validateSettings({ ...glow(), assistant: { morning: { at: "07:30" }, character: { name: "Mithra", look: { base: "tall", colour: "pink", accessory: "scissors" } } } }).ok);
+  assert.ok(validateSettings({ ...glow(), assistant: { morning: { at: "07:30" }, character: { name: "Mithra", style: "critters", seed: "glow-salon-3f2a1c-4", colour: "fda4af", personality: "cheerful" } } }).ok);
   const r = validateSettings({ ...glow(), assistant: { character: { name: "Mithra", voice: "warm" } } });
   assert.equal(r.ok, false);
   assert.ok(!r.ok && r.errors.some((e) => /answers in text/u.test(e)));

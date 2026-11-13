@@ -1,0 +1,94 @@
+{
+  "$comment": "Third-party code vendored for the shop character renderer (bundle/character/render.ts, plan item 11i). Fetched with npm pack on 14 Nov 2026 and checked against the npm integrity below; bundle/test/character-render.test.ts checks every file against its sha256 here. Never fetched at run time.",
+  "packages": {
+    "dicebear-core": {
+      "package": "@dicebear/core",
+      "version": "10.7.0",
+      "licence": "MIT",
+      "integrity": "sha512-JUOzKOd8RUByJJo8ZL+C7YE/pvEsWewfpbWUmR8OIQZWv/PvUQHnohdevySC3icyyxe6EIU/8B/rQgA42us1QA==",
+      "source": "https://www.npmjs.com/package/@dicebear/core",
+      "kept": "lib/**/*.js (the .d.ts type files are left out), LICENSE, package.json",
+      "files": {
+        "LICENSE": "e337900e7ad5e9d1dd79d57897fa5c21043c10d8c9cbfe40e652a3269740f5cf",
+        "lib/Avatar.js": "712759f7a6dd8f112c32948e45f3b0ccedac51b557208f3ac259d63ce5e0116f",
+        "lib/Error/CircularColorReferenceError.js": "d60a302378619cfbab63ebac57a21bbaecc442ae8840a0af5e7658ea4b1545db",
+        "lib/Error/OptionsValidationError.js": "557342e070fa2e4343db157da7dc5eda1a598c242b1b34f8e653e76937957624",
+        "lib/Error/StyleValidationError.js": "b30a4f3cad81d0d1a3dd853cf8c09469f5f78ea76577cee27b01e980398a815f",
+        "lib/Error/ValidationError.js": "277ddf5e1087c747ef599de920147d70797fadb5562fbd1a064b53edb093f98a",
+        "lib/Options.js": "fe4ff66a4661e33a93512a6fcd12d6a280da29d353f05bd9d1c20f45eac3ca18",
+        "lib/OptionsDescriptor.js": "39c93af38f46c8d9205cd0e403ddf65a14c54c724e50228ee9b3ecd4938a20c1",
+        "lib/Prng.js": "d9b16cc26033e9c91f1d2d5aef3d6a49c523ce2177d622ae25270e94406efc45",
+        "lib/Prng/Fnv1a.js": "40a665f2bac44f938749bf783c17d60b36d269dfdba838a14d6479f43ac645bd",
+        "lib/Prng/Mulberry32.js": "6f22e2a64d7db5fbf8e8cdb403e92eebceebf1ddda6a1befa3fd6aa8c46d05d7",
+        "lib/Renderer.js": "523941d1f09e72ec372933a162100112d714c6c982625dffe75a0467780e9f28",
+        "lib/Resolver.js": "c08b65546f0f544a1cde7ef30da15f3af769c47ff0740ae3d0112883690aa66f",
+        "lib/Style.js": "1f2b96476f16e6f6ed1e515458ee64f22d759f82d4b975e1c9e18d775b4cf927",
+        "lib/Style/Canvas.js": "02cc44c83887e488eeb7b573eb070d5c640e2b1aaa993ef820b9ead59fc1819a",
+        "lib/Style/Color.js": "50c645518524aa9eb8ef327d8846db4e944f37e2dc4aabfcc0acc109999c0e66",
+        "lib/Style/Component.js": "b66b63b6ebe24889828c4cfd561241b0869e1b1c31d77cdb653aeb882a84487e",
+        "lib/Style/ComponentTranslate.js": "4b9bd0ba78f0ed9b43d125080f1633408af0e6bb6854b159a0b1f9aea5809d05",
+        "lib/Style/ComponentVariant.js": "91a3c8b30f2464c833728e0b815184638837f8e1b86574de3b93ae895b2b6d0e",
+        "lib/Style/Element.js": "eec23e357a52eabfbd3b755b1bacd910f4e1bc1b71db13d45cfba5b793313f33",
+        "lib/Style/Meta.js": "ef3b1b37440b731eadec732cc16e7d3b4de72130c07e00d98d3bbae3dca2806e",
+        "lib/Style/MetaCreator.js": "3e01a1ebb4847248ea7b9cca85a380c348d13572a26819709e789133d628d9ef",
+        "lib/Style/MetaLicense.js": "f2849a3e7f2496095d2686f7e057166602d62563155fdfd675620a3529272f3c",
+        "lib/Style/MetaSource.js": "537c4fabd0b3da8b21789962a739020fbbbd1f8ed3d9a67216e8d12570e6e1b8",
+        "lib/StyleDefinition.js": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+        "lib/StyleOptions.js": "9c2b181b1641e5b010ea6f49b6295739f0a18c71db1fc5c64802f9fce1bc27a4",
+        "lib/Utils/Color.js": "26942fb0e6f1185fb573cad3fdbc511bfb8fa93f724606a241a76d13db174ee8",
+        "lib/Utils/Initials.js": "182f73756f6bf6add554daa10a3fa9625697dc6714474f2562ca43e11e23116f",
+        "lib/Utils/License.js": "22e35d969efdba08edb70f83bdd09fe8544bb887225e82fb5809eb8409b3e078",
+        "lib/Utils/Number.js": "5a11507023539f7990c46ba5034e183557d5298dbec16b01c6403e020ea35e3f",
+        "lib/Utils/Xml.js": "ff7c9732b3bc728af07cb8324c58e240b02b4535ae40f4aa282b23e7ca9ab330",
+        "lib/Validator/OptionsValidator.js": "1017c3ca302123faea56ce94988f133faaa8495ea2e94e4eabed002d7e1f1d40",
+        "lib/Validator/StyleValidator.js": "cc859b035f6ca2a788b4ad07cf9530bd049eca210a966c62bb3389748254d315",
+        "lib/index.js": "492f84b5f4f10a7eafd1bbac3395aec3d70fb3a10f93697c758fa61218bc1e62",
+        "package.json": "83a11b3bd93591ab1c6009123e15b3e794c0c12bf18c670168e9055171c14f94"
+      }
+    },
+    "dicebear-styles": {
+      "package": "@dicebear/styles",
+      "version": "10.6.0",
+      "licence": "CC0 1.0 for the five styles kept (clay, critters, sprouts, moods, pixelbot; each definition repeats it in meta.license); LICENSE.md lists every style of the package",
+      "integrity": "sha512-KhxbEVI+z8TaenX58+ZhIRFBt7adggu/F+8g6ZYLu43H2/lgLuWA3Kg8vHBrCVWdfTTTt1p2wUhQomIkkypTuQ==",
+      "source": "https://www.npmjs.com/package/@dicebear/styles",
+      "kept": "dist/<style>.min.json for the five styles, LICENSE.md",
+      "files": {
+        "LICENSE.md": "341fae394c7f041f93c572479dff5471da45a4f42937a7b7a52bc0ea528cb6e2",
+        "clay.min.json": "61ad0cbef2031c65dea71e89bcc07407927751f0e05c26de47ed672a3c54ea70",
+        "critters.min.json": "df67e34f221589c4949d989996008158d6cdfdcd4149ff92297c51077ca59e9e",
+        "moods.min.json": "f03f6d3c9e1ba6620d579c8615f3c0a465f0f3ac8a07665d918ff4e84fd731ea",
+        "pixelbot.min.json": "02a9ddabe5439dc51b6b8b93f8bb8844d47e7fedfa2ddf9f9ac723ad58335cf6",
+        "sprouts.min.json": "f3892e7d47cd8abce9fc5b3db4f370bd8a6d6f19514d767672b943173eaadd66"
+      }
+    },
+    "resvg-wasm": {
+      "package": "@resvg/resvg-wasm",
+      "version": "2.6.2",
+      "licence": "MPL-2.0 (LICENSE is the licence text; the package itself ships none). Source: https://github.com/yisibl/resvg-js",
+      "integrity": "sha512-FqALmHI8D4o6lk/LRWDnhw95z5eO+eAa6ORjVg09YRR7BkcM6oPHU9uyC0gtQG5vpFLvgpeU4+zEAz2H8APHNw==",
+      "source": "https://www.npmjs.com/package/@resvg/resvg-wasm",
+      "kept": "index.mjs, index_bg.wasm, package.json, unchanged",
+      "files": {
+        "LICENSE": "5eba353fe5076ac3432177f8ab1cf75e3afcd0584251e37c3bfead5f447d040e",
+        "index.mjs": "10170d02d816f02ec76f9bc095b01d9becf536e7b1e12e5aa616652c84b237a1",
+        "index_bg.wasm": "22bf6e9f9a100d972da0411a69c5ba504367fc1fa87b3b64e3f35e53926d2d70",
+        "package.json": "4a9efcb54b2670726ccf9b91086413676c3de0fae607cce3b8a5a0d25abaff48"
+      }
+    },
+    "webp-encoder": {
+      "package": "@jsquash/webp",
+      "version": "1.5.0",
+      "licence": "Apache-2.0 (LICENSE); the encoder is libwebp, BSD-3-Clause (COPYING-libwebp; Google also grants a patent licence: https://github.com/webmproject/libwebp/blob/main/PATENTS)",
+      "integrity": "sha512-KggLoj2MnRSfIqTeKe1EmbljTX2vuV7mh79k89PCL1pyqiDULcPM1L47twxXt0hkb68F70bXiL31MxsuoZtKFw==",
+      "source": "https://www.npmjs.com/package/@jsquash/webp",
+      "kept": "codec/enc/webp_enc.js and webp_enc.wasm (the plain build, not SIMD: the same bytes on every machine), LICENSE",
+      "files": {
+        "COPYING-libwebp": "5aec868f669e384a22372a4e8a1a6cd7d44c64cd451f960ca69cc170d1e13acf",
+        "LICENSE": "8c3690b09c168f196446cf5904332023bbc15eb92b6a7cee470ac829e6a65d20",
+        "webp_enc.js": "5fd62301662e37785aec38e38807926f72933d4c8b919018a43faf1b1ca760f6",
+        "webp_enc.wasm": "b6085bb6702f144e9dc6016d58d230b34a84976bf0d080b7390b4b4b137d6ab7"
+      }
+    }
+  }
+}

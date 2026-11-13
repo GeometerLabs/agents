@@ -27,7 +27,8 @@ import type { DurableStore } from "./store.ts";
 import type { OwnerSignin } from "../../../../modules/channels/owner-signin.ts";
 import type { PagesFile } from "../../../../modules/channels/pages-file.ts";
 import { createAudioDrop } from "../../../../modules/channels/owner-audio.ts";
-import { ownerAppView } from "../../../../modules/assistant/app/view.ts";
+import type { CharacterPictures } from "../../../../modules/assistant/character.ts";
+import { ownerAppView, publicCharacter } from "../../../../modules/assistant/app/view.ts";
 import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
 import { feeConfirmView, feesOffer, ownerView, parentView } from "../src/channel.ts";
 
@@ -61,6 +62,8 @@ export interface RuntimeOptions {
   ownerParser?: OwnerParser;
   /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts), made by the shared start. Left out: none. */
   ownerSignin?: OwnerSignin;
+  /** Item 11i: where the character's mood pictures are (pages.json, read on every use), for the morning line's picture and sticker. Left out: none sent. */
+  pictures?: () => CharacterPictures | undefined;
   /**
    * Item 11h: the centre's page addresses (its pages.json, read on every use), so a reminder can carry a parent's private link under the centre's page. Left out, or
    * no file: no page, and the reminders are as they were.
@@ -148,7 +151,12 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     },
     // Item 11h: what the centre's page, a parent's private page, a payment's confirmation page and the owner's page read, each from the last saved state
     channel: {
-      offer: async () => feesOffer(settings, !(options.licence?.() ?? UNRESTRICTED).takesNewWork),
+      offer: async (store) => {
+        // item 11i: with the centre's assistant on, the page's head shows its character in the mood the public sees now (the front adds the picture)
+        const offer = feesOffer(settings, !(options.licence?.() ?? UNRESTRICTED).takesNewWork);
+        const character = publicCharacter({ skills: [skillOver(store)], state: store.assistant, nowMs: clock.now(), timeZone: settings.timezone, settings: settings.assistant });
+        return character ? { ...offer, shop: { ...offer.shop, character } } : offer;
+      },
       view: (store, handleHash) => feeConfirmView(settings, store, handleHash),
       parent: (store, linkHash) => parentView(settings, store, linkHash),
       ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
@@ -178,7 +186,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     monthly: options.report ? createMonthlyReport(options.report) : undefined,
     // Item 11e: the owner's morning line, from this template's skill read-only over the store
     ...(settings.assistant ? { daily: createMorningJob<Store>({
-      shop: { name: settings.name, timezone: settings.timezone, owner: settings.owner, settings: settings.assistant },
+      shop: { name: settings.name, timezone: settings.timezone, owner: settings.owner, settings: settings.assistant, ...(options.pictures ? { pictures: options.pictures } : {}) },
       skills: (store) => [skillOver(store)],
     }) } : {}),
     ...(options.licence ? { licence: options.licence, licenceNotice: createFeesLicenceNotice(settings, options.licence) } : {}),
