@@ -14,6 +14,7 @@ Owner's decision, 3 November 2026: every template comes with a guide to pitching
 | `sell/guide.<lang>.src.md` | One per other language the template speaks (`LANGUAGES` in `src/settings.ts`), with the same placeholders |
 | `sell/guide.<lang>.md` | What partners read: made from the source and the price list in force by `node prices/render.ts`. Never edit it by hand; the test fails when it is behind its source or the list |
 | `sell/one-pager.<lang>.html` | A printable single page the partner leaves with the owner, one per language |
+| `sell/letter-of-intent.<lang>.md`, `sell/first-week.<lang>.md`, `sell/partner-group.<lang>.md` | The three pieces a partner copies, as short pages the sites can link to. Their text is also in the guide (section 6, and the two `###` parts of section 2), word for word; a test compares them |
 | `test/sell-guide.test.ts` | Checks all of the above |
 
 ## The 11 sections, in this order
@@ -82,6 +83,16 @@ Section 8 is cut to what the code needs from the shop today, and the same cut la
 - **Cut rule.** A checklist item stays only if something in the code still needs it. A thing only some shops want is an optional item that says so (Google Calendar for Bookings: a shop with none runs on its own booking list; its own Razorpay account). Razorpay's fee is written only in the Razorpay-only item, never in the main pitch or the price table.
 - **The WhatsApp check** is the honest list: the Business app stays, a Facebook login with admin access to the shop's Meta business portfolio (the owner logs in themselves), a name that matches what the shop calls itself in public, verification that may be asked later, and the app opened at least every 2 weeks. Never promise "no documents" or "one visit".
 - **The shop terms stay signed on paper.** Agreeing them on WhatsApp is built but off, and waits for the owner's legal check. A guide may say that Geometer may later tell the partner so; it never says the WhatsApp agreement is enough.
+
+## Phone first (14 November 2026)
+
+A partner may have only a budget Android. So a guide never needs a laptop, Node, shared Wi-Fi or a printer.
+
+- **The demo is an address** the partner opens on any phone. Until the hosted demo exists, the guide carries the line `DEMO_URL` (a placeholder that is replaced when the address is known), and points to the made-up example pages at `https://streetlist.in/examples/`, which are pictures, not the demo.
+- **The sheet and the card go on WhatsApp.** Paper is an option. The shop terms stay signed on paper until the legal check of agreeing them on WhatsApp is done.
+- **WhatsApp is set up through the shop's own Gupshup account** (the panel's "Gupshup (the shop's own account)" choice): the guide's setup item follows the panel's own steps and quotes its labels, in each language as the panel shows them. The shop's Gupshup wallet pays WhatsApp's charges, never Geometer or the partner.
+- **Three pieces in every guide:** the partners' WhatsApp group (the line `PARTNER_GROUP_LINK` until the owner supplies the invite link; 10:00 to 19:00, answered the same day), "Your first week", and the letter-of-intent message. Each is also a standalone file.
+- **Pilot fee.** Geometer's plan fee is waived for each shop's first three months for partners who join before 31 January 2027, up to 3 shops per partner (plan decision 53). It is not in the price list, so it is written by hand in section 6; move it into the list when it has an id.
 
 ## Keeping it true
 
