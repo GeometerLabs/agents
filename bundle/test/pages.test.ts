@@ -2,6 +2,8 @@
 // at fleet with the deployment key and hands the shop's runtime and front their addresses; a confirmed name is not asked again for a day, a refused one not for
 // ten minutes; "own" and a removed shop give the name back; the panel's "sign out every device" reaches the runtime; the owner's view is on the pages domain only
 // for a shop this server's door serves; and the pages domain is a setting of Geometer's partner server, never geometer.dev. Written 12 Nov 2026.
+import { makeOwnerRecovery, makeOwnerSetup, removeOwnerPasskeys } from "../lib/pages.ts";
+import { grantInFile, readOwnerGrants } from "../../modules/channels/owner-grants.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -137,6 +139,17 @@ test("\"own\", or a shop removed from the server, gives the name back; the panel
     rmSync(join(b.dir, "shops", "ravi", "owner-sessions.json"));
     await b.sync(["ravi"], new Date(T0.getTime() + 4000));
     assert.equal(existsSync(copy), false);
+    // item 11h: the partner's setup QR and recovery card (hashes only) go the same way, so a QR shown on the panel works within one pass
+    const made = makeOwnerSetup(b.dir, "ravi", T0);
+    const codes = makeOwnerRecovery(b.dir, "ravi", T0);
+    await b.sync(["ravi"], new Date(T0.getTime() + 5000));
+    const grants = join(b.dir, "generated", "shops", "ravi", "client", "owner-grants.json");
+    const handed = readFileSync(grants, "utf8");
+    assert.ok(!handed.includes(made.token) && !codes.some((c) => handed.includes(c)), "hashes only");
+    assert.equal(grantInFile({ kind: "setup", token: made.token }, readOwnerGrants(handed), T0.getTime() + 5000), "valid");
+    removeOwnerPasskeys(b.dir, "ravi", new Date(T0.getTime() + 6000));
+    await b.sync(["ravi"], new Date(T0.getTime() + 7000));
+    assert.equal(readOwnerGrants(readFileSync(grants, "utf8"))!.passkeysBefore, new Date(T0.getTime() + 6000).toISOString());
   } finally { b.done(); }
 });
 
