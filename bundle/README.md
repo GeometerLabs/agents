@@ -258,6 +258,8 @@ The exit code is 0 when every client is moved, unchanged or skipped, and 1 when 
 
 ## Bring your own agent
 
+**It runs on your own server** (decision 55, 14 Nov 2026): no custom agent runs on Geometer's servers, so `agent add`, `check` and `deploy` refuse on Geometer's partner server (a panel in hosted mode), where partners use the templates and tune them. A small company running its own agents does the same, on the same builder licence.
+
 You built an agent with Claude Code, Lovable, n8n or your own code. It takes bookings, collects deposits and refunds them. Geometer puts the same Guards in front of the services it calls, keeps the same record, asks the owner on WhatsApp before a big refund, and writes the same monthly report. **You change three web addresses and one key in your agent. Geometer does not host it, rebuild it or read its code.**
 
 ```sh
