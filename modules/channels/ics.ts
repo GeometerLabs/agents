@@ -15,7 +15,7 @@ const DESCRIPTION: Record<string, (ref: string) => string> = {
 };
 
 /** Text as RFC 5545 wants it: backslash, semicolon, comma and line breaks escaped. */
-export const icsText = (s: string): string => s.replace(/\\/gu, "\\\\").replace(/;/gu, "\;").replace(/,/gu, "\\,").replace(/\r?\n/gu, "\\n");
+export const icsText = (s: string): string => s.replace(/\\/gu, "\\\\").replace(/;/gu, "\\;").replace(/,/gu, "\\,").replace(/\r?\n/gu, "\\n");
 
 /** One content line folded at 75 octets (a fold is CRLF and a space), never inside a character. */
 export function fold(line: string): string {
