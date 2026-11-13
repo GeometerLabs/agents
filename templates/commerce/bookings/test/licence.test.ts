@@ -28,7 +28,7 @@ test("in the wind-down a request to book is answered 'paused, contact the shop':
   const w = world();
   set("wind_down");
   await w.say(BOOK);
-  assert.equal(w.lastTextTo(CUSTOMER), "Online booking is paused for now. Please contact Glow Salon directly.");
+  assert.equal(w.lastTextTo(CUSTOMER), "Sorry, online booking is paused for now. Please contact Glow Salon directly.");
   assert.equal(w.store.bookings.size, 0, "no draft is kept as a promise");
   assert.equal(w.payments.links().length, 0);
   assert.equal(w.calendar.events().length, 0);
@@ -38,7 +38,7 @@ test("in the wind-down a request to book is answered 'paused, contact the shop':
   assert.equal(refused[0].decisions[0].ruleId, LICENCE_RULE);
   assert.equal(entries(w, "send_message").at(-1)!.outcome, "confirmed", "the customer is told, and WhatsApp shows it");
   await w.say("hi");
-  assert.equal(w.lastTextTo(CUSTOMER), "Online booking is paused for now. Please contact Glow Salon directly.", "no menu that would end in 'paused'");
+  assert.equal(w.lastTextTo(CUSTOMER), "Sorry, online booking is paused for now. Please contact Glow Salon directly.", "no menu that would end in 'paused'");
   assert.deepEqual(entries(w, "licence").map((e) => e.refs.state), ["wind_down"], "one record line for the change, not one per message");
 });
 
@@ -50,7 +50,7 @@ test("a deposit paid from a link sent before the wind-down still books, and a ca
   w.payments.customerPays(link.id);
   await w.deliverPaymentEvents();
   assert.equal(w.store.bookings.get("b-1")!.state, "confirmed", "money owed to the customer's booking is honoured: the earlier link's payment books");
-  assert.match(w.lastTextTo(CUSTOMER), /^Booked!/u);
+  assert.match(w.lastTextTo(CUSTOMER), /^You're booked!/u);
   await w.say("cancel my booking");
   assert.equal(w.store.bookings.get("b-1")!.state, "cancelled");
   assert.ok(entries(w, "refund").length > 0 && entries(w, "refund").every((e) => e.outcome !== "blocked"), "the deposit's refund goes on in the wind-down");
@@ -64,7 +64,7 @@ test("a request that was waiting for 'yes' when the wind-down began is not held:
   await w.say("yes");
   assert.equal(w.store.bookings.get("b-1")!.state, "enquiry");
   assert.equal(w.payments.links().length, 0);
-  assert.equal(w.lastTextTo(CUSTOMER), "Online booking is paused for now. Please contact Glow Salon directly.");
+  assert.equal(w.lastTextTo(CUSTOMER), "Sorry, online booking is paused for now. Please contact Glow Salon directly.");
 });
 
 test("back to normal: new bookings are taken at once, and nothing asked in the wind-down is done by itself", async () => {
@@ -130,14 +130,14 @@ test("the runtime sends the owner one service notice at the wind-down and one at
     const first = kit.messaging.sentTo(owner);
     assert.equal(first.length, 1, "once");
     assert.equal(first[0].templateName, "owner_service_paused", "the owner has not written today, so it goes as the utility template");
-    assert.equal(first[0].text, "Notice: online booking for Glow Salon is paused for now. Existing bookings, cancellations and refunds still go through. Please contact Divya, local partner.");
+    assert.equal(first[0].text, "Heads up: online booking for Glow Salon is paused for now. Bookings you already have, cancellations and refunds still go through. To sort it out, please contact Divya, local partner.");
     now = { ...now, state: "stopped", exportUntil: PAID_THROUGH + 150 * 86_400 };
     await runtime.tick();
     await runtime.tick();
     const all = kit.messaging.sentTo(owner);
     assert.equal(all.length, 2);
     assert.equal(all[1].templateName, "owner_service_stopped");
-    assert.equal(all[1].text, "Notice: online booking for Glow Salon has stopped, because the service from Divya, local partner has ended. Bookings after today still in your calendar: 0. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you.");
+    assert.equal(all[1].text, "Heads up: online booking for Glow Salon has stopped, because the service from Divya, local partner has ended. Bookings still in your calendar after today: 0. To keep it going with another local partner, write to hello@geometer.dev and Geometer will put you in touch.");
     assert.doesNotMatch(all[1].text, /copy|export|records|owe|pay|keys/iu, "no money, no blame, no copy or export for the owner");
     now = { ...now, state: "wind_down", paidThrough: PAID_THROUGH + 40 * 86_400, exportUntil: null };
     await runtime.tick();
@@ -169,7 +169,7 @@ test("the runtime reads client/licence.json by its modified time and judges it w
 // ---- Guard's own check (ADR-0062): the same refusal, made outside the runtime. Here the runtime's file says the shop is in order (a builder edited it, or the
 // runtime has not read the newer lease yet) and Guard answers 402 `subscription_suspended`. The runtime treats it as its own pause: once, plainly, nothing kept.
 
-const PAUSED = "Online booking is paused for now. Please contact Glow Salon directly.";
+const PAUSED = "Sorry, online booking is paused for now. Please contact Glow Salon directly.";
 const suspended = (operation: string) => new GuardSuspendedError(402, `refused by the Guard: subscription_suspended: the licence for shop glow-salon is in its wind-down, so ${operation} (new work) is refused`,
   { decision: "deny", code: "subscription_suspended", reason_code: "subscription_suspended", sent: "no", retry: "no", reason: `subscription_suspended: the licence for shop glow-salon is in its wind-down, so ${operation} (new work) is refused`, detail: { state: "wind_down", shop: "glow-salon", operation } },
   { method: "POST", path: "/x" });

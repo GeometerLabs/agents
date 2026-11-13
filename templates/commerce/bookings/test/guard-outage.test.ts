@@ -93,7 +93,7 @@ test("the Calendar Guard down past the bound: the customer is told the request w
     await o.run(GUARD_WAIT_MS);
     assert.equal(o.toCustomer().length, 1);
     // the words of their own (11 Nov): what happened, where the message is, what to do; never that the owner was told or will write, which the code does not do
-    assert.equal(o.toCustomer()[0].text, `Sorry, I could not finish your request: the booking system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact ${o.kit.settings.name} directly.`);
+    assert.equal(o.toCustomer()[0].text, `Sorry, I couldn't finish that: the booking system isn't answering just now. Your message is on the owner's to-do list. Please write again later, or contact ${o.kit.settings.name} directly.`);
     assert.deepEqual(o.runtime.status().tasks, { pending: 0, done: 0, failed: 1 });
     const found = obligations.detect({ template: "bookings", entries: o.db.loadState().record, cases: [], nowMs: o.kit.clock.now(), options: DEFAULT_OPTIONS }).found.filter((f) => f.kind === "message_unanswered");
     assert.equal(found.length, 1, "the to-do item the words name is there");
@@ -105,7 +105,7 @@ test("past the bound, a first-time customer is answered in the language they wro
   const w = createWorld();
   const newcomer = "+919877777777";
   await w.agent.giveUp!({ kind: "message", message: w.messaging.receive(newcomer, "നാളെ ഹെയർകട്ട് വേണം") }, { service: "calendar", tell: true });
-  assert.match(w.lastTextTo(newcomer), /ബുക്കിംഗ് സംവിധാനം ഇപ്പോൾ പ്രതികരിക്കുന്നില്ല/u, "Malayalam");
+  assert.match(w.lastTextTo(newcomer), /ബുക്കിംഗ് സിസ്റ്റം ഇപ്പോൾ പ്രതികരിക്കുന്നില്ല/u, "Malayalam");
   await w.agent.giveUp!({ kind: "message", message: w.messaging.receive("+919866666666", "I want a haircut tomorrow at 6pm") }, { service: "calendar", tell: true });
-  assert.match(w.lastTextTo("+919866666666"), /^Sorry, I could not finish your request/u, "English");
+  assert.match(w.lastTextTo("+919866666666"), /^Sorry, I couldn't finish that/u, "English");
 });

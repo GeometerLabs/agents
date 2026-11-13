@@ -68,6 +68,21 @@ export function formatSlot(ms: number, timeZone: string, language: Language): st
   return `${formatDate(p, language)}, ${formatTime(p, language)}`;
 }
 
+/**
+ * An Indian mobile number the way people write it on WhatsApp: "+91 98111 11111" for "+919811111111" (14 Nov 2026: the owner found the run-together digits hard
+ * to read). Anything else comes back as it was (another country's number, a booking page's conversation), so nothing is ever guessed. A check that reads a message
+ * with a grouped number must hold this form among its literals too (templates/commerce/bookings/src/language/check.ts).
+ */
+export function groupPhone(e164: string): string {
+  const m = /^\+91(\d{5})(\d{5})$/u.exec(e164);
+  return m ? `+91 ${m[1]} ${m[2]}` : e164;
+}
+
+/** Words that open a sentence: the first letter capitalised in English ("Haircut on ..."). Hindi, Malayalam and Kannada have no capital letters, so they are kept as they are. */
+export function sentenceStart(text: string, language: Language): string {
+  return language === "en" && text.length > 0 ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : text;
+}
+
 // The old way of typing a Malayalam chillu was consonant + virama + ZWJ; Unicode now has one letter for each.
 const OLD_CHILLU: [RegExp, string][] = [[/ണ്\u200d/gu, "ൺ"], [/ന്\u200d/gu, "ൻ"], [/ര്\u200d/gu, "ർ"], [/ല്\u200d/gu, "ൽ"], [/ള്\u200d/gu, "ൾ"], [/ക്\u200d/gu, "ൿ"]];
 
