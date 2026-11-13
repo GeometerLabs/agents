@@ -1,6 +1,6 @@
 // The character's mood (item 11e, decision 43): the shop's real state at a glance, computed from the skills' reads and the clock every time it is asked for, never
-// stored and never earned. No points, chores or streaks: a mood says what is true now, and changes when the shop does. Used by the owner's app (the face it shows)
-// and the morning line (which sticker). character.ts names the sticker.
+// stored and never earned. No points, chores or streaks: a mood says what is true now, and changes when the shop does. Used by the owner's app (the face it shows),
+// the morning line (its picture and sticker) and the shop's page (its public face). character.ts maps each mood to its picture (FACE_OF_MOOD, publicFace).
 import type { LocalDate } from "../core/time.ts";
 import { localParts, zonedToMs, HOUR } from "../core/time.ts";
 

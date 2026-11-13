@@ -20,6 +20,7 @@ import { heldRulesOf } from "../modules/approvals/held-call.ts";
 import { syncAgentLicences, syncLicence } from "./lib/licence.ts";
 import { syncOwnerLinks } from "./lib/owner-link.ts";
 import { syncPages } from "./lib/pages.ts";
+import { syncCharacters } from "./lib/character.ts";
 import { processAgentRequests } from "./agent/requests.ts";
 import { claimPaperSigner } from "./lib/signer-claim.ts";
 import { applyServerSettings } from "./server-settings.ts";
@@ -293,6 +294,18 @@ export function runLicence(ctx: Context): string[] {
 }
 
 /**
+ * Item 11i: each deployed shop's character pictures, on every loop, just before the pages pass (which hands their version to the runtime): drawn when the shop's
+ * look changed or the set went missing, and copied to the front when its copy differs (lib/character.ts). Cheap when nothing changed: a manifest read and a hash
+ * of each picture per shop; drawing a set takes about a second.
+ */
+export async function runCharacters(ctx: Context): Promise<string[]> {
+  const state = loadState(ctx.dir);
+  const lines = await syncCharacters({ dir: ctx.dir, shops: Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n) });
+  lines.forEach((l) => ctx.log(l));
+  return lines;
+}
+
+/**
  * Item 11f: each deployed shop's page on the pages domain, on every loop: its slug claimed or given back at fleet when the panel's choice changed (or once a day),
  * and its addresses handed to its runtime and front (lib/pages.ts). Cheap when nothing changed: two small files per shop, no call to fleet.
  */
@@ -320,7 +333,7 @@ export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);
   for (;;) {
     // the server's own settings first (the panel's first run): a shop deployed in the same pass then finds the model and its key in place
-    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); runLicence(ctx); runOwnerLinks(ctx); await runPages(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
+    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); runLicence(ctx); runOwnerLinks(ctx); await runCharacters(ctx); await runPages(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
     await ctx.sleep(everyMs);
   }
 }

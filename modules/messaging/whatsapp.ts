@@ -22,6 +22,12 @@
 //  - image:   type "image", image: { link, caption }. Like a document, WhatsApp fetches the link itself (https, public; PNG or JPEG, at most 5 MB) and it is a session
 //             message: only inside the 24-hour window. Sending by `link` keeps the call one JSON body through Guard; an uploaded media id would need a second route.
 //             https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/image-messages.md
+//  - sticker: type "sticker", sticker: { link } (or an uploaded { id }). A static sticker is a WebP of at most 100 KB, an animated one at most 500 KB. A service
+//             message: Meta's send-messages page lists Sticker among the types sent while the customer service window is open. Item 11i; both pages read 14 Nov 2026.
+//             https://developers.facebook.com/documentation/business-messaging/whatsapp/messages/sticker-messages.md and .../messages/send-messages.md
+//  - template image header (item 11i): components [{ type: "header", parameters: [{ type: "image", image: { link } }] }, { type: "body", ... }]. The template must
+//             have been created with a HEADER of format IMAGE. https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/template-media/
+//             (read 14 Nov 2026). A template is the only message that may go outside the window, so the picture goes there too.
 //  - reply:   { messaging_product, contacts: [{ input, wa_id }], messages: [{ id: "wamid...", message_status? }] }. It means the API
 //             ACCEPTED the message. Delivery arrives later as a status webhook.
 //  - errors:  { error: { message, type, code, error_data: { details }, fbtrace_id } }. Code 131047: more than 24 hours since the customer
@@ -39,8 +45,8 @@ import { META_LANGUAGE } from "../language/meta-templates.ts";
 import { ApiError, WindowClosedError } from "../core/faults.ts";
 import { interactiveProblem, interactiveText } from "../language/interactive.ts";
 import type { InteractiveMessage } from "../language/interactive.ts";
-import { documentProblem, imageProblem } from "./messaging.ts";
-import type { DocumentMessage, ImageMessage, Messaging, OutboundMessage, TemplateMessage } from "./messaging.ts";
+import { documentProblem, imageProblem, stickerProblem } from "./messaging.ts";
+import type { DocumentMessage, ImageMessage, Messaging, OutboundMessage, StickerMessage, TemplateMessage } from "./messaging.ts";
 import { asArray, createHttp, isObject, num, str } from "../core/http.ts";
 import type { Http, HttpReply, Json } from "../core/http.ts";
 
@@ -73,6 +79,11 @@ export interface CloudApiWire {
   /** A read that reaches this service's Guard and changes nothing (Messaging.ping). */
   pingPath: string;
   describeError(reply: HttpReply): { message: string; code?: number };
+  /**
+   * Item 11i: does this service document a sticker sent by `link`? Meta does; Gupshup's partner pass-through shows only an uploaded media `id` (its v3 sticker page,
+   * read 14 Nov 2026), so its adapter offers no sticker rather than guess. Left out: no.
+   */
+  stickerByLink?: boolean;
 }
 
 /** A template value may not hold line breaks, tabs or runs of spaces; the record's values never do, so this only guards. */
@@ -85,7 +96,10 @@ export function templateBody(to: string, template: TemplateMessage): Json {
     messaging_product: "whatsapp", recipient_type: "individual", to, type: "template",
     template: {
       name: template.name, language: { code: META_LANGUAGE[template.language] },
-      ...(parameters.length > 0 ? { components: [{ type: "body", parameters: parameters.map((p) => ({ type: "text", text: cleanParameter(p) })) }] } : {}),
+      ...(parameters.length > 0 || template.headerImage ? { components: [
+        ...(template.headerImage ? [{ type: "header", parameters: [{ type: "image", image: { link: template.headerImage } }] }] : []),
+        ...(parameters.length > 0 ? [{ type: "body", parameters: parameters.map((p) => ({ type: "text", text: cleanParameter(p) })) }] : []),
+      ] } : {}),
     },
   };
 }
@@ -108,10 +122,15 @@ export function imageBody(to: string, image: ImageMessage): Json {
   return { messaging_product: "whatsapp", recipient_type: "individual", to, type: "image", image: { link: image.link, ...(image.caption ? { caption: image.caption } : {}) } };
 }
 
+/** The wire body for a sticker sent by its address (item 11i). Exported so the tests (and the stand-in) can read it. */
+export function stickerBody(to: string, sticker: StickerMessage): Json {
+  return { messaging_product: "whatsapp", recipient_type: "individual", to, type: "sticker", sticker: { link: sticker.link } };
+}
+
 /** Meta's Cloud API, direct (or through Meta's own test number): the default provider. */
 export function createWhatsAppMessaging(config: WhatsAppConfig, deps: { clock: Clock; window: WindowStore }): Messaging {
   const number = `/${GRAPH_VERSION}/${encodeURIComponent(config.phoneNumberId)}`;
-  return createCloudApiMessaging(createHttp(config.baseUrl, "WhatsApp", config.timeoutMs, config.agentToken), { name: "WhatsApp", sendPath: `${number}/messages`, pingPath: number, describeError: describeMetaError }, deps);
+  return createCloudApiMessaging(createHttp(config.baseUrl, "WhatsApp", config.timeoutMs, config.agentToken), { name: "WhatsApp", sendPath: `${number}/messages`, pingPath: number, describeError: describeMetaError, stickerByLink: true }, deps);
 }
 
 /**
@@ -147,7 +166,18 @@ export function createCloudApiMessaging(http: Http, wire: CloudApiWire, deps: { 
     return { ...message };
   }
 
+  /** Item 11i: a sticker, only where the service documents one by link, and only inside the window (a service message). */
+  const sticker: Pick<Messaging, "sendSticker"> = wire.stickerByLink ? {
+    async sendSticker(to, sticker) {
+      if (!windowOpen(to)) throw new WindowClosedError();
+      const problem = stickerProblem(sticker);
+      if (problem) throw new ApiError(400, `The sticker cannot be sent: ${problem}.`);
+      return send(stickerBody(to, sticker), { to, kind: "sticker", text: "", sticker: { ...sticker } });
+    },
+  } : {};
+
   return {
+    ...sticker,
     async sendText(to, text) {
       if (!windowOpen(to)) throw new WindowClosedError(); // WhatsApp would refuse (131047); no need to ask
       return send({ messaging_product: "whatsapp", recipient_type: "individual", to, type: "text", text: { body: text, preview_url: false } }, { to, kind: "text", text });
@@ -175,7 +205,8 @@ export function createCloudApiMessaging(http: Http, wire: CloudApiWire, deps: { 
     },
 
     async sendTemplate(to, template) {
-      return send(templateBody(to, template), { to, kind: "template", text: template.text, templateName: template.name, language: template.language });
+      if (template.headerImage !== undefined && imageProblem({ link: template.headerImage }) !== null) throw new ApiError(400, "The template's header picture must be an https link.");
+      return send(templateBody(to, template), { to, kind: "template", text: template.text, templateName: template.name, language: template.language, ...(template.headerImage ? { headerImage: template.headerImage } : {}) });
     },
 
     async isWindowOpen(to) { return windowOpen(to); },

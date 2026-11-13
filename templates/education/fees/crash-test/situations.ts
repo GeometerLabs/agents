@@ -18,6 +18,7 @@ import { balancePaise, paidPaise } from "../src/due.ts";
 import { brightTuition, createWorld } from "../src/harness.ts";
 import type { World, WorldOptions } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
+import { assistantSettingsJson } from "../../../../modules/assistant/settings.ts";
 import type { Settings } from "../src/settings.ts";
 import { systemOneFetch, systemOneStandin } from "../../../../modules/standins/system-one.ts";
 import { MARKERS, SAYS } from "./says.ts";
@@ -582,6 +583,8 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
       const { results, expect } = checker();
       const raw = JSON.parse(JSON.stringify(shop.settings));
       raw.students = shop.settings.students.map((s) => ({ name: s.name, parent: s.parent, batch: s.batchId, ...(s.language ? { language: s.language } : {}) }));
+      // item 11i: the assistant block back in the shape a settings file writes it (a centre saved through the panel's Character step has one)
+      if (shop.settings.assistant) raw.assistant = assistantSettingsJson(shop.settings.assistant);
       const settings1 = parseSettings({ ...raw, partPayments: { allowed: false, minInr: 1 } });
       const w = createWorld({ settings: settings1, nowMs: shop.startMs });
       await atReminder(w, 0);

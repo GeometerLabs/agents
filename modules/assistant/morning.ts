@@ -11,9 +11,12 @@
 // attempted) is written and saved before the send; the ending (confirmed, unconfirmed, failed) after. A claim with no ending is never sent again; only `failed` (nothing
 // went out) is tried again, after an hour, three times at most.
 //
-// WHAT GOES OUT. The template `owner_morning` (templates.ts): as plain text while the owner's 24-hour window is open, as the approved template outside it. The words are
-// the template's body filled in, either way, and checked against the values first. The record line names the sticker for the shop's mood (character.ts), for when the
-// drawings exist; no picture is sent yet.
+// WHAT GOES OUT. The shop's personality's morning template (templates.ts: `owner_morning`, or `owner_morning_cheerful` / `owner_morning_brief`): as plain text while
+// the owner's 24-hour window is open, as the approved template outside it. The words are the template's body filled in, either way, and checked against the values first.
+// Item 11i, the character: outside the window the template's image header carries the picture of the shop's mood now (its PNG); inside it, the mood's sticker (its
+// WebP) goes just before the text, best effort: a sticker that fails is a line in the log, never a reason to send the morning line again. The record's lines name the
+// mood and its picture (`face`), and the ending says which sticker went (`sticker`: the picture's name, never WhatsApp's message id, which the record keeps only as a
+// fingerprint, under `messageId`, B69).
 import { HOUR, addDays, zonedToMs } from "../core/time.ts";
 import type { Clock } from "../core/clock.ts";
 import { checkText } from "../language/check.ts";
@@ -27,7 +30,8 @@ import { openCards } from "./cards.ts";
 import { todayIn } from "./mood.ts";
 import type { OwnerSkill } from "./skill.ts";
 import type { AssistantState } from "./state.ts";
-import { morningFacts, render, templateMessageFor } from "./templates.ts";
+import { MORNING_TEMPLATE_OF, morningFacts, render, templateMessageFor, templateNameOf } from "./templates.ts";
+import { pictureUrl } from "./character.ts";
 import type { MorningToday } from "./templates.ts";
 
 /** How long after its hour the morning line may still go. */
@@ -106,10 +110,13 @@ export function createMorningJob<Store extends { assistant?: AssistantState }>(s
     if (!something && money.paise === 0 && waiting === 0) { finished = key; return { done: false, why: "quiet" }; }
 
     // ---- the words: the template's body filled in, and checked against its own values ----
-    const facts = morningFacts({ language, timeZone: tz, shop: shop.name, name: shop.settings.character.name, today, parts, moneyPaise: money.paise, waiting });
-    const text = render("morning", facts);
-    const { sticker, mood } = shopMood(skills, state, now, tz, shop.settings);
-    const refs = { to: "owner", morning: key, templates: "owner_morning", mood, sticker };
+    const facts = morningFacts({ language, timeZone: tz, shop: shop.name, today, parts, moneyPaise: money.paise, waiting });
+    const template = MORNING_TEMPLATE_OF[shop.settings.character.personality];
+    const text = render(template, facts);
+    // the owner sees the shop's real mood (all five); only the public sees the softer face (character.ts publicFace)
+    const { mood, face } = shopMood(skills, state, now, tz);
+    const pictures = shop.pictures?.();
+    const refs = { to: "owner", morning: key, templates: templateNameOf(template), mood, face };
     const check = checkText(text, facts.check);
     if (!check.ok) {
       ctx.record.append({ conversation: owner, action: "send_message", outcome: "blocked", inputs: { to: "owner", morning: key }, language, refs, notes: `The morning line did not match its record, so it was not sent: ${check.problems.join(" ")}` });
@@ -127,11 +134,16 @@ export function createMorningJob<Store extends { assistant?: AssistantState }>(s
     let via: "template" | "text" = "template";
     let sent: OutboundMessage | undefined;
     let note: string | undefined;
+    let sticker: OutboundMessage | undefined;
     try {
       if (await ctx.messaging.isWindowOpen(owner).catch(() => false)) {
+        // the mood's sticker first, so the face sits above the words; best effort, and never a reason to try the morning line again
+        if (pictures && ctx.messaging.sendSticker) {
+          try { sticker = await ctx.messaging.sendSticker(owner, { link: pictureUrl(pictures, face, "webp") }); } catch (e) { ctx.log(`The morning line's sticker did not go (${(e as Error).message}); the words go alone.`); }
+        }
         try { sent = await ctx.messaging.sendText(owner, text); via = "text"; } catch (e) { if (!(e instanceof WindowClosedError)) throw e; sent = undefined; }
       }
-      if (!sent) sent = await ctx.messaging.sendTemplate(owner, templateMessageFor("morning", facts, text));
+      if (!sent) sent = await ctx.messaging.sendTemplate(owner, { ...templateMessageFor(template, facts, text), ...(pictures ? { headerImage: pictureUrl(pictures, face, "png") } : {}) });
       outcome = (await ctx.messaging.getMessage(sent.id)) ? "confirmed" : "unconfirmed";
     } catch (e) {
       outcome = !sent && nothingWasSent(e) ? "failed" : "unconfirmed";
@@ -139,7 +151,7 @@ export function createMorningJob<Store extends { assistant?: AssistantState }>(s
     }
 
     // ---- 3. say how it ended ----
-    ctx.record.append({ conversation: owner, action: "send_message", outcome, inputs: { to: "owner", morning: key }, language, ...(note ? { notes: note } : {}), refs: { ...refs, ...(sent ? { messageId: sent.id, via } : {}) } });
+    ctx.record.append({ conversation: owner, action: "send_message", outcome, inputs: { to: "owner", morning: key }, language, ...(note ? { notes: note } : {}), refs: { ...refs, ...(sent ? { messageId: sent.id, via } : {}), ...(via === "template" && sent && pictures ? { picture: "header" } : {}), ...(sticker ? { sticker: face } : {}) } });
     ctx.save();
     if (outcome === "failed") ctx.log(`The morning line could not be sent to the owner (${note}). ${refused.length + 1 < MAX_TRIES ? "It is tried again in an hour." : "That was the last try for today."}`);
     else finished = key;
