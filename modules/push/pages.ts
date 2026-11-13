@@ -70,7 +70,11 @@ export const ALERTS_SCRIPT = `(() => {
     try {
       if ((await Notification.requestPermission()) !== "granted") { msg.textContent = d.blocked; return; }
       const r = await reg;
-      const s = (await r.pushManager.getSubscription()) || (await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }));
+      let s = await r.pushManager.getSubscription();
+      // a subscription made for another key (the shop's server was restored, or set up again) would be refused by the push service: it is made again
+      const had = s && s.options && s.options.applicationServerKey ? new Uint8Array(s.options.applicationServerKey) : null;
+      if (s && had && (had.length !== key.length || had.some((b, i) => b !== key[i]))) { await s.unsubscribe(); s = null; }
+      s = s || (await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }));
       await post(d.save, { subscription: s.toJSON() });
       msg.textContent = d.done;
       if (d.reload) location.reload(); else await show();

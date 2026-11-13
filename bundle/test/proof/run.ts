@@ -1361,7 +1361,15 @@ async function withoutWhatsApp() {
   check("no push address, key or handle is in the record", !text.includes("proof-owner") && !text.includes("proof-customer") && !text.includes(handle), "");
   const status = JSON.parse(exec("ops", ["node", "/app/bundle/services/ops.ts", "admin", `g-${shop}-push`, "GET", "/admin/status"]).out.trim().split("\n").at(-1) ?? "{}");
   check("the push Guard is ready, its tripwires hold, and it decided every push (its own record of them)", status.status === 200 && status.body?.tripwires?.ok !== false, { status: status.status, tripwires: status.body?.tripwires });
-  results.withoutWhatsApp = { shop, pushes: (await pushesSeen()).length, record: record.length, ownerPushes: ownerSends.length };
+  // the push Guard's daily count per phone, on the real Guard: 51 well-formed pushes from the shop's runtime to one made-up phone. Each of the first 50 reaches the push
+  // service (its 201 keeps the count: a 4xx would give it back); the 51st is refused by the Guard itself, before the push sender is asked
+  const token = readSecret(`rt-${shop}`, "agent_push");
+  const flood = nodeEval(`rt-${shop}`, `(async()=>{const call={host:'fcm.googleapis.com',path:'/fcm/send/proof-count',sub:'c0ffee000001',ttl:60,urgency:'normal',vapid:'vapid t=a.b.c, k=AAAA',body:'AAAA'};const out=[];for(let i=0;i<51;i++){const r=await fetch('http://g-${shop}-push:8080/v1/push/customer',{method:'POST',headers:{authorization:'Bearer ${token}','content-type':'application/json'},body:JSON.stringify(call)});const t=await r.text();out.push(r.status+(r.status===403?':'+(/"reason_code":"([a-z_]+)"/.exec(t)||[])[1]:''));}console.log(JSON.stringify(out))})()`, 180_000).out.trim().split("\n").at(-1) ?? "[]";
+  let statuses: string[] = [];
+  try { statuses = JSON.parse(flood); } catch { statuses = []; }
+  const reached = (await pushesSeen()).filter((p) => p.path === "/fcm/send/proof-count").length;
+  check("the push Guard counts on the real Guard: 50 pushes to one phone a day go (each reached the push service), the 51st is refused by the Guard's own count", statuses.length === 51 && statuses.slice(0, 50).every((x) => x === "201") && statuses[50] === "403:limit_exceeded" && reached === 50, { first: statuses[0], last: statuses[50], reached });
+  results.withoutWhatsApp = { shop, pushes: (await pushesSeen()).length, record: record.length, ownerPushes: ownerSends.length, countCheck: { last: statuses[50], reached } };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------- item 5: the licence

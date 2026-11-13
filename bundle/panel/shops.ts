@@ -133,7 +133,7 @@ export function createShops(config: PanelConfig, store: Store) {
       const s = (runtime.services ?? {}) as Record<string, Record<string, unknown>>;
       const stand = (o: Record<string, unknown> | undefined) => ({ baseUrl: "http://guard.invalid", ...(o ?? {}) });
       // only the services the template has: a Fees runtime.json that names a calendar is refused by its own check
-      const withGuards = { ...runtime, services: { ...s, payments: stand(s.payments), ...(guardsOf(kind, settings).includes("calendar") ? { calendar: stand(s.calendar) } : {}), messaging: stand(s.messaging) },
+      const withGuards = { ...runtime, services: { ...s, payments: stand(s.payments), ...(guardsOf(kind, settings).includes("calendar") ? { calendar: stand(s.calendar) } : {}), ...(s.messaging ? { messaging: stand(s.messaging) } : {}) }, // item 11h: no messaging, no WhatsApp: none stands in
         ...(runtime.parser ? { parser: { baseUrl: "http://guard.invalid", ...(runtime.parser as object) } } : {}) };
       const r = kind.validateRuntimeConfig(withGuards, "/tmp");
       if (!r.ok) problems.push(...(r.errors ?? []));

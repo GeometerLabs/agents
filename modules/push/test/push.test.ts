@@ -33,6 +33,7 @@ function setup(answer: (call: PushCall, route: string) => number = () => 201) {
     calls.push({ route, call, auth: (init.headers as Record<string, string>).authorization });
     const status = answer(call, route);
     return new Response(status === 403 ? JSON.stringify({ error: "refused by the Guard", guard: { reason_code: "limit_exceeded" } }) : "{}", { status });
+    // (a 401 here is the push service's own: the subscription's key is not the shop's)
   }) as unknown as typeof fetch;
   const sender = createPushSender({ store, guard: { baseUrl: "http://g-glow-push:8080", agentToken: "agent-token" }, subject: () => "https://pages.example/glow", clock, fetchImpl });
   const push = createPush({ store, sender, shopName: "Glow", clock, on: true });
@@ -172,4 +173,23 @@ test("the address rule the runtime and the push sender share: only the host Guar
   for (const path of ["//evil.example/x", "/a/../b", "/@evil.example", "no-slash"]) assert.match(pushCallProblem({ ...base, path })!, /path/u, path);
   assert.match(pushCallProblem({ ...base, ttl: -1 })!, /ttl/u);
   assert.match(pushCallProblem({ ...base, body: "not base64!" })!, /body/u);
+});
+
+test("the pages' own scripts and workers are well-formed JavaScript (their behaviour in a browser is tested by hand: modules/Deferred.md)", async () => {
+  const { ALERTS_SCRIPT, CUSTOMER_SW } = await import("../pages.ts");
+  const { PASSKEY_SCRIPT } = await import("../../channels/owner-passkey-page.ts");
+  const { OWNER_APP_SW } = await import("../../assistant/app/pwa.ts");
+  for (const [name, code] of Object.entries({ ALERTS_SCRIPT, CUSTOMER_SW, PASSKEY_SCRIPT, OWNER_APP_SW })) assert.doesNotThrow(() => new Function(code), name);
+  assert.match(OWNER_APP_SW, /addEventListener\("push"/u);
+  assert.match(OWNER_APP_SW, /addEventListener\("notificationclick"/u);
+  assert.doesNotMatch(CUSTOMER_SW, /addEventListener\("fetch"/u, "a customer's worker keeps and fetches nothing");
+});
+
+test("a push service's own 401 (the phone subscribed with another key: a restored server) forgets that phone; the Guard's 403 names its reason and only refuses", async () => {
+  const s = setup(() => 401); try {
+    s.push.subscribe("owner", browser().sub);
+    s.push.owner("x"); await s.sender.pass();
+    assert.equal(s.push.ownerPhones(), 0);
+    assert.deepEqual(s.store.counts(T0), { gone: 1 });
+  } finally { s.done(); }
 });

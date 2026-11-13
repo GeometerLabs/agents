@@ -710,7 +710,9 @@ by Geometer or Firebase: the shop's own runtime checks every step.
 - **A lost phone**: the partner prints a **recovery card** (five one-use codes, about 48 bits each, no look-alike letters; hashes only), and the owner types one at
   `<base>/owner/recover` to register a new passkey. Wrong codes are counted per address at the front and per shop at the runtime (20 a day). Or the partner shows a fresh
   QR, and "Remove the owner's passkeys" (the panel) makes every passkey made before it stop working, with the QR and the card.
-- The WhatsApp sign-in link stays as one way in, offered only when the shop has a WhatsApp number on its page.
+- The WhatsApp sign-in link stays as one way in, offered only when the shop has a WhatsApp number on its page. It goes on WhatsApp or not at all, never as a
+  push (`push.ts whatsappOf`): pushed, a one-use link would sit in clear in the push queue and show on a lock screen, and a shop with no WhatsApp would send one to
+  anyone who asked its page. A flood of challenges cannot lock the owner out: the store keeps at most 300 open ones and the oldest go first.
 - **Verified vs assumed.** A real Chromium authenticator's registration and sign-in (Playwright's virtual authenticator, kept as a fixture) verify; so does a software
   authenticator through the real front and runtime. A real phone's fingerprint, Google Password Manager's sync to a second phone and an iPhone are not tried
   (Deferred.md).
@@ -727,8 +729,10 @@ a page customer's (booked, a reminder, a refund notice).
   against the shop's daily caps (owner 200, customers 500, any one phone 50); only then does the server's **push sender** (bundle/services/push.ts) make the real
   request, building the address from the host Guard checked and nothing else. The sender holds no secret and sees only ciphertext. Chrome, Edge and Samsung Internet
   on Android use FCM, Firefox Mozilla's service, Safari (iPhone from iOS 16.4, added to the home screen) Apple's; Edge on Windows is not covered.
-- **Sent outside the steps** (`push/sender.ts`): queued when a message is sent, drained on its own timer and at once. 2xx sent; 404/410 forgets the phone; the
-  Guard's 403 (its rules or a daily count) is never tried again; anything else is tried a few times over growing waits, then given up.
+- **Sent outside the steps** (`push/sender.ts`): queued when a message is sent, drained on its own timer and at once (a push queued during a pass gets the pass after
+  it). 2xx sent; 404/410 forgets the phone; the Guard's 403 (its answer names its rule or its count) is never tried again; the push service's own 401 or 403 means the
+  phone subscribed with another key (a restored server): the phone is forgotten, and its page subscribes it again when opened (the script compares the keys); anything
+  else is tried a few times over growing waits, then given up.
 - **The owner's choice** (`push/push.ts pushMessaging`, wrapping the shop's messaging for every template): WhatsApp, push or both. Never push alone while no phone has
   alerts on (the owner would hear nothing); push alone for a shop with no WhatsApp. A push stands in for the send: its id is `push-...`, so the record says the alert
   went and names it. With neither WhatsApp nor a phone, nothing goes and the record says so ("failed", with why); the owner's page lists what waits either way.
