@@ -985,9 +985,11 @@ on WhatsApp. What changed, and what did not:
 
 What every line still means, word for word or not: the agent never says it checked a payment (on UPI the owner checks their UPI app and confirms); nothing is booked
 until the record says so; a screenshot is not proof ("a screenshot alone isn't proof of payment"); the cancellation rule; a UPI refund is sent by the owner and the
-customer hears "sent" only after the owner marks it. `owner_upi_marked` says only what the owner marked ("Got it: you marked ₹200 as received ..."), not "booked":
+customer hears "sent" only after the owner marks it. `owner_upi_marked` says only what the owner marked ("Got it: you marked ₹200 from +91 98111 11111 as received. Thank you!"), not "booked":
 it is sent whenever the marks add up, whether or not the calendar then confirms, and a failed confirmation has its own notice. The crash test's fixed words
-(`crash-test/says.ts` MARKERS) are kept in every language.
+(`crash-test/says.ts` MARKERS) are kept in every language. The owner's claim, part, marked, late, refund-marked and refund-kept lines name only the amount, the
+customer's number and the code, never the service or the time: the UPI desk for an agent someone else wrote (modules/payments/owner-marked/desk.ts) sends the same
+lines and may know neither (bundle/test/desk-served.test.ts holds that every one is still written there).
 
 Hindi, Malayalam and Kannada were rewritten in the same style (machine-written, like the rest of those packs; REVIEW-ml.md and REVIEW-kn.md were made again from the
 new words for the native reader). Every changed WhatsApp template body needs Meta's approval again before it can carry the message outside the 24-hour window.

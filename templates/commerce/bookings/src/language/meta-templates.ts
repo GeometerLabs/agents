@@ -333,20 +333,20 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   {
     name: "owner_upi_customer_says_paid", usedFor: "owner_upi_claim", audience: "owner",
     bodies: {
-      en: "The customer says they've paid: {deposit} for the {service} on {slot}, {phone}. Please check your UPI app first (a screenshot isn't proof), then tap Received (or reply: received {upiCode}).",
-      hi: "ग्राहक कह रहे हैं कि पेमेंट कर दिया है: {service}, {slot} के लिए {deposit}, ग्राहक {phone}। पहले अपना UPI ऐप देख लीजिए (स्क्रीनशॉट सबूत नहीं होता), फिर \"मिल गया\" दबाइए (या लिखिए: received {upiCode})।",
-      ml: "കസ്റ്റമർ പണം അടച്ചെന്ന് പറയുന്നു: {service} ({slot}), {phone}, {deposit}. ആദ്യം നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ (സ്ക്രീൻഷോട്ട് തെളിവല്ല), എന്നിട്ട് \"കിട്ടി\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: received {upiCode}).",
-      kn: 'ಗ್ರಾಹಕರು ಹಣ ಕಟ್ಟಿದ್ದೇನೆ ಎನ್ನುತ್ತಿದ್ದಾರೆ: {phone}, {service} ({slot}), {deposit}. ಮೊದಲು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ (ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ), ಹಣ ಬಂದಿದ್ದರೆ "ಬಂದಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: received {upiCode}).',
+      en: "A customer says they've paid: {deposit} from {phone}. Please check your UPI app first (a screenshot isn't proof), then tap Received (or reply: received {upiCode}).",
+      hi: "ग्राहक कह रहे हैं कि पेमेंट कर दिया है: {phone} से {deposit}। पहले अपना UPI ऐप देख लीजिए (स्क्रीनशॉट सबूत नहीं होता), फिर \"मिल गया\" दबाइए (या लिखिए: received {upiCode})।",
+      ml: "കസ്റ്റമർ പണം അടച്ചെന്ന് പറയുന്നു: {phone}, {deposit}. ആദ്യം നിങ്ങളുടെ UPI ആപ്പ് നോക്കൂ (സ്ക്രീൻഷോട്ട് തെളിവല്ല), എന്നിട്ട് \"കിട്ടി\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: received {upiCode}).",
+      kn: "ಗ್ರಾಹಕರು ಹಣ ಕಟ್ಟಿದ್ದೇನೆ ಎನ್ನುತ್ತಿದ್ದಾರೆ: {phone}, {deposit}. ಮೊದಲು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ (ಸ್ಕ್ರೀನ್‌ಶಾಟ್ ಪುರಾವೆ ಅಲ್ಲ), ಹಣ ಬಂದಿದ್ದರೆ \"ಬಂದಿದೆ\" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: received {upiCode}).",
     },
   },
   {
     // asked again from the unfinished-work list (B31) when the owner marked part of a deposit and has not marked the rest: the owner may not have written today
     name: "owner_upi_part_marked", usedFor: "owner_upi_part", audience: "owner",
     bodies: {
-      en: "You marked {marked}, but the deposit for the {service} on {slot} is {deposit}, so it's not booked yet. I'll keep holding the slot until the hold ends. When the other {left} comes in, tap Received (or reply: received {upiCode}).",
-      hi: "आपने {marked} दर्ज किया, पर {service}, {slot} का जमा {deposit} है, इसलिए अभी बुकिंग नहीं हुई। रोक खत्म होने तक मैं स्लॉट रोककर रखूँगा। बाकी {left} आ जाए तो \"मिल गया\" दबाइए (या लिखिए: received {upiCode})।",
-      ml: "നിങ്ങൾ {marked} രേഖപ്പെടുത്തി, പക്ഷേ {service} ({slot}) അഡ്വാൻസ് {deposit} ആണ്, അതുകൊണ്ട് ഇതുവരെ ബുക്ക് ആയിട്ടില്ല. മാറ്റിവച്ച സമയം തീരുന്നത് വരെ ഞാൻ സ്ലോട്ട് പിടിച്ചുവയ്ക്കും. ബാക്കി {left} കൂടി കിട്ടിയാൽ \"കിട്ടി\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: received {upiCode}).",
-      kn: 'ನೀವು {marked} ಗುರುತಿಸಿದ್ದೀರಿ, ಆದರೆ {service} ({slot}) ಮುಂಗಡ ಹಣ {deposit}, ಹಾಗಾಗಿ ಇನ್ನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಕಾಯ್ದಿರಿಸುವ ಸಮಯ ಮುಗಿಯುವವರೆಗೆ ಸ್ಲಾಟ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ. ಉಳಿದ {left} ಬಂದಾಗ "ಬಂದಿದೆ" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: received {upiCode}).',
+      en: "You marked {marked} from {phone}, but the deposit is {deposit}, so it's not booked yet. I'll keep holding the slot until the hold ends. When the other {left} comes in, tap Received (or reply: received {upiCode}).",
+      hi: "आपने ग्राहक {phone} के {marked} दर्ज किए, पर जमा {deposit} है, इसलिए अभी बुकिंग नहीं हुई। रोक खत्म होने तक मैं स्लॉट रोककर रखूँगा। बाकी {left} आ जाए तो \"मिल गया\" दबाइए (या लिखिए: received {upiCode})।",
+      ml: "നിങ്ങൾ {marked} രേഖപ്പെടുത്തി (കസ്റ്റമർ {phone}), പക്ഷേ അഡ്വാൻസ് {deposit} ആണ്, അതുകൊണ്ട് ഇതുവരെ ബുക്ക് ആയിട്ടില്ല. മാറ്റിവച്ച സമയം തീരുന്നത് വരെ ഞാൻ സ്ലോട്ട് പിടിച്ചുവയ്ക്കും. ബാക്കി {left} കൂടി കിട്ടിയാൽ \"കിട്ടി\" ടാപ്പ് ചെയ്യൂ (അല്ലെങ്കിൽ ഇങ്ങനെ മറുപടി അയക്കൂ: received {upiCode}).",
+      kn: "ನೀವು {phone} ಅವರ {marked} ಗುರುತಿಸಿದ್ದೀರಿ, ಆದರೆ ಮುಂಗಡ ಹಣ {deposit}, ಹಾಗಾಗಿ ಇನ್ನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಕಾಯ್ದಿರಿಸುವ ಸಮಯ ಮುಗಿಯುವವರೆಗೆ ಸ್ಲಾಟ್ ಹಾಗೆಯೇ ಇರುತ್ತದೆ. ಉಳಿದ {left} ಬಂದಾಗ \"ಬಂದಿದೆ\" ಒತ್ತಿ (ಅಥವಾ ಹೀಗೆ ಉತ್ತರಿಸಿ: received {upiCode}).",
     },
   },
   {
