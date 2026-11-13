@@ -5,60 +5,68 @@
 //
 // The page's rules (a content policy the front sends): no script, nothing loaded from anywhere, no frame, forms post only to the page itself. The UPI QR code is an
 // inline SVG made here from the payment link (modules/qr), and the "Pay in your UPI app" button is the same link (upi://pay?...), which opens the customer's UPI app.
+//
+// The look (item 11i's design pass, 14 Nov 2026) is the shared one in look.ts (CUSTOMER_CSS): the head with the shop's character on every page, a state as a stamp in its
+// meaning's colour (stateBlock), services and times as large tiles, the shop's messages as coloured bubbles, the AI assistants' note folded at the foot.
 import { html, raw } from "../core/html.ts";
 import type { Raw } from "../core/html.ts";
 import { localParts } from "../core/time.ts";
 import { formatDate, formatInr, formatSlot, formatTime } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import { textQrSvg } from "../qr/svg.ts";
-import type { BookingView, Offer } from "./backend.ts";
+import type { BookingView, Offer, PayInstructions } from "./backend.ts";
 import { PAGE } from "./words.ts";
-import { FACE_CSS, facePartnerLine, shopFace } from "./shop-face.ts";
+import { facePartnerLine, shopFace, shopHead } from "./shop-face.ts";
+import { CUSTOMER_CSS } from "./look.ts";
+import { STAMP, STAMP_TONE } from "./words-look.ts";
+import type { StampKey, Tone } from "./words-look.ts";
 import { CONFIRM } from "./words-confirm.ts";
 import type { PagesFile } from "./pages-file.ts";
 
-const CSS = `
-:root{--ink:#10231a;--mute:#4b5d52;--line:#cfe3d6;--g9:#14532d;--g7:#15803d;--g1:#dcfce7;--amber:#92400e;--amber-bg:#fffbeb;--bg:#fff}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 system-ui,-apple-system,"Segoe UI","Noto Sans","Noto Sans Devanagari","Noto Sans Malayalam","Noto Sans Kannada",sans-serif}
-main{max-width:34rem;margin:0 auto;padding:0 16px 40px}header{background:var(--g9);color:#fff;margin:0 -16px 16px;padding:18px 16px}header h1{margin:0;font-size:1.35rem}header p{margin:4px 0 0;opacity:.9}
-h2{font-size:1.1rem;margin:22px 0 8px}a{color:var(--g7)}.langs a,.langs b{margin-right:10px}.note{color:var(--mute);font-size:.9rem}.machine{background:var(--amber-bg);color:var(--amber);padding:8px 10px;border-radius:8px;font-size:.9rem}
-.list{list-style:none;padding:0;margin:0}.list li{margin:0 0 8px}.choice{display:block;border:1px solid var(--line);border-radius:10px;padding:12px;text-decoration:none;color:var(--ink)}.choice.on{border-color:var(--g7);background:var(--g1)}
-.choice span{float:right;font-weight:600}.days a,.days b{display:inline-block;margin:0 6px 8px 0;padding:6px 10px;border:1px solid var(--line);border-radius:999px;text-decoration:none;font-size:.95rem}.days b{background:var(--g1);border-color:var(--g7)}
-.slots{display:flex;flex-wrap:wrap;gap:8px}.slots label{border:1px solid var(--line);border-radius:8px;padding:8px 10px}.slots input{margin-right:6px}
-label.f{display:block;margin:10px 0 4px;font-weight:600}input[type=text],input[type=tel]{width:100%;font-size:1.05rem;padding:10px;border:1px solid var(--line);border-radius:8px}
-button,.btn{display:inline-block;margin-top:14px;font-size:1.05rem;padding:12px 18px;border-radius:10px;border:0;background:var(--g7);color:#fff;text-decoration:none;cursor:pointer}
-button.quiet,.btn.quiet{background:#fff;color:var(--g9);border:1px solid var(--line)}.status{font-size:1.15rem;font-weight:600;margin:16px 0}.box{border:1px solid var(--line);border-radius:12px;padding:14px;margin:14px 0}
-.qr svg{width:220px;height:220px;display:block;margin:10px 0}.msgs li{border-left:3px solid var(--line);padding:4px 10px;margin:0 0 8px;white-space:pre-line}.warn{color:var(--amber)}footer{margin-top:28px;border-top:1px solid var(--line);padding-top:12px}
-`;
 
-// `.msgs li` keeps a message's own line breaks (white-space: pre-line, 14 Nov 2026): Bookings' quote puts the UPI ID and who confirms on lines of their own.
+// The shop's messages keep their own line breaks (look.ts `.msgs li`, white-space: pre-line): Bookings' quote puts the UPI ID and who confirms on lines of their own.
 
 export interface PageShop { name: string; publicUrl: string }
 
 /**
- * The whole page: head, header and the content, with the language links and, for a machine-written language, the note that says so. Shared with item 11h's pages
- * (order-page.ts, fee-page.ts), so every customer view of a shop looks and behaves the same.
+ * The whole page: the head (the shop's character, name and mood, and the language links), the note that says a language is machine-written, and the content.
+ * Shared with item 11h's pages (order-page.ts, fee-page.ts), so every customer view of a shop looks and behaves the same. `face`: the front page's extras under
+ * the head (shop-face.ts shopFace: WhatsApp and the hours); `foot`: the partner's line. A page that reloads itself (`refreshSeconds`) shows the head without the
+ * face's picture, so a phone waiting on it does not fetch the picture again every few seconds.
  */
-export function layout(o: { shop: Pick<Offer["shop"], "name" | "address" | "languages">; language: Language; title: string; body: Raw; refreshSeconds?: number; selfPath: string; query?: Record<string, string>; /** Item 11f: the shop's face and the partner's line (the booking page's front). */ face?: Raw; foot?: Raw }): string {
+export function layout(o: { shop: Pick<Offer["shop"], "name" | "address" | "languages" | "character">; language: Language; title: string; body: Raw; refreshSeconds?: number; selfPath: string; query?: Record<string, string>; face?: Raw; foot?: Raw }): string {
   const w = PAGE[o.language];
   const link = (l: Language) => { const q = new URLSearchParams({ ...(o.query ?? {}), lang: l }); return `${o.selfPath}?${q}`; };
-  return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
-${o.refreshSeconds ? raw(`<meta http-equiv="refresh" content="${o.refreshSeconds}">`) : ""}<title>${o.title}</title><style>${raw(CSS)}${FACE_CSS}</style></head>
-<body><main><header><h1>${o.shop.name}</h1>${o.shop.address ? html`<p>${o.shop.address}</p>` : ""}</header>
-${o.shop.languages.length > 1 ? html`<p class="langs" aria-label="${w.language}">${o.shop.languages.map((l) => (l === o.language ? html`<b>${LANGUAGE_LABEL[l]}</b>` : html`<a href="${link(l)}" hreflang="${l}">${LANGUAGE_LABEL[l]}</a>`))}</p>` : ""}
-${w.machine ? html`<p class="machine">${w.machine}</p>` : ""}
+  // theme-color: the phone's bar takes the head's tint, so the page and the bar read as one
+  return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="theme-color" content="#e2f2e9">
+${o.refreshSeconds ? raw(`<meta http-equiv="refresh" content="${o.refreshSeconds}">`) : ""}<title>${o.title}</title><style>${raw(CUSTOMER_CSS)}</style></head>
+<body><header class="head"><div class="wrap">${shopHead({ shop: o.shop, language: o.language, picture: !o.refreshSeconds })}
+${o.shop.languages.length > 1 ? html`<p class="langs" aria-label="${w.language}">${o.shop.languages.map((l) => (l === o.language ? html`<b>${LANGUAGE_LABEL[l]}</b>` : html`<a href="${link(l)}" hreflang="${l}">${LANGUAGE_LABEL[l]}</a>`))}</p>` : ""}</div></header>
+<main class="wrap">${w.machine ? html`<p class="machine">${w.machine}</p>` : ""}
 ${o.face ?? ""}${o.body}${o.foot ?? ""}
 </main></body></html>`.markup}`;
 }
+
+/**
+ * A state on a customer's page: its stamp, in its meaning's colour, over the sentence that says it (words-look.ts). `tone` overrides the stamp's own colour (a
+ * refund that was sent is green, one still to come is amber). `id` goes on the sentence, where links and tests find it.
+ */
+export function stateBlock(key: StampKey, language: Language, text: string, o: { tone?: Tone; role?: "status" | "alert"; id?: string } = {}): Raw {
+  return html`<div class="state s-${o.tone ?? STAMP_TONE[key]}"${o.role ? raw(` role="${o.role}"`) : ""}><span class="stamp">${STAMP[language][key]}</span><p class="status"${o.id ? raw(` id="${o.id}"`) : ""}>${text}</p></div>`;
+}
+
+/** A line from the front that is not a state (too many requests, a form to check): red, no stamp, read out at once. */
+export const errorBlock = (text: string): Raw => html`<div class="state s-bad" role="alert"><p class="status">${text}</p></div>`;
 
 export const LANGUAGE_LABEL: Record<Language, string> = { en: "English", hi: "हिन्दी", ml: "മലയാളം", kn: "ಕನ್ನಡ" };
 
 const dateOf = (iso: string) => { const [year, month, day] = iso.split("-").map(Number); return { year, month, day }; };
 
-/** The footer every page has: what an AI assistant can do here, the API, and that the shop's limits apply. */
+/** The footer every page has: what an AI assistant can do here, the API, and that the shop's limits apply, folded under its title. */
 function footer(shop: PageShop, language: Language): Raw {
   const w = PAGE[language];
-  return html`<footer><h2>${w.assistantsTitle}</h2><p class="note">${w.assistants(`${shop.publicUrl}/mcp`, `${shop.publicUrl}/api/v1`)}</p></footer>`;
+  // folded: a customer rarely needs it, and it is the page's longest paragraph
+  return html`<footer><details><summary>${w.assistantsTitle}</summary><p class="note">${w.assistants(`${shop.publicUrl}/mcp`, `${shop.publicUrl}/api/v1`)}</p></details></footer>`;
 }
 
 /**
@@ -74,37 +82,60 @@ export function bookingPage(o: { shop: PageShop; offer: Offer; language: Languag
   const tz = s.timezone;
   const self = `${o.shop.publicUrl}/`;
   const q = (extra: Record<string, string>) => `${self}?${new URLSearchParams({ lang: o.language, ...extra })}`;
-  if (s.paused) return layout({ shop: s, language: o.language, title: w.title(s.name), selfPath: self, face, foot, body: html`<p class="status warn">${w.paused}</p>${footer(o.shop, o.language)}` });
+  if (s.paused) return layout({ shop: s, language: o.language, title: w.title(s.name), selfPath: self, face, foot, body: html`${stateBlock("paused", o.language, w.paused)}${footer(o.shop, o.language)}` });
   const deposit = formatInr(s.deposit.amountInr);
   const chosen = o.offer.services.find((x) => x.id === o.serviceId);
-  const services = html`<h2>${w.pickService}</h2><ul class="list">${o.offer.services.map((x) => html`<li><a class="choice${x.id === chosen?.id ? " on" : ""}" href="${q({ service: x.id })}">${x.names[o.language]}<span>${formatInr(x.priceInr)}</span><br><small class="note">${w.minutes(x.durationMinutes)}</small></a></li>`)}</ul>`;
+  const services = html`<h2>${w.pickService}</h2><ul class="list">${o.offer.services.map((x) => html`<li><a class="choice${x.id === chosen?.id ? " on" : ""}" href="${q({ service: x.id })}"${x.id === chosen?.id ? raw(' aria-current="true"') : ""}><b>${x.names[o.language]}</b><span>${formatInr(x.priceInr)}</span><small class="note">${w.minutes(x.durationMinutes)}</small></a></li>`)}</ul>`;
   let times: Raw | string = "";
   if (chosen) {
     const days = o.offer.days ?? [];
     const open = days.filter((d) => d.starts.length > 0);
     const day = days.find((d) => d.date === o.date && d.starts.length > 0) ?? open[0];
-    if (o.offer.calendarUnread) times = html`<h2>${w.pickTime}</h2><p class="warn">${w.calendarUnread}</p>`;
-    else if (!day) times = html`<h2>${w.pickTime}</h2><p>${w.noDays}</p>`;
+    if (o.offer.calendarUnread) times = html`<h2>${w.pickTime}</h2>${errorBlock(w.calendarUnread)}`;
+    else if (!day) times = html`<h2>${w.pickTime}</h2><p class="card">${w.noDays}</p>`;
     else {
       times = html`<h2>${w.pickTime}</h2>
-<p class="days">${days.map((d) => (d.date === day.date ? html`<b>${formatDate(dateOf(d.date), o.language)}</b>` : d.starts.length > 0 ? html`<a href="${q({ service: chosen.id, date: d.date })}">${formatDate(dateOf(d.date), o.language)}</a>` : ""))}</p>
+<p class="days">${days.map((d) => (d.date === day.date ? html`<b aria-current="date">${formatDate(dateOf(d.date), o.language)}</b>` : d.starts.length > 0 ? html`<a href="${q({ service: chosen.id, date: d.date })}">${formatDate(dateOf(d.date), o.language)}</a>` : ""))}</p>
 <form method="post" action="${o.shop.publicUrl}/book">
 <input type="hidden" name="service" value="${chosen.id}"><input type="hidden" name="lang" value="${o.language}">${o.nonce ? html`<input type="hidden" name="nonce" value="${o.nonce}">` : ""}
-<div class="slots">${day.starts.map((t, i) => html`<label><input type="radio" name="start" value="${t}" required${i === 0 ? raw(" checked") : ""}>${formatTime(localParts(t, tz), o.language)}</label>`)}</div>
+<div class="slots">${day.starts.map((t, i) => html`<label><input type="radio" name="start" value="${t}" required${i === 0 ? raw(" checked") : ""}><span>${formatTime(localParts(t, tz), o.language)}</span></label>`)}</div>
 <h2>${w.yourDetails}</h2>
 <label class="f" for="name">${w.name}</label><input type="text" id="name" name="name" required maxlength="60" autocomplete="name" value="${o.values?.name ?? ""}">
 <label class="f" for="phone">${w.phone}</label><input type="tel" id="phone" name="phone" required maxlength="20" autocomplete="tel" inputmode="tel" value="${o.values?.phone ?? ""}">
 <p class="note">${w.phoneNote}</p>
-<button type="submit">${w.hold}</button>
+<button type="submit" class="full">${w.hold}</button>
 <p class="note">${w.cancelRule(s.cancellation.windowHours)}</p>
 </form>`;
     }
   }
   return layout({
     shop: s, language: o.language, title: w.title(s.name), selfPath: self, face, foot, query: { ...(chosen ? { service: chosen.id } : {}), ...(o.date ? { date: o.date } : {}) },
-    body: html`<p>${w.intro(deposit, s.payment.kind === "upi")}</p>${o.error ? html`<p class="status warn" role="alert">${o.error}</p>` : ""}${services}${times}${footer(o.shop, o.language)}`,
+    body: html`<p>${w.intro(deposit, s.payment.kind === "upi")}</p>${o.error ? errorBlock(o.error) : ""}${services}${times}${footer(o.shop, o.language)}`,
   });
 }
+
+/**
+ * How to pay by UPI, the same box on a booking's, an order's and a fee's page: the amount and who to, the button that opens the customer's UPI app, the code to
+ * scan (on a white ground, so a camera reads it in any theme), what happens next and, where the page has it, "I have paid" (posting to `paid.action`).
+ */
+export function upiBox(o: { pay: Extract<PayInstructions, { kind: "upi" }>; language: Language; afterPay: string; paidAction?: string }): Raw {
+  const p = PAGE[o.language];
+  const label = p.upiPay(formatInr(o.pay.leftPaise / 100), o.pay.payTo.name, o.pay.payTo.id);
+  return html`<div class="box pay"><p class="amount"><b>${label}</b></p><a class="btn full" href="${o.pay.link}">${p.openUpi}</a>
+<p class="note">${p.scan}</p><div class="qr">${raw(textQrSvg(o.pay.link, { label }))}</div><p class="note">${o.afterPay}</p>
+${o.paidAction ? html`<form method="post" action="${o.paidAction}"><input type="hidden" name="lang" value="${o.language}"><button class="quiet full" type="submit">${p.paid}</button></form>` : ""}</div>`;
+}
+
+/** The shop's messages about a booking or an order, newest first, as bubbles with the time under each. */
+export function messageList(messages: readonly { atMs: number; text: string }[], timeZone: string, language: Language): Raw | "" {
+  if (messages.length === 0) return "";
+  return html`<h2>${PAGE[language].messages}</h2><ul class="msgs">${[...messages].reverse().map((m) => html`<li>${m.text}<small class="note">${formatSlot(m.atMs, timeZone, language)}</small></li>`)}</ul>`;
+}
+
+/** The stamp of a booking's or an order's state. */
+export const STAMP_OF: Record<string, StampKey> = { held: "held", checking: "checking", booked: "booked", confirmed: "confirmed", expired: "expired", cancelled: "cancelled", done: "done", not_held: "notHeld" };
+/** A refund's colour: on its way or being decided waits (amber), sent is done (green), kept is closed (grey). */
+export const REFUND_TONE: Record<"asked" | "owed" | "sent" | "kept", Tone> = { asked: "wait", owed: "wait", sent: "ok", kept: "plain" };
 
 /**
  * A booking's own page: where it has got to, how to pay while it is held, cancel, and the shop's messages about it. Refreshes itself while something is still to come.
@@ -119,35 +150,27 @@ export function statusPage(o: { shop: PageShop; offer: Offer; language: Language
   const v = o.view;
   const title = w.title(s.name);
   const again = html`<p><a class="btn" href="${o.shop.publicUrl}/?lang=${o.language}">${w.again}</a></p>`;
-  if (!v) return layout({ shop: s, language: o.language, title, selfPath: self, body: html`<p class="status">${w.unknown}</p>${again}` });
-  if (v.status === "pending") return layout({ shop: s, language: o.language, title, selfPath: self, refreshSeconds: 2, body: html`<p class="status">${w.pending}</p><p class="note">${w.keepLink}</p>` });
-  if (v.status === "not_done") return layout({ shop: s, language: o.language, title, selfPath: self, body: html`<p class="status warn">${w.notDone}</p>${again}` });
-  if (v.status === "refused") return layout({ shop: s, language: o.language, title, selfPath: self, body: html`<p class="status warn">${w.refused[v.reason] ?? w.refused.unknown}</p>${again}` });
+  if (!v) return layout({ shop: s, language: o.language, title, selfPath: self, body: html`${stateBlock("unknown", o.language, w.unknown)}${again}` });
+  if (v.status === "pending") return layout({ shop: s, language: o.language, title, selfPath: self, refreshSeconds: 2, body: html`${stateBlock("holding", o.language, w.pending, { role: "status" })}<p class="note">${w.keepLink}</p>` });
+  if (v.status === "not_done") return layout({ shop: s, language: o.language, title, selfPath: self, body: html`${stateBlock("notDone", o.language, w.notDone)}${again}` });
+  if (v.status === "refused") return layout({ shop: s, language: o.language, title, selfPath: self, body: html`${stateBlock("refused", o.language, w.refused[v.reason] ?? w.refused.unknown)}${again}` });
 
-  const what = html`${v.service ? html`<p><b>${v.service.names[o.language]}</b> · ${formatInr(v.service.priceInr)}${v.startMs !== undefined ? html`<br>${formatSlot(v.startMs, tz, o.language)}` : ""}<br><small class="note">${w.note(v.ref)}</small></p>` : ""}`;
+  const what = html`${v.service ? html`<div class="card sum"><p><b>${v.service.names[o.language]}</b> · ${formatInr(v.service.priceInr)}${v.startMs !== undefined ? html`<br>${formatSlot(v.startMs, tz, o.language)}` : ""}<br><small class="note">${w.note(v.ref)}</small></p></div>` : ""}`;
   const line = v.status === "held" ? w.held(v.holdExpiresAt !== undefined ? formatSlot(v.holdExpiresAt, tz, o.language) : "")
     : v.status === "booked" ? w.booked(v.startMs !== undefined ? formatSlot(v.startMs, tz, o.language) : "")
     : v.status === "checking" ? w.checking : v.status === "expired" ? w.expired : v.status === "cancelled" ? w.cancelled : v.status === "done" ? w.done : w.notHeld;
   let pay: Raw | string = "";
-  if (v.status === "held" && v.pay?.kind === "upi") {
-    const amount = formatInr(v.pay.leftPaise / 100);
-    pay = html`<div class="box"><p><b>${w.upiPay(amount, v.pay.payTo.name, v.pay.payTo.id)}</b></p>
-<p><a class="btn" href="${v.pay.link}">${w.openUpi}</a></p>
-<p class="note">${w.scan}</p><div class="qr">${raw(textQrSvg(v.pay.link, { label: w.upiPay(amount, v.pay.payTo.name, v.pay.payTo.id) }))}</div>
-<p class="note">${w.afterPay}</p>
-${v.canSayPaid ? html`<form method="post" action="${self}/paid"><input type="hidden" name="lang" value="${o.language}"><button class="quiet" type="submit">${w.paid}</button></form>` : ""}</div>`;
-  } else if (v.status === "held" && v.pay?.kind === "link") {
-    pay = html`<div class="box"><p><a class="btn" href="${v.pay.url}" rel="noreferrer">${w.linkPay(formatInr(v.depositInr))}</a></p></div>`;
-  }
-  const cancel = v.canCancel ? html`<form method="post" action="${self}/cancel"><input type="hidden" name="lang" value="${o.language}"><button class="quiet" type="submit">${w.cancel}</button><p class="note">${w.cancelRule(s.cancellation.windowHours)}</p></form>` : "";
-  const messages = v.messages.length > 0 ? html`<h2>${w.messages}</h2><ul class="list msgs">${[...v.messages].reverse().map((m) => html`<li>${m.text}<br><small class="note">${formatSlot(m.atMs, tz, o.language)}</small></li>`)}</ul>` : "";
+  if (v.status === "held" && v.pay?.kind === "upi") pay = upiBox({ pay: v.pay, language: o.language, afterPay: w.afterPay, ...(v.canSayPaid ? { paidAction: `${self}/paid` } : {}) });
+  else if (v.status === "held" && v.pay?.kind === "link") pay = html`<div class="box pay"><a class="btn full" href="${v.pay.url}" rel="noreferrer">${w.linkPay(formatInr(v.depositInr))}</a></div>`;
+  const cancel = v.canCancel ? html`<form method="post" action="${self}/cancel"><input type="hidden" name="lang" value="${o.language}"><button class="quiet full" type="submit">${w.cancel}</button><p class="note">${w.cancelRule(s.cancellation.windowHours)}</p></form>` : "";
   const c = CONFIRM[o.language];
-  const refund = v.refund ? html`<p class="status" id="refund">${c.refund[v.refund.state](formatInr(v.refund.amountInr))}</p>` : "";
-  const calendar = o.ics ? html`<p><a class="btn quiet" href="${o.ics}" download>${c.ics}</a><br><small class="note">${c.icsNote}</small></p>` : "";
+  const refund = v.refund ? stateBlock("refund", o.language, c.refund[v.refund.state](formatInr(v.refund.amountInr)), { tone: REFUND_TONE[v.refund.state], id: "refund" }) : "";
+  const calendar = o.ics ? html`<div class="card"><a class="btn quiet full" href="${o.ics}" download>${c.ics}</a><p class="note">${c.icsNote}</p></div>` : "";
+  const sad = v.status === "not_held" || v.status === "expired";
   return layout({
     shop: s, language: o.language, title, selfPath: self,
     // held: look again every 15 s, so "Booked" shows once the owner marks the payment; checking: every 30 s
     ...(v.status === "held" ? { refreshSeconds: 15 } : v.status === "checking" ? { refreshSeconds: 30 } : {}),
-    body: html`${o.notice ? html`<p class="note" role="status">${o.notice}</p>` : ""}<p class="status${v.status === "not_held" || v.status === "expired" ? " warn" : ""}">${line}</p>${refund}${what}${pay}${calendar}${o.alerts ? raw(o.alerts) : ""}${v.status === "not_held" || v.status === "expired" ? again : ""}${cancel}${messages}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
+    body: html`${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${refund}${what}${pay}${calendar}${o.alerts ? raw(o.alerts) : ""}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
   });
 }

@@ -7,7 +7,7 @@
 //   GET  /s/<shop>/o/<owner token>       the owner's private approvals page                     POST /s/<shop>/o/<owner token>   an answer
 //   ...  /s/<shop>/owner/...             item 11f: the owner's view, signed in by a one-time link on WhatsApp (owner-session.ts)
 //   With the shop's assistant (item 11e), both owner addresses are also the owner's app: <owner base>/ (the page), /manifest.webmanifest, /sw.js, /talk (the talk
-//   box's words) and /voice (a hold-to-record recording); the page's one script runs by a nonce in that response's content policy (appPolicy).
+//   box's words) and /voice (a hold-to-record recording, Ogg or WebM Opus); the page's one script runs by a nonce in that response's content policy (appPolicy).
 //
 // Item 11i, the shop's character: every shop's mood pictures (drawn on its server, bundle/character/render.ts) are public at stable addresses, for the shop's own
 // page, Streetlist and WhatsApp (which fetches the PNG and WebP itself):
@@ -606,7 +606,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     if (app && sub === "/voice") {
       if (!app.listen || !shop.backend.ownerVoice) return sendJson(res, 404, { error: { code: "not_found", message: "Voice is not on for this shop's assistant." } });
       const type = String(req.headers["content-type"] ?? "");
-      if (!/^audio\/ogg\b/iu.test(type)) return sendJson(res, 415, { error: { code: "bad_request", message: "Send the recording as audio/ogg (Opus)." } });
+      // item 11i: Ogg Opus, or WebM Opus (what Android's Chrome records); the voice service reads the length from the bytes themselves either way
+      if (!/^audio\/(ogg|webm)\b/iu.test(type)) return sendJson(res, 415, { error: { code: "bad_request", message: "Send the recording as audio/ogg or audio/webm (Opus)." } });
       if (!csrfOk(req.headers[CSRF_HEADER])) return sendJson(res, 403, { error: { code: "bad_request", message: `Send the session's form token in ${CSRF_HEADER}.` } });
       const bytes = await readBytes(req, MAX_VOICE_BYTES);
       if (!bytes || bytes.length === 0) return sendJson(res, 413, { error: { code: "bad_request", message: "A recording of at most 30 seconds." } });
@@ -645,7 +646,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     }
     // the owner's app runs our scripts only: a fresh nonce for this response, in its content policy and on those scripts, and nothing else may run
     const nonce = app || pushState ? randomBytes(16).toString("base64") : undefined;
-    const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), ...(nonce ? { nonce } : {}) }) : undefined;
+    // bare: the box without its script, which runs inside the page's one script (owner-page.ts, look.ts themeScript)
+    const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), bare: true }) : undefined;
     // item 11i: the owner's app shows the character in the shop's real mood (all five moods: this is the owner's own view)
     const facePic = state.view.app ? shop.character?.()?.picture(state.view.app.face, "svg") : undefined;
     return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
