@@ -31,10 +31,10 @@ export interface ShopInfo {
   /** Item 11f: the week's opening hours ("10:00" to "20:00", null when closed), for the customer view. Left out by a template that has none. */
   hours?: Record<"sun" | "mon" | "tue" | "wed" | "thu" | "fri" | "sat", { open: string; close: string } | null>;
   /**
-   * Item 11f, 11i: the shop's character, when the shop has the assistant: its name and the mood the PUBLIC sees now (all well, busy or closed; character.ts
+   * Item 11f, 11i: the shop's character, when the shop has the assistant: its name (only when the partner gave one) and the mood the PUBLIC sees now (all well, busy or closed; character.ts
    * publicFace), from the runtime. `picture` is added by the front, never by the runtime: that mood's SVG as a data: address (front.ts withFace).
    */
-  character?: { name: string; face?: Face; picture?: string };
+  character?: { name?: string; face?: Face; picture?: string };
 }
 export interface Offer { shop: ShopInfo; services: OfferService[]; serviceId?: string; days?: { date: string; starts: number[] }[]; calendarUnread?: boolean }
 

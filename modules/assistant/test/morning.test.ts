@@ -56,7 +56,7 @@ test("not before its hour; then once, as the template outside the window, naming
   assert.equal(r.done && r.via, "template");
   const sent = w.messaging.sentTo(OWNER);
   assert.equal(sent.length, 1);
-  assert.match(sent[0].text, /^Good morning from Mithra, the assistant of Glow Salon\. Today, Thu 12 Nov: bookings: 1, the first at 10:30 am\. Recorded yesterday: nothing\. Waiting for you: 2\./u);
+  assert.match(sent[0].text, /^Good morning from the assistant of Glow Salon\. Today, Thu 12 Nov: bookings: 1, the first at 10:30 am\. Recorded yesterday: nothing\. Waiting for you: 2\./u);
   const lines = w.record.entries().filter((e) => e.refs.morning === "2026-11-12");
   assert.deepEqual(lines.map((e) => e.outcome), ["attempted", "confirmed"]);
   assert.equal(lines[1].refs.mood, "waiting_for_owner");
@@ -75,7 +75,7 @@ test("inside the owner's window it goes as plain text with the same words", asyn
   w.clock.set(at(THU, 8, 5));
   const r = await w.job.run(w.ctx);
   assert.equal(r.done && r.via, "text");
-  assert.match(w.messaging.sentTo(OWNER)[0].text, /^सुप्रभात, मैं Mithra, Glow Salon का असिस्टेंट।/u);
+  assert.match(w.messaging.sentTo(OWNER)[0].text, /^सुप्रभात, मैं Glow Salon का असिस्टेंट।/u);
 });
 
 test("silent on a closed day: a closed weekday, or a date the owner closed", async () => {
@@ -166,5 +166,5 @@ test("the personality picks its own morning template; only the opening and the s
   await w.job.run(w.ctx);
   const sent = w.messaging.sentTo(OWNER)[0];
   assert.equal(sent.templateName, "owner_morning_cheerful");
-  assert.match(sent.text, /^Good morning! Mithra here, the assistant of Glow Salon\. Today, Thu 12 Nov: bookings: 1, the first at 10:30 am\. Recorded yesterday: nothing\. Waiting for you: nothing\. Reply here to see more\. Have a lovely day!$/u);
+  assert.match(sent.text, /^Good morning! Glow Salon's assistant here\. Today, Thu 12 Nov: bookings: 1, the first at 10:30 am\. Recorded yesterday: nothing\. Waiting for you: nothing\. Reply here to see more\. Have a lovely day!$/u);
 });

@@ -1,8 +1,9 @@
 // The Character step of a shop's setup (plan item 11i, decision 47), as plain functions: what the step keeps in the draft, what each press does, what it refuses
 // in the person's language, and what it writes into the shop's settings. The page is views-character.ts; the drawings are bundle/character/render.ts.
 //
-// The partner (or builder) makes the shop's assistant with the owner beside them: a style (Golu, Critters, Sprouts, Moods, Pixel), a face from a row of eight rolled
-// for this shop, a colour from the style's own DiceBear palette (or Auto), a name, and a personality that changes only small talk. The panel runs no script, so every
+// The partner (or builder) makes the shop's assistant with the owner beside them: a style (DiceBear's Clay, Critters, Sprouts, Moods, Pixel Bot), a face from a row of
+// eight rolled for this shop, a colour from the style's own DiceBear palette (or Auto), a name if they want one (owner, 14 Nov: optional; with none it is "<the
+// shop>'s assistant"), and a personality that changes only small talk. The panel runs no script, so every
 // press is a form post that comes back to the same step (style, face, colour, Roll), and only "Next" checks the whole and moves on. What was typed in the name box
 // is kept on every press.
 //
@@ -25,6 +26,7 @@ export interface CharacterDraft {
   roll: string;
   seed?: string;
   colour?: string;
+  /** The character's name as typed; empty for none (it is then "<the shop>'s assistant"). */
   name: string;
   personality: Personality;
   /** True once the step was finished (Next, with nothing refused): only then does saving the shop write a character, and so turn its assistant on. */
@@ -36,7 +38,7 @@ const newRoll = (): string => randomBytes(3).toString("hex");
 /** The eight seeds of a roll for a shop. Every seed starts with the shop's id. */
 export const stripSeeds = (shopId: string, roll: string): string[] => Array.from({ length: STRIP }, (_, i) => `${shopId}-${roll}-${i}`);
 
-/** The step's starting point for a new shop: Golu, a fresh roll with its first face picked, Auto colour, no name yet, the warm personality. */
+/** The step's starting point for a new shop: Clay, a fresh roll with its first face picked, Auto colour, no name, the warm personality. */
 export const newCharacterDraft = (shopId: string): CharacterDraft => {
   const roll = newRoll();
   return { style: "clay", roll, seed: stripSeeds(shopId, roll)[0], name: "", personality: "warm", chosen: false };
@@ -47,7 +49,7 @@ export function characterDraftFromSettings(settings: unknown, shopId: string): C
   const raw = (settings as { assistant?: { character?: unknown } } | undefined)?.assistant?.character;
   const c = raw === undefined ? undefined : readCharacter(raw, []);
   if (!c) return newCharacterDraft(shopId);
-  return { style: c.style, roll: newRoll(), seed: c.seed ?? shopId, ...(c.colour ? { colour: c.colour } : {}), name: c.name, personality: c.personality, chosen: true };
+  return { style: c.style, roll: newRoll(), seed: c.seed ?? shopId, ...(c.colour ? { colour: c.colour } : {}), name: c.name ?? "", personality: c.personality, chosen: true };
 }
 
 /** What a press asks for: a style, a face, a colour, a new roll, or Next. */
@@ -92,7 +94,7 @@ export function applyCharacter(draft: { shopId?: string; character?: CharacterDr
   const errors: string[] = [];
   readCharacter(characterSetting(c, shopId), errors);
   if (errors.length > 0) {
-    if (!/^[\p{L}\p{M}][\p{L}\p{M} '’-]{0,23}$/u.test(c.name)) problems.push(p.name);
+    if (c.name !== "" && !/^[\p{L}\p{M}][\p{L}\p{M} '’-]{0,23}$/u.test(c.name)) problems.push(p.name);
     if (!c.seed) problems.push(p.face);
     if (problems.length === 0) problems.push(...errors);
   }
@@ -100,9 +102,9 @@ export function applyCharacter(draft: { shopId?: string; character?: CharacterDr
   return { stay: false, problems };
 }
 
-/** The `assistant.character` setting the draft writes (modules/assistant/character.ts reads it back). */
+/** The `assistant.character` setting the draft writes (modules/assistant/character.ts reads it back). A name only when the partner gave one. */
 export function characterSetting(c: CharacterDraft, shopId: string): Character & { seed: string } {
-  return { name: c.name.trim(), style: c.style, seed: c.seed ?? `${shopId}-${c.roll}-0`, ...(c.colour ? { colour: c.colour } : {}), personality: c.personality };
+  return { ...(c.name.trim() ? { name: c.name.trim() } : {}), style: c.style, seed: c.seed ?? `${shopId}-${c.roll}-0`, ...(c.colour ? { colour: c.colour } : {}), personality: c.personality };
 }
 
 /**

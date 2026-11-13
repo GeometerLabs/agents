@@ -499,7 +499,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       ...(hasPage(kindId) ? { pages: { settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), ...(readPagesStatus(config.serverDir, id) ? { status: readPagesStatus(config.serverDir, id)! } : {}), canChoose: config.mode === "own" } } : {}),
       ...(pagesNotice === "ended" || pagesNotice === "bad" ? { pagesNotice } : {}),
       // item 11i: the shop's assistant, for a template with the Character step: its name and the version of its drawn pictures
-      ...(templates().find((t) => t.id === kindId)?.steps.includes("character") ? { character: (() => { const raw = rawSettings(shops, id); const name = raw?.assistant ? readAssistantSettings(raw.assistant, [])?.character.name : undefined; const version = characterReader(characterDirOf(config.serverDir, id))()?.version; return { ...(name ? { name } : {}), ...(version && name ? { version } : {}) }; })() } : {}),
+      ...(templates().find((t) => t.id === kindId)?.steps.includes("character") ? { character: (() => { const raw = rawSettings(shops, id); const a = raw?.assistant ? readAssistantSettings(raw.assistant, []) : undefined; const version = characterReader(characterDirOf(config.serverDir, id))()?.version; return { has: a !== undefined, shop: settings?.name ?? id, ...(a?.character.name ? { name: a.character.name } : {}), ...(version && a ? { version } : {}) }; })() } : {}),
       voiceLink: voiceLinkWord(c.lang),
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
       isBuilder: r.account!.role === "builder",

@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { OWNER_APP_SW, ownerAppManifest } from "../app/pwa.ts";
 import { talkBox } from "../app/talk.ts";
-import { ownerAppView } from "../app/view.ts";
+import { ownerAppView, publicCharacter } from "../app/view.ts";
 import { LANGUAGES } from "../../language/languages.ts";
 import { defaultCharacter } from "../character.ts";
 import { emptyAssistantState } from "../state.ts";
@@ -71,6 +71,14 @@ test("the view: the mood, today's list and the open cards by id and digest, neve
   const view = ownerAppView({ skills: [skill], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } });
   assert.equal(view.mood, "waiting_for_owner");
   assert.equal(view.face, "needs", "the owner's app shows the owner's mood: needs you");
+  // item 11i: the same reads, as the shop's public pages get them (the offer's `shop.character`): a booking within the hour, so busy, never "needs you"
+  assert.deepEqual(publicCharacter({ skills: [skill], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } }), { face: "busy" }, "no name: the partner gave none (owner, 14 Nov)");
+  const nothingSoon = { ...skill, day: () => [] };
+  assert.deepEqual(publicCharacter({ skills: [nothingSoon], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } }), { face: "well" }, "a card waits, but the public sees all well");
+  const wrong = { ...nothingSoon, problems: () => 1 };
+  assert.equal(ownerAppView({ skills: [wrong], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } }).face, "wrong");
+  assert.equal(publicCharacter({ skills: [wrong], state, nowMs: now + 10 * 3_600_000, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } })?.face, "closed", "something wrong after hours: the public sees closed");
+  assert.equal(publicCharacter({ skills: [skill], state, nowMs: now, timeZone: tz, settings: undefined }), undefined, "no assistant, no character");
   assert.equal(view.today.length, 1);
   assert.deepEqual(view.cards.map((c) => [c.case, c.amountPaise, c.who]), [["b-1", 20_000, "Priya"]]);
   assert.ok(!JSON.stringify(view).includes(code));

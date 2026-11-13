@@ -737,8 +737,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.character.colourLabel` | നിറം 3 | Colour 3 |  |
 | `setup.character.moodsTitle` | ഇതിന്റെ അഞ്ച് മൂഡുകൾ | Its five moods |  |
 | `setup.character.moodsHelp` | ഉടമ അഞ്ചും കാണും. ഉപഭോക്താക്കൾ എല്ലാം ശരി, തിരക്കിലാണ്, അടച്ചിരിക്കുന്നു എന്നിവ മാത്രം കാണും. | The owner sees all five. Customers see only All well, Busy and Closed. |  |
-| `setup.character.name` | ഇതിന്റെ പേര് | Its name |  |
-| `setup.character.nameHelp` | ഏത് ഭാഷയിലും 1 മുതൽ 24 വരെ അക്ഷരങ്ങൾ. ഉദാഹരണത്തിന് Mithra അല്ലെങ്കിൽ Golu. | 1 to 24 letters, in any language. For example Mithra or Golu. |  |
+| `setup.character.name` | ഇതിന്റെ പേര് (നിർബന്ധമില്ല) | Its name (optional) |  |
+| `setup.character.nameHelp` | നിർബന്ധമില്ല. ഒഴിച്ചിട്ടാൽ ഇത് കടയുടെ പേരിൽ കടയുടെ അസിസ്റ്റന്റ് ആയിരിക്കും. ഏത് ഭാഷയിലും 24 അക്ഷരങ്ങൾ വരെ, അക്കങ്ങൾ വേണ്ട. | Optional. Left empty, it is the shop's assistant, under the shop's name. Up to 24 letters, in any language, no digits. |  |
 | `setup.character.personalityLegend` | സംസാരിക്കുന്ന രീതി | How it talks |  |
 | `setup.character.personalityHelp` | ഇത് ഇതിന്റെ അഭിവാദനവും രാവിലത്തെ വിവരത്തിന്റെ ആദ്യത്തെയും അവസാനത്തെയും വാക്കുകളും മാത്രം മാറ്റുന്നു. തുകകൾ, കാർഡുകൾ, അംഗീകാരങ്ങൾ, പരിധികൾ എന്നിവ മാറില്ല. | This changes only its greeting and the first and last words of the morning summary. Amounts, cards, approvals and limits stay the same. |  |
 | `setup.character.personalities.warm` | സ്നേഹമുള്ള | Warm |  |
@@ -746,7 +746,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.character.personalities.brief` | ചുരുക്കം | Brief |  |
 | `setup.character.saysLabel` | ഇത് പറയും: | It says: |  |
 | `setup.character.chosenMark` | തിരഞ്ഞെടുത്തു | Picked |  |
-| `setup.character.problems.name` | അസിസ്റ്റന്റിന് ഒരു പേര് നൽകൂ: 1 മുതൽ 24 വരെ അക്ഷരങ്ങൾ, അക്കങ്ങൾ വേണ്ട. | Give the assistant a name: 1 to 24 letters, no digits. |  |
+| `setup.character.problems.name` | പേര് അക്കങ്ങളില്ലാതെ 1 മുതൽ 24 വരെ അക്ഷരങ്ങൾ ആയിരിക്കണം, അല്ലെങ്കിൽ ഒഴിച്ചിടുക. | The name must be 1 to 24 letters with no digits, or left empty. |  |
 | `setup.character.problems.style` | അഞ്ച് ശൈലികളിൽ ഒന്ന് തിരഞ്ഞെടുക്കൂ. | Pick one of the five styles. |  |
 | `setup.character.problems.face` | നിരയിൽ നിന്ന് ഒരു മുഖം തിരഞ്ഞെടുക്കൂ. | Pick a face from the row. |  |
 | `setup.character.problems.colour` | കാണിച്ച നിറങ്ങളിൽ ഒന്നോ സ്വയമോ തിരഞ്ഞെടുക്കൂ. | Pick one of the colours shown, or Auto. |  |
@@ -1255,12 +1255,15 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `agents.actions.rotateDone` | പുതിയ ക്രെഡൻഷ്യലുകൾ ഉണ്ടാക്കി. പഴയവ 4 Nov 2026, 10:15-ന് നിൽക്കും. | New credentials made. The old ones stop at 4 Nov 2026, 10:15. |  |
 | `agents.actions.rotateFailed` | പുതിയ ക്രെഡൻഷ്യലുകൾക്കുള്ള കഴിഞ്ഞ ആവശ്യം നടന്നില്ല; നിങ്ങളുടെ ഏജന്റിന് ഒന്നും മാറിയില്ല. കാരണം സെർവറിന്റെ ലോഗിൽ ഉണ്ട്. | The last request for new credentials was not done; nothing changed for your agent. The server's log says why. |  |
 | `agents.actions.cliOnly` | ഏജന്റിനെ നീക്കം ചെയ്യുന്നത് സെർവറിൽ മാത്രം: geometer agent remove <name>. | Removing an agent is done on the server only: geometer agent remove <name>. |  |
-| `personality.warm.greeting` | ഞാൻ {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. | I'm {name}, {shop}'s assistant. |  |
-| `personality.warm.morningOpening` | സുപ്രഭാതം, ഞാൻ {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. | Good morning from {name}, the assistant of {shop}. |  |
+| `personality.warm.greeting` | ഞാൻ {shop}-ന്റെ അസിസ്റ്റന്റ്. | I'm {shop}'s assistant. |  |
+| `personality.warm.greetingNamed` | ഞാൻ {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. | I'm {name}, {shop}'s assistant. |  |
+| `personality.warm.morningOpening` | സുപ്രഭാതം, ഞാൻ {shop}-ന്റെ അസിസ്റ്റന്റ്. | Good morning from the assistant of {shop}. |  |
 | `personality.warm.morningSignOff` | കൂടുതൽ കാണാൻ ഇവിടെ മറുപടി നൽകുക. | Reply here to see more. |  |
-| `personality.cheerful.greeting` | നമസ്കാരം! ഞാൻ {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്, സഹായിക്കാൻ സന്തോഷം. | Hello! I'm {name}, {shop}'s assistant, happy to help. |  |
-| `personality.cheerful.morningOpening` | സുപ്രഭാതം! ഞാൻ {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. | Good morning! {name} here, the assistant of {shop}. |  |
+| `personality.cheerful.greeting` | നമസ്കാരം! ഞാൻ {shop}-ന്റെ അസിസ്റ്റന്റ്, സഹായിക്കാൻ സന്തോഷം. | Hello! I'm {shop}'s assistant, happy to help. |  |
+| `personality.cheerful.greetingNamed` | നമസ്കാരം! ഞാൻ {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്, സഹായിക്കാൻ സന്തോഷം. | Hello! I'm {name}, {shop}'s assistant, happy to help. |  |
+| `personality.cheerful.morningOpening` | സുപ്രഭാതം! ഞാൻ {shop}-ന്റെ അസിസ്റ്റന്റ്. | Good morning! {shop}'s assistant here. |  |
 | `personality.cheerful.morningSignOff` | കൂടുതൽ കാണാൻ ഇവിടെ മറുപടി നൽകുക. നല്ലൊരു ദിവസം ആശംസിക്കുന്നു! | Reply here to see more. Have a lovely day! |  |
-| `personality.brief.greeting` | ഇത് {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. | This is {name}, {shop}'s assistant. |  |
-| `personality.brief.morningOpening` | രാവിലത്തെ വിവരം: {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. | Morning summary from {name}, the assistant of {shop}. |  |
+| `personality.brief.greeting` | ഇത് {shop}-ന്റെ അസിസ്റ്റന്റ്. | This is {shop}'s assistant. |  |
+| `personality.brief.greetingNamed` | ഇത് {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. | This is {name}, {shop}'s assistant. |  |
+| `personality.brief.morningOpening` | രാവിലത്തെ വിവരം: {shop}-ന്റെ അസിസ്റ്റന്റ്. | Morning summary from the assistant of {shop}. |  |
 | `personality.brief.morningSignOff` | കൂടുതലിന് മറുപടി നൽകുക. | Reply for more. |  |

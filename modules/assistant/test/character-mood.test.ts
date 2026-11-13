@@ -1,9 +1,9 @@
-// The character and the settings block (item 11e; item 11i, decision 47): a character is a name, one of the five approved DiceBear styles, a seed, an optional colour
-// from that style's own palette and a personality, with no voice (the assistant answers in text, owner 12 Nov); the old hand-drawn "look" is refused in words. The mood
+// The character and the settings block (item 11e; item 11i, decision 47): a character is one of the five approved DiceBear styles, a seed, an optional colour
+// from that style's own palette, a personality and an optional name (owner, 14 Nov), with no voice (the assistant answers in text, owner 12 Nov); the old hand-drawn "look" is refused in words. The mood
 // is computed from the shop's real state only, in a fixed order, and maps to one picture; the public sees only all well, busy or closed.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { CHARACTER_STYLES, EYES_AND_MOUTH, FACES, FACE_OF_MOOD, FACE_WORDS, STYLE_INFO, defaultCharacter, pictureUrl, publicFace, readCharacter, themeColour } from "../character.ts";
+import { ASSISTANT_OF, CHARACTER_STYLES, EYES_AND_MOUTH, FACES, FACE_OF_MOOD, FACE_WORDS, STYLE_INFO, defaultCharacter, pictureUrl, pictureWords, publicFace, readCharacter, themeColour } from "../character.ts";
 import { MOODS, moodOf, outsideHours } from "../mood.ts";
 import { PERSONALITIES, SMALL_TALK, greeting } from "../personality.ts";
 import { DEFAULT_MORNING, readAssistantSettings } from "../settings.ts";
@@ -16,18 +16,20 @@ const TZ = "Asia/Kolkata";
 const THU = { year: 2026, month: 11, day: 12 };
 const at = (h: number, m = 0) => zonedToMs(THU, { hour: h, minute: m }, TZ);
 
-test("a character is a name, a style, a seed, a colour from the style's own palette and a personality; anything else is refused in words", () => {
+test("a character is a style, a seed, a colour from the style's own palette, a personality and, only if the partner gives one, a name; anything else is refused in words", () => {
   const errors: string[] = [];
-  const c = { name: "Mithra", style: "critters", seed: "glow-salon-3f2a1c-4", colour: "fda4af", personality: "cheerful" };
+  const c = { name: "Asha", style: "critters", seed: "glow-salon-3f2a1c-4", colour: "fda4af", personality: "cheerful" };
   assert.deepEqual(readCharacter(c, errors), c);
   assert.deepEqual(errors, []);
-  assert.deepEqual(readCharacter({ name: "Golu" }, []), { name: "Golu", style: "clay", personality: "warm" }, "the defaults: Golu, the shop's id as seed, Auto colour, warm");
-  assert.equal(readCharacter({ name: "Golu", colour: "#C4795C" }, [])?.colour, "c4795c", "a colour may be written with a # and capitals");
+  assert.deepEqual(readCharacter({}, []), { style: "clay", personality: "warm" }, "the defaults: Clay, the shop's id as seed, Auto colour, warm, and no name (owner, 14 Nov)");
+  assert.deepEqual(readCharacter({ name: "  " }, []), { style: "clay", personality: "warm" }, "an empty name is no name");
+  assert.equal(readCharacter({ colour: "#C4795C" }, [])?.colour, "c4795c", "a colour may be written with a # and capitals");
+  assert.equal(defaultCharacter().name, undefined);
   for (const [raw, says] of [
-    [{ name: "R2D2" }, /no digits/u], [{ name: "" }, /1 to 24 letters/u], [{ name: "Mithra", style: "avataaars" }, /must be one of: clay/u],
-    [{ name: "Mithra", style: "clay", colour: "fda4af" }, /one of the Golu colours/u], [{ name: "Mithra", seed: "Has Spaces" }, /small letters, digits and hyphens/u],
-    [{ name: "Mithra", personality: "grumpy" }, /warm, cheerful, brief/u], [{ name: "Mithra", voice: "warm" }, /answers in text/u], ["Mithra", /must be an object/u],
-    [{ name: "Mithra", look: { base: "tall", colour: "pink", accessory: "scissors" } }, /no longer a setting/u],
+    [{ name: "R2D2" }, /no digits/u], [{ name: 7 }, /or left out/u], [{ style: "avataaars" }, /must be one of: clay/u],
+    [{ style: "clay", colour: "fda4af" }, /one of the Clay colours/u], [{ seed: "Has Spaces" }, /small letters, digits and hyphens/u],
+    [{ personality: "grumpy" }, /warm, cheerful, brief/u], [{ voice: "warm" }, /answers in text/u], ["Asha", /must be an object/u],
+    [{ look: { base: "tall", colour: "pink", accessory: "scissors" } }, /no longer a setting/u],
   ] as const) {
     const e: string[] = [];
     readCharacter(raw, e);
@@ -38,11 +40,15 @@ test("a character is a name, a style, a seed, a colour from the style's own pale
   for (const name of ["मित्रा", "മിത്ര", "ಮಿತ್ರ", "O'Neil"]) { const e: string[] = []; readCharacter({ name }, e); assert.deepEqual(e, [], name); }
 });
 
-test("the five styles, each with eight colours and an eyes-and-mouth pair for every mood; the words never say \"bot\"", () => {
+test("the five styles go by DiceBear's own names, each with eight colours and an eyes-and-mouth pair for every mood; a picture's words name the shop and the mood", () => {
   assert.deepEqual([...CHARACTER_STYLES], ["clay", "critters", "sprouts", "moods", "pixelbot"]);
+  assert.deepEqual(CHARACTER_STYLES.map((s) => STYLE_INFO[s].name), ["Clay", "Critters", "Sprouts", "Moods", "Pixel Bot"], "owner, 14 Nov: DiceBear's own names");
+  assert.equal(pictureWords("en", "Glow Salon", "well"), "Glow Salon's assistant, all well");
+  assert.equal(pictureWords("en", "Glow Salon", "wrong", "Asha"), "Asha, Glow Salon's assistant, something wrong");
+  assert.equal(pictureWords("hi", "Glow Salon", "busy"), "Glow Salon का असिस्टेंट, व्यस्त");
+  for (const l of LANGUAGES) assert.ok(ASSISTANT_OF[l]("Glow Salon").includes("Glow Salon"), l);
   for (const s of CHARACTER_STYLES) {
     assert.equal(STYLE_INFO[s].palette.length, 8, s);
-    assert.ok(!/bot/iu.test(STYLE_INFO[s].name), STYLE_INFO[s].name);
     for (const f of FACES) assert.equal(EYES_AND_MOUTH[s][f].length, 2, `${s} ${f}`);
   }
   assert.deepEqual(new Set(Object.values(FACE_OF_MOOD)), new Set(FACES), "every picture stands for a mood");
@@ -59,8 +65,8 @@ test("the public sees only all well, busy or closed: what waits for the owner an
   assert.equal(publicFace("busy", "busy"), "busy");
 });
 
-test("a personality changes only small talk: warm is today's words exactly, and every line names only the character and the shop", () => {
-  // the warm morning template is word for word what owner_morning said before item 11i, so a shop that never picked one reads what it read before
+test("a personality changes only small talk: warm is today's words less the character's name, and every line names only the shop (and the character only when it has a name)", () => {
+  // the warm morning template is what owner_morning said before item 11i, less "{name}, " (owner, 14 Nov: a character has a name only when the partner gives one)
   const OLD: Record<string, string> = {
   en: "Good morning from {name}, the assistant of {shop}. Today, {date}: {today}. Recorded yesterday: {money}. Waiting for you: {waiting}. Reply here to see more.",
   hi: "सुप्रभात, मैं {name}, {shop} का असिस्टेंट। आज, {date}: {today}। कल दर्ज: {money}। आपके लिए बाकी: {waiting}। और देखने के लिए यहाँ जवाब दें।",
@@ -68,17 +74,19 @@ test("a personality changes only small talk: warm is today's words exactly, and 
   kn: "ಶುಭೋದಯ, ನಾನು {name}, {shop} ನ ಸಹಾಯಕ. ಇಂದು, {date}: {today}. ನಿನ್ನೆ ದಾಖಲಾದದ್ದು: {money}. ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವವು: {waiting}. ಹೆಚ್ಚು ನೋಡಲು ಇಲ್ಲಿ ಉತ್ತರಿಸಿ.",
   };
   const t = assistantCatalogue.templates;
-  for (const l of LANGUAGES) assert.equal(t.find((x) => x.name === "owner_morning")!.bodies[l], OLD[l], l);
+  for (const l of LANGUAGES) assert.equal(t.find((x) => x.name === "owner_morning")!.bodies[l], OLD[l].replace("{name}, ", ""), l);
+  for (const x of t) for (const l of LANGUAGES) assert.ok(!x.bodies[l].includes("{name}"), `${x.name} ${l}: a template never names the character`);
   assert.deepEqual(t.filter((x) => x.usedFor.startsWith("morning")).map((x) => x.name), ["owner_morning", "owner_morning_cheerful", "owner_morning_brief"]);
   for (const p of PERSONALITIES) for (const l of LANGUAGES) {
     const words = SMALL_TALK[p][l];
     for (const [k, v] of Object.entries(words)) {
       assert.ok(!/\d/u.test(v), `${p} ${l} ${k}: no digit`);
       assert.ok(!/\b(safe|guaranteed|proves|certified|bot|earn|income)\b|100%/iu.test(v), `${p} ${l} ${k}: a banned word`);
-      assert.deepEqual([...v.matchAll(/\{(\w+)\}/gu)].map((m) => m[1]).filter((x) => x !== "name" && x !== "shop"), [], `${p} ${l} ${k}: only {name} and {shop}`);
+      assert.deepEqual([...v.matchAll(/\{(\w+)\}/gu)].map((m) => m[1]).filter((x) => x !== (k === "greetingNamed" ? "name" : "") && x !== "shop"), [], `${p} ${l} ${k}: only {shop}, and {name} in the named greeting`);
     }
     assert.ok(!words.morningOpening.startsWith("{"), `${p} ${l}: a template body may not start with a value`);
-    assert.ok(greeting(p, l, "Golu", "Glow Salon").includes("Golu"), `${p} ${l}`);
+    assert.ok(greeting(p, l, "Glow Salon", "Asha").includes("Asha") && greeting(p, l, "Glow Salon", "Asha").includes("Glow Salon"), `${p} ${l}: named`);
+    assert.ok(!greeting(p, l, "Glow Salon").includes("{") && greeting(p, l, "Glow Salon").includes("Glow Salon"), `${p} ${l}: no name`);
   }
 });
 

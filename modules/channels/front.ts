@@ -84,7 +84,7 @@ const PICTURE_PATH = new RegExp(`^/character/(${[...FACES, "now"].join("|")})\\.
  */
 export function withFace(backend: ChannelBackend, files: (() => CharacterFiles | undefined) | undefined): ChannelBackend {
   if (!files) return backend;
-  const add = <T extends { shop: { character?: { name: string; face?: Face; picture?: string } } }>(o: T): T => {
+  const add = <T extends { shop: { character?: { name?: string; face?: Face; picture?: string } } }>(o: T): T => {
     const c = o.shop.character;
     const svg = c?.face ? files()?.picture(c.face, "svg") : undefined;
     return svg ? { ...o, shop: { ...o.shop, character: { ...c!, picture: svgDataUri(svg.bytes) } } } : o;

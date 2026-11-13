@@ -1022,15 +1022,16 @@ DiceBear's own art in five moods and keeps the pictures with the shop; the shop'
 
 **The Character step** (`panel/character.ts`, `panel/views-character.ts`). It comes after "accounts" and before "checks": the accounts step can still change a new shop's
 id (another shop took the name), and the faces' seeds start with the id. Step 5 of 6 for every template (`template.json`). The panel runs no script, so every choice
-is a button in one form: a style (five buttons, each showing that style's face), a face from a row of eight rolled for this shop, a colour (the style's own eight
+is a button in one form: a style (five buttons by DiceBear's own names, Clay, Critters, Sprouts, Moods and Pixel Bot, each showing that style's face), a face from a row of eight rolled for this shop, a colour (the style's own eight
 DiceBear colours, plus Auto), Roll (eight new seeds, each `<shop id>-<six random hex digits>-<n>`), then the five moods of the picked face with their words, the name
 and the personality (each with a sample of its greeting). A press comes back to the step with the choice made and the name kept; Next checks the whole. Each
 picture-button is labelled in words ("Face 3 of 8", "Colour 2", the style's name) and the picked one says so with `aria-pressed` and a visible "Picked" (never colour
-alone); Enter in the name box is Next (a hidden first button). At 390 px the page has no sideways scroll (checked in headless Chromium). The pictures on the page are
+alone); each mood picture's alt text names the shop and the mood ("Hosahalli Beauty's assistant, all well"); the name is optional (owner, 14 Nov: empty by default, and
+the shop's name stands for it); Enter in the name box is Next (a hidden first button). At 390 px the page has no sideways scroll (checked in headless Chromium). The pictures on the page are
 the panel's own, `GET /character/preview/<style>/<colour|auto>/<seed>/<mood|face>.svg` (signed in; only the approved styles, palettes and moods and a plain seed; cached a
 week, since one address always draws the same picture), so the page stays small on a phone and a press does not send the pictures again.
 
-**What saving does.** The settings get `assistant.character` (name, style, seed, colour, personality), with any `assistant` block the shop already had kept as it was
+**What saving does.** The settings get `assistant.character` (style, seed, colour, personality, and a name only if one was typed), with any `assistant` block the shop already had kept as it was
 (its morning hour). **This turns the shop's assistant on**: the owner's chat, the morning line and the owner's app, as decisions 43 and 47 intend for every shop
 (the settings' `assistant` block was the switch, and the panel never wrote it before). A new shop cannot skip the step; an existing shop edited without finishing the
 step gets nothing new (`withCharacter`). Then every mood is drawn into `shops/<shop>/character/` (about half a second); if that fails, the deployer draws it on its
@@ -1042,8 +1043,8 @@ next pass. The shop page shows the saved moods as a row and offers the "All well
 `@resvg/resvg-wasm` 2.6.2 (MPL-2.0, unchanged; the licence text beside it, since the package ships none) and jSquash's libwebp encoder from `@jsquash/webp` 1.5.0
 (Apache-2.0; libwebp itself BSD-3-Clause, `COPYING-libwebp`), its plain build so every machine makes the same bytes. Nothing is fetched while drawing (a test makes
 `fetch` throw). Per mood:
-- `<mood>.svg`: DiceBear's output, with its `<metadata>` block taken out (a licence notice CC0 does not ask for, and the style's own name, which has a word the
-  product's text never uses); 2 to 20 KB;
+- `<mood>.svg`: DiceBear's output, with its `<metadata>` block taken out (a licence notice CC0 does not ask for, about 0.9 KB of every file, and the credit is in
+  `vendor/`); 2 to 20 KB;
 - `<mood>.png`: 640 px on DiceBear's own tile, the size WhatsApp's profile photo and the template's image header show best; 17 to 30 KB;
 - `<mood>.webp`: WhatsApp's sticker shape, 512 px with a 16 px clear margin and no tile, lossless; 1 to 7 KB (WhatsApp's limit for a still sticker is 100 KB, checked).
 

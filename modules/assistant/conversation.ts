@@ -446,7 +446,7 @@ export function createAssistant(deps: AssistantDeps) {
     const offered = intent.kind === "unknown" || context.kinds.includes(intent.kind);
     if (!offered) { await tell("not_offered", {}); return true; }
     switch (intent.kind) {
-      case "help": await tell("help", { name: shop.settings.character.name, shop: shop.name, kinds: context.kinds, personality: shop.settings.character.personality }); break;
+      case "help": await tell("help", { ...(shop.settings.character.name ? { name: shop.settings.character.name } : {}), shop: shop.name, kinds: context.kinds, personality: shop.settings.character.personality }); break;
       case "limit": await tell("limit_no", {}); break;
       case "day": {
         const date = dateOf(intent) ?? today();

@@ -6,7 +6,7 @@
 // The pages origin runs no script but Geometer's own: the script here carries the response's nonce (front.ts puts the same one in that response's content policy),
 // and a signed-in owner's posts carry the session's form token (the hidden field, or the x-owner-csrf header on the recording's POST).
 import type { Language } from "../../language/languages.ts";
-import { FACE_WORDS } from "../character.ts";
+import { ASSISTANT_OF, FACE_WORDS, pictureWords } from "../character.ts";
 import type { Face } from "../character.ts";
 import type { TalkLine } from "../state.ts";
 
@@ -39,13 +39,13 @@ ${a.listen === false ? "" : `<button type="button" id="talk-rec" hidden data-hol
 }
 
 /**
- * The character's line at the top of the app: its picture in the shop's mood now (item 11i, when the pictures are drawn; a dot in its colour until then), its name
- * and the mood in words (character.ts FACE_WORDS: a face never carries the mood alone). The picture's alt text says the same, for a screen reader.
+ * The character's line at the top of the app: its picture in the shop's mood now (item 11i, when the pictures are drawn; a dot in its colour until then), who it
+ * is ("Glow Salon's assistant", with the character's name only when the partner gave one) and the mood in words (character.ts: a face never carries the mood alone).
+ * The picture's alt text says the same, for a screen reader.
  */
-export function characterLine(a: { language: Language; name: string; colour: string; face: Face; picture?: string }): string {
-  const words = FACE_WORDS[a.language][a.face];
-  const pic = a.picture ? `<img src="${esc(a.picture)}" width="56" height="56" alt="${esc(`${a.name}: ${words}`)}">` : `<span class="dot" style="background:${esc(a.colour)}"></span>`;
-  return `<p class="who-am-i">${pic} <span><b>${esc(a.name)}</b> · ${esc(words)}</span></p>`;
+export function characterLine(a: { language: Language; shop: string; name?: string; colour: string; face: Face; picture?: string }): string {
+  const pic = a.picture ? `<img src="${esc(a.picture)}" width="56" height="56" alt="${esc(pictureWords(a.language, a.shop, a.face, a.name))}">` : `<span class="dot" style="background:${esc(a.colour)}"></span>`;
+  return `<p class="who-am-i">${pic} <span><b>${esc(ASSISTANT_OF[a.language](a.shop, a.name))}</b> · ${esc(FACE_WORDS[a.language][a.face])}</span></p>`;
 }
 
 /**

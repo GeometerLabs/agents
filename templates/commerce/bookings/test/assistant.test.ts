@@ -395,7 +395,7 @@ test("the morning line reads the same store: tomorrow's booking and the deposit 
   w.clock.set(zonedToMs({ year: 2026, month: 11, day: 4 }, { hour: 8, minute: 5 }, settings.timezone));
   const r = await job.run({ clock: w.clock, messaging: w.messaging, record: w.record, store: w.store, log: () => undefined, save: () => undefined });
   assert.equal(r.done, true);
-  assert.equal(w.lastTextTo(w.owner), "Good morning from Mithra, the assistant of Glow Salon. Today, Wed 4 Nov: bookings: 1, the first at 6:00 pm. Recorded yesterday: ₹200. Waiting for you: nothing. Reply here to see more.");
+  assert.equal(w.lastTextTo(w.owner), "Good morning from the assistant of Glow Salon. Today, Wed 4 Nov: bookings: 1, the first at 6:00 pm. Recorded yesterday: ₹200. Waiting for you: nothing. Reply here to see more.");
   w.clock.advance(HOUR);
   assert.equal((await job.run({ clock: w.clock, messaging: w.messaging, record: w.record, store: w.store, log: () => undefined, save: () => undefined })).done, false);
 });
