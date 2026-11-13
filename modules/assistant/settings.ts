@@ -2,7 +2,9 @@
 // check (templates/<...>/src/settings.ts) hands the block here, so the three templates read it the same way. Left out of a shop's settings: no assistant, and the
 // owner's fixed phrases work exactly as before (the agent answers anything else with its usual "I didn't understand").
 //
-//   "assistant": { "morning": { "at": "08:00" } | false, "character": { "name": "Mithra", "look": { ... } } }
+//   "assistant": { "morning": { "at": "08:00" } | false, "character": { "name": "Mithra", "style": "clay", "seed": "veena-salon-3f2a1c-4", "colour": "c4795c", "personality": "warm" } }
+//
+// Item 11i: the panel's Character step writes `character` (and with it the block), so a shop set up in the panel has its assistant on.
 import { readCharacter, defaultCharacter } from "./character.ts";
 import type { Character } from "./character.ts";
 

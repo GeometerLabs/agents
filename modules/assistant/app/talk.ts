@@ -6,7 +6,8 @@
 // The pages origin runs no script but Geometer's own: the script here carries the response's nonce (front.ts puts the same one in that response's content policy),
 // and a signed-in owner's posts carry the session's form token (the hidden field, or the x-owner-csrf header on the recording's POST).
 import type { Language } from "../../language/languages.ts";
-import type { Mood } from "../mood.ts";
+import { FACE_WORDS } from "../character.ts";
+import type { Face } from "../character.ts";
 import type { TalkLine } from "../state.ts";
 
 const WORDS: Record<Language, { title: string; placeholder: string; send: string; hold: string; release: string; sending: string; failed: string; offline: string; you: string }> = {
@@ -37,17 +38,14 @@ ${a.listen === false ? "" : `<button type="button" id="talk-rec" hidden data-hol
 <script${a.nonce ? ` nonce="${esc(a.nonce)}"` : ""}>${talkScript(a.base)}</script>`;
 }
 
-/** The mood in a few words, beside the character's name (the drawings come later). Machine-written in Hindi, Malayalam and Kannada, like the rest of the page. */
-const MOOD_WORDS: Record<Language, Record<Mood, string>> = {
-  en: { something_wrong: "Something needs a look", waiting_for_owner: "Waiting for you", closed: "Closed now", busy: "Busy", quiet: "All quiet" },
-  hi: { something_wrong: "कुछ देखना ज़रूरी है", waiting_for_owner: "आपका इंतज़ार है", closed: "अभी बंद", busy: "व्यस्त", quiet: "सब शांत" },
-  ml: { something_wrong: "ഒന്ന് നോക്കേണ്ടതുണ്ട്", waiting_for_owner: "നിങ്ങൾക്കായി കാത്തിരിക്കുന്നു", closed: "ഇപ്പോൾ അടച്ചിരിക്കുന്നു", busy: "തിരക്കിലാണ്", quiet: "എല്ലാം ശാന്തം" },
-  kn: { something_wrong: "ಏನೋ ನೋಡಬೇಕಿದೆ", waiting_for_owner: "ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿದೆ", closed: "ಈಗ ಮುಚ್ಚಿದೆ", busy: "ಕಾರ್ಯನಿರತ", quiet: "ಎಲ್ಲವೂ ಶಾಂತ" },
-};
-
-/** The character's line at the top of the app: a dot in its colour, its name and the shop's mood now (from the shop's real state, mood.ts). */
-export function characterLine(a: { language: Language; name: string; colour: string; mood: Mood }): string {
-  return `<p class="who-am-i"><span class="dot" style="background:${esc(a.colour)}"></span> <b>${esc(a.name)}</b> · ${esc(MOOD_WORDS[a.language][a.mood])}</p>`;
+/**
+ * The character's line at the top of the app: its picture in the shop's mood now (item 11i, when the pictures are drawn; a dot in its colour until then), its name
+ * and the mood in words (character.ts FACE_WORDS: a face never carries the mood alone). The picture's alt text says the same, for a screen reader.
+ */
+export function characterLine(a: { language: Language; name: string; colour: string; face: Face; picture?: string }): string {
+  const words = FACE_WORDS[a.language][a.face];
+  const pic = a.picture ? `<img src="${esc(a.picture)}" width="56" height="56" alt="${esc(`${a.name}: ${words}`)}">` : `<span class="dot" style="background:${esc(a.colour)}"></span>`;
+  return `<p class="who-am-i">${pic} <span><b>${esc(a.name)}</b> · ${esc(words)}</span></p>`;
 }
 
 /**

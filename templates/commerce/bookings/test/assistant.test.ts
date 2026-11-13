@@ -413,7 +413,7 @@ test("the assistant's part of the store survives a restart, and a shop without o
 });
 
 test("the settings: an \"assistant\" block is read; a voice for the character is refused (it answers in text)", () => {
-  assert.ok(validateSettings({ ...glow(), assistant: { morning: { at: "07:30" }, character: { name: "Mithra", look: { base: "tall", colour: "pink", accessory: "scissors" } } } }).ok);
+  assert.ok(validateSettings({ ...glow(), assistant: { morning: { at: "07:30" }, character: { name: "Mithra", style: "critters", seed: "glow-salon-3f2a1c-4", colour: "fda4af", personality: "cheerful" } } }).ok);
   const r = validateSettings({ ...glow(), assistant: { character: { name: "Mithra", voice: "warm" } } });
   assert.equal(r.ok, false);
   assert.ok(!r.ok && r.errors.some((e) => /answers in text/u.test(e)));

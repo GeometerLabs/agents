@@ -1,10 +1,15 @@
-// The shop's assistant's WhatsApp templates (item 11e): the three messages it may send outside a person's 24-hour window. Used by morning.ts (the morning line to the
+// The shop's assistant's WhatsApp templates (item 11e): the messages it may send outside a person's 24-hour window. Used by morning.ts (the morning line to the
 // owner) and conversation.ts (a closed or reopened day, to the customers booked that day); the template ids and bodies go to Meta with item 12's submission.
+// Item 11i: the morning line is one template per personality (personality.ts: only its opening and sign-off differ), and each has an image header that carries the
+// shop's mood picture (the character's PNG, served by the shop's own server), so the morning line shows the mood outside the 24-hour window too.
 //
 // The text sent is ALWAYS the template's body filled in (`render`), inside the window as well, so what the outgoing check reads is what Meta approved, word for word
 // (modules/language/meta-templates.ts insists on it). Each value goes through the Writer (words.ts), so it is checked against the record's values. The bodies start
 // and end with fixed words, as Meta's review wants. Hindi, Malayalam and Kannada are machine-written and on the review list before submission.
 import { createMetaCatalogue, fillBody, metaBody } from "../language/meta-templates.ts";
+import { LANGUAGES } from "../language/languages.ts";
+import { PERSONALITIES, SMALL_TALK } from "./personality.ts";
+import type { Personality } from "./personality.ts";
 import type { MetaTemplate } from "../language/meta-templates.ts";
 import type { CheckFacts } from "../language/check.ts";
 import type { Language } from "../language/languages.ts";
@@ -12,19 +17,28 @@ import type { TemplateMessage } from "../messaging/messaging.ts";
 import type { LocalDate } from "../core/time.ts";
 import { Writer } from "./words.ts";
 
-export type AssistantTemplateId = "morning" | "day_closed" | "day_open";
+export type AssistantTemplateId = "morning" | "morning_cheerful" | "morning_brief" | "day_closed" | "day_open";
 type Slot = "shop" | "name" | "date" | "time" | "today" | "money" | "waiting";
 
+/** The middle of the morning line, the same for every personality: the values, with fixed words around each. */
+const MORNING_MIDDLE: Record<Language, string> = {
+  en: "Today, {date}: {today}. Recorded yesterday: {money}. Waiting for you: {waiting}.",
+  hi: "आज, {date}: {today}। कल दर्ज: {money}। आपके लिए बाकी: {waiting}।",
+  ml: "ഇന്ന്, {date}: {today}. ഇന്നലെ രേഖപ്പെടുത്തിയത്: {money}. നിങ്ങൾക്കായി കാത്തിരിക്കുന്നവ: {waiting}.",
+  kn: "ಇಂದು, {date}: {today}. ನಿನ್ನೆ ದಾಖಲಾದದ್ದು: {money}. ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವವು: {waiting}.",
+};
+
+/** Each personality's morning template (personality.ts): its opening, the middle and its sign-off. The warm one keeps the name and words `owner_morning` always had. */
+export const MORNING_TEMPLATE_OF: Record<Personality, AssistantTemplateId> = { warm: "morning", cheerful: "morning_cheerful", brief: "morning_brief" };
+const morningTemplate = (p: Personality): MetaTemplate<AssistantTemplateId> => ({
+  name: p === "warm" ? "owner_morning" : `owner_morning_${p}`, usedFor: MORNING_TEMPLATE_OF[p], audience: "owner",
+  // item 11i: the morning line carries the shop's mood picture as an image header, so the owner sees it outside the 24-hour window too (character.ts)
+  header: "image",
+  bodies: Object.fromEntries(LANGUAGES.map((l) => [l, `${SMALL_TALK[p][l].morningOpening} ${MORNING_MIDDLE[l]} ${SMALL_TALK[p][l].morningSignOff}`])) as Record<Language, string>,
+});
+
 const TEMPLATES: readonly MetaTemplate<AssistantTemplateId>[] = [
-  {
-    name: "owner_morning", usedFor: "morning", audience: "owner",
-    bodies: {
-      en: "Good morning from {name}, the assistant of {shop}. Today, {date}: {today}. Recorded yesterday: {money}. Waiting for you: {waiting}. Reply here to see more.",
-      hi: "सुप्रभात, मैं {name}, {shop} का असिस्टेंट। आज, {date}: {today}। कल दर्ज: {money}। आपके लिए बाकी: {waiting}। और देखने के लिए यहाँ जवाब दें।",
-      ml: "സുപ്രഭാതം, ഞാൻ {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. ഇന്ന്, {date}: {today}. ഇന്നലെ രേഖപ്പെടുത്തിയത്: {money}. നിങ്ങൾക്കായി കാത്തിരിക്കുന്നവ: {waiting}. കൂടുതൽ കാണാൻ ഇവിടെ മറുപടി നൽകുക.",
-      kn: "ಶುಭೋದಯ, ನಾನು {name}, {shop} ನ ಸಹಾಯಕ. ಇಂದು, {date}: {today}. ನಿನ್ನೆ ದಾಖಲಾದದ್ದು: {money}. ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವವು: {waiting}. ಹೆಚ್ಚು ನೋಡಲು ಇಲ್ಲಿ ಉತ್ತರಿಸಿ.",
-    },
-  },
+  ...PERSONALITIES.map(morningTemplate),
   {
     name: "booking_day_closed", usedFor: "day_closed", audience: "customer",
     bodies: {
@@ -64,6 +78,9 @@ export function render(id: AssistantTemplateId, f: TemplateFacts): string {
   const t = TEMPLATES.find((x) => x.usedFor === id)!;
   return fillBody(metaBody(t.bodies[f.language]), assistantCatalogue.parametersFor(t, f.language, f));
 }
+
+/** The name a template is submitted and sent under (owner_morning, owner_morning_cheerful ...). */
+export const templateNameOf = (id: AssistantTemplateId): string => TEMPLATES.find((t) => t.usedFor === id)!.name;
 
 /** The template message for the same text (outside the window). Its text must equal `render`'s, or it goes under a name no provider knows and is refused. */
 export const templateMessageFor = (id: AssistantTemplateId, f: TemplateFacts, text: string): TemplateMessage =>
