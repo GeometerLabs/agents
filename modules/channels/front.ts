@@ -244,7 +244,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
 
     // ---- item 11i: the character's pictures (every template's shop has them) ----
     const picture = PICTURE_PATH.exec(rest);
-    if (picture) return pictureRoute(req, res, found, shop, picture[1] as Face | "now", picture[2] as PictureFormat, method, address);
+    if (picture) return pictureRoute(req, res, found, picture[1] as Face | "now", picture[2] as PictureFormat, method, address);
 
     // item 11h: an Orders shop's and a Fees centre's customer side are their own; the owner's page and the QR code below are every shop's
     const ownerPath = /^\/o\/[^/]+(\/.*)?$/u.test(rest) || rest === "/owner" || rest.startsWith("/owner/");
@@ -370,12 +370,12 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
    * mood the public sees at this minute, asked of the runtime, and cached a minute. Images only, with their own strict policy (an SVG opened on its own runs no
    * script and loads nothing). Readable from any site (Streetlist shows the faces), never framed.
    */
-  async function pictureRoute(req: IncomingMessage, res: ServerResponse, found: FrontShop, shop: FrontShop, face: Face | "now", format: PictureFormat, method: string, address: string): Promise<void> {
+  async function pictureRoute(req: IncomingMessage, res: ServerResponse, found: FrontShop, face: Face | "now", format: PictureFormat, method: string, address: string): Promise<void> {
     if (method !== "GET" && method !== "HEAD") { res.writeHead(405, { allow: "GET, HEAD", "cache-control": "no-store" }); res.end(); return; }
     if (!limiter.take("read", address)) { res.writeHead(429, { "retry-after": "60", "cache-control": "no-store" }); res.end(); return; }
     const files = found.character?.();
     let mood: Face | undefined = face === "now" ? undefined : face;
-    if (face === "now" && files) mood = (await shop.backend.offer({})).shop.character?.face;
+    if (face === "now" && files) mood = (await found.backend.offer({})).shop.character?.face; // the runtime's own answer: no picture is needed to pick one
     const pic = files && mood ? files.picture(mood, format) : undefined;
     if (!pic) { res.writeHead(404, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" }); res.end(method === "HEAD" ? undefined : "There is no picture here."); return; }
     const etag = `"${pic.sha256.slice(0, 32)}"`;
