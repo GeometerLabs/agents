@@ -67,7 +67,15 @@ export function connectionOf(dir: string, server: ServerConfig, folder: AgentFol
 }
 
 /** `agent add`: make the agent's folder, a credential for each Guard and the file that hands them to the agent (agent/credentials.ts). Starts nothing. */
+/**
+ * Plan decision 55 (owner, 14 Nov 2026): no custom agents run on Geometer's servers. Geometer's partner server is the one whose panel runs in hosted mode; there,
+ * partners use the templates and tune them, and an agent someone wrote runs on its builder's own server. Refused at `agent add`, `check` and `deploy`.
+ */
+export const HOSTED_AGENT_REFUSAL = "This is Geometer's partner server, and no custom agents run on Geometer's servers: partners use the templates and tune them. An agent you wrote runs on your own server (install the bundle there, or pair it from your account on geometer.dev).";
+const hostedProblem = (server: ServerConfig): Problem[] => (server.panel.mode === "hosted" ? [{ rule: "agent-on-hosted", message: HOSTED_AGENT_REFUSAL }] : []);
+
 export function addAgent(dir: string, name: string, flags: AgentFlags, readFile: (path: string) => string, now: Date): AgentFolder {
+  if (hostedProblem(loadServer(dir)).length > 0) throw new Error(HOSTED_AGENT_REFUSAL);
   const problem = shopNameProblem(name);
   if (problem) throw new Error(problem.replace(/shop name/gu, "agent name"));
   const paths = serverPaths(dir);
@@ -191,8 +199,9 @@ function missingSecrets(dir: string, name: string, f: AgentFolder): Problem[] {
 export function prepareAgent(ctx: Context, server: ServerConfig, state: State, name: string): { prepared?: PreparedAgent; problems: Problem[]; notes: string[] } {
   const folder = readAgent(ctx.dir, name);
   const taken = takeSecrets(ctx.dir, name);
-  const problems: Problem[] = [...taken.problems];
+  const problems: Problem[] = [...taken.problems, ...hostedProblem(server)];
   const notes = taken.unknown.map((u) => `${name}: secrets-inbox/${name}/${u} is not a name the bundle knows, so it was left where it is.`);
+  if (problems.some((p) => p.rule === "agent-on-hosted")) return { problems, notes };
   const first = planAgent(server, folder);
   problems.push(...first.problems);
   if (folder.agent && folder.settings) problems.push(...missingSecrets(ctx.dir, name, folder));
