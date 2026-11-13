@@ -29,7 +29,7 @@ function fromError(e: unknown): StandinReply {
  * The templates a template pathway has written for Meta's approval (modules/language/meta-templates.ts, createMetaCatalogue), and any others it sends in its
  * own words (Bookings' monthly report has its own list). Only the names, the languages and the bodies are read here.
  */
-export interface TemplateCatalogue { templates: readonly { name: string; bodies: Record<Language, string> }[] }
+export interface TemplateCatalogue { templates: readonly { name: string; bodies: Record<Language, string>; /** Item 11i: the template was created with an image header. */ header?: "image" }[] }
 
 /** Tell the fake which templates the provider has approved, in every language. */
 export function approveTemplates(messaging: FakeMessaging, catalogue: TemplateCatalogue): void {
@@ -102,6 +102,10 @@ export function whatsappStandin(messaging: FakeMessaging, catalogue: TemplateCat
         const img = body.image;
         if (typeof img?.link !== "string" || (img.caption !== undefined && typeof img.caption !== "string")) return metaError(400, 131009, "Parameter value is not valid: an image needs a link.");
         id = (await messaging.sendImage(body.to, { link: img.link, ...(img.caption !== undefined ? { caption: img.caption } : {}) })).id;
+      } else if (body.type === "sticker") {
+        // item 11i: a sticker by its link (Meta's sticker-messages page); the fake holds the window and the .webp rule
+        if (typeof body.sticker?.link !== "string") return metaError(400, 131009, "Parameter value is not valid: a sticker needs a link.");
+        id = (await messaging.sendSticker(body.to, { link: body.sticker.link })).id;
       } else if (body.type === "template" && typeof body.template?.name === "string") {
         const language = (Object.keys(META_LANGUAGE) as Language[]).find((l) => META_LANGUAGE[l] === body.template.language?.code);
         const template = catalogue.templates.find((t) => t.name === body.template.name);
@@ -109,7 +113,12 @@ export function whatsappStandin(messaging: FakeMessaging, catalogue: TemplateCat
         const parameters: string[] = (body.template.components ?? []).filter((c: any) => c.type === "body").flatMap((c: any) => (c.parameters ?? []).map((p: any) => String(p.text)));
         if (parameters.length !== valuesIn(template.bodies[language])) return metaError(400, 132000, "Number of parameters does not match the expected number of params.");
         if (parameters.some((p) => /[\n\t]| {4}/u.test(p))) return metaError(400, 132018, "Template validation error: parameters may not hold new lines, tabs or four spaces in a row.");
-        id = (await messaging.sendTemplate(body.to, { name: template.name, language, text: fillBody(metaBody(template.bodies[language]), parameters) })).id;
+        // item 11i: a template made with an image header must be sent with one picture in it, and one made without cannot take one (Meta's 132012: the values are not
+        // in the format the template was made with)
+        const headers = (body.template.components ?? []).filter((c: any) => c.type === "header").flatMap((c: any) => c.parameters ?? []);
+        const headerImage = headers.length === 1 && headers[0]?.type === "image" && typeof headers[0].image?.link === "string" ? String(headers[0].image.link) : undefined;
+        if ((template.header === "image") !== (headerImage !== undefined) || headers.length > 1) return metaError(400, 132012, "Variable parameter values formatted incorrectly.");
+        id = (await messaging.sendTemplate(body.to, { name: template.name, language, text: fillBody(metaBody(template.bodies[language]), parameters), ...(headerImage ? { headerImage } : {}) })).id;
       } else {
         return metaError(400, 131009, "Parameter value is not valid.");
       }

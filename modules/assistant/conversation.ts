@@ -31,7 +31,8 @@ import type { CardReply } from "./cards.ts";
 import type { OwnerContext, OwnerIntent, OwnerKind } from "./intents.ts";
 import { moodOf, outsideHours, todayIn } from "./mood.ts";
 import type { Mood } from "./mood.ts";
-import { stickerFor } from "./character.ts";
+import { FACE_OF_MOOD, publicFace } from "./character.ts";
+import type { CharacterPictures, Face } from "./character.ts";
 import type { AssistantSettings } from "./settings.ts";
 import { TALK_LINES, UNDO_FOR_MS, assistantOf, compactAssistant, nextId } from "./state.ts";
 import type { AssistantState, CardRecord } from "./state.ts";
@@ -62,6 +63,11 @@ export interface AssistantShop {
   timezone: string;
   owner: { whatsapp: string; language: Language };
   settings: AssistantSettings;
+  /**
+   * Item 11i: where the character's mood pictures are served (the deployer writes their version into pages.json), read on every use. Left out, or undefined when the
+   * pictures are not drawn yet: the morning line goes without its picture (and an image-header template is then refused by the provider, said in the record).
+   */
+  pictures?: () => CharacterPictures | undefined;
 }
 
 /** What the owner's words came to: the intent, a note for the record (a fallback), and what reading cost (the understanding refs). */
@@ -440,7 +446,7 @@ export function createAssistant(deps: AssistantDeps) {
     const offered = intent.kind === "unknown" || context.kinds.includes(intent.kind);
     if (!offered) { await tell("not_offered", {}); return true; }
     switch (intent.kind) {
-      case "help": await tell("help", { name: shop.settings.character.name, shop: shop.name, kinds: context.kinds }); break;
+      case "help": await tell("help", { name: shop.settings.character.name, shop: shop.name, kinds: context.kinds, personality: shop.settings.character.personality }); break;
       case "limit": await tell("limit_no", {}); break;
       case "day": {
         const date = dateOf(intent) ?? today();
@@ -541,8 +547,8 @@ export function createAssistant(deps: AssistantDeps) {
     compactAssistant(s, now, isoDate(today()));
   }
 
-  /** The mood now, from the skills' reads and the clock (mood.ts), and the sticker that shows it. */
-  const mood = () => shopMood(skills, state(), clock.now(), tz, shop.settings);
+  /** The mood now, from the skills' reads and the clock (mood.ts), and the pictures that show it (to the owner, and to the public). */
+  const mood = () => shopMood(skills, state(), clock.now(), tz);
 
   return { onOwnerMessage, onPageCard, onPageMessage, onPageVoice, hearOwner, onTick, mood, kinds: context.kinds };
 }
@@ -552,21 +558,25 @@ export type Assistant = ReturnType<typeof createAssistant>;
 export const speechRead = (h: Extract<Heard, { ok: true }>): Record<string, string> =>
   ({ step: "rules", provider: h.provider, model: h.model, inputTokens: "0", outputTokens: "0", costMicroInr: String(h.costMicroInr) });
 
-/** The shop's mood from its skills' reads, the assistant's cards and closed days, and the clock; and the sticker for it. Pure: the owner's app and the morning line call it. */
-export function shopMood(skills: readonly OwnerSkill[], state: AssistantState | undefined, nowMs: number, timeZone: string, settings: AssistantSettings): { mood: Mood; sticker: string } {
+/**
+ * The shop's mood from its skills' reads, the assistant's cards and closed days, and the clock; the picture that shows it to the owner (`face`), and the one the
+ * public sees (`publicFace`: all well, busy or closed only, character.ts). Pure: the owner's app, the morning line and the shop's page call it.
+ */
+export function shopMood(skills: readonly OwnerSkill[], state: AssistantState | undefined, nowMs: number, timeZone: string): { mood: Mood; face: Face; publicFace: Face } {
   const d = todayIn(nowMs, timeZone);
   const bookings = skills.find((s) => s.day);
   const hoursSkill = skills.find((s) => s.hours);
   const hours = hoursSkill ? hoursSkill.hours!(d) : null;
-  const m = moodOf({
+  const facts = {
     problems: skills.reduce((n, s) => n + s.problems(), 0),
     waiting: skills.reduce((n, s) => n + s.waiting().length, 0) + (state ? openCards(state, nowMs).length : 0),
     closedToday: isClosedDay(state, d) || (hoursSkill !== undefined && hours === null),
     outsideHours: hoursSkill !== undefined && outsideHours(hours, d, nowMs, timeZone),
     todayStartsMs: bookings ? bookings.day!(d).map((r) => r.startMs) : [],
     nowMs,
-  });
-  return { mood: m, sticker: stickerFor(settings.character, m) };
+  };
+  const m = moodOf(facts);
+  return { mood: m, face: FACE_OF_MOOD[m], publicFace: publicFace(m, moodOf({ ...facts, problems: 0, waiting: 0 })) };
 }
 
 /** Money recorded on a date, read from the record: every confirmed payment line, the owner's marks included (they are the owner's statement, B74). */

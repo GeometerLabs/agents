@@ -12,6 +12,8 @@ import { formatDate, formatInr, formatSlot, formatTime } from "../language/forma
 import type { CheckFacts } from "../language/check.ts";
 import type { Language } from "../language/languages.ts";
 import type { DayRow, MoveRefusal, OpenRow, OweRow, PrepareRefusal } from "./skill.ts";
+import { greeting } from "./personality.ts";
+import type { Personality } from "./personality.ts";
 
 /** Formats values in one language and remembers each one for the outgoing check. */
 export class Writer {
@@ -78,7 +80,8 @@ export interface MessageData {
   card_expired: Record<string, never>;
   card_unknown: Record<string, never>;
   limit_no: Record<string, never>;
-  help: { name: string; shop: string; kinds: readonly string[] };
+  /** The greeting is the personality's (personality.ts); left out, the warm one (today's words). */
+  help: { name: string; shop: string; kinds: readonly string[]; personality?: Personality };
   not_understood: { kinds: readonly string[] };
   not_offered: Record<string, never>;
   voice_unheard: Record<string, never>;
@@ -310,7 +313,7 @@ const W: Record<Language, Words> = {
     card_expired: () => "That card ran out. Ask me again if you still want it.",
     card_unknown: () => "I have no card with that code.",
     limit_no: () => "Limits (refunds, deposits, caps) are changed by your partner from their panel. I can't change them from here in this version.",
-    help: (d, w) => `I'm ${w.lit(d.name)}, ${w.lit(d.shop)}'s assistant. You can say, for example:\n${examples(w, d.kinds)}`,
+    help: (d, w) => `${greeting(d.personality ?? "warm", "en", w.lit(d.name), w.lit(d.shop))} You can say, for example:\n${examples(w, d.kinds)}`,
     not_understood: (d, w) => `Sorry, I didn't get that. You can say, for example:\n${examples(w, d.kinds)}`,
     not_offered: () => "This shop's assistant doesn't handle that.",
     voice_unheard: () => "I couldn't make out that voice note. Please type it.",
@@ -346,7 +349,7 @@ const W: Record<Language, Words> = {
     card_expired: () => "उस कार्ड का समय ख़त्म हो गया। अगर अब भी चाहिए तो फिर कहें।",
     card_unknown: () => "उस कोड का कोई कार्ड मेरे पास नहीं है।",
     limit_no: () => "सीमाएँ (रिफंड, जमा राशि, कैप) आपका पार्टनर अपने पैनल से बदलता है। इस वर्शन में मैं इन्हें यहाँ से नहीं बदल सकता।",
-    help: (d, w) => `मैं ${w.lit(d.name)} हूँ, ${w.lit(d.shop)} का असिस्टेंट। आप ऐसे कह सकते हैं:\n${examples(w, d.kinds)}`,
+    help: (d, w) => `${greeting(d.personality ?? "warm", "hi", w.lit(d.name), w.lit(d.shop))} आप ऐसे कह सकते हैं:\n${examples(w, d.kinds)}`,
     not_understood: (d, w) => `माफ़ कीजिए, समझ नहीं आया। आप ऐसे कह सकते हैं:\n${examples(w, d.kinds)}`,
     not_offered: () => "इस दुकान का असिस्टेंट यह काम नहीं करता।",
     voice_unheard: () => "वह वॉइस नोट समझ नहीं आया। कृपया लिखकर भेजें।",
@@ -382,7 +385,7 @@ const W: Record<Language, Words> = {
     card_expired: () => "ആ കാർഡിന്റെ സമയം കഴിഞ്ഞു. ഇപ്പോഴും വേണമെങ്കിൽ വീണ്ടും ചോദിക്കുക.",
     card_unknown: () => "ആ കോഡുള്ള കാർഡ് എന്റെ പക്കലില്ല.",
     limit_no: () => "പരിധികൾ (റീഫണ്ട്, ഡെപ്പോസിറ്റ്, ക്യാപ്) നിങ്ങളുടെ പാർട്ണർ അവരുടെ പാനലിൽ നിന്നാണ് മാറ്റുന്നത്. ഈ പതിപ്പിൽ എനിക്ക് ഇവിടെ നിന്ന് അവ മാറ്റാനാകില്ല.",
-    help: (d, w) => `ഞാൻ ${w.lit(d.name)}, ${w.lit(d.shop)}-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n${examples(w, d.kinds)}`,
+    help: (d, w) => `${greeting(d.personality ?? "warm", "ml", w.lit(d.name), w.lit(d.shop))} ഇങ്ങനെ പറയാം:\n${examples(w, d.kinds)}`,
     not_understood: (d, w) => `ക്ഷമിക്കണം, മനസ്സിലായില്ല. ഇങ്ങനെ പറയാം:\n${examples(w, d.kinds)}`,
     not_offered: () => "ഈ കടയുടെ അസിസ്റ്റന്റ് അത് ചെയ്യുന്നില്ല.",
     voice_unheard: () => "ആ വോയ്സ് നോട്ട് മനസ്സിലായില്ല. ദയവായി ടൈപ്പ് ചെയ്യുക.",
@@ -418,7 +421,7 @@ const W: Record<Language, Words> = {
     card_expired: () => "ಆ ಕಾರ್ಡ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಇನ್ನೂ ಬೇಕಾದರೆ ಮತ್ತೆ ಕೇಳಿ.",
     card_unknown: () => "ಆ ಕೋಡ್‌ನ ಕಾರ್ಡ್ ನನ್ನ ಬಳಿ ಇಲ್ಲ.",
     limit_no: () => "ಮಿತಿಗಳನ್ನು (ರೀಫಂಡ್, ಠೇವಣಿ, ಕ್ಯಾಪ್) ನಿಮ್ಮ ಪಾರ್ಟ್‌ನರ್ ಅವರ ಪ್ಯಾನೆಲ್‌ನಿಂದ ಬದಲಾಯಿಸುತ್ತಾರೆ. ಈ ಆವೃತ್ತಿಯಲ್ಲಿ ನಾನು ಇಲ್ಲಿಂದ ಅವುಗಳನ್ನು ಬದಲಾಯಿಸಲಾಗದು.",
-    help: (d, w) => `ನಾನು ${w.lit(d.name)}, ${w.lit(d.shop)} ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n${examples(w, d.kinds)}`,
+    help: (d, w) => `${greeting(d.personality ?? "warm", "kn", w.lit(d.name), w.lit(d.shop))} ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n${examples(w, d.kinds)}`,
     not_understood: (d, w) => `ಕ್ಷಮಿಸಿ, ಅರ್ಥವಾಗಲಿಲ್ಲ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n${examples(w, d.kinds)}`,
     not_offered: () => "ಈ ಅಂಗಡಿಯ ಸಹಾಯಕ ಅದನ್ನು ಮಾಡುವುದಿಲ್ಲ.",
     voice_unheard: () => "ಆ ವಾಯ್ಸ್ ನೋಟ್ ಅರ್ಥವಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಟೈಪ್ ಮಾಡಿ.",

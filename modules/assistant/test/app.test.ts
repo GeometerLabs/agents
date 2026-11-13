@@ -14,9 +14,11 @@ import { zonedToMs } from "../../core/time.ts";
 
 const BASE = "https://shop.example/s/glow/o/abcdefghijklmnopqrstuvwxyzABCDEFGHIJ0123456";
 
-test("the manifest opens this shop's owner page and nothing else, in the owner's language and the character's colour", () => {
+test("the manifest opens this shop's owner page and nothing else, in the owner's language and the character's colour; its icon is the character when the shop has one", () => {
+  const withFace = ownerAppManifest({ base: BASE, shop: "Glow Salon", language: "en", colour: "#be185d", iconSvg: '<svg xmlns="http://www.w3.org/2000/svg"><circle r="4"/></svg>' });
+  assert.equal(Buffer.from(String((withFace.icons as { src: string }[])[0].src).split(",")[1], "base64").toString("utf8"), '<svg xmlns="http://www.w3.org/2000/svg"><circle r="4"/></svg>');
   for (const language of LANGUAGES) {
-    const m = ownerAppManifest({ base: BASE, shop: "Glow Salon", language, colour: "pink" });
+    const m = ownerAppManifest({ base: BASE, shop: "Glow Salon", language, colour: "#be185d" });
     assert.equal(m.start_url, `${BASE}/`);
     assert.equal(m.scope, `${BASE}/`);
     assert.equal(m.lang, language);
@@ -68,7 +70,7 @@ test("the view: the mood, today's list and the open cards by id and digest, neve
   const { code } = makeCard(state, { kind: "refund", skill: "bookings", case: "b-1", fields: { who: "Priya", amountPaise: 20_000, paymentId: "pay_1" } }, {}, now);
   const view = ownerAppView({ skills: [skill], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } });
   assert.equal(view.mood, "waiting_for_owner");
-  assert.equal(view.sticker, "round-teal-waiting_for_owner");
+  assert.equal(view.face, "needs", "the owner's app shows the owner's mood: needs you");
   assert.equal(view.today.length, 1);
   assert.deepEqual(view.cards.map((c) => [c.case, c.amountPaise, c.who]), [["b-1", 20_000, "Priya"]]);
   assert.ok(!JSON.stringify(view).includes(code));

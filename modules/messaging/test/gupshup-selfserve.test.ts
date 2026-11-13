@@ -238,3 +238,22 @@ test("statuses: delivered, read and failed are kept (with both ids), enqueued an
   const asyncLine = { seq: 9, action: "send_message", refs: { messageId: "72f61f22-5aa4-4615-a970-943edf6da01c" } } as any;
   assert.equal(findSentEntry([asyncLine], closed.ids)?.entry.seq, 9);
 });
+
+test("item 11i: a sticker is one form post to the send route, inside the window only; a template with an image header carries it in `message`", async () => {
+  const g = await guard();
+  try {
+    let last: number | undefined;
+    const m = createGupshupSelfServeMessaging({ baseUrl: g.url, ...APP, agentToken: AGENT_TOKEN }, { clock: fakeClock(10), window: { lastInboundAt: () => last } });
+    const link = "https://pages.example/glow-salon/character/well.webp?v=0123456789abcdef";
+    await assert.rejects(m.sendSticker!(CUSTOMER, { link }), WindowClosedError);
+    assert.equal(g.seen.length, 0, "outside the window nothing is asked");
+    last = 0;
+    const s = await m.sendSticker!(CUSTOMER, { link });
+    assert.deepEqual([g.seen[0].path, JSON.parse(g.seen[0].form.message)], [GUPSHUP_SELFSERVE_ROUTES.send, { type: "sticker", url: link }]);
+    assert.equal((await m.getMessage(s.id))?.kind, "sticker");
+    const png = link.replace("well.webp", "well.png");
+    await m.sendTemplate(CUSTOMER, { name: "booking_confirmed", language: "en", text: "…", parameters: ["a", "b"], headerImage: png });
+    const t = g.seen.filter((x) => x.path === GUPSHUP_SELFSERVE_ROUTES.template).at(-1)!;
+    assert.deepEqual(JSON.parse(t.form.message), { type: "image", image: { link: png } });
+  } finally { await g.close(); }
+});

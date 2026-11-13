@@ -1,7 +1,7 @@
 // What the owner's app shows (item 11e), read from the step's store like every other read: the character and its mood, today's list, what needs the owner (each skill's
 // waiting items and the assistant's open cards, by id and digest so a press can be checked against what waits now), and the last lines of talk. Pure. Used by the
 // runtime's owner read (templates/commerce/bookings/server/runtime.ts), which adds it to item 11d's owner view as `app`.
-import type { Character } from "../character.ts";
+import type { Character, Face } from "../character.ts";
 import { isClosedDay, shopMood } from "../conversation.ts";
 import { cardHasNo, openCards } from "../cards.ts";
 import type { Mood } from "../mood.ts";
@@ -13,7 +13,8 @@ import type { AssistantState, TalkLine } from "../state.ts";
 export interface OwnerAppView {
   character: Character;
   mood: Mood;
-  sticker: string;
+  /** Item 11i: the picture of the mood (character.ts FACES), all five, since this is the owner's view. */
+  face: Face;
   closedToday: boolean;
   today: DayRow[];
   /** Each skill's waiting items: on the page each is answered as item 11d's page answers it (its own digest, read by the skill). */
@@ -25,9 +26,9 @@ export interface OwnerAppView {
 
 export function ownerAppView(a: { skills: readonly OwnerSkill[]; state: AssistantState | undefined; nowMs: number; timeZone: string; settings: AssistantSettings }): OwnerAppView {
   const d = todayIn(a.nowMs, a.timeZone);
-  const { mood, sticker } = shopMood(a.skills, a.state, a.nowMs, a.timeZone, a.settings);
+  const { mood, face } = shopMood(a.skills, a.state, a.nowMs, a.timeZone);
   return {
-    character: a.settings.character, mood, sticker,
+    character: a.settings.character, mood, face,
     closedToday: isClosedDay(a.state, d),
     today: a.skills.flatMap((s) => s.day?.(d) ?? []).sort((x, y) => x.startMs - y.startMs),
     waiting: a.skills.flatMap((s) => s.waiting().map((w) => ({ ...w, skill: s.name }))),
@@ -38,4 +39,13 @@ export function ownerAppView(a: { skills: readonly OwnerSkill[]; state: Assistan
     })),
     talk: a.state?.talk ?? [],
   };
+}
+
+/**
+ * Item 11i: the shop's character as its public pages show it (the offer's `shop.character`): the name and the mood the PUBLIC sees now (all well, busy or closed;
+ * character.ts publicFace), from the same reads as the owner's app. Undefined for a shop without the assistant. The front adds the picture itself.
+ */
+export function publicCharacter(a: { skills: readonly OwnerSkill[]; state: AssistantState | undefined; nowMs: number; timeZone: string; settings: AssistantSettings | undefined }): { name: string; face: Face } | undefined {
+  if (!a.settings) return undefined;
+  return { name: a.settings.character.name, face: shopMood(a.skills, a.state, a.nowMs, a.timeZone).publicFace };
 }
