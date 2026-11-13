@@ -190,3 +190,15 @@ test("changing a Fees centre's settings is the same steps from what it has, and 
     assert.equal(readFileSync(join(b.dir, "shops", shop, "pathway.lock"), "utf8").trim(), "fees@0.1.0");
   } finally { await b.close(); }
 });
+
+// Item 11h: a centre with no WhatsApp number goes through the same six steps on UPI; its runtime.json names no messaging (so no WhatsApp Guard is placed).
+// Parents then get their private page link from the owner's page by hand: Fees has no push for parents yet (modules/Deferred.md).
+test("item 11h: a Fees centre started without WhatsApp: its runtime.json names no messaging, and nothing about WhatsApp is asked", async () => {
+  const b = await boot({ publicUrl: "https://shops.example.test" });
+  try {
+    const divya = await b.account("divya", "partner");
+    await setUpFees(divya, b, [FEES1, FEES2, STEP3, { waNone: "1", payMod: "upi", upiId: "sunrise@okicici", upiPayee: "Sunrise Tuition" }]);
+    const runtime = JSON.parse(readFileSync(join(b.dir, "shops", shopIdOf(b), "runtime.json"), "utf8"));
+    assert.equal(runtime.services.messaging, undefined);
+  } finally { await b.close(); }
+});
