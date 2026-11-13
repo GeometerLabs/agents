@@ -1,6 +1,6 @@
 // Plan item 11i: the owner's talk box on Android records WebM Opus (Chrome's MediaRecorder cannot record Ogg), so the voice service reads a WebM recording's
 // length from its bytes, as it reads a WhatsApp voice note's (ogg.ts): for the 30-second limit and the cost. Checked on a real recording Chromium made with
-// MediaRecorder (fixtures/chromium-recording.webm, a 3-second tone from the browser's test microphone), on files laid out the same way (standin.ts), and on
+// MediaRecorder (fixtures/chromium-recording.webm, 3 seconds from the browser's test microphone), on files laid out the same way (standin.ts), and on
 // files that are not WebM Opus at all.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -12,9 +12,11 @@ import { fakeVoiceNote, fakeWebmVoiceNote, scriptedSpeech, scriptedWire } from "
 
 const CHROMIUM = new Uint8Array(readFileSync(new URL("./fixtures/chromium-recording.webm", import.meta.url)));
 
-test("a real Chromium recording (MediaRecorder, audio/webm;codecs=opus: unknown sizes, no duration) is about as long as it was recorded", () => {
+test("a real Chromium recording (MediaRecorder, audio/webm;codecs=opus: unknown sizes, no duration) is as long as its packets say", () => {
+  // Recorded for 3 seconds from Chromium's test microphone; the recorder started a little late and sent 60 ms packets with gaps for the silence. ffprobe lists
+  // the last packet at 2.43 s, lasting 60 ms: 2.49 s, which is what the reader must say.
   const seconds = webmOpusSeconds(CHROMIUM);
-  assert.ok(seconds !== null && seconds > 2.5 && seconds < 3.6, `read ${seconds} s of a 3-second recording`);
+  assert.ok(seconds !== null && Math.abs(seconds - 2.49) < 0.005, `read ${seconds} s; its packets end at 2.49 s`);
   assert.equal(oggOpusSeconds(CHROMIUM), null, "it is not Ogg");
 });
 
