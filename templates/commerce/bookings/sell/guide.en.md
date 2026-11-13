@@ -1,6 +1,6 @@
 # Pitch and sell the Bookings template
 
-For local partners (18 and over) and builders. Written 3 November 2026, in the pilot phase. The shop owner never reads this guide: they get the one-page sheet (`one-pager.en.html`) from you. The same guide exists in Hindi, Malayalam and Kannada. Use the language the owner speaks. Reworked on 14 November 2026 so that looking after the service is the centre of your role.
+For local partners (18 and over) and builders. Written 3 November 2026, in the pilot phase. The shop owner never reads this guide: they get the one-page sheet (`one-pager.en.html`) from you. The same guide exists in Hindi, Malayalam and Kannada. Use the language the owner speaks. Reworked on 14 November 2026 so that looking after the service is the centre of your role, and so that you can do all of it from a phone.
 
 **Your part, in one line.** You are the person who looks after this service with its owner: you know the shop, you tune its rules, you fix things when they go wrong, you bring customers when the street asks, and you are the person the owner calls. Setup is only the first step, never the pitch. What lasts is your care and your judgment, not access to the tool.
 
@@ -11,6 +11,8 @@ practise with a friend → a friendly shop → a stranger's shop → quote → f
 **What the owner does today.** Most owners already manage bookings somehow: they answer on their own phone late at night, keep a notebook, or have a relative or helper replying on WhatsApp. It is free and familiar, and it works on most days. Where money slips away, in the owner's own words: "I lost that booking overnight", "I forgot to ask for the advance", "I gave a discount because they pushed", "two people turned up for the same slot". None of this is the owner's fault; it is a habit, and it is what you have to beat. What you do instead: you set up the rules once, then look after them with the owner, so the late-night reply, the advance and one person for one slot do not depend on anyone being awake.
 
 **Who to approach first.** Salons and beauty services that take advances. Other local services that book by the hour come after.
+
+**All you need is a phone.** A budget Android with WhatsApp is enough. The demo opens as a web page on any phone. The one-page sheet and the ask card go to the owner as WhatsApp messages. The letter of intent (section 6) is a message too. Paper is an option, never a need, except for the shop terms (section 8).
 
 ## 1. Is this shop a fit?
 
@@ -34,14 +36,39 @@ Three yes: go. Two yes: go, but carefully. One or none: skip it. A polite skip i
 ## 2. Before you go
 
 1. Practise with a friend who plays the owner. Do sections 3 and 5 out loud, three times.
-2. Run the demo yourself, twice, start to finish (section 4).
+2. Run the demo yourself, on your phone, twice, start to finish (section 4).
 3. Visit a friendly shop first. Ask your buddy, or Geometer's team, to come on the first visit.
 4. Then visit a shop you don't know. A "no" is normal. Write down what they said.
 5. Know your price before you walk in (section 6). Write it on a card.
+6. Join the partners' WhatsApp group and say hello there (below).
 
-Carry: your laptop (charged, demo tested on a phone), 3 printed one-page sheets with your name and number written in, the shop terms with your price filled in, and a pen.
+Carry: your phone (charged, with the demo open in a tab), the one-page sheet and the ask card ready to send on WhatsApp, the letter-of-intent message (section 6), and the shop terms with your price filled in (section 8). Paper is an option: if the owner likes paper, print 3 copies of the sheet with your name and number written in.
 
-The card "What to ask the shop for" (`sell/ask-card.en.md`) lists what to ask the owner for. Bring it.
+The card "What to ask the shop for" (`sell/ask-card.en.md`) lists what to ask the owner for. It is plain text: paste it into a WhatsApp message to the owner, or read it out. The one-page sheet (`one-pager.en.html`, next to this guide) is a web page: open it on your phone, take a screenshot or share it, and send it to the owner on WhatsApp. When you send it from your number, the owner already has your name and number.
+
+### The partners' WhatsApp group
+
+Help is one message away. Join the partners' WhatsApp group before your first visit:
+
+```text
+PARTNER_GROUP_LINK
+```
+
+(The line above is a placeholder: the owner supplies the group's invite link.) Ask anything there, 10:00 to 19:00. A question is answered the same day, and one that comes in after 19:00 waits until the next morning. For anything private, write to hello@geometer.dev. Never put a shop's customer messages, passwords or codes in the group.
+
+### Your first week
+
+A guide, not a rule: go at your own pace. Tick each one as you do it.
+
+- [ ] **Day 1: become a partner.** On geometer.dev, sign in, press "Become a partner", accept the partner terms (18 or over) and give your WhatsApp number.
+- [ ] **Day 1: join the partners' WhatsApp group** and say hello.
+- [ ] **Days 1 and 2: read sections 1 to 4 and section 7** of this guide, on your phone.
+- [ ] **Day 2: open the demo on your phone** and go through its four steps twice, in the owner's language (section 4).
+- [ ] **Day 3: practise out loud** with a friend who plays the owner: the three sentences and the questions, three times.
+- [ ] **Day 4: decide your price** (section 6), write it on a card, and save the letter-of-intent message in your phone.
+- [ ] **Day 5: visit a friendly shop.** Bring your buddy, or ask in the group who can come. Show the demo on the owner's phone, and ask for a reply "YES" to the letter-of-intent message.
+- [ ] **Day 6: write down what they said,** the good and the bad, and ask the group about what you could not answer.
+- [ ] **Day 7: visit one shop you don't know.** A "no" is normal.
 
 ## 3. The first three sentences
 
@@ -59,14 +86,13 @@ Setup is the first step, so it is never the pitch. What you offer is that you st
 
 ## 4. Show it on the owner's own phone
 
-**Before you go in.** On your laptop, in the agents folder:
+**Before you go in.** Open the demo on your own phone, in the owner's language, and go through it once so you know where each button is. It is a web page: no login, nothing to install, and it works on mobile data, so no Wi-Fi is needed.
 
-```sh
-node templates/commerce/bookings/demo/server.ts            # English
-node templates/commerce/bookings/demo/server.ts --lang hi  # Hindi (also ml, kn)
-```
+`DEMO_URL`
 
-It prints a line like `On a phone, same Wi-Fi:  http://192.168.1.23:8787`. Open that address on the owner's phone. Both devices need the same Wi-Fi. If the phone can't open it, turn on your phone's hotspot and join your laptop to it. The demo has no login: never open it to the internet.
+(The line above is a placeholder: the address of the hosted demo shop goes here, with the address for each language.) At the shop, open it on the owner's phone, or send the address to the owner on WhatsApp.
+
+Until that address is here, you can show the made-up example shop pages at `https://streetlist.in/examples/` to give the owner a look at a shop's page. They are pictures of what a page looks like, not the demo: their buttons do nothing. Then tell the four steps below as a story.
 
 Optional, 30 seconds: tap "Set up for this shop" and enter the shop's name, up to 4 services with the owner's own prices, the deposit and the opening hours. Do this before the visit if you have the price list.
 
@@ -88,7 +114,7 @@ Optional, 30 seconds: tap "Set up for this shop" and enter the shop's name, up t
 - The prices are Glow Salon's unless you set the demo up for the shop. Use the owner's own prices when you can.
 - Let the owner type as a customer and try to talk it into a discount. That is the best part of the demo.
 - The demo shows what happened in the demo. It is not a claim about a live shop. It always shows "We didn't check: phone calls · walk-ins."
-- Stop it with Ctrl+C. Nothing is saved.
+- Nothing real is saved or sent. "Start again" resets the demo.
 
 ## 5. Questions owners ask
 
@@ -102,7 +128,7 @@ Never say it won't make mistakes.
 
 ### "Who sees my customers' messages?"
 
-> "Their messages go through WhatsApp and the WhatsApp service we use, like with any business WhatsApp tool. They stay with me and you. Geometer only receives counts and health signals, never the words of a message. A customer who writes STOP gets no more messages."
+> "Their messages go through WhatsApp and Gupshup, the WhatsApp service the shop has its own account with, like with any business WhatsApp tool. They stay with me and you. Geometer only receives counts and health signals, never the words of a message. A customer who writes STOP gets no more messages."
 
 Name the service and where it runs when you know. Don't say that nobody can see them. You can.
 
@@ -119,13 +145,13 @@ Don't run Meta's AI down. In November 2026 it replies, books and speaks Indian l
 The facts behind "it depends":
 
 - It must be the WhatsApp Business app, not plain WhatsApp.
-- It needs a Facebook login with admin access to the shop's Meta business portfolio, which the owner uses themselves. Meta may later ask the shop to verify its business; which documents it accepts for a small shop is not confirmed.
+- It is set up through the shop's own Gupshup account (section 8). Gupshup links the number to a Meta business account, so the owner may be asked to log in to Facebook there, themselves. Meta may later ask the shop to verify its business; which documents it accepts for a small shop is not confirmed.
 - Open the app at least once every 2 weeks: after about 2 weeks without it, the connection drops. Uninstalling the app disconnects the number.
 - Linked devices are unlinked and must be linked again. In one-to-one chats, disappearing messages, view-once and live location stop working, and broadcast lists become read-only.
 
 ### "What does it cost?"
 
-> "It's [your monthly price] a month, and [your setup price] once for setting it up. WhatsApp's message fees are their own line on the bill, at cost. Nothing else. You can stop with one message."
+> "It's [your monthly price] a month, and [your setup price] once for setting it up. WhatsApp's message fees are the shop's own, paid at cost from the shop's own Gupshup wallet. Nothing else. You can stop with one message."
 
 Section 6 has the numbers.
 
@@ -133,7 +159,7 @@ Section 6 has the numbers.
 
 > "Your own WhatsApp keeps working as always, and you can answer customers yourself. The helper just stops answering until it is fixed. If it isn't sure, it sends nothing rather than guess. In the first week I check it myself every day, and you can call me any time."
 
-When it is live there will be alerts to you. They are not built yet (section 11).
+The owner's own app can send an alert to their phone when something needs them, once they turn alerts on when they first sign in. That has not been tried on a real phone yet (section 11). You do not get alerts yourself yet, so look at the record, as in the first week (section 9).
 
 ### "Can I switch it off?"
 
@@ -176,17 +202,32 @@ Three payments, three different people. Keep them apart. The amounts are from Ge
 | The shop | You | Looking after it each month, Business (a starting point; you decide) | ₹999 to ₹1,499 |
 | The shop | You | Setup for Basic, once. You keep all of it. | ₹999 to ₹1,999 |
 | The shop | You | Setup for Business, once. You keep all of it. | ₹1,999 to ₹2,999 |
-| The shop, as its own line on your bill | WhatsApp, at cost, through your prepaid balance | Message fees | about ₹90 (Basic) or ₹295 (Business) per shop per month |
+| The shop, from its own Gupshup wallet | Gupshup and WhatsApp, at cost | Message fees (an estimate, not a price) | about ₹90 (Basic) or ₹295 (Business) per shop per month |
 
 The monthly amount is the price of your care: the first-month check-in, the tuning, the fixes and the report. Setup is paid once; looking after it is what the shop keeps paying for.
 
 1. **Geometer's plan: Basic ₹149 or Business ₹299 per live shop per month, before GST.** A shop counts for a month when it was live on 15 or more days. Basic holds bookings, reminders, prices and hours, no money moves, and includes 1,000 customer messages a month. Business adds deposits, refunds, the owner's OK on refunds above the limit and the monthly report, and includes 3,000 messages. A Bookings shop that takes a deposit is Business; one where no money moves is Basic. A shop with several workflows or branches is Operations, ₹999 a month with 10,000 messages: ask Geometer's support before you quote it. You pay nothing to join: no joining fee, no kit, no paid training. The plan starts when a shop goes live. A builder who runs it on their own server, with their own AI key and WhatsApp account, pays ₹199 a month for each live client business instead, whatever the plan. The first 100 builders and partners with a shop live get the Innovator badge and a vote on the next template: a badge, not a discount.
-2. **Above the allowance, and WhatsApp.** Extra messages cost ₹49 for each 1,000, from your prepaid balance, and only with your yes; you get a warning at 80%. Or you move the shop up a plan. Meta's and the provider's WhatsApp charges are passed on at cost, from the same balance, and so is the payment fee when you top it up (2.36%). Geometer never handles the money of shops or their customers.
-3. **Put WhatsApp on the shop's bill as its own line, at cost.** Charge your monthly service, and add WhatsApp's message fees as a separate line at what they cost you. A shop that sends more messages then pays for more, and your service price stays yours. WhatsApp platforms in India bill messages as a separate line too.
-4. **The shop's price: a starting point; you decide.** For Basic, ₹499 to ₹699 a month and a setup of ₹999 to ₹1,999. For Business, ₹999 to ₹1,499 a month and a setup of ₹1,999 to ₹2,999. The setup is all yours. What you keep each month is your service price minus Geometer's plan; WhatsApp, on its own line, passes through at cost.
-5. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the shop can cancel with one message, no automatic debit unless the owner clearly agreed.
-6. **When to take money:** until Geometer tells you your town is ready, don't take the setup fee or a first month. Ask the owner to sign a letter of intent: a short note that says "I will take this at this price when it is ready."
-7. **Money flow only.** Say who pays whom, as above. Never say how much anyone will make, not even as an example. Geometer doesn't either.
+2. **Pilot: Geometer's plan fee is free for each shop's first three months.** If you join before 31 January 2027, Geometer waives its plan fee for each shop's first three months live, for up to 3 shops. After that, the list price above applies. This does not change your price to the shop: you still set it, and you keep it. The pilot has a limit on free shops overall too, so if you are unsure whether a shop still counts, ask in the partners' group before you promise it. (Decided 14 November 2026; this is not in the price list yet.)
+3. **Above the allowance, and your balance.** Extra messages cost ₹49 for each 1,000, from your prepaid balance, and only with your yes; you get a warning at 80%. Or you move the shop up a plan. The payment fee when you top the balance up is passed on at cost (2.36%). WhatsApp is separate: see the next point. Geometer never handles the money of shops or their customers.
+4. **WhatsApp is the shop's own cost.** In the pilot the shop has its own Gupshup account, and its own Gupshup wallet pays Meta's charges and Gupshup's fee, at cost. That money never passes through you or Geometer, so you add nothing to your bill. Tell the owner the estimate in the table, and that the wallet needs topping up in Gupshup's dashboard: when it is empty, messages stop. A shop that sends more messages pays more, and your service price stays yours.
+5. **The shop's price: a starting point; you decide.** For Basic, ₹499 to ₹699 a month and a setup of ₹999 to ₹1,999. For Business, ₹999 to ₹1,499 a month and a setup of ₹1,999 to ₹2,999. The setup is all yours. What you keep each month is your service price minus Geometer's plan (and nothing at all of the plan during the free months); WhatsApp is the shop's own cost, paid from its Gupshup wallet.
+6. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the shop can cancel with one message, no automatic debit unless the owner clearly agreed.
+7. **When to take money:** until Geometer tells you your town is ready, don't take the setup fee or a first month. Ask the owner for a letter of intent: a short note that says "I will take this at this price when it is ready." The ready-made WhatsApp message is below.
+8. **Money flow only.** Say who pays whom, as above. Never say how much anyone will make, not even as an example. Geometer doesn't either.
+
+### The letter-of-intent message
+
+Send it on WhatsApp after the owner has seen the demo (or the story), and keep the owner's reply. Replace what is in [square brackets]. If the owner would rather sign a paper note, the same words work on paper.
+
+```text
+Hello [owner's name], this is [your name] from [town].
+Thank you for letting me show you the booking helper for [shop name].
+If you reply YES to this message, it means: when the helper is ready in [town], [shop name] would like to try it at my price, [your monthly price] a month, and [your setup price] once for setting it up.
+This is only a note that you would like to try it. Nothing is paid or taken now, and you can change your mind at any time by writing NO.
+When it starts I will look after it with you. You can call me on [your number].
+```
+
+Send it only when you know your price (see the price table). Never say how much the owner will make, and never ask for money before Geometer tells you your town is ready.
 
 ## 7. Never say
 
@@ -208,17 +249,20 @@ The monthly amount is the price of your care: the first-month check-in, the tuni
 
 ## 8. The setup visit
 
-Take your laptop and the owner's phone. Go through the list in order, and tick each item with the owner.
+Take your phone and the owner's phone. Go through the list in order, and tick each item with the owner. The owner types their own passwords and codes on their own phone.
 
 **How the shop gets paid.** UPI is the default: customers pay the shop's own UPI ID, and the shop needs no gateway account. Ask the owner for the UPI ID and the name that shows on it. Type both carefully, then read them back to the owner. Nothing checks a UPI ID for you, so one wrong letter sends the money to someone else. Then show the owner the "Received" button on WhatsApp. Use Razorpay only if the shop has, or wants, its own account. Ask for what is on the card "What to ask the shop for" (`sell/ask-card.en.md`); it also says what not to promise.
 
-- [ ] **The WhatsApp check.** Open the shop's WhatsApp with the owner.
-  - It must be the WhatsApp Business app, and the shop keeps its number and its app.
-  - WhatsApp needs a Facebook login with admin access to the shop's Meta business portfolio. The owner logs in themselves, on their own phone: you never see a password or a code.
-  - The name WhatsApp shows must match what the shop calls itself in public (signboard, Google or Instagram page).
-  - Meta may ask the shop to verify its business later. Which documents it accepts for a small shop is not confirmed, so don't promise that no papers will be needed.
-  - Tell the owner: open the app at least once every 2 weeks, don't uninstall it, and link the other devices again afterwards.
-- [ ] **Google Calendar, only if the shop wants it.** The shop does not need one: a Bookings shop with no Google Calendar runs on its own booking list. Choose that with `"calendar": {"module": "own"}` in the shop's settings.json; without that line, or with `"google"`, the shop uses Google Calendar. The owner sends "today" or "tomorrow" on WhatsApp to the shop's number and gets that day's bookings; the panel shows the counts. If the shop does want Google Calendar, share it together on your laptop, not the phone: the owner's Google Calendar, Settings and sharing, Share with specific people. Add the address Geometer gives you, with "Make changes to events". It takes about 2 minutes. A calendar can be added later without losing bookings: the future bookings already made are written to it.
+- [ ] **WhatsApp, through the shop's own Gupshup account.** A shop can also start without WhatsApp: in the panel, "Start without WhatsApp for now" lets customers book and pay on the shop's page while the owner signs in with a fingerprint and gets alerts in their app, and the number can be added later. Otherwise do this together, on the phones:
+  - Whose account: the shop signs up at Gupshup (gupshup.io) itself and keeps the account. The shop's own Gupshup wallet pays WhatsApp's charges and Gupshup's fee. Geometer never holds that money, and neither do you. You never see a password or a code.
+  - Step 1: the owner signs up at Gupshup and makes a WhatsApp app for the shop's number. It must be the WhatsApp Business app, and the shop keeps its number and its app. Gupshup links the number to a Meta business account, so the owner may be asked to log in to Facebook there, on their own phone.
+  - Step 2: the owner adds you as an admin of the Gupshup account.
+  - Step 3: our message templates are added to the shop's app and must show as approved in Gupshup before the shop goes live. Today this is done by hand in Gupshup's dashboard: the list is in `templates/commerce/bookings/whatsapp-templates.json`, in all four languages. Approval takes minutes up to about 2 days, and Meta can ask for changes, so give no date. Ask in the partners' group before you start. Geometer is building a way to add them for you; it does not exist yet.
+  - Step 4: in the panel's WhatsApp step, choose "Gupshup (the shop's own account)". Type the shop's WhatsApp number with its country code, the app's name and API key from Gupshup's dashboard, and a secret word of your own (16 or more letters, digits, _ or -). Write the secret word down: the panel does not show it again.
+  - Step 5: in the Gupshup app's Webhooks tab, add the address the panel shows, with your secret word in place of SECRET-WORD.
+  - Step 6: press "Run the checks" in the panel. It asks Gupshup whether the key and the app name go together and how many templates show as approved. It sends nothing and does not show which number the app sends from, so the test booking below is the first real test.
+  - Tell the owner: WhatsApp stops when the Gupshup wallet runs out, so top it up in Gupshup's dashboard. The name WhatsApp shows must match what the shop calls itself in public (signboard, Google or Instagram page). Meta may ask the shop to verify its business later, and which documents it accepts for a small shop is not confirmed, so don't promise that no papers will be needed. Open the app at least once every 2 weeks, don't uninstall it, and link the other devices again afterwards.
+- [ ] **Google Calendar, only if the shop wants it.** The shop does not need one: a Bookings shop with no Google Calendar runs on its own booking list. Choose that in the panel's calendar step ("Keep the bookings in the shop's own list"); without that choice the shop uses Google Calendar. The owner sends "today" or "tomorrow" on WhatsApp to the shop's number and gets that day's bookings; the panel shows the counts. If the shop does want Google Calendar, share it together: sharing is a setting of Google Calendar's website, not of its phone app, so on the phone open calendar.google.com in Chrome and choose "Desktop site". In the owner's Google Calendar, go to Settings and sharing, Share with specific people. Add the address Geometer gives you, with "Make changes to events". It takes about 2 minutes. A calendar can be added later without losing bookings: the future bookings already made are written to it.
 - [ ] **The shop's own Razorpay account.** Only if the shop chooses Razorpay. Deposits go straight to the shop, never to you or Geometer. The owner makes the account on their own phone: you never see their password or code. It may need a website and policy pages (about, contact, pricing, terms, privacy, cancellation and refunds). Whether an Instagram page counts is not confirmed, so ask Razorpay. It takes minutes, or up to 4 working days. **Razorpay's fee** is written only here: about 2% plus GST on each deposit. Tell the shop: "Razorpay keeps its fee even when you give a deposit back. On a ₹200 deposit that is about ₹5." Check Razorpay's current page; if the shop's own agreement says otherwise, the agreement wins. Put the fee in the shop terms for this shop. On UPI there is no gateway fee.
 - [ ] **The limits, in the owner's words.** Ask, write down, read back:
 
@@ -231,10 +275,10 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
   | Cancellation window | "How early must a customer cancel to get the deposit back?" | "24 hours before." |
   | Refund limit | "Up to how much may it give back without asking you?" | "Up to ₹200. Above that, it asks you." |
 
-- [ ] **The owner's number for approvals.** This is the WhatsApp number where it asks "Give back ₹200?". The owner answers "approve b-1" or "deny b-1". Practise one together.
+- [ ] **The owner's number for approvals.** This is the WhatsApp number where it asks "Give back ₹200?". The owner answers "approve b-1" or "deny b-1". Practise one together. Then ask the owner to turn on alerts in their own app and check that one arrives.
 - [ ] **One test booking with test money.** From your own phone, book, pay a test deposit, see it in the owner's booking list (or in the calendar, if one is connected), then cancel. Nothing real is paid.
 - [ ] **The go-live certificate, read together.** Read every line aloud in the owner's language, including "Not checked". It says the checks were run by hand on practice services, using this shop's own prices, hours and limits, and it lists what was not checked. If some checks could not be run on this shop's settings, it says so. Malayalam and Kannada: don't go live until a native speaker has reviewed the wording.
-- [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, the WhatsApp message fees, whether the deposit is refundable or counts against the bill (the shop's accountant decides), cancel with one message, no surprise charges, your name and number. Both sign. Leave a copy and the one-page sheet. Signed paper is still what Geometer's checks assume. Later, Geometer may tell you that the terms can be agreed on WhatsApp instead; do that only after Geometer says so. A shop that chose Razorpay also has Razorpay's fee in its terms (see the Razorpay item).
+- [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, the WhatsApp message fees, whether the deposit is refundable or counts against the bill (the shop's accountant decides), cancel with one message, no surprise charges, your name and number. Print them beforehand at any copy shop in town (or ask in the partners' group), and both sign on paper. Leave a copy, and send the owner the one-page sheet on WhatsApp. Signed paper is still what Geometer's checks assume. Later, Geometer may tell you that the terms can be agreed on WhatsApp instead; do that only after Geometer says so. A shop that chose Razorpay also has Razorpay's fee in its terms (see the Razorpay item).
 
 ## 9. The first month
 
@@ -250,16 +294,16 @@ Take your laptop and the owner's phone. Go through the list in order, and tick e
 
 ## 10. When something goes wrong
 
-1. **Stop the agent first.** In the pilot you stop it by hand, because the stop button is not built yet: learn how before your first visit. The owner can also disconnect it from their phone (section 5).
+1. **Stop the agent first.** In the panel, open the shop and press "Stop this shop", then "Yes, stop it". Nothing more goes out once the server has stopped it, which can take a minute, and only the server can say it has stopped. Try it once on a practice shop before your first visit. The owner can also disconnect it from their phone (section 5).
 2. **Call the owner before they find out.** "Something went wrong with [what]. I have stopped the helper. Here is what happened and what I am doing. Your own WhatsApp works as normal."
 3. **Look at the record.** Find the action, what was confirmed, and which limit said what. "Show what we did" shows it.
 4. **Fix it, check it again, then switch it on.** If a customer was charged wrongly, sit with the owner while they refund it from their own Razorpay account. With UPI, the owner sends the refund from their own UPI app, and the helper tells the customer "sent" only after the owner marks it done.
-5. **Put it in the report.** It goes in the month's mistakes, and you tell Geometer's support the same day.
+5. **Put it in the report.** It goes in the month's mistakes, and you tell Geometer's support the same day: write in the partners' WhatsApp group (10:00 to 19:00, answered the same day), and to hello@geometer.dev for anything private.
 
 You are the person the owner calls, and the shop's named, accountable person. Your name is on the report and the certificate. Putting it right with them is part of looking after it. Don't blame the software, and don't say "it won't happen again".
 
 ## 11. Be honest about what's true today
 
-As of 3 November 2026 the agent has been built and checked by hand on practice services with test money. It has not yet run on a real WhatsApp, Razorpay or Google Calendar account, and no shop is live: the first shops are planned for early 2027, town by town, and Geometer tells you when yours is ready. The limits run inside the agent, not yet in a separate guard. The stop button, the alerts to you and the page where anyone can check a certificate are not built yet, and some warnings may not reach an owner who hasn't written to the number that day, so check the record yourself. Hindi, Malayalam and Kannada wording is machine-written: Malayalam and Kannada wait for a native speaker's review before any real shop uses them, and in those two languages the demo's buttons are still in English. Never say more than this. UPI is built as a payment option: the owner marks each payment paid and sends each refund. It is not checked automatically, and it has not run in a live shop.
+As of 14 November 2026 the agent has been built and checked by hand on practice services with test money. It has not yet run on a real WhatsApp account through Gupshup, a real UPI app, Razorpay or Google Calendar, and no shop is live: the first shops are planned for early 2027, town by town, and Geometer tells you when yours is ready. The limits are checked by Guard, a separate program that stands between the agent and WhatsApp, payments and the calendar; that was run on Geometer's own test server with stand-in services, not in a live shop. The stop button is built in the panel, and the owner's alerts, QR sign-in and fingerprint are built, but none of them has been tried on a real phone. You do not get alerts yourself yet, and a warning sent on WhatsApp may not reach an owner who has not written to the number that day, so check the record yourself. The page where anyone can check a certificate is geometer.dev/verify; it is in English only for now. Our message templates are not yet added to any real Gupshup app. Hindi, Malayalam and Kannada wording is machine-written: Malayalam and Kannada wait for a native speaker's review before any real shop uses them, and in those two languages the demo's buttons are still in English. Never say more than this. UPI is built as a payment option: the owner marks each payment paid and sends each refund. It is not checked automatically, and it has not run in a live shop.
 
 <!-- Made by prices/render.ts from guide.en.src.md and the price list in force. Edit that file, then run: node prices/render.ts -->
