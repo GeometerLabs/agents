@@ -1,8 +1,17 @@
 // Every message the agent sends, per language. v0 has NO model-written text: each message is one of these templates,
 // and every amount, date, time, service and link in it is rendered from the record (the facts), never typed by hand
 // and never translated. Adding a language means adding one more object below; the type makes sure none is missing.
+//
+// How they read (14 Nov 2026, the owner's direction after seeing the UPI story): like a friendly shop assistant on WhatsApp. One or two short
+// sentences and then the one thing to do; everyday words; the service and the time named instead of an internal id (a customer never sees
+// "b-3"); a phone number grouped the way people write it ("+91 98111 11111"); the service capitalised when it opens an English sentence.
+// What every line still means, word changes or not: the agent never says it checked a payment (the owner confirms a UPI payment); nothing
+// is booked until the record says so; a screenshot is not proof; the cancellation rule and who sends a refund. The tests and the crash test
+// hold those meanings. A raw `upi://pay?...` link never appears in a message: WhatsApp does not make it tappable and it reads as broken,
+// so a UPI shop's customer gets the UPI ID in words and the QR picture (upi_qr_caption), and a gateway's https link stays on a line of its own.
 import type { Language } from "../../../../../modules/language/languages.ts";
-import { formatInr, formatSlot } from "../../../../../modules/language/format.ts";
+import { formatInr, formatSlot, formatTime, groupPhone, sentenceStart } from "../../../../../modules/language/format.ts";
+import { localParts } from "../../../../../modules/core/time.ts";
 
 /** The values of this conversation's record that a message may use. The outgoing check reads the same object. */
 export interface MessageFacts {
@@ -107,85 +116,93 @@ export function need<K extends keyof MessageFacts>(f: MessageFacts, key: K): Non
 }
 export const slot = (f: MessageFacts) => formatSlot(need(f, "slotMs"), f.timeZone, f.language);
 export const inr = (f: MessageFacts, key: "priceInr" | "depositInr" | "refundInr") => formatInr(need(f, key));
-/** The owner's day list: a heading, then one line per booking (time, service, the customer's number, the reference). The words around it are per language. */
+/** This booking's service, to open a sentence ("Haircut on Tue 10 Nov ..."): capitalised in English only (format.ts sentenceStart). */
+export const Service = (f: MessageFacts) => sentenceStart(need(f, "serviceName"), f.language);
+/** The customer's number as people write it ("+91 98111 11111"); the check holds this form too (check.ts). Only ever in a message to the owner. */
+export const phone = (f: MessageFacts) => groupPhone(need(f, "customerPhone"));
+/**
+ * The owner's day list: a heading that names the day, then one short line per booking: the time, the service and the customer's number. The date is in the
+ * heading, so a row does not repeat it, and the booking's id is left out: nothing on the list is typed back. The words around it are per language.
+ */
 function dayList(f: MessageFacts, words: { heading: Record<"today" | "tomorrow", string>; none: Record<"today" | "tomorrow", string> }): string {
   const day = f.day ?? "today";
   const rows = f.dayBookings ?? [];
   if (rows.length === 0) return words.none[day];
-  return [words.heading[day], ...rows.map((r) => `- ${formatSlot(r.slotMs, f.timeZone, f.language)} ${r.serviceName} ${r.customerPhone} (${r.ref})`)].join("\n");
+  return [words.heading[day], ...rows.map((r) => `- ${formatTime(localParts(r.slotMs, f.timeZone), f.language)}: ${r.serviceName}, ${groupPhone(r.customerPhone)}`)].join("\n");
 }
 const menuList = (f: MessageFacts) => f.services.map((s) => `${s.name} ${formatInr(s.priceInr)}`).join(", ");
 
 const en: BaseSet = {
-  menu: (f) => `Hello! Welcome to ${f.businessName}. We offer: ${menuList(f)}. Tell me which service, day and time you would like.`,
-  ask_when: (f) => `Which day and time would you like for your ${need(f, "serviceName")}?`,
-  ask_new_time: () => "Which day and time would you like instead?",
-  price_floor: (f) => `Our ${need(f, "serviceName")} is ${inr(f, "priceInr")}, and I can't go lower than that.`,
-  confirm_details: (f) => `Just to be sure: ${need(f, "serviceName")} on ${slot(f)}. Reply "yes" to continue.`,
-  quote_and_link: (f) => `Our ${need(f, "serviceName")} is ${inr(f, "priceInr")}. ${slot(f)} is free. Pay a ${inr(f, "depositInr")} deposit to confirm: ${need(f, "link")} (I'll hold the slot for ${need(f, "holdMinutes")} minutes.)`,
+  menu: (f) => `Hi! Welcome to ${f.businessName}. We do: ${menuList(f)}. Which one would you like, and when?`,
+  ask_when: (f) => `When would you like your ${need(f, "serviceName")}? Tell me the day and time.`,
+  ask_new_time: () => "Which day and time would suit you instead?",
+  price_floor: (f) => `Our ${need(f, "serviceName")} is ${inr(f, "priceInr")}. Sorry, I can't go lower than that.`,
+  confirm_details: (f) => `Just checking: ${need(f, "serviceName")} on ${slot(f)}? Reply "yes" to go ahead.`,
+  // The gateway's link is https and WhatsApp makes it tappable; it goes on a line of its own, after the words, so the message reads first and the link is easy to tap.
+  quote_and_link: (f) => `${Service(f)} on ${slot(f)} is free! It's ${inr(f, "priceInr")}. Pay a ${inr(f, "depositInr")} deposit to book it, and I'll hold the slot for ${need(f, "holdMinutes")} minutes.\nPay ${inr(f, "depositInr")} here: ${need(f, "link")}`,
   // After price_floor has already said the price, the quote does not repeat it.
-  slot_and_link: (f) => `${slot(f)} is free. Pay a ${inr(f, "depositInr")} deposit to confirm: ${need(f, "link")} (I'll hold the slot for ${need(f, "holdMinutes")} minutes.)`,
-  already_waiting: (f) => `Your slot (${slot(f)}) is already held. Pay the ${inr(f, "depositInr")} deposit to confirm: ${need(f, "link")}`,
-  slot_unavailable: (f) => `Sorry, ${slot(f)} is not available. Please suggest another time.`,
-  outside_hours: (f) => `Sorry, we are closed at ${slot(f)}. Please suggest another time.`,
-  hold_failed: (f) => `Sorry, I couldn't hold ${slot(f)} just now, so nothing is booked. I've told the owner. Please try again in a few minutes.`,
-  link_failed: () => "Sorry, I couldn't create the payment link just now, so nothing is booked. I've told the owner.",
-  booked: (f) => `Booked! ${need(f, "serviceName")} on ${slot(f)}. Your ${inr(f, "depositInr")} deposit is received. Cancel at least ${need(f, "windowHours")} hours before the start for a refund.`,
-  couldnt_confirm: (f) => `We received your ${inr(f, "depositInr")} deposit, but I couldn't confirm ${slot(f)} in our calendar yet, so it is not booked. I've told the owner, who will contact you.`,
-  hold_expired: (f) => `The hold on ${slot(f)} has ended because the deposit was not received in time. Message me if you'd still like to book.`,
-  slot_gone_refund: (f) => `Your ${inr(f, "depositInr")} payment arrived after the hold on ${slot(f)} ended, and that time has been taken. ${inr(f, "refundInr")} is being refunded to you.`,
-  refund_unbooked: (f) => `Your ${inr(f, "depositInr")} payment arrived, but there is no active booking for it. ${inr(f, "refundInr")} is being refunded to you.`,
-  reschedule_failed: (f) => `Sorry, I couldn't confirm moving your booking to ${slot(f)} in our calendar. I've told the owner, who will contact you.`,
-  duplicate_refund: (f) => `You paid the deposit twice. The extra ${inr(f, "refundInr")} is being refunded.`,
-  duplicate_refund_pending: (f) => `You paid the deposit twice. The extra ${inr(f, "refundInr")} will be refunded once the owner approves.`,
-  cancelled_refund: (f) => `Your booking for ${slot(f)} is cancelled. Your ${inr(f, "refundInr")} deposit is being refunded.`,
-  cancelled_refund_pending: (f) => `Your booking for ${slot(f)} is cancelled. The owner will confirm your ${inr(f, "refundInr")} refund shortly.`,
-  cancelled_late: (f) => `Your booking for ${slot(f)} is cancelled. As it is less than ${need(f, "windowHours")} hours before the start, the owner will decide about your ${inr(f, "depositInr")} deposit and message you.`,
-  cancelled_no_deposit: (f) => `Your slot on ${slot(f)} is cancelled. Nothing was charged.`,
-  no_booking_found: () => "I couldn't find a booking to change. Tell me the service, day and time and I'll book it.",
-  refund_approved: (f) => `The owner approved your refund. ${inr(f, "refundInr")} is on its way.`,
-  refund_denied: (f) => `The owner has decided not to refund the ${inr(f, "depositInr")} deposit.`,
-  rescheduled: (f) => `Done. Your ${need(f, "serviceName")} is moved to ${slot(f)}.`,
-  reminder: (f) => `Reminder: your ${need(f, "serviceName")} at ${f.businessName} is on ${slot(f)}.`,
-  didnt_understand: () => "Sorry, I didn't understand. Please tell me the service, day and time you would like.",
-  voice_note: () => "Please type your message; I can't listen to voice notes yet.",
-  voice_note_retry: () => "I couldn't make out that voice note. Please type your message instead.",
-  pick_service: (f) => `Hello! Welcome to ${f.businessName}. Which service would you like?`,
-  pick_slot: (f) => `When would you like your ${need(f, "serviceName")}? Pick a time below, or write the day and time you prefer.`,
-  confirm_buttons: (f) => `Just to be sure: ${need(f, "serviceName")} on ${slot(f)}. Is that right?`,
+  slot_and_link: (f) => `${slot(f)} is free! Pay a ${inr(f, "depositInr")} deposit to book it, and I'll hold the slot for ${need(f, "holdMinutes")} minutes.\nPay ${inr(f, "depositInr")} here: ${need(f, "link")}`,
+  already_waiting: (f) => `I'm still holding ${slot(f)} for you. Pay the ${inr(f, "depositInr")} deposit to book it.\nPay ${inr(f, "depositInr")} here: ${need(f, "link")}`,
+  slot_unavailable: (f) => `Sorry, ${slot(f)} is not available. What other time would work for you?`,
+  outside_hours: (f) => `Sorry, we're closed at ${slot(f)}. What other time would work for you?`,
+  hold_failed: (f) => `Sorry, I couldn't hold ${slot(f)} just now, so nothing is booked. I've let the owner know. Please try again in a few minutes.`,
+  link_failed: () => "Sorry, I couldn't make the payment link just now, so nothing is booked. I've let the owner know.",
+  booked: (f) => `You're booked! ${Service(f)}, ${slot(f)}. We got your ${inr(f, "depositInr")} deposit. Can't make it? Cancel at least ${need(f, "windowHours")} hours before and your deposit comes back.`,
+  couldnt_confirm: (f) => `We got your ${inr(f, "depositInr")} deposit, but I couldn't confirm ${slot(f)} in our calendar yet, so it's not booked. I've told the owner, and they'll get in touch with you.`,
+  hold_expired: (f) => `I've let go of ${slot(f)}, as the deposit didn't come in time. Message me if you'd still like to book.`,
+  slot_gone_refund: (f) => `Sorry! Your ${inr(f, "depositInr")} payment came in after the hold on ${slot(f)} ended, and that time is now taken. We're refunding ${inr(f, "refundInr")} to you.`,
+  refund_unbooked: (f) => `Your ${inr(f, "depositInr")} payment came in, but there's no booking open for it. We're refunding ${inr(f, "refundInr")} to you.`,
+  reschedule_failed: (f) => `Sorry, I couldn't move your booking to ${slot(f)} in our calendar. I've told the owner, and they'll get in touch with you.`,
+  duplicate_refund: (f) => `You paid the deposit twice. We're refunding the extra ${inr(f, "refundInr")} to you.`,
+  duplicate_refund_pending: (f) => `You paid the deposit twice. The extra ${inr(f, "refundInr")} comes back to you once the owner approves it.`,
+  cancelled_refund: (f) => `Done, your booking for ${slot(f)} is cancelled. We're refunding your ${inr(f, "refundInr")} deposit.`,
+  cancelled_refund_pending: (f) => `Done, your booking for ${slot(f)} is cancelled. The owner will confirm your ${inr(f, "refundInr")} refund soon.`,
+  cancelled_late: (f) => `Done, your booking for ${slot(f)} is cancelled. As it's less than ${need(f, "windowHours")} hours before the start, the owner will decide about your ${inr(f, "depositInr")} deposit and let you know.`,
+  cancelled_no_deposit: (f) => `Done, ${slot(f)} is cancelled. You weren't charged anything.`,
+  no_booking_found: () => "I couldn't find a booking to change. Tell me the service, day and time, and I'll book it for you.",
+  refund_approved: (f) => `Good news: the owner approved your refund. ${inr(f, "refundInr")} is on its way to you.`,
+  refund_denied: (f) => `Sorry, the owner has decided not to refund the ${inr(f, "depositInr")} deposit.`,
+  rescheduled: (f) => `Done! Your ${need(f, "serviceName")} is now on ${slot(f)}.`,
+  reminder: (f) => `Hi! Just a reminder: your ${need(f, "serviceName")} at ${f.businessName} is on ${slot(f)}. See you then!`,
+  didnt_understand: () => "Sorry, I didn't catch that. Which service would you like, and on what day and time?",
+  voice_note: () => "Sorry, I can't listen to voice notes yet. Could you type your message?",
+  voice_note_retry: () => "Sorry, I couldn't make out that voice note. Could you type it instead?",
+  pick_service: (f) => `Hi! Welcome to ${f.businessName}. What would you like to book?`,
+  pick_slot: (f) => `When would you like your ${need(f, "serviceName")}? Pick a time below, or type the day and time you'd like.`,
+  confirm_buttons: (f) => `Just checking: ${need(f, "serviceName")} on ${slot(f)}. Is that right?`,
   ask_cancel: (f) => `Do you want to cancel your booking for ${slot(f)}?`,
-  kept: (f) => `Okay, your booking for ${slot(f)} stays as it is.`,
-  told_owner: () => "I've told the owner that you would like to talk. They will message you here.",
+  kept: (f) => `No problem, your booking for ${slot(f)} stays as it is.`,
+  told_owner: () => "I've told the owner you'd like to talk. They'll message you here.",
   couldnt_tell_owner: () => "Sorry, I couldn't reach the owner just now. Please try again in a few minutes.",
-  refund_checking: (f) => `We are checking your ${inr(f, "refundInr")} refund and will message you as soon as it is confirmed.`,
-  refund_confirmed: (f) => `Your ${inr(f, "refundInr")} refund is confirmed and is on its way back to you.`,
-  refund_expired: (f) => `The owner did not answer in time about your ${inr(f, "refundInr")} refund, so it has not been sent. Please contact ${f.businessName} directly.`,
+  refund_checking: (f) => `We're checking on your ${inr(f, "refundInr")} refund, and I'll message you as soon as it's confirmed.`,
+  refund_confirmed: (f) => `Your ${inr(f, "refundInr")} refund is confirmed and on its way back to you.`,
+  refund_expired: (f) => `Sorry, the owner didn't answer in time about your ${inr(f, "refundInr")} refund, so it hasn't been sent. Please contact ${f.businessName} directly.`,
 
-  owner_refund_needs_approval: (f) => `Approval needed: refund ${inr(f, "refundInr")} for ${need(f, "customerPhone")} (${need(f, "serviceName")}, ${slot(f)}). Reply "approve ${need(f, "approvalCode")}" or "deny ${need(f, "approvalCode")}" within ${need(f, "approvalHours")} hours.`,
-  owner_cant_confirm: (f) => `Could not confirm ${need(f, "customerPhone")}'s ${need(f, "serviceName")} on ${slot(f)} in the calendar, so it is NOT booked. Their ${inr(f, "depositInr")} deposit is recorded. Reply "retry ${need(f, "bookingRef")}" to check the calendar again, or "approve ${need(f, "bookingRef")}" to cancel it and refund the deposit.`,
-  owner_late_cancellation: (f) => `Customer ${need(f, "customerPhone")} cancelled ${need(f, "serviceName")} on ${slot(f)} less than ${need(f, "windowHours")} hours before the start. Deposit ${inr(f, "depositInr")}. Reply "approve ${need(f, "bookingRef")}" to refund it or "deny ${need(f, "bookingRef")}" to keep it.`,
-  owner_duplicate_payment: (f) => `Customer ${need(f, "customerPhone")} paid the deposit twice for ${need(f, "serviceName")} on ${slot(f)}. The extra ${inr(f, "refundInr")} was refunded.`,
+  owner_refund_needs_approval: (f) => `A refund needs your OK: ${inr(f, "refundInr")} to ${phone(f)} (${need(f, "serviceName")}, ${slot(f)}). Reply "approve ${need(f, "approvalCode")}" or "deny ${need(f, "approvalCode")}" within ${need(f, "approvalHours")} hours.`,
+  owner_cant_confirm: (f) => `Please check: the ${need(f, "serviceName")} on ${slot(f)} for ${phone(f)} didn't go into the calendar, so it's NOT booked. Their ${inr(f, "depositInr")} deposit is recorded. Reply "retry ${need(f, "bookingRef")}" to try the calendar again, or "approve ${need(f, "bookingRef")}" to cancel it and refund the deposit.`,
+  owner_late_cancellation: (f) => `Late cancellation: ${phone(f)} cancelled the ${need(f, "serviceName")} on ${slot(f)}, less than ${need(f, "windowHours")} hours before the start. Their deposit is ${inr(f, "depositInr")}. Reply "approve ${need(f, "bookingRef")}" to refund it or "deny ${need(f, "bookingRef")}" to keep it.`,
+  owner_duplicate_payment: (f) => `Heads up: ${phone(f)} paid the deposit twice for the ${need(f, "serviceName")} on ${slot(f)}. The extra ${inr(f, "refundInr")} was refunded to them.`,
   // A late payment (the hold had ended and the time was taken) and a payment for a booking that was cancelled get one line: the owner can do nothing about either, the money is back.
-  owner_payment_unused: (f) => `A ${inr(f, "depositInr")} payment from ${need(f, "customerPhone")} arrived for ${slot(f)}, but that booking was no longer active (its hold had ended, or it was cancelled). ${inr(f, "refundInr")} was refunded.`,
+  owner_payment_unused: (f) => `Heads up: ${phone(f)} paid ${inr(f, "depositInr")} for ${slot(f)}, but that booking was no longer open (its hold had ended, or it was cancelled). ${inr(f, "refundInr")} was refunded to them.`,
   // The slot could not be held, or the payment link could not be made: either way nothing is booked and the customer has been told to try again.
-  owner_not_booked: (f) => `Could not set up ${need(f, "customerPhone")}'s ${need(f, "serviceName")} on ${slot(f)}: the calendar or the payment link did not work. Nothing is booked.`,
-  owner_reschedule_failed: (f) => `Could not confirm moving ${need(f, "customerPhone")}'s ${need(f, "serviceName")} to ${slot(f)} in the calendar. Please check their booking.`,
-  owner_message_held: (f) => `A message to ${need(f, "customerPhone")} was held back because it did not match the booking record. Nothing was sent.`,
-  owner_opted_out: (f) => `Customer ${need(f, "customerPhone")} sent STOP. No more messages will go to them.`,
-  owner_unknown_command: () => `I didn't understand that. Reply "approve", "deny" or "retry" followed by the booking reference.`,
-  owner_day_bookings: (f) => dayList(f, { heading: { today: "Your bookings today:", tomorrow: "Your bookings tomorrow:" }, none: { today: "No bookings today.", tomorrow: "No bookings tomorrow." } }),
-  owner_approval_done: (f) => `Thank you. The ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} is being sent, and they will be told.`,
-  owner_approval_denied: (f) => `Understood. The ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} will not be sent, and they will be told.`,
-  owner_approval_expired: (f) => `That request ran out before you answered, so nothing was refunded: ${inr(f, "refundInr")} for ${need(f, "customerPhone")}.`,
-  owner_approval_failed: () => "I could not record your answer just now. Please send it again in a few minutes.",
-  owner_approval_waiting: (f) => `Thank you. Your approval of the ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} is recorded. Approvals still needed from the others: ${need(f, "approvalsLeft")}. It is sent only once they are given.`,
-  owner_approval_closed: (f) => `The ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} has been approved by the others, so your answer is no longer needed. Thank you.`,
-  owner_approval_refused: (f) => `The ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} was refused by one of the people who approve refunds, so it will not be sent, and they will be told.`,
-  owner_refund_settled: (f) => `Refund done: ${inr(f, "refundInr")} for ${need(f, "customerPhone")}. The person who set up your agent checked it and marked it as made, so it is not sent a second time.`,
-  owner_wants_to_talk: (f) => `Customer ${need(f, "customerPhone")} would like to talk to you. Please message them.`,
-  owner_ai_allowance: (f) => `Notice: this month's AI allowance for ${f.businessName} is used up, so the agent now answers with buttons and lists. It still books, and every limit still holds. The person who set it up has been told. Normal service returns next month.`,
-  owner_ai_off: (f) => `Notice: the AI that reads messages for ${f.businessName} has been switched off for now. The agent keeps booking with buttons and lists, and every limit still holds. The person who set it up has been told.`,
-  owner_ai_fault: (f) => `Notice: the AI that reads messages for ${f.businessName} is not answering right now, so the agent is using buttons and lists. It still books, and every limit still holds. It will try the AI again in a few minutes.`,
+  owner_not_booked: (f) => `Heads up: I couldn't set up the ${need(f, "serviceName")} on ${slot(f)} for ${phone(f)}, because the calendar or the payment link didn't work. Nothing is booked.`,
+  owner_reschedule_failed: (f) => `Heads up: I couldn't move the ${need(f, "serviceName")} for ${phone(f)} to ${slot(f)} in the calendar. Please check their booking.`,
+  owner_message_held: (f) => `Heads up: I held back a message to ${phone(f)} because it didn't match the booking record. Nothing was sent.`,
+  owner_opted_out: (f) => `Heads up: ${phone(f)} sent STOP, so I won't message them again.`,
+  owner_unknown_command: () => `Sorry, I didn't get that. Reply "approve", "deny" or "retry" followed by the booking number.`,
+  owner_day_bookings: (f) => dayList(f, { heading: { today: "Today's bookings:", tomorrow: "Tomorrow's bookings:" }, none: { today: "No bookings today.", tomorrow: "No bookings tomorrow." } }),
+  owner_approval_done: (f) => `Thanks! The ${inr(f, "refundInr")} refund to ${phone(f)} is being sent, and I'll let them know.`,
+  owner_approval_denied: (f) => `Okay, the ${inr(f, "refundInr")} refund to ${phone(f)} won't be sent. I'll let them know.`,
+  owner_approval_expired: (f) => `That refund request (${inr(f, "refundInr")} to ${phone(f)}) ran out before you answered, so nothing was refunded.`,
+  owner_approval_failed: () => "Sorry, I couldn't save your answer just now. Please send it again in a few minutes.",
+  owner_approval_waiting: (f) => `Thanks, your OK for the ${inr(f, "refundInr")} refund to ${phone(f)} is saved. OKs still needed from the others: ${need(f, "approvalsLeft")}. It goes out only once they're in.`,
+  owner_approval_closed: (f) => `No need to answer: the others have approved the ${inr(f, "refundInr")} refund to ${phone(f)}. Thank you!`,
+  owner_approval_refused: (f) => `One of the people who approve refunds said no to the ${inr(f, "refundInr")} refund to ${phone(f)}, so it won't be sent. I'll let the customer know.`,
+  owner_refund_settled: (f) => `Refund done: ${inr(f, "refundInr")} to ${phone(f)}. The person who set up your agent checked it and marked it as made, so it won't be sent a second time.`,
+  owner_wants_to_talk: (f) => `A customer would like to talk to you: ${phone(f)}. Please message them when you can.`,
+  owner_ai_allowance: (f) => `Heads up: this month's AI allowance for ${f.businessName} is used up, so I'm answering with buttons and lists for now. I still take bookings, and all your limits still apply. The person who set me up knows. Normal service is back next month.`,
+  owner_ai_off: (f) => `Heads up: the AI that reads messages for ${f.businessName} is switched off for now. I keep taking bookings with buttons and lists, and all your limits still apply. The person who set me up knows.`,
+  owner_ai_fault: (f) => `Heads up: the AI that reads messages for ${f.businessName} isn't answering right now, so I'm using buttons and lists. I still take bookings, and all your limits still apply. I'll try the AI again in a few minutes.`,
 };
 
 const hi: BaseSet = {
@@ -405,6 +422,9 @@ const kn: BaseSet = {
 // A shop that takes UPI: the customer pays the shop's own UPI ID, and the booking is made only when the owner taps "Received" (or replies "received <code>"). These
 // messages never say a payment was checked by the agent: the owner confirms it. A refund is sent by the owner from their own UPI app, and the customer hears "sent"
 // only after the owner marks it so. The owner's lines start and end with fixed words, as every owner line does (several are WhatsApp templates: meta-templates.ts).
+// The customer's words carry the UPI ID and the payee in plain text, and never the `upi://` link itself (WhatsApp does not open it): the QR picture of that link goes
+// just before the words when it can (agent.ts qrOf; a booking page draws its own button and QR). The owner's one-use code is written once, at the end, as the typed
+// stand-in for the button ("(or reply: received 7P52KF)"); no customer line carries it, and no customer line names the booking's id.
 // Hindi, Malayalam and Kannada are machine-written, like the rest of those packs, and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
 
 const payee = (f: MessageFacts) => need(f, "payee");
@@ -414,31 +434,31 @@ const marked = (f: MessageFacts) => formatInr(need(f, "markedInr"));
 const left = (f: MessageFacts) => formatInr(need(f, "leftInr"));
 
 const upiEn: UpiSet = {
-  upi_quote_and_link: (f) => `Our ${need(f, "serviceName")} is ${inr(f, "priceInr")}. ${slot(f)} is free. To confirm, pay the ${inr(f, "depositInr")} deposit by UPI to ${payee(f)} (UPI ID ${upiId(f)}): ${need(f, "link")} I'll hold the slot for ${need(f, "holdMinutes")} minutes. The owner confirms the payment, then I'll message you.`,
-  upi_slot_and_link: (f) => `${slot(f)} is free. To confirm, pay the ${inr(f, "depositInr")} deposit by UPI to ${payee(f)} (UPI ID ${upiId(f)}): ${need(f, "link")} I'll hold the slot for ${need(f, "holdMinutes")} minutes. The owner confirms the payment, then I'll message you.`,
-  upi_already_waiting: (f) => `Your slot (${slot(f)}) is held. Pay the ${inr(f, "depositInr")} deposit by UPI to ${payee(f)} (UPI ID ${upiId(f)}): ${need(f, "link")} The owner confirms the payment, then I'll message you.`,
-  upi_qr_caption: (f) => `Scan to pay ${inr(f, "depositInr")} by UPI to ${payee(f)} for booking ${need(f, "bookingRef")}.`,
-  upi_booked: (f) => `Booked! ${need(f, "serviceName")} on ${slot(f)}. The owner has confirmed your ${inr(f, "depositInr")} deposit. Cancel at least ${need(f, "windowHours")} hours before the start for a refund.`,
-  upi_paid_claim: (f) => `Thank you. The owner will look for your ${inr(f, "depositInr")} payment in their UPI app and confirm it, then I'll message you. A screenshot is not proof of payment, so please wait for that message.`,
-  upi_nothing_waiting: () => "Thank you. No UPI payment is waiting for you just now, so there is nothing for the owner to confirm. If you paid for something else, please talk to the owner.",
-  upi_hold_expired: (f) => `The hold on ${slot(f)} has ended because the owner had not confirmed the deposit in time. If you have already paid, the owner will contact you. Message me if you'd still like to book.`,
-  upi_late_received: (f) => `The owner confirmed your ${marked(f)} payment after the hold on ${slot(f)} had ended, so it is not booked. The owner will contact you about booking again or sending the money back.`,
-  upi_refund_owed: (f) => `The owner will send ${inr(f, "refundInr")} back to you by UPI. I'll message you when they mark it sent.`,
-  upi_cancelled_refund_owed: (f) => `Your booking for ${slot(f)} is cancelled. The owner will send your ${inr(f, "refundInr")} back to you by UPI, and I'll message you when they mark it sent.`,
-  upi_extra_refund_owed: (f) => `You paid more than the deposit. The owner will send the extra ${inr(f, "refundInr")} back to you by UPI, and I'll message you when they mark it sent.`,
-  upi_refund_sent: (f) => `The owner has marked your ${inr(f, "refundInr")} refund for booking ${need(f, "bookingRef")} as sent by UPI. Please check your UPI app.`,
+  upi_quote_and_link: (f) => `${Service(f)} on ${slot(f)} is free! It's ${inr(f, "priceInr")}. Pay a ${inr(f, "depositInr")} deposit to book it, and I'll hold the slot for ${need(f, "holdMinutes")} minutes.\nUPI ID: ${upiId(f)} (${payee(f)})\nThe owner will confirm your payment, then I'll message you.`,
+  upi_slot_and_link: (f) => `${slot(f)} is free! Pay a ${inr(f, "depositInr")} deposit to book it, and I'll hold the slot for ${need(f, "holdMinutes")} minutes.\nUPI ID: ${upiId(f)} (${payee(f)})\nThe owner will confirm your payment, then I'll message you.`,
+  upi_already_waiting: (f) => `I'm still holding ${slot(f)} for you. Pay the ${inr(f, "depositInr")} deposit to book it.\nUPI ID: ${upiId(f)} (${payee(f)})\nThe owner will confirm your payment, then I'll message you.`,
+  upi_qr_caption: (f) => `Scan to pay the ${inr(f, "depositInr")} deposit to ${payee(f)} by UPI.`,
+  upi_booked: (f) => `You're booked! ${Service(f)}, ${slot(f)}. The owner has confirmed your ${inr(f, "depositInr")} deposit. Can't make it? Cancel at least ${need(f, "windowHours")} hours before and your deposit comes back.`,
+  upi_paid_claim: (f) => `Thanks! The owner will check their UPI app for your ${inr(f, "depositInr")}, then I'll message you. Please wait for that message: a screenshot alone isn't proof of payment.`,
+  upi_nothing_waiting: () => "Thanks! I don't have a UPI payment waiting from you right now, so there's nothing for the owner to confirm. If you paid for something else, please talk to the owner.",
+  upi_hold_expired: (f) => `I've let go of ${slot(f)}, as the owner hadn't confirmed your deposit in time. If you've already paid, the owner will get in touch. Message me if you'd still like to book.`,
+  upi_late_received: (f) => `The owner confirmed your ${marked(f)} payment, but only after the hold on ${slot(f)} had ended, so it's not booked. The owner will get in touch about booking again or sending your money back.`,
+  upi_refund_owed: (f) => `The owner will send ${inr(f, "refundInr")} back to you by UPI. I'll message you once they mark it as sent.`,
+  upi_cancelled_refund_owed: (f) => `Done, your booking for ${slot(f)} is cancelled. The owner will send your ${inr(f, "refundInr")} back by UPI, and I'll message you once they mark it as sent.`,
+  upi_extra_refund_owed: (f) => `You paid more than the deposit. The owner will send the extra ${inr(f, "refundInr")} back to you by UPI, and I'll message you once they mark it as sent.`,
+  upi_refund_sent: (f) => `The owner has marked your ${inr(f, "refundInr")} refund as sent by UPI. Please check your UPI app.`,
 
-  owner_upi_expected: (f) => `UPI payment to check: customer ${need(f, "customerPhone")} will pay the ${inr(f, "depositInr")} deposit for ${need(f, "serviceName")} on ${slot(f)} (booking ${need(f, "bookingRef")}). When it shows in your UPI app, tap Received or reply "received ${code(f)}". If a different amount came, reply "received ${code(f)}" and the amount.`,
-  owner_upi_claim: (f) => `Customer ${need(f, "customerPhone")} says they have paid the ${inr(f, "depositInr")} deposit for booking ${need(f, "bookingRef")}. A screenshot is not proof: check your UPI app. When it is there, tap Received or reply "received ${code(f)}".`,
-  owner_upi_marked: (f) => `Thank you. ${marked(f)} for booking ${need(f, "bookingRef")} is marked paid by you.`,
-  owner_upi_part: (f) => `You marked ${marked(f)} for booking ${need(f, "bookingRef")}, but the deposit is ${inr(f, "depositInr")}, so it is not booked yet. The slot stays held until the hold ends. When the other ${left(f)} arrives, tap Received or reply "received ${code(f)}".`,
-  owner_upi_already: () => "That payment is already marked. It is counted once.",
-  owner_upi_unknown: () => "I don't know that code. Please use the code in my latest message about the payment.",
-  owner_upi_late: (f) => `You marked ${marked(f)} received for booking ${need(f, "bookingRef")} after its hold had ended, so it was not booked again by itself. Book customer ${need(f, "customerPhone")} again yourself, or send the ${inr(f, "refundInr")} back by UPI. Then tap Refund sent or Kept for booking, or reply "refunded ${code(f)}" or "kept ${code(f)}".`,
-  owner_upi_refund_owed: (f) => `Refund to send: ${inr(f, "refundInr")} by UPI to customer ${need(f, "customerPhone")} (booking ${need(f, "bookingRef")}). The agent never sends money. When you have sent it, tap Refund sent or reply "refunded ${code(f)}".`,
-  owner_upi_refund_reminder: (f) => `Reminder: ${inr(f, "refundInr")} is still owed back to customer ${need(f, "customerPhone")} (booking ${need(f, "bookingRef")}). When you have sent it by UPI, tap Refund sent or reply "refunded ${code(f)}".`,
-  owner_upi_refund_marked: (f) => `Thank you. The ${inr(f, "refundInr")} refund for booking ${need(f, "bookingRef")} is marked sent, and the customer has been told.`,
-  owner_upi_refund_kept: (f) => `Noted. The ${inr(f, "refundInr")} for booking ${need(f, "bookingRef")} is kept for a booking you make yourself. Nothing more is owed back.`,
+  owner_upi_expected: (f) => `New booking to check: ${need(f, "serviceName")}, ${slot(f)}, ${phone(f)}. They'll pay a ${inr(f, "depositInr")} deposit by UPI. When you see it in your UPI app, tap Received (or reply: received ${code(f)}, adding the amount if it's different).`,
+  owner_upi_claim: (f) => `The customer says they've paid: ${inr(f, "depositInr")} for the ${need(f, "serviceName")} on ${slot(f)}, ${phone(f)}. Please check your UPI app first (a screenshot isn't proof), then tap Received (or reply: received ${code(f)}).`,
+  owner_upi_marked: (f) => `Got it: you marked ${marked(f)} as received for the ${need(f, "serviceName")} on ${slot(f)}. Thank you!`,
+  owner_upi_part: (f) => `You marked ${marked(f)}, but the deposit for the ${need(f, "serviceName")} on ${slot(f)} is ${inr(f, "depositInr")}, so it's not booked yet. I'll keep holding the slot until the hold ends. When the other ${left(f)} comes in, tap Received (or reply: received ${code(f)}).`,
+  owner_upi_already: () => "That payment is already marked, so it counts only once.",
+  owner_upi_unknown: () => "Sorry, I don't recognise that code. Please use the one in my latest message about this payment.",
+  owner_upi_late: (f) => `You marked ${marked(f)} as received after the hold on ${slot(f)} had ended, so it wasn't booked by itself. Please book ${phone(f)} yourself, or send the ${inr(f, "refundInr")} back by UPI. Then tap Refund sent or Kept for booking (or reply: refunded ${code(f)} or kept ${code(f)}).`,
+  owner_upi_refund_owed: (f) => `Refund to send: ${inr(f, "refundInr")} by UPI to ${phone(f)}. I never send money myself. Once you've sent it, tap Refund sent (or reply: refunded ${code(f)}).`,
+  owner_upi_refund_reminder: (f) => `Reminder: ${inr(f, "refundInr")} is still owed back to ${phone(f)}. Once you've sent it by UPI, tap Refund sent (or reply: refunded ${code(f)}).`,
+  owner_upi_refund_marked: (f) => `Thanks! The ${inr(f, "refundInr")} refund to ${phone(f)} is marked as sent, and the customer has been told.`,
+  owner_upi_refund_kept: (f) => `Noted: you're keeping the ${inr(f, "refundInr")} from ${phone(f)} for a booking you make yourself. Nothing more is owed back.`,
 };
 
 const upiHi: UpiSet = {
@@ -533,9 +553,9 @@ const partner = (f: MessageFacts) => need(f, "partner");
 const upcoming = (f: MessageFacts) => need(f, "upcomingCount");
 
 const licenceEn: LicenceSet = {
-  booking_paused: (f) => `Online booking is paused for now. Please contact ${f.businessName} directly.`,
-  owner_licence_paused: (f) => `Notice: online booking for ${f.businessName} is paused for now. Existing bookings, cancellations and refunds still go through. Please contact ${partner(f)}.`,
-  owner_licence_stopped: (f) => `Notice: online booking for ${f.businessName} has stopped, because the service from ${partner(f)} has ended. Bookings after today still in your calendar: ${upcoming(f)}. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you.`,
+  booking_paused: (f) => `Sorry, online booking is paused for now. Please contact ${f.businessName} directly.`,
+  owner_licence_paused: (f) => `Heads up: online booking for ${f.businessName} is paused for now. Bookings you already have, cancellations and refunds still go through. Please contact ${partner(f)} about it.`,
+  owner_licence_stopped: (f) => `Heads up: online booking for ${f.businessName} has stopped, because the service from ${partner(f)} has ended. Bookings still in your calendar after today: ${upcoming(f)}. To keep it going with another local partner, write to hello@geometer.dev and Geometer will put you in touch.`,
 };
 const licenceHi: LicenceSet = {
   booking_paused: (f) => `ऑनलाइन बुकिंग अभी रुकी हुई है। कृपया सीधे ${f.businessName} से संपर्क करें।`,
@@ -557,7 +577,7 @@ const licenceKn: LicenceSet = {
 // Hindi, Malayalam and Kannada are machine-written, like the rest of those packs, and wait for a native speaker's review (the REVIEW sheets list them; Deferred.md says so).
 // The shop's name is not given a case ending: the sentence that names it is built the way `booking_paused` is.
 const waitEn: GuardWaitSet = {
-  wait_over: (f) => `Sorry, I could not finish your request: the booking system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact ${f.businessName} directly.`,
+  wait_over: (f) => `Sorry, I couldn't finish that: the booking system isn't answering just now. Your message is on the owner's to-do list. Please write again later, or contact ${f.businessName} directly.`,
 };
 const waitHi: GuardWaitSet = {
   wait_over: (f) => `माफ़ कीजिए, मैं आपका अनुरोध पूरा नहीं कर पाया: बुकिंग सिस्टम अभी जवाब नहीं दे रहा है। आपका संदेश मालिक की काम की सूची में है। कृपया बाद में फिर लिखें, या सीधे ${f.businessName} से संपर्क करें।`,
