@@ -9,7 +9,9 @@ import type { IncomingHttpHeaders, Server } from "node:http";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { addressAllowed, doorHandler, fleetRegistry, guardedLookup, originProblem, passThroughPolicy } from "../services/door.ts";
-import type { IdAnswer, SlugAnswer, Transport, Upstream } from "../services/door.ts";
+import type { CardAnswer, IdAnswer, SlugAnswer, Transport, Upstream } from "../services/door.ts";
+import { WHATSAPP_LINE, cardPage, esc, noCardPage, rupees } from "../services/card-page.ts";
+import type { PartnerCard } from "../services/card-page.ts";
 
 const servers: Server[] = [];
 after(() => { for (const s of servers) s.close(); });
@@ -22,10 +24,20 @@ const SLUGS: Record<string, SlugAnswer> = {
   "old-name": { state: "moved", to: "veena-salon" },
   "closed-shop": { state: "gone" },
 };
+/** A face as fleet keeps it after cleaning (apps/fleet/src/face-svg.ts): inline, no script, no address but the namespace. */
+const FACE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><title>unused</title><circle cx="50" cy="50" r="40" fill="#f6a609"/></svg>';
+const CARD: PartnerCard = {
+  handle: "asha-digital", name: "Asha Digital", intro: "I set up bookings for shops on our street.", face: { style: "clay", svg: FACE }, area: "Palayam, Thiruvananthapuram", languages: ["en", "ml"],
+  whatsapp: "919876543210", services: [{ name: "Bookings", monthly: 299, setup: 500 }, { name: "Fees", monthly: 0, setup: 0 }], shop_count: 3, shops: [{ name: "Glow Salon", slug: "glow-salon" }],
+};
+const CARDS: Record<string, CardAnswer> = {
+  "asha-digital": { state: "active", ...CARD },
+  "<script>": { state: "active", ...CARD, handle: "x-ss", name: "<script>alert(1)</script>", intro: "\"><img src=x onerror=alert(2)>", area: "<b>area</b>", services: [{ name: "<svg onload=alert(3)>", monthly: 1234567, setup: 12 }], shops: [{ name: "<i>Shop</i>", slug: "a-b" }] },
+};
 const IDS: Record<string, IdAnswer> = { "k7m2qx9r4t": { state: "active", slug: "veena-salon" }, "s2s2s2s2s2": { state: "suspended" }, "g3g3g3g3g3": { state: "gone" } };
 
 async function door(o: { remote?: (target: URL, init: Parameters<Transport>[1]) => Upstream; local?: (target: URL, init: Parameters<Transport>[1]) => Upstream; registryDown?: boolean } = {}) {
-  const calls: { kind: "local" | "remote" | "slug" | "id"; target?: string; headers?: Record<string, string>; body?: string }[] = [];
+  const calls: { kind: "local" | "remote" | "slug" | "id" | "card"; target?: string; headers?: Record<string, string>; body?: string }[] = [];
   const logs: string[] = [];
   const local: Transport = async (target, init) => {
     calls.push({ kind: "local", target: target.href, headers: init.headers, ...(init.body ? { body: init.body.toString() } : {}) });
@@ -42,6 +54,7 @@ async function door(o: { remote?: (target: URL, init: Parameters<Transport>[1]) 
     registry: {
       slug: async (s) => { calls.push({ kind: "slug", target: s }); return o.registryDown ? "unreachable" : SLUGS[s] ?? { state: "unknown" }; },
       id: async (i) => { calls.push({ kind: "id", target: i }); return IDS[i] ?? { state: "unknown" }; },
+      card: async (h) => { calls.push({ kind: "card", target: h }); return o.registryDown ? "unreachable" : h === "xss-card" ? CARDS["<script>"] : CARDS[h] ?? { state: "unknown" }; },
     },
   });
   const server = createServer(handler);
@@ -229,4 +242,90 @@ test("the owner's app (items 11d and 11e): a shop of this server keeps its own p
   assert.equal(d.calls.filter((c) => c.kind === "local").at(-1)!.body!.length, recording.length);
   assert.equal((await d.call("/veena-salon/book", { method: "POST", headers: sized, body: recording })).status, 413, "any other post keeps the small limit");
   assert.equal((await d.call("/ravi-cuts/owner/voice", { method: "POST", headers: sized, body: recording })).status, 302, "a builder's owner view is sent to its own domain, its body never read");
+});
+
+// ---- the partner's calling card (plan item 11g) ---------------------------------------------------------------------------------------------------------------
+
+/** Words the site never uses (owner's list, 14 Nov 2026), checked on whole words in everything a visitor can read on the card. */
+const BANNED = /\b(earn|earning|earnings|income|side hustle|passive|limited seats?|join now|work from home|founder|founding|bot|leaderboard|streak|safe|guaranteed?|proves?|certified|communal)\b|100%/iu;
+
+test("/@handle serves the partner's card as plain HTML: their words, a QR code of the address, the verify link, no script, and the door's own policy", async () => {
+  const d = await door();
+  const r = await d.call("/@asha-digital");
+  assert.equal(r.status, 200);
+  assert.match(String(r.headers["content-type"]), /^text\/html/u);
+  assert.equal(r.headers["cache-control"], "public, max-age=60");
+  assert.match(String(r.headers["content-security-policy"]), /default-src 'none'/u);
+  assert.doesNotMatch(String(r.headers["content-security-policy"]), /script-src[^;]*(?!'none')\w|unsafe-eval|'self'/u);
+  assert.equal(r.headers["x-content-type-options"], "nosniff");
+  assert.equal(r.headers["set-cookie"], undefined);
+  assert.doesNotMatch(r.body, /<script|<link|<iframe|<img|<form|<object|\son[a-z]+=|javascript:/iu, "no script, nothing loaded, no handler");
+  for (const must of ["Asha Digital", "@asha-digital", "I set up bookings", "Palayam, Thiruvananthapuram", "English, Malayalam", "Bookings", "₹299 a month, ₹500 to set up", "No monthly charge, no set-up charge",
+    "3 local services", "Glow Salon", 'href="/glow-salon/"', "pages.example/@asha-digital", 'href="https://geometer.dev/verify"', "hello@geometer.dev", esc(WHATSAPP_LINE)]) {
+    assert.ok(r.body.includes(must), must);
+  }
+  assert.match(r.body, /href="https:\/\/wa\.me\/919876543210\?text=/u);
+  assert.match(r.body, /<svg viewBox="0 0 \d+ \d+" role="img" aria-label="QR code for https:\/\/pages\.example\/@asha-digital"/u, "a QR code of the card's own address");
+  assert.ok(r.body.includes(FACE), "the face is inline");
+  assert.ok(Buffer.byteLength(r.body) < 40_000, "light enough for a slow phone");
+  assert.doesNotMatch(r.body, /prefers-color-scheme/u, "light for everyone");
+  assert.doesNotMatch(r.body.replace(/<svg[\s\S]*?<\/svg>/gu, "").replace(/<style>[\s\S]*?<\/style>/u, ""), BANNED, "the site's word rules");
+  assert.equal((await d.call("/@asha-digital/")).status, 200, "a trailing slash is the same page");
+  assert.equal((await d.call("/%40asha-digital")).status, 200, "%40 is an @");
+  assert.equal((await d.call("/@asha-digital", { method: "HEAD" })).status, 200);
+  assert.ok(!d.calls.some((c) => c.kind === "local" || c.kind === "remote" || c.kind === "slug"), "the card is not a shop: nothing is forwarded");
+});
+
+test("a card whose words are markup is escaped, and the WhatsApp link is digits only", async () => {
+  const d = await door();
+  const r = await d.call("/@xss-card");
+  assert.equal(r.status, 200);
+  assert.doesNotMatch(r.body, /<script>alert|<img src=x|<b>area|<i>Shop|<svg onload/u);
+  assert.ok(r.body.includes("&lt;script&gt;alert(1)&lt;/script&gt;"));
+  assert.ok(r.body.includes("&quot;&gt;&lt;img src=x onerror=alert(2)&gt;"));
+  assert.ok(r.body.includes("₹12,34,567 a month"), "Indian digit grouping");
+  const html = cardPage({ ...CARD, whatsapp: "9198x76;543210" }, "pages.example");
+  assert.doesNotMatch(html, /wa\.me/u, "a number that is not digits gets no link");
+  assert.deepEqual([rupees(0), rupees(999), rupees(1000), rupees(100000), rupees(1234567)], ["₹0", "₹999", "₹1,000", "₹1,00,000", "₹12,34,567"]);
+});
+
+test("a handle that is unknown, unpublished or junk is one friendly 404; fleet down is a 503 that says so", async () => {
+  const d = await door();
+  for (const path of ["/@nobody-here", "/@A", "/@", "/@a", "/@x--y", "/@" + "a".repeat(60), "/@asha-digital/extra", "/@%E0%A4%A", "/@../x"]) {
+    const r = await d.call(path);
+    assert.equal(r.status, 404, path);
+    assert.match(r.body, /There is no partner page here/u, path);
+    assert.match(r.body, /href="\/"/u, "a way back");
+    assert.doesNotMatch(r.body, /<script/u);
+    assert.match(String(r.headers["content-security-policy"]), /default-src 'none'/u);
+  }
+  assert.equal(noCardPage().includes("noindex"), true);
+  assert.equal((await door({ registryDown: true }).then((x) => x.call("/@asha-digital"))).status, 503);
+  const post = await d.call("/@asha-digital", { method: "POST", body: "x=1" });
+  assert.equal(post.status, 405);
+  // junk shapes never reach fleet
+  assert.deepEqual(d.calls.filter((c) => c.kind === "card").map((c) => c.target), ["nobody-here"]);
+});
+
+test("guessing handles is limited like guessing shop names", async () => {
+  const d = await door();
+  let last = 0;
+  for (let i = 0; i < 40; i++) last = (await d.call(`/@nobody-${i}-x`)).status;
+  assert.equal(last, 429);
+});
+
+test("fleetRegistry asks fleet's public card route and keeps the answer a minute", async () => {
+  let asked = 0;
+  const reg = fleetRegistry({ fleetUrl: "https://fleet.example/", fetchImpl: (async (url: string) => { asked++; assert.equal(url, "https://fleet.example/v1/partner-cards/asha-digital"); return new Response(JSON.stringify({ state: "active", ...CARD }), { status: 200 }); }) as unknown as typeof fetch, now: () => 1000 });
+  assert.equal(((await reg.card("asha-digital")) as { name: string }).name, "Asha Digital");
+  await reg.card("asha-digital");
+  assert.equal(asked, 1);
+});
+
+test("the card page's own words pass the site's word rules, whatever the partner typed", () => {
+  const html = cardPage({ ...CARD, shops: [], shop_count: 1 }, "pages.example");
+  const text = html.replace(/<svg[\s\S]*?<\/svg>/gu, " ").replace(/<style>[\s\S]*?<\/style>/u, " ").replace(/<[^>]+>/gu, " ");
+  assert.doesNotMatch(text, BANNED);
+  assert.doesNotMatch(text, /[A-Z0-9._%+-]+@(?!geometer\.dev)[A-Z0-9.-]+\.[A-Z]{2,}/iu, "the only public contact is hello@geometer.dev");
+  assert.ok(text.includes("Each is named here only when it says yes."));
 });
