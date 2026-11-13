@@ -71,9 +71,11 @@ export function createPushSender(o: { store: PushStore; guard: PushGuard | undef
     return o.store.settle(w.id, "later", at, status);
   }
 
-  /** Send what is due, one at a time (a shop has few phones), then tidy. Never two passes at once (a pass asked for meanwhile is that same pass). */
+  /** Asked for while a pass was running: that pass may have read the queue before the new push, so one more pass follows it (one, however often it is asked). */
+  let next: Promise<void> | undefined;
+  /** Send what is due, one at a time (a shop has few phones), then tidy. Never two passes at once: asked while one runs, the answer is the pass that follows it. */
   function pass(): Promise<void> {
-    if (running) return running;
+    if (running) return (next ??= running.then(() => { next = undefined; return pass(); }));
     const p = (async () => {
       try {
         for (const w of o.store.due(o.clock.now())) await one(w);

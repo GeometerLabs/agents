@@ -290,6 +290,9 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     // a UPI shop (B33) has no Razorpay Guard; item 11h: a shop with no WhatsApp has no WhatsApp Guard, and every shop has a push Guard (its owner's alerts)
     const kinds = [...guardsOf(template, shop.settings).filter((k) => k !== "whatsapp" || facts.hasWhatsApp), "push"];
     const razorpay = kinds.includes("razorpay");
+    // Item 11h: a refund a gateway's Guard holds is asked of the owner by the approvals relay, on WhatsApp, and is listed on the owner's page only once that question
+    // went out. So a gateway shop needs WhatsApp for now; a shop with no WhatsApp takes UPI (the owner marks payments and refunds on their page). Refused by name.
+    if (razorpay && !facts.hasWhatsApp) problems.push({ rule: "whatsapp-none-gateway", message: `${shop.name} has no WhatsApp number but takes payments through a gateway. A refund the gateway's Guard holds is asked of the owner on WhatsApp, so a gateway shop needs its WhatsApp number for now. Give it its number, or take UPI (the owner marks payments and refunds on their page).` });
     if (razorpay) { try { specs.razorpay = gatewaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.gatewaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); } }
     if (facts.hasWhatsApp) specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour, ...(facts.whatsappRoute ? { route: facts.whatsappRoute } : {}) });
     specs.push = pushSpec(identity("push"), PUSH_LIMITS);
