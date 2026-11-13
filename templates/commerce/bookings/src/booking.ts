@@ -107,6 +107,12 @@ export interface Booking {
   channel?: "web" | "mcp";
   /** The SHA-256 of the booking's handle: the only thing that reaches it from outside. Never the handle itself. */
   handle?: string;
+  /**
+   * Item 11h (owner, 14 Nov): a WhatsApp booking's own page link, as its hash (modules/channels/handle.ts handleHash). Made fresh each time the quote goes out
+   * on WhatsApp (a newer one replaces it, so only the last link sent opens the page), and saved only once that message was accepted. Its page shows the booking and
+   * how to pay; it cancels nothing and claims nothing (the customer does those on WhatsApp).
+   */
+  pageLink?: string;
   /** The name and number the customer typed (not verified): for the owner to call them. Never used to find the booking, and never messaged on WhatsApp. */
   contact?: { name?: string; phone: string };
 }
@@ -161,7 +167,7 @@ export function latestBooking(store: Store, customer: string, states: BookingSta
 }
 
 /** The values of this booking's record that a message may use. Everything comes from the booking and the settings, never from message text. */
-export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; slotChoices?: number[]; menu?: boolean; upiCode?: string; markedInr?: number; leftInr?: number; day?: "today" | "tomorrow"; dayBookings?: MessageFacts["dayBookings"] } = {}): MessageFacts {
+export function factsFor(settings: Settings, booking: Booking | null, language: Language, extra: { customerPhone?: string; refundInr?: number; slotMs?: number; slotChoices?: number[]; menu?: boolean; upiCode?: string; markedInr?: number; leftInr?: number; day?: "today" | "tomorrow"; dayBookings?: MessageFacts["dayBookings"]; pageLink?: string } = {}): MessageFacts {
   const payTo = ownerMarkedOf(settings.payment)?.payTo; // who the customer pays, when the owner marks payments (B71)
   const service = booking?.serviceId ? settings.services.find((s) => s.id === booking.serviceId) : undefined;
   return {
@@ -186,6 +192,7 @@ export function factsFor(settings: Settings, booking: Booking | null, language: 
     ...(extra.markedInr !== undefined ? { markedInr: extra.markedInr } : {}),
     ...(extra.leftInr !== undefined ? { leftInr: extra.leftInr } : {}),
     ...(extra.day ? { day: extra.day, dayBookings: extra.dayBookings ?? [] } : {}),
+    ...(extra.pageLink ? { pageLink: extra.pageLink } : {}),
   };
 }
 

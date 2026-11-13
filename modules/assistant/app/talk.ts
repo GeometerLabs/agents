@@ -5,7 +5,11 @@
 //
 // The pages origin runs no script but Geometer's own: the script here carries the response's nonce (front.ts puts the same one in that response's content policy),
 // and a signed-in owner's posts carry the session's form token (the hidden field, or the x-owner-csrf header on the recording's POST).
+//
+// Item 11h (decision 45): under the text box, the keyboard-mic hint (modules/channels/words-confirm.ts MIC_HINT): the phone keyboard's own microphone types the
+// owner's words on the phone, at no cost to the shop; the hold-to-record button stays for recorded voice notes.
 import type { Language } from "../../language/languages.ts";
+import { MIC_HINT } from "../../channels/words-confirm.ts";
 import type { Mood } from "../mood.ts";
 import type { TalkLine } from "../state.ts";
 
@@ -31,7 +35,7 @@ export function talkBox(a: { base: string; language: Language; lines: readonly T
   const lines = a.lines.map((l) => `<p class="talk-${l.from}"><b>${esc(l.from === "owner" ? w.you : a.assistantName)}:</b> ${esc(l.text).replace(/\n/gu, "<br>")}</p>`).join("");
   const csrf = a.csrf ? `<input type="hidden" name="csrf" value="${esc(a.csrf)}">` : "";
   return `<section class="talk" aria-labelledby="talk-h"><h2 id="talk-h">${esc(w.title)}</h2>${lines}
-<form method="post" action="${esc(a.base)}/talk">${csrf}<label class="sr" for="talk-t">${esc(w.title)}</label><textarea id="talk-t" name="text" rows="2" maxlength="900" required placeholder="${esc(w.placeholder)}"></textarea><button type="submit">${esc(w.send)}</button></form>
+<form method="post" action="${esc(a.base)}/talk">${csrf}<label class="sr" for="talk-t">${esc(w.title)}</label><textarea id="talk-t" name="text" rows="2" maxlength="900" required placeholder="${esc(w.placeholder)}" aria-describedby="talk-mic"></textarea><p class="note" id="talk-mic">${esc(MIC_HINT[a.language])}</p><button type="submit">${esc(w.send)}</button></form>
 ${a.listen === false ? "" : `<button type="button" id="talk-rec" hidden data-hold="${esc(w.hold)}" data-release="${esc(w.release)}" data-sending="${esc(w.sending)}" data-failed="${esc(w.failed)}"${a.csrf ? ` data-csrf="${esc(a.csrf)}"` : ""}>${esc(w.hold)}</button>`}
 <p id="talk-offline" class="notice" hidden>${esc(w.offline)}</p></section>
 <script${a.nonce ? ` nonce="${esc(a.nonce)}"` : ""}>${talkScript(a.base)}</script>`;
