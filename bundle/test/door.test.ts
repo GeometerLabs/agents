@@ -230,3 +230,22 @@ test("the owner's app (items 11d and 11e): a shop of this server keeps its own p
   assert.equal((await d.call("/veena-salon/book", { method: "POST", headers: sized, body: recording })).status, 413, "any other post keeps the small limit");
   assert.equal((await d.call("/ravi-cuts/owner/voice", { method: "POST", headers: sized, body: recording })).status, 302, "a builder's owner view is sent to its own domain, its body never read");
 });
+
+test("item 11h: service workers are ours only: a local shop's owner worker and a booking page's alerts worker pass with our policy; a builder's never reach the shared origin", async () => {
+  const ownerWorker = "default-src 'none'; connect-src https://pages.example/veena-salon/owner/";
+  const d = await door({
+    local: (target) => ({ status: 200, headers: { "content-type": "text/javascript; charset=utf-8", "content-security-policy": target.pathname.includes("/owner/") ? ownerWorker : "default-src 'none'" }, body: Buffer.from("self.addEventListener('push', () => {});") }),
+    remote: () => ({ status: 200, headers: { "content-type": "text/javascript", "service-worker-allowed": "/" }, body: Buffer.from("self.addEventListener('fetch', () => {});") }),
+  });
+  const owner = await d.call("/veena-salon/owner/sw.js");
+  assert.equal(owner.status, 200);
+  assert.equal(owner.headers["content-security-policy"], ownerWorker, "the owner's worker comes from our front, scoped to that shop's owner view");
+  assert.equal((await d.call(`/veena-salon/b/${"A".repeat(32)}/sw.js`)).status, 200, "a booking page's alerts worker of this server passes too");
+  for (const path of ["/ravi-cuts/sw.js", `/ravi-cuts/b/${"A".repeat(32)}/sw.js`, "/ravi-cuts/owner/sw.js"]) {
+    const r = await d.call(path);
+    assert.notEqual(r.status, 200, `${path}: no worker of a builder's server is served on the shared origin`);
+    assert.equal(r.headers["service-worker-allowed"], undefined);
+  }
+  assert.ok(!d.calls.some((c) => c.kind === "remote" && c.target?.endsWith("/sw.js")), "the builder's server is not even asked for one");
+  assert.match(passThroughPolicy("pages.example", "ravi-cuts"), /worker-src 'none'/u, "and a builder's page could not register one anyway");
+});

@@ -71,16 +71,19 @@ export function createPushSender(o: { store: PushStore; guard: PushGuard | undef
     return o.store.settle(w.id, "later", at, status);
   }
 
-  /** Send what is due, one at a time (a shop has few phones), then tidy. Never two passes at once. */
+  /** Send what is due, one at a time (a shop has few phones), then tidy. Never two passes at once (a pass asked for meanwhile is that same pass). */
   function pass(): Promise<void> {
-    running ??= (async () => {
+    if (running) return running;
+    const p = (async () => {
       try {
         for (const w of o.store.due(o.clock.now())) await one(w);
         o.store.tidy(o.clock.now());
       } catch (e) { log(`The push sender stopped a pass: ${(e as Error).message}`); }
-      finally { running = undefined; }
     })();
-    return running;
+    // cleared once it settles, even when it had nothing to wait for (an async function with no await finishes before it is assigned)
+    running = p;
+    void p.finally(() => { if (running === p) running = undefined; });
+    return p;
   }
 
   return {
