@@ -420,6 +420,14 @@ The service is `bundle/services/speech/` (README there). It was written and test
 | **Route names.** The voice-notes adapter and its Guard spec call `POST /stt` (`modules/voice/geometer.ts` `GEOMETER_SPEECH_ROUTES`, merged 13 Nov); the service also answers `POST /v1/transcribe`, which nothing calls now | The two were built apart and the service kept both | Next change to the service | The `/v1/transcribe` alias is removed with its test, or kept and named as the public route |
 | **Speaking** (`/v1/speak`) answers 501: the owner chose to listen in voice and reply in text (12 Nov), and the voice-notes adapter has no speak route and the speech Guard no speaking limit (removed on the voice-notes branch, f920e47) | Decision, not a gap | If the owner ever wants spoken replies | A text-to-speech engine is chosen after its own bake-off, with a speak route in the adapter and the Guard |
 
+
+## A partner's calling card at /@handle (plan item 11g, 14 Nov 2026): what is left
+
+- **The shop's yes has no screen yet.** Fleet takes it (`POST /v1/partner-card/yes` with the server's deployment key) and the card names a shop only with it, but nothing in the panel or the owner's app sends it. It needs a tap in the owner's app ("Let my partner name my shop on their page"), stored beside `page.json` and sent by `syncPages`. Until then a card shows the count only. The owner's own tap must be the owner's, never the partner's.
+- **A stable id for a card.** The QR code uses the handle address. A `/c/<id>` kept through a handle change would match the shops' `/p/<id>`.
+- **Door rendering is English only.** The card's chrome (headings, the WhatsApp line) is English; the partner's own words are in whatever language they typed. hi, ml and kn text after native review.
+- **No picture of the card for sharing** (an Open Graph image). The page has a title and description only.
+
 ## The shop's character (plan item 11i, 14 Nov 2026): what is left
 
 | Left open | Why | Trigger | Done when |
