@@ -108,7 +108,7 @@ test("the real Guard with the bundle's guard.toml: the owner's own command names
     assert.equal(item.waiting_for, "shop-two");
     assert.deepEqual([item.approvals_needed, item.approvals_given, item.requested_by, item.may_still_decide], [2, 0, ["owner"], ["meena", "ravi"]], "Guard heard Geo-Requested-By: owner; the reading credential does not hold shop-two");
     await w.relay.poll();
-    assert.equal(w.whatsapp.sentTo(w.owner).filter((m) => /Approval needed/u.test(m.text)).length, 0, "the owner, who asked, is not asked");
+    assert.equal(w.whatsapp.sentTo(w.owner).filter((m) => /A refund needs your OK/u.test(m.text)).length, 0, "the owner, who asked, is not asked" /* the Bookings ask's opening words since 14 Nov 2026 */);
     const [ravi, meena] = [w.whatsapp.sentTo(RAVI.whatsapp), w.whatsapp.sentTo(MEENA.whatsapp)];
     assert.deepEqual([ravi.length, meena.length], [1, 1]);
     assert.notEqual(codeIn(ravi[0].text), codeIn(meena[0].text));

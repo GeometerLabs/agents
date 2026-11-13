@@ -12,6 +12,7 @@ import type { World } from "../src/harness.ts";
 import { parseSettings } from "../src/settings.ts";
 import { TEMPLATES } from "../src/language/templates.ts";
 import { HOUR } from "../../../../modules/core/time.ts";
+import { groupPhone } from "../../../../modules/language/format.ts";
 
 const limited = (refundLimitInr: number) => parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), cancellation: { windowHours: 24, refundLimitInr } });
 const BOOK = "haircut day after tomorrow at 6pm";
@@ -146,7 +147,7 @@ test("expiry: when the owner never answers, Guard's approval runs out, the custo
   assert.equal(w.store.bookings.get("b-1")!.pending[0].kind, "guard_hold", "still waiting at 23 hours");
   await w.advance(2 * 60); // past 24 hours
   assert.equal(w.store.bookings.get("b-1")!.pending.length, 0);
-  assert.match(w.lastTextTo(CUSTOMER), /did not answer in time about your ₹200 refund.*contact Glow Salon/);
+  assert.match(w.lastTextTo(CUSTOMER), /didn't answer in time about your ₹200 refund.*contact Glow Salon/);
   assert.equal(w.payments.refunds().length, 0);
   assert.equal(calls.length, 0);
   assert.deepEqual(issues(w).map((i) => i.kind), ["expired"]);
@@ -161,7 +162,7 @@ test("an approval that Guard will no longer honour (it ran out between the answe
   await w.agent.handle({ kind: "approval_decision", approval: id, decision: "approve" });
   assert.equal(w.payments.refunds().length, 0);
   assert.deepEqual(issues(w).map((i) => i.kind), ["expired"]);
-  assert.match(w.lastTextTo(CUSTOMER), /did not answer in time/);
+  assert.match(w.lastTextTo(CUSTOMER), /didn't answer in time/);
 });
 
 test("look before retrying: a refund that already exists is treated as done and is not sent again", async () => {
@@ -241,7 +242,7 @@ test("outcome unknown on a refund within the limit: never sent again, recorded a
   assert.match(note, /NOT sent again/);
   assert.match(note, /Check the payment gateway.s own records/);
   assert.deepEqual(w.textsTo(w.owner), [], "the owner cannot settle it");
-  assert.match(w.lastTextTo(CUSTOMER), /checking your ₹200 refund/);
+  assert.match(w.lastTextTo(CUSTOMER), /checking on your ₹200 refund/);
   await w.advance(5 * 60); // time passing does not send it either
   await w.say("cancel my booking");
   assert.equal(refundCalls(w), 1);
@@ -301,11 +302,11 @@ test("Guard cannot decide (stopped, busy): nothing was sent, so the agent tries 
   await w.say("cancel my booking");
   assert.equal(w.payments.refunds().length, 0);
   assert.equal(w.store.bookings.get("b-1")!.pending[0].kind, "refund_retry");
-  assert.match(w.lastTextTo(CUSTOMER), /checking your ₹200 refund/);
+  assert.match(w.lastTextTo(CUSTOMER), /checking on your ₹200 refund/);
   await w.advance(1);
   assert.equal(w.payments.refunds().length, 1, "tried again after a minute, looking first");
   assert.equal(w.store.bookings.get("b-1")!.pending.length, 0);
-  assert.match(w.lastTextTo(CUSTOMER), /Your booking for .* is cancelled\. Your ₹200 deposit is being refunded/);
+  assert.match(w.lastTextTo(CUSTOMER), /your booking for .* is cancelled\. We're refunding your ₹200 deposit/);
   assert.deepEqual(w.textsTo(w.owner), []);
   assert.deepEqual(issues(w), []);
 });
@@ -361,7 +362,7 @@ test("the deposit was lowered after a booking paid the old one: Guard refuses th
   assert.equal(entries(w, "refund", "confirmed").length, 0);
   assert.deepEqual(w.heldForOwner(), [], "the owner is not asked about it");
   assert.deepEqual(w.textsTo(w.owner), []);
-  assert.match(w.lastTextTo(CUSTOMER), /We are checking your ₹200 refund and will message you/, "the customer is told it is being checked, not that it was sent");
+  assert.match(w.lastTextTo(CUSTOMER), /We're checking on your ₹200 refund, and I'll message you/, "the customer is told it is being checked, not that it was sent");
   await w.advance(120);
   assert.equal(asked, 1, "it is not tried again");
   assert.equal(w.payments.refunds().length, 0);
@@ -405,7 +406,7 @@ test("409 already_done: a refund a person at the server settled as made is done 
   };
   w.payments.listRefunds = async (id) => { if (++looks === 2) throw new ApiError(503, "Razorpay is not answering"); await listRefunds(id); return []; };
   await w.say("cancel my booking");
-  assert.match(w.lastTextTo(CUSTOMER), /checking your ₹200 refund/);
+  assert.match(w.lastTextTo(CUSTOMER), /checking on your ₹200 refund/);
   w.guard.resolve(pay, "happened", "ops");
   await w.advance(2 * 60);
   // the second try reached Guard, which said already_done: nothing was sent, and it is not a failure
@@ -417,7 +418,7 @@ test("409 already_done: a refund a person at the server settled as made is done 
   assert.match(done[0].notes, /settled this refund as made \(already_done\).*not by the payments service's own list.*not sent again/);
   assert.deepEqual(issues(w), [], "nobody needs to look at it again");
   assert.deepEqual(w.store.bookings.get("b-1")!.stoppedRefunds, [pay], "and Guard is never asked about this payment again");
-  assert.equal(w.textsTo(w.owner).at(-1), `Refund done: ₹200 for ${CUSTOMER}. The person who set up your agent checked it and marked it as made, so it is not sent a second time.`);
+  assert.equal(w.textsTo(w.owner).at(-1), `Refund done: ₹200 to ${groupPhone(CUSTOMER)}. The person who set up your agent checked it and marked it as made, so it won't be sent a second time.`);
   assert.match(w.lastTextTo(CUSTOMER), /deposit is being refunded/, "the customer is told it is done, never that it failed");
   const tries = w.payments.calls.length;
   await w.advance(60 * 60);
@@ -447,7 +448,7 @@ test("409 already_done after the owner approved a held refund: done, the owner i
   assert.equal(calls.length, 1, "the held bytes went to Guard once");
   assert.equal(w.payments.refunds().length, 0);
   assert.equal(entries(w, "refund", "confirmed").at(-1)!.refs.confirmedBy, "operator:asha.ops");
-  assert.match(w.textsTo(w.owner).at(-1)!, /^Refund done: ₹200 for /u);
+  assert.match(w.textsTo(w.owner).at(-1)!, /^Refund done: ₹200 to /u);
   assert.match(w.lastTextTo(CUSTOMER), /owner approved your refund/);
   assert.deepEqual(issues(w), []);
   assert.equal(w.store.bookings.get("b-1")!.pending.length, 0);

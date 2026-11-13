@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { CODE_ALPHABET, CODE_LENGTH } from "../../../../modules/approvals/code.ts";
 import { HOUR, MINUTE } from "../../../../modules/core/time.ts";
 import { CUSTOMER, OTHER_CUSTOMER } from "../src/harness.ts";
+import { groupPhone } from "../../../../modules/language/format.ts";
 import { OWNER_SECRET, APPROVER_ID, startApprovalsWorld } from "./helpers/approvals-world.ts";
 import type { ApprovalsWorld } from "./helpers/approvals-world.ts";
 
@@ -23,7 +24,7 @@ run("the owner is asked once, in the pathway's own words: the amount and the pay
   assert.equal(sent[0].kind, "template", "the owner has not written today, so it goes as the approved template");
   assert.equal(sent[0].templateName, "owner_approval_request");
   const code = codeIn(sent[0].text);
-  assert.equal(sent[0].text, `Approval needed: refund ₹200 for ${CUSTOMER} (haircut, Thu 5 Nov, 6:00 pm). Reply "approve ${code}" or "deny ${code}" within 24 hours.`);
+  assert.equal(sent[0].text, `A refund needs your OK: ₹200 to ${groupPhone(CUSTOMER)} (haircut, Thu 5 Nov, 6:00 pm). Reply "approve ${code}" or "deny ${code}" within 24 hours.`); // the number grouped as people write it (14 Nov 2026)
   assert.equal(code.length, CODE_LENGTH);
   assert.ok([...code].every((c) => CODE_ALPHABET.includes(c)));
   assert.ok(!sent[0].text.includes("b-1"), "never the booking ref");
@@ -66,7 +67,7 @@ run("approve <code>: Guard gets the owner's signed answer, the agent sends the i
   assert.match(w.kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /owner approved your refund/);
   const told = w.toOwner();
   assert.equal(told.length, 2);
-  assert.equal(told[1].text, `Thank you. The ₹200 refund for ${CUSTOMER} is being sent, and they will be told.`);
+  assert.equal(told[1].text, `Thanks! The ₹200 refund to ${groupPhone(CUSTOMER)} is being sent, and I'll let them know.`);
   assert.equal(told[1].kind, "text", "a reply to the owner's own message");
   assert.deepEqual(w.relay.status().asks, { decided: 1 });
   assert.deepEqual(w.relay.status().decided, { approve: 1, deny: 0 });
@@ -85,7 +86,7 @@ run("deny <code>: Guard gets the no, nothing is refunded, the customer and the o
   assert.deepEqual(w.guard.accepted.map((a) => a.decision), ["deny"]);
   assert.equal(refunded(w), 0);
   assert.match(w.kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /decided not to refund the ₹200/);
-  assert.equal(w.toOwner()[1].text, `Understood. The ₹200 refund for ${CUSTOMER} will not be sent, and they will be told.`);
+  assert.equal(w.toOwner()[1].text, `Okay, the ₹200 refund to ${groupPhone(CUSTOMER)} won't be sent. I'll let them know.`);
   await w.kit.say(w.runtime, "cancel my booking");
   for (let i = 0; i < 3; i++) { w.clock.advance(HOUR); await w.relay.poll(); await w.runtime.tick(); }
   assert.equal(w.toOwner().length, 2, "no second ask for the same refund");
@@ -226,7 +227,7 @@ run("a late reply: the code ran out, the owner is told once and plainly that not
   assert.equal(w.guard.accepted.length, 0, "never offered to Guard");
   assert.equal(refunded(w), 0);
   const told = w.toOwner();
-  assert.equal(told.at(-1)!.text, `That request ran out before you answered, so nothing was refunded: ₹200 for ${CUSTOMER}.`);
+  assert.equal(told.at(-1)!.text, `That refund request (₹200 to ${groupPhone(CUSTOMER)}) ran out before you answered, so nothing was refunded.`);
   const count = told.length;
   await w.ownerWrites(`approve ${code}`);
   await w.ownerWrites(`deny ${code}`);
@@ -234,7 +235,7 @@ run("a late reply: the code ran out, the owner is told once and plainly that not
   // the agent, on its side, ends the same way when Guard's approval runs out
   w.clock.advance(HOUR);
   await w.runtime.tick();
-  assert.match(w.kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /did not answer in time about your ₹200 refund/);
+  assert.match(w.kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /didn't answer in time about your ₹200 refund/);
   assert.equal(w.model.approvals().find((a) => a.id === approval)!.state, "pending");
   assert.equal(w.runtime.status().refunds.needBuilder.expired, 1);
 });
@@ -345,7 +346,7 @@ run("Guard cannot be reached when the owner answers: the owner is asked to send 
   const notify = w.guardClient.notify;
   w.guardClient.notify = async () => ({ kind: "unreachable", error: "down" });
   await w.ownerWrites(`approve ${code}`);
-  assert.equal(w.toOwner().at(-1)!.text, "I could not record your answer just now. Please send it again in a few minutes.");
+  assert.equal(w.toOwner().at(-1)!.text, "Sorry, I couldn't save your answer just now. Please send it again in a few minutes.");
   assert.equal(refunded(w), 0);
   assert.deepEqual(w.relay.status().asks, { asked: 1 });
   w.guardClient.notify = notify;
@@ -436,7 +437,7 @@ run("the owner's language: the ask and the answers are in it, the commands stay 
   await w.heldRefund();
   await w.relay.poll();
   const text = w.toOwner()[0].text;
-  assert.match(text, /^मंज़ूरी चाहिए: /);
+  assert.match(text, /^रिफंड के लिए आपकी हाँ चाहिए: /);
   assert.match(text, /"approve [A-Z0-9]{6}" या "deny [A-Z0-9]{6}"/);
   assert.match(text, /24 घंटे के अंदर/);
   await w.ownerWrites(`approve ${codeIn(text)}`);

@@ -1192,7 +1192,7 @@ async function heldRefundThroughRuntime() {
   if (!link) { check("a booking through the runtime gets its deposit link (the start of the held-refund check)", false, { wrote }); return; }
   const refundsBefore = ((await st()).refunds ?? []).length;
   await control(shop, "/_standin/razorpay/pay", { request_id: link.id });
-  const booked = await waitFor("'Booked!'", async () => ((await st()).outbox ?? []).some((m: { to: string; text: string }) => digits(m.to) === digits(c.from) && /^Booked!/u.test(m.text)), 60);
+  const booked = await waitFor("'You're booked!'", async () => ((await st()).outbox ?? []).some((m: { to: string; text: string }) => digits(m.to) === digits(c.from) && /^You're booked!/u.test(m.text)), 60); // the Bookings words since 14 Nov 2026
   check("the customer paid the deposit and the runtime booked it (the calendar and the payment record agree)", booked, link.id);
   await customerWrites(shop, c.from, "please cancel my booking");
   let held: { seq: number; refs: Record<string, string> } | undefined;
