@@ -48,17 +48,22 @@ export interface ReportTemplate {
 export const REPORT_SLOTS = ["title", "collected", "givenBack", "pending", "orders", "cancelled", "asked", "approved", "saidNo", "stopped", "notChecked", "code", "link", "check", "builder"] as const;
 export type ReportSlot = (typeof REPORT_SLOTS)[number];
 
+/**
+ * 14 Nov: the figures are bold (*text*, which WhatsApp shows as bold), so a figure never looks like its label: every number or amount, and the title line. In "Not checked" only the
+ * label is bold; where a line has a count and reasons ("Stopped by your limits"), the numbers are bold, not the reasons. The asterisk is a fixed word on each side of a value, so the
+ * rules (never start or end with a value, never two values side by side) still hold. The plain summary text (text.ts) is not changed: the website bolds that itself.
+ */
 /** The words for one language. Starts and ends with fixed words, never two values side by side, one line per thing the owner reads. */
 function wording(language: Language, badge: boolean, upi = false): string {
   const s = STRINGS[language];
   const dot = language === "hi" ? "।" : ".";
   return [
-    `${s.monthlyReport}: {title}`,
-    `${upi ? s.upiLabel.collected : s.label.collected}: {collected} · ${upi ? s.upiLabel.givenBack : s.label.givenBack}: {givenBack} · ${s.label.stillToCollect}: {pending}`,
-    `${s.label.ordersTaken}: {orders} · ${s.label.cancelled}: {cancelled}`,
-    `${s.label.wasAsked}: {asked} · ${s.label.approved}: {approved} · ${s.label.saidNo}: {saidNo}`,
-    `${s.label.stoppedByLimits}: {stopped}`,
-    `${s.label.notChecked}: {notChecked}${dot} ${s.handRun}`,
+    `*${s.monthlyReport}: {title}*`,
+    `${upi ? s.upiLabel.collected : s.label.collected}: *{collected}* · ${upi ? s.upiLabel.givenBack : s.label.givenBack}: *{givenBack}* · ${s.label.stillToCollect}: *{pending}*`,
+    `${s.label.ordersTaken}: *{orders}* · ${s.label.cancelled}: *{cancelled}*`,
+    `${s.label.wasAsked}: *{asked}* · ${s.label.approved}: *{approved}* · ${s.label.saidNo}: *{saidNo}*`,
+    `${s.label.stoppedByLimits}: *{stopped}*`,
+    `*${s.label.notChecked}*: {notChecked}${dot} ${s.handRun}`,
     `${s.page.code}: {code} · ${s.fullReport}: {link}`,
     `${s.checkGenuine}: {check}`,
     s.helpLine,
