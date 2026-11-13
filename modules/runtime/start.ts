@@ -24,7 +24,7 @@ import type { AiPolicy } from "../understanding/ai-state.ts";
 import { systemOneFromEnv } from "../understanding/system-one.ts";
 import { RATES, dayOf, selfHostedRate } from "../understanding/rates.ts";
 import type { DecisionStep, ModelStep, RouterOptions } from "../understanding/router.ts";
-import { ClientError, aiOverrideReader, modelSwitchReader, reportOptionsReader } from "./config.ts";
+import { ClientError, aiOverrideReader, modelSwitchReader, reportOptionsReader, runtimeHasWhatsApp } from "./config.ts";
 import type { ClientFolder } from "./config.ts";
 import type { Runtime } from "./core.ts";
 import { startServer } from "./http.ts";
@@ -247,7 +247,7 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   let server: RunningServer;
   try {
     // the owner's link is read from the client folder on every request (the deployer writes and removes it), so a revoked link stops without a restart
-    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}), ...(ownerSignin ? { ownerSignin: ownerSignin.http } : {}), ...(push ? { push, hasWhatsApp: (client.runtime.services as Record<string, unknown> | undefined)?.messaging !== undefined || client.runtime.mode === "fakes" } : {}) });
+    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}), ...(ownerSignin ? { ownerSignin: ownerSignin.http } : {}), ...(push ? { push, hasWhatsApp: runtimeHasWhatsApp(client.runtime) } : {}) });
   } catch (e) {
     await runtime.close();
     ownerAccess?.close();

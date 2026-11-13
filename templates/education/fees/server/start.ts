@@ -2,6 +2,7 @@
 // line around this; the tests start it directly. The start itself, and the reading of messages and of the report block, are the same for every template
 // (modules/runtime/start.ts); this file gives them Fees' reading, its report and its runtime.
 import { pushMessaging } from "../../../../modules/push/push.ts";
+import { runtimeHasWhatsApp } from "../../../../modules/runtime/config.ts";
 import type { Messaging } from "../../../../modules/messaging/messaging.ts";
 import { join } from "node:path";
 import { buildVoice } from "../../../../modules/voice/config.ts";
@@ -72,7 +73,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
     async build(client, { store, clock, log, recordKey, ownerSignin, push }) {
       const raw = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive, payment: client.settings.payment });
       // item 11h: every message to the owner by the owner's choice of WhatsApp, push or both (push alone for a shop with no WhatsApp: modules/push/push.ts)
-      const built = { ...raw, messaging: pushMessaging(raw.messaging as Messaging | undefined, push, client.settings.owner.whatsapp, clock) };
+      const built = { ...raw, messaging: pushMessaging(runtimeHasWhatsApp(client.runtime) ? raw.messaging as Messaging | undefined : undefined, push, client.settings.owner.whatsapp, clock) };
       // An owner-marked shop's QR pictures (UPI) go into the folder the monthly report's pages are served from (read-only, no listing), under random names (B33).
       const report = client.runtime.report;
       const services = ownerMarkedOf((client.settings as { payment?: PaymentSettings }).payment) && report ? { ...built, qrImage: folderQrImages({ dir: report.pagesDir, baseUrl: report.pageBaseUrl, log }) } : built;
