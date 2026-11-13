@@ -149,8 +149,8 @@ test("the real Guard: one no refuses a refund that needs two, whoever approved f
     const states = ((await (await w.admin("/admin/approvals")).json()) as { approvals: { state: string }[] }).approvals.map((a) => a.state);
     assert.deepEqual(states, ["denied"]);
     assert.match(w.kit.messaging.sentTo(CUSTOMER).at(-1)!.text, /decided not to refund/);
-    assert.match(w.whatsapp.sentTo(w.owner).at(-1)!.text, /was refused by one of the people who approve refunds/u);
-    assert.match(w.whatsapp.sentTo(RAVI.whatsapp).at(-1)!.text, /मना कर दिया है/u);
+    assert.match(w.whatsapp.sentTo(w.owner).at(-1)!.text, /One of the people who approve refunds said no/u);
+    assert.match(w.whatsapp.sentTo(RAVI.whatsapp).at(-1)!.text, /मना कर दिया/u);
     // Ravi's code is closed: his late answer reaches nobody
     await w.writes(RAVI.whatsapp, `approve ${codeIn(w.whatsapp.sentTo(RAVI.whatsapp)[0].text)}`);
     assert.equal(w.standins.fakes.payments.refunds().length, 0);
