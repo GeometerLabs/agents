@@ -1352,7 +1352,10 @@ async function withoutWhatsApp() {
   // ---- judged from the records ----
   const record = recordOf(shop);
   const ownerSends = record.filter((e) => e.action === "send_message" && e.refs.to === "owner");
-  check("the runtime's record: every alert to the owner went as a push (named push-...), none on WhatsApp", ownerSends.length >= 3 && ownerSends.every((e) => e.outcome === "confirmed" && String(e.refs.messageId ?? "").startsWith("push-")), ownerSends.map((e) => [e.refs.templates, e.refs.messageId]).slice(0, 6));
+  // a live runtime writes message ids keyed with the record's key (B69), so the record cannot say "push-..." here; what it can say is that every alert went, and
+  // the push service saw one push to the owner's phone for each (with no WhatsApp Guard at all, nothing else could have carried it)
+  const toOwnerPhone = (await pushesSeen()).filter((p) => p.path === ownerPhone.path).length;
+  check("the runtime's record: every alert to the owner went (confirmed), and the push service carried one to the owner's phone for each; there is no WhatsApp to carry any", ownerSends.length >= 3 && ownerSends.every((e) => e.outcome === "confirmed") && toOwnerPhone >= ownerSends.length, { sends: ownerSends.map((e) => e.refs.templates), pushesToOwner: toOwnerPhone });
   check("the record shows the page booking, the owner's marks from the page, the refund marked sent, and the passkey sign-ins", record.some((e) => e.action === "channel_booking" && e.outcome === "confirmed") && record.some((e) => e.action === "owner_page_action") && record.some((e) => e.action === "owner_session" && e.refs.how === "setup") && record.filter((e) => e.action === "owner_session" && e.refs.what === "signed_in" && e.refs.how === "passkey").length >= 2, { entries: record.length });
   const text = JSON.stringify(record);
   check("no push address, key or handle is in the record", !text.includes("proof-owner") && !text.includes("proof-customer") && !text.includes(handle), "");
