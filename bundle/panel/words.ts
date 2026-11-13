@@ -102,7 +102,7 @@ export interface Words {
       price: string; hours: string; deposit(amount: string, minutes: number): string; refund(hours: number, limit: string): string; booked: string; language: string; charge: string;
     };
     /**
-     * The Fees template's own form (a centre, its batches and fees, its students, and the rules of the month). The same five steps, so the steps' titles for it are here.
+     * The Fees template's own form (a centre, its batches and fees, its students, and the rules of the month). The same six steps, so the steps' titles for it are here.
      * Everything else the phone setup says (languages, accounts, checks) is shared, and the centre's limits in plain words are the Fees certificate's own lines
      * (templates/education/fees/report/strings.ts), so they are said once.
      */
@@ -119,7 +119,7 @@ export interface Words {
         mostBad: string; partBad(max: string): string; waiverBad(max: string): string; refundBad: string;
       };
     };
-    /** The Orders template's own form (a shop, its menu, and the rules: cut-off, slots, advance and limits). The same five steps. The limits in plain words are the Orders certificate's own lines. */
+    /** The Orders template's own form (a shop, its menu, and the rules: cut-off, slots, advance and limits). The same six steps. The limits in plain words are the Orders certificate's own lines. */
     orders: {
       steps: { business: string; rules: string };
       business: { name: string; address: string; menu: string; menuHelp: string };

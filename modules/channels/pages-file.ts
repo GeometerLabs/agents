@@ -51,10 +51,12 @@ export function readPagesFile(text: string | undefined): PagesFile | undefined {
 }
 
 /**
- * Item 11i: where the shop's character pictures are, for links that leave the server (WhatsApp fetches them itself): through the pages domain's front door when the
- * shop has a page there, else on its own server. Undefined when the pictures are not drawn and handed over yet.
+ * Item 11i: where the shop's character pictures are, for the links WhatsApp fetches itself (the morning template's image header, the sticker): always the shop's own
+ * server (`base`), never through the pages domain's front door. At 08:00 WhatsApp's fetchers ask for many shops' pictures from the same few addresses; the door
+ * limits each address and asks fleet about each name, so a picture there could be refused, and a template whose header picture cannot be fetched is not delivered.
+ * Undefined when the pictures are not drawn and handed over yet. Streetlist and the pages use the door's addresses (front.ts).
  */
-export const picturesOf = (pages: PagesFile | undefined): CharacterPictures | undefined => (pages?.character ? { base: pages.url ?? pages.base, version: pages.character.version } : undefined);
+export const picturesOf = (pages: PagesFile | undefined): CharacterPictures | undefined => (pages?.character ? { base: pages.base, version: pages.character.version } : undefined);
 
 /** A reader that looks at the file on every call (a few hundred bytes), so the deployer's next pass is seen at once. */
 export const pagesReader = (file: string): (() => PagesFile | undefined) => () => {

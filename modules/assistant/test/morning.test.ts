@@ -145,7 +145,7 @@ test("inside the window the mood's sticker (the WebP) goes just before the words
   assert.deepEqual(sent.map((m) => m.kind), ["sticker", "text"]);
   assert.equal(sent[0].sticker?.link, "https://pages.example/glow-salon/character/closed.webp?v=0123456789abcdef", "at 08:05 the shop opens at 10:00: closed (the true mood, to the owner)");
   const end = w.record.entries().filter((e) => e.refs.morning === "2026-11-12").at(-1)!;
-  assert.equal(end.refs.sticker, sent[0].id);
+  assert.equal(end.refs.sticker, "closed", "the picture's name, never WhatsApp's id (the record keeps ids only as fingerprints, B69)");
 });
 
 test("a sticker that fails is only a line in the log: the words still go, once", async () => {

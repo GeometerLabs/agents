@@ -1,5 +1,5 @@
 // The phone setup for a shop, as plain functions: what each step takes from the form, what it refuses (in the person's language), and how the steps
-// become the same client folder a builder would write. The shop form is the demo's (templates/commerce/bookings/demo/personalise.ts), grown into five steps; it is
+// become the same client folder a builder would write. The shop form is the demo's (templates/commerce/bookings/demo/personalise.ts), grown into six steps (item 11i added the shop's assistant); it is
 // not copied. It asks only for what the template's manifest says the template uses, and `validateSettings` is the last gate on everything.
 import { calendarModule, validateSettings } from "../../templates/commerce/bookings/src/settings.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
@@ -105,7 +105,7 @@ export function whatsappDraftOf(meta: ShopMeta, runtime: Record<string, any> | u
   return { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(m?.phoneNumberId ?? ""), ...(m?.provider === "gupshup-selfserve" ? { provider: "gupshup-selfserve" as const, appName: String(m.appName ?? "") } : {}) };
 }
 
-/** A draft for a shop that already exists, so changing its settings is the same five steps. */
+/** A draft for a shop that already exists, so changing its settings is the same six steps. */
 export function draftFromShop(id: string, accountId: string, templateId: string, shopId: string, settings: Settings, runtime: Record<string, any> | undefined, meta: ShopMeta, now: string): Draft {
   return {
     id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: formFromSettings(settings), windowHours: String(settings.cancellation.windowHours),
