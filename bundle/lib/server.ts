@@ -141,7 +141,8 @@ export interface ServerConfig {
   /** First two numbers of the private address range the bundle's networks use. Default 10.231. */
   network: { base: string };
   /** For a test: another host for a provider's Guard. */
-  upstreams?: Partial<Record<"razorpay" | "whatsapp" | "calendar" | "model", Upstream>>;
+  /** Item 11h: `push` is the push Guard's upstream (the server's push sender, by default), and `push-service` where the push sender sends every push instead of the real push services (a test server only). */
+  upstreams?: Partial<Record<"razorpay" | "whatsapp" | "calendar" | "model" | "push" | "push-service", Upstream>>;
   limits: { razorpayLinksPerHour: number; whatsappMessagesPerHour: number; calendarEventsCreatedPerHour: number; calendarEventsDeletedPerDay: number };
   /** The open panel container. "own": a builder's server (invitations from the panel); "hosted": Geometer's partner server (the data key is required). */
   panel: { enabled: boolean; mode: "own" | "hosted"; /** B72: the shop terms can be sent to the owner and agreed on WhatsApp (modules/terms). OFF unless true: it needs the owner's legal check before it replaces signed paper. */ termsOnWhatsapp: boolean };

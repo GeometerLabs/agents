@@ -1,16 +1,17 @@
-// One shop, planned: from its settings and runtime.json to the specs for its three Guards and the runtime config its container will read.
+// One shop, planned: from its settings and runtime.json to the specs for its Guards and the runtime config its container will read. Item 11h (decision 45): every
+// shop also gets a push Guard (its owner's alerts, and its customers' who allowed them), and a shop whose runtime.json names no messaging service has no WhatsApp.
 // This file is pure (no files, no Docker, no clock), so every rule that can refuse a deploy is tested without a machine.
 import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
 import { OWNER_APPROVER } from "../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../modules/approvals/people.ts";
-import { KINDS, kindFor, guardsOf, hasCalendar as shopHasCalendar } from "../lib/kinds.ts";
+import { KINDS, kindFor, guardsOf, hasCalendar as shopHasCalendar, runtimeHasWhatsApp } from "../lib/kinds.ts";
 import type { Kind } from "../lib/kinds.ts";
 import { DEFAULT_PREPARED_BY, publicUrl, selfHostedTarget } from "../lib/server.ts";
 import { RUNTIME_SIGNING_KEY_FILE } from "../lib/secrets.ts";
 import type { ModelConfig, PanelRuntime, Pins, ServerConfig, ShopFolder, Upstream } from "../lib/server.ts";
 import { stableJson } from "../lib/util.ts";
 import type { Problem } from "../lib/util.ts";
-import { GUARD_UPSTREAM_TIMEOUT_MS, calendarSpec, guardDef, modelPath, modelProvider, modelSpec, gatewaySpec, whatsappGuardDef, whatsappSpec } from "./guards.ts";
+import { GUARD_UPSTREAM_TIMEOUT_MS, PUSH_LIMITS, calendarSpec, guardDef, modelPath, modelProvider, modelSpec, gatewaySpec, pushGuardDef, pushSpec, whatsappGuardDef, whatsappSpec } from "./guards.ts";
 import type { WhatsAppRoute } from "./guards.ts";
 import { SPEECH_GUARDS_PLACED, speechProblem } from "./speech.ts";
 import { messagingConfigProblem } from "../../modules/messaging/providers.ts";
@@ -117,14 +118,16 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
   // Item 11c: Gupshup self-serve shows a shop no Meta phone number id; its number stands in (digits only), as the id the inbox and the runtime keep for the number
   const m0 = isObj(services.messaging) ? services.messaging : {};
   const ownNumber = m0.provider === "gupshup-selfserve" && typeof m0.sourceNumber === "string" ? m0.sourceNumber.replace(/\D/gu, "") : undefined;
-  const phoneNumberId = pins.whatsapp?.phoneNumberId ?? written.whatsapp ?? ownNumber;
+  // item 11h (decision 45): a shop with no messaging service in runtime.json has no WhatsApp at all, and nothing about a number is asked
+  const hasWhatsApp = runtimeHasWhatsApp(panel);
+  const phoneNumberId = hasWhatsApp ? pins.whatsapp?.phoneNumberId ?? written.whatsapp ?? ownNumber : undefined;
   if (pins.calendar && written.calendar !== undefined && written.calendar !== pins.calendar.calendarId) notes.push("runtime.json names another calendar than the one the connection check confirmed (pins.json); the confirmed one is used.");
   if (pins.whatsapp && written.whatsapp !== undefined && written.whatsapp !== pins.whatsapp.phoneNumberId) notes.push("runtime.json names another WhatsApp number id than the one the connection check confirmed (pins.json); the confirmed one is used.");
   if (hasCalendar && (typeof calendarId !== "string" || calendarId.trim() === "")) problems.push({ rule: "calendar-id", message: 'runtime.json needs services.calendar.calendarId: the shop\'s own Google calendar. The calendar Guard allows exactly that one and refuses every other.' });
-  if (typeof phoneNumberId !== "string" || !/^\d{6,20}$/u.test(phoneNumberId)) problems.push({ rule: "whatsapp-number-id", message: 'runtime.json needs services.messaging.phoneNumberId: the shop\'s own WhatsApp phone number id (digits only). The WhatsApp Guard allows exactly that one and refuses every other.' });
+  if (hasWhatsApp && (typeof phoneNumberId !== "string" || !/^\d{6,20}$/u.test(phoneNumberId))) problems.push({ rule: "whatsapp-number-id", message: 'runtime.json needs services.messaging.phoneNumberId: the shop\'s own WhatsApp phone number id (digits only). The WhatsApp Guard allows exactly that one and refuses every other.' });
   // Item 11b: a shop whose WhatsApp goes through Gupshup says so in runtime.json, with its Gupshup app id; its Guard then fronts Gupshup and allows only that app
   const messaging = isObj(services.messaging) ? services.messaging : {};
-  const providerProblem = messagingConfigProblem(messaging);
+  const providerProblem = hasWhatsApp ? messagingConfigProblem(messaging) : null;
   if (providerProblem) problems.push({ rule: "whatsapp-provider", message: `runtime.json: ${providerProblem}` });
   const whatsappRoute: WhatsAppRoute | undefined = providerProblem ? undefined
     : messaging.provider === "gupshup" ? { provider: "gupshup", appId: messaging.appId as string }
@@ -161,7 +164,7 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
     else parser = { wire: p.wire as string, model: p.model as string, ...(typeof p.timeoutMs === "number" ? { timeoutMs: p.timeoutMs } : {}) };
     if (p.baseUrl !== undefined || p.agentTokenFile !== undefined) notes.push("parser: the bundle sets baseUrl and agentTokenFile itself (the server's model Guard).");
   }
-  return { calendarId: calendarId as string, phoneNumberId: phoneNumberId as string, whatsappRoute, timeoutMs: timeoutMs as number, parser, tickSeconds: typeof panel.tickSeconds === "number" ? panel.tickSeconds : undefined };
+  return { calendarId: calendarId as string, phoneNumberId: phoneNumberId as string, hasWhatsApp, whatsappRoute, timeoutMs: timeoutMs as number, parser, tickSeconds: typeof panel.tickSeconds === "number" ? panel.tickSeconds : undefined };
 }
 
 /** The pathway's own check of a runtime config (server/config.ts). A parameter so a test can stand in for a pathway version that knows more. */
@@ -283,17 +286,19 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
 
   if (shop.settings && problems.length === 0) {
     const identity = (kind: GuardKind) => ({ tenant: shop.name, name: `${shop.name}-${kind}`, version: versions[kind] ?? 1, reviewedBy: server.reviewedBy });
-    const specs: Record<Exclude<GuardKind, "model">, LimitsSpec | undefined> = { razorpay: undefined, whatsapp: undefined, calendar: undefined };
-    const kinds = guardsOf(template, shop.settings); // a UPI shop (B33) has no Razorpay Guard
+    const specs: Record<Exclude<GuardKind, "model">, LimitsSpec | undefined> = { razorpay: undefined, whatsapp: undefined, calendar: undefined, push: undefined };
+    // a UPI shop (B33) has no Razorpay Guard; item 11h: a shop with no WhatsApp has no WhatsApp Guard, and every shop has a push Guard (its owner's alerts)
+    const kinds = [...guardsOf(template, shop.settings).filter((k) => k !== "whatsapp" || facts.hasWhatsApp), "push"];
     const razorpay = kinds.includes("razorpay");
     if (razorpay) { try { specs.razorpay = gatewaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.gatewaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); } }
-    specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour, ...(facts.whatsappRoute ? { route: facts.whatsappRoute } : {}) });
+    if (facts.hasWhatsApp) specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour, ...(facts.whatsappRoute ? { route: facts.whatsappRoute } : {}) });
+    specs.push = pushSpec(identity("push"), PUSH_LIMITS);
     if (kinds.includes("calendar")) specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
     for (const kind of kinds) {
       const spec = specs[kind];
       if (!spec) continue;
       // `gupshupRenewed` (deploy.ts decides it from the secrets: no static token, a server universal token): the Guard reads the refresher's renewed app token
-      const def = kind === "whatsapp" ? whatsappGuardDef(facts.whatsappRoute, o.gupshupRenewed === true) : guardDef(kind);
+      const def = kind === "whatsapp" ? whatsappGuardDef(facts.whatsappRoute, o.gupshupRenewed === true) : kind === "push" ? pushGuardDef() : guardDef(kind);
       const approvers = kind === "razorpay" ? (shop.settings as { approvers?: ApproversSettings }).approvers : undefined;
       guards.push({ kind, service: names.guard(shop.name, kind), tenant: shop.name, deployment: `${shop.name}-${kind}`, def, upstream: upstreamOf(server, kind, def), spec, specText: stableJson(spec), ...(approvers ? { approvers } : {}) });
     }
@@ -303,11 +308,26 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       services: {
         ...(razorpay ? { payments: { baseUrl: guardUrl(names.guard(shop.name, "razorpay")), agentTokenFile: `${SECRETS}/agent_razorpay` } } : {}),
         ...(kinds.includes("calendar") ? { calendar: { baseUrl: guardUrl(names.guard(shop.name, "calendar")), calendarId: facts.calendarId, agentTokenFile: `${SECRETS}/agent_calendar` } } : {}),
-        messaging: { baseUrl: guardUrl(names.guard(shop.name, "whatsapp")), phoneNumberId: facts.phoneNumberId, ...(facts.whatsappRoute ?? {}), agentTokenFile: `${SECRETS}/agent_whatsapp` },
+        ...(facts.hasWhatsApp ? { messaging: { baseUrl: guardUrl(names.guard(shop.name, "whatsapp")), phoneNumberId: facts.phoneNumberId, ...(facts.whatsappRoute ?? {}), agentTokenFile: `${SECRETS}/agent_whatsapp` } } : {}),
+        // item 11h: every push goes through the shop's own push Guard
+        push: { baseUrl: guardUrl(names.guard(shop.name, "push")), agentTokenFile: `${SECRETS}/agent_push` },
         timeoutMs: facts.timeoutMs,
       },
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
+    // Item 11h: a runtime pinned to a version from before 14 Nov 2026 knows no push service and needs WhatsApp. Push is then left out (with its Guard), and a shop with no
+    // WhatsApp is refused, since such a runtime would not start.
+    if (!check(runtime, "/").ok) {
+      const { push: _push, ...noPush } = runtime.services as Record<string, unknown>;
+      const without = { ...runtime, services: noPush };
+      if (check(without, "/").ok) {
+        runtime = without;
+        const i = guards.findIndex((g) => g.kind === "push");
+        if (i >= 0) guards.splice(i, 1);
+        notes.push(`${shop.name} is pinned to a template version from before web push, so it sends no alerts by push (WhatsApp only). Update the template, and push is on from the next deploy.`);
+      }
+    }
+    if (!facts.hasWhatsApp && !check(runtime, "/").ok) problems.push({ rule: "whatsapp-none-pinned", message: `${shop.name} has no WhatsApp number, but it is pinned to ${shop.lock ? `${shop.lock.pathway}@${shop.lock.version}` : "a template version"}, whose runtime still needs one. Move the shop to a version from 14 Nov 2026 or later (geometer update), or give it its WhatsApp number.` });
     // Item 11b: the provider must be read by the runtime of the version the shop is pinned to. One from before 11 Nov 2026 refuses `provider` as an unknown key and would not
     // start; unlike `ai` or `report` there is nothing to fall back to (Meta's paths with Gupshup's token behind them), so the deploy is refused instead.
     if (facts.whatsappRoute && !check(runtime, "/").ok) {

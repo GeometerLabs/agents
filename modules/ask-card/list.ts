@@ -4,7 +4,8 @@
 // test/ask-card.test.ts.
 //
 // What goes on the list: only what the code needs from the shop today. The first block is the same for every template: the UPI ID, the shop's WhatsApp number, the
-// owner's phone, and the Facebook login WhatsApp needs. After it, each template adds what its own settings file asks (Bookings: templates/commerce/bookings/src/settings.ts;
+// owner's phone, and the Facebook login WhatsApp needs. Item 11h (decision 45): WhatsApp is reach, not a need, so its two lines are optional: a shop can go live
+// with its page alone, the owner signing in with a passkey and hearing by alerts in their app. After it, each template adds what its own settings file asks (Bookings: templates/commerce/bookings/src/settings.ts;
 // Orders and Fees likewise). Things only some shops want (Google Calendar for Bookings, its own Razorpay account, a delivery area) are marked optional.
 //
 // Honesty rules the list keeps (docs/research/2026-11-11-whatsapp-onboarding-facts.md): Meta may later ask the shop to verify its business, and which documents it accepts
@@ -52,17 +53,17 @@ const ALWAYS: ListItem[] = [
       "ಗ್ರಾಹಕರು ನೇರವಾಗಿ ಈ UPI ID ಗೆ ಹಣ ಕಳುಹಿಸುತ್ತಾರೆ. ಎರಡನ್ನೂ ಎಚ್ಚರಿಕೆಯಿಂದ ಟೈಪ್ ಮಾಡಿ, ಮಾಲೀಕರಿಗೆ ಓದಿ ಹೇಳಿ: UPI ID ಯನ್ನು ಪರಿಶೀಲಿಸುವ ವ್ಯವಸ್ಥೆ ಇಲ್ಲ, ಒಂದು ಅಕ್ಷರ ತಪ್ಪಿದರೆ ಹಣ ಬೇರೆಯವರಿಗೆ ಹೋಗುತ್ತದೆ."),
   },
   {
-    id: "shop-whatsapp", group: "always",
+    id: "shop-whatsapp", group: "always", optional: true,
     what: w(
-      "The shop's WhatsApp number, in the WhatsApp Business app on the owner's phone",
-      "दुकान का WhatsApp नंबर, मालिक के फ़ोन के WhatsApp Business ऐप में",
-      "കടയുടെ WhatsApp നമ്പർ, ഉടമയുടെ ഫോണിലെ WhatsApp Business ആപ്പിൽ",
-      "ಅಂಗಡಿಯ WhatsApp ನಂಬರ್, ಮಾಲೀಕರ ಫೋನ್‌ನ WhatsApp Business ಆ್ಯಪ್‌ನಲ್ಲಿ"),
+      "The shop's WhatsApp number, in the WhatsApp Business app on the owner's phone (the shop can also start with its page alone)",
+      "दुकान का WhatsApp नंबर, मालिक के फ़ोन के WhatsApp Business ऐप में (दुकान सिर्फ़ अपने पेज से भी शुरू कर सकती है)",
+      "കടയുടെ WhatsApp നമ്പർ, ഉടമയുടെ ഫോണിലെ WhatsApp Business ആപ്പിൽ (കടയ്ക്ക് സ്വന്തം പേജ് മാത്രം വെച്ചും തുടങ്ങാം)",
+      "ಅಂಗಡಿಯ WhatsApp ನಂಬರ್, ಮಾಲೀಕರ ಫೋನ್‌ನ WhatsApp Business ಆ್ಯಪ್‌ನಲ್ಲಿ (ಅಂಗಡಿ ತನ್ನ ಪುಟದಿಂದಲೇ ಶುರು ಮಾಡಬಹುದು)"),
     why: w(
-      "The shop keeps its number and its app; the helper works next to them. It must be the Business app, not plain WhatsApp. The owner opens the app at least every two weeks, or the connection can drop.",
-      "दुकान अपना नंबर और अपना ऐप रखती है; हेल्पर उनके बग़ल में काम करता है। यह WhatsApp Business ऐप होना चाहिए, साधारण WhatsApp नहीं। मालिक ऐप को कम से कम दो हफ़्ते में एक बार खोलें, वरना कनेक्शन टूट सकता है।",
-      "കട സ്വന്തം നമ്പറും സ്വന്തം ആപ്പും നിലനിർത്തും; ഹെൽപ്പർ അവയ്ക്കരികിൽ പ്രവർത്തിക്കും. ഇത് WhatsApp Business ആപ്പ് ആയിരിക്കണം, സാധാരണ WhatsApp അല്ല. ഉടമ ആപ്പ് കുറഞ്ഞത് രണ്ട് ആഴ്ചയിലൊരിക്കൽ തുറക്കണം, അല്ലെങ്കിൽ കണക്ഷൻ വിട്ടുപോകാം.",
-      "ಅಂಗಡಿ ತನ್ನ ನಂಬರ್ ಮತ್ತು ತನ್ನ ಆ್ಯಪ್ ಉಳಿಸಿಕೊಳ್ಳುತ್ತದೆ; ಹೆಲ್ಪರ್ ಅವುಗಳ ಪಕ್ಕದಲ್ಲೇ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಇದು WhatsApp Business ಆ್ಯಪ್ ಆಗಿರಬೇಕು, ಸಾಮಾನ್ಯ WhatsApp ಅಲ್ಲ. ಮಾಲೀಕರು ಆ್ಯಪ್ ಅನ್ನು ಕನಿಷ್ಠ ಎರಡು ವಾರಕ್ಕೊಮ್ಮೆ ತೆರೆಯಬೇಕು, ಇಲ್ಲದಿದ್ದರೆ ಸಂಪರ್ಕ ಕಡಿಯಬಹುದು."),
+      "The shop keeps its number and its app; the helper works next to them. It must be the Business app, not plain WhatsApp. The owner opens the app at least every two weeks, or the connection can drop. Without it, customers book and pay on the shop's page, and the owner signs in with their fingerprint and gets alerts in their app.",
+      "दुकान अपना नंबर और अपना ऐप रखती है; हेल्पर उनके बग़ल में काम करता है। यह WhatsApp Business ऐप होना चाहिए, साधारण WhatsApp नहीं। मालिक ऐप को कम से कम दो हफ़्ते में एक बार खोलें, वरना कनेक्शन टूट सकता है। इसके बिना ग्राहक दुकान के पेज पर बुक और भुगतान करते हैं, और मालिक फ़िंगरप्रिंट से साइन इन करके अपने ऐप में अलर्ट पाते हैं।",
+      "കട സ്വന്തം നമ്പറും സ്വന്തം ആപ്പും നിലനിർത്തും; ഹെൽപ്പർ അവയ്ക്കരികിൽ പ്രവർത്തിക്കും. ഇത് WhatsApp Business ആപ്പ് ആയിരിക്കണം, സാധാരണ WhatsApp അല്ല. ഉടമ ആപ്പ് കുറഞ്ഞത് രണ്ട് ആഴ്ചയിലൊരിക്കൽ തുറക്കണം, അല്ലെങ്കിൽ കണക്ഷൻ വിട്ടുപോകാം. ഇതില്ലെങ്കിൽ കസ്റ്റമർമാർ കടയുടെ പേജിൽ ബുക്ക് ചെയ്ത് പണമടയ്ക്കും, ഉടമ വിരലടയാളം കൊണ്ട് സൈൻ ഇൻ ചെയ്ത് ആപ്പിൽ അലേർട്ടുകൾ കാണും.",
+      "ಅಂಗಡಿ ತನ್ನ ನಂಬರ್ ಮತ್ತು ತನ್ನ ಆ್ಯಪ್ ಉಳಿಸಿಕೊಳ್ಳುತ್ತದೆ; ಹೆಲ್ಪರ್ ಅವುಗಳ ಪಕ್ಕದಲ್ಲೇ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಇದು WhatsApp Business ಆ್ಯಪ್ ಆಗಿರಬೇಕು, ಸಾಮಾನ್ಯ WhatsApp ಅಲ್ಲ. ಮಾಲೀಕರು ಆ್ಯಪ್ ಅನ್ನು ಕನಿಷ್ಠ ಎರಡು ವಾರಕ್ಕೊಮ್ಮೆ ತೆರೆಯಬೇಕು, ಇಲ್ಲದಿದ್ದರೆ ಸಂಪರ್ಕ ಕಡಿಯಬಹುದು. ಇದಿಲ್ಲದೆ ಗ್ರಾಹಕರು ಅಂಗಡಿಯ ಪುಟದಲ್ಲಿ ಬುಕ್ ಮಾಡಿ ಪಾವತಿಸುತ್ತಾರೆ, ಮಾಲೀಕರು ಬೆರಳಚ್ಚಿನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ ತಮ್ಮ ಆ್ಯಪ್‌ನಲ್ಲಿ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಪಡೆಯುತ್ತಾರೆ."),
   },
   {
     id: "owner-phone", group: "always",
@@ -78,11 +79,11 @@ const ALWAYS: ListItem[] = [
       "ಹೆಲ್ಪರ್ ಅನುಮತಿ ಕೇಳುವುದು ಮತ್ತು ತಿಂಗಳ ರಿಪೋರ್ಟ್ ಬರುವುದು ಈ ನಂಬರ್‌ಗೆ. ಮಾಲೀಕರು \"approve\" ಅಥವಾ \"deny\" ಎಂದು ಉತ್ತರಿಸುತ್ತಾರೆ. ಒಟ್ಟಿಗೆ ಒಂದನ್ನು ಪ್ರಯತ್ನಿಸಿ."),
   },
   {
-    id: "meta-login", group: "always",
+    id: "meta-login", group: "always", optional: true,
     what: w(
-      "A Facebook login with admin access to the shop's Meta business portfolio",
-      "दुकान के Meta बिज़नेस पोर्टफ़ोलियो पर एडमिन पहुँच वाला Facebook लॉगिन",
-      "കടയുടെ Meta ബിസിനസ് പോർട്ട്‌ഫോളിയോയിൽ അഡ്മിൻ ആക്സസ് ഉള്ള ഒരു Facebook ലോഗിൻ",
+      "With WhatsApp only: a Facebook login with admin access to the shop's Meta business portfolio",
+      "सिर्फ़ WhatsApp के साथ: दुकान के Meta बिज़नेस पोर्टफ़ोलियो पर एडमिन पहुँच वाला Facebook लॉगिन",
+      "WhatsApp ഉണ്ടെങ്കിൽ മാത്രം: കടയുടെ Meta ബിസിനസ് പോർട്ട്‌ഫോളിയോയിൽ അഡ്മിൻ ആക്സസ് ഉള്ള ഒരു Facebook ലോഗിൻ",
       "ಅಂಗಡಿಯ Meta ಬಿಸಿನೆಸ್ ಪೋರ್ಟ್‌ಫೋಲಿಯೊದಲ್ಲಿ ಅಡ್ಮಿನ್ ಪ್ರವೇಶ ಇರುವ Facebook ಲಾಗಿನ್"),
     why: w(
       "WhatsApp needs it. The owner logs in themselves, on their own phone: you never see a password or a code.",
@@ -246,9 +247,9 @@ const BOOKINGS: ListItem[] = [
       "കടയുടെ ബുക്കിംഗ് പേജിന് വേറൊന്നും വേണ്ട: അതിന്റെ ലിങ്ക്, കൗണ്ടറിനുള്ള QR കോഡ്, ഉടമയുടെ സ്വകാര്യ അംഗീകാര ലിങ്ക് എന്നിവ പാനൽ തരും",
       "ಅಂಗಡಿಯ ಬುಕಿಂಗ್ ಪುಟಕ್ಕೆ ಇನ್ನೇನೂ ಬೇಡ: ಅದರ ಲಿಂಕ್, ಕೌಂಟರ್‌ಗಾಗಿ ಅದರ QR ಕೋಡ್ ಮತ್ತು ಮಾಲೀಕರ ಖಾಸಗಿ ಅನುಮೋದನೆ ಲಿಂಕ್ ಅನ್ನು ಪ್ಯಾನೆಲ್ ಕೊಡುತ್ತದೆ"),
     why: w(
-      "From the day the shop is live, customers can also book and pay the deposit by UPI on the booking page, without WhatsApp, under the same limits; AI assistants can book there too. The owner can mark payments received and answer refunds on the private page. The shop's own WhatsApp number is still needed to put it live.",
-      "जिस दिन से दुकान लाइव है, ग्राहक बुकिंग पेज पर WhatsApp के बिना भी बुक कर सकते हैं और UPI से अग्रिम राशि दे सकते हैं, उन्हीं सीमाओं के साथ; AI सहायक भी वहाँ बुक कर सकते हैं। मालिक निजी पेज पर पेमेंट मिला हुआ मान सकते हैं और रिफ़ंड का जवाब दे सकते हैं। दुकान को लाइव करने के लिए उसका अपना WhatsApp नंबर अब भी चाहिए।",
-      "കട ലൈവ് ആകുന്ന ദിവസം മുതൽ കസ്റ്റമർമാർക്ക് WhatsApp ഇല്ലാതെയും ബുക്കിംഗ് പേജിൽ ബുക്ക് ചെയ്ത് UPI വഴി അഡ്വാൻസ് അടയ്ക്കാം, അതേ പരിധികളോടെ; AI സഹായികൾക്കും അവിടെ ബുക്ക് ചെയ്യാം. ഉടമയ്ക്ക് സ്വകാര്യ പേജിൽ പേയ്‌മെന്റ് കിട്ടിയെന്ന് രേഖപ്പെടുത്താനും റീഫണ്ടുകൾക്ക് മറുപടി നൽകാനും കഴിയും. കട ലൈവ് ആക്കാൻ അതിന്റെ സ്വന്തം WhatsApp നമ്പർ ഇപ്പോഴും വേണം.",
+      "From the day the shop is live, customers can also book and pay the deposit by UPI on the booking page, without WhatsApp, under the same limits; AI assistants can book there too. The owner can mark payments received and answer refunds on the private page, and can go live without a WhatsApp number at all.",
+      "जिस दिन से दुकान लाइव है, ग्राहक बुकिंग पेज पर WhatsApp के बिना भी बुक कर सकते हैं और UPI से अग्रिम राशि दे सकते हैं, उन्हीं सीमाओं के साथ; AI सहायक भी वहाँ बुक कर सकते हैं। मालिक निजी पेज पर पेमेंट मिला हुआ मान सकते हैं और रिफ़ंड का जवाब दे सकते हैं, और दुकान WhatsApp नंबर के बिना भी लाइव हो सकती है।",
+      "കട ലൈവ് ആകുന്ന ദിവസം മുതൽ കസ്റ്റമർമാർക്ക് WhatsApp ഇല്ലാതെയും ബുക്കിംഗ് പേജിൽ ബുക്ക് ചെയ്ത് UPI വഴി അഡ്വാൻസ് അടയ്ക്കാം, അതേ പരിധികളോടെ; AI സഹായികൾക്കും അവിടെ ബുക്ക് ചെയ്യാം. ഉടമയ്ക്ക് സ്വകാര്യ പേജിൽ പേയ്‌മെന്റ് കിട്ടിയെന്ന് രേഖപ്പെടുത്താനും റീഫണ്ടുകൾക്ക് മറുപടി നൽകാനും കഴിയും, WhatsApp നമ്പർ ഇല്ലാതെയും കട ലൈവ് ആക്കാം.",
       "ಅಂಗಡಿ ಲೈವ್ ಆದ ದಿನದಿಂದ ಗ್ರಾಹಕರು WhatsApp ಇಲ್ಲದೆಯೂ ಬುಕಿಂಗ್ ಪುಟದಲ್ಲಿ ಬುಕ್ ಮಾಡಿ UPI ಮೂಲಕ ಮುಂಗಡ ಪಾವತಿಸಬಹುದು, ಅದೇ ಮಿತಿಗಳೊಂದಿಗೆ; AI ಸಹಾಯಕರೂ ಅಲ್ಲಿ ಬುಕ್ ಮಾಡಬಹುದು. ಮಾಲೀಕರು ಖಾಸಗಿ ಪುಟದಲ್ಲಿ ಪಾವತಿ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿ ರೀಫಂಡ್‌ಗಳಿಗೆ ಉತ್ತರಿಸಬಹುದು. ಅಂಗಡಿಯನ್ನು ಲೈವ್ ಮಾಡಲು ಅದರ ಸ್ವಂತ WhatsApp ನಂಬರ್ ಈಗಲೂ ಬೇಕು."),
   },
 ];

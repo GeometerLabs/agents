@@ -8,6 +8,8 @@
 //     desk Guard on a port of its own (DESK_PORT), never this one.
 //
 //   CONFIG=/etc/geometer/relay.json PORT=8795 HOST=0.0.0.0 [DESK_PORT=8796] node bundle/services/relay.ts
+import { channelMessaging } from "../../modules/channels/outbox.ts";
+import { emptyChannelState } from "../../modules/channels/state.ts";
 import { existsSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { join } from "node:path";
@@ -55,7 +57,8 @@ export interface RelayShopConfig {
   /** An own agent on a module the owner marks (UPI, B71 part 2): its desk. */
   desk?: DeskConfig;
   business?: { name: string; timeZone: string; ownerLanguage: "en" | "hi" | "ml" | "kn" };
-  whatsappGuardUrl: string;
+  /** Item 11h: left out for a shop with no WhatsApp: the relay then asks the owner on nothing, and the owner answers from their page, where the held refund is listed. */
+  whatsappGuardUrl?: string;
   ownerWhatsapp: string;
   phoneNumberId: string;
   /** Item 11b: the shop's WhatsApp Guard fronts Gupshup (with the shop's Gupshup app id). Left out: Meta direct. */
@@ -93,8 +96,11 @@ export function shopRelay(name: string, c: RelayShopConfig, read: (path: string)
     if (!v) throw new Error(`${name}: the secret file ${file} is missing or empty in ${c.secretsDir}.`);
     return v;
   };
-  // the relay and the desk speak the shop's own WhatsApp Guard, so they use its provider (item 11b: Gupshup, or Meta direct when left out)
-  const whatsapp = (window: { lastInboundAt(phone: string): number | undefined }) => createLiveMessaging({ baseUrl: c.whatsappGuardUrl, phoneNumberId: c.phoneNumberId, ...(c.provider ? { provider: c.provider, appId: c.appId, appName: c.appName, sourceNumber: c.sourceNumber } : {}), agentToken: need("agent_whatsapp") }, { clock, window });
+  // the relay and the desk speak the shop's own WhatsApp Guard, so they use its provider (item 11b: Gupshup, or Meta direct when left out). Item 11h: a shop with
+  // no WhatsApp gets a messaging that sends nothing (each send is refused as not sent), so the relay records that it could not ask and the page carries the ask
+  const whatsapp = (window: { lastInboundAt(phone: string): number | undefined }) => c.whatsappGuardUrl
+    ? createLiveMessaging({ baseUrl: c.whatsappGuardUrl, phoneNumberId: c.phoneNumberId, ...(c.provider ? { provider: c.provider, appId: c.appId, appName: c.appName, sourceNumber: c.sourceNumber } : {}), agentToken: need("agent_whatsapp") }, { clock, window })
+    : channelMessaging(undefined, () => emptyChannelState(), clock);
 
   // an own agent whose money the owner marks: the desk, and no relay (nothing is ever held for the owner: the owner sends every refund)
   if (c.desk) {

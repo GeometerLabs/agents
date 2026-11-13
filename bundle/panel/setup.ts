@@ -39,7 +39,8 @@ export interface Draft {
   approvers?: { whatsapp: string; language: string }[];
   twoAboveInr?: string;
   /** Item 11c: `provider` "gupshup-selfserve" means the shop's own Gupshup account (with its `appName`); left out is Meta direct, as before. A draft from before has neither. */
-  whatsapp: { businessNumber: string; numberId: string; provider?: "gupshup-selfserve"; appName?: string };
+  /** Item 11h: `none` when the partner chose to start without WhatsApp (the number fields stay empty, and runtime.json names no messaging service). */
+  whatsapp: { businessNumber: string; numberId: string; provider?: "gupshup-selfserve"; appName?: string; none?: true };
   /** B72: `use` is "own" (the shop's own booking list, the default) or "google" (a Google Calendar, which needs `id`). A draft saved before 12 Nov has no `use`: read as "own" for a new shop. */
   calendar: { id: string; use?: "own" | "google" };
   /** B71: the gateway key as typed, for a shop that chose a gateway: its mode and id. */
@@ -99,6 +100,8 @@ export function newDraft(id: string, accountId: string, template: Template, exam
  */
 export function whatsappDraftOf(meta: ShopMeta, runtime: Record<string, any> | undefined): Draft["whatsapp"] {
   const m = runtime?.services?.messaging;
+  // item 11h: a shop already saved with no messaging service started without WhatsApp
+  if (runtime && !m) return { businessNumber: "", numberId: "", none: true };
   return { businessNumber: meta.whatsapp?.businessNumber ?? "", numberId: String(m?.phoneNumberId ?? ""), ...(m?.provider === "gupshup-selfserve" ? { provider: "gupshup-selfserve" as const, appName: String(m.appName ?? "") } : {}) };
 }
 
@@ -259,7 +262,9 @@ export function applyAccounts(draft: Draft, body: Body, template: Template, meta
     if (checked.clientEmail) clientEmail = checked.clientEmail;
   };
 
-  if (template.accounts.includes("whatsapp")) {
+  // Item 11h (decision 45): "start without WhatsApp": nothing about WhatsApp is asked; customers book and pay on the page, and the owner signs in with a passkey
+  if (template.accounts.includes("whatsapp") && body.waNone === "1") draft.whatsapp = { businessNumber: "", numberId: "", none: true };
+  else if (template.accounts.includes("whatsapp")) {
     const business = normalizePhone(text(body.waNumber, 30));
     if (!business) problems.push(s.businessNumberBad);
     else if (draft.ownerNumber && digitsOf(business) === digitsOf(draft.ownerNumber)) problems.push(s.sameNumber);
@@ -362,7 +367,8 @@ export function buildSettings(draft: Draft, example: Settings): Built {
  * no step for it yet (modules/Deferred.md), so a shop moved to Gupshup by hand keeps it when someone edits it here. A runtime.json with no provider is left as made.
  */
 export function keepWhatsAppProvider(runtime: Record<string, unknown>, before: unknown, whatsapp?: Draft["whatsapp"]): Record<string, unknown> {
-  const services = runtime.services as { messaging: Record<string, unknown> };
+  const services = runtime.services as { messaging?: Record<string, unknown> };
+  if (!services.messaging) return runtime; // item 11h: a shop with no WhatsApp has no provider to keep
   // Item 11c: the setup now has the step for it. A shop whose draft picked its own Gupshup account is written as one; its number is `sourceNumber` (digits, with the country code).
   if (whatsapp?.provider === "gupshup-selfserve") {
     const prior = (before as { services?: { messaging?: { appId?: unknown } } } | undefined)?.services?.messaging;
@@ -374,12 +380,15 @@ export function keepWhatsAppProvider(runtime: Record<string, unknown>, before: u
   return { ...runtime, services: { ...services, messaging: { ...services.messaging, provider: m.provider, ...(m.appId !== undefined ? { appId: m.appId } : {}) } } };
 }
 
-/** runtime.json: who things are. Where they are (hosts, ports, token files) is the deployer's. A payments service is named only for a shop that chose a gateway (B71). */
+/**
+ * runtime.json: who things are. Where they are (hosts, ports, token files) is the deployer's. A payments service is named only for a shop that chose a gateway (B71).
+ * Item 11h (decision 45): no WhatsApp number (the partner ticked "start without WhatsApp"), no messaging service: the shop runs on its page alone.
+ */
 export function runtimeFor(calendarId: string, phoneNumberId: string, serverModel?: { wire: string; model: string }, gateway = false): Record<string, unknown> {
   return {
     mode: "live", tickSeconds: 30,
     // B72: no calendar id means the shop's own booking list, and runtime.json names no calendar at all
-    services: { ...(gateway ? { payments: {} } : {}), ...(calendarId !== "" ? { calendar: { calendarId } } : {}), messaging: { phoneNumberId }, timeoutMs: 20_000 },
+    services: { ...(gateway ? { payments: {} } : {}), ...(calendarId !== "" ? { calendar: { calendarId } } : {}), ...(phoneNumberId !== "" ? { messaging: { phoneNumberId } } : {}), timeoutMs: 20_000 },
     ...(serverModel ? { parser: { wire: serverModel.wire, model: serverModel.model } } : {}),
   };
 }
