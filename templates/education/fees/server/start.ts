@@ -3,7 +3,7 @@
 // (modules/runtime/start.ts); this file gives them Fees' reading, its report and its runtime.
 import { join } from "node:path";
 import { buildVoice } from "../../../../modules/voice/config.ts";
-import { PAGES_FILE, pagesReader } from "../../../../modules/channels/pages-file.ts";
+import { PAGES_FILE, pagesReader, picturesOf } from "../../../../modules/channels/pages-file.ts";
 import { folderQrImages } from "../../../../modules/payments/owner-marked/qr-image.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
@@ -81,6 +81,8 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       // Item 11e: the shop's assistant reads the owner's words through the same steps, with the owner's reading (modules/assistant/reading.ts). Only when it is on.
       const ownerParser = client.settings.assistant ? understanding(client as ClientFolder, { clock, log: () => undefined }, OWNER_UNDERSTANDING as never).parser as OwnerParser : undefined;
       return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}),
+        // item 11i: the character's pictures, as the deployer hands their version over in pages.json (read on every use)
+        pictures: () => picturesOf(pagesReader(join(client.folder, PAGES_FILE))()),
         // item 11h: the centre's page addresses, read on every use, so a reminder can carry a parent's private link (no file: no link, as before)
         pages: pagesReader(join(client.folder, PAGES_FILE)), log });
     },

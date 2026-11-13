@@ -30,7 +30,16 @@ export interface MetaTemplate<Id extends string = string> {
   audience: "customer" | "owner";
   /** The wording per language, with {slot} where a record value goes. Turned into {{n}} for Meta. */
   bodies: Record<Language, string>;
+  /**
+   * Item 11i: an image header (Meta's media header, format IMAGE). Sent with the picture's https address as the header's one parameter (TemplateMessage.headerImage);
+   * submitted with an example picture uploaded through Meta's Resumable Upload API, whose handle goes in `example.header_handle` (HEADER_HANDLE_TO_UPLOAD below).
+   * https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/template-media/ and .../templates/components (read 14 Nov 2026).
+   */
+  header?: "image";
 }
+
+/** Where the submission's example header handle goes: Meta's Resumable Upload API gives it for the example picture at submission time (item 12), never ahead of it. */
+export const HEADER_HANDLE_TO_UPLOAD = "<the handle Meta's Resumable Upload API gives for the example picture>";
 
 const SLOT_RE = /\{([A-Za-z]+)\}/gu;
 
@@ -47,7 +56,7 @@ export function fillBody(metaText: string, parameters: string[]): string {
 
 export interface MetaSubmission {
   name: string; language: string; category: "UTILITY"; parameter_format: "positional";
-  components: { type: "BODY"; text: string; example: { body_text: string[][] } }[];
+  components: ({ type: "HEADER"; format: "IMAGE"; example: { header_handle: string[] } } | { type: "BODY"; text: string; example: { body_text: string[][] } })[];
 }
 
 /** A template's list of templates, with the record values they use. `Facts` is what the template's messages are written from. */
@@ -91,7 +100,10 @@ export function createMetaCatalogue<Facts extends { language: Language }, Id ext
   function submissions(example: (language: Language) => Facts): MetaSubmission[] {
     return a.templates.flatMap((t) => LANGUAGES.map((language) => ({
       name: t.name, language: META_LANGUAGE[language], category: "UTILITY" as const, parameter_format: "positional" as const,
-      components: [{ type: "BODY" as const, text: metaBody(t.bodies[language]), example: { body_text: [parametersFor(t, language, example(language))] } }],
+      components: [
+        ...(t.header === "image" ? [{ type: "HEADER" as const, format: "IMAGE" as const, example: { header_handle: [HEADER_HANDLE_TO_UPLOAD] } }] : []),
+        { type: "BODY" as const, text: metaBody(t.bodies[language]), example: { body_text: [parametersFor(t, language, example(language))] } },
+      ],
     })));
   }
 

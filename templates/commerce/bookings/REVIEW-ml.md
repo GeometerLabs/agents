@@ -462,7 +462,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 
 ## 7. The panel and the phone setup
 
-Everything a partner or builder reads in the panel, in Malayalam: signing in, the shop's status and its monthly cost line, and the five setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the checks). Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.
+Everything a partner or builder reads in the panel, in Malayalam: signing in, the shop's status and its monthly cost line, and the six setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the shop's assistant, the checks). The "personality.*" lines are the shop assistant's small talk in its three personalities: {shop} is the shop's name and {name} the assistant's own name, which the partner may leave out. Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.
 
 What to look for first: (1) is each line something a shop owner or a young partner on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and a payment gateway read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, a payment gateway's name, Google Calendar, Guard, Geometer).
 
@@ -722,8 +722,41 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.steps.languages` | ഭാഷകളും നിങ്ങളുടെ നമ്പറും | Languages and your number |  |
 | `setup.steps.accounts` | കടയുടെ അക്കൗണ്ടുകൾ ബന്ധിപ്പിക്കൂ | Connect the shop's accounts |  |
 | `setup.steps.checks` | പരിശോധനകൾ | Checks |  |
+| `setup.steps.character` | കടയുടെ അസിസ്റ്റന്റ് | The shop's assistant |  |
 | `setup.problemsTitle` | ഇത് ശരിയാക്കൂ: | Please fix this: |  |
 | `setup.fallback` | ഒരു കാര്യം ശരിയാക്കണം: The deposit is more than the cheapest service. | One thing needs fixing: The deposit is more than the cheapest service. |  |
+| `setup.character.intro` | ഉടമയോടൊപ്പം ഇരുന്ന് കടയുടെ അസിസ്റ്റന്റിനെ ഉണ്ടാക്കൂ: ഒരു മുഖം, അതിന്റെ നിറം, ഒരു പേര്, സംസാരിക്കുന്ന രീതി. ഉപഭോക്താക്കൾ ഇതിനെ കടയുടെ പേജിൽ കാണും. ഉടമ ഇതിന്റെ മൂഡ് ആപ്പിലും WhatsApp-ലും കാണും. | With the owner beside you, make the shop's assistant: a face, its colour, a name and how it talks. Customers see it on the shop's page. The owner sees its mood in their app and on WhatsApp. |  |
+| `setup.character.styleLegend` | ശൈലി | Style |  |
+| `setup.character.stripLegend` | ഒരു മുഖം തിരഞ്ഞെടുക്കൂ | Pick a face |  |
+| `setup.character.stripHelp` | ഓരോ മുഖവും ഈ കടയ്ക്ക് മാത്രമായി വരയ്ക്കുന്നതാണ്. എട്ട് പുതിയവയ്ക്കായി വീണ്ടും റോൾ ചെയ്യൂ. | Each face is drawn for this shop only. Roll for eight new ones. |  |
+| `setup.character.faceLabel` | മുഖം 3 / 8 | Face 3 of 8 |  |
+| `setup.character.roll` | പുതിയ മുഖങ്ങൾ റോൾ ചെയ്യൂ | Roll new faces |  |
+| `setup.character.colourLegend` | നിറം | Colour |  |
+| `setup.character.auto` | സ്വയം | Auto |  |
+| `setup.character.autoLabel` | സ്വയം: ശൈലിയുടെ സ്വന്തം നിറം | Auto: the style's own colour |  |
+| `setup.character.colourLabel` | നിറം 3 | Colour 3 |  |
+| `setup.character.moodsTitle` | ഇതിന്റെ അഞ്ച് മൂഡുകൾ | Its five moods |  |
+| `setup.character.moodsHelp` | ഉടമ അഞ്ചും കാണും. ഉപഭോക്താക്കൾ എല്ലാം ശരി, തിരക്കിലാണ്, അടച്ചിരിക്കുന്നു എന്നിവ മാത്രം കാണും. | The owner sees all five. Customers see only All well, Busy and Closed. |  |
+| `setup.character.name` | ഇതിന്റെ പേര് (നിർബന്ധമില്ല) | Its name (optional) |  |
+| `setup.character.nameHelp` | നിർബന്ധമില്ല. ഒഴിച്ചിട്ടാൽ ഇത് കടയുടെ പേരിൽ കടയുടെ അസിസ്റ്റന്റ് ആയിരിക്കും. ഏത് ഭാഷയിലും 24 അക്ഷരങ്ങൾ വരെ, അക്കങ്ങൾ വേണ്ട. | Optional. Left empty, it is the shop's assistant, under the shop's name. Up to 24 letters, in any language, no digits. |  |
+| `setup.character.personalityLegend` | സംസാരിക്കുന്ന രീതി | How it talks |  |
+| `setup.character.personalityHelp` | ഇത് ഇതിന്റെ അഭിവാദനവും രാവിലത്തെ വിവരത്തിന്റെ ആദ്യത്തെയും അവസാനത്തെയും വാക്കുകളും മാത്രം മാറ്റുന്നു. തുകകൾ, കാർഡുകൾ, അംഗീകാരങ്ങൾ, പരിധികൾ എന്നിവ മാറില്ല. | This changes only its greeting and the first and last words of the morning summary. Amounts, cards, approvals and limits stay the same. |  |
+| `setup.character.personalities.warm` | സ്നേഹമുള്ള | Warm |  |
+| `setup.character.personalities.cheerful` | ഉന്മേഷമുള്ള | Cheerful |  |
+| `setup.character.personalities.brief` | ചുരുക്കം | Brief |  |
+| `setup.character.saysLabel` | ഇത് പറയും: | It says: |  |
+| `setup.character.chosenMark` | തിരഞ്ഞെടുത്തു | Picked |  |
+| `setup.character.problems.name` | പേര് അക്കങ്ങളില്ലാതെ 1 മുതൽ 24 വരെ അക്ഷരങ്ങൾ ആയിരിക്കണം, അല്ലെങ്കിൽ ഒഴിച്ചിടുക. | The name must be 1 to 24 letters with no digits, or left empty. |  |
+| `setup.character.problems.style` | അഞ്ച് ശൈലികളിൽ ഒന്ന് തിരഞ്ഞെടുക്കൂ. | Pick one of the five styles. |  |
+| `setup.character.problems.face` | നിരയിൽ നിന്ന് ഒരു മുഖം തിരഞ്ഞെടുക്കൂ. | Pick a face from the row. |  |
+| `setup.character.problems.colour` | കാണിച്ച നിറങ്ങളിൽ ഒന്നോ സ്വയമോ തിരഞ്ഞെടുക്കൂ. | Pick one of the colours shown, or Auto. |  |
+| `setup.character.problems.personality` | സംസാരിക്കുന്ന രീതി തിരഞ്ഞെടുക്കൂ. | Pick how it talks. |  |
+| `setup.character.shopTitle` | കടയുടെ അസിസ്റ്റന്റ് | The shop's assistant |  |
+| `setup.character.shopNone` | ഈ കടയ്ക്ക് ഇതുവരെ അസിസ്റ്റന്റ് ഇല്ല. സജ്ജീകരണത്തിലെ അസിസ്റ്റന്റ് ഘട്ടത്തിൽ ഉണ്ടാക്കൂ. | This shop has no assistant yet. Make one in the setup's assistant step. |  |
+| `setup.character.shopNotDrawn` | സേവ് ചെയ്ത് ഒരു മിനിറ്റിനുള്ളിൽ സെർവറിൽ ഇതിന്റെ ചിത്രങ്ങൾ വരയ്ക്കപ്പെടും. | Its pictures are drawn on the server within a minute of saving. |  |
+| `setup.character.profileTitle` | WhatsApp പ്രൊഫൈൽ ഫോട്ടോ | WhatsApp profile photo |  |
+| `setup.character.profileHelp` | കടയുടെ നമ്പർ എവിടെ കൈകാര്യം ചെയ്യുന്നുവോ അവിടെ ഈ ചിത്രം കടയുടെ WhatsApp പ്രൊഫൈലിൽ നിങ്ങൾ തന്നെ ഇടൂ: WhatsApp Business ആപ്പ്, Meta-യുടെ WhatsApp Manager, അല്ലെങ്കിൽ Gupshup ഡാഷ്‌ബോർഡ്. പാനലിന് ഇത് ഇപ്പോൾ ഇടാനാകില്ല. | Put this picture on the shop's WhatsApp profile yourself, wherever the shop's number is managed: the WhatsApp Business app, Meta's WhatsApp Manager or Gupshup's dashboard. The panel can't set it for you yet. |  |
+| `setup.character.download` | ചിത്രം ഡൗൺലോഡ് ചെയ്യൂ (PNG) | Download the picture (PNG) |  |
 | `setup.business.name` | കടയുടെ പേര് | Shop name |  |
 | `setup.business.services` | സേവനങ്ങൾ (കുറഞ്ഞത് ഒന്ന്, പരമാവധി നാല്) | Services (at least one, up to four) |  |
 | `setup.business.serviceName` | പേര് | Name |  |
@@ -1222,4 +1255,15 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `agents.actions.rotateDone` | പുതിയ ക്രെഡൻഷ്യലുകൾ ഉണ്ടാക്കി. പഴയവ 4 Nov 2026, 10:15-ന് നിൽക്കും. | New credentials made. The old ones stop at 4 Nov 2026, 10:15. |  |
 | `agents.actions.rotateFailed` | പുതിയ ക്രെഡൻഷ്യലുകൾക്കുള്ള കഴിഞ്ഞ ആവശ്യം നടന്നില്ല; നിങ്ങളുടെ ഏജന്റിന് ഒന്നും മാറിയില്ല. കാരണം സെർവറിന്റെ ലോഗിൽ ഉണ്ട്. | The last request for new credentials was not done; nothing changed for your agent. The server's log says why. |  |
 | `agents.actions.cliOnly` | ഏജന്റിനെ നീക്കം ചെയ്യുന്നത് സെർവറിൽ മാത്രം: geometer agent remove <name>. | Removing an agent is done on the server only: geometer agent remove <name>. |  |
-
+| `personality.warm.greeting` | ഞാൻ {shop}-ന്റെ അസിസ്റ്റന്റ്. | I'm {shop}'s assistant. |  |
+| `personality.warm.greetingNamed` | ഞാൻ {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. | I'm {name}, {shop}'s assistant. |  |
+| `personality.warm.morningOpening` | സുപ്രഭാതം, ഞാൻ {shop}-ന്റെ അസിസ്റ്റന്റ്. | Good morning from the assistant of {shop}. |  |
+| `personality.warm.morningSignOff` | കൂടുതൽ കാണാൻ ഇവിടെ മറുപടി നൽകുക. | Reply here to see more. |  |
+| `personality.cheerful.greeting` | നമസ്കാരം! ഞാൻ {shop}-ന്റെ അസിസ്റ്റന്റ്, സഹായിക്കാൻ സന്തോഷം. | Hello! I'm {shop}'s assistant, happy to help. |  |
+| `personality.cheerful.greetingNamed` | നമസ്കാരം! ഞാൻ {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്, സഹായിക്കാൻ സന്തോഷം. | Hello! I'm {name}, {shop}'s assistant, happy to help. |  |
+| `personality.cheerful.morningOpening` | സുപ്രഭാതം! ഞാൻ {shop}-ന്റെ അസിസ്റ്റന്റ്. | Good morning! {shop}'s assistant here. |  |
+| `personality.cheerful.morningSignOff` | കൂടുതൽ കാണാൻ ഇവിടെ മറുപടി നൽകുക. നല്ലൊരു ദിവസം ആശംസിക്കുന്നു! | Reply here to see more. Have a lovely day! |  |
+| `personality.brief.greeting` | ഇത് {shop}-ന്റെ അസിസ്റ്റന്റ്. | This is {shop}'s assistant. |  |
+| `personality.brief.greetingNamed` | ഇത് {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. | This is {name}, {shop}'s assistant. |  |
+| `personality.brief.morningOpening` | രാവിലത്തെ വിവരം: {shop}-ന്റെ അസിസ്റ്റന്റ്. | Morning summary from the assistant of {shop}. |  |
+| `personality.brief.morningSignOff` | കൂടുതലിന് മറുപടി നൽകുക. | Reply for more. |  |

@@ -149,7 +149,7 @@ test("the visitor's language: ?lang= first, then the browser's; the customer vie
   assert.match(ml, /https:\/\/geometer\.dev\/account/u, "the partner's line");
   const en = await (await s.get("/s/veena/", { "accept-language": "en" })).text();
   assert.match(en, /Mon 10:00–20:00/u);
-  assert.match(en, /<svg class="face-c"/u, "the character's placeholder");
+  assert.ok(!/class="face-c"/u.test(en), "no placeholder drawing: a shop with no character pictures shows no face (item 11i)");
   assert.ok(!/<script/iu.test(en), "no script on the customer view");
   const qr = await (await s.get("/s/veena/qr.svg")).text();
   assert.ok(qr.includes("https://pages.example/p/k7m2qx9r4t"), "the counter's QR carries the address that survives renames");

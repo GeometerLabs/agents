@@ -7,33 +7,32 @@
 // queues a POST: a tap or a message needs the live page (its digests are checked at the runtime against what waits now), so offline it simply fails and says so.
 // The manifest's start_url and scope are the owner's own link (<link>/), so an installed app opens this shop's page and nothing else.
 import type { Language } from "../../language/languages.ts";
-import type { Look } from "../character.ts";
-
-/** The look's colour as a theme colour: the app's bar takes the character's colour. */
-export const LOOK_COLOURS: Record<Look["colour"], string> = { teal: "#0f766e", pink: "#be185d", saffron: "#c2410c", indigo: "#4338ca", leaf: "#15803d", clay: "#9a3412" };
 
 /** The app's name in the owner's language: the shop's name and "assistant". */
 const APP_NAME: Record<Language, (shop: string) => string> = {
   en: (shop) => `${shop} assistant`, hi: (shop) => `${shop} असिस्टेंट`, ml: (shop) => `${shop} അസിസ്റ്റന്റ്`, kn: (shop) => `${shop} ಸಹಾಯಕ`,
 };
 
-/** A plain icon: the character's colour and the shop's first letter, as an SVG data address (no file to serve, nothing fetched). The drawings replace it later. */
-export function ownerAppIcon(shop: string, colour: Look["colour"]): string {
+/**
+ * The app's icon as an SVG data address (no file to serve, nothing fetched): the character in its "all well" picture when the shop's pictures are drawn (item 11i),
+ * else a plain tile in the theme colour with the shop's first letter.
+ */
+export function ownerAppIcon(shop: string, colour: string, iconSvg?: string): string {
   const letter = [...shop.trim()][0]?.toUpperCase() ?? "S";
   const safe = letter.replace(/[<>&"']/gu, "");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="${LOOK_COLOURS[colour]}"/><text x="256" y="330" font-size="260" text-anchor="middle" fill="#fff" font-family="system-ui,sans-serif">${safe}</text></svg>`;
+  const svg = iconSvg ?? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="${colour.replace(/[^#0-9a-fA-F]/gu, "")}"/><text x="256" y="330" font-size="260" text-anchor="middle" fill="#fff" font-family="system-ui,sans-serif">${safe}</text></svg>`;
   return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
 }
 
-/** The web app manifest for one shop's owner link (`base` is https://<server>/s/<shop>/o/<token>, no trailing slash). */
-export function ownerAppManifest(a: { base: string; shop: string; language: Language; colour: Look["colour"] }): Record<string, unknown> {
+/** The web app manifest for one shop's owner link (`base` is https://<server>/s/<shop>/o/<token>, no trailing slash). `colour`: character.ts themeColour. */
+export function ownerAppManifest(a: { base: string; shop: string; language: Language; colour: string; iconSvg?: string }): Record<string, unknown> {
   const name = APP_NAME[a.language](a.shop);
   return {
     name, short_name: [...name].length <= 12 ? name : [...a.shop].slice(0, 12).join(""), lang: a.language,
     // the app opens at <link>/ (the owner page's front serves it there as at <link>), because a service worker controls only pages inside its scope, <link>/
     start_url: `${a.base}/`, scope: `${a.base}/`, id: `${a.base}/`, display: "standalone", orientation: "portrait",
-    background_color: "#ffffff", theme_color: LOOK_COLOURS[a.colour],
-    icons: [{ src: ownerAppIcon(a.shop, a.colour), sizes: "512x512", type: "image/svg+xml", purpose: "any" }],
+    background_color: "#ffffff", theme_color: a.colour,
+    icons: [{ src: ownerAppIcon(a.shop, a.colour, a.iconSvg), sizes: "512x512", type: "image/svg+xml", purpose: "any" }],
   };
 }
 

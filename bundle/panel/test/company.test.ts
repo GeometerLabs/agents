@@ -87,7 +87,7 @@ test("the join form asks for a company in every language, keeps it on the accoun
     assert.equal(accounts.find((a) => a.handle === "plain")?.company, undefined);
 
     const f = await setUp(b, divyaBrowser);
-    await divyaBrowser.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/5`);
+    await divyaBrowser.post(`/setup/${f.draft}/save`, {}, `/setup/${f.draft}/6`);
     const owner = JSON.parse(readFileSync(join(b.dir, "shops", f.shop, "owner.json"), "utf8"));
     assert.equal(owner.company, "Sri Sai Digital");
     assert.equal(preparedByOf(owner), "Divya, Sri Sai Digital");

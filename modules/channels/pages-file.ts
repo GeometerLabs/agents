@@ -4,6 +4,7 @@
 //
 // Nothing in it is secret. The pages domain is never written in code: these addresses come from fleet's answer to the deployer's claim.
 import { readFileSync } from "node:fs";
+import type { CharacterPictures } from "../assistant/character.ts";
 
 export const PAGES_FILE = "pages.json";
 
@@ -22,6 +23,11 @@ export interface PagesFile {
   whatsapp?: string;
   /** The panel's page for this shop, for the partner's line on the page (a link only: the panel signs its own people in). */
   panelUrl?: string;
+  /**
+   * Item 11i: the version of the shop's drawn character pictures (character-files.ts), when they are drawn and handed to the front. The runtime links to them as
+   * <url or base>/character/<face>.<format>?v=<version> (the morning line's picture and sticker); left out, it sends no picture.
+   */
+  character?: { version: string };
 }
 
 const HTTPS = /^https:\/\/[a-z0-9.-]+(:\d{1,5})?(\/[A-Za-z0-9._~%/-]*)?$/u;
@@ -40,8 +46,17 @@ export function readPagesFile(text: string | undefined): PagesFile | undefined {
     ...(isUrl(f.pageUrl) ? { pageUrl: f.pageUrl } : {}),
     ...(typeof f.whatsapp === "string" && /^\+\d{10,15}$/u.test(f.whatsapp) ? { whatsapp: f.whatsapp } : {}),
     ...(isUrl(f.panelUrl) ? { panelUrl: f.panelUrl } : {}),
+    ...(typeof f.character === "object" && f.character !== null && typeof (f.character as { version?: unknown }).version === "string" && /^[0-9a-f]{16}$/u.test((f.character as { version: string }).version) ? { character: { version: (f.character as { version: string }).version } } : {}),
   };
 }
+
+/**
+ * Item 11i: where the shop's character pictures are, for the links WhatsApp fetches itself (the morning template's image header, the sticker): always the shop's own
+ * server (`base`), never through the pages domain's front door. At 08:00 WhatsApp's fetchers ask for many shops' pictures from the same few addresses; the door
+ * limits each address and asks fleet about each name, so a picture there could be refused, and a template whose header picture cannot be fetched is not delivered.
+ * Undefined when the pictures are not drawn and handed over yet. Streetlist and the pages use the door's addresses (front.ts).
+ */
+export const picturesOf = (pages: PagesFile | undefined): CharacterPictures | undefined => (pages?.character ? { base: pages.base, version: pages.character.version } : undefined);
 
 /** A reader that looks at the file on every call (a few hundred bytes), so the deployer's next pass is seen at once. */
 export const pagesReader = (file: string): (() => PagesFile | undefined) => () => {

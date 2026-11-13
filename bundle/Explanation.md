@@ -1013,3 +1013,65 @@ The owner dropped the idea of a voice agent that answers the shop's phone (telep
 **What the Guards can and cannot bind.** The speech Guard lists exactly one route (`POST /stt` for Geometer's service, Sarvam's for the other) and caps calls a day. It cannot pin the model: Sarvam's is a multipart field and Geometer's service chooses its own. The media Guard lists one GET route (`/{version}/{media_id}`) and cannot send or upload; a Guard rule can only allow exact values, so it cannot tell a media id from another id in that place (the shop's own phone number record, say), and a daily count bounds it. That is a looser fence than the WhatsApp Guard's.
 
 **Why the Guards are still not placed.** A voice note's audio is downloaded from a host and a path that neither Meta's nor Gupshup's documents name. A Guard has one upstream and a fixed route list, so the download Guard's spec cannot be written until one sandbox voice note shows them; placing a half-set would look finished when it could not work. `bundle/Deferred.md` lists exactly what placing them takes.
+
+## The shop's character: the Character step, the renderer and the pictures (plan item 11i, decision 47; 14 Nov 2026)
+
+The partner (or builder) makes each shop's assistant with the owner beside them, in a Character step of the panel's shop setup; the shop's own server draws it with
+DiceBear's own art in five moods and keeps the pictures with the shop; the shop's page, Streetlist, the owner's app and WhatsApp show them. modules/Explanation.md
+("The character") says what the setting is, who sees which mood and how personalities and WhatsApp use them; this section is the bundle's half.
+
+**The Character step** (`panel/character.ts`, `panel/views-character.ts`). It comes after "accounts" and before "checks": the accounts step can still change a new shop's
+id (another shop took the name), and the faces' seeds start with the id. Step 5 of 6 for every template (`template.json`). The panel runs no script, so every choice
+is a button in one form: a style (five buttons by DiceBear's own names, Clay, Critters, Sprouts, Moods and Pixel Bot, each showing that style's face), a face from a row of eight rolled for this shop, a colour (the style's own eight
+DiceBear colours, plus Auto), Roll (eight new seeds, each `<shop id>-<six random hex digits>-<n>`), then the five moods of the picked face with their words, the name
+and the personality (each with a sample of its greeting). A press comes back to the step with the choice made and the name kept; Next checks the whole. Each
+picture-button is labelled in words ("Face 3 of 8", "Colour 2", the style's name) and the picked one says so with `aria-pressed` and a visible "Picked" (never colour
+alone); each mood picture's alt text names the shop and the mood ("Hosahalli Beauty's assistant, all well"); the name is optional (owner, 14 Nov: empty by default, and
+the shop's name stands for it); Enter in the name box is Next (a hidden first button). At 390 px the page has no sideways scroll (checked in headless Chromium). The pictures on the page are
+the panel's own, `GET /character/preview/<style>/<colour|auto>/<seed>/<mood|face>.svg` (signed in; only the approved styles, palettes and moods and a plain seed; cached a
+week, since one address always draws the same picture), so the page stays small on a phone and a press does not send the pictures again.
+
+**What saving does.** The settings get `assistant.character` (style, seed, colour, personality, and a name only if one was typed), with any `assistant` block the shop already had kept as it was
+(its morning hour). **This turns the shop's assistant on**: the owner's chat, the morning line and the owner's app, as decisions 43 and 47 intend for every shop
+(the settings' `assistant` block was the switch, and the panel never wrote it before). A new shop cannot skip the step; an existing shop edited without finishing the
+step gets nothing new (`withCharacter`). Then every mood is drawn into `shops/<shop>/character/` (about half a second); if that fails, the deployer draws it on its
+next pass. The shop page shows the saved moods as a row and offers the "All well" PNG to download for the shop's WhatsApp profile photo, set by hand
+(bundle/Deferred.md says why not by API).
+
+**The renderer** (`character/render.ts`) draws from files in `vendor/` only, each recorded with its version, npm integrity, licence and sha256 in `vendor/vendor.json`
+(a test checks every byte): `@dicebear/core` 10.7.0 (MIT; its `lib/*.js`), the five style definitions from `@dicebear/styles` 10.6.0 (each CC0 1.0 in its own `meta`),
+`@resvg/resvg-wasm` 2.6.2 (MPL-2.0, unchanged; the licence text beside it, since the package ships none) and jSquash's libwebp encoder from `@jsquash/webp` 1.5.0
+(Apache-2.0; libwebp itself BSD-3-Clause, `COPYING-libwebp`), its plain build so every machine makes the same bytes. Nothing is fetched while drawing (a test makes
+`fetch` throw). Per mood:
+- `<mood>.svg`: DiceBear's output, with its `<metadata>` block taken out (a licence notice CC0 does not ask for, about 0.9 KB of every file, and the credit is in
+  `vendor/`); 2 to 20 KB;
+- `<mood>.png`: 640 px on DiceBear's own tile, the size WhatsApp's profile photo and the template's image header show best; 17 to 30 KB;
+- `<mood>.webp`: WhatsApp's sticker shape, 512 px with a 16 px clear margin and no tile, lossless; 1 to 7 KB (WhatsApp's limit for a still sticker is 100 KB, checked).
+
+Why resvg and libwebp, both as WebAssembly: they have no native parts, so the same files run in the panel's container and in the deployer on the host with no
+build step and nothing to compile per machine (`sharp` and `@resvg/resvg-js` ship native binaries per platform); resvg draws DiceBear's paths, clip paths and
+opacities exactly (DiceBear's SVGs use nothing it lacks; it needs no fonts, and system fonts are not loaded); libwebp is the reference WebP encoder, and lossless keeps a
+sticker's flat colours crisp and small. The cost is 2.8 MB of WebAssembly (2.4 MB of it resvg, 0.9 MB gzipped), loaded only when a set is drawn, never at a page view.
+A set takes about 0.5 s once warm, and is drawn once per look: its fingerprint is the look and the renderer's versions, written last in `character.json` with every
+file's sha256; the same look keeps the set (nothing written), a new colour or seed, a damaged file or a new renderer version draws it again. A new set is drawn
+beside the old one and moved into place whole.
+
+**On the server** (`lib/character.ts`, the deployer's `runCharacters`, just before the pages pass on every loop). For each deployed shop it reads the settings, draws the
+set if the look changed (so a builder's hand-written settings, or a restore that brought back the settings but not the pictures, get the same bytes back), copies it
+to the inbox's folder for the shop (`secrets/inbox/<shop>/character/`, beside `pages.json`; the inbox mounts only that folder) when the copy differs, and takes the copy
+away when the shop has no assistant any more. The pages pass then writes the copy's version into both `pages.json` files (`character.version`), which is how the runtime
+links to the pictures. A handover writes only `assignment.json`, so it keeps them.
+
+**Served by the shop's own server** (`modules/channels/front.ts`): `<base>/character/<well|needs|wrong|closed|busy>.<svg|png|webp>` with the sha256 as ETag, a day's cache
+and 304 on If-None-Match; `<base>/character/now.<format>`, the mood the public sees now (all well, busy or closed), cached a minute; images only, with their own strict
+policy, `cross-origin-resource-policy: cross-origin` so Streetlist on another origin can show them, never framed. `<base>` is the shop's address on its own server or,
+through the front door, on the pages domain. **The door needed no change**: it already forwards `If-None-Match` and passes `content-type`, `cache-control` and `etag`
+back, for this server's shops and for a builder's client (`test/door-character.test.ts` holds it to that). The shop's page head shows the public face as a `data:`
+picture with its mood in words beside it and in its alt text, because the pages' content policy (and the door's for a builder's page) loads images only from data;
+placing the face in the page's design is the later design pass's, and it can use the addresses above once a policy names them. The owner's app shows the owner's real
+mood the same way, and its installed icon is the "All well" picture.
+
+**Sizes** (measured on the landing tree against main 7df41ee). The tracked bundle (`bundle/`) was 4,585,716 bytes and is 8,237,937: 3,546,327 of it is `vendor/`,
+the rest the renderer, the step, the server side and their tests. The whole repository goes from 16,485,530 to 20,241,175 bytes. Nothing is added to `node_modules`
+(there is none). The pictures' folder does not count toward a shop's desired state (`deploy.ts desiredOf` hashes the settings, runtime, lock and pins only), so drawing
+a set never redeploys the shop; saving a new character does, through its settings.
