@@ -12,6 +12,10 @@
 //                 refresher, ops          the Google token refresher; the heartbeat sender and the admin client the deployer reaches through `docker exec`
 //                 caddy, (panel)
 //
+// Item 11h (decision 45): every shop also has g-<shop>-push (and its forwarder), its push Guard, which passes a checked, counted push to the server's one push sender,
+// `push` (services/push.ts), on the network `push` that only the push Guards and the sender share. The sender alone is on egress for it; the push Guards are not.
+// Their admin addresses are in a range of their own (PUSH_ADMIN_BASE + the shop's index), so every existing shop keeps the four addresses it had.
+//
 // Networks. net-<shop> and admin are `internal: true`: no route out. egress and front are not. Only the Guards (and the services that must call out:
 // ops for the heartbeat, the refresher for Google) are on egress. Caddy is on front with the inbox, the relay and the panel, so
 // it can reach those three and nothing else; its Caddyfile sends /c/* to the inbox and /panel/* to the panel (the relay is for the inbox to call). Item 11d: /s/* goes to
@@ -38,7 +42,7 @@ import { basename, dirname, join } from "node:path";
 import { CADDY_IMAGE, isLocalDomain, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { agentNames } from "../agent/plan.ts";
-import { DESK_PORT, GUPSHUP_TOKEN_MOUNT, LICENCE_MOUNT, OWNER_MARKED_KINDS } from "./guards.ts";
+import { DESK_PORT, GUPSHUP_TOKEN_MOUNT, LICENCE_MOUNT, OWNER_MARKED_KINDS, PUSH_PORT, PUSH_SERVICE } from "./guards.ts";
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import type { GuardKind } from "./guards.ts";
 import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, names } from "./shop.ts";
@@ -49,6 +53,10 @@ export const ADMIN_FORWARD_PORT = 8190;
 export const INBOX_PORT = 8788;
 /** Item 11f: the pages domain's front door (services/door.ts), and the network only it, Caddy and the inbox are on. */
 export const PAGES_NETWORK = "pages";
+/** Item 11h: the network only the shops' push Guards and the server's push sender share. */
+export const PUSH_NETWORK = "push";
+/** Item 11h: where the push Guards' admin addresses start on the `admin` network: past every shop's four (a shop's index is under 224, so 16 + 4 * 223 + 3 < 2048). */
+export const PUSH_ADMIN_BASE = 2048;
 export const RELAY_PORT = 8795;
 export const REFRESHER_PORT = 8791;
 export const PANEL_PORT = 8790;
@@ -142,13 +150,13 @@ export interface Addressing {
 export function addressing(server: ServerConfig): Addressing {
   const base = server.network.base;
   return {
-    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21`, gate: `${base}.232.0/24`, speech: `${base}.233.0/24`, pages: `${base}.236.0/24` },
+    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21`, gate: `${base}.232.0/24`, speech: `${base}.233.0/24`, pages: `${base}.236.0/24`, push: `${base}.237.0/24` },
     panelIp(kind, index) {
       const n = 16 + index * 4 + slotOf(kind);
       return `${base}.${224 + (n >> 8)}.${n & 255}`;
     },
     adminIp(_shop, slot, index = 0) {
-      const n = slot === "model" ? 8 : 16 + index * 4 + (slot === "door" ? 3 : slotOf(slot));
+      const n = slot === "model" ? 8 : slot === "push" ? PUSH_ADMIN_BASE + index : 16 + index * 4 + (slot === "door" ? 3 : slotOf(slot));
       return `${base}.${240 + (n >> 8)}.${n & 255}`;
     },
   };
@@ -234,11 +242,13 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   // network is an alias on the forwarder.
   const guard = (g: GuardRef, attach: string[], adminAddress: string, extraVolumes: Y[], dependsOn?: Record<string, Y>, panelAddress?: string) => {
     const fwd = `fwd-${g.service.replace(/^g-/u, "")}`;
+    // item 11h: a push Guard reaches the server's push sender on `push`, and the internet not at all; every other Guard reaches its provider on egress
+    const out: Record<string, Y> = g.kind === "push" ? { [PUSH_NETWORK]: {} } : { egress: {} };
     add(fwd, {
       image: FORWARDER_IMAGE, ...hardened, user: guardUser,
       command: ["nc", "-ll", "-s", adminAddress, "-p", String(ADMIN_FORWARD_PORT), "-e", "nc", "127.0.0.1", "8082"],
       // the panel's network carries only the Guard's agent port (the forwarder listens on the admin address alone); the panel reaches the Guard by name there
-      networks: { ...Object.fromEntries(attach.map((n) => [n, { aliases: [g.service] }])), egress: {}, admin: { ipv4_address: adminAddress }, ...(panelAddress ? { panel: { ipv4_address: panelAddress, aliases: [g.service] } } : {}) },
+      networks: { ...Object.fromEntries(attach.map((n) => [n, { aliases: [g.service] }])), ...out, admin: { ipv4_address: adminAddress }, ...(panelAddress ? { panel: { ipv4_address: panelAddress, aliases: [g.service] } } : {}) },
     });
     add(g.service, {
       image: server.guardImage, ...hardened, user: guardUser, stop_grace_period: "30s", network_mode: `service:${fwd}`,
@@ -258,7 +268,8 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
           // a renewed Gupshup shop's WhatsApp Guard: its own sub-folder of the refresher's Gupshup tokens, read-only, as the Calendar Guard's Google token
           ...(g.kind === "whatsapp" && shop.gupshupRenewed ? [{ type: "volume", source: GUPSHUP_AUTH_VOLUME, target: GUPSHUP_TOKEN_MOUNT, read_only: true, volume: { subpath: shop.name } }] : [])],
         g.kind === "calendar" || (g.kind === "whatsapp" && shop.gupshupRenewed) ? { refresher: { condition: "service_healthy" } } : undefined,
-        features.panel ? net.panelIp(g.kind as Exclude<GuardKind, "model">, shop.index) : undefined,
+        // the panel checks no push Guard (it has nothing to read there), so a push Guard has no address on the panel's network
+        features.panel && g.kind !== "push" ? net.panelIp(g.kind as Exclude<GuardKind, "model">, shop.index) : undefined,
       );
     }
     const doorIp = net.adminIp(shop.name, "door", shop.index);
@@ -313,6 +324,14 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     volumes: [appVolume, `${dirs.generated}/refresher:/etc/geometer:ro`, `${secretDir("refresher")}:/run/secrets:ro`, "google-auth:/home/node", ...(gupshupRenewed ? [`${GUPSHUP_AUTH_VOLUME}:${REFRESHER_GUPSHUP_DIR}`] : [])],
     networks: { admin: {}, egress: {} }, healthcheck: { ...healthWget(REFRESHER_PORT, "/healthz"), start_period: gupshupRenewed ? "180s" : "30s" },
   }), [`${dirs.generated}/refresher/refresher.json`]);
+  // Item 11h: the server's push sender. On `push` (only the shops' push Guards reach it) and egress (the push services). No secret, no volume but the app.
+  // PUSH_SERVICE_OVERRIDE only when geometer.json's `upstreams` names a `push-service` (a test server's stand-in).
+  const pushOverride = server.upstreams?.["push-service"];
+  if (shops.length > 0) add(PUSH_SERVICE, node(["node", "/app/bundle/services/push.ts"], {
+    environment: { PORT: String(PUSH_PORT), HOST: "0.0.0.0", ...(pushOverride ? { PUSH_SERVICE_OVERRIDE: `${pushOverride.tls ? "https" : "http"}://${pushOverride.host}` } : {}) },
+    volumes: [appVolume],
+    networks: { [PUSH_NETWORK]: {}, egress: {} }, healthcheck: healthWget(PUSH_PORT, "/healthz"),
+  }));
   add("ops", node(["node", "/app/bundle/services/ops.ts", "run"], {
     environment: { CONFIG: "/etc/geometer/ops.json" },
     // ops writes only the fleet folder, as the user who runs the deployer (like the panel), so the deployer and the panel can read what it writes
@@ -377,6 +396,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     ...(agents.length > 0 ? { [agentNames.gate]: { internal: true, ipam: { config: [{ subnet: net.subnets.gate }] } } } : {}),
     ...(door ? { [PAGES_NETWORK]: { internal: true, ipam: { config: [{ subnet: net.subnets.pages }] } } } : {}),
     ...(features.speech ? { speech: { internal: true, ipam: { config: [{ subnet: net.subnets.speech }] } } } : {}),
+    ...(shops.length > 0 ? { [PUSH_NETWORK]: { internal: true, ipam: { config: [{ subnet: net.subnets.push }] } } } : {}),
   };
   for (const s of shops) networks[names.net(s.name)] = { internal: true, ipam: { config: [{ subnet: shopSubnet(server, s.index) }] } };
   const volumes: Record<string, Y> = { "google-auth": {}, [RELAY_STATE_VOLUME]: {}, "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {}, ...(shops.some((s) => s.gupshupRenewed) ? { [GUPSHUP_AUTH_VOLUME]: {} } : {}) };

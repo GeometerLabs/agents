@@ -544,7 +544,9 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
     const paying = paymentModuleOf(d);
     const guide =(steps: string[]) => html`<ol class="guide">${steps.map((s) => html`<li>${s}</li>`)}</ol>`;
     body = html`<p>${a.intro}</p><form method="post" action="/setup/${d.id}/${v.now + 1}" autocomplete="off">${csrf(c)}
-  ${t.accounts.includes("whatsapp") ? html`<h2>${a.whatsapp.title}</h2><p>${a.whatsapp.intro}</p>${guide(a.whatsapp.steps)}
+  ${t.accounts.includes("whatsapp") ? html`<h2>${a.whatsapp.title}</h2>
+    <div class="field"><label><input type="checkbox" name="waNone" value="1" ${d.whatsapp.none ? raw("checked") : ""}> ${a.whatsapp.none}</label><p class="help">${a.whatsapp.noneHelp}</p></div>
+    <p>${a.whatsapp.intro}</p>${guide(a.whatsapp.steps)}
     ${text(a.whatsapp.number, "waNumber", d.whatsapp.businessNumber, { type: "tel", mode: "tel", max: 30 })}
     <div class="field"><label><input type="radio" name="waProvider" value="meta" ${d.whatsapp.provider === undefined ? raw("checked") : ""}> ${a.whatsapp.selfServe.choiceMeta}</label>
       <label><input type="radio" name="waProvider" value="gupshup-selfserve" ${d.whatsapp.provider === "gupshup-selfserve" ? raw("checked") : ""}> ${a.whatsapp.selfServe.choiceGupshup}</label></div>
@@ -652,6 +654,8 @@ export function setupChecksPage(c: Ctx, v: ChecksView): string {
     row(v.deployApplied ? "ok" : "wait", html`<b>${k.deploy}</b><br>${v.deployApplied ? k.deployApplied(when(v.deployApplied.at, c.lang)) : k.deployNot}`),
     row(v.limits && v.limits.proven === v.limits.of && v.limits.of > 0 ? "ok" : "wait", html`${v.limits ? k.limitsProven(v.limits.proven, v.limits.of) : k.limitsNot}`),
     ...(v.checks?.connections ? v.checks.connections.map((r) => checkLine(c, r)) : [row("wait", html`${v.guardConfigured ? k.waiting : k.guardNotSet}`)]),
+    // item 11h: a shop with no WhatsApp: the owner's way in is the setup QR code and a passkey
+    ...(v.unmet.includes("owner-signin") ? [row("wait", html`${k.ownerSigninWait}`)] : d.whatsapp.none ? [row("ok", html`${k.ownerSigninOk}`)] : []),
   ];
   return layout(c, w.steps.checks, html`${head}
 <div class="notice" role="status">${k.saved}</div>

@@ -48,7 +48,7 @@ export interface GuardDef {
 }
 
 /** The Guards a shop can have. A desk Guard (OWNER_MARKED_KINDS) is only ever an agent's: a template shop on UPI runs the same ledger in its own runtime. */
-export const GUARD_KINDS: readonly GuardKind[] = [...GATEWAY_KINDS, "whatsapp", "calendar", "model"];
+export const GUARD_KINDS: readonly GuardKind[] = [...GATEWAY_KINDS, "whatsapp", "calendar", "push", "model"];
 
 /**
  * Where the owner-marked desk listens (B71 part 2): the approvals relay's container serves it on this port of its own (bundle/services/desk.ts), apart from the
@@ -188,7 +188,7 @@ export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messa
 // per day at that shop's own Guard and the shop's kill switch stops its pushes too (modules/Explanation.md, "Works without WhatsApp").
 
 /** Where the server's push sender listens, on the `push` network only the shops' push Guards share with it (compose.ts). */
-export const PUSH_PORT = 8797;
+export const PUSH_PORT = 8798;
 /** The push sender's container name, and so the push Guard's upstream. */
 export const PUSH_SERVICE = "push";
 export { PUSH_HOSTS, PUSH_OPERATIONS, PUSH_ROUTES };
@@ -197,6 +197,9 @@ export { PUSH_HOSTS, PUSH_OPERATIONS, PUSH_ROUTES };
 export function pushGuardDef(): GuardDef {
   return { kind: "push", tool: "web-push", upstream: `${PUSH_SERVICE}:${PUSH_PORT}`, headers: {}, plain: true };
 }
+
+/** Item 11h: a shop's daily push caps: its owner's alerts, its customers', and any one phone's. Generous for a small shop; a flood stops at Guard. */
+export const PUSH_LIMITS = { ownerPerDay: 200, customerPerDay: 500, perPhonePerDay: 50 } as const;
 
 /** A count limited to one argument's value (a phone's subscription): `scope` names the argument. */
 const scopedCount = (id: string, operation: string, field: string, cap: number, windowSeconds: number) => ({ id, kind: "count", operation, scope: [field], cap: String(cap), window_seconds: windowSeconds });
