@@ -1013,3 +1013,15 @@ The owner dropped the idea of a voice agent that answers the shop's phone (telep
 **What the Guards can and cannot bind.** The speech Guard lists exactly one route (`POST /stt` for Geometer's service, Sarvam's for the other) and caps calls a day. It cannot pin the model: Sarvam's is a multipart field and Geometer's service chooses its own. The media Guard lists one GET route (`/{version}/{media_id}`) and cannot send or upload; a Guard rule can only allow exact values, so it cannot tell a media id from another id in that place (the shop's own phone number record, say), and a daily count bounds it. That is a looser fence than the WhatsApp Guard's.
 
 **Why the Guards are still not placed.** A voice note's audio is downloaded from a host and a path that neither Meta's nor Gupshup's documents name. A Guard has one upstream and a fixed route list, so the download Guard's spec cannot be written until one sandbox voice note shows them; placing a half-set would look finished when it could not work. `bundle/Deferred.md` lists exactly what placing them takes.
+
+
+## A partner's calling card at /@handle (plan item 11g, decision 49; 14 Nov 2026)
+
+`streetlist.in/@handle` is rendered by the same front door that serves the shop pages (`services/door.ts` routes it before the slug branch; `services/card-page.ts` draws it). What it does and why:
+
+- **Fleet owns the card, the door only draws it.** The door asks fleet's public `GET /v1/partner-cards/<handle>` (same one-minute memory as the slug lookups) and never reads Firestore. An unknown, unpublished or junk handle is one friendly 404 and counts against the visitor's "unknown names" limit like a guessed shop name.
+- **Server-rendered HTML and one inline style sheet, no script, nothing fetched.** The door's own content policy (`default-src 'none'; style-src 'unsafe-inline'`) applies, so the face is an inline SVG (fleet rebuilt it from an allow-list, `apps/fleet/src/face-svg.ts`) and the QR code is an inline SVG made here with `modules/qr`. No web font: the phone's own font, so a budget Android phone paints it at once. The page is about 8 KB plus the face (Pixel is the largest, about 20 KB).
+- **Streetlist's look, light only** (paper, ink, shutter green, marigold hero; the owner's 14 Nov rule), read from the `streetlist` repository's tokens.
+- **Everything a partner typed is escaped**; the WhatsApp link is built from digits only; the standing line "WhatsApp message charges are passed on at cost and paid from the shop's own WhatsApp account" is always shown with the services.
+- **The QR code carries the card's handle address** (`https://<domain>/@handle`), not a stable page id: a card has no `page_ids` row (those are per shop). Cards are renamed rarely, a renamed handle's old address cools at fleet, and a stable card id is a possible later step (Deferred.md).
+- **Not here:** the home page of streetlist.in and its Caddy wiring (item 6 of before-launch.md), and the shop's own tap to say yes (below).
