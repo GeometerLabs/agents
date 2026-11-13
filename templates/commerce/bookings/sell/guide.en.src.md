@@ -8,6 +8,10 @@ For local partners (18 and over) and builders. Written 3 November 2026, in the p
 practise with a friend → a friendly shop → a stranger's shop → quote → first payment → first-month check-in → tuning and the monthly report, month after month
 ```
 
+**What the owner does today.** Most owners already manage bookings somehow: they answer on their own phone late at night, keep a notebook, or have a relative or helper replying on WhatsApp. It is free and familiar, and it works on most days. Where money slips away, in the owner's own words: "I lost that booking overnight", "I forgot to ask for the advance", "I gave a discount because they pushed", "two people turned up for the same slot". None of this is the owner's fault; it is a habit, and it is what you have to beat. What you do instead: you set up the rules once, then look after them with the owner, so the late-night reply, the advance and one person for one slot do not depend on anyone being awake.
+
+**Who to approach first.** Salons and beauty services that take advances. Other local services that book by the hour come after.
+
 ## 1. Is this shop a fit?
 
 | A good fit | Not a fit (for now) |
