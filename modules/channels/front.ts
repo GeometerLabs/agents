@@ -253,7 +253,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // item 11f: the owner's view signed in from WhatsApp, with item 11d's page behind the session
     if (rest === "/owner" || rest.startsWith("/owner/")) {
       return ownerSessionRoute({
-        limiter, sendHtml, sendJson, readBody,
+        limiter, sendHtml, sendJson, readBody, policy: PAGE_POLICY,
         ownerRoute: (sub, o) => ownerRoute(req, res, url, shop, sub, address, o),
       }, { req, res, url, base: shop.publicUrl, sub: rest.slice("/owner".length), address, backend: shop.backend, pages, sameOrigin: sameOrigin(req, shop) });
     }

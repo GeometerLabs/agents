@@ -8,6 +8,7 @@ import { OWNER_ACCESS_FILE, OWNER_SESSIONS_FILE, openOwnerAccess, readEndBefore 
 import { createOwnerSignin } from "../channels/owner-signin.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import { PAGES_FILE, pagesReader } from "../channels/pages-file.ts";
+import { OWNER_GRANTS_FILE, ownerGrantsReader } from "../channels/owner-grants.ts";
 import type { Language } from "../language/languages.ts";
 import { systemClock } from "../core/clock.ts";
 import type { Clock } from "../core/clock.ts";
@@ -209,6 +210,8 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   const ownerAccess = channelToken && owner ? openOwnerAccess(join(client.runtime.dataDir, OWNER_ACCESS_FILE)) : undefined;
   const ownerSignin = ownerAccess && owner ? createOwnerSignin({
     access: ownerAccess, pages: pagesReader(join(client.folder, PAGES_FILE)), endBefore: () => readEndBefore(join(client.folder, OWNER_SESSIONS_FILE)),
+    // item 11h: the partner's setup QR and recovery card, as the deployer copies the panel's file here
+    grants: ownerGrantsReader(join(client.folder, OWNER_GRANTS_FILE)),
     owner, shopName: (client.settings as { name?: string }).name ?? "", clock, log,
   }) : undefined;
   let runtime: Rt;
