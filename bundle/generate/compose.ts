@@ -46,7 +46,8 @@ import { DESK_PORT, GUPSHUP_TOKEN_MOUNT, LICENCE_MOUNT, OWNER_MARKED_KINDS, PUSH
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import type { GuardKind } from "./guards.ts";
 import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, names } from "./shop.ts";
-import { DOOR_PORT } from "../services/door.ts";
+import { DOOR_PORT, DOOR_ROBOTS_DISALLOW, NOTHING_HEADER } from "../services/door.ts";
+import { HOME_EXAMPLES_REDIRECT, HOME_MOUNT, HOME_ROBOTS_DISALLOW, HOME_SITE_ROOT } from "../lib/home.ts";
 
 export const FORWARDER_IMAGE = "busybox:1.37.0";
 export const ADMIN_FORWARD_PORT = 8190;
@@ -137,6 +138,11 @@ export interface Dirs {
    * replaces the files by rename, and a single-file bind mount keeps showing the old one). The model Guard does not get it.
    */
   licence: string;
+  /**
+   * The server's home/ folder (lib/home.ts): the installed Streetlist builds and the `current` link to the served one. Caddy mounts the FOLDER read-only at HOME_MOUNT
+   * (a bind-mounted symlink is resolved once, at start, so a switched build would not show). Optional: only the partner server's pages domain uses it.
+   */
+  home?: string;
 }
 
 export interface Addressing {
@@ -382,7 +388,9 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     image: CADDY_IMAGE, restart: "unless-stopped", security_opt: ["no-new-privileges:true"],
     ports: [`${server.ports.http}:80`, `${server.ports.https}:443`],
     // each shop's reports folder, and only that folder of its data volume, read-only
-    volumes: [`${dirs.generated}/Caddyfile:/etc/caddy/Caddyfile:ro`, "caddy-data:/data", "caddy-config:/config", ...shops.map((s): Y => ({ type: "volume", source: names.dataVolume(s.name), target: `${REPORTS_MOUNT}/${s.name}`, read_only: true, volume: { subpath: REPORTS_SUBPATH } }))],
+    volumes: [`${dirs.generated}/Caddyfile:/etc/caddy/Caddyfile:ro`, "caddy-data:/data", "caddy-config:/config", ...shops.map((s): Y => ({ type: "volume", source: names.dataVolume(s.name), target: `${REPORTS_MOUNT}/${s.name}`, read_only: true, volume: { subpath: REPORTS_SUBPATH } })),
+      // item 6 of before-launch.md: the installed Streetlist builds, for the pages domain's static home (read-only; the folder, not the `current` link in it)
+      ...(door && dirs.home ? [`${dirs.home}:${HOME_MOUNT}:ro`] : [])],
     networks: { front: {}, ...(agents.length > 0 ? { [agentNames.gate]: {} } : {}), ...(door ? { [PAGES_NETWORK]: {} } : {}) },
     ...(shops.length > 0 ? { depends_on: Object.fromEntries(shops.map((s) => [names.reportsDir(s.name), { condition: "service_completed_successfully" }])) } : {}),
   }, [`${dirs.generated}/Caddyfile`]);
@@ -473,7 +481,119 @@ export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shop
     // everything else is the panel's, when there is one: it serves from the root of its own address
     ...(server.panel.enabled ? [`\thandle {`, `\t\treverse_proxy panel:${PANEL_PORT}`, `\t}`] : [`\thandle {`, `\t\trespond "Geometer" 404`, `\t}`]), `}`, ``,
     // item 11f: the pages domain and its extra domains, a site of their own that reaches ONLY the front door: no /c, /s, /r, /g or panel there
-    ...(server.pages && server.fleet ? [`${[server.pages.domain, ...server.pages.extraDomains].join(", ")} {`, `\treverse_proxy door:${DOOR_PORT}`, `}`, ``] : []),
+    ...(server.pages && server.fleet ? pagesSites(server.pages) : []),
   ].join("\n");
+}
+
+// ---- the pages domain: the Streetlist home, then the door ------------------------------------------------------------------------------------------------------
+// The Streetlist site's own files (streetlist repository, built into dist/ and installed by `geometer home install`, lib/home.ts) are served by Caddy at the pages
+// domain; every other path goes to the door. The text below is fixed: it does not depend on which build is installed (a build whose hosting rules differ is refused
+// at install), so installing or rolling back a build never rewrites this file or restarts Caddy. With no build installed the `@home-live` test fails and the domain is
+// the door's alone, as before. It ports the streetlist repository's firebase.json: clean URLs (/shops from shops.html; the .html address and a trailing slash redirect
+// to the clean one), /examples -> /examples/glow-salon (302), the security headers on everything, a strict content policy and `no-cache` on pages, a year of
+// `immutable` on /assets, and the friendly 404 page. Deliberate difference: a MISSING file under /assets is `no-cache`, not a year of `immutable`, so a 404 caught
+// by a browser during a build switch is not remembered.
+
+/** firebase.json's `**` headers: on every response of the home. */
+export const HOME_SECURITY_HEADERS: readonly (readonly [string, string])[] = [
+  ["X-Content-Type-Options", "nosniff"], ["Referrer-Policy", "strict-origin-when-cross-origin"], ["Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()"],
+  ["Cross-Origin-Opener-Policy", "same-origin"], ["X-Frame-Options", "DENY"],
+];
+/** firebase.json's policy for every path except /assets/...: no script or style but its own files. */
+export const HOME_CSP = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; font-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'";
+export const HOME_ASSET_CACHE = "public, max-age=31536000, immutable";
+/** The door's own transport rule, on the home's answers too (the door sets it on every answer it gives; Firebase set its own). */
+const HOME_HSTS = "max-age=31536000";
+
+const hdr = (indent: string, rows: readonly (readonly [string, string])[]): string[] => [`${indent}header {`, ...rows.map(([k, v]) => `${indent}\t${k} "${v}"`), `${indent}}`];
+
+/** One reverse proxy to the door. `friendly404`: a "no page here" answer of the door's (marked with NOTHING_HEADER) is replaced by the home's own 404 page, with its headers. */
+function doorProxy(indent: string, friendly404: boolean): string[] {
+  if (!friendly404) return [`${indent}reverse_proxy door:${DOOR_PORT}`];
+  return [
+    `${indent}reverse_proxy door:${DOOR_PORT} {`,
+    `${indent}\t@home-nothing header ${NOTHING_HEADER} 1`,
+    `${indent}\thandle_response @home-nothing {`,
+    `${indent}\t\troot * ${HOME_SITE_ROOT}`,
+    ...hdr(`${indent}\t\t`, [...HOME_SECURITY_HEADERS, ["Strict-Transport-Security", HOME_HSTS], ["Content-Security-Policy", HOME_CSP], ["Cache-Control", "no-cache"]]),
+    `${indent}\t\trewrite * /404.html`,
+    `${indent}\t\tfile_server {`, `${indent}\t\t\tstatus 404`, `${indent}\t\t}`,
+    `${indent}\t}`,
+    `${indent}}`,
+  ];
+}
+
+/** /robots.txt: the door's disallowed paths and the home's, in one answer (the two files would otherwise disagree about who answers). */
+export const mergedRobots = (): string => `User-agent: *\n${[...DOOR_ROBOTS_DISALLOW, ...HOME_ROBOTS_DISALLOW].map((d) => `Disallow: ${d}`).join("\n")}\n`;
+
+/** The pages domain's site block (the primary domain: the home and the door) and one block for the extra domains (the door alone, which redirects them to the primary). */
+export function pagesSites(pages: { domain: string; extraDomains: string[] }): string[] {
+  const live = `\t\t@home-live file {\n\t\t\troot ${HOME_SITE_ROOT}\n\t\t\ttry_files /index.html\n\t\t}`;
+  return [
+    `${pages.domain} {`,
+    `\troute {`,
+    `\t\thandle /robots.txt {`,
+    `\t\t\theader Cache-Control "public, max-age=3600"`,
+    `\t\t\theader Content-Type "text/plain; charset=utf-8"`,
+    `\t\t\trespond <<ROBOTS`,
+    ...mergedRobots().trimEnd().split("\n"),
+    `ROBOTS 200`,
+    `\t\t}`,
+    live,
+    `\t\thandle @home-live {`,
+    `\t\t\troute {`,
+    `\t\t\t\t# the addresses Firebase's cleanUrls and trailingSlash=false change: the .html and the trailing-slash forms go to the clean one`,
+    `\t\t\t\t@home-index-html path /index.html`,
+    `\t\t\t\tredir @home-index-html / 301`,
+    `\t\t\t\t@home-html path_regexp home-html ^/(shops|partners|privacy|examples/[a-z0-9-]+)\\.html$`,
+    `\t\t\t\tredir @home-html /{re.home-html.1} 301`,
+    `\t\t\t\t@home-slash path_regexp home-slash ^/(shops|partners|privacy|examples|examples/[a-z0-9-]+)/$`,
+    `\t\t\t\tredir @home-slash /{re.home-slash.1} 301`,
+    `\t\t\t\tredir /examples ${HOME_EXAMPLES_REDIRECT} 302`,
+    `\t\t\t\t# the home's own addresses: a page, a picture or a hashed file; anything missing under them is the home's 404 page`,
+    `\t\t\t\t@home-area path / /shops /partners /privacy /favicon.svg /examples /examples/* /assets /assets/*`,
+    `\t\t\t\thandle @home-area {`,
+    `\t\t\t\t\troute {`,
+    `\t\t\t\t\t\t# a page is read, not posted to: GET and HEAD only (the door would otherwise take the name for a shop's)`,
+    `\t\t\t\t\t\t@home-other-method not method GET HEAD`,
+    `\t\t\t\t\t\theader @home-other-method Allow "GET, HEAD"`,
+    `\t\t\t\t\t\trespond @home-other-method "Not here" 405`,
+    `\t\t\t\t\t\troot * ${HOME_SITE_ROOT}`,
+    `\t\t\t\t\t\tencode zstd gzip`,
+    ...hdr(`\t\t\t\t\t\t`, [...HOME_SECURITY_HEADERS, ["Strict-Transport-Security", HOME_HSTS]]),
+    `\t\t\t\t\t\t@home-asset path /assets/*`,
+    `\t\t\t\t\t\theader @home-asset Cache-Control "${HOME_ASSET_CACHE}"`,
+    `\t\t\t\t\t\t@home-page not path /assets/*`,
+    `\t\t\t\t\t\theader @home-page Content-Security-Policy "${HOME_CSP}"`,
+    `\t\t\t\t\t\theader @home-page Cache-Control "no-cache"`,
+    `\t\t\t\t\t\t@home-found file {`,
+    `\t\t\t\t\t\t\ttry_files {path}.html {path} {path}index.html`,
+    `\t\t\t\t\t\t}`,
+    `\t\t\t\t\t\thandle @home-found {`,
+    `\t\t\t\t\t\t\trewrite * {http.matchers.file.relative}`,
+    `\t\t\t\t\t\t\tfile_server`,
+    `\t\t\t\t\t\t}`,
+    `\t\t\t\t\t\thandle {`,
+    `\t\t\t\t\t\t\theader Cache-Control "no-cache"`,
+    `\t\t\t\t\t\t\trewrite * /404.html`,
+    `\t\t\t\t\t\t\tfile_server {`, `\t\t\t\t\t\t\t\tstatus 404`, `\t\t\t\t\t\t\t}`,
+    `\t\t\t\t\t\t}`,
+    `\t\t\t\t\t}`,
+    `\t\t\t\t}`,
+    `\t\t\t\t# everything else (a shop's page, /p/<id>, /@handle, the door's own answers) is the door's`,
+    `\t\t\t\thandle {`,
+    ...doorProxy(`\t\t\t\t\t`, true),
+    `\t\t\t\t}`,
+    `\t\t\t}`,
+    `\t\t}`,
+    `\t\t# no home installed (or none readable): the door alone, as before the home was served here`,
+    `\t\thandle {`,
+    ...doorProxy(`\t\t\t`, false),
+    `\t\t}`,
+    `\t}`,
+    `}`, ``,
+    // an extra domain only reaches the door, which redirects it to the primary with the path kept: the home is never served under another name
+    ...(pages.extraDomains.length > 0 ? [`${pages.extraDomains.join(", ")} {`, ...doorProxy(`\t`, false), `}`, ``] : []),
+  ];
 }
 
