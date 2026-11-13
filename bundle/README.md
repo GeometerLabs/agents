@@ -472,6 +472,24 @@ approved: Deferred.md). The link works once, for 10 minutes; the session lasts 3
 every printed link working. Never geometer.dev or a name under it (shop pages keep their own cookies and reputation). **What the owner does once:** point the pages
 domain's DNS (an A record, and AAAA if the server has IPv6) at the partner server's address, then deploy; Caddy gets its certificate by itself.
 
+**The Streetlist home on that domain** (before-launch item 6, decision 49): with `"pages": {"domain": "streetlist.in", ...}` (set at `init` with `--pages-domain streetlist.in
+[--pages-extra streetlist.co.in]`), the same Caddy site also serves Streetlist's static pages (`/`, `/shops`, `/partners`, `/privacy`, `/examples/...`, `/assets/...`) with
+the headers, cache rules and 404 page of the streetlist repository's `firebase.json`, and sends every other address (a shop's page, `/p/<id>`, `/@handle`) to the door.
+A build of the home reaches the server as ONE pinned file, and no build tool runs there:
+
+```
+geometer home pack <the streetlist folder, built with npm run build>   # on the owner's machine: streetlist-home-<commit>.json and its sha256
+# put that sha256 in bundle/home.json (a reviewed commit: one commit then says which home a server serves), put the file at the https address named there or on the server
+geometer home install [<file or https address>]    # on the server: checksum against the pin, every file checked, installed beside the served build, switched atomically
+geometer home status                               # what is served, what is pinned
+geometer home rollback                             # back to the build before (a second rollback goes forward again)
+```
+
+Installing or rolling back never rewrites the Caddyfile or restarts Caddy (Caddy reads `home/current`, a link that is switched by one rename), and with no build
+installed the domain is the door's alone. A build that holds a name the home does not own (one that could shadow a shop), a path outside the site, a file whose bytes do
+not match their checksum, or hosting rules that differ from what this bundle's Caddy settings were written for is refused and nothing is changed. Explanation.md,
+"The Streetlist home on the pages domain", has the reasons.
+
 ## The owner's monthly report
 
 On the first morning of the month each shop's agent sends its owner last month's report on WhatsApp, with a link to the full page. The bundle turns this on for every shop it deploys. You do nothing for it. Three things make it work, and all three come from the bundle:
