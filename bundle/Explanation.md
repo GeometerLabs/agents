@@ -918,6 +918,40 @@ since its rewrites are static. Neither removes the work: they still need fleet's
 partners' shops (most shops), so their pages cost no extra hop. A builder's client takes one hop more, through the partner server; if that traffic grows, the door moves
 to its own small machine with the same container (Deferred.md).
 
+### The Streetlist home on the pages domain (before-launch item 6, decision 49; 14 Nov 2026)
+
+streetlist.in is one name with two kinds of page: Streetlist's own static site (built by the streetlist repository: home, `/shops`, `/partners`, `/privacy`, `/examples/...`,
+`/assets/...`) and the shops' pages and partners' cards (the door). Firebase Hosting served the first while the partner server did not exist; with it, Caddy serves both
+on the one domain, so a visitor's address never changes between "Streetlist" and "a shop on Streetlist" and one certificate and one set of headers rule the domain.
+
+**Caddy's rule, in one sentence:** an address the home owns (a fixed list: `/`, `/shops`, `/partners`, `/privacy`, `/favicon.svg`, `/examples...`, `/assets...`, and
+`/robots.txt`) is answered by Caddy from the installed build; everything else goes to the door unchanged. The list is `HOME_TOP` in `lib/home.ts`, **not** "whatever file is on
+disk": a file can never answer for a name outside it, so a static file cannot shadow a shop's page. Every name in it is in fleet's `RESERVED_SLUGS`, so no shop can take it
+either (two tests: this repository's `test/home.test.ts` and fleet's `page-slugs.test.ts`; install refuses a build with any other top-level name).
+
+**The text is fixed, the build is data.** `pagesSites` in `generate/compose.ts` does not depend on which build is installed. The build is a folder, `<server>/home/`, mounted
+read-only (the folder, not a symlink: Docker resolves a bind-mounted link once, at start), and `current` inside it is a relative symlink switched by renaming a new one over
+it. So a new build or a rollback is one atomic step, needs no deploy and no Caddy restart, and with no build the `@home-live` test fails and the domain is the door's alone
+(as before this item). What would force a Caddy change is a change of the hosting rules, and that cannot happen unnoticed: the pack carries the hash of `firebase.json`'s rules,
+and install refuses a pack whose hash is not the one the Caddy text was ported from (`HOME_RULES_SHA`; a test recomputes it from the repository's own `firebase.json`).
+
+**What was ported from `firebase.json`** (each row is checked against a real Caddy 2.8.4 in `test/home-caddy.test.ts`): clean URLs (`/shops` from `shops.html`; `/shops.html`,
+`/index.html` and `/shops/` redirect (301) to the clean address, never reaching the door, which would count a stranger's typo as an unknown shop name); `/examples` to
+`/examples/glow-salon` (302); the five security headers on everything; the strict content policy and `no-cache` on pages, `immutable` for a year on `/assets`;
+compression (Firebase compresses, Caddy does not unless told); and the friendly 404: a missing file under the home's addresses, and the door's own "no page here" answers
+(marked with `x-geometer-nothing`, set on nothing else), show the home's `404.html` with status 404. **Differences, on purpose:** a missing file under `/assets` is `no-cache`,
+not a year of `immutable` (a 404 seen during a build switch must not stick in a browser); the home's addresses take GET and HEAD only (405 otherwise, with `Allow`); and
+`/robots.txt` is one merged answer (the door's `/*/owner`, `/*/o/`... lines plus the home's `/examples/`), since two files would disagree about who answers.
+
+**How a build gets there, and why a pack.** `geometer home pack` turns the built `dist/` into one JSON file (sorted, no dates, dot files such as `dist/.vite` left out, the
+commit and the rules hash inside), so the same build packs to the same bytes and a second person can check the pin. Its sha256 is the pin in `bundle/home.json`; because that
+file is part of the agents repository, the commit the server runs (`agents_ref`) says which home it serves. A tarball would not give that (macOS and GNU `tar` write different
+bytes for the same files) and would need `tar` and its path rules on the server; a JSON file is read by code that checks every path (no `..`, no hidden part, no folder the home
+does not have) and every file's checksum before the first byte is written. Releases are kept as `releases/<id>/`; the one before is `previous`; older ones are removed.
+
+**Extra domains** (`streetlist.co.in`, if bought) get a block of their own that reaches only the door, which redirects them (301) to the primary with the path kept: the home
+is never served under another name. The domain is never written in code: `pages.domain` in geometer.json (and fleet's config; Terraform's one `pages_domain` writes both).
+
 ### One origin for every shop: what keeps them apart
 
 Every shop on the pages domain shares one origin, so a cookie's `Path` is hygiene, not a boundary: a page of one slug that could run script, or a form posted from one
