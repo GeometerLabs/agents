@@ -29,6 +29,10 @@
 //   POST /internal/channel/owner-signout  x-owner-session: <token>   end that session
 //   GET  /internal/owner-session          x-owner-session, with the INBOX's internal token: 204 when the session is good. The approvals relay asks this, so it
 //                                         never takes the front's word for who the owner is.
+// Item 11h, passkeys (owner-access.ts, webauthn.ts): one route, the step in the body. Every check is HERE; the front carries the browser's answers.
+//   POST /internal/channel/owner-passkey  {"op": "grant_state" | "register_options" | "register", "grant": {"kind": "setup", "token"} | {"kind": "recovery", "code"}, "response"?}
+//                                         {"op": "status"} | {"op": "signin_options"} | {"op": "signin", "response"}
+//                                         answers {state} | {options} | {session, expires_at_ms} | {count, options?}, or 403 {state | why}
 //
 // The runtime never holds a webhook secret: the inbox checked each provider's signature before it called us. The bearer
 // token only says the caller is our own inbox. Bind to 127.0.0.1 or a private network, never the open internet.
@@ -42,6 +46,8 @@ import { MAX_VOICE_BYTES } from "../channels/owner-audio.ts";
 import { HANDLE_HASH } from "../channels/handle.ts";
 import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts";
 import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "../channels/owner-access.ts";
+import type { AssertionResponse, RegistrationResponse } from "../channels/owner-access.ts";
+import type { Grant } from "../channels/owner-grants.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import type { OwnerLinkFile } from "../channels/owner-link.ts";
 import type { RuntimeChannel } from "./core.ts";
@@ -161,8 +167,8 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
     return session !== undefined && options.ownerSignin?.check(session) !== undefined;
   };
   /** A session's start or end, for the record: an event of the runtime's own, saved and run as a step like any other. */
-  const recordAccess = (what: "signed_in" | "signed_out", session: string): void => {
-    runtime.submit([{ kind: "owner_access", id: randomUUID(), what, session }]);
+  const recordAccess = (what: "signed_in" | "signed_out" | "passkey_added", session: string, how?: "link" | "passkey" | "setup" | "recovery"): void => {
+    runtime.submit([{ kind: "owner_access", id: randomUUID(), what, session, ...(how ? { how } : {}) }]);
     runtime.kick();
   };
 
@@ -231,8 +237,49 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (!signin) return send(res, 403, { state: "unknown" });
       const done = signin.consume(link);
       if (!done.ok) return send(res, 403, { state: done.state });
-      recordAccess("signed_in", done.id);
+      recordAccess("signed_in", done.id, "link");
       return send(res, 200, { session: done.session, expires_at_ms: done.expiresAt });
+    }
+    // ---- item 11h: passkeys ----
+    if (path === "/internal/channel/owner-passkey") {
+      only("POST");
+      const signin = options.ownerSignin;
+      let body: Record<string, unknown>;
+      try { body = JSON.parse(await readBody(req, 32 * 1024)) as Record<string, unknown>; } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      if (!signin || !signin.passkeysOn()) return send(res, 403, { state: "unknown", why: "Passkeys are not on for this shop." });
+      const g = body.grant as { kind?: unknown; token?: unknown; code?: unknown } | undefined;
+      const grant: Grant | undefined = g?.kind === "setup" && typeof g.token === "string" ? { kind: "setup", token: g.token.slice(0, 64) }
+        : g?.kind === "recovery" && typeof g.code === "string" ? { kind: "recovery", code: g.code.slice(0, 40) } : undefined;
+      const op = body.op;
+      if (op === "grant_state" || op === "register_options" || op === "register") {
+        if (!grant) return send(res, 400, { error: 'Send "grant": {"kind": "setup", "token"} or {"kind": "recovery", "code"}.' });
+        // a recovery code is a guess until it matches: too many wrong ones today and none is looked at
+        if (grant.kind === "recovery" && signin.codesLocked()) return send(res, 403, { state: "locked" });
+        const state = signin.grantState(grant);
+        if (grant.kind === "recovery" && state === "unknown") signin.noteWrongCode();
+        if (op === "grant_state") return send(res, 200, { state, shop: signin.shopName });
+        if (op === "register_options") {
+          const r = signin.registrationOptions(grant);
+          return r.ok ? send(res, 200, { options: r.options }) : send(res, 403, { state: r.state });
+        }
+        const done = signin.register(grant, body.response as RegistrationResponse);
+        if (!done.ok) return send(res, 403, { state: done.state, ...("why" in done && done.why ? { why: done.why } : {}) });
+        recordAccess("passkey_added", done.passkey, grant.kind);
+        recordAccess("signed_in", done.id, "passkey");
+        return send(res, 200, { session: done.session, expires_at_ms: done.expiresAt });
+      }
+      if (op === "status") return send(res, 200, { count: signin.passkeys().length });
+      if (op === "signin_options") return send(res, 200, signin.signinOptions());
+      if (op === "signin") {
+        const done = signin.signin(body.response as AssertionResponse);
+        if (!done.ok) return send(res, 403, { why: done.why });
+        recordAccess("signed_in", done.id, "passkey");
+        return send(res, 200, { session: done.session, expires_at_ms: done.expiresAt });
+      }
+      return send(res, 400, { error: "op is grant_state, register_options, register, signin_options or signin." });
     }
     if (path === "/internal/channel/owner-signout") {
       only("POST");

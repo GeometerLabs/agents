@@ -22,7 +22,7 @@ import { monthRange } from "../../modules/report/months.ts";
 import { createAccounts } from "./accounts.ts";
 import type { Account, Role } from "./accounts.ts";
 import { casesOf, monthOf, monthlyFromExport, readExport } from "./activity.ts";
-import { ConfigError, isSecure, readServerModel, webhookUrlFor } from "./config.ts";
+import { ConfigError, isSecure, readPagesDomain, readServerModel, webhookUrlFor } from "./config.ts";
 import type { PanelConfig } from "./config.ts";
 import { SECRET_NAMES, liveView, preparedByOf, serverPaths, shopIdFromName } from "./contract.ts";
 import type { SecretName } from "./contract.ts";
@@ -44,7 +44,8 @@ import { createHandover } from "./handover.ts";
 import { createTerms } from "./terms.ts";
 import { termsLinkWord, termsPage } from "./views-terms.ts";
 import { createChannels } from "./channels.ts";
-import { SLUG_SHAPE, WHATSAPP_NUMBER, endOwnerSessions, readPageSettings, readPagesStatus, writePageSettings } from "../lib/pages.ts";
+import { SLUG_SHAPE, WHATSAPP_NUMBER, endOwnerSessions, makeOwnerRecovery, makeOwnerSetup, ownerBaseOf, ownerGrantsSummary, readPageSettings, readPagesStatus, removeOwnerPasskeys, writePageSettings } from "../lib/pages.ts";
+import { ownerSetupPage, recoveryCardPage } from "./views-pages.ts";
 import { ownerLinkMadePage } from "./views-channels.ts";
 import { applyVoice, keepSpeech, voiceFormOf, voiceOf } from "./voice.ts";
 import { voiceLinkWord, voicePage } from "./views-voice.ts";
@@ -489,8 +490,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       // item 11d: a shop whose template has a page (Bookings; item 11h: Orders and Fees too), and only a panel that knows the server's public address can show its links
       ...(hasPage(kindId) && channels.view(id) ? { channels: channels.view(id)!, channelsKind: kindId as "bookings" | "orders" | "fees" } : {}),
       // item 11f: the shop's page on the pages domain (its short name, where it stands at fleet) and the owner's sessions; a builder chooses "hub" or "own"
-      ...(hasPage(kindId) ? { pages: { settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), ...(readPagesStatus(config.serverDir, id) ? { status: readPagesStatus(config.serverDir, id)! } : {}), canChoose: config.mode === "own" } } : {}),
-      ...(pagesNotice === "ended" || pagesNotice === "bad" ? { pagesNotice } : {}),
+      ...(hasPage(kindId) ? { pages: { settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), ...(readPagesStatus(config.serverDir, id) ? { status: readPagesStatus(config.serverDir, id)! } : {}), canChoose: config.mode === "own", grants: ownerGrantsSummary(config.serverDir, id) } } : {}),
+      ...(pagesNotice === "ended" || pagesNotice === "bad" || pagesNotice === "removed" ? { pagesNotice } : {}),
       voiceLink: voiceLinkWord(c.lang),
       papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
       isBuilder: r.account!.role === "builder",
@@ -540,6 +541,38 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     endOwnerSessions(config.serverDir, ref.id, new Date(now()));
     log(`every owner session of ${ref.id} signed out by ${r.account!.id}`);
     redirect(r, `/shops/${ref.id}?pages=ended`);
+  });
+
+  // item 11h: the owner's passkeys. The setup QR and the recovery card are shown once, on the page that makes them; only their hashes are written
+  // (shops/<shop>/owner-grants.json), and the deployer hands the file to the shop's runtime at its next pass (10 s). The address in them is the owner's view's
+  // own, worked out as the deployer works it out (lib/pages.ts ownerBaseOf), because the runtime checks each passkey against that origin.
+  const ownerBase = (id: string): string | undefined => {
+    if (!config.publicUrl) return undefined;
+    const domain = readPagesDomain(config.serverDir);
+    return ownerBaseOf({ publicUrl: config.publicUrl, ...(domain ? { pagesDomain: domain } : {}), shop: id, settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), status: readPagesStatus(config.serverDir, id) });
+  };
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-setup$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    const base = ref && hasPage(shops.kind(ref.id)) ? ownerBase(ref.id) : undefined;
+    if (!ref || !base) return notFound(r);
+    const made = makeOwnerSetup(config.serverDir, ref.id, new Date(now()));
+    log(`owner's setup QR of ${ref.id} made by ${r.account!.id}`); // the token itself is never logged
+    page(r, 200, ownerSetupPage(r.ctx(), ref.id, `${base}/setup/${made.token}`, made.expiresAt));
+  });
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-recovery$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    const base = ref && hasPage(shops.kind(ref.id)) ? ownerBase(ref.id) : undefined;
+    if (!ref || !base) return notFound(r);
+    const codes = makeOwnerRecovery(config.serverDir, ref.id, new Date(now()));
+    log(`owner's recovery card of ${ref.id} made by ${r.account!.id}`); // the codes are never logged
+    page(r, 200, recoveryCardPage(r.ctx(), ref.id, shops.settings(ref.id)?.name ?? ref.id, codes, `${base}/recover`));
+  });
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-passkeys\/remove$/u, "user", (r) => {
+    const ref = shops.find(r.account!, r.params[0]);
+    if (!ref || !hasPage(shops.kind(ref.id))) return notFound(r);
+    removeOwnerPasskeys(config.serverDir, ref.id, new Date(now()));
+    log(`every owner passkey of ${ref.id} removed by ${r.account!.id}`);
+    redirect(r, `/shops/${ref.id}?pages=removed`);
   });
 
   // a recovery step from the to-do list: only an action the list itself offers for that case right now, and only as a request to the shop's own agent

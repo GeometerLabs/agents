@@ -9,12 +9,16 @@
 //   pages.json (two copies)           what the shop's runtime (client folder) and the inbox's front (the shop's secrets folder) read on every request
 //                                     (modules/channels/pages-file.ts): the shop's addresses, where the owner's view is, the WhatsApp number to show
 //   owner-sessions.json (one copy)    the panel's file, handed to the runtime's client folder (removed again when the panel's is gone)
+//   shops/<shop>/owner-grants.json    item 11h: the partner's setup QR, recovery card and "remove the owner's passkeys", as hashes only (modules/channels/owner-grants.ts);
+//                                     handed to the runtime's client folder the same way, so a QR shown on the panel works within one pass (10 s)
 //
 // Fleet is asked only when something changed (a new slug, a choice of "own", a removed shop) or once a day (the claim is idempotent), and a refused claim is not
 // sent again for ten minutes unless the slug changes. The deployment key is the deployer's (as for the paper signer's claim); no other container holds it.
 import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { OWNER_SESSIONS_FILE } from "../../modules/channels/owner-access.ts";
+import { OWNER_GRANTS_FILE, RECOVERY_CODES, SETUP_MS, newRecoveryCode, newSetupToken, readOwnerGrants, recoveryHash, setupHash } from "../../modules/channels/owner-grants.ts";
+import type { OwnerGrants } from "../../modules/channels/owner-grants.ts";
 import { PAGES_FILE, readPagesFile } from "../../modules/channels/pages-file.ts";
 import type { PagesFile } from "../../modules/channels/pages-file.ts";
 import { readSecretFile, secretFile } from "./secrets.ts";
@@ -74,18 +78,63 @@ export function endOwnerSessions(dir: string, shop: string, now: Date): void {
   writeAtomic(join(serverPaths(dir).shop(shop), OWNER_SESSIONS_FILE), `${stableJson({ schema: 1, endBefore: now.toISOString() })}\n`);
 }
 
+// ---- item 11h: the owner's passkeys, the panel's side -------------------------------------------------------------------------------------------------------
+
+export const ownerGrantsFile = (dir: string, shop: string): string => join(serverPaths(dir).shop(shop), OWNER_GRANTS_FILE);
+const readGrants = (dir: string, shop: string): OwnerGrants => readOwnerGrants(read(ownerGrantsFile(dir, shop))) ?? { schema: 1 };
+const writeGrants = (dir: string, shop: string, g: OwnerGrants): void => writeAtomic(ownerGrantsFile(dir, shop), `${stableJson(g)}\n`);
+
+/** A new setup QR for the shop (one use, SETUP_MS, this shop only): the token to show ONCE; only its hash is written. Any earlier QR stops working. */
+export function makeOwnerSetup(dir: string, shop: string, now: Date): { token: string; expiresAt: Date } {
+  const token = newSetupToken();
+  const expiresAt = new Date(now.getTime() + SETUP_MS);
+  writeGrants(dir, shop, { ...readGrants(dir, shop), setup: { sha256: setupHash(token), createdAt: now.toISOString(), expiresAt: expiresAt.toISOString() } });
+  return { token, expiresAt };
+}
+
+/** A new recovery card: RECOVERY_CODES codes to print ONCE; only their hashes are written. Every code of an earlier card stops working. */
+export function makeOwnerRecovery(dir: string, shop: string, now: Date): string[] {
+  const codes = Array.from({ length: RECOVERY_CODES }, newRecoveryCode);
+  writeGrants(dir, shop, { ...readGrants(dir, shop), recovery: { codes: codes.map(recoveryHash), createdAt: now.toISOString() } });
+  return codes;
+}
+
+/** "Remove the owner's passkeys" (a lost phone): every passkey made before now stops working, and the setup QR and recovery card are cleared too. */
+export function removeOwnerPasskeys(dir: string, shop: string, now: Date): void {
+  writeGrants(dir, shop, { schema: 1, passkeysBefore: now.toISOString() });
+}
+
+/** When the current card and the last QR were made, and passkeys last removed, for the panel's block. Never a hash. */
+export function ownerGrantsSummary(dir: string, shop: string): { setupAt?: string; recoveryAt?: string; removedAt?: string } {
+  const g = readGrants(dir, shop);
+  return { ...(g.setup ? { setupAt: g.setup.createdAt } : {}), ...(g.recovery ? { recoveryAt: g.recovery.createdAt } : {}), ...(g.passkeysBefore ? { removedAt: g.passkeysBefore } : {}) };
+}
+
 export function readPagesStatus(dir: string, shop: string): PageStatus | undefined {
   try { const s = JSON.parse(read(pagesStatusFile(dir, shop)) ?? "") as PageStatus; return s.schema === 1 ? s : undefined; } catch { return undefined; }
+}
+
+/** The slug fleet confirmed for the shop's current choice, or undefined. */
+const claimedOf = (settings: PageSettings, status: PageStatus | undefined): PageStatus | undefined =>
+  settings.pages === "hub" && status?.slug !== undefined && status.slug === settings.slug && status.url !== undefined ? status : undefined;
+
+/**
+ * Where the owner's view is: on the pages domain only for a shop this server's door serves (its `pagesDomain`), else at this server's own address. One rule for
+ * the deployer (pagesFileFor) and the panel (item 11h: the setup QR and the recovery card must name the same address the runtime checks passkeys against).
+ */
+export function ownerBaseOf(o: { publicUrl: string; pagesDomain?: string; shop: string; settings: PageSettings; status: PageStatus | undefined }): string {
+  const claimed = claimedOf(o.settings, o.status);
+  let served = false;
+  try { served = claimed !== undefined && o.pagesDomain !== undefined && new URL(claimed.url!).hostname === o.pagesDomain; } catch { served = false; }
+  return `${served ? claimed!.url : `${o.publicUrl}/s/${o.shop}`}/owner`;
 }
 
 /** The addresses a shop's runtime and front are handed (pages-file.ts). The owner's view is on the pages domain only for a shop this server's door serves. */
 export function pagesFileFor(server: ServerConfig, shop: string, settings: PageSettings, status: PageStatus | undefined): PagesFile {
   const base = `${publicUrl(server)}/s/${shop}`;
-  const claimed = settings.pages === "hub" && status?.slug !== undefined && status.slug === settings.slug && status.url !== undefined ? status : undefined;
-  let served = false;
-  try { served = claimed !== undefined && server.pages !== undefined && new URL(claimed.url!).hostname === server.pages.domain; } catch { served = false; }
+  const claimed = claimedOf(settings, status);
   return {
-    schema: 1, base, ownerBase: `${served ? claimed!.url : base}/owner`,
+    schema: 1, base, ownerBase: ownerBaseOf({ publicUrl: publicUrl(server), ...(server.pages ? { pagesDomain: server.pages.domain } : {}), shop, settings, status }),
     ...(claimed ? { slug: claimed.slug!, url: claimed.url!, ...(claimed.pageUrl ? { pageUrl: claimed.pageUrl } : {}) } : {}),
     ...(settings.whatsapp ? { whatsapp: settings.whatsapp } : {}),
     ...(server.panel.enabled ? { panelUrl: `${publicUrl(server)}/shops/${shop}` } : {}),
@@ -174,6 +223,8 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
     // the panel's "sign out every device", to the runtime, which reads it on every request
     const endAll = read(join(serverPaths(dir).shop(shop), OWNER_SESSIONS_FILE));
     keep(join(serverPaths(dir).generated, "shops", shop, "client", OWNER_SESSIONS_FILE), endAll);
+    // item 11h: the partner's setup QR, recovery card and "remove the owner's passkeys" (hashes only), to the runtime, which reads it on every request
+    if (keep(join(serverPaths(dir).generated, "shops", shop, "client", OWNER_GRANTS_FILE), read(ownerGrantsFile(dir, shop)))) lines.push(`${shop}: the owner's sign-in codes are handed to the runtime.`);
   }
 
   // a shop that is no longer deployed here gives its name back (it cools at fleet; a mistaken removal undone within 90 days keeps it and its page id)

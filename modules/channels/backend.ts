@@ -138,6 +138,11 @@ export interface ChannelBackend {
   /** Item 11f: end this session. */
   signout?(session: string): Promise<void>;
   /**
+   * Item 11h: one step of a passkey ceremony, passed to the runtime as it is (the runtime checks everything: modules/runtime/http.ts "owner-passkey"). The answer's
+   * status and body, so the front can tell a refusal (403) from a fault.
+   */
+  passkey?(body: Record<string, unknown>): Promise<{ status: number; body: Record<string, unknown> }>;
+  /**
    * Items 11d and 11e: a recording from the owner's page, passed to the runtime as it came (the runtime holds it in memory only). "off": the shop's assistant has no
    * voice service; "refused": the owner's credential is not good.
    */
@@ -220,6 +225,11 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
       if (r.status === 403) return { state: (await r.json() as { state: Exclude<LinkState, "valid"> }).state };
       const a = await json<{ session: string; expires_at_ms: number }>(r);
       return { session: a.session, expiresAtMs: a.expires_at_ms };
+    },
+    async passkey(body) {
+      const r = await call(`${o.url}/internal/channel/owner-passkey`, { method: "POST", headers: headers(), body: JSON.stringify(body) }, timeout);
+      if (r.status !== 200 && r.status !== 403 && r.status !== 400) throw new BackendError(`The shop's system answered ${r.status}.`);
+      return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async signout(session) {
       await json<unknown>(await call(`${o.url}/internal/channel/owner-signout`, { method: "POST", headers: headers({ session }) }, timeout));

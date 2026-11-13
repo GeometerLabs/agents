@@ -13,16 +13,26 @@
 //
 // A link cannot go as free text outside the owner's 24-hour WhatsApp window, and no approved sign-in template exists yet (Meta's authentication templates carry
 // codes, not links: bundle/Deferred.md). Then nothing is sent, the record says so, and the page has already told the owner to send "open my app" instead.
+//
+// Item 11h (decisions 45 and 46): passkeys. The `http` object also carries the passkey ceremonies (owner-access.ts holds the state, webauthn.ts the checks): the
+// partner's setup QR or a recovery code (owner-grants.ts, the panel's file, read fresh on every call) to register one, and the passkey to sign in. The RP ID and
+// the origin come from the pages file's ownerBase, the one address the owner's view has. A shop with no WhatsApp has no link to send, and the passkey is its way in.
 import type { Clock } from "../core/clock.ts";
 import type { Language } from "../language/languages.ts";
 import type { InboundMessage, Messaging, OutboundMessage } from "../messaging/messaging.ts";
 import type { ActionRecord, Outcome } from "../record/record.ts";
 import { nothingWasSent } from "../report/monthly-job.ts";
-import type { OwnerAccess, OwnerNow } from "./owner-access.ts";
+import type { AssertionResponse, OwnerAccess, OwnerNow, RegistrationResponse } from "./owner-access.ts";
+import type { Grant, OwnerGrants } from "./owner-grants.ts";
 import type { PagesFile } from "./pages-file.ts";
+import { relyingParty } from "./webauthn.ts";
 
 /** The runtime's own record events for a session (never from the front: the front's channel token can send only the channel events). */
-export interface OwnerAccessEvent { kind: "owner_access"; id: string; what: "signed_in" | "signed_out"; session: string }
+export interface OwnerAccessEvent {
+  kind: "owner_access"; id: string;
+  /** Item 11h: "passkey_added" when the owner registered a passkey (from the partner's QR or a recovery code); `how` says what signed them in. */
+  what: "signed_in" | "signed_out" | "passkey_added"; session: string; how?: "link" | "passkey" | "setup" | "recovery";
+}
 /** The page asks for a sign-in link. No number, no address: the runtime knows both. */
 export interface OwnerSigninEvent { kind: "owner_signin"; id: string }
 
@@ -53,6 +63,8 @@ export interface OwnerSigninSetup {
   pages: () => PagesFile | undefined;
   /** The panel's "sign out every device" moment, read fresh. */
   endBefore: () => number | undefined;
+  /** Item 11h: the panel's setup QR, recovery card and "remove the owner's passkeys" (owner-grants.ts), read fresh. Left out: no passkeys. */
+  grants?: () => OwnerGrants | undefined;
   owner: { whatsapp: string; language: Language };
   shopName: string;
   clock: Clock;
@@ -66,6 +78,9 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
   const log = setup.log ?? (() => undefined);
   /** The owner as the settings and the deployer say now; undefined while the shop has no pages file (no owner sign-in at all). */
   const who = (): OwnerNow | undefined => { const p = setup.pages(); return p ? { owner: owner.whatsapp, base: p.ownerBase } : undefined; };
+
+  /** The panel's "remove the owner's passkeys" moment, if there is one. */
+  const passkeysBefore = (): number | undefined => { const at = setup.grants?.()?.passkeysBefore; return at ? Date.parse(at) : undefined; };
 
   /** Is this the owner's "open my app"? Only from the owner's own number, only the fixed phrases, and only when the shop has an owner view to open. */
   const isOpenMyApp = (m: InboundMessage): boolean => sameNumber(m.from, owner.whatsapp) && !m.reply && m.text !== "" && OPEN_MY_APP.includes(phraseOf(m.text)) && who() !== undefined;
@@ -110,7 +125,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
     /** Handle one event the core gave here (`takes` said yes). */
     async run(event: OwnerSigninEvent | OwnerAccessEvent | { kind: "message"; message: InboundMessage }, ctx: { messaging: Messaging; record: ActionRecord }): Promise<void> {
       if (event.kind === "owner_access") {
-        ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs: { what: event.what, session: event.session }, language: owner.language, refs: { what: event.what, session: event.session } });
+        ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs: { what: event.what, session: event.session, ...(event.how ? { how: event.how } : {}) }, language: owner.language, refs: { what: event.what, session: event.session, ...(event.how ? { how: event.how } : {}) } });
         return;
       }
       await sendLink(event.kind === "message" ? "whatsapp" : "page", ctx);
@@ -131,6 +146,30 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       consume: (token: string) => { const w = who(); return w ? access.consume(token, w, clock.now()) : { ok: false as const, state: "unknown" as const }; },
       check: (session: string) => { const w = who(); return w ? access.check(session, w, clock.now(), setup.endBefore()) : undefined; },
       end: (session: string) => access.end(session, clock.now()),
+      // ---- item 11h: passkeys (each answers "unknown" or nothing for a shop with no pages file or no grants reader) ----
+      shopName: setup.shopName,
+      passkeysOn: (): boolean => setup.grants !== undefined && who() !== undefined,
+      grantState: (g: Grant) => { const w = who(); return w && setup.grants ? access.grantState(g, setup.grants(), clock.now()) : "unknown" as const; },
+      /** Too many wrong recovery codes today: the front says "wait" and nothing is checked. A wrong one is counted by `noteWrongCode`. */
+      codesLocked: () => access.codesLocked(clock.now()),
+      noteWrongCode: () => access.noteWrongCode(clock.now()),
+      registrationOptions: (g: Grant) => {
+        const w = who();
+        if (!w || !setup.grants) return { ok: false as const, state: "unknown" as const };
+        return access.registrationOptions(g, setup.grants(), w, relyingParty(w.base), setup.shopName || "Shop", clock.now());
+      },
+      register: (g: Grant, response: RegistrationResponse) => {
+        const w = who();
+        if (!w || !setup.grants) return { ok: false as const, state: "unknown" as const };
+        return access.register(g, setup.grants(), w, relyingParty(w.base), response, clock.now());
+      },
+      signinOptions: () => { const w = who(); return w && setup.grants ? access.signinOptions(w, relyingParty(w.base), clock.now(), passkeysBefore()) : { count: 0 }; },
+      signin: (response: AssertionResponse) => {
+        const w = who();
+        if (!w || !setup.grants) return { ok: false as const, why: "Passkeys are not on for this shop." };
+        return access.signin(response, w, relyingParty(w.base), clock.now(), passkeysBefore());
+      },
+      passkeys: () => { const w = who(); return w && setup.grants ? access.passkeys(w, relyingParty(w.base), passkeysBefore()) : []; },
     },
   };
 }
