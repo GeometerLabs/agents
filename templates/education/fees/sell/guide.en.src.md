@@ -4,8 +4,10 @@ For local partners (18 and over) and builders. Written 5 November 2026, in the p
 
 **Read section 11 first.** Fees is not live in any centre yet, and it has no phone demo. Today you can explain it, show a printed walkthrough on your laptop, and ask for a letter of intent. You cannot promise a start date.
 
+**Your part, in one line.** You are the person who looks after this service with its owner: you know the centre, you tune its rules, you fix things when they go wrong, you bring customers when the street asks, and you are the person the owner calls. Setup is only the first step, never the pitch. What lasts is your care and your judgment, not access to the tool.
+
 ```text
-practise with a friend → a friendly centre → a stranger's centre → letter of intent → (when your town is ready) setup → still paying at month 3
+practise with a friend → a friendly centre → a stranger's centre → letter of intent → (when your town is ready) setup → first-month check-in → tuning and the monthly report, month after month
 ```
 
 **What Fees does, in one breath.** Each month, on WhatsApp, it sends every parent a fee reminder with a Razorpay payment link, in the parent's own language: Hindi, English, Malayalam or Kannada. It is built so that a fee the payment record shows paid gets no reminder: paid is judged from Razorpay's own record, never from what a parent says. Part payments, a late fee, discounts and refunds all work inside limits the owner sets. On the 1st the owner gets a monthly report on WhatsApp.
@@ -45,13 +47,15 @@ The card "What to ask the shop for" (`sell/ask-card.en.md`) lists what to ask th
 
 Say them in the owner's language, slowly.
 
-1. "Hello, I'm [your name] from [town], and I help tuition centres collect their monthly fees on WhatsApp."
+1. "Hello, I'm [your name] from [town], and I help tuition centres collect their monthly fees on WhatsApp, and I stay on afterwards to look after it with you."
 2. "It's a fee helper: each month it sends every parent a reminder with a payment link in their own language, and a fee that the payment record shows paid gets no more reminders."
 3. "May I show you on my laptop, with test money, in 3 minutes?"
 
 Then stop talking. If they say yes, go to section 4. If they say no, say "Thank you. May I leave this sheet with you?" and leave.
 
 Don't open with "AI", with technology, or with the price. If they ask "Is this AI?", say yes (section 5).
+
+Setup is the first step, so it is never the pitch. What you offer is that you stay and look after it with them: you know their centre, you tune its rules, you fix things when they go wrong, and you are the person they call.
 
 ## 4. Show it to the owner
 
@@ -170,9 +174,13 @@ There is no live system yet, so there are no live alerts either (section 11).
 
 > "Yes, any time. Tell me with one message and I stop it. You can also disconnect it yourself from your phone: in the WhatsApp Business app, Settings, Account, Business Platform, Disconnect. The menu names can change. Your number and your chats stay."
 
+### "Why pay every month once it is set up?"
+
+> "Setup is only the first day. After that I look after it with you: I check in during the first month, I tune your rules when your centre changes, I fix things when they go wrong, I go through the monthly report with you, and I'm the person you call. That is what the monthly amount is for."
+
 ### "Who do I call?"
 
-> "Me. My name and number are on this sheet. I set it up, so I'm the one who answers for it."
+> "Me. My name and number are on this sheet. I look after it with you: I know your centre, and when something goes wrong I'm the one who sorts it out with you."
 
 Answer your phone, and reply the same day.
 
@@ -227,9 +235,11 @@ Three payments, three different people. Keep them apart. The amounts are from Ge
 | Who pays | Who gets it | What for | Amount |
 | --- | --- | --- | --- |
 | You | Geometer | Each live centre, each month | {{plan.business.fee}} |
-| The centre | You | The monthly service (a starting point; you decide) | {{guide.business.shop-min}} to {{guide.business.shop-max}} |
+| The centre | You | Looking after it each month (a starting point; you decide) | {{guide.business.shop-min}} to {{guide.business.shop-max}} |
 | The centre | You | Setup, once. You keep all of it. | {{guide.business.setup-min}} to {{guide.business.setup-max}} |
 | The centre, as its own line on your bill | WhatsApp, at cost | Message fees | about {{guide.business.whatsapp}} per centre per month |
+
+The monthly amount is the price of your care: the first-month check-in, the tuning, the fixes and the report. Setup is paid once; looking after it is what the centre keeps paying for.
 
 1. **Geometer's fee: {{plan.business.fee}} per live centre per month.** Fees is in the Business plan, with {{plan.business.allowance}} messages a month included. Extra messages are {{overage.extra}} for each 1,000, paid from your prepaid balance, and never charged without your yes. WhatsApp's own message fees are passed on at cost, and so is the payment fee when you top up the balance. A builder who runs it on their own server, with their own AI key and WhatsApp account, pays {{licence.builder.fee}} a month for each live client business instead. The first {{innovator.places}} builders and partners with a shop live get the Innovator badge: a badge, not a discount. A centre counts for a month when it was live on 15 or more days. You pay nothing to join: no joining fee, no kit, no paid training. The fee starts when a centre goes live.
 2. **The centre's price: a starting point; you decide.** The table gives the range. The setup is {{guide.business.setup-min}} to {{guide.business.setup-max}}, and you keep all of it. Put WhatsApp on the centre's bill as its own line, at cost: a centre that sends more messages then pays for more, and your service price stays yours.
@@ -303,7 +313,7 @@ When a centre is live:
    - Check that refunds owed are being sent: the owner sends each one from their own UPI app and marks it done.
 2. **On the 1st: read the first monthly report together.** It comes to the owner on WhatsApp, with a page behind it. Read every line: Collected, Still to collect, Given back; Reminders sent, Taken off fees; You were asked, You approved, You said no; Stopped by your limits; and Not checked. Include the mistakes. If there is a mistake, you say it first.
 3. **Ask for one introduction.** "Do you know another centre owner who collects monthly fees from parents? Would you introduce me?" Ask only after the owner has seen the report and is happy. Never offer a reward, a discount or a gift for it.
-4. **Keep checking in.** A centre that is still paying at month 3 is the real result.
+4. **Keep looking after it.** Every month: read the report together, ask what the owner would change, and tune the rules when they ask. A limit gets wider only when the owner says so, and it is written down. A centre that is still being looked after at month 3 is the real result.
 
 ## 10. When something goes wrong
 
@@ -313,7 +323,7 @@ When a centre is live:
 4. **Fix it, check it again, then switch it on.** If a parent was charged wrongly, sit with the owner while they refund it from their own Razorpay account. If a parent got a reminder they should not have, the owner says sorry to them first. With UPI, the owner sends the refund from their own UPI app, and the helper tells the parent "sent" only after the owner marks it done.
 5. **Put it in the report.** It goes in the month's mistakes, and you tell Geometer's team the same day.
 
-You are the centre's named, accountable person. Your name is on the report and the certificate. Don't blame the software, and don't say "it won't happen again".
+You are the person the owner calls, and the centre's named, accountable person. Your name is on the report and the certificate. Putting it right with them is part of looking after it. Don't blame the software, and don't say "it won't happen again".
 
 ## 11. Be honest about what's true today
 
