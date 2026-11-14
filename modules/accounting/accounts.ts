@@ -37,11 +37,11 @@ export const ACCOUNTS = {
 /** The account a payment method's money lands in. */
 export const METHOD_ACCOUNT: Record<Method, string> = { gateway: ACCOUNTS.gateway.code, upi: ACCOUNTS.upi.code, cash: ACCOUNTS.cash.code, bank: ACCOUNTS.bank.code };
 
-const SERVICE = /^[a-z0-9][a-z0-9_-]{0,47}$/u;
+const SERVICE = /^[a-z0-9][a-z0-9_-]{0,99}$/u;
 
 /** The income account of one service of a shop: `revenue:<service id>`. A service id that is not a plain id is refused, because the code is chained for good. */
 export function serviceAccount(service: string): string {
-  if (!SERVICE.test(service)) throw new Error(`"${service}" is not a service id the books can use (lower-case letters, digits, "_" and "-", at most 48).`);
+  if (!SERVICE.test(service)) throw new Error(`"${service}" is not a service id the books can use (lower-case letters, digits, "_" and "-", at most 100).`);
   return `revenue:${service}`;
 }
 
