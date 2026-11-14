@@ -21,6 +21,7 @@ import { isDeskFile } from "../services/desk.ts";
 import type { RecordFacts, SnapshotJob } from "./snapshot.ts";
 import type { ObjectStore } from "./store.ts";
 import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
+import { OWNER_KEEP_FILE, ownerKeepProblem } from "./owner-keep.ts";
 
 const sha256 = (data: Uint8Array) => createHash("sha256").update(data).digest("hex");
 const walk = (dir: string): string[] => readdirSync(dir).flatMap((n) => (statSync(join(dir, n)).isDirectory() ? walk(join(dir, n)) : [join(dir, n)]));
@@ -77,7 +78,7 @@ export async function snapshotsOf(store: ObjectStore, shop: string): Promise<Map
   return out;
 }
 
-export interface Fetched { stamp: string; db: Buffer; record: RecordFacts | null; /** The shop's fingerprint key, from the manifest (B69). A snapshot older than the key has none. */ personKey?: string }
+export interface Fetched { stamp: string; db: Buffer; record: RecordFacts | null; /** The owner's passkeys and alert subscriptions (owner-keep.ts), when the snapshot has them. */ ownerKeep?: Buffer; /** The shop's fingerprint key, from the manifest (B69). A snapshot older than the key has none. */ personKey?: string }
 
 /**
  * The runtime's database from the newest whole snapshot of a shop (one whose manifest was written: it is written last), at or before `atMs` if given. Only the database
@@ -115,11 +116,15 @@ export async function fetchSnapshot(store: ObjectStore, shop: string, identity: 
   const folder = `${shop}/${stamp}/`;
   const runtimeKey = keys.find((k) => /\/runtime\/agent\.db(\.gz)?\.age$/u.test(k));
   if (!runtimeKey) throw new Error(`the snapshot of ${stamp} has no runtime database (the shop had no record yet that night)`);
-  const files = await openAll(store, folder, stamp, [keys.find((k) => MANIFEST_KEY.test(k))!, runtimeKey], identity);
+  const keepKey = keys.find((k) => /\/runtime\/owner-keep\.json\.gz\.age$/u.test(k));
+  const files = await openAll(store, folder, stamp, [keys.find((k) => MANIFEST_KEY.test(k))!, runtimeKey, ...(keepKey ? [keepKey] : [])], identity);
   const manifest = JSON.parse(files.get("manifest.json")!.toString("utf8")) as { files?: { path?: string; key?: string; sha256: string }[]; runtime?: RecordFacts | null; personKey?: string };
   check(files, manifest);
   if (!digests(manifest).has("runtime/agent.db")) throw new Error(`the snapshot of ${stamp}'s manifest does not describe its runtime database`);
-  return { stamp, db: files.get("runtime/agent.db")!, record: manifest.runtime ?? null, ...(manifest.personKey ? { personKey: manifest.personKey } : {}) };
+  // checked now, while nothing of the shop's has been touched: a file the importer cannot read must stop the restore here, not after the database is swapped
+  const keep = files.get(OWNER_KEEP_FILE);
+  if (keep) { let parsed: unknown; try { parsed = JSON.parse(keep.toString("utf8")); } catch { parsed = undefined; } const problem = ownerKeepProblem(parsed); if (problem) throw new Error(`the owner's passkeys and alerts in the snapshot of ${stamp} are damaged (${problem})`); }
+  return { stamp, db: files.get("runtime/agent.db")!, record: manifest.runtime ?? null, ...(keep ? { ownerKeep: keep } : {}), ...(manifest.personKey ? { personKey: manifest.personKey } : {}) };
 }
 
 export interface FetchedAgent {
@@ -184,7 +189,7 @@ export async function runAgentRestoreJob(job: RestoreJob, store: ObjectStore): P
  * Fetch, check and write the database and the note the runtime reads at its next start (`restored.json`: it moves the shop's ids on so none used after the snapshot comes
  * back, and writes a `restored` entry to the record). The deployer puts both in the shop's volume with the runtime stopped.
  */
-export async function runRestoreJob(job: RestoreJob, store: ObjectStore): Promise<{ ok: true; stamp: string; record: RecordFacts }> {
+export async function runRestoreJob(job: RestoreJob, store: ObjectStore): Promise<{ ok: true; stamp: string; record: RecordFacts; ownerKeep?: boolean }> {
   const got = await fetchSnapshot(store, job.shop, readFileSync(job.identityFile, "utf8"), job.atMs);
   mkdirSync(job.out, { recursive: true });
   const file = join(job.out, "agent.db");
@@ -198,8 +203,10 @@ export async function runRestoreJob(job: RestoreJob, store: ObjectStore): Promis
   } finally { db.close(); }
   // for the deployer, which runs as another user and takes it from here: the folder holds the whole database too, and it removes the folder when the restore is done
   if (got.personKey) writeFileSync(join(job.out, PERSON_KEY_OBJECT), `${got.personKey}\n`, { mode: 0o644 });
+  // the owner's passkeys and alerts: a file of their own next to the database, which the deployer's last step imports (jobs.ts, owner-keep.ts)
+  if (got.ownerKeep) writeFileSync(join(job.out, "owner-keep.json"), got.ownerKeep, { mode: 0o644 });
   writeFileSync(join(job.out, RESTORE_NOTE), `${JSON.stringify({ snapshot: got.stamp, restoredAt: job.nowIso, lastSeq: record.lastSeq })}\n`, { mode: 0o644 });
-  return { ok: true, stamp: got.stamp, record };
+  return { ok: true, stamp: got.stamp, record, ...(got.ownerKeep ? { ownerKeep: true } : {}) };
 }
 
 if (import.meta.main) {

@@ -236,6 +236,7 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
   const dataVolume = volume(server, names.dataVolume(shop));
   let got: { stamp: string; record: RecordFacts };
   let keyNote = "";
+  let ownerNote = "";
   let snapshotKey: string | undefined;
   try {
     mkdirSync(join(work, "files"), { recursive: true }); chmodSync(join(work, "files"), 0o777); // the container writes here; the deployer removes it after
@@ -243,7 +244,7 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
     // 1. fetch, check and open the snapshot while the shop still runs (nothing of the shop's is touched yet)
     const place = snapshotPlace(ctx, server);
     const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${work}:/out`, "-v", `${o.identity}:/run/secrets/identity:ro`, ...place.mounts, server.appImage, "node", "/app/bundle/backup/restore-snapshot.ts", "--job", "/out/job.json"], { timeoutMs: 900_000 });
-    const out = lastJson(r.stdout) as { ok?: boolean; stamp?: string; record?: RecordFacts; error?: string } | undefined;
+    const out = lastJson(r.stdout) as { ok?: boolean; stamp?: string; record?: RecordFacts; ownerKeep?: boolean; error?: string } | undefined;
     if (!out?.ok || !out.stamp || !out.record) throw new Error(`No snapshot was restored; the shop was not touched and is still running. ${out?.error ?? (r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 300) || `exit ${r.code}`)}`);
     got = { stamp: out.stamp, record: out.record };
     // B69: the snapshot's fingerprint key, checked now, while nothing of the shop's has been touched
@@ -256,6 +257,8 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
       `cd /data/${shop}/data && cp /in/agent.db agent.db.restoring && (mv agent.db agent.db.before-restore-${stamp} 2>/dev/null; mv agent.db-wal agent.db.before-restore-${stamp}-wal 2>/dev/null; true) && rm -f agent.db-shm && mv agent.db.restoring agent.db && cp /in/${RESTORE_NOTE} ${RESTORE_NOTE}`]);
     // B69: the snapshot's fingerprint key goes back before the runtime starts, so the shop can match the people already in its record
     if (swap.code === 0) keyNote = keyPutBack(ctx.dir, shop, snapshotKey, server.panel.enabled, stamp);
+    // the owner's passkeys and alert subscriptions (owner-keep.ts): files of their own beside agent.db, merged in while the runtime is still stopped, as the runtime's own user
+    if (swap.code === 0 && out.ownerKeep) ownerNote = await ownerKeepPutBack(ctx, server, shop, work);
     await compose(ctx, ["start", names.runtime(shop)]);
     if (swap.code !== 0) throw new Error(`The restored file could not be put in place: ${swap.stderr.trim().slice(0, 200)}`);
   } finally { rmSync(work, { recursive: true, force: true }); }
@@ -263,7 +266,22 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
   const behind = published && published.seq > (got.record.lastSeq ?? 0)
     ? ` The shop's last daily fingerprint (${published.day}) covers entry ${published.seq}, after this snapshot: from now on its fingerprint and the drill's comparison will say the record no longer matches what was published (see bundle/Deferred.md).`
     : "";
-  return `${shop}'s database is restored from the snapshot of ${got.stamp} (record up to entry #${got.record.lastSeq ?? 0}). The file it replaced is kept as agent.db.before-restore-${stamp}. The shop is running again: before anything else it moves its ids on, writes a "restored" entry, and looks at the payment service and the calendar before it sends anything again.${keyNote}${behind}`;
+  return `${shop}'s database is restored from the snapshot of ${got.stamp} (record up to entry #${got.record.lastSeq ?? 0}). The file it replaced is kept as agent.db.before-restore-${stamp}. The shop is running again: before anything else it moves its ids on, writes a "restored" entry, and looks at the payment service and the calendar before it sends anything again.${keyNote}${behind}${ownerNote}`;
+}
+
+/**
+ * The owner's passkeys and alert subscriptions from the snapshot, merged into the shop's own small files with the runtime stopped (owner-keep.ts says what is and is not carried).
+ * It never throws: the database is already in place and the runtime must still start. A failure is said, with what to do by hand.
+ */
+async function ownerKeepPutBack(ctx: Context, server: ServerConfig, shop: string, work: string): Promise<string> {
+  const byHand = "the owner will have to sign in with a link and allow alerts again; the snapshot's runtime/owner-keep.json (restore-snapshot.ts) holds them";
+  try {
+    const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false, "1000:1000"), "-v", `${work}/files:/in:ro`, "-v", `${volume(server, names.dataVolume(shop))}:/data/${shop}`, server.appImage,
+      "node", "/app/bundle/backup/owner-keep.ts", "import", `/data/${shop}/data`, "/in/owner-keep.json"], { timeoutMs: 120_000 });
+    const out = lastJson(r.stdout) as { ok?: boolean; passkeys?: number; subscriptions?: number; error?: string } | undefined;
+    if (!out?.ok) return ` The owner's passkeys and alerts could NOT be put back (${out?.error ?? (r.stderr.trim().split("\n").slice(-1)[0] || `exit ${r.code}`).slice(0, 200)}): ${byHand}.`;
+    return ` The owner's passkeys (${out.passkeys ?? 0} put back) and alert subscriptions (${out.subscriptions ?? 0}) were put back: the owner signs in with the same passkey and alerts reach the same phones.`;
+  } catch (e) { return ` The owner's passkeys and alerts could NOT be put back (${(e as Error).message.slice(0, 200)}): ${byHand}.`; }
 }
 
 /** The fingerprint key the restore job took out of the snapshot, put back; what to say about it. It never throws: the database is already in place and the runtime must still start. */

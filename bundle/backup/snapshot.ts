@@ -5,6 +5,8 @@
 // the secret half is kept OFF the server, so nothing on the server can open a snapshot. The plain text never leaves this container's memory and temp folder.
 //
 //   <shop>/<stamp>/runtime/agent.db.gz.age     the runtime's database
+//   <shop>/<stamp>/runtime/owner-keep.json.gz.age   the owner's passkeys (public keys) and alert subscriptions, from the two small files beside agent.db (owner-keep.ts); only when the
+//                                              owner has set up either, so a shop without them makes no extra object
 //   <shop>/<stamp>/guard-<kind>.tar.gz.age     one Guard's backup folder (its store, its evidence ledger, anchor and pack), as one tar
 //   <shop>/<stamp>/manifest.json.gz.age        every file's size and sha256 (before compression), the record's length and last entry, and the shop's fingerprint key (B69)
 //
@@ -32,7 +34,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
-import { join, relative } from "node:path";
+import { dirname, join, relative } from "node:path";
 import { gzipSync } from "node:zlib";
 import { encrypt } from "./age.ts";
 import { folderStore, s3Store } from "./store.ts";
@@ -42,6 +44,7 @@ import { ledgerEntries } from "../../modules/record/ledger.ts";
 import { canonicalJson } from "../../modules/record/record.ts";
 import type { RecordEntry } from "../../modules/record/record.ts";
 import { keyIdOf } from "../lib/secrets.ts";
+import { OWNER_KEEP_FILE, OWNER_KEEP_OBJECT, readOwnerKeep } from "./owner-keep.ts";
 
 export interface SnapshotJob {
   stamp: string;
@@ -139,6 +142,13 @@ export async function snapshotShop(shop: SnapshotJob["shops"][number], job: Snap
     rmSync(copy, { force: true });
     files.push({ path: "runtime/agent.db", bytes: data.length, sha256: sha256(data) });
     objects.push({ name: RUNTIME_OBJECT, plain: gzipSync(data) });
+    // the owner's passkeys and alert subscriptions live in files of their own beside agent.db: without them a restore signs the owner out and turns their alerts off
+    const keep = readOwnerKeep(dirname(shop.runtimeDb));
+    if (keep) {
+      const text = Buffer.from(JSON.stringify(keep));
+      files.push({ path: OWNER_KEEP_FILE, bytes: text.length, sha256: sha256(text) });
+      objects.push({ name: OWNER_KEEP_OBJECT, plain: gzipSync(text) });
+    }
   }
   return sealAndPut(shop, job, store, { objects, files, record, empty: "there was nothing to copy (no record yet, and no Guard backup)" });
 }

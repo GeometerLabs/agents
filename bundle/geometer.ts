@@ -84,6 +84,13 @@
 //   rollback [<shop> | --shops a,b]   back to the previous pathway.lock, deployed through the same checks; with no name, the clients the last update moved
 //   logs <shop> [--tail N]       a shop's runtime and Guards;   logs [--tail N] with no shop: the server's own services (the panel, HTTPS, the heartbeat, the inbox, the relay)
 //   apply [--watch]              the host-side deployer: applies what the panel writes, running the same checked deploy
+//   whatsapp-templates <shop> [--submit | --status] [--template bookings|orders|fees] [--languages hi,en] [--only name1,name2]
+//                                put the shop's WhatsApp templates (about 130 messages in four languages) into ITS OWN Gupshup account, instead of typing them into Gupshup's dashboard.
+//                                Plain steps: 1. the shop is set up on its own Gupshup account (runtime.json has the app name; add "appId" under services.messaging, shown on the app's page).
+//                                2. Give the key for this one command: GUPSHUP_APIKEY=... node bundle/geometer.ts whatsapp-templates <shop> --server <folder>   (or it is read from the shop's
+//                                secret file once `gupshup_apikey` is handed in); never type it as an argument. 3. Run it as it is: a DRY RUN prints exactly what would be sent and sends nothing.
+//                                4. Try one first: add --submit --only <name> --languages en, then --status. 5. Then --submit for all; a template already pending or approved is skipped, so
+//                                running it again is safe. 6. --status lists each one's state; Meta approves in up to a day. A rejected one is left alone and flagged. Not tried against the real service.
 //   backup now | drill           the nightly snapshot and the weekly restore drill, once
 //
 // The deployer is the only process with the Docker socket. The panel never gets it.
@@ -110,6 +117,7 @@ import { MANAGE_SUBCOMMANDS, manageCommand } from "./agent/manage-cli.ts";
 import { recordAgent } from "./agent/records.ts";
 import { exportCommand } from "./export/cli.ts";
 import { homeCommand } from "./home-cli.ts";
+import { whatsappTemplatesCommand } from "./whatsapp-templates-cli.ts";
 import { paperCommand } from "./backup/papers-cli.ts";
 import { runFingerprints } from "./backup/fingerprints.ts";
 import { writeAgentReport } from "./agent/report.ts";
@@ -174,6 +182,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       // update / rollback
       to: { type: "string" }, shops: { type: "string" }, "dry-run": { type: "boolean" },
       // home install / pack, init
+      languages: { type: "string" }, only: { type: "string" }, submit: { type: "boolean" }, status: { type: "boolean" },
       sha256: { type: "string" }, commit: { type: "string" }, "pages-domain": { type: "string" }, "pages-extra": { type: "string" },
     },
   }) as { values: Record<string, string | boolean | undefined>; positionals: string[] };
@@ -400,6 +409,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     }
 
     if (command === "home") return await homeCommand(dir, positionals[0], positionals.slice(1), { ...(str("out") ? { out: str("out")! } : {}), ...(str("sha256") ? { sha256: str("sha256")! } : {}), ...(str("commit") ? { commit: str("commit")! } : {}) }, { log: (l) => console.log(l) });
+    if (command === "whatsapp-templates") return await whatsappTemplatesCommand(APP_DIR, dir, positionals[0], { ...(str("template") ? { template: str("template")! } : {}), ...(str("languages") ? { languages: str("languages")! } : {}), ...(str("only") ? { only: str("only")! } : {}), submit: values.submit === true, status: values.status === true }, { log: (l) => console.log(l) });
     if (command === "status") return await status(ctx);
     if (command === "up") return await up(ctx);
     if (command === "server") return await serverCommand(ctx, positionals[0], { wait: str("wait"), confirm: values.confirm === true });
