@@ -21,7 +21,7 @@ export const razorpay: PaymentProvider = {
   displayName: "Razorpay",
   // Razorpay's own record says when money arrives (a signed webhook, read back), refunds go through it behind Guard, a payment link can stay open for the rest of
   // a part payment, and a link can be cancelled so it can no longer be paid.
-  capabilities: { confirmsAutomatically: true, refundsAutomatically: true, takesPartPayments: true, cancels: true, readsBack: true },
+  capabilities: { confirmsAutomatically: true, refundsAutomatically: true, takesPartPayments: true, cancels: true, readsBack: true, readsSettlements: true },
   example: "{\"module\": \"razorpay\"}",
   readSettings(v, errors) {
     for (const key of Object.keys(v)) if (key !== "module" && key !== "upi") errors.push(`I don't know what "${key}" means in the payment module. Allowed: module, upi.`);

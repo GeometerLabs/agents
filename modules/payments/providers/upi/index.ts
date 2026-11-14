@@ -17,7 +17,7 @@ export const upi: PaymentProvider = {
   displayName: "UPI",
   // Nothing about a UPI payment can be seen by the agent, so every capability is a person's: the owner marks money received and pays refunds back. A request
   // asks for one exact amount (the payer's app cannot change it), and one already sent can still be paid after the agent stops counting on it.
-  capabilities: { confirmsAutomatically: false, refundsAutomatically: false, takesPartPayments: false, cancels: false, readsBack: false },
+  capabilities: { confirmsAutomatically: false, refundsAutomatically: false, takesPartPayments: false, cancels: false, readsBack: false, readsSettlements: false },
   example: "{\"module\": \"upi\", \"upi\": {\"id\": \"glowsalon@okicici\", \"payee\": \"Glow Salon\"}}",
   readSettings(v, errors) {
     for (const key of Object.keys(v)) if (key !== "module" && key !== "upi") errors.push(`I don't know what "${key}" means in the payment module. Allowed: module, upi.`);
