@@ -62,3 +62,22 @@ test("new.ts copies the newest list forward and refuses to overwrite or go back"
     assert.equal(isRealDay("2026-12-31"), true);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+// Plan decision 56 (14 Nov 2026) words the Operations plan again ("a busy shop or service, branches, or three or more services together"). The 14 Nov list is the 11 Nov list
+// with only that note (and the about text) changed, so no price can have moved with it by accident.
+test("the 14 Nov list changes only the Operations note: every amount, source and date is the 11 Nov list's", () => {
+  const before = JSON.parse(readFileSync(join(PRICES_DIR, "2026-11-11.json"), "utf8"));
+  const now = JSON.parse(readFileSync(join(PRICES_DIR, "2026-11-14.json"), "utf8"));
+  const { date: _d1, about: _a1, rates: rates1, ...rest1 } = before;
+  const { date: _d2, about: _a2, rates: rates2, ...rest2 } = now;
+  assert.equal(now.date, "2026-11-14");
+  assert.deepEqual(rest2, rest1, "the format, quality names, exchange rates and notPriced are unchanged");
+  assert.deepEqual(Object.keys(rates2), Object.keys(rates1), "the same ids, in the same order");
+  for (const id of Object.keys(rates1).filter((x) => x !== "plan.operations.fee")) assert.deepEqual(rates2[id], rates1[id], id);
+  const { note: n1, ...op1 } = rates1["plan.operations.fee"];
+  const { note: n2, ...op2 } = rates2["plan.operations.fee"];
+  assert.deepEqual(op2, op1, "the Operations fee itself is unchanged");
+  assert.notEqual(n2, n1);
+  assert.match(n2, /decision 56/u);
+  assert.doesNotMatch(n2, /two or three templates/u);
+});
