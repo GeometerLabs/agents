@@ -8,6 +8,9 @@
 //  - "Still to collect" is read from the fees as they are when the report is made: the open fees of the month and what is left on each.
 //  - A limit "stopped" something at ONE entry: a blocked entry is counted under the rule that blocked it, once.
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
+import { journal } from "../../../../modules/accounting/journal.ts";
+import { figuresOf } from "../../../../modules/accounting/figures.ts";
+import { FEES_LEGACY } from "../src/accounting.ts";
 import { readFileSync } from "node:fs";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
@@ -16,7 +19,7 @@ import { localParts, zonedToMs } from "../../../../modules/core/time.ts";
 import { canonicalJson } from "../../../../modules/record/record.ts";
 import type { RecordEntry } from "../../../../modules/record/record.ts";
 import { digestOf } from "../../../../modules/report/digest.ts";
-import { isSettledByWord, settledByWordOf } from "../../../../modules/report/settled-by-word.ts";
+import { settledByWordOf } from "../../../../modules/report/settled-by-word.ts";
 import type { SettledByWord } from "../../../../modules/report/settled-by-word.ts";
 import { headOf } from "../../../../modules/record/ledger.ts";
 import { MESSAGE_STATUS_ENTRY } from "../../../../modules/unfinished/registry.ts";
@@ -187,35 +190,19 @@ export function buildFeesReport(input: ReportInput): FeesReport {
   const all = [...input.entries].filter((e) => Date.parse(e.time) < to).sort((a, b) => a.seq - b.seq);
   const month = all.filter((e) => Date.parse(e.time) >= from);
 
-  // ---- money: from entries the payments service's own record confirmed ----
-  const collected = emptyAmount();
-  const seenPayments = new Set<string>();
-  // UPI (B33): the owner's marks are the payment record, and a refund counts once the owner marks it sent
-  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): their marks are the payment record
-  for (const e of month.filter((x) => (x.action === "record_payment" || (upi && x.action === "owner_marked_paid")) && x.outcome === "confirmed")) {
-    const key = e.refs.paymentId ?? `seq-${e.seq}`;
-    if (seenPayments.has(key)) continue;
-    seenPayments.add(key);
-    add(collected, e.refs.amountPaise);
-  }
-  const givenBack = emptyAmount();
-  const seenRefunds = new Set<string>();
-  // a refund a person settled by their word is not money given back: it is counted on its own (settledByWord), never here
-  for (const e of month.filter((x) => (x.action === "refund" || (upi && x.action === "upi_refund_marked_done")) && x.outcome === "confirmed" && !isSettledByWord(x))) {
-    const key = e.refs.refundId ?? `seq-${e.seq}`;
-    if (seenRefunds.has(key)) continue;
-    seenRefunds.add(key);
-    add(givenBack, e.refs.amountPaise);
-  }
+  // ---- money: read from the books (modules/accounting/figures.ts): the journal is the record read as double-entry lines, and the month's figures are sums over it ----
+  // For a UPI centre the owner's marks are the payment record (cash and bank marks too), and a refund counts once the owner marks it sent; the journal reads them all. A
+  // payment is counted once, a refund once per refund id, and a refund a person settled by their word is not money given back (it is counted on its own below).
+  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): the report says so (paidBy)
+  const figures = figuresOf(journal(all, FEES_LEGACY), all, FEES_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { ownerMarks: upi });
+  const collected = figures.received;
+  const givenBack = { count: figures.refunds.count, paise: figures.refunds.paise };
   const byWord = settledByWordOf(month).rows; // a person's word, by who said it (modules/report/settled-by-word.ts)
 
   // ---- waivers and late fees, each at its own confirmed entry ----
-  const waivers = { total: emptyAmount(), byOwner: emptyAmount(), withinLimit: emptyAmount(), lateFeesAdded: emptyAmount() };
-  for (const e of month.filter((x) => x.action === "waive_fee" && x.outcome === "confirmed")) {
-    add(waivers.total, e.refs.amountPaise);
-    add(e.refs.by === "owner" ? waivers.byOwner : waivers.withinLimit, e.refs.amountPaise);
-  }
-  for (const e of month.filter((x) => x.action === "add_late_fee" && x.outcome === "confirmed")) add(waivers.lateFeesAdded, e.refs.amountPaise);
+  // the totals come from the books; who approved each waiver (the owner, or within the limit) is the entry's own `by`, which the books do not carry, so that split is still counted here
+  const waivers = { total: figures.discounts, byOwner: emptyAmount(), withinLimit: emptyAmount(), lateFeesAdded: figures.lateFees };
+  for (const e of month.filter((x) => x.action === "waive_fee" && x.outcome === "confirmed")) add(e.refs.by === "owner" ? waivers.byOwner : waivers.withinLimit, e.refs.amountPaise);
 
   // ---- the owner's part: a request is counted once, whether it was a waiver or a refund, and however many entries it left ----
   const asked = new Set(month.filter((e) => e.outcome === "held_for_owner" && (e.action === "waiver_request" || e.action === "refund"))

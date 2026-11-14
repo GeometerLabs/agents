@@ -11,6 +11,9 @@
 //  - A limit "stopped" something at ONE entry: a blocked entry is counted under the rule that blocked it, once. A check that stops an order and the message that tells the
 //    customer carry the same decision; they are one stop (see stopsIn).
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
+import { journal } from "../../../../modules/accounting/journal.ts";
+import { figuresOf } from "../../../../modules/accounting/figures.ts";
+import { ORDERS_LEGACY } from "../src/accounting.ts";
 import { existsSync, readFileSync } from "node:fs";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
@@ -19,7 +22,7 @@ import { localParts, zonedToMs } from "../../../../modules/core/time.ts";
 import { canonicalJson } from "../../../../modules/record/record.ts";
 import type { RecordEntry } from "../../../../modules/record/record.ts";
 import { digestOf } from "../../../../modules/report/digest.ts";
-import { isSettledByWord, settledByWordOf } from "../../../../modules/report/settled-by-word.ts";
+import { settledByWordOf } from "../../../../modules/report/settled-by-word.ts";
 import type { SettledByWord } from "../../../../modules/report/settled-by-word.ts";
 import { headOf } from "../../../../modules/record/ledger.ts";
 import { MESSAGE_STATUS_ENTRY } from "../../../../modules/unfinished/registry.ts";
@@ -215,28 +218,13 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
   const all = [...input.entries].filter((e) => Date.parse(e.time) < to).sort((a, b) => a.seq - b.seq);
   const month = all.filter((e) => Date.parse(e.time) >= from);
 
-  // ---- money: from entries the payments service's own record confirmed (or, for UPI, the owner's marks) ----
-  const collected = emptyAmount();
-  const seenPayments = new Set<string>();
-  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): their marks are the payment record
-  for (const e of month.filter((x) => (x.action === "record_payment" || (upi && x.action === "owner_marked_paid")) && x.outcome === "confirmed")) {
-    const key = e.refs.paymentId ?? `seq-${e.seq}`;
-    if (seenPayments.has(key)) continue;
-    seenPayments.add(key);
-    add(collected, e.refs.amountPaise);
-  }
-  // A refund that was looked for again carries its refund id but not its amount: that is the amount an earlier entry for the same payment kept.
-  const amountOfPayment = new Map<string, string>();
-  for (const e of all) if (e.action === "refund" && e.refs.paymentId && e.refs.amountPaise) amountOfPayment.set(e.refs.paymentId, e.refs.amountPaise);
-  const givenBack = emptyAmount();
-  const seenRefunds = new Set<string>();
-  // a refund a person settled by their word is not money given back: it is counted on its own (settledByWord), never here
-  for (const e of month.filter((x) => (x.action === "refund" || (upi && x.action === "upi_refund_marked_done")) && x.outcome === "confirmed" && !isSettledByWord(x))) {
-    const key = e.refs.refundId ?? `seq-${e.seq}`;
-    if (seenRefunds.has(key)) continue;
-    seenRefunds.add(key);
-    add(givenBack, e.refs.amountPaise ?? (e.refs.paymentId ? amountOfPayment.get(e.refs.paymentId) : undefined));
-  }
+  // ---- money: read from the books (modules/accounting/figures.ts): the journal is the record read as double-entry lines, and the month's figures are sums over it ----
+  // For a UPI shop the owner's marks are the payment record, and a refund counts once the owner marks it sent; the journal reads both. The advance a payment brought is
+  // counted once per payment, a refund once per refund id, and a refund a person settled by their word is not money given back (it is counted on its own below).
+  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): the report says so (paidBy)
+  const figures = figuresOf(journal(all, ORDERS_LEGACY), all, ORDERS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { refundAmountFromPayment: true, ownerMarks: upi });
+  const collected = figures.received;
+  const givenBack = { count: figures.refunds.count, paise: figures.refunds.paise };
   const byWord = settledByWordOf(month).rows; // a person's word, by who said it (modules/report/settled-by-word.ts)
 
   // ---- orders: each at its own confirmed entry, once per order ----
