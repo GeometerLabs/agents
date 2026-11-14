@@ -307,7 +307,7 @@ export function createAgent(deps: AgentDeps): Agent {
   /** A refund the owner owes: recorded, the parent told it will come from the owner, the owner told what to send, with the code. The agent never sends it. */
   async function oweBack(due: Due, paymentId: string, amountPaise: number, why: string, decisions: Decision[] = []): Promise<OwedRefund> {
     const r = oweRefund(markState!, { caseId: due.id, customer: due.customer, paymentId, amountPaise, why }, clock.now());
-    books.post({ kind: "refund_owed", case: due.id, owed: r.id, paymentId, amountPaise }, (m) => log(due, due.customer, MARK_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise), ...m }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` })));
+    books.post({ kind: "refund_owed", case: due.id, owed: r.id, paymentId, amountPaise }, (m) => log(due, due.customer, MARK_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise), ...m }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` }));
     await tellCustomer(due, due.customer, ["fee_upi_refund_owed"], { refundInr: amountPaise / 100 });
     await tellOwner(due, due.customer, "owner_fee_upi_refund_owed", { refundInr: amountPaise / 100, upiCode: r.code ?? undefined, offer: refundButtons(r) });
     return r;
