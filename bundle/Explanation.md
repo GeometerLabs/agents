@@ -1156,3 +1156,45 @@ mood the same way, and its installed icon is the "All well" picture.
 the rest the renderer, the step, the server side and their tests. The whole repository goes from 16,485,530 to 20,241,175 bytes. Nothing is added to `node_modules`
 (there is none). The pictures' folder does not count toward a shop's desired state (`deploy.ts desiredOf` hashes the settings, runtime, lock and pins only), so drawing
 a set never redeploys the shop; saving a new character does, through its settings.
+
+## Submitting a template's WhatsApp messages by script (pre-release batch 7, 14 Nov 2026)
+
+**What.** `geometer whatsapp-templates <shop>` reads a template's `whatsapp-templates.json` (bookings 152 entries, orders 116, fees 140; no other template, module or bundle file has one),
+maps each entry to Gupshup's create-template fields and sends it to the shop's own Gupshup app. `lib/gupshup-templates.ts` decides everything and `whatsapp-templates-cli.ts` only prints.
+
+**The API it is built on.** Gupshup documents the create call as a guide page, not as a reference page: `POST https://api.gupshup.io/wa/app/{appId}/template`, header `apikey`, form
+fields `languageCode`, `content`, `footer`, `category`, `example`, `vertical`, `elementName`, `templateType`, `buttons`; the reply has `status`, `template` and `message`
+(docs.gupshup.io/docs/template-button-list; name, length and sample rules on docs.gupshup.io/docs/create-template). The reads are documented references (`GET /wa/app/{app_id}/template`,
+docs.gupshup.io/reference/get-all-templates-for-an-app). The statuses are on docs.gupshup.io/docs/message-template-approvals-statuses. Three things the guide does not say are chosen and marked
+for the first real run: how `example` writes its sample values (the body with each `{{n}}` replaced by `[value]`, `EXAMPLE_FORM`), what `vertical` holds (the template's name), and the
+language codes (ours: hi, en, ml, kn).
+
+**Dry run by default, idempotent.** With no flag it reads the app's list (so it needs the key and the app) and prints what it would send. `--submit` sends. A name and language already in the
+app in any state is skipped; a rejected or failed one is also skipped but flagged, because resending a refused wording unchanged is a waste and Meta limits how often a name can be redone.
+
+**The key.** From `GUPSHUP_APIKEY` or the shop's secret file only, sent in the `apikey` header, in no message and no argument. Template creation is not a route a shop's Guard lists (it is
+a one-off set-up, not something the running shop does), so this talks to `api.gupshup.io` from the machine that runs it. A plain-http base address is accepted only for this machine (the tests).
+
+**Tests** run against `modules/standins/gupshup-templates.ts`, a local stand-in with Gupshup's paths, header and reply shapes: they check the dry run sends nothing, a submit sends each once,
+a second run skips, the key travels only in the header, a wrong key stops the run, and every one of the 408 entries maps. The real service is never called.
+
+## The owner's passkeys and alert subscriptions in the backup (pre-release batch 7, 14 Nov 2026)
+
+**The gap.** The runtime keeps the owner's sign-in (`owner-access.sqlite`: passkeys, sessions, links) and the alerts (`push.sqlite`: the shop's VAPID keys, each phone's subscription, the owner's
+choice) in two small SQLite files of their own beside `agent.db`. The nightly snapshot copied `agent.db` only, so a restore (or a new machine) left the owner signed out, with no passkey, and
+alerts off until the partner set both up again.
+
+**What is carried** (`backup/owner-keep.ts`): the passkeys table (public key, counter, credential id: the private half never leaves the phone), the used setup-QR and recovery-code hashes (so a
+used QR does not work again), the shop's WebAuthn user id (so the phone keeps offering the same passkey), the live push subscriptions, the VAPID keys (a subscription only accepts pushes signed
+by the key it was made with) and the owner's choice. Not carried: sessions, one-time links, challenges, counters and waiting alerts; they are short-lived and start fresh.
+**Handled as the record is.** One JSON file, gzipped and age-encrypted to the owner's key as its own snapshot object (`runtime/owner-keep.json.gz.age`), listed in the manifest with its
+sha256 and checked before a restore touches anything. The public keys are not secrets, but the subscriptions (push address plus keys) are, and one piece is simpler to reason about than two.
+A shop whose owner has set up neither makes no extra object, so the backup-cost ceiling is unchanged for it; one that has costs one PUT more a night.
+
+**Restore** puts `owner-keep.json` beside the database; after the database swap and with the runtime still stopped, the deployer runs `node /app/bundle/backup/owner-keep.ts import` in a
+short-lived container as the runtime's own user. It **merges**: a row the live file already has is left alone (the live file is newer than any snapshot, so a counter that moved on, a
+passkey removed since and a phone that unsubscribed since all stay as they are). The WebAuthn user id and the VAPID keys come from the snapshot only when the live file has no passkeys or
+no subscriptions to go with them. A failure never stops the shop starting; the restore's text says it and what to do by hand.
+
+**Proved** by `test/owner-keep.test.ts` with stand-ins (a software passkey, a fake push service): back up, restore onto a new machine, the owner signs in with the same passkey and an alert
+reaches the same subscription, signed with the same key and opened by the same phone; the bucket holds no plain subscription; the merge rules; a damaged file is refused.
