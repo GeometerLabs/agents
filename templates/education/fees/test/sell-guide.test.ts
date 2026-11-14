@@ -287,17 +287,14 @@ test("sell guide: the walkthrough the guide teaches does what the five steps say
   }
 });
 
-test("sell guide: the walkthrough command in the guide is a real one", () => {
-  const script = readFileSync(new URL("../scripts/walkthrough.ts", import.meta.url), "utf8");
-  assert.ok(script.includes('lang: { type: "string" }'));
+test("sell guide (14 Nov): the walkthrough is for a phone: the placeholder line for the hosted demo's address, the example pages, and no laptop command", () => {
   for (const l of LANGUAGES) {
-    const commands = fencedLines(section(l, 4), "sh");
-    assert.ok(commands.some((c) => c.startsWith("node templates/education/fees/scripts/walkthrough.ts --lang en")), `${l}: the guide gives the English command`);
-    assert.ok(commands.some((c) => c.startsWith("node templates/education/fees/scripts/walkthrough.ts --lang hi")), `${l}: the guide gives the command for the owner's language`);
-    assert.ok(commands.every((c) => /^node templates\/education\/fees\/scripts\/walkthrough\.ts --lang (en|hi)( |$)/.test(c)));
-    assert.ok(commands.some((c) => c.includes("also ml, kn")), `${l}: the guide says ml and kn are there too`);
+    const four = section(l, 4);
+    assert.ok(four.includes("`DEMO_URL`") && four.includes("https://streetlist.in/examples/"), `${l}: the placeholder line and the example pages`);
+    assert.equal(fencedLines(four, "sh").length, 0, `${l}: no shell command in section 4`);
+    assert.ok(!/192\.168|node templates|Ctrl\+C/.test(guide(l)), `${l}: no laptop command in the guide`);
   }
-  assert.ok(existsSync(new URL("../scripts/walkthrough.ts", import.meta.url)));
+  assert.ok(existsSync(new URL("../scripts/walkthrough.ts", import.meta.url)), "the run the transcript comes from is still there");
 });
 
 // ---- what the guide says does not exist yet: when it is built, this fails, and the guide has to change -----------------------
@@ -309,9 +306,9 @@ test("sell guide: what the guide says is not built yet is still not built (build
   const script = readFileSync(new URL("../scripts/hand-check.ts", import.meta.url), "utf8");
   assert.ok(script.includes('settings: { type: "string" }'), "the guide tells the partner to run the hand check on the centre's own settings file");
   for (const l of LANGUAGES) {
-    assert.ok(section(l, 8).includes("hand-check.ts --settings"), `${l}: the real command for the check on a centre's own settings`);
+    assert.ok(!section(l, 8).includes("hand-check.ts"), `${l}: the checks are the panel's button, not a command`);
     assert.ok(section(l, 8).includes("templates/education/fees/whatsapp-templates.json") && existsSync(new URL("../whatsapp-templates.json", import.meta.url)), `${l}: the list of messages Meta must approve exists`);
-    assert.ok(section(l, 8).includes("templates/education/fees/settings/bright-tuition.example.json") && existsSync(new URL("../settings/bright-tuition.example.json", import.meta.url)));
+    assert.ok(existsSync(new URL("../settings/bright-tuition.example.json", import.meta.url)));
     assert.ok(section(l, 11).includes("REVIEW-ml.md") && section(l, 11).includes("REVIEW-kn.md"), `${l}: section 11 names the review sheets`);
   }
   for (const file of ["REVIEW-ml.md", "REVIEW-kn.md"]) assert.ok(existsSync(new URL(`../${file}`, import.meta.url)), file);
@@ -491,15 +488,17 @@ test("sell guide: every guide quotes the owner's reply, STOP and the Guard code,
 
 // ---- the paperwork cut (B72, 12 Nov 2026) --------------------------------------------------------------------------------------
 
-test("sell guide (B72): the WhatsApp check is the honest list (Business app, Facebook login with admin access, public name, verification may be asked, app opened every 2 weeks), with no account-age rule and no promise of 'no documents' or 'one visit'", () => {
+test("sell guide (B72, 14 Nov): WhatsApp goes through the centre's own Gupshup account, step by step as the panel does it, and the honest facts stay, with no account-age rule and no promise of 'no documents' or 'one visit'", () => {
   for (const l of LANGUAGES) {
     const text = guide(l);
-    const whatsapp = section(l, 8).split("\n- [ ] **").find((x) => /^(The WhatsApp check|WhatsApp की जाँच|WhatsApp പരിശോധന|WhatsApp ಪರಿಶೀಲನೆ)/u.test(x));
-    assert.ok(whatsapp, `${l}: the WhatsApp check item is there`);
-    assert.ok(whatsapp.includes("Facebook") && whatsapp.includes("Meta"), `${l}: it names the Facebook login and the Meta business portfolio`);
-    assert.equal(whatsapp.split("\n").filter((x) => x.startsWith("  - ")).length, 5, `${l}: it has its five points`);
+    const whatsapp = section(l, 8).split("\n- [ ] **").find((x) => x.includes("Gupshup"));
+    assert.ok(whatsapp, `${l}: the Gupshup item is there`);
+    assert.ok(whatsapp.includes("Facebook") && whatsapp.includes("Meta"), `${l}: it names the Facebook login and the Meta business account`);
+    assert.ok(whatsapp.includes("SECRET-WORD") && whatsapp.includes("gupshup.io"), `${l}: it names the secret word and where to sign up`);
+    assert.equal(whatsapp.split("\n").filter((x) => x.startsWith("  - ")).length, 8, `${l}: it has its eight points`);
     assert.ok(!/months of real use|months old|कुछ महीने पुराना|മാസങ്ങളുടെ പഴക്കം|ತಿಂಗಳು ಹಳೆಯ/u.test(text), `${l}: the unconfirmed account-age rule is not stated as a fact`);
     assert.ok(!/\bno documents\b|\bone visit\b|\bno paperwork\b/i.test(text), `${l}: no promise the facts file forbids`);
+    assert.ok(!/Meta business portfolio/.test(text), `${l}: the old Meta-direct route is gone`);
   }
 });
 
