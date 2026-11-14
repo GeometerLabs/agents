@@ -1,3 +1,7 @@
+    // the one flag: --yes (as install.sh has it) skips the question and reaches the bundle as the same word, so what the bundle tells a person to type is what the command takes
+    r = await shimRun("server stop --yes");
+    assert.equal(r.code, 0, r.out);
+    assert.ok(s.calls().some((c) => c.endsWith("bundle/geometer.ts server stop --yes")), "server stop --yes goes ahead");
 // install.sh, the one-step install of a builder's server (plan item 14b), one function at a time, with every outside program replaced by a stub on PATH that
 // writes down how it was called: the system it accepts and refuses, release.json read without Node, this copy checked against the release tag, Node and Docker's
 // key checked against their pins before anything is installed, ports and the domain, the Guard image file's sha256, the files it never replaces, the `geometer`
@@ -276,7 +280,7 @@ test("system files are written only when new or the install's own, never over so
     assert.ok(s.calls().includes("node /home/builder/geometer/agents/bundle/geometer.ts stop glow-salon"), "geometer stop <shop> is still the kill switch, passed through");
     r = await shimRun("server stop");
     assert.equal(r.code, 1);
-    assert.ok(!s.calls().some((c) => c.includes("systemctl") || c.endsWith("server stop --confirm")), "nothing was stopped without the answer");
+    assert.ok(!s.calls().some((c) => c.includes("systemctl") || c.endsWith("server stop --yes")), "nothing was stopped without the answer");
     r = await shimRun("status", { ID_U: "0" });
     assert.equal(r.code, 2); assert.match(r.out, /Run geometer as builder, not as root/u);
   } finally { s.done(); }
