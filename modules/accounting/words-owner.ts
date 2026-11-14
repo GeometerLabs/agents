@@ -20,6 +20,9 @@ export interface OwnerMoneyWords {
   notMatchedTitle: string; notMatchedNone: string;
   upiClaim: (amount: string, caseRef: string) => string;
   gateway: (amount: string, caseRef: string, date: string) => string;
+  /** The payment service is holding the payout; and a payout for a payment that did not go through the assistant. */
+  gatewayHeld: (amount: string, caseRef: string) => string;
+  notThrough: (amount: string) => string;
   untold: (amount: string, caseRef: string) => string;
   /** Said of a customer when the case is not known. */
   aCase: string;
@@ -40,7 +43,9 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     owedService: (c) => `${c}: this is waiting to go back through the payment service.`,
     notMatchedTitle: "Not matched yet", notMatchedNone: "Everything is matched.",
     upiClaim: (a, c) => `A customer says they paid ${a} for ${c}. Look in your UPI app.`,
-    gateway: (a, c, d) => `${a} for ${c}, paid through the payment service on ${d}, is not yet matched to a payout.`,
+    gateway: (a, c, d) => `${a} for ${c}, paid through the payment service on ${d}, is not yet in your bank.`,
+    gatewayHeld: (a, c) => `${a} for ${c} is being held by the payment service, so it is not in your bank yet.`,
+    notThrough: (a) => `${a} was paid into your bank for a payment not through your assistant. It is not in these books.`,
     untold: (a, c) => `A refund of ${a} for ${c} was made, but the customer has not been told yet. Please tell them.`,
     aCase: "a customer",
     accountantTitle: "Send to my accountant", accountantNote: "Every payment in a table that opens in Excel or Tally.",
@@ -59,7 +64,9 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     owedService: (c) => `${c}: यह पेमेंट सेवा से लौटने के इंतज़ार में है।`,
     notMatchedTitle: "अभी मिलान नहीं हुआ", notMatchedNone: "सब कुछ मिल गया है।",
     upiClaim: (a, c) => `एक ग्राहक कहता है कि उसने ${c} के लिए ${a} दिए हैं। अपने UPI ऐप में देखें।`,
-    gateway: (a, c, d) => `${c} के लिए ${a}, ${d} को पेमेंट सेवा से आए, अभी किसी भुगतान से नहीं मिले हैं।`,
+    gateway: (a, c, d) => `${c} के लिए ${a}, ${d} को पेमेंट सेवा से आए, अभी आपके बैंक में नहीं पहुँचे हैं।`,
+    gatewayHeld: (a, c) => `${c} के लिए ${a} पेमेंट सेवा ने रोक रखे हैं, इसलिए अभी आपके बैंक में नहीं हैं।`,
+    notThrough: (a) => `${a} आपके बैंक में ऐसे भुगतान के लिए आए जो आपके असिस्टेंट से नहीं हुआ। यह इन हिसाबों में नहीं है।`,
     untold: (a, c) => `${c} के लिए ${a} का रिफंड हो चुका है, पर ग्राहक को अभी बताया नहीं गया। कृपया उन्हें बताएँ।`,
     aCase: "एक ग्राहक",
     accountantTitle: "मेरे अकाउंटेंट को भेजें", accountantNote: "हर भुगतान एक तालिका में, जो Excel या Tally में खुलती है।",
@@ -78,7 +85,9 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     owedService: (c) => `${c}: ഇത് പേയ്‌മെന്റ് സേവനം വഴി തിരികെ പോകാൻ കാത്തിരിക്കുന്നു.`,
     notMatchedTitle: "ഇതുവരെ ഒത്തുനോക്കിയിട്ടില്ല", notMatchedNone: "എല്ലാം ഒത്തുനോക്കി.",
     upiClaim: (a, c) => `${c}-ന് ${a} അടച്ചു എന്ന് ഒരു ഉപഭോക്താവ് പറയുന്നു. നിങ്ങളുടെ UPI ആപ്പിൽ നോക്കുക.`,
-    gateway: (a, c, d) => `${c}-ന് ${a}, ${d}-ന് പേയ്‌മെന്റ് സേവനം വഴി അടച്ചത്, ഇതുവരെ ഒരു പണമിടപാടുമായി ഒത്തുനോക്കിയിട്ടില്ല.`,
+    gateway: (a, c, d) => `${c}-ന് ${a}, ${d}-ന് പേയ്‌മെന്റ് സേവനം വഴി അടച്ചത്, ഇതുവരെ നിങ്ങളുടെ ബാങ്കിൽ എത്തിയിട്ടില്ല.`,
+    gatewayHeld: (a, c) => `${c}-ന് ${a} പേയ്‌മെന്റ് സേവനം പിടിച്ചുവച്ചിരിക്കുന്നു, അതിനാൽ ഇതുവരെ നിങ്ങളുടെ ബാങ്കിൽ എത്തിയിട്ടില്ല.`,
+    notThrough: (a) => `നിങ്ങളുടെ അസിസ്റ്റന്റ് വഴി അല്ലാത്ത ഒരു പേയ്‌മെന്റിന് ${a} നിങ്ങളുടെ ബാങ്കിൽ വന്നു. ഇത് ഈ കണക്കുകളിൽ ഇല്ല.`,
     untold: (a, c) => `${c}-ന് ${a} റീഫണ്ട് ചെയ്തു, പക്ഷേ ഉപഭോക്താവിനെ ഇതുവരെ അറിയിച്ചിട്ടില്ല. ദയവായി അറിയിക്കുക.`,
     aCase: "ഒരു ഉപഭോക്താവ്",
     accountantTitle: "എന്റെ അക്കൗണ്ടന്റിന് അയയ്ക്കുക", accountantNote: "എല്ലാ പേയ്‌മെന്റും Excel-ലോ Tally-യിലോ തുറക്കുന്ന ഒരു പട്ടികയിൽ.",
@@ -97,7 +106,9 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     owedService: (c) => `${c}: ಇದು ಪಾವತಿ ಸೇವೆಯ ಮೂಲಕ ಹಿಂದಿರುಗಲು ಕಾಯುತ್ತಿದೆ.`,
     notMatchedTitle: "ಇನ್ನೂ ಹೊಂದಿಸಿಲ್ಲ", notMatchedNone: "ಎಲ್ಲವೂ ಹೊಂದಿಕೆಯಾಗಿದೆ.",
     upiClaim: (a, c) => `${c} ಗೆ ${a} ಪಾವತಿಸಿದ್ದೇನೆ ಎಂದು ಒಬ್ಬ ಗ್ರಾಹಕ ಹೇಳುತ್ತಾರೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ನೋಡಿ.`,
-    gateway: (a, c, d) => `${c} ಗೆ ${a}, ${d} ರಂದು ಪಾವತಿ ಸೇವೆಯ ಮೂಲಕ ಬಂದದ್ದು, ಇನ್ನೂ ಯಾವುದೇ ಪಾವತಿಗೆ ಹೊಂದಿಸಿಲ್ಲ.`,
+    gateway: (a, c, d) => `${c} ಗೆ ${a}, ${d} ರಂದು ಪಾವತಿ ಸೇವೆಯ ಮೂಲಕ ಬಂದದ್ದು, ಇನ್ನೂ ನಿಮ್ಮ ಬ್ಯಾಂಕ್‌ಗೆ ತಲುಪಿಲ್ಲ.`,
+    gatewayHeld: (a, c) => `${c} ಗೆ ${a} ಅನ್ನು ಪಾವತಿ ಸೇವೆ ಹಿಡಿದಿಟ್ಟಿದೆ, ಆದ್ದರಿಂದ ಇನ್ನೂ ನಿಮ್ಮ ಬ್ಯಾಂಕ್‌ಗೆ ತಲುಪಿಲ್ಲ.`,
+    notThrough: (a) => `ನಿಮ್ಮ ಸಹಾಯಕದ ಮೂಲಕ ನಡೆಯದ ಪಾವತಿಗೆ ${a} ನಿಮ್ಮ ಬ್ಯಾಂಕ್‌ಗೆ ಬಂದಿದೆ. ಇದು ಈ ಲೆಕ್ಕಗಳಲ್ಲಿ ಇಲ್ಲ.`,
     untold: (a, c) => `${c} ಗೆ ${a} ರೀಫಂಡ್ ಮಾಡಲಾಗಿದೆ, ಆದರೆ ಗ್ರಾಹಕರಿಗೆ ಇನ್ನೂ ತಿಳಿಸಿಲ್ಲ. ದಯವಿಟ್ಟು ತಿಳಿಸಿ.`,
     aCase: "ಒಬ್ಬ ಗ್ರಾಹಕ",
     accountantTitle: "ನನ್ನ ಲೆಕ್ಕಿಗರಿಗೆ ಕಳುಹಿಸಿ", accountantNote: "ಪ್ರತಿ ಪಾವತಿಯೂ Excel ಅಥವಾ Tally ನಲ್ಲಿ ತೆರೆಯುವ ಕೋಷ್ಟಕದಲ್ಲಿ.",
