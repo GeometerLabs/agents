@@ -11,13 +11,17 @@
 //    money move, so it is listed on its own and left out of the totals;
 //  - kept from cancellations: what `revenue:kept` holds in the month; gateway charges: the charge and the GST on it, when any were posted (settlements, a later step);
 //  - still to come (Fees only): what the open fees are still owed, all time, not just this month, with the count of open fees. Null for a shop that has no fees;
-//  - owed back: Journal.owedList(); not matched: the three things the books cannot match to money on their own.
+//  - owed back: Journal.owedList(); not matched: what the books cannot match to money on their own. For a payment service shop (settlements.ts reads what it paid
+//    into the bank): a payment with no settlement after more than 4 working days (Monday to Friday, in the shop's time zone; bank holidays are not known, so a
+//    holiday week can say "not yet" a day early), a row the service is holding, and a payout for a payment that did not go through the assistant.
 // A customer's number and a student's name are never in the view: a case id is the only way a person is named, and obligations' `customer` is dropped here.
 import { ACCOUNTS } from "./accounts.ts";
+import { MONEY_REFS } from "./journal.ts";
 import type { Journal, Line } from "./journal.ts";
 import { dayRange, monthRange } from "./periods.ts";
 import type { Range } from "./periods.ts";
-import { localParts } from "../core/time.ts";
+import { addDays, daysBetween, localParts, weekdayOf } from "../core/time.ts";
+import { SETTLEMENT_ACTIONS } from "./settlements.ts";
 import { markObligations } from "../payments/owner-marked/obligations.ts";
 import type { RecordEntry } from "../record/record.ts";
 
@@ -41,6 +45,10 @@ export type NotMatched =
   | { kind: "upi_claim"; case: string | null; paise: number }
   /** `sinceMs`: when the money came, so the page can say "paid on 12 Nov". */
   | { kind: "gateway"; case: string | null; paise: number; sinceMs: number }
+  /** The payment service is holding this payment's payout (a row with `on_hold`): it is not in the bank. */
+  | { kind: "gateway_held"; case: string | null; paise: number }
+  /** The payment service paid out a payment the assistant never took: left out of the books, listed here so the owner knows. */
+  | { kind: "not_through_assistant"; paise: number }
   | { kind: "untold_refund"; case: string | null; paise: number };
 
 export interface MoneyView {
@@ -63,6 +71,17 @@ export interface MoneyView {
 const MONEY_ACCOUNTS: ReadonlySet<string> = new Set([ACCOUNTS.cash.code, ACCOUNTS.upi.code, ACCOUNTS.bank.code, ACCOUNTS.gateway.code, ACCOUNTS.bankSettled.code]);
 
 /** Whole paise of rupees the provider's list gave (always whole paise; rounded only to undo the float of the division). */
+/** Working days after a payment's day, up to and including today (Monday to Friday, local dates). */
+function workingDaysSince(thenMs: number, nowMs: number, timeZone: string): number {
+  const from = localParts(thenMs, timeZone);
+  const days = daysBetween(from, localParts(nowMs, timeZone));
+  let n = 0;
+  for (let k = 1; k <= days; k++) { const w = weekdayOf(addDays(from, k)); if (w !== 0 && w !== 6) n++; }
+  return n;
+}
+/** A gateway payment is "not yet in your bank" once more than this many working days have passed. */
+const SETTLES_WITHIN_WORKING_DAYS = 4;
+
 const toPaise = (inr: number): number => Math.round(inr * 100);
 
 function tally(lines: readonly Line[], kind: Line["kind"], side: "debitPaise" | "creditPaise", range: Range, keep: (l: Line) => boolean = () => true): Tally {
@@ -113,18 +132,27 @@ export function ownerMoney(i: MoneyViewInput): MoneyView {
     .filter((l) => l.kind === "refund_made" && byWordLine(l) && l.creditPaise > 0 && MONEY_ACCOUNTS.has(l.account) && Date.parse(l.at) >= month.fromMs && Date.parse(l.at) < month.toMs)
     .map((l) => ({ case: l.case, paise: l.creditPaise, atMs: Date.parse(l.at) }));
 
-  // Money that came through the payment service and is not yet matched to a payout: what each case still holds in `gateway`.
-  const gateway = new Map<string | null, { paise: number; sinceMs: number }>();
+  // Payments the payment service has paid into the bank (a `settled` row), and what is held or was not through the assistant, from the record's own settlement lines.
+  const settledEntities = new Set<string>();
+  for (const e of i.entries) if (e.refs[MONEY_REFS.kind] === "settled") settledEntities.add(e.refs[MONEY_REFS.entity]);
+  const seqRefs = new Map(i.entries.map((e) => [e.seq, e.refs]));
+  // A payment that came through the payment service and has no payout after more than 4 working days, while its case still holds money there.
+  const heldInGateway = new Map<string | null, number>();
+  for (const l of lines) if (l.account === ACCOUNTS.gateway.code) heldInGateway.set(l.case, (heldInGateway.get(l.case) ?? 0) + l.debitPaise - l.creditPaise);
+  const gatewayUnpaid: NotMatched[] = [];
   for (const l of lines) {
-    if (l.account !== ACCOUNTS.gateway.code) continue;
-    const g = gateway.get(l.case) ?? { paise: 0, sinceMs: Date.parse(l.at) };
-    g.paise += l.debitPaise - l.creditPaise;
-    gateway.set(l.case, g);
+    const paymentId = l.kind === "received" && l.account === ACCOUNTS.gateway.code && l.debitPaise > 0 ? seqRefs.get(l.seq)?.[MONEY_REFS.paymentId] : undefined;
+    if (paymentId === undefined || settledEntities.has(paymentId) || (heldInGateway.get(l.case) ?? 0) <= 0) continue;
+    if (workingDaysSince(Date.parse(l.at), i.nowMs, i.timeZone) > SETTLES_WITHIN_WORKING_DAYS) gatewayUnpaid.push({ kind: "gateway", case: l.case, paise: l.debitPaise, sinceMs: Date.parse(l.at) });
   }
+  const listed = (why: string): RecordEntry[] => i.entries.filter((e) => e.action === SETTLEMENT_ACTIONS.listed && e.refs.why === why);
+  const once = (rows: RecordEntry[]): RecordEntry[] => rows.filter((e, n) => rows.findIndex((o) => o.refs.entity === e.refs.entity) === n);
+  const held: NotMatched[] = once(listed("held")).filter((e) => !settledEntities.has(e.refs.entity)).map((e) => ({ kind: "gateway_held", case: e.booking, paise: Number(e.refs.amountPaise) }));
+  const notThrough: NotMatched[] = once(listed("unknown_payment")).filter((e) => e.refs.rowType === "payment").map((e) => ({ kind: "not_through_assistant", paise: Number(e.refs.amountPaise) }));
 
   const notMatched: NotMatched[] = [
     ...markObligations(i.entries).filter((o) => o.kind === "upi_payment_unconfirmed").map((o): NotMatched => ({ kind: "upi_claim", case: o.case || null, paise: o.amountPaise })),
-    ...[...gateway].filter(([, g]) => g.paise > 0).map(([c, g]): NotMatched => ({ kind: "gateway", case: c, paise: g.paise, sinceMs: g.sinceMs })),
+    ...gatewayUnpaid, ...held, ...notThrough,
     ...i.refundsUntold.map((u): NotMatched => ({ kind: "untold_refund", case: u.case, paise: toPaise(u.amountInr) })),
   ];
 

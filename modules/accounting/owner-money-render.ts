@@ -36,6 +36,8 @@ export function ownerMoneySection(view: MoneyView, language: Language, links: Ex
     switch (n.kind) {
       case "upi_claim": return w.upiClaim(inr(n.paise), ref(n.case));
       case "gateway": return w.gateway(inr(n.paise), ref(n.case), formatDate(localParts(n.sinceMs, timeZone), language));
+      case "gateway_held": return w.gatewayHeld(inr(n.paise), ref(n.case));
+      case "not_through_assistant": return w.notThrough(inr(n.paise));
       case "untold_refund": return w.untold(inr(n.paise), ref(n.case));
     }
   };
