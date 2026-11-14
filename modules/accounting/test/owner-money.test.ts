@@ -141,12 +141,15 @@ test("the section in four languages: the scope line, the sums, the links, no ban
   const w = build();
   const v = view(w);
   for (const language of LANGUAGES) {
-    const page = ownerMoneySection(v, language, { thisMonth: "/m/2026-11", lastMonth: "/m/2026-10", year: "/m/26-27" }, TZ, NOW).toString();
+    const page = ownerMoneySection(v, language, { base: "/m" }, TZ).toString();
     const text = page.replace(/<[^>]+>/gu, " ");
     assert.ok(text.includes(OWNER_MONEY_WORDS[language].scope), `${language}: the scope line`);
     assert.ok(page.includes("₹883.95"), `${language}: this month's received, from paise`);
     assert.ok(page.includes("₹123.45"), `${language}: today's received`);
-    for (const href of ["/m/2026-11", "/m/2026-10", "/m/26-27"]) assert.ok(page.includes(`href="${href}"`), `${language}: link ${href}`);
+    // three periods, three files each, from the month the view names (the runtime's clock); the WhatsApp link holds the words only
+    for (const href of ["/m/2026-11/journal-2026-11.csv", "/m/2026-11/documents-2026-11.csv", "/m/2026-11/README.txt", "/m/2026-10/journal-2026-10.csv", "/m/26-27/documents-26-27.csv"]) assert.ok(page.includes(`href="${href}"`), `${language}: link ${href}`);
+    assert.match(page, /href="https:\/\/wa\.me\/\?text=[^"]*"/u, `${language}: the share link`);
+    assert.equal(/\.csv[^"]*wa\.me/u.test(page), false);
     assert.equal(/<script/i.test(page), false);
     assert.deepEqual(bannedIn(text, language), [], `${language}: banned words`);
     for (const re of ACCOUNTING_WORDS) assert.equal(re.test(text), false, `${language}: ${re}`);
@@ -161,7 +164,7 @@ test("a case named with markup is text, not markup", () => {
   w.clock.set(NOW);
   w.post(gw("<b-1>", "pay_x", 5_000), "record_deposit");
   const v = ownerMoney({ journal: w.acc.journal(), entries: w.record.entries(), refundsUntold: [], nowMs: NOW, timeZone: TZ });
-  const page = ownerMoneySection(v, "en", { thisMonth: "a", lastMonth: "b", year: "c" }, TZ, NOW).toString();
+  const page = ownerMoneySection(v, "en", { base: "a" }, TZ).toString();
   assert.equal(page.includes("<b-1>"), false);
   assert.ok(page.includes("&lt;b-1&gt;"));
 });
