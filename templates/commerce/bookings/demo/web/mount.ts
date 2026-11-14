@@ -17,6 +17,16 @@ export const GUARD_NOTE = "In this demo the template's own code checks the limit
 /** The three steps: the shop form, the chat with test money, and what was checked (the owner's plain-words lines, the record). */
 export const STEPS = [["shop", "Your shop"], ["try", "Try it"], ["checked", "What was checked"]] as const;
 
+/**
+ * The mount's own words in the other languages (the note under the banner and the three step names). MACHINE-WRITTEN (14 November 2026), hi, ml and kn: they wait for a
+ * native speaker's review with the rest. English stays the exported GUARD_NOTE and STEPS above.
+ */
+const LABELS: Record<string, { note: string; steps: [string, string, string] }> = {
+  hi: { note: "इस डेमो में सीमा की जाँच टेम्पलेट का अपना कोड करता है। असली दुकान पर Guard उसे AI के बाहर रोकता है।", steps: ["आपकी दुकान", "आज़माइए", "क्या जाँचा गया"] },
+  ml: { note: "ഈ ഡെമോയിൽ പരിധി പരിശോധിക്കുന്നത് ടെംപ്ലേറ്റിന്റെ സ്വന്തം കോഡാണ്. യഥാർത്ഥ കടയിൽ Guard അത് AI-ക്ക് പുറത്തുനിന്ന് തടയുന്നു.", steps: ["നിങ്ങളുടെ കട", "പരീക്ഷിക്കൂ", "പരിശോധിച്ചത്"] },
+  kn: { note: "ಈ ಡೆಮೊದಲ್ಲಿ ಮಿತಿಯನ್ನು ಟೆಂಪ್ಲೇಟ್‌ನ ಸ್ವಂತ ಕೋಡ್ ಪರಿಶೀಲಿಸುತ್ತದೆ. ನಿಜವಾದ ಅಂಗಡಿಯಲ್ಲಿ Guard ಅದನ್ನು AI ಹೊರಗೆ ತಡೆಯುತ್ತದೆ.", steps: ["ನಿಮ್ಮ ಅಂಗಡಿ", "ಪ್ರಯತ್ನಿಸಿ", "ಏನು ಪರಿಶೀಲಿಸಲಾಯಿತು"] },
+};
+
 export interface MountOptions extends LocalDemoOptions {
   /** Which step first: "form" (default) opens step 1, the shop form, filled in with the example shop; "chat" opens step 2 with the example shop. */
   startWith?: "form" | "chat";
@@ -81,7 +91,8 @@ export function mountDemo(element: HTMLElement, options: MountOptions = {}): Mou
   notes.className = "geo-notes";
   const note = doc.createElement("p");
   note.className = "geo-note";
-  note.textContent = GUARD_NOTE;
+  const words = LABELS[options.language ?? "en"];
+  note.textContent = words?.note ?? GUARD_NOTE;
   banner.before(notes);
   notes.append(banner, note);
 
@@ -103,7 +114,7 @@ export function mountDemo(element: HTMLElement, options: MountOptions = {}): Mou
     number.textContent = String(i + 1);
     const text = doc.createElement("span");
     text.className = "geo-step-label";
-    text.textContent = label;
+    text.textContent = words?.steps[i] ?? label;
     button.append(number, text);
     stepButtons.set(key, button);
     item.appendChild(button);

@@ -94,5 +94,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   if (!process.argv[2]) { console.error("Say where to write it: node scripts/build-demo.ts <folder>"); process.exit(2); }
   const r = buildDemo(process.argv[2]);
   console.log(`Built the hosted demo: ${r.files.length} files in ${resolve(process.argv[2])}.`);
-  console.log("Preview it with:  node scripts/serve-demo.ts <folder>   (the pages domain's own rules, on this computer)");
+  console.log("Put it in the home pack:  geometer home pack <streetlist folder> --demo <this folder>");
 }
