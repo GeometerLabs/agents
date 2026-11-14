@@ -118,7 +118,12 @@ function countByState(store: Store): Record<string, number> {
 const CONFIRMATION_KEEP_MS = 90 * 24 * 3_600_000;
 
 export function createRuntime(options: RuntimeOptions): Runtime {
-  const { settings, clock, services, parser } = options;
+  const { settings, clock, parser } = options;
+  // batch 3: a parent who allowed alerts on their private page also hears the centre's messages to their number as web push, keyed by the parent's stable ref. The AGENT sends
+  // through these services (kit.services below), so they are wrapped here, once, for the agent and the core alike. A reminder carries the parent's private link and a payment
+  // link: no address travels in a push (push/pages.ts) and the store keeps only the link's hash, so the pushed words have every address taken out (the tap opens the page).
+  const withoutAddresses = (text: string): string => text.replace(/\bhttps?:\/\/\S+/giu, "").replace(/[ \t]+/gu, " ").replace(/\n[ \t]*\n+/gu, "\n").trim();
+  const services: Services = options.push ? { ...options.services, messaging: alsoPushTo(options.services.messaging, options.push, (to) => `parent:${parentRef(to)}`, withoutAddresses) } : options.services;
   const policy: AiPolicy = options.ai ?? {};
   // item 11h: the parents' links this process made (in memory only: the store keeps their hashes), so a reminder resends the link a parent already has
   const linkMemory = new Map<string, string>();
@@ -188,7 +193,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   };
   return createRuntimeCore({
     settings, store: options.store, clock, // batch 3: a parent who allowed alerts on their private page also hears the centre's messages to their number as web push, keyed by the parent's stable ref
-    messaging: options.push ? alsoPushTo(services.messaging, options.push, (to) => `parent:${parentRef(to)}`) : services.messaging, pathwayVersion: options.pathwayVersion, kit, ai: policy,
+    messaging: services.messaging, pathwayVersion: options.pathwayVersion, kit, ai: policy,
     monthly: options.report ? createMonthlyReport(options.report) : undefined,
     // Item 11e: the owner's morning line, from this template's skill read-only over the store
     ...(settings.assistant ? { daily: createMorningJob<Store>({

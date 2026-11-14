@@ -156,3 +156,7 @@ A refund a person at the server settled as made (Guard's `already_done`) was alr
 one row per person after "given back" ("Settled by ravi, by their word"). The owner's WhatsApp message says it after the given-back amount, inside that value, so
 no approved template body changed. The longest form that fits WhatsApp's 1,024 characters is chosen, from the names down to none. How and why:
 modules/Explanation.md, "Settled by <who>, by their word on the documents". Machine-written hi/ml/kn, on the REVIEW sheets (section 6).
+
+## A parent's alerts (release-flow batch 3, 14 Nov 2026)
+
+A parent who allowed alerts on their private page also hears the centre's messages to their number as web push. The runtime wraps the services it hands the agent (`alsoPushTo`, modules/push/push.ts; the agent sends through `kit.services`, so the wrapper sits there, not only on the core's own messaging). The subscription is keyed by the parent's stable ref (`parentView.ref`, `parent:<ref>`), not by their link, which is made again at the first reminder after a restart. A reminder carries the parent's private link and a payment link, and no address travels in a push, so the pushed words have every address taken out; the tap opens the page's own address. `test/parent-push.test.ts` runs a real reminder through it.

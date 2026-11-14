@@ -44,7 +44,9 @@ export const PHONE_SHAPE = /^\+\d{10,15}$/u;
  * A map link a partner pastes: https only, on a maps host, no spaces or markup, at most 300 characters. A map link carries a query ("?q=..."), which `isUrl` refuses,
  * so it has its own check. Used by the panel's form and by the file's reader, so both say the same.
  */
-export const MAP_HOSTS = /^https:\/\/(www\.google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl|goo\.gl\/maps|www\.openstreetmap\.org|maps\.apple\.com)(\/|\?|$)/iu;
+// The ending of a Google address is pinned (".com", ".co.in", ".com.au", ".de"): an open ending let "www.google.com.evil.example/maps" through.
+const GOOGLE_END = "(?:com|co\\.[a-z]{2}|com\\.[a-z]{2}|[a-z]{2})";
+export const MAP_HOSTS = new RegExp(`^https://(?:www\\.google\\.${GOOGLE_END}/maps|maps\\.google\\.${GOOGLE_END}|maps\\.app\\.goo\\.gl|goo\\.gl/maps|www\\.openstreetmap\\.org|maps\\.apple\\.com)(?:/|\\?|$)`, "iu");
 export const isMapLink = (v: unknown): v is string => typeof v === "string" && v.length <= 300 && /^[^\s"'<>\\]+$/u.test(v) && MAP_HOSTS.test(v);
 
 /** The file's content, checked field by field; undefined when it is missing or not one (then the shop simply has no pages address and no owner sign-in). */

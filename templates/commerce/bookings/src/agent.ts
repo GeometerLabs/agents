@@ -968,8 +968,10 @@ export function createAgent(deps: AgentDeps): Agent {
       b.reminders = reminderSchedule(settings, b.startMs!, clock.now());
       log(b, b.customer, "confirm_booking", "confirmed", want, { refs: { eventId: found.event.id }, ...(ownList ? { notes: "read back from the shop's own booking list (this shop has no Google Calendar); the deposit is recorded too" } : {}) });
       moveTo(b, "confirmed");
-      // batch 5: a WhatsApp booking's own page link goes in the booked message too (a customer must not depend on the quote's one message), when the shop has a page
-      const page = pageLinkFor(b);
+      // batch 5: a WhatsApp booking's own page link goes in the booked message too (a customer must not depend on the quote's one message), when the shop has a page.
+      // Only while the customer's 24-hour window is open: outside it the message must go as ONE approved template, and "booked" with a link is two (no template
+      // carries it), which the provider would refuse, so the customer would not hear "booked" at all. Their quote's link stays good.
+      const page = (await messaging.isWindowOpen(b.customer).catch(() => false)) ? pageLinkFor(b) : undefined;
       const sent = await tellCustomer(b, b.customer, [ownerConfirms ? "upi_booked" : "booked", ...(page ? ["booked_page_link" as const] : [])], { offer: cancelOrOwner, ...(page ? { pageLink: page.url } : {}) });
       if (sent && page) keepPageLink(b, page.hash);
       return;
