@@ -240,14 +240,14 @@ test("the message is the owner's lines in every language: numbers from the repor
   for (const language of LANGUAGES) {
     const { text, template } = monthlyReportMessage(sealed, language, { link: "https://reports.example.com/r/abc/report-2026-11-en.html" });
     const s = STRINGS[language];
-    assert.ok(text.includes(`${s.upiLabel.collected}: ₹1,660`), text);
-    assert.ok(text.includes(`${s.upiLabel.givenBack}: ₹180`), text);
-    assert.ok(text.includes(`${s.label.stillToCollect}: ₹240 (${s.label.orders}: 1)`), text);
-    assert.ok(text.includes(`${s.label.ordersTaken}: 7`) && text.includes(`${s.label.cancelled}: 2`), text);
-    assert.ok(text.includes(`${s.label.wasAsked}: 2`) && text.includes(`${s.label.approved}: 2`) && text.includes(`${s.label.saidNo}: 0`), text);
+    assert.ok(text.includes(`${s.upiLabel.collected}: *₹1,660*`), text);
+    assert.ok(text.includes(`${s.upiLabel.givenBack}: *₹180*`), text);
+    assert.ok(text.includes(`${s.label.stillToCollect}: *₹240 (${s.label.orders}: 1)*`), text);
+    assert.ok(text.includes(`${s.label.ordersTaken}: *7*`) && text.includes(`${s.label.cancelled}: *2*`), text);
+    assert.ok(text.includes(`${s.label.wasAsked}: *2*`) && text.includes(`${s.label.approved}: *2*`) && text.includes(`${s.label.saidNo}: *0*`), text);
     assert.ok(text.includes(sealed.code) && text.includes("https://reports.example.com/r/abc/report-2026-11-en.html") && text.includes("Divya, local partner"), text);
     assert.ok(text.includes(s.helpLine), "the help line");
-    assert.ok(text.startsWith(`${s.monthlyReport}: `), "starts with fixed words");
+    assert.ok(text.startsWith(`*${s.monthlyReport}: `), "starts with fixed words");
     assert.ok(text.endsWith("Geometer"), "ends with fixed words");
     assert.equal(template.name, "order_monthly_report_upi", "a UPI shop's money is labelled as marked by the owner");
     assert.equal(text.split("\n").length, 10, "the owner's lines, the code and page, the check link (item 17b), who set it up");
@@ -274,7 +274,7 @@ test("the Innovator badge is one more line, the last, and only when the report c
   const razorpay = November(w);
   assert.equal(monthlyReportMessage(seal(razorpay), "en", { link: "https://x.example.com/a.html" }).template.name, "order_monthly_report");
   assert.equal(monthlyReportMessage(seal({ ...razorpay, innovator: true as const }), "en", { link: "https://x.example.com/a.html" }).template.name, "order_monthly_report_innovator");
-  assert.ok(monthlyReportMessage(seal(razorpay), "en", { link: "https://x.example.com/a.html" }).text.includes("Advance collected: ₹0"));
+  assert.ok(monthlyReportMessage(seal(razorpay), "en", { link: "https://x.example.com/a.html" }).text.includes("Advance collected: *₹0*"));
   assert.throws(() => monthlyReportMessage(seal({ ...November(month), preparedBy: null }), "en", { link: "https://x.example.com/a.html" }), /names no one/);
 });
 
@@ -343,8 +343,8 @@ test("the shared monthly job sends the Orders report once, on the 1st from 09:00
   assert.equal(sent.length, 1);
   assert.equal(sent[0].templateName, "order_monthly_report_upi");
   const marked = w.store.upi!.requests.flatMap((q) => q.marks).reduce((sum, m) => sum + m.amountPaise, 0) / 100;
-  assert.ok(sent[0].text.includes(`Advance marked paid by owner: ₹${marked.toLocaleString("en-IN")}`), sent[0].text);
-  assert.ok(sent[0].text.includes("Monthly report: Annapurna Tiffins · Nov 2026 · stand-in services, test money"), sent[0].text);
+  assert.ok(sent[0].text.includes(`Advance marked paid by owner: *₹${marked.toLocaleString("en-IN")}*`), sent[0].text);
+  assert.ok(sent[0].text.includes("*Monthly report: Annapurna Tiffins · Nov 2026 · stand-in services, test money*"), sent[0].text);
   assert.ok(sent[0].text.includes("https://reports.example.com/r/t1000000/report-2026-11-en.html"), sent[0].text);
   for (const [d, h] of [[1, 9], [1, 15], [2, 9], [15, 10]]) { w.clock.set(at(12, d, h)); await job.run(context(w)); }
   assert.equal(w.messaging.sentTo(w.owner).length, before + 1, "never twice");
@@ -379,11 +379,11 @@ test("a refund a person settled by their word is not money given back: it is cou
   // the documents (12 Nov 2026): one row per person on the page, and the owner's WhatsApp message says it after "given back" (no template body changes)
   const env = seal({ ...r, preparedBy: "Divya, Sri Sai Digital" });
   const page = reportPage(env, "en");
-  assert.match(page, /<td>Settled by ravi, by their word<\/td><td[^>]*>1<\/td><td[^>]*>₹200<\/td>/u);
+  assert.match(page, /<td>Settled by ravi, by their word<\/td><td[^>]*><strong>1<\/strong><\/td><td[^>]*><strong>₹200<\/strong><\/td>/u);
   assert.ok(!page.includes("operator:ravi"), "who, as a person reads it");
   for (const language of ["en", "hi", "ml", "kn"] as const) {
     const m = monthlyReportMessage(env, language, { link: "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2026-11-en.html" });
-    assert.ok(m.text.includes(`${STRINGS[language].label.givenBack}: ₹50 · ${STRINGS[language].settledByWord("ravi")}: 1 (₹200)`), `${language}: ${m.text}`);
+    assert.ok(m.text.includes(`${STRINGS[language].label.givenBack}: *₹50 · ${STRINGS[language].settledByWord("ravi")}: 1 (₹200)*`), `${language}: ${m.text}`);
     assert.equal(m.template.text, m.text);
   }
   assert.ok(!monthlyReportMessage(seal({ ...none, preparedBy: "Divya" }), "en", { link: "https://reports.example.com/r/x/report-2026-11-en.html" }).text.includes("by their word"));

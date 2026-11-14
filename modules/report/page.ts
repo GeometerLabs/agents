@@ -7,9 +7,13 @@ import { textQrSvg } from "../qr/svg.ts";
 import { verifyLink, verifyQrSvg } from "./verify-link.ts";
 import { whatThisChecksBlock } from "./what-this-checks.ts";
 
+/** A figure in a table cell or card: <strong>, so it stands out from its label. Empty stays empty (a row with no amount). The value is escaped here. */
+export const fig = (value: string | number): string => (String(value) === "" ? "" : `<strong>${esc(value)}</strong>`);
+
 // The only door for text into the page: every value is escaped here so a shop name or customer text can never add markup.
 export const esc = (value: string | number): string => String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
+// 14 Nov: figures are <strong> in full ink (cards and the numbers table), so a figure never looks like its label; `.hi` is the one soft highlight, on the first money figure.
 const CSS = `
 :root{--g9:#14532d;--g7:#15803d;--g1:#dcfce7;--g0:#f0fdf4;--ink:#10231a;--mute:#4b5d52;--line:#cfe3d6;--amber:#92400e;--amber-bg:#fffbeb;--amber-line:#f5d98a;--bg:#fff}
 *{box-sizing:border-box}
@@ -26,7 +30,9 @@ h2{font-size:1.1rem;margin:1.6rem 0 .5rem;color:var(--g9)}
 .note{background:var(--g0);border-left:4px solid var(--g7);padding:.6rem .8rem;margin:1rem 0}
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:10px;margin:1rem 0}
 .card{border:1px solid var(--line);border-radius:10px;padding:.6rem .8rem;background:var(--g0)}
-.card b{display:block;font-size:1.6rem;color:var(--g9);line-height:1.2}
+.card strong{display:block;font-size:1.6rem;color:var(--ink);line-height:1.2}
+.card strong.hi{display:inline-block;background:var(--g1);border-radius:6px;padding:0 .35rem;margin-left:-.35rem}
+td.n strong{color:var(--ink)}
 .card span{font-size:.85rem;color:var(--mute)}
 .tablewrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:.95rem}

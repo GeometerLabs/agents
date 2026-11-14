@@ -5,7 +5,7 @@ import { formatDate } from "../../../../modules/language/format.ts";
 import { localParts } from "../../../../modules/core/time.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
-import { esc, list, page, sealBlock, table } from "../../../../modules/report/page.ts";
+import { esc, fig, list, page, sealBlock, table } from "../../../../modules/report/page.ts";
 import type { Envelope } from "../../../../modules/report/sign.ts";
 import { badgeText, languagesOf, periodLabel, rupees, settledWho } from "../../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../../modules/report/text.ts";
@@ -25,7 +25,7 @@ export function reportSection(envelope: Envelope<FeesReport>, language: Language
   const s = STRINGS[language];
   const r = envelope.document;
   const p = s.page;
-  const amount = (a: { count: number; paise: number }) => [String(a.count), esc(rupees(a.paise))];
+  const amount = (a: { count: number; paise: number }) => [fig(a.count), fig(rupees(a.paise))];
   const made = localParts(Date.parse(r.madeAt), r.shop.timeZone);
   const madeOn = `${formatDate(made, language)} ${made.year}`;
   const source = s.sourceTag[r.source] || p.liveServices;
@@ -35,17 +35,17 @@ export function reportSection(envelope: Envelope<FeesReport>, language: Language
     [esc(moneyLabels(language, r.paidBy).givenBack), ...amount(r.money.givenBack)],
     // refunds a person settled by their word (B75): one row per person, never counted as given back
     ...(r.money.settledByWord ?? []).map((w) => [esc(s.settledByWord(settledWho(w.by))), ...amount(w)]),
-    [esc(p.opened), String(r.fees.opened), ""],
-    [esc(p.paidInFull), String(r.fees.paidInFull), ""],
-    [esc(p.partlyPaid), String(r.fees.partlyPaid), ""],
+    [esc(p.opened), fig(r.fees.opened), ""],
+    [esc(p.paidInFull), fig(r.fees.paidInFull), ""],
+    [esc(p.partlyPaid), fig(r.fees.partlyPaid), ""],
     [esc(s.label.stillToCollect), ...amount(r.fees.stillToCollect)],
     [esc(p.byOwner), ...amount(r.waivers.byOwner)],
     [esc(p.withinLimit), ...amount(r.waivers.withinLimit)],
     [esc(p.lateFeesAdded), ...amount(r.waivers.lateFeesAdded)],
-    [esc(s.label.wasAsked), String(r.owner.asked), ""],
-    [esc(s.label.approved), String(r.owner.approved), ""],
-    [esc(s.label.saidNo), String(r.owner.denied), ""],
-    [esc(p.stoppedParents), String(r.parents.stopped), ""],
+    [esc(s.label.wasAsked), fig(r.owner.asked), ""],
+    [esc(s.label.approved), fig(r.owner.approved), ""],
+    [esc(s.label.saidNo), fig(r.owner.denied), ""],
+    [esc(p.stoppedParents), fig(r.parents.stopped), ""],
   ]);
   const rules = table([{ text: p.rule }, { text: p.times, n: true }], RULE_IDS.map((id) => [`${esc(s.stop[id])} <code>${esc(id)}</code>`, String(r.stopped.byRule[id])]));
   const messages = table([{ text: p.item }, { text: p.count, n: true }, ...LANGUAGES.map((l) => ({ text: s.languageName[l], n: true }))], [
@@ -62,10 +62,10 @@ export function reportSection(envelope: Envelope<FeesReport>, language: Language
 <header class="head"><p class="kicker">${esc(s.agent)} · ${esc(s.monthlyReport)}</p><h1>${esc(r.shop.name)}</h1><p class="period">${esc(periodLabel(r.period, language))}</p>${s.sourceTag[r.source] ? `<p class="tag">${esc(s.sourceTag[r.source])}</p>` : ""}${r.innovator ? `<p class="badge">${esc(badgeText(language))}</p>` : ""}</header>
 <p class="note">${esc(s.handRun)}</p>
 <div class="cards">
-<div class="card"><b>${esc(rupees(r.money.collected.paise))}</b><span>${esc(moneyLabels(language, r.paidBy).collected)}</span></div>
-<div class="card"><b>${esc(rupees(r.fees.stillToCollect.paise))}</b><span>${esc(s.label.stillToCollect)}</span></div>
-<div class="card"><b>${esc(rupees(r.waivers.total.paise))}</b><span>${esc(s.label.takenOff)}</span></div>
-<div class="card"><b>${r.reminders.sent}</b><span>${esc(s.label.remindersSent)}</span></div>
+<div class="card"><strong class="hi">${esc(rupees(r.money.collected.paise))}</strong><span>${esc(moneyLabels(language, r.paidBy).collected)}</span></div>
+<div class="card"><strong>${esc(rupees(r.fees.stillToCollect.paise))}</strong><span>${esc(s.label.stillToCollect)}</span></div>
+<div class="card"><strong>${esc(rupees(r.waivers.total.paise))}</strong><span>${esc(s.label.takenOff)}</span></div>
+<div class="card"><strong>${r.reminders.sent}</strong><span>${esc(s.label.remindersSent)}</span></div>
 </div>
 <h2>${esc(p.numbers)}</h2>${numbers}
 <h2>${esc(p.stoppedHeading)}</h2>${rules}

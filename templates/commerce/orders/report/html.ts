@@ -4,7 +4,7 @@
 import { formatDate } from "../../../../modules/language/format.ts";
 import { localParts } from "../../../../modules/core/time.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
-import { esc, list, page, sealBlock, table } from "../../../../modules/report/page.ts";
+import { esc, fig, list, page, sealBlock, table } from "../../../../modules/report/page.ts";
 import type { Envelope } from "../../../../modules/report/sign.ts";
 import { badgeText, languagesOf, periodLabel, rupees, settledWho } from "../../../../modules/report/text.ts";
 import type { ReportLanguage } from "../../../../modules/report/text.ts";
@@ -24,7 +24,7 @@ export function reportSection(envelope: Envelope<OrdersReport>, language: Langua
   const s = STRINGS[language];
   const r = envelope.document;
   const p = s.page;
-  const amount = (a: { count: number; paise: number }) => [String(a.count), esc(rupees(a.paise))];
+  const amount = (a: { count: number; paise: number }) => [fig(a.count), fig(rupees(a.paise))];
   const made = localParts(Date.parse(r.madeAt), r.shop.timeZone);
   const madeOn = `${formatDate(made, language)} ${made.year}`;
   const source = s.sourceTag[r.source] || p.liveServices;
@@ -35,19 +35,19 @@ export function reportSection(envelope: Envelope<OrdersReport>, language: Langua
     [esc(labels.givenBack), ...amount(r.money.givenBack)],
     // refunds a person settled by their word (B75): one row per person, never counted as given back
     ...(r.money.settledByWord ?? []).map((w) => [esc(s.settledByWord(settledWho(w.by))), ...amount(w)]),
-    [esc(p.ordersTaken), String(r.orders.taken), ""],
-    [esc(p.ordersCompleted), String(r.orders.completed), ""],
-    [esc(p.ordersCancelled), String(r.orders.cancelled), ""],
-    [esc(p.holdsRanOut), String(r.orders.holdsRanOut), ""],
-    [esc(s.label.wasAsked), String(r.owner.asked), ""],
-    [esc(s.label.approved), String(r.owner.approved), ""],
-    [esc(s.label.saidNo), String(r.owner.denied), ""],
-    [esc(p.stoppedCustomers), String(r.customers.stopped), ""],
+    [esc(p.ordersTaken), fig(r.orders.taken), ""],
+    [esc(p.ordersCompleted), fig(r.orders.completed), ""],
+    [esc(p.ordersCancelled), fig(r.orders.cancelled), ""],
+    [esc(p.holdsRanOut), fig(r.orders.holdsRanOut), ""],
+    [esc(s.label.wasAsked), fig(r.owner.asked), ""],
+    [esc(s.label.approved), fig(r.owner.approved), ""],
+    [esc(s.label.saidNo), fig(r.owner.denied), ""],
+    [esc(p.stoppedCustomers), fig(r.customers.stopped), ""],
   ]);
   const sold = table([{ text: p.item }, { text: p.count, n: true }, { text: p.amount, n: true }], [
-    [esc(p.soldOrders), String(r.sold.orders), ""],
-    [esc(p.pickup), String(r.sold.pickup), ""],
-    [esc(p.delivery), String(r.sold.delivery), ""],
+    [esc(p.soldOrders), fig(r.sold.orders), ""],
+    [esc(p.pickup), fig(r.sold.pickup), ""],
+    [esc(p.delivery), fig(r.sold.delivery), ""],
     [esc(s.label.stillToCollect), ...amount(r.sold.toCollect)],
   ]);
   const items = r.sold.items.length > 0
@@ -66,10 +66,10 @@ export function reportSection(envelope: Envelope<OrdersReport>, language: Langua
 <header class="head"><p class="kicker">${esc(s.agent)} · ${esc(s.monthlyReport)}</p><h1>${esc(r.shop.name)}</h1><p class="period">${esc(periodLabel(r.period, language))}</p>${s.sourceTag[r.source] ? `<p class="tag">${esc(s.sourceTag[r.source])}</p>` : ""}${r.innovator ? `<p class="badge">${esc(badgeText(language))}</p>` : ""}</header>
 <p class="note">${esc(s.handRun)}</p>
 <div class="cards">
-<div class="card"><b>${esc(rupees(r.money.collected.paise))}</b><span>${esc(labels.collected)}</span></div>
-<div class="card"><b>${esc(rupees(r.sold.toCollect.paise))}</b><span>${esc(s.label.stillToCollect)}</span></div>
-<div class="card"><b>${r.orders.taken}</b><span>${esc(s.label.ordersTaken)}</span></div>
-<div class="card"><b>${r.orders.cancelled}</b><span>${esc(s.label.cancelled)}</span></div>
+<div class="card"><strong class="hi">${esc(rupees(r.money.collected.paise))}</strong><span>${esc(labels.collected)}</span></div>
+<div class="card"><strong>${esc(rupees(r.sold.toCollect.paise))}</strong><span>${esc(s.label.stillToCollect)}</span></div>
+<div class="card"><strong>${r.orders.taken}</strong><span>${esc(s.label.ordersTaken)}</span></div>
+<div class="card"><strong>${r.orders.cancelled}</strong><span>${esc(s.label.cancelled)}</span></div>
 </div>
 <h2>${esc(p.numbers)}</h2>${numbers}
 <h2>${esc(p.soldHeading)}</h2>${sold}${items}
