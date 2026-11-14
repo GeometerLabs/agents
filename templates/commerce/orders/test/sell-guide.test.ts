@@ -313,9 +313,9 @@ test("sell guide (14 Nov): the walkthrough is for a phone: the hosted demo's add
 
 // ---- what the guide says does not exist yet: when it is built, this fails, and the guide has to change -----------------------
 
-test("sell guide: what the guide says is not built yet is still not built (build the phone demo, then change sections 4 and 11), and what it says is built is", () => {
+test("sell guide: what the guide says is built is (the hosted demo's adapter, which section 4 points to, included)", () => {
   const orders = (path: string) => new URL(`../${path}`, import.meta.url);
-  assert.ok(!existsSync(orders("demo")), "templates/commerce/orders/demo exists now: the guide still says there is no phone demo for Orders");
+  assert.ok(existsSync(orders("demo/quick.ts")), "the hosted demo at /demo/orders is built from this adapter (scripts/build-demo.ts)");
   for (const built of ["scripts/go-live-certificate.ts", "scripts/client-report.ts", "report/strings.ts", "approvals/relay.ts", "whatsapp-templates.json"]) assert.ok(existsSync(orders(built)), `${built}: the guide says it is built`);
   for (const l of LANGUAGES) {
     assert.ok(section(l, 8).includes("templates/commerce/orders/whatsapp-templates.json"), `${l}: the real file`);

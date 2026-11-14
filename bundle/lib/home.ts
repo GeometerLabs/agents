@@ -23,11 +23,16 @@ import { dirname, join, resolve } from "node:path";
 import { Refused, stableJson } from "./util.ts";
 
 /** The top-level names the home owns, as a visitor types them (`/shops`, `/assets/...`). Every one is in fleet's RESERVED_SLUGS. */
-export const HOME_TOP: readonly string[] = ["shops", "partners", "privacy", "examples", "assets"];
+export const HOME_TOP: readonly string[] = ["shops", "partners", "privacy", "examples", "assets", "demo"];
 /** Single files at the top that are not slugs (a dot is never in a slug). robots.txt is not here: Caddy answers it, merged with the door's. */
 export const HOME_FILES: readonly string[] = ["favicon.svg"];
 /** Pages inside /examples/, as the home builds them (a name here is a file examples/<name>.html). Any lowercase name is accepted, the shape is checked on install. */
 export const HOME_EXAMPLE_NAME = /^[a-z0-9][a-z0-9-]{0,60}$/u;
+/**
+ * The hosted demo (batch 2b of release-flow-gaps.md): /demo (demo.html) and its folder demo/ (scripts/build-demo.ts makes both). It is not part of the Streetlist repository: the pack
+ * maker adds the folder it is given with --demo. A demo file is a page, a script, a style sheet or a JSON file, any depth; the three pages are demo/<name>.html.
+ */
+export const HOME_DEMO_FILE = /\.(html|js|css|json)$/u;
 /** Firebase's `redirects` for the one redirect the home has: /examples is the first example. Kept with the rules hash below. */
 export const HOME_EXAMPLES_REDIRECT = "/examples/glow-salon";
 
@@ -85,7 +90,7 @@ function walk(root: string, rel = ""): string[] {
  * commit always give the same bytes (sorted, no dates), so a second person can make the pack and compare its sha256. A dirty work tree is refused: the commit must be
  * what was built.
  */
-export function makePack(streetlistDir: string, opts: { commit?: string } = {}): { bytes: Buffer; pack: Pack; sha256: string } {
+export function makePack(streetlistDir: string, opts: { commit?: string; demoDir?: string } = {}): { bytes: Buffer; pack: Pack; sha256: string } {
   const root = resolve(streetlistDir);
   const dist = join(root, "dist");
   if (!existsSync(join(dist, "index.html"))) throw new HomeRefused(`${dist}/index.html is not there. Build the Streetlist site first (npm run build in that folder).`);
@@ -98,6 +103,16 @@ export function makePack(streetlistDir: string, opts: { commit?: string } = {}):
   }
   const hosting = (JSON.parse(readFileSync(join(root, "firebase.json"), "utf8")) as { hosting: Parameters<typeof rulesShaOf>[0] }).hosting;
   const files = walk(dist).map((path) => ({ path, data: readFileSync(join(dist, path)) }));
+  if (opts.demoDir) {
+    // the demo built by scripts/build-demo.ts, laid out as the site's own paths (demo.html, demo/...); the Streetlist build may not carry the same names
+    const demo = resolve(opts.demoDir);
+    if (!existsSync(join(demo, "demo.html"))) throw new HomeRefused(`${demo}/demo.html is not there. Build the demo first (node scripts/build-demo.ts <folder> in the agents repository).`);
+    const taken = new Set(files.map((f) => f.path));
+    for (const path of walk(demo)) {
+      if (taken.has(path)) throw new HomeRefused(`${path} is in both the Streetlist build and the demo.`);
+      files.push({ path, data: readFileSync(join(demo, path)) });
+    }
+  }
   const made = buildPack(files, commit, rulesShaOf(hosting), false);
   verifyPack(made.bytes); // a changed firebase.json is refused HERE, in the words that say what to update, not for the first time on the server
   return made;
@@ -154,7 +169,8 @@ export function verifyPack(bytes: Buffer, opts: { expectSha?: string; rulesSha?:
     if (!isHomeFile && !isRobots && !owned.has(top)) throw new HomeRefused(`${f.path} would answer for the name "${top}", which the home does not own (it owns ${HOME_TOP.join(", ")}). A name here must first be reserved in fleet's slug list and added to HOME_TOP, or a shop could be shadowed by a file.`);
     // a folder name must be a real folder of the home: /examples/<page>.html, /assets/<file>, and nothing deeper than that under examples
     if (parts.length > 1 && top === "examples" && (parts.length !== 2 || !f.path.endsWith(".html") || !HOME_EXAMPLE_NAME.test(parts[1]!.slice(0, -5)))) throw new HomeRefused(`${f.path} is not an example page (examples/<name>.html).`);
-    if (parts.length > 1 && !["examples", "assets"].includes(top)) throw new HomeRefused(`${f.path} is in a folder the home does not have.`);
+    if (top === "demo" && !HOME_DEMO_FILE.test(f.path)) throw new HomeRefused(`${f.path} is not a page, script, style sheet or JSON file, which is all the demo holds.`);
+    if (parts.length > 1 && !["examples", "assets", "demo"].includes(top)) throw new HomeRefused(`${f.path} is in a folder the home does not have.`);
     if (parts.length === 1 && HOME_TOP.includes(top) && !f.path.endsWith(".html")) throw new HomeRefused(`${f.path} would shadow the name "${top}".`);
     const data = Buffer.from(typeof f.data === "string" ? f.data : "", "base64");
     if (data.length !== f.size || sha256(data) !== f.sha256) throw new HomeRefused(`${f.path} does not match its checksum: the build file is damaged or was changed. Nothing was installed.`);

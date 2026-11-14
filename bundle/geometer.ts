@@ -12,7 +12,7 @@
 //                                licence key is refused like a missing --licence-key.
 //                                --pages-domain D [--pages-extra D2,D3]: Geometer's partner server only (panel mode hosted, with fleet): this server answers for the pages domain
 //                                (streetlist.in) with the front door, and serves the Streetlist home there (home, below). The extra domains are redirected to D.
-//   home pack <streetlist folder> [--out F] [--commit ID]   make the one file that carries a built Streetlist site (on your machine, after `npm run build` there)
+//   home pack <streetlist folder> [--out F] [--commit ID] [--demo DIR]   make the one file that carries a built Streetlist site (on your machine, after `npm run build` there); --demo adds the hosted demo (node scripts/build-demo.ts DIR)
 //   home install [<file or https address>] [--sha256 HEX]   check a pack against the pin (bundle/home.json), install it beside the one served and switch to it, atomically
 //   home rollback | home status   go back to the build before; say what is served and what is pinned
 //   pair <folder> --fleet-url U  pair a NEW server with Geometer's fleet: reads the one-time code from your account page (geometer.dev/account, "Add a server") on
@@ -187,7 +187,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       to: { type: "string" }, shops: { type: "string" }, "dry-run": { type: "boolean" },
       // home install / pack, init
       languages: { type: "string" }, only: { type: "string" }, submit: { type: "boolean" }, status: { type: "boolean" },
-      sha256: { type: "string" }, commit: { type: "string" }, "pages-domain": { type: "string" }, "pages-extra": { type: "string" },
+      sha256: { type: "string" }, commit: { type: "string" }, demo: { type: "string" }, "pages-domain": { type: "string" }, "pages-extra": { type: "string" },
     },
   }) as { values: Record<string, string | boolean | undefined>; positionals: string[] };
   const str = (k: string) => (typeof values[k] === "string" ? values[k] as string : undefined);
@@ -199,7 +199,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     if (command === "pair") return await pair(positionals[0], str("fleet-url"));
 
     // packing a built Streetlist site happens on the owner's machine, with no server folder
-    if (command === "home" && positionals[0] === "pack") return await homeCommand("", positionals[0], positionals.slice(1), { ...(str("out") ? { out: str("out")! } : {}), ...(str("sha256") ? { sha256: str("sha256")! } : {}), ...(str("commit") ? { commit: str("commit")! } : {}) }, { log: (l) => console.log(l) });
+    if (command === "home" && positionals[0] === "pack") return await homeCommand("", positionals[0], positionals.slice(1), { ...(str("out") ? { out: str("out")! } : {}), ...(str("sha256") ? { sha256: str("sha256")! } : {}), ...(str("commit") ? { commit: str("commit")! } : {}), ...(str("demo") ? { demo: str("demo")! } : {}) }, { log: (l) => console.log(l) });
     const dir = serverDir({ server: str("server") });
     if (command === "model-key") {
       const server = loadServer(dir);
@@ -424,7 +424,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       return 0;
     }
 
-    if (command === "home") return await homeCommand(dir, positionals[0], positionals.slice(1), { ...(str("out") ? { out: str("out")! } : {}), ...(str("sha256") ? { sha256: str("sha256")! } : {}), ...(str("commit") ? { commit: str("commit")! } : {}) }, { log: (l) => console.log(l) });
+    if (command === "home") return await homeCommand(dir, positionals[0], positionals.slice(1), { ...(str("out") ? { out: str("out")! } : {}), ...(str("sha256") ? { sha256: str("sha256")! } : {}), ...(str("commit") ? { commit: str("commit")! } : {}), ...(str("demo") ? { demo: str("demo")! } : {}) }, { log: (l) => console.log(l) });
     if (command === "whatsapp-templates") return await whatsappTemplatesCommand(APP_DIR, dir, positionals[0], { ...(str("template") ? { template: str("template")! } : {}), ...(str("languages") ? { languages: str("languages")! } : {}), ...(str("only") ? { only: str("only")! } : {}), submit: values.submit === true, status: values.status === true }, { log: (l) => console.log(l) });
     if (command === "status") return await status(ctx);
     if (command === "up") return await up(ctx);

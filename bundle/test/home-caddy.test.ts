@@ -24,6 +24,9 @@ const build = (marker: string) => buildPack([
   { path: "partners.html", data: text("<p>PARTNERS</p>") }, { path: "privacy.html", data: text("<p>PRIVACY</p>") }, { path: "examples/glow-salon.html", data: text("<p>GLOW</p>") },
   { path: "assets/main-Ab_1.js", data: text("console.log('" + "x".repeat(2000) + "')") }, { path: "favicon.svg", data: text("<svg/>") },
   { path: "robots.txt", data: text("User-agent: *\nAllow: /\nDisallow: /examples/\n") },
+  // the hosted demo (scripts/build-demo.ts): the list, one page, the shared script and a template's module
+  { path: "demo.html", data: text("<p>DEMO-LIST</p>") }, { path: "demo/orders.html", data: text("<p>DEMO-ORDERS</p>") }, { path: "demo/page.js", data: text("console.log('demo')") },
+  { path: "demo/orders/index.js", data: text("export {}") },
 ], "5f49032");
 
 let doorServer: Server; let container = ""; let dir = ""; let base = "";
@@ -93,6 +96,22 @@ test("clean URLs, trailing slash and /examples behave as on Firebase: one clean 
   await to("/examples/glow-salon.html", 301, "/examples/glow-salon");
   await to("/shops/", 301, "/shops"); await to("/partners/", 301, "/partners"); await to("/examples/", 301, "/examples"); await to("/examples/glow-salon/", 301, "/examples/glow-salon");
   await to("/examples", 302, "/examples/glow-salon");
+});
+
+test("the hosted demo: /demo and its pages answer from the build with the home's headers, the clean-URL redirects apply, and a missing demo file is the home's 404 (never the door)", { skip: !ON && "REAL_CADDY=1 not set" }, async () => {
+  for (const [path, marker] of [["/demo", "DEMO-LIST"], ["/demo/orders", "DEMO-ORDERS"], ["/demo/page.js", "console.log('demo')"], ["/demo/orders/index.js", "export {}"]] as const) {
+    const r = await get(path);
+    assert.equal(r.status, 200, path);
+    assert.ok(r.body.includes(marker), path);
+    assert.equal(r.h.get("x-frame-options"), "DENY", path);
+    assert.equal(r.h.get("cache-control"), "no-cache", path);
+  }
+  assert.match((await get("/demo?lang=ml")).h.get("content-type") ?? "", /text\/html/u, "the language in the address does not change what is served");
+  const to = async (path: string, location: string) => { const r = await get(path); assert.equal(r.status, 301, path); assert.equal(r.h.get("location"), location, path); };
+  await to("/demo.html", "/demo"); await to("/demo/", "/demo"); await to("/demo/orders.html", "/demo/orders"); await to("/demo/orders/", "/demo/orders");
+  const post = await get("/demo/orders", { method: "POST" });
+  assert.equal(post.status, 405);
+  for (const path of ["/demo/nope", "/demo/orders/nope.js"]) { const r = await get(path); assert.equal(r.status, 404, path); assert.ok(r.body.includes("STREETLIST-404"), path); }
 });
 
 test("what is missing under the home's own addresses is the 404 page (status 404), never a listing or the door", { skip: !ON && "REAL_CADDY=1 not set" }, async () => {
