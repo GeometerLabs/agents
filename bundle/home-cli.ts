@@ -11,12 +11,12 @@ export interface HomeIo { log: (line: string) => void; pin?: () => HomePin; fetc
 
 export const HOME_SUBCOMMANDS = ["pack", "install", "rollback", "status"] as const;
 
-export async function homeCommand(serverDir: string, sub: string | undefined, args: string[], flags: { out?: string; sha256?: string; commit?: string }, io: HomeIo): Promise<number> {
+export async function homeCommand(serverDir: string, sub: string | undefined, args: string[], flags: { out?: string; sha256?: string; commit?: string; demo?: string }, io: HomeIo): Promise<number> {
   const pin = (io.pin ?? readPin)();
   if (sub === "pack") {
     // on the owner's machine, from the built streetlist repository; no server folder is needed
-    if (!args[0]) throw new HomeRefused("Say which folder: home pack <the streetlist folder> [--out <file>] (build the site there first: npm run build).");
-    const made = makePack(args[0], flags.commit ? { commit: flags.commit } : {});
+    if (!args[0]) throw new HomeRefused("Say which folder: home pack <the streetlist folder> [--out <file>] [--demo <the demo folder>] (build the site there first: npm run build).");
+    const made = makePack(args[0], { ...(flags.commit ? { commit: flags.commit } : {}), ...(flags.demo ? { demoDir: flags.demo } : {}) }); // --demo: the hosted demo folder (scripts/build-demo.ts) goes into the same pack
     const out = resolve(flags.out ?? `streetlist-home-${made.pack.commit.slice(0, 12)}.json`);
     writeFileSync(out, made.bytes);
     io.log(`Wrote ${out} (${made.pack.files.length} files, ${Math.round(made.bytes.length / 1024)} KB) from Streetlist commit ${made.pack.commit}.`);

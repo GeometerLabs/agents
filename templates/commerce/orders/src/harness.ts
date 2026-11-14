@@ -28,14 +28,13 @@ import { TEMPLATE_NAMES } from "./language/templates.ts";
 import { parseSettings } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 
-const example = (file: string): Settings => parseSettings(JSON.parse(readFileSync(new URL(`../settings/${file}`, import.meta.url), "utf8")));
-
+// Each example is read with a literal file name: the browser build (scripts/build-demo.ts) copies the files a template reads by finding them in the code.
 /** Annapurna Tiffins, the example shop: a tiffin service that takes UPI (the usual for a partner shop), pickup and delivery. */
-export const annapurna = (): Settings => example("annapurna-tiffins.example.json");
+export const annapurna = (): Settings => parseSettings(JSON.parse(readFileSync(new URL("../settings/annapurna-tiffins.example.json", import.meta.url), "utf8")));
 /** The same shop on Razorpay. */
-export const annapurnaRazorpay = (): Settings => example("annapurna-tiffins-razorpay.example.json");
+export const annapurnaRazorpay = (): Settings => parseSettings(JSON.parse(readFileSync(new URL("../settings/annapurna-tiffins-razorpay.example.json", import.meta.url), "utf8")));
 /** Sweet Crumbs Bakery, a second example: Malayalam and English, pickup only, the whole order paid in advance, on Razorpay. */
-export const sweetCrumbs = (): Settings => example("sweet-crumbs.example.json");
+export const sweetCrumbs = (): Settings => parseSettings(JSON.parse(readFileSync(new URL("../settings/sweet-crumbs.example.json", import.meta.url), "utf8")));
 
 /** Customers of the example shop. */
 export const AMIT = "+919844444444"; // English

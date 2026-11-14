@@ -299,10 +299,8 @@ test("sell guide (14 Nov): the walkthrough is for a phone: the hosted demo's add
 
 // ---- what the guide says does not exist yet: when it is built, this fails, and the guide has to change -----------------------
 
-test("sell guide: what the guide says is not built yet is still not built (build the phone demo, then change sections 4 and 11)", () => {
-  for (const missing of ["demo"]) {
-    assert.ok(!existsSync(new URL(`../${missing}`, import.meta.url)), `templates/education/fees/${missing} exists now: the guide still says there is no phone demo for Fees`);
-  }
+test("sell guide: the hosted demo section 4 points to is built from this template's adapter", () => {
+  assert.ok(existsSync(new URL("../demo/quick.ts", import.meta.url)), "the hosted demo at /demo/fees is built from this adapter (scripts/build-demo.ts)");
   const script = readFileSync(new URL("../scripts/hand-check.ts", import.meta.url), "utf8");
   assert.ok(script.includes('settings: { type: "string" }'), "the guide tells the partner to run the hand check on the centre's own settings file");
   for (const l of LANGUAGES) {

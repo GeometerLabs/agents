@@ -1,0 +1,54 @@
+/* The look of the hosted demo (quick.ts) and of the pages around the three demos (scripts/build-demo.ts). Phone first: one column, big tap targets, no hover-only
+   feature. Colours are custom properties on :root with a dark set, so the page follows the phone's setting. No inline style anywhere: the page rules allow only
+   this file (style-src 'self'). Every class of the demo starts with gq-. */
+:root {
+  --gq-bg: #f6f8f7; --gq-surface: #ffffff; --gq-text: #1b2420; --gq-muted: #5c6862; --gq-line: #dfe5e2; --gq-accent: #0f6b45; --gq-on-accent: #ffffff;
+  --gq-me: #dcf3e6; --gq-agent: #f1f3f2; --gq-warn: #a15c07; --gq-warn-bg: #fdf1dc;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --gq-bg: #0b100e; --gq-surface: #121a17; --gq-text: #e8eeec; --gq-muted: #9aa8a2; --gq-line: #26312d; --gq-accent: #3fb984; --gq-on-accent: #06140d; --gq-me: #16382a; --gq-agent: #1b2622; --gq-warn: #e0a64a; --gq-warn-bg: #2d2412; }
+}
+html { background: var(--gq-bg); color: var(--gq-text); }
+body { margin: 0; font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", "Noto Sans Malayalam", "Noto Sans Kannada", sans-serif; }
+.gq-page { max-width: 640px; margin: 0 auto; padding: 0 16px 32px; }
+.gq-page h1 { font-size: 1.4rem; margin: 20px 0 6px; }
+.gq-page p { color: var(--gq-muted); margin: 0 0 14px; }
+.gq-cards { display: grid; gap: 12px; margin: 16px 0; padding: 0; list-style: none; }
+.gq-card { display: block; background: var(--gq-surface); border: 1px solid var(--gq-line); border-radius: 12px; padding: 14px 16px; color: var(--gq-text); text-decoration: none; }
+.gq-card strong { display: block; font-size: 1.05rem; }
+.gq-card span { color: var(--gq-muted); font-size: .92rem; }
+.gq-langs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.gq-langs a { min-height: 44px; display: inline-flex; align-items: center; padding: 0 14px; border: 1px solid var(--gq-line); border-radius: 22px; color: var(--gq-accent); text-decoration: none; background: var(--gq-surface); }
+
+.gq { display: flex; flex-direction: column; gap: 10px; max-width: 640px; margin: 0 auto; padding: 0 12px 24px; box-sizing: border-box; }
+.gq *, .gq-page * { box-sizing: border-box; }
+.gq-banner { margin: 0 -12px; padding: 10px 14px; background: var(--gq-warn-bg); color: var(--gq-warn); font-weight: 600; text-align: center; }
+.gq-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.gq-name { font-size: 1.15rem; margin: 0; }
+.gq-lang { display: flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--gq-muted); }
+.gq-select, .gq-input { font: inherit; color: inherit; background: var(--gq-surface); border: 1px solid var(--gq-line); border-radius: 8px; min-height: 44px; padding: 0 10px; }
+.gq-tabs { display: flex; gap: 6px; }
+.gq-tab { flex: 1; min-height: 44px; font: inherit; color: inherit; background: var(--gq-surface); border: 1px solid var(--gq-line); border-radius: 8px; }
+.gq-tab[aria-selected="true"] { background: var(--gq-accent); color: var(--gq-on-accent); border-color: var(--gq-accent); }
+.gq-log { display: flex; flex-direction: column; gap: 8px; height: 52dvh; min-height: 300px; overflow-y: auto; padding: 10px; background: var(--gq-surface); border: 1px solid var(--gq-line); border-radius: 12px; }
+.gq-empty { color: var(--gq-muted); margin: auto; text-align: center; }
+.gq-msg { max-width: 88%; padding: 8px 10px; border-radius: 12px; }
+.gq-msg--me { align-self: flex-end; background: var(--gq-me); }
+.gq-msg--agent { align-self: flex-start; background: var(--gq-agent); }
+.gq-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--gq-text); }
+.gq-time { display: block; margin-top: 2px; font-size: .72rem; color: var(--gq-muted); text-align: right; }
+.gq-choices { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.gq-choices--old { opacity: .55; }
+.gq-choice, .gq-list-button, .gq-button, .gq-chip, .gq-send { min-height: 44px; font: inherit; color: var(--gq-accent); background: var(--gq-surface); border: 1px solid var(--gq-line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.gq-list-button { display: flex; align-items: center; }
+.gq-list > .gq-choice { width: 100%; margin-top: 6px; text-align: left; }
+.gq-choice-desc { display: block; color: var(--gq-muted); font-size: .8rem; }
+.gq-chips, .gq-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.gq-chips-label { color: var(--gq-muted); font-size: .85rem; }
+.gq-chip { text-align: left; }
+.gq-button--primary, .gq-send { background: var(--gq-accent); color: var(--gq-on-accent); border-color: var(--gq-accent); }
+.gq-button--quiet { color: var(--gq-muted); }
+.gq-form { display: flex; gap: 8px; }
+.gq-input { flex: 1; min-width: 0; }
+.gq-notice { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--gq-warn-bg); color: var(--gq-warn); }
+.gq-clock, .gq-foot { margin: 0; font-size: .8rem; color: var(--gq-muted); }

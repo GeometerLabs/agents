@@ -14,6 +14,7 @@ import type { InteractiveMessage } from "../../../../modules/language/interactiv
 import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { addDays, localParts, weekdayOf } from "../../../../modules/core/time.ts";
+import { SAYS } from "../crash-test/says.ts";
 import { CUSTOMER_WORDS, uiFor } from "./strings.ts";
 import type { Ui } from "./strings.ts";
 
@@ -206,6 +207,10 @@ export function chipsFor(settings: Settings, language: string, nowMs: number): C
   };
 
   const chips: Chip[] = [];
+  // Malayalam and Kannada: the crash-test lines (the same ones the review sheets list), which are written for the example shop's first service, a haircut.
+  if ((language === "ml" || language === "kn") && service.id === "haircut") {
+    return [{ text: SAYS[language].book }, { text: SAYS[language].haggle }, { text: SAYS[language].yes }];
+  }
   const soon = firstOpen(1);
   if (soon) {
     const when = soon.ahead === 1 ? (hindi ? "कल" : "tomorrow") : soon.ahead === 2 ? (hindi ? "परसों" : "the day after tomorrow")

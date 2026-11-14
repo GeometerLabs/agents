@@ -4,6 +4,7 @@
 // Languages are looked up by code in a plain object, so a language pack added to LANGUAGES works at once with the
 // English words here until someone adds a reviewed set. Nothing below touches src/.
 import { formatInr } from "../../../../modules/language/format.ts";
+import { SAYS } from "../crash-test/says.ts"; // the scripted customer lines in four languages: the demo's suggestions and Cancel button say the same
 
 export interface Ui {
   // labels
@@ -123,9 +124,49 @@ const hi: Ui = {
   demoNote: "इस डेमो में WhatsApp, पेमेंट और कैलेंडर की जगह अभ्यास वाले नकली सिस्टम हैं।",
 };
 
-const UI: Record<string, Ui> = { en, hi };
+// MACHINE-WRITTEN (14 November 2026), Malayalam and Kannada: the demo's own labels, buttons and sentences (the banner, the tabs, the chat, the shop form). They need a native
+// speaker's review, like every ml and kn line here (Deferred.md). The owner's plain-language summary and the record are still the English ones: only the labels are translated.
+const ml: Ui = {
+  ...en,
+  banner: "ഡെമോ · ടെസ്റ്റ് പണം · യഥാർത്ഥമായി ഒന്നും അയയ്ക്കില്ല",
+  tabCustomer: "കസ്റ്റമർ", tabOwner: "ഉടമ", tabRecord: "ഞങ്ങൾ ചെയ്തത്",
+  showRecord: "ഞങ്ങൾ ചെയ്തത് കാണൂ ▸", hideRecord: "മറയ്ക്കൂ ▾",
+  typeHere: "കസ്റ്റമറായി ടൈപ്പ് ചെയ്യൂ…", send: "അയയ്ക്കൂ", payTwice: "രണ്ടുതവണ അടയ്ക്കൂ", time1h: "1 മണിക്കൂർ കഴിയുന്നു", time1d: "1 ദിവസം കഴിയുന്നു",
+  cancel: "ബുക്കിംഗ് റദ്ദാക്കൂ", reset: "വീണ്ടും തുടങ്ങൂ", setup: "ഈ കടയ്ക്കായി ക്രമീകരിക്കൂ",
+  clock: "ഡെമോ ക്ലോക്ക്", trySaying: "ഇങ്ങനെ പറഞ്ഞുനോക്കൂ", chatEmpty: "ഇതുവരെ സന്ദേശങ്ങളില്ല. ഒരു നിർദ്ദേശം തൊടൂ, അല്ലെങ്കിൽ കസ്റ്റമറായി ടൈപ്പ് ചെയ്യൂ.", testCustomer: "ടെസ്റ്റ് കസ്റ്റമർ",
+  ownerHeading: "ഉടമയ്ക്ക് WhatsApp-ൽ കാണുന്നത്", ownerEmpty: "ഉടമയ്ക്ക് ഇതുവരെ ഒന്നുമില്ല.", waitingHeading: "നിങ്ങളുടെ മറുപടിക്കായി കാത്തിരിക്കുന്നു", nothingWaiting: "നിങ്ങളുടെ മറുപടിക്കായി ഒന്നും കാത്തിരിക്കുന്നില്ല.",
+  approve: "അനുവദിക്കൂ", deny: "നിരസിക്കൂ", retry: "കലണ്ടർ വീണ്ടും നോക്കൂ", cancelAndRefund: "റദ്ദാക്കി പണം തിരികെ കൊടുക്കൂ", plainHeading: "ലളിതമായി",
+  formTitle: "ഈ കടയ്ക്കായി ക്രമീകരിക്കൂ", formName: "കടയുടെ പേര്", formLanguage: "ഭാഷ", formServices: "സേവനങ്ങൾ (ഒരെണ്ണമെങ്കിലും, പരമാവധി നാല്)",
+  formServiceName: "പേര്", formAlso: "മറ്റ് പേരുകൾ (കോമ ഇട്ട്)", formPrice: "വില ₹", formMinutes: "മിനിറ്റ്", formDeposit: "അഡ്വാൻസ് ₹", formOpens: "തുറക്കുന്നത്", formCloses: "അടയ്ക്കുന്നത്", formDays: "തുറക്കുന്ന ദിവസങ്ങൾ",
+  formSubmit: "ഈ കടയ്ക്കായി ഡെമോ വീണ്ടും ഉണ്ടാക്കൂ", formCancel: "അടയ്ക്കൂ", formHint: "ഇത് ഡെമോ കടയുടെ സ്വന്തം വിലകളോടെ വീണ്ടും തുടങ്ങും.",
+  dayNames: ["ഞായർ", "തിങ്കൾ", "ചൊവ്വ", "ബുധൻ", "വ്യാഴം", "വെള്ളി", "ശനി"],
+  working: "ചെയ്യുന്നു…",
+  nothingToPay: "ഇപ്പോൾ അടയ്ക്കാൻ അഡ്വാൻസ് ഒന്നുമില്ല. ആദ്യം ഒരു ബുക്കിംഗ് ചോദിക്കൂ.", demoFull: "ഈ ഡെമോയിൽ ഒരുപാട് സന്ദേശങ്ങളായി. 'വീണ്ടും തുടങ്ങൂ' അമർത്തൂ.", rebuilt: "ഈ കടയ്ക്കായി വീണ്ടും ഉണ്ടാക്കി.",
+  payButton: (a) => `${a} അഡ്വാൻസ് അടയ്ക്കൂ (ടെസ്റ്റ് പണം)`,
+};
 
-/** The words for a language code; English until a reviewed set exists for that language. */
+const kn: Ui = {
+  ...en,
+  banner: "ಡೆಮೊ · ಟೆಸ್ಟ್ ಹಣ · ನಿಜವಾದದ್ದು ಏನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ",
+  tabCustomer: "ಗ್ರಾಹಕ", tabOwner: "ಮಾಲೀಕ", tabRecord: "ನಾವು ಮಾಡಿದ್ದು",
+  showRecord: "ನಾವು ಮಾಡಿದ್ದನ್ನು ನೋಡಿ ▸", hideRecord: "ಮರೆಮಾಡಿ ▾",
+  typeHere: "ಗ್ರಾಹಕರಂತೆ ಟೈಪ್ ಮಾಡಿ…", send: "ಕಳುಹಿಸಿ", payTwice: "ಎರಡು ಬಾರಿ ಪಾವತಿಸಿ", time1h: "1 ಗಂಟೆ ಕಳೆಯುತ್ತದೆ", time1d: "1 ದಿನ ಕಳೆಯುತ್ತದೆ",
+  cancel: "ಬುಕಿಂಗ್ ರದ್ದು ಮಾಡಿ", reset: "ಮತ್ತೆ ಶುರು ಮಾಡಿ", setup: "ಈ ಅಂಗಡಿಗೆ ಹೊಂದಿಸಿ",
+  clock: "ಡೆಮೊ ಗಡಿಯಾರ", trySaying: "ಹೀಗೆ ಹೇಳಿ ನೋಡಿ", chatEmpty: "ಇನ್ನೂ ಸಂದೇಶಗಳಿಲ್ಲ. ಒಂದು ಸಲಹೆಯನ್ನು ಒತ್ತಿ ಅಥವಾ ಗ್ರಾಹಕರಂತೆ ಟೈಪ್ ಮಾಡಿ.", testCustomer: "ಟೆಸ್ಟ್ ಗ್ರಾಹಕ",
+  ownerHeading: "ಮಾಲೀಕರಿಗೆ WhatsApp ನಲ್ಲಿ ಕಾಣುವುದು", ownerEmpty: "ಮಾಲೀಕರಿಗೆ ಇನ್ನೂ ಏನೂ ಇಲ್ಲ.", waitingHeading: "ನಿಮ್ಮ ಉತ್ತರಕ್ಕಾಗಿ ಕಾಯುತ್ತಿದೆ", nothingWaiting: "ನಿಮ್ಮ ಉತ್ತರಕ್ಕಾಗಿ ಏನೂ ಕಾಯುತ್ತಿಲ್ಲ.",
+  approve: "ಒಪ್ಪಿ", deny: "ನಿರಾಕರಿಸಿ", retry: "ಕ್ಯಾಲೆಂಡರ್ ಮತ್ತೆ ನೋಡಿ", cancelAndRefund: "ರದ್ದು ಮಾಡಿ ಹಣ ಹಿಂತಿರುಗಿಸಿ", plainHeading: "ಸರಳ ಮಾತುಗಳಲ್ಲಿ",
+  formTitle: "ಈ ಅಂಗಡಿಗೆ ಹೊಂದಿಸಿ", formName: "ಅಂಗಡಿಯ ಹೆಸರು", formLanguage: "ಭಾಷೆ", formServices: "ಸೇವೆಗಳು (ಕನಿಷ್ಠ ಒಂದು, ಗರಿಷ್ಠ ನಾಲ್ಕು)",
+  formServiceName: "ಹೆಸರು", formAlso: "ಇತರ ಹೆಸರುಗಳು (ಕಾಮಾ ಹಾಕಿ)", formPrice: "ಬೆಲೆ ₹", formMinutes: "ನಿಮಿಷ", formDeposit: "ಮುಂಗಡ ₹", formOpens: "ತೆರೆಯುವುದು", formCloses: "ಮುಚ್ಚುವುದು", formDays: "ತೆರೆದಿರುವ ದಿನಗಳು",
+  formSubmit: "ಈ ಅಂಗಡಿಗೆ ಡೆಮೊ ಮತ್ತೆ ಮಾಡಿ", formCancel: "ಮುಚ್ಚಿ", formHint: "ಇದು ಡೆಮೊವನ್ನು ಅಂಗಡಿಯ ಸ್ವಂತ ಬೆಲೆಗಳೊಂದಿಗೆ ಮತ್ತೆ ಶುರು ಮಾಡುತ್ತದೆ.",
+  dayNames: ["ಭಾನು", "ಸೋಮ", "ಮಂಗಳ", "ಬುಧ", "ಗುರು", "ಶುಕ್ರ", "ಶನಿ"],
+  working: "ಆಗುತ್ತಿದೆ…",
+  nothingToPay: "ಈಗ ಪಾವತಿಸಲು ಮುಂಗಡ ಏನೂ ಇಲ್ಲ. ಮೊದಲು ಒಂದು ಬುಕಿಂಗ್ ಕೇಳಿ.", demoFull: "ಈ ಡೆಮೊದಲ್ಲಿ ತುಂಬಾ ಸಂದೇಶಗಳಾದವು. 'ಮತ್ತೆ ಶುರು ಮಾಡಿ' ಒತ್ತಿ.", rebuilt: "ಈ ಅಂಗಡಿಗೆ ಮತ್ತೆ ಮಾಡಲಾಯಿತು.",
+  payButton: (a) => `${a} ಮುಂಗಡ ಪಾವತಿಸಿ (ಟೆಸ್ಟ್ ಹಣ)`,
+};
+
+const UI: Record<string, Ui> = { en, hi, ml, kn };
+
+/** The words for a language code (ml and kn: labels only, machine-written; the rest English). */
 export function uiFor(language: string): Ui {
   return UI[language] ?? en;
 }
@@ -141,4 +182,6 @@ export function labelsOf(ui: Ui): Record<string, string | string[]> {
 export const CUSTOMER_WORDS: Record<string, { cancel: string; yes: string }> = {
   en: { cancel: "Please cancel my booking", yes: "yes" },
   hi: { cancel: "बुकिंग रद्द करें", yes: "हाँ" },
+  ml: { cancel: SAYS.ml.cancel, yes: SAYS.ml.yes },
+  kn: { cancel: SAYS.kn.cancel, yes: SAYS.kn.yes },
 };
