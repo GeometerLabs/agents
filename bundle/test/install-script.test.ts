@@ -276,7 +276,11 @@ test("system files are written only when new or the install's own, never over so
     assert.ok(s.calls().includes("node /home/builder/geometer/agents/bundle/geometer.ts stop glow-salon"), "geometer stop <shop> is still the kill switch, passed through");
     r = await shimRun("server stop");
     assert.equal(r.code, 1);
-    assert.ok(!s.calls().some((c) => c.includes("systemctl") || c.endsWith("server stop --confirm")), "nothing was stopped without the answer");
+    assert.ok(!s.calls().some((c) => c.includes("systemctl") || c.endsWith("server stop --yes")), "nothing was stopped without the answer");
+    // the one flag: --yes (as install.sh has it) skips the question and reaches the bundle as the same word, so what the bundle tells a person to type is what the command takes
+    r = await shimRun("server stop --yes");
+    assert.equal(r.code, 0, r.out);
+    assert.ok(s.calls().some((c) => c.endsWith("bundle/geometer.ts server stop --yes")), "server stop --yes goes ahead");
     r = await shimRun("status", { ID_U: "0" });
     assert.equal(r.code, 2); assert.match(r.out, /Run geometer as builder, not as root/u);
   } finally { s.done(); }

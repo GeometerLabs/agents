@@ -6,7 +6,9 @@
 // as the bucket, the real fleet service on the host), and records what it sees in $PROOF_DIR/results.json and results.txt. Every bundle container runs inside
 // ONE parent cgroup capped at 2 CPUs and 4 GiB (the 2 vCPU / 4 GB server of B14 item 4; the stand-ins, MinIO and the probes are outside it). Everything it creates
 // is named geometer-proof-* and is removed at the end (volumes, networks, containers, the cgroup); it never deletes an image. The `agent` phase (B51) adds an agent
-// someone else wrote (proof-agent, the example agent run from this machine through Caddy) beside the shops, and keeps it for the phases after it.
+// someone else wrote (proof-agent, the example agent run from this machine through Caddy) beside the shops, and keeps it for the phases after it. The `upidesk` phase
+// (B71) adds a second one that takes UPI, and plays the owner's WhatsApp replies through the inbox and the relay into the desk. The `trial` phase (decision 39) is last: it
+// takes the server down and makes a paired one under a second fleet that signs real leases (`--only upidesk,trial` runs just these two, after the one-shop deploy).
 //
 // The Guard image must read `[licence]` and have RFC 8032's published test key built in (monorepo ADR-0062): the proof pins that key in geometer.json and signs
 // its leases with it (test/licence-helpers.ts). GUARD_IMAGE names the image (default geo-guard:local-b14, built locally, never pushed). Since decision 39 (monorepo
@@ -30,12 +32,13 @@ import { addAgent, deployAgent } from "../../agent/deploy.ts";
 import { recordAgent } from "../../agent/records.ts";
 import { decrypt, encrypt, generateIdentity } from "../../backup/age.ts";
 import { loadState } from "../../lib/state.ts";
-import { clientLicenceFile, licencePaths, syncLicence } from "../../lib/licence.ts";
+import { clientLicenceFile, keptLease, licencePaths, syncLicence } from "../../lib/licence.ts";
+import { pairServer } from "../../lib/pairing.ts";
 import { loadServer } from "../../lib/server.ts";
 import { yaml } from "../../generate/compose.ts";
 import type { Runner } from "../../lib/runner.ts";
-import { TEST_PUBLIC_HEX, signTest } from "../licence-helpers.ts";
-import { AGENT_INDEX, AGENT_NAME, OWNER, calendarOf, phoneOf, secretsOf, shopName } from "./shops.ts";
+import { TEST_PRIVATE_PEM, TEST_PUBLIC_HEX, signTest } from "../licence-helpers.ts";
+import { AGENT_INDEX, AGENT_NAME, OWNER, UPI_AGENT_INDEX, UPI_AGENT_NAME, calendarOf, phoneOf, secretsOf, shopName } from "./shops.ts";
 
 const APP = new URL("../../../", import.meta.url).pathname.replace(/\/$/u, "");
 const EXAMPLE = join(APP, "templates/commerce/bookings/clients/glow-salon.example");
@@ -196,7 +199,7 @@ function stats(): { name: string; mib: number }[] {
 function group(name: string): string {
   if (name === "g-model") return "model Guard";
   // the agent someone else wrote (the agent phase) is counted apart, so the shops' per-shop figures stay comparable with the runs before it
-  if (name.startsWith(`g-${AGENT_NAME}-`)) return "own agent's Guards";
+  if (name.startsWith(`g-${AGENT_NAME}-`) || name.startsWith(`g-${UPI_AGENT_NAME}-`)) return "own agent's Guards";
   if (/^g-.+-(razorpay|whatsapp|calendar)$/u.test(name)) return "shop Guards";
   if (name.startsWith("rt-")) return "runtimes";
   if (name.startsWith("fwd-") || name.startsWith("door-")) return "forwarders and doors";
@@ -266,26 +269,7 @@ async function main_(): Promise<void> {
   say(`proof directory: ${SCRATCH}\nstarted ${results.startedAt}`);
   await smoke();
   // ------------------------------------------------------------------ the server folder, the stand-ins, the bucket, the fleet
-  const identityFile = join(SCRATCH, "age-identity.txt");
-  rmSync(SERVER, { recursive: true, force: true });
-  // --licence-key: RFC 8032's published test key, the one built into the proof's Guard image (anyone can sign with it, never a production key); pairing gives a server its key
-  let code = await main(["init", SERVER, "--id", "proof", "--domain", "localhost", "--reviewed-by", "builder-proof", "--model-wire", "openai", "--model", "gpt-4o-mini", "--http-port", "18080", "--https-port", "18443",
-    "--snapshots-url", "s3://geo-snaps/proof", "--snapshots-endpoint", "http://minio:9000", "--age-identity-out", identityFile, "--fleet-url", "http://host.docker.internal:18790", "--fleet-key-file", "fleet_key", "--guard-image", GUARD_IMAGE, "--panel",
-    "--licence-key", TEST_PUBLIC_HEX]);
-  if (code !== 0) throw new Error("init failed");
-  const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
-  // item 11h: "push-service" sends every push to the stand-ins' push service (the server's push sender reaches it on egress, as it would reach FCM)
-  conf.upstreams = { razorpay: { host: "standins:8790", tls: false }, whatsapp: { host: "standins:8790", tls: false }, calendar: { host: "standins:8790", tls: false }, model: { host: "standins:8791", tls: false }, "push-service": { host: "standins:8792", tls: false } };
-  // the load must not meet the shops' own hourly caps (the proof measures the server, not the caps): every count is raised, and the report says so
-  if (HEARTBEAT !== undefined) conf.heartbeatSeconds = HEARTBEAT;
-  conf.panel = { enabled: true, mode: "own" }; conf.limits = { razorpayLinksPerHour: 1_000_000, whatsappMessagesPerHour: 1_000_000, calendarEventsCreatedPerHour: 1_000_000, calendarEventsDeletedPerDay: 1_000_000 };
-  writeFileSync(join(SERVER, "geometer.json"), JSON.stringify(conf, null, 2));
-  // the lease pairing and the first heartbeat would bring (the proof's fleet signs none: it has no licence key), every proof shop in order, before the first deploy
-  handLease(1).forEach((l) => say(`   ${l}`));
-  mkdirSync(join(SCRATCH, "minio", "geo-snaps"), { recursive: true });
-  writeTestCompose();
-  writeFileSync(join(SCRATCH, "model-key"), "sk-proof-model-key-0123456789\n"); writeFileSync(join(SCRATCH, "bucket-key"), "proofkey:proofsecret123\n");
-  for (const a of [["model-key", join(SCRATCH, "model-key")], ["backup-key", "snapshots", join(SCRATCH, "bucket-key")]]) if (await main([...a, "--server", SERVER]) !== 0) throw new Error(`${a[0]} failed`);
+  await makeServer(["--id", "proof", "--fleet-url", "http://host.docker.internal:18790", "--fleet-key-file", "fleet_key", "--licence-key", TEST_PUBLIC_HEX], true);
 
   // the real fleet service, on the host, with its own temp config and data (read-only use of the monorepo)
   const fleetDir = join(SCRATCH, "fleet"); mkdirSync(fleetDir, { recursive: true });
@@ -344,6 +328,7 @@ async function main_(): Promise<void> {
     await phase("outputs", deployerOutputs);
     await phase("data", dataDuties);
     await phase("agent", ownAgent);
+    await phase("upidesk", upiDesk);
     await phase("model", modelGuard);
     await phase("nowhatsapp", withoutWhatsApp);
     measure("1 shop (after the checks above)", 1);
@@ -376,10 +361,42 @@ async function main_(): Promise<void> {
       await phase("load", () => loadStep(size));
     }
     if (runs("load")) loadSummary();
+    // last: it takes the first server down and makes a paired one in its place, so nothing may run after it
+    await phase("trial", trialLease);
   } finally {
     results.fleetLog = readFileSync(fleetLog, "utf8").split("\n").filter((l) => /alert|Guard|incident|recover/iu.test(l)).slice(-12);
     fleet.kill();
   }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- the server folder
+
+/**
+ * Makes the proof's server folder from nothing: `init`, the upstreams pointed at the stand-ins, the limits raised for the load, the keys the bundle needs, and the test
+ * compose file. `identity` is what `init` is given for fleet and the licence key: the proof's own fleet and RFC 8032's test key (the lease is then handed in by hand, `hand`),
+ * or `--pairing` (the `trial` phase, after `pair` has kept fleet's answer in the folder: the lease then comes from fleet).
+ */
+async function makeServer(identity: string[], hand: boolean): Promise<void> {
+  const identityFile = join(SCRATCH, "age-identity.txt");
+  if (hand) rmSync(SERVER, { recursive: true, force: true }); // a paired server has already kept fleet's answer in the folder
+  // --licence-key: RFC 8032's published test key, the one built into the proof's Guard image (anyone can sign with it, never a production key); pairing gives a server its key
+  let code = await main(["init", SERVER, "--domain", "localhost", "--reviewed-by", "builder-proof", "--model-wire", "openai", "--model", "gpt-4o-mini", "--http-port", "18080", "--https-port", "18443",
+    "--snapshots-url", "s3://geo-snaps/proof", "--snapshots-endpoint", "http://minio:9000", "--age-identity-out", identityFile, "--guard-image", GUARD_IMAGE, "--panel",
+    ...identity]);
+  if (code !== 0) throw new Error("init failed");
+  const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
+  // item 11h: "push-service" sends every push to the stand-ins' push service (the server's push sender reaches it on egress, as it would reach FCM)
+  conf.upstreams = { razorpay: { host: "standins:8790", tls: false }, whatsapp: { host: "standins:8790", tls: false }, calendar: { host: "standins:8790", tls: false }, model: { host: "standins:8791", tls: false }, "push-service": { host: "standins:8792", tls: false } };
+  // the load must not meet the shops' own hourly caps (the proof measures the server, not the caps): every count is raised, and the report says so
+  if (HEARTBEAT !== undefined) conf.heartbeatSeconds = HEARTBEAT;
+  conf.panel = { enabled: true, mode: "own" }; conf.limits = { razorpayLinksPerHour: 1_000_000, whatsappMessagesPerHour: 1_000_000, calendarEventsCreatedPerHour: 1_000_000, calendarEventsDeletedPerDay: 1_000_000 };
+  writeFileSync(join(SERVER, "geometer.json"), JSON.stringify(conf, null, 2));
+  // the lease pairing and the first heartbeat would bring (the proof's fleet signs none: it has no licence key), every proof shop in order, before the first deploy
+  if (hand) handLease(1).forEach((l) => say(`   ${l}`));
+  mkdirSync(join(SCRATCH, "minio", "geo-snaps"), { recursive: true });
+  writeTestCompose();
+  writeFileSync(join(SCRATCH, "model-key"), "sk-proof-model-key-0123456789\n"); writeFileSync(join(SCRATCH, "bucket-key"), "proofkey:proofsecret123\n");
+  for (const a of [["model-key", join(SCRATCH, "model-key")], ["backup-key", "snapshots", join(SCRATCH, "bucket-key")]]) if (await main([...a, "--server", SERVER]) !== 0) throw new Error(`${a[0]} failed`);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------- phases
@@ -830,6 +847,158 @@ async function ownAgent() {
   const after = (() => { try { return JSON.parse(readFileSync(join(SERVER, "exports", AGENT_NAME, "record.json"), "utf8")) as { action: string; outcome: string }[]; } catch { return []; } })();
   check("the next record pass after the restore writes nothing twice (one refund, one deposit)", after.filter((e) => e.action === "refund" && e.outcome === "confirmed").length === 1 && after.filter((e) => e.action === "record_deposit").length === 1, { added: again.added, problems: again.problems });
   results.ownAgent = { deploySeconds: results.agentDeploySeconds, proven: deployed.proven.line, record: counts, hostile: Object.fromEntries(targets.map(([label], i) => [label, got[i]])), snapshot: line, drill: dl, restore: said.slice(0, 600) }; save();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- B71: the owner-marked UPI desk through the relay
+//
+// An agent someone else wrote that takes UPI (no gateway): its UPI address is a desk Guard, and the desk itself runs in the relay's container. This phase plays the whole
+// path on the real bundle, as the unit tests (test/desk-served.test.ts) play it with a stand-in relay: the agent asks the desk for a request through Caddy and its desk
+// Guard; the relay tells the owner on WhatsApp (through the agent's WhatsApp Guard); the owner's reply goes WhatsApp stand-in -> inbox -> relay -> desk and marks the money
+// received; a refund owed is marked sent the same way; and a restart of the relay keeps all of it. Judged from the desk's own lists and the stand-in's outbox, never from the agent.
+
+async function upiDesk() {
+  say(`\n== the owner-marked UPI desk through the relay (B71): ${UPI_AGENT_NAME}, the owner's WhatsApp replies mark the money ==`);
+  const ctx = ctxFor();
+  const st = () => control(UPI_AGENT_NAME, "/_standin/state");
+  const guards = ["upi", "whatsapp"].map((k) => `g-${UPI_AGENT_NAME}-${k}`);
+  addAgent(SERVER, UPI_AGENT_NAME, { upstreams: "upi,whatsapp", deposit: "200", "refund-limit": "100", "owner-whatsapp": OWNER, "whatsapp-number-id": phoneOf(UPI_AGENT_INDEX), "upi-id": "proofsalon@okicici", payee: "Proof Salon" }, (p) => readFileSync(p, "utf8"), new Date());
+  const inbox = join(SERVER, "secrets-inbox", UPI_AGENT_NAME); mkdirSync(inbox, { recursive: true });
+  const s = secretsOf(UPI_AGENT_INDEX);
+  for (const [n, v] of Object.entries({ whatsapp_token: s.whatsapp_token, whatsapp_app_secret: s.whatsapp_app_secret, whatsapp_verify_token: s.whatsapp_verify_token })) writeFileSync(join(inbox, n), v);
+  const deployed = await deployAgent(ctx, UPI_AGENT_NAME);
+  check("the UPI agent deploys: its desk Guard and WhatsApp Guard start and every tripwire passes on the running Guards", deployed.proven.passed === deployed.proven.of && deployed.proven.of > 0, deployed.proven.line);
+  await waitFor("the UPI agent's Guards", () => guards.every(healthy), 120);
+  const credential = readFileSync(secretFile(SERVER, "agents", UPI_AGENT_NAME, "upi_token"), "utf8").trim();
+  // one call through Caddy and the desk Guard, the whole answer (viaCaddy cuts it at 200 characters): its status and its JSON
+  const desk = (method: string, path: string, body?: unknown) => {
+    const r = sh("curl", ["-sk", "-X", method, `https://localhost:18443/g/${UPI_AGENT_NAME}/upi${path}`, "-H", `authorization: Bearer ${credential}`, "-H", "content-type: application/json", ...(body ? ["--data-binary", JSON.stringify(body)] : []), "-w", "\n%{http_code}", "--max-time", "30"]);
+    const lines = r.out.trimEnd().split("\n");
+    let json: any = {}; try { json = JSON.parse(lines.slice(0, -1).join("\n")); } catch { /* not JSON: the status says */ }
+    return { status: lines.at(-1) ?? "", json };
+  };
+  const read = (path: string): any => desk("GET", path).json;
+  viaCaddy("GET", `/g/${UPI_AGENT_NAME}/upi/requests`); // Caddy makes its local certificate on the first handshake, if nothing has yet
+
+  // ---- the agent asks the desk for a deposit request, through its desk Guard: only the deposit, only with its credential
+  check("the desk Guard refuses a call with no credential, and an amount that is not the deposit (₹999 against ₹200)", viaCaddy("GET", `/g/${UPI_AGENT_NAME}/upi/requests`).status.startsWith("40") && viaCaddy("POST", `/g/${UPI_AGENT_NAME}/upi/requests`, credential, { reference: "u-x", amount_paise: 99900, customer: "+919811111191" }).status === "403", "");
+  const customer = "+919811111191";
+  await customerWrites(UPI_AGENT_NAME, OWNER, "hello"); // the owner has written: their 24-hour window is open, so the desk's notices go as plain text with the code in them
+  await sleep(3000); // the relay has recorded it before the request is made (a notice outside the window goes as a template, which carries the code too, but through another path)
+  const made = desk("POST", "/requests", { reference: "u-1", amount_paise: 20000, customer, service: "haircut", slot_ms: Date.now() + 3 * 86_400_000 });
+  check("the agent's request for the ₹200 deposit is taken by the desk: the shop's own upi:// link, not paid yet", made.status === "200" && /^upi:\/\/pay\?/u.test(made.json.pay_url ?? "") && made.json.paid === false, { status: made.status, paid: made.json.paid });
+  // ---- the relay tells the owner on WhatsApp, with a one-use code, through the agent's WhatsApp Guard
+  let code: string | undefined;
+  const toOwner = async () => ((await st()).outbox ?? []).filter((m: { to: string; text: string }) => digits(m.to) === digits(OWNER)) as { to: string; text: string }[];
+  await waitFor("the desk's notice to the owner", async () => { const m = (await toOwner()).at(-1); code = m ? /received\s+([A-HJKMNP-Z2-9]{6})\b/u.exec(m.text)?.[1] : undefined; return !!code; }, 90);
+  check("the relay told the owner on WhatsApp, with a one-use code to answer with", !!code, code ? "a code was sent" : (await toOwner()).map((m) => m.text.slice(0, 80)));
+  if (!code) return;
+  await customerWrites(UPI_AGENT_NAME, "+919899999999", `received ${code}`);
+  await sleep(4000);
+  check("a stranger's \"received <code>\" marks nothing: the request is still not paid", read("/requests?reference=u-1").requests?.[0]?.paid === false, "");
+  // ---- the owner replies on WhatsApp: stand-in -> inbox -> relay -> desk
+  const told = (await toOwner()).length;
+  await customerWrites(UPI_AGENT_NAME, OWNER, `received ${code}`);
+  const paid = await waitFor("the desk to take the owner's mark", () => read("/requests?reference=u-1").requests?.[0]?.paid === true, 60);
+  const mark = read("/requests?reference=u-1").requests?.[0]?.payments?.[0];
+  check("the owner's WhatsApp reply reached the desk through the inbox and the relay, and marked the ₹200 received: the owner's own statement, with who and when", paid && mark?.amount_paise === 20000 && mark?.marked_by === "owner" && typeof mark?.marked_at_ms === "number", mark);
+  // the same message again (a provider's redelivery, or the owner tapping twice): counted once
+  await customerWrites(UPI_AGENT_NAME, OWNER, `received ${code}`);
+  await sleep(4000);
+  check("the owner's reply sent again is not a second payment", read("/requests?reference=u-1").requests?.[0]?.payments?.length === 1, read("/requests?reference=u-1").requests?.[0]?.payments?.length);
+  // ---- a refund owed, never more than was marked, then marked sent by the owner's WhatsApp reply
+  const tooMuch = desk("POST", "/refunds", { payment_id: mark?.id, amount_paise: 30000, why: "cancelled" });
+  const owed = desk("POST", "/refunds", { payment_id: mark?.id, amount_paise: 20000, why: "cancelled" });
+  check("a refund owed is taken for the deposit and no more (₹300 refused by the desk Guard), and nothing is sent: the owner sends every UPI refund", tooMuch.status === "403" && owed.status === "200" && owed.json.sent === false, { tooMuch: tooMuch.status, owed: owed.status, sent: owed.json.sent });
+  let refundCode: string | undefined;
+  await waitFor("the desk's refund notice to the owner", async () => { const m = (await toOwner()).slice(told).map((x) => /refunded\s+([A-HJKMNP-Z2-9]{6})\b/u.exec(x.text)?.[1]).filter(Boolean).at(-1); refundCode = m; return !!refundCode; }, 90);
+  check("the relay told the owner to send the refund, with its own one-use code", !!refundCode, refundCode ? "a code was sent" : "none");
+  if (refundCode) await customerWrites(UPI_AGENT_NAME, OWNER, `refunded ${refundCode}`);
+  const done = await waitFor("the refund marked sent", () => (read("/refunds").refunds ?? []).some((r: { state: string; sent: boolean }) => r.state === "done" && r.sent === true), 60);
+  check("the owner's WhatsApp reply 'refunded <code>' settles the refund in the desk", done, "");
+  // ---- a restart of the relay (where the desk lives): every request, mark and refund is still there
+  dc(["restart", "relay"]); await waitFor("the relay", () => healthy("relay"), 90);
+  const after = read("/requests?reference=u-1").requests?.[0];
+  check("after restarting the relay the desk keeps the request, the owner's mark and the settled refund", after?.paid === true && after?.payments?.length === 1 && (read("/refunds").refunds ?? []).some((r: { state: string }) => r.state === "done"), { paid: after?.paid, marks: after?.payments?.length });
+  // ---- its record: from the desk Guard's decisions and the desk's lists; what the owner marked is labelled as the owner's word
+  await recordAgent(ctx, UPI_AGENT_NAME);
+  const entries = (() => { try { return JSON.parse(readFileSync(join(SERVER, "exports", UPI_AGENT_NAME, "record.json"), "utf8")) as { action: string; outcome: string }[]; } catch { return []; } })();
+  check("its record shows the request, the owner's mark and the refund, and no phone number or code", entries.length > 0 && !JSON.stringify(entries).includes(digits(customer)) && !JSON.stringify(entries).includes(digits(OWNER)) && !JSON.stringify(entries).includes(code), entries.map((e) => `${e.action}:${e.outcome}`).slice(0, 12));
+  results.upiDesk = { agent: UPI_AGENT_NAME, proven: deployed.proven.line, ownerNotices: (await toOwner()).length, record: entries.length }; save();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------------- decision 39: a paired server under fleet's real trial lease
+//
+// Every other phase runs on a server whose lease the script signs by hand (handLease), against a fleet that signs none. This one runs the real thing, once: a SECOND fleet
+// with its licence on (signing with RFC 8032's test key, the one built into the proof's Guard) and pairing on; a builder's account; a one-time pairing code exchanged by the
+// bundle's own `pairServer`, as install.sh does; `init --pairing` taking the trial lease in; then ONE shop, started under it. The first server is taken down for this (a trial
+// covers three shops, the first server has more, and both use the same ports), so this phase is the last. What it judges: the shop's Guards have no licence until the heartbeat
+// reports the shop and fleet's answer admits it to the trial; then the deployer's pass keeps the new lease, the Guards turn active, and a booking gets its payment link.
+
+async function trialLease() {
+  say("\n== a paired server starting a shop under fleet's real trial lease (decision 39) ==");
+  const dir = join(SCRATCH, "fleet-trial"); mkdirSync(dir, { recursive: true });
+  const keyFile = join(dir, "licence-key.pem"); writeFileSync(keyFile, TEST_PRIVATE_PEM, { mode: 0o600 });
+  const config = join(dir, "fleet.config.json");
+  writeFileSync(config, JSON.stringify({ data_dir: join(dir, "data"), listen: { host: "0.0.0.0", port: 18793 }, founder_contact: "founder@example.com", evaluate_every_s: 5, thresholds: { open_grace_s: 5, recover_grace_s: 5 }, notifiers: [{ type: "log" }],
+    licence: { key_file: keyFile, due_days: 7, final_stop_day: 60, auto_issue: false }, pairing: { public_url: "http://127.0.0.1:18793", code_minutes: 30, codes_per_hour: 5, exchanges_per_minute: 10, client_address: "socket" } }));
+  const fleetCli = (...a: string[]) => sh("node", [join(MONOREPO, "apps/fleet/main.ts"), ...a, "--config", config]);
+  const made = fleetCli("partner", "add", "trial-builder", "--name", "Trial Builder", "--contact", "builder@example.com", "--kind", "builder");
+  const issued = fleetCli("pairing", "code", "trial-builder");
+  const pairingCode = /gfp_[a-z2-9-]{24,40}/iu.exec(issued.out)?.[0];
+  check("the trial fleet makes a builder's account and a one-time pairing code", made.code === 0 && !!pairingCode, `${made.err}${issued.err}`.slice(0, 200));
+  if (!pairingCode) return;
+  const fleetLog = join(dir, "fleet.log");
+  const fleet2 = spawn("node", [join(MONOREPO, "apps/fleet/main.ts"), "serve", "--config", config], { stdio: ["ignore", "pipe", "pipe"] });
+  fleet2.stdout.on("data", (c: Buffer) => appendFileSync(fleetLog, c)); fleet2.stderr.on("data", (c: Buffer) => appendFileSync(fleetLog, c));
+  try {
+    await waitFor("the trial fleet", async () => { try { return (await fetch("http://127.0.0.1:18793/healthz", { signal: AbortSignal.timeout(2000) })).status < 500; } catch { return false; } }, 30);
+
+    // ---- the first server goes; a new folder is paired (the code is exchanged once) and made with init --pairing
+    dc(["down", "-v", "--remove-orphans", "--timeout", "10"], { timeout: 600_000 });
+    rmSync(SERVER, { recursive: true, force: true }); mkdirSync(SERVER, { recursive: true });
+    const paired = await pairServer({ dir: SERVER, fleetUrl: "http://127.0.0.1:18793", code: pairingCode, now: new Date() });
+    check("pairing gives the server its id, fleet's licence key (the test key) and a signed trial lease", /^[a-z0-9-]+$/u.test(paired.deploymentId) && paired.licenceKeys.includes(TEST_PUBLIC_HEX) && !!paired.trialLease, { id: paired.deploymentId, keys: paired.licenceKeys.length, lease: !!paired.trialLease });
+    await makeServer(["--pairing"], false);
+    const conf = JSON.parse(readFileSync(join(SERVER, "geometer.json"), "utf8"));
+    conf.fleet = { ...conf.fleet, url: "http://host.docker.internal:18793" }; // the containers reach the host by this name; the host paired by 127.0.0.1
+    writeFileSync(join(SERVER, "geometer.json"), JSON.stringify(conf, null, 2));
+    const server = loadServer(SERVER);
+    const kept = keptLease(SERVER, server);
+    check("init --pairing took the trial lease in: checked with the pinned key, for this server's own id, listing no shop yet", !!kept && kept.deployment === paired.deploymentId && kept.shops.length === 0, { deployment: kept?.deployment, shops: kept?.shops.length });
+
+    // ---- one shop, started: its Guards have no licence until fleet admits it
+    const shop = shopName(70);
+    await addShop(70);
+    const res = await deploy(ctxFor());
+    const mine = res.find((r) => r.shop === shop);
+    check("the shop deploys on the paired server: every tripwire of its Guards passes", !!mine && mine.proven.passed === mine.proven.of && mine.proven.of > 0, mine?.proven.line);
+    const guard = `g-${shop}-razorpay`;
+    await waitFor("the shop's Guard", () => healthy(guard) && healthy(`rt-${shop}`), 120);
+    const before = guardView(guard);
+    check("before fleet has heard of the shop its Guard has no licence for it (nothing new goes out)", before.state !== "active" && before.shop === shop && before.deployment === paired.deploymentId, { state: before.state, deployment: before.deployment });
+
+    // ---- the heartbeat reports the shop; fleet admits it to the trial and answers with a lease that lists it; the deployer's pass keeps it
+    const leased = await waitFor("fleet's lease to list the shop", async () => {
+      syncLicence(SERVER, loadServer(SERVER), [shop], new Date()); // the deployer's pass (apply --watch) is not running in the proof: this is what it does with the heartbeat's answer
+      return !!keptLease(SERVER, loadServer(SERVER))?.shops.some((x) => x.id === shop);
+    }, 240);
+    const entry = keptLease(SERVER, loadServer(SERVER))?.shops.find((x) => x.id === shop);
+    check("the heartbeat's answer lists the shop as a trial shop: active, no grace days, covered to the end of the trial, signed by fleet and checked by the bundle", leased && entry?.state === "active" && entry?.grace_days === 0 && (entry?.expires ?? 0) > nowS() + 25 * DAY_S, entry);
+    await waitFor("the Guard to read the lease", () => guardView(guard).state === "active", 60);
+    check("the shop's Guard now says active (the lease the deployer kept, read through the folder the Guard mounts)", guardView(guard).state === "active", { state: guardView(guard).state });
+    const trial = fleetCli("licence", "trial", "show", "trial-builder");
+    check("fleet's own account of the trial names the server and the shop it admitted", trial.code === 0 && trial.out.includes(paired.deploymentId) && trial.out.includes(shop), trial.out.trim().split("\n").slice(0, 6));
+
+    // ---- and the shop works under it: a customer asks for a booking and the deposit link is made
+    const c = nextCustomer(70);
+    await customerWrites(shop, c.from, c.text);
+    const linked = await waitFor("the deposit link", async () => ((await control(shop, "/_standin/state")).links ?? []).length > 0, 90);
+    check("under the trial lease a customer's booking gets its deposit link (payment links are what a shop with no licence cannot make)", linked, "");
+    results.trialLease = { deployment: paired.deploymentId, entry };
+  } finally {
+    results.trialFleetLog = existsSync(fleetLog) ? readFileSync(fleetLog, "utf8").split("\n").filter((l) => /licence|trial|lease|pair/iu.test(l)).slice(-8) : [];
+    fleet2.kill();
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------- B14, through the runtime
@@ -1386,7 +1555,7 @@ const inOrder = (id: string) => ({ id, plan: "business", state: "active", paid_t
  * stop and restore). The runtimes' own licence files are written for the shops only: an own agent has no runtime of ours.
  */
 function handLease(serial: number, glowEntry?: Record<string, unknown>): string[] {
-  const shops = [...PROOF_SHOPS, AGENT_NAME].map((id) => (id === "glow-salon" && glowEntry ? { id, plan: "business", grace_days: 30, ...glowEntry } : inOrder(id)));
+  const shops = [...PROOF_SHOPS, AGENT_NAME, UPI_AGENT_NAME].map((id) => (id === "glow-salon" && glowEntry ? { id, plan: "business", grace_days: 30, ...glowEntry } : inOrder(id)));
   const token = signTest({ v: 1, kind: "lease", deployment: "proof", serial, issued_at: nowS(), shops });
   mkdirSync(join(SERVER, "fleet"), { recursive: true });
   writeFileSync(join(SERVER, "fleet", "lease"), `${token}\n`);

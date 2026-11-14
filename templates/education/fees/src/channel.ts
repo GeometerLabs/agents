@@ -12,7 +12,7 @@ import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { OwnerActionName } from "../../../../modules/channels/events.ts";
-import type { FeeConfirmView, FeeLine, FeesOffer, OwnerParentView, ParentView, PayInstructions } from "../../../../modules/channels/backend.ts";
+import type { FeeConfirmView, FeeLine, FeesOffer, OwnerCashView, OwnerParentView, ParentView, PayInstructions } from "../../../../modules/channels/backend.ts";
 import { batchName } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import { balancePaise, monthLabel, owedPaise, paidPaise } from "./due.ts";
@@ -125,6 +125,9 @@ export interface OwnerItem {
   why?: string;
   /** The owner-marked one-use code the press stands for (the same the WhatsApp button carries). */
   code?: string;
+  /** Money clarity: when the parent said they paid and the UPI reference they typed (not in the digest: a parent's press must not stale the owner's). */
+  claimedAtMs?: number;
+  upiRef?: string;
   /** A waiver's or a refund request's id ("q-3"): the owner's own "approve q-3" on WhatsApp. */
   request?: string;
 }
@@ -144,7 +147,7 @@ export function ownerItems(settings: Settings, store: Store): OwnerItem[] {
     const r = store.upi?.requests.find((x) => x.id === d.currentLinkId);
     if (!r || !r.code || (r.status !== "created" && r.status !== "partially_paid")) continue;
     const left = leftOn(r);
-    items.push({ kind: "deposit", case: d.id, digest: digestOf(["fee_claim", d.id, r.id, left, r.marks.length, r.usedCodes.length]), actions: ["received"], amountPaise: left, customer: { phone: d.customer, name: d.studentName }, channel: "whatsapp", what: whatOf(settings, d), code: r.code });
+    items.push({ kind: "deposit", case: d.id, digest: digestOf(["fee_claim", d.id, r.id, left, r.marks.length, r.usedCodes.length]), actions: ["received"], amountPaise: left, customer: { phone: d.customer, name: d.studentName }, channel: "whatsapp", what: whatOf(settings, d), claimedAtMs: d.claimAtMs, ...(d.claimRef ? { upiRef: d.claimRef } : {}), code: r.code });
   }
   for (const r of store.upi?.refunds ?? []) {
     if (r.state !== "owed" || !r.code) continue;
@@ -157,6 +160,18 @@ export function ownerItems(settings: Settings, store: Store): OwnerItem[] {
     else if (p?.kind === "refund_request") items.push({ kind: "refund_request", case: d.id, digest: digestOf(["refund_request", d.id, p.id, p.amountInr, p.paymentId]), actions: ["approve", "deny"], amountPaise: p.amountInr * 100, customer: { phone: d.customer, name: d.studentName }, channel: "whatsapp", what: whatOf(settings, d), request: p.id });
   }
   return items;
+}
+
+/** The most open fees the owner's "paid another way?" list shows (a centre of forty students has forty open fees; the page stays short). */
+export const CASH_LIST_MAX = 60;
+
+/**
+ * Money clarity: the open fees the owner may mark as paid by hand, soonest due first. The mark is for the whole balance (a part is not offered), so a press is one fee
+ * paid, once: the digest holds the balance and the payments counted, and a press with another digest (a payment came, a waiver) does nothing.
+ */
+export function cashList(settings: Settings, store: Store): OwnerCashView[] {
+  return [...store.dues.values()].filter((d) => d.state === "open" && balancePaise(d) > 0).sort((a, b) => a.dueMs - b.dueMs).slice(0, CASH_LIST_MAX)
+    .map((d) => ({ case: d.id, digest: digestOf(["cash", d.id, balancePaise(d), d.payments.length, d.waivedInr, d.lateFeeInr]), student: d.studentName, what: whatOf(settings, d), amountPaise: balancePaise(d) }));
 }
 
 /** The centre's parents (from its settings: one entry per number), each with their students and their private link's state, for the owner's page. */
@@ -179,5 +194,6 @@ export function ownerView(settings: Settings, store: Store) {
     items: ownerItems(settings, store).map(({ code: _code, request: _request, ...shown }) => shown),
     upcoming: [],
     parents: parentsList(settings, store),
+    cash: cashList(settings, store),
   };
 }

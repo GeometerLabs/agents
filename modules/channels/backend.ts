@@ -48,6 +48,8 @@ export type BookingView =
     status: "not_held" | "held" | "checking" | "booked" | "expired" | "cancelled" | "done"; ref: string; channel?: string;
     service?: OfferService; startMs?: number; endMs?: number; depositInr: number; holdExpiresAt?: number; pay?: PayInstructions;
     canCancel: boolean; canSayPaid: boolean; messages: { atMs: number; text: string }[];
+    /** Money clarity: the customer has already said they paid (the owner's page lists it first). */
+    claimed?: boolean;
     /** Item 11h: a refund on this booking, as the shop's record holds it (the confirmation page shows it without WhatsApp). */
     refund?: { state: "asked" | "owed" | "sent" | "kept"; amountInr: number };
   };
@@ -57,14 +59,24 @@ export type BookingView =
  * payment a parent says they made), `waiver` and `refund_request`. `what` is what it is about, already in the owner's language, for a kind no service names.
  */
 export interface OwnerItemView {
-  kind: "deposit" | "refund_owed" | "late_refund" | "calendar" | "big_order" | "waiver" | "refund_request"; case: string; digest: string; actions: string[]; amountPaise: number;
+  kind: "deposit" | "late_deposit" | "refund_owed" | "late_refund" | "calendar" | "big_order" | "waiver" | "refund_request"; case: string; digest: string; actions: string[]; amountPaise: number;
   customer: { phone: string; name?: string }; channel: "whatsapp" | "web" | "mcp"; serviceId?: string; startMs?: number; why?: string; what?: string;
+  /**
+   * Money clarity: for a `deposit` or a `late_deposit`, when the customer said they paid (left out: nobody said so, the hold is only waiting) and the UPI reference they
+   * typed. `late_deposit` is a hold that ended where money may have come anyway; "received" on it is the late mark, after which the refund (or keep) card follows.
+   */
+  claimedAtMs?: number; upiRef?: string;
 }
 /**
  * Item 11h (Fees): a parent as the owner's page lists them, with their private link's state. `ref` names the parent without their number ("p-" and 12 hex digits
  * of its hash); `digest` binds a press to the link state shown, so a "send a new link" pressed twice sends one.
  */
 export interface OwnerParentView { ref: string; phone: string; students: string[]; link: "active" | "none"; sinceMs?: number; digest: string }
+/**
+ * Money clarity (Fees): an open fee the owner may mark as paid in cash (or a bank transfer the agent cannot see), for the owner's folded "paid another way?" list. `digest`
+ * binds a press to the fee as shown (its balance and payments), so a stale press or a second one does nothing.
+ */
+export interface OwnerCashView { case: string; digest: string; student: string; what: string; amountPaise: number }
 export interface OwnerView {
   shop: { name: string; timezone: string; ownerLanguage: Language };
   /** Item 11h: the template, for the page's headings. Left out: Bookings. */
@@ -74,6 +86,8 @@ export interface OwnerView {
   upcoming: { case: string; startMs: number; serviceId?: string; what?: string; customer: { phone: string; name?: string }; channel: OwnerItemView["channel"]; state: string }[];
   /** Item 11h (Fees): the centre's parents and their private links. */
   parents?: OwnerParentView[];
+  /** Money clarity (Fees): the open fees the owner may mark paid by hand. */
+  cash?: OwnerCashView[];
   /**
    * Item 11e: the shop's assistant's view (its open cards, answered by id and digest; the mood; the talk), when the shop has the assistant. Left out otherwise.
    * `listen`: the shop has a voice service, so the page offers hold-to-record.
@@ -105,7 +119,7 @@ export type OrderView =
     status: "not_held" | "checking" | "held" | "confirmed" | "expired" | "cancelled" | "done"; ref: string; channel?: string;
     lines: { itemId: string; names: Record<Language, string>; qty: number; priceInr: number }[];
     totalInr?: number; advanceInr?: number; date?: string; mode?: "pickup" | "delivery"; slot?: { id: string; fromMs: number; toMs: number }; area?: string;
-    holdExpiresAt?: number; pay?: PayInstructions; canCancel: boolean; canSayPaid: boolean; messages: { atMs: number; text: string }[];
+    holdExpiresAt?: number; pay?: PayInstructions; canCancel: boolean; canSayPaid: boolean; messages: { atMs: number; text: string }[]; claimed?: boolean;
   };
 
 /** A Fees centre's public page: only the centre itself. A parent's fees are on their private link, never found by a number. */

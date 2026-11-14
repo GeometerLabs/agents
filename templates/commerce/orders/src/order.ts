@@ -102,6 +102,13 @@ export interface Order {
   /** UPI: when the owner was last told that this customer says they paid (at most once an hour). */
   claimTellAtMs?: number;
   /**
+   * Money clarity (14 Nov): when the customer last said they paid (the button on their page or on WhatsApp, or words), and the UPI reference they typed on the page, if
+   * any. The owner's page splits "customer says paid" from "waiting for payment" by it and shows the reference. Unlike `claimTellAtMs` it is set when the claim is
+   * made, whether or not the owner could be told. It never counts as a payment: only the owner's mark does.
+   */
+  claimAtMs?: number;
+  claimRef?: string;
+  /**
    * Item 11h: an order made on the shop's page or its API ("web") or through the MCP endpoint ("mcp"). Its `customer` is then the channel's conversation ("web:<16
    * hex>", modules/channels/conversation.ts), never the typed number, so nothing finds it by number and nothing is sent to that number on WhatsApp.
    */

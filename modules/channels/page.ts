@@ -21,6 +21,8 @@ import { CUSTOMER_CSS } from "./look.ts";
 import { STAMP, STAMP_TONE } from "./words-look.ts";
 import type { StampKey, Tone } from "./words-look.ts";
 import { CONFIRM } from "./words-confirm.ts";
+import { CHECK_MINUTES, MONEY } from "./words-money.ts";
+import { UPI_SCRIPT } from "./upi-script.ts";
 import type { PagesFile } from "./pages-file.ts";
 import { sendLinkBox, shopContact } from "./contact-bar.ts";
 
@@ -35,17 +37,17 @@ export interface PageShop { name: string; publicUrl: string }
  * the head (shop-face.ts shopFace: WhatsApp and the hours); `foot`: the partner's line. A page that reloads itself (`refreshSeconds`) shows the head without the
  * face's picture, so a phone waiting on it does not fetch the picture again every few seconds.
  */
-export function layout(o: { shop: Pick<Offer["shop"], "name" | "address" | "languages" | "character" | "contact">; language: Language; title: string; body: Raw; refreshSeconds?: number; selfPath: string; query?: Record<string, string>; face?: Raw; foot?: Raw }): string {
+export function layout(o: { shop: Pick<Offer["shop"], "name" | "address" | "languages" | "character" | "contact">; language: Language; title: string; body: Raw; refreshSeconds?: number; selfPath: string; query?: Record<string, string>; face?: Raw; foot?: Raw; /** Money clarity: the UPI page's one script (upi-script.ts), by this response's nonce. It looks for a change itself, so the meta refresh below runs only without it. */ script?: { nonce: string } }): string {
   const w = PAGE[o.language];
   const link = (l: Language) => { const q = new URLSearchParams({ ...(o.query ?? {}), lang: l }); return `${o.selfPath}?${q}`; };
   // theme-color: the phone's bar takes the head's tint, so the page and the bar read as one
   return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="theme-color" content="#e2f2e9">
-${o.refreshSeconds ? raw(`<meta http-equiv="refresh" content="${o.refreshSeconds}">`) : ""}<title>${o.title}</title><style>${raw(CUSTOMER_CSS)}</style></head>
+${o.refreshSeconds ? raw(o.script ? `<noscript><meta http-equiv="refresh" content="${o.refreshSeconds}"></noscript>` : `<meta http-equiv="refresh" content="${o.refreshSeconds}">`) : ""}<title>${o.title}</title><style>${raw(CUSTOMER_CSS)}</style></head>
 <body><header class="head"><div class="wrap">${shopHead({ shop: o.shop, language: o.language, picture: !o.refreshSeconds })}
 ${o.shop.languages.length > 1 ? html`<p class="langs" aria-label="${w.language}">${o.shop.languages.map((l) => (l === o.language ? html`<b>${LANGUAGE_LABEL[l]}</b>` : html`<a href="${link(l)}" hreflang="${l}">${LANGUAGE_LABEL[l]}</a>`))}</p>` : ""}</div></header>
 <main class="wrap">${w.machine ? html`<p class="machine">${w.machine}</p>` : ""}
 ${shopContact(o.language, o.shop.contact)}${o.face ?? ""}${o.body}${o.foot ?? ""}
-</main></body></html>`.markup}`;
+</main>${o.script ? html`<script nonce="${o.script.nonce}">${raw(UPI_SCRIPT)}</script>` : ""}</body></html>`.markup}`;
 }
 
 /**
@@ -116,15 +118,56 @@ export function bookingPage(o: { shop: PageShop; offer: Offer; language: Languag
 }
 
 /**
- * How to pay by UPI, the same box on a booking's, an order's and a fee's page: the amount and who to, the button that opens the customer's UPI app, the code to
- * scan (on a white ground, so a camera reads it in any theme), what happens next and, where the page has it, "I have paid" (posting to `paid.action`).
+ * The UPI reference a customer may type with "I have paid": the 12 digits in their UPI app's payment details. It only helps the owner find the payment (events.ts drops
+ * anything that is not digits); it is never read as proof. Shared by the booking's, the order's and the fee's "I have paid" forms.
  */
-export function upiBox(o: { pay: Extract<PayInstructions, { kind: "upi" }>; language: Language; afterPay: string; paidAction?: string }): Raw {
+export function upiRefField(language: Language): Raw {
+  const m = MONEY[language];
+  return html`<label class="f" for="upi_ref">${m.refLabel}</label><input type="text" id="upi_ref" name="upi_ref" inputmode="numeric" pattern="[0-9]{6,22}" maxlength="22" autocomplete="off"><p class="note">${m.refHint}</p>`;
+}
+
+/**
+ * "Payment did not go through?", folded: look in the bank app before anything (a retry after the money left would pay twice), another UPI app, or the UPI ID typed in,
+ * and a button that opens the same payment again. `link` is the box's own UPI link.
+ */
+export function payFold(language: Language, link: string): Raw {
+  const m = MONEY[language];
+  return html`<details class="fold"><summary>${m.failTitle}</summary><ul>${m.failTips.map((t) => html`<li>${t}</li>`)}</ul><a class="btn quiet full" href="${link}">${m.retry}</a></details>`;
+}
+
+/** Android's way to open this very page in Chrome from a phone's in-app browser (a UPI link often will not open there): an intent address. Other phones never show it. */
+const chromeIntent = (page: string): string => {
+  const u = new URL(page);
+  return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=${u.protocol.slice(0, -1)};package=com.android.chrome;end`;
+};
+
+/**
+ * How to pay by UPI, the same box on a booking's, an order's and a fee's page: the amount and who to, the button that opens the customer's UPI app, "copy UPI ID" and
+ * "open in Chrome" (both hidden until the page's script runs, and the second only on Android: upi-script.ts), the code to scan (on a white ground, so a camera reads it
+ * in any theme), what happens next, "I have paid" with the UPI reference (posting to `paidAction`; once pressed, `claimed` says what the shop does now and how long it
+ * usually takes) and the "payment did not go through?" fold. `page` is this page's own address, for "open in Chrome"; `scripted`: the page has upi-script.ts (the two small buttons are drawn only then).
+ */
+export function upiBox(o: { pay: Extract<PayInstructions, { kind: "upi" }>; language: Language; afterPay: string; paidAction?: string; claimed?: boolean; page?: string; scripted?: boolean }): Raw {
   const p = PAGE[o.language];
+  const m = MONEY[o.language];
   const label = p.upiPay(formatInr(o.pay.leftPaise / 100), o.pay.payTo.name, o.pay.payTo.id);
-  return html`<div class="box pay"><p class="amount"><b>${label}</b></p><a class="btn full" href="${o.pay.link}">${p.openUpi}</a>
+  const paid = o.claimed ? html`<p class="notice" role="status">${m.claimed} ${m.checkTime(CHECK_MINUTES)}</p>`
+    : o.paidAction ? html`<form method="post" action="${o.paidAction}"><input type="hidden" name="lang" value="${o.language}">${upiRefField(o.language)}<button class="quiet full" type="submit">${p.paid}</button><p class="note">${m.checkTime(CHECK_MINUTES)}</p></form>` : "";
+  return html`<div class="box pay" data-upi><p class="amount"><b>${label}</b></p><a class="btn full" href="${o.pay.link}">${p.openUpi}</a>
+${o.scripted ? html`<p class="row"><button type="button" class="quiet" data-copy="${o.pay.payTo.id}" data-done="${m.copied}" hidden>${m.copyId}</button>${o.page ? html` <a class="btn quiet" data-chrome href="${chromeIntent(o.page)}" hidden>${m.openChrome}</a>` : ""}</p>` : ""}
 <p class="note">${p.scan}</p><div class="qr">${raw(textQrSvg(o.pay.link, { label }))}</div><p class="note">${o.afterPay}</p>
-${o.paidAction ? html`<form method="post" action="${o.paidAction}"><input type="hidden" name="lang" value="${o.language}"><button class="quiet full" type="submit">${p.paid}</button></form>` : ""}</div>`;
+${paid}${payFold(o.language, o.pay.link)}</div>`;
+}
+
+/**
+ * An expired booking's "paid after the time ended?": the customer may have paid as the hold ran out. Before the press it asks (and says what happens: the shop refunds or
+ * books again); after it, `claimed`, it says the payment is noted. Nothing here says the shop has the money: only the owner can see that, in their own UPI app.
+ */
+export function lateBox(o: { language: Language; paidAction?: string; claimed?: boolean }): Raw | "" {
+  const m = MONEY[o.language];
+  if (o.claimed) return html`<p class="notice" role="status">${m.lateClaimed}</p>`;
+  if (!o.paidAction) return "";
+  return html`<div class="box"><h3>${m.lateTitle}</h3><p class="note">${m.lateNote}</p><form method="post" action="${o.paidAction}"><input type="hidden" name="lang" value="${o.language}">${upiRefField(o.language)}<button class="quiet full" type="submit">${PAGE[o.language].paid}</button></form></div>`;
 }
 
 /** The shop's messages about a booking or an order, newest first, as bubbles with the time under each. */
@@ -143,7 +186,7 @@ export const REFUND_TONE: Record<"asked" | "owed" | "sent" | "kept", Tone> = { a
  * Item 11h (decision 45): it is the customer's confirmation page without WhatsApp: the refund as the record holds it, a calendar file (`ics`), and (`alerts`, already
  * drawn, with the push service's script) "Tell me on this phone".
  */
-export function statusPage(o: { shop: PageShop; offer: Offer; language: Language; handle: string; view: BookingView | null; notice?: string; ics?: string; alerts?: string }): string {
+export function statusPage(o: { shop: PageShop; offer: Offer; language: Language; handle: string; view: BookingView | null; notice?: string; ics?: string; alerts?: string; /** Money clarity: this response's script nonce, for the UPI box's script and its quiet check for a change (front.ts). */ nonce?: string }): string {
   const w = PAGE[o.language];
   const s = o.offer.shop;
   const tz = s.timezone;
@@ -161,7 +204,8 @@ export function statusPage(o: { shop: PageShop; offer: Offer; language: Language
     : v.status === "booked" ? w.booked(v.startMs !== undefined ? formatSlot(v.startMs, tz, o.language) : "")
     : v.status === "checking" ? w.checking : v.status === "expired" ? w.expired : v.status === "cancelled" ? w.cancelled : v.status === "done" ? w.done : w.notHeld;
   let pay: Raw | string = "";
-  if (v.status === "held" && v.pay?.kind === "upi") pay = upiBox({ pay: v.pay, language: o.language, afterPay: w.afterPay, ...(v.canSayPaid ? { paidAction: `${self}/paid` } : {}) });
+  const script = o.nonce && v.status === "held" && v.pay?.kind === "upi" ? { nonce: o.nonce } : undefined;
+  if (v.status === "held" && v.pay?.kind === "upi") pay = upiBox({ pay: v.pay, language: o.language, afterPay: w.afterPay, page: `${self}?lang=${o.language}`, scripted: script !== undefined, ...(v.claimed ? { claimed: true } : {}), ...(v.canSayPaid ? { paidAction: `${self}/paid` } : {}) });
   else if (v.status === "held" && v.pay?.kind === "link") pay = html`<div class="box pay"><a class="btn full" href="${v.pay.url}" rel="noreferrer">${w.linkPay(formatInr(v.depositInr))}</a></div>`;
   const cancel = v.canCancel ? html`<form method="post" action="${self}/cancel"><input type="hidden" name="lang" value="${o.language}"><button class="quiet full" type="submit">${w.cancel}</button><p class="note">${w.cancelRule(s.cancellation.windowHours)}</p></form>` : "";
   const c = CONFIRM[o.language];
@@ -170,10 +214,14 @@ export function statusPage(o: { shop: PageShop; offer: Offer; language: Language
   // batch 5: "send me this link" for a booking made on the page or through MCP, while it is live: the private address is the only way back to it
   const sendLink = (v.channel === "web" || v.channel === "mcp") && (v.status === "held" || v.status === "booked" || v.status === "checking") ? sendLinkBox(o.language, s.name, self) : "";
   const sad = v.status === "not_held" || v.status === "expired";
+  // money clarity: an expired booking's "paid after the time ended?" (the shop will refund or book again), or its acknowledgement once pressed
+  const late = v.status === "expired" ? lateBox({ language: o.language, ...(v.claimed ? { claimed: true } : {}), ...(v.canSayPaid ? { paidAction: `${self}/paid` } : {}) }) : "";
+  // what the page says now, in one word the script compares: a different one means look again (the owner marked, a refund moved, the shop wrote)
+  const state = [v.status, v.claimed ? "claimed" : "", v.refund?.state ?? "", v.messages.length].join(":");
   return layout({
-    shop: s, language: o.language, title, selfPath: self,
-    // held: look again every 15 s, so "Booked" shows once the owner marks the payment; checking: every 30 s
+    shop: s, language: o.language, title, selfPath: self, ...(script ? { script } : {}),
+    // held: look again every 15 s, so "Booked" shows once the owner marks the payment (with the script, only when something changed, so the QR is not redrawn); checking: every 30 s
     ...(v.status === "held" ? { refreshSeconds: 15 } : v.status === "checking" ? { refreshSeconds: 30 } : {}),
-    body: html`${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${refund}${what}${pay}${calendar}${sendLink}${o.alerts ? raw(o.alerts) : ""}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
+    body: html`${script ? html`<div hidden data-poll="${self}" data-state="${state}"></div>` : ""}${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${refund}${what}${pay}${late}${calendar}${sendLink}${o.alerts ? raw(o.alerts) : ""}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
   });
 }

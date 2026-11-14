@@ -28,6 +28,7 @@ import type { Desk, DeskNotice } from "../../../modules/payments/owner-marked/de
 import { emptyMarkState } from "../../../modules/payments/owner-marked/ledger.ts";
 import type { MarkState } from "../../../modules/payments/owner-marked/ledger.ts";
 import { serveRaw } from "../../../modules/standins/http.ts";
+import { settle as settleRule } from "./settle.ts";
 import { paymentUpstreamOf } from "../folder.ts";
 import type { GuardPlan } from "../../generate/shop.ts";
 import type { ServerConfig } from "../../lib/server.ts";
@@ -301,21 +302,8 @@ export async function buildWorld(plan: CrashPlan, options: WorldOptions = {}): P
         }));
         return [...newest, JSON.stringify(deskParts?.state ?? null).length, fakes.payments.calls.length, fakes.calendar.calls.length, fakes.messaging.outbox().length, fakes.payments.events.length].join("|");
       },
-      async settle(from) {
-        const started = Date.now();
-        const deadline = started + timeout;
-        let last = await world.activity();
-        let changedAt = Date.now();
-        let moved = from === undefined || last !== from;
-        while (Date.now() < deadline) {
-          await sleep(100);
-          const now = await world.activity();
-          if (now !== last) { last = now; changedAt = Date.now(); moved = true; }
-          // quiet for most of a second after something happened; if nothing happens at all for a few seconds, there is nothing to wait for
-          else if (moved && Date.now() - changedAt >= 800) return;
-          else if (!moved && Date.now() - started >= 4000) return;
-        }
-      },
+      // quiet is judged by settle.ts: a window that grows with the machine's load and the agent's own retry cadence, not a fixed 800 ms
+      settle: (from) => settleRule({ activity: () => world.activity(), from, maxMs: timeout }),
       async until(condition, ms = timeout) {
         const deadline = Date.now() + ms;
         while (Date.now() < deadline) {
