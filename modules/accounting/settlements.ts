@@ -6,7 +6,7 @@
 // it, because nothing it can reach says what was paid into the bank.
 //
 // What it does, in order, and the rule behind each:
-//  - yesterday is read once. A day that was read has a `settlements_read` line in the record, and is not read again (the record is the memory: no state of its own, so a
+//  - yesterday is read once (with the days since the last one read, below). A day that was read has a `settlements_read` line in the record, and is not read again (the record is the memory: no state of its own, so a
 //    restore from a copy cannot read twice). A read that fails writes nothing and is tried again on the next tick; nothing is guessed from a half answer.
 //  - a payment or refund row whose payment the books know (it came through this agent, `received:<payment>`) is posted with post(): `settled`, once per row
 //    (identity `settled:<settlement>:<row>`), with the fee checked both ways (journal.ts checkSettlementRow);
@@ -14,6 +14,8 @@
 //  - a row for a payment the books do not know (not taken through the agent) is not posted: it is listed ("a payment not through your assistant");
 //  - a row whose figures fit neither way of reading the fee, or a row of another kind (an adjustment, a transfer), is listed and never posted. An adjustment is kept
 //    in the record with its figures so the accountant's settlements file can show it.
+// A day that failed is read again on the next tick, and a day missed (the agent was off, or Guard did not yet have the route) is read when the agent next runs, at most
+// the last 7 days at a time, oldest first; a day never read before the first read is not looked for.
 // A listed row is one `settlement_listed` line (no money refs, so the journal ignores it), at most once per reason, settlement and row.
 //
 // Written from Razorpay's documents and run only against the stand-in: no live key exists, so no real settlement has been read. The first one is the check
@@ -23,7 +25,7 @@ import type { Language } from "../language/languages.ts";
 import type { ActionRecord, Outcome } from "../record/record.ts";
 import type { Accounting } from "./post.ts";
 import { dayRange } from "./periods.ts";
-import { localParts } from "../core/time.ts";
+import { addDays, localParts } from "../core/time.ts";
 
 /** The record's action names for these lines. Persisted, so never renamed. */
 export const SETTLEMENT_ACTIONS = { read: "settlements_read", row: "settlement_row", listed: "settlement_listed" } as const;
@@ -66,15 +68,46 @@ export function yesterdayOf(nowMs: number, timeZone: string): { year: number; mo
   return { year: p.year, month: p.month, day: p.day };
 }
 
-export async function readSettlementsOnce(i: SettlementsInput): Promise<SettlementsResult> {
-  const day = yesterdayOf(i.nowMs, i.timeZone);
-  const key = dayKey(day);
-  if (!i.payments.readSettlements) throw new Error("This payment module cannot read settlements: ask its capabilities (readsSettlements) before calling this.");
-  if (i.record.entries().some((e) => e.action === SETTLEMENT_ACTIONS.read && e.refs.day === key)) return { status: "already_read", day: key, posted: 0, listed: 0 };
+/** How many unread days one tick catches up on, at most (an agent that was off for a week reads the week; longer is in Deferred). */
+const CATCH_UP_DAYS = 7;
 
+/** The days to read: every day after the last one read up to yesterday (at most CATCH_UP_DAYS), or just yesterday when none was ever read. */
+function daysToRead(i: SettlementsInput, yesterday: { year: number; month: number; day: number }): { year: number; month: number; day: number }[] {
+  const last = i.record.entries().filter((e) => e.action === SETTLEMENT_ACTIONS.read).map((e) => e.refs.day).sort().at(-1);
+  const out: { year: number; month: number; day: number }[] = [];
+  for (let back = 0; back < CATCH_UP_DAYS; back++) {
+    const d = addDays(yesterday, -back);
+    if (last !== undefined && dayKey(d) <= last) break;
+    out.unshift(d);
+    if (last === undefined) break; // never read before: yesterday only
+  }
+  return out;
+}
+
+/**
+ * Read what is unread, oldest day first: normally yesterday. It stops at the first day that fails (a failed read writes nothing, so the next tick starts there again).
+ * `day` is yesterday, and `status` is "read" when every day it tried was read, "already_read" when there was nothing to read, "failed" at the first failure.
+ */
+export async function readSettlementsOnce(i: SettlementsInput): Promise<SettlementsResult> {
+  const yesterday = yesterdayOf(i.nowMs, i.timeZone);
+  const result: SettlementsResult = { status: "already_read", day: dayKey(yesterday), posted: 0, listed: 0 };
+  const read = i.payments.readSettlements;
+  if (!read) return { ...result, status: "failed", error: "This payment module has no settlement read (its capabilities say readsSettlements: false)." };
+  for (const day of daysToRead(i, yesterday)) {
+    const one = await readDay(i, day, read.bind(i.payments));
+    if (one.status === "failed") return { ...result, status: "failed", posted: result.posted + one.posted, listed: result.listed + one.listed, error: one.error };
+    result.status = "read";
+    result.posted += one.posted;
+    result.listed += one.listed;
+  }
+  return result;
+}
+
+async function readDay(i: SettlementsInput, day: { year: number; month: number; day: number }, read: NonNullable<Payments["readSettlements"]>): Promise<SettlementsResult> {
+  const key = dayKey(day);
   let rows: SettlementRow[];
   try {
-    rows = await i.payments.readSettlements(day);
+    rows = await read(day);
   } catch (e) {
     return { status: "failed", day: key, posted: 0, listed: 0, error: (e as Error).message };
   }
