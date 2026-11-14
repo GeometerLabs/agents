@@ -43,7 +43,7 @@ import { OWNER, PAGE } from "./words.ts";
 import { bookingPage, statusPage } from "./page.ts";
 import { bookingIcs } from "./ics.ts";
 import { ownerLinkGone, ownerPage } from "./owner-page.ts";
-import { CONTACT_HEADER } from "./contact-bar.ts";
+import { CONTACT_HEADER, shopErrorPage } from "./contact-bar.ts";
 import type { OwnerCred } from "./backend.ts";
 import { CSRF_HEADER, csrfMatches, ownerSessionRoute } from "./owner-session.ts";
 import type { PagesFile } from "./pages-file.ts";
@@ -259,6 +259,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
   };
   const kit: FrontKit = { limiter, log, ...(options.waitMs !== undefined ? { waitMs: options.waitMs } : {}), maxForm: MAX_FORM, maxJson: MAX_JSON, sendHtml, sendJson, redirect, readBody, languageOf, sameOrigin, customerPolicy: customerPagePolicy };
 
+  /** The partner each request's shop names, for the catch-all error page below (which has no shop in hand). */
+  const partnerOf = new WeakMap<ServerResponse, NonNullable<PagesFile["partner"]>>();
   async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", "http://front");
     const m = /^\/s\/([a-z0-9][a-z0-9-]{0,39})(\/.*)?$/u.exec(url.pathname);
@@ -272,6 +274,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const withPicture: FrontShop = found.character ? { ...doorShop, backend: withFace(doorShop.backend, found.character) } : doorShop;
     // batch 5: and the shop's phone and map link (withContact)
     const shop: FrontShop = found.pages ? { ...withPicture, backend: withContact(withPicture.backend, found.pages) } : withPicture;
+    if (pages?.partner) partnerOf.set(res, pages.partner);
     // batch 3: name the shop's partner for the door, whose error pages (a shop that is down) have nobody else to ask; the door keeps it and never passes it on
     if (typeof door === "string" && pages?.partner) res.setHeader(CONTACT_HEADER, Buffer.from(JSON.stringify({ n: pages.partner.name, p: pages.partner.phone }), "utf8").toString("base64url"));
     const name = m[1];
@@ -279,7 +282,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const method = req.method ?? "GET";
     const address = addressOf(req);
     const o = opsOf(name, shop);
-    const tooMany = () => sendHtml(res, 429, `<!doctype html><meta charset="utf-8"><p>${PAGE.en.tooMany}</p>`, { "retry-after": "300" });
+    // the visitor's language and the partner's number, not one English line (batch 3)
+    const tooMany = () => { const l = languageOf(req, url, LANGUAGES); return sendHtml(res, 429, shopErrorPage(l, PAGE[l].tooMany, pages?.partner), { "retry-after": "300" }); };
 
     if (rest === "") { res.writeHead(301, { location: `${shop.publicUrl}/` }); res.end(); return; }
 
@@ -571,7 +575,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       if (o.onGone) return o.onGone(); // a session that ended is not a guess: no wrong count, back to sign in
       limiter.take("wrong", address); return json ? sendJson(res, 403, { error: { code: "denied_link", message: OWNER.en.result.denied_link } }) : sendHtml(res, 403, ownerLinkGone(fallback, shop.pages?.()?.partner), { "x-robots-tag": "noindex" });
     };
-    const slow = (retry: string) => (json ? sendJson(res, 429, { error: { code: "too_many", message: PAGE.en.tooMany } }, { "retry-after": retry }) : sendHtml(res, 429, `<!doctype html><meta charset="utf-8"><p>${PAGE.en.tooMany}</p>`, { "retry-after": retry }));
+    const slow = (retry: string) => (json ? sendJson(res, 429, { error: { code: "too_many", message: PAGE.en.tooMany } }, { "retry-after": retry }) : sendHtml(res, 429, shopErrorPage(fallback, PAGE[fallback].tooMany, shop.pages?.()?.partner), { "retry-after": retry }));
     if (limiter.over("wrong", address)) return slow("3600");
     if (typeof token === "string" && !OWNER_TOKEN.test(token)) return gone();
     /** A signed-in owner's POST must carry the session's form token; the panel's link is its own secret and needs none. */
@@ -689,7 +693,11 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
   return (req, res) => {
     route(req, res).catch((e) => {
       log(`The front could not answer a request: ${(e as Error).message}`);
-      if (!res.headersSent) sendHtml(res, 503, `<!doctype html><meta charset="utf-8"><p>${PAGE.en.calendarUnread}</p>`, { "retry-after": "60" });
+      if (!res.headersSent) {
+        // the shop's runtime did not answer: in the visitor's language, with the partner's number when this shop's file names one (partnerOf, set when the shop was found)
+        const l = languageOf(req, new URL(req.url ?? "/", "http://front"), LANGUAGES);
+        sendHtml(res, 503, shopErrorPage(l, PAGE[l].calendarUnread, partnerOf.get(res)), { "retry-after": "60" });
+      }
     });
   };
 }

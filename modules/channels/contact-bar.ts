@@ -4,11 +4,13 @@
 //   shopContact  the shop's own phone ("Call the shop") and map link: on every customer page (audit C5), so a shop with no WhatsApp can still be reached. The front adds
 //                them to each offer's `shop` (front.ts withContact), the way it adds the face, so no page needs pages.json passed in.
 // Plain links (tel: and wa.me), no script. The phone numbers were checked when the panel took them and again when the file was read (pages-file.ts).
-import { html } from "../core/html.ts";
+import { html, raw } from "../core/html.ts";
 import type { Raw } from "../core/html.ts";
 import type { Language } from "../language/languages.ts";
 import type { PagesFile } from "./pages-file.ts";
 import { FIRST_WORDS } from "./words-owner-first.ts";
+import { SIGNIN_CSS } from "./look.ts";
+import { PAGE } from "./words.ts";
 
 /**
  * The header the shop's front sets on its pages for the front door (bundle/services/door.ts): the partner's contact as base64url JSON {n: name, p: "+91...", l?: languages}.
@@ -45,4 +47,13 @@ export function shopContact(language: Language, c: ShopContact | undefined): Raw
 export function sendLinkBox(language: Language, shopName: string, pageUrl: string): Raw {
   const w = FIRST_WORDS[language];
   return html`<div class="card"><a class="btn wa full" href="https://wa.me/?text=${encodeURIComponent(`${shopName}: ${pageUrl}`)}" rel="noopener">${w.sendLink}</a><p class="note">${w.sendLinkNote}</p></div>`;
+}
+
+/**
+ * A short error page of the shop's front (too many requests; the shop's runtime not answering): one sentence in the visitor's language, the machine-written line for
+ * Hindi, Malayalam and Kannada, and the partner's name with Call and WhatsApp when the shop's file names one. It used to be one English sentence with nobody to call.
+ */
+export function shopErrorPage(language: Language, text: string, partner?: PagesFile["partner"]): string {
+  const machine = PAGE[language].machine;
+  return `<!doctype html>${html`<html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${text}</title><style>${raw(SIGNIN_CSS)}</style></head><body><main class="wrap signin">${machine ? html`<p class="machine">${machine}</p>` : ""}<p class="notice" role="alert">${text}</p>${partnerBar(language, partner ? { partner } : undefined)}</main></body></html>`.markup}`;
 }

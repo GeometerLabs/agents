@@ -62,6 +62,29 @@ test("a typed or guessed link opens nothing; a link sent again does not kill the
   assert.equal([...w.store.bookings.values()].length, 1, "still one booking");
 });
 
+test("the booked message carries a link too while the window is open, and the quote's link still opens the booking; outside the window it goes as it always did", async () => {
+  // inside the window: "booked" and the page link in one message, and the link the quote carried is still good
+  const m = maker();
+  const w = createWorld({ settings, pageLink: m.pageLink });
+  await w.say("haircut tomorrow at 6pm");
+  await w.ownerMarksReceived("b-1");
+  assert.equal(m.made.length, 2, "the quote's link, then the booked message's");
+  const booked = w.messaging.sentTo(CUSTOMER).map((x) => x.text).find((t) => /You're booked/u.test(t))!;
+  assert.ok(booked.includes(m.made[1].url), "the booked message carries its own page link");
+  assert.match(booked, /Your booking page, to see it or cancel/u);
+  assert.equal(bookingView(settings, w.store, m.made[0].hash)?.status, "booked", "the page the quote's link has open now says booked");
+  assert.equal(bookingView(settings, w.store, m.made[1].hash)?.status, "booked");
+
+  // outside the window "booked" must go as one approved template: a second part (the link) would make it two, which the provider refuses, so no link is added
+  const n = maker();
+  const late = createWorld({ settings, pageLink: n.pageLink });
+  await late.say("haircut tomorrow at 6pm");
+  (late.messaging as { isWindowOpen: (to: string) => Promise<boolean> }).isWindowOpen = async () => false;
+  await late.ownerMarksReceived("b-1");
+  assert.equal(n.made.length, 1, "no new link is made outside the window");
+  assert.ok(late.messaging.sentTo(CUSTOMER).some((x) => /You're booked/u.test(x.text) && !x.text.includes("/b/")), "the customer still hears \"booked\", in one message");
+});
+
 test("a link whose message did not go is not kept: the last link that reached the customer still works", async () => {
   const m = maker();
   const w = createWorld({ settings, pageLink: m.pageLink });
