@@ -23,8 +23,10 @@ import type { Outcome, RecordEntry } from "../record/record.ts";
 /** The kinds of money fact. A payment request is not one: no money moved and nothing was supplied (plan, section 2). */
 export type MoneyKind =
   | "received" | "fee_charged" | "late_fee" | "discount" | "applied" | "kept"
-  | "refund_owed" | "refund_made" | "refund_cancelled" | "write_off" | "correction";
-export const MONEY_KINDS: readonly MoneyKind[] = ["received", "fee_charged", "late_fee", "discount", "applied", "kept", "refund_owed", "refund_made", "refund_cancelled", "write_off", "correction"];
+  | "refund_owed" | "refund_made" | "refund_cancelled" | "write_off" | "correction"
+  /** One row of the payment service's settlement report: what it paid into the bank for a payment (less its charges), or took back for a refund (plan, section 8). */
+  | "settled";
+export const MONEY_KINDS: readonly MoneyKind[] = ["received", "fee_charged", "late_fee", "discount", "applied", "kept", "refund_owed", "refund_made", "refund_cancelled", "write_off", "correction", "settled"];
 
 /** How the money is known: the payments service's own list, the owner's mark, or a person's word (Guard's `already_done`). Printed on documents and the owner's page. */
 export type Evidence = "provider" | "owner_mark" | "person_word";
@@ -36,7 +38,37 @@ export type ReceivedFor = "advance" | "fee" | "extra";
 export const MONEY_REFS = {
   kind: "money", amount: "amountPaise", paymentId: "paymentId", refundId: "refundId", owed: "owed", method: "method", evidence: "evidence",
   for: "for", service: "service", doc: "doc", reverses: "reverses", why: "why",
+  // a settled row (the payment service's own ids and figures, all in paise; `basis` says which way the fee was read, see checkSettlementRow)
+  settlementId: "settlementId", utr: "utr", entity: "entity", rowType: "rowType", fee: "feePaise", tax: "taxPaise", credit: "creditPaise", debit: "debitPaise", basis: "feeBasis", settledAt: "settledAt",
 } as const;
+
+/** The payment service's own figures for one settlement row, in paise (a Razorpay recon row: payments.ts SettlementRow). */
+export interface SettlementFigures { type: "payment" | "refund"; amount: number; fee: number; tax: number; credit: number; debit: number }
+
+/** How a row's fee was read: `without_gst` (credit = amount - fee - tax) or `with_gst` (credit = amount - fee, the fee holds the tax). */
+export type FeeBasis = "without_gst" | "with_gst";
+
+export type RowCheck = { ok: true; basis: FeeBasis; feePaise: number; gstPaise: number } | { ok: false; why: string };
+
+/**
+ * Whether a settlement row's figures add up, and which way. Razorpay's documents do not say whether the recon `fee` includes its `tax` (the dashboard report says it
+ * does not; docs/research/2026-11-15-razorpay-settlements-and-tally.md A2), so each payment row is checked both ways, to the paisa: the credit must be
+ * amount - fee - tax (fee without GST) or amount - fee (fee with GST). A row that fits neither is refused, never posted and never nudged. A refund row must be a
+ * plain take-back: its debit is its amount, and no credit, fee or tax. Nothing here has run against a real account (no live key exists yet): the first real
+ * settlement is the check (modules/Deferred.md).
+ */
+export function checkSettlementRow(r: SettlementFigures): RowCheck {
+  const ints = [r.amount, r.fee, r.tax, r.credit, r.debit];
+  if (!ints.every((n) => Number.isSafeInteger(n) && n >= 0)) return { ok: false, why: "a figure of the row is not a whole number of paise, or is negative" };
+  if (r.amount <= 0) return { ok: false, why: "the row has no amount" };
+  if (r.type === "refund") {
+    return r.debit === r.amount && r.credit === 0 && r.fee === 0 && r.tax === 0 ? { ok: true, basis: "without_gst", feePaise: 0, gstPaise: 0 } : { ok: false, why: "a refund row is not just its amount taken back" };
+  }
+  if (r.debit !== 0) return { ok: false, why: "a payment row has something taken off it (a debit)" };
+  if (r.credit === r.amount - r.fee - r.tax) return { ok: true, basis: "without_gst", feePaise: r.fee, gstPaise: r.tax };
+  if (r.fee >= r.tax && r.credit === r.amount - r.fee) return { ok: true, basis: "with_gst", feePaise: r.fee - r.tax, gstPaise: r.tax };
+  return { ok: false, why: `the credit ${r.credit} is neither amount - fee - tax (${r.amount - r.fee - r.tax}) nor amount - fee (${r.amount - r.fee})` };
+}
 
 /** Which of a template's older actions were money, and what kind. Handed in by the template (it knows its own action names; this module imports no template). */
 export interface LegacyMap {
@@ -249,6 +281,7 @@ export class Journal {
         return this.refundMade(e, need("owed"), { amount, method: method(need("method")), evidence: ev, identity, doc, paymentId: r[MONEY_REFS.paymentId] });
       }
       case "refund_cancelled": return this.refundCancelled(e, need("owed"));
+      case "settled": return this.settled(e, amount);
       case "correction": {
         const seq = Number(need("reverses"));
         const lines = this.bySeq.get(seq);
@@ -259,6 +292,29 @@ export class Journal {
         return this.post(e, kind, lines.map((l) => ({ account: l.account, debit: l.creditPaise, credit: l.debitPaise })), { identity: `correction:${seq}`, amount: total });
       }
     }
+  }
+
+  /**
+   * One row of the settlement report. A payment row: what was credited to the bank, the charge (without its GST) and the GST on it, out of what the payment held at
+   * the gateway. A refund row: what the gateway took back is out of the bank. Once per row, by the settlement and the row's own id.
+   */
+  private settled(e: RecordEntry, amount: number): void {
+    const r = e.refs;
+    const need = (k: keyof typeof MONEY_REFS): string => { const v = r[MONEY_REFS[k]]; if (v === undefined || v === "") throw new Error(`a settled line has no ${MONEY_REFS[k]}`); return v; };
+    const whole = (k: keyof typeof MONEY_REFS): number => { const t = need(k); const n = Number(t); if (!Number.isSafeInteger(n) || n < 0 || String(n) !== t) throw new Error(`the ${MONEY_REFS[k]} "${t}" is not a whole number of paise`); return n; };
+    const type = need("rowType");
+    if (type !== "payment" && type !== "refund") throw new Error(`"${type}" is not a settled row this module books (a payment or a refund)`);
+    const check = checkSettlementRow({ type, amount, fee: whole("fee"), tax: whole("tax"), credit: whole("credit"), debit: whole("debit") });
+    if (!check.ok) throw new Error(`a settled ${type} row is not posted: ${check.why}`);
+    if (check.basis !== need("basis")) throw new Error(`the settled row says its fee is read ${need("basis")} but its figures read ${check.basis}`);
+    const identity = `settled:${need("settlementId")}:${need("entity")}`;
+    need("utr");
+    const gateway = ACCOUNTS.gateway.code;
+    const bank = ACCOUNTS.bankSettled.code;
+    const pairs = type === "payment"
+      ? [{ account: bank, debit: whole("credit") }, { account: ACCOUNTS.gatewayFees.code, debit: check.feePaise }, { account: ACCOUNTS.gstOnFees.code, debit: check.gstPaise }, { account: gateway, credit: amount }]
+      : [{ account: gateway, debit: amount }, { account: bank, credit: amount }];
+    this.post(e, "settled", pairs, { evidence: "provider", identity, amount });
   }
 
   // ---- a line written before this module (frozen) ---------------------------------------------------------------------
