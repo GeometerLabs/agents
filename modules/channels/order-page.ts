@@ -80,7 +80,7 @@ ${items}${slots}${address}
 }
 
 /** An order's own page: where it has got to, what it is (at the shop's prices), how to pay while it is held, cancel, and the shop's messages. Refreshes itself while something is still to come. */
-export function orderPage(o: { shop: PageShop; offer: OrderOffer; language: Language; handle: string; view: OrderView | null; notice?: string }): string {
+export function orderPage(o: { shop: PageShop; offer: OrderOffer; language: Language; handle: string; view: OrderView | null; notice?: string; /** Money clarity: this response's script nonce, for the UPI box's script (front-orders.ts). */ nonce?: string }): string {
   const w = ORDER_PAGE[o.language];
   const p = PAGE[o.language];
   const s = o.offer.shop;
@@ -103,14 +103,15 @@ ${when ? html`<p>${when}</p>` : ""}<p><small class="note">${w.note(v.ref)}</smal
     : v.status === "confirmed" ? w.confirmed(when) : v.status === "checking" ? w.checking : v.status === "expired" ? w.expired
     : v.status === "cancelled" ? w.cancelled : v.status === "done" ? w.done : w.notHeld;
   let pay: Raw | string = "";
-  if (v.status === "held" && v.pay?.kind === "upi") pay = upiBox({ pay: v.pay, language: o.language, afterPay: w.afterPay, ...(v.canSayPaid ? { paidAction: `${self}/paid` } : {}) });
+  const script = o.nonce && v.status === "held" && v.pay?.kind === "upi" ? { nonce: o.nonce } : undefined;
+  if (v.status === "held" && v.pay?.kind === "upi") pay = upiBox({ pay: v.pay, language: o.language, afterPay: w.afterPay, page: `${self}?lang=${o.language}`, scripted: script !== undefined, ...(v.claimed ? { claimed: true } : {}), ...(v.canSayPaid ? { paidAction: `${self}/paid` } : {}) });
   else if (v.status === "held" && v.pay?.kind === "link") pay = html`<div class="box pay"><a class="btn full" href="${v.pay.url}" rel="noreferrer">${p.linkPay(formatInr(v.advanceInr ?? 0))}</a></div>`;
   const cancel = v.canCancel ? html`<form method="post" action="${self}/cancel"><input type="hidden" name="lang" value="${o.language}"><button class="quiet full" type="submit">${w.cancel}</button><p class="note">${w.cancelRule(s.cancellation.windowHours)}</p></form>` : "";
   const sad = v.status === "not_held" || v.status === "expired";
   return layout({
-    shop: s, language: o.language, title, selfPath: self,
-    // held: look again every 15 s, so "Confirmed" shows once the owner marks the payment; waiting for the owner: every 30 s
+    shop: s, language: o.language, title, selfPath: self, ...(script ? { script } : {}),
+    // held: look again every 15 s, so "Confirmed" shows once the owner marks the payment (with the script, only when something changed: the QR is not redrawn); waiting for the owner: every 30 s
     ...(v.status === "held" ? { refreshSeconds: 15 } : v.status === "checking" ? { refreshSeconds: 30 } : {}),
-    body: html`${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${what}${pay}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
+    body: html`${script ? html`<div hidden data-poll="${self}" data-state="${[v.status, v.claimed ? "claimed" : "", v.messages.length].join(":")}"></div>` : ""}${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${what}${pay}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
   });
 }

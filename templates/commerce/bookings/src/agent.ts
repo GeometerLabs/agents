@@ -598,7 +598,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /** "I have paid", the words, or a screenshot: thanks, the owner will confirm, a screenshot is not proof. The owner is asked to look, at most once an hour per booking. */
-  async function onPaidClaim(phone: string, via: "button" | "words" | "screenshot"): Promise<void> {
+  async function onPaidClaim(phone: string, via: "button" | "words" | "screenshot", upiRef?: string): Promise<void> {
     const b = latestBooking(store, phone, ["awaiting_deposit"]);
     const request = b ? requestOf(b) : undefined;
     if (!b || !request) {
@@ -608,10 +608,34 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     await tellCustomer(b, phone, ["upi_paid_claim"]);
     const now = clock.now();
+    noteClaim(b, now, upiRef);
     const recently = b.claimTellAtMs !== undefined && now - b.claimTellAtMs < HOUR;
     let told = recently;
     if (!recently && request.code) { told = await tellOwner(b, phone, "owner_upi_claim", { upiCode: request.code, offer: receivedButtons(request, depositPaise - request.marks.reduce((n, m) => n + m.amountPaise, 0)) }); if (told) b.claimTellAtMs = now; }
     log(b, phone, MARK_ACTIONS.claim, told ? "confirmed" : "failed", { claim: "paid", via }, { refs: { to: "owner", via, requestId: request.id }, notes: `the customer says they paid (${via === "screenshot" ? "a screenshot, which is not proof" : via === "button" ? "the I have paid button" : "in words"}); nothing is marked paid until the owner marks it${recently ? "; the owner was already asked in the last hour" : ""}` });
+  }
+
+  /** Money clarity: remember that the customer says they paid (and the UPI reference they typed), so the owner's page can list it first. It counts as nothing paid. */
+  function noteClaim(b: Booking, now: number, upiRef?: string): void {
+    b.claimAtMs = now;
+    if (upiRef) b.claimRef = upiRef;
+  }
+
+  /**
+   * "I have paid" from the booking's own page AFTER the hold ended (the page offers it on a UPI shop's expired booking): the customer may have paid just as the time ran
+   * out. Nothing is marked and nothing is booked: the claim is kept, the owner is asked to look (the same message as any claim, with the same one-use code, which
+   * stays live after the request was closed), and their "received" then goes the late-mark way (lateMark): owed back, or kept for a booking made by hand. Said at most
+   * once an hour. The customer is told on their page, not on WhatsApp (a web customer has none).
+   */
+  async function onLateClaim(b: Booking, upiRef?: string): Promise<void> {
+    const request = requestOf(b);
+    if (!request || request.marks.length > 0 || !request.code) { log(b, b.customer, MARK_ACTIONS.claim, "blocked", { claim: "paid", late: true }, { notes: "a late 'I have paid' for a booking with no UPI request still open to a mark: nothing was done" }); return; }
+    const now = clock.now();
+    noteClaim(b, now, upiRef);
+    const recently = b.claimTellAtMs !== undefined && now - b.claimTellAtMs < HOUR;
+    let told = recently;
+    if (!recently) { told = await tellOwner(b, b.customer, "owner_upi_claim", { upiCode: request.code, offer: receivedButtons(request, request.amountPaise) }); if (told) b.claimTellAtMs = now; }
+    log(b, b.customer, MARK_ACTIONS.claim, told ? "confirmed" : "failed", { claim: "paid", late: true }, { refs: { to: "owner", via: "button", requestId: request.id }, notes: `the customer says they paid after the hold ended (the booking's page); nothing is marked or booked: the owner is asked to look, and a mark then is owed back or kept${recently ? "; the owner was already asked in the last hour" : ""}` });
   }
 
   /** A picture from a customer. It is never looked at or kept. On a UPI shop it is read as "I paid" (a screenshot is not proof); a shop whose gateway confirms by itself answers nothing, as before. */
@@ -1565,7 +1589,9 @@ export function createAgent(deps: AgentDeps): Agent {
     if (!b || b.handle !== e.handle) { log(null, owner, "channel_booking", "blocked", { op: e.op }, { refs: { channel: e.channel, op: e.op }, notes: "no booking has this handle, so nothing was done" }); return; }
     log(b, b.customer, "channel_booking", "confirmed", { op: e.op }, { refs: { channel: e.channel, op: e.op }, notes: e.op === "cancel" ? "the customer cancelled from the booking's page" : "the customer says they paid, from the booking's page; nothing is marked paid until the owner marks it" });
     if (e.op === "cancel") return onCancel(b.customer); // its conversation holds only this booking, so this cancels exactly it
-    if (ownerConfirms) return onPaidClaim(b.customer, "button");
+    if (!ownerConfirms) return;
+    if (b.state === "expired") return onLateClaim(b, e.upiRef);
+    return onPaidClaim(b.customer, "button", e.upiRef);
   }
 
   /**

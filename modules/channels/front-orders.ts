@@ -7,6 +7,7 @@
 // The same checks as Bookings' routes, before anything reaches the runtime: the per-address limits (a start counts as a booking start, against the address and the
 // shop; a cancel or a claim as an act; wrong handles as guesses), the shape of every field, and an Origin check on every form. The form sends item ids and
 // quantities only: no price is ever read from a request.
+import { randomBytes } from "node:crypto";
 import { BackendError } from "./backend.ts";
 import { HANDLE, NONCE, handleFromNonce, handleHash, newHandle } from "./handle.ts";
 import { orderApiOperation, orderApiRequest } from "./api.ts";
@@ -16,6 +17,7 @@ import type { OrderOps } from "./order-ops.ts";
 import { menuPage, orderPage } from "./order-page.ts";
 import { PAGE } from "./words.ts";
 import { ORDER_PAGE } from "./words-orders-fees.ts";
+import { customerPagePolicy } from "./front.ts"; // used when a request is handled, never while the modules load (front.ts imports this file too)
 import type { FrontKit, RouteArgs } from "./front.ts";
 
 /** The order's lines from the form's `qty_<item id>` fields: only the shop's items, only quantities above zero. */
@@ -118,7 +120,7 @@ export async function orderRoute(kit: FrontKit, a: RouteArgs, ops: { web: OrderO
       const form = new URLSearchParams((await kit.readBody(req, kit.maxForm)) ?? "");
       const language = kit.languageOf(req, url, offer.shop.languages, form);
       if (!limiter.take("act", address)) return kit.sendHtml(res, 429, orderPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view: await viewNow(), notice: PAGE[language].tooMany }));
-      try { if (o[2] === "/cancel") await ops.page.cancel_order({ handle }); else await ops.page.say_paid(handle); }
+      try { if (o[2] === "/cancel") await ops.page.cancel_order({ handle }); else await ops.page.say_paid(handle, form.get("upi_ref") ?? undefined); }
       catch (e) { if (e instanceof BackendError) throw e; limiter.take("wrong", address); }
       return kit.redirect(res, `${shop.publicUrl}/order/${handle}?lang=${language}`);
     }
@@ -127,7 +129,9 @@ export async function orderRoute(kit: FrontKit, a: RouteArgs, ops: { web: OrderO
     const view = await viewNow();
     if (!view) limiter.take("wrong", address);
     const language = kit.languageOf(req, url, offer.shop.languages);
-    return kit.sendHtml(res, view ? 200 : 404, orderPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view }), { "x-robots-tag": "noindex" });
+    // money clarity: a held UPI advance's page has the UPI box's one script (copy the UPI ID, look for a change without redrawing the QR), by this response's nonce
+    const nonce = view && "ref" in view && view.status === "held" && view.pay?.kind === "upi" ? randomBytes(16).toString("base64") : undefined;
+    return kit.sendHtml(res, view ? 200 : 404, orderPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view, ...(nonce ? { nonce } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": customerPagePolicy(`${shop.publicUrl}/order/${handle}`, nonce) } : {}) });
   }
   return kit.sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
 }

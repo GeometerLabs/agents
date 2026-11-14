@@ -15,7 +15,8 @@ import type { Language } from "../language/languages.ts";
 import type { FeeConfirmView, FeeLine, FeesOffer, ParentView } from "./backend.ts";
 import { PAGE } from "./words.ts";
 import { FEE_PAGE } from "./words-orders-fees.ts";
-import { layout, stateBlock, upiBox } from "./page.ts";
+import { layout, stateBlock, upiBox, upiRefField } from "./page.ts";
+import { CHECK_MINUTES, MONEY } from "./words-money.ts";
 import { STAMP, STAMP_TONE } from "./words-look.ts";
 import type { StampKey } from "./words-look.ts";
 import { ICON } from "./look.ts";
@@ -66,7 +67,7 @@ export function parentPage(o: { shop: PageShop; offer: FeesOffer; language: Lang
   const w = FEE_PAGE[o.language];
   const s = o.offer.shop;
   const tz = s.timezone;
-  const form = (action: "pay" | "paid", dueId: string, label: string, quiet: boolean) => html`<form method="post" action="${o.base}/${action}"><input type="hidden" name="due" value="${dueId}"><input type="hidden" name="lang" value="${o.language}"><input type="hidden" name="nonce" value="${o.nonce}"><button class="${quiet ? "quiet full" : "full"}" type="submit">${label}</button></form>`;
+  const form = (action: "pay" | "paid", dueId: string, label: string, quiet: boolean) => html`<form method="post" action="${o.base}/${action}"><input type="hidden" name="due" value="${dueId}"><input type="hidden" name="lang" value="${o.language}"><input type="hidden" name="nonce" value="${o.nonce}">${action === "paid" ? upiRefField(o.language) : ""}<button class="${quiet ? "quiet full" : "full"}" type="submit">${label}</button>${action === "paid" ? html`<p class="note">${MONEY[o.language].checkTime(CHECK_MINUTES)}</p>` : ""}</form>`;
   const fees = o.view.dues.map((f) => {
     let state: Raw | string = "";
     if (f.state === "paid") state = html`<p class="status">${w.statePaid}</p>`;
