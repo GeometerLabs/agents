@@ -26,7 +26,8 @@ interface Words {
   shopPhone: string; shopPhoneNote: string; map: string; mapNote: string; partnerName: string; partnerPhone: string; partnerNote: string;
   setupWait: string; setupReady: string; setupWaitNote: string; cardQr: string; cardMachine: string;
 }
-const WORDS: Record<Language, Words> = {
+/** Exported so the native reviewer's sheet lists these lines too (review.ts, ids "pages.block.*"). */
+export const WORDS: Record<Language, Words> = {
   en: {
     heading: "The shop's page", note: "Customers book, pay and message the shop here; the owner signs in with a link sent to their WhatsApp. One short name per shop.",
     choice: "Where the page is", hub: "On the shared pages domain (a short name)", own: "On your own domain only", slug: "Short name", slugNote: "3 to 40 small letters, digits and hyphens, like veena-salon. A name another shop holds, or one used lately, cannot be taken.",

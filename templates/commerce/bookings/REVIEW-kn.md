@@ -1289,4 +1289,103 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `personality.brief.greetingNamed` | ಇದು {name}, {shop} ನ ಸಹಾಯಕ. | This is {name}, {shop}'s assistant. |  |
 | `personality.brief.morningOpening` | ಬೆಳಗಿನ ಮಾಹಿತಿ: {shop} ನ ಸಹಾಯಕ. | Morning summary from the assistant of {shop}. |  |
 | `personality.brief.morningSignOff` | ಹೆಚ್ಚಿನದಕ್ಕೆ ಉತ್ತರಿಸಿ. | Reply for more. |  |
+| `owner.first.chromeTitle` | ಈ ಪುಟಕ್ಕೆ Chrome ಬೇಕು | This page needs Chrome |  |
+| `owner.first.chromeBody` | ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಿಮ್ಮ ಫೋನ್‌ನ ಸೈನ್ ಇನ್ ಹೊಂದಿಸಲು ಆಗುವುದಿಲ್ಲ. ಈ ಪುಟವನ್ನು Chrome ನಲ್ಲಿ ತೆರೆಯಿರಿ, ಅಥವಾ ಲಿಂಕ್ ನಕಲಿಸಿ Chrome ನಲ್ಲಿ ಅಂಟಿಸಿ. | This browser can't set up sign-in on your phone. Open this page in Chrome, or copy the link and paste it into Chrome. |  |
+| `owner.first.chromeOpen` | Chrome ನಲ್ಲಿ ತೆರೆಯಿರಿ | Open in Chrome |  |
+| `owner.first.chromeCopy` | ಲಿಂಕ್ ನಕಲಿಸಿ | Copy link |  |
+| `owner.first.chromeCopied` | ಲಿಂಕ್ ನಕಲಾಗಿದೆ. Chrome ನಲ್ಲಿ ಅಂಟಿಸಿ. | Link copied. Paste it in Chrome. |  |
+| `owner.first.noLock` | ನಿಮ್ಮ ಫೋನ್‌ಗೆ ಸ್ಕ್ರೀನ್ ಲಾಕ್ (PIN, ಪ್ಯಾಟರ್ನ್ ಅಥವಾ ಬೆರಳಚ್ಚು) ಬೇಕು. ಸೆಟ್ಟಿಂಗ್ಸ್‌ನಲ್ಲಿ ಹೊಂದಿಸಿ, ಮತ್ತೆ ಒತ್ತಿ. | Your phone needs a screen lock (PIN, pattern or fingerprint). Set one in Settings, then press again. |  |
+| `owner.first.notYet` | ಈ ಕೋಡ್ ಇನ್ನೂ ಕೆಲಸ ಮಾಡುತ್ತಿಲ್ಲ. ಪಾಲುದಾರರು ಈಗಷ್ಟೇ ತೋರಿಸಿದ್ದರೆ 15 ಸೆಕೆಂಡ್ ಕಾದು ಮತ್ತೆ ತೆರೆಯಿರಿ. ಆದರೂ ಆಗದಿದ್ದರೆ ಹೊಸದನ್ನು ಕೇಳಿ. | This code isn't working yet. If your partner just showed it, wait 15 seconds and open it again. If it still fails, ask for a new one. |  |
+| `owner.first.step2` | ಹಂತ 2 / 2: ಎಚ್ಚರಿಕೆಗಳನ್ನು ಆನ್ ಮಾಡಿ | Step 2 of 2: turn on alerts |  |
+| `owner.first.step2Intro` | ಸೈನ್ ಇನ್ ಆಯಿತು. ಈಗ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಆನ್ ಮಾಡಿ, ಪಾವತಿ ಅಥವಾ ಮರುಪಾವತಿಗೆ ನಿಮ್ಮ ಅಗತ್ಯವಿದ್ದಾಗ ಈ ಫೋನ್ ತಿಳಿಸುತ್ತದೆ. | Sign-in is done. Now turn on alerts, so this phone buzzes when a payment or a refund needs you. |  |
+| `owner.first.alertsOn` | ಎಚ್ಚರಿಕೆಗಳು: ಆನ್, 2 ಫೋನ್‌ನಲ್ಲಿ | Alerts: on, on 2 phones |  |
+| `owner.first.alertsOff` | ಎಚ್ಚರಿಕೆಗಳು: ಆಫ್. ಏನಾದರೂ ಬೇಕಾದಾಗ ನಿಮಗೆ ಗೊತ್ತಾಗುವುದಿಲ್ಲ. | Alerts: off. You will not hear when something needs you. |  |
+| `owner.first.alertsTurnOn` | ಎಚ್ಚರಿಕೆಗಳನ್ನು ಆನ್ ಮಾಡಿ | Turn on alerts |  |
+| `owner.first.partner` | ನಿಮ್ಮ ಪಾಲುದಾರರು: Divya | Your partner: Divya |  |
+| `owner.first.partnerNoName` | ನಿಮ್ಮ ಪಾಲುದಾರರು | Your partner |  |
+| `owner.first.call` | ಕರೆ ಮಾಡಿ | Call |  |
+| `owner.first.whatsapp` | WhatsApp | WhatsApp |  |
+| `owner.first.shopCall` | ಅಂಗಡಿಗೆ ಕರೆ ಮಾಡಿ | Call the shop |  |
+| `owner.first.shopMap` | ನಕ್ಷೆಯಲ್ಲಿ ನೋಡಿ | Find us on the map |  |
+| `owner.first.sendLink` | ಈ ಲಿಂಕ್ ನನ್ನ WhatsApp ಗೆ ಕಳುಹಿಸಿ | Send this link to my WhatsApp |  |
+| `owner.first.sendLinkNote` | ಬುಕಿಂಗ್ ನೋಡಲು ಅಥವಾ ರದ್ದು ಮಾಡಲು ಈ ಪುಟವೊಂದೇ ದಾರಿ. ಲಿಂಕ್ ಉಳಿಸಿಕೊಳ್ಳಲು ನಿಮಗೇ ಕಳುಹಿಸಿಕೊಳ್ಳಿ. | This page is the only way to see or cancel your booking. Send the link to yourself to keep it. |  |
+| `door.say.nothing.title` | ಇಲ್ಲಿ ಅಂಗಡಿಯ ಪುಟ ಇಲ್ಲ | There is no shop page here |  |
+| `door.say.nothing.text` | ವಿಳಾಸ ಪರಿಶೀಲಿಸಿ, ಅಥವಾ ಅಂಗಡಿಯಿಂದ ಅವರ ಲಿಂಕ್ ಕೇಳಿ. | Check the address, or ask the shop for its link. |  |
+| `door.say.gone.title` | ಈ ಅಂಗಡಿಯ ಪುಟ ಮುಚ್ಚಲಾಗಿದೆ | This shop page is closed |  |
+| `door.say.gone.text` | ಈ ವಿಳಾಸದಲ್ಲಿ ಅಂಗಡಿಗೆ ಈಗ ಪುಟ ಇಲ್ಲ. | The shop no longer has a page at this address. |  |
+| `door.say.suspended.title` | ಈ ಅಂಗಡಿಯ ಪುಟ ಈಗ ಲಭ್ಯವಿಲ್ಲ | This shop page is not available |  |
+| `door.say.suspended.text` | ಇದರ ಬಗ್ಗೆ ಒಂದು ವರದಿಯನ್ನು ಪರಿಶೀಲಿಸುವವರೆಗೆ ಇದನ್ನು ತೆಗೆದಿದೆ. | It has been taken down while a report about it is looked at. |  |
+| `door.say.unreachable.title` | ಅಂಗಡಿಗಳ ಪುಟಗಳು ಈಗ ತೆರೆಯುತ್ತಿಲ್ಲ | Shop pages are not reachable just now |  |
+| `door.say.unreachable.text` | ಕೆಲವು ನಿಮಿಷ ಬಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Please try again in a few minutes. |  |
+| `door.say.notAnswering.title` | ಈ ಅಂಗಡಿಯ ಪುಟ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ | This shop's page is not answering |  |
+| `door.say.notAnswering.text` | ಕೆಲವು ನಿಮಿಷ ಬಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Please try again in a few minutes. |  |
+| `door.say.notAnsweringLater.title` | ಈ ಅಂಗಡಿಯ ಪುಟ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ | This shop's page is not answering |  |
+| `door.say.notAnsweringLater.text` | ಸ್ವಲ್ಪ ಹೊತ್ತು ಬಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Please try again later. |  |
+| `door.say.notHere.title` | ಇಲ್ಲಿ ಅಲ್ಲ | Not here |  |
+| `door.say.notHere.text` | ಪುಟದ ಲಿಂಕ್ ಮತ್ತು ಬಟನ್‌ಗಳನ್ನು ಬಳಸಿ. | Use the page's links and buttons. |  |
+| `door.say.home.title` | ಅಂಗಡಿಗಳ ಪುಟಗಳು | Shop pages |  |
+| `door.say.home.text` | ಪ್ರತಿ ಅಂಗಡಿಯ ಪುಟ ಅದರ ಚಿಕ್ಕ ಹೆಸರಿನಲ್ಲಿದೆ, ಉದಾ. /veena-salon. ಅಂಗಡಿಗಳು ಇದನ್ನು ತಮ್ಮ ಸ್ಥಳೀಯ ಪಾಲುದಾರರೊಂದಿಗೆ ಹೊಂದಿಸುತ್ತವೆ. | Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local partner. |  |
+| `door.say.waitMinute.title` | ತುಂಬಾ ವಿನಂತಿಗಳು | Too many requests |  |
+| `door.say.waitMinute.text` | ಒಂದು ನಿಮಿಷ ಕಾಯಿರಿ. | Please wait a minute. |  |
+| `door.say.waitWhile.title` | ತುಂಬಾ ವಿನಂತಿಗಳು | Too many requests |  |
+| `door.say.waitWhile.text` | ಸ್ವಲ್ಪ ಹೊತ್ತು ಕಾಯಿರಿ. | Please wait a while. |  |
+| `door.say.waitFew.title` | ತುಂಬಾ ವಿನಂತಿಗಳು | Too many requests |  |
+| `door.say.waitFew.text` | ಕೆಲವು ನಿಮಿಷ ಕಾಯಿರಿ. | Please wait a few minutes. |  |
+| `door.say.nothingHere.title` | ಇಲ್ಲಿ ಏನೂ ಇಲ್ಲ | There is nothing here |  |
+| `door.say.nothingHere.text` | ಈ ವಿಳಾಸದಲ್ಲಿ ಪುಟ ಇಲ್ಲ. | This page has no such address. |  |
+| `door.say.tooBig.title` | ತುಂಬಾ ದೊಡ್ಡದು | Too big |  |
+| `door.say.tooBig.text` | ಇದು ಅಂಗಡಿಯ ಪುಟ ಸ್ವೀಕರಿಸುವುದಕ್ಕಿಂತ ಹೆಚ್ಚು. | That is more than a shop's page takes. |  |
+| `door.say.wrong.title` | ಏನೋ ತಪ್ಪಾಯಿತು | Something went wrong |  |
+| `door.say.wrong.text` | ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Please try again. |  |
+| `door.help` | ಸಹಾಯ ಬೇಕೇ? Divya ಈ ಅಂಗಡಿಯ ಪುಟವನ್ನು ನೋಡಿಕೊಳ್ಳುತ್ತಾರೆ. | Need help? Divya looks after this shop's page. |  |
+| `door.call` | ಕರೆ ಮಾಡಿ | Call |  |
+| `door.whatsapp` | WhatsApp | WhatsApp |  |
+| `pages.block.heading` | ಅಂಗಡಿಯ ಪುಟ | The shop's page |  |
+| `pages.block.note` | ಗ್ರಾಹಕರು ಇಲ್ಲಿ ಬುಕ್ ಮಾಡುತ್ತಾರೆ, ಪಾವತಿಸುತ್ತಾರೆ ಮತ್ತು ಅಂಗಡಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತಾರೆ; ಮಾಲೀಕರು ತಮ್ಮ WhatsApp ಗೆ ಬಂದ ಲಿಂಕ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತಾರೆ. ಪ್ರತಿ ಅಂಗಡಿಗೆ ಒಂದು ಚಿಕ್ಕ ಹೆಸರು. | Customers book, pay and message the shop here; the owner signs in with a link sent to their WhatsApp. One short name per shop. |  |
+| `pages.block.choice` | ಪುಟ ಎಲ್ಲಿದೆ | Where the page is |  |
+| `pages.block.hub` | ಹಂಚಿದ ಪುಟ ಡೊಮೇನ್‌ನಲ್ಲಿ (ಚಿಕ್ಕ ಹೆಸರು) | On the shared pages domain (a short name) |  |
+| `pages.block.own` | ನಿಮ್ಮ ಸ್ವಂತ ಡೊಮೇನ್‌ನಲ್ಲಿ ಮಾತ್ರ | On your own domain only |  |
+| `pages.block.slug` | ಚಿಕ್ಕ ಹೆಸರು | Short name |  |
+| `pages.block.slugNote` | 3 ರಿಂದ 40 ಸಣ್ಣ ಅಕ್ಷರಗಳು, ಅಂಕಿಗಳು ಮತ್ತು ಹೈಫನ್, ಉದಾ. veena-salon. ಬೇರೆ ಅಂಗಡಿಯ ಹೆಸರು ಅಥವಾ ಇತ್ತೀಚೆಗೆ ಬಳಸಿದ ಹೆಸರು ತೆಗೆದುಕೊಳ್ಳಲಾಗದು. | 3 to 40 small letters, digits and hyphens, like veena-salon. A name another shop holds, or one used lately, cannot be taken. |  |
+| `pages.block.whatsapp` | ಪುಟದಲ್ಲಿ ಅಂಗಡಿಯ WhatsApp ನಂಬರ್ | The shop's WhatsApp number on the page |  |
+| `pages.block.whatsappNote` | +91 ಮತ್ತು ಹತ್ತು ಅಂಕಿಗಳು. ಪುಟ ಇದಕ್ಕೆ ಲಿಂಕ್ ಮಾಡುತ್ತದೆ, ಮಾಲೀಕರು ಇದಕ್ಕೆ "open my app" ಕಳುಹಿಸುತ್ತಾರೆ. | +91 and ten digits. The page links to it ("message us on WhatsApp"), and the owner sends "open my app" to it. |  |
+| `pages.block.save` | ಉಳಿಸಿ | Save |  |
+| `pages.block.live` | ಚಾಲೂ: https://pages.example/glow-salon | Live at https://pages.example/glow-salon |  |
+| `pages.block.stable` | QR ಕೋಡ್ ಮತ್ತು ಮುದ್ರಣಕ್ಕಾಗಿ ವಿಳಾಸ | Address for QR codes and print |  |
+| `pages.block.stableNote` | ಚಿಕ್ಕ ಹೆಸರು ಅಥವಾ ಡೊಮೇನ್ ಬದಲಾದರೂ ಇದು ಬದಲಾಗುವುದಿಲ್ಲ. ಮುದ್ರಿಸುವ ಎಲ್ಲದರಲ್ಲೂ ಇದನ್ನೇ ಬಳಸಿ. | It never changes, even if the short name or the domain changes. Use it on anything printed. |  |
+| `pages.block.waiting` | ಪಡೆಯಲಾಗುತ್ತಿದೆ: ಸರ್ವರ್ ಒಂದು ನಿಮಿಷದಲ್ಲಿ ಕೇಳುತ್ತದೆ. | Being claimed: the server asks within a minute. |  |
+| `pages.block.problem` | ಪಡೆಯಲಿಲ್ಲ: that name is taken | Not taken: that name is taken |  |
+| `pages.block.ownNote` | ಪುಟ ಈ ಸರ್ವರ್‌ನ ಸ್ವಂತ ವಿಳಾಸದಲ್ಲಿ ಮಾತ್ರ. | The page is at this server's own address only. |  |
+| `pages.block.sessions` | ಮಾಲೀಕರು ಸೈನ್ ಇನ್ ಆದ ಸಾಧನಗಳು | The owner's signed-in devices |  |
+| `pages.block.sessionsNote` | ಮಾಲೀಕರು ಬೆರಳಚ್ಚಿನಿಂದ (ಪಾಸ್‌ಕೀ) ಅಥವಾ WhatsApp ನಲ್ಲಿ ಬಂದ ಲಿಂಕ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತಾರೆ; ಪ್ರತಿ ಸಾಧನ 30 ದಿನ ಸೈನ್ ಇನ್ ಆಗಿರುತ್ತದೆ. ಫೋನ್ ಕಳೆದುಹೋದರೆ ಅಥವಾ ಮಾಲೀಕರು ಕೇಳಿದರೆ, ಎಲ್ಲವನ್ನೂ ಸೈನ್ ಔಟ್ ಮಾಡಿ. | The owner signs in with their fingerprint (a passkey) or a link on WhatsApp; each device stays signed in for 30 days. If a phone is lost or the owner asks, sign every device out. |  |
+| `pages.block.endAll` | ಎಲ್ಲಾ ಸಾಧನಗಳನ್ನು ಸೈನ್ ಔಟ್ ಮಾಡಿ | Sign out every device |  |
+| `pages.block.ended` | ಎಲ್ಲಾ ಸಾಧನಗಳು ಸೈನ್ ಔಟ್ ಆಗಿವೆ. | Every device is signed out. |  |
+| `pages.block.bad` | ಚಿಕ್ಕ ಹೆಸರು (3 ರಿಂದ 40 ಸಣ್ಣ ಅಕ್ಷರಗಳು, ಅಂಕಿಗಳು ಮತ್ತು ಹೈಫನ್) ಮತ್ತು ನಂಬರ್ (+91 ಮತ್ತು ಹತ್ತು ಅಂಕಿಗಳು) ಪರಿಶೀಲಿಸಿ: ಏನೂ ಉಳಿಸಲಿಲ್ಲ. | Check the short name (3 to 40 small letters, digits and hyphens) and the number (+91 and ten digits): nothing was saved. |  |
+| `pages.block.signin` | ಮಾಲೀಕರ ಸೈನ್ ಇನ್ | The owner's sign-in |  |
+| `pages.block.signinNote` | ಮಾಲೀಕರು ಫೋನ್‌ನ ಬೆರಳಚ್ಚು ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತಾರೆ. ಸೆಟಪ್ ಭೇಟಿಯಲ್ಲಿ ಸೆಟಪ್ QR ಕೋಡ್ ತೋರಿಸಿ: ಮಾಲೀಕರು ಅದನ್ನು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಬೆರಳಚ್ಚು ಮುಟ್ಟುತ್ತಾರೆ. ನಂತರ ಅವರಿಗೆ ರಿಕವರಿ ಕಾರ್ಡ್ ಮುದ್ರಿಸಿ. | The owner signs in with their phone's fingerprint or screen lock. At the setup visit, show the setup QR code: the owner scans it and touches the fingerprint reader. Then print a recovery card for them. |  |
+| `pages.block.setupMake` | ಸೆಟಪ್ QR ಕೋಡ್ ತೋರಿಸಿ | Show the setup QR code |  |
+| `pages.block.recoveryMake` | ರಿಕವರಿ ಕಾರ್ಡ್ ಮುದ್ರಿಸಿ | Print a recovery card |  |
+| `pages.block.recoveryOn` | ರಿಕವರಿ ಕಾರ್ಡ್ ಮಾಡಿದ್ದು 2026-11-14. | Recovery card made 2026-11-14. |  |
+| `pages.block.remove` | ಮಾಲೀಕರ ಪಾಸ್‌ಕೀಗಳನ್ನು ತೆಗೆದುಹಾಕಿ | Remove the owner's passkeys |  |
+| `pages.block.removeNote` | ಫೋನ್ ಕಳೆದುಹೋದರೆ ಅಥವಾ ಕಳುವಾದರೆ: ಎಲ್ಲಾ ಪಾಸ್‌ಕೀಗಳು, QR ಕೋಡ್ ಮತ್ತು ಕಾರ್ಡ್ ಕೆಲಸ ನಿಲ್ಲಿಸುತ್ತವೆ. ನಂತರ ಹೊಸ ಸೆಟಪ್ QR ಕೋಡ್ ತೋರಿಸಿ. | For a lost or stolen phone: every passkey stops working, and so do the QR code and the card. Then show a new setup QR code. |  |
+| `pages.block.removed` | ಮಾಲೀಕರ ಪಾಸ್‌ಕೀಗಳನ್ನು ತೆಗೆದುಹಾಕಲಾಗಿದೆ. ಮಾಲೀಕರನ್ನು ಭೇಟಿಯಾದಾಗ ಹೊಸ ಸೆಟಪ್ QR ಕೋಡ್ ತೋರಿಸಿ. | The owner's passkeys are removed. Show a new setup QR code when you meet the owner. |  |
+| `pages.block.setupTitle` | ಮಾಲೀಕರಿಗಾಗಿ ಸೆಟಪ್ QR ಕೋಡ್ | Setup QR code for the owner |  |
+| `pages.block.setupNote` | ಒಮ್ಮೆ ಮಾತ್ರ, ಈ ಅಂಗಡಿಗೆ ಮಾತ್ರ, 10:30 UTC ವರೆಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಮಾಲೀಕರು ಫೋನ್ ಕ್ಯಾಮೆರಾದಿಂದ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಬೆರಳಚ್ಚು ಮುಟ್ಟಬೇಕು. ಹೊಸ ಕೋಡ್ ತೋರಿಸಿದರೆ ಇದು ನಿಲ್ಲುತ್ತದೆ. | Works once, for this shop only, until 10:30 UTC. The owner scans it with their phone's camera, then touches the fingerprint reader. Showing a new code stops this one. |  |
+| `pages.block.cardTitle` | ರಿಕವರಿ ಕಾರ್ಡ್ | Recovery card |  |
+| `pages.block.cardNote` | ಈ ಪುಟವನ್ನು ಮುದ್ರಿಸಿ ಮಾಲೀಕರಿಗೆ ಕೊಡಿ. ಪ್ರತಿ ಕೋಡ್ ಒಮ್ಮೆ ಮಾತ್ರ. ಈ ಕೋಡ್‌ಗಳನ್ನು ಮತ್ತೆ ಯಾರೂ ನೋಡಲಾಗದು, ಇಲ್ಲಿಯೂ. | Print this page and give it to the owner. Each code works once. Nobody can see these codes again, not even here. |  |
+| `pages.block.cardOwner` | ಫೋನ್ ಕಳೆದುಹೋಯಿತೇ? https://pages.example/glow-salon/owner/recover ತೆರೆದು ಒಂದು ಕೋಡ್ ಟೈಪ್ ಮಾಡಿ. | Lost your phone? Open https://pages.example/glow-salon/owner/recover and type one code. |  |
+| `pages.block.printNote` | ಬ್ರೌಸರ್‌ನ Print ಬಳಸಿ. | Use your browser's Print. |  |
+| `pages.block.back` | ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ | Back to the shop |  |
+| `pages.block.shopPhone` | ಪುಟದಲ್ಲಿ ಅಂಗಡಿಯ ಫೋನ್ ನಂಬರ್ | The shop's phone number on the page |  |
+| `pages.block.shopPhoneNote` | ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ, ಉದಾ. +918012345678. ಪುಟದಲ್ಲಿ "ಅಂಗಡಿಗೆ ಕರೆ ಮಾಡಿ" ಕಾಣುತ್ತದೆ. ಲ್ಯಾಂಡ್‌ಲೈನ್ ಕೂಡ ಆಗುತ್ತದೆ. | With the country code, like +918012345678. The page shows "Call the shop". A landline works too. |  |
+| `pages.block.map` | ಮ್ಯಾಪ್ ಲಿಂಕ್ | Map link |  |
+| `pages.block.mapNote` | ಅಂಗಡಿಯ Google Maps ಲಿಂಕ್ ಅಂಟಿಸಿ (Share, ನಂತರ Copy link). ಪುಟದಲ್ಲಿ "ನಕ್ಷೆಯಲ್ಲಿ ನೋಡಿ" ಕಾಣುತ್ತದೆ. | Paste the shop's link from Google Maps (Share, then Copy link). The page shows "Find us on the map". |  |
+| `pages.block.partnerName` | ನಿಮ್ಮ ಹೆಸರು, ಮಾಲೀಕರಿಗಾಗಿ | Your name, for the owner |  |
+| `pages.block.partnerPhone` | ನಿಮ್ಮ ಫೋನ್ ನಂಬರ್, ಮಾಲೀಕರಿಗಾಗಿ | Your phone number, for the owner |  |
+| `pages.block.partnerNote` | ಮಾಲೀಕರ ಆಪ್‌ನಲ್ಲಿ ಮತ್ತು ಪ್ರತಿ ದೋಷ ಪುಟದಲ್ಲಿ ನಿಮ್ಮ ಹೆಸರು, ಕರೆ ಮತ್ತು WhatsApp ಬಟನ್‌ಗಳೊಂದಿಗೆ ಕಾಣುತ್ತದೆ. ಎರಡನ್ನೂ ತುಂಬಿ, ಅಥವಾ ಯಾವುದನ್ನೂ ಬೇಡ. | The owner's app and every error page show your name with Call and WhatsApp buttons. Fill in both, or neither. |  |
+| `pages.block.setupWait` | ಕಾಯಿರಿ... | Wait... |  |
+| `pages.block.setupReady` | ಸಿದ್ಧ: ಈಗ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ | Ready: scan now |  |
+| `pages.block.setupWaitNote` | ಕೋಡ್ ತೋರಿಸಿ ಸುಮಾರು 15 ಸೆಕೆಂಡ್ ನಂತರ ಕೆಲಸ ಮಾಡಲು ಶುರುವಾಗುತ್ತದೆ. ಕೆಳಗಿನ ಪಟ್ಟಿ ಹಸಿರಾಗುವವರೆಗೆ ಕಾಯಿರಿ, ನಂತರ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಅದಕ್ಕೂ ಮೊದಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿದರೆ ಇನ್ನೂ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | The code starts working about 15 seconds after it is shown. Wait until the bar below turns green, then scan. A scan before that does not work yet. |  |
+| `pages.block.cardQr` | ಅಥವಾ ಫೋನ್ ಕ್ಯಾಮೆರಾದಿಂದ ಇದನ್ನು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ: | Or scan this with your phone's camera: |  |
+| `pages.block.cardMachine` | ಈ ಕನ್ನಡವನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಬಲ್ಲವರು ಇನ್ನೂ ಪರಿಶೀಲಿಸಿಲ್ಲ. |  |  |
 

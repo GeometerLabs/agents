@@ -1289,4 +1289,103 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `personality.brief.greetingNamed` | ഇത് {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. | This is {name}, {shop}'s assistant. |  |
 | `personality.brief.morningOpening` | രാവിലത്തെ വിവരം: {shop}-ന്റെ അസിസ്റ്റന്റ്. | Morning summary from the assistant of {shop}. |  |
 | `personality.brief.morningSignOff` | കൂടുതലിന് മറുപടി നൽകുക. | Reply for more. |  |
+| `owner.first.chromeTitle` | ഈ പേജിന് Chrome വേണം | This page needs Chrome |  |
+| `owner.first.chromeBody` | ഈ ബ്രൗസറിന് നിങ്ങളുടെ ഫോണിൽ സൈൻ ഇൻ സജ്ജമാക്കാനാവില്ല. ഈ പേജ് Chrome-ൽ തുറക്കൂ, അല്ലെങ്കിൽ ലിങ്ക് കോപ്പി ചെയ്ത് Chrome-ൽ പേസ്റ്റ് ചെയ്യൂ. | This browser can't set up sign-in on your phone. Open this page in Chrome, or copy the link and paste it into Chrome. |  |
+| `owner.first.chromeOpen` | Chrome-ൽ തുറക്കൂ | Open in Chrome |  |
+| `owner.first.chromeCopy` | ലിങ്ക് കോപ്പി ചെയ്യൂ | Copy link |  |
+| `owner.first.chromeCopied` | ലിങ്ക് കോപ്പി ചെയ്തു. Chrome-ൽ പേസ്റ്റ് ചെയ്യൂ. | Link copied. Paste it in Chrome. |  |
+| `owner.first.noLock` | നിങ്ങളുടെ ഫോണിന് സ്ക്രീൻ ലോക്ക് (PIN, പാറ്റേൺ അല്ലെങ്കിൽ വിരലടയാളം) വേണം. സെറ്റിംഗ്സിൽ സജ്ജമാക്കി വീണ്ടും അമർത്തൂ. | Your phone needs a screen lock (PIN, pattern or fingerprint). Set one in Settings, then press again. |  |
+| `owner.first.notYet` | ഈ കോഡ് ഇപ്പോൾ പ്രവർത്തിക്കുന്നില്ല. പങ്കാളി ഇപ്പോൾ കാണിച്ചതാണെങ്കിൽ 15 സെക്കൻഡ് കാത്ത് വീണ്ടും തുറക്കൂ. എന്നിട്ടും ശരിയായില്ലെങ്കിൽ പുതിയത് ചോദിക്കൂ. | This code isn't working yet. If your partner just showed it, wait 15 seconds and open it again. If it still fails, ask for a new one. |  |
+| `owner.first.step2` | ഘട്ടം 2 / 2: അലേർട്ടുകൾ ഓണാക്കൂ | Step 2 of 2: turn on alerts |  |
+| `owner.first.step2Intro` | സൈൻ ഇൻ കഴിഞ്ഞു. ഇനി അലേർട്ടുകൾ ഓണാക്കൂ, പേയ്‌മെന്റോ റീഫണ്ടോ നിങ്ങളെ കാത്തിരിക്കുമ്പോൾ ഈ ഫോൺ അറിയിക്കും. | Sign-in is done. Now turn on alerts, so this phone buzzes when a payment or a refund needs you. |  |
+| `owner.first.alertsOn` | അലേർട്ടുകൾ: ഓൺ, 2 ഫോണിൽ | Alerts: on, on 2 phones |  |
+| `owner.first.alertsOff` | അലേർട്ടുകൾ: ഓഫ്. എന്തെങ്കിലും വേണ്ടപ്പോൾ നിങ്ങൾ അറിയില്ല. | Alerts: off. You will not hear when something needs you. |  |
+| `owner.first.alertsTurnOn` | അലേർട്ടുകൾ ഓണാക്കൂ | Turn on alerts |  |
+| `owner.first.partner` | നിങ്ങളുടെ പങ്കാളി: Divya | Your partner: Divya |  |
+| `owner.first.partnerNoName` | നിങ്ങളുടെ പങ്കാളി | Your partner |  |
+| `owner.first.call` | വിളിക്കൂ | Call |  |
+| `owner.first.whatsapp` | WhatsApp | WhatsApp |  |
+| `owner.first.shopCall` | കടയെ വിളിക്കൂ | Call the shop |  |
+| `owner.first.shopMap` | മാപ്പിൽ കാണൂ | Find us on the map |  |
+| `owner.first.sendLink` | ഈ ലിങ്ക് എന്റെ WhatsApp-ലേക്ക് അയയ്ക്കൂ | Send this link to my WhatsApp |  |
+| `owner.first.sendLinkNote` | ബുക്കിംഗ് കാണാനോ റദ്ദാക്കാനോ ഉള്ള ഒരേയൊരു വഴി ഈ പേജാണ്. ലിങ്ക് സൂക്ഷിക്കാൻ സ്വയം അയച്ചുവയ്ക്കൂ. | This page is the only way to see or cancel your booking. Send the link to yourself to keep it. |  |
+| `door.say.nothing.title` | ഇവിടെ കടയുടെ പേജ് ഇല്ല | There is no shop page here |  |
+| `door.say.nothing.text` | വിലാസം പരിശോധിക്കൂ, അല്ലെങ്കിൽ കടയോട് അവരുടെ ലിങ്ക് ചോദിക്കൂ. | Check the address, or ask the shop for its link. |  |
+| `door.say.gone.title` | ഈ കടയുടെ പേജ് അടച്ചു | This shop page is closed |  |
+| `door.say.gone.text` | ഈ വിലാസത്തിൽ ഇപ്പോൾ കടയ്ക്ക് പേജ് ഇല്ല. | The shop no longer has a page at this address. |  |
+| `door.say.suspended.title` | ഈ കടയുടെ പേജ് ഇപ്പോൾ ലഭ്യമല്ല | This shop page is not available |  |
+| `door.say.suspended.text` | ഇതിനെക്കുറിച്ചുള്ള ഒരു റിപ്പോർട്ട് പരിശോധിക്കുന്നതുവരെ ഇത് നീക്കിയിരിക്കുന്നു. | It has been taken down while a report about it is looked at. |  |
+| `door.say.unreachable.title` | കടകളുടെ പേജുകൾ ഇപ്പോൾ തുറക്കുന്നില്ല | Shop pages are not reachable just now |  |
+| `door.say.unreachable.text` | കുറച്ച് മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Please try again in a few minutes. |  |
+| `door.say.notAnswering.title` | ഈ കടയുടെ പേജ് പ്രതികരിക്കുന്നില്ല | This shop's page is not answering |  |
+| `door.say.notAnswering.text` | കുറച്ച് മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Please try again in a few minutes. |  |
+| `door.say.notAnsweringLater.title` | ഈ കടയുടെ പേജ് പ്രതികരിക്കുന്നില്ല | This shop's page is not answering |  |
+| `door.say.notAnsweringLater.text` | കുറച്ച് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Please try again later. |  |
+| `door.say.notHere.title` | ഇവിടെ അല്ല | Not here |  |
+| `door.say.notHere.text` | പേജിലെ ലിങ്കുകളും ബട്ടണുകളും ഉപയോഗിക്കൂ. | Use the page's links and buttons. |  |
+| `door.say.home.title` | കടകളുടെ പേജുകൾ | Shop pages |  |
+| `door.say.home.text` | ഓരോ കടയുടെയും പേജ് അതിന്റെ ചെറിയ പേരിലാണ്, ഉദാ. /veena-salon. കടകൾ ഇത് അവരുടെ പ്രാദേശിക പങ്കാളിയോടൊപ്പം സജ്ജമാക്കുന്നു. | Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local partner. |  |
+| `door.say.waitMinute.title` | വളരെയധികം അഭ്യർത്ഥനകൾ | Too many requests |  |
+| `door.say.waitMinute.text` | ഒരു മിനിറ്റ് കാത്തിരിക്കൂ. | Please wait a minute. |  |
+| `door.say.waitWhile.title` | വളരെയധികം അഭ്യർത്ഥനകൾ | Too many requests |  |
+| `door.say.waitWhile.text` | കുറച്ച് നേരം കാത്തിരിക്കൂ. | Please wait a while. |  |
+| `door.say.waitFew.title` | വളരെയധികം അഭ്യർത്ഥനകൾ | Too many requests |  |
+| `door.say.waitFew.text` | കുറച്ച് മിനിറ്റ് കാത്തിരിക്കൂ. | Please wait a few minutes. |  |
+| `door.say.nothingHere.title` | ഇവിടെ ഒന്നുമില്ല | There is nothing here |  |
+| `door.say.nothingHere.text` | ഈ വിലാസത്തിൽ പേജ് ഇല്ല. | This page has no such address. |  |
+| `door.say.tooBig.title` | വളരെ വലുത് | Too big |  |
+| `door.say.tooBig.text` | ഇത് ഒരു കടയുടെ പേജ് സ്വീകരിക്കുന്നതിലും കൂടുതലാണ്. | That is more than a shop's page takes. |  |
+| `door.say.wrong.title` | എന്തോ കുഴപ്പം പറ്റി | Something went wrong |  |
+| `door.say.wrong.text` | വീണ്ടും ശ്രമിക്കൂ. | Please try again. |  |
+| `door.help` | സഹായം വേണോ? Divya ഈ കടയുടെ പേജ് നോക്കുന്നു. | Need help? Divya looks after this shop's page. |  |
+| `door.call` | വിളിക്കൂ | Call |  |
+| `door.whatsapp` | WhatsApp | WhatsApp |  |
+| `pages.block.heading` | കടയുടെ പേജ് | The shop's page |  |
+| `pages.block.note` | കസ്റ്റമർമാർ ഇവിടെ ബുക്ക് ചെയ്യുകയും പണമടയ്ക്കുകയും കടയ്ക്ക് സന്ദേശം അയയ്ക്കുകയും ചെയ്യുന്നു; ഉടമ WhatsApp-ൽ വരുന്ന ലിങ്ക് വഴി സൈൻ ഇൻ ചെയ്യുന്നു. ഓരോ കടയ്ക്കും ഒരു ചെറിയ പേര്. | Customers book, pay and message the shop here; the owner signs in with a link sent to their WhatsApp. One short name per shop. |  |
+| `pages.block.choice` | പേജ് എവിടെ | Where the page is |  |
+| `pages.block.hub` | പങ്കിട്ട പേജ് ഡൊമെയ്‌നിൽ (ചെറിയ പേര്) | On the shared pages domain (a short name) |  |
+| `pages.block.own` | നിങ്ങളുടെ സ്വന്തം ഡൊമെയ്‌നിൽ മാത്രം | On your own domain only |  |
+| `pages.block.slug` | ചെറിയ പേര് | Short name |  |
+| `pages.block.slugNote` | 3 മുതൽ 40 വരെ ചെറിയ അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഹൈഫൻ, ഉദാ. veena-salon. മറ്റൊരു കടയുടെ പേരോ അടുത്തിടെ ഉപയോഗിച്ച പേരോ എടുക്കാനാവില്ല. | 3 to 40 small letters, digits and hyphens, like veena-salon. A name another shop holds, or one used lately, cannot be taken. |  |
+| `pages.block.whatsapp` | പേജിലെ കടയുടെ WhatsApp നമ്പർ | The shop's WhatsApp number on the page |  |
+| `pages.block.whatsappNote` | +91-ഉം പത്ത് അക്കങ്ങളും. പേജ് ഇതിലേക്ക് ലിങ്ക് ചെയ്യും, ഉടമ ഇതിലേക്ക് "open my app" അയയ്ക്കും. | +91 and ten digits. The page links to it ("message us on WhatsApp"), and the owner sends "open my app" to it. |  |
+| `pages.block.save` | സേവ് ചെയ്യൂ | Save |  |
+| `pages.block.live` | ലൈവ്: https://pages.example/glow-salon | Live at https://pages.example/glow-salon |  |
+| `pages.block.stable` | QR കോഡിനും അച്ചടിക്കും ഉള്ള വിലാസം | Address for QR codes and print |  |
+| `pages.block.stableNote` | ചെറിയ പേരോ ഡൊമെയ്‌നോ മാറിയാലും ഇത് മാറില്ല. അച്ചടിക്കുന്ന എല്ലാറ്റിലും ഇത് ഉപയോഗിക്കൂ. | It never changes, even if the short name or the domain changes. Use it on anything printed. |  |
+| `pages.block.waiting` | എടുക്കുന്നു: സെർവർ ഒരു മിനിറ്റിനുള്ളിൽ ചോദിക്കും. | Being claimed: the server asks within a minute. |  |
+| `pages.block.problem` | എടുത്തില്ല: that name is taken | Not taken: that name is taken |  |
+| `pages.block.ownNote` | പേജ് ഈ സെർവറിന്റെ സ്വന്തം വിലാസത്തിൽ മാത്രം. | The page is at this server's own address only. |  |
+| `pages.block.sessions` | ഉടമ സൈൻ ഇൻ ചെയ്ത ഉപകരണങ്ങൾ | The owner's signed-in devices |  |
+| `pages.block.sessionsNote` | ഉടമ വിരലടയാളം (പാസ്‌കീ) കൊണ്ടോ WhatsApp-ൽ വരുന്ന ലിങ്ക് വഴിയോ സൈൻ ഇൻ ചെയ്യുന്നു; ഓരോ ഉപകരണവും 30 ദിവസം സൈൻ ഇൻ ആയിരിക്കും. ഫോൺ നഷ്ടപ്പെട്ടാലോ ഉടമ ആവശ്യപ്പെട്ടാലോ എല്ലാം സൈൻ ഔട്ട് ചെയ്യൂ. | The owner signs in with their fingerprint (a passkey) or a link on WhatsApp; each device stays signed in for 30 days. If a phone is lost or the owner asks, sign every device out. |  |
+| `pages.block.endAll` | എല്ലാ ഉപകരണങ്ങളും സൈൻ ഔട്ട് ചെയ്യൂ | Sign out every device |  |
+| `pages.block.ended` | എല്ലാ ഉപകരണങ്ങളും സൈൻ ഔട്ട് ചെയ്തു. | Every device is signed out. |  |
+| `pages.block.bad` | ചെറിയ പേരും (3 മുതൽ 40 വരെ ചെറിയ അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഹൈഫൻ) നമ്പറും (+91-ഉം പത്ത് അക്കങ്ങളും) പരിശോധിക്കൂ: ഒന്നും സേവ് ചെയ്തില്ല. | Check the short name (3 to 40 small letters, digits and hyphens) and the number (+91 and ten digits): nothing was saved. |  |
+| `pages.block.signin` | ഉടമയുടെ സൈൻ ഇൻ | The owner's sign-in |  |
+| `pages.block.signinNote` | ഉടമ ഫോണിലെ വിരലടയാളമോ സ്ക്രീൻ ലോക്കോ കൊണ്ട് സൈൻ ഇൻ ചെയ്യുന്നു. സെറ്റപ്പ് സമയത്ത് സെറ്റപ്പ് QR കോഡ് കാണിക്കൂ: ഉടമ അത് സ്കാൻ ചെയ്ത് വിരലടയാളം തൊടും. പിന്നെ അവർക്കായി ഒരു റിക്കവറി കാർഡ് പ്രിന്റ് ചെയ്യൂ. | The owner signs in with their phone's fingerprint or screen lock. At the setup visit, show the setup QR code: the owner scans it and touches the fingerprint reader. Then print a recovery card for them. |  |
+| `pages.block.setupMake` | സെറ്റപ്പ് QR കോഡ് കാണിക്കൂ | Show the setup QR code |  |
+| `pages.block.recoveryMake` | റിക്കവറി കാർഡ് പ്രിന്റ് ചെയ്യൂ | Print a recovery card |  |
+| `pages.block.recoveryOn` | റിക്കവറി കാർഡ് ഉണ്ടാക്കിയത് 2026-11-14. | Recovery card made 2026-11-14. |  |
+| `pages.block.remove` | ഉടമയുടെ പാസ്‌കീകൾ നീക്കം ചെയ്യൂ | Remove the owner's passkeys |  |
+| `pages.block.removeNote` | ഫോൺ നഷ്ടപ്പെട്ടാലോ മോഷണം പോയാലോ: എല്ലാ പാസ്‌കീകളും, QR കോഡും കാർഡും, പ്രവർത്തിക്കാതാകും. പിന്നെ പുതിയ സെറ്റപ്പ് QR കോഡ് കാണിക്കൂ. | For a lost or stolen phone: every passkey stops working, and so do the QR code and the card. Then show a new setup QR code. |  |
+| `pages.block.removed` | ഉടമയുടെ പാസ്‌കീകൾ നീക്കം ചെയ്തു. ഉടമയെ കാണുമ്പോൾ പുതിയ സെറ്റപ്പ് QR കോഡ് കാണിക്കൂ. | The owner's passkeys are removed. Show a new setup QR code when you meet the owner. |  |
+| `pages.block.setupTitle` | ഉടമയ്ക്കുള്ള സെറ്റപ്പ് QR കോഡ് | Setup QR code for the owner |  |
+| `pages.block.setupNote` | ഒരിക്കൽ മാത്രം, ഈ കടയ്ക്ക് മാത്രം, 10:30 UTC വരെ പ്രവർത്തിക്കും. ഉടമ ഫോൺ ക്യാമറ കൊണ്ട് സ്കാൻ ചെയ്ത് വിരലടയാളം തൊടണം. പുതിയ കോഡ് കാണിച്ചാൽ ഇത് നിൽക്കും. | Works once, for this shop only, until 10:30 UTC. The owner scans it with their phone's camera, then touches the fingerprint reader. Showing a new code stops this one. |  |
+| `pages.block.cardTitle` | റിക്കവറി കാർഡ് | Recovery card |  |
+| `pages.block.cardNote` | ഈ പേജ് പ്രിന്റ് ചെയ്ത് ഉടമയ്ക്ക് കൊടുക്കൂ. ഓരോ കോഡും ഒരിക്കൽ മാത്രം. ഈ കോഡുകൾ ഇനി ആർക്കും കാണാനാവില്ല, ഇവിടെയും. | Print this page and give it to the owner. Each code works once. Nobody can see these codes again, not even here. |  |
+| `pages.block.cardOwner` | ഫോൺ നഷ്ടപ്പെട്ടോ? https://pages.example/glow-salon/owner/recover തുറന്ന് ഒരു കോഡ് ടൈപ്പ് ചെയ്യൂ. | Lost your phone? Open https://pages.example/glow-salon/owner/recover and type one code. |  |
+| `pages.block.printNote` | ബ്രൗസറിലെ Print ഉപയോഗിക്കൂ. | Use your browser's Print. |  |
+| `pages.block.back` | കടയിലേക്ക് മടങ്ങൂ | Back to the shop |  |
+| `pages.block.shopPhone` | പേജിൽ കടയുടെ ഫോൺ നമ്പർ | The shop's phone number on the page |  |
+| `pages.block.shopPhoneNote` | രാജ്യ കോഡ് സഹിതം, ഉദാ. +918012345678. പേജിൽ "കടയെ വിളിക്കൂ" കാണും. ലാൻഡ്‌ലൈനും ചേരും. | With the country code, like +918012345678. The page shows "Call the shop". A landline works too. |  |
+| `pages.block.map` | മാപ്പ് ലിങ്ക് | Map link |  |
+| `pages.block.mapNote` | കടയുടെ Google Maps ലിങ്ക് പേസ്റ്റ് ചെയ്യൂ (Share, പിന്നെ Copy link). പേജിൽ "മാപ്പിൽ കാണൂ" കാണും. | Paste the shop's link from Google Maps (Share, then Copy link). The page shows "Find us on the map". |  |
+| `pages.block.partnerName` | നിങ്ങളുടെ പേര്, ഉടമയ്ക്കായി | Your name, for the owner |  |
+| `pages.block.partnerPhone` | നിങ്ങളുടെ ഫോൺ നമ്പർ, ഉടമയ്ക്കായി | Your phone number, for the owner |  |
+| `pages.block.partnerNote` | ഉടമയുടെ ആപ്പിലും ഓരോ എറർ പേജിലും നിങ്ങളുടെ പേര്, വിളിക്കാനും WhatsApp-നും ബട്ടണുകളോടെ കാണും. രണ്ടും നൽകൂ, അല്ലെങ്കിൽ ഒന്നും വേണ്ട. | The owner's app and every error page show your name with Call and WhatsApp buttons. Fill in both, or neither. |  |
+| `pages.block.setupWait` | കാത്തിരിക്കൂ... | Wait... |  |
+| `pages.block.setupReady` | തയ്യാർ: ഇപ്പോൾ സ്കാൻ ചെയ്യൂ | Ready: scan now |  |
+| `pages.block.setupWaitNote` | കോഡ് കാണിച്ച് ഏകദേശം 15 സെക്കൻഡ് കഴിഞ്ഞാണ് പ്രവർത്തിച്ചുതുടങ്ങുന്നത്. താഴത്തെ ബാർ പച്ചയാകുന്നതുവരെ കാത്തിരുന്ന് സ്കാൻ ചെയ്യൂ. അതിനുമുമ്പ് സ്കാൻ ചെയ്താൽ ഇതുവരെ പ്രവർത്തിക്കില്ല. | The code starts working about 15 seconds after it is shown. Wait until the bar below turns green, then scan. A scan before that does not work yet. |  |
+| `pages.block.cardQr` | അല്ലെങ്കിൽ ഫോൺ ക്യാമറ കൊണ്ട് ഇത് സ്കാൻ ചെയ്യൂ: | Or scan this with your phone's camera: |  |
+| `pages.block.cardMachine` | ഈ മലയാളം യന്ത്രം എഴുതിയതാണ്; മലയാളം അറിയുന്ന ഒരാൾ ഇതുവരെ പരിശോധിച്ചിട്ടില്ല. |  |  |
 

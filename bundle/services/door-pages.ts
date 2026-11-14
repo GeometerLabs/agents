@@ -33,7 +33,8 @@ interface Words { say: Record<DoorKey, Say>; help: (name: string) => string; cal
 
 const CSS = "body{margin:0;font:17px/1.5 system-ui,sans-serif;color:#10231a}main{max-width:32rem;margin:0 auto;padding:32px 16px}.langs a,.langs b{display:inline-block;margin:0 10px 0 0}.help{margin-top:24px;padding:12px 14px;border:1px solid #c9d8cf;border-radius:14px}.help a{display:inline-block;margin:6px 14px 0 0;padding:10px 0;font-weight:650}.machine{color:#5a6b61;font-size:.9rem}";
 
-const WORDS: Record<Language, Words> = {
+/** Exported so the native reviewer's sheet lists these lines too (bundle/panel/review.ts, ids "door.*"). */
+export const WORDS: Record<Language, Words> = {
   en: {
     say: {
       nothing: { title: "There is no shop page here", text: "Check the address, or ask the shop for its link." },
