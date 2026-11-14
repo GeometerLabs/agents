@@ -8,8 +8,14 @@
  */
 export const AGENT_INDEX = 90;
 export const AGENT_NAME = "proof-agent";
-export const shopName = (i: number): string => (i === 1 ? "glow-salon" : i === AGENT_INDEX ? AGENT_NAME : `shop-${String(i).padStart(2, "0")}`);
-export const shopIndex = (name: string): number | undefined => (name === "glow-salon" ? 1 : name === AGENT_NAME ? AGENT_INDEX : /^shop-(\d{2})$/u.exec(name) ? Number(name.slice(5)) : undefined);
+/**
+ * The proof's second agent someone else wrote (the `upidesk` phase): it takes UPI, so the owner marks each payment on WhatsApp and the desk in the relay keeps the ledger.
+ * Number 91, told apart the same way, so the stand-ins give it a set of its own.
+ */
+export const UPI_AGENT_INDEX = 91;
+export const UPI_AGENT_NAME = "proof-upi-agent";
+export const shopName = (i: number): string => (i === 1 ? "glow-salon" : i === AGENT_INDEX ? AGENT_NAME : i === UPI_AGENT_INDEX ? UPI_AGENT_NAME : `shop-${String(i).padStart(2, "0")}`);
+export const shopIndex = (name: string): number | undefined => (name === "glow-salon" ? 1 : name === AGENT_NAME ? AGENT_INDEX : name === UPI_AGENT_NAME ? UPI_AGENT_INDEX : /^shop-(\d{2})$/u.exec(name) ? Number(name.slice(5)) : undefined);
 export const phoneOf = (i: number): string => `10000000000${String(i).padStart(4, "0")}`;
 export const calendarOf = (i: number): string => `${shopName(i)}@group.calendar.google.com`;
 /** The owner's number in the example settings every proof shop is made from. */

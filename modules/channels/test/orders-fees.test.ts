@@ -61,3 +61,25 @@ test("a parent's link hashes apart from every handle: one can never open the oth
   assert.notEqual(parentLinkHash(s), handleHash(s));
   assert.match(parentLinkHash(s), /^[0-9a-f]{64}$/u);
 });
+
+test("\"I have paid\" may carry the UPI reference the customer typed: digits only, kept for a paid press and dropped from anything else (it counts as nothing)", () => {
+  const paid = { kind: "channel_request", id: "r-5", channel: "web", op: "paid", handle: hash };
+  const keep = checkChannelEvent({ ...paid, upiRef: " 412345678901 " });
+  assert.ok(keep.ok && keep.event.kind === "channel_request" && "upiRef" in keep.event && keep.event.upiRef === "412345678901", "trimmed digits are kept");
+  for (const bad of ["see my screenshot", "<script>1</script>", "12345", "1".repeat(23), "4123 4567 8901", "https://x.example/1234567890", 412345678901]) {
+    const dropped = checkChannelEvent({ ...paid, upiRef: bad });
+    assert.ok(dropped.ok, "the claim itself is still taken");
+    assert.equal(JSON.stringify(dropped.event).includes("upiRef"), false, `${String(bad)} is dropped`);
+  }
+  assert.equal(JSON.stringify((checkChannelEvent({ ...paid, op: "cancel", upiRef: "412345678901" }) as { event: unknown }).event).includes("upiRef"), false, "a cancel carries none");
+  const fee = { kind: "channel_request", id: "r-6", channel: "web", op: "fee_paid", parent: hash, dueId: "f-3", handle: "b".repeat(64), upiRef: "412345678901" };
+  const kept = checkChannelEvent(fee);
+  assert.ok(kept.ok && "upiRef" in kept.event && kept.event.upiRef === "412345678901");
+  assert.equal(JSON.stringify((checkChannelEvent({ ...fee, op: "fee_pay" }) as { event: unknown }).event).includes("upiRef"), false, "asking how to pay carries none");
+});
+
+test("the owner page's answers include the cash mark (money clarity), and only by the digest shown", () => {
+  const ok = checkChannelEvent({ kind: "owner_action", id: "o-1", action: "cash", case: "f-3", digest: "a".repeat(32) });
+  assert.ok(ok.ok);
+  assert.equal(checkChannelEvent({ kind: "owner_action", id: "o-2", action: "cash", case: "f-3", digest: "x" }).ok, false, "no digest, no mark");
+});

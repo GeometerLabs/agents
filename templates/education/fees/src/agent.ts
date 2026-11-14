@@ -42,7 +42,7 @@ import { newHandle, parentLinkHash } from "../../../../modules/channels/handle.t
 import type { ChannelEvent, ChannelFee, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
 import type { PageAudio } from "../../../../modules/voice/turn.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
-import { ownerItems, parentOf, parentsList } from "./channel.ts";
+import { cashList, ownerItems, parentOf, parentsList } from "./channel.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
@@ -63,7 +63,7 @@ import { RULES } from "../../../../modules/understanding/model.ts";
 import { createReader } from "../../../../modules/understanding/reader.ts";
 import { coerceIntent } from "./adapters/model.ts";
 import type { Intent, IntentParser, ParseOptions } from "./adapters/model.ts";
-import { balanceInr, balancePaise, duesOf, factsFor, monthKey, moveTo, newDue, newRequestId, openDues, owedPaise, paidPaise, register } from "./due.ts";
+import { CASH_LINK, balanceInr, balancePaise, duesOf, factsFor, monthKey, moveTo, newDue, newRequestId, openDues, owedPaise, paidPaise, register } from "./due.ts";
 import type { CountedPayment, Customer, Due, Pending, Store } from "./due.ts";
 import { LABELS, buttonsFor, intentFromReply } from "./language/interactive.ts";
 import type { Choice } from "../../../../modules/language/interactive.ts";
@@ -692,6 +692,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const link = await currentLink(due);
     if (!link.ok && !link.paused && (due.linkFailTellAtMs === undefined || now - due.linkFailTellAtMs >= HOURLY)) { due.linkFailTellAtMs = now; await tellOwner(due, parent, "owner_link_failed"); }
     if (e.op === "fee_pay") return;
+    if (e.upiRef) due.claimRef = e.upiRef; // money clarity: the owner's page shows it beside the claim; it counts as nothing
     if (ownerConfirms) { await markClaim(due, parent, "page", link.ok); return; }
     // a gateway centre: the record was read above and shows nothing yet; the owner is told, once an hour, as for a claim on WhatsApp
     due.claimAtMs = now;
@@ -725,6 +726,7 @@ export function createAgent(deps: AgentDeps): Agent {
       else log(null, owner, "parent_link", "failed", {}, { notes: "the message with the new link was not accepted, so the parent's old link (if any) still works and nothing changed" });
       return;
     }
+    if (e.action === "cash") return onOwnerCash(e);
     const item = ownerItems(settings, store).find((x) => x.case === e.case && x.digest === e.digest && x.actions.includes(e.action));
     const due = store.dues.get(e.case) ?? null;
     if (!item) {
@@ -737,6 +739,39 @@ export function createAgent(deps: AgentDeps): Agent {
       ? { ...base, text: "", reply: { id: markButtonId(e.action === "received" ? "received" : "refunded", item.code), kind: "button" } }
       : { ...base, text: `${e.action} ${item.request}` };
     await onOwnerMessage(msg);
+  }
+
+  /**
+   * Money clarity: the owner marks an open fee paid in cash (or by a bank transfer the agent cannot see), from their page's "paid another way?" list. The page showed the
+   * fee with a digest of its balance and payments; with any other digest nothing is done. The mark is for the whole balance, counted as a payment of its own kind
+   * (CASH_LINK) and written to the record as the owner's mark ("owner_marked_paid", with `via: "cash"`), which is exactly what the rules read as the record showing the
+   * money: the parent is told it was received, reminders stop, the report counts it as marked by the owner. Open payment links are closed, so a payment that still
+   * comes on one is counted and goes back as an extra. Nothing is sent to a payments service, and no rule of Guard or of the ledger changes.
+   */
+  async function onOwnerCash(e: OwnerAction): Promise<void> {
+    const shown = cashList(settings, store).find((x) => x.case === e.case && x.digest === e.digest);
+    const due = store.dues.get(e.case) ?? null;
+    if (!shown || !due || due.state !== "open") {
+      log(due, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "the fee is not as the owner's page showed it (paid, waived or changed since): nothing was marked" });
+      return;
+    }
+    const amountPaise = balancePaise(due);
+    const counted: CountedPayment = { id: `cash-${due.id}-${due.payments.filter((p) => p.linkId === CASH_LINK).length + 1}`, amountPaise, linkId: CASH_LINK };
+    due.payments.push(counted);
+    log(due, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "the owner marked this fee paid in cash (or by a transfer the agent cannot see) on their private page" });
+    log(due, owner, MARK_ACTIONS.marked, "confirmed", { via: "cash", amountPaise }, { refs: { paymentId: counted.id, amountPaise: String(amountPaise), markedBy: "owner", via: "cash" }, notes: "marked paid by owner: paid by hand (cash or a bank transfer), from the owner's own page; no payments service holds it" });
+    await settle(due, [counted]);
+    if (due.state !== "open") await closeOpenLinks(due);
+  }
+
+  /** A settled fee asks for nothing more: its open requests are closed (a UPI request, in the ledger; a gateway link, at the payments service when it can still be closed). */
+  async function closeOpenLinks(due: Due): Promise<void> {
+    if (ownerConfirms) { await closeOpenRequests(due); return; }
+    for (const l of due.links) {
+      if (due.payments.some((p) => p.linkId === l.id)) continue; // a link with a payment on it cannot be closed (the payments service refuses); anything it collects later is given back
+      const closed = await payments.cancelRequest(l.id).then(() => true).catch(() => false);
+      log(due, due.customer, "cancel_fee_link", closed ? "confirmed" : "unconfirmed", { linkId: l.id }, { refs: { linkId: l.id }, notes: closed ? "the fee was marked paid by hand, so its payment link is closed" : "the fee was marked paid by hand and the link could not be closed; a payment that still comes on it is given back" });
+    }
   }
 
   /** The owner's talk box on their page (typed words, or a recording held in memory), read by the shop's assistant. A shop without it reads nothing. */
@@ -854,6 +889,7 @@ export function createAgent(deps: AgentDeps): Agent {
     // a refund is against one payment: the biggest one that has not been refunded
     const candidates: { payment: CountedPayment; refundedPaise: number }[] = [];
     for (const counted of due.payments) {
+      if (counted.linkId === CASH_LINK) continue; // paid by hand: no payments service holds it, so it is never refunded through one (the owner gives that money back by hand)
       const payment = await payments.fetchPayment(counted.id).catch(() => null);
       candidates.push({ payment: counted, refundedPaise: payment?.amount_refunded ?? 0 });
     }

@@ -101,6 +101,13 @@ export interface Booking {
   /** UPI (B33): when the owner was last told that this customer says they paid (at most once an hour). */
   claimTellAtMs?: number;
   /**
+   * Money clarity (14 Nov): when the customer last said they paid (the button on their page or on WhatsApp, or words), and the UPI reference they typed on the page, if
+   * any. The owner's page splits "customer says paid" from "waiting for payment" by it and shows the reference. Unlike `claimTellAtMs` it is set when the claim is
+   * made, whether or not the owner could be told. It never counts as a payment: only the owner's mark does.
+   */
+  claimAtMs?: number;
+  claimRef?: string;
+  /**
    * Item 11d: a booking made on the shop's booking page or its API ("web") or by an AI assistant through the MCP endpoint ("mcp"). Left out: a WhatsApp booking. Its
    * `customer` is then the channel's conversation ("web:<16 hex>", modules/channels/handle.ts), never the typed number, so nothing finds it by number.
    */

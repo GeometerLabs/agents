@@ -120,6 +120,7 @@ export function orderView(settings: Settings, store: Store, handleHash: string):
     // what the WhatsApp "cancel" takes (agent.ts onCancel): one waiting for the owner or its advance ends at once; a confirmed one follows the cancellation window
     canCancel: status === "checking" || status === "held" || status === "confirmed",
     canSayPaid: status === "held" && pay?.kind === "upi",
+    claimed: o.claimAtMs !== undefined, // money clarity: the customer has already said they paid
     messages: (store.channel?.outbox ?? []).filter((m) => m.to === o.customer).map((m) => ({ atMs: m.atMs, text: m.text })),
   };
 }
@@ -139,6 +140,9 @@ export interface OwnerItem {
   startMs?: number;
   /** For a refund owed: why, in the template's words. */
   why?: string;
+  /** Money clarity: for a `deposit`, when the customer said they paid and the UPI reference they typed (not in the digest: a customer's press must not stale the owner's). */
+  claimedAtMs?: number;
+  upiRef?: string;
   /** The owner-marked one-use code the press stands for (the same the WhatsApp button carries). Never leaves the runtime. */
   code?: string;
 }
@@ -163,7 +167,7 @@ export function ownerItems(settings: Settings, store: Store, nowMs?: number): { 
     const o = store.orders.get(r.reference);
     if (!o || o.state !== "awaiting_advance" || !r.code || (r.status !== "created" && r.status !== "partially_paid")) continue;
     const left = leftOn(r);
-    items.push({ kind: "deposit", case: o.id, digest: digestOf(["advance", o.id, r.id, left, r.marks.length, r.usedCodes.length]), actions: ["received"], amountPaise: left, customer: customerOf(o, o.customer), channel: channelOf(o), what: orderWhat(settings, o), ...(o.slotStartMs !== undefined ? { startMs: o.slotStartMs } : {}), code: r.code });
+    items.push({ kind: "deposit", case: o.id, digest: digestOf(["advance", o.id, r.id, left, r.marks.length, r.usedCodes.length]), actions: ["received"], amountPaise: left, customer: customerOf(o, o.customer), channel: channelOf(o), what: orderWhat(settings, o), ...(o.slotStartMs !== undefined ? { startMs: o.slotStartMs } : {}), ...(o.claimAtMs !== undefined ? { claimedAtMs: o.claimAtMs } : {}), ...(o.claimRef ? { upiRef: o.claimRef } : {}), code: r.code });
   }
   for (const r of store.upi?.refunds ?? []) {
     if (r.state !== "owed" || !r.code) continue;

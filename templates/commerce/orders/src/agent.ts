@@ -696,7 +696,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /** "I have paid", the words, or a screenshot: thanks, the owner will confirm, a screenshot is not proof. The owner is asked to look, at most once an hour per order. */
-  async function onPaidClaim(phone: string, via: "button" | "words" | "screenshot"): Promise<void> {
+  async function onPaidClaim(phone: string, via: "button" | "words" | "screenshot", upiRef?: string): Promise<void> {
     const o = latestOrder(store, phone, ["awaiting_advance"]);
     const request = o ? requestOf(o) : undefined;
     if (!o || !request) {
@@ -706,6 +706,9 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     await tellCustomer(o, phone, ["upi_paid_claim"]);
     const now = clock.now();
+    // money clarity: kept so the owner's page lists it first, with the reference; it counts as nothing paid
+    o.claimAtMs = now;
+    if (upiRef) o.claimRef = upiRef;
     const recently = o.claimTellAtMs !== undefined && now - o.claimTellAtMs < HOUR;
     let told = recently;
     if (!recently && request.code) { told = await tellOwner(o, phone, "owner_upi_claim", { upiCode: request.code, offer: receivedButtons(request, advancePaise(o) - request.marks.reduce((n, m) => n + m.amountPaise, 0)) }); if (told) o.claimTellAtMs = now; }
@@ -1276,7 +1279,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (!o || o.handle !== e.handle) { log(null, owner, "channel_order", "blocked", { op: e.op }, { refs: { channel: e.channel, op: e.op }, notes: "no order has this handle, so nothing was done" }); return; }
     log(o, o.customer, "channel_order", "confirmed", { op: e.op }, { refs: { channel: e.channel, op: e.op }, notes: e.op === "cancel" ? "the customer cancelled from the order's page" : "the customer says they paid, from the order's page; nothing is marked paid until the owner marks it" });
     if (e.op === "cancel") return onCancel(o.customer); // its conversation holds only this order, so this cancels exactly it
-    return ownerConfirms ? onPaidClaim(o.customer, "button") : onPaidReadBack(o.customer);
+    return ownerConfirms ? onPaidClaim(o.customer, "button", e.upiRef) : onPaidReadBack(o.customer);
   }
 
   /**

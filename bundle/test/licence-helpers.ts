@@ -10,6 +10,9 @@ export const TEST_PUBLIC_HEX: string = VECTORS.test_key.public_hex;
 const KEY = Buffer.from(TEST_PUBLIC_HEX, "hex");
 const PRIVATE = createPrivateKey({ key: Buffer.concat([Buffer.from("302e020100300506032b657004220420", "hex"), Buffer.from(VECTORS.test_key.seed_hex, "hex")]), format: "der", type: "pkcs8" });
 
+/** The same key as a PEM file, for a fleet the proof starts with `licence.key_file` (RFC 8032's published key: anyone can sign with it, never a production key). */
+export const TEST_PRIVATE_PEM = PRIVATE.export({ type: "pkcs8", format: "pem" }) as string;
+
 /** fleet's canonical form, for these values: keys sorted, no spaces */
 const canonical = (v: unknown): string => (Array.isArray(v) ? `[${v.map(canonical).join(",")}]` : v !== null && typeof v === "object" ? `{${Object.keys(v).sort().map((k) => `"${k}":${canonical((v as Record<string, unknown>)[k])}`).join(",")}}` : JSON.stringify(v));
 

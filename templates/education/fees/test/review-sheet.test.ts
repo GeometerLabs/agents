@@ -1,4 +1,4 @@
-// The review sheets (REVIEW-ml.md, REVIEW-kn.md) are what a native speaker reads before a real centre uses a language. They are written by scripts/review-sheet.ts from
+// The review sheets (REVIEW-hi.md, REVIEW-ml.md, REVIEW-kn.md) are what a native speaker reads before a real centre uses a language. They are written by scripts/review-sheet.ts from
 // the templates and word lists themselves; these tests fail if a sheet has fallen behind (a template, a word or a sample sentence is missing from it) or lost its
 // warning line.
 import { test } from "node:test";
@@ -20,7 +20,7 @@ import type { TemplateId } from "../src/language/templates.ts";
 const WARNING = "Machine-written. Must be reviewed by a native speaker before any real centre sees it.";
 const centre = brightTuition();
 
-for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]) {
+for (const language of ["hi", "ml", "kn"] as const satisfies readonly ReviewLanguage[]) {
   const committed = readFileSync(new URL(`../REVIEW-${language}.md`, import.meta.url), "utf8");
 
   test(`REVIEW-${language}.md opens with the machine-written warning and has a column for the native reviewer`, () => {
@@ -45,12 +45,12 @@ for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]
   });
 
   test(`REVIEW-${language}.md lists every word the parser knows and every sample sentence`, () => {
-    const w = WORDS[language];
-    for (const word of [...w.yes, ...w.no, ...w.greeting, ...w.stop, ...w.stopPhrases, ...w.rupee, ...w.overrideTopics, ...w.overrideVerbs, ...w.hints]) {
+    const w = WORDS[language as "ml" | "kn"]; // Hindi has no entry in the shared lists (its words are the parser's own, below)
+    for (const word of w === undefined ? [] : [...w.yes, ...w.no, ...w.greeting, ...w.stop, ...w.stopPhrases, ...w.rupee, ...w.overrideTopics, ...w.overrideVerbs, ...w.hints]) {
       assert.ok(committed.includes(word), `"${word}" is missing from REVIEW-${language}.md`);
     }
-    // the sheet lists a language's own letters and the Latin letters people type; the Hindi words belong to the Hindi review
-    const ownLetters = language === "ml" ? /[\u0D00-\u0D7F]/u : /[\u0C80-\u0CFF]/u;
+    // the sheet lists a language's own letters and the Latin letters people type
+    const ownLetters = language === "hi" ? /[\u0900-\u097F]/u : language === "ml" ? /[\u0D00-\u0D7F]/u : /[\u0C80-\u0CFF]/u;
     for (const word of Object.values(FEE_WORDS).flat().filter((x) => ownLetters.test(x) || /^[\x20-\x7E]+$/u.test(x))) assert.ok(committed.includes(word), `the fee word "${word}" is missing from REVIEW-${language}.md`);
     for (const [sentence] of EXAMPLES[language]) assert.ok(committed.includes(sentence), sentence);
     for (const sentence of Object.values(SAYS[language]).map((say) => (typeof say === "function" ? say(200) : say))) assert.ok(committed.includes(sentence), `the hand check types "${sentence}" but REVIEW-${language}.md does not list it`);

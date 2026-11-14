@@ -78,7 +78,7 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
       const nonce = form.get("nonce") ?? "";
       const handle = NONCE.test(nonce) ? handleFromNonce(nonce, [f[2]!, dueId]) : newHandle();
       const op = sub === "/pay" ? "fee_pay" : "fee_paid";
-      await backend.submit([{ kind: "channel_request", id: randomUUID(), channel: "web", op, parent: linkHash, dueId, handle: handleHash(handle) }]);
+      await backend.submit([{ kind: "channel_request", id: randomUUID(), channel: "web", op, parent: linkHash, dueId, handle: handleHash(handle), ...(op === "fee_paid" && form.get("upi_ref") ? { upiRef: form.get("upi_ref")! } : {}) }]);
       if (op === "fee_paid") return kit.redirect(res, `${shop.publicUrl}/fee/${handle}?lang=${language}`);
       // "show how to pay": wait a little for the step, so the page that follows shows the payment details
       const deadline = Date.now() + Math.min(kit.waitMs ?? 2_000, 2_000);

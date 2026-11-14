@@ -15,3 +15,8 @@
 - **Per-slot capacity.** Stock is per item per day, and the limit is per day. A slot cannot be full on its own.
 - **Part payments.** A Razorpay link is for the exact advance. A payment of another amount cannot happen on such a link; on UPI the owner's marks are added up and a part keeps the order held.
 - **Tests and review of the sell guide wording by a person.** The tests scan for banned words and tie numbers to the hand check; a person has not read the Hindi, Malayalam and Kannada guides.
+
+## Money clarity (14 Nov 2026): left open
+
+- **No "time ran out: did money come?" card for an Orders owner.** Built for Bookings (Explanation.md there). An Orders owner can still mark a late advance on WhatsApp with the code, and the order page has no "paid after the time ended?" either. It is the same ledger, so only the page's list and words are missing. Done when: an Orders shop has no WhatsApp.
+- **"Extend the hold once" and the real-phone tries.** See templates/commerce/bookings/Deferred.md and modules/Deferred.md, "Money clarity".

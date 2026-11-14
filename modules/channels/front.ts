@@ -168,9 +168,10 @@ export const appPolicy = (base: string, nonce: string): string =>
   `${PAGE_POLICY}; script-src 'nonce-${nonce}'; connect-src ${base}/voice ${base}/push/subscribe ${base}/push/unsubscribe; worker-src ${base}/sw.js; manifest-src ${base}/manifest.webmanifest`;
 /**
  * Item 11h: a customer's booking or order page with its "Tell me on this phone" button: PAGE_POLICY and that page's own worker and its one POST, each at its own
- * address under that page (`page`, no trailing slash), never 'self'.
+ * address under that page (`page`, no trailing slash), never 'self'. Money clarity: the page's own address is a connect source too, for the UPI box's quiet look for a
+ * change (upi-script.ts: a GET of this very page, nothing sent), and the script may run on a page with no alerts (a held UPI deposit).
  */
-export const customerPagePolicy = (page: string, nonce: string): string => `${PAGE_POLICY}; script-src 'nonce-${nonce}'; connect-src ${page}/push; worker-src ${page}/sw.js`;
+export const customerPagePolicy = (page: string, nonce: string): string => `${PAGE_POLICY}; script-src 'nonce-${nonce}'; connect-src ${page}/push ${page}; worker-src ${page}/sw.js`;
 const MAX_FORM = 4 * 1024;
 const MAX_JSON = 16 * 1024;
 
@@ -400,7 +401,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
         const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
         const language = languageOf(req, url, offer.shop.languages, form);
         if (!limiter.take("act", address)) return sendHtml(res, 429, statusPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view: await shop.backend.view(handleHash(handle)), notice: PAGE[language].tooMany }));
-        try { if (sub === "/cancel") await o.page.cancel_booking({ handle }); else await o.page.say_paid(handle); }
+        try { if (sub === "/cancel") await o.page.cancel_booking({ handle }); else await o.page.say_paid(handle, form.get("upi_ref") ?? undefined); }
         catch (e) { if (e instanceof BackendError) throw e; limiter.take("wrong", address); }
         return redirect(res, `${self}?lang=${language}`);
       }
@@ -439,12 +440,16 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
         return;
       }
       const live = view !== null && "ref" in view && (view.status === "held" || view.status === "booked" || view.status === "checking");
-      const nonce = publicKey && live ? randomBytes(16).toString("base64") : undefined;
+      // one nonce for whatever script this response has: the alerts' (a page made on the page or through MCP, with push on) and/or the UPI box's (money clarity: a held UPI
+      // deposit; its script copies the UPI ID and looks for a change without redrawing the QR)
+      const upiHeld = view !== null && "ref" in view && view.status === "held" && view.pay?.kind === "upi";
+      const withAlerts = publicKey !== undefined && live;
+      const nonce = withAlerts || upiHeld ? randomBytes(16).toString("base64") : undefined;
       let phones = 0;
-      if (nonce) { const st = await shop.backend.push!({ op: "customer_state", handle: handleHash(handle) }).catch(() => undefined); phones = Number(st?.body.phones ?? 0); }
-      const alerts = nonce ? customerAlertsBox({ page: self, language, key: publicKey!, phones, nonce }) : undefined;
+      if (nonce && withAlerts) { const st = await shop.backend.push!({ op: "customer_state", handle: handleHash(handle) }).catch(() => undefined); phones = Number(st?.body.phones ?? 0); }
+      const alerts = nonce && withAlerts ? customerAlertsBox({ page: self, language, key: publicKey!, phones, nonce }) : undefined;
       const ics = view && "ref" in view && view.startMs !== undefined && view.status !== "expired" && view.status !== "not_held" ? `${self}/booking.ics?lang=${language}` : undefined;
-      return sendHtml(res, view ? 200 : 404, statusPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view, ...(ics ? { ics } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": customerPagePolicy(self, nonce) } : {}) });
+      return sendHtml(res, view ? 200 : 404, statusPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view, ...(ics ? { ics } : {}), ...(alerts ? { alerts } : {}), ...(nonce ? { nonce } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": customerPagePolicy(self, nonce) } : {}) });
     }
     return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
   }
@@ -523,6 +528,15 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
         while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !now.parents?.some((p) => p.digest === digest)) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
         return "sent";
       }
+      // money clarity (Fees): an open fee marked paid by hand (cash, or a transfer the agent cannot see), bound to the fee as the page showed it
+      if (action === "cash") {
+        if (!state.view.cash?.some((c) => c.case === theCase && c.digest === digest)) return "changed";
+        const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action, case: theCase, digest }], token);
+        if (r === "refused") return "denied_link";
+        const deadline = Date.now() + (options.waitMs ?? 3_000);
+        while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !now.cash?.some((c) => c.digest === digest)) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
+        return "sent";
+      }
       const shown = state.view.items.find((i) => i.case === theCase && i.digest === digest && i.actions.includes(action));
       if (!shown) return "changed"; // already answered (here or on WhatsApp), or changed since it was shown: nothing is sent
       const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action: action as never, case: theCase, digest }], token);
@@ -552,11 +566,13 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     services: state.view.services,
     waiting: [
       ...state.relayAsks.map((x) => ({ source: "relay", kind: "guard_refund", case: x.approval, digest: x.digest, actions: ["approve", "deny"], amount_paise: x.amountPaise, customer: { phone: x.customerPhone }, booking: x.booking, ...(x.serviceName ? { service_name: x.serviceName } : {}), ...(x.slotMs !== undefined ? { start_ms: x.slotMs } : {}), until_ms: x.untilMs })),
-      ...state.view.items.map((i) => ({ source: "runtime", kind: i.kind, case: i.case, digest: i.digest, actions: i.actions, amount_paise: i.amountPaise, customer: i.customer, channel: i.channel, ...(i.serviceId ? { service_id: i.serviceId } : {}), ...(i.what ? { what: i.what } : {}), ...(i.startMs !== undefined ? { start_ms: i.startMs } : {}), ...(i.why ? { why: i.why } : {}) })),
+      ...state.view.items.map((i) => ({ source: "runtime", kind: i.kind, case: i.case, digest: i.digest, actions: i.actions, amount_paise: i.amountPaise, customer: i.customer, channel: i.channel, ...(i.serviceId ? { service_id: i.serviceId } : {}), ...(i.what ? { what: i.what } : {}), ...(i.startMs !== undefined ? { start_ms: i.startMs } : {}), ...(i.why ? { why: i.why } : {}), ...(i.claimedAtMs !== undefined ? { claimed_at_ms: i.claimedAtMs } : {}), ...(i.upiRef ? { upi_ref: i.upiRef } : {}) })),
     ],
     upcoming: state.view.upcoming,
     // item 11h (Fees): the parents and their private links, answered like the items: {"source": "runtime", "action": "send_link" | "revoke_link", "case": <ref>, "digest"}
     ...(state.view.parents ? { parents: state.view.parents.map((p) => ({ source: "runtime", case: p.ref, digest: p.digest, phone: p.phone, students: p.students, link: p.link, ...(p.sinceMs !== undefined ? { since_ms: p.sinceMs } : {}), actions: p.link === "active" ? ["send_link", "revoke_link"] : ["send_link"] })) } : {}),
+    // money clarity (Fees): the open fees that can be marked paid by hand: {"source": "runtime", "action": "cash", "case": <fee>, "digest"}
+    ...(state.view.cash ? { cash: state.view.cash.map((c) => ({ source: "runtime", case: c.case, digest: c.digest, student: c.student, what: c.what, amount_paise: c.amountPaise, actions: ["cash"] })) } : {}),
     // item 11e: the assistant's open cards, answered like the items: {"source": "runtime", "action": "card_yes" | "card_no", "case": <card id>, "digest"}
     ...(state.view.app ? { cards: state.view.app.cards.map((c) => ({ source: "runtime", case: c.id, digest: c.digest, actions: c.hasNo ? ["card_yes", "card_no"] : ["card_yes"], kind: c.kind, booking: c.case, amount_paise: c.amountPaise, who: c.who, until_ms: c.expiresAtMs, ...(c.question ? { question: c.question } : {}) })) } : {}),
   });
