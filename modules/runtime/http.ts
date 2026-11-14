@@ -394,7 +394,10 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
     if (path === "/status") {
       only("GET");
       if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." }, { "www-authenticate": "Bearer", ...closing });
-      return send(res, 200, runtime.status());
+      // batch 3: how the owner can sign in and hear (counts only), for the panel's go-live: a shop with no WhatsApp may not go live until one passkey exists and one phone has alerts
+      const signin = options.ownerSignin;
+      const ownerAccess = { passkeys: signin?.passkeysOn() ? signin.passkeys().length : 0, alertPhones: options.push?.on ? options.push.ownerPhones() : 0 };
+      return send(res, 200, { ...runtime.status(), ownerAccess });
     }
     if (path === "/internal/owner-session") {
       only("GET");

@@ -31,6 +31,7 @@ import type { Limiter } from "./limits.ts";
 import type { PagesFile } from "./pages-file.ts";
 import { PAGE } from "./words.ts";
 import { SIGNIN_CSS } from "./look.ts";
+import { partnerBar } from "./contact-bar.ts";
 import { PASSKEY_SCRIPT, PASSKEY_WORDS, isPasskeyRoute, passkeyButton, passkeyPolicy, passkeyRoute } from "./owner-passkey-page.ts";
 
 export const OWNER_COOKIE = "__Secure-geo-owner";
@@ -144,7 +145,7 @@ export function signinPage(o: { base: string; language: Language; pages: PagesFi
   const wa = o.pages?.whatsapp;
   const owner = `${o.base}/owner`;
   const passkey = o.passkeys
-    ? html`${o.passkeys.count > 0 ? passkeyButton({ mode: "signin", options: `${owner}/passkey/options`, finish: `${owner}/passkey/finish`, label: p.signIn, language: o.language }) : html`<p class="notice">${p.none}</p>`}
+    ? html`${o.passkeys.count > 0 ? passkeyButton({ mode: "signin", options: `${owner}/passkey/options`, finish: `${owner}/passkey/finish`, label: p.signIn, language: o.language, address: owner }) : html`<p class="notice">${p.none}</p>`}
 <p class="note">${p.note}</p><p class="note"><a href="${owner}/recover?lang=${o.language}">${p.recoverLink}</a></p>`
     : "";
   const whatsapp = wa
@@ -155,7 +156,7 @@ export function signinPage(o: { base: string; language: Language; pages: PagesFi
   const intro = o.sent ? html`<p class="notice" role="status">${w.sent}</p>` : html`<p>${wa || !o.passkeys ? w.intro : p.introNoWhatsapp}</p>`;
   return page(o.language, w.title, html`<h1>${w.title}</h1>
 ${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
-${intro}${passkey}${whatsapp}
+${partnerBar(o.language, o.pages)}${intro}${passkey}${whatsapp}
 ${partnerLine(o.language, o.pages?.panelUrl)}`, o.passkeys && o.passkeys.count > 0 ? o.passkeys.nonce : undefined);
 }
 
@@ -164,13 +165,13 @@ const signinPolicy = (policy: string, base: string, passkeys?: { count: number; 
   passkeys && passkeys.count > 0 ? { "content-security-policy": passkeyPolicy(policy, passkeys.nonce, [`${base}/owner/passkey/options`, `${base}/owner/passkey/finish`]) } : {};
 
 /** The page a link from WhatsApp opens: a button to sign in (valid), or why not and a way to ask again. */
-export function linkPage(o: { base: string; link: string; language: Language; state: LinkState }): string {
+export function linkPage(o: { base: string; link: string; language: Language; state: LinkState; pages?: PagesFile }): string {
   const w = SIGNIN_WORDS[o.language];
   if (o.state === "valid") {
     return page(o.language, w.linkTitle, html`<h1>${w.linkTitle}</h1><p>${w.linkValid}</p>
-<form method="post" action="${o.base}/owner/in/${o.link}"><input type="hidden" name="lang" value="${o.language}"><button type="submit" class="full">${w.signIn}</button></form>`);
+<form method="post" action="${o.base}/owner/in/${o.link}"><input type="hidden" name="lang" value="${o.language}"><button type="submit" class="full">${w.signIn}</button></form>${partnerBar(o.language, o.pages)}`);
   }
-  return page(o.language, w.linkTitle, html`<h1>${w.linkTitle}</h1><p class="notice">${w.state[o.state]}</p><p><a class="btn" href="${o.base}/owner?lang=${o.language}">${w.askAgain}</a></p>`);
+  return page(o.language, w.linkTitle, html`<h1>${w.linkTitle}</h1><p class="notice">${w.state[o.state]}</p><p><a class="btn" href="${o.base}/owner?lang=${o.language}">${w.askAgain}</a></p>${partnerBar(o.language, o.pages)}`);
 }
 
 /** What the session routes need from the front: its helpers, so the limits, the body caps and the Origin check are the front's own. */
@@ -216,7 +217,7 @@ export async function ownerSessionRoute(deps: OwnerSessionDeps, a: {
   const method = req.method ?? "GET";
   const cookiePath = `${new URL(base).pathname}/owner`;
   const htmlHeaders = { "x-robots-tag": "noindex" };
-  const slow = (language: Language) => deps.sendHtml(res, 429, page(language, SIGNIN_WORDS[language].title, html`<p class="notice">${SIGNIN_WORDS[language].tooMany}</p>`), { "retry-after": "600" });
+  const slow = (language: Language) => deps.sendHtml(res, 429, page(language, SIGNIN_WORDS[language].title, html`<p class="notice">${SIGNIN_WORDS[language].tooMany}</p>${partnerBar(language, pages)}`), { "retry-after": "600" });
   const back = (to: string, extra: Record<string, string> = {}) => { res.writeHead(303, { location: to, "cache-control": "no-store", ...extra }); res.end(); };
 
   // no pages file, or a runtime without sign-in: the owner's view is not on for this shop (item 11d's panel-made link still works)
@@ -240,7 +241,8 @@ export async function ownerSessionRoute(deps: OwnerSessionDeps, a: {
     if (method === "POST" && !a.sameOrigin) return deps.sendJson(res, 403, { message: "Calls from another site's page are refused." });
     return passkeyRoute({
       limiter: deps.limiter, sendHtml: deps.sendHtml, sendJson: deps.sendJson, readBody: deps.readBody, policy: deps.policy,
-      page: (language, title, body, nonce) => page(language, title, body, nonce), cookie: (session) => ownerCookie(cookiePath, session),
+      // every error page of the passkey routes carries the partner's number too (batch 3)
+      page: (language, title, body, nonce) => page(language, title, html`${body}${partnerBar(language, pages)}`, nonce), cookie: (session) => ownerCookie(cookiePath, session),
     }, { req, res, base, sub, address, backend, language: signinLanguage(req, url) });
   }
 
@@ -253,7 +255,7 @@ export async function ownerSessionRoute(deps: OwnerSessionDeps, a: {
     if (method === "GET") {
       const state = ACCESS_TOKEN.test(token) ? await backend.linkState(token) : "unknown";
       if (state === "unknown") deps.limiter.take("wrong", address);
-      return deps.sendHtml(res, state === "valid" ? 200 : 410, linkPage({ base, link: token, language, state }), htmlHeaders);
+      return deps.sendHtml(res, state === "valid" ? 200 : 410, linkPage({ base, link: token, language, state, pages }), htmlHeaders);
     }
     if (method !== "POST") return deps.sendHtml(res, 405, "<!doctype html><p>Use the page's button.</p>", { allow: "GET, POST" });
     const form = new URLSearchParams((await deps.readBody(req, 4096)) ?? "");
@@ -261,7 +263,7 @@ export async function ownerSessionRoute(deps: OwnerSessionDeps, a: {
     const done = ACCESS_TOKEN.test(token) ? await backend.signin(token) : { state: "unknown" as const };
     if ("state" in done) {
       if (done.state === "unknown") deps.limiter.take("wrong", address);
-      return deps.sendHtml(res, 410, linkPage({ base, link: token, language: lang, state: done.state }), htmlHeaders);
+      return deps.sendHtml(res, 410, linkPage({ base, link: token, language: lang, state: done.state, pages }), htmlHeaders);
     }
     // the browser that OPENED the link is the one signed in, never the one that asked for it
     return back(`${base}/owner?lang=${lang}`, { "set-cookie": ownerCookie(cookiePath, done.session) });

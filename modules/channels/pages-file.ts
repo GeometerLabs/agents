@@ -21,6 +21,11 @@ export interface PagesFile {
   pageUrl?: string;
   /** The shop's WhatsApp number to show ("message us on WhatsApp"): +91 and ten digits, as the panel took it. */
   whatsapp?: string;
+  /** Batch 5: the shop's own phone ("Call the shop") and map link, on every customer page. The phone may be a landline, so it is any +country number, not only a mobile. */
+  phone?: string;
+  map?: string;
+  /** Batch 3: the partner who looks after the shop (name and the number they call or WhatsApp on), at the top of the owner's app and on every error page. */
+  partner?: { name: string; phone: string };
   /** The panel's page for this shop, for the partner's line on the page (a link only: the panel signs its own people in). */
   panelUrl?: string;
   /**
@@ -32,6 +37,15 @@ export interface PagesFile {
 
 const HTTPS = /^https:\/\/[a-z0-9.-]+(:\d{1,5})?(\/[A-Za-z0-9._~%/-]*)?$/u;
 const isUrl = (v: unknown): v is string => typeof v === "string" && v.length <= 300 && HTTPS.test(v) && !v.endsWith("/");
+
+/** An international number as the panel takes it: "+" and 10 to 15 digits. */
+export const PHONE_SHAPE = /^\+\d{10,15}$/u;
+/**
+ * A map link a partner pastes: https only, on a maps host, no spaces or markup, at most 300 characters. A map link carries a query ("?q=..."), which `isUrl` refuses,
+ * so it has its own check. Used by the panel's form and by the file's reader, so both say the same.
+ */
+export const MAP_HOSTS = /^https:\/\/(www\.google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl|goo\.gl\/maps|www\.openstreetmap\.org|maps\.apple\.com)(\/|\?|$)/iu;
+export const isMapLink = (v: unknown): v is string => typeof v === "string" && v.length <= 300 && /^[^\s"'<>\\]+$/u.test(v) && MAP_HOSTS.test(v);
 
 /** The file's content, checked field by field; undefined when it is missing or not one (then the shop simply has no pages address and no owner sign-in). */
 export function readPagesFile(text: string | undefined): PagesFile | undefined {
@@ -46,6 +60,10 @@ export function readPagesFile(text: string | undefined): PagesFile | undefined {
     ...(isUrl(f.pageUrl) ? { pageUrl: f.pageUrl } : {}),
     ...(typeof f.whatsapp === "string" && /^\+\d{10,15}$/u.test(f.whatsapp) ? { whatsapp: f.whatsapp } : {}),
     ...(isUrl(f.panelUrl) ? { panelUrl: f.panelUrl } : {}),
+    ...(typeof f.phone === "string" && PHONE_SHAPE.test(f.phone) ? { phone: f.phone } : {}),
+    ...(isMapLink(f.map) ? { map: f.map } : {}),
+    ...(typeof f.partner === "object" && f.partner !== null && typeof (f.partner as { name?: unknown }).name === "string" && (f.partner as { name: string }).name.length > 0 && (f.partner as { name: string }).name.length <= 60 && typeof (f.partner as { phone?: unknown }).phone === "string" && PHONE_SHAPE.test((f.partner as { phone: string }).phone)
+      ? { partner: { name: (f.partner as { name: string }).name, phone: (f.partner as { phone: string }).phone } } : {}),
     ...(typeof f.character === "object" && f.character !== null && typeof (f.character as { version?: unknown }).version === "string" && /^[0-9a-f]{16}$/u.test((f.character as { version: string }).version) ? { character: { version: (f.character as { version: string }).version } } : {}),
   };
 }
