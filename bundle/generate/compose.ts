@@ -486,6 +486,7 @@ export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shop
 }
 
 // ---- the pages domain: the Streetlist home, then the door ------------------------------------------------------------------------------------------------------
+// (The hosted demo, /demo and /demo/*, is served the same way: it rides in the same pack, lib/home.ts HOME_DEMO_FILE.)
 // The Streetlist site's own files (streetlist repository, built into dist/ and installed by `geometer home install`, lib/home.ts) are served by Caddy at the pages
 // domain; every other path goes to the door. The text below is fixed: it does not depend on which build is installed (a build whose hosting rules differ is refused
 // at install), so installing or rolling back a build never rewrites this file or restarts Caddy. With no build installed the `@home-live` test fails and the domain is
@@ -545,13 +546,13 @@ export function pagesSites(pages: { domain: string; extraDomains: string[] }): s
     `\t\t\t\t# the addresses Firebase's cleanUrls and trailingSlash=false change: the .html and the trailing-slash forms go to the clean one`,
     `\t\t\t\t@home-index-html path /index.html`,
     `\t\t\t\tredir @home-index-html / 301`,
-    `\t\t\t\t@home-html path_regexp home-html ^/(shops|partners|privacy|examples/[a-z0-9-]+)\\.html$`,
+    `\t\t\t\t@home-html path_regexp home-html ^/(shops|partners|privacy|demo|examples/[a-z0-9-]+|demo/[a-z0-9-]+)\\.html$`,
     `\t\t\t\tredir @home-html /{re.home-html.1} 301`,
-    `\t\t\t\t@home-slash path_regexp home-slash ^/(shops|partners|privacy|examples|examples/[a-z0-9-]+)/$`,
+    `\t\t\t\t@home-slash path_regexp home-slash ^/(shops|partners|privacy|examples|examples/[a-z0-9-]+|demo|demo/[a-z0-9-]+)/$`,
     `\t\t\t\tredir @home-slash /{re.home-slash.1} 301`,
     `\t\t\t\tredir /examples ${HOME_EXAMPLES_REDIRECT} 302`,
     `\t\t\t\t# the home's own addresses: a page, a picture or a hashed file; anything missing under them is the home's 404 page`,
-    `\t\t\t\t@home-area path / /shops /partners /privacy /favicon.svg /examples /examples/* /assets /assets/*`,
+    `\t\t\t\t@home-area path / /shops /partners /privacy /favicon.svg /examples /examples/* /assets /assets/* /demo /demo/*`,
     `\t\t\t\thandle @home-area {`,
     `\t\t\t\t\troute {`,
     `\t\t\t\t\t\t# a page is read, not posted to: GET and HEAD only (the door would otherwise take the name for a shop's)`,

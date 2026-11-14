@@ -162,8 +162,9 @@ test("sell guide (B72): Google Calendar is an optional item; the owner's booking
     const setup = sections(guide(l))[7].body;
     const items = setup.split("\n").filter((x) => x.startsWith("- [ ] **"));
     assert.equal(items.length, 8, `${l}: the checklist keeps its 8 items`);
-    const calendar = items.find((x) => x.includes('"module": "own"'));
-    assert.ok(calendar, `${l}: the Google Calendar item says how a shop runs on its own booking list (settings "calendar": {"module": "own"})`);
+    const calendar = items.find((x) => x.includes("Make changes to events"));
+    assert.ok(calendar, `${l}: the Google Calendar item says how a shop runs on its own booking list (the panel's choice, not a hand edit of settings.json)`);
+    assert.ok(!calendar.includes("settings.json"), `${l}: the panel has the choice, so no hand edit of settings.json`);
     assert.ok(calendar.includes('"today"') && calendar.includes('"tomorrow"'), `${l}: and how the owner gets a day's bookings`);
     assert.ok(calendar.includes("Make changes to events"), `${l}: the sharing steps stay, for a shop that wants Google Calendar`);
     assert.ok(!/make a Google Calendar first|पहले एक Google Calendar बनाइए|ആദ്യം ഒരു Google Calendar ഉണ്ടാക്കി|ಮೊದಲು ಒಂದು Google Calendar ಮಾಡಿ/u.test(setup), `${l}: a shop on a paper diary is no longer told to make a calendar`);
@@ -172,14 +173,17 @@ test("sell guide (B72): Google Calendar is an optional item; the owner's booking
   assert.ok(guide("en").includes("see it in the owner's booking list (or in the calendar, if one is connected)"));
 });
 
-test("sell guide (B72): the WhatsApp check is the honest list (Business app, Facebook login with admin access, public name, verification may be asked, open the app every 2 weeks), with no account-age rule and no promise of 'no documents' or 'one visit'", () => {
+test("sell guide (B72, 14 Nov): WhatsApp goes through the shop's own Gupshup account, step by step as the panel does it, and the honest facts stay (Business app, Facebook login inside Gupshup's sign-up, public name, verification may be asked, open the app every 2 weeks), with no account-age rule and no promise of 'no documents' or 'one visit'", () => {
   for (const l of LANGUAGES) {
     const text = guide(l);
-    const whatsapp = sections(text)[7].body.split("\n- [ ] **")[1];
-    assert.ok(whatsapp.includes("Facebook") && whatsapp.includes("Meta"), `${l}: the WhatsApp check names the Facebook login and the Meta business portfolio`);
-    assert.equal(whatsapp.split("\n").filter((x) => x.startsWith("  - ")).length, 5, `${l}: the WhatsApp check has its five points`);
+    const whatsapp = sections(text)[7].body.split("\n- [ ] **").find((x) => x.includes("Gupshup"));
+    assert.ok(whatsapp, `${l}: the Gupshup item is there`);
+    assert.ok(whatsapp.includes("Facebook") && whatsapp.includes("Meta"), `${l}: the Gupshup item names the Facebook login and the Meta business account`);
+    assert.ok(whatsapp.includes("SECRET-WORD") && whatsapp.includes("gupshup.io"), `${l}: it names the secret word the callback address ends with, and where to sign up`);
+    assert.equal(whatsapp.split("\n").filter((x) => x.startsWith("  - ")).length, 8, `${l}: it has its eight points (whose account, six steps, what to tell the owner)`);
     assert.ok(!/months of real use|months old|कुछ महीने पुराना|മാസങ്ങളുടെ പഴക്കം|ತಿಂಗಳು ಹಳೆಯ/u.test(text), `${l}: the unconfirmed account-age rule is not stated as a fact`);
     assert.ok(!/\bno documents\b|\bone visit\b|\bno paperwork\b/i.test(text), `${l}: no promise the facts file forbids`);
+    assert.ok(!/Meta business portfolio/.test(text), `${l}: the old Meta-direct route (a login with admin access to the Meta business portfolio) is gone`);
   }
 });
 
@@ -338,13 +342,12 @@ test("sell guide: the four demo steps the guide teaches do what it says, in ever
   }
 });
 
-test("sell guide: the demo command in the guide is a real one", () => {
-  const server = readFileSync(new URL("../demo/server.ts", import.meta.url), "utf8");
-  assert.ok(server.includes('"--lang"'));
+test("sell guide (14 Nov): the demo is for a phone: the hosted demo's address, the made-up example pages, and no laptop, Node command or Wi-Fi address", () => {
   for (const l of LANGUAGES) {
-    assert.ok(guide(l).includes("node templates/commerce/bookings/demo/server.ts"), `${l}: the guide gives the command`);
-    assert.ok(guide(l).includes("--lang"), `${l}: the guide shows how to start the demo in the owner's language`);
-    assert.ok(/http:\/\/192\.168\.\d+\.\d+:8787/.test(guide(l)), `${l}: the guide shows what the Wi-Fi address looks like`);
+    const four = sections(guide(l))[3].body;
+    assert.ok(four.includes("`https://streetlist.in/demo/bookings`") && !four.includes("DEMO_URL"), `${l}: the hosted demo's address is there, no placeholder`);
+    assert.ok(four.includes("https://streetlist.in/examples/"), `${l}: the example pages are named`);
+    assert.ok(!/192\.168|node templates|Ctrl\+C|```sh/.test(guide(l)), `${l}: no laptop command, Wi-Fi address or Ctrl+C in the guide`);
   }
   assert.ok(existsSync(new URL("../demo/server.ts", import.meta.url)));
 });
