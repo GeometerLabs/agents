@@ -486,3 +486,9 @@ The service is `bundle/services/speech/` (README there). It was written and test
 | **All new hi, ml and kn text is machine-written** (`modules/demo/quick-strings.ts`, the Bookings labels, the list page, the customers' suggestions): it needs a native speaker's read. | As for every hi/ml/kn text. | The native review. |
 | **Orders' and Fees' suggestions are one or two sentences.** A partner can type anything; the rule parser understands the example shop's words. | Kept short on purpose. | Partners say what they typed that did not work. |
 | **No per-visitor limit, no log of visits.** Nothing reaches a server, so there is nothing to count. | By design (no telemetry). | If the owner wants to know how often the demo is opened, that is the home page's analytics decision, not this file's. |
+
+## The 25-shop step of the Docker proof on a laptop (14 Nov 2026): what is left
+
+- **25 shops stop Docker Desktop's engine on the owner's Mac** (8 GB for Docker, 10 CPUs). In the full proof of 14 Nov the 25-shop deploy passed with every Guard proven, then `docker compose ps` could not reach the daemon ("Cannot connect to the Docker daemon"); Docker Desktop restarted by itself. Since item 11h every shop has a fourth Guard (push) and its forwarder, so 25 shops are about 50 containers more than at the 9 Nov measurement that gave "about 25 shops a server". The proof now says so instead of reporting an empty list (`listServices` throws Docker's own error).
+- **What was run instead:** the full proof at `--shops 1,5,10` (the trial phase last). Until the 25-shop step passes again, do not quote 25 shops a server.
+- **Trigger:** measure on the real partner server (e2-medium, 4 GB) before its first shops, with `--shops 1,5,10,25`; then set the per-server shop count in docs/costs.md and the plan from that measurement.
