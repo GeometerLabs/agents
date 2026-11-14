@@ -256,7 +256,7 @@ test("licence lease takes a lease given by hand, for this server only", async ()
   } finally { w.done(); }
 });
 
-test("the whole server has its own verbs: server stop asks for --confirm and names the shops; stop with no shop points there; status waits for the panel", async () => {
+test("the whole server has its own verbs: server stop asks for --yes and names the shops; stop with no shop points there; status waits for the panel", async () => {
   const w = world({ "glow-salon": panelRuntime() }, { panel: { enabled: true } });
   try {
     const state = loadState(w.root);
@@ -270,11 +270,13 @@ test("the whole server has its own verbs: server stop asks for --confirm and nam
 
     const ask = await quiet(() => main(["server", "stop", "--server", w.root], ctx));
     assert.equal(ask.result, 3);
-    assert.match(ask.out, /stops EVERY container.*glow-salon.*geometer stop <shop>.*server stop --confirm/su);
-    assert.ok(!runner.calls.some((c) => c.args.includes("stop")), "nothing is stopped without --confirm");
-    const done = await quiet(() => main(["server", "stop", "--confirm", "--server", w.root], ctx));
+    assert.match(ask.out, /stops EVERY container.*glow-salon.*geometer stop <shop>.*server stop --yes/su);
+    assert.ok(!runner.calls.some((c) => c.args.includes("stop")), "nothing is stopped without --yes");
+    const done = await quiet(() => main(["server", "stop", "--yes", "--server", w.root], ctx));
     assert.equal(done.result, 0, done.err);
     assert.ok(runner.calls.some((c) => c.args.at(-1) === "stop" && c.args.includes("compose")));
+    // the old spelling still works (the geometer command an earlier install.sh wrote passes it), without being named in any help text
+    assert.equal((await quiet(() => main(["server", "stop", "--confirm", "--server", w.root], ctx))).result, 0, "--confirm is a hidden alias of --yes");
 
     assert.match((await quiet(() => main(["stop", "--server", w.root], ctx))).err, /Say which shop: stop <shop> \(the kill switch for that one shop.*geometer server stop/u);
     const status = await quiet(() => main(["server", "status", "--server", w.root], ctx));
