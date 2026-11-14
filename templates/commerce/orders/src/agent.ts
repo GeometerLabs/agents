@@ -66,6 +66,7 @@ import { detectLanguage } from "../../../../modules/understanding/rules.ts";
 import { ensureLink as makeLink } from "../../../../modules/payments/links.ts";
 import type { PaymentEvent, Payments } from "../../../../modules/payments/payments.ts";
 import { createRefunds, recheckLine } from "../../../../modules/payments/refunds.ts";
+import { ordersAccounting } from "./accounting.ts";
 import { emptyMarkState, markReceived, markRefund, oweRefund, reminded, remindersDue, markedPayments } from "../../../../modules/payments/owner-marked/ledger.ts";
 import type { OwedRefund, OwnerMark, MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { parseMarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
@@ -167,6 +168,9 @@ export function createAgent(deps: AgentDeps): Agent {
   const policy: AiPolicy = deps.ai ?? {};
   const licence = deps.licence ?? (() => UNRESTRICTED);
   const tz = settings.timezone;
+  // The shop's accounting (modules/accounting), over the very record `log` appends to: every money line below goes through books.post, which gives the line's
+  // own write its money fields and reads the line back (modules/accounting/post.ts). The action names, outcomes and notes are the ones this agent always wrote.
+  const books = ordersAccounting({ record, timezone: settings.timezone, clock });
   const owner = settings.owner.whatsapp;
   // B37: with other approvers, a refund the owner's own command asks for names the owner (Geo-Requested-By), and the others' code replies are the relay's
   const askedByOwner = ownerAsked(settings.approvers);
@@ -292,6 +296,7 @@ export function createAgent(deps: AgentDeps): Agent {
     tellOwner: (o, phone, template, more) => tellOwner(o, phone, template as TemplateId, more),
     cases: () => store.orders.values(),
     ids: { checking: "refund_checking", denied: "refund_denied", approved: "refund_approved", expired: "refund_expired", settled: "owner_refund_settled", confirmed: "refund_confirmed" },
+    accounting: books,
   });
   const { requestRefund, overLimit } = refunds;
   const afterRefund = (o: Order, result: Parameters<typeof refunds.afterRefund>[1], a: { paymentId: string; amountInr: number; done: { customer: TemplateId; owner?: TemplateId }; held: TemplateId }) => refunds.afterRefund(o, result, a);
@@ -588,10 +593,10 @@ export function createAgent(deps: AgentDeps): Agent {
       o.handledPayments.push(payment.id);
       if (rule.verdict === "allow") {
         o.advancePaymentId = payment.id;
-        log(o, o.customer, "record_payment", "confirmed", { linkId: link.id, amount: payment.amount }, { decisions: [rule], refs: { paymentId: payment.id, linkId: link.id, amountPaise: String(payment.amount) } });
+        books.post({ kind: "received", case: o.id, paymentId: payment.id, amountPaise: payment.amount, method: "gateway", evidence: "provider", for: "advance" }, (m) => log(o, o.customer, "record_payment", "confirmed", { linkId: link.id, amount: payment.amount }, { decisions: [rule], refs: { paymentId: payment.id, linkId: link.id, amountPaise: String(payment.amount), ...m } }));
         await afterAdvance(o);
       } else {
-        log(o, o.customer, "record_payment", "blocked", { linkId: link.id, amount: payment.amount }, { decisions: [rule], refs: { paymentId: payment.id, amountPaise: String(payment.amount) } });
+        books.post({ kind: "received", case: o.id, paymentId: payment.id, amountPaise: payment.amount, method: "gateway", evidence: "provider", for: "extra" }, (m) => log(o, o.customer, "record_payment", "blocked", { linkId: link.id, amount: payment.amount }, { decisions: [rule], refs: { paymentId: payment.id, amountPaise: String(payment.amount), ...m } }));
         await handleExtraPayment(o, payment.id, payment.amount / 100 - payment.amount_refunded / 100, rule);
       }
     }
@@ -652,10 +657,10 @@ export function createAgent(deps: AgentDeps): Agent {
     if (fresh.length === 0) return "none";
     for (const m of fresh) {
       o.handledPayments.push(m.id);
-      log(o, o.customer, MARK_ACTIONS.marked, "confirmed", { requestId: request.id, amountPaise: m.amountPaise }, {
-        refs: { paymentId: m.id, requestId: request.id, amountPaise: String(m.amountPaise), markedBy: "owner" },
+      books.post({ kind: "received", case: o.id, paymentId: m.id, amountPaise: m.amountPaise, method: "upi", evidence: "owner_mark", for: "advance" }, (money) => log(o, o.customer, MARK_ACTIONS.marked, "confirmed", { requestId: request.id, amountPaise: m.amountPaise }, {
+        refs: { paymentId: m.id, requestId: request.id, amountPaise: String(m.amountPaise), markedBy: "owner", ...money },
         notes: m.afterClose ? "marked received by the owner after the request was closed: it does not confirm by itself" : "marked paid by owner: from the owner's own number, with a one-use code",
-      });
+      }));
     }
     const freshPaise = fresh.reduce((n, m) => n + m.amountPaise, 0);
     const last = fresh.at(-1)!;
@@ -688,7 +693,7 @@ export function createAgent(deps: AgentDeps): Agent {
   /** A refund the owner owes: recorded, the customer told it will come from the owner, the owner told what to send, with the code. The agent never sends it. */
   async function oweBack(o: Order, paymentId: string, amountPaise: number, why: string, x: { customer: TemplateId; ownerTemplate?: TemplateId; keepAllowed?: boolean; markedInr?: number; decisions?: Decision[] }): Promise<OwedRefund> {
     const r = oweRefund(markState!, { caseId: o.id, customer: o.customer, paymentId, amountPaise, why, keepAllowed: x.keepAllowed }, clock.now());
-    log(o, o.customer, MARK_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions: x.decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise) }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` });
+    books.post({ kind: "refund_owed", case: o.id, owed: r.id, paymentId, amountPaise }, (m) => log(o, o.customer, MARK_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions: x.decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise), ...m }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` }));
     const refundInr = amountPaise / 100;
     await tellCustomer(o, o.customer, [x.customer], { refundInr, markedInr: x.markedInr });
     await tellOwner(o, o.customer, x.ownerTemplate ?? "owner_upi_refund_owed", { refundInr, upiCode: r.code ?? undefined, markedInr: x.markedInr, offer: refundButtons(r) });
@@ -747,11 +752,11 @@ export function createAgent(deps: AgentDeps): Agent {
     const o = store.orders.get(r.caseId) ?? null;
     const refs = { refundId: r.id, paymentId: r.paymentId, amountPaise: String(r.amountPaise) };
     if (result.kind === "kept") {
-      log(o, r.customer, MARK_ACTIONS.refundKept, "confirmed", { refundId: r.id }, { refs, notes: "the owner keeps this money for an order they take by hand: nothing is owed back" });
+      books.post({ kind: "kept", case: r.caseId, owed: r.id, why: "late_mark_kept" }, (m) => log(o, r.customer, MARK_ACTIONS.refundKept, "confirmed", { refundId: r.id }, { refs: { ...refs, ...m }, notes: "the owner keeps this money for an order they take by hand: nothing is owed back" }));
       await tellOwner(o, r.customer, "owner_upi_refund_kept", { refundInr: r.amountPaise / 100 });
       return;
     }
-    log(o, r.customer, MARK_ACTIONS.refundDone, "confirmed", { refundId: r.id }, { refs, notes: "the owner marked the refund sent from their UPI app; only now is the customer told it was sent" });
+    books.post({ kind: "refund_made", case: r.caseId, owed: r.id, paymentId: r.paymentId, amountPaise: r.amountPaise, method: "upi", evidence: "owner_mark", refundId: r.id }, (m) => log(o, r.customer, MARK_ACTIONS.refundDone, "confirmed", { refundId: r.id }, { refs: { ...refs, ...m }, notes: "the owner marked the refund sent from their UPI app; only now is the customer told it was sent" }));
     await tellCustomer(o, r.customer, ["upi_refund_sent"], { refundInr: r.amountPaise / 100 });
     await tellOwner(o, r.customer, "owner_upi_refund_marked", { refundInr: r.amountPaise / 100 });
   }
@@ -947,7 +952,8 @@ export function createAgent(deps: AgentDeps): Agent {
 
     if (command === "deny") {
       o.pending.shift();
-      log(o, owner, "owner_decision", "confirmed", { command }, { notes: "the owner declined the refund", refs: said });
+      // the advance stays with the shop: the books move it from the customer's advance to "kept from a cancellation" (the owner's page takes this same path)
+      books.post({ kind: "kept", case: o.id, amountPaise: (pending as Extract<Pending, { kind: "refund" }>).amountInr * 100, why: "late_cancellation" }, (m) => log(o, owner, "owner_decision", "confirmed", { command }, { notes: "the owner declined the refund", refs: { ...said, ...m } }));
       await tellCustomer(o, o.customer, ["refund_denied"]);
       return;
     }
@@ -1123,7 +1129,9 @@ export function createAgent(deps: AgentDeps): Agent {
       if (o.state === "awaiting_advance" && o.holdExpiresAt !== undefined && o.holdExpiresAt <= now) await expireHold(o);
       if (o.state === "confirmed" && o.slotEndMs !== undefined && o.slotEndMs <= now) {
         moveTo(o, "completed");
-        log(o, o.customer, "complete_order", "confirmed", { endMs: o.slotEndMs });
+        // the advance is applied to the order when it is done; an order with no advance posts nothing
+        const own = (money: Record<string, string>) => log(o, o.customer, "complete_order", "confirmed", { endMs: o.slotEndMs }, Object.keys(money).length > 0 ? { refs: money } : {});
+        if (o.advancePaymentId && advancePaise(o) > 0) books.post({ kind: "applied", case: o.id, amountPaise: advancePaise(o), service: "orders" }, own); else own({});
       }
     }
   }

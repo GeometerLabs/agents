@@ -35,6 +35,7 @@ import type { Action, Outcome } from "../record/record.ts";
 import type { SaidOutcome } from "../messaging/say.ts";
 import { ATTEMPTS } from "./links.ts";
 import type { Payments, Refund } from "./payments.ts";
+import type { Accounting, MoneyEvent } from "../accounting/post.ts";
 
 /** After a refund could not be sent at all, or an approved one could not be sent again: minutes before each next try, then the builder is told. */
 export const RETRY_MINUTES = [1, 2, 5, 15, 30, 60];
@@ -142,11 +143,30 @@ export interface RefundDeps<C extends RefundCase> {
    * `confirmed` tells the customer their refund is confirmed when the payments service's list settles one they were told was being checked (`checking`).
    */
   ids: { checking: string; denied: string; approved: string; expired: string; settled: string; confirmed: string };
+  /**
+   * The shop's accounting (modules/accounting). With it, the refund lines below carry their money fields: the first `refund attempted` line of a payment owes the
+   * refund, every `refund confirmed` line makes it, and the final no cancels it. Optional so an older caller still works; every template passes it.
+   */
+  accounting?: Accounting;
 }
 
 // Looks before sending and never resends a refund that may already have gone out, since a repeated refund is real money lost.
 export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
   const { payments, clock, owner, log, tellCustomer, tellOwner } = deps;
+
+  // ---- the money fields of a refund line (modules/accounting/post.ts) -----------------------------------------------------------------------------------
+  //
+  // post() does not write a line of its own: it hands the template's own line (the same action and outcome as before) the money refs to merge in last, and reads the
+  // line back. A refund is owed under its receipt, `<case>:<payment>`. A line that is a repeat gets no money refs and is still written, so nothing else changes.
+  const books = deps.accounting;
+  const post = (event: MoneyEvent, write: (money: Record<string, string>) => void): void => { if (books) books.post(event, write); else write({}); };
+  const owedKey = (b: C, paymentId: string) => `${b.id}:${paymentId}`;
+  /** A refund that was made: the payments service's list showed it (provider), or a person at the server settled it by their word (no refund id). */
+  const madePost = (b: C, paymentId: string, amountPaise: number, refundId: string | undefined, write: (money: Record<string, string>) => void): void =>
+    post({ kind: "refund_made", case: b.id, owed: owedKey(b, paymentId), paymentId, amountPaise, method: "gateway", evidence: refundId ? "provider" : "person_word", ...(refundId ? { refundId } : {}) }, write);
+  /** A refund that will not be made (the final no). Anything that may still have gone out stays owed: nothing is posted for it. */
+  const cancelPost = (b: C, paymentId: string, why: "owner_said_no" | "expired" | "refused" | "failed", write: (money: Record<string, string>) => void): void =>
+    post({ kind: "refund_cancelled", case: b.id, owed: owedKey(b, paymentId), why }, write);
 
   const issuesOf = (b: C) => (b.refundIssues ??= []);
   const stoppedOf = (b: C) => (b.stoppedRefunds ??= []);
@@ -198,10 +218,10 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
    */
   async function settledByPerson(b: C, paymentId: string, amountInr: number, refs: Record<string, string>, e: GuardAlreadyDoneError): Promise<void> {
     const who = e.confirmedBy ?? "a person at the server";
-    log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, {
-      refs: { ...refs, confirmedBy: who, ...(e.intent ? { intent: e.intent } : {}) },
+    madePost(b, paymentId, amountInr * 100, undefined, (m) => log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, {
+      refs: { ...refs, confirmedBy: who, ...(e.intent ? { intent: e.intent } : {}), ...m },
       notes: `Guard says ${who} settled this refund as made (already_done): it is done by that person's word, not by the payments service's own list, which did not show it. It is not sent again`,
-    });
+    }));
     if (!stoppedOf(b).includes(paymentId)) stoppedOf(b).push(paymentId); // asking Guard again would only get the same answer
     await tellOwner(b, b.customer, deps.ids.settled, { refundInr: amountInr });
   }
@@ -215,7 +235,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     const which = e.approval ?? approval;
     if (which) log(b, owner, "owner_decision", "confirmed", { approval: which, decision: "deny" }, { refs: { command: "deny", approval: which }, notes: "Guard's record says the person asked denied this exact refund, so Guard refused it when it was sent again and asked nobody again" });
     if (!stoppedOf(b).includes(paymentId)) stoppedOf(b).push(paymentId); // the identical call is refused for a day, and asking later would ask the owner again
-    log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs: { ...refs, ...(which ? { approval: which } : {}) }, notes: "the owner declined the refund (Guard: denied_by_approver). Nothing was refunded" });
+    cancelPost(b, paymentId, "owner_said_no", (m) => log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs: { ...refs, ...(which ? { approval: which } : {}), ...m }, notes: "the owner declined the refund (Guard: denied_by_approver). Nothing was refunded" }));
   }
 
   const overLimit = (amountInr: number) => amountInr > deps.limitInr();
@@ -233,12 +253,13 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs, notes: "an earlier try at this refund ended with a no, an unclear outcome, a failure, or Guard's word that a person settled it as made, so Guard is not asked again" });
       return "stopped";
     }
-    log(b, b.customer, "refund", "attempted", { paymentId, amountInr }, { decisions, refs });
+    // the refund is owed from its first attempt (a repeat of the same attempt owes nothing new: post says so and the line is written as before)
+    post({ kind: "refund_owed", case: b.id, owed: receipt, paymentId, amountPaise }, (m) => log(b, b.customer, "refund", "attempted", { paymentId, amountInr }, { decisions, refs: { ...refs, ...m } }));
 
     /** The refund may have gone out and cannot be sent again: read the payments service's own list once, and stop. */
     async function maybeDone(why: string): Promise<RefundResult> {
       const found = await findRefund(paymentId, receipt).catch(() => undefined);
-      if (found) { log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id }, notes: `${why}; the payments service's own list shows the refund, and it is not sent again` }); return "done"; }
+      if (found) { madePost(b, paymentId, amountPaise, found.id, (m) => log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id, ...m }, notes: `${why}; the payments service's own list shows the refund, and it is not sent again` })); return "done"; }
       const note = `${why}. The refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment ${paymentId}; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).`;
       log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: note });
       raise(b, paymentId, "unknown", note, { amountInr });
@@ -249,7 +270,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     async function readBack(refundId: string | undefined, note?: string): Promise<RefundResult> {
       const found = await findRefund(paymentId, receipt).catch(() => undefined);
       if (found) {
-        log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id }, ...(note ? { notes: note } : {}) });
+        madePost(b, paymentId, amountPaise, found.id, (m) => log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: found.id, ...m }, ...(note ? { notes: note } : {}) }));
         if (expectHold) {
           const why = `A refund of ${formatInr(amountInr)} is above the ${formatInr(deps.limitInr())} limit but Guard sent it without holding it for the owner. Guard's threshold does not match these settings: check the gateway's limits spec.`;
           log(b, b.customer, "refund", "unconfirmed", { paymentId, amountInr }, { refs, notes: why });
@@ -268,7 +289,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       try {
         const done = await findRefund(paymentId, receipt); // look first: an earlier try, or a lost reply, may have landed
         if (done) {
-          log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: done.id } });
+          madePost(b, paymentId, amountPaise, done.id, (m) => log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId: done.id, ...m } }));
           return "done";
         }
       } catch (e) {
@@ -298,13 +319,13 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
           case "owner_said_no": ownerSaidNo(b, paymentId, amountInr, refs, sorted.error); return "denied";
           case "refused": {
             const note = `Guard refused the refund (${sorted.error.kind === "limit" ? "a limit" : "a rule"}${sorted.error.ruleId ? `: ${sorted.error.ruleId}` : ""}): ${sorted.error.guard.reason ?? sorted.error.message}. Nothing was refunded.`;
-            log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs, notes: note });
+            cancelPost(b, paymentId, "refused", (m) => log(b, b.customer, "refund", "blocked", { paymentId, amountInr }, { refs: { ...refs, ...m }, notes: note }));
             raise(b, paymentId, "refused", note);
             return "stopped";
           }
           case "no_good": {
             const note = `Guard did not take the refund and will not on a retry: ${sorted.why}. Nothing was refunded.`;
-            log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs, notes: note });
+            cancelPost(b, paymentId, "failed", (m) => log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs: { ...refs, ...m }, notes: note }));
             raise(b, paymentId, "failed", note, { amountInr });
             return "stopped";
           }
@@ -337,7 +358,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       const tries = p.tries + 1;
       if (tries >= RETRY_MINUTES.length) {
         const note = `The refund of ${formatInr(p.amountInr)} for payment ${p.paymentId} could not be sent after ${tries + 1} tries. Nothing was refunded.`;
-        log(b, b.customer, "refund", "failed", { paymentId: p.paymentId, amountInr: p.amountInr }, { notes: note, refs: { paymentId: p.paymentId } });
+        cancelPost(b, p.paymentId, "failed", (m) => log(b, b.customer, "refund", "failed", { paymentId: p.paymentId, amountInr: p.amountInr }, { notes: note, refs: { paymentId: p.paymentId, ...m } }));
         raise(b, p.paymentId, "failed", note, { amountInr: p.amountInr });
         return;
       }
@@ -398,12 +419,12 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
   async function settleIssue(b: C, issue: RefundIssue, r: Refund, through: SettledThrough): Promise<boolean> {
     b.refundIssues = issuesOf(b).filter((x) => x !== issue);
     const inputs = through.via === "recheck" ? { paymentId: issue.paymentId, recheck: true } : { paymentId: issue.paymentId, event: through.eventId };
-    log(b, b.customer, "refund", "confirmed", inputs, {
-      refs: { paymentId: issue.paymentId, amountPaise: String(r.amount), refundId: r.id, ...(through.via === "refund.done" ? { eventId: through.eventId } : {}) },
+    madePost(b, issue.paymentId, r.amount, r.id, (m) => log(b, b.customer, "refund", "confirmed", inputs, {
+      refs: { paymentId: issue.paymentId, amountPaise: String(r.amount), refundId: r.id, ...(through.via === "refund.done" ? { eventId: through.eventId } : {}), ...m },
       notes: through.via === "recheck"
         ? "looked again: the payments service's own list now shows the refund. It was not sent again"
         : "the payments service's own refund.done event names this refund, and its own list shows it: the attempt whose outcome was unknown is settled by the provider. It was not sent again",
-    });
+    }));
     const now = clock.now();
     const untold: UntoldRefund = { paymentId: issue.paymentId, refundId: r.id, amountInr: r.amount / 100, sinceMs: now, tries: 0, lastAtMs: now, last: "not_sent" };
     untoldOf(b).push(untold); // kept before the message goes, so it is listed until a message is accepted
@@ -477,7 +498,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       log(b, owner, "owner_decision", "confirmed", { approval: hold.approval, decision: command }, { refs: { command, approval: hold.approval }, notes: "the approvals relay reported that the owner denied the refund" });
       dropHold(b, hold);
       stoppedOf(b).push(hold.paymentId); // Guard would hold the same call again under a new approval: the agent must not ask again
-      log(b, b.customer, "refund", "blocked", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval }, notes: "the owner declined the refund" });
+      cancelPost(b, hold.paymentId, "owner_said_no", (m) => log(b, b.customer, "refund", "blocked", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval, ...m }, notes: "the owner declined the refund" }));
       await tellCustomer(b, b.customer, [deps.ids.denied]);
       return;
     }
@@ -494,7 +515,7 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
       if (hold.tries >= RETRY_MINUTES.length) {
         dropHold(b, hold);
         const note = `The owner approved the refund, but it could not be sent after ${hold.tries} tries (${why}). Nothing was refunded.`;
-        log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs, notes: note });
+        cancelPost(b, paymentId, "failed", (m) => log(b, b.customer, "refund", "failed", { paymentId, amountInr }, { refs: { ...refs, ...m }, notes: note }));
         raise(b, paymentId, "failed", note, { amountInr });
         return tellCustomer(b, b.customer, [deps.ids.checking], { refundInr: amountInr }).then(() => undefined);
       }
@@ -505,12 +526,14 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     const released = () => log(b, owner, "owner_decision", "confirmed", { approval: hold.approval, decision: "approve" }, { refs: { command: "approve", approval: hold.approval }, notes: "Guard released the held refund, so the owner's approval is on Guard's record" });
     const finish = async (refundId: string, note?: string) => {
       dropHold(b, hold);
-      log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId }, ...(note ? { notes: note } : {}) });
+      madePost(b, paymentId, amountInr * 100, refundId, (m) => log(b, b.customer, "refund", "confirmed", { paymentId, amountInr }, { refs: { ...refs, refundId, ...m }, ...(note ? { notes: note } : {}) }));
       await tellCustomer(b, b.customer, [deps.ids.approved], { refundInr: amountInr });
     };
     const stop = async (kind: RefundIssueKind, note: string, outcome: "failed" | "unconfirmed" | "blocked", refundId?: string) => {
       dropHold(b, hold);
-      log(b, b.customer, "refund", outcome, { paymentId, amountInr }, { refs: { ...refs, ...(refundId ? { refundId } : {}) }, notes: note });
+      // only a no that is final cancels the refund; one that may have gone out (unknown, uncertain, unconfirmed) stays owed
+      const line = (m: Record<string, string>) => log(b, b.customer, "refund", outcome, { paymentId, amountInr }, { refs: { ...refs, ...(refundId ? { refundId } : {}), ...m }, notes: note });
+      if (kind === "refused" || kind === "failed") cancelPost(b, paymentId, kind, line); else line({});
       raise(b, paymentId, kind, note, { amountInr, refundId });
       await tellCustomer(b, b.customer, [deps.ids.checking], { refundInr: amountInr });
     };
@@ -587,13 +610,13 @@ export function createRefunds<C extends RefundCase>(deps: RefundDeps<C>) {
     const made = await findRefund(hold.paymentId, hold.receipt).catch(() => undefined);
     if (made) {
       dropHold(b, hold);
-      log(b, b.customer, "refund", "confirmed", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval, refundId: made.id }, notes: "the hold's time ran out here, but the payments service's own list shows the refund: it was made. It is not sent again" });
+      madePost(b, hold.paymentId, hold.amountInr * 100, made.id, (m) => log(b, b.customer, "refund", "confirmed", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval, refundId: made.id, ...m }, notes: "the hold's time ran out here, but the payments service's own list shows the refund: it was made. It is not sent again" }));
       await tellCustomer(b, b.customer, [deps.ids.approved], { refundInr: hold.amountInr });
       return;
     }
     dropHold(b, hold);
     const note = `${why}. Nothing was refunded. A new request for payment ${hold.paymentId} has to be made by the builder.`;
-    log(b, b.customer, "refund", "failed", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval }, notes: note });
+    cancelPost(b, hold.paymentId, "expired", (m) => log(b, b.customer, "refund", "failed", { paymentId: hold.paymentId, amountInr: hold.amountInr }, { refs: { paymentId: hold.paymentId, approval: hold.approval, ...m }, notes: note }));
     raise(b, hold.paymentId, "expired", note);
     await tellCustomer(b, b.customer, [deps.ids.expired], { refundInr: hold.amountInr });
   }
