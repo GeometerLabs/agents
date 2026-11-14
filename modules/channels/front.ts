@@ -7,7 +7,7 @@
 //   GET  /s/<shop>/o/<owner token>       the owner's private approvals page                     POST /s/<shop>/o/<owner token>   an answer
 //   ...  /s/<shop>/owner/...             item 11f: the owner's view, signed in by a one-time link on WhatsApp (owner-session.ts)
 //   With the shop's assistant (item 11e), both owner addresses are also the owner's app: <owner base>/ (the page), /manifest.webmanifest, /sw.js, /talk (the talk
-//   box's words) and /voice (a hold-to-record recording); the page's one script runs by a nonce in that response's content policy (appPolicy).
+//   box's words) and /voice (a hold-to-record recording, Ogg or WebM Opus); the page's one script runs by a nonce in that response's content policy (appPolicy).
 //
 // Item 11i, the shop's character: every shop's mood pictures (drawn on its server, bundle/character/render.ts) are public at stable addresses, for the shop's own
 // page, Streetlist and WhatsApp (which fetches the PNG and WebP itself):
@@ -127,9 +127,17 @@ export interface FrontOptions {
   log?: (line: string) => void;
 }
 
-/** The pages' content policy: no script at all, nothing loaded from anywhere, no frame, forms only to this site, no referrer. */
+/** The pages' content policy: no script at all, nothing loaded from anywhere, no frame, forms only to this site. */
 export const PAGE_POLICY = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
-const HTML_HEADERS = { "content-type": "text/html; charset=utf-8", "content-security-policy": PAGE_POLICY, "x-content-type-options": "nosniff", "referrer-policy": "no-referrer", "cache-control": "no-store" };
+/**
+ * The pages' referrer policy: the origin only, never the address. An address here can be a secret (a booking's handle, the owner's link), so no page ever sends
+ * its path or query in a Referer. It is "strict-origin" and not "no-referrer" because, under "no-referrer", a browser sends `Origin: null` with every form it posts
+ * (the Fetch standard, "append a request Origin header"), and every form here is checked against its Origin (sameOrigin): a real browser's booking, cancel, "I have
+ * paid", the owner's answers and the sign-in were all refused with 403 (found by item 11i's design pass in headless Chromium; the tests post with fetch, which
+ * always sends the real Origin). The owner's pages say the same in a meta tag (owner-page.ts, owner-session.ts).
+ */
+export const PAGE_REFERRER = "strict-origin";
+const HTML_HEADERS = { "content-type": "text/html; charset=utf-8", "content-security-policy": PAGE_POLICY, "x-content-type-options": "nosniff", "referrer-policy": PAGE_REFERRER, "cache-control": "no-store" };
 /**
  * The owner's app page (item 11e, on the owner's link and the signed-in view): PAGE_POLICY and exactly what the app needs, each at its own address under the owner's
  * base: its one inline script by this response's nonce, the recording's POST, its service worker and its manifest. The pages origin is shared by every shop on the
@@ -606,7 +614,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     if (app && sub === "/voice") {
       if (!app.listen || !shop.backend.ownerVoice) return sendJson(res, 404, { error: { code: "not_found", message: "Voice is not on for this shop's assistant." } });
       const type = String(req.headers["content-type"] ?? "");
-      if (!/^audio\/ogg\b/iu.test(type)) return sendJson(res, 415, { error: { code: "bad_request", message: "Send the recording as audio/ogg (Opus)." } });
+      // item 11i: Ogg Opus, or WebM Opus (what Android's Chrome records); the voice service reads the length from the bytes themselves either way
+      if (!/^audio\/(ogg|webm)\b/iu.test(type)) return sendJson(res, 415, { error: { code: "bad_request", message: "Send the recording as audio/ogg or audio/webm (Opus)." } });
       if (!csrfOk(req.headers[CSRF_HEADER])) return sendJson(res, 403, { error: { code: "bad_request", message: `Send the session's form token in ${CSRF_HEADER}.` } });
       const bytes = await readBytes(req, MAX_VOICE_BYTES);
       if (!bytes || bytes.length === 0) return sendJson(res, 413, { error: { code: "bad_request", message: "A recording of at most 30 seconds." } });
@@ -645,7 +654,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     }
     // the owner's app runs our scripts only: a fresh nonce for this response, in its content policy and on those scripts, and nothing else may run
     const nonce = app || pushState ? randomBytes(16).toString("base64") : undefined;
-    const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), ...(nonce ? { nonce } : {}) }) : undefined;
+    // bare: the box without its script, which runs inside the page's one script (owner-page.ts, look.ts themeScript)
+    const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), bare: true }) : undefined;
     // item 11i: the owner's app shows the character in the shop's real mood (all five moods: this is the owner's own view)
     const facePic = state.view.app ? shop.character?.()?.picture(state.view.app.face, "svg") : undefined;
     return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });

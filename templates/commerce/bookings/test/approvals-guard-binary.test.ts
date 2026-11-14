@@ -101,14 +101,22 @@ owner-glow-salon = "\${file:${join(dir, "owner_notify_secret")}}"
   return { agentUrl: `http://127.0.0.1:${listen}`, adminUrl: `http://127.0.0.1:${adminListen}`, agentToken: agent.token, adminToken: admin.token, ownerSecret, spec, digest: summary.digest, approvalTtlSeconds, stop };
 }
 
+/**
+ * The stand-in and the real Guard in front of it. When the Guard does not come up (on a loaded machine its 5 s wait can run out), the stand-in is closed before
+ * the error goes on: an open stand-in server kept this test file's process alive after the failure, holding the machine's test lock for 36 minutes (14 Nov 2026).
+ */
+async function standinsAndGuard(settings: ReturnType<typeof glowSalon>, approvalTtlSeconds?: number): Promise<{ standins: Awaited<ReturnType<typeof startStandins>>; guard: RealGuard }> {
+  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
+  try { return { standins, guard: await startRealGuard(settings, standins.port, approvalTtlSeconds) }; } catch (e) { await standins.close(); throw e; }
+}
+
 const admin = (g: RealGuard, path: string, init: RequestInit = {}) => fetch(`${g.adminUrl}${path}`, { ...init, headers: { authorization: `Bearer ${g.adminToken}`, "content-type": "application/json", ...(init.headers ?? {}) } });
 
 const limited = (refundLimitInr: number) => parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), cancellation: { windowHours: 24, refundLimitInr } });
 
 test("the generated spec compiles, and the agent's limit and the real Guard's threshold are the same line: at the limit passes, one paisa above is held", { skip }, async () => {
   const settings = limited(100);
-  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
-  const guard = await startRealGuard(settings, standins.port);
+  const { standins, guard } = await standinsAndGuard(settings);
   try {
     assert.equal(refundThresholdPaise(settings), 10_000);
     const refund = (amount: number, id = "pay_nobody") => fetch(`${guard.agentUrl}/v1/payments/${id}/refund`, { method: "POST", headers: { authorization: `Bearer ${guard.agentToken}`, "content-type": "application/json" }, body: JSON.stringify({ amount, receipt: `b-1:${id}` }) });
@@ -137,8 +145,7 @@ const pendingApprovals = async (g: RealGuard) => ((await (await admin(g, "/admin
 
 test("a refund above the deposit is refused by the real Guard even when it is also above the owner's limit: the refusal wins over the hold, and nobody is asked", { skip }, async () => {
   const settings = limited(100); // the owner's limit (₹100) is below the deposit (₹200), so the deposit itself is held
-  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
-  const guard = await startRealGuard(settings, standins.port);
+  const { standins, guard } = await standinsAndGuard(settings);
   try {
     assert.deepEqual(guard.spec.rules.find((r: any) => r.id === "refund-at-most-deposit"), { id: "refund-at-most-deposit", kind: "argument_bound", operation: "refund", field: "amount", min: "1", max: "20000", units: { amount: "paise" } });
     // exactly the deposit is above the limit, so it waits for the owner as before
@@ -166,8 +173,7 @@ test("a refund above the deposit is refused by the real Guard even when it is al
 
 test("the deposit was lowered: the real Guard refuses the older, larger refund (the same bound, the new number), lets the new deposit through, and the refused call does not use up the once-only record", { skip }, async () => {
   const lowered = parseSettings({ ...JSON.parse(JSON.stringify(glowSalon())), deposit: { ...JSON.parse(JSON.stringify(glowSalon())).deposit, amountInr: 150 }, cancellation: { windowHours: 24, refundLimitInr: 500 } });
-  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
-  const guard = await startRealGuard(lowered, standins.port);
+  const { standins, guard } = await standinsAndGuard(lowered);
   try {
     assert.equal(guard.spec.rules.find((r: any) => r.id === "refund-at-most-deposit").max, "15000");
     // ₹200 was a deposit before the change: above the new deposit, so refused, though it is well inside the owner's limit (₹500)
@@ -200,8 +206,7 @@ test("the longest approval time Guard accepts is 7 days; one second more is refu
 
 test("held → relay asks once → the owner approves → a signed notify → the identical call again → the refund is made once, and the owner was asked exactly once", { skip }, async () => {
   const settings = limited(100);
-  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
-  const guard = await startRealGuard(settings, standins.port);
+  const { standins, guard } = await standinsAndGuard(settings);
   const kit = createKit();
   const dir = mkdtempSync(join(tmpdir(), "geo-relay-it-"));
   const whatsapp = createFakeMessaging(kit.clock);
@@ -290,8 +295,7 @@ test("held → relay asks once → the owner approves → a signed notify → th
 
 test("a denied refund against the real Guard: the owner says no, nothing is refunded, and Guard is not asked again", { skip }, async () => {
   const settings = limited(100);
-  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
-  const guard = await startRealGuard(settings, standins.port);
+  const { standins, guard } = await standinsAndGuard(settings);
   const kit = createKit();
   const dir = mkdtempSync(join(tmpdir(), "geo-relay-it-"));
   const whatsapp = createFakeMessaging(kit.clock);
@@ -342,8 +346,7 @@ test("a denied refund against the real Guard: the owner says no, nothing is refu
 // the bytes in the same way. The runtime never builds the call again: it sends the saved bytes (modules/payments/refunds.ts, resendRefund).
 test("B74: after the owner approves, a changed amount, another payment or another receipt is held again under a new approval and nothing is sent; only the identical call is released, once", { skip }, async () => {
   const settings = limited(100); // ₹200 deposit, owner's limit ₹100: a refund above ₹100 is held
-  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
-  const guard = await startRealGuard(settings, standins.port);
+  const { standins, guard } = await standinsAndGuard(settings);
   try {
     const payments = createRazorpayPayments({ baseUrl: guard.agentUrl, agentToken: guard.agentToken });
     // two paid deposits, both through the real Guard (₹200 is the only amount the deposit bound lets through)

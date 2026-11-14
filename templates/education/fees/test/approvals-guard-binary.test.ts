@@ -100,6 +100,15 @@ owner-bright-tuition = "\${file:${join(dir, "owner_notify_secret")}}"
   return { agentUrl: `http://127.0.0.1:${listen}`, adminUrl: `http://127.0.0.1:${adminListen}`, agentToken: agent.token, adminToken: admin.token, ownerSecret, spec, digest: summary.digest, approvalTtlSeconds, stop };
 }
 
+/**
+ * The stand-in and the real Guard in front of it. When the Guard does not come up (on a loaded machine its 5 s wait can run out), the stand-in is closed before
+ * the error goes on: an open stand-in server kept this test file's process alive after the failure, holding the machine's test lock for 36 minutes (14 Nov 2026).
+ */
+async function standinsAndGuard(settings: ReturnType<typeof brightTuition>, approvalTtlSeconds?: number): Promise<{ standins: Awaited<ReturnType<typeof startStandins>>; guard: RealGuard }> {
+  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
+  try { return { standins, guard: await startRealGuard(settings, standins.port, approvalTtlSeconds) }; } catch (e) { await standins.close(); throw e; }
+}
+
 const admin = (g: RealGuard, path: string, init: RequestInit = {}) => fetch(`${g.adminUrl}${path}`, { ...init, headers: { authorization: `Bearer ${g.adminToken}`, "content-type": "application/json", ...(init.headers ?? {}) } });
 const agentCall = (g: RealGuard, path: string, body: unknown) => fetch(`${g.agentUrl}${path}`, { method: "POST", headers: { authorization: `Bearer ${g.agentToken}`, "content-type": "application/json" }, body: JSON.stringify(body) });
 const refundCall = (g: RealGuard, amount: number, id: string) => agentCall(g, `/v1/payments/${id}/refund`, { amount });
@@ -108,8 +117,7 @@ const pendingApprovals = async (g: RealGuard) => ((await (await admin(g, "/admin
 
 test("the generated spec compiles, and the centre's refund limit and the real Guard's threshold are the same line: at the limit passes, one paisa above is held, above the dearest fee is refused", { skip }, async () => {
   const settings = brightTuition();
-  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
-  const guard = await startRealGuard(settings, standins.port);
+  const { standins, guard } = await standinsAndGuard(settings);
   try {
     assert.equal(refundThresholdPaise(settings), 50_000);
     assert.equal(highestPaise(settings), 190_000, "the dearest fee (₹1,800) with the late fee (₹100)");
@@ -144,8 +152,7 @@ test("the generated spec compiles, and the centre's refund limit and the real Gu
 
 test("the owner's limit is the centre's own: lowered to ₹100, a ₹101 refund is held, and the spec says so", { skip }, async () => {
   const settings = parseSettings({ ...JSON.parse(readFileSync(new URL("../settings/bright-tuition.example.json", import.meta.url), "utf8")), refund: { limitInr: 100 } });
-  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
-  const guard = await startRealGuard(settings, standins.port);
+  const { standins, guard } = await standinsAndGuard(settings);
   try {
     assert.equal((await refundCall(guard, 10_000, "pay_a")).status, 400, "at the limit it goes on");
     assert.equal((await refundCall(guard, 10_100, "pay_b")).status, 202);
@@ -170,8 +177,7 @@ test("the longest approval time Guard accepts is 7 days; one second more is refu
 /** A runtime on the real Guard, a relay beside it, and a parent who has paid ₹1,800: everything up to the refund request. */
 async function withRealApproval(run: (a: { guard: RealGuard; standins: Awaited<ReturnType<typeof startStandins>>; kit: ReturnType<typeof createKit>; runtime: any; relay: ReturnType<typeof createRelay>; whatsapp: ReturnType<typeof createFakeMessaging>; owner: string; lines: string[]; stage: () => Promise<void> }) => Promise<void>): Promise<void> {
   const settings = brightTuition();
-  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
-  const guard = await startRealGuard(settings, standins.port);
+  const { standins, guard } = await standinsAndGuard(settings);
   const kit = createKit();
   const dir = mkdtempSync(join(tmpdir(), "geo-relay-fees-"));
   const whatsapp = createFakeMessaging(kit.clock);
