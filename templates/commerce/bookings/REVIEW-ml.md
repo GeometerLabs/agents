@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (58)
+## 1. Messages to the customer (59)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -59,6 +59,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `upi_already_waiting` | UPI shop: the customer writes again while the slot is held | ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ഇപ്പോഴും നിങ്ങൾക്കായി മാറ്റിവച്ചിട്ടുണ്ട്. ബുക്ക് ചെയ്യാൻ ₹200 അഡ്വാൻസ് അടയ്ക്കൂ. UPI ID: glowsalon@okicici (Glow Salon) നിങ്ങളുടെ പേയ്മെന്റ് ഉടമ ഉറപ്പിക്കും, അതിനുശേഷം ഞാൻ മെസ്സേജ് അയക്കാം. | I'm still holding Tue 10 Nov, 6:00 pm for you. Pay the ₹200 deposit to book it. UPI ID: glowsalon@okicici (Glow Salon) The owner will confirm your payment, then I'll message you. |  |
 | `upi_qr_caption` | UPI shop: the words under the QR picture (no booking id) | UPI വഴി ₹200 അഡ്വാൻസ് അടയ്ക്കാൻ സ്കാൻ ചെയ്യൂ (Glow Salon). | Scan to pay the ₹200 deposit to Glow Salon by UPI. |  |
 | `upi_page_link` | UPI shop, a booking made on WhatsApp: the last lines of the quote, with the private link to the booking's own page (made for this message) |  പണമടയ്ക്കാനും ബുക്കിംഗ് കാണാനും ടാപ്പ് ചെയ്യൂ (നിങ്ങൾക്ക് മാത്രം, ആർക്കും അയയ്ക്കരുത്): https://streetlist.in/glow-salon/b/Xy7Qm2LpR9vK4tW8nB3cD6fH1jZ5aE0s |  Tap to pay and see your booking (just for you, please don't share it): https://streetlist.in/glow-salon/b/Xy7Qm2LpR9vK4tW8nB3cD6fH1jZ5aE0s |  |
+| `booked_page_link` | A booking made on WhatsApp, in a shop with a page: the last lines of the booked message, with the private link to the booking's own page (made for this message; the link in the quote stays good too) |  ബുക്കിംഗ് കാണാനോ റദ്ദാക്കാനോ ഉള്ള പേജ് (നിങ്ങൾക്ക് മാത്രം, ആർക്കും അയയ്ക്കരുത്): https://streetlist.in/glow-salon/b/Xy7Qm2LpR9vK4tW8nB3cD6fH1jZ5aE0s |  Your booking page, to see it or cancel (just for you, please don't share it): https://streetlist.in/glow-salon/b/Xy7Qm2LpR9vK4tW8nB3cD6fH1jZ5aE0s |  |
 | `upi_booked` | UPI shop: the owner marked the whole deposit received and the calendar shows the booking | ബുക്ക് ആയി! ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00. നിങ്ങളുടെ ₹200 അഡ്വാൻസ് ഉടമ ഉറപ്പിച്ചു. വരാൻ പറ്റില്ലെങ്കിൽ 24 മണിക്കൂർ മുമ്പെങ്കിലും റദ്ദാക്കൂ, അഡ്വാൻസ് തിരികെ കിട്ടും. | You're booked! Haircut, Tue 10 Nov, 6:00 pm. The owner has confirmed your ₹200 deposit. Can't make it? Cancel at least 24 hours before and your deposit comes back. |  |
 | `upi_paid_claim` | UPI shop: the customer says they paid, taps I have paid, or sends a screenshot (nothing is marked paid) | നന്ദി! ഉടമ അവരുടെ UPI ആപ്പിൽ നിങ്ങളുടെ ₹200 നോക്കും, അതിനുശേഷം ഞാൻ മെസ്സേജ് അയക്കാം. ആ മെസ്സേജ് വരുന്നത് വരെ കാത്തിരിക്കൂ: സ്ക്രീൻഷോട്ട് മാത്രം പേയ്മെന്റിന്റെ തെളിവാകില്ല. | Thanks! The owner will check their UPI app for your ₹200, then I'll message you. Please wait for that message: a screenshot alone isn't proof of payment. |  |
 | `upi_nothing_waiting` | UPI shop: the customer says they paid and no UPI payment is waiting | നന്ദി! ഇപ്പോൾ നിങ്ങളുടെ UPI പേയ്മെന്റ് ഒന്നും കാത്തിരിക്കുന്നില്ല, അതുകൊണ്ട് ഉടമയ്ക്ക് ഉറപ്പിക്കാൻ ഒന്നുമില്ല. വേറെ എന്തിനെങ്കിലും പണം അടച്ചതാണെങ്കിൽ ദയവായി ഉടമയോട് സംസാരിക്കൂ. | Thanks! I don't have a UPI payment waiting from you right now, so there's nothing for the owner to confirm. If you paid for something else, please talk to the owner. |  |
@@ -980,8 +981,8 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.checks.settingsOk` | ക്രമീകരണങ്ങൾ പൂർണ്ണമാണ്. | The settings are complete. |  |
 | `setup.checks.handCheck` | ഈ കടയുടെ സ്വന്തം വിലകളിലും സമയത്തിലും നടത്തിയ പരീക്ഷണങ്ങൾ | The tests on this shop's own prices and hours |  |
 | `setup.checks.handNotRun` | ഇതുവരെ നടത്തിയിട്ടില്ല. | Not run yet. |  |
-| `setup.checks.ownerSigninWait` | WhatsApp ഇല്ല: ഉടമ വിരലടയാളം കൊണ്ട് സൈൻ ഇൻ ചെയ്യും. അവർക്ക് സെറ്റപ്പ് QR കോഡ് കാണിക്കൂ (ഈ പാനലിലെ കടയുടെ പേജ്, "ഉടമയുടെ സൈൻ ഇൻ"), ആപ്പിൽ അലേർട്ടുകൾ ഓണാക്കാൻ പറയൂ. | No WhatsApp: the owner signs in with their fingerprint. Show them the setup QR code (the shop's page in this panel, "The owner's sign-in"), and ask them to turn on alerts in their app. |  |
-| `setup.checks.ownerSigninOk` | ഉടമയ്ക്ക് സെറ്റപ്പ് QR കോഡ് കാണിച്ചു. | The owner's setup QR code has been shown. |  |
+| `setup.checks.ownerSigninWait` | WhatsApp ഇല്ല: ഉടമ വിരലടയാളം കൊണ്ട് സൈൻ ഇൻ ചെയ്യും. അവർക്ക് സെറ്റപ്പ് QR കോഡ് കാണിക്കൂ (ഈ പാനലിലെ കടയുടെ പേജ്, "ഉടമയുടെ സൈൻ ഇൻ"), ആപ്പിൽ അലേർട്ടുകൾ ഓണാക്കാൻ പറയൂ. ഉടമ സൈൻ ഇൻ ചെയ്ത് ഒരു ഫോണിൽ അലേർട്ടുകൾ ഓണായാൽ കട ലൈവ് ആക്കാം. | No WhatsApp: the owner signs in with their fingerprint. Show them the setup QR code (the shop's page in this panel, "The owner's sign-in"), and ask them to turn on alerts in their app. The shop can go live once they have signed in and one phone has alerts on. |  |
+| `setup.checks.ownerSigninOk` | ഉടമ ഫോണിൽ സൈൻ ഇൻ ചെയ്തു, അലേർട്ടുകൾ ഓണാണ്. | The owner has signed in on their phone and turned on alerts. |  |
 | `setup.checks.deploy` | സെർവറിന്റെ അപ്ഡേറ്റ് | The server's update |  |
 | `setup.checks.deployApplied` | നടപ്പാക്കിയ സമയം: 4 Nov 2026, 10:30. | Applied 4 Nov 2026, 10:30. |  |
 | `setup.checks.deployNot` | ഇതുവരെ നടപ്പായിട്ടില്ല. | Not applied yet. |  |
