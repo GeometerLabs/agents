@@ -86,7 +86,7 @@ from 08:00. How it works: [modules/Explanation.md](../../../modules/Explanation.
 
 Hindi, English, Malayalam and Kannada, and the Hindi, Malayalam and Kannada people type in Latin letters. A parent is written to in their own language, kept per student in the settings, and changes if they write in another. All messages are fixed templates; every amount, date and name is filled in from the record, and the outgoing check reads the final text against the record before it is sent.
 
-The Malayalam and Kannada wording is **machine-written** and must be read by a native speaker before a real centre sees it. [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) list every message, button label, word the agent understands, sentence the hand check types, and every word of the monthly report, made from the code itself (`scripts/review-sheet.ts`); a test fails if a committed sheet falls behind. Hindi has no sheet yet.
+The Hindi, Malayalam and Kannada wording is **machine-written** and must be read by a native speaker before a real centre sees it. [REVIEW-hi.md](REVIEW-hi.md), [REVIEW-ml.md](REVIEW-ml.md) and [REVIEW-kn.md](REVIEW-kn.md) list every message, button label, word the agent understands, sentence the hand check types, and every word of the monthly report, made from the code itself (`scripts/review-sheet.ts`); a test fails if a committed sheet falls behind (`node templates/education/fees/scripts/review-sheet.ts hi > templates/education/fees/REVIEW-hi.md`, and ml, kn).
 
 ## Settings: tailoring without code
 
