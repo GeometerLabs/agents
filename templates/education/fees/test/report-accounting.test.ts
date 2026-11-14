@@ -53,7 +53,7 @@ test("the open check agrees with the report on the evidence pack, fails when one
   const pack = packOf(entries, TENANT);
   const ok = checkAccounting(pack, report);
   assert.equal(ok.ok, true, renderCheck(ok));
-  const changed = checkAccounting(withChangedAmount(pack), report);
+  const changed = checkAccounting(withChangedAmount(pack, report.document.period), report);
   assert.equal(changed.ok, false);
   assert.match(renderCheck(changed), /DIFFERENT: Account "[a-z_:]+"/);
   const short = checkAccounting(cutShort(pack, pack.entries.length - 3), report);
