@@ -237,16 +237,16 @@ test("web build: the agent's reply buttons and list reach the page, and tapping 
 test("web build: the page's own script gets the answers it expects, shaped like fetch", async () => {
   const { createLocalDemo } = await load("demo/web/local.js");
   const demo = createLocalDemo();
-  const state = await demo.fetch("/api/state", {});
+  const state = await demo.ask("/api/state", {});
   assert.equal(state.ok, true);
   assert.equal(((await state.json()) as any).shop.name, "Glow Salon");
-  const refused = await demo.fetch("/api/say", { method: "POST", body: JSON.stringify({ text: "" }) });
+  const refused = await demo.ask("/api/say", { method: "POST", body: JSON.stringify({ text: "" }) });
   assert.equal(refused.ok, false);
   assert.match(((await refused.json()) as any).error, /Write a message first/);
-  const notJson = await demo.fetch("/api/say", { method: "POST", body: "{" });
+  const notJson = await demo.ask("/api/say", { method: "POST", body: "{" });
   assert.equal(notJson.ok, false);
   const hindi = createLocalDemo({ language: "hi" });
-  assert.match(((await (await hindi.fetch("/api/state", {})).json()) as any).ui.banner, /डेमो/);
+  assert.match(((await (await hindi.ask("/api/state", {})).json()) as any).ui.banner, /डेमो/);
   assert.throws(() => createLocalDemo({ language: "xx" }), /not one this demo knows/);
 });
 
@@ -359,6 +359,6 @@ test("web build: the mount code adds no way for typed text to become markup", ()
   assert.ok(/root\.remove\(\)/.test(source) && /watcher\.disconnect\(\)/.test(source), "unmount takes the demo out and stops watching it");
   assert.ok(!/attachShadow/.test(source), "the demo is in the page's own tree, so its class names can be restyled by the page");
   const both = source + readFileSync(join(ROOT, "demo/web/local.ts"), "utf8");
-  assert.deepEqual([...both.matchAll(/(\w+[. ])fetch\(/g)].map((m) => m[1]).sort(), ["async ", "local."], "the only fetch is the in-page demo's own");
+  assert.deepEqual([...both.matchAll(/\bfetch\s*\(/g)], [], "no fetch call at all: the in-page demo's own method is called ask, so the hosted demo's build can tell it from a network call");
   assert.ok(!/XMLHttpRequest|WebSocket|sendBeacon|localStorage|sessionStorage|indexedDB|document\.cookie/.test(both), "no network, no storage, no cookies");
 });
