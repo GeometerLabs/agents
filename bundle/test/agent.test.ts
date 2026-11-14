@@ -4,7 +4,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { addAgent, connectionOf, connectionText, deployAgent } from "../agent/deploy.ts";
+import { HOSTED_AGENT_REFUSAL, addAgent, connectionOf, connectionText, deployAgent } from "../agent/deploy.ts";
 import { agentFromFlags, readAgent } from "../agent/folder.ts";
 import type { AgentFlags } from "../agent/folder.ts";
 import { planAgent } from "../agent/plan.ts";
@@ -100,6 +100,16 @@ test("caps from the agent's file reach the specs, and a cap that would make an a
     addAgent(u.root, "too-low", flags({ "refund-inr-per-day": "100" }), noFiles, NOW); // a deposit is ₹200
     assert.match(planAgent(server, readAgent(u.root, "too-low")).problems[0].message, /daily refund cap .* is smaller than one deposit/);
   } finally { u.done(); }
+});
+
+test("decision 55: no custom agent runs on Geometer's partner server (panel mode hosted): agent add refuses it; a builder's own server takes it", () => {
+  const hosted = tempServer({}, { panel: { enabled: true, mode: "hosted" } });
+  try {
+    assert.throws(() => addAgent(hosted.root, "my-agent", flags(), noFiles, NOW), (e: Error) => e.message === HOSTED_AGENT_REFUSAL);
+    assert.equal(existsSync(hosted.paths.agent("my-agent")), false, "nothing was written");
+  } finally { hosted.done(); }
+  const own = tempServer({}, { panel: { enabled: true, mode: "own" } });
+  try { addAgent(own.root, "my-agent", flags(), noFiles, NOW); } finally { own.done(); }
 });
 
 test("a name is used once: an agent cannot take a shop's name, or another agent's", () => {

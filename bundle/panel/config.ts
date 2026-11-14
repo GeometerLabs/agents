@@ -35,6 +35,11 @@ export interface PanelConfig {
   hostingSharePaise?: number;
   /** How many hours an answer from the owner may wait before the to-do list says it has waited too long (PANEL_APPROVAL_WAIT_HOURS). Left out: 12. */
   approvalWaitHours?: number;
+  /**
+   * Hosted mode: the geometer.dev account page, where a local partner opens this panel with their geometer.dev sign-in (fleet-signin.ts). The sign-in page links
+   * to it. PANEL_ACCOUNT_URL; left out: https://geometer.dev/account/. Not used on a builder's own server.
+   */
+  accountUrl?: string;
   staleMinutes: number;
   now?: () => number;
 }
@@ -85,6 +90,15 @@ export function readPagesDomain(serverDir: string): string | undefined {
   } catch { return undefined; }
 }
 
+/** Where a partner opens this panel with their geometer.dev sign-in, unless PANEL_ACCOUNT_URL says otherwise. */
+export const DEFAULT_ACCOUNT_URL = "https://geometer.dev/account/";
+/** The geometer.dev account page a hosted panel sends partners to: https only, or the default. */
+function accountUrlOf(v: string | undefined): string {
+  if (v === undefined || v === "") return DEFAULT_ACCOUNT_URL;
+  if (!/^https:\/\/[^\s"<>]+$/u.test(v)) throw new ConfigError("PANEL_ACCOUNT_URL must be an https:// address, like https://geometer.dev/account/.");
+  return v;
+}
+
 // Turns the environment into a PanelConfig (everything comes from env so the compose file is the only place to set it); throws ConfigError on a missing or bad value, notably the data key on a hosted server.
 export function configFromEnv(env: Record<string, string | undefined>): PanelConfig {
   const serverDir = env.PANEL_SERVER_DIR;
@@ -114,5 +128,6 @@ export function configFromEnv(env: Record<string, string | undefined>): PanelCon
     ...(num(env.PANEL_HOSTING_SHARE_PAISE, "PANEL_HOSTING_SHARE_PAISE") !== undefined ? { hostingSharePaise: num(env.PANEL_HOSTING_SHARE_PAISE, "PANEL_HOSTING_SHARE_PAISE") as number } : {}),
     ...(num(env.PANEL_APPROVAL_WAIT_HOURS, "PANEL_APPROVAL_WAIT_HOURS") !== undefined ? { approvalWaitHours: num(env.PANEL_APPROVAL_WAIT_HOURS, "PANEL_APPROVAL_WAIT_HOURS") as number } : {}),
     staleMinutes: num(env.PANEL_STALE_MINUTES, "PANEL_STALE_MINUTES") ?? 30,
+    accountUrl: accountUrlOf(env.PANEL_ACCOUNT_URL),
   };
 }

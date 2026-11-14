@@ -52,6 +52,10 @@
 //                                agent set <name> --run "<cmd>" --version V   records how to start the agent ({version} in the command) and which version it is at
 //   panel invite --role builder|partner [--note T]     a one-time invitation link from the running panel (the first builder's way in; hosted mode has no other)
 //   invite builder|partner [--note T]                  the same, shorter
+//   panel reset <handle>                               a one-time link for a person who forgot their panel passphrase (sessions end when it is used)
+//   panel signout <handle>                             end every panel session of one account now (a paused partner, a lost phone)
+//   panel accounts                                     the panel's accounts: sign-in name, role, and whether they sign in with a passphrase or geometer.dev
+//   panel link-partner <handle> <partner-id>           Geometer's partner server: an invited partner signs in with geometer.dev from now on, and keeps their shops
 //   panel confirm-link --kind limits|go-live --shop S [--changes JSON] [--note T]    a one-time link a person opens in the panel to confirm what Claude Code asked for (the plugin, B11); it only asks
 //   export <shop> [--out <folder>]    everything that is the shop's, in plain open files, as a folder and a .tar.gz: settings, limits and their history, the record (JSON lines), reports,
 //                                certificates, a manifest with each file's sha256 and a README. No key or secret is in it. It reads files only, so it works for a stopped shop and a lapsed plan.
@@ -367,6 +371,18 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       return 0;
     }
 
+    if (command === "panel" && ["reset", "signout", "accounts", "link-partner"].includes(positionals[0] ?? "")) {
+      // the panel's accounts live in its encrypted data, so the panel container answers; nothing here reads or prints a hash or a token
+      if (!loadServer(dir).panel.enabled) throw new Error('This server has no panel: set "panel": { "enabled": true } in geometer.json and deploy, or `init --panel`.');
+      const [what, handle, partner] = positionals;
+      const need = what === "accounts" ? 0 : what === "link-partner" ? 2 : 1;
+      if (positionals.length - 1 !== need) throw new Error(what === "link-partner" ? "Say which account and which partner: panel link-partner <sign-in name> <partner id in fleet>" : what === "accounts" ? "panel accounts takes nothing more." : `Say whose: panel ${what} <sign-in name> (panel accounts lists them)`);
+      const args = what === "accounts" ? [] : ["--handle", handle as string, ...(what === "link-partner" ? ["--partner", partner as string] : [])];
+      const r = await compose(ctx, ["exec", "-T", "panel", "node", "/app/bundle/panel/main.ts", what, ...args], { timeoutMs: 60_000 });
+      if (r.code !== 0) throw new Error(`The panel did not do it (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 300)}). Is it running? \`geometer status\` says; \`geometer deploy\` starts it.`);
+      process.stdout.write(r.stdout);
+      return 0;
+    }
     if (command === "panel" && positionals[0] === "confirm-link") {
       // asks the running panel for a one-time link a person opens to confirm something Claude Code drafted (the plugin, B11). It only asks: nothing is applied from here.
       if (!loadServer(dir).panel.enabled) throw new Error('This server has no panel: set "panel": { "enabled": true } in geometer.json and deploy, or `init --panel`.');

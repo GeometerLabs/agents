@@ -107,17 +107,48 @@ export const languageName = (l: Language): string => languageOptions().find((o) 
 
 // ---- sign in, invitations ---------------------------------------------------------------------------------------------------------------
 
-// Sign-in form. `hostedNote` adds the line that explains accounts come only by invitation on Geometer's server.
-export function loginPage(c: Ctx, o: { error?: string; handle?: string; hostedNote: boolean }): string {
+// Sign-in form, with the "ask for a new link" line under it. On Geometer's partner server (`partnersUrl` given) a local partner is sent to geometer.dev first,
+// where they open the panel with no passphrase (fleet-signin.ts); the passphrase form stays for anyone the server's owner invited.
+export function loginPage(c: Ctx, o: { error?: string; handle?: string; hostedNote: boolean; /** Hosted mode: the geometer.dev account page. */ partnersUrl?: string }): string {
   const w = c.w.login;
   return layout(c, w.title, html`<h1>${w.title}</h1>
+${o.partnersUrl ? html`<div class="notice"><p>${w.partners}</p><p><a class="btn primary" href="${o.partnersUrl}">${w.partnersLink}</a></p></div>` : ""}
 ${o.error ? html`<ul class="errors" role="alert"><li>${o.error}</li></ul>` : ""}
 <form method="post" action="/login" autocomplete="off">${csrf(c)}
   <label class="field"><span>${w.handle}</span><input name="handle" value="${o.handle ?? ""}" autocomplete="username" autocapitalize="none" required></label>
   <label class="field"><span>${w.passphrase}</span><input name="passphrase" type="password" autocomplete="current-password" required></label>
   <button class="btn primary" type="submit">${w.button}</button>
 </form>
+<p class="note">${o.partnersUrl ? w.forgotHosted : w.forgot}</p>
 <p class="note">${w.byInvitation}</p>`, { nav: false });
+}
+
+// Where a partner's geometer.dev link lands (fleet-signin.ts). Opening it uses nothing up; the button does. The first visit asks the name (and company and
+// language) the owner's monthly report will say; a returning partner just presses the button.
+export function signinPage(c: Ctx, o: { ticket: string; returning?: string; error?: string; values: { name: string; company: string; language: string } }): string {
+  const w = c.w.signin;
+  const j = c.w.join;
+  return layout(c, w.title, html`<h1>${w.title}</h1>
+<p>${o.returning ? w.welcomeBack(o.returning) : w.intro}</p>
+${o.error ? html`<ul class="errors" role="alert"><li>${o.error}</li></ul>` : ""}
+<form method="post" action="/signin" autocomplete="off">${csrf(c)}<input type="hidden" name="ticket" value="${o.ticket}">
+${o.returning ? "" : html`  <label class="field"><span>${j.name}</span><input name="name" value="${o.values.name}" maxlength="80" required></label>
+  <label class="field"><span>${j.company}</span><input name="company" value="${o.values.company}" maxlength="60"><p class="help">${j.companyHelp}</p></label>
+  <label class="field"><span>${j.language}</span><select name="language">${languageOptions().map((l) => html`<option value="${l.code}" ${l.code === o.values.language ? raw("selected") : ""}>${l.label}</option>`)}</select></label>
+`}  <button class="btn primary" type="submit">${w.button}</button>
+</form>`, { nav: false });
+}
+
+// Where a reset link lands: a new passphrase for the account it names. The link is spent only when the new passphrase is saved.
+export function resetPage(c: Ctx, o: { token: string; name: string; error?: string }): string {
+  const w = c.w.reset;
+  return layout(c, w.title, html`<h1>${w.title}</h1>
+<p>${w.intro(o.name)}</p>
+${o.error ? html`<ul class="errors" role="alert"><li>${o.error}</li></ul>` : ""}
+<form method="post" action="/reset" autocomplete="off">${csrf(c)}<input type="hidden" name="token" value="${o.token}">
+  <label class="field"><span>${c.w.join.passphrase}</span><input name="passphrase" type="password" autocomplete="new-password" required><p class="help">${c.w.join.passphraseHelp}</p></label>
+  <button class="btn primary" type="submit">${w.button}</button>
+</form>`, { nav: false });
 }
 
 // Where an invite link lands: the person picks a name and passphrase. `values` is refilled after an error so a phone user does not retype everything.
