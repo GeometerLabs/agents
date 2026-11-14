@@ -86,7 +86,7 @@ test("csvField: a comma, quote or line break quotes the field and doubles the qu
   assert.equal(csvField("say \"hi\""), "\"say \"\"hi\"\"\"");
   assert.equal(csvField("two\nlines"), "\"two\nlines\"");
   assert.equal(csvField(7), "7");
-  assert.deepEqual(parseCsv("a,\"b,\"\"c\"\"\r\nd\",e\r\n"), [["a", "b,\"c\"\r\nd", "e"]].map((r) => r.length === 3 ? r : r));
+  assert.deepEqual(parseCsv("a,\"b,\"\"c\"\"\r\nd\",e\r\n"), [["a", "b,\"c\"\r\nd", "e"]]);
 });
 
 function shop() {
