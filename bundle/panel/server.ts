@@ -50,6 +50,7 @@ import { createHandover } from "./handover.ts";
 import { createTerms } from "./terms.ts";
 import { termsLinkWord, termsPage } from "./views-terms.ts";
 import { createChannels } from "./channels.ts";
+import { PHONE_SHAPE, isMapLink } from "../../modules/channels/pages-file.ts";
 import { SLUG_SHAPE, WHATSAPP_NUMBER, endOwnerSessions, makeOwnerRecovery, makeOwnerSetup, ownerBaseOf, ownerGrantsSummary, readPageSettings, readPagesStatus, removeOwnerPasskeys, writePageSettings } from "../lib/pages.ts";
 import { ownerSetupPage, recoveryCardPage } from "./views-pages.ts";
 import { ownerLinkMadePage } from "./views-channels.ts";
@@ -596,9 +597,16 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     if (!ref || !hasPage(shops.kind(ref.id))) return notFound(r); // item 11h: Orders' and Fees' shops have a page too
     const slug = (r.form.slug ?? "").trim().toLowerCase();
     const whatsapp = (r.form.whatsapp ?? "").replace(/[\s-]/gu, "");
-    if ((slug !== "" && !SLUG_SHAPE.test(slug)) || (whatsapp !== "" && !WHATSAPP_NUMBER.test(whatsapp))) return redirect(r, `/shops/${ref.id}?pages=bad`);
+    // batch 5 and 3: the shop's own phone and map link (every customer page), and the partner's name and number (the owner's app and every error page)
+    const phone = (r.form.phone ?? "").replace(/[\s().-]/gu, "");
+    const map = (r.form.map ?? "").trim();
+    const partnerName = (r.form.partnerName ?? "").replace(/\s+/gu, " ").trim();
+    const partnerPhone = (r.form.partnerPhone ?? "").replace(/[\s().-]/gu, "");
+    if ((slug !== "" && !SLUG_SHAPE.test(slug)) || (whatsapp !== "" && !WHATSAPP_NUMBER.test(whatsapp))
+      || (phone !== "" && !PHONE_SHAPE.test(phone)) || (map !== "" && !isMapLink(map))
+      || (partnerPhone !== "" && (!PHONE_SHAPE.test(partnerPhone) || partnerName === "" || partnerName.length > 60))) return redirect(r, `/shops/${ref.id}?pages=bad`);
     const pages = config.mode === "hosted" ? "hub" : r.form.pages === "hub" ? "hub" : "own"; // Geometer's partner server is always on the pages domain
-    writePageSettings(config.serverDir, ref.id, { pages, ...(slug ? { slug } : {}), ...(whatsapp ? { whatsapp } : {}) });
+    writePageSettings(config.serverDir, ref.id, { pages, ...(slug ? { slug } : {}), ...(whatsapp ? { whatsapp } : {}), ...(phone ? { phone } : {}), ...(map ? { map } : {}), ...(partnerPhone ? { partner: { name: partnerName, phone: partnerPhone } } : {}) });
     log(`page of ${ref.id} set by ${r.account!.id}: ${pages}${slug ? ` ${slug}` : ""}`);
     redirect(r, `/shops/${ref.id}`);
   });
@@ -634,7 +642,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     if (!ref || !base) return notFound(r);
     const codes = makeOwnerRecovery(config.serverDir, ref.id, new Date(now()));
     log(`owner's recovery card of ${ref.id} made by ${r.account!.id}`); // the codes are never logged
-    page(r, 200, recoveryCardPage(r.ctx(), ref.id, shops.settings(ref.id)?.name ?? ref.id, codes, `${base}/recover`));
+    page(r, 200, recoveryCardPage(r.ctx(), ref.id, shops.settings(ref.id)?.name ?? ref.id, codes, `${base}/recover`, shops.settings(ref.id)?.owner?.language ?? r.ctx().lang));
   });
   on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-passkeys\/remove$/u, "user", (r) => {
     const ref = shops.find(r.account!, r.params[0]);

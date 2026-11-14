@@ -129,3 +129,23 @@ export function pushMessaging(base: Messaging | undefined, push: Push | undefine
   Object.defineProperty(messaging, WHATSAPP, { value: base, enumerable: false });
   return messaging;
 }
+
+
+/**
+ * Batch 3 (Fees parents' alerts): every message to a number is also pushed to the conversation `conversationOf(to)` names, so a parent who allowed alerts on their private
+ * page hears the centre's messages to their number (the fee reminder, a payment seen, a refund) without WhatsApp, or besides it. The push goes first and never fails the
+ * message; a number whose page never allowed alerts has no subscription, so nothing is queued. The WhatsApp-only marker of `base` is kept (an owner's one-use sign-in link
+ * must still go by WhatsApp alone: `whatsappOf`), and what `base` does not have (documents, pictures) is not added. `textOf` is what is pushed in place of the message's words: no
+ * address or code travels in a push (push/pages.ts), so a caller whose messages carry a private link says how to take it out.
+ */
+export function alsoPushTo(base: Messaging, push: Push, conversationOf: (to: string) => string, textOf: (text: string) => string = (t) => t): Messaging {
+  const also = (to: string, text: string): void => { try { const words = textOf(text); if (words.trim()) push.customer(conversationOf(to), words); } catch { /* an alert that could not be queued never fails the message */ } };
+  const out: Messaging = {
+    ...base,
+    sendText: (to, text) => { also(to, text); return base.sendText(to, text); },
+    sendTemplate: (to, t) => { also(to, t.text); return base.sendTemplate(to, t); },
+    ...(base.sendInteractive ? { sendInteractive: (to, m) => { also(to, m.body); return base.sendInteractive!(to, m); } } : {}),
+  };
+  Object.defineProperty(out, WHATSAPP, { value: whatsappOf(base), enumerable: false });
+  return out;
+}

@@ -31,6 +31,9 @@ import { CARD_LABELS } from "../assistant/words.ts";
 import { characterLine, talkBox, talkScript } from "../assistant/app/talk.ts";
 import { ASSISTANT_OF, themeColour } from "../assistant/character.ts";
 import { ALERTS_SCRIPT } from "../push/pages.ts";
+import { partnerBar } from "./contact-bar.ts";
+import { FIRST_WORDS } from "./words-owner-first.ts";
+import type { PagesFile } from "./pages-file.ts";
 import { ICON, OWNER_CSS, themeScript, themeSwitch } from "./look.ts";
 import { OWNER_LOOK } from "./words-look.ts";
 import type { TagKey, Tone } from "./words-look.ts";
@@ -50,6 +53,12 @@ export interface OwnerPageInput {
   nonce?: string;
   /** Item 11h: the owner's "Alerts on this phone" box (modules/push/pages.ts), already drawn without its script (`bare`), when the shop has web push. */
   alerts?: string;
+  /** Batch 3: the partner (name and number) for the "who to call" bar at the top, from the shop's pages.json. */
+  partner?: PagesFile["partner"];
+  /** Batch 3: how many phones have alerts on (the runtime's count), for the top line "Alerts: on, on 1 phone". Left out: the shop has no push. */
+  alertPhones?: number;
+  /** Batch 3: the owner has just signed in for the first time on this phone (the setup's next step): with no alerts yet, the alerts box leads as "Step 2 of 2". */
+  firstSignIn?: boolean;
   /** Item 11i: the character's picture in the shop's mood now, as a data: address (front.ts reads it from the shop's own pictures). Left out: none drawn yet. */
   picture?: string;
 }
@@ -138,11 +147,19 @@ ${v.upcoming.length > 0 ? html`<ul class="rows">${v.upcoming.map((u) => html`<li
     : html`<h1>${v.shop.name}</h1>`;
   // the referrer: the origin only, never this page's address (it holds the owner's link); not "no-referrer", which makes a browser post forms with Origin: null
   // (front.ts PAGE_REFERRER)
+  // batch 3: the alerts' state is the first thing under the head ("Alerts: on, on 1 phone", or off with a way to turn them on); on the first sign-in with none on, the
+  // box itself leads, as step 2 of 2, so an owner cannot miss it
+  const first = FIRST_WORDS[o.language];
+  const leadAlerts = o.alerts !== undefined && o.firstSignIn === true && (o.alertPhones ?? 0) === 0;
+  const alertsLine = o.alertPhones === undefined || leadAlerts ? "" : o.alertPhones > 0
+    ? html`<p class="note alerts-line" role="status">${first.alertsOn(o.alertPhones)}</p>`
+    : html`<p class="notice alerts-line" role="status">${first.alertsOff} <a href="#alerts-h">${first.alertsTurnOn}</a></p>`;
   return `<!doctype html>${html`<html lang="${o.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="strict-origin">
 <title>${w.title(v.shop.name)}</title><style>${raw(OWNER_CSS)}</style>${appHead}${script ? html`<script nonce="${o.nonce!}">${raw(script)}</script>` : ""}</head><body class="app">
 <header class="head"><div class="wrap"><div class="head-in">${head}</div>${o.nonce ? raw(themeSwitch(OWNER_LOOK[o.language].theme)) : ""}</div></header>
 <main class="wrap">${machine ? html`<p class="machine">${machine}</p>` : ""}
-${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
+${partnerBar(o.language, o.partner ? { partner: o.partner } : undefined)}${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
+${leadAlerts ? html`<h2>${first.step2}</h2><p>${first.step2Intro}</p>${raw(o.alerts!)}` : alertsLine}
 <p class="note private">${raw(ICON.lock)}<span>${w.privateNote}</span></p>
 ${saysPaid.length > 0 ? html`<h2>${money.saysPaid}</h2>${saysPaid.map(item)}` : ""}
 ${waiting.length > 0 || !anything ? html`<h2>${w.waiting}</h2>${waiting.length > 0 ? waiting : html`<p class="calm">${w.none}</p>`}` : ""}
@@ -150,12 +167,12 @@ ${waitingPay.length > 0 ? html`<h2>${money.waitingPay}</h2><p class="note">${mon
 ${lateOnly.length > 0 ? html`<h2>${money.lateHeading}</h2><p class="note">${money.lateNote}</p>${lateOnly.map(item)}` : ""}
 ${coming}${parents}${cash}
 ${app ? raw(talkBox({ base: o.base, language: o.language, lines: app.talk, assistantName: app.character.name ?? ASSISTANT_OF[o.language](v.shop.name), ...(o.csrf ? { csrf: o.csrf } : {}), listen: app.listen === true, bare: true })) : ""}
-${o.alerts ? raw(o.alerts) : ""}
+${o.alerts && !leadAlerts ? raw(o.alerts) : ""}
 ${o.signOut ? html`<form method="post" action="${o.signOut.action}">${o.csrf ? html`<input type="hidden" name="csrf" value="${o.csrf}">` : ""}<button class="no full" type="submit">${o.signOut.label}</button></form>` : ""}
 </main></body></html>`.markup}`;
 }
 
 /** The page shown when the link is not (or no longer) valid: no shop name, nothing to learn. */
-export function ownerLinkGone(language: Language): string {
-  return `<!doctype html>${html`<html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>-</title><style>${raw(OWNER_CSS)}</style></head><body><main class="wrap"><p class="state s-bad">${OWNER[language].result.denied_link}</p></main></body></html>`.markup}`;
+export function ownerLinkGone(language: Language, partner?: PagesFile["partner"]): string {
+  return `<!doctype html>${html`<html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>-</title><style>${raw(OWNER_CSS)}</style></head><body><main class="wrap"><p class="state s-bad">${OWNER[language].result.denied_link}</p>${partnerBar(language, partner ? { partner } : undefined)}</main></body></html>`.markup}`;
 }

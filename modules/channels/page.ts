@@ -24,6 +24,7 @@ import { CONFIRM } from "./words-confirm.ts";
 import { CHECK_MINUTES, MONEY } from "./words-money.ts";
 import { UPI_SCRIPT } from "./upi-script.ts";
 import type { PagesFile } from "./pages-file.ts";
+import { sendLinkBox, shopContact } from "./contact-bar.ts";
 
 
 // The shop's messages keep their own line breaks (look.ts `.msgs li`, white-space: pre-line): Bookings' quote puts the UPI ID and who confirms on lines of their own.
@@ -36,7 +37,7 @@ export interface PageShop { name: string; publicUrl: string }
  * the head (shop-face.ts shopFace: WhatsApp and the hours); `foot`: the partner's line. A page that reloads itself (`refreshSeconds`) shows the head without the
  * face's picture, so a phone waiting on it does not fetch the picture again every few seconds.
  */
-export function layout(o: { shop: Pick<Offer["shop"], "name" | "address" | "languages" | "character">; language: Language; title: string; body: Raw; refreshSeconds?: number; selfPath: string; query?: Record<string, string>; face?: Raw; foot?: Raw; /** Money clarity: the UPI page's one script (upi-script.ts), by this response's nonce. It looks for a change itself, so the meta refresh below runs only without it. */ script?: { nonce: string } }): string {
+export function layout(o: { shop: Pick<Offer["shop"], "name" | "address" | "languages" | "character" | "contact">; language: Language; title: string; body: Raw; refreshSeconds?: number; selfPath: string; query?: Record<string, string>; face?: Raw; foot?: Raw; /** Money clarity: the UPI page's one script (upi-script.ts), by this response's nonce. It looks for a change itself, so the meta refresh below runs only without it. */ script?: { nonce: string } }): string {
   const w = PAGE[o.language];
   const link = (l: Language) => { const q = new URLSearchParams({ ...(o.query ?? {}), lang: l }); return `${o.selfPath}?${q}`; };
   // theme-color: the phone's bar takes the head's tint, so the page and the bar read as one
@@ -45,7 +46,7 @@ ${o.refreshSeconds ? raw(o.script ? `<noscript><meta http-equiv="refresh" conten
 <body><header class="head"><div class="wrap">${shopHead({ shop: o.shop, language: o.language, picture: !o.refreshSeconds })}
 ${o.shop.languages.length > 1 ? html`<p class="langs" aria-label="${w.language}">${o.shop.languages.map((l) => (l === o.language ? html`<b>${LANGUAGE_LABEL[l]}</b>` : html`<a href="${link(l)}" hreflang="${l}">${LANGUAGE_LABEL[l]}</a>`))}</p>` : ""}</div></header>
 <main class="wrap">${w.machine ? html`<p class="machine">${w.machine}</p>` : ""}
-${o.face ?? ""}${o.body}${o.foot ?? ""}
+${shopContact(o.language, o.shop.contact)}${o.face ?? ""}${o.body}${o.foot ?? ""}
 </main>${o.script ? html`<script nonce="${o.script.nonce}">${raw(UPI_SCRIPT)}</script>` : ""}</body></html>`.markup}`;
 }
 
@@ -210,6 +211,8 @@ export function statusPage(o: { shop: PageShop; offer: Offer; language: Language
   const c = CONFIRM[o.language];
   const refund = v.refund ? stateBlock("refund", o.language, c.refund[v.refund.state](formatInr(v.refund.amountInr)), { tone: REFUND_TONE[v.refund.state], id: "refund" }) : "";
   const calendar = o.ics ? html`<div class="card"><a class="btn quiet full" href="${o.ics}" download>${c.ics}</a><p class="note">${c.icsNote}</p></div>` : "";
+  // batch 5: "send me this link" for a booking made on the page or through MCP, while it is live: the private address is the only way back to it
+  const sendLink = (v.channel === "web" || v.channel === "mcp") && (v.status === "held" || v.status === "booked" || v.status === "checking") ? sendLinkBox(o.language, s.name, self) : "";
   const sad = v.status === "not_held" || v.status === "expired";
   // money clarity: an expired booking's "paid after the time ended?" (the shop will refund or book again), or its acknowledgement once pressed
   const late = v.status === "expired" ? lateBox({ language: o.language, ...(v.claimed ? { claimed: true } : {}), ...(v.canSayPaid ? { paidAction: `${self}/paid` } : {}) }) : "";
@@ -219,6 +222,6 @@ export function statusPage(o: { shop: PageShop; offer: Offer; language: Language
     shop: s, language: o.language, title, selfPath: self, ...(script ? { script } : {}),
     // held: look again every 15 s, so "Booked" shows once the owner marks the payment (with the script, only when something changed, so the QR is not redrawn); checking: every 30 s
     ...(v.status === "held" ? { refreshSeconds: 15 } : v.status === "checking" ? { refreshSeconds: 30 } : {}),
-    body: html`${script ? html`<div hidden data-poll="${self}" data-state="${state}"></div>` : ""}${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${refund}${what}${pay}${late}${calendar}${o.alerts ? raw(o.alerts) : ""}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
+    body: html`${script ? html`<div hidden data-poll="${self}" data-state="${state}"></div>` : ""}${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${refund}${what}${pay}${late}${calendar}${sendLink}${o.alerts ? raw(o.alerts) : ""}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
   });
 }

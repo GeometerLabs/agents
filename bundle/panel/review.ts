@@ -12,6 +12,9 @@ import { SAMPLE_ARGS } from "./words.ts";
 import { HEALTH_SAMPLE_ARGS, HEALTH_WORDS } from "./words-health.ts";
 import { AGENT_SAMPLE_ARGS, AGENT_WORDS } from "./words-agents.ts";
 import { loadVoteRound } from "./votes.ts";
+import { WORDS as PAGES_BLOCK_WORDS } from "./views-pages.ts";
+import { WORDS as DOOR_WORDS } from "../services/door-pages.ts";
+import { FIRST_WORDS } from "../../modules/channels/words-owner-first.ts";
 import { PERSONALITIES, SMALL_TALK } from "../../modules/assistant/personality.ts";
 
 export type ReviewLanguage = "ml" | "kn";
@@ -60,10 +63,21 @@ const agentsFlat = (language: Language): Map<string, string> => flatWords({ agen
  */
 const personalityFlat = (language: Language): Map<string, string> => flatWords({ personality: Object.fromEntries(PERSONALITIES.map((p) => [p, SMALL_TALK[p][language]])) });
 
+/**
+ * The words added for the owner's first sign-in and who to call (14 Nov 2026), under the ids "owner.first.*" (the passkey page's Chrome and screen-lock lines, the alerts'
+ * second step, the partner bar, the shop's links), "door.*" (the door's error pages) and "pages.block.*" (the panel's shop page block, its QR page and recovery card),
+ * so they reach the same native reviewer. Values a phrase takes are shown with a sample.
+ */
+const firstSamples: Record<string, unknown[]> = {
+  "owner.first.alertsOn": [2], "owner.first.partner": ["Divya"], "door.help": ["Divya"],
+  "pages.block.live": ["https://pages.example/glow-salon"], "pages.block.problem": ["that name is taken"], "pages.block.setupNote": ["10:30 UTC"], "pages.block.recoveryOn": ["2026-11-14"], "pages.block.cardOwner": ["https://pages.example/glow-salon/owner/recover"],
+};
+const firstFlat = (language: Language): Map<string, string> => flatWords({ owner: { first: FIRST_WORDS[language] }, door: DOOR_WORDS[language], pages: { block: PAGES_BLOCK_WORDS[language] } }, firstSamples);
+
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...firstFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...firstFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

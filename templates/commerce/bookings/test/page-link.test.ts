@@ -40,7 +40,7 @@ test("the quote on WhatsApp carries the booking's own page link; the page shows 
   assert.deepEqual("messages" in v ? v.messages : undefined, [], "WhatsApp's messages are not kept for the page");
 });
 
-test("a typed or guessed link opens nothing; a link sent again replaces the old one, which then opens nothing", async () => {
+test("a typed or guessed link opens nothing; a link sent again does not kill the old one; only the last four links open the booking", async () => {
   const m = maker();
   const w = createWorld({ settings, pageLink: m.pageLink });
   await w.say("haircut tomorrow at 6pm");
@@ -48,14 +48,41 @@ test("a typed or guessed link opens nothing; a link sent again replaces the old 
   assert.equal(bookingView(settings, w.store, hashOf(randomBytes(24).toString("base64url"))), null, "a guessed link");
   assert.equal(bookingView(settings, w.store, hashOf(first.handle.slice(0, -1) + (first.handle.endsWith("A") ? "B" : "A"))), null, "one letter off");
   assert.equal(bookingView(settings, w.store, first.handle), null, "the handle itself, typed where its hash belongs");
-  // the customer writes again while the deposit waits: the same booking, a fresh link, and the old one stops
+  // the customer writes again while the deposit waits: the same booking, a fresh link; the old one stays good (batch 5: the booked message carries a link too, and
+  // must not kill the page the quote's link has open), until more than four newer ones have been sent
   await w.say("book a haircut tomorrow at 6pm");
   assert.ok(m.made.length >= 2, "a new message, a new link");
   const latest = m.made.at(-1)!;
   assert.ok(w.messaging.sentTo(CUSTOMER).at(-1)?.text.includes(latest.url) || w.messaging.sentTo(CUSTOMER).some((x) => x.text.includes(latest.url)));
-  assert.equal(bookingView(settings, w.store, first.hash), null, "the old link opens nothing");
+  assert.equal(bookingView(settings, w.store, first.hash)?.status, "held", "the old link still opens the booking");
   assert.equal(bookingView(settings, w.store, latest.hash)?.status, "held", "the new one opens the booking");
+  for (let i = 0; i < 5; i++) await w.say("book a haircut tomorrow at 6pm");
+  assert.equal(bookingView(settings, w.store, first.hash), null, "after more than four newer links the first opens nothing");
+  assert.equal(bookingView(settings, w.store, m.made.at(-1)!.hash)?.status, "held", "the newest still opens it");
   assert.equal([...w.store.bookings.values()].length, 1, "still one booking");
+});
+
+test("the booked message carries a link too while the window is open, and the quote's link still opens the booking; outside the window it goes as it always did", async () => {
+  // inside the window: "booked" and the page link in one message, and the link the quote carried is still good
+  const m = maker();
+  const w = createWorld({ settings, pageLink: m.pageLink });
+  await w.say("haircut tomorrow at 6pm");
+  await w.ownerMarksReceived("b-1");
+  assert.equal(m.made.length, 2, "the quote's link, then the booked message's");
+  const booked = w.messaging.sentTo(CUSTOMER).map((x) => x.text).find((t) => /You're booked/u.test(t))!;
+  assert.ok(booked.includes(m.made[1].url), "the booked message carries its own page link");
+  assert.match(booked, /Your booking page, to see it or cancel/u);
+  assert.equal(bookingView(settings, w.store, m.made[0].hash)?.status, "booked", "the page the quote's link has open now says booked");
+  assert.equal(bookingView(settings, w.store, m.made[1].hash)?.status, "booked");
+
+  // outside the window "booked" must go as one approved template: a second part (the link) would make it two, which the provider refuses, so no link is added
+  const n = maker();
+  const late = createWorld({ settings, pageLink: n.pageLink });
+  await late.say("haircut tomorrow at 6pm");
+  (late.messaging as { isWindowOpen: (to: string) => Promise<boolean> }).isWindowOpen = async () => false;
+  await late.ownerMarksReceived("b-1");
+  assert.equal(n.made.length, 1, "no new link is made outside the window");
+  assert.ok(late.messaging.sentTo(CUSTOMER).some((x) => /You're booked/u.test(x.text) && !x.text.includes("/b/")), "the customer still hears \"booked\", in one message");
 });
 
 test("a link whose message did not go is not kept: the last link that reached the customer still works", async () => {
