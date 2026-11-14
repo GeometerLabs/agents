@@ -15,7 +15,7 @@ import type { Clock } from "../core/clock.ts";
 import type { RecordEntry } from "../record/record.ts";
 import type { Method } from "./accounts.ts";
 import { serviceAccount } from "./accounts.ts";
-import { Journal, MONEY_REFS } from "./journal.ts";
+import { Journal, MONEY_REFS, checkSettlementRow } from "./journal.ts";
 import type { Evidence, LegacyMap, MoneyKind, ReceivedFor } from "./journal.ts";
 import { formatNumber, fyOf, fyStartMs, nextNumber } from "./numbers.ts";
 import type { Series } from "./numbers.ts";
@@ -47,7 +47,13 @@ export type MoneyEvent =
   | { kind: "refund_owed"; case: string; owed: string; paymentId: string; amountPaise: number }
   | { kind: "refund_made"; case: string; owed: string; paymentId: string; amountPaise: number; method: Method; evidence: Evidence; /** The provider's or the owner-marked ledger's refund id; left out only for a person's word. */ refundId?: string }
   | { kind: "refund_cancelled"; case: string; owed: string; why: "owner_said_no" | "expired" | "refused" | "failed" }
-  | { kind: "correction"; case: string | null; reverses: number; why: "owner" | "accountant" };
+  | { kind: "correction"; case: string | null; reverses: number; why: "owner" | "accountant" }
+  /**
+   * One row of the payment service's settlement report, for the case of the payment it is about (the books know the payment already: a row for one they do not know
+   * is never posted, settlements.ts lists it). `entityId` is the payment's or the refund's own id, `paymentId` the payment either way. The figures are the row's own,
+   * in paise; checkSettlementRow decides how the fee reads, and `feeBasis` is what it decided (written to the record, so a reader sees which way it was).
+   */
+  | { kind: "settled"; case: string; settlementId: string; utr: string; entityId: string; rowType: "payment" | "refund"; paymentId: string; amountPaise: number; feePaise: number; taxPaise: number; creditPaise: number; debitPaise: number; /** When the payment service settled it, epoch seconds (the settlements file shows the day). */ settledAt?: number };
 
 /** The template writes its own line with these refs merged in last, and returns nothing that matters: the line is read back from the record. */
 export type WriteMoneyLine = (refs: Record<string, string>) => unknown;
@@ -95,6 +101,7 @@ export function createAccounting(o: { record: { entries(): readonly RecordEntry[
       case "refund_made": return j.identities.has(e.refundId ? `made:${e.refundId}` : `made:${e.owed}:${e.evidence}`) ? `refund ${e.refundId ?? e.owed} is already counted` : null;
       case "refund_cancelled": return j.openOwed(e.owed) === 0 ? `no refund is owed under ${e.owed}` : null;
       case "correction": return j.identities.has(`correction:${e.reverses}`) ? `entry ${e.reverses} is already corrected` : null;
+      case "settled": return j.identities.has(`settled:${e.settlementId}:${e.entityId}`) ? `row ${e.entityId} of settlement ${e.settlementId} is already counted` : null;
       default: return null;
     }
   }
@@ -112,6 +119,11 @@ export function createAccounting(o: { record: { entries(): readonly RecordEntry[
     if (e.kind === "refund_made" && e.refundId) refs[R.refundId] = e.refundId;
     if ("why" in e) refs[R.why] = e.why;
     if (e.kind === "correction") refs[R.reverses] = String(e.reverses);
+    if (e.kind === "settled") {
+      const check = checkSettlementRow({ type: e.rowType, amount: e.amountPaise, fee: e.feePaise, tax: e.taxPaise, credit: e.creditPaise, debit: e.debitPaise });
+      if (!check.ok) throw new Error(`A settlement row of ${e.entityId} cannot be posted: ${check.why}.`); // before anything is written
+      Object.assign(refs, { [R.settlementId]: e.settlementId, [R.utr]: e.utr, [R.entity]: e.entityId, [R.rowType]: e.rowType, [R.fee]: String(e.feePaise), [R.tax]: String(e.taxPaise), [R.credit]: String(e.creditPaise), [R.debit]: String(e.debitPaise), [R.basis]: check.basis, ...(e.settledAt !== undefined ? { [R.settledAt]: String(e.settledAt) } : {}) });
+    }
     if (doc) refs[R.doc] = doc;
     return refs;
   }
