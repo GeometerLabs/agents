@@ -531,7 +531,7 @@ export const en: Words = {
     checks: {
       saveFirst: "Save this shop to the server first.", saveButton: "Save and connect", saved: "Saved. The server will apply it, and this page shows when it has.", runButton: "Run the checks", waiting: "Waiting for the server to apply the shop.",
       settingsOk: "The settings are complete.", handCheck: "The tests on this shop's own prices and hours", handNotRun: "Not run yet.",
-      ownerSigninWait: "No WhatsApp: the owner signs in with their fingerprint. Show them the setup QR code (the shop's page in this panel, \"The owner's sign-in\"), and ask them to turn on alerts in their app.", ownerSigninOk: "The owner's setup QR code has been shown.",
+      ownerSigninWait: "No WhatsApp: the owner signs in with their fingerprint. Show them the setup QR code (the shop's page in this panel, \"The owner's sign-in\"), and ask them to turn on alerts in their app. The shop can go live once they have signed in and one phone has alerts on.", ownerSigninOk: "The owner has signed in on their phone and turned on alerts.",
       deploy: "The server's update", deployApplied: (at) => `Applied ${at}.`, deployNot: "Not applied yet.", limitsProven: (p, o) => `${p} of ${o} limits proven to hold on the running agent.`, limitsNot: "Limits not proven yet.",
       guardNotSet: "This server has not told the panel where to check the accounts yet, so they cannot be checked here.",
       readOnly: "Checks only read. They never send a message, take a payment or make a booking, so sending and payments are not tested here.",
