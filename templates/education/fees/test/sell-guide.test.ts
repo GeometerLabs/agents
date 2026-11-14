@@ -287,10 +287,10 @@ test("sell guide: the walkthrough the guide teaches does what the five steps say
   }
 });
 
-test("sell guide (14 Nov): the walkthrough is for a phone: the placeholder line for the hosted demo's address, the example pages, and no laptop command", () => {
+test("sell guide (14 Nov): the walkthrough is for a phone: the hosted demo's address, the example pages, and no laptop command", () => {
   for (const l of LANGUAGES) {
     const four = section(l, 4);
-    assert.ok(four.includes("`DEMO_URL`") && four.includes("https://streetlist.in/examples/"), `${l}: the placeholder line and the example pages`);
+    assert.ok(four.includes("`https://streetlist.in/demo/fees`") && !four.includes("DEMO_URL") && four.includes("https://streetlist.in/examples/"), `${l}: the hosted demo address (no placeholder) and the example pages`);
     assert.equal(fencedLines(four, "sh").length, 0, `${l}: no shell command in section 4`);
     assert.ok(!/192\.168|node templates|Ctrl\+C/.test(guide(l)), `${l}: no laptop command in the guide`);
   }

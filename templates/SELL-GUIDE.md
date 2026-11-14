@@ -14,7 +14,7 @@ Owner's decision, 3 November 2026: every template comes with a guide to pitching
 | `sell/guide.<lang>.src.md` | One per other language the template speaks (`LANGUAGES` in `src/settings.ts`), with the same placeholders |
 | `sell/guide.<lang>.md` | What partners read: made from the source and the price list in force by `node prices/render.ts`. Never edit it by hand; the test fails when it is behind its source or the list |
 | `sell/one-pager.<lang>.html` | A printable single page the partner leaves with the owner, one per language |
-| `sell/letter-of-intent.<lang>.md`, `sell/first-week.<lang>.md`, `sell/partner-group.<lang>.md` | The three pieces a partner copies, as short pages the sites can link to. Their text is also in the guide (section 6, and the two `###` parts of section 2), word for word; a test compares them |
+| `sell/letter-of-intent.<lang>.md`, `sell/first-week.<lang>.md`, `sell/partner-group.<lang>.md` | The three pieces a partner copies (the last is the help line for now, until a WhatsApp group exists), as short pages the sites can link to. Their text is also in the guide (section 6, and the two `###` parts of section 2), word for word; a test compares them |
 | `test/sell-guide.test.ts` | Checks all of the above |
 
 ## The 11 sections, in this order
@@ -88,11 +88,11 @@ Section 8 is cut to what the code needs from the shop today, and the same cut la
 
 A partner may have only a budget Android. So a guide never needs a laptop, Node, shared Wi-Fi or a printer.
 
-- **The demo is an address** the partner opens on any phone. Until the hosted demo exists, the guide carries the line `DEMO_URL` (a placeholder that is replaced when the address is known), and points to the made-up example pages at `https://streetlist.in/examples/`, which are pictures, not the demo.
+- **The demo is an address** the partner opens on any phone (decided 14 November 2026): the landing page is `https://streetlist.in/demo`, and each template has its own page, `https://streetlist.in/demo/bookings`, `/demo/orders` and `/demo/fees` (the equipment-rental variant uses bookings). A language is chosen by `?lang=hi`, `?lang=ml` or `?lang=kn` (English is the default; `?lang=en` also works). The guide's section 4 gives the template's address and the address for each language, says it runs on test money with nothing real sent, and that it starts fresh each time it is opened. The made-up example pages at `https://streetlist.in/examples/` are optional pictures of a shop's page, not the demo.
 - **The sheet and the card go on WhatsApp.** Paper is an option. The shop terms stay signed on paper until the legal check of agreeing them on WhatsApp is done.
 - **WhatsApp is set up through the shop's own Gupshup account** (the panel's "Gupshup (the shop's own account)" choice): the guide's setup item follows the panel's own steps and quotes its labels, in each language as the panel shows them. The shop's Gupshup wallet pays WhatsApp's charges, never Geometer or the partner.
-- **Three pieces in every guide:** the partners' WhatsApp group (the line `PARTNER_GROUP_LINK` until the owner supplies the invite link; 10:00 to 19:00, answered the same day), "Your first week", and the letter-of-intent message. Each is also a standalone file.
-- **Pilot fee.** Geometer's plan fee is waived for each shop's first three months for partners who join before 31 January 2027, up to 3 shops per partner (plan decision 53). It is not in the price list, so it is written by hand in section 6; move it into the list when it has an id.
+- **Three pieces in every guide:** the help line (write to hello@geometer.dev, 10:00 to 19:00, answered the same day; the file is still called `partner-group.<lang>.md`), "Your first week", and the letter-of-intent message. Each is also a standalone file. The partners' WhatsApp group does not exist yet (owner, 14 November 2026: "keep for later"): when the owner creates it, its invite link comes later and the group is added to the guides and to this file in the same change.
+- **Pilot fee.** "All free until 31 March 2027" (owner, 14 November 2026, plan decision 53): Geometer's plan fee is free for every pilot shop until 31 March 2027, for partners who join before 31 January 2027, up to 3 shops per partner and 50 shops in all. After 31 March 2027 the list price applies. It is not in the price list, so it is written by hand in section 6 (and in the pilot line the guides carry); move it into the list when it has an id.
 
 ## Keeping it true
 

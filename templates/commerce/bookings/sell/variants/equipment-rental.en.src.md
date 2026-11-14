@@ -105,7 +105,7 @@ The three payments are as in section 6 of the main guide: Geometer's plan (a ren
 
 1. **The shop's price: a starting point; you decide.** Near {{guide.business.shop-min}} for one machine, near {{guide.business.shop-max}} for a bigger centre. The setup is {{guide.business.setup-min}} to {{guide.business.setup-max}}.
 2. **Rental is seasonal.** Before you sign, agree with the owner whether the price is every month or only for the months the helper is on, and write it in the shop terms. A shop counts for a month when it was live on 15 or more days, so a month with fewer live days is not counted; write that in the shop terms too.
-3. **One helper books one thing at a time.** For a centre with several machines, the price is for the centre, one shop, however many helpers it has. If it runs several workflows or branches together it may be Operations, {{plan.operations.fee}} a month: ask Geometer's support before you quote.
+3. **One helper books one thing at a time.** For a centre with several machines, the price is for the centre, one shop, however many helpers it has. If it is a very busy centre, has branches, or runs 3 or more services together, it is Operations, {{plan.operations.fee}} a month: ask Geometer's support before you quote.
 4. **Money flow only,** as in the main guide. Never say how much anyone will make.
 
 ## 7. Never say

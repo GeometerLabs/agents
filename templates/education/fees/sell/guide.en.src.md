@@ -2,7 +2,7 @@
 
 For local partners (18 and over) and builders. Written 5 November 2026, in the pilot phase. The centre owner never reads this guide: they get the one-page sheet (`one-pager.en.html`) from you. The same guide exists in Hindi, Malayalam and Kannada. Use the language the owner speaks. Reworked on 14 November 2026 so that looking after the service is the centre of your role, and so that you can do all of it from a phone.
 
-**Read section 11 first.** Fees is not live in any centre yet, and its phone demo is not here yet. Today you can explain it, tell the five-step walkthrough in section 4 from your phone, and ask for a letter of intent by WhatsApp. You cannot promise a start date.
+**Read section 11 first.** Fees is not live in any centre yet. Today you can explain it, tell the five-step walkthrough in section 4 from your phone, and ask for a letter of intent by WhatsApp. You cannot promise a start date.
 
 **Your part, in one line.** You are the person who looks after this service with its owner: you know the centre, you tune its rules, you fix things when they go wrong, you bring customers when the street asks, and you are the person the owner calls. Setup is only the first step, never the pitch. What lasts is your care and your judgment, not access to the tool.
 
@@ -44,34 +44,34 @@ Three yes: go. Two yes: go, but carefully. One or none: skip it. A polite skip i
 3. Visit a friendly centre first. Ask your buddy, or Geometer's team, to come on the first visit.
 4. Then visit a centre you don't know. A "no" is normal. Write down what they said.
 5. Know your price before you walk in (section 6). Write it on a card.
-6. Join the partners' WhatsApp group and say hello there (below).
+6. Write to hello@geometer.dev to say hello and to ask for help (below).
 
 Carry: your phone (charged), the one-page sheet and the ask card ready to send on WhatsApp, the letter-of-intent message (section 6), and the shop terms with your price filled in (section 8). Paper is an option: if the owner likes paper, print 3 copies of the sheet with your name and number written in.
 
 The card "What to ask the shop for" (`sell/ask-card.en.md`) lists what to ask the owner for. It is plain text: paste it into a WhatsApp message to the owner, or read it out. The one-page sheet (`one-pager.en.html`, next to this guide) is a web page: open it on your phone, take a screenshot or share it, and send it to the owner on WhatsApp. When you send it from your number, the owner already has your name and number.
 
-### The partners' WhatsApp group
+### Help: write to hello@geometer.dev
 
-Help is one message away. Join the partners' WhatsApp group before your first visit:
+Help is one message away. Write to hello@geometer.dev before your first visit and say hello:
 
 ```text
-PARTNER_GROUP_LINK
+hello@geometer.dev
 ```
 
-(The line above is a placeholder: the owner supplies the group's invite link.) Ask anything there, 10:00 to 19:00. A question is answered the same day, and one that comes in after 19:00 waits until the next morning. For anything private, write to hello@geometer.dev. Never put a shop's customer messages, passwords or codes in the group.
+Ask anything there, 10:00 to 19:00. A question is answered the same day, and one that comes in after 19:00 waits until the next morning. Never put a shop's customer messages, passwords or codes in a message.
 
 ### Your first week
 
 A guide, not a rule: go at your own pace. Tick each one as you do it.
 
 - [ ] **Day 1: become a partner.** On geometer.dev, sign in, press "Become a partner", accept the partner terms (18 or over) and give your WhatsApp number.
-- [ ] **Day 1: join the partners' WhatsApp group** and say hello.
+- [ ] **Day 1: write to hello@geometer.dev** and say hello.
 - [ ] **Days 1 and 2: read sections 1 to 4 and section 7** of this guide, on your phone.
 - [ ] **Day 2: learn the five steps of the story in section 4** and tell them twice, out loud, in the owner's language. Look at the demo address too if it is there.
 - [ ] **Day 3: practise out loud** with a friend who plays the owner: the three sentences and the questions, three times.
 - [ ] **Day 4: decide your price** (section 6), write it on a card, and save the letter-of-intent message in your phone.
-- [ ] **Day 5: visit a friendly centre.** Bring your buddy, or ask in the group who can come. Tell the story from section 4, and ask for a reply "YES" to the letter-of-intent message.
-- [ ] **Day 6: write down what they said,** the good and the bad, and ask the group about what you could not answer.
+- [ ] **Day 5: visit a friendly centre.** Bring your buddy, or write to hello@geometer.dev to ask who can come. Tell the story from section 4, and ask for a reply "YES" to the letter-of-intent message.
+- [ ] **Day 6: write down what they said,** the good and the bad, and write to hello@geometer.dev about what you could not answer.
 - [ ] **Day 7: visit one centre you don't know.** A "no" is normal.
 
 ## 3. The first three sentences
@@ -90,11 +90,18 @@ Setup is the first step, so it is never the pitch. What you offer is that you st
 
 ## 4. Show it to the owner
 
-Fees does not have a phone demo yet; Bookings has one. A hosted demo shop for Fees is being built, and its address goes on the line below. Until then, what you show is the walkthrough: one parent's month at Bright Tuition Centre, run on stand-in services with test money. Nothing real is sent to anyone.
+Fees has a hosted demo shop, at the address below. The five steps below tell its story as a walkthrough: one parent's month at Bright Tuition Centre, run on stand-in services with test money. Nothing real is sent to anyone.
 
-`DEMO_URL`
+`https://streetlist.in/demo/fees`
 
-(The line above is a placeholder: the address of the hosted demo shop goes here, with the address for each language. Where it is here, open it on the owner's phone and tap through the same five steps.)
+This is the hosted demo shop. At the shop, open it on the owner's phone, or send the address to the owner on WhatsApp. The language is chosen at the end of the address:
+
+- English: `https://streetlist.in/demo/fees` (or add `?lang=en`)
+- Hindi: `https://streetlist.in/demo/fees?lang=hi`
+- Malayalam: `https://streetlist.in/demo/fees?lang=ml`
+- Kannada: `https://streetlist.in/demo/fees?lang=kn`
+
+The page also has a language choice at the top. All the demos are listed at `https://streetlist.in/demo`. It runs on test money, and nothing real is sent to anyone. It starts fresh each time it is opened, so nothing the owner types stays.
 
 **Before you go in.** Read the five steps below, out loud, twice: once in English and once in the owner's language, until you can tell them without reading. At the centre, tell them as a story, with your phone in your hand. You can also show the made-up example shop pages at `https://streetlist.in/examples/`: they are pictures of what a page looks like, not the demo, and their buttons do nothing. Each step is what the parent, the agent and the owner really wrote in a run on stand-in services; none of it was typed in advance.
 
@@ -270,8 +277,8 @@ Three payments, three different people. Keep them apart. The amounts are from Ge
 The monthly amount is the price of your care: the first-month check-in, the tuning, the fixes and the report. Setup is paid once; looking after it is what the centre keeps paying for.
 
 1. **Geometer's fee: {{plan.business.fee}} per live centre per month.** Fees is in the Business plan, with {{plan.business.allowance}} messages a month included. Extra messages are {{overage.extra}} for each 1,000, paid from your prepaid balance, and never charged without your yes. The payment fee when you top up the balance is passed on at cost. WhatsApp's own message fees are the centre's, not yours: see the WhatsApp point below. A builder who runs it on their own server, with their own AI key and WhatsApp account, pays {{licence.builder.fee}} a month for each live client business instead. The first {{innovator.places}} builders and partners with a shop live get the Innovator badge: a badge, not a discount. A centre counts for a month when it was live on 15 or more days. You pay nothing to join: no joining fee, no kit, no paid training. The fee starts when a centre goes live.
-2. **Pilot: Geometer's plan fee is free for each shop's first three months.** If you join before 31 January 2027, Geometer waives its plan fee for each shop's first three months live, for up to 3 shops. After that, the list price above applies. This does not change your price to the shop: you still set it, and you keep it. The pilot has a limit on free shops overall too, so if you are unsure whether a shop still counts, ask in the partners' group before you promise it. (Decided 14 November 2026; this is not in the price list yet.)
-3. **The centre's price: a starting point; you decide.** The table gives the range. The setup is {{guide.business.setup-min}} to {{guide.business.setup-max}}, and you keep all of it. What you keep each month is your service price minus Geometer's plan (and nothing at all of the plan during the free months).
+2. **Pilot: Geometer's plan fee is free for every pilot shop until 31 March 2027.** If you join before 31 January 2027, Geometer does not charge its plan fee for your pilot shops until 31 March 2027, for up to 3 shops per partner and 50 shops in all. After 31 March 2027, the list price above applies. This does not change your price to the shop: you still set it, and you keep it. The pilot has a limit of 50 free shops, so if you are unsure whether a shop still counts, write to hello@geometer.dev before you promise it. (Decided 14 November 2026: all free until 31 March 2027; this is not in the price list yet.)
+3. **The centre's price: a starting point; you decide.** The table gives the range. The setup is {{guide.business.setup-min}} to {{guide.business.setup-max}}, and you keep all of it. What you keep each month is your service price minus Geometer's plan (and nothing at all of the plan while the pilot is free, until 31 March 2027).
 4. **Write the price down** in the shop terms (section 8). The terms say: no surprise charges, the centre can cancel with one message, no automatic debit unless the owner clearly agreed.
 5. **WhatsApp is the centre's own cost.** In the pilot the centre has its own Gupshup account, and its own Gupshup wallet pays Meta's charges and Gupshup's fee, at cost. That money never passes through you or Geometer, so you add nothing to your bill. Tell the owner the estimate in the table, and that the wallet needs topping up in Gupshup's dashboard: when it is empty, messages stop. A centre that sends more messages pays more, and your service price stays yours.
 6. **Nothing else to pay.** You pay for nothing else to use Fees. A centre that chooses Razorpay opens and pays for its own Razorpay account: see the Razorpay item in section 8.
@@ -322,7 +329,7 @@ Take your phone and the owner's phone. Go through the list in order, and tick ea
   - Whose account: the centre signs up at Gupshup (gupshup.io) itself and keeps the account. The centre's own Gupshup wallet pays WhatsApp's charges and Gupshup's fee. Geometer never holds that money, and neither do you. You never see a password or a code.
   - Step 1: the owner signs up at Gupshup and makes a WhatsApp app for the centre's number. It must be the WhatsApp Business app, and the centre keeps its number and its app. Gupshup links the number to a Meta business account, so the owner may be asked to log in to Facebook there, on their own phone.
   - Step 2: the owner adds you as an admin of the Gupshup account.
-  - Step 3: our message templates are added to the centre's app and must show as approved in Gupshup before the centre goes live. Today this is done by hand in Gupshup's dashboard (see the next item). Ask in the partners' group before you start. Geometer is building a way to add them for you; it does not exist yet.
+  - Step 3: our message templates are added to the centre's app and must show as approved in Gupshup before the centre goes live. Today this is done by hand in Gupshup's dashboard (see the next item). Write to hello@geometer.dev before you start. Geometer is building a way to add them for you; it does not exist yet.
   - Step 4: in the panel's WhatsApp step, choose "Gupshup (the shop's own account)". Type the centre's WhatsApp number with its country code, the app's name and API key from Gupshup's dashboard, and a secret word of your own (16 or more letters, digits, _ or -). Write the secret word down: the panel does not show it again.
   - Step 5: in the Gupshup app's Webhooks tab, add the address the panel shows, with your secret word in place of SECRET-WORD.
   - Step 6: press "Run the checks" in the panel. It asks Gupshup whether the key and the app name go together and how many templates show as approved. It sends nothing and does not show which number the app sends from, so the first real test is the one you do with the owner.
@@ -346,7 +353,7 @@ Take your phone and the owner's phone. Go through the list in order, and tick ea
 - [ ] **The owner's number for approvals.** This is the WhatsApp number where it asks "Approval needed". The owner answers "approve q-1" or "deny q-1". For a refund above the refund limit the reply uses a one-use code instead of q-1. Practise one reply together. For a refund above the refund limit, the one-use code comes from the approvals relay. It has been tried against the real Guard program, but not on a live centre (section 11). A fee waiver above the waiver limit is not held that way: the agent asks with the same "approve q-1" reply.
 - [ ] **The checks on this centre's settings.** In the panel, fill in the centre's numbers from the list above, save, and press "Run the checks". A check that these settings can't express, for example a late fee when the centre has none, is named as not run and is not counted.
 - [ ] **The go-live certificate, read together.** The panel makes it when you press "Ready to go live", and "Open the go-live certificate" shows it. (A builder with a laptop can also make it from the command line: see the template's README.) It says what was tried, on which settings, and what was not checked. Read every line aloud in the owner's language, including "Not checked". Malayalam and Kannada: don't go live until a native speaker has reviewed the wording.
-- [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, WhatsApp's message fees, cancel with one message, no surprise charges, your name and number. Print them beforehand at any copy shop in town (or ask in the partners' group), and both sign on paper. Leave a copy, and send the owner the one-page sheet on WhatsApp. Signed paper is still what Geometer's checks assume. Later, Geometer may tell you that the terms can be agreed on WhatsApp instead; do that only after Geometer says so. A centre that chose Razorpay also has Razorpay's fee in its terms (see the Razorpay item).
+- [ ] **The shop terms, signed.** The price (monthly and setup), what the helper does and doesn't do, the limits, WhatsApp's message fees, cancel with one message, no surprise charges, your name and number. Print them beforehand at any copy shop in town (or ask Geometer's support at hello@geometer.dev), and both sign on paper. Leave a copy, and send the owner the one-page sheet on WhatsApp. Signed paper is still what Geometer's checks assume. Later, Geometer may tell you that the terms can be agreed on WhatsApp instead; do that only after Geometer says so. A centre that chose Razorpay also has Razorpay's fee in its terms (see the Razorpay item).
 
 ## 9. The first month
 
@@ -368,7 +375,7 @@ When a centre is live:
 2. **Call the owner before they find out.** "Something went wrong with [what]. I have stopped the helper. Here is what happened and what I am doing. Your own WhatsApp works as normal."
 3. **Look at the record.** Find the action, what was confirmed, and which limit said what. The monthly report is made from this record.
 4. **Fix it, check it again, then switch it on.** If a parent was charged wrongly, sit with the owner while they refund it from their own Razorpay account. If a parent got a reminder they should not have, the owner says sorry to them first. With UPI, the owner sends the refund from their own UPI app, and the helper tells the parent "sent" only after the owner marks it done.
-5. **Put it in the report.** It goes in the month's mistakes, and you tell Geometer's team the same day: write in the partners' WhatsApp group (10:00 to 19:00, answered the same day), and to hello@geometer.dev for anything private.
+5. **Put it in the report.** It goes in the month's mistakes, and you tell Geometer's team the same day: write to hello@geometer.dev (10:00 to 19:00, answered the same day).
 
 You are the person the owner calls, and the centre's named, accountable person. Your name is on the report and the certificate. Putting it right with them is part of looking after it. Don't blame the software, and don't say "it won't happen again".
 

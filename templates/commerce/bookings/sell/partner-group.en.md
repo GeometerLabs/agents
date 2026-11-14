@@ -1,11 +1,11 @@
-# The partners' WhatsApp group
+# Help: write to hello@geometer.dev
 
 From the Bookings sell guide ([guide.en.md](guide.en.md)); the same text is in it. Section numbers are that guide's.
 
-Help is one message away. Join the partners' WhatsApp group before your first visit:
+Help is one message away. Write to hello@geometer.dev before your first visit and say hello:
 
 ```text
-PARTNER_GROUP_LINK
+hello@geometer.dev
 ```
 
-(The line above is a placeholder: the owner supplies the group's invite link.) Ask anything there, 10:00 to 19:00. A question is answered the same day, and one that comes in after 19:00 waits until the next morning. For anything private, write to hello@geometer.dev. Never put a shop's customer messages, passwords or codes in the group.
+Ask anything there, 10:00 to 19:00. A question is answered the same day, and one that comes in after 19:00 waits until the next morning. Never put a shop's customer messages, passwords or codes in a message.

@@ -1,6 +1,6 @@
 // The phone-first parts of the three sell guides (Bookings, Orders, Fees), checked together because they are the same text in every guide (14 Nov 2026, batch 2a):
-// the three pieces a partner copies (the partners' WhatsApp group, "Your first week", the letter-of-intent message) are in each guide word for word AND as
-// standalone files the sites link to; the pilot fee line is in section 6; the placeholders (DEMO_URL, PARTNER_GROUP_LINK) are there until real addresses replace them;
+// the three pieces a partner copies (the help line, which is write-to-hello@geometer.dev until a partners' WhatsApp group exists, "Your first week", the letter-of-intent message)
+// are in each guide word for word AND as standalone files the sites link to; the pilot fee line is in section 6; the hosted demo's addresses are in section 4 (no placeholder is left);
 // no laptop, Node, Wi-Fi or printer is needed. The per-template tests (sell-guide.test.ts) check the rest.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -30,13 +30,33 @@ test("the three pieces are in every guide word for word, and stand alone as file
   }
 });
 
-test("the placeholders are there, the same in every language: the group's link, the hosted demo's address, and the pilot fee line in section 6", () => {
+const DEMO = { "commerce/bookings": "bookings", "commerce/orders": "orders", "education/fees": "fees" } as const;
+
+test("the hosted demo's address for the template is in section 4 with one address per language, and no placeholder is left anywhere", () => {
   for (const t of TEMPLATES) for (const l of LANGUAGES) {
     const guide = file(t, `guide.${l}.src.md`);
-    assert.equal(guide.split("PARTNER_GROUP_LINK").length - 1, 1, `${t} ${l}: one PARTNER_GROUP_LINK placeholder`);
-    assert.equal(guide.split("`DEMO_URL`").length - 1, 1, `${t} ${l}: one DEMO_URL placeholder line`);
-    assert.ok(guide.includes("10:00") && guide.includes("19:00"), `${t} ${l}: the group's hours`);
-    assert.ok(guide.includes("hello@geometer.dev"));
+    const url = `https://streetlist.in/demo/${DEMO[t as keyof typeof DEMO]}`;
+    const four = guide.split(/^## 5\. /m)[0].split(/^## 4\. /m)[1];
+    assert.ok(four.includes(`\`${url}\``), `${t} ${l}: the template's demo address is in section 4`);
+    for (const code of ["hi", "ml", "kn"]) assert.ok(four.includes(`\`${url}?lang=${code}\``), `${t} ${l}: the address for ?lang=${code}`);
+    assert.ok(four.includes("`?lang=en`") && four.includes("`https://streetlist.in/demo`"), `${t} ${l}: the English form and the landing page`);
+    assert.ok(four.includes("https://streetlist.in/examples/"), `${t} ${l}: the example pages are still named, as pictures`);
+    for (const piece of ["guide", "partner-group", "first-week", "letter-of-intent"]) {
+      const text = piece === "guide" ? guide : file(t, `${piece}.${l}.md`);
+      assert.ok(!/DEMO_URL|PARTNER_GROUP_LINK/.test(text), `${t} ${l} ${piece}: no placeholder left`);
+    }
+    assert.ok(!/Until that address is here|एड्रेस यहाँ नहीं|वह पता यहाँ नहीं/.test(guide), `${t} ${l}: no "until the address is here" sentence`);
+  }
+});
+
+test("the help line is the email address, with the hours, in every guide and its standalone piece; no WhatsApp group is promised", () => {
+  for (const t of TEMPLATES) for (const l of LANGUAGES) {
+    const guide = file(t, `guide.${l}.src.md`);
+    const help = body(file(t, `partner-group.${l}.md`));
+    assert.ok(help.includes("```text\nhello@geometer.dev\n```"), `${t} ${l}: the standalone help piece has the email line`);
+    assert.ok(help.includes("10:00") && help.includes("19:00"), `${t} ${l}: the help hours`);
+    assert.ok(guide.includes(help), `${t} ${l}: the guide has the help piece word for word`);
+    assert.ok(!/WhatsApp group|WhatsApp ग्रुप|WhatsApp ഗ്രൂപ്പ്|WhatsApp ഗ്രൂപ്പിൽ|WhatsApp ಗುಂಪ|partners' group/.test(guide), `${t} ${l}: no partners' WhatsApp group is mentioned`);
     const six = guide.split(/^## 7\. /m)[0].split(/^## 6\. /m)[1];
     assert.ok(/2027/.test(six) && /31/.test(six), `${t} ${l}: section 6 has the pilot fee line (join before 31 January 2027)`);
   }
