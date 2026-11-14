@@ -115,6 +115,12 @@ footer + footer { margin-top: 0; border-top: 0; }
 footer summary { display: list-item; padding: 12px 0; cursor: pointer; font-weight: 650; color: var(--ink); }
 footer a { display: inline-block; padding: 11px 0; }
 
+/* money clarity: the UPI box's folded "payment did not go through?", and the row of its small buttons (copy the UPI ID, open in Chrome) */
+.fold { margin-top: 12px; border-top: 1px solid var(--line); }
+.fold summary { display: list-item; padding: 12px 0; cursor: pointer; font-weight: 650; }
+.fold ul { margin: 0 0 12px; padding-left: 20px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+
 /* a card with a stamp (a fee, a thing waiting on the owner), its edge in the stamp's colour; the padlock line for a private page */
 .private { display: flex; gap: 8px; align-items: flex-start; }
 .private svg { flex: none; width: 18px; height: 18px; margin-top: 3px; }

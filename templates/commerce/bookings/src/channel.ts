@@ -47,7 +47,7 @@ const requestOf = (store: Store, b: Booking): MarkedRequest | undefined => store
  * One request by its handle's hash, as its own page may show it. Null when the store has none (the runtime then says whether its task is still waiting). A refused
  * request says only why, as a name the page words; a booking says its state, what it is for, how to pay while it is held, and the messages the agent gave it.
  */
-export function bookingView(settings: Settings, store: Store, handleHash: string) {
+export function bookingView(settings: Settings, store: Store, handleHash: string, nowMs: number = Date.now()) {
   const request = store.channel?.requests[handleHash];
   // item 11h: a WhatsApp booking's own page, by the link last sent on WhatsApp (a newer one replaced any older, which then opens nothing)
   const byLink = request ? undefined : [...store.bookings.values()].find((x) => x.pageLink === handleHash && !x.channel);
@@ -75,7 +75,10 @@ export function bookingView(settings: Settings, store: Store, handleHash: string
     ...(pay ? { pay } : {}),
     // a WhatsApp booking's page shows and lets the customer pay; cancelling and "I have paid" stay on WhatsApp, where the customer is known by their number
     canCancel: !byLink && (status === "held" || status === "booked" || status === "checking"),
-    canSayPaid: !byLink && status === "held" && pay?.kind === "upi",
+    // money clarity: also after the hold ended, while the owner could still mark the request (lateClaimable): the customer may have paid as the time ran out
+    canSayPaid: !byLink && ((status === "held" && pay?.kind === "upi") || (status === "expired" && lateClaimable(store, b, nowMs))),
+    // the customer has already said they paid: the page says so, and the owner's page lists it first
+    claimed: !byLink && b.claimAtMs !== undefined,
     // its messages are WhatsApp's, not kept here: the page shows none of them
     messages: byLink ? [] : messages(b.customer),
     ...refundOf(store, b),
@@ -93,9 +96,27 @@ function refundOf(store: Store, b: Booking): { refund?: { state: "asked" | "owed
   return asked && asked.kind === "refund" ? { refund: { state: "asked", amountInr: asked.amountInr } } : {};
 }
 
+/** How long after a hold ended the owner's page still lists "money may have come", and the customer's page still takes "I have paid": a UPI payment made as the time ran out. */
+export const LATE_WINDOW_MS = 48 * 3_600_000;
+/** A claim made after the hold ended stays listed (and takeable) for longer: the owner may only see the payment in their UPI app days later. */
+export const LATE_CLAIM_WINDOW_MS = 14 * 24 * 3_600_000;
+
+/**
+ * An expired booking whose UPI request is still open to a mark (its one-use code stays live after the hold ended, ledger.ts closeRequest) and has none: money may have
+ * come as the time ran out. Only a UPI shop has one. Bounded in time so an old, forgotten hold is not listed forever.
+ */
+function lateRequest(store: Store, b: Booking, nowMs: number): MarkedRequest | undefined {
+  if (b.state !== "expired") return undefined;
+  const r = requestOf(store, b);
+  if (!r || !r.code || r.marks.length > 0 || b.depositPaymentId) return undefined;
+  const since = b.claimAtMs !== undefined ? Math.max(b.claimAtMs, r.closedAtMs ?? 0) : (r.closedAtMs ?? 0);
+  return nowMs - since < (b.claimAtMs !== undefined ? LATE_CLAIM_WINDOW_MS : LATE_WINDOW_MS) ? r : undefined;
+}
+const lateClaimable = (store: Store, b: Booking, nowMs: number): boolean => lateRequest(store, b, nowMs) !== undefined;
+
 /** What waits for the owner, as the owner's page shows it and the agent checks a press against. `code` is for the agent only and is never sent out (ownerView). */
 export interface OwnerItem {
-  kind: "deposit" | "refund_owed" | "late_refund" | "calendar";
+  kind: "deposit" | "late_deposit" | "refund_owed" | "late_refund" | "calendar";
   case: string;
   /** The digest of exactly what is shown: what it is, its amount and how far it has got. A press with another digest does nothing (agent.ts onOwnerAction). */
   digest: string;
@@ -107,12 +128,19 @@ export interface OwnerItem {
   startMs?: number;
   /** For a refund owed: why, in the template's words ("cancelled", ...). */
   why?: string;
+  /**
+   * Money clarity: when the customer said they paid, and the UPI reference they typed. NOT in the digest: a customer's press must not make the owner's own press stale.
+   * A `late_deposit` is a hold that ended where money may have come anyway (listed for 48 hours, or 14 days after a claim); "received" on it is the late mark.
+   */
+  claimedAtMs?: number;
+  upiRef?: string;
   /** The owner-marked one-use code the press stands for (the same the WhatsApp button carries). Never leaves the runtime. */
   code?: string;
 }
 
 const digestOf = (parts: unknown[]): string => createHash("sha256").update(JSON.stringify(parts)).digest("hex").slice(0, 32);
 const customerOf = (b: Booking | undefined, phone: string) => (b?.contact ? { phone: b.contact.phone, ...(b.contact.name ? { name: b.contact.name } : {}) } : { phone });
+const claimOf = (b: Booking): { claimedAtMs?: number; upiRef?: string } => ({ ...(b.claimAtMs !== undefined ? { claimedAtMs: b.claimAtMs } : {}), ...(b.claimRef ? { upiRef: b.claimRef } : {}) });
 const channelOf = (b: Booking | undefined): OwnerItem["channel"] => b?.channel ?? "whatsapp";
 
 /**
@@ -127,7 +155,15 @@ export function ownerItems(settings: Settings, store: Store, nowMs?: number): { 
     const b = store.bookings.get(r.reference);
     if (!b || b.state !== "awaiting_deposit" || !r.code || (r.status !== "created" && r.status !== "partially_paid")) continue;
     const left = leftOn(r);
-    items.push({ kind: "deposit", case: b.id, digest: digestOf(["deposit", b.id, r.id, left, r.marks.length, r.usedCodes.length]), actions: ["received"], amountPaise: left, customer: customerOf(b, b.customer), channel: channelOf(b), ...(b.serviceId ? { serviceId: b.serviceId } : {}), ...(b.startMs !== undefined ? { startMs: b.startMs } : {}), code: r.code });
+    items.push({ kind: "deposit", case: b.id, digest: digestOf(["deposit", b.id, r.id, left, r.marks.length, r.usedCodes.length]), actions: ["received"], amountPaise: left, customer: customerOf(b, b.customer), channel: channelOf(b), ...(b.serviceId ? { serviceId: b.serviceId } : {}), ...(b.startMs !== undefined ? { startMs: b.startMs } : {}), ...claimOf(b), code: r.code });
+  }
+  // money clarity: a hold that ended where money may have come anyway. The owner's "received" is the same mark as on WhatsApp; after the close it is the late mark
+  // (agent.ts lateMark): owed back (with "keep" offered, for a booking made by hand), never booked again by itself. No ledger rule changes.
+  const nowMs0 = nowMs ?? Date.now();
+  for (const b of store.bookings.values()) {
+    const r = lateRequest(store, b, nowMs0);
+    if (!r?.code) continue;
+    items.push({ kind: "late_deposit", case: b.id, digest: digestOf(["late_deposit", b.id, r.id, r.amountPaise, r.usedCodes.length]), actions: ["received"], amountPaise: r.amountPaise, customer: customerOf(b, b.customer), channel: channelOf(b), ...(b.serviceId ? { serviceId: b.serviceId } : {}), ...(b.startMs !== undefined ? { startMs: b.startMs } : {}), ...claimOf(b), code: r.code });
   }
   for (const r of store.upi?.refunds ?? []) {
     if (r.state !== "owed" || !r.code) continue;

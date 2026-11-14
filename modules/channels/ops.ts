@@ -163,11 +163,11 @@ export function createOps(ctx: OpsContext) {
       return { ...bookingOut(handle, v, offer.shop.timezone, languageOf(args.language, offer.shop)), note: "The cancellation follows the shop's rule: inside its window the deposit comes back; later, the owner decides." };
     },
 
-    /** The page's "I have paid" (not an API operation for assistants): the owner is asked to look; nothing is marked paid. */
-    async say_paid(handle: string) {
+    /** The page's "I have paid" (not an API operation for assistants): the owner is asked to look; nothing is marked paid. `upiRef`: the reference the customer typed, checked again in events.ts. */
+    async say_paid(handle: string, upiRef?: string) {
       const v = await viewOf(handle);
       if (!("canSayPaid" in v) || !v.canSayPaid) return false;
-      await ctx.backend.submit([{ kind: "channel_request", id: randomUUID(), channel: ctx.channel, op: "paid", handle: handleHash(handle) }]);
+      await ctx.backend.submit([{ kind: "channel_request", id: randomUUID(), channel: ctx.channel, op: "paid", handle: handleHash(handle), ...(upiRef ? { upiRef } : {}) }]);
       return true;
     },
   };

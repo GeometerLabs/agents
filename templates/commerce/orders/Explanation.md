@@ -71,3 +71,7 @@ one row per person after "given back" ("Settled by ravi, by their word"). The ow
 no approved template body changed. The longest form that fits WhatsApp's 1,024 characters is chosen, from the names down to none: in the long-name Malayalam
 month with the badge there is no room, and the message is as before. How and why: modules/Explanation.md, "Settled by <who>, by their word on the documents".
 Machine-written hi/ml/kn, on the REVIEW sheets (section 6).
+
+## Money the owner and customer can read (batch 4, 14 Nov 2026)
+
+The Orders page takes the same money parts as Bookings' (templates/commerce/bookings/Explanation.md, "Money the owner and customer can read"): the UPI box with "copy UPI ID", "open in Chrome", the UPI reference and the "payment did not go through?" fold; a held UPI order's page runs the one small script (by a nonce) instead of reloading under the customer; "I already paid" says how long a check takes. An order remembers when the customer said they paid (`claimAtMs`) and the reference (`claimRef`), and the owner's page lists "Customers say they have paid" apart from "Waiting for payment", with the order's reference (`o-3`, the UPI note). A gateway (Razorpay) shop's page has the payment link and none of this: the gateway confirms by itself, so there is nothing for the owner to mark and "I have paid" is not offered (tested). The late-payment card is Bookings' only (see Deferred.md).

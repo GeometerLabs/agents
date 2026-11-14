@@ -40,6 +40,11 @@ export interface LinkRecord { id: string; url: string; reference: string; amount
 
 /** A payment the agent has counted, read from the payments service's own list on one of the fee's links. */
 export interface CountedPayment { id: string; amountPaise: number; linkId: string }
+/**
+ * `linkId` of a payment the OWNER marked as paid by hand (cash, or a bank transfer the agent cannot see): it is on no payment link and no payments service, so it can
+ * never be refunded through one (agent.ts skips it when it looks for a payment to refund). Money clarity, 14 Nov.
+ */
+export const CASH_LINK = "cash";
 
 /**
  * Something waiting for the owner's answer, or for another try.
@@ -90,6 +95,8 @@ export interface Due {
    * Received button, from then until the owner marks it or it is settled: a fee nobody has claimed waits for the parent, not the owner.
    */
   claimAtMs?: number;
+  /** Money clarity: the UPI reference the parent typed with "I have paid" (digits; helps the owner find the payment; counts as nothing). */
+  claimRef?: string;
 }
 
 /**

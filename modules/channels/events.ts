@@ -36,9 +36,19 @@ export interface ChannelOrder {
  * never a number; `handle` is the hash of the confirmation page's handle the front made for this press, so the parent has a stable page that says "confirmed" only
  * when the centre's record does. Only the page sends these (channel "web"): there is no API or MCP for fees.
  */
-export interface ChannelFee { kind: "channel_request"; id: string; channel: "web"; op: "fee_pay" | "fee_paid"; parent: string; dueId: string; handle: string }
-/** Cancel, or "I have paid" (the owner is asked to look; nothing is marked paid), for the booking or the order with this handle. */
-export interface ChannelOther { kind: "channel_request"; id: string; channel: ChannelName; op: "cancel" | "paid"; handle: string }
+export interface ChannelFee { kind: "channel_request"; id: string; channel: "web"; op: "fee_pay" | "fee_paid"; parent: string; dueId: string; handle: string; upiRef?: string }
+/**
+ * Cancel, or "I have paid" (the owner is asked to look; nothing is marked paid), for the booking or the order with this handle. `upiRef` (an "I have paid" only) is the
+ * UPI reference the customer typed from their app's payment details, to help the owner find the payment: digits only, never used to decide anything (a mark is still
+ * only the owner's).
+ */
+export interface ChannelOther { kind: "channel_request"; id: string; channel: ChannelName; op: "cancel" | "paid"; handle: string; upiRef?: string }
+/**
+ * A UPI reference as a customer types it: the 12 digits an app shows as "UPI Ref No" or "UTR" (some banks show up to 22). Anything else is dropped (the claim itself
+ * still counts), so a typed sentence, a link or a script never reaches the owner's page.
+ */
+export const UPI_REF = /^\d{6,22}$/u;
+const upiRefOf = (raw: unknown): { upiRef?: string } => (typeof raw === "string" && UPI_REF.test(raw.trim()) ? { upiRef: raw.trim() } : {});
 export type ChannelRequest = ChannelBook | ChannelOrder | ChannelFee | ChannelOther;
 
 /**
@@ -46,7 +56,7 @@ export type ChannelRequest = ChannelBook | ChannelOrder | ChannelFee | ChannelOt
  * cards: `card_yes` / `card_no`, whose case is the card's id ("c-3") and whose digest is the card's own. A card's answer goes through the same binding as a tap on
  * WhatsApp (modules/assistant/cards.ts judgeCard): one use, and the action read again from the store must still have the card's digest.
  */
-export const OWNER_ACTIONS = ["received", "refunded", "kept", "approve", "deny", "retry", "card_yes", "card_no", "send_link", "revoke_link"] as const;
+export const OWNER_ACTIONS = ["received", "refunded", "kept", "approve", "deny", "retry", "card_yes", "card_no", "send_link", "revoke_link", "cash"] as const;
 export type OwnerActionName = (typeof OWNER_ACTIONS)[number];
 export interface OwnerAction { kind: "owner_action"; id: string; action: OwnerActionName; case: string; digest: string }
 
@@ -116,13 +126,13 @@ export function checkChannelEvent(raw: unknown): { ok: true; event: ChannelEvent
   if (!CHANNELS.includes(raw.channel as ChannelName)) return { ok: false, error: 'A channel_request\'s channel is "web" or "mcp".' };
   if (typeof raw.handle !== "string" || !HANDLE_HASH.test(raw.handle)) return { ok: false, error: "A channel_request carries its handle's hash (64 hex digits), never the handle." };
   const base = { kind: "channel_request" as const, id: raw.id, channel: raw.channel as ChannelName, handle: raw.handle };
-  if (raw.op === "cancel" || raw.op === "paid") return { ok: true, event: { ...base, op: raw.op } };
+  if (raw.op === "cancel" || raw.op === "paid") return { ok: true, event: { ...base, op: raw.op, ...(raw.op === "paid" ? upiRefOf(raw.upiRef) : {}) } };
   // item 11h: a parent's press on their private page: the page only, and only the link's hash and the fee's id are read
   if (raw.op === "fee_pay" || raw.op === "fee_paid") {
     if (raw.channel !== "web") return { ok: false, error: "A parent's request comes from their page only (channel \"web\")." };
     if (typeof raw.parent !== "string" || !HANDLE_HASH.test(raw.parent)) return { ok: false, error: "A parent's request carries the hash of their private link (64 hex digits), never the link." };
     if (typeof raw.dueId !== "string" || !DUE_ID.test(raw.dueId)) return { ok: false, error: 'A parent\'s request names the fee ("f-3").' };
-    return { ok: true, event: { kind: "channel_request", id: raw.id, channel: "web", op: raw.op, parent: raw.parent, dueId: raw.dueId, handle: raw.handle } };
+    return { ok: true, event: { kind: "channel_request", id: raw.id, channel: "web", op: raw.op, parent: raw.parent, dueId: raw.dueId, handle: raw.handle, ...(raw.op === "fee_paid" ? upiRefOf(raw.upiRef) : {}) } };
   }
   if (raw.op === "order") return checkOrder(raw, base);
   if (raw.op !== "book") return { ok: false, error: 'A channel_request\'s op is "book", "order", "fee_pay", "fee_paid", "cancel" or "paid".' };

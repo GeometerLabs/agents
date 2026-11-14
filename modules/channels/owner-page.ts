@@ -26,6 +26,7 @@ import type { Language } from "../language/languages.ts";
 import type { OwnerItemView, OwnerView, RelayAsk } from "./backend.ts";
 import { OWNER, PAGE } from "./words.ts";
 import { OWNER_MORE } from "./words-orders-fees.ts";
+import { OWNER_MONEY } from "./words-money.ts";
 import { CARD_LABELS } from "../assistant/words.ts";
 import { characterLine, talkBox, talkScript } from "../assistant/app/talk.ts";
 import { ASSISTANT_OF, themeColour } from "../assistant/character.ts";
@@ -59,13 +60,14 @@ function button(base: string, f: { source: "runtime" | "relay"; action: string; 
 }
 
 /** One thing waiting, as a card: a tag saying what it is (in its meaning's colour), the amount large, the sentence, and its answers side by side. */
-function waitingCard(language: Language, o: { tag: TagKey; tone?: Tone; amountPaise: number; text: string; buttons: Raw[] }): Raw {
-  return html`<div class="item s-${o.tone ?? "wait"}"><div class="top"><span class="stamp">${OWNER_LOOK[language].tag[o.tag]}</span>${o.amountPaise > 0 ? html`<span class="amt">${formatInr(o.amountPaise / 100)}</span>` : ""}</div><p>${o.text}</p><div class="acts">${o.buttons}</div></div>`;
+function waitingCard(language: Language, o: { tag: TagKey; /** Money clarity: a tag of its own words (words-money.ts), in place of the shared one. */ label?: string; tone?: Tone; amountPaise: number; text: string | Raw; buttons: Raw[] }): Raw {
+  return html`<div class="item s-${o.tone ?? "wait"}"><div class="top"><span class="stamp">${o.label ?? OWNER_LOOK[language].tag[o.tag]}</span>${o.amountPaise > 0 ? html`<span class="amt">${formatInr(o.amountPaise / 100)}</span>` : ""}</div><p>${o.text}</p><div class="acts">${o.buttons}</div></div>`;
 }
 
 export function ownerPage(o: OwnerPageInput): string {
   const w = OWNER[o.language];
   const more = OWNER_MORE[o.language];
+  const money = OWNER_MONEY[o.language];
   const v = o.view;
   const tz = v.shop.timezone;
   const service = (id?: string) => v.services.find((s) => s.id === id)?.names[o.language] ?? "";
@@ -77,8 +79,11 @@ export function ownerPage(o: OwnerPageInput): string {
   const item = (i: OwnerItemView): Raw => {
     const amount = formatInr(i.amountPaise / 100);
     const b = (action: string, label: string, quiet = false) => button(o.base, { source: "runtime", action, case: i.case, digest: i.digest }, label, quiet, o.csrf);
-    const card = (tag: TagKey, text: string, buttons: Raw[], tone?: Tone) => waitingCard(o.language, { tag, ...(tone ? { tone } : {}), amountPaise: i.amountPaise, text, buttons });
-    if (i.kind === "deposit") return card("payment", w.deposit(who(i.customer, i.channel), amount, what(i)), [b("received", w.received(amount))]);
+    const card = (tag: TagKey, text: string | Raw, buttons: Raw[], tone?: Tone, label?: string) => waitingCard(o.language, { tag, ...(label ? { label } : {}), ...(tone ? { tone } : {}), amountPaise: i.amountPaise, text, buttons });
+    // money clarity: a deposit says which booking it is (the UPI note), when the customer said they paid and the UPI reference they typed, so the owner ticks the right one
+    const payLines = (): Raw => html`<br><small class="note">${v.kind === "fees" ? "" : `${money.reference(i.case)} `}${i.claimedAtMs !== undefined ? `${money.claimedAt(formatSlot(i.claimedAtMs, tz, o.language))} ` : ""}${i.upiRef ? money.upiRef(i.upiRef) : ""}</small>`;
+    if (i.kind === "deposit") return card("payment", html`${w.deposit(who(i.customer, i.channel), amount, what(i))}${payLines()}`, [b("received", w.received(amount))], i.claimedAtMs !== undefined ? "info" : "wait", i.claimedAtMs !== undefined ? money.tagSaysPaid : undefined);
+    if (i.kind === "late_deposit") return card("payment", html`${money.lateDeposit(who(i.customer, i.channel), amount, what(i))}${payLines()}<br><small class="note">${money.lateAfter}</small>`, [b("received", w.received(amount))], "bad", money.tagLate);
     if (i.kind === "refund_owed") return card("refundToSend", w.refundOwed(who(i.customer, i.channel), amount, i.why ?? ""), [b("refunded", w.refundSent), ...(i.actions.includes("kept") ? [b("kept", v.kind === "orders" ? more.keptOrder : w.kept, true)] : [])]);
     if (i.kind === "late_refund" && v.kind === "orders") return card("lateCancel", more.lateOrder(who(i.customer, i.channel), what(i), amount), [b("approve", more.giveBack), b("deny", more.keepAdvance, true)]);
     if (i.kind === "late_refund") return card("lateCancel", w.lateRefund(who(i.customer, i.channel), what(i), amount), [b("approve", w.refundIt), b("deny", w.keepIt, true)]);
@@ -93,6 +98,8 @@ export function ownerPage(o: OwnerPageInput): string {
     const b = (action: string, label: string, quiet = false) => button(o.base, { source: "runtime", action, case: p.ref, digest: p.digest }, label, quiet, o.csrf);
     return html`<div class="item s-${p.link === "active" ? "ok" : "plain"}"><p>${more.parentRow(p.students.join(", "), p.phone)}<br><small class="note">${p.link === "active" && p.sinceMs !== undefined ? more.linkActive(formatSlot(p.sinceMs, tz, o.language)) : more.linkNone}</small></p><div class="acts">${b("send_link", more.sendLink)}${p.link === "active" ? b("revoke_link", more.revokeLink, true) : ""}</div></div>`;
   })}` : "";
+  // money clarity (Fees): the open fees the owner may mark paid by hand (cash, or a bank transfer the agent cannot see), folded: a centre has a fee for every student
+  const cash = v.cash && v.cash.length > 0 ? html`<h2>${money.cashTitle}</h2><details class="fold"><summary>${money.cashNote}</summary>${v.cash.map((c) => html`<div class="item s-plain"><p>${money.cashRow(c.student, c.what)}</p><div class="acts">${button(o.base, { source: "runtime", action: "cash", case: c.case, digest: c.digest }, money.cashButton(formatInr(c.amountPaise / 100)), false, o.csrf)}</div></div>`)}</details>` : "";
   const coming = v.kind === "fees" ? "" : html`<h2>${v.kind === "orders" ? more.upcomingOrders : w.upcoming}</h2>
 ${v.upcoming.length > 0 ? html`<ul class="rows">${v.upcoming.map((u) => html`<li><b>${formatSlot(u.startMs, tz, o.language)}</b><span>${u.what ?? service(u.serviceId)} · ${who(u.customer, u.channel)}</span></li>`)}</ul>` : html`<p class="card">${v.kind === "orders" ? more.noneComingOrders : w.noneComing}</p>`}`;
   const ask = (a: RelayAsk): Raw => {
@@ -109,7 +116,15 @@ ${v.upcoming.length > 0 ? html`<ul class="rows">${v.upcoming.map((u) => html`<li
   };
   // a card that answers something already waiting (kind "answer") is the same thing as that item, whose own buttons are right here: only the assistant's own acts
   // (cancel, refund, a message) are shown as cards, so the page never lists one thing twice
-  const waiting = [...o.relayAsks.map(ask), ...v.items.map(item), ...(v.app?.cards ?? []).filter((c) => c.kind !== "answer").map(card)];
+  // money clarity: what customers say they paid comes first; a deposit nobody has said they paid, and a hold that ended where money may have come, are listed apart (what
+  // the owner is only waiting on is not mixed with what asks for an answer now)
+  const claimedPay = (i: OwnerItemView) => (i.kind === "deposit" || i.kind === "late_deposit") && i.claimedAtMs !== undefined;
+  const saysPaid = v.items.filter(claimedPay);
+  const waitingPay = v.items.filter((i) => i.kind === "deposit" && i.claimedAtMs === undefined);
+  const lateOnly = v.items.filter((i) => i.kind === "late_deposit" && i.claimedAtMs === undefined);
+  const rest = v.items.filter((i) => !claimedPay(i) && i.kind !== "deposit" && i.kind !== "late_deposit");
+  const waiting = [...o.relayAsks.map(ask), ...rest.map(item), ...(v.app?.cards ?? []).filter((c) => c.kind !== "answer").map(card)];
+  const anything = saysPaid.length + waiting.length + waitingPay.length + lateOnly.length > 0;
   const machine = PAGE[o.language].machine;
   const app = v.app;
   const colour = app ? themeColour(app.character) : undefined;
@@ -129,9 +144,11 @@ ${v.upcoming.length > 0 ? html`<ul class="rows">${v.upcoming.map((u) => html`<li
 <main class="wrap">${machine ? html`<p class="machine">${machine}</p>` : ""}
 ${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
 <p class="note private">${raw(ICON.lock)}<span>${w.privateNote}</span></p>
-<h2>${w.waiting}</h2>
-${waiting.length > 0 ? waiting : html`<p class="calm">${w.none}</p>`}
-${coming}${parents}
+${saysPaid.length > 0 ? html`<h2>${money.saysPaid}</h2>${saysPaid.map(item)}` : ""}
+${waiting.length > 0 || !anything ? html`<h2>${w.waiting}</h2>${waiting.length > 0 ? waiting : html`<p class="calm">${w.none}</p>`}` : ""}
+${waitingPay.length > 0 ? html`<h2>${money.waitingPay}</h2><p class="note">${money.waitingPayNote}</p>${waitingPay.map(item)}` : ""}
+${lateOnly.length > 0 ? html`<h2>${money.lateHeading}</h2><p class="note">${money.lateNote}</p>${lateOnly.map(item)}` : ""}
+${coming}${parents}${cash}
 ${app ? raw(talkBox({ base: o.base, language: o.language, lines: app.talk, assistantName: app.character.name ?? ASSISTANT_OF[o.language](v.shop.name), ...(o.csrf ? { csrf: o.csrf } : {}), listen: app.listen === true, bare: true })) : ""}
 ${o.alerts ? raw(o.alerts) : ""}
 ${o.signOut ? html`<form method="post" action="${o.signOut.action}">${o.csrf ? html`<input type="hidden" name="csrf" value="${o.csrf}">` : ""}<button class="no full" type="submit">${o.signOut.label}</button></form>` : ""}
