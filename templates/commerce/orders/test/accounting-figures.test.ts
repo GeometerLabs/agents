@@ -51,8 +51,8 @@ function oldMoney(all: readonly RecordEntry[], upi: boolean, from: number, to: n
   return { collected, givenBack };
 }
 
-function newMoney(all: readonly RecordEntry[], from: number, to: number) {
-  const f = figuresOf(journal(all, ORDERS_LEGACY), all, ORDERS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { refundAmountFromPayment: true });
+function newMoney(all: readonly RecordEntry[], upi: boolean, from: number, to: number) {
+  const f = figuresOf(journal(all, ORDERS_LEGACY), all, ORDERS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { refundAmountFromPayment: true, ownerMarks: upi });
   return { collected: f.received, givenBack: { count: f.refunds.count, paise: f.refunds.paise } };
 }
 
@@ -80,8 +80,8 @@ test("the books give the report's money, exactly, on the busy month and every cr
     const upi = !capabilitiesOf(w.settings.payment).confirmsAutomatically;
     for (const s of spans(all, w.settings.timezone)) {
       const old = oldMoney(all, upi, s.from, s.to);
-      assert.deepEqual(newMoney(all, s.from, s.to), old, `world ${i}, ${s.label}`);
-      assert.deepEqual(newMoney(olderForm(all), s.from, s.to), old, `world ${i}, ${s.label}, read as a record written before the books`);
+      assert.deepEqual(newMoney(all, upi, s.from, s.to), old, `world ${i}, ${s.label}`);
+      assert.deepEqual(newMoney(olderForm(all), upi, s.from, s.to), old, `world ${i}, ${s.label}, read as a record written before the books`);
       seen += old.collected.count + old.givenBack.count;
     }
     assert.deepEqual(journal(all, ORDERS_LEGACY).problems.filter((p) => !/already counted/.test(p.why)), [], `world ${i}: the journal reads every line of the record`);
@@ -106,13 +106,14 @@ test("older records without money fields: a repeated payment, a refund by a pers
     entry("refund", "confirmed", { paymentId: "pay_1", amountPaise: "20000", refundId: "rfnd_1" }), // the same refund again
     entry("refund", "confirmed", { paymentId: "pay_4", amountPaise: "30000", confirmedBy: "Ravi" }, "o-3"), // a person's word: not a refund made
     entry("refund", "confirmed", { paymentId: "pay_1", refundId: "rfnd_9" }), // looked for again: no amount of its own, the payment's earlier one is used
+    entry("owner_marked_paid", "confirmed", { paymentId: "cash-1", amountPaise: "50000", markedBy: "owner", via: "cash" }), // an owner mark on a gateway shop: the report has never summed it, and still does not
   ];
   const t = Date.parse("2026-11-01T00:00:00Z");
-  assert.deepEqual(newMoney(entries, t, t + 40 * 86400000), oldMoney(entries, false, t, t + 40 * 86400000));
+  assert.deepEqual(newMoney(entries, false, t, t + 40 * 86400000), oldMoney(entries, false, t, t + 40 * 86400000));
   const upiEntries = [
     entry("owner_marked_paid", "confirmed", { paymentId: "mark_1", amountPaise: "20000", markedBy: "owner" }),
     entry("upi_refund_owed", "held_for_owner", { refundId: "upr-1", paymentId: "mark_1", amountPaise: "5000" }),
     entry("upi_refund_marked_done", "confirmed", { refundId: "upr-1", paymentId: "mark_1", amountPaise: "5000" }),
   ];
-  assert.deepEqual(newMoney(upiEntries, t, t + 40 * 86400000), oldMoney(upiEntries, true, t, t + 40 * 86400000));
+  assert.deepEqual(newMoney(upiEntries, true, t, t + 40 * 86400000), oldMoney(upiEntries, true, t, t + 40 * 86400000));
 });

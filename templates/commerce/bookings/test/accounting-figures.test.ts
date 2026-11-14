@@ -54,8 +54,8 @@ function oldMoney(all: readonly RecordEntry[], upi: boolean, from: number, to: n
   return { deposits, refunds, missing };
 }
 
-function newMoney(all: readonly RecordEntry[], from: number, to: number) {
-  const f = figuresOf(journal(all, BOOKINGS_LEGACY), all, BOOKINGS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString());
+function newMoney(all: readonly RecordEntry[], upi: boolean, from: number, to: number) {
+  const f = figuresOf(journal(all, BOOKINGS_LEGACY), all, BOOKINGS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { ownerMarks: upi });
   return { deposits: f.received, refunds: f.refunds, missing: f.missing };
 }
 
@@ -73,8 +73,8 @@ function equal(label: string, all: readonly RecordEntry[], upi: boolean, timezon
   let counted = 0;
   for (const s of spans(all, timezone)) {
     const old = oldMoney(all, upi, s.from, s.to);
-    assert.deepEqual(newMoney(all, s.from, s.to), old, `${label}, ${s.label}`);
-    assert.deepEqual(newMoney(olderForm(all), s.from, s.to), old, `${label}, ${s.label}, read as a record written before the books`);
+    assert.deepEqual(newMoney(all, upi, s.from, s.to), old, `${label}, ${s.label}`);
+    assert.deepEqual(newMoney(olderForm(all), upi, s.from, s.to), old, `${label}, ${s.label}, read as a record written before the books`);
     counted += old.deposits.count + old.refunds.count;
   }
   return counted;
@@ -122,13 +122,14 @@ test("older records without money fields: a missing amount, a repeated payment, 
     entry("refund", "confirmed", { paymentId: "pay_3", amountPaise: "20000", refundId: "rfnd_3" }), // of a second payment
     entry("refund", "confirmed", { paymentId: "pay_4", amountPaise: "20000", confirmedBy: "Ravi" }, undefined, "b-3"), // a person's word: not a refund made
     entry("refund", "confirmed", { paymentId: "pay_5", refundId: "rfnd_5" }, undefined, "b-4"), // no amount
+    entry("owner_marked_paid", "confirmed", { paymentId: "cash-1", amountPaise: "50000", markedBy: "owner", via: "cash" }), // an owner mark on a gateway shop: the report has never summed it, and still does not
   ];
   const t = Date.parse("2026-11-01T00:00:00Z");
-  assert.deepEqual(newMoney(entries, t, t + 40 * 86400000), oldMoney(entries, false, t, t + 40 * 86400000));
+  assert.deepEqual(newMoney(entries, false, t, t + 40 * 86400000), oldMoney(entries, false, t, t + 40 * 86400000));
   const upiEntries = [
     entry("owner_marked_paid", "confirmed", { paymentId: "mark_1", amountPaise: "20000", markedBy: "owner" }),
     entry("upi_refund_owed", "held_for_owner", { refundId: "upr-1", paymentId: "mark_1", amountPaise: "5000" }),
     entry("upi_refund_marked_done", "confirmed", { refundId: "upr-1", paymentId: "mark_1", amountPaise: "5000" }),
   ];
-  assert.deepEqual(newMoney(upiEntries, t, t + 40 * 86400000), oldMoney(upiEntries, true, t, t + 40 * 86400000));
+  assert.deepEqual(newMoney(upiEntries, true, t, t + 40 * 86400000), oldMoney(upiEntries, true, t, t + 40 * 86400000));
 });

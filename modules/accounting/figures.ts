@@ -13,7 +13,9 @@
 //  - `discounts` (a waiver) and `lateFees`: each at its own entry;
 //  - a line the journal could not read because its amount is missing is still counted (count 1, paise 0) and listed under `missing`, exactly as the old sums did.
 //    Orders alone read a refund line that carries no amount (an older "looked for again" line) as the amount an earlier line of the same payment kept
-//    (`refundAmountFromPayment`); the other two never did.
+//    (`refundAmountFromPayment`); the other two never did;
+//  - the owner's marks (a UPI payment, a cash or bank payment, a refund marked sent) were summed only for a shop whose payments module cannot confirm by itself (UPI).
+//    A report passes `ownerMarks: false` for any other shop, so its signed figures stay as they were; the books themselves count every mark.
 import type { Journal, LegacyMap } from "./journal.ts";
 import { MONEY_REFS } from "./journal.ts";
 import type { RecordEntry } from "../record/record.ts";
@@ -41,7 +43,10 @@ function receivedFor(e: RecordEntry, legacy: LegacyMap): string | undefined {
   return legacy.received.find((x) => x.action === e.action && x.outcome === e.outcome)?.for;
 }
 
-export function figuresOf(journal: Journal, entries: readonly RecordEntry[], legacy: LegacyMap, fromIso: string, toIso: string, options: { refundAmountFromPayment?: boolean } = {}): MonthFigures {
+/** A line the journal could not read, but which is the owner's mark (its own evidence, or an older line's action). */
+const isOwnerMark = (e: RecordEntry): boolean => e.refs[MONEY_REFS.evidence] === "owner_mark" || e.action === "owner_marked_paid" || e.action === "upi_refund_marked_done";
+
+export function figuresOf(journal: Journal, entries: readonly RecordEntry[], legacy: LegacyMap, fromIso: string, toIso: string, options: { refundAmountFromPayment?: boolean; ownerMarks?: boolean } = {}): MonthFigures {
   const out: MonthFigures = { received: empty(), refunds: { ...empty(), ofDeposits: empty(), ofSecondPayments: empty() }, discounts: empty(), lateFees: empty(), missing: { depositAmounts: 0, refundAmounts: 0 } };
   // the payments received as a deposit or advance, over the whole record up to the month's end (a refund may come a month after its payment)
   const advance = new Set<string>();
@@ -58,6 +63,7 @@ export function figuresOf(journal: Journal, entries: readonly RecordEntry[], leg
   for (const e of entries) {
     if (e.time < fromIso || e.time >= toIso) continue;
     const lines = journal.linesOf(e.seq);
+    if (options.ownerMarks === false && (lines.length > 0 ? lines[0].evidence === "owner_mark" : isOwnerMark(e))) continue;
     if (lines.length === 0) {
       // not read as money: only an amount that is missing or wrong is counted (as before: counted, adds nothing, listed as missing)
       const why = problems.get(e.seq);
