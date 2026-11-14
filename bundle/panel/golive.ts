@@ -8,7 +8,6 @@ import { readFileSync } from "node:fs";
 import { loadPrivateKey } from "../../modules/report/sign.ts";
 import { gatewayOf } from "../../modules/payments/providers/index.ts";
 import { guardsOf, kindFor, runtimeHasWhatsApp } from "../lib/kinds.ts";
-import { ownerGrantsSummary } from "../lib/pages.ts";
 import type { HandCheckSummaryLike, Kind } from "../lib/kinds.ts";
 import { checkConnections } from "./checks.ts";
 import type { CheckResult, ConnectionTargets } from "./checks.ts";
@@ -25,12 +24,15 @@ export interface StoredChecks {
   hand: HandCheckSummaryLike & { failed: number; notTested: number };
   /** null: this server has not said where the shop's Guards are, so nothing could be checked. */
   connections: CheckResult[] | null;
+  /** Batch 3: what the runtime counted when the checks ran: the owner's passkeys and the phones with alerts on. Left out: the runtime did not answer (or has no sign-in). */
+  ownerAccess?: { passkeys: number; alertPhones: number };
 }
 
 /**
  * Item 11h (decision 45): "owner-signin": a shop with no WhatsApp whose owner has no way to hear yet. Without WhatsApp, the owner signs in with a passkey from the
- * partner's setup QR and turns on alerts in their app; until the partner has shown that QR, a payment to mark or a refund to approve would reach nobody. The panel
- * cannot see the owner's phone, so it asks for what it can see: the QR was made (bundle/Deferred.md says what would show more).
+ * partner's setup QR and turns on alerts in their app; until one passkey exists and one phone has alerts on, a payment to mark or a refund to approve would reach
+ * nobody. Batch 3: the runtime's /status counts both (modules/runtime/http.ts ownerAccess) and the checks keep the counts they saw, so "go live" refuses until the owner has
+ * signed in and one phone has alerts. A shop WITH WhatsApp keeps the owner's WhatsApp as a way to hear, so it is not held back by this.
  */
 export type Unmet = "hand-check" | "deploy" | "limits" | "connections" | "settings-changed" | "owner-signin";
 
@@ -95,10 +97,14 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
         const calendarId = report.pins.calendar?.calendarId;
         if (runtime && calendarId && runtime.services?.calendar?.calendarId !== calendarId) shops.writeRuntime(shop, { ...runtime, services: { ...runtime.services, calendar: { ...runtime.services.calendar, calendarId } } });
       }
+      // batch 3: what the shop's runtime counts of the owner's way in (passkeys, phones with alerts), asked once here; it is kept with the checks that ask it
+      const probe = runtimeHasWhatsApp(shops.runtime(shop)) ? undefined : (await shops.probeRuntime(shop)).counts?.ownerAccess;
+      const ownerAccess = probe && Number.isInteger(probe.passkeys) && Number.isInteger(probe.alertPhones) ? { passkeys: Number(probe.passkeys), alertPhones: Number(probe.alertPhones) } : undefined;
       const result: StoredChecks = {
         at: iso(now()), settingsDigest: papers.policyDigest(settings),
         hand: { ...summary, failed: certificate.checks.failed, notTested: certificate.notTested.length },
         connections: report ? report.results : null,
+        ...(ownerAccess ? { ownerAccess } : {}),
       };
       store.write(`checks/${shop}.json`, result);
       return result;
@@ -114,7 +120,7 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
       if (!read.ok || read.status.deploy?.state !== "applied") out.push("deploy");
       else if (!read.status.limits || read.status.limits.of === 0 || read.status.limits.proven < read.status.limits.of) out.push("limits");
       if (!checks?.connections || !checks.connections.every((c) => c.ok)) out.push("connections");
-      if (!runtimeHasWhatsApp(shops.runtime(shop)) && !ownerGrantsSummary(config.serverDir, shop).setupAt) out.push("owner-signin");
+      if (!runtimeHasWhatsApp(shops.runtime(shop)) && !(checks?.ownerAccess && checks.ownerAccess.passkeys >= 1 && checks.ownerAccess.alertPhones >= 1)) out.push("owner-signin");
       return out;
     },
 
