@@ -30,6 +30,8 @@ import { BlockList, isIP } from "node:net";
 import { readFileSync } from "node:fs";
 import { MAX_VOICE_BYTES } from "../../modules/channels/owner-audio.ts";
 import { cardPage, noCardPage } from "./card-page.ts";
+import { CONTACT_HEADER, doorPage, parseContact } from "./door-pages.ts";
+import type { DoorContact, DoorKey } from "./door-pages.ts";
 import type { PartnerCard } from "./card-page.ts";
 
 export const DOOR_PORT = 8797;
@@ -199,8 +201,6 @@ export interface DoorOptions {
   now?: () => number;
 }
 
-const PAGE_CSS = "body{margin:0;font:17px/1.5 system-ui,sans-serif;color:#10231a}main{max-width:32rem;margin:0 auto;padding:32px 16px}";
-const pageOf = (title: string, text: string) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>${PAGE_CSS}</style></head><body><main><h1>${title}</h1><p>${text}</p></main></body></html>`;
 /** The door's own pages: no script, nothing loaded, never framed. */
 const OWN_POLICY = "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
 /** What a builder's page gets on the shared origin, whatever it asked for: no script, no worker, forms and fetches only to its own slug, never framed. */
@@ -254,16 +254,20 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
   const local = o.local ?? nodeTransport();
   const remote = o.remote ?? nodeTransport(guardedLookup());
   const primaryOrigin = `https://${o.primary}`;
+  // the last partner contact each of this server's shops' fronts named (door-pages.ts CONTACT_HEADER): so a page for a shop that is down can say who to call
+  const contacts = new Map<string, DoorContact>();
+  /** The door's own pages in the visitor's language (door-pages.ts); `slug`: the shop's, so the page can name its partner when the door has seen one. */
+  const pageOf = (res: ServerResponse, key: DoorKey, slug?: string): string => doorPage(key, res, slug ? contacts.get(slug) : undefined);
 
   const own = (res: ServerResponse, status: number, body: string, type = "text/html; charset=utf-8", extra: Record<string, string> = {}) => {
     res.writeHead(status, { "content-type": type, "content-length": Buffer.byteLength(body), "content-security-policy": OWN_POLICY, "x-content-type-options": "nosniff", "referrer-policy": "no-referrer", "strict-transport-security": HSTS, "cache-control": "no-store", ...extra });
     res.end(body);
   };
   const go = (res: ServerResponse, status: 301 | 302 | 303, location: string) => { res.writeHead(status, { location, "cache-control": status === 301 ? "public, max-age=3600" : "no-store", "strict-transport-security": HSTS }); res.end(); };
-  const nothing = (res: ServerResponse, status = 404) => own(res, status, pageOf("There is no shop page here", "Check the address, or ask the shop for its link."), "text/html; charset=utf-8", { [NOTHING_HEADER]: "1" });
-  const gone = (res: ServerResponse) => own(res, 410, pageOf("This shop page is closed", "The shop no longer has a page at this address."));
-  const suspended = (res: ServerResponse) => own(res, 410, pageOf("This shop page is not available", "It has been taken down while a report about it is looked at."));
-  const unreachable = (res: ServerResponse) => own(res, 503, pageOf("Shop pages are not reachable just now", "Please try again in a few minutes."), "text/html; charset=utf-8", { "retry-after": "120" });
+  const nothing = (res: ServerResponse, status = 404) => own(res, status, pageOf(res, "nothing"), "text/html; charset=utf-8", { [NOTHING_HEADER]: "1" });
+  const gone = (res: ServerResponse) => own(res, 410, pageOf(res, "gone"));
+  const suspended = (res: ServerResponse) => own(res, 410, pageOf(res, "suspended"));
+  const unreachable = (res: ServerResponse) => own(res, 503, pageOf(res, "unreachable"), "text/html; charset=utf-8", { "retry-after": "120" });
 
   /** Pass a request on and its answer back. `local`: this server's own front (our code: its headers pass); otherwise a builder's server (a short list passes). */
   async function forward(req: IncomingMessage, res: ServerResponse, a: { target: URL; slug: string; local: boolean; visitor: string; body?: Buffer }): Promise<void> {
@@ -275,11 +279,14 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
       up = await (a.local ? local : remote)(a.target, { method: req.method ?? "GET", headers, ...(a.body ? { body: a.body } : {}), timeoutMs: 10_000 });
     } catch (e) {
       log(`door: ${a.slug} could not be reached (${(e as { code?: string }).code ?? "error"})`); // the slug and why, never the path or the visitor
-      return own(res, 502, pageOf("This shop's page is not answering", "Please try again in a few minutes."), "text/html; charset=utf-8", { "retry-after": "60" });
+      return own(res, 502, pageOf(res, "notAnswering", a.slug), "text/html; charset=utf-8", { "retry-after": "60" });
     }
     const out: Record<string, string | string[]> = {};
     if (a.local) {
-      for (const [k, v] of Object.entries(up.headers)) if (v !== undefined && !HOP_BY_HOP.has(k)) out[k] = v;
+      // the shop's front names its partner on its pages: kept per slug for the error pages, and never passed on to the visitor
+      const contact = parseContact(up.headers[CONTACT_HEADER]);
+      if (contact) { contacts.delete(a.slug); contacts.set(a.slug, contact); if (contacts.size > 500) contacts.delete(contacts.keys().next().value!); }
+      for (const [k, v] of Object.entries(up.headers)) if (v !== undefined && !HOP_BY_HOP.has(k) && k !== CONTACT_HEADER) out[k] = v;
     } else {
       for (const k of RESPONSE_HEADERS) { const v = up.headers[k]; if (typeof v === "string") out[k] = v; }
       out["content-security-policy"] = passThroughPolicy(o.primary, a.slug);
@@ -290,7 +297,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
       const location = up.headers.location;
       if (typeof location === "string") {
         const rewritten = rewriteLocation(location, a.target, a.slug);
-        if (!rewritten) { log(`door: ${a.slug} redirected off its own page; refused`); return own(res, 502, pageOf("This shop's page is not answering", "Please try again in a few minutes.")); }
+        if (!rewritten) { log(`door: ${a.slug} redirected off its own page; refused`); return own(res, 502, pageOf(res, "notAnswering", a.slug)); }
         out.location = rewritten;
       }
     }
@@ -321,18 +328,18 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     // an extra domain: the same path on the primary one, so old printed links and codes keep working after a domain change
     if (o.extra.includes(host)) return go(res, 301, `${primaryOrigin}${url.pathname}${url.search}`);
     if (host !== o.primary) return nothing(res);
-    if (method !== "GET" && method !== "HEAD" && method !== "POST") return own(res, 405, pageOf("Not here", "Use the page's links and buttons."), "text/html; charset=utf-8", { allow: "GET, HEAD, POST" });
+    if (method !== "GET" && method !== "HEAD" && method !== "POST") return own(res, 405, pageOf(res, "notHere"), "text/html; charset=utf-8", { allow: "GET, HEAD, POST" });
     if (url.pathname === "/robots.txt") return own(res, 200, `User-agent: *\n${DOOR_ROBOTS_DISALLOW.map((d) => `Disallow: ${d}\n`).join("")}`, "text/plain; charset=utf-8", { "cache-control": "public, max-age=3600" });
-    if (url.pathname === "/") return own(res, 200, pageOf("Shop pages", "Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local partner."), "text/html; charset=utf-8", { "cache-control": "public, max-age=3600" });
+    if (url.pathname === "/") return own(res, 200, pageOf(res, "home"), "text/html; charset=utf-8", { "cache-control": "public, max-age=3600" });
     const visitor = visitorOf(req);
-    if (!take("all", visitor)) return own(res, 429, pageOf("Too many requests", "Please wait a minute."), "text/html; charset=utf-8", { "retry-after": "60" });
+    if (!take("all", visitor)) return own(res, 429, pageOf(res, "waitMinute"), "text/html; charset=utf-8", { "retry-after": "60" });
 
     // a partner's calling card: /@handle (a browser or a QR reader may send the @ as %40). The shape is checked before fleet is asked, and anything fleet does not
     // show (unknown, unpublished) is one and the same 404, counted against the visitor like an unknown shop name.
     const c = /^\/(?:@|%40)([^/]*)(\/.*)?$/iu.exec(url.pathname);
     if (c) {
-      if (method === "POST") return own(res, 405, pageOf("Not here", "Use the page's links and buttons."), "text/html; charset=utf-8", { allow: "GET, HEAD" });
-      if (limits.over("unknown", visitor)) return own(res, 429, pageOf("Too many requests", "Please wait a while."), "text/html; charset=utf-8", { "retry-after": "600" });
+      if (method === "POST") return own(res, 405, pageOf(res, "notHere"), "text/html; charset=utf-8", { allow: "GET, HEAD" });
+      if (limits.over("unknown", visitor)) return own(res, 429, pageOf(res, "waitWhile"), "text/html; charset=utf-8", { "retry-after": "600" });
       const handle = c[1];
       if (!SLUG.test(handle) || (c[2] ?? "/") !== "/") { take("unknown", visitor); return own(res, 404, noCardPage()); }
       const a = await o.registry.card(handle);
@@ -345,7 +352,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     // the stable page address: always the shop's current slug, never another shop's
     const p = /^\/p\/([^/]+)\/?$/u.exec(url.pathname);
     if (p) {
-      if (limits.over("unknown", visitor)) return own(res, 429, pageOf("Too many requests", "Please wait a while."), "text/html; charset=utf-8", { "retry-after": "600" });
+      if (limits.over("unknown", visitor)) return own(res, 429, pageOf(res, "waitWhile"), "text/html; charset=utf-8", { "retry-after": "600" });
       if (!PAGE_ID.test(p[1])) { take("unknown", visitor); return nothing(res); }
       const a = await o.registry.id(p[1]);
       if (a === "unreachable") return unreachable(res);
@@ -358,7 +365,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     }
 
     const m = /^\/([^/]+)(\/.*)?$/u.exec(url.pathname);
-    if (limits.over("unknown", visitor)) return own(res, 429, pageOf("Too many requests", "Please wait a while."), "text/html; charset=utf-8", { "retry-after": "600" });
+    if (limits.over("unknown", visitor)) return own(res, 429, pageOf(res, "waitWhile"), "text/html; charset=utf-8", { "retry-after": "600" });
     if (!m || !SLUG.test(m[1])) { take("unknown", visitor); return nothing(res); }
     const slug = m[1];
     const rest = m[2] ?? "";
@@ -370,21 +377,21 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     if (a.state === "moved") return go(res, 301, `${primaryOrigin}/${a.to}${rest}${url.search}`);
 
     const isLocal = a.deployment_id === o.deploymentId;
-    if (method === "POST" && !isLocal && !take("posts", visitor)) return own(res, 429, pageOf("Too many requests", "Please wait a few minutes."), "text/html; charset=utf-8", { "retry-after": "300" });
+    if (method === "POST" && !isLocal && !take("posts", visitor)) return own(res, 429, pageOf(res, "waitFew"), "text/html; charset=utf-8", { "retry-after": "300" });
     const shopPath = `/s/${encodeURIComponent(a.agent_id)}${rest}${url.search}`;
     if (!isLocal) {
       const problem = originProblem(a.origin);
-      if (problem) { log(`door: ${slug} has no address the door will call (${problem})`); return own(res, 502, pageOf("This shop's page is not answering", "Please try again later.")); }
+      if (problem) { log(`door: ${slug} has no address the door will call (${problem})`); return own(res, 502, pageOf(res, "notAnsweringLater", slug)); }
       // the owner's view of a builder's client lives on the builder's own domain: no owner sign-in or session ever crosses this door
       if (/^\/(owner|o)(\/|$)/u.test(rest)) return go(res, 302, `${a.origin}${shopPath}`);
       // item 11h: a service worker is Geometer's own only (the owner's app and a booking page's alerts, of this server's shops). A builder's page runs no script here
       // (passThroughPolicy) and so could not register one; the address of one is refused as well, so nothing a builder's server sends can ever be a worker here
-      if (/(^|\/)sw\.js$/u.test(rest)) return own(res, 404, pageOf("There is nothing here", "This page has no such address."));
+      if (/(^|\/)sw\.js$/u.test(rest)) return own(res, 404, pageOf(res, "nothingHere"));
     }
     let body: Buffer | undefined;
     if (method === "POST") {
       const read = await readRequestBody(req, isLocal && isOwnerVoice(rest) ? MAX_VOICE_BYTES : MAX_REQUEST_BYTES);
-      if (read === "too_big") return own(res, 413, pageOf("Too big", "That is more than a shop's page takes."));
+      if (read === "too_big") return own(res, 413, pageOf(res, "tooBig"));
       body = read;
     }
     const target = new URL(shopPath, isLocal ? o.localUrl : a.origin!);
@@ -394,7 +401,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
   return (req, res) => {
     route(req, res).catch((e) => {
       log(`door: a request could not be answered (${(e as Error).name})`);
-      if (!res.headersSent) own(res, 500, pageOf("Something went wrong", "Please try again."));
+      if (!res.headersSent) own(res, 500, pageOf(res, "wrong"));
     });
   };
 }
