@@ -522,7 +522,7 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     const page = pageLinkFor(b);
     const sent = await tellCustomer(b, b.customer, [...prefix, prefix.includes("price_floor") ? "upi_slot_and_link" : "upi_quote_and_link", ...(page ? ["upi_page_link" as const] : [])], { shown, offer: paidCancelOrOwner, image: b.channel ? undefined : await qrOf(request), ...(page ? { pageLink: page.url } : {}) }); // a booking page draws its own QR
-    if (sent && page) b.pageLink = page.hash;
+    if (sent && page) keepPageLink(b, page.hash);
     await tellOwner(b, b.customer, "owner_upi_expected", { upiCode: request.code ?? undefined, offer: receivedButtons(request, request.amountPaise) });
   }
 
@@ -531,6 +531,11 @@ export function createAgent(deps: AgentDeps): Agent {
    * booking made on WhatsApp (a page's own booking has its handle already), and only when the runtime can make one (the shop has a page). It is saved, as its hash,
    * only once the message carrying it was accepted, and it replaces the last one: a link sent again stops the old.
    */
+  /** A link was sent: it becomes the booking's latest, and the three before it stay good (the booked message must not kill the page the quote's link has open). */
+  const keepPageLink = (b: Booking, hash: string): void => {
+    if (b.pageLink && b.pageLink !== hash) b.pageLinksBefore = [...(b.pageLinksBefore ?? []), b.pageLink].slice(-3);
+    b.pageLink = hash;
+  };
   const pageLinkFor = (b: Booking): { url: string; hash: string } | undefined => (b.channel ? undefined : deps.pageLink?.());
 
   async function tellAlreadyWaiting(waiting: Booking): Promise<void> {
@@ -538,7 +543,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (!request) { await tellCustomer(waiting, waiting.customer, ["already_waiting"], { offer: cancelOrOwner }); return; }
     const page = pageLinkFor(waiting);
     const sent = await tellCustomer(waiting, waiting.customer, ["upi_already_waiting", ...(page ? ["upi_page_link" as const] : [])], { offer: paidCancelOrOwner, image: waiting.channel ? undefined : await qrOf(request), ...(page ? { pageLink: page.url } : {}) });
-    if (sent && page) waiting.pageLink = page.hash;
+    if (sent && page) keepPageLink(waiting, page.hash);
   }
 
   /**
@@ -963,7 +968,10 @@ export function createAgent(deps: AgentDeps): Agent {
       b.reminders = reminderSchedule(settings, b.startMs!, clock.now());
       log(b, b.customer, "confirm_booking", "confirmed", want, { refs: { eventId: found.event.id }, ...(ownList ? { notes: "read back from the shop's own booking list (this shop has no Google Calendar); the deposit is recorded too" } : {}) });
       moveTo(b, "confirmed");
-      await tellCustomer(b, b.customer, [ownerConfirms ? "upi_booked" : "booked"], { offer: cancelOrOwner });
+      // batch 5: a WhatsApp booking's own page link goes in the booked message too (a customer must not depend on the quote's one message), when the shop has a page
+      const page = pageLinkFor(b);
+      const sent = await tellCustomer(b, b.customer, [ownerConfirms ? "upi_booked" : "booked", ...(page ? ["booked_page_link" as const] : [])], { offer: cancelOrOwner, ...(page ? { pageLink: page.url } : {}) });
+      if (sent && page) keepPageLink(b, page.hash);
       return;
     }
     log(b, b.customer, "confirm_booking", found.error ? "failed" : "unconfirmed", want, { notes: found.error ?? "the calendar does not show the booking" });

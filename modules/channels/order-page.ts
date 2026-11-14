@@ -80,7 +80,7 @@ ${items}${slots}${address}
 }
 
 /** An order's own page: where it has got to, what it is (at the shop's prices), how to pay while it is held, cancel, and the shop's messages. Refreshes itself while something is still to come. */
-export function orderPage(o: { shop: PageShop; offer: OrderOffer; language: Language; handle: string; view: OrderView | null; notice?: string }): string {
+export function orderPage(o: { shop: PageShop; offer: OrderOffer; language: Language; handle: string; view: OrderView | null; notice?: string; /** Item 11h, batch 3: "Tell me on this phone" (push/pages.ts customerAlertsBox), already drawn, for a web order that is still live. */ alerts?: string }): string {
   const w = ORDER_PAGE[o.language];
   const p = PAGE[o.language];
   const s = o.offer.shop;
@@ -111,6 +111,6 @@ ${when ? html`<p>${when}</p>` : ""}<p><small class="note">${w.note(v.ref)}</smal
     shop: s, language: o.language, title, selfPath: self,
     // held: look again every 15 s, so "Confirmed" shows once the owner marks the payment; waiting for the owner: every 30 s
     ...(v.status === "held" ? { refreshSeconds: 15 } : v.status === "checking" ? { refreshSeconds: 30 } : {}),
-    body: html`${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${what}${pay}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
+    body: html`${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${what}${pay}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}${o.alerts ? raw(o.alerts) : ""}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
   });
 }

@@ -49,8 +49,8 @@ const requestOf = (store: Store, b: Booking): MarkedRequest | undefined => store
  */
 export function bookingView(settings: Settings, store: Store, handleHash: string) {
   const request = store.channel?.requests[handleHash];
-  // item 11h: a WhatsApp booking's own page, by the link last sent on WhatsApp (a newer one replaced any older, which then opens nothing)
-  const byLink = request ? undefined : [...store.bookings.values()].find((x) => x.pageLink === handleHash && !x.channel);
+  // item 11h: a WhatsApp booking's own page, by the link last sent on WhatsApp (the last four links sent open it: a newer one no longer kills the one the customer already has open)
+  const byLink = request ? undefined : [...store.bookings.values()].find((x) => (x.pageLink === handleHash || x.pageLinksBefore?.includes(handleHash)) && !x.channel);
   if (!request && !byLink) return null;
   const messages = (to: string) => (store.channel?.outbox ?? []).filter((m) => m.to === to).map((m) => ({ atMs: m.atMs, text: m.text }));
   if (request && (request.refused !== undefined || request.booking === undefined)) return { status: "refused" as const, reason: request.refused ?? "unknown", channel: request.channel };

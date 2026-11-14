@@ -85,6 +85,7 @@ const WHEN: Record<TemplateId, string> = {
   hold_failed: "The calendar could not hold the slot",
   link_failed: "The payment link could not be made",
   booked: "Calendar and deposit both recorded",
+  booked_page_link: "A booking made on WhatsApp, in a shop with a page: the last lines of the booked message, with the private link to the booking's own page (made for this message; the link in the quote stays good too)",
   couldnt_confirm: "Deposit received but the calendar could not confirm",
   hold_expired: "The held slot ran out before the deposit came",
   slot_gone_refund: "Deposit came after the hold ended and the time was taken",
