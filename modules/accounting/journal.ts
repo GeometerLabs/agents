@@ -67,7 +67,9 @@ export interface Line {
   doc?: string;
 }
 
-export interface DocRef { number: string; series: Series; fy: string; n: number; seq: number; at: string; case: string | null; kind: MoneyKind; amountPaise: number; evidence?: Evidence }
+export interface DocRef { number: string; series: Series; fy: string; n: number; seq: number; at: string; case: string | null; kind: MoneyKind; amountPaise: number; evidence?: Evidence;
+  /** The payment this document is about (a receipt's, or the payment a refund note gives back), and how it was paid: a refund note finds its receipt by `paymentId` (documents.ts). */
+  paymentId?: string; method?: Method }
 
 export interface Problem { seq: number; why: string }
 
@@ -125,7 +127,7 @@ export class Journal {
 
   // ---- the lines ------------------------------------------------------------------------------------------------------
 
-  private post(e: RecordEntry, kind: MoneyKind, pairs: { account: string; debit?: number; credit?: number }[], extra: { evidence?: Evidence; method?: Method; doc?: string; identity?: string; amount: number }): void {
+  private post(e: RecordEntry, kind: MoneyKind, pairs: { account: string; debit?: number; credit?: number }[], extra: { evidence?: Evidence; method?: Method; doc?: string; paymentId?: string; identity?: string; amount: number }): void {
     if (extra.identity !== undefined) {
       const was = this.identities.get(extra.identity);
       if (was !== undefined) throw new Error(`${extra.identity} was already counted at entry ${was}; this one is not counted again`);
@@ -152,7 +154,7 @@ export class Journal {
     if (extra.doc) {
       const d = parseNumber(extra.doc);
       if (!d) this.problems.push({ seq: e.seq, why: `"${extra.doc}" is not a document number this module writes` });
-      else this.documents.push({ number: extra.doc, series: d.series, fy: d.fy, n: d.n, seq: e.seq, at: e.time, case: e.booking, kind, amountPaise: extra.amount, ...(extra.evidence ? { evidence: extra.evidence } : {}) });
+      else this.documents.push({ number: extra.doc, series: d.series, fy: d.fy, n: d.n, seq: e.seq, at: e.time, case: e.booking, kind, amountPaise: extra.amount, ...(extra.evidence ? { evidence: extra.evidence } : {}), ...(extra.paymentId ? { paymentId: extra.paymentId } : {}), ...(extra.method ? { method: extra.method } : {}) });
     }
   }
 
@@ -170,7 +172,7 @@ export class Journal {
 
   private received(e: RecordEntry, a: { amount: number; paymentId: string; method: Method; evidence: Evidence; for: ReceivedFor; doc?: string }): void {
     const into = a.for === "fee" ? ACCOUNTS.receivable.code : ACCOUNTS.advances.code;
-    this.post(e, "received", [{ account: METHOD_ACCOUNT[a.method], debit: a.amount }, { account: into, credit: a.amount }], { evidence: a.evidence, method: a.method, doc: a.doc, identity: `received:${a.paymentId}`, amount: a.amount });
+    this.post(e, "received", [{ account: METHOD_ACCOUNT[a.method], debit: a.amount }, { account: into, credit: a.amount }], { evidence: a.evidence, method: a.method, doc: a.doc, paymentId: a.paymentId, identity: `received:${a.paymentId}`, amount: a.amount });
   }
 
   private refundOwed(e: RecordEntry, key: string, amount: number, doc?: string): void {
@@ -180,12 +182,12 @@ export class Journal {
     this.owed.set(key, { case: e.booking, open: amount, from });
   }
 
-  private refundMade(e: RecordEntry, key: string, a: { amount: number; method: Method; evidence: Evidence; identity: string; doc?: string }): void {
+  private refundMade(e: RecordEntry, key: string, a: { amount: number; method: Method; evidence: Evidence; identity: string; doc?: string; paymentId?: string }): void {
     const o = this.owed.get(key);
     const use = Math.min(o?.open ?? 0, a.amount);
     const rest = a.amount - use; // made with nothing (or less) owed first: an older line, or a refund the list showed after it was given up
     const from = rest > 0 ? this.take(e.booking, rest) : [];
-    this.post(e, "refund_made", [{ account: ACCOUNTS.refundsOwed.code, debit: use }, ...from.map((f) => ({ account: f.account, debit: f.paise })), { account: METHOD_ACCOUNT[a.method], credit: a.amount }], { evidence: a.evidence, method: a.method, doc: a.doc, identity: a.identity, amount: a.amount });
+    this.post(e, "refund_made", [{ account: ACCOUNTS.refundsOwed.code, debit: use }, ...from.map((f) => ({ account: f.account, debit: f.paise })), { account: METHOD_ACCOUNT[a.method], credit: a.amount }], { evidence: a.evidence, method: a.method, doc: a.doc, paymentId: a.paymentId, identity: a.identity, amount: a.amount });
     if (o && use > 0) { o.open -= use; spend(o.from, use); } // only once the lines are in: a refused line changes nothing
   }
 
@@ -244,7 +246,7 @@ export class Journal {
         const ev = evidence(need("evidence"));
         const refundId = r[MONEY_REFS.refundId];
         const identity = refundId ? `made:${refundId}` : `made:${need("owed")}:${ev}`;
-        return this.refundMade(e, need("owed"), { amount, method: method(need("method")), evidence: ev, identity, doc });
+        return this.refundMade(e, need("owed"), { amount, method: method(need("method")), evidence: ev, identity, doc, paymentId: r[MONEY_REFS.paymentId] });
       }
       case "refund_cancelled": return this.refundCancelled(e, need("owed"));
       case "correction": {
@@ -286,7 +288,7 @@ export class Journal {
       const byWord = r.confirmedBy !== undefined && r.refundId === undefined;
       if (r.paymentId === undefined) throw new Error("an older refund line has no payment id");
       const key = `${e.booking}:${r.paymentId}`;
-      return this.refundMade(e, key, { amount: paise(r.amountPaise), method: "gateway", evidence: byWord ? "person_word" : "provider", identity: r.refundId ? `made:${r.refundId}` : `made:${key}:person_word` });
+      return this.refundMade(e, key, { amount: paise(r.amountPaise), method: "gateway", evidence: byWord ? "person_word" : "provider", identity: r.refundId ? `made:${r.refundId}` : `made:${key}:person_word`, paymentId: r.paymentId });
     }
     if (e.action === SHARED.owedByOwner) {
       if (r.refundId === undefined) throw new Error("an older refund owed by the owner has no id");
