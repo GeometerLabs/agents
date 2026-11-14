@@ -13,6 +13,9 @@ import type { Clock } from "../../../../modules/core/clock.ts";
 import { createMonthlyReport } from "../report/monthly-job.ts";
 import type { MonthlyReportSetup } from "../report/monthly-job.ts";
 import { batchName } from "../src/settings.ts";
+import { parentRef } from "../src/channel.ts";
+import { alsoPushTo } from "../../../../modules/push/push.ts";
+import type { Push } from "../../../../modules/push/push.ts";
 import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { RETRY_DELAYS_MS, createRuntimeCore } from "../../../../modules/runtime/core.ts";
@@ -184,7 +187,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     },
   };
   return createRuntimeCore({
-    settings, store: options.store, clock, messaging: services.messaging, pathwayVersion: options.pathwayVersion, kit, ai: policy,
+    settings, store: options.store, clock, // batch 3: a parent who allowed alerts on their private page also hears the centre's messages to their number as web push, keyed by the parent's stable ref
+    messaging: options.push ? alsoPushTo(services.messaging, options.push, (to) => `parent:${parentRef(to)}`) : services.messaging, pathwayVersion: options.pathwayVersion, kit, ai: policy,
     monthly: options.report ? createMonthlyReport(options.report) : undefined,
     // Item 11e: the owner's morning line, from this template's skill read-only over the store
     ...(settings.assistant ? { daily: createMorningJob<Store>({
