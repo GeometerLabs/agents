@@ -18,6 +18,10 @@
 //   GET  /internal/channel/request?handle=<64 hex>    one request by its handle's hash
 //   GET  /internal/channel/parent?link=<64 hex>       item 11h (Fees): what a parent's private link opens, by the link's hash; 404 for a hash no parent has now
 //   GET  /internal/channel/owner                     what waits for the owner (x-owner-link needed)
+//   GET  /internal/channel/documents?handle=<hash>|link=<hash>&lang=xx   the receipts, bills and refund notes of the page with that handle's (or parent link's) hash, newest first.
+//                                                     Never by a case id: a holder of the channel token cannot walk the cases. Empty for a hash no page has.
+//   GET  /internal/channel/accounting?period=2026-11|26-27   the accountant's files (journal CSV, documents CSV, README) for a period. ONLY with the owner's SESSION
+//                                                     (x-owner-session): not the panel's link, and never the channel token alone.
 //   POST /internal/channel/owner-voice               items 11d and 11e: a recording from the owner's page (audio/ogg or audio/webm, at most 256 KB), with the owner's credential;
 //                                                     held in memory only, and an owner_message carrying its reference is saved (never the audio)
 // An owner_message (the owner's talk box) needs the owner's credential too, like an owner_action.
@@ -59,6 +63,8 @@ import { conversationOf } from "../channels/conversation.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import type { OwnerLinkFile } from "../channels/owner-link.ts";
 import type { RuntimeChannel } from "./core.ts";
+import { LANGUAGES } from "../language/languages.ts";
+import type { Language } from "../language/languages.ts";
 
 /** What the server needs of a runtime: a template's runtime gives this much, whatever its cases are called. */
 export interface ServedRuntime {
@@ -378,6 +384,30 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       only("GET");
       if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
       return send(res, 200, channel.owner());
+    }
+    // the documents of one page's case or cases (Bookings, Orders: a handle's hash; Fees: a handle's hash or a parent link's hash), drawn in the page's language
+    if (path === "/internal/channel/documents") {
+      only("GET");
+      if (!channel.documents) throw new HttpError(404, "There is nothing here.");
+      const handle = url.searchParams.get("handle");
+      const link = url.searchParams.get("link");
+      const lang = url.searchParams.get("lang") ?? "en";
+      if ((handle === null) === (link === null)) return send(res, 400, { error: "Send handle or link, one of them." });
+      if (!HANDLE_HASH.test(handle ?? link ?? "")) return send(res, 400, { error: "handle and link are hashes: 64 hex digits." });
+      if (!LANGUAGES.includes(lang as Language)) return send(res, 400, { error: "lang is en, hi, ml or kn." });
+      return send(res, 200, { documents: channel.documents(handle !== null ? { handle } : { link: link! }, lang as Language) });
+    }
+    // the accountant's files: the owner's SESSION only, checked here against this runtime's own sessions (a link made in the panel does not open them)
+    if (path === "/internal/channel/accounting") {
+      only("GET");
+      const session = header(req, OWNER_SESSION_HEADER);
+      if (session === undefined || options.ownerSignin?.check(session) === undefined) return send(res, 403, { error: "The owner's session is not valid." });
+      if (!channel.accountantFiles) throw new HttpError(404, "There is nothing here.");
+      const period = url.searchParams.get("period") ?? "";
+      if (!/^(\d{4}-(0[1-9]|1[0-2])|\d{2}-\d{2})$/u.test(period)) return send(res, 400, { error: "period is a month (2026-11) or a financial year (26-27)." });
+      let files;
+      try { files = channel.accountantFiles(period); } catch (e) { return send(res, 400, { error: (e as Error).message }); }
+      return send(res, 200, { files });
     }
     throw new HttpError(404, "There is nothing here.");
   }

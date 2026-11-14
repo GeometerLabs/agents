@@ -14,6 +14,9 @@
 // assistant's cards among what waits (by card id and digest), the talk box at the bottom (modules/assistant/app/talk.ts), and the app's manifest and service worker
 // (served by front.ts next to this page). Its one script carries the response's nonce; front.ts puts the same nonce in that response's content policy.
 //
+// The shop's Money section (modules/accounting/owner-money-render.ts) sits below what waits for the owner's answer, for every template: what came in and went back
+// today and this month, what is owed back, what is not matched yet, and (for a signed-in owner) the accountant's files.
+//
 // Item 11i's design pass (14 Nov 2026): the shared look (look.ts OWNER_CSS). The head carries the character in the shop's real mood with the mood as a chip in its
 // colour; each thing waiting is a card with a tag saying what it is, the amount large, and its two answers side by side (yes in green, no as an outline); the coming
 // list is a list of rows; the talk is bubbles. The app's one script sits in the head (look.ts themeScript): it sets a remembered dark pick before the first paint,
@@ -32,6 +35,8 @@ import { characterLine, talkBox, talkScript } from "../assistant/app/talk.ts";
 import { ASSISTANT_OF, themeColour } from "../assistant/character.ts";
 import { ALERTS_SCRIPT } from "../push/pages.ts";
 import { partnerBar } from "./contact-bar.ts";
+import { ownerMoneySection } from "../accounting/owner-money-render.ts";
+import type { ExportLinks } from "../accounting/owner-money-render.ts";
 import { FIRST_WORDS } from "./words-owner-first.ts";
 import type { PagesFile } from "./pages-file.ts";
 import { ICON, OWNER_CSS, themeScript, themeSwitch } from "./look.ts";
@@ -59,6 +64,11 @@ export interface OwnerPageInput {
   alertPhones?: number;
   /** Batch 3: the owner has just signed in for the first time on this phone (the setup's next step): with no alerts yet, the alerts box leads as "Step 2 of 2". */
   firstSignIn?: boolean;
+  /**
+   * Where the accountant's files are (`<owner app>/accounting`), for a signed-in owner's SESSION only: the runtime serves them to nothing else, so the panel's link
+   * page leaves this out and its Money section has no download card.
+   */
+  exportLinks?: ExportLinks;
   /** Item 11i: the character's picture in the shop's mood now, as a data: address (front.ts reads it from the shop's own pictures). Left out: none drawn yet. */
   picture?: string;
 }
@@ -165,6 +175,7 @@ ${saysPaid.length > 0 ? html`<h2>${money.saysPaid}</h2>${saysPaid.map(item)}` : 
 ${waiting.length > 0 || !anything ? html`<h2>${w.waiting}</h2>${waiting.length > 0 ? waiting : html`<p class="calm">${w.none}</p>`}` : ""}
 ${waitingPay.length > 0 ? html`<h2>${money.waitingPay}</h2><p class="note">${money.waitingPayNote}</p>${waitingPay.map(item)}` : ""}
 ${lateOnly.length > 0 ? html`<h2>${money.lateHeading}</h2><p class="note">${money.lateNote}</p>${lateOnly.map(item)}` : ""}
+${v.money ? ownerMoneySection(v.money, o.language, o.exportLinks, tz) : ""}
 ${coming}${parents}${cash}
 ${app ? raw(talkBox({ base: o.base, language: o.language, lines: app.talk, assistantName: app.character.name ?? ASSISTANT_OF[o.language](v.shop.name), ...(o.csrf ? { csrf: o.csrf } : {}), listen: app.listen === true, bare: true })) : ""}
 ${o.alerts && !leadAlerts ? raw(o.alerts) : ""}

@@ -33,7 +33,7 @@ import { createAudioDrop } from "../../../../modules/channels/owner-audio.ts";
 import type { CharacterPictures } from "../../../../modules/assistant/character.ts";
 import { ownerAppView, publicCharacter } from "../../../../modules/assistant/app/view.ts";
 import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
-import { feeConfirmView, feesOffer, ownerView, parentView } from "../src/channel.ts";
+import { documentsOf, exportFilesOf, feeConfirmView, feesOffer, ownerView, parentView } from "../src/channel.ts";
 
 export const PATHWAY = "fees";
 export { RETRY_DELAYS_MS };
@@ -170,8 +170,11 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       view: (store, handleHash) => feeConfirmView(settings, store, handleHash),
       parent: (store, linkHash) => parentView(settings, store, linkHash),
       ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
-      owner: (store) => ({
-        ...ownerView(settings, store),
+      // the receipts of the page's own fees, and the accountant's files (the runtime lets only the owner's session reach them), both from the saved record
+      documents: (store, entries, key, language) => documentsOf(settings, store, entries, key, language),
+      accountantFiles: (_store, entries, period) => exportFilesOf(settings, entries, period),
+      owner: (store, entries) => ({
+        ...ownerView(settings, store, clock.now(), entries),
         ...(settings.assistant ? { app: { ...ownerAppView({ skills: [skillOver(store)], state: store.assistant, nowMs: clock.now(), timeZone: settings.timezone, settings: settings.assistant }), listen: pageAudio !== undefined } } : {}),
       }),
     },

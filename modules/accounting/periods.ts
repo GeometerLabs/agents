@@ -44,3 +44,14 @@ export function periodRange(period: string, timeZone: string): Range | null {
 
 /** The financial year of a moment, "26-27" (numbers.ts has it; repeated as a name here so a caller of periods needs one import). */
 export const fyPeriodOf = fyOf;
+
+/**
+ * The three periods the owner's page offers for download, from the month the runtime says it is now ("2026-11"): this month, last month and the financial year that
+ * month is in ("26-27"). One place, so the links on the page and the addresses the front serves can never disagree, and both follow the runtime's own clock.
+ */
+export function exportPeriods(monthPeriod: string): { thisMonth: string; lastMonth: string; year: string } {
+  const [y, m] = monthPeriod.split("-").map(Number);
+  const start = m >= 4 ? y : y - 1; // the financial year runs 1 April to 31 March
+  const two = (n: number) => String(n % 100).padStart(2, "0");
+  return { thisMonth: monthPeriod, lastMonth: previousMonth(monthPeriod), year: `${two(start)}-${two(start + 1)}` };
+}
