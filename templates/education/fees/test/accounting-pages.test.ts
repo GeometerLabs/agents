@@ -119,7 +119,7 @@ test("a parent's page and confirmation page list that parent's receipts and serv
     assert.equal(r.status, 200);
     const doc = await r.text();
     const text = visible(doc);
-    for (const need of ["RCT/26-27/0001", "Fee for November 2026", "Rohan Mehta", "₹1,800", "Bright", "+919855555555"]) assert.ok(text.includes(need), need);
+    for (const need of ["RCT/26-27/0001", "Fee for Nov 2026", "Rohan Mehta", "₹1,800", "Bright", "+919855555555"]) assert.ok(text.includes(need), need);
     assert.equal(/<script/iu.test(doc), false);
     const ml = visible(await (await w.page(`/f/${nair.link}/d/RCT%2F26-27%2F0002?lang=ml`)).text());
     assert.ok(ml.includes("Meera") && ml.includes("-ലെ ഫീസ്"), "in Malayalam, for the other parent's own fee");
