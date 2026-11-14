@@ -36,25 +36,25 @@ Then stop talking, as in the main guide. Don't open with "AI", with technology o
 
 ## 4. Show it on the owner's own phone
 
-Open the demo on your phone as in section 4 of the main guide: no laptop and no Wi-Fi are needed, and every screen says "Demo · test money · nothing real is sent". The steps below use the made-up rental example. A builder with a laptop can start that example from the agents folder, in the owner's language:
+Open the demo on your phone as in section 4 of the main guide: no laptop and no Wi-Fi are needed, and every screen says "ಡೆಮೊ · ಟೆಸ್ಟ್ ಹಣ · ನಿಜವಾದದ್ದು ಏನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ" (Demo · test money · nothing real is sent). The steps below use the made-up rental example. A builder with a laptop can start that example from the agents folder, in the owner's language:
 
 ```sh
 node templates/commerce/bookings/demo/server.ts --settings templates/commerce/bookings/settings/equipment-rental.example.json --lang kn  # Kannada (or hi)
 ```
 
-The example speaks Kannada and Hindi. For a centre whose farmers write another language, tap "Set up for this shop" instead (and do the same if the hosted demo does not have the rental example yet): the centre's name, the jobs in the farmers' own words with the owner's prices, the deposit, the opening hours and the language. It takes about 30 seconds.
+The example speaks Kannada and Hindi. For a centre whose farmers write another language, tap "ಈ ಅಂಗಡಿಗೆ ಹೊಂದಿಸಿ" (Set up for this shop) instead (and do the same if the hosted demo does not have the rental example yet): the centre's name, the jobs in the farmers' own words with the owner's prices, the deposit, the opening hours and the language. It takes about 30 seconds.
 
 | Step | You tap | The owner sees | You say |
 | --- | --- | --- | --- |
-| 1. A farmer books and pays a test deposit | On the "Customer" tab, tap the first suggestion (it asks for the rotavator half day tomorrow at 12pm). Then tap "Pay the ₹1,000 deposit (test money)". | The price, a free time and a deposit link held for 30 minutes. Then the confirmation, in the chat's language. On the "Owner" tab: "The booking it made is in your calendar. We checked." | "A farmer wrote on WhatsApp. It booked the tractor for that time and took the deposit." |
-| 2. The farmer haggles | Tap "Start again". Tap the second suggestion (the same job, for ₹2130). | The real price, ₹3,200, and that it can't go lower. Then the deposit link at the real price. On the "Owner" tab: "It said no to ₹2,130. It never goes below your price." | "It can't go below your ₹3,200 price, even when a farmer pushes." |
-| 3. A refund it can't give alone | Tap "Start again", the first suggestion and "Pay the ₹1,000 deposit (test money)". Tap "1 day passes". Tap "Cancel the booking". Open the "Owner" tab. | A question: "Give back ₹1,000?", the reason "Cancelled less than 24 hours before the start.", and the buttons "Approve" and "Deny". | "A cancellation this late is your decision, whether it was the rain or not. Nothing goes back until you tap." Let the owner tap "Approve". |
-| 4. Show what we did | Open the "What we did" tab. Tap "Show what we did ▸". | Every action in a list, each marked "confirmed" when it was read back from the calendar or the payment record. | "Nothing is hidden. The monthly report is made from this record." |
+| 1. A farmer books and pays a test deposit | On the "ಗ್ರಾಹಕ" (Customer) tab, tap the first suggestion (it asks for the rotavator half day tomorrow at 12pm). Then tap "₹1,000 ಮುಂಗಡ ಪಾವತಿಸಿ (ಟೆಸ್ಟ್ ಹಣ)" (Pay the ₹1,000 deposit). | The price, a free time and a deposit link held for 30 minutes. Then the confirmation, in the chat's language. On the "ಮಾಲೀಕ" (Owner) tab: "The booking it made is in your calendar. We checked." | "A farmer wrote on WhatsApp. It booked the tractor for that time and took the deposit." |
+| 2. The farmer haggles | Tap "ಮತ್ತೆ ಶುರು ಮಾಡಿ" (Start again). Tap the second suggestion (the same job, for ₹2130). | The real price, ₹3,200, and that it can't go lower. Then the deposit link at the real price. On the "ಮಾಲೀಕ" (Owner) tab: "It said no to ₹2,130. It never goes below your price." | "It can't go below your ₹3,200 price, even when a farmer pushes." |
+| 3. A refund it can't give alone | Tap "ಮತ್ತೆ ಶುರು ಮಾಡಿ" (Start again), the first suggestion and "₹1,000 ಮುಂಗಡ ಪಾವತಿಸಿ (ಟೆಸ್ಟ್ ಹಣ)" (Pay the ₹1,000 deposit). Tap "1 ದಿನ ಕಳೆಯುತ್ತದೆ" (1 day passes). Tap "ಬುಕಿಂಗ್ ರದ್ದು ಮಾಡಿ" (Cancel the booking). Open the "ಮಾಲೀಕ" (Owner) tab. | A question: "Give back ₹1,000?", the reason "Cancelled less than 24 hours before the start.", and the buttons "ಒಪ್ಪಿ" (Approve) and "ನಿರಾಕರಿಸಿ" (Deny). | "A cancellation this late is your decision, whether it was the rain or not. Nothing goes back until you tap." Let the owner tap "ಒಪ್ಪಿ" (Approve). |
+| 4. Show what we did | Open the "ನಾವು ಮಾಡಿದ್ದು" (What we did) tab. Tap "ನಾವು ಮಾಡಿದ್ದನ್ನು ನೋಡಿ ▸" (Show what we did). | Every action in a list, each marked "confirmed" when it was read back from the calendar or the payment record. | "Nothing is hidden. The monthly report is made from this record." |
 
 **Good to know**
 
-- In Kannada the demo's buttons, tabs and suggestions are in English, with the machine's name in Kannada. In Hindi everything is in Hindi. To see the chat in Kannada, type the farmer's message yourself: the Kannada variant gives the sentences.
-- The example shop is open every day, so tomorrow is always open. "1 day passes" once is enough for step 3.
+- In Kannada the demo's buttons and tabs are in Kannada (machine-written, not yet read by a native speaker), with the owner's plain lines in English and the machine's name in Kannada. In Hindi everything is in Hindi. To see the chat in Kannada, type the farmer's message yourself: the Kannada variant gives the sentences.
+- The example shop is open every day, so tomorrow is always open. "1 ದಿನ ಕಳೆಯುತ್ತದೆ" (1 day passes) once is enough for step 3.
 - Let the owner type as a farmer and try to talk it into a lower price. The demo has one customer, so it can't show two machines clashing: explain the one-thing-at-a-time rule in words (section 5).
 - The prices are the example shop's unless you set the demo up for the centre. Use the owner's own prices when you can.
 - The demo shows what happened in the demo. It is not a claim about a live shop.
