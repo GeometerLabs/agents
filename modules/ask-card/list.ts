@@ -8,7 +8,7 @@
 // with its page alone, the owner signing in with a passkey and hearing by alerts in their app. After it, each template adds what its own settings file asks (Bookings: templates/commerce/bookings/src/settings.ts;
 // Orders and Fees likewise). Things only some shops want (Google Calendar for Bookings, its own Razorpay account, a delivery area) are marked optional.
 //
-// Honesty rules the list keeps (docs/research/2026-11-11-whatsapp-onboarding-facts.md): Meta may later ask the shop to verify its business, and which documents it accepts
+// Honesty rules the list keeps (docs/research/2026-11-whatsapp-and-gupshup.md): Meta may later ask the shop to verify its business, and which documents it accepts
 // for a small shop is not confirmed, so the card never tells the partner that no papers will be needed. No price or percentage is written here (prices live in prices/).
 //
 // Hindi, Malayalam and Kannada are machine-written, like the rest of those languages (REVIEW_STATE in bundle/panel/languages.ts): they wait for a native reader. The words
