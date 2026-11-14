@@ -463,7 +463,7 @@ if [ "\${1:-}" = server ]; then
         [ "\$answer" = stop ] || { echo "Nothing was stopped."; exit 1; }
       fi
       if has_unit; then sudo systemctl stop "\$UNIT"; echo "The deployer is stopped."; fi
-      exec "\$NODE" "\$APP/bundle/geometer.ts" server stop --confirm ;;
+      exec "\$NODE" "\$APP/bundle/geometer.ts" server stop --yes ;;
     start)
       bundle server start
       if has_unit; then sudo systemctl start "\$UNIT"; echo "The deployer is running."; fi ;;

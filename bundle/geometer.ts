@@ -74,7 +74,7 @@
 //   up                           bring up the server's own services (HTTPS, the panel, the heartbeat) before any shop exists; install.sh ends with it. Once a shop is
 //                                deployed, `deploy` is what brings things up.
 //   server status [--wait S]     every container of this server and how it is; --wait: until the panel and HTTPS are up, at most S seconds
-//   server stop --confirm        stop EVERY container on this server: no shop answers customers until `server start`. Without --confirm it only says what it would stop.
+//   server stop --yes        stop EVERY container on this server: no shop answers customers until `server start`. Without --yes it only says what it would stop.
 //                                (Not the same as `stop <shop>`, the kill switch for one shop.) The `geometer` command install.sh writes also stops the deployer first.
 //   server start                 start them again as they were (a server with no shop yet: the same as `up`)
 //   status                       every shop: running or not, what its Guards enforce, the last snapshot and drill
@@ -171,7 +171,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "licence-key": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, template: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" }, // stream-*: only to say they are no longer used
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
-      kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" }, pairing: { type: "boolean" }, "guard-licence-kid": { type: "string" }, wait: { type: "string" }, confirm: { type: "boolean" },
+      kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" }, pairing: { type: "boolean" }, "guard-licence-kid": { type: "string" }, wait: { type: "string" }, yes: { type: "boolean" }, confirm: { type: "boolean" } /* hidden alias of --yes: the /usr/local/bin/geometer an earlier install.sh wrote passes `server stop --confirm` */,
       "prepared-by": { type: "string" }, company: { type: "string" }, "upi-id": { type: "string" }, payee: { type: "string" }, payment: { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
       // agent add / report
       settings: { type: "string" }, upstreams: { type: "string" }, "owner-whatsapp": { type: "string" }, "owner-language": { type: "string" }, "business-name": { type: "string" }, deposit: { type: "string" }, "refund-limit": { type: "string" },
@@ -428,7 +428,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     if (command === "whatsapp-templates") return await whatsappTemplatesCommand(APP_DIR, dir, positionals[0], { ...(str("template") ? { template: str("template")! } : {}), ...(str("languages") ? { languages: str("languages")! } : {}), ...(str("only") ? { only: str("only")! } : {}), submit: values.submit === true, status: values.status === true }, { log: (l) => console.log(l) });
     if (command === "status") return await status(ctx);
     if (command === "up") return await up(ctx);
-    if (command === "server") return await serverCommand(ctx, positionals[0], { wait: str("wait"), confirm: values.confirm === true });
+    if (command === "server") return await serverCommand(ctx, positionals[0], { wait: str("wait"), yes: values.yes === true || values.confirm === true });
 
     if (command === "licence") {
       if ((positionals[0] !== "extension" && positionals[0] !== "lease") || !positionals[1]) throw new Error("Say what to do: licence extension <file>   (the gx1. token Geometer sent, in a file or as it is), or licence lease <file>   (a gl1. lease)");
@@ -712,7 +712,7 @@ async function pair(folder: string | undefined, fleetUrl: string | undefined): P
  * `server status|start|stop`: the whole server, as distinct from one shop. `stop <shop>` stays the kill switch for that shop; stopping every container is a different
  * act with a different name, and it asks to be confirmed, because no shop answers its customers while the server is stopped.
  */
-async function serverCommand(ctx: Context, sub: string | undefined, o: { wait?: string; confirm: boolean }): Promise<number> {
+async function serverCommand(ctx: Context, sub: string | undefined, o: { wait?: string; yes: boolean }): Promise<number> {
   const server = loadServer(ctx.dir);
   const state = loadState(ctx.dir);
   const deployed = [...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...Object.entries(state.agents ?? {}).filter(([, a]) => a.applied).map(([n]) => n)].sort();
@@ -744,14 +744,14 @@ async function serverCommand(ctx: Context, sub: string | undefined, o: { wait?: 
   }
   if (sub === "stop") {
     const what = deployed.length === 0 ? "No shop runs here yet, so only the panel and HTTPS stop." : `These stop answering their customers until \`geometer server start\`: ${deployed.join(", ")}. Payment links already sent still work at the payment service; nothing new goes out.`;
-    if (!o.confirm) { console.log(`This stops EVERY container on this server. ${what}\nTo stop one shop instead, it is \`geometer stop <shop>\` (its kill switch). To go ahead: geometer server stop --confirm`); return 3; }
+    if (!o.yes) { console.log(`This stops EVERY container on this server. ${what}\nTo stop one shop instead, it is \`geometer stop <shop>\` (its kill switch). To go ahead: geometer server stop --yes`); return 3; }
     if (!started) { console.log("Nothing has been started on this server, so there is nothing to stop."); return 0; }
     const r = await compose(ctx, ["stop"], { timeoutMs: 600_000 });
     if (r.code !== 0) throw new Error(`docker compose stop failed: ${r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 300)}`);
     console.log(`Stopped every container on this server. ${what}`);
     return 0;
   }
-  throw new Error("Say what to do with the whole server: server status [--wait S] | server start | server stop --confirm   (one shop: stop <shop> / start <shop>)");
+  throw new Error("Say what to do with the whole server: server status [--wait S] | server start | server stop --yes   (one shop: stop <shop> / start <shop>)");
 }
 
 async function status(ctx: Context): Promise<number> {
