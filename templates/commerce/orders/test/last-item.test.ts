@@ -1,4 +1,4 @@
-// Two customers for the last item at the same moment: only one may get it (plan checkpoint item 8, 11 Nov 2026; docs/product/intent-and-outcomes.md, "Candidate failure
+// Two customers for the last item at the same moment: only one may get it (plan checkpoint item 8, 11 Nov 2026; docs/product/assurance-design.md, "Candidate failure
 // tests"). Orders already holds stock in its own saved state: what is left of an item is worked out from the orders that hold it (src/order.ts, takenOf), and an order
 // waiting for its advance holds its share until its hold ends. The runtime runs one step of a shop at a time (modules/runtime/tasks.ts), so the look at what is left and
 // the hold are never split by another customer's step. These tests pin both, through the real runtime, with a menu that has one veg thali left.

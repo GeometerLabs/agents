@@ -1,4 +1,4 @@
-// "We're checking, don't do it again yet" comes from saved state (plan B75, checkpoint item 8, 11 Nov 2026; docs/product/intent-and-outcomes.md). Through the real runtime:
+// "We're checking, don't do it again yet" comes from saved state (plan B75, checkpoint item 8, 11 Nov 2026; docs/product/assurance-design.md). Through the real runtime:
 //   - a refund whose outcome is unknown is kept on its booking (refundIssues and stoppedRefunds, in the saved snapshot): it survives a restart, a fresh attempt does not
 //     send it again, days of the customer's silence do not clear it, the to-do list keeps it, and only the payments service's own list settles it, with its refund id;
 //   - a wait for a Guard that ends with the step thrown away keeps the case number that step took: the hold (or link) its first try left at the provider is never taken

@@ -1,4 +1,4 @@
-// Two customers for the last slot at the same moment: only one may get it (plan checkpoint item 8, 11 Nov 2026; docs/product/intent-and-outcomes.md, "Candidate failure
+// Two customers for the last slot at the same moment: only one may get it (plan checkpoint item 8, 11 Nov 2026; docs/product/assurance-design.md, "Candidate failure
 // tests"). What makes it so, and what each test pins:
 //   - one message at a time: the runtime never runs two steps of a shop together (modules/runtime/tasks.ts), so the look at the slot and the hold a step makes are never
 //     split by another customer's step. Pinned by holding a step half-way and showing the other customer's step has not started.

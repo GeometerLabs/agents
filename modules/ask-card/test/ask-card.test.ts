@@ -12,7 +12,7 @@ import { REPO, askCardFor, askCardRows, cardFiles, cardPath, renderMarkdown, sta
 const TRANSLATED = LANGUAGES.filter((l) => l !== "en");
 /** Words no site-like copy may use (the owner's list), as whole words in the English text. */
 const SITE_BANNED = [/\bearn/i, /\bincome\b/i, /side hustle/i, /\bpassive\b/i, /\bbot\b/i, /leaderboard/i, /\bstreak/i, /\bfounder/i];
-/** A promise the facts file says we must not make (docs/research/2026-11-11-whatsapp-onboarding-facts.md). */
+/** A promise the facts file says we must not make (docs/research/2026-11-whatsapp-and-gupshup.md). */
 const PROMISE = /\bno documents\b|\bone visit\b|\bno paperwork\b|\bwithout (any )?documents\b/i;
 
 test("the list has a card for each of its templates (that these are the bundle's templates is checked in bundle/test/ask-card.test.ts)", () => {

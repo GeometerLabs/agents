@@ -73,7 +73,7 @@ A single page the partner leaves behind. Self-contained: inline CSS, no scripts,
 - **Money flow yes, amounts no.** Say who pays whom and how much a fee is. Never say how much anyone will make, not even as an example.
 - Serious and sober. No hype, no emojis, no gamification.
 - Use the owner's own words for the limits: "It can't go below your ₹450 price."
-- Where the true answer is "it depends" (a Razorpay website, whether Meta will ask the shop to verify its business), say so. Never state a WhatsApp rule as fact that the facts file (`docs/research/2026-11-11-whatsapp-onboarding-facts.md`) lists as unconfirmed, such as an account-age rule.
+- Where the true answer is "it depends" (a Razorpay website, whether Meta will ask the shop to verify its business), say so. Never state a WhatsApp rule as fact that the facts file (`docs/research/2026-11-whatsapp-and-gupshup.md`) lists as unconfirmed, such as an account-age rule.
 
 ## The setup visit asks for as little as possible (B72)
 
