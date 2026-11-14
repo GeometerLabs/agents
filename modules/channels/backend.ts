@@ -35,6 +35,8 @@ export interface ShopInfo {
    * publicFace), from the runtime. `picture` is added by the front, never by the runtime: that mood's SVG as a data: address (front.ts withFace).
    */
   character?: { name?: string; face?: Face; picture?: string };
+  /** Batch 5: the shop's own phone and map link, from its pages.json (the front adds them to every offer: front.ts withContact), so every customer page can show them. */
+  contact?: { phone?: string; map?: string };
 }
 export interface Offer { shop: ShopInfo; services: OfferService[]; serviceId?: string; days?: { date: string; starts: number[] }[]; calendarUnread?: boolean }
 
@@ -102,7 +104,7 @@ export interface OrderSlotView { id: string; mode: "pickup" | "delivery"; fromMs
 /** What an Orders shop's page offers: the menu, the days with their slots and what is left of each item, and the shop's rules. Prices come from the settings only. */
 export interface OrderOffer {
   kind: "orders";
-  shop: Pick<ShopInfo, "name" | "address" | "timezone" | "languages" | "payment" | "paused" | "character"> & { advance: { mode: "full" | "part"; percent: number; holdMinutes: number }; cancellation: { windowHours: number } };
+  shop: Pick<ShopInfo, "name" | "address" | "timezone" | "languages" | "payment" | "paused" | "character" | "contact"> & { advance: { mode: "full" | "part"; percent: number; holdMinutes: number }; cancellation: { windowHours: number } };
   items: OfferItem[];
   /** Today and the days ahead the shop takes orders for. `left`: how many of each item are not held yet; `full`: the day's order count is reached. */
   days: { date: string; slots: OrderSlotView[]; left: Record<string, number>; full: boolean }[];
@@ -121,7 +123,7 @@ export type OrderView =
   };
 
 /** A Fees centre's public page: only the centre itself. A parent's fees are on their private link, never found by a number. */
-export interface FeesOffer { kind: "fees"; shop: Pick<ShopInfo, "name" | "address" | "timezone" | "languages" | "payment" | "paused" | "character"> }
+export interface FeesOffer { kind: "fees"; shop: Pick<ShopInfo, "name" | "address" | "timezone" | "languages" | "payment" | "paused" | "character" | "contact"> }
 /** One student's fee for one month, as the parent's page shows it. Money in whole rupees from the centre's record; `pay` only while something is owed. */
 export interface FeeLine {
   id: string; student: string; batch: Record<Language, string>; month: string; dueMs: number;
@@ -129,7 +131,7 @@ export interface FeeLine {
   state: "open" | "paid" | "closed"; pay?: PayInstructions; canSayPaid: boolean; claimed: boolean;
 }
 /** What a parent's private link opens: that parent's students and their fees, and nothing of anyone else's. */
-export interface ParentView { students: { name: string; batch: Record<Language, string> }[]; dues: FeeLine[] }
+export interface ParentView { /** The parent's stable ref ("p-" and 12 hex digits), for the page's alerts: the runtime keys them by it, never by the link. */ ref?: string; students: { name: string; batch: Record<Language, string> }[]; dues: FeeLine[] }
 /**
  * A fee payment's confirmation page, by the handle the parent's press made. `confirmed` only when the centre's record shows the fee paid (the payments service's
  * own list, or the owner's mark on a UPI centre); `waiting` after "I have paid" until then.

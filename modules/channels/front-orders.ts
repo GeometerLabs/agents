@@ -2,6 +2,7 @@
 //
 //   GET  /s/<shop>/                      the menu page (?lang=, ?date=)                        POST /s/<shop>/order        start an order (a form)
 //   GET  /s/<shop>/order/<handle>        an order's own page                                   POST .../order/<handle>/cancel, .../order/<handle>/paid
+//   GET  .../order/<handle>/sw.js, POST .../order/<handle>/push   batch 3: the page's alerts ("Tell me on this phone"), as a booking page has them
 //   ...  /s/<shop>/api/v1/...            the ordering API (api.ts orderApiRequest)             POST /s/<shop>/mcp          the same operations for AI assistants
 //
 // The same checks as Bookings' routes, before anything reaches the runtime: the per-address limits (a start counts as a booking start, against the address and the
@@ -9,6 +10,7 @@
 // quantities only: no price is ever read from a request.
 import { randomBytes } from "node:crypto";
 import { BackendError } from "./backend.ts";
+import { CUSTOMER_SW, customerAlertsBox } from "../push/pages.ts";
 import { HANDLE, NONCE, handleFromNonce, handleHash, newHandle } from "./handle.ts";
 import { orderApiOperation, orderApiRequest } from "./api.ts";
 import { ordersServer, serverPost } from "./mcp.ts";
@@ -108,30 +110,61 @@ export async function orderRoute(kit: FrontKit, a: RouteArgs, ops: { web: OrderO
       return again(e instanceof OpError && e.code === "paused" ? ORDER_PAGE[language].paused : ORDER_PAGE[language].badForm, 400);
     }
   }
-  const o = /^\/order\/([^/]+)(\/cancel|\/paid)?$/u.exec(rest);
+  // "<page>/" is the page too: a tapped alert opens its worker's scope, which ends in a slash
+  const o = /^\/order\/([^/]+)(\/|\/cancel|\/paid|\/sw\.js|\/push)?$/u.exec(rest);
   if (o) {
     const handle = o[1];
     if (limiter.over("wrong", address)) return tooMany();
     if (!HANDLE.test(handle)) { limiter.take("wrong", address); return kit.sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>"); }
     const offer = await shop.backend.orderOffer();
     const viewNow = () => shop.backend.orderView!(handleHash(handle));
-    if (o[2] && method === "POST") {
+    const sub = o[2] === "/" ? undefined : o[2];
+    const self = `${shop.publicUrl}/order/${handle}`;
+    // batch 3 (item 11h's alerts for Orders): a customer's alerts on this order's page, for a page made on the page or through MCP (the runtime refuses any other)
+    if (sub === "/push") {
+      if (method !== "POST") return kit.sendJson(res, 405, { error: "POST" }, { allow: "POST" });
+      if (!kit.sameOrigin(req, shop)) return kit.sendJson(res, 403, { error: "Calls from another site's page are refused." });
+      if (!shop.backend.push || !limiter.take("act", address)) return kit.sendJson(res, shop.backend.push ? 429 : 404, { error: "Alerts are not on here." });
+      let body: Record<string, unknown>;
+      try { body = JSON.parse((await kit.readBody(req, kit.maxForm)) ?? "") as Record<string, unknown>; } catch { return kit.sendJson(res, 400, { error: "Send JSON." }); }
+      const r = await shop.backend.push({ op: "customer_subscribe", handle: handleHash(handle), subscription: body.subscription });
+      if (r.status === 404) limiter.take("wrong", address);
+      return kit.sendJson(res, r.status === 200 ? 200 : r.status === 404 ? 404 : 400, r.status === 200 ? { result: "done" } : { error: String(r.body.error ?? "That was not taken.") });
+    }
+    if (sub === "/sw.js" && method === "GET") {
+      const view = await viewNow();
+      const k = view && "ref" in view && (view.channel === "web" || view.channel === "mcp") && shop.backend.push ? await shop.backend.push({ op: "key" }).catch(() => undefined) : undefined;
+      if (!k || k.body.on !== true) return kit.sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+      res.writeHead(200, { "content-type": "text/javascript; charset=utf-8", "content-length": Buffer.byteLength(CUSTOMER_SW), "cache-control": "no-cache", "content-security-policy": "default-src 'none'", "x-content-type-options": "nosniff" });
+      res.end(CUSTOMER_SW);
+      return;
+    }
+    if ((sub === "/cancel" || sub === "/paid") && method === "POST") {
       if (!kit.sameOrigin(req, shop)) return kit.sendHtml(res, 403, "<!doctype html><p>Forms from another site are refused.</p>");
       const form = new URLSearchParams((await kit.readBody(req, kit.maxForm)) ?? "");
       const language = kit.languageOf(req, url, offer.shop.languages, form);
       if (!limiter.take("act", address)) return kit.sendHtml(res, 429, orderPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view: await viewNow(), notice: PAGE[language].tooMany }));
-      try { if (o[2] === "/cancel") await ops.page.cancel_order({ handle }); else await ops.page.say_paid(handle, form.get("upi_ref") ?? undefined); }
+      try { if (sub === "/cancel") await ops.page.cancel_order({ handle }); else await ops.page.say_paid(handle, form.get("upi_ref") ?? undefined); }
       catch (e) { if (e instanceof BackendError) throw e; limiter.take("wrong", address); }
       return kit.redirect(res, `${shop.publicUrl}/order/${handle}?lang=${language}`);
     }
-    if (method !== "GET" || o[2]) return kit.sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
+    if (method !== "GET" || sub) return kit.sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
     if (!limiter.take("read", address)) return tooMany();
     const view = await viewNow();
     if (!view) limiter.take("wrong", address);
     const language = kit.languageOf(req, url, offer.shop.languages);
-    // money clarity: a held UPI advance's page has the UPI box's one script (copy the UPI ID, look for a change without redrawing the QR), by this response's nonce
-    const nonce = view && "ref" in view && view.status === "held" && view.pay?.kind === "upi" ? randomBytes(16).toString("base64") : undefined;
-    return kit.sendHtml(res, view ? 200 : 404, orderPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view, ...(nonce ? { nonce } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": customerPagePolicy(`${shop.publicUrl}/order/${handle}`, nonce) } : {}) });
+    // one nonce for whatever script this response has: the alerts' (a live web order with push on) and/or money clarity's UPI box script (a held UPI advance)
+    const live = view !== null && "ref" in view && (view.channel === "web" || view.channel === "mcp") && (view.status === "held" || view.status === "confirmed" || view.status === "checking") && shop.backend.push !== undefined;
+    const key = live ? await shop.backend.push!({ op: "key" }).catch(() => undefined) : undefined;
+    const publicKey = key?.body.on === true && typeof key.body.publicKey === "string" ? key.body.publicKey : undefined;
+    const upiHeld = view && "ref" in view && view.status === "held" && view.pay?.kind === "upi";
+    const nonce = publicKey || upiHeld ? randomBytes(16).toString("base64") : undefined;
+    let alerts: string | undefined;
+    if (nonce && publicKey) {
+      const st = await shop.backend.push!({ op: "customer_state", handle: handleHash(handle) }).catch(() => undefined);
+      alerts = customerAlertsBox({ page: self, language, key: publicKey, phones: Number(st?.body.phones ?? 0), nonce });
+    }
+    return kit.sendHtml(res, view ? 200 : 404, orderPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view, ...(alerts ? { alerts } : {}), ...(nonce ? { nonce } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": kit.customerPolicy(self, nonce) } : {}) });
   }
   return kit.sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
 }

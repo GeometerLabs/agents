@@ -9,7 +9,8 @@
 // runtime only its HASH (handle.ts parentLinkHash), and the runtime answers for the parent whose saved hash it is now, so a replaced or revoked link opens nothing at
 // once. Wrong links count as guesses (limits.ts "wrong"); every form is checked for its Origin; a press goes to the runtime only for a link that opens something now,
 // and the runtime checks it again in the step.
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
+import { CUSTOMER_SW, customerAlertsBox } from "../push/pages.ts";
 import { HANDLE, NONCE, handleFromNonce, handleHash, newHandle, parentLinkHash } from "./handle.ts";
 import { feeConfirmPage, feesCentrePage, parentLinkGone, parentPage } from "./fee-page.ts";
 import { PAGE } from "./words.ts";
@@ -34,7 +35,8 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
   }
 
   // ---- a parent's private page ----
-  const f = /^\/f\/([^/]+)(\/pay|\/paid)?$/u.exec(rest);
+  // "<link>/" is the page too: a tapped alert opens its worker's scope, which ends in a slash
+  const f = /^\/f\/([^/]+)(\/|\/pay|\/paid|\/sw\.js|\/push)?$/u.exec(rest);
   if (f) {
     const link = f[1];
     if (limiter.over("wrong", address)) return tooMany();
@@ -43,7 +45,27 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
     const gone = (language = kit.languageOf(req, url, offer.shop.languages)) => { limiter.take("wrong", address); return kit.sendHtml(res, 404, parentLinkGone({ shop: { name, publicUrl: shop.publicUrl }, offer, language, selfPath: base }), { "x-robots-tag": "noindex" }); };
     if (!HANDLE.test(link)) return gone();
     const linkHash = parentLinkHash(link);
-    if (f[2] && method === "POST") {
+    const sub = f[2] === "/" ? undefined : f[2];
+    // batch 3: a parent's alerts on their private page, keyed by the PARENT (the runtime finds them by the link's hash now), so a link made again after a restart does
+    // not lose them. The worker is scoped to this page's address, as a booking page's is.
+    if (sub === "/push") {
+      if (method !== "POST") return kit.sendJson(res, 405, { error: "POST" }, { allow: "POST" });
+      if (!kit.sameOrigin(req, shop)) return kit.sendJson(res, 403, { error: "Calls from another site's page are refused." });
+      if (!backend.push || !limiter.take("act", address)) return kit.sendJson(res, backend.push ? 429 : 404, { error: "Alerts are not on here." });
+      let body: Record<string, unknown>;
+      try { body = JSON.parse((await kit.readBody(req, kit.maxForm)) ?? "") as Record<string, unknown>; } catch { return kit.sendJson(res, 400, { error: "Send JSON." }); }
+      const r = await backend.push({ op: "customer_subscribe", handle: linkHash, subscription: body.subscription });
+      if (r.status === 404) limiter.take("wrong", address);
+      return kit.sendJson(res, r.status === 200 ? 200 : r.status === 404 ? 404 : 400, r.status === 200 ? { result: "done" } : { error: String(r.body.error ?? "That was not taken.") });
+    }
+    if (sub === "/sw.js" && method === "GET") {
+      const k = backend.push && (await backend.parentView(linkHash)) ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
+      if (!k || k.body.on !== true) return kit.sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+      res.writeHead(200, { "content-type": "text/javascript; charset=utf-8", "content-length": Buffer.byteLength(CUSTOMER_SW), "cache-control": "no-cache", "content-security-policy": "default-src 'none'", "x-content-type-options": "nosniff" });
+      res.end(CUSTOMER_SW);
+      return;
+    }
+    if ((sub === "/pay" || sub === "/paid") && method === "POST") {
       if (!kit.sameOrigin(req, shop)) return kit.sendHtml(res, 403, "<!doctype html><p>Forms from another site are refused.</p>");
       const form = new URLSearchParams((await kit.readBody(req, kit.maxForm)) ?? "");
       const language = kit.languageOf(req, url, offer.shop.languages, form);
@@ -54,8 +76,8 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
       if (!DUE_ID.test(dueId) || !view.dues.some((d) => d.id === dueId)) return kit.redirect(res, `${base}?lang=${language}`);
       // a double tap is one press: the handle comes from the page's nonce and what it asks for
       const nonce = form.get("nonce") ?? "";
-      const handle = NONCE.test(nonce) ? handleFromNonce(nonce, [f[2], dueId]) : newHandle();
-      const op = f[2] === "/pay" ? "fee_pay" : "fee_paid";
+      const handle = NONCE.test(nonce) ? handleFromNonce(nonce, [f[2]!, dueId]) : newHandle();
+      const op = sub === "/pay" ? "fee_pay" : "fee_paid";
       await backend.submit([{ kind: "channel_request", id: randomUUID(), channel: "web", op, parent: linkHash, dueId, handle: handleHash(handle), ...(op === "fee_paid" && form.get("upi_ref") ? { upiRef: form.get("upi_ref")! } : {}) }]);
       if (op === "fee_paid") return kit.redirect(res, `${shop.publicUrl}/fee/${handle}?lang=${language}`);
       // "show how to pay": wait a little for the step, so the page that follows shows the payment details
@@ -67,11 +89,20 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
       }
       return kit.redirect(res, `${base}?lang=${language}`);
     }
-    if (method !== "GET" || f[2]) return kit.sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
+    if (method !== "GET" || sub) return kit.sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
     if (!limiter.take("read", address)) return tooMany();
     const view = await backend.parentView(linkHash);
     if (!view) return gone();
-    return kit.sendHtml(res, 200, parentPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language: kit.languageOf(req, url, offer.shop.languages), base, view, nonce: newHandle() }), { "x-robots-tag": "noindex" });
+    const language = kit.languageOf(req, url, offer.shop.languages);
+    const key = backend.push ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
+    const publicKey = key?.body.on === true && typeof key.body.publicKey === "string" ? key.body.publicKey : undefined;
+    const scriptNonce = publicKey ? randomBytes(16).toString("base64") : undefined;
+    let alerts: string | undefined;
+    if (scriptNonce) {
+      const st = await backend.push!({ op: "customer_state", handle: linkHash }).catch(() => undefined);
+      alerts = customerAlertsBox({ page: base, language, key: publicKey!, phones: Number(st?.body.phones ?? 0), nonce: scriptNonce });
+    }
+    return kit.sendHtml(res, 200, parentPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, base, view, nonce: newHandle(), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(scriptNonce ? { "content-security-policy": kit.customerPolicy(base, scriptNonce) } : {}) });
   }
 
   // ---- a payment's confirmation page ----

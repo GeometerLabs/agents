@@ -64,7 +64,7 @@ test("the setup QR and the recovery card are shown once, kept as hashes, for thi
   } finally { await b.close(); }
 });
 
-test("a shop with no WhatsApp: no WhatsApp check, and not ready to go live until the owner's setup QR has been shown", async () => {
+test("a shop with no WhatsApp: no WhatsApp check, and not ready to go live until the owner has signed in and one phone has alerts on", async () => {
   const b = await boot({ publicUrl: "https://shops.example.test" });
   try {
     await b.account("arjun", "builder");
@@ -81,7 +81,15 @@ test("a shop with no WhatsApp: no WhatsApp check, and not ready to go live until
     const arjun = await b.account("arjun2", "builder");
     b.addShop("other", { name: "Other" });
     writeFileSync(join(b.dir, "shops", "glow-salon", "owner-grants.json"), JSON.stringify({ schema: 1, setup: { sha256: "a".repeat(64), createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 60_000).toISOString() } }));
-    assert.ok(!goLive.unmet("glow-salon", settings).includes("owner-signin"), "once the QR was shown, that condition is met");
+    assert.ok(goLive.unmet("glow-salon", settings).includes("owner-signin"), "showing the QR is not enough any more: the runtime must count a passkey and a phone with alerts");
+    // batch 3: what the runtime counted when the checks ran (modules/runtime/http.ts /status ownerAccess), kept with the stored checks
+    const stored = (ownerAccess?: { passkeys: number; alertPhones: number }) => store.write("checks/glow-salon.json", { at: new Date().toISOString(), settingsDigest: "x", hand: { total: 1, held: 1, failed: 0, notTested: 0 }, connections: null, ...(ownerAccess ? { ownerAccess } : {}) });
+    stored({ passkeys: 1, alertPhones: 0 });
+    assert.ok(goLive.unmet("glow-salon", settings).includes("owner-signin"), "a passkey but no phone with alerts: still held back");
+    stored({ passkeys: 0, alertPhones: 1 });
+    assert.ok(goLive.unmet("glow-salon", settings).includes("owner-signin"), "alerts but no passkey: still held back");
+    stored({ passkeys: 1, alertPhones: 1 });
+    assert.ok(!goLive.unmet("glow-salon", settings).includes("owner-signin"), "one passkey and one phone with alerts: that condition is met");
     assert.ok(!goLive.unmet("other", shops.settings("other")).includes("owner-signin"), "a shop with WhatsApp is not asked for it");
     void arjun;
   } finally { await b.close(); }

@@ -367,3 +367,19 @@ test("item 6 (the Streetlist home on this domain): only the door's own 'no page 
   // the home's own names are the door's unknown shop names: reserved at fleet, so never a shop (fleet's test), and here a plain 404
   for (const name of ["shops", "partners", "privacy", "examples", "assets"]) assert.equal((await d.call(`/${name}/`)).status, 404, name);
 });
+
+test("a shop's front names its partner; the door keeps it, never passes it on, and its 502 page for that shop in the visitor's language says who to call (batch 3)", async () => {
+  const contact = Buffer.from(JSON.stringify({ n: "Divya", p: "+919800000000" }), "utf8").toString("base64url");
+  let down = false;
+  const d = await door({ local: () => { if (down) throw Object.assign(new Error("refused"), { code: "ECONNREFUSED" }); return { status: 200, headers: { "content-type": "text/html", "x-geometer-contact": contact }, body: Buffer.from("<p>hello</p>") }; } });
+  const ok = await d.call("/veena-salon/");
+  assert.equal(ok.status, 200);
+  assert.equal(ok.headers["x-geometer-contact"], undefined, "the visitor never sees the header");
+  down = true;
+  const page = await d.call("/veena-salon/", { headers: { "accept-language": "ml-IN,en;q=0.5" } });
+  assert.equal(page.status, 502);
+  assert.match(page.body, /lang="ml"/u, "in the visitor's language");
+  assert.match(page.body, /href="tel:\+919800000000"/u); assert.match(page.body, /wa\.me\/919800000000/u);
+  const other = await d.call("/ravi-cuts/");
+  assert.doesNotMatch(other.body, /919800000000/u, "another shop's page does not name this partner");
+});

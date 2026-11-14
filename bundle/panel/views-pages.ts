@@ -22,8 +22,12 @@ interface Words {
   sessions: string; sessionsNote: string; endAll: string; ended: string; bad: string;
   signin: string; signinNote: string; setupMake: string; recoveryMake: string; recoveryOn: (day: string) => string; remove: string; removeNote: string; removed: string;
   setupTitle: string; setupNote: (until: string) => string; cardTitle: string; cardNote: string; cardOwner: (url: string) => string; printNote: string; back: string;
+  /** Batch 3 and 5: the shop's phone and map, the partner's name and number (what the owner's app and the error pages show), and the QR page's "wait until green". */
+  shopPhone: string; shopPhoneNote: string; map: string; mapNote: string; partnerName: string; partnerPhone: string; partnerNote: string;
+  setupWait: string; setupReady: string; setupWaitNote: string; cardQr: string; cardMachine: string;
 }
-const WORDS: Record<Language, Words> = {
+/** Exported so the native reviewer's sheet lists these lines too (review.ts, ids "pages.block.*"). */
+export const WORDS: Record<Language, Words> = {
   en: {
     heading: "The shop's page", note: "Customers book, pay and message the shop here; the owner signs in with a link sent to their WhatsApp. One short name per shop.",
     choice: "Where the page is", hub: "On the shared pages domain (a short name)", own: "On your own domain only", slug: "Short name", slugNote: "3 to 40 small letters, digits and hyphens, like veena-salon. A name another shop holds, or one used lately, cannot be taken.",
@@ -37,6 +41,11 @@ const WORDS: Record<Language, Words> = {
     setupTitle: "Setup QR code for the owner", setupNote: (until) => `Works once, for this shop only, until ${until}. The owner scans it with their phone's camera, then touches the fingerprint reader. Showing a new code stops this one.`,
     cardTitle: "Recovery card", cardNote: "Print this page and give it to the owner. Each code works once. Nobody can see these codes again, not even here.", cardOwner: (url) => `Lost your phone? Open ${url} and type one code.`,
     printNote: "Use your browser's Print.", back: "Back to the shop",
+    shopPhone: "The shop's phone number on the page", shopPhoneNote: "With the country code, like +918012345678. The page shows \"Call the shop\". A landline works too.",
+    map: "Map link", mapNote: "Paste the shop's link from Google Maps (Share, then Copy link). The page shows \"Find us on the map\".",
+    partnerName: "Your name, for the owner", partnerPhone: "Your phone number, for the owner", partnerNote: "The owner's app and every error page show your name with Call and WhatsApp buttons. Fill in both, or neither.",
+    setupWait: "Wait...", setupReady: "Ready: scan now", setupWaitNote: "The code starts working about 15 seconds after it is shown. Wait until the bar below turns green, then scan. A scan before that does not work yet.",
+    cardQr: "Or scan this with your phone's camera:", cardMachine: "",
   },
   hi: {
     heading: "दुकान का पेज", note: "ग्राहक यहाँ बुक करते हैं, भुगतान करते हैं और दुकान को मैसेज करते हैं; मालिक अपने WhatsApp पर आए लिंक से साइन इन करते हैं। हर दुकान का एक छोटा नाम।",
@@ -51,6 +60,11 @@ const WORDS: Record<Language, Words> = {
     setupTitle: "मालिक के लिए सेटअप QR कोड", setupNote: (until) => `एक बार, सिर्फ़ इसी दुकान के लिए, ${until} तक चलेगा। मालिक इसे फ़ोन के कैमरे से स्कैन करें, फिर फ़िंगरप्रिंट छुएँ। नया कोड दिखाने पर यह बंद हो जाता है।`,
     cardTitle: "रिकवरी कार्ड", cardNote: "यह पेज छापकर मालिक को दीजिए। हर कोड एक बार चलता है। ये कोड फिर कोई नहीं देख सकता, यहाँ भी नहीं।", cardOwner: (url) => `फ़ोन खो गया? ${url} खोलिए और एक कोड लिखिए।`,
     printNote: "ब्राउज़र का Print इस्तेमाल करें।", back: "दुकान पर वापस",
+    shopPhone: "पेज पर दुकान का फ़ोन नंबर", shopPhoneNote: "देश कोड के साथ, जैसे +918012345678। पेज पर \"दुकान को कॉल करें\" दिखेगा। लैंडलाइन भी चलता है।",
+    map: "मैप लिंक", mapNote: "दुकान का Google Maps लिंक चिपकाइए (Share, फिर Copy link)। पेज पर \"नक्शे पर देखें\" दिखेगा।",
+    partnerName: "आपका नाम, मालिक के लिए", partnerPhone: "आपका फ़ोन नंबर, मालिक के लिए", partnerNote: "मालिक के ऐप और हर एरर पेज पर आपका नाम, कॉल और WhatsApp बटन के साथ दिखेगा। दोनों भरिए, या कोई नहीं।",
+    setupWait: "रुकिए...", setupReady: "तैयार: अब स्कैन करें", setupWaitNote: "कोड दिखने के करीब 15 सेकंड बाद चलने लगता है। नीचे की पट्टी हरी होने तक रुकिए, फिर स्कैन करें। उससे पहले स्कैन करने पर यह अभी नहीं चलता।",
+    cardQr: "या फ़ोन के कैमरे से यह स्कैन करें:", cardMachine: "यह हिंदी मशीन से लिखी गई है; किसी हिंदी भाषी ने अभी इसे जाँचा नहीं है।",
   },
   ml: {
     heading: "കടയുടെ പേജ്", note: "കസ്റ്റമർമാർ ഇവിടെ ബുക്ക് ചെയ്യുകയും പണമടയ്ക്കുകയും കടയ്ക്ക് സന്ദേശം അയയ്ക്കുകയും ചെയ്യുന്നു; ഉടമ WhatsApp-ൽ വരുന്ന ലിങ്ക് വഴി സൈൻ ഇൻ ചെയ്യുന്നു. ഓരോ കടയ്ക്കും ഒരു ചെറിയ പേര്.",
@@ -65,6 +79,11 @@ const WORDS: Record<Language, Words> = {
     setupTitle: "ഉടമയ്ക്കുള്ള സെറ്റപ്പ് QR കോഡ്", setupNote: (until) => `ഒരിക്കൽ മാത്രം, ഈ കടയ്ക്ക് മാത്രം, ${until} വരെ പ്രവർത്തിക്കും. ഉടമ ഫോൺ ക്യാമറ കൊണ്ട് സ്കാൻ ചെയ്ത് വിരലടയാളം തൊടണം. പുതിയ കോഡ് കാണിച്ചാൽ ഇത് നിൽക്കും.`,
     cardTitle: "റിക്കവറി കാർഡ്", cardNote: "ഈ പേജ് പ്രിന്റ് ചെയ്ത് ഉടമയ്ക്ക് കൊടുക്കൂ. ഓരോ കോഡും ഒരിക്കൽ മാത്രം. ഈ കോഡുകൾ ഇനി ആർക്കും കാണാനാവില്ല, ഇവിടെയും.", cardOwner: (url) => `ഫോൺ നഷ്ടപ്പെട്ടോ? ${url} തുറന്ന് ഒരു കോഡ് ടൈപ്പ് ചെയ്യൂ.`,
     printNote: "ബ്രൗസറിലെ Print ഉപയോഗിക്കൂ.", back: "കടയിലേക്ക് മടങ്ങൂ",
+    shopPhone: "പേജിൽ കടയുടെ ഫോൺ നമ്പർ", shopPhoneNote: "രാജ്യ കോഡ് സഹിതം, ഉദാ. +918012345678. പേജിൽ \"കടയെ വിളിക്കൂ\" കാണും. ലാൻഡ്‌ലൈനും ചേരും.",
+    map: "മാപ്പ് ലിങ്ക്", mapNote: "കടയുടെ Google Maps ലിങ്ക് പേസ്റ്റ് ചെയ്യൂ (Share, പിന്നെ Copy link). പേജിൽ \"മാപ്പിൽ കാണൂ\" കാണും.",
+    partnerName: "നിങ്ങളുടെ പേര്, ഉടമയ്ക്കായി", partnerPhone: "നിങ്ങളുടെ ഫോൺ നമ്പർ, ഉടമയ്ക്കായി", partnerNote: "ഉടമയുടെ ആപ്പിലും ഓരോ എറർ പേജിലും നിങ്ങളുടെ പേര്, വിളിക്കാനും WhatsApp-നും ബട്ടണുകളോടെ കാണും. രണ്ടും നൽകൂ, അല്ലെങ്കിൽ ഒന്നും വേണ്ട.",
+    setupWait: "കാത്തിരിക്കൂ...", setupReady: "തയ്യാർ: ഇപ്പോൾ സ്കാൻ ചെയ്യൂ", setupWaitNote: "കോഡ് കാണിച്ച് ഏകദേശം 15 സെക്കൻഡ് കഴിഞ്ഞാണ് പ്രവർത്തിച്ചുതുടങ്ങുന്നത്. താഴത്തെ ബാർ പച്ചയാകുന്നതുവരെ കാത്തിരുന്ന് സ്കാൻ ചെയ്യൂ. അതിനുമുമ്പ് സ്കാൻ ചെയ്താൽ ഇതുവരെ പ്രവർത്തിക്കില്ല.",
+    cardQr: "അല്ലെങ്കിൽ ഫോൺ ക്യാമറ കൊണ്ട് ഇത് സ്കാൻ ചെയ്യൂ:", cardMachine: "ഈ മലയാളം യന്ത്രം എഴുതിയതാണ്; മലയാളം അറിയുന്ന ഒരാൾ ഇതുവരെ പരിശോധിച്ചിട്ടില്ല.",
   },
   kn: {
     heading: "ಅಂಗಡಿಯ ಪುಟ", note: "ಗ್ರಾಹಕರು ಇಲ್ಲಿ ಬುಕ್ ಮಾಡುತ್ತಾರೆ, ಪಾವತಿಸುತ್ತಾರೆ ಮತ್ತು ಅಂಗಡಿಗೆ ಸಂದೇಶ ಕಳುಹಿಸುತ್ತಾರೆ; ಮಾಲೀಕರು ತಮ್ಮ WhatsApp ಗೆ ಬಂದ ಲಿಂಕ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತಾರೆ. ಪ್ರತಿ ಅಂಗಡಿಗೆ ಒಂದು ಚಿಕ್ಕ ಹೆಸರು.",
@@ -79,6 +98,11 @@ const WORDS: Record<Language, Words> = {
     setupTitle: "ಮಾಲೀಕರಿಗಾಗಿ ಸೆಟಪ್ QR ಕೋಡ್", setupNote: (until) => `ಒಮ್ಮೆ ಮಾತ್ರ, ಈ ಅಂಗಡಿಗೆ ಮಾತ್ರ, ${until} ವರೆಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಮಾಲೀಕರು ಫೋನ್ ಕ್ಯಾಮೆರಾದಿಂದ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಬೆರಳಚ್ಚು ಮುಟ್ಟಬೇಕು. ಹೊಸ ಕೋಡ್ ತೋರಿಸಿದರೆ ಇದು ನಿಲ್ಲುತ್ತದೆ.`,
     cardTitle: "ರಿಕವರಿ ಕಾರ್ಡ್", cardNote: "ಈ ಪುಟವನ್ನು ಮುದ್ರಿಸಿ ಮಾಲೀಕರಿಗೆ ಕೊಡಿ. ಪ್ರತಿ ಕೋಡ್ ಒಮ್ಮೆ ಮಾತ್ರ. ಈ ಕೋಡ್‌ಗಳನ್ನು ಮತ್ತೆ ಯಾರೂ ನೋಡಲಾಗದು, ಇಲ್ಲಿಯೂ.", cardOwner: (url) => `ಫೋನ್ ಕಳೆದುಹೋಯಿತೇ? ${url} ತೆರೆದು ಒಂದು ಕೋಡ್ ಟೈಪ್ ಮಾಡಿ.`,
     printNote: "ಬ್ರೌಸರ್‌ನ Print ಬಳಸಿ.", back: "ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ",
+    shopPhone: "ಪುಟದಲ್ಲಿ ಅಂಗಡಿಯ ಫೋನ್ ನಂಬರ್", shopPhoneNote: "ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ, ಉದಾ. +918012345678. ಪುಟದಲ್ಲಿ \"ಅಂಗಡಿಗೆ ಕರೆ ಮಾಡಿ\" ಕಾಣುತ್ತದೆ. ಲ್ಯಾಂಡ್‌ಲೈನ್ ಕೂಡ ಆಗುತ್ತದೆ.",
+    map: "ಮ್ಯಾಪ್ ಲಿಂಕ್", mapNote: "ಅಂಗಡಿಯ Google Maps ಲಿಂಕ್ ಅಂಟಿಸಿ (Share, ನಂತರ Copy link). ಪುಟದಲ್ಲಿ \"ನಕ್ಷೆಯಲ್ಲಿ ನೋಡಿ\" ಕಾಣುತ್ತದೆ.",
+    partnerName: "ನಿಮ್ಮ ಹೆಸರು, ಮಾಲೀಕರಿಗಾಗಿ", partnerPhone: "ನಿಮ್ಮ ಫೋನ್ ನಂಬರ್, ಮಾಲೀಕರಿಗಾಗಿ", partnerNote: "ಮಾಲೀಕರ ಆಪ್‌ನಲ್ಲಿ ಮತ್ತು ಪ್ರತಿ ದೋಷ ಪುಟದಲ್ಲಿ ನಿಮ್ಮ ಹೆಸರು, ಕರೆ ಮತ್ತು WhatsApp ಬಟನ್‌ಗಳೊಂದಿಗೆ ಕಾಣುತ್ತದೆ. ಎರಡನ್ನೂ ತುಂಬಿ, ಅಥವಾ ಯಾವುದನ್ನೂ ಬೇಡ.",
+    setupWait: "ಕಾಯಿರಿ...", setupReady: "ಸಿದ್ಧ: ಈಗ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ", setupWaitNote: "ಕೋಡ್ ತೋರಿಸಿ ಸುಮಾರು 15 ಸೆಕೆಂಡ್ ನಂತರ ಕೆಲಸ ಮಾಡಲು ಶುರುವಾಗುತ್ತದೆ. ಕೆಳಗಿನ ಪಟ್ಟಿ ಹಸಿರಾಗುವವರೆಗೆ ಕಾಯಿರಿ, ನಂತರ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಅದಕ್ಕೂ ಮೊದಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿದರೆ ಇನ್ನೂ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ.",
+    cardQr: "ಅಥವಾ ಫೋನ್ ಕ್ಯಾಮೆರಾದಿಂದ ಇದನ್ನು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ:", cardMachine: "ಈ ಕನ್ನಡವನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಬಲ್ಲವರು ಇನ್ನೂ ಪರಿಶೀಲಿಸಿಲ್ಲ.",
   },
 };
 
@@ -101,6 +125,10 @@ ${notice === "bad" ? html`<div class="notice" role="alert">${w.bad}</div>` : ""}
 ${v.canChoose ? html`<label class="field"><span>${w.choice}</span><select name="pages"><option value="own" ${s.pages === "own" ? raw("selected") : ""}>${w.own}</option><option value="hub" ${s.pages === "hub" ? raw("selected") : ""}>${w.hub}</option></select></label>` : ""}
 <label class="field"><span>${w.slug}</span><input name="slug" value="${s.slug ?? ""}" maxlength="40" pattern="[a-z0-9][a-z0-9-]{1,38}[a-z0-9]" autocapitalize="none" spellcheck="false"></label><p class="note">${w.slugNote}</p>
 <label class="field"><span>${w.whatsapp}</span><input name="whatsapp" type="tel" value="${s.whatsapp ?? ""}" maxlength="13" pattern="\\+91[0-9]{10}"></label><p class="note">${w.whatsappNote}</p>
+<label class="field"><span>${w.shopPhone}</span><input name="phone" type="tel" value="${s.phone ?? ""}" maxlength="16" pattern="\\+[0-9]{10,15}"></label><p class="note">${w.shopPhoneNote}</p>
+<label class="field"><span>${w.map}</span><input name="map" type="url" value="${s.map ?? ""}" maxlength="300"></label><p class="note">${w.mapNote}</p>
+<label class="field"><span>${w.partnerName}</span><input name="partnerName" value="${s.partner?.name ?? ""}" maxlength="60"></label>
+<label class="field"><span>${w.partnerPhone}</span><input name="partnerPhone" type="tel" value="${s.partner?.phone ?? ""}" maxlength="16" pattern="\\+[0-9]{10,15}"></label><p class="note">${w.partnerNote}</p>
 <button class="btn" type="submit">${w.save}</button></form>
 <h3>${w.signin}</h3><p class="note">${w.signinNote}</p>
 ${notice === "removed" ? html`<div class="notice" role="status">${w.removed}</div>` : ""}
@@ -114,18 +142,28 @@ ${notice === "ended" ? html`<div class="notice" role="status">${w.ended}</div>` 
 <form method="post" action="/shops/${id}/owner-sessions/end">${csrf(c)}<button class="btn danger" type="submit">${w.endAll}</button></form>`;
 }
 
-/** Item 11h: the setup QR code, shown once. Its address is the owner's view's own (the runtime checks the passkey against that origin). */
+/**
+ * Item 11h: the setup QR code, shown once. Its address is the owner's view's own (the runtime checks the passkey against that origin). Batch 3: the deployer hands the
+ * code to the runtime within one pass (10 s), and a scan before that was counted as a wrong guess; the page now says "wait until this turns green", with a bar that
+ * turns green by itself after 15 s (CSS only: the panel runs no script, and the code is shown once, so nothing here can ask the runtime).
+ */
 export function ownerSetupPage(c: Ctx, id: string, url: string, until: Date): string {
   const w = WORDS[c.lang];
   const time = until.toISOString().slice(11, 16);
-  return layout(c, w.setupTitle, html`<h1>${w.setupTitle}</h1><figure class="qr">${raw(textQrSvg(url, { width: 280 }))}</figure>
+  return layout(c, w.setupTitle, html`<h1>${w.setupTitle}</h1><div class="ready" role="status"><span class="ready-wait">${w.setupWait}</span><span class="ready-go">${w.setupReady}</span></div><p class="note">${w.setupWaitNote}</p><figure class="qr">${raw(textQrSvg(url, { width: 280 }))}</figure>
 <div class="notice" role="note">${w.setupNote(`${time} UTC`)}</div><p><small class="note"><code class="addr">${url}</code></small></p><p><a href="/shops/${id}">${w.back}</a></p>`);
 }
 
-/** Item 11h: the recovery card, shown once, made to be printed: the shop, the codes in two groups of five, and where the owner types one. */
-export function recoveryCardPage(c: Ctx, id: string, shopName: string, codes: readonly string[], recoverUrl: string): string {
+/**
+ * Item 11h: the recovery card, shown once, made to be printed. Batch 3: the part the owner keeps (the card itself) is in the OWNER's language, not the partner's, and
+ * carries a QR for the recovery address (opened in the owner's language) beside the address in large type; the partner's own instructions stay in the panel's.
+ */
+export function recoveryCardPage(c: Ctx, id: string, shopName: string, codes: readonly string[], recoverUrl: string, ownerLanguage: Language = c.lang): string {
   const w = WORDS[c.lang];
+  const o = WORDS[ownerLanguage];
   return layout(c, w.cardTitle, html`<h1>${w.cardTitle}: ${shopName}</h1><div class="notice" role="note">${w.cardNote}</div>
+<section class="owner-card" lang="${ownerLanguage}"><h2>${o.cardTitle}: ${shopName}</h2>${o.cardMachine ? html`<p class="note">${o.cardMachine}</p>` : ""}
 <ol class="codes">${codes.map((code) => html`<li>${printedCode(code)}</li>`)}</ol>
-<p><b>${w.cardOwner(recoverUrl)}</b></p><p class="note">${w.printNote}</p><p><a href="/shops/${id}">${w.back}</a></p>`);
+<p><b>${o.cardOwner(recoverUrl)}</b></p><p class="note">${o.cardQr}</p><figure class="qr">${raw(textQrSvg(`${recoverUrl}?lang=${ownerLanguage}`, { width: 180 }))}</figure></section>
+<p class="note">${w.printNote}</p><p><a href="/shops/${id}">${w.back}</a></p>`);
 }

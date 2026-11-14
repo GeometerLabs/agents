@@ -1,7 +1,7 @@
 // A shop's page on the pages domain, the server's side (plan item 11f, decision 44). Used by the deployer's loop (apply.ts runPages), by the panel (which writes the
 // shop's choice and reads what came of it) and by the tests.
 //
-//   shops/<shop>/page.json            DESIRED, the panel writes it: {"schema": 1, "pages": "hub" | "own", "slug": "veena-salon", "whatsapp": "+919800000000"}.
+//   shops/<shop>/page.json            DESIRED, the panel writes it: {"schema": 1, "pages": "hub" | "own", "slug": "veena-salon", "whatsapp": "+919800000000", "phone", "map", "partner": {"name","phone"}}.
 //                                     "hub": a slug and a page id on the pages domain (fleet's registry), served through the front door. "own": the shop's
 //                                     views are at https://<this server>/s/<shop>/ only. Geometer's partner server is always "hub"; a builder's default is "own".
 //   shops/<shop>/owner-sessions.json  the panel's "sign out every device": {"schema": 1, "endBefore": "<ISO>"}
@@ -20,7 +20,7 @@ import { dirname, join, resolve } from "node:path";
 import { OWNER_SESSIONS_FILE } from "../../modules/channels/owner-access.ts";
 import { OWNER_GRANTS_FILE, RECOVERY_CODES, SETUP_MS, newRecoveryCode, newSetupToken, readOwnerGrants, recoveryHash, setupHash } from "../../modules/channels/owner-grants.ts";
 import type { OwnerGrants } from "../../modules/channels/owner-grants.ts";
-import { PAGES_FILE, readPagesFile } from "../../modules/channels/pages-file.ts";
+import { PAGES_FILE, PHONE_SHAPE, isMapLink, readPagesFile } from "../../modules/channels/pages-file.ts";
 import type { PagesFile } from "../../modules/channels/pages-file.ts";
 import { readSecretFile, secretFile } from "./secrets.ts";
 import { publicUrl, serverPaths } from "./server.ts";
@@ -36,7 +36,13 @@ const DAY_MS = 24 * 60 * 60_000;
 export const CLAIM_RETRY_MS = 10 * 60_000;
 
 /** What the panel chose for a shop. */
-export interface PageSettings { pages: "hub" | "own"; slug?: string; whatsapp?: string }
+export interface PageSettings {
+  pages: "hub" | "own"; slug?: string; whatsapp?: string;
+  /** Batch 5: the shop's own phone (any +country number, a landline too) and a map link, shown on every customer page. */
+  phone?: string; map?: string;
+  /** Batch 3: the partner who looks after the shop: name and the number to call or WhatsApp, shown at the top of the owner's app and on every error page. */
+  partner?: { name: string; phone: string };
+}
 /** What came of it, for the panel. */
 export interface PageStatus {
   schema: 1; at: string;
@@ -72,12 +78,15 @@ export function readPageSettings(dir: string, shop: string, hosted: boolean): Pa
     pages,
     ...(typeof f.slug === "string" && SLUG_SHAPE.test(f.slug) ? { slug: f.slug } : {}),
     ...(typeof f.whatsapp === "string" && WHATSAPP_NUMBER.test(f.whatsapp) ? { whatsapp: f.whatsapp } : {}),
+    ...(typeof f.phone === "string" && PHONE_SHAPE.test(f.phone) ? { phone: f.phone } : {}),
+    ...(isMapLink(f.map) ? { map: f.map } : {}),
+    ...(isObj(f.partner) && typeof f.partner.name === "string" && f.partner.name.length > 0 && f.partner.name.length <= 60 && typeof f.partner.phone === "string" && PHONE_SHAPE.test(f.partner.phone) ? { partner: { name: f.partner.name, phone: f.partner.phone } } : {}),
   };
 }
 
 /** The panel writes the shop's choice (checked by the panel's form first). */
 export function writePageSettings(dir: string, shop: string, s: PageSettings): void {
-  writeAtomic(pageSettingsFile(dir, shop), `${stableJson({ schema: 1, pages: s.pages, ...(s.slug ? { slug: s.slug } : {}), ...(s.whatsapp ? { whatsapp: s.whatsapp } : {}) })}\n`);
+  writeAtomic(pageSettingsFile(dir, shop), `${stableJson({ schema: 1, pages: s.pages, ...(s.slug ? { slug: s.slug } : {}), ...(s.whatsapp ? { whatsapp: s.whatsapp } : {}), ...(s.phone ? { phone: s.phone } : {}), ...(s.map ? { map: s.map } : {}), ...(s.partner ? { partner: s.partner } : {}) })}\n`);
 }
 
 /** The panel's "sign out every device": every owner session made before now ends (the runtime refuses it from its next request, and records it once). */
@@ -147,6 +156,9 @@ export function pagesFileFor(server: ServerConfig, shop: string, settings: PageS
     schema: 1, base, ownerBase: ownerBaseOf({ publicUrl: publicUrl(server), ...(server.pages ? { pagesDomain: server.pages.domain } : {}), shop, settings, status }),
     ...(claimed ? { slug: claimed.slug!, url: claimed.url!, ...(claimed.pageUrl ? { pageUrl: claimed.pageUrl } : {}) } : {}),
     ...(settings.whatsapp ? { whatsapp: settings.whatsapp } : {}),
+    ...(settings.phone ? { phone: settings.phone } : {}),
+    ...(settings.map ? { map: settings.map } : {}),
+    ...(settings.partner ? { partner: settings.partner } : {}),
     ...(server.panel.enabled ? { panelUrl: `${publicUrl(server)}/shops/${shop}` } : {}),
     ...(character ? { character: { version: character } } : {}),
   };

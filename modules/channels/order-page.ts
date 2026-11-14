@@ -80,7 +80,7 @@ ${items}${slots}${address}
 }
 
 /** An order's own page: where it has got to, what it is (at the shop's prices), how to pay while it is held, cancel, and the shop's messages. Refreshes itself while something is still to come. */
-export function orderPage(o: { shop: PageShop; offer: OrderOffer; language: Language; handle: string; view: OrderView | null; notice?: string; /** Money clarity: this response's script nonce, for the UPI box's script (front-orders.ts). */ nonce?: string }): string {
+export function orderPage(o: { shop: PageShop; offer: OrderOffer; language: Language; handle: string; view: OrderView | null; notice?: string; /** Money clarity: this response's script nonce, for the UPI box's script (front-orders.ts). */ nonce?: string; /** Item 11h, batch 3: "Tell me on this phone" (push/pages.ts customerAlertsBox), already drawn, for a live web order; it runs by the same nonce. */ alerts?: string }): string {
   const w = ORDER_PAGE[o.language];
   const p = PAGE[o.language];
   const s = o.offer.shop;
@@ -112,6 +112,6 @@ ${when ? html`<p>${when}</p>` : ""}<p><small class="note">${w.note(v.ref)}</smal
     shop: s, language: o.language, title, selfPath: self, ...(script ? { script } : {}),
     // held: look again every 15 s, so "Confirmed" shows once the owner marks the payment (with the script, only when something changed: the QR is not redrawn); waiting for the owner: every 30 s
     ...(v.status === "held" ? { refreshSeconds: 15 } : v.status === "checking" ? { refreshSeconds: 30 } : {}),
-    body: html`${script ? html`<div hidden data-poll="${self}" data-state="${[v.status, v.claimed ? "claimed" : "", v.messages.length].join(":")}"></div>` : ""}${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${what}${pay}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
+    body: html`${script ? html`<div hidden data-poll="${self}" data-state="${[v.status, v.claimed ? "claimed" : "", v.messages.length].join(":")}"></div>` : ""}${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${what}${pay}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}${o.alerts ? raw(o.alerts) : ""}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
   });
 }

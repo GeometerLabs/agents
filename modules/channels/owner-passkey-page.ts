@@ -21,6 +21,7 @@ import type { Language } from "../language/languages.ts";
 import type { ChannelBackend } from "./backend.ts";
 import type { Limiter } from "./limits.ts";
 import { RECOVERY_CODE, SETUP_TOKEN, normalCode } from "./owner-grants.ts";
+import { FIRST_WORDS } from "./words-owner-first.ts";
 
 /** The words of the passkey pages. Hindi, Malayalam and Kannada are machine-written and wait for native review (plan item 12); the page says so. */
 export interface PasskeyWords {
@@ -80,8 +81,19 @@ export const passkeyPolicy = (policy: string, nonce: string, connect: readonly s
  * the phone, posts the phone's answer back and goes where the answer says. `data-mode` is "register" or "signin". Nothing is kept in the browser.
  */
 export const PASSKEY_SCRIPT = `(() => {
-  const btn = document.getElementById("pk"), msg = document.getElementById("pk-msg");
-  if (!btn || !window.PublicKeyCredential || !navigator.credentials) return;
+  const btn = document.getElementById("pk"), msg = document.getElementById("pk-msg"), alt = document.getElementById("pk-alt");
+  if (!btn) return;
+  // a scanner's in-app browser (or an old browser) cannot make a passkey: the button stays hidden, so say so and offer Chrome (batch 3, release-flow-gaps)
+  if (!window.PublicKeyCredential || !navigator.credentials) {
+    if (alt) {
+      alt.hidden = false;
+      const cp = document.getElementById("pk-copy"), url = document.getElementById("pk-url");
+      if (cp) cp.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(cp.dataset.url); cp.textContent = cp.dataset.copied; } catch { if (url) { url.select(); } }
+      });
+    }
+    return;
+  }
   const d = btn.dataset;
   const bin = (s) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), (c) => c.charCodeAt(0));
   const txt = (b) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/, "");
@@ -93,6 +105,12 @@ export const PASSKEY_SCRIPT = `(() => {
   };
   const ids = (list) => (list || []).map((x) => ({ type: x.type, id: bin(x.id) }));
   btn.hidden = false;
+  // a phone with no screen lock cannot make or use a passkey (userVerification is required): say it before the press, not as a bare "that didn't work". A cancelled
+  // prompt gives the same error name, so the check is the phone's own answer, and a press that fails is worded by it
+  let noLock = false;
+  if (PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
+    PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then((ok) => { if (!ok) { noLock = true; msg.textContent = d.nolock; } }).catch(() => {});
+  }
   btn.addEventListener("click", async () => {
     btn.disabled = true; msg.textContent = d.wait;
     try {
@@ -110,18 +128,37 @@ export const PASSKEY_SCRIPT = `(() => {
       msg.textContent = d.done;
       location.href = done.next;
     } catch (e) {
-      msg.textContent = (e && e.j && e.j.message) || d.failed;
+      msg.textContent = (e && e.j && e.j.message) || (noLock || (e && e.name === "NotSupportedError") ? d.nolock : d.failed);
       btn.disabled = false;
     }
   });
 })();`;
 
-/** The button and its message line, with the words the script shows. */
-export function passkeyButton(o: { mode: "register" | "signin"; options: string; finish: string; label: string; language: Language; code?: string }): Raw {
+/**
+ * The button and its message line, with the words the script shows. `address` is this very page's address: when the phone's browser cannot make a passkey (a
+ * scanner's in-app browser), the script shows "Open in Chrome" (an Android intent link) and a copy button for it, so the owner is never left with a bare heading.
+ */
+export function passkeyButton(o: { mode: "register" | "signin"; options: string; finish: string; label: string; language: Language; code?: string; address?: string }): Raw {
   const w = PASSKEY_WORDS[o.language];
+  const f = FIRST_WORDS[o.language];
   // pk-slot keeps the button's place (look.ts), so showing it moves nothing; the button fills the width, the one way in on this page
-  return html`<p class="pk-slot"><button type="button" id="pk" class="full" hidden data-mode="${o.mode}" data-options="${o.options}" data-finish="${o.finish}" data-wait="${w.wait}" data-failed="${w.failed}" data-done="${w.done}"${o.code ? html` data-code="${o.code}"` : ""}>${o.label}</button></p>
-<p id="pk-msg" class="note" role="status" aria-live="polite"></p><noscript><p class="note">${w.noScript}</p></noscript>`;
+  return html`<p class="pk-slot"><button type="button" id="pk" class="full" hidden data-mode="${o.mode}" data-options="${o.options}" data-finish="${o.finish}" data-wait="${w.wait}" data-failed="${w.failed}" data-done="${w.done}" data-nolock="${f.noLock}"${o.code ? html` data-code="${o.code}"` : ""}>${o.label}</button></p>
+<p id="pk-msg" class="note" role="status" aria-live="polite"></p>${o.address ? chromeBlock(o.address, o.language) : ""}<noscript><p class="note">${w.noScript}</p></noscript>`;
+}
+
+/** The android intent address that opens an https page in Chrome (other phones use the copy button). */
+export function chromeIntent(address: string): string {
+  const u = new URL(address);
+  return `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.android.chrome;end`;
+}
+
+/** Shown by the script only when the browser cannot make a passkey: why, an "Open in Chrome" link and a copy button with the address to paste there. */
+function chromeBlock(address: string, language: Language): Raw {
+  const f = FIRST_WORDS[language];
+  return html`<div id="pk-alt" class="notice" hidden><p><b>${f.chromeTitle}</b></p><p>${f.chromeBody}</p>
+<p><a class="btn full" href="${chromeIntent(address)}">${f.chromeOpen}</a></p>
+<p><button type="button" id="pk-copy" class="quiet full" data-url="${address}" data-copied="${f.chromeCopied}">${f.chromeCopy}</button></p>
+<p><input id="pk-url" class="code" readonly value="${address}" aria-label="${f.chromeCopy}"></p></div>`;
 }
 
 /** What owner-session.ts lends these routes: its helpers, and how it draws a page and sets the session cookie. */
@@ -158,26 +195,30 @@ export async function passkeyRoute(deps: PasskeyDeps, a: { req: IncomingMessage;
   /** The shop's name, for the setup page's words (the runtime says it with the grant's state). */
   let shop = "";
   /** A grant the runtime does not know is a guess: counted per address, as a wrong sign-in link is. */
-  const stateOf = async (grant: Record<string, unknown>): Promise<string> => {
+  const stateOf = async (grant: Record<string, unknown>, freshQr = false): Promise<string> => {
     const r = await call({ op: "grant_state", grant });
     const state = typeof r.body.state === "string" ? r.body.state : "unknown";
     if (typeof r.body.shop === "string") shop = r.body.shop;
-    if (state === "unknown") deps.limiter.take("wrong", address);
+    // a well-formed QR token the runtime does not know yet is most likely a fresh QR scanned inside the deployer's 10 s: not a wrong guess (a 256-bit token cannot be
+    // guessed), only an act of this address, so a flood of such opens is still slowed
+    if (state === "unknown") deps.limiter.take(freshQr ? "act" : "wrong", address);
     return state;
   };
   /** The setup page, for the QR's token or a recovery code: the button, or why not. */
-  const setupPage = (state: string, endpoints: { options: string; finish: string }, code?: string): void => {
+  const setupPage = (state: string, endpoints: { options: string; finish: string }, code?: string, address?: string, fresh = false): void => {
     if (state !== "valid") {
-      const why = w.state[(state in w.state ? state : "unknown") as keyof PasskeyWords["state"]];
+      // a QR scanned in its first seconds is not yet known to the runtime (the deployer hands it over within 10 s): "wait and open it again", not "this code doesn't work"
+      const why = state === "unknown" && fresh ? FIRST_WORDS[language].notYet : w.state[(state in w.state ? state : "unknown") as keyof PasskeyWords["state"]];
       return deps.sendHtml(res, 410, deps.page(language, w.setupTitle, html`<h1>${w.setupTitle}</h1><p class="notice">${why}</p><p><a href="${owner}?lang=${language}">${w.signIn}</a></p>`), noindex);
     }
     const nonce = randomBytes(16).toString("base64");
-    const body = html`<h1>${w.setupTitle}</h1><p>${w.setupIntro(shop)}</p>${passkeyButton({ mode: "register", ...endpoints, label: w.setupButton, language, ...(code ? { code } : {}) })}`;
+    const body = html`<h1>${w.setupTitle}</h1><p>${w.setupIntro(shop)}</p>${passkeyButton({ mode: "register", ...endpoints, label: w.setupButton, language, ...(code ? { code } : {}), ...(address ? { address } : {}) })}`;
     deps.sendHtml(res, 200, deps.page(language, w.setupTitle, body, nonce), { ...noindex, "content-security-policy": passkeyPolicy(deps.policy, nonce, [endpoints.options, endpoints.finish]) });
   };
   /** The runtime's answer to a finished ceremony: the cookie and where to go, or why not. */
-  const finished = (r: { status: number; body: Record<string, unknown> }): void => {
-    if (r.status === 200 && typeof r.body.session === "string") return deps.sendJson(res, 200, { next: `${owner}/?lang=${language}` }, { "set-cookie": deps.cookie(r.body.session) });
+  // `first`: a new passkey just made (setup QR or recovery card): the app opens with alerts as step 2 of 2 (owner-page.ts firstSignIn)
+  const finished = (r: { status: number; body: Record<string, unknown> }, first = false): void => {
+    if (r.status === 200 && typeof r.body.session === "string") return deps.sendJson(res, 200, { next: `${owner}/?lang=${language}${first ? "&first=1" : ""}` }, { "set-cookie": deps.cookie(r.body.session) });
     const state = typeof r.body.state === "string" && r.body.state in w.state ? w.state[r.body.state as keyof PasskeyWords["state"]] : undefined;
     return deps.sendJson(res, 403, { message: state ?? w.failed });
   };
@@ -192,7 +233,7 @@ export async function passkeyRoute(deps: PasskeyDeps, a: { req: IncomingMessage;
     if (!setup[2]) {
       if (method !== "GET") return deps.sendHtml(res, 405, "<!doctype html><p>Use the page's button.</p>", { allow: "GET" });
       // a GET never uses the QR up (a scanner app may open it first): it only shows the button
-      return setupPage(await stateOf(grant), endpoints);
+      return setupPage(await stateOf(grant, true), endpoints, undefined, `${owner}/setup/${token}`, true);
     }
     if (method !== "POST") return deps.sendJson(res, 405, { message: "POST" }, { allow: "POST" });
     if (setup[2] === "/options") {
@@ -201,7 +242,7 @@ export async function passkeyRoute(deps: PasskeyDeps, a: { req: IncomingMessage;
       return deps.sendJson(res, 200, { options: r.body.options });
     }
     const body = await json();
-    return finished(await call({ op: "register", grant, response: body.response }));
+    return finished(await call({ op: "register", grant, response: body.response }), true);
   }
 
   // ---- the recovery card ----
@@ -217,7 +258,7 @@ export async function passkeyRoute(deps: PasskeyDeps, a: { req: IncomingMessage;
       const form = new URLSearchParams((await deps.readBody(req, 4096)) ?? "");
       const code = normalCode(form.get("code") ?? "");
       if (!RECOVERY_CODE.test(code)) { deps.limiter.take("wrong", address); return setupPage("unknown", { options: "", finish: "" }); }
-      return setupPage(await stateOf({ kind: "recovery", code }), { options: `${owner}/recover/options`, finish: `${owner}/recover/finish` }, code);
+      return setupPage(await stateOf({ kind: "recovery", code }), { options: `${owner}/recover/options`, finish: `${owner}/recover/finish` }, code, `${owner}/recover`);
     }
     const body = await json();
     const code = normalCode(typeof body.code === "string" ? body.code : "");
@@ -228,7 +269,7 @@ export async function passkeyRoute(deps: PasskeyDeps, a: { req: IncomingMessage;
       if (r.status !== 200) { if (r.body.state === "unknown") deps.limiter.take("wrong", address); return deps.sendJson(res, 403, { message: w.state[(r.body.state as keyof PasskeyWords["state"]) ?? "unknown"] ?? w.failed }); }
       return deps.sendJson(res, 200, { options: r.body.options });
     }
-    return finished(await call({ op: "register", grant, response: body.response }));
+    return finished(await call({ op: "register", grant, response: body.response }), true);
   }
 
   // ---- signing in with the passkey ----

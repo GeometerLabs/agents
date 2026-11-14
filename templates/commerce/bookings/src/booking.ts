@@ -120,6 +120,8 @@ export interface Booking {
    * how to pay; it cancels nothing and claims nothing (the customer does those on WhatsApp).
    */
   pageLink?: string;
+  /** The hashes of the page links sent before `pageLink` (the last three): a customer who opened the quote's link must still reach their page after the booked message carries a new one. */
+  pageLinksBefore?: string[];
   /** The name and number the customer typed (not verified): for the owner to call them. Never used to find the booking, and never messaged on WhatsApp. */
   contact?: { name?: string; phone: string };
 }
