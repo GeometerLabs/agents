@@ -4,6 +4,7 @@
 //    synchronously, so WebCrypto (which answers later) cannot be used without changing the record. This is plain SHA-256 in JavaScript.
 //    The tests compare it with Node's own on text in several scripts, so a browser's fingerprints equal a live shop's.
 //  - randomInt(max): the approvals relay's one-use codes (modules/approvals/code.ts), from the browser's own random numbers.
+//  - randomBytes(n).toString("base64url" | "hex"): the unguessable handle of a page link (modules/channels/handle.ts), which Fees and Orders now make.
 
 const primes: number[] = [];
 for (let n = 2; primes.length < 64; n++) if (primes.every((p) => n % p !== 0)) primes.push(n);
@@ -87,4 +88,15 @@ export function randomInt(minOrMax: number, max?: number): number {
   const draw = new Uint32Array(1);
   do globalThis.crypto.getRandomValues(draw); while (draw[0] >= limit);
   return min + (draw[0] % range);
+}
+
+/** Random bytes that can name themselves the two ways the shop's code asks (base64url for a page handle, hex), drawn from the browser's own random numbers. */
+export function randomBytes(size: number): Uint8Array & { toString(encoding?: "hex" | "base64url"): string } {
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(size)) as Uint8Array & { toString(encoding?: "hex" | "base64url"): string };
+  bytes.toString = (encoding) => {
+    if (encoding === "hex") return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+    if (encoding === "base64url") return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/u, "");
+    throw new Error(`The browser build can only write random bytes as hex or base64url, not ${encoding}.`);
+  };
+  return bytes;
 }

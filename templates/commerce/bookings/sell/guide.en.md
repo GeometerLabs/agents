@@ -114,7 +114,7 @@ Optional, 30 seconds: tap "Set up for this shop" and enter the shop's name, up t
 
 **Good to know**
 
-- In Malayalam and Kannada the demo's buttons, tabs and suggestions are still in English, and so is the reply to "Cancel the booking". To see the chat in Malayalam or Kannada, type the customer's message yourself: the Malayalam and Kannada guides give the sentences.
+- In Malayalam and Kannada the demo's buttons and tabs are in that language (machine-written, not yet read by a native speaker), while the owner's plain lines and the record are still in English. To see the chat in Malayalam or Kannada, type the customer's message yourself: the Malayalam and Kannada guides give the sentences.
 - If the shop is closed tomorrow (Glow Salon is closed on Sunday, so on a Saturday), the suggestions pick the next open day. In Malayalam and Kannada, change "tomorrow" in the sentence you type to "the day after tomorrow" (നാളെ becomes മറ്റന്നാൾ, ನಾಳೆ becomes ನಾಡಿದ್ದು).
 - For step 3 the booking must be less than 24 hours away. Look at the demo clock and the booking time in the chat, and tap "1 day passes" again if it is further away. On a Saturday it takes two taps.
 - The refund question also appears when a refund is above the owner's refund limit. The demo shows the late cancellation because it is quick to show.

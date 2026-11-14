@@ -149,7 +149,7 @@ export function mountDemo(element: HTMLElement, options: MountOptions = {}): Mou
   const local = createLocalDemo(options);
   const first = { pending: options.startWith !== "chat" };
   const fetchForPage = async (path: string, init?: { method?: string; body?: string }) => {
-    const answer = await local.fetch(path, init);
+    const answer = await local.ask(path, init);
     if (first.pending) {
       first.pending = false;
       win.setTimeout(() => find("btnSetup").click(), 0); // after the page has drawn the first screen: open the shop form
