@@ -92,7 +92,9 @@ export class Journal {
   private readonly owed = new Map<string, Owed>();
   private readonly bySeq = new Map<number, Line[]>();
 
-  constructor(private readonly legacy: LegacyMap) {}
+  private readonly legacy: LegacyMap;
+  // a plain field, not a parameter property: Node runs this file by stripping types, and it cannot strip that form
+  constructor(legacy: LegacyMap) { this.legacy = legacy; }
 
   addAll(entries: readonly RecordEntry[]): this {
     for (let i = this.seen; i < entries.length; i++) this.add(entries[i]);
