@@ -1198,3 +1198,10 @@ no subscriptions to go with them. A failure never stops the shop starting; the r
 
 **Proved** by `test/owner-keep.test.ts` with stand-ins (a software passkey, a fake push service): back up, restore onto a new machine, the owner signs in with the same passkey and an alert
 reaches the same subscription, signed with the same key and opened by the same phone; the bucket holds no plain subscription; the merge rules; a damaged file is refused.
+
+## The panel's side of the owner's first sign-in; the door's error pages (release-flow batches 3 and 5, 14 Nov 2026)
+
+- **Go-live waits for the owner.** `goLive.run` asks the shop's runtime (`/status`, `ownerAccess`) for the passkeys and the phones with alerts and stores the counts with the checks; `unmet` lists "owner-signin" for a shop with no WhatsApp until both are at least one. A shop with WhatsApp is not held back: its owner hears on WhatsApp.
+- **The setup QR page** says "Wait until this turns green": a bar that turns green by itself after 15 s, in CSS (the panel runs no script and the code is shown once; nothing here can ask the runtime). The recovery card is one boxed block in the owner's language (the shop's `owner.language`) with a QR for the recovery address, so the typed address is the second way.
+- **The shop's page form** also takes the shop's phone, a map link, and the partner's name and number (`page.json` -> `pages.json`, lib/pages.ts; each stage whitelists fields, so all four were changed together).
+- **The door's own pages** (services/door-pages.ts) are in English, Hindi, Malayalam or Kannada (the visitor's `?lang=`, else their browser's, else English). The door cannot ask a shop's front when the shop is down, so each front names its partner in `x-geometer-contact` on its pages; the door keeps the last one per shop (500 at most), removes the header before the visitor sees it, and puts "Need help? Name looks after this shop's page" with Call and WhatsApp on that shop's 502 page. No fleet change.
