@@ -86,7 +86,8 @@ test("an order's page lists its own receipts and serves them; another order's nu
   try {
     const first = await w.paidOrder(2, "98111 11111");
     const second = await w.paidOrder(1, "98222 22222");
-    for (const language of LANGUAGES) {
+    // this shop's page is in English and Hindi (its settings); the Money section below is in all four (the owner's own language)
+    for (const language of ["en", "hi"] as const) {
       const html = await (await w.page(`/order/${first}?lang=${language}`)).text();
       assert.ok(html.includes(`<h2>${DOC[language].receipts}</h2>`), `${language}: the Receipts heading`);
       assert.ok(html.includes(`/order/${first}/d/RCT%2F26-27%2F0001?lang=${language}`), `${language}: the link`);

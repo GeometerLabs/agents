@@ -96,7 +96,7 @@ function parseCsv(text: string): string[][] {
     else if (c === "\r" && text[i + 1] === "\n") { row.push(field); rows.push(row); row = []; field = ""; i++; }
     else field += c;
   }
-  assert.equal(field + row.length, "", "the file ends with a row ending");
+  assert.ok(field === "" && row.length === 0, "the file ends with a row ending");
   return rows;
 }
 const visible = (page: string) => page.replace(/<style>[\s\S]*?<\/style>/gu, " ").replace(/<[^>]+>/gu, " ").replace(/&#39;/gu, "'");
@@ -161,7 +161,7 @@ test("the owner's app shows the Money section in four languages; the panel's lin
       assert.ok(html.indexOf(words.title) > html.indexOf("<h2>"), `${language}: below the page's first heading`);
       for (const href of ["2026-11/journal-2026-11.csv", "2026-11/documents-2026-11.csv", "2026-11/README.txt", "2026-10/journal-2026-10.csv", "26-27/journal-26-27.csv"]) assert.ok(html.includes(`href="${w.ownerBase}/accounting/${href}"`), `${language}: ${href}`);
       const wa = /href="(https:\/\/wa\.me\/\?text=[^"]*)"/u.exec(html)?.[1] ?? "";
-      assert.equal(decodeURIComponent(wa.split("text=")[1]), words.shareText(`${MONTH_NAMES[language][10]} 2026`), `${language}: the share link holds the words only`);
+      assert.equal(decodeURIComponent(wa.split("text=")[1]).replace(/&#39;/gu, "'"), words.shareText(`${MONTH_NAMES[language][10]} 2026`), `${language}: the share link holds the words only`);
       assert.equal(/csv|@|\d{10}/u.test(decodeURIComponent(wa)), false, `${language}: no file and no number in the share link`);
       assert.deepEqual(bannedIn(visible(html), language), [], `${language}: claims`);
     }
