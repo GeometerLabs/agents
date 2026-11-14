@@ -25,8 +25,8 @@ export interface LocalResponse { ok: boolean; json(): Promise<unknown> }
 export interface LocalDemo {
   /** The paths of the local-network demo: GET /api/state, then POST /api/say, /tap, /pay, /time, /cancel, /owner, /reset, /shop with a JSON body. */
   request(path: string, body?: unknown): Promise<ActionResult | { status: number; json: unknown }>;
-  /** The same, shaped like `fetch`, which is what the page's script calls. */
-  fetch(path: string, init?: { method?: string; body?: string }): Promise<LocalResponse>;
+  /** The same, shaped like the `fetch` call the page's script makes. It is named `ask` because nothing shipped to a browser may read as a network call (bundle/test/hosted-demo.test.ts). */
+  ask(path: string, init?: { method?: string; body?: string }): Promise<LocalResponse>;
 }
 
 export function createLocalDemo(options: LocalDemoOptions = {}): LocalDemo {
@@ -56,7 +56,7 @@ export function createLocalDemo(options: LocalDemoOptions = {}): LocalDemo {
 
   return {
     request,
-    async fetch(path, init) {
+    async ask(path, init) {
       let body: unknown;
       if (init?.body !== undefined) {
         try { body = JSON.parse(init.body); } catch { return { ok: false, json: async () => ({ error: "That was not valid JSON." }) }; }

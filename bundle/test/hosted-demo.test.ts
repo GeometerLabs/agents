@@ -85,14 +85,15 @@ for (const lang of LANGS) {
     const before = quick.logs.customer.length;
     await quick.say("owner", chip);
     assert.ok(quick.logs.customer.length > before, "the confirmation reached the customer");
-    assert.equal(quick.ownerChips().length > 0, true);
+    assert.equal(quick.ownerChips().length, 0, "marked received, nothing waits for the owner, so no stale \"received\" suggestion is left");
   });
 
   test(`Fees in ${lang}, through the built modules: the first reminder is already there, the parent says they paid (nothing yet), then pays with test money`, async () => {
     const built = await load("demo/fees/index.js");
     const quick = built.createQuick(await built.makeShop(lang));
-    assert.equal(quick.logs.customer.length, 1, "the reminder went out on its own");
-    assert.match(quick.logs.customer[0].text, /pay\.example/u);
+    // One reminder per child: the Hindi example family (the Sharmas) has two children at the centre, every other family one.
+    assert.equal(quick.logs.customer.length, lang === "hi" ? 2 : 1, "the reminders went out on their own, one for each child");
+    for (const reminder of quick.logs.customer) assert.match(reminder.text, /pay\.example/u);
     assert.ok(quick.shop.payable());
     await quick.say("customer", quick.shop.chips[0]);
     assert.ok(quick.logs.owner.length >= 1, "the owner is asked to check");

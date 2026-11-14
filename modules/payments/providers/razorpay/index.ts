@@ -7,7 +7,7 @@
 //   runtime.ts  the wire code above as one GatewayRuntime (node only; this file stays plain data, because the agent and the browser demo read it)
 //   words.ts    what a person reads about Razorpay, in four languages
 //   SIGNUP.md   what a shop must open, and what it costs
-import { isObject } from "../../../core/http.ts";
+import { isObject } from "../../../core/json.ts"; // not http.ts: the browser demo ships this adapter and must not ship a file that makes network calls
 import type { PaymentProvider } from "../types.ts";
 import { RAZORPAY_GUARD } from "./guard.ts";
 import { RAZORPAY_WORDS } from "./words.ts";
