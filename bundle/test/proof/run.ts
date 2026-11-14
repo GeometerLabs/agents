@@ -81,6 +81,19 @@ const exec = (service: string, a: string[], o?: { input?: string; timeout?: numb
 const nodeEval = (service: string, code: string, timeout = 60_000) => exec(service, ["node", "-e", code], { timeout });
 const containerOf = (service: string) => dc(["ps", "-q", service]).out.trim();
 /** "Up 2 minutes (healthy)" -- and NOT "(unhealthy)", which also contains the word. */
+/**
+ * Every service of the project with its status, `ps -a` so a stopped container is listed too. With a hundred containers the command can be slow or fail; it is tried
+ * a few times and then FAILS with docker's own message, never an empty list that reads as "nothing is running" (the 14 Nov run showed "listed: 0" for 104 containers).
+ */
+function listServices(): string[][] {
+  let last = "";
+  for (let i = 0; i < 4; i++) {
+    const r = dc(["ps", "-a", "--format", "{{.Service}}\t{{.Status}}"], { timeout: 180_000 });
+    if (r.code === 0 && r.out.trim() !== "") return r.out.trim().split("\n").map((l) => l.split("\t"));
+    last = `exit ${r.code}: ${(r.err || r.out || "no output").trim().slice(0, 400)}`;
+  }
+  throw new Error(`docker compose ps could not list the services: ${last}`);
+}
 const healthy = (service: string) => /\(healthy\)/u.test(dc(["ps", service]).out);
 
 // ---------------------------------------------------------------------------------------------------------------------------------- the shops
@@ -336,17 +349,20 @@ async function main_(): Promise<void> {
 
     for (const size of SIZES.filter((s) => s > 1 && runs("load"))) {
       say(`\n== scale to ${size} shops ==`);
-      const have = Object.keys(loadState(SERVER).shops).length;
-      for (let i = have + 1; i <= size; i++) await addShop(i);
+      // By name, not by count: the earlier phases leave other shops on the server (the no-WhatsApp shop-80), so counting them would skip shop-02 and make every later
+      // check that names shop 2 (isolation, the load driver) talk to a shop that was never made (the 14 Nov run: sent 42, delivered 33, one shop's share refused).
+      const present = new Set(Object.keys(loadState(SERVER).shops));
+      for (let i = 2; i <= size; i++) if (!present.has(shopName(i))) await addShop(i);
       t0 = Date.now();
       const r = await deploy(ctx);
       results[`deploy${size}Seconds`] = Math.round((Date.now() - t0) / 1000);
-      check(`deploy ${size} shops: every Guard proven`, r.length === size && r.every((x) => x.proven.passed === x.proven.of), r.map((x) => x.proven.line).slice(0, 2));
+      const expectedShops = size + (present.has(shopName(NOWA_INDEX)) ? 1 : 0); // the kept no-WhatsApp shop is deployed with them
+      check(`deploy ${size} shops: every Guard proven`, r.length === expectedShops && r.every((x) => x.proven.passed === x.proven.of), r.map((x) => x.proven.line).slice(0, 2));
       await sleep(80_000);
       // `ps -a`, so a container that is not running is listed too (and named), not left out of the count; read again for up to a minute
       let mustBeHealthy: string[][] = []; let notHealthy: string[] = [];
       for (let i = 0; i < 7; i++) {
-        const ps = dc(["ps", "-a", "--format", "{{.Service}}\t{{.Status}}"]).out.trim().split("\n").map((l) => l.split("\t"));
+        const ps = listServices();
         mustBeHealthy = ps.filter(([n]) => /^(g-|rt-|inbox$|relay$|refresher$)/u.test(n));
         notHealthy = mustBeHealthy.filter(([, st]) => !/\(healthy\)/u.test(st ?? "")).map(([n, st]) => `${n}: ${st}`);
         if (notHealthy.length === 0 && mustBeHealthy.length >= size * 4 + 4) break;
@@ -954,7 +970,15 @@ async function trialLease() {
     await waitFor("the trial fleet", async () => { try { return (await fetch("http://127.0.0.1:18793/healthz", { signal: AbortSignal.timeout(2000) })).status < 500; } catch { return false; } }, 30);
 
     // ---- the first server goes; a new folder is paired (the code is exchanged once) and made with init --pairing
-    dc(["down", "-v", "--remove-orphans", "--timeout", "10"], { timeout: 600_000 });
+    const down = dc(["down", "-v", "--remove-orphans", "--timeout", "10"], { timeout: 600_000 });
+    if (down.code !== 0) say(`(compose down of the first server said: ${down.err.trim().slice(0, 300)})`);
+    // The paired server's networks have the same fixed subnets (server.network.base), so Docker refuses them while any of the first server's networks is still there
+    // ("Pool overlaps", the 14 Nov run, after 25 shops): wait until they are gone, and remove what is left (only geometer-proof_*, which this script made).
+    const leftNets = () => dk(["network", "ls", "-q", "--filter", `name=^${PROJECT}_`]).out.trim().split("\n").filter(Boolean);
+    if (!(await waitFor("the first server's networks to go", () => leftNets().length === 0, 60))) {
+      for (const n of leftNets()) dk(["network", "rm", n]);
+      if (leftNets().length > 0) throw new Error(`the first server's networks are still there: ${leftNets().join(" ")}`);
+    }
     rmSync(SERVER, { recursive: true, force: true }); mkdirSync(SERVER, { recursive: true });
     const paired = await pairServer({ dir: SERVER, fleetUrl: "http://127.0.0.1:18793", code: pairingCode, now: new Date() });
     check("pairing gives the server its id, fleet's licence key (the test key) and a signed trial lease", /^[a-z0-9-]+$/u.test(paired.deploymentId) && paired.licenceKeys.includes(TEST_PUBLIC_HEX) && !!paired.trialLease, { id: paired.deploymentId, keys: paired.licenceKeys.length, lease: !!paired.trialLease });
