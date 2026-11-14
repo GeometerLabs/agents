@@ -104,7 +104,7 @@ export class Journal {
   /** What the case holds in an account: debits less credits (an asset's balance; a liability's is the negative). */
   caseBalance(caseId: string | null, account: string): number { return this.balance.get(`${caseId}|${account}`) ?? 0; }
   /** The deposit or advance a case holds now, in paise. */
-  advancesOf(caseId: string): number { return -this.caseBalance(caseId, ACCOUNTS.advances.code); }
+  advancesOf(caseId: string): number { return 0 - this.caseBalance(caseId, ACCOUNTS.advances.code); } // 0 - x, not -x: no -0 for an empty case
   /** What a fee case is still owed (negative: paid beyond it). */
   receivableOf(caseId: string): number { return this.caseBalance(caseId, ACCOUNTS.receivable.code); }
   /** The lines one record entry gave (none: it was not money, or it could not be read). */
