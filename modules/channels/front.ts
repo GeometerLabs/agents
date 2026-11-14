@@ -43,6 +43,7 @@ import { OWNER, PAGE } from "./words.ts";
 import { bookingPage, statusPage } from "./page.ts";
 import { bookingIcs } from "./ics.ts";
 import { ownerLinkGone, ownerPage } from "./owner-page.ts";
+import { CONTACT_HEADER } from "./contact-bar.ts";
 import type { OwnerCred } from "./backend.ts";
 import { CSRF_HEADER, csrfMatches, ownerSessionRoute } from "./owner-session.ts";
 import type { PagesFile } from "./pages-file.ts";
@@ -100,6 +101,24 @@ export function withFace(backend: ChannelBackend, files: (() => CharacterFiles |
   };
 }
 
+/**
+ * Batch 5: every offer's shop carries the shop's own phone and map link from its pages.json, so every customer page (the front page, a booking's, an order's, a fee's,
+ * and each "not found" or "waiting" state) can show "Call the shop" and a map link without each page being handed the file. Read per request, like the face.
+ */
+export function withContact(backend: ChannelBackend, pages: (() => PagesFile | undefined) | undefined): ChannelBackend {
+  if (!pages) return backend;
+  const add = <T extends { shop: { contact?: { phone?: string; map?: string } } }>(o: T): T => {
+    const p = pages();
+    return p && (p.phone || p.map) ? { ...o, shop: { ...o.shop, contact: { ...(p.phone ? { phone: p.phone } : {}), ...(p.map ? { map: p.map } : {}) } } } : o;
+  };
+  return {
+    ...backend,
+    offer: async (q) => add(await backend.offer(q)),
+    ...(backend.orderOffer ? { orderOffer: async () => add(await backend.orderOffer!()) } : {}),
+    ...(backend.feesOffer ? { feesOffer: async () => add(await backend.feesOffer!()) } : {}),
+  };
+}
+
 /** Item 11h: what front.ts lends the per-template routes (front-orders.ts, front-fees.ts), so every route answers, counts and checks the same way. */
 export interface FrontKit {
   limiter: Limiter;
@@ -113,6 +132,8 @@ export interface FrontKit {
   readBody(req: IncomingMessage, max: number): Promise<string | undefined>;
   languageOf(req: IncomingMessage, url: URL, offered: readonly Language[], form?: URLSearchParams): Language;
   sameOrigin(req: IncomingMessage, shop: FrontShop): boolean;
+  /** The content policy of a customer page that runs the alerts script (customerPagePolicy), for the per-template routes. */
+  customerPolicy(page: string, nonce: string): string;
 }
 /** One request, as front.ts has read it: the shop (its addresses already under the pages domain when the door sent it), its name, the path under it, the visitor. */
 export interface RouteArgs { req: IncomingMessage; res: ServerResponse; url: URL; shop: FrontShop; name: string; rest: string; method: string; address: string; pages?: PagesFile }
@@ -236,7 +257,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const origin = req.headers.origin;
     return origin === undefined || origin === new URL(shop.publicUrl).origin;
   };
-  const kit: FrontKit = { limiter, log, ...(options.waitMs !== undefined ? { waitMs: options.waitMs } : {}), maxForm: MAX_FORM, maxJson: MAX_JSON, sendHtml, sendJson, redirect, readBody, languageOf, sameOrigin };
+  const kit: FrontKit = { limiter, log, ...(options.waitMs !== undefined ? { waitMs: options.waitMs } : {}), maxForm: MAX_FORM, maxJson: MAX_JSON, sendHtml, sendJson, redirect, readBody, languageOf, sameOrigin, customerPolicy: customerPagePolicy };
 
   async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", "http://front");
@@ -248,7 +269,11 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const door = req.headers[DOOR_HEADER];
     const doorShop: FrontShop = typeof door === "string" && pages?.slug !== undefined && pages.url !== undefined && door === pages.slug ? { ...found, publicUrl: pages.url } : found;
     // item 11i: every offer a page is drawn from carries the shop's public face (withFace)
-    const shop: FrontShop = found.character ? { ...doorShop, backend: withFace(doorShop.backend, found.character) } : doorShop;
+    const withPicture: FrontShop = found.character ? { ...doorShop, backend: withFace(doorShop.backend, found.character) } : doorShop;
+    // batch 5: and the shop's phone and map link (withContact)
+    const shop: FrontShop = found.pages ? { ...withPicture, backend: withContact(withPicture.backend, found.pages) } : withPicture;
+    // batch 3: name the shop's partner for the door, whose error pages (a shop that is down) have nobody else to ask; the door keeps it and never passes it on
+    if (typeof door === "string" && pages?.partner) res.setHeader(CONTACT_HEADER, Buffer.from(JSON.stringify({ n: pages.partner.name, p: pages.partner.phone }), "utf8").toString("base64url"));
     const name = m[1];
     const rest = m[2] ?? "";
     const method = req.method ?? "GET";
@@ -544,7 +569,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const fallback: Language = (LANGUAGES.includes(url.searchParams.get("lang") as Language) ? url.searchParams.get("lang") : "en") as Language;
     const gone = () => {
       if (o.onGone) return o.onGone(); // a session that ended is not a guess: no wrong count, back to sign in
-      limiter.take("wrong", address); return json ? sendJson(res, 403, { error: { code: "denied_link", message: OWNER.en.result.denied_link } }) : sendHtml(res, 403, ownerLinkGone(fallback), { "x-robots-tag": "noindex" });
+      limiter.take("wrong", address); return json ? sendJson(res, 403, { error: { code: "denied_link", message: OWNER.en.result.denied_link } }) : sendHtml(res, 403, ownerLinkGone(fallback, shop.pages?.()?.partner), { "x-robots-tag": "noindex" });
     };
     const slow = (retry: string) => (json ? sendJson(res, 429, { error: { code: "too_many", message: PAGE.en.tooMany } }, { "retry-after": retry }) : sendHtml(res, 429, `<!doctype html><meta charset="utf-8"><p>${PAGE.en.tooMany}</p>`, { "retry-after": retry }));
     if (limiter.over("wrong", address)) return slow("3600");
@@ -658,7 +683,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), bare: true }) : undefined;
     // item 11i: the owner's app shows the character in the shop's real mood (all five moods: this is the owner's own view)
     const facePic = state.view.app ? shop.character?.()?.picture(state.view.app.face, "svg") : undefined;
-    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
+    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
   }
 
   return (req, res) => {

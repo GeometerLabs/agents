@@ -35,6 +35,8 @@ export interface ShopInfo {
    * publicFace), from the runtime. `picture` is added by the front, never by the runtime: that mood's SVG as a data: address (front.ts withFace).
    */
   character?: { name?: string; face?: Face; picture?: string };
+  /** Batch 5: the shop's own phone and map link, from its pages.json (the front adds them to every offer: front.ts withContact), so every customer page can show them. */
+  contact?: { phone?: string; map?: string };
 }
 export interface Offer { shop: ShopInfo; services: OfferService[]; serviceId?: string; days?: { date: string; starts: number[] }[]; calendarUnread?: boolean }
 

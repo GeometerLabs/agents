@@ -123,6 +123,10 @@ footer a { display: inline-block; padding: 11px 0; }
 .item .amt { font-size: 1.3rem; font-weight: 800; }
 .item p { margin: 0 0 .5em; }
 .item h3 { margin: 8px 0 2px; }
+/* who to call (contact-bar.ts): the partner's name with Call and WhatsApp, and the shop's own call and map links; 44 px tall taps */
+.who { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 14px; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; font-size: .95rem; }
+.who b { flex: 1 1 100%; }
+.who .btn { flex: 1 1 auto; margin: 0; min-height: 44px; }
 /* the owner's sign-in pages: the passkey button's place is kept while its script decides to show it, so nothing below moves */
 .signin { padding-top: 28px; }
 .pk-slot { min-height: 60px; margin: 0; }
