@@ -30,6 +30,7 @@ import type { ChannelBackend, OwnerCred } from "./backend.ts";
 import type { Limiter } from "./limits.ts";
 import type { PagesFile } from "./pages-file.ts";
 import { PAGE } from "./words.ts";
+import { SIGNIN_CSS } from "./look.ts";
 import { PASSKEY_SCRIPT, PASSKEY_WORDS, isPasskeyRoute, passkeyButton, passkeyPolicy, passkeyRoute } from "./owner-passkey-page.ts";
 
 export const OWNER_COOKIE = "__Secure-geo-owner";
@@ -112,10 +113,6 @@ export const SIGNIN_WORDS: Record<Language, Words> = {
 /** Geometer's account page, where a partner or builder signs in (on geometer.dev, a different domain from the shop pages: no sign-in crosses between them). */
 export const ACCOUNT_URL = "https://geometer.dev/account";
 
-const CSS = `body{margin:0;color:#10231a;font:17px/1.5 system-ui,-apple-system,"Segoe UI","Noto Sans","Noto Sans Devanagari","Noto Sans Malayalam","Noto Sans Kannada",sans-serif}
-main{max-width:30rem;margin:0 auto;padding:24px 16px 40px}h1{font-size:1.3rem}.note{color:#4b5d52;font-size:.92rem}.notice{background:#fffbeb;color:#92400e;padding:8px 10px;border-radius:8px}
-button,.btn{display:inline-block;margin-top:12px;font-size:1.05rem;padding:12px 18px;border-radius:10px;border:0;background:#15803d;color:#fff;text-decoration:none;cursor:pointer}
-footer{margin-top:28px;border-top:1px solid #cfe3d6;padding-top:10px;font-size:.88rem;color:#4b5d52}a{color:#15803d}`;
 
 /** The partner's small line: their account on geometer.dev and the server's panel. Links only; no sign-in crosses to the pages domain (Explanation.md says why). */
 export function partnerLine(language: Language, panelUrl?: string): Raw {
@@ -123,11 +120,15 @@ export function partnerLine(language: Language, panelUrl?: string): Raw {
   return html`<footer><span>${w.partner}</span> <a href="${ACCOUNT_URL}" rel="noopener">${w.account}</a>${panelUrl ? html` · <a href="${panelUrl}" rel="noopener">${w.panel}</a>` : ""}</footer>`;
 }
 
-/** A sign-in page. `nonce`: the page carries the passkey script (item 11h), run by that nonce in the response's own policy. */
+/**
+ * A sign-in page. `nonce`: the page carries the passkey script (item 11h), run by that nonce in the response's own policy. The look is the shops' shared one
+ * (look.ts SIGNIN_CSS, item 11i's design pass): the same buttons, fields and notes as the shop's pages, the way in first.
+ */
 function page(language: Language, title: string, body: Raw, nonce?: string): string {
   const machine = PAGE[language].machine;
-  return `<!doctype html>${html`<html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer"><title>${title}</title><style>${raw(CSS)}</style></head><body><main>
-${machine ? html`<p class="notice">${machine}</p>` : ""}${body}</main>${nonce ? html`<script nonce="${nonce}">${raw(PASSKEY_SCRIPT)}</script>` : ""}</body></html>`.markup}`;
+  // the referrer: the origin only (front.ts PAGE_REFERRER: "no-referrer" makes a browser post the sign-in forms with Origin: null, which are then refused)
+  return `<!doctype html>${html`<html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="strict-origin"><title>${title}</title><style>${raw(SIGNIN_CSS)}</style></head><body><main class="wrap signin">
+${machine ? html`<p class="machine">${machine}</p>` : ""}${body}</main>${nonce ? html`<script nonce="${nonce}">${raw(PASSKEY_SCRIPT)}</script>` : ""}</body></html>`.markup}`;
 }
 
 /** "Open my app" on WhatsApp, as a wa.me link with the words filled in: the way to sign in that always works (the owner's message opens the window). */
@@ -147,8 +148,9 @@ export function signinPage(o: { base: string; language: Language; pages: PagesFi
 <p class="note">${p.note}</p><p class="note"><a href="${owner}/recover?lang=${o.language}">${p.recoverLink}</a></p>`
     : "";
   const whatsapp = wa
-    ? html`<form method="post" action="${owner}/signin"><input type="hidden" name="lang" value="${o.language}"><button type="submit"${o.passkeys ? raw(' class="btn" style="background:#4b5d52"') : ""}>${w.send}</button></form>
-<p class="note">${w.nothingCame}</p><p><a class="btn" href="${waOpenMyApp(wa)}" rel="noopener">${w.askOnWhatsapp}</a></p>`
+    // with passkeys on, the WhatsApp link is the second way in: an outline under the fingerprint button
+    ? html`<form method="post" action="${owner}/signin"><input type="hidden" name="lang" value="${o.language}"><button type="submit" class="${o.passkeys ? "quiet full" : "full"}">${w.send}</button></form>
+<p class="note">${w.nothingCame}</p><p><a class="btn wa full" href="${waOpenMyApp(wa)}" rel="noopener">${w.askOnWhatsapp}</a></p>`
     : o.passkeys ? "" : html`<p class="note">${w.noWhatsapp}</p>`;
   const intro = o.sent ? html`<p class="notice" role="status">${w.sent}</p>` : html`<p>${wa || !o.passkeys ? w.intro : p.introNoWhatsapp}</p>`;
   return page(o.language, w.title, html`<h1>${w.title}</h1>
@@ -166,7 +168,7 @@ export function linkPage(o: { base: string; link: string; language: Language; st
   const w = SIGNIN_WORDS[o.language];
   if (o.state === "valid") {
     return page(o.language, w.linkTitle, html`<h1>${w.linkTitle}</h1><p>${w.linkValid}</p>
-<form method="post" action="${o.base}/owner/in/${o.link}"><input type="hidden" name="lang" value="${o.language}"><button type="submit">${w.signIn}</button></form>`);
+<form method="post" action="${o.base}/owner/in/${o.link}"><input type="hidden" name="lang" value="${o.language}"><button type="submit" class="full">${w.signIn}</button></form>`);
   }
   return page(o.language, w.linkTitle, html`<h1>${w.linkTitle}</h1><p class="notice">${w.state[o.state]}</p><p><a class="btn" href="${o.base}/owner?lang=${o.language}">${w.askAgain}</a></p>`);
 }

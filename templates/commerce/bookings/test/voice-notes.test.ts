@@ -7,7 +7,7 @@ import { CUSTOMER, createWorld } from "../src/harness.ts";
 import type { World } from "../src/harness.ts";
 import { createVoice } from "../../../../modules/voice/voice.ts";
 import type { VoiceService } from "../../../../modules/voice/voice.ts";
-import { fakeVoiceNote, scriptedSpeech, scriptedWire } from "../../../../modules/voice/standin.ts";
+import { fakeVoiceNote, fakeWebmVoiceNote, scriptedSpeech, scriptedWire } from "../../../../modules/voice/standin.ts";
 import { sttCostMicroInr } from "../../../../modules/voice/speech.ts";
 import { summarizeUsage } from "../../../../bundle/lib/usage.ts";
 import { parseWhatsAppWebhook } from "../../../../modules/messaging/webhooks.ts";
@@ -186,6 +186,17 @@ test("with the assistant, the owner's voice note is heard and read like their ty
   const usage = summarizeUsage(w.record.entries(), {});
   assert.equal(usage.modelMicroInr, listen, "the cost meter counts it as the shop's AI spend");
   assert.equal(usage.messages, 0, "an owner's note is never counted as a customer message");
+});
+
+test("a WebM recording from the owner's page (item 11i: what Android's Chrome records) is heard like an Ogg one: its length read from the bytes, the cost counted once", async () => {
+  const drop = createAudioDrop({ now: () => Date.UTC(2026, 10, 3, 4, 30) });
+  const ref = drop.put(fakeWebmVoiceNote(SECONDS), "audio/webm; codecs=opus");
+  const { w, speech } = voiceWorld({ settings: withAssistant(), transcript: { text: "close tomorrow", language: "en", confidence: 0.95 }, pageAudio: (r) => drop.get(r) });
+  await w.agent.handle({ kind: "owner_message", id: "page-webm-1", text: "", voice: ref });
+  assert.equal(speech.calls.length, 1, "listened to once");
+  assert.match(speech.calls[0].detail, /^audio\/webm; codecs=opus /u, "handed on as WebM");
+  assert.deepEqual(w.store.assistant?.closedDays, ["2026-11-04"], "read like typed words");
+  assert.equal(summarizeUsage(w.record.entries(), {}).modelMicroInr, sttCostMicroInr(RATE, SECONDS), "priced by the length in its bytes");
 });
 
 test("a spoken fixed phrase goes through the fixed phrases first, and its cost is still on the owner_assistant line", async () => {

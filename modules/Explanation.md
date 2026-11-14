@@ -765,6 +765,67 @@ phone and no recording reaches the shop. The customer pages have no other free-t
 through the real runtime and front: the QR, a passkey, alerts both ways opened with the phones' keys, a page booking and payment, a refund marked from the alert and
 shown on the confirmation page, the passkey again, nothing on WhatsApp, the record) and `test/page-link.test.ts`; the bundle's in bundle/Explanation.md.
 
+## The design pass: a shop's pages and the owner's app (item 11i's first half; 14 Nov 2026)
+
+The owner, 12 Nov: "with the same care the site got". These are the screens a shop's customers and its owner use, mostly on budget Android phones: the page
+(`channels/page.ts`, `order-page.ts`, `fee-page.ts`), a booking's, order's or payment's own page, the owner's app (`owner-page.ts` with `assistant/app/talk.ts` and
+`push/pages.ts`) and the owner's sign-in pages (`owner-session.ts`, `owner-passkey-page.ts`). Visual and layout changes only; every route, form, field name, limit,
+policy and test stays, with two exceptions the owner asked for in the same item (below: WebM recordings).
+
+**One look** (`channels/look.ts`). Each of those files had its own small style sheet; they now share one, in three parts (the customer's pages, the owner's app,
+the sign-in pages), so a fix lands everywhere. It is Streetlist's look (streetlist.in, its `docs/Explanation.md` sections 7 to 9): limewash paper and ink, flat
+colours, one bold element, plain words. The owner's 14 Nov lessons from the two websites are its rules: colour, never a black-and-white newspaper; no purple haze
+or glows; no repeated decorative markers; readable chat bubbles (white text on coloured bubbles); clear states (stamps in their meaning's colour); nothing
+misaligned; compact.
+- **The head** (`shop-face.ts` `shopHead`, drawn by `layout()` on every customer page): a flat green tint, the shop's character on its own DiceBear tile at 84 px
+  with one soft shadow (the one bold element), the name and address, and who the character is with the mood in words as a chip in the mood's colour. The hours
+  and "message us on WhatsApp" stay on the front pages (`shopFace`). A page that reloads itself while it waits (`refreshSeconds`: a held booking every 15 s)
+  shows the head without the picture: a Pixel Bot face is about 24 KB inline and would be fetched again on every reload.
+- **States wear stamps** (`words-look.ts`, `page.ts` `stateBlock`): a short word over the sentence, in its meaning's colour: amber waits (held, checking, to pay),
+  green is done (booked, confirmed, paid, a refund sent), red did not happen (time's up, not held, not booked), grey is closed (cancelled, done). A refund is its
+  own block, coloured by where it stands. The sentence under each stamp is the words it always had.
+- **Choosing** is by tiles at least 44 px tall: services and items as cards with the price on the right, days as pills (the picked one ink), times and slots as
+  tiles. A time stays a real radio button inside its tile (keyboard, screen reader, no script), and the tile shows the pick through `input:checked + span`, which
+  every phone's browser has (no `:has()`).
+- **Paying** is one box everywhere (`upiBox`): the amount and who to, the button that opens the UPI app, the QR code on a white ground (a camera reads it in any
+  theme), what happens next, and "I have paid".
+- **Messages are bubbles**: the shop's to a customer in shutter green with white text, the time under each; the owner's own words in the talk box the same, the
+  assistant's on a card.
+- **The owner's app**: the head with the character in the shop's real mood (all five), each thing waiting as a card with a tag saying what it is ("Payment to
+  check", "Refund to approve", "Message to send"), the amount large and the two answers side by side (yes in green, no as an outline; each a form of its own, its
+  hidden fields in the order the tests and the runtime read them); "nothing waits" as a calm green line; the coming list as rows; the private-page note with a
+  padlock; the talk box's keyboard-mic hint with a microphone; Send and Hold to talk side by side.
+- **Budget phones**: the phone's own font (the pages' policy loads nothing, and Devanagari, Malayalam and Kannada are on every Android phone), more line height
+  for those scripts, no fixed heights or `nowrap` on anything with words, 360 px first. Nothing moves after the first paint: the passkey button's place is kept,
+  the record button sits beside Send, the dark/light switch has its own spot in the head. The sheet is written readable and shrunk at start (`min`): about 8 KB
+  on a customer page and on the owner's app, 5.7 KB on the sign-in pages (each page carried about 2 KB before). Pages are sent uncompressed today; Caddy's
+  `encode` on the shops' pages would take a sheet to about 3 KB (Deferred.md).
+- **Light by default; dark only when picked.** The owner's app has a sun/moon switch. Its one script (`look.ts` `themeScript`, in the head with the response's
+  nonce) sets a remembered dark pick on `<html>` before anything paints, then wires the switch and runs the talk box's and the alerts' code, so the page still runs
+  exactly one script (the Bookings channels test counts it); `talkBox` and `ownerAlertsBox` take `bare` to leave their own script out. Customer pages run no
+  script and keep no cookie, so a pick could not be remembered there: they stay light, and their dark is in Deferred.md. Nothing reads the phone's own setting.
+- **The face stays still.** DiceBear's "slow" animation would need a second, moving set of pictures per shop (the saved SVGs are still drawings) and twice the
+  bytes inline on every page; the owner's 14 Nov rule also rejected CSS imitations of life. Streetlist moves only its large hero characters. Deferred.md.
+
+**Forms in a real browser: the origin only, not no-referrer** (`front.ts` `PAGE_REFERRER`). The pass's screenshots in headless Chromium found that a real browser's
+form never got through: the pages said `Referrer-Policy: no-referrer`, and under it a browser posts every form with `Origin: null` (the Fetch standard, "append
+a request Origin header"), which the front's Origin check refuses with 403. So the booking, cancel, "I have paid", the owner's answers and the sign-in all failed in
+a browser; the tests post with fetch, which always sends the real Origin, so none had caught it. The pages now say `strict-origin` (the header, and the meta tag
+on the owner's pages): a Referer carries the origin only, never a page's address (a booking's handle, the owner's link), and the Origin check is as strict as
+before (`test/referrer.test.ts`: `Origin: null` and another site's are still refused). The panel and the door's pass-through for a builder's pages say
+`no-referrer` too (Deferred.md).
+
+**Recordings in WebM** (`voice/webm.ts`). Android's Chrome records only WebM Opus, so the talk box's Hold to talk showed only on Firefox. The page now records
+Ogg Opus where it can and WebM Opus otherwise (`talk.ts`); the front (`front.ts` `/voice`) and the runtime (`runtime/http.ts` `owner-voice`) take `audio/ogg` or
+`audio/webm` and nothing else, the runtime writing the type itself; and the voice service reads the length from the bytes, Ogg first, then WebM (`voice.ts`).
+A recording made by MediaRecorder is written while it is made, so it has no total length: its Segment and Clusters have unknown sizes and its Info no Duration.
+`webmOpusSeconds` counts as a player would: each Cluster's Timecode plus each Opus block's offset gives when the block starts, and the last block's start plus
+its own length (from the Opus packet's first byte, RFC 6716 section 3.1) is the end. It only reads, steps over everything else by its size, and answers null for
+anything that is not WebM or Matroska with an Opus track. Tested on a real recording Chromium made (`voice/test/fixtures/chromium-recording.webm`), on files laid out
+the same way (`standin.ts` `fakeWebmVoiceNote`), and through the Bookings agent; Geometer's speech service decodes WebM with the same ffmpeg step (its Python
+tests). The real recording is short (1.2 KB, from Chromium's test microphone, made on a busy machine): its packets have gaps (the cause was not looked into) and
+end at 2.49 s of the 3 recorded; the reader says 2.49 s, as ffprobe's packet list does. Voice stays off until the owner's sandbox step; Sarvam with WebM is not tried.
+
 ## The shop's assistant (item 11e, decision 43; 12 Nov 2026)
 
 Decision 43: a shop gets **one assistant, not a set of agent templates**. Bookings, Fees and Orders become its skills; the owner talks to the assistant by text or voice note

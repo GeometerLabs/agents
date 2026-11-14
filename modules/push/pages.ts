@@ -6,6 +6,10 @@
 // (that shop's owner view only), and a customer's is <page>/sw.js with scope <page>/ (that one booking's page only, e.g. <base>/b/<handle>/). Neither is ever served
 // for a builder's pages on the shared origin: the door serves those without script and refuses a worker's address (bundle/services/door.ts). A worker shows the
 // words it is pushed and, when tapped, opens its own scope: no address or code travels in a push.
+//
+// Item 11i's design pass (14 Nov 2026): both boxes take the shared look (modules/channels/look.ts) by class, with no inline styles; the owner's box is a card, and
+// a customer's box is a card only once its script shows it (a phone that cannot take alerts sees nothing at all). `bare` leaves the owner's script out: the
+// owner's page runs it inside its one script.
 import type { Language } from "../language/languages.ts";
 
 const esc = (s: string) => s.replace(/[&<>"']/gu, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -85,26 +89,26 @@ export const ALERTS_SCRIPT = `(() => {
   });
 })();`;
 
-/** The owner's box. `state`: what the runtime says (choice, phones, whether the shop has WhatsApp); `key`: the shop's VAPID public key. */
-export function ownerAlertsBox(o: { base: string; language: Language; key: string; state: { choice: string; phones: number; whatsapp: boolean }; csrf?: string; nonce?: string; notice?: string }): string {
+/** The owner's box. `state`: what the runtime says (choice, phones, whether the shop has WhatsApp); `key`: the shop's VAPID public key. `bare`: no script element. */
+export function ownerAlertsBox(o: { base: string; language: Language; key: string; state: { choice: string; phones: number; whatsapp: boolean }; csrf?: string; nonce?: string; notice?: string; bare?: boolean }): string {
   const w = ALERT_WORDS[o.language];
-  const radio = (v: string, label: string) => `<label style="display:block;margin:4px 0"><input type="radio" name="choice" value="${v}"${o.state.choice === v ? " checked" : ""}> ${esc(label)}</label>`;
+  const radio = (v: string, label: string) => `<label><input type="radio" name="choice" value="${v}"${o.state.choice === v ? " checked" : ""}> ${esc(label)}</label>`;
   const choice = o.state.whatsapp && o.state.phones > 0
-    ? `<form method="post" action="${esc(o.base)}/push/choice">${o.csrf ? `<input type="hidden" name="csrf" value="${esc(o.csrf)}">` : ""}<fieldset style="border:0;padding:0;margin:8px 0"><legend>${esc(w.choice)}</legend>${radio("whatsapp", w.whatsapp)}${radio("push", w.push)}${radio("both", w.both)}</fieldset><button type="submit">${esc(w.save)}</button></form>`
+    ? `<form method="post" action="${esc(o.base)}/push/choice">${o.csrf ? `<input type="hidden" name="csrf" value="${esc(o.csrf)}">` : ""}<fieldset><legend>${esc(w.choice)}</legend>${radio("whatsapp", w.whatsapp)}${radio("push", w.push)}${radio("both", w.both)}</fieldset><button type="submit" class="quiet">${esc(w.save)}</button></form>`
     : "";
-  return `<section class="alerts" aria-labelledby="alerts-h"><h2 id="alerts-h">${esc(w.title)}</h2><p class="note">${esc(w.intro)}</p>
+  return `<section class="alerts card" aria-labelledby="alerts-h"><h2 id="alerts-h">${esc(w.title)}</h2><p class="note">${esc(w.intro)}</p>
 ${o.notice ? `<p class="notice" role="status">${esc(o.notice)}</p>` : ""}<p class="note">${esc(o.state.phones > 0 ? w.on(o.state.phones) : w.off)}</p>
 <div id="alerts" hidden data-key="${esc(o.key)}" data-sw="${esc(o.base)}/sw.js" data-scope="${esc(o.base)}/" data-save="${esc(o.base)}/push/subscribe" data-stop="${esc(o.base)}/push/unsubscribe" data-reload="1"
  data-done="${esc(w.on(1))}" data-saved="" data-blocked="${esc(w.blocked)}" data-failed="${esc(w.failed)}"${o.csrf ? ` data-csrf="${esc(o.csrf)}"` : ""}>
 <button type="button" id="alerts-on">${esc(w.turnOn)}</button> <button type="button" id="alerts-off" class="no" hidden>${esc(w.turnOff)}</button><p id="alerts-msg" class="note" role="status" aria-live="polite"></p></div>
-<p class="note">${esc(w.iphone)}</p>${choice}</section>
-<script${o.nonce ? ` nonce="${esc(o.nonce)}"` : ""}>${ALERTS_SCRIPT}</script>`;
+<p class="note">${esc(w.iphone)}</p>${choice}</section>${o.bare ? "" : `
+<script${o.nonce ? ` nonce="${esc(o.nonce)}"` : ""}>${ALERTS_SCRIPT}</script>`}`;
 }
 
 /** A customer's button on one booking's or order's own page (`page`: its address, no trailing slash). */
 export function customerAlertsBox(o: { page: string; language: Language; key: string; phones: number; nonce: string }): string {
   const w = ALERT_WORDS[o.language];
-  return `<section class="alerts"><div id="alerts" hidden data-key="${esc(o.key)}" data-sw="${esc(o.page)}/sw.js" data-scope="${esc(o.page)}/" data-save="${esc(o.page)}/push"
+  return `<section class="alerts"><div id="alerts" class="card" hidden data-key="${esc(o.key)}" data-sw="${esc(o.page)}/sw.js" data-scope="${esc(o.page)}/" data-save="${esc(o.page)}/push"
  data-done="${esc(w.customerOn)}" data-saved="${esc(w.customerOn)}" data-blocked="${esc(w.blocked)}" data-failed="${esc(w.failed)}">
 <button type="button" id="alerts-on">${esc(w.customer)}</button><p id="alerts-msg" class="note" role="status" aria-live="polite">${o.phones > 0 ? esc(w.customerOn) : ""}</p><p class="note">${esc(w.customerNote)}</p></div></section>
 <script nonce="${esc(o.nonce)}">${ALERTS_SCRIPT}</script>`;
