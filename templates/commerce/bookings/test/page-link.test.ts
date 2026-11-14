@@ -40,7 +40,7 @@ test("the quote on WhatsApp carries the booking's own page link; the page shows 
   assert.deepEqual("messages" in v ? v.messages : undefined, [], "WhatsApp's messages are not kept for the page");
 });
 
-test("a typed or guessed link opens nothing; a link sent again replaces the old one, which then opens nothing", async () => {
+test("a typed or guessed link opens nothing; a link sent again does not kill the old one; only the last four links open the booking", async () => {
   const m = maker();
   const w = createWorld({ settings, pageLink: m.pageLink });
   await w.say("haircut tomorrow at 6pm");
@@ -48,13 +48,17 @@ test("a typed or guessed link opens nothing; a link sent again replaces the old 
   assert.equal(bookingView(settings, w.store, hashOf(randomBytes(24).toString("base64url"))), null, "a guessed link");
   assert.equal(bookingView(settings, w.store, hashOf(first.handle.slice(0, -1) + (first.handle.endsWith("A") ? "B" : "A"))), null, "one letter off");
   assert.equal(bookingView(settings, w.store, first.handle), null, "the handle itself, typed where its hash belongs");
-  // the customer writes again while the deposit waits: the same booking, a fresh link, and the old one stops
+  // the customer writes again while the deposit waits: the same booking, a fresh link; the old one stays good (batch 5: the booked message carries a link too, and
+  // must not kill the page the quote's link has open), until more than four newer ones have been sent
   await w.say("book a haircut tomorrow at 6pm");
   assert.ok(m.made.length >= 2, "a new message, a new link");
   const latest = m.made.at(-1)!;
   assert.ok(w.messaging.sentTo(CUSTOMER).at(-1)?.text.includes(latest.url) || w.messaging.sentTo(CUSTOMER).some((x) => x.text.includes(latest.url)));
-  assert.equal(bookingView(settings, w.store, first.hash), null, "the old link opens nothing");
+  assert.equal(bookingView(settings, w.store, first.hash)?.status, "held", "the old link still opens the booking");
   assert.equal(bookingView(settings, w.store, latest.hash)?.status, "held", "the new one opens the booking");
+  for (let i = 0; i < 5; i++) await w.say("book a haircut tomorrow at 6pm");
+  assert.equal(bookingView(settings, w.store, first.hash), null, "after more than four newer links the first opens nothing");
+  assert.equal(bookingView(settings, w.store, m.made.at(-1)!.hash)?.status, "held", "the newest still opens it");
   assert.equal([...w.store.bookings.values()].length, 1, "still one booking");
 });
 
