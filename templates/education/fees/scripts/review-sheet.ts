@@ -1,5 +1,6 @@
 // Writes the review sheet a native speaker fills in: every message the Fees agent sends in a language, with what it is meant to say, and every word and phrase it
 // understands from a parent in that language.
+//   node templates/education/fees/scripts/review-sheet.ts hi > templates/education/fees/REVIEW-hi.md
 //   node templates/education/fees/scripts/review-sheet.ts ml > templates/education/fees/REVIEW-ml.md
 //   node templates/education/fees/scripts/review-sheet.ts kn > templates/education/fees/REVIEW-kn.md
 // The sheet is made from the templates, the formatters and the word lists themselves, so it cannot drift from what the agent really says; a test
@@ -20,7 +21,7 @@ import { WORDS } from "../../../../modules/language/words.ts";
 import { reportStringRows, sampleOwnerText } from "../report/review.ts";
 import { sampleMessage } from "../report/whatsapp.ts";
 
-export type ReviewLanguage = "ml" | "kn";
+export type ReviewLanguage = "hi" | "ml" | "kn";
 
 /** When each message is sent, in a line, so the reviewer knows what the parent or the owner has just done. */
 const WHEN: Record<TemplateId, string> = {
@@ -107,6 +108,16 @@ const WHEN: Record<TemplateId, string> = {
 
 /** Parent sentences, in the language, with what they mean. The sheet shows what the agent reads from each. */
 export const EXAMPLES: Record<ReviewLanguage, [string, string][]> = {
+  hi: [
+    ["फीस भरने का लिंक भेजिए", "Send the link to pay the fee"],
+    ["मैंने फीस भर दी है", "I paid the fee"],
+    ["फीस अभी नहीं भरी है", "I have not paid the fee yet (not a claim of payment: nothing is marked paid)"],
+    ["फीस में 200 रुपये की छूट दे दीजिए", "Give a discount of 200 rupees on the fee"],
+    ["मुझे 500 रुपये का रिफंड चाहिए", "I want 500 rupees refunded"],
+    ["मुझे मालिक से बात करनी है", "I want to talk to the owner"],
+    ["fees bhar di, link nahi chahiye", "(Latin letters) I paid the fee, no link needed"],
+    ["मैसेज बंद करो", "Stop the messages"],
+  ],
   ml: [
     ["ഫീസ് അടയ്ക്കാനുള്ള ലിങ്ക് അയക്കാമോ?", "Can you send the link to pay the fee?"],
     ["ഞാൻ ഫീസ് അടച്ചു", "I paid the fee"],
@@ -154,7 +165,7 @@ function describeIntent(i: Intent): string {
 }
 
 /** The characters of a script, to split the mixed word lists: the language's own letters, and the Latin letters people type it in. */
-const SCRIPT: Record<ReviewLanguage, RegExp> = { ml: /[ഀ-ൿ]/u, kn: /[ಀ-೿]/u };
+const SCRIPT: Record<ReviewLanguage, RegExp> = { hi: /[ऀ-ॿ]/u, ml: /[ഀ-ൿ]/u, kn: /[ಀ-೿]/u };
 const LATIN = /^[\x20-\x7E]+$/u;
 
 /** The whole sheet for a language, as Markdown. */
@@ -210,12 +221,17 @@ export function reviewSheet(language: ReviewLanguage): string {
     feeRow("take money off the fee (a discount, a waiver)", "discount, concession, waive", FEE_WORDS.discount),
     feeRow("money back", "refund, money back", FEE_WORDS.refund),
     feeRow("talk to the owner", "owner, talk to", FEE_WORDS.owner),
+  ];
+  // the shared word lists (yes, no, stop, rupee, ...) have no Hindi entry (Hindi is read by the parser's own lists, listed above), as in the Orders sheet
+  if (language !== "hi") {
+    understood.push(
     ["yes (exact)", "yes", list(words.yes), ""], ["no (exact)", "no", list(words.no), ""], ["hello (exact)", "hello", list(words.greeting), ""],
     ["STOP, on its own or in a few words (exact)", "stop", list(words.stop), ""], ["STOP, as a phrase (the start; the last word may continue)", "stop the messages", list(words.stopPhrases), ""],
     ["rupee, after an amount: \"200 …\"", "rupees", list(words.rupee), ""],
     ["\"rules\", near a word for \"forget\" (a trick)", "rules, instructions", list(words.overrideTopics), ""], ["\"forget\", near a word for \"rules\" (a trick)", "forget, ignore, break", list(words.overrideVerbs), ""],
-    ["Latin-letter words that show the parent writes " + name, "(language hints)", list(words.hints), ""],
-  ];
+    ["Latin-letter words that show the parent writes " + name, "(language hints)", list(words.hints), ""]
+    );
+  }
   out.push(table(["Meaning", "English", `Words and phrases (${name} letters first, then the Latin letters people type it in)`, REVIEWER], understood), "");
   out.push("An amount is read from \"₹200\", \"200 rs\", \"200 रुपये\" or a plain number of 20 or more that is not part of a written date. The amount is what the parent asked; what the agent may do about it is decided by the centre's limits, not by the reading.", "");
 
@@ -245,8 +261,8 @@ export function reviewSheet(language: ReviewLanguage): string {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const language = process.argv[2];
-  if (language !== "ml" && language !== "kn") {
-    console.error("Say which language: node templates/education/fees/scripts/review-sheet.ts ml   (or kn)");
+  if (language !== "hi" && language !== "ml" && language !== "kn") {
+    console.error("Say which language: node templates/education/fees/scripts/review-sheet.ts hi   (or ml, kn)");
     process.exitCode = 1;
   } else {
     console.log(reviewSheet(language));
