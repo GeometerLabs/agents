@@ -87,6 +87,8 @@ export function parentView(settings: Settings, store: Store, linkHash: string): 
   const open = mine.filter((d) => d.state === "open").sort((a, b) => a.dueMs - b.dueMs);
   const settled = mine.filter((d) => d.state !== "open").sort((a, b) => b.dueMs - a.dueMs).slice(0, SETTLED_SHOWN);
   return {
+    // batch 3: the parent's stable ref (not the link, which is made again after a restart): what their page's alerts are keyed by (modules/runtime/http.ts)
+    ref: parentRef(parent),
     students: settings.students.filter((s) => s.parent === parent).map((s) => ({ name: s.name, batch: batchNames(settings, s.batchId) })),
     dues: [...open, ...settled].map((d) => feeLine(settings, store, d)),
   };

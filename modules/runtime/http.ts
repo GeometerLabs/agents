@@ -331,11 +331,15 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (op.startsWith("customer_")) {
         const handle = typeof body.handle === "string" ? body.handle : "";
         if (!HANDLE_HASH.test(handle)) return send(res, 400, { error: "handle is the handle's hash: 64 hex digits." });
-        const view = channel.view(handle) as { channel?: unknown } | null;
+        // batch 3 (Fees): a parent's private page has alerts too, keyed by the PARENT (`parent:<ref>`, the stable ref of their number), not by the link, which is made
+        // again at the first reminder after a restart. The Fees messaging pushes a message to the parent's number to this same conversation.
+        const parentView = channel.parent?.(handle) as { ref?: unknown } | null | undefined;
+        const parentWho = typeof parentView?.ref === "string" && /^p-[0-9a-f]{12}$/u.test(parentView.ref) ? `parent:${parentView.ref}` : undefined;
+        const view = parentWho ? null : channel.view(handle) as { channel?: unknown } | null;
         // only a page made on the page or through MCP: a WhatsApp customer hears on WhatsApp, and a fee page belongs to a parent who does
         const ch = view?.channel === "web" || view?.channel === "mcp" ? view.channel : undefined;
-        if (!ch) return send(res, 404, { error: "No page with alerts has this handle." });
-        const who = conversationOf(ch, handle);
+        if (!ch && !parentWho) return send(res, 404, { error: "No page with alerts has this handle." });
+        const who = parentWho ?? conversationOf(ch!, handle);
         if (op === "customer_subscribe") {
           const r = push.subscribe(who, body.subscription as BrowserSubscription);
           if (!r.ok) return send(res, 400, { error: r.why });

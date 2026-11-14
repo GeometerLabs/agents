@@ -117,7 +117,7 @@ export interface FeeLine {
   state: "open" | "paid" | "closed"; pay?: PayInstructions; canSayPaid: boolean; claimed: boolean;
 }
 /** What a parent's private link opens: that parent's students and their fees, and nothing of anyone else's. */
-export interface ParentView { students: { name: string; batch: Record<Language, string> }[]; dues: FeeLine[] }
+export interface ParentView { /** The parent's stable ref ("p-" and 12 hex digits), for the page's alerts: the runtime keys them by it, never by the link. */ ref?: string; students: { name: string; batch: Record<Language, string> }[]; dues: FeeLine[] }
 /**
  * A fee payment's confirmation page, by the handle the parent's press made. `confirmed` only when the centre's record shows the fee paid (the payments service's
  * own list, or the owner's mark on a UPI centre); `waiting` after "I have paid" until then.
