@@ -92,8 +92,8 @@ test("documents: a restore's jump is said as a skipped range, and a problem is c
   const rct = s.documents.find((d) => d.series === "RCT")!;
   assert.equal(rct.count, 2);
   assert.equal(rct.skipped.length, 1);
-  assert.match(rct.skipped[0].from, /\/0002$/);
-  assert.match(rct.skipped[0].to, new RegExp(`/${String(RESTORE_DOC_GAP + 1 - 1).padStart(4, "0")}$`));
+  assert.match(rct.skipped[0].from, /\/0003$/);
+  assert.match(rct.skipped[0].to, new RegExp(`/${RESTORE_DOC_GAP + 2}$`));
   assert.equal(s.problems, 1);
   const october = accountingSummary(journal(entries, LEGACY), new Date(at(10, 1, 0)).toISOString(), FROM, entries);
   assert.equal(october.problems, 0);
