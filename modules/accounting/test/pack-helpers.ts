@@ -10,10 +10,10 @@ const { privateKey } = generateKeyPairSync("ed25519");
 export const packOf = (entries: readonly RecordEntry[], tenant: string): any =>
   JSON.parse(JSON.stringify(evidencePack(ledgerEntries(entries, tenant), { tenant, now: Date.now(), key: privateKey })));
 
-/** A copy of the pack with the first received payment's amount made 100 paise larger: what a careless or dishonest edit would look like. Its hashes are left as they were. */
-export function withChangedAmount(pack: any): any {
+/** A copy of the pack with the first received payment's amount (inside the report's period, so the report's figures must move) made 100 paise larger: what a careless or dishonest edit would look like. Its hashes are left as they were. */
+export function withChangedAmount(pack: any, period: { from: string; to: string }): any {
   const copy = JSON.parse(JSON.stringify(pack));
-  const e = copy.entries.find((x: { body: string }) => /"money":"received"/.test(x.body));
+  const e = copy.entries.find((x: { body: string }) => { const t = (JSON.parse(x.body) as { time: string }).time; return /"money":"received"/.test(x.body) && t >= period.from && t < period.to; });
   if (!e) throw new Error("the pack has no received payment to change");
   e.body = e.body.replace(/"amountPaise":"(\d+)"/, (_m: string, n: string) => `"amountPaise":"${Number(n) + 100}"`);
   return copy;
