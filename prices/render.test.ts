@@ -1,7 +1,7 @@
 // The sell guides are made from their source files and the price list in force (render.ts): every placeholder is a rate in the list, amounts are written the way the
 // guides write them, every guide in the templates has a source, and none is behind its source or the list.
 import { strict as assert } from "node:assert";
-import { readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { test } from "node:test";
 import { cardFiles } from "../modules/ask-card/render.ts";
@@ -45,7 +45,11 @@ test("every sell guide in the templates has a source file, and every source rend
     }
   }
   assert.ok(guides.length >= 16, `${guides.length} guides`);
-  for (const g of guides) assert.ok(made.has(g), `${g} has no source file: write ${g.replace(/\.md$/u, ".src.md")} with {{id}} placeholders`);
+  // The three standalone pieces a partner copies (sell/first-week, letter-of-intent and partner-group, 14 Nov) are plain files: their text is also in each guide's source, word for
+  // word, and each template's sell-guide test compares the two. They carry no list price, so they need no {{id}} source; if one ever names a rupee figure it must come from the list.
+  const pieces = guides.filter((g) => /(^|\/)(first-week|letter-of-intent|partner-group)\.[a-z]{2}\.md$/u.test(g));
+  for (const g of pieces) assert.doesNotMatch(readFileSync(join(REPO, g), "utf8"), /₹\s?\d/u, `${g} names a rupee figure: a price belongs in a guide's source with {{id}} placeholders`);
+  for (const g of guides.filter((x) => !pieces.includes(x))) assert.ok(made.has(g), `${g} has no source file: write ${g.replace(/\.md$/u, ".src.md")} with {{id}} placeholders`);
 });
 
 test("no guide is behind its source or the price list in force (node prices/render.ts writes them)", () => {
