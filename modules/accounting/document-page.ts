@@ -11,7 +11,7 @@
 import { html, raw } from "../core/html.ts";
 import type { Raw } from "../core/html.ts";
 import { localParts } from "../core/time.ts";
-import { formatDate, formatSlot, MONTH_NAMES } from "../language/format.ts";
+import { formatDate, formatTime, MONTH_NAMES } from "../language/format.ts";
 import { CUSTOMER_CSS } from "../channels/look.ts";
 import { PAGE } from "../channels/words.ts";
 import { formatPaise } from "./documents.ts";
@@ -53,7 +53,8 @@ export function documentPage(d: Document): string {
   const label = (local: string, english: string): Raw => html`${local}${both ? html`<span class="en" lang="en">${english}</span>` : ""}`;
   const refund = d.kind === "refund_note";
   const how = d.evidence === undefined ? "" : d.evidence === "owner_mark" && refund ? w.ownerMarkRefund : w.evidence[d.evidence];
-  const dateText = `${formatSlot(ms, d.timeZone, d.language)}, ${localParts(ms, d.timeZone).year}`;
+  const when = localParts(ms, d.timeZone);
+  const dateText = `${formatDate(when, d.language)} ${when.year}, ${formatTime(when, d.language)}`;
   const citeDate = (iso: string) => `${formatDate(localParts(Date.parse(iso), d.timeZone), d.language)} ${localParts(Date.parse(iso), d.timeZone).year}`;
   const title = `${w.title[d.kind]} ${d.number}`;
   return `<!doctype html>${html`<html lang="${d.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="theme-color" content="#e2f2e9">

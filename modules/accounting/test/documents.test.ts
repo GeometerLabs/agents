@@ -32,12 +32,12 @@ function world(status: TaxStatus) {
   return { post, docs: () => acc.journal().documents };
 }
 
-const whatFor = (c: string, l: Language) => (c.startsWith("fee") ? { en: "Fee for November 2026", hi: "नवंबर 2026 की फ़ीस", ml: "2026 നവംബറിലെ ഫീസ്", kn: "ನವೆಂಬರ್ 2026 ರ ಶುಲ್ಕ" }[l] : { en: "Haircut, Sat 15 Nov, 10:30 am", hi: "बाल कटवाना, शनि 15 नवंबर", ml: "ഹെയർകട്ട്, ശനി 15 നവംബർ", kn: "ಹೇರ್‌ಕಟ್, ಶನಿ 15 ನವೆಂಬರ್" }[l]);
+const whatFor = (c: string, l: Language) => (c.startsWith("fee") ? { en: "Fee for November 2026", hi: "नवंबर 2026 की फ़ीस", ml: "2026 നവംബറിലെ ഫീസ്", kn: "ನವೆಂಬರ್ 2026 ರ ಶುಲ್ಕ" }[l] : { en: "Haircut, Sun 15 Nov, 10:30 am", hi: "बाल कटवाना, रवि 15 नवंबर", ml: "ഹെയർകട്ട്, ഞായർ 15 നവംബർ", kn: "ಹೇರ್‌ಕಟ್, ಭಾನು 15 ನವೆಂಬರ್" }[l]);
 
 // The words for "tax" this module might use, by language (the English word is checked everywhere): an unregistered shop's page holds none of them.
 const TAX_WORDS = [/\btax/i, /GSTIN/i, /\bGST\b/, /टैक्स/u, /(^|[\s,.;(])कर($|[\s,.;)])/u, /करदाता/u, /നികുതി/u, /ತೆರಿಗೆ/u];
 const body = (page: string) => page.replace(/<style>[\s\S]*?<\/style>/u, "");
-const visible = (page: string) => body(page).replace(/<[^>]+>/gu, " ");
+const visible = (page: string) => body(page).replace(/<[^>]+>/gu, " ").replace(/&#39;/gu, "'").replace(/&amp;/gu, "&");
 
 function receipt(status: TaxStatus = "unregistered") {
   const w = world(status);
@@ -55,7 +55,7 @@ test("a receipt in every language: title, number, date, amount, how it is known,
     assert.ok(text.includes("₹450.50"), `${language}: amount`);
     assert.ok(text.includes(SHOP.name) && text.includes(SHOP.address) && text.includes(SHOP.phone));
     assert.ok(text.includes(whatFor("b-1", language)), `${language}: what it is for`);
-    assert.match(text, /15 Nov 2026/u); // the English date is on every page (the local one for en reads "Sat 15 Nov, 10:30 am, 2026")
+    assert.match(text, /15 Nov 2026/u); // the English date is on every page (the local one for en reads "Sun 15 Nov, 10:30 am, 2026")
     if (language !== "en") { assert.ok(text.includes("Receipt") && text.includes("Amount received") && text.includes("Number")); assert.match(page, /class="machine"/u); }
     else assert.ok(text.includes("Confirmed by the payment service") && text.includes("Made by computer for Meena Salon."));
     assert.ok(page.includes(`<html lang="${language}">`));
@@ -87,7 +87,7 @@ test("a fee bill: an unregistered shop's is a Bill, with no payment line (nothin
     assert.equal(d.kind, "bill");
     assert.equal(d.legend, false);
     const text = visible(documentPage(d));
-    assert.ok(text.includes("₹1,50,000") && text.includes(whatFor("fee-7", language)));
+    assert.ok(text.includes("₹1,500") && text.includes(whatFor("fee-7", language)));
     assert.equal(d.evidence, undefined);
   }
 });
@@ -116,7 +116,7 @@ test("a composition shop: its bill is a Bill of supply and every document begins
   w.post({ kind: "fee_charged", case: "fee-7", amountPaise: 150_000 }, "open_fee");
   w.post({ kind: "received", case: "b-1", paymentId: "pay_1", amountPaise: 20_000, method: "upi", evidence: "owner_mark", for: "advance" }, "owner_marked_paid");
   for (const doc of w.docs()) for (const language of LANGUAGES) {
-    const d = makeDocument({ doc, documents: w.docs(), shop: SHOP, language, whatFor });
+    const d = makeDocument({ doc, documents: w.docs(), shop: { ...SHOP, status: "composition" }, language, whatFor });
     const page = documentPage(d);
     assert.equal(d.legend, true);
     assert.ok(visible(page).includes("composition taxable person, not eligible to collect tax on supplies"));
