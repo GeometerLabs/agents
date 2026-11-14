@@ -342,10 +342,10 @@ test("sell guide: the four demo steps the guide teaches do what it says, in ever
   }
 });
 
-test("sell guide (14 Nov): the demo is for a phone: the placeholder line for the hosted demo's address, the made-up example pages, and no laptop, Node command or Wi-Fi address", () => {
+test("sell guide (14 Nov): the demo is for a phone: the hosted demo's address, the made-up example pages, and no laptop, Node command or Wi-Fi address", () => {
   for (const l of LANGUAGES) {
     const four = sections(guide(l))[3].body;
-    assert.ok(four.includes("`DEMO_URL`"), `${l}: the demo address placeholder line is there (until the hosted demo's address replaces it)`);
+    assert.ok(four.includes("`https://streetlist.in/demo/bookings`") && !four.includes("DEMO_URL"), `${l}: the hosted demo's address is there, no placeholder`);
     assert.ok(four.includes("https://streetlist.in/examples/"), `${l}: the example pages are named`);
     assert.ok(!/192\.168|node templates|Ctrl\+C|```sh/.test(guide(l)), `${l}: no laptop command, Wi-Fi address or Ctrl+C in the guide`);
   }
