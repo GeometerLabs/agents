@@ -2,6 +2,14 @@
 
 3 November 2026. Each item is left out on purpose, with the reason and what would make it worth doing. Nothing here is claimed as done anywhere else in this folder.
 
+## Money clarity (14 Nov 2026): left open
+
+| Left open | Why | Revisit when |
+| --- | --- | --- |
+| **"Extend the hold once"** | A hold's length is a booking rule Guard's hold limit bounds, not a page button; the "payment did not go through?" fold sends the customer to the bank app first and to "I have paid" if the money left | The owner decides an extension rule |
+| **A late payment nobody pressed "I have paid" for, after 48 hours** | Not listed (the owner can still mark it on WhatsApp with the code). The window is `LATE_WINDOW_MS` in `src/channel.ts` | A shop asks for longer |
+| **Not tried on real phones** | "Copy UPI ID", "open in Chrome" and the quiet check for change; see modules/Deferred.md | The first pilot shop |
+
 ## Real services and the engine
 
 | Left open | Why | Revisit when |

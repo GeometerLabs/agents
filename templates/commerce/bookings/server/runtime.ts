@@ -175,7 +175,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
         try { return { ...base, serviceId: query.serviceId, days: await agent.freeStarts(query.serviceId, from, Math.min(query.days ?? 7, 14)) }; }
         catch { return { ...base, serviceId: query.serviceId, days: [], calendarUnread: true }; }
       },
-      view: (store, handleHash) => bookingView(settings, store, handleHash),
+      view: (store, handleHash) => bookingView(settings, store, handleHash, clock.now()),
       ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
       // item 11e on item 11d's page: with the shop's assistant on, the owner's read also carries the app's view (its cards by id and digest, the mood, the talk),
       // read-only over the same saved state as the page's items, so the page's cards are exactly the ones a WhatsApp tap would answer
