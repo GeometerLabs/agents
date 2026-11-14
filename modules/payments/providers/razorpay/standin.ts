@@ -100,7 +100,7 @@ function reconRows(payments: FakePayments, o: StandinOptions): { dayMs: number; 
     const s = settlesOn(r.created_at);
     out.push({ dayMs: s.dayMs, at: r.created_at, row: { entity_id: r.id, type: "refund", debit: r.amount, credit: 0, amount: r.amount, fee: 0, tax: 0, created_at: r.created_at, payment_id: r.payment_id, ...common(s, r.id) } });
   }
-  return out.sort((a, b) => a.at - b.at || String(a.row.entity_id).localeCompare(String(b.row.entity_id)));
+  return out.sort((a, b) => a.at - b.at || String(a.row.entity_id).localeCompare(String(b.row.entity_id), undefined, { numeric: true }));
 }
 
 // Translates Razorpay paths into calls on the fake payments, so crash tests run the real adapter against a fake that can fail on demand.

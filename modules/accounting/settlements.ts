@@ -123,10 +123,10 @@ async function readDay(i: SettlementsInput, day: { year: number; month: number; 
 
   for (const row of rows) {
     if (row.type !== "payment" && row.type !== "refund") { list(row.type === "adjustment" ? "adjustment" : "other", row, `a ${row.type} row of settlement ${row.settlementId ?? "?"}: not booked, kept for the settlements file`); continue; }
-    if (row.onHold || !row.settled) { list("held", row, "the payment service is holding this row; it is not in the bank"); continue; }
-    if (row.settlementId === null || row.utr === null) { list("problem", row, "a settled row with no settlement id or bank reference is not posted"); continue; }
     const paymentId = row.type === "payment" ? row.entityId : row.paymentId;
     const known = paymentId === null ? null : caseOf(i.accounting, paymentId);
+    if (row.onHold || !row.settled) { list("held", row, "the payment service is holding this row; it is not in the bank", known); continue; }
+    if (row.settlementId === null || row.utr === null) { list("problem", row, "a settled row with no settlement id or bank reference is not posted", known); continue; }
     if (known === null || paymentId === null) { list("unknown_payment", row, "a payment that did not go through the assistant: left out of the books"); continue; }
     try {
       const done = i.accounting.post(
