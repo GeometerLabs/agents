@@ -178,7 +178,8 @@ export async function refreshStatuses(ctx: Context): Promise<string[]> {
   for (const shop of applied) {
     const o = seen?.shops.find((x) => x.id === shop);
     const mine = o?.guards.filter((g) => g.id !== "guard-model") ?? [];
-    if (!o || mine.length !== 3 || mine.some((g) => g.admin?.tripwires?.ran !== true)) continue;
+    // every Guard the shop has: its provider Guards and its push Guard (item 11h), fewer for a shop with no WhatsApp; a fixed three left the refresh skipping every shop once the push Guard existed
+    if (!o || mine.length === 0 || mine.some((g) => g.admin?.tripwires?.ran !== true)) continue;
     const answered = o.up && o.ready && mine.every((g) => g.healthReady);
     const proven = mine.reduce((n, g) => n + (g.admin!.tripwires!.passed ?? 0), 0), of = mine.reduce((n, g) => n + (g.admin!.tripwires!.of ?? 0), 0);
     const failed = mine.some((g) => g.admin!.tripwires!.ok === false);

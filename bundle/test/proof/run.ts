@@ -81,6 +81,19 @@ const exec = (service: string, a: string[], o?: { input?: string; timeout?: numb
 const nodeEval = (service: string, code: string, timeout = 60_000) => exec(service, ["node", "-e", code], { timeout });
 const containerOf = (service: string) => dc(["ps", "-q", service]).out.trim();
 /** "Up 2 minutes (healthy)" -- and NOT "(unhealthy)", which also contains the word. */
+/**
+ * Every service of the project with its status, `ps -a` so a stopped container is listed too. With a hundred containers the command can be slow or fail; it is tried
+ * a few times and then FAILS with docker's own message, never an empty list that reads as "nothing is running" (the 14 Nov run showed "listed: 0" for 104 containers).
+ */
+function listServices(): string[][] {
+  let last = "";
+  for (let i = 0; i < 4; i++) {
+    const r = dc(["ps", "-a", "--format", "{{.Service}}\t{{.Status}}"], { timeout: 180_000 });
+    if (r.code === 0 && r.out.trim() !== "") return r.out.trim().split("\n").map((l) => l.split("\t"));
+    last = `exit ${r.code}: ${(r.err || r.out || "no output").trim().slice(0, 400)}`;
+  }
+  throw new Error(`docker compose ps could not list the services: ${last}`);
+}
 const healthy = (service: string) => /\(healthy\)/u.test(dc(["ps", service]).out);
 
 // ---------------------------------------------------------------------------------------------------------------------------------- the shops
@@ -131,10 +144,10 @@ function bundleServices(): string[] {
 function writeTestCompose(): void {
   const user = `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`;
   const services: Record<string, any> = {
-    standins: { image: "node:26-alpine", user: "1000:1000", init: true, restart: "unless-stopped", command: ["node", "/app/bundle/test/proof/standins.ts"], volumes: [`${APP}:/app:ro`], networks: ["egress", "front"], ports: ["127.0.0.1:18791:8790", "127.0.0.1:18792:8792"],
+    standins: { image: "node:26-alpine", user: "1000:1000", init: true, restart: "unless-stopped", command: ["node", "/app/bundle/test/proof/standins.ts"], volumes: [`${APP}:/app:ro`], networks: ["egress", "front"], ports: ["127.0.0.1::8790", "127.0.0.1::8792"],
       healthcheck: { test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8791/_state"], interval: "3s", timeout: "3s", retries: 20, start_period: "3s" } },
     "panel-probe": { image: "node:26-alpine", user, command: ["sleep", "100000"], volumes: [`${join(SERVER, "secrets", "panel")}:/run/secrets:ro`], networks: ["panel"] },
-    minio: { image: "minio/minio:latest", command: ["server", "/data"], environment: { MINIO_ROOT_USER: "proofkey", MINIO_ROOT_PASSWORD: "proofsecret123", MINIO_PROMETHEUS_AUTH_TYPE: "public" }, volumes: [`${join(SCRATCH, "minio")}:/data`], networks: ["egress"], ports: ["127.0.0.1:19000:9000"] },
+    minio: { image: "minio/minio:latest", command: ["server", "/data"], environment: { MINIO_ROOT_USER: "proofkey", MINIO_ROOT_PASSWORD: "proofsecret123", MINIO_PROMETHEUS_AUTH_TYPE: "public" }, volumes: [`${join(SCRATCH, "minio")}:/data`], networks: ["egress"], ports: ["127.0.0.1::9000"] },
   };
   for (const svc of bundleServices()) if (!TEST_SERVICES.has(svc)) services[svc] = { ...services[svc], cgroup_parent: `/${CAP_CGROUP}` };
   if (services.refresher) services.refresher.depends_on = { standins: { condition: "service_healthy" } };
@@ -336,17 +349,20 @@ async function main_(): Promise<void> {
 
     for (const size of SIZES.filter((s) => s > 1 && runs("load"))) {
       say(`\n== scale to ${size} shops ==`);
-      const have = Object.keys(loadState(SERVER).shops).length;
-      for (let i = have + 1; i <= size; i++) await addShop(i);
+      // By name, not by count: the earlier phases leave other shops on the server (the no-WhatsApp shop-80), so counting them would skip shop-02 and make every later
+      // check that names shop 2 (isolation, the load driver) talk to a shop that was never made (the 14 Nov run: sent 42, delivered 33, one shop's share refused).
+      const present = new Set(Object.keys(loadState(SERVER).shops));
+      for (let i = 2; i <= size; i++) if (!present.has(shopName(i))) await addShop(i);
       t0 = Date.now();
       const r = await deploy(ctx);
       results[`deploy${size}Seconds`] = Math.round((Date.now() - t0) / 1000);
-      check(`deploy ${size} shops: every Guard proven`, r.length === size && r.every((x) => x.proven.passed === x.proven.of), r.map((x) => x.proven.line).slice(0, 2));
+      const expectedShops = size + (present.has(shopName(NOWA_INDEX)) ? 1 : 0); // the kept no-WhatsApp shop is deployed with them
+      check(`deploy ${size} shops: every Guard proven`, r.length === expectedShops && r.every((x) => x.proven.passed === x.proven.of), r.map((x) => x.proven.line).slice(0, 2));
       await sleep(80_000);
       // `ps -a`, so a container that is not running is listed too (and named), not left out of the count; read again for up to a minute
       let mustBeHealthy: string[][] = []; let notHealthy: string[] = [];
       for (let i = 0; i < 7; i++) {
-        const ps = dc(["ps", "-a", "--format", "{{.Service}}\t{{.Status}}"]).out.trim().split("\n").map((l) => l.split("\t"));
+        const ps = listServices();
         mustBeHealthy = ps.filter(([n]) => /^(g-|rt-|inbox$|relay$|refresher$)/u.test(n));
         notHealthy = mustBeHealthy.filter(([, st]) => !/\(healthy\)/u.test(st ?? "")).map(([n, st]) => `${n}: ${st}`);
         if (notHealthy.length === 0 && mustBeHealthy.length >= size * 4 + 4) break;
@@ -954,7 +970,16 @@ async function trialLease() {
     await waitFor("the trial fleet", async () => { try { return (await fetch("http://127.0.0.1:18793/healthz", { signal: AbortSignal.timeout(2000) })).status < 500; } catch { return false; } }, 30);
 
     // ---- the first server goes; a new folder is paired (the code is exchanged once) and made with init --pairing
-    dc(["down", "-v", "--remove-orphans", "--timeout", "10"], { timeout: 600_000 });
+    const down = dc(["down", "-v", "--remove-orphans", "--timeout", "10"], { timeout: 600_000 });
+    if (down.code !== 0) say(`(compose down of the first server said: ${down.err.trim().slice(0, 300)})`);
+    // The paired server's networks have the same fixed subnets (server.network.base), so Docker refuses them while any of the first server's networks is still there
+    // ("Pool overlaps", the 14 Nov run, after 25 shops): wait until they are gone, and remove what is left (only geometer-proof_*, which this script made).
+    const leftNets = () => dk(["network", "ls", "-q", "--filter", `name=^${PROJECT}_`]).out.trim().split("\n").filter(Boolean);
+    if (!(await waitFor("the first server's networks to go", () => leftNets().length === 0, 60))) {
+      for (const n of leftNets()) dk(["network", "rm", n]);
+      if (leftNets().length > 0) throw new Error(`the first server's networks are still there: ${leftNets().join(" ")}`);
+    }
+    hostPorts.clear(); // the paired server's test services are published on ports of their own
     rmSync(SERVER, { recursive: true, force: true }); mkdirSync(SERVER, { recursive: true });
     const paired = await pairServer({ dir: SERVER, fleetUrl: "http://127.0.0.1:18793", code: pairingCode, now: new Date() });
     check("pairing gives the server its id, fleet's licence key (the test key) and a signed trial lease", /^[a-z0-9-]+$/u.test(paired.deploymentId) && paired.licenceKeys.includes(TEST_PUBLIC_HEX) && !!paired.trialLease, { id: paired.deploymentId, keys: paired.licenceKeys.length, lease: !!paired.trialLease });
@@ -1004,13 +1029,29 @@ async function trialLease() {
 // ---------------------------------------------------------------------------------------------------------------------------------- B14, through the runtime
 
 /** The test's way to the stand-ins (published on the host's loopback only): play a shop's customer, pay a link, read what the provider holds. */
-const STANDINS = "http://127.0.0.1:18791";
+/**
+ * Where a published test service answers on the host. The host ports are Docker's to choose (`127.0.0.1::port`): a fixed port can be held by a forwarder Docker Desktop
+ * leaves behind after a run, and then every call to the stand-ins hits that dead listener (the next run's load and trial checks all failed that way). Asked once per server.
+ */
+const hostPorts = new Map<string, number>();
+function hostPort(service: string, port: number): number {
+  const key = `${service}:${port}`;
+  let n = hostPorts.get(key);
+  if (n === undefined) {
+    const r = dc(["port", service, String(port)]);
+    n = Number(/:(\d+)\s*$/mu.exec(r.out)?.[1]);
+    if (!Number.isInteger(n) || n <= 0) throw new Error(`docker compose port ${service} ${port} gave no host port: ${(r.err || r.out).trim().slice(0, 200)}`);
+    hostPorts.set(key, n);
+  }
+  return n;
+}
+const standinsUrl = () => `http://127.0.0.1:${hostPort("standins", 8790)}`;
 async function control(shop: string, path: string, body?: unknown): Promise<any> {
   // a read is tried three times (a busy stand-in can be slow to hand over a large state); a POST once, since it plays a customer or a payment
   let last = "";
   for (let i = 0; i < (body === undefined ? 3 : 1); i++) {
     try {
-      const r = await fetch(`${STANDINS}/_proof/${shop}${path}`, { method: body === undefined ? "GET" : "POST", headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(60_000) });
+      const r = await fetch(`${standinsUrl()}/_proof/${shop}${path}`, { method: body === undefined ? "GET" : "POST", headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(60_000) });
       return await r.json();
     } catch (e) { last = `${(e as Error).message} ${String((e as { cause?: unknown }).cause ?? "")}`.trim(); await sleep(1000); }
   }
@@ -1216,7 +1257,7 @@ async function hostileRuntime() {
   attempt(`its network's gateway ${gateway || "(none)"}:22`, gateway, 22);
   attempt("the cloud metadata address 169.254.169.254:80", "169.254.169.254", 80);
   attempt("a public IPv6 address [2606:4700:4700::1111]:443", "2606:4700:4700::1111", 443);
-  attempt(`the stand-ins' published port on the host, 127.0.0.1:18791 (its own loopback)`, "127.0.0.1", 18791);
+  attempt(`the stand-ins' published port on the host (its own loopback)`, "127.0.0.1", hostPort("standins", 8790));
   const sock = nodeEval(rt, "console.log(require('fs').existsSync('/var/run/docker.sock')?'PRESENT':'ABSENT')").out.trim();
   check("hostile runtime: no Docker socket in the container", sock === "ABSENT", sock);
   // Guard as an open proxy: a request in absolute form for MinIO, and a call with MinIO's name in Host. Guard sends only to its one upstream, and only routes it lists.
@@ -1416,7 +1457,7 @@ function viaCaddyFull(method: string, path: string, o: { headers?: Record<string
 }
 const jsonVia = (path: string, value: unknown, o: { cookie?: string; headers?: Record<string, string> } = {}) => viaCaddyFull("POST", path, { ...o, headers: { "content-type": "application/json", ...o.headers }, body: JSON.stringify(value) });
 const formVia = (path: string, fields: Record<string, string>, cookie?: string) => viaCaddyFull("POST", path, { headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(fields).toString(), ...(cookie ? { cookie } : {}) });
-const pushesSeen = async (): Promise<{ host: string; path: string; ttl?: string; encoding?: string; authorization?: string; body: string }[]> => ((await (await fetch("http://127.0.0.1:18792/_push")).json()) as { pushes: [] }).pushes;
+const pushesSeen = async (): Promise<{ host: string; path: string; ttl?: string; encoding?: string; authorization?: string; body: string }[]> => ((await (await fetch(`http://127.0.0.1:${hostPort("standins", 8792)}/_push`)).json()) as { pushes: [] }).pushes;
 
 async function withoutWhatsApp() {
   const shop = shopName(NOWA_INDEX);
@@ -1663,7 +1704,7 @@ function volumeSizes(): { runtimes: number; guards: number; other: number; byNam
 async function minioOps(): Promise<Record<string, number>> {
   for (const [path, metric, label] of [["/minio/v2/metrics/cluster", "minio_s3_requests_total", "api"], ["/minio/v2/metrics/node", "minio_s3_requests_total", "api"], ["/minio/metrics/v3/api/requests", "minio_api_requests_total", "name"]]) {
     try {
-      const t = await (await fetch(`http://127.0.0.1:19000${path}`, { signal: AbortSignal.timeout(10_000) })).text();
+      const t = await (await fetch(`http://127.0.0.1:${hostPort("minio", 9000)}${path}`, { signal: AbortSignal.timeout(10_000) })).text();
       const out: Record<string, number> = {};
       for (const m of t.matchAll(new RegExp(`^${metric}\\{([^}]*)\\}\\s+([\\d.e+]+)$`, "gmu"))) { const api = new RegExp(`${label}="([^"]+)"`, "u").exec(m[1])?.[1] ?? "?"; out[api] = (out[api] ?? 0) + Number(m[2]); }
       if (Object.keys(out).length > 0) return out;
