@@ -139,15 +139,18 @@ export function ownerMoney(i: MoneyViewInput): MoneyView {
   // A payment that came through the payment service and has no payout after more than 4 working days, while its case still holds money there.
   const heldInGateway = new Map<string | null, number>();
   for (const l of lines) if (l.account === ACCOUNTS.gateway.code) heldInGateway.set(l.case, (heldInGateway.get(l.case) ?? 0) + l.debitPaise - l.creditPaise);
+  const listed = (why: string): RecordEntry[] => i.entries.filter((e) => e.action === SETTLEMENT_ACTIONS.listed && e.refs.why === why && Date.parse(e.time) >= month.fromMs && Date.parse(e.time) < month.toMs);
+  const once = (rows: RecordEntry[]): RecordEntry[] => rows.filter((e, n) => rows.findIndex((o) => o.refs.entity === e.refs.entity) === n);
+  // A held row is listed as held, and not also as "not yet in your bank". Held and not-through-the-assistant rows are listed for the month they were found in.
+  const heldRows = once(listed("held")).filter((e) => !settledEntities.has(e.refs.entity));
+  const heldIds = new Set(heldRows.map((e) => e.refs.entity));
   const gatewayUnpaid: NotMatched[] = [];
   for (const l of lines) {
     const paymentId = l.kind === "received" && l.account === ACCOUNTS.gateway.code && l.debitPaise > 0 ? seqRefs.get(l.seq)?.[MONEY_REFS.paymentId] : undefined;
-    if (paymentId === undefined || settledEntities.has(paymentId) || (heldInGateway.get(l.case) ?? 0) <= 0) continue;
+    if (paymentId === undefined || settledEntities.has(paymentId) || heldIds.has(paymentId) || (heldInGateway.get(l.case) ?? 0) <= 0) continue;
     if (workingDaysSince(Date.parse(l.at), i.nowMs, i.timeZone) > SETTLES_WITHIN_WORKING_DAYS) gatewayUnpaid.push({ kind: "gateway", case: l.case, paise: l.debitPaise, sinceMs: Date.parse(l.at) });
   }
-  const listed = (why: string): RecordEntry[] => i.entries.filter((e) => e.action === SETTLEMENT_ACTIONS.listed && e.refs.why === why);
-  const once = (rows: RecordEntry[]): RecordEntry[] => rows.filter((e, n) => rows.findIndex((o) => o.refs.entity === e.refs.entity) === n);
-  const held: NotMatched[] = once(listed("held")).filter((e) => !settledEntities.has(e.refs.entity)).map((e) => ({ kind: "gateway_held", case: e.booking, paise: Number(e.refs.amountPaise) }));
+  const held: NotMatched[] = heldRows.map((e) => ({ kind: "gateway_held", case: e.booking, paise: Number(e.refs.amountPaise) }));
   const notThrough: NotMatched[] = once(listed("unknown_payment")).filter((e) => e.refs.rowType === "payment").map((e) => ({ kind: "not_through_assistant", paise: Number(e.refs.amountPaise) }));
 
   const notMatched: NotMatched[] = [

@@ -121,10 +121,10 @@ const RECON_PAGE = 100;
 const RECON_MAX_PAGES = 200;
 const ROW_TYPES = ["payment", "refund", "transfer", "adjustment"] as const;
 
-/** One recon row. Fields the docs do not promise (`posted_at`, `credit_type`) are not read. A row in another currency, or of a type the docs do not list, throws. */
+/** One recon row. Fields the docs do not promise (`posted_at`, `credit_type`) are not read. A row in another currency throws; a type the docs do not list is "other". */
 export function toSettlementRow(raw: Json): SettlementRow {
-  const type = ROW_TYPES.find((t) => t === raw.type);
-  if (!type) throw new ApiError(502, `Razorpay's settlement row has a type this code does not know: ${String(raw.type)}.`);
+  // A type the docs do not list is "other", never a throw: one odd row would otherwise fail the whole day's read, and a day that fails past midnight is read late or not at all.
+  const type = ROW_TYPES.find((t) => t === raw.type) ?? "other";
   if (raw.currency !== undefined && raw.currency !== null) needInr(raw.currency);
   return {
     entityId: needStr(raw.entity_id, "settlement row id"), type, paymentId: str(raw.payment_id) ?? (type === "payment" ? str(raw.entity_id) ?? null : null),

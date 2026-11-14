@@ -85,12 +85,13 @@ export interface PaymentEvent {
 /**
  * One row of a provider's settlement report (Razorpay: the recon rows): a payment paid out, a refund taken back, or something else the provider settled. Amounts are
  * paise, times epoch seconds. `fee` and `tax` are exactly what the provider's row says: whether `fee` already holds the `tax` is for the books to check row by row
- * (modules/accounting/settle.ts), because the provider does not say.
+ * (modules/accounting/journal.ts checkSettlementRow), because the provider does not say.
  */
 export interface SettlementRow {
   /** The payment's, refund's or adjustment's own id. */
   entityId: string;
-  type: "payment" | "refund" | "transfer" | "adjustment";
+  /** "other": a kind of row the provider has that this code does not know; the books list it and post nothing. */
+  type: "payment" | "refund" | "transfer" | "adjustment" | "other";
   /** The payment a refund is for; null on a payment row. */
   paymentId: string | null;
   amount: number;
