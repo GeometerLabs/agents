@@ -237,16 +237,16 @@ test("web build: the agent's reply buttons and list reach the page, and tapping 
 test("web build: the page's own script gets the answers it expects, shaped like fetch", async () => {
   const { createLocalDemo } = await load("demo/web/local.js");
   const demo = createLocalDemo();
-  const state = await demo.fetch("/api/state", {});
+  const state = await demo.ask("/api/state", {});
   assert.equal(state.ok, true);
   assert.equal(((await state.json()) as any).shop.name, "Glow Salon");
-  const refused = await demo.fetch("/api/say", { method: "POST", body: JSON.stringify({ text: "" }) });
+  const refused = await demo.ask("/api/say", { method: "POST", body: JSON.stringify({ text: "" }) });
   assert.equal(refused.ok, false);
   assert.match(((await refused.json()) as any).error, /Write a message first/);
-  const notJson = await demo.fetch("/api/say", { method: "POST", body: "{" });
+  const notJson = await demo.ask("/api/say", { method: "POST", body: "{" });
   assert.equal(notJson.ok, false);
   const hindi = createLocalDemo({ language: "hi" });
-  assert.match(((await (await hindi.fetch("/api/state", {})).json()) as any).ui.banner, /डेमो/);
+  assert.match(((await (await hindi.ask("/api/state", {})).json()) as any).ui.banner, /डेमो/);
   assert.throws(() => createLocalDemo({ language: "xx" }), /not one this demo knows/);
 });
 

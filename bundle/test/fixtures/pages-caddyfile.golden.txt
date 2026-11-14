@@ -22,13 +22,13 @@ ROBOTS 200
 				# the addresses Firebase's cleanUrls and trailingSlash=false change: the .html and the trailing-slash forms go to the clean one
 				@home-index-html path /index.html
 				redir @home-index-html / 301
-				@home-html path_regexp home-html ^/(shops|partners|privacy|examples/[a-z0-9-]+)\.html$
+				@home-html path_regexp home-html ^/(shops|partners|privacy|demo|examples/[a-z0-9-]+|demo/[a-z0-9-]+)\.html$
 				redir @home-html /{re.home-html.1} 301
-				@home-slash path_regexp home-slash ^/(shops|partners|privacy|examples|examples/[a-z0-9-]+)/$
+				@home-slash path_regexp home-slash ^/(shops|partners|privacy|examples|examples/[a-z0-9-]+|demo|demo/[a-z0-9-]+)/$
 				redir @home-slash /{re.home-slash.1} 301
 				redir /examples /examples/glow-salon 302
 				# the home's own addresses: a page, a picture or a hashed file; anything missing under them is the home's 404 page
-				@home-area path / /shops /partners /privacy /favicon.svg /examples /examples/* /assets /assets/*
+				@home-area path / /shops /partners /privacy /favicon.svg /examples /examples/* /assets /assets/* /demo /demo/*
 				handle @home-area {
 					route {
 						# a page is read, not posted to: GET and HEAD only (the door would otherwise take the name for a shop's)
