@@ -359,6 +359,6 @@ test("web build: the mount code adds no way for typed text to become markup", ()
   assert.ok(/root\.remove\(\)/.test(source) && /watcher\.disconnect\(\)/.test(source), "unmount takes the demo out and stops watching it");
   assert.ok(!/attachShadow/.test(source), "the demo is in the page's own tree, so its class names can be restyled by the page");
   const both = source + readFileSync(join(ROOT, "demo/web/local.ts"), "utf8");
-  assert.deepEqual([...both.matchAll(/(\w+[. ])fetch\(/g)].map((m) => m[1]).sort(), ["async ", "local."], "the only fetch is the in-page demo's own");
+  assert.deepEqual([...both.matchAll(/\bfetch\s*\(/g)], [], "no fetch call at all: the in-page demo's own method is called ask, so the hosted demo's build can tell it from a network call");
   assert.ok(!/XMLHttpRequest|WebSocket|sendBeacon|localStorage|sessionStorage|indexedDB|document\.cookie/.test(both), "no network, no storage, no cookies");
 });
