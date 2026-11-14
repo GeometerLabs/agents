@@ -529,7 +529,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
         return "sent";
       }
       // money clarity (Fees): an open fee marked paid by hand (cash, or a transfer the agent cannot see), bound to the fee as the page showed it
-      if (action === "cash") {
+      if (action === "cash" || action === "bank") {
         if (!state.view.cash?.some((c) => c.case === theCase && c.digest === digest)) return "changed";
         const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action, case: theCase, digest }], token);
         if (r === "refused") return "denied_link";
@@ -572,7 +572,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // item 11h (Fees): the parents and their private links, answered like the items: {"source": "runtime", "action": "send_link" | "revoke_link", "case": <ref>, "digest"}
     ...(state.view.parents ? { parents: state.view.parents.map((p) => ({ source: "runtime", case: p.ref, digest: p.digest, phone: p.phone, students: p.students, link: p.link, ...(p.sinceMs !== undefined ? { since_ms: p.sinceMs } : {}), actions: p.link === "active" ? ["send_link", "revoke_link"] : ["send_link"] })) } : {}),
     // money clarity (Fees): the open fees that can be marked paid by hand: {"source": "runtime", "action": "cash", "case": <fee>, "digest"}
-    ...(state.view.cash ? { cash: state.view.cash.map((c) => ({ source: "runtime", case: c.case, digest: c.digest, student: c.student, what: c.what, amount_paise: c.amountPaise, actions: ["cash"] })) } : {}),
+    ...(state.view.cash ? { cash: state.view.cash.map((c) => ({ source: "runtime", case: c.case, digest: c.digest, student: c.student, what: c.what, amount_paise: c.amountPaise, actions: ["cash", "bank"] })) } : {}),
     // item 11e: the assistant's open cards, answered like the items: {"source": "runtime", "action": "card_yes" | "card_no", "case": <card id>, "digest"}
     ...(state.view.app ? { cards: state.view.app.cards.map((c) => ({ source: "runtime", case: c.id, digest: c.digest, actions: c.hasNo ? ["card_yes", "card_no"] : ["card_yes"], kind: c.kind, booking: c.case, amount_paise: c.amountPaise, who: c.who, until_ms: c.expiresAtMs, ...(c.question ? { question: c.question } : {}) })) } : {}),
   });
