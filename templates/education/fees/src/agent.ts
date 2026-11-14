@@ -75,6 +75,7 @@ import type { MarkReply } from "../../../../modules/payments/owner-marked/owner.
 import { ownerMarkChoices } from "../../../../modules/payments/owner-marked/buttons.ts";
 import { MARK_ACTIONS } from "../../../../modules/payments/owner-marked/obligations.ts";
 import { capabilitiesOf, ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
+import { readSettlementsOnce } from "../../../../modules/accounting/settlements.ts";
 import type { ButtonId } from "./language/interactive.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
@@ -1162,6 +1163,7 @@ export function createAgent(deps: AgentDeps): Agent {
     await refunds.sweep(now); // refunds first, whatever state their fee is in
     if (markState) await remindOwedRefunds(now);
     await closeLinksAtStop();
+    if (can.readsSettlements) await readSettlementsOnce({ payments, accounting: books, record, conversation: owner, language: settings.languages[0], nowMs: now, timeZone: tz }); // yesterday's settlement rows, once a day (modules/accounting/settlements.ts)
     const working = licence().takesNewWork;
     if (working) openMonthlyFees(); // in the wind-down no month's fees are opened: nothing is kept to chase later
     for (const due of [...store.dues.values()]) {

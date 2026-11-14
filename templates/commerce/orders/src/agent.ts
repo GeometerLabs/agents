@@ -73,6 +73,7 @@ import { parseMarkReply } from "../../../../modules/payments/owner-marked/owner.
 import type { MarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
 import { MARK_ACTIONS } from "../../../../modules/payments/owner-marked/obligations.ts";
 import { capabilitiesOf, ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
+import { readSettlementsOnce } from "../../../../modules/accounting/settlements.ts";
 import type { Action, ActionRecord, Outcome } from "../../../../modules/record/record.ts";
 import { RULES } from "../../../../modules/understanding/model.ts";
 import { createReader } from "../../../../modules/understanding/reader.ts";
@@ -1125,6 +1126,7 @@ export function createAgent(deps: AgentDeps): Agent {
     await refunds.sweep(now); // refunds first, whatever state their order is in (modules/payments/refunds.ts)
     if (markState) await remindOwedRefunds(now);
     await closeLinksAtStop();
+    if (can.readsSettlements) await readSettlementsOnce({ payments, accounting: books, record, conversation: owner, language: settings.languages[0], nowMs: now, timeZone: tz }); // yesterday's settlement rows, once a day (modules/accounting/settlements.ts)
     for (const o of [...store.orders.values()]) {
       if (o.state === "awaiting_advance" && o.holdExpiresAt !== undefined && o.holdExpiresAt <= now) await expireHold(o);
       if (o.state === "confirmed" && o.slotEndMs !== undefined && o.slotEndMs <= now) {
