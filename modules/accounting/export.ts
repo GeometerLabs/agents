@@ -89,9 +89,10 @@ export function accountantFiles(i: ExportInput): ExportFile[] {
         const restore = restores.find((r) => r.seq > prev.seq && r.seq < d.seq && (prev.seq > 0 || Date.parse(r.time) >= fyStartMs(fy, i.timeZone)));
         const when = restore ? restore.time : d.at;
         if (d.n > prev.n + 1 && inRange(when)) {
-          for (let n = prev.n + 1; n < d.n; n++) {
-            docRows.push([`${series}/${fy}/${String(n).padStart(4, "0")}`, dateOf(Date.parse(when), i.timeZone), DOC_TYPE[series], "", restore ? "not used: the shop's data was restored" : "missing"]);
-          }
+          // One row per skipped range, not per number: a restore skips 10,000 numbers (numbers.ts RESTORE_DOC_GAP), and a sheet of 10,000 empty rows helps nobody.
+          const num = (n: number) => `${series}/${fy}/${String(n).padStart(4, "0")}`;
+          const range = d.n - 1 === prev.n + 1 ? num(prev.n + 1) : `${num(prev.n + 1)} to ${num(d.n - 1)}`;
+          docRows.push([range, dateOf(Date.parse(when), i.timeZone), DOC_TYPE[series], "", restore ? "not used: the shop's data was restored" : "missing"]);
         }
         prev = { n: d.n, seq: d.seq };
       }
@@ -102,7 +103,7 @@ export function accountantFiles(i: ExportInput): ExportFile[] {
     `Files for the period ${i.period} (${i.period.length === 7 ? "one month" : "one financial year, 1 April to 31 March"}), dates in the shop's time zone (${i.timeZone}).`,
     "",
     `${names.journal}: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.`,
-    `${names.documents}: every receipt, bill and refund note issued in the period, with its number, date, type and amount. A number that was skipped has its own row: "not used: the shop's data was restored" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and "missing" for any other gap (which should not happen).`,
+    `${names.documents}: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them ("RCT/26-27/0003 to RCT/26-27/10002"): "not used: the shop's data was restored" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and "missing" for any other gap (which should not happen).`,
     "",
     OWNER_MONEY_WORDS.en.scope,
     "All amounts are in rupees with two decimals. A customer's phone number or name is never in these files; a customer is only a case reference.",

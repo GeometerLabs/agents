@@ -173,7 +173,7 @@ test("documents CSV: every number with its date, type and amount", () => {
   assert.equal(byNumber["RCT/26-27/0001"], undefined, "the October receipt is not in November's file");
 });
 
-test("a restore: each number skipped has its own row, saying why; a gap with no restore is \"missing\"", () => {
+test("a restore: the numbers skipped are one row, saying why; a gap with no restore is \"missing\"", () => {
   const w = world(at(11, 2, 10));
   w.post(gw("b-1", "p1", 100), "record_deposit");
   w.post(gw("b-2", "p2", 200), "record_deposit");
@@ -188,12 +188,11 @@ test("a restore: each number skipped has its own row, saying why; a gap with no 
   const rows = parseCsv(file(accountantFiles({ journal: j, entries: w.record.entries(), period: "2026-11", timeZone: TZ }), "documents-2026-11.csv")).slice(1);
   const restored = rows.filter((r) => r[4] === "not used: the shop's data was restored");
   const missing = rows.filter((r) => r[4] === "missing");
-  assert.equal(restored.length, RESTORE_DOC_GAP);
-  assert.equal(restored[0][0], "RCT/26-27/0003");
-  assert.equal(restored.at(-1)![0], `RCT/26-27/${2 + RESTORE_DOC_GAP}`);
+  assert.equal(restored.length, 1);
+  assert.equal(restored[0][0], `RCT/26-27/0003 to RCT/26-27/${2 + RESTORE_DOC_GAP}`);
   assert.equal(restored[0][1], "2026-11-05");
   assert.equal(restored[0][3], "");
-  assert.deepEqual(missing.map((r) => r[0]), [`RCT/26-27/${2 + RESTORE_DOC_GAP + 2}`, `RCT/26-27/${2 + RESTORE_DOC_GAP + 3}`]);
+  assert.deepEqual(missing.map((r) => r[0]), [`RCT/26-27/${2 + RESTORE_DOC_GAP + 2} to RCT/26-27/${2 + RESTORE_DOC_GAP + 3}`]);
   assert.equal(rows.filter((r) => r[4] === "").length, 4, "the four numbers issued are listed once each");
 });
 
