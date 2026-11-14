@@ -993,3 +993,7 @@ lines and may know neither (bundle/test/desk-served.test.ts holds that every one
 
 Hindi, Malayalam and Kannada were rewritten in the same style (machine-written, like the rest of those packs; REVIEW-ml.md and REVIEW-kn.md were made again from the
 new words for the native reader). Every changed WhatsApp template body needs Meta's approval again before it can carry the message outside the 24-hour window.
+
+## The booked message carries the booking page's link (release-flow batch 5, 14 Nov 2026)
+
+A WhatsApp booking in a shop with a page gets its private page link in the "booked" message too (`booked_page_link`, four languages), not only in the UPI quote: the customer should not depend on one earlier message to see or cancel their booking. Each link is made fresh for its message and only its hash is kept (`Booking.pageLink`). Until now a newer link replaced the older, so the booked message would have killed the page the quote's link had open (the customer waiting on it to show "Booked"). The booking now keeps the last four hashes (`pageLinksBefore`, `keepPageLink` in agent.ts); `bookingView` opens it by any of them, and a fifth newer link drops the oldest. The ml and kn review sheets were made again with `node bundle/panel/review-sheet.ts ml` and `kn`.
