@@ -226,9 +226,10 @@ export function documentsOf(settings: Settings, store: Store, entries: readonly 
   });
 }
 
-/** The accountant's files for a period, from the record (modules/accounting/export.ts). No student's name is in them: a fee is only its case id. */
+/** The accountant's files for a period, from the record (modules/accounting/export.ts), with the two best-effort Tally files (no company name: the import goes into the open
+ * company). No student's name is in them: a fee is only its case id. */
 export const exportFilesOf = (settings: Settings, entries: readonly RecordEntry[], period: string) =>
-  accountantFiles({ journal: feesJournal(entries), entries, period, timeZone: settings.timezone });
+  accountantFiles({ journal: feesJournal(entries), entries, period, timeZone: settings.timezone, tally: {} });
 
 /**
  * The owner's page's read: the items without their codes, the parents and their links, the centre's name and the owner's language, and the Money section's figures

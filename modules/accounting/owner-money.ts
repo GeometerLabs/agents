@@ -66,11 +66,16 @@ export interface MoneyView {
   notMatched: NotMatched[];
   /** The shop's month as "2026-11", for the page's links and labels. */
   period: string;
+  /**
+   * The shop reads what its payment service paid into the bank (the record has a settlements_read line, settlements.ts). Only then can the page say a payment is
+   * "not yet in your bank", and only then is there a settlements file to download. A shop that does not read settlements (a UPI shop, or a Guard without the
+   * read_settlements route) has no such line, so its gateway money is never called unpaid on a guess.
+   */
+  readsSettlements: boolean;
 }
 
 const MONEY_ACCOUNTS: ReadonlySet<string> = new Set([ACCOUNTS.cash.code, ACCOUNTS.upi.code, ACCOUNTS.bank.code, ACCOUNTS.gateway.code, ACCOUNTS.bankSettled.code]);
 
-/** Whole paise of rupees the provider's list gave (always whole paise; rounded only to undo the float of the division). */
 /** Working days after a payment's day, up to and including today (Monday to Friday, local dates). */
 function workingDaysSince(thenMs: number, nowMs: number, timeZone: string): number {
   const from = localParts(thenMs, timeZone);
@@ -82,6 +87,7 @@ function workingDaysSince(thenMs: number, nowMs: number, timeZone: string): numb
 /** A gateway payment is "not yet in your bank" once more than this many working days have passed. */
 const SETTLES_WITHIN_WORKING_DAYS = 4;
 
+/** Whole paise of rupees the provider's list gave (always whole paise; rounded only to undo the float of the division). */
 const toPaise = (inr: number): number => Math.round(inr * 100);
 
 function tally(lines: readonly Line[], kind: Line["kind"], side: "debitPaise" | "creditPaise", range: Range, keep: (l: Line) => boolean = () => true): Tally {
@@ -133,6 +139,7 @@ export function ownerMoney(i: MoneyViewInput): MoneyView {
     .map((l) => ({ case: l.case, paise: l.creditPaise, atMs: Date.parse(l.at) }));
 
   // Payments the payment service has paid into the bank (a `settled` row), and what is held or was not through the assistant, from the record's own settlement lines.
+  const readsSettlements = i.entries.some((e) => e.action === SETTLEMENT_ACTIONS.read);
   const settledEntities = new Set<string>();
   for (const e of i.entries) if (e.refs[MONEY_REFS.kind] === "settled") settledEntities.add(e.refs[MONEY_REFS.entity]);
   const seqRefs = new Map(i.entries.map((e) => [e.seq, e.refs]));
@@ -147,7 +154,7 @@ export function ownerMoney(i: MoneyViewInput): MoneyView {
   const gatewayUnpaid: NotMatched[] = [];
   for (const l of lines) {
     const paymentId = l.kind === "received" && l.account === ACCOUNTS.gateway.code && l.debitPaise > 0 ? seqRefs.get(l.seq)?.[MONEY_REFS.paymentId] : undefined;
-    if (paymentId === undefined || settledEntities.has(paymentId) || heldIds.has(paymentId) || (heldInGateway.get(l.case) ?? 0) <= 0) continue;
+    if (!readsSettlements || paymentId === undefined || settledEntities.has(paymentId) || heldIds.has(paymentId) || (heldInGateway.get(l.case) ?? 0) <= 0) continue;
     if (workingDaysSince(Date.parse(l.at), i.nowMs, i.timeZone) > SETTLES_WITHIN_WORKING_DAYS) gatewayUnpaid.push({ kind: "gateway", case: l.case, paise: l.debitPaise, sinceMs: Date.parse(l.at) });
   }
   const held: NotMatched[] = heldRows.map((e) => ({ kind: "gateway_held", case: e.booking, paise: Number(e.refs.amountPaise) }));
@@ -172,5 +179,6 @@ export function ownerMoney(i: MoneyViewInput): MoneyView {
     owedBack: i.journal.owedList().map((o) => ({ case: o.case, paise: o.paise, why: owedWhy(o.key) })),
     notMatched,
     period: `${p.year}-${String(p.month).padStart(2, "0")}`,
+    readsSettlements,
   };
 }

@@ -101,7 +101,14 @@ test("owed back: each refund still owed, with a plain reason; made and kept ones
 });
 
 test("not matched: a UPI claim, money still with the payment service, and a refund whose customer was not told", () => {
-  const v = view(build());
+  // "not yet in your bank" needs a shop that reads its settlements: without a settlements_read line the page never calls gateway money unpaid on a guess
+  const unread = view(build());
+  assert.equal(unread.readsSettlements, false);
+  assert.deepEqual(unread.notMatched.filter((n) => n.kind === "gateway"), []);
+  const reads = build();
+  reads.line(null, "settlements_read", "confirmed", { day: "2026-11-14", rows: "0", posted: "0", listed: "0" });
+  const v = view(reads);
+  assert.equal(v.readsSettlements, true);
   const claim = v.notMatched.find((n) => n.kind === "upi_claim");
   assert.deepEqual(claim, { kind: "upi_claim", case: "b-9", paise: 50_000 });
   const gateway = v.notMatched.filter((n) => n.kind === "gateway");

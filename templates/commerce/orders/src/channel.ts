@@ -220,9 +220,12 @@ export function documentsOf(settings: Settings, store: Store, entries: readonly 
   return caseDocuments({ journal: ordersJournal(entries), cases: o ? [o.id] : [], shop: { name: settings.name, address: settings.address ?? "", timezone: settings.timezone }, language, whatFor });
 }
 
-/** The accountant's files for a period, from the record (modules/accounting/export.ts). */
+/**
+ * The accountant's files for a period, from the record (modules/accounting/export.ts), with the two best-effort Tally files. No company name is put in them: the
+ * accountant's Tally company may be named differently from the shop, so the import goes into the company that is open.
+ */
 export const exportFilesOf = (settings: Settings, entries: readonly RecordEntry[], period: string) =>
-  accountantFiles({ journal: ordersJournal(entries), entries, period, timeZone: settings.timezone });
+  accountantFiles({ journal: ordersJournal(entries), entries, period, timeZone: settings.timezone, tally: {} });
 
 /**
  * The owner's page's read: the items without their codes, the shop's name and the owner's language, and the Money section's figures worked out from the record
