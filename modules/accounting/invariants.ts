@@ -15,10 +15,15 @@
 //    and the accountant's files. A customer's number lives only in the entry's own `conversation`, which the evidence pack fingerprints (modules/record/fingerprint.ts).
 //    The numbers looked for are the record's own conversations (with and without the country code), not "any long run of digits": refs rightly carry times in
 //    seconds or milliseconds and a bank's 12-digit UTR, which a digit count would call phone numbers.
+// `figuresFaults` checks one more thing, for the monthly report: its rows (figures.ts) and its "Money this month" block (the books summary) differ only by the
+// money `booksOnly` names (a payment made twice, the owner's own marks), counted each way a report counts the owner's marks. So the line under the block that
+// explains the difference is always the whole difference.
 import { ACCOUNTS } from "./accounts.ts";
 import { journal, MONEY_REFS } from "./journal.ts";
 import type { Journal, LegacyMap } from "./journal.ts";
 import { RESTORED_ACTION } from "./numbers.ts";
+import { figuresOf } from "./figures.ts";
+import { accountingSummary } from "./summary.ts";
 import type { RecordEntry } from "../record/record.ts";
 
 /** The phone numbers of the record's conversations, each with and without its country code (an Indian number's last 10 digits). */
@@ -84,4 +89,25 @@ export function booksFaults(entries: readonly RecordEntry[], legacy: LegacyMap, 
     }
   }
   return faults;
+}
+
+/**
+ * The report's rows against its "Money this month" block, over the whole record: received in the books = received + paidTwice + markedReceived, and refunds made
+ * (less a person's word) = refunds + markedGivenBack, with the owner's marks summed and left out. `refundAmountFromPayment`: as the template's report passes it.
+ */
+export function figuresFaults(entries: readonly RecordEntry[], legacy: LegacyMap, o: { refundAmountFromPayment?: boolean } = {}): string[] {
+  const from = "1970-01-01T00:00:00.000Z", to = "2100-01-01T00:00:00.000Z";
+  const j = journal(entries, legacy);
+  const s = accountingSummary(j, from, to, entries);
+  const books = (kind: string): number => s.byKind.find((k) => k.kind === kind)?.paise ?? 0;
+  const out: string[] = [];
+  for (const ownerMarks of [true, false]) {
+    const f = figuresOf(j, entries, legacy, from, to, { ...o, ownerMarks });
+    const b = f.booksOnly;
+    const rows = f.received.paise + b.paidTwice.paise + b.markedReceived.paise;
+    if (books("received") !== rows) out.push(`owner marks ${ownerMarks ? "counted" : "left out"}: the books received ${books("received")}, the rows and booksOnly ${rows}`);
+    const back = f.refunds.paise + b.markedGivenBack.paise;
+    if (books("refund_made") - s.byWord.paise !== back) out.push(`owner marks ${ownerMarks ? "counted" : "left out"}: the books gave back ${books("refund_made") - s.byWord.paise}, the rows and booksOnly ${back}`);
+  }
+  return out;
 }

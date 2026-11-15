@@ -69,7 +69,7 @@ export function reportSection(envelope: Envelope<FeesReport>, language: Language
 <div class="card"><strong>${r.reminders.sent}</strong><span>${esc(s.label.remindersSent)}</span></div>
 </div>
 <h2>${esc(p.numbers)}</h2>${numbers}
-${r.accounting ? moneyBlock(r.accounting.summary, s.moneyBlock, { toCome: true }) : ""}
+${r.accounting ? moneyBlock(r.accounting.summary, s.moneyBlock, { toCome: true, booksOnly: r.money.booksOnly }) : ""}
 <h2>${esc(p.stoppedHeading)}</h2>${rules}
 <h2>${esc(p.messagesHeading)}</h2>${messages}
 <dl><dt>${esc(p.unconfirmed)}</dt><dd>${r.unconfirmed.open}</dd></dl>

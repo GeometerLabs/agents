@@ -276,6 +276,9 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `moneyBlock.heading` | इस महीने के पैसे | Money this month |  |
 | `moneyBlock.owedBack` | महीने के अंत में ग्राहकों को लौटाना बाकी | Still owed back at the end of the month |  |
 | `moneyBlock.toCome` | महीने के अंत में अभी आना बाकी | Still to come at the end of the month |  |
+| `moneyBlock.paidTwice` | "मिले" में {amount} शामिल हैं जो ग्राहकों ने दो बार चुकाए। वह पैसा उनका है, दुकान का नहीं। | "Received" includes {amount} that customers paid twice. That money is theirs, not the shop's. |  |
+| `moneyBlock.markedReceived` | "मिले" में {amount} शामिल हैं जिन्हें आपने खुद मिला हुआ दर्ज किया। ऊपर की पंक्तियाँ सिर्फ़ वे भुगतान गिनती हैं जिनकी पुष्टि आपकी पेमेंट सेवा ने की। | "Received" includes {amount} that you marked as paid yourself. The rows above count only payments that your payment service confirmed. |  |
+| `moneyBlock.markedGivenBack` | "लौटाए" में {amount} शामिल हैं जिन्हें आपने खुद भेजा हुआ दर्ज किया। | "Given back" includes {amount} that you marked as sent yourself. |  |
 | `moneyBlock.received` | मिले | Received |  |
 | `moneyBlock.givenBack` | लौटाए | Given back |  |
 | `moneyBlock.kept` | रद्द करने पर रखे | Kept from cancellations |  |

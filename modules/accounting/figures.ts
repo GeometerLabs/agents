@@ -15,7 +15,11 @@
 //    Orders alone read a refund line that carries no amount (an older "looked for again" line) as the amount an earlier line of the same payment kept
 //    (`refundAmountFromPayment`); the other two never did;
 //  - the owner's marks (a UPI payment, a cash or bank payment, a refund marked sent) were summed only for a shop whose payments module cannot confirm by itself (UPI).
-//    A report passes `ownerMarks: false` for any other shop, so its signed figures stay as they were; the books themselves count every mark.
+//    A report passes `ownerMarks: false` for any other shop, so its signed figures stay as they were; the books themselves count every mark;
+//  - `booksOnly`: what the books count and the figures above leave out, so a report can say why its "Money this month" block (all money in and out, the standard
+//    way: a payment counts when it arrives, a payment made twice is the customer's money owed back) differs from its own rows. `paidTwice`: second payments on a link;
+//    `markedReceived` and `markedGivenBack`: the owner's marks left out by `ownerMarks: false`. Received in the books = received + paidTwice + markedReceived, and
+//    refunds made (less a person's word) = refunds + markedGivenBack; each template's accounting-figures test holds both on every crash-test world.
 import type { Journal, LegacyMap } from "./journal.ts";
 import { MONEY_REFS } from "./journal.ts";
 import type { RecordEntry } from "../record/record.ts";
@@ -32,6 +36,17 @@ export interface MonthFigures {
   /** Fees `waivers.lateFeesAdded`. */
   lateFees: Amount;
   missing: { depositAmounts: number; refundAmounts: number };
+  /** What the books count and the figures above leave out (see the file comment). */
+  booksOnly: { paidTwice: Amount; markedReceived: Amount; markedGivenBack: Amount };
+}
+
+/** What the books count and the report's rows leave out, in paise, as a report carries it (only when one is above 0: see `booksOnlyOf`). */
+export interface BooksOnly { paidTwicePaise: number; markedReceivedPaise: number; markedGivenBackPaise: number }
+
+/** The month's `booksOnly` for the report data and its "Money this month" block (report-block.ts), or undefined when the rows and the books agree. */
+export function booksOnlyOf(f: MonthFigures): BooksOnly | undefined {
+  const b = { paidTwicePaise: f.booksOnly.paidTwice.paise, markedReceivedPaise: f.booksOnly.markedReceived.paise, markedGivenBackPaise: f.booksOnly.markedGivenBack.paise };
+  return b.paidTwicePaise + b.markedReceivedPaise + b.markedGivenBackPaise > 0 ? b : undefined;
 }
 
 const empty = (): Amount => ({ count: 0, paise: 0 });
@@ -47,7 +62,8 @@ function receivedFor(e: RecordEntry, legacy: LegacyMap): string | undefined {
 const isOwnerMark = (e: RecordEntry): boolean => e.refs[MONEY_REFS.evidence] === "owner_mark" || e.action === "owner_marked_paid" || e.action === "upi_refund_marked_done";
 
 export function figuresOf(journal: Journal, entries: readonly RecordEntry[], legacy: LegacyMap, fromIso: string, toIso: string, options: { refundAmountFromPayment?: boolean; ownerMarks?: boolean } = {}): MonthFigures {
-  const out: MonthFigures = { received: empty(), refunds: { ...empty(), ofDeposits: empty(), ofSecondPayments: empty() }, discounts: empty(), lateFees: empty(), missing: { depositAmounts: 0, refundAmounts: 0 } };
+  const out: MonthFigures = { received: empty(), refunds: { ...empty(), ofDeposits: empty(), ofSecondPayments: empty() }, discounts: empty(), lateFees: empty(), missing: { depositAmounts: 0, refundAmounts: 0 },
+    booksOnly: { paidTwice: empty(), markedReceived: empty(), markedGivenBack: empty() } };
   // the payments received as a deposit or advance, over the whole record up to the month's end (a refund may come a month after its payment)
   const advance = new Set<string>();
   for (const e of entries) {
@@ -63,7 +79,13 @@ export function figuresOf(journal: Journal, entries: readonly RecordEntry[], leg
   for (const e of entries) {
     if (e.time < fromIso || e.time >= toIso) continue;
     const lines = journal.linesOf(e.seq);
-    if (options.ownerMarks === false && (lines.length > 0 ? lines[0].evidence === "owner_mark" : isOwnerMark(e))) continue;
+    if (options.ownerMarks === false && (lines.length > 0 ? lines[0].evidence === "owner_mark" : isOwnerMark(e))) {
+      // left out of the report's rows, still in the books: counted here so the report can say so
+      const moved = lines.reduce((n, l) => n + l.debitPaise, 0);
+      if (lines[0]?.kind === "received") bump(out.booksOnly.markedReceived, moved);
+      else if (lines[0]?.kind === "refund_made") bump(out.booksOnly.markedGivenBack, moved);
+      continue;
+    }
     if (lines.length === 0) {
       // not read as money: only an amount that is missing or wrong is counted (as before: counted, adds nothing, listed as missing)
       const why = problems.get(e.seq);
@@ -85,7 +107,7 @@ export function figuresOf(journal: Journal, entries: readonly RecordEntry[], leg
     const first = lines[0];
     const total = lines.reduce((n, l) => n + l.debitPaise, 0); // every entry balances: what it moved is the sum of its debits
     switch (first.kind) {
-      case "received": if (receivedFor(e, legacy) !== "extra") bump(out.received, total); break;
+      case "received": bump(receivedFor(e, legacy) === "extra" ? out.booksOnly.paidTwice : out.received, total); break;
       case "refund_made": {
         if (first.evidence === "person_word") break;
         refundSeen.add(e.refs.refundId ?? `seq-${e.seq}`);

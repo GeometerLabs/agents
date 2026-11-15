@@ -285,6 +285,9 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `moneyBlock.heading` | ಈ ತಿಂಗಳ ಹಣ | Money this month |  |
 | `moneyBlock.owedBack` | ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು | Still owed back at the end of the month |  |
 | `moneyBlock.toCome` | ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು | Still to come at the end of the month |  |
+| `moneyBlock.paidTwice` | "ಬಂದದ್ದು" ಇದರಲ್ಲಿ ಗ್ರಾಹಕರು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ {amount} ಸೇರಿದೆ. ಆ ಹಣ ಅವರದು, ಅಂಗಡಿಯದಲ್ಲ. | "Received" includes {amount} that customers paid twice. That money is theirs, not the shop's. |  |
+| `moneyBlock.markedReceived` | "ಬಂದದ್ದು" ಇದರಲ್ಲಿ ನೀವೇ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದ {amount} ಸೇರಿದೆ. ಮೇಲಿನ ಸಾಲುಗಳು ನಿಮ್ಮ ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದ ಪಾವತಿಗಳನ್ನು ಮಾತ್ರ ಎಣಿಸುತ್ತವೆ. | "Received" includes {amount} that you marked as paid yourself. The rows above count only payments that your payment service confirmed. |  |
+| `moneyBlock.markedGivenBack` | "ಹಿಂದಿರುಗಿಸಿದ್ದು" ಇದರಲ್ಲಿ ನೀವೇ ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ {amount} ಸೇರಿದೆ. | "Given back" includes {amount} that you marked as sent yourself. |  |
 | `moneyBlock.received` | ಬಂದದ್ದು | Received |  |
 | `moneyBlock.givenBack` | ಹಿಂದಿರುಗಿಸಿದ್ದು | Given back |  |
 | `moneyBlock.kept` | ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು | Kept from cancellations |  |

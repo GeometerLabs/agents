@@ -73,7 +73,7 @@ export function reportSection(envelope: Envelope<OrdersReport>, language: Langua
 <div class="card"><strong>${r.orders.cancelled}</strong><span>${esc(s.label.cancelled)}</span></div>
 </div>
 <h2>${esc(p.numbers)}</h2>${numbers}
-${r.accounting ? moneyBlock(r.accounting.summary, s.moneyBlock) : ""}
+${r.accounting ? moneyBlock(r.accounting.summary, s.moneyBlock, { booksOnly: r.money.booksOnly }) : ""}
 <h2>${esc(p.soldHeading)}</h2>${sold}${items}
 <h2>${esc(p.stoppedHeading)}</h2>${rules}
 <h2>${esc(p.messagesHeading)}</h2>${messages}

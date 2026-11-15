@@ -13,7 +13,7 @@ import { runOn } from "../crash-test/situations.ts";
 import { BOOKINGS_LEGACY } from "../src/accounting.ts";
 import { journal } from "../../../../modules/accounting/journal.ts";
 import { figuresOf } from "../../../../modules/accounting/figures.ts";
-import { booksFaults } from "../../../../modules/accounting/invariants.ts";
+import { booksFaults, figuresFaults } from "../../../../modules/accounting/invariants.ts";
 import { isSettledByWord, settledByWordOf } from "../../../../modules/report/settled-by-word.ts";
 import { monthRange } from "../../../../modules/report/months.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
@@ -99,6 +99,8 @@ test("the books give the report's deposits, refunds and missing amounts, exactly
     assert.deepEqual(j.problems.filter((p) => !/already counted/.test(p.why)), [], `world ${i}: the journal reads every line of the record`);
     // the books hold after every situation: balanced entries, money once, refunds owed equal to the open refunds, numbers with no gap, no phone number in refs
     assert.deepEqual(booksFaults(w.record.entries(), BOOKINGS_LEGACY), [], `world ${i}: the books hold`);
+    // the report's rows and its "Money this month" block differ only by what booksOnly names (a payment made twice, the owner's own marks)
+    assert.deepEqual(figuresFaults(w.record.entries(), BOOKINGS_LEGACY), [], `world ${i}: the rows and the block differ only by booksOnly`);
     assert.deepEqual(w.record.entries().filter((e) => e.refs.money === undefined && j.linesOf(e.seq).length > 0).map((e) => `${e.action}/${e.outcome}`), [], `world ${i}: every money line was written through post`);
     const f = figuresOf(j, w.record.entries(), BOOKINGS_LEGACY, "1970-01-01T00:00:00.000Z", "2100-01-01T00:00:00.000Z");
     refundsSeen += f.refunds.count;

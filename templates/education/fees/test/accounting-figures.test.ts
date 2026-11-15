@@ -13,7 +13,7 @@ import { runOn } from "../crash-test/situations.ts";
 import { FEES_LEGACY } from "../src/accounting.ts";
 import { journal } from "../../../../modules/accounting/journal.ts";
 import { figuresOf } from "../../../../modules/accounting/figures.ts";
-import { booksFaults } from "../../../../modules/accounting/invariants.ts";
+import { booksFaults, figuresFaults } from "../../../../modules/accounting/invariants.ts";
 import { balancePaise } from "../src/due.ts";
 import { isSettledByWord } from "../../../../modules/report/settled-by-word.ts";
 import { monthRange } from "../../../../modules/report/months.ts";
@@ -92,6 +92,8 @@ test("the books give the report's money, exactly, on the busy month and every cr
     // the books hold after every situation (as in Bookings and Orders), and no student's name reaches a record entry's refs
     const dues = [...w.store.dues.values()];
     assert.deepEqual(booksFaults(all, FEES_LEGACY, { privateText: dues.map((d) => d.studentName) }), [], `world ${i}: the books hold`);
+    // the report's rows and its "Money this month" block differ only by what booksOnly names (a payment made twice, the owner's own marks)
+    assert.deepEqual(figuresFaults(all, FEES_LEGACY), [], `world ${i}: the rows and the block differ only by booksOnly`);
     // Fees keeps each fee's balance in its own store, before refunds (due.ts: "negative: more was paid than is owed, and the extra is to be refunded"). The books take
     // a refund owed out of the fee's overpaid receivable first and the rest from `returns` (a refund the owner gives on a fee paid exactly), so the books' receivable is
     // the store's balance plus the refunds owed on that fee, up to what was overpaid. A refund made, or kept by the owner, stays counted; a cancelled one does not.
