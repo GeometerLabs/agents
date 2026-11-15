@@ -160,3 +160,13 @@ See [Deferred.md](Deferred.md). The ones to know first: nothing has been run aga
 ## Not a claim
 
 Everything above was run on stand-in services. "Held 26 of 26" means 26 situations were tried and the stand-ins' records showed the limits held in them. It does not mean the agent is right in a real centre, and it says nothing about situations that were not tried. No word in this folder is a promise about what will be collected.
+
+## Modules it uses
+
+<!-- modules it uses: made by modules/module-map.ts from the imports; run `node modules/module-map.ts --write` -->
+
+The shared modules Fees uses, from its code's own imports: [`accounting/`](../../../modules/README.md#what-is-here), [`approvals/`](../../../modules/README.md#what-is-here), [`assistant/`](../../../modules/README.md#what-is-here), [`channels/`](../../../modules/README.md#what-is-here), [`core/`](../../../modules/README.md#what-is-here), [`crash-test/`](../../../modules/README.md#what-is-here), [`demo/`](../../../modules/README.md#what-is-here), [`inbox/`](../../../modules/README.md#what-is-here), [`language/`](../../../modules/README.md#what-is-here), [`licence/`](../../../modules/README.md#what-is-here), [`limits/`](../../../modules/README.md#what-is-here), [`messaging/`](../../../modules/README.md#what-is-here), [`papers/`](../../../modules/README.md#what-is-here), [`payments/`](../../../modules/README.md#what-is-here), [`push/`](../../../modules/README.md#what-is-here), [`qr/`](../../../modules/README.md#what-is-here), [`record/`](../../../modules/README.md#what-is-here), [`reminders/`](../../../modules/README.md#what-is-here), [`report/`](../../../modules/README.md#what-is-here), [`runtime/`](../../../modules/README.md#what-is-here), [`standins/`](../../../modules/README.md#what-is-here), [`terms/`](../../../modules/README.md#what-is-here), [`understanding/`](../../../modules/README.md#what-is-here), [`unfinished/`](../../../modules/README.md#what-is-here), [`voice/`](../../../modules/README.md#what-is-here).
+
+What each one does and what a template hands it: the table in [modules/README.md](../../../modules/README.md#what-is-here). A new template uses the same modules the same way.
+
+<!-- end of modules it uses -->
