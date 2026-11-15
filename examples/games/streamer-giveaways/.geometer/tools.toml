@@ -1,5 +1,5 @@
 # The simulated world: a promo service with campaigns and the codes given to viewers.
-# A code is one effect per campaign and viewer. The service also has an operator-only export of every code.
+# A code is one effect per campaign and viewer. The service also has an admin-only export of every code.
 [[tool]]
 id = "promo"
 double = "http"

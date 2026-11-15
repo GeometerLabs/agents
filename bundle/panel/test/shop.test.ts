@@ -206,7 +206,7 @@ test("the checks, then 'Ready to go live': a different account stops it and is n
     assert.ok(names.includes("go-live-certificate.json") && names.includes("go-live-certificate-ml.html"), names.join());
     const cert = JSON.parse(docs.get(f.shop, "go-live/go-live-certificate.json")!);
     assert.ok(cert.signatures?.length > 0 || cert.signature, "signed with the panel's key");
-    assert.equal(cert.document.preparedBy, "DIVYA, local partner");
+    assert.equal(cert.document.preparedBy, "DIVYA, local Operator");
     assert.equal(cert.document.shop.name, "Hosahalli Beauty");
     const done = (await divya.get(checks)).plain;
     assert.ok(done.includes(w.ready) && done.includes(w.certificate));
@@ -264,7 +264,7 @@ test("the monthly report reads the go-live certificate the panel made, and says 
     assert.ok(checks && checks.hand.total > 0 && checks.hand.held === checks.hand.total);
     b.status("glow-salon", applied());
     await gl.run("glow-salon");
-    const result = gl.ready("glow-salon", "Divya, local partner");
+    const result = gl.ready("glow-salon", "Divya, local Operator");
     assert.equal(result.ok, true, JSON.stringify(result));
     await owner.post("/shops/glow-salon/report", { month: monthly }, "/shops/glow-salon");
     const after = reportJson(`report-${monthly}.json`).document;
@@ -279,7 +279,7 @@ test("the monthly report reads the go-live certificate the panel made, and says 
     assert.equal((await owner.get("/shops/glow-salon/docs/monthly/2026-11/..%2fsecret.txt")).status, 404);
     // No message text is anywhere on the page: only counts.
     assert.ok(!/नमस्ते|Glow Salon-ലേക്ക്/u.test(page));
-    // Builders can open "Show what we did"; a partner cannot see it.
+    // Builders can open "Show what we did"; an Operator cannot see it.
     assert.ok(page.includes(WORDS.en.shop.detailsPins) && page.includes("sha256 "));
   } finally { await b.close(); }
 });

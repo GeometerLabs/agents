@@ -2,7 +2,7 @@
 // level or a rank (claim rule 2): who runs it and for which shop, the template and its version, the limits in plain words, the go-live checks ("held N of M")
 // and what they did not test, the live counts so far, and who made a limit wider and when.
 //
-// The operator (the partner or builder) chooses which of those are public. A field they keep back reads "not shown by the operator" on the public paper,
+// The operator (the Operator or builder) chooses which of those are public. A field they keep back reads "not shown by the operator" on the public paper,
 // never as if it were empty: a missing "limits made wider" must not read as "no limit was made wider". Customer data is never an input here: the paper is
 // made from counts of the record, the settings' limits and the go-live certificate, so it cannot carry a number or a name.
 //

@@ -1,4 +1,4 @@
-// Client health and margin (B32) and the innovators' template vote (B56): the arithmetic on fixed numbers, unknown staying unknown, a partner seeing only their
+// Client health and margin (B32) and the innovators' template vote (B56): the arithmetic on fixed numbers, unknown staying unknown, an Operator seeing only their
 // own shops, the vote shown only to an innovator, one vote each, counts without names, and none of the site's banned words in any of the four languages.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -120,7 +120,7 @@ test("what the person types: rupees as whole paise, empty as not entered, anythi
 
 // ---- the pages ------------------------------------------------------------------------------------------------------------------------------------------------
 
-test("a partner's page: the running cost from the price list, her price and minutes, her margin; the cost she cannot know is unknown and the margin says it is before that", async () => {
+test("an Operator's page: the running cost from the price list, her price and minutes, her margin; the cost she cannot know is unknown and the margin says it is before that", async () => {
   const b = await boot({}, { mode: "hosted" });
   try {
     const divya = await b.account("divya", "partner");
@@ -179,7 +179,7 @@ test("on a builder's own server Geometer's line is the builder licence and the m
   } finally { await b.close(); }
 });
 
-test("a partner sees only her own shops; another partner's shop is a 404 for her to read and to save, and a builder's entries are his own", async () => {
+test("an Operator sees only her own shops; another Operator's shop is a 404 for her to read and to save, and a builder's entries are his own", async () => {
   const b = await boot({}, { mode: "hosted" });
   try {
     const divya = await b.account("divya", "partner");

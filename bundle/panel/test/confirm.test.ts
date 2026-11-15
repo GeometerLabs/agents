@@ -97,7 +97,7 @@ test("a link cannot be made, or used, to loosen a limit or to change something t
   } finally { await b.close(); }
 });
 
-test("a link made before the settings changed is refused, and a partner who does not own the shop cannot open it", async () => {
+test("a link made before the settings changed is refused, and an Operator who does not own the shop cannot open it", async () => {
   const { b, arjun } = await setUp();
   try {
     const { link } = ask(b, { kind: "limits", shop: "glow-salon", changes: [{ path: "cancellation.refundLimitInr", value: 100 }] });

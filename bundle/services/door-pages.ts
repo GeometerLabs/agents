@@ -1,6 +1,6 @@
 // The door's own error pages, in the shop's languages (release-flow batch 3, 14 Nov 2026). Before this the door answered "This shop's page is not answering" and the
 // rest in English only, with no way to reach anyone. Now each page is in English, Hindi, Malayalam or Kannada (the visitor's `?lang=`, else the browser's first of the
-// four, else English), links to the other three, and, when the door has seen the shop's partner contact, says who to call.
+// four, else English), links to the other three, and, when the door has seen the shop's Operator contact, says who to call.
 //
 // What the door can know: it holds no shop data and asks no front when a shop is down (that is exactly when a page is wanted). So the shop's front names its partner
 // in a response header on every page it serves (`CONTACT_HEADER`, modules/channels/contact-bar.ts), and the door keeps the last one it saw per slug (door.ts `contacts`), a
@@ -44,7 +44,7 @@ export const WORDS: Record<Language, Words> = {
       notAnswering: { title: "This shop's page is not answering", text: "Please try again in a few minutes." },
       notAnsweringLater: { title: "This shop's page is not answering", text: "Please try again later." },
       notHere: { title: "Not here", text: "Use the page's links and buttons." },
-      home: { title: "Shop pages", text: "Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local partner." },
+      home: { title: "Shop pages", text: "Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local Operator." },
       waitMinute: { title: "Too many requests", text: "Please wait a minute." }, waitWhile: { title: "Too many requests", text: "Please wait a while." }, waitFew: { title: "Too many requests", text: "Please wait a few minutes." },
       nothingHere: { title: "There is nothing here", text: "This page has no such address." },
       tooBig: { title: "Too big", text: "That is more than a shop's page takes." },
@@ -61,7 +61,7 @@ export const WORDS: Record<Language, Words> = {
       notAnswering: { title: "इस दुकान का पेज जवाब नहीं दे रहा", text: "कुछ मिनट बाद फिर कोशिश कीजिए।" },
       notAnsweringLater: { title: "इस दुकान का पेज जवाब नहीं दे रहा", text: "थोड़ी देर बाद फिर कोशिश कीजिए।" },
       notHere: { title: "यहाँ नहीं", text: "पेज के लिंक और बटन इस्तेमाल कीजिए।" },
-      home: { title: "दुकानों के पेज", text: "हर दुकान का पेज उसके अपने छोटे नाम पर है, जैसे /veena-salon। दुकानें इसे अपने स्थानीय पार्टनर के साथ बनवाती हैं।" },
+      home: { title: "दुकानों के पेज", text: "हर दुकान का पेज उसके अपने छोटे नाम पर है, जैसे /veena-salon। दुकानें इसे अपने स्थानीय ऑपरेटर के साथ बनवाती हैं।" },
       waitMinute: { title: "बहुत ज़्यादा अनुरोध", text: "एक मिनट रुकिए।" }, waitWhile: { title: "बहुत ज़्यादा अनुरोध", text: "थोड़ी देर रुकिए।" }, waitFew: { title: "बहुत ज़्यादा अनुरोध", text: "कुछ मिनट रुकिए।" },
       nothingHere: { title: "यहाँ कुछ नहीं है", text: "इस पते पर कोई पेज नहीं है।" },
       tooBig: { title: "बहुत बड़ा", text: "यह दुकान के पेज की सीमा से ज़्यादा है।" },
@@ -78,7 +78,7 @@ export const WORDS: Record<Language, Words> = {
       notAnswering: { title: "ഈ കടയുടെ പേജ് പ്രതികരിക്കുന്നില്ല", text: "കുറച്ച് മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ." },
       notAnsweringLater: { title: "ഈ കടയുടെ പേജ് പ്രതികരിക്കുന്നില്ല", text: "കുറച്ച് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ." },
       notHere: { title: "ഇവിടെ അല്ല", text: "പേജിലെ ലിങ്കുകളും ബട്ടണുകളും ഉപയോഗിക്കൂ." },
-      home: { title: "കടകളുടെ പേജുകൾ", text: "ഓരോ കടയുടെയും പേജ് അതിന്റെ ചെറിയ പേരിലാണ്, ഉദാ. /veena-salon. കടകൾ ഇത് അവരുടെ പ്രാദേശിക പങ്കാളിയോടൊപ്പം സജ്ജമാക്കുന്നു." },
+      home: { title: "കടകളുടെ പേജുകൾ", text: "ഓരോ കടയുടെയും പേജ് അതിന്റെ ചെറിയ പേരിലാണ്, ഉദാ. /veena-salon. കടകൾ ഇത് അവരുടെ പ്രാദേശിക ഓപ്പറേറ്റർയോടൊപ്പം സജ്ജമാക്കുന്നു." },
       waitMinute: { title: "വളരെയധികം അഭ്യർത്ഥനകൾ", text: "ഒരു മിനിറ്റ് കാത്തിരിക്കൂ." }, waitWhile: { title: "വളരെയധികം അഭ്യർത്ഥനകൾ", text: "കുറച്ച് നേരം കാത്തിരിക്കൂ." }, waitFew: { title: "വളരെയധികം അഭ്യർത്ഥനകൾ", text: "കുറച്ച് മിനിറ്റ് കാത്തിരിക്കൂ." },
       nothingHere: { title: "ഇവിടെ ഒന്നുമില്ല", text: "ഈ വിലാസത്തിൽ പേജ് ഇല്ല." },
       tooBig: { title: "വളരെ വലുത്", text: "ഇത് ഒരു കടയുടെ പേജ് സ്വീകരിക്കുന്നതിലും കൂടുതലാണ്." },
@@ -95,7 +95,7 @@ export const WORDS: Record<Language, Words> = {
       notAnswering: { title: "ಈ ಅಂಗಡಿಯ ಪುಟ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ", text: "ಕೆಲವು ನಿಮಿಷ ಬಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ." },
       notAnsweringLater: { title: "ಈ ಅಂಗಡಿಯ ಪುಟ ಉತ್ತರಿಸುತ್ತಿಲ್ಲ", text: "ಸ್ವಲ್ಪ ಹೊತ್ತು ಬಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ." },
       notHere: { title: "ಇಲ್ಲಿ ಅಲ್ಲ", text: "ಪುಟದ ಲಿಂಕ್ ಮತ್ತು ಬಟನ್‌ಗಳನ್ನು ಬಳಸಿ." },
-      home: { title: "ಅಂಗಡಿಗಳ ಪುಟಗಳು", text: "ಪ್ರತಿ ಅಂಗಡಿಯ ಪುಟ ಅದರ ಚಿಕ್ಕ ಹೆಸರಿನಲ್ಲಿದೆ, ಉದಾ. /veena-salon. ಅಂಗಡಿಗಳು ಇದನ್ನು ತಮ್ಮ ಸ್ಥಳೀಯ ಪಾಲುದಾರರೊಂದಿಗೆ ಹೊಂದಿಸುತ್ತವೆ." },
+      home: { title: "ಅಂಗಡಿಗಳ ಪುಟಗಳು", text: "ಪ್ರತಿ ಅಂಗಡಿಯ ಪುಟ ಅದರ ಚಿಕ್ಕ ಹೆಸರಿನಲ್ಲಿದೆ, ಉದಾ. /veena-salon. ಅಂಗಡಿಗಳು ಇದನ್ನು ತಮ್ಮ ಸ್ಥಳೀಯ ಆಪರೇಟರ್ ಅವರೊಂದಿಗೆ ಹೊಂದಿಸುತ್ತವೆ." },
       waitMinute: { title: "ತುಂಬಾ ವಿನಂತಿಗಳು", text: "ಒಂದು ನಿಮಿಷ ಕಾಯಿರಿ." }, waitWhile: { title: "ತುಂಬಾ ವಿನಂತಿಗಳು", text: "ಸ್ವಲ್ಪ ಹೊತ್ತು ಕಾಯಿರಿ." }, waitFew: { title: "ತುಂಬಾ ವಿನಂತಿಗಳು", text: "ಕೆಲವು ನಿಮಿಷ ಕಾಯಿರಿ." },
       nothingHere: { title: "ಇಲ್ಲಿ ಏನೂ ಇಲ್ಲ", text: "ಈ ವಿಳಾಸದಲ್ಲಿ ಪುಟ ಇಲ್ಲ." },
       tooBig: { title: "ತುಂಬಾ ದೊಡ್ಡದು", text: "ಇದು ಅಂಗಡಿಯ ಪುಟ ಸ್ವೀಕರಿಸುವುದಕ್ಕಿಂತ ಹೆಚ್ಚು." },
@@ -117,7 +117,7 @@ export function languageOf(req: { url?: string; headers: Record<string, string |
   return "en";
 }
 
-/** One of the door's own pages for the request on `res`, in the visitor's language, with who to call when the shop's partner is known. */
+/** One of the door's own pages for the request on `res`, in the visitor's language, with who to call when the shop's Operator is known. */
 export function doorPage(key: DoorKey, res: ServerResponse, contact?: DoorContact): string {
   const language = languageOf(res.req, contact?.languages);
   const w = WORDS[language];

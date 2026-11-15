@@ -1,4 +1,4 @@
-// Item 11h in the panel (decisions 45 and 46): the owner's sign-in without WhatsApp. The partner shows a setup QR code (one use, that shop only, 15 minutes) and prints a
+// Item 11h in the panel (decisions 45 and 46): the owner's sign-in without WhatsApp. The Operator shows a setup QR code (one use, that shop only, 15 minutes) and prints a
 // recovery card (five one-use codes); both are shown once and only their hashes are written, for the deployer to hand to the shop's runtime. "Remove the owner's
 // passkeys" is there for a lost phone. A shop with no WhatsApp number is not ready to go live until the owner's QR has been shown.
 import { test } from "node:test";
@@ -60,7 +60,7 @@ test("the setup QR and the recovery card are shown once, kept as hashes, for thi
     assert.equal(grantInFile({ kind: "recovery", code: codes[0] }, after, now0()), "unknown");
 
     const other = await b.account("divya", "partner");
-    assert.equal((await other.post("/shops/glow-salon/owner-setup", {}, "/shops")).status, 404, "another partner's shop is a 404");
+    assert.equal((await other.post("/shops/glow-salon/owner-setup", {}, "/shops")).status, 404, "another Operator's shop is a 404");
   } finally { await b.close(); }
 });
 

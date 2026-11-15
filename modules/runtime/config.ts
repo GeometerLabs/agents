@@ -106,9 +106,9 @@ export interface AllowanceConfig { messages?: number; costInr?: number }
  * address of the full page. Every path is measured from the client folder.
  */
 export interface ReportConfig {
-  /** Who set the agent up, as the owner should read it ("Divya, local partner"). Read again when it changes, like `ai`. */
+  /** Who set the agent up, as the owner should read it ("Divya, local Operator"). Read again when it changes, like `ai`. */
   preparedBy: string;
-  /** Whether this builder or partner has the Innovator badge (fleet's answer for the shop). Read again when it changes. Default false. */
+  /** Whether this builder or Operator has the Innovator badge (fleet's answer for the shop). Read again when it changes. Default false. */
   innovator?: boolean;
   /** Where the full page is served from: https, no trailing slash. The runtime writes each month's page into `pagesDir/<random name>/`; whatever serves that folder read-only, with no folder listing, is at this address. */
   pageBaseUrl: string;
@@ -277,7 +277,7 @@ export const validName = (v: unknown): v is string => isText(v) && v.length <= N
 
 /** `report`: the monthly report to the owner. */
 function readReport(raw: unknown, folder: string, dataDir: string, errors: string[]): ReportConfig | undefined {
-  if (!isObj(raw)) { errors.push('"report" must be an object like {"preparedBy": "Divya, local partner", "pageBaseUrl": "https://reports.example.com/r"}. Leave it out and no monthly report is sent to the owner.'); return undefined; }
+  if (!isObj(raw)) { errors.push('"report" must be an object like {"preparedBy": "Divya, local Operator", "pageBaseUrl": "https://reports.example.com/r"}. Leave it out and no monthly report is sent to the owner.'); return undefined; }
   const before = errors.length;
   unknownKeys(raw, REPORT_KEYS, "report", errors);
   if (!validName(raw.preparedBy)) errors.push(`report.preparedBy must be the name the owner should read for who set the agent up, on one line, up to ${NAME_LIMIT} characters. The monthly message says it.`);

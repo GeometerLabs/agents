@@ -1,6 +1,6 @@
 // Makes a shop's monthly report and monthly record certificate from the agent's record, in the shop's language.
 //   node templates/commerce/bookings/scripts/client-report.ts --settings shop.json --record entries.json --bookings bookings.json \
-//        --month 2026-11 --lang hi --out ./out --source stand-in --go-live ./go-live-certificate.json [--key ~/geometer-keys/report-key.pem] [--prepared-by "Divya, local partner"] [--innovator]
+//        --month 2026-11 --lang hi --out ./out --source stand-in --go-live ./go-live-certificate.json [--key ~/geometer-keys/report-key.pem] [--prepared-by "Divya, local Operator"] [--innovator]
 // --record is the whole action record (a list of entries, oldest first); --bookings is the conversation store's bookings.
 // --lang is hi, en, ml, kn, or both (Hindi and English, as two messages and one page). --source says what the numbers
 // were counted from (stand-in, test-mode or live) and is written on every layer; there is no default.
@@ -8,7 +8,7 @@
 // (this shop's own settings, Glow Salon's example, or other settings) is written into the report and the monthly certificate. Without it, or with a file
 // that is missing, unsigned, changed or not a go-live certificate, the script says so in one plain sentence, the report says so too, and the files are
 // still written.
-// --innovator puts the Innovator badge on the report and its certificate (for the first 100 builders and partners; fleet's answer for the shop says so).
+// --innovator puts the Innovator badge on the report and its certificate (for the first 100 builders and Operators; fleet's answer for the shop says so).
 // Without --key the files are not signed, and the script says so. Files are written into --out and nowhere else.
 import { parseArgs } from "node:util";
 import { UsageError, main, readBookings, readEntries, readGoLive, readKey, readLanguage, readNow, readSettings, readSource } from "../report/cli.ts";

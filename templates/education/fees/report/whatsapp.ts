@@ -1,5 +1,5 @@
 // The monthly Fees report as a WhatsApp message: the owner's lines, in the centre's language, from the numbers the report counted, with the name of the builder or
-// partner who set the agent up and, when they have it, the Innovator badge. The same plan as Bookings' (B54), over the same shared job (modules/report/monthly-job.ts).
+// Operator who set the agent up and, when they have it, the Innovator badge. The same plan as Bookings' (B54), over the same shared job (modules/report/monthly-job.ts).
 //
 // One wording, two ways to send it. The words below are written once per language. Inside the owner's 24-hour window they go out as plain text. Outside it (the usual
 // case on the 1st of the month) WhatsApp carries only an approved template, so the SAME words are listed for Meta as two utility templates, `fee_monthly_report` and

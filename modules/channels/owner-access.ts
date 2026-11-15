@@ -13,7 +13,7 @@
 //   - a link or a session is good only for the owner number and the owner's address (`base`) it was made for: a new owner number in the settings, or a new slug,
 //     ends them; and a session made before the panel's "sign out every device" (OWNER_SESSIONS_FILE) is refused.
 //
-// Item 11h (decisions 45 and 46): passkeys, so the owner signs in without WhatsApp. The partner's setup QR or a code from the printed recovery card (owner-grants.ts)
+// Item 11h (decisions 45 and 46): passkeys, so the owner signs in without WhatsApp. The Operator's setup QR or a code from the printed recovery card (owner-grants.ts)
 // lets the owner register a passkey; later sign-ins use it. Kept here too, because a passkey sign-in makes the same session as a link:
 //   - each challenge is 32 random bytes, kept as a hash, works once, for CHALLENGE_MS, for one ceremony (and a registration's for one grant);
 //   - a grant is used up only when the registration finishes, in the same transaction that keeps the credential and makes the session, so a cancelled

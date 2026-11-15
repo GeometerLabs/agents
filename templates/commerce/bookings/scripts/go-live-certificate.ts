@@ -1,5 +1,5 @@
 // Makes a shop's go-live certificate from one run of the hand check, in the shop's language.
-//   node templates/commerce/bookings/scripts/go-live-certificate.ts --settings shop.json --lang hi --out ./out [--key ~/geometer-keys/report-key.pem] [--prepared-by "Divya, local partner"]
+//   node templates/commerce/bookings/scripts/go-live-certificate.ts --settings shop.json --lang hi --out ./out [--key ~/geometer-keys/report-key.pem] [--prepared-by "Divya, local Operator"]
 // The hand check (the same situations scripts/hand-check.ts runs) is run now, on this shop's own settings, against stand-in
 // services. The certificate says "Held N of M situations. K failed. J not tested", lists what was not tested, shows the shop's
 // limits from the settings, and says the checks were run by hand against stand-in services. A situation these settings cannot

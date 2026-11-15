@@ -104,7 +104,7 @@ test("Google Calendar is optional and only on Bookings; Razorpay and the shop's 
 
 test("each template asks what its own settings ask, and nothing the code no longer needs", () => {
   const ids = (t: (typeof CARD_TEMPLATES)[number]) => askCardFor(t, "en").items.filter((i) => i.group === "template").map((i) => i.id);
-  // item 11d: the booking page is on the card too (nothing to ask for, but the partner should know the shop has it from day one)
+  // item 11d: the booking page is on the card too (nothing to ask for, but the Operator should know the shop has it from day one)
   assert.deepEqual(ids("bookings"), ["services", "hours", "deposit", "hold-time", "cancellation", "refund-limit", "calendar", "booking-page"]);
   assert.deepEqual(ids("orders"), ["menu", "cutoff", "slots", "delivery-area", "advance", "day-limits", "cancellation", "refund-limit", "approval-line"]);
   assert.deepEqual(ids("fees"), ["students", "class-fee", "due-day", "late-fee", "reminders", "part-payments", "waiver-limit", "refund-limit"]);

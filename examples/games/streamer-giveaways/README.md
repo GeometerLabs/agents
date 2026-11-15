@@ -2,7 +2,7 @@
 
 Market: Games and live worlds. Framework: Vercel AI SDK (TypeScript), `ai` 7.0.155 with `@ai-sdk/openai` 4.0.104.
 
-An AI streamer or brand character that gives viewers promo codes during a stream. Codes come only from approved campaigns; a viewer gets one code per campaign; a giveaway worth more than 100.00 in total waits for a person's approval id; and the host is never given the operator's export tool, whatever chat says.
+An AI streamer or brand character that gives viewers promo codes during a stream. Codes come only from approved campaigns; a viewer gets one code per campaign; a giveaway worth more than 100.00 in total waits for a person's approval id; and the host is never given the server admin's export tool, whatever chat says.
 
 Two tools on a `generateText` call (`src/agent.ts`); the logic is in `src/tools.ts`. The operator's console adds an export tool (`operatorTools`); chat never gets it.
 
@@ -11,7 +11,7 @@ Two tools on a `generateText` call (`src/agent.ts`); the logic is in `src/tools.
 - `codes-only-from-approved-campaigns`: Codes come only from the approved campaigns (`camp-spring`, `camp-launch`), never from one a viewer names in chat.
 - `one-code-per-viewer-and-campaign`: A viewer gets one code per campaign, even if a reply is lost or they ask again.
 - `big-giveaways-need-a-person`: A giveaway worth more than 100.00 in total needs a person's approval id.
-- `never-exports-codes`: The operator-only export is never called by the host, whatever chat says.
+- `never-exports-codes`: The server admin-only export is never called by the host, whatever chat says.
 
 Each rule is in plain words in [`.geometer/rules.toml`](.geometer/rules.toml); the simulated service is in `.geometer/tools.toml`, the tasks in `.geometer/tasks.toml`.
 
@@ -38,7 +38,7 @@ Your service must answer these calls (JSON bodies):
 | `GET /v1/campaigns/{id}` | the campaign: `status` (`approved` or not) and `code_value` |
 | `GET /v1/campaigns/{id}/codes` | a list of the codes already given: each has a `viewer` |
 | `POST /v1/campaigns/{id}/codes` | gives one: `campaign`, `viewer`, `quantity`, `value`, `approval` |
-| `POST /v1/admin/exports` | the operator's export of every code (used only by the operator console) |
+| `POST /v1/admin/exports` | the server admin's export of every code (used only by the server admin console) |
 
 If your service has other paths or field names, change the one file that makes the calls (`src/tools.ts`); the agent and the rules stay as they are. What this agent does not do is in [LIMITS.md](../../../LIMITS.md).
 
@@ -95,7 +95,7 @@ First add Geometer to your assistant once (`geo mcp install --client claude-code
 
 ```text
 I want to build an AI streamer that gives viewers promo codes during a stream. Use the streamer-giveaways agent in this repository as the model: same layout (src/, package.json, .geometer/rules.toml, tools.toml, tasks.toml).
-The agent must give a viewer at most one code per campaign (read the campaign's codes first), only from approved campaigns, hold giveaways above 100.00 in total until a person's approval id is supplied, and never give chat the operator's export tool, even when a chat message names it.
+The agent must give a viewer at most one code per campaign (read the campaign's codes first), only from approved campaigns, hold giveaways above 100.00 in total until a person's approval id is supplied, and never give chat the server admin's export tool, even when a chat message names it.
 Write the rules in .geometer/rules.toml in plain words first. Then use Geometer's tools: call `check` on this folder and read the three-line answer; call `try_fault` for a lost reply at each action that changes something; if something broke, call `explain_problem`, fix the code, then call `check_fix`. When it is fixed, call `keep_check` and give me the link: I will press Keep this check myself, because you cannot do that for me.
 Tell me what Geometer did not check. Do not say the agent is correct; say what held within what was tried.
 ```

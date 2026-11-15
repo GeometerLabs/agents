@@ -1,7 +1,7 @@
 // Own agents in the panel (B51's rest, 12 Nov 2026): what a builder sees of each agent they wrote, beside the shops, and the three things they may ask for from here (stop,
 // a new crash test, new credentials). The panel has no agents/ folder and no state file: everything comes from files the deployer writes for it (status/<agent>.json with its
 // `own` block, exports/<agent>/: the record, the last crash test, the version in service, the last rotation), and every action is a request file with a name and an id that
-// the deployer carries out (bundle/agent/requests.ts, apply.ts processStopRequests). Nothing the panel writes reaches a command line. Builders only: a partner never sees an
+// the deployer carries out (bundle/agent/requests.ts, apply.ts processStopRequests). Nothing the panel writes reaches a command line. Builders only: an Operator never sees an
 // own agent, and to them the address is a 404 like any shop that is not theirs.
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

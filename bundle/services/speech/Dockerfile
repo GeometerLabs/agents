@@ -57,5 +57,5 @@ USER 10001:10001
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
   CMD ["python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=4).status == 200 else 1)"]
-# `docker run IMAGE python -m geometer_speech.fetch_models ...` runs the operator's download step from the same image.
+# `docker run IMAGE python -m geometer_speech.fetch_models ...` runs the server admin's download step from the same image.
 CMD ["python", "-m", "geometer_speech.server"]

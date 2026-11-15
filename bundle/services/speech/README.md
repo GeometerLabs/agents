@@ -1,8 +1,8 @@
 # Geometer speech service (voice notes in, text out)
 
-A small service that turns a customer's WhatsApp voice note into text. Hindi, Malayalam and Kannada go to AI4Bharat's IndicConformer; English goes to Whisper. It listens only: replies to customers are text (owner's decision, 12 Nov 2026), so there is no speech output. It runs on CPU, keeps nothing (audio is held for the length of one request and deleted), and ships with the open deploy bundle so a builder can run it too. Partners' shops use the one on Geometer's server.
+A small service that turns a customer's WhatsApp voice note into text. Hindi, Malayalam and Kannada go to AI4Bharat's IndicConformer; English goes to Whisper. It listens only: replies to customers are text (owner's decision, 12 Nov 2026), so there is no speech output. It runs on CPU, keeps nothing (audio is held for the length of one request and deleted), and ships with the open deploy bundle so a builder can run it too. Operators' shops use the one on Geometer's server.
 
-It is **off** unless the server turns it on, and it has no model files until the operator downloads them (see "What the operator does").
+It is **off** unless the server turns it on, and it has no model files until the server admin downloads them (see "What the server admin does").
 
 ## What it answers
 
@@ -44,7 +44,7 @@ Read the licence text on each model's own page when you accept it; this table is
 - `ai4bharat/indic-conformer-600m-multilingual` at `2a77d305038dfc502fd9464e7d028b90381976cb` (371 files under `assets/` plus the model card: the CTC path only, no RNNT, no joint networks)
 - `ggerganov/whisper.cpp` at `5359861c739e955e79d9a303bcbc70fb988958b1` (`ggml-small.en-q5_1.bin` sha256 `bfdff4894dcb76bbf647d56263ea2a96645423f1669176f4844a1bf8e478ad30`; `ggml-tiny-q5_1.bin` sha256 `818710568da3ca15689e31a743197b520007872ff9576237bda97bd1b469c3d7`)
 
-## What the operator does
+## What the server admin does
 
 1. **Accept the licence.** Log in to Hugging Face and open https://huggingface.co/ai4bharat/indic-conformer-600m-multilingual ; read the terms and accept them. Make a read-only access token (Settings, Access Tokens) and save it in a file only you can read (`chmod 600`).
 2. **Build the image once** (needs Docker; a few minutes, it compiles whisper.cpp): `docker build -t geo-speech:0.1.0 bundle/services/speech`

@@ -1,4 +1,4 @@
-// A walkthrough a partner can run before a visit, and read out to a centre owner: one parent's month at Bright Tuition Centre, on the stand-in services (test money,
+// A walkthrough an Operator can run before a visit, and read out to a centre owner: one parent's month at Bright Tuition Centre, on the stand-in services (test money,
 // nothing real is sent), printed as the conversation the parent and the owner would see.
 //   node templates/education/fees/scripts/walkthrough.ts [--lang hi|en|ml|kn]        (default: hi)
 // The five steps are the ones the sell guide teaches (sell/guide.en.md, section 4): the reminder with its payment link, "I already paid" when the record shows

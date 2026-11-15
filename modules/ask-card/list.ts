@@ -1,4 +1,4 @@
-// "What to ask the shop for": the ONE list behind the card a partner takes to a visit (B72, plan checkpoint item 9). Everything the card says is written here, in
+// "What to ask the shop for": the ONE list behind the card an Operator takes to a visit (B72, plan checkpoint item 9). Everything the card says is written here, in
 // English, Hindi, Malayalam and Kannada, and nowhere else: render.ts makes the cards (the Markdown files beside each template's sell guide, and the data the panel
 // shows) from this file, so the printed card, the panel and the sell guides' setup list cannot drift apart. Used by render.ts, the panel (through askCardFor) and
 // test/ask-card.test.ts.
@@ -9,7 +9,7 @@
 // Orders and Fees likewise). Things only some shops want (Google Calendar for Bookings, its own Razorpay account, a delivery area) are marked optional.
 //
 // Honesty rules the list keeps (docs/research/2026-11-whatsapp-and-gupshup.md): Meta may later ask the shop to verify its business, and which documents it accepts
-// for a small shop is not confirmed, so the card never tells the partner that no papers will be needed. No price or percentage is written here (prices live in prices/).
+// for a small shop is not confirmed, so the card never tells the Operator that no papers will be needed. No price or percentage is written here (prices live in prices/).
 //
 // Hindi, Malayalam and Kannada are machine-written, like the rest of those languages (REVIEW_STATE in bundle/panel/languages.ts): they wait for a native reader. The words
 // for deposit, advance, refund, booking and the limits are the ones the sell guides and the customer messages already use (templates/commerce/bookings/src/language/templates.ts).
@@ -94,10 +94,10 @@ const ALWAYS: ListItem[] = [
   {
     id: "gupshup-account", group: "always", optional: true,
     what: w(
-      "Only if the shop uses its own Gupshup account (the pilot's route): the owner signs up at Gupshup, adds the partner as an admin, and the shop gives you the app name and the API key",
-      "सिर्फ़ तब जब दुकान अपना Gupshup अकाउंट इस्तेमाल करती है (पायलट का रास्ता): मालिक Gupshup पर साइन अप करते हैं, पार्टनर को एडमिन बनाते हैं, और दुकान आपको ऐप का नाम और API key देती है",
+      "Only if the shop uses its own Gupshup account (the pilot's route): the owner signs up at Gupshup, adds the Operator as an admin, and the shop gives you the app name and the API key",
+      "सिर्फ़ तब जब दुकान अपना Gupshup अकाउंट इस्तेमाल करती है (पायलट का रास्ता): मालिक Gupshup पर साइन अप करते हैं, ऑपरेटर को एडमिन बनाते हैं, और दुकान आपको ऐप का नाम और API key देती है",
       "കട സ്വന്തം Gupshup അക്കൗണ്ട് ഉപയോഗിക്കുന്നെങ്കിൽ മാത്രം (പൈലറ്റിന്റെ വഴി): ഉടമ Gupshup-ൽ സൈൻ അപ്പ് ചെയ്യും, പാർട്ണറെ അഡ്മിൻ ആയി ചേർക്കും, കട നിങ്ങൾക്ക് ആപ്പിന്റെ പേരും API key-യും തരും",
-      "ಅಂಗಡಿ ತನ್ನ ಸ್ವಂತ Gupshup ಖಾತೆ ಬಳಸುವುದಾದರೆ ಮಾತ್ರ (ಪೈಲಟ್‌ನ ದಾರಿ): ಮಾಲೀಕರು Gupshup ನಲ್ಲಿ ಸೈನ್ ಅಪ್ ಮಾಡುತ್ತಾರೆ, ಪಾರ್ಟ್ನರ್ ಅನ್ನು ಅಡ್ಮಿನ್ ಆಗಿ ಸೇರಿಸುತ್ತಾರೆ, ಮತ್ತು ಅಂಗಡಿ ನಿಮಗೆ ಆ್ಯಪ್ ಹೆಸರು ಮತ್ತು API key ಕೊಡುತ್ತದೆ"),
+      "ಅಂಗಡಿ ತನ್ನ ಸ್ವಂತ Gupshup ಖಾತೆ ಬಳಸುವುದಾದರೆ ಮಾತ್ರ (ಪೈಲಟ್‌ನ ದಾರಿ): ಮಾಲೀಕರು Gupshup ನಲ್ಲಿ ಸೈನ್ ಅಪ್ ಮಾಡುತ್ತಾರೆ, ಆಪರೇಟರ್ ಅನ್ನು ಅಡ್ಮಿನ್ ಆಗಿ ಸೇರಿಸುತ್ತಾರೆ, ಮತ್ತು ಅಂಗಡಿ ನಿಮಗೆ ಆ್ಯಪ್ ಹೆಸರು ಮತ್ತು API key ಕೊಡುತ್ತದೆ"),
     why: w(
       "The shop keeps the account, and its own Gupshup wallet pays Meta's charges and Gupshup's fee. The API key goes into the panel's key box only; never write it on paper or send it in a chat. Our message templates must show as approved in the shop's Gupshup app before the first message.",
       "अकाउंट दुकान का ही रहता है, और Meta का शुल्क तथा Gupshup की फ़ीस दुकान के अपने Gupshup वॉलेट से जाती है। API key सिर्फ़ पैनल के key बॉक्स में डालिए; उसे काग़ज़ पर मत लिखिए और चैट में मत भेजिए। पहला मैसेज जाने से पहले हमारे मैसेज टेम्पलेट दुकान के Gupshup ऐप में मंज़ूर (approved) दिखने चाहिए।",
@@ -239,7 +239,7 @@ const BOOKINGS: ListItem[] = [
       "തുടങ്ങാൻ ആവശ്യമില്ല. ബുക്കിംഗ് സ്വന്തം ബുക്കിംഗ് പട്ടിക സൂക്ഷിക്കും: ഉടമ കടയുടെ നമ്പറിലേക്ക് WhatsApp-ൽ \"today\" അല്ലെങ്കിൽ \"tomorrow\" അയച്ചാൽ ആ ദിവസത്തെ ബുക്കിംഗുകൾ കാണാം. കലണ്ടർ പിന്നീട് ചേർക്കാം, നേരത്തേ നടന്ന ബുക്കിംഗുകൾ അതിൽ എഴുതിച്ചേർക്കും.",
       "ಆರಂಭಿಸಲು ಬೇಕಿಲ್ಲ. ಬುಕಿಂಗ್ ತನ್ನದೇ ಬುಕಿಂಗ್ ಪಟ್ಟಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ: ಮಾಲೀಕರು ಅಂಗಡಿಯ ನಂಬರ್‌ಗೆ WhatsApp ನಲ್ಲಿ \"today\" ಅಥವಾ \"tomorrow\" ಕಳುಹಿಸಿದರೆ ಆ ದಿನದ ಬುಕಿಂಗ್‌ಗಳು ಕಾಣುತ್ತವೆ. ಕ್ಯಾಲೆಂಡರ್ ಅನ್ನು ನಂತರ ಸೇರಿಸಬಹುದು, ಈಗಾಗಲೇ ಆದ ಬುಕಿಂಗ್‌ಗಳನ್ನು ಅದರಲ್ಲಿ ಬರೆಯಲಾಗುತ್ತದೆ."),
   },  {
-    // item 11d: nothing to ask for, but the partner should know the shop has it from day one, and what it does not cover yet
+    // item 11d: nothing to ask for, but the Operator should know the shop has it from day one, and what it does not cover yet
     id: "booking-page", group: "template",
     what: w(
       "Nothing more for the shop's booking page: the panel gives its link, its QR code for the counter, and the owner's private approvals link",
@@ -513,7 +513,7 @@ export const HEADS: Record<"always" | "template", Words> = {
   template: w("For this template", "इस टेम्पलेट के लिए", "ഈ ടെംപ്ലേറ്റിന്", "ಈ ಟೆಂಪ್ಲೇಟ್‌ಗೆ"),
 };
 
-/** The line under the list: what the partner must not promise. */
+/** The line under the list: what the Operator must not promise. */
 export const NOTE: Words = w(
   "Do not promise how long setup takes, or that nothing else will be asked for. Meta decides what it needs, and it can change.",
   "यह मत वादा कीजिए कि सेटअप में कितना समय लगेगा, या कि और कुछ नहीं माँगा जाएगा। क्या चाहिए, यह Meta तय करता है, और वह बदल सकता है।",
@@ -535,15 +535,15 @@ export const CARD_WRITTEN = "12 November 2026";
 export const REVIEW_BANNER: Record<Language, string[]> = {
   en: [],
   hi: [
-    `**Machine-written (${CARD_WRITTEN}). Needs review by a native speaker before partners or shops rely on it.**`,
-    `मशीन से लिखा गया (${CARD_WRITTEN})। किसी पार्टनर या दुकान के इस पर भरोसा करने से पहले किसी हिंदी मातृभाषी से जँचवाना ज़रूरी है।`,
+    `**Machine-written (${CARD_WRITTEN}). Needs review by a native speaker before Operators or shops rely on it.**`,
+    `मशीन से लिखा गया (${CARD_WRITTEN})। किसी ऑपरेटर या दुकान के इस पर भरोसा करने से पहले किसी हिंदी मातृभाषी से जँचवाना ज़रूरी है।`,
   ],
   ml: [
-    `**Machine-written (${CARD_WRITTEN}). Needs review by a native speaker before partners or shops rely on it.**`,
-    `യന്ത്രം എഴുതിയത് (${CARD_WRITTEN}). പാർട്ണർമാരോ കടകളോ ഇത് ആശ്രയിക്കുന്നതിന് മുമ്പ് ഒരു മലയാളം മാതൃഭാഷക്കാരൻ പരിശോധിക്കണം.`,
+    `**Machine-written (${CARD_WRITTEN}). Needs review by a native speaker before Operators or shops rely on it.**`,
+    `യന്ത്രം എഴുതിയത് (${CARD_WRITTEN}). ഓപ്പറേറ്റർമാരോ കടകളോ ഇത് ആശ്രയിക്കുന്നതിന് മുമ്പ് ഒരു മലയാളം മാതൃഭാഷക്കാരൻ പരിശോധിക്കണം.`,
   ],
   kn: [
-    `**Machine-written (${CARD_WRITTEN}). Needs review by a native speaker before partners or shops rely on it.**`,
-    `ಯಂತ್ರ ಬರೆದದ್ದು (${CARD_WRITTEN}). ಪಾರ್ಟ್ನರ್‌ಗಳು ಅಥವಾ ಅಂಗಡಿಗಳು ಇದನ್ನು ನಂಬುವ ಮೊದಲು ಕನ್ನಡ ಮಾತೃಭಾಷಿಕರೊಬ್ಬರು ಪರಿಶೀಲಿಸಬೇಕು.`,
+    `**Machine-written (${CARD_WRITTEN}). Needs review by a native speaker before Operators or shops rely on it.**`,
+    `ಯಂತ್ರ ಬರೆದದ್ದು (${CARD_WRITTEN}). ಆಪರೇಟರ್‌ಗಳು ಅಥವಾ ಅಂಗಡಿಗಳು ಇದನ್ನು ನಂಬುವ ಮೊದಲು ಕನ್ನಡ ಮಾತೃಭಾಷಿಕರೊಬ್ಬರು ಪರಿಶೀಲಿಸಬೇಕು.`,
   ],
 };

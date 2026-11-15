@@ -1,4 +1,4 @@
-// Moving a shop to another partner or builder (B38): with the owner's agreement from their own number, the reason recorded, never to Geometer, and what moves and what does not.
+// Moving a shop to another Operator or builder (B38): with the owner's agreement from their own number, the reason recorded, never to Geometer, and what moves and what does not.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -122,7 +122,7 @@ test("a request runs out after 72 hours and can be asked again; a request can be
   } finally { await b.close(); }
 });
 
-test("a partner who does not serve the shop cannot see, ask for or cancel its move; the keys the shop was given stay where they are and no key is in what the move writes", async () => {
+test("an Operator who does not serve the shop cannot see, ask for or cancel its move; the keys the shop was given stay where they are and no key is in what the move writes", async () => {
   const { b, divya, meera, kiran } = await setUp();
   try {
     mkdirSync(join(b.dir, "secrets-inbox", "glow-salon"), { recursive: true });
@@ -144,15 +144,15 @@ test("a partner who does not serve the shop cannot see, ask for or cancel its mo
 test("after a move the owner's monthly report names the new person: the deployer reads assignment.json first", async () => {
   const { b, divya, meera } = await setUp();
   try {
-    assert.equal(readShop(b.dir, "glow-salon").preparedBy, "DIVYA, local partner");
+    assert.equal(readShop(b.dir, "glow-salon").preparedBy, "DIVYA, local Operator");
     const code = codeOf((await divya.post("/shops/glow-salon/handover", { to: "meera", reason: "stopped_serving" }, "/shops/glow-salon/handover")).plain);
     writeRecord(b, "glow-salon", [agreed(b, "glow-salon", code, NOW + HOUR)]);
     await meera.get("/shops");
     const after = readShop(b.dir, "glow-salon");
-    assert.deepEqual([after.preparedBy, after.preparedBySource], ["MEERA, local partner", "assignment.json"]);
+    assert.deepEqual([after.preparedBy, after.preparedBySource], ["MEERA, local Operator", "assignment.json"]);
     // a report.json written by hand does not keep the old name on the owner's report
-    writeFileSync(join(b.dir, "shops", "glow-salon", "report.json"), JSON.stringify({ schema: 1, preparedBy: "Divya, Kochi partner" }));
-    assert.equal(readShop(b.dir, "glow-salon").preparedBy, "MEERA, local partner");
+    writeFileSync(join(b.dir, "shops", "glow-salon", "report.json"), JSON.stringify({ schema: 1, preparedBy: "Divya, Kochi Operator" }));
+    assert.equal(readShop(b.dir, "glow-salon").preparedBy, "MEERA, local Operator");
   } finally { await b.close(); }
 });
 

@@ -1,5 +1,5 @@
 // Item 11d in the panel: a Bookings shop's page shows its booking page link, the QR code for the counter, the MCP endpoint, and the owner's approvals link, which the
-// partner makes (shown once, only its hash kept) and switches off. Another partner's shop is a 404, as everywhere in the panel.
+// Operator makes (shown once, only its hash kept) and switches off. Another Operator's shop is a 404, as everywhere in the panel.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -44,7 +44,7 @@ test("the shop page shows the booking page, its QR, the MCP endpoint; the owner'
 });
 
 // Item 11h: an Orders shop and a Fees centre have the same block, in their own words: Orders with its MCP endpoint, Fees without (a parent's fees are reached only by
-// their private link), and both with the owner's link the partner makes.
+// their private link), and both with the owner's link the Operator makes.
 test("an Orders shop's and a Fees centre's page block, and the owner's link for both", async () => {
   const b = await boot({ publicUrl: "http://shops.example.test" });
   try {

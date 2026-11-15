@@ -1,7 +1,7 @@
 """The one error the service raises on purpose: carries the HTTP status and a sentence a person can read.
 
 Used everywhere; server.py turns it into a JSON body {"error": "..."}. Messages are written for the shop's
-operator, not for a programmer, because the speech Guard passes them back up the chain.
+server admin, not for a programmer, because the speech Guard passes them back up the chain.
 """
 from __future__ import annotations
 

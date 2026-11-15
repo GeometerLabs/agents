@@ -120,7 +120,7 @@ geo-guard credential   # prints  token: gg_...   and   token_sha256 = "..."
 ```
 
 - the agent's token: its hash goes under `[[agents]]`, the token itself in `secrets/guard_agent_token`;
-- the operator's token (for approvals and the export): its hash under `[[admins]]`, the token in `secrets/guard_admin_token`;
+- the server admin's token (for approvals and the export): its hash under `[[admins]]`, the token in `secrets/guard_admin_token`;
 - the API's own key, the whole header value on one line (`Bearer sk_live_...`), in `secrets/api_authorization`. Guard reads it from that file and adds it to every call it sends.
 
 `bundle_digest` in `guard.toml` is the digest the build printed; Guard refuses a bundle file that does not hash to it. Run `geo-guard verify-bundle guard/bundle.json --config guard/guard.toml` again after you edit. Raise `version` in the accept file with every change: Guard loads a bundle only if its version is higher than the one it has.
@@ -161,7 +161,7 @@ A reply with no `guard` object is the API's own. This table is the part of Guard
 Guard's admin credential alone never approves. An approver needs a role that covers the call (`guard.toml` has an `approver` role for each operation you put a threshold on).
 
 ```
-# the operator issues an approver a credential that expires
+# the server admin issues an approver a credential that expires
 curl -s -X POST $ADMIN/admin/approvers -H "Authorization: Bearer $ADMIN_TOKEN" \
   -d '{"id":"alex.reviewer","roles":["approver"],"ttl_seconds":3600}'      # -> "token": "gg_..." (shown once)
 
@@ -206,7 +206,7 @@ writes, to `review/2026-11-05/` (a **new folder every time**; it refuses a folde
 
 **Every month, or every week: add `--state-file`.** Guard lists only its 500 most recent decisions, so a plain export of a busy Guard misses what came before. With `--state-file review/export-state.json` the file keeps how far the last export read; each run then writes only the decisions after that point (its `seq` numbers carry on), and no decision is written twice. If more than 500 were decided between two runs, the first line of `record.jsonl` is a `record_gap` line that says which stretch is missing, `summary.txt` starts with `MISSING CALLS`, and the command prints it too. The evidence pack still holds every decision Guard kept. Keep the state file with the exports, and do not edit it. Use the same state file for the same Guard each time.
 
-**What reviewers get, and what they do not.** With `--backup-dir`, the export asks Guard for a **backup** in a new subfolder of that folder (the path as Guard sees it; Guard must be able to write there, and `--backup-read-dir` says where this process sees the same folder when that differs). A Guard backup holds Guard's store and its **evidence keys**. It is for restoring Guard and stays with the operator. The export copies only the two files a reviewer needs, the evidence pack and the anchor, and the tests check that no key and no store land in the review folder. Hand reviewers the review folder, never the backup folder.
+**What reviewers get, and what they do not.** With `--backup-dir`, the export asks Guard for a **backup** in a new subfolder of that folder (the path as Guard sees it; Guard must be able to write there, and `--backup-read-dir` says where this process sees the same folder when that differs). A Guard backup holds Guard's store and its **evidence keys**. It is for restoring Guard and stays with the server admin. The export copies only the two files a reviewer needs, the evidence pack and the anchor, and the tests check that no key and no store land in the review folder. Hand reviewers the review folder, never the backup folder.
 
 The pack is the tamper-evident part. A reviewer checks it with the open verifier, [`geo-verify`](https://github.com/GeometerLabs/geometer-verify) (Apache-2.0):
 

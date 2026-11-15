@@ -1,7 +1,7 @@
 // A shop's page on the pages domain, the server's side (plan item 11f, bundle/lib/pages.ts and geometer.json `pages`): the deployer claims the panel's short name
 // at fleet with the deployment key and hands the shop's runtime and front their addresses; a confirmed name is not asked again for a day, a refused one not for
 // ten minutes; "own" and a removed shop give the name back; the panel's "sign out every device" reaches the runtime; the owner's view is on the pages domain only
-// for a shop this server's door serves; and the pages domain is a setting of Geometer's partner server, never geometer.dev. Written 12 Nov 2026.
+// for a shop this server's door serves; and the pages domain is a setting of Geometer's Operator server, never geometer.dev. Written 12 Nov 2026.
 import { makeOwnerRecovery, makeOwnerSetup, removeOwnerPasskeys } from "../lib/pages.ts";
 import { grantInFile, readOwnerGrants } from "../../modules/channels/owner-grants.ts";
 import { test } from "node:test";
@@ -49,7 +49,7 @@ function folder(mode: "hosted" | "own") {
 
 const pagesOf = (path: string) => readPagesFile(readFileSync(path, "utf8"));
 
-test("on the partner server a shop is on the pages domain by default; a builder's is on its own domain unless it chooses", () => {
+test("on the Operator server a shop is on the pages domain by default; a builder's is on its own domain unless it chooses", () => {
   const p = folder("hosted");
   const b = folder("own");
   try {
@@ -86,7 +86,7 @@ test("the deployer claims the name with the deployment key, writes what came of 
   } finally { p.done(); }
 });
 
-test("a refused name is shown to the panel and not asked again for ten minutes, unless the partner picks another", async () => {
+test("a refused name is shown to the panel and not asked again for ten minutes, unless the Operator picks another", async () => {
   const p = folder("hosted");
   try {
     p.setAnswer(() => ({ status: 409, json: { error: "That page name is taken. Pick another.", code: "taken" } }));
@@ -139,7 +139,7 @@ test("\"own\", or a shop removed from the server, gives the name back; the panel
     rmSync(join(b.dir, "shops", "ravi", "owner-sessions.json"));
     await b.sync(["ravi"], new Date(T0.getTime() + 4000));
     assert.equal(existsSync(copy), false);
-    // item 11h: the partner's setup QR and recovery card (hashes only) go the same way, so a QR shown on the panel works within one pass
+    // item 11h: the Operator's setup QR and recovery card (hashes only) go the same way, so a QR shown on the panel works within one pass
     const made = makeOwnerSetup(b.dir, "ravi", T0);
     const codes = makeOwnerRecovery(b.dir, "ravi", T0);
     await b.sync(["ravi"], new Date(T0.getTime() + 5000));
@@ -161,7 +161,7 @@ test("the pages file for a shop with no name is still written: its base and its 
   } finally { p.done(); }
 });
 
-test("geometer.json: the pages domain is the partner server's setting, a list of a primary and extra domains, never geometer.dev or the server's own", () => {
+test("geometer.json: the pages domain is the Operator server's setting, a list of a primary and extra domains, never geometer.dev or the server's own", () => {
   const base = { schema: 1, id: "partner-1", domain: "partners.example", reviewedBy: "t", panel: { enabled: true, mode: "hosted" } };
   const errors = (pages: unknown, mode = "hosted") => parseServer({ ...base, panel: { enabled: true, mode }, pages }).errors.join(" ");
   assert.equal(errors({ domain: "pages.example", extraDomains: ["old.example"] }), "");
@@ -171,7 +171,7 @@ test("geometer.json: the pages domain is the partner server's setting, a list of
   assert.match(errors({ domain: "partners.example" }), /own domain/u);
   assert.match(errors({ domain: "https://pages.example" }), /small letters/u);
   assert.match(errors({ domain: "pages.example", extraDomains: ["pages.example"] }), /twice/u);
-  assert.match(errors({ domain: "pages.example" }, "own"), /partner server/u);
+  assert.match(errors({ domain: "pages.example" }, "own"), /Operator server/u);
 });
 
 test("generated: the pages domain's site reaches only the door, the door is on its own network and egress with no secret, and a server without it has none", () => {

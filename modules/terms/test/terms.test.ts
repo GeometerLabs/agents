@@ -1,5 +1,5 @@
 // B72: the shop terms agreed on WhatsApp (modules/terms). Written, not run (owner's instruction of 11 Nov: run everything once at the end).
-//   - the text exists in four languages, carries the shop, the partner and the two prices, and uses none of the banned words or a promise of legal strength;
+//   - the text exists in four languages, carries the shop, the Operator and the two prices, and uses none of the banned words or a promise of legal strength;
 //   - the digest changes with any price, name, language or version;
 //   - the owner's words: "terms" asks, "I agree" in four languages agrees, "ok" and "yes" do not;
 //   - a terms file is read field by field, and the runtime's reader follows the file: no file, or one that does not check, is the feature off.
@@ -18,7 +18,7 @@ import { termsReader } from "../reader.ts";
 
 const FILE: TermsFile = { schema: 1, partnerName: "Divya", partnerPhone: "+919800000000", monthlyInr: 700, setupInr: 1500 };
 
-test("the terms exist in all four languages with the shop, the partner and both prices, and promise nothing legal or banned", () => {
+test("the terms exist in all four languages with the shop, the Operator and both prices, and promise nothing legal or banned", () => {
   for (const language of LANGUAGES) {
     const text = termsText(language, "Glow Salon", FILE);
     for (const must of ["Glow Salon", "Divya", "+919800000000", "700", "1,500", TERMS_VERSION, "hello@geometer.dev"]) assert.ok(text.includes(must) || (must === "1,500" && text.includes("1500")), `${language} lacks ${must}`);

@@ -49,7 +49,7 @@ export function inboxFor(shops: Shops, id: string, nowMs: number, options: Unfin
   return { id, name, asOf: existsSync(file) ? new Date(statSync(file).mtimeMs).toISOString() : undefined, items: [...renewal, ...found], failed } as ShopInbox;
 }
 
-/** Every shop this account may see, those with something to do first (most items, then name). A partner's list holds only the partner's own shops. */
+/** Every shop this account may see, those with something to do first (most items, then name). An Operator's list holds only the Operator's own shops. */
 export function inboxAll(shops: Shops, account: Account, nowMs: number, options: UnfinishedOptions): ShopInbox[] {
   return shops.visibleTo(account).map((s) => inboxFor(shops, s.id, nowMs, options)).sort((a, b) => b.items.length - a.items.length || a.name.localeCompare(b.name));
 }

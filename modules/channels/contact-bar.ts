@@ -1,5 +1,5 @@
 // Who to call, on every page (release-flow batches 3 and 5, 14 Nov 2026). Two small pieces, drawn by the pages' own layouts:
-//   partnerBar   the partner's name with "Call" and "WhatsApp" links: at the top of the owner's app and on every error page, so an owner whose page says "ask your partner"
+//   partnerBar   the Operator's name with "Call" and "WhatsApp" links: at the top of the owner's app and on every error page, so an owner whose page says "ask your Operator"
 //                always has the person's number in reach (audit O25). From pages.json's `partner` (the panel's page form writes it).
 //   shopContact  the shop's own phone ("Call the shop") and map link: on every customer page (audit C5), so a shop with no WhatsApp can still be reached. The front adds
 //                them to each offer's `shop` (front.ts withContact), the way it adds the face, so no page needs pages.json passed in.
@@ -13,7 +13,7 @@ import { SIGNIN_CSS } from "./look.ts";
 import { PAGE } from "./words.ts";
 
 /**
- * The header the shop's front sets on its pages for the front door (bundle/services/door.ts): the partner's contact as base64url JSON {n: name, p: "+91...", l?: languages}.
+ * The header the shop's front sets on its pages for the front door (bundle/services/door.ts): the Operator's contact as base64url JSON {n: name, p: "+91...", l?: languages}.
  * The door keeps the last one per shop for its own error pages and removes it before the visitor sees the response.
  */
 export const CONTACT_HEADER = "x-geometer-contact";
@@ -22,7 +22,7 @@ const digits = (n: string): string => n.replace(/\D/gu, "");
 export const telLink = (n: string): string => `tel:+${digits(n)}`;
 const waLinkOf = (n: string): string => `https://wa.me/${digits(n)}`;
 
-/** The partner's name with Call and WhatsApp. Nothing when the shop's file has no partner yet. */
+/** The Operator's name with Call and WhatsApp. Nothing when the shop's file has no Operator yet. */
 export function partnerBar(language: Language, pages: Pick<PagesFile, "partner"> | undefined): Raw {
   const p = pages?.partner;
   if (!p) return html``;
@@ -51,7 +51,7 @@ export function sendLinkBox(language: Language, shopName: string, pageUrl: strin
 
 /**
  * A short error page of the shop's front (too many requests; the shop's runtime not answering): one sentence in the visitor's language, the machine-written line for
- * Hindi, Malayalam and Kannada, and the partner's name with Call and WhatsApp when the shop's file names one. It used to be one English sentence with nobody to call.
+ * Hindi, Malayalam and Kannada, and the Operator's name with Call and WhatsApp when the shop's file names one. It used to be one English sentence with nobody to call.
  */
 export function shopErrorPage(language: Language, text: string, partner?: PagesFile["partner"]): string {
   const machine = PAGE[language].machine;

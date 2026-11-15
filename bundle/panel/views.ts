@@ -107,7 +107,7 @@ export const languageName = (l: Language): string => languageOptions().find((o) 
 
 // ---- sign in, invitations ---------------------------------------------------------------------------------------------------------------
 
-// Sign-in form, with the "ask for a new link" line under it. On Geometer's partner server (`partnersUrl` given) a local partner is sent to geometer.dev first,
+// Sign-in form, with the "ask for a new link" line under it. On Geometer's Operator server (`partnersUrl` given) a local Operator is sent to geometer.dev first,
 // where they open the panel with no passphrase (fleet-signin.ts); the passphrase form stays for anyone the server's owner invited.
 export function loginPage(c: Ctx, o: { error?: string; handle?: string; hostedNote: boolean; /** Hosted mode: the geometer.dev account page. */ partnersUrl?: string }): string {
   const w = c.w.login;
@@ -123,8 +123,8 @@ ${o.error ? html`<ul class="errors" role="alert"><li>${o.error}</li></ul>` : ""}
 <p class="note">${w.byInvitation}</p>`, { nav: false });
 }
 
-// Where a partner's geometer.dev link lands (fleet-signin.ts). Opening it uses nothing up; the button does. The first visit asks the name (and company and
-// language) the owner's monthly report will say; a returning partner just presses the button.
+// Where an Operator's geometer.dev link lands (fleet-signin.ts). Opening it uses nothing up; the button does. The first visit asks the name (and company and
+// language) the owner's monthly report will say; a returning Operator just presses the button.
 export function signinPage(c: Ctx, o: { ticket: string; returning?: string; error?: string; values: { name: string; company: string; language: string } }): string {
   const w = c.w.signin;
   const j = c.w.join;
@@ -313,7 +313,7 @@ ${l.renewUrl ? html`<p><a class="btn primary" href="${l.renewUrl}" rel="noopener
 ${l.staleSince ? html`<div class="notice" role="status">${w.stale(day(l.staleSince))}</div>` : ""}`;
 }
 
-/** The plan: its name and included messages, the Innovator badge, the price (the plan's, or the builder licence), and what fleet wants the partner to know (button mode, warnings). */
+/** The plan: its name and included messages, the Innovator badge, the price (the plan's, or the builder licence), and what fleet wants the Operator to know (button mode, warnings). */
 function planBlock(c: Ctx, p: PlanView): Raw {
   const w = c.w.plan;
   const price = p.price ? (p.price.licence ? w.priceBuilder(formatRupees(p.price.paise)) : w.price(formatRupees(p.price.paise))) : "";

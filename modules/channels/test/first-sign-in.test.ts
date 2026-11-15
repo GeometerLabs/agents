@@ -1,5 +1,5 @@
-// The owner's first sign-in and "who to call" (release-flow batches 3 and 5, 14 Nov 2026), the pieces that need no server: the pages file carries the partner, the shop's
-// phone and a map link (and drops a bad one); the partner bar and the shop's links; the passkey page's Chrome fallback, screen-lock words and fresh-QR words; the
+// The owner's first sign-in and "who to call" (release-flow batches 3 and 5, 14 Nov 2026), the pieces that need no server: the pages file carries the Operator, the shop's
+// phone and a map link (and drops a bad one); the Operator bar and the shop's links; the passkey page's Chrome fallback, screen-lock words and fresh-QR words; the
 // owner's app's alerts line and step 2; and that no new words use a word the pages must not.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -12,7 +12,7 @@ import { FIRST_WORDS } from "../words-owner-first.ts";
 
 const base = { schema: 1, base: "https://s.example/s/glow", ownerBase: "https://s.example/s/glow/owner" };
 
-test("pages.json carries the partner, the shop's phone (a landline too) and a map link with a query; a bad one is dropped, not the file", () => {
+test("pages.json carries the Operator, the shop's phone (a landline too) and a map link with a query; a bad one is dropped, not the file", () => {
   const f = readPagesFile(JSON.stringify({ ...base, phone: "+918012345678", map: "https://www.google.com/maps/search/?api=1&query=Glow+Salon", partner: { name: "Divya", phone: "+919800000000" } }))!;
   assert.equal(f.phone, "+918012345678");
   assert.equal(f.map, "https://www.google.com/maps/search/?api=1&query=Glow+Salon");
@@ -26,7 +26,7 @@ test("pages.json carries the partner, the shop's phone (a landline too) and a ma
   for (const good of ["https://www.google.com/maps/place/Glow+Salon", "https://www.google.co.in/maps?q=glow", "https://maps.google.com/?q=glow", "https://goo.gl/maps/xyz", "https://www.openstreetmap.org/?mlat=1&mlon=2"]) assert.equal(isMapLink(good), true, good);
 });
 
-test("the partner bar names the partner with a call link and a WhatsApp link, in every language; nothing without a partner", () => {
+test("the Operator bar names the Operator with a call link and a WhatsApp link, in every language; nothing without an Operator", () => {
   for (const l of LANGUAGES) {
     const bar = partnerBar(l, { partner: { name: "Divya", phone: "+91 98000 00000".replace(/\s/gu, "") } }).markup;
     assert.match(bar, /href="tel:\+919800000000"/u);

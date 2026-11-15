@@ -25,7 +25,7 @@ Not built, or built only as far as said. The first block needs another part of t
 - **Pin the Razorpay account.** Pin the `account_id` of the first signed webhook and have the inbox refuse events from any other account. Until then the check proves the key works and is in the right mode, and the page tells the person to look for the shop's name on the first test payment link.
 - **Pin the key id into Guard's allowlist** the same way the WhatsApp number and the calendar are pinned.
 
-- **A shop name is reserved only by the panel's own drafts.** Between step 4 and the save, a shop folder made by hand with the same name is refused at the save (its folder is not touched), but this partner's keys already sit in `secrets-inbox/<id>/`. The bundle's `shop add` should refuse a name whose inbox already holds files.
+- **A shop name is reserved only by the panel's own drafts.** Between step 4 and the save, a shop folder made by hand with the same name is refused at the save (its folder is not touched), but this Operator's keys already sit in `secrets-inbox/<id>/`. The bundle's `shop add` should refuse a name whose inbox already holds files.
 
 ## Cost line
 
@@ -42,13 +42,13 @@ Not built, or built only as far as said. The first block needs another part of t
 - No page to list or revoke invitations, change a passphrase, or sign out everywhere (the version counter is there, the button is not). A forgotten passphrase
   is reset by a one-use link that whoever runs the server makes on the command line (`geometer panel reset`, 14 Nov); there is no self-service reset by email
   (the panel sends no mail). No second factor.
-- **Partners' geometer.dev sign-in (14 Nov, decision 53).** Not run against a deployed fleet and partner server, nor on a phone; the tests use fleet's fixed
-  vector and tickets signed with the same published test key. The panel does not hear of a pause until the partner's session ends (at most 12 hours, or at
-  once with `geometer panel signout`). Revisit when: a pause must bite sooner. Done when: fleet's heartbeat answer to the partner server lists the paused
-  partner ids and the panel refuses their sessions. The panel cannot list or remove the spent-ticket records by hand (they drop off as tickets run out).
-- **A shop a partner sets up here still needs Geometer's `shop plan` in fleet** before the lease lists it and it can take work: the panel does not tell fleet
-  which partner set a shop up. Revisit when: partners set up shops without the owner. Done when: the deployer claims a shop for the partner who set it up,
-  with the deployment key, and fleet applies the partner's live-shop limit there.
+- **Operators' geometer.dev sign-in (14 Nov, decision 53).** Not run against a deployed fleet and Operator server, nor on a phone; the tests use fleet's fixed
+  vector and tickets signed with the same published test key. The panel does not hear of a pause until the Operator's session ends (at most 12 hours, or at
+  once with `geometer panel signout`). Revisit when: a pause must bite sooner. Done when: fleet's heartbeat answer to the Operator server lists the paused
+  Operator ids and the panel refuses their sessions. The panel cannot list or remove the spent-ticket records by hand (they drop off as tickets run out).
+- **A shop an Operator sets up here still needs Geometer's `shop plan` in fleet** before the lease lists it and it can take work: the panel does not tell fleet
+  which Operator set a shop up. Revisit when: Operators set up shops without the owner. Done when: the deployer claims a shop for the Operator who set it up,
+  with the deployment key, and fleet applies the Operator's live-shop limit there.
 - The login limit is in memory: a restart forgets it. Drafts of a setup that was never finished stay on disk.
 - Retention and deletion on request for the shops Geometer hosts (B25 names the data duties): no page or command yet; the panel's own data is accounts, invitations as hashes, drafts, which secrets arrived, the last checks, and the papers it made.
 - The monthly report is made on a button, in the owner's language. Sending it to the owner on WhatsApp, a schedule, the QR and the verify page (needs a deploy yes) are not here.
@@ -73,14 +73,14 @@ Not built, or built only as far as said. The first block needs another part of t
 - The list is as fresh as the deployer's export of the record (every quarter of an hour). A button's effect shows after the next export. A live read from the runtime would be fresher, but the panel does not reach the runtime (see "The panel's view of the runtime" in `../Deferred.md`).
 - A recovery request that the runtime did not take for an hour is dropped by the deployer (said once in its log). The panel does not show the state of a request it filed.
 - The handover needs the shop to be running, because the owner's message has to reach the agent. A shop pinned to a template version older than this one does not know `move CODE` (the owner's message gets the usual "I did not understand"); update the shop first.
-- The new person does not accept the shop; the person moving it and the owner agree. A partner could be handed a shop they do not want. Add an accept step if that happens.
+- The new person does not accept the shop; the person moving it and the owner agree. An Operator could be handed a shop they do not want. Add an accept step if that happens.
 - A move is within one server. Moving a shop between two servers (a builder's own server to Geometer's hosted one, or the other way) is an export and a new `shop add` there; the keys are entered again. There is no import.
 - Hindi, Malayalam and Kannada for the new pages (to do, export, handover) are machine-written like the rest, listed in section 7 of the review sheets; the new lines wait for a native reader.
 - The export holds the record as the deployer exports it (customers as keyed fingerprints). A copy with the raw numbers, for the owner who asks for it, is the shop's own database (`geometer restore` makes one from the backup); an export mode that reads the database inside the shop's volume and keeps the numbers is not built.
 
 ## UPI in the panel (B33)
 
-- No live check of a UPI ID: nothing can read one without paying it. The partner types it and reads it back to the owner; a wrong but well-formed ID is not caught by the panel.
+- No live check of a UPI ID: nothing can read one without paying it. The Operator types it and reads it back to the owner; a wrong but well-formed ID is not caught by the panel.
 - Switching a saved shop from Razorpay to UPI (or back) in the panel changes the settings and the notes only. The old Razorpay secrets stay in the write-only inbox until whoever runs the server removes them.
 - The new Hindi, Malayalam and Kannada sentences (the `upi` block and the two inbox kinds) wait for a native reader.
 - A phone-width look at the new step has not been done (no browser).
@@ -90,7 +90,7 @@ Not built, or built only as far as said. The first block needs another part of t
 ## The shop's licence (B13, 8 Nov)
 
 - **The renew link is fleet's, as fleet last said it.** The panel shows the link from the last heartbeat's answer; a link that has expired at Razorpay is not checked.
-  Revisit when: fleet re-links an expired invoice and partners find stale links.
+  Revisit when: fleet re-links an expired invoice and Operators find stale links.
 - **No licence page across shops.** The state is on each shop's page and its card; a builder with many shops has no one list of the ones that owe. Revisit when: a
   builder asks for it. (9 Nov: the "Health and margin" page lists every shop with what needs a look, but it does not list licence state across shops on its own.)
 
@@ -98,14 +98,14 @@ Not built, or built only as far as said. The first block needs another part of t
 
 - [ ] **The heartbeat field for the vote is not sent.** The votes stay in the panel's store until fleet accepts one optional counts-only field; the exact field and both sides' edits are in `bundle/Deferred.md` ("The innovators' template vote"). Until then the results an innovator sees are this panel's votes only.
 - [ ] **Hindi, Malayalam and Kannada for `words-health.ts` and `vote-options.json` are machine-written and wait for a native reader.** They are on the review sheets (section 7, ids `health.*` and `vote.option.*`), and the pages carry the panel's draft note in those languages.
-- [ ] **Messages above the plan's allowance are not in the running cost.** The overage (INR 49 per 1,000 customer messages above the allowance, paid from the partner's balance) needs the balance and the month's message count against the allowance. The line is left out, not shown as 0, so the running cost can be a little short for a busy shop. Revisit when: the balance is in the shop's fleet answer.
+- [ ] **Messages above the plan's allowance are not in the running cost.** The overage (INR 49 per 1,000 customer messages above the allowance, paid from the Operator's balance) needs the balance and the month's message count against the allowance. The line is left out, not shown as 0, so the running cost can be a little short for a busy shop. Revisit when: the balance is in the shop's fleet answer.
 - [ ] **WhatsApp at cost is an estimate that leans high.** It is the month's counts at the price list's rates with GST, before the month's 1,000 free service replies per number (`lib/usage.ts`), and the record cannot say whether a 24-hour window was open. The line says "Estimate".
 - [x] **The shop page and the health page price a shop the same way (closed 9 Nov).** Both read `cost.ts` `chargeOf`; the Innovator discount and the own-server discount are gone with the owner's two price lists, so there is no cap of shops and nothing to stack.
 - [ ] **The builder licence is read from the panel's mode.** A panel on a builder's own server (`PANEL_MODE=own`) is taken as the builder licence and a hosted panel as the plan fee with the model inside it. A builder who runs the panel on their own server for a shop on Geometer's hosting is not told apart.
 - [ ] **Hosting share is not in the running cost.** The bundle does not measure a shop's share of the server yet (the shop page's cost line says so too). It is not shown as 0.
-- [ ] **Only the shops a person serves count for their Innovator badge and vote.** A builder who can see every shop on a server is not made an innovator by a partner's shop.
+- [ ] **Only the shops a person serves count for their Innovator badge and vote.** A builder who can see every shop on a server is not made an innovator by an Operator's shop.
 - [ ] **No phone-width look at the new pages** (no browser here), and the bottom tab bar now has one more tab.
-- [ ] **The setup fee is shown once, not spread over months** and is not part of the monthly margin. Revisit when: partners ask for it per month.
+- [ ] **The setup fee is shown once, not spread over months** and is not part of the monthly margin. Revisit when: Operators ask for it per month.
 
 ## Own agents (12 Nov 2026, B51's rest)
 
@@ -113,4 +113,4 @@ Not built, or built only as far as said. The first block needs another part of t
 - **No monthly report and no connection checks for an own agent in the panel.** Its report is `geometer agent report`; the shop's connection checks read a shop's settings. Revisit when: a builder asks for an agent's report from the panel. Done when the agent's page links its month's report, made from its record like a shop's.
 - **The page refreshes on reload only.** A crash test takes minutes; the page says it is running until the builder reloads. Done when: the page carries a plain meta refresh while a crash test runs (no script).
 
-- **A parent link from the partner panel (item 1's leftover, 14 Nov): not built.** A parent's private link is made by the Fees agent (in a reminder, or the owner's "send a new link"), kept only as a hash, and sent to the parent's WhatsApp. For the panel to show one the runtime would have to hand a parent's link to the partner, which holds a parent's private page in the partner's hands; the design keeps the owner and the parent as the only holders. The Fees shop page says where parents' links come from. Done when: the owner says who the link is for (a partner testing a centre: a demo parent is the better answer; a parent with no WhatsApp: the owner's page "send a new link" already reaches a parent's number).
+- **A parent link from the Operator panel (item 1's leftover, 14 Nov): not built.** A parent's private link is made by the Fees agent (in a reminder, or the owner's "send a new link"), kept only as a hash, and sent to the parent's WhatsApp. For the panel to show one the runtime would have to hand a parent's link to the Operator, which holds a parent's private page in the Operator's hands; the design keeps the owner and the parent as the only holders. The Fees shop page says where parents' links come from. Done when: the owner says who the link is for (an Operator testing a centre: a demo parent is the better answer; a parent with no WhatsApp: the owner's page "send a new link" already reaches a parent's number).

@@ -9,7 +9,7 @@ export interface PlanView {
   plan: PlanName | null;
   /** Customer messages a month the plan includes. */
   allowance: number | null;
-  /** The Innovator badge: one of the first builders and partners with a shop live. A badge, not a price. */
+  /** The Innovator badge: one of the first builders and Operators with a shop live. A badge, not a price. */
   innovator: boolean;
   buttons: boolean;
   /** Only with buttons: why, as fleet's code. */

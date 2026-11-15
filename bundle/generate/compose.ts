@@ -140,7 +140,7 @@ export interface Dirs {
   licence: string;
   /**
    * The server's home/ folder (lib/home.ts): the installed Streetlist builds and the `current` link to the served one. Caddy mounts the FOLDER read-only at HOME_MOUNT
-   * (a bind-mounted symlink is resolved once, at start, so a switched build would not show). Optional: only the partner server's pages domain uses it.
+   * (a bind-mounted symlink is resolved once, at start, so a switched build would not show). Optional: only the Operator server's pages domain uses it.
    */
   home?: string;
 }
@@ -215,7 +215,7 @@ export interface Composed {
 }
 
 /**
- * The optional speech-to-text service (plan 11d). `image` is built from bundle/services/speech/Dockerfile; `modelsDir` is a host folder filled by the operator's fetch-models
+ * The optional speech-to-text service (plan 11d). `image` is built from bundle/services/speech/Dockerfile; `modelsDir` is a host folder filled by the server admin's fetch-models
  * and mounted READ-ONLY (the service never writes models and the image holds none); `tokenFile` only when the service is not on the same private network as its Guard.
  */
 export interface SpeechOptions { image: string; modelsDir: string; tokenFile?: string }

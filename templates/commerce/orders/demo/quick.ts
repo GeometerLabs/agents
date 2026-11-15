@@ -1,4 +1,4 @@
-// The Orders agent's hosted demo shop (modules/demo/quick.ts draws the page): Annapurna Tiffins, the example shop, on the UPI example settings, as a partner's shop mostly is: the customer taps "I have paid" and the owner (the other tab)
+// The Orders agent's hosted demo shop (modules/demo/quick.ts draws the page): Annapurna Tiffins, the example shop, on the UPI example settings, as an Operator's shop mostly is: the customer taps "I have paid" and the owner (the other tab)
 // marks the money received, as the guide's walkthrough shows. Nothing is paid in the page. The agent is the real one, on the template's own in-memory stand-ins; the visitor is a customer, and the other tab is the owner's WhatsApp.
 // What this file adds is only the choice of language (every language the agent speaks, so the same shop can be shown in any) and the customer's words to try.
 import { readFileSync } from "node:fs";

@@ -1,5 +1,5 @@
 // The papers page (B28, B35, B36): the record of one case, a person's statement, the agent's identity paper and the evidence pack, for a shop the account may see, signed
-// with the panel's key, and read by the report verifier. A partner asking for another partner's shop gets the same 404 as for a shop that does not exist; a person's
+// with the panel's key, and read by the report verifier. An Operator asking for another Operator's shop gets the same 404 as for a shop that does not exist; a person's
 // number is only ever in a POST body, never in the log.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -19,7 +19,7 @@ const bookings = [...month.world.store.bookings.values()];
 const refund = entries.find((e) => e.action === "refund" && e.outcome === "confirmed")!;
 const refunded = bookings.find((b) => b.id === refund.booking)!;
 
-test("the papers of a partner's own shop: one case, a statement by POST, the identity paper full and public, the pack and its anchor; another partner gets 404", async () => {
+test("the papers of an Operator's own shop: one case, a statement by POST, the identity paper full and public, the pack and its anchor; another Operator gets 404", async () => {
   const b = await boot({}, { signing: true, key: true });
   try {
     const divya = await b.account("divya", "partner");
@@ -92,7 +92,7 @@ test("the papers of a partner's own shop: one case, a statement by POST, the ide
     assert.equal(anchor.checkpoint.head, pack.entries.at(-1).hash);
 
     for (const path of ["/shops/glow-salon/papers", `/shops/glow-salon/papers/case?case=${refunded.id}`, "/shops/glow-salon/papers/identity.json", "/shops/glow-salon/papers/ledger/pack.json"]) {
-      assert.equal((await meena.get(path)).status, 404, `${path} for another partner`);
+      assert.equal((await meena.get(path)).status, 404, `${path} for another Operator`);
     }
     assert.equal((await meena.post("/shops/glow-salon/papers/statement", { number: refunded.customer }, "/shops")).status, 404);
   } finally { await b.close(); }

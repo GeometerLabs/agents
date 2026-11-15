@@ -1,4 +1,4 @@
-// The owner's private approvals link: a long random token the partner gives the owner once (the panel makes it, shows it once, and keeps only its hash). Used by the panel
+// The owner's private approvals link: a long random token the Operator gives the owner once (the panel makes it, shows it once, and keeps only its hash). Used by the panel
 // (which makes and revokes it), by the deployer (which hands the hash to the shop's runtime and relay), and by those two, which check the link on every request.
 //
 // The link is checked at the authority, not only at the public front: the runtime (for what the agent asks the owner) and the approvals relay (for a refund Guard

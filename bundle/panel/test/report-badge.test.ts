@@ -31,7 +31,7 @@ test("the report the panel makes carries the Innovator badge when fleet says so,
       return JSON.parse(papers(b, "glow-salon").get("glow-salon", "monthly/2026-11/report-2026-11.json")!).document as { preparedBy: string | null; innovator?: true };
     };
     let doc = await make();
-    assert.equal(doc.preparedBy, "Divya, local partner");
+    assert.equal(doc.preparedBy, "Divya, local Operator");
     assert.equal(doc.innovator, undefined, "fleet has said nothing: no badge");
     fleet(answer({ innovator: true }));
     doc = await make();
@@ -43,10 +43,10 @@ test("the report the panel makes carries the Innovator badge when fleet says so,
     fleet("{ not json");
     assert.equal((await make()).innovator, undefined);
     // report.json, when the shop has one, is the name on both copies
-    writeFileSync(join(b.dir, "shops", "glow-salon", "report.json"), JSON.stringify({ schema: 1, preparedBy: "Meera, Kochi partner" }));
-    assert.equal((await make()).preparedBy, "Meera, Kochi partner");
+    writeFileSync(join(b.dir, "shops", "glow-salon", "report.json"), JSON.stringify({ schema: 1, preparedBy: "Meera, Kochi Operator" }));
+    assert.equal((await make()).preparedBy, "Meera, Kochi Operator");
     writeFileSync(join(b.dir, "shops", "glow-salon", "report.json"), "{ nope");
-    assert.equal((await make()).preparedBy, "Divya, local partner", "a report.json that cannot be read falls back to the attribution");
-    assert.equal(preparedByOf({ accountName: "Divya", role: "partner" }), "Divya, local partner");
+    assert.equal((await make()).preparedBy, "Divya, local Operator", "a report.json that cannot be read falls back to the attribution");
+    assert.equal(preparedByOf({ accountName: "Divya", role: "partner" }), "Divya, local Operator");
   } finally { await b.close(); }
 });

@@ -132,12 +132,12 @@ Guard's ADR-0060 and ADR-0061 (monorepo main `e99d5d47`) changed two things this
 
 ## The owner's agreement to a handover (B38, 7 Nov)
 
-`approvals/handover.ts` is the owner's side of moving a shop to another partner or builder. The panel makes a one-use code (the approvals' own alphabet and length), shows it once and keeps its hash (a different hash from an approval code's: a code made for a move can never answer an approval). The owner sends `move CODE` from their own number to the shop's WhatsApp number; both agents (`onOwnerMessage`) write one `handover_agreed` / `confirmed` entry from the owner's number with `refs.handover` the code's hash, say nothing back, and change nothing else. It is its own action, not an `owner_decision`, so a monthly report never counts it as an approval or a refusal. The panel moves the shop only when it finds that entry in the shop's exported record, from the owner's number, after the request and before the 72 hours ran out.
+`approvals/handover.ts` is the owner's side of moving a shop to another Operator or builder. The panel makes a one-use code (the approvals' own alphabet and length), shows it once and keeps its hash (a different hash from an approval code's: a code made for a move can never answer an approval). The owner sends `move CODE` from their own number to the shop's WhatsApp number; both agents (`onOwnerMessage`) write one `handover_agreed` / `confirmed` entry from the owner's number with `refs.handover` the code's hash, say nothing back, and change nothing else. It is its own action, not an `owner_decision`, so a monthly report never counts it as an approval or a refusal. The panel moves the shop only when it finds that entry in the shop's exported record, from the owner's number, after the request and before the 72 hours ran out.
 
 ## UPI, marked paid by the owner (B33, 7 Nov)
 
-Partners sell to small shops that have no payment-gateway account and should not need one. So a shop picks a payment module (settings `"payment"`): **UPI**, the default
-the panel offers partner shops (the shop's own UPI ID; no gateway account, no gateway fee), or **Razorpay**, for a shop with its own account. Geometer never onboards a
+Operators sell to small shops that have no payment-gateway account and should not need one. So a shop picks a payment module (settings `"payment"`): **UPI**, the default
+the panel offers Operator shops (the shop's own UPI ID; no gateway account, no gateway fee), or **Razorpay**, for a shop with its own account. Geometer never onboards a
 shop onto a payment provider and never holds shop or customer money. `payments/upi/` is the UPI module; both templates use it.
 
 **What "paid" means.** Nothing the agent can reach sees a UPI payment: the customer pays the shop's own UPI ID from their own app, and the owner sees it in theirs. So
@@ -166,7 +166,7 @@ the owner marks it so ("refunded K7M2QX" or the Refund sent button).
 
 **The link** (`link.ts`) follows NPCI's UPI Linking Specifications 1.6 (November 2017): `pa`, `pn`, `am` in decimals with no `mam` (so the amount cannot be changed), a
 short `tn` with the booking or fee reference, `cu=INR`, RFC 3986 percent-encoding (a space is `%20`). `tr`, `mc`, `mode`, `orgid` and `sign` are left out on purpose:
-they belong to a merchant's signed request, and a partner shop's UPI ID is often a personal one, which payment apps may refuse or flag as a merchant request (Deferred).
+they belong to a merchant's signed request, and an Operator shop's UPI ID is often a personal one, which payment apps may refuse or flag as a merchant request (Deferred).
 
 **The QR code is written here, not vendored** (`modules/qr/qr.ts`, `png.ts`; moved from `payments/upi/` on 8 Nov when the signed papers became its second user): byte mode, level M, versions 1 to 40, the standard's mask penalty, and a one-bit PNG with
 `node:zlib` (deflate and CRC-32, both in Node). About 250 lines, tested against vectors that do not come from it: the Reed-Solomon worked example (HELLO WORLD at 1-M),
@@ -206,7 +206,7 @@ it, so every paper in every template gets the same block; `scanToCheck` in each 
 
 **No `&key=` in the link.** The key id printed on a paper is the one inside the file: whoever changed a paper and signed it again with their own key would have changed it
 too. A key in the QR would show on the website as "from the link", and a QR is printed on the same paper. So the link carries none, and the sentence beside the QR says to compare
-the key shown on the paper with one the partner or Geometer's team gave the reader. `verifyLink(envelope, key)` accepts a key for a caller that holds one the reader was given
+the key shown on the paper with one the Operator or Geometer's team gave the reader. `verifyLink(envelope, key)` accepts a key for a caller that holds one the reader was given
 another way (nothing does today).
 
 **The page cannot change the signed file.** The signed document holds numbers and digests, never the HTML; the page is made from the envelope, and the QR, the link and the
@@ -247,7 +247,7 @@ link) and leave everything that finishes money owed. The decision they record is
 
 ## UPI by default, any other provider through one seam (B71, 10 Nov)
 
-The owner, 10 Nov: agents use UPI by default and add Razorpay or another provider only if needed, because paperwork stops partners onboarding shops; and "I don't
+The owner, 10 Nov: agents use UPI by default and add Razorpay or another provider only if needed, because paperwork stops Operators onboarding shops; and "I don't
 like the idea of having our agents limited to razorpay". What changed in `payments/`, and why each part is as it is:
 
 - **The interface is neutral** (`payments.ts`). A payment request, the payments on it, refunds, and three events: `request.paid`, `payment.received`,
@@ -377,7 +377,7 @@ The pass-through matters because whatsapp.ts already builds Meta's bodies (text,
 **What Gupshup lacks, or does differently.**
 - **Gupshup's send is taken first and sent afterwards (an inference for the partner API).** Gupshup's self-serve page says its send "is processed asynchronously" and reports enqueued, failed, sent, delivered and read by callback. The partner v3 pages do not say so, but their events include Gupshup's own "Failed (internal)", sent after the call was answered. So its answer is read as *Gupshup* taking the message: Meta's refusals, including 131047 (the 24-hour window had closed), arrive later as a `failed` status. So the window check in this runtime (`windowOpen`) matters more here than with Meta, and the failed report is how the shop learns. The adapter still treats a Meta-shaped 131047 in a reply as `WindowClosedError`, in case Gupshup passes one through.
 - **Its callbacks are not signed.** The inbox's path-token mode is the only check, with Gupshup's documented source addresses as an optional allowlist ([IP allowlisting](https://partner-docs.gupshup.io/docs/gupshup-ip-allowlisting)). A v3 subscription can also carry custom headers ("meta", for example a shared secret header). That is still a shared secret and not a body signature, and it is not used yet.
-- **Its errors have their own shape:** `{status: "error", message}`. Three are documented: 401 "Authentication Failed", 400 "Callback Billing must be enabled for this API" (an app setting the partner must turn on) and 400 "Invalid App Details". They are read in plain words.
+- **Its errors have their own shape:** `{status: "error", message}`. Three are documented: 401 "Authentication Failed", 400 "Callback Billing must be enabled for this API" (an app setting the Operator must turn on) and 400 "Invalid App Details". They are read in plain words.
 - **The cheap read guard-wait.ts asks a Guard that is down is `GET /partner/app/{appId}/health`.** Gupshup allows only 10 of these a minute; the waiting backs off to every 30 s.
 - **Gupshup has no read that names the number.** The panel's WhatsApp check for a Gupshup shop is the app's health read through its Guard (12 Nov, `bundle/panel/checks.ts` `checkGupshup`): it says Gupshup answered for the app, and names the number as not checked (Deferred.md).
 - **Its credentials are changing.** Gupshup's auth guide (updated 13 Oct 2026, read 12 Nov) puts the long-lived partner app token under "phasing out". The newer universal token (UT) lasts 24 hours to 60 days and acts for the whole partner; the per-app token (UAT) lasts 1 to 24 hours and is minted with the UT ([auth guide](https://partner-docs.gupshup.io/docs/partner-authentication-guide-universal-tokens-ut-overview), [UAT mint](https://partner-docs.gupshup.io/reference/mintuniversalapptoken)). Since 12 Nov the token refresher renews a UAT for each Gupshup shop that hands in no static token, from a UT the server holds, and writes it where only that shop's WhatsApp Guard reads it (`bundle/services/gupshup-tokens.ts`; the UT never leaves the refresher's folder). A failure shows on the panel's unfinished-work list within a minute, while the token in use still has at least 8 hours. Not run against Gupshup, and the header form a UAT takes is not documented (Deferred.md).
@@ -444,8 +444,8 @@ from the link before it reads them, and never re-encodes first. A summary is mad
 
 **The payload,** in order: the layout (one byte: which paper, which figures), the source (live, test mode, stand-in services: so a sample never reads as real
 money), a flag for money the owner marked (a UPI shop, `paidBy: "owner-marked"`), the period (`2026-11`, a go-live certificate's day `2026-11-03`, or a range
-`2026-11-01..2026-11-15`), the agent's name, the shop's name (up to 64 bytes), who set it up as the paper says it (up to 64: on Geometer's partner server it is the only place the
-page names the partner, so it gets the same room), the figures (unsigned LEB128,
+`2026-11-01..2026-11-15`), the agent's name, the shop's name (up to 64 bytes), who set it up as the paper says it (up to 64: on Geometer's Operator server it is the only place the
+page names the Operator, so it gets the same room), the figures (unsigned LEB128,
 money in paise), the first 8 bytes of the signer's key id (a hint: which listed key to try), and the full paper's sha256 (so a file, when someone has it, can be
 matched to the summary). Layouts: 1 Bookings' monthly report, 2 Bookings' monthly record certificate, 3 any template's go-live certificate, 4 Fees' monthly
 report, 5 Orders' monthly report (Fees and Orders have no monthly record certificate yet). Each carries the figures the printed page and the owner's WhatsApp
@@ -469,16 +469,16 @@ owner's monthly WhatsApp message gets one line, "Check it is genuine: {check}", 
 within 1,024 characters (`messageCheckLink`), chosen once so the plain text and the template agree: the summary link, else the paper's `#sha256:` link, else
 its `#<code>` link (38 characters; used even when nothing fits, so a message that fitted before this line still fits). Measured on 11 Nov over all 48
 template variants (3 templates, 4 variants, 4 languages): with the sample names every Bookings message carries the summary, Fees in Malayalam and Orders in
-Malayalam and Kannada take the digest link; with long names in the shop's own script (about 50 letters for the shop and 40 for the partner), 8 of Bookings' 16
+Malayalam and Kannada take the digest link; with long names in the shop's own script (about 50 letters for the shop and 40 for the Operator), 8 of Bookings' 16
 take the summary and the rest the digest link, Fees' and Orders' take the digest link, and 5 (Orders in Malayalam, Fees' UPI-and-Innovator message in
 Malayalam) need the code link; the longest is 1,013 characters. The new
 words are in `report/text.ts` (`CHECK_GENUINE`, `SCAN_SUMMARY`), taken into each template's strings so the review sheets list them; Hindi, Malayalam and
 Kannada are machine-written.
 
 **Who signs, and who the page names.** A server's panel holds one key (`secrets/panel/signing_key`) and signs every paper it makes. On a builder's server that
-is the builder's key; on Geometer's partner server it is Geometer's, for every partner's shop. Fleet's public list (monorepo `apps/fleet/src/paper-signers.ts`)
-names each key: Geometer for its partner server, never the partner, since the partner does not hold that key; a builder's key by the account that owned the
-server when the key was listed, by default by name, or as "a Geometer builder" if they asked. The partner who set a shop up is still named on the page, from
+is the builder's key; on Geometer's Operator server it is Geometer's, for every Operator's shop. Fleet's public list (monorepo `apps/fleet/src/paper-signers.ts`)
+names each key: Geometer for its Operator server, never the Operator, since the Operator does not hold that key; a builder's key by the account that owned the
+server when the key was listed, by default by name, or as "a Geometer builder" if they asked. The Operator who set a shop up is still named on the page, from
 the summary's `by`: the line the paper itself prints, shown as what the paper says, apart from who signed. The key hint in the link only says which entry to
 try; what counts is that the signature verifies under the public key the list gives.
 
@@ -584,7 +584,7 @@ offer, a booking by its handle's hash, and (with the owner's link) the owner's l
 internal token can. The front runs in the inbox process, so today the isolation is per token, not per process: a fault in that process could reach both tokens. A front
 container of its own is in Deferred.md.
 
-**The owner's page.** The partner makes the link in the panel (shown once; only its hash is kept in `shops/<shop>/owner-link.json`). The deployer copies the hash to the
+**The owner's page.** The Operator makes the link in the panel (shown once; only its hash is kept in `shops/<shop>/owner-link.json`). The deployer copies the hash to the
 runtime's client folder and the relay's secret folder on every pass of its loop (every 10 s), and removes both when the panel switches the link off; the runtime and the
 relay read their copy on every request. So the link is checked at the authority, not only at the front, and a revoked link stops within one pass, without a restart.
 The page lists, from the saved state and never from messages: a deposit to mark received (UPI), a refund the owner owes and marks sent, a late cancellation's refund the
@@ -597,8 +597,8 @@ exactly what was shown (kind, case, ids, amount and how far it has got). The aut
   a new yes; a no is final for that call (Guard refuses the identical call since 12 Nov, and the page's answer is the ask's one use). The page shows only the owner's own
   asks, never another approver's (B37).
 For a shop on WhatsApp the page is one more way to answer, never a replacement. The JSON pair is the same state and the same answer, for the owner's app another job builds.
-The link widens who can answer: on WhatsApp only the owner's phone can, while anyone who has seen the link can answer as the owner, the partner who made it included.
-So the panel shows it once, the page says not to share it, a shop that moves to another partner loses it (the new partner makes a new one), and the partner can switch
+The link widens who can answer: on WhatsApp only the owner's phone can, while anyone who has seen the link can answer as the owner, the Operator who made it included.
+So the panel shows it once, the page says not to share it, a shop that moves to another Operator loses it (the new Operator makes a new one), and the Operator can switch
 it off at any time. An answer the page could not see done within a few seconds (the step waits for a Guard) is shown as "sent", never as "done".
 
 **Abuse, without a CAPTCHA.** At the front, per address (Caddy's view of the visitor): 6 booking starts and 20 cancels or claims per 10 minutes, 120 reads a minute, 10
@@ -699,9 +699,9 @@ And `templates/commerce/orders/test/runtime.test.ts` checks a Guard-held refund'
 If WhatsApp changed its rules tomorrow, a shop keeps working and loses only reach. WhatsApp stays the main channel. Three things depended on it, and each now has a
 way that does not: the owner's sign-in, the owner's alerts, and what a page customer hears.
 
-**The owner's sign-in: the partner's QR, then a passkey** (`channels/owner-grants.ts`, `owner-access.ts`, `webauthn.ts`, `owner-passkey-page.ts`). Nothing is mediated
+**The owner's sign-in: the Operator's QR, then a passkey** (`channels/owner-grants.ts`, `owner-access.ts`, `webauthn.ts`, `owner-passkey-page.ts`). Nothing is mediated
 by Geometer or Firebase: the shop's own runtime checks every step.
-- At the setup visit the partner shows a **setup QR** from the panel: 32 random bytes, one use, that shop only, 15 minutes. The panel keeps only its hash, in
+- At the setup visit the Operator shows a **setup QR** from the panel: 32 random bytes, one use, that shop only, 15 minutes. The panel keeps only its hash, in
   `shops/<shop>/owner-grants.json`, and the deployer copies the file to the runtime's client folder on each pass (as the owner's link and "sign out every device"
   already travel). The owner scans it; the page (`<base>/owner/setup/<token>`, one script by a nonce) asks the runtime for options and hands them to the phone.
 - The runtime makes a **challenge** for that QR (32 bytes, kept as a hash, one use, 5 minutes), and checks the phone's answer itself (`webauthn.ts`, node:crypto, no
@@ -716,8 +716,8 @@ by Geometer or Firebase: the shop's own runtime checks every step.
 - **Signing in later**: `<base>/owner/passkey/options` and `/finish`. The counter: when either the stored or the new value is not 0, the new one must be higher (a
   copied key shows itself); a synced passkey that always says 0 is accepted. A replayed answer finds its challenge used. A session is the same 30-day session a
   WhatsApp link makes (item 11f), so everything behind it is unchanged.
-- **A lost phone**: the partner prints a **recovery card** (five one-use codes, about 48 bits each, no look-alike letters; hashes only), and the owner types one at
-  `<base>/owner/recover` to register a new passkey. Wrong codes are counted per address at the front and per shop at the runtime (20 a day). Or the partner shows a fresh
+- **A lost phone**: the Operator prints a **recovery card** (five one-use codes, about 48 bits each, no look-alike letters; hashes only), and the owner types one at
+  `<base>/owner/recover` to register a new passkey. Wrong codes are counted per address at the front and per shop at the runtime (20 a day). Or the Operator shows a fresh
   QR, and "Remove the owner's passkeys" (the panel) makes every passkey made before it stop working, with the QR and the card.
 - The WhatsApp sign-in link stays as one way in, offered only when the shop has a WhatsApp number on its page. It goes on WhatsApp or not at all, never as a
   push (`push.ts whatsappOf`): pushed, a one-use link would sit in clear in the push queue and show on a lock screen, and a shop with no WhatsApp would send one to
@@ -916,7 +916,7 @@ the same as the typed `approve K7M2QX`.
   shop's name, through the outgoing check and the customer's 24-hour window. STOP is STOP. When the window is closed, the card says so: WhatsApp lets a shop start a
   conversation only with an approved template, and a free text is not one.
 - **Loosening a limit** (a bigger refund limit, a lower deposit, more holds) is not possible from the owner's chat in the first release. The assistant says so, in the
-  owner's language, and names the partner's panel.
+  owner's language, and names the Operator's panel.
 
 ### What the owner can say, per skill (first release)
 
@@ -928,7 +928,7 @@ in the owner's language (`owner.language`).
 | **Ask** | a day's list ("tomorrow", "bookings on Sunday", "कल की बुकिंग"), money in, what needs me | who owes, money in, what needs me | open orders, money in, what needs me |
 | **Act, said in passing, undoable** | close a day, reopen it; move a booking ("move b-14 to 5pm", "shift b-14 to Friday"), through the agent's own reschedule with both slot rules checked first and the customer told; undo | – | – |
 | **Act, as a card** | cancel a booking (with its deposit back), refund a cancelled booking's deposit (all or part), answer what waits (a late refund, a calendar retry, a UPI deposit to mark, a refund sent), message a customer | answer what waits (a waiver, a refund request), message a parent | answer what waits (a big order, a late refund), message a customer |
-| **Not from the chat** | loosening a limit (the partner's panel) | loosening a limit, cancelling or refunding a fee (Deferred) | loosening a limit, cancelling or refunding an order (Deferred) |
+| **Not from the chat** | loosening a limit (the Operator's panel) | loosening a limit, cancelling or refunding a fee (Deferred) | loosening a limit, cancelling or refunding an order (Deferred) |
 
 The owner's fixed phrases come first and are unchanged: `today`, `tomorrow`, `approve|deny|retry b-14` (Fees `q-N`, Orders `o-N`), `received K7M2QX` and its button,
 `move <code>`, `terms`, `I agree`, and the relay's `approve K7M2QX`. A card's yes on something waiting **is** the owner's fixed reply (`wire.ts ownerReply`): the agent handles it
@@ -982,7 +982,7 @@ not sent more than four hours after its time. A month of morning lines is not ac
 
 `character.ts` is what every part shares about a shop's character, and it draws nothing. The setting, in the shop's settings (`assistant.character`), is one of the
 five DiceBear styles the owner approved, called by DiceBear's own names (owner, 14 Nov: Clay, Critters, Sprouts, Moods, Pixel Bot; the panel is the only place a style is
-named), a seed (left out: the shop's id), a colour from that style's own palette (left out: "Auto", DiceBear's pick), a personality and, only if the partner gives one, a
+named), a seed (left out: the shop's id), a colour from that style's own palette (left out: "Auto", DiceBear's pick), a personality and, only if the Operator gives one, a
 name (1 to 24 letters, any script, no digits). **No name by default** (owner, 14 Nov): the assistant is "<the shop>'s assistant" (`ASSISTANT_OF`), and the
 character's name appears beside the shop's only where one was set, and never in a WhatsApp template (a template cannot leave a value out). The hand-drawn "look" of
 12 Nov (base, colour, accessory such as scissors or a spanner) is gone: the owner judged hand-drawn additions and home-made filters low quality on 14 Nov, so the
@@ -1123,7 +1123,7 @@ Every send answers `{ "status": "submitted", "messageId" }` and "is processed as
 
 **Where the key is.** Nowhere in this code. The adapter's base URL is the shop's WhatsApp Guard; the Guard's `[upstream_headers]` adds `apikey = ${file:/run/secrets/whatsapp_authorization}` (the shop's API key, handed in as `gupshup_apikey`). The Guard lists three routes (both sends are one operation, `send`, so the hourly cap and the final stop hold templates too, and the template list is `read_number`) and allows only the shop's own number (`source`) on a send and the app on the read. Guard cannot pin `src.name`, the app name in the form (its compiler refuses an exact rule on a dotted field name, which the real-Guard test found), so a send is pinned by the number and by the API key being the app's own.
 
-**The panel and the money.** The phone step offers "Gupshup (the shop's own account)": two links, a short checklist (add the partner as admin; add and approve our templates in the app), the app name and two write-only boxes (the API key and the secret word of the callback address). The connection check reads the app's template list and says only what that shows: the key and the app name go together, and how many of the listed templates are approved; it does not name the number or send. The shop's own Gupshup wallet pays Meta's charges and Gupshup's fee, so for such a shop the cost lines say "an estimate, paid from the shop's own Gupshup wallet, not from Geometer's balance", the builder's running-cost list shows no WhatsApp cost for it, and the heartbeat sends zero WhatsApp counts (the baseline still follows the real count), so fleet's Meta pass-through (counted from `service`, `utility`, `marketing`) bills nothing for it. **Fleet does need a change, though.** `apps/fleet/src/meter.ts` `whatsappCost` also adds, on the Gupshup route, the provider's fee for `messagesIn + service + utility + marketing`, where `messagesIn` is the heartbeat's `messages` count, which is also the plan's allowance counter and so cannot be zeroed; and `billing.ts` `settleWhatsApp` debits the partner's balance with the total. So until fleet learns that a shop pays its own WhatsApp, a self-serve shop's Gupshup fee is still debited from the partner on that route. The change is small: fleet's heartbeat schema (`schema.ts` `checkUsage`) accepts an optional `whatsapp_paid_by: "shop"` in `usage`, the registry keeps it per shop, `settleWhatsApp` skips such a shop and the meter's WhatsApp line becomes "not_ours" with the reason. The agents side then sends the flag instead of zeros.
+**The panel and the money.** The phone step offers "Gupshup (the shop's own account)": two links, a short checklist (add the Operator as admin; add and approve our templates in the app), the app name and two write-only boxes (the API key and the secret word of the callback address). The connection check reads the app's template list and says only what that shows: the key and the app name go together, and how many of the listed templates are approved; it does not name the number or send. The shop's own Gupshup wallet pays Meta's charges and Gupshup's fee, so for such a shop the cost lines say "an estimate, paid from the shop's own Gupshup wallet, not from Geometer's balance", the builder's running-cost list shows no WhatsApp cost for it, and the heartbeat sends zero WhatsApp counts (the baseline still follows the real count), so fleet's Meta pass-through (counted from `service`, `utility`, `marketing`) bills nothing for it. **Fleet does need a change, though.** `apps/fleet/src/meter.ts` `whatsappCost` also adds, on the Gupshup route, the provider's fee for `messagesIn + service + utility + marketing`, where `messagesIn` is the heartbeat's `messages` count, which is also the plan's allowance counter and so cannot be zeroed; and `billing.ts` `settleWhatsApp` debits the Operator's balance with the total. So until fleet learns that a shop pays its own WhatsApp, a self-serve shop's Gupshup fee is still debited from the Operator on that route. The change is small: fleet's heartbeat schema (`schema.ts` `checkUsage`) accepts an optional `whatsapp_paid_by: "shop"` in `usage`, the registry keeps it per shop, `settleWhatsApp` skips such a shop and the meter's WhatsApp line becomes "not_ours" with the reason. The agents side then sends the flag instead of zeros.
 
 ## Voice notes (B29, 12 Nov 2026)
 
@@ -1131,9 +1131,9 @@ Every send answers `{ "status": "submitted", "messageId" }` and "is processed as
 
 ## The owner's first sign-in, who to call, and the shop's own links (release-flow batches 3 and 5, 14 Nov 2026)
 
-- **The first sign-in is two steps.** A new passkey (the partner's QR or a recovery card) opens the owner's app at `?first=1`: with no phone on alerts yet, the alerts box leads as "Step 2 of 2". Every later visit shows one line at the top, "Alerts: on, on 1 phone" or "Alerts: off" with a link to turn them on. The runtime's `/status` carries `ownerAccess` (passkeys, phones with alerts) as counts only, and the panel's go-live reads it (bundle/Explanation.md).
+- **The first sign-in is two steps.** A new passkey (the Operator's QR or a recovery card) opens the owner's app at `?first=1`: with no phone on alerts yet, the alerts box leads as "Step 2 of 2". Every later visit shows one line at the top, "Alerts: on, on 1 phone" or "Alerts: off" with a link to turn them on. The runtime's `/status` carries `ownerAccess` (passkeys, phones with alerts) as counts only, and the panel's go-live reads it (bundle/Explanation.md).
 - **Passkey page, when the phone cannot.** A scanner's in-app browser has no `PublicKeyCredential`: the script shows "This page needs Chrome", an Android intent link and a copy button (the page's own address, passed in by whoever draws the button). A phone with no screen lock answers `isUserVerifyingPlatformAuthenticatorAvailable()` false: the page says so before the press, and a failed press is worded the same way. A QR scanned inside the deployer's 10 s is "not working yet, wait and open it again", counted as an act of the address, not as a wrong guess (a 256-bit token cannot be guessed, so the guess count loses nothing).
-- **Who to call.** pages.json carries `partner` (name, number), `phone` and `map`. `partnerBar` (contact-bar.ts) draws the partner's name with Call and WhatsApp at the top of the owner's app and on every sign-in and error page; the front adds the shop's phone and map to every offer's `shop` (`withContact`, as `withFace` adds the face), so `layout()` shows "Call the shop" and a map link on every customer page, including the "not found" and "waiting" states, without any page being handed the file. The map link has its own check (`isMapLink`: https on a maps host, a query allowed) because `isUrl` refuses a query; the phone is any +country number, a landline too. The front also names the partner in an `x-geometer-contact` header for the door (bundle/Explanation.md).
+- **Who to call.** pages.json carries `partner` (name, number), `phone` and `map`. `partnerBar` (contact-bar.ts) draws the Operator's name with Call and WhatsApp at the top of the owner's app and on every sign-in and error page; the front adds the shop's phone and map to every offer's `shop` (`withContact`, as `withFace` adds the face), so `layout()` shows "Call the shop" and a map link on every customer page, including the "not found" and "waiting" states, without any page being handed the file. The map link has its own check (`isMapLink`: https on a maps host, a query allowed) because `isUrl` refuses a query; the phone is any +country number, a landline too. The front also names the Operator in an `x-geometer-contact` header for the door (bundle/Explanation.md).
 - **Orders pages have alerts.** `front-orders.ts` serves `<order>/sw.js` and `<order>/push` as Bookings' page does; the runtime's customer push op already works from the Orders channel's own view.
 - **"Send me this link".** A web booking, while live, shows a WhatsApp share link (`wa.me/?text=`) so the customer can keep the one private address in their own chat. It is a link, not a button: customer pages run no script.
 - **Words** for these live in `words-owner-first.ts`, not in the long per-language records of `words.ts`.

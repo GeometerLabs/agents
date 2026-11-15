@@ -102,7 +102,7 @@ test("caps from the agent's file reach the specs, and a cap that would make an a
   } finally { u.done(); }
 });
 
-test("decision 55: no custom agent runs on Geometer's partner server (panel mode hosted): agent add refuses it; a builder's own server takes it", () => {
+test("decision 55: no custom agent runs on Geometer's Operator server (panel mode hosted): agent add refuses it; a builder's own server takes it", () => {
   const hosted = tempServer({}, { panel: { enabled: true, mode: "hosted" } });
   try {
     assert.throws(() => addAgent(hosted.root, "my-agent", flags(), noFiles, NOW), (e: Error) => e.message === HOSTED_AGENT_REFUSAL);

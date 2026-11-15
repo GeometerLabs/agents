@@ -23,7 +23,7 @@ export interface LeaseShop {
   expires: number;
   /** The planned final stop, from the wind-down on; null before. */
   stop_at: number | null;
-  /** After the final stop, the end of the 90-day export for the builder or partner (never sent to the owner); null before. */
+  /** After the final stop, the end of the 90-day export for the builder or Operator (never sent to the owner); null before. */
   export_until: number | null;
   /** The one notice the shop owner is due now ("wind_down" or "stop"), or null. */
   notice: "wind_down" | "stop" | null;
@@ -110,7 +110,7 @@ export interface LicenceFile {
   shop: LeaseShop | null;
   newest_issued_at: number;
   extension_until: number;
-  /** The builder or partner who set the shop up ("Divya, local partner"): the owner's notices name them. */
+  /** The builder or Operator who set the shop up ("Divya, local Operator"): the owner's notices name them. */
   partner: string;
 }
 

@@ -63,7 +63,7 @@ export interface BackupFacts { lastCopyAt?: string | null; lastDrillAt?: string 
 
 export interface ShopObservation {
   id: string;
-  /** Item 11c: this shop's own Gupshup wallet pays Meta and Gupshup for WhatsApp. Its real counts are sent with `usage.whatsapp_paid_by: "shop"`, so fleet counts and bills none of its WhatsApp (nothing is passed on from the partner's balance). */
+  /** Item 11c: this shop's own Gupshup wallet pays Meta and Gupshup for WhatsApp. Its real counts are sent with `usage.whatsapp_paid_by: "shop"`, so fleet counts and bills none of its WhatsApp (nothing is passed on from the Operator's balance). */
   whatsappPaidBy?: "shop";
   pathway: string;
   pathwayVersion: string;

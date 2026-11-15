@@ -1,4 +1,4 @@
-// Geometer's own speech-to-text service as the DEFAULT speech provider (owner's direction, 12 Nov 2026: open-source models in one container Geometer runs, so partners do not need an
+// Geometer's own speech-to-text service as the DEFAULT speech provider (owner's direction, 12 Nov 2026: open-source models in one container Geometer runs, so Operators do not need an
 // account with anyone; the research picked AI4Bharat IndicConformer for Hindi, Malayalam and Kannada and Whisper for English). Listening only: the agent replies in text. This file is only the client for its two-route HTTP contract; which models sit behind it is the service's business (a separate research job chooses them).
 // The contract, written here so the service and this client are built to the same page:
 //   POST /stt             multipart/form-data, one part `file` (the voice note as it came: Ogg Opus, AMR, MP3 ...)

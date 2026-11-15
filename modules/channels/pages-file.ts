@@ -24,9 +24,9 @@ export interface PagesFile {
   /** Batch 5: the shop's own phone ("Call the shop") and map link, on every customer page. The phone may be a landline, so it is any +country number, not only a mobile. */
   phone?: string;
   map?: string;
-  /** Batch 3: the partner who looks after the shop (name and the number they call or WhatsApp on), at the top of the owner's app and on every error page. */
+  /** Batch 3: the Operator who looks after the shop (name and the number they call or WhatsApp on), at the top of the owner's app and on every error page. */
   partner?: { name: string; phone: string };
-  /** The panel's page for this shop, for the partner's line on the page (a link only: the panel signs its own people in). */
+  /** The panel's page for this shop, for the Operator's line on the page (a link only: the panel signs its own people in). */
   panelUrl?: string;
   /**
    * Item 11i: the version of the shop's drawn character pictures (character-files.ts), when they are drawn and handed to the front. The runtime links to them as
@@ -41,7 +41,7 @@ const isUrl = (v: unknown): v is string => typeof v === "string" && v.length <= 
 /** An international number as the panel takes it: "+" and 10 to 15 digits. */
 export const PHONE_SHAPE = /^\+\d{10,15}$/u;
 /**
- * A map link a partner pastes: https only, on a maps host, no spaces or markup, at most 300 characters. A map link carries a query ("?q=..."), which `isUrl` refuses,
+ * A map link an Operator pastes: https only, on a maps host, no spaces or markup, at most 300 characters. A map link carries a query ("?q=..."), which `isUrl` refuses,
  * so it has its own check. Used by the panel's form and by the file's reader, so both say the same.
  */
 // The ending of a Google address is pinned (".com", ".co.in", ".com.au", ".de"): an open ending let "www.google.com.evil.example/maps" through.

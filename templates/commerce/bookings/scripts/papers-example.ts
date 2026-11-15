@@ -48,7 +48,7 @@ await main(async () => {
     w.write(`case-${booking.id}-${language}.html`, disputePage(record));
     w.write(`case-${booking.id}-${language}.txt`, `${disputeText(record)}\n`);
   }
-  const cert = buildGoLiveCertificate({ settings: world.settings, handCheck: { held: 38, total: 38, checks: 120, failedTitles: [] }, issuedAt: at(10, 27, 10), preparedBy: "Divya, local partner (example)" });
+  const cert = buildGoLiveCertificate({ settings: world.settings, handCheck: { held: 38, total: 38, checks: 120, failedTitles: [] }, issuedAt: at(10, 27, 10), preparedBy: "Divya, local Operator (example)" });
   w.write("go-live-certificate.json", envelopeFile(seal(cert, privateKey)));
   const goLive = fromGoLive(cert, "en");
   const wider = { ...world.settings, cancellation: { ...world.settings.cancellation, refundLimitInr: world.settings.cancellation.refundLimitInr + 300 } };

@@ -1,7 +1,7 @@
 // Client health and margin (plan B32), per shop and over a person's shops. No words in any language here: it returns facts and numbers, and
 // views-health.ts says them in the reader's language.
 //
-//  - The partner's own entries (the price they charge, a setup fee, support minutes and what an hour of their time is worth) are kept in the panel's own
+//  - The Operator's own entries (the price they charge, a setup fee, support minutes and what an hour of their time is worth) are kept in the panel's own
 //    store, under the person's account, and are never sent to fleet: fleet keeps counts only.
 //  - The running cost is the same arithmetic as the shop page's cost line (cost.ts): whole paise, each line rounded UP once, Geometer's charge read from the
 //    price list in force by the same rule (chargeOf: the plan's fee, or the builder licence on a builder's own server). WhatsApp at cost and the model come from THIS MONTH's entries of the exported record (lib/usage.ts), not from the cumulative totals.
@@ -77,7 +77,7 @@ export function entriesFromForm(form: Record<string, string | undefined>, month:
 const keyOf = (accountId: string) => accountId.replace(/_/gu, "-");
 const entriesName = (accountId: string, shop: string) => `health/${keyOf(accountId)}/${shop}.json`;
 
-// The partner's own figures (price charged, setup fee, support minutes, hourly worth) kept per account and shop in the panel store; kept apart from fleet's facts because only the partner knows them and they must never be mistaken for measured numbers.
+// The Operator's own figures (price charged, setup fee, support minutes, hourly worth) kept per account and shop in the panel store; kept apart from fleet's facts because only the Operator knows them and they must never be mistaken for measured numbers.
 export function createEntries(store: Store) {
   return {
     /** This person's entries for a shop. Nobody else's are ever read for them. */
@@ -176,9 +176,9 @@ export interface RunningCostInput {
   plan: { paise: number | null; notes: CostNote[] };
   /** This month from the record, or null when there is no export. */
   usage: UsageTotals | null;
-  /** Item 11c: the shop is on its own Gupshup account: its wallet pays Meta and Gupshup directly, so WhatsApp is no cost of the builder's or partner's (a note, no money). */
+  /** Item 11c: the shop is on its own Gupshup account: its wallet pays Meta and Gupshup directly, so WhatsApp is no cost of the builder's or Operator's (a note, no money). */
   whatsappFromShopWallet?: boolean;
-  /** True on a hosted (Geometer's partner) server: the model is inside the plan fee. False on the builder's own server, where the model key is the builder's own. */
+  /** True on a hosted (Geometer's Operator) server: the model is inside the plan fee. False on the builder's own server, where the model key is the builder's own. */
   modelIncluded: boolean;
   entries: Entries | undefined;
   month: string;

@@ -1,7 +1,7 @@
 # ലെറ്റർ ഓഫ് ഇന്റന്റ് മെസേജ്
 
-> **Machine-written (5 November 2026). Needs review by a native speaker before partners or shops rely on it.**
-> യന്ത്രം എഴുതിയത് (5 November 2026). പാർട്ണർമാരോ സെന്ററുകളോ ഇത് ആശ്രയിക്കുന്നതിന് മുമ്പ് ഒരു മലയാളം മാതൃഭാഷക്കാരൻ പരിശോധിക്കണം.
+> **Machine-written (5 November 2026). Needs review by a native speaker before Operators or shops rely on it.**
+> യന്ത്രം എഴുതിയത് (5 November 2026). ഓപ്പറേറ്റർമാരോ സെന്ററുകളോ ഇത് ആശ്രയിക്കുന്നതിന് മുമ്പ് ഒരു മലയാളം മാതൃഭാഷക്കാരൻ പരിശോധിക്കണം.
 > The UPI parts of 7 November 2026 also wait for a native speaker's review.
 > 7 നവംബർ 2026-ലെ UPI ഭാഗങ്ങളും ഒരു മാതൃഭാഷക്കാരൻ പരിശോധിക്കാൻ കാത്തിരിക്കുന്നു.
 

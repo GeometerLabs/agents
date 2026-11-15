@@ -114,7 +114,7 @@ test("the shop's page head shows the public face as a data: picture, with the sh
   assert.match(hi, /व्यस्त/u, "in the visitor's language");
 });
 
-test("the owner's app shows the owner's real mood (something wrong) with its words, and the character's name when the partner gave one; the public page never shows that mood", async () => {
+test("the owner's app shows the owner's real mood (something wrong) with its words, and the character's name when the Operator gave one; the public page never shows that mood", async () => {
   const s = await shop({ face: "well" });
   const page = await (await s.get("/s/veena/o/abcdefghijklmnopqrstuvwxyzABCDEFGHIJ0123456")).text();
   assert.ok(page.includes(svgDataUri(svgOf("wrong")).replace(/&/gu, "&amp;").slice(0, 60)), "the wrong picture");

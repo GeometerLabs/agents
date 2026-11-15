@@ -1,4 +1,4 @@
-// The walkthrough a partner shows an owner (scripts/walkthrough.ts) does what the sell guide says it does, in every language, on the example centre: the reminder with
+// The walkthrough an Operator shows an owner (scripts/walkthrough.ts) does what the sell guide says it does, in every language, on the example centre: the reminder with
 // its link, "I already paid" with nothing on record, a discount that goes to the owner, the payment and its receipt, and no reminder once paid. Judged from the
 // stand-ins' own records, not from the text it printed.
 import { test } from "node:test";

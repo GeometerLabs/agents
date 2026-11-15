@@ -155,10 +155,10 @@ test("a stop request is carried out on every Guard, shown as stopped in status w
     assert.deepEqual(await processStopRequests(w.ctx), ["glow-salon"]);
     assert.ok(!existsSync(file));
     const s = readStatus(w.root, "glow-salon")!;
-    assert.deepEqual([s.stopped?.requestId, s.stopped?.by], ["req-7f3a", "Divya (partner, from the panel)"]);
+    assert.deepEqual([s.stopped?.requestId, s.stopped?.by], ["req-7f3a", "Divya (Operator, from the panel)"]);
     assert.match(s.stopped!.reason!, /request req-7f3a/);
     assert.equal(loadState(w.root).shops["glow-salon"].stopped?.requestId, "req-7f3a");
-    assert.ok(w.admin.includes("stop glow-salon on Divya (partner, from the panel) request req-7f3a"));
+    assert.ok(w.admin.includes("stop glow-salon on Divya (Operator, from the panel) request req-7f3a"));
     // a request that is not one is left alone, and a deploy keeps the shop stopped
     writeFileSync(join(w.root, "requests", "glow-salon.stop.json"), "{not json");
     assert.deepEqual(await processStopRequests(w.ctx), []);

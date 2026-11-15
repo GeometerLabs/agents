@@ -10,7 +10,7 @@
 //   POST <base>/owner/answer       an answer from the owner's page (with the session's form token)
 //   GET  <base>/owner/api/v1/state, POST <base>/owner/api/v1/answer   item 11d's JSON pair, with the session (the answer with the form token in x-owner-csrf)
 //   POST <base>/owner/out          sign out on this browser
-//   Item 11h (decisions 45 and 46): <base>/owner/setup/<token>, /recover and /passkey/... are the passkey pages (owner-passkey-page.ts): the partner's setup QR or
+//   Item 11h (decisions 45 and 46): <base>/owner/setup/<token>, /recover and /passkey/... are the passkey pages (owner-passkey-page.ts): the Operator's setup QR or
 //   a recovery code registers a passkey, and the passkey signs the owner in with no WhatsApp at all. The sign-in page leads with it when the shop has one, and
 //   offers the WhatsApp link only when the shop has a WhatsApp number on its page.
 //
@@ -73,7 +73,7 @@ export const SIGNIN_WORDS: Record<Language, Words> = {
     title: "Sign in to your shop", intro: "This page is for the shop's owner. A sign-in link goes to the owner's WhatsApp number, the one set up with the shop. No password.",
     send: "Send me a sign-in link", sent: "If you are this shop's owner, a sign-in link is on its way to your WhatsApp. It works once, for 10 minutes.",
     nothingCame: "Nothing came? Send \"open my app\" to the shop's WhatsApp number, and the link comes back as a reply.", askOnWhatsapp: "Send \"open my app\" on WhatsApp",
-    noWhatsapp: "The shop's WhatsApp number is not on this page yet: ask your partner for it.",
+    noWhatsapp: "The shop's WhatsApp number is not on this page yet: ask your Operator for it.",
     linkTitle: "Sign in", linkValid: "Tap the button to sign in on this phone or computer.", signIn: "Sign in",
     state: { used: "This link was used already.", expired: "This link has run out: a link works for 10 minutes.", replaced: "A newer link was sent. Use the newest one.", unknown: "This link does not work." },
     askAgain: "Ask for a new link", signOut: "Sign out", signedOut: "You are signed out on this device.", tooMany: "Too many tries from here. Wait a few minutes.",
@@ -83,7 +83,7 @@ export const SIGNIN_WORDS: Record<Language, Words> = {
     title: "अपनी दुकान में साइन इन करें", intro: "यह पेज दुकान के मालिक के लिए है। साइन-इन का लिंक मालिक के WhatsApp नंबर पर जाता है, वही जो दुकान के साथ जोड़ा गया है। कोई पासवर्ड नहीं।",
     send: "मुझे साइन-इन लिंक भेजें", sent: "अगर आप इस दुकान के मालिक हैं, तो साइन-इन लिंक आपके WhatsApp पर आ रहा है। यह एक बार, 10 मिनट तक चलेगा।",
     nothingCame: "कुछ नहीं आया? दुकान के WhatsApp नंबर पर \"open my app\" भेजिए, लिंक जवाब में आ जाएगा।", askOnWhatsapp: "WhatsApp पर \"open my app\" भेजें",
-    noWhatsapp: "दुकान का WhatsApp नंबर अभी इस पेज पर नहीं है: अपने पार्टनर से पूछिए।",
+    noWhatsapp: "दुकान का WhatsApp नंबर अभी इस पेज पर नहीं है: अपने ऑपरेटर से पूछिए।",
     linkTitle: "साइन इन", linkValid: "इस फ़ोन या कंप्यूटर पर साइन इन करने के लिए बटन दबाइए।", signIn: "साइन इन",
     state: { used: "यह लिंक पहले ही इस्तेमाल हो चुका है।", expired: "इस लिंक का समय ख़त्म हो गया: लिंक 10 मिनट चलता है।", replaced: "एक नया लिंक भेजा गया है। सबसे नया इस्तेमाल करें।", unknown: "यह लिंक काम नहीं करता।" },
     askAgain: "नया लिंक माँगें", signOut: "साइन आउट", signedOut: "इस डिवाइस पर आप साइन आउट हो गए हैं।", tooMany: "यहाँ से बहुत बार कोशिश हुई। कुछ मिनट रुकिए।",
@@ -93,7 +93,7 @@ export const SIGNIN_WORDS: Record<Language, Words> = {
     title: "നിങ്ങളുടെ കടയിൽ സൈൻ ഇൻ ചെയ്യൂ", intro: "ഈ പേജ് കടയുടമയ്ക്കുള്ളതാണ്. സൈൻ ഇൻ ലിങ്ക് കടയോടൊപ്പം ചേർത്ത ഉടമയുടെ WhatsApp നമ്പറിലേക്ക് പോകും. പാസ്‌വേഡ് ഇല്ല.",
     send: "എനിക്ക് സൈൻ ഇൻ ലിങ്ക് അയയ്ക്കൂ", sent: "നിങ്ങൾ ഈ കടയുടെ ഉടമയാണെങ്കിൽ, സൈൻ ഇൻ ലിങ്ക് നിങ്ങളുടെ WhatsApp-ലേക്ക് വരുന്നു. ഇത് ഒരിക്കൽ മാത്രം, 10 മിനിറ്റ് പ്രവർത്തിക്കും.",
     nothingCame: "ഒന്നും വന്നില്ലേ? കടയുടെ WhatsApp നമ്പറിലേക്ക് \"open my app\" അയയ്ക്കൂ, ലിങ്ക് മറുപടിയായി വരും.", askOnWhatsapp: "WhatsApp-ൽ \"open my app\" അയയ്ക്കൂ",
-    noWhatsapp: "കടയുടെ WhatsApp നമ്പർ ഇതുവരെ ഈ പേജിൽ ഇല്ല: നിങ്ങളുടെ പങ്കാളിയോട് ചോദിക്കൂ.",
+    noWhatsapp: "കടയുടെ WhatsApp നമ്പർ ഇതുവരെ ഈ പേജിൽ ഇല്ല: നിങ്ങളുടെ ഓപ്പറേറ്ററോട് ചോദിക്കൂ.",
     linkTitle: "സൈൻ ഇൻ", linkValid: "ഈ ഫോണിലോ കമ്പ്യൂട്ടറിലോ സൈൻ ഇൻ ചെയ്യാൻ ബട്ടൺ അമർത്തൂ.", signIn: "സൈൻ ഇൻ",
     state: { used: "ഈ ലിങ്ക് ഇതിനകം ഉപയോഗിച്ചു.", expired: "ഈ ലിങ്കിന്റെ സമയം കഴിഞ്ഞു: ലിങ്ക് 10 മിനിറ്റ് പ്രവർത്തിക്കും.", replaced: "പുതിയ ഒരു ലിങ്ക് അയച്ചിട്ടുണ്ട്. ഏറ്റവും പുതിയത് ഉപയോഗിക്കൂ.", unknown: "ഈ ലിങ്ക് പ്രവർത്തിക്കുന്നില്ല." },
     askAgain: "പുതിയ ലിങ്ക് ചോദിക്കൂ", signOut: "സൈൻ ഔട്ട്", signedOut: "ഈ ഉപകരണത്തിൽ നിങ്ങൾ സൈൻ ഔട്ട് ചെയ്തു.", tooMany: "ഇവിടെ നിന്ന് വളരെയധികം ശ്രമങ്ങൾ. കുറച്ച് മിനിറ്റ് കാത്തിരിക്കൂ.",
@@ -103,7 +103,7 @@ export const SIGNIN_WORDS: Record<Language, Words> = {
     title: "ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಸೈನ್ ಇನ್ ಮಾಡಿ", intro: "ಈ ಪುಟ ಅಂಗಡಿಯ ಮಾಲೀಕರಿಗಾಗಿ. ಸೈನ್ ಇನ್ ಲಿಂಕ್ ಅಂಗಡಿಯೊಂದಿಗೆ ಸೇರಿಸಿದ ಮಾಲೀಕರ WhatsApp ನಂಬರ್‌ಗೆ ಹೋಗುತ್ತದೆ. ಪಾಸ್‌ವರ್ಡ್ ಇಲ್ಲ.",
     send: "ನನಗೆ ಸೈನ್ ಇನ್ ಲಿಂಕ್ ಕಳುಹಿಸಿ", sent: "ನೀವು ಈ ಅಂಗಡಿಯ ಮಾಲೀಕರಾಗಿದ್ದರೆ, ಸೈನ್ ಇನ್ ಲಿಂಕ್ ನಿಮ್ಮ WhatsApp ಗೆ ಬರುತ್ತಿದೆ. ಇದು ಒಮ್ಮೆ ಮಾತ್ರ, 10 ನಿಮಿಷ ಕೆಲಸ ಮಾಡುತ್ತದೆ.",
     nothingCame: "ಏನೂ ಬರಲಿಲ್ಲವೇ? ಅಂಗಡಿಯ WhatsApp ನಂಬರ್‌ಗೆ \"open my app\" ಕಳುಹಿಸಿ, ಲಿಂಕ್ ಉತ್ತರವಾಗಿ ಬರುತ್ತದೆ.", askOnWhatsapp: "WhatsApp ನಲ್ಲಿ \"open my app\" ಕಳುಹಿಸಿ",
-    noWhatsapp: "ಅಂಗಡಿಯ WhatsApp ನಂಬರ್ ಇನ್ನೂ ಈ ಪುಟದಲ್ಲಿ ಇಲ್ಲ: ನಿಮ್ಮ ಪಾಲುದಾರರನ್ನು ಕೇಳಿ.",
+    noWhatsapp: "ಅಂಗಡಿಯ WhatsApp ನಂಬರ್ ಇನ್ನೂ ಈ ಪುಟದಲ್ಲಿ ಇಲ್ಲ: ನಿಮ್ಮ ಆಪರೇಟರ್ ಅವರನ್ನು ಕೇಳಿ.",
     linkTitle: "ಸೈನ್ ಇನ್", linkValid: "ಈ ಫೋನ್ ಅಥವಾ ಕಂಪ್ಯೂಟರ್‌ನಲ್ಲಿ ಸೈನ್ ಇನ್ ಮಾಡಲು ಬಟನ್ ಒತ್ತಿ.", signIn: "ಸೈನ್ ಇನ್",
     state: { used: "ಈ ಲಿಂಕ್ ಈಗಾಗಲೇ ಬಳಸಲಾಗಿದೆ.", expired: "ಈ ಲಿಂಕ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ: ಲಿಂಕ್ 10 ನಿಮಿಷ ಕೆಲಸ ಮಾಡುತ್ತದೆ.", replaced: "ಹೊಸ ಲಿಂಕ್ ಕಳುಹಿಸಲಾಗಿದೆ. ಅತ್ಯಂತ ಹೊಸದನ್ನು ಬಳಸಿ.", unknown: "ಈ ಲಿಂಕ್ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ." },
     askAgain: "ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ", signOut: "ಸೈನ್ ಔಟ್", signedOut: "ಈ ಸಾಧನದಲ್ಲಿ ನೀವು ಸೈನ್ ಔಟ್ ಆಗಿದ್ದೀರಿ.", tooMany: "ಇಲ್ಲಿಂದ ತುಂಬಾ ಪ್ರಯತ್ನಗಳು. ಕೆಲವು ನಿಮಿಷ ಕಾಯಿರಿ.",
@@ -111,11 +111,11 @@ export const SIGNIN_WORDS: Record<Language, Words> = {
   },
 };
 
-/** Geometer's account page, where a partner or builder signs in (on geometer.dev, a different domain from the shop pages: no sign-in crosses between them). */
+/** Geometer's account page, where an Operator or builder signs in (on geometer.dev, a different domain from the shop pages: no sign-in crosses between them). */
 export const ACCOUNT_URL = "https://geometer.dev/account";
 
 
-/** The partner's small line: their account on geometer.dev and the server's panel. Links only; no sign-in crosses to the pages domain (Explanation.md says why). */
+/** The Operator's small line: their account on geometer.dev and the server's panel. Links only; no sign-in crosses to the pages domain (Explanation.md says why). */
 export function partnerLine(language: Language, panelUrl?: string): Raw {
   const w = SIGNIN_WORDS[language];
   return html`<footer><span>${w.partner}</span> <a href="${ACCOUNT_URL}" rel="noopener">${w.account}</a>${panelUrl ? html` · <a href="${panelUrl}" rel="noopener">${w.panel}</a>` : ""}</footer>`;
@@ -236,12 +236,12 @@ export async function ownerSessionRoute(deps: OwnerSessionDeps, a: {
     return back(`${base}/owner?sent=1&lang=${language}`);
   }
 
-  // ---- item 11h: passkeys (the partner's setup QR, the recovery card, signing in) ----
+  // ---- item 11h: passkeys (the Operator's setup QR, the recovery card, signing in) ----
   if (isPasskeyRoute(sub)) {
     if (method === "POST" && !a.sameOrigin) return deps.sendJson(res, 403, { message: "Calls from another site's page are refused." });
     return passkeyRoute({
       limiter: deps.limiter, sendHtml: deps.sendHtml, sendJson: deps.sendJson, readBody: deps.readBody, policy: deps.policy,
-      // every error page of the passkey routes carries the partner's number too (batch 3)
+      // every error page of the passkey routes carries the Operator's number too (batch 3)
       page: (language, title, body, nonce) => page(language, title, html`${body}${partnerBar(language, pages)}`, nonce), cookie: (session) => ownerCookie(cookiePath, session),
     }, { req, res, base, sub, address, backend, language: signinLanguage(req, url) });
   }

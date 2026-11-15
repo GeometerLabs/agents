@@ -8,7 +8,7 @@
 //                                    lease back in), and which inbox token was last looked at.
 //   state/licence/extensions/*.gx1   emergency extensions handed in with `geometer licence extension <file>`, each checked like a lease.
 //   generated/shops/<shop>/client/licence.json   what the shop's runtime is handed: its entry in the kept lease (or none), newest_issued_at, the extensions' latest
-//                                    `until`, and the partner's name. The runtime works the state out itself with its own clock (modules/licence/rules.ts, licenceNow).
+//                                    `until`, and the Operator's name. The runtime works the state out itself with its own clock (modules/licence/rules.ts, licenceNow).
 //   status/<shop>.json `licence`     the same state, for the panel and `geometer status`.
 //
 // A key that comes inside a token is never trusted: the kid only picks among the pinned keys. A refused lease, a missing one or a quiet fleet changes nothing: the kept

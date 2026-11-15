@@ -1,8 +1,8 @@
-// A local partner opens the panel on Geometer's partner server with their geometer.dev account (plan decision 53; fleet-signin.ts), and a forgotten passphrase
+// A local Operator opens the panel on Geometer's Operator server with their geometer.dev account (plan decision 53; fleet-signin.ts), and a forgotten passphrase
 // gets a one-time reset link (both modes). Checked here: the ticket check against fleet's fixed vector (the monorepo's apps/fleet/test/fixtures/panel-ticket-
 // vector.json, copied below: the same bytes, the same public key) and against every way a ticket can be wrong; the sign-in over HTTP (opening the link spends
-// nothing, the button does, a ticket works once, one account per partner id, a partner sees only their own shops, the account has no passphrase); hosted mode
-// only; an invited partner moved to geometer.dev keeps their shops; the reset link (once, runs out, signs every session out, refused for a geometer.dev account);
+// nothing, the button does, a ticket works once, one account per Operator id, an Operator sees only their own shops, the account has no passphrase); hosted mode
+// only; an invited Operator moved to geometer.dev keeps their shops; the reset link (once, runs out, signs every session out, refused for a geometer.dev account);
 // sign-out everywhere; the login page's two lines; and that no ticket or reset token reaches the log. Written 14 Nov 2026.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -35,7 +35,7 @@ function ticket(over: Record<string, unknown> = {}, key = PRIVATE, kid = KID): s
   return `${head}.${sign(null, Buffer.from(head, "ascii"), key).toString("base64url")}`;
 }
 
-/** Geometer's partner server: hosted mode, with the licence key and the fleet id geometer.json pins. */
+/** Geometer's Operator server: hosted mode, with the licence key and the fleet id geometer.json pins. */
 async function hosted(): Promise<Boot> {
   const b = await boot({}, { mode: "hosted" });
   writeFileSync(join(b.dir, "geometer.json"), JSON.stringify({ id: "partners-local", fleet: { url: "https://fleet.example", keyFile: "fleet_key", deploymentId: "partner-1" }, licence: { keys: [VECTOR.public_key_hex] } }));
@@ -93,7 +93,7 @@ test("the server's identity comes from geometer.json: fleet's id for it, else it
 
 // ---- signing in -------------------------------------------------------------------------------------------------------------------------------------
 
-test("a partner's ticket: opening it spends nothing, the button signs them in to the account kept for their partner id, and a ticket works once", async () => {
+test("an Operator's ticket: opening it spends nothing, the button signs them in to the account kept for their Operator id, and a ticket works once", async () => {
   const b = await hosted();
   try {
     const t = ticket();
@@ -111,11 +111,11 @@ test("a partner's ticket: opening it spends nothing, the button signs them in to
     assert.equal((await b.browser().get(`/signin/${t}`)).status, 410);
     const again = await anon.req("POST", "/signin", { _csrf: tokenOf(first.text), ticket: t, name: "Divya", company: "", language: "en" });
     assert.deepEqual([again.status, again.plain.includes(WORDS.en.signin.problems.gone)], [410, true]);
-    // a new ticket for the same partner: no form, the same account
+    // a new ticket for the same Operator: no form, the same account
     const back = await signIn(b, ticket());
     assert.ok(back.page.plain.includes(WORDS.en.signin.welcomeBack("Divya")) && !back.page.text.includes('name="name"'));
     assert.equal(back.done.status, 303);
-    assert.equal(listAccounts(b.config).length, 1, "one account per partner id");
+    assert.equal(listAccounts(b.config).length, 1, "one account per Operator id");
     // an expired ticket, and one for another server
     assert.equal((await b.browser().get(`/signin/${ticket({ iat: NOW_S - 400, exp: NOW_S - 100 })}`)).status, 410);
     assert.equal((await b.browser().get(`/signin/${ticket({ aud: "partner-2" })}`)).status, 400);
@@ -125,7 +125,7 @@ test("a partner's ticket: opening it spends nothing, the button signs them in to
   } finally { await b.close(); }
 });
 
-test("a partner who signed in with geometer.dev sees only the shops they set up; another partner's ticket is another account; neither has a passphrase", async () => {
+test("an Operator who signed in with geometer.dev sees only the shops they set up; another Operator's ticket is another account; neither has a passphrase", async () => {
   const b = await hosted();
   try {
     const divya = (await signIn(b, ticket({ sub: "p-divyaaaaaa" }), { name: "Divya", company: "", language: "en" })).browser;
@@ -138,7 +138,7 @@ test("a partner who signed in with geometer.dev sees only the shops they set up;
     b.addShop("meena-shop", { ownerId: acc.byHandle(ids["p-meenaaaaaa"])!.id, ownerName: "Meena", name: "Meena Salon" });
     const mine = (await divya.get("/shops")).text;
     assert.ok(mine.includes("Divya Salon") && !mine.includes("Meena Salon"));
-    assert.equal((await divya.get("/shops/meena-shop")).status, 404, "another partner's shop is like one that does not exist");
+    assert.equal((await divya.get("/shops/meena-shop")).status, 404, "another Operator's shop is like one that does not exist");
     assert.ok((await meena.get("/shops")).text.includes("Meena Salon"));
     // the sign-in form never opens a geometer.dev account, whatever is typed
     const login = b.browser();
@@ -160,11 +160,11 @@ test("a builder's own server takes no geometer.dev ticket at all: its invitation
     const login = (await b.browser().get("/login")).plain;
     assert.ok(!login.includes(WORDS.en.login.partners), "no geometer.dev line on a builder's server");
     assert.ok(login.includes(WORDS.en.login.forgot), "the ask-for-a-new-link line");
-    assert.throws(() => linkFleetPartner(b.config, "anyone", "p-x"), /Geometer's partner server/);
+    assert.throws(() => linkFleetPartner(b.config, "anyone", "p-x"), /Geometer's Operator server/);
   } finally { await b.close(); }
 });
 
-test("on Geometer's partner server the sign-in page sends partners to geometer.dev and says how to get a new passphrase link", async () => {
+test("on Geometer's Operator server the sign-in page sends Operators to geometer.dev and says how to get a new passphrase link", async () => {
   const b = await hosted();
   try {
     const page = (await b.browser().get("/login")).plain;
@@ -175,7 +175,7 @@ test("on Geometer's partner server the sign-in page sends partners to geometer.d
   } finally { await b.close(); }
 });
 
-test("an invited partner moved to geometer.dev keeps their shops; their passphrase and their open sessions end", async () => {
+test("an invited Operator moved to geometer.dev keeps their shops; their passphrase and their open sessions end", async () => {
   const b = await hosted();
   try {
     const asha = await b.account("asha", "partner");

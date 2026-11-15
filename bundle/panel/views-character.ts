@@ -56,7 +56,7 @@ export function characterStepBody(c: Ctx, d: { id: string; shopId?: string; char
 
 /**
  * What the shop page shows about the character: its saved moods as a row, and the "All well" PNG to put on the shop's WhatsApp profile by hand. `has`: the shop's
- * settings turn the assistant on; `name` only when the partner gave the character one; `version` once its pictures are drawn.
+ * settings turn the assistant on; `name` only when the Operator gave the character one; `version` once its pictures are drawn.
  */
 export interface CharacterBlockView { has: boolean; shop: string; name?: string; version?: string }
 

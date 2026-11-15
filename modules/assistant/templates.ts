@@ -30,7 +30,7 @@ const MORNING_MIDDLE: Record<Language, string> = {
 
 /**
  * Each personality's morning template (personality.ts): its opening, the middle and its sign-off. The warm one keeps the template name `owner_morning` and its words,
- * less the character's name (owner, 14 Nov: a character has a name only when the partner gives it one, and a template cannot leave a value out).
+ * less the character's name (owner, 14 Nov: a character has a name only when the Operator gives it one, and a template cannot leave a value out).
  */
 export const MORNING_TEMPLATE_OF: Record<Personality, AssistantTemplateId> = { warm: "morning", cheerful: "morning_cheerful", brief: "morning_brief" };
 const morningTemplate = (p: Personality): MetaTemplate<AssistantTemplateId> => ({

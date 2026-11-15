@@ -23,7 +23,7 @@ function exportBookings(b: Boot, shop: string, bookings: unknown[], entries: unk
 }
 const stuckBooking = (id: string) => ({ id, customer: "p-aaaaaaaaaaaa", language: "en", state: "needs_owner", depositPaymentId: "pmt_1", depositInr: 200, handledPayments: ["pmt_1"], reminders: [], pending: [{ kind: "calendar" }], dateNeedsConfirmation: false, timeInferred: false });
 
-test("the list holds the shops a person can see: a partner sees only their own, a builder sees every shop", async () => {
+test("the list holds the shops a person can see: an Operator sees only their own, a builder sees every shop", async () => {
   const b = await boot();
   try {
     const arjun = await b.account("arjun", "builder");
@@ -35,7 +35,7 @@ test("the list holds the shops a person can see: a partner sees only their own, 
     const sentence = WORDS.en.inbox.kinds.deposit_no_booking("b-1", "₹200", 0, "");
     const mine = (await divya.get("/inbox")).plain;
     assert.ok(mine.includes("Glow Salon") && mine.includes(sentence), mine.slice(0, 1500));
-    assert.ok(!mine.includes("Hosahalli Cuts"), "a partner never sees another partner's shop");
+    assert.ok(!mine.includes("Hosahalli Cuts"), "an Operator never sees another Operator's shop");
     assert.ok(!(await meera.get("/inbox")).plain.includes("Glow Salon"));
     const all = (await arjun.get("/inbox")).plain;
     assert.ok(all.includes("Glow Salon") && all.includes("Hosahalli Cuts") && all.includes(WORDS.en.inbox.count(2)));
@@ -122,7 +122,7 @@ test("an item shows a button for each recovery action it offers; pressing one fi
       assert.equal(r.location, "/inbox?notice=refused", JSON.stringify(form));
     }
     assert.equal(readdirSync(join(b.dir, "requests")).length, 1);
-    // another partner sees nothing of it; the builder may ask
+    // another Operator sees nothing of it; the builder may ask
     assert.equal((await meera.post("/shops/glow-salon/recover", { case: "b-1", action: "retry_booking" }, "/inbox")).status, 404);
     assert.equal((await arjun.post("/shops/glow-salon/recover", { case: "b-1", action: "ask_owner_again" }, "/inbox")).location, "/inbox?notice=sent");
     assert.equal(readdirSync(join(b.dir, "requests")).length, 2);

@@ -1,6 +1,6 @@
 <!--
 What this is for: the manual test script for the Fees template (templates/education/fees) on the real services: WhatsApp sandbox, Razorpay test mode and UPI. Fees has no calendar.
-Who runs it: the owner or a partner, by hand, in one sitting (plus one step the next day). Read README.md in this folder first (set-up and procedures P1 to P6).
+Who runs it: the owner or an Operator, by hand, in one sitting (plus one step the next day). Read README.md in this folder first (set-up and procedures P1 to P6).
 Entry names below are the ones the code writes (templates/education/fees/src/agent.ts, modules/payments/refunds.ts, modules/payments/owner-marked/obligations.ts).
 -->
 

@@ -215,7 +215,7 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   const ownerAccess = channelToken && owner ? openOwnerAccess(join(client.runtime.dataDir, OWNER_ACCESS_FILE)) : undefined;
   const ownerSignin = ownerAccess && owner ? createOwnerSignin({
     access: ownerAccess, pages: pagesReader(join(client.folder, PAGES_FILE)), endBefore: () => readEndBefore(join(client.folder, OWNER_SESSIONS_FILE)),
-    // item 11h: the partner's setup QR and recovery card, as the deployer copies the panel's file here
+    // item 11h: the Operator's setup QR and recovery card, as the deployer copies the panel's file here
     grants: ownerGrantsReader(join(client.folder, OWNER_GRANTS_FILE)),
     owner, shopName: (client.settings as { name?: string }).name ?? "", clock, log,
   }) : undefined;
