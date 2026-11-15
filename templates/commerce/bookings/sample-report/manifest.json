@@ -10,9 +10,9 @@
   "report": {
     "json": "report-2026-11.json",
     "html": "report-2026-11-en.html",
-    "code": "WQDM-VZAP",
-    "digest": "sha256:e5db4dfd5614f409738e3ff0be932f6db909edd96a502a69c5f401a069c0428d",
-    "check": "https://geometer.dev/verify/#s1.AQIBBzIwMjYtMTEIYm9va2luZ3MMU2FtcGxlIFNhbG9uHkRpdnlhLCBsb2NhbCBwYXJ0bmVyIChleGFtcGxlKQgH4MUIwLgCAQIBAAC1AAPgzI7hQ-XbTf1WFPQJc44_8L6TL225Ce3ZalAqacX0AaBpwEKN.FU8drPrUztF5DxWbChTuODxSNe-neU3n7yIgugVWTInsfUzATZHFD7lwWm4jzccuAIb3rNdhhgL2gVrWaPUlAQ"
+    "code": "CHJ0-26X0",
+    "digest": "sha256:6464011ba0d8d5e6e00a72922cbe56c52041065963e5c5d1cb454c69f39c1812",
+    "check": "https://geometer.dev/verify/#s1.AQIBBzIwMjYtMTEIYm9va2luZ3MMU2FtcGxlIFNhbG9uHkRpdnlhLCBsb2NhbCBwYXJ0bmVyIChleGFtcGxlKQgH4MUIwLgCAQIBAAC1AAPgzI7hQ2RkARug2NXm4Apykiy-VsUgQQZZY-XF0ctFTGnznBgS.3xmRdycFnX1rkkbpNqYLj6bZW9HqjqWfj2z5RHK-htuKeR45GAagfc0lIKoeSRj1UjcA7vVppStrMttMPhGPBw"
   },
   "crashTest": {
     "json": "go-live-certificate.json",

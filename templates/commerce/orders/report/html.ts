@@ -1,6 +1,7 @@
 // The builder layer: a printable page, self-contained (one file, inline CSS, no script, no external font, image or link), built with the shared page frame
 // (modules/report/page.ts). It shows the same numbers as the owner's text, a table per limit, and a "Show what we did" section with the counts by action and
 // outcome and the digests. Every value that reaches the page is escaped; the shop's name comes from the settings file.
+import { moneyBlock } from "../../../../modules/accounting/report-block.ts";
 import { formatDate } from "../../../../modules/language/format.ts";
 import { localParts } from "../../../../modules/core/time.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
@@ -72,6 +73,7 @@ export function reportSection(envelope: Envelope<OrdersReport>, language: Langua
 <div class="card"><strong>${r.orders.cancelled}</strong><span>${esc(s.label.cancelled)}</span></div>
 </div>
 <h2>${esc(p.numbers)}</h2>${numbers}
+${r.accounting ? moneyBlock(r.accounting.summary, s.moneyBlock) : ""}
 <h2>${esc(p.soldHeading)}</h2>${sold}${items}
 <h2>${esc(p.stoppedHeading)}</h2>${rules}
 <h2>${esc(p.messagesHeading)}</h2>${messages}

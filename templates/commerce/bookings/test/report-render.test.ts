@@ -107,6 +107,8 @@ test("every ₹ amount in the output is an amount the record holds", async () =>
   const report = await novemberReport();
   const held = new Set([report.money.deposits.paise, report.money.refunds.paise, report.money.refunds.ofDeposits.paise, report.money.refunds.ofSecondPayments.paise, 0].map((p) => formatInr(p / 100)));
   assert.deepEqual([...held].sort(), ["₹0", "₹1,000", "₹200", "₹5,400", "₹800"].sort());
+  // the page's "Money this month" block is the books' own figures, which count every payment (a second payment on a link too, owed back at once): ₹5,600 received, here
+  for (const k of report.accounting!.summary.byKind) if (k.kind === "received") held.add(formatInr(k.paise / 100));
   for (const language of ALL) {
     for (const l of languagesOf(language)) {
       for (const a of amountsIn(ownerText(report, l))) assert.ok(held.has(a), `${a} in the ${l} owner text`);
