@@ -4,6 +4,11 @@ Newest first within each part. "Revisit when" is the trigger; nothing here is cl
 
 ## Needs a decision or an approval from the owner
 
+- **The bundle's slow tests, and its code (15 Nov 2026).** Built: the crash test file is two files and two repeat runs are gone (Explanation.md, "A shorter bundle test run"). Not done:
+  - the asks-again and past-end examples (`test/crash-test-wrong.test.ts`) still run on all twelve situations, about four minutes, because they are the only runs that show each fails exactly one situation and they are approval checks. Revisit when the owner says yes to running them on the held-refund situations only;
+  - `package.json`'s `npm test` runs `node --test test/` as before, with as many files at once as the computer has cores less one. The faster run above used two at a time. Revisit when a test run is too slow or too hot on a builder's computer;
+  - no review of the bundle's code for bloat: only a scan for exports nothing uses, which found one constant (`TICKET_PREFIX`) and a few type names, none removed. Revisit when the owner asks for a code review of the bundle.
+
 - **How long a shop waits for a Guard that is down, and for which outages (B14, 10 Nov).** Built: a task waits for its Guard for at most 15 minutes from when the message arrived. While it waits, the shop's later messages wait behind it: order is shop-wide (`modules/Explanation.md` says why). A provider that is away (`provider_unreachable`) does not wait. To decide:
   - whether 15 minutes is right, given that it is also the whole shop's silence at its worst;
   - whether a provider's own outage should wait too (a one-line change, and a wider promise);
