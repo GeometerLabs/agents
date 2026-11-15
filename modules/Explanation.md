@@ -1222,3 +1222,15 @@ Three things from `accounting/` now show on the shop's pages. How each reaches t
 **The Money section on the owner's app** (`accounting/owner-money-render.ts` inside `channels/owner-page.ts`), below what waits for the owner's answer, for every template. Each template's `ownerView` builds `money` from its journal, the record's entries and its cases' `refundsUntold` (with their case). `ChannelKit.owner` now also receives the saved record (`entries`).
 
 **"Send to my accountant"**. For a signed-in owner's SESSION only: `<owner app>/accounting/<period>/<file>` (this month, last month and the financial year, taken from the runtime's own month, `periods.ts exportPeriods`; the files are `journal-<period>.csv`, `documents-<period>.csv`, `README.txt`, the two best-effort Tally files `tally-masters.xml` and `tally-vouchers.xml`, and `settlements-<period>.csv` for a shop that reads its settlements), as downloads. The Tally files name no company, because the accountant's Tally company may be named differently from the shop: the import goes into the company that is open. The front reads them from the runtime's `GET /internal/channel/accounting?period=` with the owner's session; the runtime checks the session itself against its own sessions, so the channel token alone, and the panel's link, get 403. The panel's link page (`/o/<token>`) shows the same figures with no download card. The WhatsApp link is `https://wa.me/?text=` with the words "My shop's accounts for <month>" only: never a file or a customer. The owner app's worker (`OWNER_APP_SW`) answers only the app's root page, and the customer pages' worker has no fetch handler, so neither can keep a receipt or a file.
+
+## Which template uses which module, made from the imports (15 Nov 2026)
+
+The "Who imports it" column of `README.md` was written by hand and fell behind: Orders was missing from most rows, and seven modules (`licence`, `voice`, `terms`,
+`unfinished`, `push`, `demo`, `ask-card`) had no row at all. No template listed the modules it uses, although the README said each `Explanation.md` did.
+
+Now `module-map.ts` reads the code's own imports (not tests, fixtures or comments) and writes both lists: the column, for Bookings, Orders, Fees and the bundle, and
+a "Modules it uses" section at the end of each template's README, between two markers. A row may add its own note after " · " (`accounting/` is also used by
+`payments/refunds.ts`; `ask-card/` is used by no template's code and makes the sell-guide cards), and the note is kept. `test/module-map.test.ts` fails when a list is
+behind or a module folder has no row, and says the command that fixes it: `node modules/module-map.ts --write`. A new module needs only its row's first three columns
+written by hand; a new template needs its folder added to `USERS` in `module-map.ts`. Module-to-module use is left to the code: it is many lines and nobody reads it.
+What a template hands each module stays in the table's third column, written by hand, because it is a description, not a list.

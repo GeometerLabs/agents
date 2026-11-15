@@ -117,3 +117,13 @@ Hindi, English, Malayalam and Kannada, and the Hindi, Malayalam and Kannada peop
 ## What is not done yet
 
 See [Deferred.md](Deferred.md).
+
+## Modules it uses
+
+<!-- modules it uses: made by modules/module-map.ts from the imports; run `node modules/module-map.ts --write` -->
+
+The shared modules Orders uses, from its code's own imports: [`accounting/`](../../../modules/README.md#what-is-here), [`approvals/`](../../../modules/README.md#what-is-here), [`assistant/`](../../../modules/README.md#what-is-here), [`channels/`](../../../modules/README.md#what-is-here), [`core/`](../../../modules/README.md#what-is-here), [`crash-test/`](../../../modules/README.md#what-is-here), [`demo/`](../../../modules/README.md#what-is-here), [`inbox/`](../../../modules/README.md#what-is-here), [`language/`](../../../modules/README.md#what-is-here), [`licence/`](../../../modules/README.md#what-is-here), [`limits/`](../../../modules/README.md#what-is-here), [`messaging/`](../../../modules/README.md#what-is-here), [`papers/`](../../../modules/README.md#what-is-here), [`payments/`](../../../modules/README.md#what-is-here), [`push/`](../../../modules/README.md#what-is-here), [`record/`](../../../modules/README.md#what-is-here), [`report/`](../../../modules/README.md#what-is-here), [`runtime/`](../../../modules/README.md#what-is-here), [`terms/`](../../../modules/README.md#what-is-here), [`understanding/`](../../../modules/README.md#what-is-here), [`unfinished/`](../../../modules/README.md#what-is-here), [`voice/`](../../../modules/README.md#what-is-here).
+
+What each one does and what a template hands it: the table in [modules/README.md](../../../modules/README.md#what-is-here). A new template uses the same modules the same way.
+
+<!-- end of modules it uses -->

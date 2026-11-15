@@ -411,3 +411,13 @@ The full list, with a reason and a trigger for each, is in [Deferred.md](Deferre
 ## Not a claim
 
 A template core checked against stand-in services and a rule-based parser. A result says that these situations held within what was tried, nothing more. Licence: Apache-2.0 (see [../../../LICENSE](../../../LICENSE)).
+
+## Modules it uses
+
+<!-- modules it uses: made by modules/module-map.ts from the imports; run `node modules/module-map.ts --write` -->
+
+The shared modules Bookings uses, from its code's own imports: [`accounting/`](../../../modules/README.md#what-is-here), [`approvals/`](../../../modules/README.md#what-is-here), [`assistant/`](../../../modules/README.md#what-is-here), [`channels/`](../../../modules/README.md#what-is-here), [`core/`](../../../modules/README.md#what-is-here), [`crash-test/`](../../../modules/README.md#what-is-here), [`demo/`](../../../modules/README.md#what-is-here), [`inbox/`](../../../modules/README.md#what-is-here), [`language/`](../../../modules/README.md#what-is-here), [`licence/`](../../../modules/README.md#what-is-here), [`limits/`](../../../modules/README.md#what-is-here), [`messaging/`](../../../modules/README.md#what-is-here), [`papers/`](../../../modules/README.md#what-is-here), [`payments/`](../../../modules/README.md#what-is-here), [`push/`](../../../modules/README.md#what-is-here), [`qr/`](../../../modules/README.md#what-is-here), [`record/`](../../../modules/README.md#what-is-here), [`reminders/`](../../../modules/README.md#what-is-here), [`report/`](../../../modules/README.md#what-is-here), [`runtime/`](../../../modules/README.md#what-is-here), [`standins/`](../../../modules/README.md#what-is-here), [`terms/`](../../../modules/README.md#what-is-here), [`understanding/`](../../../modules/README.md#what-is-here), [`unfinished/`](../../../modules/README.md#what-is-here), [`voice/`](../../../modules/README.md#what-is-here).
+
+What each one does and what a template hands it: the table in [modules/README.md](../../../modules/README.md#what-is-here). A new template uses the same modules the same way.
+
+<!-- end of modules it uses -->
