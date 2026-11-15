@@ -159,7 +159,7 @@ test("the owner's app shows the Money section in four languages; the panel's lin
       assert.ok(html.includes("₹400"), `${language}: this month's received, two deposits of ₹200`);
       assert.ok(html.includes(words.scope), `${language}: the scope line`);
       assert.ok(html.indexOf(words.title) > html.indexOf("<h2>"), `${language}: below the page's first heading`);
-      for (const href of ["2026-11/journal-2026-11.csv", "2026-11/documents-2026-11.csv", "2026-11/README.txt", "2026-10/journal-2026-10.csv", "26-27/journal-26-27.csv"]) assert.ok(html.includes(`href="${w.ownerBase}/accounting/${href}"`), `${language}: ${href}`);
+      for (const href of ["2026-11/journal-2026-11.csv", "2026-11/documents-2026-11.csv", "2026-11/README.txt", "2026-11/tally-masters.xml", "2026-11/tally-vouchers.xml", "2026-10/journal-2026-10.csv", "26-27/journal-26-27.csv"]) assert.ok(html.includes(`href="${w.ownerBase}/accounting/${href}"`), `${language}: ${href}`);
       const wa = /href="(https:\/\/wa\.me\/\?text=[^"]*)"/u.exec(html)?.[1] ?? "";
       assert.equal(decodeURIComponent(wa.split("text=")[1]).replace(/&#39;/gu, "'"), words.shareText(`${MONTH_NAMES[language][10]} 2026`), `${language}: the share link holds the words only`);
       assert.equal(/csv|@|\d{10}/u.test(decodeURIComponent(wa)), false, `${language}: no file and no number in the share link`);
@@ -200,7 +200,19 @@ test("the accountant's files download for the owner's session only, and parse as
     assert.match(await readme.text(), /journal-2026-11\.csv/u);
     assert.equal((await get("26-27/journal-26-27.csv")).status, 200, "the financial year");
     assert.equal((await get("2026-10/documents-2026-10.csv")).status, 200, "last month (empty is a file too)");
-    // only this month, last month and the financial year, and only a period's own three files
+    // the two best-effort Tally files download as XML; a UPI shop reads no settlements, so it has no settlements file and its page offers none
+    for (const name of ["tally-masters.xml", "tally-vouchers.xml"]) {
+      const x = await get(`2026-11/${name}`);
+      assert.equal(x.status, 200, name);
+      assert.equal(x.headers.get("content-type"), "application/xml; charset=utf-8", name);
+      assert.match(await x.text(), /^<\?xml|<ENVELOPE>/u, name);
+    }
+    assert.equal((await get("2026-11/settlements-2026-11.csv")).status, 404, "no settlements file for a shop that reads none");
+    // no file of any period carries a customer's number or name
+    for (const name of ["journal-2026-11.csv", "documents-2026-11.csv", "README.txt", "tally-masters.xml", "tally-vouchers.xml"]) {
+      assert.equal(/9811111111|9822222222|Asha/u.test(await (await get(`2026-11/${name}`)).text()), false, `${name}: no customer number or name`);
+    }
+    // only this month, last month and the financial year, and only the files a period has
     for (const nope of ["2026-09/journal-2026-09.csv", "2026-11/journal-2026-10.csv", "2026-11/other.csv", "2026-11", "../journal.csv", "25-26/journal-25-26.csv"]) assert.equal((await get(nope)).status, 404, nope);
     // refused: no session, a made-up one, the panel's link, the channel token alone
     const noCookie = await get("2026-11/journal-2026-11.csv", {});

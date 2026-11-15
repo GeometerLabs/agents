@@ -751,7 +751,7 @@ export function createAgent(deps: AgentDeps): Agent {
    * Money clarity: the owner marks an open fee paid in cash (or by a bank transfer the agent cannot see), from their page's "paid another way?" list. The page showed the
    * fee with a digest of its balance and payments; with any other digest nothing is done. The mark is for the whole balance, counted as a payment of its own kind
    * (CASH_LINK) and written to the record as the owner's mark ("owner_marked_paid", with `via: "cash"`), which is exactly what the rules read as the record showing the
-   * money: the parent is told it was received, reminders stop, the accounts count it (modules/accounting; the owner's money page shows it), and a UPI centre's report counts it as marked by the owner; a gateway centre's signed report does not yet (modules/accounting/Deferred.md). Open payment links are closed, so a payment that still
+   * money: the parent is told it was received, reminders stop, the accounts count it (modules/accounting; the owner's money page shows it), and a UPI centre's report counts it as marked by the owner; a gateway centre's signed report does not yet (modules/Deferred.md, "The accounting module"). Open payment links are closed, so a payment that still
    * comes on one is counted and goes back as an extra. Nothing is sent to a payments service, and no rule of Guard or of the ledger changes.
    */
   async function onOwnerCash(e: OwnerAction): Promise<void> {
