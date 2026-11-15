@@ -170,6 +170,7 @@ test("a case named with markup is text, not markup", () => {
   const w = world();
   w.clock.set(at(11, 3, 10)); // paid through the payment service more than 4 working days ago, so it is listed as "not yet in your bank"
   w.post(gw("<b-1>", "pay_x", 5_000), "record_deposit");
+  w.line(null, "settlements_read", "confirmed", { day: "2026-11-14", rows: "0", posted: "0", listed: "0" }); // a shop that reads its settlements
   const v = ownerMoney({ journal: w.acc.journal(), entries: w.record.entries(), refundsUntold: [], nowMs: NOW, timeZone: TZ });
   const page = ownerMoneySection(v, "en", { base: "a" }, TZ).toString();
   assert.equal(page.includes("<b-1>"), false);
