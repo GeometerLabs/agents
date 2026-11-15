@@ -58,7 +58,7 @@ export interface OwnerPageInput {
   nonce?: string;
   /** Item 11h: the owner's "Alerts on this phone" box (modules/push/pages.ts), already drawn without its script (`bare`), when the shop has web push. */
   alerts?: string;
-  /** Batch 3: the partner (name and number) for the "who to call" bar at the top, from the shop's pages.json. */
+  /** Batch 3: the Operator (name and number) for the "who to call" bar at the top, from the shop's pages.json. */
   partner?: PagesFile["partner"];
   /** Batch 3: how many phones have alerts on (the runtime's count), for the top line "Alerts: on, on 1 phone". Left out: the shop has no push. */
   alertPhones?: number;

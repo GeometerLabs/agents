@@ -9,7 +9,7 @@
 //    and with no `mam` the payer's app does not let the amount be changed; `cu` is the currency, and "INR" is the only value; `tn` is a short note;
 //  - a space is written `%20` (never `+`), as RFC 3986 section 2.1 percent-encoding, and so is every other character a value cannot carry as it is.
 // What is left out on purpose, and why (Explanation.md, "UPI"):
-//  - `tr` (a transaction reference) is "mandatory for merchant transactions". A partner shop's UPI ID is often a personal one, and payment apps may refuse or
+//  - `tr` (a transaction reference) is "mandatory for merchant transactions". An Operator shop's UPI ID is often a personal one, and payment apps may refuse or
 //    flag a merchant-style request to a personal UPI ID, so the reference travels in `tn` instead. A shop with a business UPI ID can be given `tr` later;
 //  - `mc`, `mode`, `orgid` and `sign` belong to a merchant's signed request, which needs a merchant account with a bank. Without `sign` the payer's app may
 //    say that the source of the request could not be verified; that is expected for a request like this, and it is why "paid" is the owner's word, not ours.

@@ -1,5 +1,5 @@
 // The bundle's sender against fleet's REAL server and billing engine (not a stub), when the monorepo is at hand: a heartbeat with the cost meter's counts is accepted, fleet's
-// per-shop answer comes back in the shape the bundle reads, and "buttons" arrives when the partner's balance cannot pay for the next block of extra messages. This is the
+// per-shop answer comes back in the shape the bundle reads, and "buttons" arrives when the Operator's balance cannot pay for the next block of extra messages. This is the
 // contract tested in practice; the two sides' own tests pin it from each end. Skipped, saying why, when the monorepo's fleet is not there or is too old to know `usage`.
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
@@ -86,7 +86,7 @@ test("fleet's real heartbeat takes the three counts, and the lease it signs (RFC
     assert.equal(r.answer?.["glow-salon"]?.licence?.state, "active", "and fleet's unsigned copy for the panel");
     const taken = takeLease(s.root, { id: "acme-vps-1", licence: PIN.licence }, r.lease!);
     assert.equal(taken.taken, true, JSON.stringify(taken));
-    const file = licenceFileFor(keptLicence(s.root, { id: "acme-vps-1", licence: PIN.licence }), "glow-salon", "Divya, local partner");
+    const file = licenceFileFor(keptLicence(s.root, { id: "acme-vps-1", licence: PIN.licence }), "glow-salon", "Divya, local Operator");
     assert.equal(file.shop?.plan, "business");
     assert.deepEqual([licenceNow(file, NOW.getTime()).state, licenceNow(file, NOW.getTime()).takesNewWork], ["active", true]);
     assert.equal(takeLease(s.root, { id: "other-vps", licence: PIN.licence }, r.lease!).taken, false, "a lease for this deployment is not another's");

@@ -5,10 +5,10 @@
 //   ... main.ts reset --handle divya [--hours 72]          a one-time link to choose a new passphrase (a forgotten one); every session of the account ends when it is used
 //   ... main.ts signout --handle divya                     end every session of one account now
 //   ... main.ts accounts                                   the accounts: sign-in name, role, how they sign in (one JSON line each; no hash, no token)
-//   ... main.ts link-partner --handle divya --partner p-x  hosted mode: an invited partner signs in with geometer.dev from now on and keeps their shops
+//   ... main.ts link-partner --handle divya --partner p-x  hosted mode: an invited Operator signs in with geometer.dev from now on and keeps their shops
 //
 // Everything else is set by environment variables (see README.md in this folder). Hosted mode (PANEL_MODE=hosted) is Geometer's own server for the
-// partners' shops: it refuses to start without PANEL_DATA_KEY_FILE, and invitations are made only here, on the command line.
+// Operators' shops: it refuses to start without PANEL_DATA_KEY_FILE, and invitations are made only here, on the command line.
 import { parseArgs } from "node:util";
 import { ConfigError, configFromEnv } from "./config.ts";
 import { writeFileSync } from "node:fs";
@@ -48,9 +48,9 @@ try {
     for (const a of listAccounts(config)) console.log(JSON.stringify(a));
   } else if (command === "link-partner") {
     const { values } = parseArgs({ args: rest, options: { handle: { type: "string" }, partner: { type: "string" } } });
-    if (!values.handle || !values.partner) throw new ConfigError("Say which account and which partner: --handle <sign-in name> --partner <partner id in fleet>.");
+    if (!values.handle || !values.partner) throw new ConfigError("Say which account and which Operator: --handle <sign-in name> --partner <Operator id in fleet>.");
     const a = linkFleetPartner(config, values.handle, values.partner);
-    console.log(`${a.handle} (${a.name}) now signs in with the geometer.dev account of partner ${a.fleetPartner}, and keeps their shops. Their passphrase no longer works, and every session of theirs has ended.`);
+    console.log(`${a.handle} (${a.name}) now signs in with the geometer.dev account of Operator ${a.fleetPartner}, and keeps their shops. Their passphrase no longer works, and every session of theirs has ended.`);
   } else if (command === "confirm-link") {
     // Asks for a person's yes (plan B11, the Claude Code plugin): prints one JSON line with a one-time link. It only ASKS; there is no command that applies anything.
     const { values } = parseArgs({ args: rest, options: { kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" }, note: { type: "string" } } });

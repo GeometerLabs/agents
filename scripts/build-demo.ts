@@ -1,4 +1,4 @@
-// Builds the hosted demo: one folder that the partner server's Caddy serves at https://streetlist.in/demo (plan: release-flow-gaps.md, problem 2, batch 2b). It holds
+// Builds the hosted demo: one folder that the Operator server's Caddy serves at https://streetlist.in/demo (plan: release-flow-gaps.md, problem 2, batch 2b). It holds
 //
 //   demo.html                  the list: the three demo shops, each with its four languages            -> /demo
 //   demo/bookings.html         one page per template (a path of its own, the language in ?lang=)       -> /demo/bookings, /demo/orders, /demo/fees

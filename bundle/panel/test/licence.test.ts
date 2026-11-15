@@ -1,6 +1,6 @@
-// The shop's licence on the panel (B13): the state the server worked out from the signed lease, in plain words and in the partner's language, the dates from fleet's copy,
+// The shop's licence on the panel (B13): the state the server worked out from the signed lease, in plain words and in the Operator's language, the dates from fleet's copy,
 // fleet's renew link, a note when the lease has not been refreshed for more than 2 days, "no licence yet" for a shop the lease does not list (decision 39), and the day a
-// builder's trial ends. A partner sees only their own shops' licences.
+// builder's trial ends. An Operator sees only their own shops' licences.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -31,7 +31,7 @@ test("the view: the signed state, fleet's days, the renew link only when somethi
   assert.equal(parseFleetAnswer(JSON.stringify(fleetAnswer({ state: "warning", renew_url: "javascript:alert(1)" })))?.licence?.renew_url, null, "a renew link is https or nothing");
 });
 
-test("the shop page and the list show the licence to the partner whose shop it is, in their language, and to no other partner", async () => {
+test("the shop page and the list show the licence to the Operator whose shop it is, in their language, and to no other Operator", async () => {
   const b = await boot();
   try {
     const divya = await b.account("divya", "partner", "hi");
@@ -50,7 +50,7 @@ test("the shop page and the list show the licence to the partner whose shop it i
     assert.match(page.plain, /सहायता को लिखिए। एक इंसान जवाब देता है।/u);
     const list = await divya.get("/shops");
     assert.match(list.plain, /रुका हुआ: कोई नई बुकिंग या भुगतान अनुरोध नहीं/u);
-    assert.equal((await meena.get("/shops/divya-shop")).status, 404, "another partner's shop is not there for her");
+    assert.equal((await meena.get("/shops/divya-shop")).status, 404, "another Operator's shop is not there for her");
     assert.doesNotMatch((await meena.get("/shops")).plain, /rzp\.io|Paused/u);
     const own = await meena.get("/shops/meena-shop");
     assert.doesNotMatch(own.plain, /<h2>Licence<\/h2>/u, "her shop's status has no licence block (never deployed): nothing is said about a licence");

@@ -80,7 +80,7 @@ export interface MessageData {
   card_expired: Record<string, never>;
   card_unknown: Record<string, never>;
   limit_no: Record<string, never>;
-  /** The greeting is the personality's (personality.ts); left out, the warm one. `name`: the character's, only when the partner gave it one. */
+  /** The greeting is the personality's (personality.ts); left out, the warm one. `name`: the character's, only when the Operator gave it one. */
   help: { name?: string; shop: string; kinds: readonly string[]; personality?: Personality };
   not_understood: { kinds: readonly string[] };
   not_offered: Record<string, never>;
@@ -110,7 +110,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
     no_case: (w, d) => `Nothing has the number ${w.lit(d.ref)}.`, not_yours: (w, d) => `${w.lit(d.ref)} is not something this assistant handles.`,
     already_back: (w, d) => `The deposit on ${w.lit(d.ref)} is already going back, so I can't cancel it from here. Please tell the customer yourself.`,
     cancel_first: (w, d) => `${w.lit(d.ref)} is still booked. To give the deposit back, cancel it: ${w.lit(`cancel ${d.ref}`)}.`,
-    not_here: (w, d) => `That can't be done from the chat for ${w.lit(d.ref)} in this version. Use the message I sent you about it, or ask your partner.`,
+    not_here: (w, d) => `That can't be done from the chat for ${w.lit(d.ref)} in this version. Use the message I sent you about it, or ask your Operator.`,
     not_booked: (w, d) => `${w.lit(d.ref)} is not booked yet, so there is nothing to cancel.`,
     not_live: (w, d) => `${w.lit(d.ref)} is already cancelled, done or expired.`, nothing_paid: (w, d) => `Nothing was paid on ${w.lit(d.ref)}, so there is nothing to refund.`,
     too_much: (w, d) => `That is more than was paid on ${w.lit(d.ref)} (${w.inr(d.paidPaise ?? 0)}).`, nothing_waiting: (w, d) => `Nothing on ${w.lit(d.ref)} is waiting for you.`,
@@ -123,7 +123,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
     no_case: (w, d) => `${w.lit(d.ref)} नंबर का कुछ नहीं मिला।`, not_yours: (w, d) => `${w.lit(d.ref)} यह असिस्टेंट नहीं संभालता।`,
     already_back: (w, d) => `${w.lit(d.ref)} की जमा राशि पहले से वापस जा रही है, इसलिए मैं इसे यहाँ से रद्द नहीं कर सकता। कृपया ग्राहक को ख़ुद बताएँ।`,
     cancel_first: (w, d) => `${w.lit(d.ref)} अभी बुक है। जमा राशि लौटाने के लिए इसे रद्द करें: ${w.lit(`cancel ${d.ref}`)}।`,
-    not_here: (w, d) => `इस वर्शन में ${w.lit(d.ref)} के लिए यह चैट से नहीं हो सकता। इसके बारे में भेजे मेरे मैसेज का इस्तेमाल करें, या अपने पार्टनर से कहें।`,
+    not_here: (w, d) => `इस वर्शन में ${w.lit(d.ref)} के लिए यह चैट से नहीं हो सकता। इसके बारे में भेजे मेरे मैसेज का इस्तेमाल करें, या अपने ऑपरेटर से कहें।`,
     not_booked: (w, d) => `${w.lit(d.ref)} अभी बुक नहीं हुई है, इसलिए रद्द करने को कुछ नहीं है।`,
     not_live: (w, d) => `${w.lit(d.ref)} पहले ही रद्द, पूरा या ख़त्म हो चुका है।`, nothing_paid: (w, d) => `${w.lit(d.ref)} पर कुछ भी नहीं चुकाया गया, तो वापस करने को कुछ नहीं है।`,
     too_much: (w, d) => `यह ${w.lit(d.ref)} पर चुकाए गए पैसे (${w.inr(d.paidPaise ?? 0)}) से ज़्यादा है।`, nothing_waiting: (w, d) => `${w.lit(d.ref)} पर आपके लिए कुछ बाकी नहीं है।`,
@@ -242,14 +242,14 @@ const DONE: Record<Language, (w: Writer, d: MessageData["done"]) => string> = {
     held_by_guard: `The refund of ${w.inr(d.amountPaise)} for ${w.lit(d.ref)} is above your limit: approve it on the card that follows.`,
     owed_by_owner: `Please send ${w.inr(d.amountPaise)} back to ${w.lit(d.who)} (${w.lit(d.ref)}) from your UPI app, then tap Sent on the message I send you.`,
     sent: `Sent to ${w.lit(d.who)} (${w.lit(d.ref)}).`, answered: `Done for ${w.lit(d.ref)}.`,
-    failed: `That did not go through for ${w.lit(d.ref)}. It is on your partner's list.`, not_sent: `The message to ${w.lit(d.who)} (${w.lit(d.ref)}) could not be sent.`,
+    failed: `That did not go through for ${w.lit(d.ref)}. It is on your Operator's list.`, not_sent: `The message to ${w.lit(d.who)} (${w.lit(d.ref)}) could not be sent.`,
   })[d.note],
   hi: (w, d) => ({
     cancelled: `${w.lit(d.ref)} रद्द कर दी गई।`, refund_sent: `हो गया: ${w.inr(d.amountPaise)} ${w.lit(d.who)} (${w.lit(d.ref)}) को वापस जा रहे हैं।`,
     held_by_guard: `${w.lit(d.ref)} का ${w.inr(d.amountPaise)} रिफंड आपकी सीमा से ऊपर है: अगले कार्ड पर मंज़ूर करें।`,
     owed_by_owner: `कृपया अपने UPI ऐप से ${w.lit(d.who)} (${w.lit(d.ref)}) को ${w.inr(d.amountPaise)} लौटाएँ, फिर मेरे भेजे मैसेज पर Sent दबाएँ।`,
     sent: `${w.lit(d.who)} (${w.lit(d.ref)}) को भेज दिया।`, answered: `${w.lit(d.ref)} के लिए हो गया।`,
-    failed: `${w.lit(d.ref)} के लिए यह नहीं हो पाया। यह आपके पार्टनर की सूची में है।`, not_sent: `${w.lit(d.who)} (${w.lit(d.ref)}) को मैसेज नहीं जा सका।`,
+    failed: `${w.lit(d.ref)} के लिए यह नहीं हो पाया। यह आपके ऑपरेटर की सूची में है।`, not_sent: `${w.lit(d.who)} (${w.lit(d.ref)}) को मैसेज नहीं जा सका।`,
   })[d.note],
   ml: (w, d) => ({
     cancelled: `${w.lit(d.ref)} റദ്ദാക്കി.`, refund_sent: `ചെയ്തു: ${w.inr(d.amountPaise)} ${w.lit(d.who)}-ക്ക് (${w.lit(d.ref)}) തിരികെ പോകുന്നു.`,
@@ -291,7 +291,7 @@ const W: Record<Language, Words> = {
     money_in: (d, w) => (d.payments === 0 ? `Nothing recorded on ${w.date(d.date)} yet.` : `Recorded on ${w.date(d.date)}: ${w.inr(d.paise)} from payments: ${w.n(d.payments)}.`),
     closed: (d, w) => `Closed ${w.date(d.date)}. ${d.booked === 0 ? "No bookings that day." : `Bookings that day: ${w.n(d.booked)}. I've asked them to pick another day.`}${d.missed.length > 0 ? ` I could not reach these, please call them: ${d.missed.map((m) => `${w.lit(m.case)} (${w.lit(m.who)})`).join(", ")}.` : ""} Reply undo to open it again.`,
     already_closed: (d, w) => `${w.date(d.date)} is already closed.`,
-    weekday_closed: (d, w) => `The shop is always closed on that weekday (${w.date(d.date)}). Your opening hours are set by your partner.`,
+    weekday_closed: (d, w) => `The shop is always closed on that weekday (${w.date(d.date)}). Your opening hours are set by your Operator.`,
     not_closed: (d, w) => `${w.date(d.date)} is not closed.`,
     reopened: (d, w) => `Open again on ${w.date(d.date)}.${d.told > 0 ? ` I've told customers their booking stands: ${w.n(d.told)}.` : ""}`,
     past_day: (d, w) => `${w.date(d.date)} has already gone.`,
@@ -312,7 +312,7 @@ const W: Record<Language, Words> = {
     card_closed: () => "That card was already answered.",
     card_expired: () => "That card ran out. Ask me again if you still want it.",
     card_unknown: () => "I have no card with that code.",
-    limit_no: () => "Limits (refunds, deposits, caps) are changed by your partner from their panel. I can't change them from here in this version.",
+    limit_no: () => "Limits (refunds, deposits, caps) are changed by your Operator from their panel. I can't change them from here in this version.",
     help: (d, w) => `${greeting(d.personality ?? "warm", "en", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} You can say, for example:\n${examples(w, d.kinds)}`,
     not_understood: (d, w) => `Sorry, I didn't get that. You can say, for example:\n${examples(w, d.kinds)}`,
     not_offered: () => "This shop's assistant doesn't handle that.",
@@ -327,7 +327,7 @@ const W: Record<Language, Words> = {
     money_in: (d, w) => (d.payments === 0 ? `${w.date(d.date)} को अभी कुछ दर्ज नहीं हुआ।` : `${w.date(d.date)} को दर्ज: ${w.inr(d.paise)}, भुगतान: ${w.n(d.payments)}।`),
     closed: (d, w) => `${w.date(d.date)} बंद कर दिया। ${d.booked === 0 ? "उस दिन कोई बुकिंग नहीं।" : `उस दिन की बुकिंग: ${w.n(d.booked)}। मैंने उनसे दूसरा दिन चुनने को कहा है।`}${d.missed.length > 0 ? ` इन तक मैसेज नहीं पहुँचा, कृपया इन्हें फ़ोन करें: ${d.missed.map((m) => `${w.lit(m.case)} (${w.lit(m.who)})`).join(", ")}.` : ""} फिर से खोलने के लिए undo लिखें।`,
     already_closed: (d, w) => `${w.date(d.date)} पहले से बंद है।`,
-    weekday_closed: (d, w) => `उस दिन (${w.date(d.date)}) दुकान हमेशा बंद रहती है। आपके खुलने का समय आपका पार्टनर तय करता है।`,
+    weekday_closed: (d, w) => `उस दिन (${w.date(d.date)}) दुकान हमेशा बंद रहती है। आपके खुलने का समय आपका ऑपरेटर तय करता है।`,
     not_closed: (d, w) => `${w.date(d.date)} बंद नहीं है।`,
     reopened: (d, w) => `${w.date(d.date)} फिर से खुला।${d.told > 0 ? ` मैंने ग्राहकों को बताया कि उनकी बुकिंग पक्की है: ${w.n(d.told)}।` : ""}`,
     past_day: (d, w) => `${w.date(d.date)} बीत चुका है।`,
@@ -348,7 +348,7 @@ const W: Record<Language, Words> = {
     card_closed: () => "उस कार्ड का जवाब पहले ही दिया जा चुका है।",
     card_expired: () => "उस कार्ड का समय ख़त्म हो गया। अगर अब भी चाहिए तो फिर कहें।",
     card_unknown: () => "उस कोड का कोई कार्ड मेरे पास नहीं है।",
-    limit_no: () => "सीमाएँ (रिफंड, जमा राशि, कैप) आपका पार्टनर अपने पैनल से बदलता है। इस वर्शन में मैं इन्हें यहाँ से नहीं बदल सकता।",
+    limit_no: () => "सीमाएँ (रिफंड, जमा राशि, कैप) आपका ऑपरेटर अपने पैनल से बदलता है। इस वर्शन में मैं इन्हें यहाँ से नहीं बदल सकता।",
     help: (d, w) => `${greeting(d.personality ?? "warm", "hi", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} आप ऐसे कह सकते हैं:\n${examples(w, d.kinds)}`,
     not_understood: (d, w) => `माफ़ कीजिए, समझ नहीं आया। आप ऐसे कह सकते हैं:\n${examples(w, d.kinds)}`,
     not_offered: () => "इस दुकान का असिस्टेंट यह काम नहीं करता।",
@@ -384,7 +384,7 @@ const W: Record<Language, Words> = {
     card_closed: () => "ആ കാർഡിന് ഇതിനകം മറുപടി നൽകി.",
     card_expired: () => "ആ കാർഡിന്റെ സമയം കഴിഞ്ഞു. ഇപ്പോഴും വേണമെങ്കിൽ വീണ്ടും ചോദിക്കുക.",
     card_unknown: () => "ആ കോഡുള്ള കാർഡ് എന്റെ പക്കലില്ല.",
-    limit_no: () => "പരിധികൾ (റീഫണ്ട്, ഡെപ്പോസിറ്റ്, ക്യാപ്) നിങ്ങളുടെ പാർട്ണർ അവരുടെ പാനലിൽ നിന്നാണ് മാറ്റുന്നത്. ഈ പതിപ്പിൽ എനിക്ക് ഇവിടെ നിന്ന് അവ മാറ്റാനാകില്ല.",
+    limit_no: () => "പരിധികൾ (റീഫണ്ട്, ഡെപ്പോസിറ്റ്, ക്യാപ്) നിങ്ങളുടെ ഓപ്പറേറ്റർ അവരുടെ പാനലിൽ നിന്നാണ് മാറ്റുന്നത്. ഈ പതിപ്പിൽ എനിക്ക് ഇവിടെ നിന്ന് അവ മാറ്റാനാകില്ല.",
     help: (d, w) => `${greeting(d.personality ?? "warm", "ml", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} ഇങ്ങനെ പറയാം:\n${examples(w, d.kinds)}`,
     not_understood: (d, w) => `ക്ഷമിക്കണം, മനസ്സിലായില്ല. ഇങ്ങനെ പറയാം:\n${examples(w, d.kinds)}`,
     not_offered: () => "ഈ കടയുടെ അസിസ്റ്റന്റ് അത് ചെയ്യുന്നില്ല.",

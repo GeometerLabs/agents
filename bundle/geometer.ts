@@ -10,7 +10,7 @@
 //                                key taken from what `pair` kept in the folder, and the trial lease taken in. --guard-licence-kid: refuse when fleet's licence key is not the
 //                                one built into the Guard image (bundle/release.json names it), since every shop's deploy would be refused then. A pairing that brought no
 //                                licence key is refused like a missing --licence-key.
-//                                --pages-domain D [--pages-extra D2,D3]: Geometer's partner server only (panel mode hosted, with fleet): this server answers for the pages domain
+//                                --pages-domain D [--pages-extra D2,D3]: Geometer's Operator server only (panel mode hosted, with fleet): this server answers for the pages domain
 //                                (streetlist.in) with the front door, and serves the Streetlist home there (home, below). The extra domains are redirected to D.
 //   home pack <streetlist folder> [--out F] [--commit ID] [--demo DIR]   make the one file that carries a built Streetlist site (on your machine, after `npm run build` there); --demo adds the hosted demo (node scripts/build-demo.ts DIR)
 //   home install [<file or https address>] [--sha256 HEX]   check a pack against the pin (bundle/home.json), install it beside the one served and switch to it, atomically
@@ -25,8 +25,8 @@
 //   google-key <file>            one Google service-account key for every shop that hands in none of its own (hosted mode)
 //   gupshup-token <file>         the Gupshup partner's Universal Token (follow-up 2): the token refresher mints and renews each Gupshup shop's app token with it, for every
 //                                Gupshup shop that hands in no static gupshup_authorization. Only on a server run by that Gupshup partner: it acts for every app linked
-//                                to the partner. It lasts at most 60 days; hand in a new one before then (the panel's to-do list says when).
-//   shop add <name> --from <client folder> [--prepared-by "Divya, local partner" | --prepared-by Divya --company "Sri Sai Digital"]      copy a client folder in (settings.json, runtime.json,
+//                                to the Operator. It lasts at most 60 days; hand in a new one before then (the panel's to-do list says when).
+//   shop add <name> --from <client folder> [--prepared-by "Divya, local Operator" | --prepared-by Divya --company "Sri Sai Digital"]      copy a client folder in (settings.json, runtime.json,
 //                                pathway.lock); --prepared-by is the name the owner's monthly report message says set the shop up (written to report.json; without it the message says "your
 //                                builder"). With --company, --prepared-by is the person's name alone and the message says "Divya, Sri Sai Digital".
 //   shop add <name> --template bookings|fees|orders (--upi-id ID --payee "Name" | --payment razorpay | --settings F) [--whatsapp-number-id ID] [--calendar own|google] [--calendar-id ID] [--prepared-by ... [--company ...]]
@@ -53,9 +53,9 @@
 //   panel invite --role builder|partner [--note T]     a one-time invitation link from the running panel (the first builder's way in; hosted mode has no other)
 //   invite builder|partner [--note T]                  the same, shorter
 //   panel reset <handle>                               a one-time link for a person who forgot their panel passphrase (sessions end when it is used)
-//   panel signout <handle>                             end every panel session of one account now (a paused partner, a lost phone)
+//   panel signout <handle>                             end every panel session of one account now (a paused Operator, a lost phone)
 //   panel accounts                                     the panel's accounts: sign-in name, role, and whether they sign in with a passphrase or geometer.dev
-//   panel link-partner <handle> <partner-id>           Geometer's partner server: an invited partner signs in with geometer.dev from now on, and keeps their shops
+//   panel link-partner <handle> <partner-id>           Geometer's Operator server: an invited Operator signs in with geometer.dev from now on, and keeps their shops
 //   panel confirm-link --kind limits|go-live --shop S [--changes JSON] [--note T]    a one-time link a person opens in the panel to confirm what Claude Code asked for (the plugin, B11); it only asks
 //   export <shop> [--out <folder>]    everything that is the shop's, in plain open files, as a folder and a .tar.gz: settings, limits and their history, the record (JSON lines), reports,
 //                                certificates, a manifest with each file's sha256 and a README. No key or secret is in it. It reads files only, so it works for a stopped shop and a lapsed plan.
@@ -242,7 +242,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
     }
 
     if (command === "gupshup-token") {
-      // follow-up 2: the partner's Universal Token, kept only in the refresher's folder; never printed, only its end (read from the token itself, not checked)
+      // follow-up 2: the Operator's Universal Token, kept only in the refresher's folder; never printed, only its end (read from the token itself, not checked)
       const token = readFileSync(resolve(positionals[0] ?? ""), "utf8").trim();
       if (!/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u.test(token)) throw new Error("The file must hold Gupshup's Universal Token on one line, as Gupshup gave it (three parts with dots between, like eyJ...).");
       prepareSecretsRoot(dir);
@@ -268,7 +268,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
         if (!companyOf(company)) throw new Error(`--company must be the company or business name on one line, up to ${COMPANY_LIMIT} characters.`);
         preparedBy = preparedByOf({ accountName: preparedBy, company, role: "partner" });
       }
-      if (preparedBy !== undefined && !parseReportFile(JSON.stringify({ schema: 1, preparedBy }))) throw new Error('--prepared-by must be the name the owner reads for who set the shop up, on one line with single spaces, up to 120 characters: for example --prepared-by "Divya, local partner".');
+      if (preparedBy !== undefined && !parseReportFile(JSON.stringify({ schema: 1, preparedBy }))) throw new Error('--prepared-by must be the name the owner reads for who set the shop up, on one line with single spaces, up to 120 characters: for example --prepared-by "Divya, local Operator".');
       const target = serverPaths(dir).shop(name);
       if (existsSync(target)) throw new Error(`There is already a shop called ${name}.`);
       // a name whose secrets inbox already holds files belongs to a setup someone else started (the panel makes the inbox first): never adopt it
@@ -335,7 +335,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
         cpSync(src, join(target, file));
       }
       if (preparedBy !== undefined) writeFileSync(join(target, "report.json"), `${JSON.stringify({ schema: 1, preparedBy }, null, 2)}\n`);
-      console.log(`Added ${name}. Next: hand in its secrets (the panel does this), then \`geometer check ${name}\`.${preparedBy === undefined ? ` The owner's monthly report will say "${DEFAULT_PREPARED_BY}" set it up; \`--prepared-by "Divya, local partner"\` (or \`--prepared-by Divya --company "Sri Sai Digital"\`, or shops/${name}/report.json) names a person.` : ""}`);
+      console.log(`Added ${name}. Next: hand in its secrets (the panel does this), then \`geometer check ${name}\`.${preparedBy === undefined ? ` The owner's monthly report will say "${DEFAULT_PREPARED_BY}" set it up; \`--prepared-by "Divya, local Operator"\` (or \`--prepared-by Divya --company "Sri Sai Digital"\`, or shops/${name}/report.json) names a person.` : ""}`);
       return 0;
     }
 
@@ -376,7 +376,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       if (!loadServer(dir).panel.enabled) throw new Error('This server has no panel: set "panel": { "enabled": true } in geometer.json and deploy, or `init --panel`.');
       const [what, handle, partner] = positionals;
       const need = what === "accounts" ? 0 : what === "link-partner" ? 2 : 1;
-      if (positionals.length - 1 !== need) throw new Error(what === "link-partner" ? "Say which account and which partner: panel link-partner <sign-in name> <partner id in fleet>" : what === "accounts" ? "panel accounts takes nothing more." : `Say whose: panel ${what} <sign-in name> (panel accounts lists them)`);
+      if (positionals.length - 1 !== need) throw new Error(what === "link-partner" ? "Say which account and which Operator: panel link-partner <sign-in name> <Operator id in fleet>" : what === "accounts" ? "panel accounts takes nothing more." : `Say whose: panel ${what} <sign-in name> (panel accounts lists them)`);
       const args = what === "accounts" ? [] : ["--handle", handle as string, ...(what === "link-partner" ? ["--partner", partner as string] : [])];
       const r = await compose(ctx, ["exec", "-T", "panel", "node", "/app/bundle/panel/main.ts", what, ...args], { timeoutMs: 60_000 });
       if (r.code !== 0) throw new Error(`The panel did not do it (${(r.stderr.trim() || r.stdout.trim() || `exit ${r.code}`).slice(0, 300)}). Is it running? \`geometer status\` says; \`geometer deploy\` starts it.`);
@@ -588,7 +588,7 @@ async function init(folder: string | undefined, v: Record<string, string | boole
     ...(paired && paired.licenceKeys.length > 0 ? { licence: { keys: paired.licenceKeys } } : s("licence-key") ? { licence: { keys: s("licence-key")!.split(",").map((k) => k.trim().toLowerCase()).filter(Boolean) } } : {}),
     ...(s("snapshots-url") && recipient ? { backup: { snapshots: { url: s("snapshots-url"), ...(s("snapshots-endpoint") ? { endpoint: s("snapshots-endpoint") } : {}), keepDays: 30 }, ageRecipient: recipient } } : {}),
     panel: { enabled: v.panel === true, mode: v["panel-mode"] === "hosted" ? "hosted" : "own" },
-    // the partner server's pages domain (item 11f; streetlist.in by default there, item 6 of before-launch.md): given by hand, never assumed; extra domains are redirected to it
+    // the Operator server's pages domain (item 11f; streetlist.in by default there, item 6 of before-launch.md): given by hand, never assumed; extra domains are redirected to it
     ...(s("pages-domain") ? { pages: { domain: s("pages-domain"), extraDomains: (s("pages-extra") ?? "").split(",").map((d) => d.trim().toLowerCase()).filter(Boolean) } } : {}),
     ports: { http: s("http-port") ? Number(s("http-port")) : 80, https: s("https-port") ? Number(s("https-port")) : 443 },
   };

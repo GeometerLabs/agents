@@ -139,14 +139,14 @@ test("through the front door the addresses are the pages domain's, only for the 
   assert.equal((await s.post("/s/veena/owner/signin", "", { ...door, origin: "https://partners.example" })).status, 403, "through the door, only the pages origin's forms");
 });
 
-test("the visitor's language: ?lang= first, then the browser's; the customer view shows the hours, WhatsApp and the partner's line, and the QR carries the stable address", async () => {
+test("the visitor's language: ?lang= first, then the browser's; the customer view shows the hours, WhatsApp and the Operator's line, and the QR carries the stable address", async () => {
   const s = await shop();
   assert.match(await (await s.get("/s/veena/owner", { "accept-language": "hi-IN,hi;q=0.9" })).text(), /मुझे साइन-इन लिंक भेजें/u);
   assert.match(await (await s.get("/s/veena/owner?lang=kn", { "accept-language": "hi" })).text(), /ನನಗೆ ಸೈನ್ ಇನ್ ಲಿಂಕ್ ಕಳುಹಿಸಿ/u);
   const ml = await (await s.get("/s/veena/?lang=ml")).text();
   assert.match(ml, /ഞായർ അടച്ചിരിക്കും/u, "Sunday closed, in Malayalam");
   assert.match(ml, /href="https:\/\/wa\.me\/919800000002"/u);
-  assert.match(ml, /https:\/\/geometer\.dev\/account/u, "the partner's line");
+  assert.match(ml, /https:\/\/geometer\.dev\/account/u, "the Operator's line");
   const en = await (await s.get("/s/veena/", { "accept-language": "en" })).text();
   assert.match(en, /Mon 10:00–20:00/u);
   assert.ok(!/class="face-c"/u.test(en), "no placeholder drawing: a shop with no character pictures shows no face (item 11i)");

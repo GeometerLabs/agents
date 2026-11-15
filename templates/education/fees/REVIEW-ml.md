@@ -223,7 +223,7 @@ Bright Tuition Centre · ഫെബ്രുവരി 2027 · പരിശീല�
 
 ### The monthly report on WhatsApp, with sample numbers
 
-Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the star and the word for Innovator, appears only for a builder or partner who has the badge.
+Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the star and the word for Innovator, appears only for a builder or Operator who has the badge.
 
 ```text
 *പ്രതിമാസ റിപ്പോർട്ട്: Bright Tuition Centre · ഫെബ്രുവരി 2027*
@@ -382,7 +382,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `page.madeOn` | ഉണ്ടാക്കിയ തീയതി | Made on |  |
 | `page.signedBy` | ഒപ്പിട്ടത് | Signed by |  |
 | `page.notSigned` | ഒപ്പിട്ടിട്ടില്ല | Not signed |  |
-| `page.scanToCheck` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
+| `page.scanToCheck` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ ഓപ്പറേറ്റർയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your Operator or Geometer's team gave you. |  |
 | `page.scanSummary` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ ഈ കോഡ് സ്കാൻ ചെയ്യുക, അല്ലെങ്കിൽ ലിങ്ക് തുറക്കുക. രേഖ യഥാർത്ഥമാണോ, ആരാണ് ഇത് പുറത്തിറക്കിയത്, ഈ പേജുമായി ഒത്തുനോക്കാനുള്ള കണക്കുകൾ എന്നിവ അത് കാണിക്കും. പരിശോധന നിങ്ങളുടെ ഫോണിൽ നടക്കുന്നു, രേഖയെക്കുറിച്ച് ഒന്നും അയയ്ക്കുന്നില്ല. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല. | Scan this code, or open the link, to check this paper on geometer.dev. It shows whether the paper is genuine, who issued it, and the figures to compare with this page. The check runs on your phone and nothing about the paper is sent. It does not show that the numbers are true. |  |
 | `page.signatureNote` | ഈ രേഖ ആരാണ് ഉണ്ടാക്കിയതെന്നും അത് മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. ഇതിൽ എണ്ണിയതെല്ലാം പൂർണ്ണമാണെന്ന് അത് കാണിക്കുന്നില്ല. | A signature shows who made this document and that it has not changed. It does not show that what it counts is complete. |  |
 | `page.notAGrade` | ഇവ രേഖയിൽ കാണുന്നതിന്റെ എണ്ണം മാത്രമാണ്. ഇവ ഏജന്റിന് മാർക്കോ ഗ്രേഡോ നൽകുന്നില്ല. | These are counts of what the record shows. They do not grade the agent. |  |

@@ -1,20 +1,20 @@
-// Signing in to the panel on Geometer's partner server with the geometer.dev account (plan decision 53; the monorepo's ADR-0071 and apps/fleet/src/panel-ticket.ts
-// have the format). Only in hosted mode, and only for local partners: a builder's own server keeps its invitations and passphrases, and a SHOP OWNER never signs in
+// Signing in to the panel on Geometer's Operator server with the geometer.dev account (plan decision 53; the monorepo's ADR-0071 and apps/fleet/src/panel-ticket.ts
+// have the format). Only in hosted mode, and only for local Operators: a builder's own server keeps its invitations and passphrases, and a SHOP OWNER never signs in
 // through Geometer or Firebase (owners keep the setup QR and their passkey, owner-signin).
 //
-// How it goes. A partner signed in on geometer.dev presses "Open your panel"; fleet checks they are a partner and not paused, and hands the page a one-use TICKET
+// How it goes. An Operator signed in on geometer.dev presses "Open your panel"; fleet checks they are an Operator and not paused, and hands the page a one-use TICKET
 // in a link to <panel>/signin/<ticket>. Opening the link shows a page here (nothing is used up by opening it, so a link preview cannot spend it); pressing its button
-// is a same-origin POST that checks the ticket again, spends it, and signs the person in to the panel account kept for that partner, made on their first visit.
+// is a same-origin POST that checks the ticket again, spends it, and signs the person in to the panel account kept for that Operator, made on their first visit.
 //
 // What is checked, offline, with nothing new shared: the ticket is "gp1.<kid>.<payload>.<sig>", an Ed25519 signature by fleet's LICENCE key over the exact bytes
 // "gp1.<kid>.<payload>". The server pinned that key's public half at `init` (geometer.json `licence.keys`), and the panel reads that file: no new secret reaches
 // the panel and the panel never calls fleet. Then the payload: kind "panel"; `aud` must be THIS server's id in fleet (geometer.json `fleet.deploymentId`, else
 // `id`: the same id the heartbeat names); `exp` not past and `iat` not ahead (a minute's leeway for clocks), and no ticket that claims to live longer than
 // MAX_LIFE_S; `jti` not seen before (kept, hashed, until its ticket's `exp`, in the panel's own encrypted store, so a restart does not forget it). `sub` is the
-// partner's id in fleet: the panel keeps ONE account per partner id, so one partner's ticket can never open another's account, and the role model is unchanged
-// (a partner sees only the shops they set up).
+// Operator's id in fleet: the panel keeps ONE account per Operator id, so one Operator's ticket can never open another's account, and the role model is unchanged
+// (an Operator sees only the shops they set up).
 //
-// The threat model, in short, is in Explanation.md ("Partners sign in with geometer.dev; a reset link for a forgotten passphrase").
+// The threat model, in short, is in Explanation.md ("Operators sign in with geometer.dev; a reset link for a forgotten passphrase").
 import { createHash, verify } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";

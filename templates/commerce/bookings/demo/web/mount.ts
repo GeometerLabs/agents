@@ -3,7 +3,7 @@
 //   import { mountDemo } from "./dist/index.js";
 //   mountDemo(document.getElementById("demo"));
 //
-// It is the same demo as the one a partner runs on a laptop (demo/page.js draws it, demo/api.ts and demo/session.ts run it): the
+// It is the same demo as the one an Operator runs on a laptop (demo/page.js draws it, demo/api.ts and demo/session.ts run it): the
 // real template code on in-memory stand-ins for WhatsApp, payments and the calendar, with test money and a fake clock. Everything runs
 // in this page. There is no server, no sign-in, nothing is sent and nothing is saved. scripts/build-web-demo.ts builds it for the browser.
 // The look is demo/web/theme.css: every colour, size and font is a custom property (--geo-*) that the page around it can set.

@@ -20,7 +20,7 @@ import { monthRange } from "../../../../modules/report/months.ts";
 const BOOK = "haircut tomorrow at 6pm";
 const PAID_THROUGH = 1_796_668_200;
 let state: LicenceNow = UNRESTRICTED;
-const set = (s: LicenceNow["state"], exportUntil: number | null = null) => { state = { state: s, restricted: s === "wind_down" || s === "stopped", takesNewWork: s !== "wind_down" && s !== "stopped", paidThrough: PAID_THROUGH, exportUntil, partner: "Divya, local partner" }; };
+const set = (s: LicenceNow["state"], exportUntil: number | null = null) => { state = { state: s, restricted: s === "wind_down" || s === "stopped", takesNewWork: s !== "wind_down" && s !== "stopped", paidThrough: PAID_THROUGH, exportUntil, partner: "Divya, local Operator" }; };
 const world = () => { state = UNRESTRICTED; return createWorld({ licence: () => state }); };
 const entries = (w: ReturnType<typeof createWorld>, action: string) => w.record.entries().filter((e) => e.action === action);
 
@@ -101,13 +101,13 @@ test("the final stop closes the open deposit links once, through the payments se
   assert.ok(blocked.length >= 1, "and the record says each one that was held back");
 });
 
-test("every licence message has its words in all four languages, and the owner's notices name the partner and are never about money", () => {
+test("every licence message has its words in all four languages, and the owner's notices name the Operator and are never about money", () => {
   for (const language of ["en", "hi", "ml", "kn"] as const) {
-    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Glow Salon", services: [], partner: "Divya, local partner", upcomingCount: 3 };
+    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Glow Salon", services: [], partner: "Divya, local Operator", upcomingCount: 3 };
     for (const id of ["booking_paused", "owner_licence_paused", "owner_licence_stopped"] as const) {
       const text = TEMPLATES[language][id](facts);
       assert.ok(text.length > 20, `${language} ${id}`);
-      if (id !== "booking_paused") assert.ok(text.includes("Divya, local partner"), `${language} ${id} names the partner`);
+      if (id !== "booking_paused") assert.ok(text.includes("Divya, local Operator"), `${language} ${id} names the Operator`);
       assert.doesNotMatch(text, /₹|invoice|pay |payment|safe|guarantee/iu, `${language} ${id}`);
     }
   }
@@ -124,20 +124,20 @@ test("the runtime sends the owner one service notice at the wind-down and one at
     const owner = kit.settings.owner.whatsapp;
     await runtime.tick();
     assert.equal(kit.messaging.sentTo(owner).length, 0, "nothing to say while the shop is in order");
-    now = { state: "wind_down", restricted: true, takesNewWork: false, paidThrough: PAID_THROUGH, exportUntil: null, partner: "Divya, local partner" };
+    now = { state: "wind_down", restricted: true, takesNewWork: false, paidThrough: PAID_THROUGH, exportUntil: null, partner: "Divya, local Operator" };
     await runtime.tick();
     await runtime.tick();
     const first = kit.messaging.sentTo(owner);
     assert.equal(first.length, 1, "once");
     assert.equal(first[0].templateName, "owner_service_paused", "the owner has not written today, so it goes as the utility template");
-    assert.equal(first[0].text, "Heads up: online booking for Glow Salon is paused for now. Bookings you already have, cancellations and refunds still go through. To sort it out, please contact Divya, local partner.");
+    assert.equal(first[0].text, "Heads up: online booking for Glow Salon is paused for now. Bookings you already have, cancellations and refunds still go through. To sort it out, please contact Divya, local Operator.");
     now = { ...now, state: "stopped", exportUntil: PAID_THROUGH + 150 * 86_400 };
     await runtime.tick();
     await runtime.tick();
     const all = kit.messaging.sentTo(owner);
     assert.equal(all.length, 2);
     assert.equal(all[1].templateName, "owner_service_stopped");
-    assert.equal(all[1].text, "Heads up: online booking for Glow Salon has stopped, because the service from Divya, local partner has ended. Bookings still in your calendar after today: 0. To keep it going with another local partner, write to hello@geometer.dev and Geometer will put you in touch.");
+    assert.equal(all[1].text, "Heads up: online booking for Glow Salon has stopped, because the service from Divya, local Operator has ended. Bookings still in your calendar after today: 0. To keep it going with another local partner, write to hello@geometer.dev and Geometer will put you in touch.");
     assert.doesNotMatch(all[1].text, /copy|export|records|owe|pay|keys/iu, "no money, no blame, no copy or export for the owner");
     now = { ...now, state: "wind_down", paidThrough: PAID_THROUGH + 40 * 86_400, exportUntil: null };
     await runtime.tick();
@@ -154,7 +154,7 @@ test("the runtime reads client/licence.json by its modified time and judges it w
     const read = licenceReader(dir, { now: () => clockMs });
     assert.deepEqual(read(), UNRESTRICTED, "no file: not restricted");
     const shop: LeaseShop = { id: "glow-salon", plan: "business", state: "active", paid_through: PAID_THROUGH, grace_days: 30, expires: PAID_THROUGH + 30 * 86_400, stop_at: null, export_until: null, notice: null };
-    const file: LicenceFile = { schema: 1, shop, newest_issued_at: PAID_THROUGH, extension_until: 0, partner: "Divya, local partner" };
+    const file: LicenceFile = { schema: 1, shop, newest_issued_at: PAID_THROUGH, extension_until: 0, partner: "Divya, local Operator" };
     writeFileSync(join(dir, "licence.json"), JSON.stringify(file));
     assert.equal(read().state, "active");
     clockMs = (PAID_THROUGH + 31 * 86_400) * 1000;

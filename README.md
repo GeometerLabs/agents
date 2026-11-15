@@ -62,7 +62,7 @@ They are in [examples/](examples/README.md), one folder per domain.
 | [game-director](examples/games/game-director) | Games and live worlds | Pydantic AI (Python) | An AI director that spawns resources and adjusts shop prices in a small world economy, each event once, prices within bounds. |
 | [game-master](examples/games/game-master) | Games and live worlds | Node.js, no framework | An AI game master that rewards quest completions in a small economy, once per completion. |
 | [liveops-compensation](examples/games/liveops-compensation) | Games and live worlds | LangGraph (Python) | After a server crash eats a raid loadout, restores the items or currency per ticket; big ones wait for a game master. |
-| [streamer-giveaways](examples/games/streamer-giveaways) | Games and live worlds | Vercel AI SDK (TypeScript) | An AI streamer that gives viewers promo codes from approved campaigns, one per viewer, never an operator tool. |
+| [streamer-giveaways](examples/games/streamer-giveaways) | Games and live worlds | Vercel AI SDK (TypeScript) | An AI streamer that gives viewers promo codes from approved campaigns, one per viewer, never a server admin tool. |
 | [lab-protocol](examples/science/lab-protocol) | Operations (lab) | Mastra (TypeScript) | Runs a protocol step on a sample once; a scientist approves discards. |
 
 ## Try one in 5 minutes

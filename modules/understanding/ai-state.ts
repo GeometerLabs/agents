@@ -2,7 +2,7 @@
 // tests all read one set of rules.
 //
 // A shop is in BUTTON MODE, and the agent reads with the rules only and answers with buttons and lists, when any of these holds (checked in this order):
-//   override   the shop's config says `ai: "buttons"` (the bundle writes it from fleet's heartbeat answer: a partner's balance ran out, or the plan has no AI)
+//   override   the shop's config says `ai: "buttons"` (the bundle writes it from fleet's heartbeat answer: an Operator's balance ran out, or the plan has no AI)
 //   allowance  this month's messages handled by the decision and language models, or their estimated cost, have reached the allowance
 //   fault      a model step failed (an error, a timeout, an answer it could not use) in the last few minutes
 // None of this changes a limit. Guard and the template's own checks hold exactly as before; only the reading of free text is done without a model.

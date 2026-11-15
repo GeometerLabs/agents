@@ -83,10 +83,10 @@ test("reviewers get the evidence pack and the anchor and nothing else of Guard's
     await story(s);
     const backups = join(tempDir(), "backups"), first = tempDir(), second = tempDir();
     await exportRecord({ admin: s.adminUrl, token: s.adminToken, out: first, backupDir: backups, stamp: "one" });
-    // Guard's own backup (its store and its keys) stays where the operator keeps it. What the reviewers get is two files.
+    // Guard's own backup (its store and its keys) stays where the server admin keeps it. What the reviewers get is two files.
     assert.deepEqual(filesUnder(join(first, "evidence")).sort(), ["anchor.json", "evidence-pack.json"]);
     assert.ok(!filesUnder(first).some((f) => /\.secret$|state\.db|keys\//u.test(f)), "no key and no store in the review folder");
-    assert.ok(filesUnder(join(backups, "backup-one")).some((f) => f.endsWith(".secret")), "the keys are in the operator's backup; this shows what was left out");
+    assert.ok(filesUnder(join(backups, "backup-one")).some((f) => f.endsWith(".secret")), "the keys are in the server admin's backup; this shows what was left out");
     const summary = readFileSync(join(first, "summary.txt"), "utf8");
     assert.match(summary, /evidence\/ holds Guard's evidence pack and anchor/u);
     assert.match(summary, /EARLIER export/u);

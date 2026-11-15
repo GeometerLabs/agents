@@ -30,7 +30,7 @@ export interface ReportRun {
   source: Source;
   key?: KeyObject;
   preparedBy?: string;
-  /** The builder or partner has the Innovator badge: the report carries it. */
+  /** The builder or Operator has the Innovator badge: the report carries it. */
   innovator?: boolean;
   /** What the go-live certificate the shop was given shows (report/go-live.ts). Left out, the report says that none was given. */
   goLive?: GoLiveFinding;

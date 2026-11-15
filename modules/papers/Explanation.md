@@ -37,7 +37,7 @@ The agent's own limit checks and Guard's holds are kept apart. Guard's own decis
 
 ## The identity paper
 
-A **stable id** per deployed agent: `agt_` and 20 base32 characters of random (`newAgentId`). The bundle makes it once and keeps it in `shops/<shop>/identity.json` (written with `wx`, never overwritten), so a settings change, a template update or a move to another partner on the same server keeps it.
+A **stable id** per deployed agent: `agt_` and 20 base32 characters of random (`newAgentId`). The bundle makes it once and keeps it in `shops/<shop>/identity.json` (written with `wx`, never overwritten), so a settings change, a template update or a move to another Operator on the same server keeps it.
 
 The paper states: who runs it and for which shop; the template and its version; the limits in plain words (the go-live certificate's own phrases); the go-live checks, "held N of M", and what they did not test (the certificate's own list); the live counts so far (entries, payments, refunds, times a limit said no, times it waited for the owner); the limits made wider, by whom and when (each saved version of the settings compared with the one before, with each limit's direction: a higher refund limit is wider, a shorter cancellation window is wider); and the ledger's head with the last published fingerprint.
 

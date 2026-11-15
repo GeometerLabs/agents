@@ -252,7 +252,7 @@ export function reviewSheet(language: ReviewLanguage): string {
   out.push("What to look for first: (1) is every line something a centre owner would understand in ten seconds; (2) is each label short and never an exaggeration (these documents count and state facts: they never say a centre is good or safe).", "");
   out.push("### The five lines, with sample numbers", "", "```text", sampleOwnerText(language), "```", "");
   out.push("### The monthly report on WhatsApp, with sample numbers", "");
-  out.push("Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the star and the word for Innovator, appears only for a builder or partner who has the badge.", "");
+  out.push("Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the star and the word for Innovator, appears only for a builder or Operator who has the badge.", "");
   out.push("```text", sampleMessage(language), "```", "");
   out.push("### Every word and phrase of the report", "");
   out.push(table(["Id", `Text (${name})`, "Meaning (English)", REVIEWER], reportStringRows(language).map((r) => [`\`${r.id}\``, r.text, r.english, ""])), "");

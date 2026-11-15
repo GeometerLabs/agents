@@ -1,4 +1,4 @@
-// Who can do what: accounts and invitations, the two roles, a partner seeing only their own shops, CSRF, the login rate limit, cookies,
+// Who can do what: accounts and invitations, the two roles, an Operator seeing only their own shops, CSRF, the login rate limit, cookies,
 // encryption at rest in hosted mode, and what the log and the pages never hold.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -28,7 +28,7 @@ test("no sign-up: a stranger has no way in but an invitation, and every shop pag
   } finally { await b.close(); }
 });
 
-test("a partner sees only their own shops; a builder sees every shop; a shop that is not yours is exactly like one that does not exist", async () => {
+test("an Operator sees only their own shops; a builder sees every shop; a shop that is not yours is exactly like one that does not exist", async () => {
   const b = await boot({}, { standins: false });
   try {
     const divya = await b.account("divya", "partner");
@@ -44,7 +44,7 @@ test("a partner sees only their own shops; a builder sees every shop; a shop tha
     for (const n of ["Divya Salon", "Meena Salon", "Made On The Server"]) assert.ok(all.includes(n), n);
     assert.ok(all.includes(WORDS.en.shops.titleAll));
 
-    // Every route that takes a shop: the other partner's shop, and one nobody owns, answer 404 and name nothing.
+    // Every route that takes a shop: the other Operator's shop, and one nobody owns, answer 404 and name nothing.
     const same = (text: string, id: string) => text.replaceAll(id, "X").replace(/nonce="[^"]+"/gu, "").replace(/%2F[A-Za-z0-9%-]*/gu, "");
     const nothing = same((await divya.get("/shops/does-not-exist")).text, "does-not-exist");
     for (const other of ["meena-shop", "server-shop"]) {
@@ -62,14 +62,14 @@ test("a partner sees only their own shops; a builder sees every shop; a shop tha
       }
     }
     assert.equal(existsSync(join(b.dir, "requests", "meena-shop.stop.json")), false, "nothing was written for a shop that is not theirs");
-    // The builder is not locked out of anyone's shop; a partner has no invite page (it is a builder's).
+    // The builder is not locked out of anyone's shop; an Operator has no invite page (it is a builder's).
     assert.equal((await arjun.get("/shops/meena-shop")).status, 200);
     assert.equal((await divya.get("/invite")).status, 404);
     // Names that try to leave the shops folder are not shops.
     assert.equal((await divya.get("/shops/%2e%2e")).location, "/shops", "the browser-style dot-dot is just the front page");
     for (const path of ["/shops/..%2f..%2fetc", "/shops/divya-shop%2f..%2fmeena-shop", "/shops/DIVYA-SHOP", "/shops/divya shop"]) assert.equal((await divya.get(path)).status, 404, path);
     assert.equal((await divya.post("/shops/divya-shop/stop", {}, "/shops/divya-shop/stop")).status, 303); // their own is fine
-    // "Show what we did" is the builder's: a partner's page has the plain words and no engine details.
+    // "Show what we did" is the builder's: an Operator's page has the plain words and no engine details.
     assert.ok(!(await divya.get("/shops/divya-shop")).plain.includes("sha256 ") && (await arjun.get("/shops/divya-shop")).plain.includes("sha256 "));
   } finally { await b.close(); }
 });
@@ -93,7 +93,7 @@ test("an invitation works once, runs out, and is never in the log or in any page
     assert.ok(!b.logs.join("\n").includes(token), "the log never holds an invitation token");
     const shopsPage = (await first.get("/shops")).text;
     assert.ok(!shopsPage.includes(token));
-    // The new partner's language was kept: Malayalam pages.
+    // The new Operator's language was kept: Malayalam pages.
     assert.ok(shopsPage.includes('lang="ml"') && shopsPage.includes(WORDS.ml.shops.title));
 
     const arjun = await b.account("arjun", "builder");

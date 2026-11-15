@@ -115,7 +115,7 @@ test("create_pathway makes a shop from a template, keeps limits at the template'
     const noUpi = await w.call("create_pathway", { name: "bright", template: "fees", settings: { name: "Bright Tuition" } });
     assert.equal(noUpi.isError, true);
     assert.match(noUpi.text, /shop's own UPI ID/u);
-    const made = await w.call("create_pathway", { name: "bright", template: "fees", prepared_by: "Divya, local partner", upi_id: "brighttuition@okhdfcbank", payee: "Bright Tuition", settings: { name: "Bright Tuition", address: "1 Temple Road" } });
+    const made = await w.call("create_pathway", { name: "bright", template: "fees", prepared_by: "Divya, local Operator", upi_id: "brighttuition@okhdfcbank", payee: "Bright Tuition", settings: { name: "Bright Tuition", address: "1 Temple Road" } });
     assert.equal(made.isError, false, made.text);
     const settings = JSON.parse(readFileSync(join(w.server.paths.shop("bright"), "settings.json"), "utf8"));
     assert.equal(settings.name, "Bright Tuition");

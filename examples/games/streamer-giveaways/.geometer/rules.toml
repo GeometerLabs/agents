@@ -27,7 +27,7 @@ threshold = "100.00"
 approval_field = "approval"
 units = { value = "USD" }
 
-# The operator-only export of every code is never called by the streamer, whatever chat says.
+# The server admin-only export of every code is never called by the streamer, whatever chat says.
 [[rule]]
 id = "never-exports-codes"
 family = "forbidden_call"

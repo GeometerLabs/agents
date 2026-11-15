@@ -160,7 +160,7 @@ Counted, published beside the technical results, never graded:
 
 ## The sell guide (outline)
 
-Follows [../../SELL-GUIDE.md](../../SELL-GUIDE.md). The seller is a young local partner, 18 or over, who knows the committees in her or his area. The buyer is the committee: usually the secretary or the treasurer, with the president's agreement.
+Follows [../../SELL-GUIDE.md](../../SELL-GUIDE.md). The seller is a young local Operator, 18 or over, who knows the committees in her or his area. The buyer is the committee: usually the secretary or the treasurer, with the president's agreement.
 
 | # | Heading | Key content |
 | --- | --- | --- |

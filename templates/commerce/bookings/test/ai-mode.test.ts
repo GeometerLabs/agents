@@ -191,7 +191,7 @@ test("the AI cap (model: off) leaves the language model out: the rules and the d
   await w.say(UNCLEAR, { from: OTHER_CUSTOMER });
   assert.equal(unsure.state.model, 0);
   assert.deepEqual(modeEntries(w).map((e) => [e.refs.mode, e.refs.reason, e.refs.month]), [["model_off", "ai_cap", "2026-11"]], "one line in the record, not one per message");
-  assert.equal(w.textsTo(w.owner).length, 0, "the owner is not told: fleet tells the partner");
+  assert.equal(w.textsTo(w.owner).length, 0, "the owner is not told: fleet tells the Operator");
   assert.equal(modeOf(w.store, { model: () => model }, w.clock.now(), IST).buttons, false, "the shop is not in button mode");
 
   const sure = steps(); // the decision model is sure: it answers under the cap as ever

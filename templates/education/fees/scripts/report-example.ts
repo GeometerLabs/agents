@@ -26,7 +26,7 @@ await main(async () => {
   for (const language of ["hi", "en", "ml", "kn", "both"] as const) {
     files.push(...writeFeesReport({
       settings: world.settings, entries: world.record.entries(), dues: [...world.store.dues.values()], month: "2026-11", language, out, source: "stand-in",
-      key: privateKey, preparedBy: "Divya, local partner (example)", now: at(12, 1, 10),
+      key: privateKey, preparedBy: "Divya, local Operator (example)", now: at(12, 1, 10),
     }).files);
   }
   console.log(`An example month (Bright Tuition Centre, November 2026) on stand-in services and test money. ${new Set(files).size} files in ${out}.`);

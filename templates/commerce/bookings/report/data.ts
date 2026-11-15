@@ -183,7 +183,7 @@ export interface MonthlyReport {
   /** What the report was told about the go-live checks: no certificate, one it could not trust, or one it read and what that says the checks ran on. */
   goLive: GoLiveFinding;
   /**
-   * Present, and true, only when the builder or partner who sends this report has the Innovator badge (fleet's answer for the shop). It is part of the signed
+   * Present, and true, only when the builder or Operator who sends this report has the Innovator badge (fleet's answer for the shop). It is part of the signed
    * bytes, so the badge on the page is the one that was signed. Left out otherwise, which keeps the bytes (and the digest and code) of every report made without it.
    */
   innovator?: true;
@@ -218,7 +218,7 @@ export interface ReportInput {
   /** When the report is made (epoch milliseconds). Passed in, never read from the machine, so the same input gives the same report. */
   madeAt: number;
   preparedBy?: string;
-  /** Whether the builder or partner has the Innovator badge. Left out or false: no badge, and nothing about it in the signed bytes. */
+  /** Whether the builder or Operator has the Innovator badge. Left out or false: no badge, and nothing about it in the signed bytes. */
   innovator?: boolean;
   /** What the go-live certificate the caller was given says (report/go-live.ts). Left out, the report says that no go-live certificate was given. */
   goLive?: GoLiveFinding;

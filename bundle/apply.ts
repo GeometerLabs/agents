@@ -108,7 +108,7 @@ export async function processStopRequests(ctx: Context): Promise<string[]> {
     // an agent someone else wrote (the panel's own-agent page, 12 Nov 2026): the same kill switch on its Guards, marked on the agent, never as a shop
     const agent = state.agents?.[shop];
     const applied = (agent ?? state.shops[shop])?.applied !== undefined;
-    const by = `${request.requestedBy.name || request.requestedBy.id} (${request.requestedBy.role ?? "user"}, from the panel)`;
+    const by = `${request.requestedBy.name || request.requestedBy.id} (${request.requestedBy.role === "partner" ? "Operator" : (request.requestedBy.role ?? "user")}, from the panel)`;
     const reason = `request ${request.requestId}`;
     let stoppedReason = `stopped by ${by} at ${ctx.now().toISOString()}: ${reason}`;
     if (applied) {

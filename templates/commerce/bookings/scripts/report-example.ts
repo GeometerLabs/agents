@@ -25,7 +25,7 @@ await main(async () => {
   const { privateKey, publicKey } = generateKeyPairSync("ed25519");
   writeFileSync(join(out, "example-public-key.pem"), publicKey.export({ type: "spki", format: "pem" }));
   const now = at(12, 2, 10);
-  const common = { settings: world.settings, out, source: "stand-in" as const, key: privateKey, preparedBy: "Divya, local partner (example)", now };
+  const common = { settings: world.settings, out, source: "stand-in" as const, key: privateKey, preparedBy: "Divya, local Operator (example)", now };
   const files: string[] = [];
   const handCheck = summariseHandCheck(await runAll());
   for (const language of ["hi", "en", "ml", "kn", "both"] as const) files.push(...writeGoLiveCertificate({ ...common, handCheck, language }).files);

@@ -1,7 +1,7 @@
 // The Character step of a shop's setup (plan item 11i, decision 47), as plain functions: what the step keeps in the draft, what each press does, what it refuses
 // in the person's language, and what it writes into the shop's settings. The page is views-character.ts; the drawings are bundle/character/render.ts.
 //
-// The partner (or builder) makes the shop's assistant with the owner beside them: a style (DiceBear's Clay, Critters, Sprouts, Moods, Pixel Bot), a face from a row of
+// The Operator (or builder) makes the shop's assistant with the owner beside them: a style (DiceBear's Clay, Critters, Sprouts, Moods, Pixel Bot), a face from a row of
 // eight rolled for this shop, a colour from the style's own DiceBear palette (or Auto), a name if they want one (owner, 14 Nov: optional; with none it is "<the
 // shop>'s assistant"), and a personality that changes only small talk. The panel runs no script, so every
 // press is a form post that comes back to the same step (style, face, colour, Roll), and only "Next" checks the whole and moves on. What was typed in the name box
@@ -102,7 +102,7 @@ export function applyCharacter(draft: { shopId?: string; character?: CharacterDr
   return { stay: false, problems };
 }
 
-/** The `assistant.character` setting the draft writes (modules/assistant/character.ts reads it back). A name only when the partner gave one. */
+/** The `assistant.character` setting the draft writes (modules/assistant/character.ts reads it back). A name only when the Operator gave one. */
 export function characterSetting(c: CharacterDraft, shopId: string): Character & { seed: string } {
   return { ...(c.name.trim() ? { name: c.name.trim() } : {}), style: c.style, seed: c.seed ?? `${shopId}-${c.roll}-0`, ...(c.colour ? { colour: c.colour } : {}), personality: c.personality };
 }

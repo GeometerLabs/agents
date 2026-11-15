@@ -31,7 +31,7 @@ test("client-report.ts writes the report and the monthly certificate for the sho
   const { dir, keys, args } = await fixtures();
   const before = tree(dir);
   const out = join(dir, "out");
-  const r = run("client-report.ts", ...args, "--lang", "hi", "--out", out, "--source", "stand-in", "--key", keys.privateKeyPath, "--prepared-by", "Divya, local partner");
+  const r = run("client-report.ts", ...args, "--lang", "hi", "--out", out, "--source", "stand-in", "--key", keys.privateKeyPath, "--prepared-by", "Divya, local Operator");
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(tree(out), ["certificate-2026-11-hi.html", "certificate-2026-11-hi.txt", "certificate-2026-11.json", "owner-2026-11-hi.txt", "report-2026-11-hi.html", "report-2026-11.json"]);
   assert.deepEqual(tree(dir).filter((p) => !p.startsWith("out")), before, "nothing was written anywhere but --out");
@@ -83,11 +83,11 @@ test("client-report.ts will not guess: no --source, a bad language, a bad month,
 test("go-live-certificate.ts runs the hand check and writes the certificate in the shop's language", async () => {
   const { dir, keys } = await fixtures();
   const out = join(dir, "golive");
-  const r = run("go-live-certificate.ts", "--settings", join(dir, "settings.json"), "--lang", "ml", "--out", out, "--key", keys.privateKeyPath, "--prepared-by", "Divya, local partner", "--now", "2027-02-04T10:30:00+05:30");
+  const r = run("go-live-certificate.ts", "--settings", join(dir, "settings.json"), "--lang", "ml", "--out", out, "--key", keys.privateKeyPath, "--prepared-by", "Divya, local Operator", "--now", "2027-02-04T10:30:00+05:30");
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(tree(out), ["go-live-certificate-ml.html", "go-live-certificate-ml.txt", "go-live-certificate.json"]);
   const text = readFileSync(join(out, "go-live-certificate-ml.txt"), "utf8");
-  assert.ok(text.includes("38 സാഹചര്യങ്ങളിൽ 38 എണ്ണം") && text.includes("stand-in services") && text.includes("പരിശോധനാ സർട്ടിഫിക്കറ്റ്") && text.includes("Divya, local partner"));
+  assert.ok(text.includes("38 സാഹചര്യങ്ങളിൽ 38 എണ്ണം") && text.includes("stand-in services") && text.includes("പരിശോധനാ സർട്ടിഫിക്കറ്റ്") && text.includes("Divya, local Operator"));
   const v = verifyEnvelopeText(readFileSync(join(out, "go-live-certificate.json"), "utf8"));
   assert.equal(v.unchanged && v.signed, true);
   const en = run("go-live-certificate.ts", "--settings", join(dir, "settings.json"), "--lang", "en", "--out", join(dir, "golive-en"));

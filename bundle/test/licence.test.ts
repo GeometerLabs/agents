@@ -99,7 +99,7 @@ test("an extension pushes an expired lease's cover out, never lifts a stated win
   try {
     assert.equal(takeLease(s.root, server, lease(10, T0, [shopEntry(), shopEntry({ id: "spa-one", state: "wind_down", notice: "wind_down" })])).taken, true);
     const past = T0 + 31 * DAY; // the lease's cover for glow-salon has ended
-    const file = (id: string) => licenceFileFor(keptLicence(s.root, server), id, "Divya, local partner");
+    const file = (id: string) => licenceFileFor(keptLicence(s.root, server), id, "Divya, local Operator");
     assert.equal(licenceNow(file("glow-salon"), past * 1000).state, "wind_down", "offline past its cover: the wind-down, never the stop");
     const ext = extension(T0 + 20 * DAY, T0 + 40 * DAY);
     assert.equal((takeExtension(s.root, server, extension(T0, T0 + 40 * DAY, ["other-vps"]), past) as { why: string }).why, "it does not name this server (acme-vps-1)");
@@ -121,8 +121,8 @@ test("an extension pushes an expired lease's cover out, never lifts a stated win
   } finally { s.done(); }
 });
 
-test("the runtime's licence.json is read field by field: a lease shop with a field more, or a partner name too long, is not a licence file", () => {
-  const good = { schema: 1, shop: shopEntry(), newest_issued_at: T0, extension_until: 0, partner: "Divya, local partner" };
+test("the runtime's licence.json is read field by field: a lease shop with a field more, or an Operator name too long, is not a licence file", () => {
+  const good = { schema: 1, shop: shopEntry(), newest_issued_at: T0, extension_until: 0, partner: "Divya, local Operator" };
   assert.deepEqual(parseLicenceFile(good), good);
   assert.equal(parseLicenceFile({ ...good, shop: { ...shopEntry(), extra: 1 } }), undefined);
   assert.equal(parseLicenceFile({ ...good, partner: "x".repeat(121) }), undefined);

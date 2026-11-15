@@ -1,4 +1,4 @@
-// The character's personality (decision 47): a few ways the shop's assistant makes small talk, picked by the partner in the panel's Character step. A personality
+// The character's personality (decision 47): a few ways the shop's assistant makes small talk, picked by the Operator in the panel's Character step. A personality
 // changes ONLY the assistant's own small talk: the greeting (the first sentence of its "help" answer, words.ts) and the morning summary's opening and sign-off
 // (templates.ts builds one morning template per personality from these parts). It never changes money cards, amounts, approvals, limits or any other fixed wording.
 //
@@ -15,7 +15,7 @@ export type Personality = (typeof PERSONALITIES)[number];
 
 /**
  * The small talk, per personality and language. `{shop}` is the shop's name, and `{name}` the character's, which only `greetingNamed` uses (owner, 14 Nov: a
- * character has no name unless the partner gives it one). Nothing else may appear (no number, no amount), so the outgoing check has nothing new to read. The morning
+ * character has no name unless the Operator gives it one). Nothing else may appear (no number, no amount), so the outgoing check has nothing new to read. The morning
  * opening names only the shop, because a WhatsApp template cannot leave a value out, and must not start with a value (Meta's review); every sign-off ends with fixed
  * words.
  */
@@ -40,6 +40,6 @@ export const SMALL_TALK: Record<Personality, Record<Language, { greeting: string
   },
 };
 
-/** The greeting, with the character's name only when the partner gave one (both values already noted for the outgoing check by the caller's Writer). */
+/** The greeting, with the character's name only when the Operator gave one (both values already noted for the outgoing check by the caller's Writer). */
 export const greeting = (p: Personality, language: Language, shop: string, name?: string): string =>
   (name ? SMALL_TALK[p][language].greetingNamed : SMALL_TALK[p][language].greeting).replace("{name}", () => name ?? "").replace("{shop}", () => shop);

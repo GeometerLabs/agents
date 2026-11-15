@@ -201,7 +201,7 @@ test("the monthly report to the owner (B54) is counted as one utility message, f
   const dir = mkdtempSync(join(tmpdir(), "geo-usage-report-"));
   try {
     w.clock.set(zonedToMs({ year: 2026, month: 12, day: 1 }, { hour: 9, minute: 30 }, w.settings.timezone));
-    const job = createMonthlyReport({ source: "live", pages: { dir, baseUrl: "https://reports.example.com/r" }, options: () => ({ preparedBy: "Divya, local partner", innovator: false }) });
+    const job = createMonthlyReport({ source: "live", pages: { dir, baseUrl: "https://reports.example.com/r" }, options: () => ({ preparedBy: "Divya, local Operator", innovator: false }) });
     await job.run({ settings: w.settings, clock: w.clock, messaging: w.messaging, record: w.record, store: w.store, save: () => undefined });
     const written = w.record.entries().slice(before);
     assert.deepEqual(written.map((e) => [e.action, e.outcome, e.refs.to, e.refs.report]), [["send_message", "attempted", "owner", "2026-11"], ["send_message", "confirmed", "owner", "2026-11"]]);

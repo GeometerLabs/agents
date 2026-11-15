@@ -30,7 +30,7 @@ export interface StoredChecks {
 
 /**
  * Item 11h (decision 45): "owner-signin": a shop with no WhatsApp whose owner has no way to hear yet. Without WhatsApp, the owner signs in with a passkey from the
- * partner's setup QR and turns on alerts in their app; until one passkey exists and one phone has alerts on, a payment to mark or a refund to approve would reach
+ * Operator's setup QR and turns on alerts in their app; until one passkey exists and one phone has alerts on, a payment to mark or a refund to approve would reach
  * nobody. Batch 3: the runtime's /status counts both (modules/runtime/http.ts ownerAccess) and the checks keep the counts they saw, so "go live" refuses until the owner has
  * signed in and one phone has alerts. A shop WITH WhatsApp keeps the owner's WhatsApp as a way to hear, so it is not held back by this.
  */

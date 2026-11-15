@@ -1,4 +1,4 @@
-"""fetch-models: download the speech models into the models folder and check every file. Run by the OPERATOR, with their own Hugging Face token.
+"""fetch-models: download the speech models into the models folder and check every file. Run by the server admin, with their own Hugging Face token.
 
 Never run by Geometer's code or by the service. Why it exists: IndicConformer's repository is gated (a Hugging Face account that has
 accepted its terms is needed to download it), so the files cannot be baked into the image or fetched anonymously.
@@ -101,7 +101,7 @@ def download(op: urllib.request.OpenerDirector, model: dict, f: dict, dest: Path
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Download and verify Geometer's speech models (run by the operator, with their own Hugging Face token).")
+    ap = argparse.ArgumentParser(description="Download and verify Geometer's speech models (run by the server admin, with their own Hugging Face token).")
     ap.add_argument("--models-dir", type=Path, required=True)
     ap.add_argument("--lock", type=Path, default=LOCK)
     ap.add_argument("--token-file", type=Path, help="a file holding your Hugging Face access token (read access is enough); or set HF_TOKEN")

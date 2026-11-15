@@ -1,6 +1,6 @@
 // Makes a shop's monthly report from the agent's saved record and orders, in the shop's language.
 //   node templates/commerce/orders/scripts/client-report.ts --settings shop.json --record entries.json --orders orders.json \
-//        --month 2026-11 --lang hi --out ./out --source stand-in --go-live ./go-live-certificate.json [--key ~/geometer-keys/report-key.pem] [--prepared-by "Divya, local partner"] [--innovator]
+//        --month 2026-11 --lang hi --out ./out --source stand-in --go-live ./go-live-certificate.json [--key ~/geometer-keys/report-key.pem] [--prepared-by "Divya, local Operator"] [--innovator]
 // --record is the whole action record (a list of entries, oldest first); --orders is the conversation store's orders (what the deploy bundle exports to exports/<shop>/orders.json).
 // --lang is hi, en, ml, kn, or both (Hindi and English, as two messages and one page). --source says what the numbers were counted from (stand-in, test-mode or live) and is
 // written on every layer; there is no default.

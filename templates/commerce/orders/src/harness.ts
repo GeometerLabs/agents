@@ -29,7 +29,7 @@ import { parseSettings } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 
 // Each example is read with a literal file name: the browser build (scripts/build-demo.ts) copies the files a template reads by finding them in the code.
-/** Annapurna Tiffins, the example shop: a tiffin service that takes UPI (the usual for a partner shop), pickup and delivery. */
+/** Annapurna Tiffins, the example shop: a tiffin service that takes UPI (the usual for an Operator shop), pickup and delivery. */
 export const annapurna = (): Settings => parseSettings(JSON.parse(readFileSync(new URL("../settings/annapurna-tiffins.example.json", import.meta.url), "utf8")));
 /** The same shop on Razorpay. */
 export const annapurnaRazorpay = (): Settings => parseSettings(JSON.parse(readFileSync(new URL("../settings/annapurna-tiffins-razorpay.example.json", import.meta.url), "utf8")));

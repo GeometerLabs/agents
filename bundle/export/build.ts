@@ -290,7 +290,7 @@ function FORMAT_README(m: Manifest): string {
 ==========================================
 
 This folder is everything that is ${m.shop}'s, taken out of Geometer in plain files, so it can be read, kept, and checked without Geometer.
-Made ${m.exportedAt}${m.exportedBy ? ` for ${m.exportedBy.name} (${m.exportedBy.role})` : ""}. It was made from files only; nothing was sent to anyone, and no service was called.
+Made ${m.exportedAt}${m.exportedBy ? ` for ${m.exportedBy.name} (${m.exportedBy.role === "partner" ? "Operator" : m.exportedBy.role})` : ""}. It was made from files only; nothing was sent to anyone, and no service was called.
 
 WHAT IS IN IT
   manifest.json                 the shop, the time, the counts, and every other file with its sha256 and size
@@ -305,7 +305,7 @@ WHAT IS IN IT
                                 {"seq","time","conversation","booking","action","inputsDigest","outcome","decisions","language","notes","refs"}.
                                 "booking" holds the id of the booking (or the student's fee) the entry is about. "conversation" and customers are fingerprints (see PEOPLE IN THE RECORD).
   record/cases.jsonl            the bookings (or, for a Fees centre, the fees, or, for an Orders shop, the orders), one per line, as the agent held them. Customers are fingerprints (see PEOPLE IN THE RECORD); a delivery address is not in it.
-  assignment.json               who serves the shop, and every move to another partner or builder with its date and reason (only when there has been one)
+  assignment.json               who serves the shop, and every move to another Operator or builder with its date and reason (only when there has been one)
   status.json                   the deployer's last word on the shop (versions, limits proven, backups)
   reports/<month>/              each monthly report and its certificate: the signed .json and the readable .html
   certificates/go-live/         the go-live certificate: the signed .json and the readable .html

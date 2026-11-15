@@ -19,7 +19,7 @@ This template does four things, and only these:
 
 - **Women's self-help groups**, usually 10 to 20 members, with a president, a treasurer and a book-keeper (in some places called a community resource person, or CRP).
 - **The book-keeper.** She is the person whose work changes most. The aim is fewer arguments and less copying, not a replacement for her. Her time is counted (see "The human outcome to count").
-- **Whoever sets it up:** a local partner or builder, working with the group, not for the group.
+- **Whoever sets it up:** a local Operator or builder, working with the group, not for the group.
 
 ## Settings
 
@@ -152,7 +152,7 @@ Counted, published beside the technical results, never graded (the company's "wh
 
 ## The sell guide (outline)
 
-Follows [../../SELL-GUIDE.md](../../SELL-GUIDE.md). The seller is a young local partner, 18 or over, often a woman who knows the groups in her area. The buyer is usually not a shop owner: it is a group's leaders, or the federation or programme that supports many groups. The guide is written in every language the template speaks.
+Follows [../../SELL-GUIDE.md](../../SELL-GUIDE.md). The seller is a young local Operator, 18 or over, often a woman who knows the groups in her area. The buyer is usually not a shop owner: it is a group's leaders, or the federation or programme that supports many groups. The guide is written in every language the template speaks.
 
 | # | Heading | Key content |
 | --- | --- | --- |

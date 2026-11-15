@@ -387,7 +387,7 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   if (state.modelApplied) writeGuardFiles(ctx.dir, names.modelGuard, state.modelApplied);
   // the licence lease (B13): each runtime is handed its shop's entry before it starts (client/licence.json; no lease kept, or no key pinned, means none is restricted)
   syncLicence(ctx.dir, server, applied.map(([name]) => name), ctx.now()).forEach((l) => ctx.log(l));
-  // B72: the shop terms the owner can agree to on WhatsApp. Handed to a runtime (client/terms.json) only when the server setting is on AND the partner filled the shop's terms in;
+  // B72: the shop terms the owner can agree to on WhatsApp. Handed to a runtime (client/terms.json) only when the server setting is on AND the Operator filled the shop's terms in;
   // otherwise any copy is taken away, so turning the setting off switches the feature off at the next deploy.
   for (const [name] of applied) syncTerms(ctx.dir, server.panel.termsOnWhatsapp, name);
   // agents someone else wrote stay in the compose file whenever a shop is deployed (without this, `up --remove-orphans` would take their Guards away)
@@ -412,7 +412,7 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   if (process.getuid?.() === 0) chownSync(p.fleet, opsUser.uid, opsUser.gid);
   // the Streetlist home's folder, where the pages domain's Caddy reads the installed build: made here (0755) so Docker does not make it as root, and empty until `geometer home install`
   if (server.pages) ensureDir(p.home);
-  // the speech models folder, if speech is on: made here so Docker does not make it as root; the operator's fetch-models fills it (services/speech/README.md)
+  // the speech models folder, if speech is on: made here so Docker does not make it as root; the server admin's fetch-models fills it (services/speech/README.md)
   if (server.speech?.enabled) ensureDir(server.speech.modelsDir ?? p.speechModels);
   const composed = composeServer(server, dirsOf(ctx), shops, { opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}), ...(server.speech?.enabled ? { speech: { image: server.speech.image, modelsDir: server.speech.modelsDir ?? p.speechModels } } : {}) });
   writeAtomic(composeFile(ctx.dir), composed.compose);

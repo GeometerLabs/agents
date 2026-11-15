@@ -1,5 +1,5 @@
 // The phone-first parts of the three sell guides (Bookings, Orders, Fees), checked together because they are the same text in every guide (14 Nov 2026, batch 2a):
-// the three pieces a partner copies (the help line, which is write-to-hello@geometer.dev until a partners' WhatsApp group exists, "Your first week", the letter-of-intent message)
+// the three pieces an Operator copies (the help line, which is write-to-hello@geometer.dev until an Operators' WhatsApp group exists, "Your first week", the letter-of-intent message)
 // are in each guide word for word AND as standalone files the sites link to; the pilot fee line is in section 6; the hosted demo's addresses are in section 4 (no placeholder is left);
 // no laptop, Node, Wi-Fi or printer is needed. The per-template tests (sell-guide.test.ts) check the rest.
 import { test } from "node:test";
@@ -56,7 +56,7 @@ test("the help line is the email address, with the hours, in every guide and its
     assert.ok(help.includes("```text\nhello@geometer.dev\n```"), `${t} ${l}: the standalone help piece has the email line`);
     assert.ok(help.includes("10:00") && help.includes("19:00"), `${t} ${l}: the help hours`);
     assert.ok(guide.includes(help), `${t} ${l}: the guide has the help piece word for word`);
-    assert.ok(!/WhatsApp group|WhatsApp ग्रुप|WhatsApp ഗ്രൂപ്പ്|WhatsApp ഗ്രൂപ്പിൽ|WhatsApp ಗುಂಪ|partners' group/.test(guide), `${t} ${l}: no partners' WhatsApp group is mentioned`);
+    assert.ok(!/WhatsApp group|WhatsApp ग्रुप|WhatsApp ഗ്രൂപ്പ്|WhatsApp ഗ്രൂപ്പിൽ|WhatsApp ಗುಂಪ|partners' group/.test(guide), `${t} ${l}: no Operators' WhatsApp group is mentioned`);
     const six = guide.split(/^## 7\. /m)[0].split(/^## 6\. /m)[1];
     assert.ok(/2027/.test(six) && /31/.test(six), `${t} ${l}: section 6 has the pilot fee line (join before 31 January 2027)`);
   }

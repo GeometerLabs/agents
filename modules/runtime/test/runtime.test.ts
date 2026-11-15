@@ -74,7 +74,7 @@ test("a runtime config is read the same way for every template; only the service
   assert.ok(readRuntimeConfig({ mode: "live", services: { payments } }, "/client", FEES_SERVICES).ok, "a shop with no WhatsApp and no push Guard: runtime.json names neither");
   assert.ok(readRuntimeConfig({ mode: "live", services: { push: { baseUrl: "http://g-push:8080" } } }, "/client", BOOKINGS_SERVICES).ok, "a UPI shop on its own booking list with no WhatsApp: its push Guard alone");
   // the settings every template shares are accepted by both shapes
-  for (const shape of [FEES_SERVICES, BOOKINGS_SERVICES]) assert.ok(readRuntimeConfig({ mode: "fakes", ai: "buttons", allowance: { messages: 100 }, pauseMinutes: 5, report: { preparedBy: "Divya, local partner", pageBaseUrl: "https://reports.example.com/r" } }, "/client", shape).ok);
+  for (const shape of [FEES_SERVICES, BOOKINGS_SERVICES]) assert.ok(readRuntimeConfig({ mode: "fakes", ai: "buttons", allowance: { messages: 100 }, pauseMinutes: 5, report: { preparedBy: "Divya, local Operator", pageBaseUrl: "https://reports.example.com/r" } }, "/client", shape).ok);
 });
 
 test("B72: a Google Calendar shop (settings say nothing, or google) in live mode is asked for its calendar service; one on its own booking list is not", () => {

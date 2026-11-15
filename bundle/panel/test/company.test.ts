@@ -15,11 +15,11 @@ import { setUp } from "./flow.ts";
 test("preparedByOf: 'Name, Company' with a company, else the role as before; one line, 120 characters, nothing cut mid-character", () => {
   assert.equal(preparedByOf({ accountName: "Divya", role: "partner", company: "Sri Sai Digital" }), "Divya, Sri Sai Digital");
   assert.equal(preparedByOf({ accountName: "Kiran", role: "builder", company: "Hexa Labs" }), "Kiran, Hexa Labs");
-  assert.equal(preparedByOf({ accountName: "Divya", role: "partner" }), "Divya, local partner");
+  assert.equal(preparedByOf({ accountName: "Divya", role: "partner" }), "Divya, local Operator");
   assert.equal(preparedByOf({ accountName: "Kiran", role: "builder", company: "   " }), "Kiran, builder");
   assert.equal(preparedByOf({ accountName: " Divya \n K ", role: "partner", company: "Sri \t Sai\nDigital" }), "Divya K, Sri Sai Digital", "one line, single spaces");
-  assert.equal(preparedByOf({ accountName: "Divya", role: "partner", company: 7 as unknown as string }), "Divya, local partner", "a company that is not text is ignored");
-  assert.equal(preparedByOf({ accountName: "Divya", role: "partner", company: "x".repeat(61) }), "Divya, local partner", "a company over 60 characters is not a usable one");
+  assert.equal(preparedByOf({ accountName: "Divya", role: "partner", company: 7 as unknown as string }), "Divya, local Operator", "a company that is not text is ignored");
+  assert.equal(preparedByOf({ accountName: "Divya", role: "partner", company: "x".repeat(61) }), "Divya, local Operator", "a company over 60 characters is not a usable one");
 
   // too long: the company is cut first
   const name = "N".repeat(100);
@@ -37,7 +37,7 @@ test("preparedByOf: 'Name, Company' with a company, else the role as before; one
   for (const company of ["കൊച്ചി ഡിജിറ്റൽ സൊല്യൂഷൻസ്", "ಬೆಂಗಳೂರು ಡಿಜಿಟಲ್"]) for (let n = 100; n <= 118; n++) {
     const line = preparedByOf({ accountName: "N".repeat(n), role: "partner", company });
     assert.ok(line.length <= PREPARED_BY_LIMIT && line === line.trim() && !line.includes("\n"), line);
-    if (line.endsWith(", local partner")) continue; // no room for even a character of the company: the role, as before
+    if (line.endsWith(", local Operator")) continue; // no room for even a character of the company: the role, as before
     const tail = line.slice(n + 2);
     assert.ok(company.startsWith(tail), "a clean prefix of the company");
     const marks = /[ാ-്ಾ-್]/u;
@@ -49,13 +49,13 @@ test("preparedByOf: 'Name, Company' with a company, else the role as before; one
 test("a company on the owner file or the handover person reaches the line; report.json still wins; old files read as before", () => {
   const owner: OwnerFile = { schema: 1, accountId: "a", accountName: "Divya", company: "Sri Sai Digital", role: "partner", createdAt: "2026-11-01T10:00:00Z", template: "bookings" };
   assert.equal(resolvePreparedBy({ owner })?.name, "Divya, Sri Sai Digital");
-  assert.equal(resolvePreparedBy({ owner, report: { schema: 1, preparedBy: "Meera, Kochi partner" } })?.name, "Meera, Kochi partner");
+  assert.equal(resolvePreparedBy({ owner, report: { schema: 1, preparedBy: "Meera, Kochi Operator" } })?.name, "Meera, Kochi Operator");
   const assignment: AssignmentFile = { schema: 1, current: { accountId: "b", accountName: "Kiran", company: "Hexa Labs", role: "builder", since: "2026-11-05T10:00:00Z" }, history: [] };
   assert.equal(resolvePreparedBy({ owner, assignment })?.name, "Kiran, Hexa Labs");
   assert.equal(servedByOf(owner, assignment)?.company, "Hexa Labs");
   assert.equal(servedByOf(owner, undefined)?.company, "Sri Sai Digital");
   const old = parseOwner(JSON.stringify({ schema: 1, accountId: "a", accountName: "Divya", role: "partner", createdAt: "2026-11-01T10:00:00Z", template: "bookings" }));
-  assert.equal(resolvePreparedBy({ owner: old })?.name, "Divya, local partner");
+  assert.equal(resolvePreparedBy({ owner: old })?.name, "Divya, local Operator");
 });
 
 test("the join form asks for a company in every language, keeps it on the account and on the shops the account sets up", async () => {
@@ -105,8 +105,8 @@ test("geometer shop add --company: the person's name and the company make report
   try {
     assert.equal((await add("one", "--prepared-by", "Divya", "--company", "Sri Sai Digital")).code, 0);
     assert.deepEqual(said("one"), { schema: 1, preparedBy: "Divya, Sri Sai Digital" });
-    assert.equal((await add("two", "--prepared-by", "Divya, local partner")).code, 0);
-    assert.equal(said("two").preparedBy, "Divya, local partner", "without --company the line is taken as it is");
+    assert.equal((await add("two", "--prepared-by", "Divya, local Operator")).code, 0);
+    assert.equal(said("two").preparedBy, "Divya, local Operator", "without --company the line is taken as it is");
     const alone = await add("three", "--company", "Sri Sai Digital");
     assert.notEqual(alone.code, 0);
     assert.match(alone.err, /--company goes with --prepared-by/u);

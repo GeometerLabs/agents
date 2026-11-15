@@ -1,4 +1,4 @@
-// The REAL Caddy (caddy:2.8.4-alpine, the image the partner server runs) in front of the REAL door, serving a small Streetlist build: every row of the path matrix of
+// The REAL Caddy (caddy:2.8.4-alpine, the image the Operator server runs) in front of the REAL door, serving a small Streetlist build: every row of the path matrix of
 // before-launch item 6 (the clean URLs, the redirects, the headers and cache rules of firebase.json, the friendly 404, robots.txt, and the paths that must reach the door).
 // Text goldens cannot show that Caddy behaves as the generated file says, so this does. It needs Docker and the image; it runs only when REAL_CADDY=1 (one container,
 // a few seconds) and says so when it does not. Written 14 Nov 2026.

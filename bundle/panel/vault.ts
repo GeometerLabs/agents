@@ -1,7 +1,7 @@
 // Encryption at rest for everything the panel itself keeps (accounts, invites, drafts, the record of which secrets arrived, the audit trail):
 // AES-256-GCM from node:crypto, one fresh 12-byte nonce per write, the record's name as additional authenticated data (so a file copied over
 // another one fails to open), and the key in a FILE named by the environment, outside the data folder it protects. Hosted mode (Geometer's
-// partner server) refuses to start without it; a builder's own server may use it too.
+// Operator server) refuses to start without it; a builder's own server may use it too.
 //
 //   geo1.<base64url(nonce 12 | ciphertext | tag 16)>
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto";

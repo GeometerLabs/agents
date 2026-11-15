@@ -1,4 +1,4 @@
-// Reads client/terms.json for a running shop (B72), the way the licence is read (modules/runtime/config.ts licenceReader): again whenever the file changes, so a partner's
+// Reads client/terms.json for a running shop (B72), the way the licence is read (modules/runtime/config.ts licenceReader): again whenever the file changes, so an Operator's
 // change reaches the runtime with no restart. No file, or a file that does not check, means the terms feature is off for this shop.
 // Used by: the three templates' server/start.ts, handed on to the agent as `terms`.
 import { readFileSync, statSync } from "node:fs";

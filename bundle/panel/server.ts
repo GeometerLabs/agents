@@ -1,5 +1,5 @@
 // The panel's web server: plain node:http, pages rendered on the server, no JavaScript, no dependencies. One panel, two ways to run it: on a builder's
-// own server, and on Geometer's server for the partners' shops. It never has the Docker socket: it writes files (desired state, a stop request, secrets
+// own server, and on Geometer's server for the Operators' shops. It never has the Docker socket: it writes files (desired state, a stop request, secrets
 // into the inbox) and reads files (the deployer's status) and each runtime's /status.
 //
 // What every request goes through, in this order: the account is read from a signed cookie; the route says who may use it; a POST must carry the form's
@@ -7,7 +7,7 @@
 // "METHOD path status ms" with no query, no cookie and no body, and an invitation's, reset link's or geometer.dev ticket's token blanked out.
 //
 // Ways in: an invitation then a passphrase (both modes); a reset link for a forgotten passphrase (both modes, made on the command line); and, on Geometer's
-// partner server only, a local partner's geometer.dev sign-in (fleet-signin.ts, plan decision 53). A shop OWNER never signs in here: owners use their own view's
+// Operator server only, a local Operator's geometer.dev sign-in (fleet-signin.ts, plan decision 53). A shop OWNER never signs in here: owners use their own view's
 // setup QR and passkey.
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -146,7 +146,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const inbox = createInbox(shops, now);
   const goLive = createGoLive(config, shops, store);
   const confirmations = createConfirmations(store, now);
-  // item 11d: a shop that moves to another partner loses the owner's link the old partner made; the new partner makes the owner a new one
+  // item 11d: a shop that moves to another Operator loses the owner's link the old Operator made; the new Operator makes the owner a new one
   const handover = createHandover(shops, accounts, store, now, (shop) => channels.revoke(shop));
   const terms = createTerms(shops, config.serverDir); // B72: shop terms agreed on WhatsApp; off unless geometer.json says so
   const channels = createChannels(config.serverDir, config.publicUrl); // item 11d: each shop's page, MCP endpoint and the owner's approvals link (channels.ts)
@@ -259,7 +259,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   });
 
   // sign in
-  // on Geometer's partner server, the sign-in page sends local partners to geometer.dev first (fleet-signin.ts)
+  // on Geometer's Operator server, the sign-in page sends local Operators to geometer.dev first (fleet-signin.ts)
   const partnersUrl = config.mode === "hosted" ? { partnersUrl: config.accountUrl ?? DEFAULT_ACCOUNT_URL } : {};
   on("GET", /^\/login$/u, "public", (r) => r.account ? redirect(r, "/shops") : page(r, 200, loginPage(r.ctx(), { hostedNote: config.mode === "hosted", ...partnersUrl })));
   on("POST", /^\/login$/u, "public", async (r) => {
@@ -299,7 +299,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     }
     redirect(r, "/shops", [sessions.issue(result.account.id, result.account.sessionVersion).setCookie]);
   });
-  // ---- a local partner's geometer.dev sign-in (hosted mode only; fleet-signin.ts). Opening the link spends nothing; the button's same-origin POST does.
+  // ---- a local Operator's geometer.dev sign-in (hosted mode only; fleet-signin.ts). Opening the link spends nothing; the button's same-origin POST does.
   /** The ticket, checked against this server's pinned keys and id, and not spent yet; or why not, as "gone" (ran out, used) or "bad" (anything else). */
   function ticketOf(ticket: string): { ok: true; ticket: Ticket } | { ok: false; why: "gone" | "bad" } {
     const identity = readFleetIdentity(config.serverDir);
@@ -430,7 +430,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       };
     });
     const firstRun = config.mode === "own" && r.account!.role === "builder" && !serverSetup.view().done;
-    // a builder's own agents, beside the shops (none for a partner: agents.ids answers nothing)
+    // a builder's own agents, beside the shops (none for an Operator: agents.ids answers nothing)
     const own = agents.ids(r.account!).map((id) => agents.view(id, staleMs, unfinished));
     page(r, 200, shopsPage(c, { all: r.account!.role === "builder", cards, ...(firstRun ? { serverToDo: true } : {}), serverLink: config.mode === "own" && r.account!.role === "builder", agents: agentsSection(c, own) }));
   });
@@ -590,14 +590,14 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     redirect(r, `/shops/${ref.id}`);
   });
 
-  // item 11f: the shop's page. The partner (or builder) picks the short name and the WhatsApp number the page shows; a builder also picks the pages domain or
+  // item 11f: the shop's page. The Operator (or builder) picks the short name and the WhatsApp number the page shows; a builder also picks the pages domain or
   // their own. Only the choice is written (shops/<shop>/page.json): the deployer claims the name at fleet within a pass and writes what came of it for this page.
   on("POST", /^\/shops\/([a-z0-9-]{1,40})\/page$/u, "user", (r) => {
     const ref = shops.find(r.account!, r.params[0]);
     if (!ref || !hasPage(shops.kind(ref.id))) return notFound(r); // item 11h: Orders' and Fees' shops have a page too
     const slug = (r.form.slug ?? "").trim().toLowerCase();
     const whatsapp = (r.form.whatsapp ?? "").replace(/[\s-]/gu, "");
-    // batch 5 and 3: the shop's own phone and map link (every customer page), and the partner's name and number (the owner's app and every error page)
+    // batch 5 and 3: the shop's own phone and map link (every customer page), and the Operator's name and number (the owner's app and every error page)
     const phone = (r.form.phone ?? "").replace(/[\s().-]/gu, "");
     const map = (r.form.map ?? "").trim();
     const partnerName = (r.form.partnerName ?? "").replace(/\s+/gu, " ").trim();
@@ -605,7 +605,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     if ((slug !== "" && !SLUG_SHAPE.test(slug)) || (whatsapp !== "" && !WHATSAPP_NUMBER.test(whatsapp))
       || (phone !== "" && !PHONE_SHAPE.test(phone)) || (map !== "" && !isMapLink(map))
       || (partnerPhone !== "" && (!PHONE_SHAPE.test(partnerPhone) || partnerName === "" || partnerName.length > 60))) return redirect(r, `/shops/${ref.id}?pages=bad`);
-    const pages = config.mode === "hosted" ? "hub" : r.form.pages === "hub" ? "hub" : "own"; // Geometer's partner server is always on the pages domain
+    const pages = config.mode === "hosted" ? "hub" : r.form.pages === "hub" ? "hub" : "own"; // Geometer's Operator server is always on the pages domain
     writePageSettings(config.serverDir, ref.id, { pages, ...(slug ? { slug } : {}), ...(whatsapp ? { whatsapp } : {}), ...(phone ? { phone } : {}), ...(map ? { map } : {}), ...(partnerPhone ? { partner: { name: partnerName, phone: partnerPhone } } : {}) });
     log(`page of ${ref.id} set by ${r.account!.id}: ${pages}${slug ? ` ${slug}` : ""}`);
     redirect(r, `/shops/${ref.id}`);
@@ -677,7 +677,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   });
 
   // the papers (B28, B35, B36): the record of one case, a person's statement, the agent's identity paper (full and public), the record as an evidence pack. Each goes
-  // through shops.find, so a partner gets a 404 for a shop that is not theirs; a person's number is only ever in a POST body, never in the address or the log
+  // through shops.find, so an Operator gets a 404 for a shop that is not theirs; a person's number is only ever in a POST body, never in the address or the log
   const papers = createPapers(config, shops, goLive.docs, now);
   const PAPER_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; frame-ancestors 'none'; form-action 'none'";
   const sendPaper = (r: Req, made: MadePaper | undefined) => (made ? body(r.res, 200, made.type, made.text, { "content-security-policy": PAPER_CSP, ...(made.file.endsWith(".json") || made.file.endsWith(".txt") ? { "content-disposition": `attachment; filename=\"${made.file}\"` } : {}) }) : notFound(r));
@@ -760,7 +760,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     log(`voice notes of ${ref.id} turned ${applied.runtime.speech ? "on" : "off"} by ${r.account!.id}`);
     voicePageFor(r, ref.id);
   });
-  // moving a shop to another partner or builder (B38), with the owner's agreement from their own number
+  // moving a shop to another Operator or builder (B38), with the owner's agreement from their own number
   const handoverPageFor = (r: Req, id: string, extra: Partial<HandoverView> = {}): void => {
     const state = handover.check(id);
     const c = r.ctx();
@@ -895,7 +895,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const svg = drawSvg({ style: style as CharacterStyle, seed, ...(colour !== "auto" ? { colour } : {}) }, mood === "face" ? undefined : mood as Face);
     body(r.res, 200, "image/svg+xml", svg, { "cache-control": "private, max-age=604800, immutable", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'" });
   });
-  // A shop's saved pictures (shops/<shop>/character), for the shop page's row of moods and the "All well" PNG the partner puts on the WhatsApp profile by hand.
+  // A shop's saved pictures (shops/<shop>/character), for the shop page's row of moods and the "All well" PNG the Operator puts on the WhatsApp profile by hand.
   on("GET", /^\/shops\/([a-z0-9-]{1,40})\/character\/([a-z]{4,6})\.(svg|png|webp)$/u, "user", (r) => {
     const ref = shops.find(r.account!, r.params[0]);
     const face = r.params[1] as Face;
@@ -1208,14 +1208,14 @@ export function makeResetLink(config: PanelConfig, handle: string, hours = 72): 
   } catch (e) { if (e instanceof AccountError) throw new ConfigError(e.message); throw e; }
 }
 
-/** Tie an existing partner account to a fleet partner id (hosted mode): from then on it signs in with geometer.dev only, and every session of it ends. */
+/** Tie an existing Operator account to a fleet Operator id (hosted mode): from then on it signs in with geometer.dev only, and every session of it ends. */
 export function linkFleetPartner(config: PanelConfig, handle: string, partner: string): Account {
-  if (config.mode !== "hosted") throw new ConfigError("Only Geometer's partner server (PANEL_MODE=hosted) signs partners in with geometer.dev. A builder's own server keeps its invitations and passphrases.");
+  if (config.mode !== "hosted") throw new ConfigError("Only Geometer's Operator server (PANEL_MODE=hosted) signs Operators in with geometer.dev. A builder's own server keeps its invitations and passphrases.");
   const { store } = openStores(config);
   try { return createAccounts(store, config.now).linkFleet(handle, partner); } catch (e) { if (e instanceof AccountError) throw new ConfigError(e.message); throw e; }
 }
 
-/** End every session of one account now (a paused partner's open panel, a lost phone). The person signs in again the way their account allows. */
+/** End every session of one account now (a paused Operator's open panel, a lost phone). The person signs in again the way their account allows. */
 export function signOutAccount(config: PanelConfig, handle: string): Account {
   const { store } = openStores(config);
   const accounts = createAccounts(store, config.now);

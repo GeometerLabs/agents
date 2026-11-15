@@ -1,4 +1,4 @@
-// The setup steps as a partner on a phone does them (item 11i added the Character step as the fifth), shared by the tests that need a shop to exist.
+// The setup steps as an Operator on a phone does them (item 11i added the Character step as the fifth), shared by the tests that need a shop to exist.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -22,7 +22,7 @@ export const CHARACTER5 = { act: "next", characterName: "", personality: "warm" 
 
 export interface Flow { draft: string; shop: string; replies: string[] }
 
-/** The six steps as a partner on a phone does them. Every reply is kept, so a test can look for what must never appear. */
+/** The six steps as an Operator on a phone does them. Every reply is kept, so a test can look for what must never appear. */
 export async function setUp(b: Boot, who: Browser, given: Record<string, string>[] = [STEP1, STEP2, STEP3, STEP4]): Promise<Flow> {
   const replies: string[] = [];
   // the four steps a test names, then the Character step (item 11i) unless the test names it too

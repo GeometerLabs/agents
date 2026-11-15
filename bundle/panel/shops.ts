@@ -1,7 +1,7 @@
 // The shops on the server, as files. This is the only place the panel touches shops/, status/, requests/ and exports/. It writes desired state
 // (settings.json, runtime.json, pathway.lock, owner.json, pins.json) and a stop request; it reads the deployer's results and each runtime's /status.
 // Who may see a shop is decided here, in one function, and every page and every action goes through it: a builder sees every shop on the server, a
-// partner only the shops whose owner.json names them, and a shop that is not yours looks exactly like a shop that does not exist.
+// Admin only the shops whose owner.json names them, and a shop that is not yours looks exactly like a shop that does not exist.
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createHash, randomBytes } from "node:crypto";
@@ -59,9 +59,9 @@ export function createShops(config: PanelConfig, store: Store) {
     owner(id: string): OwnerFile | undefined { return parseOwner(readText(join(paths.shop(safe(id)), "owner.json"))); },
     /** Who moved the shop to someone else, if anyone has (assignment.json, written only by a handover). */
     assignment(id: string): AssignmentFile | undefined { return parseAssignmentFile(readText(join(paths.shop(safe(id)), "assignment.json"))); },
-    /** Who serves the shop now, in the shape of owner.json: the latest handover's new person, else the one who set it up. A partner sees a shop only while this names them. */
+    /** Who serves the shop now, in the shape of owner.json: the latest handover's new person, else the one who set it up. An Operator sees a shop only while this names them. */
     servedBy(id: string): OwnerFile | undefined { return servedByOf(api.owner(id), api.assignment(id)); },
-    /** Who the owner's monthly report says set the shop up ("Divya, local partner"): a handover's new person, else the shop's report.json, else the attribution. The deployer reads the same three files. */
+    /** Who the owner's monthly report says set the shop up ("Divya, local Operator"): a handover's new person, else the shop's report.json, else the attribution. The deployer reads the same three files. */
     preparedBy(id: string): string | undefined {
       const report = parseReportFile(readText(join(paths.shop(safe(id)), "report.json")));
       const owner = api.owner(id);

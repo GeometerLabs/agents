@@ -108,7 +108,7 @@ label.f { display: block; margin: 16px 0 6px; font-weight: 650; }
 input[type=text], input[type=tel], input[type=number], input:not([type]), textarea { width: 100%; min-height: 48px; padding: 10px 12px; border: 1.5px solid var(--line2); border-radius: 12px; background: var(--card); color: var(--ink); font: inherit; }
 textarea { min-height: 88px; resize: vertical; }
 
-/* ---- the foot: what an AI assistant can do (folded), the partner's line ---- */
+/* ---- the foot: what an AI assistant can do (folded), the Operator's line ---- */
 footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--soft); font-size: .92rem; }
 footer + footer { margin-top: 0; border-top: 0; }
 /* a folded part keeps the browser's own triangle (list-item), and is still 44 px tall */
@@ -129,7 +129,7 @@ footer a { display: inline-block; padding: 11px 0; }
 .item .amt { font-size: 1.3rem; font-weight: 800; }
 .item p { margin: 0 0 .5em; }
 .item h3 { margin: 8px 0 2px; }
-/* who to call (contact-bar.ts): the partner's name with Call and WhatsApp, and the shop's own call and map links; 44 px tall taps */
+/* who to call (contact-bar.ts): the Operator's name with Call and WhatsApp, and the shop's own call and map links; 44 px tall taps */
 .who { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 14px; padding: 10px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; font-size: .95rem; }
 .who b { flex: 1 1 100%; }
 .who .btn { flex: 1 1 auto; margin: 0; min-height: 44px; }

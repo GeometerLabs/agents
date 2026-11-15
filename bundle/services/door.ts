@@ -1,12 +1,12 @@
 // The front door of the pages domain (plan item 11f, decision 44): https://<the pages domain>/<slug> for every shop that has a page there. It runs on Geometer's
-// partner server only, as its own container (`door`, generate/compose.ts), behind Caddy's site block for the pages domain and its extra domains. It holds no
+// Operator server only, as its own container (`door`, generate/compose.ts), behind Caddy's site block for the pages domain and its extra domains. It holds no
 // secret and keeps nothing but a minute's memory of fleet's answers.
 //
 //   GET  /                        a short page: what this domain is
 //   GET  /robots.txt              Disallow: /*/owner (an owner's page is nobody's search result), and (item 11h) a parent's page, a payment's and an order's
 //   GET  /healthz                 the process is up
 //   GET  /p/<id>                  the shop's STABLE page address (QR codes carry it): redirected to its current slug; "suspended" or "gone" otherwise
-//   GET  /@<handle>               a local partner's calling card (plan item 11g, services/card-page.ts): server-rendered HTML and CSS, no script, from fleet's
+//   GET  /@<handle>               a local Operator's calling card (plan item 11g, services/card-page.ts): server-rendered HTML and CSS, no script, from fleet's
 //                                 published card (GET /v1/partner-cards/<handle>). A handle that is unknown, unpublished or junk is the same friendly 404.
 //   ...  /<slug>[/<rest>]         the shop's page. A shop on this server: forwarded to the inbox's front as /s/<shop>/<rest>, with `x-geometer-door: <slug>`.
 //                                 A builder's client: the customer view, the API and MCP forwarded to https://<their server>/s/<shop>/<rest> as a pure
@@ -120,7 +120,7 @@ export interface Registry { slug(slug: string): Promise<SlugAnswer | "unreachabl
 
 /**
  * Fleet's public lookups with a short memory: an answer is used for FRESH_MS (unknown and gone for UNKNOWN_MS), and when fleet cannot be reached a known answer
- * is used for up to STALE_MS, so the partners' shop pages do not go down with fleet. At most MAX_KEPT answers are kept (the oldest go first).
+ * is used for up to STALE_MS, so the Operators' shop pages do not go down with fleet. At most MAX_KEPT answers are kept (the oldest go first).
  */
 export function fleetRegistry(o: { fleetUrl: string; fetchImpl?: typeof fetch; now?: () => number; freshMs?: number; unknownMs?: number; staleMs?: number; maxKept?: number }): Registry {
   const fetchImpl = o.fetchImpl ?? fetch;
@@ -254,9 +254,9 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
   const local = o.local ?? nodeTransport();
   const remote = o.remote ?? nodeTransport(guardedLookup());
   const primaryOrigin = `https://${o.primary}`;
-  // the last partner contact each of this server's shops' fronts named (door-pages.ts CONTACT_HEADER): so a page for a shop that is down can say who to call
+  // the last Operator contact each of this server's shops' fronts named (door-pages.ts CONTACT_HEADER): so a page for a shop that is down can say who to call
   const contacts = new Map<string, DoorContact>();
-  /** The door's own pages in the visitor's language (door-pages.ts); `slug`: the shop's, so the page can name its partner when the door has seen one. */
+  /** The door's own pages in the visitor's language (door-pages.ts); `slug`: the shop's, so the page can name its Operator when the door has seen one. */
   const pageOf = (res: ServerResponse, key: DoorKey, slug?: string): string => doorPage(key, res, slug ? contacts.get(slug) : undefined);
 
   const own = (res: ServerResponse, status: number, body: string, type = "text/html; charset=utf-8", extra: Record<string, string> = {}) => {
@@ -283,7 +283,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     }
     const out: Record<string, string | string[]> = {};
     if (a.local) {
-      // the shop's front names its partner on its pages: kept per slug for the error pages, and never passed on to the visitor
+      // the shop's front names its Operator on its pages: kept per slug for the error pages, and never passed on to the visitor
       const contact = parseContact(up.headers[CONTACT_HEADER]);
       if (contact) { contacts.delete(a.slug); contacts.set(a.slug, contact); if (contacts.size > 500) contacts.delete(contacts.keys().next().value!); }
       for (const [k, v] of Object.entries(up.headers)) if (v !== undefined && !HOP_BY_HOP.has(k) && k !== CONTACT_HEADER) out[k] = v;
@@ -334,7 +334,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     const visitor = visitorOf(req);
     if (!take("all", visitor)) return own(res, 429, pageOf(res, "waitMinute"), "text/html; charset=utf-8", { "retry-after": "60" });
 
-    // a partner's calling card: /@handle (a browser or a QR reader may send the @ as %40). The shape is checked before fleet is asked, and anything fleet does not
+    // an Operator's calling card: /@handle (a browser or a QR reader may send the @ as %40). The shape is checked before fleet is asked, and anything fleet does not
     // show (unknown, unpublished) is one and the same 404, counted against the visitor like an unknown shop name.
     const c = /^\/(?:@|%40)([^/]*)(\/.*)?$/iu.exec(url.pathname);
     if (c) {

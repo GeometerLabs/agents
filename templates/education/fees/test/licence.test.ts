@@ -15,7 +15,7 @@ import { monthRange } from "../../../../modules/report/months.ts";
 
 const PAID_THROUGH = 1_796_668_200;
 let state: LicenceNow = UNRESTRICTED;
-const set = (s: LicenceNow["state"]) => { state = s === "active" ? UNRESTRICTED : { state: s, restricted: true, takesNewWork: false, paidThrough: PAID_THROUGH, exportUntil: PAID_THROUGH + 150 * 86_400, partner: "Divya, local partner" }; };
+const set = (s: LicenceNow["state"]) => { state = s === "active" ? UNRESTRICTED : { state: s, restricted: true, takesNewWork: false, paidThrough: PAID_THROUGH, exportUntil: PAID_THROUGH + 150 * 86_400, partner: "Divya, local Operator" }; };
 const world = () => { state = UNRESTRICTED; return createWorld({ licence: () => state }); };
 const entries = (w: ReturnType<typeof createWorld>, action: string) => w.record.entries().filter((e) => e.action === action);
 const PAUSED = "Online fee payment is paused for now. Please contact Bright Tuition Centre directly.";
@@ -66,12 +66,12 @@ test("the final stop closes the open fee links once and sends nothing more", asy
   assert.equal(w.messaging.outbox().length, sent, "nothing more is sent");
 });
 
-test("every licence message has its words in all four languages; the owner's notices name the partner and are never about money", () => {
+test("every licence message has its words in all four languages; the owner's notices name the Operator and are never about money", () => {
   for (const language of ["en", "hi", "ml", "kn"] as const) {
-    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Bright Tuition", partner: "Divya, local partner", openFeesCount: 4 };
+    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Bright Tuition", partner: "Divya, local Operator", openFeesCount: 4 };
     for (const id of ["fee_paused", "owner_licence_paused", "owner_licence_stopped"] as const) {
       const text = TEMPLATES[language][id](facts);
-      if (id !== "fee_paused") assert.ok(text.includes("Divya, local partner"), `${language} ${id}`);
+      if (id !== "fee_paused") assert.ok(text.includes("Divya, local Operator"), `${language} ${id}`);
       assert.doesNotMatch(text, /₹|invoice|safe|guarantee/iu, `${language} ${id}`);
     }
   }
@@ -85,11 +85,11 @@ test("the runtime sends the owner the wind-down's notice once, as the utility te
     const { runtime } = kit.open({ licence: () => now });
     const owner = kit.settings.owner.whatsapp;
     const notices = () => kit.messaging.sentTo(owner).filter((m) => m.templateName?.startsWith("owner_fee_service_"));
-    now = { state: "wind_down", restricted: true, takesNewWork: false, paidThrough: PAID_THROUGH, exportUntil: null, partner: "Divya, local partner" };
+    now = { state: "wind_down", restricted: true, takesNewWork: false, paidThrough: PAID_THROUGH, exportUntil: null, partner: "Divya, local Operator" };
     await runtime.tick();
     await runtime.tick();
     assert.equal(notices().length, 1);
-    assert.equal(notices()[0].text, "Notice: online fee payment for Bright Tuition Centre is paused for now. Fees already paid, and refunds, still go through. Please contact Divya, local partner.");
+    assert.equal(notices()[0].text, "Notice: online fee payment for Bright Tuition Centre is paused for now. Fees already paid, and refunds, still go through. Please contact Divya, local Operator.");
   } finally { kit.cleanup(); }
 });
 

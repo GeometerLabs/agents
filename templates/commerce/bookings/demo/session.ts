@@ -180,7 +180,7 @@ export function createDemo(settings: Settings, nowMs: number): Demo {
 
 const EN_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-/** Sentences a partner can tap instead of typing, written for THIS shop's first service, prices and opening days. */
+/** Sentences an Operator can tap instead of typing, written for THIS shop's first service, prices and opening days. */
 export function chipsFor(settings: Settings, language: string, nowMs: number): Chip[] {
   const hindi = language === "hi";
   const service = settings.services[0];

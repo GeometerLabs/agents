@@ -49,7 +49,7 @@ function phone() {
   };
 }
 
-/** A shop's data folder as the runtime leaves it: agent.db, the owner's sign-in file with one passkey registered through the partner's QR, and the push file with one phone. */
+/** A shop's data folder as the runtime leaves it: agent.db, the owner's sign-in file with one passkey registered through the Operator's QR, and the push file with one phone. */
 function shop(dir: string) {
   const data = join(dir, "data"); mkdirSync(data, { recursive: true });
   const store = openStore(data);

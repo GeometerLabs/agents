@@ -1,7 +1,7 @@
 // Alerts on an order's page and on a parent's page (release-flow batch 3, 14 Nov 2026), through the real public front over HTTP with a stand-in runtime backend: the page
 // offers "Tell me on this phone" with its own worker and a content policy that names exactly this page's two addresses; the worker is served only to a page that can have
 // alerts; a subscription goes to the runtime keyed by the page's handle (an order) or by the parent's link hash (a fee), and a wrong shape or another site's page is refused.
-// Also: a shop's pages.json gives every customer page its phone and map link, and names the partner for the door in a header.
+// Also: a shop's pages.json gives every customer page its phone and map link, and names the Operator for the door in a header.
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
@@ -72,7 +72,7 @@ test("a parent's page offers alerts keyed by the parent's link hash; the worker 
   assert.deepEqual(calls.at(-1)!.body, { op: "customer_subscribe", handle: parentLinkHash(link), subscription: sub }, "the runtime finds the parent by the link's hash now");
 });
 
-test("every customer page shows the shop's phone and map link, and a door request names the partner in a header the door strips", async () => {
+test("every customer page shows the shop's phone and map link, and a door request names the Operator in a header the door strips", async () => {
   const handle = newHandle();
   const pages = { schema: 1 as const, base: "https://s.example/s/glow", ownerBase: "https://s.example/s/glow/owner", slug: "glow", url: "https://pages.example/glow", phone: "+918012345678", map: "https://maps.app.goo.gl/AbC123", partner: { name: "Divya", phone: "+919800000000" } };
   const backend = { orderOffer: async () => ({ kind: "orders", shop: { ...SHOP, advance: { mode: "part", percent: 50, holdMinutes: 30 }, cancellation: { windowHours: 4 } }, items: [], days: [], maxItemsPerOrder: 20 }), orderView: async () => null, push } as unknown as ChannelBackend;
@@ -82,12 +82,12 @@ test("every customer page shows the shop's phone and map link, and a door reques
   assert.match(text, /href="https:\/\/maps\.app\.goo\.gl\/AbC123"/u);
   const viaDoor = await fetch(`${f.origin}/s/glow/order/${handle}`, { headers: { "x-geometer-door": "glow" } });
   const header = viaDoor.headers.get(CONTACT_HEADER);
-  assert.ok(header, "a door request carries the partner's contact for the door");
+  assert.ok(header, "a door request carries the Operator's contact for the door");
   assert.deepEqual(JSON.parse(Buffer.from(header!, "base64url").toString("utf8")), { n: "Divya", p: "+919800000000" });
   assert.equal((await f.get(`/order/${handle}`)).headers.get(CONTACT_HEADER), null, "a request that did not come through the door gets none");
 });
 
-test("when the shop's runtime does not answer, the page is in the visitor's language and names the partner (not one English line)", async () => {
+test("when the shop's runtime does not answer, the page is in the visitor's language and names the Operator (not one English line)", async () => {
   const pages = { schema: 1 as const, base: "https://s.example/s/glow", ownerBase: "https://s.example/s/glow/owner", partner: { name: "Divya", phone: "+919800000000" } };
   const backend = { orderOffer: async () => { throw new Error("the runtime is not answering"); }, push } as unknown as ChannelBackend;
   const f = await front({ backend, kind: "orders", pages: () => pages });

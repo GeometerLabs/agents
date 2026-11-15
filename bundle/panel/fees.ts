@@ -39,7 +39,7 @@ const blankBatches = (): FeesForm["batches"] => Array.from({ length: MAX_BATCHES
 /** A Fees draft has no use for Bookings' form, but the shared steps read the centre's name from `form.name`, so that is where the name lives. */
 const emptyShopForm = (): Draft["form"] => ({ name: "", language: "en", services: [], deposit: "", opens: "", closes: "", days: [] });
 
-/** The settings of the template's example, as the form's starting point: its rules are the template's defaults; the centre, batches and students are the partner's own. */
+/** The settings of the template's example, as the form's starting point: its rules are the template's defaults; the centre, batches and students are the Operator's own. */
 export function newFeesDraft(id: string, accountId: string, template: Template, example: Settings, now: string): Draft {
   return {
     id, accountId, template: template.id, createdAt: now, editing: false, saved: false,

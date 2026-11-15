@@ -76,7 +76,7 @@ WhatsApp is written for Meta's Cloud API shape (Graph v26.0), and Gupshup (the p
 
 ## Show it to a shop
 
-A demo mode a partner runs on a laptop and opens on the shop owner's own phone. It is the **real agent** running on the in-memory stand-ins with a fake clock: **test money only, nothing real is contacted, nothing is saved.** A banner on every screen says so ("Demo · test money · nothing real is sent").
+A demo mode an Operator runs on a laptop and opens on the shop owner's own phone. It is the **real agent** running on the in-memory stand-ins with a fake clock: **test money only, nothing real is contacted, nothing is saved.** A banner on every screen says so ("Demo · test money · nothing real is sent").
 
 ```sh
 # from the root of this repository; both devices on the same Wi-Fi
@@ -112,7 +112,7 @@ It prints the addresses to open, for example `http://192.168.1.23:8787` for the 
 
 ## Sell it
 
-A template isn't ready to sell until its guide is. [`sell/`](sell/) has the pitch-and-sell guide for local partners and builders in English, Hindi, Malayalam and Kannada (`guide.<lang>.md`, from "is this shop a fit" to the first month, built on the demo above) and the one-page sheet the partner leaves with the owner (`one-pager.<lang>.html`, printable on A4).
+A template isn't ready to sell until its guide is. [`sell/`](sell/) has the pitch-and-sell guide for local Operators and builders in English, Hindi, Malayalam and Kannada (`guide.<lang>.md`, from "is this shop a fit" to the first month, built on the demo above) and the one-page sheet the Operator leaves with the owner (`one-pager.<lang>.html`, printable on A4).
 A business that is a different kind of customer for the same template gets a **variant** that covers only what differs and points here for the rest: [`sell/variants/equipment-rental.<lang>.md`](sell/variants/) (rules: [../../SELL-GUIDE.md](../../SELL-GUIDE.md), "Variants").
 Hindi, Malayalam and Kannada are machine-written and wait for native review ([Deferred.md](Deferred.md)). What every template's guide must cover: [../../SELL-GUIDE.md](../../SELL-GUIDE.md). `test/sell-guide.test.ts` checks the sections, the banned words, the amounts and the demo steps.
 
@@ -176,7 +176,7 @@ give a name and a number, then pay the deposit by UPI (a "Pay in your UPI app" b
 as on WhatsApp) or on the gateway's link. The page is plain HTML in the shop's languages. The same six operations are a small JSON API (`/s/<shop>/api/v1`) and an MCP
 endpoint for AI assistants (`/s/<shop>/mcp`). Every booking goes through the same runtime step, limits, hold and deposit as a WhatsApp booking, under its own conversation;
 the record says `channel_booking` with `refs.channel` (`web` or `mcp`). The owner can answer what waits for them (UPI payments to mark, refunds, the calendar's retries,
-refunds Guard holds) on a private page whose link the partner makes in the panel. What it shows, the limits, and what a fake booking can and cannot do:
+refunds Guard holds) on a private page whose link the Operator makes in the panel. What it shows, the limits, and what a fake booking can and cannot do:
 [modules/Explanation.md](../../../modules/Explanation.md), "Not only WhatsApp". Run a runtime with `CHANNEL_TOKEN_FILE` set to have its channel routes; the front is
 `modules/channels/front.ts`. Tests: `test/channels.test.ts`.
 
@@ -388,7 +388,7 @@ scripts/report-key.ts, client-report.ts, go-live-certificate.ts, verify-report.t
 test/                              unit tests, plus one test per situation; test/demo.test.ts drives the demo through its HTTP endpoints;
                                    the runtime server's tests (runtime, store, server, ticker, config, start) use test/runtime-kit.ts
 scripts/hand-check.ts              the hand check
-demo/                              the partner demo: server.ts (start it), app.ts (web server and limits), session.ts (a world and its buttons),
+demo/                              the Operator demo: server.ts (start it), app.ts (web server and limits), session.ts (a world and its buttons),
                                    view.ts (the owner's summary and the record), personalise.ts (the shop form), strings.ts, page.ts/.css/.js
 scripts/review-sheet.ts            writes REVIEW-ml.md and REVIEW-kn.md from the templates and word lists
 scripts/model-eval.ts              the model eval (eval-score.ts scores it, eval-keys.ts reads the keys: laptop only)

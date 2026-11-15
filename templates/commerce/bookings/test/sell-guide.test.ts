@@ -237,7 +237,7 @@ test("sell guide: the ₹ amounts are the same set in every guide, section by se
   }
 });
 
-test("sell guide: section 6 states the two price lists of the list in force (partners' plans, the builder licence, WhatsApp on the shop's bill), and the first-100 price, the own-server discount, the old flat fee and the word 'founding' are gone from every guide and variant", () => {
+test("sell guide: section 6 states the two price lists of the list in force (Operators' plans, the builder licence, WhatsApp on the shop's bill), and the first-100 price, the own-server discount, the old flat fee and the word 'founding' are gone from every guide and variant", () => {
   for (const l of LANGUAGES) {
     for (const [name, text, source] of [["guide", guide(l), `guide.${l}.src.md`], ["variant", variant(l), `variants/equipment-rental.${l}.src.md`]] as const) {
       // The 4 Nov flat fee was ₹199, written by hand. Since decision 36 (10 Nov) the builder licence is ₹199 too, and it reaches a guide only through
@@ -263,7 +263,7 @@ test("sell guide: every number is the same in every language", () => {
 
 // ---- the demo the guide teaches -----------------------------------------------------------------------------------------
 
-// What the guide tells a partner to type in Malayalam and Kannada, where the demo's suggestions are in English. When the shop is
+// What the guide tells an Operator to type in Malayalam and Kannada, where the demo's suggestions are in English. When the shop is
 // closed tomorrow (Glow Salon: Sundays, so on a Saturday) the guide says to write "the day after tomorrow" instead of "tomorrow".
 const TYPED: Partial<Record<Language, { book: string; haggle: string; tomorrow: string; dayAfter: string }>> = {
   ml: { book: "നാളെ വൈകുന്നേരം 6 മണിക്ക് ഹെയർകട്ട് വേണം", haggle: "നാളെ വൈകുന്നേരം 6 മണിക്ക് ഹെയർകട്ട്, ₹300-ന് ചെയ്യാമോ?", tomorrow: "നാളെ", dayAfter: "മറ്റന്നാൾ" },
@@ -290,7 +290,7 @@ test("sell guide: the guide quotes the demo's own screen words (the buttons, tab
   }
 });
 
-test("sell guide: the four demo steps the guide teaches do what it says, in every language, whatever day of the week the partner starts", async () => {
+test("sell guide: the four demo steps the guide teaches do what it says, in every language, whatever day of the week the Operator starts", async () => {
   for (let k = 0; k < 7; k++) { // the demo clock starts on the real date: Glow Salon is closed on Sundays, so a Saturday is different
     const start = NOW + k * DAY;
     for (const l of LANGUAGES) {
@@ -538,7 +538,7 @@ test("variant guide: what it says about the example shop and the check is what t
 
 const WEEKDAYS_ALL_OPEN = (s: Settings) => [0, 1, 2, 3, 4, 5, 6].every((d) => hoursOn(s, d) !== null);
 
-// What the variant tells a partner to type in Kannada, where the demo's suggestions are in English with the machine's name in Kannada.
+// What the variant tells an Operator to type in Kannada, where the demo's suggestions are in English with the machine's name in Kannada.
 const RENTAL_TYPED_KN = {
   book: "ನಾಳೆ ಮಧ್ಯಾಹ್ನ 12 ಗಂಟೆಗೆ ರೋಟಾವೇಟರ್ ಟ್ರ್ಯಾಕ್ಟರ್ ಅರ್ಧ ದಿನ ಬೇಕು",
   haggle: "ನಾಳೆ ಮಧ್ಯಾಹ್ನ 12 ಗಂಟೆಗೆ ರೋಟಾವೇಟರ್ ಟ್ರ್ಯಾಕ್ಟರ್ ಅರ್ಧ ದಿನ, ₹2130ಕ್ಕೆ ಮಾಡ್ತೀರಾ?",
@@ -560,7 +560,7 @@ test("variant guide: the variant quotes the demo's own screen words and suggesti
   assert.ok(variant("kn").includes(RENTAL_TYPED_KN.book) && variant("kn").includes(RENTAL_TYPED_KN.haggle), "the Kannada variant quotes the sentences to type");
 });
 
-test("variant guide: the four demo steps it teaches do what it says on the example shop, in Hindi and in Kannada, whatever day the partner starts", async () => {
+test("variant guide: the four demo steps it teaches do what it says on the example shop, in Hindi and in Kannada, whatever day the Operator starts", async () => {
   for (let k = 0; k < 7; k++) {
     const start = NOW + k * DAY;
     for (const demoLanguage of ["hi", "kn"] as const) {

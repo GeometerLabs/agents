@@ -15,7 +15,7 @@
 // logic that decides this is decision-window.ts, which the "bring your own agent" record uses too. Without --state-file every run reads the whole list, as before.
 // With --backup-dir it also asks Guard for a backup in a NEW subfolder of that folder (the path as Guard sees it; Guard must be able to write there), and copies
 // the two files a reviewer needs, evidence-pack.json and anchor.json, into <out>/evidence/. Nothing else is copied. The rest of the backup is Guard's store and
-// its evidence keys: it is for restoring Guard, it stays with the operator, and it must not go to reviewers. Guard refuses a backup into a folder that is not
+// its evidence keys: it is for restoring Guard, it stays with the server admin, and it must not go to reviewers. Guard refuses a backup into a folder that is not
 // empty, which is why every run makes its own subfolder.
 //
 // A reviewer checks the pack with the open geo-verify. An anchor from the same export only shows the pack was not changed after Guard wrote it. To catch a rewrite
@@ -142,7 +142,7 @@ export function summaryText(lines: RecordLine[], o: { approvals: Obj[]; intents:
     `- It shows only calls that went through this Guard.`,
     o.windowFull ? `- Guard lists only its ${WINDOW} most recent decisions, and this list is that long: older decisions may exist that this file does not hold.${inc && !inc.gap ? " Nothing is known to be missing since the last export." : ""} The evidence pack has them.` : `- Guard lists at most its ${WINDOW} most recent decisions; this list is shorter, so that limit did not cut it.`,
     o.evidence
-      ? `- evidence/ holds Guard's evidence pack and anchor. An anchor from this same export only shows the pack was not changed after Guard wrote it. To catch a rewrite of Guard's own records, check a later pack against an anchor you saved from an EARLIER export, kept where your engineers cannot change it. Without an anchor, geo-verify says "unverifiable".\n- Guard's full backup (its store and its evidence keys) was written to the operator's backup folder. It is for restoring Guard and is not part of this export.`
+      ? `- evidence/ holds Guard's evidence pack and anchor. An anchor from this same export only shows the pack was not changed after Guard wrote it. To catch a rewrite of Guard's own records, check a later pack against an anchor you saved from an EARLIER export, kept where your engineers cannot change it. Without an anchor, geo-verify says "unverifiable".\n- Guard's full backup (its store and its evidence keys) was written to the server admin's backup folder. It is for restoring Guard and is not part of this export.`
       : `- No evidence pack was asked for (--backup-dir). Without it, nothing here is tamper-evident: these are files anyone with access to this folder could edit.`,
   ];
   return `${out.join("\n")}\n`;
@@ -157,7 +157,7 @@ async function ask(admin: string, token: string, method: string, path: string, b
   return JSON.parse(text) as Obj;
 }
 
-/** The only two files of Guard's backup that go to reviewers. The rest (state.db, evidence/keys) never leaves the operator. */
+/** The only two files of Guard's backup that go to reviewers. The rest (state.db, evidence/keys) never leaves the server admin. */
 export const REVIEWER_FILES = ["evidence-pack.json", "anchor.json"] as const;
 
 export interface ExportOptions {
@@ -228,5 +228,5 @@ if (import.meta.main) {
   const r = await exportRecord({ admin: values.admin, token: readFileSync(values["token-file"], "utf8").trim(), out: resolve(values.out), ...(values["backup-dir"] ? { backupDir: values["backup-dir"] } : {}), ...(values["backup-read-dir"] ? { backupReadDir: values["backup-read-dir"] } : {}), ...(values["state-file"] ? { stateFile: resolve(values["state-file"]) } : {}) });
   console.log(`Wrote ${r.files.join(", ")} to ${resolve(values.out)} (${r.lines} decisions${r.windowFull ? ", the list is full: older ones are not here" : ""}).`);
   if (r.gap) console.log(`MISSING CALLS: ${r.gap.message}`);
-  if (r.backup) console.log(`Copied evidence-pack.json and anchor.json to ${join(resolve(values.out), "evidence")}. Guard's full backup (store and keys) is at ${r.backup.guardPath}: keep it with the operator.`);
+  if (r.backup) console.log(`Copied evidence-pack.json and anchor.json to ${join(resolve(values.out), "evidence")}. Guard's full backup (store and keys) is at ${r.backup.guardPath}: keep it with the server admin.`);
 }

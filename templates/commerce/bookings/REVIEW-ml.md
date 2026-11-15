@@ -282,7 +282,7 @@ Glow Salon · ഫെബ്രുവരി 2027 · പരിശീലന സം�
 
 ### The monthly report on WhatsApp, with sample numbers
 
-Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the Innovator badge, is there only for the first 100 builders and partners; the other template is the same without it. The labels are the ones above; the new words are "Full report", the name of the badge and the code line.
+Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the Innovator badge, is there only for the first 100 builders and Operators; the other template is the same without it. The labels are the ones above; the new words are "Full report", the name of the badge and the code line.
 
 ```text
 *പ്രതിമാസ റിപ്പോർട്ട്: Glow Salon · ഫെബ്രുവരി 2027*
@@ -436,7 +436,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `page.checkAt` | ഇവിടെ പരിശോധിക്കുക | Check it at |  |
 | `page.signedBy` | ഈ കീ ഉപയോഗിച്ച് ഒപ്പിട്ടു | Signed with key |  |
 | `page.notSigned` | ഒപ്പിട്ടിട്ടില്ല | Not signed |  |
-| `page.scanToCheck` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
+| `page.scanToCheck` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ ഓപ്പറേറ്റർയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your Operator or Geometer's team gave you. |  |
 | `page.scanSummary` | ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ ഈ കോഡ് സ്കാൻ ചെയ്യുക, അല്ലെങ്കിൽ ലിങ്ക് തുറക്കുക. രേഖ യഥാർത്ഥമാണോ, ആരാണ് ഇത് പുറത്തിറക്കിയത്, ഈ പേജുമായി ഒത്തുനോക്കാനുള്ള കണക്കുകൾ എന്നിവ അത് കാണിക്കും. പരിശോധന നിങ്ങളുടെ ഫോണിൽ നടക്കുന്നു, രേഖയെക്കുറിച്ച് ഒന്നും അയയ്ക്കുന്നില്ല. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല. | Scan this code, or open the link, to check this paper on geometer.dev. It shows whether the paper is genuine, who issued it, and the figures to compare with this page. The check runs on your phone and nothing about the paper is sent. It does not show that the numbers are true. |  |
 | `page.signatureNote` | ഈ രേഖ ആര് പുറത്തിറക്കി എന്നും അതിനുശേഷം മാറിയിട്ടില്ലെന്നും ഒപ്പ് കാണിക്കുന്നു. കണക്കുകൾ ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല. | A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true. |  |
 | `page.showWhatWeDid` | ഞങ്ങൾ ചെയ്തത് കാണുക ▸ | Show what we did ▸ |  |
@@ -474,9 +474,9 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 
 ## 7. The panel and the phone setup
 
-Everything a partner or builder reads in the panel, in Malayalam: signing in, the shop's status and its monthly cost line, and the six setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the shop's assistant, the checks). The "personality.*" lines are the shop assistant's small talk in its three personalities: {shop} is the shop's name and {name} the assistant's own name, which the partner may leave out. Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.
+Everything an Operator or builder reads in the panel, in Malayalam: signing in, the shop's status and its monthly cost line, and the six setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the shop's assistant, the checks). The "personality.*" lines are the shop assistant's small talk in its three personalities: {shop} is the shop's name and {name} the assistant's own name, which the Operator may leave out. Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.
 
-What to look for first: (1) is each line something a shop owner or a young partner on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and a payment gateway read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, a payment gateway's name, Google Calendar, Guard, Geometer).
+What to look for first: (1) is each line something a shop owner or a young Operator on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and a payment gateway read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, a payment gateway's name, Google Calendar, Guard, Geometer).
 
 | Id | Text (Malayalam) | Meaning (English) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- |
@@ -500,7 +500,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `login.byInvitation` | അക്കൗണ്ടുകൾ ക്ഷണം വഴി മാത്രമേ ഉണ്ടാക്കൂ. ഈ സെർവർ നടത്തുന്ന ആളോട് നിങ്ങളുടെ ലിങ്ക് ചോദിക്കൂ. | Accounts are made by invitation. Ask the person who runs this server for your link. |  |
 | `login.forgot` | പാസ്ഫ്രേസ് മറന്നോ? ഈ സെർവർ നടത്തുന്ന ആളോട് പുതിയ ലിങ്ക് ചോദിക്കൂ. അത് ഒരു തവണ മാത്രം പ്രവർത്തിക്കും. | Forgot your passphrase? Ask the person who runs this server for a new link. It works once. |  |
 | `login.forgotHosted` | പാസ്ഫ്രേസ് മറന്നോ? ഞങ്ങൾക്ക് തന്ന ഇമെയിലിൽ നിന്ന് hello@geometer.dev-ലേക്ക് എഴുതി പുതിയ ലിങ്ക് ചോദിക്കൂ. അത് ഒരു തവണ മാത്രം പ്രവർത്തിക്കും. | Forgot your passphrase? Write to hello@geometer.dev from the email you gave us, and ask for a new link. It works once. |  |
-| `login.partners` | ലോക്കൽ പാർട്ണർമാർ: geometer.dev-ലെ നിങ്ങളുടെ അക്കൗണ്ടിൽ നിന്ന് പാനൽ തുറക്കൂ. പാസ്ഫ്രേസ് വേണ്ട. | Local partners: open your panel from your account on geometer.dev. You need no passphrase. |  |
+| `login.partners` | ലോക്കൽ ഓപ്പറേറ്റർമാർ: geometer.dev-ലെ നിങ്ങളുടെ അക്കൗണ്ടിൽ നിന്ന് പാനൽ തുറക്കൂ. പാസ്ഫ്രേസ് വേണ്ട. | Local Operators: open your panel from your account on geometer.dev. You need no passphrase. |  |
 | `login.partnersLink` | geometer.dev-ലെ എന്റെ അക്കൗണ്ടിലേക്ക് പോകൂ | Go to my account on geometer.dev |  |
 | `signin.title` | നിങ്ങളുടെ പാനൽ തുറക്കൂ | Open your panel |  |
 | `signin.intro` | നിങ്ങൾ geometer.dev-ൽ ലോഗിൻ ചെയ്തിട്ടുണ്ട്. നിങ്ങളുടെ പേര് ഒരിക്കൽ പറയൂ, അടുത്ത തവണ നേരെ അകത്തു കയറാം. | You are signed in on geometer.dev. Tell us your name once, and next time you go straight in. |  |
@@ -514,11 +514,11 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `reset.problems.reset-unknown` | ഈ ലിങ്ക് ഞങ്ങൾ ഉണ്ടാക്കിയതല്ല. പുതിയത് ചോദിക്കൂ. | This link is not one we made. Ask for a new one. |  |
 | `reset.problems.reset-used` | ഈ ലിങ്ക് മുമ്പേ ഉപയോഗിച്ചു. പുതിയത് ചോദിക്കൂ. | This link was already used. Ask for a new one. |  |
 | `reset.problems.reset-expired` | ഈ ലിങ്കിന്റെ സമയം കഴിഞ്ഞു. പുതിയത് ചോദിക്കൂ. | This link has run out. Ask for a new one. |  |
-| `join.title` | നിങ്ങളുടെ partner അക്കൗണ്ട് ഉണ്ടാക്കൂ | Create your partner account |  |
+| `join.title` | നിങ്ങളുടെ Operator അക്കൗണ്ട് ഉണ്ടാക്കൂ | Create your Operator account |  |
 | `join.intro` | നിങ്ങളുടെ ക്ഷണം ഒരു തവണ മാത്രമേ പ്രവർത്തിക്കൂ. എങ്ങനെ ലോഗിൻ ചെയ്യണമെന്ന് തിരഞ്ഞെടുക്കൂ. | Your invitation works once. Choose how you sign in. |  |
 | `join.name` | നിങ്ങളുടെ പേര് | Your name |  |
 | `join.company` | കമ്പനിയുടെ അല്ലെങ്കിൽ ബിസിനസിന്റെ പേര് (വേണമെങ്കിൽ) | Company or business name (optional) |  |
-| `join.companyHelp` | കടയുടമയുടെ പ്രതിമാസ റിപ്പോർട്ടിൽ നിങ്ങളുടെ പേരിനു ശേഷം ഇത് കാണും. ഒഴിച്ചിട്ടാൽ പകരം "local partner" അല്ലെങ്കിൽ "builder" കാണും. 60 അക്ഷരം വരെ. | Shop owners read this after your name in their monthly report. Leave it empty and they read "local partner" or "builder" instead. Up to 60 characters. |  |
+| `join.companyHelp` | കടയുടമയുടെ പ്രതിമാസ റിപ്പോർട്ടിൽ നിങ്ങളുടെ പേരിനു ശേഷം ഇത് കാണും. ഒഴിച്ചിട്ടാൽ പകരം "local Operator" അല്ലെങ്കിൽ "builder" കാണും. 60 അക്ഷരം വരെ. | Shop owners read this after your name in their monthly report. Leave it empty and they read "local Operator" or "builder" instead. Up to 60 characters. |  |
 | `join.handle` | ലോഗിൻ ചെയ്യാനുള്ള പേര് | Name to sign in with |  |
 | `join.handleHelp` | 3 മുതൽ 40 വരെ അക്ഷരങ്ങൾ, അക്കങ്ങൾ, ഡോട്ട് അല്ലെങ്കിൽ ഡാഷ്. | 3 to 40 letters, digits, dots or dashes. |  |
 | `join.passphrase` | പാസ്ഫ്രേസ് | Passphrase |  |
@@ -537,7 +537,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `join.problems.long` | പാസ്ഫ്രേസ് വളരെ നീളമുള്ളതാണ് (പരമാവധി 200 അക്ഷരങ്ങൾ). | The passphrase is too long (200 characters at most). |  |
 | `join.problems.same-as-handle` | പാസ്ഫ്രേസ് നിങ്ങളുടെ ലോഗിൻ പേരിന് തുല്യമാകരുത്. | The passphrase cannot be the same as your sign-in name. |  |
 | `roles.builder` | ബിൽഡർ | builder |  |
-| `roles.partner` | പാർട്ണർ | partner |  |
+| `roles.partner` | ഓപ്പറേറ്റർ | Operator |  |
 | `invite.title` | ഒരാളെ ക്ഷണിക്കൂ | Invite someone |  |
 | `invite.role` | അവരുടെ റോൾ | They will be a |  |
 | `invite.note` | ആർക്കാണ് ഇത്? | Who is it for? |  |
@@ -680,10 +680,10 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.lines.gateway` | {gateway}-യുടെ ഫീസ് | {gateway}'s fee |  |
 | `cost.lines.geometer` | Geometer-ന്റെ പ്ലാൻ | Geometer's plan |  |
 | `cost.lines.hosting` | ഹോസ്റ്റിംഗ് വിഹിതം | Hosting share |  |
-| `cost.payer.builder-pays-whatsapp-provider` | ബിൽഡറോ പാർട്ണറോ അവരുടെ സ്വന്തം WhatsApp പ്രൊവൈഡർക്ക് അടയ്ക്കും | paid by the builder or partner to their own WhatsApp provider |  |
+| `cost.payer.builder-pays-whatsapp-provider` | ബിൽഡറോ പാർട്ണറോ അവരുടെ സ്വന്തം WhatsApp പ്രൊവൈഡർക്ക് അടയ്ക്കും | paid by the builder or Operator to their own WhatsApp provider |  |
 | `cost.payer.shop-pays-gupshup-wallet` | ഏകദേശ കണക്ക്; കടയുടെ സ്വന്തം Gupshup വാലറ്റിൽ നിന്നാണ് പോകുന്നത്, Geometer ബാലൻസിൽ നിന്നല്ല | an estimate, paid from the shop's own Gupshup wallet, not from Geometer's balance |  |
 | `cost.payer.shop-pays-gateway` | കട {gateway}-ക്ക് നേരിട്ട് അടയ്ക്കും | paid by the shop to {gateway} |  |
-| `cost.payer.builder-pays-geometer` | ബിൽഡറോ പാർട്ണറോ Geometer-ന് അടയ്ക്കും; AI മോഡൽ ഇതിൽ ഉൾപ്പെടുന്നു | paid to Geometer by the builder or partner; the AI model is included |  |
+| `cost.payer.builder-pays-geometer` | ബിൽഡറോ പാർട്ണറോ Geometer-ന് അടയ്ക്കും; AI മോഡൽ ഇതിൽ ഉൾപ്പെടുന്നു | paid to Geometer by the builder or Operator; the AI model is included |  |
 | `cost.payer.builder-pays-licence` | ബിൽഡർ Geometer-ന് അടയ്ക്കും, പ്രവർത്തിക്കുന്ന ഓരോ ക്ലയന്റ് ബിസിനസിനും ഒരിക്കൽ; AI കീ ബിൽഡറുടെ സ്വന്തം | paid to Geometer by the builder, once for each live client business; the AI key is the builder's own |  |
 | `cost.payer.hosting` | സെർവറിന്റെ ചെലവ്, പങ്കിട്ടത് | the server's cost, shared |  |
 | `cost.unknown` | അറിയില്ല | unknown |  |
@@ -727,7 +727,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.means.reminder` | ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ഒന്നും മാറുന്നില്ല. | Nothing changes for customers yet. |  |
 | `licence.means.warning` | ഉപഭോക്താക്കൾക്ക് ഇപ്പോൾ ഒന്നും മാറുന്നില്ല. പണം അടച്ചില്ലെങ്കിൽ കട പുതിയ ബുക്കിംഗോ പണം ചോദിക്കലോ എടുക്കില്ല. | Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests. |  |
 | `licence.means.wind_down` | ഉപഭോക്താക്കളോട് കടയെ ബന്ധപ്പെടാൻ പറയുന്നു. റീഫണ്ടുകളും റദ്ദാക്കലുകളും നേരത്തെ ബുക്ക് ചെയ്തതോ പണം അടച്ചതോ ആയ കാര്യങ്ങളും തുടരും. പണം അടച്ചാൽ ഉടൻ എല്ലാം തിരിച്ചുവരും. | Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once. |  |
-| `licence.means.stopped` | കടയിൽ നിന്ന് ഇനി ഒന്നും അയയ്ക്കില്ല. തുറന്നിരിക്കുന്ന പണമടയ്ക്കൽ ലിങ്കുകൾ റദ്ദാക്കി; കടയുടെ സ്വന്തം അക്കൗണ്ടുകളും കീകളും കടയുടേതായി തുടരും. ഒന്നും മായ്ച്ചിട്ടില്ല. സേവനം അവസാനിച്ചെന്ന് ഉടമയെ അറിയിച്ചു; മറ്റൊരു പ്രാദേശിക പാർട്ണറുമായി ബന്ധപ്പെടാൻ ഉടമയ്ക്ക് hello@geometer.dev എന്ന വിലാസത്തിലേക്ക് എഴുതാം. കടയുടെ രേഖകൾ നിങ്ങൾക്ക് മാത്രമേ ഡൗൺലോഡ് ചെയ്യാനാകൂ. | Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local partner. Only you can download the shop's records. |  |
+| `licence.means.stopped` | കടയിൽ നിന്ന് ഇനി ഒന്നും അയയ്ക്കില്ല. തുറന്നിരിക്കുന്ന പണമടയ്ക്കൽ ലിങ്കുകൾ റദ്ദാക്കി; കടയുടെ സ്വന്തം അക്കൗണ്ടുകളും കീകളും കടയുടേതായി തുടരും. ഒന്നും മായ്ച്ചിട്ടില്ല. സേവനം അവസാനിച്ചെന്ന് ഉടമയെ അറിയിച്ചു; മറ്റൊരു പ്രാദേശിക പാർട്ണറുമായി ബന്ധപ്പെടാൻ ഉടമയ്ക്ക് hello@geometer.dev എന്ന വിലാസത്തിലേക്ക് എഴുതാം. കടയുടെ രേഖകൾ നിങ്ങൾക്ക് മാത്രമേ ഡൗൺലോഡ് ചെയ്യാനാകൂ. | Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local Operator. Only you can download the shop's records. |  |
 | `licence.means.none` | Geometer-ന്റെ ലീസ് ഇതുവരെ ഈ കടയെ ഉൾക്കൊള്ളുന്നില്ല, അതിനാൽ ഇതിന്റെ Guard-കൾ പുതിയ ജോലി എടുക്കുന്നില്ല. റീഫണ്ടുകളും റദ്ദാക്കലുകളും ഉള്ളത് വായിക്കലും തുടരും. ട്രയലോ പ്ലാനോ ഉണ്ടെങ്കിൽ, ആദ്യ ഡിപ്ലോയ് കഴിഞ്ഞ് ഒന്നോ രണ്ടോ മിനിറ്റിനുള്ളിൽ ലീസ് ഈ കടയെ ഉൾപ്പെടുത്തും. ഇല്ലെങ്കിൽ സപ്പോർട്ടിന് എഴുതുക. ഒരാൾ മറുപടി നൽകും. | Geometer's lease does not cover this shop yet, so its Guards take no new work. Refunds, cancellations and reading what is there still go through. When the trial or a plan covers the shop, the lease lists it within a minute or two of its first deploy. If it does not, write to support. A person answers. |  |
 | `licence.paidThrough` | അടുത്ത പണം അടയ്ക്കേണ്ടത്: 8 Dec 2026. | Next payment due: 8 Dec 2026. |  |
 | `licence.windDownOn` | പണം അടച്ചില്ലെങ്കിൽ 7 Jan 2027 മുതൽ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | If it is not paid, new bookings pause on 7 Jan 2027. |  |
@@ -963,7 +963,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.accounts.whatsapp.selfServe.signup` | Gupshup-ൽ സൈൻ അപ്പ് ചെയ്യൂ | Sign up at Gupshup |  |
 | `setup.accounts.whatsapp.selfServe.guide` | ആപ്പിന്റെ പേരും API key-യും എവിടെ കിട്ടും | How to find the app name and API key |  |
 | `setup.accounts.whatsapp.selfServe.steps.1` | കട Gupshup-ൽ സൈൻ അപ്പ് ചെയ്ത് തന്റെ നമ്പറിനായി ഒരു WhatsApp ആപ്പ് ഉണ്ടാക്കുന്നു. | The shop signs up at Gupshup and makes a WhatsApp app for its number. |  |
-| `setup.accounts.whatsapp.selfServe.steps.2` | Gupshup അക്കൗണ്ടിൽ പാർട്ണറെ അഡ്മിൻ ആയി ചേർക്കൂ. | Add the partner as an admin of the Gupshup account. |  |
+| `setup.accounts.whatsapp.selfServe.steps.2` | Gupshup അക്കൗണ്ടിൽ പാർട്ണറെ അഡ്മിൻ ആയി ചേർക്കൂ. | Add the Operator as an admin of the Gupshup account. |  |
 | `setup.accounts.whatsapp.selfServe.steps.3` | ആപ്പിൽ ഞങ്ങളുടെ മെസേജ് ടെംപ്ലേറ്റുകൾ ചേർത്ത്, Gupshup അവ അംഗീകരിച്ചതായി (approved) കാണിക്കുന്നതുവരെ കാത്തിരിക്കൂ. | In the app, add our message templates and wait until Gupshup shows them as approved. |  |
 | `setup.accounts.whatsapp.selfServe.steps.4` | Gupshup ഡാഷ്ബോർഡിൽ നിന്ന് ആപ്പിന്റെ പേരും API key-യും കോപ്പി ചെയ്ത് താഴെ ടൈപ്പ് ചെയ്യൂ, കൂടെ കോൾബാക്ക് വിലാസത്തിനുള്ള നിങ്ങളുടെ സ്വന്തം രഹസ്യവാക്കും. | Copy the app's name and API key from the Gupshup dashboard and type them below, with a secret word of your own for the callback address. |  |
 | `setup.accounts.whatsapp.selfServe.steps.5` | ആപ്പിന്റെ Webhooks ടാബിൽ താഴെ കാണുന്ന വിലാസം ചേർക്കൂ, അവസാനം ആ രഹസ്യവാക്ക് വരണം. | In the app's Webhooks tab, add the address shown below, ending with that secret word. |  |
@@ -1073,10 +1073,10 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `takeOut.check` | ഫയലുകൾ പരിശോധിക്കാൻ അകത്തെ README നോക്കുക. | To check the files, use the README inside. |  |
 | `handover.heading` | ഈ കട മറ്റൊരാൾക്ക് കൈമാറുക | Move this shop to someone else |  |
 | `handover.button` | ഈ കട കൈമാറുക… | Move this shop… |  |
-| `handover.intro` | ഈ സെർവറിലെ മറ്റൊരു പാർട്ണർക്കോ ബിൽഡർക്കോ ഈ കടയുടെ നടത്തിപ്പ് നൽകുക. ആദ്യം കടയുടമ സ്വന്തം ഫോണിൽ നിന്ന് സമ്മതിക്കണം. | Give the running of this shop to another partner or builder on this server. The shop owner has to agree first, from their own phone. |  |
+| `handover.intro` | ഈ സെർവറിലെ മറ്റൊരു ഓപ്പറേറ്റർക്കോ ബിൽഡർക്കോ ഈ കടയുടെ നടത്തിപ്പ് നൽകുക. ആദ്യം കടയുടമ സ്വന്തം ഫോണിൽ നിന്ന് സമ്മതിക്കണം. | Give the running of this shop to another Operator or builder on this server. The shop owner has to agree first, from their own phone. |  |
 | `handover.moves` | മാറുന്നത്: ഇവിടെ ഈ കട ആർക്കൊക്കെ കാണാനും മാറ്റാനും കഴിയും, ഉടമയുടെ പ്രതിമാസ റിപ്പോർട്ടിലെ പേര്. | What moves: who can see and change this shop here, and the name on the owner's monthly report. |  |
 | `handover.stays` | മാറാത്തത്: കടയുടെ സ്വന്തം WhatsApp നമ്പർ, പേയ്മെന്റ് അക്കൗണ്ട്, കലണ്ടർ എന്നിവ കൂടെ പോകില്ല. കീകൾ കൈമാറില്ല: അടുത്തതായി കട നടത്തുന്നയാൾ അവ വീണ്ടും നൽകണം. | What stays: the shop's own WhatsApp number, payment account and calendar do not move. Keys are not carried across: whoever serves the shop next enters them again. |  |
-| `handover.never` | ഒരു കട മറ്റൊരു പാർട്ണർക്കോ ബിൽഡർക്കോ പോകാം. Geometer-ലേക്ക് പോകാൻ പറ്റില്ല. | A shop can go to another partner or builder. It cannot go to Geometer. |  |
+| `handover.never` | ഒരു കട മറ്റൊരു ഓപ്പറേറ്റർക്കോ ബിൽഡർക്കോ പോകാം. Geometer-ലേക്ക് പോകാൻ പറ്റില്ല. | A shop can go to another Operator or builder. It cannot go to Geometer. |  |
 | `handover.who` | അവരുടെ സൈൻ-ഇൻ പേര് | Their sign-in name |  |
 | `handover.whoHelp` | ഈ പാനലിൽ അവർ സൈൻ ഇൻ ചെയ്യുന്ന പേര്. | The name they sign in to this panel with. |  |
 | `handover.why` | എന്തിനാണ് കട മാറ്റുന്നത്? | Why is it moving? |  |
@@ -1305,14 +1305,14 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `owner.first.chromeCopy` | ലിങ്ക് കോപ്പി ചെയ്യൂ | Copy link |  |
 | `owner.first.chromeCopied` | ലിങ്ക് കോപ്പി ചെയ്തു. Chrome-ൽ പേസ്റ്റ് ചെയ്യൂ. | Link copied. Paste it in Chrome. |  |
 | `owner.first.noLock` | നിങ്ങളുടെ ഫോണിന് സ്ക്രീൻ ലോക്ക് (PIN, പാറ്റേൺ അല്ലെങ്കിൽ വിരലടയാളം) വേണം. സെറ്റിംഗ്സിൽ സജ്ജമാക്കി വീണ്ടും അമർത്തൂ. | Your phone needs a screen lock (PIN, pattern or fingerprint). Set one in Settings, then press again. |  |
-| `owner.first.notYet` | ഈ കോഡ് ഇപ്പോൾ പ്രവർത്തിക്കുന്നില്ല. പങ്കാളി ഇപ്പോൾ കാണിച്ചതാണെങ്കിൽ 15 സെക്കൻഡ് കാത്ത് വീണ്ടും തുറക്കൂ. എന്നിട്ടും ശരിയായില്ലെങ്കിൽ പുതിയത് ചോദിക്കൂ. | This code isn't working yet. If your partner just showed it, wait 15 seconds and open it again. If it still fails, ask for a new one. |  |
+| `owner.first.notYet` | ഈ കോഡ് ഇപ്പോൾ പ്രവർത്തിക്കുന്നില്ല. ഓപ്പറേറ്റർ ഇപ്പോൾ കാണിച്ചതാണെങ്കിൽ 15 സെക്കൻഡ് കാത്ത് വീണ്ടും തുറക്കൂ. എന്നിട്ടും ശരിയായില്ലെങ്കിൽ പുതിയത് ചോദിക്കൂ. | This code isn't working yet. If your Operator just showed it, wait 15 seconds and open it again. If it still fails, ask for a new one. |  |
 | `owner.first.step2` | ഘട്ടം 2 / 2: അലേർട്ടുകൾ ഓണാക്കൂ | Step 2 of 2: turn on alerts |  |
 | `owner.first.step2Intro` | സൈൻ ഇൻ കഴിഞ്ഞു. ഇനി അലേർട്ടുകൾ ഓണാക്കൂ, പേയ്‌മെന്റോ റീഫണ്ടോ നിങ്ങളെ കാത്തിരിക്കുമ്പോൾ ഈ ഫോൺ അറിയിക്കും. | Sign-in is done. Now turn on alerts, so this phone buzzes when a payment or a refund needs you. |  |
 | `owner.first.alertsOn` | അലേർട്ടുകൾ: ഓൺ, 2 ഫോണിൽ | Alerts: on, on 2 phones |  |
 | `owner.first.alertsOff` | അലേർട്ടുകൾ: ഓഫ്. എന്തെങ്കിലും വേണ്ടപ്പോൾ നിങ്ങൾ അറിയില്ല. | Alerts: off. You will not hear when something needs you. |  |
 | `owner.first.alertsTurnOn` | അലേർട്ടുകൾ ഓണാക്കൂ | Turn on alerts |  |
-| `owner.first.partner` | നിങ്ങളുടെ പങ്കാളി: Divya | Your partner: Divya |  |
-| `owner.first.partnerNoName` | നിങ്ങളുടെ പങ്കാളി | Your partner |  |
+| `owner.first.partner` | നിങ്ങളുടെ ഓപ്പറേറ്റർ: Divya | Your Operator: Divya |  |
+| `owner.first.partnerNoName` | നിങ്ങളുടെ ഓപ്പറേറ്റർ | Your Operator |  |
 | `owner.first.call` | വിളിക്കൂ | Call |  |
 | `owner.first.whatsapp` | WhatsApp | WhatsApp |  |
 | `owner.first.shopCall` | കടയെ വിളിക്കൂ | Call the shop |  |
@@ -1334,7 +1334,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `door.say.notHere.title` | ഇവിടെ അല്ല | Not here |  |
 | `door.say.notHere.text` | പേജിലെ ലിങ്കുകളും ബട്ടണുകളും ഉപയോഗിക്കൂ. | Use the page's links and buttons. |  |
 | `door.say.home.title` | കടകളുടെ പേജുകൾ | Shop pages |  |
-| `door.say.home.text` | ഓരോ കടയുടെയും പേജ് അതിന്റെ ചെറിയ പേരിലാണ്, ഉദാ. /veena-salon. കടകൾ ഇത് അവരുടെ പ്രാദേശിക പങ്കാളിയോടൊപ്പം സജ്ജമാക്കുന്നു. | Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local partner. |  |
+| `door.say.home.text` | ഓരോ കടയുടെയും പേജ് അതിന്റെ ചെറിയ പേരിലാണ്, ഉദാ. /veena-salon. കടകൾ ഇത് അവരുടെ പ്രാദേശിക ഓപ്പറേറ്റർയോടൊപ്പം സജ്ജമാക്കുന്നു. | Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local Operator. |  |
 | `door.say.waitMinute.title` | വളരെയധികം അഭ്യർത്ഥനകൾ | Too many requests |  |
 | `door.say.waitMinute.text` | ഒരു മിനിറ്റ് കാത്തിരിക്കൂ. | Please wait a minute. |  |
 | `door.say.waitWhile.title` | വളരെയധികം അഭ്യർത്ഥനകൾ | Too many requests |  |

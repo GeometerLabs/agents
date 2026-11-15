@@ -47,7 +47,7 @@ export interface ShopLicence {
   stop_on: string | null;
   export_until: string | null;
   notice: "wind_down" | "stop" | null;
-  /** The partner's payment link for the invoice holding the shop back: https only, or null. */
+  /** The Operator's payment link for the invoice holding the shop back: https only, or null. */
   renew_url: string | null;
   /**
    * Only for a shop the builder's trial covers (no plan; decision 39, monorepo ADR-0070): the trial's LAST DAY, which the panel shows as "the last day of the trial

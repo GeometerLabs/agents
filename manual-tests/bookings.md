@@ -1,6 +1,6 @@
 <!--
 What this is for: the manual test script for the Bookings template (templates/commerce/bookings) on the real services: WhatsApp sandbox, Razorpay test mode, UPI, a test Google calendar.
-Who runs it: the owner or a partner, by hand, in one sitting (plus one step the next day). Read README.md in this folder first (set-up and procedures P1 to P6).
+Who runs it: the owner or an Operator, by hand, in one sitting (plus one step the next day). Read README.md in this folder first (set-up and procedures P1 to P6).
 Entry names below are the ones the code writes (templates/commerce/bookings/src/agent.ts, modules/payments/refunds.ts, modules/payments/owner-marked/obligations.ts).
 -->
 

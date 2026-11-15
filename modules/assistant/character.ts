@@ -1,8 +1,8 @@
 // The shop's character (item 11e, decision 47; built 14 Nov 2026 as item 11i's character half): one per shop, carried in the shop's settings
-// (`assistant.character`), rolled by the partner in the panel's Character step with the owner beside them. Owner, 14 Nov: the styles go by DiceBear's own names,
-// and a character has no name unless the partner gives it one: pages and WhatsApp say "<the shop>'s assistant", with the character's name only when one was set.
+// (`assistant.character`), rolled by the Operator in the panel's Character step with the owner beside them. Owner, 14 Nov: the styles go by DiceBear's own names,
+// and a character has no name unless the Operator gives it one: pages and WhatsApp say "<the shop>'s assistant", with the character's name only when one was set.
 // This file is what every part of the product shares about it, and it draws nothing:
-//  - the five DiceBear styles the owner approved (docs/product/characters/README.md), each with the one colour a partner may change and that colour's own DiceBear
+//  - the five DiceBear styles the owner approved (docs/product/characters/README.md), each with the one colour an Operator may change and that colour's own DiceBear
 //    palette (its first eight values; a bundle test checks them against the vendored definitions);
 //  - the five moods a picture shows, by the names the pictures are served under (`well`, `needs`, `wrong`, `closed`, `busy`, as Streetlist names them), and the
 //    approved eyes and mouth for each style and mood;
@@ -28,7 +28,7 @@ const PASTELS = ["7dd3fc", "a5b4fc", "c4b5fd", "f0abfc", "fda4af", "fca5a5", "fd
 
 /**
  * Each style as the panel shows it: DiceBear's own name for it (owner, 14 Nov; Latin letters in every language, like a brand), the DiceBear colour a swatch changes
- * (`<option>Color`), and the first eight values of that colour in the style's own definition. Only the partner's panel names a style; no customer or owner sees it.
+ * (`<option>Color`), and the first eight values of that colour in the style's own definition. Only the Operator's panel names a style; no customer or owner sees it.
  */
 export const STYLE_INFO: Record<CharacterStyle, { name: string; colourOption: "body" | "pot" | "face" | "glow"; palette: readonly string[] }> = {
   clay: { name: "Clay", colourOption: "body", palette: ["c4795c", "d99277", "e0bd6a", "cf9f52", "a8b37e", "8ba06b", "83b0a4", "86a5c3"] },
@@ -86,7 +86,7 @@ export interface CharacterPictures { base: string; version: string }
 export const pictureUrl = (p: CharacterPictures, face: Face, format: PictureFormat): string => `${p.base}/character/${face}.${format}?v=${p.version}`;
 
 export interface Character {
-  /** What the assistant calls itself, when the partner gave it a name: 1 to 24 letters in any script. Left out: it is "<the shop>'s assistant". */
+  /** What the assistant calls itself, when the Operator gave it a name: 1 to 24 letters in any script. Left out: it is "<the shop>'s assistant". */
   name?: string;
   style: CharacterStyle;
   /** DiceBear's seed: decides the shape, top, details, colours and tile. The panel's Roll makes one that begins with the shop's id. Left out: the shop's id. */
@@ -102,10 +102,10 @@ const NAME_RE = /^[\p{L}\p{M}][\p{L}\p{M} '’-]{0,23}$/u;
 /** A seed: plain characters only, so it can sit in a file name, a form and a URL unchanged. */
 export const SEED_RE = /^[a-z0-9][a-z0-9-]{0,79}$/u;
 
-/** The character a shop has when its settings turn the assistant on but name none: Clay with the shop's id as its seed, and no name. The partner sets the real one at the visit. */
+/** The character a shop has when its settings turn the assistant on but name none: Clay with the shop's id as its seed, and no name. The Operator sets the real one at the visit. */
 export const defaultCharacter = (): Character => ({ style: "clay", personality: "warm" });
 
-/** Who the assistant is, in words: "Glow Salon's assistant", or with a name the partner set, "<name>, Glow Salon's assistant". Machine-written beyond English. */
+/** Who the assistant is, in words: "Glow Salon's assistant", or with a name the Operator set, "<name>, Glow Salon's assistant". Machine-written beyond English. */
 export const ASSISTANT_OF: Record<Language, (shop: string, name?: string) => string> = {
   en: (shop, name) => `${name ? `${name}, ` : ""}${shop}'s assistant`,
   hi: (shop, name) => `${name ? `${name}, ` : ""}${shop} का असिस्टेंट`,
