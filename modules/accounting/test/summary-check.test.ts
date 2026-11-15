@@ -24,6 +24,7 @@ import type { MoneyEvent } from "../post.ts";
 import { accountingSummary, reportAccounting } from "../summary.ts";
 import { MONEY_BLOCK_WORDS, moneyBlock } from "../report-block.ts";
 import { BadInput, checkAccounting, renderCheck } from "../check.ts";
+import { esc } from "../../report/page.ts";
 
 const TZ = "Asia/Kolkata";
 const at = (month: number, day: number, hour: number, year = 2026) => zonedToMs({ year, month, day }, { hour, minute: 0 }, TZ);
@@ -197,4 +198,21 @@ test("the Money this month block: bold figures from the summary, in four languag
     assert.doesNotMatch(text, /debit|credit|ledger|journal|receivable|liabilit/i);
   }
   assert.ok(!moneyBlock(summary, MONEY_BLOCK_WORDS.en).includes(MONEY_BLOCK_WORDS.en.toCome), "only Fees shows what is still to come");
+});
+
+test("a refund made on a person's word only is counted on its own and left out of the block's \"given back\", as the owner's Money section does", () => {
+  const w = busy();
+  w.clock.set(at(11, 22, 10));
+  // b-3's owed ₹100 is settled on a person's word: no provider's or owner's record shows the money moved
+  w.post({ kind: "refund_made", case: "b-3", owed: "b-3:p3", paymentId: "p3", amountPaise: 10000, method: "gateway", evidence: "person_word" }, "refund");
+  const summary = accountingSummary(journal(w.record.entries(), LEGACY), FROM, TO, w.record.entries());
+  assert.deepEqual(summary.byWord, { entries: 1, paise: 10000 });
+  assert.equal(summary.byKind.find((k) => k.kind === "refund_made")?.paise, 40000, "the journal still holds both refunds");
+  const en = MONEY_BLOCK_WORDS.en;
+  const cards = [...moneyBlock(summary, en).matchAll(/<strong>([^<]+)<\/strong><span>([^<]+)<\/span>/g)].map((m) => [m[2], m[1]]);
+  assert.deepEqual(Object.fromEntries(cards)[en.givenBack], "₹300", "given back: the provider's refund only");
+  assert.deepEqual(Object.fromEntries(cards)[esc(en.byWord)], "₹100", "the person's-word refund on its own card");
+  // the open check re-adds it from the pack as well
+  const { pack, report } = packAndReport(w.record.entries());
+  assert.equal(checkAccounting(pack, report).ok, true);
 });

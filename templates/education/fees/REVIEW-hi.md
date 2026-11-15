@@ -279,6 +279,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `moneyBlock.received` | मिले | Received |  |
 | `moneyBlock.givenBack` | लौटाए | Given back |  |
 | `moneyBlock.kept` | रद्द करने पर रखे | Kept from cancellations |  |
+| `moneyBlock.byWord` | किसी के कहने पर निपटाए गए, ऊपर के जोड़ में नहीं | Settled on someone's word, not counted in the totals above |  |
 | `upiLabel.collected` | मालिक द्वारा मिला हुआ दर्ज | Marked paid by owner |  |
 | `upiLabel.givenBack` | मालिक द्वारा भेजा हुआ दर्ज रिफंड | Refunds marked sent by owner |  |
 | `upiLabel.notChecked` | भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं) | automatic payment checking (with UPI you mark each payment) |  |

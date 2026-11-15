@@ -17,6 +17,8 @@ export interface MoneyBlockWords {
   received: string; givenBack: string; kept: string;
   /** At the month's end: refunds still owed back to customers, and (Fees) fees still to come in. */
   owedBack: string; toCome: string;
+  /** Refunds settled on someone's word only: shown on their own and left out of "given back" (the owner's Money section words them the same way). */
+  byWord: string;
 }
 
 const OWN: Record<Language, Pick<MoneyBlockWords, "heading" | "owedBack" | "toCome">> = {
@@ -28,22 +30,24 @@ const OWN: Record<Language, Pick<MoneyBlockWords, "heading" | "owedBack" | "toCo
 
 const wordsFor = (l: Language): MoneyBlockWords => {
   const o = OWNER_MONEY_WORDS[l];
-  return { ...OWN[l], received: o.received, givenBack: o.givenBack, kept: o.kept };
+  return { ...OWN[l], received: o.received, givenBack: o.givenBack, kept: o.kept, byWord: o.byWordTitle };
 };
 
 export const MONEY_BLOCK_WORDS: Record<Language, MoneyBlockWords> = { en: wordsFor("en"), hi: wordsFor("hi"), ml: wordsFor("ml"), kn: wordsFor("kn") };
 
 /**
  * The block as HTML for the report page (the cards of modules/report/page.ts). `toCome`: a template that bills in advance (Fees) also shows what is still to come in.
- * What is shown: received and given back always; what the shop kept only when something was; what is still owed back always (a plain zero is an answer).
+ * What is shown: received and given back always; what the shop kept only when something was; refunds settled on someone's word only when there were some, and
+ * never inside "given back" (the same rule as the owner's Money section); what is still owed back always (a plain zero is an answer).
  */
 export function moneyBlock(summary: AccountingSummary, words: MoneyBlockWords, options: { toCome?: boolean } = {}): string {
   const paiseOf = (kind: string): number => summary.byKind.find((k) => k.kind === kind)?.paise ?? 0;
   const card = (label: string, paise: number): string => `<div class="card">${fig(inr(paise))}<span>${esc(label)}</span></div>`;
   const cards = [
     card(words.received, paiseOf("received")),
-    card(words.givenBack, paiseOf("refund_made")),
+    card(words.givenBack, paiseOf("refund_made") - summary.byWord.paise),
     ...(paiseOf("kept") > 0 ? [card(words.kept, paiseOf("kept"))] : []),
+    ...(summary.byWord.paise > 0 ? [card(words.byWord, summary.byWord.paise)] : []),
     card(words.owedBack, summary.closing.refundsOwedPaise),
     ...(options.toCome ? [card(words.toCome, Math.max(0, summary.closing.receivablePaise))] : []),
   ];

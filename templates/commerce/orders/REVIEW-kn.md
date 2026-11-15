@@ -292,6 +292,7 @@ Annapurna Tiffins · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ನ�
 | `moneyBlock.received` | ಬಂದದ್ದು | Received |  |
 | `moneyBlock.givenBack` | ಹಿಂದಿರುಗಿಸಿದ್ದು | Given back |  |
 | `moneyBlock.kept` | ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು | Kept from cancellations |  |
+| `moneyBlock.byWord` | ಯಾರದೋ ಮಾತಿನ ಮೇಲೆ ಮುಗಿಸಿದ್ದು, ಮೇಲಿನ ಮೊತ್ತದಲ್ಲಿ ಇಲ್ಲ | Settled on someone's word, not counted in the totals above |  |
 | `upiLabel.collected` | ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ | Advance marked paid by owner |  |
 | `upiLabel.givenBack` | ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್ | Refunds marked sent by owner |  |
 | `upiLabel.notChecked` | ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ) | automatic payment checking (with UPI you mark each payment) |  |

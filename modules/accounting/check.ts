@@ -90,6 +90,8 @@ function compare(report: AccountingSummary, pack: AccountingSummary): CheckLine[
     const say = (d: typeof r) => (d ? `${d.count} from ${d.first} to ${d.last}${d.skipped.length ? `, skipping ${d.skipped.map((s) => `${s.from} to ${s.to}`).join(", ")}` : ""}` : "none");
     out.push(same ? { ok: true, text: `Documents ${key}: ${say(r)}, the same.` } : { ok: false, text: `Documents ${key}: the report says ${say(r)} but the pack gives ${say(k)}.` });
   }
+  figure(out, "Refunds made on a person's word only", report.byWord.paise, pack.byWord.paise);
+  out.push(report.byWord.entries === pack.byWord.entries ? { ok: true, text: `Refunds on a person's word: ${report.byWord.entries}, the same.` } : { ok: false, text: `Refunds on a person's word: the report says ${report.byWord.entries} but the pack has ${pack.byWord.entries}.` });
   out.push(report.problems === pack.problems ? { ok: true, text: `Entries that could not be read as money: ${report.problems}, the same.` } : { ok: false, text: `Entries that could not be read as money: the report says ${report.problems} but the pack gives ${pack.problems}.` });
   return out;
 }
@@ -100,6 +102,7 @@ function summaryOf(v: unknown): AccountingSummary {
   need(isObj(s) && Array.isArray(s.accounts) && Array.isArray(s.byKind) && Array.isArray(s.documents) && isObj(s.closing) && Number.isSafeInteger(s.problems), "The report's books summary is not in the shape this check reads.");
   need(s!.accounts.every((a) => isObj(a) && typeof a.account === "string" && ints([a.debitPaise, a.creditPaise])) && s!.byKind.every((k) => isObj(k) && typeof k.kind === "string" && ints([k.entries, k.paise])), "The report's books summary has a figure that is not a whole number of paise.");
   need(ints([s!.closing.advancesPaise, s!.closing.refundsOwedPaise, s!.closing.receivablePaise]), "The report's closing balances are not whole numbers of paise.");
+  need(isObj(s!.byWord) && ints([s!.byWord.entries, s!.byWord.paise]), "The report's refunds on a person's word are not whole numbers.");
   need(s!.documents.every((d) => isObj(d) && typeof d.series === "string" && typeof d.fy === "string" && typeof d.first === "string" && typeof d.last === "string" && Number.isSafeInteger(d.count) && Array.isArray(d.skipped)), "The report's document list is not in the shape this check reads.");
   return s!;
 }

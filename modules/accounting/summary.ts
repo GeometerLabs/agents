@@ -14,6 +14,9 @@
 //    wrong, which then shows);
 //  - documents: per series and financial year, the documents issued in the period: first number, last number, how many, and any numbers skipped (a restore moves a
 //    series on; the skipped range is said, never hidden);
+//  - byWord: the period's refunds made on a person's word only (evidence person_word: no provider's or owner's record shows the money moved). They are in byKind's
+//    refund_made, as the journal holds them, and the page takes them OUT of "given back" and lists them on their own, the same rule as the owner's Money section
+//    (owner-money.ts byWord), so the report and the owner's page never say two different "given back" figures;
 //  - problems: how many of the period's record entries the journal could not read as money. It needs the record's entries only for their times (a problem names its
 //    entry by number), so they are handed in.
 import { journal as foldJournal } from "./journal.ts";
@@ -32,6 +35,8 @@ export interface AccountingSummary {
   /** At the period's end: what the shop holds for customers, what it still owes back, and what is still to come in (a fee's receivable; negative when paid beyond it). */
   closing: { advancesPaise: number; refundsOwedPaise: number; receivablePaise: number };
   documents: SummaryDocuments[];
+  /** Refunds made in the period on a person's word only: how many entries and how many paise (inside byKind's refund_made). */
+  byWord: { entries: number; paise: number };
   problems: number;
 }
 
@@ -42,6 +47,7 @@ export function accountingSummary(journal: Journal, fromIso: string, toIso: stri
 
   const accounts = new Map<string, SummaryAccount>();
   const kinds = new Map<string, { seqs: Set<number>; paise: number }>();
+  const byWord = { seqs: new Set<number>(), paise: 0 };
   const closing = new Map<string, number>(); // debits less credits up to the period's end
   for (const l of journal.lines) {
     if (l.at >= toIso) continue;
@@ -55,6 +61,7 @@ export function accountingSummary(journal: Journal, fromIso: string, toIso: stri
     k.seqs.add(l.seq);
     k.paise += l.debitPaise; // every entry balances, so what it moved is the sum of its debits
     kinds.set(l.kind, k);
+    if (l.kind === "refund_made" && l.evidence === "person_word") { byWord.seqs.add(l.seq); byWord.paise += l.debitPaise; }
   }
   const held = (account: string): number => closing.get(account) ?? 0;
 
@@ -94,6 +101,7 @@ export function accountingSummary(journal: Journal, fromIso: string, toIso: stri
       receivablePaise: held(ACCOUNTS.receivable.code) + 0,
     },
     documents,
+    byWord: { entries: byWord.seqs.size, paise: byWord.paise },
     problems,
   };
 }

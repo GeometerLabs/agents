@@ -347,6 +347,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `moneyBlock.received` | കിട്ടിയത് | Received |  |
 | `moneyBlock.givenBack` | തിരികെ നൽകിയത് | Given back |  |
 | `moneyBlock.kept` | റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത് | Kept from cancellations |  |
+| `moneyBlock.byWord` | ആരുടെയോ വാക്കിൽ തീർത്തത്, മുകളിലെ തുകകളിൽ ഇല്ല | Settled on someone's word, not counted in the totals above |  |
 | `upiLabel.deposits` | ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ് | Deposits marked paid by owner |  |
 | `upiLabel.givenBack` | ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട് | Refunds marked sent by owner |  |
 | `notTested.upi-not-automatic` | പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു | automatic payment checking: with UPI the owner marks each payment received |  |
