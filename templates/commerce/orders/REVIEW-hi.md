@@ -276,6 +276,13 @@ Annapurna Tiffins · फरवरी 2027 · अभ्यास वाले न
 | `languageName.en` | अंग्रेज़ी | English |  |
 | `languageName.ml` | मलयालम | Malayalam |  |
 | `languageName.kn` | कन्नड़ | Kannada |  |
+| `moneyBlock.heading` | इस महीने के पैसे | Money this month |  |
+| `moneyBlock.owedBack` | महीने के अंत में ग्राहकों को लौटाना बाकी | Still owed back at the end of the month |  |
+| `moneyBlock.toCome` | महीने के अंत में अभी आना बाकी | Still to come at the end of the month |  |
+| `moneyBlock.received` | मिले | Received |  |
+| `moneyBlock.givenBack` | लौटाए | Given back |  |
+| `moneyBlock.kept` | रद्द करने पर रखे | Kept from cancellations |  |
+| `moneyBlock.machine` | ये शब्द मशीन से लिखे गए हैं; कोई हिंदी पाठक इन्हें जाँचेगा। |  |  |
 | `upiLabel.collected` | मालिक द्वारा मिला हुआ दर्ज एडवांस | Advance marked paid by owner |  |
 | `upiLabel.givenBack` | मालिक द्वारा भेजा हुआ दर्ज रिफंड | Refunds marked sent by owner |  |
 | `upiLabel.notChecked` | भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं) | automatic payment checking (with UPI you mark each payment) |  |
