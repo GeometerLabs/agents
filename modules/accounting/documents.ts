@@ -1,5 +1,5 @@
 // What a customer's document says, as plain data: a receipt, a bill, a bill of supply or a refund note (plan section 5 and 7.2). A pure function, no page, no
-// clock, no store: document-page.ts draws it, and a later step wires it to the case pages. Kept apart from the page so the rules (what a shop's status may show) are
+// clock, no store: document-page.ts draws it, and case-documents.ts picks the documents of one page's cases for the booking's, order's and fee's own pages. Kept apart from the page so the rules (what a shop's status may show) are
 // tested without HTML.
 //
 // A CALLER MUST HAND IN:

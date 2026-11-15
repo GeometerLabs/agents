@@ -2,6 +2,7 @@
 //
 //   GET  /s/<shop>/                      the menu page (?lang=, ?date=)                        POST /s/<shop>/order        start an order (a form)
 //   GET  /s/<shop>/order/<handle>        an order's own page                                   POST .../order/<handle>/cancel, .../order/<handle>/paid
+//   GET  .../order/<handle>/d/<number>   one of the order's own receipts (receipts.ts); another order's number is a plain not-found
 //   GET  .../order/<handle>/sw.js, POST .../order/<handle>/push   batch 3: the page's alerts ("Tell me on this phone"), as a booking page has them
 //   ...  /s/<shop>/api/v1/...            the ordering API (api.ts orderApiRequest)             POST /s/<shop>/mcp          the same operations for AI assistants
 //
@@ -18,6 +19,7 @@ import { OpError } from "./ops.ts";
 import type { OrderOps } from "./order-ops.ts";
 import { menuPage, orderPage } from "./order-page.ts";
 import { PAGE } from "./words.ts";
+import { DOCUMENT_SUB, documentHtml, receiptsBox, receiptsOf } from "./receipts.ts";
 import { ORDER_PAGE } from "./words-orders-fees.ts";
 import { customerPagePolicy } from "./front.ts"; // used when a request is handled, never while the modules load (front.ts imports this file too)
 import type { FrontKit, RouteArgs } from "./front.ts";
@@ -111,7 +113,7 @@ export async function orderRoute(kit: FrontKit, a: RouteArgs, ops: { web: OrderO
     }
   }
   // "<page>/" is the page too: a tapped alert opens its worker's scope, which ends in a slash
-  const o = /^\/order\/([^/]+)(\/|\/cancel|\/paid|\/sw\.js|\/push)?$/u.exec(rest);
+  const o = /^\/order\/([^/]+)(\/|\/cancel|\/paid|\/sw\.js|\/push|\/d\/.+)?$/u.exec(rest);
   if (o) {
     const handle = o[1];
     if (limiter.over("wrong", address)) return tooMany();
@@ -148,11 +150,19 @@ export async function orderRoute(kit: FrontKit, a: RouteArgs, ops: { web: OrderO
       catch (e) { if (e instanceof BackendError) throw e; limiter.take("wrong", address); }
       return kit.redirect(res, `${shop.publicUrl}/order/${handle}?lang=${language}`);
     }
-    if (method !== "GET" || sub) return kit.sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
+    if (method !== "GET" || (sub && !sub.startsWith("/d/"))) return kit.sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
     if (!limiter.take("read", address)) return tooMany();
     const view = await viewNow();
     if (!view) limiter.take("wrong", address);
     const language = kit.languageOf(req, url, offer.shop.languages);
+    // the order's receipts: only those of the order this handle opens (the runtime finds them by the handle's hash), so another order's number is a plain not-found
+    const docs = view && "ref" in view ? await receiptsOf(shop.backend, { handle: handleHash(handle) }, language) : [];
+    const docPath = sub ? DOCUMENT_SUB.exec(sub) : null;
+    if (docPath) {
+      const page = documentHtml(docs, docPath[1], offer.shop.contact?.phone);
+      if (!page) { limiter.take("wrong", address); return kit.sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>"); }
+      return kit.sendHtml(res, 200, page, { "x-robots-tag": "noindex" });
+    }
     // one nonce for whatever script this response has: the alerts' (a live web order with push on) and/or money clarity's UPI box script (a held UPI advance)
     const live = view !== null && "ref" in view && (view.channel === "web" || view.channel === "mcp") && (view.status === "held" || view.status === "confirmed" || view.status === "checking") && shop.backend.push !== undefined;
     const key = live ? await shop.backend.push!({ op: "key" }).catch(() => undefined) : undefined;
@@ -164,7 +174,7 @@ export async function orderRoute(kit: FrontKit, a: RouteArgs, ops: { web: OrderO
       const st = await shop.backend.push!({ op: "customer_state", handle: handleHash(handle) }).catch(() => undefined);
       alerts = customerAlertsBox({ page: self, language, key: publicKey, phones: Number(st?.body.phones ?? 0), nonce });
     }
-    return kit.sendHtml(res, view ? 200 : 404, orderPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view, ...(alerts ? { alerts } : {}), ...(nonce ? { nonce } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": kit.customerPolicy(self, nonce) } : {}) });
+    return kit.sendHtml(res, view ? 200 : 404, orderPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view, receipts: receiptsBox(docs, self, language), ...(alerts ? { alerts } : {}), ...(nonce ? { nonce } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": kit.customerPolicy(self, nonce) } : {}) });
   }
   return kit.sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
 }

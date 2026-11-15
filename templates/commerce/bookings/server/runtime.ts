@@ -28,7 +28,7 @@ import { createRecord } from "../../../../modules/record/record.ts";
 import { channelMessaging } from "../../../../modules/channels/outbox.ts";
 import { isChannelConversation } from "../../../../modules/channels/conversation.ts";
 import { compactChannel, emptyChannelState } from "../../../../modules/channels/state.ts";
-import { bookingView, ownerView, publicServices, shopInfo } from "../src/channel.ts";
+import { bookingView, documentsOf, exportFilesOf, ownerView, publicServices, shopInfo } from "../src/channel.ts";
 import type { CharacterPictures } from "../../../../modules/assistant/character.ts";
 import { ownerAppView, publicCharacter } from "../../../../modules/assistant/app/view.ts";
 import { createAudioDrop } from "../../../../modules/channels/owner-audio.ts";
@@ -177,10 +177,13 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       },
       view: (store, handleHash) => bookingView(settings, store, handleHash, clock.now()),
       ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
+      // the receipts of the page's own booking, and the accountant's files (the runtime lets only the owner's session reach them), both from the saved record
+      documents: (store, entries, key, language) => documentsOf(settings, store, entries, key, language),
+      accountantFiles: (_store, entries, period) => exportFilesOf(settings, entries, period),
       // item 11e on item 11d's page: with the shop's assistant on, the owner's read also carries the app's view (its cards by id and digest, the mood, the talk),
       // read-only over the same saved state as the page's items, so the page's cards are exactly the ones a WhatsApp tap would answer
-      owner: (store) => ({
-        ...ownerView(settings, store, clock.now()),
+      owner: (store, entries) => ({
+        ...ownerView(settings, store, clock.now(), entries),
         ...(settings.assistant ? { app: { ...ownerAppView({ skills: [bookingsSkill({ settings, store, nowMs: () => clock.now(), entries: () => [], optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false })], state: store.assistant, nowMs: clock.now(), timeZone: settings.timezone, settings: settings.assistant }), listen: pageAudio !== undefined } } : {}),
       }),
     },

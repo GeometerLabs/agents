@@ -11,6 +11,13 @@ import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { OwnerActionName } from "../../../../modules/channels/events.ts";
 import { addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
+import { formatSlot } from "../../../../modules/language/format.ts";
+import { caseDocuments } from "../../../../modules/accounting/case-documents.ts";
+import type { DocumentsKey } from "../../../../modules/accounting/case-documents.ts";
+import { accountantFiles } from "../../../../modules/accounting/export.ts";
+import { ownerMoney } from "../../../../modules/accounting/owner-money.ts";
+import type { RecordEntry } from "../../../../modules/record/record.ts";
+import { bookingsJournal } from "./accounting.ts";
 import { serviceName } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import type { Booking, Store } from "./booking.ts";
@@ -44,18 +51,28 @@ const STATUS: Record<Booking["state"], PublicStatus> = {
 const requestOf = (store: Store, b: Booking): MarkedRequest | undefined => store.upi?.requests.find((r) => r.id === b.linkId);
 
 /**
+ * The one lookup of a page's booking by its handle's hash, shared by the page's own read (bookingView) and its receipts (documentsOf), so they can never find
+ * different bookings: a web or MCP request's booking (whose own handle must match), or (item 11h) a WhatsApp booking's own page, by the link last sent on WhatsApp
+ * (the last four links sent open it: a newer one no longer kills the one the customer already has open).
+ */
+function lookup(store: Store, handleHash: string) {
+  const request = store.channel?.requests[handleHash];
+  const byLink = request ? undefined : [...store.bookings.values()].find((x) => (x.pageLink === handleHash || x.pageLinksBefore?.includes(handleHash)) && !x.channel);
+  const found = byLink ?? (request && request.refused === undefined && request.booking !== undefined ? store.bookings.get(request.booking) : undefined);
+  return { request, byLink, booking: found && (byLink || found.handle === handleHash) ? found : undefined };
+}
+
+/**
  * One request by its handle's hash, as its own page may show it. Null when the store has none (the runtime then says whether its task is still waiting). A refused
  * request says only why, as a name the page words; a booking says its state, what it is for, how to pay while it is held, and the messages the agent gave it.
  */
 export function bookingView(settings: Settings, store: Store, handleHash: string, nowMs: number = Date.now()) {
-  const request = store.channel?.requests[handleHash];
-  // item 11h: a WhatsApp booking's own page, by the link last sent on WhatsApp (the last four links sent open it: a newer one no longer kills the one the customer already has open)
-  const byLink = request ? undefined : [...store.bookings.values()].find((x) => (x.pageLink === handleHash || x.pageLinksBefore?.includes(handleHash)) && !x.channel);
+  const { request, byLink, booking } = lookup(store, handleHash);
   if (!request && !byLink) return null;
   const messages = (to: string) => (store.channel?.outbox ?? []).filter((m) => m.to === to).map((m) => ({ atMs: m.atMs, text: m.text }));
   if (request && (request.refused !== undefined || request.booking === undefined)) return { status: "refused" as const, reason: request.refused ?? "unknown", channel: request.channel };
-  const b = byLink ?? store.bookings.get(request!.booking!);
-  if (!b || (!byLink && b.handle !== handleHash)) return null;
+  const b = booking;
+  if (!b) return null;
   const status = STATUS[b.state];
   const service = settings.services.find((s) => s.id === b.serviceId);
   const marked = ownerMarkedOf(settings.payment);
@@ -186,13 +203,38 @@ export function ownerItems(settings: Settings, store: Store, nowMs?: number): { 
   return { items, upcoming };
 }
 
-/** The owner's page's read: the items without their codes, the services' names, and the shop's name and the owner's language. */
-export function ownerView(settings: Settings, store: Store, nowMs?: number) {
+/**
+ * The documents (receipts, refund notes) of the booking the page with this handle's hash opens, newest first, drawn in the page's language. The booking is found by
+ * `lookup`, the page's own lookup, so another booking's number is never among them. What each document is for: the service and the slot, in the customer's language.
+ */
+export function documentsOf(settings: Settings, store: Store, entries: readonly RecordEntry[], key: DocumentsKey, language: Language) {
+  const b = "handle" in key ? lookup(store, key.handle).booking : undefined;
+  const whatFor = (caseId: string, l: Language): string => {
+    const x = store.bookings.get(caseId);
+    const service = settings.services.find((s) => s.id === x?.serviceId);
+    return [service ? serviceName(service, l) : "", x?.startMs !== undefined ? formatSlot(x.startMs, settings.timezone, l) : ""].filter(Boolean).join(", ");
+  };
+  return caseDocuments({ journal: bookingsJournal(entries), cases: b ? [b.id] : [], shop: { name: settings.name, address: settings.address ?? "", timezone: settings.timezone }, language, whatFor });
+}
+
+/** The accountant's files for a period, from the record (modules/accounting/export.ts). */
+export const exportFilesOf = (settings: Settings, entries: readonly RecordEntry[], period: string) =>
+  accountantFiles({ journal: bookingsJournal(entries), entries, period, timeZone: settings.timezone });
+
+/**
+ * The owner's page's read: the items without their codes, the services' names, the shop's name and the owner's language, and the Money section's figures worked out
+ * from the record (`entries`). A refund made whose customer was not told is passed with its booking (an UntoldRefund has no case of its own).
+ */
+export function ownerView(settings: Settings, store: Store, nowMs: number | undefined, entries: readonly RecordEntry[]) {
   const { items, upcoming } = ownerItems(settings, store, nowMs);
   return {
     shop: { name: settings.name, timezone: settings.timezone, ownerLanguage: settings.owner.language },
     services: publicServices(settings),
     items: items.map(({ code: _code, ...shown }) => shown),
     upcoming,
+    money: ownerMoney({
+      journal: bookingsJournal(entries), entries, nowMs: nowMs ?? Date.now(), timeZone: settings.timezone,
+      refundsUntold: [...store.bookings.values()].flatMap((b) => (b.refundsUntold ?? []).map((u) => ({ case: b.id, amountInr: u.amountInr }))),
+    }),
   };
 }

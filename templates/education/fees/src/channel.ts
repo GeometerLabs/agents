@@ -13,6 +13,12 @@ import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { OwnerActionName } from "../../../../modules/channels/events.ts";
 import type { FeeConfirmView, FeeLine, FeesOffer, OwnerCashView, OwnerParentView, ParentView, PayInstructions } from "../../../../modules/channels/backend.ts";
+import { caseDocuments } from "../../../../modules/accounting/case-documents.ts";
+import type { DocumentsKey } from "../../../../modules/accounting/case-documents.ts";
+import { accountantFiles } from "../../../../modules/accounting/export.ts";
+import { ownerMoney } from "../../../../modules/accounting/owner-money.ts";
+import type { RecordEntry } from "../../../../modules/record/record.ts";
+import { feesJournal } from "./accounting.ts";
 import { batchName } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import { balancePaise, monthLabel, owedPaise, paidPaise } from "./due.ts";
@@ -95,6 +101,16 @@ export function parentView(settings: Settings, store: Store, linkHash: string): 
 }
 
 /**
+ * The fee a confirmation page is about, by the handle's hash: the one lookup shared by the page's own read (feeConfirmView) and its receipts (documentsOf), so they
+ * can never find different fees. A refused press has none, and a fee answers only to the parent whose press made the handle.
+ */
+function confirmedDue(store: Store, handleHash: string): Due | undefined {
+  const c = store.confirmations?.[handleHash];
+  const due = c && c.refused === undefined ? store.dues.get(c.dueId) : undefined;
+  return due && due.customer === c!.parent ? due : undefined;
+}
+
+/**
  * A payment's confirmation page, by its handle's hash. Its status is the record's, read now: "confirmed" only when the fee is paid (the payments service's own list,
  * or the owner's mark on a UPI centre); "part" when some is recorded; "waiting" after "I have paid" until then. Null when no press made this handle.
  */
@@ -102,8 +118,8 @@ export function feeConfirmView(settings: Settings, store: Store, handleHash: str
   const c = store.confirmations?.[handleHash];
   if (!c) return null;
   if (c.refused !== undefined) return { status: "refused", reason: c.refused };
-  const due = store.dues.get(c.dueId);
-  if (!due || due.customer !== c.parent) return null;
+  const due = confirmedDue(store, handleHash);
+  if (!due) return null;
   const status = due.state === "paid" ? "confirmed" : due.state === "closed" ? "closed" : paidPaise(due) > 0 ? "part" : "waiting";
   return { status, ref: due.id, op: "paid", atMs: c.atMs, due: feeLine(settings, store, due) };
 }
@@ -185,8 +201,40 @@ export function parentsList(settings: Settings, store: Store): OwnerParentView[]
   });
 }
 
-/** The owner's page's read: the items without their codes, the parents and their links, the centre's name and the owner's language. Fees has no coming list. */
-export function ownerView(settings: Settings, store: Store) {
+/**
+ * "Fee for November 2026", the words of a fee's document. Hindi, Malayalam and Kannada are MACHINE-WRITTEN and wait for a native reader, like the rest of the
+ * documents' words (modules/accounting/words-documents.ts, whose page says so at its top).
+ */
+const FEE_FOR: Record<Language, (month: string) => string> = {
+  en: (m) => `Fee for ${m}`, hi: (m) => `${m} की फ़ीस`, ml: (m) => `${m}-ലെ ഫീസ്`, kn: (m) => `${m} ರ ಶುಲ್ಕ`,
+};
+
+/**
+ * The documents (receipts, bills, refund notes) of the fees the page opens, newest first, drawn in the page's language: for a parent's link (its hash) all of that
+ * parent's fees, for a confirmation page's handle (its hash) that one fee. The cases come from the page's own lookups (`parentOf`, `confirmedDue`), so another
+ * parent's number is never among them. The student's name is the document's `person`, read here from the centre's own store at this moment and never written anywhere.
+ */
+export function documentsOf(settings: Settings, store: Store, entries: readonly RecordEntry[], key: DocumentsKey, language: Language) {
+  let cases: string[] = [];
+  if ("link" in key) { const parent = parentOf(store, key.link); cases = parent === undefined ? [] : [...store.dues.values()].filter((d) => d.customer === parent).map((d) => d.id); }
+  else { const due = confirmedDue(store, key.handle); cases = due ? [due.id] : []; }
+  const due = (caseId: string) => store.dues.get(caseId);
+  return caseDocuments({
+    journal: feesJournal(entries), cases, shop: { name: settings.name, address: settings.address ?? "", timezone: settings.timezone }, language,
+    whatFor: (caseId, l) => { const d = due(caseId); return d ? FEE_FOR[l](monthLabel(d, l)) : ""; },
+    person: (caseId) => due(caseId)?.studentName,
+  });
+}
+
+/** The accountant's files for a period, from the record (modules/accounting/export.ts). No student's name is in them: a fee is only its case id. */
+export const exportFilesOf = (settings: Settings, entries: readonly RecordEntry[], period: string) =>
+  accountantFiles({ journal: feesJournal(entries), entries, period, timeZone: settings.timezone });
+
+/**
+ * The owner's page's read: the items without their codes, the parents and their links, the centre's name and the owner's language, and the Money section's figures
+ * worked out from the record (`entries`). Fees has no coming list. A refund made whose parent was not told is passed with its fee.
+ */
+export function ownerView(settings: Settings, store: Store, nowMs: number | undefined, entries: readonly RecordEntry[]) {
   return {
     shop: { name: settings.name, timezone: settings.timezone, ownerLanguage: settings.owner.language },
     kind: "fees" as const,
@@ -195,5 +243,9 @@ export function ownerView(settings: Settings, store: Store) {
     upcoming: [],
     parents: parentsList(settings, store),
     cash: cashList(settings, store),
+    money: ownerMoney({
+      journal: feesJournal(entries), entries, nowMs: nowMs ?? Date.now(), timeZone: settings.timezone,
+      refundsUntold: [...store.dues.values()].flatMap((d) => (d.refundsUntold ?? []).map((u) => ({ case: d.id, amountInr: u.amountInr }))),
+    }),
   };
 }
