@@ -67,7 +67,7 @@ const warned = new Set<string>();
 
 /** Run one crash test the panel asked for, beside the loop; its summary is written when it ends, whatever the end. */
 function startCrashTest(ctx: Context, agent: string, request: AgentRequest): void {
-  const by = `${request.requestedBy.name} (${request.requestedBy.role}, from the panel)`;
+  const by = `${request.requestedBy.name} (${request.requestedBy.role === "partner" ? "Operator" : request.requestedBy.role}, from the panel)`;
   writeCrashSummary(ctx.dir, agent, { at: ctx.now().toISOString(), version: null, held: 0, of: 0, failed: [], notRun: [], goLive: false, running: true, by });
   const work = (async () => {
     try {

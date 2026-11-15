@@ -160,7 +160,7 @@ test("a builder's own server takes no geometer.dev ticket at all: its invitation
     const login = (await b.browser().get("/login")).plain;
     assert.ok(!login.includes(WORDS.en.login.partners), "no geometer.dev line on a builder's server");
     assert.ok(login.includes(WORDS.en.login.forgot), "the ask-for-a-new-link line");
-    assert.throws(() => linkFleetPartner(b.config, "anyone", "p-x"), /Geometer's partner server/);
+    assert.throws(() => linkFleetPartner(b.config, "anyone", "p-x"), /Geometer's Operator server/);
   } finally { await b.close(); }
 });
 

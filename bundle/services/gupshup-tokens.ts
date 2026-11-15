@@ -4,7 +4,7 @@
 //
 // WHO HOLDS WHAT. The long-lived credential is the Universal Token (UT, 24 hours to 60 days), kept only in the refresher's own secrets folder
 // (secrets/refresher/_server/gupshup_universal_token). A UT acts for the whole Gupshup partner, so it is never given to a Guard, a runtime or the panel, and it belongs
-// only on a server run by that partner: Geometer's own partner server for the pilot's shops, or a builder who is a Gupshup partner in their own name. A builder's server
+// only on a server run by that partner: Geometer's own Operator server for the pilot's shops, or a builder who is a Gupshup partner in their own name. A builder's server
 // is never given Geometer's UT (renewal for those would be fleet minting app tokens for them: Deferred.md). Minting a new UT needs the Operator admin's email and client
 // secret, which stay with the person: they hand in a new UT before the old one ends, and this file says when that is (from the UT's own `exp`).
 //

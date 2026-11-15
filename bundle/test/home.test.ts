@@ -242,5 +242,5 @@ test("init --pages-domain writes geometer.json's pages (extra domains after it),
   } finally { console.log = log; }
   const err = console.error; const lines: string[] = []; console.error = (l: string) => { lines.push(String(l)); };
   try { assert.equal(await main(["init", join(root, "builder"), "--domain", "shops.example", "--reviewed-by", "o", "--model", "m", "--licence-key", TEST_PUBLIC_HEX, "--pages-domain", "streetlist.in"]), 1); } finally { console.error = err; }
-  assert.match(lines.join("\n"), /partner server/u);
+  assert.match(lines.join("\n"), /Operator server/u);
 });

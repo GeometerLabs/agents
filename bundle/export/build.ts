@@ -290,7 +290,7 @@ function FORMAT_README(m: Manifest): string {
 ==========================================
 
 This folder is everything that is ${m.shop}'s, taken out of Geometer in plain files, so it can be read, kept, and checked without Geometer.
-Made ${m.exportedAt}${m.exportedBy ? ` for ${m.exportedBy.name} (${m.exportedBy.role})` : ""}. It was made from files only; nothing was sent to anyone, and no service was called.
+Made ${m.exportedAt}${m.exportedBy ? ` for ${m.exportedBy.name} (${m.exportedBy.role === "partner" ? "Operator" : m.exportedBy.role})` : ""}. It was made from files only; nothing was sent to anyone, and no service was called.
 
 WHAT IS IN IT
   manifest.json                 the shop, the time, the counts, and every other file with its sha256 and size
