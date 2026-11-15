@@ -17,8 +17,8 @@ export interface MoneyBlockWords {
   received: string; givenBack: string; kept: string;
   /** At the month's end: refunds still owed back to customers, and (Fees) fees still to come in. */
   owedBack: string; toCome: string;
-  /** Null in English; the machine-written note in the other three. */
-  machine: string | null;
+  /** Empty in English; the machine-written note in the other three (empty, not null, so the four languages carry the same set of strings). */
+  machine: string;
 }
 
 const OWN: Record<Language, Pick<MoneyBlockWords, "heading" | "owedBack" | "toCome">> = {
@@ -30,7 +30,7 @@ const OWN: Record<Language, Pick<MoneyBlockWords, "heading" | "owedBack" | "toCo
 
 const wordsFor = (l: Language): MoneyBlockWords => {
   const o = OWNER_MONEY_WORDS[l];
-  return { ...OWN[l], received: o.received, givenBack: o.givenBack, kept: o.kept, machine: o.machine };
+  return { ...OWN[l], received: o.received, givenBack: o.givenBack, kept: o.kept, machine: o.machine ?? "" };
 };
 
 export const MONEY_BLOCK_WORDS: Record<Language, MoneyBlockWords> = { en: wordsFor("en"), hi: wordsFor("hi"), ml: wordsFor("ml"), kn: wordsFor("kn") };

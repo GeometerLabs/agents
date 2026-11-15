@@ -282,6 +282,13 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `languageName.en` | ഇംഗ്ലീഷ് | English |  |
 | `languageName.ml` | മലയാളം | Malayalam |  |
 | `languageName.kn` | കന്നഡ | Kannada |  |
+| `moneyBlock.heading` | ഈ മാസത്തെ പണം | Money this month |  |
+| `moneyBlock.owedBack` | മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത് | Still owed back at the end of the month |  |
+| `moneyBlock.toCome` | മാസാവസാനം ഇനിയും കിട്ടാനുള്ളത് | Still to come at the end of the month |  |
+| `moneyBlock.received` | കിട്ടിയത് | Received |  |
+| `moneyBlock.givenBack` | തിരികെ നൽകിയത് | Given back |  |
+| `moneyBlock.kept` | റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത് | Kept from cancellations |  |
+| `moneyBlock.machine` | ഈ വാക്കുകൾ യന്ത്രം എഴുതിയതാണ്; ഒരു മലയാളം വായനക്കാരൻ പരിശോധിക്കും. |  |  |
 | `upiLabel.collected` | ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത് | Marked paid by owner |  |
 | `upiLabel.givenBack` | ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട് | Refunds marked sent by owner |  |
 | `upiLabel.notChecked` | പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു) | automatic payment checking (with UPI you mark each payment) |  |

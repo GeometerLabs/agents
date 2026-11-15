@@ -282,6 +282,13 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `languageName.en` | ಇಂಗ್ಲಿಷ್ | English |  |
 | `languageName.ml` | ಮಲಯಾಳಂ | Malayalam |  |
 | `languageName.kn` | ಕನ್ನಡ | Kannada |  |
+| `moneyBlock.heading` | ಈ ತಿಂಗಳ ಹಣ | Money this month |  |
+| `moneyBlock.owedBack` | ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು | Still owed back at the end of the month |  |
+| `moneyBlock.toCome` | ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು | Still to come at the end of the month |  |
+| `moneyBlock.received` | ಬಂದದ್ದು | Received |  |
+| `moneyBlock.givenBack` | ಹಿಂದಿರುಗಿಸಿದ್ದು | Given back |  |
+| `moneyBlock.kept` | ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು | Kept from cancellations |  |
+| `moneyBlock.machine` | ಈ ಪದಗಳನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಓದುಗರೊಬ್ಬರು ಪರಿಶೀಲಿಸುತ್ತಾರೆ. |  |  |
 | `upiLabel.collected` | ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು | Marked paid by owner |  |
 | `upiLabel.givenBack` | ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್ | Refunds marked sent by owner |  |
 | `upiLabel.notChecked` | ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ) | automatic payment checking (with UPI you mark each payment) |  |

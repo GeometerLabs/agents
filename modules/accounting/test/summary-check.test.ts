@@ -194,7 +194,7 @@ test("the Money this month block: bold figures from the summary, in four languag
     assert.match(html, /<strong>₹550\.50<\/strong>/, "received, from integer paise");
     assert.match(html, /<strong>₹100<\/strong>/, "still owed back");
     assert.ok(html.includes(words.heading) && html.includes(words.owedBack) && html.includes(words.toCome));
-    assert.equal(words.machine === null, language === "en", "the three machine-written languages say so");
+    assert.equal(words.machine === "", language === "en", "the three machine-written languages say so");
     assert.doesNotMatch(text, /debit|credit|ledger|journal|receivable|liabilit/i);
   }
   assert.ok(!moneyBlock(summary, MONEY_BLOCK_WORDS.en).includes(MONEY_BLOCK_WORDS.en.toCome), "only Fees shows what is still to come");
