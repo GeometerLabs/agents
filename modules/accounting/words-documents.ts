@@ -30,6 +30,8 @@ export interface DocWords {
   legend: string;
   footer: (shop: string) => string;
   printHint: string;
+  /** The heading of a customer's page's list of its documents ("Receipts"): the page lists receipts, bills and refund notes under the one word a customer looks for. */
+  receipts: string;
 }
 
 export const DOC: W<DocWords> = {
@@ -44,6 +46,7 @@ export const DOC: W<DocWords> = {
     legend: "composition taxable person, not eligible to collect tax on supplies",
     footer: (s) => `Made by computer for ${s}.`,
     printHint: "To keep a copy, choose \"Print / Save as PDF\" in your phone's menu.",
+    receipts: "Receipts",
   },
   hi: {
     title: { receipt: "रसीद", bill: "बिल", bill_of_supply: "आपूर्ति का बिल", refund_note: "पैसे वापसी का नोट" },
@@ -56,6 +59,7 @@ export const DOC: W<DocWords> = {
     legend: "कंपोज़िशन करदाता, आपूर्ति पर कर वसूलने का पात्र नहीं",
     footer: (s) => `यह ${s} के लिए कंप्यूटर से बनाया गया है।`,
     printHint: "अपनी कॉपी रखने के लिए फ़ोन के मेन्यू में \"Print / Save as PDF\" चुनिए।",
+    receipts: "रसीदें",
   },
   ml: {
     title: { receipt: "രസീത്", bill: "ബിൽ", bill_of_supply: "സപ്ലൈ ബിൽ", refund_note: "പണം തിരികെ നൽകിയ കുറിപ്പ്" },
@@ -68,6 +72,7 @@ export const DOC: W<DocWords> = {
     legend: "കോമ്പോസിഷൻ നികുതിദായകൻ; വിതരണങ്ങളിൽ നികുതി ഈടാക്കാൻ അർഹതയില്ല",
     footer: (s) => `${s}-നായി കമ്പ്യൂട്ടർ ഉണ്ടാക്കിയത്.`,
     printHint: "കോപ്പി സൂക്ഷിക്കാൻ ഫോണിലെ മെനുവിൽ \"Print / Save as PDF\" തിരഞ്ഞെടുക്കുക.",
+    receipts: "രസീതുകൾ",
   },
   kn: {
     title: { receipt: "ರಶೀದಿ", bill: "ಬಿಲ್", bill_of_supply: "ಪೂರೈಕೆ ಬಿಲ್", refund_note: "ಹಣ ಹಿಂತಿರುಗಿಸಿದ ಟಿಪ್ಪಣಿ" },
@@ -80,5 +85,6 @@ export const DOC: W<DocWords> = {
     legend: "ಸಂಯೋಜನೆ ತೆರಿಗೆದಾರ; ಪೂರೈಕೆಗಳ ಮೇಲೆ ತೆರಿಗೆ ಸಂಗ್ರಹಿಸಲು ಅರ್ಹರಲ್ಲ",
     footer: (s) => `${s} ಗಾಗಿ ಕಂಪ್ಯೂಟರ್ ಮೂಲಕ ತಯಾರಿಸಲಾಗಿದೆ.`,
     printHint: "ಪ್ರತಿ ಉಳಿಸಲು ಫೋನ್‌ನ ಮೆನುವಿನಲ್ಲಿ \"Print / Save as PDF\" ಆರಿಸಿ.",
+    receipts: "ರಸೀದಿಗಳು",
   },
 };

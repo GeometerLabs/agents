@@ -1,20 +1,24 @@
-// The Money section of the owner's app, as one HTML fragment (the figures are owner-money.ts, the words words-owner.ts). Built here and NOT wired into
-// channels/owner-page.ts: a later step puts it in the page and serves the export links.
+// The Money section of the owner's app, as one HTML fragment (the figures are owner-money.ts, the words words-owner.ts). channels/owner-page.ts puts it in the
+// page below what waits for the owner's answer, and channels/front.ts serves the download addresses (only to the owner's signed-in session).
 //
 // Phone first, and only the page's own look: the cards, stamps and big `.amt` figures of channels/look.ts (`.item`, `.top`, `.stamp`, `.amt`, `.calm`, `.row`,
 // `.btn.quiet`, `.note`, `.machine`), so it needs no style and no script. Every figure is bold and large; a list says what to do in one sentence. Every value goes
 // through html`` (escaped by default). Amounts are written from integer paise, whole rupees without decimals, with Indian grouping (language/format.ts).
 import { html } from "../core/html.ts";
 import type { Raw } from "../core/html.ts";
-import { formatDate, formatInr } from "../language/format.ts";
+import { formatDate, formatInr, MONTH_NAMES } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import { localParts } from "../core/time.ts";
-import { fyPeriodOf } from "./periods.ts";
+import { exportNames } from "./export.ts";
+import { exportPeriods } from "./periods.ts";
 import { OWNER_MONEY_WORDS } from "./words-owner.ts";
 import type { MoneyView, NotMatched } from "./owner-money.ts";
 
-/** The addresses of the three downloads (the routes are wired later). Handed in so this file knows no route. */
-export interface ExportLinks { thisMonth: string; lastMonth: string; year: string }
+/**
+ * Where the accountant's files are: `base` is the owner app's accounting address, and a period's files are at `<base>/<period>/<file name>` (export.ts exportNames).
+ * Handed in so this file knows no route. Left out (the panel's link page has no signed-in session): the section then shows no download card.
+ */
+export interface ExportLinks { base: string }
 
 /** "₹1,200", or "₹1,200.50" when the paise are not whole rupees: integer arithmetic, never a float's rounding. */
 export function inr(paise: number): string {
@@ -23,7 +27,7 @@ export function inr(paise: number): string {
   return rest === 0 ? formatInr(rupees) : `${formatInr(rupees)}.${String(rest).padStart(2, "0")}`;
 }
 
-export function ownerMoneySection(view: MoneyView, language: Language, links: ExportLinks, timeZone: string, nowMs: number): Raw {
+export function ownerMoneySection(view: MoneyView, language: Language, links: ExportLinks | undefined, timeZone: string): Raw {
   const w = OWNER_MONEY_WORDS[language];
   const ref = (c: string | null): string => c ?? w.aCase;
   const fig = (tone: string, label: string, paise: number, note?: string): Raw =>
@@ -42,7 +46,19 @@ export function ownerMoneySection(view: MoneyView, language: Language, links: Ex
   const unmatched = view.notMatched.length === 0
     ? html`<p class="calm">${w.notMatchedNone}</p>`
     : view.notMatched.map((n) => html`<div class="item s-info"><p>${sentence(n)}</p></div>`);
-  const fy = fyPeriodOf(nowMs, timeZone);
+  // the three periods come from the month the runtime says it is (view.period), so the links, their labels and the front's allowed set all follow one clock
+  const periods = exportPeriods(view.period);
+  const [py, pm] = view.period.split("-").map(Number);
+  const rows = (): Raw => {
+    const row = (label: string, period: string): Raw => {
+      const n = exportNames(period);
+      const file = (name: string, text: string): Raw => html`<a class="btn quiet" href="${links!.base}/${period}/${name}">${text}</a>`;
+      return html`<p><b>${label}</b></p><div class="row">${file(n.journal, w.fileJournal)}${file(n.documents, w.fileDocuments)}${file(n.readme, w.fileReadme)}</div>`;
+    };
+    // the WhatsApp link carries the words only, never a file or a customer: the accountant is asked for, the files are sent from the downloads above
+    const share = `https://wa.me/?text=${encodeURIComponent(w.shareText(`${MONTH_NAMES[language][pm - 1]} ${py}`))}`;
+    return html`${row(w.thisMonth, periods.thisMonth)}${row(w.lastMonth, periods.lastMonth)}${row(w.thisYear(periods.year), periods.year)}<p><a class="btn quiet" href="${share}" rel="noopener">${w.shareWhatsapp}</a></p>`;
+  };
   return html`<section class="money" lang="${language}">
 <h2>${w.title}</h2>
 ${w.machine ? html`<p class="machine">${w.machine}</p>` : ""}
@@ -60,8 +76,7 @@ ${view.byWord.length > 0 ? html`<div class="item s-plain"><p><b>${w.byWordTitle}
 ${owed}
 <h3>${w.notMatchedTitle}</h3>
 ${unmatched}
-<div class="card"><h3>${w.accountantTitle}</h3><p class="note">${w.accountantNote}</p>
-<div class="row"><a class="btn quiet" href="${links.thisMonth}" download>${w.thisMonth}</a><a class="btn quiet" href="${links.lastMonth}" download>${w.lastMonth}</a><a class="btn quiet" href="${links.year}" download>${w.thisYear(fy)}</a></div></div>
+${links ? html`<div class="card"><h3>${w.accountantTitle}</h3><p class="note">${w.accountantNote}</p>${rows()}</div>` : ""}
 <p class="note">${w.scope}</p>
 </section>`;
 }

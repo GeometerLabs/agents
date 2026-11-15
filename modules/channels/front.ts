@@ -2,6 +2,7 @@
 //
 //   GET  /s/<shop>/                      the booking page (?lang=, ?service=, ?date=)          POST /s/<shop>/book        start a booking (a form)
 //   GET  /s/<shop>/b/<handle>            a booking's own page                                   POST .../b/<handle>/cancel, .../b/<handle>/paid
+//   GET  /s/<shop>/b/<handle>/d/<number>  one of the booking's own receipts (receipts.ts); another booking's number is a plain not-found
 //   GET  /s/<shop>/qr.svg                a QR code of the booking page, for the counter
 //   ...  /s/<shop>/api/v1/...            the booking API (api.ts)                               POST /s/<shop>/mcp         the same operations for AI assistants (mcp.ts)
 //   GET  /s/<shop>/o/<owner token>       the owner's private approvals page                     POST /s/<shop>/o/<owner token>   an answer
@@ -43,6 +44,8 @@ import { OWNER, PAGE } from "./words.ts";
 import { bookingPage, statusPage } from "./page.ts";
 import { bookingIcs } from "./ics.ts";
 import { ownerLinkGone, ownerPage } from "./owner-page.ts";
+import { DOCUMENT_SUB, documentHtml, receiptsBox, receiptsOf } from "./receipts.ts";
+import { exportPeriods } from "../accounting/periods.ts";
 import { CONTACT_HEADER, shopErrorPage } from "./contact-bar.ts";
 import type { OwnerCred } from "./backend.ts";
 import { CSRF_HEADER, csrfMatches, ownerSessionRoute } from "./owner-session.ts";
@@ -388,7 +391,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     }
     // a booking's own page. Item 11h: also its calendar file, and (with web push) its worker and "Tell me on this phone"; "<page>/" is the page too, because a
     // tapped alert opens its worker's scope, which ends in a slash
-    const b = /^\/b\/([^/]+)(\/|\/cancel|\/paid|\/booking\.ics|\/sw\.js|\/push)?$/u.exec(rest);
+    const b = /^\/b\/([^/]+)(\/|\/cancel|\/paid|\/booking\.ics|\/sw\.js|\/push|\/d\/.+)?$/u.exec(rest);
     if (b) {
       const handle = b[1];
       const sub = b[2] === "/" ? undefined : b[2];
@@ -421,6 +424,14 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       const view = await shop.backend.view(handleHash(handle));
       if (!view) limiter.take("wrong", address);
       const language = languageOf(req, url, offer.shop.languages);
+      // the booking's receipts: only those of the case this handle opens (the runtime finds them by the handle's hash, so another case's number is a plain not-found)
+      const docs = view && "ref" in view ? await receiptsOf(shop.backend, { handle: handleHash(handle) }, language) : [];
+      const docPath = sub ? DOCUMENT_SUB.exec(sub) : null;
+      if (docPath) {
+        const page = documentHtml(docs, docPath[1], offer.shop.contact?.phone);
+        if (!page) { limiter.take("wrong", address); return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>"); }
+        return sendHtml(res, 200, page, { "x-robots-tag": "noindex" });
+      }
       // item 11h: the calendar file, made from the saved booking (never with the page's address in it: ics.ts)
       if (sub === "/booking.ics") {
         const ics = view ? bookingIcs({ view, shop: offer.shop, language, handleHash: handleHash(handle), host: new URL(shop.publicUrl).hostname, nowMs: Date.now() }) : undefined;
@@ -449,7 +460,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       if (nonce && withAlerts) { const st = await shop.backend.push!({ op: "customer_state", handle: handleHash(handle) }).catch(() => undefined); phones = Number(st?.body.phones ?? 0); }
       const alerts = nonce && withAlerts ? customerAlertsBox({ page: self, language, key: publicKey!, phones, nonce }) : undefined;
       const ics = view && "ref" in view && view.startMs !== undefined && view.status !== "expired" && view.status !== "not_held" ? `${self}/booking.ics?lang=${language}` : undefined;
-      return sendHtml(res, view ? 200 : 404, statusPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view, ...(ics ? { ics } : {}), ...(alerts ? { alerts } : {}), ...(nonce ? { nonce } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": customerPagePolicy(self, nonce) } : {}) });
+      return sendHtml(res, view ? 200 : 404, statusPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view, receipts: receiptsBox(docs, self, language), ...(ics ? { ics } : {}), ...(alerts ? { alerts } : {}), ...(nonce ? { nonce } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": customerPagePolicy(self, nonce) } : {}) });
     }
     return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
   }
@@ -598,8 +609,11 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const csrfOk = (given: unknown) => o.csrf === undefined || (typeof token === "object" && "session" in token && csrfMatches(token.session, given));
     // item 11e: the owner's app lives at the same base: the page also at "<base>/" (a service worker controls only pages inside its scope, <base>/), and its four routes
     const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST" };
-    if (routes[sub] === undefined) return json ? sendJson(res, 404, { error: { code: "not_found", message: "GET /api/v1/state or POST /api/v1/answer." } }) : sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
-    if (routes[sub] !== method) return json ? sendJson(res, 405, { error: { code: "bad_request", message: `Use ${routes[sub]} here.` } }, { allow: routes[sub] }) : sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: routes[sub] });
+    // the accountant's files: <owner app>/accounting/<period>/<file>, for the signed-in owner's session only (handled below, once the session is known good)
+    const accounting = /^\/accounting\/([^/]+)(?:\/([^/]+))?$/u.exec(sub);
+    if (accounting) { if (method !== "GET") return sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" }); }
+    else if (routes[sub] === undefined) return json ? sendJson(res, 404, { error: { code: "not_found", message: "GET /api/v1/state or POST /api/v1/answer." } }) : sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+    if (!accounting && routes[sub] !== method) return json ? sendJson(res, 405, { error: { code: "bad_request", message: `Use ${routes[sub]} here.` } }, { allow: routes[sub] }) : sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: routes[sub] });
     if (!limiter.take(method === "POST" ? "act" : "read", address)) return slow("300");
     if (method === "POST" && !sameOrigin(req, shop)) return json ? sendJson(res, 403, { error: { code: "bad_request", message: "Calls from another site's page are refused." } }) : sendHtml(res, 403, "<!doctype html><p>Forms from another site are refused.</p>");
     const state = await ownerState(shop, token);
@@ -608,6 +622,26 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const language: Language = asked && LANGUAGES.includes(asked as Language) ? asked as Language : state.view.shop.ownerLanguage;
     const w = OWNER[language];
 
+    if (accounting) {
+      // only the owner's SESSION, never the panel's link; the runtime checks the session again, so the front's word is not the only gate. Only this month, last month and the
+      // financial year (taken from the runtime's own clock, as the page's links are), and only the three files a period has: anything else is a plain not-found.
+      const session = typeof token === "object" && "session" in token ? token.session : undefined;
+      const money = state.view.money;
+      const nothing = () => sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+      if (!session || !money || !shop.backend.accountantFiles) return nothing();
+      const wanted = exportPeriods(money.period);
+      if (![wanted.thisMonth, wanted.lastMonth, wanted.year].includes(accounting[1])) return nothing();
+      const files = await shop.backend.accountantFiles({ session }, accounting[1]);
+      if (files === null) return gone();
+      const file = accounting[2] === undefined ? undefined : files.find((f) => f.name === accounting[2]);
+      if (!file) return nothing();
+      res.writeHead(200, {
+        "content-type": file.name.endsWith(".csv") ? "text/csv; charset=utf-8" : "text/plain; charset=utf-8", "content-disposition": `attachment; filename="${file.name}"`,
+        "content-length": Buffer.byteLength(file.content), "cache-control": "no-store", "x-content-type-options": "nosniff", "x-robots-tag": "noindex", "content-security-policy": "default-src 'none'",
+      });
+      res.end(file.content);
+      return;
+    }
     if (sub === "/api/v1/state") return sendJson(res, 200, ownerJson(state), { "x-robots-tag": "noindex" });
 
     // ---- item 11e: the owner's app (the talk box and recordings only for a shop with the assistant; item 11h: the manifest and the worker for every shop) ----
@@ -703,7 +737,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), bare: true }) : undefined;
     // item 11i: the owner's app shows the character in the shop's real mood (all five moods: this is the owner's own view)
     const facePic = state.view.app ? shop.character?.()?.picture(state.view.app.face, "svg") : undefined;
-    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
+    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(typeof token === "object" && "session" in token && shop.backend.accountantFiles ? { exportLinks: { base: `${base}/accounting` } } : {}), ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
   }
 
   return (req, res) => {

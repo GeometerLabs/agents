@@ -3,6 +3,7 @@
 //   GET  /s/<shop>/                  the centre's page: who it is, and that fees are paid from each parent's private link (no form: a number opens nothing)
 //   GET  /s/<shop>/f/<link>          a parent's private page: their students' fees            POST .../f/<link>/pay, .../f/<link>/paid   (a fee, by its id)
 //   GET  /s/<shop>/fee/<handle>      a payment's confirmation page, made by "I have paid"
+//   GET  .../f/<link>/d/<number>, .../fee/<handle>/d/<number>   one of that page's own receipts (receipts.ts); another parent's number is a plain not-found
 //   A centre has no API and no MCP endpoint: a parent's fees are reached only by their private link, which an assistant has no way to be given.
 //
 // A typed phone number never opens a student's fees: nothing here takes one. The link is a 32-character bearer string the centre gave the parent; the front sends the
@@ -14,6 +15,7 @@ import { CUSTOMER_SW, customerAlertsBox } from "../push/pages.ts";
 import { HANDLE, NONCE, handleFromNonce, handleHash, newHandle, parentLinkHash } from "./handle.ts";
 import { feeConfirmPage, feesCentrePage, parentLinkGone, parentPage } from "./fee-page.ts";
 import { PAGE } from "./words.ts";
+import { DOCUMENT_SUB, documentHtml, receiptsBox, receiptsOf } from "./receipts.ts";
 import type { FrontKit, RouteArgs } from "./front.ts";
 
 const DUE_ID = /^f-\d{1,9}$/u;
@@ -36,7 +38,7 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
 
   // ---- a parent's private page ----
   // "<link>/" is the page too: a tapped alert opens its worker's scope, which ends in a slash
-  const f = /^\/f\/([^/]+)(\/|\/pay|\/paid|\/sw\.js|\/push)?$/u.exec(rest);
+  const f = /^\/f\/([^/]+)(\/|\/pay|\/paid|\/sw\.js|\/push|\/d\/.+)?$/u.exec(rest);
   if (f) {
     const link = f[1];
     if (limiter.over("wrong", address)) return tooMany();
@@ -89,11 +91,19 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
       }
       return kit.redirect(res, `${base}?lang=${language}`);
     }
-    if (method !== "GET" || sub) return kit.sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
+    if (method !== "GET" || (sub && !sub.startsWith("/d/"))) return kit.sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
     if (!limiter.take("read", address)) return tooMany();
     const view = await backend.parentView(linkHash);
     if (!view) return gone();
     const language = kit.languageOf(req, url, offer.shop.languages);
+    // this parent's receipts: only those of the fees this link opens now (the runtime finds them by the link's hash, so another parent's number is a plain not-found)
+    const docs = await receiptsOf(backend, { link: linkHash }, language);
+    const docPath = sub ? DOCUMENT_SUB.exec(sub) : null;
+    if (docPath) {
+      const page = documentHtml(docs, docPath[1], offer.shop.contact?.phone);
+      if (!page) { limiter.take("wrong", address); return nothing(); }
+      return kit.sendHtml(res, 200, page, { "x-robots-tag": "noindex" });
+    }
     const key = backend.push ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
     const publicKey = key?.body.on === true && typeof key.body.publicKey === "string" ? key.body.publicKey : undefined;
     const scriptNonce = publicKey ? randomBytes(16).toString("base64") : undefined;
@@ -102,11 +112,11 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
       const st = await backend.push!({ op: "customer_state", handle: linkHash }).catch(() => undefined);
       alerts = customerAlertsBox({ page: base, language, key: publicKey!, phones: Number(st?.body.phones ?? 0), nonce: scriptNonce });
     }
-    return kit.sendHtml(res, 200, parentPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, base, view, nonce: newHandle(), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(scriptNonce ? { "content-security-policy": kit.customerPolicy(base, scriptNonce) } : {}) });
+    return kit.sendHtml(res, 200, parentPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, base, view, nonce: newHandle(), receipts: receiptsBox(docs, base, language), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(scriptNonce ? { "content-security-policy": kit.customerPolicy(base, scriptNonce) } : {}) });
   }
 
   // ---- a payment's confirmation page ----
-  const c = /^\/fee\/([^/]+)$/u.exec(rest);
+  const c = /^\/fee\/([^/]+)(\/d\/.+)?$/u.exec(rest);
   if (c) {
     const handle = c[1];
     if (limiter.over("wrong", address)) return tooMany();
@@ -116,7 +126,16 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
     const offer = await backend.feesOffer();
     const view = await backend.feeConfirmView(handleHash(handle));
     if (!view) limiter.take("wrong", address);
-    return kit.sendHtml(res, view ? 200 : 404, feeConfirmPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language: kit.languageOf(req, url, offer.shop.languages), handle, view }), { "x-robots-tag": "noindex" });
+    const language = kit.languageOf(req, url, offer.shop.languages);
+    // the receipts of the fee this confirmation is about (found by the handle's hash, as the page itself is)
+    const docs = view && "ref" in view ? await receiptsOf(backend, { handle: handleHash(handle) }, language) : [];
+    const docPath = c[2] ? DOCUMENT_SUB.exec(c[2]) : null;
+    if (docPath) {
+      const page = documentHtml(docs, docPath[1], offer.shop.contact?.phone);
+      if (!page) { limiter.take("wrong", address); return nothing(); }
+      return kit.sendHtml(res, 200, page, { "x-robots-tag": "noindex" });
+    }
+    return kit.sendHtml(res, view ? 200 : 404, feeConfirmPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, handle, view, receipts: receiptsBox(docs, `${shop.publicUrl}/fee/${handle}`, language) }), { "x-robots-tag": "noindex" });
   }
   return nothing();
 }

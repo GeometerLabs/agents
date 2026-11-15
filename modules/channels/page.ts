@@ -186,7 +186,7 @@ export const REFUND_TONE: Record<"asked" | "owed" | "sent" | "kept", Tone> = { a
  * Item 11h (decision 45): it is the customer's confirmation page without WhatsApp: the refund as the record holds it, a calendar file (`ics`), and (`alerts`, already
  * drawn, with the push service's script) "Tell me on this phone".
  */
-export function statusPage(o: { shop: PageShop; offer: Offer; language: Language; handle: string; view: BookingView | null; notice?: string; ics?: string; alerts?: string; /** Money clarity: this response's script nonce, for the UPI box's script and its quiet check for a change (front.ts). */ nonce?: string }): string {
+export function statusPage(o: { shop: PageShop; offer: Offer; language: Language; handle: string; view: BookingView | null; notice?: string; /** The "Receipts" box (channels/receipts.ts receiptsBox), already drawn: a booking's, an order's or a fee's documents. */ receipts?: Raw | "" ; ics?: string; alerts?: string; /** Money clarity: this response's script nonce, for the UPI box's script and its quiet check for a change (front.ts). */ nonce?: string }): string {
   const w = PAGE[o.language];
   const s = o.offer.shop;
   const tz = s.timezone;
@@ -222,6 +222,6 @@ export function statusPage(o: { shop: PageShop; offer: Offer; language: Language
     shop: s, language: o.language, title, selfPath: self, ...(script ? { script } : {}),
     // held: look again every 15 s, so "Booked" shows once the owner marks the payment (with the script, only when something changed, so the QR is not redrawn); checking: every 30 s
     ...(v.status === "held" ? { refreshSeconds: 15 } : v.status === "checking" ? { refreshSeconds: 30 } : {}),
-    body: html`${script ? html`<div hidden data-poll="${self}" data-state="${state}"></div>` : ""}${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${refund}${what}${pay}${late}${calendar}${sendLink}${o.alerts ? raw(o.alerts) : ""}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
+    body: html`${script ? html`<div hidden data-poll="${self}" data-state="${state}"></div>` : ""}${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}${stateBlock(STAMP_OF[v.status] ?? "notHeld", o.language, line)}${refund}${what}${pay}${late}${calendar}${sendLink}${o.receipts ?? ""}${o.alerts ? raw(o.alerts) : ""}${sad ? again : ""}${cancel}${messageList(v.messages, tz, o.language)}<p class="note">${w.keepLink}</p>${footer(o.shop, o.language)}`,
   });
 }

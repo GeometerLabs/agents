@@ -7,7 +7,8 @@
 import type { Clock } from "../../../../modules/core/clock.ts";
 import { createAccounting } from "../../../../modules/accounting/post.ts";
 import type { Accounting } from "../../../../modules/accounting/post.ts";
-import type { LegacyMap } from "../../../../modules/accounting/journal.ts";
+import { journal } from "../../../../modules/accounting/journal.ts";
+import type { Journal, LegacyMap } from "../../../../modules/accounting/journal.ts";
 import type { RecordEntry } from "../../../../modules/record/record.ts";
 
 export const BOOKINGS_LEGACY: LegacyMap = Object.freeze({
@@ -18,6 +19,9 @@ export const BOOKINGS_LEGACY: LegacyMap = Object.freeze({
   ]),
   applied: Object.freeze([Object.freeze({ action: "complete_booking", account: "revenue:bookings" })]),
 }) as LegacyMap;
+
+/** The journal of a record's entries, read with Bookings' own action names: what the page's receipts, the owner's Money section and the accountant's files are built from. */
+export const bookingsJournal = (entries: readonly RecordEntry[]): Journal => journal(entries, BOOKINGS_LEGACY);
 
 /** The shop's accounting over the same record the agent's `log` appends to. */
 export const bookingsAccounting = (o: { record: { entries(): readonly RecordEntry[] }; timezone: string; clock: Clock }): Accounting =>

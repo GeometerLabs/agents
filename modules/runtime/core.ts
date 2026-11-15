@@ -31,6 +31,9 @@ import { recordMessageStatus } from "../messaging/statuses.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import { channelStartKey } from "../channels/events.ts";
 import type { StatusContext } from "../messaging/statuses.ts";
+import type { DocumentsKey } from "../accounting/case-documents.ts";
+import type { Document } from "../accounting/documents.ts";
+import type { ExportFile } from "../accounting/export.ts";
 
 /** Wait before the first, second and third retry; so four tries in all. For a step that failed: a step that found its Guard down waits by guard-wait.ts instead. */
 export const RETRY_DELAYS_MS = [1_000, 5_000, 30_000];
@@ -112,8 +115,18 @@ export interface ChannelKit<Store> {
   offer(store: Store, query: OfferQuery): Promise<unknown>;
   /** One request by its handle's hash, as its page may show it (an allowlist: never a code, never another customer); null when the saved state has none. */
   view(store: Store, handleHash: string): unknown | null;
-  /** What waits for the owner, each with the digest of exactly what is shown, and the coming bookings. */
-  owner(store: Store): unknown;
+  /**
+   * What waits for the owner, each with the digest of exactly what is shown, and the coming bookings. `entries` is the saved record: the owner's Money section is
+   * worked out from the accounts it holds (modules/accounting/owner-money.ts), which only the record has.
+   */
+  owner(store: Store, entries: readonly RecordEntry[]): unknown;
+  /**
+   * The documents (receipts, bills, refund notes) of the case or cases the page with this handle's hash (or, for a parent's page, this link's hash) shows, newest
+   * first, drawn in `language` (modules/accounting/case-documents.ts). Empty for a key no page has. Left out by a template with no accounting.
+   */
+  documents?(store: Store, entries: readonly RecordEntry[], key: DocumentsKey, language: Language): Document[];
+  /** The accountant's files for a period ("2026-11" or "26-27"), from the saved record (modules/accounting/export.ts). Throws for a text that is not a period. */
+  accountantFiles?(store: Store, entries: readonly RecordEntry[], period: string): ExportFile[];
   /**
    * Item 11h (Fees): what a parent's private link opens, found by the link's HASH (modules/channels/handle.ts parentLinkHash): only that parent's students' fees.
    * Null for a hash no parent has now (never made, replaced, or revoked). Left out by a template with no parent links.
@@ -224,6 +237,10 @@ export interface RuntimeChannel {
   /** The request with this handle's hash, or where its task is; null when there is neither. */
   view(handleHash: string): unknown | PendingView | null;
   owner(): unknown;
+  /** The kit's documents read, when it has one. */
+  documents?(key: DocumentsKey, language: Language): Document[];
+  /** The kit's accountant's files, when it has them. The runtime's http route lets only a signed-in owner's session reach this. */
+  accountantFiles?(period: string): ExportFile[];
   /** The kit's parent read (above), when it has one. */
   parent?(linkHash: string): unknown | null;
   /** The kit's ownerVoice (above), when it has one. */
@@ -431,7 +448,9 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
           const task = db.taskState?.(channelStartKey(handleHash));
           return task === "pending" ? { status: "pending" as const } : task === "failed" ? { status: "not_done" as const } : null;
         },
-        owner: () => kit.channel!.owner(kit.parse(snapshot)),
+        owner: () => kit.channel!.owner(kit.parse(snapshot), entries),
+        ...(kit.channel.documents ? { documents: (key: DocumentsKey, language: Language) => kit.channel!.documents!(kit.parse(snapshot), entries, key, language) } : {}),
+        ...(kit.channel.accountantFiles ? { accountantFiles: (period: string) => kit.channel!.accountantFiles!(kit.parse(snapshot), entries, period) } : {}),
         ...(kit.channel.parent ? { parent: (linkHash: string) => kit.channel!.parent!(kit.parse(snapshot), linkHash) } : {}),
         ...(kit.channel.ownerVoice ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => kit.channel!.ownerVoice!(audio) } : {}),
       } satisfies RuntimeChannel,
