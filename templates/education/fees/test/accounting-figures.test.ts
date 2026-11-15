@@ -92,8 +92,19 @@ test("the books give the report's money, exactly, on the busy month and every cr
     // the books hold after every situation (as in Bookings and Orders), and no student's name reaches a record entry's refs
     const dues = [...w.store.dues.values()];
     assert.deepEqual(booksFaults(all, FEES_LEGACY, { privateText: dues.map((d) => d.studentName) }), [], `world ${i}: the books hold`);
-    // Fees keeps each fee's balance in its own store; the books' receivable for that fee must say the same, to the paisa
-    for (const d of dues) assert.equal(j.receivableOf(d.id), balancePaise(d), `world ${i}: fee ${d.id}'s receivable is its balance`);
+    // Fees keeps each fee's balance in its own store, before refunds (due.ts: "negative: more was paid than is owed, and the extra is to be refunded"). The books take
+    // a refund owed out of the fee's overpaid receivable first and the rest from `returns` (a refund the owner gives on a fee paid exactly), so the books' receivable is
+    // the store's balance plus the refunds owed on that fee, up to what was overpaid. A refund made, or kept by the owner, stays counted; a cancelled one does not.
+    const owedOn = new Map<string, { case: string; paise: number }>();
+    for (const e of all) {
+      if (e.refs.money === "refund_owed" && j.linesOf(e.seq).length > 0) owedOn.set(e.refs.owed, { case: e.booking ?? "", paise: Number(e.refs.amountPaise) });
+      if (e.refs.money === "refund_cancelled" && j.linesOf(e.seq).length > 0) owedOn.delete(e.refs.owed);
+    }
+    for (const d of dues) {
+      const refunds = [...owedOn.values()].filter((o) => o.case === d.id).reduce((n, o) => n + o.paise, 0);
+      const overpaid = Math.max(0, -balancePaise(d));
+      assert.equal(j.receivableOf(d.id), balancePaise(d) + Math.min(refunds, overpaid), `world ${i}: fee ${d.id}'s receivable is its balance plus its refunds of what was overpaid`);
+    }
     assert.deepEqual(all.filter((e) => e.refs.money === undefined && j.linesOf(e.seq).length > 0).map((e) => `${e.action}/${e.outcome}`), [], `world ${i}: every money line was written through post`);
   });
   assert.ok(seen > 50, `the comparison saw money: ${seen} figures`);

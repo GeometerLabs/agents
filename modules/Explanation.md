@@ -1193,7 +1193,7 @@ the same, 1 a difference, 2 a file it cannot read). The hash chain itself is geo
 old sums were deleted, each template's `test/accounting-figures.test.ts` held the journal's figures equal to them, to the paisa and the count, on the busy month and on
 every crash-test world, and on records written in the older form; the old sums are kept in those tests as the thing the books must agree with. The same tests now also
 run `invariants.ts` (`booksFaults`) on every crash-test world: every entry balances, money is counted once, `refunds_owed` equals the open refunds, numbers have no gap a
-restore does not explain, no customer number or student name is in any refs, and (Fees) each fee's receivable equals its balance in the Fees store.
+restore does not explain, no customer number or student name is in any refs, and (Fees) each fee's receivable equals its balance in the Fees store plus the refunds owed on it, up to what was overpaid (the store keeps its balance before refunds; the books take a refund from the overpaid receivable first and the rest from `returns`).
 
 **Fees' "paid another way?"** splits into two buttons, cash and bank (`channels/words-money.ts`, `events.ts`), so the books know which account the money is in.
 

@@ -22,7 +22,9 @@ function world() {
   const acc = createAccounting({ record, shop: { timezone: TZ }, legacy: LEGACY, clock });
   const raw = (action: string, refs: Record<string, string>, outcome: Outcome = "confirmed", c: string | null = "b-1") =>
     record.append({ conversation: PHONE, booking: c, action, inputs: {}, outcome, language: "en", refs });
-  const post = (event: MoneyEvent, action: string, outcome: Outcome = "confirmed") => acc.post(event, (refs) => raw(action, refs, outcome, "case" in event ? event.case : null));
+  // as a template does: its own line carries the payment id and the amount even when post gives no money fields (a repeat), so the journal reads the repeat as one
+  const post = (event: MoneyEvent, action: string, outcome: Outcome = "confirmed") =>
+    acc.post(event, (refs) => raw(action, { ...("paymentId" in event ? { paymentId: event.paymentId } : {}), ...("amountPaise" in event ? { amountPaise: String(event.amountPaise) } : {}), ...refs }, outcome, "case" in event ? event.case : null));
   return { record, post, raw };
 }
 const gw = (c: string, id: string, amountPaise: number): MoneyEvent => ({ kind: "received", case: c, paymentId: id, amountPaise, method: "gateway", evidence: "provider", for: "advance" });
