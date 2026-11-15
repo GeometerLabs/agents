@@ -148,7 +148,7 @@ export interface ServerConfig {
   panel: { enabled: boolean; mode: "own" | "hosted"; /** B72: the shop terms can be sent to the owner and agreed on WhatsApp (modules/terms). OFF unless true: it needs the owner's legal check before it replaces signed paper. */ termsOnWhatsapp: boolean };
   /**
    * Geometer's speech-to-text service for voice notes (plan 11d, services/speech). OFF unless `enabled`: no container, no network, no model folder is made. When on, the
-   * service runs on its own internal network (no way out), reads its model files from `modelsDir` read-only (default <server folder>/speech-models, filled by the operator's
+   * service runs on its own internal network (no way out), reads its model files from `modelsDir` read-only (default <server folder>/speech-models, filled by the server admin's
    * `fetch-models`), and is reached only by the speech Guard. `image` is built once from bundle/services/speech/Dockerfile.
    */
   speech?: { enabled: boolean; image: string; modelsDir?: string };
@@ -218,7 +218,7 @@ export function serverPaths(dir: string) {
     requests: join(root, "requests"),
     stopRequest: (name: string) => join(root, "requests", `${name}.stop.json`),
     exports: join(root, "exports"),
-    /** The speech service's model files (filled by the operator's fetch-models; mounted read-only into the service). */
+    /** The speech service's model files (filled by the server admin's fetch-models; mounted read-only into the service). */
     speechModels: join(root, "speech-models"),
     /** The Streetlist home's installed builds and the `current` link (lib/home.ts); Caddy mounts the folder read-only on a server with a pages domain. */
     home: join(root, "home"),

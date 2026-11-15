@@ -215,7 +215,7 @@ export interface Composed {
 }
 
 /**
- * The optional speech-to-text service (plan 11d). `image` is built from bundle/services/speech/Dockerfile; `modelsDir` is a host folder filled by the operator's fetch-models
+ * The optional speech-to-text service (plan 11d). `image` is built from bundle/services/speech/Dockerfile; `modelsDir` is a host folder filled by the server admin's fetch-models
  * and mounted READ-ONLY (the service never writes models and the image holds none); `tokenFile` only when the service is not on the same private network as its Guard.
  */
 export interface SpeechOptions { image: string; modelsDir: string; tokenFile?: string }

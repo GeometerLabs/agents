@@ -125,7 +125,7 @@ def make_handler(service: SpeechService):
                 self._post()
             except SpeechError as e:
                 self._fail(e)
-            except Exception:  # never show a stack trace to a caller; the operator reads the log
+            except Exception:  # never show a stack trace to a caller; the server admin reads the log
                 log.exception("unexpected error")
                 self._fail(SpeechError(500, "The speech service hit a problem with this note."))
 

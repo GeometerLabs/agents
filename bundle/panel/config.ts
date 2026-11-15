@@ -44,7 +44,7 @@ export interface PanelConfig {
   now?: () => number;
 }
 
-// Thrown for a bad environment at start-up so the panel refuses to run, with a message the operator can act on, instead of limping along half set up.
+// Thrown for a bad environment at start-up so the panel refuses to run, with a message the server admin can act on, instead of limping along half set up.
 export class ConfigError extends Error {}
 
 const fill = (template: string | undefined, values: Record<string, string>): string | undefined =>

@@ -167,7 +167,7 @@ const WHEN: Record<TemplateId, string> = {
   owner_upi_refund_kept: "UPI shop: the answer to the owner's Kept for booking",
   booking_paused: "The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later",
   owner_licence_paused: "The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money",
-  owner_licence_stopped: "The one notice to the owner at the licence's final stop: the Operator's service has ended, the bookings still in the calendar, and that hello@geometer.dev will connect the owner with another local Operator",
+  owner_licence_stopped: "The one notice to the owner at the licence's final stop: the partner's service has ended, the bookings still in the calendar, and that hello@geometer.dev will connect the owner with another local partner",
 };
 
 /** Customer sentences, in the language, with what they mean. The sheet shows what the agent reads from each. */

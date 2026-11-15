@@ -137,7 +137,7 @@ test("the runtime sends the owner one service notice at the wind-down and one at
     const all = kit.messaging.sentTo(owner);
     assert.equal(all.length, 2);
     assert.equal(all[1].templateName, "owner_service_stopped");
-    assert.equal(all[1].text, "Heads up: online booking for Glow Salon has stopped, because the service from Divya, local Operator has ended. Bookings still in your calendar after today: 0. To keep it going with another local Operator, write to hello@geometer.dev and Geometer will put you in touch.");
+    assert.equal(all[1].text, "Heads up: online booking for Glow Salon has stopped, because the service from Divya, local Operator has ended. Bookings still in your calendar after today: 0. To keep it going with another local partner, write to hello@geometer.dev and Geometer will put you in touch.");
     assert.doesNotMatch(all[1].text, /copy|export|records|owe|pay|keys/iu, "no money, no blame, no copy or export for the owner");
     now = { ...now, state: "wind_down", paidThrough: PAID_THROUGH + 40 * 86_400, exportUntil: null };
     await runtime.tick();

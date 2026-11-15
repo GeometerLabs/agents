@@ -885,7 +885,7 @@ for Operators' shops and for builders' clients who choose it, and at `https://<s
 code: it is one setting, read by fleet (`pages.domain`, and `pages.extra_domains`) and by the server that answers for it (`geometer.json` `pages.domain` and
 `pages.extraDomains`). The docs call it "the pages domain"; tests use `pages.example` and `old.example`.
 
-**Why a domain of its own, apart from geometer.dev.** Shop pages carry other people's names, prices and (for builders' clients) another operator's server. On a separate
+**Why a domain of its own, apart from geometer.dev.** Shop pages carry other people's names, prices and (for builders' clients) another server admin's server. On a separate
 registrable domain they share no cookies with geometer.dev (its account page and Firebase sign-in), and a shop page someone reports does not touch geometer.dev's mail or
 search reputation. The paper checker stays on geometer.dev/verify. `geometer.json` refuses a pages domain that is geometer.dev or under it.
 
@@ -958,7 +958,7 @@ Every shop on the pages domain shares one origin, so a cookie's `Path` is hygien
 slug to another, gets the browser's same-origin treatment, and SameSite=Lax does not stop it. What keeps shops apart is three things, each checked in code:
 
 1. **No script from anyone but Geometer's own code runs on the pages origin.** The Operators' shops are served by item 11d's front (plain HTML, a policy with no script).
-   A builder's server is another operator, so the door replaces its policy with one that allows no script, and drops its cookies and service-worker headers.
+   A builder's server is another server admin, so the door replaces its policy with one that allows no script, and drops its cookies and service-worker headers.
    The one script of ours is the owner's app (item 11e, wired 13 Nov): its page alone gets a policy (`front.ts appPolicy`) that runs its one inline script by a fresh
    nonce per response, and names the app's worker, manifest and recording POST by their full addresses under that shop's owner view, never `'self'` (every slug
    shares the origin). The door passes our front's policy through as it is, and still replaces a builder's, so no other page there runs script or registers a worker.
@@ -1243,3 +1243,12 @@ gone, and the run is now about 7 minutes:
 The file is now two, `test/crash-test.test.ts` (the good example, other settings, an agent that cannot be driven, UPI) and `test/crash-test-wrong.test.ts` (the three
 wrong examples), with what they share in `test/crash-test-helpers.ts`, so the test runner runs them side by side. The asks-again and past-end examples still run on
 every situation: they are the only runs that show each fails exactly one, and they are approval checks. What is left: Deferred.md, "The bundle's slow tests".
+
+## Partner became Operator in the words people read (16 Nov 2026)
+
+The owner asked for "Operator" in place of "partner" in every word a person reads: "operator is more action oriented and clear". This pass changed prose, panel and owner-page labels, the sell kits and guides in four languages, the door's card page, report and owner messages (other than the registered ones), READMEs, Explanation.md and Deferred.md prose, and code comments that describe the role. English is "Operator" with a capital O ("Become an Operator", "your Operator", "the Operator card", "Operators"); Hindi, Kannada and Malayalam use ऑपरेटर, ಆಪರೇಟರ್ and ഓപ്പറേറ്റർ.
+
+Names did not change: identifiers, JSON keys, flags, URL paths and file names still say partner, because changing them needs a data migration (see Deferred.md, "Partner is still the word in code, data and signed or registered text").
+
+**The clash.** "operator" already meant the person who runs a server (speech model fetch, Guard's admin, a builder's own server). Where it meant that, the text now says "the server admin" so the two meanings never meet. What stays: Guard's `operator:` prefix in a settled-by value (data), the identity paper's `operator` field (who runs the agent: an Operator or a builder), and the sample streamer's `operator.ts` console (file and npm script names).
+
