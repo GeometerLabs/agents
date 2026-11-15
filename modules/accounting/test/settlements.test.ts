@@ -263,7 +263,8 @@ test("not matched: a payment with no payout after more than 4 working days, a he
   assert.deepEqual(v.notMatched.filter((n) => n.kind === "not_through_assistant"), [{ kind: "not_through_assistant", paise: 50_000 }]);
   // the words, in every language: plain, no accounting word, none the claims check bans, no phone number or name, and no provider named
   for (const language of LANGUAGES) {
-    const text = ownerMoneySection(v, language, { thisMonth: "/m", lastMonth: "/l", year: "/y" }, TZ, at(11, 17, 12)).toString();
+    // no download links: their file names (journal-<period>.csv) are not words the owner reads; the links are tested in accounting-front.test.ts
+    const text = ownerMoneySection(v, language, undefined, TZ).toString();
     assert.deepEqual(bannedIn(text, language), [], `${language}: banned words`);
     for (const word of [/\bdebit/i, /\bcredit/i, /\bledger/i, /\breceivable/i, /\bjournal/i, /\bsettle/i, /razorpay/i]) assert.equal(word.test(text), false, `${language}: ${word}`);
     assert.equal(text.includes("9800000001") || text.includes("Asha"), false);
