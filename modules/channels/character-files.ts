@@ -1,6 +1,6 @@
 // The shop's character pictures as its own server keeps them (item 11i, decision 47): one folder, `character/`, with every mood drawn as SVG, PNG and WebP and a
 // small manifest, `character.json`, written LAST so a reader never sees half a set. bundle/character/render.ts draws and writes the folder into the shop's own data
-// (shops/<shop>/character/, when the partner saves the Character step, or when the deployer finds the settings changed); the deployer hands a copy to the inbox's
+// (shops/<shop>/character/, when the Operator saves the Character step, or when the deployer finds the settings changed); the deployer hands a copy to the inbox's
 // folder for the shop, beside pages.json (bundle/lib/character.ts). This file is the one shape both sides agree on, and the reader the public front uses
 // (front.ts serves <base>/character/<face>.<format>), so modules never import the bundle.
 //

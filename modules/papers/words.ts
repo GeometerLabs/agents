@@ -50,7 +50,7 @@ const en: PaperWords = {
   common: { shop: "Shop", issued: "Made on", code: "Check code", checkAt: (p) => `Check it at geometer.dev${p}`, notChecked: "What this paper did not check", notSigned: "not signed",
     signedBy: "Signed with key", digest: "Digest", ledger: "Record fingerprint (entry and hash)", ledgerNone: "not anchored to the record's fingerprint", draft: "Draft words, waiting for review",
     signatureNote: "The code and the digest let anyone check this paper has not changed since it was signed. They do not show that what it says is true.",
-    checkHeading: "Check this paper", scanToCheck: "Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you." },
+    checkHeading: "Check this paper", scanToCheck: "Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your Operator or Geometer's team gave you." },
   statement: {
     title: "Your payments statement", forNumber: (l) => `For the WhatsApp number ending ${l}`, intro: "Your own payments and refunds, as this shop's agent recorded them. Nothing about anyone else.",
     heading: "Your payments", paid: "Paid", refunded: "Refunded", markedPaid: "Marked paid by owner", markedRefund: "Refund marked sent by owner", totalPaid: "Total paid", totalRefunded: "Total refunded",
@@ -70,7 +70,7 @@ const en: PaperWords = {
     held: (h, t) => `Held ${h} of ${t} situations`, checksNone: "No go-live check result was given for this paper.", notTestedHeading: "What the checks did not test",
     live: "What it has done so far", liveSince: (d) => `Since ${d}`, entries: "Entries in its record", payments: "Payments recorded", refunds: "Refunds recorded", stopped: "Times a limit said no",
     heldForOwner: "Times it waited for the owner", changes: "Limits made wider", changed: (d, who, what) => `${d}: ${who} changed ${what}`, noChanges: (s) => `No limit was made wider since ${s}.`,
-    noHistory: "The panel keeps no history of this shop's settings yet.", hidden: "Not shown by the operator", role: { builder: "builder", partner: "local partner" },
+    noHistory: "The panel keeps no history of this shop's settings yet.", hidden: "Not shown by the operator", role: { builder: "builder", partner: "local Operator" },
   },
   not: {
     truth: "That what the record says is true. This paper is made from the agent's own record.",
@@ -102,7 +102,7 @@ const hi: PaperWords = {
   common: { shop: "दुकान", issued: "बनाया गया", code: "जाँच कोड", checkAt: (p) => `geometer.dev${p} पर जाँचें`, notChecked: "इस काग़ज़ ने क्या नहीं जाँचा", notSigned: "हस्ताक्षर नहीं",
     signedBy: "इस कुंजी से हस्ताक्षर", digest: "डाइजेस्ट", ledger: "रिकॉर्ड की पहचान (एंट्री और हैश)", ledgerNone: "रिकॉर्ड की पहचान से नहीं जुड़ा", draft: "मसौदा शब्द, समीक्षा बाकी",
     signatureNote: "कोड और डाइजेस्ट से कोई भी देख सकता है कि हस्ताक्षर के बाद यह काग़ज़ बदला नहीं। इससे यह नहीं दिखता कि इसमें लिखी बात सच है।",
-    checkHeading: "इस काग़ज़ को जाँचें", scanToCheck: "इस काग़ज़ को geometer.dev पर जाँचने के लिए स्कैन करें। इसकी .json फ़ाइल चाहिए होगी। जाँच आपके ब्राउज़र में होती है, कुछ भेजा नहीं जाता। लिंक में हस्ताक्षर की कुंजी नहीं है: किसने हस्ताक्षर किए यह जानने के लिए यहाँ दिखी कुंजी को उस कुंजी से मिलाएँ जो आपके पार्टनर या Geometer की टीम ने दी है।" },
+    checkHeading: "इस काग़ज़ को जाँचें", scanToCheck: "इस काग़ज़ को geometer.dev पर जाँचने के लिए स्कैन करें। इसकी .json फ़ाइल चाहिए होगी। जाँच आपके ब्राउज़र में होती है, कुछ भेजा नहीं जाता। लिंक में हस्ताक्षर की कुंजी नहीं है: किसने हस्ताक्षर किए यह जानने के लिए यहाँ दिखी कुंजी को उस कुंजी से मिलाएँ जो आपके ऑपरेटर या Geometer की टीम ने दी है।" },
   statement: {
     title: "आपके भुगतान का विवरण", forNumber: (l) => `${l} पर ख़त्म होने वाले WhatsApp नंबर के लिए`, intro: "सिर्फ़ आपके भुगतान और रिफ़ंड, जैसे इस दुकान के एजेंट ने लिखे। किसी और के बारे में कुछ नहीं।",
     heading: "आपके भुगतान", paid: "भुगतान", refunded: "रिफ़ंड", markedPaid: "मालिक ने भुगतान मिला लिखा", markedRefund: "मालिक ने रिफ़ंड भेजा लिखा", totalPaid: "कुल भुगतान", totalRefunded: "कुल रिफ़ंड",
@@ -122,7 +122,7 @@ const hi: PaperWords = {
     held: (h, t) => `${t} में से ${h} स्थितियों में सीमा टिकी`, checksNone: "इस काग़ज़ को चालू होने की जाँच का नतीजा नहीं दिया गया।", notTestedHeading: "जाँच ने क्या नहीं परखा",
     live: "अब तक क्या किया", liveSince: (d) => `${d} से`, entries: "रिकॉर्ड में एंट्री", payments: "दर्ज भुगतान", refunds: "दर्ज रिफ़ंड", stopped: "सीमा ने कितनी बार मना किया",
     heldForOwner: "कितनी बार मालिक का इंतज़ार किया", changes: "जो सीमाएँ ढीली की गईं", changed: (d, who, what) => `${d}: ${who} ने ${what} बदला`, noChanges: (s) => `${s} से कोई सीमा ढीली नहीं की गई।`,
-    noHistory: "पैनल में इस दुकान की सेटिंग का इतिहास अभी नहीं है।", hidden: "चलाने वाले ने नहीं दिखाया", role: { builder: "बिल्डर", partner: "स्थानीय पार्टनर" },
+    noHistory: "पैनल में इस दुकान की सेटिंग का इतिहास अभी नहीं है।", hidden: "चलाने वाले ने नहीं दिखाया", role: { builder: "बिल्डर", partner: "स्थानीय ऑपरेटर" },
   },
   not: {
     truth: "रिकॉर्ड में लिखी बात सच है या नहीं। यह काग़ज़ एजेंट के अपने रिकॉर्ड से बना है।",
@@ -154,7 +154,7 @@ const ml: PaperWords = {
   common: { shop: "കട", issued: "തയ്യാറാക്കിയത്", code: "പരിശോധനാ കോഡ്", checkAt: (p) => `geometer.dev${p} ൽ പരിശോധിക്കുക`, notChecked: "ഈ രേഖ എന്തൊക്കെ പരിശോധിച്ചില്ല", notSigned: "ഒപ്പിട്ടിട്ടില്ല",
     signedBy: "ഈ കീ കൊണ്ട് ഒപ്പിട്ടു", digest: "ഡൈജസ്റ്റ്", ledger: "രേഖയുടെ വിരലടയാളം (എൻട്രിയും ഹാഷും)", ledgerNone: "രേഖയുടെ വിരലടയാളവുമായി ബന്ധിപ്പിച്ചിട്ടില്ല", draft: "കരട് വാക്കുകൾ, പരിശോധന ബാക്കി",
     signatureNote: "ഒപ്പിട്ട ശേഷം ഈ രേഖ മാറിയിട്ടില്ലെന്ന് കോഡും ഡൈജസ്റ്റും കൊണ്ട് ആർക്കും നോക്കാം. ഇതിൽ പറയുന്നത് ശരിയാണെന്ന് അത് കാണിക്കുന്നില്ല.",
-    checkHeading: "ഈ രേഖ പരിശോധിക്കുക", scanToCheck: "ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ പങ്കാളിയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക." },
+    checkHeading: "ഈ രേഖ പരിശോധിക്കുക", scanToCheck: "ഈ രേഖ geometer.dev-ൽ പരിശോധിക്കാൻ സ്കാൻ ചെയ്യുക. ഇതിന്റെ .json ഫയൽ വേണ്ടിവരും. പരിശോധന നിങ്ങളുടെ ബ്രൗസറിൽ നടക്കുന്നു, ഒന്നും അയയ്ക്കുന്നില്ല. ലിങ്കിൽ ഒപ്പിട്ട കീ ഇല്ല: ആര് ഒപ്പിട്ടു എന്നറിയാൻ ഇവിടെ കാണുന്ന കീ, നിങ്ങളുടെ ഓപ്പറേറ്റർയോ Geometer ടീമോ തന്ന കീയുമായി ഒത്തുനോക്കുക." },
   statement: {
     title: "നിങ്ങളുടെ പണമടവ് വിവരം", forNumber: (l) => `${l} ൽ അവസാനിക്കുന്ന WhatsApp നമ്പറിന്`, intro: "നിങ്ങളുടെ സ്വന്തം പണമടവുകളും റീഫണ്ടുകളും മാത്രം, ഈ കടയുടെ ഏജന്റ് രേഖപ്പെടുത്തിയതുപോലെ. മറ്റാരെക്കുറിച്ചും ഒന്നുമില്ല.",
     heading: "നിങ്ങളുടെ പണമടവുകൾ", paid: "അടച്ചത്", refunded: "തിരികെ നൽകിയത്", markedPaid: "പണം കിട്ടിയെന്ന് ഉടമ രേഖപ്പെടുത്തി", markedRefund: "റീഫണ്ട് അയച്ചെന്ന് ഉടമ രേഖപ്പെടുത്തി", totalPaid: "ആകെ അടച്ചത്", totalRefunded: "ആകെ തിരികെ നൽകിയത്",
@@ -174,7 +174,7 @@ const ml: PaperWords = {
     held: (h, t) => `${t} സാഹചര്യങ്ങളിൽ ${h} എണ്ണത്തിൽ പരിധി നിന്നു`, checksNone: "ഈ രേഖയ്ക്ക് തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാഫലം നൽകിയിട്ടില്ല.", notTestedHeading: "പരിശോധന എന്തൊക്കെ നോക്കിയില്ല",
     live: "ഇതുവരെ ചെയ്തത്", liveSince: (d) => `${d} മുതൽ`, entries: "രേഖയിലെ എൻട്രികൾ", payments: "രേഖപ്പെടുത്തിയ പണമടവുകൾ", refunds: "രേഖപ്പെടുത്തിയ റീഫണ്ടുകൾ", stopped: "പരിധി വേണ്ടെന്ന് പറഞ്ഞ തവണകൾ",
     heldForOwner: "ഉടമയ്ക്കായി കാത്ത തവണകൾ", changes: "അയച്ച പരിധികൾ", changed: (d, who, what) => `${d}: ${who} ${what} മാറ്റി`, noChanges: (s) => `${s} മുതൽ ഒരു പരിധിയും അയച്ചിട്ടില്ല.`,
-    noHistory: "ഈ കടയുടെ ക്രമീകരണങ്ങളുടെ ചരിത്രം പാനലിൽ ഇതുവരെ ഇല്ല.", hidden: "നടത്തുന്നയാൾ കാണിച്ചിട്ടില്ല", role: { builder: "ബിൽഡർ", partner: "പ്രാദേശിക പങ്കാളി" },
+    noHistory: "ഈ കടയുടെ ക്രമീകരണങ്ങളുടെ ചരിത്രം പാനലിൽ ഇതുവരെ ഇല്ല.", hidden: "നടത്തുന്നയാൾ കാണിച്ചിട്ടില്ല", role: { builder: "ബിൽഡർ", partner: "പ്രാദേശിക ഓപ്പറേറ്റർ" },
   },
   not: {
     truth: "രേഖയിൽ പറയുന്നത് ശരിയാണോ എന്ന്. ഈ രേഖ ഏജന്റിന്റെ സ്വന്തം രേഖയിൽ നിന്ന് ഉണ്ടാക്കിയതാണ്.",
@@ -206,7 +206,7 @@ const kn: PaperWords = {
   common: { shop: "ಅಂಗಡಿ", issued: "ಮಾಡಿದ ದಿನ", code: "ಪರಿಶೀಲನಾ ಕೋಡ್", checkAt: (p) => `geometer.dev${p} ನಲ್ಲಿ ಪರಿಶೀಲಿಸಿ`, notChecked: "ಈ ಕಾಗದ ಏನನ್ನು ಪರಿಶೀಲಿಸಲಿಲ್ಲ", notSigned: "ಸಹಿ ಇಲ್ಲ",
     signedBy: "ಈ ಕೀಲಿಯಿಂದ ಸಹಿ", digest: "ಡೈಜೆಸ್ಟ್", ledger: "ದಾಖಲೆಯ ಬೆರಳಚ್ಚು (ನಮೂದು ಮತ್ತು ಹ್ಯಾಶ್)", ledgerNone: "ದಾಖಲೆಯ ಬೆರಳಚ್ಚಿಗೆ ಜೋಡಿಸಿಲ್ಲ", draft: "ಕರಡು ಪದಗಳು, ಪರಿಶೀಲನೆ ಬಾಕಿ",
     signatureNote: "ಸಹಿ ಮಾಡಿದ ನಂತರ ಈ ಕಾಗದ ಬದಲಾಗಿಲ್ಲ ಎಂದು ಕೋಡ್ ಮತ್ತು ಡೈಜೆಸ್ಟ್‌ನಿಂದ ಯಾರಾದರೂ ನೋಡಬಹುದು. ಇದರಲ್ಲಿ ಹೇಳಿದ್ದು ನಿಜ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ.",
-    checkHeading: "ಈ ಕಾಗದವನ್ನು ಪರಿಶೀಲಿಸಿ", scanToCheck: "ಈ ಕಾಗದವನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ." },
+    checkHeading: "ಈ ಕಾಗದವನ್ನು ಪರಿಶೀಲಿಸಿ", scanToCheck: "ಈ ಕಾಗದವನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಆಪರೇಟರ್ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ." },
   statement: {
     title: "ನಿಮ್ಮ ಪಾವತಿಗಳ ವಿವರ", forNumber: (l) => `${l} ರಲ್ಲಿ ಮುಗಿಯುವ WhatsApp ಸಂಖ್ಯೆಗೆ`, intro: "ನಿಮ್ಮ ಸ್ವಂತ ಪಾವತಿಗಳು ಮತ್ತು ವಾಪಸುಗಳು ಮಾತ್ರ, ಈ ಅಂಗಡಿಯ ಏಜೆಂಟ್ ದಾಖಲಿಸಿದಂತೆ. ಬೇರೆ ಯಾರ ಬಗ್ಗೆಯೂ ಏನೂ ಇಲ್ಲ.",
     heading: "ನಿಮ್ಮ ಪಾವತಿಗಳು", paid: "ಪಾವತಿ", refunded: "ವಾಪಸ್", markedPaid: "ಹಣ ಬಂತು ಎಂದು ಮಾಲೀಕರು ಗುರುತಿಸಿದರು", markedRefund: "ವಾಪಸ್ ಕಳುಹಿಸಿದೆ ಎಂದು ಮಾಲೀಕರು ಗುರುತಿಸಿದರು", totalPaid: "ಒಟ್ಟು ಪಾವತಿ", totalRefunded: "ಒಟ್ಟು ವಾಪಸ್",
@@ -226,7 +226,7 @@ const kn: PaperWords = {
     held: (h, t) => `${t} ಸನ್ನಿವೇಶಗಳಲ್ಲಿ ${h} ರಲ್ಲಿ ಮಿತಿ ನಿಂತಿತು`, checksNone: "ಈ ಕಾಗದಕ್ಕೆ ಆರಂಭದ ಪರಿಶೀಲನೆಯ ಫಲಿತಾಂಶ ಕೊಟ್ಟಿಲ್ಲ.", notTestedHeading: "ಪರಿಶೀಲನೆ ಏನನ್ನು ನೋಡಲಿಲ್ಲ",
     live: "ಇದುವರೆಗೆ ಮಾಡಿದ್ದು", liveSince: (d) => `${d} ರಿಂದ`, entries: "ದಾಖಲೆಯ ನಮೂದುಗಳು", payments: "ದಾಖಲಾದ ಪಾವತಿಗಳು", refunds: "ದಾಖಲಾದ ವಾಪಸುಗಳು", stopped: "ಮಿತಿ ಬೇಡ ಎಂದ ಬಾರಿ",
     heldForOwner: "ಮಾಲೀಕರಿಗಾಗಿ ಕಾದ ಬಾರಿ", changes: "ಸಡಿಲಿಸಿದ ಮಿತಿಗಳು", changed: (d, who, what) => `${d}: ${who} ${what} ಬದಲಿಸಿದರು`, noChanges: (s) => `${s} ರಿಂದ ಯಾವ ಮಿತಿಯನ್ನೂ ಸಡಿಲಿಸಿಲ್ಲ.`,
-    noHistory: "ಈ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಇತಿಹಾಸ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಇನ್ನೂ ಇಲ್ಲ.", hidden: "ನಡೆಸುವವರು ತೋರಿಸಿಲ್ಲ", role: { builder: "ಬಿಲ್ಡರ್", partner: "ಸ್ಥಳೀಯ ಪಾಲುದಾರ" },
+    noHistory: "ಈ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಇತಿಹಾಸ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಇನ್ನೂ ಇಲ್ಲ.", hidden: "ನಡೆಸುವವರು ತೋರಿಸಿಲ್ಲ", role: { builder: "ಬಿಲ್ಡರ್", partner: "ಸ್ಥಳೀಯ ಆಪರೇಟರ್" },
   },
   not: {
     truth: "ದಾಖಲೆಯಲ್ಲಿ ಹೇಳಿದ್ದು ನಿಜವೇ ಎಂದು. ಈ ಕಾಗದ ಏಜೆಂಟ್‌ನ ಸ್ವಂತ ದಾಖಲೆಯಿಂದ ಮಾಡಿದ್ದು.",

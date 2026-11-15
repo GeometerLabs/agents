@@ -95,7 +95,7 @@ ${totalBlock(h, o.sum)}
 ${o.innovator ? html`<p><a class="btn" href="/vote">${h.vote.link}</a></p>` : ""}`);
 }
 
-// One shop's health and cost page with the partner's own entries form; `values` refills the form after a refused entry.
+// One shop's health and cost page with the Operator's own entries form; `values` refills the form after a refused entry.
 export function shopHealthPage(c: Ctx, o: { shop: ShopHealth; month: string; saved?: boolean; problem?: keyof HealthWords["problems"]; values?: Record<string, string> }): string {
   const h = HEALTH_WORDS[c.lang];
   const s = o.shop;

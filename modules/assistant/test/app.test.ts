@@ -72,7 +72,7 @@ test("the view: the mood, today's list and the open cards by id and digest, neve
   assert.equal(view.mood, "waiting_for_owner");
   assert.equal(view.face, "needs", "the owner's app shows the owner's mood: needs you");
   // item 11i: the same reads, as the shop's public pages get them (the offer's `shop.character`): a booking within the hour, so busy, never "needs you"
-  assert.deepEqual(publicCharacter({ skills: [skill], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } }), { face: "busy" }, "no name: the partner gave none (owner, 14 Nov)");
+  assert.deepEqual(publicCharacter({ skills: [skill], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } }), { face: "busy" }, "no name: the Operator gave none (owner, 14 Nov)");
   const nothingSoon = { ...skill, day: () => [] };
   assert.deepEqual(publicCharacter({ skills: [nothingSoon], state, nowMs: now, timeZone: tz, settings: { morningAt: null, character: defaultCharacter() } }), { face: "well" }, "a card waits, but the public sees all well");
   const wrong = { ...nothingSoon, problems: () => 1 };

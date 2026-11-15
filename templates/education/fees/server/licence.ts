@@ -1,6 +1,6 @@
 // The owner's licence notice for a Fees centre (plan B13): what modules/licence/notice.ts sends, once for each `paid_through`, in the owner's language. The wind-down's
-// says online fee payment is paused and who to contact; the final stop's says the partner's service has ended, how many fees are still open, and that
-// hello@geometer.dev will connect the owner with another local partner. It never mentions a copy or export of the records (that goes only to the builder or partner).
+// says online fee payment is paused and who to contact; the final stop's says the Operator's service has ended, how many fees are still open, and that
+// hello@geometer.dev will connect the owner with another local Operator. It never mentions a copy or export of the records (that goes only to the builder or Operator).
 import { createLicenceNotice } from "../../../../modules/licence/notice.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
@@ -10,7 +10,7 @@ import { templateMessage } from "../src/language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "../src/language/templates.ts";
 import type { Settings } from "../src/settings.ts";
 
-/** Who to contact when the bundle could not say (it always names the partner who set the centre up; this is only for a runtime started by hand). */
+/** Who to contact when the bundle could not say (it always names the Operator who set the centre up; this is only for a runtime started by hand). */
 export const WHO_SET_IT_UP: Record<Language, string> = { en: "the person who set it up", hi: "इसे सेट करने वाले व्यक्ति", ml: "ഇത് ക്രമീകരിച്ച വ്യക്തിയെ", kn: "ಇದನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರನ್ನು" };
 
 export function createFeesLicenceNotice(settings: Settings, licence: () => LicenceNow) {

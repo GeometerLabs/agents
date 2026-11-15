@@ -172,7 +172,7 @@ test("the panel's phone step: picking the shop's own Gupshup account asks for th
   assert.deepEqual(written.services.messaging, { phoneNumberId: SOURCE, provider: "gupshup-selfserve", appName: "Glow_Salon", sourceNumber: SOURCE });
   const before = { services: { messaging: { provider: "gupshup-selfserve", appName: "Glow_Salon", sourceNumber: SOURCE, appId: "07c7c72d-20e3-4ff9-a5a1-14d1186eeec8" } } };
   assert.equal((keepWhatsAppProvider(fresh, before, draft.whatsapp) as any).services.messaging.appId, "07c7c72d-20e3-4ff9-a5a1-14d1186eeec8", "an app id written by hand is kept");
-  assert.deepEqual(keepWhatsAppProvider(fresh, before, { businessNumber: "+919876543210", numberId: "123456789012" }), fresh, "the partner chose Meta: written as Meta");
+  assert.deepEqual(keepWhatsAppProvider(fresh, before, { businessNumber: "+919876543210", numberId: "123456789012" }), fresh, "the Operator chose Meta: written as Meta");
   // a partner-mode shop is still kept as it was
   const partner = keepWhatsAppProvider(fresh, { services: { messaging: { provider: "gupshup", appId: "07c7c72d-20e3-4ff9-a5a1-14d1186eeec8" } } }, { businessNumber: "x", numberId: "1" }) as any;
   assert.equal(partner.services.messaging.provider, "gupshup");
@@ -195,7 +195,7 @@ test("the connection check reads the app's template list: it names the app and h
   assert.equal(report.results[0].ok, false);
 });
 
-test("the cost: a self-serve shop's two WhatsApp lines are an estimate paid from the shop's own Gupshup wallet, not the builder's or partner's; the running-cost list counts nothing for it", () => {
+test("the cost: a self-serve shop's two WhatsApp lines are an estimate paid from the shop's own Gupshup wallet, not the builder's or Operator's; the running-cost list counts nothing for it", () => {
   const prices = loadPriceList(new URL("2026-11-09.json", PRICES_DIR).pathname);
   const wallet = monthlyCost({ settings: glowSalon(), whatsappProvider: "gupshup", whatsappFromShopWallet: true }, prices);
   const builder = monthlyCost({ settings: glowSalon(), whatsappProvider: "gupshup" }, prices);

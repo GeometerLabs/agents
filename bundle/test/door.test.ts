@@ -263,12 +263,12 @@ test("item 11h: service workers are ours only: a local shop's owner worker and a
   assert.match(passThroughPolicy("pages.example", "ravi-cuts"), /worker-src 'none'/u, "and a builder's page could not register one anyway");
 });
 
-// ---- the partner's calling card (plan item 11g) ---------------------------------------------------------------------------------------------------------------
+// ---- the Operator's calling card (plan item 11g) ---------------------------------------------------------------------------------------------------------------
 
 /** Words the site never uses (owner's list, 14 Nov 2026), checked on whole words in everything a visitor can read on the card. */
 const BANNED = /\b(earn|earning|earnings|income|side hustle|passive|limited seats?|join now|work from home|founder|founding|bot|leaderboard|streak|safe|guaranteed?|proves?|certified|communal)\b|100%/iu;
 
-test("/@handle serves the partner's card as plain HTML: their words, a QR code of the address, the verify link, no script, and the door's own policy", async () => {
+test("/@handle serves the Operator's card as plain HTML: their words, a QR code of the address, the verify link, no script, and the door's own policy", async () => {
   const d = await door();
   const r = await d.call("/@asha-digital");
   assert.equal(r.status, 200);
@@ -341,7 +341,7 @@ test("fleetRegistry asks fleet's public card route and keeps the answer a minute
   assert.equal(asked, 1);
 });
 
-test("the card page's own words pass the site's word rules, whatever the partner typed", () => {
+test("the card page's own words pass the site's word rules, whatever the Operator typed", () => {
   const html = cardPage({ ...CARD, shops: [], shop_count: 1 }, "pages.example");
   const text = html.replace(/<svg[\s\S]*?<\/svg>/gu, " ").replace(/<style>[\s\S]*?<\/style>/u, " ").replace(/<[^>]+>/gu, " ");
   assert.doesNotMatch(text, BANNED);
@@ -368,7 +368,7 @@ test("item 6 (the Streetlist home on this domain): only the door's own 'no page 
   for (const name of ["shops", "partners", "privacy", "examples", "assets"]) assert.equal((await d.call(`/${name}/`)).status, 404, name);
 });
 
-test("a shop's front names its partner; the door keeps it, never passes it on, and its 502 page for that shop in the visitor's language says who to call (batch 3)", async () => {
+test("a shop's front names its Operator; the door keeps it, never passes it on, and its 502 page for that shop in the visitor's language says who to call (batch 3)", async () => {
   const contact = Buffer.from(JSON.stringify({ n: "Divya", p: "+919800000000" }), "utf8").toString("base64url");
   let down = false;
   const d = await door({ local: () => { if (down) throw Object.assign(new Error("refused"), { code: "ECONNREFUSED" }); return { status: 200, headers: { "content-type": "text/html", "x-geometer-contact": contact }, body: Buffer.from("<p>hello</p>") }; } });
@@ -381,5 +381,5 @@ test("a shop's front names its partner; the door keeps it, never passes it on, a
   assert.match(page.body, /lang="ml"/u, "in the visitor's language");
   assert.match(page.body, /href="tel:\+919800000000"/u); assert.match(page.body, /wa\.me\/919800000000/u);
   const other = await d.call("/ravi-cuts/");
-  assert.doesNotMatch(other.body, /919800000000/u, "another shop's page does not name this partner");
+  assert.doesNotMatch(other.body, /919800000000/u, "another shop's page does not name this Operator");
 });

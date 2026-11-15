@@ -22,7 +22,7 @@ const scratch = () => mkdtempSync(join(tmpdir(), "geometer-report-test-"));
 const run = (script: string, ...args: string[]) => spawnSync(process.execPath, [join(SCRIPTS, script), ...args], { encoding: "utf8" });
 
 // a small, real document: the go-live certificate for Glow Salon (no hand-check run needed: the counts are passed in)
-const smallDocument = () => buildGoLiveCertificate({ settings: glowSalon(), handCheck: { held: 33, total: 33, checks: 196, failedTitles: [] }, issuedAt: Date.parse("2027-02-04T10:30:00+05:30"), preparedBy: "Divya, local partner" });
+const smallDocument = () => buildGoLiveCertificate({ settings: glowSalon(), handCheck: { held: 33, total: 33, checks: 196, failedTitles: [] }, issuedAt: Date.parse("2027-02-04T10:30:00+05:30"), preparedBy: "Divya, local Operator" });
 
 test("a signed file round-trips, and says only what a signature shows", () => {
   const keys = generateKeyFiles(join(scratch(), "keys"));

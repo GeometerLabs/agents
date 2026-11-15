@@ -21,7 +21,7 @@ Groups decide things in meetings and then lose them. A self-help group agrees to
 - **Self-help groups,** committees (festival, water, school management, housing society) and **cooperatives** that meet regularly and decide things that other people have to do.
 - **The person who confirms:** the secretary, the chair or another named person. She or he is the group's choice, and is recorded as such.
 - **The people who hold tasks:** any member, and sometimes a person outside the group (a vendor, a technician) who is only reminded, with their consent.
-- **Whoever sets it up:** a local partner or builder, working with the group.
+- **Whoever sets it up:** a local Operator or builder, working with the group.
 
 ## Settings
 
@@ -154,7 +154,7 @@ Counted, published beside the technical results, never graded:
 
 ## The sell guide (outline)
 
-Follows [../../SELL-GUIDE.md](../../SELL-GUIDE.md). The seller is a young local partner, 18 or over. The buyer is the group's secretary or chair, or the programme that supports many groups.
+Follows [../../SELL-GUIDE.md](../../SELL-GUIDE.md). The seller is a young local Operator, 18 or over. The buyer is the group's secretary or chair, or the programme that supports many groups.
 
 | # | Heading | Key content |
 | --- | --- | --- |

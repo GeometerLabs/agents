@@ -1,12 +1,12 @@
 // Makes the "What to ask the shop for" card from the one list in list.ts (B72). Three readers:
 //   - the panel, through askCardFor(template, language): plain data to show on screen;
-//   - partners, through the Markdown files this script writes beside each template's sell guide (sell/ask-card.<lang>.md);
+//   - Operators, through the Markdown files this script writes beside each template's sell guide (sell/ask-card.<lang>.md);
 //   - the review sheet, through askCardRows(language): the same lines with their English, so a native reader sees them.
 //
 //   node modules/ask-card/render.ts            writes the twelve cards (3 templates x 4 languages)
 //   node modules/ask-card/render.ts --check    writes nothing; fails and names every card that is behind the list
 //
-// Why generated files at all: a partner prints or opens the card without the panel, and a test (test/ask-card.test.ts) fails when a file is not what the list makes, so the
+// Why generated files at all: an Operator prints or opens the card without the panel, and a test (test/ask-card.test.ts) fails when a file is not what the list makes, so the
 // card on paper and the card on screen cannot say different things.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -48,7 +48,7 @@ export interface Card {
   heads: { always: string; template: string };
   optionalLabel: string;
   items: CardItem[];
-  /** What the partner must not promise. */
+  /** What the Operator must not promise. */
   note: string;
   /** "machine-written" for Hindi, Malayalam and Kannada until a native reader signs them off; the panel shows a banner for it. */
   review: "source" | "machine-written";
@@ -72,7 +72,7 @@ export function askCardFor(template: CardTemplate, language: Language): Card {
   };
 }
 
-/** The card as Markdown: a checklist the partner ticks with the owner. */
+/** The card as Markdown: a checklist the Operator ticks with the owner. */
 export function renderMarkdown(card: Card): string {
   const lines: string[] = [`# ${card.title}`, ""];
   if (card.review === "machine-written") {

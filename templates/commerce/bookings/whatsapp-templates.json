@@ -1983,7 +1983,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "ध्यान दें: {{1}} की ऑनलाइन बुकिंग बंद हो गई है, क्योंकि {{2}} की सेवा खत्म हो गई है। आज के बाद आपके कैलेंडर में {{3}} बुकिंग बाकी हैं। किसी दूसरे लोकल पार्टनर के साथ इसे जारी रखना हो तो hello@geometer.dev पर लिखिए, Geometer आपको मिलवा देगा।",
+        "text": "ध्यान दें: {{1}} की ऑनलाइन बुकिंग बंद हो गई है, क्योंकि {{2}} की सेवा खत्म हो गई है। आज के बाद आपके कैलेंडर में {{3}} बुकिंग बाकी हैं। किसी दूसरे लोकल ऑपरेटर के साथ इसे जारी रखना हो तो hello@geometer.dev पर लिखिए, Geometer आपको मिलवा देगा।",
         "example": {
           "body_text": [
             [
@@ -2004,7 +2004,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "Heads up: online booking for {{1}} has stopped, because the service from {{2}} has ended. Bookings still in your calendar after today: {{3}}. To keep it going with another local partner, write to hello@geometer.dev and Geometer will put you in touch.",
+        "text": "Heads up: online booking for {{1}} has stopped, because the service from {{2}} has ended. Bookings still in your calendar after today: {{3}}. To keep it going with another local Operator, write to hello@geometer.dev and Geometer will put you in touch.",
         "example": {
           "body_text": [
             [
@@ -2046,7 +2046,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "ಗಮನಿಸಿ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ, ಏಕೆಂದರೆ {{2}} ಅವರ ಸೇವೆ ಮುಗಿದಿದೆ. ಇಂದಿನ ನಂತರ ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಇನ್ನೂ ಇರುವ ಬುಕಿಂಗ್‌ಗಳು: {{3}}. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ.",
+        "text": "ಗಮನಿಸಿ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ, ಏಕೆಂದರೆ {{2}} ಅವರ ಸೇವೆ ಮುಗಿದಿದೆ. ಇಂದಿನ ನಂತರ ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಇನ್ನೂ ಇರುವ ಬುಕಿಂಗ್‌ಗಳು: {{3}}. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಆಪರೇಟರ್ ಜೊತೆ ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ.",
         "example": {
           "body_text": [
             [

@@ -20,7 +20,7 @@ import { join } from "node:path";
 const settings = glowSalon();
 const range = monthRange("2026-11", settings.timezone);
 const made = Date.UTC(2026, 11, 1, 4, 0);
-const make = (innovator?: boolean) => buildMonthlyReport({ settings, entries: [], bookings: [], ...range, source: "live", madeAt: made, preparedBy: "Divya, local partner", ...(innovator === undefined ? {} : { innovator }) });
+const make = (innovator?: boolean) => buildMonthlyReport({ settings, entries: [], bookings: [], ...range, source: "live", madeAt: made, preparedBy: "Divya, local Operator", ...(innovator === undefined ? {} : { innovator }) });
 
 test("the badge is a word and a plain symbol in every language, and none of them is the word 'founding'", () => {
   for (const language of LANGUAGES) {
@@ -65,7 +65,7 @@ test("with the flag the badge is in the signed bytes, on the page in every langu
 test("writeClientReport puts the badge on the files only when told to, and hands back the sealed report", () => {
   const out = mkdtempSync(join(tmpdir(), "geo-badge-"));
   try {
-    const run = { settings, entries: [], bookings: [], month: "2026-11", language: "en" as const, out, source: "live" as const, now: made, preparedBy: "Divya, local partner" };
+    const run = { settings, entries: [], bookings: [], month: "2026-11", language: "en" as const, out, source: "live" as const, now: made, preparedBy: "Divya, local Operator" };
     const without = writeClientReport(run);
     assert.equal(without.report.code, without.code);
     assert.ok(!readFileSync(join(out, "report-2026-11-en.html"), "utf8").includes("badge\">"));

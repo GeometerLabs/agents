@@ -14,7 +14,7 @@ import { verifyEnvelopeText } from "../../../../modules/report/sign.ts";
 
 const EXAMPLE = new URL("../clients/glow-salon.example", import.meta.url).pathname;
 const TOKEN = "0123456789abcdef0123456789abcdef";
-const BLOCK = { preparedBy: "Divya, local partner", pageBaseUrl: "https://reports.example.com/r" };
+const BLOCK = { preparedBy: "Divya, local Operator", pageBaseUrl: "https://reports.example.com/r" };
 const check = (report: unknown, extra: object = {}) => validateRuntimeConfig({ mode: "fakes", ...extra, report }, "/clients/glow");
 
 test("with no report block there is no monthly report; with one, the paths are measured from the client folder and the page folder defaults to the data folder's reports", () => {
@@ -23,7 +23,7 @@ test("with no report block there is no monthly report; with one, the paths are m
   const r = check({ ...BLOCK, innovator: true, source: "live", signingKeyFile: "keys/report-key.pem", goLiveFile: "go-live-certificate.json" });
   assert.ok(r.ok);
   assert.deepEqual(r.config.report, {
-    preparedBy: "Divya, local partner", pageBaseUrl: "https://reports.example.com/r", pagesDir: "/clients/glow/data/reports", innovator: true, source: "live",
+    preparedBy: "Divya, local Operator", pageBaseUrl: "https://reports.example.com/r", pagesDir: "/clients/glow/data/reports", innovator: true, source: "live",
     signingKeyFile: "/clients/glow/keys/report-key.pem", goLiveFile: "/clients/glow/go-live-certificate.json",
   });
   const elsewhere = check({ ...BLOCK, pagesDir: "/srv/reports" }, { dataDir: "/srv/data" });
@@ -57,13 +57,13 @@ test("the badge and the name are read again when runtime.json changes, a half-wr
     const write = (text: string, secondsAhead: number) => { writeFileSync(file, text); const t = new Date(Date.now() + secondsAhead * 1000); utimesSync(file, t, t); };
     write(JSON.stringify({ mode: "fakes", report: { ...BLOCK, innovator: false } }), 0);
     const read = reportOptionsReader(dir, { preparedBy: BLOCK.preparedBy, innovator: false });
-    assert.deepEqual(read(), { preparedBy: "Divya, local partner", innovator: false });
+    assert.deepEqual(read(), { preparedBy: "Divya, local Operator", innovator: false });
     write(JSON.stringify({ mode: "fakes", report: { ...BLOCK, innovator: true } }), 10);
-    assert.deepEqual(read(), { preparedBy: "Divya, local partner", innovator: true }, "fleet said innovator: the next report carries the badge");
+    assert.deepEqual(read(), { preparedBy: "Divya, local Operator", innovator: true }, "fleet said innovator: the next report carries the badge");
     write('{"mode": "fakes", "report": {"prepared', 20);
-    assert.deepEqual(read(), { preparedBy: "Divya, local partner", innovator: true }, "a write in the middle changes nothing");
+    assert.deepEqual(read(), { preparedBy: "Divya, local Operator", innovator: true }, "a write in the middle changes nothing");
     write(JSON.stringify({ mode: "fakes" }), 30);
-    assert.deepEqual(read(), { preparedBy: "Divya, local partner", innovator: true });
+    assert.deepEqual(read(), { preparedBy: "Divya, local Operator", innovator: true });
     write(JSON.stringify({ mode: "fakes", report: { ...BLOCK, preparedBy: "Arjun, Kochi Automations", innovator: false } }), 40);
     assert.deepEqual(read(), { preparedBy: "Arjun, Kochi Automations", innovator: false }, "and the badge is taken away the same way");
     write(JSON.stringify({ mode: "fakes", report: { ...BLOCK, preparedBy: "bad\nname", innovator: "maybe" } }), 50);

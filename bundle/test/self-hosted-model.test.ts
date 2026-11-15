@@ -63,7 +63,7 @@ test("a self-hosted model is refused when it is not OpenAI-compatible, names two
   }
 });
 
-test("partners' shops cannot select it: Geometer's partner server (panel mode hosted) refuses a self-hosted model, because its AI cap is priced from Geometer's list", () => {
+test("Operators' shops cannot select it: Geometer's Operator server (panel mode hosted) refuses a self-hosted model, because its AI cap is priced from Geometer's list", () => {
   const e = errorsOf(selfHosted({ rate: RATE }), { panel: { enabled: true, mode: "hosted" } });
   assert.equal(e.length, 1);
   assert.match(e[0], /builder's own server/);
@@ -97,7 +97,7 @@ test("a shop cannot price its own calls: on a hosted provider's server, provider
   const forged = { wire: "openai", model: "gpt-4o-mini", provider: SELF_HOSTED_PROVIDER, rate: { inputUsdPerMillion: 0, outputUsdPerMillion: 0 } };
   const expected = { wire: "openai", baseUrl: "http://g-model:8080/v1", model: "gpt-4o-mini", agentTokenFile: "/run/secrets/agent_model", provider: "openai" };
   assert.deepEqual(generated({}, forged).parser, expected);
-  assert.deepEqual(generated({ panel: { enabled: true, mode: "hosted" } }, forged).parser, expected, "on Geometer's partner server too");
+  assert.deepEqual(generated({ panel: { enabled: true, mode: "hosted" } }, forged).parser, expected, "on Geometer's Operator server too");
 });
 
 test("every generated parser names its provider, so a hosted provider's calls are priced too: before 11 Nov the runtime took g-model, which no rate line prices", () => {

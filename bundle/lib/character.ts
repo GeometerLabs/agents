@@ -1,5 +1,5 @@
 // The shop's character on the server (plan item 11i, decision 47): the deployer's side. Used by the deployer's loop (apply.ts runCharacters, just before the pages
-// pass) and by the panel when the partner saves the Character step (panel/server.ts).
+// pass) and by the panel when the Operator saves the Character step (panel/server.ts).
 //
 //   shops/<shop>/settings.json         `assistant.character`: the look (style, seed, colour), the name and the personality (the panel's Character step writes it)
 //   shops/<shop>/character/            the shop's own pictures: every mood as SVG, PNG and WebP, and character.json (render.ts), drawn when the look changes

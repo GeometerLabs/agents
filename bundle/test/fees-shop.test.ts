@@ -233,14 +233,14 @@ test("shop add --template fees starts a centre from the template: the example se
     assert.equal(upi.result, 0, upi.err);
     assert.deepEqual(readShop(w.root, "upi-centre").settings.payment, { module: "upi", upi: { id: "brighttuition@okhdfcbank", payee: "Bright Tuition" } });
     assert.deepEqual(JSON.parse(readFileSync(join(w.paths.shop("upi-centre"), "runtime.json"), "utf8")).services.payments, undefined, "a UPI centre's runtime names no payments service");
-    const r = await add("bright", "--template", "fees", "--payment", "razorpay", "--whatsapp-number-id", PHONE_NUMBER_ID, "--prepared-by", "Divya, local partner");
+    const r = await add("bright", "--template", "fees", "--payment", "razorpay", "--whatsapp-number-id", PHONE_NUMBER_ID, "--prepared-by", "Divya, local Operator");
     assert.equal(r.result, 0, r.err);
     assert.match(r.out, /somebody else's made-up centre/);
     const dir = w.paths.shop("bright");
     assert.equal(readFileSync(join(dir, "pathway.lock"), "utf8"), "fees@0.1.0\n");
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "runtime.json"), "utf8")), { mode: "live", tickSeconds: 30, services: { payments: {}, messaging: { phoneNumberId: PHONE_NUMBER_ID }, timeoutMs: 20_000 } });
     assert.deepEqual(JSON.parse(readFileSync(join(dir, "settings.json"), "utf8")), { ...JSON.parse(readFileSync(new URL("../../templates/education/fees/settings/bright-tuition-upi.example.json", import.meta.url), "utf8")), payment: { module: "razorpay" } }, "the example, with the gateway the person chose");
-    assert.deepEqual(JSON.parse(readFileSync(join(dir, "report.json"), "utf8")), { schema: 1, preparedBy: "Divya, local partner" });
+    assert.deepEqual(JSON.parse(readFileSync(join(dir, "report.json"), "utf8")), { schema: 1, preparedBy: "Divya, local Operator" });
     assert.deepEqual(readShop(w.root, "bright").problems, [], "the shop reads cleanly");
     w.handIn("bright", feesSecrets("bright"));
     assert.deepEqual((await checkShop(w.ctx, "bright")).problems, [], "and it passes the generator's checks");

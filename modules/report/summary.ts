@@ -25,7 +25,7 @@
 //   pathway   text      the agent's name as the paper has it ("bookings", "fees", "orders", or a builder's own agent), up to 32 bytes
 //   shop      text      the shop's name as the paper prints it, up to 64 bytes (a longer name is cut at a whole character and ends with "…")
 //   by        text      who set the shop up, as the paper says it ("Divya, Sri Sai Digital"), up to 64 bytes; empty when the paper names no one. On Geometer's
-//                       partner server this is the only place the page names the partner, so it gets the same room as the shop's name
+//                       Operator server this is the only place the page names the Operator, so it gets the same room as the shop's name
 //   figures   1 byte count (at most 16), then each figure as an unsigned LEB128 number in its fewest bytes; money is in paise
 //   key hint  8 bytes   the first 8 bytes of the signer's key id (the sha256 of its raw public key, sign.ts): which entry of the public list to try
 //   digest    32 bytes  the sha256 of the full paper (its `digest`), so the file, when someone has it, can be matched to this summary

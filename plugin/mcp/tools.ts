@@ -66,7 +66,7 @@ const create_pathway: Tool = {
     template: { type: "string", description: "A template id from list_modules, e.g. bookings or fees." },
     whatsapp_number_id: { type: "string", description: "The WhatsApp phone number id (digits). Optional now; the panel asks for it." },
     calendar_id: { type: "string", description: "Bookings only: the shop's Google calendar id." },
-    prepared_by: { type: "string", description: "The name the owner reads in the monthly report, e.g. 'Divya, local partner'. With `company`, the person's name alone, e.g. 'Divya'." },
+    prepared_by: { type: "string", description: "The name the owner reads in the monthly report, e.g. 'Divya, local Operator'. With `company`, the person's name alone, e.g. 'Divya'." },
     company: { type: "string", description: "Optional. Your agency or business name; the owner then reads 'Divya, Sri Sai Digital'. Needs prepared_by." },
     settings: { type: "object", description: "Business details to start from, in the template's settings shape. Limit fields are ignored if they equal the template's, and refused if they differ." },
     upi_id: { type: "string", description: "The shop's own UPI ID (for example glowsalon@okicici). Customers pay it by UPI, the default; the owner confirms each payment. Required: a shop never starts on a gateway or on the example's made-up UPI ID." },

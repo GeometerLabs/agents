@@ -1,4 +1,4 @@
-// The Streetlist home on the partner server (before-launch item 6, lib/home.ts): a build reaches the server as one pinned pack file, is checked, installed beside the
+// The Streetlist home on the Operator server (before-launch item 6, lib/home.ts): a build reaches the server as one pinned pack file, is checked, installed beside the
 // one served, switched to atomically and rolled back; its names cannot shadow a shop's; and the Caddy side is the streetlist repository's firebase.json, ported.
 // Written 14 Nov 2026. The tests that read the streetlist repository or fleet's slug list look for them beside this repository and say so when they are not there.
 import { test } from "node:test";
@@ -22,7 +22,7 @@ const text = (s: string) => Buffer.from(s);
 /** A small build: every kind of file the home has. `change` replaces or adds files; null removes one. */
 function files(change: Record<string, string | null> = {}): { path: string; data: Uint8Array }[] {
   const base: Record<string, string | null> = {
-    "index.html": "<p>HOME one</p>", "404.html": "<p>NOT FOUND</p>", "shops.html": "<p>shops</p>", "partners.html": "<p>partners</p>", "privacy.html": "<p>privacy</p>",
+    "index.html": "<p>HOME one</p>", "404.html": "<p>NOT FOUND</p>", "shops.html": "<p>shops</p>", "partners.html": "<p>Operators</p>", "privacy.html": "<p>privacy</p>",
     "examples/glow-salon.html": "<p>glow</p>", "assets/main-Ab_1.js": "console.log(1)", "assets/site-x.css": "body{}", "favicon.svg": "<svg/>", "robots.txt": "User-agent: *\nAllow: /\nDisallow: /examples/\n",
   };
   return Object.entries({ ...base, ...change }).filter(([, v]) => v !== null).map(([path, v]) => ({ path, data: text(v!) }));

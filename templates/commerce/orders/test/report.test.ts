@@ -33,7 +33,7 @@ import { annapurnaRazorpay, createWorld } from "../src/harness.ts";
 const November = (w: World, extra: { source?: "stand-in" | "test-mode" | "live"; innovator?: boolean; preparedBy?: string } = {}): OrdersReport =>
   buildOrdersReport({
     settings: w.settings, entries: w.record.entries(), orders: [...w.store.orders.values()], ...monthRange("2026-11", w.settings.timezone), source: extra.source ?? "stand-in", madeAt: at(12, 1, 10),
-    preparedBy: extra.preparedBy ?? "Divya, local partner", innovator: extra.innovator,
+    preparedBy: extra.preparedBy ?? "Divya, local Operator", innovator: extra.innovator,
   });
 
 let month: World;
@@ -245,7 +245,7 @@ test("the message is the owner's lines in every language: numbers from the repor
     assert.ok(text.includes(`${s.label.stillToCollect}: *₹240 (${s.label.orders}: 1)*`), text);
     assert.ok(text.includes(`${s.label.ordersTaken}: *7*`) && text.includes(`${s.label.cancelled}: *2*`), text);
     assert.ok(text.includes(`${s.label.wasAsked}: *2*`) && text.includes(`${s.label.approved}: *2*`) && text.includes(`${s.label.saidNo}: *0*`), text);
-    assert.ok(text.includes(sealed.code) && text.includes("https://reports.example.com/r/abc/report-2026-11-en.html") && text.includes("Divya, local partner"), text);
+    assert.ok(text.includes(sealed.code) && text.includes("https://reports.example.com/r/abc/report-2026-11-en.html") && text.includes("Divya, local Operator"), text);
     assert.ok(text.includes(s.helpLine), "the help line");
     assert.ok(text.startsWith(`*${s.monthlyReport}: `), "starts with fixed words");
     assert.ok(text.endsWith("Geometer"), "ends with fixed words");
@@ -295,7 +295,7 @@ test("the template follows Meta's rules: numbered values used once, fixed words 
       const parameters = reportParameters(template, language, values);
       assert.equal(parameters.length, slots.length);
       for (const p of parameters) assert.ok(!/[\n\t]| {2,}/.test(p), `a value is one line: ${JSON.stringify(p)}`);
-      if (template.upi && !template.badge) assert.equal(fillBody(meta, parameters), monthlyReportMessage(sealed, language, { link: "https://x.example.com/a.html" }).text.replace("Divya, local partner", "Divya Nair"));
+      if (template.upi && !template.badge) assert.equal(fillBody(meta, parameters), monthlyReportMessage(sealed, language, { link: "https://x.example.com/a.html" }).text.replace("Divya, local Operator", "Divya Nair"));
       assert.ok([...meta].length <= 1024);
     }
   }
@@ -332,7 +332,7 @@ test("the shared monthly job sends the Orders report once, on the 1st from 09:00
   approveReports(w);
   const dir = tempDir();
   let n = 0;
-  const job = createMonthlyReport({ source: "stand-in", pages: { dir, baseUrl: "https://reports.example.com/r" }, options: () => ({ preparedBy: "Divya, local partner", innovator: false }), token: () => `t${++n}`.padEnd(8, "0") });
+  const job = createMonthlyReport({ source: "stand-in", pages: { dir, baseUrl: "https://reports.example.com/r" }, options: () => ({ preparedBy: "Divya, local Operator", innovator: false }), token: () => `t${++n}`.padEnd(8, "0") });
   assert.equal(lastMonth(at(12, 1, 9), "Asia/Kolkata"), "2026-11");
   w.clock.set(at(12, 1, 8, 59));
   assert.deepEqual(await job.run(context(w)), { done: false, why: "not-yet" });

@@ -110,7 +110,7 @@ test("a run that skipped situations says so: the counts leave them out, the cert
 // ---- the certificate in words ---------------------------------------------------------------------------------------------------
 
 test("the limits are in plain words in every language, with the shop's own numbers and no customer's number, UPI id or address", () => {
-  const cert = buildGoLiveCertificate({ settings: example, handCheck: ranOn(example), issuedAt: ISSUED, preparedBy: "Divya, local partner" });
+  const cert = buildGoLiveCertificate({ settings: example, handCheck: ranOn(example), issuedAt: ISSUED, preparedBy: "Divya, local Operator" });
   const text = JSON.stringify(cert);
   assert.ok(!text.includes(example.owner.whatsapp) && !text.includes("annapurna@okicici") && !text.includes(example.address!));
   const en = limitLines(cert, "en");
@@ -138,12 +138,12 @@ test("the limits are in plain words in every language, with the shop's own numbe
 test("the text and the page: held N of M, what did not hold, what was not tested, how it was run, the code, and no grading word in any language", () => {
   const failed = ranOn(example, { held: 16, failedTitles: ["A refund above the limit is held by Guard"] });
   for (const summary of [ranOn(example), failed]) {
-    const sealed = seal(buildGoLiveCertificate({ settings: example, handCheck: summary, issuedAt: ISSUED, preparedBy: "Divya, local partner" }), issuer);
+    const sealed = seal(buildGoLiveCertificate({ settings: example, handCheck: summary, issuedAt: ISSUED, preparedBy: "Divya, local Operator" }), issuer);
     for (const l of LANGUAGES) {
       const text = goLiveText(sealed, l);
       const s = STRINGS[l];
       assert.ok(text.includes(s.cert.held(summary.held, 17, 17 - summary.held, baseList.length)), `${l}: held line`);
-      assert.ok(text.includes(sealed.code) && text.includes(`/verify/#${sealed.code}`) && text.includes("Divya, local partner"), l);
+      assert.ok(text.includes(sealed.code) && text.includes(`/verify/#${sealed.code}`) && text.includes("Divya, local Operator"), l);
       assert.ok(text.includes(s.cert.handRunLine) && text.includes(s.notTested["upi-not-automatic"]), l);
       if (summary.held < 17) assert.ok(text.includes("A refund above the limit is held by Guard"), l);
       assert.equal(bannedIn(text, l).length, 0, `${l}: ${bannedIn(text, l).join(" ")}`);
@@ -179,7 +179,7 @@ test("go-live-certificate.ts runs the real hand check on a shop's own settings f
   writeFileSync(settingsFile, JSON.stringify({ ...raw(), name: "Sunrise Tiffins", refund: { limitInr: 250 } }));
   const keys = generateKeyFiles(join(dir, "keys"));
   const out = join(dir, "out");
-  const made = run("go-live-certificate.ts", ["--settings", settingsFile, "--lang", "hi", "--out", out, "--key", keys.privateKeyPath, "--prepared-by", "Divya, local partner", "--now", "2027-02-04T10:30:00+05:30"]);
+  const made = run("go-live-certificate.ts", ["--settings", settingsFile, "--lang", "hi", "--out", out, "--key", keys.privateKeyPath, "--prepared-by", "Divya, local Operator", "--now", "2027-02-04T10:30:00+05:30"]);
   assert.equal(made.status, 0, made.stdout + made.stderr);
   assert.match(made.stdout, /Signed with your key\./);
   assert.deepEqual(readdirSync(out).sort(), ["go-live-certificate-hi.html", "go-live-certificate-hi.txt", "go-live-certificate.json"]);

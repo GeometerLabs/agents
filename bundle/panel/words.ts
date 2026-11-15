@@ -25,11 +25,11 @@ export interface Words {
   nav: { shops: string; setUp: string; invite: string; signOut: string };
   common: { back: string; next: string; save: string; counts: string };
   /**
-   * `forgot` (a builder's own server) and `forgotHosted` (Geometer's partner server) are the "ask for a new link" line under the sign-in form; `partners` and
-   * `partnersLink` send a local partner on Geometer's server to geometer.dev, where they open the panel with no passphrase (fleet-signin.ts).
+   * `forgot` (a builder's own server) and `forgotHosted` (Geometer's Operator server) are the "ask for a new link" line under the sign-in form; `partners` and
+   * `partnersLink` send a local Operator on Geometer's server to geometer.dev, where they open the panel with no passphrase (fleet-signin.ts).
    */
   login: { title: string; handle: string; passphrase: string; button: string; wrong: string; wait(seconds: number): string; byInvitation: string; forgot: string; forgotHosted: string; partners: string; partnersLink: string };
-  /** The page a partner's geometer.dev link opens (fleet-signin.ts): the first visit asks name, company and language (join's labels); later visits greet them. */
+  /** The page an Operator's geometer.dev link opens (fleet-signin.ts): the first visit asks name, company and language (join's labels); later visits greet them. */
   signin: { title: string; intro: string; welcomeBack(name: string): string; button: string; problems: { gone: string; bad: string } };
   /** The page a reset link opens: a new passphrase (join's help and problems for the passphrase itself). */
   reset: { title: string; intro(name: string): string; button: string; problems: { "reset-unknown": string; "reset-used": string; "reset-expired": string } };
@@ -83,7 +83,7 @@ export interface Words {
   };
   /**
    * The shop's licence (B13), from the signed lease the server keeps: where it stands and what that means for customers, its dates, fleet's renew link, and a note
-   * when the lease has not been refreshed for a while. Said to a builder or partner, never to the shop's customers.
+   * when the lease has not been refreshed for a while. Said to a builder or Operator, never to the shop's customers.
    */
   licence: {
     heading: string; states: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped" | "none", string>; means: Record<"active" | "reminder" | "warning" | "wind_down" | "stopped" | "none", string>;
@@ -188,7 +188,7 @@ export interface Words {
   };
   /** Taking a shop's files out (B38): a copy of everything that is the shop's, in plain files, that works even when the plan has lapsed. */
   takeOut: { heading: string; text: string; button: string; notIn: string; check: string };
-  /** Moving a shop to another partner or builder (B38), with the owner's agreement from their own phone. */
+  /** Moving a shop to another Operator or builder (B38), with the owner's agreement from their own phone. */
   handover: {
     heading: string; button: string; intro: string; moves: string; stays: string; never: string;
     who: string; whoHelp: string; why: string; reasons: Record<"stopped_paying" | "stopped_serving" | "owner_request", string>; start: string;
@@ -263,7 +263,7 @@ export const en: Words = {
     wait: (s) => `Too many tries. Wait ${s} seconds and try again.`, byInvitation: "Accounts are made by invitation. Ask the person who runs this server for your link.",
     forgot: "Forgot your passphrase? Ask the person who runs this server for a new link. It works once.",
     forgotHosted: "Forgot your passphrase? Write to hello@geometer.dev from the email you gave us, and ask for a new link. It works once.",
-    partners: "Local partners: open your panel from your account on geometer.dev. You need no passphrase.", partnersLink: "Go to my account on geometer.dev",
+    partners: "Local Operators: open your panel from your account on geometer.dev. You need no passphrase.", partnersLink: "Go to my account on geometer.dev",
   },
   signin: {
     title: "Open your panel", intro: "You are signed in on geometer.dev. Tell us your name once, and next time you go straight in.",
@@ -278,7 +278,7 @@ export const en: Words = {
     problems: { "reset-unknown": "This link is not one we made. Ask for a new one.", "reset-used": "This link was already used. Ask for a new one.", "reset-expired": "This link has run out. Ask for a new one." },
   },
   join: {
-    title: (role) => `Create your ${role} account`, intro: "Your invitation works once. Choose how you sign in.", name: "Your name", company: "Company or business name (optional)", companyHelp: "Shop owners read this after your name in their monthly report. Leave it empty and they read \"local partner\" or \"builder\" instead. Up to 60 characters.", handle: "Name to sign in with", handleHelp: "3 to 40 letters, digits, dots or dashes.",
+    title: (role) => `Create your ${role} account`, intro: "Your invitation works once. Choose how you sign in.", name: "Your name", company: "Company or business name (optional)", companyHelp: "Shop owners read this after your name in their monthly report. Leave it empty and they read \"local Operator\" or \"builder\" instead. Up to 60 characters.", handle: "Name to sign in with", handleHelp: "3 to 40 letters, digits, dots or dashes.",
     passphrase: "Passphrase", passphraseHelp: "At least 10 characters. A few words in a row is easy to remember and hard to guess.", language: "Your language", button: "Create account",
     problems: {
       "invite-unknown": "This link is not one we made. Ask for a new one.", "invite-used": "This link was already used. Ask for a new one.", "invite-expired": "This link has run out. Ask for a new one.",
@@ -348,8 +348,8 @@ export const en: Words = {
     heading: "What it costs to run, each month", early: "Early estimate: no real bookings are counted yet.", fromRecord: (n) => `Worked out from ${n} bookings in the record.`, assumption: (n) => `We assumed ${n} bookings a month.`,
     lines: { whatsapp: "WhatsApp messages (Meta's fee)", "whatsapp-provider": "WhatsApp provider's own fee", gateway: "{gateway}'s fee", geometer: "Geometer's plan", hosting: "Hosting share" },
     payer: {
-      "builder-pays-whatsapp-provider": "paid by the builder or partner to their own WhatsApp provider", "shop-pays-gupshup-wallet": "an estimate, paid from the shop's own Gupshup wallet, not from Geometer's balance", "shop-pays-gateway": "paid by the shop to {gateway}",
-      "builder-pays-geometer": "paid to Geometer by the builder or partner; the AI model is included",
+      "builder-pays-whatsapp-provider": "paid by the builder or Operator to their own WhatsApp provider", "shop-pays-gupshup-wallet": "an estimate, paid from the shop's own Gupshup wallet, not from Geometer's balance", "shop-pays-gateway": "paid by the shop to {gateway}",
+      "builder-pays-geometer": "paid to Geometer by the builder or Operator; the AI model is included",
       "builder-pays-licence": "paid to Geometer by the builder, once for each live client business; the AI key is the builder's own", hosting: "the server's cost, shared",
     },
     unknown: "unknown", total: "Total", subtotal: (n) => `Subtotal. ${n} ${t1(n, "item has", "items have")} no price yet, so this is not the whole cost.`, priceList: (d) => `Prices from the list of ${d}.`,
@@ -390,7 +390,7 @@ export const en: Words = {
       reminder: "Nothing changes for customers yet.",
       warning: "Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests.",
       wind_down: "Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once.",
-      stopped: "Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local partner. Only you can download the shop's records.",
+      stopped: "Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local Operator. Only you can download the shop's records.",
       none: "Geometer's lease does not cover this shop yet, so its Guards take no new work. Refunds, cancellations and reading what is there still go through. When the trial or a plan covers the shop, the lease lists it within a minute or two of its first deploy. If it does not, write to support. A person answers.",
     },
     paidThrough: (day) => `Next payment due: ${day}.`, windDownOn: (day) => `If it is not paid, new bookings pause on ${day}.`, extended: (day) => `Geometer's emergency extension covers it until ${day}.`,
@@ -517,7 +517,7 @@ export const en: Words = {
           choiceMeta: "Meta direct (the shop's own Meta app)", choiceGupshup: "Gupshup (the shop's own account)", title: "Gupshup (the shop's own account)",
           intro: "The shop signs up at Gupshup itself and keeps the account. The shop's own Gupshup wallet pays Meta's charges and Gupshup's fee; Geometer never holds that money.",
           signup: "Sign up at Gupshup", guide: "How to find the app name and API key",
-          steps: ["The shop signs up at Gupshup and makes a WhatsApp app for its number.", "Add the partner as an admin of the Gupshup account.", "In the app, add our message templates and wait until Gupshup shows them as approved.", "Copy the app's name and API key from the Gupshup dashboard and type them below, with a secret word of your own for the callback address.", "In the app's Webhooks tab, add the address shown below, ending with that secret word."],
+          steps: ["The shop signs up at Gupshup and makes a WhatsApp app for its number.", "Add the Operator as an admin of the Gupshup account.", "In the app, add our message templates and wait until Gupshup shows them as approved.", "Copy the app's name and API key from the Gupshup dashboard and type them below, with a secret word of your own for the callback address.", "In the app's Webhooks tab, add the address shown below, ending with that secret word."],
           appName: "Gupshup app name", apiKey: "Gupshup API key", pathToken: "Secret word for the callback address (16 or more letters, digits, _ or -)",
           callback: "Add this address in the Gupshup app's Webhooks tab, with your secret word in place of SECRET-WORD:",
         },
@@ -590,10 +590,10 @@ export const en: Words = {
   },
   handover: {
     heading: "Move this shop to someone else", button: "Move this shop…",
-    intro: "Give the running of this shop to another partner or builder on this server. The shop owner has to agree first, from their own phone.",
+    intro: "Give the running of this shop to another Operator or builder on this server. The shop owner has to agree first, from their own phone.",
     moves: "What moves: who can see and change this shop here, and the name on the owner's monthly report.",
     stays: "What stays: the shop's own WhatsApp number, payment account and calendar do not move. Keys are not carried across: whoever serves the shop next enters them again.",
-    never: "A shop can go to another partner or builder. It cannot go to Geometer.",
+    never: "A shop can go to another Operator or builder. It cannot go to Geometer.",
     who: "Their sign-in name", whoHelp: "The name they sign in to this panel with.", why: "Why is it moving?",
     reasons: { stopped_paying: "They stopped paying", stopped_serving: "They stopped serving the shop", owner_request: "The owner asked for it" },
     start: "Ask the owner to agree", askTitle: "Now the owner has to agree",

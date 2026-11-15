@@ -227,7 +227,7 @@ export function withModelProvider(runtime: Record<string, unknown>, model: Model
 
 /** What the monthly report block is made from. */
 export interface ReportFacts {
-  /** "Divya, local partner": who the owner is told set the agent up (the shop's report.json, else the panel's attribution). */
+  /** "Divya, local Operator": who the owner is told set the agent up (the shop's report.json, else the panel's attribution). */
   preparedBy: string;
   /** Fleet's answer: the Innovator badge on the message, the page and the certificate. */
   innovator: boolean;
@@ -350,7 +350,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     const signingKeyFile = server.panel.enabled && o.reportKeyReadable === true ? `${SECRETS}/${RUNTIME_SIGNING_KEY_FILE}` : undefined;
     if (server.panel.enabled && o.reportKeyReadable === false) notes.push(`the owner's monthly WhatsApp report is not signed on this server: the server's paper key could not be copied for ${shop.name}'s runtime (${o.reportKeyWhy ?? "no reason was given"}). The report still carries its digest and code link; the next deploy tries again.`);
     runtime = withReport(runtime, { preparedBy: shop.preparedBy, innovator: shop.innovator, pageBaseUrl: reportBaseUrl(server, shop.name), source: !razorpay || shop.pins.gateway?.mode === "live" ? "live" : "test-mode", tenant: shop.name, ...(signingKeyFile ? { signingKeyFile } : {}) }, check, notes); // a UPI shop's money is the owner's real marks
-    if (shop.preparedBySource === "default") notes.push(`nobody is named as having set ${shop.name} up (no shops/${shop.name}/report.json, no owner.json), so the owner's monthly message says "${DEFAULT_PREPARED_BY}". Name them with \`geometer shop add --prepared-by\`, or write {"schema": 1, "preparedBy": "Divya, local partner"} in shops/${shop.name}/report.json.`);
+    if (shop.preparedBySource === "default") notes.push(`nobody is named as having set ${shop.name} up (no shops/${shop.name}/report.json, no owner.json), so the owner's monthly message says "${DEFAULT_PREPARED_BY}". Name them with \`geometer shop add --prepared-by\`, or write {"schema": 1, "preparedBy": "Divya, local Operator"} in shops/${shop.name}/report.json.`);
   }
   return { shop: shop.name, guards, runtime, notes, problems };
 }

@@ -40,7 +40,7 @@ export interface Draft {
   approvers?: { whatsapp: string; language: string }[];
   twoAboveInr?: string;
   /** Item 11c: `provider` "gupshup-selfserve" means the shop's own Gupshup account (with its `appName`); left out is Meta direct, as before. A draft from before has neither. */
-  /** Item 11h: `none` when the partner chose to start without WhatsApp (the number fields stay empty, and runtime.json names no messaging service). */
+  /** Item 11h: `none` when the Operator chose to start without WhatsApp (the number fields stay empty, and runtime.json names no messaging service). */
   whatsapp: { businessNumber: string; numberId: string; provider?: "gupshup-selfserve"; appName?: string; none?: true };
   /** B72: `use` is "own" (the shop's own booking list, the default) or "google" (a Google Calendar, which needs `id`). A draft saved before 12 Nov has no `use`: read as "own" for a new shop. */
   calendar: { id: string; use?: "own" | "google" };
@@ -87,7 +87,7 @@ export function paymentBlock(d: Draft): PaymentSettings {
 /** What the example settings of the template say, as the form's starting point. */
 export function newDraft(id: string, accountId: string, template: Template, example: Settings, now: string): Draft {
   const form = formFromSettings(example);
-  form.name = ""; // a new shop starts with no name and no prices of the example's: the partner writes their own
+  form.name = ""; // a new shop starts with no name and no prices of the example's: the Operator writes their own
   form.services = form.services.map(() => ({ id: "", name: "", also: "", price: "", minutes: "30" }));
   form.deposit = "";
   return {
@@ -378,14 +378,14 @@ export function keepWhatsAppProvider(runtime: Record<string, unknown>, before: u
     return { ...runtime, services: { ...services, messaging: { ...services.messaging, provider: "gupshup-selfserve", appName: whatsapp.appName, sourceNumber: digitsOf(whatsapp.businessNumber), ...(prior?.appId !== undefined ? { appId: prior.appId } : {}) } } };
   }
   const m = (before as { services?: { messaging?: { provider?: unknown; appId?: unknown } } } | undefined)?.services?.messaging;
-  // no provider named before, or a self-serve shop whose draft now says Meta direct (the partner switched it on purpose): written as Meta, as made
+  // no provider named before, or a self-serve shop whose draft now says Meta direct (the Operator switched it on purpose): written as Meta, as made
   if (!m || m.provider === undefined || m.provider === "gupshup-selfserve") return runtime;
   return { ...runtime, services: { ...services, messaging: { ...services.messaging, provider: m.provider, ...(m.appId !== undefined ? { appId: m.appId } : {}) } } };
 }
 
 /**
  * runtime.json: who things are. Where they are (hosts, ports, token files) is the deployer's. A payments service is named only for a shop that chose a gateway (B71).
- * Item 11h (decision 45): no WhatsApp number (the partner ticked "start without WhatsApp"), no messaging service: the shop runs on its page alone.
+ * Item 11h (decision 45): no WhatsApp number (the Operator ticked "start without WhatsApp"), no messaging service: the shop runs on its page alone.
  */
 export function runtimeFor(calendarId: string, phoneNumberId: string, serverModel?: { wire: string; model: string }, gateway = false): Record<string, unknown> {
   return {

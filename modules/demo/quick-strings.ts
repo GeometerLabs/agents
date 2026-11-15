@@ -1,6 +1,6 @@
 // The words on the hosted demo's screens (quick.ts), in the four languages. Only the demo's chrome is here: what the agent says to the customer, the parent and the owner
 // is the template's own text (src/language/), never written again for the demo.
-// MACHINE-WRITTEN (14 November 2026): the hi, ml and kn lines need a native speaker's review before partners or shops rely on them (modules/Deferred.md lists this).
+// MACHINE-WRITTEN (14 November 2026): the hi, ml and kn lines need a native speaker's review before Operators or shops rely on them (modules/Deferred.md lists this).
 import type { Language } from "../language/languages.ts";
 
 export interface QuickWords {

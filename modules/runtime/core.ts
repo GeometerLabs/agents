@@ -391,7 +391,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     db.commitStep({ taskId, snapshot: after, entries: fresh, nowMs: clock.now(), ...(failedWith !== undefined ? { failedWith } : {}) });
     snapshot = after;
     entries = all;
-    // The builder or partner is told once, here, when the agent moves to buttons: the agent writes one ai_mode line per episode (its reason is in the line and in /status).
+    // The builder or Operator is told once, here, when the agent moves to buttons: the agent writes one ai_mode line per episode (its reason is in the line and in /status).
     // The AI cap is not button mode: only the language model is left out, for the rest of the month.
     for (const e of fresh) {
       if (e.action !== "ai_mode") continue;

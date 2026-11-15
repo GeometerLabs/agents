@@ -10,7 +10,7 @@ import { TEMPLATES } from "../src/language/templates.ts";
 
 const PAID_THROUGH = 1_796_668_200;
 let state: LicenceNow = UNRESTRICTED;
-const set = (s: LicenceNow["state"]) => { state = s === "active" ? UNRESTRICTED : { state: s, restricted: true, takesNewWork: false, paidThrough: PAID_THROUGH, exportUntil: PAID_THROUGH + 90 * 86400, partner: "Divya, local partner" } as LicenceNow; };
+const set = (s: LicenceNow["state"]) => { state = s === "active" ? UNRESTRICTED : { state: s, restricted: true, takesNewWork: false, paidThrough: PAID_THROUGH, exportUntil: PAID_THROUGH + 90 * 86400, partner: "Divya, local Operator" } as LicenceNow; };
 const world = () => { state = UNRESTRICTED; return createWorld({ settings: annapurnaRazorpay(), licence: () => state }); };
 const ORDER = "2 veg thali 10 nov 12:00 pm pickup";
 
@@ -50,12 +50,12 @@ test("the final stop closes the open advance links once and sends nothing more",
   assert.equal(w.messaging.outbox().length, sent);
 });
 
-test("the licence messages exist in four languages, name the partner, and are never about money", () => {
+test("the licence messages exist in four languages, name the Operator, and are never about money", () => {
   for (const language of ["en", "hi", "ml", "kn"] as const) {
-    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Annapurna", menu: [], partner: "Divya, local partner", upcomingCount: 4 };
+    const facts = { language, timeZone: "Asia/Kolkata", businessName: "Annapurna", menu: [], partner: "Divya, local Operator", upcomingCount: 4 };
     for (const id of ["orders_paused", "owner_licence_paused", "owner_licence_stopped"] as const) {
       const text = TEMPLATES[language][id](facts);
-      if (id !== "orders_paused") assert.ok(text.includes("Divya, local partner"), `${language} ${id}`);
+      if (id !== "orders_paused") assert.ok(text.includes("Divya, local Operator"), `${language} ${id}`);
       assert.doesNotMatch(text, /₹|invoice|safe|guarantee/iu, `${language} ${id}`);
     }
   }

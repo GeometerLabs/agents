@@ -1,5 +1,5 @@
 // Makes a centre's go-live certificate from one run of the hand check, in the centre's language.
-//   node templates/education/fees/scripts/go-live-certificate.ts --settings centre.json --lang hi --out ./out [--key ~/geometer-keys/report-key.pem] [--prepared-by "Divya, local partner"]
+//   node templates/education/fees/scripts/go-live-certificate.ts --settings centre.json --lang hi --out ./out [--key ~/geometer-keys/report-key.pem] [--prepared-by "Divya, local Operator"]
 // The hand check (the same situations scripts/hand-check.ts runs) is run now, on this centre's own settings, against stand-in services. The certificate says "Held N of M
 // situations. K failed. J not tested", lists what was not tested, shows the centre's limits from the settings, and says the checks were run by hand against stand-in services.
 // A situation these settings cannot run (a centre with no late fee has no late fee to add) is left out of N and M, named in the certificate's file, and counted as not tested.

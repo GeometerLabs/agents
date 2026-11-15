@@ -1,4 +1,4 @@
-// The customer view's head on the shop's page (plan item 11f, decision 44): the shop's character, its hours this week, "message us on WhatsApp", and the partner's
+// The customer view's head on the shop's page (plan item 11f, decision 44): the shop's character, its hours this week, "message us on WhatsApp", and the Operator's
 // small line. Rendered by page.ts on the booking page (in the visitor's language, from what the runtime's offer says and the shop's pages file), plain HTML and an
 // inline picture: no script, nothing fetched, so the page's content policy stays "no script".
 //
@@ -68,5 +68,5 @@ export function shopFace(o: { shop: Pick<ShopInfo, "hours">; language: Language;
 ${o.shop.hours ? html`<details class="hours"><summary>${w.hours}</summary><ul>${hoursLines(o.shop.hours, o.language).map((l) => html`<li>${l}</li>`)}</ul></details>` : ""}</section>`;
 }
 
-/** The partner's line, for the bottom of the customer view (owner-session.ts writes it). */
+/** The Operator's line, for the bottom of the customer view (owner-session.ts writes it). */
 export const facePartnerLine = (language: Language, pages?: PagesFile): Raw => partnerLine(language, pages?.panelUrl);

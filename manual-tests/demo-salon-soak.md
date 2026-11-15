@@ -1,6 +1,6 @@
 <!--
 What this is for: the one-page plan for B14 item 5, Geometer's own demo salon agent running through Guard for two weeks before the first client. Checkpoint item 10, second half.
-Who runs it: the owner (or the partner they name) checks daily; the lead reads the weekly summary. Read README.md in this folder first (set-up, the record, procedures P1 to P6).
+Who runs it: the owner (or the Operator they name) checks daily; the lead reads the weekly summary. Read README.md in this folder first (set-up, the record, procedures P1 to P6).
 -->
 
 # Demo salon through Guard: two-week soak (B14 item 5)

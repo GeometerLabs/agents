@@ -387,7 +387,7 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   if (state.modelApplied) writeGuardFiles(ctx.dir, names.modelGuard, state.modelApplied);
   // the licence lease (B13): each runtime is handed its shop's entry before it starts (client/licence.json; no lease kept, or no key pinned, means none is restricted)
   syncLicence(ctx.dir, server, applied.map(([name]) => name), ctx.now()).forEach((l) => ctx.log(l));
-  // B72: the shop terms the owner can agree to on WhatsApp. Handed to a runtime (client/terms.json) only when the server setting is on AND the partner filled the shop's terms in;
+  // B72: the shop terms the owner can agree to on WhatsApp. Handed to a runtime (client/terms.json) only when the server setting is on AND the Operator filled the shop's terms in;
   // otherwise any copy is taken away, so turning the setting off switches the feature off at the next deploy.
   for (const [name] of applied) syncTerms(ctx.dir, server.panel.termsOnWhatsapp, name);
   // agents someone else wrote stay in the compose file whenever a shop is deployed (without this, `up --remove-orphans` would take their Guards away)

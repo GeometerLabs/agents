@@ -176,7 +176,7 @@ export interface CostInput {
   assumptions?: Partial<Assumptions>;
   /** "gupshup" or "360dialog". Left out: the provider's own fee is unknown. */
   whatsappProvider?: string;
-  /** Item 11c: the shop is on its own Gupshup account, whose wallet pays Meta's charges and Gupshup's fee directly. Both WhatsApp lines are then an estimate of what the SHOP pays (payer "shop-pays-gupshup-wallet"), never the builder's or partner's. */
+  /** Item 11c: the shop is on its own Gupshup account, whose wallet pays Meta's charges and Gupshup's fee directly. Both WhatsApp lines are then an estimate of what the SHOP pays (payer "shop-pays-gupshup-wallet"), never the builder's or Operator's. */
   whatsappFromShopWallet?: boolean;
   /** This shop's share of the server, in paise a month. Left out: unknown until the bundle measures it. */
   hostingSharePaise?: number;
@@ -233,7 +233,7 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
   const caveats = new Set<Caveat>();
   if (!observed) caveats.add("early-estimate");
   const lines: CostLine[] = [];
-  // item 11c: who pays for WhatsApp (both lines): a self-serve shop's own Gupshup wallet, else the builder or partner
+  // item 11c: who pays for WhatsApp (both lines): a self-serve shop's own Gupshup wallet, else the builder or Operator
   const waPayer: Payer = input.whatsappFromShopWallet ? "shop-pays-gupshup-wallet" : "builder-pays-whatsapp-provider";
 
   const known = (id: LineId, payer: Payer, micro: bigint, quantities: Record<string, number>, uses: string[], quality: Quality): CostLine =>
@@ -299,7 +299,7 @@ export function monthlyCost(input: CostInput, prices: PriceList): MonthlyCost {
   }
 
   // 4. Geometer's line for this shop (chargeOf): on Geometer's server, the shop's plan, one monthly amount before GST with the AI model in it up to the plan's
-  // allowance (extra messages and WhatsApp are passed on from the partner's balance and are not in this line); on a builder's own server, the builder licence,
+  // allowance (extra messages and WhatsApp are passed on from the Operator's balance and are not in this line); on a builder's own server, the builder licence,
   // whatever the plan, with the builder's own AI key. It does not depend on bookings. The plan is the one fleet reports, or else the one the shop's settings point
   // to: a deposit means Business, no money moving means Basic. It is read from the price list like every other rate, so a changed price is a new list. A list
   // without the rate makes the line unknown, never INR 0.

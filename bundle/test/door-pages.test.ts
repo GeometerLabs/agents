@@ -1,5 +1,5 @@
 // The door's own error pages in the shop's languages (release-flow batch 3, 14 Nov 2026): the language the visitor asks for, the old English text unchanged, the
-// machine-written line for Hindi, Malayalam and Kannada, the partner's call and WhatsApp links when the door has seen them, and a header that is not a contact is ignored.
+// machine-written line for Hindi, Malayalam and Kannada, the Operator's call and WhatsApp links when the door has seen them, and a header that is not a contact is ignored.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { doorPage, languageOf, parseContact } from "../services/door-pages.ts";
@@ -18,7 +18,7 @@ test("the English page is the old text; the visitor's language comes from ?lang=
   assert.doesNotMatch(en, /class="machine"/u);
 });
 
-test("a known partner is named with Call and WhatsApp; a header that is not a contact is ignored", () => {
+test("a known Operator is named with Call and WhatsApp; a header that is not a contact is ignored", () => {
   const contact = parseContact(header({ n: "Divya", p: "+919800000000" }))!;
   const page = doorPage("notAnswering", res("/glow", "ml"), contact);
   assert.match(page, /href="tel:\+919800000000"/u); assert.match(page, /href="https:\/\/wa\.me\/919800000000"/u); assert.match(page, /Divya/u);

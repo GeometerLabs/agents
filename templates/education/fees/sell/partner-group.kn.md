@@ -1,7 +1,7 @@
 # ಸಹಾಯ: hello@geometer.dev ಗೆ ಬರೆಯಿರಿ
 
-> **Machine-written (5 November 2026). Needs review by a native speaker before partners or shops rely on it.**
-> ಯಂತ್ರ ಬರೆದದ್ದು (5 November 2026). ಪಾರ್ಟ್ನರ್‌ಗಳು ಅಥವಾ ಸೆಂಟರ್‌ಗಳು ಇದನ್ನು ನಂಬುವ ಮೊದಲು ಕನ್ನಡ ಮಾತೃಭಾಷಿಕರೊಬ್ಬರು ಪರಿಶೀಲಿಸಬೇಕು.
+> **Machine-written (5 November 2026). Needs review by a native speaker before Operators or shops rely on it.**
+> ಯಂತ್ರ ಬರೆದದ್ದು (5 November 2026). ಆಪರೇಟರ್‌ಗಳು ಅಥವಾ ಸೆಂಟರ್‌ಗಳು ಇದನ್ನು ನಂಬುವ ಮೊದಲು ಕನ್ನಡ ಮಾತೃಭಾಷಿಕರೊಬ್ಬರು ಪರಿಶೀಲಿಸಬೇಕು.
 > The UPI parts of 7 November 2026 also wait for a native speaker's review.
 > 7 ನವೆಂಬರ್ 2026 ರ UPI ಭಾಗಗಳೂ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆಗಾಗಿ ಕಾಯುತ್ತಿವೆ.
 

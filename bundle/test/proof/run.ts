@@ -3,7 +3,7 @@
 //   /path/to/heavy.sh node bundle/test/proof/run.ts [--shops 1,5,10] [--only phase,phase] [--load-seconds 120] [--keep]
 //
 // The default sizes are 1, 5 and 10 shops (15 Nov 2026, release speed): 25 shops stop Docker Desktop's engine on a laptop, so that step needs the
-// real partner server (bundle/Deferred.md, "The 25-shop step"); pass `--shops 1,5,10,25` there.
+// real Operator server (bundle/Deferred.md, "The 25-shop step"); pass `--shops 1,5,10,25` there.
 //
 // Provenance (15 Nov 2026): results.json records which bundle/ and modules/ trees and which Guard input digest (env GUARD_INPUT_DIGEST) the run proved;
 // test/proof/same-as-last.ts compares it with the present tree and says whether a release may skip the proof, run the core set (`--only licence-block,isolation,held,licence,tripwire,webhook`
@@ -1448,7 +1448,7 @@ async function heldRefundThroughRuntime() {
 // ---------------------------------------------------------------------------------------------------------------------------------- item 11h: works without WhatsApp
 //
 // A UPI shop with NO WhatsApp (its runtime.json names no messaging service), deployed beside glow-salon on the real bundle: no WhatsApp Guard is placed, and its push
-// Guard and the server's push sender are. The script plays the phones through Caddy, as a browser would: the owner registers a passkey from the partner's setup QR
+// Guard and the server's push sender are. The script plays the phones through Caddy, as a browser would: the owner registers a passkey from the Operator's setup QR
 // (a software authenticator signing for https://localhost:18443) and allows alerts; a customer books and pays on the page and allows alerts on the booking's page;
 // the owner marks the deposit and, after the customer cancels, the refund, each from the page the push alert opens. Every push reaches the stand-in push service
 // through the shop's push Guard and the push sender, and the script opens it with the phone's own keys. Judged from the records: the runtime's, the push Guard's.
@@ -1492,7 +1492,7 @@ async function withoutWhatsApp() {
   const services = bundleServices();
   check("no WhatsApp Guard is placed for it; its push Guard and the server's push sender are", !services.includes(`g-${shop}-whatsapp`) && services.includes(`g-${shop}-push`) && services.includes("push"), services.filter((x) => x.includes(shop) || x === "push"));
   await waitFor("its push Guard and runtime", () => healthy(`g-${shop}-push`) && healthy(`rt-${shop}`) && healthy("push"), 120);
-  // the partner shows the setup QR on the panel (its file, hashes only), and the deployer's pass hands it and the page addresses to the runtime
+  // the Operator shows the setup QR on the panel (its file, hashes only), and the deployer's pass hands it and the page addresses to the runtime
   const qr = makeOwnerSetup(SERVER, shop, new Date());
   (await syncPages({ dir: SERVER, server: loadServer(SERVER), shops: [shop], now: new Date() })).forEach((l) => say(`   ${l}`));
 
@@ -1504,7 +1504,7 @@ async function withoutWhatsApp() {
   const phonePk = newSoftPasskey("localhost");
   const reg = jsonVia(`/s/${shop}/owner/setup/${qr.token}/finish`, { response: softRegister(phonePk, options, CADDY) });
   const session = /__Secure-geo-owner=([A-Za-z0-9_-]{43})/u.exec(reg.headers["set-cookie"] ?? "")?.[1];
-  check("the owner registers a passkey from the partner's QR and is signed in, with no WhatsApp message", reg.status === 200 && !!session, { status: reg.status });
+  check("the owner registers a passkey from the Operator's QR and is signed in, with no WhatsApp message", reg.status === 200 && !!session, { status: reg.status });
   if (!session) return;
   const cookie = `__Secure-geo-owner=${session}`;
   check("the QR works once", viaCaddyFull("GET", `/s/${shop}/owner/setup/${qr.token}`).status === 410, "");

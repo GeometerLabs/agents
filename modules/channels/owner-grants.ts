@@ -1,4 +1,4 @@
-// What the partner hands the owner at the setup visit, so the owner can register a passkey without WhatsApp (plan item 11h, decisions 45 and 46): a setup QR code
+// What the Operator hands the owner at the setup visit, so the owner can register a passkey without WhatsApp (plan item 11h, decisions 45 and 46): a setup QR code
 // (one use, that shop only, short-lived) and a printed recovery card (a few one-use codes). Used by the panel, which makes them and keeps only their hashes, by the
 // deployer, which copies the file to the shop's runtime on every pass of its loop (bundle/lib/pages.ts), and by the runtime (owner-access.ts), which checks a
 // token or a code against the copy it reads on every request and remembers, in its own store, which ones were used.

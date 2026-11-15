@@ -15,7 +15,7 @@ import { CHARACTER5, M, MARKERS, STEP1, STEP2, STEP3, STEP4, setUp } from "./flo
 const text = (html: string) => html.replace(/<[^>]+>/gu, " ").replace(/&[a-z#0-9]+;/gu, " ").replace(/\s+/gu, " ");
 const everythingOnDisk = (dir: string): string => readdirSync(dir, { recursive: true, withFileTypes: true }).filter((e) => e.isFile()).map((e) => `${join(e.parentPath, e.name)}\n${readFileSync(join(e.parentPath, e.name), "utf8")}`).join("\n----\n");
 
-test("six steps write the client folder a builder would: valid settings, the runtime's own ids, the pin, and the partner as the permanent owner", async () => {
+test("six steps write the client folder a builder would: valid settings, the runtime's own ids, the pin, and the Operator as the permanent owner", async () => {
   const b = await boot({}, { standins: true });
   try {
     const divya = await b.account("divya", "partner", "ml");

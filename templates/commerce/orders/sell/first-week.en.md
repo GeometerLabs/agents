@@ -4,7 +4,7 @@ From the Orders sell guide ([guide.en.md](guide.en.md)); the same text is in it.
 
 A guide, not a rule: go at your own pace. Tick each one as you do it.
 
-- [ ] **Day 1: become a partner.** On geometer.dev, sign in, press "Become a partner", accept the partner terms (18 or over) and give your WhatsApp number.
+- [ ] **Day 1: become an Operator.** On geometer.dev, sign in, press "Become an Operator", accept the Operator terms (18 or over) and give your WhatsApp number.
 - [ ] **Day 1: write to hello@geometer.dev** and say hello.
 - [ ] **Days 1 and 2: read sections 1 to 4 and section 7** of this guide, on your phone.
 - [ ] **Day 2: learn the five steps of the story in section 4** and tell them twice, out loud, in the owner's language. Look at the demo address too if it is there.

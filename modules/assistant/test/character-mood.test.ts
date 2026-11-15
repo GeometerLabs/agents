@@ -16,7 +16,7 @@ const TZ = "Asia/Kolkata";
 const THU = { year: 2026, month: 11, day: 12 };
 const at = (h: number, m = 0) => zonedToMs(THU, { hour: h, minute: m }, TZ);
 
-test("a character is a style, a seed, a colour from the style's own palette, a personality and, only if the partner gives one, a name; anything else is refused in words", () => {
+test("a character is a style, a seed, a colour from the style's own palette, a personality and, only if the Operator gives one, a name; anything else is refused in words", () => {
   const errors: string[] = [];
   const c = { name: "Asha", style: "critters", seed: "glow-salon-3f2a1c-4", colour: "fda4af", personality: "cheerful" };
   assert.deepEqual(readCharacter(c, errors), c);
@@ -66,7 +66,7 @@ test("the public sees only all well, busy or closed: what waits for the owner an
 });
 
 test("a personality changes only small talk: warm is today's words less the character's name, and every line names only the shop (and the character only when it has a name)", () => {
-  // the warm morning template is what owner_morning said before item 11i, less "{name}, " (owner, 14 Nov: a character has a name only when the partner gives one)
+  // the warm morning template is what owner_morning said before item 11i, less "{name}, " (owner, 14 Nov: a character has a name only when the Operator gives one)
   const OLD: Record<string, string> = {
   en: "Good morning from {name}, the assistant of {shop}. Today, {date}: {today}. Recorded yesterday: {money}. Waiting for you: {waiting}. Reply here to see more.",
   hi: "सुप्रभात, मैं {name}, {shop} का असिस्टेंट। आज, {date}: {today}। कल दर्ज: {money}। आपके लिए बाकी: {waiting}। और देखने के लिए यहाँ जवाब दें।",

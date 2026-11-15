@@ -8,7 +8,7 @@
 // THE CLAIM (decision 40, item 17b). Fleet lists a key only when the server shows it holds the private half: it signs the statement
 //   "geo-paper-signer/1\n" + <the deployment id fleet knows it by> + "\n" + <the raw public key, 64 hex digits>
 // with the key itself, and sends { public_key, proof } to fleet's POST /v1/paper-signers with its deployment key. So nobody can put someone else's key (Geometer's
-// partner server's, another builder's) on the list under their own name, and a statement made for one deployment cannot be replayed for another. The monorepo's
+// Operator server's, another builder's) on the list under their own name, and a statement made for one deployment cannot be replayed for another. The monorepo's
 // apps/fleet/src/paper-signers.ts checks the same bytes; the two must change together.
 import { createPublicKey, sign, verify } from "node:crypto";
 import type { KeyObject } from "node:crypto";

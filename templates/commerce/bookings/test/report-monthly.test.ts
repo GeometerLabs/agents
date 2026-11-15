@@ -30,7 +30,7 @@ test.afterEach(() => { for (const d of dirs) rmSync(d, { recursive: true, force:
 function setup(o: { innovator?: boolean; dir?: string } = {}): MonthlyReportSetup & { made: string[] } {
   const made: string[] = [];
   let n = 0;
-  return { made, source: "live", pages: { dir: o.dir ?? tempDir(), baseUrl: BASE }, options: () => ({ preparedBy: "Divya, local partner", innovator: o.innovator === true }), token: () => { const t = `t${++n}`.padEnd(8, "0"); made.push(t); return t; } };
+  return { made, source: "live", pages: { dir: o.dir ?? tempDir(), baseUrl: BASE }, options: () => ({ preparedBy: "Divya, local Operator", innovator: o.innovator === true }), token: () => { const t = `t${++n}`.padEnd(8, "0"); made.push(t); return t; } };
 }
 
 /** A shop with a November: one haircut booked on 3 Nov and its deposit paid. The report templates are approved, as they are in production. */
@@ -89,7 +89,7 @@ test("nothing before 09:00 on the 1st; at 09:00 the owner gets the month's repor
   const deposit = w.linkFor("b-1")!.payments.reduce((sum, p) => sum + p.amount, 0) / 100; // what the payments fake holds, not what the agent said
   assert.ok(sent.text.includes(`Bookings made: *1* · Deposits collected: *₹${deposit}*`), sent.text);
   assert.ok(sent.text.includes("Monthly report: Glow Salon · Nov 2026"), sent.text);
-  assert.ok(sent.text.includes("Set up by: Divya, local partner · Geometer"), sent.text);
+  assert.ok(sent.text.includes("Set up by: Divya, local Operator · Geometer"), sent.text);
   assert.ok(sent.text.includes(`${BASE}/t1000000/report-2026-11-en.html`), sent.text);
   assert.ok(!sent.text.includes("★"), "no badge");
 
@@ -320,7 +320,7 @@ test("the Innovator template goes out only when the flag is on, and a change to 
   assert.ok(toOwner(badged)[0].text.endsWith("\n★ Innovator"), toOwner(badged)[0].text);
   // the flag is read when the report is made
   const flag = { on: false };
-  const job = createMonthlyReport({ ...setup(), options: () => ({ preparedBy: "Divya, local partner", innovator: flag.on }) });
+  const job = createMonthlyReport({ ...setup(), options: () => ({ preparedBy: "Divya, local Operator", innovator: flag.on }) });
   const w = await novemberWorld();
   w.clock.set(at(12, 1, 9));
   flag.on = true;

@@ -7,7 +7,7 @@
 //   "payment": { "module": "upi", "upi": { "id": "glowsalon@okicici", "payee": "Glow Salon" } }      the default: the shop's own UPI ID, marked paid by the owner
 //   "payment": { "module": "razorpay" }                                                               the shop's own gateway account, through Guard
 // Geometer never opens either for a shop. A settings file without the block is NOT a gateway shop: it is refused and told to give the shop's UPI ID (owner, 10 Nov:
-// no paperwork for partners), so a shop can never end up behind a gateway nobody chose for it. Nothing was live when this flipped (before it, no block meant Razorpay).
+// no paperwork for Operators), so a shop can never end up behind a gateway nobody chose for it. Nothing was live when this flipped (before it, no block meant Razorpay).
 import type { PaymentCapabilities } from "../payments.ts";
 import type { GatewayGuard, PaymentProvider, ProviderSettings } from "./types.ts";
 import { razorpay } from "./razorpay/index.ts";
