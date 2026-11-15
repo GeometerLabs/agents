@@ -254,9 +254,9 @@ like the idea of having our agents limited to razorpay". What changed in `paymen
   `refund.done`. Field names that were Razorpay's are not (`pay_url`, `request_id`, `part_payments`, `min_first_payment`; a payment is `received`), and the
   stand-in gateway's ids are `req_`/`pmt_`/`rfd_`. `reference_id` and the paise amounts stay: they are no one provider's. Razorpay's own names live only where
   its wire format is read or written (its folder), and its webhook samples in tests keep them.
-- **A module says what it can do** (`PaymentCapabilities`): confirms automatically, refunds automatically, takes part payments, cancels, can be read back. The
-  three templates ask these, never a provider's name. UPI says no to all five (the owner marks money and pays refunds; a request is for one exact amount; one
-  already sent can still be paid; the agent's own store is the only record); Razorpay says yes to all five. The owner's mark and a gateway's webhook enter the same
+- **A module says what it can do** (`PaymentCapabilities`): confirms automatically, refunds automatically, takes part payments, cancels, can be read back, and (15 Nov, accounting step 6) reads settlements. The
+  three templates ask these, never a provider's name. UPI says no to all six (the owner marks money and pays refunds; a request is for one exact amount; one
+  already sent can still be paid; the agent's own store is the only record; nothing the agent can reach says what reached the bank); Razorpay says yes to all six. The owner's mark and a gateway's webhook enter the same
   `reconcilePayments` (Bookings, Orders) or `count` (Fees): one flow, with the owner's marks as the payment record.
 - **A provider is one folder**, `payments/providers/<name>/`: `index.ts` declares it as plain data (capabilities, how its settings block reads, its Guard routes
   and operations, its keys' shape, its words in four languages, its fee's price-list ids, its sign-up notes in `SIGNUP.md`); a gateway's wire code (adapter,
@@ -277,6 +277,15 @@ like the idea of having our agents limited to razorpay". What changed in `paymen
   `{"module": "own-api"}` only when an agent folder reads its settings (bundle/agent/folder.ts); a template's shop can never choose it, because no template
   code knows such an API. It has no capabilities, words or stand-in here: its Guard spec is the one the builder reviewed with the companies kit, and the bundle
   says what it cannot check (bundle/Deferred.md).
+
+- **Settlements (accounting step 6, 15 Nov 2026).** A provider that `readsSettlements` gives `Payments.readSettlements(day)`: every row it settled that day (a payment paid
+  out less its charge, a refund taken back, an adjustment), paged. Razorpay's is `GET /v1/settlements/recon/combined?year&month&day&count&skip` through the shop's own Guard as
+  a read-only route (`read_settlements`, in `reads.record`; the golden file and the monorepo spec changed with it, on purpose). Each template's tick calls
+  `accounting/settlements.ts` once a day for yesterday: a row whose payment the books know becomes one `settled` line (the bank, the charge without its GST and the GST on it,
+  out of the gateway; a refund is the reverse), checked to the paisa both ways because Razorpay does not say whether `fee` holds `tax`; a held row, a payment not taken
+  through the assistant, a row that fits neither way and an adjustment are listed in the record, never posted. **Written from Razorpay's documents and run only against the
+  stand-in: no live key exists.** The stand-in's settlement day (two calendar days after the payment), its 2% fee with 18% GST, and its recon pages are its own choices,
+  not a copy of a real account.
 
 ## B71 part 2 and B74: the desk on servers, holds on an own API, one checked action (11 Nov)
 

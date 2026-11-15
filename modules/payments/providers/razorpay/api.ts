@@ -18,10 +18,14 @@
 //             https://razorpay.com/docs/api/refunds/create-normal/
 //  - refunds: GET  /v1/payments/{id}/refunds?count=100 -> { entity: "collection", count, items: [...] }.
 //             https://razorpay.com/docs/api/refunds/fetch-multiple-refund-payment/
+//  - recon:   GET  /v1/settlements/recon/combined?year&month&day&count&skip -> { entity: "collection", count, items: [...] }; one item per payment, refund, transfer or
+//             adjustment settled, amounts in paise, `settlement_utr` the bank's reference. Read 15 Nov 2026 (docs/research/2026-11-15-razorpay-settlements-and-tally.md):
+//             https://razorpay.com/docs/api/settlements/fetch-recon.md. Whether `fee` includes `tax` is not documented; the books check each row both ways.
+//             NOT RUN against a real account: no live key exists, only the stand-in (standin.ts) has answered it.
 //  - a missing id is HTTP 400 "The id provided does not exist", not 404.
 //  - errors: { error: { code, description, source, step, reason, metadata } }.
 import { ApiError, GuardError } from "../../../core/faults.ts";
-import type { NewPaymentRequest, Payment, PaymentRequest, Payments, Refund } from "../../payments.ts";
+import type { NewPaymentRequest, Payment, PaymentRequest, Payments, Refund, SettlementRow } from "../../payments.ts";
 import { asArray, createHttp, isObject, num, str } from "../../../core/http.ts";
 import type { Http, HttpReply, Json } from "../../../core/http.ts";
 
@@ -111,6 +115,24 @@ export function toRefund(raw: Json): Refund | null {
   };
 }
 
+/** Razorpay's rows per page of the recon: 1 to 1000 (the docs). */
+const RECON_PAGE = 100;
+/** A day of one shop is nowhere near this many pages; a reply that never ends is a fault to say, not a loop. */
+const RECON_MAX_PAGES = 200;
+const ROW_TYPES = ["payment", "refund", "transfer", "adjustment"] as const;
+
+/** One recon row. Fields the docs do not promise (`posted_at`, `credit_type`) are not read. A row in another currency throws; a type the docs do not list is "other". */
+export function toSettlementRow(raw: Json): SettlementRow {
+  // A type the docs do not list is "other", never a throw: one odd row would otherwise fail the whole day's read, and a day that fails past midnight is read late or not at all.
+  const type = ROW_TYPES.find((t) => t === raw.type) ?? "other";
+  if (raw.currency !== undefined && raw.currency !== null) needInr(raw.currency);
+  return {
+    entityId: needStr(raw.entity_id, "settlement row id"), type, paymentId: str(raw.payment_id) ?? (type === "payment" ? str(raw.entity_id) ?? null : null),
+    amount: num(raw.amount) ?? 0, fee: num(raw.fee) ?? 0, tax: num(raw.tax) ?? 0, debit: num(raw.debit) ?? 0, credit: num(raw.credit) ?? 0,
+    onHold: raw.on_hold === true, settled: raw.settled === true, settlementId: str(raw.settlement_id) ?? null, utr: str(raw.settlement_utr) ?? null, settledAt: num(raw.settled_at) ?? null,
+  };
+}
+
 // ---- the adapter ------------------------------------------------------------------------------------------------------------
 
 // The live adapter: all calls go through core/http with no key, because Guard in front adds the credential.
@@ -195,6 +217,19 @@ export function createRazorpayPayments(config: RazorpayConfig): Payments {
       if (isMissing(reply)) return [];
       const raw = expectOk(reply);
       return asArray(raw.items).filter(isObject).map(toRefund).filter((r): r is Refund => r !== null);
+    },
+
+    /** The whole day's recon rows, page by page (count and skip), through Guard's read-only route. A page that fails is raised: the caller reads the day again, never guesses. */
+    async readSettlements(day, options = {}) {
+      const count = options.pageSize ?? RECON_PAGE;
+      const rows: SettlementRow[] = [];
+      for (let page = 0; page < RECON_MAX_PAGES; page++) {
+        const reply = await http.request("GET", "/v1/settlements/recon/combined", { query: { year: day.year, month: day.month, day: day.day, count, skip: page * count } });
+        const items = asArray(expectOk(reply).items).filter(isObject);
+        rows.push(...items.map(toSettlementRow));
+        if (items.length < count) return rows;
+      }
+      throw new ApiError(502, "Razorpay's settlement rows for one day did not end.");
     },
   };
 }

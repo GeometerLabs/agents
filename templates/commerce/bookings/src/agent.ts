@@ -69,6 +69,7 @@ import { markButtonId, parseMarkReply } from "../../../../modules/payments/owner
 import type { MarkReply } from "../../../../modules/payments/owner-marked/owner.ts";
 import { MARK_ACTIONS } from "../../../../modules/payments/owner-marked/obligations.ts";
 import { capabilitiesOf, ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
+import { readSettlementsOnce } from "../../../../modules/accounting/settlements.ts";
 import type { ButtonId } from "./language/interactive.ts";
 import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
 import { calendarModule, hoursOn, serviceName } from "./settings.ts";
@@ -1472,6 +1473,7 @@ export function createAgent(deps: AgentDeps): Agent {
     await refunds.sweep(now); // refunds first, whatever state their booking is in (modules/payments/refunds.ts)
     if (markState) await remindOwedRefunds(now);
     await closeLinksAtStop();
+    if (can.readsSettlements) await readSettlementsOnce({ payments, accounting: books, record, conversation: owner, language: settings.languages[0], nowMs: now, timeZone: tz }); // yesterday's settlement rows, once a day (modules/accounting/settlements.ts)
     for (const b of [...store.bookings.values()]) {
       if (b.state === "awaiting_deposit" && b.holdExpiresAt !== undefined && b.holdExpiresAt <= now) await expireHold(b);
       if (b.state !== "confirmed" || b.startMs === undefined || b.endMs === undefined) continue;
