@@ -13,7 +13,7 @@ const textsOf = (language: (typeof LANGUAGES)[number]): string[] => {
   return [
     m.copyId, m.copied, m.openChrome, m.chromeNote, m.refLabel, m.refHint, m.paid, m.claimed, m.checkTime(CHECK_MINUTES), m.failTitle, ...m.failTips, m.retry, m.lateTitle, m.lateNote, m.lateClaimed, m.lateRefund,
     o.saysPaid, o.waitingPay, o.waitingPayNote, o.lateHeading, o.lateNote, o.tagSaysPaid, o.tagLate, o.reference("b-1"), o.claimedAt("Mon 10:30"), o.upiRef("412345678901"), o.lateDeposit("Asha", "₹200", "haircut"), o.lateAfter,
-    o.cashTitle, o.cashNote, o.cashRow("Rohan", "class 10"), o.cashButton("₹1,800"),
+    o.cashTitle, o.cashNote, o.cashRow("Rohan", "class 10"), o.cashButton("₹1,800"), o.bankButton("₹1,800"),
   ];
 };
 

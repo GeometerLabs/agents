@@ -11,6 +11,13 @@
 //    and again as the reason shown on the message that follows), so each rule is counted at its own entry only.
 //  - Only "unconfirmed" and "failed" outcomes are counted as such, never "attempted" (an attempt is checked in the next step).
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
+import { journal } from "../../../../modules/accounting/journal.ts";
+import { booksOnlyOf, figuresOf } from "../../../../modules/accounting/figures.ts";
+import type { BooksOnly } from "../../../../modules/accounting/figures.ts";
+import { reportAccounting } from "../../../../modules/accounting/summary.ts";
+import type { AccountingSummary } from "../../../../modules/accounting/summary.ts";
+import type { LegacyMap } from "../../../../modules/accounting/journal.ts";
+import { BOOKINGS_LEGACY } from "../src/accounting.ts";
 import { readFileSync } from "node:fs";
 import { NOT_TESTED, notTestedOf } from "../crash-test/not-tested.ts";
 import type { NotTestedId } from "../crash-test/not-tested.ts";
@@ -158,7 +165,9 @@ export interface MonthlyReport {
    * the server settled as made by their word (Guard's already_done): never counted as refunds made, grouped by who said so. Left out when there are none, which keeps
    * the bytes of every report made before.
    */
-  money: { deposits: Amount; refunds: Amount & { ofDeposits: Amount; ofSecondPayments: Amount }; settledByWord?: SettledByWord[] };
+  money: { deposits: Amount; refunds: Amount & { ofDeposits: Amount; ofSecondPayments: Amount }; settledByWord?: SettledByWord[];
+    /** Money the books count and the rows above leave out (a payment made twice, the owner's own marks on a gateway shop); only when one is above 0. */
+    booksOnly?: BooksOnly };
   owner: { asked: number; approved: number; denied: number; retried: number };
   stopped: { total: number; byRule: Record<RuleId, number> };
   messages: { toCustomers: { total: number; byLanguage: ByLanguage }; toOwner: { total: number; byLanguage: ByLanguage }; heldBack: number };
@@ -183,6 +192,11 @@ export interface MonthlyReport {
    * labels them so. Left out for a Razorpay shop, which keeps the bytes (and the digest and code) of every report made before.
    */
   paidBy?: "owner-marked";
+  /**
+   * The books summary (modules/accounting/summary.ts) for the month, with the template's frozen legacy map so the open check (modules/accounting/check.ts) can read an older line
+   * from the evidence pack alone. Left out when the whole record has no money lines, which keeps the bytes of every report made without money.
+   */
+  accounting?: { summary: AccountingSummary; legacy: LegacyMap };
   /**
    * The head of the shop's record as a hash-chained ledger (modules/record/ledger.ts) when the report was made: the last entry's number and hash, over the whole record handed
    * in. A later change to any entry it covers gives a different hash, which no longer matches this one or the daily fingerprint. null when the caller named no ledger
@@ -282,31 +296,17 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   const moved = new Set(month.filter((e) => e.action === "reschedule_booking" && e.outcome === "confirmed" && e.booking !== null).map((e) => e.booking)).size;
 
   // ---- money: a gateway's from entries the payments service's own record confirmed; UPI's from the owner's marks, labelled as the owner's (paidBy) ----
-  const depositEntries = all.filter((e) => e.action === "record_deposit" && e.outcome === "confirmed");
-  const depositPayments = new Set(depositEntries.map((e) => e.refs.paymentId).filter(Boolean));
-  const missing = { depositAmounts: 0, refundAmounts: 0, ownerCommands: 0, messageTargets: 0 };
-  const deposits = emptyAmount();
-  const seenDeposits = new Set<string>();
-  // UPI (B33): the owner's marks are the payment record ("owner_marked_paid"), and a refund counts once the owner marks it sent ("upi_refund_marked_done")
-  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): their marks are the payment record
-  for (const e of month.filter((x) => (x.action === "record_deposit" || (upi && x.action === "owner_marked_paid")) && x.outcome === "confirmed")) {
-    const key = e.refs.paymentId ?? `seq-${e.seq}`;
-    if (seenDeposits.has(key)) continue;
-    seenDeposits.add(key);
-    if (!tally([deposits], e.refs.amountPaise)) missing.depositAmounts++;
-  }
-  const refunds = { ...emptyAmount(), ofDeposits: emptyAmount(), ofSecondPayments: emptyAmount() };
-  const seenRefunds = new Set<string>();
-  // a refund a person settled by their word is not a refund made: it is counted on its own below (settledByWord), never here
-  for (const e of month.filter((x) => (x.action === "refund" || (upi && x.action === "upi_refund_marked_done")) && x.outcome === "confirmed" && !isSettledByWord(x))) {
-    const key = e.refs.refundId ?? `seq-${e.seq}`;
-    if (seenRefunds.has(key)) continue;
-    seenRefunds.add(key);
-    const part = depositPayments.has(e.refs.paymentId) || e.action === "upi_refund_marked_done" ? refunds.ofDeposits : refunds.ofSecondPayments;
-    if (!tally([refunds, part], e.refs.amountPaise)) missing.refundAmounts++;
-  }
+  // The figures are read from the books (modules/accounting/figures.ts): the journal is the record read as double-entry lines, and the month's deposits and refunds are
+  // sums over it. Nothing is summed again here. UPI (B33): the owner's marks are the payment record and a refund counts once the owner marks it sent; the journal reads both.
+  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): their marks are the payment record, and the report says so (paidBy)
+  const figures = figuresOf(journal(all, BOOKINGS_LEGACY), all, BOOKINGS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { ownerMarks: upi });
+  const booksOnly = booksOnlyOf(figures); // why the "Money this month" block can differ from the rows (figures.ts booksOnly)
+  const accounting = reportAccounting(all, BOOKINGS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString());
+  const deposits = figures.received;
+  const refunds = figures.refunds;
+  // a refund a person settled by their word is not a refund made: it is counted on its own below (settledByWord), never in `refunds`
   const byWord = settledByWordOf(month);
-  missing.refundAmounts += byWord.missingAmounts;
+  const missing = { depositAmounts: figures.missing.depositAmounts, refundAmounts: figures.missing.refundAmounts + byWord.missingAmounts, ownerCommands: 0, messageTargets: 0 };
 
   // ---- the owner's part ----
   const asked = new Set(month.filter((e) => e.action === "refund" && e.outcome === "held_for_owner").map((e) => `${e.booking}|${e.refs.paymentId ?? e.seq}`)).size;
@@ -379,7 +379,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     policyDigest: policyDigest(settings),
     record: { entries: month.length, digest: digestOf(recordRows.map((r) => r.digest)), byAction, rows: recordRows },
     bookings: { made, cancelled, moved, droppedBeforeBooked: dropped },
-    money: { deposits, refunds, ...(byWord.rows.length > 0 ? { settledByWord: byWord.rows } : {}) },
+    money: { deposits, refunds, ...(byWord.rows.length > 0 ? { settledByWord: byWord.rows } : {}), ...(booksOnly ? { booksOnly } : {}) },
     owner,
     stopped: { total: stoppedTotal, byRule },
     messages: { toCustomers, toOwner, heldBack },
@@ -395,6 +395,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     goLive,
     ...(input.innovator === true ? { innovator: true as const } : {}),
     ...(upi ? { paidBy: "owner-marked" as const } : {}),
+    ...(accounting ? { accounting } : {}),
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };
 }
@@ -445,19 +446,6 @@ function workOf(a: { all: readonly RecordEntry[]; month: readonly RecordEntry[];
 
 /** The canonical bytes of the report: what is digested and signed. */
 export const reportBytes = (report: MonthlyReport): string => canonicalJson(report);
-
-function emptyAmount(): Amount { return { count: 0, paise: 0 }; }
-
-/**
- * One more thing counted in each total, with its amount when the record kept one. A thing with no amount is still
- * counted, but adds nothing, and the caller notes it as missing (returns false).
- */
-function tally(totals: Amount[], amountPaise: string | undefined): boolean {
-  const paise = amountPaise === undefined ? NaN : Number(amountPaise);
-  const ok = Number.isInteger(paise) && paise >= 0;
-  for (const t of totals) { t.count++; if (ok) t.paise += paise; }
-  return ok;
-}
 
 function firstBy(entries: readonly RecordEntry[], keep: (e: RecordEntry) => boolean, key: (e: RecordEntry) => string): Map<string, RecordEntry> {
   const out = new Map<string, RecordEntry>();

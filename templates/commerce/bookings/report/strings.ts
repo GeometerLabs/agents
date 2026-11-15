@@ -8,6 +8,8 @@
 // Claim rules, kept in code: a document counts and states facts; it never grades. BANNED lists, per language, the words
 // no document may contain (safe, guaranteed, certified, earnings and their translations). A test runs every document in
 // every language through it. The confirm verbs the packs already use (पक्का, ഉറപ്പിക്കാൻ, ಖಚಿತಪಡಿಸಲು) are not on it.
+import { MONEY_BLOCK_WORDS } from "../../../../modules/accounting/report-block.ts";
+import type { MoneyBlockWords } from "../../../../modules/accounting/report-block.ts";
 import { INNOVATOR, CHECK_GENUINE, SCAN_SUMMARY, SETTLED_BY_SOMEONE, SETTLED_BY_WORD } from "../../../../modules/report/text.ts";
 import { STAND_IN_SERVICES } from "../crash-test/not-tested.ts";
 import type { RuleId } from "../../../../modules/record/record.ts";
@@ -42,6 +44,8 @@ export interface Strings {
   sourceLong: Record<Source, string>;
   /** The labels a UPI shop's report uses instead (B33): its money is what the owner marked, not what a payment service shows. */
   upiLabel: { deposits: string; givenBack: string };
+  /** The \"Money this month\" block (modules/accounting/report-block.ts), from the signed books summary. */
+  moneyBlock: MoneyBlockWords;
   notTested: Record<NotTestedKey, string>;
   notCounted: Record<NotCountedId, string>;
   /** The month's work and what it cost (plan B75): the three counts, what each means, and why a cost per job is sometimes not given. */
@@ -101,6 +105,7 @@ const en: Strings = {
     "test-mode": "These numbers come from real services in test mode. The money was test money.",
     live: "These numbers come from the live record of real services.",
   },
+  moneyBlock: MONEY_BLOCK_WORDS.en,
   upiLabel: { deposits: "Deposits marked paid by owner", givenBack: "Refunds marked sent by owner" },
   notTested: {
     "upi-not-automatic": "automatic payment checking: with UPI the owner marks each payment received", "real-upi": "a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment)",
@@ -189,6 +194,7 @@ const hi: Strings = {
     "test-mode": "ये आँकड़े असली सेवाओं के टेस्ट मोड से आए हैं। पैसा टेस्ट पैसा था।",
     live: "ये आँकड़े असली सेवाओं के चालू रिकॉर्ड से आए हैं।",
   },
+  moneyBlock: MONEY_BLOCK_WORDS.hi,
   upiLabel: { deposits: "मालिक द्वारा मिला हुआ दर्ज जमा", givenBack: "मालिक द्वारा भेजा हुआ दर्ज रिफंड" },
   notTested: {
     "upi-not-automatic": "भुगतान की अपने-आप जाँच: UPI में हर भुगतान मालिक खुद मिला हुआ दर्ज करते हैं", "real-upi": "असली UPI ऐप से असली UPI ID पर भुगतान (मालिक का दर्ज करना आज़माया गया, भुगतान नहीं)",
@@ -277,6 +283,7 @@ const ml: Strings = {
     "test-mode": "ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ ടെസ്റ്റ് മോഡിൽ നിന്നുള്ളതാണ്. പണം ടെസ്റ്റ് പണമായിരുന്നു.",
     live: "ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ പ്രവർത്തിക്കുന്ന രേഖയിൽ നിന്നുള്ളതാണ്.",
   },
+  moneyBlock: MONEY_BLOCK_WORDS.ml,
   upiLabel: { deposits: "ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ്", givenBack: "ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്" },
   notTested: {
     "upi-not-automatic": "പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു", "real-upi": "യഥാർത്ഥ UPI ആപ്പിൽ നിന്ന് യഥാർത്ഥ UPI ID-യിലേക്കുള്ള പണമടവ് (ഉടമയുടെ രേഖപ്പെടുത്തലാണ് പരീക്ഷിച്ചത്, പണമടവല്ല)",
@@ -365,6 +372,7 @@ const kn: Strings = {
     "test-mode": "ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ಟೆಸ್ಟ್ ಮೋಡ್‌ನಿಂದ ಬಂದವು. ಹಣ ಟೆಸ್ಟ್ ಹಣವಾಗಿತ್ತು.",
     live: "ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ನಡೆಯುತ್ತಿರುವ ದಾಖಲೆಯಿಂದ ಬಂದವು.",
   },
+  moneyBlock: MONEY_BLOCK_WORDS.kn,
   upiLabel: { deposits: "ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ", givenBack: "ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್" },
   notTested: {
     "upi-not-automatic": "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ: UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರೇ ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸುತ್ತಾರೆ", "real-upi": "ನಿಜವಾದ UPI ಆ್ಯಪ್‌ನಿಂದ ನಿಜವಾದ UPI ID ಗೆ ಪಾವತಿ (ಮಾಲೀಕರ ದಾಖಲಾತಿಯನ್ನು ಪ್ರಯತ್ನಿಸಲಾಯಿತು, ಪಾವತಿಯನ್ನಲ್ಲ)",

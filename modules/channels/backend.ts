@@ -8,6 +8,10 @@ import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "./owner-access.ts";
 import type { LinkState } from "./owner-access.ts";
 import type { OwnerAppView } from "../assistant/app/view.ts";
 import type { Face } from "../assistant/character.ts";
+import type { DocumentsKey } from "../accounting/case-documents.ts";
+import type { Document } from "../accounting/documents.ts";
+import type { ExportFile } from "../accounting/export.ts";
+import type { MoneyView } from "../accounting/owner-money.ts";
 
 /**
  * Who is acting as the owner: the panel-made private link (item 11d), or a session the runtime made from a one-time WhatsApp link (item 11f). A bare string is a
@@ -93,6 +97,8 @@ export interface OwnerView {
    * `listen`: the shop has a voice service, so the page offers hold-to-record.
    */
   app?: OwnerAppView & { listen?: boolean };
+  /** The owner's Money section (modules/accounting/owner-money.ts), worked out at the runtime from the shop's accounts. Left out by a runtime that has none. */
+  money?: MoneyView;
 }
 
 // ---- item 11h: Orders and Fees on the page ----------------------------------------------------------------------------------------------------------------
@@ -177,6 +183,13 @@ export interface ChannelBackend {
   /** Item 11h: the same reads, for an Orders shop (its offer and an order by its handle's hash). */
   orderOffer?(): Promise<OrderOffer>;
   orderView?(handleHash: string): Promise<OrderView | null>;
+  /**
+   * The documents of the page with this handle's hash (a parent's page: its link's hash), newest first, in `language`. Their shop phone is empty: the front adds the
+   * one from pages.json (withContact). Left out (a stand-in, or a runtime with no accounting): no receipts are listed or served.
+   */
+  documents?(key: DocumentsKey, language: Language): Promise<Document[]>;
+  /** The accountant's files for a period, for a signed-in owner's SESSION only (the runtime refuses anything else); null when the session is not good. */
+  accountantFiles?(owner: { session: string }, period: string): Promise<ExportFile[] | null>;
   /** Item 11h: the same reads, for a Fees centre: its page, a parent's link by its hash (null: no parent has it now), a confirmation page by its handle's hash. */
   feesOffer?(): Promise<FeesOffer>;
   parentView?(linkHash: string): Promise<ParentView | null>;
@@ -237,6 +250,17 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     async feeConfirmView(handleHash) {
       const r = await call(`${o.url}/internal/channel/request?handle=${handleHash}`, { headers: headers() }, timeout);
       return r.status === 404 ? null : json<FeeConfirmView>(r);
+    },
+    async documents(key, language) {
+      const p = new URLSearchParams("handle" in key ? { handle: key.handle } : { link: key.link });
+      p.set("lang", language);
+      const r = await call(`${o.url}/internal/channel/documents?${p}`, { headers: headers() }, timeout);
+      return (await json<{ documents: Document[] }>(r)).documents;
+    },
+    async accountantFiles(owner, period) {
+      const r = await call(`${o.url}/internal/channel/accounting?period=${encodeURIComponent(period)}`, { headers: headers(owner) }, timeout);
+      if (r.status === 403) return null;
+      return (await json<{ files: ExportFile[] }>(r)).files;
     },
     async owner(owner) {
       const r = await call(`${o.url}/internal/channel/owner`, { headers: headers(owner) }, timeout);

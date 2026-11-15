@@ -2,6 +2,7 @@
 // green and white with amber for what was not tested. It shows the same numbers as the owner's text, a table per limit,
 // and a "Show what we did ▸" section with the counts by action and outcome, the record's entries (fingerprints only) and
 // the digests. Every value that reaches the page is escaped; shop and service names come from the settings file.
+import { moneyBlock } from "../../../../modules/accounting/report-block.ts";
 import { formatDate } from "../../../../modules/language/format.ts";
 import { localParts } from "../../../../modules/core/time.ts";
 const two = (n: number) => String(n).padStart(2, "0");
@@ -102,6 +103,7 @@ export function reportSection(envelope: Envelope<MonthlyReport>, language: Langu
 <div class="card"><strong>${r.stopped.total}</strong><span>${esc(s.label.stoppedByLimits)}</span></div>
 </div>
 <h2>${esc(p.numbers)}</h2>${numbers}
+${r.accounting ? moneyBlock(r.accounting.summary, s.moneyBlock, { booksOnly: r.money.booksOnly }) : ""}
 ${workBlock(r, s)}
 <h2>${esc(p.stoppedHeading)}</h2>${rules}<p class="small">${esc(p.stoppedNote)}</p>
 <h2>${esc(p.messagesHeading)}</h2>${messages}

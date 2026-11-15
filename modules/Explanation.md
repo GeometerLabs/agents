@@ -254,9 +254,9 @@ like the idea of having our agents limited to razorpay". What changed in `paymen
   `refund.done`. Field names that were Razorpay's are not (`pay_url`, `request_id`, `part_payments`, `min_first_payment`; a payment is `received`), and the
   stand-in gateway's ids are `req_`/`pmt_`/`rfd_`. `reference_id` and the paise amounts stay: they are no one provider's. Razorpay's own names live only where
   its wire format is read or written (its folder), and its webhook samples in tests keep them.
-- **A module says what it can do** (`PaymentCapabilities`): confirms automatically, refunds automatically, takes part payments, cancels, can be read back. The
-  three templates ask these, never a provider's name. UPI says no to all five (the owner marks money and pays refunds; a request is for one exact amount; one
-  already sent can still be paid; the agent's own store is the only record); Razorpay says yes to all five. The owner's mark and a gateway's webhook enter the same
+- **A module says what it can do** (`PaymentCapabilities`): confirms automatically, refunds automatically, takes part payments, cancels, can be read back, and (15 Nov, accounting step 6) reads settlements. The
+  three templates ask these, never a provider's name. UPI says no to all six (the owner marks money and pays refunds; a request is for one exact amount; one
+  already sent can still be paid; the agent's own store is the only record; nothing the agent can reach says what reached the bank); Razorpay says yes to all six. The owner's mark and a gateway's webhook enter the same
   `reconcilePayments` (Bookings, Orders) or `count` (Fees): one flow, with the owner's marks as the payment record.
 - **A provider is one folder**, `payments/providers/<name>/`: `index.ts` declares it as plain data (capabilities, how its settings block reads, its Guard routes
   and operations, its keys' shape, its words in four languages, its fee's price-list ids, its sign-up notes in `SIGNUP.md`); a gateway's wire code (adapter,
@@ -277,6 +277,15 @@ like the idea of having our agents limited to razorpay". What changed in `paymen
   `{"module": "own-api"}` only when an agent folder reads its settings (bundle/agent/folder.ts); a template's shop can never choose it, because no template
   code knows such an API. It has no capabilities, words or stand-in here: its Guard spec is the one the builder reviewed with the companies kit, and the bundle
   says what it cannot check (bundle/Deferred.md).
+
+- **Settlements (accounting step 6, 15 Nov 2026).** A provider that `readsSettlements` gives `Payments.readSettlements(day)`: every row it settled that day (a payment paid
+  out less its charge, a refund taken back, an adjustment), paged. Razorpay's is `GET /v1/settlements/recon/combined?year&month&day&count&skip` through the shop's own Guard as
+  a read-only route (`read_settlements`, in `reads.record`; the golden file and the monorepo spec changed with it, on purpose). Each template's tick calls
+  `accounting/settlements.ts` once a day for yesterday: a row whose payment the books know becomes one `settled` line (the bank, the charge without its GST and the GST on it,
+  out of the gateway; a refund is the reverse), checked to the paisa both ways because Razorpay does not say whether `fee` holds `tax`; a held row, a payment not taken
+  through the assistant, a row that fits neither way and an adjustment are listed in the record, never posted. **Written from Razorpay's documents and run only against the
+  stand-in: no live key exists.** The stand-in's settlement day (two calendar days after the payment), its 2% fee with 18% GST, and its recon pages are its own choices,
+  not a copy of a real account.
 
 ## B71 part 2 and B74: the desk on servers, holds on an own API, one checked action (11 Nov)
 
@@ -1131,3 +1140,85 @@ Every send answers `{ "status": "submitted", "messageId" }` and "is processed as
 ## Money the owner and customer can read: the words and the UPI script (batch 4, 14 Nov 2026)
 
 The money parts of the pages' words are in `channels/words-money.ts` (`MONEY` for the customer, `OWNER_MONEY` for the owner; `CHECK_MINUTES` is the one figure for "a check usually takes"), apart from `words.ts` so the pages' other words are not touched; Hindi, Malayalam and Kannada are machine-written there like the rest. The UPI box (`page.ts` `upiBox`, shared by a booking's, an order's and a fee's page) gained the UPI reference field, a folded "payment did not go through?" (`payFold`), and, on a page with the script, "copy UPI ID" and "open in Chrome". The script (`channels/upi-script.ts`) exists only on a held UPI booking's or order's page, runs by that response's nonce, and `customerPagePolicy` allows it that page's own address and nothing else to connect to. It replaces the 15-second meta refresh (which redrew the QR under a customer who was scanning) by a GET of the page's own address and a reload only when the page's `data-state` marker changed; the meta refresh stays inside `<noscript>`. The owner's page groups what customers say they paid, what needs an answer, and what is only waiting (`owner-page.ts`); Fees' "paid in cash or by bank?" is a folded list there (the runtime side is in templates/education/fees/Explanation.md).
+
+## The accounting module: one shop's books, invoices and receipts (15 Nov 2026)
+
+`accounting/` is the one shared piece that every agent which takes or gives back money uses to keep the shop's books: Bookings, Orders and Fees today, and any later
+template or a builder's own agent. The plan and the questions the owner answered are in the company docs (`plans/accounting-module.md`); the India rules it follows,
+with the official sources, are in `research/2026-11-15-india-gst-invoicing.md` and `research/2026-11-15-razorpay-settlements-and-tally.md`.
+
+**The books are a fold over the record, not a second store.** `journal.ts` reads the shop's append-only, hash-chained record (`record/record.ts`, `record/ledger.ts`) and
+gives double-entry lines in whole paise: debits equal credits for every entry. Nothing is written anywhere else, so there is nothing to migrate and nothing that can
+drift from the record: the record anyone can check with geometer-verify IS the books. Records written before this module are read through a frozen `LegacyMap` that each
+template hands in (`templates/*/src/accounting.ts`: which of its action names were money and what they were for).
+
+**One writer: `post(event, write)`** (`post.ts`). A template calls it exactly where it already writes a `confirmed` line (the payment read back from the payment service's
+own list, or the owner's mark), so nothing a customer or the AI says reaches the books. `post` does not write a line of its own: it gives the money fields (`refs.money`,
+`amountPaise`, `paymentId`, `method`, `evidence`, `doc` ...) for the line the template writes anyway, under the template's own action name, so every limit, paper and
+report that reads those names is unchanged. It then reads the line back through the journal and throws if it is not there or does not read as money; the runtime saves a
+step in one SQLite transaction, so a thrown step saves nothing (no half-written money, no number used). Money moves at most once: a second post of the same payment, the
+same refund or a second refund owed while one is open gets no money fields and says so (the double tap, the redelivered webhook, the lost reply's retry).
+
+The kinds of money fact (`MoneyKind`): received (gateway, UPI marked by the owner, cash or bank marked by the owner), fee charged, late fee, discount, deposit applied,
+kept on a late cancellation, refund owed, refund made, refund cancelled, write-off, correction, and (from the settlements read) settled. A receipt credits its case
+(advances, or a fee's receivable); a refund owed takes from the advances first, then from any overpaid receivable, then from `returns`; a cancelled refund puts the money
+back exactly where it came from. "Payment requested" posts nothing: a link is not money.
+
+**Documents and their numbers** (`numbers.ts`, `documents.ts`, `document-page.ts`). A receipt (`RCT`), a bill (`BILL`) and a refund note (`CN`), each numbered
+`<series>/<yy-yy>/<n>`, gap-free per shop per financial year (1 April to 31 March in the shop's time zone), at most 16 characters (CGST rule 46(b)). The next number is
+worked out from the record in the same step. After a restore from a nightly snapshot (`runtime/restored.ts` writes a `restored` entry) each series jumps on by 10,000, so
+a number is never used twice, and the skipped range is said in the export and the report, never hidden. A shop is "unregistered" (the default: no GSTIN, no tax line, no
+word "tax") or "composition" (a bill of supply with the rule 5(1)(f) legend); a regular GST-registered shop is refused until a CA has read the sample documents (Deferred.md).
+A document is a printable page in en, hi, ml and kn with the shop's name, address and phone, run with no script; a refund note cites the receipt of the same payment.
+
+**What the owner and the accountant see.** `owner-money.ts` and `owner-money-render.ts`: the Money section of the owner's app (today, this month, owed back to customers,
+not matched, "send to my accountant"), on a phone. A refund made only on a person's word (Guard's "already done" settled by someone at the server) is listed on its own
+and kept out of every total. Gateway money is called "not yet in your bank" only for a shop that reads its settlements (the record has a `settlements_read` line): a shop
+that cannot read them is never told its money is missing on a guess. `export.ts` writes `journal-<period>.csv`, `documents-<period>.csv` (with skipped ranges, one row
+per range), `settlements-<period>.csv` for a shop that reads settlements, `README.txt`, and the two best-effort TallyPrime files (`tally.ts`). A period is a month or a
+financial year (`periods.ts`). The files name a case by its id and a payment by the provider's id; a customer's number or a student's name is never in them.
+
+**Settlements** (`settlements.ts`). For a payment service that `readsSettlements` (Razorpay, through the shop's own Guard as the read-only route `read_settlements`), each
+template's tick reads yesterday's settlement rows once a day, catching up at most 7 missed days. A row whose payment the books know becomes one `settled` line (the bank,
+the charge without its GST, the GST on it, out of `gateway`); the fee is checked both ways (with and without its GST), because Razorpay's documents do not say which.
+A held row, a row for a payment that did not go through the assistant, and anything the books cannot read are listed, never posted.
+
+**Period close needs no lock of its own.** A journal line is always dated by its record entry's time, and nothing is back-dated: the record cannot be, and `post`
+takes no date. So nothing can land in a past month, and a fix is a new entry dated now. A month closes when its signed monthly report is made: the report carries the
+books summary and the record's head, which fix that month's figures for good, and the open check finds any later change.
+
+**The signed monthly report and the open check** (`summary.ts`, `report-block.ts`, `check.ts`). Each template's report carries an optional `accounting` field: the
+period's books summary (per account, per kind, the closing balances, the document runs, the refunds on a person's word and the count of lines that could not be read)
+and the legacy map it was read with. It is left out for a record with no money. The page shows a short "Money this month" block in four languages.
+
+The block and the report's own rows can show two different "received" figures, and that is the standard way, not a mistake. The block is the books: a payment counts
+when it arrives, and a payment made twice on the same link is the customer's money, owed back, not the shop's. The rows count deposits, advances or fees only, as the
+signed figures always did: no second payment, and on a gateway shop none of the owner's own marks. So `figures.ts` also counts `booksOnly` (the second payments, the
+owner's marks received and given back that the rows leave out), the report data carries it when one is above 0, and the block shows one plain line under its cards
+for each ("Received includes ₹200 that customers paid twice. That money is theirs, not the shop's."). `invariants.ts` (`figuresFaults`) holds, on every crash-test
+world of each template, that the books' received equals the rows plus `booksOnly`, and the same for given back, so the line is always the whole difference. Anyone with the
+shop's evidence pack can run `node modules/accounting/check.ts <pack.json> <report.json>`: it rebuilds the journal from the pack alone and compares every figure (exit 0
+the same, 1 a difference, 2 a file it cannot read). The hash chain itself is geometer-verify's to check.
+
+**The templates' own sums are gone.** Bookings', Orders' and Fees' `report/data.ts` take their money figures from `figures.ts` (`figuresOf`) over the journal. Before the
+old sums were deleted, each template's `test/accounting-figures.test.ts` held the journal's figures equal to them, to the paisa and the count, on the busy month and on
+every crash-test world, and on records written in the older form; the old sums are kept in those tests as the thing the books must agree with. The same tests now also
+run `invariants.ts` (`booksFaults`) on every crash-test world: every entry balances, money is counted once, `refunds_owed` equals the open refunds, numbers have no gap a
+restore does not explain, no customer number or student name is in any refs, and (Fees) each fee's receivable equals its balance in the Fees store plus the refunds owed on it, up to what was overpaid (the store keeps its balance before refunds; the books take a refund from the overpaid receivable first and the rest from `returns`).
+
+**Fees' "paid another way?"** splits into two buttons, cash and bank (`channels/words-money.ts`, `events.ts`), so the books know which account the money is in.
+
+A shop with money through the payment service that does not read its settlements is told "money paid online is not yet checked against your bank" in place of
+"everything is matched", which it could not know.
+
+How the books reach the pages (receipts on a customer's page, the Money section, the downloads) is the next section.
+
+## The accounting module on the pages: receipts, the Money section and the accountant's files (15 Nov 2026)
+
+Three things from `accounting/` now show on the shop's pages. How each reaches the visitor, and what keeps it from reaching the wrong one:
+
+**Receipts on a customer's own page** (`channels/receipts.ts`). A booking's, an order's and a fee's page (a parent's page and a payment's confirmation page) lists a "Receipts" box, newest first, and serves each document at `<that page's address>/d/<number>` (the number URL-encoded, `RCT%2F26-27%2F0001`; a literal slash works too, and the front matches the still-encoded path). The front asks the runtime `GET /internal/channel/documents?handle=<hash>|link=<hash>&lang=` (`ChannelKit.documents`). It is keyed by the SAME hash the page's own read uses, never by a case id: the template resolves the hash with the one lookup its view already used (`bookingOf`-style `lookup` in Bookings, `orderOf`, `parentOf` and `confirmedDue` in Fees), so a document of another case is not in the answer and "another case's number" is a plain not-found at the runtime, not a check at the front. The runtime returns built `Document`s (an allowlist: no payment id), drawn by `documentPage`; the shop's phone is left empty and the front adds it from pages.json (`withContact`), as for every page. Fees' student name rides in `person`, read from the centre's own store for that response and written nowhere; the export and the Money section never carry it. The pages and the document run no script and load nothing. A failed read leaves the page as it was (no list).
+
+**The Money section on the owner's app** (`accounting/owner-money-render.ts` inside `channels/owner-page.ts`), below what waits for the owner's answer, for every template. Each template's `ownerView` builds `money` from its journal, the record's entries and its cases' `refundsUntold` (with their case). `ChannelKit.owner` now also receives the saved record (`entries`).
+
+**"Send to my accountant"**. For a signed-in owner's SESSION only: `<owner app>/accounting/<period>/<file>` (this month, last month and the financial year, taken from the runtime's own month, `periods.ts exportPeriods`; the files are `journal-<period>.csv`, `documents-<period>.csv`, `README.txt`, the two best-effort Tally files `tally-masters.xml` and `tally-vouchers.xml`, and `settlements-<period>.csv` for a shop that reads its settlements), as downloads. The Tally files name no company, because the accountant's Tally company may be named differently from the shop: the import goes into the company that is open. The front reads them from the runtime's `GET /internal/channel/accounting?period=` with the owner's session; the runtime checks the session itself against its own sessions, so the channel token alone, and the panel's link, get 403. The panel's link page (`/o/<token>`) shows the same figures with no download card. The WhatsApp link is `https://wa.me/?text=` with the words "My shop's accounts for <month>" only: never a file or a customer. The owner app's worker (`OWNER_APP_SW`) answers only the app's root page, and the customer pages' worker has no fetch handler, so neither can keep a receipt or a file.

@@ -2,6 +2,11 @@
 // the move: the gateway limits spec for every template and example, the whole plan (spec, runtime) of a shop and of an own agent, the guard.toml, and the compose file with its
 // addresses. Change the golden file only on purpose: `GOLDEN_WRITE=1 node --test test/payment-guard-golden.test.ts` from bundle/.
 //
+// Changed on purpose on 15 Nov 2026 (accounting module, plan section 8): the Razorpay Guard gained one read-only route, `GET /v1/settlements/recon/combined` as the
+// operation `read_settlements`, listed after `list_refunds` and before `payout` (the monorepo's deploy/pathways/bookings/razorpay/spec.json has the same route in
+// the same place, on its own branch), and the reading credential's `reads` grew by that operation. So the routes of every spec, the plan's reads and the generated
+// Guard files differ from the earlier golden file by that route and that name, and by nothing else. It changes nothing at Razorpay and no rule limits it.
+//
 // Compared both ways: stableJson is what is hashed and deployed; JSON.stringify keeps array order and insertion order, which anything reading the spec directly can see.
 import { test } from "node:test";
 import assert from "node:assert/strict";
