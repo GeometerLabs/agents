@@ -9,7 +9,7 @@ import type { Raw } from "../core/html.ts";
 import { formatDate, formatInr, MONTH_NAMES } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import { localParts } from "../core/time.ts";
-import { exportNames } from "./export.ts";
+import { exportNames, extraNames } from "./export.ts";
 import { exportPeriods } from "./periods.ts";
 import { OWNER_MONEY_WORDS } from "./words-owner.ts";
 import type { MoneyView, NotMatched } from "./owner-money.ts";
@@ -53,9 +53,11 @@ export function ownerMoneySection(view: MoneyView, language: Language, links: Ex
   const [py, pm] = view.period.split("-").map(Number);
   const rows = (): Raw => {
     const row = (label: string, period: string): Raw => {
-      const n = exportNames(period);
+      const n = { ...exportNames(period), ...extraNames(period) };
       const file = (name: string, text: string): Raw => html`<a class="btn quiet" href="${links!.base}/${period}/${name}">${text}</a>`;
-      return html`<p><b>${label}</b></p><div class="row">${file(n.journal, w.fileJournal)}${file(n.documents, w.fileDocuments)}${file(n.readme, w.fileReadme)}</div>`;
+      // the settlements file exists only for a shop that reads settlements; the two Tally files are best effort (export.ts leaves them out, and says why in the
+      // README, when they cannot be made, so their link is then a plain not-found while the CSV files are always there)
+      return html`<p><b>${label}</b></p><div class="row">${file(n.journal, w.fileJournal)}${file(n.documents, w.fileDocuments)}${view.readsSettlements ? file(n.settlements, w.fileSettlements) : ""}${file(n.tallyMasters, w.fileTallyMasters)}${file(n.tallyVouchers, w.fileTallyVouchers)}${file(n.readme, w.fileReadme)}</div>`;
     };
     // the WhatsApp link carries the words only, never a file or a customer: the accountant is asked for, the files are sent from the downloads above
     const share = `https://wa.me/?text=${encodeURIComponent(w.shareText(`${MONTH_NAMES[language][pm - 1]} ${py}`))}`;

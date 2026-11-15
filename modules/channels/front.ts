@@ -624,7 +624,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
 
     if (accounting) {
       // only the owner's SESSION, never the panel's link; the runtime checks the session again, so the front's word is not the only gate. Only this month, last month and the
-      // financial year (taken from the runtime's own clock, as the page's links are), and only the three files a period has: anything else is a plain not-found.
+      // financial year (taken from the runtime's own clock, as the page's links are), and only the files that period has: anything else is a plain not-found.
       const session = typeof token === "object" && "session" in token ? token.session : undefined;
       const money = state.view.money;
       const nothing = () => sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
@@ -636,7 +636,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       const file = accounting[2] === undefined ? undefined : files.find((f) => f.name === accounting[2]);
       if (!file) return nothing();
       res.writeHead(200, {
-        "content-type": file.name.endsWith(".csv") ? "text/csv; charset=utf-8" : "text/plain; charset=utf-8", "content-disposition": `attachment; filename="${file.name}"`,
+        "content-type": file.name.endsWith(".csv") ? "text/csv; charset=utf-8" : file.name.endsWith(".xml") ? "application/xml; charset=utf-8" : "text/plain; charset=utf-8", "content-disposition": `attachment; filename="${file.name}"`,
         "content-length": Buffer.byteLength(file.content), "cache-control": "no-store", "x-content-type-options": "nosniff", "x-robots-tag": "noindex", "content-security-policy": "default-src 'none'",
       });
       res.end(file.content);

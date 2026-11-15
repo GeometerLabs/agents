@@ -28,7 +28,7 @@ export interface OwnerMoneyWords {
   aCase: string;
   accountantTitle: string; accountantNote: string; thisMonth: string; lastMonth: string; thisYear: (fy: string) => string;
   /** The three downloads of a period, named for what is in them, and the one WhatsApp nudge to the accountant (a link of the words only: never a file or a customer). */
-  fileJournal: string; fileDocuments: string; fileReadme: string; shareWhatsapp: string; shareText: (period: string) => string;
+  fileJournal: string; fileDocuments: string; fileReadme: string; fileSettlements: string; fileTallyMasters: string; fileTallyVouchers: string; shareWhatsapp: string; shareText: (period: string) => string;
   scope: string;
 }
 
@@ -52,7 +52,7 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     aCase: "a customer",
     accountantTitle: "Send to my accountant", accountantNote: "Every payment in a table that opens in Excel or Tally.",
     thisMonth: "This month", lastMonth: "Last month", thisYear: (fy) => `Financial year ${fy}`,
-    fileJournal: "All payments", fileDocuments: "Receipts and bills", fileReadme: "Read me", shareWhatsapp: "Tell my accountant on WhatsApp", shareText: (p) => `My shop's accounts for ${p}`,
+    fileJournal: "All payments", fileDocuments: "Receipts and bills", fileReadme: "Read me", fileSettlements: "Paid into the bank", fileTallyMasters: "For Tally: accounts", fileTallyVouchers: "For Tally: entries", shareWhatsapp: "Tell my accountant on WhatsApp", shareText: (p) => `My shop's accounts for ${p}`,
     scope: "These are the payments that went through your assistant. Money paid at the shop is not here.",
   },
   hi: {
@@ -74,7 +74,7 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     aCase: "एक ग्राहक",
     accountantTitle: "मेरे अकाउंटेंट को भेजें", accountantNote: "हर भुगतान एक तालिका में, जो Excel या Tally में खुलती है।",
     thisMonth: "इस महीने", lastMonth: "पिछले महीने", thisYear: (fy) => `वित्त वर्ष ${fy}`,
-    fileJournal: "सारे भुगतान", fileDocuments: "रसीदें और बिल", fileReadme: "पढ़ने के लिए", shareWhatsapp: "WhatsApp पर अपने अकाउंटेंट को बताइए", shareText: (p) => `मेरी दुकान का हिसाब, ${p}`,
+    fileJournal: "सारे भुगतान", fileDocuments: "रसीदें और बिल", fileReadme: "पढ़ने के लिए", fileSettlements: "बैंक में आया पैसा", fileTallyMasters: "Tally के लिए: खाते", fileTallyVouchers: "Tally के लिए: एंट्री", shareWhatsapp: "WhatsApp पर अपने अकाउंटेंट को बताइए", shareText: (p) => `मेरी दुकान का हिसाब, ${p}`,
     scope: "ये वे भुगतान हैं जो आपके असिस्टेंट से होकर गए। दुकान पर दिया गया पैसा यहाँ नहीं है।",
   },
   ml: {
@@ -96,7 +96,7 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     aCase: "ഒരു ഉപഭോക്താവ്",
     accountantTitle: "എന്റെ അക്കൗണ്ടന്റിന് അയയ്ക്കുക", accountantNote: "എല്ലാ പേയ്‌മെന്റും Excel-ലോ Tally-യിലോ തുറക്കുന്ന ഒരു പട്ടികയിൽ.",
     thisMonth: "ഈ മാസം", lastMonth: "കഴിഞ്ഞ മാസം", thisYear: (fy) => `സാമ്പത്തിക വർഷം ${fy}`,
-    fileJournal: "എല്ലാ പണമിടപാടുകളും", fileDocuments: "രസീതുകളും ബില്ലുകളും", fileReadme: "വായിക്കാൻ", shareWhatsapp: "WhatsApp-ൽ അക്കൗണ്ടന്റിനോട് പറയൂ", shareText: (p) => `എന്റെ കടയുടെ കണക്കുകൾ, ${p}`,
+    fileJournal: "എല്ലാ പണമിടപാടുകളും", fileDocuments: "രസീതുകളും ബില്ലുകളും", fileReadme: "വായിക്കാൻ", fileSettlements: "ബാങ്കിൽ വന്ന പണം", fileTallyMasters: "Tally-ക്ക്: അക്കൗണ്ടുകൾ", fileTallyVouchers: "Tally-ക്ക്: എൻട്രികൾ", shareWhatsapp: "WhatsApp-ൽ അക്കൗണ്ടന്റിനോട് പറയൂ", shareText: (p) => `എന്റെ കടയുടെ കണക്കുകൾ, ${p}`,
     scope: "ഇവ നിങ്ങളുടെ അസിസ്റ്റന്റ് വഴി നടന്ന പേയ്‌മെന്റുകളാണ്. കടയിൽ നേരിട്ട് നൽകിയ പണം ഇവിടെ ഇല്ല.",
   },
   kn: {
@@ -118,7 +118,7 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     aCase: "ಒಬ್ಬ ಗ್ರಾಹಕ",
     accountantTitle: "ನನ್ನ ಲೆಕ್ಕಿಗರಿಗೆ ಕಳುಹಿಸಿ", accountantNote: "ಪ್ರತಿ ಪಾವತಿಯೂ Excel ಅಥವಾ Tally ನಲ್ಲಿ ತೆರೆಯುವ ಕೋಷ್ಟಕದಲ್ಲಿ.",
     thisMonth: "ಈ ತಿಂಗಳು", lastMonth: "ಕಳೆದ ತಿಂಗಳು", thisYear: (fy) => `ಹಣಕಾಸು ವರ್ಷ ${fy}`,
-    fileJournal: "ಎಲ್ಲಾ ಪಾವತಿಗಳು", fileDocuments: "ರಸೀದಿ ಮತ್ತು ಬಿಲ್‌ಗಳು", fileReadme: "ಓದಲು", shareWhatsapp: "WhatsApp ನಲ್ಲಿ ನಿಮ್ಮ ಅಕೌಂಟೆಂಟ್‌ಗೆ ಹೇಳಿ", shareText: (p) => `ನನ್ನ ಅಂಗಡಿಯ ಲೆಕ್ಕ, ${p}`,
+    fileJournal: "ಎಲ್ಲಾ ಪಾವತಿಗಳು", fileDocuments: "ರಸೀದಿ ಮತ್ತು ಬಿಲ್‌ಗಳು", fileReadme: "ಓದಲು", fileSettlements: "ಬ್ಯಾಂಕಿಗೆ ಬಂದ ಹಣ", fileTallyMasters: "Tally ಗಾಗಿ: ಖಾತೆಗಳು", fileTallyVouchers: "Tally ಗಾಗಿ: ಎಂಟ್ರಿಗಳು", shareWhatsapp: "WhatsApp ನಲ್ಲಿ ನಿಮ್ಮ ಅಕೌಂಟೆಂಟ್‌ಗೆ ಹೇಳಿ", shareText: (p) => `ನನ್ನ ಅಂಗಡಿಯ ಲೆಕ್ಕ, ${p}`,
     scope: "ಇವು ನಿಮ್ಮ ಸಹಾಯಕದ ಮೂಲಕ ನಡೆದ ಪಾವತಿಗಳು. ಅಂಗಡಿಯಲ್ಲಿ ನೇರವಾಗಿ ಕೊಟ್ಟ ಹಣ ಇಲ್ಲಿ ಇಲ್ಲ.",
   },
 };
