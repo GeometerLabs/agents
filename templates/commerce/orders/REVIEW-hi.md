@@ -282,7 +282,6 @@ Annapurna Tiffins · फरवरी 2027 · अभ्यास वाले न
 | `moneyBlock.received` | मिले | Received |  |
 | `moneyBlock.givenBack` | लौटाए | Given back |  |
 | `moneyBlock.kept` | रद्द करने पर रखे | Kept from cancellations |  |
-| `moneyBlock.machine` | ये शब्द मशीन से लिखे गए हैं; कोई हिंदी पाठक इन्हें जाँचेगा। |  |  |
 | `upiLabel.collected` | मालिक द्वारा मिला हुआ दर्ज एडवांस | Advance marked paid by owner |  |
 | `upiLabel.givenBack` | मालिक द्वारा भेजा हुआ दर्ज रिफंड | Refunds marked sent by owner |  |
 | `upiLabel.notChecked` | भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं) | automatic payment checking (with UPI you mark each payment) |  |

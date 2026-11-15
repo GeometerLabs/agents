@@ -5,7 +5,7 @@
 // read from the summary only, by kind of money fact and the closing balances, so no account name or accounting word reaches the owner's page.
 //
 // Words: English is the source. Hindi, Malayalam and Kannada are MACHINE-WRITTEN and wait for a native reader, like the owner's money words they share (words-owner.ts:
-// received, given back, kept, still to come); `machine` says so in that language. None of the words report/claims.ts bans appear (a test checks every language).
+// received, given back, kept, still to come); the report page already marks its machine-written languages in its own words (the words are not repeated here). None of the words report/claims.ts bans appear (a test checks every language).
 import { OWNER_MONEY_WORDS } from "./words-owner.ts";
 import { inr } from "./owner-money-render.ts";
 import type { AccountingSummary } from "./summary.ts";
@@ -17,8 +17,6 @@ export interface MoneyBlockWords {
   received: string; givenBack: string; kept: string;
   /** At the month's end: refunds still owed back to customers, and (Fees) fees still to come in. */
   owedBack: string; toCome: string;
-  /** Empty in English; the machine-written note in the other three (empty, not null, so the four languages carry the same set of strings). */
-  machine: string;
 }
 
 const OWN: Record<Language, Pick<MoneyBlockWords, "heading" | "owedBack" | "toCome">> = {
@@ -30,7 +28,7 @@ const OWN: Record<Language, Pick<MoneyBlockWords, "heading" | "owedBack" | "toCo
 
 const wordsFor = (l: Language): MoneyBlockWords => {
   const o = OWNER_MONEY_WORDS[l];
-  return { ...OWN[l], received: o.received, givenBack: o.givenBack, kept: o.kept, machine: o.machine ?? "" };
+  return { ...OWN[l], received: o.received, givenBack: o.givenBack, kept: o.kept };
 };
 
 export const MONEY_BLOCK_WORDS: Record<Language, MoneyBlockWords> = { en: wordsFor("en"), hi: wordsFor("hi"), ml: wordsFor("ml"), kn: wordsFor("kn") };
@@ -49,5 +47,5 @@ export function moneyBlock(summary: AccountingSummary, words: MoneyBlockWords, o
     card(words.owedBack, summary.closing.refundsOwedPaise),
     ...(options.toCome ? [card(words.toCome, Math.max(0, summary.closing.receivablePaise))] : []),
   ];
-  return `<h2>${esc(words.heading)}</h2><div class="cards">${cards.join("")}</div>${words.machine ? `<p class="small">${esc(words.machine)}</p>` : ""}`;
+  return `<h2>${esc(words.heading)}</h2><div class="cards">${cards.join("")}</div>`;
 }
