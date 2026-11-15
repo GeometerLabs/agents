@@ -70,7 +70,7 @@ node --version                                       # v26.x
 
 ```sh
 git clone https://github.com/GeometerLabs/agents.git && cd agents
-docker load < ~/geo-guard-0.1.0-alpha.2-pathways.1-x86_64.tar      # the file Geometer gave you
+docker pull ghcr.io/geometerlabs/geo-guard:0.1.0-alpha.3 && docker tag ghcr.io/geometerlabs/geo-guard:0.1.0-alpha.3 geo-guard:0.1.0-alpha.3   # install.sh pulls it by the digest in bundle/release.json
 ```
 
 **4. Make the server folder.** Everything lives in one folder; the bundle's own code is read-only inside the containers.

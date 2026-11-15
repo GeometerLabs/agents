@@ -229,22 +229,33 @@ test("ports 80 and 443 must be free or this server's own Caddy's; the domain sho
 });
 
 test("a Guard image file is loaded only when its sha256 is the one release.json pins for this CPU", async () => {
-  const s = sandbox({ docker: 'case "$1" in image) [ -n "${HAVE_IMAGE:-}" ];; load) echo "Loaded image: geo-guard:0.1.0-alpha.2-pathways.1";; esac' });
+  const s = sandbox({ docker: 'case "$1" in image) [ -n "${HAVE_IMAGE:-}" ];; load) echo "Loaded image: geo-guard:0.1.0-alpha.3";; esac' });
   try {
     const file = join(s.root, "guard.tar"); writeFileSync(file, "a pretend image");
-    const pinned = releaseWith(s.root, { guard_file_sha256_amd64: sha("a pretend image") });
+    // the file cases run on a pin with no registry: with one, install.sh pulls by digest and never reads a file (checked last, below)
+    const noRegistry = { guard_registry_repository: "", guard_digest_amd64: "", guard_digest_arm64: "" };
+    const pinned = releaseWith(s.root, { ...noRegistry, guard_file_sha256_amd64: sha("a pretend image") });
     let r = await s.run(`ARCH=amd64 DOCKER_DIRECT=1 GUARD_FILE=${JSON.stringify(file)}; get_guard_image; echo "state: $GUARD_STATE"`, { RELEASE_FILE: pinned, HAVE_IMAGE: "1" });
     assert.equal(r.code, 0, r.out);
     assert.match(r.out, /sha256 [0-9a-f]{64}, as release\.json pins it.*state: loaded from a file/su);
     assert.ok(s.calls().some((c) => c === `docker load -i ${file}`));
-    const wrong = releaseWith(join(s.root, "home"), { guard_file_sha256_amd64: "0".repeat(64) });
+    const wrong = releaseWith(join(s.root, "home"), { ...noRegistry, guard_file_sha256_amd64: "0".repeat(64) });
     r = await s.run(`ARCH=amd64 DOCKER_DIRECT=1 GUARD_FILE=${JSON.stringify(file)}; get_guard_image`, { RELEASE_FILE: wrong });
     assert.equal(r.code, 1); assert.match(r.out, /not 0{64} as release\.json pins it for amd64\. It was not loaded/u);
-    r = await s.run(`ARCH=amd64 DOCKER_DIRECT=1 GUARD_FILE=${JSON.stringify(file)}; get_guard_image`, { RELEASE_FILE: RELEASE });
+    // a release with no registry pin (before 0.1.0-alpha.3 every release.json was like this): a file must be pinned, and no file means "missing"
+    const unregisteredDir = join(s.root, "unregistered"); mkdirSync(unregisteredDir);
+    const unregistered = releaseWith(unregisteredDir, noRegistry);
+    r = await s.run(`ARCH=amd64 DOCKER_DIRECT=1 GUARD_FILE=${JSON.stringify(file)}; get_guard_image`, { RELEASE_FILE: unregistered });
     assert.equal(r.code, 1); assert.match(r.out, /pins no Guard image file for amd64.*Nothing was loaded/u);
     assert.equal(s.calls().filter((c) => c.startsWith("docker load")).length, 1, "only the pinned file was ever loaded");
-    r = await s.run("ARCH=amd64 DOCKER_DIRECT=1; get_guard_image; echo \"state: $GUARD_STATE\"", { RELEASE_FILE: RELEASE });
+    r = await s.run("ARCH=amd64 DOCKER_DIRECT=1; get_guard_image; echo \"state: $GUARD_STATE\"", { RELEASE_FILE: unregistered });
     assert.match(r.out, /not on this machine.*The panel starts without it.*state: missing/su);
+    // the real release.json names the registry and this CPU's digest: the image is pulled by that digest, never by a tag, and tagged with the pinned name
+    const pin = JSON.parse(readFileSync(RELEASE, "utf8")) as Record<string, string>;
+    r = await s.run("ARCH=amd64 DOCKER_DIRECT=1; get_guard_image; echo \"state: $GUARD_STATE\"", { RELEASE_FILE: RELEASE });
+    assert.equal(r.code, 0, r.out); assert.match(r.out, /state: pulled by digest sha256:[0-9a-f]{64}/u);
+    assert.ok(s.calls().includes(`docker pull ${pin.guard_registry_repository}@${pin.guard_digest_amd64}`), s.calls().join("\n"));
+    assert.ok(s.calls().includes(`docker tag ${pin.guard_registry_repository}@${pin.guard_digest_amd64} ${pin.guard_image}`), s.calls().join("\n"));
   } finally { s.done(); }
 });
 
@@ -364,7 +375,7 @@ test("a whole dry run says each step and changes nothing: no root command, no se
     });
     assert.equal(r.code, 0, r.out);
     for (const said of [/Dry run: each step is printed, nothing is changed, and no code is sent/u, /NOT A RELEASE/u, /What the install will do/u, /no pairing: the panel starts, but no alerts from outside and no licence lease/u,
-      /would run: env GEOMETER_SERVER=.*geometer-server .*bundle\/geometer\.ts init .*geometer-server --domain localhost --reviewed-by builder@.* --guard-image geo-guard:0\.1\.0-alpha\.2-pathways\.1 --panel --http-port 8080 --https-port 8443 --licence-key (ab){32}/u,
+      /would run: env GEOMETER_SERVER=.*geometer-server .*bundle\/geometer\.ts init .*geometer-server --domain localhost --reviewed-by builder@.* --guard-image geo-guard:0\.1\.0-alpha\.3 --panel --http-port 8080 --https-port 8443 --licence-key (ab){32}/u,
       /would run: .*bundle\/geometer\.ts up/u, /Left for the panel's first run/u, /Not paired: nobody outside hears if this server goes down/u]) assert.match(r.out, said);
     assert.ok(!s.calls().some((c) => c.startsWith("sudo")), `no root command: ${s.calls().filter((c) => c.startsWith("sudo")).join("; ")}`);
     assert.ok(!existsSync(join(s.root, "home", "geometer-server")), "no server folder");

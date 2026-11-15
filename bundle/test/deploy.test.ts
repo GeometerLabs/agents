@@ -26,7 +26,7 @@ test("a good deploy: files written, compose brought up, the running Guards asked
     const status = readStatus(w.root, "glow-salon")!;
     assert.deepEqual([status.deploy.state, status.limits?.proven, status.limits?.of], ["applied", 16, 16]); // item 11h: with the push Guard
     assert.ok(status.limits!.unprovable.length > 0 && status.limits!.unprovable.every((u) => !u.includes(":")), "what cannot be tested is named, and is not counted");
-    assert.deepEqual([status.versions?.pathway, status.versions?.guard], ["bookings@0.1.0", "geo-guard:0.1.0-alpha.2-pathways.1"]);
+    assert.deepEqual([status.versions?.pathway, status.versions?.guard], ["bookings@0.1.0", "geo-guard:0.1.0-alpha.3"]);
     assert.deepEqual(status.versions?.guards, { razorpay: 1, whatsapp: 1, calendar: 1, push: 1 });
     assert.equal(status.webhooks?.razorpay, "https://shops.example.com/c/glow-salon/webhooks/razorpay");
     assert.ok(w.admin.includes("g-glow-salon-razorpay GET /admin/status"), "the running Guard was asked");
