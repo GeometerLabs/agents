@@ -13,6 +13,7 @@ import { runOn } from "../crash-test/situations.ts";
 import { ORDERS_LEGACY } from "../src/accounting.ts";
 import { journal } from "../../../../modules/accounting/journal.ts";
 import { figuresOf } from "../../../../modules/accounting/figures.ts";
+import { booksFaults } from "../../../../modules/accounting/invariants.ts";
 import { isSettledByWord } from "../../../../modules/report/settled-by-word.ts";
 import { monthRange } from "../../../../modules/report/months.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
@@ -86,6 +87,8 @@ test("the books give the report's money, exactly, on the busy month and every cr
     }
     assert.deepEqual(journal(all, ORDERS_LEGACY).problems.filter((p) => !/already counted/.test(p.why)), [], `world ${i}: the journal reads every line of the record`);
     const j = journal(all, ORDERS_LEGACY);
+    // the books hold after every situation: balanced entries, money once, refunds owed equal to the open refunds, numbers with no gap, no phone number in refs
+    assert.deepEqual(booksFaults(all, ORDERS_LEGACY), [], `world ${i}: the books hold`);
     assert.deepEqual(all.filter((e) => e.refs.money === undefined && j.linesOf(e.seq).length > 0).map((e) => `${e.action}/${e.outcome}`), [], `world ${i}: every money line was written through post`);
   });
   assert.ok(seen > 20, `the comparison saw money: ${seen} figures`);
