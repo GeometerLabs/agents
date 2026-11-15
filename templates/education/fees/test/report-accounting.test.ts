@@ -41,7 +41,7 @@ test("the page shows Money this month in four languages, in the words of strings
     const s = STRINGS[language].moneyBlock;
     assert.equal(s, MONEY_BLOCK_WORDS[language]);
     assert.ok(html.includes(s.heading) && html.includes(s.received) && html.includes(s.givenBack) && html.includes(s.owedBack), language);
-    assert.deepEqual(bannedIn([s.heading, s.received, s.givenBack, s.kept, s.owedBack, s.toCome].join(" "), language), []);
+    assert.deepEqual(bannedIn([s.heading, s.received, s.givenBack, s.kept, s.owedBack, s.toCome, s.byWord].join(" "), language), []);
     assert.equal(html.includes(s.toCome), true, "only Fees shows what is still to come");
   }
   assert.equal(reportSection(seal(build([], false), key) as never, "en").includes(MONEY_BLOCK_WORDS.en.heading), false, "no block without a summary");
