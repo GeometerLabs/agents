@@ -1,6 +1,6 @@
 // The accountant's downloads at the public front, with two shops behind one front (written 15 Nov 2026): a session made for one shop opens nothing at the other (the
 // runtime of each shop checks its own sessions, and the front carries the cookie to the shop whose address it came to), a request without a session or with a panel
-// link opens nothing, and the front serves only this month, last month and the financial year, only a period's three files, only by GET. The shops here are stand-ins
+// link opens nothing, and the front serves only this month, last month and the financial year, only the files a period has, only by GET. The shops here are stand-ins
 // that keep their sign-ins in the real access store; the whole chain over real runtimes is in each template's accounting-pages.test.ts.
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
@@ -46,7 +46,7 @@ async function front() {
       submit: async () => "saved",
       view: async () => null,
       owner: async (c) => (isOwner(c) ? view : null),
-      accountantFiles: async (owner, period) => { if (!isOwner(owner)) return null; p.asked.push(period); return [{ name: `journal-${period}.csv`, content: `a,b\r\nshop ${id},${period}\r\n` }, { name: `documents-${period}.csv`, content: "number\r\n" }, { name: "README.txt", content: `shop ${id}` }]; },
+      accountantFiles: async (owner, period) => { if (!isOwner(owner)) return null; p.asked.push(period); return [{ name: `journal-${period}.csv`, content: `a,b\r\nshop ${id},${period}\r\n` }, { name: `documents-${period}.csv`, content: "number\r\n" }, { name: "README.txt", content: `shop ${id}` }, { name: "tally-masters.xml", content: "<ENVELOPE></ENVELOPE>" }]; },
       linkState: async (link) => p.access.linkState(link, p.who, Date.now()),
       signin: async (link) => { const r = p.access.consume(link, p.who, Date.now()); return r.ok ? { session: r.session, expiresAtMs: r.expiresAt } : { state: r.state }; },
       signout: async (s) => { p.access.end(s, Date.now()); },
@@ -107,4 +107,8 @@ test("only this month, last month and the financial year, only a period's files,
   assert.equal(csv.headers.get("content-type"), "text/csv; charset=utf-8");
   assert.equal(csv.headers.get("content-disposition"), 'attachment; filename="journal-2026-11.csv"');
   assert.equal((await at("2026-11/README.txt")).headers.get("content-type"), "text/plain; charset=utf-8");
+  // any file the runtime lists for the period is served by its name (the Tally files, a settlements file), and an XML file as XML
+  const xml = await at("2026-11/tally-masters.xml");
+  assert.equal(xml.status, 200);
+  assert.equal(xml.headers.get("content-type"), "application/xml; charset=utf-8");
 });

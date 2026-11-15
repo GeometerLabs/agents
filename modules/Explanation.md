@@ -1183,6 +1183,10 @@ template's tick reads yesterday's settlement rows once a day, catching up at mos
 the charge without its GST, the GST on it, out of `gateway`); the fee is checked both ways (with and without its GST), because Razorpay's documents do not say which.
 A held row, a row for a payment that did not go through the assistant, and anything the books cannot read are listed, never posted.
 
+**Period close needs no lock of its own.** A journal line is always dated by its record entry's time, and nothing is back-dated: the record cannot be, and `post`
+takes no date. So nothing can land in a past month, and a fix is a new entry dated now. A month closes when its signed monthly report is made: the report carries the
+books summary and the record's head, which fix that month's figures for good, and the open check finds any later change.
+
 **The signed monthly report and the open check** (`summary.ts`, `report-block.ts`, `check.ts`). Each template's report carries an optional `accounting` field: the
 period's books summary (per account, per kind, the closing balances, the document runs, the refunds on a person's word and the count of lines that could not be read)
 and the legacy map it was read with. It is left out for a record with no money. The page shows a short "Money this month" block in four languages. Anyone with the
@@ -1196,6 +1200,9 @@ run `invariants.ts` (`booksFaults`) on every crash-test world: every entry balan
 restore does not explain, no customer number or student name is in any refs, and (Fees) each fee's receivable equals its balance in the Fees store plus the refunds owed on it, up to what was overpaid (the store keeps its balance before refunds; the books take a refund from the overpaid receivable first and the rest from `returns`).
 
 **Fees' "paid another way?"** splits into two buttons, cash and bank (`channels/words-money.ts`, `events.ts`), so the books know which account the money is in.
+
+A shop with money through the payment service that does not read its settlements is told "money paid online is not yet checked against your bank" in place of
+"everything is matched", which it could not know.
 
 How the books reach the pages (receipts on a customer's page, the Money section, the downloads) is the next section.
 

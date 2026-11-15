@@ -72,6 +72,11 @@ export interface MoneyView {
    * read_settlements route) has no such line, so its gateway money is never called unpaid on a guess.
    */
   readsSettlements: boolean;
+  /**
+   * The shop has taken money through the payment service and does not read its settlements, so nobody has checked that money reached the bank: the page says so
+   * in place of "everything is matched", which it could not know.
+   */
+  payoutsUnchecked: boolean;
 }
 
 const MONEY_ACCOUNTS: ReadonlySet<string> = new Set([ACCOUNTS.cash.code, ACCOUNTS.upi.code, ACCOUNTS.bank.code, ACCOUNTS.gateway.code, ACCOUNTS.bankSettled.code]);
@@ -180,5 +185,6 @@ export function ownerMoney(i: MoneyViewInput): MoneyView {
     notMatched,
     period: `${p.year}-${String(p.month).padStart(2, "0")}`,
     readsSettlements,
+    payoutsUnchecked: !readsSettlements && lines.some((l) => l.account === ACCOUNTS.gateway.code && l.debitPaise > 0),
   };
 }

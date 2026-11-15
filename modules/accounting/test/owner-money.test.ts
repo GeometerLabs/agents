@@ -176,3 +176,26 @@ test("a case named with markup is text, not markup", () => {
   assert.equal(page.includes("<b-1>"), false);
   assert.ok(page.includes("&lt;b-1&gt;"));
 });
+
+test("\"everything is matched\" only when it is known: a shop with online money that does not read its payouts is told they are not checked yet", () => {
+  const w = world();
+  w.clock.set(NOW);
+  w.post(gw("b-1", "pay_1", 20_000), "record_deposit");
+  const unread = ownerMoney({ journal: w.acc.journal(), entries: w.record.entries(), refundsUntold: [], nowMs: NOW, timeZone: TZ });
+  assert.equal(unread.payoutsUnchecked, true);
+  for (const language of LANGUAGES) {
+    const page = ownerMoneySection(unread, language, undefined, TZ).toString();
+    assert.ok(page.includes(OWNER_MONEY_WORDS[language].payoutsUnchecked), language);
+    assert.equal(page.includes(OWNER_MONEY_WORDS[language].notMatchedNone), false, `${language}: no false all-clear`);
+    assert.deepEqual(bannedIn(OWNER_MONEY_WORDS[language].payoutsUnchecked, language), [], language);
+  }
+  w.line(null, "settlements_read", "confirmed", { day: "2026-11-14", rows: "0", posted: "0", listed: "0" });
+  const reads = ownerMoney({ journal: w.acc.journal(), entries: w.record.entries(), refundsUntold: [], nowMs: NOW, timeZone: TZ });
+  assert.equal(reads.payoutsUnchecked, false, "a shop that reads its settlements is checked");
+  const cashOnly = world();
+  cashOnly.clock.set(NOW);
+  cashOnly.post({ kind: "received", case: "b-8", paymentId: "up_8", amountPaise: 12_345, method: "cash", evidence: "owner_mark", for: "advance" }, "owner_marked_paid");
+  const v = ownerMoney({ journal: cashOnly.acc.journal(), entries: cashOnly.record.entries(), refundsUntold: [], nowMs: NOW, timeZone: TZ });
+  assert.equal(v.payoutsUnchecked, false, "no online money: nothing to check");
+  assert.ok(ownerMoneySection(v, "en", undefined, TZ).toString().includes(OWNER_MONEY_WORDS.en.notMatchedNone));
+});

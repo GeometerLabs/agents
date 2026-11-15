@@ -25,6 +25,12 @@ import { createAccounting } from "../post.ts";
 import type { MoneyEvent } from "../post.ts";
 import { SETTLEMENT_ACTIONS, readSettlementsOnce, yesterdayOf } from "../settlements.ts";
 import { tallyFiles, xml } from "../tally.ts";
+import { figuresOf } from "../figures.ts";
+import { booksFaults } from "../invariants.ts";
+import { reportAccounting } from "../summary.ts";
+import { checkAccounting } from "../check.ts";
+import { headOf } from "../../record/ledger.ts";
+import { packOf } from "./pack-helpers.ts";
 
 const TZ = "Asia/Kolkata";
 const at = (month: number, day: number, hour: number, year = 2026) => zonedToMs({ year, month, day }, { hour, minute: 0 }, TZ);
@@ -424,3 +430,24 @@ test("Tally XML: a voucher that does not sum to zero is refused, and the export 
   assert.match(out.find((f) => f.name === "README.txt")!.content, /The Tally files could not be made this time/u);
   assert.ok(out.some((f) => f.name === "journal-2026-11.csv"), "the CSV files are still complete");
 });
+
+// ---- the three parts together: settlements, the report's books summary and its open check, the books check ------------------------------------------
+
+test("a record with settled rows passes the open check and the books check, and the report's received and refunds are as they were before the rows", async () => {
+  const w = booked();
+  const legacy = { received: [] };
+  const FROM = new Date(at(11, 1, 0)).toISOString();
+  const TO = new Date(at(12, 1, 0)).toISOString();
+  const before = figuresOf(w.acc.journal(), w.record.entries(), legacy, FROM, TO);
+  await job(w, stub(rows12()));
+  const entries = w.record.entries();
+  assert.ok(entries.filter((e) => e.refs.money === "settled").length >= 2, "the rows were posted");
+  assert.deepEqual(booksFaults(entries, legacy, { privateText: [NAME] }), [], "the books hold, and no name or number is in any refs");
+  const after = figuresOf(w.acc.journal(), entries, legacy, FROM, TO);
+  assert.deepEqual([after.received, after.refunds], [before.received, before.refunds], "a payout moves money between accounts; it is not a payment or a refund");
+  const report = JSON.parse(JSON.stringify({ document: { period: { from: FROM, to: TO }, accounting: reportAccounting(entries, legacy, FROM, TO), anchor: headOf(entries, "glow-salon") } }));
+  assert.ok(report.document.accounting.summary.byKind.some((k: { kind: string }) => k.kind === "settled"), "the summary carries the settled rows");
+  const checked = checkAccounting(packOf(entries, "glow-salon"), report);
+  assert.equal(checked.ok, true, checked.lines.filter((l) => !l.ok).map((l) => l.text).join("; "));
+});
+

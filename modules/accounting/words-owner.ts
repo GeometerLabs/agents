@@ -18,6 +18,8 @@ export interface OwnerMoneyWords {
   owedTitle: string; owedNone: string;
   owedUpi: (caseRef: string) => string; owedService: (caseRef: string) => string;
   notMatchedTitle: string; notMatchedNone: string;
+  /** A shop with money through the payment service that does not read its payouts yet: said in place of "everything is matched", which would not be known. */
+  payoutsUnchecked: string;
   upiClaim: (amount: string, caseRef: string) => string;
   gateway: (amount: string, caseRef: string, date: string) => string;
   /** The payment service is holding the payout; and a payout for a payment that did not go through the assistant. */
@@ -43,7 +45,7 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     owedTitle: "Owed back to customers", owedNone: "Nothing is owed back.",
     owedUpi: (c) => `${c}: you pay this back by UPI, then mark it done.`,
     owedService: (c) => `${c}: this is waiting to go back through the payment service.`,
-    notMatchedTitle: "Not matched yet", notMatchedNone: "Everything is matched.",
+    notMatchedTitle: "Not matched yet", notMatchedNone: "Everything is matched.", payoutsUnchecked: "Money paid online is not yet checked against your bank. See the payouts in your payment service's app.",
     upiClaim: (a, c) => `A customer says they paid ${a} for ${c}. Look in your UPI app.`,
     gateway: (a, c, d) => `${a} for ${c}, paid through the payment service on ${d}, is not yet in your bank.`,
     gatewayHeld: (a, c) => `${a} for ${c} is being held by the payment service, so it is not in your bank yet.`,
@@ -65,7 +67,7 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     owedTitle: "ग्राहकों को लौटाना बाकी", owedNone: "कुछ भी लौटाना बाकी नहीं है।",
     owedUpi: (c) => `${c}: यह आप UPI से लौटाएँ, फिर \"हो गया\" चिह्नित करें।`,
     owedService: (c) => `${c}: यह पेमेंट सेवा से लौटने के इंतज़ार में है।`,
-    notMatchedTitle: "अभी मिलान नहीं हुआ", notMatchedNone: "सब कुछ मिल गया है।",
+    notMatchedTitle: "अभी मिलान नहीं हुआ", notMatchedNone: "सब कुछ मिल गया है।", payoutsUnchecked: "ऑनलाइन मिला पैसा अभी आपके बैंक से मिलाया नहीं गया है। पेमेंट सेवा के ऐप में पेआउट देखिए।",
     upiClaim: (a, c) => `एक ग्राहक कहता है कि उसने ${c} के लिए ${a} दिए हैं। अपने UPI ऐप में देखें।`,
     gateway: (a, c, d) => `${c} के लिए ${a}, ${d} को पेमेंट सेवा से आए, अभी आपके बैंक में नहीं पहुँचे हैं।`,
     gatewayHeld: (a, c) => `${c} के लिए ${a} पेमेंट सेवा ने रोक रखे हैं, इसलिए अभी आपके बैंक में नहीं हैं।`,
@@ -87,7 +89,7 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     owedTitle: "ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത്", owedNone: "തിരികെ നൽകാൻ ഒന്നുമില്ല.",
     owedUpi: (c) => `${c}: ഇത് നിങ്ങൾ UPI വഴി തിരികെ നൽകി, പിന്നെ \"കഴിഞ്ഞു\" എന്ന് അടയാളപ്പെടുത്തണം.`,
     owedService: (c) => `${c}: ഇത് പേയ്‌മെന്റ് സേവനം വഴി തിരികെ പോകാൻ കാത്തിരിക്കുന്നു.`,
-    notMatchedTitle: "ഇതുവരെ ഒത്തുനോക്കിയിട്ടില്ല", notMatchedNone: "എല്ലാം ഒത്തുനോക്കി.",
+    notMatchedTitle: "ഇതുവരെ ഒത്തുനോക്കിയിട്ടില്ല", notMatchedNone: "എല്ലാം ഒത്തുനോക്കി.", payoutsUnchecked: "ഓൺലൈനായി കിട്ടിയ പണം ഇതുവരെ നിങ്ങളുടെ ബാങ്കുമായി ഒത്തുനോക്കിയിട്ടില്ല. പേയ്മെന്റ് സേവനത്തിന്റെ ആപ്പിൽ പേഔട്ടുകൾ നോക്കൂ.",
     upiClaim: (a, c) => `${c}-ന് ${a} അടച്ചു എന്ന് ഒരു ഉപഭോക്താവ് പറയുന്നു. നിങ്ങളുടെ UPI ആപ്പിൽ നോക്കുക.`,
     gateway: (a, c, d) => `${c}-ന് ${a}, ${d}-ന് പേയ്‌മെന്റ് സേവനം വഴി അടച്ചത്, ഇതുവരെ നിങ്ങളുടെ ബാങ്കിൽ എത്തിയിട്ടില്ല.`,
     gatewayHeld: (a, c) => `${c}-ന് ${a} പേയ്‌മെന്റ് സേവനം പിടിച്ചുവച്ചിരിക്കുന്നു, അതിനാൽ ഇതുവരെ നിങ്ങളുടെ ബാങ്കിൽ എത്തിയിട്ടില്ല.`,
@@ -109,7 +111,7 @@ export const OWNER_MONEY_WORDS: W<OwnerMoneyWords> = {
     owedTitle: "ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು", owedNone: "ಹಿಂದಿರುಗಿಸಲು ಏನೂ ಇಲ್ಲ.",
     owedUpi: (c) => `${c}: ಇದನ್ನು ನೀವು UPI ಮೂಲಕ ಹಿಂದಿರುಗಿಸಿ, ನಂತರ \"ಆಯಿತು\" ಎಂದು ಗುರುತಿಸಿ.`,
     owedService: (c) => `${c}: ಇದು ಪಾವತಿ ಸೇವೆಯ ಮೂಲಕ ಹಿಂದಿರುಗಲು ಕಾಯುತ್ತಿದೆ.`,
-    notMatchedTitle: "ಇನ್ನೂ ಹೊಂದಿಸಿಲ್ಲ", notMatchedNone: "ಎಲ್ಲವೂ ಹೊಂದಿಕೆಯಾಗಿದೆ.",
+    notMatchedTitle: "ಇನ್ನೂ ಹೊಂದಿಸಿಲ್ಲ", notMatchedNone: "ಎಲ್ಲವೂ ಹೊಂದಿಕೆಯಾಗಿದೆ.", payoutsUnchecked: "ಆನ್‌ಲೈನ್‌ನಲ್ಲಿ ಬಂದ ಹಣವನ್ನು ಇನ್ನೂ ನಿಮ್ಮ ಬ್ಯಾಂಕ್‌ನೊಂದಿಗೆ ಹೊಂದಿಸಿಲ್ಲ. ಪಾವತಿ ಸೇವೆಯ ಆಪ್‌ನಲ್ಲಿ ಪೇಔಟ್‌ಗಳನ್ನು ನೋಡಿ.",
     upiClaim: (a, c) => `${c} ಗೆ ${a} ಪಾವತಿಸಿದ್ದೇನೆ ಎಂದು ಒಬ್ಬ ಗ್ರಾಹಕ ಹೇಳುತ್ತಾರೆ. ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ನೋಡಿ.`,
     gateway: (a, c, d) => `${c} ಗೆ ${a}, ${d} ರಂದು ಪಾವತಿ ಸೇವೆಯ ಮೂಲಕ ಬಂದದ್ದು, ಇನ್ನೂ ನಿಮ್ಮ ಬ್ಯಾಂಕ್‌ಗೆ ತಲುಪಿಲ್ಲ.`,
     gatewayHeld: (a, c) => `${c} ಗೆ ${a} ಅನ್ನು ಪಾವತಿ ಸೇವೆ ಹಿಡಿದಿಟ್ಟಿದೆ, ಆದ್ದರಿಂದ ಇನ್ನೂ ನಿಮ್ಮ ಬ್ಯಾಂಕ್‌ಗೆ ತಲುಪಿಲ್ಲ.`,

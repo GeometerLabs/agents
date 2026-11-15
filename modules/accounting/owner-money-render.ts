@@ -45,9 +45,11 @@ export function ownerMoneySection(view: MoneyView, language: Language, links: Ex
       case "untold_refund": return w.untold(inr(n.paise), ref(n.case));
     }
   };
+  // "everything is matched" only when it is known: a shop with online money it does not check against the bank is told that instead
+  const unchecked = view.payoutsUnchecked ? html`<div class="item s-info"><p>${w.payoutsUnchecked}</p></div>` : "";
   const unmatched = view.notMatched.length === 0
-    ? html`<p class="calm">${w.notMatchedNone}</p>`
-    : view.notMatched.map((n) => html`<div class="item s-info"><p>${sentence(n)}</p></div>`);
+    ? (view.payoutsUnchecked ? unchecked : html`<p class="calm">${w.notMatchedNone}</p>`)
+    : html`${unchecked}${view.notMatched.map((n) => html`<div class="item s-info"><p>${sentence(n)}</p></div>`)}`;
   // the three periods come from the month the runtime says it is (view.period), so the links, their labels and the front's allowed set all follow one clock
   const periods = exportPeriods(view.period);
   const [py, pm] = view.period.split("-").map(Number);
