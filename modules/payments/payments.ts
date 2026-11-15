@@ -14,6 +14,8 @@ import type { GuardModel } from "./guard-model.ts";
  *  - takesPartPayments: one request stays open for the rest after a part is paid. False: a request is for one exact amount, and the rest needs a request of its own.
  *  - cancels: a request can be closed at the provider so it can no longer be paid. False: a request already sent can still be paid (the agent only stops counting on it).
  *  - readsBack: the provider's own record can be read, so "look first" and "read back" ask the provider. False: the agent's own store is the only record.
+ *  - readsSettlements: the provider says which payments it has paid into the shop's bank, and what it kept (Payments.readSettlements). False: nothing the agent can
+ *    reach says so (UPI goes straight to the shop's account), and the books have no settlement to match.
  */
 export interface PaymentCapabilities {
   confirmsAutomatically: boolean;
@@ -21,6 +23,7 @@ export interface PaymentCapabilities {
   takesPartPayments: boolean;
   cancels: boolean;
   readsBack: boolean;
+  readsSettlements: boolean;
 }
 
 export interface Payment {
@@ -79,6 +82,32 @@ export interface PaymentEvent {
   payload: { request?: { id: string; reference_id: string }; payment?: { id: string; request_id?: string }; refund?: { id: string; payment_id: string } };
 }
 
+/**
+ * One row of a provider's settlement report (a settlement or reconciliation report): a payment paid out, a refund taken back, or something else the provider settled. Amounts are
+ * paise, times epoch seconds. `fee` and `tax` are exactly what the provider's row says: whether `fee` already holds the `tax` is for the books to check row by row
+ * (modules/accounting/journal.ts checkSettlementRow), because the provider does not say.
+ */
+export interface SettlementRow {
+  /** The payment's, refund's or adjustment's own id. */
+  entityId: string;
+  /** "other": a kind of row the provider has that this code does not know; the books list it and post nothing. */
+  type: "payment" | "refund" | "transfer" | "adjustment" | "other";
+  /** The payment a refund is for; null on a payment row. */
+  paymentId: string | null;
+  amount: number;
+  fee: number;
+  tax: number;
+  debit: number;
+  credit: number;
+  /** Held back by the provider: not paid into the bank (yet). */
+  onHold: boolean;
+  /** The provider has paid it out. */
+  settled: boolean;
+  settlementId: string | null;
+  utr: string | null;
+  settledAt: number | null;
+}
+
 export interface NewPaymentRequest { amount: number; reference_id: string; description: string; part_payments?: boolean; min_first_payment?: number }
 
 export interface Payments {
@@ -95,6 +124,11 @@ export interface Payments {
   /** Send a refund Guard held again, with those exact bytes (`call.body` of the GuardHeldError). Only after the owner approved it. */
   resendRefund(paymentId: string, body: string, requestedBy?: string[]): Promise<Refund>;
   listRefunds(paymentId: string): Promise<Refund[]>;
+  /**
+   * Every row the provider settled on one day (read only; only a provider whose capabilities say `readsSettlements` has this). The whole day, however many pages
+   * it took. `pageSize` is for a test; a provider has its own default.
+   */
+  readSettlements?(day: { year: number; month: number; day: number }, options?: { pageSize?: number }): Promise<SettlementRow[]>;
 }
 
 /**

@@ -161,7 +161,7 @@ test("the section in four languages: the scope line, the sums, the links, no ban
 
 test("a case named with markup is text, not markup", () => {
   const w = world();
-  w.clock.set(NOW);
+  w.clock.set(at(11, 3, 10)); // paid through the payment service more than 4 working days ago, so it is listed as "not yet in your bank"
   w.post(gw("<b-1>", "pay_x", 5_000), "record_deposit");
   const v = ownerMoney({ journal: w.acc.journal(), entries: w.record.entries(), refundsUntold: [], nowMs: NOW, timeZone: TZ });
   const page = ownerMoneySection(v, "en", { base: "a" }, TZ).toString();

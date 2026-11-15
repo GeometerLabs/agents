@@ -11,6 +11,7 @@
 //   duplicate and late events          the same body twice is one event; a late one is judged by read-back  the same mark twice counts once; a mark after the close is kept apart
 //   never refunding more than paid     above the payment is refused; a second refund of a payment is not sent  what is owed is counted against the payment, so nothing is left to owe twice
 //   a held refund                      held for the owner, sent once after the approval, never again      does not apply: no refund is sent; the owed one waits for the owner's mark
+//   settlements                        a day's rows read through Guard, read only                           does not apply: the money goes straight to the owner's account
 //   a refund that fails                a 5xx is looked for once, never repeated; a refusal stops it        does not apply: the owner pays; an unmarked one is reminded three times, then listed
 //   B33: screenshot, other amount, never, twice, after the release     does not apply: the provider's own record confirms         each as B33 says
 import { test } from "node:test";
@@ -125,6 +126,29 @@ for (const p of PROVIDERS) {
     }
     assert.match(p.signup, /SIGNUP\.md$/u);
   });
+
+  // ---- settlements (15 Nov 2026, accounting step 6) ----
+  // A provider that reads settlements reads a day's rows through its own Guard (a read-only route); one that cannot says so, and the call is refused in plain words.
+  if (can.readsSettlements) {
+    test(`${p.id}: settlements: a day's rows are read through Guard as a read-only call, and nothing is changed`, async () => {
+      const kit = await gatewayKit(p);
+      try {
+        const made = await ensureLink(kit.direct, { reference: "b-1", amountPaise: DEPOSIT, description: "Deposit b-1" });
+        kit.fake.customerPays(made.link!.id);
+        const paymentId = kit.fake.links()[0].payments[0].id;
+        assert.ok(p.gateway!.guard.reads.record.some((op) => p.gateway!.guard.routes.some((r) => r.operation === op && r.method === "GET" && /settlement/u.test(r.path))), "the reading credential may read the settlement route");
+        const day = new Date(T0 + 2 * 86_400_000); // the stand-in settles a payment two days on (India's day)
+        const rows = await kit.payments.readSettlements!({ year: day.getUTCFullYear(), month: day.getUTCMonth() + 1, day: day.getUTCDate() });
+        assert.deepEqual(rows.map((r) => [r.entityId, r.type, r.amount, r.settled]), [[paymentId, "payment", DEPOSIT, true]]);
+        assert.equal(kit.fake.refunds().length, 0);
+      } finally { await kit.close(); }
+    });
+  } else {
+    test(`${p.id}: settlements: does not apply: nothing the agent can reach says what reached the bank, so no settlement is read`, () => {
+      assert.equal(can.readsSettlements, false);
+      assert.equal(p.gateway, undefined);
+    });
+  }
 
   // ---- lost reply ----
   if (gateway) {
