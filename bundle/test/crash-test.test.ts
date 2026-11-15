@@ -1,49 +1,18 @@
 // The crash test of an agent someone else wrote, against the REAL Guard: the example agent (examples/own-agent/server.js, plain Node) is started by its own command, put behind the
-// three real Guards the bundle generates, in front of the stand-in services, and tried with every situation. The good example holds all of them. The broken example is the same agent
-// with one thing done wrong (when the answer to a refund is lost it asks again, with a new idempotency key): it fails exactly one situation, and the stand-in still holds one refund
-// because Guard's at-most-once rule held every repeat. Two more wrong examples (12 Nov 2026) each fail exactly one of the held-refund situations: server-asks-again.js keeps sending
-// after the owner's no (Guard refuses each send as denied_by_approver and asks nobody again), server-past-end.js sends after the request ran out. These need a geo-guard built
-// with the ADR-0061 addendum (12 Nov 2026): an older one opens a new request after the no, and the owner-denies situation fails on Guard's check. Skipped, saying so, when the built geo-guard program is not on this computer. The situation where nobody
-// answers waits out Guard's shortest request (60 s), so a full run takes about a minute longer than before.
+// three real Guards the bundle generates, in front of the stand-in services, and tried with every situation. The good example holds all of them, on one run that is also
+// read for the owner's no and the owner who never answers. Other settings, an agent that cannot be driven and a UPI agent are tried here too. The wrong examples, each
+// failing exactly the situation it is wrong in, are in crash-test-wrong.test.ts (a file of their own so both files run side by side).
+// These need a geo-guard built with the ADR-0061 addendum (12 Nov 2026). Skipped, saying so, when the built geo-guard program is not on this computer. The situation where
+// nobody answers waits out Guard's shortest request (60 s).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { addAgent } from "../agent/deploy.ts";
-import { crashTestText, planCrashTest, runCrashTest } from "../agent/crash-test/run.ts";
-import type { CrashResult } from "../agent/crash-test/run.ts";
-import { makeContext, main } from "../geometer.ts";
+import { crashTestText } from "../agent/crash-test/run.ts";
+import { main } from "../geometer.ts";
 import { readHandCheck } from "../handcheck.ts";
-import { CALENDAR_ID, PHONE_NUMBER_ID, tempServer } from "./helpers.ts";
 import { BINARY, skipWithoutBinary } from "./real-guard.ts";
+import { ALL, EXAMPLES, agentOn, crashTest, failing, quiet } from "./crash-test-helpers.ts";
 
-const EXAMPLES = new URL("../examples/own-agent/", import.meta.url).pathname;
-const NOW = new Date("2026-11-05T09:00:00Z");
-const flags = { upstreams: "razorpay,whatsapp,calendar", "owner-whatsapp": "+919800000001", deposit: "200", "refund-limit": "100", "whatsapp-number-id": PHONE_NUMBER_ID, "calendar-id": CALENDAR_ID };
-const ALL = ["booking-works", "payment-link-lost-reply", "refund-lost-reply", "duplicate-payment-event", "calendar-silent-failure", "razorpay-key-expired", "refund-above-limit", "owner-denies", "approval-expires", "refund-more-than-paid", "duplicate-inbound", "price-below-floor"];
-
-function agentOn(run: string, extra: Record<string, string> = {}) {
-  const t = tempServer({});
-  addAgent(t.root, "my-agent", { ...flags, run, version: "v1", ...extra }, () => "", NOW);
-  return { ...t, ctx: makeContext(t.root, { now: () => NOW }) };
-}
-
-async function crashTest(run: string, extra: Record<string, string> = {}, situations?: string[]): Promise<CrashResult> {
-  const a = agentOn(run, extra);
-  try {
-    const { plan } = await planCrashTest(a.ctx, "my-agent", { guardBin: BINARY });
-    return await runCrashTest(plan, situations ? { situations } : {});
-  } finally { a.done(); }
-}
-
-async function quiet<T>(work: () => Promise<T>): Promise<{ result: T; out: string; err: string }> {
-  const out: string[] = []; const err: string[] = [];
-  const [log, error] = [console.log, console.error];
-  console.log = (...a: unknown[]) => out.push(a.join(" ")); console.error = (...a: unknown[]) => err.push(a.join(" "));
-  try { return { result: await work(), out: out.join("\n"), err: err.join("\n") }; } finally { console.log = log; console.error = error; }
-}
-
-const failing = (r: CrashResult) => r.situations.filter((s) => !s.held).map((s) => s.id);
-
-test("the example agent holds every situation, judged from the stand-ins' records and Guard's decisions, and the output reads like the hand check's", { skip: skipWithoutBinary }, async () => {
+test("the example agent holds every situation, judged from the stand-ins' records and Guard's decisions, and the output reads like the hand check's; when the owner says no, or never answers, it stops after one send that finds out (or before the end), tells the customer, and says no refund was made", { skip: skipWithoutBinary }, async () => {
   const r = await crashTest(`node ${EXAMPLES}server.js`);
   assert.deepEqual(r.situations.map((s) => s.id), ALL);
   assert.deepEqual(failing(r), [], r.situations.filter((s) => !s.held).map((s) => s.checks.filter((c) => !c.passed).map((c) => `${c.label}: ${c.detail}`).join("; ")).join(" | "));
@@ -56,49 +25,12 @@ test("the example agent holds every situation, judged from the stand-ins' record
   const lost = r.situations.find((s) => s.id === "refund-lost-reply")!;
   assert.deepEqual(lost.checks.map((c) => c.label), ["Razorpay holds exactly one refund (not two)", "The refund is the deposit, ₹200", "After the answer was lost the agent did not ask for the refund again", "The agent was still running at the end"]);
   assert.ok(r.situations.every((s) => s.checks.length >= 4));
-});
-
-test("the broken example fails exactly the situation it is broken in, and Guard's at-most-once holds every repeat so the stand-in still has one refund", { skip: skipWithoutBinary }, async () => {
-  const r = await crashTest(`node ${EXAMPLES}server-broken.js`);
-  assert.deepEqual(failing(r), ["refund-lost-reply"]);
-  assert.deepEqual([r.held, r.total], [11, 12]);
-  const lost = r.situations.find((s) => s.id === "refund-lost-reply")!;
-  const byLabel = Object.fromEntries(lost.checks.map((c) => [c.label, c]));
-  // the money: one refund at Razorpay, because Guard did not let the repeat through
-  assert.equal(byLabel["Razorpay holds exactly one refund (not two)"].passed, true);
-  assert.equal(byLabel["The refund is the deposit, ₹200"].passed, true);
-  // the agent: it asked again, three times, with a new key each time, and Guard's decisions say it held every one
-  const asked = byLabel["After the answer was lost the agent did not ask for the refund again"];
-  assert.equal(asked.passed, false);
-  assert.match(asked.detail, /Guard saw 3 more refund requests after the one whose answer was lost, and stopped all of them \(hold\)/u);
-  assert.match(asked.detail, /not by the agent/u);
-  // every other situation held, including the ones that use the same resend-until-approved path
-  assert.ok(r.situations.filter((s) => s.id !== "refund-lost-reply").every((s) => s.held));
-});
-
-test("the owner says no, and the owner never answers: the good example stops after one send that finds out (or before the end), tells the customer, and says no refund was made", { skip: skipWithoutBinary }, async () => {
-  const r = await crashTest(`node ${EXAMPLES}server.js`, {}, ["owner-denies", "approval-expires"]);
-  assert.deepEqual(r.situations.map((s) => [s.id, s.held]), [["owner-denies", true], ["approval-expires", true]], r.situations.map((s) => s.checks.filter((c) => !c.passed).map((c) => `${c.label}: ${c.detail}`).join("; ")).join(" | "));
-  const denied = r.situations[0];
+  // the owner says no, and the owner never answers (judged on the same run)
+  const denied = r.situations.find((s) => s.id === "owner-denies")!;
   assert.deepEqual(denied.checks.map((c) => c.label), ["Razorpay refunded nothing", "After the owner's no the agent sent the refund at most once more (to find out), and then stopped", "Guard refused the identical refund after the no and asked the owner nothing new", "It did not try another way: no refund of another amount or for another payment, and no payout", "The customer was told after the owner's no", "No message to the customer says the deposit was refunded", "The agent was still running at the end"]);
   assert.ok(denied.checks.find((c) => c.label === "Guard refused the identical refund after the no and asked the owner nothing new")!.passed, "the send that finds out is refused (denied_by_approver) and opens no request: the owner is not asked again");
-  assert.match(r.situations[1].how, /runs out after 60 seconds, the shortest Guard takes, standing in for the shop's 24 hours/u, "the output says the 24 hours were shortened");
-  assert.match(r.situations[1].how, /read as words/u);
-});
-
-test("an agent that keeps sending after the owner's no fails exactly that situation; one that sends after the request ran out fails exactly the other", { skip: skipWithoutBinary }, async () => {
-  const again = await crashTest(`node ${EXAMPLES}server-asks-again.js`);
-  assert.deepEqual(failing(again), ["owner-denies"]);
-  const check = again.situations.find((s) => s.id === "owner-denies")!.checks.find((c) => !c.passed)!;
-  assert.equal(check.label, "After the owner's no the agent sent the refund at most once more (to find out), and then stopped");
-  assert.match(check.detail, /refused \d+ of them as the owner's no: the agent kept sending/u);
-  const deniedChecks = again.situations.find((s) => s.id === "owner-denies")!.checks;
-  assert.ok(deniedChecks.find((c) => c.label === "Razorpay refunded nothing")!.passed, "only the owner's yes releases a held refund: the money check holds, the agent check does not");
-  assert.ok(deniedChecks.find((c) => c.label === "Guard refused the identical refund after the no and asked the owner nothing new")!.passed, "however often it sends, Guard asks the owner nothing new");
-  const late = await crashTest(`node ${EXAMPLES}server-past-end.js`);
-  assert.deepEqual(failing(late), ["approval-expires"]);
-  const labels = late.situations.find((s) => s.id === "approval-expires")!.checks.filter((c) => !c.passed).map((c) => c.label);
-  assert.deepEqual(labels, ["Guard asked the owner once: no second request after the first ran out", "After the request ran out the agent did not send the refund again"]);
+  assert.match(r.situations.find((s) => s.id === "approval-expires")!.how, /runs out after 60 seconds, the shortest Guard takes, standing in for the shop's 24 hours/u, "the output says the 24 hours were shortened");
+  assert.match(r.situations.find((s) => s.id === "approval-expires")!.how, /read as words/u);
 });
 
 test("settings with a refund limit at or above the deposit: the refund goes straight through, the over-limit situation is named as not run on these settings, and the lost reply is still survived", { skip: skipWithoutBinary }, async () => {

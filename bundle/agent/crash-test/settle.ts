@@ -1,7 +1,7 @@
 // How a crash-test situation knows the agent and the stand-ins have gone quiet: the one place the "settle" rule lives (world.ts calls it).
 //
 // A fixed quiet window (it was 800 ms) is not correct under load: the agent's own retry timers, and every call the situation makes to read what happened, all stretch when the
-// machine is busy, so a late repeat can arrive after the window and be missed (the flake at crash-test.test.ts:61, the broken example's re-asked refunds). Nothing the situation can
+// machine is busy, so a late repeat can arrive after the window and be missed (the flake in bundle/test/crash-test-wrong.test.ts: the broken example's re-asked refunds). Nothing the situation can
 // ask the agent says "I will not repeat", so the window is made to follow what was seen instead of the clock alone:
 //   - the load: how long reading the activity took (it calls three Guards' admin ports, so it slows with the machine). Quiet needs at least 6 of the slowest such reads;
 //   - the cadence: once two changes have been seen, the longest gap between changes so far (a retry loop's period). Quiet needs at least twice that gap.
