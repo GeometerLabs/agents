@@ -1233,13 +1233,13 @@ reaches the same subscription, signed with the same key and opened by the same p
 
 ## A shorter bundle test run (15 Nov 2026)
 
-The bundle's tests took 25 minutes on the laptop's cool setting (one file at a time, efficiency cores). Most of that was the setting: with all cores and two files at
-a time (`HEAVY_FAST=1` in the scratchpad's `heavy.sh`, `node --test --test-concurrency=2 test/`) the same tests took 10 minutes, with no change to them. Half of the
-rest was `test/crash-test.test.ts`, which starts real Guards for every crash test it runs, and each full run waits out Guard's shortest owner request (60 s). Two runs
-were repeats and are gone; no check is gone:
+The bundle's tests took 25 minutes on a computer kept cool (one file at a time, on the slow cores). Most of that was the setting: with all cores and two files at
+a time (`node --test --test-concurrency=2 test/`) the same tests took 10 minutes, with no change to them. Half of the rest was `test/crash-test.test.ts`, which
+starts real Guards for every crash test it runs, and each full run waits out Guard's shortest owner request (60 s). Two runs were repeats and are gone; no check is
+gone, and the run is now about 7 minutes:
 - the owner's no and the owner who never answers are read from the good example's full run, not from a second run of those two situations;
 - the broken example runs in full once, in `test/update-agent.test.ts`'s real update ("Held 11 of 12"); `test/crash-test-wrong.test.ts` runs it on the three
   situations of its refund path, with every check on the lost reply as before.
 The file is now two, `test/crash-test.test.ts` (the good example, other settings, an agent that cannot be driven, UPI) and `test/crash-test-wrong.test.ts` (the three
 wrong examples), with what they share in `test/crash-test-helpers.ts`, so the test runner runs them side by side. The asks-again and past-end examples still run on
-every situation: they are the only runs that show each fails exactly one, and they are approval checks.
+every situation: they are the only runs that show each fails exactly one, and they are approval checks. What is left: Deferred.md, "The bundle's slow tests".
