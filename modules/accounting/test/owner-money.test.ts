@@ -185,7 +185,7 @@ test("\"everything is matched\" only when it is known: a shop with online money 
   assert.equal(unread.payoutsUnchecked, true);
   for (const language of LANGUAGES) {
     const page = ownerMoneySection(unread, language, undefined, TZ).toString();
-    assert.ok(page.includes(OWNER_MONEY_WORDS[language].payoutsUnchecked), language);
+    assert.ok(page.replace(/&#39;/gu, "'").includes(OWNER_MONEY_WORDS[language].payoutsUnchecked), language); // the page escapes the apostrophe
     assert.equal(page.includes(OWNER_MONEY_WORDS[language].notMatchedNone), false, `${language}: no false all-clear`);
     assert.deepEqual(bannedIn(OWNER_MONEY_WORDS[language].payoutsUnchecked, language), [], language);
   }
