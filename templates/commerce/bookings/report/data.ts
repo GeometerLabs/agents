@@ -12,7 +12,8 @@
 //  - Only "unconfirmed" and "failed" outcomes are counted as such, never "attempted" (an attempt is checked in the next step).
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { journal } from "../../../../modules/accounting/journal.ts";
-import { figuresOf } from "../../../../modules/accounting/figures.ts";
+import { booksOnlyOf, figuresOf } from "../../../../modules/accounting/figures.ts";
+import type { BooksOnly } from "../../../../modules/accounting/figures.ts";
 import { reportAccounting } from "../../../../modules/accounting/summary.ts";
 import type { AccountingSummary } from "../../../../modules/accounting/summary.ts";
 import type { LegacyMap } from "../../../../modules/accounting/journal.ts";
@@ -164,7 +165,9 @@ export interface MonthlyReport {
    * the server settled as made by their word (Guard's already_done): never counted as refunds made, grouped by who said so. Left out when there are none, which keeps
    * the bytes of every report made before.
    */
-  money: { deposits: Amount; refunds: Amount & { ofDeposits: Amount; ofSecondPayments: Amount }; settledByWord?: SettledByWord[] };
+  money: { deposits: Amount; refunds: Amount & { ofDeposits: Amount; ofSecondPayments: Amount }; settledByWord?: SettledByWord[];
+    /** Money the books count and the rows above leave out (a payment made twice, the owner's own marks on a gateway shop); only when one is above 0. */
+    booksOnly?: BooksOnly };
   owner: { asked: number; approved: number; denied: number; retried: number };
   stopped: { total: number; byRule: Record<RuleId, number> };
   messages: { toCustomers: { total: number; byLanguage: ByLanguage }; toOwner: { total: number; byLanguage: ByLanguage }; heldBack: number };
@@ -297,6 +300,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   // sums over it. Nothing is summed again here. UPI (B33): the owner's marks are the payment record and a refund counts once the owner marks it sent; the journal reads both.
   const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): their marks are the payment record, and the report says so (paidBy)
   const figures = figuresOf(journal(all, BOOKINGS_LEGACY), all, BOOKINGS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { ownerMarks: upi });
+  const booksOnly = booksOnlyOf(figures); // why the "Money this month" block can differ from the rows (figures.ts booksOnly)
   const accounting = reportAccounting(all, BOOKINGS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString());
   const deposits = figures.received;
   const refunds = figures.refunds;
@@ -375,7 +379,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     policyDigest: policyDigest(settings),
     record: { entries: month.length, digest: digestOf(recordRows.map((r) => r.digest)), byAction, rows: recordRows },
     bookings: { made, cancelled, moved, droppedBeforeBooked: dropped },
-    money: { deposits, refunds, ...(byWord.rows.length > 0 ? { settledByWord: byWord.rows } : {}) },
+    money: { deposits, refunds, ...(byWord.rows.length > 0 ? { settledByWord: byWord.rows } : {}), ...(booksOnly ? { booksOnly } : {}) },
     owner,
     stopped: { total: stoppedTotal, byRule },
     messages: { toCustomers, toOwner, heldBack },

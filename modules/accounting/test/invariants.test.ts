@@ -1,5 +1,5 @@
 // booksFaults (invariants.ts): a record posted through post() holds; a document number skipped with no restore, a customer's number or a student's name in refs, and a
-// restore's jump are each told apart. The templates' crash tests run the same check on every world they make (test/accounting-figures.test.ts in each template).
+// restore's jump are each told apart. figuresFaults: the report's rows and its "Money this month" block differ only by booksOnly (figures.ts). The templates' crash tests run the same check on every world they make (test/accounting-figures.test.ts in each template).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { fakeClock } from "../../core/clock.ts";
@@ -10,7 +10,9 @@ import type { LegacyMap } from "../journal.ts";
 import { RESTORED_ACTION } from "../numbers.ts";
 import { createAccounting } from "../post.ts";
 import type { MoneyEvent } from "../post.ts";
-import { booksFaults } from "../invariants.ts";
+import { booksFaults, figuresFaults } from "../invariants.ts";
+import { booksOnlyOf, figuresOf } from "../figures.ts";
+import { journal } from "../journal.ts";
 
 const TZ = "Asia/Kolkata";
 const PHONE = "+919800000001";
@@ -61,4 +63,20 @@ test("a customer's number or a student's name in a record entry's refs is a faul
   assert.deepEqual(booksFaults(w.record.entries(), LEGACY, { privateText: ["Asha Rao"] }), []);
   w.raw("note", { to: "9800000001", who: "Asha Rao" }, "confirmed");
   assert.deepEqual(booksFaults(w.record.entries(), LEGACY, { privateText: ["Asha Rao"] }), ["entry 3: refs.to carries a customer's phone number", "entry 3: refs.who carries a private name"]);
+});
+
+test("the report's rows leave out a payment made twice and, on a gateway shop, the owner's marks; booksOnly names exactly that money", () => {
+  const w = world();
+  w.post(gw("b-1", "pay_1", 20_000), "record_deposit");
+  w.post({ kind: "received", case: "b-1", paymentId: "pay_2", amountPaise: 20_000, method: "gateway", evidence: "provider", for: "extra" }, "record_deposit", "blocked");
+  w.post({ kind: "received", case: "b-3", paymentId: "cash-1", amountPaise: 5_000, method: "cash", evidence: "owner_mark", for: "advance" }, "owner_marked_paid");
+  const entries = w.record.entries();
+  const f = figuresOf(journal(entries, LEGACY), entries, LEGACY, "1970-01-01T00:00:00.000Z", "2100-01-01T00:00:00.000Z", { ownerMarks: false });
+  assert.equal(f.received.paise, 20_000, "the rows: the deposit only");
+  assert.deepEqual(booksOnlyOf(f), { paidTwicePaise: 20_000, markedReceivedPaise: 5_000, markedGivenBackPaise: 0 });
+  assert.deepEqual(figuresFaults(entries, LEGACY), []);
+  const plain = world();
+  plain.post(gw("b-1", "pay_1", 20_000), "record_deposit");
+  const pe = plain.record.entries();
+  assert.equal(booksOnlyOf(figuresOf(journal(pe, LEGACY), pe, LEGACY, "1970-01-01T00:00:00.000Z", "2100-01-01T00:00:00.000Z", { ownerMarks: false })), undefined, "nothing left out: no line");
 });

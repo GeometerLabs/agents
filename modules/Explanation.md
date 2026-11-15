@@ -1189,7 +1189,14 @@ books summary and the record's head, which fix that month's figures for good, an
 
 **The signed monthly report and the open check** (`summary.ts`, `report-block.ts`, `check.ts`). Each template's report carries an optional `accounting` field: the
 period's books summary (per account, per kind, the closing balances, the document runs, the refunds on a person's word and the count of lines that could not be read)
-and the legacy map it was read with. It is left out for a record with no money. The page shows a short "Money this month" block in four languages. Anyone with the
+and the legacy map it was read with. It is left out for a record with no money. The page shows a short "Money this month" block in four languages.
+
+The block and the report's own rows can show two different "received" figures, and that is the standard way, not a mistake. The block is the books: a payment counts
+when it arrives, and a payment made twice on the same link is the customer's money, owed back, not the shop's. The rows count deposits, advances or fees only, as the
+signed figures always did: no second payment, and on a gateway shop none of the owner's own marks. So `figures.ts` also counts `booksOnly` (the second payments, the
+owner's marks received and given back that the rows leave out), the report data carries it when one is above 0, and the block shows one plain line under its cards
+for each ("Received includes ₹200 that customers paid twice. That money is theirs, not the shop's."). `invariants.ts` (`figuresFaults`) holds, on every crash-test
+world of each template, that the books' received equals the rows plus `booksOnly`, and the same for given back, so the line is always the whole difference. Anyone with the
 shop's evidence pack can run `node modules/accounting/check.ts <pack.json> <report.json>`: it rebuilds the journal from the pack alone and compares every figure (exit 0
 the same, 1 a difference, 2 a file it cannot read). The hash chain itself is geometer-verify's to check.
 

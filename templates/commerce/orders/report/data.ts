@@ -12,7 +12,8 @@
 //    customer carry the same decision; they are one stop (see stopsIn).
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { journal } from "../../../../modules/accounting/journal.ts";
-import { figuresOf } from "../../../../modules/accounting/figures.ts";
+import { booksOnlyOf, figuresOf } from "../../../../modules/accounting/figures.ts";
+import type { BooksOnly } from "../../../../modules/accounting/figures.ts";
 import { reportAccounting } from "../../../../modules/accounting/summary.ts";
 import type { AccountingSummary } from "../../../../modules/accounting/summary.ts";
 import type { LegacyMap } from "../../../../modules/accounting/journal.ts";
@@ -109,7 +110,9 @@ export interface OrdersReport {
    * `givenBack` is what the payments service's own record confirmed (or, UPI, the owner marked sent). `settledByWord` (B75, 12 Nov 2026) are refunds a person at the
    * server settled as made by their word (Guard's already_done): never counted as given back, grouped by who said so. Left out when there are none (older bytes kept).
    */
-  money: { collected: Amount; givenBack: Amount; settledByWord?: SettledByWord[] };
+  money: { collected: Amount; givenBack: Amount; settledByWord?: SettledByWord[];
+    /** Money the books count and the rows above leave out (a payment made twice, the owner's own marks on a gateway shop); only when one is above 0. */
+    booksOnly?: BooksOnly };
   /** Present only for a UPI shop (B33): the money is what the owner MARKED, and every document labels it so. Left out for a Razorpay shop, which keeps its bytes. */
   paidBy?: "owner-marked";
   /** From the record: orders confirmed (each once), orders completed, orders cancelled after they were confirmed, and holds that ran out before an advance was recorded. */
@@ -231,6 +234,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
   // counted once per payment, a refund once per refund id, and a refund a person settled by their word is not money given back (it is counted on its own below).
   const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): the report says so (paidBy)
   const figures = figuresOf(journal(all, ORDERS_LEGACY), all, ORDERS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { refundAmountFromPayment: true, ownerMarks: upi });
+  const booksOnly = booksOnlyOf(figures); // why the "Money this month" block can differ from the rows (figures.ts booksOnly)
   const accounting = reportAccounting(all, ORDERS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString());
   const collected = figures.received;
   const givenBack = { count: figures.refunds.count, paise: figures.refunds.paise };
@@ -294,7 +298,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
     madeAt: new Date(madeAt).toISOString(),
     policyDigest: policyDigest(settings),
     record: { entries: month.length, digest: digestOf(all.map(entryDigest)), byAction },
-    money: { collected, givenBack, ...(byWord.length > 0 ? { settledByWord: byWord } : {}) },
+    money: { collected, givenBack, ...(byWord.length > 0 ? { settledByWord: byWord } : {}), ...(booksOnly ? { booksOnly } : {}) },
     ...(upi ? { paidBy: "owner-marked" as const } : {}),
     orders, sold, owner,
     customers: { stopped: new Set(month.filter((e) => e.action === "opt_out" && e.outcome === "confirmed").map((e) => e.conversation)).size },

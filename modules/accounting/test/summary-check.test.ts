@@ -200,6 +200,22 @@ test("the Money this month block: bold figures from the summary, in four languag
   assert.ok(!moneyBlock(summary, MONEY_BLOCK_WORDS.en).includes(MONEY_BLOCK_WORDS.en.toCome), "only Fees shows what is still to come");
 });
 
+test("the lines under the block say why it differs from the report's rows, in four languages, only for money there was", () => {
+  const { report } = packAndReport(busy().record.entries());
+  const summary = report.document.accounting.summary;
+  const booksOnly = { paidTwicePaise: 20_000, markedReceivedPaise: 5_050, markedGivenBackPaise: 0 };
+  for (const language of LANGUAGES) {
+    const words = MONEY_BLOCK_WORDS[language];
+    const html = moneyBlock(summary, words, { booksOnly });
+    assert.deepEqual(bannedIn(html.replace(/<[^>]+>/g, " "), language), [], language);
+    assert.ok(html.includes(esc(words.paidTwice.replace("{amount}", "₹200"))), `${language}: the payment made twice`);
+    assert.ok(html.includes(esc(words.markedReceived.replace("{amount}", "₹50.50"))), `${language}: the owner's own marks`);
+    assert.ok(!html.includes(esc(words.markedGivenBack.split("{amount}")[0])), `${language}: no line for money there was not`);
+    for (const w of [words.paidTwice, words.markedReceived, words.markedGivenBack]) assert.equal(w.split("{amount}").length, 2, `${language}: one amount in "${w}"`);
+  }
+  assert.ok(!moneyBlock(summary, MONEY_BLOCK_WORDS.en).includes('class="small"'), "no booksOnly: no line");
+});
+
 test("a refund made on a person's word only is counted on its own and left out of the block's \"given back\", as the owner's Money section does", () => {
   const w = busy();
   w.clock.set(at(11, 22, 10));

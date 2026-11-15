@@ -289,6 +289,9 @@ Annapurna Tiffins · ഫെബ്രുവരി 2027 · പരിശീലന �
 | `moneyBlock.heading` | ഈ മാസത്തെ പണം | Money this month |  |
 | `moneyBlock.owedBack` | മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത് | Still owed back at the end of the month |  |
 | `moneyBlock.toCome` | മാസാവസാനം ഇനിയും കിട്ടാനുള്ളത് | Still to come at the end of the month |  |
+| `moneyBlock.paidTwice` | "കിട്ടിയത്" എന്നതിൽ ഉപഭോക്താക്കൾ രണ്ടുതവണ അടച്ച {amount} ഉൾപ്പെടുന്നു. ആ പണം അവരുടേതാണ്, കടയുടേതല്ല. | "Received" includes {amount} that customers paid twice. That money is theirs, not the shop's. |  |
+| `moneyBlock.markedReceived` | "കിട്ടിയത്" എന്നതിൽ നിങ്ങൾ സ്വയം കിട്ടിയതായി രേഖപ്പെടുത്തിയ {amount} ഉൾപ്പെടുന്നു. മുകളിലെ വരികൾ നിങ്ങളുടെ പേയ്‌മെന്റ് സേവനം സ്ഥിരീകരിച്ച പേയ്‌മെന്റുകൾ മാത്രമേ എണ്ണുന്നുള്ളൂ. | "Received" includes {amount} that you marked as paid yourself. The rows above count only payments that your payment service confirmed. |  |
+| `moneyBlock.markedGivenBack` | "തിരികെ നൽകിയത്" എന്നതിൽ നിങ്ങൾ സ്വയം അയച്ചതായി രേഖപ്പെടുത്തിയ {amount} ഉൾപ്പെടുന്നു. | "Given back" includes {amount} that you marked as sent yourself. |  |
 | `moneyBlock.received` | കിട്ടിയത് | Received |  |
 | `moneyBlock.givenBack` | തിരികെ നൽകിയത് | Given back |  |
 | `moneyBlock.kept` | റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത് | Kept from cancellations |  |
