@@ -47,7 +47,7 @@ export async function makeSampleReport(out: string): Promise<Record<string, unkn
   const { world } = await runSampleMonth();
   const key = testKey();
   const now = at(11, 30, 23, 5); // the report is made at the end of the month's last evening, so the customer who says they paid is still waiting
-  const common = { settings, out, source: "stand-in" as const, key, preparedBy: "Divya, local Operator (example)", now, language: "en" as const };
+  const common = { settings, out, source: "stand-in" as const, key, preparedBy: "Divya, local partner (example)", now, language: "en" as const };
 
   // The crash-test report: the situations that suit a UPI shop, run on these settings with the stand-in services and read into the go-live certificate.
   const handCheck = summariseRun(await runOn(settings));

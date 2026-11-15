@@ -213,7 +213,7 @@ const listRupees = (id: string): string => `₹${(latestPriceList().rates[id].mi
 
 /** Sample arguments for the functions in a Words set, so the review sheet can show one real sentence per line. */
 export const SAMPLE_ARGS: Record<string, unknown[]> = {
-  "login.wait": [30], "join.title": ["partner"], "signin.welcomeBack": ["Divya"], "reset.intro": ["Divya"], "shops.version": ["bookings@0.1.0"], "shops.limits": [9, 9], "shops.setUpBy": ["Divya"],
+  "login.wait": [30], "join.title": ["Operator"], "signin.welcomeBack": ["Divya"], "reset.intro": ["Divya"], "shops.version": ["bookings@0.1.0"], "shops.limits": [9, 9], "shops.setUpBy": ["Divya"],
   "shop.versions": ["0.1.0", "0.1.0"], "shop.hoursRange": ["10:00", "20:00"], "shop.lastDeploy": ["4 Nov 2026, 10:30"], "shop.unprovable": ["refund-limit"], "shop.backupCopy": ["4 Nov 2026, 10:30"], "shop.backupDrill": ["4 Nov 2026, 04:00", true],
   "shop.summaryDeposit": ["₹200", 15], "shop.summaryCancel": [24, "₹200"], "shop.waiting": [2], "shop.needBuilder": [1], "shop.approvalsLine": [3, 2, 1],
   "shop.makeReport": ["2026-11"], "shop.stopTitle": ["Glow Salon"], "shop.stopAsked": ["4 Nov 2026, 10:30"], "shop.detailsPrices": ["2026-11-03"],
@@ -287,7 +287,7 @@ export const en: Words = {
       "same-as-handle": "The passphrase cannot be the same as your sign-in name.",
     },
   },
-  roles: { builder: "builder", partner: "partner" },
+  roles: { builder: "builder", partner: "Operator" },
   invite: { title: "Invite someone", role: "They will be a", note: "Who is it for?", button: "Make a link", made: "Here is the link. It works once and runs out in 3 days.", copy: "Send it only to that person.", hostedOnly: "On this server, invitations are made by whoever runs the server." },
   shops: {
     title: "Your shops", titleAll: "All shops on this server", empty: "No shops yet.", setUp: "Set up a shop", version: (v) => `Version ${v}`,
