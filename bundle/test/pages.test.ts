@@ -171,7 +171,7 @@ test("geometer.json: the pages domain is the Operator server's setting, a list o
   assert.match(errors({ domain: "partners.example" }), /own domain/u);
   assert.match(errors({ domain: "https://pages.example" }), /small letters/u);
   assert.match(errors({ domain: "pages.example", extraDomains: ["pages.example"] }), /twice/u);
-  assert.match(errors({ domain: "pages.example" }, "own"), /partner server/u);
+  assert.match(errors({ domain: "pages.example" }, "own"), /Operator server/u);
 });
 
 test("generated: the pages domain's site reaches only the door, the door is on its own network and egress with no secret, and a server without it has none", () => {

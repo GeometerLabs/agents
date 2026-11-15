@@ -313,7 +313,7 @@ test("a handle that is unknown, unpublished or junk is one friendly 404; fleet d
   for (const path of ["/@nobody-here", "/@A", "/@", "/@a", "/@x--y", "/@" + "a".repeat(60), "/@asha-digital/extra", "/@%E0%A4%A", "/@../x"]) {
     const r = await d.call(path);
     assert.equal(r.status, 404, path);
-    assert.match(r.body, /There is no partner page here/u, path);
+    assert.match(r.body, /There is no Operator page here/u, path);
     assert.match(r.body, /href="\/"/u, "a way back");
     assert.doesNotMatch(r.body, /<script/u);
     assert.match(String(r.headers["content-security-policy"]), /default-src 'none'/u);
