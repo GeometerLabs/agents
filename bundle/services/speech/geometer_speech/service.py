@@ -87,13 +87,13 @@ class SpeechService:
     # -- routing -------------------------------------------------------------------------------------------------------
 
     def _engine(self, language: str | None) -> Transcriber:
-        """The engine for a language, or a plain 503 naming the missing model files (the operator's `fetch-models` step)."""
+        """The engine for a language, or a plain 503 naming the missing model files (the server admin's `fetch-models` step)."""
         if language == "en":
             if self.english is None:
-                raise SpeechError(503, "The English speech model is not installed on this server yet. The operator needs to run fetch-models.")
+                raise SpeechError(503, "The English speech model is not installed on this server yet. The server admin needs to run fetch-models.")
             return self.english
         if self.indic is None:
-            raise SpeechError(503, "The Hindi, Malayalam and Kannada speech model is not installed on this server yet. The operator needs to run fetch-models.")
+            raise SpeechError(503, "The Hindi, Malayalam and Kannada speech model is not installed on this server yet. The server admin needs to run fetch-models.")
         return self.indic
 
     def _route(self, samples: np.ndarray, language: str | None) -> tuple[Heard, str]:

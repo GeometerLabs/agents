@@ -1,7 +1,7 @@
 // The guard.toml for one company's Guard, in Guard's production profile. It is the same file whether Guard runs as a Compose sidecar, a Kubernetes sidecar or on
 // a plain host, and the end-to-end test starts the real Guard from what this writes.
 //
-// It holds no secret. The agent's and the operator's tokens appear only as sha256 hashes (`geo-guard credential` prints a token and its hash), and the API's own
+// It holds no secret. The agent's and the server admin's tokens appear only as sha256 hashes (`geo-guard credential` prints a token and its hash), and the API's own
 // key is read from a file only Guard can read. Until you put real hashes in, the all-zero ones match no token, so a Guard started from an unedited file lets nobody in.
 export const ZERO_HASH = "0".repeat(64);
 export const ZERO_DIGEST = `sha256:${ZERO_HASH}`;
@@ -26,7 +26,7 @@ export interface GuardConfigOptions {
   authHeader?: { name: string; file: string };
   /** Agents that may call Guard, by id and the sha256 of their token. */
   agents: { id: string; sha256: string; operations?: string[] }[];
-  /** The sha256 of the operator's token (the admin port: approvals, the kill switch, decisions). */
+  /** The sha256 of the server admin's token (the admin port: approvals, the kill switch, decisions). */
   adminSha256?: string;
   /** Operations that hold for a person (the spec's `call_bound_approval` rules). A role that may approve them is written. */
   approvalOperations?: string[];

@@ -1,7 +1,7 @@
 // The shops on the server, as files. This is the only place the panel touches shops/, status/, requests/ and exports/. It writes desired state
 // (settings.json, runtime.json, pathway.lock, owner.json, pins.json) and a stop request; it reads the deployer's results and each runtime's /status.
 // Who may see a shop is decided here, in one function, and every page and every action goes through it: a builder sees every shop on the server, a
-// Operator only the shops whose owner.json names them, and a shop that is not yours looks exactly like a shop that does not exist.
+// Admin only the shops whose owner.json names them, and a shop that is not yours looks exactly like a shop that does not exist.
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { createHash, randomBytes } from "node:crypto";

@@ -23,7 +23,7 @@ export const give_code = tool({
 
 /** For the operator's console only (src/operator.ts). The stream host is never given it. */
 export const export_codes = tool({
-  description: "Export every code of a campaign (operator only).",
+  description: "Export every code of a campaign (admin only).",
   inputSchema: z.object({ campaign_id: z.string() }),
   execute: async ({ campaign_id }) => t.exportCodes(campaign_id),
 });

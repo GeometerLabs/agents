@@ -18,5 +18,5 @@ Try one: `cd examples/payments/refund-desk`, then `geo check .`, then `../../../
 | | [game-director](games/game-director) | An AI director that spawns resources and adjusts shop prices in a small world economy, each event once, prices within bounds |
 | | [game-master](games/game-master) | An AI game master that rewards quest completions in a small economy, once per completion |
 | | [liveops-compensation](games/liveops-compensation) | After a server crash eats a raid loadout, restores the items or currency per ticket; big ones wait for a game master |
-| | [streamer-giveaways](games/streamer-giveaways) | An AI streamer that gives viewers promo codes from approved campaigns, one per viewer, never an operator tool |
+| | [streamer-giveaways](games/streamer-giveaways) | An AI streamer that gives viewers promo codes from approved campaigns, one per viewer, never a server admin tool |
 | `science/` | [lab-protocol](science/lab-protocol) | Runs a protocol step on a sample once; a scientist approves discards |
