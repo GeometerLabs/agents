@@ -1,6 +1,9 @@
 // The B14 proof and the load measurement, on real Docker. ONE script, meant to be run inside ONE hold of the heavy lock:
 //
-//   /path/to/heavy.sh node bundle/test/proof/run.ts [--shops 1,5,10,25] [--only phase,phase] [--load-seconds 120] [--keep]
+//   /path/to/heavy.sh node bundle/test/proof/run.ts [--shops 1,5,10] [--only phase,phase] [--load-seconds 120] [--keep]
+//
+// The default sizes are 1, 5 and 10 shops (15 Nov 2026, release speed): 25 shops stop Docker Desktop's engine on a laptop, so that step needs the
+// real partner server (bundle/Deferred.md, "The 25-shop step"); pass `--shops 1,5,10,25` there.
 //
 // It builds a throwaway server folder, brings the real bundle up with docker compose (the real Guard image, one set of stand-ins per shop as the providers, MinIO
 // as the bucket, the real fleet service on the host), and records what it sees in $PROOF_DIR/results.json and results.txt. Every bundle container runs inside
@@ -46,7 +49,7 @@ const MONOREPO = process.env.GEOMETER_MONOREPO ?? "../monorepo";
 const SCRATCH = process.env.PROOF_DIR ?? mkdtempSync(join(tmpdir(), "geometer-proof-"));
 const GUARD_IMAGE = process.env.GUARD_IMAGE ?? "geo-guard:local-b14";
 const args = process.argv.slice(2);
-const SIZES = (args.includes("--shops") ? args[args.indexOf("--shops") + 1] : "1,5,10,25").split(",").map(Number);
+const SIZES = (args.includes("--shops") ? args[args.indexOf("--shops") + 1] : "1,5,10").split(",").map(Number);
 const KEEP = args.includes("--keep");
 /** `--only kill,licence`: run those phases (and the deploy of one shop they need); the default is every phase. */
 const ONLY = args.includes("--only") ? new Set(args[args.indexOf("--only") + 1].split(",")) : undefined;
