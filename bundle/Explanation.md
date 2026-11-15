@@ -1230,3 +1230,16 @@ reaches the same subscription, signed with the same key and opened by the same p
 ### Skipping a repeat of the proof (15 Nov 2026)
 
 `test/proof/run.ts` now writes `provenance` into `results.json`: the git tree ids of `bundle/` and `modules/`, the agents commit and whether those directories were dirty, the Guard's input digest (the monorepo's digest of the `R16-guard-unchanged` case, passed as `GUARD_INPUT_DIGEST`), and the phases and shop sizes that ran. `test/proof/same-as-last.ts` (rule in `test/proof/provenance.ts`, tested in `test/proof-provenance.test.ts`) compares the last full, passing, clean run with the present tree: the same trees and Guard digest mean skip; an unknown Guard digest means the core set (`--shops 1 --only licence-block,isolation,held,licence,tripwire,webhook`: the licence block and wind-down, isolation, a held refund surviving, the tripwires, the webhook); anything else means the full proof. The core set's time (about 10 minutes) is an estimate, not measured. The tree id is a git tree, so only committed changes count, and a dirty tree always means the full proof.
+
+## A shorter bundle test run (15 Nov 2026)
+
+The bundle's tests took 25 minutes on the laptop's cool setting (one file at a time, efficiency cores). Most of that was the setting: with all cores and two files at
+a time (`HEAVY_FAST=1` in the scratchpad's `heavy.sh`, `node --test --test-concurrency=2 test/`) the same tests took 10 minutes, with no change to them. Half of the
+rest was `test/crash-test.test.ts`, which starts real Guards for every crash test it runs, and each full run waits out Guard's shortest owner request (60 s). Two runs
+were repeats and are gone; no check is gone:
+- the owner's no and the owner who never answers are read from the good example's full run, not from a second run of those two situations;
+- the broken example runs in full once, in `test/update-agent.test.ts`'s real update ("Held 11 of 12"); `test/crash-test-wrong.test.ts` runs it on the three
+  situations of its refund path, with every check on the lost reply as before.
+The file is now two, `test/crash-test.test.ts` (the good example, other settings, an agent that cannot be driven, UPI) and `test/crash-test-wrong.test.ts` (the three
+wrong examples), with what they share in `test/crash-test-helpers.ts`, so the test runner runs them side by side. The asks-again and past-end examples still run on
+every situation: they are the only runs that show each fails exactly one, and they are approval checks.
