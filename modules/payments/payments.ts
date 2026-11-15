@@ -83,7 +83,7 @@ export interface PaymentEvent {
 }
 
 /**
- * One row of a provider's settlement report (Razorpay: the recon rows): a payment paid out, a refund taken back, or something else the provider settled. Amounts are
+ * One row of a provider's settlement report (a settlement or reconciliation report): a payment paid out, a refund taken back, or something else the provider settled. Amounts are
  * paise, times epoch seconds. `fee` and `tax` are exactly what the provider's row says: whether `fee` already holds the `tax` is for the books to check row by row
  * (modules/accounting/journal.ts checkSettlementRow), because the provider does not say.
  */
