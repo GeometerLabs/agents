@@ -84,12 +84,14 @@ async function world(o: { whatsapp?: boolean } = {}) {
   const json = (path: string, body: unknown, headers: Record<string, string> = {}) => page(path, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) });
   const form = (path: string, fields: Record<string, string>) => page(path, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(fields).toString() });
   const record = () => { const s = openStore(join(folder, "data")); try { return s.loadState().record; } finally { s.close(); } };
-  /** Wait for the sender (it runs outside the steps) to hand `n` pushes to the Guard. */
-  const pushed = async (n: number) => { for (let i = 0; i < 100 && pushes.length < n; i++) await new Promise((r) => setTimeout(r, 30)); return pushes; };
+  /** Wait for the sender (it runs outside the steps) to hand the Guard a push on `route` after the first `from` pushes, and return the pushes since `from`.
+   *  It waits for the route, not for a count: one step can send to the owner and the customer, and their order is not fixed (a count made the test pass
+   *  or fail by which push arrived first). */
+  const pushedTo = async (from: number, route: string) => { for (let i = 0; i < 100 && !pushes.slice(from).some((p) => p.route === route); i++) await new Promise((r) => setTimeout(r, 30)); return pushes.slice(from); };
   const ownerToken = newOwnerToken();
   writeFileSync(join(folder, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(ownerToken, new Date(clock.now()))));
   return {
-    origin, page, json, form, record, lines, client, clock, setupToken, pushes, pushed, ownerToken,
+    origin, page, json, form, record, lines, client, clock, setupToken, pushes, pushedTo, ownerToken,
     setCookie(session: string) { cookie = `${OWNER_COOKIE}=${session}`; }, signOut() { cookie = ""; },
     async done() { await new Promise<void>((r) => { front.closeAllConnections(); front.close(() => r()); }); guard.close(); await client.stop(); rmSync(root, { recursive: true, force: true }); },
   };
@@ -161,7 +163,7 @@ test("a shop with no WhatsApp: passkey sign-in from the partner's QR, push alert
     // ---- the owner heard of the held booking by push (not WhatsApp); "I have paid" on the page goes no further than asking the owner to look ----
     await w.form(`/b/${handle}/paid`, { lang: "en" });
     await w.client.runtime.idle();
-    const p1 = (await w.pushed(before + 1)).slice(before);
+    const p1 = await w.pushedTo(before, "/v1/push/owner");
     assert.ok(p1.length >= 1, "a push went to the owner");
     const toOwner = p1.find((p) => p.route === "/v1/push/owner")!;
     assert.equal(toOwner.call.host, "fcm.googleapis.com");
@@ -181,7 +183,7 @@ test("a shop with no WhatsApp: passkey sign-in from the partner's QR, push alert
     assert.deepEqual(await mark.json(), { result: "done" });
     await w.client.runtime.idle();
     assert.match(await (await w.page(`/b/${handle}?lang=en`)).text(), /Booked: /u);
-    const p2 = (await w.pushed(before2 + 1)).slice(before2);
+    const p2 = await w.pushedTo(before2, "/v1/push/customer");
     const toCustomer = p2.find((p) => p.route === "/v1/push/customer");
     assert.ok(toCustomer, "the customer's phone gets the news");
     assert.equal(toCustomer!.call.host, "updates.push.services.mozilla.com");
@@ -191,7 +193,7 @@ test("a shop with no WhatsApp: passkey sign-in from the partner's QR, push alert
     const before3 = w.pushes.length;
     await w.form(`/b/${handle}/cancel`, { lang: "en" });
     await w.client.runtime.idle();
-    const p3 = (await w.pushed(before3 + 1)).slice(before3);
+    const p3 = await w.pushedTo(before3, "/v1/push/owner");
     const refundAlert = p3.find((p) => p.route === "/v1/push/owner");
     assert.ok(refundAlert, "the refund to send reaches the owner as an alert");
     assert.match(ownerAlerts.open(refundAlert!.call.body).body, /₹200/u);
@@ -202,7 +204,7 @@ test("a shop with no WhatsApp: passkey sign-in from the partner's QR, push alert
     assert.deepEqual(await (await w.json("/owner/api/v1/answer", { source: "runtime", action: "refunded", case: owed.case, digest: owed.digest }, { "x-owner-csrf": csrf })).json(), { result: "done" });
     await w.client.runtime.idle();
     assert.match(await (await w.page(`/b/${handle}?lang=en`)).text(), /The shop has sent your refund of ₹200\./u, "and then as sent");
-    const p4 = (await w.pushed(before4 + 1)).slice(before4);
+    const p4 = await w.pushedTo(before4, "/v1/push/customer");
     const refundNotice = p4.find((p) => p.route === "/v1/push/customer");
     assert.ok(refundNotice, "the customer's refund notice arrives by push");
     assert.match(customerAlerts.open(refundNotice!.call.body).body, /refund/iu);
@@ -285,7 +287,7 @@ test("the owner's choice is followed: the first phone gives both, then push alon
     assert.match(app, /value="both" checked/u, "the first phone with alerts: both");
     const waTo = () => w.lines.filter((l) => l.startsWith("[stand-in WhatsApp] to +919000000000")).length;
     const toOwner = () => w.pushes.filter((p) => p.route === "/v1/push/owner").length;
-    const step = async (date: string, n: string, ph: string) => { const wa = waTo(); const pu = toOwner(); await book(w, date, n, ph); await w.pushed(pu + 1); await new Promise((r) => setTimeout(r, 150)); return { wa: waTo() - wa, push: toOwner() - pu }; };
+    const step = async (date: string, n: string, ph: string) => { const wa = waTo(); const pu = toOwner(); const n0 = w.pushes.length; await book(w, date, n, ph); await w.pushedTo(n0, "/v1/push/owner"); await new Promise((r) => setTimeout(r, 150)); return { wa: waTo() - wa, push: toOwner() - pu }; };
     assert.deepEqual(await step("2026-11-18", "Asha", "98111 11111"), { wa: 1, push: 1 }, "both");
     await w.form(`/o/${w.ownerToken}/push/choice`, { choice: "push" });
     assert.deepEqual(await step("2026-11-18", "Ravi", "98222 22222"), { wa: 0, push: 1 }, "push alone");
@@ -312,7 +314,7 @@ test("a customer who allowed alerts gets the reminder by push; a late cancellati
     const before = w.pushes.length;
     w.clock.advance(4 * 60 * 60_000);
     await w.client.runtime.tick(); await w.client.runtime.idle();
-    const reminder = (await w.pushed(before + 1)).slice(before).find((p) => p.route === "/v1/push/customer");
+    const reminder = (await w.pushedTo(before, "/v1/push/customer")).find((p) => p.route === "/v1/push/customer");
     assert.ok(reminder, "the reminder reached the customer's phone");
     assert.equal(reminder!.call.host, "web.push.apple.com");
     assert.match(customer.open(reminder!.call.body).body, /Haircut|haircut|today|reminder/iu);
