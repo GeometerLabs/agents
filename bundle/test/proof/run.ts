@@ -1,6 +1,13 @@
 // The B14 proof and the load measurement, on real Docker. ONE script, meant to be run inside ONE hold of the heavy lock:
 //
-//   /path/to/heavy.sh node bundle/test/proof/run.ts [--shops 1,5,10,25] [--only phase,phase] [--load-seconds 120] [--keep]
+//   /path/to/heavy.sh node bundle/test/proof/run.ts [--shops 1,5,10] [--only phase,phase] [--load-seconds 120] [--keep]
+//
+// The default sizes are 1, 5 and 10 shops (15 Nov 2026, release speed): 25 shops stop Docker Desktop's engine on a laptop, so that step needs the
+// real partner server (bundle/Deferred.md, "The 25-shop step"); pass `--shops 1,5,10,25` there.
+//
+// Provenance (15 Nov 2026): results.json records which bundle/ and modules/ trees and which Guard input digest (env GUARD_INPUT_DIGEST) the run proved;
+// test/proof/same-as-last.ts compares it with the present tree and says whether a release may skip the proof, run the core set (`--only licence-block,isolation,held,licence,tripwire,webhook`
+// with `--shops 1`) or run it all. The rule is in the monorepo's docs/release-runbook.md, section 6.
 //
 // It builds a throwaway server folder, brings the real bundle up with docker compose (the real Guard image, one set of stand-ins per shop as the providers, MinIO
 // as the bucket, the real fleet service on the host), and records what it sees in $PROOF_DIR/results.json and results.txt. Every bundle container runs inside
@@ -38,6 +45,7 @@ import { loadServer } from "../../lib/server.ts";
 import { yaml } from "../../generate/compose.ts";
 import type { Runner } from "../../lib/runner.ts";
 import { TEST_PRIVATE_PEM, TEST_PUBLIC_HEX, signTest } from "../licence-helpers.ts";
+import { collect as collectProvenance } from "./provenance.ts";
 import { AGENT_INDEX, AGENT_NAME, OWNER, UPI_AGENT_INDEX, UPI_AGENT_NAME, calendarOf, phoneOf, secretsOf, shopName } from "./shops.ts";
 
 const APP = new URL("../../../", import.meta.url).pathname.replace(/\/$/u, "");
@@ -46,7 +54,7 @@ const MONOREPO = process.env.GEOMETER_MONOREPO ?? "../monorepo";
 const SCRATCH = process.env.PROOF_DIR ?? mkdtempSync(join(tmpdir(), "geometer-proof-"));
 const GUARD_IMAGE = process.env.GUARD_IMAGE ?? "geo-guard:local-b14";
 const args = process.argv.slice(2);
-const SIZES = (args.includes("--shops") ? args[args.indexOf("--shops") + 1] : "1,5,10,25").split(",").map(Number);
+const SIZES = (args.includes("--shops") ? args[args.indexOf("--shops") + 1] : "1,5,10").split(",").map(Number);
 const KEEP = args.includes("--keep");
 /** `--only kill,licence`: run those phases (and the deploy of one shop they need); the default is every phase. */
 const ONLY = args.includes("--only") ? new Set(args[args.indexOf("--only") + 1].split(",")) : undefined;
@@ -61,6 +69,9 @@ const SERVER = join(SCRATCH, "server");
 const STANDIN_BUSINESS_NUMBER = "+15550000000";
 const PROJECT = "geometer-proof";
 const results: Record<string, unknown> = { startedAt: new Date().toISOString(), guardImage: GUARD_IMAGE, checks: [] as unknown[] };
+// What this run is a proof of (test/proof/provenance.ts): lets a release skip a repeat when nothing it exercises changed. GUARD_INPUT_DIGEST is the
+// monorepo's digest of the R16-guard-unchanged case (`geo-qual list --digests`), which the release passes in.
+results.provenance = collectProvenance(APP, { guardInputDigest: process.env.GUARD_INPUT_DIGEST ?? "", guardImage: GUARD_IMAGE, onlyPhases: ONLY ? [...ONLY] : null, shopSizes: SIZES });
 const text = join(SCRATCH, "results.txt");
 mkdirSync(SCRATCH, { recursive: true });
 
