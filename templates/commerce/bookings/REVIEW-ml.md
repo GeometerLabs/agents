@@ -341,6 +341,13 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `sourceLong.stand-in` | ഈ കണക്കുകൾ പരിശീലന സംവിധാനങ്ങളിൽ നിന്നും ടെസ്റ്റ് പണത്തിൽ നിന്നും ഉള്ളതാണ്. യഥാർത്ഥമായ ഒന്നും അയയ്ക്കുകയോ അടയ്ക്കുകയോ ചെയ്തിട്ടില്ല. | These numbers come from stand-in services and test money. Nothing real was sent or paid. |  |
 | `sourceLong.test-mode` | ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ ടെസ്റ്റ് മോഡിൽ നിന്നുള്ളതാണ്. പണം ടെസ്റ്റ് പണമായിരുന്നു. | These numbers come from real services in test mode. The money was test money. |  |
 | `sourceLong.live` | ഈ കണക്കുകൾ യഥാർത്ഥ സേവനങ്ങളുടെ പ്രവർത്തിക്കുന്ന രേഖയിൽ നിന്നുള്ളതാണ്. | These numbers come from the live record of real services. |  |
+| `moneyBlock.heading` | ഈ മാസത്തെ പണം | Money this month |  |
+| `moneyBlock.owedBack` | മാസാവസാനം ഉപഭോക്താക്കൾക്ക് തിരികെ നൽകാനുള്ളത് | Still owed back at the end of the month |  |
+| `moneyBlock.toCome` | മാസാവസാനം ഇനിയും കിട്ടാനുള്ളത് | Still to come at the end of the month |  |
+| `moneyBlock.received` | കിട്ടിയത് | Received |  |
+| `moneyBlock.givenBack` | തിരികെ നൽകിയത് | Given back |  |
+| `moneyBlock.kept` | റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത് | Kept from cancellations |  |
+| `moneyBlock.byWord` | ആരുടെയോ വാക്കിൽ തീർത്തത്, മുകളിലെ തുകകളിൽ ഇല്ല | Settled on someone's word, not counted in the totals above |  |
 | `upiLabel.deposits` | ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ് | Deposits marked paid by owner |  |
 | `upiLabel.givenBack` | ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട് | Refunds marked sent by owner |  |
 | `notTested.upi-not-automatic` | പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു | automatic payment checking: with UPI the owner marks each payment received |  |

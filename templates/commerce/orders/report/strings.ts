@@ -3,6 +3,8 @@
 //
 // Machine-written Hindi, Malayalam and Kannada. They are listed in REVIEW-hi.md, REVIEW-ml.md and REVIEW-kn.md for a native speaker, and no real shop should be given them before
 // that review. The claim rules (modules/report/claims.ts) apply: a document counts and states facts; it never grades.
+import { MONEY_BLOCK_WORDS } from "../../../../modules/accounting/report-block.ts";
+import type { MoneyBlockWords } from "../../../../modules/accounting/report-block.ts";
 import { CHECK_GENUINE, SCAN_SUMMARY, SETTLED_BY_SOMEONE, SETTLED_BY_WORD } from "../../../../modules/report/text.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { NotCountedId, NotTestedKey, OrderRuleId, Source } from "./data.ts";
@@ -35,6 +37,8 @@ export interface Strings {
   languageName: Record<Language, string>;
   /** The labels a UPI shop's report uses instead (B33): its money is what the owner marked, not what a payment service shows. */
   upiLabel: { collected: string; givenBack: string; notChecked: string };
+  /** The \"Money this month\" block (modules/accounting/report-block.ts), from the signed books summary. */
+  moneyBlock: MoneyBlockWords;
   /** The full lists on the page: what the hand check did not cover, and what the record cannot count. */
   notTested: Record<NotTestedKey, string>;
   notCounted: Record<NotCountedId, string>;
@@ -77,6 +81,7 @@ export const en: Strings = {
   more: (n) => `and ${n} more (see the full report)`,
   notChecked: { cash: "balance paid in cash or UPI at pickup", upi: "payments outside Razorpay", whatsapp: "real WhatsApp", razorpay: "real Razorpay", review: "a native speaker's review of the wording" },
   languageName: { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" },
+  moneyBlock: MONEY_BLOCK_WORDS.en,
   upiLabel: { collected: "Advance marked paid by owner", givenBack: "Refunds marked sent by owner", notChecked: "automatic payment checking (with UPI you mark each payment)" },
   notTested: {
     "balance-at-pickup": "The rest of the price, paid in cash or by UPI at pickup or delivery (only the advance is tracked)",
@@ -157,6 +162,7 @@ export const hi: Strings = {
   more: (n) => `और ${n} बातें (पूरी रिपोर्ट में)`,
   notChecked: { cash: "पिकअप पर नकद या UPI से दी गई बाकी रकम", upi: "Razorpay के बाहर के भुगतान", whatsapp: "असली WhatsApp", razorpay: "असली Razorpay", review: "शब्दों की किसी मूल भाषी से जाँच" },
   languageName: { hi: "हिंदी", en: "अंग्रेज़ी", ml: "मलयालम", kn: "कन्नड़" },
+  moneyBlock: MONEY_BLOCK_WORDS.hi,
   upiLabel: { collected: "मालिक द्वारा मिला हुआ दर्ज एडवांस", givenBack: "मालिक द्वारा भेजा हुआ दर्ज रिफंड", notChecked: "भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं)" },
   notTested: {
     "balance-at-pickup": "बाकी रकम, जो पिकअप या डिलीवरी पर नकद या UPI से दी जाती है (सिर्फ़ एडवांस का हिसाब रखा जाता है)",
@@ -236,6 +242,7 @@ export const ml: Strings = {
   more: (n) => `കൂടാതെ ${n} കാര്യങ്ങൾ (മുഴുവൻ റിപ്പോർട്ടിൽ)`,
   notChecked: { cash: "പിക്കപ്പിൽ പണമായോ UPI വഴിയോ അടച്ച ബാക്കി തുക", upi: "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ", whatsapp: "യഥാർത്ഥ WhatsApp", razorpay: "യഥാർത്ഥ Razorpay", review: "വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന" },
   languageName: { hi: "ഹിന്ദി", en: "ഇംഗ്ലീഷ്", ml: "മലയാളം", kn: "കന്നഡ" },
+  moneyBlock: MONEY_BLOCK_WORDS.ml,
   upiLabel: { collected: "ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയ അഡ്വാൻസ്", givenBack: "ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്", notChecked: "പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു)" },
   notTested: {
     "balance-at-pickup": "വിലയുടെ ബാക്കി, പിക്കപ്പിലോ ഡെലിവറിയിലോ പണമായോ UPI വഴിയോ അടയ്ക്കുന്നത് (അഡ്വാൻസ് മാത്രമേ രേഖപ്പെടുത്തൂ)",
@@ -315,6 +322,7 @@ export const kn: Strings = {
   more: (n) => `ಇನ್ನೂ ${n} ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)`,
   notChecked: { cash: "ಪಿಕಪ್‌ನಲ್ಲಿ ನಗದು ಅಥವಾ UPI ಮೂಲಕ ಕೊಟ್ಟ ಉಳಿದ ಮೊತ್ತ", upi: "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು", whatsapp: "ನಿಜವಾದ WhatsApp", razorpay: "ನಿಜವಾದ Razorpay", review: "ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ" },
   languageName: { hi: "ಹಿಂದಿ", en: "ಇಂಗ್ಲಿಷ್", ml: "ಮಲಯಾಳಂ", kn: "ಕನ್ನಡ" },
+  moneyBlock: MONEY_BLOCK_WORDS.kn,
   upiLabel: { collected: "ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ", givenBack: "ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್", notChecked: "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ)" },
   notTested: {
     "balance-at-pickup": "ಉಳಿದ ಬೆಲೆ, ಪಿಕಪ್ ಅಥವಾ ಡೆಲಿವರಿಯಲ್ಲಿ ನಗದು ಅಥವಾ UPI ಮೂಲಕ ಕೊಡುವುದು (ಮುಂಗಡವನ್ನು ಮಾತ್ರ ದಾಖಲಿಸಲಾಗುತ್ತದೆ)",

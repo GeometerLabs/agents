@@ -13,6 +13,9 @@
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { journal } from "../../../../modules/accounting/journal.ts";
 import { figuresOf } from "../../../../modules/accounting/figures.ts";
+import { reportAccounting } from "../../../../modules/accounting/summary.ts";
+import type { AccountingSummary } from "../../../../modules/accounting/summary.ts";
+import type { LegacyMap } from "../../../../modules/accounting/journal.ts";
 import { ORDERS_LEGACY } from "../src/accounting.ts";
 import { existsSync, readFileSync } from "node:fs";
 import type { Language } from "../../../../modules/language/languages.ts";
@@ -122,6 +125,11 @@ export interface OrdersReport {
   notTested: NotTestedKey[];
   /** What the report was told about the go-live checks: no certificate, one it could not trust, or one it read and what that says the checks ran on. */
   goLive: GoLiveFinding;
+  /**
+   * The books summary (modules/accounting/summary.ts) for the month, with the template's frozen legacy map so the open check (modules/accounting/check.ts) can read an older line
+   * from the evidence pack alone. Left out when the whole record has no money lines, which keeps the bytes of every report made without money.
+   */
+  accounting?: { summary: AccountingSummary; legacy: LegacyMap };
   /** The head of the shop's record as a hash-chained ledger when the report was made (see Bookings' report/data.ts), or null when no ledger was named. Part of the signed bytes. */
   anchor: LedgerHead | null;
 }
@@ -223,6 +231,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
   // counted once per payment, a refund once per refund id, and a refund a person settled by their word is not money given back (it is counted on its own below).
   const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): the report says so (paidBy)
   const figures = figuresOf(journal(all, ORDERS_LEGACY), all, ORDERS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { refundAmountFromPayment: true, ownerMarks: upi });
+  const accounting = reportAccounting(all, ORDERS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString());
   const collected = figures.received;
   const givenBack = { count: figures.refunds.count, paise: figures.refunds.paise };
   const byWord = settledByWordOf(month).rows; // a person's word, by who said it (modules/report/settled-by-word.ts)
@@ -295,6 +304,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
     notCounted: NOT_COUNTED.map((id) => (upi ? UPI_NOT_COUNTED[id] ?? id : id)),
     notTested: notTestedForReport(goLive, settings),
     goLive,
+    ...(accounting ? { accounting } : {}),
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };
 }

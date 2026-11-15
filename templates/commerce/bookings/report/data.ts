@@ -13,6 +13,9 @@
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import { journal } from "../../../../modules/accounting/journal.ts";
 import { figuresOf } from "../../../../modules/accounting/figures.ts";
+import { reportAccounting } from "../../../../modules/accounting/summary.ts";
+import type { AccountingSummary } from "../../../../modules/accounting/summary.ts";
+import type { LegacyMap } from "../../../../modules/accounting/journal.ts";
 import { BOOKINGS_LEGACY } from "../src/accounting.ts";
 import { readFileSync } from "node:fs";
 import { NOT_TESTED, notTestedOf } from "../crash-test/not-tested.ts";
@@ -187,6 +190,11 @@ export interface MonthlyReport {
    */
   paidBy?: "owner-marked";
   /**
+   * The books summary (modules/accounting/summary.ts) for the month, with the template's frozen legacy map so the open check (modules/accounting/check.ts) can read an older line
+   * from the evidence pack alone. Left out when the whole record has no money lines, which keeps the bytes of every report made without money.
+   */
+  accounting?: { summary: AccountingSummary; legacy: LegacyMap };
+  /**
    * The head of the shop's record as a hash-chained ledger (modules/record/ledger.ts) when the report was made: the last entry's number and hash, over the whole record handed
    * in. A later change to any entry it covers gives a different hash, which no longer matches this one or the daily fingerprint. null when the caller named no ledger
    * (`ledger` below), which keeps the bytes of every report made before. Part of the signed bytes.
@@ -289,6 +297,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
   // sums over it. Nothing is summed again here. UPI (B33): the owner's marks are the payment record and a refund counts once the owner marks it sent; the journal reads both.
   const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): their marks are the payment record, and the report says so (paidBy)
   const figures = figuresOf(journal(all, BOOKINGS_LEGACY), all, BOOKINGS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { ownerMarks: upi });
+  const accounting = reportAccounting(all, BOOKINGS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString());
   const deposits = figures.received;
   const refunds = figures.refunds;
   // a refund a person settled by their word is not a refund made: it is counted on its own below (settledByWord), never in `refunds`
@@ -382,6 +391,7 @@ export function buildMonthlyReport(input: ReportInput): MonthlyReport {
     goLive,
     ...(input.innovator === true ? { innovator: true as const } : {}),
     ...(upi ? { paidBy: "owner-marked" as const } : {}),
+    ...(accounting ? { accounting } : {}),
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };
 }
