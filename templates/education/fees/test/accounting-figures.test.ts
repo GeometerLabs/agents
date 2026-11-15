@@ -13,6 +13,8 @@ import { runOn } from "../crash-test/situations.ts";
 import { FEES_LEGACY } from "../src/accounting.ts";
 import { journal } from "../../../../modules/accounting/journal.ts";
 import { figuresOf } from "../../../../modules/accounting/figures.ts";
+import { booksFaults } from "../../../../modules/accounting/invariants.ts";
+import { balancePaise } from "../src/due.ts";
 import { isSettledByWord } from "../../../../modules/report/settled-by-word.ts";
 import { monthRange } from "../../../../modules/report/months.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
@@ -87,6 +89,11 @@ test("the books give the report's money, exactly, on the busy month and every cr
     }
     assert.deepEqual(journal(all, FEES_LEGACY).problems.filter((p) => !/already counted/.test(p.why)), [], `world ${i}: the journal reads every line of the record`);
     const j = journal(all, FEES_LEGACY);
+    // the books hold after every situation (as in Bookings and Orders), and no student's name reaches a record entry's refs
+    const dues = [...w.store.dues.values()];
+    assert.deepEqual(booksFaults(all, FEES_LEGACY, { privateText: dues.map((d) => d.studentName) }), [], `world ${i}: the books hold`);
+    // Fees keeps each fee's balance in its own store; the books' receivable for that fee must say the same, to the paisa
+    for (const d of dues) assert.equal(j.receivableOf(d.id), balancePaise(d), `world ${i}: fee ${d.id}'s receivable is its balance`);
     assert.deepEqual(all.filter((e) => e.refs.money === undefined && j.linesOf(e.seq).length > 0).map((e) => `${e.action}/${e.outcome}`), [], `world ${i}: every money line was written through post`);
   });
   assert.ok(seen > 50, `the comparison saw money: ${seen} figures`);
