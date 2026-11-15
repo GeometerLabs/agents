@@ -111,6 +111,12 @@ export interface WorldOptions {
 /** The tenant and builder named in the Guard spec the harness builds; they only label it. */
 export const HARNESS_GUARD = { tenant: "annapurna", version: 1, reviewedBy: "hand-check" } as const;
 
+/**
+ * A test that needs every world a run makes (the equality test of the report's money against the books, test/accounting-figures.test.ts, runs the crash-test situations,
+ * which build their own worlds) sets `on`; it is called once for each world made, just before createWorld returns it. Nothing else uses it.
+ */
+export const worldHook: { on?: (world: World) => void } = {};
+
 export function createWorld(options: WorldOptions = {}): World {
   const settings = options.settings ?? annapurna();
   const clock = fakeClock(options.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 9 }, { hour: 10, minute: 0 }, settings.timezone));
@@ -205,5 +211,6 @@ export function createWorld(options: WorldOptions = {}): World {
       return world.ownerSays(`refunded ${code}`);
     },
   };
+  worldHook.on?.(world);
   return world;
 }

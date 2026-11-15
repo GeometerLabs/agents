@@ -206,7 +206,7 @@ test("agent deploy: the same checked deploy, the credential in every Guard, the 
     }
     assert.deepEqual(Object.keys(status.own?.credentials?.guards ?? {}).sort(), ["calendar", "razorpay", "whatsapp"], "the panel is told since when each Guard's credential is in force");
     assert.equal(status.own?.credentials?.shared, false);
-    assert.match(toml("razorpay"), /id = "record-my-agent"[^[]*operations = \["list_links", "read_link", "read_payment", "list_refunds"\]/u, "the reading agent can look and cannot refund");
+    assert.match(toml("razorpay"), /id = "record-my-agent"[^[]*operations = \["list_links", "read_link", "read_payment", "list_refunds", "read_settlements"\]/u, "the reading agent can look (and read the day's settlement rows, 15 Nov 2026) and cannot refund");
     assert.match(toml("razorpay"), /\[\[approvers\]\]\nid = "owner-my-agent"/u, "the owner is the one who approves a held refund");
     assert.match(toml("whatsapp"), /id = "relay-my-agent"[^[]*operations = \["send"\]/u);
     assert.match(toml("calendar"), /id = "record-my-agent"[^[]*operations = \["list", "get"\]/u);

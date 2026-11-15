@@ -101,6 +101,22 @@ async function remindMehta(w: World): Promise<{ link: string; dueId: string; par
   return { link, dueId: dueId!, parentHtml };
 }
 
+test("the same page's other choice: a bank transfer is marked as the bank's money, with via \"bank\"", async () => {
+  const w = await world();
+  try {
+    const { dueId } = await remindMehta(w);
+    const owner = await w.ownerPage();
+    const digest = digestOn(owner, "bank", dueId);
+    assert.ok(digest, "the bank press carries the digest of the fee as shown");
+    const done = await w.form(`/o/${w.ownerToken}/answer`, { source: "runtime", action: "bank", case: dueId, digest: digest! });
+    assert.match(done.headers.get("location") ?? "", /n=done/u);
+    await w.client.runtime.idle();
+    const mark = w.record().find((e) => e.action === "owner_marked_paid" && e.booking === dueId);
+    assert.ok(mark && mark.refs.via === "bank" && mark.refs.method === "bank" && mark.refs.money === "received" && mark.refs.amountPaise === "180000", "recorded as the owner's mark by bank transfer, in the books as bank money");
+    assert.ok(w.record().some((e) => e.action === "settle_fee" && e.booking === dueId && e.outcome === "confirmed"), "settled from the record, as for cash");
+  } finally { await w.done(); }
+});
+
 test("the owner marks a fee paid in cash from the page: bound to the fee as shown, the parent is told it was received, reminders stop, and it can never be refunded through a payments service", async () => {
   const w = await world();
   try {
@@ -109,11 +125,11 @@ test("the owner marks a fee paid in cash from the page: bound to the fee as show
     let owner = await w.ownerPage();
     assert.doesNotMatch(owner, /should pay ₹1,800/u, "an unclaimed fee is not a thing waiting for an answer");
     assert.match(owner, /<h2>Paid in cash or by bank\?<\/h2><details class="fold"><summary>If a parent paid you another way, mark it here\./u, "the folded list of open fees");
-    assert.match(owner, /Rohan Mehta, class 10, Nov 2026[\s\S]*Paid ₹1,800 by hand/u);
+    assert.match(owner, /Rohan Mehta, class 10, Nov 2026[\s\S]*Paid ₹1,800 in cash[\s\S]*Paid ₹1,800 by bank transfer/u, "two choices: cash and bank transfer");
     const digest = digestOn(owner, "cash", dueId);
     assert.ok(digest, "the press carries the digest of the fee as shown");
     const state = await (await w.page(`/o/${w.ownerToken}/api/v1/state`)).json() as { cash: { case: string; amount_paise: number; actions: string[] }[]; waiting: unknown[] };
-    assert.deepEqual(state.cash.find((c) => c.case === dueId), { source: "runtime", case: dueId, digest, student: "Rohan Mehta", what: "class 10, Nov 2026", amount_paise: 180_000, actions: ["cash"] }, "the same list as JSON, for the owner's app");
+    assert.deepEqual(state.cash.find((c) => c.case === dueId), { source: "runtime", case: dueId, digest, student: "Rohan Mehta", what: "class 10, Nov 2026", amount_paise: 180_000, actions: ["cash", "bank"] }, "the same list as JSON, for the owner's app");
 
     const stale = await w.form(`/o/${w.ownerToken}/answer`, { source: "runtime", action: "cash", case: dueId, digest: "f".repeat(32) });
     assert.match(stale.headers.get("location") ?? "", /n=changed/u, "a digest that is not the fee as shown does nothing");
@@ -126,11 +142,12 @@ test("the owner marks a fee paid in cash from the page: bound to the fee as show
     const entries = w.record();
     const mark = entries.find((e) => e.action === "owner_marked_paid" && e.booking === dueId);
     assert.ok(mark && mark.refs.markedBy === "owner" && mark.refs.via === "cash" && mark.refs.amountPaise === "180000", "recorded as the owner's mark, by hand, for the whole balance");
+    assert.ok(mark.refs.money === "received" && mark.refs.method === "cash" && mark.refs.evidence === "owner_mark" && mark.refs.for === "fee", "and in the books as cash received for the fee");
     assert.ok(entries.some((e) => e.action === "settle_fee" && e.booking === dueId && e.outcome === "confirmed"), "settled from the record, as for any payment");
     assert.ok(w.lines.filter((l) => l.startsWith(`[stand-in WhatsApp] to ${MEHTA}:`)).length > toParentBefore && w.lines.some((l) => l.startsWith(`[stand-in WhatsApp] to ${MEHTA}:`) && l.includes("has received ₹1,800 for Rohan Mehta's")), "the parent is told it was received");
     assert.match(await (await w.page(`/f/${link}?lang=en`)).text(), /Paid\. The centre&#39;s record shows it\./u);
     owner = await w.ownerPage();
-    assert.ok(!owner.includes(`name="case" value="${dueId}"`) || !/Paid ₹1,800 by hand[\s\S]*Rohan Mehta/u.test(owner), "gone from the list");
+    assert.ok(!owner.includes(`name="case" value="${dueId}"`) || !/Paid ₹1,800 in cash[\s\S]*Rohan Mehta/u.test(owner), "gone from the list");
     const again = await w.form(`/o/${w.ownerToken}/answer`, { source: "runtime", action: "cash", case: dueId, digest: digest! });
     assert.match(again.headers.get("location") ?? "", /n=changed/u, "the same press again marks nothing twice");
     assert.equal(w.record().filter((e) => e.action === "owner_marked_paid" && e.booking === dueId).length, 1);

@@ -6,7 +6,14 @@
 //  - a payment in a link carries `payment_id`, not `id`, and no refund figures (those are on the payment);
 //  - a missing id is HTTP 400 "The id provided does not exist", not 404;
 //  - a second link with the same reference_id is 400 "payment link creation with reference ID already attempted".
+//
+// The settlement recon (GET /v1/settlements/recon/combined) is served for the fake's own payments and refunds so the books have something real-shaped to read. It is
+// written from Razorpay's documents and is NOT a copy of a real account's answer (none was available): a payment settles two days after it was taken (a calendar day
+// in India, not working days), at a fee of 2% with 18% GST on the fee, in whole paise rounded as integers; a refund is a debit row of its own amount the same way. The
+// documents do not say whether the recon `fee` includes its `tax`, so the stand-in can serve either (`feeIncludesTax`), and it can hold a row (`hold`), which Razorpay
+// does when it sees risk. Pages are count and skip, 10 a page when no count is given.
 import { ApiError, TimeoutError } from "../../../core/faults.ts";
+import { localParts } from "../../../core/time.ts";
 import type { FakePayments, Payment, PaymentEvent, PaymentRequest, Refund } from "../../payments.ts";
 import { RAZORPAY_EVENT } from "./webhook.ts";
 import { LostReply, ok } from "../../../standins/http.ts";
@@ -55,9 +62,63 @@ export function wireRefund(r: Refund): Record<string, unknown> {
   return { id: r.id, entity: "refund", amount: r.amount, currency: "INR", payment_id: r.payment_id, notes: {}, receipt: r.receipt ?? null, acquirer_data: { arn: null }, created_at: r.created_at, batch_id: null, status: r.status, speed_processed: "normal" };
 }
 
+export interface StandinOptions {
+  /** Serve `fee` with the GST in it (credit = amount - fee), not without (credit = amount - fee - tax). Default: without. */
+  feeIncludesTax?: boolean;
+  /** Payment or refund ids whose row Razorpay holds: `on_hold` true, not settled, no UTR. */
+  hold?: ReadonlySet<string>;
+}
+
+const SETTLES_AFTER_DAYS = 2;
+const FEE_PERCENT = 2;
+const GST_PERCENT = 18;
+const DAY_MS = 86_400_000;
+const IST = "Asia/Kolkata";
+
+/** The recon rows of the fake's payments and refunds, each with the India day it settles on (a UTC-midnight stamp of that day, for comparing days). */
+function reconRows(payments: FakePayments, o: StandinOptions): { dayMs: number; at: number; row: Record<string, unknown> }[] {
+  const out: { dayMs: number; at: number; row: Record<string, unknown> }[] = [];
+  const settlesOn = (createdAt: number): { dayMs: number; yyyymmdd: string; at: number } => {
+    const p = localParts(createdAt * 1000, IST);
+    const dayMs = Date.UTC(p.year, p.month - 1, p.day) + SETTLES_AFTER_DAYS * DAY_MS;
+    const d = new Date(dayMs);
+    return { dayMs, yyyymmdd: `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}${String(d.getUTCDate()).padStart(2, "0")}`, at: Math.floor(dayMs / 1000) };
+  };
+  const common = (s: ReturnType<typeof settlesOn>, id: string) => {
+    const held = o.hold?.has(id) === true;
+    return { currency: "INR", on_hold: held, settled: !held, settlement_id: `setl_${s.yyyymmdd}`, settlement_utr: held ? null : `UTR${s.yyyymmdd}`, settled_at: held ? null : s.at, notes: [], description: null, order_id: null, method: "upi" };
+  };
+  for (const p of payments.links().flatMap((l) => l.payments)) {
+    const s = settlesOn(p.created_at);
+    const fee = Math.round((p.amount * FEE_PERCENT) / 100);
+    const tax = Math.round((fee * GST_PERCENT) / 100);
+    const feeShown = o.feeIncludesTax ? fee + tax : fee;
+    out.push({ dayMs: s.dayMs, at: p.created_at, row: { entity_id: p.id, type: "payment", debit: 0, credit: p.amount - fee - tax, amount: p.amount, fee: feeShown, tax, created_at: p.created_at, payment_id: null, ...common(s, p.id) } });
+  }
+  for (const r of payments.refunds()) {
+    if (r.status !== "processed") continue;
+    const s = settlesOn(r.created_at);
+    out.push({ dayMs: s.dayMs, at: r.created_at, row: { entity_id: r.id, type: "refund", debit: r.amount, credit: 0, amount: r.amount, fee: 0, tax: 0, created_at: r.created_at, payment_id: r.payment_id, ...common(s, r.id) } });
+  }
+  return out.sort((a, b) => a.at - b.at || String(a.row.entity_id).localeCompare(String(b.row.entity_id), undefined, { numeric: true }));
+}
+
 // Translates Razorpay paths into calls on the fake payments, so crash tests run the real adapter against a fake that can fail on demand.
-export function razorpayStandin(payments: FakePayments): Handler {
+export function razorpayStandin(payments: FakePayments, options: StandinOptions = {}): Handler {
   return async ({ method, path, query, body }) => {
+    if (path === "/v1/settlements/recon/combined" && method === "GET") {
+      const year = Number(query.get("year"));
+      const month = Number(query.get("month"));
+      const dayText = query.get("day");
+      const day = dayText === null ? undefined : Number(dayText);
+      if (!Number.isInteger(year) || !Number.isInteger(month) || (day !== undefined && !Number.isInteger(day))) return error(400, "year and month are required, as whole numbers");
+      const count = Number(query.get("count") ?? 10);
+      const skip = Number(query.get("skip") ?? 0);
+      if (!Number.isInteger(count) || count < 1 || count > 1000 || !Number.isInteger(skip) || skip < 0) return error(400, "count must be 1 to 1000 and skip 0 or more");
+      const all = reconRows(payments, options).filter((r) => { const d = new Date(r.dayMs); return d.getUTCFullYear() === year && d.getUTCMonth() + 1 === month && (day === undefined || d.getUTCDate() === day); });
+      const items = all.slice(skip, skip + count).map((r) => r.row);
+      return ok({ entity: "collection", count: items.length, items });
+    }
     if (!path.startsWith("/v1/payment_links") && !path.startsWith("/v1/payments/")) return undefined;
     try {
       if (path === "/v1/payment_links" && method === "POST") {

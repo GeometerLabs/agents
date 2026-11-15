@@ -56,6 +56,7 @@ import { detectLanguage } from "../../../../modules/understanding/rules.ts";
 import { ensureLink as makeLink } from "../../../../modules/payments/links.ts";
 import type { Payment, PaymentEvent, PaymentRequest, Payments } from "../../../../modules/payments/payments.ts";
 import { createRefunds, recheckLine } from "../../../../modules/payments/refunds.ts";
+import { feesAccounting } from "./accounting.ts";
 import type { Action, ActionRecord, Outcome } from "../../../../modules/record/record.ts";
 import { takeDue } from "../../../../modules/reminders/reminders.ts";
 import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
@@ -74,6 +75,7 @@ import type { MarkReply } from "../../../../modules/payments/owner-marked/owner.
 import { ownerMarkChoices } from "../../../../modules/payments/owner-marked/buttons.ts";
 import { MARK_ACTIONS } from "../../../../modules/payments/owner-marked/obligations.ts";
 import { capabilitiesOf, ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
+import { readSettlementsOnce } from "../../../../modules/accounting/settlements.ts";
 import type { ButtonId } from "./language/interactive.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
@@ -158,6 +160,9 @@ export function createAgent(deps: AgentDeps): Agent {
   const policy: AiPolicy = deps.ai ?? {};
   const licence = deps.licence ?? (() => UNRESTRICTED);
   const tz = settings.timezone;
+  // The centre's accounting (modules/accounting), over the very record `log` appends to: every money line below goes through books.post, which gives the line's
+  // own write its money fields and reads the line back (modules/accounting/post.ts). The action names, outcomes and notes are the ones this agent always wrote.
+  const books = feesAccounting({ record, timezone: settings.timezone, clock });
   const owner = settings.owner.whatsapp;
   // B37: with other approvers, a refund the owner's own command asks for names the owner (Geo-Requested-By), and the others' code replies are the relay's
   const askedByOwner = ownerAsked(settings.approvers);
@@ -237,6 +242,7 @@ export function createAgent(deps: AgentDeps): Agent {
     tellOwner: (due, phone, template, more) => tellOwner(due, phone, template as TemplateId, more),
     cases: () => store.dues.values(),
     ids: { checking: "fee_refund_checking", denied: "fee_refund_denied", approved: "fee_refund_approved", expired: "fee_refund_expired", settled: "owner_refund_settled", confirmed: "fee_refund_confirmed" },
+    accounting: books,
   });
   const { requestRefund, afterRefund, overLimit } = refunds;
 
@@ -302,7 +308,7 @@ export function createAgent(deps: AgentDeps): Agent {
   /** A refund the owner owes: recorded, the parent told it will come from the owner, the owner told what to send, with the code. The agent never sends it. */
   async function oweBack(due: Due, paymentId: string, amountPaise: number, why: string, decisions: Decision[] = []): Promise<OwedRefund> {
     const r = oweRefund(markState!, { caseId: due.id, customer: due.customer, paymentId, amountPaise, why }, clock.now());
-    log(due, due.customer, MARK_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise) }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` });
+    books.post({ kind: "refund_owed", case: due.id, owed: r.id, paymentId, amountPaise }, (m) => log(due, due.customer, MARK_ACTIONS.refundOwed, "held_for_owner", { paymentId, amountPaise }, { decisions, refs: { refundId: r.id, paymentId, amountPaise: String(amountPaise), ...m }, notes: `owed back by the owner, who sends it from their own UPI app (${why}); the agent never sends it and tracks it until the owner marks it done` }));
     await tellCustomer(due, due.customer, ["fee_upi_refund_owed"], { refundInr: amountPaise / 100 });
     await tellOwner(due, due.customer, "owner_fee_upi_refund_owed", { refundInr: amountPaise / 100, upiCode: r.code ?? undefined, offer: refundButtons(r) });
     return r;
@@ -334,7 +340,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (result.kind !== "done") { await quietly("unknown", result.kind === "not_allowed" ? "keeping this money was not offered" : "a code the agent never issued"); return; }
     const r = result.refund;
     const due = store.dues.get(r.caseId) ?? null;
-    log(due, r.customer, MARK_ACTIONS.refundDone, "confirmed", { refundId: r.id }, { refs: { refundId: r.id, paymentId: r.paymentId, amountPaise: String(r.amountPaise) }, notes: "the owner marked the refund sent from their UPI app; only now is the parent told it was sent" });
+    books.post({ kind: "refund_made", case: r.caseId, owed: r.id, paymentId: r.paymentId, amountPaise: r.amountPaise, method: "upi", evidence: "owner_mark", refundId: r.id }, (m) => log(due, r.customer, MARK_ACTIONS.refundDone, "confirmed", { refundId: r.id }, { refs: { refundId: r.id, paymentId: r.paymentId, amountPaise: String(r.amountPaise), ...m }, notes: "the owner marked the refund sent from their UPI app; only now is the parent told it was sent" }));
     await tellCustomer(due, r.customer, ["fee_upi_refund_sent"], { refundInr: r.amountPaise / 100 });
     await tellOwner(due, r.customer, "owner_fee_upi_refund_marked", { refundInr: r.amountPaise / 100 });
   }
@@ -396,8 +402,8 @@ export function createAgent(deps: AgentDeps): Agent {
         const counted: CountedPayment = { id: p.id, amountPaise: p.amount, linkId: link.id };
         due.payments.push(counted);
         fresh.push(counted);
-        if (ownerConfirms) log(due, due.customer, MARK_ACTIONS.marked, "confirmed", { requestId: link.id, amount: p.amount }, { refs: { paymentId: p.id, linkId: link.id, requestId: link.id, amountPaise: String(p.amount), markedBy: "owner" }, notes: found.status === "cancelled" ? "marked received by the owner on a request the agent had replaced (the amount changed): it counts toward the fee" : "marked paid by owner: from the owner's own number, with a one-use code" });
-        else log(due, due.customer, "record_payment", "confirmed", { linkId: link.id, amount: p.amount }, { refs: { paymentId: p.id, linkId: link.id, amountPaise: String(p.amount) } });
+        if (ownerConfirms) books.post({ kind: "received", case: due.id, paymentId: p.id, amountPaise: p.amount, method: "upi", evidence: "owner_mark", for: "fee" }, (m) => log(due, due.customer, MARK_ACTIONS.marked, "confirmed", { requestId: link.id, amount: p.amount }, { refs: { paymentId: p.id, linkId: link.id, requestId: link.id, amountPaise: String(p.amount), markedBy: "owner", ...m }, notes: found.status === "cancelled" ? "marked received by the owner on a request the agent had replaced (the amount changed): it counts toward the fee" : "marked paid by owner: from the owner's own number, with a one-use code" }));
+        else books.post({ kind: "received", case: due.id, paymentId: p.id, amountPaise: p.amount, method: "gateway", evidence: "provider", for: "fee" }, (m) => log(due, due.customer, "record_payment", "confirmed", { linkId: link.id, amount: p.amount }, { refs: { paymentId: p.id, linkId: link.id, amountPaise: String(p.amount), ...m } }));
       }
     }
     return { ok, fresh };
@@ -561,7 +567,7 @@ export function createAgent(deps: AgentDeps): Agent {
         const due = register(store, newDue(settings, student, student.language ?? store.customers.get(student.parent)?.language ?? settings.languages[0], key, date, dueMsOf(date)));
         // Every reminder day is kept, the ones that have passed too: opened on the first reminder's day, or later, the ones already due go as ONE message (the shared rule).
         due.reminders = moments.map((atMs) => ({ atMs, sent: false }));
-        log(due, due.customer, "open_fee", "confirmed", { month: key, feeInr: due.feeInr }, { refs: { month: key, amountPaise: String(due.feeInr * 100) }, notes: `the fee for ${due.studentName}, ${key}, is open` });
+        books.post({ kind: "fee_charged", case: due.id, amountPaise: due.feeInr * 100 }, (m) => log(due, due.customer, "open_fee", "confirmed", { month: key, feeInr: due.feeInr }, { refs: { month: key, amountPaise: String(due.feeInr * 100), ...m }, notes: `the fee for ${due.studentName}, ${key}, is open` }));
       }
     }
   }
@@ -576,7 +582,7 @@ export function createAgent(deps: AgentDeps): Agent {
     await settle(due, fresh);
     if (due.state !== "open") return;
     due.lateFeeInr = settings.lateFeeInr;
-    log(due, due.customer, "add_late_fee", "confirmed", { amountPaise: settings.lateFeeInr * 100 }, { refs: { amountPaise: String(settings.lateFeeInr * 100) }, notes: `the grace days are over and the payment record shows the fee unpaid` });
+    books.post({ kind: "late_fee", case: due.id, amountPaise: settings.lateFeeInr * 100 }, (m) => log(due, due.customer, "add_late_fee", "confirmed", { amountPaise: settings.lateFeeInr * 100 }, { refs: { amountPaise: String(settings.lateFeeInr * 100), ...m }, notes: `the grace days are over and the payment record shows the fee unpaid` }));
     if (due.remindersSent < settings.reminders.maxPerMonth && !due.reminders.some((r) => !r.sent)) due.reminders.push({ atMs: clock.now(), sent: false }); // the parent should hear of it
   }
 
@@ -726,7 +732,7 @@ export function createAgent(deps: AgentDeps): Agent {
       else log(null, owner, "parent_link", "failed", {}, { notes: "the message with the new link was not accepted, so the parent's old link (if any) still works and nothing changed" });
       return;
     }
-    if (e.action === "cash") return onOwnerCash(e);
+    if (e.action === "cash" || e.action === "bank") return onOwnerCash(e);
     const item = ownerItems(settings, store).find((x) => x.case === e.case && x.digest === e.digest && x.actions.includes(e.action));
     const due = store.dues.get(e.case) ?? null;
     if (!item) {
@@ -745,7 +751,7 @@ export function createAgent(deps: AgentDeps): Agent {
    * Money clarity: the owner marks an open fee paid in cash (or by a bank transfer the agent cannot see), from their page's "paid another way?" list. The page showed the
    * fee with a digest of its balance and payments; with any other digest nothing is done. The mark is for the whole balance, counted as a payment of its own kind
    * (CASH_LINK) and written to the record as the owner's mark ("owner_marked_paid", with `via: "cash"`), which is exactly what the rules read as the record showing the
-   * money: the parent is told it was received, reminders stop, the report counts it as marked by the owner. Open payment links are closed, so a payment that still
+   * money: the parent is told it was received, reminders stop, the accounts count it (modules/accounting; the owner's money page shows it), and a UPI centre's report counts it as marked by the owner; a gateway centre's signed report does not yet (modules/Deferred.md, "The accounting module"). Open payment links are closed, so a payment that still
    * comes on one is counted and goes back as an extra. Nothing is sent to a payments service, and no rule of Guard or of the ledger changes.
    */
   async function onOwnerCash(e: OwnerAction): Promise<void> {
@@ -756,10 +762,11 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     const amountPaise = balancePaise(due);
+    const via = e.action === "bank" ? "bank" : "cash"; // Q7: the owner says which, and the books file it under cash in hand or the bank
     const counted: CountedPayment = { id: `cash-${due.id}-${due.payments.filter((p) => p.linkId === CASH_LINK).length + 1}`, amountPaise, linkId: CASH_LINK };
     due.payments.push(counted);
     log(due, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "the owner marked this fee paid in cash (or by a transfer the agent cannot see) on their private page" });
-    log(due, owner, MARK_ACTIONS.marked, "confirmed", { via: "cash", amountPaise }, { refs: { paymentId: counted.id, amountPaise: String(amountPaise), markedBy: "owner", via: "cash" }, notes: "marked paid by owner: paid by hand (cash or a bank transfer), from the owner's own page; no payments service holds it" });
+    books.post({ kind: "received", case: due.id, paymentId: counted.id, amountPaise, method: via, evidence: "owner_mark", for: "fee" }, (m) => log(due, owner, MARK_ACTIONS.marked, "confirmed", { via, amountPaise }, { refs: { paymentId: counted.id, amountPaise: String(amountPaise), markedBy: "owner", via, ...m }, notes: "marked paid by owner: paid by hand (cash or a bank transfer), from the owner's own page; no payments service holds it" }));
     await settle(due, [counted]);
     if (due.state !== "open") await closeOpenLinks(due);
   }
@@ -862,7 +869,7 @@ export function createAgent(deps: AgentDeps): Agent {
   /** Take `amountInr` off the fee (within the limit, or because the owner said yes), make the link for the new balance, and tell the parent. */
   async function applyWaiver(due: Due, amountInr: number, by: "limit" | "owner", decisions: Decision[]): Promise<void> {
     due.waivedInr += amountInr;
-    log(due, due.customer, "waive_fee", "confirmed", { amountInr }, { decisions, refs: { amountPaise: String(amountInr * 100), by }, notes: by === "owner" ? "the owner approved this waiver" : "within the waiver limit" });
+    books.post({ kind: "discount", case: due.id, amountPaise: amountInr * 100 }, (m) => log(due, due.customer, "waive_fee", "confirmed", { amountInr }, { decisions, refs: { amountPaise: String(amountInr * 100), by, ...m }, notes: by === "owner" ? "the owner approved this waiver" : "within the waiver limit" }));
     if (balancePaise(due) <= 0) {
       moveTo(due, paidPaise(due) > 0 ? "paid" : "closed");
       log(due, due.customer, "settle_fee", "confirmed", { waived: true }, { refs: { amountPaise: String(paidPaise(due)) }, notes: "the waiver covers what was left" });
@@ -1156,6 +1163,7 @@ export function createAgent(deps: AgentDeps): Agent {
     await refunds.sweep(now); // refunds first, whatever state their fee is in
     if (markState) await remindOwedRefunds(now);
     await closeLinksAtStop();
+    if (can.readsSettlements) await readSettlementsOnce({ payments, accounting: books, record, conversation: owner, language: settings.languages[0], nowMs: now, timeZone: tz }); // yesterday's settlement rows, once a day (modules/accounting/settlements.ts)
     const working = licence().takesNewWork;
     if (working) openMonthlyFees(); // in the wind-down no month's fees are opened: nothing is kept to chase later
     for (const due of [...store.dues.values()]) {

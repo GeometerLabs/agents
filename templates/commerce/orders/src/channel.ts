@@ -15,6 +15,13 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import type { OwnerActionName } from "../../../../modules/channels/events.ts";
 import type { OrderOffer, OrderView, PayInstructions } from "../../../../modules/channels/backend.ts";
 import { addDays, localParts, zonedToMs } from "../../../../modules/core/time.ts";
+import { formatDate } from "../../../../modules/language/format.ts";
+import { caseDocuments } from "../../../../modules/accounting/case-documents.ts";
+import type { DocumentsKey } from "../../../../modules/accounting/case-documents.ts";
+import { accountantFiles } from "../../../../modules/accounting/export.ts";
+import { ownerMoney } from "../../../../modules/accounting/owner-money.ts";
+import type { RecordEntry } from "../../../../modules/record/record.ts";
+import { ordersJournal } from "./accounting.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import { allSlots, itemName, itemOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
@@ -95,6 +102,16 @@ function payOf(settings: Settings, store: Store, o: Order): PayInstructions | un
 }
 
 /**
+ * The one lookup of a page's order by its handle's hash, shared by the page's own read (orderView) and its receipts (documentsOf), so they can never find different
+ * orders. A refused request has no order; an order answers only to its own handle.
+ */
+function orderOf(store: Store, handleHash: string): Order | undefined {
+  const request = store.channel?.requests[handleHash];
+  const o = request && request.refused === undefined && request.booking !== undefined ? store.orders.get(request.booking) : undefined;
+  return o && o.handle === handleHash ? o : undefined;
+}
+
+/**
  * One request by its handle's hash, as its own page may show it. Null when the store has none (the runtime then says whether its task is still waiting). A refused
  * request says only why, as a name the page words; an order says its state, its lines at the shop's prices, its day and slot, how to pay while it is held, and the
  * messages the agent gave it.
@@ -103,8 +120,8 @@ export function orderView(settings: Settings, store: Store, handleHash: string):
   const request = store.channel?.requests[handleHash];
   if (!request) return null;
   if (request.refused !== undefined || request.booking === undefined) return { status: "refused", reason: request.refused ?? "unknown", channel: request.channel };
-  const o = store.orders.get(request.booking);
-  if (!o || o.handle !== handleHash) return null;
+  const o = orderOf(store, handleHash);
+  if (!o) return null;
   const status = STATUS[o.state];
   const items = publicItems(settings);
   const pay = status === "held" ? payOf(settings, store, o) : undefined;
@@ -190,8 +207,31 @@ export function ownerItems(settings: Settings, store: Store, nowMs?: number): { 
   return { items, upcoming };
 }
 
-/** The owner's page's read: the items without their codes, the shop's name and the owner's language. Orders has no services: `what` names each order. */
-export function ownerView(settings: Settings, store: Store, nowMs?: number) {
+/**
+ * The documents (receipts, refund notes) of the order the page with this handle's hash opens, newest first, drawn in the page's language. The order is found by
+ * `orderOf`, the page's own lookup, so another order's number is never among them. What each is for: the items and the day, in the customer's language.
+ */
+export function documentsOf(settings: Settings, store: Store, entries: readonly RecordEntry[], key: DocumentsKey, language: Language) {
+  const o = "handle" in key ? orderOf(store, key.handle) : undefined;
+  const whatFor = (caseId: string, l: Language): string => {
+    const x = store.orders.get(caseId);
+    return x ? [orderWhat(settings, x, l), x.date ? formatDate(x.date, l) : ""].filter(Boolean).join(", ") : "";
+  };
+  return caseDocuments({ journal: ordersJournal(entries), cases: o ? [o.id] : [], shop: { name: settings.name, address: settings.address ?? "", timezone: settings.timezone }, language, whatFor });
+}
+
+/**
+ * The accountant's files for a period, from the record (modules/accounting/export.ts), with the two best-effort Tally files. No company name is put in them: the
+ * accountant's Tally company may be named differently from the shop, so the import goes into the company that is open.
+ */
+export const exportFilesOf = (settings: Settings, entries: readonly RecordEntry[], period: string) =>
+  accountantFiles({ journal: ordersJournal(entries), entries, period, timeZone: settings.timezone, tally: {} });
+
+/**
+ * The owner's page's read: the items without their codes, the shop's name and the owner's language, and the Money section's figures worked out from the record
+ * (`entries`). Orders has no services: `what` names each order. A refund made whose customer was not told is passed with its order.
+ */
+export function ownerView(settings: Settings, store: Store, nowMs: number | undefined, entries: readonly RecordEntry[]) {
   const { items, upcoming } = ownerItems(settings, store, nowMs);
   return {
     shop: { name: settings.name, timezone: settings.timezone, ownerLanguage: settings.owner.language },
@@ -199,5 +239,9 @@ export function ownerView(settings: Settings, store: Store, nowMs?: number) {
     services: [],
     items: items.map(({ code: _code, ...shown }) => shown),
     upcoming,
+    money: ownerMoney({
+      journal: ordersJournal(entries), entries, nowMs: nowMs ?? Date.now(), timeZone: settings.timezone,
+      refundsUntold: [...store.orders.values()].flatMap((o) => (o.refundsUntold ?? []).map((u) => ({ case: o.id, amountInr: u.amountInr }))),
+    }),
   };
 }

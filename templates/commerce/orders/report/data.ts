@@ -11,6 +11,13 @@
 //  - A limit "stopped" something at ONE entry: a blocked entry is counted under the rule that blocked it, once. A check that stops an order and the message that tells the
 //    customer carry the same decision; they are one stop (see stopsIn).
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
+import { journal } from "../../../../modules/accounting/journal.ts";
+import { booksOnlyOf, figuresOf } from "../../../../modules/accounting/figures.ts";
+import type { BooksOnly } from "../../../../modules/accounting/figures.ts";
+import { reportAccounting } from "../../../../modules/accounting/summary.ts";
+import type { AccountingSummary } from "../../../../modules/accounting/summary.ts";
+import type { LegacyMap } from "../../../../modules/accounting/journal.ts";
+import { ORDERS_LEGACY } from "../src/accounting.ts";
 import { existsSync, readFileSync } from "node:fs";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
@@ -19,7 +26,7 @@ import { localParts, zonedToMs } from "../../../../modules/core/time.ts";
 import { canonicalJson } from "../../../../modules/record/record.ts";
 import type { RecordEntry } from "../../../../modules/record/record.ts";
 import { digestOf } from "../../../../modules/report/digest.ts";
-import { isSettledByWord, settledByWordOf } from "../../../../modules/report/settled-by-word.ts";
+import { settledByWordOf } from "../../../../modules/report/settled-by-word.ts";
 import type { SettledByWord } from "../../../../modules/report/settled-by-word.ts";
 import { headOf } from "../../../../modules/record/ledger.ts";
 import { MESSAGE_STATUS_ENTRY } from "../../../../modules/unfinished/registry.ts";
@@ -103,7 +110,9 @@ export interface OrdersReport {
    * `givenBack` is what the payments service's own record confirmed (or, UPI, the owner marked sent). `settledByWord` (B75, 12 Nov 2026) are refunds a person at the
    * server settled as made by their word (Guard's already_done): never counted as given back, grouped by who said so. Left out when there are none (older bytes kept).
    */
-  money: { collected: Amount; givenBack: Amount; settledByWord?: SettledByWord[] };
+  money: { collected: Amount; givenBack: Amount; settledByWord?: SettledByWord[];
+    /** Money the books count and the rows above leave out (a payment made twice, the owner's own marks on a gateway shop); only when one is above 0. */
+    booksOnly?: BooksOnly };
   /** Present only for a UPI shop (B33): the money is what the owner MARKED, and every document labels it so. Left out for a Razorpay shop, which keeps its bytes. */
   paidBy?: "owner-marked";
   /** From the record: orders confirmed (each once), orders completed, orders cancelled after they were confirmed, and holds that ran out before an advance was recorded. */
@@ -119,6 +128,11 @@ export interface OrdersReport {
   notTested: NotTestedKey[];
   /** What the report was told about the go-live checks: no certificate, one it could not trust, or one it read and what that says the checks ran on. */
   goLive: GoLiveFinding;
+  /**
+   * The books summary (modules/accounting/summary.ts) for the month, with the template's frozen legacy map so the open check (modules/accounting/check.ts) can read an older line
+   * from the evidence pack alone. Left out when the whole record has no money lines, which keeps the bytes of every report made without money.
+   */
+  accounting?: { summary: AccountingSummary; legacy: LegacyMap };
   /** The head of the shop's record as a hash-chained ledger when the report was made (see Bookings' report/data.ts), or null when no ledger was named. Part of the signed bytes. */
   anchor: LedgerHead | null;
 }
@@ -215,28 +229,15 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
   const all = [...input.entries].filter((e) => Date.parse(e.time) < to).sort((a, b) => a.seq - b.seq);
   const month = all.filter((e) => Date.parse(e.time) >= from);
 
-  // ---- money: from entries the payments service's own record confirmed (or, for UPI, the owner's marks) ----
-  const collected = emptyAmount();
-  const seenPayments = new Set<string>();
-  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): their marks are the payment record
-  for (const e of month.filter((x) => (x.action === "record_payment" || (upi && x.action === "owner_marked_paid")) && x.outcome === "confirmed")) {
-    const key = e.refs.paymentId ?? `seq-${e.seq}`;
-    if (seenPayments.has(key)) continue;
-    seenPayments.add(key);
-    add(collected, e.refs.amountPaise);
-  }
-  // A refund that was looked for again carries its refund id but not its amount: that is the amount an earlier entry for the same payment kept.
-  const amountOfPayment = new Map<string, string>();
-  for (const e of all) if (e.action === "refund" && e.refs.paymentId && e.refs.amountPaise) amountOfPayment.set(e.refs.paymentId, e.refs.amountPaise);
-  const givenBack = emptyAmount();
-  const seenRefunds = new Set<string>();
-  // a refund a person settled by their word is not money given back: it is counted on its own (settledByWord), never here
-  for (const e of month.filter((x) => (x.action === "refund" || (upi && x.action === "upi_refund_marked_done")) && x.outcome === "confirmed" && !isSettledByWord(x))) {
-    const key = e.refs.refundId ?? `seq-${e.seq}`;
-    if (seenRefunds.has(key)) continue;
-    seenRefunds.add(key);
-    add(givenBack, e.refs.amountPaise ?? (e.refs.paymentId ? amountOfPayment.get(e.refs.paymentId) : undefined));
-  }
+  // ---- money: read from the books (modules/accounting/figures.ts): the journal is the record read as double-entry lines, and the month's figures are sums over it ----
+  // For a UPI shop the owner's marks are the payment record, and a refund counts once the owner marks it sent; the journal reads both. The advance a payment brought is
+  // counted once per payment, a refund once per refund id, and a refund a person settled by their word is not money given back (it is counted on its own below).
+  const upi = !capabilitiesOf(settings.payment).confirmsAutomatically; // the owner marks payments (UPI): the report says so (paidBy)
+  const figures = figuresOf(journal(all, ORDERS_LEGACY), all, ORDERS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { refundAmountFromPayment: true, ownerMarks: upi });
+  const booksOnly = booksOnlyOf(figures); // why the "Money this month" block can differ from the rows (figures.ts booksOnly)
+  const accounting = reportAccounting(all, ORDERS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString());
+  const collected = figures.received;
+  const givenBack = { count: figures.refunds.count, paise: figures.refunds.paise };
   const byWord = settledByWordOf(month).rows; // a person's word, by who said it (modules/report/settled-by-word.ts)
 
   // ---- orders: each at its own confirmed entry, once per order ----
@@ -297,7 +298,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
     madeAt: new Date(madeAt).toISOString(),
     policyDigest: policyDigest(settings),
     record: { entries: month.length, digest: digestOf(all.map(entryDigest)), byAction },
-    money: { collected, givenBack, ...(byWord.length > 0 ? { settledByWord: byWord } : {}) },
+    money: { collected, givenBack, ...(byWord.length > 0 ? { settledByWord: byWord } : {}), ...(booksOnly ? { booksOnly } : {}) },
     ...(upi ? { paidBy: "owner-marked" as const } : {}),
     orders, sold, owner,
     customers: { stopped: new Set(month.filter((e) => e.action === "opt_out" && e.outcome === "confirmed").map((e) => e.conversation)).size },
@@ -307,6 +308,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
     notCounted: NOT_COUNTED.map((id) => (upi ? UPI_NOT_COUNTED[id] ?? id : id)),
     notTested: notTestedForReport(goLive, settings),
     goLive,
+    ...(accounting ? { accounting } : {}),
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };
 }

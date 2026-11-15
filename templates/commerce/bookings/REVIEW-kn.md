@@ -341,6 +341,16 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `sourceLong.stand-in` | ಈ ಲೆಕ್ಕಗಳು ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳು ಮತ್ತು ಟೆಸ್ಟ್ ಹಣದಿಂದ ಬಂದವು. ನಿಜವಾದ ಯಾವುದನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ, ಪಾವತಿಸಿಲ್ಲ. | These numbers come from stand-in services and test money. Nothing real was sent or paid. |  |
 | `sourceLong.test-mode` | ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ಟೆಸ್ಟ್ ಮೋಡ್‌ನಿಂದ ಬಂದವು. ಹಣ ಟೆಸ್ಟ್ ಹಣವಾಗಿತ್ತು. | These numbers come from real services in test mode. The money was test money. |  |
 | `sourceLong.live` | ಈ ಲೆಕ್ಕಗಳು ನಿಜವಾದ ಸೇವೆಗಳ ನಡೆಯುತ್ತಿರುವ ದಾಖಲೆಯಿಂದ ಬಂದವು. | These numbers come from the live record of real services. |  |
+| `moneyBlock.heading` | ಈ ತಿಂಗಳ ಹಣ | Money this month |  |
+| `moneyBlock.owedBack` | ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಗ್ರಾಹಕರಿಗೆ ಹಿಂದಿರುಗಿಸಬೇಕಾದದ್ದು | Still owed back at the end of the month |  |
+| `moneyBlock.toCome` | ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಇನ್ನೂ ಬರಬೇಕಾದದ್ದು | Still to come at the end of the month |  |
+| `moneyBlock.paidTwice` | "ಬಂದದ್ದು" ಇದರಲ್ಲಿ ಗ್ರಾಹಕರು ಎರಡು ಬಾರಿ ಪಾವತಿಸಿದ {amount} ಸೇರಿದೆ. ಆ ಹಣ ಅವರದು, ಅಂಗಡಿಯದಲ್ಲ. | "Received" includes {amount} that customers paid twice. That money is theirs, not the shop's. |  |
+| `moneyBlock.markedReceived` | "ಬಂದದ್ದು" ಇದರಲ್ಲಿ ನೀವೇ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿದ {amount} ಸೇರಿದೆ. ಮೇಲಿನ ಸಾಲುಗಳು ನಿಮ್ಮ ಪಾವತಿ ಸೇವೆ ದೃಢಪಡಿಸಿದ ಪಾವತಿಗಳನ್ನು ಮಾತ್ರ ಎಣಿಸುತ್ತವೆ. | "Received" includes {amount} that you marked as paid yourself. The rows above count only payments that your payment service confirmed. |  |
+| `moneyBlock.markedGivenBack` | "ಹಿಂದಿರುಗಿಸಿದ್ದು" ಇದರಲ್ಲಿ ನೀವೇ ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ {amount} ಸೇರಿದೆ. | "Given back" includes {amount} that you marked as sent yourself. |  |
+| `moneyBlock.received` | ಬಂದದ್ದು | Received |  |
+| `moneyBlock.givenBack` | ಹಿಂದಿರುಗಿಸಿದ್ದು | Given back |  |
+| `moneyBlock.kept` | ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು | Kept from cancellations |  |
+| `moneyBlock.byWord` | ಯಾರದೋ ಮಾತಿನ ಮೇಲೆ ಮುಗಿಸಿದ್ದು, ಮೇಲಿನ ಮೊತ್ತದಲ್ಲಿ ಇಲ್ಲ | Settled on someone's word, not counted in the totals above |  |
 | `upiLabel.deposits` | ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ಮುಂಗಡ | Deposits marked paid by owner |  |
 | `upiLabel.givenBack` | ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್ | Refunds marked sent by owner |  |
 | `notTested.upi-not-automatic` | ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ: UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರೇ ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸುತ್ತಾರೆ | automatic payment checking: with UPI the owner marks each payment received |  |
