@@ -5,6 +5,10 @@
 // The default sizes are 1, 5 and 10 shops (15 Nov 2026, release speed): 25 shops stop Docker Desktop's engine on a laptop, so that step needs the
 // real partner server (bundle/Deferred.md, "The 25-shop step"); pass `--shops 1,5,10,25` there.
 //
+// Provenance (15 Nov 2026): results.json records which bundle/ and modules/ trees and which Guard input digest (env GUARD_INPUT_DIGEST) the run proved;
+// test/proof/same-as-last.ts compares it with the present tree and says whether a release may skip the proof, run the core set (`--only licence-block,isolation,held,licence,tripwire,webhook`
+// with `--shops 1`) or run it all. The rule is in the monorepo's docs/release-runbook.md, section 6.
+//
 // It builds a throwaway server folder, brings the real bundle up with docker compose (the real Guard image, one set of stand-ins per shop as the providers, MinIO
 // as the bucket, the real fleet service on the host), and records what it sees in $PROOF_DIR/results.json and results.txt. Every bundle container runs inside
 // ONE parent cgroup capped at 2 CPUs and 4 GiB (the 2 vCPU / 4 GB server of B14 item 4; the stand-ins, MinIO and the probes are outside it). Everything it creates
@@ -41,6 +45,7 @@ import { loadServer } from "../../lib/server.ts";
 import { yaml } from "../../generate/compose.ts";
 import type { Runner } from "../../lib/runner.ts";
 import { TEST_PRIVATE_PEM, TEST_PUBLIC_HEX, signTest } from "../licence-helpers.ts";
+import { collect as collectProvenance } from "./provenance.ts";
 import { AGENT_INDEX, AGENT_NAME, OWNER, UPI_AGENT_INDEX, UPI_AGENT_NAME, calendarOf, phoneOf, secretsOf, shopName } from "./shops.ts";
 
 const APP = new URL("../../../", import.meta.url).pathname.replace(/\/$/u, "");
@@ -64,6 +69,9 @@ const SERVER = join(SCRATCH, "server");
 const STANDIN_BUSINESS_NUMBER = "+15550000000";
 const PROJECT = "geometer-proof";
 const results: Record<string, unknown> = { startedAt: new Date().toISOString(), guardImage: GUARD_IMAGE, checks: [] as unknown[] };
+// What this run is a proof of (test/proof/provenance.ts): lets a release skip a repeat when nothing it exercises changed. GUARD_INPUT_DIGEST is the
+// monorepo's digest of the R16-guard-unchanged case (`geo-qual list --digests`), which the release passes in.
+results.provenance = collectProvenance(APP, { guardInputDigest: process.env.GUARD_INPUT_DIGEST ?? "", guardImage: GUARD_IMAGE, onlyPhases: ONLY ? [...ONLY] : null, shopSizes: SIZES });
 const text = join(SCRATCH, "results.txt");
 mkdirSync(SCRATCH, { recursive: true });
 
