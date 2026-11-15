@@ -11,7 +11,7 @@
 # command, the panel through Caddy from the host, and the heartbeat at fleet. It removes only what it made: one compose project, one container, one image,
 # its work folder. Bind mounts are resolved by the Docker daemon, so the work folder must be a path Docker shares (on Docker Desktop: under /Users,
 # /private, /tmp or /var/folders); it is mounted at the same path in the container.
-# Needs: the Guard image geo-guard:0.1.0-alpha.2-pathways.1 on this machine, Node 26, python3, and the network (nodejs.org, Docker Hub for ubuntu:24.04 and docker:27-cli).
+# Needs: the Guard image geo-guard:0.1.0-alpha.3 on this machine, Node 26, python3, and the network (nodejs.org, Docker Hub for ubuntu:24.04 and docker:27-cli).
 set -uo pipefail
 FLEET=${1:?say where fleet is: <monorepo>/apps/fleet}
 AGENTS=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
@@ -37,7 +37,7 @@ trap cleanup EXIT
 
 say "1. a clone of the branch, with a test release commit and tag (in the clone only)"
 git clone -q "$AGENTS" "$W/home/geometer/agents" || exit 1
-docker save geo-guard:0.1.0-alpha.2-pathways.1 -o "$W/guard.tar" || exit 1
+docker save geo-guard:0.1.0-alpha.3 -o "$W/guard.tar" || exit 1
 GSHA=$(sha "$W/guard.tar")
 python3 -I - "$W/home/geometer/agents/bundle/release.json" "$GSHA" <<'EOF'
 import json, sys

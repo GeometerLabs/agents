@@ -12,7 +12,7 @@ jobs:
           docker run --rm --network host \
             -v /var/run/docker.sock:/var/run/docker.sock \
             -v "$PWD:$PWD" -w "$PWD" \
-            ghcr.io/geometerlabs/geo:0.1.0-alpha.1 ci \
+            ghcr.io/geometerlabs/geo:0.1.0-alpha.3 ci \
             --report geometer-report.json --junit geometer-junit.xml
       - uses: actions/upload-artifact@v4
         if: always()

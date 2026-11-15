@@ -191,7 +191,7 @@ function pagesProblems(raw: unknown, domain: string, hosted: boolean): string[] 
   return problems;
 }
 
-export const DEFAULT_GUARD_IMAGE = "geo-guard:0.1.0-alpha.2-pathways.1";
+export const DEFAULT_GUARD_IMAGE = "geo-guard:0.1.0-alpha.3";
 export const DEFAULT_APP_IMAGE = "node:26-alpine";
 export const DEFAULT_SPEECH_IMAGE = "geo-speech:0.1.0";
 export const CADDY_IMAGE = "caddy:2.8.4-alpine";
