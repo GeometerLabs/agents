@@ -114,7 +114,7 @@ const WHEN: Record<TemplateId, string> = {
   owner_upi_refund_kept: "UPI shop: the owner kept the money for an order they take by hand",
   orders_paused: "The shop's licence is in its wind-down: the answer to a customer who asks to order. No order, no link, nothing kept for later",
   owner_licence_paused: "The one notice to the owner when the licence winds down: online ordering is paused, who to contact. Never about money",
-  owner_licence_stopped: "The one notice to the owner at the licence's final stop: the partner's service has ended, what is still open, and that hello@geometer.dev will connect the owner with another local partner",
+  owner_licence_stopped: "The one notice to the owner at the licence's final stop: the Operator's service has ended, what is still open, and that hello@geometer.dev will connect the owner with another local Operator",
 };
 
 const cell = (text: string) => text.replace(/\|/gu, "\\|").replace(/\n/gu, " ");

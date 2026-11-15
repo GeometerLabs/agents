@@ -16,7 +16,7 @@
 //  - reply:  { messages: [{ id: "GUPSHUP_MESSAGE_ID" }], messaging_product, contacts } (a Gupshup id, not a wamid). Read as GUPSHUP having taken the message: its
 //            self-serve send "is processed asynchronously" (https://docs.gupshup.io/docs/session-messages) and the partner events include its own failures after the
 //            answer, so Meta's refusals (131047, the closed window) are expected afterwards as a "failed" status (webhooks.ts parseWhatsAppStatuses). An inference
-//            for the partner API: its pages do not say it in so many words.
+//            for the Operator API: its pages do not say it in so many words.
 //  - errors: { status: "error", message } (401 "Authentication Failed"; 400 "Callback Billing must be enabled for this API"; 400 "Invalid App Details").
 //  - read:   GET /partner/app/{appId}/health, `Authorization: {PARTNER_APP_TOKEN}`, answers { status: "success", healthy: "true" }; 10 calls a minute at most.
 //            https://partner-docs.gupshup.io/reference/get_partner-app-appid-health
@@ -40,9 +40,9 @@ export const GUPSHUP_ROUTES = { send: "/partner/app/{app_id}/v3/message", read: 
  * Gupshup's newer tokens (follow-up 2, 12 Nov 2026), read 12 Nov 2026 from Gupshup's partner pages: the auth guide
  * (https://partner-docs.gupshup.io/docs/partner-authentication-guide-universal-tokens-ut-overview, updated 13 Oct 2026), "Generate universal token"
  * (.../reference/mintuniversaltoken, updated 6 Oct 2026) and "Generate universal app token" (.../reference/mintuniversalapptoken, updated 17 Sep 2026).
- *  - the partner app token this adapter's Guard sends today is "legacy, phasing out"; the long-lived partner credentials are the admin's client secret (at most 3 months)
+ *  - the Operator app token this adapter's Guard sends today is "legacy, phasing out"; the long-lived Operator credentials are the admin's client secret (at most 3 months)
  *    and the Universal Token (UT) minted with it (24 hours to 60 days; POST /partner/{partnerId}/auth/token, form email + clientSecret + name [+ expiry]; 3 active per
- *    admin; 3 mints a minute). A UT acts for the WHOLE partner, so it is never put in a shop's Guard.
+ *    admin; 3 mints a minute). A UT acts for the WHOLE Operator, so it is never put in a shop's Guard.
  *  - a Universal App Token (UAT) acts for ONE app and lives 1 to 24 hours: POST /partner/app/{appId}/token, `Authorization: Bearer <UT>`, form `name` (1 to 128 characters,
  *    unique among the app's active ones) and `expiry` (epoch MILLISECONDS, now + 1 h <= expiry <= now + 24 h); answers { status: "success", token, id } (no expiry in the
  *    reply); 10 mints a minute; 3 active per app; 401 when the UT is not good, 409 at 3 active or a name in use, 429 too many.

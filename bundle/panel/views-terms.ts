@@ -1,6 +1,6 @@
-// The shop terms page (B72, 12 Nov 2026): the partner enters their name, number and the two prices, sees the exact text the owner will get on WhatsApp, sees whether it was
+// The shop terms page (B72, 12 Nov 2026): the Operator enters their name, number and the two prices, sees the exact text the owner will get on WhatsApp, sees whether it was
 // sent and agreed, and downloads the copy once the owner agreed. Plain forms and links, no script. The few panel words here are in four languages, Hindi, Malayalam and Kannada
-// machine-written and waiting for a native reader like the rest of the panel's. The page always says that signed paper is still what Geometer's guides tell a partner to use.
+// machine-written and waiting for a native reader like the rest of the panel's. The page always says that signed paper is still what Geometer's guides tell an Operator to use.
 import type { Language } from "../../modules/language/languages.ts";
 import type { TermsFile } from "../../modules/terms/terms.ts";
 import { html } from "./html.ts";

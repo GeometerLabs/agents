@@ -1,5 +1,5 @@
 // The owner's passkeys (plan item 11h, decisions 45 and 46): the checks of webauthn.ts on a real Chromium authenticator's answers and on a software one's, and
-// the runtime's store (owner-access.ts) with the partner's setup QR and recovery card (owner-grants.ts): one use, that shop only, the expiry, a cancelled prompt
+// the runtime's store (owner-access.ts) with the Operator's setup QR and recovery card (owner-grants.ts): one use, that shop only, the expiry, a cancelled prompt
 // that does not burn the QR, another shop's passkey on the same pages domain refused, a replayed answer refused, the counter, recovery, and "remove the passkeys".
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -102,7 +102,7 @@ test("the setup QR and the recovery card: hashes only in the file, a setup QR ru
 
 // ---- the runtime's store ------------------------------------------------------------------------------------------------------------------------------
 
-test("registration from the partner's QR: the QR is used up only when the passkey is kept, once; a cancelled prompt does not burn it; then a session", () => {
+test("registration from the Operator's QR: the QR is used up only when the passkey is kept, once; a cancelled prompt does not burn it; then a session", () => {
   const { access, done } = store(); try {
     const token = newSetupToken(); const file = grants({ token }); const g = { kind: "setup" as const, token };
     const first = access.registrationOptions(g, file, OWNER, RP, "Glow", T0);
@@ -131,7 +131,7 @@ test("registration from the partner's QR: the QR is used up only when the passke
 test("the QR is this shop's only and runs out: another shop's QR, an expired one and a replaced one register nothing; an answer for another challenge or origin is refused", () => {
   const { access, done } = store(); try {
     const token = newSetupToken(); const file = grants({ token });
-    const other = { kind: "setup" as const, token: newSetupToken() }; // the QR the partner made for another shop: that shop's file names it, this one does not
+    const other = { kind: "setup" as const, token: newSetupToken() }; // the QR the Operator made for another shop: that shop's file names it, this one does not
     assert.deepEqual(access.registrationOptions(other, file, OWNER, RP, "Glow", T0), { ok: false, state: "unknown" });
     assert.deepEqual(access.registrationOptions({ kind: "setup", token }, file, OWNER, RP, "Glow", T0 + SETUP_MS), { ok: false, state: "expired" });
     const newer = grants({ token: newSetupToken(), at: T0 + 60_000 });

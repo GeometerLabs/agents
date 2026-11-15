@@ -1,7 +1,7 @@
 # बुकिंग पाथवे को पिच करें और बेचें: उपकरण किराये पर
 
-> **Machine-written (3 November 2026). Needs review by a native speaker before partners or shops rely on it.**
-> मशीन से लिखा गया (3 November 2026)। किसी पार्टनर या दुकान के इस पर भरोसा करने से पहले किसी हिंदी मातृभाषी से जँचवाना ज़रूरी है।
+> **Machine-written (3 November 2026). Needs review by a native speaker before Operators or shops rely on it.**
+> मशीन से लिखा गया (3 November 2026)। किसी ऑपरेटर या दुकान के इस पर भरोसा करने से पहले किसी हिंदी मातृभाषी से जँचवाना ज़रूरी है।
 > The prices (the two price lists) also wait for a native speaker's review.
 
 यह उन कस्टम हायरिंग सेंटरों और गाँव के उपकरण-मालिकों के लिए एक रूप है जो ट्रैक्टर और उसके औज़ार, पंप सेट या टेंट को आधे दिन या पूरे दिन के लिए किराये पर देते हैं। 3 नवंबर 2026 को लिखा गया। **पहले मुख्य गाइड पढ़िए ([guide.hi.md](../guide.hi.md))।** यह पन्ना सिर्फ़ वही बदलता है जो अलग है। यही रूप अंग्रेज़ी, मलयालम और कन्नड़ में भी है। दुकान का मालिक इसे कभी नहीं पढ़ता।

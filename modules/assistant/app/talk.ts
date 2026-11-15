@@ -51,7 +51,7 @@ export function talkBox(a: { base: string; language: Language; lines: readonly T
 
 /**
  * The character's line at the top of the app: its picture in the shop's mood now (item 11i, when the pictures are drawn; a dot in its colour until then), who it
- * is ("Glow Salon's assistant", with the character's name only when the partner gave one) and the mood in words (character.ts: a face never carries the mood alone),
+ * is ("Glow Salon's assistant", with the character's name only when the Operator gave one) and the mood in words (character.ts: a face never carries the mood alone),
  * as a chip in the mood's colour (look.ts). The picture's alt text says the same, for a screen reader. `title`: the page's heading, beside the picture.
  */
 export function characterLine(a: { language: Language; shop: string; name?: string; colour: string; face: Face; picture?: string; title?: string }): string {

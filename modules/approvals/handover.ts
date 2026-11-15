@@ -1,4 +1,4 @@
-// The owner's agreement to move a shop to another partner or builder (plan B38): "move K7M2QX", sent from the owner's own number to the shop's WhatsApp number.
+// The owner's agreement to move a shop to another Operator or builder (plan B38): "move K7M2QX", sent from the owner's own number to the shop's WhatsApp number.
 //
 // The panel makes a one-use code (code.ts: the same alphabet and length as an approval's), shows it to the person moving the shop, and keeps only its HASH. The owner sends the
 // code in a message; the agent writes a handover_agreed entry in the record, from the owner's number, holding the code's hash. The panel moves the shop only when it finds that

@@ -1,15 +1,15 @@
-// A local partner's calling card as one HTML page (plan item 11g, decision 49): what https://<pages domain>/@<handle> shows. The front door (door.ts) asks fleet for
+// A local Operator's calling card as one HTML page (plan item 11g, decision 49): what https://<pages domain>/@<handle> shows. The front door (door.ts) asks fleet for
 // the published card (monorepo apps/fleet, GET /v1/partner-cards/<handle>), hands the answer to `cardPage`, and sends the result with its own no-script policy.
 //
 // WHY IT LOOKS LIKE THIS. The page must open fast on a budget Android phone on a slow connection, so it is plain HTML and one inline style sheet: no script, no
 // web font (the phone's own font, with the rounded one first where it has it), no picture to fetch (the face is an inline SVG, cleaned by fleet before it was kept; the
 // QR code is an inline SVG made here), and no layout that waits for anything. The look is Streetlist's (the repository `streetlist`, src/styles/site.css): limewash
-// paper, ink, shutter green for links, marigold for the partners' colour, flat colours, light for everyone (the owner's 14 Nov rule: no dark theme here, and the page
+// paper, ink, shutter green for links, marigold for the Operators' colour, flat colours, light for everyone (the owner's 14 Nov rule: no dark theme here, and the page
 // does not read the phone's own setting).
 //
-// WHAT IS ESCAPED. Everything a partner typed (name, introduction, area, service names, shop names) goes through `esc`; the WhatsApp link is built from digits only;
+// WHAT IS ESCAPED. Everything an Operator typed (name, introduction, area, service names, shop names) goes through `esc`; the WhatsApp link is built from digits only;
 // the face is the one string that is not escaped, because fleet rebuilt it from an allow-list of drawing parts and it is never built from what a visitor sent.
-// The words follow the site's rules: no promise of income, no ranks, points or streaks; the partner's own prices are shown as they typed them, and Geometer's
+// The words follow the site's rules: no promise of income, no ranks, points or streaks; the Operator's own prices are shown as they typed them, and Geometer's
 // standing line about WhatsApp charges is always there.
 import { textQrSvg } from "../../modules/qr/svg.ts";
 
@@ -43,7 +43,7 @@ export function rupees(n: number): string {
   return `₹${head},${s.slice(-3)}`;
 }
 
-/** The standing line about WhatsApp charges (plan item 11g): the partner's prices never include them. */
+/** The standing line about WhatsApp charges (plan item 11g): the Operator's prices never include them. */
 export const WHATSAPP_LINE = "WhatsApp message charges are passed on at cost and paid from the shop's own WhatsApp account.";
 
 const CSS = `
@@ -90,11 +90,11 @@ function shell(title: string, description: string, body: string, robots = "index
 
 /** The friendly page for a handle with no published card (unknown, unpublished, junk, or fleet saying "unknown"). */
 export function noCardPage(): string {
-  return shell("There is no partner page here", "Check the address, or ask the partner for their link.",
-    `<div class="hero"><h1>There is no partner page here</h1><p class="intro">Check the address, or ask the partner for their link.</p><p><a href="/">Back to Streetlist</a></p></div>`, "noindex");
+  return shell("There is no Operator page here", "Check the address, or ask the Operator for their link.",
+    `<div class="hero"><h1>There is no Operator page here</h1><p class="intro">Check the address, or ask the Operator for their link.</p><p><a href="/">Back to Streetlist</a></p></div>`, "noindex");
 }
 
-/** "2 months" style helpers are avoided on purpose: the page states amounts exactly as the partner set them. */
+/** "2 months" style helpers are avoided on purpose: the page states amounts exactly as the Operator set them. */
 function serviceRow(s: PartnerCard["services"][number]): string {
   const monthly = s.monthly === 0 ? "No monthly charge" : `${rupees(s.monthly)} a month`;
   const setup = s.setup === 0 ? "no set-up charge" : `${rupees(s.setup)} to set up`;
@@ -119,5 +119,5 @@ export function cardPage(card: PartnerCard, primary: string): string {
     + `<section><h2>This page</h2><div class="qr">${textQrSvg(address, { label: `QR code for ${address}`, border: 2 })}<p>Scan to open this page, or share the address:<br><b>${esc(`${primary}/@${card.handle}`)}</b></p></div>`
     + `<p class="note">See how Geometer checks the work these assistants do: <a href="https://geometer.dev/verify">geometer.dev/verify</a></p></section>`
     + `<footer>Streetlist pages are run on Geometer. Questions: <a href="mailto:hello@geometer.dev">hello@geometer.dev</a></footer>`;
-  return shell(`${card.name} (@${card.handle}) on Streetlist`, card.intro || `${card.name}, a local partner on Streetlist who looks after local services with their owners.`, body);
+  return shell(`${card.name} (@${card.handle}) on Streetlist`, card.intro || `${card.name}, a local Operator on Streetlist who looks after local services with their owners.`, body);
 }

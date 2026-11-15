@@ -140,7 +140,7 @@ export interface Dirs {
   licence: string;
   /**
    * The server's home/ folder (lib/home.ts): the installed Streetlist builds and the `current` link to the served one. Caddy mounts the FOLDER read-only at HOME_MOUNT
-   * (a bind-mounted symlink is resolved once, at start, so a switched build would not show). Optional: only the partner server's pages domain uses it.
+   * (a bind-mounted symlink is resolved once, at start, so a switched build would not show). Optional: only the Operator server's pages domain uses it.
    */
   home?: string;
 }

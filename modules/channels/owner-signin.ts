@@ -15,7 +15,7 @@
 // codes, not links: bundle/Deferred.md). Then nothing is sent, the record says so, and the page has already told the owner to send "open my app" instead.
 //
 // Item 11h (decisions 45 and 46): passkeys. The `http` object also carries the passkey ceremonies (owner-access.ts holds the state, webauthn.ts the checks): the
-// partner's setup QR or a recovery code (owner-grants.ts, the panel's file, read fresh on every call) to register one, and the passkey to sign in. The RP ID and
+// Operator's setup QR or a recovery code (owner-grants.ts, the panel's file, read fresh on every call) to register one, and the passkey to sign in. The RP ID and
 // the origin come from the pages file's ownerBase, the one address the owner's view has. A shop with no WhatsApp has no link to send, and the passkey is its way in.
 import type { Clock } from "../core/clock.ts";
 import type { Language } from "../language/languages.ts";
@@ -31,7 +31,7 @@ import { relyingParty } from "./webauthn.ts";
 /** The runtime's own record events for a session (never from the front: the front's channel token can send only the channel events). */
 export interface OwnerAccessEvent {
   kind: "owner_access"; id: string;
-  /** Item 11h: "passkey_added" when the owner registered a passkey (from the partner's QR or a recovery code); `how` says what signed them in. */
+  /** Item 11h: "passkey_added" when the owner registered a passkey (from the Operator's QR or a recovery code); `how` says what signed them in. */
   what: "signed_in" | "signed_out" | "passkey_added"; session: string; how?: "link" | "passkey" | "setup" | "recovery";
 }
 /** The page asks for a sign-in link. No number, no address: the runtime knows both. */
@@ -98,7 +98,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
     // counted first, as every request is, so a shop with no WhatsApp cannot have its record flooded by asking either
     const wa = whatsappOf(ctx0.messaging);
     if (!wa) {
-      ctx0.record.append({ conversation: owner.whatsapp, action: "owner_signin", outcome: "blocked", inputs: { via }, language: owner.language, notes: "This shop has no WhatsApp, so no sign-in link is sent: the owner signs in with their passkey (or the partner's setup QR or recovery card).", refs: { to: "owner", via } });
+      ctx0.record.append({ conversation: owner.whatsapp, action: "owner_signin", outcome: "blocked", inputs: { via }, language: owner.language, notes: "This shop has no WhatsApp, so no sign-in link is sent: the owner signs in with their passkey (or the Operator's setup QR or recovery card).", refs: { to: "owner", via } });
       return;
     }
     const ctx = { ...ctx0, messaging: wa };

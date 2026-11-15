@@ -1233,9 +1233,9 @@ export function createAgent(deps: AgentDeps): Agent {
     // "approve K7M2QX" answers the approvals relay, which reads the owner's messages too (the inbox gives it a copy). It is not for the agent:
     // no reply and no record, so the owner is not told "I didn't understand" about an answer that was understood elsewhere.
     if (isRelayReply(msg)) return;
-    // "move K7M2QX" is the owner agreeing to hand the shop to another partner or builder (modules/approvals/handover.ts). The record keeps the owner's number and the code's hash; the panel does the rest.
+    // "move K7M2QX" is the owner agreeing to hand the shop to another Operator or builder (modules/approvals/handover.ts). The record keeps the owner's number and the code's hash; the panel does the rest.
     const moving = parseHandoverReply(msg.text);
-    if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another partner or builder. The panel checks the code before it moves anything" }); return; }
+    if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another Operator or builder. The panel checks the code before it moves anything" }); return; }
     // B72: "terms" sends the shop terms to the owner and "I agree" records the agreement (modules/terms/owner.ts). Off unless the shop was handed a terms file.
     if (await handleOwnerTerms(msg, { setup: deps.terms?.(), shopName: settings.name, ownerNumber: owner, ownerLanguage: settings.owner.language, messaging, record, log: (action, outcome, inputs, more) => log(null, owner, action, outcome, inputs, more) })) return;
     // B72: "today" / "tomorrow" (or "bookings") asks for that day's bookings, from the shop's own saved list. A reply to the owner's own message, so no template is needed.
@@ -1448,7 +1448,7 @@ export function createAgent(deps: AgentDeps): Agent {
   /**
    * B72: remember which calendar the bookings were last written to. A shop that was on its own booking list and now has Google Calendar gets its coming bookings written
    * there once, looking first by booking id, so nothing is doubled and nothing is lost; the booking list stays the authority either way. A booking whose time Google already
-   * shows taken is not un-booked: the failure is recorded for the partner and the owner's list still shows it. Tried again on the next beat until every one is in.
+   * shows taken is not un-booked: the failure is recorded for the Operator and the owner's list still shows it. Tried again on the next beat until every one is in.
    */
   async function backfillCalendar(now: number): Promise<void> {
     if (ownList) { if (store.calendarState?.kind !== "own") store.calendarState = { kind: "own" }; return; }

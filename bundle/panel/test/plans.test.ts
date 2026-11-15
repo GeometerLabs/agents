@@ -1,5 +1,5 @@
 // The plan lists (B48). The list of 5 Nov was written as a proposal; the owner decided it the same day and the list of 7 Nov put it in force. On 9 Nov the owner made it two
-// price lists, partners and builders, and the list of 9 Nov is in force. A proposal must still load and be skipped by the running-cost line; each list in force carries the
+// price lists, Operators and builders, and the list of 9 Nov is in force. A proposal must still load and be skipped by the running-cost line; each list in force carries the
 // terms it was decided with; and fleet's copy of every list from 9 Nov on is this repo's file, byte for byte (prices/README.md).
 import { test } from "node:test";
 import assert from "node:assert/strict";

@@ -20,7 +20,7 @@ export type CommonAction =
   | "receive_message" | "receive_payment_event" | "send_message" | "ask_owner" | "opt_out" | "owner_decision" | "refund"
   // the one plain line sent back to a voice note ("please type"); it is a message, so a report counts it as one
   | "voice_note_reply"
-  // the agent moved to buttons and lists with no AI (the monthly allowance is used up, it was switched off from outside, or a model failed): the entry the builder or partner reads
+  // the agent moved to buttons and lists with no AI (the monthly allowance is used up, it was switched off from outside, or a model failed): the entry the builder or Operator reads
   | "ai_mode";
 export type Action = CommonAction | (string & {});
 

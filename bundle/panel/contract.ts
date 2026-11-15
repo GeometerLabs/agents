@@ -262,11 +262,11 @@ function cut(v: string, max: number): string {
 }
 
 /**
- * "Divya, Sri Sai Digital" when the account gave a company or business name, else "Divya, local partner" or "Divya, builder": the one way the owner is told who set the shop up, on
+ * "Divya, Sri Sai Digital" when the account gave a company or business name, else "Divya, local Operator" or "Divya, builder": the one way the owner is told who set the shop up, on
  * one line and cut to what the runtime accepts. When it is too long the company is shortened first, then the name; a company that cannot keep even one character is left out for the role.
  */
 export function preparedByOf(owner: Pick<OwnerFile, "accountName" | "role"> & { company?: string }): string {
-  const role = owner.role === "partner" ? "local partner" : "builder";
+  const role = owner.role === "partner" ? "local Operator" : "builder";
   let name = oneLine(owner.accountName);
   const company = companyOf(owner.company);
   if (company !== undefined && name !== "") {
@@ -315,7 +315,7 @@ export interface AssignmentFile {
 
 const person = (v: unknown): Person | undefined => (isObj(v) && text(v.accountId, 80) && text(v.accountName, 120) && (v.role === "builder" || v.role === "partner") ? { accountId: v.accountId as string, accountName: v.accountName as string, role: v.role } : undefined);
 
-// Checks the file that says which account set up (and may see) which shop; a partner's visibility rests on it, so a broken file shows nothing rather than everything.
+// Checks the file that says which account set up (and may see) which shop; an Operator's visibility rests on it, so a broken file shows nothing rather than everything.
 export function parseAssignmentFile(textOrNothing: string | undefined): AssignmentFile | undefined {
   if (textOrNothing === undefined) return undefined;
   try {

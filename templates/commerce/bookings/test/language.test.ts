@@ -33,7 +33,7 @@ function factsFor(language: Language, id: TemplateId): MessageFacts {
   // item 11h: a WhatsApp booking's own page link, which the UPI quote may carry (a sample: a real one is made for one message)
   const upi = id.startsWith("upi_") || id.startsWith("owner_upi_") || id === "booked_page_link" ? { upiId: "glowsalon@okicici", payee: "Glow Salon", upiCode: "P4XR9T", markedInr: 130, leftInr: 70, pageLink: "https://pages.example/glow-salon/b/Xy7Qm2LpR9vK4tW8nB3cD6fH1jZ5aE0s" } : {};
   // the licence's notices to the owner (B13): who to contact, and the bookings still to come at the final stop
-  const licence = id.startsWith("owner_licence_") ? { partner: "Divya, local partner", upcomingCount: 3 } : {};
+  const licence = id.startsWith("owner_licence_") ? { partner: "Divya, local Operator", upcomingCount: 3 } : {};
   return id === "menu"
     ? facts(language, { services: [{ name: HAIRCUT[language], priceInr: 450 }, { name: FACIAL[language], priceInr: 900 }] })
     : facts(language, { ...upi, ...licence });

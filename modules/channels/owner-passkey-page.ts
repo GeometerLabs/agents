@@ -1,7 +1,7 @@
 // The owner's passkey pages on the shop's page (plan item 11h, decisions 45 and 46), the front's side: what the owner sees and the one small script that talks to
 // the phone's passkey (navigator.credentials). Used by owner-session.ts, which hands these routes over under <base>/owner:
 //
-//   GET  <base>/owner/setup/<token>            the partner's setup QR opens this: "Set up sign-in on this phone" (the token's state from the runtime; nothing used)
+//   GET  <base>/owner/setup/<token>            the Operator's setup QR opens this: "Set up sign-in on this phone" (the token's state from the runtime; nothing used)
 //   POST <base>/owner/setup/<token>/options    JSON: the runtime's options for navigator.credentials.create (a fresh challenge for this QR)
 //   POST <base>/owner/setup/<token>/finish     JSON: the phone's answer, to the runtime, which keeps the passkey, uses the QR up and makes a session: the cookie
 //   GET  <base>/owner/recover, POST            the recovery card: type a code; a good one gives the same setup page, with the code instead of the QR's token
@@ -32,43 +32,43 @@ export interface PasskeyWords {
 }
 export const PASSKEY_WORDS: Record<Language, PasskeyWords> = {
   en: {
-    signIn: "Sign in with your fingerprint", note: "Uses your phone's fingerprint or screen lock. No password.", none: "First time on this phone? Ask your partner for the setup QR code.",
+    signIn: "Sign in with your fingerprint", note: "Uses your phone's fingerprint or screen lock. No password.", none: "First time on this phone? Ask your Operator for the setup QR code.",
     failed: "That didn't work. Try again, or use another way below.", wait: "Waiting for your phone…", recoverLink: "Lost your phone? Use your recovery card",
     introNoWhatsapp: "This page is for the shop's owner. You sign in with your phone's fingerprint or screen lock.",
     setupTitle: "Set up sign-in on this phone", setupIntro: (shop) => `From now on you sign in to ${shop} with your fingerprint or screen lock. No password, no WhatsApp needed.`,
     setupButton: "Set up with my fingerprint", done: "All set! Opening your shop…",
-    state: { used: "This code was used already. Ask your partner for a new one.", expired: "This code has run out. Ask your partner to show a new one.", unknown: "This code doesn't work. Ask your partner for a new one.", locked: "Too many tries today. Ask your partner for a new setup code." },
-    recoverTitle: "Use your recovery card", recoverIntro: "Type one of the codes on the card your partner gave you. Each code works once.", recoverField: "Code", recoverButton: "Next",
+    state: { used: "This code was used already. Ask your Operator for a new one.", expired: "This code has run out. Ask your Operator to show a new one.", unknown: "This code doesn't work. Ask your Operator for a new one.", locked: "Too many tries today. Ask your Operator for a new setup code." },
+    recoverTitle: "Use your recovery card", recoverIntro: "Type one of the codes on the card your Operator gave you. Each code works once.", recoverField: "Code", recoverButton: "Next",
     noScript: "This needs a phone browser with JavaScript on. Chrome works.",
   },
   hi: {
-    signIn: "फ़िंगरप्रिंट से साइन इन करें", note: "आपके फ़ोन का फ़िंगरप्रिंट या स्क्रीन लॉक काम आता है। कोई पासवर्ड नहीं।", none: "इस फ़ोन पर पहली बार? अपने पार्टनर से सेटअप QR कोड माँगिए।",
+    signIn: "फ़िंगरप्रिंट से साइन इन करें", note: "आपके फ़ोन का फ़िंगरप्रिंट या स्क्रीन लॉक काम आता है। कोई पासवर्ड नहीं।", none: "इस फ़ोन पर पहली बार? अपने ऑपरेटर से सेटअप QR कोड माँगिए।",
     failed: "यह नहीं हुआ। फिर कोशिश करें, या नीचे दूसरा तरीका अपनाएँ।", wait: "आपके फ़ोन का इंतज़ार…", recoverLink: "फ़ोन खो गया? अपना रिकवरी कार्ड इस्तेमाल करें",
     introNoWhatsapp: "यह पेज दुकान के मालिक के लिए है। आप अपने फ़ोन के फ़िंगरप्रिंट या स्क्रीन लॉक से साइन इन करते हैं।",
     setupTitle: "इस फ़ोन पर साइन-इन सेट करें", setupIntro: (shop) => `अब से आप ${shop} में अपने फ़िंगरप्रिंट या स्क्रीन लॉक से साइन इन करेंगे। न पासवर्ड, न WhatsApp की ज़रूरत।`,
     setupButton: "मेरे फ़िंगरप्रिंट से सेट करें", done: "हो गया! आपकी दुकान खुल रही है…",
-    state: { used: "यह कोड पहले ही इस्तेमाल हो चुका है। अपने पार्टनर से नया माँगिए।", expired: "इस कोड का समय ख़त्म हो गया। अपने पार्टनर से नया दिखाने को कहिए।", unknown: "यह कोड काम नहीं करता। अपने पार्टनर से नया माँगिए।", locked: "आज बहुत बार कोशिश हुई। अपने पार्टनर से नया सेटअप कोड माँगिए।" },
-    recoverTitle: "अपना रिकवरी कार्ड इस्तेमाल करें", recoverIntro: "पार्टनर के दिए कार्ड का कोई एक कोड लिखिए। हर कोड एक बार चलता है।", recoverField: "कोड", recoverButton: "आगे",
+    state: { used: "यह कोड पहले ही इस्तेमाल हो चुका है। अपने ऑपरेटर से नया माँगिए।", expired: "इस कोड का समय ख़त्म हो गया। अपने ऑपरेटर से नया दिखाने को कहिए।", unknown: "यह कोड काम नहीं करता। अपने ऑपरेटर से नया माँगिए।", locked: "आज बहुत बार कोशिश हुई। अपने ऑपरेटर से नया सेटअप कोड माँगिए।" },
+    recoverTitle: "अपना रिकवरी कार्ड इस्तेमाल करें", recoverIntro: "ऑपरेटर के दिए कार्ड का कोई एक कोड लिखिए। हर कोड एक बार चलता है।", recoverField: "कोड", recoverButton: "आगे",
     noScript: "इसके लिए JavaScript वाला फ़ोन ब्राउज़र चाहिए। Chrome चलता है।",
   },
   ml: {
-    signIn: "വിരലടയാളം കൊണ്ട് സൈൻ ഇൻ ചെയ്യൂ", note: "നിങ്ങളുടെ ഫോണിലെ വിരലടയാളമോ സ്ക്രീൻ ലോക്കോ ഉപയോഗിക്കുന്നു. പാസ്‌വേഡ് ഇല്ല.", none: "ഈ ഫോണിൽ ആദ്യമായാണോ? നിങ്ങളുടെ പങ്കാളിയോട് സെറ്റപ്പ് QR കോഡ് ചോദിക്കൂ.",
+    signIn: "വിരലടയാളം കൊണ്ട് സൈൻ ഇൻ ചെയ്യൂ", note: "നിങ്ങളുടെ ഫോണിലെ വിരലടയാളമോ സ്ക്രീൻ ലോക്കോ ഉപയോഗിക്കുന്നു. പാസ്‌വേഡ് ഇല്ല.", none: "ഈ ഫോണിൽ ആദ്യമായാണോ? നിങ്ങളുടെ ഓപ്പറേറ്ററോട് സെറ്റപ്പ് QR കോഡ് ചോദിക്കൂ.",
     failed: "അത് നടന്നില്ല. വീണ്ടും ശ്രമിക്കൂ, അല്ലെങ്കിൽ താഴെയുള്ള മറ്റൊരു വഴി ഉപയോഗിക്കൂ.", wait: "നിങ്ങളുടെ ഫോണിനായി കാത്തിരിക്കുന്നു…", recoverLink: "ഫോൺ നഷ്ടപ്പെട്ടോ? റിക്കവറി കാർഡ് ഉപയോഗിക്കൂ",
     introNoWhatsapp: "ഈ പേജ് കടയുടമയ്ക്കുള്ളതാണ്. ഫോണിലെ വിരലടയാളമോ സ്ക്രീൻ ലോക്കോ കൊണ്ട് സൈൻ ഇൻ ചെയ്യാം.",
     setupTitle: "ഈ ഫോണിൽ സൈൻ ഇൻ സജ്ജമാക്കൂ", setupIntro: (shop) => `ഇനി മുതൽ ${shop}-ൽ നിങ്ങളുടെ വിരലടയാളമോ സ്ക്രീൻ ലോക്കോ കൊണ്ട് സൈൻ ഇൻ ചെയ്യാം. പാസ്‌വേഡും WhatsApp-ഉം വേണ്ട.`,
     setupButton: "എന്റെ വിരലടയാളം കൊണ്ട് സജ്ജമാക്കൂ", done: "എല്ലാം ശരിയായി! നിങ്ങളുടെ കട തുറക്കുന്നു…",
-    state: { used: "ഈ കോഡ് ഇതിനകം ഉപയോഗിച്ചു. പങ്കാളിയോട് പുതിയത് ചോദിക്കൂ.", expired: "ഈ കോഡിന്റെ സമയം കഴിഞ്ഞു. പുതിയത് കാണിക്കാൻ പങ്കാളിയോട് പറയൂ.", unknown: "ഈ കോഡ് പ്രവർത്തിക്കുന്നില്ല. പങ്കാളിയോട് പുതിയത് ചോദിക്കൂ.", locked: "ഇന്ന് വളരെയധികം ശ്രമങ്ങൾ. പങ്കാളിയോട് പുതിയ സെറ്റപ്പ് കോഡ് ചോദിക്കൂ." },
-    recoverTitle: "റിക്കവറി കാർഡ് ഉപയോഗിക്കൂ", recoverIntro: "പങ്കാളി തന്ന കാർഡിലെ ഒരു കോഡ് ടൈപ്പ് ചെയ്യൂ. ഓരോ കോഡും ഒരിക്കൽ മാത്രം.", recoverField: "കോഡ്", recoverButton: "അടുത്തത്",
+    state: { used: "ഈ കോഡ് ഇതിനകം ഉപയോഗിച്ചു. ഓപ്പറേറ്ററോട് പുതിയത് ചോദിക്കൂ.", expired: "ഈ കോഡിന്റെ സമയം കഴിഞ്ഞു. പുതിയത് കാണിക്കാൻ ഓപ്പറേറ്ററോട് പറയൂ.", unknown: "ഈ കോഡ് പ്രവർത്തിക്കുന്നില്ല. ഓപ്പറേറ്ററോട് പുതിയത് ചോദിക്കൂ.", locked: "ഇന്ന് വളരെയധികം ശ്രമങ്ങൾ. ഓപ്പറേറ്ററോട് പുതിയ സെറ്റപ്പ് കോഡ് ചോദിക്കൂ." },
+    recoverTitle: "റിക്കവറി കാർഡ് ഉപയോഗിക്കൂ", recoverIntro: "ഓപ്പറേറ്റർ തന്ന കാർഡിലെ ഒരു കോഡ് ടൈപ്പ് ചെയ്യൂ. ഓരോ കോഡും ഒരിക്കൽ മാത്രം.", recoverField: "കോഡ്", recoverButton: "അടുത്തത്",
     noScript: "ഇതിന് JavaScript ഉള്ള ഫോൺ ബ്രൗസർ വേണം. Chrome മതി.",
   },
   kn: {
-    signIn: "ಬೆರಳಚ್ಚಿನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ", note: "ನಿಮ್ಮ ಫೋನ್‌ನ ಬೆರಳಚ್ಚು ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್ ಬಳಸುತ್ತದೆ. ಪಾಸ್‌ವರ್ಡ್ ಇಲ್ಲ.", none: "ಈ ಫೋನ್‌ನಲ್ಲಿ ಮೊದಲ ಬಾರಿಯೇ? ನಿಮ್ಮ ಪಾಲುದಾರರಿಂದ ಸೆಟಪ್ QR ಕೋಡ್ ಕೇಳಿ.",
+    signIn: "ಬೆರಳಚ್ಚಿನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ", note: "ನಿಮ್ಮ ಫೋನ್‌ನ ಬೆರಳಚ್ಚು ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್ ಬಳಸುತ್ತದೆ. ಪಾಸ್‌ವರ್ಡ್ ಇಲ್ಲ.", none: "ಈ ಫೋನ್‌ನಲ್ಲಿ ಮೊದಲ ಬಾರಿಯೇ? ನಿಮ್ಮ ಆಪರೇಟರ್ ಅವರಿಂದ ಸೆಟಪ್ QR ಕೋಡ್ ಕೇಳಿ.",
     failed: "ಅದು ಆಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ, ಅಥವಾ ಕೆಳಗಿನ ಇನ್ನೊಂದು ದಾರಿ ಬಳಸಿ.", wait: "ನಿಮ್ಮ ಫೋನ್‌ಗಾಗಿ ಕಾಯುತ್ತಿದೆ…", recoverLink: "ಫೋನ್ ಕಳೆದುಹೋಯಿತೇ? ರಿಕವರಿ ಕಾರ್ಡ್ ಬಳಸಿ",
     introNoWhatsapp: "ಈ ಪುಟ ಅಂಗಡಿಯ ಮಾಲೀಕರಿಗಾಗಿ. ನಿಮ್ಮ ಫೋನ್‌ನ ಬೆರಳಚ್ಚು ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತೀರಿ.",
     setupTitle: "ಈ ಫೋನ್‌ನಲ್ಲಿ ಸೈನ್ ಇನ್ ಹೊಂದಿಸಿ", setupIntro: (shop) => `ಇನ್ನು ಮುಂದೆ ${shop}ಗೆ ನಿಮ್ಮ ಬೆರಳಚ್ಚು ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತೀರಿ. ಪಾಸ್‌ವರ್ಡ್ ಬೇಡ, WhatsApp ಬೇಡ.`,
     setupButton: "ನನ್ನ ಬೆರಳಚ್ಚಿನಿಂದ ಹೊಂದಿಸಿ", done: "ಎಲ್ಲಾ ಸಿದ್ಧ! ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯುತ್ತಿದೆ…",
-    state: { used: "ಈ ಕೋಡ್ ಈಗಾಗಲೇ ಬಳಸಲಾಗಿದೆ. ಪಾಲುದಾರರಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ.", expired: "ಈ ಕೋಡ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಹೊಸದನ್ನು ತೋರಿಸಲು ಪಾಲುದಾರರಿಗೆ ಹೇಳಿ.", unknown: "ಈ ಕೋಡ್ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. ಪಾಲುದಾರರಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ.", locked: "ಇಂದು ತುಂಬಾ ಪ್ರಯತ್ನಗಳು. ಪಾಲುದಾರರಿಂದ ಹೊಸ ಸೆಟಪ್ ಕೋಡ್ ಕೇಳಿ." },
-    recoverTitle: "ರಿಕವರಿ ಕಾರ್ಡ್ ಬಳಸಿ", recoverIntro: "ಪಾಲುದಾರರು ಕೊಟ್ಟ ಕಾರ್ಡ್‌ನ ಒಂದು ಕೋಡ್ ಟೈಪ್ ಮಾಡಿ. ಪ್ರತಿ ಕೋಡ್ ಒಮ್ಮೆ ಮಾತ್ರ.", recoverField: "ಕೋಡ್", recoverButton: "ಮುಂದೆ",
+    state: { used: "ಈ ಕೋಡ್ ಈಗಾಗಲೇ ಬಳಸಲಾಗಿದೆ. ಆಪರೇಟರ್ ಅವರಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ.", expired: "ಈ ಕೋಡ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಹೊಸದನ್ನು ತೋರಿಸಲು ಆಪರೇಟರ್ ಅವರಿಗೆ ಹೇಳಿ.", unknown: "ಈ ಕೋಡ್ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. ಆಪರೇಟರ್ ಅವರಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ.", locked: "ಇಂದು ತುಂಬಾ ಪ್ರಯತ್ನಗಳು. ಆಪರೇಟರ್ ಅವರಿಂದ ಹೊಸ ಸೆಟಪ್ ಕೋಡ್ ಕೇಳಿ." },
+    recoverTitle: "ರಿಕವರಿ ಕಾರ್ಡ್ ಬಳಸಿ", recoverIntro: "ಆಪರೇಟರ್ ಅವರು ಕೊಟ್ಟ ಕಾರ್ಡ್‌ನ ಒಂದು ಕೋಡ್ ಟೈಪ್ ಮಾಡಿ. ಪ್ರತಿ ಕೋಡ್ ಒಮ್ಮೆ ಮಾತ್ರ.", recoverField: "ಕೋಡ್", recoverButton: "ಮುಂದೆ",
     noScript: "ಇದಕ್ಕೆ JavaScript ಇರುವ ಫೋನ್ ಬ್ರೌಸರ್ ಬೇಕು. Chrome ಆಗುತ್ತದೆ.",
   },
 };
@@ -223,7 +223,7 @@ export async function passkeyRoute(deps: PasskeyDeps, a: { req: IncomingMessage;
     return deps.sendJson(res, 403, { message: state ?? w.failed });
   };
 
-  // ---- the partner's setup QR ----
+  // ---- the Operator's setup QR ----
   const setup = /^\/setup\/([^/]+)(\/options|\/finish)?$/u.exec(sub);
   if (setup) {
     const token = setup[1];

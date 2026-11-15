@@ -1,4 +1,4 @@
-// `geometer home pack|install|rollback|status`: the Streetlist home on the partner server (lib/home.ts says how and why). The command line's side only: reading the pin,
+// `geometer home pack|install|rollback|status`: the Streetlist home on the Operator server (lib/home.ts says how and why). The command line's side only: reading the pin,
 // getting the file, saying in plain words what happened. Nothing here restarts Caddy or runs a deploy: Caddy reads home/current, which `install` and `rollback` move
 // by one atomic rename, and the Caddy settings do not depend on which build is installed.
 import { writeFileSync } from "node:fs";
@@ -25,7 +25,7 @@ export async function homeCommand(serverDir: string, sub: string | undefined, ar
     return 0;
   }
   const server = loadServer(serverDir);
-  if (!server.pages) throw new HomeRefused('This server has no pages domain ("pages" in geometer.json), so it serves no Streetlist home. Partner server only: geometer init ... --pages-domain streetlist.in.');
+  if (!server.pages) throw new HomeRefused('This server has no pages domain ("pages" in geometer.json), so it serves no Streetlist home. Operator server only: geometer init ... --pages-domain streetlist.in.');
   if (sub === "status" || sub === undefined) {
     const s = homeStatus(serverDir);
     io.log(`Pages domain: ${server.pages.domain}${server.pages.extraDomains.length ? ` (also ${server.pages.extraDomains.join(", ")}, redirected)` : ""}. Folder: ${homePaths(serverDir).root}`);

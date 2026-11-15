@@ -3,14 +3,14 @@
 //
 //   shops/<shop>/page.json            DESIRED, the panel writes it: {"schema": 1, "pages": "hub" | "own", "slug": "veena-salon", "whatsapp": "+919800000000", "phone", "map", "partner": {"name","phone"}}.
 //                                     "hub": a slug and a page id on the pages domain (fleet's registry), served through the front door. "own": the shop's
-//                                     views are at https://<this server>/s/<shop>/ only. Geometer's partner server is always "hub"; a builder's default is "own".
+//                                     views are at https://<this server>/s/<shop>/ only. Geometer's Operator server is always "hub"; a builder's default is "own".
 //   shops/<shop>/owner-sessions.json  the panel's "sign out every device": {"schema": 1, "endBefore": "<ISO>"}
 //   status/pages/<shop>.json          RESULT, the deployer writes it for the panel: the slug fleet confirmed, its address, the stable page address, or the problem
 //   pages.json (two copies)           what the shop's runtime (client folder) and the inbox's front (the shop's secrets folder) read on every request
 //                                     (modules/channels/pages-file.ts): the shop's addresses, where the owner's view is, the WhatsApp number to show, and (item 11i)
 //                                     the version of the character pictures the front serves (lib/character.ts)
 //   owner-sessions.json (one copy)    the panel's file, handed to the runtime's client folder (removed again when the panel's is gone)
-//   shops/<shop>/owner-grants.json    item 11h: the partner's setup QR, recovery card and "remove the owner's passkeys", as hashes only (modules/channels/owner-grants.ts);
+//   shops/<shop>/owner-grants.json    item 11h: the Operator's setup QR, recovery card and "remove the owner's passkeys", as hashes only (modules/channels/owner-grants.ts);
 //                                     handed to the runtime's client folder the same way, so a QR shown on the panel works within one pass (10 s)
 //
 // Fleet is asked only when something changed (a new slug, a choice of "own", a removed shop) or once a day (the claim is idempotent), and a refused claim is not
@@ -32,7 +32,7 @@ export const PAGE_SETTINGS_FILE = "page.json";
 /** Fleet's routes (monorepo apps/fleet/src/page-slugs-api.ts). */
 export const SLUGS_PATH = "/v1/page-slugs";
 const DAY_MS = 24 * 60 * 60_000;
-/** A refused claim (taken, cooling) is not asked again for this long, unless the partner picks another name. */
+/** A refused claim (taken, cooling) is not asked again for this long, unless the Operator picks another name. */
 export const CLAIM_RETRY_MS = 10 * 60_000;
 
 /** What the panel chose for a shop. */
@@ -40,7 +40,7 @@ export interface PageSettings {
   pages: "hub" | "own"; slug?: string; whatsapp?: string;
   /** Batch 5: the shop's own phone (any +country number, a landline too) and a map link, shown on every customer page. */
   phone?: string; map?: string;
-  /** Batch 3: the partner who looks after the shop: name and the number to call or WhatsApp, shown at the top of the owner's app and on every error page. */
+  /** Batch 3: the Operator who looks after the shop: name and the number to call or WhatsApp, shown at the top of the owner's app and on every error page. */
   partner?: { name: string; phone: string };
 }
 /** What came of it, for the panel. */
@@ -69,7 +69,7 @@ export const frontCharacterVersion = (dir: string, shop: string): string | undef
 /** The two copies of pages.json the deployer keeps: the runtime's client folder and the inbox's folder for the shop. */
 export const pagesCopies = (dir: string, shop: string): string[] => [join(serverPaths(dir).generated, "shops", shop, "client", PAGES_FILE), secretFile(dir, "inbox", shop, PAGES_FILE)];
 
-/** The shop's choice, read field by field. Without a file: "hub" on Geometer's partner server (panel mode hosted), "own" on a builder's server (decision 44). */
+/** The shop's choice, read field by field. Without a file: "hub" on Geometer's Operator server (panel mode hosted), "own" on a builder's server (decision 44). */
 export function readPageSettings(dir: string, shop: string, hosted: boolean): PageSettings {
   let f: Record<string, unknown> = {};
   try { const raw = JSON.parse(read(pageSettingsFile(dir, shop)) ?? "{}") as unknown; if (isObj(raw)) f = raw; } catch { f = {}; }
@@ -86,7 +86,7 @@ export function readPageSettings(dir: string, shop: string, hosted: boolean): Pa
 
 /** The panel writes the shop's choice (checked by the panel's form first). */
 export function writePageSettings(dir: string, shop: string, s: PageSettings): void {
-  writeAtomic(pageSettingsFile(dir, shop), `${stableJson({ schema: 1, pages: s.pages, ...(s.slug ? { slug: s.slug } : {}), ...(s.whatsapp ? { whatsapp: s.whatsapp } : {}), ...(s.phone ? { phone: s.phone } : {}), ...(s.map ? { map: s.map } : {}), ...(s.partner ? { partner: s.partner } : {}) })}\n`);
+  writeAtomic(pageSettingsFile(dir, shop), `${stableJson({ schema: 1, pages: s.pages, ...(s.slug ? { slug: s.slug } : {}), ...(s.whatsapp ? { whatsapp: s.whatsapp } : {}), ...(s.phone ? { phone: s.phone } : {}), ...(s.map ? { map: s.map } : {}), ...(s.partner ? { Operator: s.partner } : {}) })}\n`);
 }
 
 /** The panel's "sign out every device": every owner session made before now ends (the runtime refuses it from its next request, and records it once). */
@@ -246,7 +246,7 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
     // the panel's "sign out every device", to the runtime, which reads it on every request
     const endAll = read(join(serverPaths(dir).shop(shop), OWNER_SESSIONS_FILE));
     keep(join(serverPaths(dir).generated, "shops", shop, "client", OWNER_SESSIONS_FILE), endAll);
-    // item 11h: the partner's setup QR, recovery card and "remove the owner's passkeys" (hashes only), to the runtime, which reads it on every request
+    // item 11h: the Operator's setup QR, recovery card and "remove the owner's passkeys" (hashes only), to the runtime, which reads it on every request
     if (keep(join(serverPaths(dir).generated, "shops", shop, "client", OWNER_GRANTS_FILE), read(ownerGrantsFile(dir, shop)))) lines.push(`${shop}: the owner's sign-in codes are handed to the runtime.`);
   }
 

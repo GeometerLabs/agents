@@ -6,7 +6,7 @@
 // The rules it keeps:
 //  - money or a limit, and a message to a customer, come back as a CARD (cards.ts) and are done only on its tap; nothing changes before the tap;
 //  - closing a day is done at once, said in passing, and undoable for a day;
-//  - loosening a limit is not possible here (the partner's panel does it), and the owner is told so;
+//  - loosening a limit is not possible here (the Operator's panel does it), and the owner is told so;
 //  - every value comes from the record or from the words by rule (intents.ts); a model only picks the kind;
 //  - every word goes out through modules/messaging/say.ts with the outgoing check over the values it states (words.ts).
 import { isRelayReply } from "../approvals/buttons.ts";

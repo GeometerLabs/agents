@@ -75,13 +75,13 @@ export function selfHostedTarget(m: Pick<ModelConfig, "selfHosted">): { host: st
   return { host: `${u.hostname}:${u.port || (tls ? "443" : "80")}`, tls, path: `${u.pathname.replace(/\/+$/u, "")}/chat/completions` };
 }
 
-/** Every problem with geometer.json's `model.selfHosted`, in plain words. `hosted`: this is Geometer's partner server. */
+/** Every problem with geometer.json's `model.selfHosted`, in plain words. `hosted`: this is Geometer's Operator server. */
 function selfHostedProblems(model: Record<string, unknown>, hosted: boolean): string[] {
   const raw = model.selfHosted;
   if (raw === undefined) return [];
   const shape = '"model.selfHosted" must say {"url": "https://<your model server or gateway>/v1"}, with "rate": {"inputUsdPerMillion": <number>, "outputUsdPerMillion": <number>} if you want its calls priced.';
-  // Geometer's partner server: Geometer pays the AI there and caps it from its own price list (ai.cap), so a rate set on the server would decide the cap.
-  if (hosted) return ['"model.selfHosted" is for a builder\'s own server. On Geometer\'s partner server (panel mode "hosted") the model is Geometer\'s, and its AI cap is priced from Geometer\'s list.'];
+  // Geometer's Operator server: Geometer pays the AI there and caps it from its own price list (ai.cap), so a rate set on the server would decide the cap.
+  if (hosted) return ['"model.selfHosted" is for a builder\'s own server. On Geometer\'s Operator server (panel mode "hosted") the model is Geometer\'s, and its AI cap is priced from Geometer\'s list.'];
   if (!isObj(raw)) return [shape];
   const problems: string[] = [];
   const unknown = Object.keys(raw).filter((k) => k !== "url" && k !== "rate");
@@ -144,7 +144,7 @@ export interface ServerConfig {
   /** Item 11h: `push` is the push Guard's upstream (the server's push sender, by default), and `push-service` where the push sender sends every push instead of the real push services (a test server only). */
   upstreams?: Partial<Record<"razorpay" | "whatsapp" | "calendar" | "model" | "push" | "push-service", Upstream>>;
   limits: { razorpayLinksPerHour: number; whatsappMessagesPerHour: number; calendarEventsCreatedPerHour: number; calendarEventsDeletedPerDay: number };
-  /** The open panel container. "own": a builder's server (invitations from the panel); "hosted": Geometer's partner server (the data key is required). */
+  /** The open panel container. "own": a builder's server (invitations from the panel); "hosted": Geometer's Operator server (the data key is required). */
   panel: { enabled: boolean; mode: "own" | "hosted"; /** B72: the shop terms can be sent to the owner and agreed on WhatsApp (modules/terms). OFF unless true: it needs the owner's legal check before it replaces signed paper. */ termsOnWhatsapp: boolean };
   /**
    * Geometer's speech-to-text service for voice notes (plan 11d, services/speech). OFF unless `enabled`: no container, no network, no model folder is made. When on, the
@@ -163,7 +163,7 @@ export interface ServerConfig {
    */
   licence?: { keys: string[] };
   /**
-   * Item 11f: the pages domain this server answers for with the front door (bundle/services/door.ts), Geometer's partner server only. `domain` is the primary one
+   * Item 11f: the pages domain this server answers for with the front door (bundle/services/door.ts), Geometer's Operator server only. `domain` is the primary one
    * (new links use it, and fleet's `pages.domain` must name the same); `extraDomains` are answered by redirecting to it (an old or a country domain). Never
    * geometer.dev or under it: shop pages keep their own cookies and their own reputation (Explanation.md).
    */
@@ -179,7 +179,7 @@ function pagesProblems(raw: unknown, domain: string, hosted: boolean): string[] 
   const shape = '"pages" must say {"domain": "<the pages domain>", "extraDomains": ["<an older domain>", ...]} (small letters, no https://, no port, no path).';
   if (!isObj(raw)) return [shape];
   const problems: string[] = [];
-  if (!hosted) problems.push('"pages" is for Geometer\'s partner server (panel mode "hosted"). A builder\'s clients reach the pages domain through it, and a builder\'s own domain serves them at /s/<shop>/ already.');
+  if (!hosted) problems.push('"pages" is for Geometer\'s Operator server (panel mode "hosted"). A builder\'s clients reach the pages domain through it, and a builder\'s own domain serves them at /s/<shop>/ already.');
   const unknown = Object.keys(raw).filter((k) => k !== "domain" && k !== "extraDomains");
   if (unknown.length > 0) problems.push(`"pages" has ${unknown.map((k) => `"${k}"`).join(", ")}, which it does not know. ${shape}`);
   const all = [raw.domain, ...(Array.isArray(raw.extraDomains) ? raw.extraDomains : raw.extraDomains === undefined ? [] : [null])];
@@ -394,12 +394,12 @@ export interface ShopFolder {
    */
   fleetModel?: "off";
   /**
-   * Who the owner's monthly report says set the shop up: shops/<shop>/report.json if it has one, else the panel's attribution (owner.json: "Divya, local partner"), else
+   * Who the owner's monthly report says set the shop up: shops/<shop>/report.json if it has one, else the panel's attribution (owner.json: "Divya, local Operator"), else
    * DEFAULT_PREPARED_BY. `preparedBySource` says which, so a deploy can tell the builder when it had to fall back.
    */
   preparedBy: string;
   preparedBySource: "assignment.json" | "report.json" | "owner.json" | "default";
-  /** Fleet's last word on whether this shop's builder or partner has the Innovator badge (fleet/<shop>.json). False when fleet has said nothing readable. */
+  /** Fleet's last word on whether this shop's builder or Operator has the Innovator badge (fleet/<shop>.json). False when fleet has said nothing readable. */
   innovator: boolean;
   /** Plain-words problems reading the folder (missing file, bad JSON, bad settings). */
   problems: string[];
@@ -450,7 +450,7 @@ export function readShop(dir: string, name: string): ShopFolder {
   const optional = (file: string): string | undefined => { const path = join(folder, file); return existsSync(path) ? readFileSync(path, "utf8") : undefined; };
   const reportText = optional("report.json");
   const reportFile = parseReportFile(reportText);
-  if (reportText !== undefined && !reportFile) problems.push('report.json is not usable: it must be {"schema": 1, "preparedBy": "Divya, local partner"}, the name on one line, up to 120 characters.');
+  if (reportText !== undefined && !reportFile) problems.push('report.json is not usable: it must be {"schema": 1, "preparedBy": "Divya, local Operator"}, the name on one line, up to 120 characters.');
   const ownerFile = parseOwner(optional("owner.json"));
   const assignment = parseAssignmentFile(optional("assignment.json"));
   const by = resolvePreparedBy({ ...(reportFile ? { report: reportFile } : {}), ...(ownerFile ? { owner: ownerFile } : {}), ...(assignment ? { assignment } : {}) });

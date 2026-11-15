@@ -37,7 +37,7 @@ test("every shop the bundle deploys gets a report block: the name, the badge, Ca
     const p = planShop(serverConfig(), t.shop("glow-salon"));
     assert.deepEqual(p.problems, []);
     assert.deepEqual(p.notes, []);
-    assert.deepEqual(reportOf(p), { preparedBy: "Divya, local partner", innovator: true, pageBaseUrl: "https://shops.example.com/r/glow-salon", pagesDir: "/home/node/data/reports", source: "test-mode", tenant: "glow-salon" }, "tenant: the ledger the report is anchored to (B28) is the shop id");
+    assert.deepEqual(reportOf(p), { preparedBy: "Divya, local Operator", innovator: true, pageBaseUrl: "https://shops.example.com/r/glow-salon", pagesDir: "/home/node/data/reports", source: "test-mode", tenant: "glow-salon" }, "tenant: the ledger the report is anchored to (B28) is the shop id");
     const checked = validateRuntimeConfig(p.runtime, "/");
     assert.equal(checked.ok, true, "so the shop starts");
     assert.equal(checked.ok && checked.config.report?.innovator, true, "and the runtime reads the badge from it");
@@ -72,7 +72,7 @@ test("the address is the server's: its domain, and its port when it is not 443; 
   } finally { t.done(); }
 });
 
-test("who set the shop up: report.json first, then the panel's attribution (a partner or a builder), then a plain default that the deploy says it used", () => {
+test("who set the shop up: report.json first, then the panel's attribution (an Operator or a builder), then a plain default that the deploy says it used", () => {
   const t = tempServer(); try {
     const by = () => { const p = planShop(serverConfig(), t.shop("glow-salon")); return { name: reportOf(p)?.preparedBy, notes: p.notes, problems: p.problems }; };
     rmSync(join(t.paths.shop("glow-salon"), "owner.json")); // a shop made by `shop add`, not by the panel
@@ -82,11 +82,11 @@ test("who set the shop up: report.json first, then the panel's attribution (a pa
     assert.equal(none.notes.length, 1);
     assert.match(none.notes[0], /nobody is named as having set glow-salon up .*"your builder".*--prepared-by/u);
     putOwner(t.paths);
-    assert.deepEqual([by().name, by().notes], ["Divya, local partner", []]);
+    assert.deepEqual([by().name, by().notes], ["Divya, local Operator", []]);
     putOwner(t.paths, { role: "builder", accountName: "Arjun" });
     assert.equal(by().name, "Arjun, builder");
-    putReportFile(t.paths, { schema: 1, preparedBy: "Meera, Kochi partner" });
-    assert.deepEqual([by().name, by().notes], ["Meera, Kochi partner", []], "a person's word beats the attribution");
+    putReportFile(t.paths, { schema: 1, preparedBy: "Meera, Kochi Operator" });
+    assert.deepEqual([by().name, by().notes], ["Meera, Kochi Operator", []], "a person's word beats the attribution");
     putReportFile(t.paths, "{ nope");
     assert.match(by().problems[0].message, /report\.json is not usable/u, "a file that cannot be read is said, not skipped");
     putReportFile(t.paths, { schema: 1, preparedBy: "two\nlines" });
@@ -97,11 +97,11 @@ test("who set the shop up: report.json first, then the panel's attribution (a pa
 });
 
 test("the attribution is cut and put on one line so the runtime always accepts it", () => {
-  assert.equal(preparedByOf({ accountName: "Divya", role: "partner" }), "Divya, local partner");
+  assert.equal(preparedByOf({ accountName: "Divya", role: "partner" }), "Divya, local Operator");
   assert.equal(preparedByOf({ accountName: "  Divya \n\t Nair ", role: "builder" }), "Divya Nair, builder");
   const long = preparedByOf({ accountName: "D".repeat(300), role: "partner" });
   assert.equal(long.length, 120);
-  assert.ok(long.endsWith(", local partner"));
+  assert.ok(long.endsWith(", local Operator"));
   const t = tempServer(); try {
     putOwner(t.paths, { accountName: "Divya\nNair\t" + "N".repeat(100) });
     const p = planShop(serverConfig(), t.shop("glow-salon"));
@@ -190,7 +190,7 @@ test("a pinned version whose runtime-config check cannot be read gets neither op
 });
 
 test("withReport adds nothing to nothing, or to a config that was broken before the block was added", () => {
-  const facts: ReportFacts = { preparedBy: "Divya, local partner", innovator: false, pageBaseUrl: "https://shops.example.com/r/glow-salon", source: "test-mode" };
+  const facts: ReportFacts = { preparedBy: "Divya, local Operator", innovator: false, pageBaseUrl: "https://shops.example.com/r/glow-salon", source: "test-mode" };
   const notes: string[] = [];
   assert.deepEqual(withReport({}, facts, oldPathway, notes), {});
   const broken = { mode: "nonsense" };
@@ -229,7 +229,7 @@ test("the deployer writes the block into the generated runtime.json, redeploys t
     w.handIn("glow-salon");
     await deploy(w.ctx);
     const generated = () => JSON.parse(readFileSync(join(w.root, "generated", "shops", "glow-salon", "client", "runtime.json"), "utf8")) as { report: Record<string, unknown> };
-    assert.deepEqual(generated().report, { innovator: false, pageBaseUrl: "https://shops.example.com/r/glow-salon", pagesDir: "/home/node/data/reports", preparedBy: "Divya, local partner", source: "test-mode", tenant: "glow-salon" });
+    assert.deepEqual(generated().report, { innovator: false, pageBaseUrl: "https://shops.example.com/r/glow-salon", pagesDir: "/home/node/data/reports", preparedBy: "Divya, local Operator", source: "test-mode", tenant: "glow-salon" });
     const first = loadState(w.root).shops["glow-salon"].applied!.desiredHash;
     assert.deepEqual((await applyOnce(w.ctx)).skipped, ["glow-salon"], "nothing changed");
     putAnswer(w.paths, answer({ innovator: true }));
@@ -238,7 +238,7 @@ test("the deployer writes the block into the generated runtime.json, redeploys t
     assert.notEqual(loadState(w.root).shops["glow-salon"].applied!.desiredHash, first);
     putOwner(w.paths, { accountName: "Meera" });
     assert.deepEqual((await applyOnce(w.ctx)).applied, ["glow-salon"], "and so is a new name");
-    assert.equal(generated().report.preparedBy, "Meera, local partner");
+    assert.equal(generated().report.preparedBy, "Meera, local Operator");
     putAnswer(w.paths, answer({ innovator: false }));
     putOwner(w.paths);
     assert.deepEqual((await applyOnce(w.ctx)).applied, ["glow-salon"], "and flipping both back");
@@ -292,14 +292,14 @@ test("`shop add --prepared-by` writes report.json, which the shop's plan reads; 
     const plain = await quiet(() => main(["shop", "add", "glow-salon", "--from", EXAMPLE_CLIENT, "--server", w.root]));
     assert.equal(plain.result, 0, plain.err);
     assert.match(plain.out, /monthly report will say "your builder" set it up/u);
-    const named = await quiet(() => main(["shop", "add", "chai-point", "--from", EXAMPLE_CLIENT, "--prepared-by", "Divya, local partner", "--server", w.root]));
+    const named = await quiet(() => main(["shop", "add", "chai-point", "--from", EXAMPLE_CLIENT, "--prepared-by", "Divya, local Operator", "--server", w.root]));
     assert.equal(named.result, 0, named.err);
     assert.doesNotMatch(named.out, /your builder/u);
-    assert.deepEqual(JSON.parse(readFileSync(join(w.paths.shop("chai-point"), "report.json"), "utf8")), { schema: 1, preparedBy: "Divya, local partner" });
+    assert.deepEqual(JSON.parse(readFileSync(join(w.paths.shop("chai-point"), "report.json"), "utf8")), { schema: 1, preparedBy: "Divya, local Operator" });
     const bad = await quiet(() => main(["shop", "add", "tea-stall", "--from", EXAMPLE_CLIENT, "--prepared-by", "two\nlines", "--server", w.root]));
     assert.equal(bad.result, 1);
     assert.match(bad.err, /--prepared-by must be the name/u);
-    assert.deepEqual([readShop(w.root, "chai-point").preparedBy, readShop(w.root, "chai-point").preparedBySource], ["Divya, local partner", "report.json"]);
+    assert.deepEqual([readShop(w.root, "chai-point").preparedBy, readShop(w.root, "chai-point").preparedBySource], ["Divya, local Operator", "report.json"]);
     assert.deepEqual([readShop(w.root, "glow-salon").preparedBy, readShop(w.root, "glow-salon").preparedBySource], ["your builder", "default"]);
   } finally { w.done(); }
 });
@@ -307,7 +307,7 @@ test("`shop add --prepared-by` writes report.json, which the shop's plan reads; 
 // ---- item 17b: the owner's WhatsApp report signed with the server's paper key --------------------------------------------------------------------------------
 
 test("17b: the report block names the runtime's copy of the server's paper key when the deployer can hand it one; a version that does not take it is unsigned, and said", () => {
-  const facts: ReportFacts = { preparedBy: "Divya, local partner", innovator: false, pageBaseUrl: "https://shops.example.com/r/glow-salon", source: "live", tenant: "glow-salon", signingKeyFile: "/run/secrets/report_signing_key" };
+  const facts: ReportFacts = { preparedBy: "Divya, local Operator", innovator: false, pageBaseUrl: "https://shops.example.com/r/glow-salon", source: "live", tenant: "glow-salon", signingKeyFile: "/run/secrets/report_signing_key" };
   const notes: string[] = [];
   const signed = withReport({ mode: "fakes" }, facts, validateRuntimeConfig, notes);
   assert.equal((signed.report as Record<string, unknown>).signingKeyFile, "/run/secrets/report_signing_key");

@@ -26,7 +26,7 @@ const owner = glowSalon().owner.whatsapp;
 
 /** The sample month (38 bookings, ₹17,600 in deposits, 5 stopped), as a live report made by Divya. */
 function report(o: { innovator?: boolean; preparedBy?: string | null } = {}): MonthlyReport {
-  return { ...sampleReport(), source: "live", preparedBy: o.preparedBy === undefined ? "Divya, local partner" : o.preparedBy, ...(o.innovator ? { innovator: true as const } : {}) };
+  return { ...sampleReport(), source: "live", preparedBy: o.preparedBy === undefined ? "Divya, local Operator" : o.preparedBy, ...(o.innovator ? { innovator: true as const } : {}) };
 }
 const sealed = (o: Parameters<typeof report>[0] = {}) => seal(report(o));
 
@@ -46,7 +46,7 @@ test("the message is the owner's lines in every language: counts and amounts fro
     assert.ok(lines[5].startsWith(`*${s.label.notChecked}*: `) && !lines[5].slice(s.label.notChecked.length + 4).includes("*") && lines[5].endsWith(s.handRun), lines[5]);
     assert.equal(lines[6], `${s.page.code}: ${env.code} · ${s.fullReport}: ${LINK}`);
     assert.equal(lines[7], `${s.checkGenuine}: ${verifyLink(env)}`, "an unsigned report carries the #digest link (item 17b)");
-    assert.equal(lines[8], `${s.page.setUpBy}: Divya, local partner · Geometer`);
+    assert.equal(lines[8], `${s.page.setUpBy}: Divya, local Operator · Geometer`);
     assert.deepEqual(bannedIn(text, language), [], `${language}: a word no document may use`);
     assert.ok(!/found(ing|er)/iu.test(text));
   }
@@ -79,9 +79,9 @@ test("a report that names no one who set the agent up is not turned into a messa
 });
 
 test("a name typed with a line break or a run of spaces is one line in the message (Meta refuses a break in a value)", () => {
-  const { text, template } = monthlyReportMessage(sealed({ preparedBy: "Divya\n  Nair,\t   local partner" }), "en", { link: LINK });
+  const { text, template } = monthlyReportMessage(sealed({ preparedBy: "Divya\n  Nair,\t   local Operator" }), "en", { link: LINK });
   assert.equal(text.split("\n").length, 9);
-  assert.ok(text.includes("Set up by: Divya Nair, local partner · Geometer"));
+  assert.ok(text.includes("Set up by: Divya Nair, local Operator · Geometer"));
   for (const p of template.parameters!) assert.ok(!/[\n\t\r]| {2}/u.test(p), p);
 });
 
@@ -97,7 +97,7 @@ test("the template variables: one value for each {{n}}, in order, and filling th
       assert.deepEqual(slots, [...REPORT_SLOTS], `${t.name} (${language}) names every value once, in the order the values come`);
       assert.equal(fillBody(metaBody(t.bodies[language]), message.template.parameters!), message.text, `${t.name} (${language})`);
       assert.equal(message.template.text, message.text);
-      const values = reportValues(report(), language, { code: env.code, link: LINK, check: verifyLink(env), builder: "Divya, local partner" });
+      const values = reportValues(report(), language, { code: env.code, link: LINK, check: verifyLink(env), builder: "Divya, local Operator" });
       assert.deepEqual(reportParameters(t, language, values), slots.map((slot) => values[slot]));
     }
   }

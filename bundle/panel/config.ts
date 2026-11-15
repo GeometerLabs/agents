@@ -1,5 +1,5 @@
 // How the panel is started. One panel, two ways to run it: on a builder's own server ("own": builders may invite people from the panel, and the data
-// key is optional) and on Geometer's server for the partners' shops ("hosted": invitations come only from the server's owner on the command line,
+// key is optional) and on Geometer's server for the Operators' shops ("hosted": invitations come only from the server's owner on the command line,
 // and the panel refuses to start without its data key). Everything is read from the environment, so the bundle's compose file sets it.
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -36,7 +36,7 @@ export interface PanelConfig {
   /** How many hours an answer from the owner may wait before the to-do list says it has waited too long (PANEL_APPROVAL_WAIT_HOURS). Left out: 12. */
   approvalWaitHours?: number;
   /**
-   * Hosted mode: the geometer.dev account page, where a local partner opens this panel with their geometer.dev sign-in (fleet-signin.ts). The sign-in page links
+   * Hosted mode: the geometer.dev account page, where a local Operator opens this panel with their geometer.dev sign-in (fleet-signin.ts). The sign-in page links
    * to it. PANEL_ACCOUNT_URL; left out: https://geometer.dev/account/. Not used on a builder's own server.
    */
   accountUrl?: string;
@@ -82,7 +82,7 @@ export function readServerModel(serverDir: string): { wire: "openai" | "anthropi
   return undefined;
 }
 
-/** Item 11h: the pages domain geometer.json names (Geometer's partner server), read when the owner's setup QR is made, so it names the owner's view's real address. */
+/** Item 11h: the pages domain geometer.json names (Geometer's Operator server), read when the owner's setup QR is made, so it names the owner's view's real address. */
 export function readPagesDomain(serverDir: string): string | undefined {
   try {
     const g = JSON.parse(readFileSync(join(resolve(serverDir), "geometer.json"), "utf8")) as { pages?: { domain?: unknown } };
@@ -90,9 +90,9 @@ export function readPagesDomain(serverDir: string): string | undefined {
   } catch { return undefined; }
 }
 
-/** Where a partner opens this panel with their geometer.dev sign-in, unless PANEL_ACCOUNT_URL says otherwise. */
+/** Where an Operator opens this panel with their geometer.dev sign-in, unless PANEL_ACCOUNT_URL says otherwise. */
 export const DEFAULT_ACCOUNT_URL = "https://geometer.dev/account/";
-/** The geometer.dev account page a hosted panel sends partners to: https only, or the default. */
+/** The geometer.dev account page a hosted panel sends Operators to: https only, or the default. */
 function accountUrlOf(v: string | undefined): string {
   if (v === undefined || v === "") return DEFAULT_ACCOUNT_URL;
   if (!/^https:\/\/[^\s"<>]+$/u.test(v)) throw new ConfigError("PANEL_ACCOUNT_URL must be an https:// address, like https://geometer.dev/account/.");
@@ -104,7 +104,7 @@ export function configFromEnv(env: Record<string, string | undefined>): PanelCon
   const serverDir = env.PANEL_SERVER_DIR;
   if (!serverDir) throw new ConfigError("Say which server folder the panel serves: PANEL_SERVER_DIR=/path/to/server (the folder with geometer.json and shops/).");
   const mode = env.PANEL_MODE ?? "own";
-  if (mode !== "own" && mode !== "hosted") throw new ConfigError('PANEL_MODE must be "own" (a builder\'s server) or "hosted" (Geometer\'s partner server).');
+  if (mode !== "own" && mode !== "hosted") throw new ConfigError('PANEL_MODE must be "own" (a builder\'s server) or "hosted" (Geometer\'s Operator server).');
   const port = num(env.PANEL_PORT, "PANEL_PORT") ?? 8790;
   if (port > 65535) throw new ConfigError("PANEL_PORT must be 0 to 65535.");
   const publicUrl = env.PANEL_PUBLIC_URL?.replace(/\/+$/u, "");

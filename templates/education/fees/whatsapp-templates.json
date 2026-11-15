@@ -2755,7 +2755,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "सूचना: {{1}} की ऑनलाइन फ़ीस वसूली बंद हो गई है, क्योंकि {{2}} की सेवा समाप्त हो गई है। आपके विद्यार्थियों की बाकी फ़ीस: {{3}}। इसे किसी दूसरे स्थानीय पार्टनर के साथ जारी रखने के लिए hello@geometer.dev पर लिखें, Geometer आपको जोड़ देगा।",
+        "text": "सूचना: {{1}} की ऑनलाइन फ़ीस वसूली बंद हो गई है, क्योंकि {{2}} की सेवा समाप्त हो गई है। आपके विद्यार्थियों की बाकी फ़ीस: {{3}}। इसे किसी दूसरे स्थानीय ऑपरेटर के साथ जारी रखने के लिए hello@geometer.dev पर लिखें, Geometer आपको जोड़ देगा।",
         "example": {
           "body_text": [
             [
@@ -2776,7 +2776,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "Notice: online fee collection for {{1}} has stopped, because the service from {{2}} has ended. Fees from your students still open: {{3}}. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you.",
+        "text": "Notice: online fee collection for {{1}} has stopped, because the service from {{2}} has ended. Fees from your students still open: {{3}}. To keep it running with another local Operator, write to hello@geometer.dev and Geometer will connect you.",
         "example": {
           "body_text": [
             [
@@ -2818,7 +2818,7 @@
     "components": [
       {
         "type": "BODY",
-        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಸಂಗ್ರಹ ನಿಂತಿದೆ, ಏಕೆಂದರೆ {{2}} ನೀಡುತ್ತಿದ್ದ ಸೇವೆ ಮುಗಿದಿದೆ. ನಿಮ್ಮ ವಿದ್ಯಾರ್ಥಿಗಳ ಬಾಕಿ ಶುಲ್ಕಗಳು: {{3}}. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಇದನ್ನು ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ.",
+        "text": "ಸೂಚನೆ: {{1}}-ನ ಆನ್‌ಲೈನ್ ಶುಲ್ಕ ಸಂಗ್ರಹ ನಿಂತಿದೆ, ಏಕೆಂದರೆ {{2}} ನೀಡುತ್ತಿದ್ದ ಸೇವೆ ಮುಗಿದಿದೆ. ನಿಮ್ಮ ವಿದ್ಯಾರ್ಥಿಗಳ ಬಾಕಿ ಶುಲ್ಕಗಳು: {{3}}. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಆಪರೇಟರ್ ಜೊತೆ ಇದನ್ನು ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ.",
         "example": {
           "body_text": [
             [

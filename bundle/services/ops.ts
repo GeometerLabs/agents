@@ -273,7 +273,7 @@ export async function heartbeatTick(config: OpsConfig, key: string, state: Heart
 
 /**
  * Follow-up 2: every minute, the refresher's word on each Gupshup token renewal, written for the panel (fleet/_renewals.json). Runs with or without a fleet: the panel's
- * list is how the builder or partner hears of it on a server that sends no heartbeat.
+ * list is how the builder or Operator hears of it on a server that sends no heartbeat.
  */
 export async function watchRenewals(config: Pick<OpsConfig, "refresherUrl" | "fleetDir">, o: { fetchFn?: typeof fetch; once?: boolean } = {}): Promise<void> {
   if (!config.fleetDir) return;

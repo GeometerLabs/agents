@@ -28,7 +28,7 @@ function novemberReport(source: Source = "stand-in"): Promise<MonthlyReport> | M
   const make = async (s: Source) => {
     const { world } = await runBusyMonth();
     const { from, to } = monthRange("2026-11", settings.timezone);
-    return buildMonthlyReport({ settings, entries: world.record.entries(), bookings: [...world.store.bookings.values()], from, to, source: s, madeAt: at(12, 2, 10), preparedBy: "Divya, local partner" });
+    return buildMonthlyReport({ settings, entries: world.record.entries(), bookings: [...world.store.bookings.values()], from, to, source: s, madeAt: at(12, 2, 10), preparedBy: "Divya, local Operator" });
   };
   if (source !== "stand-in") return make(source);
   return (cached ??= make("stand-in"));
@@ -181,7 +181,7 @@ test("the page lists each limit, the digests, the entries' fingerprints and the 
   assert.ok(html.includes(report.policyDigest) && html.includes(report.record.digest));
   const some = report.record.rows[100];
   assert.ok(html.includes(some.digest.slice(7, 23)) && html.includes(`<code>${some.action}</code>`));
-  assert.ok(html.includes("<code>confirm_booking</code>") && html.includes("Set up by") && html.includes("Divya, local partner"));
+  assert.ok(html.includes("<code>confirm_booking</code>") && html.includes("Set up by") && html.includes("Divya, local Operator"));
   assert.ok(html.includes("https://geometer.dev/verify/#sha256:") && html.includes("<svg") && html.includes("Not signed"));
   assert.ok(!/\+91\d/.test(html), "no phone number on the page");
 });
@@ -224,6 +224,6 @@ test("every string table is complete in all four languages", () => {
 
 test("a line break typed into a shop's name cannot make a sixth line", () => {
   const odd = parseSettings({ ...JSON.parse(JSON.stringify(settings)), name: "Glow\nSalon\r\n\u2028Kochi" });
-  const r = buildMonthlyReport({ settings: odd, entries: [], bookings: [], ...monthRange("2026-11", settings.timezone), source: "live", madeAt: 0, preparedBy: "Divya\nlocal partner" });
+  const r = buildMonthlyReport({ settings: odd, entries: [], bookings: [], ...monthRange("2026-11", settings.timezone), source: "live", madeAt: 0, preparedBy: "Divya\nlocal Operator" });
   for (const language of LANGUAGES) assert.equal(ownerText(r, language).split(/\r?\n|\u2028/).length, 5);
 });

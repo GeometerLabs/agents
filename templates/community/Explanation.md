@@ -51,7 +51,7 @@ These templates handle other people's money or decisions, in places where trust 
 
 ## Where the numbers and names came from
 
-Every number in a statement or a table in these specs is made up. The laws named are the ones the partner rules and the owner's brief already point at (the Chit Funds Act 1982, the Prize Chits and Money Circulation Schemes (Banning) Act 1978, state money-lending acts, the Banning of Unregulated Deposit Schemes Act 2019, FCRA for foreign gifts to a committee, the DPDP Act 2023). Naming a law is a prompt to ask a lawyer, not a statement that the template meets it.
+Every number in a statement or a table in these specs is made up. The laws named are the ones the Operator rules and the owner's brief already point at (the Chit Funds Act 1982, the Prize Chits and Money Circulation Schemes (Banning) Act 1978, state money-lending acts, the Banning of Unregulated Deposit Schemes Act 2019, FCRA for foreign gifts to a committee, the DPDP Act 2023). Naming a law is a prompt to ask a lawyer, not a statement that the template meets it.
 
 ## What was checked
 

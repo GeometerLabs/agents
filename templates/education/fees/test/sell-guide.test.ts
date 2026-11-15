@@ -120,7 +120,7 @@ test("sell guide: the English headings are the ones SELL-GUIDE.md names", () => 
   const rows = [...spec.matchAll(/^\| (\d+) \| ([^|]+?) \| /gm)].map((m) => [Number(m[1]), m[2]] as const);
   assert.equal(rows.length, 11);
   // Two titles change, on purpose: "shop" in section 1 (this guide writes "centre" for the place a parent's child goes to), and section 4, which says
-  // "to the owner" because Fees has no demo on the owner's phone, only a walkthrough on the partner's laptop (the heading must not claim more than is true today).
+  // "to the owner" because Fees has no demo on the owner's phone, only a walkthrough on the Operator's laptop (the heading must not claim more than is true today).
   const titles = sections(guide("en")).map((s) => [s.n, s.title.replace("centre", "shop").replace("Show it to the owner", "Show it on the owner's own phone")] as const);
   assert.deepEqual(titles, rows);
 });
@@ -302,7 +302,7 @@ test("sell guide (14 Nov): the walkthrough is for a phone: the hosted demo's add
 test("sell guide: the hosted demo section 4 points to is built from this template's adapter", () => {
   assert.ok(existsSync(new URL("../demo/quick.ts", import.meta.url)), "the hosted demo at /demo/fees is built from this adapter (scripts/build-demo.ts)");
   const script = readFileSync(new URL("../scripts/hand-check.ts", import.meta.url), "utf8");
-  assert.ok(script.includes('settings: { type: "string" }'), "the guide tells the partner to run the hand check on the centre's own settings file");
+  assert.ok(script.includes('settings: { type: "string" }'), "the guide tells the Operator to run the hand check on the centre's own settings file");
   for (const l of LANGUAGES) {
     assert.ok(!section(l, 8).includes("hand-check.ts"), `${l}: the checks are the panel's button, not a command`);
     assert.ok(section(l, 8).includes("templates/education/fees/whatsapp-templates.json") && existsSync(new URL("../whatsapp-templates.json", import.meta.url)), `${l}: the list of messages Meta must approve exists`);

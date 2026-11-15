@@ -1,9 +1,9 @@
-// The shop terms agreed on WhatsApp, as the panel sees them (B72, 12 Nov 2026). The partner enters their name, number and the two prices; the deployer hands the runtime the
+// The shop terms agreed on WhatsApp, as the panel sees them (B72, 12 Nov 2026). The Operator enters their name, number and the two prices; the deployer hands the runtime the
 // file; the owner writes "terms" and then "I agree" to the shop's WhatsApp number; the agent records the agreement (modules/terms/owner.ts); this file finds that record entry in
-// the shop's exported record and builds the copy the partner downloads.
+// the shop's exported record and builds the copy the Operator downloads.
 //
 // OFF unless geometer.json says `"panel": {"termsOnWhatsapp": true}` (read again each time, so the switch needs no restart). It has not had the owner's legal check: the page says
-// signed paper is still what Geometer's sell guides tell a partner to use, and nothing here calls the copy legally sufficient.
+// signed paper is still what Geometer's sell guides tell an Operator to use, and nothing here calls the copy legally sufficient.
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { personLabel } from "../../modules/record/fingerprint.ts";
@@ -16,7 +16,7 @@ import type { MadePaper } from "./papers.ts";
 import type { Shops } from "./shops.ts";
 
 export type TermsState =
-  | { state: "details" }                                          // the partner has not entered their name, number and prices yet
+  | { state: "details" }                                          // the Operator has not entered their name, number and prices yet
   | { state: "ready"; text: string; digest: string }              // the terms are set; the owner has not been sent them, or has not agreed
   | { state: "sent"; text: string; digest: string; at: string }   // sent to the owner, no agreement yet
   | { state: "agreed"; text: string; digest: string; at: string } // the owner agreed to exactly these terms
@@ -44,7 +44,7 @@ export function createTerms(shops: Shops, serverDir: string) {
   const api = {
     on: (): boolean => termsOn(dir),
     file: (id: string): TermsFile | undefined => readShopTerms(dir, id),
-    /** Save what the partner entered, or say what is wrong. */
+    /** Save what the Operator entered, or say what is wrong. */
     save(id: string, form: Record<string, string | undefined>): { ok: true } | { ok: false } {
       const parsed = readTermsFile({ schema: 1, partnerName: (form.partnerName ?? "").trim(), partnerPhone: (form.partnerPhone ?? "").trim(), monthlyInr: /^\d{1,8}$/u.test(form.monthlyInr ?? "") ? Number(form.monthlyInr) : NaN, setupInr: /^\d{1,8}$/u.test(form.setupInr ?? "") ? Number(form.setupInr) : NaN });
       if (!parsed) return { ok: false };
@@ -65,7 +65,7 @@ export function createTerms(shops: Shops, serverDir: string) {
       const sent = [...mine].reverse().find((e) => e.action === TERMS_SENT_ACTION && e.refs?.termsDigest === digest);
       return sent ? { state: "sent", text, digest, at: sent.time } : { state: "ready", text, digest };
     },
-    /** The copy the partner keeps: the exact text the owner agreed to, then the facts of the agreement. Only when the agreement is to the current text. */
+    /** The copy the Operator keeps: the exact text the owner agreed to, then the facts of the agreement. Only when the agreement is to the current text. */
     copy(id: string): MadePaper | undefined {
       const s = api.status(id);
       const settings = shops.settings(id);
@@ -77,7 +77,7 @@ export function createTerms(shops: Shops, serverDir: string) {
         `Shop: ${settings.name}`, `Owner's number: ${settings.owner.whatsapp}`, `Agreed at: ${s.at}`,
         `Terms version: ${TERMS_VERSION}`, `Language: ${settings.owner.language}`, `Digest of the text above (sha256): ${s.digest}`,
         `WhatsApp message (fingerprint, as the shop's record keeps it): ${entry?.refs?.messageId ?? "not kept"}`,
-        "", "This copy shows what the shop's record holds. It has not had a legal check; signed paper is still what Geometer's sell guides tell a partner to use.",
+        "", "This copy shows what the shop's record holds. It has not had a legal check; signed paper is still what Geometer's sell guides tell an Operator to use.",
       ];
       return { file: `shop-terms-${id}-${TERMS_VERSION}.txt`, type: "text/plain; charset=utf-8", text: `${lines.join("\n")}\n` };
     },

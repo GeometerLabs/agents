@@ -1,6 +1,6 @@
 # Geometer speech service (voice notes in, text out)
 
-A small service that turns a customer's WhatsApp voice note into text. Hindi, Malayalam and Kannada go to AI4Bharat's IndicConformer; English goes to Whisper. It listens only: replies to customers are text (owner's decision, 12 Nov 2026), so there is no speech output. It runs on CPU, keeps nothing (audio is held for the length of one request and deleted), and ships with the open deploy bundle so a builder can run it too. Partners' shops use the one on Geometer's server.
+A small service that turns a customer's WhatsApp voice note into text. Hindi, Malayalam and Kannada go to AI4Bharat's IndicConformer; English goes to Whisper. It listens only: replies to customers are text (owner's decision, 12 Nov 2026), so there is no speech output. It runs on CPU, keeps nothing (audio is held for the length of one request and deleted), and ships with the open deploy bundle so a builder can run it too. Operators' shops use the one on Geometer's server.
 
 It is **off** unless the server turns it on, and it has no model files until the operator downloads them (see "What the operator does").
 

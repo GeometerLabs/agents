@@ -2,9 +2,9 @@
 
 Owner's decision, 3 November 2026: every template comes with a guide to pitching and selling it locally, in every language the template speaks, and **a template isn't ready to sell until its guide is.** The Bookings template is the first; copy its shape from [`commerce/bookings/sell/`](commerce/bookings/sell/).
 
-**The partner looks after it with the owner.** Every guide carries this centre (owner, 14 November 2026): a partner is the person who looks after a local service with its owner, who knows the shop, tunes its rules, fixes things when they go wrong, brings customers when the street asks, and is the person the owner calls. Setup is only the first step and is never the pitch; what lasts is care and judgment, not access to the tool. So each guide has a short "Your part" paragraph before the ladder, a line after the first three sentences that keeps setup out of the pitch, and a price section that names the monthly amount as the price of looking after it.
+**The Operator looks after it with the owner.** Every guide carries this centre (owner, 14 November 2026): an Operator is the person who looks after a local service with its owner, who knows the shop, tunes its rules, fixes things when they go wrong, brings customers when the street asks, and is the person the owner calls. Setup is only the first step and is never the pitch; what lasts is care and judgment, not access to the tool. So each guide has a short "Your part" paragraph before the ladder, a line after the first three sentences that keeps setup out of the pitch, and a price section that names the monthly amount as the price of looking after it.
 
-**Who reads what.** The guide is read by a young local partner (18 and over, maybe shy, pitching for the first time) and by a builder (a freelancer or micro-agency). The shop owner never reads the guide. The owner gets the one-page sheet.
+**Who reads what.** The guide is read by a young local Operator (18 and over, maybe shy, pitching for the first time) and by a builder (a freelancer or micro-agency). The shop owner never reads the guide. The owner gets the one-page sheet.
 
 ## What a template ships
 
@@ -12,9 +12,9 @@ Owner's decision, 3 November 2026: every template comes with a guide to pitching
 | --- | --- |
 | `sell/guide.en.src.md` | The master, in English. Every price is a placeholder from the repo's price list, `{{plan.basic.fee}}` or `{{guide.business.shop-min}}` (ids in `prices/README.md`), and `{{date}}` is the list's day |
 | `sell/guide.<lang>.src.md` | One per other language the template speaks (`LANGUAGES` in `src/settings.ts`), with the same placeholders |
-| `sell/guide.<lang>.md` | What partners read: made from the source and the price list in force by `node prices/render.ts`. Never edit it by hand; the test fails when it is behind its source or the list |
-| `sell/one-pager.<lang>.html` | A printable single page the partner leaves with the owner, one per language |
-| `sell/letter-of-intent.<lang>.md`, `sell/first-week.<lang>.md`, `sell/partner-group.<lang>.md` | The three pieces a partner copies (the last is the help line for now, until a WhatsApp group exists), as short pages the sites can link to. Their text is also in the guide (section 6, and the two `###` parts of section 2), word for word; a test compares them |
+| `sell/guide.<lang>.md` | What Operators read: made from the source and the price list in force by `node prices/render.ts`. Never edit it by hand; the test fails when it is behind its source or the list |
+| `sell/one-pager.<lang>.html` | A printable single page the Operator leaves with the owner, one per language |
+| `sell/letter-of-intent.<lang>.md`, `sell/first-week.<lang>.md`, `sell/partner-group.<lang>.md` | The three pieces an Operator copies (the last is the help line for now, until a WhatsApp group exists), as short pages the sites can link to. Their text is also in the guide (section 6, and the two `###` parts of section 2), word for word; a test compares them |
 | `test/sell-guide.test.ts` | Checks all of the above |
 
 ## The 11 sections, in this order
@@ -24,11 +24,11 @@ Number the headings `## 1.` to `## 11.` exactly. Short pages, one example each, 
 | # | Section | It must give the reader |
 | --- | --- | --- |
 | 1 | Is this shop a fit? | Good fits, bad fits, three quick questions to ask yourself |
-| 2 | Before you go | The partner ladder: practise with a friend, a friendly shop, a stranger. Run the demo twice. Know your price. |
+| 2 | Before you go | The Operator ladder: practise with a friend, a friendly shop, a stranger. Run the demo twice. Know your price. |
 | 3 | The first three sentences | Exactly three sentences for the door, in the owner's language |
 | 4 | Show it on the owner's own phone | The demo: the command, the Wi-Fi link, exactly what to tap, what the owner sees, what to say. Test money, nothing real sent. |
 | 5 | Questions owners ask | Honest answers to the questions below, in quotes |
-| 6 | Price | Who pays whom and how much; Geometer's plan and its price; the suggested shop price as "a starting point; you decide"; the setup fee the partner keeps; the price in the shop terms; pass-through fees; **any platform access the user pays for themselves** (for example X's paid API tiers for a social posting template) |
+| 6 | Price | Who pays whom and how much; Geometer's plan and its price; the suggested shop price as "a starting point; you decide"; the setup fee the Operator keeps; the price in the shop terms; pass-through fees; **any platform access the user pays for themselves** (for example X's paid API tiers for a social posting template) |
 | 7 | Never say | A table: phrase, why, what to say instead |
 | 8 | The setup visit | A checklist of everything done with the owner at the shop, ending with the go-live certificate read together and the shop terms signed. **Say what platform access the template needs and how long it takes** (for example Meta's app review before Instagram publishing), so nobody promises a start date the platform controls. |
 | 9 | The first month | A check in week 1, the first monthly report read together, one introduction asked for (never a reward), then the monthly rhythm of looking after it: read the report together, tune the rules when the owner asks, and a service still looked after at month 3 |
@@ -53,11 +53,11 @@ The test for variants is in `test/sell-guide.test.ts` ("variant guide: ..."). Th
 
 ## The one-pager
 
-A single page the partner leaves behind. Self-contained: inline CSS, no scripts, no external fonts, images or URLs, system fonts that render Devanagari, Malayalam and Kannada. Green and white, other colours only as accents. Readable on a phone, printable on A4. It has:
+A single page the Operator leaves behind. Self-contained: inline CSS, no scripts, no external fonts, images or URLs, system fonts that render Devanagari, Malayalam and Kannada. Green and white, other colours only as accents. Readable on a phone, printable on A4. It has:
 
 - **one example**, drawn as a step flow in HTML and CSS: a customer messages, books, pays, and the owner gets the monthly report;
 - **three things the owner can check**, in the owner's words, for example "It can't go below your prices.";
-- **a space** for the partner's name and phone number;
+- **a space** for the Operator's name and phone number;
 - **the not-checked line** in short form, dated, as in the report: what was not checked, and that checks were run by hand.
 
 ## Languages
@@ -65,7 +65,7 @@ A single page the partner leaves behind. Self-contained: inline CSS, no scripts,
 - English is the master. The other files are real translations in natural spoken register, with the loanwords locals use ("booking", "deposit", "link").
 - Amounts, numbers and the order of sections are identical in every language. Write every amount as `₹450` in Western digits, a range as `₹999 to ₹1,999`. A price Geometer charges or suggests is never typed: it is a placeholder, so a new price list changes every guide with one command (`node prices/render.ts`). The example shop's own prices (a ₹450 haircut) are typed.
 - Each translation starts with a banner: machine-written, needs native review, plus the date. On a one-page sheet it is an HTML comment, so the owner's printed copy stays clean. It stays until a native speaker has reviewed the file. Add a Deferred row for the review.
-- Anything the owner will tap, read or hear is quoted exactly as the product shows it, and the test checks it against the product's own strings. If a demo step is taught, the test drives the demo through it for every language, on each of the seven days a partner might start (a shop's closed day changes what the demo does).
+- Anything the owner will tap, read or hear is quoted exactly as the product shows it, and the test checks it against the product's own strings. If a demo step is taught, the test drives the demo through it for every language, on each of the seven days an Operator might start (a shop's closed day changes what the demo does).
 
 ## Rules every guide follows
 
@@ -82,17 +82,17 @@ Section 8 is cut to what the code needs from the shop today, and the same cut la
 - **One card, one list.** What to ask the shop for is written once, in `modules/ask-card/list.ts`, and made into `sell/ask-card.<lang>.md` beside the guide by `node modules/ask-card/render.ts` (`--check` writes nothing and fails if a card is behind). Section 2 or 8 of each guide points at the card in its own language. Do not copy the list into the guide: change the list, run the command.
 - **Cut rule.** A checklist item stays only if something in the code still needs it. A thing only some shops want is an optional item that says so (Google Calendar for Bookings: a shop with none runs on its own booking list; its own Razorpay account). Razorpay's fee is written only in the Razorpay-only item, never in the main pitch or the price table.
 - **The WhatsApp check** is the honest list: the Business app stays, a Facebook login with admin access to the shop's Meta business portfolio (the owner logs in themselves), a name that matches what the shop calls itself in public, verification that may be asked later, and the app opened at least every 2 weeks. Never promise "no documents" or "one visit".
-- **The shop terms stay signed on paper.** Agreeing them on WhatsApp is built but off, and waits for the owner's legal check. A guide may say that Geometer may later tell the partner so; it never says the WhatsApp agreement is enough.
+- **The shop terms stay signed on paper.** Agreeing them on WhatsApp is built but off, and waits for the owner's legal check. A guide may say that Geometer may later tell the Operator so; it never says the WhatsApp agreement is enough.
 
 ## Phone first (14 November 2026)
 
-A partner may have only a budget Android. So a guide never needs a laptop, Node, shared Wi-Fi or a printer.
+An Operator may have only a budget Android. So a guide never needs a laptop, Node, shared Wi-Fi or a printer.
 
-- **The demo is an address** the partner opens on any phone (decided 14 November 2026): the landing page is `https://streetlist.in/demo`, and each template has its own page, `https://streetlist.in/demo/bookings`, `/demo/orders` and `/demo/fees` (the equipment-rental variant uses bookings). A language is chosen by `?lang=hi`, `?lang=ml` or `?lang=kn` (English is the default; `?lang=en` also works). The guide's section 4 gives the template's address and the address for each language, says it runs on test money with nothing real sent, and that it starts fresh each time it is opened. The made-up example pages at `https://streetlist.in/examples/` are optional pictures of a shop's page, not the demo.
+- **The demo is an address** the Operator opens on any phone (decided 14 November 2026): the landing page is `https://streetlist.in/demo`, and each template has its own page, `https://streetlist.in/demo/bookings`, `/demo/orders` and `/demo/fees` (the equipment-rental variant uses bookings). A language is chosen by `?lang=hi`, `?lang=ml` or `?lang=kn` (English is the default; `?lang=en` also works). The guide's section 4 gives the template's address and the address for each language, says it runs on test money with nothing real sent, and that it starts fresh each time it is opened. The made-up example pages at `https://streetlist.in/examples/` are optional pictures of a shop's page, not the demo.
 - **The sheet and the card go on WhatsApp.** Paper is an option. The shop terms stay signed on paper until the legal check of agreeing them on WhatsApp is done.
 - **WhatsApp is set up through the shop's own Gupshup account** (the panel's "Gupshup (the shop's own account)" choice): the guide's setup item follows the panel's own steps and quotes its labels, in each language as the panel shows them. The shop's Gupshup wallet pays WhatsApp's charges, never Geometer or the partner.
-- **Three pieces in every guide:** the help line (write to hello@geometer.dev, 10:00 to 19:00, answered the same day; the file is still called `partner-group.<lang>.md`), "Your first week", and the letter-of-intent message. Each is also a standalone file. The partners' WhatsApp group does not exist yet (owner, 14 November 2026: "keep for later"): when the owner creates it, its invite link comes later and the group is added to the guides and to this file in the same change.
-- **Pilot fee.** "All free until 31 March 2027" (owner, 14 November 2026, plan decision 53): Geometer's plan fee is free for every pilot shop until 31 March 2027, for partners who join before 31 January 2027, up to 3 shops per partner and 50 shops in all. After 31 March 2027 the list price applies. It is not in the price list, so it is written by hand in section 6 (and in the pilot line the guides carry); move it into the list when it has an id.
+- **Three pieces in every guide:** the help line (write to hello@geometer.dev, 10:00 to 19:00, answered the same day; the file is still called `partner-group.<lang>.md`), "Your first week", and the letter-of-intent message. Each is also a standalone file. The Operators' WhatsApp group does not exist yet (owner, 14 November 2026: "keep for later"): when the owner creates it, its invite link comes later and the group is added to the guides and to this file in the same change.
+- **Pilot fee.** "All free until 31 March 2027" (owner, 14 November 2026, plan decision 53): Geometer's plan fee is free for every pilot shop until 31 March 2027, for Operators who join before 31 January 2027, up to 3 shops per Operator and 50 shops in all. After 31 March 2027 the list price applies. It is not in the price list, so it is written by hand in section 6 (and in the pilot line the guides carry); move it into the list when it has an id.
 
 ## Keeping it true
 

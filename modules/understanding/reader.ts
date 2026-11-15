@@ -23,7 +23,7 @@ export interface ReaderDeps<I extends IntentBase, C, O extends ParseOptionsBase>
   store: AiStore;
   clock: Clock;
   timeZone: string;
-  /** The record entry the builder or partner reads when the agent moves to buttons. */
+  /** The record entry the builder or Operator reads when the agent moves to buttons. */
   log(action: Action, outcome: Outcome, inputs: unknown, more: { notes: string; refs: Record<string, string> }): void;
   /** Tell the owner, once, why. The ids are the template's three notices. */
   tellOwner(notice: "allowance" | "override" | "fault"): Promise<unknown>;
@@ -102,7 +102,7 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
   }
 
   /**
-   * The AI cap: one line in the record, once a month, when the language model is first left out. Nobody else is told from here: fleet tells the partner (its `ai_cap`
+   * The AI cap: one line in the record, once a month, when the language model is first left out. Nobody else is told from here: fleet tells the Operator (its `ai_cap`
    * alert and warning), the owner's service does not change in a way they would notice, and a customer whose message the rules cannot read gets the menu.
    */
   function announceModelOff(): void {
@@ -111,7 +111,7 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
     if (state.told.modelOff === state.month) return;
     state.told.modelOff = state.month;
     deps.log("ai_mode", "confirmed", { reason: "ai_cap", month: state.month }, {
-      notes: `This shop has used its AI allowance for the month (${state.month}): its model spend reached the plan's cap, so the shop's config says model: off. The language model (step 2) is left out until fleet turns it back on, on the 1st. The rules and the decision model (step 1) keep answering; a message they cannot read gets the menu, as in button mode. Every limit still holds. Fleet tells the partner; no customer or owner is told.`,
+      notes: `This shop has used its AI allowance for the month (${state.month}): its model spend reached the plan's cap, so the shop's config says model: off. The language model (step 2) is left out until fleet turns it back on, on the 1st. The rules and the decision model (step 1) keep answering; a message they cannot read gets the menu, as in button mode. Every limit still holds. Fleet tells the Operator; no customer or owner is told.`,
       refs: { mode: "model_off", reason: "ai_cap", month: state.month },
     });
   }
@@ -120,7 +120,7 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
   const mode = () => modeOf(store, policy, clock.now(), timeZone);
 
   /**
-   * Tell the owner, once, that the agent now answers with buttons and lists, and why; and put a line in the record that the builder or partner reads
+   * Tell the owner, once, that the agent now answers with buttons and lists, and why; and put a line in the record that the builder or Operator reads
    * (the runtime's status and the heartbeat carry it on). Once means once per month for the allowance, once per switch for the outside switch, and once a day for a
    * failing model. Customers are never told: they simply get buttons.
    */
@@ -139,7 +139,7 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
     const notes = reason === "allowance"
       ? `This shop's monthly AI allowance is used up (${spent}). The agent reads with the rules only and answers with buttons and lists until the month ends. Every limit still holds. The owner has been told once.`
       : reason === "override"
-        ? "The shop's config says ai: buttons (set from outside, for example when the plan or the partner's balance has no AI left). The agent reads with the rules only and answers with buttons and lists until that is changed. Every limit still holds. The owner has been told once."
+        ? "The shop's config says ai: buttons (set from outside, for example when the plan or the Operator's balance has no AI left). The agent reads with the rules only and answers with buttons and lists until that is changed. Every limit still holds. The owner has been told once."
         : `A model step failed, so for ${policy.pauseMinutes ?? DEFAULT_PAUSE_MINUTES} minutes the agent reads with the rules only and answers with buttons and lists, then tries the AI again. Every limit still holds. The owner is told once a day.`;
     deps.log("ai_mode", "confirmed", { reason, month: state.month }, { notes, refs: { mode: "buttons", reason, month: state.month } });
     await deps.tellOwner(reason);

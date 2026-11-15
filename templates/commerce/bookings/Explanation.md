@@ -38,9 +38,9 @@ Everything here runs against in-memory fakes. That is a stand-in for real servic
 - **A mutation check by hand.** To see whether the situations can fail, 17 deliberate bugs were put into a scratch copy, one at a time (trust the calendar's reply, no inbound de-duplication, count every payment as a deposit, no look before creating a link, refunds always allowed, late cancellations refunded automatically, weekday phrases not confirmed, no double-booking check, hours not checked, "booked" without both confirmations, outgoing check switched off, and others). At first 14 were caught. Three were not: removing only the "I can't go lower" sentence (the quote still states ₹450; a check on that sentence was added), letting every message state every service's price (invisible to the situations because the templates never do; a unit test on the facts was added), and switching off only the `opt-out` gate (the `no-message-after-stop` gate still holds the reminders, which is the point of having two; a test that the record shows the opt-out decision was added). A review also found that a reschedule confirmed with "yes" skipped the slot rules; it is fixed, with a situation for it. One test regex had mistaken "is free" (the slot is available) for "free of charge". Checks that read the agent's own record (rather than the fakes) live in `test/record-decisions.test.ts`, apart from the situations.
 - **A type check that is not part of the folder.** Node strips types without checking them. The code was checked once with TypeScript 5.9 borrowed read-only from another project's `node_modules` (`strict`, `erasableSyntaxOnly`, `verbatimModuleSyntax`, `noUnusedLocals`), with no errors. No tsconfig is committed, because it would need `@types/node` installed, and this folder has no dependencies.
 
-## Demo mode (a partner shows it on the owner's phone)
+## Demo mode (an Operator shows it on the owner's phone)
 
-Added 3 November 2026 in `demo/`. The product doc's partner journey asks for "a live demo on the shopkeeper's own phone" that passes the mom test. This is that, locally: no hosting, no network out, no dependencies, nothing in `src/` changed.
+Added 3 November 2026 in `demo/`. The product doc's Operator journey asks for "a live demo on the shopkeeper's own phone" that passes the mom test. This is that, locally: no hosting, no network out, no dependencies, nothing in `src/` changed.
 
 **1. The real agent, not a mock.** `createWorld` gives the agent, the stand-ins and a fake clock; the demo only adds a chat transcript (the fakes keep what was sent out, not what came in), the meaning of the buttons, and one-at-a-time handling. Because the agent has no locking (Deferred.md), every session runs its taps through a promise queue: three quick taps on "Pay" make one payment.
 
@@ -50,7 +50,7 @@ Added 3 November 2026 in `demo/`. The product doc's partner journey asks for "a 
 
 **4. The fake clock starts on today's real date at 10:00 shop time**, so "tomorrow" on the owner's phone is the real tomorrow and every suggestion is still ahead whatever the hour (starting at the real time of day would put an evening demo's "tomorrow 6pm" inside the 24-hour window, and "1 day passes" would then run past the booking instead of cancelling inside the window). Tests pin it to Tue 3 Nov 2026, 10:00. The suggestions under the chat are written from the shop's own first service, prices and opening days, and move to the next open day when tomorrow is closed.
 
-**5. One shop per server.** The shop form replaces the shop for every device on this server (other open pages start again on their next request), so a partner can set it up on the laptop and open it on the phone. A failed form changes nothing. An untouched service keeps all its names, and untouched hours keep each day's own hours; a renamed service uses the new name in every language. The refund limit is raised to at least the deposit.
+**5. One shop per server.** The shop form replaces the shop for every device on this server (other open pages start again on their next request), so an Operator can set it up on the laptop and open it on the phone. A failed form changes nothing. An untouched service keeps all its names, and untouched hours keep each day's own hours; a renamed service uses the new name in every language. The refund limit is raised to at least the deposit.
 
 **6. Safety, because a laptop on Wi-Fi is a server.** It listens on the machine's private addresses and 127.0.0.1, never 0.0.0.0, and refuses any client that is not on a private network (even one a router forwards in). The Host header must be an address or a .local name (no DNS rebinding), a POST must be JSON and its Origin must match the page, the cookie is HttpOnly and SameSite=Strict and never chosen by the client, and bodies, messages, sessions and requests per device are capped. The page is served with a Content-Security-Policy that allows only its own nonced script and style; every piece of typed text reaches the page through `textContent`. The deposit link is shown as text, never a tappable link, because the fake mints real-looking `rzp.io` addresses. A test runs the page's real script against the real server with a stand-in for the browser's page and checks that no markup is ever made from typed text.
 
@@ -63,7 +63,7 @@ Added 3 November 2026 in `demo/`. The product doc's partner journey asks for "a 
 
 ## The demo in the browser (B42, added 4 November 2026)
 
-"Build your first agent, in the browser": the partner demo above, running entirely in a visitor's page, with no server and no sign-in, for the website's `/start` page. It is also the base for a later "Try to break it" game. `mountDemo(element, options?)` draws three steps inside any element (the shop form, the chat with test money, what was checked); `scripts/build-web-demo.ts` builds it (`npm run build:web-demo`, output in `demo/web/dist/`, which git ignores). Nothing in `src/` changed, and no dependency was added.
+"Build your first agent, in the browser": the Operator demo above, running entirely in a visitor's page, with no server and no sign-in, for the website's `/start` page. It is also the base for a later "Try to break it" game. `mountDemo(element, options?)` draws three steps inside any element (the shop form, the chat with test money, what was checked); `scripts/build-web-demo.ts` builds it (`npm run build:web-demo`, output in `demo/web/dist/`, which git ignores). Nothing in `src/` changed, and no dependency was added.
 
 **1. The same code, not a copy.** The build reads the same `.ts` files that run the live agent and the local-network demo, from where they are, and for each one (a) takes the types out with Node's own `module.stripTypeScriptTypes` in `strip` mode, which keeps every other character, and (b) changes only the names in `import ... from "x"`: `.ts` becomes `.js`, and `node:fs` and `node:crypto` point at two small stand-ins in `demo/web/shims/`. A test strips the types from each source file itself and checks that the built file equals it, apart from those names, for every file under `src/` and `demo/`. The build starts from the entry (`demo/web/mount.ts`) and follows imports, so the server files (`app.ts`, `page.ts`, `server.ts`) are not in it. Any other `node:` module, a package, or a computed `import()` stops the build.
 
@@ -332,8 +332,8 @@ lets the slot go and answers "paused, contact the shop", as for its own check, a
   `refs.licence`; a UPI shop has none to close). Then a gate in `say` holds back every message, and the record says each one. Payments already made are still recorded.
 - **Back in order**: new bookings are taken at once; nothing from the wind-down is done by itself (the customer asks again). One `licence` record line marks each change.
 - **The owner's notice** (`server/licence.ts`, sent by `modules/licence/notice.ts` from the runtime core): `owner_licence_paused` at the wind-down,
-  `owner_licence_stopped` at the final stop (online booking has stopped because the partner's service has ended, the bookings after today still in the calendar, and that the owner can write to hello@geometer.dev to be connected with another local partner; no copy or export is offered to the owner), once for each
-  `paid_through`, as the utility templates `owner_service_paused` and `owner_service_stopped` when the owner's window is closed. They name the partner and never
+  `owner_licence_stopped` at the final stop (online booking has stopped because the Operator's service has ended, the bookings after today still in the calendar, and that the owner can write to hello@geometer.dev to be connected with another local Operator; no copy or export is offered to the owner), once for each
+  `paid_through`, as the utility templates `owner_service_paused` and `owner_service_stopped` when the owner's window is closed. They name the Operator and never
   mention money. Hindi, Malayalam and Kannada are machine-written and wait for a native speaker's review (REVIEW-ml.md, REVIEW-kn.md).
 
 ## Choices to review
@@ -661,10 +661,10 @@ The shop is in **button mode** when any of these holds, checked in this order. I
 | `allowance` | `decision` + `model` messages this month reach `allowance.messages`, or their cost reaches `allowance.costInr` | The owner, once a month. Record: `ai_mode`, `reason: allowance` |
 | `fault` | A step was asked and could not answer (an error, a timeout, an answer it could not use) and **no other step could**, so the rules had to read the message. A decision model that fails while the language model answers is not a fault: it is `failed: decision` in that message's record, and after a few of those it is paused (below) | The owner, at most once a day. Button mode lasts `pauseMinutes`, then the next message tries the AI again. Record: `ai_mode`, `reason: fault` |
 
-- **Told once.** Three new owner notices, in four languages, each a WhatsApp template (`owner_ai_allowance_used`, `owner_ai_switched_off`, `owner_ai_not_answering`; `whatsapp-templates.json` is rebuilt). The builder or partner has no WhatsApp number in the settings, so they are told by the record (`ai_mode`, with the reason and the month, in plain words in `notes`), by `status().ai` and by a start-up/runtime log line, all of which the heartbeat can carry. The "already told" flags are kept with the store, so a restart or a repeated step does not tell them again.
+- **Told once.** Three new owner notices, in four languages, each a WhatsApp template (`owner_ai_allowance_used`, `owner_ai_switched_off`, `owner_ai_not_answering`; `whatsapp-templates.json` is rebuilt). The builder or Operator has no WhatsApp number in the settings, so they are told by the record (`ai_mode`, with the reason and the month, in plain words in `notes`), by `status().ai` and by a start-up/runtime log line, all of which the heartbeat can carry. The "already told" flags are kept with the store, so a restart or a repeated step does not tell them again.
 - **No customer is ever left without an answer.** A message the rules cannot read gets the list of the shop's services; a time the shop cannot give gets a list of other free times; a model that fails changes nothing about the reply except that the rules read it. A new test and three hand-check situations hold this (below).
 - **A tapped message never asks a model, whatever the mode.** The router is not even called.
-- **The month's AI cap is not button mode (9 Nov).** `runtime.json` says `"model": "off"` (the bundle writes it from fleet's answer once the shop's model spend reaches the plan's cap, price list `ai.cap`): the reader passes `skipSteps: ["model"]`, so the router leaves the language model out and records `skipped: model`. The rules and the decision model keep answering; a message neither can read is the rules' reading, so it gets the list of services, which is what button mode sends for that turn. The shop stays in AI mode, the owner is not told (fleet tells the partner), and the record has one `ai_mode` line a month (`mode: model_off`, `reason: ai_cap`). A decision model that is paused is still asked under the cap, because nothing after it could read the message. The same code serves Fees and Orders.
+- **The month's AI cap is not button mode (9 Nov).** `runtime.json` says `"model": "off"` (the bundle writes it from fleet's answer once the shop's model spend reaches the plan's cap, price list `ai.cap`): the reader passes `skipSteps: ["model"]`, so the router leaves the language model out and records `skipped: model`. The rules and the decision model keep answering; a message neither can read is the rules' reading, so it gets the list of services, which is what button mode sends for that turn. The shop stays in AI mode, the owner is not told (fleet tells the Operator), and the record has one `ai_mode` line a month (`mode: model_off`, `reason: ai_cap`). A decision model that is paused is still asked under the cap, because nothing after it could read the message. The same code serves Fees and Orders.
 
 ### A pause on a decision model that keeps failing (5 Nov)
 
@@ -720,7 +720,7 @@ New: `understanding.test.ts` (client, rate table, redaction, router), `buttons.t
 
 ## The monthly report on WhatsApp, and the Innovator badge (B54, B56; added 5 November 2026)
 
-On the first morning of the month the owner gets last month's report on WhatsApp, from the shop's own record, in the owner's language, with the name of the builder or partner who set the agent up, and the Innovator badge when that person has it. It goes once, even if the process restarts. Everything below is in `report/` (`whatsapp.ts`, `monthly-job.ts`) except the wiring in `server/`.
+On the first morning of the month the owner gets last month's report on WhatsApp, from the shop's own record, in the owner's language, with the name of the builder or Operator who set the agent up, and the Innovator badge when that person has it. It goes once, even if the process restarts. Everything below is in `report/` (`whatsapp.ts`, `monthly-job.ts`) except the wiring in `server/`.
 
 ### The message
 
@@ -769,7 +769,7 @@ Serving the folder is not done here (Deferred.md). That is why the job is off un
 ### Switching it on: the `report` block of `runtime.json`
 
 ```json
-"report": { "preparedBy": "Divya, local partner", "pageBaseUrl": "https://reports.example.com/r", "innovator": false,
+"report": { "preparedBy": "Divya, local Operator", "pageBaseUrl": "https://reports.example.com/r", "innovator": false,
             "signingKeyFile": "keys/report-key.pem", "goLiveFile": "go-live-certificate.json", "source": "live", "pagesDir": "data/reports" }
 ```
 
@@ -794,7 +794,7 @@ The agent handles two more things, both small and both through the paths it alre
 ## UPI, marked paid by the owner (B33; added 7 November 2026)
 
 A shop picks how customers pay the deposit: `"payment": {"module": "upi", "upi": {"id": "glowsalon@okicici", "payee": "Glow Salon"}}` (the default the panel offers a
-partner shop: no gateway account, no gateway fee) or `{"module": "razorpay"}`. A settings file with no `payment` is a Razorpay shop, and parses to the same object as
+Operator shop: no gateway account, no gateway fee) or `{"module": "razorpay"}`. A settings file with no `payment` is a Razorpay shop, and parses to the same object as
 before, so nothing set up earlier changes. The shared module is `modules/payments/upi` (its Explanation section says why each part is as it is); this is what Bookings
 does with it.
 

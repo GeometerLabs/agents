@@ -43,7 +43,7 @@ export const RETRY_MINUTES = [1, 2, 5, 15, 30, 60];
 /**
  * Why a refund needs the builder, not the owner. "unheld": a refund above the limit was sent without Guard holding it (Guard's threshold does not match the settings).
  * "late_upi": a UPI shop's owner marked money received after the booking's hold had ended (B33): it was not booked again by itself, the owner owes it back or books
- * the customer by hand, and the builder or partner is told through this count as well as the record.
+ * the customer by hand, and the builder or Operator is told through this count as well as the record.
  */
 export type RefundIssueKind = "unknown" | "uncertain" | "refused" | "failed" | "unconfirmed" | "expired" | "unheld" | "late_upi";
 /**

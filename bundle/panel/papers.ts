@@ -1,5 +1,5 @@
 // The panel's side of the three papers (B28 statement, B35 record of one case, B36 identity paper) and of the record's evidence pack, for one shop the account may
-// see (the routes in server.ts ask shops.find first: a partner gets a 404 for a shop that is not theirs). Everything is made from files the panel already reads: the
+// see (the routes in server.ts ask shops.find first: an Operator gets a 404 for a shop that is not theirs). Everything is made from files the panel already reads: the
 // deployer's export of the record and the cases (numbers already keyed fingerprints there), the shop's settings and their history, the go-live certificate the panel keeps,
 // and the last daily fingerprint the deployer wrote into the shop's status. The panel's signing key signs them; without one they say they are not signed.
 //
@@ -104,7 +104,7 @@ export function createPapers(config: PanelConfig, shops: Shops, docs: Documents,
       const env = sealDisputeRecord({ template: b.kind.papers, shop: b.shop, case: found, entries: b.data.entries, language: lang(language, b.ownerLanguage), now: now(), tenant: id }, key);
       return [{ file: `case-${caseId}.json`, type: "application/json; charset=utf-8", text: envelopeFile(env) }, { file: `case-${caseId}-${env.document.language}.html`, type: "text/html; charset=utf-8", text: disputePage(env) }];
     },
-    /** A person's statement, by the number the partner typed (never kept, never logged). */
+    /** A person's statement, by the number the Operator typed (never kept, never logged). */
     statement(id: string, number: string, language?: string): MadePaper[] {
       if (!/^\+?[0-9 ]{8,16}$/u.test(number.trim())) throw new PaperError("Type the person's WhatsApp number, with the country code (like +91 98...).");
       const b = base(id);

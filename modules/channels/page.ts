@@ -34,7 +34,7 @@ export interface PageShop { name: string; publicUrl: string }
 /**
  * The whole page: the head (the shop's character, name and mood, and the language links), the note that says a language is machine-written, and the content.
  * Shared with item 11h's pages (order-page.ts, fee-page.ts), so every customer view of a shop looks and behaves the same. `face`: the front page's extras under
- * the head (shop-face.ts shopFace: WhatsApp and the hours); `foot`: the partner's line. A page that reloads itself (`refreshSeconds`) shows the head without the
+ * the head (shop-face.ts shopFace: WhatsApp and the hours); `foot`: the Operator's line. A page that reloads itself (`refreshSeconds`) shows the head without the
  * face's picture, so a phone waiting on it does not fetch the picture again every few seconds.
  */
 export function layout(o: { shop: Pick<Offer["shop"], "name" | "address" | "languages" | "character" | "contact">; language: Language; title: string; body: Raw; refreshSeconds?: number; selfPath: string; query?: Record<string, string>; face?: Raw; foot?: Raw; /** Money clarity: the UPI page's one script (upi-script.ts), by this response's nonce. It looks for a change itself, so the meta refresh below runs only without it. */ script?: { nonce: string } }): string {
@@ -79,7 +79,7 @@ function footer(shop: PageShop, language: Language): Raw {
 export function bookingPage(o: { shop: PageShop; offer: Offer; language: Language; serviceId?: string; date?: string; error?: string; values?: { name?: string; phone?: string }; /** The form's random nonce (handle.ts handleFromNonce): a second tap is the same booking. */ nonce?: string; /** Item 11f: the shop's page addresses (its WhatsApp number, the panel's link). */ pages?: PagesFile }): string {
   const w = PAGE[o.language];
   const s = o.offer.shop;
-  // item 11f: the customer view's head (the character, the hours, WhatsApp) and the partner's small line
+  // item 11f: the customer view's head (the character, the hours, WhatsApp) and the Operator's small line
   const face = shopFace({ shop: s, language: o.language, ...(o.pages ? { pages: o.pages } : {}) });
   const foot = facePartnerLine(o.language, o.pages);
   const tz = s.timezone;

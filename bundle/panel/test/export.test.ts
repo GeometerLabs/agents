@@ -186,7 +186,7 @@ test("it works for a shop that is stopped, whose plan lapsed, and whose runtime 
 });
 const HOUR_MS = 3_600_000;
 
-test("only a person who can see the shop can take its files: another partner gets the same 404 as for a shop that is not there", async () => {
+test("only a person who can see the shop can take its files: another Operator gets the same 404 as for a shop that is not there", async () => {
   const b = await boot({}, { signing: true });
   try {
     const arjun = await b.account("arjun", "builder");

@@ -167,7 +167,7 @@ const WHEN: Record<TemplateId, string> = {
   owner_upi_refund_kept: "UPI shop: the answer to the owner's Kept for booking",
   booking_paused: "The shop's licence is in its wind-down: the answer to a request to book. Nothing is booked or kept for later",
   owner_licence_paused: "The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money",
-  owner_licence_stopped: "The one notice to the owner at the licence's final stop: the partner's service has ended, the bookings still in the calendar, and that hello@geometer.dev will connect the owner with another local partner",
+  owner_licence_stopped: "The one notice to the owner at the licence's final stop: the Operator's service has ended, the bookings still in the calendar, and that hello@geometer.dev will connect the owner with another local Operator",
 };
 
 /** Customer sentences, in the language, with what they mean. The sheet shows what the agent reads from each. */
@@ -323,7 +323,7 @@ export function reviewSheet(language: ReviewLanguage): string {
   out.push("What to look for first: (1) is every line something a shop owner would understand in ten seconds; (2) is each label short and never an exaggeration (these documents count and state facts: they never say a shop is safe, guaranteed or approved, and a native reader should flag any word that sounds like it does); (3) is \"deposit\" the everyday word here, as in section 1; (4) is the word for \"limits\" (the rules the shop set) the one a shopkeeper would use; (5) the technical words kept in Latin letters on purpose (STOP, WhatsApp, Razorpay, webhook signatures, stand-in services).", "");
   out.push("### The five lines, with sample numbers", "", "```text", sampleOwnerText(language), "```", "");
   out.push("### The monthly report on WhatsApp, with sample numbers", "");
-  out.push("Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the Innovator badge, is there only for the first 100 builders and partners; the other template is the same without it. The labels are the ones above; the new words are \"Full report\", the name of the badge and the code line.", "");
+  out.push("Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the Innovator badge, is there only for the first 100 builders and Operators; the other template is the same without it. The labels are the ones above; the new words are \"Full report\", the name of the badge and the code line.", "");
   out.push("```text", sampleMessage(language), "```", "");
   out.push("### Every word and phrase of the report and the certificates", "");
   out.push(table(["Id", `Text (${name})`, "Meaning (English)", REVIEWER], reportStringRows(language).map((r) => [`\`${r.id}\``, r.text, r.english, ""])), "");

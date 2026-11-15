@@ -263,7 +263,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
   };
   const kit: FrontKit = { limiter, log, ...(options.waitMs !== undefined ? { waitMs: options.waitMs } : {}), maxForm: MAX_FORM, maxJson: MAX_JSON, sendHtml, sendJson, redirect, readBody, languageOf, sameOrigin, customerPolicy: customerPagePolicy };
 
-  /** The partner each request's shop names, for the catch-all error page below (which has no shop in hand). */
+  /** The Operator each request's shop names, for the catch-all error page below (which has no shop in hand). */
   const partnerOf = new WeakMap<ServerResponse, NonNullable<PagesFile["partner"]>>();
   async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const url = new URL(req.url ?? "/", "http://front");
@@ -279,14 +279,14 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // batch 5: and the shop's phone and map link (withContact)
     const shop: FrontShop = found.pages ? { ...withPicture, backend: withContact(withPicture.backend, found.pages) } : withPicture;
     if (pages?.partner) partnerOf.set(res, pages.partner);
-    // batch 3: name the shop's partner for the door, whose error pages (a shop that is down) have nobody else to ask; the door keeps it and never passes it on
+    // batch 3: name the shop's Operator for the door, whose error pages (a shop that is down) have nobody else to ask; the door keeps it and never passes it on
     if (typeof door === "string" && pages?.partner) res.setHeader(CONTACT_HEADER, Buffer.from(JSON.stringify({ n: pages.partner.name, p: pages.partner.phone }), "utf8").toString("base64url"));
     const name = m[1];
     const rest = m[2] ?? "";
     const method = req.method ?? "GET";
     const address = addressOf(req);
     const o = opsOf(name, shop);
-    // the visitor's language and the partner's number, not one English line (batch 3)
+    // the visitor's language and the Operator's number, not one English line (batch 3)
     const tooMany = () => { const l = languageOf(req, url, LANGUAGES); return sendHtml(res, 429, shopErrorPage(l, PAGE[l].tooMany, pages?.partner), { "retry-after": "300" }); };
 
     if (rest === "") { res.writeHead(301, { location: `${shop.publicUrl}/` }); res.end(); return; }
@@ -744,7 +744,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     route(req, res).catch((e) => {
       log(`The front could not answer a request: ${(e as Error).message}`);
       if (!res.headersSent) {
-        // the shop's runtime did not answer: in the visitor's language, with the partner's number when this shop's file names one (partnerOf, set when the shop was found)
+        // the shop's runtime did not answer: in the visitor's language, with the Operator's number when this shop's file names one (partnerOf, set when the shop was found)
         const l = languageOf(req, new URL(req.url ?? "/", "http://front"), LANGUAGES);
         sendHtml(res, 503, shopErrorPage(l, PAGE[l].calendarUnread, partnerOf.get(res)), { "retry-after": "60" });
       }

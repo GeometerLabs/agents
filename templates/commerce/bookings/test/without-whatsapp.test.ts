@@ -1,5 +1,5 @@
 // Item 11h's second half (decision 45, "works without WhatsApp") end to end, through a real Bookings runtime and the real public front over HTTP: a UPI shop with no
-// WhatsApp at all (its runtime.json names a push Guard and no messaging service). The owner registers a passkey from the partner's setup QR and signs in with it
+// WhatsApp at all (its runtime.json names a push Guard and no messaging service). The owner registers a passkey from the Operator's setup QR and signs in with it
 // later (a software authenticator answering for the phone); the owner's phone and the customer's phone allow alerts; every push reaches a stand-in push Guard as the
 // JSON the real one checks, and the test opens it with the phone's own keys, as the browser does. What it shows: the customer books and pays on the page, the
 // owner hears by push and marks the deposit from the page, the customer hears "booked" by push, cancels early, the owner marks the refund sent from the page the
@@ -65,7 +65,7 @@ async function world(o: { whatsapp?: boolean } = {}) {
   writeFileSync(join(folder, "runtime.json"), JSON.stringify({ mode: "fakes", port: 0, tickSeconds: 3600, services: { push: { baseUrl: `http://127.0.0.1:${guardPort}` }, ...(o.whatsapp ? { messaging: { baseUrl: "http://whatsapp.invalid", phoneNumberId: "123456789012345" } } : {}) } }));
   writeFileSync(join(folder, "pathway.lock"), "bookings@0.1.0\n");
   writeFileSync(join(folder, "pages.json"), JSON.stringify({ schema: 1, base: "https://partners.example/s/glow", ownerBase: RUNTIME_OWNER_BASE, slug: "glow-salon", url: "https://pages.example/glow-salon" }));
-  // the partner's setup QR, as the deployer copies the panel's file (hashes only)
+  // the Operator's setup QR, as the deployer copies the panel's file (hashes only)
   const setupToken = newSetupToken();
   const clock = fakeClock(Date.UTC(2026, 10, 16, 3, 30));
   writeFileSync(join(folder, OWNER_GRANTS_FILE), JSON.stringify({ schema: 1, setup: { sha256: setupHash(setupToken), createdAt: new Date(clock.now()).toISOString(), expiresAt: new Date(clock.now() + SETUP_MS).toISOString() } }));
@@ -101,10 +101,10 @@ const sessionOf = (setCookie: string | null): string => new RegExp(`${OWNER_COOK
 const startsOn = (html: string): number[] => [...html.matchAll(/name="start" value="(\d+)"/gu)].map((m) => Number(m[1]));
 const handleOf = (location: string | null): string => /\/b\/([A-Za-z0-9_-]{32})/u.exec(location ?? "")?.[1] ?? "";
 
-test("a shop with no WhatsApp: passkey sign-in from the partner's QR, push alerts both ways, page booking and payment, a refund marked from the alert, the refund on the confirmation page", async () => {
+test("a shop with no WhatsApp: passkey sign-in from the Operator's QR, push alerts both ways, page booking and payment, a refund marked from the alert, the refund on the confirmation page", async () => {
   const w = await world();
   try {
-    // ---- the owner, at the setup visit: the partner's QR opens the setup page; the phone makes a passkey; a session follows ----
+    // ---- the owner, at the setup visit: the Operator's QR opens the setup page; the phone makes a passkey; a session follows ----
     const setup = await w.page(`/owner/setup/${w.setupToken}?lang=en`);
     assert.equal(setup.status, 200);
     const setupHtml = await setup.text();
@@ -232,7 +232,7 @@ test("a shop with no WhatsApp: passkey sign-in from the partner's QR, push alert
     const entries = w.record();
     const ownerSends = entries.filter((e) => e.refs.to === "owner" && e.action === "send_message");
     assert.ok(ownerSends.length >= 3 && ownerSends.every((e) => e.outcome === "confirmed" && String(e.refs.messageId ?? "").startsWith("push-")), "each alert to the owner is a push, named by its id");
-    assert.ok(entries.some((e) => e.action === "owner_session" && e.refs.what === "passkey_added" && e.refs.how === "setup"), "the passkey from the partner's QR is in the record");
+    assert.ok(entries.some((e) => e.action === "owner_session" && e.refs.what === "passkey_added" && e.refs.how === "setup"), "the passkey from the Operator's QR is in the record");
     assert.equal(entries.filter((e) => e.action === "owner_session" && e.refs.what === "signed_in" && e.refs.how === "passkey").length, 2);
     assert.ok(!w.lines.some((l) => l.startsWith("[stand-in WhatsApp]")), "nothing was sent on WhatsApp");
     const text = JSON.stringify(entries);

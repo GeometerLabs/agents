@@ -116,7 +116,7 @@ Every owner message that is not the answer to something the owner has just writt
 | `owner_upi_refund_marked` | UPI shop: the answer to the owner's Refund sent | ಧನ್ಯವಾದ! ₹200 ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ ಎಂದು ಗುರುತಿಸಿದ್ದೇನೆ, ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. | Thanks! The ₹200 refund is marked as sent, and the customer has been told. |  |
 | `owner_upi_refund_kept` | UPI shop: the answer to the owner's Kept for booking | ಸರಿ: ₹200 ಅನ್ನು ನೀವೇ ಮಾಡುವ ಬುಕಿಂಗ್‌ಗಾಗಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತಿದ್ದೀರಿ. ಇನ್ನು ಏನೂ ಮರಳಿ ಕೊಡಬೇಕಿಲ್ಲ. | Noted: you're keeping the ₹200 for a booking you make yourself. Nothing more is owed back. |  |
 | `owner_licence_paused` | The one notice to the owner when the shop's licence winds down: online booking is paused, who to contact. Never about money | ಗಮನಿಸಿ: Glow Salon-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಾಗಲೇ ಇರುವ ಬುಕಿಂಗ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮೊದಲಿನಂತೆಯೇ ನಡೆಯುತ್ತವೆ. ಇದನ್ನು ಸರಿಪಡಿಸಲು ದಯವಿಟ್ಟು Divya, Sri Sai Digital ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Heads up: online booking for Glow Salon is paused for now. Bookings you already have, cancellations and refunds still go through. To sort it out, please contact Divya, Sri Sai Digital. |  |
-| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: the partner's service has ended, the bookings still in the calendar, and that hello@geometer.dev will connect the owner with another local partner | ಗಮನಿಸಿ: Glow Salon-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ, ಏಕೆಂದರೆ Divya, Sri Sai Digital ಅವರ ಸೇವೆ ಮುಗಿದಿದೆ. ಇಂದಿನ ನಂತರ ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಇನ್ನೂ ಇರುವ ಬುಕಿಂಗ್‌ಗಳು: 3. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ. | Heads up: online booking for Glow Salon has stopped, because the service from Divya, Sri Sai Digital has ended. Bookings still in your calendar after today: 3. To keep it going with another local partner, write to hello@geometer.dev and Geometer will put you in touch. |  |
+| `owner_licence_stopped` | The one notice to the owner at the licence's final stop: the partner's service has ended, the bookings still in the calendar, and that hello@geometer.dev will connect the owner with another local partner | ಗಮನಿಸಿ: Glow Salon-ನ ಆನ್‌ಲೈನ್ ಬುಕಿಂಗ್ ನಿಂತಿದೆ, ಏಕೆಂದರೆ Divya, Sri Sai Digital ಅವರ ಸೇವೆ ಮುಗಿದಿದೆ. ಇಂದಿನ ನಂತರ ನಿಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಇನ್ನೂ ಇರುವ ಬುಕಿಂಗ್‌ಗಳು: 3. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಆಪರೇಟರ್ ಜೊತೆ ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ. | Heads up: online booking for Glow Salon has stopped, because the service from Divya, Sri Sai Digital has ended. Bookings still in your calendar after today: 3. To keep it going with another local partner, write to hello@geometer.dev and Geometer will put you in touch. |  |
 
 ### The words on the buttons and the lists
 
@@ -282,7 +282,7 @@ Glow Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ವ್ಯ�
 
 ### The monthly report on WhatsApp, with sample numbers
 
-Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the Innovator badge, is there only for the first 100 builders and partners; the other template is the same without it. The labels are the ones above; the new words are "Full report", the name of the badge and the code line.
+Sent to the owner on the 1st of the month, as these same words: as an approved WhatsApp template when the owner has not written in the last day (the usual case), as plain text when they have. The last line, the Innovator badge, is there only for the first 100 builders and Operators; the other template is the same without it. The labels are the ones above; the new words are "Full report", the name of the badge and the code line.
 
 ```text
 *ಮಾಸಿಕ ವರದಿ: Glow Salon · ಫೆಬ್ರವರಿ 2027*
@@ -436,7 +436,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `page.checkAt` | ಇಲ್ಲಿ ಪರಿಶೀಲಿಸಿ | Check it at |  |
 | `page.signedBy` | ಈ ಕೀಲಿಯಿಂದ ಸಹಿ ಮಾಡಲಾಗಿದೆ | Signed with key |  |
 | `page.notSigned` | ಸಹಿ ಇಲ್ಲ | Not signed |  |
-| `page.scanToCheck` | ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಪಾಲುದಾರ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your partner or Geometer's team gave you. |  |
+| `page.scanToCheck` | ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಆಪರೇಟರ್ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your Operator or Geometer's team gave you. |  |
 | `page.scanSummary` | ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಈ ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಅಥವಾ ಲಿಂಕ್ ತೆರೆಯಿರಿ. ದಾಖಲೆ ನಿಜವಾದುದೇ, ಅದನ್ನು ಯಾರು ನೀಡಿದರು, ಮತ್ತು ಈ ಪುಟದೊಂದಿಗೆ ಹೋಲಿಸಲು ಲೆಕ್ಕಗಳನ್ನು ಅದು ತೋರಿಸುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ದಾಖಲೆಯ ಬಗ್ಗೆ ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲೆಕ್ಕಗಳು ಸತ್ಯ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | Scan this code, or open the link, to check this paper on geometer.dev. It shows whether the paper is genuine, who issued it, and the figures to compare with this page. The check runs on your phone and nothing about the paper is sent. It does not show that the numbers are true. |  |
 | `page.signatureNote` | ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ನೀಡಿದರು ಮತ್ತು ಅಂದಿನಿಂದ ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಲೆಕ್ಕಗಳು ಸತ್ಯ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | A signature shows who issued this document and that it has not changed since. It does not show that the numbers are true. |  |
 | `page.showWhatWeDid` | ನಾವು ಏನು ಮಾಡಿದೆವು ನೋಡಿ ▸ | Show what we did ▸ |  |
@@ -474,9 +474,9 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 
 ## 7. The panel and the phone setup
 
-Everything a partner or builder reads in the panel, in Kannada: signing in, the shop's status and its monthly cost line, and the six setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the shop's assistant, the checks). The "personality.*" lines are the shop assistant's small talk in its three personalities: {shop} is the shop's name and {name} the assistant's own name, which the partner may leave out. Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.
+Everything an Operator or builder reads in the panel, in Kannada: signing in, the shop's status and its monthly cost line, and the six setup steps (the business, the deposit and cancellation, languages, connecting the shop's accounts, the shop's assistant, the checks). The "personality.*" lines are the shop assistant's small talk in its three personalities: {shop} is the shop's name and {name} the assistant's own name, which the Operator may leave out. Amounts, dates, phone numbers and names are filled in by the panel and never translated; the samples below use made-up ones. The limits are each written as one sentence of what the shop gains: those seven lines (and the two "when it says booked" and "you stay in charge" lines) are the ones in the product's pricing document, so a change there is a change here. The certificate line "Held N of M" and "Show what we did" are in section 6.
 
-What to look for first: (1) is each line something a shop owner or a young partner on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and a payment gateway read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, a payment gateway's name, Google Calendar, Guard, Geometer).
+What to look for first: (1) is each line something a shop owner or a young Operator on a cheap phone would understand in ten seconds; (2) are the words for deposit, refund, calendar, booking and limits the everyday ones; (3) do the instructions for connecting WhatsApp, the calendar and a payment gateway read as steps a person could follow with the real screens in front of them; (4) never a word that sounds like a guarantee (the panel counts and states facts; it does not say anything is safe or certified); (5) the names kept in Latin letters on purpose (WhatsApp, a payment gateway's name, Google Calendar, Guard, Geometer).
 
 | Id | Text (Kannada) | Meaning (English) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- |
@@ -500,7 +500,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `login.byInvitation` | ಖಾತೆಗಳನ್ನು ಆಹ್ವಾನದ ಮೂಲಕ ಮಾತ್ರ ಮಾಡಲಾಗುತ್ತದೆ. ಈ ಸರ್ವರ್ ನಡೆಸುವವರ ಬಳಿ ನಿಮ್ಮ ಲಿಂಕ್ ಕೇಳಿ. | Accounts are made by invitation. Ask the person who runs this server for your link. |  |
 | `login.forgot` | ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರಾ? ಈ ಸರ್ವರ್ ನಡೆಸುವವರ ಬಳಿ ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. ಅದು ಒಂದು ಬಾರಿ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ. | Forgot your passphrase? Ask the person who runs this server for a new link. It works once. |  |
 | `login.forgotHosted` | ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರಾ? ನೀವು ನಮಗೆ ಕೊಟ್ಟ ಇಮೇಲ್‌ನಿಂದ hello@geometer.dev ಗೆ ಬರೆದು ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. ಅದು ಒಂದು ಬಾರಿ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ. | Forgot your passphrase? Write to hello@geometer.dev from the email you gave us, and ask for a new link. It works once. |  |
-| `login.partners` | ಲೋಕಲ್ ಪಾರ್ಟ್ನರ್‌ಗಳು: geometer.dev ನಲ್ಲಿರುವ ನಿಮ್ಮ ಖಾತೆಯಿಂದ ಪ್ಯಾನೆಲ್ ತೆರೆಯಿರಿ. ಪಾಸ್‌ವರ್ಡ್ ಬೇಕಿಲ್ಲ. | Local partners: open your panel from your account on geometer.dev. You need no passphrase. |  |
+| `login.partners` | ಲೋಕಲ್ ಆಪರೇಟರ್‌ಗಳು: geometer.dev ನಲ್ಲಿರುವ ನಿಮ್ಮ ಖಾತೆಯಿಂದ ಪ್ಯಾನೆಲ್ ತೆರೆಯಿರಿ. ಪಾಸ್‌ವರ್ಡ್ ಬೇಕಿಲ್ಲ. | Local Operators: open your panel from your account on geometer.dev. You need no passphrase. |  |
 | `login.partnersLink` | geometer.dev ನಲ್ಲಿ ನನ್ನ ಖಾತೆಗೆ ಹೋಗಿ | Go to my account on geometer.dev |  |
 | `signin.title` | ನಿಮ್ಮ ಪ್ಯಾನೆಲ್ ತೆರೆಯಿರಿ | Open your panel |  |
 | `signin.intro` | ನೀವು geometer.dev ನಲ್ಲಿ ಸೈನ್ ಇನ್ ಆಗಿದ್ದೀರಿ. ನಿಮ್ಮ ಹೆಸರನ್ನು ಒಮ್ಮೆ ತಿಳಿಸಿ, ಮುಂದಿನ ಬಾರಿ ನೇರವಾಗಿ ಒಳಗೆ ಹೋಗುತ್ತೀರಿ. | You are signed in on geometer.dev. Tell us your name once, and next time you go straight in. |  |
@@ -514,11 +514,11 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `reset.problems.reset-unknown` | ಈ ಲಿಂಕ್ ನಾವು ಮಾಡಿದ್ದಲ್ಲ. ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. | This link is not one we made. Ask for a new one. |  |
 | `reset.problems.reset-used` | ಈ ಲಿಂಕ್ ಈಗಾಗಲೇ ಬಳಕೆಯಾಗಿದೆ. ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. | This link was already used. Ask for a new one. |  |
 | `reset.problems.reset-expired` | ಈ ಲಿಂಕ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಹೊಸ ಲಿಂಕ್ ಕೇಳಿ. | This link has run out. Ask for a new one. |  |
-| `join.title` | ನಿಮ್ಮ partner ಖಾತೆ ತೆರೆಯಿರಿ | Create your partner account |  |
+| `join.title` | ನಿಮ್ಮ Operator ಖಾತೆ ತೆರೆಯಿರಿ | Create your Operator account |  |
 | `join.intro` | ನಿಮ್ಮ ಆಹ್ವಾನ ಒಂದು ಬಾರಿ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಹೇಗೆ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತೀರಿ ಎಂದು ಆರಿಸಿ. | Your invitation works once. Choose how you sign in. |  |
 | `join.name` | ನಿಮ್ಮ ಹೆಸರು | Your name |  |
 | `join.company` | ಕಂಪನಿ ಅಥವಾ ವ್ಯಾಪಾರದ ಹೆಸರು (ಬೇಕಿದ್ದರೆ) | Company or business name (optional) |  |
-| `join.companyHelp` | ಅಂಗಡಿಯ ಮಾಲೀಕರ ತಿಂಗಳ ವರದಿಯಲ್ಲಿ ನಿಮ್ಮ ಹೆಸರಿನ ನಂತರ ಇದು ಕಾಣುತ್ತದೆ. ಖಾಲಿ ಬಿಟ್ಟರೆ ಬದಲಿಗೆ "local partner" ಅಥವಾ "builder" ಕಾಣುತ್ತದೆ. 60 ಅಕ್ಷರದವರೆಗೆ. | Shop owners read this after your name in their monthly report. Leave it empty and they read "local partner" or "builder" instead. Up to 60 characters. |  |
+| `join.companyHelp` | ಅಂಗಡಿಯ ಮಾಲೀಕರ ತಿಂಗಳ ವರದಿಯಲ್ಲಿ ನಿಮ್ಮ ಹೆಸರಿನ ನಂತರ ಇದು ಕಾಣುತ್ತದೆ. ಖಾಲಿ ಬಿಟ್ಟರೆ ಬದಲಿಗೆ "local Operator" ಅಥವಾ "builder" ಕಾಣುತ್ತದೆ. 60 ಅಕ್ಷರದವರೆಗೆ. | Shop owners read this after your name in their monthly report. Leave it empty and they read "local Operator" or "builder" instead. Up to 60 characters. |  |
 | `join.handle` | ಸೈನ್ ಇನ್ ಮಾಡಲು ಹೆಸರು | Name to sign in with |  |
 | `join.handleHelp` | 3 ರಿಂದ 40 ಅಕ್ಷರ, ಅಂಕಿ, ಚುಕ್ಕೆ ಅಥವಾ ಡ್ಯಾಶ್ (ಇಂಗ್ಲಿಷ್ ಅಕ್ಷರಗಳಲ್ಲಿ). | 3 to 40 letters, digits, dots or dashes. |  |
 | `join.passphrase` | ಪಾಸ್‌ವರ್ಡ್ | Passphrase |  |
@@ -537,7 +537,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `join.problems.long` | ಪಾಸ್‌ವರ್ಡ್ ತುಂಬಾ ಉದ್ದವಾಗಿದೆ (ಹೆಚ್ಚೆಂದರೆ 200 ಅಕ್ಷರ). | The passphrase is too long (200 characters at most). |  |
 | `join.problems.same-as-handle` | ಪಾಸ್‌ವರ್ಡ್ ಮತ್ತು ಸೈನ್ ಇನ್ ಹೆಸರು ಒಂದೇ ಆಗಿರಬಾರದು. | The passphrase cannot be the same as your sign-in name. |  |
 | `roles.builder` | ಬಿಲ್ಡರ್ | builder |  |
-| `roles.partner` | ಪಾರ್ಟ್ನರ್ | partner |  |
+| `roles.partner` | ಆಪರೇಟರ್ | Operator |  |
 | `invite.title` | ಯಾರನ್ನಾದರೂ ಆಹ್ವಾನಿಸಿ | Invite someone |  |
 | `invite.role` | ಅವರ ಪಾತ್ರ | They will be a |  |
 | `invite.note` | ಇದು ಯಾರಿಗಾಗಿ? | Who is it for? |  |
@@ -680,10 +680,10 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `cost.lines.gateway` | {gateway} ಶುಲ್ಕ | {gateway}'s fee |  |
 | `cost.lines.geometer` | Geometer ಪ್ಲಾನ್ | Geometer's plan |  |
 | `cost.lines.hosting` | ಹೋಸ್ಟಿಂಗ್ ಪಾಲು | Hosting share |  |
-| `cost.payer.builder-pays-whatsapp-provider` | ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ ತಮ್ಮ ಸ್ವಂತ WhatsApp ಪ್ರೊವೈಡರ್‌ಗೆ ಕೊಡುತ್ತಾರೆ | paid by the builder or partner to their own WhatsApp provider |  |
+| `cost.payer.builder-pays-whatsapp-provider` | ಬಿಲ್ಡರ್ ಅಥವಾ ಆಪರೇಟರ್ ತಮ್ಮ ಸ್ವಂತ WhatsApp ಪ್ರೊವೈಡರ್‌ಗೆ ಕೊಡುತ್ತಾರೆ | paid by the builder or Operator to their own WhatsApp provider |  |
 | `cost.payer.shop-pays-gupshup-wallet` | ಅಂದಾಜು; ಅಂಗಡಿಯ ಸ್ವಂತ Gupshup ವ್ಯಾಲೆಟ್‌ನಿಂದ ಹೋಗುತ್ತದೆ, Geometer ಬ್ಯಾಲೆನ್ಸ್‌ನಿಂದ ಅಲ್ಲ | an estimate, paid from the shop's own Gupshup wallet, not from Geometer's balance |  |
 | `cost.payer.shop-pays-gateway` | ಅಂಗಡಿಯೇ {gateway} ಶುಲ್ಕ ಕಟ್ಟುತ್ತದೆ | paid by the shop to {gateway} |  |
-| `cost.payer.builder-pays-geometer` | ಬಿಲ್ಡರ್ ಅಥವಾ ಪಾರ್ಟ್ನರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ; AI ಮಾದರಿ ಇದರಲ್ಲಿ ಒಳಗೊಂಡಿದೆ | paid to Geometer by the builder or partner; the AI model is included |  |
+| `cost.payer.builder-pays-geometer` | ಬಿಲ್ಡರ್ ಅಥವಾ ಆಪರೇಟರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ; AI ಮಾದರಿ ಇದರಲ್ಲಿ ಒಳಗೊಂಡಿದೆ | paid to Geometer by the builder or Operator; the AI model is included |  |
 | `cost.payer.builder-pays-licence` | ಬಿಲ್ಡರ್ Geometer ಗೆ ಕೊಡುತ್ತಾರೆ, ಚಾಲನೆಯಲ್ಲಿರುವ ಪ್ರತಿ ಕ್ಲೈಂಟ್ ಬಿಸಿನೆಸ್‌ಗೆ ಒಮ್ಮೆ; AI ಕೀ ಬಿಲ್ಡರ್‌ನ ಸ್ವಂತದ್ದು | paid to Geometer by the builder, once for each live client business; the AI key is the builder's own |  |
 | `cost.payer.hosting` | ಸರ್ವರ್ ವೆಚ್ಚ, ಹಂಚಿಕೊಳ್ಳಲಾಗಿದೆ | the server's cost, shared |  |
 | `cost.unknown` | ಗೊತ್ತಿಲ್ಲ | unknown |  |
@@ -727,7 +727,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `licence.means.reminder` | ಗ್ರಾಹಕರಿಗೆ ಸದ್ಯಕ್ಕೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. | Nothing changes for customers yet. |  |
 | `licence.means.warning` | ಗ್ರಾಹಕರಿಗೆ ಸದ್ಯಕ್ಕೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. ಪಾವತಿಸದಿದ್ದರೆ ಅಂಗಡಿ ಹೊಸ ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಕೇಳಿಕೆ ತೆಗೆದುಕೊಳ್ಳುವುದಿಲ್ಲ. | Nothing changes for customers yet. If it stays unpaid, the shop takes no new bookings or payment requests. |  |
 | `licence.means.wind_down` | ಗ್ರಾಹಕರಿಗೆ ಅಂಗಡಿಯನ್ನು ಸಂಪರ್ಕಿಸಲು ಹೇಳಲಾಗುತ್ತದೆ. ರೀಫಂಡ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ಈಗಾಗಲೇ ಬುಕ್ ಅಥವಾ ಪಾವತಿಯಾದ ಕೆಲಸಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಪಾವತಿಸಿದ ಕೂಡಲೇ ಎಲ್ಲವೂ ಮರಳುತ್ತದೆ. | Customers are told to contact the shop. Refunds, cancellations and what was already booked or paid still go through. Paying brings it back at once. |  |
-| `licence.means.stopped` | ಅಂಗಡಿಯಿಂದ ಇನ್ನು ಏನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. ತೆರೆದಿರುವ ಪಾವತಿ ಲಿಂಕ್‌ಗಳನ್ನು ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ; ಅಂಗಡಿಯ ಸ್ವಂತ ಖಾತೆಗಳು ಮತ್ತು ಕೀಗಳು ಅಂಗಡಿಯವೇ ಆಗಿರುತ್ತವೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಸೇವೆ ಮುಗಿದಿದೆ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ; ಬೇರೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಸೇರಲು ಅವರು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಬಹುದು. ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು ನೀವು ಮಾತ್ರ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು. | Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local partner. Only you can download the shop's records. |  |
+| `licence.means.stopped` | ಅಂಗಡಿಯಿಂದ ಇನ್ನು ಏನೂ ಕಳುಹಿಸುವುದಿಲ್ಲ. ತೆರೆದಿರುವ ಪಾವತಿ ಲಿಂಕ್‌ಗಳನ್ನು ರದ್ದುಗೊಳಿಸಲಾಗಿದೆ; ಅಂಗಡಿಯ ಸ್ವಂತ ಖಾತೆಗಳು ಮತ್ತು ಕೀಗಳು ಅಂಗಡಿಯವೇ ಆಗಿರುತ್ತವೆ. ಏನನ್ನೂ ಅಳಿಸಿಲ್ಲ. ಸೇವೆ ಮುಗಿದಿದೆ ಎಂದು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ; ಬೇರೊಬ್ಬ ಸ್ಥಳೀಯ ಆಪರೇಟರ್ ಜೊತೆ ಸೇರಲು ಅವರು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಬಹುದು. ಅಂಗಡಿಯ ದಾಖಲೆಗಳನ್ನು ನೀವು ಮಾತ್ರ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬಹುದು. | Nothing more is sent from the shop. Open payment links are cancelled; the shop's own accounts and keys stay the shop's. Nothing is deleted. The owner was told the service has ended and can write to hello@geometer.dev to be connected with another local Operator. Only you can download the shop's records. |  |
 | `licence.means.none` | Geometer-ನ ಲೀಸ್ ಇನ್ನೂ ಈ ಅಂಗಡಿಯನ್ನು ಒಳಗೊಂಡಿಲ್ಲ, ಆದ್ದರಿಂದ ಇದರ Guard ಗಳು ಹೊಸ ಕೆಲಸ ತೆಗೆದುಕೊಳ್ಳುವುದಿಲ್ಲ. ರೀಫಂಡ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ಇರುವುದನ್ನು ಓದುವುದು ಮುಂದುವರಿಯುತ್ತವೆ. ಟ್ರಯಲ್ ಅಥವಾ ಪ್ಲಾನ್ ಇದ್ದರೆ, ಮೊದಲ ಡಿಪ್ಲಾಯ್‌ನ ಒಂದೆರಡು ನಿಮಿಷಗಳಲ್ಲಿ ಲೀಸ್ ಈ ಅಂಗಡಿಯನ್ನು ಸೇರಿಸುತ್ತದೆ. ಇಲ್ಲದಿದ್ದರೆ ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Geometer's lease does not cover this shop yet, so its Guards take no new work. Refunds, cancellations and reading what is there still go through. When the trial or a plan covers the shop, the lease lists it within a minute or two of its first deploy. If it does not, write to support. A person answers. |  |
 | `licence.paidThrough` | ಮುಂದಿನ ಪಾವತಿ: 8 Dec 2026. | Next payment due: 8 Dec 2026. |  |
 | `licence.windDownOn` | ಪಾವತಿಸದಿದ್ದರೆ 7 Jan 2027 ರಿಂದ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | If it is not paid, new bookings pause on 7 Jan 2027. |  |
@@ -963,7 +963,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `setup.accounts.whatsapp.selfServe.signup` | Gupshup ನಲ್ಲಿ ಸೈನ್ ಅಪ್ ಮಾಡಿ | Sign up at Gupshup |  |
 | `setup.accounts.whatsapp.selfServe.guide` | ಆ್ಯಪ್ ಹೆಸರು ಮತ್ತು API key ಎಲ್ಲಿ ಸಿಗುತ್ತದೆ | How to find the app name and API key |  |
 | `setup.accounts.whatsapp.selfServe.steps.1` | ಅಂಗಡಿ Gupshup ನಲ್ಲಿ ಸೈನ್ ಅಪ್ ಮಾಡಿ ತನ್ನ ನಂಬರ್‌ಗಾಗಿ ಒಂದು WhatsApp ಆ್ಯಪ್ ರಚಿಸುತ್ತದೆ. | The shop signs up at Gupshup and makes a WhatsApp app for its number. |  |
-| `setup.accounts.whatsapp.selfServe.steps.2` | Gupshup ಖಾತೆಗೆ ಪಾರ್ಟ್ನರ್ ಅನ್ನು ಅಡ್ಮಿನ್ ಆಗಿ ಸೇರಿಸಿ. | Add the partner as an admin of the Gupshup account. |  |
+| `setup.accounts.whatsapp.selfServe.steps.2` | Gupshup ಖಾತೆಗೆ ಆಪರೇಟರ್ ಅನ್ನು ಅಡ್ಮಿನ್ ಆಗಿ ಸೇರಿಸಿ. | Add the Operator as an admin of the Gupshup account. |  |
 | `setup.accounts.whatsapp.selfServe.steps.3` | ಆ್ಯಪ್‌ನಲ್ಲಿ ನಮ್ಮ ಮೆಸೇಜ್ ಟೆಂಪ್ಲೇಟ್‌ಗಳನ್ನು ಸೇರಿಸಿ, Gupshup ಅವನ್ನು ಅನುಮೋದಿತ (approved) ಎಂದು ತೋರಿಸುವವರೆಗೆ ಕಾಯಿರಿ. | In the app, add our message templates and wait until Gupshup shows them as approved. |  |
 | `setup.accounts.whatsapp.selfServe.steps.4` | Gupshup ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ನಿಂದ ಆ್ಯಪ್ ಹೆಸರು ಮತ್ತು API key ಕಾಪಿ ಮಾಡಿ ಕೆಳಗೆ ಟೈಪ್ ಮಾಡಿ, ಜೊತೆಗೆ ಕಾಲ್‌ಬ್ಯಾಕ್ ವಿಳಾಸಕ್ಕಾಗಿ ನಿಮ್ಮದೇ ಒಂದು ಗುಪ್ತ ಪದವನ್ನು ಆರಿಸಿ. | Copy the app's name and API key from the Gupshup dashboard and type them below, with a secret word of your own for the callback address. |  |
 | `setup.accounts.whatsapp.selfServe.steps.5` | ಆ್ಯಪ್‌ನ Webhooks ಟ್ಯಾಬ್‌ನಲ್ಲಿ ಕೆಳಗೆ ತೋರಿಸಿದ ವಿಳಾಸವನ್ನು ಸೇರಿಸಿ, ಕೊನೆಯಲ್ಲಿ ಆ ಗುಪ್ತ ಪದ ಇರಲಿ. | In the app's Webhooks tab, add the address shown below, ending with that secret word. |  |
@@ -1073,10 +1073,10 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `takeOut.check` | ಫೈಲ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಲು ಒಳಗಿರುವ README ನೋಡಿ. | To check the files, use the README inside. |  |
 | `handover.heading` | ಈ ಅಂಗಡಿಯನ್ನು ಬೇರೊಬ್ಬರಿಗೆ ವರ್ಗಾಯಿಸಿ | Move this shop to someone else |  |
 | `handover.button` | ಈ ಅಂಗಡಿಯನ್ನು ವರ್ಗಾಯಿಸಿ… | Move this shop… |  |
-| `handover.intro` | ಈ ಸರ್ವರ್‌ನಲ್ಲಿರುವ ಬೇರೆ ಪಾರ್ಟ್ನರ್ ಅಥವಾ ಬಿಲ್ಡರ್‌ಗೆ ಈ ಅಂಗಡಿಯ ನಿರ್ವಹಣೆ ನೀಡಿ. ಮೊದಲು ಅಂಗಡಿ ಮಾಲೀಕರು ತಮ್ಮ ಫೋನ್‌ನಿಂದ ಒಪ್ಪಬೇಕು. | Give the running of this shop to another partner or builder on this server. The shop owner has to agree first, from their own phone. |  |
+| `handover.intro` | ಈ ಸರ್ವರ್‌ನಲ್ಲಿರುವ ಬೇರೆ ಆಪರೇಟರ್ ಅಥವಾ ಬಿಲ್ಡರ್‌ಗೆ ಈ ಅಂಗಡಿಯ ನಿರ್ವಹಣೆ ನೀಡಿ. ಮೊದಲು ಅಂಗಡಿ ಮಾಲೀಕರು ತಮ್ಮ ಫೋನ್‌ನಿಂದ ಒಪ್ಪಬೇಕು. | Give the running of this shop to another Operator or builder on this server. The shop owner has to agree first, from their own phone. |  |
 | `handover.moves` | ಬದಲಾಗುವುದು: ಇಲ್ಲಿ ಈ ಅಂಗಡಿಯನ್ನು ಯಾರು ನೋಡಬಹುದು ಮತ್ತು ಬದಲಿಸಬಹುದು, ಮತ್ತು ಮಾಲೀಕರ ಮಾಸಿಕ ವರದಿಯಲ್ಲಿರುವ ಹೆಸರು. | What moves: who can see and change this shop here, and the name on the owner's monthly report. |  |
 | `handover.stays` | ಬದಲಾಗದ್ದು: ಅಂಗಡಿಯ ಸ್ವಂತ WhatsApp ಸಂಖ್ಯೆ, ಪಾವತಿ ಖಾತೆ ಮತ್ತು ಕ್ಯಾಲೆಂಡರ್ ಜೊತೆಗೆ ಹೋಗುವುದಿಲ್ಲ. ಕೀಗಳು ಹೋಗುವುದಿಲ್ಲ: ಮುಂದೆ ಅಂಗಡಿಯನ್ನು ನಡೆಸುವವರು ಅವನ್ನು ಮತ್ತೆ ನಮೂದಿಸಬೇಕು. | What stays: the shop's own WhatsApp number, payment account and calendar do not move. Keys are not carried across: whoever serves the shop next enters them again. |  |
-| `handover.never` | ಅಂಗಡಿ ಬೇರೆ ಪಾರ್ಟ್ನರ್ ಅಥವಾ ಬಿಲ್ಡರ್‌ಗೆ ಹೋಗಬಹುದು. Geometer ಗೆ ಹೋಗಲಾರದು. | A shop can go to another partner or builder. It cannot go to Geometer. |  |
+| `handover.never` | ಅಂಗಡಿ ಬೇರೆ ಆಪರೇಟರ್ ಅಥವಾ ಬಿಲ್ಡರ್‌ಗೆ ಹೋಗಬಹುದು. Geometer ಗೆ ಹೋಗಲಾರದು. | A shop can go to another Operator or builder. It cannot go to Geometer. |  |
 | `handover.who` | ಅವರ ಸೈನ್-ಇನ್ ಹೆಸರು | Their sign-in name |  |
 | `handover.whoHelp` | ಈ ಪ್ಯಾನೆಲ್‌ಗೆ ಅವರು ಸೈನ್ ಇನ್ ಆಗುವ ಹೆಸರು. | The name they sign in to this panel with. |  |
 | `handover.why` | ಅಂಗಡಿ ಏಕೆ ಹೋಗುತ್ತಿದೆ? | Why is it moving? |  |
@@ -1305,14 +1305,14 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `owner.first.chromeCopy` | ಲಿಂಕ್ ನಕಲಿಸಿ | Copy link |  |
 | `owner.first.chromeCopied` | ಲಿಂಕ್ ನಕಲಾಗಿದೆ. Chrome ನಲ್ಲಿ ಅಂಟಿಸಿ. | Link copied. Paste it in Chrome. |  |
 | `owner.first.noLock` | ನಿಮ್ಮ ಫೋನ್‌ಗೆ ಸ್ಕ್ರೀನ್ ಲಾಕ್ (PIN, ಪ್ಯಾಟರ್ನ್ ಅಥವಾ ಬೆರಳಚ್ಚು) ಬೇಕು. ಸೆಟ್ಟಿಂಗ್ಸ್‌ನಲ್ಲಿ ಹೊಂದಿಸಿ, ಮತ್ತೆ ಒತ್ತಿ. | Your phone needs a screen lock (PIN, pattern or fingerprint). Set one in Settings, then press again. |  |
-| `owner.first.notYet` | ಈ ಕೋಡ್ ಇನ್ನೂ ಕೆಲಸ ಮಾಡುತ್ತಿಲ್ಲ. ಪಾಲುದಾರರು ಈಗಷ್ಟೇ ತೋರಿಸಿದ್ದರೆ 15 ಸೆಕೆಂಡ್ ಕಾದು ಮತ್ತೆ ತೆರೆಯಿರಿ. ಆದರೂ ಆಗದಿದ್ದರೆ ಹೊಸದನ್ನು ಕೇಳಿ. | This code isn't working yet. If your partner just showed it, wait 15 seconds and open it again. If it still fails, ask for a new one. |  |
+| `owner.first.notYet` | ಈ ಕೋಡ್ ಇನ್ನೂ ಕೆಲಸ ಮಾಡುತ್ತಿಲ್ಲ. ಆಪರೇಟರ್ ಅವರು ಈಗಷ್ಟೇ ತೋರಿಸಿದ್ದರೆ 15 ಸೆಕೆಂಡ್ ಕಾದು ಮತ್ತೆ ತೆರೆಯಿರಿ. ಆದರೂ ಆಗದಿದ್ದರೆ ಹೊಸದನ್ನು ಕೇಳಿ. | This code isn't working yet. If your Operator just showed it, wait 15 seconds and open it again. If it still fails, ask for a new one. |  |
 | `owner.first.step2` | ಹಂತ 2 / 2: ಎಚ್ಚರಿಕೆಗಳನ್ನು ಆನ್ ಮಾಡಿ | Step 2 of 2: turn on alerts |  |
 | `owner.first.step2Intro` | ಸೈನ್ ಇನ್ ಆಯಿತು. ಈಗ ಎಚ್ಚರಿಕೆಗಳನ್ನು ಆನ್ ಮಾಡಿ, ಪಾವತಿ ಅಥವಾ ಮರುಪಾವತಿಗೆ ನಿಮ್ಮ ಅಗತ್ಯವಿದ್ದಾಗ ಈ ಫೋನ್ ತಿಳಿಸುತ್ತದೆ. | Sign-in is done. Now turn on alerts, so this phone buzzes when a payment or a refund needs you. |  |
 | `owner.first.alertsOn` | ಎಚ್ಚರಿಕೆಗಳು: ಆನ್, 2 ಫೋನ್‌ನಲ್ಲಿ | Alerts: on, on 2 phones |  |
 | `owner.first.alertsOff` | ಎಚ್ಚರಿಕೆಗಳು: ಆಫ್. ಏನಾದರೂ ಬೇಕಾದಾಗ ನಿಮಗೆ ಗೊತ್ತಾಗುವುದಿಲ್ಲ. | Alerts: off. You will not hear when something needs you. |  |
 | `owner.first.alertsTurnOn` | ಎಚ್ಚರಿಕೆಗಳನ್ನು ಆನ್ ಮಾಡಿ | Turn on alerts |  |
-| `owner.first.partner` | ನಿಮ್ಮ ಪಾಲುದಾರರು: Divya | Your partner: Divya |  |
-| `owner.first.partnerNoName` | ನಿಮ್ಮ ಪಾಲುದಾರರು | Your partner |  |
+| `owner.first.partner` | ನಿಮ್ಮ ಆಪರೇಟರ್ ಅವರು: Divya | Your Operator: Divya |  |
+| `owner.first.partnerNoName` | ನಿಮ್ಮ ಆಪರೇಟರ್ ಅವರು | Your Operator |  |
 | `owner.first.call` | ಕರೆ ಮಾಡಿ | Call |  |
 | `owner.first.whatsapp` | WhatsApp | WhatsApp |  |
 | `owner.first.shopCall` | ಅಂಗಡಿಗೆ ಕರೆ ಮಾಡಿ | Call the shop |  |
@@ -1334,7 +1334,7 @@ What to look for first: (1) is each line something a shop owner or a young partn
 | `door.say.notHere.title` | ಇಲ್ಲಿ ಅಲ್ಲ | Not here |  |
 | `door.say.notHere.text` | ಪುಟದ ಲಿಂಕ್ ಮತ್ತು ಬಟನ್‌ಗಳನ್ನು ಬಳಸಿ. | Use the page's links and buttons. |  |
 | `door.say.home.title` | ಅಂಗಡಿಗಳ ಪುಟಗಳು | Shop pages |  |
-| `door.say.home.text` | ಪ್ರತಿ ಅಂಗಡಿಯ ಪುಟ ಅದರ ಚಿಕ್ಕ ಹೆಸರಿನಲ್ಲಿದೆ, ಉದಾ. /veena-salon. ಅಂಗಡಿಗಳು ಇದನ್ನು ತಮ್ಮ ಸ್ಥಳೀಯ ಪಾಲುದಾರರೊಂದಿಗೆ ಹೊಂದಿಸುತ್ತವೆ. | Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local partner. |  |
+| `door.say.home.text` | ಪ್ರತಿ ಅಂಗಡಿಯ ಪುಟ ಅದರ ಚಿಕ್ಕ ಹೆಸರಿನಲ್ಲಿದೆ, ಉದಾ. /veena-salon. ಅಂಗಡಿಗಳು ಇದನ್ನು ತಮ್ಮ ಸ್ಥಳೀಯ ಆಪರೇಟರ್ ಅವರೊಂದಿಗೆ ಹೊಂದಿಸುತ್ತವೆ. | Each shop's page is at its own short name, like /veena-salon. Shops set theirs up with their local Operator. |  |
 | `door.say.waitMinute.title` | ತುಂಬಾ ವಿನಂತಿಗಳು | Too many requests |  |
 | `door.say.waitMinute.text` | ಒಂದು ನಿಮಿಷ ಕಾಯಿರಿ. | Please wait a minute. |  |
 | `door.say.waitWhile.title` | ತುಂಬಾ ವಿನಂತಿಗಳು | Too many requests |  |

@@ -1,4 +1,4 @@
-// A walkthrough a partner can run before a visit, and read out to a shop owner: one customer's order at Annapurna Tiffins (a made-up tiffin service, UPI), on the stand-in
+// A walkthrough an Operator can run before a visit, and read out to a shop owner: one customer's order at Annapurna Tiffins (a made-up tiffin service, UPI), on the stand-in
 // services (test money, nothing real is sent), printed as the conversation the customer and the owner would see.
 //   node templates/commerce/orders/scripts/walkthrough.ts [--lang hi|en|ml|kn]        (default: hi)
 // The five steps are the ones the sell guide teaches (sell/guide.en.md, section 4): an order for tomorrow's lunch with its advance request, "I have paid" with nothing marked,

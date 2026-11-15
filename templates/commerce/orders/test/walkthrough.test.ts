@@ -1,4 +1,4 @@
-// The walkthrough a partner shows an owner (scripts/walkthrough.ts) does what the sell guide says it does, in every language, on the example shop: an order for tomorrow's lunch
+// The walkthrough an Operator shows an owner (scripts/walkthrough.ts) does what the sell guide says it does, in every language, on the example shop: an order for tomorrow's lunch
 // with its advance request, "I have paid" with nothing marked, the owner's mark that confirms it, a lower price refused, and a cancellation with a refund the owner sends. Judged
 // from the stand-ins' own records, not from the text it printed.
 import { test } from "node:test";

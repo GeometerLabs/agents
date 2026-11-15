@@ -1,10 +1,10 @@
-// Accounts, passphrases and invites. Two roles: a builder sees every shop on the server; a partner sees only the shops they set up. Nobody signs
+// Accounts, passphrases and invites. Two roles: a builder sees every shop on the server; an Operator sees only the shops they set up. Nobody signs
 // themselves up: an account exists only because someone with the server (or, on a builder's own server, a builder) made an invite link, and the
 // link works once. Passphrases are hashed with scrypt (node:crypto), each with its own salt; invite tokens are kept only as a sha256.
 //
 // Two more ways in, both narrow:
-//  - On Geometer's partner server (hosted mode), a local partner signs in with their geometer.dev account (fleet-signin.ts, plan decision 53). Their account here
-//    is made on their first visit from fleet's partner id (`fleetPartner`), one account per partner id, always role "partner". It has NO passphrase: its hash
+//  - On Geometer's Operator server (hosted mode), a local Operator signs in with their geometer.dev account (fleet-signin.ts, plan decision 53). Their account here
+//    is made on their first visit from fleet's Operator id (`fleetPartner`), one account per Operator id, always role "partner". It has NO passphrase: its hash
 //    is a marker scrypt never matches, so the sign-in form can never open it, and a pause in fleet (no new ticket) is enough to keep the person out.
 //  - A RESET link (made on the command line by whoever runs the server: `geometer panel reset <handle>`) lets a person with a passphrase choose a new one. It works
 //    once, runs out, is kept only as a sha256, and signs every session of that account out. An account that signs in with geometer.dev has nothing to reset.
@@ -20,7 +20,7 @@ export const ROLES: readonly Role[] = ["builder", "partner"];
 
 export interface Account {
   id: string; handle: string; name: string; company?: string; role: Role; language: Language; hash: string; sessionVersion: number; createdAt: string; invitedBy: string;
-  /** Hosted mode: the partner's id in fleet, for an account that signs in with geometer.dev (fleet-signin.ts). Such an account has no passphrase. */
+  /** Hosted mode: the Operator's id in fleet, for an account that signs in with geometer.dev (fleet-signin.ts). Such an account has no passphrase. */
   fleetPartner?: string;
 }
 /** A one-time link to choose a new passphrase. Only the token's sha256 is kept. */
@@ -86,7 +86,7 @@ export function createAccounts(store: Store, now: () => number = Date.now) {
   const loadResets = () => store.read<{ schema: 1; resets: Reset[] }>("resets.json")?.resets ?? [];
   const saveResets = (resets: Reset[]) => store.write("resets.json", { schema: 1, resets });
   const findReset = (token: string) => { const hash = sha256(token); return loadResets().find((r) => r.tokenHash === hash); };
-  /** A free sign-in name made from a fleet partner id (only shown to whoever runs the server). */
+  /** A free sign-in name made from a fleet Operator id (only shown to whoever runs the server). */
   const handleFor = (partner: string): string => {
     const base = partner.toLowerCase().replace(/[^a-z0-9._-]/gu, "-").replace(/^[^a-z0-9]+/u, "").slice(0, 36).padEnd(3, "0");
     const taken = new Set(load().map((a) => a.handle));
@@ -156,7 +156,7 @@ export function createAccounts(store: Store, now: () => number = Date.now) {
     // ---- geometer.dev sign-in (hosted mode; fleet-signin.ts) ----------------------------------------------------------------------------------------------
     byFleetPartner: (partner: string): Account | undefined => load().find((a) => a.fleetPartner === partner),
     /**
-     * The account of a fleet partner who has just shown a good ticket: the one kept for that partner id, or a new one (their first visit) with the name, company
+     * The account of a fleet Operator who has just shown a good ticket: the one kept for that Operator id, or a new one (their first visit) with the name, company
      * and language they gave. Always role "partner", never a passphrase.
      */
     fromFleet(partner: string, o: { name: string; company?: string; language: string }): FleetAccountResult {
@@ -176,16 +176,16 @@ export function createAccounts(store: Store, now: () => number = Date.now) {
       return { ok: true, account, made: true };
     },
     /**
-     * Whoever runs the server ties an existing partner account to a fleet partner id (`geometer panel link-partner`), so a partner who was invited before keeps their
+     * Whoever runs the server ties an existing Operator account to a fleet Operator id (`geometer panel link-partner`), so an Operator who was invited before keeps their
      * shops when they start signing in with geometer.dev. From then on that account signs in only with geometer.dev: its passphrase is removed and every session ends.
      */
     linkFleet(handle: string, partner: string): Account {
-      if (!/^[a-z0-9][a-z0-9_-]{0,63}$/u.test(partner)) throw new AccountError(`"${partner}" is not a partner id in fleet (fleet's partner list shows them).`);
+      if (!/^[a-z0-9][a-z0-9_-]{0,63}$/u.test(partner)) throw new AccountError(`"${partner}" is not an Operator id in fleet (fleet's Operator list shows them).`);
       const account = load().find((a) => a.handle === handle.trim().toLowerCase());
       if (!account) throw new AccountError(`There is no account "${handle}" on this panel.`);
-      if (account.role !== "partner") throw new AccountError(`"${account.handle}" is a builder's account: only a partner's account signs in with geometer.dev.`);
+      if (account.role !== "partner") throw new AccountError(`"${account.handle}" is a builder's account: only an Operator's account signs in with geometer.dev.`);
       const other = load().find((a) => a.fleetPartner === partner && a.id !== account.id);
-      if (other) throw new AccountError(`Fleet partner ${partner} already has the account "${other.handle}" here.`);
+      if (other) throw new AccountError(`Fleet Operator ${partner} already has the account "${other.handle}" here.`);
       const linked: Account = { ...account, fleetPartner: partner, hash: NO_PASSPHRASE, sessionVersion: account.sessionVersion + 1 };
       save(load().map((a) => (a.id === account.id ? linked : a)));
       saveResets(loadResets().filter((r) => r.accountId !== account.id)); // a reset link for it would have nothing left to reset

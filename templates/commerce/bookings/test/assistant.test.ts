@@ -287,7 +287,7 @@ test("move a booking: done at once through the agent's own reschedule, the custo
 test("closing a weekday that is always closed, or a day gone, is said plainly", async () => {
   const w = withAssistant();
   await owner(w, "close sunday");
-  assert.equal(w.lastTextTo(w.owner), "The shop is always closed on that weekday (Sun 8 Nov). Your opening hours are set by your partner.");
+  assert.equal(w.lastTextTo(w.owner), "The shop is always closed on that weekday (Sun 8 Nov). Your opening hours are set by your Operator.");
   await owner(w, "close");
   assert.equal(w.lastTextTo(w.owner), "Which day? For example: close Sunday.");
 });
@@ -295,7 +295,7 @@ test("closing a weekday that is always closed, or a day gone, is said plainly", 
 test("limits cannot be loosened from the chat in this release, and the owner is told where", async () => {
   const w = withAssistant();
   await owner(w, "increase my refund limit to ₹1000");
-  assert.equal(w.lastTextTo(w.owner), "Limits (refunds, deposits, caps) are changed by your partner from their panel. I can't change them from here in this version.");
+  assert.equal(w.lastTextTo(w.owner), "Limits (refunds, deposits, caps) are changed by your Operator from their panel. I can't change them from here in this version.");
 });
 
 test("the owner's language: the assistant answers in it", async () => {

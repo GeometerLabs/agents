@@ -99,7 +99,7 @@ export interface OrdersReport {
   source: Source;
   shop: { name: string; timeZone: string; languages: Language[]; ownerLanguage: Language };
   preparedBy: string | null;
-  /** True when the builder or partner who set the agent up has the Innovator badge (plan B56). */
+  /** True when the builder or Operator who set the agent up has the Innovator badge (plan B56). */
   innovator?: true;
   period: { from: string; to: string; firstDay: LocalDate; lastDay: LocalDate; month: { year: number; month: number } | null };
   madeAt: string;

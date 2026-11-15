@@ -51,7 +51,7 @@ test("ON: 'I agree' before the terms were sent, or after they changed, records n
   await w.say("I agree", { from: w.owner });
   assert.deepEqual(entries(w, TERMS_AGREED_ACTION).map((e) => e.outcome), ["blocked"]);
   await w.say("terms", { from: w.owner });
-  file = { ...FILE, monthlyInr: 900 }; // the partner changed the price after the terms went out
+  file = { ...FILE, monthlyInr: 900 }; // the Operator changed the price after the terms went out
   await w.say("I agree", { from: w.owner });
   assert.deepEqual(entries(w, TERMS_AGREED_ACTION).map((e) => e.outcome), ["blocked", "blocked"]);
 });

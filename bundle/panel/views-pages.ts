@@ -1,6 +1,6 @@
 // Item 11f on the panel's shop page: "The shop's page" (the short name on the pages domain, where it stands at fleet, its stable address and the WhatsApp number the
 // page shows), the builder's choice between the pages domain and their own domain, and "sign out every device" for the owner's sessions. Plain forms, no script.
-// Item 11h (decisions 45 and 46): "The owner's sign-in": the setup QR code the partner shows at the setup visit (the owner registers a passkey with it), the printed
+// Item 11h (decisions 45 and 46): "The owner's sign-in": the setup QR code the Operator shows at the setup visit (the owner registers a passkey with it), the printed
 // recovery card, and "remove the owner's passkeys" for a lost phone. The QR and the codes are shown once (only their hashes are kept: bundle/lib/pages.ts).
 // Used by views.ts (the shop page) and server.ts (the two routes that write lib/pages.ts's files). The words are in four languages; Hindi, Malayalam and Kannada are
 // machine-written and wait for a native reader, like the rest of the panel's.
@@ -22,7 +22,7 @@ interface Words {
   sessions: string; sessionsNote: string; endAll: string; ended: string; bad: string;
   signin: string; signinNote: string; setupMake: string; recoveryMake: string; recoveryOn: (day: string) => string; remove: string; removeNote: string; removed: string;
   setupTitle: string; setupNote: (until: string) => string; cardTitle: string; cardNote: string; cardOwner: (url: string) => string; printNote: string; back: string;
-  /** Batch 3 and 5: the shop's phone and map, the partner's name and number (what the owner's app and the error pages show), and the QR page's "wait until green". */
+  /** Batch 3 and 5: the shop's phone and map, the Operator's name and number (what the owner's app and the error pages show), and the QR page's "wait until green". */
   shopPhone: string; shopPhoneNote: string; map: string; mapNote: string; partnerName: string; partnerPhone: string; partnerNote: string;
   setupWait: string; setupReady: string; setupWaitNote: string; cardQr: string; cardMachine: string;
 }
@@ -155,8 +155,8 @@ export function ownerSetupPage(c: Ctx, id: string, url: string, until: Date): st
 }
 
 /**
- * Item 11h: the recovery card, shown once, made to be printed. Batch 3: the part the owner keeps (the card itself) is in the OWNER's language, not the partner's, and
- * carries a QR for the recovery address (opened in the owner's language) beside the address in large type; the partner's own instructions stay in the panel's.
+ * Item 11h: the recovery card, shown once, made to be printed. Batch 3: the part the owner keeps (the card itself) is in the OWNER's language, not the Operator's, and
+ * carries a QR for the recovery address (opened in the owner's language) beside the address in large type; the Operator's own instructions stay in the panel's.
  */
 export function recoveryCardPage(c: Ctx, id: string, shopName: string, codes: readonly string[], recoverUrl: string, ownerLanguage: Language = c.lang): string {
   const w = WORDS[c.lang];

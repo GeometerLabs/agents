@@ -1,5 +1,5 @@
 // The monthly report as a WhatsApp message (plan B54): the owner's five lines, in the shop's language, from the numbers the report counted, with the
-// name of the builder or partner who set the agent up and, when they have it, the Innovator badge (B56).
+// name of the builder or Operator who set the agent up and, when they have it, the Innovator badge (B56).
 //
 // One wording, two ways to send it. The words below are written once per language. Inside the owner's 24-hour window they go out as plain text. Outside it
 // (the usual case on the 1st of the month: the owner has not written in a day) WhatsApp carries only an approved template, so the SAME words are listed for Meta

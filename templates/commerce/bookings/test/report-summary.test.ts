@@ -50,7 +50,7 @@ async function novemberWorld(): Promise<World> {
 test("a signed report and its certificate print a summary link that is genuine under the listed key and says what the paper says", async () => {
   const w = await novemberWorld();
   const out = tempDir();
-  const made = writeClientReport({ settings: w.settings, entries: w.record.entries(), bookings: [...w.store.bookings.values()], month: "2026-11", language: "en", out, source: "live", key: privateKey, preparedBy: "Divya, local partner", now: at(12, 1, 9) });
+  const made = writeClientReport({ settings: w.settings, entries: w.record.entries(), bookings: [...w.store.bookings.values()], month: "2026-11", language: "en", out, source: "live", key: privateKey, preparedBy: "Divya, local Operator", now: at(12, 1, 9) });
   assert.ok(made.check, "a signed report has a summary link");
   const check = checkSummaryLink(made.check!, LIST);
   assert.equal(check.status, "genuine");
@@ -62,7 +62,7 @@ test("a signed report and its certificate print a summary link that is genuine u
   assert.equal(check.summary.shop, "Glow Salon");
   assert.equal(check.summary.period, "2026-11");
   assert.equal(check.summary.source, "live");
-  assert.equal(check.summary.by, "Divya, local partner");
+  assert.equal(check.summary.by, "Divya, local Operator");
   assert.equal(check.summary.ownerMarked, false);
 
   const page = readFileSync(join(out, "report-2026-11-en.html"), "utf8");
@@ -85,7 +85,7 @@ test("a signed report and its certificate print a summary link that is genuine u
 test("an unsigned report has no summary: the page keeps the #digest link and the old words", async () => {
   const w = await novemberWorld();
   const out = tempDir();
-  const made = writeClientReport({ settings: w.settings, entries: w.record.entries(), bookings: [...w.store.bookings.values()], month: "2026-11", language: "en", out, source: "live", preparedBy: "Divya, local partner", now: at(12, 1, 9) });
+  const made = writeClientReport({ settings: w.settings, entries: w.record.entries(), bookings: [...w.store.bookings.values()], month: "2026-11", language: "en", out, source: "live", preparedBy: "Divya, local Operator", now: at(12, 1, 9) });
   assert.equal(made.check, undefined);
   const page = readFileSync(join(out, "report-2026-11-en.html"), "utf8");
   assert.ok(page.includes(verifyLink(made.report)) && !page.includes("#s1.") && page.includes(STRINGS.en.page.scanToCheck));
@@ -95,7 +95,7 @@ test("an unsigned report has no summary: the page keeps the #digest link and the
 test("a signed go-live certificate's summary: held, total, failed, not tested, on its date, from stand-in services", () => {
   const out = tempDir();
   const issued = Date.parse("2026-11-03T10:30:00+05:30");
-  const made = writeGoLiveCertificate({ settings: glowSalon(), handCheck: { held: 33, total: 33, checks: 196, failedTitles: [] }, language: "hi", out, key: privateKey, preparedBy: "Divya, local partner", now: issued });
+  const made = writeGoLiveCertificate({ settings: glowSalon(), handCheck: { held: 33, total: 33, checks: 196, failedTitles: [] }, language: "hi", out, key: privateKey, preparedBy: "Divya, local Operator", now: issued });
   const link = [...made.texts[0].matchAll(S1)][0][0];
   assert.equal(made.texts[0].split("\n").at(-1), `${STRINGS.hi.checkGenuine}: ${link}`, "the text ends with the check link");
   assert.ok(!made.texts[0].includes(`/verify/#${made.code}`), "the short /verify/#code is not printed beside it");
@@ -110,7 +110,7 @@ test("a signed go-live certificate's summary: held, total, failed, not tested, o
 });
 
 test("a UPI shop's summary says its money is what the owner marked", () => {
-  const upi: MonthlyReport = { ...sampleReport(), source: "live", preparedBy: "Divya, local partner", paidBy: "owner-marked" };
+  const upi: MonthlyReport = { ...sampleReport(), source: "live", preparedBy: "Divya, local Operator", paidBy: "owner-marked" };
   const env = seal(upi, privateKey);
   const check = checkSummaryLink(summaryLinkFor(env, reportSummaryFields(upi), privateKey)!, LIST);
   assert.ok(check.status === "genuine" && check.summary.ownerMarked === true);
@@ -119,7 +119,7 @@ test("a UPI shop's summary says its money is what the owner marked", () => {
 test("the monthly job sends the owner the summary link of the report it signed, and it checks as genuine", async () => {
   const w = await novemberWorld();
   let n = 0;
-  const job = createMonthlyReport({ source: "live", pages: { dir: tempDir(), baseUrl: "https://reports.example.com/r" }, options: () => ({ preparedBy: "Divya, local partner", innovator: false }), key: privateKey, token: () => `t${++n}`.padEnd(8, "0") });
+  const job = createMonthlyReport({ source: "live", pages: { dir: tempDir(), baseUrl: "https://reports.example.com/r" }, options: () => ({ preparedBy: "Divya, local Operator", innovator: false }), key: privateKey, token: () => `t${++n}`.padEnd(8, "0") });
   const context: MonthlyReportContext = { settings: w.settings, clock: w.clock, messaging: w.messaging, record: w.record, store: w.store, save: () => undefined };
   w.clock.set(at(12, 1, 9));
   await job.run(context);

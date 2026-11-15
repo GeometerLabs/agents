@@ -1,5 +1,5 @@
-// The Streetlist home on the partner server (plan item 6 of before-launch.md, decision 49): streetlist.in's static pages (/, /shops, /partners, /privacy,
-// /examples/..., /assets/...) are served by the partner server's own Caddy, and everything else on that domain goes to the front door (services/door.ts).
+// The Streetlist home on the Operator server (plan item 6 of before-launch.md, decision 49): streetlist.in's static pages (/, /shops, /partners, /privacy,
+// /examples/..., /assets/...) are served by the Operator server's own Caddy, and everything else on that domain goes to the front door (services/door.ts).
 // This file is the one place that knows what the home is and how a build of it reaches the server:
 //
 //   - WHAT IT SERVES: the names the home owns (HOME_TOP). Each must be reserved in fleet's slug list (apps/fleet/src/page-slugs.ts RESERVED_SLUGS), so a shop can never

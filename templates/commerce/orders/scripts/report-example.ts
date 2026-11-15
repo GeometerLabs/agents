@@ -26,7 +26,7 @@ await main(async () => {
   for (const language of ["hi", "en", "ml", "kn", "both"] as const) {
     files.push(...writeOrdersReport({
       settings: world.settings, entries: world.record.entries(), orders: [...world.store.orders.values()], month: "2026-11", language, out, source: "stand-in",
-      key: privateKey, preparedBy: "Divya, local partner (example)", now: at(12, 1, 10),
+      key: privateKey, preparedBy: "Divya, local Operator (example)", now: at(12, 1, 10),
     }).files);
   }
   console.log(`An example month (Annapurna Tiffins, November 2026) on stand-in services and test money. ${new Set(files).size} files in ${out}.`);

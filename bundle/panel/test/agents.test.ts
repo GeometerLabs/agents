@@ -1,5 +1,5 @@
 // Own agents in the panel (B51's rest, 12 Nov 2026, agents.ts and views-agents.ts): a builder sees each own agent beside the shops, from the files the deployer writes
-// (status/<agent>.json `own`, exports/<agent>/), with its Guards and their credentials' dates but never a credential; a partner sees none and gets a 404; the three
+// (status/<agent>.json `own`, exports/<agent>/), with its Guards and their credentials' dates but never a credential; an Operator sees none and gets a 404; the three
 // actions write request files that hold a name and an id and nothing a command could run; no script on the page; and none of the words a page must not say.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -36,7 +36,7 @@ function ownAgent(b: Boot, id = "my-agent", o: { held?: number; crash?: Record<s
   writeFileSync(join(dir, "in-service.json"), JSON.stringify({ version: "4f9c2e1", at: AT, held: 12, of: 12, code: "GL-7K2M" }));
 }
 
-test("a builder sees each own agent beside the shops; a partner sees none, and its page is a 404 to them", async () => {
+test("a builder sees each own agent beside the shops; an Operator sees none, and its page is a 404 to them", async () => {
   const b = await boot(); try {
     b.addShop("glow-salon");
     ownAgent(b, "my-agent", { held: 1 });

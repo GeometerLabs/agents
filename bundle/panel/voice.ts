@@ -44,7 +44,7 @@ export function applyVoice(runtime: Record<string, unknown>, form: VoiceForm): {
   return { ok: true, runtime: { ...runtime, speech: { ...before, provider: form.provider, rate: { sttInrPerMinute: stt }, media: { ...((before.media ?? {}) as object), downloadHosts: [form.downloadHost] } } } };
 }
 
-/** A runtime.json the panel writes again (an edit of the shop's setup) keeps the voice block the builder or partner turned on. */
+/** A runtime.json the panel writes again (an edit of the shop's setup) keeps the voice block the builder or Operator turned on. */
 export function keepSpeech(runtime: Record<string, unknown>, before: unknown): Record<string, unknown> {
   const s = (before as { speech?: unknown } | undefined)?.speech;
   return s === undefined ? runtime : { ...runtime, speech: s };

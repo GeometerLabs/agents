@@ -99,7 +99,7 @@ Hindi, English, Malayalam and Kannada, and the Hindi, Malayalam and Kannada peop
 
 ## Sell it
 
-[`sell/guide.en.md`](sell/guide.en.md) (and `.hi`, `.ml`, `.kn`) teaches a local partner or a builder to pitch it, and `sell/one-pager.*.html` is the sheet the owner keeps. The only claim about money is: "No order confirmed without the payment record (or your confirmation for UPI); every refund tracked."
+[`sell/guide.en.md`](sell/guide.en.md) (and `.hi`, `.ml`, `.kn`) teaches a local Operator or a builder to pitch it, and `sell/one-pager.*.html` is the sheet the owner keeps. The only claim about money is: "No order confirmed without the payment record (or your confirmation for UPI); every refund tracked."
 
 ## What is in the folder
 

@@ -158,7 +158,7 @@ export function buildUpiSituations(shop: Shop, book: BookWords): Built[] {
   });
 
   // 6. The owner confirms after the hold was released
-  add("upi-confirmed-after-release", "The owner confirms after the hold was released: recorded as received, not booked again by itself, the owner and the partner told", `The hold runs out (${hold + 1} minutes), then the owner taps Received`, async () => {
+  add("upi-confirmed-after-release", "The owner confirms after the hold was released: recorded as received, not booked again by itself, the owner and the Operator told", `The hold runs out (${hold + 1} minutes), then the owner taps Received`, async () => {
     const { results, expect } = checker();
     const { w } = world();
     await w.say(book(en, slot!));
@@ -169,7 +169,7 @@ export function buildUpiSituations(shop: Shop, book: BookWords): Built[] {
     expect("The customer was told the owner will contact them", sent(w, "upi_late_received") === 1);
     expect("The owner was told, with Refund sent and Kept for booking", sent(w, "owner_upi_late", "owner") === 1 && (w.messaging.sentTo(w.owner).at(-1)?.interactive?.buttons ?? []).map((b) => b.id.split(":")[0]).join(",") === "upi-refunded,upi-kept");
     const issue = w.store.bookings.get("b-1")?.refundIssues?.find((i) => i.kind === "late_upi");
-    expect("The partner is told: the shop's status counts it for the builder, and the unfinished work lists the money as owed back", !!issue && open(w).includes(`upi_refund_owed b-1 ${D * 100}`), open(w).join(" | "));
+    expect("The Operator is told: the shop's status counts it for the builder, and the unfinished work lists the money as owed back", !!issue && open(w).includes(`upi_refund_owed b-1 ${D * 100}`), open(w).join(" | "));
     await w.ownerMarksRefund("b-1", { tap: true, kept: true });
     expect("When the owner keeps it for a booking made by hand, nothing is owed and the customer is not told it was refunded", open(w).length === 0 && sent(w, "upi_refund_sent") === 0 && entries(w, MARK_ACTIONS.refundKept, "confirmed").length === 1);
     return results;

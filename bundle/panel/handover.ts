@@ -1,4 +1,4 @@
-// Moving a shop to another partner or builder (plan B38), with the owner's agreement and the reason recorded.
+// Moving a shop to another Operator or builder (plan B38), with the owner's agreement and the reason recorded.
 //
 // The steps. Whoever serves the shop (or a builder on the server) says who gets it and why. The panel makes a one-use code, shows it once, and keeps its hash with the request
 // (72 hours). The owner sends "move CODE" to the shop's WhatsApp number from their own number; the agent writes a `handover_agreed` entry in the record (modules/approvals/handover.ts).
@@ -44,7 +44,7 @@ export type MoveState =
 const GEOMETER_LIKE = /geometer|fleet|^server$|^system$|^admin$/iu;
 
 // The handover flow (ask, wait for the owner's "move CODE" by WhatsApp, finish): keeps only the code's hash and expires after 72 hours so a stale code moves nothing. `now` is injectable for tests.
-/** `onMoved` (item 11d): called once a shop has moved, so what the old partner was given for it stops working (the owner's approvals link, which they made). */
+/** `onMoved` (item 11d): called once a shop has moved, so what the old Operator was given for it stops working (the owner's approvals link, which they made). */
 export function createHandover(shops: Shops, accounts: Accounts, store: Store, now: () => number, onMoved?: (shop: string) => void) {
   const key = (shop: string) => `handover/${shop}.json`;
   const iso = (ms: number) => new Date(ms).toISOString();

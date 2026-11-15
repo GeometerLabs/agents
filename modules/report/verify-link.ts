@@ -7,7 +7,7 @@
 //
 // The key part is left out of every link this repository prints. A key named in the link is shown on the page as "from the link", and a paper cannot vouch for
 // its own signer: the key id on the paper is the one in the file, which anyone who changed the paper and signed it again would also have changed. A key the reader got
-// from the person they trust (the partner, Geometer's team) is the check, so the paper says where to get one rather than carrying one. `verifyLink` takes a `key`
+// from the person they trust (the Operator, Geometer's team) is the check, so the paper says where to get one rather than carrying one. `verifyLink` takes a `key`
 // only for a caller that holds a key the reader has already been given another way.
 import { qrSvg } from "../qr/svg.ts";
 import { encodeQr } from "../qr/qr.ts";

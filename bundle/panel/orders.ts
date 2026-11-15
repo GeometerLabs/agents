@@ -77,7 +77,7 @@ export const placesOf = (area: string): string[] => {
   return area.split(/[,\n]/u).map((p) => p.trim().slice(0, 40)).filter((p) => p !== "" && !seen.has(p.toLowerCase()) && (seen.add(p.toLowerCase()), true)).slice(0, MAX_PLACES);
 };
 
-/** The settings of the template's example, as the form's starting point: its rules are the template's defaults; the shop, menu and slots are the partner's own. */
+/** The settings of the template's example, as the form's starting point: its rules are the template's defaults; the shop, menu and slots are the Operator's own. */
 export function newOrdersDraft(id: string, accountId: string, template: Template, example: Settings, now: string): Draft {
   return {
     id, accountId, template: template.id, createdAt: now, editing: false, saved: false,

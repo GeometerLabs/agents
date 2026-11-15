@@ -68,10 +68,10 @@ export function connectionOf(dir: string, server: ServerConfig, folder: AgentFol
 
 /** `agent add`: make the agent's folder, a credential for each Guard and the file that hands them to the agent (agent/credentials.ts). Starts nothing. */
 /**
- * Plan decision 55 (owner, 14 Nov 2026): no custom agents run on Geometer's servers. Geometer's partner server is the one whose panel runs in hosted mode; there,
- * partners use the templates and tune them, and an agent someone wrote runs on its builder's own server. Refused at `agent add`, `check` and `deploy`.
+ * Plan decision 55 (owner, 14 Nov 2026): no custom agents run on Geometer's servers. Geometer's Operator server is the one whose panel runs in hosted mode; there,
+ * Operators use the templates and tune them, and an agent someone wrote runs on its builder's own server. Refused at `agent add`, `check` and `deploy`.
  */
-export const HOSTED_AGENT_REFUSAL = "This is Geometer's partner server, and no custom agents run on Geometer's servers: partners use the templates and tune them. An agent you wrote runs on your own server (install the bundle there, or pair it from your account on geometer.dev).";
+export const HOSTED_AGENT_REFUSAL = "This is Geometer's Operator server, and no custom agents run on Geometer's servers: Operators use the templates and tune them. An agent you wrote runs on your own server (install the bundle there, or pair it from your account on geometer.dev).";
 const hostedProblem = (server: ServerConfig): Problem[] => (server.panel.mode === "hosted" ? [{ rule: "agent-on-hosted", message: HOSTED_AGENT_REFUSAL }] : []);
 
 export function addAgent(dir: string, name: string, flags: AgentFlags, readFile: (path: string) => string, now: Date): AgentFolder {

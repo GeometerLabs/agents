@@ -32,7 +32,7 @@ let dirs: string[] = [];
 const tempDir = () => { const d = mkdtempSync(join(tmpdir(), "geo-summary-")); dirs.push(d); return d; };
 test.afterEach(() => { for (const d of dirs) rmSync(d, { recursive: true, force: true }); dirs = []; });
 
-const live = (o: Partial<FeesReport> = {}): FeesReport => ({ ...sampleReport(), source: "live", preparedBy: "Divya, local partner", ...o });
+const live = (o: Partial<FeesReport> = {}): FeesReport => ({ ...sampleReport(), source: "live", preparedBy: "Divya, local Operator", ...o });
 
 test("a signed monthly report's summary is genuine under the listed key, names the full report and carries its figures in layout 4", () => {
   const r = live();
@@ -60,7 +60,7 @@ test("a UPI centre's summary says its money is what the owner marked", () => {
 
 test("a signed go-live certificate ends its text with its summary link, which is genuine and from stand-in services", () => {
   const out = tempDir();
-  const made = writeGoLiveCertificate({ settings: brightTuition(), handCheck: { held: 17, total: 17, checks: 90, failedTitles: [] }, language: "ml", out, key: privateKey, preparedBy: "Divya, local partner", now: Date.parse("2026-11-03T10:30:00+05:30") });
+  const made = writeGoLiveCertificate({ settings: brightTuition(), handCheck: { held: 17, total: 17, checks: 90, failedTitles: [] }, language: "ml", out, key: privateKey, preparedBy: "Divya, local Operator", now: Date.parse("2026-11-03T10:30:00+05:30") });
   const link = [...made.texts[0].matchAll(S1)][0][0];
   assert.equal(made.texts[0].split("\n").at(-1), `${STRINGS.ml.checkGenuine}: ${link}`);
   assert.ok(readFileSync(join(out, "go-live-certificate-ml.html"), "utf8").includes(link));

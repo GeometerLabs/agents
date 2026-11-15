@@ -47,5 +47,5 @@ test("cancelling an order from the chat is not in this release, and says so", as
   const w = withAssistant();
   bigOrderWaiting(w);
   await w.ownerSays("cancel o-1");
-  assert.equal(w.lastTextTo(w.owner), "That can't be done from the chat for o-1 in this version. Use the message I sent you about it, or ask your partner.");
+  assert.equal(w.lastTextTo(w.owner), "That can't be done from the chat for o-1 in this version. Use the message I sent you about it, or ask your Operator.");
 });

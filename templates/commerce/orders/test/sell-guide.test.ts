@@ -134,7 +134,7 @@ test("sell guide: the English headings are the ones SELL-GUIDE.md names", () => 
   const spec = readFileSync(SPEC, "utf8");
   const rows = [...spec.matchAll(/^\| (\d+) \| ([^|]+?) \| /gm)].map((m) => [Number(m[1]), m[2]] as const);
   assert.equal(rows.length, 11);
-  // One title changes, on purpose: section 4 says "to the owner" because Orders has no demo on the owner's phone, only a walkthrough on the partner's laptop (the heading must not
+  // One title changes, on purpose: section 4 says "to the owner" because Orders has no demo on the owner's phone, only a walkthrough on the Operator's laptop (the heading must not
   // claim more than is true today).
   const titles = sections(guide("en")).map((s) => [s.n, s.title.replace("Show it to the owner", "Show it on the owner's own phone")] as const);
   assert.deepEqual(titles, rows);
@@ -324,7 +324,7 @@ test("sell guide: what the guide says is built is (the hosted demo's adapter, wh
   const certScript = readFileSync(orders("scripts/go-live-certificate.ts"), "utf8");
   for (const option of ["settings", "lang", "out"]) assert.ok(certScript.includes(`${option}: { type: "string" }`), `go-live-certificate.ts takes --${option}`);
   const script = readFileSync(orders("scripts/hand-check.ts"), "utf8");
-  assert.ok(script.includes('settings: { type: "string" }'), "the guide tells the partner to run the hand check on the shop's own settings file");
+  assert.ok(script.includes('settings: { type: "string" }'), "the guide tells the Operator to run the hand check on the shop's own settings file");
   assert.ok(existsSync(orders("settings/annapurna-tiffins.example.json")));
 });
 
