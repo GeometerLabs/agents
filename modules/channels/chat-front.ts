@@ -56,13 +56,14 @@ export const guestCookie = (path: string, handle: string): string => `${CHAT_COO
  * The chat page's content policy: PAGE_POLICY and exactly what the page needs, each at its own address (the pages origin is shared by every shop, so nothing says 'self'):
  * its one script by this response's nonce and the vendored player at its own address (no `unsafe-eval`: the light build has no eval), the calls it makes (send, thread, push, a
  * recording, the animations' files), its alerts' worker, the one font, and the shop's own character pictures (`<page>/character/`, for DiceBear's animation and the well face).
- * It is PAGE_POLICY with its `img-src` widened, never a second `img-src` (a browser reads only the first). Every other page keeps PAGE_POLICY.
+ * It is PAGE_POLICY with its `img-src` widened, never a second `img-src` (a browser reads only the first), and its `form-action` narrowed from 'self' to the one address the composer
+ * posts to (the pages origin is shared by every shop, so 'self' would let a form go to any of them). Every other page keeps PAGE_POLICY.
  */
 // One policy for the chat page (17 Nov merge of W1b and W3): W1b's character pictures (img-src), the lazily loaded Lottie player and the voice route; and, through the
 // Streetlist door, W3's app manifest and, when the shop sends through Streetlist's one push key, the app's own root worker. Each at its exact address, never 'self'
 // (the pages origin is shared by every shop).
 export const chatPolicy = (base: string, nonce: string, home?: string, app?: { origin: string; worker: boolean }): string =>
-  `${PAGE_POLICY.replace("img-src data:", home ? `img-src data: ${home}/character/` : "img-src data:")}; script-src 'nonce-${nonce}' ${base}/m/lottie.js; connect-src ${base}/send ${base}/thread ${base}/push ${base}/voice ${base}/m/ ${base}/id/; worker-src ${base}/sw.js${app?.worker ? ` ${app.origin}/sw.js` : ""}; font-src ${base}/font.woff2${app ? `; manifest-src ${app.origin}/manifest.webmanifest` : ""}`;
+  `${PAGE_POLICY.replace("img-src data:", home ? `img-src data: ${home}/character/` : "img-src data:").replace("form-action 'self'", `form-action ${base}/send`)}; script-src 'nonce-${nonce}' ${base}/m/lottie.js; connect-src ${base}/send ${base}/thread ${base}/push ${base}/voice ${base}/m/ ${base}/id/; worker-src ${base}/sw.js${app?.worker ? ` ${app.origin}/sw.js` : ""}; font-src ${base}/font.woff2${app ? `; manifest-src ${app.origin}/manifest.webmanifest` : ""}`;
 
 /**
  * Which key and worker alerts use on this page, in one place so the page that offers them and the call that takes them cannot disagree (W3). Served through the Streetlist
@@ -121,7 +122,7 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
   // W2: a guest's identity (keep this chat, a new phone, delete my chat); a parent's chat has none, their link is who they are
   if (sub === "/id" || sub.startsWith("/id/")) {
     if (parent) return kit.sendHtml(res, 404, NOT_FOUND);
-    return identityRoute(kit, a, { sub, hash, base, path, languageOf: async () => kit.languageOf(req, url, (await shopOf(a, kind)).languages) });
+    return identityRoute(kit, a, { sub, hash, base, path, languageOf: async (form) => kit.languageOf(req, url, (await shopOf(a, kind)).languages, form) });
   }
 
   // the animations' player and files: static, public, a year's cache (the player's address carries its version), served only to this page's own policy

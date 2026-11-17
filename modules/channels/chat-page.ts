@@ -26,7 +26,7 @@ import { ALERT_WORDS, ALERTS_SCRIPT } from "../push/pages.ts";
 import { CHATS_LIST_WORDS, INSTALL_SCRIPT, JOIN_SCRIPT, SHARE_ICON } from "./chats-list.ts";
 import type { ChatThread } from "./chat.ts";
 import { HOLD_TO_RECORD } from "../assistant/app/talk.ts";
-import { CHAT_CSS, ICON, THEME_KEY, themeSwitch } from "./look.ts";
+import { CHAT_CSS, CHAT_INSTALL_CSS, CHAT_VOICE_CSS, ICON, THEME_KEY, themeSwitch } from "./look.ts";
 import { PAINTS, isPaint } from "./chat-paint.ts";
 import type { PaintId } from "./chat-paint.ts";
 import { LOTTIE_VERSION, MOMENT_SCRIPT, STILLS } from "./chat-motion.ts";
@@ -137,7 +137,7 @@ export function chatPage(a: ChatPageArgs): string {
   const wellWords = { chip: FACE_WORDS[a.language].well, alt: pictureWords(a.language, a.shop.name, "well", c?.name), still: wellUrl ?? null, anim: wellAnim ?? null };
   const stills = { confirmed: STILLS.confirmed, paid: STILLS.paid };
 
-  const css = `@font-face{font-family:"Baloo 2";font-style:normal;font-weight:400 800;font-display:swap;src:url(${a.fontUrl}) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}:root{--display:"Baloo 2",system-ui,sans-serif}${CHAT_CSS}${MOTION}`;
+  const css = `@font-face{font-family:"Baloo 2";font-style:normal;font-weight:400 800;font-display:swap;src:url(${a.fontUrl}) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}:root{--display:"Baloo 2",system-ui,sans-serif}${CHAT_CSS}${a.onStreetlist ? CHAT_INSTALL_CSS : ""}${a.listen ? CHAT_VOICE_CSS : ""}${MOTION}`;
   const thread = linesHtml(a.thread.lines, a, face);
   const tapsHtml = (list: { id?: string; n?: number; title: string; hint?: string; go?: boolean }[]) => list.map((t) => `<button type="button" class="tap${t.go ? " go" : ""}"${t.id !== undefined ? ` data-tap="${esc(t.id)}"` : ` data-quick="${t.n}"`}>${esc(t.title)}${t.hint ? `<small>${esc(t.hint)}</small>` : ""}</button>`).join("");
   const opening = empty

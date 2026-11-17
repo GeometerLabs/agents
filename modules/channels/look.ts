@@ -296,11 +296,6 @@ body.chat { display: flex; flex-direction: column; height: var(--vvh, 100dvh); o
 .callrow .btn { min-height: 44px; margin: 0; padding: .3em 1em; }
 .alerts-slot .alerts { margin: 0; }
 .alerts-slot .card { margin: 6px 0; }
-/* the install prompt on a chat served through Streetlist (W3): one big button, or on an iPhone the one-line Share hint with its icon, and a quiet "Not now" */
-#install-go { width: 100%; }
-#install-slot .quiet { margin-top: 6px; }
-.note.ios { display: flex; align-items: center; gap: 10px; font-weight: 600; }
-.share-i { flex: none; width: 26px; height: 26px; fill: none; stroke: var(--green); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 340px) { .b { max-width: 90%; } .taps { margin-left: 0; } }
 /* ---- motion's places (17 Nov 2026): the head's picture, a moment the record marks, hold to talk ---- */
 .face-p { flex: none; display: block; line-height: 0; border-radius: 14px; }
@@ -313,6 +308,17 @@ body.chat { display: flex; flex-direction: column; height: var(--vvh, 100dvh); o
 .hello-art { display: none; justify-content: center; height: 72px; margin: 0 0 4px; }
 .hello-art.on { display: flex; }
 .hello-art .art { width: 72px; height: 72px; }
+`;
+
+const INSTALL = `
+/* the install prompt on a chat served through Streetlist (W3): one big button, or on an iPhone the one-line Share hint with its icon, and a quiet "Not now" */
+#install-go { width: 100%; }
+#install-slot .quiet { margin-top: 6px; }
+.note.ios { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.share-i { flex: none; width: 26px; height: 26px; fill: none; stroke: var(--green); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+`;
+
+const VOICE = `
 .rec { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; margin: 0; padding: 0; border: 1.5px solid var(--line2); border-radius: 50%; background: var(--card); color: var(--ink); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .rec svg { width: 24px; height: 24px; }
 .rec.on { background: var(--bad); border-color: var(--bad); color: #fff; }
@@ -326,6 +332,10 @@ body.chat { display: flex; flex-direction: column; height: var(--vvh, 100dvh); o
 export const CUSTOMER_CSS = min(CORE + CUSTOMER);
 export const OWNER_CSS = min(CORE + DARK + OWNER);
 export const CHAT_CSS = min(CORE + DARK + CHAT);
+/** Hold to talk's own rules (the button, the hint, the red note): added only to a page whose shop has a voice service, so a shop without one carries nothing of it. */
+/** The install prompt's rules (W3): added only to a page served through the Streetlist door, which is the only page that has the slot. */
+export const CHAT_INSTALL_CSS = min(INSTALL);
+export const CHAT_VOICE_CSS = min(VOICE);
 /** The owner's sign-in pages: the common part only. */
 export const SIGNIN_CSS = min(CORE);
 
