@@ -17,7 +17,7 @@ import type { Settings } from "../src/settings.ts";
 
 const NOW = Date.UTC(2026, 10, 17, 6, 30);
 const keys = (o: { gaps: { missing: string }[] }) => o.gaps.map((g) => g.missing);
-const stateNames = (): string[] => [...readFileSync(new URL("../src/order.ts", import.meta.url), "utf8").match(/export type OrderState =([\s\S]+?);/u)![1].matchAll(/"([a-z_]+)"/gu)].map((m) => m[1]);
+const stateNames = (): string[] => { const src = readFileSync(new URL("../src/order.ts", import.meta.url), "utf8"); return [...src.slice(src.indexOf("export type OrderState ="), src.indexOf("export type Ack")).matchAll(/\|\s*"([a-z_]+)"/gu)].map((m) => m[1]); };
 
 function make(settings: Settings, state: OrderState, lineIndex = 0, qty = 10): PurchaseOrder {
   const line = settings.catalogue[lineIndex];

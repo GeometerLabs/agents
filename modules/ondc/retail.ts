@@ -28,7 +28,6 @@ function location(g: Gaps, seller: Party, slots: readonly Slot[], nowMs: number)
   const whole = a?.locality && a.city && a.state && a.areaCode ? a : undefined;
   g.need("shop_address_parts", whole);
   const gps = g.need("shop_gps", f.gps);
-  g.need("city_code", f.cityCode);
   const from = slots.map((s) => s.from).sort()[0];
   const to = slots.map((s) => s.to).sort().reverse()[0];
   return clean({
@@ -166,9 +165,10 @@ export function orderMessage(o: OrderIn, stage: RetailStage, c: Caller): Out | n
   const b = withBuyer ? c.buyer : undefined;
   const a = b?.address;
   const slot = stage === "on_select" || stage === "on_init" ? undefined : o.slot && { range: { start: iso(o.slot.fromMs), end: iso(o.slot.toMs) } };
-  const startAddress = (() => { const w = f.address?.locality && f.address.city && f.address.state && f.address.areaCode ? f.address : undefined; g.need("shop_address_parts", w); return w && { locality: w.locality, city: w.city, state: w.state, area_code: w.areaCode }; })();
-  const shopGps = g.need("shop_gps", f.gps);
-  const care = g.need("shop_phone", f.phone);
+  const late = stage !== "on_select" && stage !== "on_init"; // the shop's own address, position and phone are only written from on_confirm on
+  const startAddress = !late ? undefined : (() => { const w = f.address?.locality && f.address.city && f.address.state && f.address.areaCode ? f.address : undefined; g.need("shop_address_parts", w); return w && { locality: w.locality, city: w.city, state: w.state, area_code: w.areaCode }; })();
+  const shopGps = late ? g.need("shop_gps", f.gps) : undefined;
+  const care = late ? g.need("shop_phone", f.phone) : undefined;
   const fulfillment = {
     id: fid,
     type: FULFILMENT[mode].type,
