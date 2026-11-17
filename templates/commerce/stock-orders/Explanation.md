@@ -49,3 +49,8 @@
 - **The ask card has no payment lines.** Stock orders takes no money (no customers, no payment service; the owner pays suppliers outside the chat), so its card leaves out the UPI ID and the shop's own Razorpay account. The ask-card test names this one exception and its reason. The setup-visit step of each sell guide now names the card.
 - **Try now** (`modules/messaging/send-once.ts`) clears the last-try time instead of setting it to 0, so a refused message is due at the next run on any clock.
 - **Harness:** `cardCode()` reads both card wordings (the agent's quoted "yes K7X2" and the assistant's plain `reply yes K7X2`); an assistant card for the same order replaces the agent's own card (same action, so one live card), and the newest code is the one that works.
+
+## The agent's import check reads imports as Node loads them (18 Nov 2026)
+
+`test/runtime-imports.test.ts` checks that the agent, its assistant skill and its owner page read no disk, no database and no server file, because the browser demo is built from the agent. Since W2 (17 Nov), three shared type files the agent imports for types only (`RuntimeEvent`, `OwnerView`, `TalkModel`) reach server files through their own imports, and the check followed those type-only imports. Type stripping erases a whole `import type ... from` or `export type ... from` statement before the file runs, so it loads nothing. With the owner's yes (18 Nov: the recommended option, over moving the shared types into files of their own), the walker leaves those statements out; a mixed `import { type A, b }` still loads its module and is still followed. Traced by hand before the change: with type-only imports left out, the agent's graph reads no disk.
+
