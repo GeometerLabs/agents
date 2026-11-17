@@ -21,7 +21,7 @@ export interface Strings {
   settledByWord: (who: string) => string;
   settledBySomeone: string;
   /** The owner's lines: "label: number". */
-  label: { collected: string; stillToCollect: string; givenBack: string; takenOff: string; wasAsked: string; approved: string; saidNo: string; remindersSent: string; stoppedByLimits: string; notChecked: string; students: string };
+  label: { collected: string; oldDuesCollected: string; stillToCollect: string; givenBack: string; takenOff: string; wasAsked: string; approved: string; saidNo: string; remindersSent: string; stoppedByLimits: string; notChecked: string; students: string };
   /** Classes (the Fees add-on): the lines of a centre that has them, each "label: number". Counted from the record; never a word about learning. */
   classes: { held: string; linksSent: string; attendance: string; missedNotes: string; doubts: string };
   /** What each limit that stopped something is called. */
@@ -35,7 +35,7 @@ export interface Strings {
   languageName: Record<Language, string>;
   /** The full lists on the page: what the hand check did not cover, and what the record cannot count. */
   /** The labels a UPI shop's report uses instead (B33): its money is what the owner marked, not what a payment service shows. */
-  upiLabel: { collected: string; givenBack: string; notChecked: string };
+  upiLabel: { collected: string; oldDuesCollected: string; givenBack: string; notChecked: string };
   /** The \"Money this month\" block (modules/accounting/report-block.ts), from the signed books summary. */
   moneyBlock: MoneyBlockWords;
   notTested: Record<NotTestedKey, string>;
@@ -66,7 +66,7 @@ export interface Strings {
 
 export const en: Strings = {
   agent: "Fees agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", fullReport: "Full report", checkGenuine: CHECK_GENUINE.en, settledByWord: SETTLED_BY_WORD.en, settledBySomeone: SETTLED_BY_SOMEONE.en,
-  label: { collected: "Collected", stillToCollect: "Still to collect", givenBack: "Given back", takenOff: "Taken off fees", wasAsked: "You were asked", approved: "You approved", saidNo: "You said no", remindersSent: "Reminders sent", stoppedByLimits: "Stopped by your limits", notChecked: "Not checked", students: "students" },
+  label: { collected: "Collected", stillToCollect: "Still to collect", oldDuesCollected: "Old dues collected", givenBack: "Given back", takenOff: "Taken off fees", wasAsked: "You were asked", approved: "You approved", saidNo: "You said no", remindersSent: "Reminders sent", stoppedByLimits: "Stopped by your limits", notChecked: "Not checked", students: "students" },
   classes: { held: "Classes held", linksSent: "Class links sent", attendance: "Students marked", missedNotes: "Missed-class notes sent", doubts: "Doubts handed to the teacher" },
   stop: {
     "no-reminder-once-paid": "Reminders after a payment", "reminder-cap": "More reminders than your cap", "waiver-limit": "Waivers for more than was owed", "fee-link-matches-record": "Links for the wrong amount", "refund-limit": "Refunds above what was paid",
@@ -78,7 +78,7 @@ export const en: Strings = {
   notChecked: { cash: "fees paid in cash or by bank transfer", upi: "payments outside Razorpay", whatsapp: "real WhatsApp", razorpay: "real Razorpay", review: "a native speaker's review of the wording" },
   languageName: { hi: "Hindi", en: "English", ml: "Malayalam", kn: "Kannada" },
   moneyBlock: MONEY_BLOCK_WORDS.en,
-  upiLabel: { collected: "Marked paid by owner", givenBack: "Refunds marked sent by owner", notChecked: "automatic payment checking (with UPI you mark each payment)" },
+  upiLabel: { collected: "Marked paid by owner", oldDuesCollected: "Old dues marked paid by owner", givenBack: "Refunds marked sent by owner", notChecked: "automatic payment checking (with UPI you mark each payment)" },
   notTested: {
     "upi-not-automatic": "automatic payment checking: with UPI the owner marks each payment received", "real-upi": "a real UPI app paying a real UPI ID (the owner's marks were tried, not a payment)",
     "cash-and-bank-transfers": "Fees paid in cash or by bank transfer (a parent who says so is sent to the owner; nothing is marked paid)",
@@ -142,7 +142,7 @@ export const en: Strings = {
 
 export const hi: Strings = {
   agent: "फीस एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", fullReport: "पूरी रिपोर्ट", checkGenuine: CHECK_GENUINE.hi, settledByWord: SETTLED_BY_WORD.hi, settledBySomeone: SETTLED_BY_SOMEONE.hi,
-  label: { collected: "जमा हुआ", stillToCollect: "अभी लेना बाकी", givenBack: "वापस किया", takenOff: "फीस से घटाया", wasAsked: "आपसे पूछा गया", approved: "आपने मंज़ूर किया", saidNo: "आपने मना किया", remindersSent: "भेजी गई याद", stoppedByLimits: "आपकी सीमाओं ने रोका", notChecked: "जाँचा नहीं गया", students: "विद्यार्थी" },
+  label: { collected: "जमा हुआ", stillToCollect: "अभी लेना बाकी", oldDuesCollected: "पुराना बकाया जमा हुआ", givenBack: "वापस किया", takenOff: "फीस से घटाया", wasAsked: "आपसे पूछा गया", approved: "आपने मंज़ूर किया", saidNo: "आपने मना किया", remindersSent: "भेजी गई याद", stoppedByLimits: "आपकी सीमाओं ने रोका", notChecked: "जाँचा नहीं गया", students: "विद्यार्थी" },
   classes: { held: "हुई क्लास", linksSent: "भेजे गए क्लास लिंक", attendance: "उपस्थिति दर्ज", missedNotes: "छूटी क्लास के नोट भेजे", doubts: "शिक्षक को दिए डाउट" },
   stop: {
     "no-reminder-once-paid": "भुगतान के बाद याद", "reminder-cap": "सीमा से ज़्यादा याद", "waiver-limit": "बकाया से ज़्यादा की छूट", "fee-link-matches-record": "गलत रकम के लिंक", "refund-limit": "भरी रकम से ज़्यादा का रिफंड",
@@ -154,7 +154,7 @@ export const hi: Strings = {
   notChecked: { cash: "नकद या बैंक ट्रांसफर से दी गई फीस", upi: "Razorpay के बाहर के भुगतान", whatsapp: "असली WhatsApp", razorpay: "असली Razorpay", review: "शब्दों की किसी मूल भाषी से जाँच" },
   languageName: { hi: "हिंदी", en: "अंग्रेज़ी", ml: "मलयालम", kn: "कन्नड़" },
   moneyBlock: MONEY_BLOCK_WORDS.hi,
-  upiLabel: { collected: "मालिक द्वारा मिला हुआ दर्ज", givenBack: "मालिक द्वारा भेजा हुआ दर्ज रिफंड", notChecked: "भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं)" },
+  upiLabel: { collected: "मालिक द्वारा मिला हुआ दर्ज", oldDuesCollected: "पुराना बकाया, मालिक द्वारा मिला हुआ दर्ज", givenBack: "मालिक द्वारा भेजा हुआ दर्ज रिफंड", notChecked: "भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं)" },
   notTested: {
     "upi-not-automatic": "भुगतान की अपने-आप जाँच: UPI में हर भुगतान मालिक खुद मिला हुआ दर्ज करते हैं", "real-upi": "असली UPI ऐप से असली UPI ID पर भुगतान (मालिक का दर्ज करना आज़माया गया, भुगतान नहीं)",
     "cash-and-bank-transfers": "नकद या बैंक ट्रांसफर से दी गई फीस (जो अभिभावक ऐसा कहे उसे मालिक के पास भेजा जाता है; कुछ भी \"भरा हुआ\" नहीं माना जाता)",
@@ -217,7 +217,7 @@ export const hi: Strings = {
 
 export const ml: Strings = {
   agent: "ഫീസ് ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", fullReport: "പൂർണ്ണ റിപ്പോർട്ട്", checkGenuine: CHECK_GENUINE.ml, settledByWord: SETTLED_BY_WORD.ml, settledBySomeone: SETTLED_BY_SOMEONE.ml,
-  label: { collected: "പിരിഞ്ഞത്", stillToCollect: "ഇനിയും പിരിക്കാനുള്ളത്", givenBack: "തിരികെ നൽകിയത്", takenOff: "ഫീസിൽ നിന്ന് കുറച്ചത്", wasAsked: "നിങ്ങളോട് ചോദിച്ചു", approved: "നിങ്ങൾ അംഗീകരിച്ചു", saidNo: "നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു", remindersSent: "അയച്ച ഓർമ്മപ്പെടുത്തലുകൾ", stoppedByLimits: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", notChecked: "പരിശോധിക്കാത്തത്", students: "വിദ്യാർത്ഥികൾ" },
+  label: { collected: "പിരിഞ്ഞത്", stillToCollect: "ഇനിയും പിരിക്കാനുള്ളത്", oldDuesCollected: "പഴയ കുടിശ്ശിക പിരിഞ്ഞത്", givenBack: "തിരികെ നൽകിയത്", takenOff: "ഫീസിൽ നിന്ന് കുറച്ചത്", wasAsked: "നിങ്ങളോട് ചോദിച്ചു", approved: "നിങ്ങൾ അംഗീകരിച്ചു", saidNo: "നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു", remindersSent: "അയച്ച ഓർമ്മപ്പെടുത്തലുകൾ", stoppedByLimits: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", notChecked: "പരിശോധിക്കാത്തത്", students: "വിദ്യാർത്ഥികൾ" },
   classes: { held: "നടന്ന ക്ലാസുകൾ", linksSent: "അയച്ച ക്ലാസ് ലിങ്കുകൾ", attendance: "ഹാജർ രേഖപ്പെടുത്തിയവർ", missedNotes: "അയച്ച ക്ലാസ് മുടക്ക് കുറിപ്പുകൾ", doubts: "അധ്യാപകന് നൽകിയ സംശയങ്ങൾ" },
   stop: {
     "no-reminder-once-paid": "പണമടച്ചതിനു ശേഷമുള്ള ഓർമ്മപ്പെടുത്തൽ", "reminder-cap": "പരിധിയിൽ കൂടുതൽ ഓർമ്മപ്പെടുത്തൽ", "waiver-limit": "ബാക്കിയുള്ളതിലും കൂടുതലുള്ള ഇളവ്", "fee-link-matches-record": "തെറ്റായ തുകയുടെ ലിങ്ക്", "refund-limit": "അടച്ചതിൽ കൂടുതലുള്ള റീഫണ്ട്",
@@ -229,7 +229,7 @@ export const ml: Strings = {
   notChecked: { cash: "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ്", upi: "Razorpay-ക്ക് പുറത്തുള്ള പേയ്മെന്റുകൾ", whatsapp: "യഥാർത്ഥ WhatsApp", razorpay: "യഥാർത്ഥ Razorpay", review: "വാക്കുകളെക്കുറിച്ച് ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന" },
   languageName: { hi: "ഹിന്ദി", en: "ഇംഗ്ലീഷ്", ml: "മലയാളം", kn: "കന്നഡ" },
   moneyBlock: MONEY_BLOCK_WORDS.ml,
-  upiLabel: { collected: "ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത്", givenBack: "ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്", notChecked: "പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു)" },
+  upiLabel: { collected: "ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത്", oldDuesCollected: "പഴയ കുടിശ്ശിക, ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത്", givenBack: "ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട്", notChecked: "പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു)" },
   notTested: {
     "upi-not-automatic": "പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു", "real-upi": "യഥാർത്ഥ UPI ആപ്പിൽ നിന്ന് യഥാർത്ഥ UPI ID-യിലേക്കുള്ള പണമടവ് (ഉടമയുടെ രേഖപ്പെടുത്തലാണ് പരീക്ഷിച്ചത്, പണമടവല്ല)",
     "cash-and-bank-transfers": "പണമായോ ബാങ്ക് ട്രാൻസ്ഫറായോ അടച്ച ഫീസ് (അങ്ങനെ പറയുന്ന രക്ഷിതാവിനെ ഉടമയുടെ അടുത്തേക്ക് അയയ്ക്കുന്നു; ഒന്നും \"അടച്ചു\" എന്ന് രേഖപ്പെടുത്തുന്നില്ല)",
@@ -292,7 +292,7 @@ export const ml: Strings = {
 
 export const kn: Strings = {
   agent: "ಶುಲ್ಕ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", fullReport: "ಪೂರ್ಣ ವರದಿ", checkGenuine: CHECK_GENUINE.kn, settledByWord: SETTLED_BY_WORD.kn, settledBySomeone: SETTLED_BY_SOMEONE.kn,
-  label: { collected: "ಸಂಗ್ರಹವಾದದ್ದು", stillToCollect: "ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು", givenBack: "ಮರಳಿ ಕೊಟ್ಟದ್ದು", takenOff: "ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು", wasAsked: "ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು", approved: "ನೀವು ಒಪ್ಪಿದ್ದು", saidNo: "ನೀವು ಬೇಡ ಎಂದದ್ದು", remindersSent: "ಕಳುಹಿಸಿದ ನೆನಪುಗಳು", stoppedByLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", notChecked: "ಪರಿಶೀಲಿಸದ್ದು", students: "ವಿದ್ಯಾರ್ಥಿಗಳು" },
+  label: { collected: "ಸಂಗ್ರಹವಾದದ್ದು", stillToCollect: "ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು", oldDuesCollected: "ಹಳೆಯ ಬಾಕಿ ಸಂಗ್ರಹವಾದದ್ದು", givenBack: "ಮರಳಿ ಕೊಟ್ಟದ್ದು", takenOff: "ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು", wasAsked: "ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು", approved: "ನೀವು ಒಪ್ಪಿದ್ದು", saidNo: "ನೀವು ಬೇಡ ಎಂದದ್ದು", remindersSent: "ಕಳುಹಿಸಿದ ನೆನಪುಗಳು", stoppedByLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", notChecked: "ಪರಿಶೀಲಿಸದ್ದು", students: "ವಿದ್ಯಾರ್ಥಿಗಳು" },
   classes: { held: "ನಡೆದ ತರಗತಿಗಳು", linksSent: "ಕಳುಹಿಸಿದ ತರಗತಿ ಲಿಂಕ್‌ಗಳು", attendance: "ಹಾಜರಾತಿ ಗುರುತಿಸಿದವರು", missedNotes: "ಕಳುಹಿಸಿದ ತಪ್ಪಿದ ತರಗತಿ ಟಿಪ್ಪಣಿಗಳು", doubts: "ಶಿಕ್ಷಕರಿಗೆ ನೀಡಿದ ಸಂದೇಹಗಳು" },
   stop: {
     "no-reminder-once-paid": "ಪಾವತಿಯ ನಂತರದ ನೆನಪು", "reminder-cap": "ಮಿತಿಗಿಂತ ಹೆಚ್ಚಿನ ನೆನಪು", "waiver-limit": "ಬಾಕಿಗಿಂತ ಹೆಚ್ಚಿನ ರಿಯಾಯಿತಿ", "fee-link-matches-record": "ತಪ್ಪು ಮೊತ್ತದ ಲಿಂಕ್", "refund-limit": "ಪಾವತಿಸಿದ್ದಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್",
@@ -304,7 +304,7 @@ export const kn: Strings = {
   notChecked: { cash: "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ", upi: "Razorpay ಹೊರಗಿನ ಪಾವತಿಗಳು", whatsapp: "ನಿಜವಾದ WhatsApp", razorpay: "ನಿಜವಾದ Razorpay", review: "ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ" },
   languageName: { hi: "ಹಿಂದಿ", en: "ಇಂಗ್ಲಿಷ್", ml: "ಮಲಯಾಳಂ", kn: "ಕನ್ನಡ" },
   moneyBlock: MONEY_BLOCK_WORDS.kn,
-  upiLabel: { collected: "ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು", givenBack: "ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್", notChecked: "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ)" },
+  upiLabel: { collected: "ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು", oldDuesCollected: "ಹಳೆಯ ಬಾಕಿ, ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು", givenBack: "ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್", notChecked: "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ)" },
   notTested: {
     "upi-not-automatic": "ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ: UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರೇ ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸುತ್ತಾರೆ", "real-upi": "ನಿಜವಾದ UPI ಆ್ಯಪ್‌ನಿಂದ ನಿಜವಾದ UPI ID ಗೆ ಪಾವತಿ (ಮಾಲೀಕರ ದಾಖಲಾತಿಯನ್ನು ಪ್ರಯತ್ನಿಸಲಾಯಿತು, ಪಾವತಿಯನ್ನಲ್ಲ)",
     "cash-and-bank-transfers": "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ವರ್ಗಾವಣೆಯಲ್ಲಿ ಕೊಟ್ಟ ಶುಲ್ಕ (ಹಾಗೆ ಹೇಳಿದ ಪೋಷಕರನ್ನು ಮಾಲೀಕರ ಬಳಿ ಕಳುಹಿಸಲಾಗುತ್ತದೆ; ಏನನ್ನೂ \"ಪಾವತಿಯಾಗಿದೆ\" ಎಂದು ಗುರುತಿಸುವುದಿಲ್ಲ)",
@@ -368,5 +368,5 @@ export const kn: Strings = {
 export const STRINGS: Record<Language, Strings> = { hi, en, ml, kn };
 
 /** The money labels of a report: a UPI centre's (B33) say the money was marked by the owner; a Razorpay centre's are as they were. */
-export const moneyLabels = (language: Language, paidBy?: "owner-marked"): { collected: string; givenBack: string } =>
-  paidBy === "owner-marked" ? STRINGS[language].upiLabel : { collected: STRINGS[language].label.collected, givenBack: STRINGS[language].label.givenBack };
+export const moneyLabels = (language: Language, paidBy?: "owner-marked"): { collected: string; oldDuesCollected: string; givenBack: string } =>
+  paidBy === "owner-marked" ? STRINGS[language].upiLabel : { collected: STRINGS[language].label.collected, oldDuesCollected: STRINGS[language].label.oldDuesCollected, givenBack: STRINGS[language].label.givenBack };
