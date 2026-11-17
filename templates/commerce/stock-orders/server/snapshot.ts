@@ -4,7 +4,9 @@
 //  - `seq` makes the next "po-3" (a `count`: po-N is quoted to suppliers, so a step that runs again after a restart must never give a new order a number already taken);
 //  - `handled` (the owner's message ids already acted on) and `requests` (one request, one order) are what stop a message delivered twice making a second order;
 //  - `optedOut` (suppliers who sent STOP), `asking` (a question the agent put to the owner), `assistant` (the assistant's part: its cards, memory, limit changes, talk)
-//    and `ai` (the month's AI counts) are saved so a restart in the middle of an approval or a question loses nothing.
+//    and `ai` (the month's AI counts) are saved so a restart in the middle of an approval or a question loses nothing;
+//  - `sendOnce` (modules/messaging/send-once.ts) holds each order message and reminder the agent asked for with its claim and ending: it is what makes a message go out once even if
+//    the process dies mid-send, so it must be saved with the orders.
 import type { Store } from "../src/order.ts";
 import { snapshotCodec } from "../../../../modules/runtime/snapshot.ts";
 
@@ -17,6 +19,7 @@ const codec = snapshotCodec<Store>(1, [
   { name: "asking", kind: "optional-object" },
   { name: "assistant", kind: "optional-object" },
   { name: "ai", kind: "optional-ai" },
+  { name: "sendOnce", kind: "optional-object" },
 ]);
 
 export const serializeStore: (store: Store) => string = codec.serialize;

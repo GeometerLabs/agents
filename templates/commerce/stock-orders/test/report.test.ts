@@ -123,6 +123,10 @@ test("an order that was cancelled before it went out is counted as never sent an
   const w = createWorld({ unapproved: ["stock_order_to_supplier"] });
   await w.ownerSays("order 10 boxes of hair colour from Ravi Traders");
   await w.ownerSays(w.approveText());
+  // a refusal that says nothing went out is tried again an hour later, three tries in all (send once); only then is the order marked not sent and the owner told
+  assert.equal(w.order("po-1")?.state, "approved");
+  await w.advance(60);
+  await w.advance(60);
   assert.equal(w.order("po-1")?.state, "send_failed");
   await w.ownerSays("cancel po-1");
   const r = November(w);
