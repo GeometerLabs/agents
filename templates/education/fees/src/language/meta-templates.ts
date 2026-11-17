@@ -6,7 +6,7 @@
 // stand-ins into {slots}. So what the parent receives is always what the outgoing check read, and the Hindi, Malayalam and Kannada wording that a native
 // speaker reviews exists in one place. The mechanism is shared (modules/language/meta-templates.ts); a test checks every body starts and ends with fixed words
 // (Meta rejects a body that starts or ends with a parameter) and fills back into the very text.
-import { formatDate, formatInr } from "../../../../../modules/language/format.ts";
+import { formatDate, formatInr, formatTime } from "../../../../../modules/language/format.ts";
 import { LANGUAGES } from "../../../../../modules/language/languages.ts";
 import type { Language } from "../../../../../modules/language/languages.ts";
 import { META_LANGUAGE, createMetaCatalogue, fillBody, metaBody } from "../../../../../modules/language/meta-templates.ts";
@@ -16,10 +16,11 @@ import { monthLabel } from "../due.ts";
 import { batchName } from "../settings.ts";
 import type { Settings } from "../settings.ts";
 import { dueDate, familyLines, inr, need, payTo, render } from "./templates.ts";
+import { CLASS_META_IDS, classDate, classTime } from "../classes/words.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "student" | "batch" | "month" | "fee" | "late" | "balance" | "paid" | "received" | "waiver" | "refund" | "limit" | "date" | "link" | "phone" | "ref" | "req" | "code" | "hours" | "upiCode" | "partner" | "openFees" | "page" | "lines";
+export type Slot = "business" | "student" | "batch" | "month" | "fee" | "late" | "balance" | "paid" | "received" | "waiver" | "refund" | "limit" | "date" | "link" | "phone" | "ref" | "req" | "code" | "hours" | "upiCode" | "partner" | "openFees" | "page" | "lines" | "classDate" | "classTime" | "classLink" | "materialLink" | "waiting";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   student: (f) => need(f, "studentName"),
@@ -45,22 +46,29 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   openFees: (f) => String(need(f, "openFeesCount")),
   page: (f) => need(f, "pageLink"),
   lines: (f) => familyLines(f), // the several fees of a family reminder, as one value (templates.ts)
+  // Classes (src/classes/words.ts): the class's date and time as the formatters write them, the teacher's link, the material page and the count of waiting doubts
+  classDate: (f) => classDate(f),
+  classTime: (f) => classTime(f),
+  classLink: (f) => need(f, "classLink"),
+  materialLink: (f) => need(f, "materialLink"),
+  waiting: (f) => String(need(f, "waitingCount")),
 };
 
 /** The stand-in values a message is written once with, and the slot each becomes. Each is unlike anything a template says on its own. */
-const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", student: "§student§", batch: "§batch§", month: "§month§", link: "§link§", phone: "§phone§", ref: "§ref§", req: "§req§", code: "§code§", upiCode: "§upicode§", partner: "§partner§", page: "§page§" };
+const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", student: "§student§", batch: "§batch§", month: "§month§", link: "§link§", phone: "§phone§", ref: "§ref§", req: "§req§", code: "§code§", upiCode: "§upicode§", partner: "§partner§", page: "§page§", classLink: "§classlink§", materialLink: "§materiallink§" };
 const STAND_IN_AMOUNT: Partial<Record<Slot, number>> = { fee: 7_000_001, late: 7_000_002, balance: 7_000_003, paid: 7_000_004, received: 7_000_005, waiver: 7_000_006, refund: 7_000_007, limit: 7_000_008 };
 const STAND_IN_DUE_MS = Date.UTC(2030, 5, 14, 0, 0); // a date no message of ours would state (Fri 14 Jun 2030)
 const STAND_IN_HOURS = 7_000_009;
-const STAND_IN_COUNT: Partial<Record<Slot, number>> = { openFees: 7_000_010 };
+const STAND_IN_COUNT: Partial<Record<Slot, number>> = { openFees: 7_000_010, waiting: 7_000_011 };
+const STAND_IN_CLASS_MS = Date.UTC(2030, 6, 19, 13, 30); // a class no message of ours would state (Fri 19 Jul 2030, 1:30 pm)
 
 /** The family reminder is written once with one stand-in fee line; the whole rendered line is then the template's `{lines}`. */
 const STAND_IN_FAMILY = [{ studentName: "§student§", batchName: "§batch§", monthLabel: "§month§", balanceInr: 7_000_003, dueMs: STAND_IN_DUE_MS, link: "§link§", dueRef: "§ref§" }];
 
 function standInFacts(language: Language): MessageFacts {
-  const facts: MessageFacts = { language, timeZone: "UTC", businessName: STAND_IN_TEXT.business!, dueMs: STAND_IN_DUE_MS, approvalHours: STAND_IN_HOURS, openFeesCount: STAND_IN_COUNT.openFees };
+  const facts: MessageFacts = { language, timeZone: "UTC", businessName: STAND_IN_TEXT.business!, dueMs: STAND_IN_DUE_MS, classMs: STAND_IN_CLASS_MS, approvalHours: STAND_IN_HOURS, openFeesCount: STAND_IN_COUNT.openFees, waitingCount: STAND_IN_COUNT.waiting };
   const set = facts as unknown as Record<string, unknown>;
-  const names: Partial<Record<Slot, string>> = { student: "studentName", batch: "batchName", month: "monthLabel", link: "link", phone: "customerPhone", ref: "dueRef", req: "requestRef", code: "approvalCode", upiCode: "upiCode", partner: "partner", page: "pageLink" };
+  const names: Partial<Record<Slot, string>> = { student: "studentName", batch: "batchName", month: "monthLabel", link: "link", phone: "customerPhone", ref: "dueRef", req: "requestRef", code: "approvalCode", upiCode: "upiCode", partner: "partner", page: "pageLink", classLink: "classLink", materialLink: "materialLink" };
   for (const [slot, key] of Object.entries(names)) set[key] = STAND_IN_TEXT[slot as Slot];
   const amounts: Partial<Record<Slot, string>> = { fee: "feeInr", late: "lateFeeInr", balance: "balanceInr", paid: "paidInr", received: "receivedInr", waiver: "waiverInr", refund: "refundInr", limit: "waiverLimitInr" };
   for (const [slot, key] of Object.entries(amounts)) set[key] = STAND_IN_AMOUNT[slot as Slot];
@@ -76,6 +84,7 @@ function bodyOf(id: TemplateId, language: Language): string {
   for (const [slot, stand] of Object.entries(STAND_IN_TEXT)) text = text.split(stand!).join(`{${slot}}`);
   for (const [slot, n] of Object.entries(STAND_IN_AMOUNT)) text = text.split(formatInr(n)).join(`{${slot}}`);
   text = text.split(formatDate(localParts(STAND_IN_DUE_MS, "UTC"), language)).join("{date}");
+  text = text.split(formatDate(localParts(STAND_IN_CLASS_MS, "UTC"), language)).join("{classDate}").split(formatTime(localParts(STAND_IN_CLASS_MS, "UTC"), language)).join("{classTime}");
   for (const [slot, n] of Object.entries(STAND_IN_COUNT)) text = text.split(String(n)).join(`{${slot}}`);
   return text.split(String(STAND_IN_HOURS)).join("{hours}");
 }
@@ -129,6 +138,9 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   // the licence's service notices to the owner (B13): the one plain notice at the wind-down and at the final stop
   template("owner_fee_service_paused", "owner_licence_paused", "owner"),
   template("owner_fee_service_stopped", "owner_licence_stopped", "owner"),
+  // Classes (17 Nov 2026, src/classes/): the messages that go out on the agent's own, so often outside the window: the first question, the class link, the missed-class
+  // note, the material link, and what the teacher is asked for (attendance, a missing class link, doubts waiting)
+  ...CLASS_META_IDS.map((id) => template(id, id, id.startsWith("owner_") ? "owner" : "customer")),
 ];
 
 const catalogue = createMetaCatalogue<MessageFacts, TemplateId, Slot>({ templates: META_TEMPLATES, values: VALUE });
@@ -157,6 +169,14 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
       { studentName: settings.students[Math.min(1, settings.students.length - 1)].name, batchName: batchName(batch, language), monthLabel: monthLabel({ month: "2026-10" }, language), balanceInr: batch.monthlyFeeInr, dueMs: Date.UTC(2026, 9, 4, 18, 30), link: "https://rzp.io/i/example2", dueRef: "f-2" },
     ],
     partner: "Divya, Sri Sai Digital", openFeesCount: 4, pageLink: "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq",
+    // Classes: a class of the example centre (Mon 9 Nov 2026, 5:00 pm in India), the teacher's link, the material page, and the counts its messages state
+    classMs: Date.UTC(2026, 10, 9, 11, 30), classLink: "https://meet.google.com/abc-defg-hij", materialLink: "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq/m/class-10",
+    roster: `1 ${settings.students[0].name}, 2 ${settings.students[Math.min(1, settings.students.length - 1)].name}`, doubtText: "d-1 Aarav: how do I solve 2x + 3 = 11?",
+    classLines: [
+      { studentName: settings.students[0].name, batchName: batchName(batch, language), startMs: Date.UTC(2026, 10, 9, 11, 30) },
+      { studentName: settings.students[Math.min(1, settings.students.length - 1)].name, batchName: batchName(batch, language), startMs: Date.UTC(2026, 10, 10, 12, 30) },
+    ],
+    leadMinutes: 30, presentCount: 4, absentCount: 1, notedCount: 1, waitingCount: 2, sentCount: 3, heldCount: 1,
   };
 }
 

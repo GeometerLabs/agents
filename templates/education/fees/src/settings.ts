@@ -9,6 +9,8 @@ import type { ApproversSettings } from "../../../../modules/approvals/people.ts"
 import { isValidTimeZone } from "../../../../modules/core/time.ts";
 import { BACK_DUES_MAX, JOINING_RULES, parseJoined } from "./joining.ts";
 import type { BackDue, JoiningRule } from "./joining.ts";
+import { readClasses } from "./classes/settings.ts";
+import type { ClassesSettings } from "./classes/settings.ts";
 import { readPaymentSettings } from "../../../../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
 
@@ -36,6 +38,8 @@ export interface Student {
   joined?: string;
   /** Earlier months still unpaid when the agent started, entered by the owner: each is opened once as a fee of its own, carried and reminded (src/joining.ts). */
   backDues?: BackDue[];
+  /** Classes only: the student is 18 or over, so the contact ("parent") is the student's own number and no parent's consent is asked. Left out: a child, with a parent. */
+  adult?: boolean;
 }
 
 export interface Settings {
@@ -84,6 +88,11 @@ export interface Settings {
   owner: { whatsapp: string; language: Language };
   /** Others who may approve a refund Guard holds, and the amount above which two must (B37, modules/approvals/people.ts). Left out: the owner alone. */
   approvers?: ApproversSettings;
+  /**
+   * Classes (owner decision 50, src/classes/): the timetable, the class link's lead time and the material file limit. Left out: the centre is exactly the Fees centre it was,
+   * and no code of src/classes/ runs for it.
+   */
+  classes?: ClassesSettings;
   /** Item 11e: the shop's assistant (the owner's conversation, the morning line, the character; modules/assistant/settings.ts). Left out: no assistant, as before. */
   assistant?: AssistantSettings;
 }
@@ -101,7 +110,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the centre's name, batches, students and so on."] };
 
-  unknownKeys(input, ["name", "address", "timezone", "languages", "batches", "students", "due", "joiningMidMonth", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "assistant"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "languages", "batches", "students", "due", "joiningMidMonth", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "assistant", "classes"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the centre's name (\"name\").");
@@ -129,6 +138,7 @@ export function validateSettings(input: unknown): SettingsResult {
   if (approvers) for (const p of approvers.people) if (students.some((s) => s.parent === p.whatsapp)) errors.push(`approvers: ${p.id}'s number is a parent's. A person who approves refunds answers from their own number, not a parent's.`);
 
   const assistant = readAssistantSettings(input.assistant, errors);
+  const classes = readClasses(input.classes, batches, errors);
   if (errors.length > 0) return { ok: false, errors };
   const settings: Settings = {
     name: (name as string).trim(), timezone: timezone as string, languages, batches, students,
@@ -140,6 +150,7 @@ export function validateSettings(input: unknown): SettingsResult {
   if (typeof address === "string") settings.address = address;
   if (approvers) settings.approvers = approvers;
   if (assistant) settings.assistant = assistant;
+  if (classes) settings.classes = classes;
   return { ok: true, settings };
 }
 
@@ -238,7 +249,7 @@ function readStudents(v: unknown, batches: Batch[], languages: Language[], owner
   v.forEach((raw, i) => {
     const label = isObj(raw) && typeof raw.name === "string" ? `Student "${raw.name}"` : `Student number ${i + 1}`;
     if (!isObj(raw)) { errors.push(`${label} must be an object with name, parent and batch.`); return; }
-    unknownKeys(raw, ["name", "parent", "batch", "language", "joined", "backDues"], label, errors);
+    unknownKeys(raw, ["name", "parent", "batch", "language", "joined", "backDues", "adult"], label, errors);
     const studentName = typeof raw.name === "string" ? raw.name.trim() : "";
     if (studentName === "") errors.push(`${label} needs a name ("name").`);
     if (typeof raw.parent !== "string" || !PHONE.test(raw.parent)) errors.push(`${label} needs the parent's WhatsApp number ("parent"), starting with + and the country code, then digits only, for example +919800000000.`);
@@ -247,13 +258,14 @@ function readStudents(v: unknown, batches: Batch[], languages: Language[], owner
     if (raw.language !== undefined && (!LANGUAGES.includes(raw.language as Language) || !languages.includes(raw.language as Language))) errors.push(`${label}'s language ("language") must be one of the centre's languages: ${languages.map((l) => `"${l}"`).join(", ")}.`);
     if (raw.joined !== undefined && (typeof raw.joined !== "string" || parseJoined(raw.joined) === undefined)) errors.push(`${label}'s joining day ("joined") must be a real date written like 2026-11-18.`);
     const backDues = readBackDues(raw.backDues, label, batches.find((b) => b.id === raw.batch), errors);
+    if (raw.adult !== undefined && typeof raw.adult !== "boolean") errors.push(`${label}'s "adult" must be true or false.`);
     if (studentName !== "" && typeof raw.parent === "string") {
       const key = `${raw.parent}|${studentName.toLowerCase()}`;
       if (seen.has(key)) errors.push(`${label} is listed twice for the same parent number.`);
       seen.add(key);
     }
     if (studentName !== "" && typeof raw.parent === "string" && PHONE.test(raw.parent) && typeof raw.batch === "string" && batches.some((b) => b.id === raw.batch)) {
-      students.push({ name: studentName, parent: raw.parent, batchId: raw.batch, ...(raw.language ? { language: raw.language as Language } : {}), ...(typeof raw.joined === "string" ? { joined: raw.joined } : {}), ...(backDues.length > 0 ? { backDues } : {}) });
+      students.push({ name: studentName, parent: raw.parent, batchId: raw.batch, ...(raw.language ? { language: raw.language as Language } : {}), ...(typeof raw.joined === "string" ? { joined: raw.joined } : {}), ...(backDues.length > 0 ? { backDues } : {}), ...(raw.adult === true ? { adult: true } : {}) });
     }
   });
   return students;
