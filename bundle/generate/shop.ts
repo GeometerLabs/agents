@@ -164,7 +164,17 @@ function runtimeFacts(server: ServerConfig, panel: PanelRuntime, pins: Pins, pro
     else parser = { wire: p.wire as string, model: p.model as string, ...(typeof p.timeoutMs === "number" ? { timeoutMs: p.timeoutMs } : {}) };
     if (p.baseUrl !== undefined || p.agentTokenFile !== undefined) notes.push("parser: the bundle sets baseUrl and agentTokenFile itself (the server's model Guard).");
   }
-  return { calendarId: calendarId as string, phoneNumberId: phoneNumberId as string, hasWhatsApp, whatsappRoute, timeoutMs: timeoutMs as number, parser, tickSeconds: typeof panel.tickSeconds === "number" ? panel.tickSeconds : undefined };
+  // Block M: the talk's own model block, the same shape as the parser's. The server's model Guard allows ONE model (`model-pin`), so a talk model of another name would be
+  // refused on every call: refused here, in words, like the parser's. Left out of runtime.json, the talk uses the parser's model and nothing is written.
+  let talk: { wire: string; model: string; timeoutMs?: number } | undefined;
+  if (panel.talk !== undefined) {
+    const p = isObj(panel.talk) ? panel.talk : {};
+    if (p.wire !== server.model.wire) problems.push({ rule: "model-matches-guard", message: `runtime.json's "talk" asks for the "${String(p.wire)}" wire, but this server's model Guard speaks "${server.model.wire}". Use "${server.model.wire}".` });
+    else if (p.model !== server.model.model) problems.push({ rule: "model-matches-guard", message: `runtime.json's "talk" asks for the model "${String(p.model)}", but this server's model Guard allows only "${server.model.model}" and would refuse every call. Use "${server.model.model}", or leave "talk" out and the talk uses the parser's model.` });
+    else talk = { wire: p.wire as string, model: p.model as string, ...(typeof p.timeoutMs === "number" ? { timeoutMs: p.timeoutMs } : {}) };
+    if (p.baseUrl !== undefined || p.agentTokenFile !== undefined) notes.push("talk: the bundle sets baseUrl and agentTokenFile itself (the server's model Guard).");
+  }
+  return { calendarId: calendarId as string, phoneNumberId: phoneNumberId as string, hasWhatsApp, whatsappRoute, timeoutMs: timeoutMs as number, parser, talk, tickSeconds: typeof panel.tickSeconds === "number" ? panel.tickSeconds : undefined };
 }
 
 /** The pathway's own check of a runtime config (server/config.ts). A parameter so a test can stand in for a pathway version that knows more. */
@@ -223,6 +233,23 @@ export function withModelProvider(runtime: Record<string, unknown>, model: Model
   if (validate(priced, "/").ok) return priced;
   notes.push("the model you host has a rate in geometer.json, but this template version does not know parser.rate yet, so its calls are counted with no price. Update the template, and the rate is written on the next deploy.");
   return named;
+}
+
+/**
+ * Block M: the GENERATED runtime config gets a `talk` block when the panel's runtime.json names one: the same wire, the server's model Guard, this agent's credential for it, the
+ * provider the rate table prices (`modelProvider`) and a self-hosted model's own rate, exactly as the parser's. Like `ai` and `report` above it goes in ONLY if the pathway's own
+ * validator accepts it: a runtime from before the talk refuses an unknown key and would not start, and a shop that cannot start is worse off than one with no talk. Then
+ * the block is left out and a note says so (the talk then has no model of its own; it uses the parser's, if that version has the talk at all).
+ */
+export function withTalk(runtime: Record<string, unknown>, talk: { wire: string; model: string; timeoutMs?: number } | undefined, model: ModelConfig, validate: RuntimeValidator, notes: string[]): Record<string, unknown> {
+  if (!talk || Object.keys(runtime).length === 0) return runtime;
+  const provider = modelProvider(model);
+  const rate = model.selfHosted?.rate;
+  const block = { wire: talk.wire, baseUrl: modelBaseUrl(model), model: talk.model, agentTokenFile: `${SECRETS}/agent_model`, ...(talk.timeoutMs !== undefined ? { timeoutMs: talk.timeoutMs } : {}), ...(provider ? { provider } : {}), ...(provider && rate ? { rate } : {}) };
+  const withIt = { ...runtime, talk: block };
+  if (validate(withIt, "/").ok) return withIt;
+  notes.push("this template version does not know runtime.json's talk block yet, so the shop's assistant has no talk of its own. Update the template, and the block is written on the next deploy.");
+  return runtime;
 }
 
 /** What the monthly report block is made from. */
@@ -343,6 +370,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
       problems.push({ rule: "calendar-own-pinned", message: `${shop.name} runs on its own booking list (settings "calendar": {"module": "own"}), but it is pinned to ${shop.lock ? `${shop.lock.pathway}@${shop.lock.version}` : "a template version"}, whose runtime still needs a Google Calendar. Move the shop to a version from 12 Nov 2026 or later (geometer update), or give it a Google Calendar.` });
     }
     runtime = withModelProvider(runtime, server.model, check, notes);
+    runtime = withTalk(runtime, facts.talk, server.model, check, notes);
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
     runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
     // 17b: the server's paper key exists where the panel is on, and a deploy has just copied it for the runtime, as the runtime's own (lib/report-key.ts, any deployer uid).
