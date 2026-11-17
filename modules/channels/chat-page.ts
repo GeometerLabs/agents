@@ -229,7 +229,8 @@ ${a.pushKey ? ALERTS_SCRIPT : ""}
 ${a.onStreetlist ? `${JOIN_SCRIPT}${INSTALL_SCRIPT}
 // this shop joins the phone's Streetlist chats list once the guest has said something, and keeps its row's last line and seen mark up to date
 const slugNow = location.pathname.split("/")[1] || "";
-const faceOf = () => { try { const i = $("face-src"); if (!i) return undefined; const u = new URL(i.src, location.href); return u.origin === location.origin ? u.pathname + u.search : undefined; } catch (x) { return undefined; } };
+// the list shows the shop's calm "well" face by its own address on this site (the page draws its face from a data: picture, which the Streetlist site's policy would not load)
+const faceOf = () => ${c?.picture ? "true" : "false"} && slugNow ? "/" + slugNow + "/character/well.svg" : undefined;
 const keepRow = () => {
   if (!(last > 0)) return;
   const runs = lines.querySelectorAll(".run[data-n]");
