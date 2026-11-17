@@ -38,6 +38,13 @@ export interface InboundMessage {
    */
   noModel?: true;
   /**
+   * W1 hold-to-talk (17 Nov 2026): a chat guest's recording, held in the runtime's memory only (modules/channels/chat-audio.ts) and handed to the agent for this one step with
+   * `voiceNote`. The agent's own listener hears it (the same switches, daily limit and spend as a WhatsApp voice note) and calls `onHeard` with the words, so the guest's bubble
+   * shows what was heard before the answer. Never set by a person, never saved.
+   */
+  audio?: { ref: string; bytes: Uint8Array; mime: string };
+  onHeard?: (text: string) => void;
+  /**
    * Set when the customer tapped a button or a list row instead of writing: the id that row had when we sent it (language/interactive.ts), and which kind it was.
    * `text` is the row's title, as WhatsApp sends it. The agent looks the id up and reads no words, so no model is asked.
    */

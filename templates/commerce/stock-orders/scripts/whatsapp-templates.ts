@@ -4,8 +4,9 @@
 import { writeFileSync } from "node:fs";
 import { glowSalon } from "../src/harness.ts";
 import { metaSubmissions } from "../src/language/meta-templates.ts";
+import { reportSubmissions } from "../report/whatsapp.ts";
 
-const text = `${JSON.stringify(metaSubmissions(glowSalon()), null, 2)}\n`;
+const text = `${JSON.stringify([...metaSubmissions(glowSalon()), ...reportSubmissions()], null, 2)}\n`;
 if (process.argv.includes("--print")) process.stdout.write(text);
 else {
   writeFileSync(new URL("../whatsapp-templates.json", import.meta.url), text);

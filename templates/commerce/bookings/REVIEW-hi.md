@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (59)
+## 1. Messages to the customer (60)
 
 | Template id | When it is sent | Text (Hindi) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -23,6 +23,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `slot_unavailable` | The time is taken or already past | माफ़ कीजिए, मंगलवार, 10 नवंबर, शाम 6:00 बजे खाली नहीं है। कोई और समय बताइए? | Sorry, Tue 10 Nov, 6:00 pm is not available. What other time would work for you? |  |
 | `outside_hours` | The shop is closed then | माफ़ कीजिए, मंगलवार, 10 नवंबर, शाम 6:00 बजे पर हम बंद रहते हैं। कोई और समय बताइए? | Sorry, we're closed at Tue 10 Nov, 6:00 pm. What other time would work for you? |  |
 | `hold_failed` | The calendar could not hold the slot | माफ़ कीजिए, अभी मंगलवार, 10 नवंबर, शाम 6:00 बजे का स्लॉट रोक नहीं पाया, इसलिए कुछ भी बुक नहीं हुआ है। मैंने मालिक को बता दिया है। थोड़ी देर बाद फिर कोशिश कीजिए। | Sorry, I couldn't hold Tue 10 Nov, 6:00 pm just now, so nothing is booked. I've let the owner know. Please try again in a few minutes. |  |
+| `chat_shop_busy` | A chat guest asks for a time while the shop already has as many unpaid holds as its cap (the shop is not asked, nothing is held) | दुकान में अभी कई बुकिंग भुगतान की राह देख रही हैं, इसलिए कुछ रोका नहीं गया। थोड़ी देर बाद फिर कोशिश करें, या दुकान को फ़ोन करें। | The shop has many bookings waiting for payment right now, so nothing is held. Please try again in a little while, or call the shop. |  |
 | `link_failed` | The payment link could not be made | माफ़ कीजिए, अभी पेमेंट लिंक नहीं बन पाया, इसलिए कुछ भी बुक नहीं हुआ है। मैंने मालिक को बता दिया है। | Sorry, I couldn't make the payment link just now, so nothing is booked. I've let the owner know. |  |
 | `booked` | Calendar and deposit both recorded | बुक हो गया! हेयरकट, मंगलवार, 10 नवंबर, शाम 6:00 बजे। आपका ₹200 जमा हमें मिल गया। नहीं आ पा रहे? शुरू होने से कम से कम 24 घंटे पहले रद्द कर दीजिए, आपका जमा वापस मिल जाएगा। | You're booked! Haircut, Tue 10 Nov, 6:00 pm. We got your ₹200 deposit. Can't make it? Cancel at least 24 hours before and your deposit comes back. |  |
 | `couldnt_confirm` | Deposit received but the calendar could not confirm | आपका ₹200 जमा मिल गया है, पर मंगलवार, 10 नवंबर, शाम 6:00 बजे अभी हमारे कैलेंडर में पक्का नहीं हो पाया, इसलिए बुकिंग नहीं हुई है। मैंने मालिक को बता दिया है, वे आपसे बात करेंगे। | We got your ₹200 deposit, but I couldn't confirm Tue 10 Nov, 6:00 pm in our calendar yet, so it's not booked. I've told the owner, and they'll get in touch with you. |  |
@@ -712,6 +713,14 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `setup.character.stripHelp` | हर चेहरा सिर्फ़ इसी दुकान के लिए बनता है। आठ नए चेहरों के लिए फिर से रोल कीजिए। | Each face is drawn for this shop only. Roll for eight new ones. |  |
 | `setup.character.faceLabel` | चेहरा 3 / 8 | Face 3 of 8 |  |
 | `setup.character.roll` | नए चेहरे रोल करें | Roll new faces |  |
+| `setup.character.paintLegend` | साइनबोर्ड का रंग | Signboard colour |  |
+| `setup.character.paintHelp` | दुकान की चैट की ऊपरी पट्टी, असली दुकान के बोर्ड की तरह रंगी हुई। हर रंग के साथ ऐसा लिखा रंग आता है जो उस पर आसानी से पढ़ा जाए। | The strip at the top of the shop's chat, painted like a real shop board. Each colour comes with writing that is easy to read on it. |  |
+| `setup.character.paintNone` | हल्का हरा | Soft green |  |
+| `setup.character.paints.pink` | गुलाबी | Pink |  |
+| `setup.character.paints.blue` | नीला | Blue |  |
+| `setup.character.paints.green` | पत्ती-हरा | Leaf green |  |
+| `setup.character.paints.marigold` | गेंदा | Marigold |  |
+| `setup.character.paints.brick` | ईंट-लाल | Brick red |  |
 | `setup.character.colourLegend` | रंग | Colour |  |
 | `setup.character.auto` | अपने-आप | Auto |  |
 | `setup.character.autoLabel` | अपने-आप: स्टाइल का अपना रंग | Auto: the style's own colour |  |
@@ -731,6 +740,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `setup.character.problems.style` | पाँच में से एक स्टाइल चुनिए। | Pick one of the five styles. |  |
 | `setup.character.problems.face` | पंक्ति में से एक चेहरा चुनिए। | Pick a face from the row. |  |
 | `setup.character.problems.colour` | दिखाए गए रंगों में से एक चुनिए, या अपने-आप। | Pick one of the colours shown, or Auto. |  |
+| `setup.character.problems.paint` | दिखाए गए साइनबोर्ड रंगों में से एक चुनिए। | Pick one of the signboard colours shown. |  |
 | `setup.character.problems.personality` | बात करने का तरीका चुनिए। | Pick how it talks. |  |
 | `setup.character.shopTitle` | दुकान का असिस्टेंट | The shop's assistant |  |
 | `setup.character.shopNone` | इस दुकान का अभी कोई असिस्टेंट नहीं है। इसे सेटअप के असिस्टेंट वाले कदम में बनाइए। | This shop has no assistant yet. Make one in the setup's assistant step. |  |
@@ -1453,6 +1463,16 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.thread` | बातचीत | Conversation |  |
 | `chat.alertsHead` | दुकान जवाब दे तो फ़ोन बजे? | Want a buzz when the shop answers? |  |
 | `chat.onStreetlist` | Streetlist पर | on Streetlist |  |
+| `chat.more.confirmed` | पक्का हो गया। दुकान के अपने रिकॉर्ड में है। | Confirmed. The shop's own record has it. |  |
+| `chat.more.paid` | भुगतान मिल गया। दुकान के अपने रिकॉर्ड में है। | Payment received. The shop's own record has it. |  |
+| `chat.more.hold` | बोलने के लिए दबाकर रखें | Hold to talk |  |
+| `chat.more.release` | भेजने के लिए छोड़ें | Release to send |  |
+| `chat.more.listening` | सुन रहे हैं | Listening |  |
+| `chat.more.voiceNote` | आवाज़ का संदेश | Voice message |  |
+| `chat.more.micBlocked` | इस पेज के लिए माइक्रोफ़ोन बंद है। आप लिखकर भेज सकते हैं। | The microphone is off for this page. You can type instead. |  |
+| `chat.more.link` | हमसे चैट करें | Chat with us |  |
+| `chat.more.linkAbout` | दुकान से चैट खुलती है | Opens the chat with the shop |  |
+| `chat.guest` | चैट अतिथि | Chat guest |  |
 | `chat.quick.bookings.1` | दाम देखें | See prices |  |
 | `chat.quick.bookings.2` | समय बुक करें | Book a time |  |
 | `chat.quick.bookings.3` | आप कहाँ हैं? | Where are you? |  |

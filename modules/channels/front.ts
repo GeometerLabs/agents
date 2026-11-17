@@ -13,6 +13,7 @@
 // Item 11i, the shop's character: every shop's mood pictures (drawn on its server, bundle/character/render.ts) are public at stable addresses, for the shop's own
 // page, Streetlist and WhatsApp (which fetches the PNG and WebP itself):
 //   GET  /s/<shop>/character/<well|needs|wrong|closed|busy>.<svg|png|webp>   one mood's picture: an ETag (its sha256), a day's cache, `?v=` ignored (links carry it)
+//   GET  /s/<shop>/character/<mood>-anim.svg                                DiceBear's own "slow" animation of that mood (17 Nov 2026), for the chat's head: same cache
 //   GET  /s/<shop>/character/now.<svg|png|webp>                             the picture of the mood the PUBLIC sees now (all well, busy or closed: character.ts
 //                                                                           publicFace), a minute's cache
 // The shop's pages show the same public face in their head (shop-face.ts), as a data: address because the pages load images only from data.
@@ -79,13 +80,13 @@ export interface FrontShop {
   /** Item 11f: the shop's page addresses (pages.json), read on every request. Left out: no pages domain and no owner sign-in for this shop. */
   pages?: () => PagesFile | undefined;
   /** Item 11h: the shop's template, which decides its customer side. Left out: Bookings (every shop before item 11h). */
-  kind?: "bookings" | "orders" | "fees";
+  kind?: "bookings" | "orders" | "fees" | "stock";
   /** Item 11i: the shop's character pictures (character-files.ts characterReader over its folder), read on every request. Left out: the shop shows no face. */
   character?: () => CharacterFiles | undefined;
 }
 
 /** Item 11i: the picture addresses the front answers: one mood, or `now`, in one of the three formats. */
-const PICTURE_PATH = new RegExp(`^/character/(${[...FACES, "now"].join("|")})\\.(${PICTURE_FORMATS.join("|")})$`, "u");
+const PICTURE_PATH = new RegExp(`^/character/(${[...FACES, "now"].join("|")})(-anim)?\\.(${PICTURE_FORMATS.join("|")})$`, "u");
 
 /**
  * Item 11i: the offers a page is drawn from carry the shop's public face as a picture. The runtime says which mood the public sees (`character.face`); this adds
@@ -111,11 +112,12 @@ export function withFace(backend: ChannelBackend, files: (() => CharacterFiles |
  * Batch 5: every offer's shop carries the shop's own phone and map link from its pages.json, so every customer page (the front page, a booking's, an order's, a fee's,
  * and each "not found" or "waiting" state) can show "Call the shop" and a map link without each page being handed the file. Read per request, like the face.
  */
-export function withContact(backend: ChannelBackend, pages: (() => PagesFile | undefined) | undefined): ChannelBackend {
+export function withContact(backend: ChannelBackend, pages: (() => PagesFile | undefined) | undefined, chatHref?: string): ChannelBackend {
   if (!pages) return backend;
-  const add = <T extends { shop: { contact?: { phone?: string; map?: string } } }>(o: T): T => {
+  // `chatHref` (17 Nov 2026): the shop's chat, so every customer page has one clear "Chat with us" button (contact-bar.ts shopContact); only a shop whose runtime has a chat
+  const add = <T extends { shop: { contact?: { phone?: string; map?: string; chat?: string } } }>(o: T): T => {
     const p = pages();
-    return p && (p.phone || p.map) ? { ...o, shop: { ...o.shop, contact: { ...(p.phone ? { phone: p.phone } : {}), ...(p.map ? { map: p.map } : {}) } } } : o;
+    return p && (p.phone || p.map || chatHref) ? { ...o, shop: { ...o.shop, contact: { ...(p.phone ? { phone: p.phone } : {}), ...(p.map ? { map: p.map } : {}), ...(chatHref ? { chat: chatHref } : {}) } } } : o;
   };
   return {
     ...backend,
@@ -136,6 +138,8 @@ export interface FrontKit {
   sendJson(res: ServerResponse, status: number, value: unknown, extra?: Record<string, string>): void;
   redirect(res: ServerResponse, to: string): void;
   readBody(req: IncomingMessage, max: number): Promise<string | undefined>;
+  /** A body as bytes (a guest's recording), or undefined past `max`. */
+  readBytes(req: IncomingMessage, max: number): Promise<Buffer | undefined>;
   languageOf(req: IncomingMessage, url: URL, offered: readonly Language[], form?: URLSearchParams): Language;
   sameOrigin(req: IncomingMessage, shop: FrontShop): boolean;
   /** The content policy of a customer page that runs the alerts script (customerPagePolicy), for the per-template routes. */
@@ -264,7 +268,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const origin = req.headers.origin;
     return origin === undefined || origin === new URL(shop.publicUrl).origin;
   };
-  const kit: FrontKit = { limiter, log, ...(options.waitMs !== undefined ? { waitMs: options.waitMs } : {}), maxForm: MAX_FORM, maxJson: MAX_JSON, sendHtml, sendJson, redirect, readBody, languageOf, sameOrigin, customerPolicy: customerPagePolicy };
+  const kit: FrontKit = { limiter, log, ...(options.waitMs !== undefined ? { waitMs: options.waitMs } : {}), maxForm: MAX_FORM, maxJson: MAX_JSON, sendHtml, sendJson, redirect, readBody, readBytes, languageOf, sameOrigin, customerPolicy: customerPagePolicy };
 
   /** The Operator each request's shop names, for the catch-all error page below (which has no shop in hand). */
   const partnerOf = new WeakMap<ServerResponse, NonNullable<PagesFile["partner"]>>();
@@ -280,7 +284,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // item 11i: every offer a page is drawn from carries the shop's public face (withFace)
     const withPicture: FrontShop = found.character ? { ...doorShop, backend: withFace(doorShop.backend, found.character) } : doorShop;
     // batch 5: and the shop's phone and map link (withContact)
-    const shop: FrontShop = found.pages ? { ...withPicture, backend: withContact(withPicture.backend, found.pages) } : withPicture;
+    const shop: FrontShop = found.pages ? { ...withPicture, backend: withContact(withPicture.backend, found.pages, withPicture.backend.chat ? `${doorShop.publicUrl}/chat` : undefined) } : withPicture;
     if (pages?.partner) partnerOf.set(res, pages.partner);
     // batch 3: name the shop's Operator for the door, whose error pages (a shop that is down) have nobody else to ask; the door keeps it and never passes it on
     if (typeof door === "string" && pages?.partner) res.setHeader(CONTACT_HEADER, Buffer.from(JSON.stringify({ n: pages.partner.name, p: pages.partner.phone }), "utf8").toString("base64url"));
@@ -296,7 +300,9 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
 
     // ---- item 11i: the character's pictures (every template's shop has them) ----
     const picture = PICTURE_PATH.exec(rest);
-    if (picture) return pictureRoute(req, res, found, picture[1] as Face | "now", picture[2] as PictureFormat, method, address);
+    // `<mood>-anim.svg` is DiceBear's animation of a fixed mood: no `now`, no PNG or WebP of it (a sticker or a profile photo cannot move)
+    if (picture && picture[2] && (picture[1] === "now" || picture[3] !== "svg")) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+    if (picture) return pictureRoute(req, res, found, picture[1] as Face | "now", picture[3] as PictureFormat, method, address, picture[2] !== undefined);
 
     // W1: the chat on the shop's page, for every kind of shop, before the shop's own customer routes (an Orders or Fees shop would not otherwise reach it).
     // `viaDoor`: the page is served on the Streetlist pages domain, the only place that shows the Streetlist mark.
@@ -304,6 +310,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
 
     // item 11h: an Orders shop's and a Fees centre's customer side are their own; the owner's page and the QR code below are every shop's
     const ownerPath = /^\/o\/[^/]+(\/.*)?$/u.test(rest) || rest === "/owner" || rest.startsWith("/owner/");
+    // Stock orders talks to suppliers on WhatsApp and has no customers: only the owner's page (and the character's pictures above) is here, never a booking page, API or MCP
+    if (shop.kind === "stock" && !ownerPath && rest !== "/qr.svg") return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
     if ((shop.kind === "orders" || shop.kind === "fees") && !ownerPath && rest !== "/qr.svg") {
       const args: RouteArgs = { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}) };
       return shop.kind === "orders" ? orderRoute(kit, args, orderOpsOf(name, shop)) : feeRoute(kit, args);
@@ -477,7 +485,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
    * mood the public sees at this minute, asked of the runtime, and cached a minute. Images only, with their own strict policy (an SVG opened on its own runs no
    * script and loads nothing). Readable from any site (Streetlist shows the faces), never framed.
    */
-  async function pictureRoute(req: IncomingMessage, res: ServerResponse, found: FrontShop, face: Face | "now", format: PictureFormat, method: string, address: string): Promise<void> {
+  async function pictureRoute(req: IncomingMessage, res: ServerResponse, found: FrontShop, face: Face | "now", format: PictureFormat, method: string, address: string, animated = false): Promise<void> {
     if (method !== "GET" && method !== "HEAD") { res.writeHead(405, { allow: "GET, HEAD", "cache-control": "no-store" }); res.end(); return; }
     // only `now` asks the runtime, so only it counts against the address's reads; a fixed mood is a small file, and WhatsApp's fetchers (many shops' pictures from a
     // few addresses at 08:00) must not be refused one, or the morning template whose header it is would not be delivered
@@ -485,7 +493,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const files = found.character?.();
     let mood: Face | undefined = face === "now" ? undefined : face;
     if (face === "now" && files) mood = (await found.backend.offer({})).shop.character?.face; // the runtime's own answer: no picture is needed to pick one
-    const pic = files && mood ? files.picture(mood, format) : undefined;
+    const pic = files && mood ? (animated ? files.animation?.(mood) : files.picture(mood, format)) : undefined;
     if (!pic) { res.writeHead(404, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff" }); res.end(method === "HEAD" ? undefined : "There is no picture here."); return; }
     const etag = `"${pic.sha256.slice(0, 32)}"`;
     const headers: Record<string, string> = {
@@ -529,11 +537,13 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       // item 11e: one of the assistant's cards, by its id and digest (no code is ever on the page); the runtime's card binding decides what happens
       if (action === "card_yes" || action === "card_no") {
         const card = state.view.app?.cards.find((c) => c.id === theCase && c.digest === digest);
-        if (!card || (action === "card_no" && !card.hasNo)) return "changed";
+        // Stock orders lists its own approval card as an item (case = the card's id), not in the app's cards
+        const itemCard = state.view.items.find((i) => i.case === theCase && i.digest === digest && i.actions.includes(action));
+        if ((!card && !itemCard) || (card && action === "card_no" && !card.hasNo)) return "changed";
         const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action, case: theCase, digest }], token);
         if (r === "refused") return "denied_link";
         const deadline = Date.now() + (options.waitMs ?? 3_000);
-        while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !now.app?.cards.some((c) => c.id === theCase)) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
+        while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || (!now.app?.cards.some((c) => c.id === theCase) && !now.items.some((i) => i.case === theCase && i.digest === digest))) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
         return "sent";
       }
       // item 11h (Fees): a parent's private link, sent anew or switched off, bound to the link's state as the page showed it

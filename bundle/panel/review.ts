@@ -23,9 +23,26 @@ import { limitReviewLines } from "../../modules/assistant/limits-card.ts";
 import { LIMIT_WORDS } from "../../modules/limits/chat-limit-kinds.ts";
 import { WORDS as LIMITS_PANEL_WORDS } from "./views-limits.ts";
 import { OWNER_MONEY } from "../../modules/channels/words-money.ts";
+import { STOCK_WORDS } from "../../modules/channels/words-stock.ts";
+import { STOCK_PANEL_WORDS } from "./stock.ts";
 import { WORDS as LIMITS_OWNER_WORDS } from "../../modules/channels/owner-limits-page.ts";
 import { CHAT, QUICK } from "../../modules/channels/words-chat.ts";
 import { IDENTITY } from "../../modules/channels/words-chat-identity.ts";
+import { CHAT_MORE } from "../../modules/channels/words-chat-more.ts";
+import { CHAT_GUEST } from "../../modules/channels/chat-guest.ts";
+
+/**
+ * Stock orders (17 Nov 2026): the owner page's words for what waits (ids "stock.owner.*"), the phone setup's forms and refusals and the shop page's lines (ids "stock.panel.*"), each with
+ * made-up values so a native reviewer reads whole sentences. The card for a supplier order and the two limits' words are with "card.stock-orders.*" and "limits.assistant.*".
+ */
+const stockSamples: Record<string, unknown[]> = {
+  "stock.owner.approve": ["Ravi Traders", "10 box hair colour", "₹12,000"], "stock.owner.silent": ["Ravi Traders", "po-3: 10 box hair colour"], "stock.owner.receive": ["Ravi Traders", "po-3: 10 box hair colour"],
+  "stock.panel.problems.tooManySuppliers": [12], "stock.panel.problems.supplierBad": [2], "stock.panel.problems.supplierTwice": [2, "Ravi Traders"], "stock.panel.problems.numberTwice": [2],
+  "stock.panel.problems.tooManyLines": [40], "stock.panel.problems.lineBad": [3], "stock.panel.problems.lineSupplier": [3, "Ravi"], "stock.panel.problems.priceBad": [3], "stock.panel.problems.reorderBad": [3],
+  "stock.panel.problems.lineTwice": [3], "stock.panel.problems.capAbovePrice": ["₹1,200"], "stock.panel.shop.messages.line": [6],
+};
+const stockFlat = (language: Language): Map<string, string> => flatWords({ stock: { owner: STOCK_WORDS[language], panel: STOCK_PANEL_WORDS[language] } }, stockSamples);
+import { CHATS_LIST_WORDS } from "../../modules/channels/chats-list.ts";
 
 export type ReviewLanguage = "hi" | "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
@@ -89,6 +106,8 @@ const memoryFlat = (language: Language): Map<string, string> => {
   say("talk_fallback", { waiting: 2, today: 5 }); say("talk_off", {});
   out.set("memory.button.remember", NOTE_LABELS[language].yes); out.set("memory.button.no", NOTE_LABELS[language].no);
   const card = (skill: string, kind: string, amountPaise: number) => cardQuestion({ kind, skill, who: "Priya", ref: skill === "fees" ? "f-3" : "o-5", what: skill === "fees" ? "November 2026" : "2 cakes", amountPaise, code: "K7M2QX", hasNo: true }, language, "Asia/Kolkata");
+  // the supplier-order card of Stock orders: a cancel (no money moves) and the approval of an order
+  out.set("card.stock-orders.cancel", card("stock-orders", "cancel", 0)); out.set("card.stock-orders.approve", card("stock-orders", "order", 1_200_000));
   for (const skill of ["fees", "orders"]) { out.set(`card.${skill}.cancel_money`, card(skill, "cancel", 150_000)); out.set(`card.${skill}.cancel_none`, card(skill, "cancel", 0)); out.set(`card.${skill}.refund`, card(skill, "refund", 50_000)); }
   // The two refusals that name the money going back, worded for Fees (a payment) and Orders (an advance); Bookings' say "deposit" and are on the main sheet.
   for (const skill of ["fees", "orders"]) for (const why of ["already_back", "cancel_first"] as const) out.set(`refusal.${skill}.${why}`, writeAssistant("refusal", { why, ref: skill === "fees" ? "f-3" : "o-5", skill }, language, "Asia/Kolkata").text);
@@ -111,16 +130,23 @@ const firstFlat = (language: Language): Map<string, string> => flatWords({ owner
 /** Fees, 17 Nov 2026: the owner page's rupee box for a fee received only in part, in cash (modules/channels/words-money.ts), under the ids "owner.money.cashPart*". */
 const cashPartFlat = (language: Language): Map<string, string> => new Map([["owner.money.cashPartLabel", OWNER_MONEY[language].cashPartLabel], ["owner.money.cashPartButton", OWNER_MONEY[language].cashPartButton]]);
 
-/** W1, the chat on the shop's page (17 Nov 2026): the page's words and the three quick taps of each template (modules/channels/words-chat.ts), under the ids "chat.*" and "chat.quick.<kind>.*". */
-const chatFlat = (language: Language): Map<string, string> => flatWords({ chat: { ...CHAT[language], quick: Object.fromEntries(Object.entries(QUICK).map(([kind, q]) => [kind, q.label[language]])) } }, { "chat.closed": ["10:00–20:00"], "chat.kept": [30] });
+/**
+ * W1, the chat on the shop's page (17 Nov 2026): the page's words and the three quick taps of each template (modules/channels/words-chat.ts), under the ids "chat.*" and
+ * "chat.quick.<kind>.*"; W1b adds the moments, hold to talk and "Chat with us" ("chat.more.*", words-chat-more.ts) and the owner's "Chat guest" (chat.guest). The panel's signboard
+ * paint names are in the panel's own words (setup.character.paint*), so they are already in section 7.
+ */
+const chatFlat = (language: Language): Map<string, string> => flatWords({ chat: { ...CHAT[language], more: CHAT_MORE[language], guest: CHAT_GUEST[language], quick: Object.fromEntries(Object.entries(QUICK).map(([kind, q]) => [kind, q.label[language]])) } }, { "chat.closed": ["10:00–20:00"], "chat.kept": [30] });
+
+/** W3, the chat page's lines about the Streetlist app (17 Nov 2026): the "Your chats" link and the install prompt (modules/channels/chats-list.ts), under the ids "chat.list.*". The Streetlist site's /chats page has the same lines plus its own (its docs/Review-words.md). */
+const chatListFlat = (language: Language): Map<string, string> => flatWords({ chat: { list: CHATS_LIST_WORDS[language] } });
 
 /** W2, keep this chat, open it on a new phone, delete my chat and a parent's chat (17 Nov 2026; modules/channels/words-chat-identity.ts), under the ids "chat.id.*". The two WhatsApp link templates are in modules/channels/chat-link-templates.json. */
 const chatIdentityFlat = (language: Language): Map<string, string> => flatWords({ chat: { id: IDENTITY[language] } });
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...chatIdentityFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...chatIdentityFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

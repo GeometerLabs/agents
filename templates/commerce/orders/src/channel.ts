@@ -26,6 +26,8 @@ import { ordersJournal } from "./accounting.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import { allSlots, itemName, itemOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
+import { isChatConversation } from "../../../../modules/channels/conversation.ts";
+import { guestLabel } from "../../../../modules/channels/chat-guest.ts";
 import { fixSlot, ordersInSlot, ordersOn, takenOf } from "./order.ts";
 import type { Order, OrderState, Store } from "./order.ts";
 
@@ -170,7 +172,7 @@ export interface OwnerItem {
   actions: OwnerActionName[];
   amountPaise: number;
   customer: { phone: string; name?: string };
-  channel: "whatsapp" | "web" | "mcp";
+  channel: "whatsapp" | "web" | "mcp" | "chat";
   /** The order's lines, in the owner's language ("2 × Veg thali, 1 × Curd"); the slot is `startMs`. */
   what: string;
   startMs?: number;
@@ -186,7 +188,8 @@ export interface OwnerItem {
 const digestOf = (parts: unknown[]): string => createHash("sha256").update(JSON.stringify(parts)).digest("hex").slice(0, 32);
 /** How the owner knows a customer: the name and the number typed on the page (item 11h), else the WhatsApp number. Never the "web:..." conversation. */
 export const customerOf = (o: Order | undefined, phone: string): { phone: string; name?: string } => (o?.contact ? { phone: o.contact.phone, ...(o.contact.name ? { name: o.contact.name } : {}) } : { phone });
-const channelOf = (o: Order | undefined): OwnerItem["channel"] => o?.channel ?? "whatsapp";
+const plainCustomerOf = customerOf;
+const plainChannelOf = (o: Order | undefined): OwnerItem["channel"] => o?.channel ?? "whatsapp";
 
 /** The order in the owner's words: its lines from the shop's menu ("2 × Veg thali, 1 × Curd"). */
 export const orderWhat = (settings: Settings, o: Order, language: Language = settings.owner.language): string =>
@@ -199,6 +202,9 @@ export const orderWhat = (settings: Settings, o: Order, language: Language = set
  */
 export function ownerItems(settings: Settings, store: Store, nowMs?: number): { items: OwnerItem[]; upcoming: { case: string; startMs: number; what: string; customer: { phone: string; name?: string }; channel: OwnerItem["channel"]; state: string }[] } {
   const items: OwnerItem[] = [];
+  // 17 Nov 2026: a guest of the shop's chat is "Chat guest 3" to the owner (chat-guest.ts), never "chat:..."; their number is the words, so the page shows no phone for them
+  const customerOf = (o: Order | undefined, phone: string): { phone: string; name?: string } => (isChatConversation(phone) ? { phone: "", name: guestLabel(store.channel, phone, settings.owner.language) } : plainCustomerOf(o, phone));
+  const channelOf = (o: Order | undefined): OwnerItem["channel"] => (o && isChatConversation(o.customer) ? "chat" : plainChannelOf(o));
   for (const r of store.upi?.requests ?? []) {
     const o = store.orders.get(r.reference);
     if (!o || o.state !== "awaiting_advance" || !r.code || (r.status !== "created" && r.status !== "partially_paid")) continue;

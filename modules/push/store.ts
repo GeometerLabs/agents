@@ -29,7 +29,13 @@ export const OWNER_CHOICES: readonly OwnerChoice[] = ["whatsapp", "push", "both"
 /** A subscription as a browser hands it (PushSubscription.toJSON()). */
 export interface BrowserSubscription { endpoint: string; keys: { p256dh: string; auth: string } }
 /** A kept subscription, for the sender. */
-export interface Subscription { id: string; who: string; host: string; path: string; p256dh: Buffer; auth: Buffer }
+export interface Subscription { id: string; who: string; host: string; path: string; p256dh: Buffer; auth: Buffer; signer: Signer }
+/**
+ * Who signs this phone's pushes: the shop's own VAPID key ("own": the owner's app, a booking's page, a shop not on Streetlist) or Streetlist's one key through the relay
+ * ("streetlist": a phone that subscribed through the Streetlist app's root worker, W3). A subscription is made FOR one key and the push service refuses another's, so this
+ * is decided when the phone subscribes and never switched afterwards.
+ */
+export type Signer = "own" | "streetlist";
 /** One waiting push. */
 export interface Waiting { id: string; sub: Subscription; kind: "owner" | "customer"; title: string; body: string; tag: string; madeAt: number; tries: number }
 
@@ -66,8 +72,10 @@ export function openPushStore(file: string) {
     );
     CREATE INDEX IF NOT EXISTS queue_waiting ON queue (state, next_at);
   `);
-  type SubRow = { id: string; who: string; host: string; path: string; p256dh: string; auth: string; made_at: number; dead_at: number | null };
-  const asSub = (r: SubRow): Subscription => ({ id: r.id, who: r.who, host: r.host, path: r.path, p256dh: Buffer.from(r.p256dh, "base64url"), auth: Buffer.from(r.auth, "base64url") });
+  // W3: who signs a phone's pushes. An older store has no such column and CREATE TABLE IF NOT EXISTS would not add it, so it is added once, here ("own" for what was there).
+  if (!(db.prepare("PRAGMA table_info(subs)").all() as { name: string }[]).some((c) => c.name === "signer")) db.exec("ALTER TABLE subs ADD COLUMN signer TEXT NOT NULL DEFAULT 'own'");
+  type SubRow = { id: string; who: string; host: string; path: string; p256dh: string; auth: string; made_at: number; dead_at: number | null; signer?: string };
+  const asSub = (r: SubRow): Subscription => ({ id: r.id, who: r.who, host: r.host, path: r.path, p256dh: Buffer.from(r.p256dh, "base64url"), auth: Buffer.from(r.auth, "base64url"), signer: r.signer === "streetlist" ? "streetlist" : "own" });
   const live = (who: string): SubRow[] => db.prepare("SELECT * FROM subs WHERE who = ? AND dead_at IS NULL ORDER BY made_at").all(who) as SubRow[];
 
   const api = {
@@ -83,16 +91,16 @@ export function openPushStore(file: string) {
      * Keep a browser's subscription for `who` ("owner", or a customer page's conversation). The same address again is the same subscription (moved to `who` if a
      * page passed it on). Returns its short id, or why it was refused.
      */
-    subscribe(who: string, s: BrowserSubscription, now: number): { ok: true; id: string } | { ok: false; why: string } {
+    subscribe(who: string, s: BrowserSubscription, now: number, signer: Signer = "own"): { ok: true; id: string } | { ok: false; why: string } {
       const problem = subscriptionProblem(s);
       if (problem) return { ok: false, why: problem };
       const u = new URL(s.endpoint);
       const path = `${u.pathname}${u.search}`;
       const old = db.prepare("SELECT id FROM subs WHERE host = ? AND path = ?").get(u.hostname, path) as { id: string } | undefined;
       const id = old?.id ?? newId();
-      db.prepare(`INSERT INTO subs (id, who, host, path, p256dh, auth, made_at) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(host, path) DO UPDATE SET who = excluded.who, p256dh = excluded.p256dh, auth = excluded.auth, made_at = excluded.made_at, dead_at = NULL, dead_why = NULL`)
-        .run(id, who, u.hostname, path, s.keys.p256dh, s.keys.auth, now);
+      db.prepare(`INSERT INTO subs (id, who, host, path, p256dh, auth, made_at, signer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(host, path) DO UPDATE SET who = excluded.who, p256dh = excluded.p256dh, auth = excluded.auth, made_at = excluded.made_at, signer = excluded.signer, dead_at = NULL, dead_why = NULL`)
+        .run(id, who, u.hostname, path, s.keys.p256dh, s.keys.auth, now, signer);
       const max = who === "owner" ? OWNER_PHONES : CUSTOMER_PHONES;
       const rows = live(who);
       for (const r of rows.slice(0, Math.max(0, rows.length - max))) api.drop(r.id, "too_many", now);
@@ -152,7 +160,7 @@ export function openPushStore(file: string) {
     /** The pushes due now, oldest first (a push waiting too long is given up first). */
     due(now: number, limit = 20): Waiting[] {
       db.prepare("UPDATE queue SET state = 'failed', done_at = ? WHERE state = 'waiting' AND made_at < ?").run(now, now - MAX_WAIT_MS);
-      const rows = db.prepare(`SELECT q.id, q.kind, q.title, q.body, q.tag, q.made_at, q.tries, s.id AS sid, s.who, s.host, s.path, s.p256dh, s.auth, s.made_at AS smade, s.dead_at
+      const rows = db.prepare(`SELECT q.id, q.kind, q.title, q.body, q.tag, q.made_at, q.tries, s.id AS sid, s.who, s.host, s.path, s.p256dh, s.auth, s.signer, s.made_at AS smade, s.dead_at
         FROM queue q JOIN subs s ON s.id = q.sub_id WHERE q.state = 'waiting' AND q.next_at <= ? AND s.dead_at IS NULL ORDER BY q.made_at LIMIT ?`).all(now, limit) as (SubRow & { sid: string; kind: string; title: string; body: string; tag: string; tries: number; smade: number })[];
       return rows.map((r) => ({ id: r.id, kind: r.kind as Waiting["kind"], title: r.title, body: r.body, tag: r.tag, madeAt: r.made_at, tries: r.tries, sub: asSub({ ...r, id: r.sid, made_at: r.smade }) }));
     },

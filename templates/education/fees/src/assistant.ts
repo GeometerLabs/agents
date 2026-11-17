@@ -5,7 +5,7 @@
 // Cancelling and refunding a fee from the chat (17 Nov 2026) are the agent's own paths, handed in as `acts` (src/agent.ts feesActs), as in Bookings: "cancel f-3" is the
 // owner's waiver of the whole balance (the very applyWaiver of "approve q-3") and "refund f-3" is the owner's decision sent as the same refund as "approve q-4". The card
 // binds the fee's state, balance, payments counted, waiver and late fee, so a change since voids it, and the act reads the record again on the tap.
-import { checkWords, ownerReply } from "../../../../modules/assistant/wire.ts";
+import { checkWords, ownerReply, prepareGuestMessage } from "../../../../modules/assistant/wire.ts";
 import type { Executed, OwnerSkill, OweRow, Prepared, Proposal, WaitingItem } from "../../../../modules/assistant/skill.ts";
 import type { RecordEntry } from "../../../../modules/record/record.ts";
 import type { RefundResult } from "../../../../modules/payments/refunds.ts";
@@ -112,6 +112,8 @@ export function feesSkill(deps: FeesSkillDeps): OwnerSkill {
   const waitingOn = (d: Due): Waiting[] => waitingNow().filter((i) => i.case === d.id);
 
   function prepare(p: Proposal): Prepared {
+    const guest = prepareGuestMessage(p, { skill: "fees", channel: store.channel, language: lang, optedOut: deps.optedOut }); // a chat guest ("g-3") has no case: only a message to them
+    if (guest) return guest;
     const d = store.dues.get(p.case);
     if (!d) return { ok: false, why: "no_case" };
     if (p.kind === "answer") {
@@ -189,7 +191,7 @@ export function feesSkill(deps: FeesSkillDeps): OwnerSkill {
     name: "fees",
     ...talkReads(deps),
     routing: {
-      refs: /^[fq]-\d{1,6}$/u,
+      refs: /^[fqg]-\d{1,6}$/u,
       buttonPrefixes: ["pay:", "paid:"],
       words: ROUTING_WORDS,
       liveCaseOf: (phone) => openDues(store, phone)[0]?.id,

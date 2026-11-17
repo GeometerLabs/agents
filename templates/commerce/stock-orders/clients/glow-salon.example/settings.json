@@ -1,0 +1,241 @@
+{
+  "name": "Glow Unisex Salon",
+  "address": "12 Temple Road, Thrissur",
+  "timezone": "Asia/Kolkata",
+  "languages": [
+    "en",
+    "hi"
+  ],
+  "owner": {
+    "whatsapp": "+919812300001",
+    "language": "en"
+  },
+  "items": [
+    {
+      "id": "hair-colour",
+      "names": {
+        "en": [
+          "hair colour",
+          "hair color",
+          "colour"
+        ],
+        "hi": [
+          "हेयर कलर",
+          "कलर"
+        ],
+        "ml": [
+          "ഹെയർ കളർ"
+        ],
+        "kn": [
+          "ಹೇರ್ ಕಲರ್"
+        ]
+      }
+    },
+    {
+      "id": "shampoo",
+      "names": {
+        "en": [
+          "shampoo"
+        ],
+        "hi": [
+          "शैम्पू"
+        ],
+        "ml": [
+          "ഷാംപൂ"
+        ],
+        "kn": [
+          "ಶಾಂಪೂ"
+        ]
+      }
+    },
+    {
+      "id": "hair-oil",
+      "names": {
+        "en": [
+          "hair oil",
+          "oil"
+        ],
+        "hi": [
+          "हेयर ऑयल",
+          "तेल"
+        ],
+        "ml": [
+          "ഹെയർ ഓയിൽ"
+        ],
+        "kn": [
+          "ಹೇರ್ ಆಯಿಲ್"
+        ]
+      }
+    },
+    {
+      "id": "towel",
+      "names": {
+        "en": [
+          "towel",
+          "towels"
+        ],
+        "hi": [
+          "तौलिया"
+        ],
+        "ml": [
+          "ടവൽ"
+        ],
+        "kn": [
+          "ಟವೆಲ್"
+        ]
+      }
+    }
+  ],
+  "units": [
+    {
+      "id": "box",
+      "names": {
+        "en": [
+          "box"
+        ],
+        "hi": [
+          "डिब्बा",
+          "बॉक्स"
+        ],
+        "ml": [
+          "ബോക്സ്"
+        ],
+        "kn": [
+          "ಬಾಕ್ಸ್"
+        ]
+      }
+    },
+    {
+      "id": "piece",
+      "names": {
+        "en": [
+          "piece",
+          "pc"
+        ],
+        "hi": [
+          "पीस",
+          "नग"
+        ],
+        "ml": [
+          "എണ്ണം"
+        ],
+        "kn": [
+          "ತುಂಡು"
+        ]
+      }
+    },
+    {
+      "id": "bottle",
+      "names": {
+        "en": [
+          "bottle"
+        ],
+        "hi": [
+          "बोतल"
+        ],
+        "ml": [
+          "കുപ്പി"
+        ],
+        "kn": [
+          "ಬಾಟಲ್"
+        ]
+      }
+    }
+  ],
+  "suppliers": [
+    {
+      "id": "ravi-traders",
+      "name": "Ravi Traders",
+      "aliases": [
+        "ravi"
+      ],
+      "whatsapp": "+919876500001",
+      "language": "hi",
+      "approved": true
+    },
+    {
+      "id": "meena-beauty",
+      "name": "Meena Beauty Supplies",
+      "aliases": [
+        "meena"
+      ],
+      "whatsapp": "+919876500002",
+      "language": "en",
+      "approved": true
+    },
+    {
+      "id": "kumar-wholesale",
+      "name": "Kumar Wholesale",
+      "aliases": [
+        "kumar"
+      ],
+      "whatsapp": "+919876500003",
+      "language": "en",
+      "approved": false
+    }
+  ],
+  "catalogue": [
+    {
+      "item": "hair-colour",
+      "supplier": "ravi-traders",
+      "unit": "box",
+      "priceInr": 450,
+      "reorderQty": 10
+    },
+    {
+      "item": "hair-colour",
+      "supplier": "ravi-traders",
+      "unit": "piece",
+      "priceInr": 40
+    },
+    {
+      "item": "hair-colour",
+      "supplier": "meena-beauty",
+      "unit": "box",
+      "priceInr": 460,
+      "reorderQty": 10
+    },
+    {
+      "item": "hair-colour",
+      "supplier": "kumar-wholesale",
+      "unit": "box",
+      "priceInr": 430
+    },
+    {
+      "item": "shampoo",
+      "supplier": "ravi-traders",
+      "unit": "bottle",
+      "priceInr": 180,
+      "reorderQty": 12
+    },
+    {
+      "item": "shampoo",
+      "supplier": "meena-beauty",
+      "unit": "bottle",
+      "priceInr": 175.5,
+      "reorderQty": 12
+    },
+    {
+      "item": "hair-oil",
+      "supplier": "meena-beauty",
+      "unit": "bottle",
+      "priceInr": 120,
+      "reorderQty": 6
+    },
+    {
+      "item": "towel",
+      "supplier": "meena-beauty",
+      "unit": "piece",
+      "priceInr": 90
+    }
+  ],
+  "limits": {
+    "maxPerOrderInr": 12000,
+    "monthlyBudgetInr": 20000,
+    "maxQuantity": 200
+  },
+  "followUpHours": [
+    4,
+    24
+  ]
+}

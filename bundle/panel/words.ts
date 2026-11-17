@@ -99,9 +99,10 @@ export interface Words {
     /** Item 11i: the Character step (views-character.ts) and the shop page's character block. The moods' words are modules/assistant/character.ts FACE_WORDS. */
     character: {
       intro: string; styleLegend: string; stripLegend: string; stripHelp: string; faceLabel(n: number, of: number): string; roll: string;
+      paintLegend: string; paintHelp: string; paintNone: string; paints: { pink: string; blue: string; green: string; marigold: string; brick: string };
       colourLegend: string; auto: string; autoLabel: string; colourLabel(n: number): string; moodsTitle: string; moodsHelp: string; name: string; nameHelp: string;
       personalityLegend: string; personalityHelp: string; personalities: { warm: string; cheerful: string; brief: string }; saysLabel: string; chosenMark: string;
-      problems: { name: string; style: string; face: string; colour: string; personality: string };
+      problems: { name: string; style: string; face: string; colour: string; paint: string; personality: string };
       shopTitle: string; shopNone: string; shopNotDrawn: string; profileTitle: string; profileHelp: string; download: string;
     };
     business: { name: string; services: string; serviceName: string; also: string; price: string; minutes: string; opens: string; closes: string; openOn: string; hint: string; dayNames: string[]; /** how many bookings can run at the same time (two chairs), and its problem line */ capacity: string; capacityBad: string };
@@ -237,7 +238,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "inbox.count": [3], "inbox.asOf": ["4 Nov 2026, 10:30"], "inbox.since": ["4 Nov 2026, 10:30"], "inbox.fallback": ["upi_unconfirmed", "b-3"],
   "inbox.kinds.deposit_no_booking": ["b-3", "₹200"], "inbox.kinds.payment_unrecorded": ["f-3"], "inbox.kinds.approval_waiting_long": ["b-3", "", 14, "[what]"],
   "inbox.kinds.refund_waiting": ["b-3", "₹200", 0, "[who]"], "inbox.kinds.refund_unknown": ["b-3"], "inbox.kinds.refund_failed": ["b-3"], "inbox.kinds.refund_made_not_told": ["b-3", "₹200", 0, "[how]"],
-  "inbox.kinds.message_unanswered": ["#12"], "inbox.kinds.message_not_delivered": ["b-3"], "inbox.kinds.whatsapp_token_renewal": ["WhatsApp", "", 6], "inbox.kinds.whatsapp_token_credential": ["WhatsApp", "", 120], "inbox.kinds.upi_payment_unconfirmed": ["b-3", "₹200"], "inbox.kinds.upi_refund_owed": ["b-3", "₹200"], "upi.problems.idNoAt": ["glowsalon"], "upi.problems.idShape": ["glow salon@"],
+  "inbox.kinds.message_unanswered": ["#12"], "inbox.kinds.message_not_delivered": ["b-3"], "inbox.kinds.supplier_no_answer": ["po-3"], "inbox.kinds.goods_not_received": ["po-3"], "inbox.kinds.whatsapp_token_renewal": ["WhatsApp", "", 6], "inbox.kinds.whatsapp_token_credential": ["WhatsApp", "", 120], "inbox.kinds.upi_payment_unconfirmed": ["b-3", "₹200"], "inbox.kinds.upi_refund_owed": ["b-3", "₹200"], "upi.problems.idNoAt": ["glowsalon"], "upi.problems.idShape": ["glow salon@"],
   "handover.ask": ["K7M2QX"], "handover.waiting": ["Meera"], "handover.done": ["Meera"], "handover.historyLine": ["Divya", "Meera", "4 Nov 2026, 10:30", "[reason]"],
   "setup.checks.whatsapp.confirmed": ["+91 98765 43210"], "setup.checks.whatsapp.differs": ["3210"],
   "setup.checks.whatsapp.selfServeConfirmed": ["Glow_Salon", 4, 5], "setup.checks.whatsapp.gupshupConfirmed": ["07c7c72d-20e3-4ff9-a5a1-14d1186eeec8"], "setup.checks.whatsapp.gupshupNotFound": ["Invalid App Details"],
@@ -399,19 +400,20 @@ export const en: Words = {
     trial: (day) => `Trial licence: the last day is ${day}. From the next day, new bookings pause until the shop is on a plan.`,
   },
   setup: {
-    title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { bookings: "Bookings with a deposit", fees: "Fee collection for classes", orders: "Pre-orders with an advance" },
+    title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { "stock-orders": "Restocking from suppliers", bookings: "Bookings with a deposit", fees: "Fee collection for classes", orders: "Pre-orders with an advance" },
     templateElsewhere: "A builder sets this one up with the plugin. The phone setup does not have it yet.", start: "Start", progress: (n, o) => `Step ${n} of ${o}`,
     steps: { business: "The business", deposit: "Deposit and cancellation", languages: "Languages and your number", accounts: "Connect the shop's accounts", checks: "Checks", character: "The shop's assistant" },
     problemsTitle: "Please fix this:", fallback: (e) => `One thing needs fixing: ${e}`,
     character: {
       intro: "With the owner beside you, make the shop's assistant: a face, its colour, a name and how it talks. Customers see it on the shop's page. The owner sees its mood in their app and on WhatsApp.",
       styleLegend: "Style", stripLegend: "Pick a face", stripHelp: "Each face is drawn for this shop only. Roll for eight new ones.", faceLabel: (n, o) => `Face ${n} of ${o}`, roll: "Roll new faces",
+      paintLegend: "Signboard colour", paintHelp: "The strip at the top of the shop's chat, painted like a real shop board. Each colour comes with writing that is easy to read on it.", paintNone: "Soft green", paints: { pink: "Pink", blue: "Blue", green: "Leaf green", marigold: "Marigold", brick: "Brick red" },
       colourLegend: "Colour", auto: "Auto", autoLabel: "Auto: the style's own colour", colourLabel: (n) => `Colour ${n}`,
       moodsTitle: "Its five moods", moodsHelp: "The owner sees all five. Customers see only All well, Busy and Closed.",
       name: "Its name (optional)", nameHelp: "Optional. Left empty, it is the shop's assistant, under the shop's name. Up to 24 letters, in any language, no digits.",
       personalityLegend: "How it talks", personalityHelp: "This changes only its greeting and the first and last words of the morning summary. Amounts, cards, approvals and limits stay the same.",
       personalities: { warm: "Warm", cheerful: "Cheerful", brief: "Brief" }, saysLabel: "It says:", chosenMark: "Picked",
-      problems: { name: "The name must be 1 to 24 letters with no digits, or left empty.", style: "Pick one of the five styles.", face: "Pick a face from the row.", colour: "Pick one of the colours shown, or Auto.", personality: "Pick how it talks." },
+      problems: { name: "The name must be 1 to 24 letters with no digits, or left empty.", style: "Pick one of the five styles.", face: "Pick a face from the row.", colour: "Pick one of the colours shown, or Auto.", paint: "Pick one of the signboard colours shown.", personality: "Pick how it talks." },
       shopTitle: "The shop's assistant", shopNone: "This shop has no assistant yet. Make one in the setup's assistant step.", shopNotDrawn: "Its pictures are drawn on the server within a minute of saving.",
       profileTitle: "WhatsApp profile photo", profileHelp: "Put this picture on the shop's WhatsApp profile yourself, wherever the shop's number is managed: the WhatsApp Business app, Meta's WhatsApp Manager or Gupshup's dashboard. The panel can't set it for you yet.", download: "Download the picture (PNG)",
     },
@@ -575,6 +577,8 @@ export const en: Words = {
       whatsapp_token_renewal: (_id, _amount, hours) => `WhatsApp through Gupshup: this shop's token could not be renewed. The one in use ends in ${hours} hours, and then no message goes out. Check the server (geometer logs refresher) or hand in a new Gupshup universal token.`,
       whatsapp_token_credential: (_id, _amount, hours) => `WhatsApp through Gupshup: the server's Gupshup universal token ${credentialEnds(hours)} (geometer gupshup-token <file>).`,
       message_not_delivered: (id) => `A WhatsApp message for ${id} never reached the phone (WhatsApp reported it failed): reach the person another way`,
+      supplier_no_answer: (id) => `Order ${id}: the supplier has not answered, even after asking again: call them, or cancel the order if it never reached them`,
+      goods_not_received: (id) => `Order ${id}: the supplier accepted it but nothing has been marked received for a week: ask them, or mark what arrived`,
       upi_payment_unconfirmed: (id, amount) => `UPI payment of ${amount} for ${id} is not yet confirmed by the owner: ask the owner to check their UPI app`,
       upi_refund_owed: (id, amount) => `Refund of ${amount} for ${id} is owed by the owner and not yet marked done: remind the owner`,
     },

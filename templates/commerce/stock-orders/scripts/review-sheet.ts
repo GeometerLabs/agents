@@ -12,6 +12,8 @@ import { LABELS } from "../src/language/labels.ts";
 import { exampleFacts } from "../src/language/meta-templates.ts";
 import { STATE_WORDS, TEMPLATES, render } from "../src/language/templates.ts";
 import type { MessageFacts, TemplateId } from "../src/language/templates.ts";
+import { reportStringRows, sampleOwnerText } from "../report/review.ts";
+import { sampleMessage } from "../report/whatsapp.ts";
 
 export type ReviewLanguage = "hi" | "ml" | "kn";
 
@@ -100,6 +102,12 @@ export function reviewSheet(language: ReviewLanguage): string {
   out.push(table(["Id", `Text (${name})`, "Meaning (English)", REVIEWER], (Object.keys(LABELS.en) as (keyof typeof LABELS.en)[]).map((key) => [`\`${key}\``, LABELS[language][key], LABELS.en[key], ""])), "");
   out.push("## 3. Months and weekdays as the agent writes them", "", table(["Weekday", `Written in ${name}`, REVIEWER], WEEKDAY_NAMES[language].map((w, i) => [WEEKDAYS_EN[i], w, ""])), "", table(["Month", `Written in ${name}`, REVIEWER], MONTH_NAMES[language].map((m, i) => [MONTHS_EN[i], m, ""])), "");
   out.push("The agent names the month of the budget in English letters (\"Nov 2026\") in every language; a reviewer may ask for the local name.", "");
+  out.push("## 4. The monthly report", "");
+  out.push("The report says how many orders were placed, answered by the supplier, received in full or in part, and how much of the budget was used. It never says an order was paid unless the owner marked it.", "");
+  out.push("### The monthly report on WhatsApp, with sample numbers", "", "```text", sampleMessage(language), "```", "");
+  out.push("### The owner's text, with sample numbers", "", "```text", sampleOwnerText(language), "```", "");
+  out.push("### Every word and phrase of the report", "");
+  out.push(table(["Id", `Text (${name})`, "Meaning (English)", REVIEWER], reportStringRows(language).map((r) => [`\`${r.id}\``, r.text, r.english, ""])), "");
   return out.join("\n");
 }
 

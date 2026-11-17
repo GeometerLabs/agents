@@ -57,7 +57,7 @@ export const ALERT_WORDS: Record<Language, AlertWords> = {
 
 /**
  * The shared script: register this page's worker at its own scope, and subscribe on a press with the shop's public key, posting the subscription to `data-save`.
- * `data-off` (owner only) unsubscribes this phone. Hidden until the browser can do push. Nothing is kept in the browser beyond the browser's own subscription.
+ * `data-off` (owner only) unsubscribes this phone. `data-signer` ("streetlist": the Streetlist app's one key and root worker, W3) is passed on with the subscription so the shop signs through the relay. Hidden until the browser can do push. Nothing is kept in the browser beyond the browser's own subscription.
  */
 export const ALERTS_SCRIPT = `(() => {
   const box = document.getElementById("alerts");
@@ -67,7 +67,11 @@ export const ALERTS_SCRIPT = `(() => {
   const post = (url, body) => fetch(url, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", ...(d.csrf ? { "x-owner-csrf": d.csrf } : {}) }, body: JSON.stringify(body) }).then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); });
   const reg = navigator.serviceWorker.register(d.sw, { scope: d.scope });
   box.hidden = false;
-  const show = async () => { const s = await (await reg).pushManager.getSubscription(); on.hidden = !!s; if (off) off.hidden = !s; if (s && d.saved) msg.textContent = d.saved; };
+  // On the Streetlist app's ONE shared subscription (data-signer) the phone "has a subscription" the moment ANY shop took it, so the button cannot be hidden by that alone: this
+  // shop must have taken it too. Each shop's page remembers the endpoint ITS own save address last accepted (per page, in this browser); a shop's own subscription is its own.
+  const mark = d.signer ? "alerts-shop:" + d.save : null;
+  const known = (s) => { if (!s) return false; if (!mark) return true; try { return localStorage.getItem(mark) === s.endpoint; } catch (e) { return false; } };
+  const show = async () => { const s = await (await reg).pushManager.getSubscription(); on.hidden = known(s); if (off) off.hidden = !s; if (known(s) && d.saved) msg.textContent = d.saved; };
   show().catch(() => {});
   on.addEventListener("click", async () => {
     on.disabled = true;
@@ -75,11 +79,14 @@ export const ALERTS_SCRIPT = `(() => {
       if ((await Notification.requestPermission()) !== "granted") { msg.textContent = d.blocked; return; }
       const r = await reg;
       let s = await r.pushManager.getSubscription();
-      // a subscription made for another key (the shop's server was restored, or set up again) would be refused by the push service: it is made again
+      // a subscription made for another key (the shop's server was restored, or set up again) would be refused by the push service: it is made again.
+      // (On the Streetlist app's one shared subscription (data-signer) this happens only if Streetlist's own key changed; a shop's page never unsubscribes it otherwise,
+      // because every shop in the app shares it.)
       const had = s && s.options && s.options.applicationServerKey ? new Uint8Array(s.options.applicationServerKey) : null;
       if (s && had && (had.length !== key.length || had.some((b, i) => b !== key[i]))) { await s.unsubscribe(); s = null; }
       s = s || (await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }));
-      await post(d.save, { subscription: s.toJSON() });
+      await post(d.save, { subscription: s.toJSON(), ...(d.signer ? { signer: d.signer } : {}) });
+      if (mark) { try { localStorage.setItem(mark, s.endpoint); } catch (e) { /* shown again next time */ } }
       msg.textContent = d.done;
       if (d.reload) location.reload(); else await show();
     } catch { msg.textContent = d.failed; } finally { on.disabled = false; }

@@ -118,7 +118,7 @@ Hindi, Malayalam and Kannada are machine-written and wait for native review ([De
 
 ## Equipment rental (custom hiring centres and village equipment owners)
 
-The same template, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 33 of 33 situations on its own settings. Run the demo on it:
+The same template, as settings: `settings/equipment-rental.example.json` is a made-up village hiring centre (Hosahalli Farm Hiring Centre) that rents one tractor with its attachments by the half day or the day, with a deposit, in Kannada and Hindi. It holds 35 of 35 situations on its own settings. Run the demo on it:
 
 ```sh
 node templates/commerce/bookings/demo/server.ts --settings templates/commerce/bookings/settings/equipment-rental.example.json --lang kn   # or hi

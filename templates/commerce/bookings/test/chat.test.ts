@@ -15,6 +15,10 @@ import { runtimeBackend } from "../../../../modules/channels/backend.ts";
 import { guestHash } from "../../../../modules/channels/handle.ts";
 import { chatConversationOf } from "../../../../modules/channels/conversation.ts";
 import { startClient } from "../server/start.ts";
+import { openStore } from "../server/store.ts";
+import { parseStore } from "../server/snapshot.ts";
+import { ownerItems } from "../src/channel.ts";
+import { parseSettings } from "../src/settings.ts";
 
 const INTERNAL = "internal-0123456789abcdef0123";
 const CHANNEL = "channel-0123456789abcdef01234";
@@ -148,5 +152,31 @@ test("alerts are taken only after the shop has answered", async () => {
     const after = await push("customer_state");
     assert.ok([200, 404].includes(after.status));
     if (after.status === 200) assert.equal(((await after.json()) as { answered: boolean }).answered, true);
+  } finally { await w.done(); }
+});
+
+// W1b (17 Nov 2026): what the owner sees of a guest. The hold a guest made in the chat is on the owner's list as "Chat guest 1" (channel "chat", no phone), never as `chat:...`; the
+// shop's cap on unpaid holds counts it; and the shop's own message to the owner about the guest uses the same words.
+test("a guest's hold is on the owner's list as 'Chat guest 1', with no conversation name and no phone", async () => {
+  const w = await world();
+  try {
+    const [cookie] = await w.open();
+    await w.send(cookie, { id: "s-1", quick: 2 });
+    await w.client.runtime.idle();
+    let t = await w.thread(cookie);
+    await w.send(cookie, { id: "s-2", tap: t.lines.at(-1)!.choices![0].id });
+    await w.client.runtime.idle();
+    t = await w.thread(cookie);
+    await w.send(cookie, { id: "s-3", tap: t.lines.at(-1)!.choices![0].id });
+    await w.client.runtime.idle();
+    const s = openStore(join(w.folder, "data"));
+    const store = (() => { try { return parseStore(s.loadState().snapshot!); } finally { s.close(); } })();
+    const settings = parseSettings(JSON.parse(readFileSync(join(w.folder, "settings.json"), "utf8")));
+    const { items, upcoming } = ownerItems(settings, store, w.clock.now());
+    const seen = JSON.stringify({ items, upcoming });
+    assert.ok(!/chat:[0-9a-f]{16}/u.test(seen), "the owner's list never names a chat conversation");
+    const mine = [...items, ...upcoming].filter((x) => x.customer.name === "Chat guest 1");
+    assert.ok(mine.length >= 1, "the guest is 'Chat guest 1'");
+    assert.ok(mine.every((x) => x.customer.phone === "" && x.channel === "chat"));
   } finally { await w.done(); }
 });

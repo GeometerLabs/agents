@@ -18,12 +18,21 @@ import type { Messaging, OutboundMessage } from "../messaging/messaging.ts";
 import type { InteractiveMessage } from "../language/interactive.ts";
 import { isChannelConversation, isChatConversation } from "./conversation.ts";
 import { CHAT_THREAD_MAX, OUTBOX_PER_CONVERSATION } from "./state.ts";
-import type { ChannelState, ChatChoice } from "./state.ts";
+import type { ChannelState, ChatChoice, ChatMoment } from "./state.ts";
 
 /** The buttons or the list rows of an interactive message, as a chat thread keeps them (W1): the page draws them as tiles and a tap is checked against them. */
 export function choicesOf(m: InteractiveMessage): ChatChoice[] {
   if (m.buttons) return m.buttons.map((b) => ({ id: b.id, title: b.title }));
   return (m.list?.rows ?? []).map((r) => ({ id: r.id, title: r.title, ...(r.description ? { hint: r.description } : {}), list: true as const }));
+}
+
+/**
+ * Mark a kept chat line as one the record stands behind (state.ts ChatMoment). Called by a template's say, only after the message went out and only for the messages its own gate
+ * lets through ("booked" only when recorded), so a line is marked because the record says so and never because of what its words look like.
+ */
+export function markMoment(state: ChannelState, id: string, moment: ChatMoment): void {
+  const m = state.outbox.find((x) => x.id === id);
+  if (m) m.moment = moment;
 }
 
 export function channelMessaging(base: Messaging | undefined, state: () => ChannelState, clock: Clock, onKeep?: (to: string, text: string) => void): Messaging {

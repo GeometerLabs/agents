@@ -89,6 +89,11 @@ export interface ChatMessage {
   /** W2, a parent's chat on their private fee page: the HASH of the parent's link (handle.ts parentLinkHash). The runtime opens it at its door, checks it opens a parent now and
    *  replaces `handle` with the parent's own thread (handle.ts parentChatHash); it is never kept. Only a Fees centre takes it. */
   parent?: string;
+  /**
+   * Hold-to-talk (17 Nov 2026): the reference of a recording the runtime holds in memory (chat-audio via the template's runtime), set ONLY by the runtime's own HTTP layer,
+   * never the audio. `checkChannelEvent` never reads one from the front, so a `voice` sent from outside is dropped like any other field.
+   */
+  voice?: string;
 }
 /** The longest typed send (the page's own maxlength). */
 export const CHAT_TEXT_MAX = 500;

@@ -7,6 +7,9 @@
 //   POST <page>/chat/push          "Tell me on this phone": the guest's alerts, kept by the runtime against their conversation (only after the shop has answered)
 //   GET  <page>/chat/sw.js         the alerts' worker (only when the shop has push on), scope <page>/chat/ only
 //   GET  <page>/chat/font.woff2    Baloo 2's Latin subset (SIL OFL, fonts/OFL-baloo-2.txt): a year's cache, named in this page's policy only
+//   POST <page>/chat/voice         hold to talk: a guest's recording (Ogg or WebM Opus, up to 30 seconds), passed to the runtime, which holds it in memory and listens in the guest's step
+//   GET  <page>/chat/m/lottie.js   the vendored lottie-web light player (vendor/lottie), a year's cache; the page asks for it only when a moment happens
+//   GET  <page>/chat/m/<moment>.json   one of the three animations (motion/*.json): confirmed, paid, hello
 //
 // Who the guest is: a random 32-byte handle in the cookie `__Secure-geo-chat`, HttpOnly, Secure, SameSite=Lax, Path=<the page's path>/chat, so the browser sends it to the chat's
 // addresses and nowhere else on the shared pages origin. The front keeps nothing: it sends the runtime only guestHash(shop, handle), which names the guest at THIS shop
@@ -17,6 +20,9 @@ import { GUEST_HANDLE, guestHash, newGuestHandle } from "./handle.ts";
 import { chatPage } from "./chat-page.ts";
 import { identityRoute } from "./chat-identity-front.ts";
 import { identityBlock } from "./chat-identity-page.ts";
+import { MOMENTS, LOTTIE_VERSION } from "./chat-motion.ts";
+import { MAX_VOICE_BYTES } from "./owner-audio.ts";
+import { isPaint } from "./chat-paint.ts";
 import { CHAT } from "./words-chat.ts";
 import type { ChatKind } from "./words-chat.ts";
 import { CUSTOMER_SW } from "../push/pages.ts";
@@ -48,13 +54,34 @@ export const guestCookie = (path: string, handle: string): string => `${CHAT_COO
 
 /**
  * The chat page's content policy: PAGE_POLICY and exactly what the page needs, each at its own address (the pages origin is shared by every shop, so nothing says 'self'):
- * its one script by this response's nonce, the three calls it makes, its alerts' worker, and the one font (this page only; every other page keeps PAGE_POLICY).
+ * its one script by this response's nonce and the vendored player at its own address (no `unsafe-eval`: the light build has no eval), the calls it makes (send, thread, push, a
+ * recording, the animations' files), its alerts' worker, the one font, and the shop's own character pictures (`<page>/character/`, for DiceBear's animation and the well face).
+ * It is PAGE_POLICY with its `img-src` widened, never a second `img-src` (a browser reads only the first). Every other page keeps PAGE_POLICY.
  */
-export const chatPolicy = (base: string, nonce: string): string =>
-  `${PAGE_POLICY}; script-src 'nonce-${nonce}'; connect-src ${base}/send ${base}/thread ${base}/push ${base}/id/; worker-src ${base}/sw.js; font-src ${base}/font.woff2`;
+// One policy for the chat page (17 Nov merge of W1b and W3): W1b's character pictures (img-src), the lazily loaded Lottie player and the voice route; and, through the
+// Streetlist door, W3's app manifest and, when the shop sends through Streetlist's one push key, the app's own root worker. Each at its exact address, never 'self'
+// (the pages origin is shared by every shop).
+export const chatPolicy = (base: string, nonce: string, home?: string, app?: { origin: string; worker: boolean }): string =>
+  `${PAGE_POLICY.replace("img-src data:", home ? `img-src data: ${home}/character/` : "img-src data:")}; script-src 'nonce-${nonce}' ${base}/m/lottie.js; connect-src ${base}/send ${base}/thread ${base}/push ${base}/voice ${base}/m/ ${base}/id/; worker-src ${base}/sw.js${app?.worker ? ` ${app.origin}/sw.js` : ""}; font-src ${base}/font.woff2${app ? `; manifest-src ${app.origin}/manifest.webmanifest` : ""}`;
+
+/**
+ * Which key and worker alerts use on this page, in one place so the page that offers them and the call that takes them cannot disagree (W3). Served through the Streetlist
+ * door (`viaDoor`) by a shop that has a relay, a phone subscribes with Streetlist's ONE key and the app's root worker, and the shop is told to use the relay for it
+ * (`signer`); any other page keeps the shop's own key and its own worker under the page.
+ */
+export function pushChoice(key: { publicKey?: unknown; relayKey?: unknown } | undefined, viaDoor: boolean, publicUrl: string): { key: string; via?: { sw: string; scope: string }; signer: "own" | "streetlist" } | undefined {
+  if (typeof key?.publicKey !== "string") return undefined;
+  if (viaDoor && typeof key.relayKey === "string") { const origin = new URL(publicUrl).origin; return { key: key.relayKey, via: { sw: `${origin}/sw.js`, scope: `${origin}/` }, signer: "streetlist" }; }
+  return { key: key.publicKey, signer: "own" };
+}
 
 let font: Buffer | undefined;
 const fontBytes = (): Buffer => (font ??= readFileSync(new URL("./fonts/baloo-2-latin-wght-normal.woff2", import.meta.url)));
+
+let player: Buffer | undefined;
+const playerBytes = (): Buffer => (player ??= readFileSync(new URL("./vendor/lottie/lottie_light.min.js", import.meta.url)));
+const motion = new Map<string, Buffer>();
+const motionBytes = (name: string): Buffer => { let b = motion.get(name); if (!b) { b = readFileSync(new URL(`./motion/${name}.json`, import.meta.url)); motion.set(name, b); } return b; };
 
 const NOT_FOUND = "<!doctype html><p>There is nothing here.</p>";
 
@@ -97,6 +124,36 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     return identityRoute(kit, a, { sub, hash, base, path, languageOf: async () => kit.languageOf(req, url, (await shopOf(a, kind)).languages) });
   }
 
+  // the animations' player and files: static, public, a year's cache (the player's address carries its version), served only to this page's own policy
+  if ((sub === "/m/lottie.js" || /^\/m\/[a-z]+\.json$/u.test(sub)) && method === "GET") {
+    const name = sub === "/m/lottie.js" ? undefined : sub.slice(3, -5);
+    if (name !== undefined && !(MOMENTS as readonly string[]).includes(name)) return kit.sendHtml(res, 404, NOT_FOUND);
+    const bytes = name === undefined ? playerBytes() : motionBytes(name);
+    res.writeHead(200, { "content-type": name === undefined ? "text/javascript; charset=utf-8" : "application/json; charset=utf-8", "content-length": bytes.length, "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'" });
+    res.end(bytes);
+    return;
+  }
+
+  if (sub === "/voice" && method === "POST") {
+    if (!kit.sameOrigin(req, shop)) return kit.sendJson(res, 403, { error: "Calls from another site's page are refused." });
+    if (!backend.chatVoice || parent) return kit.sendJson(res, 404, { error: "Voice is not on here." });
+    const offer = await shopOf(a, kind);
+    const asked = url.searchParams.get("lang");
+    const language = offer.languages.includes(asked as Language) ? asked as Language : kit.languageOf(req, url, offer.languages);
+    const type = String(req.headers["content-type"] ?? "");
+    if (!hash) return kit.sendJson(res, 400, { error: "Open the chat page first." });
+    if (!/^audio\/(ogg|webm)\b/iu.test(type)) return kit.sendJson(res, 415, { error: "Send the recording as audio/ogg or audio/webm (Opus)." });
+    if (!limiter.take("chat", address) || !limiter.take("shopChats", `shop:${name}`)) return tooMany(language);
+    const asId = url.searchParams.get("id") ?? "";
+    const id = /^[A-Za-z0-9-]{1,64}$/u.test(asId) ? asId : randomUUID();
+    const bytes = await kit.readBytes(req, MAX_VOICE_BYTES);
+    if (!bytes || bytes.length === 0) return kit.sendJson(res, 413, { error: "A recording of at most 30 seconds." });
+    const r = await backend.chatVoice(hash, { id, language }, { bytes, mime: type });
+    if (r === "off") return kit.sendJson(res, 404, { error: "Voice is not on here." });
+    if (r === "slow") return tooMany(language);
+    return kit.sendJson(res, 200, { ok: true, id });
+  }
+
   if (sub === "/sw.js" && method === "GET") {
     const k = backend.push && !parent ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
     if (!k || k.body.on !== true) return kit.sendHtml(res, 404, NOT_FOUND);
@@ -119,7 +176,9 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     if (!backend.push || !hash || parent || !limiter.take("chat", address)) return kit.sendJson(res, backend.push && hash && !parent ? 429 : 404, { error: "Alerts are not on here." });
     let body: Record<string, unknown>;
     try { body = JSON.parse((await kit.readBody(req, kit.maxForm)) ?? "") as Record<string, unknown>; } catch { return kit.sendJson(res, 400, { error: "Send JSON." }); }
-    const r = await backend.push({ op: "customer_subscribe", handle: hash, subscription: body.subscription });
+    // Streetlist's one key only on a page served through the door, and only when the shop has a relay (the runtime refuses it otherwise)
+    const signer = a.viaDoor && body.signer === "streetlist" ? "streetlist" : undefined;
+    const r = await backend.push({ op: "customer_subscribe", handle: hash, subscription: body.subscription, ...(signer ? { signer } : {}) });
     return kit.sendJson(res, r.status === 200 ? 200 : r.status === 403 ? 403 : r.status === 404 ? 404 : 400, r.status === 200 ? { result: "done" } : { error: String(r.body.error ?? "That was not taken.") });
   }
 
@@ -155,17 +214,21 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     }
     const thread = guest ? await backend.chat(guest, parent ? { parent: parent.hash } : {}) : { lines: [], answered: false, capped: false, retentionDays: 30 };
     const key = backend.push && !parent ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
-    const pushKey = key?.body.on === true && typeof key.body.publicKey === "string" ? key.body.publicKey : undefined;
+    const choice = key?.body.on === true ? pushChoice(key.body, a.viaDoor, shop.publicUrl) : undefined;
     const nonce = randomBytes(16).toString("base64");
-    const read = thread as { personality?: string; paint?: string };
+    const read = thread as { personality?: string; listen?: boolean };
+    // the character's pictures (for DiceBear's animation and the well face): only when the shop's own set is drawn; the animated files are optional in a set
+    const files = shop.character?.();
+    const art = files ? { base: `${shop.publicUrl}/character`, version: files.version, animated: files.animation?.("well") !== undefined } : undefined;
+    const paint = a.pages?.paint;
     const personality = (PERSONALITIES as readonly string[]).includes(read.personality ?? "") ? read.personality as Personality : undefined;
     const html = chatPage({
       shop: offer, kind, language, base, home: parent ? `${shop.publicUrl}/f/${parent.link}` : shop.publicUrl, nonce, thread,
       identity: identityBlock({ language, base, ...(parent ? { parent: { back: `${shop.publicUrl}/f/${parent.link}?lang=${language}` } } : {}) }),
-      ...(personality ? { personality } : {}), ...(read.paint ? { paint: read.paint } : {}), ...(pushKey ? { pushKey } : {}),
+      ...(personality ? { personality } : {}), ...(paint && isPaint(paint) ? { paint } : {}), ...(art ? { art } : {}), ...(read.listen === true ? { listen: true } : {}), ...(choice ? { pushKey: choice.key, ...(choice.via ? { pushVia: choice.via } : {}) } : {}),
       onStreetlist: a.viaDoor, fontUrl: `${base}/font.woff2`, ...(url.searchParams.get("notice") === "rate" ? { notice: "rate" as const } : {}),
     });
-    return kit.sendHtml(res, 200, html, { "content-security-policy": chatPolicy(base, nonce), "x-robots-tag": "noindex", ...(cookie ? { "set-cookie": cookie } : {}) });
+    return kit.sendHtml(res, 200, html, { "content-security-policy": chatPolicy(base, nonce, art ? shop.publicUrl : undefined, a.viaDoor ? { origin: new URL(shop.publicUrl).origin, worker: choice?.signer === "streetlist" } : undefined), "x-robots-tag": "noindex", ...(cookie ? { "set-cookie": cookie } : {}) });
   }
 
   return kit.sendHtml(res, 404, NOT_FOUND);

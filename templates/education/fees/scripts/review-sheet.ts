@@ -178,7 +178,8 @@ const context = {} as never;
 const WEEKDAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const MONTHS_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-const cell = (text: string) => text.replace(/\|/gu, "\\|").replace(/\n/gu, " ");
+/** One table cell: the sheet is a markdown table, so a "|" inside a message is escaped and a line break is a space (the test applies the same, to find the message). */
+export const cell = (text: string) => text.replace(/\|/gu, "\\|").replace(/\n/gu, " ");
 const table = (head: string[], rows: string[][]) => [`| ${head.join(" | ")} |`, `| ${head.map(() => "---").join(" | ")} |`, ...rows.map((r) => `| ${r.map(cell).join(" | ")} |`)].join("\n");
 const REVIEWER = "Native reviewer: OK / change to …";
 const list = (words: readonly string[]) => words.join(" · ");

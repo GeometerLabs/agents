@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (59)
+## 1. Messages to the customer (60)
 
 | Template id | When it is sent | Text (Malayalam) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -23,6 +23,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `slot_unavailable` | The time is taken or already past | ക്ഷമിക്കണം, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ഒഴിവില്ല. മറ്റൊരു സമയം പറയാമോ? | Sorry, Tue 10 Nov, 6:00 pm is not available. What other time would work for you? |  |
 | `outside_hours` | The shop is closed then | ക്ഷമിക്കണം, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ഞങ്ങൾ അടച്ചിരിക്കും. മറ്റൊരു സമയം പറയാമോ? | Sorry, we're closed at Tue 10 Nov, 6:00 pm. What other time would work for you? |  |
 | `hold_failed` | The calendar could not hold the slot | ക്ഷമിക്കണം, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ഇപ്പോൾ മാറ്റിവയ്ക്കാൻ പറ്റിയില്ല, അതുകൊണ്ട് ഒന്നും ബുക്ക് ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. കുറച്ച് മിനിറ്റ് കഴിഞ്ഞ് ഒന്നുകൂടി ശ്രമിക്കൂ. | Sorry, I couldn't hold Tue 10 Nov, 6:00 pm just now, so nothing is booked. I've let the owner know. Please try again in a few minutes. |  |
+| `chat_shop_busy` | A chat guest asks for a time while the shop already has as many unpaid holds as its cap (the shop is not asked, nothing is held) | കടയിൽ ഇപ്പോൾ പണമടയ്ക്കാൻ കാത്തിരിക്കുന്ന ബുക്കിംഗുകൾ ഒരുപാടുണ്ട്, അതുകൊണ്ട് ഒന്നും മാറ്റിവച്ചിട്ടില്ല. കുറച്ചു കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ, അല്ലെങ്കിൽ കടയിൽ വിളിക്കൂ. | The shop has many bookings waiting for payment right now, so nothing is held. Please try again in a little while, or call the shop. |  |
 | `link_failed` | The payment link could not be made | ക്ഷമിക്കണം, പേയ്മെന്റ് ലിങ്ക് ഇപ്പോൾ ഉണ്ടാക്കാൻ പറ്റിയില്ല, അതുകൊണ്ട് ഒന്നും ബുക്ക് ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. | Sorry, I couldn't make the payment link just now, so nothing is booked. I've let the owner know. |  |
 | `booked` | Calendar and deposit both recorded | ബുക്ക് ആയി! ഹെയർകട്ട്, ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00. നിങ്ങളുടെ ₹200 അഡ്വാൻസ് കിട്ടി. വരാൻ പറ്റില്ലെങ്കിൽ 24 മണിക്കൂർ മുമ്പെങ്കിലും റദ്ദാക്കൂ, അഡ്വാൻസ് തിരികെ കിട്ടും. | You're booked! Haircut, Tue 10 Nov, 6:00 pm. We got your ₹200 deposit. Can't make it? Cancel at least 24 hours before and your deposit comes back. |  |
 | `couldnt_confirm` | Deposit received but the calendar could not confirm | നിങ്ങളുടെ ₹200 അഡ്വാൻസ് കിട്ടി, പക്ഷേ ചൊവ്വ, 10 നവംബർ, വൈകുന്നേരം 6:00 ഞങ്ങളുടെ കലണ്ടറിൽ ഉറപ്പിക്കാൻ ഇതുവരെ പറ്റിയില്ല, അതുകൊണ്ട് ബുക്ക് ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്, അവർ നിങ്ങളെ ബന്ധപ്പെടും. | We got your ₹200 deposit, but I couldn't confirm Tue 10 Nov, 6:00 pm in our calendar yet, so it's not booked. I've told the owner, and they'll get in touch with you. |  |
@@ -759,6 +760,14 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `setup.character.stripHelp` | ഓരോ മുഖവും ഈ കടയ്ക്ക് മാത്രമായി വരയ്ക്കുന്നതാണ്. എട്ട് പുതിയവയ്ക്കായി വീണ്ടും റോൾ ചെയ്യൂ. | Each face is drawn for this shop only. Roll for eight new ones. |  |
 | `setup.character.faceLabel` | മുഖം 3 / 8 | Face 3 of 8 |  |
 | `setup.character.roll` | പുതിയ മുഖങ്ങൾ റോൾ ചെയ്യൂ | Roll new faces |  |
+| `setup.character.paintLegend` | ബോർഡിന്റെ നിറം | Signboard colour |  |
+| `setup.character.paintHelp` | കടയുടെ ചാറ്റിന്റെ മുകളിലെ പട്ട, യഥാർത്ഥ കടബോർഡ് പോലെ പെയിന്റ് ചെയ്തത്. ഓരോ നിറത്തിനുമൊപ്പം അതിൽ എളുപ്പം വായിക്കാവുന്ന എഴുത്തുനിറം വരും. | The strip at the top of the shop's chat, painted like a real shop board. Each colour comes with writing that is easy to read on it. |  |
+| `setup.character.paintNone` | ഇളം പച്ച | Soft green |  |
+| `setup.character.paints.pink` | പിങ്ക് | Pink |  |
+| `setup.character.paints.blue` | നീല | Blue |  |
+| `setup.character.paints.green` | ഇലപ്പച്ച | Leaf green |  |
+| `setup.character.paints.marigold` | ചെട്ടിപ്പൂ മഞ്ഞ | Marigold |  |
+| `setup.character.paints.brick` | ഇഷ്ടിക ചുവപ്പ് | Brick red |  |
 | `setup.character.colourLegend` | നിറം | Colour |  |
 | `setup.character.auto` | സ്വയം | Auto |  |
 | `setup.character.autoLabel` | സ്വയം: ശൈലിയുടെ സ്വന്തം നിറം | Auto: the style's own colour |  |
@@ -778,6 +787,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `setup.character.problems.style` | അഞ്ച് ശൈലികളിൽ ഒന്ന് തിരഞ്ഞെടുക്കൂ. | Pick one of the five styles. |  |
 | `setup.character.problems.face` | നിരയിൽ നിന്ന് ഒരു മുഖം തിരഞ്ഞെടുക്കൂ. | Pick a face from the row. |  |
 | `setup.character.problems.colour` | കാണിച്ച നിറങ്ങളിൽ ഒന്നോ സ്വയമോ തിരഞ്ഞെടുക്കൂ. | Pick one of the colours shown, or Auto. |  |
+| `setup.character.problems.paint` | കാണിച്ച ബോർഡ് നിറങ്ങളിൽ ഒന്ന് തിരഞ്ഞെടുക്കൂ. | Pick one of the signboard colours shown. |  |
 | `setup.character.problems.personality` | സംസാരിക്കുന്ന രീതി തിരഞ്ഞെടുക്കൂ. | Pick how it talks. |  |
 | `setup.character.shopTitle` | കടയുടെ അസിസ്റ്റന്റ് | The shop's assistant |  |
 | `setup.character.shopNone` | ഈ കടയ്ക്ക് ഇതുവരെ അസിസ്റ്റന്റ് ഇല്ല. സജ്ജീകരണത്തിലെ അസിസ്റ്റന്റ് ഘട്ടത്തിൽ ഉണ്ടാക്കൂ. | This shop has no assistant yet. Make one in the setup's assistant step. |  |
@@ -1500,6 +1510,16 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.thread` | സംഭാഷണം | Conversation |  |
 | `chat.alertsHead` | കട മറുപടി തന്നാൽ ഫോൺ അറിയിക്കണോ? | Want a buzz when the shop answers? |  |
 | `chat.onStreetlist` | Streetlist-ൽ | on Streetlist |  |
+| `chat.more.confirmed` | ഉറപ്പായി. കടയുടെ സ്വന്തം രേഖയിൽ ഉണ്ട്. | Confirmed. The shop's own record has it. |  |
+| `chat.more.paid` | പണം കിട്ടി. കടയുടെ സ്വന്തം രേഖയിൽ ഉണ്ട്. | Payment received. The shop's own record has it. |  |
+| `chat.more.hold` | സംസാരിക്കാൻ അമർത്തിപ്പിടിക്കൂ | Hold to talk |  |
+| `chat.more.release` | അയയ്ക്കാൻ വിടൂ | Release to send |  |
+| `chat.more.listening` | കേൾക്കുന്നു | Listening |  |
+| `chat.more.voiceNote` | ശബ്ദ സന്ദേശം | Voice message |  |
+| `chat.more.micBlocked` | ഈ പേജിന് മൈക്രോഫോൺ ഓഫാണ്. പകരം ടൈപ്പ് ചെയ്യാം. | The microphone is off for this page. You can type instead. |  |
+| `chat.more.link` | ഞങ്ങളോട് ചാറ്റ് ചെയ്യൂ | Chat with us |  |
+| `chat.more.linkAbout` | കടയുമായുള്ള ചാറ്റ് തുറക്കും | Opens the chat with the shop |  |
+| `chat.guest` | ചാറ്റ് അതിഥി | Chat guest |  |
 | `chat.quick.bookings.1` | വില കാണൂ | See prices |  |
 | `chat.quick.bookings.2` | സമയം ബുക്ക് ചെയ്യൂ | Book a time |  |
 | `chat.quick.bookings.3` | നിങ്ങൾ എവിടെയാണ്? | Where are you? |  |

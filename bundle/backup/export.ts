@@ -84,16 +84,21 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   const usage = summarizeUsage(raw, rates); // counted before the conversation is hidden, and it reads no text
   // A Bookings snapshot holds `bookings`, a Fees one holds `dues`, an Orders one holds `orders`: whichever the shop's store has is exported, under its own file name.
   const saved = state ? (JSON.parse(state.snapshot) as { bookings?: [string, Record<string, unknown>][]; dues?: [string, Record<string, unknown>][]; orders?: [string, Record<string, unknown>][] }) : {};
-  const isOrders = saved.orders !== undefined;
-  const isFees = !isOrders && saved.dues !== undefined && saved.bookings === undefined;
-  const casesFile = isOrders ? "orders.json" : isFees ? "dues.json" : "bookings.json";
+  // Stock orders (17 Nov 2026) also keeps an `orders` map (its purchase orders), told apart by its own counter `seq` (an Orders store has `nextOrder`): it must never be exported as Orders'
+  const isStock = saved.orders !== undefined && (saved as { seq?: unknown; nextOrder?: unknown }).seq !== undefined && (saved as { nextOrder?: unknown }).nextOrder === undefined;
+  const isOrders = saved.orders !== undefined && !isStock;
+  const isFees = !isOrders && !isStock && saved.dues !== undefined && saved.bookings === undefined;
+  const casesFile = isStock ? "purchase-orders.json" : isOrders ? "orders.json" : isFees ? "dues.json" : "bookings.json";
   const students = isFees ? [...new Set((saved.dues ?? []).map(([, d]) => String(d.studentName ?? "")).filter((n) => n.length >= 2))].sort((a, b) => b.length - a.length) : [];
   const scrub = (text: unknown): unknown => (typeof text === "string" ? students.reduce((t, name) => t.split(name).join(hide("s", name)), text) : text);
   const entries = raw.map((e) => ({ ...e, conversation: hide("c", e.conversation), ...(isFees && "notes" in e ? { notes: scrub(e.notes) } : {}) }));
   // An order also carries the delivery address a customer wrote: it is the shop's, for the owner, and never leaves the shop's volume (only the place on the delivery list does).
   // Item 11h: an order from the shop's page carries the name and number its customer typed and its handle's hash too: as for a page booking below, the name and the hash
   // stay in the shop's volume and the number leaves only as a fingerprint.
-  const cases = isOrders
+  // a purchase order names a supplier by id and carries no customer: only the owner's WhatsApp message id that asked for it (`requestId`) is left out
+  const cases = isStock
+    ? (saved.orders ?? []).map(([, o]) => { const { requestId: _requestId, ...rest } = o as Record<string, unknown>; return rest; })
+    : isOrders
     ? (saved.orders ?? []).map(([, o]) => { const { address: _address, contact, handle: _handle, ...rest } = o as Record<string, unknown> & { contact?: { phone?: string } }; return { ...rest, customer: hide("p", o.customer), ...(contact?.phone ? { contact: { phone: hide("p", contact.phone) } } : {}) }; })
     : isFees
     ? (saved.dues ?? []).map(([, d]) => ({ ...d, customer: hide("p", d.customer), studentName: hide("s", d.studentName) }))
@@ -118,8 +123,8 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
     renameSync(tmp, join(shop.out, file));
   }
   let open: Record<string, number> | undefined;
-  try { open = countsByKind(obligations.detect({ template: isOrders ? "orders" : isFees ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }
-  return { name: shop.name, ok: true, entries: entries.length, ...(isOrders ? { orders: cases.length } : isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}) };
+  try { open = countsByKind(obligations.detect({ template: isStock ? "stock-orders" : isOrders ? "orders" : isFees ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }
+  return { name: shop.name, ok: true, entries: entries.length, ...(isOrders || isStock ? { orders: cases.length } : isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}) };
 }
 
 if (import.meta.main) {

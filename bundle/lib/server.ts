@@ -168,6 +168,12 @@ export interface ServerConfig {
    * geometer.dev or under it: shop pages keep their own cookies and their own reputation (Explanation.md).
    */
   pages?: { domain: string; extraDomains: string[] };
+  /**
+   * W3 (17 Nov 2026): the Streetlist app's one push key, the PUBLIC half (65 bytes, base64url, from `node bundle/services/push-relay.ts make-key <file>`). Only with `pages`. The private half is
+   * a file in secrets/push/ (never here, never in the repository): the server's push sender signs with it (services/push-relay.ts). The public half goes into each shop's runtime.json so
+   * its chat page can subscribe a phone with it. Left out: no shop sends to the Streetlist app's phones.
+   */
+  pushRelay?: { publicKey: string };
 }
 
 /** A pages domain: a lowercase host name with a dot, no scheme, port or path (the same rule as fleet's `pages.domain`). */
@@ -291,6 +297,13 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
   if (o.fleet !== undefined && (!fleet || typeof fleet.url !== "string" || typeof fleet.keyFile !== "string")) errors.push('"fleet" must say {"url": "https://...", "keyFile": "<a file that holds this server\'s deployment key>"}.');
   if (fleet && typeof fleet.url === "string" && !/^https:\/\//u.test(fleet.url) && !/^http:\/\/(localhost|127\.0\.0\.1|host\.docker\.internal)/u.test(fleet.url)) errors.push('"fleet.url" must be https:// (the deployment key is a bearer secret).');
   const fleetId = fleet?.deploymentId;
+  if (o.pushRelay !== undefined) {
+    const k = isObj(o.pushRelay) ? o.pushRelay.publicKey : undefined;
+    if (o.pages === undefined) errors.push('"pushRelay" needs "pages": it is the Streetlist app\'s push key, for shops served on the pages domain.');
+    if (!isObj(o.pushRelay) || Object.keys(o.pushRelay).some((x) => x !== "publicKey") || typeof k !== "string" || !/^[A-Za-z0-9_-]{87}$/u.test(k) || Buffer.from(k, "base64url")[0] !== 4) {
+      errors.push('"pushRelay" must say {"publicKey": "<the push key\'s public half>"}: 65 bytes in base64url, printed by `node bundle/services/push-relay.ts make-key <file>`. The private half is a file in secrets/push/, never here.');
+    }
+  }
   errors.push(...pagesProblems(o.pages, typeof o.domain === "string" ? o.domain : "", isObj(o.panel) && o.panel.mode === "hosted"));
   if (o.gupshupTokenHeader !== undefined && o.gupshupTokenHeader !== "bearer" && o.gupshupTokenHeader !== "bare") errors.push('"gupshupTokenHeader" must be "bearer" or "bare": how a renewed Gupshup app token is sent.');
   if (fleetId !== undefined && (typeof fleetId !== "string" || serverIdProblem(fleetId))) errors.push('"fleet.deploymentId" must be the server id fleet gave this server when it was paired (pairing.json).');
@@ -310,6 +323,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     panel: { enabled: isObj(o.panel) ? o.panel.enabled === true : false, mode: isObj(o.panel) && o.panel.mode === "hosted" ? "hosted" : "own", termsOnWhatsapp: isObj(o.panel) && o.panel.termsOnWhatsapp === true },
     heartbeatSeconds: typeof o.heartbeatSeconds === "number" && o.heartbeatSeconds >= 5 ? o.heartbeatSeconds : 60,
     ...(licenceKeys && licenceKeys.every((k) => typeof k === "string") ? { licence: { keys: licenceKeys as string[] } } : {}),
+    ...(isObj(o.pushRelay) && typeof o.pushRelay.publicKey === "string" ? { pushRelay: { publicKey: o.pushRelay.publicKey } } : {}),
     ...(isObj(o.pages) && typeof o.pages.domain === "string" ? { pages: { domain: o.pages.domain, extraDomains: Array.isArray(o.pages.extraDomains) ? o.pages.extraDomains.filter((d): d is string => typeof d === "string") : [] } } : {}),
     ports: { http: isObj(o.ports) && Number.isInteger(o.ports.http) ? o.ports.http as number : 80, https: isObj(o.ports) && Number.isInteger(o.ports.https) ? o.ports.https as number : 443 },
   };
