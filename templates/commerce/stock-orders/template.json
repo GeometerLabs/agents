@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "stock-orders",
+  "setup": "stock-orders",
+  "steps": ["business", "languages", "accounts", "checks"],
+  "accounts": ["whatsapp"],
+  "settingsExample": "settings/glow-salon.example.json"
+}
