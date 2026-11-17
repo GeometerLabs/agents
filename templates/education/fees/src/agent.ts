@@ -38,6 +38,7 @@ import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { feesSkill } from "./assistant.ts";
+import type { FeesActs } from "./assistant.ts";
 import { newHandle, parentLinkHash } from "../../../../modules/channels/handle.ts";
 import type { ChannelEvent, ChannelFee, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
 import type { PageAudio } from "../../../../modules/voice/turn.ts";
@@ -56,6 +57,7 @@ import { detectLanguage } from "../../../../modules/understanding/rules.ts";
 import { ensureLink as makeLink } from "../../../../modules/payments/links.ts";
 import type { Payment, PaymentEvent, PaymentRequest, Payments } from "../../../../modules/payments/payments.ts";
 import { createRefunds, recheckLine } from "../../../../modules/payments/refunds.ts";
+import type { RefundResult } from "../../../../modules/payments/refunds.ts";
 import { feesAccounting } from "./accounting.ts";
 import type { Action, ActionRecord, Outcome } from "../../../../modules/record/record.ts";
 import { takeDue } from "../../../../modules/reminders/reminders.ts";
@@ -1104,10 +1106,19 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     log(due, owner, "owner_decision", "confirmed", { command }, { decisions: [once, limit], refs: said });
-    if (ownerRefunds) { await oweBack(due, pending.paymentId, pending.amountInr * 100, "the owner approved the refund the parent asked for", [once, limit]); return; }
-    // with other approvers (B37) the owner is named as asking for it: if Guard holds it, someone else approves it
-    const result = await requestRefund(due, pending.paymentId, pending.amountInr, [once, limit], overLimit(pending.amountInr), askedByOwner);
-    await afterRefund(due, result, { paymentId: pending.paymentId, amountInr: pending.amountInr, done: { customer: "fee_refund_approved" }, held: "fee_refund_pending", requestedBy: askedByOwner });
+    await sendOwnerRefund(due, pending.paymentId, pending.amountInr, "the owner approved the refund the parent asked for", [once, limit]);
+  }
+
+  /**
+   * A refund the owner has decided on, the one path for every way the owner can decide it: "approve q-3" (a parent asked) and the shop's assistant's refund card. The
+   * checks (one refund for a payment, the limit with the owner's yes) were made by the caller and are recorded with the refund. A UPI centre's owner pays it back by hand
+   * (recorded as owed); a gateway refund goes through Guard like any other (held above the limit), and the owner is named as asking when others approve (B37).
+   */
+  async function sendOwnerRefund(due: Due, paymentId: string, amountInr: number, why: string, decisions: Decision[]): Promise<RefundResult | "owed"> {
+    if (ownerRefunds) { await oweBack(due, paymentId, amountInr * 100, why, decisions); return "owed"; }
+    const result = await requestRefund(due, paymentId, amountInr, decisions, overLimit(amountInr), askedByOwner);
+    await afterRefund(due, result, { paymentId, amountInr, done: { customer: "fee_refund_approved" }, held: "fee_refund_pending", requestedBy: askedByOwner });
+    return result;
   }
 
   // ---- events --------------------------------------------------------------------------------------------------------------
@@ -1299,10 +1310,35 @@ export function createAgent(deps: AgentDeps): Agent {
     log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
   }
 
+  // ---- the owner's cancel and refund from the chat (the shop's assistant's acts) ---------------------------------------------------------------------------
+  // The skill adds no way to move money of its own: each act is a path the agent already has, with the same limits. A cancel is the owner's waiver of the whole balance (the
+  // very applyWaiver of "approve q-3"), after the record is read again; a refund is the owner's decision sent as the same refund ("approve q-4" on a parent's request).
+  const feesActs: FeesActs = {
+    owner, ownerRefunds,
+    async cancelFee(due, amountInr) {
+      const { fresh } = await reconcile(due);
+      await settle(due, fresh);
+      // only this exact action: the fee is still open and still owes what the card showed
+      if (due.state !== "open" || balanceInr(due) !== amountInr || amountInr < 1) return false;
+      const decision = checkWaiver({ amountInr, balanceInr: balanceInr(due), alreadyWaivedInr: due.waivedInr, limitInr: settings.waiver.limitInr, ownerApproved: true });
+      if (decision.verdict !== "allow") { log(due, owner, "waive_fee", "blocked", { amountInr }, { decisions: [decision], notes: "the owner's cancel of this fee was not applied" }); return false; }
+      await applyWaiver(due, amountInr, "owner", [decision]);
+      if (due.state !== "open") await closeOpenLinks(due); // nothing more is asked on this fee
+      return due.state !== "open";
+    },
+    async refund(due, paymentId, amountInr, why) {
+      const payment = await payments.fetchPayment(paymentId).catch(() => null);
+      const once = checkOneRefundPerPayment({ paymentId, refundedPaise: payment?.amount_refunded ?? 0 });
+      const limit = checkRefundLimit({ amountInr, limitInr: settings.refund.limitInr, paidInr: (payment?.amount ?? 0) / 100, ownerApproved: true });
+      if (once.verdict === "block" || limit.verdict === "block") { log(due, owner, "refund", "blocked", { paymentId, amountInr }, { decisions: [once, limit], refs: { paymentId, amountPaise: String(amountInr * 100) }, notes: "the owner's refund from the shop's assistant was not sent" }); return "denied"; }
+      return sendOwnerRefund(due, paymentId, amountInr, why, [once, limit]);
+    },
+  };
+
   // ---- item 11e: the shop's assistant (modules/assistant) -------------------------------------------------------------
   // On only when the settings have an "assistant" block. Fees is its one skill here; answering what waits is the owner's own fixed reply (src/assistant.ts).
   const assistant = assistantForAgent({
-    settings, store, skill: feesSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg) }),
+    settings, store, skill: feesSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg), entries: () => record.entries(), acts: feesActs }),
     clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
     // the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out
     ...(deps.voice ? { hearing: { hear: createListener({ voice: deps.voice, reader, isCommander: () => false, optedOut: () => false }) } } : {}),
