@@ -26,6 +26,8 @@ import type { ChannelState } from "../../../../modules/channels/state.ts";
 import { advanceFor, cutoffOf, itemName, itemOf, slotOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import type { MessageFacts } from "./language/templates.ts";
+import { planMealsInSlot } from "./plans/ledger.ts";
+import type { PlansState } from "./plans/ledger.ts";
 
 export type OrderState = "enquiry" | "awaiting_owner" | "awaiting_advance" | "confirmed" | "expired" | "cancelled" | "completed";
 
@@ -125,6 +127,11 @@ export interface Order {
    * `linkId` and `linkUrl` are that link. Left out until something about the balance happens.
    */
   balance?: { amountInr: number; paid?: { by: "cash" | "upi" | "provider"; atMs: number; paymentId?: string }; linkId?: string; linkUrl?: string };
+  /**
+   * Monthly plans (17 Nov 2026): this "order" is the payment of one period of a plan, not a meal. It is the record the payment link, the owner's UPI mark and any refund of
+   * the period are matched to (so a renewal's payment is matched to its period by this order's id), and it has no day and no items, so it never counts as an order in a slot.
+   */
+  plan?: { id: string; period: number; typeId: string };
   /** Item 11h: the hash of the order's handle (modules/channels/handle.ts): the only thing that reaches it from the page, the API or MCP. */
   handle?: string;
   /** Item 11h: the name and number the customer typed (not verified): what the owner sees, and what the per-number limits count. */
@@ -154,6 +161,8 @@ export interface Store {
   assistant?: AssistantState;
   /** Item 11h: the shop page's, the API's and the MCP endpoint's messages and requests (modules/channels/state.ts). Left out until the first one. */
   channel?: ChannelState;
+  /** Monthly plans (17 Nov 2026): every plan, its periods and the state of each meal day (src/plans/ledger.ts). Left out until the first plan. */
+  plans?: PlansState;
 }
 
 export function createStore(): Store {
@@ -188,7 +197,8 @@ export function register(store: Store, order: Order): Order {
 
 /** The customer's most recent order in one of these states. */
 export function latestOrder(store: Store, customer: string, states: OrderState[]): Order | undefined {
-  return [...store.orders.values()].reverse().find((o) => o.customer === customer && states.includes(o.state));
+  // the payment of a plan's period is not "their order" (cancel, "I paid", "already waiting" mean a meal order): plans find theirs by the plan (src/plans/flow.ts)
+  return [...store.orders.values()].reverse().find((o) => o.customer === customer && !o.plan && states.includes(o.state));
 }
 
 // ---- the money, whole rupees ------------------------------------------------------------------------------------------
@@ -228,12 +238,13 @@ export function ordersOn(store: Store, date: LocalDate, nowMs: number, exceptId 
 
 /**
  * How many orders hold a place in one slot on one day (a slot's `maxOrders`): worked out from the orders, like the day's count, so a restart or a cancellation can never
- * leave a number that disagrees with them. Not counting `exceptId` (the order being checked).
+ * leave a number that disagrees with them. Not counting `exceptId` (the order being checked). Plan meals (src/plans/ledger.ts) are counted here too, so every check of a slot
+ * (the agent's, the shop's page, the list of open slots) agrees.
  */
 export function ordersInSlot(store: Store, date: LocalDate, slotId: string, nowMs: number, exceptId = ""): number {
   let n = 0;
   for (const o of store.orders.values()) if (o.id !== exceptId && o.slotId === slotId && sameDay(o.date, date) && holdsStock(o, nowMs)) n++;
-  return n;
+  return n + planMealsInSlot(store.plans, date, slotId, nowMs); // a plan's meals hold places in the slot too (17 Nov 2026); none for a shop without plans
 }
 
 // ---- the slot, the cut-off and what a message may say ----------------------------------------------------------------
