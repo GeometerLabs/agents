@@ -173,15 +173,17 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
    * a part was marked is void on its tap, as on the page.
    */
   type Waiting = WaitingItem & { fields: Record<string, string | number | boolean>; reply: { id: string } | string };
-  const ANSWERS: Record<OwnerItem["kind"], { yes: string; no?: string }> = { late_refund: { yes: "approve", no: "deny" }, calendar: { yes: "retry" }, deposit: { yes: "received" }, refund_owed: { yes: "refunded" } };
+  const ANSWERS: Record<OwnerItem["kind"], { yes: string; no?: string }> = { late_refund: { yes: "approve", no: "deny" }, calendar: { yes: "retry" }, deposit: { yes: "received" }, late_deposit: { yes: "received" }, refund_owed: { yes: "refunded" } };
+  // late_deposit (a hold that ended where money may have come anyway, channel.ts ownerItems) is answered with the same "received" mark and its one-use code. It was
+  // missing here until 17 Nov 2026, so "what needs me" threw as soon as one was listed with the assistant on (found while finishing Orders, which had the same item).
   function waitingNow(): Waiting[] {
     return ownerItems(settings, store, deps.nowMs()).items.map((i): Waiting => {
       const b = store.bookings.get(i.case);
       const a = ANSWERS[i.kind];
       // a UPI mark is the same button the owner's WhatsApp message carries (with its one-use code); the agent's own asks are the typed "approve b-3" and the like
-      const reply = i.code && (i.kind === "deposit" || i.kind === "refund_owed") ? { id: markButtonId(i.kind === "deposit" ? "received" : "refunded", i.code) } : a.yes;
+      const reply = i.code && (i.kind === "deposit" || i.kind === "late_deposit" || i.kind === "refund_owed") ? { id: markButtonId(i.kind === "refund_owed" ? "refunded" : "received", i.code) } : a.yes;
       return {
-        case: i.case, kind: i.kind, amountPaise: i.amountPaise, who: b ? whoOf(b) : i.customer.name ?? i.customer.phone, what: b ? what(b) : "", money: true,
+        case: i.case, kind: i.kind === "late_deposit" ? "deposit" : i.kind, amountPaise: i.amountPaise, who: b ? whoOf(b) : i.customer.name ?? i.customer.phone, what: b ? what(b) : "", money: true,
         yes: a.yes, ...(a.no ? { no: a.no } : {}), fields: { pageDigest: i.digest, amountPaise: i.amountPaise }, reply,
       };
     });
