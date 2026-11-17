@@ -5,6 +5,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { OWNER_LINK_FILE, ownerLinkReader } from "../channels/owner-link.ts";
 import { OWNER_ACCESS_FILE, OWNER_SESSIONS_FILE, openOwnerAccess, readEndBefore } from "../channels/owner-access.ts";
+import { CHAT_IDENTITY_FILE, openChatIdentity } from "../channels/chat-identity.ts";
+import { createChatLinks, withChatLinks } from "../channels/chat-link-send.ts";
+import { createChatIdentity } from "../channels/chat-identity-http.ts";
+import type { RuntimeChannel } from "./core.ts";
 import { createOwnerSignin } from "../channels/owner-signin.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import { PAGES_FILE, pagesReader } from "../channels/pages-file.ts";
@@ -213,12 +217,18 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   // the shop's addresses (pages.json) and the panel's "sign out every device" (owner-sessions.json) are read from the client folder on every use.
   const owner = (client.settings as { owner?: { whatsapp: string; language: Language } }).owner;
   const ownerAccess = channelToken && owner ? openOwnerAccess(join(client.runtime.dataDir, OWNER_ACCESS_FILE)) : undefined;
-  const ownerSignin = ownerAccess && owner ? createOwnerSignin({
+  const ownerSigninBase = ownerAccess && owner ? createOwnerSignin({
     access: ownerAccess, pages: pagesReader(join(client.folder, PAGES_FILE)), endBefore: () => readEndBefore(join(client.folder, OWNER_SESSIONS_FILE)),
     // item 11h: the Operator's setup QR and recovery card, as the deployer copies the panel's file here
     grants: ownerGrantsReader(join(client.folder, OWNER_GRANTS_FILE)),
     owner, shopName: (client.settings as { name?: string }).name ?? "", clock, log,
   }) : undefined;
+  // W2: a chat guest's identity (keys per thread, the number they gave, one-use links), in a file of its own beside the store, for a shop with a page and an owner. Its links go out through
+  // the owner's sign-in (the core hands that its events before the agent), so no template passes anything more along.
+  const chatIdentity = ownerSigninBase ? openChatIdentity(join(client.runtime.dataDir, CHAT_IDENTITY_FILE)) : undefined;
+  const ownerSignin = ownerSigninBase && chatIdentity
+    ? withChatLinks(ownerSigninBase, createChatLinks({ identity: chatIdentity, pages: pagesReader(join(client.folder, PAGES_FILE)), shopName: (client.settings as { name?: string }).name ?? "", clock, log }))
+    : ownerSigninBase;
   // Item 11h: web push, for a shop with a page. On only when runtime.json names the shop's push Guard (services.push): every push goes through it. The store (the
   // shop's VAPID keys, the phones, the owner's choice, the queue) is a file of its own beside the store; the sender drains it outside the agent's steps.
   const pushStore = channelToken ? openPushStore(join(client.runtime.dataDir, PUSH_FILE)) : undefined;
@@ -236,6 +246,7 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   } catch (e) {
     store.close();
     ownerAccess?.close();
+    chatIdentity?.close();
     pushStore?.close();
     throw e;
   }
@@ -244,13 +255,18 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   if (client.runtime.mode === "fakes" && before.recordLength > 0) {
     log(`Warning: this data folder remembers earlier ${hooks.casesName}, but the stand-in services start empty every run, so they will disagree. For a local run, use a new data folder.`);
   }
+  const chatIdentityRoutes = chatIdentity && channelToken ? createChatIdentity({
+    identity: chatIdentity, pages: pagesReader(join(client.folder, PAGES_FILE)), shopName: (client.settings as { name?: string }).name ?? "", clock,
+    runtime: { get channel() { return (runtime as { channel?: RuntimeChannel }).channel; }, submit: (events) => runtime.submit(events), kick: () => runtime.kick() }, ...(push ? { push } : {}),
+  }) : undefined;
   let server: RunningServer;
   try {
     // the owner's link is read from the client folder on every request (the deployer writes and removes it), so a revoked link stops without a restart
-    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}), ...(ownerSignin ? { ownerSignin: ownerSignin.http } : {}), ...(push ? { push, hasWhatsApp: runtimeHasWhatsApp(client.runtime) } : {}) });
+    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}), ...(ownerSignin ? { ownerSignin: ownerSignin.http } : {}), ...(push ? { push, hasWhatsApp: runtimeHasWhatsApp(client.runtime) } : {}), ...(chatIdentityRoutes ? { chatIdentity: chatIdentityRoutes } : {}) });
   } catch (e) {
     await runtime.close();
     ownerAccess?.close();
+    chatIdentity?.close();
     pushStore?.close();
     throw e;
   }
@@ -267,6 +283,7 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
       await server.close();
       await runtime.close();
       ownerAccess?.close();
+      chatIdentity?.close();
       pushStore?.close();
     },
   };

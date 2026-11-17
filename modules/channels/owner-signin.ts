@@ -134,7 +134,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
     },
 
     /** Handle one event the core gave here (`takes` said yes). */
-    async run(event: OwnerSigninEvent | OwnerAccessEvent | { kind: "message"; message: InboundMessage }, ctx: { messaging: Messaging; record: ActionRecord }): Promise<void> {
+    async run(event: OwnerSigninEvent | OwnerAccessEvent | { kind: "message"; message: InboundMessage }, ctx: { messaging: Messaging; record: ActionRecord; store?: unknown }): Promise<void> {
       if (event.kind === "owner_access") {
         ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs: { what: event.what, session: event.session, ...(event.how ? { how: event.how } : {}) }, language: owner.language, refs: { what: event.what, session: event.session, ...(event.how ? { how: event.how } : {}) } });
         return;
