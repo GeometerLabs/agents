@@ -93,6 +93,8 @@ export const LAYOUTS: readonly Layout[] = [
   { id: 4, paper: "monthly-report", template: "fees", figures: [money("collected"), money("givenBack"), money("stillToCollect"), count("remindersSent"), money("takenOff"), count("asked"), count("approved"), count("saidNo"), count("stoppedByLimits")] },
   // Orders' monthly report: its cards and its message's lines.
   { id: 5, paper: "monthly-report", template: "orders", figures: [money("collected"), money("givenBack"), money("stillToCollect"), count("ordersTaken"), count("cancelled"), count("asked"), count("approved"), count("saidNo"), count("stoppedByLimits")] },
+  // Stock orders' monthly report: its owner lines (report/summary.ts). The one money figure is the budget the approved orders hold; "markedPaid" is the owner's own note.
+  { id: 6, paper: "monthly-report", template: "stock-orders", figures: [count("ordersPlaced"), count("acknowledged"), count("receivedFull"), count("partReceived"), count("wrongItem"), count("supplierSaidNo"), count("noAnswer"), count("neverSent"), money("budgetUsed"), count("markedPaid"), count("stoppedByLimits")] },
 ];
 
 // The parser reads a layout id off the wire; an unknown id gives undefined so a newer or forged link is refused instead of misread.
