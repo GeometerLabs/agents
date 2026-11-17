@@ -33,6 +33,7 @@ export function reportSection(envelope: Envelope<FeesReport>, language: Language
 
   const numbers = table([{ text: p.item }, { text: p.count, n: true }, { text: p.amount, n: true }], [
     [esc(moneyLabels(language, r.paidBy).collected), ...amount(r.money.collected)],
+    ...(r.money.oldDues ? [[esc(moneyLabels(language, r.paidBy).oldDuesCollected), ...amount(r.money.oldDues)]] : []), // only when an old due was paid this period
     [esc(moneyLabels(language, r.paidBy).givenBack), ...amount(r.money.givenBack)],
     // refunds a person settled by their word (B75): one row per person, never counted as given back
     ...(r.money.settledByWord ?? []).map((w) => [esc(s.settledByWord(settledWho(w.by))), ...amount(w)]),

@@ -279,6 +279,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `settledBySomeone` | ಒಬ್ಬ ವ್ಯಕ್ತಿ ತಮ್ಮ ಮಾತಿನ ಮೇಲೆ ಇತ್ಯರ್ಥಪಡಿಸಿದ್ದು | Settled by a person, by their word |  |
 | `label.collected` | ಸಂಗ್ರಹವಾದದ್ದು | Collected |  |
 | `label.stillToCollect` | ಇನ್ನೂ ಸಂಗ್ರಹಿಸಬೇಕಾದದ್ದು | Still to collect |  |
+| `label.oldDuesCollected` | ಹಳೆಯ ಬಾಕಿ ಸಂಗ್ರಹವಾದದ್ದು | Old dues collected |  |
 | `label.givenBack` | ಮರಳಿ ಕೊಟ್ಟದ್ದು | Given back |  |
 | `label.takenOff` | ಶುಲ್ಕದಿಂದ ಕಡಿಮೆ ಮಾಡಿದ್ದು | Taken off fees |  |
 | `label.wasAsked` | ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು | You were asked |  |
@@ -326,6 +327,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `moneyBlock.kept` | ರದ್ದತಿಯಿಂದ ಇಟ್ಟುಕೊಂಡದ್ದು | Kept from cancellations |  |
 | `moneyBlock.byWord` | ಯಾರದೋ ಮಾತಿನ ಮೇಲೆ ಮುಗಿಸಿದ್ದು, ಮೇಲಿನ ಮೊತ್ತದಲ್ಲಿ ಇಲ್ಲ | Settled on someone's word, not counted in the totals above |  |
 | `upiLabel.collected` | ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು | Marked paid by owner |  |
+| `upiLabel.oldDuesCollected` | ಹಳೆಯ ಬಾಕಿ, ಮಾಲೀಕರು ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದು | Old dues marked paid by owner |  |
 | `upiLabel.givenBack` | ಮಾಲೀಕರು ಕಳುಹಿಸಿದೆ ಎಂದು ದಾಖಲಿಸಿದ ರೀಫಂಡ್ | Refunds marked sent by owner |  |
 | `upiLabel.notChecked` | ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ (UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ನೀವು ದಾಖಲಿಸುತ್ತೀರಿ) | automatic payment checking (with UPI you mark each payment) |  |
 | `notTested.upi-not-automatic` | ಪಾವತಿಯ ಸ್ವಯಂ ಪರಿಶೀಲನೆ: UPI ಯಲ್ಲಿ ಪ್ರತಿ ಪಾವತಿಯನ್ನು ಮಾಲೀಕರೇ ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸುತ್ತಾರೆ | automatic payment checking: with UPI the owner marks each payment received |  |

@@ -270,6 +270,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `settledBySomeone` | किसी व्यक्ति ने अपनी बात पर निपटाया | Settled by a person, by their word |  |
 | `label.collected` | जमा हुआ | Collected |  |
 | `label.stillToCollect` | अभी लेना बाकी | Still to collect |  |
+| `label.oldDuesCollected` | पुराना बकाया जमा हुआ | Old dues collected |  |
 | `label.givenBack` | वापस किया | Given back |  |
 | `label.takenOff` | फीस से घटाया | Taken off fees |  |
 | `label.wasAsked` | आपसे पूछा गया | You were asked |  |
@@ -317,6 +318,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `moneyBlock.kept` | रद्द करने पर रखे | Kept from cancellations |  |
 | `moneyBlock.byWord` | किसी के कहने पर निपटाए गए, ऊपर के जोड़ में नहीं | Settled on someone's word, not counted in the totals above |  |
 | `upiLabel.collected` | मालिक द्वारा मिला हुआ दर्ज | Marked paid by owner |  |
+| `upiLabel.oldDuesCollected` | पुराना बकाया, मालिक द्वारा मिला हुआ दर्ज | Old dues marked paid by owner |  |
 | `upiLabel.givenBack` | मालिक द्वारा भेजा हुआ दर्ज रिफंड | Refunds marked sent by owner |  |
 | `upiLabel.notChecked` | भुगतान की अपने-आप जाँच (UPI में हर भुगतान आप दर्ज करते हैं) | automatic payment checking (with UPI you mark each payment) |  |
 | `notTested.upi-not-automatic` | भुगतान की अपने-आप जाँच: UPI में हर भुगतान मालिक खुद मिला हुआ दर्ज करते हैं | automatic payment checking: with UPI the owner marks each payment received |  |

@@ -27,3 +27,20 @@ export const feesJournal = (entries: readonly RecordEntry[]): Journal => journal
 /** The centre's accounting over the same record the agent's `log` appends to. */
 export const feesAccounting = (o: { record: { entries(): readonly RecordEntry[] }; timezone: string; clock: Clock }): Accounting =>
   createAccounting({ record: o.record, shop: { timezone: o.timezone }, legacy: FEES_LEGACY, clock: o.clock });
+
+/**
+ * The fees that are old dues, read from the record: each back due was opened once by an `open_fee` line that says `backDue: "true"` and the month it is for (agent.ts
+ * openMonthlyFees). Fee id -> month ("2026-09"). The owner decided (17 Nov 2026) that old dues are told apart in the report and marked in the accountant's files, never
+ * posted differently, so this is the one place that says which lines belong to one.
+ */
+export function oldDueMonths(entries: readonly RecordEntry[]): ReadonlyMap<string, string> {
+  const out = new Map<string, string>();
+  for (const e of entries) if (e.action === "open_fee" && e.outcome === "confirmed" && e.refs.backDue === "true" && e.booking && e.refs.month) out.set(e.booking, e.refs.month);
+  return out;
+}
+
+/** The month an entry's old due is for, or undefined when the entry is not on an old due (what modules/accounting/export.ts `oldDueOf` wants). */
+export function oldDueOf(entries: readonly RecordEntry[]): (e: RecordEntry) => string | undefined {
+  const months = oldDueMonths(entries);
+  return (e) => (e.booking ? months.get(e.booking) : undefined);
+}
