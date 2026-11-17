@@ -10,13 +10,13 @@ import { createHash } from "node:crypto";
 import type { OwnerItemView, OwnerView } from "../../../../modules/channels/backend.ts";
 import { openCards } from "../../../../modules/assistant/cards.ts";
 import type { AssistantState } from "../../../../modules/assistant/state.ts";
-import { openUnknowns } from "../../../../modules/messaging/send-once.ts";
+import { nextTryMs, openRefusals, openUnknowns } from "../../../../modules/messaging/send-once.ts";
 import { SKILL, isOpen } from "./order.ts";
 import type { PurchaseOrder, Store } from "./order.ts";
 import { itemOf, nameIn, supplierOf, unitOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 
-export type OwnerItem = OwnerItemView & { kind: "po_approval" | "po_silent" | "po_receive" | "po_unsure" };
+export type OwnerItem = OwnerItemView & { kind: "po_approval" | "po_silent" | "po_receive" | "po_unsure" | "po_refused" };
 
 const digestOf = (...parts: (string | number | undefined)[]): string => createHash("sha256").update(parts.map((p) => String(p ?? "")).join("|")).digest("hex").slice(0, 32);
 
@@ -42,7 +42,11 @@ export function ownerItems(settings: Settings, store: Store, nowMs: number, stat
     // an order message that may or may not have reached the supplier (the process died while it was sent, or the reply was lost): the owner says what to do, once.
     // Bound to the message's own id and ending, so a press for one that was answered since does nothing (send once, modules/messaging/send-once.ts).
     const unsure = o.state === "send_unknown" && o.ack === "none" ? openUnknowns(store.sendOnce, "purchase_order").find((i) => i.caseId === o.id) : undefined;
-    if (unsure) {
+    // WhatsApp refused the order message and nothing went out: told at once, with the time of the next automatic try, and "Try now" / "Cancel order"
+    const refused = o.state === "approved" ? openRefusals(store.sendOnce, "purchase_order").find((i) => i.caseId === o.id) : undefined;
+    if (refused) {
+      out.push({ kind: "po_refused", case: o.id, digest: digestOf(o.id, refused.id, refused.tries), actions: ["try_now", "cancel_order"], amountPaise: o.totalPaise, customer, channel: "whatsapp", startMs: nextTryMs(refused), what: `${o.id}: ${whatOf(settings, o)}` });
+    } else if (unsure) {
       out.push({ kind: "po_unsure", case: o.id, digest: digestOf(o.id, unsure.id, unsure.status, unsure.resolved), actions: ["got_it", "send_again"], amountPaise: o.totalPaise, customer, channel: "whatsapp", what: `${o.id}: ${whatOf(settings, o)}` });
     } else if (o.ack === "none" && (o.state === "sent" || o.state === "send_unknown") && o.silentToldMs !== undefined) {
       out.push({ kind: "po_silent", case: o.id, digest: digestOf(o.id, o.state, o.ack, o.askedMs, o.asks.filter((a) => a.sent).length), actions: ["retry"], amountPaise: o.totalPaise, customer, channel: "whatsapp", what: `${o.id}: ${whatOf(settings, o)}` });

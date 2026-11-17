@@ -42,7 +42,7 @@ import { assistantOf } from "../../../../modules/assistant/state.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
 import { createSay } from "../../../../modules/messaging/say.ts";
 import type { SaidOutcome } from "../../../../modules/messaging/say.ts";
-import { nextIntentId, openUnknowns, queueSend, resolveUnknown, runSendOnce, sendOnceOf } from "../../../../modules/messaging/send-once.ts";
+import { nextIntentId, openRefusals, openUnknowns, queueSend, resolveUnknown, retryNow, runSendOnce, sendOnceOf } from "../../../../modules/messaging/send-once.ts";
 import type { SendEnding, SendIntent } from "../../../../modules/messaging/send-once.ts";
 import type { Decision } from "../../../../modules/limits/limits.ts";
 import { strictest } from "../../../../modules/limits/limits.ts";
@@ -458,6 +458,25 @@ export function createAgent(deps: AgentDeps): Agent {
   /** The order message the owner was asked about, that may or may not have gone out and that they have not answered yet. */
   const unsureOf = (o: PurchaseOrder): SendIntent | undefined => (o.state === "send_unknown" ? openUnknowns(store.sendOnce, ORDER_KIND).find((i) => i.caseId === o.id) : undefined);
 
+  /** The order message WhatsApp refused (nothing went out) that is waiting for its next try: the owner has been shown it, with "Try now" and "Cancel order". */
+  const refusedOf = (o: PurchaseOrder): SendIntent | undefined => (o.state === "approved" ? openRefusals(store.sendOnce, ORDER_KIND).find((i) => i.caseId === o.id) : undefined);
+
+  /** "Try now": the same intent is due at once. Only while it is refused with tries left; it counts as one of the three tries. */
+  async function onTryNow(o: PurchaseOrder): Promise<void> {
+    const i = refusedOf(o);
+    if (!i || !retryNow(sendOnceOf(store), i.id)) return;
+    log(o, owner, "owner_decision", "confirmed", { decision: "try_now", intent: i.id }, { notes: "the owner asked to try the refused order message now; nothing was sent yet", refs: { evidence: "owner_marked", intent: i.id } });
+  }
+
+  /** "Cancel order" on a refused message: the retries stop (the intent is given up) and the existing cancel path frees the budget. */
+  async function onCancelRefused(o: PurchaseOrder): Promise<void> {
+    const i = refusedOf(o);
+    if (!i) return;
+    i.status = "gave_up";
+    o.state = "send_failed"; // the state the cancel path already accepts: nothing went out
+    await onCancel(o);
+  }
+
   /** "They got it": the owner's word that the supplier has the order. Nothing is sent; the order is with the supplier as far as the owner says, and the supplier is still asked on schedule. */
   async function onGotIt(o: PurchaseOrder): Promise<void> {
     const u = unsureOf(o);
@@ -799,6 +818,8 @@ export function createAgent(deps: AgentDeps): Agent {
     log(o, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: page, notes: "pressed by the owner on their page; done exactly as the same words on WhatsApp" });
     if (e.action === "received") return onReceipt(o, undefined, { id: `owner-page:${e.id}`, from: owner, text: "", timestamp: clock.now() });
     if (e.action === "retry") return askSupplierAgain(o);
+    if (e.action === "try_now") return onTryNow(o);
+    if (e.action === "cancel_order") return onCancelRefused(o);
     if (e.action === "got_it") return onGotIt(o);
     if (e.action === "send_again") return onSendAgain(o);
   }
