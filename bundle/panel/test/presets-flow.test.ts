@@ -78,7 +78,7 @@ test("Something else: the Operator writes the trade, then picks the kind of work
     assert.ok(nothing.plain.includes(PRESET_WORDS.en.typedEmpty));
     const noKind = await divya.post("/setup", { trade: "florist <b>", template: "" }, "/setup/other");
     assert.equal(noKind.status, 400, "Enter pressed before a kind was picked chooses nothing");
-    assert.ok(noKind.plain.includes(PRESET_WORDS.en.kindQuestion) && noKind.plain.includes('value="florist &lt;b&gt;"'), "what was written comes back, escaped");
+    assert.ok(noKind.plain.includes(PRESET_WORDS.en.kindQuestion) && noKind.text.includes('value="florist &lt;b&gt;"'), "what was written comes back, escaped");
     assert.equal((await divya.post("/setup", { trade: "florist", template: "elsewhere" }, "/setup/other")).status, 404);
     assert.equal((await divya.post("/setup", { template: "bookings" }, "/setup")).status, 303, "a bare template starts as it always did");
   } finally { await b.close(); }
