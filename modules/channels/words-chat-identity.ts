@@ -20,6 +20,8 @@ export interface IdentityWords {
   newPhone: string; newPhoneBody: string; numberLabel: string; sendLink: string; linkSent: string; wait: string; badNumber: string;
   /** The optional number, given on the keep box. */
   numberAsk: string; numberSave: string; numberSaved: string;
+  /** The page the confirm link opens: "Tap to confirm this is your number". */
+  confirmHead: string; confirmBody: string; confirmButton: string; confirmDone: string;
   /** The link's own page (opened from WhatsApp on the new phone). */
   backHead: string; backBody: string; backButton: string; backUsed: string; backExpired: string;
   /** "Send me my booking link", when the number is known. */
@@ -38,7 +40,8 @@ export const IDENTITY: Record<Language, IdentityWords> = {
     otherShop: "That one is for another shop. Pick the one for this shop, or tap I have a new phone.", openFailed: "We could not open your chat. Try again, or tap I have a new phone.", openDone: "Your chat is open on this phone.",
     newPhone: "I have a new phone", newPhoneBody: "Type the WhatsApp number you gave us. We will send a link there.", numberLabel: "WhatsApp number", sendLink: "Send me a link",
     linkSent: "If we have that number, a link is on its way. It works once, for 15 minutes.", wait: "Please wait a little before asking again.", badNumber: "That does not look like a phone number.",
-    numberAsk: "If you get a new phone, we can send a link to your WhatsApp. Add your number (you can skip this).", numberSave: "Save my number", numberSaved: "Saved. On a new phone, tap I have a new phone.",
+    numberAsk: "If you get a new phone, we can send a link to your WhatsApp. Add your number (you can skip this).", numberSave: "Save my number", numberSaved: "We sent a message to that number. Tap its link to confirm it is yours.",
+    confirmHead: "Confirm your number", confirmBody: "Tap to confirm this is your number.", confirmButton: "Yes, this is my number", confirmDone: "Thank you. Your number is saved for this chat.",
     backHead: "Welcome back", backBody: "Open your chat on this phone?", backButton: "Open my chat here", backUsed: "This link was used already. Ask for a new one from the chat page.",
     backExpired: "This link has run out. Ask for a new one from the chat page.",
     sendMyLinks: "Send me my booking link", myLinksSent: "Sent to your WhatsApp.", myLinksNone: "There is no link to send yet.",
@@ -95,7 +98,7 @@ export const IDENTITY: Record<Language, IdentityWords> = {
 
 // ---- the two WhatsApp utility templates (Meta's category UTILITY, one language per submission) -----------------------------------------------------------------
 
-export interface ChatLinkTemplate { name: "chat_new_phone" | "chat_my_link"; usedFor: string; bodies: Record<Language, string> }
+export interface ChatLinkTemplate { name: "chat_new_phone" | "chat_my_link" | "chat_confirm_number"; usedFor: string; bodies: Record<Language, string> }
 
 /**
  * `chat_new_phone`: the one-use link that opens a customer's chat on a new phone. `chat_my_link`: a booking's or an order's own page link, sent again. {shop} and {link} are
@@ -118,6 +121,15 @@ export const CHAT_LINK_TEMPLATES: readonly ChatLinkTemplate[] = [
       hi: "आपका लिंक, {shop} से: {link} अगर आपने यह नहीं माँगा, तो इस संदेश को छोड़ दीजिए।",
       ml: "നിങ്ങളുടെ ലിങ്ക്, {shop}-ൽ നിന്ന്: {link} നിങ്ങൾ ചോദിച്ചതല്ലെങ്കിൽ ഈ സന്ദേശം അവഗണിക്കൂ.",
       kn: "ನಿಮ್ಮ ಲಿಂಕ್, {shop} ಇಂದ: {link} ನೀವು ಕೇಳದಿದ್ದರೆ ಈ ಸಂದೇಶವನ್ನು ಬಿಟ್ಟುಬಿಡಿ.",
+    },
+  },
+  {
+    name: "chat_confirm_number", usedFor: "A customer typed this number on the chat page to be reached on a new phone; the person at the number is asked to confirm it is theirs",
+    bodies: {
+      en: "Tap to confirm this is your number for your chat with {shop}: {link} It works once, for 15 minutes. If you did not ask for it, ignore this message.",
+      hi: "{shop} के साथ आपकी चैट के लिए यह आपका नंबर है, यह पक्का करने को दबाइए: {link} यह एक बार, 15 मिनट तक चलेगा। अगर आपने यह नहीं माँगा, तो इस संदेश को छोड़ दीजिए।",
+      ml: "{shop}-മായുള്ള നിങ്ങളുടെ ചാറ്റിന് ഇത് നിങ്ങളുടെ നമ്പറാണെന്ന് ഉറപ്പിക്കാൻ തൊടൂ: {link} ഇത് ഒരിക്കൽ മാത്രം, 15 മിനിറ്റ് പ്രവർത്തിക്കും. നിങ്ങൾ ചോദിച്ചതല്ലെങ്കിൽ ഈ സന്ദേശം അവഗണിക്കൂ.",
+      kn: "{shop} ಜೊತೆಗಿನ ನಿಮ್ಮ ಚಾಟ್‌ಗೆ ಇದು ನಿಮ್ಮ ನಂಬರ್ ಎಂದು ಖಚಿತಪಡಿಸಲು ಒತ್ತಿ: {link} ಇದು ಒಮ್ಮೆ ಮಾತ್ರ, 15 ನಿಮಿಷ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ನೀವು ಕೇಳದಿದ್ದರೆ ಈ ಸಂದೇಶವನ್ನು ಬಿಟ್ಟುಬಿಡಿ.",
     },
   },
 ];

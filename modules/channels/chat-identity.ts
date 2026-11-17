@@ -54,6 +54,7 @@ export const LINK_TOKEN = /^[A-Za-z0-9_-]{43}$/u;
 
 const sha = (text: string): string => createHash("sha256").update(text).digest("hex");
 const tokenHash = (token: string): string => sha(`chat-recovery:${token}`);
+const confirmHash = (token: string): string => sha(`chat-confirm:${token}`);
 const challengeHash = (c: string): string => sha(`chat-challenge:${c}`);
 /** A number as the identity file keeps it for lookup: the digits only, hashed. */
 export const numberKey = (digits: string): string => sha(`chat-number:${digits.replace(/\D/gu, "")}`);
@@ -73,6 +74,8 @@ export function openChatIdentity(file: string) {
     -- the phones (guest hashes) that kept the chat or opened it with a key: a phone restored only by a link is not one, so it is still offered a key of its own
     CREATE TABLE IF NOT EXISTS phones (hash TEXT PRIMARY KEY, guest TEXT NOT NULL, made_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS contact (guest TEXT PRIMARY KEY, number TEXT NOT NULL, key TEXT NOT NULL, made_at INTEGER NOT NULL);
+    -- a number typed on the keep box waits here until its owner taps the link sent to it (confirmNumber); only then does it become the thread's contact
+    CREATE TABLE IF NOT EXISTS pending (hash TEXT PRIMARY KEY, id TEXT NOT NULL, guest TEXT NOT NULL, number TEXT NOT NULL, made_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, state TEXT NOT NULL CHECK (state IN ('issued', 'used', 'replaced', 'unsent')));
     CREATE TABLE IF NOT EXISTS links (hash TEXT PRIMARY KEY, id TEXT NOT NULL, guest TEXT NOT NULL, made_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, used_at INTEGER, state TEXT NOT NULL CHECK (state IN ('issued', 'used', 'replaced', 'unsent')));
     CREATE TABLE IF NOT EXISTS attempts (kind TEXT NOT NULL, key TEXT NOT NULL, at INTEGER NOT NULL);
   `);
@@ -287,9 +290,67 @@ export function openChatIdentity(file: string) {
      */
     forget(hash: string): string {
       const g = resolve(hash);
-      for (const sql of ["DELETE FROM creds WHERE guest = ?", "DELETE FROM phones WHERE guest = ?", "DELETE FROM users WHERE guest = ?", "DELETE FROM contact WHERE guest = ?", "DELETE FROM links WHERE guest = ?", "DELETE FROM alias WHERE to_hash = ?", "DELETE FROM alias WHERE from_hash = ?"]) db.prepare(sql).run(g);
+      api.dropThread(g);
       db.prepare("DELETE FROM alias WHERE from_hash = ?").run(hash);
       return g;
+    },
+
+    /** Everything this side keeps for one thread: keys, user id, number, a number waiting to be confirmed, links, the phones that hold a key and every phone tied to it. */
+    dropThread(g: string): void {
+      for (const sql of ["DELETE FROM creds WHERE guest = ?", "DELETE FROM phones WHERE guest = ?", "DELETE FROM users WHERE guest = ?", "DELETE FROM contact WHERE guest = ?", "DELETE FROM pending WHERE guest = ?", "DELETE FROM links WHERE guest = ?", "DELETE FROM alias WHERE to_hash = ?"]) db.prepare(sql).run(g);
+    },
+
+    /**
+     * Retention: a thread the shop has cleared (its words, after the conversation retention) takes its keys, number and ties with it. `live` says whether the shop still has the
+     * thread. Returns how many threads were dropped.
+     */
+    dropGone(live: (thread: string) => boolean): number {
+      const all = new Set((db.prepare("SELECT guest AS g FROM creds UNION SELECT guest FROM contact UNION SELECT guest FROM pending UNION SELECT guest FROM links UNION SELECT to_hash FROM alias").all() as { g: string }[]).map((r) => r.g));
+      let n = 0;
+      for (const g of all) if (!live(g)) { api.dropThread(g); n++; }
+      return n;
+    },
+
+    // ---- a number counts only once its owner has tapped the link sent to it ----
+
+    /** A new one-use link asking whoever holds this number to confirm it for the thread (a newer one replaces an older). The token is returned ONCE, to the step that sends it. */
+    issueConfirm(guest: string, digits: string, now: number): { id: string; token: string } {
+      const token = randomBytes(32).toString("base64url");
+      const id = randomBytes(6).toString("hex");
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        db.prepare("UPDATE pending SET state = 'replaced' WHERE guest = ? AND state = 'issued'").run(guest);
+        db.prepare("INSERT INTO pending (hash, id, guest, number, made_at, expires_at, state) VALUES (?, ?, ?, ?, ?, ?, 'issued')").run(confirmHash(token), id, guest, digits, now, now + RECOVERY_LINK_MS);
+        db.exec("COMMIT");
+      } catch (e) { db.exec("ROLLBACK"); throw e; }
+      return { id, token };
+    },
+    confirmUnsent(id: string): void { db.prepare("UPDATE pending SET state = 'unsent' WHERE id = ? AND state = 'issued'").run(id); },
+    /** What a confirm link is now (looking uses nothing up). */
+    confirmState(token: string, now: number): "valid" | "used" | "expired" | "replaced" | "unknown" {
+      if (!LINK_TOKEN.test(token)) return "unknown";
+      const r = db.prepare("SELECT state, expires_at FROM pending WHERE hash = ?").get(confirmHash(token)) as { state: string; expires_at: number } | undefined;
+      if (!r || r.state === "unsent") return "unknown";
+      if (r.state === "used" || r.state === "replaced") return r.state;
+      return r.expires_at > now ? "valid" : "expired";
+    },
+    /** The button: in one statement the link is used up and the number becomes the thread's contact. */
+    confirmNumber(token: string, now: number): { ok: true } | { ok: false; state: "used" | "expired" | "replaced" | "unknown" } {
+      const state = api.confirmState(token, now);
+      if (state !== "valid") return { ok: false, state };
+      const r = db.prepare("SELECT guest, number FROM pending WHERE hash = ?").get(confirmHash(token)) as { guest: string; number: string };
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        const used = db.prepare("UPDATE pending SET state = 'used' WHERE hash = ? AND state = 'issued' AND expires_at > ?").run(confirmHash(token), now);
+        if (Number(used.changes) !== 1) { db.exec("ROLLBACK"); return { ok: false, state: "used" }; }
+        api.setNumber(r.guest, r.number, now);
+        db.exec("COMMIT");
+        return { ok: true };
+      } catch (e) { db.exec("ROLLBACK"); throw e; }
+    },
+    /** One ask to confirm a number: counted per number and per shop like a recovery ask, and five a day for the thread. */
+    countConfirmAsk(hash: string, digits: string, now: number): boolean {
+      return take("confirm", resolve(hash), [{ max: 5, perMs: DAY }], now) && api.countRecoveryAsk(digits, now);
     },
 
     /**
@@ -298,6 +359,7 @@ export function openChatIdentity(file: string) {
      */
     purge(now: number, retentionDays = 30): void {
       db.prepare("DELETE FROM contact WHERE made_at < ?").run(now - retentionDays * DAY);
+      db.prepare("DELETE FROM pending WHERE expires_at < ?").run(now - DAY);
       db.prepare("DELETE FROM links WHERE expires_at < ?").run(now - DAY);
       db.prepare("DELETE FROM alias WHERE made_at < ?").run(now - 2 * retentionDays * DAY);
       db.prepare("DELETE FROM phones WHERE made_at < ?").run(now - 2 * retentionDays * DAY);
