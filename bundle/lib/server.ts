@@ -169,8 +169,8 @@ export interface ServerConfig {
    */
   pages?: { domain: string; extraDomains: string[] };
   /**
-   * W3 (17 Nov 2026): the Streetlist app's one push key, the PUBLIC half (65 bytes, base64url, from `node bundle/services/relay.ts make-key <file>`). Only with `pages`. The private half is
-   * a file in secrets/push/ (never here, never in the repository): the server's push sender signs with it (services/relay.ts). The public half goes into each shop's runtime.json so
+   * W3 (17 Nov 2026): the Streetlist app's one push key, the PUBLIC half (65 bytes, base64url, from `node bundle/services/push-relay.ts make-key <file>`). Only with `pages`. The private half is
+   * a file in secrets/push/ (never here, never in the repository): the server's push sender signs with it (services/push-relay.ts). The public half goes into each shop's runtime.json so
    * its chat page can subscribe a phone with it. Left out: no shop sends to the Streetlist app's phones.
    */
   pushRelay?: { publicKey: string };
@@ -301,7 +301,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     const k = isObj(o.pushRelay) ? o.pushRelay.publicKey : undefined;
     if (o.pages === undefined) errors.push('"pushRelay" needs "pages": it is the Streetlist app\'s push key, for shops served on the pages domain.');
     if (!isObj(o.pushRelay) || Object.keys(o.pushRelay).some((x) => x !== "publicKey") || typeof k !== "string" || !/^[A-Za-z0-9_-]{87}$/u.test(k) || Buffer.from(k, "base64url")[0] !== 4) {
-      errors.push('"pushRelay" must say {"publicKey": "<the push key\'s public half>"}: 65 bytes in base64url, printed by `node bundle/services/relay.ts make-key <file>`. The private half is a file in secrets/push/, never here.');
+      errors.push('"pushRelay" must say {"publicKey": "<the push key\'s public half>"}: 65 bytes in base64url, printed by `node bundle/services/push-relay.ts make-key <file>`. The private half is a file in secrets/push/, never here.');
     }
   }
   errors.push(...pagesProblems(o.pages, typeof o.domain === "string" ? o.domain : "", isObj(o.panel) && o.panel.mode === "hosted"));

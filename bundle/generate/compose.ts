@@ -333,8 +333,8 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   // Item 11h: the server's push sender. On `push` (only the shops' push Guards reach it) and egress (the push services). No secret, no volume but the app.
   // PUSH_SERVICE_OVERRIDE only when geometer.json's `upstreams` names a `push-service` (a test server's stand-in).
   const pushOverride = server.upstreams?.["push-service"];
-  // W3: with `pushRelay` in geometer.json the sender also signs for the Streetlist app's phones (services/relay.ts): the private key is a file in secrets/push/ the owner makes
-  // with `node bundle/services/relay.ts make-key`, mounted read-only here; the shops it signs for are this server's. Without `pushRelay` nothing about it changes.
+  // W3: with `pushRelay` in geometer.json the sender also signs for the Streetlist app's phones (services/push-relay.ts): the private key is a file in secrets/push/ the owner makes
+  // with `node bundle/services/push-relay.ts make-key`, mounted read-only here; the shops it signs for are this server's. Without `pushRelay` nothing about it changes.
   const relayOn = server.pages !== undefined && server.pushRelay !== undefined;
   if (shops.length > 0) add(PUSH_SERVICE, node(["node", "/app/bundle/services/push.ts"], {
     environment: {

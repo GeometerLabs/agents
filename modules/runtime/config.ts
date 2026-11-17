@@ -47,7 +47,7 @@ const PUSH_SERVICE = { name: "push", mayLack: true, optional: ["relayKey", "rela
 /**
  * W3 (17 Nov 2026): a shop served through the Streetlist door sends to the Streetlist app's phones through the front's relay, with Streetlist's one push key. `relayKey` is that
  * key's PUBLIC half (65 bytes, base64url), which the chat page subscribes phones with; `relayShop` is this shop's name on its server, which the relay checks. Both or neither.
- * The private half is never here: only the relay holds it (bundle/services/relay.ts).
+ * The private half is never here: only the relay holds it (bundle/services/push-relay.ts).
  */
 function pushRelayProblem(raw: Record<string, unknown>): string | null {
   if (raw.relayKey === undefined && raw.relayShop === undefined) return null;
