@@ -20,6 +20,7 @@ export const USERS = [
   { name: "Bookings", dir: "templates/commerce/bookings" },
   { name: "Orders", dir: "templates/commerce/orders" },
   { name: "Fees", dir: "templates/education/fees" },
+  { name: "Stock orders", dir: "templates/commerce/stock-orders" },
   { name: "the bundle", dir: "bundle" },
 ] as const;
 export type UserName = (typeof USERS)[number]["name"];
