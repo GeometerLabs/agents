@@ -15,6 +15,8 @@ import type { MonthlyReportSetup } from "../report/monthly-job.ts";
 import { batchName } from "../src/settings.ts";
 import { parentRef } from "../src/channel.ts";
 import { alsoPushTo } from "../../../../modules/push/push.ts";
+import { channelMessaging } from "../../../../modules/channels/outbox.ts";
+import { compactChannel, emptyChannelState } from "../../../../modules/channels/state.ts";
 import type { Push } from "../../../../modules/push/push.ts";
 import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
@@ -150,13 +152,13 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     keepCounters: keepStoreCounters,
     services: services as unknown as Record<string, unknown>,
     createAgent: ({ store, record, services: watched }) => createAgent({
-      settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}), ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(options.talker ? { talker: options.talker } : {}),
+      settings, clock, ...(watched as unknown as Services), messaging: channelMessaging((watched as unknown as Services).messaging, () => (store.channel ??= emptyChannelState()), clock, options.push ? (to, text) => { options.push!.customer(to, text); } : undefined), parser, record, store, ai: policy, ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}), ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(options.talker ? { talker: options.talker } : {}),
       pageBase, linkMemory, ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}),
     }),
     // Item 11h: a confirmation page is kept while its fee is open, and for CONFIRMATION_KEEP_MS after it was pressed once the fee is settled. A parent's link is never
     // taken off here: it is the parent's until a new one replaces it or the owner switches it off.
     compactStore(store, beforeMs) {
-      let changed = 0;
+      let changed = compactChannel(store.channel, beforeMs, () => true); // W1: the chat threads go with the retention, like any conversation
       for (const [hash, c] of Object.entries(store.confirmations ?? {})) {
         const due = store.dues.get(c.dueId);
         // a refused press goes with the conversations' retention; a settled fee's page stays longer, so the parent can still open it

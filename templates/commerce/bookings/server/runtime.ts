@@ -28,7 +28,7 @@ import type { BaseStatus, RefundCounts, Runtime as CoreRuntime, RuntimeKit } fro
 import { parseStore, serializeStore, keepStoreCounters, skipStoreCounters } from "./snapshot.ts";
 import { createRecord } from "../../../../modules/record/record.ts";
 import { channelMessaging } from "../../../../modules/channels/outbox.ts";
-import { isChannelConversation } from "../../../../modules/channels/conversation.ts";
+import { isChannelConversation, isChatConversation } from "../../../../modules/channels/conversation.ts";
 import { compactChannel, emptyChannelState } from "../../../../modules/channels/state.ts";
 import { bookingView, documentsOf, exportFilesOf, ownerView, publicServices, shopInfo } from "../src/channel.ts";
 import type { CharacterPictures } from "../../../../modules/assistant/character.ts";
@@ -159,7 +159,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       }
       // a channel conversation is one booking's: once that booking is over and its request gone, its customer entry (its language) has nothing left to serve
       for (const conversation of [...store.customers.keys()]) {
-        if (!isChannelConversation(conversation) || Object.values(store.channel?.requests ?? {}).some((r) => r.booking !== undefined && store.bookings.get(r.booking)?.customer === conversation)) continue;
+        if (!isChannelConversation(conversation) || isChatConversation(conversation) || Object.values(store.channel?.requests ?? {}).some((r) => r.booking !== undefined && store.bookings.get(r.booking)?.customer === conversation)) continue;
         store.customers.delete(conversation);
         changed++;
       }

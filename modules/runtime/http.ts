@@ -17,6 +17,8 @@
 // token these routes do not exist.
 //   POST /internal/channel/events   {"events": [...]}   1 to 10 channel events; an owner_action also needs the owner's link (x-owner-link), checked here against the
 //                                                     hash in the client folder, read on every request so a revoked link stops at once
+//   (W1) a chat_message is also taken here (a guest's send in the chat on the shop's page); it needs no owner, and its per-guest and per-shop rates are checked here, before it is saved
+//   GET  /internal/channel/chat?handle=<64 hex>[&after=N][&cid=<id>]   W1: a chat guest's thread (an empty one for a guest never seen), and where the send `cid` stands
 //   GET  /internal/channel/offer?service=&from=YYYY-MM-DD&days=N   the services, prices and free times
 //   GET  /internal/channel/request?handle=<64 hex>    one request by its handle's hash
 //   GET  /internal/channel/parent?link=<64 hex>       item 11h (Fees): what a parent's private link opens, by the link's hash; 404 for a hash no parent has now
@@ -55,6 +57,7 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { checkEvents, checkRecovery } from "./events.ts";
+import { CHAT_LIMITS, createRate } from "../channels/chat.ts";
 import { checkOwnerLimit, checkSettled } from "../limits/runtime-limits.ts";
 import type { LimitsView } from "../limits/runtime-limits.ts";
 import type { IncomingEvent } from "./events.ts";
@@ -68,7 +71,7 @@ import type { Grant } from "../channels/owner-grants.ts";
 import type { Push } from "../push/push.ts";
 import { OWNER_CHOICES } from "../push/store.ts";
 import type { BrowserSubscription, OwnerChoice } from "../push/store.ts";
-import { conversationOf } from "../channels/conversation.ts";
+import { chatConversationOf, conversationOf } from "../channels/conversation.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import type { OwnerLinkFile } from "../channels/owner-link.ts";
 import type { RuntimeChannel } from "./core.ts";
@@ -200,6 +203,15 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
     runtime.kick();
   };
 
+  /** W1: the chat's rates, in memory (a restart forgetting them costs nothing; what must survive a restart is the saved day's caps, chat.ts). */
+  const chatRate = createRate();
+  const chatAllowed = (e: { handle: string }): boolean => {
+    const known = runtime.channel?.chatState(e.handle).known === true;
+    return chatRate.take(`g ${e.handle}`, CHAT_LIMITS.perMinute, 60_000)
+      && chatRate.take("shop", CHAT_LIMITS.shopPer10Min, 10 * 60_000)
+      && (known || chatRate.take("new", CHAT_LIMITS.newGuestsPerHour, 60 * 60_000));
+  };
+
   /** The channel's routes. Only with a channel token, and only for a runtime whose template has channels. */
   async function channelRoute(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> {
     const channel = runtime.channel;
@@ -222,12 +234,24 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
         if (!checked.ok) return send(res, 400, { error: checked.error });
         // the owner's link is checked HERE, at the runtime, against its own file: the front cannot act for the owner without it
         if ((checked.event.kind === "owner_action" || checked.event.kind === "owner_message") && !ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+        // W1: a guest's send is counted before anything is saved, so a flood saves no task and costs no step; the same send again (a retry) is not counted twice
+        if (checked.event.kind === "chat_message" && !chatAllowed(checked.event)) return send(res, 429, { error: "Too many messages. Wait a minute.", rate: true }, { "retry-after": "60" });
         events.push(checked.event);
       }
       const counts = runtime.submit(events); // on disk when this returns
       send(res, 200, counts);
       runtime.kick();
       return;
+    }
+    if (path === "/internal/channel/chat") {
+      only("GET");
+      const handle = url.searchParams.get("handle") ?? "";
+      if (!HANDLE_HASH.test(handle)) return send(res, 400, { error: "handle is the guest's hash: 64 hex digits." });
+      const after = url.searchParams.get("after");
+      const cid = url.searchParams.get("cid") ?? undefined;
+      if (after !== null && !/^\d{1,9}$/u.test(after)) return send(res, 400, { error: "after is a line number." });
+      if (cid !== undefined && !/^[A-Za-z0-9-]{1,64}$/u.test(cid)) return send(res, 400, { error: "cid is a send's id." });
+      return send(res, 200, channel.chat(handle, { ...(after !== null ? { after: Number(after) } : {}), ...(cid ? { cid } : {}) }));
     }
     if (path === "/internal/channel/offer") {
       only("GET");
@@ -361,6 +385,21 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
         if (!HANDLE_HASH.test(handle)) return send(res, 400, { error: "handle is the handle's hash: 64 hex digits." });
         // batch 3 (Fees): a parent's private page has alerts too, keyed by the PARENT (`parent:<ref>`, the stable ref of their number), not by the link, which is made
         // again at the first reminder after a restart. The Fees messaging pushes a message to the parent's number to this same conversation.
+        // W1: a chat guest's alerts, keyed by their conversation. Offered only after the shop has answered (the page shows the button then; this is the check that holds
+        // when a page is not honest): a guest the runtime has never seen, or one nobody has answered, takes none.
+        const chatSt = channel.chatState(handle);
+        if (chatSt.known) {
+          if (op === "customer_subscribe" && !chatSt.answered) return send(res, 403, { error: "Alerts are offered after the first answer." });
+          const who = chatConversationOf(handle);
+          if (op === "customer_subscribe") {
+            const r = push.subscribe(who, body.subscription as BrowserSubscription);
+            if (!r.ok) return send(res, 400, { error: r.why });
+          } else if (op === "customer_unsubscribe") {
+            if (typeof body.endpoint !== "string") return send(res, 400, { error: "Send the endpoint to stop." });
+            push.unsubscribe(who, body.endpoint);
+          } else if (op !== "customer_state") return send(res, 400, { error: "op is not one this route knows." });
+          return send(res, 200, { on: true, phones: push.phones(who), answered: chatSt.answered });
+        }
         const parentView = channel.parent?.(handle) as { ref?: unknown } | null | undefined;
         const parentWho = typeof parentView?.ref === "string" && /^p-[0-9a-f]{12}$/u.test(parentView.ref) ? `parent:${parentView.ref}` : undefined;
         const view = parentWho ? null : channel.view(handle) as { channel?: unknown } | null;

@@ -41,7 +41,9 @@ import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { feesSkill } from "./assistant.ts";
 import type { FeesActs } from "./assistant.ts";
 import { newHandle, parentLinkHash } from "../../../../modules/channels/handle.ts";
-import type { ChannelEvent, ChannelFee, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
+import type { ChannelEvent, ChannelFee, ChatMessage, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
+import { chatTurn } from "../../../../modules/channels/chat.ts";
+import { emptyChannelState } from "../../../../modules/channels/state.ts";
 import type { PageAudio } from "../../../../modules/voice/turn.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
 import { cashList, ownerItems, parentOf, parentsList } from "./channel.ts";
@@ -1313,6 +1315,31 @@ export function createAgent(deps: AgentDeps): Agent {
     say("blocked", `the agent has no recovery called "${e.action}"`);
   }
 
+  /**
+   * W1, the chat on the centre's page: PUBLIC questions only. The guest is nobody the centre knows, so no fee, no payment and no student is ever read or shown here (a parent's
+   * own fees stay on their private page; a parent's chat there is W2). The words are read by the rules alone for "stop" and "talk to the owner" (which tells the owner, once an
+   * hour), then the centre's assistant may answer from what parents may be told (block M, every check); if it cannot, one fixed line says what this chat is for and the owner's
+   * button goes with it. Nothing here touches money.
+   */
+  async function onChatTurn(msg: InboundMessage): Promise<void> {
+    const phone = msg.from;
+    const customer = customerOf(phone);
+    if (store.seenMessages.has(msg.id)) return;
+    store.seenMessages.add(msg.id);
+    const tapped = msg.reply ? intentFromReply(msg.reply.id) : null;
+    const read = tapped ? { intent: tapped, understood: RULES } : await readIntent(msg.text, { rulesOnly: true });
+    log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}) }, { notes: "a public question from the chat on the centre's page; no fee or student is read for it", refs: { messageId: msg.id, channel: "chat" } });
+    if (read.intent.kind === "stop") return onStop(phone);
+    if (customer.optedOut) return;
+    if (read.intent.kind === "owner") return onTalkToOwner(phone);
+    if (!licence().takesNewWork) return pausedReply(phone, "menu");
+    if (!msg.noModel && !msg.reply && msg.text !== "" && (await assistant?.talkToCustomer({ phone, text: msg.text, language: languageOf(phone), ...(read.intent.overrideAttempt ? { overrideAttempt: true } : {}), menu: () => ({ buttons: buttonsFor(languageOf(phone), ["owner"]) }) }))) return;
+    await tellCustomer(null, phone, ["fee_chat_public"], { offer: { kind: "buttons", buttons: ["owner"] } });
+  }
+  async function onChatMessage(e: ChatMessage): Promise<void> {
+    await chatTurn({ state: (store.channel ??= emptyChannelState()), ai: store, now: clock.now(), timeZone: settings.timezone, kind: "fees", run: onChatTurn, setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
+  }
+
   async function handle(event: AgentEvent): Promise<void> {
     noteLicence();
     if (event.kind === "recovery") return onRecovery(event);
@@ -1323,6 +1350,7 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     if (event.kind === "owner_action") return onOwnerAction(event);
     if (event.kind === "owner_message") return onOwnerPageMessage(event);
+    if (event.kind === "chat_message") return onChatMessage(event);
     if (event.kind === "owner_signin") return; // the runtime core's own (modules/channels/owner-signin.ts): never an agent's
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);

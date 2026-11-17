@@ -27,6 +27,8 @@ const codec = snapshotCodec<Store>(1, [
   // Classes (src/classes/state.ts): the class links, the sessions with who was sent what and who was marked, the consent answers and the doubts. A centre without Classes
   // never has it, so its snapshot is as it was. Every field is here on purpose: a field left out would be lost at the end of each step.
   { name: "classes", kind: "optional-object" },
+  // W1: the chat on the centre's page (the guests' threads, the centre's messages to them); a centre nobody has chatted with never has it, so its snapshot is as it was
+  { name: "channel", kind: "optional-object" },
 ]);
 
 export const serializeStore: (store: Store) => string = codec.serialize;

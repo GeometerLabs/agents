@@ -12,6 +12,7 @@ import type { DocumentsKey } from "../accounting/case-documents.ts";
 import type { Document } from "../accounting/documents.ts";
 import type { ExportFile } from "../accounting/export.ts";
 import type { MoneyView } from "../accounting/owner-money.ts";
+import type { ChatRead } from "../runtime/core.ts";
 
 /**
  * Who is acting as the owner: the panel-made private link (item 11d), or a session the runtime made from a one-time WhatsApp link (item 11f). A bare string is a
@@ -162,7 +163,7 @@ export type RelayDecision = "recorded" | "gone" | "changed" | "expired" | "faile
 export interface ChannelBackend {
   offer(q: { serviceId?: string; fromDate?: string; days?: number }): Promise<Offer>;
   /** Save events; the owner's credential with an owner_action. "refused": the runtime said no (the owner's link or session, mostly). */
-  submit(events: ChannelEvent[], owner?: OwnerCred): Promise<"saved" | "refused">;
+  submit(events: ChannelEvent[], owner?: OwnerCred): Promise<"saved" | "refused" | "slow">;
   view(handleHash: string): Promise<BookingView | null>;
   /** Null when the owner's link or session is not (or no longer) good. */
   owner(owner: OwnerCred): Promise<OwnerView | null>;
@@ -192,6 +193,11 @@ export interface ChannelBackend {
    * voice service; "refused": the owner's credential is not good.
    */
   ownerVoice?(owner: OwnerCred, audio: { bytes: Buffer; mime: string }): Promise<"saved" | "refused" | "off">;
+  /**
+   * W1, the chat on the shop's page: a guest's thread by the HASH of their handle (handle.ts guestHash), after line `after`, and where the send `cid` stands. Never throws
+   * for an unknown guest: that is an empty thread. Left out: the shop has no chat.
+   */
+  chat?(guestHash: string, q?: { after?: number; cid?: string }): Promise<ChatRead>;
   /** Item 11h: the same reads, for an Orders shop (its offer and an order by its handle's hash). */
   orderOffer?(): Promise<OrderOffer>;
   orderView?(handleHash: string): Promise<OrderView | null>;
@@ -250,6 +256,7 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     async submit(events, owner) {
       const r = await call(`${o.url}/internal/channel/events`, { method: "POST", headers: headers(owner), body: JSON.stringify({ events }) }, timeout);
       if (r.status === 403) return "refused";
+      if (r.status === 429) return "slow"; // W1: the runtime's own per-guest or per-shop rate said wait
       if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`);
       return "saved";
     },
@@ -263,6 +270,10 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     async orderView(handleHash) {
       const r = await call(`${o.url}/internal/channel/request?handle=${handleHash}`, { headers: headers() }, timeout);
       return r.status === 404 ? null : json<OrderView>(r);
+    },
+    async chat(guestHash, q = {}) {
+      const p = new URLSearchParams({ handle: guestHash, ...(q.after ? { after: String(q.after) } : {}), ...(q.cid ? { cid: q.cid } : {}) });
+      return json<ChatRead>(await call(`${o.url}/internal/channel/chat?${p}`, { headers: headers() }, timeout));
     },
     async feesOffer() { return json<FeesOffer>(await call(`${o.url}/internal/channel/offer`, { headers: headers() }, timeout)); },
     async parentView(linkHash) {

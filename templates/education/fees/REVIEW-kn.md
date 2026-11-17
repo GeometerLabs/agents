@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a tuitio
 
 Amounts are always written as ₹1,200 with Western digits; names, dates and links are filled in from the centre's record, never translated.
 
-## 1. Messages to the parent (57)
+## 1. Messages to the parent (58)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -22,6 +22,7 @@ Amounts are always written as ₹1,200 with Western digits; names, dates and lin
 | `fee_claim_partial` | The parent said they paid, and the payment record shows only part of it | Aarav Sharma ಅವರ 8ನೇ ತರಗತಿ ನವೆಂಬರ್ 2026 ಶುಲ್ಕದಲ್ಲಿ ₹1,200 ಪಾವತಿಯಾಗಿರುವುದು ಕಾಣಿಸುತ್ತಿದೆ, ಆದ್ದರಿಂದ ₹1,200 ಇನ್ನೂ ಬಾಕಿ ಇದೆ. ಉಳಿದದ್ದನ್ನು ಇಲ್ಲಿ ಪಾವತಿಸಿ: https://rzp.io/i/example | We can see ₹1,200 paid for Aarav Sharma's class 8 fee for Nov 2026, so ₹1,200 is still to pay. Pay the rest here: https://rzp.io/i/example |  |
 | `fee_claim_not_found` | The parent said they paid, and the payment record shows nothing yet (the owner is told as well) | Aarav Sharma ಅವರ 8ನೇ ತರಗತಿ ನವೆಂಬರ್ 2026 ಶುಲ್ಕದ ಪಾವತಿ ಇನ್ನೂ ನಮಗೆ ಕಾಣಿಸುತ್ತಿಲ್ಲ. ಈಗಷ್ಟೇ ಪಾವತಿಸಿದ್ದರೆ ಕಾಣಿಸಲು ಕೆಲವು ನಿಮಿಷ ಬೇಕಾಗಬಹುದು. ಪರಿಶೀಲಿಸಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿದ್ದೇನೆ. ಪಾವತಿ ಆಗದಿದ್ದರೆ ಇಲ್ಲಿ ಪಾವತಿಸಬಹುದು: https://rzp.io/i/example | We cannot see a payment yet for Aarav Sharma's class 8 fee for Nov 2026. If you paid just now, it can take a few minutes to show. I have asked the owner to check. If it did not go through, you can pay here: https://rzp.io/i/example |  |
 | `fee_nothing_due` | The parent writes, and nothing is owed for any of their children | ಈಗ ನಿಮ್ಮಿಂದ ಏನೂ ಬಾಕಿ ಇಲ್ಲ. ಧನ್ಯವಾದ! | Nothing is due from you right now. Thank you! |  |
+| `fee_chat_public` | Someone writes in the chat on the centre's page and nothing could answer them (the talk is off or said nothing): the chat is for questions about the centre; a child's fees are on their private page | ಈ ಚಾಟ್ ಕೇಂದ್ರದ ಬಗ್ಗೆ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸುತ್ತದೆ. ಮಗುವಿನ ಶುಲ್ಕ ಕೇಂದ್ರ ನಿಮಗೆ ಕಳುಹಿಸಿದ ಖಾಸಗಿ ಪುಟದಲ್ಲಿದೆ; ಮಾಲೀಕರನ್ನು ಸಂಪರ್ಕಿಸಲು ಕೆಳಗಿನ ಬಟನ್ ಒತ್ತಿ. | This chat answers questions about the centre. A child's fees are on the private page the centre sent you; to reach the owner, tap the button below. |  |
 | `fee_waiver_asked` | The parent asked to take money off the fee, above what the agent may take off alone: the owner has been asked | ಶುಲ್ಕವನ್ನು ನಾನೇ ಬದಲಾಯಿಸಲು ಆಗುವುದಿಲ್ಲ. Aarav Sharma ಅವರ ನವೆಂಬರ್ 2026 ಶುಲ್ಕದಿಂದ ₹100 ಕಡಿಮೆ ಮಾಡಬಹುದೇ ಎಂದು ಮಾಲೀಕರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಉತ್ತರ ಇಲ್ಲಿಯೇ ಸಿಗುತ್ತದೆ. | I cannot change the fee myself. I have asked the owner about taking ₹100 off Aarav Sharma's fee for Nov 2026. You will hear back here. |  |
 | `fee_waiver_applied` | A waiver was done (within the limit, or the owner said yes): the new amount, with a new link | ಆಯಿತು. Aarav Sharma ಅವರ ನವೆಂಬರ್ 2026 ಶುಲ್ಕದಿಂದ ₹100 ಕಡಿಮೆ ಮಾಡಲಾಗಿದೆ. ಈಗ ₹1,200 ಪಾವತಿಸಬೇಕು: https://rzp.io/i/example | Done. ₹100 is taken off Aarav Sharma's fee for Nov 2026. ₹1,200 is now to pay: https://rzp.io/i/example |  |
 | `fee_waiver_cleared` | A waiver was done and it covers what was left: nothing more is due | ಆಯಿತು. Aarav Sharma ಅವರ ನವೆಂಬರ್ 2026 ಶುಲ್ಕದಿಂದ ₹100 ಕಡಿಮೆ ಮಾಡಲಾಗಿದೆ. ಇನ್ನೇನೂ ಬಾಕಿ ಇಲ್ಲ. | Done. ₹100 is taken off Aarav Sharma's fee for Nov 2026. Nothing more is due. |  |

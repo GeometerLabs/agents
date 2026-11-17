@@ -1,0 +1,1 @@
+The Streetlist awning mark (streetlist-mark.svg) and its rounded tile (streetlist-icon.svg), copied unchanged from the owner's logo set (../streetlist-logo). They are the owner's mark; the chat page inlines the tile (chat-page.ts) on the Streetlist pages domain only.
