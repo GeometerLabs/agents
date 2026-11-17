@@ -803,7 +803,8 @@ export function createAgent(deps: AgentDeps): Agent {
 
   /**
    * Money clarity: the owner marks an open fee paid in cash (or by a bank transfer the agent cannot see), from their page's "paid another way?" list. The page showed the
-   * fee with a digest of its balance and payments; with any other digest nothing is done. The mark is for the whole balance, counted as a payment of its own kind
+   * fee with a digest of its balance and payments; with any other digest nothing is done. The mark is for the whole balance (or, with `amountPaise`, a part of it: each mark
+   * is a payment of its own and a record line of its own, and the fee stays open for the rest), counted as a payment of its own kind
    * (CASH_LINK) and written to the record as the owner's mark ("owner_marked_paid", with `via: "cash"`), which is exactly what the rules read as the record showing the
    * money: the parent is told it was received, reminders stop, the accounts count it (modules/accounting; the owner's money page shows it), and a UPI centre's report counts it as marked by the owner; a gateway centre's signed report does not yet (modules/Deferred.md, "The accounting module"). Open payment links are closed, so a payment that still
    * comes on one is counted and goes back as an extra. Nothing is sent to a payments service, and no rule of Guard or of the ledger changes.
@@ -815,12 +816,20 @@ export function createAgent(deps: AgentDeps): Agent {
       log(due, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "the fee is not as the owner's page showed it (paid, waived or changed since): nothing was marked" });
       return;
     }
-    const amountPaise = balancePaise(due);
+    const balance = balancePaise(due);
+    // The whole balance, or (17 Nov 2026) only a part the owner typed: whole rupees, at least ₹1, never more than what is owed. A part leaves the fee open for the rest.
+    const amountPaise = e.amountPaise ?? balance;
+    if (amountPaise < 100 || amountPaise % 100 !== 0 || amountPaise > balance) {
+      log(due, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "the amount marked is not whole rupees, or is more than what is owed on the fee: nothing was marked" });
+      return;
+    }
     const via = e.action === "bank" ? "bank" : "cash"; // Q7: the owner says which, and the books file it under cash in hand or the bank
     const counted: CountedPayment = { id: `cash-${due.id}-${due.payments.filter((p) => p.linkId === CASH_LINK).length + 1}`, amountPaise, linkId: CASH_LINK };
     due.payments.push(counted);
     log(due, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "the owner marked this fee paid in cash (or by a transfer the agent cannot see) on their private page" });
     books.post({ kind: "received", case: due.id, paymentId: counted.id, amountPaise, method: via, evidence: "owner_mark", for: "fee" }, (m) => log(due, owner, MARK_ACTIONS.marked, "confirmed", { via, amountPaise }, { refs: { paymentId: counted.id, amountPaise: String(amountPaise), markedBy: "owner", via, ...m }, notes: "marked paid by owner: paid by hand (cash or a bank transfer), from the owner's own page; no payments service holds it" }));
+    // a part marked: the link the parent pays is made again for exactly what is still owed (the old one is closed if it can be), before they are told it was received
+    if (amountPaise < balance) await currentLink(due);
     await settle(due, [counted]);
     if (due.state !== "open") await closeOpenLinks(due);
   }

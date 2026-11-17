@@ -509,7 +509,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
 
   type OwnerResult = "done" | "sent" | "changed" | "expired" | "error" | "denied_link";
   /** One answer, to the authority it belongs to. The result names what happened; nothing is done unless the authority found exactly what was shown. */
-  async function ownerAnswer(shop: FrontShop, token: OwnerCred, state: NonNullable<Awaited<ReturnType<typeof ownerState>>>, a: { source?: unknown; action?: unknown; case?: unknown; digest?: unknown }): Promise<OwnerResult> {
+  async function ownerAnswer(shop: FrontShop, token: OwnerCred, state: NonNullable<Awaited<ReturnType<typeof ownerState>>>, a: { source?: unknown; action?: unknown; case?: unknown; digest?: unknown; amount?: unknown }): Promise<OwnerResult> {
     const action = typeof a.action === "string" ? a.action : ""; const theCase = typeof a.case === "string" ? a.case : ""; const digest = typeof a.digest === "string" ? a.digest : "";
     if (!/^[0-9a-f]{32}$/u.test(digest)) return "changed";
     try {
@@ -541,8 +541,13 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       }
       // money clarity (Fees): an open fee marked paid by hand (cash, or a transfer the agent cannot see), bound to the fee as the page showed it
       if (action === "cash" || action === "bank") {
-        if (!state.view.cash?.some((c) => c.case === theCase && c.digest === digest)) return "changed";
-        const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action, case: theCase, digest }], token);
+        const shown = state.view.cash?.find((c) => c.case === theCase && c.digest === digest);
+        if (!shown) return "changed";
+        // a part: whole rupees typed on the page, more than nothing and less than the balance shown (the agent checks it again against the fee as it stands)
+        const typed = typeof a.amount === "string" || typeof a.amount === "number" ? String(a.amount).trim() : "";
+        const partPaise = typed === "" ? undefined : /^\d{1,9}$/u.test(typed) ? Number(typed) * 100 : -1;
+        if (partPaise !== undefined && (partPaise < 100 || partPaise >= shown.amountPaise)) return "changed";
+        const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action, case: theCase, digest, ...(partPaise !== undefined ? { amountPaise: partPaise } : {}) }], token);
         if (r === "refused") return "denied_link";
         const deadline = Date.now() + (options.waitMs ?? 3_000);
         while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !now.cash?.some((c) => c.digest === digest)) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
@@ -717,7 +722,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     if (sub === "/answer") {
       const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
       if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
-      const result = await ownerAnswer(shop, token, state, { source: form.get("source"), action: form.get("action"), case: form.get("case"), digest: form.get("digest") });
+      const result = await ownerAnswer(shop, token, state, { source: form.get("source"), action: form.get("action"), case: form.get("case"), digest: form.get("digest"), amount: form.get("amount") });
       return redirect(res, `${base}?lang=${language}&n=${result}`);
     }
     const n = url.searchParams.get("n");
