@@ -23,7 +23,7 @@ export interface PushCall { host: string; path: string; sub: string; ttl: number
 
 /**
  * W3 (17 Nov 2026): a phone subscribed through the Streetlist app has the app's ONE push key, which no shop holds. Such a call carries `relay` (the shop's name on its server)
- * in place of `vapid`, and the push sender signs it with Streetlist's key and posts it in one step (bundle/services/relay.ts): the signed header is never handed back,
+ * in place of `vapid`, and the push sender signs it with Streetlist's key and posts it in one step (bundle/services/push-relay.ts): the signed header is never handed back,
  * because a VAPID signature is bound only to the push service's origin and one returned would work for every Streetlist subscription at that service.
  */
 export const RELAY_SHOP = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u;

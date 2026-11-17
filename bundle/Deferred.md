@@ -524,7 +524,7 @@ The service is `bundle/services/speech/` (README there). It was written and test
 
 | Item | Why not now | Done when |
 |---|---|---|
-| **The key is not made, so the relay is off.** The owner makes it (`node bundle/services/relay.ts make-key secrets/push/streetlist_vapid.json`), puts `pushRelay.publicKey` in geometer.json and deploys. | A secret the owner places; deploys need their yes. | The first deploy with `pushRelay` shows "The Streetlist relay is on for N shop(s)" in the sender's log. |
+| **The key is not made, so the relay is off.** The owner makes it (`node bundle/services/push-relay.ts make-key secrets/push/streetlist_vapid.json`), puts `pushRelay.publicKey` in geometer.json and deploys. | A secret the owner places; deploys need their yes. | The first deploy with `pushRelay` shows "The Streetlist relay is on for N shop(s)" in the sender's log. |
 | **Fleet's `RESERVED_SLUGS` must gain `chats`** (monorepo, apps/fleet/src/page-slugs.ts). | Another repository. | `bundle/test/home.test.ts` and fleet's own test pass. |
 | **The relay trusts the shop name a runtime sends.** A compromised runtime could name another shop on the same server and use that shop's relay count. | Guard does not stamp the caller's name on a passed-on call. | Guard adds the name, or each push Guard maps to its shop. |
 | **The relay's counts are in memory** (a restart clears them; Guard's daily caps stay). | Enough for a small shop; one more file otherwise. | A restart shows a flood that Guard did not catch. |

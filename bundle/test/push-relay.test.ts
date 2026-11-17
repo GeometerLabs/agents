@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { newVapidKeys, readVapidHeader, vapidVerifies } from "../../modules/push/crypto.ts";
 import { pushCallProblem } from "../../modules/push/hosts.ts";
 import type { PushCall } from "../../modules/push/hosts.ts";
-import { RELAY_LIMITS, RELAY_SIGNATURE_S, createRelay, makeRelayKeyFile, parseRelayKeys, readRelayKeys } from "../services/relay.ts";
+import { RELAY_LIMITS, RELAY_SIGNATURE_S, createRelay, makeRelayKeyFile, parseRelayKeys, readRelayKeys } from "../services/push-relay.ts";
 import { pushHandler } from "../services/push.ts";
 import { parseServer } from "../lib/server.ts";
 import { serverConfig } from "./helpers.ts";
@@ -75,7 +75,7 @@ test("limits: a shop's burst, its day and one phone's day each stop at their cou
 });
 
 test("the relay never opens a push: no decryption code in it, and it never returns the signed header", () => {
-  const source = readFileSync(new URL("../services/relay.ts", import.meta.url), "utf8");
+  const source = readFileSync(new URL("../services/push-relay.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /decryptPush|createDecipheriv|createECDH|hkdfSync/u, "it holds no way to read a push");
   const handler = readFileSync(new URL("../services/push.ts", import.meta.url), "utf8");
   assert.doesNotMatch(handler, /answer\([^)]*vapid/u, "the sender never answers with a header");

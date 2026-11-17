@@ -15,7 +15,7 @@
 //
 // W3 (17 Nov 2026): a call that carries `relay` instead of `vapid` is for a phone of the Streetlist app, whose one push key no shop holds. When this sender was started with
 // that key (PUSH_RELAY_KEY_FILE, a secret handed in like the others), it checks the call, counts it against the shop's limits, signs it itself and posts it in the same step
-// (services/relay.ts says what it will and will not sign, and why it is here and not in the door). The signed header is never returned. Without the key, such a call is
+// (services/push-relay.ts says what it will and will not sign, and why it is here and not in the door). The signed header is never returned. Without the key, such a call is
 // answered 503 ("later"), never 401, 403, 404 or 410, which the runtime reads as a dead phone.
 //
 // The proof's stand-in push service enters through the server's `upstreams` (geometer.json, the seam that already points Guards at stand-ins): `push-service`
@@ -24,8 +24,8 @@ import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { pushCallProblem } from "../../modules/push/hosts.ts";
 import type { PushCall } from "../../modules/push/hosts.ts";
-import { createRelay, readRelayKeys } from "./relay.ts";
-import type { Relay } from "./relay.ts";
+import { createRelay, readRelayKeys } from "./push-relay.ts";
+import type { Relay } from "./push-relay.ts";
 
 /** The routes Guard passes on (the push Guard's spec has exactly these). */
 const ROUTES = new Set(["/v1/push/owner", "/v1/push/customer"]);
