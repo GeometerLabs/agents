@@ -6,6 +6,7 @@
 import { pathToFileURL } from "node:url";
 import { ORDER_WORDS, NUMBER_WORDS, parseIntent } from "../src/adapters/rule-parser.ts";
 import type { Intent } from "../src/adapters/model.ts";
+import { PLAN_WORDS } from "../src/plans/words.ts";
 import { annapurna } from "../src/harness.ts";
 import { LABELS } from "../src/language/interactive.ts";
 import { exampleFacts } from "../src/language/meta-templates.ts";
@@ -36,6 +37,24 @@ const WHEN: Record<TemplateId, string> = {
   sold_out: "An item is sold out for the day",
   day_full: "The shop takes no more orders for that day",
   slot_full: "A slot has reached its own limit of orders for that day (the slot's own most orders): pick another time or day",
+  plan_choose: "A customer asks for a monthly plan and the shop has more than one: the plans with their prices, to choose by name",
+  plan_quote: "A monthly plan is held: the meals, the first and last day, the month's price and the payment link (a UPI shop: with the UPI ID, and the owner confirms)",
+  plan_active: "The plan's payment is recorded: the meals owed, the month, and when a day closes for skipping or pausing",
+  plan_full: "The slot has no place left for the plan's days: the plan is not started",
+  plan_none: "A customer asks about a plan and has none",
+  plan_pause_done: "The customer paused the plan from a day: no meals from then, the paused days count as credit at the end of the month",
+  plan_skip_done: "The customer skipped one meal day before its cut-off: it counts as credit at the end of the month",
+  plan_resume_done: "The customer resumed a paused plan from a day",
+  plan_cutoff_refused: "A pause, skip or resume came after that day's cut-off: refused, with the cut-off time",
+  plan_no_meal: "A skip, pause or resume for a day with no meal, or one already skipped or paused",
+  plan_cancelled: "The customer cancelled the plan: no meal is sent or charged after the days already closed",
+  plan_renewal: "The month's end: the next month's payment request with the amount (after any credit), the plan price, the pay-by time and the link; no automatic debit",
+  plan_lapsed: "The renewal was not paid before its first meal closed: the plan has stopped, nothing is charged",
+  plan_hold_expired: "The first payment of a plan did not come in time: the plan was not started",
+  plan_credit_refund: "Days of a plan not taken (or unused when it ended) are refunded",
+  plan_credit_refund_pending: "The same refund is above the refund limit: waiting for the owner",
+  owner_plan_started: "To the owner: a new monthly plan is paid, with its meals, month and way (pickup or delivery)",
+  owner_plan_cancelled: "To the owner: a plan was cancelled, so no meals are to be made for the days after it",
   order_reminder: "The reminder before the slot, to a customer whose order is confirmed: the items, when, pickup or delivery, and what is left to pay",
   balance_paid: "The owner marked the balance received at pickup or delivery (or the balance link was paid): thanks, nothing more to pay",
   balance_link: "The owner asked for a link for the balance: the amount left and the link to pay it",
@@ -197,6 +216,12 @@ export function reviewSheet(language: ReviewLanguage): string {
     row("I have paid (a claim; checked against the payment record, never believed on its own)", "paid, I have paid", ORDER_WORDS.paid),
     row("money back", "refund, money back", ORDER_WORDS.refund),
     row("talk to the owner", "owner, talk to", ORDER_WORDS.owner),
+    row("a monthly plan (a shop with plans): the word for a plan, and for starting one", "plan, monthly, subscribe, want", [...PLAN_WORDS.plan, ...PLAN_WORDS.subscribe]),
+    row("a plan: skip a day", "skip", PLAN_WORDS.skip),
+    row("a plan: pause from a day", "pause, hold", PLAN_WORDS.pause),
+    row("a plan: resume from a day", "resume, restart", PLAN_WORDS.resume),
+    row("a plan: cancel it (with the word for a plan)", "cancel, stop, end", PLAN_WORDS.cancel),
+    row("a plan: my plan", "my plan", PLAN_WORDS.mine),
     row("a quantity in words (one to ten in English and Hindi, one to five in Malayalam and Kannada)", "one, two, three", Object.keys(NUMBER_WORDS)),
   ];
   if (language !== "hi") {
