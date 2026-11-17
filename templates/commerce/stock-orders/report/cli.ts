@@ -12,7 +12,6 @@ import { readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { pathToFileURL } from "node:url";
 import { UsageError, ledgerTenant, main, readEntries, readJson, readKey, readLanguage, readNow, readSource } from "../../../../modules/report/cli.ts";
-import { runOn } from "../crash-test/situations.ts";
 import type { PurchaseOrder } from "../src/order.ts";
 import { validateSettings } from "../src/settings.ts";
 import type { Settings } from "../src/settings.ts";
@@ -66,6 +65,8 @@ export async function runCli(argv: string[]): Promise<number> {
   const key = readKey(o.key);
   console.log(key ? "Signed with your key." : "NOT signed (no --key): the files carry a digest and a code, but nothing shows who issued them.");
   if (command === "go-live") {
+    // loaded only here: the runtime server imports readGoLive from this file and must not pull the whole crash-test in with it
+    const { runOn } = await import("../crash-test/situations.ts");
     const ran = await runOn(settings); // the situations run on THIS shop's settings
     if (ran.results.length === 0) throw new Error(`No situation could be run on these settings, so there is nothing to put in a certificate: ${ran.skipped.map((s) => s.reason).join(" ")}`);
     const handCheck = summariseRun(ran);

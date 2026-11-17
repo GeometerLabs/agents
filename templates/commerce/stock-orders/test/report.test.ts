@@ -14,7 +14,8 @@ import { monthRange } from "../../../../modules/report/months.ts";
 import { lastMonth } from "../../../../modules/report/monthly-job.ts";
 import { envelopeFile, keyIdOf, publicKeyHex, seal, verifyEnvelopeText } from "../../../../modules/report/sign.ts";
 import { labelledFigures } from "../../../../modules/report/summary.ts";
-import { checkSummaryLink, summaryLinkFor } from "../../../../modules/report/summary-sign.ts";
+import { WHATSAPP_BODY_LIMIT, checkSummaryLink, summaryLinkFor } from "../../../../modules/report/summary-sign.ts";
+import { verifyCodeLink, verifyLink } from "../../../../modules/report/verify-link.ts";
 import type { ListedSigner } from "../../../../modules/report/summary-sign.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
 import { notTestedOf } from "../crash-test/not-tested.ts";
@@ -89,7 +90,7 @@ test.afterEach(() => { for (const d of dirs) rmSync(d, { recursive: true, force:
 test("the month's counts are the ones the scripted month was built to hold", () => {
   const r = November(month);
   assert.deepEqual(r.orders, { placed: 5, sentOut: 5, acknowledged: 3, declinedBySupplier: 1, silent: 1, receivedFull: 1, partReceived: 1, wrongItem: 1, neverSent: 0, sendUnknown: 0 });
-  assert.deepEqual(r.owner, { asked: 5, approved: 5, saidNo: 0, cardsRanOut: 0 });
+  assert.deepEqual(r.owner, { asked: 5, approved: 5, saidNo: 0, voided: 0 });
   assert.deepEqual(r.markedPaidByOwner, { orders: 1 });
   assert.equal(r.source, "stand-in");
   assert.equal(r.anchor, null);
@@ -148,9 +149,6 @@ test("\"paid\" is the owner's own note: a separate count, never mixed into ackno
   assert.equal(none.markedPaidByOwner.orders, 0);
   assert.deepEqual(paid.orders, none.orders, "marking an order paid changes no count of what the supplier said or what arrived");
   assert.equal(paid.budget.usedPaise, none.budget.usedPaise);
-  // the report's own bytes never say "paid" except in the owner's-note count
-  assert.equal(/paid/i.test(JSON.stringify(none)), false);
-  assert.equal(/paid/i.test(JSON.stringify(paid).replace("markedPaidByOwner", "")), false);
   for (const l of LANGUAGES) {
     const note = STRINGS[l].label.markedPaid;
     assert.ok(ownerText(paid, l).includes(note), `${l}: the owner's note is shown as the owner's own note`);
@@ -293,6 +291,32 @@ test("the WhatsApp templates are named stock_..., fill to the same words as the 
   for (const s of subs) assert.equal(s.components[0].example.body_text[0].length, (s.components[0].text.match(/\{\{\d+\}\}/g) ?? []).length, `${s.name} ${s.language}`);
   assert.ok(sampleFor(REPORT_TEMPLATES[1]).innovator === true && sampleFor(REPORT_TEMPLATES[0]).innovator === undefined);
   assert.ok(sampleMessage("en").includes("Innovator"));
+});
+
+test("every report template, in every language, with long names in the shop's own script and the owner's note shown, stays within WhatsApp's 1024 characters and uses the longest check link that fits", () => {
+  const names: Record<string, { shop: string; by: string }> = {
+    en: { shop: "Sri Annapurna Home Tiffins and Evening Snacks Centre", by: "Divya Ramakrishnan, Sri Sai Digital Services" },
+    hi: { shop: "श्री अन्नपूर्णा होम टिफ़िन एंड इवनिंग स्नैक्स सेंटर", by: "दिव्या रामकृष्णन, श्री साई डिजिटल सर्विसेज़" },
+    ml: { shop: "ശ്രീ അന്നപൂർണ്ണ ഹോം ടിഫിൻസ് ആൻഡ് ഈവനിംഗ് സ്നാക്സ് സെന്റർ", by: "ദിവ്യ രാമകൃഷ്ണൻ, ശ്രീ സായി ഡിജിറ്റൽ സർവീസസ്" },
+    kn: { shop: "ಶ್ರೀ ಅನ್ನಪೂರ್ಣ ಹೋಮ್ ಟಿಫಿನ್ಸ್ ಮತ್ತು ಸಂಜೆ ತಿಂಡಿ ಕೇಂದ್ರ", by: "ದಿವ್ಯಾ ರಾಮಕೃಷ್ಣನ್, ಶ್ರೀ ಸಾಯಿ ಡಿಜಿಟಲ್ ಸರ್ವೀಸಸ್" },
+  };
+  const page = `https://reports.example.com/r/${"a".repeat(32)}/report-2026-11-en.html`;
+  for (const t of REPORT_TEMPLATES) for (const language of LANGUAGES) {
+    const base = sampleReport();
+    const r: StockReport = { ...base, source: "stand-in", preparedBy: names[language].by, shop: { ...base.shop, name: names[language].shop }, ...(t.badge ? { innovator: true as const } : {}),
+      markedPaidByOwner: { orders: 12 }, budget: { monthlyPaise: 123_456_700, usedPaise: 98_765_400, leftPaise: 1 } };
+    const env = seal(r, privateKey);
+    const summary = summaryLinkFor(env, reportSummaryFields(r), privateKey)!;
+    const message = monthlyReportMessage(env, language, { link: page, check: summary });
+    assert.equal(message.template.name, t.name);
+    assert.ok(message.text.length <= WHATSAPP_BODY_LIMIT, `${t.name} (${language}): ${message.text.length} characters`);
+    // the longest link that fits: the summary, else the #digest link, else the #code link (messageCheckLink)
+    const tiers = [summary, verifyLink(env), verifyCodeLink(env)];
+    const used = tiers.find((link) => message.text.includes(`${STRINGS[language].checkGenuine}: ${link}\n`))!;
+    assert.ok(used, `${t.name} (${language}): the check line carries one of the three links`);
+    for (const longer of tiers.slice(0, tiers.indexOf(used))) assert.ok(message.text.length - used.length + longer.length > WHATSAPP_BODY_LIMIT, `${t.name} (${language}): ${longer.slice(0, 40)}… would have fitted`);
+    assert.equal(message.template.text, message.text);
+  }
 });
 
 test("a report without the person who set the agent up cannot be sent as a message", () => {

@@ -66,7 +66,7 @@ export const en: Strings = {
   budgetOf: (used, total) => `${used} of ${total}`,
   label: {
     placed: "Orders placed", acknowledged: "Supplier said OK", receivedFull: "Received in full", partReceived: "Part received", wrongItem: "Wrong item", supplierSaidNo: "Supplier said no", noAnswer: "No answer from the supplier",
-    neverSent: "Cancelled or never sent", budgetUsed: "Budget used", budgetLeft: "Budget left", markedPaid: "You marked as paid (your own note)", asked: "You were asked", approved: "You approved", saidNo: "You said no",
+    neverSent: "Cancelled or never sent", budgetUsed: "Budget used", budgetLeft: "Budget left", markedPaid: "Marked paid by you (your note)", asked: "You were asked", approved: "You approved", saidNo: "You said no",
     stopped: "Stopped by your limits", notChecked: "Not checked",
   },
   stop: {
@@ -74,7 +74,7 @@ export const en: Strings = {
     "approval-matches-order": "Approvals that no longer matched the order", "one-order-per-request": "A second order from one request", "reply-from-supplier": "Replies that were not the supplier's",
     "send-only-when-approved": "Sends that were not approved", "message-matches-record": "Messages that did not match the record", "opt-out": "Messages after STOP", other: "Something else your limits held back",
   },
-  notChecked: { whatsapp: "real WhatsApp", supplier: "how real suppliers answer", paying: "paying a supplier", review: "a native speaker's review of the wording" },
+  notChecked: { whatsapp: "real WhatsApp", supplier: "real suppliers' replies", paying: "paying a supplier", review: "a native speaker's review of the wording" },
   notTested: {
     "real-whatsapp": "Real WhatsApp: a real account, a real Meta template approval, a real supplier's phone",
     "native-review": "A native speaker's review of the Hindi, Malayalam and Kannada wording",
@@ -135,11 +135,11 @@ export const hi: Strings = {
   promise: "आपकी मंज़ूरी के बिना कोई ऑर्डर सप्लायर को नहीं जाता; एजेंट किसी को पैसे नहीं देता।",
   handRun: "जाँच हाथ से की गई।",
   sourceTag: { "stand-in": "अभ्यास वाले नकली सिस्टम, टेस्ट पैसा", "test-mode": "टेस्ट मोड, टेस्ट पैसा", live: "" },
-  more: (n) => `और ${n} बातें (पूरी रिपोर्ट में)`,
+  more: (n) => `और ${n} (पूरी रिपोर्ट में)`,
   budgetOf: (used, total) => `${total} में से ${used}`,
   label: {
     placed: "दिए गए ऑर्डर", acknowledged: "सप्लायर ने OK कहा", receivedFull: "पूरा माल आया", partReceived: "कुछ माल आया", wrongItem: "गलत सामान", supplierSaidNo: "सप्लायर ने मना किया", noAnswer: "सप्लायर का जवाब नहीं",
-    neverSent: "रद्द या भेजे नहीं गए", budgetUsed: "इस्तेमाल हुआ बजट", budgetLeft: "बचा हुआ बजट", markedPaid: "आपने भुगतान किया दर्ज किया (आपका अपना नोट)", asked: "आपसे पूछा गया", approved: "आपने मंज़ूर किया", saidNo: "आपने मना किया",
+    neverSent: "रद्द या भेजे नहीं गए", budgetUsed: "इस्तेमाल हुआ बजट", budgetLeft: "बचा हुआ बजट", markedPaid: "आपने भुगतान दर्ज किया (आपका नोट)", asked: "आपसे पूछा गया", approved: "आपने मंज़ूर किया", saidNo: "आपने मना किया",
     stopped: "आपकी सीमाओं ने रोका", notChecked: "जाँचा नहीं गया",
   },
   stop: {
@@ -147,7 +147,7 @@ export const hi: Strings = {
     "approval-matches-order": "ऑर्डर से न मिलने वाली मंज़ूरियाँ", "one-order-per-request": "एक अनुरोध से दूसरा ऑर्डर", "reply-from-supplier": "सप्लायर के न होने वाले जवाब",
     "send-only-when-approved": "बिना मंज़ूरी के भेजने की कोशिशें", "message-matches-record": "रिकॉर्ड से न मिलने वाले संदेश", "opt-out": "STOP के बाद संदेश", other: "आपकी सीमाओं ने रोकी कोई और बात",
   },
-  notChecked: { whatsapp: "असली WhatsApp", supplier: "असली सप्लायर कैसे जवाब देते हैं", paying: "सप्लायर को पैसे देना", review: "शब्दों की किसी मूल भाषी से जाँच" },
+  notChecked: { whatsapp: "असली WhatsApp", supplier: "असली सप्लायर के जवाब", paying: "सप्लायर को पैसे देना", review: "शब्दों की किसी मूल भाषी से जाँच" },
   notTested: {
     "real-whatsapp": "असली WhatsApp: असली खाता, Meta से असली टेम्पलेट मंज़ूरी, असली सप्लायर का फ़ोन",
     "native-review": "हिंदी, मलयालम और कन्नड़ शब्दों की किसी मूल भाषी से जाँच",
@@ -208,11 +208,11 @@ export const ml: Strings = {
   promise: "നിങ്ങളുടെ അനുമതിയില്ലാതെ ഒരു ഓർഡറും വിതരണക്കാരന് പോകില്ല; ഏജന്റ് ആർക്കും പണം നൽകുന്നില്ല.",
   handRun: "പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.",
   sourceTag: { "stand-in": "പരിശീലന സംവിധാനങ്ങൾ, ടെസ്റ്റ് പണം", "test-mode": "ടെസ്റ്റ് മോഡ്, ടെസ്റ്റ് പണം", live: "" },
-  more: (n) => `ഒപ്പം ${n} കാര്യങ്ങൾ കൂടി (പൂർണ്ണ റിപ്പോർട്ടിൽ)`,
+  more: (n) => `+${n} (പൂർണ്ണ റിപ്പോർട്ടിൽ)`,
   budgetOf: (used, total) => `${total}-ൽ ${used}`,
   label: {
     placed: "നൽകിയ ഓർഡറുകൾ", acknowledged: "വിതരണക്കാരൻ OK പറഞ്ഞു", receivedFull: "മുഴുവൻ വന്നു", partReceived: "ഭാഗികമായി വന്നു", wrongItem: "തെറ്റായ സാധനം", supplierSaidNo: "വിതരണക്കാരൻ ഇല്ല എന്ന് പറഞ്ഞു", noAnswer: "വിതരണക്കാരന്റെ മറുപടി ഇല്ല",
-    neverSent: "റദ്ദാക്കിയതോ അയയ്ക്കാത്തതോ", budgetUsed: "ഉപയോഗിച്ച ബജറ്റ്", budgetLeft: "ബാക്കി ബജറ്റ്", markedPaid: "പണം നൽകിയെന്ന് നിങ്ങൾ രേഖപ്പെടുത്തിയത് (നിങ്ങളുടെ സ്വന്തം കുറിപ്പ്)", asked: "നിങ്ങളോട് ചോദിച്ചു", approved: "നിങ്ങൾ അംഗീകരിച്ചു", saidNo: "നിങ്ങൾ ഇല്ല എന്ന് പറഞ്ഞു",
+    neverSent: "റദ്ദാക്കിയതോ അയയ്ക്കാത്തതോ", budgetUsed: "ഉപയോഗിച്ച ബജറ്റ്", budgetLeft: "ബാക്കി ബജറ്റ്", markedPaid: "പണം നൽകിയതായി കുറിച്ചത് (നിങ്ങളുടെ കുറിപ്പ്)", asked: "നിങ്ങളോട് ചോദിച്ചു", approved: "നിങ്ങൾ അംഗീകരിച്ചു", saidNo: "നിങ്ങൾ ഇല്ല എന്ന് പറഞ്ഞു",
     stopped: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", notChecked: "പരിശോധിക്കാത്തത്",
   },
   stop: {
@@ -220,7 +220,7 @@ export const ml: Strings = {
     "approval-matches-order": "ഓർഡറുമായി ചേരാതായ അംഗീകാരങ്ങൾ", "one-order-per-request": "ഒരു അഭ്യർത്ഥനയിൽ നിന്ന് രണ്ടാമത്തെ ഓർഡർ", "reply-from-supplier": "വിതരണക്കാരന്റേതല്ലാത്ത മറുപടികൾ",
     "send-only-when-approved": "അംഗീകാരമില്ലാത്ത അയയ്ക്കലുകൾ", "message-matches-record": "രേഖയുമായി ചേരാത്ത സന്ദേശങ്ങൾ", "opt-out": "STOP ന് ശേഷമുള്ള സന്ദേശങ്ങൾ", other: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞ മറ്റൊന്ന്",
   },
-  notChecked: { whatsapp: "യഥാർത്ഥ WhatsApp", supplier: "യഥാർത്ഥ വിതരണക്കാർ എങ്ങനെ മറുപടി നൽകുന്നു", paying: "വിതരണക്കാരന് പണം നൽകൽ", review: "വാക്കുകളുടെ ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന" },
+  notChecked: { whatsapp: "യഥാർത്ഥ WhatsApp", supplier: "യഥാർത്ഥ വിതരണക്കാരുടെ മറുപടികൾ", paying: "വിതരണക്കാരന് പണം നൽകൽ", review: "മാതൃഭാഷക്കാരന്റെ പരിശോധന" },
   notTested: {
     "real-whatsapp": "യഥാർത്ഥ WhatsApp: യഥാർത്ഥ അക്കൗണ്ട്, Meta-യുടെ യഥാർത്ഥ ടെംപ്ലേറ്റ് അംഗീകാരം, യഥാർത്ഥ വിതരണക്കാരന്റെ ഫോൺ",
     "native-review": "ഹിന്ദി, മലയാളം, കന്നഡ വാക്കുകളുടെ ഒരു മാതൃഭാഷക്കാരന്റെ പരിശോധന",
@@ -281,11 +281,11 @@ export const kn: Strings = {
   promise: "ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಇಲ್ಲದೆ ಯಾವ ಆರ್ಡರ್ ಕೂಡ ಪೂರೈಕೆದಾರರಿಗೆ ಹೋಗುವುದಿಲ್ಲ; ಏಜೆಂಟ್ ಯಾರಿಗೂ ಹಣ ಕೊಡುವುದಿಲ್ಲ.",
   handRun: "ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.",
   sourceTag: { "stand-in": "ಅಭ್ಯಾಸದ ನಕಲಿ ವ್ಯವಸ್ಥೆಗಳು, ಟೆಸ್ಟ್ ಹಣ", "test-mode": "ಟೆಸ್ಟ್ ಮೋಡ್, ಟೆಸ್ಟ್ ಹಣ", live: "" },
-  more: (n) => `ಮತ್ತು ${n} ವಿಷಯಗಳು (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)`,
+  more: (n) => `ಮತ್ತು ${n} (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)`,
   budgetOf: (used, total) => `${total} ರಲ್ಲಿ ${used}`,
   label: {
     placed: "ನೀಡಿದ ಆರ್ಡರ್‌ಗಳು", acknowledged: "ಪೂರೈಕೆದಾರರು OK ಎಂದರು", receivedFull: "ಪೂರ್ತಿ ಬಂತು", partReceived: "ಭಾಗಶಃ ಬಂತು", wrongItem: "ತಪ್ಪು ವಸ್ತು", supplierSaidNo: "ಪೂರೈಕೆದಾರರು ಇಲ್ಲ ಎಂದರು", noAnswer: "ಪೂರೈಕೆದಾರರ ಉತ್ತರ ಇಲ್ಲ",
-    neverSent: "ರದ್ದಾದ ಅಥವಾ ಕಳುಹಿಸದ", budgetUsed: "ಬಳಸಿದ ಬಜೆಟ್", budgetLeft: "ಉಳಿದ ಬಜೆಟ್", markedPaid: "ನೀವು ಹಣ ಕೊಟ್ಟಿದ್ದೀರಿ ಎಂದು ಗುರುತಿಸಿದ್ದು (ನಿಮ್ಮದೇ ಟಿಪ್ಪಣಿ)", asked: "ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು", approved: "ನೀವು ಒಪ್ಪಿದ್ದು", saidNo: "ನೀವು ಇಲ್ಲ ಎಂದಿರಿ",
+    neverSent: "ರದ್ದಾದ ಅಥವಾ ಕಳುಹಿಸದ", budgetUsed: "ಬಳಸಿದ ಬಜೆಟ್", budgetLeft: "ಉಳಿದ ಬಜೆಟ್", markedPaid: "ಹಣ ಕೊಟ್ಟಿದ್ದೆಂದು ಗುರುತಿಸಿದ್ದು (ನಿಮ್ಮ ಟಿಪ್ಪಣಿ)", asked: "ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು", approved: "ನೀವು ಒಪ್ಪಿದ್ದು", saidNo: "ನೀವು ಇಲ್ಲ ಎಂದಿರಿ",
     stopped: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", notChecked: "ಪರಿಶೀಲಿಸದ್ದು",
   },
   stop: {
@@ -293,7 +293,7 @@ export const kn: Strings = {
     "approval-matches-order": "ಆರ್ಡರ್‌ಗೆ ಹೊಂದದ ಒಪ್ಪಿಗೆಗಳು", "one-order-per-request": "ಒಂದು ಕೋರಿಕೆಯಿಂದ ಎರಡನೇ ಆರ್ಡರ್", "reply-from-supplier": "ಪೂರೈಕೆದಾರರದ್ದಲ್ಲದ ಉತ್ತರಗಳು",
     "send-only-when-approved": "ಒಪ್ಪಿಗೆ ಇಲ್ಲದ ಕಳುಹಿಸುವಿಕೆಗಳು", "message-matches-record": "ದಾಖಲೆಗೆ ಹೊಂದದ ಸಂದೇಶಗಳು", "opt-out": "STOP ನಂತರದ ಸಂದೇಶಗಳು", other: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದ ಬೇರೆ ಏನೋ",
   },
-  notChecked: { whatsapp: "ನಿಜವಾದ WhatsApp", supplier: "ನಿಜವಾದ ಪೂರೈಕೆದಾರರು ಹೇಗೆ ಉತ್ತರಿಸುತ್ತಾರೆ", paying: "ಪೂರೈಕೆದಾರರಿಗೆ ಹಣ ಕೊಡುವುದು", review: "ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ" },
+  notChecked: { whatsapp: "ನಿಜವಾದ WhatsApp", supplier: "ನಿಜವಾದ ಪೂರೈಕೆದಾರರ ಉತ್ತರಗಳು", paying: "ಪೂರೈಕೆದಾರರಿಗೆ ಹಣ ಕೊಡುವುದು", review: "ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ" },
   notTested: {
     "real-whatsapp": "ನಿಜವಾದ WhatsApp: ನಿಜವಾದ ಖಾತೆ, Meta ಯ ನಿಜವಾದ ಟೆಂಪ್ಲೇಟ್ ಅನುಮೋದನೆ, ನಿಜವಾದ ಪೂರೈಕೆದಾರರ ಫೋನ್",
     "native-review": "ಹಿಂದಿ, ಮಲಯಾಳಂ ಮತ್ತು ಕನ್ನಡ ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ",
