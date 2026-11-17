@@ -11,14 +11,19 @@ import { fileURLToPath } from "node:url";
 const PATHWAY = fileURLToPath(new URL("..", import.meta.url)).replace(/\/$/u, "");
 const MODULES = resolve(PATHWAY, "..", "..", "..", "modules");
 
-/** Every file reachable from these by a relative import (static `import`/`export ... from`, or a dynamic `import("./x.ts")` with a plain string). */
+/**
+ * Every file reachable from these by a relative import (static `import`/`export ... from`, or a dynamic `import("./x.ts")` with a plain string), as Node loads them.
+ * A whole `import type ... from` or `export type ... from` statement is left out: type stripping erases it before the file runs, so it loads nothing (owner's decision,
+ * 18 Nov 2026, after shared type files came to reach server files through their own imports). A mixed `import { type A, b }` still loads its module and is followed.
+ */
 function reachable(entries: string[]): Map<string, { imports: string[]; text: string }> {
   const seen = new Map<string, { imports: string[]; text: string }>();
   const queue = [...entries];
   while (queue.length > 0) {
     const file = queue.pop() as string;
     if (seen.has(file)) continue;
-    const text = readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//gu, "").replace(/(^|[^:])\/\/.*$/gmu, "$1");
+    const text = readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//gu, "").replace(/(^|[^:])\/\/.*$/gmu, "$1")
+      .replace(/^\s*(?:import|export)\s+type\s[^;]*?\bfrom\s+["'][^"']+["'];?/gmu, "");
     const imports = [...text.matchAll(/(?:\bfrom\s+|\bimport\s+|\bimport\(\s*)["'](\.{1,2}\/[^"']+)["']/gu)].map((m) => m[1]);
     seen.set(file, { imports, text });
     for (const spec of imports) {
