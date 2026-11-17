@@ -229,7 +229,7 @@ test("delete my chat: the words and the guest are gone, the keys too, the cookie
     assert.match(gone.headers.get("set-cookie") ?? "", /^__Secure-geo-chat=; Path=\/s\/glow\/chat; Max-Age=0; HttpOnly; Secure; SameSite=Lax$/u);
     assert.equal(w.state.chat, undefined, "the guest and their counts are gone");
     assert.equal(w.state.outbox.length, 0, "the shop's lines to them are gone");
-    assert.deepEqual(w.identity.state(guestHash("glow", handleOf(cookie))), { keys: 0, number: false });
+    assert.deepEqual(w.identity.state(guestHash("glow", handleOf(cookie))), { keys: 0, here: false, number: false });
     assert.deepEqual(((await (await w.get("/chat/thread", { cookie })).json()) as Lines).lines, []);
     // the key opens nothing now
     const phone = cookieOf(await w.get("/chat?lang=en"))!;

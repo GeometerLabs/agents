@@ -70,6 +70,8 @@ export function openChatIdentity(file: string) {
     );
     CREATE TABLE IF NOT EXISTS challenges (hash TEXT PRIMARY KEY, kind TEXT NOT NULL CHECK (kind IN ('register', 'signin')), guest TEXT, made_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, used_at INTEGER);
     CREATE TABLE IF NOT EXISTS alias (from_hash TEXT PRIMARY KEY, to_hash TEXT NOT NULL, made_at INTEGER NOT NULL);
+    -- the phones (guest hashes) that kept the chat or opened it with a key: a phone restored only by a link is not one, so it is still offered a key of its own
+    CREATE TABLE IF NOT EXISTS phones (hash TEXT PRIMARY KEY, guest TEXT NOT NULL, made_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS contact (guest TEXT PRIMARY KEY, number TEXT NOT NULL, key TEXT NOT NULL, made_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS links (hash TEXT PRIMARY KEY, id TEXT NOT NULL, guest TEXT NOT NULL, made_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, used_at INTEGER, state TEXT NOT NULL CHECK (state IN ('issued', 'used', 'replaced', 'unsent')));
     CREATE TABLE IF NOT EXISTS attempts (kind TEXT NOT NULL, key TEXT NOT NULL, at INTEGER NOT NULL);
@@ -120,10 +122,13 @@ export function openChatIdentity(file: string) {
   const api = {
     resolve,
 
-    /** What the page may be told about a guest (never a key): how many passkeys keep this thread, and whether a number was given for a new phone. */
-    state(hash: string): { keys: number; number: boolean } {
+    /**
+     * What the page may be told about a guest (never a key): how many keys keep this thread, whether THIS phone kept it or opened it with one (`here`: a phone brought back by a link
+     * has none of its own and is offered one), and whether a number was given for a new phone.
+     */
+    state(hash: string): { keys: number; here: boolean; number: boolean } {
       const g = resolve(hash);
-      return { keys: (db.prepare("SELECT count(*) AS n FROM creds WHERE guest = ?").get(g) as { n: number }).n, number: db.prepare("SELECT 1 FROM contact WHERE guest = ?").get(g) !== undefined };
+      return { keys: (db.prepare("SELECT count(*) AS n FROM creds WHERE guest = ?").get(g) as { n: number }).n, here: db.prepare("SELECT 1 FROM phones WHERE hash = ? AND guest = ?").get(hash, g) !== undefined, number: db.prepare("SELECT 1 FROM contact WHERE guest = ?").get(g) !== undefined };
     },
 
     /** What navigator.credentials.create is handed to keep THIS thread on the phone: a challenge bound to the thread, this thread's own user id, a discoverable key, the user verified. */
@@ -160,6 +165,7 @@ export function openChatIdentity(file: string) {
           .run(randomBytes(6).toString("hex"), cred.id, guest, JSON.stringify(cred.jwk), cred.alg, cred.signCount, cred.backedUp ? 1 : 0, now, rp.rpId);
         const kept = db.prepare("SELECT id FROM creds WHERE guest = ? ORDER BY coalesce(used_at, made_at) DESC").all(guest) as { id: string }[];
         for (const old of kept.slice(MAX_KEYS_PER_THREAD)) db.prepare("DELETE FROM creds WHERE id = ?").run(old.id);
+        db.prepare("INSERT INTO phones (hash, guest, made_at) VALUES (?, ?, ?) ON CONFLICT(hash) DO UPDATE SET guest = excluded.guest, made_at = excluded.made_at").run(hash, guest, now);
         db.exec("COMMIT");
         return { ok: true };
       } catch (e) { if (db.isTransaction) db.exec("ROLLBACK"); throw e; }
@@ -192,6 +198,7 @@ export function openChatIdentity(file: string) {
         // the counter moves only from the value just checked: two answers racing with the same counter cannot both pass
         if (Number(db.prepare("UPDATE creds SET sign_count = ?, used_at = ? WHERE id = ? AND sign_count = ?").run(next.signCount, now, row.id, row.sign_count).changes) !== 1) { db.exec("ROLLBACK"); return { ok: false, why: "The passkey's counter moved meanwhile." }; }
         api.tie(hash, row.guest, now);
+        db.prepare("INSERT INTO phones (hash, guest, made_at) VALUES (?, ?, ?) ON CONFLICT(hash) DO UPDATE SET guest = excluded.guest, made_at = excluded.made_at").run(hash, row.guest, now);
         db.exec("COMMIT");
         return { ok: true, thread: row.guest };
       } catch (e) { if (db.isTransaction) db.exec("ROLLBACK"); throw e; }
@@ -217,8 +224,16 @@ export function openChatIdentity(file: string) {
     countRecoveryAsk(digits: string, now: number): boolean {
       return take("recover-shop", "shop", RECOVERY_LIMITS.perShop, now) && take("recover-number", numberKey(digits), RECOVERY_LIMITS.perNumber, now);
     },
-    /** One "send me my links" for a thread, counted: three a day. */
-    countLinksAsk(hash: string, now: number): boolean { return take("links", resolve(hash), [{ max: LINKS_PER_DAY, perMs: DAY }], now); },
+    /**
+     * One "send me my booking link", counted: three a day for the thread, three a day for the number it goes to and twenty a day for the shop, so several threads naming one number (or
+     * many threads at one shop) cannot make the shop's WhatsApp send more. False too when the thread has no number.
+     */
+    countLinksAsk(hash: string, now: number): boolean {
+      const g = resolve(hash);
+      const number = api.numberOf(g);
+      if (!number) return false;
+      return take("links", g, [{ max: LINKS_PER_DAY, perMs: DAY }], now) && take("links-number", numberKey(number), [{ max: LINKS_PER_DAY, perMs: DAY }], now) && take("links-shop", "shop", [{ max: 20, perMs: DAY }], now);
+    },
 
     /** A new one-use link for a thread; every older unused one for it stops working (one works at a time). The token is returned ONCE and never kept. */
     issueLink(guest: string, now: number): { id: string; token: string; expiresAt: number } {
@@ -272,9 +287,20 @@ export function openChatIdentity(file: string) {
      */
     forget(hash: string): string {
       const g = resolve(hash);
-      for (const sql of ["DELETE FROM creds WHERE guest = ?", "DELETE FROM users WHERE guest = ?", "DELETE FROM contact WHERE guest = ?", "DELETE FROM links WHERE guest = ?", "DELETE FROM alias WHERE to_hash = ?", "DELETE FROM alias WHERE from_hash = ?"]) db.prepare(sql).run(g);
+      for (const sql of ["DELETE FROM creds WHERE guest = ?", "DELETE FROM phones WHERE guest = ?", "DELETE FROM users WHERE guest = ?", "DELETE FROM contact WHERE guest = ?", "DELETE FROM links WHERE guest = ?", "DELETE FROM alias WHERE to_hash = ?", "DELETE FROM alias WHERE from_hash = ?"]) db.prepare(sql).run(g);
       db.prepare("DELETE FROM alias WHERE from_hash = ?").run(hash);
       return g;
+    },
+
+    /**
+     * What is kept past its use goes: a number is kept for the thread's retention (30 days from when it was given: the thread is cleared then, and the number is not worth keeping
+     * without it), a link a day after it ran out, a tie and a phone's mark twice the cookie's life. A key is the customer's own and stays until they delete the chat.
+     */
+    purge(now: number, retentionDays = 30): void {
+      db.prepare("DELETE FROM contact WHERE made_at < ?").run(now - retentionDays * DAY);
+      db.prepare("DELETE FROM links WHERE expires_at < ?").run(now - DAY);
+      db.prepare("DELETE FROM alias WHERE made_at < ?").run(now - 2 * retentionDays * DAY);
+      db.prepare("DELETE FROM phones WHERE made_at < ?").run(now - 2 * retentionDays * DAY);
     },
 
     close(): void { if (db.isOpen) db.close(); },

@@ -89,14 +89,14 @@ export async function identityRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boo
   // ---- what the page may offer ----
   if (c.sub === "/id/state" && method === "GET") {
     if (!limiter.take("read", address)) return tooMany();
-    if (!c.hash) return kit.sendJson(res, 200, { keys: 0, number: false, work: 0, offer: false, restored: false, known: false });
+    if (!c.hash) return kit.sendJson(res, 200, { keys: 0, here: false, number: false, work: 0, offer: false, restored: false, known: false });
     const r = await backend.chatId({ op: "state", handle: c.hash, via });
     return kit.sendJson(res, r.status, r.body);
   }
 
   // ---- the page's own calls ----
   const op = /^\/id\/([a-z-]+)$/u.exec(c.sub)?.[1];
-  if (!op || !(op in OPS) || method !== "POST") return kit.sendHtml(res, 404, NOT_FOUND);
+  if (!op || !Object.hasOwn(OPS, op) || method !== "POST") return kit.sendHtml(res, 404, NOT_FOUND);
   if (!kit.sameOrigin(req, shop)) return kit.sendJson(res, 403, { error: "Calls from another site's page are refused." });
   if (!c.hash) return kit.sendJson(res, 400, { error: "Open the chat page first." });
   if (limiter.over("wrong", address) || !limiter.take(op === "recover" ? "signin" : "chat", address)) return tooMany();

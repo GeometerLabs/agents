@@ -51,14 +51,14 @@ test("keeping a chat binds the key to the thread; the new phone's own hash is th
   try {
     const { p, result } = keep(s.identity, H1);
     assert.deepEqual(result, { ok: true });
-    assert.deepEqual(s.identity.state(H1), { keys: 1, number: false });
+    assert.deepEqual(s.identity.state(H1), { keys: 1, here: true, number: false });
     const o = signinOptions(s.identity);
     const r = s.identity.signin(H2, RP, softSignin(p, o, RP.origin), T0 + 2);
     assert.deepEqual(r, { ok: true, thread: H1 });
     assert.equal(s.identity.resolve(H2), H1, "the new phone reads the old thread: its lines, its caps, its bookings");
     assert.equal(s.identity.resolve(H1), H1);
     assert.equal(s.identity.resolve(H3), H3, "another guest is nobody's");
-    assert.deepEqual(s.identity.state(H2), { keys: 1, number: false }, "a tied phone sees the thread's keys");
+    assert.deepEqual(s.identity.state(H2), { keys: 1, here: true, number: false }, "a phone that opened the chat with the key has one of its own");
     assert.deepEqual(s.identity.signin(H3, RP, softSignin(p, o, RP.origin), T0 + 3).ok, false, "the challenge is used up: the same answer does nothing again");
   } finally { s.done(); }
 });
@@ -221,8 +221,24 @@ test("sends are limited per number and per shop, counted whether or not a link t
     assert.equal(s.identity.wrongLinks.locked(T0), false);
     for (let i = 0; i < WRONG_LINK_LIMIT; i++) s.identity.wrongLinks.note(T0 + i);
     assert.equal(s.identity.wrongLinks.locked(T0 + 100), true);
+    assert.equal(s.identity.countLinksAsk(H1, T0), false, "no number given, nothing to send to");
+    s.identity.setNumber(H1, NUMBER, T0);
     for (let i = 0; i < LINKS_PER_DAY; i++) assert.ok(s.identity.countLinksAsk(H1, T0 + i));
-    assert.equal(s.identity.countLinksAsk(H1, T0 + 10), false);
+    assert.equal(s.identity.countLinksAsk(H1, T0 + 10), false, "three a day for a thread");
+    // several threads naming ONE number: three a day for the number, whoever asks
+    const same = store();
+    try {
+      for (const h of [H1, H2, H3]) same.identity.setNumber(h, NUMBER, T0);
+      assert.ok(same.identity.countLinksAsk(H1, T0) && same.identity.countLinksAsk(H1, T0 + 1) && same.identity.countLinksAsk(H2, T0 + 2));
+      assert.equal(same.identity.countLinksAsk(H3, T0 + 3), false, "the number's three a day are used");
+    } finally { same.done(); }
+    // many threads, each its own number: twenty a day for the shop
+    const u = store();
+    try {
+      let served = 0;
+      for (let i = 0; i < 25; i++) { const h = String(i).padStart(2, "0").repeat(32); u.identity.setNumber(h, `91980000${String(i).padStart(4, "0")}`, T0); if (u.identity.countLinksAsk(h, T0 + i)) served++; }
+      assert.equal(served, 20);
+    } finally { u.done(); }
   } finally { s.done(); }
 });
 
@@ -235,11 +251,27 @@ test("delete my chat, this side: keys, number, links and every tied phone go, an
     s.identity.signin(H2, RP, softSignin(p, signinOptions(s.identity), RP.origin), T0 + 2);
     assert.equal(s.identity.resolve(H2), H1);
     assert.equal(s.identity.forget(H2), H1, "asked from the tied phone, it is the thread that is forgotten");
-    assert.deepEqual(s.identity.state(H1), { keys: 0, number: false });
+    assert.deepEqual(s.identity.state(H1), { keys: 0, here: false, number: false });
     assert.equal(s.identity.resolve(H2), H2);
     assert.equal(s.identity.guestOfNumber(NUMBER), undefined);
     assert.equal(s.identity.linkState(link.token, T0 + 3), "unknown");
     assert.equal(s.identity.signin(H3, RP, softSignin(p, signinOptions(s.identity, T0 + 4), RP.origin), T0 + 5).ok, false, "the old key opens nothing now");
+  } finally { s.done(); }
+});
+
+test("what is kept past its use goes: a number after the thread's retention, a link after a day; a key stays until the chat is deleted", () => {
+  const s = store();
+  try {
+    const { p } = keep(s.identity, H1);
+    s.identity.setNumber(H1, NUMBER, T0);
+    const link = s.identity.issueLink(H1, T0);
+    s.identity.purge(T0 + 29 * 24 * 3_600_000);
+    assert.equal(s.identity.guestOfNumber(NUMBER), H1, "kept for the thread's retention");
+    s.identity.purge(T0 + 31 * 24 * 3_600_000);
+    assert.equal(s.identity.guestOfNumber(NUMBER), undefined);
+    assert.equal(s.identity.linkState(link.token, T0 + 31 * 24 * 3_600_000), "unknown");
+    assert.equal(s.identity.state(H1).keys, 1);
+    assert.equal(s.identity.signin(H2, RP, softSignin(p, signinOptions(s.identity, T0 + 32 * 24 * 3_600_000), RP.origin), T0 + 32 * 24 * 3_600_000 + 1).ok, true, "the key still opens the chat");
   } finally { s.done(); }
 });
 
@@ -335,6 +367,24 @@ test("the page is offered 'keep this chat' only after a booking or an order, and
       assert.equal((await d2.routes.call({ op: "state", handle: H1 })).body.offer, false);
     } finally { d2.s.done(); }
     assert.equal((await d.routes.call({ op: "state", handle: "bad" })).status, 400);
+  } finally { d.s.done(); }
+});
+
+test("a phone brought back by the link has no key of its own: it is offered one, and keeping it works", async () => {
+  const d = door({ work: 1 });
+  try {
+    const first = (await d.routes.call({ op: "keep_options", handle: H1, via: "direct" })).body.options as { challenge: string; user: { id: string } };
+    assert.equal((await d.routes.call({ op: "keep", handle: H1, via: "direct", response: softRegister(newSoftPasskey("glow.example"), first, "https://glow.example") })).body.ok, true);
+    assert.equal((await d.routes.call({ op: "state", handle: H1 })).body.offer, false, "the phone that kept it is not offered again");
+    const link = d.s.identity.issueLink(H1, T0);
+    assert.equal((await d.routes.call({ op: "use_link", handle: H2, token: link.token })).body.ok, true);
+    const state = (await d.routes.call({ op: "state", handle: H2 })).body;
+    assert.deepEqual([state.keys, state.here, state.offer, state.restored], [1, false, true, true], "the thread has a key (the lost phone's), this phone has none of its own");
+    const second = (await d.routes.call({ op: "keep_options", handle: H2, via: "direct" })).body.options as { challenge: string; user: { id: string } };
+    assert.equal(second.user.id, first.user.id, "the same thread, the same user id");
+    assert.equal((await d.routes.call({ op: "keep", handle: H2, via: "direct", response: softRegister(newSoftPasskey("glow.example"), second, "https://glow.example") })).body.ok, true);
+    const after = (await d.routes.call({ op: "state", handle: H2 })).body;
+    assert.deepEqual([after.keys, after.here, after.offer], [2, true, false]);
   } finally { d.s.done(); }
 });
 
