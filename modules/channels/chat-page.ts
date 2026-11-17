@@ -239,7 +239,7 @@ const keepRow = () => {
   const text = p ? Array.from(p.childNodes).filter((n) => !(n.classList && n.classList.contains("sr"))).map((n) => n.textContent).join("") : "";
   const tm = run && run.querySelector("time");
   const at = tm ? (Number(tm.dataset.ms) || Date.parse(tm.getAttribute("datetime") || "")) : NaN;
-  joinChat({ slug: slugNow, name: ${j(a.shop.name)}, face: faceOf(), paint: ${j(a.paint ?? null)}, last: text, lastBy: p && p.classList.contains("you") ? "you" : "shop", at: Number.isFinite(at) ? at : Date.now(), seen: last, answered: answeredSeen });
+  joinChat({ slug: slugNow, name: ${j(a.shop.name)}, face: faceOf(), paint: ${j(a.paint ?? null)}, last: text, lastBy: p && p.classList.contains("you") ? "you" : "shop", at: Number.isFinite(at) ? at : undefined, seen: last, answered: answeredSeen });
 };
 keepRow();
 new MutationObserver(keepRow).observe(lines, { childList: true });

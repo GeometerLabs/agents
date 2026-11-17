@@ -16,6 +16,8 @@ import { createPush } from "../push.ts";
 import { createPushSender } from "../sender.ts";
 import { openPushStore } from "../store.ts";
 import { chatPolicy, pushChoice } from "../../channels/chat-front.ts";
+import { ALERTS_SCRIPT } from "../pages.ts";
+import vm from "node:vm";
 import { BOOKINGS_SERVICES, readRuntimeConfig } from "../../runtime/config.ts";
 
 const T0 = Date.UTC(2026, 10, 17, 9, 0);
@@ -164,4 +166,52 @@ test("runtime.json: the relay's two fields are both or neither, the key is a P-2
   assert.equal(check(withPush({ baseUrl: "http://g3", relayKey: RELAY_KEY, relayShop: "glow-salon" })).ok, true, "the two fields do not break a valid runtime.json");
   assert.equal(check(withPush({ baseUrl: "http://g3", relayKey: RELAY_KEY })).ok, false, "a key with no shop name");
   assert.equal(check(withPush({ baseUrl: "http://g3", relayKey: "short", relayShop: "glow-salon" })).ok, false, "not a P-256 public key");
+});
+
+/** Runs the alerts script on a page for one shop, in a sandbox: a fake document, one shared push subscription, a fake storage. Returns what the page showed and posted. */
+function alertsPage(o: { save: string; signer?: boolean; subscription?: { endpoint: string; options: { applicationServerKey: Uint8Array }; toJSON(): unknown }; storage: Map<string, string> }) {
+  const posts: { url: string; body: Record<string, unknown> }[] = [];
+  const el = (hidden: boolean) => ({ hidden, disabled: false, textContent: "", listeners: new Map<string, () => Promise<void>>(), addEventListener(type: string, fn: () => Promise<void>) { this.listeners.set(type, fn); } });
+  const box = { hidden: true, dataset: { key: Buffer.from(new Uint8Array(65).fill(4)).toString("base64url"), sw: "/sw.js", scope: "/", save: o.save, done: "done", saved: "already on", blocked: "blocked", failed: "failed", ...(o.signer ? { signer: "streetlist" } : {}) } };
+  const on = el(false); const msg = el(false);
+  const sub = o.subscription;
+  const reg = { pushManager: { getSubscription: async () => sub ?? null, subscribe: async () => sub! } };
+  const sandbox = {
+    document: { getElementById: (id: string) => ({ alerts: box, "alerts-on": on, "alerts-off": null, "alerts-msg": msg } as Record<string, unknown>)[id] ?? null },
+    navigator: { serviceWorker: { register: async () => reg } }, PushManager: function () {}, Notification: Object.assign(function () {}, { requestPermission: async () => "granted" }),
+    window: { PushManager: function () {}, Notification: function () {} }, atob: (x: string) => Buffer.from(x, "base64").toString("binary"), Uint8Array, location: { reload: () => undefined },
+    localStorage: { getItem: (k: string) => o.storage.get(k) ?? null, setItem: (k: string, v: string) => { o.storage.set(k, v); } },
+    fetch: async (url: string, init: { body: string }) => { posts.push({ url, body: JSON.parse(init.body) }); return { ok: true, json: async () => ({}) }; },
+  };
+  vm.runInNewContext(ALERTS_SCRIPT, sandbox);
+  return { on, msg, posts, tap: async () => { await on.listeners.get("click")!(); } };
+}
+
+test("on the Streetlist app's shared subscription a second shop's page still offers the button, and a tap gives that shop the subscription", async () => {
+  const key = new Uint8Array(65).fill(4);
+  const subscription = { endpoint: "https://fcm.googleapis.com/fcm/send/shared-1", options: { applicationServerKey: key }, toJSON: () => ({ endpoint: "https://fcm.googleapis.com/fcm/send/shared-1", keys: { p256dh: "x", auth: "y" } }) };
+  const storage = new Map<string, string>();
+  const settle = () => new Promise((ok) => setTimeout(ok, 5));
+  const a = alertsPage({ save: "https://streetlist.in/shop-a/chat/push", signer: true, subscription, storage });
+  await settle();
+  assert.equal(a.on.hidden, false, "shop A: the phone has a subscription but this shop has not been given it");
+  await a.tap(); await settle();
+  assert.deepEqual(a.posts.map((p) => p.url), ["https://streetlist.in/shop-a/chat/push"]);
+  assert.equal(a.posts[0]!.body.signer, "streetlist");
+  assert.equal(storage.get("alerts-shop:https://streetlist.in/shop-a/chat/push"), subscription.endpoint);
+  const b = alertsPage({ save: "https://streetlist.in/shop-b/chat/push", signer: true, subscription, storage });
+  await settle();
+  assert.equal(b.on.hidden, false, "shop B: the same phone subscription exists, but shop B never took it, so the button stays and a tap reaches shop B");
+  await b.tap(); await settle();
+  assert.deepEqual(b.posts.map((p) => p.url), ["https://streetlist.in/shop-b/chat/push"]);
+  const againA = alertsPage({ save: "https://streetlist.in/shop-a/chat/push", signer: true, subscription, storage });
+  await settle();
+  assert.equal(againA.on.hidden, true, "shop A, opened again: already on");
+});
+
+test("a shop's own subscription (no signer) is hidden by the subscription alone, as before", async () => {
+  const subscription = { endpoint: "https://fcm.googleapis.com/fcm/send/own-1", options: { applicationServerKey: new Uint8Array(65).fill(4) }, toJSON: () => ({}) };
+  const p = alertsPage({ save: "/glow/chat/push", subscription, storage: new Map() });
+  await new Promise((ok) => setTimeout(ok, 5));
+  assert.equal(p.on.hidden, true);
 });

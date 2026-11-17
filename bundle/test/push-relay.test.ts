@@ -74,6 +74,19 @@ test("limits: a shop's burst, its day and one phone's day each stop at their cou
   assert.ok(phone.sign(call({ sub: "aaaaaaaaaaaa" })).ok, "another phone is fine");
 });
 
+test("a refusal never lifts the day's count: the minute's check and the day's share one list and a refused call writes nothing back", () => {
+  let t = T0;
+  const r = relay({ now: () => t, limits: { perShopPerMinute: 2, perShopPerDay: 4, perPhonePerDay: 99 } });
+  assert.ok(r.sign(call()).ok && r.sign(call()).ok);        // two calls at 09:00
+  t += 5 * 3600_000;                                          // 14:00: those two are old for the minute, young for the day
+  assert.ok(r.sign(call()).ok && r.sign(call()).ok);        // two more: the day is now full (4 of 4)
+  assert.equal(r.sign(call()).ok, false, "the burst limit refuses (2 in the last minute)");
+  t += 61_000;
+  assert.equal(r.sign(call()).ok, false, "a minute later the day's count (4 in the last 24 hours) must still hold; the earlier refusal did not erase it");
+  t += 20 * 3600_000;                                         // the 09:00 pair is now more than 24 hours old
+  assert.ok(r.sign(call()).ok, "only when they age out does a slot open");
+});
+
 test("the relay never opens a push: no decryption code in it, and it never returns the signed header", () => {
   const source = readFileSync(new URL("../services/push-relay.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /decryptPush|createDecipheriv|createECDH|hkdfSync/u, "it holds no way to read a push");
@@ -127,12 +140,12 @@ test("a server without the relay answers a relay call 503 (try later), and a sho
   } finally { s.close(); }
 });
 
-test("the key file: made once at 0600 and never overwritten; its public half must be its private key's own", () => {
+test("the key file: made once, readable by the sender's user, and never overwritten; its public half must be its private key's own", () => {
   const dir = mkdtempSync(join(tmpdir(), "relay-"));
   try {
     const file = join(dir, "streetlist_vapid.json");
     const pub = makeRelayKeyFile(file);
-    assert.equal(statSync(file).mode & 0o777, 0o600);
+    assert.equal(statSync(file).mode & 0o777, 0o644, "the bundle's rule for a secret in a container's folder (lib/secrets.ts): the container's own user reads it, secrets/ itself is 0700");
     assert.equal(readRelayKeys(file).publicKey, pub);
     assert.throws(() => makeRelayKeyFile(file), /already exists/u);
     const stored = JSON.parse(readFileSync(file, "utf8"));
