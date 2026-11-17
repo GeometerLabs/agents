@@ -70,6 +70,8 @@ export const UNDO_FOR_MS = DAY;
 /** One line of the owner's talk in the app, shown on the page (newest last). */
 export interface TalkLine { atMs: number; from: "owner" | "assistant"; text: string }
 export const TALK_LINES = 20;
+/** Talk turns kept for the prompt (the prompt uses the last six). */
+export const CHAT_LINES = 12;
 
 export interface AssistantState {
   /** The last number given to a card or an undo ("c-3", "u-4"); never given twice, so a record line names one thing. */
@@ -85,6 +87,8 @@ export interface AssistantState {
    * was and a shop that never uses it saves the same bytes. It is a part of the assistant's state because the notes belong to the shop, not to a template.
    */
   memory?: MemoryState;
+  /** The owner's talk (block M): the last lines of the talk turns, for the prompt's "last six lines". Only talk turns, never a customer's words. Left out until the first talk. */
+  chat?: TalkLine[];
 }
 
 export const emptyAssistantState = (): AssistantState => ({ seq: 0, cards: [], refused: [], closedDays: [], undo: [], talk: [] });
@@ -124,6 +128,7 @@ export function compactAssistant(state: AssistantState, nowMs: number, todayIso:
   const days = state.closedDays.filter((d) => d >= todayIso);
   gone += state.closedDays.length - days.length;
   state.closedDays = days;
+  if (state.chat && state.chat.length > CHAT_LINES) { gone += state.chat.length - CHAT_LINES; state.chat = state.chat.slice(-CHAT_LINES); }
   if (state.talk.length > TALK_LINES) { gone += state.talk.length - TALK_LINES; state.talk = state.talk.slice(-TALK_LINES); }
   return gone;
 }

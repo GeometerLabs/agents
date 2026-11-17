@@ -2,7 +2,7 @@
 // check (templates/<...>/src/settings.ts) hands the block here, so the three templates read it the same way. Left out of a shop's settings: no assistant, and the
 // owner's fixed phrases work exactly as before (the agent answers anything else with its usual "I didn't understand").
 //
-//   "assistant": { "morning": { "at": "08:00" } | false, "character": { "name": "Mithra", "style": "clay", "seed": "veena-salon-3f2a1c-4", "colour": "c4795c", "personality": "warm" } }
+//   "assistant": { "talk": { "customers": false }, "morning": { "at": "08:00" } | false, "character": { "name": "Mithra", "style": "clay", "seed": "veena-salon-3f2a1c-4", "colour": "c4795c", "personality": "warm" } }
 //
 // Item 11i: the panel's Character step writes `character` (and with it the block), so a shop set up in the panel has its assistant on.
 import { readCharacter, defaultCharacter } from "./character.ts";
@@ -12,6 +12,11 @@ export interface AssistantSettings {
   /** The morning line: from this local time ("08:00"), once a day; null for none. */
   morningAt: { hour: number; minute: number } | null;
   character: Character;
+  /**
+   * The talk (block M): `customers: false` turns the talk off for customers only (they get the template's own menu as before); the owner's talk stays. Default on, and it
+   * needs a talk model besides (runtime.json `talk`, or the shop's language model), and is off in button mode and at the AI cap.
+   */
+  talk?: { customers: boolean };
 }
 
 /** When the morning line goes when the settings say nothing: 08:00, before most shops open and after the night's webhooks are in. */
@@ -23,7 +28,7 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object
 export function readAssistantSettings(raw: unknown, errors: string[]): AssistantSettings | undefined {
   if (raw === undefined) return undefined;
   if (!isObj(raw)) { errors.push('"assistant" must be an object (it may be empty: {} turns the shop\'s assistant on with its defaults).'); return undefined; }
-  for (const k of Object.keys(raw)) if (!["morning", "character"].includes(k)) errors.push(`"assistant" has "${k}", which is not a setting (morning, character).`);
+  for (const k of Object.keys(raw)) if (!["morning", "character", "talk"].includes(k)) errors.push(`"assistant" has "${k}", which is not a setting (morning, character, talk).`);
   let morningAt: AssistantSettings["morningAt"] = DEFAULT_MORNING;
   if (raw.morning === false) morningAt = null;
   else if (raw.morning !== undefined) {
@@ -32,8 +37,13 @@ export function readAssistantSettings(raw: unknown, errors: string[]): Assistant
     if (!m) errors.push('"assistant.morning" must be {"at": "HH:MM"} (24-hour, the shop\'s time) or false for no morning line.');
     else morningAt = { hour: Number(m[1]), minute: Number(m[2]) };
   }
+  let customers = true;
+  if (raw.talk !== undefined) {
+    if (!isObj(raw.talk) || Object.keys(raw.talk).some((k) => k !== "customers") || (raw.talk.customers !== undefined && typeof raw.talk.customers !== "boolean")) errors.push('"assistant.talk" must be {"customers": true} or {"customers": false}: false turns the assistant\'s own answers off for customers (they get the menu), true is the default.');
+    else if (raw.talk.customers === false) customers = false;
+  }
   const character = readCharacter(raw.character, errors) ?? defaultCharacter();
-  return { morningAt, character };
+  return { morningAt, character, ...(customers ? {} : { talk: { customers: false } }) };
 }
 
 /**
@@ -43,5 +53,5 @@ export function readAssistantSettings(raw: unknown, errors: string[]): Assistant
  */
 export function assistantSettingsJson(a: AssistantSettings): Record<string, unknown> {
   const two = (n: number) => String(n).padStart(2, "0");
-  return { morning: a.morningAt ? { at: `${two(a.morningAt.hour)}:${two(a.morningAt.minute)}` } : false, character: { ...a.character } };
+  return { morning: a.morningAt ? { at: `${two(a.morningAt.hour)}:${two(a.morningAt.minute)}` } : false, character: { ...a.character }, ...(a.talk?.customers === false ? { talk: { customers: false } } : {}) };
 }
