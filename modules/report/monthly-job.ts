@@ -23,19 +23,19 @@
 // WHAT GOES OUT. The template's own report (its `make` writes the page, and any certificate and the signed data, into a folder with a name nobody can guess) and the message
 // built from it: a template when the owner's 24-hour window is closed, plain text with the same words when it is open. When it is open, a certificate's text also goes as a document,
 // once, by link, if the template made one. The folder is meant to be served read-only; this file does not serve it.
-import { ApiError, GuardUnavailableError, NotSentError, WindowClosedError } from "../core/faults.ts";
+import { WindowClosedError } from "../core/faults.ts";
+import { MAX_TRIES, RETRY_AFTER_MS, nothingWasSent } from "../messaging/send-once.ts";
 import type { Messaging, OutboundMessage, TemplateMessage } from "../messaging/messaging.ts";
 import type { Clock } from "../core/clock.ts";
 import type { ActionRecord, Outcome, RecordEntry } from "../record/record.ts";
 import type { Language } from "../language/languages.ts";
-import { HOUR, localParts, zonedToMs } from "../core/time.ts";
+import { localParts, zonedToMs } from "../core/time.ts";
 import { monthRange } from "./months.ts";
 
 /** The local hour from which last month's report may go. */
 export const SEND_FROM_HOUR = 9;
-/** After a refusal, how long before the next try, and how many tries in all. */
-export const RETRY_AFTER_MS = HOUR;
-export const MAX_TRIES = 3;
+/** After a refusal, how long before the next try, and how many tries in all, and what counts as "nothing was sent": one definition for every job that sends once (modules/messaging/send-once.ts). */
+export { MAX_TRIES, RETRY_AFTER_MS, nothingWasSent };
 
 /** What a template's `make` hands back: the report it made and the message to send. */
 export interface MadeReport {
@@ -76,15 +76,6 @@ const monthKey = (year: number, month: number): string => `${year}-${String(mont
 export function lastMonth(now: number, timeZone: string): string {
   const t = localParts(now, timeZone);
   return t.month === 1 ? monthKey(t.year - 1, 12) : monthKey(t.year, t.month - 1);
-}
-
-/**
- * Did WhatsApp (or Guard in front of it) say no before anything was sent? Only then is it safe to send the same report again. A 5xx or a reply that is not understood
- * can come after the message was taken, so those are never "nothing was sent": the report is not sent twice for the sake of a retry.
- */
-export function nothingWasSent(e: unknown): boolean {
-  if (e instanceof NotSentError || e instanceof GuardUnavailableError) return true;
-  return e instanceof ApiError && e.status >= 400 && e.status < 500;
 }
 
 /** The moment, in the shop's time zone, from which the report for the month before `now`'s may go: 09:00 on the 1st. */

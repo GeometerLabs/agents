@@ -112,10 +112,12 @@ export function ownerPage(o: OwnerPageInput): string {
     // money clarity: a deposit says which booking it is (the UPI note), when the customer said they paid and the UPI reference they typed, so the owner ticks the right one
     const payLines = (): Raw => html`<br><small class="note">${v.kind === "fees" ? "" : `${money.reference(i.case)} `}${i.claimedAtMs !== undefined ? `${money.claimedAt(formatSlot(i.claimedAtMs, tz, o.language))} ` : ""}${i.upiRef ? money.upiRef(i.upiRef) : ""}</small>`;
     // Stock orders: the supplier is `customer.name`, `what` is the order already written in the owner's language; an approval is the agent's own approval card (card id and digest)
-    if (i.kind === "po_approval" || i.kind === "po_silent" || i.kind === "po_receive") {
+    if (i.kind === "po_approval" || i.kind === "po_silent" || i.kind === "po_receive" || i.kind === "po_unsure" || i.kind === "po_refused") {
       const sw = STOCK_WORDS[o.language];
       const supplier = i.customer.name ?? i.customer.phone;
       if (i.kind === "po_approval") return card("assistant", sw.approve(supplier, i.what ?? "", amount), [b("card_yes", sw.yes), b("card_no", sw.no, true)], "wait", sw.tagApprove);
+      if (i.kind === "po_refused") return card("assistant", sw.refused(supplier, i.what?.split(":")[0] ?? "", i.startMs !== undefined ? formatSlot(i.startMs, tz, o.language) : ""), [b("try_now", sw.tryNow), b("cancel_order", sw.cancelOrder, true)], "bad", sw.tagRefused);
+      if (i.kind === "po_unsure") return card("assistant", sw.unsure(supplier, i.what?.split(":")[0] ?? ""), [b("got_it", sw.gotIt), b("send_again", sw.sendAgain, true)], "bad", sw.tagUnsure);
       if (i.kind === "po_silent") return card("assistant", sw.silent(supplier, i.what ?? ""), [b("retry", sw.askAgain)], "bad", sw.tagSilent);
       return card("assistant", sw.receive(supplier, i.what ?? ""), [b("received", sw.received)], "info", sw.tagReceive);
     }
