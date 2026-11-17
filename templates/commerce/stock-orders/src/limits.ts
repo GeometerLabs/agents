@@ -87,3 +87,11 @@ export function proposalChecks(input: { settings: Settings; supplier: Supplier |
     checkMonthlyBudget({ totalPaise, reservedPaise, budgetInr: settings.limits.monthlyBudgetInr }),
   ];
 }
+
+// send-only-when-approved: the order message goes out only for an order the owner approved (and so reserved budget for), to a supplier who is approved. The one gate every
+// message that carries or repeats an order passes, so no path (a retry, a reminder, a later feature) can send one without the owner's approval.
+export function checkSendOnlyWhenApproved(input: { approved: boolean; supplier: Supplier | undefined }): Decision {
+  if (!input.approved) return block("send-only-when-approved", "The owner has not approved this order, so it is not sent to the supplier.");
+  if (!input.supplier || !input.supplier.approved) return block("send-only-when-approved", "The supplier is not approved at the moment, so the order is not sent.");
+  return allow("send-only-when-approved", "The owner approved this order and the supplier is approved.");
+}
