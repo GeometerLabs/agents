@@ -11,6 +11,7 @@ import type { ShopForm } from "../../templates/commerce/bookings/demo/personalis
 import { normaliseVpa, payeeProblem, vpaProblem } from "../../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../../modules/payments/providers/index.ts";
 import { checkSecret } from "./secrets.ts";
+import { KEEP, keepHidden } from "./keep.ts";
 import { GUPSHUP_APP_NAME } from "../../modules/messaging/gupshup-selfserve.ts";
 import { DEFAULT_PROVIDER, gatewayOf, ownerMarkedOf, providerById } from "../../modules/payments/providers/index.ts";
 import type { SecretName } from "./contract.ts";
@@ -349,9 +350,15 @@ export function upiProblems(id: string, payee: string, w: Words): string[] {
 
 export type Built = { ok: true; settings: Settings } | { ok: false; errors: string[] };
 
-/** The demo's own form-to-settings, then this step's languages, owner and window on top; validateSettings is the last word. */
-export function buildSettings(draft: Draft, example: Settings): Built {
-  const first = settingsFromForm({ ...draft.form, language: draft.primaryLanguage }, example);
+/**
+ * The demo's own form-to-settings, then this step's languages, owner and window on top; validateSettings is the last word. `saved` is the shop's settings.json as written, for a shop
+ * being changed (17 Nov, item 7): the form then starts from what the shop has (its hold minutes, reminders, slots, per-day hours and a service's chair, not the example's), and what
+ * the form does not show is put back by keepHidden before the check. Left out (a new shop, a preview): the example is the start, as before.
+ */
+export function buildSettings(draft: Draft, example: Settings, saved?: unknown): Built {
+  const checkedSaved = saved === undefined ? undefined : validateSettings(saved);
+  const base = checkedSaved?.ok ? checkedSaved.settings : example;
+  const first = settingsFromForm({ ...draft.form, language: draft.primaryLanguage }, base);
   if (!first.ok) return first;
   const s = first.settings;
   const deposit = s.deposit.amountInr;
@@ -363,9 +370,10 @@ export function buildSettings(draft: Draft, example: Settings): Built {
     languages,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
     ...approversFromDraft(draft),
-    cancellation: { windowHours: WHOLE.test(draft.windowHours) ? Number(draft.windowHours) : s.cancellation.windowHours, refundLimitInr: Math.max(example.cancellation.refundLimitInr, deposit) },
+    cancellation: { windowHours: WHOLE.test(draft.windowHours) ? Number(draft.windowHours) : s.cancellation.windowHours, refundLimitInr: Math.max(base.cancellation.refundLimitInr, deposit) },
   };
-  return validateSettings(raw);
+  // `approvers` is the form's own: left out of `raw` when the Operator gave none, so keepHidden deletes the saved ones too
+  return validateSettings(saved === undefined ? raw : keepHidden(raw, saved, KEEP.bookings));
 }
 
 /**

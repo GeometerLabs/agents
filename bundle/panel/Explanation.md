@@ -268,3 +268,38 @@ An account that signs in with geometer.dev has no passphrase, so it gets none. T
 who runs this server", on Geometer's server "write to hello@geometer.dev from the email you gave us". `geometer panel accounts` lists sign-in names and how each
 signs in (never a hash or a token); `geometer panel signout <handle>` ends one account's sessions now.
 
+
+## The phone form never drops what it does not show (17 Nov 2026, owner's item 7)
+
+Each phone form built a shop's settings from its own boxes, so editing a shop deleted every field the form had no box for. A Fees student's `backDues`, `joined` and
+`adult` went; so did a Classes centre's whole `classes` block, an Orders shop's `plans`, `reminder` and each slot's own cut-off, a Stock supplier's `approved` (an edit
+approved a supplier the owner had not), and a Bookings shop's address, a service's chair or tractor (`resource`), hold minutes, reminders and slot minutes (its form
+started from the example's values, not the shop's). An Operator who corrected one fee deleted the old dues and their reminders stopped.
+
+**The rule, one function** (`keep.ts`): start from the settings the shop saved (the raw settings.json, read at save time as the character step already did) and replace
+only what the form owns. `keepHidden(built, saved, spec)`:
+
+- a top-level key the form owns and no longer writes (a cleared address, a removed delivery area, no approvers) is deleted, not brought back;
+- a top-level key the form does not own (`plans`, `reminder`, `joiningMidMonth`, `followUpHours`, and any field another stream adds tomorrow) is kept as saved;
+- `limits` in Stock is shared: the form owns two numbers, `maxQuantity` stays;
+- a list the form owns is matched to the saved entries by `id`; a matched entry keeps every key the form does not write (a slot's `cutoff` and `maxOrders`, a service's
+  `resource`, a supplier's `aliases`/`language`/`approved`); an entry the Operator removed is simply not in the built list, so it goes with all its fields;
+- an entry's `names`: when the name the form shows is the saved name, every saved name (the other languages, the other ways customers say it) is kept;
+- Fees students have no id: they are matched by the settings' own duplicate key (the parent's number and the lowercased name), then, so that a corrected spelling or number
+  does not cost a student their back dues, by the same name alone, then by the same parent and batch, each only when exactly one saved and one typed student fit
+  (two siblings with one parent number are never guessed);
+- a centre with more batches (or a shop with more services) than the form has rows for keeps the rest after the form's own (`shown`), because the form cannot show them.
+
+Only the keys each form OWNS are listed (`KEEP` in keep.ts); no list of hidden keys exists to go out of date. The result goes through the template's own `validateSettings`
+as before, so a kept value that no longer fits is refused in the validator's words and nothing is saved: a back due above every fee that was lowered, a plan that still
+names a slot the Operator removed. The save route passes the saved settings as a new third argument of each `build` (`build(draft, example, saved?)`); a new shop and the step
+previews pass none and behave as before.
+
+Other changes that follow from "start from the saved shop": the Bookings form no longer takes the example's slot minutes, buffer, hold minutes, refund limit, reminders and
+time zone for a shop that exists (it starts from the shop's own); Fees keeps a batch's id by its row, so renaming "Class 9" keeps its students' dues and its timetable;
+Fees students keep their own language (it was set to the centre's first); Fees, Orders and Stock keep the shop's time zone. What this superseded is gone: Orders' `keep.cutoffs`,
+`keep.maxOrders`, `keep.reminder` and Stock's `keep.maxQuantity`, `keep.followUpHours` (the draft carries only the ids a name had).
+
+Tests (`test/keep.test.ts`, written 17 Nov, not run): the function on its own; then for each of the four templates a saved shop with every block the form has no box for,
+read into the form, one field edited, built as the save route does, and everything but the edited field equal; removed students, items, slots and suppliers take their
+hidden fields with them; a corrected spelling keeps back dues; a plan that still uses a removed slot is refused.
