@@ -18,13 +18,22 @@
 // The care that is the same for every template is in modules/: sending a message (messaging/say.ts), the approval cards (assistant/cards.ts), reminders (reminders/), the
 // record (record/). What is left here is stock orders: the catalogue, the order's states and its words.
 import type { Clock } from "../../../../modules/core/clock.ts";
+import type { RuntimeEvent } from "../../../../modules/runtime/events.ts";
+import type { OwnerAction } from "../../../../modules/channels/events.ts";
+import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
+import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
+import type { TalkModel } from "../../../../modules/understanding/talk.ts";
+import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
+import { stockSkill } from "./assistant.ts";
+import { CHAT_LIMITS } from "./chat-limits.ts";
+import { ownerItems } from "./channel.ts";
 import { HOUR, localParts } from "../../../../modules/core/time.ts";
 import { canon } from "../../../../modules/language/format.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { MONTH_NAMES } from "../../../../modules/language/format.ts";
 import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
 import { clip } from "../../../../modules/language/interactive.ts";
-import { actionDigest, cardButtonId, closeCard, expireCards, judgeReply, makeCard, parseCardReply } from "../../../../modules/assistant/cards.ts";
+import { actionDigest, cardButtonId, cardByCode, cardById, closeCard, expireCards, judgeCard, judgeReply, makeCard, openCards, parseCardReply } from "../../../../modules/assistant/cards.ts";
 import type { CardReply } from "../../../../modules/assistant/cards.ts";
 import type { CardAction, CardRecord } from "../../../../modules/assistant/state.ts";
 import { assistantOf } from "../../../../modules/assistant/state.ts";
@@ -40,7 +49,7 @@ import { TEMPLATE_NAMES, STATE_WORDS, money, render } from "./language/templates
 import type { MessageFacts, StateKey, StatusRow, TemplateId } from "./language/templates.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { checkApprovalMatches, checkApprovedSupplier, checkMessageMatchesRecord, checkOneOrderPerRequest, checkQuantity, checkSendOnlyWhenApproved, proposalChecks } from "./limits.ts";
-import { createStore, currentLine, holdsBudget, isOpen, monthOf, nextOrderId, orderRefOf, reservedPaise, totalOfPaise, unansweredFor, unitPaiseOf } from "./order.ts";
+import { SKILL, approvalAction, createStore, currentLine, holdsBudget, isOpen, monthOf, nextOrderId, orderRefOf, reservedPaise, totalOfPaise, unansweredFor, unitPaiseOf } from "./order.ts";
 import type { Asking, PurchaseOrder, Store } from "./order.ts";
 import { quantityIn, readOwnerText, supplierIn, unitIn, padded } from "./reading.ts";
 import type { Reading } from "./reading.ts";
@@ -53,11 +62,16 @@ export interface AgentDeps {
   messaging: Messaging;
   record: ActionRecord;
   store: Store;
+  /** The shop's AI allowance and outside switch (modules/understanding/ai-state.ts), for the assistant's reading. Left out: none. */
+  ai?: AiPolicy;
+  /** How the shop's assistant reads the owner's words (modules/assistant/reading.ts). Left out: the rules alone. The assistant is on only with an "assistant" settings block. */
+  ownerParser?: OwnerParser;
+  /** The talk model (block M). Left out: no talk. */
+  talker?: TalkModel;
 }
 
-export type AgentEvent =
-  | { kind: "message"; message: InboundMessage } // the owner's or a supplier's WhatsApp message
-  | { kind: "tick" }; // time has passed: let cards run out and ask silent suppliers again
+/** What the runtime hands the agent: a WhatsApp message, the clock, or an owner's press or words from their page. Every other kind is the runtime's own and does nothing here. */
+export type AgentEvent = RuntimeEvent;
 
 export interface Agent {
   handle(event: AgentEvent): Promise<void>;
@@ -82,7 +96,6 @@ interface SayArgs {
 /** The card is for 24 hours (modules/assistant/cards.ts); an owner who is asked and does not answer is not asked again by itself. */
 const ASKING_FOR_MS = 6 * HOUR;
 const HANDLED_KEEP = 500;
-const SKILL = "stock-orders";
 
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, messaging, record, store } = deps;
@@ -235,13 +248,8 @@ export function createAgent(deps: AgentDeps): Agent {
     await showCard(order, []);
   }
 
-  /** The card's action, from the order as it stands and the catalogue as it stands now: exactly the fields the owner approves. */
-  function actionOf(o: PurchaseOrder, line: Line): CardAction {
-    return {
-      kind: "order", skill: SKILL, case: o.id,
-      fields: { supplier: o.supplier, supplierWhatsapp: supplierOf(settings, o.supplier).whatsapp, item: o.item, unit: o.unit, qty: o.qty, unitPaise: unitPaiseOf(line), totalPaise: totalOfPaise(unitPaiseOf(line), o.qty), currency: "INR", month: monthOf(clock.now(), tz) },
-    };
-  }
+  /** The card's action, from the order as it stands and the catalogue as it stands now: exactly the fields the owner approves (order.ts approvalAction, shared with the assistant and the page). */
+  const actionOf = (o: PurchaseOrder, line: Line): CardAction => approvalAction(settings, o, line, clock.now());
 
   /** Make (or remake) the order's card and show it. Any older open card of this order is void first (modules/assistant/cards.ts makeCard). */
   async function showCard(o: PurchaseOrder, prefix: TemplateId[]): Promise<void> {
@@ -263,8 +271,10 @@ export function createAgent(deps: AgentDeps): Agent {
     return { ok: true, action: actionOf(o, line) };
   }
 
-  async function onCardReply(reply: CardReply): Promise<void> {
-    const verdict = judgeReply(cards(), reply, clock.now(), currentOf);
+  const onCardReply = (reply: CardReply): Promise<void> => applyVerdict(judgeReply(cards(), reply, clock.now(), currentOf));
+
+  /** The one place a card's verdict becomes what the owner is told and what happens: a tap or a typed code on WhatsApp, or a press on the owner's page (by card id and digest). */
+  async function applyVerdict(verdict: ReturnType<typeof judgeReply>): Promise<void> {
     switch (verdict.verdict) {
       case "unknown": await tellOwner(null, "card_unknown"); return;
       case "closed": await tellOwner(null, "card_closed"); return;
@@ -278,10 +288,7 @@ export function createAgent(deps: AgentDeps): Agent {
       }
       case "refuse": {
         closeCard(cards(), verdict.card, "refused", clock.now());
-        const o = store.orders.get(verdict.card.action.case)!;
-        if (o.state === "awaiting_approval") o.state = "declined";
-        log(o, owner, "owner_decision", "confirmed", { decision: "decline", card: verdict.card.id }, { refs: { evidence: "owner_marked", card: verdict.card.id } });
-        await tellOwner(o, "order_declined");
+        await decline(store.orders.get(verdict.card.action.case)!, verdict.card);
         return;
       }
       case "changed": {
@@ -296,7 +303,7 @@ export function createAgent(deps: AgentDeps): Agent {
         await recheckAndShow(o, ["card_changed"]);
         return;
       }
-      case "do": await approve(verdict.card); return;
+      case "do": await approve(store.orders.get(verdict.card.action.case)!, verdict.card); return;
     }
   }
 
@@ -318,29 +325,46 @@ export function createAgent(deps: AgentDeps): Agent {
    * The approval. Everything from the checks to the reservation is ONE synchronous step (no await): the budget is read from the orders, checked and reserved by
    * changing this order's state before anything else can run, so two approvals racing for the last of the budget cannot both be given it.
    */
-  async function approve(card: CardRecord): Promise<void> {
-    const o = store.orders.get(card.action.case)!;
+  async function approve(o: PurchaseOrder, card?: CardRecord): Promise<boolean> {
+    if (o.state !== "awaiting_approval") return false; // answered, cancelled or voided since: one approval only
     const supplier = supplierOf(settings, o.supplier);
     const month = monthOf(clock.now(), tz);
     const decisions = proposalChecks({ settings, supplier, qty: o.qty, totalPaise: o.totalPaise, reservedPaise: reservedPaise(store, month, o.id) });
     const worst = strictest(decisions);
+    const cardRef = card ? { card: card.id } : {};
     if (worst.verdict !== "allow") {
-      closeCard(cards(), card, "void", clock.now());
+      closeOrderCards(o, "void");
       o.state = "void";
-      log(o, owner, "owner_decision", "blocked", { decision: "approve", card: card.id }, { decisions, notes: worst.reason, refs: { card: card.id } });
+      log(o, owner, "owner_decision", "blocked", { decision: "approve", ...cardRef }, { decisions, notes: worst.reason, refs: { ...cardRef } });
       const template: TemplateId = worst.ruleId === "approved-supplier-only" ? "blocked_supplier" : worst.ruleId === "per-order-cap" ? "blocked_cap" : "blocked_budget";
       await tellOwner(o, template, { facts: { ...budgetFacts(o.id), saidQty: o.qty, maxQty: settings.limits.maxQuantity } });
-      return;
+      return false;
     }
-    closeCard(cards(), card, "done", clock.now());
+    closeOrderCards(o, "done");
     o.state = "approved";
     o.approvedMs = clock.now();
     o.budgetMonth = month;
     const matched = checkApprovalMatches({ same: true });
-    log(o, owner, "owner_decision", "confirmed", { decision: "approve", card: card.id, digest: card.digest, totalPaise: o.totalPaise }, { decisions: [...decisions, matched], notes: "the owner approved exactly this order; the budget is reserved", refs: { card: card.id, evidence: "owner_marked", month } });
+    log(o, owner, "owner_decision", "confirmed", { decision: "approve", ...cardRef, ...(card ? { digest: card.digest } : {}), totalPaise: o.totalPaise }, { decisions: [...decisions, matched], notes: "the owner approved exactly this order; the budget is reserved", refs: { ...cardRef, evidence: "owner_marked", month } });
     // ---- end of the one step; the rest talks to WhatsApp ----
     await tellOwner(o, "order_approved", { facts: budgetFacts(o.id, o.totalPaise) });
     await sendOrder(o);
+    return true;
+  }
+
+  /** Close every open approval card of this order (the agent's own and the assistant's for the same order): an answered order has no card left to tap. */
+  function closeOrderCards(o: PurchaseOrder, to: "done" | "void" | "refused"): void {
+    for (const c of cards().cards) if (c.state === "open" && c.action.skill === SKILL && c.action.kind === "order" && c.action.case === o.id) closeCard(cards(), c, to, clock.now());
+  }
+
+  /** The owner said no to an order that waits (a "no" on the card, or on the assistant's card for it). Nothing is reserved or sent. */
+  async function decline(o: PurchaseOrder, card?: CardRecord): Promise<boolean> {
+    if (o.state !== "awaiting_approval") return false;
+    closeOrderCards(o, "refused");
+    o.state = "declined";
+    log(o, owner, "owner_decision", "confirmed", { decision: "decline", ...(card ? { card: card.id } : {}) }, { refs: { evidence: "owner_marked", ...(card ? { card: card.id } : {}) } });
+    await tellOwner(o, "order_declined");
+    return true;
   }
 
   // ---- the order goes to the supplier ---------------------------------------------------------------------------------------------
@@ -585,7 +609,13 @@ export function createAgent(deps: AgentDeps): Agent {
   async function onOwnerMessage(m: InboundMessage): Promise<void> {
     log(null, owner, "receive_message", "confirmed", { text: m.text, reply: m.reply?.id }, { refs: { from: "owner", messageId: m.id } });
     const card = parseCardReply(m);
-    if (card) { await onCardReply(card); return; }
+    if (card) {
+      // One judge for each card: the agent's own order card is judged here; any other card (a limit, a cancel) is the assistant's, whose judge reads its own proposal.
+      const found = cardByCode(cards(), card.code);
+      if (assistant && found && !isOrderCard(found)) { await assistant.onOwnerMessage(m); return; }
+      await onCardReply(card);
+      return;
+    }
     const reading = readOwnerText(settings, m.text);
     // an answer to a question of ours comes first, unless the owner wrote a new request or a command
     if (store.asking && !(reading.kind === "command" || reading.kind === "status" || (reading.kind === "order" && reading.item))) {
@@ -606,15 +636,16 @@ export function createAgent(deps: AgentDeps): Agent {
         await onRequest(reading, m);
         return;
       }
-      case "other": await didntUnderstand(); return;
+      case "other": if (assistant && (await assistant.onOwnerMessage(m))) return; await didntUnderstand(); return;
     }
   }
 
   async function handleMessage(m: InboundMessage): Promise<void> {
     // a message the provider delivers twice is handled once: it can make no second order, no second approval
-    if (store.handled.includes(m.id)) { log(null, m.from, "receive_message", "blocked", {}, { notes: "this message was delivered twice and handled once", refs: { messageId: m.id } }); return; }
-    store.handled.push(m.id);
-    if (store.handled.length > HANDLED_KEEP) store.handled.splice(0, store.handled.length - HANDLED_KEEP);
+    if (store.handled.has(m.id)) { log(null, m.from, "receive_message", "blocked", {}, { notes: "this message was delivered twice and handled once", refs: { messageId: m.id } }); return; }
+    store.handled.add(m.id);
+    // a Set keeps insertion order, so the oldest ids go first
+    for (const old of store.handled) { if (store.handled.size <= HANDLED_KEEP) break; store.handled.delete(old); }
     if (digits(m.from) === digits(owner)) { await onOwnerMessage(m); return; }
     const supplier = supplierByNumber(m.from);
     if (supplier) { await onSupplierMessage(m, supplier); return; }
@@ -625,6 +656,15 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function tick(): Promise<void> {
     if (store.asking && clock.now() - store.asking.askedMs > ASKING_FOR_MS) store.asking = undefined;
+    // An order that waits must always have a card to answer. Whoever expires cards first (this tick or the assistant's), an order left with no open card is closed here and the
+    // owner is told, so no order is stranded awaiting an answer nobody can give.
+    for (const o of store.orders.values()) {
+      if (o.state === "awaiting_approval" && !openCards(cards(), clock.now()).some((c) => c.action.skill === SKILL && c.action.kind === "order" && c.action.case === o.id)) {
+        o.state = "void";
+        log(o, owner, "owner_decision", "blocked", { decision: "expired" }, { notes: "the card ran out; nothing was sent" });
+        await tellOwner(o, "card_expired");
+      }
+    }
     for (const card of expireCards(cards(), clock.now())) {
       const o = store.orders.get(card.action.case);
       if (o && o.state === "awaiting_approval") { o.state = "void"; log(o, owner, "owner_decision", "blocked", { decision: "expired", card: card.id }, { notes: "the card ran out; nothing was sent" }); await tellOwner(o, "card_expired"); }
@@ -643,10 +683,64 @@ export function createAgent(deps: AgentDeps): Agent {
     }
   }
 
+  // ---- the owner's page (an owner_action: the runtime has checked the owner's link or session before the event was saved) ------------------------------
+
+  /** Is this the agent's own approval card (judged here), as against one of the assistant's? */
+  const isOrderCard = (c: CardRecord): boolean => c.action.skill === SKILL && c.proposal.kind === "order";
+
+  async function onOwnerAction(e: OwnerAction): Promise<void> {
+    const page = { channel: "owner_page", action: e.action };
+    if (e.action === "card_yes" || e.action === "card_no") {
+      const found = cardById(cards(), e.case);
+      if (found && !isOrderCard(found)) {
+        if (!assistant) { log(null, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: page, notes: "a card's answer came for a shop without the assistant: nothing was done" }); return; }
+        return assistant.onPageCard({ card: e.case, digest: e.digest, answer: e.action === "card_yes" ? "yes" : "no" });
+      }
+      if (!found || found.digest !== e.digest) { log(null, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: page, notes: "the owner's page showed a card that is not the one waiting now: nothing was done" }); return; }
+      log(null, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: page, notes: "pressed by the owner on their page; the card's own binding decides, as for a tap on WhatsApp" });
+      return applyVerdict(judgeCard(found, e.action === "card_yes" ? "yes" : "no", clock.now(), currentOf));
+    }
+    // the other buttons answer one thing the page listed, bound by its digest: a press for something that has changed since does nothing
+    const item = ownerItems(settings, store, clock.now(), cards()).find((x) => x.case === e.case && x.digest === e.digest && x.actions.includes(e.action));
+    const o = store.orders.get(e.case) ?? null;
+    if (!item || !o) { log(o, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: page, notes: "what the owner's page showed is not what waits now (already answered or changed): nothing was done" }); return; }
+    log(o, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: page, notes: "pressed by the owner on their page; done exactly as the same words on WhatsApp" });
+    if (e.action === "received") return onReceipt(o, undefined, { id: `owner-page:${e.id}`, from: owner, text: "", timestamp: clock.now() });
+    if (e.action === "retry") return askSupplierAgain(o);
+  }
+
+  /** Ask the supplier about the SAME order now (the page's "ask again"): never a new order, and only an order the supplier has not answered. */
+  async function askSupplierAgain(o: PurchaseOrder): Promise<void> {
+    if (o.ack !== "none" || (o.state !== "sent" && o.state !== "send_unknown")) return;
+    o.askedMs = clock.now(); // the page's digest reads it, so a second press of the same button does nothing
+    await tellSupplier(o, supplierOf(settings, o.supplier), "supplier_check", { action: "ask_supplier_again" });
+  }
+
+  // ---- the shop's assistant (modules/assistant): on only with an "assistant" settings block. Its acts are this agent's own paths ----------------------------------
+  const assistant = assistantForAgent({
+    limits: CHAT_LIMITS, // "Limits, tightened by a tap": the owner may tighten the per-order cap and the monthly budget by a card
+    settings, store, clock, messaging, record, policy: deps.ai ?? {}, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}), ...(deps.talker ? { talker: deps.talker } : {}),
+    skill: stockSkill({
+      settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.optedOut.has(digits(phone)),
+      acts: { approve: (o) => approve(o), decline: (o) => decline(o), cancel: async (o) => { await onCancel(o); return o.state === "cancelled"; } },
+    }),
+    log: (caseId, phone, action, outcome, inputs, more) => log(caseId ? store.orders.get(caseId) ?? null : null, phone, action as Action, outcome, inputs, more),
+    // the AI allowance or a model fault: written in the record only (no owner template for it yet; Deferred)
+    ownerNotice: async (notice) => { log(null, owner, "assistant_notice" as Action, "failed", { notice }, { notes: `the shop's assistant could not read the owner's words (${notice})` }); },
+    languageOf: (phone) => languageOf(phone),
+    optedOut: (phone) => store.optedOut.has(digits(phone)),
+  });
+
   return {
     async handle(event) {
-      if (event.kind === "tick") return tick();
-      return handleMessage(event.message);
+      if (event.kind === "tick") { await tick(); await assistant?.onTick(); return; }
+      if (event.kind === "message") return handleMessage(event.message);
+      if (event.kind === "owner_action") return onOwnerAction(event);
+      if (event.kind === "owner_message") {
+        if (!assistant) { log(null, owner, "owner_page_message", "blocked", {}, { refs: { channel: "owner_page" }, notes: "the owner's talk box is the shop's assistant's, and this shop has none: nothing was read" }); return; }
+        return assistant.onPageMessage({ id: `owner-page:${event.id}`, from: owner, text: event.text, timestamp: clock.now() });
+      }
+      // every other kind (a sign-in, a limit settling, a recovery, a payment event) is the runtime's own: Stock orders has no payments and nothing to recover by hand
     },
   };
 }
