@@ -81,7 +81,8 @@ test("a month with no old due paid has no old-dues figure at all, and an old due
   assert.equal("oldDues" in none.money, false);
   assert.deepEqual(none.money.collected, { count: 1, paise: 180_000 });
   const entries = record("90000", "180000");
-  entries.find((e) => e.refs.paymentId === "pay_old")!.time = "2026-10-20T05:00:00.000Z"; // the old due was paid in October
+  entries.find((e) => e.refs.paymentId === "pay_old")!.time = "2026-10-20T05:00:00.000Z"; // the old due was paid in October (so it was opened before, too)
+  entries.find((e) => e.action === "open_fee" && e.booking === "d-1")!.time = "2026-10-01T05:00:00.000Z";
   assert.equal("oldDues" in build(entries).money, false);
   assert.equal(build(entries, "2026-10").money.oldDues?.paise, 90_000);
 });
@@ -153,9 +154,9 @@ test("with old dues the page, the text and the message each say it in four langu
     assert.deepEqual(bannedIn(`${label} ${STRINGS[language].upiLabel.oldDuesCollected}`, language), []);
     assert.equal(/earn|income/iu.test(`${label} ${STRINGS[language].upiLabel.oldDuesCollected}`), false);
     assert.ok(reportSection(seal(r, key) as never, language).includes(label), `page ${language}`);
-    assert.ok(ownerText(r, language).includes(`${label}: ₹30,000`), `text ${language}`);
+    assert.ok(ownerText(r, language).includes(`${label}: ₹3,000`), `text ${language}`);
     const v = reportValues(r, language, { code: "7K2M-9QXD", link: "https://example.test/r", check: "https://example.test/c", builder: "Divya" });
-    assert.ok(v.collected.startsWith("₹1,20,000") && v.collected.includes(`${label}: ₹30,000`), `message ${language}`);
+    assert.ok(v.collected.startsWith("₹1,20,000") && v.collected.includes(`${label}: ₹3,000`), `message ${language}`);
   }
   // the Meta template bodies are the same for both: the line is inside the collected value, so no template is added or changed
   assert.equal(REPORT_TEMPLATES.length, 4);
