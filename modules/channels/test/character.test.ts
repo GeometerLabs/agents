@@ -7,12 +7,12 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import type { Server } from "node:http";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { frontHandler } from "../front.ts";
 import type { ChannelBackend, Offer, OwnerView } from "../backend.ts";
-import { CHARACTER_MANIFEST, characterReader, pictureFiles, readCharacterManifest, svgDataUri } from "../character-files.ts";
+import { CHARACTER_MANIFEST, animFile, characterReader, pictureFiles, readCharacterManifest, svgDataUri } from "../character-files.ts";
 import type { Face } from "../../assistant/character.ts";
 import { readPagesFile, picturesOf } from "../pages-file.ts";
 
@@ -151,4 +151,34 @@ test("an Orders shop and a Fees centre show the same public face in their page h
     assert.equal(now.status, 200, kind);
     assert.match(await now.text(), /<title>closed<\/title>/u, kind);
   }
+});
+
+// 17 Nov 2026: DiceBear's own animation of each mood, `<mood>-anim.svg`, for the chat's head. A set drawn before animation existed (no such files) still reads, so its faces keep
+// showing until the deployer draws it again; only the SVG animates (a profile photo or a sticker cannot); `now` has none.
+test("a mood's animation is served like its still, a set without animations still reads, and no other format or `now` is animated", async () => {
+  const folder = join(dir, `anim-${Math.random().toString(36).slice(2)}`);
+  writeSet(folder);
+  const bare = characterReader(folder)()!;
+  assert.equal(bare.animation!("well"), undefined, "an older set has no animation, and is still a set");
+  assert.ok(bare.picture("well", "svg"), "its faces keep showing");
+  // add the animated files to the manifest, as render.ts writes them
+  const m = JSON.parse(readFileSync(join(folder, CHARACTER_MANIFEST), "utf8")) as { files: Record<string, { bytes: number; sha256: string }> };
+  for (const face of ["well", "needs", "wrong", "closed", "busy"] as Face[]) {
+    const bytes = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg"><style>@keyframes s{}</style><title>${face}</title></svg>`);
+    writeFileSync(join(folder, animFile(face)), bytes);
+    m.files[animFile(face)] = { bytes: bytes.length, sha256: sha(bytes) };
+  }
+  writeFileSync(join(folder, CHARACTER_MANIFEST), JSON.stringify({ ...JSON.parse(readFileSync(join(folder, CHARACTER_MANIFEST), "utf8")), files: m.files }));
+  assert.ok(readCharacterManifest(readFileSync(join(folder, CHARACTER_MANIFEST), "utf8"))!.files["well-anim.svg"]);
+  const backend: ChannelBackend = { offer: async () => OFFER("well"), submit: async () => "saved", view: async () => null, owner: async () => null as never };
+  const server = createServer(frontHandler({ shops: { x: { publicUrl: "https://partners.example/s/x", backend, character: characterReader(folder) } }, waitMs: 10 }));
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  servers.push(server);
+  const url = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+  const ok = await fetch(`${url}/s/x/character/well-anim.svg`);
+  assert.equal(ok.status, 200);
+  assert.equal(ok.headers.get("content-type"), "image/svg+xml");
+  assert.match(await ok.text(), /@keyframes/u);
+  assert.match(ok.headers.get("cache-control") ?? "", /max-age=86400/u);
+  for (const path of ["now-anim.svg", "well-anim.png", "well-anim.webp"]) assert.equal((await fetch(`${url}/s/x/character/${path}`)).status, 404, path);
 });
