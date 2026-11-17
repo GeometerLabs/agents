@@ -16,8 +16,8 @@ export interface ClassSession {
   endMs: number;
   /** By student key (`studentKey`): the hashes of the links sent for this class. A link already sent is never sent again; a CHANGED link is sent once more. */
   sent: Record<string, string[]>;
-  /** By student key: why the link was withheld (already said in the record once, so the clock does not repeat the line every beat). */
-  withheld: Record<string, string>;
+  /** By student key: why the link was withheld, and when it was last looked at. The reason is said in the record once; the fee is read again at most every few minutes, not every beat. */
+  withheld: Record<string, { reason: string; atMs: number }>;
   /** The teacher's marks, by student key. A student with no mark has not been marked. */
   marks: Record<string, "present" | "absent">;
   /** The owner was asked for attendance (once). */

@@ -92,3 +92,14 @@ export function checkClassAccess(input: AccessInput): Decision {
   if (late) return block(rule, "A fee of the student is not paid and its grace days are over.");
   return allow(rule, "The student is in the batch, the contact agreed, and every fee is paid or within its grace days.");
 }
+
+/**
+ * missed-note-after-teacher-mark: a parent hears that a child missed a class only when the TEACHER marked the child absent and confirmed the class's attendance. A class
+ * link having gone out, a join that never happened, a silence: none of these is attendance, so none sends this note.
+ */
+export function checkNoteAfterMark(input: { mark: "present" | "absent" | undefined; closed: boolean }): Decision {
+  const rule = "missed-note-after-teacher-mark";
+  if (!input.closed) return block(rule, "The teacher has not confirmed this class's attendance yet, so no one is told a child missed it.");
+  if (input.mark !== "absent") return block(rule, "The teacher did not mark this student absent.");
+  return allow(rule, "The teacher marked the student absent and confirmed the class's attendance.");
+}

@@ -15,7 +15,7 @@ import type { MessageFacts } from "../language/templates.ts";
 export type ClassTemplateId =
   // to the contact (a parent, or an adult student): the first question, the answers, the class link, the next class, a doubt, a missed class, the material
   | "class_consent_ask" | "class_consent_yes" | "class_consent_no" | "class_link" | "class_next" | "class_next_none" | "class_not_entitled"
-  | "class_doubt_ask" | "class_doubt_thanks" | "class_missed_note" | "class_material_link"
+  | "class_doubt_ask" | "class_doubt_thanks" | "class_missed_note" | "class_material_link" | "class_material_none"
   // to the teacher (the owner's number): attendance, the class link asked for and saved, doubts, and what the teacher can say
   | "owner_class_attendance" | "owner_class_roster" | "owner_class_marked" | "owner_class_no_link" | "owner_class_link_set"
   | "owner_class_doubts_waiting" | "owner_class_doubts" | "owner_class_nothing" | "owner_class_unknown" | "owner_class_shared";
@@ -43,24 +43,26 @@ const student = (f: MessageFacts) => need(f, "studentName");
 const batch = (f: MessageFacts) => need(f, "batchName");
 
 const en: Set = {
-  class_consent_ask: (f) => `Hello from ${f.businessName}. ${student(f)} is in the ${batch(f)} class. May we send class links and reading material for ${student(f)} to this number? Tap Yes to allow or No to refuse. We do not track, profile or advertise to students. Reply STOP at any time to stop all messages.`,
+  class_consent_ask: (f) => `Hello from ${f.businessName}. ${student(f)} is in ${batch(f)}. May we send class links and reading material for ${student(f)} to this number? Tap Yes to allow or No to refuse. We do not track, profile or advertise to students. Reply STOP at any time to stop all messages.`,
   class_consent_yes: (f) => `Thank you. ${f.businessName} will send ${student(f)}'s class links and reading material to this number. To ask the teacher a doubt, write "doubt". Reply STOP if you do not want these messages.`,
   class_consent_no: (f) => `Understood. ${f.businessName} will not send class links or reading material for ${student(f)} to this number.`,
-  class_link: (f) => `Class reminder from ${f.businessName}. ${student(f)}'s ${batch(f)} class is on ${classDate(f)} at ${classTime(f)}. Join here: ${need(f, "classLink")} Please do not share this link. Reply STOP if you do not want these messages.`,
+  class_link: (f) => `Class reminder from ${f.businessName}. ${student(f)}'s class (${batch(f)}) is on ${classDate(f)} at ${classTime(f)}. Join here: ${need(f, "classLink")} Please do not share this link. Reply STOP if you do not want these messages.`,
   class_next: (f) => `Next classes at ${f.businessName}: ${classLines(f)}. The class link comes to this chat shortly before each class, while the fee is paid or within its grace days.`,
   class_next_none: (f) => `${f.businessName} has no class in the timetable yet for your children's batches. Please ask the teacher.`,
-  class_not_entitled: (f) => `${student(f)}'s ${batch(f)} class link and reading material are sent while the fee is paid or within its grace days. Please pay the fee, or talk to the owner.`,
+  class_not_entitled: (f) => `${student(f)}'s class link and reading material for ${batch(f)} are sent while the fee is paid or within its grace days. Please pay the fee, or talk to the owner.`,
   class_doubt_ask: () => "Please write your doubt in one message. I will hand it to the teacher. I cannot answer subject questions myself.",
-  class_doubt_thanks: (f) => `Your doubt for ${student(f)}'s ${batch(f)} class is with the teacher. They will answer in class or message you here.`,
-  class_missed_note: (f) => `Class note from ${f.businessName}. ${student(f)} was not marked present in the ${batch(f)} class on ${classDate(f)} at ${classTime(f)}. If this is a mistake, please tell the owner. Reply STOP if you do not want these messages.`,
-  class_material_link: (f) => `Reading material from ${f.businessName} for ${student(f)}'s ${batch(f)}: ${need(f, "materialLink")} It opens only while ${student(f)} is in this class and the fee is paid or within its grace days. Please do not share it. Reply STOP if you do not want these messages.`,
+  class_doubt_thanks: (f) => `Your doubt for ${student(f)} (${batch(f)}) is with the teacher. They will answer in class or message you here.`,
+  class_missed_note: (f) => `Class note from ${f.businessName}. ${student(f)} was not marked present in the class (${batch(f)}) on ${classDate(f)} at ${classTime(f)}. If this is a mistake, please tell the owner. Reply STOP if you do not want these messages.`,
+  class_material_link: (f) => `Reading material from ${f.businessName} for ${student(f)} (${batch(f)}): ${need(f, "materialLink")} It opens only while ${student(f)} is in this class and the fee is paid or within its grace days. Please do not share it. Reply STOP if you do not want these messages.`,
 
-  owner_class_attendance: (f) => `Attendance needed at ${f.businessName}: the ${batch(f)} class on ${classDate(f)} at ${classTime(f)} is over. Reply "present" if everyone came, or reply "class" to mark who missed.`,
-  owner_class_roster: (f) => `Class ${batch(f)}, ${classDate(f)} at ${classTime(f)}. Students: ${need(f, "roster")}. Tap Everyone came, or reply "absent" with the numbers of those who missed.`,
+  class_material_none: (f) => `${student(f)}'s reading material for ${batch(f)} cannot be opened from here yet. Please ask the teacher.`,
+
+  owner_class_attendance: (f) => `Attendance needed at ${f.businessName}: the class for ${batch(f)} on ${classDate(f)} at ${classTime(f)} is over. Reply "present" if everyone came, or reply "class" to mark who missed.`,
+  owner_class_roster: (f) => `Attendance list for ${batch(f)}, ${classDate(f)} at ${classTime(f)}. Students: ${need(f, "roster")}. Tap Everyone came, or reply "absent" with the numbers of those who missed.`,
   owner_class_marked: (f) => `Attendance saved for ${batch(f)}, ${classDate(f)} at ${classTime(f)}: ${need(f, "presentCount")} present, ${need(f, "absentCount")} absent. Notes sent to the parents of those absent: ${need(f, "notedCount")}.`,
-  owner_class_no_link: (f) => `Class link needed at ${f.businessName}: no link is set for the ${batch(f)} class on ${classDate(f)} at ${classTime(f)}. Reply "link", the batch name and the full link.`,
-  owner_class_link_set: (f) => `Done. The ${batch(f)} class link is saved. It goes ${need(f, "leadMinutes")} minutes before each class to students whose fee is paid or within the grace days.`,
-  owner_class_doubts_waiting: (f) => `Doubts waiting at ${f.businessName}: ${need(f, "waitingCount")} from the ${batch(f)} class. Reply "doubts" to read them.`,
+  owner_class_no_link: (f) => `Class link needed at ${f.businessName}: no link is set for the class for ${batch(f)} on ${classDate(f)} at ${classTime(f)}. Reply "link", the batch name and the full link.`,
+  owner_class_link_set: (f) => `Done. The class link for ${batch(f)} is saved. It goes ${need(f, "leadMinutes")} minutes before each class to students whose fee is paid or within the grace days.`,
+  owner_class_doubts_waiting: (f) => `Doubts waiting at ${f.businessName}: ${need(f, "waitingCount")} from ${batch(f)}. Reply "doubts" to read them.`,
   owner_class_doubts: (f) => `Doubts waiting: ${need(f, "doubtText")} Reply "answered" and the code of a doubt when you have answered it.`,
   owner_class_nothing: () => "Nothing waits: no class needs attendance and no doubt is open.",
   owner_class_unknown: () => `I could not read that class command. Try "link", the batch name and the full link; "present"; "absent" with the numbers; "doubts"; "class".`,
@@ -79,6 +81,8 @@ const hi: Set = {
   class_doubt_thanks: (f) => `${student(f)} की ${batch(f)} की क्लास का आपका डाउट शिक्षक के पास है। वे क्लास में या यहीं संदेश भेजकर जवाब देंगे।`,
   class_missed_note: (f) => `क्लास की सूचना: ${f.businessName}। ${student(f)} को ${classDate(f)} को ${classTime(f)} की ${batch(f)} की क्लास में उपस्थित नहीं लिखा गया। अगर यह गलती है तो कृपया मालिक को बताएँ। ये संदेश नहीं चाहिए तो STOP लिखें।`,
   class_material_link: (f) => `पढ़ने की सामग्री: ${f.businessName}। ${student(f)} की ${batch(f)} की सामग्री यहाँ खोलें: ${need(f, "materialLink")} यह तभी खुलती है जब ${student(f)} इस क्लास में हो और फीस भरी हो या छूट के दिनों के भीतर हो। कृपया इसे साझा न करें। ये संदेश नहीं चाहिए तो STOP लिखें।`,
+
+  class_material_none: (f) => `${student(f)} की ${batch(f)} की पढ़ने की सामग्री यहाँ से अभी नहीं खुल सकती। कृपया शिक्षक से पूछें।`,
 
   owner_class_attendance: (f) => `उपस्थिति चाहिए: ${f.businessName} में ${batch(f)} की ${classDate(f)} को ${classTime(f)} की क्लास खत्म हो गई। सब आए हों तो "present" लिखें, या किसने क्लास छोड़ी यह चुनने के लिए "class" लिखें।`,
   owner_class_roster: (f) => `क्लास ${batch(f)}, ${classDate(f)} को ${classTime(f)}। विद्यार्थी: ${need(f, "roster")}। सब आए हों तो "सब आए" दबाएँ, या जो नहीं आए उनके नंबर के साथ "absent" लिखें।`,
@@ -105,6 +109,8 @@ const ml: Set = {
   class_missed_note: (f) => `ക്ലാസ് അറിയിപ്പ്: ${f.businessName}. ${classDate(f)}, ${classTime(f)}-ന് നടന്ന ${batch(f)} ക്ലാസിൽ ${student(f)} ഹാജരായതായി രേഖപ്പെടുത്തിയിട്ടില്ല. ഇത് തെറ്റാണെങ്കിൽ ദയവായി ഉടമയെ അറിയിക്കൂ. ഈ സന്ദേശങ്ങൾ വേണ്ടെങ്കിൽ STOP എന്ന് എഴുതുക.`,
   class_material_link: (f) => `പഠന സാമഗ്രികൾ: ${f.businessName}. ${student(f)}-ന്റെ ${batch(f)}-നുള്ള സാമഗ്രികൾ ഇവിടെ തുറക്കുക: ${need(f, "materialLink")} ${student(f)} ഈ ക്ലാസിലുള്ളപ്പോഴും ഫീസ് അടച്ചിരിക്കുമ്പോഴോ ഇളവ് ദിവസങ്ങൾക്കുള്ളിലോ മാത്രമേ ഇത് തുറക്കൂ. ദയവായി ഇത് പങ്കുവയ്ക്കരുത്. ഈ സന്ദേശങ്ങൾ വേണ്ടെങ്കിൽ STOP എന്ന് എഴുതുക.`,
 
+  class_material_none: (f) => `${student(f)}-ന്റെ ${batch(f)}-ലെ പഠന സാമഗ്രികൾ ഇവിടെ നിന്ന് ഇതുവരെ തുറക്കാനാവില്ല. ദയവായി അധ്യാപകനോട് ചോദിക്കൂ.`,
+
   owner_class_attendance: (f) => `ഹാജർ വേണം: ${f.businessName}-ൽ ${classDate(f)}, ${classTime(f)}-ന് ഉള്ള ${batch(f)} ക്ലാസ് കഴിഞ്ഞു. എല്ലാവരും വന്നെങ്കിൽ "present" എന്ന് എഴുതൂ, അല്ലെങ്കിൽ ആരൊക്കെ വന്നില്ല എന്ന് അടയാളപ്പെടുത്താൻ "class" എന്ന് എഴുതൂ.`,
   owner_class_roster: (f) => `ക്ലാസ് ${batch(f)}, ${classDate(f)}, ${classTime(f)}. വിദ്യാർത്ഥികൾ: ${need(f, "roster")}. എല്ലാവരും വന്നെങ്കിൽ "എല്ലാവരും വന്നു" അമർത്തൂ, അല്ലെങ്കിൽ വരാത്തവരുടെ നമ്പറുകളോടെ "absent" എന്ന് എഴുതൂ.`,
   owner_class_marked: (f) => `${batch(f)}, ${classDate(f)}, ${classTime(f)} ഹാജർ സേവ് ചെയ്തു: ${need(f, "presentCount")} പേർ ഹാജർ, ${need(f, "absentCount")} പേർ ഹാജരില്ല. ഹാജരില്ലാത്തവരുടെ രക്ഷിതാക്കൾക്ക് അയച്ച കുറിപ്പുകൾ: ${need(f, "notedCount")}.`,
@@ -129,6 +135,8 @@ const kn: Set = {
   class_doubt_thanks: (f) => `${student(f)} ಅವರ ${batch(f)} ತರಗತಿಯ ನಿಮ್ಮ ಸಂದೇಹ ಶಿಕ್ಷಕರ ಬಳಿ ಇದೆ. ಅವರು ತರಗತಿಯಲ್ಲಿ ಅಥವಾ ಇಲ್ಲಿ ಸಂದೇಶ ಕಳುಹಿಸಿ ಉತ್ತರಿಸುತ್ತಾರೆ.`,
   class_missed_note: (f) => `ತರಗತಿ ಸೂಚನೆ: ${f.businessName}. ${classDate(f)}, ${classTime(f)} ಕ್ಕೆ ನಡೆದ ${batch(f)} ತರಗತಿಯಲ್ಲಿ ${student(f)} ಹಾಜರಾಗಿದ್ದಾರೆ ಎಂದು ಗುರುತಿಸಲಾಗಿಲ್ಲ. ಇದು ತಪ್ಪಾಗಿದ್ದರೆ ದಯವಿಟ್ಟು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿ. ಈ ಸಂದೇಶಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಬರೆಯಿರಿ.`,
   class_material_link: (f) => `ಓದುವ ಸಾಮಗ್ರಿ: ${f.businessName}. ${student(f)} ಅವರ ${batch(f)} ಸಾಮಗ್ರಿಯನ್ನು ಇಲ್ಲಿ ತೆರೆಯಿರಿ: ${need(f, "materialLink")} ${student(f)} ಈ ತರಗತಿಯಲ್ಲಿದ್ದು ಶುಲ್ಕ ಪಾವತಿಸಿದ್ದರೆ ಅಥವಾ ರಿಯಾಯಿತಿ ದಿನಗಳ ಒಳಗಿದ್ದರೆ ಮಾತ್ರ ಇದು ತೆರೆಯುತ್ತದೆ. ದಯವಿಟ್ಟು ಇದನ್ನು ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ಸಂದೇಶಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಬರೆಯಿರಿ.`,
+
+  class_material_none: (f) => `${student(f)} ಅವರ ${batch(f)} ಓದುವ ಸಾಮಗ್ರಿ ಇಲ್ಲಿಂದ ಇನ್ನೂ ತೆರೆಯಲು ಆಗುವುದಿಲ್ಲ. ದಯವಿಟ್ಟು ಶಿಕ್ಷಕರನ್ನು ಕೇಳಿ.`,
 
   owner_class_attendance: (f) => `ಹಾಜರಾತಿ ಬೇಕು: ${f.businessName} ನಲ್ಲಿ ${classDate(f)}, ${classTime(f)} ಕ್ಕೆ ನಡೆದ ${batch(f)} ತರಗತಿ ಮುಗಿದಿದೆ. ಎಲ್ಲರೂ ಬಂದಿದ್ದರೆ "present" ಎಂದು ಬರೆಯಿರಿ, ಅಥವಾ ಯಾರು ಬರಲಿಲ್ಲ ಎಂದು ಗುರುತಿಸಲು "class" ಎಂದು ಬರೆಯಿರಿ.`,
   owner_class_roster: (f) => `ತರಗತಿ ${batch(f)}, ${classDate(f)}, ${classTime(f)}. ವಿದ್ಯಾರ್ಥಿಗಳು: ${need(f, "roster")}. ಎಲ್ಲರೂ ಬಂದಿದ್ದರೆ "ಎಲ್ಲರೂ ಬಂದರು" ಒತ್ತಿ, ಅಥವಾ ಬರದವರ ನಂಬರ್‌ಗಳೊಂದಿಗೆ "absent" ಎಂದು ಬರೆಯಿರಿ.`,
