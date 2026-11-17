@@ -5,6 +5,8 @@
 import { formatDate, formatInr, formatTime } from "../../../../../modules/language/format.ts";
 import type { Language } from "../../../../../modules/language/languages.ts";
 import { localParts } from "../../../../../modules/core/time.ts";
+import { planTemplates } from "../plans/templates.ts";
+import type { PlanFacts, PlanTemplateId } from "../plans/templates.ts";
 
 /** The values of this order's record that a message may use. The outgoing check reads the same object. */
 export interface MessageFacts {
@@ -63,6 +65,8 @@ export interface MessageFacts {
   /** The licence's service notices (B13): who the owner should contact (the partner who set the shop up), and the count the final stop's notice states. */
   partner?: string;
   upcomingCount?: number;
+  /** Monthly plans (17 Nov 2026): the meals of the period a message is about, the days not taken, and the period's first and last day. Only plan messages carry it. */
+  plan?: PlanFacts;
 }
 
 export type TemplateId =
@@ -88,7 +92,7 @@ export type TemplateId =
   | "owner_refund_needs_approval" | "owner_approval_done" | "owner_approval_denied" | "owner_approval_expired" | "owner_approval_failed"
   // the relay again, when a refund needs several people (B37), and the agent when a person at the server settled a refund as made (Guard's already_done)
   | "owner_approval_waiting" | "owner_approval_closed" | "owner_approval_refused" | "owner_refund_settled"
-  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId;
+  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PlanTemplateId;
 
 /**
  * The licence's wind-down and final stop (plan B13; modules/licence). The customer's line answers a request for a new order while ordering is paused; the owner's two are
@@ -114,7 +118,7 @@ export const TEMPLATE_NAMES = { customer: "order_update", owner: "order_owner_no
 
 type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
-type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId>, Template>;
+type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PlanTemplateId>, Template>;
 type UpiSet = Record<UpiTemplateId, Template>;
 type LicenceSet = Record<LicenceTemplateId, Template>;
 type GuardWaitSet = Record<GuardWaitTemplateId, Template>;
@@ -646,7 +650,10 @@ const waitKn: GuardWaitSet = {
   wait_over: (f) => `ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಲು ಆಗಲಿಲ್ಲ: ಆರ್ಡರ್ ವ್ಯವಸ್ಥೆ ಈಗ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತಿಲ್ಲ. ನಿಮ್ಮ ಸಂದೇಶ ಮಾಲೀಕರ ಮಾಡಬೇಕಾದ ಕೆಲಸಗಳ ಪಟ್ಟಿಯಲ್ಲಿದೆ. ದಯವಿಟ್ಟು ನಂತರ ಮತ್ತೆ ಬರೆಯಿರಿ, ಅಥವಾ ನೇರವಾಗಿ ${f.businessName} ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ.`,
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn } };
+// ---- monthly plans (17 Nov 2026): the words are in plans/templates.ts, filled with this file's own helpers ----------------------------------------------------------------
+const PLAN = planTemplates({ need, inr, day, dayAt: dateOf, cutAt, how, payTo });
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...PLAN.en }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...PLAN.hi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...PLAN.ml }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...PLAN.kn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

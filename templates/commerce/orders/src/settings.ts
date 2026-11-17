@@ -8,6 +8,8 @@ import { readApprovers } from "../../../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../../../modules/approvals/people.ts";
 import { isValidTimeZone, parseClock } from "../../../../modules/core/time.ts";
 import { DEFAULT_CAPS } from "../../../../modules/payments/guard-limits.ts";
+import { highestPlanInr, readPlans } from "./plans/settings.ts";
+import type { PlansSettings } from "./plans/settings.ts";
 import { readPaymentSettings } from "../../../../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
 
@@ -91,6 +93,11 @@ export interface Settings {
   approvers?: ApproversSettings;
   /** Item 11e: the shop's assistant (the owner's conversation, the morning line, the character; modules/assistant/settings.ts). Left out: no assistant, as before. */
   assistant?: AssistantSettings;
+  /**
+   * Monthly plans (17 Nov 2026): a meal on set weekdays in one slot for a month's price paid in advance, with pause, skip and renewal (src/plans/). Left out: no plans, and
+   * the agent is exactly as it was.
+   */
+  plans?: PlansSettings;
 }
 
 export type SettingsResult = { ok: true; settings: Settings } | { ok: false; errors: string[] };
@@ -105,7 +112,7 @@ const PHONE = /^\+\d{10,15}$/;
 export function validateSettings(input: unknown): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the shop's name, menu, slots and so on."] };
-  unknownKeys(input, ["name", "address", "timezone", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "reminder", "cancellation", "refund", "payment", "owner", "approvers", "assistant"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "reminder", "cancellation", "refund", "payment", "owner", "approvers", "assistant", "plans"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the shop's name (\"name\").");
@@ -132,6 +139,7 @@ export function validateSettings(input: unknown): SettingsResult {
     errors.push(`One order can come to ₹${highestOrderInr({ menu, orders } as Settings).toLocaleString("en-IN")} (the most items in an order, all of your dearest item), which is more than the ₹${(DEFAULT_CAPS.refundPaisePerDay / 100).toLocaleString("en-IN")} that can be refunded in a day. Lower "orders.maxItemsPerOrder" or the price.`);
   }
   const assistant = readAssistantSettings(input.assistant, errors);
+  const plans = readPlans(input.plans, { languages, slots: new Map([...pickup.map((s) => [s.id, "pickup"] as const), ...(delivery?.slots ?? []).map((s) => [s.id, "delivery"] as const)]), readCutoff, shopCutoff: cutoff as Cutoff, dailyRefundInr: DEFAULT_CAPS.refundPaisePerDay / 100 }, errors);
   if (errors.length > 0) return { ok: false, errors };
   const settings: Settings = {
     name: (name as string).trim(), timezone: timezone as string, languages, menu, orders: orders as Settings["orders"], cutoff: cutoff as Cutoff, pickup: { slots: pickup },
@@ -140,6 +148,7 @@ export function validateSettings(input: unknown): SettingsResult {
   if (delivery) settings.delivery = delivery;
   if (approvers) settings.approvers = approvers;
   if (assistant) settings.assistant = assistant;
+  if (plans) settings.plans = plans;
   if (typeof address === "string") settings.address = address;
   return { ok: true, settings };
 }
@@ -171,7 +180,7 @@ export const slotOf = (settings: Settings, id: string | undefined): { slot: Slot
 export const cutoffOf = (settings: Settings, slot: Slot): Cutoff => slot.cutoff ?? settings.cutoff;
 
 /** The dearest an order can be, in rupees: the most items, all of the dearest item. It bounds a payment link and a refund, so Guard can hold the same number. */
-export const highestOrderInr = (settings: Settings): number => settings.orders.maxItemsPerOrder * Math.max(...settings.menu.map((i) => i.priceInr));
+export const highestOrderInr = (settings: Settings): number => Math.max(settings.orders.maxItemsPerOrder * Math.max(...settings.menu.map((i) => i.priceInr)), highestPlanInr(settings.plans)); // a plan's month is one payment too (17 Nov 2026)
 
 /** The least any one payment link can be for, in rupees. */
 export const LOWEST_LINK_INR = 1;

@@ -13,6 +13,15 @@ import { RULE_IDS } from "./data.ts";
 import type { OrdersReport, GoLiveFinding } from "./data.ts";
 import { STRINGS, moneyLabels } from "./strings.ts";
 import { goLiveLines } from "./text.ts";
+import { PLAN_REPORT_WORDS } from "../src/plans/report.ts";
+import type { PlansReport } from "../src/plans/report.ts";
+
+/** The monthly plans' counts as a small table, for a shop with plans only (counted from the record: src/plans/report.ts). */
+function plansSection(p: PlansReport, language: Language): string {
+  const w = PLAN_REPORT_WORDS[language];
+  const rows: [string, string][] = [[w.active, String(p.active)], [w.started, String(p.started)], [w.renewals, String(p.renewals)], [w.meals, String(p.mealsDelivered)], [w.creditDays, String(p.credits.days)], [w.carried, rupees(p.credits.carriedPaise)], [w.refunded, rupees(p.credits.refundedPaise)], [w.cancelled, String(p.cancelled)], [w.lapsed, String(p.lapsed)]];
+  return `<h2>${esc(w.heading)}</h2>${table([{ text: w.heading }, { text: "", n: true }], rows.map(([label, value]) => [esc(label), fig(value)]))}`;
+}
 
 /** What the page says about the go-live checks: a plain note when they ran on this shop's own settings, a warning in every other case. */
 export function goLiveBlock(goLive: GoLiveFinding, language: Language): string {
@@ -75,6 +84,7 @@ export function reportSection(envelope: Envelope<OrdersReport>, language: Langua
 </div>
 <h2>${esc(p.numbers)}</h2>${numbers}
 ${r.accounting ? moneyBlock(r.accounting.summary, s.moneyBlock, { booksOnly: r.money.booksOnly }) : ""}
+${r.plans ? plansSection(r.plans, language) : ""}
 <h2>${esc(p.soldHeading)}</h2>${sold}${items}
 <h2>${esc(p.stoppedHeading)}</h2>${rules}
 <h2>${esc(p.messagesHeading)}</h2>${messages}

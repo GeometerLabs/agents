@@ -37,6 +37,8 @@ import { NOT_TESTED, notTestedOf } from "../crash-test/not-tested.ts";
 import type { NotTestedId } from "../crash-test/not-tested.ts";
 import type { GoLiveFinding } from "../../../../modules/report/go-live.ts";
 import type { Order } from "../src/order.ts";
+import { plansReportOf } from "../src/plans/report.ts";
+import type { PlansReport } from "../src/plans/report.ts";
 import { annapurna } from "../src/harness.ts";
 import { itemName } from "../src/settings.ts";
 import type { Settings } from "../src/settings.ts";
@@ -139,6 +141,8 @@ export interface OrdersReport {
    * from the evidence pack alone. Left out when the whole record has no money lines, which keeps the bytes of every report made without money.
    */
   accounting?: { summary: AccountingSummary; legacy: LegacyMap };
+  /** Monthly plans (17 Nov 2026): counted from the record (src/plans/report.ts). Made only for a shop with plans, so every other shop's report bytes are as they were. */
+  plans?: PlansReport;
   /** The head of the shop's record as a hash-chained ledger when the report was made (see Bookings' report/data.ts), or null when no ledger was named. Part of the signed bytes. */
   anchor: LedgerHead | null;
 }
@@ -317,6 +321,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
     notTested: notTestedForReport(goLive, settings),
     goLive,
     ...(accounting ? { accounting } : {}),
+    ...(settings.plans ? { plans: plansReportOf(all, month) } : {}),
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };
 }

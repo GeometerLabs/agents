@@ -31,6 +31,8 @@ import type { Settings } from "./settings.ts";
 // Each example is read with a literal file name: the browser build (scripts/build-demo.ts) copies the files a template reads by finding them in the code.
 /** Annapurna Tiffins, the example shop: a tiffin service that takes UPI (the usual for an Operator shop), pickup and delivery. */
 export const annapurna = (): Settings => parseSettings(JSON.parse(readFileSync(new URL("../settings/annapurna-tiffins.example.json", import.meta.url), "utf8")));
+/** Annapurna Tiffins with monthly plans (17 Nov 2026): a weekday lunch plan to pick up and a home-delivered one, credits carried to the next month, UPI. */
+export const annapurnaPlans = (): Settings => parseSettings(JSON.parse(readFileSync(new URL("../settings/annapurna-tiffins-plans.example.json", import.meta.url), "utf8")));
 /** The same shop on Razorpay. */
 export const annapurnaRazorpay = (): Settings => parseSettings(JSON.parse(readFileSync(new URL("../settings/annapurna-tiffins-razorpay.example.json", import.meta.url), "utf8")));
 /** Sweet Crumbs Bakery, a second example: Malayalam and English, pickup only, the whole order paid in advance, on Razorpay. */

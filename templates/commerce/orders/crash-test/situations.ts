@@ -19,6 +19,7 @@ import { checkMessage } from "../src/language/check.ts";
 import { takenOf } from "../src/order.ts";
 import { advanceFor, itemName } from "../src/settings.ts";
 import type { MenuItem, Settings } from "../src/settings.ts";
+import { planSituations } from "./plans.ts";
 import { inLanguage, momentsOf, planShop } from "./shop.ts";
 import type { Shop } from "./shop.ts";
 
@@ -597,6 +598,9 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
       return results;
     },
   });
+
+  // monthly plans (17 Nov 2026): five more, only for a shop whose settings have plans (crash-test/plans.ts), so every other shop's count is as it was
+  for (const s of planSituations(settings, shop.customer)) add(s);
 
   const situations: Situation[] = [];
   const skipped: Skipped[] = [];

@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (60)
+## 1. Messages to the customer (76)
 
 | Template id | When it is sent | Text (Hindi) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -72,8 +72,24 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `upi_refund_sent` | UPI shop: the owner marked the refund sent (only then is the customer told) | मालिक ने ऑर्डर o-3 का आपका ₹120 रिफंड UPI से भेजा हुआ दर्ज किया है। कृपया अपना UPI ऐप देखें। | The owner has marked your ₹120 refund for order o-3 as sent by UPI. Please check your UPI app. |  |
 | `orders_paused` | The shop's licence is in its wind-down: the answer to a customer who asks to order. No order, no link, nothing kept for later | ऑनलाइन ऑर्डर अभी रुके हुए हैं। कृपया सीधे Annapurna Tiffins से संपर्क करें। | Online ordering is paused for now. Please contact Annapurna Tiffins directly. |  |
 | `wait_over` | The shop's system did not answer for 15 minutes from the message (a Guard was down) and the request was not finished: the customer is told so, that the message is on the owner's to-do list, and to write again later or contact the shop. Nothing else is promised | माफ़ कीजिए, मैं आपका अनुरोध पूरा नहीं कर पाया: ऑर्डर सिस्टम अभी जवाब नहीं दे रहा है। आपका संदेश मालिक की काम की सूची में है। कृपया बाद में फिर लिखें, या सीधे Annapurna Tiffins से संपर्क करें। | Sorry, I could not finish your request: the ordering system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact Annapurna Tiffins directly. |  |
+| `plan_choose` | A customer asks for a monthly plan and the shop has more than one: the plans with their prices, to choose by name | आप कौन सा प्लान लेना चाहेंगे? 2 × वेज थाली। कृपया उसका नाम लिखिए। | Which plan would you like? 2 × veg thali. Please write its name. |  |
+| `plan_quote` | A monthly plan is held: the meals, the first and last day, the month's price and the payment link (a UPI shop: with the UPI ID, and the owner confirms) | आपका 2 × वेज थाली प्लान: गुरुवार, 12 नवंबर से शुक्रवार, 11 दिसंबर तक 22 भोजन, महीने के ₹120। यहाँ भुगतान करें: https://rzp.io/i/example। भुगतान दर्ज होते ही आपका प्लान शुरू हो जाएगा। | Your 2 × veg thali plan: 22 meals from Thu 12 Nov to Fri 11 Dec, ₹120 for the month. Pay here: https://rzp.io/i/example. Your plan starts when the payment is recorded. |  |
+| `plan_active` | The plan's payment is recorded: the meals owed, the month, and when a day closes for skipping or pausing | आपका 2 × वेज थाली प्लान चालू है: गुरुवार, 12 नवंबर से शुक्रवार, 11 दिसंबर तक 22 भोजन। आप किसी दिन की अंतिम समय-सीमा तक उसे छोड़ सकते हैं या रोक सकते हैं (गुरुवार, 12 नवंबर के लिए: बुधवार, 11 नवंबर, रात 8:00 बजे), और बंद करने के लिए "cancel plan" लिखें। | Your 2 × veg thali plan is on: 22 meals from Thu 12 Nov to Fri 11 Dec. You can skip a day or pause until its cut-off (for Thu 12 Nov: Wed 11 Nov, 8:00 pm), and write "cancel plan" to stop. |  |
+| `plan_full` | The slot has no place left for the plan's days: the plan is not started | माफ़ कीजिए, आपके बताए दिनों के लिए 2 × वेज थाली का स्लॉट भरा हुआ है, इसलिए प्लान शुरू नहीं हो सका। कृपया मालिक से बात करें। | Sorry, the 2 × veg thali slot is full for the days you asked, so I could not start your plan. Please talk to the owner. |  |
+| `plan_none` | A customer asks about a plan and has none | आपका हमारे साथ अभी कोई प्लान नहीं है। शुरू करने के लिए "monthly plan" लिखें। | You have no plan with us yet. Write "monthly plan" to start one. |  |
+| `plan_pause_done` | The customer paused the plan from a day: no meals from then, the paused days count as credit at the end of the month | आपका 2 × वेज थाली प्लान गुरुवार, 12 नवंबर से रोक दिया गया है। तब से कोई भोजन नहीं भेजा जाएगा, और रुके हुए दिन महीने के अंत में क्रेडिट गिने जाएंगे। फिर शुरू करने के लिए दिन के साथ "resume" लिखें। | Your 2 × veg thali plan is paused from Thu 12 Nov. No meals are sent from then, and the paused days are counted as credit at the end of the month. Write "resume" with a day to start again. |  |
+| `plan_skip_done` | The customer skipped one meal day before its cut-off: it counts as credit at the end of the month | छोड़ दिया गया: गुरुवार, 12 नवंबर को 2 × वेज थाली भोजन नहीं भेजा जाएगा। यह महीने के अंत में क्रेडिट गिना जाएगा। | Skipped: no 2 × veg thali meal on Thu 12 Nov. It is counted as credit at the end of the month. |  |
+| `plan_resume_done` | The customer resumed a paused plan from a day | आपका 2 × वेज थाली प्लान गुरुवार, 12 नवंबर से फिर शुरू हो रहा है। | Your 2 × veg thali plan starts again from Thu 12 Nov. |  |
+| `plan_cutoff_refused` | A pause, skip or resume came after that day's cut-off: refused, with the cut-off time | माफ़ कीजिए, गुरुवार, 12 नवंबर के लिए अब देर हो चुकी है: वह दिन बुधवार, 11 नवंबर, रात 8:00 बजे पर बंद हो गया। कुछ भी बदला नहीं गया। | Sorry, it is too late for Thu 12 Nov: that day closed at Wed 11 Nov, 8:00 pm. Nothing was changed. |  |
+| `plan_no_meal` | A skip, pause or resume for a day with no meal, or one already skipped or paused | गुरुवार, 12 नवंबर को आपके 2 × वेज थाली प्लान का कोई भोजन नहीं है, या वह पहले ही छोड़ा या रोका जा चुका है। कुछ भी बदला नहीं गया। | There is no meal of your 2 × veg thali plan on Thu 12 Nov, or it is already skipped or paused. Nothing was changed. |  |
+| `plan_cancelled` | The customer cancelled the plan: no meal is sent or charged after the days already closed | आपका 2 × वेज थाली प्लान रद्द हो गया है। पहले से बंद हो चुके दिनों के बाद कोई भोजन नहीं भेजा जाएगा और न ही पैसे लिए जाएंगे। | Your 2 × veg thali plan is cancelled. No meal is sent or charged for the days after the ones already closed. |  |
+| `plan_renewal` | The month's end: the next month's payment request with the amount (after any credit), the plan price, the pay-by time and the link; no automatic debit | आपका 2 × वेज थाली प्लान गुरुवार, 12 नवंबर से नवीनीकृत हो रहा है। राशि ₹120 (प्लान की कीमत ₹240)। कृपया बुधवार, 11 नवंबर, रात 8:00 बजे तक भुगतान करें: https://rzp.io/i/example। धन्यवाद। | Your 2 × veg thali plan renews from Thu 12 Nov. Amount ₹120 (plan price ₹240). Please pay by Wed 11 Nov, 8:00 pm: https://rzp.io/i/example. Thank you. |  |
+| `plan_lapsed` | The renewal was not paid before its first meal closed: the plan has stopped, nothing is charged | आपका 2 × वेज थाली प्लान समय पर नवीनीकृत नहीं हुआ, इसलिए बंद हो गया है। फिर शुरू करने के लिए "monthly plan" लिखें। | Your 2 × veg thali plan was not renewed in time, so it has stopped. Write "monthly plan" to start again. |  |
+| `plan_hold_expired` | The first payment of a plan did not come in time: the plan was not started | आपके 2 × वेज थाली प्लान की रोक खत्म हो गई क्योंकि भुगतान समय पर नहीं मिला। फिर शुरू करने के लिए "monthly plan" लिखें। | The hold on your 2 × veg thali plan has ended because the payment was not received in time. Write "monthly plan" to start again. |  |
+| `plan_credit_refund` | Days of a plan not taken (or unused when it ended) are refunded | आपके 2 × वेज थाली प्लान के अनुपयोगी ₹120 आपको वापस किए जा रहे हैं। | ₹120 of your 2 × veg thali plan that was not used is being refunded. |  |
+| `plan_credit_refund_pending` | The same refund is above the refund limit: waiting for the owner | आपके 2 × वेज थाली प्लान के ₹120 की वापसी की पुष्टि मालिक जल्द करेंगे। | The owner will confirm your ₹120 refund for your 2 × veg thali plan shortly. |  |
 
-## 2. Messages to the owner (39)
+## 2. Messages to the owner (41)
 
 Most owner messages are also WhatsApp templates, because they are sent by the agent on its own and WhatsApp then carries only an approved template. Meta approves the wording once, so the wording here is what is submitted.
 
@@ -118,6 +134,8 @@ Most owner messages are also WhatsApp templates, because they are sent by the ag
 | `owner_upi_refund_kept` | UPI shop: the owner kept the money for an order they take by hand | ठीक है। ऑर्डर o-3 के ₹120 आपके खुद लिए गए ऑर्डर के लिए रखे गए हैं। अब कुछ वापस देना बाकी नहीं है। | Okay. The ₹120 for order o-3 is kept for an order you take by hand. Nothing more is owed back. |  |
 | `owner_licence_paused` | The one notice to the owner when the licence winds down: online ordering is paused, who to contact. Never about money | सूचना: Annapurna Tiffins के ऑनलाइन ऑर्डर अभी रुके हुए हैं। पहले के ऑर्डर, रद्द करना और रिफंड पहले की तरह चलते रहेंगे। इस बारे में कृपया Divya, Sri Sai Digital से संपर्क करें। | Notice: online ordering for Annapurna Tiffins is paused for now. Existing orders, cancellations and refunds still go through. Please contact Divya, Sri Sai Digital. |  |
 | `owner_licence_stopped` | The one notice to the owner at the licence's final stop: the partner's service has ended, what is still open, and that hello@geometer.dev will connect the owner with another local partner | सूचना: Annapurna Tiffins के ऑनलाइन ऑर्डर बंद हो गए हैं, क्योंकि Divya, Sri Sai Digital की सेवा समाप्त हो गई है। आने वाले ऑर्डर: 4। इसे किसी दूसरे स्थानीय पार्टनर के साथ जारी रखने के लिए hello@geometer.dev पर लिखें, Geometer आपको जोड़ देगा। | Notice: online ordering for Annapurna Tiffins has stopped, because the service from Divya, Sri Sai Digital has ended. Orders still to come: 4. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you. |  |
+| `owner_plan_started` | To the owner: a new monthly plan is paid, with its meals, month and way (pickup or delivery) | नया मासिक प्लान o-3: +919811111111, 2 × वेज थाली, गुरुवार, 12 नवंबर से शुक्रवार, 11 दिसंबर तक 22 भोजन, पिकअप। | New monthly plan o-3: +919811111111, 2 × veg thali, 22 meals from Thu 12 Nov to Fri 11 Dec, pickup. |  |
+| `owner_plan_cancelled` | To the owner: a plan was cancelled, so no meals are to be made for the days after it | प्लान o-3 (2 × वेज थाली, +919811111111) रद्द हो गया है। रद्द करने के बाद के दिनों के लिए भोजन न बनाएं। | Plan o-3 (2 × veg thali, +919811111111) is cancelled. Do not make meals for the days after the cancellation. |  |
 
 ### The words on the buttons and the lists
 
@@ -189,6 +207,12 @@ Words in Latin letters are how people type the language on WhatsApp. They are li
 | I have paid (a claim; checked against the payment record, never believed on its own) | paid, I have paid | पेमेंट कर दिया · भुगतान कर दिया · पैसे भेज दिए · पैसे भेजे · भेज दिया · भर दिया · दे दिया · पे कर दिया — Latin letters: paid · i paid · i have paid · have paid · payment done · payment made · sent the money · money sent · transferred · paid it · advance paid · bhar diya · pay kar diya · payment kar diya · paid kar diya · de diya · paise bhej diye · adachu · payment cheythu · paid aanu · paavatisiddene · payment madide |  |
 | money back | refund, money back | रिफंड · वापस — Latin letters: refund · refunded · money back · give back · return my money · get back my money · paise wapas · wapas |  |
 | talk to the owner | owner, talk to | मालिक · बात करनी · बात करना · फोन करो — Latin letters: owner · talk to · call me · speak to · manager · malik |  |
+| a monthly plan (a shop with plans): the word for a plan, and for starting one | plan, monthly, subscribe, want | प्लान · मासिक · सब्सक्रिप्शन · महीने का · सब्सक्राइब · शुरू · चाहिए · लेना — Latin letters: plan · monthly · subscription · subscribe · monthly meals · plan chahiye · subscribe · join · start · want · need · take · get |  |
+| a plan: skip a day | skip | स्किप · छोड़ · मत भेजना · नहीं चाहिए — Latin letters: skip · no meal · don't send · dont send |  |
+| a plan: pause from a day | pause, hold | पॉज · रोक · रोकना — Latin letters: pause · hold · break |  |
+| a plan: resume from a day | resume, restart | फिर से शुरू · दोबारा शुरू · चालू करें — Latin letters: resume · restart · continue · start again |  |
+| a plan: cancel it (with the word for a plan) | cancel, stop, end | रद्द · बंद · खत्म — Latin letters: cancel · end · stop · unsubscribe · close |  |
+| a plan: my plan | my plan | मेरा प्लान — Latin letters: my plan · my subscription · plan status |  |
 | a quantity in words (one to ten in English and Hindi, one to five in Malayalam and Kannada) | one, two, three | एक · दो · तीन · चार · पाँच · पांच · छह · छः · सात · आठ · नौ · दस — Latin letters: one · two · three · four · five · six · seven · eight · nine · ten · ek · teen · char · chaar · paanch · panch · chhe · chhah · saat · aath · nau · das · onnu · randu · moonnu · munnu · naalu · anchu · ondu · eradu · mooru · naalku · aidu |  |
 
 The shop's own item names and its slot names ("lunch", "dinner") are the shop's settings, written by the person who sets the shop up: they are not in this list.
@@ -205,6 +229,21 @@ The shop's own item names and its slot names ("lunch", "dinner") are the shop's 
 | पैसे वापस चाहिए | I want my money back | refund |  |
 
 ## 6. The monthly report
+
+### The monthly plans' lines (a shop with plans only)
+
+| Where | Wording | Native reviewer: OK / change to … |
+| --- | --- | --- |
+| heading | मासिक प्लान |  |
+| active | महीने के अंत में चल रहे प्लान |  |
+| started | शुरू हुए प्लान |  |
+| renewals | चुकाए गए नवीनीकरण |  |
+| meals | भेजे गए भोजन |  |
+| creditDays | न लिए गए भोजन के दिन (क्रेडिट) |  |
+| carried | आगे के भुगतान में ले जाया गया क्रेडिट |  |
+| refunded | वापस किया गया क्रेडिट |  |
+| cancelled | रद्द किए गए प्लान |  |
+| lapsed | समय पर न चुकाए गए नवीनीकरण |  |
 
 The owner's monthly text is five short lines of "label: number". Every number, amount and date is counted from the record and written by the same formatters as the messages; only the words around them are below.
 

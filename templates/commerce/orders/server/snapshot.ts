@@ -18,6 +18,8 @@ const codec = snapshotCodec<Store>(1, [
   { name: "assistant", kind: "optional-object" },
   // item 11h: the shop page's requests (by their handles' hashes) and the messages its customers were given; a shop nobody ordered from on the page never has it
   { name: "channel", kind: "optional-object" },
+  // monthly plans (17 Nov 2026): the plans, their periods and every meal day's state. A plan has no counter of its own: its id is made from its first period's order number, which `nextOrder` keeps
+  { name: "plans", kind: "optional-object" },
 ]);
 
 export const serializeStore: (store: Store) => string = codec.serialize;
