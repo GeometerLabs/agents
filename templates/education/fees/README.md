@@ -130,6 +130,10 @@ The limits are pure functions (`src/limits.ts`) so Guard can run the same ones. 
 
 [`sell/guide.en.md`](sell/guide.en.md) (and `.hi`, `.ml`, `.kn`) teaches a local Operator or a builder to pitch it, and [`sell/one-pager.en.html`](sell/one-pager.en.html) is the sheet the owner keeps. The demo in section 4 is `scripts/walkthrough.ts`: there is no phone demo for Fees yet. `test/sell-guide.test.ts` holds the guide's numbers and quotes to the real hand check and walkthrough. The Fees price is the Business plan's (see the guide's section 6).
 
+## Classes (an add-on, 17 Nov 2026)
+
+A `classes` block in the settings turns the same package into Classes: a timetable, the class link sent shortly before each class only to students whose fee is paid or within the grace days, private reading material per batch, attendance marked by the teacher in one tap, a short note to the parent when a child misses a class, and doubts handed to the teacher. Fees (money, reminders, the report) is unchanged and shared. Without the block nothing of it runs. See `settings/bright-tuition-classes.example.json`, the Classes section of Explanation.md and the Classes rows of Deferred.md.
+
 ## What is in the folder
 
 | Path | What |
