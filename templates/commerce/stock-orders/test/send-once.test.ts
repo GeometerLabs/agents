@@ -148,7 +148,8 @@ test("a refusal that says nothing went out is tried again once, an hour later, a
   const w = createWorld({ unapproved: ["stock_order_to_supplier"] });
   await w.ownerSays("order 10 boxes of hair colour from Ravi Traders");
   await w.ownerSays(w.approveText());
-  assert.equal(w.order("po-1")?.state, "approved", "the owner is not told it failed yet: a second try is coming");
+  assert.equal(w.order("po-1")?.state, "approved", "held while a second try is coming");
+  assert.equal(items(w).filter((i) => i.kind === "po_refused").length, 1, "and the owner is told at once on their page");
   assert.equal(w.orderMessagesTo(RAVI).length, 0);
   for (const l of LANGUAGES) w.messaging.approve("stock_order_to_supplier", l); // the provider approves the template meanwhile
   await w.advance(30);
@@ -268,4 +269,51 @@ test("the owner's page draws the unconfirmed order in all four languages, with t
     assert.ok(html.includes('value="got_it"') && html.includes('value="send_again"') && html.includes(item.digest), language);
     assert.ok(html.includes(STOCK_WORDS[language].unsure("Ravi Traders", "po-1")), language);
   }
+});
+
+test("a refused order message is shown to the owner at once, with the time of the next try, and the item closes by itself when a later try goes through", async () => {
+  const w = createWorld({ unapproved: ["stock_order_to_supplier"] });
+  await w.ownerSays("order 10 boxes of hair colour from Ravi Traders");
+  await w.ownerSays(w.approveText());
+  const [item] = items(w).filter((i) => i.kind === "po_refused");
+  assert.ok(item);
+  assert.deepEqual(item.actions, ["try_now", "cancel_order"]);
+  assert.equal(item.startMs, intentsOf(w, "purchase_order")[0].lastTryMs! + 60 * 60_000, "the time of the next automatic try");
+  for (const language of LANGUAGES) {
+    const html = ownerPage({ base: "/o/x", language, view: ownerView(w.settings, w.store, w.clock.now()), relayAsks: [] });
+    assert.ok(html.includes(STOCK_WORDS[language].tryNow) && html.includes(STOCK_WORDS[language].cancelOrder) && html.includes('value="try_now"') && html.includes('value="cancel_order"'), language);
+  }
+  for (const l of LANGUAGES) w.messaging.approve("stock_order_to_supplier", l);
+  await w.advance(61);
+  assert.equal(w.order("po-1")?.state, "sent");
+  assert.equal(items(w).filter((i) => i.kind === "po_refused").length, 0, "closed by itself");
+  assert.equal(w.messaging.sentTo(w.owner).filter((m) => /went to Ravi Traders/u.test(m.text)).length, 1, "the owner is told once that it went");
+});
+
+test("\"Try now\" tries the same intent at once, as one of its three tries; pressed again after it went, it does nothing", async () => {
+  const w = createWorld({ unapproved: ["stock_order_to_supplier"] });
+  await w.ownerSays("order 10 boxes of hair colour from Ravi Traders");
+  await w.ownerSays(w.approveText());
+  const [item] = items(w).filter((i) => i.kind === "po_refused");
+  for (const l of LANGUAGES) w.messaging.approve("stock_order_to_supplier", l);
+  await press(w, "try_now", item.case, item.digest, "p-now");
+  assert.equal(w.orderMessagesTo(RAVI).length, 1, "sent without waiting the hour");
+  assert.equal(intentsOf(w, "purchase_order").length, 1, "the same intent, not a new one");
+  assert.equal(intentsOf(w, "purchase_order")[0].tries, 2);
+  await press(w, "try_now", item.case, item.digest, "p-now2");
+  assert.equal(w.orderMessagesTo(RAVI).length, 1);
+});
+
+test("\"Cancel order\" on a refused message stops the retries and frees the budget", async () => {
+  const w = createWorld({ unapproved: ["stock_order_to_supplier"] });
+  await w.ownerSays("order 10 boxes of hair colour from Ravi Traders");
+  await w.ownerSays(w.approveText());
+  const [item] = items(w).filter((i) => i.kind === "po_refused");
+  await press(w, "cancel_order", item.case, item.digest, "p-cancel");
+  assert.equal(w.order("po-1")?.state, "cancelled");
+  assert.equal(items(w).length, 0);
+  for (const l of LANGUAGES) w.messaging.approve("stock_order_to_supplier", l);
+  await w.advance(120);
+  assert.equal(w.orderMessagesTo(RAVI).length, 0, "never sent after it was cancelled");
+  assert.equal(w.store.sendOnce?.intents[0].status, "gave_up");
 });

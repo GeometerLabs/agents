@@ -101,6 +101,23 @@ export function resolveUnknown(state: SendOnceState, id: string, how: UnknownRes
   return intent;
 }
 
+/** Messages the provider refused (nothing went out) that will be tried again: the owner is told at once, with the time of the next try (`lastTryMs + RETRY_AFTER_MS`). */
+export const openRefusals = (state: SendOnceState | undefined, kind?: string): SendIntent[] =>
+  (state?.intents ?? []).filter((i) => i.status === "failed" && i.tries < MAX_TRIES && (kind === undefined || i.kind === kind));
+
+/** When a refused message is next tried by itself. */
+export const nextTryMs = (i: SendIntent): number => (i.lastTryMs ?? 0) + RETRY_AFTER_MS;
+
+/**
+ * The owner's "Try now" on a refused message: the SAME intent is due at the next run (not a new intent, not a new claim beyond the one every try writes), and only while it is
+ * `failed` with tries left. It counts as a try, so the bound of three holds.
+ */
+export function retryNow(state: SendOnceState, id: string): SendIntent | undefined {
+  const intent = openRefusals(state).find((i) => i.id === id);
+  if (intent) intent.lastTryMs = 0;
+  return intent;
+}
+
 export interface SendOnceDeps {
   state: SendOnceState;
   now(): number;

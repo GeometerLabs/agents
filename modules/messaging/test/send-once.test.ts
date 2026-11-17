@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ApiError, NotSentError, TimeoutError } from "../../core/faults.ts";
 import { HOUR } from "../../core/time.ts";
-import { MAX_TRIES, RETRY_AFTER_MS, nextIntentId, nothingWasSent, openUnknowns, queueSend, resolveUnknown, runSendOnce } from "../send-once.ts";
+import { MAX_TRIES, RETRY_AFTER_MS, nextIntentId, nothingWasSent, openRefusals, openUnknowns, queueSend, resolveUnknown, retryNow, runSendOnce } from "../send-once.ts";
 import type { SendEnding, SendIntent, SendOnceState } from "../send-once.ts";
 import type { SaidOutcome } from "../say.ts";
 
@@ -151,4 +151,19 @@ test("resolveUnknown refuses a message that is not unconfirmed", async () => {
   await h.run();
   assert.equal(resolveUnknown(h.state, "po-1:order:1", "owner_got_it"), undefined);
   assert.equal(resolveUnknown(h.state, "nope", "owner_got_it"), undefined);
+});
+
+test("a refused message is listed at once; \"try now\" makes the same intent due, only while it is refused with tries left", async () => {
+  const h = harness(["not_sent", "accepted"]);
+  const i = h.ask();
+  assert.equal(retryNow(h.state, i.id), undefined, "not refused yet");
+  await h.run();
+  assert.deepEqual(openRefusals(h.state).map((x) => x.id), [i.id]);
+  assert.equal(retryNow(h.state, i.id), i);
+  await h.run();
+  assert.equal(h.sends(), 2, "tried at once, without the hour");
+  assert.equal(h.state.intents.length, 1);
+  assert.equal(i.status, "confirmed");
+  assert.equal(openRefusals(h.state).length, 0);
+  assert.equal(retryNow(h.state, i.id), undefined);
 });

@@ -33,7 +33,7 @@ import { CHAT, QUICK } from "../../modules/channels/words-chat.ts";
  * made-up values so a native reviewer reads whole sentences. The card for a supplier order and the two limits' words are with "card.stock-orders.*" and "limits.assistant.*".
  */
 const stockSamples: Record<string, unknown[]> = {
-  "stock.owner.approve": ["Ravi Traders", "10 box hair colour", "₹12,000"], "stock.owner.silent": ["Ravi Traders", "po-3: 10 box hair colour"], "stock.owner.receive": ["Ravi Traders", "po-3: 10 box hair colour"], "stock.owner.unsure": ["Ravi Traders", "po-3"],
+  "stock.owner.approve": ["Ravi Traders", "10 box hair colour", "₹12,000"], "stock.owner.silent": ["Ravi Traders", "po-3: 10 box hair colour"], "stock.owner.receive": ["Ravi Traders", "po-3: 10 box hair colour"], "stock.owner.unsure": ["Ravi Traders", "po-3"], "stock.owner.refused": ["Ravi Traders", "po-3", "10:30"],
   "stock.panel.problems.tooManySuppliers": [12], "stock.panel.problems.supplierBad": [2], "stock.panel.problems.supplierTwice": [2, "Ravi Traders"], "stock.panel.problems.numberTwice": [2],
   "stock.panel.problems.tooManyLines": [40], "stock.panel.problems.lineBad": [3], "stock.panel.problems.lineSupplier": [3, "Ravi"], "stock.panel.problems.priceBad": [3], "stock.panel.problems.reorderBad": [3],
   "stock.panel.problems.lineTwice": [3], "stock.panel.problems.capAbovePrice": ["₹1,200"], "stock.panel.shop.messages.line": [6],
