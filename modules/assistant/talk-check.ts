@@ -23,7 +23,10 @@ export type TalkCheck = { ok: true; text: string; facts: CheckFacts } | { ok: fa
 /** The kinds of promise a sentence can make. A source backs a sentence only for a kind its own words state. */
 export type ClaimKind = "assure" | "speaks_for_owner" | "money_off";
 
-const U = (re: string) => new RegExp(re, "iu");
+/** Text and word lists are compared in one folded form: decomposed, with the Devanagari nukta dropped, so "मुफ़्त" and "मुफ्त" (typed either way) are the same word. */
+const fold = (s: string): string => s.normalize("NFD").replace(/\u093c/gu, "");
+const norm = (s: string): string => fold(plain(s));
+const U = (re: string) => new RegExp(fold(re), "iu");
 const NL = "(?![\\p{L}\\p{M}])"; // a word's end, in scripts where \b does not work
 const NB = "(?<![\\p{L}\\p{M}])";
 
@@ -45,7 +48,7 @@ const LONG_DIGITS = /\d[\d\s().+-]{6,}\d/gu;
 
 /** Which kinds of claim a text states. */
 export function claimKindsOf(text: string): ClaimKind[] {
-  const t = plain(text);
+  const t = norm(text);
   return (Object.keys(CLAIM_WORDS) as ClaimKind[]).filter((k) => CLAIM_WORDS[k].test(t));
 }
 
@@ -91,12 +94,12 @@ export function checkTalk(i: CheckInput): TalkCheck {
   for (const s of i.answer.sentences) for (const id of s.sources) if (!byId.has(id)) return fail(1, `a sentence names the source "${id}", which is not one this speaker may see`);
 
   // 4. completion words: refused, whatever they rest on (checked before the numbers so the record says the plainer reason)
-  for (const s of i.answer.sentences) if (COMPLETION.test(plain(s.text))) return fail(4, "a sentence says that something was done; only the shop's own messages, written from the record, say that");
+  for (const s of i.answer.sentences) if (COMPLETION.test(norm(s.text))) return fail(4, "a sentence says that something was done; only the shop's own messages, written from the record, say that");
 
   // 3. claims and commitments: to a customer, each needs a note for everyone or a setting that says the same kind of thing
   if (i.role === "customer") {
     for (const s of i.answer.sentences) {
-      const t = plain(s.text);
+      const t = norm(s.text);
       if ([...BANNED.any, ...BANNED.hi, ...BANNED.ml, ...BANNED.kn].some((re) => re.test(t))) return fail(3, "a sentence uses a word the shop's documents never use (a safety, guarantee or earnings claim)");
       for (const kind of claimKindsOf(t)) {
         const backing = s.sources.map((id) => byId.get(id)!).filter((src) => src.kind !== "record" && claimKindsOf(src.text).includes(kind));
@@ -114,7 +117,7 @@ export function checkTalk(i: CheckInput): TalkCheck {
       const same = new RegExp(`${m[1].replace(/\./gu, "\\.")}\\s*(?:%|per ?cent|प्रतिशत|ശതമാനം|ಶೇಕಡಾ|ಪ್ರತಿಶತ|ಶೇ)`, "iu");
       if (!same.test(own)) return fail(2, `a sentence says ${m[1]}%, which none of its sources states`);
     }
-    for (const m of t.matchAll(new RegExp(NUMBER_WORDS.source, "giu"))) if (!own.toLowerCase().includes(m[0].toLowerCase())) return fail(2, `a sentence uses the number word "${m[0]}", which none of its sources uses`);
+    for (const m of norm(s.text).matchAll(new RegExp(NUMBER_WORDS.source, "giu"))) if (!norm(own).toLowerCase().includes(m[0].toLowerCase())) return fail(2, `a sentence uses the number word "${m[0]}", which none of its sources uses`);
     const r = checkText(s.text, factsFor(sources, i));
     if (!r.ok) return fail(2, r.problems.join(" "));
   }
