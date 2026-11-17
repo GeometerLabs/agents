@@ -57,7 +57,7 @@ export const ALERT_WORDS: Record<Language, AlertWords> = {
 
 /**
  * The shared script: register this page's worker at its own scope, and subscribe on a press with the shop's public key, posting the subscription to `data-save`.
- * `data-off` (owner only) unsubscribes this phone. Hidden until the browser can do push. Nothing is kept in the browser beyond the browser's own subscription.
+ * `data-off` (owner only) unsubscribes this phone. `data-signer` ("streetlist": the Streetlist app's one key and root worker, W3) is passed on with the subscription so the shop signs through the relay. Hidden until the browser can do push. Nothing is kept in the browser beyond the browser's own subscription.
  */
 export const ALERTS_SCRIPT = `(() => {
   const box = document.getElementById("alerts");
@@ -75,11 +75,13 @@ export const ALERTS_SCRIPT = `(() => {
       if ((await Notification.requestPermission()) !== "granted") { msg.textContent = d.blocked; return; }
       const r = await reg;
       let s = await r.pushManager.getSubscription();
-      // a subscription made for another key (the shop's server was restored, or set up again) would be refused by the push service: it is made again
+      // a subscription made for another key (the shop's server was restored, or set up again) would be refused by the push service: it is made again.
+      // (On the Streetlist app's one shared subscription (data-signer) this happens only if Streetlist's own key changed; a shop's page never unsubscribes it otherwise,
+      // because every shop in the app shares it.)
       const had = s && s.options && s.options.applicationServerKey ? new Uint8Array(s.options.applicationServerKey) : null;
       if (s && had && (had.length !== key.length || had.some((b, i) => b !== key[i]))) { await s.unsubscribe(); s = null; }
       s = s || (await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key }));
-      await post(d.save, { subscription: s.toJSON() });
+      await post(d.save, { subscription: s.toJSON(), ...(d.signer ? { signer: d.signer } : {}) });
       msg.textContent = d.done;
       if (d.reload) location.reload(); else await show();
     } catch { msg.textContent = d.failed; } finally { on.disabled = false; }

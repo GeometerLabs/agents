@@ -48,8 +48,21 @@ export const guestCookie = (path: string, handle: string): string => `${CHAT_COO
  * The chat page's content policy: PAGE_POLICY and exactly what the page needs, each at its own address (the pages origin is shared by every shop, so nothing says 'self'):
  * its one script by this response's nonce, the three calls it makes, its alerts' worker, and the one font (this page only; every other page keeps PAGE_POLICY).
  */
-export const chatPolicy = (base: string, nonce: string): string =>
-  `${PAGE_POLICY}; script-src 'nonce-${nonce}'; connect-src ${base}/send ${base}/thread ${base}/push; worker-src ${base}/sw.js; font-src ${base}/font.woff2`;
+export const chatPolicy = (base: string, nonce: string, app?: { origin: string; worker: boolean }): string =>
+  // W3: through the Streetlist door the page also names the app's manifest (so the page can be added as the Streetlist app), and, when the shop sends through
+  // Streetlist's one push key, the app's own worker at the site's root; each at its exact address, never 'self' (the pages origin is shared by every shop)
+  `${PAGE_POLICY}; script-src 'nonce-${nonce}'; connect-src ${base}/send ${base}/thread ${base}/push; worker-src ${base}/sw.js${app?.worker ? ` ${app.origin}/sw.js` : ""}; font-src ${base}/font.woff2${app ? `; manifest-src ${app.origin}/manifest.webmanifest` : ""}`;
+
+/**
+ * Which key and worker alerts use on this page, in one place so the page that offers them and the call that takes them cannot disagree (W3). Served through the Streetlist
+ * door (`viaDoor`) by a shop that has a relay, a phone subscribes with Streetlist's ONE key and the app's root worker, and the shop is told to use the relay for it
+ * (`signer`); any other page keeps the shop's own key and its own worker under the page.
+ */
+export function pushChoice(key: { publicKey?: unknown; relayKey?: unknown } | undefined, viaDoor: boolean, publicUrl: string): { key: string; via?: { sw: string; scope: string }; signer: "own" | "streetlist" } | undefined {
+  if (typeof key?.publicKey !== "string") return undefined;
+  if (viaDoor && typeof key.relayKey === "string") { const origin = new URL(publicUrl).origin; return { key: key.relayKey, via: { sw: `${origin}/sw.js`, scope: `${origin}/` }, signer: "streetlist" }; }
+  return { key: key.publicKey, signer: "own" };
+}
 
 let font: Buffer | undefined;
 const fontBytes = (): Buffer => (font ??= readFileSync(new URL("./fonts/baloo-2-latin-wght-normal.woff2", import.meta.url)));
@@ -106,7 +119,9 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     if (!backend.push || !hash || !limiter.take("chat", address)) return kit.sendJson(res, backend.push && hash ? 429 : 404, { error: "Alerts are not on here." });
     let body: Record<string, unknown>;
     try { body = JSON.parse((await kit.readBody(req, kit.maxForm)) ?? "") as Record<string, unknown>; } catch { return kit.sendJson(res, 400, { error: "Send JSON." }); }
-    const r = await backend.push({ op: "customer_subscribe", handle: hash, subscription: body.subscription });
+    // Streetlist's one key only on a page served through the door, and only when the shop has a relay (the runtime refuses it otherwise)
+    const signer = a.viaDoor && body.signer === "streetlist" ? "streetlist" : undefined;
+    const r = await backend.push({ op: "customer_subscribe", handle: hash, subscription: body.subscription, ...(signer ? { signer } : {}) });
     return kit.sendJson(res, r.status === 200 ? 200 : r.status === 403 ? 403 : r.status === 404 ? 404 : 400, r.status === 200 ? { result: "done" } : { error: String(r.body.error ?? "That was not taken.") });
   }
 
@@ -142,16 +157,16 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     }
     const thread = guest ? await backend.chat(guest) : { lines: [], answered: false, capped: false, retentionDays: 30 };
     const key = backend.push ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
-    const pushKey = key?.body.on === true && typeof key.body.publicKey === "string" ? key.body.publicKey : undefined;
+    const choice = key?.body.on === true ? pushChoice(key.body, a.viaDoor, shop.publicUrl) : undefined;
     const nonce = randomBytes(16).toString("base64");
     const read = thread as { personality?: string; paint?: string };
     const personality = (PERSONALITIES as readonly string[]).includes(read.personality ?? "") ? read.personality as Personality : undefined;
     const html = chatPage({
       shop: offer, kind, language, base, home: shop.publicUrl, nonce, thread,
-      ...(personality ? { personality } : {}), ...(read.paint ? { paint: read.paint } : {}), ...(pushKey ? { pushKey } : {}),
+      ...(personality ? { personality } : {}), ...(read.paint ? { paint: read.paint } : {}), ...(choice ? { pushKey: choice.key, ...(choice.via ? { pushVia: choice.via } : {}) } : {}),
       onStreetlist: a.viaDoor, fontUrl: `${base}/font.woff2`, ...(url.searchParams.get("notice") === "rate" ? { notice: "rate" as const } : {}),
     });
-    return kit.sendHtml(res, 200, html, { "content-security-policy": chatPolicy(base, nonce), "x-robots-tag": "noindex", ...(cookie ? { "set-cookie": cookie } : {}) });
+    return kit.sendHtml(res, 200, html, { "content-security-policy": chatPolicy(base, nonce, a.viaDoor ? { origin: new URL(shop.publicUrl).origin, worker: choice?.signer === "streetlist" } : undefined), "x-robots-tag": "noindex", ...(cookie ? { "set-cookie": cookie } : {}) });
   }
 
   return kit.sendHtml(res, 404, NOT_FOUND);

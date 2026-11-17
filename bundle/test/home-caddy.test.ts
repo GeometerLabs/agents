@@ -23,6 +23,8 @@ const build = (marker: string) => buildPack([
   { path: "index.html", data: text(`<p>HOME ${marker}</p>`) }, { path: "404.html", data: text("<p>STREETLIST-404</p>") }, { path: "shops.html", data: text("<p>SHOPS</p>") },
   { path: "partners.html", data: text("<p>PARTNERS</p>") }, { path: "privacy.html", data: text("<p>PRIVACY</p>") }, { path: "examples/glow-salon.html", data: text("<p>GLOW</p>") },
   { path: "assets/main-Ab_1.js", data: text("console.log('" + "x".repeat(2000) + "')") }, { path: "favicon.svg", data: text("<svg/>") },
+  // the phone app (W3): the chats page, the root worker, the manifest and an icon
+  { path: "chats.html", data: text("<p>CHATS</p>") }, { path: "sw.js", data: text("self.skipWaiting()") }, { path: "manifest.webmanifest", data: text('{"name":"Streetlist"}') }, { path: "streetlist-192.png", data: text("png") },
   { path: "robots.txt", data: text("User-agent: *\nAllow: /\nDisallow: /examples/\n") },
   // the hosted demo (scripts/build-demo.ts): the list, one page, the shared script and a template's module
   { path: "demo.html", data: text("<p>DEMO-LIST</p>") }, { path: "demo/orders.html", data: text("<p>DEMO-ORDERS</p>") }, { path: "demo/page.js", data: text("console.log('demo')") },
@@ -88,6 +90,25 @@ test("assets: a year, immutable, no page policy, the security headers, compresse
   assert.ok(miss.body.includes("STREETLIST-404"));
   assert.equal(miss.h.get("cache-control"), "no-cache");
   assert.equal((await get("/favicon.svg")).status, 200);
+});
+
+test("the phone app's files (W3): /chats is the home's clean page, the worker and manifest are served by Caddy with their types and no cache, and a shop named chat is still the door's", { skip: !ON && "REAL_CADDY=1 not set" }, async () => {
+  const chats = await get("/chats");
+  assert.equal(chats.status, 200);
+  assert.ok(chats.body.includes("CHATS"));
+  assert.equal(chats.h.get("cache-control"), "no-cache");
+  assert.match(chats.h.get("content-security-policy") ?? "", /manifest-src 'self'/u);
+  const to = async (path: string, location: string) => { const r = await get(path); assert.equal(r.status, 301, path); assert.equal(r.h.get("location"), location, path); };
+  await to("/chats.html", "/chats"); await to("/chats/", "/chats");
+  const sw = await get("/sw.js");
+  assert.equal(sw.status, 200);
+  assert.match(sw.h.get("content-type") ?? "", /javascript/u);
+  assert.equal(sw.h.get("cache-control"), "no-cache", "a worker is always re-checked");
+  const manifest = await get("/manifest.webmanifest");
+  assert.equal(manifest.status, 200);
+  assert.match(manifest.h.get("content-type") ?? "", /^application\/manifest\+json/u);
+  assert.equal((await get("/streetlist-192.png")).status, 200);
+  assert.equal((await get("/glow-salon/chat")).status, 200, "a shop's own chat address is the door's, not the home's");
 });
 
 test("clean URLs, trailing slash and /examples behave as on Firebase: one clean address, 301 from the others, 302 for /examples", { skip: !ON && "REAL_CADDY=1 not set" }, async () => {
