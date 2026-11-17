@@ -949,7 +949,12 @@ export function createAgent(deps: AgentDeps): Agent {
   async function onMenu(phone: string, understood: boolean, text = "", overrideAttempt = false): Promise<void> {
     if (!licence().takesNewWork) return pausedReply(phone, "menu");
     const due = openDues(store, phone)[0];
-    if (!due) { await tellCustomer(null, phone, ["fee_nothing_due"]); return; }
+    if (!due) {
+      // block M: words nothing could read, from a parent with nothing due: the assistant may still answer from what the centre has published (the owner's button goes with it)
+      if (!understood && text !== "" && (await assistant?.talkToCustomer({ phone, text, language: languageOf(phone), ...(overrideAttempt ? { overrideAttempt: true } : {}), menu: () => ({ buttons: buttonsFor(languageOf(phone), ["owner"]) }) }))) return;
+      await tellCustomer(null, phone, ["fee_nothing_due"]);
+      return;
+    }
     const { fresh } = await reconcile(due);
     const { receipt } = await settle(due, fresh);
     if (due.state !== "open") { if (!receipt) await tellCustomer(due, phone, ["fee_already_paid"]); return; }
