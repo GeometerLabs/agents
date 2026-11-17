@@ -1249,13 +1249,16 @@ Bookings setting, so it is not declared (Deferred).
 
 **The rule, in `limits/chat-limits.ts` (pure).** `isStrictlyTighter` compares numbers, never words: ₹500 loosens a limit of ₹200 and is refused. `inForce` is the
 settings value, then any active change the file has not caught up with, then the tighter of that and every *pending tightening* (it is only stricter). A pending
-loosening and a failed change never count. `judgeChange` adds the hard bounds and "busy" (a loosening waits while another change to the same limit is pending).
+loosening and a failed change never count. `judgeChange` adds the hard bounds and "busy" (a loosening waits while another change to the same limit is pending). The bounds fence
+the loose end only for a tightening: a ₹1,000 limit with a ₹200 deposit can still be tightened to ₹500 (a loosening may not pass the bound).
 
 **The draft and the card (`assistant/limits-card.ts`).** The rules read which declared limit (its words, in any of the four languages) and the value (a rupee amount
 needs a rupee sign; a count is the first whole number). A talk model may only *name* a declared limit by id (`onLimit(text, forced)`), never write a value. The limits are
 one more `OwnerSkill`, so the card is the existing binding unchanged: `prepare` reads the limit in force NOW, so the digest (limit, value now, new value) differs if a
 change landed between the card and the tap, and the old card is void. A value that is not tighter gets words, not a card ("Your refund limit is ₹200 now, so ₹500 would
-loosen it... to loosen, open your own app"). A rule that names no declared limit is not ours: the talk (stream M1) saves it as a note.
+loosen it... to loosen, open your own app"). A rule that names no declared limit is not ours: the talk (stream M1) saves it as a note. M1's hook is `assistant.onLimit(text, limitId?)` (conversation.ts): a talk model may pass
+the declared limit's id, and the value is still read from the words. The reading asks `OwnerContext.limitRule` (intents.ts) before the kind words, so a rule with no case
+reference is a limit, not a refund or a list; the orders-a-day words need their noun ("close 16 Nov for a day" is not a limit).
 
 **The tap and what the runtime does.** `execute` writes a `LimitChange` (`pending`) into the assistant's state, saved in the same step, and puts the tighter value into the
 settings object the agent reads: the core (`runtime/core.ts`, option `limits`) calls `apply` before every step, so the runtime's checks use the tighter value at once and

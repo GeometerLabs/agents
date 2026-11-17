@@ -517,5 +517,5 @@ The service is `bundle/services/speech/` (README there). It was written and test
 - **A deploy that takes the new file and then fails its proof** is undone by putting the old number back and letting the normal pass deploy the old file; the shop is stopped by
   the existing kill switch in between (the deploy's own rule for a running Guard that does not match). Not run against Docker: the tests use fakes of ops, the deploy and the Guards.
 - **The settings file is rewritten as indented JSON** (one number changed). Its formatting is not kept byte for byte; the old file is kept beside the journal.
-- **Not run in a real shop:** the restart of the runtime by the deploy (the runtime reading the new number from its client folder) is assumed from the service's file hash and
-  not observed here. If the runtime is not restarted by a settings change, the change fails after five minutes and the file goes back.
+- **Not run in a real shop:** the runtime's restart on a settings change is read from the compose file (the runtime service's files are `client/settings.json`, `runtime.json` and
+  `pathway.lock`, hashed, and a changed hash restarts it: `bundle/generate/compose.ts`, `deploy.ts bringUp`), not observed. If it did not restart, the change fails after five minutes and the file goes back.
