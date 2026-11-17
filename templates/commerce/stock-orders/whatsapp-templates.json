@@ -1,0 +1,654 @@
+[
+  {
+    "name": "stock_order_to_supplier",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "नया ऑर्डर {{1}} ({{2}} की ओर से): {{3}} × {{4}} ({{5}}), {{6}} प्रति {{7}}, कुल {{8}}। कृपया \"OK\" लिखें अगर आप यह दे सकते हैं, या \"NO\" अगर नहीं दे सकते।",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Glow Unisex Salon",
+              "10",
+              "हेयर कलर",
+              "डिब्बा",
+              "₹450",
+              "डिब्बा",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_order_to_supplier",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "New order {{1}} from {{2}}: {{3}} × {{4}} ({{5}}), {{6}} per {{7}}, total {{8}}. Please reply OK to confirm you can supply it, or NO if you cannot.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Glow Unisex Salon",
+              "10",
+              "hair colour",
+              "box",
+              "₹450",
+              "box",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_order_to_supplier",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പുതിയ ഓർഡർ {{1}} ({{2}}-ൽ നിന്ന്): {{3}} × {{4}} ({{5}}), ഒരു {{6}}-ന് {{7}}, ആകെ {{8}}. ഇത് നൽകാൻ കഴിയുമെങ്കിൽ \"OK\" എന്നും കഴിയില്ലെങ്കിൽ \"NO\" എന്നും മറുപടി തരൂ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Glow Unisex Salon",
+              "10",
+              "ഹെയർ കളർ",
+              "ബോക്സ്",
+              "ബോക്സ്",
+              "₹450",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_order_to_supplier",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಹೊಸ ಆರ್ಡರ್ {{1}} ({{2}} ಅವರಿಂದ): {{3}} × {{4}} ({{5}}), ಒಂದು {{6}}ಗೆ {{7}}, ಒಟ್ಟು {{8}}. ಇದನ್ನು ಪೂರೈಸಲು ಸಾಧ್ಯವಾದರೆ \"OK\" ಎಂದು, ಸಾಧ್ಯವಿಲ್ಲದಿದ್ದರೆ \"NO\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Glow Unisex Salon",
+              "10",
+              "ಹೇರ್ ಕಲರ್",
+              "ಬಾಕ್ಸ್",
+              "ಬಾಕ್ಸ್",
+              "₹450",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_order_reminder",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "पहले भेजे ऑर्डर {{1}} की याद दिलाना ({{2}} की ओर से): {{3}} × {{4}} ({{5}}), {{6}} प्रति {{7}}, कुल {{8}}। यह वही ऑर्डर है, नया नहीं। कृपया \"OK\" लिखें अगर आप दे सकते हैं, या \"NO\" अगर नहीं दे सकते।",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Glow Unisex Salon",
+              "10",
+              "हेयर कलर",
+              "डिब्बा",
+              "₹450",
+              "डिब्बा",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_order_reminder",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Reminder about order {{1}} from {{2}}, sent earlier: {{3}} × {{4}} ({{5}}), {{6}} per {{7}}, total {{8}}. This is the same order, not a new one. Please reply OK to confirm, or NO if you cannot supply it.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Glow Unisex Salon",
+              "10",
+              "hair colour",
+              "box",
+              "₹450",
+              "box",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_order_reminder",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നേരത്തെ അയച്ച ഓർഡർ {{1}}-നെക്കുറിച്ചുള്ള ഓർമ്മപ്പെടുത്തൽ ({{2}}-ൽ നിന്ന്): {{3}} × {{4}} ({{5}}), ഒരു {{6}}-ന് {{7}}, ആകെ {{8}}. ഇത് അതേ ഓർഡറാണ്, പുതിയതല്ല. നൽകാൻ കഴിയുമെങ്കിൽ \"OK\" എന്നും കഴിയില്ലെങ്കിൽ \"NO\" എന്നും മറുപടി തരൂ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Glow Unisex Salon",
+              "10",
+              "ഹെയർ കളർ",
+              "ബോക്സ്",
+              "ബോക്സ്",
+              "₹450",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_order_reminder",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಈ ಮೊದಲು ಕಳುಹಿಸಿದ ಆರ್ಡರ್ {{1}} ಬಗ್ಗೆ ನೆನಪೋಲೆ ({{2}} ಅವರಿಂದ): {{3}} × {{4}} ({{5}}), ಒಂದು {{6}}ಗೆ {{7}}, ಒಟ್ಟು {{8}}. ಇದು ಅದೇ ಆರ್ಡರ್, ಹೊಸದಲ್ಲ. ಪೂರೈಸಲು ಸಾಧ್ಯವಾದರೆ \"OK\" ಎಂದು, ಸಾಧ್ಯವಿಲ್ಲದಿದ್ದರೆ \"NO\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Glow Unisex Salon",
+              "10",
+              "ಹೇರ್ ಕಲರ್",
+              "ಬಾಕ್ಸ್",
+              "ಬಾಕ್ಸ್",
+              "₹450",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_approval_card",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "मंज़ूरी के लिए ऑर्डर {{1}}: {{2}} × {{3}} ({{4}}), {{5}} प्रति {{6}}, कुल {{7}}, {{8}} से। इस महीने आपके {{9}} बजट में से {{10}} रखा जा चुका है, इस ऑर्डर के बाद {{11}} बचेगा। बटन से मंज़ूर करें, या \"yes {{12}}\" लिखें। मना करने के लिए \"no {{13}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "10",
+              "हेयर कलर",
+              "डिब्बा",
+              "₹450",
+              "डिब्बा",
+              "₹4,500",
+              "Ravi Traders",
+              "₹20,000",
+              "₹0",
+              "₹15,500",
+              "K7M2QX",
+              "K7M2QX"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_approval_card",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Order {{1}} for your approval: {{2}} × {{3}} ({{4}}), {{5}} per {{6}}, total {{7}}, from {{8}}. This month {{9}} of your {{10}} budget is reserved, so {{11}} is left after this order. Approve with the button, or reply \"yes {{12}}\". To decline reply \"no {{13}}\".",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "10",
+              "hair colour",
+              "box",
+              "₹450",
+              "box",
+              "₹4,500",
+              "Ravi Traders",
+              "₹0",
+              "₹20,000",
+              "₹15,500",
+              "K7M2QX",
+              "K7M2QX"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_approval_card",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "അനുമതിക്കായി ഓർഡർ {{1}}: {{2}} × {{3}} ({{4}}), ഒരു {{5}}-ന് {{6}}, ആകെ {{7}}, {{8}}-ൽ നിന്ന്. ഈ മാസം നിങ്ങളുടെ {{9}} ബജറ്റിൽ {{10}} മാറ്റിവച്ചിട്ടുണ്ട്, ഈ ഓർഡറിന് ശേഷം {{11}} ബാക്കി. ബട്ടൺ അമർത്തി അനുവദിക്കൂ, അല്ലെങ്കിൽ \"yes {{12}}\" എന്ന് മറുപടി നൽകൂ. വേണ്ടെങ്കിൽ \"no {{13}}\" എന്ന് നൽകൂ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "10",
+              "ഹെയർ കളർ",
+              "ബോക്സ്",
+              "ബോക്സ്",
+              "₹450",
+              "₹4,500",
+              "Ravi Traders",
+              "₹20,000",
+              "₹0",
+              "₹15,500",
+              "K7M2QX",
+              "K7M2QX"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_approval_card",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಒಪ್ಪಿಗೆಗಾಗಿ ಆರ್ಡರ್ {{1}}: {{2}} × {{3}} ({{4}}), ಒಂದು {{5}}ಗೆ {{6}}, ಒಟ್ಟು {{7}}, {{8}} ಅವರಿಂದ. ಈ ತಿಂಗಳು ನಿಮ್ಮ {{9}} ಬಜೆಟ್‌ನಲ್ಲಿ {{10}} ಮೀಸಲಿಡಲಾಗಿದೆ, ಈ ಆರ್ಡರ್ ನಂತರ {{11}} ಉಳಿಯುತ್ತದೆ. ಬಟನ್ ಒತ್ತಿ ಒಪ್ಪಿ, ಅಥವಾ \"yes {{12}}\" ಎಂದು ಉತ್ತರಿಸಿ. ಬೇಡವಾದರೆ \"no {{13}}\" ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "10",
+              "ಹೇರ್ ಕಲರ್",
+              "ಬಾಕ್ಸ್",
+              "ಬಾಕ್ಸ್",
+              "₹450",
+              "₹4,500",
+              "Ravi Traders",
+              "₹20,000",
+              "₹0",
+              "₹15,500",
+              "K7M2QX",
+              "K7M2QX"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_confirmed",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सप्लायर {{1}} ने ऑर्डर {{2}} पक्का किया: {{3}} × {{4}} ({{5}}), {{6}} प्रति {{7}}, कुल {{8}}। इसका मतलब है कि वे देंगे, यह नहीं कि माल आ गया। माल आने पर \"received {{9}}\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders",
+              "po-3",
+              "10",
+              "हेयर कलर",
+              "डिब्बा",
+              "₹450",
+              "डिब्बा",
+              "₹4,500",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_confirmed",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Order {{1}} confirmed by the supplier, {{2}}: {{3}} × {{4}} ({{5}}), {{6}} per {{7}}, total {{8}}. This means they will supply it, not that it has arrived. When it comes, reply \"received {{9}}\".",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "10",
+              "hair colour",
+              "box",
+              "₹450",
+              "box",
+              "₹4,500",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_confirmed",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "വിതരണക്കാരൻ {{1}} ഓർഡർ {{2}} സ്ഥിരീകരിച്ചു: {{3}} × {{4}} ({{5}}), ഒരു {{6}}-ന് {{7}}, ആകെ {{8}}. അവർ നൽകും എന്നാണ് ഇതിനർത്ഥം, സാധനം എത്തി എന്നല്ല. സാധനം വരുമ്പോൾ \"received {{9}}\" എന്ന് നൽകൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders",
+              "po-3",
+              "10",
+              "ഹെയർ കളർ",
+              "ബോക്സ്",
+              "ബോക്സ്",
+              "₹450",
+              "₹4,500",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_confirmed",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪೂರೈಕೆದಾರ {{1}} ಆರ್ಡರ್ {{2}} ಖಚಿತಪಡಿಸಿದ್ದಾರೆ: {{3}} × {{4}} ({{5}}), ಒಂದು {{6}}ಗೆ {{7}}, ಒಟ್ಟು {{8}}. ಅವರು ಪೂರೈಸುತ್ತಾರೆ ಎಂದರ್ಥ, ಸರಕು ಬಂದಿದೆ ಎಂದಲ್ಲ. ಬಂದಾಗ \"received {{9}}\" ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders",
+              "po-3",
+              "10",
+              "ಹೇರ್ ಕಲರ್",
+              "ಬಾಕ್ಸ್",
+              "ಬಾಕ್ಸ್",
+              "₹450",
+              "₹4,500",
+              "po-3"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_declined",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सप्लायर {{1}} ने ऑर्डर {{2}} मना कर दिया: {{3}} × {{4}} ({{5}}), {{6}} प्रति {{7}}, कुल {{8}}। माल नहीं आएगा, और रखा हुआ पैसा इस महीने के बजट में वापस आ गया है। कृपया दूसरा सप्लायर चुनें।",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders",
+              "po-3",
+              "10",
+              "हेयर कलर",
+              "डिब्बा",
+              "₹450",
+              "डिब्बा",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_declined",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Order {{1}} was declined by the supplier, {{2}}: {{3}} × {{4}} ({{5}}), {{6}} per {{7}}, total {{8}}. Nothing is coming, and the money reserved is released back to this month's budget. Please choose another supplier.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "10",
+              "hair colour",
+              "box",
+              "₹450",
+              "box",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_declined",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "വിതരണക്കാരൻ {{1}} ഓർഡർ {{2}} നിരസിച്ചു: {{3}} × {{4}} ({{5}}), ഒരു {{6}}-ന് {{7}}, ആകെ {{8}}. സാധനം വരില്ല, മാറ്റിവച്ച തുക ഈ മാസത്തെ ബജറ്റിലേക്ക് തിരികെ വന്നു. മറ്റൊരു വിതരണക്കാരനെ തിരഞ്ഞെടുക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders",
+              "po-3",
+              "10",
+              "ഹെയർ കളർ",
+              "ബോക്സ്",
+              "ബോക്സ്",
+              "₹450",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_declined",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪೂರೈಕೆದಾರ {{1}} ಆರ್ಡರ್ {{2}} ಅನ್ನು ನಿರಾಕರಿಸಿದ್ದಾರೆ: {{3}} × {{4}} ({{5}}), ಒಂದು {{6}}ಗೆ {{7}}, ಒಟ್ಟು {{8}}. ಸರಕು ಬರುವುದಿಲ್ಲ, ಮೀಸಲಿಟ್ಟ ಹಣ ಈ ತಿಂಗಳ ಬಜೆಟ್‌ಗೆ ಮರಳಿದೆ. ದಯವಿಟ್ಟು ಬೇರೆ ಪೂರೈಕೆದಾರರನ್ನು ಆರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders",
+              "po-3",
+              "10",
+              "ಹೇರ್ ಕಲರ್",
+              "ಬಾಕ್ಸ್",
+              "ಬಾಕ್ಸ್",
+              "₹450",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_silent",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "सप्लायर {{1}} से ऑर्डर {{2}} का {{3}} घंटे बाद भी जवाब नहीं आया: {{4}} × {{5}} ({{6}}), {{7}} प्रति {{8}}, कुल {{9}}। मैंने फिर पूछा और नया ऑर्डर नहीं भेजूँगा। कृपया उन्हें फ़ोन करें। ऑर्डर पक्का नहीं है।",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders",
+              "po-3",
+              "24",
+              "10",
+              "हेयर कलर",
+              "डिब्बा",
+              "₹450",
+              "डिब्बा",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_silent",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "No answer yet to order {{1}} from the supplier, {{2}}, after {{3}} hours: {{4}} × {{5}} ({{6}}), {{7}} per {{8}}, total {{9}}. I asked again and will not send a new order. Please call them. The order is not confirmed.",
+        "example": {
+          "body_text": [
+            [
+              "po-3",
+              "Ravi Traders",
+              "24",
+              "10",
+              "hair colour",
+              "box",
+              "₹450",
+              "box",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_silent",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "വിതരണക്കാരൻ {{1}}-ൽ നിന്ന് ഓർഡർ {{2}}-ന് {{3}} മണിക്കൂറിന് ശേഷവും മറുപടിയില്ല: {{4}} × {{5}} ({{6}}), ഒരു {{7}}-ന് {{8}}, ആകെ {{9}}. ഞാൻ വീണ്ടും ചോദിച്ചു, പുതിയ ഓർഡർ അയയ്ക്കില്ല. അവരെ വിളിക്കൂ. ഓർഡർ സ്ഥിരീകരിച്ചിട്ടില്ല.",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders",
+              "po-3",
+              "24",
+              "10",
+              "ഹെയർ കളർ",
+              "ബോക്സ്",
+              "ബോക്സ്",
+              "₹450",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_owner_supplier_silent",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಪೂರೈಕೆದಾರ {{1}} ಅವರಿಂದ ಆರ್ಡರ್ {{2}} ಗೆ {{3}} ಗಂಟೆಗಳ ನಂತರವೂ ಉತ್ತರ ಬಂದಿಲ್ಲ: {{4}} × {{5}} ({{6}}), ಒಂದು {{7}}ಗೆ {{8}}, ಒಟ್ಟು {{9}}. ನಾನು ಮತ್ತೆ ಕೇಳಿದ್ದೇನೆ ಮತ್ತು ಹೊಸ ಆರ್ಡರ್ ಕಳುಹಿಸುವುದಿಲ್ಲ. ದಯವಿಟ್ಟು ಅವರಿಗೆ ಕರೆ ಮಾಡಿ. ಆರ್ಡರ್ ಖಚಿತವಾಗಿಲ್ಲ.",
+        "example": {
+          "body_text": [
+            [
+              "Ravi Traders",
+              "po-3",
+              "24",
+              "10",
+              "ಹೇರ್ ಕಲರ್",
+              "ಬಾಕ್ಸ್",
+              "ಬಾಕ್ಸ್",
+              "₹450",
+              "₹4,500"
+            ]
+          ]
+        }
+      }
+    ]
+  }
+]
