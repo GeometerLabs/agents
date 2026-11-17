@@ -81,7 +81,8 @@ import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
 import type { MessageFacts, TemplateId } from "./language/templates.ts";
 import { checkFeeLink, checkMessageMatchesRecord, checkNoReminderOncePaid, checkOneRefundPerPayment, checkPaidOnlyWhenRecorded, checkReminderCap, checkRefundLimit, checkWaiver } from "./limits.ts";
-import { highestDueInr } from "./settings.ts";
+import { batchOf, highestDueInr } from "./settings.ts";
+import { feeForMonth, isJoiningMonth, parseJoined } from "./joining.ts";
 import type { Settings } from "./settings.ts";
 
 export interface AgentDeps {
@@ -556,25 +557,45 @@ export function createAgent(deps: AgentDeps): Agent {
     const now = clock.now();
     const today = localParts(now, tz);
     const next = today.month === 12 ? { year: today.year + 1, month: 1 } : { year: today.year, month: today.month + 1 };
+    const rule = settings.joiningMidMonth ?? "usual"; // "usual" runs exactly the code that was here before the rule existed
     for (const student of settings.students) {
+      const language = student.language ?? store.customers.get(student.parent)?.language ?? settings.languages[0];
+      const has = (key: string) => [...store.dues.values()].some((d) => d.customer === student.parent && d.studentName === student.name && d.month === key);
+      // Earlier months the owner listed as unpaid when the agent started: each is a fee of its own (its own link and payments), opened once and reminded now
+      for (const back of student.backDues ?? []) {
+        if (has(back.month)) continue;
+        const [year, month] = back.month.split("-").map(Number);
+        const date = dueDateOf(year, month);
+        const due = register(store, newDue(settings, student, language, back.month, date, dueMsOf(date), back.amountInr));
+        due.backDue = true;
+        due.reminders = [{ atMs: now, sent: false }];
+        books.post({ kind: "fee_charged", case: due.id, amountPaise: due.feeInr * 100 }, (m) => log(due, due.customer, "open_fee", "confirmed", { month: back.month, feeInr: due.feeInr, backDue: true }, { refs: { month: back.month, amountPaise: String(due.feeInr * 100), backDue: "true", ...m }, notes: `an earlier unpaid month for ${due.studentName} (${back.month}), entered by the owner in the settings, carried as a fee of its own` }));
+      }
+      const joined = rule !== "usual" && student.joined ? parseJoined(student.joined) : undefined;
       for (const m of [{ year: today.year, month: today.month }, next]) {
         const key = monthKey(m);
-        if ([...store.dues.values()].some((d) => d.customer === student.parent && d.studentName === student.name && d.month === key)) continue;
-        const date = dueDateOf(m.year, m.month);
+        if (has(key)) continue;
+        const owed = feeForMonth(rule, batchOf(settings, student).monthlyFeeInr, joined, m.year, m.month);
+        if (!owed.owed) continue; // not joined yet, or the centre starts a mid-month joiner's fee next month
+        const joiningNow = isJoiningMonth(joined, m.year, m.month);
+        let date = dueDateOf(m.year, m.month);
+        // a student who joins after the due day is due on the joining day, so the grace days (and any late fee) count from then, not from a day before they came
+        if (joiningNow && dueMsOf(date) < dueMsOf(joined!)) date = joined!;
         const moments = reminderMoments(date);
         if (now < Math.min(...moments)) continue;
-        if (Math.min(...moments) < store.startedAtMs) continue; // its first reminder day came before the agent first ran: that month is not chased
-        const due = register(store, newDue(settings, student, student.language ?? store.customers.get(student.parent)?.language ?? settings.languages[0], key, date, dueMsOf(date)));
+        if (!joiningNow && Math.min(...moments) < store.startedAtMs) continue; // its first reminder day came before the agent first ran: that month is not chased (a new joiner's fee is new, so it is)
+        const due = register(store, newDue(settings, student, language, key, date, dueMsOf(date), owed.feeInr));
+        if (owed.part) due.partMonth = owed.part;
         // Every reminder day is kept, the ones that have passed too: opened on the first reminder's day, or later, the ones already due go as ONE message (the shared rule).
         due.reminders = moments.map((atMs) => ({ atMs, sent: false }));
-        books.post({ kind: "fee_charged", case: due.id, amountPaise: due.feeInr * 100 }, (m) => log(due, due.customer, "open_fee", "confirmed", { month: key, feeInr: due.feeInr }, { refs: { month: key, amountPaise: String(due.feeInr * 100), ...m }, notes: `the fee for ${due.studentName}, ${key}, is open` }));
+        books.post({ kind: "fee_charged", case: due.id, amountPaise: due.feeInr * 100 }, (m2) => log(due, due.customer, "open_fee", "confirmed", { month: key, feeInr: due.feeInr }, { refs: { month: key, amountPaise: String(due.feeInr * 100), ...(owed.part ? { partMonth: owed.part.rule, joined: owed.part.joined } : {}), ...m2 }, notes: owed.part ? `the fee for ${due.studentName}, ${key}, is open (the student joined on ${owed.part.joined}: ${owed.part.rule === "prorata" ? `${owed.part.days} of ${owed.part.daysInMonth} days` : "the full month"}, by the centre's rule)` : `the fee for ${due.studentName}, ${key}, is open` }));
       }
     }
   }
 
   /** The grace days are over and the fee is not paid: add the late fee once. It is read from the payment record first, so a fee paid on the last day gets none. */
   async function addLateFee(due: Due): Promise<void> {
-    if (settings.lateFeeInr <= 0 || due.lateFeeInr > 0 || due.state !== "open") return;
+    if (settings.lateFeeInr <= 0 || due.lateFeeInr > 0 || due.state !== "open" || due.backDue) return; // a carried back due has the amount the owner gave: no late fee on top
     if (customerOf(due.customer).optedOut) return; // a parent who has asked for no messages cannot be told of a new charge, so none is added
     const after = zonedToMs(addDays(due.dueDate, settings.due.graceDays + 1), MIDNIGHT, tz);
     if (clock.now() < after) return;
