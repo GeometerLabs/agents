@@ -97,8 +97,11 @@ export interface StockReport {
     placed: number; sentOut: number; acknowledged: number; declinedBySupplier: number; silent: number; receivedFull: number; partReceived: number; wrongItem: number;
     neverSent: number; sendUnknown: number;
   };
-  /** The owner's part: orders asked in the month, those they said no to, and cards that ran out unanswered. "Approved" is orders.placed. */
-  owner: { asked: number; approved: number; saidNo: number; cardsRanOut: number };
+  /**
+   * The owner's part: orders asked in the month, those they said no to, and `voided`: orders that never went out because their card ran out, was replaced by a new card, or a
+   * check held the approval back (the order's state "void" covers all three, so the count does not say which). "Approved" is orders.placed.
+   */
+  owner: { asked: number; approved: number; saidNo: number; voided: number };
   /** The owner's own note that they paid a supplier themselves, counted from the record (orders marked once each). The agent pays no one and cannot check it. */
   markedPaidByOwner: { orders: number };
   /** The month's budget in paise: what the shop set, and what the placed orders that still hold budget add up to. */
@@ -221,7 +224,7 @@ export function buildStockReport(input: ReportInput): StockReport {
 
   // ---- the owner's part ----
   const asked = input.orders.filter((o) => inMonth(o.createdMs));
-  const owner = { asked: asked.length, approved: placed.length, saidNo: asked.filter((o) => o.state === "declined").length, cardsRanOut: asked.filter((o) => o.state === "void").length };
+  const owner = { asked: asked.length, approved: placed.length, saidNo: asked.filter((o) => o.state === "declined").length, voided: asked.filter((o) => o.state === "void").length };
   // the owner's own "paid" note: each order once, at the first mark in the month
   const markedPaidByOwner = { orders: new Set(month.filter((e) => e.action === "mark_paid_outside" && e.outcome === "confirmed" && e.booking).map((e) => e.booking as string)).size };
 

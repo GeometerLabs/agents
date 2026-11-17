@@ -39,7 +39,7 @@ export function sampleReport(): StockReport {
   return {
     ...base,
     orders: { placed: 9, sentOut: 9, acknowledged: 7, declinedBySupplier: 1, silent: 1, receivedFull: 4, partReceived: 1, wrongItem: 1, neverSent: 0, sendUnknown: 0 },
-    owner: { asked: 11, approved: 9, saidNo: 1, cardsRanOut: 1 },
+    owner: { asked: 11, approved: 9, saidNo: 1, voided: 1 },
     markedPaidByOwner: { orders: 2 },
     budget: { monthlyPaise: 2_000_000, usedPaise: 900_000, leftPaise: 1_100_000 },
     suppliers: [{ id: "ravi-traders", name: "Ravi Traders", placed: 5, acknowledged: 4, receivedFull: 3, partReceived: 1, wrongItem: 0, declined: 0, silent: 1 }],
