@@ -79,7 +79,7 @@ function talkReads(deps: FeesSkillDeps): Pick<OwnerSkill, "facts" | "publicConte
       const sources: TalkSource[] = [{ id: "s:shop", kind: "setting", text: `${settings.name}${settings.address ? `, ${settings.address}` : ""}. Fees are paid and asked about on WhatsApp.`, literals: [settings.name, ...(settings.address ? [settings.address] : [])] }];
       for (const b of settings.batches) { const name = b.names[language]?.[0] ?? b.names.en?.[0] ?? b.id; sources.push({ id: `s:batch:${b.id}`, kind: "setting", text: `${name}: ${formatInr(b.monthlyFeeInr)} a month.`, amountsInr: [b.monthlyFeeInr], literals: [name] }); }
       sources.push({ id: "s:due", kind: "setting", text: `Fees are due on day ${settings.due.day} of the month, with ${settings.due.graceDays} days to pay.${settings.lateFeeInr > 0 ? ` After that a late fee of ${formatInr(settings.lateFeeInr)} is added once.` : ""}${settings.partPayments.allowed ? ` Part payments are allowed, from ${formatInr(settings.partPayments.minInr)}.` : " Part payments are not taken."}`, amountsInr: [settings.lateFeeInr, settings.partPayments.minInr] });
-      const mine = openDues(store, phone)[0];
+      const mine = openDues(store, parentOfChat(store, phone) ?? phone)[0]; // W2: a parent's chat talks about that parent's own fee, never another's
       if (mine) sources.push({ id: "r:case", kind: "record", text: `This parent's open fee ${mine.id} for their child, ${monthLabel(mine, language)}: balance ${formatInr(balancePaise(mine) / 100)} (fee ${formatInr(mine.feeInr)}${mine.lateFeeInr > 0 ? `, late fee ${formatInr(mine.lateFeeInr)}` : ""}).`, literals: [mine.id], amountsInr: [balancePaise(mine) / 100, mine.feeInr, mine.lateFeeInr] });
       return { sources, links: [] } satisfies PublicContext;
     },

@@ -46,7 +46,7 @@ import { chatTurn } from "../../../../modules/channels/chat.ts";
 import { emptyChannelState } from "../../../../modules/channels/state.ts";
 import type { PageAudio } from "../../../../modules/voice/turn.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
-import { cashList, ownerItems, parentOf, parentsList } from "./channel.ts";
+import { cashList, ownerItems, parentOf, parentOfChat, parentsList } from "./channel.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
@@ -1008,7 +1008,7 @@ export function createAgent(deps: AgentDeps): Agent {
    * "Talk to the owner": the owner is told, once an hour for the same parent, and the parent is told the owner will message them. The agent does not reply on the
    * owner's behalf and decides nothing. If the owner could not be told, the parent is told that, and not that the owner will write.
    */
-  async function onTalkToOwner(phone: string): Promise<void> {
+  async function onTalkToOwner(phone: string, replyTo = phone): Promise<void> {
     const customer = customerOf(phone);
     const now = clock.now();
     const recently = customer.ownerAskedAtMs !== undefined && now - customer.ownerAskedAtMs < HOURLY;
@@ -1018,7 +1018,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (told) customer.ownerAskedAtMs = now;
     }
     log(null, phone, "ask_owner", told ? "confirmed" : "failed", { by: "button" }, { refs: { to: "owner" }, notes: recently ? "the owner was already told in the last hour, so not again" : told ? "the parent asked to talk to the owner, and the owner was told" : "the owner could not be told" });
-    await tellCustomer(null, phone, [told ? "fee_told_owner" : "fee_couldnt_tell_owner"]);
+    await tellCustomer(null, replyTo, [told ? "fee_told_owner" : "fee_couldnt_tell_owner"]); // W2: a parent's chat is answered in the chat, the owner is told by the parent's own number
   }
 
   /** A greeting, a yes or a no, or words that are none of these: what is owed, with the buttons; or that nothing is. */
@@ -1329,10 +1329,28 @@ export function createAgent(deps: AgentDeps): Agent {
     log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}) }, { notes: "a public question from the chat on the centre's page; no fee or student is read for it", refs: { messageId: msg.id, channel: "chat" } });
     if (read.intent.kind === "stop") return onStop(phone);
     if (customer.optedOut) return;
+    const parent = parentOfChat(store, phone);
+    if (parent) return onParentChat(parent, phone, msg, read.intent);
     if (read.intent.kind === "owner") return onTalkToOwner(phone);
     if (!licence().takesNewWork) return pausedReply(phone, "menu");
     if (!msg.noModel && !msg.reply && msg.text !== "" && (await assistant?.talkToCustomer({ phone, text: msg.text, language: languageOf(phone), ...(read.intent.overrideAttempt ? { overrideAttempt: true } : {}), menu: () => ({ buttons: buttonsFor(languageOf(phone), ["owner"]) }) }))) return;
     await tellCustomer(null, phone, ["fee_chat_public"], { offer: { kind: "buttons", buttons: ["owner"] } });
+  }
+  /**
+   * W2, a parent's chat on their private fee page. The parent is whoever's page it opened from (the link is their identity; nothing is typed). The chat talks about THIS parent's own
+   * open fees and nothing of another parent's: the centre's assistant is given their own open fee as "your child" (assistant.ts, by `parentOfChat`), and the fixed answer is the
+   * existing fee line for each open fee, which is written from the fee itself. It never makes a payment link, takes a claim or a waiver or a refund: for those, and for paying, the
+   * words point to the fee page's own Pay box (the chat page's note says so); "talk to the owner" tells the owner by the parent's own number and answers here.
+   */
+  async function onParentChat(parent: string, chat: string, msg: InboundMessage, intent: { kind: string; overrideAttempt?: boolean }): Promise<void> {
+    if (intent.kind === "owner") return onTalkToOwner(parent, chat);
+    if (!licence().takesNewWork) return pausedReply(chat, "menu");
+    const lang = languageOf(chat);
+    const money = ["pay", "paid", "discount", "refund", "greeting", "yes", "no"].includes(intent.kind);
+    if (!money && !msg.noModel && !msg.reply && msg.text !== "" && (await assistant?.talkToCustomer({ phone: chat, text: msg.text, language: lang, ...(intent.overrideAttempt ? { overrideAttempt: true } : {}), menu: () => ({ buttons: buttonsFor(lang, ["owner"]) }) }))) return;
+    const open = openDues(store, parent);
+    if (open.length === 0) { await tellCustomer(null, chat, ["fee_nothing_due"]); return; }
+    for (const due of open.slice(0, 3)) await tellCustomer(due, chat, ["fee_menu"], { offer: { kind: "buttons", buttons: ["owner"] } });
   }
   async function onChatMessage(e: ChatMessage): Promise<void> {
     await chatTurn({ state: (store.channel ??= emptyChannelState()), ai: store, now: clock.now(), timeZone: settings.timezone, kind: "fees", run: onChatTurn, setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
