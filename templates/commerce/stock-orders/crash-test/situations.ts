@@ -362,6 +362,8 @@ const BUILDERS: Build[] = [
       const w = createWorld({ settings: p.settings, unapproved: ["stock_order_to_supplier"] });
       const to = p.supplier.whatsapp;
       const ref = await orderAndApprove(w, p.say());
+      await w.advance(60); // send once: a refusal is tried again an hour later, three tries in all, and only then is the order marked not sent
+      await w.advance(60);
       expect("The order is marked not sent and no order message went out", w.order(ref)?.state === "send_failed" && w.orderMessagesTo(to).length === 0, `${w.order(ref)?.state}`);
       expect("The budget stays reserved", reserved(w) === Math.round(p.totalInr * 100), `${reserved(w)}`);
       for (const l of LANGUAGES) w.messaging.approve("stock_order_to_supplier", l);

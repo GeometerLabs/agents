@@ -13,6 +13,7 @@ import { localParts } from "../../../../modules/core/time.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
 import type { AssistantState } from "../../../../modules/assistant/state.ts";
 import type { Reminder } from "../../../../modules/reminders/reminders.ts";
+import type { SendOnceState } from "../../../../modules/messaging/send-once.ts";
 import type { CardAction } from "../../../../modules/assistant/state.ts";
 import { lineKey, paise, supplierOf } from "./settings.ts";
 import type { Line, Settings } from "./settings.ts";
@@ -21,9 +22,9 @@ export type OrderState =
   | "awaiting_approval" // a card is open; nothing is reserved, nothing is sent
   | "declined" // the owner said no
   | "void" // the card ran out, or the order changed and its card was replaced by a new order card
-  | "approved" // approved and budget reserved; the order message is being sent
+  | "approved" // approved and budget reserved; the order message is asked for and is being sent (or a refused send waits for its next try)
   | "sent" // the provider took the order message
-  | "send_unknown" // the provider's reply was lost: it may have gone out. Never sent again as an order; the supplier is asked about it
+  | "send_unknown" // the provider's reply was lost, or the process died between the claim and the ending: it may have gone out. Never sent again by itself; the owner is asked (They got it / Send it again) and the supplier is asked about it
   | "send_failed" // the provider refused it: nothing went out; the owner may send it again
   | "send_blocked" // a check held it back (the supplier opted out, the text did not match the record)
   | "supplier_declined" // the supplier said they cannot supply it: the budget is released
@@ -90,6 +91,11 @@ export interface Store {
   assistant?: AssistantState;
   /** The month's AI counts (modules/understanding/ai-state.ts): the runtime keeps them with the store. Left out until the first message is read. */
   ai?: AiState;
+  /**
+   * Send once (modules/messaging/send-once.ts): the order messages and reminders the agent asked for, each with its claim and ending. Kept with the orders so an order's state and
+   * the message's ending are saved together. Left out until the first order is approved.
+   */
+  sendOnce?: SendOnceState;
 }
 
 export const createStore = (): Store => ({ orders: new Map(), handled: new Set(), requests: new Map(), optedOut: new Set(), seq: 0 });
