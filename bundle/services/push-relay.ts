@@ -19,8 +19,9 @@
 // from the call. Its own refusals are 400 (a call that is not one) or 429 (a limit); never 401, 403, 404 or 410, because the runtime's sender reads those as "the phone's
 // subscription is dead" and would drop a good phone.
 //
-// THE SECRET. The private key is a file handed in like the server's other keys (secrets/push/streetlist_vapid.json, 0600, mounted read-only at /run/secrets); it is never in
-// the repository. `node bundle/services/push-relay.ts make-key <file>` makes one (it refuses to overwrite). Only the PUBLIC half goes into geometer.json (`pushRelay.publicKey`),
+// THE SECRET. The private key is a file handed in like the server's other keys (secrets/push/streetlist_vapid.json, mounted read-only at /run/secrets): the bundle's rule
+// (lib/secrets.ts) is a 0644 file in the container's own folder under a 0700 `secrets/`, so the container's non-root user can read it and no other user of the machine can get to
+// it. It is never in the repository. `node bundle/services/push-relay.ts make-key <file>` makes one (it refuses to overwrite). Only the PUBLIC half goes into geometer.json (`pushRelay.publicKey`),
 // which generates each shop's runtime.json so the chat page can subscribe phones with it.
 import { chmodSync, existsSync, openSync, readFileSync, writeSync, closeSync } from "node:fs";
 import { createPrivateKey, createPublicKey } from "node:crypto";
@@ -65,13 +66,13 @@ export function parseRelayKeys(text: string): VapidKeys {
 /** Reads and checks the key file. */
 export const readRelayKeys = (file: string): VapidKeys => parseRelayKeys(readFileSync(file, "utf8"));
 
-/** Makes a new key file, 0600, refusing to overwrite one. Returns the public key to put in geometer.json (`pushRelay.publicKey`). */
+/** Makes a new key file (0644: make it inside secrets/push/, which is under the 0700 secrets/, so the sender's non-root user can read it; see lib/secrets.ts), refusing to overwrite one. Returns the public key to put in geometer.json (`pushRelay.publicKey`). */
 export function makeRelayKeyFile(file: string): string {
   if (existsSync(file)) throw new Error(`${file} already exists; a new key would orphan every phone subscribed to the old one. Move it away on purpose first.`);
   const keys = newVapidKeys();
-  const fd = openSync(file, "wx", 0o600);
+  const fd = openSync(file, "wx", 0o644);
   try { writeSync(fd, `${JSON.stringify(keys)}\n`); } finally { closeSync(fd); }
-  chmodSync(file, 0o600);
+  chmodSync(file, 0o644);
   return keys.publicKey;
 }
 
@@ -83,7 +84,8 @@ export function createRelay(o: { keys: VapidKeys; shops: readonly string[]; subj
   const seen = new Map<string, number[]>();
   const DAY = 86_400_000;
   const within = (key: string, ms: number, t: number): number[] => (seen.get(key) ?? []).filter((x) => t - x < ms);
-  const take = (key: string, ms: number, cap: number, t: number): boolean => { const list = within(key, ms, t); if (list.length >= cap) { seen.set(key, list); return false; } return true; };
+  // a pure look: the minute's check and the day's check share one list, so a refusal must never write the shorter window back over the longer one (that would lift the day's count)
+  const take = (key: string, ms: number, cap: number, t: number): boolean => within(key, ms, t).length < cap;
   const note = (key: string, t: number): void => { const list = within(key, DAY, t); list.push(t); seen.set(key, list); };
   let swept = 0;
 
@@ -114,6 +116,6 @@ export function createRelay(o: { keys: VapidKeys; shops: readonly string[]; subj
 
 if (import.meta.main) {
   const [command, file] = process.argv.slice(2);
-  if (command !== "make-key" || !file) { console.error("Usage: node bundle/services/push-relay.ts make-key <file>   (makes Streetlist's push key file, 0600; prints the public key for geometer.json pushRelay.publicKey)"); process.exit(2); }
+  if (command !== "make-key" || !file) { console.error("Usage: node bundle/services/push-relay.ts make-key <file>   (makes Streetlist's push key file, 0644, so make it inside secrets/push/; prints the public key for geometer.json pushRelay.publicKey)"); process.exit(2); }
   try { console.log(makeRelayKeyFile(file)); } catch (e) { console.error((e as Error).message); process.exit(1); }
 }
