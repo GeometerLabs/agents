@@ -7,6 +7,9 @@
 //   POST <page>/chat/push          "Tell me on this phone": the guest's alerts, kept by the runtime against their conversation (only after the shop has answered)
 //   GET  <page>/chat/sw.js         the alerts' worker (only when the shop has push on), scope <page>/chat/ only
 //   GET  <page>/chat/font.woff2    Baloo 2's Latin subset (SIL OFL, fonts/OFL-baloo-2.txt): a year's cache, named in this page's policy only
+//   POST <page>/chat/voice         hold to talk: a guest's recording (Ogg or WebM Opus, up to 30 seconds), passed to the runtime, which holds it in memory and listens in the guest's step
+//   GET  <page>/chat/m/lottie.js   the vendored lottie-web light player (vendor/lottie), a year's cache; the page asks for it only when a moment happens
+//   GET  <page>/chat/m/<moment>.json   one of the three animations (motion/*.json): confirmed, paid, hello
 //
 // Who the guest is: a random 32-byte handle in the cookie `__Secure-geo-chat`, HttpOnly, Secure, SameSite=Lax, Path=<the page's path>/chat, so the browser sends it to the chat's
 // addresses and nowhere else on the shared pages origin. The front keeps nothing: it sends the runtime only guestHash(shop, handle), which names the guest at THIS shop
@@ -15,6 +18,9 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { GUEST_HANDLE, guestHash, newGuestHandle } from "./handle.ts";
 import { chatPage } from "./chat-page.ts";
+import { MOMENTS, LOTTIE_VERSION } from "./chat-motion.ts";
+import { MAX_VOICE_BYTES } from "./owner-audio.ts";
+import { isPaint } from "./chat-paint.ts";
 import { CHAT } from "./words-chat.ts";
 import type { ChatKind } from "./words-chat.ts";
 import { CUSTOMER_SW } from "../push/pages.ts";
@@ -46,13 +52,20 @@ export const guestCookie = (path: string, handle: string): string => `${CHAT_COO
 
 /**
  * The chat page's content policy: PAGE_POLICY and exactly what the page needs, each at its own address (the pages origin is shared by every shop, so nothing says 'self'):
- * its one script by this response's nonce, the three calls it makes, its alerts' worker, and the one font (this page only; every other page keeps PAGE_POLICY).
+ * its one script by this response's nonce and the vendored player at its own address (no `unsafe-eval`: the light build has no eval), the calls it makes (send, thread, push, a
+ * recording, the animations' files), its alerts' worker, the one font, and the shop's own character pictures (`<page>/character/`, for DiceBear's animation and the well face).
+ * It is PAGE_POLICY with its `img-src` widened, never a second `img-src` (a browser reads only the first). Every other page keeps PAGE_POLICY.
  */
-export const chatPolicy = (base: string, nonce: string): string =>
-  `${PAGE_POLICY}; script-src 'nonce-${nonce}'; connect-src ${base}/send ${base}/thread ${base}/push; worker-src ${base}/sw.js; font-src ${base}/font.woff2`;
+export const chatPolicy = (base: string, nonce: string, home?: string): string =>
+  `${PAGE_POLICY.replace("img-src data:", home ? `img-src data: ${home}/character/` : "img-src data:")}; script-src 'nonce-${nonce}' ${base}/m/lottie.js; connect-src ${base}/send ${base}/thread ${base}/push ${base}/voice ${base}/m/; worker-src ${base}/sw.js; font-src ${base}/font.woff2`;
 
 let font: Buffer | undefined;
 const fontBytes = (): Buffer => (font ??= readFileSync(new URL("./fonts/baloo-2-latin-wght-normal.woff2", import.meta.url)));
+
+let player: Buffer | undefined;
+const playerBytes = (): Buffer => (player ??= readFileSync(new URL("./vendor/lottie/lottie_light.min.js", import.meta.url)));
+const motion = new Map<string, Buffer>();
+const motionBytes = (name: string): Buffer => { let b = motion.get(name); if (!b) { b = readFileSync(new URL(`./motion/${name}.json`, import.meta.url)); motion.set(name, b); } return b; };
 
 const NOT_FOUND = "<!doctype html><p>There is nothing here.</p>";
 
@@ -82,6 +95,36 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     res.writeHead(200, { "content-type": "font/woff2", "content-length": bytes.length, "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" });
     res.end(bytes);
     return;
+  }
+
+  // the animations' player and files: static, public, a year's cache (the player's address carries its version), served only to this page's own policy
+  if ((sub === "/m/lottie.js" || /^\/m\/[a-z]+\.json$/u.test(sub)) && method === "GET") {
+    const name = sub === "/m/lottie.js" ? undefined : sub.slice(3, -5);
+    if (name !== undefined && !(MOMENTS as readonly string[]).includes(name)) return kit.sendHtml(res, 404, NOT_FOUND);
+    const bytes = name === undefined ? playerBytes() : motionBytes(name);
+    res.writeHead(200, { "content-type": name === undefined ? "text/javascript; charset=utf-8" : "application/json; charset=utf-8", "content-length": bytes.length, "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'" });
+    res.end(bytes);
+    return;
+  }
+
+  if (sub === "/voice" && method === "POST") {
+    if (!kit.sameOrigin(req, shop)) return kit.sendJson(res, 403, { error: "Calls from another site's page are refused." });
+    if (!backend.chatVoice) return kit.sendJson(res, 404, { error: "Voice is not on here." });
+    const offer = await shopOf(a, kind);
+    const asked = url.searchParams.get("lang");
+    const language = offer.languages.includes(asked as Language) ? asked as Language : kit.languageOf(req, url, offer.languages);
+    const type = String(req.headers["content-type"] ?? "");
+    if (!hash) return kit.sendJson(res, 400, { error: "Open the chat page first." });
+    if (!/^audio\/(ogg|webm)\b/iu.test(type)) return kit.sendJson(res, 415, { error: "Send the recording as audio/ogg or audio/webm (Opus)." });
+    if (!limiter.take("chat", address) || !limiter.take("shopChats", `shop:${name}`)) return tooMany(language);
+    const asId = url.searchParams.get("id") ?? "";
+    const id = /^[A-Za-z0-9-]{1,64}$/u.test(asId) ? asId : randomUUID();
+    const bytes = await kit.readBytes(req, MAX_VOICE_BYTES);
+    if (!bytes || bytes.length === 0) return kit.sendJson(res, 413, { error: "A recording of at most 30 seconds." });
+    const r = await backend.chatVoice(hash, { id, language }, { bytes, mime: type });
+    if (r === "off") return kit.sendJson(res, 404, { error: "Voice is not on here." });
+    if (r === "slow") return tooMany(language);
+    return kit.sendJson(res, 200, { ok: true, id });
   }
 
   if (sub === "/sw.js" && method === "GET") {
@@ -144,14 +187,18 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     const key = backend.push ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
     const pushKey = key?.body.on === true && typeof key.body.publicKey === "string" ? key.body.publicKey : undefined;
     const nonce = randomBytes(16).toString("base64");
-    const read = thread as { personality?: string; paint?: string };
+    const read = thread as { personality?: string; listen?: boolean };
+    // the character's pictures (for DiceBear's animation and the well face): only when the shop's own set is drawn; the animated files are optional in a set
+    const files = shop.character?.();
+    const art = files ? { base: `${shop.publicUrl}/character`, version: files.version, animated: files.animation?.("well") !== undefined } : undefined;
+    const paint = a.pages?.paint;
     const personality = (PERSONALITIES as readonly string[]).includes(read.personality ?? "") ? read.personality as Personality : undefined;
     const html = chatPage({
       shop: offer, kind, language, base, home: shop.publicUrl, nonce, thread,
-      ...(personality ? { personality } : {}), ...(read.paint ? { paint: read.paint } : {}), ...(pushKey ? { pushKey } : {}),
+      ...(personality ? { personality } : {}), ...(paint && isPaint(paint) ? { paint } : {}), ...(art ? { art } : {}), ...(read.listen === true ? { listen: true } : {}), ...(pushKey ? { pushKey } : {}),
       onStreetlist: a.viaDoor, fontUrl: `${base}/font.woff2`, ...(url.searchParams.get("notice") === "rate" ? { notice: "rate" as const } : {}),
     });
-    return kit.sendHtml(res, 200, html, { "content-security-policy": chatPolicy(base, nonce), "x-robots-tag": "noindex", ...(cookie ? { "set-cookie": cookie } : {}) });
+    return kit.sendHtml(res, 200, html, { "content-security-policy": chatPolicy(base, nonce, art ? shop.publicUrl : undefined), "x-robots-tag": "noindex", ...(cookie ? { "set-cookie": cookie } : {}) });
   }
 
   return kit.sendHtml(res, 404, NOT_FOUND);

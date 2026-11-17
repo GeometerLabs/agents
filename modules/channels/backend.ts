@@ -41,7 +41,7 @@ export interface ShopInfo {
    */
   character?: { name?: string; face?: Face; picture?: string };
   /** Batch 5: the shop's own phone and map link, from its pages.json (the front adds them to every offer: front.ts withContact), so every customer page can show them. */
-  contact?: { phone?: string; map?: string };
+  contact?: { phone?: string; map?: string; /** The shop's chat address (17 Nov 2026): the "Chat with us" button on every customer page. Added by the front, only for a shop that has a chat. */ chat?: string };
 }
 export interface Offer { shop: ShopInfo; services: OfferService[]; serviceId?: string; days?: { date: string; starts: number[] }[]; calendarUnread?: boolean }
 
@@ -65,7 +65,7 @@ export type BookingView =
  */
 export interface OwnerItemView {
   kind: "deposit" | "late_deposit" | "refund_owed" | "late_refund" | "calendar" | "big_order" | "waiver" | "refund_request" | "po_approval" | "po_silent" | "po_receive"; case: string; digest: string; actions: string[]; amountPaise: number;
-  customer: { phone: string; name?: string }; channel: "whatsapp" | "web" | "mcp"; serviceId?: string; startMs?: number; why?: string; what?: string;
+  customer: { phone: string; name?: string }; channel: "whatsapp" | "web" | "mcp" | "chat"; serviceId?: string; startMs?: number; why?: string; what?: string;
   /**
    * Money clarity: for a `deposit` or a `late_deposit`, when the customer said they paid (left out: nobody said so, the hold is only waiting) and the UPI reference they
    * typed. `late_deposit` is a hold that ended where money may have come anyway; "received" on it is the late mark, after which the refund (or keep) card follows.
@@ -198,6 +198,11 @@ export interface ChannelBackend {
    * for an unknown guest: that is an empty thread. Left out: the shop has no chat.
    */
   chat?(guestHash: string, q?: { after?: number; cid?: string }): Promise<ChatRead>;
+  /**
+   * W1 hold-to-talk: a guest's recording, passed to the runtime as it came (the runtime holds it in memory only and listens in the guest's step). "off": the shop has no voice
+   * service; "slow": the runtime's own per-guest or per-shop rate said wait.
+   */
+  chatVoice?(guestHash: string, send: { id: string; language: Language }, audio: { bytes: Buffer; mime: string }): Promise<"saved" | "off" | "slow">;
   /** Item 11h: the same reads, for an Orders shop (its offer and an order by its handle's hash). */
   orderOffer?(): Promise<OrderOffer>;
   orderView?(handleHash: string): Promise<OrderView | null>;
@@ -274,6 +279,14 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     async chat(guestHash, q = {}) {
       const p = new URLSearchParams({ handle: guestHash, ...(q.after ? { after: String(q.after) } : {}), ...(q.cid ? { cid: q.cid } : {}) });
       return json<ChatRead>(await call(`${o.url}/internal/channel/chat?${p}`, { headers: headers() }, timeout));
+    },
+    async chatVoice(guestHash, send, audio) {
+      const p = new URLSearchParams({ handle: guestHash, lang: send.language, id: send.id });
+      const r = await call(`${o.url}/internal/channel/chat-voice?${p}`, { method: "POST", headers: headers(undefined, { "content-type": audio.mime }), body: new Uint8Array(audio.bytes) }, timeout);
+      if (r.status === 404) return "off";
+      if (r.status === 429) return "slow";
+      if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`);
+      return "saved";
     },
     async feesOffer() { return json<FeesOffer>(await call(`${o.url}/internal/channel/offer`, { headers: headers() }, timeout)); },
     async parentView(linkHash) {

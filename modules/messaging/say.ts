@@ -22,7 +22,8 @@ import type { Decision } from "../limits/limits.ts";
 import type { Action, Outcome } from "../record/record.ts";
 import { imageProblem } from "./messaging.ts";
 import type { Messaging, OutboundMessage, TemplateMessage } from "./messaging.ts";
-import { isChannelConversation } from "../channels/conversation.ts";
+import { isChannelConversation, isChatConversation } from "../channels/conversation.ts";
+import type { ChatMoment } from "../channels/state.ts";
 
 /** What every message to say carries. A template adds its own fields (an amount, a time), which only its own `factsFor` reads. */
 export interface SayArgs {
@@ -75,6 +76,12 @@ export interface SayDeps<A extends SayArgs, Facts extends { language: Language }
   log(booking: A["booking"], phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string>; language?: Language }): void;
   /** A message to a customer was held back because it did not match the record: tell the owner. */
   heldBack(a: A): Promise<void>;
+  /**
+   * W1 (17 Nov 2026): is this message the shop saying its RECORD holds something (a booking or order confirmed, a payment received)? Decided from the template's own ids, which are
+   * gated by the record's check before they can go out, never from the words. With `markMoment`, a message kept in a chat thread is marked so the page can show it.
+   */
+  moment?(a: A): ChatMoment | undefined;
+  markMoment?(messageId: string, moment: ChatMoment): void;
 }
 
 /**
@@ -179,6 +186,8 @@ export function createSay<A extends SayArgs, Facts extends { language: Language 
       // item 11d: a message kept for a booking page (modules/channels/outbox.ts) names its channel, so nothing counts it as a WhatsApp message (bundle/lib/usage.ts)
       const channel: Record<string, string> = isChannelConversation(toNumber) ? { channel: toNumber.slice(0, toNumber.indexOf(":")) } : {};
       log(a.booking, a.phone, action, seen ? "confirmed" : "unconfirmed", inputs, { decisions, refs: { messageId: sent.id, templates: (asButtons ? offer?.body ?? a.templates : a.templates).join("+"), to: a.to, ...(asButtons ? { interactive: interactive!.list ? "list" : "buttons" } : {}), ...channel }, language });
+      // W1: a chat line the record stands behind is marked, once it is kept (it went out through this one say, after the record's own gate allowed it)
+      if (toCustomer && seen !== null && isChatConversation(toNumber)) { const moment = deps.moment?.(a); if (moment) deps.markMoment?.(sent.id, moment); }
       return { went: seen !== null, outcome: "accepted" }; // the provider gave it an id: it was taken, whether or not the outbox shows it yet
     } catch (e) {
       // Guard held it back for the shop's licence (the final stop): nothing went out, and it is the runtime's own licence refusal, made outside it. Recorded once, plainly.

@@ -59,7 +59,7 @@ export interface MessageFacts {
 export type TemplateId =
   // to the customer
   | "menu" | "ask_when" | "ask_new_time" | "price_floor" | "confirm_details" | "quote_and_link" | "slot_and_link" | "already_waiting"
-  | "slot_unavailable" | "outside_hours" | "hold_failed" | "link_failed" | "booked" | "booked_page_link" | "couldnt_confirm" | "hold_expired"
+  | "slot_unavailable" | "outside_hours" | "hold_failed" | "chat_shop_busy" | "link_failed" | "booked" | "booked_page_link" | "couldnt_confirm" | "hold_expired"
   | "slot_gone_refund" | "refund_unbooked" | "reschedule_failed" | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending"
   | "cancelled_late" | "cancelled_no_deposit" | "no_booking_found" | "refund_approved" | "refund_denied" | "rescheduled"
   | "reminder" | "didnt_understand" | "refund_checking" | "refund_confirmed" | "refund_expired" | "voice_note" | "voice_note_retry"
@@ -148,6 +148,7 @@ const en: BaseSet = {
   slot_unavailable: (f) => `Sorry, ${slot(f)} is not available. What other time would work for you?`,
   outside_hours: (f) => `Sorry, we're closed at ${slot(f)}. What other time would work for you?`,
   hold_failed: (f) => `Sorry, I couldn't hold ${slot(f)} just now, so nothing is booked. I've let the owner know. Please try again in a few minutes.`,
+  chat_shop_busy: () => "The shop has many bookings waiting for payment right now, so nothing is held. Please try again in a little while, or call the shop.",
   link_failed: () => "Sorry, I couldn't make the payment link just now, so nothing is booked. I've let the owner know.",
   booked: (f) => `You're booked! ${Service(f)}, ${slot(f)}. We got your ${inr(f, "depositInr")} deposit. Can't make it? Cancel at least ${need(f, "windowHours")} hours before and your deposit comes back.`,
   couldnt_confirm: (f) => `We got your ${inr(f, "depositInr")} deposit, but I couldn't confirm ${slot(f)} in our calendar yet, so it's not booked. I've told the owner, and they'll get in touch with you.`,
@@ -219,6 +220,7 @@ const hi: BaseSet = {
   slot_unavailable: (f) => `माफ़ कीजिए, ${slot(f)} खाली नहीं है। कोई और समय बताइए?`,
   outside_hours: (f) => `माफ़ कीजिए, ${slot(f)} पर हम बंद रहते हैं। कोई और समय बताइए?`,
   hold_failed: (f) => `माफ़ कीजिए, अभी ${slot(f)} का स्लॉट रोक नहीं पाया, इसलिए कुछ भी बुक नहीं हुआ है। मैंने मालिक को बता दिया है। थोड़ी देर बाद फिर कोशिश कीजिए।`,
+  chat_shop_busy: () => "दुकान में अभी कई बुकिंग भुगतान की राह देख रही हैं, इसलिए कुछ रोका नहीं गया। थोड़ी देर बाद फिर कोशिश करें, या दुकान को फ़ोन करें।",
   link_failed: () => "माफ़ कीजिए, अभी पेमेंट लिंक नहीं बन पाया, इसलिए कुछ भी बुक नहीं हुआ है। मैंने मालिक को बता दिया है।",
   booked: (f) => `बुक हो गया! ${need(f, "serviceName")}, ${slot(f)}। आपका ${inr(f, "depositInr")} जमा हमें मिल गया। नहीं आ पा रहे? शुरू होने से कम से कम ${need(f, "windowHours")} घंटे पहले रद्द कर दीजिए, आपका जमा वापस मिल जाएगा।`,
   couldnt_confirm: (f) => `आपका ${inr(f, "depositInr")} जमा मिल गया है, पर ${slot(f)} अभी हमारे कैलेंडर में पक्का नहीं हो पाया, इसलिए बुकिंग नहीं हुई है। मैंने मालिक को बता दिया है, वे आपसे बात करेंगे।`,
@@ -294,6 +296,7 @@ const ml: BaseSet = {
   slot_unavailable: (f) => `ക്ഷമിക്കണം, ${slot(f)} ഒഴിവില്ല. മറ്റൊരു സമയം പറയാമോ?`,
   outside_hours: (f) => `ക്ഷമിക്കണം, ${slot(f)} ഞങ്ങൾ അടച്ചിരിക്കും. മറ്റൊരു സമയം പറയാമോ?`,
   hold_failed: (f) => `ക്ഷമിക്കണം, ${slot(f)} ഇപ്പോൾ മാറ്റിവയ്ക്കാൻ പറ്റിയില്ല, അതുകൊണ്ട് ഒന്നും ബുക്ക് ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. കുറച്ച് മിനിറ്റ് കഴിഞ്ഞ് ഒന്നുകൂടി ശ്രമിക്കൂ.`,
+  chat_shop_busy: () => "കടയിൽ ഇപ്പോൾ പണമടയ്ക്കാൻ കാത്തിരിക്കുന്ന ബുക്കിംഗുകൾ ഒരുപാടുണ്ട്, അതുകൊണ്ട് ഒന്നും മാറ്റിവച്ചിട്ടില്ല. കുറച്ചു കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ, അല്ലെങ്കിൽ കടയിൽ വിളിക്കൂ.",
   link_failed: () => "ക്ഷമിക്കണം, പേയ്മെന്റ് ലിങ്ക് ഇപ്പോൾ ഉണ്ടാക്കാൻ പറ്റിയില്ല, അതുകൊണ്ട് ഒന്നും ബുക്ക് ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്.",
   booked: (f) => `ബുക്ക് ആയി! ${need(f, "serviceName")}, ${slot(f)}. നിങ്ങളുടെ ${inr(f, "depositInr")} അഡ്വാൻസ് കിട്ടി. വരാൻ പറ്റില്ലെങ്കിൽ ${need(f, "windowHours")} മണിക്കൂർ മുമ്പെങ്കിലും റദ്ദാക്കൂ, അഡ്വാൻസ് തിരികെ കിട്ടും.`,
   couldnt_confirm: (f) => `നിങ്ങളുടെ ${inr(f, "depositInr")} അഡ്വാൻസ് കിട്ടി, പക്ഷേ ${slot(f)} ഞങ്ങളുടെ കലണ്ടറിൽ ഉറപ്പിക്കാൻ ഇതുവരെ പറ്റിയില്ല, അതുകൊണ്ട് ബുക്ക് ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്, അവർ നിങ്ങളെ ബന്ധപ്പെടും.`,
@@ -367,6 +370,7 @@ const kn: BaseSet = {
   slot_unavailable: (f) => `ಕ್ಷಮಿಸಿ, ${slot(f)} ಲಭ್ಯವಿಲ್ಲ. ಬೇರೆ ಯಾವ ಸಮಯ ನಿಮಗೆ ಆಗುತ್ತದೆ?`,
   outside_hours: (f) => `ಕ್ಷಮಿಸಿ, ${slot(f)} ನಾವು ಮುಚ್ಚಿರುತ್ತೇವೆ. ಬೇರೆ ಯಾವ ಸಮಯ ನಿಮಗೆ ಆಗುತ್ತದೆ?`,
   hold_failed: (f) => `ಕ್ಷಮಿಸಿ, ಈಗ ${slot(f)} ಸ್ಲಾಟ್ ಕಾಯ್ದಿರಿಸಲು ಆಗಲಿಲ್ಲ, ಹಾಗಾಗಿ ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಕೆಲವು ನಿಮಿಷ ಬಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.`,
+  chat_shop_busy: () => "ಅಂಗಡಿಯಲ್ಲಿ ಈಗ ಪಾವತಿಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಬುಕಿಂಗ್‌ಗಳು ಬಹಳ ಇವೆ, ಹಾಗಾಗಿ ಏನನ್ನೂ ಕಾಯ್ದಿರಿಸಿಲ್ಲ. ಸ್ವಲ್ಪ ಹೊತ್ತಿನ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ, ಅಥವಾ ಅಂಗಡಿಗೆ ಕರೆ ಮಾಡಿ.",
   link_failed: () => "ಕ್ಷಮಿಸಿ, ಈಗ ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ, ಹಾಗಾಗಿ ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ.",
   booked: (f) => `ಬುಕ್ ಆಗಿದೆ! ${need(f, "serviceName")}, ${slot(f)}. ನಿಮ್ಮ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಸಿಕ್ಕಿದೆ. ಬರಲು ಆಗದಿದ್ದರೆ ಕನಿಷ್ಠ ${need(f, "windowHours")} ಗಂಟೆ ಮೊದಲು ರದ್ದು ಮಾಡಿ, ಮುಂಗಡ ಹಣ ಮರಳಿ ಸಿಗುತ್ತದೆ.`,
   couldnt_confirm: (f) => `ನಿಮ್ಮ ${inr(f, "depositInr")} ಮುಂಗಡ ಹಣ ಸಿಕ್ಕಿದೆ, ಆದರೆ ನಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ${slot(f)} ಇನ್ನೂ ಖಚಿತವಾಗಿಲ್ಲ, ಹಾಗಾಗಿ ಬುಕ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ, ಅವರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ.`,

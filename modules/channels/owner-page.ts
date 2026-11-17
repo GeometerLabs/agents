@@ -103,7 +103,8 @@ export function ownerPage(o: OwnerPageInput): string {
   const what = (i: { serviceId?: string; startMs?: number; what?: string }) => [i.what ?? service(i.serviceId), i.startMs !== undefined ? formatSlot(i.startMs, tz, o.language) : ""].filter(Boolean).join(", ");
   const from = (ch: OwnerItemView["channel"]) => (v.kind && ch === "web" ? more.webPage : w.from[ch]);
   // a fee is a parent's: the student's name and the parent's number, with no channel to name
-  const who = (c: OwnerItemView["customer"], ch: OwnerItemView["channel"]) => (v.kind === "fees" ? `${c.name ? `${c.name}, ` : ""}${c.phone}` : w.who(c.name, c.phone, from(ch)));
+  // a chat guest is "Chat guest 3" with no phone (chat-guest.ts): the words and where they wrote from, never an empty number
+  const who = (c: OwnerItemView["customer"], ch: OwnerItemView["channel"]) => (ch === "chat" ? `${c.name ?? ""} (${from(ch)})` : v.kind === "fees" ? `${c.name ? `${c.name}, ` : ""}${c.phone}` : w.who(c.name, c.phone, from(ch)));
   const item = (i: OwnerItemView): Raw => {
     const amount = formatInr(i.amountPaise / 100);
     const b = (action: string, label: string, quiet = false) => button(o.base, { source: "runtime", action, case: i.case, digest: i.digest }, label, quiet, o.csrf);

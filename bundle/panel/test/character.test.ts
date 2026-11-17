@@ -177,3 +177,32 @@ test("a shop saved before item 11i, with no assistant, is not given one by an ed
     assert.ok(existsSync(join(b.dir, "shops", "hosahalli-beauty", "character")), "the pictures drawn before stay with the shop's data");
   } finally { await b.close(); }
 });
+
+// 17 Nov 2026: the shop's signboard paint, chosen in this step from Streetlist's five paints and saved with the character; it is never part of the drawing (a paint draws nothing again).
+test("the signboard paint: a press picks one of the five, anything else is refused in words, 'none' goes back to the green tint, and it is saved with the character but never in the look", async () => {
+  const { PAINT_IDS } = await import("../../../modules/channels/chat-paint.ts");
+  const { readCharacter } = await import("../../../modules/assistant/character.ts");
+  const { lookOf } = await import("../../lib/character.ts");
+  const d: { shopId: string; character?: ReturnType<typeof newCharacterDraft> } = { shopId: "glow-salon" };
+  for (const id of PAINT_IDS) {
+    assert.deepEqual(applyCharacter(d, { pickPaint: id }, w), { stay: true, problems: [] });
+    assert.equal(d.character!.paint, id);
+  }
+  assert.deepEqual(applyCharacter(d, { pickPaint: "#ff0000" }, w).problems, [w.setup.character.problems.paint]);
+  assert.equal(d.character!.paint, "brick", "a refused paint changes nothing");
+  assert.deepEqual(applyCharacter(d, { pickPaint: "none" }, w), { stay: true, problems: [] });
+  assert.equal(d.character!.paint, undefined);
+  applyCharacter(d, { pickPaint: "pink", characterName: "Asha" }, w);
+  applyCharacter(d, { act: "next" }, w);
+  const setting = characterSetting(d.character!, "glow-salon");
+  assert.equal(setting.paint, "pink");
+  const errors: string[] = [];
+  assert.equal(readCharacter(setting, errors)?.paint, "pink");
+  assert.deepEqual(errors, []);
+  assert.ok(readCharacter({ style: "clay", paint: "#c4386f" }, errors) !== undefined && errors.length === 1, "a made-up paint is a problem in words");
+  // the look the pictures are drawn from has no paint, so choosing one draws nothing again
+  assert.ok(!("paint" in (lookOf({ assistant: { character: setting } }, "glow-salon") ?? {})));
+  assert.equal(characterDraftFromSettings({ assistant: { character: setting } }, "glow-salon").paint, "pink");
+  // every language names each paint (a swatch is never colour alone)
+  for (const l of ["en", "hi", "ml", "kn"] as const) for (const id of PAINT_IDS) assert.ok(WORDS[l].setup.character.paints[id].length > 0, `${l} ${id}`);
+});
