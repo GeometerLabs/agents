@@ -104,6 +104,8 @@ export interface AgentDeps {
   terms?: () => TermsFile | undefined;
   /** Item 11e: how the shop's assistant reads the owner's words (modules/assistant/reading.ts). Left out: the rules alone. The assistant is on only with an "assistant" settings block. */
   ownerParser?: OwnerParser;
+  /** Block M: the shop's talk model (modules/understanding/talk.ts). Left out: no talk. */
+  talker?: import("../../../../modules/understanding/talk.ts").TalkModel;
   /**
    * Item 11h: where the centre's page is (its pages file: the pages domain's address, else its own server's), so a reminder can carry the parent's private link
    * (<base>/f/<link>). Left out, or undefined: no page, and every reminder is the one it always was.
@@ -944,16 +946,26 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /** A greeting, a yes or a no, or words that are none of these: what is owed, with the buttons; or that nothing is. */
-  async function onMenu(phone: string, understood: boolean): Promise<void> {
+  async function onMenu(phone: string, understood: boolean, text = "", overrideAttempt = false): Promise<void> {
     if (!licence().takesNewWork) return pausedReply(phone, "menu");
     const due = openDues(store, phone)[0];
-    if (!due) { await tellCustomer(null, phone, ["fee_nothing_due"]); return; }
+    if (!due) {
+      // block M: words nothing could read, from a parent with nothing due: the assistant may still answer from what the centre has published (the owner's button goes with it)
+      if (!understood && text !== "" && (await assistant?.talkToCustomer({ phone, text, language: languageOf(phone), ...(overrideAttempt ? { overrideAttempt: true } : {}), menu: () => ({ buttons: buttonsFor(languageOf(phone), ["owner"]) }) }))) return;
+      await tellCustomer(null, phone, ["fee_nothing_due"]);
+      return;
+    }
     const { fresh } = await reconcile(due);
     const { receipt } = await settle(due, fresh);
     if (due.state !== "open") { if (!receipt) await tellCustomer(due, phone, ["fee_already_paid"]); return; }
     await currentLink(due);
     if (understood) await tellCustomer(due, phone, ["fee_menu"], { offer: feeButtons(due) });
-    else await tellCustomer(due, phone, ["fee_didnt_understand"], { offer: feeButtons(due) });
+    else {
+      // block M: the shop's assistant may answer, from what parents may be told; the centre's own buttons (pay, paid, the owner) go with it. False: the menu goes as before.
+      const lang = languageOf(phone, due);
+      const talked = text !== "" && await assistant?.talkToCustomer({ phone, text, language: lang, ...(overrideAttempt ? { overrideAttempt: true } : {}), menu: (askOwner) => ({ buttons: buttonsFor(lang, askOwner ? ["owner"] : ["pay", "paid", "owner"], due.id) }) });
+      if (!talked) await tellCustomer(due, phone, ["fee_didnt_understand"], { offer: feeButtons(due) });
+    }
   }
 
   async function onStop(phone: string): Promise<void> {
@@ -1113,7 +1125,7 @@ export function createAgent(deps: AgentDeps): Agent {
         case "refund": return await onRefundAsk(phone, intent);
         case "owner": return await onTalkToOwner(phone);
         case "greeting": case "yes": case "no": return await onMenu(phone, true);
-        default: await onMenu(phone, false);
+        default: await onMenu(phone, false, msg.reply ? "" : msg.text, intent.overrideAttempt === true);
       }
     } finally {
       await announceButtonMode(); // after the parent has their answer
@@ -1251,7 +1263,7 @@ export function createAgent(deps: AgentDeps): Agent {
   // On only when the settings have an "assistant" block. Fees is its one skill here; answering what waits is the owner's own fixed reply (src/assistant.ts).
   const assistant = assistantForAgent({
     settings, store, skill: feesSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg) }),
-    clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
+    clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}), ...(deps.talker ? { talker: deps.talker } : {}),
     // the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out
     ...(deps.voice ? { hearing: { hear: createListener({ voice: deps.voice, reader, isCommander: () => false, optedOut: () => false }) } } : {}),
     log: (caseId, phone, action, outcome, inputs, more) => log(caseId ? store.dues.get(caseId) ?? null : null, phone, action, outcome, inputs, more),

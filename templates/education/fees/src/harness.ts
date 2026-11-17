@@ -89,6 +89,8 @@ export interface World {
 }
 
 export interface WorldOptions {
+  /** Block M: the shop's talk model (a script in the tests). Left out: no talk. */
+  talker?: import("../../../../modules/understanding/talk.ts").TalkModel;
   /** B29: voice notes (modules/voice, usually the stand-ins in modules/voice/standin.ts). Left out: voice is off. */
   voice?: import("../../../../modules/voice/voice.ts").VoiceService;
   settings?: Settings;
@@ -127,7 +129,7 @@ export function createWorld(options: WorldOptions = {}): World {
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
   const store = createStore();
-  const agent = createAgent({ settings, clock, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}), ...(options.pageBase ? { pageBase: options.pageBase } : {}) });
+  const agent = createAgent({ settings, clock, ...(options.talker ? { talker: options.talker } : {}), payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}), ...(options.pageBase ? { pageBase: options.pageBase } : {}) });
   let deliveredEvents = 0;
   const PARENT = ROHAN_PARENT;
 

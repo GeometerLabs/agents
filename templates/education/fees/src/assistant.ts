@@ -14,6 +14,8 @@ import type { OwnerItem } from "./channel.ts";
 import { balancePaise, monthLabel, openDues } from "./due.ts";
 import type { Due, Store } from "./due.ts";
 import type { Settings } from "./settings.ts";
+import { formatInr } from "../../../../modules/language/format.ts";
+import type { PublicContext, TalkSource } from "../../../../modules/assistant/talk-types.ts";
 
 export interface FeesSkillDeps {
   settings: Settings;
@@ -26,6 +28,42 @@ export interface FeesSkillDeps {
 
 /** Fees' words for the router. */
 const ROUTING_WORDS = { en: ["fee", "fees", "tuition"], hi: ["फीस", "fees"], ml: ["ഫീസ്"], kn: ["ಫೀಸ್", "ಶುಲ್ಕ"] } as const;
+
+
+/**
+ * The reads the shop's talk rests on (block M), pure over the store. The owner's get counts and money only (no student's or parent's name or number). A parent's get the
+ * centre's batches and fees, the due day and late fee rules, and that parent's own open fee, in words that carry NO student's name: the model gets "your child", because a
+ * student's name never leaves the centre as itself.
+ */
+function talkReads(deps: FeesSkillDeps): Pick<OwnerSkill, "facts" | "publicContext"> {
+  const { settings, store } = deps;
+  const lang = settings.owner.language;
+  return {
+    facts(nowMs) {
+      const dues = [...store.dues.values()];
+      const open = dues.filter((d) => d.state === "open");
+      const owed = open.reduce((n, d) => n + balancePaise(d), 0);
+      const late = open.filter((d) => d.dueMs < nowMs);
+      const months = [...new Set(dues.map((d) => d.month))].sort().slice(-1);
+      const thisMonth = dues.filter((d) => months.includes(d.month));
+      const waiting = ownerItems(settings, store).length;
+      return [
+        { id: "r:owed", kind: "record", text: `Fees still open: ${open.length}, ${formatInr(owed / 100)} in total. Past their due date: ${late.length}, ${formatInr(late.reduce((n, d) => n + balancePaise(d), 0) / 100)}.`, amountsInr: [owed / 100, late.reduce((n, d) => n + balancePaise(d), 0) / 100] },
+        { id: "r:month", kind: "record", text: `The latest month's fees: ${thisMonth.length} in all, ${thisMonth.filter((d) => d.state === "paid").length} paid, ${thisMonth.filter((d) => d.state === "open").length} still open.` },
+        { id: "r:waiting", kind: "record", text: `Waiting for the owner's answer: ${waiting}.` },
+      ] satisfies TalkSource[];
+    },
+    publicContext(phone) {
+      const language = store.customers.get(phone)?.language ?? settings.languages[0] ?? lang;
+      const sources: TalkSource[] = [{ id: "s:shop", kind: "setting", text: `${settings.name}${settings.address ? `, ${settings.address}` : ""}. Fees are paid and asked about on WhatsApp.`, literals: [settings.name, ...(settings.address ? [settings.address] : [])] }];
+      for (const b of settings.batches) { const name = b.names[language]?.[0] ?? b.names.en?.[0] ?? b.id; sources.push({ id: `s:batch:${b.id}`, kind: "setting", text: `${name}: ${formatInr(b.monthlyFeeInr)} a month.`, amountsInr: [b.monthlyFeeInr], literals: [name] }); }
+      sources.push({ id: "s:due", kind: "setting", text: `Fees are due on day ${settings.due.day} of the month, with ${settings.due.graceDays} days to pay.${settings.lateFeeInr > 0 ? ` After that a late fee of ${formatInr(settings.lateFeeInr)} is added once.` : ""}${settings.partPayments.allowed ? ` Part payments are allowed, from ${formatInr(settings.partPayments.minInr)}.` : " Part payments are not taken."}`, amountsInr: [settings.lateFeeInr, settings.partPayments.minInr] });
+      const mine = openDues(store, phone)[0];
+      if (mine) sources.push({ id: "r:case", kind: "record", text: `This parent's open fee ${mine.id} for their child, ${monthLabel(mine, language)}: balance ${formatInr(balancePaise(mine) / 100)} (fee ${formatInr(mine.feeInr)}${mine.lateFeeInr > 0 ? `, late fee ${formatInr(mine.lateFeeInr)}` : ""}).`, literals: [mine.id], amountsInr: [balancePaise(mine) / 100, mine.feeInr, mine.lateFeeInr] });
+      return { sources, links: [] } satisfies PublicContext;
+    },
+  };
+}
 
 export function feesSkill(deps: FeesSkillDeps): OwnerSkill {
   const { settings, store } = deps;
@@ -82,6 +120,7 @@ export function feesSkill(deps: FeesSkillDeps): OwnerSkill {
 
   return {
     name: "fees",
+    ...talkReads(deps),
     routing: {
       refs: /^[fq]-\d{1,6}$/u,
       buttonPrefixes: ["pay:", "paid:"],

@@ -132,6 +132,11 @@ export interface RuntimeConfig {
   tickSeconds: number;
   services?: LiveServicesConfig;
   parser?: ParserConfig;
+  /**
+   * `talk` (block M): the model for the shop's talk (the owner's and customers' answers), the same shape as `parser`. Left out: the talk uses the parser's model. The bundle
+   * writes it from the server's model Guard, like `parser`. The model Guard allows one model, so a different one here is refused by the bundle (bundle/generate/shop.ts).
+   */
+  talk?: ParserConfig;
   decision?: DecisionConfig;
   /** "buttons" turns every model step off for this shop (written by the bundle from fleet's heartbeat answer). Read again on every message, so it takes effect without a restart. Default "on". */
   ai?: "on" | "buttons";
@@ -208,6 +213,14 @@ function readParser(raw: unknown, folder: string, errors: string[]): ParserConfi
   if (errors.length > before) return undefined;
   const agentTokenFile = isText(raw.agentTokenFile) ? (isAbsolute(raw.agentTokenFile) ? raw.agentTokenFile : resolve(folder, raw.agentTokenFile)) : undefined;
   return { wire: raw.wire as ParserConfig["wire"], baseUrl: raw.baseUrl as string, model: raw.model as string, ...(raw.timeoutMs !== undefined ? { timeoutMs: raw.timeoutMs as number } : {}), ...(agentTokenFile ? { agentTokenFile } : {}), ...(raw.provider !== undefined ? { provider: raw.provider as string } : {}), ...(raw.keyEnv !== undefined ? { keyEnv: raw.keyEnv as string } : {}), ...(rate ? { rate } : {}) };
+}
+
+/** `talk`: read exactly as `parser` is (the same keys, the same refusals), with the refusals naming "talk". */
+function readTalk(raw: unknown, folder: string, errors: string[]): ParserConfig | undefined {
+  const local: string[] = [];
+  const config = readParser(raw, folder, local);
+  errors.push(...local.map((e) => e.replace(/\bparser\b/gu, "talk")));
+  return config;
 }
 
 /**
@@ -304,7 +317,7 @@ function readReport(raw: unknown, folder: string, dataDir: string, errors: strin
 export function readRuntimeConfig(input: unknown, folder: string, shape: ServiceShape): { ok: true; config: RuntimeConfig } | { ok: false; errors: string[] } {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ['runtime.json must be an object like {"mode": "fakes"}.'] };
-  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser", "decision", "ai", "model", "allowance", "pauseMinutes", "report", "speech"], "runtime.json", errors);
+  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser", "talk", "decision", "ai", "model", "allowance", "pauseMinutes", "report", "speech"], "runtime.json", errors);
 
   if (input.mode !== "fakes" && input.mode !== "live") errors.push('Set "mode" to "fakes" (stand-in services, for a local run) or "live" (real services through Guard).');
   const host = input.host ?? "127.0.0.1";
@@ -334,6 +347,7 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
   }
 
   const parser = input.parser !== undefined ? readParser(input.parser, folder, errors) : undefined;
+  const talk = input.talk !== undefined ? readTalk(input.talk, folder, errors) : undefined;
   const decision = input.decision !== undefined ? readDecision(input.decision, errors) : undefined;
   if (input.ai !== undefined && input.ai !== "on" && input.ai !== "buttons") errors.push('"ai" must be "on" (the default) or "buttons" (no AI: the agent reads with the rules and answers with buttons and lists).');
   if (input.model !== undefined && input.model !== "normal" && input.model !== "off") errors.push('"model" must be "normal" (the default) or "off" (the month\'s AI cap: the language model is left out; the rules and the decision model keep answering).');
@@ -347,7 +361,7 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
 
   if (errors.length > 0) return { ok: false, errors };
   const dir = dataDir as string;
-  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(input.model !== undefined ? { model: input.model as "normal" | "off" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}), ...(report ? { report } : {}) , ...(speech ? { speech } : {}) } };
+  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(talk ? { talk } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(input.model !== undefined ? { model: input.model as "normal" | "off" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}), ...(report ? { report } : {}) , ...(speech ? { speech } : {}) } };
 }
 
 /** pathway.lock holds one line, `bookings@0.1.0` (blank lines and # comments are allowed). */

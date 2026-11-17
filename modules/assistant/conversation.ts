@@ -34,11 +34,21 @@ import type { Mood } from "./mood.ts";
 import { FACE_OF_MOOD, publicFace } from "./character.ts";
 import type { CharacterPictures, Face } from "./character.ts";
 import type { AssistantSettings } from "./settings.ts";
-import { TALK_LINES, UNDO_FOR_MS, assistantOf, compactAssistant, nextId } from "./state.ts";
+import { CHAT_LINES, TALK_LINES, UNDO_FOR_MS, assistantOf, compactAssistant, nextId } from "./state.ts";
 import type { AssistantState, CardRecord } from "./state.ts";
 import type { DayRow, OwnerSkill, Prepared, Proposal } from "./skill.ts";
 import { dayFacts, render as renderTemplate, templateMessageFor } from "./templates.ts";
 import type { AssistantTemplateId, TemplateFacts } from "./templates.ts";
+import type { AiPolicy, AiStore } from "../understanding/ai-state.ts";
+import type { TalkModel } from "../understanding/talk.ts";
+import { MEMORY_ACTION, addNote, closeNote, memoryOf, memoryRefs, panelAuthority } from "../memory/memory.ts";
+import type { Audience, NoteKind, NoteLang } from "../memory/memory.ts";
+import { createNotes, parseNoteReply } from "./notes.ts";
+import { customerTalk } from "./talk-customer.ts";
+import { ownerTalk } from "./talk-owner.ts";
+import type { LimitHook } from "./talk-owner.ts";
+import { talkOff } from "./talk-run.ts";
+import type { TalkEnv } from "./talk-run.ts";
 import { CARD_LABELS, cardQuestion, write } from "./words.ts";
 import type { MessageData, MessageId } from "./words.ts";
 
@@ -76,7 +86,13 @@ export interface OwnerRead { intent: OwnerIntent; note?: string; refs: Record<st
 export interface AssistantDeps {
   shop: AssistantShop;
   /** The template's store: the assistant's part lives under `assistant` and is saved with the step. */
-  store: { assistant?: AssistantState };
+  store: { assistant?: AssistantState } & AiStore;
+  /**
+   * The talk (block M): the talk model (built at the runtime's start; left out: the talk is off and everyone gets today's fixed answers), the AI policy (button mode and the
+   * AI cap turn it off), the shop's switch for customers' talk (`assistant.talk.customers`, default on), the limits half of the chat (M2; left out: a rule that names a limit
+   * is saved as a note), and a keyed digest for notes (the record's key). Left out altogether: no talk, as before.
+   */
+  talk?: { model?: TalkModel; policy: AiPolicy; customers?: boolean; limits?: LimitHook; digest?: (text: string) => string };
   /** The skills this runtime hosts (one today; modules/Explanation.md says why). */
   skills: OwnerSkill[];
   clock: Clock;
@@ -103,12 +119,14 @@ interface Said extends SayArgs {
   booking: string | null;
   write(language: Language): { text: string; check: CheckFacts; template?: { id: AssistantTemplateId; facts: TemplateFacts } };
   buttons?: Choice[];
+  /** A list (a customer's menu of services or times), instead of buttons. */
+  list?: { button: string; rows: Choice[] };
 }
 interface SaidFacts { language: Language; text: string; check: CheckFacts; template?: { id: AssistantTemplateId; facts: TemplateFacts } }
 
 /** The kinds a shop offers, from its skills: what intents.ts may read as more than "not offered". */
 export function kindsOf(skills: readonly OwnerSkill[]): OwnerKind[] {
-  const kinds: OwnerKind[] = ["waiting", "money", "cancel", "refund", "message", "undo", "limit", "help"];
+  const kinds: OwnerKind[] = ["waiting", "money", "cancel", "refund", "message", "undo", "limit", "help", "remember", "notes", "forget"];
   if (skills.some((s) => s.day)) kinds.push("day");
   if (skills.some((s) => s.owes)) kinds.push("owes");
   if (skills.some((s) => s.open)) kinds.push("open_orders");
@@ -149,7 +167,7 @@ export function createAssistant(deps: AssistantDeps) {
     languageOf: (phone) => (phone === owner ? shop.owner.language : deps.languageOf(phone)),
     optedOut: (phone) => phone !== owner && deps.optedOut(phone),
     factsFor: (a, language) => { const w = a.write(language); return { language, ...w }; },
-    interactiveFor: (a, f) => ({ body: f.text, buttons: a.buttons! }),
+    interactiveFor: (a, f) => (a.list ? { body: f.text, list: a.list } : { body: f.text, buttons: a.buttons! }),
     inputsOf: (a) => ({ templates: a.templates }),
     log: (caseId, phone, action, outcome, inputs, more) => deps.log(caseId, phone, action, outcome, inputs, more),
     heldBack: async () => undefined, // a line to a customer that fails the check is the assistant's own words: it is recorded as blocked, and the owner sees the result in the reply
@@ -204,6 +222,70 @@ export function createAssistant(deps: AssistantDeps) {
   const logLine = (caseId: string | null, action: string, outcome: Outcome, inputs: unknown, refs: Record<string, string>, notes?: string) =>
     deps.log(caseId, owner, action, outcome, inputs, { refs, ...(notes ? { notes } : {}), language: shop.owner.language });
 
+  // ---- the shop's memory and the talk (block M; modules/memory, notes.ts, talk-*.ts) ----
+  const notes = createNotes({
+    state, nowMs: () => clock.now(), ownerLanguage: shop.owner.language,
+    tell: (id, data, more) => tell(id, data as never, more),
+    logLine: (caseId, action, outcome, inputs, refs, text) => logLine(caseId, action, outcome, inputs, refs, text),
+    via: () => (toPage ? "app" : "whatsapp"), onPage: () => toPage, ...(deps.talk?.digest ? { digest: deps.talk.digest } : {}),
+  });
+  const talkEnv: TalkEnv | undefined = deps.talk ? { ...(deps.talk.model ? { model: deps.talk.model } : {}), clock, timeZone: tz, store: deps.store, policy: deps.talk.policy, log: deps.log } : undefined;
+  const promptShop = { name: shop.name, character: { ...(shop.settings.character.name ? { name: shop.settings.character.name } : {}), personality: shop.settings.character.personality } };
+
+  /** One line of the owner's talk, kept for the next prompt's "last six lines" (talk turns only). */
+  function chatLine(from: "owner" | "assistant", text: string): void {
+    const s = state();
+    s.chat = [...(s.chat ?? []), { atMs: clock.now(), from, text }].slice(-CHAT_LINES);
+  }
+
+  /**
+   * The owner's words that no rule or router read: answered as a conversation when the talk is on. False when it is off (no model, button mode, the AI cap): the caller
+   * then gives today's fixed answer. A reply that fails a check is not sent: the owner gets a fixed line with the shop's real numbers instead.
+   */
+  async function talkToOwner(text: string): Promise<boolean> {
+    if (!deps.talk || !talkEnv || talkOff(talkEnv)) return false;
+    const s = state();
+    const r = await ownerTalk({ env: talkEnv, shop: { ...promptShop, owner: shop.owner }, memory: s.memory, skills, chat: s.chat ?? [], ...(deps.talk.limits ? { limits: deps.talk.limits } : {}) }, { text, language: shop.owner.language });
+    if (!r.ran) return false;
+    if (!r.result.ok) {
+      const today = skills.find((x) => x.day);
+      await tell("talk_fallback", { waiting: skills.reduce((n, x) => n + x.waiting().length, 0) + openCards(s, clock.now()).length, ...(today ? { today: today.day!(todayIn(clock.now(), tz)).length } : {}) });
+      return true;
+    }
+    const a = r.result.answer;
+    chatLine("owner", text);
+    if (a.limit) {
+      // The model only names which declared limit is meant; the limits half reads the value from the owner's words by rule (never from a model). With no such half, or
+      // when it does not take it, the rule is kept as a note and said to be one: the chat is not a second place where limits live.
+      if (deps.talk.limits && (await deps.talk.limits.tighten({ limitId: a.limit, words: text }))) return true;
+      await notes.saveRuleAsNote(text);
+      return true;
+    }
+    await tell("talk_reply", { text: r.result.text, facts: r.result.facts });
+    chatLine("assistant", r.result.text);
+    if (a.note) await notes.proposeNote(a.note);
+    return true;
+  }
+
+  /**
+   * A customer's words that no rule or router read (the template's "didn't understand"): answered from what the shop has said customers may be told, when the talk is on and
+   * the shop has not turned customers' talk off. `menu` is the template's own buttons or list for the customer's next step (its own words and ids), added by code; with
+   * `askOwner` the template offers its way to the owner. True when a reply went out; false, and nothing sent, otherwise: the caller sends the template's menu as before.
+   */
+  async function talkToCustomer(a: { phone: string; text: string; language: Language; overrideAttempt?: boolean; menu?: (askOwner: boolean) => { buttons?: Choice[]; list?: { button: string; rows: Choice[] } } }): Promise<boolean> {
+    if (!deps.talk || !talkEnv) return false;
+    const r = await customerTalk({ env: talkEnv, shop: promptShop, customersOn: deps.talk.customers !== false, memory: deps.store.assistant?.memory, skills }, a);
+    if (!r.sent) return false;
+    const menu = a.menu?.(r.result.answer.askOwner);
+    // the template's own button and row words are its, not the model's: the outgoing check reads them as the names they are
+    const own = menu ? [...(menu.buttons ?? []).map((b) => b.title), ...(menu.list ? [menu.list.button, ...menu.list.rows.flatMap((x) => [x.title, x.description ?? ""])] : [])].filter((x) => x !== "") : [];
+    const check: CheckFacts = { ...r.result.facts, literals: [...r.result.facts.literals, ...own] };
+    return say({
+      booking: null, phone: a.phone, to: "customer", templates: ["assistant_talk"], write: () => ({ text: r.result.text, check }),
+      ...(menu ? { offer: { kind: "talk" }, ...(menu.buttons ? { buttons: menu.buttons } : {}), ...(menu.list ? { list: menu.list } : {}) } : {}),
+    });
+  }
+
   const skillOf = (ref: string): OwnerSkill | undefined => skills.find((s) => s.routing.refs.test(ref));
   const skillNamed = (name: string): OwnerSkill | undefined => skills.find((s) => s.name === name);
   const today = (): LocalDate => todayIn(clock.now(), tz);
@@ -232,7 +314,7 @@ export function createAssistant(deps: AssistantDeps) {
       { card: card.id, skill: skill.name, kind: proposal.kind, digest, case: proposal.case, ...(prepared.shown.amountPaise > 0 ? { amountPaise: String(prepared.shown.amountPaise) } : {}) },
       "a card with the exact change was shown to the owner; nothing is done until they tap it");
     const cardData = {
-      kind: proposal.kind, ...(proposal.kind === "answer" ? { itemKind: proposal.itemKind } : {}), who: prepared.shown.who, ref: proposal.case, what: prepared.shown.what,
+      kind: proposal.kind, skill: skill.name, ...(proposal.kind === "answer" ? { itemKind: proposal.itemKind } : {}), who: prepared.shown.who, ref: proposal.case, what: prepared.shown.what,
       amountPaise: prepared.shown.amountPaise, ...(prepared.shown.words !== undefined ? { words: prepared.shown.words } : {}), ...(prepared.aboveLimit ? { aboveLimit: true } : {}), code, hasNo,
     };
     // the owner's page shows the same question beside the card's buttons, without the code (items 11d and 11e together)
@@ -416,6 +498,7 @@ export function createAssistant(deps: AssistantDeps) {
     const now = clock.now();
     const last = [...state().undo].reverse().find((u) => !u.done && u.untilMs > now);
     if (!last) { await tell("undo_none", {}); return; }
+    if (last.kind === "remember") { last.done = true; await notes.undoRemember(last.case!); return; }
     if (last.kind === "move") {
       const skill = skillNamed(last.skill);
       const r = skill?.move ? await skill.move(last.case!, last.fromMs!) : { ok: false as const, why: "failed" as const };
@@ -440,6 +523,9 @@ export function createAssistant(deps: AssistantDeps) {
     // A tap is always a card's. Typed, "no thanks" has the shape of "no <code>": it is a card's reply only when a card has that code; otherwise it is words to read.
     const card = parseCardReply(msg);
     if (card && (card.via === "button" || cardByCode(state(), card.code))) { await onCardReply(card); return true; }
+    // a tap on a proposed note: Remember saves it, No is final for a day (notes.ts)
+    const noteTap = parseNoteReply(msg);
+    if (noteTap) { await notes.onProposalReply(noteTap); return true; }
     const read = await deps.read(msg.text);
     const intent = read.intent;
     logLine(null, ASSISTANT_ACTIONS.read, "confirmed", { intent: intent.kind }, { intent: intent.kind, ...read.refs, ...(intent.ref ? { case: intent.ref } : {}) }, read.note);
@@ -448,6 +534,9 @@ export function createAssistant(deps: AssistantDeps) {
     switch (intent.kind) {
       case "help": await tell("help", { ...(shop.settings.character.name ? { name: shop.settings.character.name } : {}), shop: shop.name, kinds: context.kinds, personality: shop.settings.character.personality }); break;
       case "limit": await tell("limit_no", {}); break;
+      case "remember": await notes.remember(intent.words); break;
+      case "notes": await notes.list(); break;
+      case "forget": await notes.forget(intent.note ?? ""); break;
       case "day": {
         const date = dateOf(intent) ?? today();
         const rows = skills.flatMap((s) => s.day?.(date) ?? []).sort((a, b) => a.startMs - b.startMs);
@@ -471,7 +560,7 @@ export function createAssistant(deps: AssistantDeps) {
         await propose(proposal);
         break;
       }
-      default: await tell("not_understood", { kinds: context.kinds });
+      default: if (!(await talkToOwner(msg.text))) await tell("not_understood", { kinds: context.kinds });
     }
     return true;
   }
@@ -545,12 +634,31 @@ export function createAssistant(deps: AssistantDeps) {
     const s = state();
     for (const c of expireCards(s, now)) logLine(c.action.case, ASSISTANT_ACTIONS.card, "blocked", { card: c.id }, { card: c.id, skill: c.action.skill, kind: c.action.kind, digest: c.digest, decision: "none" }, "the card ran out without a tap: nothing was done");
     compactAssistant(s, now, isoDate(today()));
+    notes.tick(); // notes past their end are closed; closed notes lose their text after 30 days (modules/memory)
   }
 
   /** The mood now, from the skills' reads and the clock (mood.ts), and the pictures that show it (to the owner, and to the public). */
   const mood = () => shopMood(skills, state(), clock.now(), tz);
 
-  return { onOwnerMessage, onPageCard, onPageMessage, onPageVoice, hearOwner, onTick, mood, kinds: context.kinds };
+  /**
+   * The Operator or the builder, in the panel (which authenticated them), adds a note to this shop's memory or closes one. The authority is made here from who the panel says
+   * they are; the owner is not told (they see the note in their app and can delete it). The panel's transport to a running runtime is not built yet (Deferred); this is the
+   * runtime's side of it, ready for the event that carries it.
+   */
+  function onPanelNote(a: { by: "operator" | "builder" } & ({ action: "add"; kind: NoteKind; text: string; lang?: NoteLang; audience?: Audience; untilMs?: number } | { action: "close"; id: string })): { ok: true; id: string } | { ok: false; why: string } {
+    const auth = panelAuthority(a.by);
+    const c = { nowMs: clock.now(), ...(deps.talk?.digest ? { digest: deps.talk.digest } : {}) };
+    const m = memoryOf(state());
+    const r = a.action === "add" ? addNote(m, auth, { kind: a.kind, text: a.text, lang: a.lang ?? "en", ...(a.audience ? { audience: a.audience } : {}), ...(a.untilMs !== undefined ? { untilMs: a.untilMs } : {}) }, c) : closeNote(m, auth, a.id, c);
+    if (!r.ok) return { ok: false, why: r.why };
+    logLine(null, MEMORY_ACTION, "confirmed", a.action === "add" ? { note: r.note.id, text: r.note.text } : { note: r.note.id, digest: r.note.digest }, memoryRefs(r.note, a.action === "add" ? "added" : "ended"), `the ${a.by} ${a.action === "add" ? "added a note to" : "closed a note of"} the shop's memory in the panel; the record keeps its id, kind and who, never its words`);
+    return { ok: true, id: r.note.id };
+  }
+
+  /** The owner deleted a note from their app (an `owner_action` forget_note, checked at the runtime against the owner's link or session). */
+  async function onPageForget(id: string): Promise<void> { await onPage(() => notes.forget(id)); }
+
+  return { onOwnerMessage, onPageCard, onPageMessage, onPageVoice, onPageForget, onPanelNote, hearOwner, onTick, mood, kinds: context.kinds, talkToCustomer, notesForApp: notes.forApp };
 }
 export type Assistant = ReturnType<typeof createAssistant>;
 

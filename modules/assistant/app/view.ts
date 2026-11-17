@@ -1,6 +1,7 @@
 // What the owner's app shows (item 11e), read from the step's store like every other read: the character and its mood, today's list, what needs the owner (each skill's
 // waiting items and the assistant's open cards, by id and digest so a press can be checked against what waits now), and the last lines of talk. Pure. Used by the
 // runtime's owner read (templates/commerce/bookings/server/runtime.ts), which adds it to item 11d's owner view as `app`.
+import { inScope } from "../../memory/memory.ts";
 import type { Character, Face } from "../character.ts";
 import { isClosedDay, shopMood } from "../conversation.ts";
 import { cardHasNo, openCards } from "../cards.ts";
@@ -22,6 +23,8 @@ export interface OwnerAppView {
   /** The assistant's open cards: answered on the page by card id and digest, with the owner's link as the authority (no code is ever on the page). */
   cards: { id: string; digest: string; skill: SkillName; kind: string; case: string; amountPaise: number; who: string; expiresAtMs: number; question?: string; hasNo: boolean }[];
   talk: readonly TalkLine[];
+  /** Block M: the notes the assistant remembers (every open note: the owner may see all), for the app's list with a delete button. */
+  notes: { id: string; text: string; kind: string; audience: "owner" | "everyone"; untilMs?: number }[];
 }
 
 export function ownerAppView(a: { skills: readonly OwnerSkill[]; state: AssistantState | undefined; nowMs: number; timeZone: string; settings: AssistantSettings }): OwnerAppView {
@@ -38,6 +41,7 @@ export function ownerAppView(a: { skills: readonly OwnerSkill[]; state: Assistan
       ...(c.question ? { question: c.question } : {}), hasNo: cardHasNo(c),
     })),
     talk: a.state?.talk ?? [],
+    notes: a.state?.memory ? inScope(a.state.memory, "owner", a.nowMs).map((n) => ({ id: n.id, text: n.text, kind: n.kind, audience: n.audience, ...(n.untilMs !== undefined ? { untilMs: n.untilMs } : {}) })) : [],
   };
 }
 
