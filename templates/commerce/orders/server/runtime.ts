@@ -61,6 +61,8 @@ export interface RuntimeOptions {
   terms?: () => import("../../../../modules/terms/terms.ts").TermsFile | undefined;
   /** Item 11e: the owner's router for the shop's assistant (modules/assistant/reading.ts). Left out: the rules alone read the owner's words. */
   ownerParser?: OwnerParser;
+  /** Block M: the shop's talk model (modules/assistant/understanding.ts buildTalker). Left out: no talk, and everyone gets the fixed answers. */
+  talker?: import("../../../../modules/understanding/talk.ts").TalkModel;
   /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts), made by the shared start. Left out: none. */
   ownerSignin?: OwnerSignin;
   /** Item 11h: the shop's web push. A message kept for a page's conversation is also pushed to the phones that allowed alerts on that page. Left out: none. */
@@ -120,7 +122,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   const agentOver = (store: Store, record: Parameters<RuntimeKit<Store, Settings, RefundContext>["createAgent"]>[0]["record"], use: Services) => createAgent({
     settings, clock, ...use, messaging: channelMessaging(use.messaging, () => (store.channel ??= emptyChannelState()), clock, options.push ? (to, text) => { options.push!.customer(to, text); } : undefined), parser, record, store, ai: policy,
     ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}),
-    ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}),
+    ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(options.talker ? { talker: options.talker } : {}), ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}),
   });
   const skillOver = (store: Store) => ordersSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false });
   const kit: RuntimeKit<Store, Settings, RefundContext> = {

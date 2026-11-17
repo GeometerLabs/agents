@@ -112,6 +112,8 @@ export interface AgentDeps {
   terms?: () => TermsFile | undefined;
   /** Item 11e: how the shop's assistant reads the owner's words (modules/assistant/reading.ts). Left out: the rules alone. The assistant is on only with an "assistant" settings block. */
   ownerParser?: OwnerParser;
+  /** Block M: the shop's talk model (modules/understanding/talk.ts). Left out: no talk. */
+  talker?: import("../../../../modules/understanding/talk.ts").TalkModel;
   /**
    * Items 11d, 11e and 11h: a recording the owner made on their page, by the reference its owner_message carries; the runtime holds the audio in memory only
    * (modules/channels/owner-audio.ts). Left out: no recording is ever found, and the owner is asked to type.
@@ -1069,7 +1071,11 @@ export function createAgent(deps: AgentDeps): Agent {
         case "keep": return await onKeep(phone);
         case "paid": return await (ownerConfirms ? onPaidClaim(phone, "button") : onPaidReadBack(phone));
         case "greeting": if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["menu"], { offer: itemsOffer(["pick_items"]) }); return;
-        default: if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["didnt_understand"], { offer: itemsOffer(["didnt_understand"]) });
+        default:
+          if (!licence().takesNewWork) return await pausedReply(phone, "menu");
+          // block M: the shop's assistant may answer, from what customers may be told (false: the talk is off, a check failed, or nothing was said; the menu goes as before)
+          if (!msg.reply && await assistant?.talkToCustomer({ phone, text: msg.text, language: languageOf(phone), ...(intent.overrideAttempt ? { overrideAttempt: true } : {}), menu: (askOwner) => (askOwner ? { buttons: buttonsFor(languageOf(phone), ["owner"]) } : { list: itemList(settings, languageOf(phone)) }) })) return;
+          await tellCustomer(null, phone, ["didnt_understand"], { offer: itemsOffer(["didnt_understand"]) });
       }
     } finally {
       await announceButtonMode(); // after the customer has their answer
@@ -1332,7 +1338,7 @@ export function createAgent(deps: AgentDeps): Agent {
   // On only when the settings have an "assistant" block. Orders is its one skill here; answering what waits is the owner's own fixed reply (src/assistant.ts).
   const assistant = assistantForAgent({
     settings, store, skill: ordersSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg) }),
-    clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
+    clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}), ...(deps.talker ? { talker: deps.talker } : {}),
     // the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out
     ...(deps.voice ? { hearing: { hear: createListener({ voice: deps.voice, reader, isCommander: () => false, optedOut: () => false }) } } : {}),
     log: (caseId, phone, action, outcome, inputs, more) => log(caseId ? store.orders.get(caseId) ?? null : null, phone, action, outcome, inputs, more),

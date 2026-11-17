@@ -6,6 +6,7 @@
 // the days the owner closed, what can still be undone, and the last few lines of the owner's talk in the app. It holds no customer's words except a message the owner
 // asked to send, which goes with its card; the card closes when it is sent or refused, and the words go with it after a day (compactAssistant).
 import { DAY } from "../core/time.ts";
+import type { MemoryState } from "../memory/memory.ts";
 
 /** What a card does when the owner taps yes: the skill, the case and the exact fields the skill read from its store. Immutable once the card is made. */
 export interface CardAction {
@@ -48,13 +49,13 @@ export interface UndoRecord {
   /** "u-2" */
   id: string;
   /** A closed day (undo: open it again) or a booking moved by the owner (undo: move it back, if that time is still free). */
-  kind: "close_day" | "move";
+  kind: "close_day" | "move" | "remember";
   skill: string;
-  /** close_day: the date closed, "2026-11-16". move: the booking's date before the move. */
+  /** close_day: the date closed, "2026-11-16". move: the booking's date before the move. remember: empty (the note is in `case`). */
   date: string;
   /** close_day: the cases whose customers were asked to pick another day. Undo tells those still on that day that their booking stands. */
   asked: string[];
-  /** move: the booking, and where it was and went. */
+  /** move: the booking, and where it was and went. remember: the note's id ("n-3"), forgotten again on undo. */
   case?: string;
   fromMs?: number;
   toMs?: number;
@@ -69,6 +70,8 @@ export const UNDO_FOR_MS = DAY;
 /** One line of the owner's talk in the app, shown on the page (newest last). */
 export interface TalkLine { atMs: number; from: "owner" | "assistant"; text: string }
 export const TALK_LINES = 20;
+/** Talk turns kept for the prompt (the prompt uses the last six). */
+export const CHAT_LINES = 12;
 
 export interface AssistantState {
   /** The last number given to a card or an undo ("c-3", "u-4"); never given twice, so a record line names one thing. */
@@ -79,6 +82,13 @@ export interface AssistantState {
   closedDays: string[];
   undo: UndoRecord[];
   talk: TalkLine[];
+  /**
+   * The shop's memory (modules/memory): standing notes, the proposals waiting for a tap, and the no's. Left out until the first note, so a store from before it loads as it
+   * was and a shop that never uses it saves the same bytes. It is a part of the assistant's state because the notes belong to the shop, not to a template.
+   */
+  memory?: MemoryState;
+  /** The owner's talk (block M): the last lines of the talk turns, for the prompt's "last six lines". Only talk turns, never a customer's words. Left out until the first talk. */
+  chat?: TalkLine[];
 }
 
 export const emptyAssistantState = (): AssistantState => ({ seq: 0, cards: [], refused: [], closedDays: [], undo: [], talk: [] });
@@ -118,6 +128,7 @@ export function compactAssistant(state: AssistantState, nowMs: number, todayIso:
   const days = state.closedDays.filter((d) => d >= todayIso);
   gone += state.closedDays.length - days.length;
   state.closedDays = days;
+  if (state.chat && state.chat.length > CHAT_LINES) { gone += state.chat.length - CHAT_LINES; state.chat = state.chat.slice(-CHAT_LINES); }
   if (state.talk.length > TALK_LINES) { gone += state.talk.length - TALK_LINES; state.talk = state.talk.slice(-TALK_LINES); }
   return gone;
 }

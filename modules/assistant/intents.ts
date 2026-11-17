@@ -11,10 +11,11 @@ import type { DatePhrase, TimePhrase } from "../language/dates.ts";
 import { canon, languageOfScript } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import { chosenProbability, isObj } from "../understanding/model.ts";
+import { readMemoryWords } from "./intents-memory.ts";
 import type { DecisionPlan, IntentBase, ParseOptionsBase, Reading } from "../understanding/model.ts";
 
 /** What the owner can ask or ask for. Which of these a shop offers depends on its skills (OwnerContext.kinds). */
-export const OWNER_KINDS = ["day", "owes", "open_orders", "waiting", "money", "close_day", "reopen_day", "move", "cancel", "refund", "message", "undo", "limit", "help"] as const;
+export const OWNER_KINDS = ["day", "owes", "open_orders", "waiting", "money", "close_day", "reopen_day", "move", "cancel", "refund", "message", "undo", "limit", "help", "remember", "notes", "forget"] as const;
 export type OwnerKind = (typeof OWNER_KINDS)[number] | "unknown";
 
 export interface OwnerIntent extends IntentBase {
@@ -29,6 +30,8 @@ export interface OwnerIntent extends IntentBase {
   amountPaise?: number;
   /** For a message: the owner's own words to send, as typed, without the reference and the command word. */
   words?: string;
+  /** forget: the note's id ("n-3"), from the words by rule. */
+  note?: string;
 }
 
 /** What the reading is told about the shop: the kinds its skills offer. A kind not offered is read but answered "this shop's assistant does not take that". */
@@ -96,6 +99,9 @@ export function readOwnerRules(text: string, context: OwnerContext): OwnerIntent
   const script = languageOfScript(text);
   const language: Language | undefined = script === "en" ? undefined : script; // Latin letters may be English or Hindi typed in Latin letters: not clear
   const base = { ...(language ? { language } : {}), ...(date ? { date } : {}), ...(time ? { time } : {}), ...(ref ? { ref } : {}) };
+  // The shop's memory (block M): "remember …", "what do you remember?", "forget 3", read first and by rule only, so the owner's words are never taken for another kind.
+  const memory = readMemoryWords(text);
+  if (memory) return { ...(language ? { language } : {}), ...(memory.kind === "remember" ? { kind: "remember", ...(memory.words ? { words: memory.words } : {}) } : memory.kind === "forget" ? { kind: "forget", note: memory.note } : { kind: "notes" }) } as OwnerIntent;
   // A message to a customer is the owner's words to pass on, whatever they say: "message b-1 sorry, we are closed tomorrow" must never close tomorrow, and "tell b-1
   // we can move you to 5pm" must never move the booking. So when the message command is the FIRST command word and a customer is named, it is a message (shown on
   // a card before anything is sent), and the other kinds' words in its body are not read. "cancel b-14 and tell her" still starts with cancel.
@@ -132,9 +138,15 @@ const KIND_MEANING: Record<Exclude<OwnerKind, "unknown">, string> = {
   undo: "undo the last thing the assistant did",
   limit: "change a limit (a refund limit, a deposit, a cap)",
   help: "know what the assistant can do",
+  remember: "ask the assistant to remember something",
+  notes: "see what the assistant remembers",
+  forget: "ask the assistant to forget a note",
 };
 
-const offered = (context: OwnerContext): Exclude<OwnerKind, "unknown">[] => OWNER_KINDS.filter((k) => context.kinds.includes(k));
+/** Only the rules read these: a model is never asked whether the owner wants something written to, or taken out of, the shop's memory. */
+const RULES_ONLY: readonly OwnerKind[] = ["remember", "notes", "forget"];
+
+const offered = (context: OwnerContext): Exclude<OwnerKind, "unknown">[] => OWNER_KINDS.filter((k) => context.kinds.includes(k) && !RULES_ONLY.includes(k));
 
 /** The owner's reading for the router. Only `kind` comes from a model; `merge` puts back the rules' values. */
 export const ownerReading: Reading<OwnerIntent, OwnerContext, ParseOptionsBase> = {
@@ -151,6 +163,7 @@ export const ownerReading: Reading<OwnerIntent, OwnerContext, ParseOptionsBase> 
     if (isObj(raw.time) && typeof raw.time.hour === "number" && typeof raw.time.minute === "number") out.time = raw.time as unknown as TimePhrase;
     if (typeof raw.ref === "string" && /^[bfqo]-\d{1,6}$/u.test(raw.ref)) out.ref = raw.ref;
     if (typeof raw.amountPaise === "number" && Number.isSafeInteger(raw.amountPaise) && raw.amountPaise > 0) out.amountPaise = raw.amountPaise;
+    if (typeof raw.note === "string" && /^n-\d{1,4}$/u.test(raw.note)) out.note = raw.note;
     if (typeof raw.words === "string" && raw.words.trim() !== "" && raw.words.length <= 900) out.words = raw.words;
     return out;
   },
