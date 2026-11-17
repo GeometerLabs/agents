@@ -17,6 +17,7 @@
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { identityBlock } from "./chat-identity-page.ts";
 import { chatPage } from "./chat-page.ts";
 import { chatPolicy } from "./chat-front.ts";
 import { PAINT_IDS, PAINTS, contrastRatio, isPaint } from "./chat-paint.ts";
@@ -26,7 +27,7 @@ import type { Language } from "../language/languages.ts";
 import type { ChatKind } from "./words-chat.ts";
 import type { ChatThread } from "./chat.ts";
 
-const STATES = ["empty", "answered", "long", "sending", "failed", "slow", "offline", "capped", "closed", "paused", "alerts", "confirmed", "paid", "confirmed-live", "paid-live", "voice", "recording", "busy", "paints"] as const;
+const STATES = ["empty", "answered", "long", "sending", "failed", "slow", "offline", "capped", "closed", "paused", "alerts", "confirmed", "paid", "confirmed-live", "paid-live", "voice", "recording", "busy", "keep", "newphone", "paints"] as const;
 const BASE = "http://127.0.0.1/s/glow/chat";
 const font = readFileSync(new URL("./fonts/baloo-2-latin-wght-normal.woff2", import.meta.url));
 const playerJs = readFileSync(new URL("./vendor/lottie/lottie_light.min.js", import.meta.url));
@@ -100,6 +101,8 @@ export function screen(state: string, q: URLSearchParams, base = BASE): { html: 
     ...(state === "voice" || state === "recording" ? { listen: true } : {}),
     ...(state === "alerts" ? { pushKey: "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBxWqwxeKV8hxiSaI4Rc" } : {}),
     onStreetlist: q.get("streetlist") === "1", fontUrl: `${base}/font.woff2`,
+    // W2: the identity part; ?parent=1 draws a Fees parent's chat note instead
+    identity: identityBlock({ language, base, ...(q.get("parent") === "1" ? { parent: { back: "http://127.0.0.1/s/glow/f/link" } } : {}) }),
   });
   const dark = q.get("theme") === "dark" ? `<script nonce="${nonce}">document.documentElement.dataset.theme = "dark";</script>` : "";
   return { html: page.replace("</body>", `${dark}${seed(state, nonce, language)}</body>`), csp: chatPolicy(base, nonce, base.replace(/\/chat$/u, "")) };
@@ -117,6 +120,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     if (motionFile && (MOMENTS as readonly string[]).includes(motionFile[1])) { res.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }); res.end(readFileSync(new URL(`./motion/${motionFile[1]}.json`, import.meta.url))); return; }
     const face = /^\/character\/([a-z]+)(-anim)?\.svg$/u.exec(url.pathname);
     if (face) { res.writeHead(200, { "content-type": "image/svg+xml", "cache-control": "no-store" }); res.end(animatedFace(face[1])); return; }
+    // W2: what the identity part's script asks (chat-identity-front.ts): "keep" offers the keep box, "newphone" is a fresh guest, any other state is a guest mid-chat with the delete button
+    if (url.pathname === "/id/state") { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify(lastState === "newphone" ? { keys: 0, here: false, number: false, work: 0, offer: false, restored: false, known: false } : { keys: 0, here: false, number: false, work: 1, offer: lastState === "keep", restored: false, known: true })); return; }
     if (url.pathname === "/thread") { res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }); res.end(JSON.stringify(Number(url.searchParams.get("after") ?? "0") >= 2 ? arriving(lastState, Date.now()) : { lines: [], answered: true, capped: false, retentionDays: 30 })); return; }
     if (!(STATES as readonly string[]).includes(state)) { res.writeHead(200, { "content-type": "text/html; charset=utf-8" }); res.end(`<!doctype html><meta charset="utf-8"><title>Chat screens</title><ul>${STATES.map((s) => `<li><a href="/${s}">${s}</a>`).join("")}</ul>`); return; }
     lastState = state;
