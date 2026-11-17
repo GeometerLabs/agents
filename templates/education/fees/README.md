@@ -101,6 +101,7 @@ A centre is a JSON file ([bright-tuition-upi.example.json](settings/bright-tuiti
 | `lateFeeInr` | Added once, after the grace days, if the fee is still unpaid. 0: none. Never more than the cheapest fee |
 | `joiningMidMonth` | What a student whose `joined` date is after the 1st owes for the joining month: `usual` (the default: `joined` is ignored, as before), `full`, `prorata` (the days left as a share of the month, whole rupees) or `nextMonth` |
 | a student's `joined`, `backDues` | The day the student joined (`2026-11-18`), and earlier months still unpaid when the agent started (`[{"month": "2026-09", "amountInr": 1500}]`, at most the batch's fee), each carried as a fee of its own |
+| `classes.oldDuesStopLink` | Classes only. `false` (the default): a carried back due does not stop the class link or the reading material, only the student's ordinary fees do. `true`: a back due past its grace days stops them as an ordinary fee does |
 | `reminders` | Days from the due day (negative is before), the hour (6 to 21), and the most reminders for one fee in a month |
 | `partPayments` | Whether a parent may pay part, and the least a first part may be |
 | `waiver.limitInr` | The most the agent takes off one student's month on its own. 0: every request goes to the owner |
