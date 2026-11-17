@@ -10,7 +10,7 @@ import type { TalkModel } from "../../../../modules/understanding/talk.ts";
 
 const annapurna = () => JSON.parse(readFileSync(new URL("../settings/annapurna-tiffins-razorpay.example.json", import.meta.url), "utf8")) as Record<string, unknown>;
 const script = (sentences: { text: string; sources: string[] }[]): TalkModel => ({ async ask() { return { answer: { sentences, ask_owner: false }, usage: { inputTokens: 900, outputTokens: 120 }, costMicroInr: 4000, rateDate: null, provider: "fake", model: "fake", latencyMs: 1 }; } });
-const QUESTION = "is the sky blue today";
+const QUESTION = "is the sky blue"; // no day word: "today" makes the rules read an order's date, which is the order flow's, not the talk's
 
 test("an unreadable message is answered from the shop's menu, with the template's item list", async () => {
   const settings = parseSettings({ ...annapurna(), assistant: {} });

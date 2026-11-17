@@ -146,7 +146,7 @@ test("every language renders both certificates, as a page and as a short text, w
         assert.deepEqual(bannedIn(texts[i], l), [], `${l}: banned word in the text`);
         assert.deepEqual(bannedIn(pages[i], l), [], `${l}: banned word on the page`);
       }
-      assert.ok(texts[0].includes(s.cert.held(38, 38, 0, 14)) && texts[0].includes("Divya, local Operator"));
+      assert.ok(texts[0].includes(s.cert.held(40, 40, 0, 14)) && texts[0].includes("Divya, local Operator"));
       assert.ok(texts[1].includes(MONTH_NAMES[l][10]) && texts[1].includes(s.handRun) && texts[1].includes(s.sourceTag["stand-in"]));
       for (const id of NOT_COUNTED) assert.ok(texts[1].includes(s.notCounted[id]) && pages[1].includes(s.notCounted[id]), `${l}: not counted "${id}"`);
     }
