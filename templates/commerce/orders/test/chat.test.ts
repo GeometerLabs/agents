@@ -58,7 +58,7 @@ test("a guest taps to order: the shop's own ordering flow answers in the thread,
     assert.equal(t.lines[0].text, "Today's menu");
     const menu = t.lines.at(-1)!;
     assert.equal(menu.who, "shop");
-    assert.match(menu.text + (menu.choices ?? []).map((c) => c.title).join(" "), /₹/u, "the shop's own prices");
+    assert.match(menu.text + (menu.choices ?? []).map((c) => `${c.title} ${c.hint ?? ""}`).join(" "), /₹/u, "the shop's own prices (a list row carries its price as its hint)");
     assert.equal((await w.send(cookie, { id: "s-2", quick: 2 })).status, 200); // "Order"
     await w.client.runtime.idle();
     t = await w.thread(cookie);
