@@ -91,6 +91,7 @@ import { VOICE_WHY, createListener, failedMarks, voiceMarks } from "../../../../
 import type { HeardOk } from "../../../../modules/voice/turn.ts";
 import { isoDate } from "../../../../modules/assistant/conversation.ts";
 import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
+import { CHAT_LIMITS } from "./chat-limits.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { bookingsSkill } from "./assistant.ts";
 
@@ -1489,7 +1490,7 @@ export function createAgent(deps: AgentDeps): Agent {
         if (b.depositInr !== undefined && b.depositInr > 0) books.post({ kind: "applied", case: b.id, amountPaise: b.depositInr * 100, service: b.serviceId ?? "bookings" }, own); else own({});
       }
     }
-    assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (modules/assistant/morning.ts)
+    await assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (modules/assistant/morning.ts)
   }
 
   // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------
@@ -1721,6 +1722,7 @@ export function createAgent(deps: AgentDeps): Agent {
     },
   });
   const assistant = assistantForAgent({
+    limits: CHAT_LIMITS, // "Limits, tightened by a tap" (chat-limits.ts): the owner may tighten these by a card
     settings, store, skill: assistantSkill, clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
     // the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out
     ...(deps.voice ? { hearing: { hear: createListener({ voice: deps.voice, reader, isCommander: () => false, optedOut: () => false }) } } : {}),

@@ -19,6 +19,8 @@ import type { Push } from "../../../../modules/push/push.ts";
 import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { RETRY_DELAYS_MS, createRuntimeCore } from "../../../../modules/runtime/core.ts";
+import { createLimitsKit } from "../../../../modules/limits/runtime-limits.ts";
+import { CHAT_LIMITS } from "../src/chat-limits.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { createFeesLicenceNotice } from "./licence.ts";
 import type { BaseStatus, RefundCounts, Runtime as CoreRuntime, RuntimeKit } from "../../../../modules/runtime/core.ts";
@@ -195,6 +197,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     },
   };
   return createRuntimeCore({
+    // "Limits, tightened by a tap": the limits the owner may change, put into the settings the agent reads before every step (modules/limits/runtime-limits.ts)
+    limits: createLimitsKit({ declared: CHAT_LIMITS, settings, clock, owner: settings.owner }),
     settings, store: options.store, clock, // batch 3: a parent who allowed alerts on their private page also hears the centre's messages to their number as web push, keyed by the parent's stable ref
     messaging: services.messaging, pathwayVersion: options.pathwayVersion, kit, ai: policy,
     monthly: options.report ? createMonthlyReport(options.report) : undefined,

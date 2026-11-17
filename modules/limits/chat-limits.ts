@@ -52,6 +52,8 @@ export interface LimitChange {
   settledAtMs?: number;
   /** Why it failed, in the deployer's plain words (never a secret). */
   why?: string;
+  /** The owner has been told how it came out (the assistant says it on the next beat, assistant/limits-card.ts). */
+  told?: true;
 }
 
 /** How many settled changes the state keeps (the record keeps all of them). */
@@ -114,6 +116,17 @@ export function judgeChange(limit: ChatLimit, a: { settings: unknown; base: numb
   if (a.direction === "tighten") return isStrictlyTighter(limit, from, a.to) ? { ok: true, from } : { ok: false, why: "not_tighter", from };
   if (a.changes.some((c) => c.limit === limit.id && c.state === "pending")) return { ok: false, why: "busy", from };
   return isStrictlyTighter(limit, a.to, from) ? { ok: true, from } : { ok: false, why: "not_looser", from };
+}
+
+/**
+ * What the settings said when this runtime started, for these declared limits, captured ONCE per settings object. The runtime then puts what is in force into that
+ * same object (applyInForce), so the starting values must be remembered apart from it. The runtime's core asks first, before any step, so nothing has moved yet.
+ */
+const STARTED = new WeakMap<object, Record<string, number>>();
+export function limitBase(declared: readonly ChatLimit[], settings: object): Record<string, number> {
+  let base = STARTED.get(settings);
+  if (!base) { base = baseValues(declared, settings); STARTED.set(settings, base); }
+  return base;
 }
 
 /** The settings value at a dotted path, or undefined when a step is missing. */
