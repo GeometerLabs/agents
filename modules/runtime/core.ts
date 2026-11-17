@@ -29,6 +29,7 @@ import { WaitingForGuard, guardAnswers, sendMemory, watchStep } from "./guard-wa
 import { afterRestore, readRestoreNote, retireRestoreNote } from "./restored.ts";
 import { recordMessageStatus } from "../messaging/statuses.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
+import { chatConversationOf } from "../channels/conversation.ts";
 import type { LimitsKit, LimitsView } from "../limits/runtime-limits.ts";
 import { channelStartKey, chatTaskKey } from "../channels/events.ts";
 import { chatAnswered, chatDay, chatKnown, chatThread } from "../channels/chat.ts";
@@ -136,6 +137,8 @@ export interface ChannelKit<Store> {
    * Null for a hash no parent has now (never made, replaced, or revoked). Left out by a template with no parent links.
    */
   parent?(store: Store, linkHash: string): unknown | null;
+  /** W2: how many bookings or orders this chat conversation has made (the page offers "keep this chat" only when it is more than none). Left out: 0. */
+  chatWork?(store: Store, conversation: string): number;
   /**
    * Classes (Fees add-on): the reading material of one batch, for the parent whose private link has this hash NOW: the batch's files (from the centre's own folder), or the
    * one file `fileId` names. Null when the link opens nothing, or none of the parent's students in the batch may open it now. Async: it reads the disk. Left out by a template with no material.
@@ -265,6 +268,8 @@ export interface RuntimeChannel {
   ownerVoice?(audio: { bytes: Uint8Array; mime: string }): string;
   /** W1: a chat guest's thread by its hash (an empty one for a guest never seen), and where its latest send stands (`cid`: the page's id for it). */
   chat(handleHash: string, q: { after?: number; cid?: string }): ChatRead;
+  /** W2: how many bookings or orders a guest's thread has made. */
+  chatWork(handleHash: string): number;
   /** W1: has this guest written, and has the shop answered? The push route reads these (alerts are offered only after an answer). */
   chatState(handleHash: string): { known: boolean; answered: boolean };
 }
@@ -351,7 +356,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     const signin = options.ownerSignin;
     const run = async () => {
       if (event.kind === "message_status") recordMessageStatus(record, event.status, statusContext);
-      else if (signin?.takes(event)) await signin.run(event as Parameters<typeof signin.run>[0], { messaging, record });
+      else if (signin?.takes(event)) await signin.run(event as Parameters<typeof signin.run>[0], { messaging, record, store }); // W2: the store too, for the chat links (chat-link-send.ts, composed into the sign-in in start.ts)
       else if (event.kind === "owner_signin" || event.kind === "owner_access") log("A sign-in event came for a shop with no owner sign-in (no pages file yet); it was dropped.");
       else if (limits?.takes(event)) { limits.run(event as Parameters<typeof limits.run>[0], { store, record }); limits.apply(store); }
       else if (event.kind === "limit_settled" || event.kind === "owner_limit") log("A limit event came for a shop that has no limits the owner may change; it was dropped.");
@@ -492,6 +497,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
           const character = (settings as { assistant?: { character?: { personality?: string; colour?: string } } }).assistant?.character;
           return { ...read, ...(task ? { send: task === "failed" ? "failed" as const : task === "done" ? "done" as const : "pending" as const } : {}), ...(character?.personality ? { personality: character.personality } : {}), ...(character?.colour ? { paint: character.colour } : {}) };
         },
+        chatWork: (handleHash: string) => kit.channel!.chatWork?.(kit.parse(snapshot), chatConversationOf(handleHash)) ?? 0,
         chatState(handleHash: string) {
           const channel = (kit.parse(snapshot) as { channel?: ChannelState }).channel;
           return { known: chatKnown(channel, handleHash), answered: chatAnswered(channel, handleHash) };

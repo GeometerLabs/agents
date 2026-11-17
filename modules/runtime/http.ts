@@ -72,6 +72,7 @@ import type { Push } from "../push/push.ts";
 import { OWNER_CHOICES } from "../push/store.ts";
 import type { BrowserSubscription, OwnerChoice } from "../push/store.ts";
 import { chatConversationOf, conversationOf } from "../channels/conversation.ts";
+import type { ChatIdentityRoutes } from "../channels/chat-identity-http.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import type { OwnerLinkFile } from "../channels/owner-link.ts";
 import type { RuntimeChannel } from "./core.ts";
@@ -113,6 +114,8 @@ export interface ServerOptions {
   /** Item 11h: the shop's web push (subscriptions and the owner's choice), and whether the shop has WhatsApp (the choice is offered only then). */
   push?: Push;
   hasWhatsApp?: boolean;
+  /** W2: a chat guest's identity (keep this chat, a new phone, delete my chat) and the door's translations (modules/channels/chat-identity-http.ts). Left out: every guest is the cookie alone. */
+  chatIdentity?: ChatIdentityRoutes;
 }
 
 export interface RunningServer {
@@ -235,6 +238,8 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
         // the owner's link is checked HERE, at the runtime, against its own file: the front cannot act for the owner without it
         if ((checked.event.kind === "owner_action" || checked.event.kind === "owner_message") && !ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
         // W1: a guest's send is counted before anything is saved, so a flood saves no task and costs no step; the same send again (a retry) is not counted twice
+        // W2: a parent's link becomes the parent's own thread, any other guest hash the thread a passkey or a link tied it to; both before the counts, which are per thread
+        if (checked.event.kind === "chat_message" && !(options.chatIdentity ? options.chatIdentity.openEvent(checked.event) : checked.event.parent === undefined)) return send(res, 403, { error: "That link opens nothing now." });
         if (checked.event.kind === "chat_message" && !chatAllowed(checked.event)) return send(res, 429, { error: "Too many messages. Wait a minute.", rate: true }, { "retry-after": "60" });
         events.push(checked.event);
       }
@@ -251,7 +256,23 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       const cid = url.searchParams.get("cid") ?? undefined;
       if (after !== null && !/^\d{1,9}$/u.test(after)) return send(res, 400, { error: "after is a line number." });
       if (cid !== undefined && !/^[A-Za-z0-9-]{1,64}$/u.test(cid)) return send(res, 400, { error: "cid is a send's id." });
-      return send(res, 200, channel.chat(handle, { ...(after !== null ? { after: Number(after) } : {}), ...(cid ? { cid } : {}) }));
+      const parent = url.searchParams.get("parent") ?? undefined;
+      if (parent !== undefined && !HANDLE_HASH.test(parent)) return send(res, 400, { error: "parent is a private link's hash: 64 hex digits." });
+      const thread = options.chatIdentity ? options.chatIdentity.openRead(handle, parent) : parent === undefined ? handle : undefined; // W2: the thread this guest or parent is tied to
+      if (!thread) return send(res, 404, { error: "That link opens nothing now." });
+      return send(res, 200, channel.chat(thread, { ...(after !== null ? { after: Number(after) } : {}), ...(cid ? { cid } : {}) }));
+    }
+    // W2: keep this chat, open it on another phone, a new phone's link, delete my chat (one route; the front sends the browser's answers and the guest's hash, nothing else)
+    if (path === "/internal/channel/chat-id") {
+      only("POST");
+      if (!options.chatIdentity) return send(res, 404, { error: "This shop has no chat identity." });
+      let body: unknown;
+      try { body = JSON.parse(await readBody(req, 32 * 1024)); } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const r = await options.chatIdentity.call(typeof body === "object" && body !== null ? body as Record<string, unknown> : {});
+      return send(res, r.status, r.body);
     }
     if (path === "/internal/channel/offer") {
       only("GET");
@@ -387,10 +408,11 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
         // again at the first reminder after a restart. The Fees messaging pushes a message to the parent's number to this same conversation.
         // W1: a chat guest's alerts, keyed by their conversation. Offered only after the shop has answered (the page shows the button then; this is the check that holds
         // when a page is not honest): a guest the runtime has never seen, or one nobody has answered, takes none.
-        const chatSt = channel.chatState(handle);
+        const thread = options.chatIdentity?.openRead(handle) ?? handle; // W2: a phone tied to a thread has that thread's alerts
+        const chatSt = channel.chatState(thread);
         if (chatSt.known) {
           if (op === "customer_subscribe" && !chatSt.answered) return send(res, 403, { error: "Alerts are offered after the first answer." });
-          const who = chatConversationOf(handle);
+          const who = chatConversationOf(thread);
           if (op === "customer_subscribe") {
             const r = push.subscribe(who, body.subscription as BrowserSubscription);
             if (!r.ok) return send(res, 400, { error: r.why });

@@ -29,6 +29,8 @@ export interface Push {
   subscribe(who: string, s: BrowserSubscription): { ok: true; id: string } | { ok: false; why: string };
   unsubscribe(who: string, endpoint: string): boolean;
   phones(who: string): number;
+  /** W2, "delete my chat": the conversation's phones stop getting alerts. */
+  forget(who: string): number;
 }
 
 export function createPush(o: { store: PushStore; sender: PushSender; shopName: string; clock: Clock; on: boolean }): Push {
@@ -50,6 +52,7 @@ export function createPush(o: { store: PushStore; sender: PushSender; shopName: 
     subscribe: (who, s) => (o.on ? store.subscribe(who, s, clock.now()) : { ok: false, why: "push is not on for this shop" }),
     unsubscribe: (who, endpoint) => store.unsubscribe(who, endpoint, clock.now()),
     phones: (who) => store.phones(who),
+    forget: (who) => store.forget(who, clock.now()),
   };
 }
 

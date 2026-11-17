@@ -6,6 +6,7 @@ import type { PaymentEvent } from "../payments/payments.ts";
 import { channelEventKey } from "../channels/events.ts";
 import type { ChannelEvent } from "../channels/events.ts";
 import type { OwnerAccessEvent } from "../channels/owner-signin.ts";
+import type { ChatLinkEvent } from "../channels/chat-link-send.ts";
 import type { LimitsEvent } from "../limits/runtime-limits.ts";
 import { limitsEventKey } from "../limits/runtime-limits.ts";
 
@@ -27,6 +28,8 @@ export type IncomingEvent =
   | ChannelEvent
   // Item 11f: the runtime's own HTTP layer says an owner's session started or ended, for the record. Never from outside: neither token can send it.
   | OwnerAccessEvent
+  // W2: a link a chat guest asked for, to send to the number they gave (modules/channels/chat-link-send.ts). Made only by the runtime's HTTP layer; the core runs it, never the agent.
+  | ChatLinkEvent
   // "Limits, tightened by a tap" (modules/limits/runtime-limits.ts): the deployer's word that Guard has a changed limit (or that it failed), and the owner's own limits page
   // behind their passkey. Like an owner_access, never from outside: only the runtime's own HTTP layer makes them, and the core, not the agent, runs them.
   | LimitsEvent;
@@ -45,6 +48,7 @@ export function eventKey(event: IncomingEvent): string {
   if (event.kind === "recovery") return `recovery:${event.id}`;
   if (event.kind === "channel_request" || event.kind === "owner_action" || event.kind === "owner_signin" || event.kind === "owner_message" || event.kind === "chat_message") return channelEventKey(event); // the panel gives each request its own id, so pressing a button twice is one request
   if (event.kind === "owner_access") return `owner_access:${event.id}`;
+  if (event.kind === "chat_link") return `chat_link:${event.id}`;
   if (event.kind === "limit_settled" || event.kind === "owner_limit") return limitsEventKey(event);
   // the same report sent again is one; a message's delivered and read are two
   if (event.kind === "message_status") return `message_status:${event.status.ids.join("|")}:${event.status.status}`;

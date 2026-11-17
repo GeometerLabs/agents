@@ -115,6 +115,13 @@ export function openPushStore(file: string) {
       db.prepare("UPDATE queue SET state = 'gone', done_at = ? WHERE sub_id = ? AND state = 'waiting'").run(now, id);
     },
 
+    /** W2, "delete my chat": every phone of `who` stops getting alerts and its waiting pushes go (the same end as an unsubscribe). Returns how many. */
+    forget(who: string, now: number): number {
+      const rows = live(who);
+      for (const r of rows) api.drop(r.id, "forgotten", now);
+      return rows.length;
+    },
+
     /** How many phones get `who`'s alerts now. */
     phones(who: string): number { return live(who).length; },
 
