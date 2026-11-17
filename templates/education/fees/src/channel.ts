@@ -182,8 +182,8 @@ export function ownerItems(settings: Settings, store: Store): OwnerItem[] {
 export const CASH_LIST_MAX = 60;
 
 /**
- * Money clarity: the open fees the owner may mark as paid by hand, soonest due first. The mark is for the whole balance (a part is not offered), so a press is one fee
- * paid, once: the digest holds the balance and the payments counted, and a press with another digest (a payment came, a waiver) does nothing.
+ * Money clarity: the open fees the owner may mark as paid by hand, soonest due first. The mark is for the whole balance, or a part of it (17 Nov 2026: the page's rupee box; the agent checks the part against the balance), so a press is one mark,
+ * once: the digest holds the balance and the payments counted, and a press with another digest (a payment came, a waiver) does nothing.
  */
 export function cashList(settings: Settings, store: Store): OwnerCashView[] {
   return [...store.dues.values()].filter((d) => d.state === "open" && balancePaise(d) > 0).sort((a, b) => a.dueMs - b.dueMs).slice(0, CASH_LIST_MAX)

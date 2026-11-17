@@ -74,6 +74,11 @@ export interface OwnerPageInput {
 }
 
 /** One answer button: posts what it stands for and the digest of what the page shows. */
+/** Fees: mark only part of a fee received by hand: a box for the rupees and a button, bound to the fee's digest like the whole-balance buttons. */
+function partForm(base: string, f: { action: string; case: string; digest: string; maxInr: number }, label: string, button: string, csrf?: string): Raw {
+  return html`<form method="post" action="${base}/answer" class="part">${csrf ? html`<input type="hidden" name="csrf" value="${csrf}">` : ""}<input type="hidden" name="source" value="runtime"><input type="hidden" name="action" value="${f.action}"><input type="hidden" name="case" value="${f.case}"><input type="hidden" name="digest" value="${f.digest}"><label>${label} <input name="amount" type="number" inputmode="numeric" min="1" max="${f.maxInr}" step="1" required></label> <button class="no" type="submit">${button}</button></form>`;
+}
+
 function button(base: string, f: { source: "runtime" | "relay"; action: string; case: string; digest: string }, label: string, quiet = false, csrf?: string): Raw {
   return html`<form method="post" action="${base}/answer">${csrf ? html`<input type="hidden" name="csrf" value="${csrf}">` : ""}<input type="hidden" name="source" value="${f.source}"><input type="hidden" name="action" value="${f.action}"><input type="hidden" name="case" value="${f.case}"><input type="hidden" name="digest" value="${f.digest}"><button class="${quiet ? "no" : "yes"}" type="submit">${label}</button></form>`;
 }
@@ -118,7 +123,7 @@ export function ownerPage(o: OwnerPageInput): string {
     return html`<div class="item s-${p.link === "active" ? "ok" : "plain"}"><p>${more.parentRow(p.students.join(", "), p.phone)}<br><small class="note">${p.link === "active" && p.sinceMs !== undefined ? more.linkActive(formatSlot(p.sinceMs, tz, o.language)) : more.linkNone}</small></p><div class="acts">${b("send_link", more.sendLink)}${p.link === "active" ? b("revoke_link", more.revokeLink, true) : ""}</div></div>`;
   })}` : "";
   // money clarity (Fees): the open fees the owner may mark paid by hand (cash, or a bank transfer the agent cannot see), folded: a centre has a fee for every student
-  const cash = v.cash && v.cash.length > 0 ? html`<h2>${money.cashTitle}</h2><details class="fold"><summary>${money.cashNote}</summary>${v.cash.map((c) => html`<div class="item s-plain"><p>${money.cashRow(c.student, c.what)}</p><div class="acts">${button(o.base, { source: "runtime", action: "cash", case: c.case, digest: c.digest }, money.cashButton(formatInr(c.amountPaise / 100)), false, o.csrf)}${button(o.base, { source: "runtime", action: "bank", case: c.case, digest: c.digest }, money.bankButton(formatInr(c.amountPaise / 100)), false, o.csrf)}</div></div>`)}</details>` : "";
+  const cash = v.cash && v.cash.length > 0 ? html`<h2>${money.cashTitle}</h2><details class="fold"><summary>${money.cashNote}</summary>${v.cash.map((c) => html`<div class="item s-plain"><p>${money.cashRow(c.student, c.what)}</p><div class="acts">${button(o.base, { source: "runtime", action: "cash", case: c.case, digest: c.digest }, money.cashButton(formatInr(c.amountPaise / 100)), false, o.csrf)}${button(o.base, { source: "runtime", action: "bank", case: c.case, digest: c.digest }, money.bankButton(formatInr(c.amountPaise / 100)), false, o.csrf)}${c.amountPaise > 100 ? partForm(o.base, { action: "cash", case: c.case, digest: c.digest, maxInr: c.amountPaise / 100 - 1 }, money.cashPartLabel, money.cashPartButton, o.csrf) : ""}</div></div>`)}</details>` : "";
   const coming = v.kind === "fees" ? "" : html`<h2>${v.kind === "orders" ? more.upcomingOrders : w.upcoming}</h2>
 ${v.upcoming.length > 0 ? html`<ul class="rows">${v.upcoming.map((u) => html`<li><b>${formatSlot(u.startMs, tz, o.language)}</b><span>${u.what ?? service(u.serviceId)} · ${who(u.customer, u.channel)}</span></li>`)}</ul>` : html`<p class="card">${v.kind === "orders" ? more.noneComingOrders : w.noneComing}</p>`}`;
   const ask = (a: RelayAsk): Raw => {
