@@ -1071,7 +1071,11 @@ export function createAgent(deps: AgentDeps): Agent {
         case "keep": return await onKeep(phone);
         case "paid": return await (ownerConfirms ? onPaidClaim(phone, "button") : onPaidReadBack(phone));
         case "greeting": if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["menu"], { offer: itemsOffer(["pick_items"]) }); return;
-        default: if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["didnt_understand"], { offer: itemsOffer(["didnt_understand"]) });
+        default:
+          if (!licence().takesNewWork) return await pausedReply(phone, "menu");
+          // block M: the shop's assistant may answer, from what customers may be told (false: the talk is off, a check failed, or nothing was said; the menu goes as before)
+          if (!msg.reply && await assistant?.talkToCustomer({ phone, text: msg.text, language: languageOf(phone), ...(intent.overrideAttempt ? { overrideAttempt: true } : {}), menu: (askOwner) => (askOwner ? { buttons: buttonsFor(languageOf(phone), ["owner"]) } : { list: itemList(settings, languageOf(phone)) }) })) return;
+          await tellCustomer(null, phone, ["didnt_understand"], { offer: itemsOffer(["didnt_understand"]) });
       }
     } finally {
       await announceButtonMode(); // after the customer has their answer

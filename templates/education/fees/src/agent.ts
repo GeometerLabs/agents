@@ -946,7 +946,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /** A greeting, a yes or a no, or words that are none of these: what is owed, with the buttons; or that nothing is. */
-  async function onMenu(phone: string, understood: boolean): Promise<void> {
+  async function onMenu(phone: string, understood: boolean, text = "", overrideAttempt = false): Promise<void> {
     if (!licence().takesNewWork) return pausedReply(phone, "menu");
     const due = openDues(store, phone)[0];
     if (!due) { await tellCustomer(null, phone, ["fee_nothing_due"]); return; }
@@ -955,7 +955,12 @@ export function createAgent(deps: AgentDeps): Agent {
     if (due.state !== "open") { if (!receipt) await tellCustomer(due, phone, ["fee_already_paid"]); return; }
     await currentLink(due);
     if (understood) await tellCustomer(due, phone, ["fee_menu"], { offer: feeButtons(due) });
-    else await tellCustomer(due, phone, ["fee_didnt_understand"], { offer: feeButtons(due) });
+    else {
+      // block M: the shop's assistant may answer, from what parents may be told; the centre's own buttons (pay, paid, the owner) go with it. False: the menu goes as before.
+      const lang = languageOf(phone, due);
+      const talked = text !== "" && await assistant?.talkToCustomer({ phone, text, language: lang, ...(overrideAttempt ? { overrideAttempt: true } : {}), menu: (askOwner) => ({ buttons: buttonsFor(lang, askOwner ? ["owner"] : ["pay", "paid", "owner"], due.id) }) });
+      if (!talked) await tellCustomer(due, phone, ["fee_didnt_understand"], { offer: feeButtons(due) });
+    }
   }
 
   async function onStop(phone: string): Promise<void> {
@@ -1115,7 +1120,7 @@ export function createAgent(deps: AgentDeps): Agent {
         case "refund": return await onRefundAsk(phone, intent);
         case "owner": return await onTalkToOwner(phone);
         case "greeting": case "yes": case "no": return await onMenu(phone, true);
-        default: await onMenu(phone, false);
+        default: await onMenu(phone, false, msg.reply ? "" : msg.text, intent.overrideAttempt === true);
       }
     } finally {
       await announceButtonMode(); // after the parent has their answer
