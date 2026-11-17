@@ -279,6 +279,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `settledBySomeone` | ഒരാൾ സ്വന്തം വാക്കിൽ തീർപ്പാക്കിയത് | Settled by a person, by their word |  |
 | `label.collected` | പിരിഞ്ഞത് | Collected |  |
 | `label.stillToCollect` | ഇനിയും പിരിക്കാനുള്ളത് | Still to collect |  |
+| `label.oldDuesCollected` | പഴയ കുടിശ്ശിക പിരിഞ്ഞത് | Old dues collected |  |
 | `label.givenBack` | തിരികെ നൽകിയത് | Given back |  |
 | `label.takenOff` | ഫീസിൽ നിന്ന് കുറച്ചത് | Taken off fees |  |
 | `label.wasAsked` | നിങ്ങളോട് ചോദിച്ചു | You were asked |  |
@@ -326,6 +327,7 @@ Sent to the owner on the 1st of the month, as these same words: as an approved W
 | `moneyBlock.kept` | റദ്ദാക്കലിൽ നിന്ന് എടുത്തുവച്ചത് | Kept from cancellations |  |
 | `moneyBlock.byWord` | ആരുടെയോ വാക്കിൽ തീർത്തത്, മുകളിലെ തുകകളിൽ ഇല്ല | Settled on someone's word, not counted in the totals above |  |
 | `upiLabel.collected` | ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത് | Marked paid by owner |  |
+| `upiLabel.oldDuesCollected` | പഴയ കുടിശ്ശിക, ഉടമ കിട്ടിയതായി രേഖപ്പെടുത്തിയത് | Old dues marked paid by owner |  |
 | `upiLabel.givenBack` | ഉടമ അയച്ചതായി രേഖപ്പെടുത്തിയ റീഫണ്ട് | Refunds marked sent by owner |  |
 | `upiLabel.notChecked` | പണമടവ് സ്വയം പരിശോധിക്കൽ (UPI-യിൽ ഓരോ പണമടവും നിങ്ങൾ രേഖപ്പെടുത്തുന്നു) | automatic payment checking (with UPI you mark each payment) |  |
 | `notTested.upi-not-automatic` | പണമടവ് സ്വയം പരിശോധിക്കൽ: UPI-യിൽ ഓരോ പണമടവും ഉടമ തന്നെ കിട്ടിയതായി രേഖപ്പെടുത്തുന്നു | automatic payment checking: with UPI the owner marks each payment received |  |

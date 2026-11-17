@@ -47,6 +47,7 @@ export function ownerText(report: FeesReport, language: Language): string {
   const title = [oneLine(report.shop.name), periodLabel(report.period, language), tag].filter(Boolean).join(" · ");
   const moneyLine = [
     pair(moneyLabels(language, report.paidBy).collected, rupees(money.collected.paise)),
+    money.oldDues ? pair(moneyLabels(language, report.paidBy).oldDuesCollected, rupees(money.oldDues.paise)) : "", // only when an old due was paid this period
     pair(s.label.stillToCollect, fees.stillToCollect.count > 0 ? `${rupees(fees.stillToCollect.paise)} (${fees.stillToCollect.count} ${s.label.students})` : rupees(0)),
     money.givenBack.count > 0 ? pair(moneyLabels(language, report.paidBy).givenBack, rupees(money.givenBack.paise)) : "",
   ].filter(Boolean).join(" · ");

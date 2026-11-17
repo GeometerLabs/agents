@@ -62,7 +62,7 @@ node templates/education/fees/approvals/main.ts    # the approvals relay: asks t
 ## What the owner sees
 
 - A message for each thing that needs them: an approval, a parent who says they paid with nothing on record, a payment link that could not be made, a message held back, a parent who sent STOP, a parent who asked to talk.
-- **The monthly report**, on WhatsApp on the 1st from 09:00, once: collected, still to collect, given back, reminders sent, what was taken off, what the owner was asked, approved and refused, what the limits stopped, and what was not checked. A page behind a link has the whole report, signed, in the owner's language (see The monthly report).
+- **The monthly report**, on WhatsApp on the 1st from 09:00, once: collected (this period's fees, and on its own line old dues collected when an earlier unpaid month was paid), still to collect, given back, reminders sent, what was taken off, what the owner was asked, approved and refused, what the limits stopped, and what was not checked. A page behind a link has the whole report, signed, in the owner's language (see The monthly report).
 
 ## A parent's private page (item 11h)
 
@@ -101,6 +101,7 @@ A centre is a JSON file ([bright-tuition-upi.example.json](settings/bright-tuiti
 | `lateFeeInr` | Added once, after the grace days, if the fee is still unpaid. 0: none. Never more than the cheapest fee |
 | `joiningMidMonth` | What a student whose `joined` date is after the 1st owes for the joining month: `usual` (the default: `joined` is ignored, as before), `full`, `prorata` (the days left as a share of the month, whole rupees) or `nextMonth` |
 | a student's `joined`, `backDues` | The day the student joined (`2026-11-18`), and earlier months still unpaid when the agent started (`[{"month": "2026-09", "amountInr": 1500}]`, at most the batch's fee), each carried as a fee of its own |
+| `classes.oldDuesStopLink` | Classes only. `false` (the default): a carried back due does not stop the class link or the reading material, only the student's ordinary fees do. `true`: a back due past its grace days stops them as an ordinary fee does |
 | `reminders` | Days from the due day (negative is before), the hour (6 to 21), and the most reminders for one fee in a month |
 | `partPayments` | Whether a parent may pay part, and the least a first part may be |
 | `waiver.limitInr` | The most the agent takes off one student's month on its own. 0: every request goes to the owner |

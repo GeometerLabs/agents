@@ -173,6 +173,7 @@
       ]
     },
     "linkLeadMinutes": 30,
-    "materialMaxMb": 10
+    "materialMaxMb": 10,
+    "oldDuesStopLink": false
   }
 }
