@@ -362,7 +362,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function onSupplierMessage(m: InboundMessage, supplier: Supplier): Promise<void> {
     log(null, m.from, "receive_message", "confirmed", { text: m.text, reply: m.reply?.id }, { refs: { from: "supplier", supplier: supplier.id, messageId: m.id } });
-    if (isStop(m.text)) {
+    if (isStop(canon(m.text))) {
       store.optedOut.add(digits(m.from));
       log(null, m.from, "opt_out", "confirmed", {}, { refs: { supplier: supplier.id } });
       await tellOwner(null, "owner_supplier_stopped", { facts: { supplierName: supplier.name } });

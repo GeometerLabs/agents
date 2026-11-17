@@ -63,13 +63,15 @@ export interface WorldOptions {
   settings?: Settings;
   /** The moment the world starts; default Mon 9 Nov 2026, 10:00 in India. */
   nowMs?: number;
+  /** WhatsApp template names the provider has NOT approved (so sending one is refused outright, the way Meta refuses an unapproved template). */
+  unapproved?: string[];
 }
 
 export function createWorld(options: WorldOptions = {}): World {
   let settings = options.settings ?? glowSalon();
   const clock = fakeClock(options.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 9 }, { hour: 10, minute: 0 }, settings.timezone));
   const messaging = createFakeMessaging(clock);
-  for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
+  for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) if (!options.unapproved?.includes(name)) for (const language of LANGUAGES) messaging.approve(name, language);
   const record = createRecord(clock);
   const store = createStore();
   let agent = createAgent({ settings, clock, messaging, record, store });
