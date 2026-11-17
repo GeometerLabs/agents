@@ -75,7 +75,7 @@ export type TemplateId =
   // to the customer: what the rules say no to
   | "price_floor" | "too_many_items" | "out_of_stock" | "sold_out" | "day_full" | "slot_full" | "after_cutoff" | "outside_area"
   // to the customer: the quote, the order, and what happens to the money
-  | "quote_and_link" | "already_waiting" | "link_failed" | "order_confirmed" | "hold_expired" | "stock_gone_refund" | "cutoff_passed_refund" | "refund_unused"
+  | "quote_and_link" | "already_waiting" | "link_failed" | "chat_shop_busy" | "order_confirmed" | "hold_expired" | "stock_gone_refund" | "cutoff_passed_refund" | "refund_unused"
   | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending" | "cancelled_late" | "cancelled_no_advance" | "cancelled_draft" | "no_order_found"
   | "refund_approved" | "refund_denied" | "refund_checking" | "refund_confirmed" | "refund_expired" | "big_order_asked" | "big_order_denied"
   // 17 Nov 2026: the reminder before the slot, and the balance paid when the order is collected or delivered (its receipt, and the link a gateway shop's owner sends)
@@ -195,6 +195,7 @@ const en: BaseSet = {
   quote_and_link: (f) => `${items(f)} for ${when(f)}, ${how(f)}. Total ${inr(f, "totalInr")}. To confirm, pay ${inr(f, "advanceInr")} here: ${payTo(f)} (I'll hold your order for ${need(f, "holdMinutes")} minutes.)${f.upiId ? " The owner confirms the payment, then I'll message you." : ""}`,
   already_waiting: (f) => `Your order (${items(f)}, ${when(f)}) is held. Pay ${inr(f, "advanceInr")} to confirm: ${payTo(f)}${f.upiId ? " The owner confirms the payment, then I'll message you." : ""}`,
   link_failed: () => "Sorry, I couldn't create the payment link just now, so nothing is ordered. I've told the owner. Please try again in a few minutes.",
+  chat_shop_busy: () => "The shop has many orders waiting for payment right now, so nothing is held. Please try again in a little while, or call the shop.",
   order_confirmed: (f) => `Confirmed! ${items(f)} for ${when(f)}, ${how(f)}. We have received your advance of ${inr(f, "advanceInr")}. ${rest(f)} Cancel at least ${need(f, "windowHours")} hours before the start for a refund.`,
   hold_expired: (f) => `The hold on your order (${items(f)}, ${when(f)}) has ended because the advance was not received in time. Message me if you'd still like to order.`,
   stock_gone_refund: (f) => `Your payment of ${inr(f, "advanceInr")} arrived after the hold on your order ended, and ${items(f)} for ${day(f)} is no longer available. ${inr(f, "refundInr")} is being refunded to you.`,
@@ -278,6 +279,7 @@ const hi: BaseSet = {
   quote_and_link: (f) => `${items(f)}, ${when(f)}, ${how(f)}। कुल ${inr(f, "totalInr")}। पक्का करने के लिए ${inr(f, "advanceInr")} यहाँ भेजें: ${payTo(f)} (आपका ऑर्डर ${need(f, "holdMinutes")} मिनट के लिए रोका गया है।)${f.upiId ? " पैसे आने पर मालिक पक्का करेंगे, फिर मैं आपको संदेश भेजूँगा।" : ""}`,
   already_waiting: (f) => `आपका ऑर्डर (${items(f)}, ${when(f)}) रोका हुआ है। पक्का करने के लिए ${inr(f, "advanceInr")} भेजें: ${payTo(f)}${f.upiId ? " पैसे आने पर मालिक पक्का करेंगे, फिर मैं आपको संदेश भेजूँगा।" : ""}`,
   link_failed: () => "माफ़ कीजिए, अभी पेमेंट लिंक नहीं बन पाया, इसलिए कुछ भी ऑर्डर नहीं हुआ है। मैंने मालिक को बता दिया है। कृपया कुछ मिनट बाद फिर कोशिश करें।",
+  chat_shop_busy: () => "दुकान में अभी कई ऑर्डर भुगतान की राह देख रहे हैं, इसलिए कुछ रोका नहीं गया। थोड़ी देर बाद फिर कोशिश करें, या दुकान को फ़ोन करें।",
   order_confirmed: (f) => `ऑर्डर पक्का! ${items(f)}, ${when(f)}, ${how(f)}। हमें आपका ${inr(f, "advanceInr")} का एडवांस मिल गया है। ${rest(f)} रिफंड के लिए शुरू होने से कम से कम ${need(f, "windowHours")} घंटे पहले रद्द करें।`,
   hold_expired: (f) => `आपके ऑर्डर (${items(f)}, ${when(f)}) की रोक खत्म हो गई क्योंकि एडवांस समय पर नहीं मिला। अब भी ऑर्डर करना चाहें तो मुझे लिखें।`,
   stock_gone_refund: (f) => `आपका ${inr(f, "advanceInr")} का भुगतान ऑर्डर की रोक खत्म होने के बाद आया, और ${day(f)} के लिए ${items(f)} अब उपलब्ध नहीं है। ${inr(f, "refundInr")} आपको वापस किया जा रहा है।`,
@@ -361,6 +363,7 @@ const ml: BaseSet = {
   quote_and_link: (f) => `${items(f)}, ${when(f)}, ${how(f)}. ആകെ ${inr(f, "totalInr")}. ഉറപ്പിക്കാൻ ${inr(f, "advanceInr")} ഇവിടെ അടയ്ക്കൂ: ${payTo(f)} (ഓർഡർ ${need(f, "holdMinutes")} മിനിറ്റ് നിങ്ങൾക്കായി മാറ്റിവച്ചിട്ടുണ്ട്.)${f.upiId ? " പണം എത്തുമ്പോൾ ഉടമ ഉറപ്പിക്കും, പിന്നെ ഞാൻ സന്ദേശം അയയ്ക്കും." : ""}`,
   already_waiting: (f) => `നിങ്ങളുടെ ഓർഡർ (${items(f)}, ${when(f)}) മാറ്റിവച്ചിട്ടുണ്ട്. ഉറപ്പിക്കാൻ ${inr(f, "advanceInr")} അടയ്ക്കൂ: ${payTo(f)}${f.upiId ? " പണം എത്തുമ്പോൾ ഉടമ ഉറപ്പിക്കും, പിന്നെ ഞാൻ സന്ദേശം അയയ്ക്കും." : ""}`,
   link_failed: () => "ക്ഷമിക്കണം, ഇപ്പോൾ പേയ്മെന്റ് ലിങ്ക് ഉണ്ടാക്കാൻ കഴിഞ്ഞില്ല, അതിനാൽ ഒന്നും ഓർഡർ ആയിട്ടില്ല. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. ദയവായി കുറച്ച് മിനിറ്റിനു ശേഷം വീണ്ടും ശ്രമിക്കൂ.",
+  chat_shop_busy: () => "കടയിൽ ഇപ്പോൾ പണമടയ്ക്കാൻ കാത്തിരിക്കുന്ന ഓർഡറുകൾ ഒരുപാടുണ്ട്, അതുകൊണ്ട് ഒന്നും മാറ്റിവച്ചിട്ടില്ല. കുറച്ചു കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ, അല്ലെങ്കിൽ കടയിൽ വിളിക്കൂ.",
   order_confirmed: (f) => `ഓർഡർ ഉറപ്പായി! ${items(f)}, ${when(f)}, ${how(f)}. നിങ്ങളുടെ ${inr(f, "advanceInr")} അഡ്വാൻസ് ലഭിച്ചു. ${rest(f)} പണം തിരികെ വേണമെങ്കിൽ തുടങ്ങുന്നതിന് കുറഞ്ഞത് ${need(f, "windowHours")} മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം.`,
   hold_expired: (f) => `അഡ്വാൻസ് സമയത്ത് ലഭിക്കാത്തതിനാൽ നിങ്ങളുടെ ഓർഡർ (${items(f)}, ${when(f)}) മാറ്റിവച്ചത് ഒഴിവാക്കി. ഇനിയും ഓർഡർ ചെയ്യണമെങ്കിൽ എനിക്ക് മെസ്സേജ് അയയ്ക്കൂ.`,
   stock_gone_refund: (f) => `നിങ്ങളുടെ ${inr(f, "advanceInr")} പേയ്മെന്റ് ഓർഡർ മാറ്റിവച്ചത് അവസാനിച്ച ശേഷമാണ് എത്തിയത്, ${day(f)}-ന് ${items(f)} ഇപ്പോൾ ലഭ്യമല്ല. ${inr(f, "refundInr")} നിങ്ങൾക്ക് തിരികെ നൽകുന്നുണ്ട്.`,
@@ -444,6 +447,7 @@ const kn: BaseSet = {
   quote_and_link: (f) => `${items(f)}, ${when(f)}, ${how(f)}. ಒಟ್ಟು ${inr(f, "totalInr")}. ಖಚಿತಪಡಿಸಲು ${inr(f, "advanceInr")} ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${payTo(f)} (ನಿಮ್ಮ ಆರ್ಡರ್ ಅನ್ನು ${need(f, "holdMinutes")} ನಿಮಿಷ ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ.)${f.upiId ? " ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ." : ""}`,
   already_waiting: (f) => `ನಿಮ್ಮ ಆರ್ಡರ್ (${items(f)}, ${when(f)}) ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ. ಖಚಿತಪಡಿಸಲು ${inr(f, "advanceInr")} ಪಾವತಿಸಿ: ${payTo(f)}${f.upiId ? " ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ." : ""}`,
   link_failed: () => "ಕ್ಷಮಿಸಿ, ಈಗ ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಆರ್ಡರ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+  chat_shop_busy: () => "ಅಂಗಡಿಯಲ್ಲಿ ಈಗ ಪಾವತಿಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಆರ್ಡರ್‌ಗಳು ಬಹಳ ಇವೆ, ಹಾಗಾಗಿ ಏನನ್ನೂ ಕಾಯ್ದಿರಿಸಿಲ್ಲ. ಸ್ವಲ್ಪ ಹೊತ್ತಿನ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ, ಅಥವಾ ಅಂಗಡಿಗೆ ಕರೆ ಮಾಡಿ.",
   order_confirmed: (f) => `ಆರ್ಡರ್ ಖಚಿತವಾಗಿದೆ! ${items(f)}, ${when(f)}, ${how(f)}. ನಿಮ್ಮ ${inr(f, "advanceInr")} ಮುಂಗಡ ಹಣ ಸಿಕ್ಕಿದೆ. ${rest(f)} ಹಣ ಮರಳಿ ಬೇಕಾದರೆ ಪ್ರಾರಂಭಕ್ಕೆ ಕನಿಷ್ಠ ${need(f, "windowHours")} ಗಂಟೆ ಮೊದಲು ರದ್ದುಗೊಳಿಸಿ.`,
   hold_expired: (f) => `ಮುಂಗಡ ಹಣ ಸಮಯಕ್ಕೆ ಸಿಗದ ಕಾರಣ ನಿಮ್ಮ ಆರ್ಡರ್ (${items(f)}, ${when(f)}) ಕಾಯ್ದಿರಿಸಿದ್ದನ್ನು ಬಿಡುಗಡೆ ಮಾಡಲಾಗಿದೆ. ಇನ್ನೂ ಆರ್ಡರ್ ಮಾಡಬೇಕಾದರೆ ನನಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿ.`,
   stock_gone_refund: (f) => `ನಿಮ್ಮ ${inr(f, "advanceInr")} ಪಾವತಿ ಆರ್ಡರ್ ಕಾಯ್ದಿರಿಸಿದ್ದು ಮುಗಿದ ನಂತರ ಬಂದಿದೆ, ಮತ್ತು ${day(f)} ಕ್ಕೆ ${items(f)} ಈಗ ಲಭ್ಯವಿಲ್ಲ. ${inr(f, "refundInr")} ನಿಮಗೆ ಮರಳಿ ಕೊಡಲಾಗುತ್ತಿದೆ.`,

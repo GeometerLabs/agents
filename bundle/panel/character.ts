@@ -14,6 +14,8 @@ import { CHARACTER_STYLES, STYLE_INFO, readCharacter } from "../../modules/assis
 import type { Character, CharacterStyle } from "../../modules/assistant/character.ts";
 import { PERSONALITIES } from "../../modules/assistant/personality.ts";
 import type { Personality } from "../../modules/assistant/personality.ts";
+import { isPaint } from "../../modules/channels/chat-paint.ts";
+import type { PaintId } from "../../modules/channels/chat-paint.ts";
 import type { Body } from "./setup.ts";
 import type { Words } from "./words.ts";
 
@@ -26,6 +28,8 @@ export interface CharacterDraft {
   roll: string;
   seed?: string;
   colour?: string;
+  /** The shop's signboard paint in its chat (chat-paint.ts); left out: the head's own green. Not part of the drawing, so picking one draws nothing again. */
+  paint?: PaintId;
   /** The character's name as typed; empty for none (it is then "<the shop>'s assistant"). */
   name: string;
   personality: Personality;
@@ -49,17 +53,18 @@ export function characterDraftFromSettings(settings: unknown, shopId: string): C
   const raw = (settings as { assistant?: { character?: unknown } } | undefined)?.assistant?.character;
   const c = raw === undefined ? undefined : readCharacter(raw, []);
   if (!c) return newCharacterDraft(shopId);
-  return { style: c.style, roll: newRoll(), seed: c.seed ?? shopId, ...(c.colour ? { colour: c.colour } : {}), name: c.name ?? "", personality: c.personality, chosen: true };
+  return { style: c.style, roll: newRoll(), seed: c.seed ?? shopId, ...(c.colour ? { colour: c.colour } : {}), ...(c.paint ? { paint: c.paint } : {}), name: c.name ?? "", personality: c.personality, chosen: true };
 }
 
 /** What a press asks for: a style, a face, a colour, a new roll, or Next. */
-export type CharacterPress = { kind: "style"; style: CharacterStyle } | { kind: "face"; seed: string } | { kind: "colour"; colour: string | undefined } | { kind: "roll" } | { kind: "next" };
+export type CharacterPress = { kind: "style"; style: CharacterStyle } | { kind: "face"; seed: string } | { kind: "colour"; colour: string | undefined } | { kind: "paint"; paint: string | undefined } | { kind: "roll" } | { kind: "next" };
 
 /** Read the press from the form: the button pressed carries its own name and value. Anything unknown is Next (Enter in the name box submits the form). */
 export function pressOf(body: Body): CharacterPress {
   if (body.act === "roll") return { kind: "roll" };
   if (typeof body.pickStyle === "string" && (CHARACTER_STYLES as readonly string[]).includes(body.pickStyle)) return { kind: "style", style: body.pickStyle as CharacterStyle };
   if (typeof body.pickFace === "string") return { kind: "face", seed: body.pickFace };
+  if (typeof body.pickPaint === "string") return { kind: "paint", paint: body.pickPaint === "none" ? undefined : body.pickPaint };
   if (typeof body.pickColour === "string") return { kind: "colour", colour: body.pickColour === "auto" ? undefined : body.pickColour };
   return { kind: "next" };
 }
@@ -88,6 +93,9 @@ export function applyCharacter(draft: { shopId?: string; character?: CharacterDr
   } else if (press.kind === "colour") {
     if (press.colour === undefined || STYLE_INFO[c.style].palette.includes(press.colour)) c.colour = press.colour;
     else problems.push(p.colour);
+  } else if (press.kind === "paint") {
+    if (press.paint === undefined || isPaint(press.paint)) c.paint = press.paint as PaintId | undefined;
+    else problems.push(p.paint);
   }
   draft.character = c;
   if (press.kind !== "next") return { stay: true, problems };
@@ -104,7 +112,7 @@ export function applyCharacter(draft: { shopId?: string; character?: CharacterDr
 
 /** The `assistant.character` setting the draft writes (modules/assistant/character.ts reads it back). A name only when the Operator gave one. */
 export function characterSetting(c: CharacterDraft, shopId: string): Character & { seed: string } {
-  return { ...(c.name.trim() ? { name: c.name.trim() } : {}), style: c.style, seed: c.seed ?? `${shopId}-${c.roll}-0`, ...(c.colour ? { colour: c.colour } : {}), personality: c.personality };
+  return { ...(c.name.trim() ? { name: c.name.trim() } : {}), style: c.style, seed: c.seed ?? `${shopId}-${c.roll}-0`, ...(c.colour ? { colour: c.colour } : {}), ...(c.paint ? { paint: c.paint } : {}), personality: c.personality };
 }
 
 /**

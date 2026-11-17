@@ -42,7 +42,9 @@ import { feesSkill } from "./assistant.ts";
 import type { FeesActs } from "./assistant.ts";
 import { newHandle, parentLinkHash } from "../../../../modules/channels/handle.ts";
 import type { ChannelEvent, ChannelFee, ChatMessage, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
-import { chatTurn } from "../../../../modules/channels/chat.ts";
+import { chatPingGate, chatTurn } from "../../../../modules/channels/chat.ts";
+import { isChatConversation } from "../../../../modules/channels/conversation.ts";
+import { guestLabel } from "../../../../modules/channels/chat-guest.ts";
 import { emptyChannelState } from "../../../../modules/channels/state.ts";
 import type { PageAudio } from "../../../../modules/voice/turn.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
@@ -127,6 +129,8 @@ export interface AgentDeps {
   linkMemory?: Map<string, string>;
   /** Items 11d, 11e and 11h: a recording the owner made on their page, by the reference its owner_message carries (modules/channels/owner-audio.ts). */
   pageAudio?: (ref: string) => PageAudio | undefined;
+  /** W1 hold-to-talk: a chat guest's recording by the reference its chat_message carries (the runtime's own, separate memory, so guests never push out the owner's). */
+  chatAudio?: (ref: string) => PageAudio | undefined;
 }
 
 export type AgentEvent =
@@ -211,7 +215,7 @@ export function createAgent(deps: AgentDeps): Agent {
     owner: { whatsapp: owner, language: settings.owner.language },
     languageOf: (phone, due) => languageOf(phone, due),
     optedOut: (phone) => customerOf(phone).optedOut,
-    factsFor: (a, language) => ({ ...factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode, ...(a.family ? { family: a.family } : {}), ...(a.pageLink && a.to === "customer" ? { pageLink: a.pageLink } : {}) }), ...(a.cls ?? {}) }),
+    factsFor: (a, language) => ({ ...factsFor(settings, a.booking, language, { customerPhone: isChatConversation(a.phone) ? guestLabel(store.channel, a.phone, settings.owner.language) : a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode, ...(a.family ? { family: a.family } : {}), ...(a.pageLink && a.to === "customer" ? { pageLink: a.pageLink } : {}) }), ...(a.cls ?? {}) }),
     interactiveFor: (a, facts, language): InteractiveMessage => {
       const offer = a.offer!;
       return { body: (offer.body ?? a.templates).map((id) => render(id, facts)).join(" "), buttons: offer.choices ?? buttonsFor(language, offer.buttons, offer.dueId) };
@@ -228,6 +232,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (due && a.templates.includes("fee_part_received")) out.push(checkPaidOnlyWhenRecorded({ record, dueId: due.id, owedPaise: owedPaise(due), needsAll: false }));
       if (a.gate) out.push(...a.gate); // Classes: the class link and the missed-class note carry their own rule
       if (licence().state === "stopped") out.push(stoppedGate);
+      out.push(...chatPingGate(store.channel, a, clock.now(), tz)); // W1: what a chat guest may make the shop tell the owner is bounded per guest per day
       return out;
     },
     log: (due, phone, action, outcome, inputs, more) => log(due, phone, action, outcome, inputs, more),
@@ -1179,7 +1184,8 @@ export function createAgent(deps: AgentDeps): Agent {
       const heard = await listen(msg);
       if (!heard?.ok) return onVoiceNote(msg, heard ?? undefined);
       voiceHeard = heard;
-      msg = { id: msg.id, from: msg.from, text: heard.text, timestamp: msg.timestamp };
+      msg.onHeard?.(heard.text); // a chat guest's bubble shows the words heard (W1 hold-to-talk)
+      msg = { id: msg.id, from: msg.from, text: heard.text, timestamp: msg.timestamp, ...(msg.noModel ? { noModel: true as const } : {}) };
     }
     if (msg.from === owner) return onOwnerMessage(msg);
     if (msg.image) return onPicture(msg);
@@ -1326,6 +1332,13 @@ export function createAgent(deps: AgentDeps): Agent {
     const customer = customerOf(phone);
     if (store.seenMessages.has(msg.id)) return;
     store.seenMessages.add(msg.id);
+    // W1 hold-to-talk: a guest's recording is heard by the same listener as a WhatsApp voice note (switches, daily limit, spend), then read like typed words
+    if (msg.voiceNote) {
+      const heard = await listen(msg);
+      if (!heard?.ok) return onVoiceNote(msg, heard ?? undefined);
+      msg.onHeard?.(heard.text);
+      msg = { id: msg.id, from: msg.from, text: heard.text, timestamp: msg.timestamp, ...(msg.noModel ? { noModel: true as const } : {}) };
+    }
     const tapped = msg.reply ? intentFromReply(msg.reply.id) : null;
     const read = tapped ? { intent: tapped, understood: RULES } : await readIntent(msg.text, { rulesOnly: true });
     log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}) }, { notes: "a public question from the chat on the centre's page; no fee or student is read for it", refs: { messageId: msg.id, channel: "chat" } });
@@ -1337,7 +1350,7 @@ export function createAgent(deps: AgentDeps): Agent {
     await tellCustomer(null, phone, ["fee_chat_public"], { offer: { kind: "buttons", buttons: ["owner"] } });
   }
   async function onChatMessage(e: ChatMessage): Promise<void> {
-    await chatTurn({ state: (store.channel ??= emptyChannelState()), ai: store, now: clock.now(), timeZone: settings.timezone, kind: "fees", run: onChatTurn, setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
+    await chatTurn({ state: (store.channel ??= emptyChannelState()), ai: store, now: clock.now(), timeZone: settings.timezone, kind: "fees", run: onChatTurn, ...(deps.chatAudio ? { audio: deps.chatAudio } : {}), setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
   }
 
   async function handle(event: AgentEvent): Promise<void> {

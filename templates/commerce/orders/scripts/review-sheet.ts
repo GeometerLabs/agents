@@ -64,6 +64,7 @@ const WHEN: Record<TemplateId, string> = {
   quote_and_link: "The order is held: the items, the day and slot, the total, the advance and the payment link (UPI: with the UPI ID, and the owner confirms)",
   already_waiting: "The customer writes again while an order is held: the same link, not a second order",
   link_failed: "The payment link could not be made: nothing is ordered, the owner is told",
+  chat_shop_busy: "A chat guest asks to order while the shop already has as many unpaid orders as its cap (nothing is held, the owner is not asked)",
   order_confirmed: "The payment record shows the advance (Razorpay): the order is confirmed, what is left to pay and the cancellation rule",
   hold_expired: "The hold ended before the advance was recorded",
   stock_gone_refund: "A payment arrived after the hold ended and the stock is gone: it is refunded",

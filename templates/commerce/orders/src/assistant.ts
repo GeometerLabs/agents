@@ -5,7 +5,9 @@
 // The acts (17 Nov 2026) are the agent's own paths, handed in as `acts` as Bookings' are (templates/commerce/bookings/src/assistant.ts): cancelling releases the stock and
 // refunds the advance through the same refund path, limits and Guard as the owner's "approve o-5"; a refund of an advance that is still the shop's does the same. Nothing
 // here decides a refund's size beyond what was paid, or moves money another way. With no `acts` (the morning line) the skill only reads.
-import { checkWords, ownerReply } from "../../../../modules/assistant/wire.ts";
+import { checkWords, ownerReply, prepareGuestMessage } from "../../../../modules/assistant/wire.ts";
+import { guestLabel } from "../../../../modules/channels/chat-guest.ts";
+import { isChatConversation } from "../../../../modules/channels/conversation.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
 import { orderWhat, ownerItems } from "./channel.ts";
 import type { OwnerItem } from "./channel.ts";
@@ -122,6 +124,8 @@ const what = (o: Order, settings: Settings, language: Settings["languages"][numb
 export function ordersSkill(deps: OrdersSkillDeps): OwnerSkill {
   const { store, settings } = deps;
   /** The order's lines in the owner's language, "2 × cake, 1 × bread", from the shop's own menu. */
+  // a chat guest is "Chat guest 3" in the owner's cards and lists (chat-guest.ts), never "chat:..."
+  const whoOf = (o: Order): string => o.contact?.name ?? o.contact?.phone ?? (isChatConversation(o.customer) ? guestLabel(store.channel, o.customer, settings.owner.language) : o.customer);
   const what = (o: Order) => o.plan ? orderWhat(settings, o) : o.lines.map((l) => { const item = settings.menu.find((m) => m.id === l.itemId); return `${l.qty} × ${item ? itemName(item, settings.owner.language) : l.itemId}`; }).join(", ");
 
   /**
@@ -158,6 +162,8 @@ export function ordersSkill(deps: OrdersSkillDeps): OwnerSkill {
   const action = (kind: string, o: Order, fields: CardAction["fields"]): CardAction => ({ kind, skill: "orders", case: o.id, fields: { who: whoOf(o), ...fields } });
 
   function prepare(p: Proposal): Prepared {
+    const guest = prepareGuestMessage(p, { skill: "orders", channel: store.channel, language: settings.owner.language, optedOut: deps.optedOut }); // a chat guest ("g-3") has no case: only a message to them
+    if (guest) return guest;
     const o = store.orders.get(p.case);
     if (!o) return { ok: false, why: "no_case" };
     if (p.kind === "answer") {
@@ -211,7 +217,7 @@ export function ordersSkill(deps: OrdersSkillDeps): OwnerSkill {
   return {
     name: "orders",
     routing: {
-      refs: /^o-\d{1,6}$/u,
+      refs: /^[og]-\d{1,6}$/u,
       buttonPrefixes: ["item:", "slot:", "pickup", "delivery"],
       words: ROUTING_WORDS,
       liveCaseOf: (phone) => [...store.orders.values()].reverse().find((o) => o.customer === phone && LIVE_STATES.includes(o.state))?.id,

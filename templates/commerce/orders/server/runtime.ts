@@ -117,6 +117,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   const policy: AiPolicy = options.ai ?? {};
   // the owner's recordings from their page, in memory only until their step listens (only with a voice service and the assistant: otherwise there is no record button)
   const pageAudio = options.voice && settings.assistant ? createAudioDrop({ now: () => clock.now() }) : undefined;
+  // W1 hold-to-talk: a chat guest's recordings, in memory only, in a drop of their own (a flood of guests never pushes out the owner's); only with a voice service, else the chat shows no button
+  const chatAudio = options.voice ? createAudioDrop({ now: () => clock.now(), max: 16 }) : undefined;
   /**
    * The agent over one step's store. Its messaging keeps a message to a page order's conversation in that same store (item 11h, modules/channels/outbox.ts), so the
    * words a page customer is given are saved whole or not at all with the step, and never go to WhatsApp.
@@ -124,7 +126,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   const agentOver = (store: Store, record: Parameters<RuntimeKit<Store, Settings, RefundContext>["createAgent"]>[0]["record"], use: Services) => createAgent({
     settings, clock, ...use, messaging: channelMessaging(use.messaging, () => (store.channel ??= emptyChannelState()), clock, options.push ? (to, text) => { options.push!.customer(to, text); } : undefined), parser, record, store, ai: policy,
     ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}),
-    ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(options.talker ? { talker: options.talker } : {}), ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}),
+    ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(options.talker ? { talker: options.talker } : {}), ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}), ...(chatAudio ? { chatAudio: (ref: string) => chatAudio.get(ref) } : {}),
   });
   const skillOver = (store: Store) => ordersSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false });
   const kit: RuntimeKit<Store, Settings, RefundContext> = {
@@ -139,7 +141,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     // an order that ended go with the same retention. The number stays on the order as a WhatsApp customer's does (it is how the owner reaches them); the record is whole.
     compactStore(store, beforeMs) {
       let changed = compactFinishedOrders(store, beforeMs);
-      changed += compactChannel(store.channel, beforeMs, (id) => ended(store.orders.get(id)));
+      changed += compactChannel(store.channel, beforeMs, (id) => ended(store.orders.get(id)), (conversation) => [...store.orders.values()].some((o) => o.customer === conversation && !ended(o))); // a guest with an order still going keeps their number
       for (const o of store.orders.values()) {
         if (!o.contact?.name || !ended(o) || (o.slotEndMs ?? 0) >= beforeMs) continue;
         delete o.contact.name;
@@ -167,6 +169,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       },
       view: (store, handleHash) => orderView(settings, store, handleHash),
       ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
+      ...(chatAudio ? { chatVoice: (audio: { bytes: Uint8Array; mime: string }) => chatAudio.put(audio.bytes, audio.mime) } : {}),
       // the receipts of the page's own order, and the accountant's files (the runtime lets only the owner's session reach them), both from the saved record
       documents: (store, entries, key, language) => documentsOf(settings, store, entries, key, language),
       accountantFiles: (_store, entries, period) => exportFilesOf(settings, entries, period),

@@ -10,6 +10,7 @@
 import { ASSISTANT_OF, FACES, FACE_WORDS, CHARACTER_STYLES, STYLE_INFO, pictureWords } from "../../modules/assistant/character.ts";
 import type { Face } from "../../modules/assistant/character.ts";
 import { PERSONALITIES, greeting } from "../../modules/assistant/personality.ts";
+import { PAINTS, PAINT_IDS } from "../../modules/channels/chat-paint.ts";
 import { STRIP, stripSeeds } from "./character.ts";
 import type { CharacterDraft } from "./character.ts";
 import { html } from "./html.ts";
@@ -44,6 +45,10 @@ export function characterStepBody(c: Ctx, d: { id: string; shopId?: string; char
   <fieldset class="field"><legend>${w.colourLegend}</legend><div class="swatches">
   <button class="pick swatch" type="submit" name="pickColour" value="auto" aria-pressed="${ch.colour === undefined ? "true" : "false"}" aria-label="${w.autoLabel}"><span class="auto">${w.auto}</span>${picked(ch.colour === undefined)}</button>
   ${info.palette.map((hex, i) => html`<button class="pick swatch" type="submit" name="pickColour" value="${hex}" aria-pressed="${hex === ch.colour ? "true" : "false"}" aria-label="${w.colourLabel(i + 1)}"><svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16" fill="#${hex}" stroke="#00000033"/></svg>${picked(hex === ch.colour)}</button>`)}
+  </div></fieldset>
+  <fieldset class="field"><legend>${w.paintLegend}</legend><p class="help">${w.paintHelp}</p><div class="swatches paints">
+  <button class="pick swatch" type="submit" name="pickPaint" value="none" aria-pressed="${ch.paint === undefined ? "true" : "false"}"><svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16" fill="#e2f2e9" stroke="#00000033"/></svg><span>${w.paintNone}</span>${picked(ch.paint === undefined)}</button>
+  ${PAINT_IDS.map((id) => html`<button class="pick swatch" type="submit" name="pickPaint" value="${id}" aria-pressed="${id === ch.paint ? "true" : "false"}"><svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16" fill="${PAINTS[id].hex}" stroke="#00000033"/></svg><span>${w.paints[id]}</span>${picked(id === ch.paint)}</button>`)}
   </div></fieldset>
   <h2>${w.moodsTitle}</h2><p class="help">${w.moodsHelp}</p>
   <ul class="moods">${FACES.map((f) => html`<li><img src="${previewSrc(ch.style, ch.colour, ch.seed ?? seeds[0], f)}" width="96" height="96" alt="${pictureWords(c.lang, shopName, f, typed)}"><span>${FACE_WORDS[c.lang][f]}</span></li>`)}</ul>
