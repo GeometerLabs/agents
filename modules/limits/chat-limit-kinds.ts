@@ -46,7 +46,8 @@ export const LIMIT_WORDS = {
       ml: "ഒരു ദിവസം പരമാവധി {v} ഓർഡറുകൾ",
       kn: "ದಿನಕ್ಕೆ ಗರಿಷ್ಠ {v} ಆರ್ಡರ್‌ಗಳು",
     },
-    words: ["orders a day", "orders per day", "orders each day", "a day", "per day", "daily", "एक दिन में", "रोज़ाना", "ദിവസം", "ദിവസേന", "ದಿನಕ್ಕೆ"],
+    // always with the noun: a bare "a day" or "per day" is in "close for a day" and means nothing about a limit
+    words: ["orders a day", "orders per day", "orders each day", "orders in a day", "order a day", "ऑर्डर रोज़", "रोज़ के ऑर्डर", "एक दिन के ऑर्डर", "ദിവസത്തെ ഓർഡർ", "ഒരു ദിവസം ഓർഡർ", "ദിവസേന ഓർഡർ", "ದಿನಕ್ಕೆ ಆರ್ಡರ್", "ದಿನದ ಆರ್ಡರ್"],
   },
 } as const;
 

@@ -10,8 +10,11 @@ import { emptyAssistantState } from "../state.ts";
 import type { AssistantState, CardRecord } from "../state.ts";
 import type { Proposal } from "../skill.ts";
 import { Writer, write } from "../words.ts";
-import { CHAT_LIMITS as ORDERS } from "../../../templates/commerce/orders/src/chat-limits.ts";
-import { CHAT_LIMITS as BOOKINGS } from "../../../templates/commerce/bookings/src/chat-limits.ts";
+import { bigOrderLimit, ordersPerDayLimit, refundLimit } from "../../limits/chat-limit-kinds.ts";
+
+// the same declarations the templates make (their own files are tested in bundle/test/chat-limit-declarations.test.ts); a shared module's tests import no template
+const BOOKINGS = [refundLimit("cancellation.refundLimitInr", (s) => ({ min: 0, max: Math.min(5000, (s as { deposit: { amountInr: number } }).deposit.amountInr) }))];
+const ORDERS = [bigOrderLimit("owner.approveOverInr", () => ({ min: 0, max: 100_000 })), refundLimit("refund.limitInr", () => ({ min: 0, max: 10_000 })), ordersPerDayLimit("orders.maxPerDay", () => ({ min: 1, max: 10_000 }))];
 
 const NOW = 1_800_000_000_000;
 type Line = { action: string; outcome: string; refs: Record<string, string> };
@@ -112,7 +115,8 @@ test("a settled change is told to the owner once: Active, or failed with the pre
   assert.deepEqual(told.map((t) => t.say.what), ["active", "failed"]);
   const w = new Writer("en", "Asia/Kolkata");
   assert.match(limitLine(told[0].say, "en", w), /^Active: Refunds above ₹500 need your approval\./);
-  assert.match(limitLine(told[1].say, "en", new Writer("en", "Asia/Kolkata")), /previous limit is still in force: Refunds above ₹500/);
+  assert.match(limitLine(told[1].say, "en", new Writer("en", "Asia/Kolkata")), /previous limit is still in force: Refunds above ₹500/, "what is in force now (l-1 is active), not this change's own `from`");
+  assert.doesNotMatch(limitLine(told[1].say, "en", new Writer("en", "Asia/Kolkata")), /deploy did not go through/, "the deployer's reason stays in the record and the panel");
   assert.deepEqual(s.limits.unannounced(), [], "said once");
   assert.equal(s.state.limitChanges.find((c) => c.id === "l-3")?.told, undefined, "a pending one is not announced");
 });
@@ -123,9 +127,23 @@ test("the words exist in four languages for the card and every message, and use 
     const w = new Writer(language, "Asia/Kolkata");
     const lines = [limitCardLine(view, language, w), ...[
       { what: "pending", limit: viewOf(ORDERS[1]), to: 300 }, { what: "active", limit: viewOf(ORDERS[2]), to: 20 }, { what: "failed", limit: viewOf(ORDERS[1]), from: 500 }, { what: "need_value", limit: viewOf(ORDERS[1]) },
-      { what: "which", limits: ORDERS.map(viewOf) }, { what: "loosen_app" }, { what: "not_tighter", limit: viewOf(ORDERS[1]), now: 200, to: 500 },
+      { what: "which", limits: ORDERS.map(viewOf) }, { what: "not_tighter", limit: viewOf(ORDERS[1]), now: 200, to: 500 },
     ].map((s) => limitLine(s as never, language, new Writer(language, "Asia/Kolkata")))];
     for (const l of lines) { assert.ok(l.length > 10, l); assert.doesNotMatch(l, /\b(safe|guaranteed|proves|certified|earn|income|bot|founder)\b|100%/iu); }
   }
   assert.match(limitCardLine(view, "en", new Writer("en", "Asia/Kolkata")), /Now: never/, "a big-order amount of 0 is never");
+});
+
+test("a rule that only has \"a day\" in it is not a limit request: the orders noun is needed", () => {
+  assert.equal(looksLikeLimitRule("close 16 Nov for a day", ORDERS), false);
+  assert.equal(looksLikeLimitRule("at most 20 orders a day", ORDERS), true);
+  assert.equal(readLimitRequest("close 16 Nov for a day", ORDERS).kind, "which");
+});
+
+test("a shop whose limit sits above its hard bound can still tighten (₹1,000 with a ₹200 deposit to ₹500), and a value below the bound asks for the value again", () => {
+  const s = shop(1000); // BOOKINGS' bound here is the ₹2,000 deposit; make it smaller to show the fence is only at the loose end
+  s.settings.deposit.amountInr = 200;
+  assert.equal(s.limits.say(s.limits.read("refunds above ₹500 need my OK")), undefined, "a card is made");
+  const prepared = s.limits.skill.prepare(propose(500));
+  assert.equal(prepared.ok, true);
 });

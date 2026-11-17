@@ -7,7 +7,10 @@ import { createRecord } from "../../record/record.ts";
 import { emptyAssistantState } from "../../assistant/state.ts";
 import type { AssistantState } from "../../assistant/state.ts";
 import { checkOwnerLimit, checkSettled, createLimitsKit, limitsEventKey } from "../runtime-limits.ts";
-import { CHAT_LIMITS } from "../../../templates/commerce/orders/src/chat-limits.ts";
+import { bigOrderLimit, ordersPerDayLimit, refundLimit } from "../chat-limit-kinds.ts";
+
+// the Orders declarations (templates/commerce/orders/src/chat-limits.ts is tested in bundle/test/chat-limit-declarations.test.ts; a module's tests import no template)
+const CHAT_LIMITS = [bigOrderLimit("owner.approveOverInr", () => ({ min: 0, max: 100_000 })), refundLimit("refund.limitInr", () => ({ min: 0, max: 10_000 })), ordersPerDayLimit("orders.maxPerDay", () => ({ min: 1, max: 10_000 }))];
 
 const owner = { whatsapp: "+919811111111", language: "en" as const };
 function kit() {

@@ -50,8 +50,7 @@ const SAMPLES: { [K in MessageId]: MessageData[K][] } = {
   done: (["cancelled", "refund_sent", "held_by_guard", "owed_by_owner", "sent", "answered", "failed", "not_sent"] as const).map((note) => ({ note, who: "Priya", ref: "b-14", amountPaise: 20_000 })),
   refused: [{}], refused_before: [{ atMs: AT_4PM }], card_changed: [{}], card_closed: [{}], card_expired: [{}], card_unknown: [{}], limit_no: [{}],
   limit: [
-    { what: "pending", limit: refundLimit, to: 500 }, { what: "active", limit: refundLimit, to: 500 }, { what: "failed", limit: refundLimit, from: 1000 }, { what: "failed", limit: refundLimit, from: 1000, why: "the deploy did not go through" },
-    { what: "not_tighter", limit: refundLimit, now: 200, to: 500 }, { what: "need_value", limit: refundLimit }, { what: "which", limits: [refundLimit, perDayLimit] }, { what: "loosen_app" },
+    { what: "pending", limit: refundLimit, to: 500 }, { what: "active", limit: refundLimit, to: 500 }, { what: "failed", limit: refundLimit, from: 1000 }, { what: "not_tighter", limit: refundLimit, now: 200, to: 500 }, { what: "need_value", limit: refundLimit }, { what: "which", limits: [refundLimit, perDayLimit] },
     { what: "active", limit: bigOrderLimit, to: 0 }, { what: "pending", limit: perDayLimit, to: 20 },
   ],
   help: [{ name: "Mithra", shop: "Glow Salon", kinds: ["day", "waiting", "money", "close_day", "move", "cancel", "message", "undo", "owes", "open_orders"] }],

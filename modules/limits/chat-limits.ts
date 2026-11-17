@@ -102,7 +102,7 @@ export type ProposalRefusal =
   | "not_whole" // not a whole number
   | "not_tighter" // from the chat or a tap: not strictly tighter than what is in force
   | "not_looser" // from the app: not looser than what is in force (nothing to loosen)
-  | "out_of_bounds" // outside the template's hard bounds
+  | "out_of_bounds" // outside the template's hard bounds (for a tightening, only the tight end: a limit may already sit above its bound)
   | "busy"; // a change to this limit is still being applied (loosening waits for it)
 
 /**
@@ -112,8 +112,13 @@ export type ProposalRefusal =
 export function judgeChange(limit: ChatLimit, a: { settings: unknown; base: number; changes: readonly LimitChange[]; to: number; direction: ChangeDirection }): { ok: true; from: number } | { ok: false; why: ProposalRefusal; from: number } {
   const from = inForce(limit, a.base, a.changes);
   if (!whole(a.to)) return { ok: false, why: "not_whole", from };
+  if (a.direction === "tighten") {
+    // the hard bounds fence the LOOSE side: a shop whose limit already sits above the bound (a ₹1,000 limit with a ₹200 deposit) must still be able to tighten to ₹500
+    const { min, max } = limit.bounds(a.settings);
+    if (limit.tighter === "lower" ? a.to < min : a.to > max) return { ok: false, why: "out_of_bounds", from };
+    return isStrictlyTighter(limit, from, a.to) ? { ok: true, from } : { ok: false, why: "not_tighter", from };
+  }
   if (!withinBounds(limit, a.settings, a.to)) return { ok: false, why: "out_of_bounds", from };
-  if (a.direction === "tighten") return isStrictlyTighter(limit, from, a.to) ? { ok: true, from } : { ok: false, why: "not_tighter", from };
   if (a.changes.some((c) => c.limit === limit.id && c.state === "pending")) return { ok: false, why: "busy", from };
   return isStrictlyTighter(limit, a.to, from) ? { ok: true, from } : { ok: false, why: "not_looser", from };
 }

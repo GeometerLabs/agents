@@ -5,9 +5,6 @@ import assert from "node:assert/strict";
 import { applyInForce, baseValues, compactChanges, getAt, inForce, isStrictlyTighter, judgeChange, setAt, withinBounds } from "../chat-limits.ts";
 import type { LimitChange } from "../chat-limits.ts";
 import { bigOrderLimit, ordersPerDayLimit, refundLimit } from "../chat-limit-kinds.ts";
-import { CHAT_LIMITS as BOOKINGS } from "../../../templates/commerce/bookings/src/chat-limits.ts";
-import { CHAT_LIMITS as FEES } from "../../../templates/education/fees/src/chat-limits.ts";
-import { CHAT_LIMITS as ORDERS } from "../../../templates/commerce/orders/src/chat-limits.ts";
 
 const refund = refundLimit("cancellation.refundLimitInr", () => ({ min: 0, max: 5000 }));
 const big = bigOrderLimit("owner.approveOverInr", () => ({ min: 0, max: 100000 }));
@@ -85,20 +82,10 @@ test("settled changes are trimmed to the newest, a pending one never", () => {
   assert.equal(list.length, 31);
 });
 
-test("each template declares only limits that are really in its settings, with the right direction", () => {
-  const bookings = { cancellation: { refundLimitInr: 200 }, deposit: { amountInr: 200 } };
-  const fees = { waiver: { limitInr: 0 }, refund: { limitInr: 500 }, batches: [{ monthlyFeeInr: 1500 }] };
-  const orders = { owner: { approveOverInr: 0 }, refund: { limitInr: 500 }, orders: { maxPerDay: 30 } };
-  for (const [declared, settings] of [[BOOKINGS, bookings], [FEES, fees], [ORDERS, orders]] as const) {
-    assert.ok(declared.length > 0);
-    for (const l of declared) {
-      assert.equal(typeof getAt(settings, l.path), "number", `${l.id} is at ${l.path}`);
-      assert.equal(l.tighter, "lower");
-      for (const lang of ["en", "hi", "ml", "kn"] as const) { assert.ok(l.rule[lang].includes("{v}"), `${l.id} ${lang} rule has its value`); assert.ok(l.name[lang].length > 0); }
-    }
-  }
-  assert.deepEqual(BOOKINGS.map((l) => l.id), ["refund_limit"]);
-  assert.deepEqual(FEES.map((l) => l.id), ["waiver_limit", "refund_limit"]);
-  assert.deepEqual(ORDERS.map((l) => l.id), ["big_order_limit", "refund_limit", "orders_per_day"]);
-  assert.equal(FEES[0].bounds(fees).max, 1500, "a waiver is never more than the cheapest monthly fee");
+test("a tightening is fenced only at the tight end: a limit above its hard bound can still be tightened, a loosening cannot go past the bound", () => {
+  const bounded = refundLimit("cancellation.refundLimitInr", () => ({ min: 0, max: 200 })); // a ₹200 deposit: the bound
+  assert.equal(judgeChange(bounded, { settings: {}, base: 1000, changes: [], to: 500, direction: "tighten" }).ok, true, "₹1,000 to ₹500 is tighter, though ₹500 is above the bound");
+  assert.equal(judgeChange(bounded, { settings: {}, base: 1000, changes: [], to: -1, direction: "tighten" }).ok, false);
+  assert.equal(judgeChange(bounded, { settings: {}, base: 100, changes: [], to: 500, direction: "loosen" }).ok, false, "a loosening may not pass the bound");
+  assert.equal(judgeChange(bounded, { settings: {}, base: 100, changes: [], to: 200, direction: "loosen" }).ok, true);
 });
