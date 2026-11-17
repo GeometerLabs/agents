@@ -25,6 +25,8 @@ import { WORDS as LIMITS_PANEL_WORDS } from "./views-limits.ts";
 import { OWNER_MONEY } from "../../modules/channels/words-money.ts";
 import { WORDS as LIMITS_OWNER_WORDS } from "../../modules/channels/owner-limits-page.ts";
 import { CHAT, QUICK } from "../../modules/channels/words-chat.ts";
+import { CHAT_MORE } from "../../modules/channels/words-chat-more.ts";
+import { CHAT_GUEST } from "../../modules/channels/chat-guest.ts";
 
 export type ReviewLanguage = "hi" | "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
@@ -110,8 +112,12 @@ const firstFlat = (language: Language): Map<string, string> => flatWords({ owner
 /** Fees, 17 Nov 2026: the owner page's rupee box for a fee received only in part, in cash (modules/channels/words-money.ts), under the ids "owner.money.cashPart*". */
 const cashPartFlat = (language: Language): Map<string, string> => new Map([["owner.money.cashPartLabel", OWNER_MONEY[language].cashPartLabel], ["owner.money.cashPartButton", OWNER_MONEY[language].cashPartButton]]);
 
-/** W1, the chat on the shop's page (17 Nov 2026): the page's words and the three quick taps of each template (modules/channels/words-chat.ts), under the ids "chat.*" and "chat.quick.<kind>.*". */
-const chatFlat = (language: Language): Map<string, string> => flatWords({ chat: { ...CHAT[language], quick: Object.fromEntries(Object.entries(QUICK).map(([kind, q]) => [kind, q.label[language]])) } }, { "chat.closed": ["10:00–20:00"], "chat.kept": [30] });
+/**
+ * W1, the chat on the shop's page (17 Nov 2026): the page's words and the three quick taps of each template (modules/channels/words-chat.ts), under the ids "chat.*" and
+ * "chat.quick.<kind>.*"; W1b adds the moments, hold to talk and "Chat with us" ("chat.more.*", words-chat-more.ts) and the owner's "Chat guest" (chat.guest). The panel's signboard
+ * paint names are in the panel's own words (setup.character.paint*), so they are already in section 7.
+ */
+const chatFlat = (language: Language): Map<string, string> => flatWords({ chat: { ...CHAT[language], more: CHAT_MORE[language], guest: CHAT_GUEST[language], quick: Object.fromEntries(Object.entries(QUICK).map(([kind, q]) => [kind, q.label[language]])) } }, { "chat.closed": ["10:00–20:00"], "chat.kept": [30] });
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
