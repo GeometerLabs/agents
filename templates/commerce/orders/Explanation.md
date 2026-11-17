@@ -95,7 +95,7 @@ What was added, and why. Every change is written to leave a shop that sets nothi
   `within-day-cap` again (a new rule id would add a key to every report's "stopped" table and change every report's bytes), with the slot's own words in the reason.
 - **A reminder before the slot** (`reminder: { "hoursBefore": 2 }`). Made when an order is confirmed, by modules/reminders (a moment already past is not scheduled; if several
   fell due, one goes), sent from the tick, only while the order still stands, cleared when it is cancelled or done. Left out: no reminder, as before. It goes out unasked, so it has
-  two Meta templates (`order_reminder`, and one for a delivery, which names the place).
+  a Meta template (`order_reminder`, the pickup wording; a delivery reminder names the place and goes as the generic name, like a delivery's confirmation).
 - **The balance paid at pickup or delivery.** The advance and the balance are two records. The advance is the payment record's and confirms the order. The balance is the total less
   the advance and is written on its own line (`record_balance`, with `balancePaise`), never added to "advance collected" and never posted as an advance in the books (the books
   have no "balance" kind; the accounting module is shared, so a new kind there is a decision of its own, see Deferred). The owner says `balance o-3 cash`, `balance o-3 upi` or,

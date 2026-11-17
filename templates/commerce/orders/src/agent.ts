@@ -920,6 +920,7 @@ export function createAgent(deps: AgentDeps): Agent {
     o.pending = [];
     moveTo(o, "cancelled");
     log(o, phone, "cancel_order", "confirmed", { hoursLeft: Math.floor(hoursLeft), inWindow });
+    await closeBalanceLink(o);
     await tellOwner(o, phone, "owner_order_cancelled");
     const limit = checkRefundLimit({ amountInr, limitInr: settings.refund.limitInr, paidInr: amountInr });
     if (limit.verdict === "block") { log(o, phone, "refund", "blocked", { paymentId: o.advancePaymentId, amountInr }, { decisions: [limit], refs: { paymentId: o.advancePaymentId!, amountPaise: String(amountInr * 100) } }); return; }
@@ -1043,9 +1044,18 @@ export function createAgent(deps: AgentDeps): Agent {
     await tellOwner(o, o.customer, "owner_balance_marked");
   }
 
+  /** An order that is cancelled no longer takes its balance: a link made for it is closed, so no money comes in on it. Best effort, said in the record. */
+  async function closeBalanceLink(o: Order): Promise<void> {
+    if (!o.balance?.linkId || o.balance.paid) return;
+    const linkId = o.balance.linkId;
+    const closed = await payments.cancelRequest(linkId).then(() => payments.fetchRequest(linkId)).then((l) => l?.status === "cancelled").catch(() => false);
+    log(o, o.customer, "cancel_balance_link", closed ? "confirmed" : "unconfirmed", { linkId }, { notes: closed ? "the order was cancelled, so the link for its balance is closed" : "the order was cancelled but the balance's link could not be closed: a payment on it is not counted (the record says so), and the owner looks in the payment account" });
+  }
+
   /** Read the balance link's payments from the payments service's own list. A payment that is not exactly the balance is not counted, and says so in the record. */
   async function reconcileBalance(o: Order): Promise<void> {
     if (!o.balance?.linkId || o.balance.paid) return;
+    if (o.state !== "confirmed" && o.state !== "completed") return; // a cancelled order takes no balance: its link was closed (above), and nothing arriving on it is counted
     const link = await payments.fetchRequest(o.balance.linkId);
     if (!link) { log(o, o.customer, "record_balance", "failed", { linkId: o.balance.linkId }, { notes: "the payments service has no such link" }); return; }
     for (const payment of link.payments) {
@@ -1445,6 +1455,7 @@ export function createAgent(deps: AgentDeps): Agent {
           o.reminders = undefined;
           moveTo(o, "cancelled");
           log(o, o.customer, "cancel_order", "confirmed", { by: "owner" }, { refs: { by: "owner", via: "assistant" }, notes: why });
+          await closeBalanceLink(o);
           return ownerCancelRefund(o, back, why, { upi: "upi_cancelled_refund_owed", done: "cancelled_refund", held: "cancelled_refund_pending" });
         },
         async cancelWaiting(o, why) {

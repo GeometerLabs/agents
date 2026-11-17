@@ -1,4 +1,4 @@
-// The whole local chain in one process: the stand-in services, the webhook inbox and an Orders runtime in LIVE mode whose live adapters call the stand-ins. A parent's message
+// The whole local chain in one process: the stand-in services, the webhook inbox and an Orders runtime in LIVE mode whose live adapters call the stand-ins. A customer's message
 // and a payment enter at the stand-ins, travel as signed webhooks to the inbox, are saved by the runtime, handled by the agent, and answered through the live adapters,
 // which call the stand-ins back.
 //
