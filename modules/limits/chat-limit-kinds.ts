@@ -49,6 +49,27 @@ export const LIMIT_WORDS = {
     // always with the noun: a bare "a day" or "per day" is in "close for a day" and means nothing about a limit
     words: ["orders a day", "orders per day", "orders each day", "orders in a day", "order a day", "ऑर्डर रोज़", "रोज़ के ऑर्डर", "एक दिन के ऑर्डर", "ദിവസത്തെ ഓർഡർ", "ഒരു ദിവസം ഓർഡർ", "ദിവസേന ഓർഡർ", "ದಿನಕ್ಕೆ ಆರ್ಡರ್", "ದಿನದ ಆರ್ಡರ್"],
   },
+  // Stock orders (17 Nov 2026): the most one purchase order may be worth, and the most a month's approved orders may add up to
+  orderCap: {
+    name: { en: "order cap", hi: "एक ऑर्डर की सीमा", ml: "ഒരു ഓർഡറിന്റെ പരിധി", kn: "ಒಂದು ಆರ್ಡರ್‌ನ ಮಿತಿ" },
+    rule: {
+      en: "No single supplier order may be worth more than {v}",
+      hi: "सप्लायर को जाने वाला कोई भी एक ऑर्डर {v} से ज़्यादा का नहीं हो सकता",
+      ml: "സപ്ലയർക്കുള്ള ഒരു ഓർഡറും {v}-ൽ കൂടുതൽ മൂല്യമുള്ളതാകരുത്",
+      kn: "ಸರಬರಾಜುದಾರರಿಗೆ ಹೋಗುವ ಯಾವುದೇ ಒಂದು ಆರ್ಡರ್ {v} ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಮೌಲ್ಯದ್ದಾಗಿರಬಾರದು",
+    },
+    words: ["order cap", "cap per order", "per order cap", "max per order", "most per order", "एक ऑर्डर की सीमा", "ഒരു ഓർഡറിന്റെ പരിധി", "ಒಂದು ಆರ್ಡರ್‌ನ ಮಿತಿ"],
+  },
+  monthlyBudget: {
+    name: { en: "monthly budget", hi: "महीने का बजट", ml: "മാസ ബജറ്റ്", kn: "ತಿಂಗಳ ಬಜೆಟ್" },
+    rule: {
+      en: "The month's supplier orders may add up to at most {v}",
+      hi: "महीने के सप्लायर ऑर्डर कुल मिलाकर ज़्यादा से ज़्यादा {v} तक हो सकते हैं",
+      ml: "മാസത്തെ സപ്ലയർ ഓർഡറുകൾ ആകെ പരമാവധി {v} വരെ ആകാം",
+      kn: "ತಿಂಗಳ ಸರಬರಾಜು ಆರ್ಡರ್‌ಗಳು ಒಟ್ಟು ಗರಿಷ್ಠ {v} ವರೆಗೆ ಇರಬಹುದು",
+    },
+    words: ["monthly budget", "month budget", "budget for the month", "stock budget", "महीने का बजट", "मासिक बजट", "മാസ ബജറ്റ്", "ತಿಂಗಳ ಬಜೆಟ್"],
+  },
 } as const;
 
 /** A limit made from one kind's words, a settings path and its bounds. */
@@ -65,3 +86,8 @@ export const waiverLimit = (path: string, bounds: Bounds): ChatLimit => make("wa
 export const bigOrderLimit = (path: string, bounds: Bounds): ChatLimit => make("bigOrder", { id: "big_order_limit", path, unit: "inr", tighter: "lower", zeroIsOff: true, bounds });
 /** The most orders in a day (lower is tighter). */
 export const ordersPerDayLimit = (path: string, bounds: Bounds): ChatLimit => make("perDay", { id: "orders_per_day", path, unit: "count", tighter: "lower", bounds });
+
+/** Stock orders: no one purchase order may be worth more than this many rupees (lower is tighter). */
+export const orderCapLimit = (path: string, bounds: Bounds): ChatLimit => make("orderCap", { id: "order_cap", path, unit: "inr", tighter: "lower", bounds });
+/** Stock orders: the month's approved orders may add up to at most this many rupees (lower is tighter). */
+export const monthlyBudgetLimit = (path: string, bounds: Bounds): ChatLimit => make("monthlyBudget", { id: "monthly_budget", path, unit: "inr", tighter: "lower", bounds });

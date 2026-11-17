@@ -117,3 +117,157 @@ A button is at most 20 letters and a label never carries an amount. A tap carrie
 
 The agent names the month of the budget in English letters ("Nov 2026") in every language; a reviewer may ask for the local name.
 
+## 4. The monthly report
+
+The report says how many orders were placed, answered by the supplier, received in full or in part, and how much of the budget was used. It never says an order was paid unless the owner marked it.
+
+### The monthly report on WhatsApp, with sample numbers
+
+```text
+*मासिक रिपोर्ट: Glow Unisex Salon · फरवरी 2027*
+दिए गए ऑर्डर: *9* · सप्लायर ने OK कहा: *7* · पूरा माल आया: *4* · कुछ माल आया: *1* · गलत सामान: *1*
+सप्लायर ने मना किया: *1* · सप्लायर का जवाब नहीं: *1* · रद्द या भेजे नहीं गए: *0*
+इस्तेमाल हुआ बजट: *₹20,000 में से ₹9,000 · आपने भुगतान दर्ज किया (आपका नोट): 2*
+आपकी सीमाओं ने रोका: *3*
+*जाँचा नहीं गया*: असली WhatsApp · असली सप्लायर के जवाब · सप्लायर को पैसे देना · शब्दों की किसी मूल भाषी से जाँच · और 10 (पूरी रिपोर्ट में)। जाँच हाथ से की गई।
+कोड: 7K2M-9QXD · पूरी रिपोर्ट: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html
+असली है या नहीं, जाँचें: https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAQAD7HYMdtfjVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.vv5O7CGK4abVQwEqt804NE5labc4lCf_1zxL3gxqPdd0PpWcfm9nMIYTIxLlfw1xZHrM0O_po3wKDN00iDnaCg
+सपोर्ट को लिखें। एक इंसान जवाब देता है।
+तैयार किया: Divya, Sri Sai Digital · Geometer
+★ इनोवेटर
+```
+
+### The owner's text, with sample numbers
+
+```text
+Glow Unisex Salon · फरवरी 2027 · अभ्यास वाले नकली सिस्टम, टेस्ट पैसा
+दिए गए ऑर्डर: 9 · सप्लायर ने OK कहा: 7 · पूरा माल आया: 4 · कुछ माल आया: 1 · गलत सामान: 1
+सप्लायर ने मना किया: 1 · सप्लायर का जवाब नहीं: 1 · रद्द या भेजे नहीं गए: 0
+इस्तेमाल हुआ बजट: ₹20,000 में से ₹9,000 · आपने भुगतान दर्ज किया (आपका नोट): 2
+आपकी सीमाओं ने रोका: 3 (महीने के बजट से ऊपर के ऑर्डर: 2 · आपकी मंज़ूर सूची में न होने वाले सप्लायर: 1)
+जाँचा नहीं गया: असली WhatsApp · असली सप्लायर के जवाब · सप्लायर को पैसे देना · शब्दों की किसी मूल भाषी से जाँच · और 10 (पूरी रिपोर्ट में)। जाँच हाथ से की गई।
+```
+
+### Every word and phrase of the report
+
+| Id | Text (Hindi) | Meaning (English) | Native reviewer: OK / change to … |
+| --- | --- | --- | --- |
+| `agent` | स्टॉक ऑर्डर एजेंट | Stock orders agent |  |
+| `monthlyReport` | मासिक रिपोर्ट | Monthly report |  |
+| `goLiveCertificate` | चालू करने से पहले का जाँच प्रमाणपत्र | Go-live certificate |  |
+| `fullReport` | पूरी रिपोर्ट | Full report |  |
+| `checkGenuine` | असली है या नहीं, जाँचें | Check it is genuine |  |
+| `helpLine` | सपोर्ट को लिखें। एक इंसान जवाब देता है। | Write to support. A person answers. |  |
+| `promise` | आपकी मंज़ूरी के बिना कोई ऑर्डर सप्लायर को नहीं जाता; एजेंट किसी को पैसे नहीं देता। | Nothing goes to a supplier without your approval; the agent pays no one. |  |
+| `handRun` | जाँच हाथ से की गई। | Checks were run by hand. |  |
+| `sourceTag.stand-in` | अभ्यास वाले नकली सिस्टम, टेस्ट पैसा | stand-in services, test money |  |
+| `sourceTag.test-mode` | टेस्ट मोड, टेस्ट पैसा | test mode, test money |  |
+| `more` | और 12 (पूरी रिपोर्ट में) | and 12 more (see the full report) |  |
+| `budgetOf` | ₹20,000 में से ₹9,000 | ₹9,000 of ₹20,000 |  |
+| `label.placed` | दिए गए ऑर्डर | Orders placed |  |
+| `label.acknowledged` | सप्लायर ने OK कहा | Supplier said OK |  |
+| `label.receivedFull` | पूरा माल आया | Received in full |  |
+| `label.partReceived` | कुछ माल आया | Part received |  |
+| `label.wrongItem` | गलत सामान | Wrong item |  |
+| `label.supplierSaidNo` | सप्लायर ने मना किया | Supplier said no |  |
+| `label.noAnswer` | सप्लायर का जवाब नहीं | No answer from the supplier |  |
+| `label.neverSent` | रद्द या भेजे नहीं गए | Cancelled or never sent |  |
+| `label.budgetUsed` | इस्तेमाल हुआ बजट | Budget used |  |
+| `label.budgetLeft` | बचा हुआ बजट | Budget left |  |
+| `label.markedPaid` | आपने भुगतान दर्ज किया (आपका नोट) | Marked paid by you (your note) |  |
+| `label.asked` | आपसे पूछा गया | You were asked |  |
+| `label.approved` | आपने मंज़ूर किया | You approved |  |
+| `label.saidNo` | आपने मना किया | You said no |  |
+| `label.stopped` | आपकी सीमाओं ने रोका | Stopped by your limits |  |
+| `label.notChecked` | जाँचा नहीं गया | Not checked |  |
+| `stop.monthly-budget` | महीने के बजट से ऊपर के ऑर्डर | Orders over the month's budget |  |
+| `stop.per-order-cap` | एक ऑर्डर की सीमा से ऊपर के ऑर्डर | Orders above your one-order limit |  |
+| `stop.order-quantity` | गलती जैसी लगने वाली मात्रा | Quantities that looked like a slip |  |
+| `stop.approved-supplier-only` | आपकी मंज़ूर सूची में न होने वाले सप्लायर | Suppliers not on your approved list |  |
+| `stop.approval-matches-order` | ऑर्डर से न मिलने वाली मंज़ूरियाँ | Approvals that no longer matched the order |  |
+| `stop.one-order-per-request` | एक अनुरोध से दूसरा ऑर्डर | A second order from one request |  |
+| `stop.reply-from-supplier` | सप्लायर के न होने वाले जवाब | Replies that were not the supplier's |  |
+| `stop.send-only-when-approved` | बिना मंज़ूरी के भेजने की कोशिशें | Sends that were not approved |  |
+| `stop.message-matches-record` | रिकॉर्ड से न मिलने वाले संदेश | Messages that did not match the record |  |
+| `stop.opt-out` | STOP के बाद संदेश | Messages after STOP |  |
+| `stop.other` | आपकी सीमाओं ने रोकी कोई और बात | Something else your limits held back |  |
+| `notChecked.whatsapp` | असली WhatsApp | real WhatsApp |  |
+| `notChecked.supplier` | असली सप्लायर के जवाब | real suppliers' replies |  |
+| `notChecked.paying` | सप्लायर को पैसे देना | paying a supplier |  |
+| `notChecked.review` | शब्दों की किसी मूल भाषी से जाँच | a native speaker's review of the wording |  |
+| `notTested.real-whatsapp` | असली WhatsApp: असली खाता, Meta से असली टेम्पलेट मंज़ूरी, असली सप्लायर का फ़ोन | Real WhatsApp: a real account, a real Meta template approval, a real supplier's phone |  |
+| `notTested.native-review` | हिंदी, मलयालम और कन्नड़ शब्दों की किसी मूल भाषी से जाँच | A native speaker's review of the Hindi, Malayalam and Kannada wording |  |
+| `notTested.model-reading` | मालिक के अनुरोध को AI मॉडल से पढ़वाना (सिर्फ़ नियमों वाला पाठक आज़माया गया; जो अनुरोध वह नहीं पढ़ पाता, उसके बारे में पूछा जाता है, अंदाज़ा नहीं लगाया जाता) | An owner's request read by an AI model (only the rule reader was tried; a request it cannot read is asked about, not guessed) |  |
+| `notTested.supplier-formats` | असली सप्लायर के जवाब देने के कई तरीके (वॉइस नोट, बिल की फ़ोटो, दूसरी लिपि, पुराने संदेश को उद्धृत करता जवाब) | The many ways real suppliers answer (a voice note, a photo of a bill, another script, a reply that quotes an older message) |  |
+| `notTested.restart` | मंज़ूरी के बीच में रीस्टार्ट (जाँच में सब कुछ मेमोरी में रखा गया था) | A restart in the middle of an approval (the checks kept everything in memory) |  |
+| `notTested.paying` | सप्लायर को पैसे देना (एजेंट किसी को पैसे नहीं देता; आपका अपना नोट सिर्फ़ आपकी बात है) | Paying a supplier (the agent pays no one; your own note is only your word) |  |
+| `notTested.invoice` | सप्लायर का इनवॉइस, कैटलॉग से अलग दाम, सप्लायर की ओर से आधे माल की सूचना, माल की वापसी | A supplier's invoice, a price that differs from the catalogue, a part-shipment note from the supplier, a return of goods |  |
+| `notTested.real-month` | मंज़ूरी खुली रहते महीना बदल जाना | A month that turns while an approval is open |  |
+| `notTested.own-settings` | ये जाँच इस दुकान की अपनी सेटिंग पर (जाँच प्रमाणपत्र कहता है कि वे उदाहरण दुकान Glow Unisex Salon पर चली थीं) | These checks on this shop's own settings (the go-live certificate says they ran on the example shop, Glow Unisex Salon) |  |
+| `notTested.other-settings` | ये जाँच इस दुकान की अपनी सेटिंग पर (जाँच प्रमाणपत्र कहता है कि वे अलग सेटिंग पर चली थीं) | These checks on this shop's own settings (the go-live certificate says they ran on different settings) |  |
+| `notTested.no-go-live-certificate` | ये जाँच इस दुकान की अपनी सेटिंग पर (कोई जाँच प्रमाणपत्र नहीं दिया गया) | These checks on this shop's own settings (no go-live certificate was given) |  |
+| `notTested.go-live-untrusted` | ये जाँच इस दुकान की अपनी सेटिंग पर (जो जाँच प्रमाणपत्र दिया गया उस पर भरोसा नहीं किया जा सका, इसलिए उसे इस्तेमाल नहीं किया गया) | These checks on this shop's own settings (the go-live certificate that was given could not be trusted, so it was not used) |  |
+| `notTested.situations-skipped` | वे स्थितियाँ जो इन सेटिंग पर चल नहीं सकीं (जाँच प्रमाणपत्र में नाम दिए हैं) | Situations these settings could not run (named in the go-live certificate) |  |
+| `notCounted.goods-really-arrived` | माल सच में आया या नहीं: सिर्फ़ आपका अपना दर्ज किया हुआ गिना जाता है | Whether the goods really arrived: only your own mark is counted |  |
+| `notCounted.payments` | सप्लायर को भुगतान: यह एजेंट किसी को पैसे नहीं देता और कोई भुगतान देख नहीं सकता; सिर्फ़ आपका अपना नोट गिना जाता है | Payments to suppliers: this agent pays no one and cannot see a payment; only your own note is counted |  |
+| `notCounted.outside-agent` | एजेंट के बाहर दिए गए ऑर्डर (फ़ोन पर, सामने या किसी और चैट में) | Orders placed outside the agent (by phone, in person or in another chat) |  |
+| `notCounted.read-receipts` | सप्लायर ने संदेश पढ़ा या नहीं | Whether a supplier read a message |  |
+| `notCounted.rule-breaks` | नियम टूटने की वे बातें जो एजेंट ने नहीं देखीं: रिकॉर्ड में वही है जो एजेंट ने किया और जिससे उसे रोका गया | Rule breaks the agent did not see: the record holds what the agent did and what it was stopped from doing |  |
+| `cert.date` | तारीख़ | Date |  |
+| `cert.held` | 15 में से 14 स्थितियाँ ठीक रहीं। 1 में गड़बड़ हुई। 12 बातें जाँची नहीं गईं। | Held 14 of 15 situations. 1 failed. 12 not tested. |  |
+| `cert.intro` | चालू करने से पहले हमने वे स्थितियाँ आज़माईं जो गलत हो सकती थीं: ऑर्डर संदेश का खोया हुआ जवाब, कभी जवाब न देने वाला सप्लायर, बजट के आख़िरी हिस्से के लिए दो ऑर्डर की होड़, आपकी मंज़ूरी के बाद बदलती मात्रा या दाम, आपकी सूची में न होने वाला सप्लायर, और गलत सामान का आना। | Before switching on, we tried situations that could go wrong: a lost reply to an order message, a supplier who never answers, two orders racing for the last of the budget, a quantity or price that changes after you approve, a supplier who is not on your list, and a wrong item arriving. |  |
+| `cert.yourLimits` | आपकी सीमाएँ | Your limits |  |
+| `cert.paidRule` | आपकी मंज़ूरी के बिना ठीक वही ऑर्डर किसी सप्लायर को नहीं जाता, और एजेंट किसी को पैसे नहीं देता | Nothing goes to a supplier until you approve that exact order, and the agent pays no one |  |
+| `cert.budget` | महीने का बजट: ₹20,000, ऑर्डर मंज़ूर करते ही अलग रख दिया जाता है | Budget for the month: ₹20,000, set aside when you approve an order |  |
+| `cert.cap` | एक ऑर्डर ज़्यादा से ज़्यादा ₹12,000 का | One order is at most ₹12,000 |  |
+| `cert.maxQty` | एक ऑर्डर में एक चीज़ की ज़्यादा से ज़्यादा 200 इकाइयाँ | At most 200 units of one item in one order |  |
+| `cert.suppliers` | 2 मंज़ूर सप्लायर; 1 सूची में हैं पर रोके गए हैं (उन्हें ऑर्डर नहीं जाता) | 2 approved suppliers; 1 on the list but paused (never ordered from) |  |
+| `cert.followUp` | जिस सप्लायर ने जवाब नहीं दिया उससे 4, 24 घंटे बाद फिर पूछा जाता है; आख़िरी बार के बाद आपको बताया जाता है | A supplier who has not answered is asked again after 4, 24 hours; after the last time you are told |  |
+| `cert.notAGrade` | यह आज़माई गई स्थितियों की गिनती है। यह एजेंट को अंक या दर्जा नहीं देती। | This counts the situations tried. It does not grade the agent. |  |
+| `cert.didNotHold` | जिनमें गड़बड़ हुई | Did not hold |  |
+| `cert.handRunLine` | जाँच हाथ से की गई, असली WhatsApp पर नहीं, बल्कि अभ्यास वाले नकली सिस्टम (stand-in services) पर। कोई पैसा नहीं हिला। | Checks were run by hand against stand-in services, not real WhatsApp. No money moved. |  |
+| `cert.checkedOn` | जाँच इन पर की गई | Checks run on |  |
+| `goLive.heading` | चालू करने से पहले की जाँच | Go-live checks |  |
+| `goLive.own` | चालू करने से पहले की जाँच इसी दुकान की अपनी सेटिंग पर चली थी, 2 Nov 2026 के जाँच प्रमाणपत्र के अनुसार। | The go-live checks ran on this shop's own settings, in the go-live certificate of 2 Nov 2026. |  |
+| `goLive.example` | 2 Nov 2026 का जाँच प्रमाणपत्र कहता है कि उसकी जाँच उदाहरण दुकान Glow Unisex Salon पर चली थी, इस दुकान की अपनी सेटिंग पर नहीं। | The go-live certificate of 2 Nov 2026 says its checks ran on the example shop, Glow Unisex Salon, not on this shop's own settings. |  |
+| `goLive.different` | 2 Nov 2026 का जाँच प्रमाणपत्र कहता है कि उसकी जाँच इस दुकान से अलग सेटिंग पर चली थी, इसलिए उससे इस दुकान की अपनी सेटिंग का हाल पता नहीं चलता। | The go-live certificate of 2 Nov 2026 says its checks ran on different settings from this shop's, so it does not show how this shop's own settings behave. |  |
+| `goLive.untrusted` | एक जाँच प्रमाणपत्र दिया गया था, पर उस पर भरोसा नहीं किया जा सका (उस पर हस्ताक्षर नहीं है, हस्ताक्षर नहीं बैठता, या वह इस एजेंट का जाँच प्रमाणपत्र है ही नहीं), इसलिए उसे इस्तेमाल नहीं किया गया। | A go-live certificate was given, but it could not be trusted (it is not signed, its signature does not fit, or it is not a go-live certificate of this agent), so it was not used. |  |
+| `goLive.none` | कोई जाँच प्रमाणपत्र नहीं दिया गया, इसलिए यह दस्तावेज़ नहीं बताता कि चालू करने से पहले की जाँच किस सेटिंग पर चली थी। | No go-live certificate was given, so this document does not say what the go-live checks ran on. |  |
+| `goLive.signedWith` | जाँच प्रमाणपत्र पर key-3f9a1c कुंजी से हस्ताक्षर हैं। कुंजी यह नहीं बताती कि वह किसके पास है। | The go-live certificate is signed with key-3f9a1c. A key does not show who holds it. |  |
+| `page.numbers` | आँकड़े | The numbers |  |
+| `page.item` | क्या | What |  |
+| `page.count` | कितने | How many |  |
+| `page.amount` | रकम | Amount |  |
+| `page.ordersHeading` | इस महीने मंज़ूर हुए ऑर्डर | Orders approved in this month |  |
+| `page.budgetHeading` | महीने का बजट | The month's budget |  |
+| `page.monthlyBudget` | महीने का बजट | Budget for the month |  |
+| `page.ownersNoteHeading` | आपका अपना नोट | Your own note |  |
+| `page.suppliersHeading` | सप्लायर के हिसाब से | By supplier |  |
+| `page.supplier` | सप्लायर | Supplier |  |
+| `page.stoppedHeading` | आपकी सीमाओं ने क्या रोका | What your limits stopped |  |
+| `page.rule` | सीमा | Limit |  |
+| `page.times` | बार | Times |  |
+| `page.notCountedHeading` | गिना नहीं गया | Not counted |  |
+| `page.notTestedHeading` | जाँचा नहीं गया | Not tested |  |
+| `page.unconfirmed` | ऑर्डर संदेश जिन्हें WhatsApp ने पक्का नहीं किया | Order messages WhatsApp did not confirm |  |
+| `page.checkHeading` | इस दस्तावेज़ को जाँचें | Check this document |  |
+| `page.code` | कोड | Code |  |
+| `page.digest` | डाइजेस्ट | Digest |  |
+| `page.countedFrom` | कहाँ से गिना | Counted from |  |
+| `page.setUpBy` | तैयार किया | Set up by |  |
+| `page.madeOn` | बनाया गया | Made on |  |
+| `page.signedBy` | हस्ताक्षर | Signed by |  |
+| `page.notSigned` | हस्ताक्षर नहीं | Not signed |  |
+| `page.signatureNote` | हस्ताक्षर दिखाता है कि यह दस्तावेज़ किसने बनाया और यह बदला नहीं है। यह नहीं दिखाता कि इसमें गिनी गई बातें पूरी हैं। | A signature shows who made this document and that it has not changed. It does not show that what it counts is complete. |  |
+| `page.scanToCheck` | इस दस्तावेज़ को geometer.dev पर जाँचने के लिए स्कैन करें। इसकी .json फ़ाइल चाहिए होगी। जाँच आपके ब्राउज़र में होती है, कुछ भेजा नहीं जाता। लिंक में हस्ताक्षर की कुंजी नहीं है: किसने हस्ताक्षर किए यह जानने के लिए यहाँ दिखी कुंजी को उस कुंजी से मिलाएँ जो आपके ऑपरेटर या Geometer की टीम ने दी है। | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your Operator or Geometer's team gave you. |  |
+| `page.scanSummary` | इस दस्तावेज़ को geometer.dev पर जाँचने के लिए यह कोड स्कैन करें या लिंक खोलें। इससे पता चलता है कि दस्तावेज़ असली है या नहीं, इसे किसने जारी किया, और इस पन्ने से मिलाने के लिए आँकड़े। जाँच आपके फ़ोन पर होती है, दस्तावेज़ के बारे में कुछ भेजा नहीं जाता। यह नहीं बताता कि आँकड़े सच हैं। | Scan this code, or open the link, to check this paper on geometer.dev. It shows whether the paper is genuine, who issued it, and the figures to compare with this page. The check runs on your phone and nothing about the paper is sent. It does not show that the numbers are true. |  |
+| `page.notAGrade` | ये रिकॉर्ड में दिखी बातों की गिनती हैं। ये एजेंट को अंक या दर्जा नहीं देतीं। | These are counts of what the record shows. They do not grade the agent. |  |
+| `page.period` | अवधि | Period |  |
+| `page.showWhatWeDid` | देखें हमने क्या किया ▸ | Show what we did ▸ |  |
+| `page.byActionHeading` | एजेंट ने क्या किया, काम के हिसाब से | What the agent did, by action |  |
+| `page.action` | काम | Action |  |
+| `page.agentVersion` | एजेंट का संस्करण | Agent version |  |
+| `page.limitsDigest` | सीमाओं का डाइजेस्ट | Limits digest |  |
+| `page.recordDigest` | रिकॉर्ड का डाइजेस्ट | Record digest |  |
+| `page.liveServices` | असली सिस्टम | Live services |  |
+

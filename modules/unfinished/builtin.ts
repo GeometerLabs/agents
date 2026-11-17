@@ -199,4 +199,36 @@ const refundMadeNotTold: ObligationKind = {
   },
 };
 
-export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false), refundMadeNotTold, messageUnanswered, messageNotDelivered, ...MARK_OBLIGATION_KINDS];
+/**
+ * Stock orders (17 Nov 2026), two kinds read from a purchase order's own fields. The supplier has not answered an order even after the last ask (`silentToldMs` is set when the owner
+ * was told): the agent asks no more, so a person calls them. And a supplier who accepted an order a week ago with nothing marked received: only the owner knows what arrived.
+ * Neither has a "done" the record shows apart from the order's own answer, so each leaves when the order does (answered, received, cancelled).
+ */
+const GOODS_WAIT_MS = 7 * 24 * 3_600_000;
+const supplierNoAnswer: ObligationKind = {
+  id: "supplier_no_answer",
+  templates: ["stock-orders"],
+  detect(input) {
+    const out: Obligation[] = [];
+    for (const c of input.cases) {
+      if (!["sent", "send_unknown"].includes(c.state) || c.ack !== "none" || num(c.silentToldMs) === undefined) continue;
+      out.push({ kind: "supplier_no_answer", caseId: c.id, sinceMs: num(c.silentToldMs) ?? null, facts: { case: c.id }, actions: [] });
+    }
+    return out;
+  },
+};
+const goodsNotReceived: ObligationKind = {
+  id: "goods_not_received",
+  templates: ["stock-orders"],
+  detect(input) {
+    const out: Obligation[] = [];
+    for (const c of input.cases) {
+      const sent = num(c.sentMs);
+      if (c.state !== "sent" || c.ack !== "accepted" || !["none", "part"].includes(String(c.receipt)) || sent === undefined || input.nowMs - sent < GOODS_WAIT_MS) continue;
+      out.push({ kind: "goods_not_received", caseId: c.id, sinceMs: sent + GOODS_WAIT_MS, facts: { case: c.id }, actions: [] });
+    }
+    return out;
+  },
+};
+
+export const BUILT_IN: readonly ObligationKind[] = [depositNoBooking, paymentUnrecorded, approvalWaitingLong, refundWaiting, refundIssues("refund_unknown", true), refundIssues("refund_failed", false), refundMadeNotTold, messageUnanswered, messageNotDelivered, supplierNoAnswer, goodsNotReceived, ...MARK_OBLIGATION_KINDS];

@@ -1,6 +1,6 @@
 # Pitch and sell the Stock orders template
 
-For local Operators (18 and over) and builders. Written 17 November 2026, in the pilot phase. The shop owner never reads this guide: they get a short sheet from you. This is the English master; the Hindi, Malayalam and Kannada guides are not written yet (they are listed in `Deferred.md`).
+For local Operators (18 and over) and builders. Written 17 November 2026, in the pilot phase. The shop owner never reads this guide: they get a short sheet from you. This is the English master; the Hindi, Malayalam and Kannada guides are translations of it.
 
 **Read section 11 first.** Stock orders is not live in any shop yet. Today you can explain it, tell the five-step walkthrough in section 4 from your phone, and ask for a letter of intent by WhatsApp. You cannot promise a start date.
 
@@ -109,7 +109,7 @@ When it starts I will look after it with you. You can call me on [your number].
 | "It orders for you automatically." | Nothing is sent without the owner's yes | "It prepares the exact order and you say yes." |
 | "The supplier confirmed, so it is delivered." | Their OK is not delivery | "They said they will supply it; you mark it when it arrives." |
 | "It pays the supplier." | It pays nobody | "You pay as you do today." |
-| "It will save you money." | No earnings or savings claims | "It keeps your monthly limit." |
+| "It will save you money." | No claims about savings | "It keeps your monthly limit." |
 | "It always picks the cheapest supplier." | It does not compare quotes | "It orders from the supplier you name or pick." |
 
 ## 8. The setup visit
@@ -131,4 +131,4 @@ Stop the agent, call the owner before they find out, look at the record, own it.
 
 ## 11. Be honest about what's true today
 
-As of 17 November 2026 the Stock orders agent and its checks run against a stand-in WhatsApp only. No shop is live on it and no real supplier has been messaged. Not yet: paying the supplier, a real WhatsApp account or Meta's approval of the templates, a native speaker's review of the Hindi, Malayalam and Kannada wording, a saved store and the shop's page, a signed monthly report, comparing quotes, the Hindi, Malayalam and Kannada guides and the one-page sheet. So: promise no start date, take no setup fee, and say plainly "it is not live anywhere yet".
+As of 17 November 2026 the Stock orders agent and its checks run against a stand-in WhatsApp only. No shop is live on it and no real supplier has been messaged. Not yet: paying the supplier, a real WhatsApp account or Meta's approval of the templates, a native speaker's review of the Hindi, Malayalam and Kannada wording, a saved store and the shop's page, a signed monthly report, comparing quotes. So: promise no start date, take no setup fee, and say plainly "it is not live anywhere yet".
