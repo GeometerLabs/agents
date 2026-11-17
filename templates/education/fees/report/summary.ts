@@ -5,10 +5,12 @@ import { periodOf } from "../../../../modules/report/summary-sign.ts";
 import type { SummaryFields } from "../../../../modules/report/summary-sign.ts";
 import type { FeesReport } from "./data.ts";
 
-/** Collected, given back, still to collect, reminders sent, taken off fees, asked, approved, said no, stopped by limits. Money is what the owner marked for a UPI centre. */
+/**
+ * Collected, given back, still to collect, reminders sent, taken off fees, asked, approved, said no, stopped by limits. Money is what the owner marked for a UPI centre. */
 export function reportSummaryFields(r: FeesReport): SummaryFields {
+  // A month in which old dues were paid uses layout 7 (layout 4 plus "oldDues" last); any other month is layout 4 exactly as before (the owner's decision, 17 Nov 2026)
   return {
-    layout: 4, source: r.source, ownerMarked: r.paidBy === "owner-marked", period: periodOf(r.period), pathway: r.pathway.name, shop: r.shop.name, by: r.preparedBy,
-    figures: [r.money.collected.paise, r.money.givenBack.paise, r.fees.stillToCollect.paise, r.reminders.sent, r.waivers.total.paise, r.owner.asked, r.owner.approved, r.owner.denied, r.stopped.total],
+    layout: r.money.oldDues ? 7 : 4, source: r.source, ownerMarked: r.paidBy === "owner-marked", period: periodOf(r.period), pathway: r.pathway.name, shop: r.shop.name, by: r.preparedBy,
+    figures: [r.money.collected.paise, r.money.givenBack.paise, r.fees.stillToCollect.paise, r.reminders.sent, r.waivers.total.paise, r.owner.asked, r.owner.approved, r.owner.denied, r.stopped.total, ...(r.money.oldDues ? [r.money.oldDues.paise] : [])],
   };
 }

@@ -8,6 +8,8 @@
 //
 // What the lines are, and where each number comes from (all counted from the record by report/data.ts):
 //   collected, given back, still to collect     report.money.collected, report.money.givenBack, report.fees.stillToCollect
+//   old dues collected (17 Nov 2026)            report.money.oldDues, inside the collected value ("₹3,500 · Old dues collected: ₹1,500") and only when there are some: the body, and so the
+//                                               Meta templates, are unchanged
 //   reminders sent, taken off fees              report.reminders.sent, report.waivers.total
 //   you were asked, approved, said no           report.owner
 //   stopped by your limits                      report.stopped.total
@@ -25,7 +27,7 @@ import type { Envelope } from "../../../../modules/report/sign.ts";
 import { badgeText, oneLine, periodLabel, rupees, settledByWordWords } from "../../../../modules/report/text.ts";
 import type { FeesReport } from "./data.ts";
 import { sampleReport } from "./review.ts";
-import { STRINGS } from "./strings.ts";
+import { STRINGS, moneyLabels } from "./strings.ts";
 import { notCheckedList } from "./text.ts";
 import { WHATSAPP_BODY_LIMIT, messageCheckLink } from "../../../../modules/report/summary-sign.ts";
 import { verifyCodeLink } from "../../../../modules/report/verify-link.ts";
@@ -109,13 +111,16 @@ export interface ReportExtras {
   settled?: string;
 }
 
+const moneyLabelOf = (report: FeesReport, language: Language): string => moneyLabels(language, report.paidBy).oldDuesCollected;
+
 /** The value of every slot, as the owner reads it. */
 export function reportValues(report: FeesReport, language: Language, extras: ReportExtras): Record<ReportSlot, string> {
   const s = STRINGS[language];
   const tag = s.sourceTag[report.source];
   return {
     title: [oneLine(report.shop.name), periodLabel(report.period, language), tag].filter(Boolean).join(" · "),
-    collected: rupees(report.money.collected.paise),
+    // an old due paid this month goes inside the value, like the people's words in `givenBack` below: the body is one fixed wording, so no template is added or changed
+    collected: [rupees(report.money.collected.paise), report.money.oldDues ? `${moneyLabelOf(report, language)}: ${rupees(report.money.oldDues.paise)}` : ""].filter(Boolean).join(" \u00b7 "),
     // what the payment service confirmed given back, then what a person settled by their word (B75), which is never counted in it
     givenBack: [rupees(report.money.givenBack.paise), extras.settled].filter(Boolean).join(" \u00b7 "),
     pending: report.fees.stillToCollect.count > 0 ? `${rupees(report.fees.stillToCollect.paise)} (${report.fees.stillToCollect.count} ${s.label.students})` : rupees(0),

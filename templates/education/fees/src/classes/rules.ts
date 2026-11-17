@@ -6,6 +6,10 @@
 // fees as the payment record shows them, never from a flag kept earlier. `checkClassAccess` is that rule as a Decision like every other limit (src/limits.ts), so it
 // is recorded beside the message it allowed or stopped.
 //
+// A carried back due (a student's `backDues`) is owed and past its grace days from the day the agent starts, so by default it does NOT decide the link or the material
+// (owner's decision, 17 Nov 2026: otherwise every student with one lost the link on the centre's first day, before the parent had heard a word from the agent). Only
+// the student's ordinary fees do. A centre that wants the stricter rule sets `classes.oldDuesStopLink: true` and back dues then block exactly as an ordinary fee does.
+//
 // "Within the grace days" is the very boundary addLateFee uses (src/agent.ts): a fee is late from the start of the day after due date + grace days. So a student is
 // never given a link on a day the agent would already have added the late fee.
 import { addDays, localParts, weekdayOf, zonedToMs } from "../../../../../modules/core/time.ts";
@@ -56,7 +60,7 @@ export function nextClass(classes: ClassesSettings, timeZone: string, batchId: s
 }
 
 /** A fee as the access rule reads it: what the payment record says about it now. The agent builds these from its dues after it has read the payments service again. */
-export interface FeeSnapshot { state: "open" | "paid" | "closed"; dueDate: LocalDate; balancePaise: number }
+export interface FeeSnapshot { state: "open" | "paid" | "closed"; dueDate: LocalDate; balancePaise: number; /** A carried back due (`due.backDue`): judged only when the centre set `oldDuesStopLink`. */ backDue?: boolean }
 
 /** Is this fee late: open, something owed, and the grace days over (from the start of the day after due date + grace days, as addLateFee counts)? */
 export function isPastGrace(fee: FeeSnapshot, graceDays: number, nowMs: number, timeZone: string): boolean {
@@ -74,13 +78,16 @@ export interface AccessInput {
   /** Every fee the student has, as the payment record shows it. */
   fees: readonly FeeSnapshot[];
   graceDays: number;
+  /** The centre's `classes.oldDuesStopLink`: true means a back due stops the link and the material like an ordinary fee; false (the default) means it is not looked at. */
+  oldDuesStopLink?: boolean;
   nowMs: number;
   timeZone: string;
 }
 
 /**
  * class-access: may this student's contact receive a class link, or open the reading material, right now? One Decision; the first reason that stops it is the one
- * said. A student with an unpaid fee past its grace days (a carried back due included: it is owed and past grace) gets nothing until it is paid or the owner waives it.
+ * said. A student with an unpaid ordinary fee past its grace days gets nothing until it is paid or the owner waives it. A back due counts the same way only when the
+ * centre set `oldDuesStopLink`; otherwise it is left out, and the recorded reason says so when one was left out.
  */
 export function checkClassAccess(input: AccessInput): Decision {
   const rule = "class-access";
@@ -88,8 +95,11 @@ export function checkClassAccess(input: AccessInput): Decision {
   if (input.consent === "no") return block(rule, "The contact said no to class links and material.");
   if (input.consent === "waiting") return block(rule, "The contact has not yet agreed to receive class links and material (the consent question is asked first).");
   if (!input.readOk) return block(rule, "The payment record could not be read just now, so it cannot be known that the fee is paid or within its grace days. Nothing is sent.");
-  const late = input.fees.find((f) => isPastGrace(f, input.graceDays, input.nowMs, input.timeZone));
-  if (late) return block(rule, "A fee of the student is not paid and its grace days are over.");
+  const stopOld = input.oldDuesStopLink === true;
+  const late = input.fees.find((f) => (stopOld || !f.backDue) && isPastGrace(f, input.graceDays, input.nowMs, input.timeZone));
+  if (late) return block(rule, late.backDue ? "An old due of the student is not paid and its grace days are over, and this centre stops the class link for an old due." : "A fee of the student is not paid and its grace days are over.");
+  const skipped = !stopOld && input.fees.some((f) => f.backDue && isPastGrace(f, input.graceDays, input.nowMs, input.timeZone));
+  if (skipped) return allow(rule, "The student is in the batch, the contact agreed, and every ordinary fee is paid or within its grace days. An old due does not stop the class link at this centre.");
   return allow(rule, "The student is in the batch, the contact agreed, and every fee is paid or within its grace days.");
 }
 

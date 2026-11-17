@@ -14,7 +14,7 @@ import type { BooksOnly } from "../../../../modules/accounting/figures.ts";
 import { reportAccounting } from "../../../../modules/accounting/summary.ts";
 import type { AccountingSummary } from "../../../../modules/accounting/summary.ts";
 import type { LegacyMap } from "../../../../modules/accounting/journal.ts";
-import { FEES_LEGACY } from "../src/accounting.ts";
+import { FEES_LEGACY, oldDueOf } from "../src/accounting.ts";
 import { readFileSync } from "node:fs";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
@@ -104,7 +104,14 @@ export interface FeesReport {
    * `givenBack` is what the payments service's own record confirmed (or, UPI, the owner marked sent). `settledByWord` (B75, 12 Nov 2026) are refunds a person at the
    * server settled as made by their word (Guard's already_done): never counted as given back, grouped by who said so. Left out when there are none (older bytes kept).
    */
-  money: { collected: Amount; givenBack: Amount; settledByWord?: SettledByWord[];
+  money: { collected: Amount; givenBack: Amount;
+    /**
+     * Owner's decision, 17 Nov 2026: old dues (a student's `backDues`, earlier months unpaid when the agent started, each a fee of its own with `backDue`) are told apart.
+     * `collected` is the money for this period's own fees and `oldDues` the payments on old dues, both worked out from the record and the books (never from what a parent said);
+     * together they are exactly the books' received figure. Left out when no old due was paid in the period, so a centre without old dues keeps its bytes.
+     */
+    oldDues?: Amount;
+    settledByWord?: SettledByWord[];
     /** Money the books count and the rows above leave out (a payment made twice, the owner's own marks on a gateway shop); only when one is above 0. */
     booksOnly?: BooksOnly };
   /** Present only for a UPI centre (B33): the money is what the owner MARKED, and every document labels it so. Left out for a Razorpay centre, which keeps its bytes. */
@@ -213,7 +220,12 @@ export function buildFeesReport(input: ReportInput): FeesReport {
   const figures = figuresOf(journal(all, FEES_LEGACY), all, FEES_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { ownerMarks: upi });
   const booksOnly = booksOnlyOf(figures); // why the "Money this month" block can differ from the rows (figures.ts booksOnly)
   const accounting = reportAccounting(all, FEES_LEGACY, new Date(from).toISOString(), new Date(to).toISOString());
-  const collected = figures.received;
+  // Old dues collected: the same books figure over only the entries on a fee that was opened as a back due (src/accounting.ts oldDueOf), so every rule of `received`
+  // (once per payment, a second payment on a link left out, a UPI centre's marks) applies unchanged and the two parts add up to `figures.received` exactly.
+  const isOld = oldDueOf(all);
+  const old = figuresOf(journal(all, FEES_LEGACY), all.filter((e) => isOld(e) !== undefined), FEES_LEGACY, new Date(from).toISOString(), new Date(to).toISOString(), { ownerMarks: upi }).received;
+  const oldDues = old.count > 0 ? { count: old.count, paise: old.paise } : undefined;
+  const collected = oldDues ? { count: figures.received.count - oldDues.count, paise: figures.received.paise - oldDues.paise } : figures.received;
   const givenBack = { count: figures.refunds.count, paise: figures.refunds.paise };
   const byWord = settledByWordOf(month).rows; // a person's word, by who said it (modules/report/settled-by-word.ts)
 
@@ -293,7 +305,7 @@ export function buildFeesReport(input: ReportInput): FeesReport {
     madeAt: new Date(madeAt).toISOString(),
     policyDigest: policyDigest(settings),
     record: { entries: month.length, digest: digestOf(all.map(entryDigest)), byAction },
-    money: { collected, givenBack, ...(byWord.length > 0 ? { settledByWord: byWord } : {}), ...(booksOnly ? { booksOnly } : {}) },
+    money: { collected, givenBack, ...(oldDues ? { oldDues } : {}), ...(byWord.length > 0 ? { settledByWord: byWord } : {}), ...(booksOnly ? { booksOnly } : {}) },
     ...(upi ? { paidBy: "owner-marked" as const } : {}),
     fees, waivers, owner,
     reminders: { sent: reminders, byLanguage, receipts },

@@ -1446,7 +1446,7 @@ export function createAgent(deps: AgentDeps): Agent {
       const fees: FeeSnapshot[] = [];
       for (const due of [...store.dues.values()].filter((d) => d.customer === parent && d.studentName === studentName)) {
         if (due.state === "open") { const read = await reconcile(due); await settle(due, read.fresh); if (!read.ok) readOk = false; } // the record is read again before the rule is applied
-        fees.push({ state: due.state, dueDate: due.dueDate, balancePaise: balancePaise(due) });
+        fees.push({ state: due.state, dueDate: due.dueDate, balancePaise: balancePaise(due), backDue: !!due.backDue });
       }
       return { readOk, fees };
     },
