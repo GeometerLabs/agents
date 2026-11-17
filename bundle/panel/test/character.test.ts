@@ -129,7 +129,9 @@ test("the step on a phone: styles by DiceBear's names, the row of faces, colours
     assert.ok(settings.assistant.character.seed.startsWith("hosahalli-beauty-"));
     const m = readCharacterManifest(readFileSync(join(folder, "character", "character.json"), "utf8"))!;
     assert.deepEqual(m.look, { style: "critters", seed: settings.assistant.character.seed });
-    assert.equal(readdirSync(join(folder, "character")).length, 16, "five moods in three formats, and the manifest");
+    const drawn = readdirSync(join(folder, "character"));
+    assert.equal(drawn.filter((f) => f.endsWith("-anim.svg")).length, 5, "each mood's DiceBear animation (W1b), an optional file");
+    assert.equal(drawn.length, 21, "five moods in three formats, five animated, and the manifest");
 
     // the shop page: the saved moods with their words, and the profile photo to set by hand
     const shopPage = await divya.get("/shops/hosahalli-beauty");
