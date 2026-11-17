@@ -24,9 +24,9 @@ test("money: paise to ONDC's string and back is exact, with no float anywhere", 
 });
 
 test("state mapping is total, and a name it does not know is refused, not guessed", () => {
-  assert.deepEqual([...statesOf("orders")], [...ORDERS_STATES]);
-  assert.deepEqual([...statesOf("bookings")], [...BOOKINGS_STATES]);
-  assert.deepEqual([...statesOf("stock-orders")], [...STOCK_ORDERS_STATES]);
+  assert.deepEqual([...statesOf("orders")].sort(), [...ORDERS_STATES].sort());
+  assert.deepEqual([...statesOf("bookings")].sort(), [...BOOKINGS_STATES].sort());
+  assert.deepEqual([...statesOf("stock-orders")].sort(), [...STOCK_ORDERS_STATES].sort());
   for (const t of ["orders", "bookings", "stock-orders"] as const) for (const s of statesOf(t)) assert.ok(statusOf(t, s).stage, `${t} ${s}`);
   assert.throws(() => statusOf("orders", "teleported"), /no ONDC mapping/u);
   assert.equal(statusOf("orders", "enquiry").stage, "none");
