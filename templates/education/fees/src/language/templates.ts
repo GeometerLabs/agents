@@ -95,6 +95,7 @@ export type TemplateId =
   // to the parent: the reminders, which go out on their own (each is also a WhatsApp template, fees/src/language/meta-templates.ts)
   | "fee_reminder" | "fee_overdue" | "fee_overdue_late" | "fee_received" | "fee_part_received"
   // to the parent: answers to what they wrote or tapped
+  | "fee_chat_public"
   | "fee_pay_link" | "fee_already_paid" | "fee_claim_partial" | "fee_claim_not_found" | "fee_nothing_due"
   | "fee_waiver_asked" | "fee_waiver_applied" | "fee_waiver_cleared" | "fee_waiver_denied" | "fee_discount_to_owner" | "fee_request_waiting"
   | "fee_refund_asked" | "fee_refund_too_much" | "fee_refund_none" | "fee_refund_done" | "fee_refund_pending" | "fee_refund_checking" | "fee_refund_confirmed" | "fee_refund_approved" | "fee_refund_denied" | "fee_refund_expired"
@@ -185,6 +186,7 @@ const en: BaseSet = {
   fee_claim_partial: (f) => `We can see ${inr(f, "paidInr")} paid for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")}, so ${inr(f, "balanceInr")} is still to pay. Pay the rest here: ${payTo(f)}`,
   fee_claim_not_found: (f) => `We cannot see a payment yet for ${need(f, "studentName")}'s ${need(f, "batchName")} fee for ${need(f, "monthLabel")}. If you paid just now, it can take a few minutes to show. I have asked the owner to check. If it did not go through, you can pay here: ${payTo(f)}`,
   fee_nothing_due: () => "Nothing is due from you right now. Thank you!",
+  fee_chat_public: () => "This chat answers questions about the centre. A child's fees are on the private page the centre sent you; to reach the owner, tap the button below.",
   fee_waiver_asked: (f) => `I cannot change the fee myself. I have asked the owner about taking ${inr(f, "waiverInr")} off ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. You will hear back here.`,
   fee_waiver_applied: (f) => `Done. ${inr(f, "waiverInr")} is taken off ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. ${inr(f, "balanceInr")} is now to pay: ${payTo(f)}`,
   fee_waiver_cleared: (f) => `Done. ${inr(f, "waiverInr")} is taken off ${need(f, "studentName")}'s fee for ${need(f, "monthLabel")}. Nothing more is due.`,
@@ -249,6 +251,7 @@ const hi: BaseSet = {
   fee_claim_partial: (f) => `${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस में ${inr(f, "paidInr")} भरे दिख रहे हैं, इसलिए ${inr(f, "balanceInr")} अभी बाकी है। बाकी यहाँ भरें: ${payTo(f)}`,
   fee_claim_not_found: (f) => `${need(f, "studentName")} की ${need(f, "batchName")} की ${need(f, "monthLabel")} की फीस का भुगतान अभी हमें नहीं दिख रहा। अगर अभी भरा है तो दिखने में कुछ मिनट लग सकते हैं। मैंने मालिक से जाँचने को कहा है। अगर भुगतान नहीं हुआ तो यहाँ भर सकते हैं: ${payTo(f)}`,
   fee_nothing_due: () => "अभी आपकी ओर से कुछ बाकी नहीं है। धन्यवाद!",
+  fee_chat_public: () => "यह चैट केंद्र के बारे में सवालों के जवाब देती है। बच्चे की फ़ीस उस निजी पेज पर है जो केंद्र ने आपको भेजा था; मालिक से बात करने के लिए नीचे का बटन दबाइए।",
   fee_waiver_asked: (f) => `फीस मैं खुद नहीं बदल सकता। मैंने मालिक से पूछा है कि ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस से ${inr(f, "waiverInr")} कम किए जाएँ या नहीं। जवाब यहीं मिलेगा।`,
   fee_waiver_applied: (f) => `हो गया। ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस से ${inr(f, "waiverInr")} कम कर दिए गए हैं। अब ${inr(f, "balanceInr")} भरने हैं: ${payTo(f)}`,
   fee_waiver_cleared: (f) => `हो गया। ${need(f, "studentName")} की ${need(f, "monthLabel")} की फीस से ${inr(f, "waiverInr")} कम कर दिए गए हैं। अब कुछ बाकी नहीं है।`,
@@ -311,6 +314,7 @@ const ml: BaseSet = {
   fee_claim_partial: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിൽ ${inr(f, "paidInr")} അടച്ചതായി കാണാം, അതിനാൽ ${inr(f, "balanceInr")} ഇനിയും അടയ്ക്കാനുണ്ട്. ബാക്കി ഇവിടെ അടയ്ക്കാം: ${payTo(f)}`,
   fee_claim_not_found: (f) => `${need(f, "studentName")}-ന്റെ ${need(f, "batchName")} ${need(f, "monthLabel")} ഫീസിന്റെ പേയ്മെന്റ് ഇതുവരെ ഞങ്ങൾക്ക് കാണാനില്ല. ഇപ്പോൾ അടച്ചതാണെങ്കിൽ കാണാൻ കുറച്ച് മിനിറ്റ് എടുക്കാം. പരിശോധിക്കാൻ ഉടമയോട് പറഞ്ഞിട്ടുണ്ട്. പേയ്മെന്റ് നടന്നിട്ടില്ലെങ്കിൽ ഇവിടെ അടയ്ക്കാം: ${payTo(f)}`,
   fee_nothing_due: () => "ഇപ്പോൾ നിങ്ങൾ ഒന്നും അടയ്ക്കാനില്ല. നന്ദി!",
+  fee_chat_public: () => "ഈ ചാറ്റ് കേന്ദ്രത്തെക്കുറിച്ചുള്ള ചോദ്യങ്ങൾക്ക് മറുപടി നൽകുന്നു. കുട്ടിയുടെ ഫീസ് കേന്ദ്രം നിങ്ങൾക്ക് അയച്ച സ്വകാര്യ പേജിലാണ്; ഉടമയെ ബന്ധപ്പെടാൻ താഴത്തെ ബട്ടൺ തൊടൂ.",
   fee_waiver_asked: (f) => `ഫീസ് മാറ്റാൻ എനിക്ക് സ്വയം കഴിയില്ല. ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസിൽ നിന്ന് ${inr(f, "waiverInr")} കുറയ്ക്കാമോ എന്ന് ഉടമയോട് ചോദിച്ചിട്ടുണ്ട്. മറുപടി ഇവിടെ തന്നെ ലഭിക്കും.`,
   fee_waiver_applied: (f) => `ശരി. ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസിൽ നിന്ന് ${inr(f, "waiverInr")} കുറച്ചിട്ടുണ്ട്. ഇനി ${inr(f, "balanceInr")} അടയ്ക്കണം: ${payTo(f)}`,
   fee_waiver_cleared: (f) => `ശരി. ${need(f, "studentName")}-ന്റെ ${need(f, "monthLabel")} ഫീസിൽ നിന്ന് ${inr(f, "waiverInr")} കുറച്ചിട്ടുണ്ട്. ഇനി ഒന്നും അടയ്ക്കാനില്ല.`,
@@ -373,6 +377,7 @@ const kn: BaseSet = {
   fee_claim_partial: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದಲ್ಲಿ ${inr(f, "paidInr")} ಪಾವತಿಯಾಗಿರುವುದು ಕಾಣಿಸುತ್ತಿದೆ, ಆದ್ದರಿಂದ ${inr(f, "balanceInr")} ಇನ್ನೂ ಬಾಕಿ ಇದೆ. ಉಳಿದದ್ದನ್ನು ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${payTo(f)}`,
   fee_claim_not_found: (f) => `${need(f, "studentName")} ಅವರ ${need(f, "batchName")} ${need(f, "monthLabel")} ಶುಲ್ಕದ ಪಾವತಿ ಇನ್ನೂ ನಮಗೆ ಕಾಣಿಸುತ್ತಿಲ್ಲ. ಈಗಷ್ಟೇ ಪಾವತಿಸಿದ್ದರೆ ಕಾಣಿಸಲು ಕೆಲವು ನಿಮಿಷ ಬೇಕಾಗಬಹುದು. ಪರಿಶೀಲಿಸಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿದ್ದೇನೆ. ಪಾವತಿ ಆಗದಿದ್ದರೆ ಇಲ್ಲಿ ಪಾವತಿಸಬಹುದು: ${payTo(f)}`,
   fee_nothing_due: () => "ಈಗ ನಿಮ್ಮಿಂದ ಏನೂ ಬಾಕಿ ಇಲ್ಲ. ಧನ್ಯವಾದ!",
+  fee_chat_public: () => "ಈ ಚಾಟ್ ಕೇಂದ್ರದ ಬಗ್ಗೆ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸುತ್ತದೆ. ಮಗುವಿನ ಶುಲ್ಕ ಕೇಂದ್ರ ನಿಮಗೆ ಕಳುಹಿಸಿದ ಖಾಸಗಿ ಪುಟದಲ್ಲಿದೆ; ಮಾಲೀಕರನ್ನು ಸಂಪರ್ಕಿಸಲು ಕೆಳಗಿನ ಬಟನ್ ಒತ್ತಿ.",
   fee_waiver_asked: (f) => `ಶುಲ್ಕವನ್ನು ನಾನೇ ಬದಲಾಯಿಸಲು ಆಗುವುದಿಲ್ಲ. ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕದಿಂದ ${inr(f, "waiverInr")} ಕಡಿಮೆ ಮಾಡಬಹುದೇ ಎಂದು ಮಾಲೀಕರನ್ನು ಕೇಳಿದ್ದೇನೆ. ಉತ್ತರ ಇಲ್ಲಿಯೇ ಸಿಗುತ್ತದೆ.`,
   fee_waiver_applied: (f) => `ಆಯಿತು. ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕದಿಂದ ${inr(f, "waiverInr")} ಕಡಿಮೆ ಮಾಡಲಾಗಿದೆ. ಈಗ ${inr(f, "balanceInr")} ಪಾವತಿಸಬೇಕು: ${payTo(f)}`,
   fee_waiver_cleared: (f) => `ಆಯಿತು. ${need(f, "studentName")} ಅವರ ${need(f, "monthLabel")} ಶುಲ್ಕದಿಂದ ${inr(f, "waiverInr")} ಕಡಿಮೆ ಮಾಡಲಾಗಿದೆ. ಇನ್ನೇನೂ ಬಾಕಿ ಇಲ್ಲ.`,
