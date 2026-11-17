@@ -25,7 +25,7 @@ export interface Strings {
   /** The one assurance the documents make, and the only one. */
   promise: string;
   /** The owner's lines: "label: number". */
-  label: { collected: string; stillToCollect: string; givenBack: string; ordersTaken: string; cancelled: string; wasAsked: string; approved: string; saidNo: string; stoppedByLimits: string; notChecked: string; orders: string };
+  label: { balanceCollected: string; collected: string; stillToCollect: string; givenBack: string; ordersTaken: string; cancelled: string; wasAsked: string; approved: string; saidNo: string; stoppedByLimits: string; notChecked: string; orders: string };
   /** What each limit that stopped something is called. */
   stop: Record<OrderRuleId, string>;
   handRun: string;
@@ -70,7 +70,7 @@ export const en: Strings = {
   agent: "Orders agent", monthlyReport: "Monthly report", goLiveCertificate: "Go-live certificate", fullReport: "Full report", checkGenuine: CHECK_GENUINE.en, settledByWord: SETTLED_BY_WORD.en, settledBySomeone: SETTLED_BY_SOMEONE.en,
   helpLine: "Write to support. A person answers.",
   promise: "No order confirmed without the payment record (or your confirmation for UPI); every refund tracked.",
-  label: { collected: "Advance collected", stillToCollect: "To collect at pickup", givenBack: "Given back", ordersTaken: "Orders taken", cancelled: "Cancelled", wasAsked: "You were asked", approved: "You approved", saidNo: "You said no", stoppedByLimits: "Stopped by your limits", notChecked: "Not checked", orders: "orders" },
+  label: { balanceCollected: "Balance collected at pickup", collected: "Advance collected", stillToCollect: "To collect at pickup", givenBack: "Given back", ordersTaken: "Orders taken", cancelled: "Cancelled", wasAsked: "You were asked", approved: "You approved", saidNo: "You said no", stoppedByLimits: "Stopped by your limits", notChecked: "Not checked", orders: "orders" },
   stop: {
     "price-at-or-above-menu": "Prices below your menu", "order-size": "Orders with too many items", "within-stock": "Orders past the day's stock", "within-day-cap": "Orders past the day's limit",
     "before-cutoff": "Orders after the cut-off", "within-delivery-area": "Addresses outside your delivery area", "confirm-only-when-recorded": "\"Confirmed\" with no payment on record", "one-advance-per-order": "A second advance on one order",
@@ -151,7 +151,7 @@ export const hi: Strings = {
   agent: "ऑर्डर एजेंट", monthlyReport: "मासिक रिपोर्ट", goLiveCertificate: "चालू करने से पहले का जाँच प्रमाणपत्र", fullReport: "पूरी रिपोर्ट", checkGenuine: CHECK_GENUINE.hi, settledByWord: SETTLED_BY_WORD.hi, settledBySomeone: SETTLED_BY_SOMEONE.hi,
   helpLine: "सपोर्ट को लिखें। एक इंसान जवाब देता है।",
   promise: "भुगतान के रिकॉर्ड (या UPI में आपकी पुष्टि) के बिना कोई ऑर्डर पक्का नहीं; हर रिफंड का हिसाब।",
-  label: { collected: "एडवांस जमा हुआ", stillToCollect: "पिकअप पर लेना बाकी", givenBack: "वापस किया", ordersTaken: "लिए गए ऑर्डर", cancelled: "रद्द हुए", wasAsked: "आपसे पूछा गया", approved: "आपने मंज़ूर किया", saidNo: "आपने मना किया", stoppedByLimits: "आपकी सीमाओं ने रोका", notChecked: "जाँचा नहीं गया", orders: "ऑर्डर" },
+  label: { balanceCollected: "पिकअप पर मिली बाकी रकम", collected: "एडवांस जमा हुआ", stillToCollect: "पिकअप पर लेना बाकी", givenBack: "वापस किया", ordersTaken: "लिए गए ऑर्डर", cancelled: "रद्द हुए", wasAsked: "आपसे पूछा गया", approved: "आपने मंज़ूर किया", saidNo: "आपने मना किया", stoppedByLimits: "आपकी सीमाओं ने रोका", notChecked: "जाँचा नहीं गया", orders: "ऑर्डर" },
   stop: {
     "price-at-or-above-menu": "मेन्यू से कम दाम", "order-size": "बहुत ज़्यादा चीज़ों वाले ऑर्डर", "within-stock": "दिन के स्टॉक से ज़्यादा के ऑर्डर", "within-day-cap": "दिन की सीमा से ज़्यादा ऑर्डर",
     "before-cutoff": "कट-ऑफ़ के बाद के ऑर्डर", "within-delivery-area": "डिलीवरी क्षेत्र के बाहर के पते", "confirm-only-when-recorded": "बिना भुगतान रिकॉर्ड के \"पक्का\"", "one-advance-per-order": "एक ऑर्डर का दूसरा एडवांस",
@@ -231,7 +231,7 @@ export const ml: Strings = {
   agent: "ഓർഡർ ഏജന്റ്", monthlyReport: "പ്രതിമാസ റിപ്പോർട്ട്", goLiveCertificate: "തുടങ്ങുന്നതിന് മുമ്പുള്ള പരിശോധനാ സർട്ടിഫിക്കറ്റ്", fullReport: "പൂർണ്ണ റിപ്പോർട്ട്", checkGenuine: CHECK_GENUINE.ml, settledByWord: SETTLED_BY_WORD.ml, settledBySomeone: SETTLED_BY_SOMEONE.ml,
   helpLine: "സപ്പോർട്ടിന് എഴുതുക. ഒരു വ്യക്തി മറുപടി നൽകും.",
   promise: "പേയ്മെന്റ് രേഖയില്ലാതെ (UPI-യിൽ നിങ്ങളുടെ സ്ഥിരീകരണമില്ലാതെ) ഒരു ഓർഡറും ഉറപ്പിക്കില്ല; ഓരോ റീഫണ്ടും രേഖപ്പെടുത്തുന്നു.",
-  label: { collected: "പിരിഞ്ഞ അഡ്വാൻസ്", stillToCollect: "പിക്കപ്പിൽ വാങ്ങാനുള്ളത്", givenBack: "തിരികെ നൽകിയത്", ordersTaken: "എടുത്ത ഓർഡറുകൾ", cancelled: "റദ്ദാക്കിയത്", wasAsked: "നിങ്ങളോട് ചോദിച്ചു", approved: "നിങ്ങൾ അംഗീകരിച്ചു", saidNo: "നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു", stoppedByLimits: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", notChecked: "പരിശോധിക്കാത്തത്", orders: "ഓർഡറുകൾ" },
+  label: { balanceCollected: "പിക്കപ്പിൽ കിട്ടിയ ബാക്കി തുക", collected: "പിരിഞ്ഞ അഡ്വാൻസ്", stillToCollect: "പിക്കപ്പിൽ വാങ്ങാനുള്ളത്", givenBack: "തിരികെ നൽകിയത്", ordersTaken: "എടുത്ത ഓർഡറുകൾ", cancelled: "റദ്ദാക്കിയത്", wasAsked: "നിങ്ങളോട് ചോദിച്ചു", approved: "നിങ്ങൾ അംഗീകരിച്ചു", saidNo: "നിങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു", stoppedByLimits: "നിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്", notChecked: "പരിശോധിക്കാത്തത്", orders: "ഓർഡറുകൾ" },
   stop: {
     "price-at-or-above-menu": "മെനുവിലെ വിലയേക്കാൾ കുറഞ്ഞ വില", "order-size": "വളരെയധികം സാധനങ്ങളുള്ള ഓർഡറുകൾ", "within-stock": "ദിവസത്തെ സ്റ്റോക്കിന് മുകളിലുള്ള ഓർഡറുകൾ", "within-day-cap": "ദിവസത്തെ പരിധിക്ക് മുകളിലുള്ള ഓർഡറുകൾ",
     "before-cutoff": "കട്ട്-ഓഫിന് ശേഷമുള്ള ഓർഡറുകൾ", "within-delivery-area": "ഡെലിവറി ഏരിയയ്ക്ക് പുറത്തുള്ള വിലാസങ്ങൾ", "confirm-only-when-recorded": "പേയ്മെന്റ് രേഖയില്ലാത്ത \"ഉറപ്പിച്ചു\"", "one-advance-per-order": "ഒരു ഓർഡറിന്റെ രണ്ടാം അഡ്വാൻസ്",
@@ -311,7 +311,7 @@ export const kn: Strings = {
   agent: "ಆರ್ಡರ್ ಏಜೆಂಟ್", monthlyReport: "ಮಾಸಿಕ ವರದಿ", goLiveCertificate: "ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ", fullReport: "ಪೂರ್ಣ ವರದಿ", checkGenuine: CHECK_GENUINE.kn, settledByWord: SETTLED_BY_WORD.kn, settledBySomeone: SETTLED_BY_SOMEONE.kn,
   helpLine: "ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ.",
   promise: "ಪಾವತಿ ದಾಖಲೆ (ಅಥವಾ UPI ಯಲ್ಲಿ ನಿಮ್ಮ ದೃಢೀಕರಣ) ಇಲ್ಲದೆ ಯಾವ ಆರ್ಡರ್ ಅನ್ನೂ ಖಚಿತಪಡಿಸುವುದಿಲ್ಲ; ಪ್ರತಿ ರೀಫಂಡ್ ದಾಖಲಾಗುತ್ತದೆ.",
-  label: { collected: "ಸಂಗ್ರಹವಾದ ಮುಂಗಡ", stillToCollect: "ಪಿಕಪ್‌ನಲ್ಲಿ ಪಡೆಯಬೇಕಾದದ್ದು", givenBack: "ಮರಳಿ ಕೊಟ್ಟದ್ದು", ordersTaken: "ತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಳು", cancelled: "ರದ್ದಾದವು", wasAsked: "ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು", approved: "ನೀವು ಒಪ್ಪಿದ್ದು", saidNo: "ನೀವು ಬೇಡ ಎಂದದ್ದು", stoppedByLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", notChecked: "ಪರಿಶೀಲಿಸದ್ದು", orders: "ಆರ್ಡರ್‌ಗಳು" },
+  label: { balanceCollected: "ಪಿಕಪ್‌ನಲ್ಲಿ ಸಿಕ್ಕ ಉಳಿದ ಮೊತ್ತ", collected: "ಸಂಗ್ರಹವಾದ ಮುಂಗಡ", stillToCollect: "ಪಿಕಪ್‌ನಲ್ಲಿ ಪಡೆಯಬೇಕಾದದ್ದು", givenBack: "ಮರಳಿ ಕೊಟ್ಟದ್ದು", ordersTaken: "ತೆಗೆದುಕೊಂಡ ಆರ್ಡರ್‌ಗಳು", cancelled: "ರದ್ದಾದವು", wasAsked: "ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು", approved: "ನೀವು ಒಪ್ಪಿದ್ದು", saidNo: "ನೀವು ಬೇಡ ಎಂದದ್ದು", stoppedByLimits: "ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು", notChecked: "ಪರಿಶೀಲಿಸದ್ದು", orders: "ಆರ್ಡರ್‌ಗಳು" },
   stop: {
     "price-at-or-above-menu": "ಮೆನುವಿಗಿಂತ ಕಡಿಮೆ ಬೆಲೆ", "order-size": "ತುಂಬ ವಸ್ತುಗಳ ಆರ್ಡರ್‌ಗಳು", "within-stock": "ದಿನದ ಸ್ಟಾಕ್‌ಗಿಂತ ಹೆಚ್ಚಿನ ಆರ್ಡರ್‌ಗಳು", "within-day-cap": "ದಿನದ ಮಿತಿಗಿಂತ ಹೆಚ್ಚಿನ ಆರ್ಡರ್‌ಗಳು",
     "before-cutoff": "ಕಟ್-ಆಫ್ ನಂತರದ ಆರ್ಡರ್‌ಗಳು", "within-delivery-area": "ಡೆಲಿವರಿ ಪ್ರದೇಶದ ಹೊರಗಿನ ವಿಳಾಸಗಳು", "confirm-only-when-recorded": "ಪಾವತಿ ದಾಖಲೆ ಇಲ್ಲದ \"ಖಚಿತ\"", "one-advance-per-order": "ಒಂದು ಆರ್ಡರ್‌ನ ಎರಡನೇ ಮುಂಗಡ",

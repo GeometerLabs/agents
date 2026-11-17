@@ -50,6 +50,14 @@ export function checkDayCap(input: { ordersOnDay: number; maxPerDay: number }): 
   return allow("within-day-cap", `${input.ordersOnDay} of ${input.maxPerDay} orders hold a place for the day.`);
 }
 
+// within-day-cap again, for one slot (17 Nov 2026): a slot's own most orders. It is the same rule id as the day's limit on purpose: a rule id is a key of every report's
+// "stopped" table (report/data.ts RULE_IDS), so a new id would change every report's bytes, and a full slot is the same kind of stop as a full day.
+export function checkSlotCap(input: { ordersInSlot: number; maxOrders: number | undefined }): Decision {
+  if (input.maxOrders === undefined) return allow("within-day-cap", "The slot has no limit of its own.");
+  if (input.ordersInSlot >= input.maxOrders) return block("within-day-cap", `${input.ordersInSlot} orders already hold a place in the slot, which is the most (${input.maxOrders}).`);
+  return allow("within-day-cap", `${input.ordersInSlot} of ${input.maxOrders} orders hold a place in the slot.`);
+}
+
 // before-cutoff: no order once the cut-off for the order's day and slot has passed. The moment itself is already too late.
 export function checkBeforeCutoff(input: { nowMs: number; cutoffMs: number }): Decision {
   if (input.nowMs >= input.cutoffMs) return block("before-cutoff", "The cut-off for that day and slot has passed.");

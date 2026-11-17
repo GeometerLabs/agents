@@ -117,6 +117,9 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("order_upi_refund_marked_sent", "upi_refund_sent", "customer"),
   // 12 Nov 2026: the promise refund_checking makes ("as soon as it is confirmed"), kept when the payments service's list settles the refund, often days later
   template("order_refund_confirmed", "refund_confirmed", "customer"),
+  // 17 Nov 2026: the reminder before the slot goes out unasked, so usually in a closed window; one body for a pickup, one for a delivery (it names the place)
+  template("order_reminder", "order_reminder", "customer"),
+  template("order_delivery_reminder", "order_reminder", "customer", "delivery"),
   // the licence's service notices to the owner (B13): the one plain notice at the wind-down and at the final stop
   template("owner_order_service_paused", "owner_licence_paused", "owner"),
   template("owner_order_service_stopped", "owner_licence_stopped", "owner"),

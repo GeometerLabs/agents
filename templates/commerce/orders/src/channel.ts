@@ -25,7 +25,7 @@ import { ordersJournal } from "./accounting.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import { allSlots, itemName, itemOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
-import { fixSlot, ordersOn, takenOf } from "./order.ts";
+import { fixSlot, ordersInSlot, ordersOn, takenOf } from "./order.ts";
 import type { Order, OrderState, Store } from "./order.ts";
 
 /** "2026-11-16": a day as the page, the API and the event name it. */
@@ -71,7 +71,8 @@ export function orderOffer(settings: Settings, store: Store, nowMs: number, paus
   const days: OrderOffer["days"] = [];
   for (let d = 0; d <= settings.orders.daysAhead; d++) {
     const date = addDays({ year: today.year, month: today.month, day: today.day }, d);
-    const slots = allSlots(settings).map(({ slot }) => { const at = slotOn(settings, date, slot.id); return { id: slot.id, mode: at.mode, fromMs: at.fromMs, toMs: at.toMs, open: at.cutoffMs > nowMs }; });
+    // a slot with a limit of its own (`maxOrders`) that is full for the day is not open: the page cannot offer what the agent would refuse (agent.ts availability)
+    const slots = allSlots(settings).map(({ slot }) => { const at = slotOn(settings, date, slot.id); const full = slot.maxOrders !== undefined && ordersInSlot(store, date, slot.id, nowMs) >= slot.maxOrders; return { id: slot.id, mode: at.mode, fromMs: at.fromMs, toMs: at.toMs, open: at.cutoffMs > nowMs && !full }; });
     const left = Object.fromEntries(settings.menu.map((i) => [i.id, Math.max(0, i.dailyStock - takenOf(store, date, i.id, nowMs))]));
     days.push({ date: isoOf(date), slots, left, full: ordersOn(store, date, nowMs) >= settings.orders.maxPerDay });
   }
@@ -142,9 +143,26 @@ export function orderView(settings: Settings, store: Store, handleHash: string):
   };
 }
 
+/** How long after a hold ended the owner's page still lists "money may have come": a UPI payment made as the time ran out (48 hours; 14 days after the customer said they paid). */
+export const LATE_WINDOW_MS = 48 * 3_600_000;
+export const LATE_CLAIM_WINDOW_MS = 14 * 24 * 3_600_000;
+
+/**
+ * An expired order whose UPI request is still open to a mark (its one-use code stays live after the hold ended, ledger.ts closeRequest) and has none: the customer may have
+ * paid as the time ran out. Only a UPI shop has one. Bounded in time, so an old, forgotten hold is not listed for ever. The owner's "received" on it is the same mark as on
+ * WhatsApp; after the close the agent treats it as the late mark (agent.ts lateMark): owed back, or kept for an order the owner takes by hand, never confirmed by itself.
+ */
+function lateRequest(store: Store, o: Order, nowMs: number): MarkedRequest | undefined {
+  if (o.state !== "expired") return undefined;
+  const r = requestOf(store, o);
+  if (!r || !r.code || r.marks.length > 0 || o.advancePaymentId) return undefined;
+  const since = o.claimAtMs !== undefined ? Math.max(o.claimAtMs, r.closedAtMs ?? 0) : (r.closedAtMs ?? 0);
+  return nowMs - since < (o.claimAtMs !== undefined ? LATE_CLAIM_WINDOW_MS : LATE_WINDOW_MS) ? r : undefined;
+}
+
 /** What waits for the owner, as the owner's page shows it and the agent checks a press against. `code` is for the agent only and is never sent out (ownerView). */
 export interface OwnerItem {
-  kind: "deposit" | "refund_owed" | "late_refund" | "big_order";
+  kind: "deposit" | "late_deposit" | "refund_owed" | "late_refund" | "big_order";
   case: string;
   /** The digest of exactly what is shown: what it is, its amount and how far it has got. A press with another digest does nothing (agent.ts onOwnerAction). */
   digest: string;
@@ -157,7 +175,7 @@ export interface OwnerItem {
   startMs?: number;
   /** For a refund owed: why, in the template's words. */
   why?: string;
-  /** Money clarity: for a `deposit`, when the customer said they paid and the UPI reference they typed (not in the digest: a customer's press must not stale the owner's). */
+  /** Money clarity: for a `deposit` or a `late_deposit` (a hold that ended where money may have come anyway: "time ran out"), when the customer said they paid and the UPI reference they typed (not in the digest: a customer's press must not stale the owner's). */
   claimedAtMs?: number;
   upiRef?: string;
   /** The owner-marked one-use code the press stands for (the same the WhatsApp button carries). Never leaves the runtime. */
@@ -185,6 +203,13 @@ export function ownerItems(settings: Settings, store: Store, nowMs?: number): { 
     if (!o || o.state !== "awaiting_advance" || !r.code || (r.status !== "created" && r.status !== "partially_paid")) continue;
     const left = leftOn(r);
     items.push({ kind: "deposit", case: o.id, digest: digestOf(["advance", o.id, r.id, left, r.marks.length, r.usedCodes.length]), actions: ["received"], amountPaise: left, customer: customerOf(o, o.customer), channel: channelOf(o), what: orderWhat(settings, o), ...(o.slotStartMs !== undefined ? { startMs: o.slotStartMs } : {}), ...(o.claimAtMs !== undefined ? { claimedAtMs: o.claimAtMs } : {}), ...(o.claimRef ? { upiRef: o.claimRef } : {}), code: r.code });
+  }
+  // money clarity (the "time ran out" card): a hold that ended where money may have come anyway
+  const nowLate = nowMs ?? Date.now();
+  for (const o of store.orders.values()) {
+    const r = lateRequest(store, o, nowLate);
+    if (!r?.code) continue;
+    items.push({ kind: "late_deposit", case: o.id, digest: digestOf(["late_advance", o.id, r.id, r.amountPaise, r.usedCodes.length]), actions: ["received"], amountPaise: r.amountPaise, customer: customerOf(o, o.customer), channel: channelOf(o), what: orderWhat(settings, o), ...(o.slotStartMs !== undefined ? { startMs: o.slotStartMs } : {}), ...(o.claimAtMs !== undefined ? { claimedAtMs: o.claimAtMs } : {}), ...(o.claimRef ? { upiRef: o.claimRef } : {}), code: r.code });
   }
   for (const r of store.upi?.refunds ?? []) {
     if (r.state !== "owed" || !r.code) continue;
