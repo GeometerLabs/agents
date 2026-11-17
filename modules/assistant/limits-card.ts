@@ -97,10 +97,10 @@ const NOT_TIGHTER_LINE: Record<Language, (name: string, now: string, to: string)
   kn: (n, now, to) => `ನಿಮ್ಮ ${n} ಈಗ ${now} ಇದೆ, ಆದ್ದರಿಂದ ${to} ಅದನ್ನು ಬಿಗಿಗೊಳಿಸುವುದಿಲ್ಲ, ಸಡಿಲಗೊಳಿಸುತ್ತದೆ. ನಾನು ಇಲ್ಲಿಂದ ಬಿಗಿಗೊಳಿಸುವುದನ್ನು ಮಾತ್ರ ಮಾಡುತ್ತೇನೆ; ಸಡಿಲಗೊಳಿಸಲು ನಿಮ್ಮ ಆ್ಯಪ್ ತೆರೆದು ಪಾಸ್‌ಕೀಯಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ.`,
 };
 const NEED_VALUE_LINE: Record<Language, (name: string, unit: ChatLimit["unit"]) => string> = {
-  en: (n, unit) => `What should your ${n} be? ${unit === "inr" ? "Say it with a rupee amount, like ₹500." : "Say the number."}`,
-  hi: (n, unit) => `आपकी ${n} कितनी होनी चाहिए? ${unit === "inr" ? "रुपये की राशि के साथ बताइए, जैसे ₹500।" : "संख्या बताइए।"}`,
-  ml: (n, unit) => `നിങ്ങളുടെ ${n} എത്ര ആയിരിക്കണം? ${unit === "inr" ? "രൂപയുടെ തുകയോടെ പറയുക, ഉദാഹരണം ₹500." : "സംഖ്യ പറയുക."}`,
-  kn: (n, unit) => `ನಿಮ್ಮ ${n} ಎಷ್ಟು ಇರಬೇಕು? ${unit === "inr" ? "ರೂಪಾಯಿ ಮೊತ್ತದೊಂದಿಗೆ ಹೇಳಿ, ಉದಾಹರಣೆಗೆ ₹500." : "ಸಂಖ್ಯೆ ಹೇಳಿ."}`,
+  en: (n, unit) => `What should your ${n} be? ${unit === "inr" ? "Say it with a rupee amount and the rupee sign." : "Say the number."}`,
+  hi: (n, unit) => `आपकी ${n} कितनी होनी चाहिए? ${unit === "inr" ? "रुपये की राशि और रुपये के चिह्न के साथ बताइए।" : "संख्या बताइए।"}`,
+  ml: (n, unit) => `നിങ്ങളുടെ ${n} എത്ര ആയിരിക്കണം? ${unit === "inr" ? "രൂപയുടെ തുകയും രൂപ ചിഹ്നവും ചേർത്ത് പറയുക." : "സംഖ്യ പറയുക."}`,
+  kn: (n, unit) => `ನಿಮ್ಮ ${n} ಎಷ್ಟು ಇರಬೇಕು? ${unit === "inr" ? "ರೂಪಾಯಿ ಮೊತ್ತವನ್ನು ರೂಪಾಯಿ ಚಿಹ್ನೆಯೊಂದಿಗೆ ಹೇಳಿ." : "ಸಂಖ್ಯೆ ಹೇಳಿ."}`,
 };
 const WHICH_LINE: Record<Language, (names: string) => string> = {
   en: (n) => `Which limit do you mean? I can tighten: ${n}. For anything else, I'll keep it as a note instead.`,
