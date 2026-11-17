@@ -6,6 +6,8 @@
 // The three messages that may go outside the 24-hour window (the morning line, a day closed, a day open) are WhatsApp templates: their text is the template's body
 // filled in, so what is checked is what Meta approved (templates.ts). The Hindi, Malayalam and Kannada are machine-written like the rest of the packs and are on the
 // review list (item 12) before anything is submitted to Meta.
+import { limitCardLine, limitLine, NOT_TIGHTER_REFUSAL } from "./limits-card.ts";
+import type { LimitCardView, LimitSay } from "./limits-card.ts";
 import { addDays, localParts, zonedToMs } from "../core/time.ts";
 import type { LocalDate } from "../core/time.ts";
 import { formatDate, formatInr, formatSlot, formatTime } from "../language/format.ts";
@@ -73,7 +75,7 @@ export interface MessageData extends MemoryMessageData {
   need_date: { kind: "close_day" | "reopen_day" };
   need_words: { ref: string };
   refusal: { why: PrepareRefusal; ref: string; who?: string; paidPaise?: number };
-  card: { kind: string; /** The skill the card is for ("fees", "orders", "bookings"): a few cards word their money differently (words.ts SKILL_ASK). */ skill?: string; itemKind?: string; who: string; ref: string; what: string; amountPaise: number; words?: string; aboveLimit?: boolean; code: string; hasNo: boolean };
+  card: { kind: string; /** The skill the card is for ("fees", "orders", "bookings"): a few cards word their money differently (words.ts SKILL_ASK). */ skill?: string; itemKind?: string; who: string; ref: string; what: string; amountPaise: number; words?: string; aboveLimit?: boolean; code: string; hasNo: boolean; /** A limit card (limits-card.ts): its rule, the value now and the proposed one. */ limit?: LimitCardView };
   done: { note: "cancelled" | "refund_sent" | "held_by_guard" | "owed_by_owner" | "sent" | "answered" | "failed" | "not_sent"; who: string; ref: string; amountPaise: number };
   refused: Record<string, never>;
   refused_before: { atMs: number };
@@ -82,6 +84,8 @@ export interface MessageData extends MemoryMessageData {
   card_expired: Record<string, never>;
   card_unknown: Record<string, never>;
   limit_no: Record<string, never>;
+  /** Everything else about a limit the owner is told: Pending, Active, Failed, not tighter, which one (limits-card.ts). */
+  limit: LimitSay;
   /** The greeting is the personality's (personality.ts); left out, the warm one. `name`: the character's, only when the Operator gave it one. */
   help: { name?: string; shop: string; kinds: readonly string[]; personality?: Personality };
   not_understood: { kinds: readonly string[] };
@@ -120,6 +124,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
     opted_out: (w, d) => `${w.lit(d.who ?? d.ref)} asked for no more messages (STOP).`,
     amount_not_on_record: (w, d) => `I can only send amounts that are on ${w.lit(d.ref)}. To give money back, say: refund ${w.lit(d.ref)}.`,
     busy: (w, d) => `${w.lit(d.ref)} is in the middle of something (a refund being checked). Try again a little later.`,
+    limit_not_tighter: () => NOT_TIGHTER_REFUSAL.en,
   },
   hi: {
     no_case: (w, d) => `${w.lit(d.ref)} नंबर का कुछ नहीं मिला।`, not_yours: (w, d) => `${w.lit(d.ref)} यह असिस्टेंट नहीं संभालता।`,
@@ -133,6 +138,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
     opted_out: (w, d) => `${w.lit(d.who ?? d.ref)} ने और मैसेज न भेजने को कहा है (STOP)।`,
     amount_not_on_record: (w, d) => `मैं सिर्फ़ वही रकम भेज सकता हूँ जो ${w.lit(d.ref)} पर दर्ज है। पैसे लौटाने के लिए कहें: refund ${w.lit(d.ref)}।`,
     busy: (w, d) => `${w.lit(d.ref)} पर अभी कुछ चल रहा है (एक रिफंड की जाँच)। थोड़ी देर बाद फिर कोशिश करें।`,
+    limit_not_tighter: () => NOT_TIGHTER_REFUSAL.hi,
   },
   ml: {
     no_case: (w, d) => `${w.lit(d.ref)} എന്ന നമ്പറിൽ ഒന്നുമില്ല.`, not_yours: (w, d) => `${w.lit(d.ref)} ഈ അസിസ്റ്റന്റ് കൈകാര്യം ചെയ്യുന്നതല്ല.`,
@@ -146,6 +152,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
     opted_out: (w, d) => `${w.lit(d.who ?? d.ref)} ഇനി സന്ദേശങ്ങൾ വേണ്ടെന്ന് പറഞ്ഞു (STOP).`,
     amount_not_on_record: (w, d) => `${w.lit(d.ref)}-ൽ രേഖപ്പെടുത്തിയ തുകകൾ മാത്രമേ എനിക്ക് അയയ്ക്കാനാകൂ. പണം തിരികെ നൽകാൻ പറയുക: refund ${w.lit(d.ref)}.`,
     busy: (w, d) => `${w.lit(d.ref)}-ൽ ഇപ്പോൾ ഒരു കാര്യം നടക്കുന്നു (ഒരു റീഫണ്ട് പരിശോധന). അൽപം കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കുക.`,
+    limit_not_tighter: () => NOT_TIGHTER_REFUSAL.ml,
   },
   kn: {
     no_case: (w, d) => `${w.lit(d.ref)} ಸಂಖ್ಯೆಯಲ್ಲಿ ಏನೂ ಇಲ್ಲ.`, not_yours: (w, d) => `${w.lit(d.ref)} ಅನ್ನು ಈ ಸಹಾಯಕ ನೋಡಿಕೊಳ್ಳುವುದಿಲ್ಲ.`,
@@ -159,6 +166,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
     opted_out: (w, d) => `${w.lit(d.who ?? d.ref)} ಇನ್ನು ಸಂದೇಶ ಬೇಡ ಎಂದಿದ್ದಾರೆ (STOP).`,
     amount_not_on_record: (w, d) => `${w.lit(d.ref)} ನಲ್ಲಿ ದಾಖಲಾದ ಮೊತ್ತಗಳನ್ನು ಮಾತ್ರ ನಾನು ಕಳುಹಿಸಬಹುದು. ಹಣ ಹಿಂತಿರುಗಿಸಲು ಹೇಳಿ: refund ${w.lit(d.ref)}.`,
     busy: (w, d) => `${w.lit(d.ref)} ನಲ್ಲಿ ಈಗ ಒಂದು ಕೆಲಸ ನಡೆಯುತ್ತಿದೆ (ಒಂದು ರೀಫಂಡ್ ಪರಿಶೀಲನೆ). ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.`,
+    limit_not_tighter: () => NOT_TIGHTER_REFUSAL.kn,
   },
 };
 
@@ -166,6 +174,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
 const BASE_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> = {
   en: (w, d) => {
     const who = w.lit(d.who); const ref = w.lit(d.ref);
+    if (d.limit) return limitCardLine(d.limit, "en", w);
     if (d.kind === "cancel") return d.amountPaise > 0 ? `Cancel ${ref} (${who}, ${w.lit(d.what)}) and refund the ${w.inr(d.amountPaise)} deposit?` : `Cancel ${ref} (${who}, ${w.lit(d.what)})? No deposit was paid.`;
     if (d.kind === "refund") return `Refund ${w.inr(d.amountPaise)} to ${who} for ${ref}?`;
     if (d.kind === "message") return `Send this to ${who} (${ref})?\n“${w.lit(d.words ?? "")}”`;
@@ -180,6 +189,7 @@ const BASE_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
   },
   hi: (w, d) => {
     const who = w.lit(d.who); const ref = w.lit(d.ref);
+    if (d.limit) return limitCardLine(d.limit, "hi", w);
     if (d.kind === "cancel") return d.amountPaise > 0 ? `${ref} (${who}, ${w.lit(d.what)}) रद्द करें और ${w.inr(d.amountPaise)} जमा राशि लौटाएँ?` : `${ref} (${who}, ${w.lit(d.what)}) रद्द करें? कोई जमा राशि नहीं दी गई थी।`;
     if (d.kind === "refund") return `${ref} के लिए ${who} को ${w.inr(d.amountPaise)} लौटाएँ?`;
     if (d.kind === "message") return `यह ${who} (${ref}) को भेजें?\n“${w.lit(d.words ?? "")}”`;
@@ -194,6 +204,7 @@ const BASE_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
   },
   ml: (w, d) => {
     const who = w.lit(d.who); const ref = w.lit(d.ref);
+    if (d.limit) return limitCardLine(d.limit, "ml", w);
     if (d.kind === "cancel") return d.amountPaise > 0 ? `${ref} (${who}, ${w.lit(d.what)}) റദ്ദാക്കി ${w.inr(d.amountPaise)} ഡെപ്പോസിറ്റ് തിരികെ നൽകണോ?` : `${ref} (${who}, ${w.lit(d.what)}) റദ്ദാക്കണോ? ഡെപ്പോസിറ്റ് അടച്ചിട്ടില്ല.`;
     if (d.kind === "refund") return `${ref}-ന് ${who}-ക്ക് ${w.inr(d.amountPaise)} തിരികെ നൽകണോ?`;
     if (d.kind === "message") return `ഇത് ${who}-ക്ക് (${ref}) അയയ്ക്കണോ?\n“${w.lit(d.words ?? "")}”`;
@@ -208,6 +219,7 @@ const BASE_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
   },
   kn: (w, d) => {
     const who = w.lit(d.who); const ref = w.lit(d.ref);
+    if (d.limit) return limitCardLine(d.limit, "kn", w);
     if (d.kind === "cancel") return d.amountPaise > 0 ? `${ref} (${who}, ${w.lit(d.what)}) ರದ್ದು ಮಾಡಿ ${w.inr(d.amountPaise)} ಠೇವಣಿ ಹಿಂತಿರುಗಿಸಬೇಕೆ?` : `${ref} (${who}, ${w.lit(d.what)}) ರದ್ದು ಮಾಡಬೇಕೆ? ಠೇವಣಿ ಪಾವತಿಯಾಗಿಲ್ಲ.`;
     if (d.kind === "refund") return `${ref} ಗಾಗಿ ${who} ಅವರಿಗೆ ${w.inr(d.amountPaise)} ಹಿಂತಿರುಗಿಸಬೇಕೆ?`;
     if (d.kind === "message") return `ಇದನ್ನು ${who} (${ref}) ಅವರಿಗೆ ಕಳುಹಿಸಬೇಕೆ?\n“${w.lit(d.words ?? "")}”`;
@@ -345,6 +357,7 @@ const W: Record<Language, Words> = {
     card_expired: () => "That card ran out. Ask me again if you still want it.",
     card_unknown: () => "I have no card with that code.",
     limit_no: () => "Limits (refunds, deposits, caps) are changed by your Operator from their panel. I can't change them from here in this version.",
+    limit: (d, w) => limitLine(d, "en", w),
     help: (d, w) => `${greeting(d.personality ?? "warm", "en", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} You can say, for example:\n${examples(w, d.kinds)}`,
     not_understood: (d, w) => `Sorry, I didn't get that. You can say, for example:\n${examples(w, d.kinds)}`,
     not_offered: () => "This shop's assistant doesn't handle that.",
@@ -381,6 +394,7 @@ const W: Record<Language, Words> = {
     card_expired: () => "उस कार्ड का समय ख़त्म हो गया। अगर अब भी चाहिए तो फिर कहें।",
     card_unknown: () => "उस कोड का कोई कार्ड मेरे पास नहीं है।",
     limit_no: () => "सीमाएँ (रिफंड, जमा राशि, कैप) आपका ऑपरेटर अपने पैनल से बदलता है। इस वर्शन में मैं इन्हें यहाँ से नहीं बदल सकता।",
+    limit: (d, w) => limitLine(d, "hi", w),
     help: (d, w) => `${greeting(d.personality ?? "warm", "hi", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} आप ऐसे कह सकते हैं:\n${examples(w, d.kinds)}`,
     not_understood: (d, w) => `माफ़ कीजिए, समझ नहीं आया। आप ऐसे कह सकते हैं:\n${examples(w, d.kinds)}`,
     not_offered: () => "इस दुकान का असिस्टेंट यह काम नहीं करता।",
@@ -417,6 +431,7 @@ const W: Record<Language, Words> = {
     card_expired: () => "ആ കാർഡിന്റെ സമയം കഴിഞ്ഞു. ഇപ്പോഴും വേണമെങ്കിൽ വീണ്ടും ചോദിക്കുക.",
     card_unknown: () => "ആ കോഡുള്ള കാർഡ് എന്റെ പക്കലില്ല.",
     limit_no: () => "പരിധികൾ (റീഫണ്ട്, ഡെപ്പോസിറ്റ്, ക്യാപ്) നിങ്ങളുടെ ഓപ്പറേറ്റർ അവരുടെ പാനലിൽ നിന്നാണ് മാറ്റുന്നത്. ഈ പതിപ്പിൽ എനിക്ക് ഇവിടെ നിന്ന് അവ മാറ്റാനാകില്ല.",
+    limit: (d, w) => limitLine(d, "ml", w),
     help: (d, w) => `${greeting(d.personality ?? "warm", "ml", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} ഇങ്ങനെ പറയാം:\n${examples(w, d.kinds)}`,
     not_understood: (d, w) => `ക്ഷമിക്കണം, മനസ്സിലായില്ല. ഇങ്ങനെ പറയാം:\n${examples(w, d.kinds)}`,
     not_offered: () => "ഈ കടയുടെ അസിസ്റ്റന്റ് അത് ചെയ്യുന്നില്ല.",
@@ -453,6 +468,7 @@ const W: Record<Language, Words> = {
     card_expired: () => "ಆ ಕಾರ್ಡ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಇನ್ನೂ ಬೇಕಾದರೆ ಮತ್ತೆ ಕೇಳಿ.",
     card_unknown: () => "ಆ ಕೋಡ್‌ನ ಕಾರ್ಡ್ ನನ್ನ ಬಳಿ ಇಲ್ಲ.",
     limit_no: () => "ಮಿತಿಗಳನ್ನು (ರೀಫಂಡ್, ಠೇವಣಿ, ಕ್ಯಾಪ್) ನಿಮ್ಮ ಪಾರ್ಟ್‌ನರ್ ಅವರ ಪ್ಯಾನೆಲ್‌ನಿಂದ ಬದಲಾಯಿಸುತ್ತಾರೆ. ಈ ಆವೃತ್ತಿಯಲ್ಲಿ ನಾನು ಇಲ್ಲಿಂದ ಅವುಗಳನ್ನು ಬದಲಾಯಿಸಲಾಗದು.",
+    limit: (d, w) => limitLine(d, "kn", w),
     help: (d, w) => `${greeting(d.personality ?? "warm", "kn", w.lit(d.shop), d.name ? w.lit(d.name) : undefined)} ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n${examples(w, d.kinds)}`,
     not_understood: (d, w) => `ಕ್ಷಮಿಸಿ, ಅರ್ಥವಾಗಲಿಲ್ಲ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n${examples(w, d.kinds)}`,
     not_offered: () => "ಈ ಅಂಗಡಿಯ ಸಹಾಯಕ ಅದನ್ನು ಮಾಡುವುದಿಲ್ಲ.",

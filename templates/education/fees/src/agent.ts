@@ -36,6 +36,7 @@ import { HOUR, MINUTE, addDays, localParts, zonedToMs } from "../../../../module
 import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
+import { CHAT_LIMITS } from "./chat-limits.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { feesSkill } from "./assistant.ts";
 import { newHandle, parentLinkHash } from "../../../../modules/channels/handle.ts";
@@ -1169,7 +1170,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   async function onTick(): Promise<void> {
-    assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (modules/assistant/morning.ts)
+    await assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (modules/assistant/morning.ts)
     const now = clock.now();
     await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
     await refunds.sweep(now); // refunds first, whatever state their fee is in
@@ -1262,6 +1263,7 @@ export function createAgent(deps: AgentDeps): Agent {
   // ---- item 11e: the shop's assistant (modules/assistant) -------------------------------------------------------------
   // On only when the settings have an "assistant" block. Fees is its one skill here; answering what waits is the owner's own fixed reply (src/assistant.ts).
   const assistant = assistantForAgent({
+    limits: CHAT_LIMITS, // "Limits, tightened by a tap" (chat-limits.ts): the owner may tighten these by a card
     settings, store, skill: feesSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg) }),
     clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}), ...(deps.talker ? { talker: deps.talker } : {}),
     // the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out

@@ -7,6 +7,10 @@
 //
 // The templates are imported by path from this repository. A shop pinned to an OLDER version of a template keeps that version's own runtime config check (lib/pathways.ts,
 // pinnedRuntimeCheck); the settings check and the Guard limits here are the current ones, as they have always been.
+import type { ChatLimit } from "../../modules/limits/chat-limits.ts";
+import { CHAT_LIMITS as bookingsChatLimits } from "../../templates/commerce/bookings/src/chat-limits.ts";
+import { CHAT_LIMITS as ordersChatLimits } from "../../templates/commerce/orders/src/chat-limits.ts";
+import { CHAT_LIMITS as feesChatLimits } from "../../templates/education/fees/src/chat-limits.ts";
 import type { LimitsSpec, LimitsSpecIdentity, PaymentCaps } from "../../modules/payments/guard-limits.ts";
 import type { ReportLanguage } from "../../modules/report/text.ts";
 import { runOn as bookingsRunOn } from "../../templates/commerce/bookings/crash-test/situations.ts";
@@ -79,6 +83,8 @@ export interface Kind {
   validateSettings(input: unknown): { ok: true; settings: any } | { ok: false; errors: string[] };
   /** The template's own check of a runtime.json (server/config.ts). */
   validateRuntimeConfig(config: unknown, folder: string): { ok: boolean; errors?: string[] };
+  /** The limits the owner may change from their assistant or their app (the template's src/chat-limits.ts): the deployer writes only these paths of the settings file. */
+  chatLimits: readonly ChatLimit[];
   /** The Razorpay limits spec made from the settings, the template's own numbers in the shared shape. */
   gatewaySpec(settings: any, identity: LimitsSpecIdentity, options: { approvalTtlSeconds: number; caps?: Partial<PaymentCaps> }): LimitsSpec;
   /** The checks and papers the panel makes: the same hand check the template's scripts run, on this shop's own settings, and the go-live certificate from it. */
@@ -97,6 +103,7 @@ export const KINDS: Record<string, Kind> = {
     casesFile: "bookings.json", casesName: "bookings",
     guards: ["razorpay", "whatsapp", "calendar"],
     validateSettings: bookingsSettings,
+    chatLimits: bookingsChatLimits,
     validateRuntimeConfig: bookingsRuntime,
     gatewaySpec: bookingsSpec,
     papers: { runOn: bookingsRunOn, summariseRun: bookingsSummary, buildGoLiveCertificate: bookingsCertificate, policyDigest: bookingsDigest, writeGoLiveCertificate: bookingsWrite },
@@ -106,6 +113,7 @@ export const KINDS: Record<string, Kind> = {
     casesFile: "dues.json", casesName: "fees",
     guards: ["razorpay", "whatsapp"],
     validateSettings: feesSettings,
+    chatLimits: feesChatLimits,
     validateRuntimeConfig: feesRuntime,
     gatewaySpec: feesSpec,
     papers: { runOn: feesRunOn, summariseRun: feesSummary, buildGoLiveCertificate: feesCertificate, policyDigest: feesDigest, writeGoLiveCertificate: feesWrite },
@@ -115,6 +123,7 @@ export const KINDS: Record<string, Kind> = {
     casesFile: "orders.json", casesName: "orders",
     guards: ["razorpay", "whatsapp"],
     validateSettings: ordersSettings,
+    chatLimits: ordersChatLimits,
     validateRuntimeConfig: ordersRuntime,
     gatewaySpec: ordersSpec,
     papers: { runOn: ordersRunOn, summariseRun: ordersSummary, buildGoLiveCertificate: ordersCertificate, policyDigest: ordersDigest, writeGoLiveCertificate: ordersWrite },

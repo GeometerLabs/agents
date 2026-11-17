@@ -21,6 +21,8 @@ export interface OwnerReaderDeps {
   /** The owner's router, or left out for the rules alone. */
   parser?: OwnerParser;
   kinds: readonly OwnerKind[];
+  /** Does a text state a rule about one of the shop's declared limits (limits-card.ts)? Left out: no rule is read as a limit. */
+  limitRule?: (text: string) => boolean;
   policy: AiPolicy;
   /** The template's store: its AI counts are shared with the customers' reader. */
   store: AiStore;
@@ -32,7 +34,7 @@ export interface OwnerReaderDeps {
 
 /** `read(text)`: the owner's intent, what it cost (counted in the month), and a note when a model could not be used. In button mode the rules alone read it. */
 export function createOwnerReader(deps: OwnerReaderDeps): (text: string) => Promise<OwnerRead> {
-  const context: OwnerContext = { kinds: deps.kinds };
+  const context: OwnerContext = { kinds: deps.kinds, ...(deps.limitRule ? { limitRule: deps.limitRule } : {}) };
   const reader = createReader<OwnerIntent, OwnerContext, ParseOptionsBase>({
     parser: deps.parser ?? ownerRulesParser, context, coerce: ownerReading.coerce, policy: deps.policy, store: deps.store, clock: deps.clock, timeZone: deps.timeZone, log: deps.log, tellOwner: deps.tellOwner,
   });

@@ -7,6 +7,8 @@
 // asked to send, which goes with its card; the card closes when it is sent or refused, and the words go with it after a day (compactAssistant).
 import { DAY } from "../core/time.ts";
 import type { MemoryState } from "../memory/memory.ts";
+import { compactChanges } from "../limits/chat-limits.ts";
+import type { LimitChange } from "../limits/chat-limits.ts";
 
 /** What a card does when the owner taps yes: the skill, the case and the exact fields the skill read from its store. Immutable once the card is made. */
 export interface CardAction {
@@ -89,13 +91,18 @@ export interface AssistantState {
   memory?: MemoryState;
   /** The owner's talk (block M): the last lines of the talk turns, for the prompt's "last six lines". Only talk turns, never a customer's words. Left out until the first talk. */
   chat?: TalkLine[];
+   * Limits the owner changed (modules/limits/chat-limits.ts): Pending until the deployer reports Guard has the new value, then Active, or Failed. The runtime's own
+   * checks use the tighter of the settings and any pending tightening at once. A store from before has none; assistantOf adds the empty list.
+   */
+  limitChanges: LimitChange[];
 }
 
-export const emptyAssistantState = (): AssistantState => ({ seq: 0, cards: [], refused: [], closedDays: [], undo: [], talk: [] });
+export const emptyAssistantState = (): AssistantState => ({ seq: 0, cards: [], refused: [], closedDays: [], undo: [], talk: [], limitChanges: [] });
 
 /** The state in a store, made on first use. A store from before the assistant has none, and loads as it was. */
 export function assistantOf(store: { assistant?: AssistantState }): AssistantState {
   if (!store.assistant) store.assistant = emptyAssistantState();
+  store.assistant.limitChanges ??= [];
   return store.assistant;
 }
 
@@ -129,6 +136,7 @@ export function compactAssistant(state: AssistantState, nowMs: number, todayIso:
   gone += state.closedDays.length - days.length;
   state.closedDays = days;
   if (state.chat && state.chat.length > CHAT_LINES) { gone += state.chat.length - CHAT_LINES; state.chat = state.chat.slice(-CHAT_LINES); }
+  gone += compactChanges(state.limitChanges ??= []);
   if (state.talk.length > TALK_LINES) { gone += state.talk.length - TALK_LINES; state.talk = state.talk.slice(-TALK_LINES); }
   return gone;
 }

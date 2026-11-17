@@ -19,6 +19,10 @@ import { PERSONALITIES, SMALL_TALK } from "../../modules/assistant/personality.t
 import { cardQuestion, write as writeAssistant } from "../../modules/assistant/words.ts";
 import type { MessageData } from "../../modules/assistant/words.ts";
 import { NOTE_LABELS } from "../../modules/assistant/words-memory.ts";
+import { limitReviewLines } from "../../modules/assistant/limits-card.ts";
+import { LIMIT_WORDS } from "../../modules/limits/chat-limit-kinds.ts";
+import { WORDS as LIMITS_PANEL_WORDS } from "./views-limits.ts";
+import { WORDS as LIMITS_OWNER_WORDS } from "../../modules/channels/owner-limits-page.ts";
 
 export type ReviewLanguage = "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
@@ -95,12 +99,14 @@ const firstSamples: Record<string, unknown[]> = {
   "owner.first.alertsOn": [2], "owner.first.partner": ["Divya"], "door.help": ["Divya"],
   "pages.block.live": ["https://pages.example/glow-salon"], "pages.block.problem": ["that name is taken"], "pages.block.setupNote": ["10:30 UTC"], "pages.block.recoveryOn": ["2026-11-14"], "pages.block.cardOwner": ["https://pages.example/glow-salon/owner/recover"],
 };
+/** "Limits, tightened by a tap" (17 Nov 2026): the limits' names and rules, the card and every message about a limit (ids "limits.assistant.*"), the panel's list of changes ("limits.panel.*") and the owner's limits page ("limits.owner.*"). */
+const limitsFlat = (language: Language): Map<string, string> => flatWords({ limits: { assistant: limitReviewLines(language, LIMIT_WORDS), panel: LIMITS_PANEL_WORDS[language], owner: LIMITS_OWNER_WORDS[language] } }, { "limits.owner.range": ["₹0", "₹5,000"] });
 const firstFlat = (language: Language): Map<string, string> => flatWords({ owner: { first: FIRST_WORDS[language] }, door: DOOR_WORDS[language], pages: { block: PAGES_BLOCK_WORDS[language] } }, firstSamples);
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

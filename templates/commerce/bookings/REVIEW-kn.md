@@ -1398,4 +1398,51 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `pages.block.setupWaitNote` | ಕೋಡ್ ತೋರಿಸಿ ಸುಮಾರು 15 ಸೆಕೆಂಡ್ ನಂತರ ಕೆಲಸ ಮಾಡಲು ಶುರುವಾಗುತ್ತದೆ. ಕೆಳಗಿನ ಪಟ್ಟಿ ಹಸಿರಾಗುವವರೆಗೆ ಕಾಯಿರಿ, ನಂತರ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಅದಕ್ಕೂ ಮೊದಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿದರೆ ಇನ್ನೂ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | The code starts working about 15 seconds after it is shown. Wait until the bar below turns green, then scan. A scan before that does not work yet. |  |
 | `pages.block.cardQr` | ಅಥವಾ ಫೋನ್ ಕ್ಯಾಮೆರಾದಿಂದ ಇದನ್ನು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ: | Or scan this with your phone's camera: |  |
 | `pages.block.cardMachine` | ಈ ಕನ್ನಡವನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಬಲ್ಲವರು ಇನ್ನೂ ಪರಿಶೀಲಿಸಿಲ್ಲ. |  |  |
-
+| `limits.assistant.refund.name` | ರೀಫಂಡ್ ಮಿತಿ | refund limit |  |
+| `limits.assistant.refund.rule` | {v} ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು | Refunds above {v} need your approval |  |
+| `limits.assistant.waiver.name` | ರಿಯಾಯಿತಿ ಮಿತಿ | waiver limit |  |
+| `limits.assistant.waiver.rule` | {v} ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರಿಯಾಯಿತಿಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು | Waivers above {v} need your approval |  |
+| `limits.assistant.bigOrder.name` | ದೊಡ್ಡ ಆರ್ಡರ್ ಮೊತ್ತ | big-order amount |  |
+| `limits.assistant.bigOrder.rule` | {v} ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಆರ್ಡರ್‌ಗಳಿಗೆ ಪಾವತಿ ಕೇಳುವ ಮೊದಲು ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು | Orders above {v} need your approval before any payment is asked |  |
+| `limits.assistant.perDay.name` | ದಿನದ ಆರ್ಡರ್‌ಗಳು | orders a day |  |
+| `limits.assistant.perDay.rule` | ದಿನಕ್ಕೆ ಗರಿಷ್ಠ {v} ಆರ್ಡರ್‌ಗಳು | At most {v} orders a day |  |
+| `limits.assistant.card` | ₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಈಗ: ₹1000. | Refunds above ₹500 need your approval. Now: ₹1000. |  |
+| `limits.assistant.never` | ಎಂದಿಗೂ ಇಲ್ಲ | never |  |
+| `limits.assistant.say.pending` | ಬಾಕಿ ಇದೆ: ₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಇದು ಇಲ್ಲಿ ಈಗಲೇ ಅನ್ವಯಿಸುತ್ತದೆ, ಜಾರಿಗೆ ಬಂದಾಗ ನಾನು ತಿಳಿಸುತ್ತೇನೆ. | Pending: Refunds above ₹500 need your approval. It already applies here, and I'll tell you when it is Active. |  |
+| `limits.assistant.say.active` | ಜಾರಿಯಲ್ಲಿದೆ: ₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. | Active: Refunds above ₹500 need your approval. |  |
+| `limits.assistant.say.failed` | ಇದು ಆಗಲಿಲ್ಲ. ಹಿಂದಿನ ಮಿತಿಯೇ ಈಗಲೂ ಜಾರಿಯಲ್ಲಿದೆ: ₹1000 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಬಹುದು. | That did not go through. The previous limit is still in force: Refunds above ₹1000 need your approval. You can try again. |  |
+| `limits.assistant.say.not_tighter` | ನಿಮ್ಮ ರೀಫಂಡ್ ಮಿತಿ ಈಗ ₹200 ಇದೆ, ಆದ್ದರಿಂದ ₹500 ಅದನ್ನು ಬಿಗಿಗೊಳಿಸುವುದಿಲ್ಲ, ಸಡಿಲಗೊಳಿಸುತ್ತದೆ. ನಾನು ಇಲ್ಲಿಂದ ಬಿಗಿಗೊಳಿಸುವುದನ್ನು ಮಾತ್ರ ಮಾಡುತ್ತೇನೆ; ಸಡಿಲಗೊಳಿಸಲು ನಿಮ್ಮ ಆ್ಯಪ್ ತೆರೆದು ಪಾಸ್‌ಕೀಯಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ. | Your refund limit is ₹200 now, so ₹500 would loosen it, not tighten it. I only tighten from here; to loosen, open your own app and sign in with your passkey. |  |
+| `limits.assistant.say.need_value` | ನಿಮ್ಮ ರೀಫಂಡ್ ಮಿತಿ ಎಷ್ಟು ಇರಬೇಕು? ರೂಪಾಯಿ ಮೊತ್ತವನ್ನು ರೂಪಾಯಿ ಚಿಹ್ನೆಯೊಂದಿಗೆ ಹೇಳಿ. | What should your refund limit be? Say it with a rupee amount and the rupee sign. |  |
+| `limits.assistant.say.which` | ಯಾವ ಮಿತಿಯನ್ನು ಹೇಳುತ್ತಿದ್ದೀರಿ? ನಾನು ಇವನ್ನು ಬಿಗಿಗೊಳಿಸಬಲ್ಲೆ: ರೀಫಂಡ್ ಮಿತಿ. ಉಳಿದದ್ದಕ್ಕೆ ಅದನ್ನು ಟಿಪ್ಪಣಿಯಾಗಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತೇನೆ. | Which limit do you mean? I can tighten: refund limit. For anything else, I'll keep it as a note instead. |  |
+| `limits.assistant.notTighterRefusal` | ಈ ಮೌಲ್ಯ ಈಗ ಜಾರಿಯಲ್ಲಿರುವ ಮಿತಿಯನ್ನು ಬಿಗಿಗೊಳಿಸುವುದಿಲ್ಲ, ಆದ್ದರಿಂದ ಏನೂ ಬದಲಾಗಲಿಲ್ಲ. ಸಡಿಲಗೊಳಿಸುವುದು ನಿಮ್ಮ ಸ್ವಂತ ಆ್ಯಪ್‌ನಲ್ಲಿ ಪಾಸ್‌ಕೀಯಿಂದ ಆಗುತ್ತದೆ. | That value no longer tightens the limit in force now, so nothing was changed. Loosening is done in your own app, with your passkey. |  |
+| `limits.panel.heading` | ಮಿತಿ ಬದಲಾವಣೆಗಳು | Limit changes |  |
+| `limits.panel.note` | ಮಾಲೀಕರು ಮಿತಿಯಲ್ಲಿ ಮಾಡಿದ ಪ್ರತಿಯೊಂದು ಬದಲಾವಣೆ ಮತ್ತು ಅದು ಈಗ ಎಲ್ಲಿದೆ. ಬಾಕಿ ಎಂದರೆ ರನ್‌ಟೈಮ್ ಬಿಗಿಯಾದ ಮೌಲ್ಯವನ್ನು ಈಗಲೇ ಪಾಲಿಸುತ್ತಿದೆ, Guard ಗೆ ಅದು ಇನ್ನೂ ಸಿಕ್ಕಿಲ್ಲ. | Every change the owner made to a limit, and where it stands. Pending means the runtime already obeys the tighter value and Guard does not have it yet. |  |
+| `limits.panel.none` | ಇನ್ನೂ ಯಾವ ಮಿತಿಯನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | No limit has been changed yet. |  |
+| `limits.panel.tighten` | ಬಿಗಿಗೊಳಿಸಲಾಗಿದೆ | tightened |  |
+| `limits.panel.loosen` | ಸಡಿಲಗೊಳಿಸಲಾಗಿದೆ | loosened |  |
+| `limits.panel.chat` | ಅಸಿಸ್ಟೆಂಟ್‌ನಲ್ಲಿ ಟ್ಯಾಪ್ ಮೂಲಕ | by a tap in the assistant |  |
+| `limits.panel.app` | ಅವರ ಆ್ಯಪ್‌ನಲ್ಲಿ | in their app |  |
+| `limits.panel.pending` | ಬಾಕಿ ಇದೆ | Pending |  |
+| `limits.panel.active` | ಜಾರಿಯಲ್ಲಿದೆ | Active |  |
+| `limits.panel.failed` | ಆಗಲಿಲ್ಲ: ಹಿಂದಿನ ಮಿತಿಯೇ ಜಾರಿಯಲ್ಲಿದೆ | Failed: the previous limit is still in force |  |
+| `limits.panel.loosenNews` | ನಿಮ್ಮ ಮಾಹಿತಿಗಾಗಿ: ಮಾಲೀಕರು ಇದನ್ನು ತಾವೇ, ತಮ್ಮ ಪಾಸ್‌ಕೀಯೊಂದಿಗೆ ಸಡಿಲಗೊಳಿಸಿದ್ದಾರೆ. ನಿಮಗಾಗಿ ಏನೂ ಕಾಯುತ್ತಿಲ್ಲ. | For your information: the owner loosened this themselves, behind their passkey. Nothing waits for you. |  |
+| `limits.panel.row` | {name}: {from} ರಿಂದ {to}, {how}, {by} | {name}: {from} to {to}, {how}, {by} |  |
+| `limits.owner.title` | ನಿಮ್ಮ ಮಿತಿಗಳು | Your limits |  |
+| `limits.owner.intro` | ನಿಮ್ಮ ಅಸಿಸ್ಟೆಂಟ್ ಕೆಲಸ ಮಾಡುವ ಮಿತಿಗಳಿವು. ಮಿತಿಯನ್ನು ಬಿಗಿಗೊಳಿಸುವುದು ಸುಲಭ: ಅಸಿಸ್ಟೆಂಟ್‌ಗೆ ಹೇಳಿ ಹೌದು ಎಂದು ಟ್ಯಾಪ್ ಮಾಡಿ. ಸಡಿಲಗೊಳಿಸುವುದು ಇಲ್ಲಿ ಮಾತ್ರ, ಪಾಸ್‌ಕೀಯಿಂದ ಸೈನ್ ಇನ್ ಆದ ಮೇಲೆ. | These are the limits your assistant works within. Tightening one is quick: tell your assistant and tap yes. Loosening one is only done here, after you sign in with your passkey. |  |
+| `limits.owner.inForce` | ಈಗ ಜಾರಿಯಲ್ಲಿದೆ | In force now |  |
+| `limits.owner.range` | ನೀವು ಇದನ್ನು ₹0 ರಿಂದ ₹5,000 ವರೆಗೆ ಇಡಬಹುದು | You can set it from ₹0 to ₹5,000 |  |
+| `limits.owner.change` | ಬದಲಿಸಿ | Change |  |
+| `limits.owner.changeTo` | ಹೊಸ ಮೌಲ್ಯ | New value |  |
+| `limits.owner.needPasskey` | ಇಲ್ಲಿ ಮಿತಿ ಬದಲಿಸಲು ಸೈನ್ ಔಟ್ ಆಗಿ, ಪಾಸ್‌ಕೀಯಿಂದ ಮತ್ತೆ ಸೈನ್ ಇನ್ ಮಾಡಿ. | To change a limit here, sign out and sign in again with your passkey. |  |
+| `limits.owner.changes` | ಇತ್ತೀಚಿನ ಬದಲಾವಣೆಗಳು | Recent changes |  |
+| `limits.owner.none` | ಇನ್ನೂ ಯಾವ ಬದಲಾವಣೆಯೂ ಇಲ್ಲ. | No changes yet. |  |
+| `limits.owner.pending` | ಬಾಕಿ ಇದೆ: ಅಂಗಡಿ ಬಿಗಿಯಾದ ಮೌಲ್ಯವನ್ನು ಈಗಲೇ ಪಾಲಿಸುತ್ತಿದೆ, Guard ಗೆ ಸಿಗುವವರೆಗೆ ಬದಲಾವಣೆ ಅಂತಿಮವಲ್ಲ | Pending: the shop already follows the tighter value, and the change is not final until Guard has it |  |
+| `limits.owner.active` | ಜಾರಿಯಲ್ಲಿದೆ | Active |  |
+| `limits.owner.failed` | ಆಗಲಿಲ್ಲ: ಹಿಂದಿನ ಮಿತಿಯೇ ಜಾರಿಯಲ್ಲಿದೆ | Failed: the previous limit is still in force |  |
+| `limits.owner.tightened` | ಬಿಗಿಗೊಳಿಸಲಾಗಿದೆ | tightened |  |
+| `limits.owner.loosened` | ಸಡಿಲಗೊಳಿಸಲಾಗಿದೆ | loosened |  |
+| `limits.owner.asked` | ಆಯಿತು. ಅಂಗಡಿಯ Guard ಗೆ ಸಿಗುವವರೆಗೆ ಇದು ಬಾಕಿ ಎಂದೂ, ನಂತರ ಜಾರಿಯಲ್ಲಿದೆ ಎಂದೂ ತೋರಿಸುತ್ತದೆ. ನಿಮ್ಮ ಆಪರೇಟರ್‌ಗೆ ತಿಳಿಸಲಾಗಿದೆ, ಅವರಿಗಾಗಿ ಏನೂ ಕಾಯುತ್ತಿಲ್ಲ. | Done. It shows as Pending until the shop's Guard has it, then as Active. Your Operator is told, and nothing waits for them. |  |
+| `limits.owner.refused` | ಈ ಮೌಲ್ಯ ಅನುಮತಿಸಲಾಗಿಲ್ಲ. ಅದು ಮಿತಿಯೊಳಗಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆಯಾಗಿರಬೇಕು ಮತ್ತು ಈಗಿನದಕ್ಕಿಂತ ಬೇರೆಯಾಗಿರಬೇಕು. | That value is not allowed. It must be a whole number inside the range, and different from now. |  |
+| `limits.owner.back` | ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ | Back to your shop |  |
+| `limits.owner.never` | ಎಂದಿಗೂ ಇಲ್ಲ | never |  |
+| `limits.owner.yourShop` | ನಿಮ್ಮ ಅಂಗಡಿ | Your shop |  |

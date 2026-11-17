@@ -31,6 +31,11 @@ export interface ShopStatus {
   obligations?: { counts: Record<string, number>; at: string };
   /** The shop's licence (B13), worked out on this server from the signed lease (lib/licence.ts). The panel shows it; the runtime reads its own copy (client/licence.json). */
   licence?: StatusLicence & { at: string };
+  /**
+   * "Limits, tightened by a tap": every change the owner made to a limit (from their assistant or their own app) and its state, newest last, as the runtime holds them
+   * (lib/limit-changes.ts). The panel lists them; a loosening is shown as news for the Operator, never as a task.
+   */
+  limitChanges?: { id: string; limit: string; from: number; to: number; direction: "tighten" | "loosen"; by: "owner_chat" | "owner_app"; state: "pending" | "active" | "failed"; at: string; why?: string }[];
   /** Where the providers should send webhooks (no token in it: a path-token shop adds its own token at the end). */
   webhooks?: { razorpay: string; whatsapp: string };
   /**
