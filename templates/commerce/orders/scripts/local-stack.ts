@@ -47,7 +47,7 @@ export const PHONE_NUMBER_ID = "100000000000001";
 export interface LocalStackOptions {
   /** A client folder to copy (default: the example). The copy lives in the temp folder; its runtime.json is rewritten for this stack. */
   clientFolder?: string;
-  /** Shared by the stand-ins and the runtime. Default: the real clock. A test passes a fake one so "the due day" is the same every day. */
+  /** Shared by the stand-ins and the runtime. Default: the real clock. A test passes a fake one. */
   clock?: Clock;
   /** Fixed ports; 0 (the default) picks a free one. The runtime keeps its port when it is stopped and started again. */
   ports?: { standins?: number; inbox?: number; runtime?: number; relay?: number };
