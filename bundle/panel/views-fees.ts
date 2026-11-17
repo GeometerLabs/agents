@@ -2,6 +2,7 @@
 // students, the form for the rules of the month, the centre's settings in plain words on the shop page, the month's counts, and the messages a centre can use. The shell,
 // the steps bar and the shared steps (languages, accounts, checks) are views.ts's; it hands over the two small helpers it shares.
 import { formatInr } from "../../modules/language/format.ts";
+import { STRINGS } from "../../templates/education/fees/report/strings.ts";
 import { batchName } from "../../templates/education/fees/src/settings.ts";
 import type { Settings } from "../../templates/education/fees/src/settings.ts";
 import type { FeesReport } from "../../templates/education/fees/report/data.ts";
@@ -77,6 +78,8 @@ export function activityFees(c: Ctx, r: FeesReport): TemplateActivity {
     lines: [
       `${a.opened}: ${r.fees.opened} · ${a.paidInFull}: ${r.fees.paidInFull} · ${a.partlyPaid}: ${r.fees.partlyPaid} · ${a.stillOpen}: ${r.fees.stillOpen}`,
       `${a.collected}: ${formatRupees(r.money.collected.paise)} · ${a.stillToCollect}: ${formatRupees(r.fees.stillToCollect.paise)}`,
+      // present only when old dues were paid this month (the report keeps them apart from this month's own fees); the label is the report's own word
+      ...(r.money.oldDues ? [`${STRINGS[c.lang].label.oldDuesCollected}: ${formatRupees(r.money.oldDues.paise)}`] : []),
       `${a.reminders}: ${r.reminders.sent} · ${c.w.shop.saidNo}: ${r.stopped.total}`,
     ],
     owner: r.owner,

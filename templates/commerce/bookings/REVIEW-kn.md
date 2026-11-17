@@ -1598,6 +1598,72 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `stock.panel.shop.states.send_unknown` | ಬಹುಶಃ ಕಳುಹಿಸಲಾಗಿದೆ | Maybe sent |  |
 | `stock.panel.shop.states.supplier_declined` | ಸರಬರಾಜುದಾರರಿಂದ ಆಗದು | Supplier cannot supply |  |
 | `stock.panel.shop.states.cancelled` | ರದ್ದು | Cancelled |  |
+| `classes.heading` | ತರಗತಿಗಳು | Classes |  |
+| `classes.label` | ತರಗತಿಯ ಸಮಯ | Class times |  |
+| `classes.help` | ಕೇಂದ್ರಕ್ಕೆ ನಿಗದಿತ ತರಗತಿ ಸಮಯ ಇಲ್ಲದಿದ್ದರೆ ಇದನ್ನು ಖಾಲಿ ಬಿಡಿ. ಪ್ರತಿ ಸಾಲಿನಲ್ಲಿ ಒಂದು ತರಗತಿ: ಬ್ಯಾಚ್, ದಿನ, ಆರಂಭದ ಸಮಯ, ಎಷ್ಟು ನಿಮಿಷ. ಉದಾಹರಣೆ: ತರಗತಿ 8, Mon, 16:00, 45. ದಿನವನ್ನು ಹೀಗೆ ಬರೆಯಿರಿ: Mon, Tue, Wed, Thu, Fri, Sat, Sun. | Leave this empty if the centre has no set class times. One class on each line: the batch, the day, the start time, how many minutes. Example: Class 8, Mon, 16:00, 45. Write the day as Mon, Tue, Wed, Thu, Fri, Sat or Sun. |  |
+| `classes.linkNote` | ಪ್ರತಿ ತರಗತಿಯ ಲಿಂಕ್ ಅನ್ನು ಶಿಕ್ಷಕರು ಮಾಲೀಕರ ನಂಬರ್‌ನಿಂದ WhatsApp ನಲ್ಲಿ ಕಳುಹಿಸುತ್ತಾರೆ, ಪೋಷಕರಿಗೆ ತರಗತಿಗೆ ಮೊದಲು ಸಿಗುತ್ತದೆ. ಲಿಂಕ್‌ಗಾಗಿ ಇಲ್ಲಿ ಏನನ್ನೂ ಬರೆಯಬೇಕಿಲ್ಲ. | The teacher sends each class's link on WhatsApp from the owner's number, and the parents get it before the class. There is nothing to type here for the link. |  |
+| `classes.oldDues` | ಹಳೆಯ ಬಾಕಿ ತಿಂಗಳೂ ತರಗತಿ ಲಿಂಕ್ ತಡೆಯಲಿ | An old unpaid month also holds back the class link |  |
+| `classes.oldDuesHelp` | ಆಫ್: ಈ ತಿಂಗಳ ಶುಲ್ಕ ಮಾತ್ರ ಲಿಂಕ್ ತಡೆಯುತ್ತದೆ. ಆನ್: ಹಳೆಯ ತಿಂಗಳು ಬಾಕಿ ಇರುವ ವಿದ್ಯಾರ್ಥಿಗೂ ಲಿಂಕ್ ಹೋಗುವುದಿಲ್ಲ. | Off: only this month's fee holds the link back. On: a student with an old unpaid month does not get the link either. |  |
+| `classes.problems.tooMany` | ಇಲ್ಲಿ ಗರಿಷ್ಠ 60 ತರಗತಿಗಳನ್ನು ಬರೆಯಬಹುದು. | At most 60 classes can be written here. |  |
+| `classes.problems.lineBad` | ತರಗತಿ ಸಾಲು 2: ಬ್ಯಾಚ್, ದಿನ, ಆರಂಭದ ಸಮಯ ಮತ್ತು ನಿಮಿಷಗಳನ್ನು ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿ ಬರೆಯಿರಿ. | Class line 2: write the batch, the day, the start time and the minutes, separated by commas. |  |
+| `classes.problems.batch` | ತರಗತಿ ಸಾಲು 2: "Class 8" ನಿಮ್ಮ ಬ್ಯಾಚ್‌ಗಳಲ್ಲಿ ಇಲ್ಲ. | Class line 2: "Class 8" is not one of your batches. |  |
+| `classes.problems.day` | ತರಗತಿ ಸಾಲು 2: ದಿನ Mon, Tue, Wed, Thu, Fri, Sat ಅಥವಾ Sun ಆಗಿರಬೇಕು. | Class line 2: the day must be Mon, Tue, Wed, Thu, Fri, Sat or Sun. |  |
+| `classes.problems.time` | ತರಗತಿ ಸಾಲು 2: ಆರಂಭದ ಸಮಯ 16:00 ನಂತೆ ಇರಬೇಕು (24 ಗಂಟೆಯ ಗಡಿಯಾರ). | Class line 2: the start time must look like 16:00 (24-hour clock). |  |
+| `classes.problems.minutes` | ತರಗತಿ ಸಾಲು 2: ಅವಧಿ 10 ರಿಂದ 240 ರವರೆಗಿನ ಪೂರ್ಣ ನಿಮಿಷಗಳಾಗಿರಬೇಕು. | Class line 2: the length must be a whole number of minutes from 10 to 240. |  |
+| `classes.problems.twice` | ತರಗತಿ ಸಾಲು 2: ಅದೇ ಬ್ಯಾಚ್, ದಿನ ಮತ್ತು ಸಮಯ ಎರಡು ಬಾರಿ ಬರೆಯಲಾಗಿದೆ. | Class line 2: the same batch, day and time is written twice. |  |
+| `preset.words.question` | ಅಂಗಡಿ ಏನು ಮಾಡುತ್ತದೆ? | What does the shop do? |  |
+| `preset.words.other` | ಬೇರೆ ಏನೋ | Something else |  |
+| `preset.words.typedLabel` | ನಿಮ್ಮ ಅಂಗಡಿ ಏನು ಮಾಡುತ್ತದೆ, ನಿಮ್ಮದೇ ಮಾತುಗಳಲ್ಲಿ? | What does the shop do, in your own words? |  |
+| `preset.words.typedHelp` | ಕೆಲವು ಪದಗಳು ಸಾಕು. ಉದಾಹರಣೆ: ದರ್ಜಿ, ಹೂವಿನ ಅಂಗಡಿ, ಟ್ಯೂಟರ್. | A few words are enough. For example: tailor, florist, tutor. |  |
+| `preset.words.kindQuestion` | ಇವುಗಳಲ್ಲಿ ಯಾವುದು ನಿಮ್ಮ ಕೆಲಸಕ್ಕೆ ಹತ್ತಿರ? | Which of these is closest to how it works? |  |
+| `preset.words.typedEmpty` | ಅಂಗಡಿ ಏನು ಮಾಡುತ್ತದೆ ಎಂದು ಕೆಲವು ಪದಗಳಲ್ಲಿ ಬರೆಯಿರಿ. | Write what the shop does, in a few words. |  |
+| `preset.words.prefillNote` | ಇಲ್ಲಿನ ಬೆಲೆಗಳು ಮತ್ತು ಸಮಯಗಳು ಉದಾಹರಣೆಗಳು ಮಾತ್ರ. ಪ್ರತಿಯೊಂದನ್ನೂ ಪರಿಶೀಲಿಸಿ ನಿಮ್ಮದಾಗಿ ಬದಲಿಸಿ. | The prices and times here are only examples. Check each one and change it to yours. |  |
+| `preset.words.tradeLabel` | ಅಂಗಡಿಯ ಬಗೆ | Kind of shop |  |
+| `preset.arts.name` | ಸಂಗೀತ, ನೃತ್ಯ ಅಥವಾ ಯೋಗ ತರಗತಿಗಳು | Music, dance or yoga classes |  |
+| `preset.arts.prefill.batches.1.names` | ಆರಂಭಿಕರು | Beginners |  |
+| `preset.arts.prefill.batches.2.names` | ಮಧ್ಯಮ ಹಂತ | Intermediate |  |
+| `preset.arts.prefill.batches.3.names` | ವಾರಾಂತ್ಯ ಬ್ಯಾಚ್ | Weekend batch |  |
+| `preset.bakery.name` | ಹೋಂ ಬೇಕರಿ ಅಥವಾ ಕೇಕ್ | Home bakery or cakes |  |
+| `preset.bakery.prefill.menu.1.names` | ಕೇಕ್ 1 ಕೆಜಿ | Cake 1 kg |  |
+| `preset.bakery.prefill.menu.2.names` | ಕಪ್‌ಕೇಕ್ 6 ಬಾಕ್ಸ್ | Cupcakes box of 6 |  |
+| `preset.bakery.prefill.menu.3.names` | ಕುಕೀಸ್ 250 ಗ್ರಾಂ | Cookies 250 g |  |
+| `preset.bakery.prefill.pickup.1.names` | ಬೆಳಿಗ್ಗೆ | morning |  |
+| `preset.bakery.prefill.pickup.2.names` | ಸಂಜೆ | evening |  |
+| `preset.catering.name` | ಕ್ಯಾಟರಿಂಗ್ | Catering |  |
+| `preset.catering.prefill.menu.1.names` | 10 ಜನರಿಗೆ ಊಟ | Meals for 10 people |  |
+| `preset.catering.prefill.menu.2.names` | 10 ಜನರಿಗೆ ತಿಂಡಿ ಟ್ರೇ | Snack tray for 10 people |  |
+| `preset.catering.prefill.menu.3.names` | ಸಿಹಿ ಬಾಕ್ಸ್ 20 ತುಂಡು | Sweet box 20 pieces |  |
+| `preset.catering.prefill.pickup.1.names` | ಬೆಳಿಗ್ಗೆ | morning |  |
+| `preset.catering.prefill.pickup.2.names` | ಮಧ್ಯಾಹ್ನ | afternoon |  |
+| `preset.clinic.name` | ಕ್ಲಿನಿಕ್ ಅಥವಾ ಫಿಸಿಯೋಥೆರಪಿ | Clinic or physiotherapy |  |
+| `preset.clinic.prefill.services.1.names` | ಸಮಾಲೋಚನೆ | Consultation |  |
+| `preset.clinic.prefill.services.2.names` | ಫಿಸಿಯೋಥೆರಪಿ ಸೆಷನ್ | Physiotherapy session |  |
+| `preset.clinic.prefill.services.3.names` | ಫಾಲೋ-ಅಪ್ ಭೇಟಿ | Follow-up visit |  |
+| `preset.restock.name` | ಸರಬರಾಜುದಾರರಿಂದ ಅಂಗಡಿಗೆ ಸ್ಟಾಕ್ ಆರ್ಡರ್ | Shop restocking from suppliers |  |
+| `preset.restock.prefill.supplier` | ನನ್ನ ಸರಬರಾಜುದಾರ | My supplier |  |
+| `preset.restock.prefill.items.1.names` | ಅಕ್ಕಿ 25 ಕೆಜಿ | Rice 25 kg |  |
+| `preset.restock.prefill.items.1.unit` | ಚೀಲ | bag |  |
+| `preset.restock.prefill.items.2.names` | ಅಡುಗೆ ಎಣ್ಣೆ 15 ಲೀಟರ್ | Cooking oil 15 L |  |
+| `preset.restock.prefill.items.2.unit` | ಟಿನ್ | tin |  |
+| `preset.restock.prefill.items.3.names` | ಸೋಪ್ | Soap |  |
+| `preset.restock.prefill.items.3.unit` | ಕಾರ್ಟನ್ | carton |  |
+| `preset.salon.name` | ಸಲೂನ್ ಅಥವಾ ಬ್ಯೂಟಿ ಪಾರ್ಲರ್ | Salon or beauty parlour |  |
+| `preset.salon.prefill.services.1.names` | ಹೇರ್‌ಕಟ್ | Haircut |  |
+| `preset.salon.prefill.services.2.names` | ಫೇಶಿಯಲ್ | Facial |  |
+| `preset.salon.prefill.services.3.names` | ಹೇರ್ ಸ್ಪಾ | Hair spa |  |
+| `preset.salon.prefill.services.4.names` | ಮ್ಯಾನಿಕ್ಯೂರ್ | Manicure |  |
+| `preset.sweets.name` | ಸಿಹಿ ಮತ್ತು ತಿಂಡಿ, ಮೊದಲೇ ಆರ್ಡರ್ | Sweets and snacks, pre-orders |  |
+| `preset.sweets.prefill.menu.1.names` | ಲಡ್ಡು 500 ಗ್ರಾಂ | Laddu 500 g |  |
+| `preset.sweets.prefill.menu.2.names` | ಹಲ್ವಾ 500 ಗ್ರಾಂ | Halwa 500 g |  |
+| `preset.sweets.prefill.menu.3.names` | ಮಿಕ್ಸ್ಚರ್ 500 ಗ್ರಾಂ | Mixture 500 g |  |
+| `preset.sweets.prefill.menu.4.names` | ಚಕ್ಕುಲಿ 500 ಗ್ರಾಂ | Murukku 500 g |  |
+| `preset.sweets.prefill.pickup.1.names` | ಬೆಳಿಗ್ಗೆ | morning |  |
+| `preset.sweets.prefill.pickup.2.names` | ಸಂಜೆ | evening |  |
+| `preset.tuition.name` | ಟ್ಯೂಷನ್ ಸೆಂಟರ್ | Tuition centre |  |
+| `preset.tuition.prefill.batches.1.names` | 8ನೇ ತರಗತಿ | Class 8 |  |
+| `preset.tuition.prefill.batches.2.names` | 9ನೇ ತರಗತಿ | Class 9 |  |
+| `preset.tuition.prefill.batches.3.names` | 10ನೇ ತರಗತಿ | Class 10 |  |
+| `keep.lost` | Rahul ಅವರ ಹಳೆಯ ಬಾಕಿ ಮತ್ತು ಇತರ ಹಿಂದಿನ ವಿವರಗಳನ್ನು ಉಳಿಸಿಕೊಳ್ಳಲಿಲ್ಲ, ಏಕೆಂದರೆ ಪೋಷಕರ ನಂಬರ್ ಬದಲಾಯಿತು. ಅವನ್ನು ಮತ್ತೆ ಸೇರಿಸಲು ನಿಮ್ಮ ಬಿಲ್ಡರ್‌ಗೆ ಹೇಳಿ. | Rahul's old dues and other earlier details were not kept, because the parent's number changed. Ask your builder to add them again. |  |
 | `chat.list.yourChats` | ನಿಮ್ಮ ಚಾಟ್‌ಗಳು | Your chats |  |
 | `chat.list.installHead` | Streetlist ಅನ್ನು ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಇಟ್ಟುಕೊಳ್ಳಿ | Keep Streetlist on your phone |  |
 | `chat.list.installBody` | ಒಂದೇ ಒತ್ತಿನಲ್ಲಿ ಚಾಟ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ, ಅಂಗಡಿ ಉತ್ತರಿಸಿದಾಗ ತಿಳಿಯಿರಿ. | Open your chats in one tap, and hear when a shop replies. |  |
