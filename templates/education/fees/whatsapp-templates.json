@@ -2996,6 +2996,634 @@
     ]
   },
   {
+    "name": "class_consent_ask",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "नमस्ते, {{1}} की ओर से। {{2}} {{3}} की क्लास में है। क्या हम {{4}} के लिए क्लास के लिंक और पढ़ने की सामग्री इसी नंबर पर भेज सकते हैं? अनुमति के लिए हाँ दबाएँ, मना करने के लिए नहीं। हम विद्यार्थियों पर नज़र नहीं रखते, उनकी प्रोफ़ाइल नहीं बनाते और विज्ञापन नहीं भेजते। सारे संदेश बंद करने के लिए कभी भी STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "Aarav Sharma"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_consent_ask",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Hello from {{1}}. {{2}} is in {{3}}. May we send class links and reading material for {{4}} to this number? Tap Yes to allow or No to refuse. We do not track, profile or advertise to students. Reply STOP at any time to stop all messages.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "class 8",
+              "Aarav Sharma"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_consent_ask",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ക്ലാസ് വിവരം: {{1}}. {{2}} {{3}} ക്ലാസിലാണ്. {{4}}-ന്റെ ക്ലാസ് ലിങ്കുകളും പഠന സാമഗ്രികളും ഈ നമ്പറിലേക്ക് അയയ്ക്കാമോ? അനുവദിക്കാൻ അതെ അമർത്തുക, വേണ്ടെങ്കിൽ അല്ല. ഞങ്ങൾ വിദ്യാർത്ഥികളെ നിരീക്ഷിക്കുകയോ പ്രൊഫൈൽ ഉണ്ടാക്കുകയോ പരസ്യം അയയ്ക്കുകയോ ചെയ്യില്ല. എല്ലാ സന്ദേശങ്ങളും നിർത്താൻ എപ്പോൾ വേണമെങ്കിലും STOP എന്ന് എഴുതുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "Aarav Sharma"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_consent_ask",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ತರಗತಿ ಮಾಹಿತಿ: {{1}}. {{2}} {{3}} ತರಗತಿಯಲ್ಲಿದ್ದಾರೆ. {{4}} ಅವರ ತರಗತಿ ಲಿಂಕ್‌ಗಳನ್ನು ಮತ್ತು ಓದುವ ಸಾಮಗ್ರಿಯನ್ನು ಈ ನಂಬರ್‌ಗೆ ಕಳುಹಿಸಬಹುದೇ? ಒಪ್ಪಿಗೆಗೆ ಹೌದು ಒತ್ತಿ, ಬೇಡವಾದರೆ ಇಲ್ಲ ಒತ್ತಿ. ನಾವು ವಿದ್ಯಾರ್ಥಿಗಳ ಮೇಲೆ ನಿಗಾ ಇಡುವುದಿಲ್ಲ, ಅವರ ಪ್ರೊಫೈಲ್ ಮಾಡುವುದಿಲ್ಲ, ಜಾಹೀರಾತು ಕಳುಹಿಸುವುದಿಲ್ಲ. ಎಲ್ಲ ಸಂದೇಶಗಳನ್ನು ನಿಲ್ಲಿಸಲು ಯಾವಾಗ ಬೇಕಾದರೂ STOP ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "Aarav Sharma"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_link",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "क्लास की याद: {{1}}। {{2}} की {{3}} की क्लास {{4}} को {{5}} है। यहाँ से जुड़ें: {{6}} कृपया यह लिंक किसी से साझा न करें। ये संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "सोमवार, 9 नवंबर",
+              "शाम 5:00 बजे",
+              "https://meet.google.com/abc-defg-hij"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_link",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Class reminder from {{1}}. {{2}}'s class ({{3}}) is on {{4}} at {{5}}. Join here: {{6}} Please do not share this link. Reply STOP if you do not want these messages.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "class 8",
+              "Mon 9 Nov",
+              "5:00 pm",
+              "https://meet.google.com/abc-defg-hij"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_link",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ക്ലാസ് ഓർമ്മപ്പെടുത്തൽ: {{1}}. {{2}}-ന്റെ {{3}} ക്ലാസ് {{4}}, {{5}}-ന് ആണ്. ഇവിടെ ചേരുക: {{6}} ദയവായി ഈ ലിങ്ക് ആരുമായും പങ്കുവയ്ക്കരുത്. ഈ സന്ദേശങ്ങൾ വേണ്ടെങ്കിൽ STOP എന്ന് എഴുതുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "തിങ്കൾ, 9 നവംബർ",
+              "വൈകുന്നേരം 5:00",
+              "https://meet.google.com/abc-defg-hij"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_link",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ತರಗತಿಯ ನೆನಪು: {{1}}. {{2}} ಅವರ {{3}} ತರಗತಿ {{4}}, {{5}} ಕ್ಕೆ ಇದೆ. ಇಲ್ಲಿ ಸೇರಿ: {{6}} ದಯವಿಟ್ಟು ಈ ಲಿಂಕ್ ಅನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ಸಂದೇಶಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "ಸೋಮವಾರ, 9 ನವೆಂಬರ್",
+              "ಸಂಜೆ 5:00",
+              "https://meet.google.com/abc-defg-hij"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_missed_note",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "क्लास की सूचना: {{1}}। {{2}} को {{3}} को {{4}} की {{5}} की क्लास में उपस्थित नहीं लिखा गया। अगर यह गलती है तो कृपया मालिक को बताएँ। ये संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "सोमवार, 9 नवंबर",
+              "शाम 5:00 बजे",
+              "कक्षा 8"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_missed_note",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Class note from {{1}}. {{2}} was not marked present in the class ({{3}}) on {{4}} at {{5}}. If this is a mistake, please tell the owner. Reply STOP if you do not want these messages.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "class 8",
+              "Mon 9 Nov",
+              "5:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_missed_note",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ക്ലാസ് അറിയിപ്പ്: {{1}}. {{2}}, {{3}}-ന് നടന്ന {{4}} ക്ലാസിൽ {{5}} ഹാജരായതായി രേഖപ്പെടുത്തിയിട്ടില്ല. ഇത് തെറ്റാണെങ്കിൽ ദയവായി ഉടമയെ അറിയിക്കൂ. ഈ സന്ദേശങ്ങൾ വേണ്ടെങ്കിൽ STOP എന്ന് എഴുതുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "തിങ്കൾ, 9 നവംബർ",
+              "വൈകുന്നേരം 5:00",
+              "എട്ടാം ക്ലാസ്",
+              "Aarav Sharma"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_missed_note",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ತರಗತಿ ಸೂಚನೆ: {{1}}. {{2}}, {{3}} ಕ್ಕೆ ನಡೆದ {{4}} ತರಗತಿಯಲ್ಲಿ {{5}} ಹಾಜರಾಗಿದ್ದಾರೆ ಎಂದು ಗುರುತಿಸಲಾಗಿಲ್ಲ. ಇದು ತಪ್ಪಾಗಿದ್ದರೆ ದಯವಿಟ್ಟು ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿ. ಈ ಸಂದೇಶಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "ಸೋಮವಾರ, 9 ನವೆಂಬರ್",
+              "ಸಂಜೆ 5:00",
+              "8ನೇ ತರಗತಿ",
+              "Aarav Sharma"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_material_link",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "पढ़ने की सामग्री: {{1}}। {{2}} की {{3}} की सामग्री यहाँ खोलें: {{4}} यह तभी खुलती है जब {{5}} इस क्लास में हो और फीस भरी हो या छूट के दिनों के भीतर हो। कृपया इसे साझा न करें। ये संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "कक्षा 8",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq/m/class-10",
+              "Aarav Sharma"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_material_link",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Reading material from {{1}} for {{2}} ({{3}}): {{4}} It opens only while {{5}} is in this class and the fee is paid or within its grace days. Please do not share it. Reply STOP if you do not want these messages.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "class 8",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq/m/class-10",
+              "Aarav Sharma"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_material_link",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പഠന സാമഗ്രികൾ: {{1}}. {{2}}-ന്റെ {{3}}-നുള്ള സാമഗ്രികൾ ഇവിടെ തുറക്കുക: {{4}} {{5}} ഈ ക്ലാസിലുള്ളപ്പോഴും ഫീസ് അടച്ചിരിക്കുമ്പോഴോ ഇളവ് ദിവസങ്ങൾക്കുള്ളിലോ മാത്രമേ ഇത് തുറക്കൂ. ദയവായി ഇത് പങ്കുവയ്ക്കരുത്. ഈ സന്ദേശങ്ങൾ വേണ്ടെങ്കിൽ STOP എന്ന് എഴുതുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "എട്ടാം ക്ലാസ്",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq/m/class-10",
+              "Aarav Sharma"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "class_material_link",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಓದುವ ಸಾಮಗ್ರಿ: {{1}}. {{2}} ಅವರ {{3}} ಸಾಮಗ್ರಿಯನ್ನು ಇಲ್ಲಿ ತೆರೆಯಿರಿ: {{4}} {{5}} ಈ ತರಗತಿಯಲ್ಲಿದ್ದು ಶುಲ್ಕ ಪಾವತಿಸಿದ್ದರೆ ಅಥವಾ ರಿಯಾಯಿತಿ ದಿನಗಳ ಒಳಗಿದ್ದರೆ ಮಾತ್ರ ಇದು ತೆರೆಯುತ್ತದೆ. ದಯವಿಟ್ಟು ಇದನ್ನು ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ಸಂದೇಶಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma",
+              "8ನೇ ತರಗತಿ",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq/m/class-10",
+              "Aarav Sharma"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_attendance",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "उपस्थिति चाहिए: {{1}} में {{2}} की {{3}} को {{4}} की क्लास खत्म हो गई। सब आए हों तो \"present\" लिखें, या किसने क्लास छोड़ी यह चुनने के लिए \"class\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "कक्षा 8",
+              "सोमवार, 9 नवंबर",
+              "शाम 5:00 बजे"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_attendance",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Attendance needed at {{1}}: the class for {{2}} on {{3}} at {{4}} is over. Reply \"present\" if everyone came, or reply \"class\" to mark who missed.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "class 8",
+              "Mon 9 Nov",
+              "5:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_attendance",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഹാജർ വേണം: {{1}}-ൽ {{2}}, {{3}}-ന് ഉള്ള {{4}} ക്ലാസ് കഴിഞ്ഞു. എല്ലാവരും വന്നെങ്കിൽ \"present\" എന്ന് എഴുതൂ, അല്ലെങ്കിൽ ആരൊക്കെ വന്നില്ല എന്ന് അടയാളപ്പെടുത്താൻ \"class\" എന്ന് എഴുതൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "തിങ്കൾ, 9 നവംബർ",
+              "വൈകുന്നേരം 5:00",
+              "എട്ടാം ക്ലാസ്"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_attendance",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಹಾಜರಾತಿ ಬೇಕು: {{1}} ನಲ್ಲಿ {{2}}, {{3}} ಕ್ಕೆ ನಡೆದ {{4}} ತರಗತಿ ಮುಗಿದಿದೆ. ಎಲ್ಲರೂ ಬಂದಿದ್ದರೆ \"present\" ಎಂದು ಬರೆಯಿರಿ, ಅಥವಾ ಯಾರು ಬರಲಿಲ್ಲ ಎಂದು ಗುರುತಿಸಲು \"class\" ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "ಸೋಮವಾರ, 9 ನವೆಂಬರ್",
+              "ಸಂಜೆ 5:00",
+              "8ನೇ ತರಗತಿ"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_no_link",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "क्लास लिंक चाहिए: {{1}} में {{2}} की {{3}} को {{4}} की क्लास का कोई लिंक नहीं है। \"link\", बैच का नाम और पूरा लिंक लिखकर भेजें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "कक्षा 8",
+              "सोमवार, 9 नवंबर",
+              "शाम 5:00 बजे"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_no_link",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Class link needed at {{1}}: no link is set for the class for {{2}} on {{3}} at {{4}}. Reply \"link\", the batch name and the full link.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "class 8",
+              "Mon 9 Nov",
+              "5:00 pm"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_no_link",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ക്ലാസ് ലിങ്ക് വേണം: {{1}}-ൽ {{2}}, {{3}}-ന് ഉള്ള {{4}} ക്ലാസിന് ലിങ്ക് ഒന്നും സജ്ജമാക്കിയിട്ടില്ല. \"link\", ബാച്ചിന്റെ പേര്, പൂർണ്ണ ലിങ്ക് എന്നിവ എഴുതി അയയ്ക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "തിങ്കൾ, 9 നവംബർ",
+              "വൈകുന്നേരം 5:00",
+              "എട്ടാം ക്ലാസ്"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_no_link",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ತರಗತಿ ಲಿಂಕ್ ಬೇಕು: {{1}} ನಲ್ಲಿ {{2}}, {{3}} ಕ್ಕೆ ನಡೆಯುವ {{4}} ತರಗತಿಗೆ ಲಿಂಕ್ ಹೊಂದಿಸಿಲ್ಲ. \"link\", ಬ್ಯಾಚ್‌ನ ಹೆಸರು ಮತ್ತು ಪೂರ್ಣ ಲಿಂಕ್ ಬರೆದು ಕಳುಹಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "ಸೋಮವಾರ, 9 ನವೆಂಬರ್",
+              "ಸಂಜೆ 5:00",
+              "8ನೇ ತರಗತಿ"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_doubts_waiting",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "डाउट इंतज़ार में: {{1}}, {{2}} की क्लास से {{3}}। पढ़ने के लिए \"doubts\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "कक्षा 8",
+              "2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_doubts_waiting",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Doubts waiting at {{1}}: {{2}} from {{3}}. Reply \"doubts\" to read them.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "2",
+              "class 8"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_doubts_waiting",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "സംശയങ്ങൾ കാത്തിരിക്കുന്നു: {{1}}, {{2}} ക്ലാസിൽ നിന്ന് {{3}}. വായിക്കാൻ \"doubts\" എന്ന് എഴുതൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "എട്ടാം ക്ലാസ്",
+              "2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "owner_class_doubts_waiting",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಸಂದೇಹಗಳು ಕಾಯುತ್ತಿವೆ: {{1}}, {{2}} ತರಗತಿಯಿಂದ {{3}}. ಓದಲು \"doubts\" ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "8ನೇ ತರಗತಿ",
+              "2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "fee_monthly_report",
     "language": "hi",
     "category": "UTILITY",
