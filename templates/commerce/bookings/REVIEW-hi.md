@@ -1254,6 +1254,31 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `personality.brief.greetingNamed` | यह {name} है, {shop} का असिस्टेंट। | This is {name}, {shop}'s assistant. |  |
 | `personality.brief.morningOpening` | सुबह की जानकारी: {shop} का असिस्टेंट। | Morning summary from the assistant of {shop}. |  |
 | `personality.brief.morningSignOff` | और जानने के लिए जवाब दें। | Reply for more. |  |
+| `memory.note_saved` | याद रखा (n-3): "closed on Sunday"। इसे सिर्फ़ मैं आपसे बात करते समय इस्तेमाल करूँगा। एक दिन के अंदर "undo" कहें, या "forget n-3"। | Remembered (n-3): "closed on Sunday". Only I use it, when I talk with you. Say "undo" within a day, or "forget n-3". |  |
+| `memory.note_proposal` | क्या मैं यह याद रखूँ? "closed on Sunday" (ग्राहकों को बताया जा सकता है) | Shall I remember this? "closed on Sunday" (customers may be told it) |  |
+| `memory.note_declined` | ठीक है, मैं यह याद नहीं रखूँगा। | Alright, I will not remember that. |  |
+| `memory.notes_list` | मुझे 2 बातें याद हैं: • n-3 [सिर्फ़ आप] closed on Sunday • n-4 [ग्राहक भी] closed on Sunday किसी को हटाने के लिए "forget n-3" कहें। | I remember 2: • n-3 [you only] closed on Sunday • n-4 [customers too] closed on Sunday Say "forget n-3" to remove one. |  |
+| `memory.note_forgotten` | भूल गया: n-3। शब्द दुकान के स्टोर से हट गए हैं; बैकअप अपने समय पर पुराने होकर हटते हैं। | Forgotten: n-3. The words are gone from the shop's store; backups age out on their own schedule. |  |
+| `memory.note_undone` | वापस ले लिया: अब मुझे n-3 याद नहीं है। | Undone: I no longer remember n-3. |  |
+| `memory.note_unknown` | n-9 नाम का कोई नोट नहीं है। "क्या याद है?" कहकर देखें। | I have no note n-9. Say "what do you remember?" to see them. |  |
+| `memory.note_full` | मैं 80 नोट रख सकता हूँ। पहले कोई एक भूलने को कहें। | I can keep 80 notes open. Forget one first. |  |
+| `memory.note_too_long` | यह एक नोट के लिए बहुत लंबा है (अधिकतम 280 अक्षर)। कृपया छोटा करके कहें। | That is too long for one note (at most 280 characters). Please say it shorter. |  |
+| `memory.note_need_words` | क्या याद रखूँ? जैसे: याद रखना शनिवार को 6 बजे बंद होता है। | What shall I remember? For example: remember we close at 6 on Saturdays. |  |
+| `memory.note_not_a_limit` | मैंने इसे नोट (n-3) के रूप में रखा है, Guard की लागू की हुई सीमा के रूप में नहीं। बातचीत में मैं इसे मानूँगा, पर यह अपने आप कुछ नहीं रोकता। | I saved this as a note (n-3), not as a limit Guard enforces. I will follow it when I talk, but it does not stop anything by itself. |  |
+| `memory.talk_fallback` | मैं अभी इसका जवाब नहीं दे सका। आज: 5। आपके इंतज़ार में: 2। मैं क्या कर सकता हूँ, यह देखने के लिए "help" कहें। | I could not answer that just now. Today: 5. Waiting for you: 2. Say "help" to see what I can do. |  |
+| `memory.talk_off` | अभी मैं सिर्फ़ तय अनुरोधों का जवाब दे सकता हूँ। उन्हें देखने के लिए "help" कहें। | I can only answer set requests right now. Say "help" to see them. |  |
+| `memory.button.remember` | याद रखें | Remember |  |
+| `memory.button.no` | नहीं | No |  |
+| `card.fees.cancel_money` | फीस f-3 (Priya, November 2026) रद्द करें और ₹1,500 बकाया माफ़ करें? कोई पैसा नहीं जाता। | Cancel fee f-3 (Priya, November 2026) and waive the ₹1,500 balance? No money moves. |  |
+| `card.fees.cancel_none` | फीस f-3 (Priya, November 2026) रद्द करें? कुछ बकाया नहीं है। | Cancel fee f-3 (Priya, November 2026)? Nothing is owed. |  |
+| `card.fees.refund` | f-3 की फीस में से Priya को ₹500 लौटाएँ? | Refund ₹500 of the fee to Priya (f-3)? |  |
+| `card.orders.cancel_money` | ऑर्डर o-5 (Priya, 2 cakes) रद्द करें और ₹1,500 एडवांस लौटाएँ? | Cancel order o-5 (Priya, 2 cakes) and refund the ₹1,500 advance? |  |
+| `card.orders.cancel_none` | ऑर्डर o-5 (Priya, 2 cakes) रद्द करें? कोई एडवांस नहीं दिया गया था। | Cancel order o-5 (Priya, 2 cakes)? No advance was paid. |  |
+| `card.orders.refund` | o-5 के एडवांस में से Priya को ₹500 लौटाएँ? | Refund ₹500 of the advance to Priya (o-5)? |  |
+| `refusal.fees.already_back` | फीस f-3 का भुगतान पहले से वापस जा रहा है, इसलिए मैं इसे यहाँ से दोबारा वापस नहीं कर सकता। कृपया अभिभावक को ख़ुद बताएँ। | The payment on fee f-3 is already going back, so I can't refund it again from here. Please tell the parent yourself. |  |
+| `refusal.fees.cancel_first` | फीस f-3 अभी खुली है। भुगतान लौटाने के लिए पहले इसे रद्द करें: cancel f-3। | Fee f-3 is still open. To give the payment back, cancel it first: cancel f-3. |  |
+| `refusal.orders.already_back` | ऑर्डर o-5 का एडवांस पहले से वापस जा रहा है, इसलिए मैं इसे यहाँ से रद्द नहीं कर सकता। कृपया ग्राहक को ख़ुद बताएँ। | The advance on order o-5 is already going back, so I can't cancel it from here. Please tell the customer yourself. |  |
+| `refusal.orders.cancel_first` | ऑर्डर o-5 अभी चालू है। एडवांस लौटाने के लिए इसे रद्द करें: cancel o-5। | Order o-5 is still on. To give the advance back, cancel it: cancel o-5. |  |
 | `owner.first.chromeTitle` | इस पेज के लिए Chrome चाहिए | This page needs Chrome |  |
 | `owner.first.chromeBody` | यह ब्राउज़र आपके फ़ोन पर साइन-इन नहीं बना सकता। इस पेज को Chrome में खोलिए, या लिंक कॉपी करके Chrome में चिपकाइए। | This browser can't set up sign-in on your phone. Open this page in Chrome, or copy the link and paste it into Chrome. |  |
 | `owner.first.chromeOpen` | Chrome में खोलें | Open in Chrome |  |
@@ -1353,4 +1378,54 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `pages.block.setupWaitNote` | कोड दिखने के करीब 15 सेकंड बाद चलने लगता है। नीचे की पट्टी हरी होने तक रुकिए, फिर स्कैन करें। उससे पहले स्कैन करने पर यह अभी नहीं चलता। | The code starts working about 15 seconds after it is shown. Wait until the bar below turns green, then scan. A scan before that does not work yet. |  |
 | `pages.block.cardQr` | या फ़ोन के कैमरे से यह स्कैन करें: | Or scan this with your phone's camera: |  |
 | `pages.block.cardMachine` | यह हिंदी मशीन से लिखी गई है; किसी हिंदी भाषी ने अभी इसे जाँचा नहीं है। |  |  |
+| `limits.assistant.refund.name` | रिफंड की सीमा | refund limit |  |
+| `limits.assistant.refund.rule` | {v} से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए | Refunds above {v} need your approval |  |
+| `limits.assistant.waiver.name` | छूट की सीमा | waiver limit |  |
+| `limits.assistant.waiver.rule` | {v} से ऊपर की छूट के लिए आपकी मंज़ूरी चाहिए | Waivers above {v} need your approval |  |
+| `limits.assistant.bigOrder.name` | बड़े ऑर्डर की राशि | big-order amount |  |
+| `limits.assistant.bigOrder.rule` | {v} से ऊपर के ऑर्डर पर पैसे माँगने से पहले आपकी मंज़ूरी चाहिए | Orders above {v} need your approval before any payment is asked |  |
+| `limits.assistant.perDay.name` | एक दिन के ऑर्डर | orders a day |  |
+| `limits.assistant.perDay.rule` | एक दिन में ज़्यादा से ज़्यादा {v} ऑर्डर | At most {v} orders a day |  |
+| `limits.assistant.card` | ₹500 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए. अभी: ₹1000. | Refunds above ₹500 need your approval. Now: ₹1000. |  |
+| `limits.assistant.never` | कभी नहीं | never |  |
+| `limits.assistant.say.pending` | प्रतीक्षा में: ₹500 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए। यह यहाँ अभी से लागू है, और चालू होते ही मैं बता दूँगा। | Pending: Refunds above ₹500 need your approval. It already applies here, and I'll tell you when it is Active. |  |
+| `limits.assistant.say.active` | चालू: ₹500 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए. | Active: Refunds above ₹500 need your approval. |  |
+| `limits.assistant.say.failed` | यह नहीं हो पाया। पहले वाली सीमा ही लागू है: ₹1000 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए। आप फिर कोशिश कर सकते हैं। | That did not go through. The previous limit is still in force: Refunds above ₹1000 need your approval. You can try again. |  |
+| `limits.assistant.say.not_tighter` | आपकी रिफंड की सीमा अभी ₹200 है, इसलिए ₹500 इसे कसने की जगह ढीला करेगा। मैं यहाँ से सिर्फ़ कसता हूँ; ढीला करने के लिए अपना ऐप खोलें और पासकी से साइन इन करें। | Your refund limit is ₹200 now, so ₹500 would loosen it, not tighten it. I only tighten from here; to loosen, open your own app and sign in with your passkey. |  |
+| `limits.assistant.say.need_value` | आपकी रिफंड की सीमा कितनी होनी चाहिए? रुपये की राशि और रुपये के चिह्न के साथ बताइए। | What should your refund limit be? Say it with a rupee amount and the rupee sign. |  |
+| `limits.assistant.say.which` | आप कौन सी सीमा की बात कर रहे हैं? मैं ये कस सकता हूँ: रिफंड की सीमा। बाकी के लिए मैं उसे नोट के रूप में रख लूँगा। | Which limit do you mean? I can tighten: refund limit. For anything else, I'll keep it as a note instead. |  |
+| `limits.assistant.notTighterRefusal` | यह मान अब लागू सीमा को कसता नहीं, इसलिए कुछ नहीं बदला। ढीला करना आपके अपने ऐप में पासकी से होता है। | That value no longer tightens the limit in force now, so nothing was changed. Loosening is done in your own app, with your passkey. |  |
+| `limits.panel.heading` | सीमाओं में बदलाव | Limit changes |  |
+| `limits.panel.note` | मालिक ने किसी सीमा में जो भी बदलाव किया और वह अभी कहाँ है। प्रतीक्षा में का मतलब: रनटाइम कसा हुआ मान अभी से मान रहा है, पर Guard के पास वह अभी नहीं है। | Every change the owner made to a limit, and where it stands. Pending means the runtime already obeys the tighter value and Guard does not have it yet. |  |
+| `limits.panel.none` | अभी तक कोई सीमा नहीं बदली गई। | No limit has been changed yet. |  |
+| `limits.panel.tighten` | कसी गई | tightened |  |
+| `limits.panel.loosen` | ढीली की गई | loosened |  |
+| `limits.panel.chat` | असिस्टेंट में टैप से | by a tap in the assistant |  |
+| `limits.panel.app` | अपने ऐप में | in their app |  |
+| `limits.panel.pending` | प्रतीक्षा में | Pending |  |
+| `limits.panel.active` | चालू | Active |  |
+| `limits.panel.failed` | नहीं हो पाया: पहले वाली सीमा ही लागू है | Failed: the previous limit is still in force |  |
+| `limits.panel.loosenNews` | आपकी जानकारी के लिए: मालिक ने इसे खुद, अपनी पासकी से, ढीला किया। आपके लिए कुछ रुका नहीं है। | For your information: the owner loosened this themselves, behind their passkey. Nothing waits for you. |  |
+| `limits.panel.row` | {name}: {from} से {to}, {how}, {by} | {name}: {from} to {to}, {how}, {by} |  |
+| `limits.owner.title` | आपकी सीमाएँ | Your limits |  |
+| `limits.owner.intro` | ये वे सीमाएँ हैं जिनके भीतर आपका असिस्टेंट काम करता है। सीमा कसना आसान है: असिस्टेंट को बताइए और हाँ पर टैप कीजिए। ढीला करना सिर्फ़ यहीं होता है, अपनी पासकी से साइन इन करने के बाद। | These are the limits your assistant works within. Tightening one is quick: tell your assistant and tap yes. Loosening one is only done here, after you sign in with your passkey. |  |
+| `limits.owner.inForce` | अभी लागू | In force now |  |
+| `limits.owner.range` | आप इसे ₹0 से ₹5,000 तक रख सकते हैं | You can set it from ₹0 to ₹5,000 |  |
+| `limits.owner.change` | बदलें | Change |  |
+| `limits.owner.changeTo` | नया मान | New value |  |
+| `limits.owner.needPasskey` | यहाँ सीमा बदलने के लिए साइन आउट करें और अपनी पासकी से फिर साइन इन करें। | To change a limit here, sign out and sign in again with your passkey. |  |
+| `limits.owner.changes` | हाल के बदलाव | Recent changes |  |
+| `limits.owner.none` | अभी कोई बदलाव नहीं। | No changes yet. |  |
+| `limits.owner.pending` | प्रतीक्षा में: दुकान कसे हुए मान को अभी से मान रही है, और बदलाव तब पक्का होगा जब Guard के पास पहुँच जाए | Pending: the shop already follows the tighter value, and the change is not final until Guard has it |  |
+| `limits.owner.active` | चालू | Active |  |
+| `limits.owner.failed` | नहीं हो पाया: पहले वाली सीमा ही लागू है | Failed: the previous limit is still in force |  |
+| `limits.owner.tightened` | कसी गई | tightened |  |
+| `limits.owner.loosened` | ढीली की गई | loosened |  |
+| `limits.owner.asked` | हो गया। जब तक दुकान के Guard के पास नहीं पहुँचता, यह प्रतीक्षा में दिखेगा, फिर चालू। आपके ऑपरेटर को बता दिया गया है, उनके लिए कुछ रुका नहीं है। | Done. It shows as Pending until the shop's Guard has it, then as Active. Your Operator is told, and nothing waits for them. |  |
+| `limits.owner.refused` | यह मान मंज़ूर नहीं है। यह सीमा के भीतर की पूरी संख्या होनी चाहिए, और अभी वाले से अलग। | That value is not allowed. It must be a whole number inside the range, and different from now. |  |
+| `limits.owner.back` | अपनी दुकान पर वापस | Back to your shop |  |
+| `limits.owner.never` | कभी नहीं | never |  |
+| `limits.owner.yourShop` | आपकी दुकान | Your shop |  |
+| `owner.money.cashPartLabel` | सिर्फ़ कुछ हिस्सा मिला? कितना (₹) | Received only part? How much (₹) |  |
+| `owner.money.cashPartButton` | यह हिस्सा नकद मिला लिखें | Mark this part received in cash |  |
 

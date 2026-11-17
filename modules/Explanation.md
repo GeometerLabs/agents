@@ -35,7 +35,7 @@ A module imports nothing from a template or the bundle. `test/boundary.test.ts` 
 | `limits.ts`: STOP, the refund limit, message-matches-record | `limits/limits.ts` | the other six rules, and the three wrappers that give the shared ones Bookings' words |
 | the reminder schedule and "send one, the latest" | `reminders/reminders.ts` | the hours before a booking |
 | the crash-test frame and what the hand check prints | `crash-test/` | the situations, and the words around the result |
-| `standins/` (Razorpay, WhatsApp, System One, Guard, http) | `standins/` | `standins/server.ts` and `control.ts` (they put the calendar in too), and the rule-based decider |
+| `standins/` (Razorpay, WhatsApp, System One, Guard, http) | `standins/` | `standins/server.ts` and `control.ts` (they put the calendar in too), and the rule-based decider | (17 Nov: the Razorpay+WhatsApp server and control routes without a calendar, which Fees and Orders both need, are `standins/payments-server.ts` (a factory taking the template's approved messages) and `standins/control.ts`; `whatsapp.ts` also holds `whatsappWebhookBody`)
 
 Bookings kept what is about a booking: the calendar and its adapters, the booking's states (`booking.ts`), its settings, its templates, its nine rules (six of them its own), its situations, its report and certificates, its demo, its inbox and runtime server.
 

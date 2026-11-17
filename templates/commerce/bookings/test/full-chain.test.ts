@@ -18,7 +18,7 @@ import { languageOfScript } from "../../../../modules/language/format.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
 import { PHONE_NUMBER_ID, startLocalStack } from "../scripts/local-stack.ts";
 import type { LocalStack } from "../scripts/local-stack.ts";
-import { whatsappWebhookBody } from "../standins/control.ts";
+import { whatsappWebhookBody } from "../../../../modules/standins/whatsapp.ts";
 
 /** Tue 3 Nov 2026, 10:00 in India, for the stand-ins and the runtime alike, so "tomorrow" is a Wednesday whatever day this runs. */
 const NOW = zonedToMs({ year: 2026, month: 11, day: 3 }, { hour: 10, minute: 0 }, glowSalon().timezone);

@@ -74,7 +74,7 @@ export interface MessageData extends MemoryMessageData {
   move_failed: { ref: string; why: MoveRefusal; toMs?: number };
   need_date: { kind: "close_day" | "reopen_day" };
   need_words: { ref: string };
-  refusal: { why: PrepareRefusal; ref: string; who?: string; paidPaise?: number };
+  refusal: { why: PrepareRefusal; ref: string; who?: string; paidPaise?: number; /** The skill the case belongs to ("fees", "orders"): two refusals word their money by it (SKILL_REFUSAL). */ skill?: string };
   card: { kind: string; /** The skill the card is for ("fees", "orders", "bookings"): a few cards word their money differently (words.ts SKILL_ASK). */ skill?: string; itemKind?: string; who: string; ref: string; what: string; amountPaise: number; words?: string; aboveLimit?: boolean; code: string; hasNo: boolean; /** A limit card (limits-card.ts): its rule, the value now and the proposed one. */ limit?: LimitCardView };
   done: { note: "cancelled" | "refund_sent" | "held_by_guard" | "owed_by_owner" | "sent" | "answered" | "failed" | "not_sent"; who: string; ref: string; amountPaise: number };
   refused: Record<string, never>;
@@ -235,6 +235,56 @@ const BASE_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
 };
 
 /**
+ * Two refusals say what money goes back, and Bookings calls it a "deposit": Fees gives back a fee's payment and Orders an order's advance. Keyed by the skill, in four languages;
+ * every other refusal, and Bookings, use REFUSAL above, byte for byte. (The ids are on the review sheets, bundle/panel/review.ts "refusal.<skill>.*".)
+ */
+const SKILL_REFUSAL: Record<Language, Partial<Record<"fees" | "orders", Partial<Record<PrepareRefusal, (w: Writer, d: MessageData["refusal"]) => string>>>>> = {
+  en: {
+    fees: {
+      already_back: (w, d) => `The payment on fee ${w.lit(d.ref)} is already going back, so I can't refund it again from here. Please tell the parent yourself.`,
+      cancel_first: (w, d) => `Fee ${w.lit(d.ref)} is still open. To give the payment back, cancel it first: ${w.lit(`cancel ${d.ref}`)}.`,
+    },
+    orders: {
+      already_back: (w, d) => `The advance on order ${w.lit(d.ref)} is already going back, so I can't cancel it from here. Please tell the customer yourself.`,
+      cancel_first: (w, d) => `Order ${w.lit(d.ref)} is still on. To give the advance back, cancel it: ${w.lit(`cancel ${d.ref}`)}.`,
+    },
+  },
+  hi: {
+    fees: {
+      already_back: (w, d) => `फीस ${w.lit(d.ref)} का भुगतान पहले से वापस जा रहा है, इसलिए मैं इसे यहाँ से दोबारा वापस नहीं कर सकता। कृपया अभिभावक को ख़ुद बताएँ।`,
+      cancel_first: (w, d) => `फीस ${w.lit(d.ref)} अभी खुली है। भुगतान लौटाने के लिए पहले इसे रद्द करें: ${w.lit(`cancel ${d.ref}`)}।`,
+    },
+    orders: {
+      already_back: (w, d) => `ऑर्डर ${w.lit(d.ref)} का एडवांस पहले से वापस जा रहा है, इसलिए मैं इसे यहाँ से रद्द नहीं कर सकता। कृपया ग्राहक को ख़ुद बताएँ।`,
+      cancel_first: (w, d) => `ऑर्डर ${w.lit(d.ref)} अभी चालू है। एडवांस लौटाने के लिए इसे रद्द करें: ${w.lit(`cancel ${d.ref}`)}।`,
+    },
+  },
+  ml: {
+    fees: {
+      already_back: (w, d) => `ഫീസ് ${w.lit(d.ref)}-ന്റെ പേയ്‌മെന്റ് ഇതിനകം തിരികെ പോകുന്നു, അതിനാൽ എനിക്ക് ഇവിടെ നിന്ന് വീണ്ടും തിരികെ നൽകാനാകില്ല. ദയവായി രക്ഷിതാവിനോട് നേരിട്ട് പറയുക.`,
+      cancel_first: (w, d) => `ഫീസ് ${w.lit(d.ref)} ഇപ്പോഴും തുറന്നിരിക്കുന്നു. പേയ്‌മെന്റ് തിരികെ നൽകാൻ ആദ്യം അത് റദ്ദാക്കുക: ${w.lit(`cancel ${d.ref}`)}.`,
+    },
+    orders: {
+      already_back: (w, d) => `ഓർഡർ ${w.lit(d.ref)}-ന്റെ അഡ്വാൻസ് ഇതിനകം തിരികെ പോകുന്നു, അതിനാൽ എനിക്ക് ഇവിടെ നിന്ന് റദ്ദാക്കാനാകില്ല. ദയവായി ഉപഭോക്താവിനോട് നേരിട്ട് പറയുക.`,
+      cancel_first: (w, d) => `ഓർഡർ ${w.lit(d.ref)} ഇപ്പോഴും നിലവിലുണ്ട്. അഡ്വാൻസ് തിരികെ നൽകാൻ അത് റദ്ദാക്കുക: ${w.lit(`cancel ${d.ref}`)}.`,
+    },
+  },
+  kn: {
+    fees: {
+      already_back: (w, d) => `ಫೀಸ್ ${w.lit(d.ref)} ನ ಪಾವತಿ ಈಗಾಗಲೇ ಹಿಂತಿರುಗುತ್ತಿದೆ, ಹಾಗಾಗಿ ನಾನು ಇಲ್ಲಿಂದ ಮತ್ತೆ ಹಿಂತಿರುಗಿಸಲಾಗದು. ದಯವಿಟ್ಟು ಪೋಷಕರಿಗೆ ನೀವೇ ತಿಳಿಸಿ.`,
+      cancel_first: (w, d) => `ಫೀಸ್ ${w.lit(d.ref)} ಇನ್ನೂ ಬಾಕಿ ಇದೆ. ಪಾವತಿ ಹಿಂತಿರುಗಿಸಲು ಮೊದಲು ಅದನ್ನು ರದ್ದು ಮಾಡಿ: ${w.lit(`cancel ${d.ref}`)}.`,
+    },
+    orders: {
+      already_back: (w, d) => `ಆರ್ಡರ್ ${w.lit(d.ref)} ನ ಅಡ್ವಾನ್ಸ್ ಈಗಾಗಲೇ ಹಿಂತಿರುಗುತ್ತಿದೆ, ಹಾಗಾಗಿ ನಾನು ಇಲ್ಲಿಂದ ರದ್ದು ಮಾಡಲಾಗದು. ದಯವಿಟ್ಟು ಗ್ರಾಹಕರಿಗೆ ನೀವೇ ತಿಳಿಸಿ.`,
+      cancel_first: (w, d) => `ಆರ್ಡರ್ ${w.lit(d.ref)} ಇನ್ನೂ ಚಾಲ್ತಿಯಲ್ಲಿದೆ. ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಲು ಅದನ್ನು ರದ್ದು ಮಾಡಿ: ${w.lit(`cancel ${d.ref}`)}.`,
+    },
+  },
+};
+
+/** The refusal's line: the skill's own wording where it has one, else the shared one. */
+const refusalLine = (language: Language, w: Writer, d: MessageData["refusal"]): string => (d.skill ? SKILL_REFUSAL[language][d.skill as "fees"]?.[d.why]?.(w, d) : undefined) ?? REFUSAL[language][d.why](w, d);
+
+/**
  * A card's question for a skill whose money is not a "deposit": Fees' cancel waives the whole balance of a fee (no money moves) and Orders' cancel gives an advance back.
  * Keyed by the skill, in four languages; every other card is worded by BASE_ASK. (The ids are on the review sheets, bundle/panel/review.ts "shop memory and talk".)
  */
@@ -347,7 +397,7 @@ const W: Record<Language, Words> = {
     moved_back: (d, w) => `${w.lit(d.ref)} is back at ${w.slot(d.toMs)}. I've told the customer.`,
     move_failed: (d, w) => `I couldn't move ${w.lit(d.ref)}${d.toMs !== undefined ? ` to ${w.slot(d.toMs)}` : ""}: ${MOVE_WHY.en[d.why]}.`,
     need_words: (d, w) => `What should I tell them? For example: ${w.lit(`message ${d.ref} Running 15 minutes late`)}.`,
-    refusal: (d, w) => REFUSAL.en[d.why](w, d),
+    refusal: (d, w) => refusalLine("en", w, d),
     card: (d, w) => `${CARD_ASK.en(w, d)}\n${CARD_FOOT.en(w, d)}`,
     done: (d, w) => DONE.en(w, d),
     refused: () => "OK. Nothing was changed.",
@@ -384,7 +434,7 @@ const W: Record<Language, Words> = {
     moved_back: (d, w) => `${w.lit(d.ref)} फिर से ${w.slot(d.toMs)} पर है। ग्राहक को बता दिया।`,
     move_failed: (d, w) => `${w.lit(d.ref)}${d.toMs !== undefined ? ` को ${w.slot(d.toMs)} पर` : ""} नहीं बदल सका: ${MOVE_WHY.hi[d.why]}।`,
     need_words: (d, w) => `उन्हें क्या बताऊँ? जैसे: ${w.lit(`message ${d.ref} 15 मिनट देर होगी`)}।`,
-    refusal: (d, w) => REFUSAL.hi[d.why](w, d),
+    refusal: (d, w) => refusalLine("hi", w, d),
     card: (d, w) => `${CARD_ASK.hi(w, d)}\n${CARD_FOOT.hi(w, d)}`,
     done: (d, w) => DONE.hi(w, d),
     refused: () => "ठीक है। कुछ नहीं बदला।",
@@ -421,7 +471,7 @@ const W: Record<Language, Words> = {
     moved_back: (d, w) => `${w.lit(d.ref)} വീണ്ടും ${w.slot(d.toMs)}-ന്. ഉപഭോക്താവിനോട് പറഞ്ഞു.`,
     move_failed: (d, w) => `${w.lit(d.ref)}${d.toMs !== undefined ? ` ${w.slot(d.toMs)}-ലേക്ക്` : ""} മാറ്റാനായില്ല: ${MOVE_WHY.ml[d.why]}.`,
     need_words: (d, w) => `അവരോട് എന്ത് പറയണം? ഉദാഹരണം: ${w.lit(`message ${d.ref} 15 മിനിറ്റ് വൈകും`)}.`,
-    refusal: (d, w) => REFUSAL.ml[d.why](w, d),
+    refusal: (d, w) => refusalLine("ml", w, d),
     card: (d, w) => `${CARD_ASK.ml(w, d)}\n${CARD_FOOT.ml(w, d)}`,
     done: (d, w) => DONE.ml(w, d),
     refused: () => "ശരി. ഒന്നും മാറ്റിയിട്ടില്ല.",
@@ -458,7 +508,7 @@ const W: Record<Language, Words> = {
     moved_back: (d, w) => `${w.lit(d.ref)} ಮತ್ತೆ ${w.slot(d.toMs)} ಕ್ಕೆ ಇದೆ. ಗ್ರಾಹಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ.`,
     move_failed: (d, w) => `${w.lit(d.ref)}${d.toMs !== undefined ? ` ಅನ್ನು ${w.slot(d.toMs)} ಕ್ಕೆ` : ""} ಬದಲಾಯಿಸಲಾಗಲಿಲ್ಲ: ${MOVE_WHY.kn[d.why]}.`,
     need_words: (d, w) => `ಅವರಿಗೆ ಏನು ಹೇಳಲಿ? ಉದಾಹರಣೆಗೆ: ${w.lit(`message ${d.ref} 15 ನಿಮಿಷ ತಡ`)}.`,
-    refusal: (d, w) => REFUSAL.kn[d.why](w, d),
+    refusal: (d, w) => refusalLine("kn", w, d),
     card: (d, w) => `${CARD_ASK.kn(w, d)}\n${CARD_FOOT.kn(w, d)}`,
     done: (d, w) => DONE.kn(w, d),
     refused: () => "ಸರಿ. ಏನೂ ಬದಲಾಗಿಲ್ಲ.",

@@ -91,6 +91,7 @@ export interface AssistantState {
   memory?: MemoryState;
   /** The owner's talk (block M): the last lines of the talk turns, for the prompt's "last six lines". Only talk turns, never a customer's words. Left out until the first talk. */
   chat?: TalkLine[];
+  /**
    * Limits the owner changed (modules/limits/chat-limits.ts): Pending until the deployer reports Guard has the new value, then Active, or Failed. The runtime's own
    * checks use the tighter of the settings and any pending tightening at once. A store from before has none; assistantOf adds the empty list.
    */

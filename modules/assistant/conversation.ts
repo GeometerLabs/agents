@@ -333,7 +333,7 @@ export function createAssistant(deps: AssistantDeps) {
     const skill = skillOf(proposal.case);
     if (!skill) { await tell("refusal", { why: "no_case", ref: proposal.case }); return; }
     const prepared = skill.prepare(proposal);
-    if (!prepared.ok) { await tell("refusal", { why: prepared.why, ref: proposal.case }); return; }
+    if (!prepared.ok) { await tell("refusal", { why: prepared.why, ref: proposal.case, skill: skill.name }); return; }
     if (prepared.action.kind === "message" && !(await windowOpen(String(prepared.action.fields.phone)))) { await tell("refusal", { why: "no_window", ref: proposal.case, who: prepared.shown.who }); return; }
     await offerCard(skill, proposal, prepared);
   }
@@ -395,7 +395,7 @@ export function createAssistant(deps: AssistantDeps) {
     if (v.verdict === "gone") {
       closeCard(s, card, "void", now);
       logLine(caseId, ASSISTANT_ACTIONS.card, "blocked", { card: card.id }, refs(card, "yes"), `the action can no longer be done (${v.why}): nothing was done`);
-      await tell("refusal", { why: v.why as never, ref: caseId }, { caseId });
+      await tell("refusal", { why: v.why as never, ref: caseId, skill: skillOf(caseId)?.name }, { caseId });
       return;
     }
     if (v.verdict === "changed") {

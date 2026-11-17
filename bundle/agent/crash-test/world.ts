@@ -16,7 +16,7 @@ import { signMeta } from "../../../modules/messaging/webhooks.ts";
 import { signRazorpay } from "../../../modules/payments/providers/razorpay/webhook.ts";
 import type { InboundMessage } from "../../../modules/messaging/messaging.ts";
 import type { Payment, PaymentRequest, Refund } from "../../../modules/payments/payments.ts";
-import { whatsappWebhookBody } from "../../../templates/commerce/bookings/standins/control.ts";
+import { whatsappWebhookBody } from "../../../modules/standins/whatsapp.ts";
 import { razorpayWebhookBody } from "../../../modules/payments/providers/razorpay/standin.ts";
 import { startStandins } from "../../../templates/commerce/bookings/standins/server.ts";
 import type { RunningStandins } from "../../../templates/commerce/bookings/standins/server.ts";
