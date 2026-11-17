@@ -182,8 +182,11 @@ a.choice:hover { border-color: var(--line2); }
 
 `;
 
-/** The owner's app: the dark tokens (the only page with the switch), the character's line, what waits, the coming list, the talk and the alerts. */
-const OWNER = `
+/**
+ * The dark set and the switch's button, shared by the owner's app and the chat page (the only two pages that run Geometer's own script, so the only two that can remember a
+ * pick). Dark only when picked, never from the phone's own setting; every colour that changes is a token.
+ */
+const DARK = `
 /* dark, only when picked (the owner's app); a thin light ring keeps a near-black tile (Pixel Bot's) apart from the dark paper */
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -194,16 +197,19 @@ const OWNER = `
   --bubble: #1f6f57;
   --tile: 0 0 0 2px rgb(255 255 255 / .16), 0 10px 22px -12px rgb(0 0 0 / .7);
 }
-
-/* ---- the owner's app ---- */
-.who-am-i { display: flex; gap: 14px; align-items: center; margin: 0; }
-.who-am-i img { width: 72px; height: 72px; border-radius: 20px; }
-.who-am-i .dot { flex: none; width: 20px; height: 20px; border-radius: 50%; }
 .head .wrap { position: relative; }
 .theme { position: absolute; top: -4px; right: 16px; width: 44px; min-height: 44px; margin: 0; padding: 0; border-radius: 50%; background: var(--card); color: var(--ink); border: 1px solid var(--line2); }
 .theme svg { width: 22px; height: 22px; }
 .theme .sun, :root[data-theme="dark"] .theme .moon { display: none; }
 :root[data-theme="dark"] .theme .sun { display: block; }
+`;
+
+/** The owner's app: the character's line, what waits, the coming list, the talk and the alerts. */
+const OWNER = `
+/* ---- the owner's app ---- */
+.who-am-i { display: flex; gap: 14px; align-items: center; margin: 0; }
+.who-am-i img { width: 72px; height: 72px; border-radius: 20px; }
+.who-am-i .dot { flex: none; width: 20px; height: 20px; border-radius: 50%; }
 .app .head-in { padding-right: 52px; }
 .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .acts form { display: flex; flex: 1 1 9.5rem; }
@@ -228,9 +234,75 @@ const OWNER = `
 .alerts input[type=radio], .alerts input[type=checkbox] { width: 22px; height: 22px; margin: 0; accent-color: var(--green); }
 `;
 
+/**
+ * The chat on the shop's page (W1, 17 Nov 2026). The shop's own signboard leads (its paint colour, or the head's green tint; the name in Baloo 2, the one font this page
+ * loads, for the name, headings and buttons only: Hindi, Malayalam and Kannada stay on the phone's own font). Flat colours only, as on every page (no gradients, glows,
+ * textures, shadows on text, dashed lines or bobbing: the owner rejected those on 14 Nov). The shop's bubble is shutter green with white text and a squared bottom-left
+ * corner, the guest's is card white with ink text and a squared bottom-right, as on the Streetlist home page's phone. Marigold is the one inviting action only.
+ * The page is a column the height of the visible screen (script sets --vvh from the visual viewport, so the composer rides above the keyboard); the thread scrolls.
+ */
+const CHAT = `
+html, body.chat { height: 100%; }
+body.chat { display: flex; flex-direction: column; height: var(--vvh, 100dvh); overflow: hidden; font-family: var(--text); }
+.display, .sign h1, .tap, .comp button, .sign .mood { font-family: var(--display, var(--text)); }
+.sign { flex: none; background: var(--paint, var(--head)); color: var(--paint-ink, var(--ink)); padding: 10px 0 10px; border-bottom: 1px solid var(--line2); }
+.sign .wrap { position: static; }
+.sign-in { display: flex; gap: 12px; align-items: center; padding-right: 52px; min-height: 60px; }
+.sign .face-c { width: 52px; height: 52px; border-radius: 14px; }
+.sign h1 { margin: 0; font-size: 1.3rem; line-height: 1.15; font-weight: 700; overflow-wrap: anywhere; }
+.sign .mood { margin: 4px 0 0; padding: .15em .6em; font-size: .82rem; background: var(--card); color: var(--ink); }
+.sign .theme { top: 8px; right: 16px; }
+.sign .lang { position: absolute; top: 56px; right: 16px; }
+.lang summary { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 12px; border-radius: 999px; background: var(--card); color: var(--ink); border: 1px solid var(--line2); font-size: .9rem; cursor: pointer; list-style: none; }
+.lang summary::-webkit-details-marker { display: none; }
+.lang div { position: absolute; right: 0; z-index: 3; display: grid; min-width: 9rem; margin-top: 4px; background: var(--card); border: 1px solid var(--line2); border-radius: 14px; overflow: hidden; }
+.lang a, .lang b { display: flex; align-items: center; min-height: 44px; padding: 0 14px; color: var(--ink); text-decoration: none; }
+.lang b { background: var(--pill); color: var(--pill-ink); }
+.banner { flex: none; margin: 0; padding: 8px 16px; background: var(--wait-bg); color: var(--wait); font-size: .92rem; text-align: center; }
+.thread { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 0 8px; scroll-behavior: auto; }
+.thread .wrap { display: grid; gap: 8px; }
+.sys { margin: 0 0 6px; color: var(--soft); font-size: .82rem; text-align: center; }
+.sys a { color: var(--soft); display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; }
+.sys svg { width: 26px; height: 26px; flex: none; }
+.run { display: grid; gap: 4px; }
+.row-b { display: flex; align-items: flex-end; gap: 8px; }
+.row-b.you { justify-content: flex-end; }
+.mini { flex: none; width: 30px; height: 30px; border-radius: 9px; background: var(--card); }
+.gap-mini { flex: none; width: 30px; }
+.b { max-width: min(82%, 26rem); padding: 9px 13px; border-radius: 18px 18px 18px 4px; background: var(--bubble); color: var(--bubble-ink); white-space: pre-line; overflow-wrap: anywhere; font-size: 1rem; }
+.b a { color: inherit; font-weight: 650; text-underline-offset: .18em; }
+.b.you { background: var(--card); color: var(--ink); border: 1px solid var(--line2); border-radius: 18px 18px 4px 18px; }
+.b.pending { opacity: .7; }
+.t { margin: 0 4px 0; color: var(--soft); font-size: .76rem; line-height: 1.3; }
+.t.you { text-align: right; }
+.t svg { width: .95em; height: .95em; vertical-align: -.12em; }
+.retry { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 0; padding: 4px 12px; border: 0; border-radius: 12px; background: var(--bad-bg); color: var(--bad); font-weight: 650; font-size: .95rem; }
+.retry .stamp { background: var(--bad); color: var(--card); }
+.dots { display: inline-flex; gap: 5px; align-items: center; padding: 14px 16px; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--bubble-ink); opacity: .85; }
+@media (prefers-reduced-motion: no-preference) { .dots { animation: pulse 1.6s ease-in-out infinite; } @keyframes pulse { 50% { opacity: .55; } } }
+.taps { display: grid; gap: 8px; margin: 4px 0 0 38px; max-width: 26rem; }
+.tap { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 10px; width: 100%; min-height: 44px; margin: 0; padding: 10px 14px; border: 1.5px solid var(--line2); border-radius: 14px; background: var(--card); color: var(--ink); font-size: 1rem; font-weight: 650; text-align: left; overflow-wrap: anywhere; box-shadow: var(--tile); }
+.tap small { flex-basis: 100%; color: var(--soft); font-weight: 400; font-size: .85rem; }
+.tap.go { background: var(--mari); border-color: var(--mari); color: #2a1a00; }
+.tap:disabled { opacity: .55; }
+.notes { flex: none; display: grid; gap: 6px; }
+.notes .state { margin: 0 0 6px; padding: 8px 12px; }
+.notes .state .status { margin: 0; font-size: .95rem; font-weight: 600; }
+.comp { flex: none; display: flex; gap: 8px; align-items: flex-end; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line2); }
+.comp textarea { flex: 1 1 auto; min-height: 48px; max-height: 8.5rem; padding: 11px 14px; border-radius: 24px; font: 400 1rem/1.4 var(--text); resize: none; }
+.comp button { flex: none; margin: 0; min-width: 76px; }
+.callrow { margin: 6px 0 0; }
+.callrow .btn { min-height: 44px; margin: 0; padding: .3em 1em; }
+.alerts-slot .alerts { margin: 0; }
+.alerts-slot .card { margin: 6px 0; }
+@media (max-width: 340px) { .b { max-width: 90%; } .taps { margin-left: 0; } }
+`;
+
 /** The style sheets, shrunk once. Each page puts its own in a <style> (the pages' policy allows inline styles only). */
 export const CUSTOMER_CSS = min(CORE + CUSTOMER);
-export const OWNER_CSS = min(CORE + OWNER);
+export const OWNER_CSS = min(CORE + DARK + OWNER);
+export const CHAT_CSS = min(CORE + DARK + CHAT);
 /** The owner's sign-in pages: the common part only. */
 export const SIGNIN_CSS = min(CORE);
 

@@ -30,7 +30,10 @@ import { afterRestore, readRestoreNote, retireRestoreNote } from "./restored.ts"
 import { recordMessageStatus } from "../messaging/statuses.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import type { LimitsKit, LimitsView } from "../limits/runtime-limits.ts";
-import { channelStartKey } from "../channels/events.ts";
+import { channelStartKey, chatTaskKey } from "../channels/events.ts";
+import { chatAnswered, chatDay, chatKnown, chatThread } from "../channels/chat.ts";
+import type { ChatThread } from "../channels/chat.ts";
+import type { ChannelState } from "../channels/state.ts";
 import type { StatusContext } from "../messaging/statuses.ts";
 import type { DocumentsKey } from "../accounting/case-documents.ts";
 import type { Document } from "../accounting/documents.ts";
@@ -260,6 +263,17 @@ export interface RuntimeChannel {
   material?(linkHash: string, batchId: string, fileId?: string): Promise<unknown | null>;
   /** The kit's ownerVoice (above), when it has one. */
   ownerVoice?(audio: { bytes: Uint8Array; mime: string }): string;
+  /** W1: a chat guest's thread by its hash (an empty one for a guest never seen), and where its latest send stands (`cid`: the page's id for it). */
+  chat(handleHash: string, q: { after?: number; cid?: string }): ChatRead;
+  /** W1: has this guest written, and has the shop answered? The push route reads these (alerts are offered only after an answer). */
+  chatState(handleHash: string): { known: boolean; answered: boolean };
+}
+
+/** What the page reads of a chat: the thread, how the latest send stands, and the character's small-talk personality and paint colour (settings.assistant.character). */
+export interface ChatRead extends ChatThread {
+  send?: "pending" | "done" | "failed";
+  personality?: string;
+  paint?: string;
 }
 
 export type { InboundMessage, Language };
@@ -469,6 +483,19 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
           return task === "pending" ? { status: "pending" as const } : task === "failed" ? { status: "not_done" as const } : null;
         },
         owner: () => kit.channel!.owner(kit.parse(snapshot), entries),
+        // W1: the chat's reads, generic over every template (its state is the store's `channel`, where the outbox already is). Nothing is saved here.
+        chat(handleHash: string, q: { after?: number; cid?: string }): ChatRead {
+          const channel = (kit.parse(snapshot) as { channel?: ChannelState }).channel;
+          const now = clock.now();
+          const read: ChatRead = chatThread(channel, handleHash, { ...(q.after !== undefined ? { after: q.after } : {}), retentionDays: options.retentionDays ?? CONVERSATION_RETENTION_DAYS, now, dayKey: chatDay(now, settings.timezone) });
+          const task = q.cid ? db.taskState?.(chatTaskKey(handleHash, q.cid)) : undefined;
+          const character = (settings as { assistant?: { character?: { personality?: string; colour?: string } } }).assistant?.character;
+          return { ...read, ...(task ? { send: task === "failed" ? "failed" as const : task === "done" ? "done" as const : "pending" as const } : {}), ...(character?.personality ? { personality: character.personality } : {}), ...(character?.colour ? { paint: character.colour } : {}) };
+        },
+        chatState(handleHash: string) {
+          const channel = (kit.parse(snapshot) as { channel?: ChannelState }).channel;
+          return { known: chatKnown(channel, handleHash), answered: chatAnswered(channel, handleHash) };
+        },
         ...(kit.channel.documents ? { documents: (key: DocumentsKey, language: Language) => kit.channel!.documents!(kit.parse(snapshot), entries, key, language) } : {}),
         ...(kit.channel.accountantFiles ? { accountantFiles: (period: string) => kit.channel!.accountantFiles!(kit.parse(snapshot), entries, period) } : {}),
         ...(kit.channel.parent ? { parent: (linkHash: string) => kit.channel!.parent!(kit.parse(snapshot), linkHash) } : {}),
