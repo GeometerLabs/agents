@@ -230,6 +230,21 @@ The shop's own item names and its slot names ("lunch", "dinner") are the shop's 
 
 ## 6. The monthly report
 
+### The monthly plans' lines (a shop with plans only)
+
+| Where | Wording | Native reviewer: OK / change to … |
+| --- | --- | --- |
+| heading | मासिक प्लान |  |
+| active | महीने के अंत में चल रहे प्लान |  |
+| started | शुरू हुए प्लान |  |
+| renewals | चुकाए गए नवीनीकरण |  |
+| meals | भेजे गए भोजन |  |
+| creditDays | न लिए गए भोजन के दिन (क्रेडिट) |  |
+| carried | आगे के भुगतान में ले जाया गया क्रेडिट |  |
+| refunded | वापस किया गया क्रेडिट |  |
+| cancelled | रद्द किए गए प्लान |  |
+| lapsed | समय पर न चुकाए गए नवीनीकरण |  |
+
 The owner's monthly text is five short lines of "label: number". Every number, amount and date is counted from the record and written by the same formatters as the messages; only the words around them are below.
 
 ### The five lines, with sample numbers

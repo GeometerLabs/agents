@@ -14,7 +14,7 @@ import { resolveDate } from "../../../../../modules/language/dates.ts";
 import type { DatePhrase } from "../../../../../modules/language/dates.ts";
 import { formatInr } from "../../../../../modules/language/format.ts";
 import type { Decision } from "../../../../../modules/limits/limits.ts";
-import { hoursBefore, scheduleAround, takeDue } from "../../../../../modules/reminders/reminders.ts";
+import { takeDue } from "../../../../../modules/reminders/reminders.ts";
 import { areaOf, checkDeliveryArea } from "../limits.ts";
 import { moveTo, newDraft, ordersInSlot, register } from "../order.ts";
 import type { Order, Store } from "../order.ts";
@@ -256,16 +256,21 @@ export function createPlans(env: PlansEnv) {
     const paid = plan.periods.filter((p) => p.state === "paid");
     const last = paid.at(-1);
     if (last && !last.settlement) await closeAndRefund(plan, last);
-    for (const piece of plan.balance.splice(0)) { const origin = store.orders.get(piece.orderId); if (origin) await env.refund(origin, piece.amountInr, "credit carried from an earlier month, unused because the plan was cancelled"); }
+    await refundBalance(plan, "because the plan was cancelled");
     delete state().plans[`pending:${plan.customer}`];
     await say(plan, "plan_cancelled", facts(plan));
     await env.tellOwner(null, plan.customer, "owner_plan_cancelled", { facts: facts(plan) });
   }
 
+  /** Credit carried and not used goes back to the payment it came from (the agent's refund path): a plan that has ended has no next payment to take it off. */
+  async function refundBalance(plan: Plan, why: string): Promise<void> {
+    for (const piece of plan.balance.splice(0)) { const origin = store.orders.get(piece.orderId); if (origin) await env.refund(origin, piece.amountInr, `credit carried from an earlier month, unused ${why}`); }
+  }
+
   /** Count a paid period's days not taken, once, and act on it: refunded now (the shop's rule is refund, or the plan is over), or carried (already on the balance). Then the period's earned money is applied. */
   async function closeAndRefund(plan: Plan, period: PlanPeriod): Promise<void> {
     const s = settle(plan, period, rulesOf(plan), clock.now());
-    logPlan(plan, "plan_credit", "confirmed", { period: period.index, days: period.settlement?.days, amountInr: s.amountInr, kind: s.kind }, { decisions: [s.decision], refs: { period: String(period.index), kind: s.kind, amountPaise: String(s.amountInr * 100) }, notes: s.kind === "carried" ? "the days not taken are carried: they come off a later payment" : s.kind === "refunded" ? "the days not taken are refunded" : "no day was left untaken" });
+    logPlan(plan, "plan_credit", "confirmed", { period: period.index, days: period.settlement?.days, amountInr: s.amountInr, kind: s.kind }, { decisions: [s.decision], refs: { period: String(period.index), kind: s.kind, days: String(period.settlement?.days ?? 0), amountPaise: String(s.amountInr * 100) }, notes: s.kind === "carried" ? "the days not taken are carried: they come off a later payment" : s.kind === "refunded" ? "the days not taken are refunded" : "no day was left untaken" });
     const o = orderOf(period);
     if (o) env.applied(o, period.dueInr - (s.kind === "none" ? 0 : s.amountInr));
     if (s.kind === "refunded" && o) await env.refund(o, s.amountInr, "days of a plan not taken, refunded by the shop's rule or because the plan ended");
@@ -299,9 +304,12 @@ export function createPlans(env: PlansEnv) {
     returnBalance(plan, period.taken);
     await env.cancelWaiting(o, period.index === 0 ? "the hold on the plan's first payment ran out" : "the renewal was not paid before its first meal closed");
     if (period.index === 0) { plan.state = "cancelled"; await env.tell(o, plan.customer, "plan_hold_expired", { facts: facts(plan) }); }
-    else { plan.state = "lapsed"; await env.tell(o, plan.customer, "plan_lapsed", { facts: facts(plan) }); }
+    else { plan.state = "lapsed"; await env.tell(o, plan.customer, "plan_lapsed", { facts: facts(plan) }); await refundBalance(plan, "because the renewal lapsed"); }
     logPlan(plan, "plan_lapse", "confirmed", { period: period.index }, { refs: { period: String(period.index) }, notes: "the payment did not come in time: no meal is owed and nothing is charged for this period" });
   }
+
+  /** One reminder, half way between now and the pay-by time (a renewal's window can be a day, so "a day before" would already be past); none when under six hours are left. */
+  const reminderFor = (payBy: number) => (payBy - clock.now() >= 6 * HOUR ? [{ atMs: clock.now() + Math.floor((payBy - clock.now()) / 2), sent: false }] : []);
 
   /** The last period's credit is final (its last cut-off passed): settle it once, take what is carried off the next payment, and ask for that payment: a link, never a debit. */
   async function renew(plan: Plan): Promise<void> {
@@ -318,7 +326,7 @@ export function createPlans(env: PlansEnv) {
     const firstDay = Object.keys(range.days).sort()[0];
     const payBy = cutoffMsFor(rules, firstDay);
     const o = register(store, newDraft(plan.customer, plan.language));
-    const period: PlanPeriod = { index: next, from: range.from, to: range.to, priceInr: type.priceInr, dueInr: type.priceInr - takenInr, taken, orderId: o.id, days: range.days, state: "awaiting_payment", payByMs: payBy, reminders: scheduleAround(payBy, hoursBefore([24]), clock.now()) };
+    const period: PlanPeriod = { index: next, from: range.from, to: range.to, priceInr: type.priceInr, dueInr: type.priceInr - takenInr, taken, orderId: o.id, days: range.days, state: "awaiting_payment", payByMs: payBy, reminders: reminderFor(payBy) };
     plan.periods.push(period);
     attach(o, plan, period);
     logPlan(plan, "plan_renew", "confirmed", { period: next, dueInr: period.dueInr, creditTakenInr: takenInr }, { decisions: [once], refs: { period: String(next) }, notes: "the next period is asked for with a payment link; nothing is charged by itself" });

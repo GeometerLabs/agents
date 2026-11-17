@@ -52,20 +52,20 @@ export function readPlanIntent(text: string, hasPlan: boolean, types: readonly P
   if (!hasPlan && !named) return undefined;
   const date = findDatePhrase(text);
   // order matters: "resume" and "cancel plan" before "pause"/"skip", because "stop my plan" is not a skip
-  if (hasPlan && RE.mine.test(t)) return { kind: "my_plan" };
   if (hasPlan && RE.resume.test(t)) return { kind: "resume", ...(date ? { date } : {}) };
   if (hasPlan && named && RE.cancel.test(t)) return { kind: "cancel_plan" };
   if (hasPlan && RE.skip.test(t)) return { kind: "skip", ...(date ? { date } : {}) };
   if (hasPlan && RE.pause.test(t)) return { kind: "pause", ...(date ? { date } : {}) };
-  if (hasPlan && named) return { kind: "my_plan" };
+  if (hasPlan && (named || RE.mine.test(t))) return { kind: "my_plan" };
   if (named && (RE.subscribe.test(t) || types.length > 0)) return { kind: "subscribe", ...typeNamed(t, types, languages) };
   return undefined;
 }
 
 /** The plan type a message names by one of its names, if exactly one is named. */
 function typeNamed(t: string, types: readonly PlanType[], languages: readonly Language[]): { typeId?: string } {
-  const hit = types.filter((type) => languages.some((l) => (type.names[l] ?? []).some((n) => t.includes(canon(n)))));
-  return hit.length === 1 ? { typeId: hit[0].id } : {};
+  // the longest name written wins, so "home lunch" is the home plan although "lunch" is also in the other's name
+  const scored = types.map((type) => ({ type, len: Math.max(0, ...languages.flatMap((l) => (type.names[l] ?? []).filter((n) => t.includes(canon(n))).map((n) => n.length))) })).filter((x) => x.len > 0).sort((x, y) => y.len - x.len);
+  return scored.length > 0 && (scored.length === 1 || scored[0].len > scored[1].len) ? { typeId: scored[0].type.id } : {};
 }
 
 /** The plans as one line of words, "Lunch plan ₹2,400, Dinner plan ₹2,800": what a customer who named no plan is asked to choose from (read whole by the outgoing check). */

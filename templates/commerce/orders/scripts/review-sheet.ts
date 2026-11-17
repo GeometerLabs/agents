@@ -6,6 +6,7 @@
 import { pathToFileURL } from "node:url";
 import { ORDER_WORDS, NUMBER_WORDS, parseIntent } from "../src/adapters/rule-parser.ts";
 import type { Intent } from "../src/adapters/model.ts";
+import { PLAN_REPORT_WORDS } from "../src/plans/report.ts";
 import { PLAN_WORDS } from "../src/plans/words.ts";
 import { annapurna } from "../src/harness.ts";
 import { LABELS } from "../src/language/interactive.ts";
@@ -239,6 +240,7 @@ export function reviewSheet(language: ReviewLanguage): string {
   out.push(table(["Customer writes", "Meaning", "The agent reads", REVIEWER], EXAMPLES[language].map(([text, meaning]) => [text, meaning, describeIntent(parseIntent(text, context)), ""])), "");
 
   out.push("## 6. The monthly report", "");
+  out.push("### The monthly plans' lines (a shop with plans only)", "", table(["Where", "Wording", REVIEWER], Object.entries(PLAN_REPORT_WORDS[language]).map(([key, text]) => [key, text, ""])), "");
   out.push("The owner's monthly text is five short lines of \"label: number\". Every number, amount and date is counted from the record and written by the same formatters as the messages; only the words around them are below.", "");
   out.push("### The five lines, with sample numbers", "", "```text", sampleOwnerText(language), "```", "");
   out.push("### The monthly report on WhatsApp, with sample numbers", "", "```text", sampleMessage(language), "```", "");

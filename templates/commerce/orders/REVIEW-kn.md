@@ -240,6 +240,21 @@ The shop's own item names and its slot names ("lunch", "dinner") are the shop's 
 
 ## 6. The monthly report
 
+### The monthly plans' lines (a shop with plans only)
+
+| Where | Wording | Native reviewer: OK / change to … |
+| --- | --- | --- |
+| heading | ತಿಂಗಳ ಪ್ಲಾನ್‌ಗಳು |  |
+| active | ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ನಡೆಯುತ್ತಿರುವ ಪ್ಲಾನ್‌ಗಳು |  |
+| started | ಶುರುವಾದ ಪ್ಲಾನ್‌ಗಳು |  |
+| renewals | ಪಾವತಿಸಿದ ನವೀಕರಣಗಳು |  |
+| meals | ಕಳುಹಿಸಿದ ಊಟ |  |
+| creditDays | ತೆಗೆದುಕೊಳ್ಳದ ಊಟದ ದಿನಗಳು (ಕ್ರೆಡಿಟ್) |  |
+| carried | ಮುಂದಿನ ಪಾವತಿಗೆ ಒಯ್ದ ಕ್ರೆಡಿಟ್ |  |
+| refunded | ಮರಳಿಸಿದ ಕ್ರೆಡಿಟ್ |  |
+| cancelled | ರದ್ದಾದ ಪ್ಲಾನ್‌ಗಳು |  |
+| lapsed | ಸಮಯಕ್ಕೆ ಪಾವತಿಸದ ನವೀಕರಣಗಳು |  |
+
 The owner's monthly text is five short lines of "label: number". Every number, amount and date is counted from the record and written by the same formatters as the messages; only the words around them are below.
 
 ### The five lines, with sample numbers

@@ -172,11 +172,11 @@
         "id": "lunch-weekdays",
         "names": {
           "en": [
-            "lunch plan",
+            "weekday lunch",
             "monthly lunch"
           ],
           "hi": [
-            "लंच प्लान",
+            "वेज लंच",
             "मासिक लंच"
           ]
         },
@@ -194,11 +194,11 @@
         "id": "home-lunch",
         "names": {
           "en": [
-            "home lunch plan",
-            "home delivery plan"
+            "home lunch",
+            "home delivery"
           ],
           "hi": [
-            "घर लंच प्लान"
+            "घर लंच"
           ]
         },
         "slotId": "lunch-home",
