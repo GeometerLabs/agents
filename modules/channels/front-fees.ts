@@ -16,6 +16,7 @@ import { HANDLE, NONCE, handleFromNonce, handleHash, newHandle, parentLinkHash }
 import { feeConfirmPage, feesCentrePage, parentLinkGone, parentPage } from "./fee-page.ts";
 import { PAGE } from "./words.ts";
 import { materialPage } from "./material-page.ts";
+import { chatRoute } from "./chat-front.ts"; // used when a request is handled, never while the modules load (chat-front.ts imports front.ts, which imports this file)
 import { DOCUMENT_SUB, documentHtml, receiptsBox, receiptsOf } from "./receipts.ts";
 import type { FrontKit, RouteArgs } from "./front.ts";
 
@@ -35,6 +36,16 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
     if (!limiter.take("read", address)) return tooMany();
     const offer = await backend.feesOffer();
     return kit.sendHtml(res, 200, feesCentrePage({ shop: { name, publicUrl: shop.publicUrl }, offer, language: kit.languageOf(req, url, offer.shop.languages), ...(pages ? { pages } : {}) }));
+  }
+
+  // ---- W2: a parent's chat on their private page: <link>/chat. The link is who they are; the runtime opens it to the parent's own thread (and says no for a link that opens nothing) ----
+  const chat = /^\/f\/([^/]+)(\/chat(?:\/.*)?)$/u.exec(rest);
+  if (chat) {
+    if (limiter.over("wrong", address)) return tooMany();
+    if (!backend.chat || !HANDLE.test(chat[1])) { limiter.take("wrong", address); return nothing(); }
+    const linkHash = parentLinkHash(chat[1]);
+    if (!(await backend.parentView(linkHash))) { limiter.take("wrong", address); return nothing(); }
+    return chatRoute(kit, { ...a, rest: chat[2], parent: { link: chat[1], hash: linkHash }, viaDoor: false });
   }
 
   // ---- a parent's private page ----
@@ -128,7 +139,7 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
       const st = await backend.push!({ op: "customer_state", handle: linkHash }).catch(() => undefined);
       alerts = customerAlertsBox({ page: base, language, key: publicKey!, phones: Number(st?.body.phones ?? 0), nonce: scriptNonce });
     }
-    return kit.sendHtml(res, 200, parentPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, base, view, nonce: newHandle(), receipts: receiptsBox(docs, base, language), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(scriptNonce ? { "content-security-policy": kit.customerPolicy(base, scriptNonce) } : {}) });
+    return kit.sendHtml(res, 200, parentPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, base, view, nonce: newHandle(), ...(backend.chat ? { chat: true } : {}), receipts: receiptsBox(docs, base, language), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(scriptNonce ? { "content-security-policy": kit.customerPolicy(base, scriptNonce) } : {}) });
   }
 
   // ---- a payment's confirmation page ----

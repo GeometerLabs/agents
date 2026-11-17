@@ -70,6 +70,8 @@ export interface ChatPageArgs {
   fontUrl: string;
   /** The guest's last send that has not been answered, when the page is drawn after a form post without script. */
   notice?: "rate";
+  /** W2: the identity part (chat-identity-page.ts): keep this chat, been here before, delete my chat; or a parent's note. Its own markup and its own script, by the same nonce. */
+  identity?: { html: string; script: string };
 }
 
 const j = (v: unknown): string => JSON.stringify(v).replace(/</gu, "\\u003c");
@@ -124,7 +126,7 @@ ${a.shop.contact?.phone ? `<p class="callrow"><a class="btn quiet" href="${esc(t
 ${a.onStreetlist ? `<p class="sys"><a href="https://streetlist.in" rel="noopener">${STREETLIST_TILE}${esc(w.onStreetlist)}</a></p>` : ""}
 ${thread}${opening}
 <div id="alerts-slot" class="alerts-slot"${a.thread.answered && a.pushKey ? "" : " hidden"}>${a.pushKey ? `<p class="sys">${esc(w.alertsHead)}</p><div id="alerts" class="card" hidden data-key="${esc(a.pushKey)}" data-sw="${esc(a.base)}/sw.js" data-scope="${esc(a.base)}/" data-save="${esc(a.base)}/push" data-done="${esc(alerts.customerOn)}" data-saved="${esc(alerts.customerOn)}" data-blocked="${esc(alerts.blocked)}" data-failed="${esc(alerts.failed)}"><button type="button" id="alerts-on">${esc(alerts.customer)}</button><p id="alerts-msg" class="note" role="status" aria-live="polite"></p></div>` : ""}</div>
-</div></main>
+${a.identity?.html ?? ""}</div></main>
 <div class="notes" id="notes">${a.shop.paused ? `<div class="state s-plain wrap"><span class="stamp">${esc(stamp.paused)}</span><p class="status">${esc(w.paused)}</p></div>` : closed ? `<div class="state s-plain wrap"><span class="stamp">${esc(stamp.closed)}</span><p class="status">${esc(w.closed(hours))}</p></div>` : ""}${a.notice === "rate" ? `<div class="state s-bad wrap" role="alert"><p class="status">${esc(w.rate)}</p></div>` : ""}${a.thread.capped ? `<div class="state s-info wrap"><p class="status">${esc(w.capped)}</p></div>` : ""}</div>
 <form class="comp" id="comp" method="post" action="${esc(a.base)}/send" autocomplete="off"><input type="hidden" name="lang" value="${a.language}"><input type="hidden" name="id" id="cid" value=""><label class="sr" for="box">${esc(w.label)}</label><textarea id="box" name="text" rows="1" maxlength="500" required placeholder="${esc(w.placeholder)}" enterkeyhint="send"></textarea><button type="submit" id="go">${esc(w.send)}</button></form>`;
 
@@ -223,5 +225,5 @@ ${a.pushKey ? ALERTS_SCRIPT : ""}
 
   return `<!doctype html><html lang="${a.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><meta name="theme-color" content="#e2f2e9"><meta name="referrer" content="strict-origin"><title>${esc(a.shop.name)} · ${esc(w.title)}</title><style>${css}</style></head>
 ${body}
-<script nonce="${esc(a.nonce)}">${script}</script></body></html>`;
+<script nonce="${esc(a.nonce)}">${script}</script>${a.identity?.script ? `<script nonce="${esc(a.nonce)}">${a.identity.script}</script>` : ""}</body></html>`;
 }
