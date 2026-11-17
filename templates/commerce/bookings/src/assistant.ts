@@ -9,7 +9,7 @@ import { addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/c
 import { resolveTime } from "../../../../modules/language/dates.ts";
 import type { Decision } from "../../../../modules/limits/limits.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
-import { checkWords, ownerReply } from "../../../../modules/assistant/wire.ts";
+import { checkWords, ownerReply, prepareGuestMessage } from "../../../../modules/assistant/wire.ts";
 import type { DayNotice, DayRow, Executed, OwnerSkill, Prepared, Proposal, WaitingItem } from "../../../../modules/assistant/skill.ts";
 import type { CardAction } from "../../../../modules/assistant/state.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
@@ -24,6 +24,8 @@ import type { OwnerItem } from "./channel.ts";
 import type { Settings } from "./settings.ts";
 import { formatInr, formatSlot } from "../../../../modules/language/format.ts";
 import type { PublicContext, TalkSource } from "../../../../modules/assistant/talk-types.ts";
+import { guestLabel } from "../../../../modules/channels/chat-guest.ts";
+import { isChatConversation } from "../../../../modules/channels/conversation.ts";
 import { isClosedDay } from "../../../../modules/assistant/conversation.ts";
 
 /** The agent's own paths the skill's acts use. Each is the function the agent already runs for the same thing; the skill adds no other way to act. */
@@ -147,6 +149,8 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
   const { settings, store } = deps;
   const tz = settings.timezone;
   const lang = settings.owner.language;
+  // a chat guest is "Chat guest 3" in the owner's cards and lists (chat-guest.ts), never "chat:..."
+  const whoOf = (b: Booking): string => (b as Booking & { contact?: { name?: string } }).contact?.name ?? (isChatConversation(b.customer) ? guestLabel(store.channel, b.customer, lang) : b.customer);
   const what = (b: Booking): string => {
     const service = settings.services.find((s) => s.id === b.serviceId);
     return [service ? serviceName(service, lang) : "", b.startMs !== undefined ? formatSlot(b.startMs, tz, lang) : ""].filter(Boolean).join(", ");
@@ -193,6 +197,8 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
   const action = (kind: string, b: Booking, fields: CardAction["fields"]): CardAction => ({ kind, skill: "bookings", case: b.id, fields: { who: whoOf(b), ...fields } });
 
   function prepare(p: Proposal): Prepared {
+    const guest = prepareGuestMessage(p, { skill: "bookings", channel: store.channel, language: lang, optedOut: deps.optedOut }); // a chat guest ("g-3") has no case: only a message to them
+    if (guest) return guest;
     const b = store.bookings.get(p.case);
     if (!b) return { ok: false, why: "no_case" };
     if (p.kind === "answer") {
@@ -250,7 +256,7 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
   return {
     name: "bookings",
     routing: {
-      refs: /^b-\d{1,6}$/u,
+      refs: /^[bg]-\d{1,6}$/u,
       buttonPrefixes: ["svc:", "slot:", "yes", "no", "cancel", "keep", "owner", "menu", "paid"],
       words: ROUTING_WORDS,
       liveCaseOf: (phone) => latestBooking(store, phone, LIVE_STATES)?.id,
