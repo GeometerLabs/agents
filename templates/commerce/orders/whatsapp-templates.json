@@ -2104,6 +2104,262 @@
     ]
   },
   {
+    "name": "plan_renewal",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपका {{1}} प्लान {{2}} से नवीनीकृत हो रहा है। राशि {{3}} (प्लान की कीमत {{4}})। कृपया {{5}} तक भुगतान करें: {{6}}। धन्यवाद।",
+        "example": {
+          "body_text": [
+            [
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर",
+              "₹120",
+              "₹240",
+              "बुधवार, 11 नवंबर, रात 8:00 बजे",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_renewal",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Your {{1}} plan renews from {{2}}. Amount {{3}} (plan price {{4}}). Please pay by {{5}}: {{6}}. Thank you.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "Thu 12 Nov",
+              "₹120",
+              "₹240",
+              "Wed 11 Nov, 8:00 pm",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_renewal",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} പ്ലാൻ {{2}} മുതൽ പുതുക്കുന്നു. തുക {{3}} (പ്ലാൻ വില {{4}}). ദയവായി {{5}}-നകം പണമടയ്ക്കൂ: {{6}}. നന്ദി.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ",
+              "₹120",
+              "₹240",
+              "ബുധൻ, 11 നവംബർ, രാത്രി 8:00",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_renewal",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ಪ್ಲಾನ್ {{2}} ರಿಂದ ನವೀಕರಣವಾಗುತ್ತಿದೆ. ಮೊತ್ತ {{3}} (ಪ್ಲಾನ್ ಬೆಲೆ {{4}}). ದಯವಿಟ್ಟು {{5}} ರೊಳಗೆ ಪಾವತಿಸಿ: {{6}}. ಧನ್ಯವಾದ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್",
+              "₹120",
+              "₹240",
+              "ಬುಧವಾರ, 11 ನವೆಂಬರ್, ರಾತ್ರಿ 8:00",
+              "https://rzp.io/i/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_pause_done",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपका {{1}} प्लान {{2}} से रोक दिया गया है। तब से कोई भोजन नहीं भेजा जाएगा, और रुके हुए दिन महीने के अंत में क्रेडिट गिने जाएंगे। फिर शुरू करने के लिए दिन के साथ \"resume\" लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "2 × वेज थाली",
+              "गुरुवार, 12 नवंबर"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_pause_done",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Your {{1}} plan is paused from {{2}}. No meals are sent from then, and the paused days are counted as credit at the end of the month. Write \"resume\" with a day to start again.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "Thu 12 Nov"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_pause_done",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ {{1}} പ്ലാൻ {{2}} മുതൽ നിർത്തിവച്ചു. അന്നുമുതൽ ഭക്ഷണം അയയ്ക്കില്ല, നിർത്തിയ ദിവസങ്ങൾ മാസാവസാനം ക്രെഡിറ്റായി കണക്കാക്കും. വീണ്ടും തുടങ്ങാൻ ഒരു ദിവസത്തോടൊപ്പം \"resume\" എഴുതൂ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "വ്യാഴം, 12 നവംബർ"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_pause_done",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ {{1}} ಪ್ಲಾನ್ ಅನ್ನು {{2}} ರಿಂದ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಅಂದಿನಿಂದ ಊಟ ಕಳುಹಿಸುವುದಿಲ್ಲ, ನಿಲ್ಲಿಸಿದ ದಿನಗಳನ್ನು ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಕ್ರೆಡಿಟ್ ಎಂದು ಎಣಿಸಲಾಗುತ್ತದೆ. ಮತ್ತೆ ಶುರು ಮಾಡಲು ಒಂದು ದಿನದ ಜೊತೆ \"resume\" ಎಂದು ಬರೆಯಿರಿ.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_skip_done",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "छोड़ दिया गया: {{1}} को {{2}} भोजन नहीं भेजा जाएगा। यह महीने के अंत में क्रेडिट गिना जाएगा।",
+        "example": {
+          "body_text": [
+            [
+              "गुरुवार, 12 नवंबर",
+              "2 × वेज थाली"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_skip_done",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Skipped: no {{1}} meal on {{2}}. It is counted as credit at the end of the month.",
+        "example": {
+          "body_text": [
+            [
+              "2 × veg thali",
+              "Thu 12 Nov"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_skip_done",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഒഴിവാക്കി: {{1}}-ന് {{2}} ഭക്ഷണം അയയ്ക്കില്ല. അത് മാസാവസാനം ക്രെഡിറ്റായി കണക്കാക്കും.",
+        "example": {
+          "body_text": [
+            [
+              "വ്യാഴം, 12 നവംബർ",
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "plan_skip_done",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಬಿಟ್ಟಿದೆ: {{1}} ರಂದು {{2}} ಊಟ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಅದನ್ನು ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಕ್ರೆಡಿಟ್ ಎಂದು ಎಣಿಸಲಾಗುತ್ತದೆ.",
+        "example": {
+          "body_text": [
+            [
+              "ಗುರುವಾರ, 12 ನವೆಂಬರ್",
+              "2 × veg thali"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "owner_order_service_paused",
     "language": "hi",
     "category": "UTILITY",

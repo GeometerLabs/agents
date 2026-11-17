@@ -22,7 +22,7 @@ import { cutAt, day, how, inr, need, render, when } from "./templates.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "items" | "when" | "day" | "cutoff" | "how" | "address" | "total" | "advance" | "balance" | "refund" | "marked" | "left" | "ref" | "phone" | "code" | "hours" | "upiCode" | "window" | "partner" | "upcoming";
+export type Slot = "business" | "items" | "when" | "day" | "cutoff" | "how" | "address" | "total" | "advance" | "balance" | "refund" | "marked" | "left" | "ref" | "phone" | "code" | "hours" | "upiCode" | "window" | "partner" | "upcoming" | "link";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   items: (f) => need(f, "itemsText"),
@@ -45,10 +45,11 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   window: (f) => String(need(f, "windowHours")),
   partner: (f) => need(f, "partner"),
   upcoming: (f) => String(need(f, "upcomingCount")),
+  link: (f) => need(f, "link"),
 };
 
 /** The stand-in values a message is written once with, and the slot each becomes. Each is unlike anything a template says on its own. */
-const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", items: "§items§", address: "§address§", ref: "§ref§", phone: "§phone§", code: "§code§", upiCode: "§upicode§", partner: "§partner§" };
+const STAND_IN_TEXT: Partial<Record<Slot, string>> = { business: "§business§", items: "§items§", address: "§address§", ref: "§ref§", phone: "§phone§", code: "§code§", upiCode: "§upicode§", partner: "§partner§", link: "§link§" };
 const STAND_IN_AMOUNT: Partial<Record<Slot, number>> = { total: 7_000_001, advance: 7_000_002, balance: 7_000_003, refund: 7_000_004, marked: 7_000_005, left: 7_000_006 };
 const STAND_IN_DAY_MS = Date.UTC(2030, 5, 14, 0, 0); // a date no message of ours would state (Fri 14 Jun 2030)
 const STAND_IN_FROM_MS = Date.UTC(2030, 5, 14, 10, 17);
@@ -59,7 +60,7 @@ const STAND_IN_COUNT: Partial<Record<Slot, number>> = { hours: 7_000_009, window
 function standInFacts(language: Language, mode: "pickup" | "delivery"): MessageFacts {
   return {
     language, timeZone: "UTC", businessName: STAND_IN_TEXT.business!, menu: [],
-    itemsText: STAND_IN_TEXT.items, address: STAND_IN_TEXT.address, orderRef: STAND_IN_TEXT.ref, customerPhone: STAND_IN_TEXT.phone, approvalCode: STAND_IN_TEXT.code, upiCode: STAND_IN_TEXT.upiCode, partner: STAND_IN_TEXT.partner,
+    itemsText: STAND_IN_TEXT.items, address: STAND_IN_TEXT.address, orderRef: STAND_IN_TEXT.ref, customerPhone: STAND_IN_TEXT.phone, approvalCode: STAND_IN_TEXT.code, upiCode: STAND_IN_TEXT.upiCode, partner: STAND_IN_TEXT.partner, link: STAND_IN_TEXT.link,
     totalInr: STAND_IN_AMOUNT.total, advanceInr: STAND_IN_AMOUNT.advance, balanceInr: STAND_IN_AMOUNT.balance, refundInr: STAND_IN_AMOUNT.refund, markedInr: STAND_IN_AMOUNT.marked, leftInr: STAND_IN_AMOUNT.left,
     dateMs: STAND_IN_DAY_MS, slotFromMs: STAND_IN_FROM_MS, slotToMs: STAND_IN_TO_MS, cutoffMs: STAND_IN_CUTOFF_MS,
     mode, area: "§area§",
@@ -120,6 +121,10 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   // 17 Nov 2026: the reminder before the slot goes out unasked, so usually in a closed window. One template, the pickup wording: a delivery reminder names the place, so it
   // does not fill this body and goes as the generic name (the same as a delivery's customer confirmation, see above and Deferred.md). The catalogue is keyed by the message.
   template("order_reminder", "order_reminder", "customer"),
+  // 17 Nov 2026, monthly plans: the renewal's payment request (unasked, the month's end), and the pause and the skip (the customer's own words, so usually inside the window)
+  template("plan_renewal", "plan_renewal", "customer"),
+  template("plan_pause_done", "plan_pause_done", "customer"),
+  template("plan_skip_done", "plan_skip_done", "customer"),
   // the licence's service notices to the owner (B13): the one plain notice at the wind-down and at the final stop
   template("owner_order_service_paused", "owner_licence_paused", "owner"),
   template("owner_order_service_stopped", "owner_licence_stopped", "owner"),
@@ -149,6 +154,7 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     mode: "pickup", area: settings.delivery?.area[0] ?? "Kakkanad", address: "Flat 4, Lake View Apartments, Kakkanad",
     link: "https://rzp.io/i/example", orderRef: "o-3", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1, upiCode: "P4XR9T", payee: settings.name, windowHours: settings.cancellation.windowHours,
     partner: "Divya, Sri Sai Digital", upcomingCount: 4,
+    plan: { meals: 22, fromMs: at("00:00"), toMs: at("00:00", { year: 2026, month: 12, day: 11 }) },
   };
 }
 

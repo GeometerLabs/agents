@@ -29,6 +29,7 @@ The hand check prints `Held N of M. K failed. J not tested.`, a line for each si
 - **The quote.** The items, the day and the window, the total, the advance and the link (UPI: the UPI ID, a QR picture, and "the owner confirms"). The order is held for `advance.holdMinutes` and **never past the cut-off**.
 - **Confirmed** only when the payment record shows the whole advance. "I have paid" in words, a button or a screenshot confirms nothing; on a UPI shop it asks the owner to look.
 - **Cancel.** Inside the window the advance goes back (Razorpay: through Guard; above the refund limit Guard holds it for the owner; UPI: the owner owes it and the customer hears "sent" only after the owner marks it). Outside the window the owner decides.
+- **Monthly plans (17 Nov 2026, a shop with a `plans` block in its settings).** "I want the monthly lunch plan": a month of meals paid in advance the shop's usual way; then skip a day, pause, resume or cancel before each day's cut-off, and a renewal link at month end (no automatic debit). The days not taken are carried to the next payment or refunded, by the shop's rule. See Explanation.md, "Monthly plans", and `settings/annapurna-tiffins-plans.example.json`.
 - **STOP** ends every message.
 
 ## What the owner sees

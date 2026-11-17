@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a food s
 
 Amounts are always written as ₹1,200 with Western digits; items, quantities, days, times, places and links are filled in from the shop's record, never translated.
 
-## 1. Messages to the customer (60)
+## 1. Messages to the customer (76)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -72,8 +72,24 @@ Amounts are always written as ₹1,200 with Western digits; items, quantities, d
 | `upi_refund_sent` | UPI shop: the owner marked the refund sent (only then is the customer told) | ಆರ್ಡರ್ o-3 ರ ನಿಮ್ಮ ₹120 ರೀಫಂಡ್ ಅನ್ನು UPI ಮೂಲಕ ಕಳುಹಿಸಲಾಗಿದೆ ಎಂದು ಮಾಲೀಕರು ದಾಖಲಿಸಿದ್ದಾರೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ UPI ಆ್ಯಪ್ ನೋಡಿ. | The owner has marked your ₹120 refund for order o-3 as sent by UPI. Please check your UPI app. |  |
 | `orders_paused` | The shop's licence is in its wind-down: the answer to a customer who asks to order. No order, no link, nothing kept for later | ಆನ್‌ಲೈನ್ ಆರ್ಡರ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ದಯವಿಟ್ಟು ನೇರವಾಗಿ Annapurna Tiffins ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Online ordering is paused for now. Please contact Annapurna Tiffins directly. |  |
 | `wait_over` | The shop's system did not answer for 15 minutes from the message (a Guard was down) and the request was not finished: the customer is told so, that the message is on the owner's to-do list, and to write again later or contact the shop. Nothing else is promised | ಕ್ಷಮಿಸಿ, ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಲು ಆಗಲಿಲ್ಲ: ಆರ್ಡರ್ ವ್ಯವಸ್ಥೆ ಈಗ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತಿಲ್ಲ. ನಿಮ್ಮ ಸಂದೇಶ ಮಾಲೀಕರ ಮಾಡಬೇಕಾದ ಕೆಲಸಗಳ ಪಟ್ಟಿಯಲ್ಲಿದೆ. ದಯವಿಟ್ಟು ನಂತರ ಮತ್ತೆ ಬರೆಯಿರಿ, ಅಥವಾ ನೇರವಾಗಿ Annapurna Tiffins ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Sorry, I could not finish your request: the ordering system is not answering just now. Your message is on the owner's to-do list. Please write again later, or contact Annapurna Tiffins directly. |  |
+| `plan_choose` | A customer asks for a monthly plan and the shop has more than one: the plans with their prices, to choose by name | ಯಾವ ಪ್ಲಾನ್ ಬೇಕು? 2 × veg thali. ದಯವಿಟ್ಟು ಅದರ ಹೆಸರು ಬರೆಯಿರಿ. | Which plan would you like? 2 × veg thali. Please write its name. |  |
+| `plan_quote` | A monthly plan is held: the meals, the first and last day, the month's price and the payment link (a UPI shop: with the UPI ID, and the owner confirms) | ನಿಮ್ಮ 2 × veg thali ಪ್ಲಾನ್: ಗುರುವಾರ, 12 ನವೆಂಬರ್ ರಿಂದ ಶುಕ್ರವಾರ, 11 ಡಿಸೆಂಬರ್ ವರೆಗೆ 22 ಊಟ, ತಿಂಗಳಿಗೆ ₹120. ಇಲ್ಲಿ ಪಾವತಿಸಿ: https://rzp.io/i/example. ಪಾವತಿ ದಾಖಲಾದ ಮೇಲೆ ಪ್ಲಾನ್ ಶುರುವಾಗುತ್ತದೆ. | Your 2 × veg thali plan: 22 meals from Thu 12 Nov to Fri 11 Dec, ₹120 for the month. Pay here: https://rzp.io/i/example. Your plan starts when the payment is recorded. |  |
+| `plan_active` | The plan's payment is recorded: the meals owed, the month, and when a day closes for skipping or pausing | ನಿಮ್ಮ 2 × veg thali ಪ್ಲಾನ್ ಶುರುವಾಗಿದೆ: ಗುರುವಾರ, 12 ನವೆಂಬರ್ ರಿಂದ ಶುಕ್ರವಾರ, 11 ಡಿಸೆಂಬರ್ ವರೆಗೆ 22 ಊಟ. ಒಂದು ದಿನದ ಕೊನೆಯ ಸಮಯದವರೆಗೆ ಅದನ್ನು ಬಿಡಬಹುದು ಅಥವಾ ನಿಲ್ಲಿಸಬಹುದು (ಗುರುವಾರ, 12 ನವೆಂಬರ್ ಗೆ: ಬುಧವಾರ, 11 ನವೆಂಬರ್, ರಾತ್ರಿ 8:00), ನಿಲ್ಲಿಸಲು "cancel plan" ಎಂದು ಬರೆಯಿರಿ. | Your 2 × veg thali plan is on: 22 meals from Thu 12 Nov to Fri 11 Dec. You can skip a day or pause until its cut-off (for Thu 12 Nov: Wed 11 Nov, 8:00 pm), and write "cancel plan" to stop. |  |
+| `plan_full` | The slot has no place left for the plan's days: the plan is not started | ಕ್ಷಮಿಸಿ, ನೀವು ಕೇಳಿದ ದಿನಗಳಿಗೆ 2 × veg thali ಸ್ಲಾಟ್ ತುಂಬಿದೆ, ಆದ್ದರಿಂದ ಪ್ಲಾನ್ ಶುರು ಮಾಡಲಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮಾಲೀಕರೊಂದಿಗೆ ಮಾತನಾಡಿ. | Sorry, the 2 × veg thali slot is full for the days you asked, so I could not start your plan. Please talk to the owner. |  |
+| `plan_none` | A customer asks about a plan and has none | ನಿಮಗೆ ಇನ್ನೂ ನಮ್ಮಲ್ಲಿ ಪ್ಲಾನ್ ಇಲ್ಲ. ಶುರು ಮಾಡಲು "monthly plan" ಎಂದು ಬರೆಯಿರಿ. | You have no plan with us yet. Write "monthly plan" to start one. |  |
+| `plan_pause_done` | The customer paused the plan from a day: no meals from then, the paused days count as credit at the end of the month | ನಿಮ್ಮ 2 × veg thali ಪ್ಲಾನ್ ಅನ್ನು ಗುರುವಾರ, 12 ನವೆಂಬರ್ ರಿಂದ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಅಂದಿನಿಂದ ಊಟ ಕಳುಹಿಸುವುದಿಲ್ಲ, ನಿಲ್ಲಿಸಿದ ದಿನಗಳನ್ನು ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಕ್ರೆಡಿಟ್ ಎಂದು ಎಣಿಸಲಾಗುತ್ತದೆ. ಮತ್ತೆ ಶುರು ಮಾಡಲು ಒಂದು ದಿನದ ಜೊತೆ "resume" ಎಂದು ಬರೆಯಿರಿ. | Your 2 × veg thali plan is paused from Thu 12 Nov. No meals are sent from then, and the paused days are counted as credit at the end of the month. Write "resume" with a day to start again. |  |
+| `plan_skip_done` | The customer skipped one meal day before its cut-off: it counts as credit at the end of the month | ಬಿಟ್ಟಿದೆ: ಗುರುವಾರ, 12 ನವೆಂಬರ್ ರಂದು 2 × veg thali ಊಟ ಕಳುಹಿಸುವುದಿಲ್ಲ. ಅದನ್ನು ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ಕ್ರೆಡಿಟ್ ಎಂದು ಎಣಿಸಲಾಗುತ್ತದೆ. | Skipped: no 2 × veg thali meal on Thu 12 Nov. It is counted as credit at the end of the month. |  |
+| `plan_resume_done` | The customer resumed a paused plan from a day | ನಿಮ್ಮ 2 × veg thali ಪ್ಲಾನ್ ಗುರುವಾರ, 12 ನವೆಂಬರ್ ರಿಂದ ಮತ್ತೆ ಶುರುವಾಗುತ್ತದೆ. | Your 2 × veg thali plan starts again from Thu 12 Nov. |  |
+| `plan_cutoff_refused` | A pause, skip or resume came after that day's cut-off: refused, with the cut-off time | ಕ್ಷಮಿಸಿ, ಗುರುವಾರ, 12 ನವೆಂಬರ್ ಗೆ ಈಗ ತಡವಾಗಿದೆ: ಆ ದಿನ ಬುಧವಾರ, 11 ನವೆಂಬರ್, ರಾತ್ರಿ 8:00 ಕ್ಕೆ ಮುಚ್ಚಿದೆ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | Sorry, it is too late for Thu 12 Nov: that day closed at Wed 11 Nov, 8:00 pm. Nothing was changed. |  |
+| `plan_no_meal` | A skip, pause or resume for a day with no meal, or one already skipped or paused | ಗುರುವಾರ, 12 ನವೆಂಬರ್ ರಂದು ನಿಮ್ಮ 2 × veg thali ಪ್ಲಾನ್‌ನಲ್ಲಿ ಊಟ ಇಲ್ಲ, ಅಥವಾ ಅದನ್ನು ಈಗಾಗಲೇ ಬಿಡಲಾಗಿದೆ ಅಥವಾ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ. | There is no meal of your 2 × veg thali plan on Thu 12 Nov, or it is already skipped or paused. Nothing was changed. |  |
+| `plan_cancelled` | The customer cancelled the plan: no meal is sent or charged after the days already closed | ನಿಮ್ಮ 2 × veg thali ಪ್ಲಾನ್ ರದ್ದಾಗಿದೆ. ಈಗಾಗಲೇ ಮುಚ್ಚಿದ ದಿನಗಳ ನಂತರ ಊಟ ಕಳುಹಿಸುವುದಿಲ್ಲ, ಹಣವನ್ನೂ ಪಡೆಯುವುದಿಲ್ಲ. | Your 2 × veg thali plan is cancelled. No meal is sent or charged for the days after the ones already closed. |  |
+| `plan_renewal` | The month's end: the next month's payment request with the amount (after any credit), the plan price, the pay-by time and the link; no automatic debit | ನಿಮ್ಮ 2 × veg thali ಪ್ಲಾನ್ ಗುರುವಾರ, 12 ನವೆಂಬರ್ ರಿಂದ ನವೀಕರಣವಾಗುತ್ತಿದೆ. ಮೊತ್ತ ₹120 (ಪ್ಲಾನ್ ಬೆಲೆ ₹240). ದಯವಿಟ್ಟು ಬುಧವಾರ, 11 ನವೆಂಬರ್, ರಾತ್ರಿ 8:00 ರೊಳಗೆ ಪಾವತಿಸಿ: https://rzp.io/i/example. ಧನ್ಯವಾದ. | Your 2 × veg thali plan renews from Thu 12 Nov. Amount ₹120 (plan price ₹240). Please pay by Wed 11 Nov, 8:00 pm: https://rzp.io/i/example. Thank you. |  |
+| `plan_lapsed` | The renewal was not paid before its first meal closed: the plan has stopped, nothing is charged | ನಿಮ್ಮ 2 × veg thali ಪ್ಲಾನ್ ಸಮಯಕ್ಕೆ ನವೀಕರಣವಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ನಿಂತಿದೆ. ಮತ್ತೆ ಶುರು ಮಾಡಲು "monthly plan" ಎಂದು ಬರೆಯಿರಿ. | Your 2 × veg thali plan was not renewed in time, so it has stopped. Write "monthly plan" to start again. |  |
+| `plan_hold_expired` | The first payment of a plan did not come in time: the plan was not started | ನಿಮ್ಮ 2 × veg thali ಪ್ಲಾನ್‌ನ ಕಾಯ್ದಿರಿಸುವಿಕೆ ಮುಗಿದಿದೆ, ಏಕೆಂದರೆ ಪಾವತಿ ಸಮಯಕ್ಕೆ ಬರಲಿಲ್ಲ. ಮತ್ತೆ ಶುರು ಮಾಡಲು "monthly plan" ಎಂದು ಬರೆಯಿರಿ. | The hold on your 2 × veg thali plan has ended because the payment was not received in time. Write "monthly plan" to start again. |  |
+| `plan_credit_refund` | Days of a plan not taken (or unused when it ended) are refunded | ನಿಮ್ಮ 2 × veg thali ಪ್ಲಾನ್‌ನಲ್ಲಿ ಬಳಸದ ₹120 ನಿಮಗೆ ಮರಳಿಸಲಾಗುತ್ತಿದೆ. | ₹120 of your 2 × veg thali plan that was not used is being refunded. |  |
+| `plan_credit_refund_pending` | The same refund is above the refund limit: waiting for the owner | ನಿಮ್ಮ 2 × veg thali ಪ್ಲಾನ್‌ನ ₹120 ರೀಫಂಡ್ ಅನ್ನು ಮಾಲೀಕರು ಶೀಘ್ರದಲ್ಲೇ ಖಚಿತಪಡಿಸುತ್ತಾರೆ. | The owner will confirm your ₹120 refund for your 2 × veg thali plan shortly. |  |
 
-## 2. Messages to the owner (39)
+## 2. Messages to the owner (41)
 
 Most owner messages are also WhatsApp templates, because they are sent by the agent on its own and WhatsApp then carries only an approved template. Meta approves the wording once, so the wording here is what is submitted.
 
@@ -118,6 +134,8 @@ Most owner messages are also WhatsApp templates, because they are sent by the ag
 | `owner_upi_refund_kept` | UPI shop: the owner kept the money for an order they take by hand | ಸರಿ. ಆರ್ಡರ್ o-3 ರ ₹120 ಅನ್ನು ನೀವೇ ತೆಗೆದುಕೊಳ್ಳುವ ಆರ್ಡರ್‌ಗಾಗಿ ಇಡಲಾಗಿದೆ. ಇನ್ನು ಏನನ್ನೂ ಮರಳಿ ಕೊಡಬೇಕಿಲ್ಲ. | Okay. The ₹120 for order o-3 is kept for an order you take by hand. Nothing more is owed back. |  |
 | `owner_licence_paused` | The one notice to the owner when the licence winds down: online ordering is paused, who to contact. Never about money | ಸೂಚನೆ: Annapurna Tiffins-ನ ಆನ್‌ಲೈನ್ ಆರ್ಡರ್ ಸದ್ಯಕ್ಕೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಈಗಿರುವ ಆರ್ಡರ್‌ಗಳು, ರದ್ದತಿಗಳು ಮತ್ತು ರೀಫಂಡ್‌ಗಳು ಮುಂದುವರಿಯುತ್ತವೆ. ಈ ಬಗ್ಗೆ ದಯವಿಟ್ಟು Divya, Sri Sai Digital ಅವರನ್ನು ಸಂಪರ್ಕಿಸಿ. | Notice: online ordering for Annapurna Tiffins is paused for now. Existing orders, cancellations and refunds still go through. Please contact Divya, Sri Sai Digital. |  |
 | `owner_licence_stopped` | The one notice to the owner at the licence's final stop: the partner's service has ended, what is still open, and that hello@geometer.dev will connect the owner with another local partner | ಸೂಚನೆ: Annapurna Tiffins-ನ ಆನ್‌ಲೈನ್ ಆರ್ಡರ್ ನಿಂತಿದೆ, ಏಕೆಂದರೆ Divya, Sri Sai Digital ನೀಡುತ್ತಿದ್ದ ಸೇವೆ ಮುಗಿದಿದೆ. ಮುಂದಿನ ಆರ್ಡರ್‌ಗಳು: 4. ಇನ್ನೊಬ್ಬ ಸ್ಥಳೀಯ ಪಾರ್ಟ್ನರ್ ಜೊತೆ ಇದನ್ನು ಮುಂದುವರಿಸಲು hello@geometer.dev ವಿಳಾಸಕ್ಕೆ ಬರೆಯಿರಿ, Geometer ನಿಮ್ಮನ್ನು ಜೋಡಿಸುತ್ತದೆ. | Notice: online ordering for Annapurna Tiffins has stopped, because the service from Divya, Sri Sai Digital has ended. Orders still to come: 4. To keep it running with another local partner, write to hello@geometer.dev and Geometer will connect you. |  |
+| `owner_plan_started` | To the owner: a new monthly plan is paid, with its meals, month and way (pickup or delivery) | ಹೊಸ ತಿಂಗಳ ಪ್ಲಾನ್ o-3: +919811111111, 2 × veg thali, ಗುರುವಾರ, 12 ನವೆಂಬರ್ ರಿಂದ ಶುಕ್ರವಾರ, 11 ಡಿಸೆಂಬರ್ ವರೆಗೆ 22 ಊಟ, ಪಿಕಪ್. | New monthly plan o-3: +919811111111, 2 × veg thali, 22 meals from Thu 12 Nov to Fri 11 Dec, pickup. |  |
+| `owner_plan_cancelled` | To the owner: a plan was cancelled, so no meals are to be made for the days after it | ಪ್ಲಾನ್ o-3 (2 × veg thali, +919811111111) ರದ್ದಾಗಿದೆ. ರದ್ದತಿಯ ನಂತರದ ದಿನಗಳಿಗೆ ಊಟ ಮಾಡಬೇಡಿ. | Plan o-3 (2 × veg thali, +919811111111) is cancelled. Do not make meals for the days after the cancellation. |  |
 
 ### The words on the buttons and the lists
 
@@ -189,6 +207,12 @@ Words in Latin letters are how people type the language on WhatsApp. They are li
 | I have paid (a claim; checked against the payment record, never believed on its own) | paid, I have paid | ಪಾವತಿಸಿದ್ದೇನೆ · ಪಾವತಿಸಿದೆ · ಹಣ ಕಳುಹಿಸಿದ್ದೇನೆ · ಪಾವತಿ ಮಾಡಿದ್ದೇನೆ — Latin letters: paid · i paid · i have paid · have paid · payment done · payment made · sent the money · money sent · transferred · paid it · advance paid · bhar diya · pay kar diya · payment kar diya · paid kar diya · de diya · paise bhej diye · adachu · payment cheythu · paid aanu · paavatisiddene · payment madide |  |
 | money back | refund, money back | ರೀಫಂಡ್ · ಮರುಪಾವತಿ · ವಾಪಸ್ — Latin letters: refund · refunded · money back · give back · return my money · get back my money · paise wapas · wapas |  |
 | talk to the owner | owner, talk to | ಮಾಲೀಕ · ಮಾತನಾಡ · ಕರೆ ಮಾಡಿ — Latin letters: owner · talk to · call me · speak to · manager · malik |  |
+| a monthly plan (a shop with plans): the word for a plan, and for starting one | plan, monthly, subscribe, want | ಪ್ಲಾನ್ · ತಿಂಗಳ · ಬೇಕು · ಶುರು · ಸೇರಬೇಕು — Latin letters: plan · monthly · subscription · subscribe · monthly meals · plan chahiye · subscribe · join · start · want · need · take · get |  |
+| a plan: skip a day | skip | ಸ್ಕಿಪ್ · ಬಿಟ್ಟು · ಬೇಡ — Latin letters: skip · no meal · don't send · dont send |  |
+| a plan: pause from a day | pause, hold | ಪಾಸ್ · ನಿಲ್ಲಿಸಿ · ನಿಲ್ಲಿಸ — Latin letters: pause · hold · break |  |
+| a plan: resume from a day | resume, restart | ಮತ್ತೆ ಶುರು · ಮುಂದುವರಿ — Latin letters: resume · restart · continue · start again |  |
+| a plan: cancel it (with the word for a plan) | cancel, stop, end | ರದ್ದು · ನಿಲ್ಲಿಸು — Latin letters: cancel · end · stop · unsubscribe · close |  |
+| a plan: my plan | my plan | ನನ್ನ ಪ್ಲಾನ್ — Latin letters: my plan · my subscription · plan status |  |
 | a quantity in words (one to ten in English and Hindi, one to five in Malayalam and Kannada) | one, two, three | ಒಂದು · ಎರಡು · ಮೂರು · ನಾಲ್ಕು · ಐದು — Latin letters: one · two · three · four · five · six · seven · eight · nine · ten · ek · teen · char · chaar · paanch · panch · chhe · chhah · saat · aath · nau · das · onnu · randu · moonnu · munnu · naalu · anchu · ondu · eradu · mooru · naalku · aidu |  |
 | yes (exact) | yes | ಹೌದು · ಸರಿ · ಸರಿಯಾಗಿದೆ · ಓಕೆ · ಒಪ್ಪಿಗೆ · ಆಯ್ತು · ಆಗಲಿ · houdu · sari · aytu · ayithu · agali |  |
 | no (exact) | no | ಬೇಡ · ಇಲ್ಲ · ಅಲ್ಲ · beda · illa · alla |  |
@@ -215,6 +239,21 @@ The shop's own item names and its slot names ("lunch", "dinner") are the shop's 
 | ಮೆಸೇಜ್ ನಿಲ್ಲಿಸಿ | Stop the messages | stop |  |
 
 ## 6. The monthly report
+
+### The monthly plans' lines (a shop with plans only)
+
+| Where | Wording | Native reviewer: OK / change to … |
+| --- | --- | --- |
+| heading | ತಿಂಗಳ ಪ್ಲಾನ್‌ಗಳು |  |
+| active | ತಿಂಗಳ ಕೊನೆಯಲ್ಲಿ ನಡೆಯುತ್ತಿರುವ ಪ್ಲಾನ್‌ಗಳು |  |
+| started | ಶುರುವಾದ ಪ್ಲಾನ್‌ಗಳು |  |
+| renewals | ಪಾವತಿಸಿದ ನವೀಕರಣಗಳು |  |
+| meals | ಕಳುಹಿಸಿದ ಊಟ |  |
+| creditDays | ತೆಗೆದುಕೊಳ್ಳದ ಊಟದ ದಿನಗಳು (ಕ್ರೆಡಿಟ್) |  |
+| carried | ಮುಂದಿನ ಪಾವತಿಗೆ ಒಯ್ದ ಕ್ರೆಡಿಟ್ |  |
+| refunded | ಮರಳಿಸಿದ ಕ್ರೆಡಿಟ್ |  |
+| cancelled | ರದ್ದಾದ ಪ್ಲಾನ್‌ಗಳು |  |
+| lapsed | ಸಮಯಕ್ಕೆ ಪಾವತಿಸದ ನವೀಕರಣಗಳು |  |
 
 The owner's monthly text is five short lines of "label: number". Every number, amount and date is counted from the record and written by the same formatters as the messages; only the words around them are below.
 
