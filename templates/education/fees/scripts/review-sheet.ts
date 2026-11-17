@@ -64,6 +64,7 @@ const WHEN: Record<TemplateId, string> = {
   fee_claim_partial: "The parent said they paid, and the payment record shows only part of it",
   fee_claim_not_found: "The parent said they paid, and the payment record shows nothing yet (the owner is told as well)",
   fee_nothing_due: "The parent writes, and nothing is owed for any of their children",
+  fee_chat_public: "Someone writes in the chat on the centre's page and nothing could answer them (the talk is off or said nothing): the chat is for questions about the centre; a child's fees are on their private page",
   fee_waiver_asked: "The parent asked to take money off the fee, above what the agent may take off alone: the owner has been asked",
   fee_waiver_applied: "A waiver was done (within the limit, or the owner said yes): the new amount, with a new link",
   fee_waiver_cleared: "A waiver was done and it covers what was left: nothing more is due",

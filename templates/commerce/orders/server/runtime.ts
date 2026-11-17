@@ -26,7 +26,7 @@ import { ordersSkill } from "../src/assistant.ts";
 import type { DurableStore } from "./store.ts";
 import type { OwnerSignin } from "../../../../modules/channels/owner-signin.ts";
 import { channelMessaging } from "../../../../modules/channels/outbox.ts";
-import { isChannelConversation } from "../../../../modules/channels/conversation.ts";
+import { isChannelConversation, isChatConversation } from "../../../../modules/channels/conversation.ts";
 import { compactChannel, emptyChannelState } from "../../../../modules/channels/state.ts";
 import { createAudioDrop } from "../../../../modules/channels/owner-audio.ts";
 import type { CharacterPictures } from "../../../../modules/assistant/character.ts";
@@ -147,7 +147,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       }
       // a channel conversation is one order's: once that order is over and its request gone, its customer entry (its language) has nothing left to serve
       for (const conversation of [...store.customers.keys()]) {
-        if (!isChannelConversation(conversation) || Object.values(store.channel?.requests ?? {}).some((r) => r.booking !== undefined && store.orders.get(r.booking)?.customer === conversation)) continue;
+        if (!isChannelConversation(conversation) || isChatConversation(conversation) || Object.values(store.channel?.requests ?? {}).some((r) => r.booking !== undefined && store.orders.get(r.booking)?.customer === conversation)) continue;
         store.customers.delete(conversation);
         changed++;
       }

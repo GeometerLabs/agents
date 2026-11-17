@@ -7,6 +7,7 @@
 // "paid" is only ever reached through confirmed read-backs in the record: the agent moves a fee there after it has read the payments service's own list of
 // payments on the fee's links. It is never reached from what a parent says. And it is final: a refund after it does not open the fee again, so no reminder
 // comes after a payment, for any reason.
+import type { ChannelState } from "../../../../modules/channels/state.ts";
 import { formatDate, MONTH_NAMES } from "../../../../modules/language/format.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { localParts } from "../../../../modules/core/time.ts";
@@ -148,6 +149,8 @@ export interface Store {
   parentLinks?: Record<string, ParentLink>;
   /** Item 11h: the confirmation pages parents' presses made, by their handles' hashes. Left out until the first one. */
   confirmations?: Record<string, FeeConfirmation>;
+  /** W1: the chat on the centre's page (modules/channels/chat.ts): its guests' threads and the shop's messages to them. Left out until a guest first writes. Public questions only: a parent's own fees stay on their private page. */
+  channel?: ChannelState;
   /** Classes (src/classes/): the class links, the sessions, the consent answers and the doubts. Left out until the first class is touched, and for a centre without Classes. */
   classes?: ClassesState;
 }
