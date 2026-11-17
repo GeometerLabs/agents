@@ -112,6 +112,8 @@ export interface AgentDeps {
   terms?: () => TermsFile | undefined;
   /** Item 11e: how the shop's assistant reads the owner's words (modules/assistant/reading.ts). Left out: the rules alone. The assistant is on only with an "assistant" settings block. */
   ownerParser?: OwnerParser;
+  /** Block M: the shop's talk model (modules/understanding/talk.ts). Left out: no talk. */
+  talker?: import("../../../../modules/understanding/talk.ts").TalkModel;
   /**
    * Items 11d, 11e and 11h: a recording the owner made on their page, by the reference its owner_message carries; the runtime holds the audio in memory only
    * (modules/channels/owner-audio.ts). Left out: no recording is ever found, and the owner is asked to type.
@@ -1332,7 +1334,7 @@ export function createAgent(deps: AgentDeps): Agent {
   // On only when the settings have an "assistant" block. Orders is its one skill here; answering what waits is the owner's own fixed reply (src/assistant.ts).
   const assistant = assistantForAgent({
     settings, store, skill: ordersSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg) }),
-    clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
+    clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}), ...(deps.talker ? { talker: deps.talker } : {}),
     // the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out
     ...(deps.voice ? { hearing: { hear: createListener({ voice: deps.voice, reader, isCommander: () => false, optedOut: () => false }) } } : {}),
     log: (caseId, phone, action, outcome, inputs, more) => log(caseId ? store.orders.get(caseId) ?? null : null, phone, action, outcome, inputs, more),

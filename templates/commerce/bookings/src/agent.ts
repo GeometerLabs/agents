@@ -134,6 +134,8 @@ export interface AgentDeps {
    * The assistant itself is on only when the settings have an "assistant" block.
    */
   ownerParser?: OwnerParser;
+  /** Block M: the shop's talk model (modules/understanding/talk.ts). Left out: no talk. */
+  talker?: import("../../../../modules/understanding/talk.ts").TalkModel;
 }
 
 export type AgentEvent =
@@ -1403,7 +1405,11 @@ export function createAgent(deps: AgentDeps): Agent {
         case "keep": return await onKeep(phone);
         case "paid": return await (ownerConfirms ? onPaidClaim(phone, "button") : tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) }).then(() => undefined));
         case "greeting": if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["menu"], { offer: servicesOffer(["pick_service"]) }); return;
-        default: if (!licence().takesNewWork) return await pausedReply(phone, "menu"); await tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) });
+        default:
+          if (!licence().takesNewWork) return await pausedReply(phone, "menu");
+          // block M: the shop's assistant may answer, from what customers may be told (false: the talk is off, a check failed, or nothing was said; the menu goes as before)
+          if (!msg.reply && await assistant?.talkToCustomer({ phone, text: msg.text, language: languageOf(phone), ...(intent.overrideAttempt ? { overrideAttempt: true } : {}), menu: (askOwner) => (askOwner ? { buttons: buttonsFor(languageOf(phone), ["owner"]) } : { list: serviceList(settings, languageOf(phone)) }) })) return;
+          await tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) });
       }
     } finally {
       await announceButtonMode(); // after the customer has their answer
@@ -1721,7 +1727,7 @@ export function createAgent(deps: AgentDeps): Agent {
     },
   });
   const assistant = assistantForAgent({
-    settings, store, skill: assistantSkill, clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
+    settings, store, skill: assistantSkill, clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}), ...(deps.talker ? { talker: deps.talker } : {}),
     // the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out
     ...(deps.voice ? { hearing: { hear: createListener({ voice: deps.voice, reader, isCommander: () => false, optedOut: () => false }) } } : {}),
     log: (caseId, phone, action, outcome, inputs, more) => log(caseId ? store.bookings.get(caseId) ?? null : null, phone, action, outcome, inputs, more),

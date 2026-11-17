@@ -73,6 +73,8 @@ export interface RuntimeOptions {
   terms?: () => import("../../../../modules/terms/terms.ts").TermsFile | undefined;
   /** Item 11e: the owner's router for the shop's assistant (modules/assistant/reading.ts). Left out: the rules alone read the owner's words. */
   ownerParser?: OwnerParser;
+  /** Block M: the shop's talk model (modules/assistant/understanding.ts buildTalker). Left out: no talk, and everyone gets the fixed answers. */
+  talker?: import("../../../../modules/understanding/talk.ts").TalkModel;
   retryDelaysMs?: number[];
   guardWaitMs?: number;
   guardLookAgainMs?: number[];
@@ -128,7 +130,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     ...(options.voice ? { voice: options.voice } : {}),
     ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}),
     // item 11e: how the shop's assistant reads the owner's words (only when the assistant is on)
-    ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}),
+    ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(options.talker ? { talker: options.talker } : {}),
     ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}),
   });
   const kit: RuntimeKit<Store, Settings, RefundContext> = {
