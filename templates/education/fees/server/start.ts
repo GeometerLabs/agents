@@ -24,6 +24,7 @@ import type { RunningClient as SharedRunningClient } from "../../../../modules/r
 import { loadClient, pathwayVersion } from "./config.ts";
 import type { ClientFolder } from "./config.ts";
 import { createRuntime } from "./runtime.ts";
+import { createMaterials } from "./materials.ts";
 import type { Runtime } from "./runtime.ts";
 import { buildServices } from "./services.ts";
 import type { LiveModule } from "./services.ts";
@@ -89,7 +90,9 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
         // item 11i: the character's pictures, as the deployer hands their version over in pages.json (read on every use)
         pictures: () => picturesOf(pagesReader(join(client.folder, PAGES_FILE))()),
         // item 11h: the centre's page addresses, read on every use, so a reminder can carry a parent's private link (no file: no link, as before)
-        pages: pagesReader(join(client.folder, PAGES_FILE)), log });
+        pages: pagesReader(join(client.folder, PAGES_FILE)),
+        // Classes: the reading-material folder on this centre's own server (<centre folder>/materials/<batch id>/), with the centre's file size limit
+        ...(client.settings.classes ? { materials: createMaterials(join(client.folder, "materials"), client.settings.classes.materialMaxMb * 1024 * 1024) } : {}), log });
     },
   }) as RunningClient;
 }
