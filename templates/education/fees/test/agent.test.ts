@@ -22,7 +22,8 @@ test("nothing is opened before the first reminder day; on it every student's fee
   ]);
   assert.ok([...w.store.dues.values()].every((d) => d.dueMs === at(11, 5, 0, 0)), "all due on the 5th, at midnight in the centre's time zone");
   assert.equal(w.textsTo(ROHAN_PARENT).length, 1);
-  assert.equal(w.textsTo(SHARMA_PARENT).length, 2, "two children, two reminders, each with its own link");
+  assert.equal(w.textsTo(SHARMA_PARENT).length, 1, "two children, ONE reminder that lists both, each fee with its own link");
+  assert.ok(w.textsTo(SHARMA_PARENT)[0].includes("Aarav Sharma") && w.textsTo(SHARMA_PARENT)[0].includes("Anaya Sharma"));
   const links = w.payments.links().map((l) => l.amount);
   assert.deepEqual(links.sort((a, b) => a - b), [120_000, 120_000, 150_000, 180_000, 180_000]);
 });

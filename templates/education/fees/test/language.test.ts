@@ -124,6 +124,6 @@ test("each reminder reaches the parent in their own language, and the check read
   for (const [student, phone, marker] of [["Aarav Sharma", "+919811111111", "फीस की याद"], ["Meera Nair", "+919822222222", "ഫീസ് ഓർമ്മപ്പെടുത്തൽ"], ["Kiran Gowda", "+919833333333", "ಶುಲ್ಕದ ನೆನಪು"], ["Rohan Mehta", "+919844444444", "Fee reminder from"]] as const) {
     assert.ok(w.textsTo(phone).some((t) => t.includes(marker) && t.includes(student.split(" ")[0])), `${student}: ${w.textsTo(phone)[0]}`);
   }
-  assert.equal(w.textsTo("+919811111111").length, 2, "the Sharma family has two children, and two reminders (one for each)");
+  assert.equal(w.textsTo("+919811111111").length, 1, "the Sharma family has two children, and one reminder that lists both");
   assert.ok(w.record.entries().every((e) => e.action !== "send_message" || e.outcome === "confirmed"), "none was held back by the check");
 });

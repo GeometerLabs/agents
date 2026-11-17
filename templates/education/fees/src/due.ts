@@ -191,7 +191,7 @@ export function monthLabel(due: { month: string }, language: Language): string {
 }
 
 /** The values of this fee's record that a message may use. Everything comes from the fee and the settings, never from message text. */
-export function factsFor(settings: Settings, due: Due | null, language: Language, extra: { customerPhone?: string; refundInr?: number; receivedInr?: number; waiverInr?: number; requestRef?: string; paidInr?: number; upiCode?: string; pageLink?: string } = {}): MessageFacts {
+export function factsFor(settings: Settings, due: Due | null, language: Language, extra: { customerPhone?: string; refundInr?: number; receivedInr?: number; waiverInr?: number; requestRef?: string; paidInr?: number; upiCode?: string; pageLink?: string; family?: MessageFacts["family"] } = {}): MessageFacts {
   const batch: Batch | undefined = due ? settings.batches.find((b) => b.id === due.batchId) : undefined;
   const payTo = ownerMarkedOf(settings.payment)?.payTo; // who the customer pays, when the owner marks payments (B71)
   return {
@@ -218,6 +218,7 @@ export function factsFor(settings: Settings, due: Due | null, language: Language
     ...(payTo ? { upiId: payTo.id, payee: payTo.name } : {}),
     ...(extra.upiCode ? { upiCode: extra.upiCode } : {}),
     ...(extra.pageLink ? { pageLink: extra.pageLink } : {}),
+    ...(extra.family ? { family: extra.family } : {}),
   };
 }
 

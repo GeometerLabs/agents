@@ -31,6 +31,8 @@ const WHEN: Record<TemplateId, string> = {
   fee_reminder_page: "The monthly reminder (fee_reminder) for a centre that has a page: the same words and a line with the parent's private fees page, which is not to be shared",
   fee_overdue_page: "The reminder after the due day (fee_overdue), with the parent's private fees page",
   fee_overdue_late_page: "The reminder after the grace days (fee_overdue_late), with the parent's private fees page",
+  fee_reminder_family: "One reminder for a parent with more than one open fee (two children, or an earlier month still unpaid): each fee on its own line with its amount, due date and its own payment link",
+  fee_reminder_family_page: "The same family reminder (fee_reminder_family) for a centre that has a page: with a line giving the parent's private fees page, which is not to be shared",
   fee_page_link: "The owner pressed \"Send a new link\" on their page: the parent's new private fees page (the old link stops working)",
   fee_received: "The payment record shows the whole fee paid: the receipt (never sent from what a parent said)",
   fee_part_received: "The payment record shows part of the fee paid: the receipt, and what is still to pay",
