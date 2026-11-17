@@ -51,8 +51,8 @@ test("the month's numbers are the ones the example month was built to hold", () 
   assert.deepEqual(r.fees, { opened: 5, paidInFull: 3, partlyPaid: 1, stillOpen: 2, stillToCollect: { count: 2, paise: 190_000 } }, "Anaya owes 1200 + 100 late - 300 waived = 1000; Meera owes 900");
   assert.deepEqual(r.waivers, { total: { count: 2, paise: 40_000 }, byOwner: { count: 1, paise: 30_000 }, withinLimit: { count: 1, paise: 10_000 }, lateFeesAdded: { count: 1, paise: 10_000 } });
   assert.deepEqual(r.owner, { asked: 2, approved: 2, denied: 0 }, "the ₹300 waiver and the ₹400 refund");
-  assert.equal(r.reminders.sent, 9);
-  assert.deepEqual(r.reminders.byLanguage, { hi: 5, en: 1, ml: 2, kn: 1 });
+  assert.equal(r.reminders.sent, 8, "the Sharmas' two children are one family reminder, so one fewer than one message each");
+  assert.deepEqual(r.reminders.byLanguage, { hi: 4, en: 1, ml: 2, kn: 1 });
   assert.equal(r.reminders.receipts, 4, "one receipt for each payment");
   assert.equal(r.parents.stopped, 1);
   assert.equal(r.stopped.total, 1);
@@ -196,7 +196,7 @@ test("the message is the owner's lines in every language: numbers from the repor
     const s = STRINGS[language];
     assert.ok(text.includes(`${s.label.collected}: *₹5,300*`), text);
     assert.ok(text.includes(`${s.label.givenBack}: *₹400*`), text);
-    assert.ok(text.includes(`${s.label.remindersSent}: *9*`), text);
+    assert.ok(text.includes(`${s.label.remindersSent}: *8*`), text);
     assert.ok(text.includes(`${s.label.takenOff}: *₹400*`), text);
     assert.ok(text.includes(`${s.label.wasAsked}: *2*`) && text.includes(`${s.label.approved}: *2*`) && text.includes(`${s.label.saidNo}: *0*`), text);
     assert.ok(text.includes(sealed.code) && text.includes("https://reports.example.com/r/abc/report-2026-11-en.html") && text.includes("Divya, local Operator"), text);

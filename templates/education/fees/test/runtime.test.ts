@@ -28,7 +28,7 @@ test("a month chased after a restart: the day the agent first ran is remembered,
     await second.runtime.tick();
     const sent = kit.messaging.outbox().filter((m) => m.to === PARENT);
     assert.equal(sent.length, 1, "the Sharmas have two children: one reminder that lists both");
-    assert.ok(kit.messaging.outbox().length >= 5, "every student's parent was reminded");
+    assert.ok(kit.messaging.outbox().length >= 4, "every parent was reminded (four parents, five students: the Sharmas get one)");
     assert.deepEqual(second.runtime.status().fees, { open: 5 });
 
     // The same story straight through in memory ends exactly the same: the record, the saved state, the links and the outbox.
