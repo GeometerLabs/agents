@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "id": "bakery",
+  "names": {
+    "en": "Home bakery or cakes",
+    "hi": "होम बेकरी या केक",
+    "ml": "ഹോം ബേക്കറി അല്ലെങ്കിൽ കേക്ക്",
+    "kn": "ಹೋಂ ಬೇಕರಿ ಅಥವಾ ಕೇಕ್"
+  },
+  "template": "orders",
+  "prefill": {
+    "menu": [
+      {
+        "names": {
+          "en": "Cake 1 kg",
+          "hi": "केक 1 किलो",
+          "ml": "കേക്ക് 1 കിലോ",
+          "kn": "ಕೇಕ್ 1 ಕೆಜಿ"
+        },
+        "priceInr": 800,
+        "dailyStock": 5
+      },
+      {
+        "names": {
+          "en": "Cupcakes box of 6",
+          "hi": "कपकेक 6 का डिब्बा",
+          "ml": "കപ്പ്കേക്ക് 6 എണ്ണം",
+          "kn": "ಕಪ್‌ಕೇಕ್ 6 ಬಾಕ್ಸ್"
+        },
+        "priceInr": 300,
+        "dailyStock": 10
+      },
+      {
+        "names": {
+          "en": "Cookies 250 g",
+          "hi": "कुकीज़ 250 ग्राम",
+          "ml": "കുക്കീസ് 250 ഗ്രാം",
+          "kn": "ಕುಕೀಸ್ 250 ಗ್ರಾಂ"
+        },
+        "priceInr": 200,
+        "dailyStock": 10
+      }
+    ],
+    "pickup": [
+      {
+        "from": "10:00",
+        "to": "13:00",
+        "names": {
+          "en": "morning",
+          "hi": "सुबह",
+          "ml": "രാവിലെ",
+          "kn": "ಬೆಳಿಗ್ಗೆ"
+        }
+      },
+      {
+        "from": "16:00",
+        "to": "19:00",
+        "names": {
+          "en": "evening",
+          "hi": "शाम",
+          "ml": "വൈകുന്നേരം",
+          "kn": "ಸಂಜೆ"
+        }
+      }
+    ],
+    "cutoffDays": 1,
+    "cutoffTime": "18:00",
+    "advance": {
+      "mode": "part",
+      "percent": 50
+    },
+    "maxItemsPerOrder": 5
+  },
+  "character": {
+    "personality": "warm",
+    "paint": "brick"
+  }
+}

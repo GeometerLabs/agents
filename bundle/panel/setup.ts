@@ -54,6 +54,13 @@ export interface Draft {
   done: number;
   /** Item 11i: the Character step's choices (character.ts). Made when the step is first shown; a draft from before has none. */
   character?: CharacterDraft;
+  /**
+   * What the shop does (17 Nov 2026, presets.ts): a preset's id, or the trade the Operator typed under "Other" (cleaned and length-bounded). Kept in the shop's meta when it is saved,
+   * never in settings.json and never sent to a customer. A draft from before, or a builder's, has none.
+   */
+  trade?: { preset?: string; typed?: string };
+  /** A preset's suggested personality and signboard paint, applied when the Character step first rolls its faces (the Operator still chooses; `chosen` stays false). */
+  suggestCharacter?: { personality?: string; paint?: string };
 }
 
 /** The module is a provider's id (modules/payments/providers): UPI's ID and payee are kept here, a gateway's key in `Draft.gateway`. */

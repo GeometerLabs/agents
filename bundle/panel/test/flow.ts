@@ -23,11 +23,11 @@ export const CHARACTER5 = { act: "next", characterName: "", personality: "warm" 
 export interface Flow { draft: string; shop: string; replies: string[] }
 
 /** The six steps as an Operator on a phone does them. Every reply is kept, so a test can look for what must never appear. */
-export async function setUp(b: Boot, who: Browser, given: Record<string, string>[] = [STEP1, STEP2, STEP3, STEP4]): Promise<Flow> {
+export async function setUp(b: Boot, who: Browser, given: Record<string, string>[] = [STEP1, STEP2, STEP3, STEP4], startWith: Record<string, string> = { template: "bookings" }): Promise<Flow> {
   const replies: string[] = [];
   // the four steps a test names, then the Character step (item 11i) unless the test names it too
   const steps = given.length === 4 ? [...given, CHARACTER5] : given;
-  const start = await who.post("/setup", { template: "bookings" }, "/setup");
+  const start = await who.post("/setup", startWith, "/setup");
   const draft = start.location!.split("/")[2];
   for (const [i, form] of steps.entries()) {
     const path = `/setup/${draft}/${i + 1}`;

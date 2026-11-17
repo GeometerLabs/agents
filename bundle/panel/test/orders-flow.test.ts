@@ -61,11 +61,11 @@ const exportEmpty = (b: Boot, shop: string) => {
   writeFileSync(join(b.dir, "exports", shop, "orders.json"), "[]");
 };
 
-test("the start page offers Orders with a button, and the six steps write the folder `shop add --template orders` writes: Orders settings with UPI, no calendar, orders@version, the Operator as owner", async () => {
+test("the Something else page offers Orders with a button, and the six steps write the folder `shop add --template orders` writes: Orders settings with UPI, no calendar, orders@version, the Operator as owner", async () => {
   const b = await boot({}, { standins: true });
   try {
     const divya = await b.account("divya", "partner");
-    const start = (await divya.get("/setup")).plain;
+    const start = (await divya.get("/setup/other")).plain;
     assert.ok(start.includes(WORDS.en.setup.templateNames.orders) && start.includes(`name="template" value="orders"`), "Orders has its start button");
     const { replies } = await setUpOrders(divya, b);
     const pages = replies.join("\n");
