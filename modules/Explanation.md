@@ -1347,3 +1347,54 @@ The owner asked for a simple chat in Streetlist itself, in the phone's browser, 
 **Three people, by taps alone ("book a haircut tomorrow at 5 and pay the deposit").** (1) A 55-year-old who reads Malayalam and uses only WhatsApp: opens the link from the shop's QR, sees "Call the shop" and the three taps in Malayalam, taps "സമയം ബുക്ക് ചെയ്യൂ", taps Haircut, taps tomorrow's 5 pm (each tile 44 px or more, full words), then reads the hold's line and taps the page link to "Pay with UPI"; she types nothing. (2) A parent on a shared old Android phone with a large font: the layout has no fixed heights, the thread scrolls, the composer rides above the keyboard (`visualViewport`), and long words wrap (`overflow-wrap: anywhere`); the same taps; if the send fails the red "Not sent. Tap to send again." button is under the bubble and the draft is kept. (3) A young customer in English on an iPhone: types "haircut tomorrow 5", Enter or Send; the shop's flow asks only what is missing, with taps; the same payment link. Not yet checked on real devices or with TalkBack and 200% font: that is the review stream's job, and the checklist is the list above.
 
 **Not tested on a real model or provider.** The talk is tested on scripted fakes. Tests (written 17 Nov, not run at the time of writing): `channels/test/chat.test.ts`, `channels/test/chat-talk.test.ts`, `commerce/bookings/test/chat.test.ts`.
+
+## Mapping to Beckn and ONDC (17 Nov 2026)
+
+The owner's instruction: "Make our shapes map to ONDC's. Write a mapping from our catalogue, order, booking and status records to the Beckn/ONDC schemas, with a test. A later ONDC adapter is then a provider module, not a rewrite." This is that mapping and nothing more: `modules/ondc/` is pure (no disk, no network, no `node:sqlite`, no new dependency) and makes no call to ONDC, holds no registry entry, signs nothing, and is not a gateway or a seller app. An adapter (the registry, signing, the gateway, being or using a seller app) is not built, on the owner's decision (`project_ondc_not_now`): it waits for the company's registration (Deferred.md).
+
+**What was read, and when (all on 17 Nov 2026, from the repositories themselves).**
+
+| Source | Version read | Licence |
+| --- | --- | --- |
+| Beckn core, the transaction API and its schemas (`beckn/protocol-specifications`) | tag `core-v1.1.0`, commit 8479762c (the latest tag is `core-v1.1.1`) | CC BY-NC-SA 4.0 |
+| ONDC retail B2C, RET10 grocery and RET11 food and beverage (`ONDC-Official/ONDC-RET-Specifications`) | branch `draft-b2c-1.2.5`, commit 7a9c7e69 (a draft: there is no release tag) | none stated |
+| ONDC retail B2B (same repository) | branch `release-2.0.2`, commit aa74e5d8 | none stated |
+| ONDC services, SRV (`ONDC-Official/ONDC-SRV-Specifications`) | branch `draft-services`, commit 0e7ec4bc (`release-services` was compared and is a subset) | none stated |
+| ONDC protocol specs (`ONDC-Official/ONDC-Protocol-Specs`), licence only | master, commit 7f1b948a | CC BY-ND 4.0 |
+
+`modules/ondc/sources.ts` holds the same table in code. Nothing from any of them is copied into the repository: the licences forbid it or say nothing, so the field tables in `contract.ts` are written by hand from reading (the facts, not the files). Beckn's own schema files were downloaded; what the mapping follows for the wire shapes is ONDC's `beckn_yaml.yaml` and attribute sheets, which build on Beckn core.
+
+**Three wire dialects, one neutral input.** The three contracts do not share a shape. Retail B2C 1.2.x has `bpp/providers`, a fulfillment with `start` and `end`, one `payment`, `quantity.count`, `state` and tags written `code`/`list`. B2B 2.0.2 and services 2.0.0 have `providers`, `stops`, `payments[]`, `quantity.selected.count`, tags written under `descriptor`, and `context.location` and `context.version`; services also write the status as `status` in capitals. So there is one builder file per contract (`retail.ts`, `services.ts`, `b2b.ts`) over shared neutral types (`types.ts`), money (`money.ts`), states (`states.ts`) and gaps (`gaps.ts`). Each template has a small `src/ondc.ts` that turns its own store and settings into the neutral types, with no change to how the template behaves; the mapping never imports a template.
+
+**What maps.**
+
+| Ours | ONDC |
+| --- | --- |
+| Orders menu and slots | retail `on_search`: one provider, items (price, quantity, stock), a Delivery and a Self-Pickup fulfillment, one location with its opening window |
+| An Orders order | retail `on_select`, `on_init`, `on_confirm`, `on_status`, `on_cancel`: items, a quote whose breakup is built from the lines, a fulfillment with the slot as its time range (at the shop's `start` for a pickup, the buyer's `end` for a delivery), a payment |
+| A Bookings service and booking | services `on_search` and the order messages, with a Store-Service fulfillment whose one stop carries the booking's start and end; the deposit is a `PRE-FULFILLMENT` payment and the rest an `ON-FULFILLMENT` one; a refund is a negative `refund` line |
+| A Stock orders purchase order (the shop is the BUYER) | B2B `select`, `init`, `confirm` requests, with the quantity, the exact quote (price x quantity) and the shop as the billed buyer |
+| Our states | ONDC's order state (Created, Accepted, In-progress, Completed, Cancelled), fulfillment state and payment status, in `states.ts`; every state of each template is listed there, and each template's `test/ondc.test.ts` reads its own source to fail if a state is added without a mapping |
+| Our cancel and refund reasons | ONDC's cancellation codes (012, 005, 022, 002, 018, 011) |
+| Our paise (or whole rupees) | ONDC's decimal strings, by integer arithmetic only |
+| An incoming select, init, confirm or cancel | a neutral intent (lines, way, slot, contact, reason) that the template's own flow would act on; incoming totals are claims, the intent carries OUR recomputed total, and a difference is flagged (`inbound.ts`) |
+
+A state with no ONDC order (an enquiry, an Orders order waiting for the owner, a booking still being filled in, a purchase order never sent) maps to "none": the builder returns nothing rather than a made-up Created order.
+
+**What does not map, or maps only by our own convention.**
+- ONDC's retail order has ONE payment, so an advance with a balance due later is `NOT-PAID` as a whole, type `ON-FULFILLMENT`; the split is written in a payment tag of ours (`advance_split`) that no buyer app is known to read. Services and B2B have `payments[]` and carry the two honestly.
+- Whether a payment was confirmed by a gateway or marked by the owner has no ONDC field; it stays in the neutral input only.
+- A visit to a shop (a salon, a hired tractor) is written as a Store-Service fulfillment with one `start` stop. The services repository's examples show only Home-Service orders with a start and an end stop; Store-Service appears there only in one on_search example. This must be checked with a real services buyer app.
+- The services repository has no cancellation-code list of its own; its examples reuse the retail codes (012, 022), so the retail list is used.
+- The retail enums say `Self-Pickup`; the OpenAPI file says `Pickup`. The enum file and the examples win.
+- Refunds travel in services' quote (a negative `refund` line); retail's quote enum has no refund line, so a retail refund is not written.
+- The return and cancellation windows: a shop's cancellation window is written as services' `cancel_by` duration; retail has no field for it.
+- A cancelled order or booking does not keep why it was cancelled, so the mapping reports `missing: cancel_reason` and writes no reason, except for "expired", which is its own state with its own code (022).
+
+**The gaps.** `gaps.ts` lists what the contracts require that no shop of ours holds (the GSTIN, the FSSAI number, pictures, descriptions, the shop's position and pincode, a return policy, a preparation time and a turnaround time, the bank account for settlement, a buyer app's finder fee, a creation time on the record, a supplier's own ONDC ids, and more), each with its severity, the ONDC fields it affects and the setting that would hold it. A builder asks `gaps.need(key, value)`: a present value is used, an absent one is left out of the message and named in the result's `gaps`. Nothing is ever filled with a plausible value. `OndcFacts` in `types.ts` is the shape of the future `ondc` block of a shop's settings; no settings reader accepts it yet, and no view fills it.
+
+**Customers' details.** A buyer's name, phone and address come from the caller (the request being answered), for one message, and are echoed; they are never read from our store. Without them those fields are simply absent. Inbound, the phone is kept for the template's own flow (which holds it on the order already) and a digest `contactRef` is given for the record. A supplier's WhatsApp number never appears in an outbound message.
+
+**The tests.** `modules/ondc/test/mapping.test.ts` runs neutral fixtures through every builder and the inbound reader. The real example shops (Orders: Annapurna on UPI and on Razorpay, and Sweet Crumbs; Bookings: Glow Salon and the equipment-rental variant; Stock orders: Glow Salon) go through each template's `test/ondc.test.ts`, because the modules boundary test forbids a module test importing a template. Both ask the same questions through `verify.ts` and `contract.ts`: every field the contract marks required is present or its gap is reported (the lists are in three buckets: from our record, from the caller, or a typed gap), the enums are ONDC's, money strings are exact, a quote's breakup adds up, state mapping is total, our on_confirm read back as a confirm request gives the same lines and slot, and the gaps are exact for each shop.
+
+**Why no adapter yet.** The owner's decision: the mapping first, so a later adapter is a provider module and not a rewrite. The adapter needs a company and a registry entry, signing keys and a gateway or seller app, none of which exist (Deferred.md).
