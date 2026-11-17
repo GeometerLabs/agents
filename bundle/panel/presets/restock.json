@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "id": "restock",
+  "names": {
+    "en": "Shop restocking from suppliers",
+    "hi": "सप्लायर से दुकान का स्टॉक मँगाना",
+    "ml": "സപ്ലയർമാരിൽ നിന്ന് കടയ്ക്ക് സ്റ്റോക്ക് ഓർഡർ",
+    "kn": "ಸರಬರಾಜುದಾರರಿಂದ ಅಂಗಡಿಗೆ ಸ್ಟಾಕ್ ಆರ್ಡರ್"
+  },
+  "template": "stock-orders",
+  "prefill": {
+    "supplier": {
+      "en": "My supplier",
+      "hi": "मेरा सप्लायर",
+      "ml": "എന്റെ സപ്ലയർ",
+      "kn": "ನನ್ನ ಸರಬರಾಜುದಾರ"
+    },
+    "items": [
+      {
+        "names": {
+          "en": "Rice 25 kg",
+          "hi": "चावल 25 किलो",
+          "ml": "അരി 25 കിലോ",
+          "kn": "ಅಕ್ಕಿ 25 ಕೆಜಿ"
+        },
+        "unit": {
+          "en": "bag",
+          "hi": "बोरी",
+          "ml": "ചാക്ക്",
+          "kn": "ಚೀಲ"
+        },
+        "priceInr": 1400,
+        "reorderQty": 4
+      },
+      {
+        "names": {
+          "en": "Cooking oil 15 L",
+          "hi": "खाने का तेल 15 लीटर",
+          "ml": "പാചക എണ്ണ 15 ലിറ്റർ",
+          "kn": "ಅಡುಗೆ ಎಣ್ಣೆ 15 ಲೀಟರ್"
+        },
+        "unit": {
+          "en": "tin",
+          "hi": "टिन",
+          "ml": "ടിൻ",
+          "kn": "ಟಿನ್"
+        },
+        "priceInr": 2400,
+        "reorderQty": 2
+      },
+      {
+        "names": {
+          "en": "Soap",
+          "hi": "साबुन",
+          "ml": "സോപ്പ്",
+          "kn": "ಸೋಪ್"
+        },
+        "unit": {
+          "en": "carton",
+          "hi": "कार्टन",
+          "ml": "കാർട്ടൺ",
+          "kn": "ಕಾರ್ಟನ್"
+        },
+        "priceInr": 1200
+      }
+    ],
+    "maxPerOrderInr": 25000,
+    "monthlyBudgetInr": 100000
+  },
+  "character": {
+    "personality": "brief",
+    "paint": "blue"
+  }
+}

@@ -329,3 +329,40 @@ WhatsApp link; adding fields to `src/classes/settings.ts` would also collide wit
 Deferred.md ("A class link from the panel").
 
 Tests: `test/classes-form.test.ts` (written 17 Nov, not run), and the Fees round trips in `test/keep.test.ts`.
+
+## Presets: "What does the shop do?" (17 Nov 2026, owner: "P yes but have an Other option operator can specify")
+
+Operators think in trades ("salon", "tuition", "tiffin"), not in our template names, so the first question of a new shop is now **What does the shop do?**, as big buttons in the
+Operator's language, one for each trade, plus **Something else**. This replaces the old first screen, which listed the templates by name; the template list moved to the page
+behind Something else.
+
+**A preset is data on top of one existing template** (`presets.ts`, `presets/<id>.json`, `presets/README.md`): an id; the trade's name in four languages; the base template (and
+variant); what the form starts with (example services, menu items or batches, pickup slots or catalogue lines, with example prices); the default rules within the template's own
+bounds; and the shop assistant's suggested personality and signboard paint. It adds no agent code, no new settings field, no new rule and no test of a money path: the examples go
+into the same boxes an Operator would type into (in the language they read the panel in; the first step says "the prices are only examples, check each"), stay editable, and pass
+through the template's own `validateSettings` when the shop is saved. "Mood" in the brief is the personality (warm, cheerful, brief): it is the one mood an Operator chooses; the faces'
+moods follow the shop's real state and are never chosen. A suggestion only starts the Character step on those values; `chosen` stays false, so nothing is written until the Operator
+has been through the step.
+
+- **Where**: `bundle/panel/presets/`, not `templates/`: templates.ts finds templates by `template.json` in `templates/<domain>/<name>/`, and a preset in that tree could be mistaken for one or
+  met by anything else that walks `templates/`. The panel's own folder is where `vote-options.json` already lives.
+- **One reader and validator** (`readPreset`, `loadPresets`): a preset naming an unknown template, a variant the template does not have, or a variant the phone form cannot set up yet is
+  refused with the reason; so is a missing language, a prefill outside the template's bounds (a deposit above the cheapest service, a late fee above the cheapest fee, `maxItemsPerOrder`
+  times the dearest item above a day's refund cap, an unknown paint), a timetable without the Classes variant, or a key nobody knows. A broken file stops the panel at start, naming the file.
+- **The first set (8)**: salon or beauty parlour, clinic or physiotherapy (Bookings); tuition centre, music or dance or yoga classes (Fees with Classes, now that the form has the Classes part);
+  home bakery or cakes, sweets and snacks pre-orders, catering (Orders); shop restocking from suppliers (Stock orders). Tiffin (Orders with `plans`) and equipment hire (Bookings `rental`)
+  are not shipped: their variants are known to the reader as "later", so a file for them is refused until the form has their step (Deferred.md). A Stock orders preset can carry no
+  supplier: its catalogue lines name a placeholder ("My supplier") and the Operator writes their own supplier and number.
+- **Something else**: the Operator writes the trade in their own words (up to 40 characters; control characters and runs of spaces cleaned, nothing else changed), then picks the kind of
+  work from today's template list in plain words ("Bookings with a deposit", "Pre-orders with an advance", "Fee collection for classes", "Restocking from suppliers"); the form starts empty
+  as today. It is one page and one form: the kind of work is the button that sends it, and a form sent by Enter before a kind was picked is asked again (a hidden first button sends an
+  empty kind), so a kind is never chosen for someone.
+- **Where the trade is kept**: the shop's meta (`trade: { preset }` or `{ typed }`), written when the shop is first saved, never in settings.json (the agent's settings are untouched) and never
+  sent to a customer by this change. The panel shows it on the shop's page ("Kind of shop"); a preset by its name in the reader's language, the typed words escaped. Fleet and Streetlist are not
+  changed (Deferred.md).
+- **Words**: the first screen's words are in `words-presets.ts` (four languages, found by the panel's language name, like `words-classes.ts`); the trades' names and example names are in the preset
+  files; all of it is machine-written in Hindi, Malayalam and Kannada and on the review sheets (ids `preset.*`, `classes.*`).
+
+Tests (written 17 Nov, not run): `test/presets.test.ts` (every file validates; every preset in every language goes through its form's real steps and builds settings the template accepts;
+refusals; the typed trade; the four languages), `test/presets-flow.test.ts` (the first screen in four languages, a trade button, Something else, the trade in the meta and on the page,
+escaped). Three existing assertions moved from `GET /setup` to `GET /setup/other` (fees-flow, orders-flow, setup tests).
