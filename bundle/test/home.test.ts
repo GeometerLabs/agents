@@ -215,7 +215,8 @@ test("Caddyfile golden: the pages domain's site is the home first (only when a b
   // the static rules are inside the home-live handle, and the plain door is the fallback after it
   assert.ok(site.indexOf("handle @home-live") < site.indexOf("# no home installed"));
   // no domain is written in the generator: the same shape for another domain
-  assert.equal(caddyfile(hosted({ domain: "pages.example", extraDomains: [] }), [], []).includes("streetlist"), false);
+  // (the home's own file names, such as /streetlist-192.png, are the site's files and stay; what must never appear is Streetlist's domain)
+  assert.equal(/streetlist\.(in|co)/u.test(caddyfile(hosted({ domain: "pages.example", extraDomains: [] }), [], [])), false);
 });
 
 test("a server with no pages domain has no home or door rules in its Caddyfile, and the shop's own site block is unchanged by them", () => {

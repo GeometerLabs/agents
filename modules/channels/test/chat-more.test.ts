@@ -85,8 +85,11 @@ test("the head: DiceBear's animation is a source only a phone that welcomes moti
   const html = screen("busy", new URLSearchParams("")).html;
   assert.match(html, /<picture class="face-p" id="face-pic"><source srcset="[^"]*\/character\/busy-anim\.svg\?v=screens" type="image\/svg\+xml" media="\(prefers-reduced-motion: no-preference\)"><img class="face-c" id="face-src" src="data:image\/svg\+xml/u);
   // the hop is inside the no-preference block, so reduced motion has none
-  const hop = /@media \(prefers-reduced-motion: no-preference\)\{[^}]*\.hop\{animation:hop \.35s/u;
-  assert.match(html, hop);
+  // (the block holds several rules, so cut it at its own closing brace instead of matching across rule braces)
+  const start = html.indexOf("@media (prefers-reduced-motion: no-preference) {\n.arrive");
+  const block = html.slice(start, html.indexOf("\n}", start));
+  assert.ok(start >= 0 && /\.hop \{ animation: hop \.35s/u.test(block), "the hop is inside the no-preference block");
+  assert.equal(html.split(".hop {").length - 1, 1, "and only there");
 });
 
 test("a record-marked line is drawn with its still and sentence after a reload (no motion), and the player is not named until a moment arrives", () => {
@@ -204,7 +207,8 @@ test("hold to talk is drawn only when the shop has a voice service: no button an
   assert.ok(withVoice.includes(CHAT_MORE.hi.hold));
   assert.match(withVoice, /audioBitsPerSecond: 24000/u);
   assert.match(withVoice, /audio\/ogg;codecs=opus", "audio\/webm;codecs=opus"/u);
-  assert.match(screen("recording", new URLSearchParams("lang=ml")).html, /class="rec-note"/u);
+  // the review screen draws the recording note by script (as the page's own recNote does), so it is named as a class the script sets
+  assert.match(screen("recording", new URLSearchParams("lang=ml")).html, /className = "rec-note"/u);
 });
 
 // ---- the owner's view of a guest -------------------------------------------------------------------------------------------------------------------

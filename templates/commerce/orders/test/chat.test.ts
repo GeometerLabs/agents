@@ -9,6 +9,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fakeClock } from "../../../../modules/core/clock.ts";
+import { esc } from "../../../../modules/core/html.ts";
 import { frontHandler } from "../../../../modules/channels/front.ts";
 import type { FrontShop } from "../../../../modules/channels/front.ts";
 import { runtimeBackend } from "../../../../modules/channels/backend.ts";
@@ -57,7 +58,7 @@ test("a guest taps to order: the shop's own ordering flow answers in the thread,
     assert.equal(t.lines[0].text, "Today's menu");
     const menu = t.lines.at(-1)!;
     assert.equal(menu.who, "shop");
-    assert.match(menu.text + (menu.choices ?? []).map((c) => c.title).join(" "), /₹/u, "the shop's own prices");
+    assert.match(menu.text + (menu.choices ?? []).map((c) => `${c.title} ${c.hint ?? ""}`).join(" "), /₹/u, "the shop's own prices (a list row carries its price as its hint)");
     assert.equal((await w.send(cookie, { id: "s-2", quick: 2 })).status, 200); // "Order"
     await w.client.runtime.idle();
     t = await w.thread(cookie);
@@ -76,7 +77,7 @@ test("a send made again is answered once; the thread is there after a reload; a 
     const t = await w.thread(cookie);
     assert.equal(t.lines.filter((l) => l.who === "you").length, 1);
     assert.equal(t.lines.filter((l) => l.who === "shop").length, 1);
-    assert.ok((await (await w.page("/chat", { headers: { cookie } })).text()).includes(t.lines[0].text));
+    assert.ok((await (await w.page("/chat", { headers: { cookie } })).text()).includes(esc(t.lines[0].text))); // the page escapes what it draws
     await w.send(cookie, { id: "s-2", tap: "item:made-up" });
     await w.client.runtime.idle();
     assert.equal((await w.thread(cookie)).lines.length, t.lines.length);

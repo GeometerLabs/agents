@@ -144,11 +144,11 @@ test("the chat page's policy names the app's worker and manifest at their exact 
   const plain = chatPolicy(base, "N");
   assert.doesNotMatch(plain, /manifest-src/u);
   assert.match(plain, /worker-src https:\/\/streetlist\.in\/glow-salon\/chat\/sw\.js(;|$)/u);
-  const app = chatPolicy(base, "N", { origin: "https://streetlist.in", worker: true });
+  const app = chatPolicy(base, "N", undefined, { origin: "https://streetlist.in", worker: true });
   assert.match(app, /worker-src https:\/\/streetlist\.in\/glow-salon\/chat\/sw\.js https:\/\/streetlist\.in\/sw\.js;/u);
   assert.match(app, /manifest-src https:\/\/streetlist\.in\/manifest\.webmanifest/u);
   assert.doesNotMatch(app, /'self'/u);
-  assert.doesNotMatch(chatPolicy(base, "N", { origin: "https://streetlist.in", worker: false }), /streetlist\.in\/sw\.js/u, "no relay: no root worker");
+  assert.doesNotMatch(chatPolicy(base, "N", undefined, { origin: "https://streetlist.in", worker: false }), /streetlist\.in\/sw\.js/u, "no relay: no root worker");
 });
 
 test("the address name: the first path part of the page, only in the shape fleet allows", () => {
