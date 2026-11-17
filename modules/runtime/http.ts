@@ -4,6 +4,9 @@
 //   POST /internal/events   {"events": [...]}   the inbox's already-checked events (bearer token)
 //   POST /internal/recover  {"id","case","action"}   the panel's to-do list asks the agent to look again or ask again about one booking or fee (bearer token). It is saved
 //                                                like any event and the agent does it through Guard and the same limits; it is not a way to send a message or move money.
+//   GET  /internal/limit-changes                "Limits, tightened by a tap" (bearer token): the limits, their value in force and the changes, for the deployer (through ops)
+//   POST /internal/limit-changes  {"id","change","result","why"?}   the deployer's word that Guard has a changed limit ("active") or that it failed. Saved like any event; the
+//                                                runtime's core settles the change in a step. It cannot make a change, only settle one the runtime made.
 //   GET  /status                                counts only, never message content (bearer token)
 //   GET  /internal/refund-context?receipt=...   read-only: the booking or fee behind a refund Guard holds, for the approvals relay (bearer token)
 //   GET  /healthz                               the process is up
@@ -22,6 +25,8 @@
 //                                                     Never by a case id: a holder of the channel token cannot walk the cases. Empty for a hash no page has.
 //   GET  /internal/channel/accounting?period=2026-11|26-27   the accountant's files (journal CSV, documents CSV, README) for a period. ONLY with the owner's SESSION
 //                                                     (x-owner-session): not the panel's link, and never the channel token alone.
+//   GET  /internal/channel/owner-limits             the owner's limits page's data (the owner's credential): the limits, the changes, and whether THIS session was made with a passkey
+//   POST /internal/channel/owner-limits  {"id","limit","to"}   a change from the owner's limits page; only with a session made by a PASSKEY (403 {"state":"passkey_needed"} otherwise)
 //   POST /internal/channel/owner-voice               items 11d and 11e: a recording from the owner's page (audio/ogg or audio/webm, at most 256 KB), with the owner's credential;
 //                                                     held in memory only, and an owner_message carrying its reference is saved (never the audio)
 // An owner_message (the owner's talk box) needs the owner's credential too, like an owner_action.
@@ -48,6 +53,8 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { checkEvents, checkRecovery } from "./events.ts";
+import { checkOwnerLimit, checkSettled } from "../limits/runtime-limits.ts";
+import type { LimitsView } from "../limits/runtime-limits.ts";
 import type { IncomingEvent } from "./events.ts";
 import { checkChannelEvent } from "../channels/events.ts";
 import { MAX_VOICE_BYTES } from "../channels/owner-audio.ts";
@@ -76,6 +83,8 @@ export interface ServedRuntime {
   ready(): { ok: true } | { ok: false; reason: string };
   /** The template's channel reads; left out when it has none. */
   channel?: RuntimeChannel;
+  /** "Limits, tightened by a tap": the limits the owner may change and the changes so far, from the last saved state. Left out: no limit routes. */
+  limits?: { view(): LimitsView };
 }
 
 export const MAX_BODY_BYTES = 256 * 1024;
@@ -380,6 +389,29 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       runtime.kick();
       return;
     }
+    // "Limits, tightened by a tap": the owner's own limits page. Reading needs the owner's credential (link or session); CHANGING needs a session made with a PASSKEY,
+    // checked here against this runtime's own sessions (a link on WhatsApp is not enough: decision 27, loosening is outside the chat). The runtime decides the direction and
+    // the bounds again in the step (modules/limits/runtime-limits.ts); the page cannot ask for more than the template allows.
+    if (path === "/internal/channel/owner-limits") {
+      if (!runtime.limits) throw new HttpError(404, "There is nothing here.");
+      if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+      const session = header(req, OWNER_SESSION_HEADER);
+      const passkey = session !== undefined && options.ownerSignin?.checkPasskey?.(session) !== undefined;
+      if (req.method === "GET") return send(res, 200, { ...runtime.limits.view(), passkey });
+      only("POST");
+      if (!passkey) return send(res, 403, { state: "passkey_needed", error: "Changing a limit needs you signed in with your passkey." });
+      let body: unknown;
+      try { body = JSON.parse(await readBody(req, 2048)); } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const checked = checkOwnerLimit(body);
+      if (!checked.ok) return send(res, 400, { error: checked.error });
+      const counts = runtime.submit([checked.event]);
+      send(res, 200, counts);
+      runtime.kick();
+      return;
+    }
     if (path === "/internal/channel/owner") {
       only("GET");
       if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
@@ -448,6 +480,24 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (!receipt || receipt.length > 200) return send(res, 400, { error: "Give the refund's receipt: ?receipt=b-3:pay_..." });
       const context = runtime.refundContext(receipt);
       return context ? send(res, 200, context) : send(res, 404, { error: "No refund is held under that receipt." });
+    }
+    // the deployer's part of a limit change (through ops): what the runtime holds, and its word that Guard has the new value, or that the change failed
+    if (path === "/internal/limit-changes") {
+      if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." }, { "www-authenticate": "Bearer", ...closing });
+      if (!runtime.limits) return send(res, 404, { error: "This shop has no limits the owner may change." });
+      if (req.method === "GET") return send(res, 200, runtime.limits.view());
+      only("POST");
+      let body: unknown;
+      try { body = JSON.parse(await readBody(req, 4096)); } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, closing); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const checked = checkSettled(body);
+      if (!checked.ok) return send(res, 400, { error: checked.error });
+      const counts = runtime.submit([checked.event]);
+      send(res, 200, counts);
+      runtime.kick();
+      return;
     }
     if (path === "/internal/recover") {
       only("POST");

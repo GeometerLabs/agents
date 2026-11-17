@@ -111,9 +111,9 @@ export function openOwnerAccess(file: string) {
     CREATE TABLE IF NOT EXISTS wrong_codes (at INTEGER NOT NULL);
   `);
   type LinkRow = { id: string; made_at: number; expires_at: number; state: string; owner_key: string; base: string };
-  type SessionRow = { id: string; made_at: number; expires_at: number; ended_at: number | null; owner_key: string; base: string };
+  type SessionRow = { id: string; link_id: string; made_at: number; expires_at: number; ended_at: number | null; owner_key: string; base: string };
   const linkByHash = db.prepare("SELECT id, made_at, expires_at, state, owner_key, base FROM links WHERE hash = ?");
-  const sessionByHash = db.prepare("SELECT id, made_at, expires_at, ended_at, owner_key, base FROM sessions WHERE hash = ?");
+  const sessionByHash = db.prepare("SELECT id, link_id, made_at, expires_at, ended_at, owner_key, base FROM sessions WHERE hash = ?");
 
   /** A new session for the browser that just proved it is the owner's (a link used up, or a passkey). Returns the token ONCE. */
   function startSession(ownerKeyValue: string, baseValue: string, from: string, now: number): { session: string; id: string; expiresAt: number } {
@@ -226,6 +226,17 @@ export function openOwnerAccess(file: string) {
       if (r.owner_key !== ownerKey(who.owner) || r.base !== who.base) return undefined; // another owner now, or the shop's page moved
       if (endBefore !== undefined && r.made_at < endBefore) return undefined;
       return { id: r.id };
+    },
+
+    /**
+     * Is this session good now AND was it made by a PASSKEY sign-in (or a passkey's first registration), not by a link? The owner's limits page needs it to loosen a
+     * limit: a link on WhatsApp can be opened by whoever holds the phone, a passkey is the owner's own finger or face (decision 27: outside the chat).
+     */
+    checkPasskey(token: string, who: OwnerNow, now: number, endBefore?: number): { id: string } | undefined {
+      const ok = this.check(token, who, now, endBefore);
+      if (!ok) return undefined;
+      const r = sessionByHash.get(sessionHash(token)) as SessionRow | undefined;
+      return r && r.link_id.startsWith("pk-") ? ok : undefined;
     },
 
     /** The owner signs out on this browser: the session ends. Its short id, or undefined when there was none live. */

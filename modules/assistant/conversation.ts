@@ -6,7 +6,7 @@
 // The rules it keeps:
 //  - money or a limit, and a message to a customer, come back as a CARD (cards.ts) and are done only on its tap; nothing changes before the tap;
 //  - closing a day is done at once, said in passing, and undoable for a day;
-//  - loosening a limit is not possible here (the Operator's panel does it), and the owner is told so;
+//  - a limit can only be TIGHTENED here, by a card and the owner's tap (limits-card.ts); loosening is the owner's own, in their app behind their passkey, and the owner is told so;
 //  - every value comes from the record or from the words by rule (intents.ts); a model only picks the kind;
 //  - every word goes out through modules/messaging/say.ts with the outgoing check over the values it states (words.ts).
 import { isRelayReply } from "../approvals/buttons.ts";
@@ -49,6 +49,8 @@ import { ownerTalk } from "./talk-owner.ts";
 import type { LimitHook } from "./talk-owner.ts";
 import { talkOff } from "./talk-run.ts";
 import type { TalkEnv } from "./talk-run.ts";
+import { limitCase, viewOf } from "./limits-card.ts";
+import type { Limits } from "./limits-card.ts";
 import { CARD_LABELS, cardQuestion, write } from "./words.ts";
 import type { MessageData, MessageId } from "./words.ts";
 
@@ -112,6 +114,8 @@ export interface AssistantDeps {
    * Left out (voice off for the shop): an owner's voice note gets the line asking to type, as before.
    */
   hearing?: { hear(msg: InboundMessage & { audio?: PageAudio }): Promise<Heard | null> };
+  /** The shop's declared limits, tightened by a card (limits-card.ts). Its skill is also in `skills`. Left out: the owner is told limits are the Operator's. */
+  limits?: Limits;
 }
 
 /** Everything a message to say carries here: the words, already written for the language say() picks (the owner's, or the customer's). */
@@ -245,7 +249,7 @@ export function createAssistant(deps: AssistantDeps) {
   async function talkToOwner(text: string): Promise<boolean> {
     if (!deps.talk || !talkEnv || talkOff(talkEnv)) return false;
     const s = state();
-    const r = await ownerTalk({ env: talkEnv, shop: { ...promptShop, owner: shop.owner }, memory: s.memory, skills, chat: s.chat ?? [], ...(deps.talk.limits ? { limits: deps.talk.limits } : {}) }, { text, language: shop.owner.language });
+    const r = await ownerTalk({ env: talkEnv, shop: { ...promptShop, owner: shop.owner }, memory: s.memory, skills, chat: s.chat ?? [], ...(talkLimits() ? { limits: talkLimits()! } : {}) }, { text, language: shop.owner.language });
     if (!r.ran) return false;
     if (!r.result.ok) {
       const today = skills.find((x) => x.day);
@@ -257,7 +261,8 @@ export function createAssistant(deps: AssistantDeps) {
     if (a.limit) {
       // The model only names which declared limit is meant; the limits half reads the value from the owner's words by rule (never from a model). With no such half, or
       // when it does not take it, the rule is kept as a note and said to be one: the chat is not a second place where limits live.
-      if (deps.talk.limits && (await deps.talk.limits.tighten({ limitId: a.limit, words: text }))) return true;
+      const hook = talkLimits();
+      if (hook && (await hook.tighten({ limitId: a.limit, words: text }))) return true;
       await notes.saveRuleAsNote(text);
       return true;
     }
@@ -315,7 +320,7 @@ export function createAssistant(deps: AssistantDeps) {
       "a card with the exact change was shown to the owner; nothing is done until they tap it");
     const cardData = {
       kind: proposal.kind, skill: skill.name, ...(proposal.kind === "answer" ? { itemKind: proposal.itemKind } : {}), who: prepared.shown.who, ref: proposal.case, what: prepared.shown.what,
-      amountPaise: prepared.shown.amountPaise, ...(prepared.shown.words !== undefined ? { words: prepared.shown.words } : {}), ...(prepared.aboveLimit ? { aboveLimit: true } : {}), code, hasNo,
+      amountPaise: prepared.shown.amountPaise, ...(prepared.shown.words !== undefined ? { words: prepared.shown.words } : {}), ...(prepared.aboveLimit ? { aboveLimit: true } : {}), ...(prepared.shown.limit ? { limit: prepared.shown.limit } : {}), code, hasNo,
     };
     // the owner's page shows the same question beside the card's buttons, without the code (items 11d and 11e together)
     card.question = cardQuestion(cardData, shop.owner.language, tz);
@@ -409,12 +414,48 @@ export function createAssistant(deps: AssistantDeps) {
     const executed = card.action.kind === "message" ? await sendWords(card) : await skill.execute(card.action);
     closeCard(s, card, "done", now);
     logLine(caseId, ASSISTANT_ACTIONS.card, executed.ok ? "confirmed" : "failed", { card: card.id }, { ...refs(card, "yes"), result: executed.note }, "the owner tapped yes; the skill did the card's saved action");
+    // a limit's tap makes a Pending change: the owner's words say so (and say Active, or that the previous limit stays, when the deployer reports, on the beat)
+    if (card.action.kind === "limit") {
+      const l = deps.limits?.declared.find((x) => x.id === card.action.fields.limit);
+      if (executed.ok && l) await tell("limit", { what: "pending", limit: viewOf(l), to: Number(card.action.fields.to) });
+      else await tell("refusal", { why: "limit_not_tighter", ref: caseId });
+      return;
+    }
     const amountPaise = typeof card.action.fields.amountPaise === "number" ? card.action.fields.amountPaise : 0;
     // "done" in the owner's words: a cancel that gave money back says the money is on its way (the card asked for both), a cancel with nothing paid says cancelled
     const kind = card.action.kind;
     const note = executed.note !== "done" ? executed.note : kind === "refund" || (kind === "cancel" && amountPaise > 0) ? "refund_sent" : kind === "cancel" ? "cancelled" : kind === "message" ? "sent" : "answered";
     const who = typeof card.action.fields.who === "string" ? card.action.fields.who : caseId;
     await tell("done", { note, who, ref: caseId, amountPaise }, { caseId });
+  }
+
+  // ---- limits (limits-card.ts) ----
+  /**
+   * The owner's words about a limit. The rules read which declared limit and what value; `forced` is the limit a talk model named by id (it may only choose among the
+   * declared ones, never write a value). What cannot become a card is answered in words (which one, how much, not tighter); a value that tightens becomes a card.
+   */
+  /**
+   * The talk's view of the limits (17 Nov merge of block M's two halves): a hook given in `talk.limits` wins; otherwise the limits half (`deps.limits`, limits-card.ts) is
+   * offered to the talk model as its declared ids, and a limit the model names goes through onLimit with that id. The model only names WHICH limit; the value is read from
+   * the owner's words by rule, judged against the limit in force and shown as a card, exactly as when the owner asks in words.
+   */
+  function talkLimits(): LimitHook | undefined {
+    if (deps.talk?.limits) return deps.talk.limits;
+    const limits = deps.limits;
+    if (!limits) return undefined;
+    return {
+      declared: () => limits.declared.map((l) => ({ id: l.id, about: l.name[shop.owner.language] ?? l.name.en })),
+      tighten: async ({ limitId, words }) => { await onLimit(words, limitId); return true; },
+    };
+  }
+
+  async function onLimit(text: string, forced?: string): Promise<void> {
+    const limits = deps.limits;
+    if (!limits) { await tell("limit_no", {}); return; }
+    const read = limits.read(text, forced);
+    const say = limits.say(read);
+    if (say) { await tell("limit", say); return; }
+    if (read.kind === "ok") await propose({ kind: "limit", case: limitCase(read.limit.id), to: read.to });
   }
 
   // ---- asking ----
@@ -533,7 +574,7 @@ export function createAssistant(deps: AssistantDeps) {
     if (!offered) { await tell("not_offered", {}); return true; }
     switch (intent.kind) {
       case "help": await tell("help", { ...(shop.settings.character.name ? { name: shop.settings.character.name } : {}), shop: shop.name, kinds: context.kinds, personality: shop.settings.character.personality }); break;
-      case "limit": await tell("limit_no", {}); break;
+      case "limit": await onLimit(msg.text); break;
       case "remember": await notes.remember(intent.words); break;
       case "notes": await notes.list(); break;
       case "forget": await notes.forget(intent.note ?? ""); break;
@@ -629,12 +670,15 @@ export function createAssistant(deps: AssistantDeps) {
   }
 
   /** On the clock's beat: cards past their time are closed, and what is no longer needed is taken off the store. The morning line is its own job (morning.ts). */
-  function onTick(): void {
+  async function onTick(): Promise<void> {
     const now = clock.now();
     const s = state();
     for (const c of expireCards(s, now)) logLine(c.action.case, ASSISTANT_ACTIONS.card, "blocked", { card: c.id }, { card: c.id, skill: c.action.skill, kind: c.action.kind, digest: c.digest, decision: "none" }, "the card ran out without a tap: nothing was done");
     compactAssistant(s, now, isoDate(today()));
     notes.tick(); // notes past their end are closed; closed notes lose their text after 30 days (modules/memory)
+    // a limit change that settled since the owner was last told: Active, or failed with the previous limit still in force (the runtime's core settles it, limits/runtime-limits.ts)
+    // (marked told first: a failed send, such as outside the owner's 24-hour window, is not tried again every beat; the owner's app shows the state either way)
+    for (const u of deps.limits?.unannounced() ?? []) { try { await tell("limit", u.say); } catch { /* the app shows it */ } }
   }
 
   /** The mood now, from the skills' reads and the clock (mood.ts), and the pictures that show it (to the owner, and to the public). */
@@ -658,7 +702,7 @@ export function createAssistant(deps: AssistantDeps) {
   /** The owner deleted a note from their app (an `owner_action` forget_note, checked at the runtime against the owner's link or session). */
   async function onPageForget(id: string): Promise<void> { await onPage(() => notes.forget(id)); }
 
-  return { onOwnerMessage, onPageCard, onPageMessage, onPageVoice, onPageForget, onPanelNote, hearOwner, onTick, mood, kinds: context.kinds, talkToCustomer, notesForApp: notes.forApp };
+  return { onOwnerMessage, onPageCard, onPageMessage, onPageVoice, onPageForget, onPanelNote, hearOwner, onTick, mood, onLimit, kinds: context.kinds, talkToCustomer, notesForApp: notes.forApp };
 }
 export type Assistant = ReturnType<typeof createAssistant>;
 

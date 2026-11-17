@@ -9,7 +9,7 @@ import { agentDesiredHash, deployAgent } from "./agent/deploy.ts";
 import { finishRotations } from "./agent/rotate.ts";
 import { listAgents, readAgent } from "./agent/folder.ts";
 import { recordAgents } from "./agent/records.ts";
-import { Refused, deploy, desiredHashOf, desiredOf, ops, renewRelayCredential } from "./deploy.ts";
+import { Refused, adminCall, deploy, desiredHashOf, desiredOf, ops, renewRelayCredential } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
 import { RECOVERY_FILE, parseRecoveryRequest, parseStopRequest } from "./lib/requests.ts";
@@ -19,6 +19,8 @@ import { OWN_API, isGatewayKind } from "../modules/payments/providers/index.ts";
 import { heldRulesOf } from "../modules/approvals/held-call.ts";
 import { syncAgentLicences, syncLicence } from "./lib/licence.ts";
 import { syncOwnerLinks } from "./lib/owner-link.ts";
+import { syncLimitChanges } from "./lib/limit-changes.ts";
+import type { LimitIO } from "./lib/limit-changes.ts";
 import { syncPages } from "./lib/pages.ts";
 import { syncCharacters } from "./lib/character.ts";
 import { processAgentRequests } from "./agent/requests.ts";
@@ -328,13 +330,41 @@ export function runOwnerLinks(ctx: Context): string[] {
   return lines;
 }
 
+/**
+ * "Limits, tightened by a tap", on every loop: each deployed shop's Pending limit changes are carried one at a time to the settings file Guard's spec is made from, deployed,
+ * read back from the running Guard and the runtime, and settled Active or Failed (lib/limit-changes.ts). Cheap when there is nothing: one read of the runtime per shop.
+ */
+export async function runLimitChanges(ctx: Context, io: LimitIO = realLimitIO(ctx)): Promise<string[]> {
+  const state = loadState(ctx.dir);
+  return syncLimitChanges(ctx, io, Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n));
+}
+
+/** The real hands: ops reaches the runtime and the Guards, `deploy` is the checked deploy. The last line of ops's output is its answer. */
+export function realLimitIO(ctx: Context): LimitIO {
+  const answer = (stdout: string): { status: number; body: any } | undefined => { try { return JSON.parse(stdout.trim().split("\n").at(-1) ?? ""); } catch { return undefined; } };
+  return {
+    async read(shop) { const a = answer((await ops(ctx, ["limits", shop])).stdout); return a?.status === 200 && a.body && Array.isArray(a.body.limits) ? a.body : undefined; },
+    async settle(shop, requestId, change, result, why) { const a = answer((await ops(ctx, ["limit-settled", shop, requestId, change, result, ...(why ? [why] : [])])).stdout); return a?.status === 200; },
+    async deploy(shop) { await deploy(ctx, shop); },
+    async guardsMatch(shop) {
+      const s = loadState(ctx.dir).shops[shop];
+      for (const g of Object.values(s?.applied?.guards ?? {})) {
+        const r = await adminCall(ctx, g.service, "GET", "/admin/status");
+        const digest: unknown = r.body?.policy?.digest;
+        if (r.status !== 200 || digest !== s.guards[g.kind]?.digest) return { ok: false, why: `${g.service} does not report the policy that was checked for the new limit` };
+      }
+      return { ok: true };
+    },
+  };
+}
+
 // The deployer's loop: each pass handles stop and recovery requests, server settings, then shops, then due jobs. Errors are caught per pass so one bad pass never ends the loop.
 export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   let lastRefresh = 0;
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);
   for (;;) {
     // the server's own settings first (the panel's first run): a shop deployed in the same pass then finds the model and its key in place
-    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); runLicence(ctx); runOwnerLinks(ctx); await runCharacters(ctx); await runPages(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
+    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); await runLimitChanges(ctx); runLicence(ctx); runOwnerLinks(ctx); await runCharacters(ctx); await runPages(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
     await ctx.sleep(everyMs);
   }
 }

@@ -86,6 +86,8 @@ export interface ShopStatus {
   versions?: { pathway?: string; bundle?: string; guard?: string };
   stopped?: { at: string; requestId?: string };
   backups?: { lastCopyAt?: string | null; lastDrillAt?: string | null; drillOk?: boolean | null };
+  /** "Limits, tightened by a tap": every change the owner made to a limit and its state (bundle/lib/limit-changes.ts). Left out: the shop has reported none. */
+  limitChanges?: { id: string; limit: string; from: number; to: number; direction: "tighten" | "loosen"; by: "owner_chat" | "owner_app"; state: "pending" | "active" | "failed"; at: string; why?: string }[];
   /** The cost meter's cumulative counts over the shop's record, as of the last export (bundle/lib/usage.ts). Counts only. */
   usage?: { at?: string; messages: number; byStep: { rules: number; decision: number; model: number }; modelMicroInr: number; /** Calls with no price: their cost is unknown, so `modelMicroInr` is a floor when this is above 0. Absent in an older file. */ unpriced?: number; whatsapp: { service: number; utility: number; marketing: number; estMicroInr: number; estimated: boolean } };
   /** The shop's licence (B13), worked out on the server from the signed lease (bundle/lib/licence.ts): what the runtime acts on. Times are ISO. */
@@ -118,6 +120,13 @@ export function parseStatus(textOrNothing: string | undefined): StatusRead {
   if (isObj(raw.backups)) {
     const day = (v: unknown) => (v === null ? null : isoDay(v));
     status.backups = { ...(day(raw.backups.lastCopyAt) !== undefined ? { lastCopyAt: day(raw.backups.lastCopyAt) as string | null } : {}), ...(day(raw.backups.lastDrillAt) !== undefined ? { lastDrillAt: day(raw.backups.lastDrillAt) as string | null } : {}), ...(typeof raw.backups.drillOk === "boolean" || raw.backups.drillOk === null ? { drillOk: raw.backups.drillOk as boolean | null } : {}) };
+  }
+  if (Array.isArray(raw.limitChanges)) {
+    status.limitChanges = raw.limitChanges.filter(isObj).slice(-30).flatMap((x) => {
+      const id = text(x.id, 20), limit = text(x.limit, 40), at = isoDay(x.at), from = whole(x.from), to = whole(x.to);
+      const ok = id && limit && at && from !== undefined && to !== undefined && (x.direction === "tighten" || x.direction === "loosen") && (x.by === "owner_chat" || x.by === "owner_app") && (x.state === "pending" || x.state === "active" || x.state === "failed");
+      return ok ? [{ id, limit, from, to, direction: x.direction as "tighten", by: x.by as "owner_chat", state: x.state as "pending", at, ...(text(x.why, 200) ? { why: text(x.why, 200) as string } : {}) }] : [];
+    });
   }
   const u = raw.usage;
   if (isObj(u) && isObj(u.byStep) && isObj(u.whatsapp)) {

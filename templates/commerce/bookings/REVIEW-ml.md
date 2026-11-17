@@ -1398,4 +1398,51 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `pages.block.setupWaitNote` | കോഡ് കാണിച്ച് ഏകദേശം 15 സെക്കൻഡ് കഴിഞ്ഞാണ് പ്രവർത്തിച്ചുതുടങ്ങുന്നത്. താഴത്തെ ബാർ പച്ചയാകുന്നതുവരെ കാത്തിരുന്ന് സ്കാൻ ചെയ്യൂ. അതിനുമുമ്പ് സ്കാൻ ചെയ്താൽ ഇതുവരെ പ്രവർത്തിക്കില്ല. | The code starts working about 15 seconds after it is shown. Wait until the bar below turns green, then scan. A scan before that does not work yet. |  |
 | `pages.block.cardQr` | അല്ലെങ്കിൽ ഫോൺ ക്യാമറ കൊണ്ട് ഇത് സ്കാൻ ചെയ്യൂ: | Or scan this with your phone's camera: |  |
 | `pages.block.cardMachine` | ഈ മലയാളം യന്ത്രം എഴുതിയതാണ്; മലയാളം അറിയുന്ന ഒരാൾ ഇതുവരെ പരിശോധിച്ചിട്ടില്ല. |  |  |
-
+| `limits.assistant.refund.name` | റീഫണ്ട് പരിധി | refund limit |  |
+| `limits.assistant.refund.rule` | {v}-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം | Refunds above {v} need your approval |  |
+| `limits.assistant.waiver.name` | ഇളവ് പരിധി | waiver limit |  |
+| `limits.assistant.waiver.rule` | {v}-ന് മുകളിലുള്ള ഇളവുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം | Waivers above {v} need your approval |  |
+| `limits.assistant.bigOrder.name` | വലിയ ഓർഡർ തുക | big-order amount |  |
+| `limits.assistant.bigOrder.rule` | {v}-ന് മുകളിലുള്ള ഓർഡറുകൾക്ക് പണം ചോദിക്കുന്നതിന് മുമ്പ് നിങ്ങളുടെ അനുമതി വേണം | Orders above {v} need your approval before any payment is asked |  |
+| `limits.assistant.perDay.name` | ദിവസത്തെ ഓർഡറുകൾ | orders a day |  |
+| `limits.assistant.perDay.rule` | ഒരു ദിവസം പരമാവധി {v} ഓർഡറുകൾ | At most {v} orders a day |  |
+| `limits.assistant.card` | ₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇപ്പോൾ: ₹1000. | Refunds above ₹500 need your approval. Now: ₹1000. |  |
+| `limits.assistant.never` | ഒരിക്കലും ഇല്ല | never |  |
+| `limits.assistant.say.pending` | കാത്തിരിക്കുന്നു: ₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇത് ഇവിടെ ഇപ്പോൾ തന്നെ ബാധകമാണ്, പ്രാബല്യത്തിൽ വരുമ്പോൾ ഞാൻ അറിയിക്കാം. | Pending: Refunds above ₹500 need your approval. It already applies here, and I'll tell you when it is Active. |  |
+| `limits.assistant.say.active` | പ്രാബല്യത്തിൽ: ₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. | Active: Refunds above ₹500 need your approval. |  |
+| `limits.assistant.say.failed` | ഇത് നടന്നില്ല. മുമ്പത്തെ പരിധി തന്നെ ഇപ്പോഴും പ്രാബല്യത്തിൽ: ₹1000-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. വീണ്ടും ശ്രമിക്കാം. | That did not go through. The previous limit is still in force: Refunds above ₹1000 need your approval. You can try again. |  |
+| `limits.assistant.say.not_tighter` | നിങ്ങളുടെ റീഫണ്ട് പരിധി ഇപ്പോൾ ₹200 ആണ്, അതിനാൽ ₹500 അത് കർശനമാക്കുകയല്ല, അയവുള്ളതാക്കുകയാണ്. ഞാൻ ഇവിടെ നിന്ന് കർശനമാക്കാൻ മാത്രമേ ചെയ്യൂ; അയവ് വരുത്താൻ നിങ്ങളുടെ ആപ്പ് തുറന്ന് പാസ്‌കീ ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്യുക. | Your refund limit is ₹200 now, so ₹500 would loosen it, not tighten it. I only tighten from here; to loosen, open your own app and sign in with your passkey. |  |
+| `limits.assistant.say.need_value` | നിങ്ങളുടെ റീഫണ്ട് പരിധി എത്ര ആയിരിക്കണം? രൂപയുടെ തുകയും രൂപ ചിഹ്നവും ചേർത്ത് പറയുക. | What should your refund limit be? Say it with a rupee amount and the rupee sign. |  |
+| `limits.assistant.say.which` | ഏത് പരിധിയാണ് ഉദ്ദേശിക്കുന്നത്? എനിക്ക് ഇവ കർശനമാക്കാം: റീഫണ്ട് പരിധി. മറ്റെന്തിനും ഞാൻ അത് ഒരു കുറിപ്പായി സൂക്ഷിക്കാം. | Which limit do you mean? I can tighten: refund limit. For anything else, I'll keep it as a note instead. |  |
+| `limits.assistant.notTighterRefusal` | ഈ മൂല്യം ഇപ്പോൾ പ്രാബല്യത്തിലുള്ള പരിധിയെ കർശനമാക്കുന്നില്ല, അതിനാൽ ഒന്നും മാറ്റിയില്ല. അയവ് വരുത്തുന്നത് നിങ്ങളുടെ സ്വന്തം ആപ്പിൽ പാസ്‌കീ ഉപയോഗിച്ചാണ്. | That value no longer tightens the limit in force now, so nothing was changed. Loosening is done in your own app, with your passkey. |  |
+| `limits.panel.heading` | പരിധി മാറ്റങ്ങൾ | Limit changes |  |
+| `limits.panel.note` | ഉടമ ഒരു പരിധിയിൽ വരുത്തിയ ഓരോ മാറ്റവും അത് ഇപ്പോൾ എവിടെ എത്തി എന്നതും. കാത്തിരിക്കുന്നു എന്നാൽ റൺടൈം കർശനമായ മൂല്യം ഇപ്പോഴേ അനുസരിക്കുന്നു, Guard-ന് അത് ഇതുവരെ ലഭിച്ചിട്ടില്ല. | Every change the owner made to a limit, and where it stands. Pending means the runtime already obeys the tighter value and Guard does not have it yet. |  |
+| `limits.panel.none` | ഇതുവരെ ഒരു പരിധിയും മാറ്റിയിട്ടില്ല. | No limit has been changed yet. |  |
+| `limits.panel.tighten` | കർശനമാക്കി | tightened |  |
+| `limits.panel.loosen` | അയവുള്ളതാക്കി | loosened |  |
+| `limits.panel.chat` | അസിസ്റ്റന്റിലെ ടാപ്പ് വഴി | by a tap in the assistant |  |
+| `limits.panel.app` | അവരുടെ ആപ്പിൽ | in their app |  |
+| `limits.panel.pending` | കാത്തിരിക്കുന്നു | Pending |  |
+| `limits.panel.active` | പ്രാബല്യത്തിൽ | Active |  |
+| `limits.panel.failed` | നടന്നില്ല: മുമ്പത്തെ പരിധി തന്നെ പ്രാബല്യത്തിൽ | Failed: the previous limit is still in force |  |
+| `limits.panel.loosenNews` | അറിയിപ്പിനായി: ഉടമ ഇത് സ്വയം, അവരുടെ പാസ്‌കീ ഉപയോഗിച്ച്, അയവുള്ളതാക്കി. നിങ്ങൾക്കായി ഒന്നും കാത്തിരിക്കുന്നില്ല. | For your information: the owner loosened this themselves, behind their passkey. Nothing waits for you. |  |
+| `limits.panel.row` | {name}: {from} മുതൽ {to} വരെ, {how}, {by} | {name}: {from} to {to}, {how}, {by} |  |
+| `limits.owner.title` | നിങ്ങളുടെ പരിധികൾ | Your limits |  |
+| `limits.owner.intro` | നിങ്ങളുടെ അസിസ്റ്റന്റ് പ്രവർത്തിക്കുന്ന പരിധികളാണിത്. പരിധി കർശനമാക്കുന്നത് എളുപ്പമാണ്: അസിസ്റ്റന്റിനോട് പറഞ്ഞ് yes ടാപ്പ് ചെയ്യുക. അയവ് വരുത്തുന്നത് ഇവിടെ മാത്രം, പാസ്‌കീ ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്ത ശേഷം. | These are the limits your assistant works within. Tightening one is quick: tell your assistant and tap yes. Loosening one is only done here, after you sign in with your passkey. |  |
+| `limits.owner.inForce` | ഇപ്പോൾ പ്രാബല്യത്തിൽ | In force now |  |
+| `limits.owner.range` | നിങ്ങൾക്ക് ഇത് ₹0 മുതൽ ₹5,000 വരെ വെക്കാം | You can set it from ₹0 to ₹5,000 |  |
+| `limits.owner.change` | മാറ്റുക | Change |  |
+| `limits.owner.changeTo` | പുതിയ മൂല്യം | New value |  |
+| `limits.owner.needPasskey` | ഇവിടെ പരിധി മാറ്റാൻ സൈൻ ഔട്ട് ചെയ്ത് പാസ്‌കീ ഉപയോഗിച്ച് വീണ്ടും സൈൻ ഇൻ ചെയ്യുക. | To change a limit here, sign out and sign in again with your passkey. |  |
+| `limits.owner.changes` | സമീപകാല മാറ്റങ്ങൾ | Recent changes |  |
+| `limits.owner.none` | ഇതുവരെ മാറ്റങ്ങളൊന്നുമില്ല. | No changes yet. |  |
+| `limits.owner.pending` | കാത്തിരിക്കുന്നു: കടയിൽ കർശനമായ മൂല്യം ഇപ്പോഴേ പാലിക്കുന്നു, Guard-ന് കിട്ടുന്നതുവരെ മാറ്റം അന്തിമമല്ല | Pending: the shop already follows the tighter value, and the change is not final until Guard has it |  |
+| `limits.owner.active` | പ്രാബല്യത്തിൽ | Active |  |
+| `limits.owner.failed` | നടന്നില്ല: മുമ്പത്തെ പരിധി തന്നെ പ്രാബല്യത്തിൽ | Failed: the previous limit is still in force |  |
+| `limits.owner.tightened` | കർശനമാക്കി | tightened |  |
+| `limits.owner.loosened` | അയവുള്ളതാക്കി | loosened |  |
+| `limits.owner.asked` | ചെയ്തു. കടയുടെ Guard-ന് കിട്ടുന്നതുവരെ ഇത് കാത്തിരിക്കുന്നു എന്നും പിന്നീട് പ്രാബല്യത്തിൽ എന്നും കാണിക്കും. നിങ്ങളുടെ ഓപ്പറേറ്ററെ അറിയിച്ചിട്ടുണ്ട്, അവർക്കായി ഒന്നും കാത്തിരിക്കുന്നില്ല. | Done. It shows as Pending until the shop's Guard has it, then as Active. Your Operator is told, and nothing waits for them. |  |
+| `limits.owner.refused` | ഈ മൂല്യം അനുവദനീയമല്ല. അത് പരിധിക്കുള്ളിലെ ഒരു പൂർണ്ണസംഖ്യയും ഇപ്പോഴത്തേതിൽ നിന്ന് വ്യത്യസ്തവും ആയിരിക്കണം. | That value is not allowed. It must be a whole number inside the range, and different from now. |  |
+| `limits.owner.back` | നിങ്ങളുടെ കടയിലേക്ക് മടങ്ങുക | Back to your shop |  |
+| `limits.owner.never` | ഒരിക്കലും ഇല്ല | never |  |
+| `limits.owner.yourShop` | നിങ്ങളുടെ കട | Your shop |  |

@@ -6,6 +6,8 @@
 //     admin <guard-service> <METHOD> <path> [json]     one admin call, answered as {"status":200,"body":...}
 //     observe                                          everything the heartbeat reads, as JSON (what `geometer status` shows)
 //     stop <shop> <on|off> <by> <reason>               the kill switch on all three of the shop's Guards, and the shop's agent on the model Guard
+//     limits <shop>                                    the limits the owner may change, their value in force and the changes so far (GET /internal/limit-changes), as {"status","body"}
+//     limit-settled <shop> <request-id> <change> <active|failed> [why...]   the deployer's word that Guard has a changed limit, or that it failed (POST /internal/limit-changes)
 //     recover <shop> <request-id> <case> <action>      ask the shop's runtime to look again or ask again about one booking or fee (POST /internal/recover); answered as {"status":200}
 //     issue-approver <shop> <ttl-seconds>              a fresh reading credential for the shop's relay, printed once on stdout
 //   Nothing in this file logs a token, and the body of a heartbeat has no message text in it.
@@ -182,6 +184,22 @@ export async function recoverCase(config: OpsConfig, shop: string, requestId: st
   } catch { return { shop, status: 0 }; }
 }
 
+/**
+ * "Limits, tightened by a tap": one call to a shop's runtime about its limit changes (the deployer cannot reach the runtime's address on every host, as for `recover`). GET reads
+ * what the runtime holds; POST settles a change the runtime made. The runtime saves a settle like any event and decides in its own step; this carries a word, never a value.
+ */
+export async function limitCall(config: OpsConfig, shop: string, body?: { id: string; change: string; result: string; why?: string }, fetchFn: typeof fetch = fetch): Promise<{ status: number; body: unknown }> {
+  const c = config.shops[shop];
+  if (!c) throw new Error(`no shop ${shop} on this server`);
+  try {
+    const r = await fetchFn(`${c.runtimeUrl.replace(/\/+$/u, "")}/internal/limit-changes`, { method: body ? "POST" : "GET", headers: { authorization: `Bearer ${readSecret(c.internalTokenFile)}`, "content-type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}), signal: timeout() });
+    const text = await r.text();
+    let parsed: unknown = text;
+    try { parsed = JSON.parse(text); } catch { /* not JSON */ }
+    return { status: r.status, body: parsed };
+  } catch { return { status: 0, body: null }; }
+}
+
 async function main(argv: string[], config: OpsConfig): Promise<number> {
   const [command, ...args] = argv;
   const out = (v: unknown) => console.log(JSON.stringify(v));
@@ -212,6 +230,10 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
     }, new Date(), fetch, skip));
     return 0;
   }
+  if (command === "limits") { try { out(await limitCall(config, args[0])); return 0; } catch (e) { console.error((e as Error).message); return 2; } }
+  if (command === "limit-settled") {
+    try { out(await limitCall(config, args[0], { id: args[1], change: args[2], result: args[3], ...(args.length > 4 ? { why: args.slice(4).join(" ") } : {}) })); return 0; } catch (e) { console.error((e as Error).message); return 2; }
+  }
   if (command === "recover") {
     try { out(await recoverCase(config, args[0], args[1], args[2], args[3])); return 0; } catch (e) { console.error((e as Error).message); return 2; }
   }
@@ -229,7 +251,7 @@ async function main(argv: string[], config: OpsConfig): Promise<number> {
     return 0;
   }
   if (command === "run") return await run(config);
-  console.error("usage: ops.ts run | admin <guard> <METHOD> <path> [json] | observe | stop <shop> <on|off> <by> <reason> | issue-approver <shop> <ttl> | agent-facts <agent> [skip json]");
+  console.error("usage: ops.ts run | admin <guard> <METHOD> <path> [json] | observe | limits <shop> | limit-settled <shop> <id> <change> <active|failed> [why] | stop <shop> <on|off> <by> <reason> | issue-approver <shop> <ttl> | agent-facts <agent> [skip json]");
   return 2;
 }
 

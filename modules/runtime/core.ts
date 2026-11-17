@@ -29,6 +29,7 @@ import { WaitingForGuard, guardAnswers, sendMemory, watchStep } from "./guard-wa
 import { afterRestore, readRestoreNote, retireRestoreNote } from "./restored.ts";
 import { recordMessageStatus } from "../messaging/statuses.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
+import type { LimitsKit, LimitsView } from "../limits/runtime-limits.ts";
 import { channelStartKey } from "../channels/events.ts";
 import type { StatusContext } from "../messaging/statuses.ts";
 import type { DocumentsKey } from "../accounting/case-documents.ts";
@@ -207,6 +208,11 @@ export interface RuntimeCoreOptions<Store extends { ai?: AiState }, Settings ext
   retentionDays?: number;
   /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts). Left out: no sign-in links, and "open my app" goes to the agent. */
   ownerSignin?: OwnerSignin;
+  /**
+   * "Limits, tightened by a tap" (modules/limits/runtime-limits.ts): the settings the agent reads get what is in force before every step, and the deployer's `limit_settled`
+   * and the owner's own limits page (`owner_limit`) are run here, in the step, like the sign-in's events. Left out: no limit changes, as before.
+   */
+  limits?: LimitsKit<Store & { assistant?: import("../assistant/state.ts").AssistantState }>;
   /** Runs around every agent step (`run` is the step itself). A seam for tests, to see order, hold a step or make one fail. */
   aroundStep?: (event: RuntimeEvent, run: () => Promise<void>) => Promise<void>;
   log?: (line: string) => void;
@@ -227,6 +233,8 @@ export interface Runtime<Status = BaseStatus, Context = unknown> {
   close(): Promise<void>;
   /** The template's channel reads (modules/channels), from the last saved state. Left out when the template has none. */
   channel?: RuntimeChannel;
+  /** The limits the owner may change, their value in force and the changes so far, from the last saved state (the deployer and the owner's limits page read it). Left out: no limit kit. */
+  limits?: { view(): LimitsView };
 }
 
 /** A channel request's status when the saved state has no answer for it yet: its task is waiting, or it ended without its work done. */
@@ -310,6 +318,8 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     const lastTry = stepOptions?.lastTry === true;
     const isTask = taskId !== undefined;
     const store = kit.parse(snapshot);
+    const limits = options.limits;
+    limits?.apply(store); // what is in force now (a tapped, still pending tightening included) is what this step's agent reads
     const record = createRecord(clock, entries, options.recordKey ? { key: options.recordKey } : {});
     if (!isTask) tickMemory.begin();
     const watch = watchStep(kit.services, { mode: isTask && !lastTry ? "wait" : "observe", givenUp, ...(isTask ? {} : { memory: tickMemory }) });
@@ -322,6 +332,8 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
       if (event.kind === "message_status") recordMessageStatus(record, event.status, statusContext);
       else if (signin?.takes(event)) await signin.run(event as Parameters<typeof signin.run>[0], { messaging, record });
       else if (event.kind === "owner_signin" || event.kind === "owner_access") log("A sign-in event came for a shop with no owner sign-in (no pages file yet); it was dropped.");
+      else if (limits?.takes(event)) { limits.run(event as Parameters<typeof limits.run>[0], { store, record }); limits.apply(store); }
+      else if (event.kind === "limit_settled" || event.kind === "owner_limit") log("A limit event came for a shop that has no limits the owner may change; it was dropped.");
       else await agent.handle(event);
     };
     let thrown: { error: unknown } | undefined;
@@ -437,6 +449,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     }) as BaseStatus & Record<string, unknown>,
 
     refundContext: (receipt) => kit.refundContext(kit.parse(snapshot), settings, receipt),
+    ...(options.limits ? { limits: { view: () => options.limits!.view(kit.parse(snapshot)) } } : {}),
 
     // Reads for the template's channels: each from a fresh parse of the last saved state, never a step in progress, and never one that saves anything.
     ...(kit.channel ? {

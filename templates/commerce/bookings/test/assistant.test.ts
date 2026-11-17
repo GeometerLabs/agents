@@ -292,10 +292,51 @@ test("closing a weekday that is always closed, or a day gone, is said plainly", 
   assert.equal(w.lastTextTo(w.owner), "Which day? For example: close Sunday.");
 });
 
-test("limits cannot be loosened from the chat in this release, and the owner is told where", async () => {
+test("a limit is tightened by a card and the owner's tap; the chat never loosens one (₹500 loosens ₹200)", async () => {
+  const w = withAssistant(); // the refund limit is ₹200
+  await owner(w, "refunds above ₹500 need my OK");
+  assert.match(w.lastTextTo(w.owner), /would loosen it/u, "a rule that is looser than the limit in force gets no card");
+  assert.equal(w.store.assistant?.limitChanges?.length ?? 0, 0);
+  await owner(w, "refunds above ₹100 need my OK");
+  const card = lastCard(w);
+  assert.match(card.text, /Refunds above ₹100 need your approval\. Now: ₹200\./u);
+  assert.equal(w.store.assistant!.limitChanges.length, 0, "nothing is changed before the tap");
+  assert.equal(w.settings.cancellation.refundLimitInr, 200);
+  await tapOwner(w, card.yes);
+  const [change] = w.store.assistant!.limitChanges;
+  assert.deepEqual([change.state, change.from, change.to, change.by], ["pending", 200, 100, "owner_chat"]);
+  assert.match(w.lastTextTo(w.owner), /^Pending: Refunds above ₹100 need your approval/u);
+  assert.equal(w.settings.cancellation.refundLimitInr, 100, "the runtime's own checks use the tighter value at once");
+  assert.deepEqual(recordOf(w, "limit_change").map((e) => [e.outcome, e.refs.state, e.refs.to]), [["unconfirmed", "pending", "100"]]);
+  // the deployer's word (the runtime's core settles it in a step): the owner hears Active on the next beat, once
+  change.state = "active";
+  await w.tick();
+  assert.match(w.lastTextTo(w.owner), /^Active: Refunds above ₹100 need your approval/u);
+  const told = w.messaging.sentTo(w.owner).length;
+  await w.tick();
+  assert.equal(w.messaging.sentTo(w.owner).length, told, "said once");
+});
+
+test("a failed change is told with the previous limit still in force; a rule that names no limit gets the list of limits", async () => {
   const w = withAssistant();
-  await owner(w, "increase my refund limit to ₹1000");
-  assert.equal(w.lastTextTo(w.owner), "Limits (refunds, deposits, caps) are changed by your Operator from their panel. I can't change them from here in this version.");
+  await owner(w, "refunds above ₹100 need my OK");
+  await tapOwner(w, lastCard(w).yes);
+  const change = w.store.assistant!.limitChanges[0];
+  change.state = "failed"; change.why = "the deploy did not go through";
+  await w.tick();
+  assert.match(w.lastTextTo(w.owner), /previous limit is still in force: Refunds above ₹200 need your approval/u);
+  await owner(w, "limit the dress colours to 3");
+  assert.match(w.lastTextTo(w.owner), /Which limit do you mean\?/u);
+});
+
+test("the card is void when the limit changed between the card and the tap", async () => {
+  const w = withAssistant();
+  await owner(w, "refunds above ₹100 need my OK");
+  const card = lastCard(w);
+  w.store.assistant!.limitChanges.push({ id: "l-90", limit: "refund_limit", path: "cancellation.refundLimitInr", from: 200, to: 50, direction: "tighten", by: "owner_app", state: "pending", atMs: 1 });
+  await tapOwner(w, card.yes);
+  assert.equal(w.store.assistant!.limitChanges.length, 1, "100 no longer tightens 50: nothing was done");
+  assert.match(w.lastTextTo(w.owner), /no longer tightens/u);
 });
 
 test("the owner's language: the assistant answers in it", async () => {

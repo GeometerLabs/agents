@@ -505,3 +505,17 @@ The service is `bundle/services/speech/` (README there). It was written and test
 - **25 shops stop Docker Desktop's engine on the owner's Mac** (8 GB for Docker, 10 CPUs). In the full proof of 14 Nov the 25-shop deploy passed with every Guard proven, then `docker compose ps` could not reach the daemon ("Cannot connect to the Docker daemon"); Docker Desktop restarted by itself. Since item 11h every shop has a fourth Guard (push) and its forwarder, so 25 shops are about 50 containers more than at the 9 Nov measurement that gave "about 25 shops a server". The proof now says so instead of reporting an empty list (`listServices` throws Docker's own error).
 - **What was run instead:** the full proof at `--shops 1,5,10` (the trial phase last). Since 15 Nov 2026 (owner: make the release process faster) that is the proof's default; `--shops 1,5,10,25` has to be named. Until the 25-shop step passes again, do not quote 25 shops a server.
 - **Trigger:** measure on the real Operator server (e2-medium, 4 GB) before its first shops, with `--shops 1,5,10,25`; then set the per-server shop count in docs/costs.md and the plan from that measurement.
+
+
+## Limits, tightened by a tap (17 Nov 2026): what Guard lacks, and what is untested
+
+- **Guard cannot report a limit's value.** `/admin/status` carries `policy.digest`, so the deployer's read-back is "the running Guard has the policy that was compiled from the
+  new file, and the restarted runtime reads the new number". What Guard (the Rust side, in the monorepo) would need is a read-only list of the limits inside its running
+  policy (for a gateway Guard: `call_bound_approval`'s threshold in paise, each count cap), in `/admin/status` or `/admin/policy` (GET). The deployer would then compare the
+  declared limit's value with that, in `realLimitIO.guardsMatch`. Trigger: the next Guard release that touches `/admin`. Done when: `guardsMatch` compares the number.
+  Limits the agent enforces alone (waiver, orders a day, big-order amount) have no Guard value to read; for those the runtime's own report of the file is the read-back.
+- **A deploy that takes the new file and then fails its proof** is undone by putting the old number back and letting the normal pass deploy the old file; the shop is stopped by
+  the existing kill switch in between (the deploy's own rule for a running Guard that does not match). Not run against Docker: the tests use fakes of ops, the deploy and the Guards.
+- **The settings file is rewritten as indented JSON** (one number changed). Its formatting is not kept byte for byte; the old file is kept beside the journal.
+- **Not run in a real shop:** the runtime's restart on a settings change is read from the compose file (the runtime service's files are `client/settings.json`, `runtime.json` and
+  `pathway.lock`, hashed, and a changed hash restarts it: `bundle/generate/compose.ts`, `deploy.ts bringUp`), not observed. If it did not restart, the change fails after five minutes and the file goes back.

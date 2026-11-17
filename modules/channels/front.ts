@@ -44,6 +44,8 @@ import { OWNER, PAGE } from "./words.ts";
 import { bookingPage, statusPage } from "./page.ts";
 import { bookingIcs } from "./ics.ts";
 import { ownerLinkGone, ownerPage } from "./owner-page.ts";
+import { WORDS as LIMITS_PAGE_WORDS, ownerLimitsPage } from "./owner-limits-page.ts";
+import type { OwnerLimitsView } from "./owner-limits-page.ts";
 import { DOCUMENT_SUB, documentHtml, receiptsBox, receiptsOf } from "./receipts.ts";
 import { exportPeriods } from "../accounting/periods.ts";
 import { CONTACT_HEADER, shopErrorPage } from "./contact-bar.ts";
@@ -608,7 +610,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     /** A signed-in owner's POST must carry the session's form token; the panel's link is its own secret and needs none. */
     const csrfOk = (given: unknown) => o.csrf === undefined || (typeof token === "object" && "session" in token && csrfMatches(token.session, given));
     // item 11e: the owner's app lives at the same base: the page also at "<base>/" (a service worker controls only pages inside its scope, <base>/), and its four routes
-    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST" };
+    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST" };
     // the accountant's files: <owner app>/accounting/<period>/<file>, for the signed-in owner's session only (handled below, once the session is known good)
     const accounting = /^\/accounting\/([^/]+)(?:\/([^/]+))?$/u.exec(sub);
     if (accounting) { if (method !== "GET") return sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" }); }
@@ -679,6 +681,27 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       res.end(OWNER_APP_SW);
       return;
     }
+    // ---- "Limits, tightened by a tap": the owner's limits page. Reading needs the owner's credential; changing needs a session made with a PASSKEY, which the runtime checks ----
+    if (sub === "/limits" || sub === "/limits/set") {
+      if (!shop.backend.limits) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+      const got = await shop.backend.limits(token);
+      if (got.status === 403) return gone();
+      if (got.status !== 200 || !Array.isArray(got.body.limits)) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+      const view = got.body as unknown as OwnerLimitsView;
+      if (sub === "/limits") {
+        const n = url.searchParams.get("n");
+        return sendHtml(res, 200, ownerLimitsPage({ base, language, view, ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(n === "asked" || n === "refused" ? { notice: n } : {}) }), { "x-robots-tag": "noindex", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" });
+      }
+      const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
+      if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
+      const row = view.limits.find((l) => l.id === form.get("limit"));
+      const to = Number(form.get("to"));
+      // the page's own pre-check, so the owner hears "not allowed" at once; the runtime decides again, in its step, against what is in force then
+      if (!view.passkey || !row || !Number.isSafeInteger(to) || to < row.bounds.min || to > row.bounds.max || to === row.inForce) return redirect(res, `${base}/limits?lang=${language}&n=refused`);
+      const r = await shop.backend.limits(token, { id: randomUUID(), limit: row.id, to });
+      if (r.status === 403 && r.body.state !== "passkey_needed") return gone();
+      return redirect(res, `${base}/limits?lang=${language}&n=${r.status === 200 ? "asked" : "refused"}`);
+    }
     if (app && sub === "/talk") {
       const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
       if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
@@ -737,7 +760,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), bare: true }) : undefined;
     // item 11i: the owner's app shows the character in the shop's real mood (all five moods: this is the owner's own view)
     const facePic = state.view.app ? shop.character?.()?.picture(state.view.app.face, "svg") : undefined;
-    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(typeof token === "object" && "session" in token && shop.backend.accountantFiles ? { exportLinks: { base: `${base}/accounting` } } : {}), ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
+    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(typeof token === "object" && "session" in token && shop.backend.accountantFiles ? { exportLinks: { base: `${base}/accounting` } } : {}), ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(shop.backend.limits ? { limitsLink: { href: `${base}/limits?lang=${language}`, label: LIMITS_PAGE_WORDS[language].title } } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
   }
 
   return (req, res) => {
