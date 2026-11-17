@@ -43,7 +43,18 @@ export type ServiceShape = readonly {
  */
 const MESSAGING_SERVICE = { name: "messaging", extra: "phoneNumberId", optional: ["provider", "appId", "appName", "sourceNumber"], check: messagingConfigProblem, mayLack: true } as const;
 /** Item 11h: the shop's push Guard (bundle/generate/guards.ts pushSpec), through which every web push goes. Left out: the shop sends no pushes. */
-const PUSH_SERVICE = { name: "push", mayLack: true } as const;
+const PUSH_SERVICE = { name: "push", mayLack: true, optional: ["relayKey", "relayShop"], check: pushRelayProblem } as const;
+/**
+ * W3 (17 Nov 2026): a shop served through the Streetlist door sends to the Streetlist app's phones through the front's relay, with Streetlist's one push key. `relayKey` is that
+ * key's PUBLIC half (65 bytes, base64url), which the chat page subscribes phones with; `relayShop` is this shop's name on its server, which the relay checks. Both or neither.
+ * The private half is never here: only the relay holds it (bundle/services/push-relay.ts).
+ */
+function pushRelayProblem(raw: Record<string, unknown>): string | null {
+  if (raw.relayKey === undefined && raw.relayShop === undefined) return null;
+  if (typeof raw.relayKey !== "string" || !/^[A-Za-z0-9_-]{87}$/u.test(raw.relayKey) || Buffer.from(raw.relayKey, "base64url")[0] !== 4) return "services.push.relayKey must be Streetlist's push public key (65 bytes, base64url).";
+  if (typeof raw.relayShop !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(raw.relayShop)) return "services.push.relayShop must be this shop's name on its server (letters, digits, dots, dashes).";
+  return null;
+}
 /**
  * Item 11h: does this shop have WhatsApp? A runtime.json whose `services` name no messaging service has none, in live mode and in fakes mode alike (fakes mode
  * with no `services` at all keeps the stand-in WhatsApp, as a local run always had). The one place a runtime decides it.
@@ -54,6 +65,11 @@ export const runtimeHasWhatsApp = (runtime: { mode?: string; services?: unknown 
 };
 
 export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "calendar", extra: "calendarId", calendar: true }, MESSAGING_SERVICE, PUSH_SERVICE];
+/**
+ * Stock orders (17 Nov 2026): WhatsApp is the whole point (the order goes to a supplier on it), so unlike every other template the messaging service may NOT be left out,
+ * and there is no payment service at all (the agent pays nobody). Push is the owner's, as everywhere.
+ */
+export const STOCK_SERVICES: ServiceShape = [{ ...MESSAGING_SERVICE, mayLack: undefined } as never, PUSH_SERVICE];
 export const FEES_SERVICES: ServiceShape = [{ name: "payments", payment: true }, MESSAGING_SERVICE, PUSH_SERVICE];
 
 /** Where the live adapters should call: the services the template names, and how long to wait for any one of them. */

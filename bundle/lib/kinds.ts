@@ -11,6 +11,14 @@ import type { ChatLimit } from "../../modules/limits/chat-limits.ts";
 import { CHAT_LIMITS as bookingsChatLimits } from "../../templates/commerce/bookings/src/chat-limits.ts";
 import { CHAT_LIMITS as ordersChatLimits } from "../../templates/commerce/orders/src/chat-limits.ts";
 import { CHAT_LIMITS as feesChatLimits } from "../../templates/education/fees/src/chat-limits.ts";
+import { CHAT_LIMITS as stockChatLimits } from "../../templates/commerce/stock-orders/src/chat-limits.ts";
+import { runOn as stockRunOn } from "../../templates/commerce/stock-orders/crash-test/situations.ts";
+import { buildGoLiveCertificate as stockCertificate, summariseRun as stockSummary } from "../../templates/commerce/stock-orders/report/certificate.ts";
+import { policyDigest as stockDigest } from "../../templates/commerce/stock-orders/report/data.ts";
+import { writeGoLiveCertificate as stockWrite } from "../../templates/commerce/stock-orders/report/run.ts";
+import { approvedRecipients as stockRecipients } from "../../templates/commerce/stock-orders/src/guard-limits.ts";
+import { validateSettings as stockSettings } from "../../templates/commerce/stock-orders/src/settings.ts";
+import { validateRuntimeConfig as stockRuntime } from "../../templates/commerce/stock-orders/server/config.ts";
 import type { LimitsSpec, LimitsSpecIdentity, PaymentCaps } from "../../modules/payments/guard-limits.ts";
 import type { ReportLanguage } from "../../modules/report/text.ts";
 import { runOn as bookingsRunOn } from "../../templates/commerce/bookings/crash-test/situations.ts";
@@ -73,9 +81,10 @@ export interface HandCheckSummaryLike { held: number; total: number; checks: num
 export interface GoLiveCertificateLike { checks: { failed: number }; notTested: unknown[] }
 
 export interface Kind {
-  id: "bookings" | "fees" | "orders";
+  id: "bookings" | "fees" | "orders" | "stock-orders";
   /** The file the deployer exports this template's cases to (backup/export.ts), and what the runtime's status and the export call them. */
-  casesFile: "bookings.json" | "dues.json" | "orders.json";
+  casesFile: "bookings.json" | "dues.json" | "orders.json" | "purchase-orders.json";
+  /** What the runtime's status calls the cases. Stock orders says "orders" too (its status counts its purchase orders by state under that name). */
   casesName: "bookings" | "fees" | "orders";
   /** The Guards a shop of this template has. */
   guards: readonly ServiceKind[];
@@ -85,8 +94,10 @@ export interface Kind {
   validateRuntimeConfig(config: unknown, folder: string): { ok: boolean; errors?: string[] };
   /** The limits the owner may change from their assistant or their app (the template's src/chat-limits.ts): the deployer writes only these paths of the settings file. */
   chatLimits: readonly ChatLimit[];
-  /** The Razorpay limits spec made from the settings, the template's own numbers in the shared shape. */
-  gatewaySpec(settings: any, identity: LimitsSpecIdentity, options: { approvalTtlSeconds: number; caps?: Partial<PaymentCaps> }): LimitsSpec;
+  /** The Razorpay limits spec made from the settings, the template's own numbers in the shared shape. Left out by a template that takes no payments (Stock orders): every caller asks only for a shop that chose a gateway. */
+  gatewaySpec?(settings: any, identity: LimitsSpecIdentity, options: { approvalTtlSeconds: number; caps?: Partial<PaymentCaps> }): LimitsSpec;
+  /** The numbers the shop's WhatsApp Guard lets a message go to, when the template writes only to a fixed list (Stock orders: its owner and its approved suppliers). Left out: any number. */
+  guardRecipients?(settings: any): string[];
   /** The checks and papers the panel makes: the same hand check the template's scripts run, on this shop's own settings, and the go-live certificate from it. */
   papers: {
     runOn(settings: any): Promise<unknown>;
@@ -127,6 +138,18 @@ export const KINDS: Record<string, Kind> = {
     validateRuntimeConfig: ordersRuntime,
     gatewaySpec: ordersSpec,
     papers: { runOn: ordersRunOn, summariseRun: ordersSummary, buildGoLiveCertificate: ordersCertificate, policyDigest: ordersDigest, writeGoLiveCertificate: ordersWrite },
+  },
+  // Stock orders (17 Nov 2026): WhatsApp only. It takes no payment and has no calendar, so it has no Razorpay Guard and no gateway spec; its cap and budget are the agent's own
+  // (and the owner's WhatsApp messages to suppliers are limited by the WhatsApp Guard's list of numbers: bundle/generate/guards.ts supplierNumbers).
+  "stock-orders": {
+    id: "stock-orders",
+    casesFile: "purchase-orders.json", casesName: "orders",
+    guards: ["whatsapp"],
+    guardRecipients: stockRecipients,
+    validateSettings: stockSettings,
+    chatLimits: stockChatLimits,
+    validateRuntimeConfig: stockRuntime,
+    papers: { runOn: stockRunOn, summariseRun: stockSummary, buildGoLiveCertificate: stockCertificate, policyDigest: stockDigest, writeGoLiveCertificate: stockWrite },
   },
 };
 

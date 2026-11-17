@@ -1,15 +1,15 @@
 // The stand-ins' control routes, /_standin/...: how a test or a person plays the customer (or parent) and the provider, and makes things go wrong. A customer writes (the
-// stand-in then delivers a SIGNED webhook to the inbox, as WhatsApp would), a customer pays a link (a signed Razorpay webhook follows), a fault is planned, and the outbox,
+// stand-in then delivers a SIGNED webhook to the inbox, as WhatsApp would), a customer pays a link (a signed webhook of the shop's gateway follows), a fault is planned, and the outbox,
 // events and links can be read. These routes exist only here, never on a real service, and the stand-ins listen on 127.0.0.1 only. It is shared by the templates that have
 // payments and messages but no calendar (Fees, Orders); Bookings' own control adds the calendar. One copy, so a fix lands once.
 import type { FakeMessaging } from "../messaging/messaging.ts";
 import type { FakePayments } from "../payments/payments.ts";
 import { signMeta } from "../messaging/webhooks.ts";
-import { signRazorpay } from "../payments/providers/razorpay/webhook.ts";
+import { GATEWAYS } from "../payments/providers/index.ts";
+import { gatewayRuntime } from "../payments/providers/runtime.ts";
 import { ok } from "./http.ts";
 import type { Handler, StandinReply } from "./http.ts";
 import { whatsappWebhookBody } from "./whatsapp.ts";
-import { razorpayWebhookBody } from "../payments/providers/razorpay/standin.ts";
 
 export interface Fakes { payments: FakePayments; messaging: FakeMessaging }
 
@@ -17,7 +17,10 @@ export interface ControlConfig {
   fakes: Fakes;
   /** Where signed webhooks go, for example http://127.0.0.1:8788. Without it, nothing is delivered (the reply says so). */
   inboxUrl?: string;
-  razorpayWebhookSecret: string;
+  /** The id of the gateway these stand-ins play (the registry's); with one gateway there is no need to say. It also names the control routes: /_standin/<id>/pay. */
+  gateway?: string;
+  /** The secret the stand-in signs the gateway's webhooks with. */
+  gatewayWebhookSecret: string;
   whatsappAppSecret: string;
   /** The phone number id the webhooks come "from". */
   phoneNumberId?: string;
@@ -31,6 +34,9 @@ export function controlStandin(config: ControlConfig): Handler {
   const { fakes } = config;
   const phoneNumberId = config.phoneNumberId ?? "100000000000001";
   let deliveredEvents = 0;
+  // The gateway's wire code comes from the registry, never from a provider's folder (modules/payments/providers/test/names.test.ts): its webhook body, signature and headers.
+  const gatewayId = config.gateway ?? GATEWAYS[0].id;
+  const { standin, webhook } = gatewayRuntime(gatewayId);
 
   async function deliver(path: string, headers: Record<string, string>, body: string): Promise<{ status?: number; error?: string }> {
     if (!config.inboxUrl) return { error: "no inbox URL is configured, so nothing was delivered" };
@@ -44,7 +50,7 @@ export function controlStandin(config: ControlConfig): Handler {
   }
 
   /**
-   * Send every Razorpay event not yet sent, in order, each signed; once, or twice when `twice` (a duplicate delivery). With `all`, every event so far goes again, which
+   * Send every payment event not yet sent, in order, each signed; once, or twice when `twice` (a duplicate delivery). With `all`, every event so far goes again, which
    * is what a provider does when it retries something the receiver did not accept (or sends a late repeat).
    */
   async function deliverPaymentEvents(twice: boolean, all = false): Promise<unknown[]> {
@@ -52,9 +58,10 @@ export function controlStandin(config: ControlConfig): Handler {
     deliveredEvents = fakes.payments.events.length;
     const results: unknown[] = [];
     for (const event of pending) {
-      const body = razorpayWebhookBody(event, fakes.payments);
-      const headers = { "x-razorpay-signature": signRazorpay(Buffer.from(body), config.razorpayWebhookSecret), "x-razorpay-event-id": event.id };
-      for (let i = 0; i < (twice ? 2 : 1); i++) results.push({ event: event.event, id: event.id, ...(await deliver("/webhooks/razorpay", headers, body)) });
+      const body = standin.webhookBody(event, fakes.payments);
+      const headers: Record<string, string> = { [webhook.signatureHeader]: webhook.sign(Buffer.from(body), config.gatewayWebhookSecret) };
+      if (webhook.eventIdHeader) headers[webhook.eventIdHeader] = event.id;
+      for (let i = 0; i < (twice ? 2 : 1); i++) results.push({ event: event.event, id: event.id, ...(await deliver(`/webhooks/${gatewayId}`, headers, body)) });
     }
     return results;
   }
@@ -73,14 +80,14 @@ export function controlStandin(config: ControlConfig): Handler {
       return ok({ message, delivered });
     }
 
-    if (path === "/_standin/razorpay/pay" && method === "POST") {
+    if (path === `/_standin/${gatewayId}/pay` && method === "POST") {
       if (typeof body?.request_id !== "string") return bad("send { request_id } (and optionally amount, twice, deliver)");
       let payment;
       try { payment = fakes.payments.customerPays(body.request_id, typeof body.amount === "number" ? { amount: body.amount } : {}); } catch (e) { return bad((e as Error).message); }
       return ok({ payment, delivered: body.deliver === false ? [] : await deliverPaymentEvents(body.twice === true) });
     }
 
-    if (path === "/_standin/razorpay/deliver" && method === "POST") return ok({ delivered: await deliverPaymentEvents(body?.twice === true, body?.all === true) });
+    if (path === `/_standin/${gatewayId}/deliver` && method === "POST") return ok({ delivered: await deliverPaymentEvents(body?.twice === true, body?.all === true) });
 
     if (path === "/_standin/fault" && method === "POST") {
       const target = body?.service === "payments" ? fakes.payments : body?.service === "messaging" ? fakes.messaging : undefined;

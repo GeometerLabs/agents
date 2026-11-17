@@ -60,6 +60,41 @@ export function characterLine(a: { language: Language; shop: string; name?: stri
 }
 
 /**
+ * The hold-to-record core, as script source: `holdToRecord(button, { onStart, onSend, send, onFail })`. Shared by the owner's talk box (below) and the chat on the shop's page (W1,
+ * 17 Nov 2026), so there is one recorder: Ogg Opus where the phone records it (the format WhatsApp voice notes have), else WebM Opus (Android's Chrome), at 24 kbps so 30 seconds
+ * is about 90 KB. It returns false, and shows nothing, when the phone cannot record; true once the button is shown. `send(blob, type)` posts the recording and throws when it
+ * did not go; `onFail(blocked)` is told when the microphone was refused (`blocked`) or the post failed. Holding starts it; letting go (or leaving the button, or 30 seconds) ends it.
+ */
+export const HOLD_TO_RECORD = `const holdToRecord = (rec, o) => {
+  const type = window.MediaRecorder ? ["audio/ogg;codecs=opus", "audio/webm;codecs=opus"].find((t) => MediaRecorder.isTypeSupported(t)) : undefined;
+  if (!rec || !type || !navigator.mediaDevices) return false;
+  rec.hidden = false;
+  let r = null, chunks = [], timer = null;
+  const stop = () => { if (r && r.state === "recording") r.stop(); clearTimeout(timer); };
+  const start = async (e) => {
+    e.preventDefault();
+    if (r) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunks = []; r = new MediaRecorder(stream, { mimeType: type, audioBitsPerSecond: 24000 }); // about 90 KB for 30 seconds: under the page's limit for a recording
+      r.ondataavailable = (x) => chunks.push(x.data);
+      r.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        o.onSend();
+        try { await o.send(new Blob(chunks, { type }), type); } catch { o.onFail(false); }
+        r = null;
+      };
+      r.start(); o.onStart();
+      timer = setTimeout(stop, ${RECORD_MAX_SECONDS} * 1000);
+    } catch { o.onFail(true); r = null; }
+  };
+  rec.addEventListener("pointerdown", start);
+  rec.addEventListener("pointerup", stop); rec.addEventListener("pointerleave", stop); rec.addEventListener("pointercancel", stop);
+  rec.addEventListener("contextmenu", (e) => e.preventDefault()); // a long press must not open the phone's own menu
+  return true;
+};`;
+
+/**
  * The progressive part: the hold-to-record button (shown only when the phone can record Opus: Ogg first, the format WhatsApp voice notes have, else WebM, the one
  * Android's Chrome records; the voice service reads both), the offline note (from the service worker's mark or navigator.onLine), and the service worker's
  * registration for this link only.
@@ -73,35 +108,18 @@ export function talkScript(base: string): string {
   const show = () => { off.hidden = navigator.onLine; };
   addEventListener("online", show); addEventListener("offline", show); show();
   const rec = document.getElementById("talk-rec");
-  const type = window.MediaRecorder ? ["audio/ogg;codecs=opus", "audio/webm;codecs=opus"].find((t) => MediaRecorder.isTypeSupported(t)) : undefined;
-  if (!rec || !type || !navigator.mediaDevices) return;
-  rec.hidden = false;
-  let r = null, chunks = [], timer = null;
-  const stop = () => { if (r && r.state === "recording") r.stop(); clearTimeout(timer); };
-  const start = async (e) => {
-    e.preventDefault();
-    if (r) return;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      chunks = []; r = new MediaRecorder(stream, { mimeType: type, audioBitsPerSecond: 24000 }); // about 90 KB for 30 seconds: under the page's limit for a recording
-      r.ondataavailable = (x) => chunks.push(x.data);
-      r.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        rec.textContent = rec.dataset.sending;
-        try {
-          const headers = { "content-type": type };
-          if (rec.dataset.csrf) headers["x-owner-csrf"] = rec.dataset.csrf;
-          const res = await fetch(base + "/voice", { method: "POST", headers, body: new Blob(chunks, { type }) });
-          if (!res.ok) throw new Error(String(res.status));
-          location.reload();
-        } catch { rec.textContent = rec.dataset.failed; }
-        r = null;
-      };
-      r.start(); rec.textContent = rec.dataset.release;
-      timer = setTimeout(stop, ${RECORD_MAX_SECONDS} * 1000);
-    } catch { rec.textContent = rec.dataset.failed; r = null; }
-  };
-  rec.addEventListener("pointerdown", start);
-  rec.addEventListener("pointerup", stop); rec.addEventListener("pointerleave", stop); rec.addEventListener("pointercancel", stop);
+  ${HOLD_TO_RECORD}
+  holdToRecord(rec, {
+    onStart: () => { rec.textContent = rec.dataset.release; },
+    onSend: () => { rec.textContent = rec.dataset.sending; },
+    send: async (blob, type) => {
+      const headers = { "content-type": type };
+      if (rec.dataset.csrf) headers["x-owner-csrf"] = rec.dataset.csrf;
+      const res = await fetch(base + "/voice", { method: "POST", headers, body: blob });
+      if (!res.ok) throw new Error(String(res.status));
+      location.reload();
+    },
+    onFail: () => { rec.textContent = rec.dataset.failed; },
+  });
 })();`;
 }

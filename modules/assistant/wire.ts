@@ -18,7 +18,9 @@ import { createLimits } from "./limits-card.ts";
 import { createOwnerReader } from "./reading.ts";
 import type { OwnerParser } from "./reading.ts";
 import type { AssistantSettings } from "./settings.ts";
-import type { OwnerSkill, PrepareRefusal } from "./skill.ts";
+import type { OwnerSkill, Prepared, PrepareRefusal, Proposal } from "./skill.ts";
+import { GUEST_REF, conversationOfNumber, guestLabel } from "../channels/chat-guest.ts";
+import type { ChannelState } from "../channels/state.ts";
 import type { AssistantState } from "./state.ts";
 
 export interface AgentAssistantDeps {
@@ -81,6 +83,24 @@ export function assistantForAgent(d: AgentAssistantDeps): Assistant | undefined 
 export function ownerReply(owner: string, nowMs: number, cardCase: string, reply: { text: string } | { buttonId: string }): InboundMessage {
   const base = { id: `assistant:${cardCase}:${nowMs}`, from: owner, timestamp: nowMs };
   return "text" in reply ? { ...base, text: reply.text } : { ...base, text: "", reply: { id: reply.buttonId, kind: "button" } };
+}
+
+/**
+ * The owner answering a chat guest (17 Nov 2026): "tell chat guest 3 we open at ten" is the proposal `message g-3`. A guest has no booking, so there is no case; the number
+ * the owner is shown ("Chat guest 3") names the guest, and the words go into that guest's thread (and as a push, if they allowed it) through the same message card, the same
+ * checks (STOP, no amount the record does not have: a guest has none) and the same one-tap confirmation as any customer. Anything else asked of a guest is "not here".
+ * Returns undefined when `p` is not about a guest, so a template's own `prepare` carries on.
+ */
+export function prepareGuestMessage(p: Proposal, a: { skill: string; channel: ChannelState | undefined; language: Language; optedOut: (conversation: string) => boolean }): Prepared | undefined {
+  const g = GUEST_REF.exec(p.case);
+  if (!g) return undefined;
+  if (p.kind !== "message") return { ok: false, why: "not_here" };
+  const conversation = conversationOfNumber(a.channel, Number(g[1]));
+  if (!conversation) return { ok: false, why: "no_case" };
+  const refused = checkWords(p.words, { optedOut: a.optedOut(conversation), amountsPaise: [] });
+  if (refused) return { ok: false, why: refused };
+  const who = guestLabel(a.channel, conversation, a.language);
+  return { ok: true, action: { kind: "message", skill: a.skill, case: p.case, fields: { who, phone: conversation, words: p.words } }, shown: { who, what: "", amountPaise: 0, words: p.words } };
 }
 
 /**

@@ -242,7 +242,8 @@ test("the owner's talk is off in button mode: the owner gets today's fixed answe
   assert.equal(off.calls.length, 0);
   const w = world();
   w.script.reply = { sentences: [{ text: "You made ₹50,000 last week.", sources: [] }] };
-  const said = (await w.sayOwner("how much did we make"))!.text;
+  // words no rule reads: "how much" is the money rule's and would be answered from the record, before the talk is asked
+  const said = (await w.sayOwner("tell me how the shop is going"))!.text;
   assert.match(said, /could not answer that just now/u);
   assert.match(said, /Waiting for you: 0/u);
   assert.equal(talkLines(w).at(-1)!.refs.check, "2");
@@ -251,16 +252,17 @@ test("the owner's talk is off in button mode: the owner gets today's fixed answe
 test("the owner's talk: a grounded reply is sent; the last six lines go in the next prompt; a limit goes to the limits half, or is saved as a note", async () => {
   const w = world({ limits: true });
   w.script.reply = { sentences: [{ text: "Bookings today: 5.", sources: ["r:today"] }] };
-  assert.match((await w.sayOwner("how are we doing today"))!.text, /Bookings today: 5\./u);
-  await w.sayOwner("and tomorrow?");
-  assert.match(w.calls.at(-1)!.user, /Earlier in this talk:[\s\S]*how are we doing today[\s\S]*Now the owner says:\nand tomorrow\?/u);
+  // none of these words may be one a rule reads ("today" or "tomorrow" alone is a day's list, "refund" is a refund): the rules come first, the talk only gets what they leave
+  assert.match((await w.sayOwner("how is the shop doing"))!.text, /Bookings today: 5\./u);
+  await w.sayOwner("and what else is new?");
+  assert.match(w.calls.at(-1)!.user, /Earlier in this talk:[\s\S]*how is the shop doing[\s\S]*Now the owner says:\nand what else is new\?/u);
   assert.ok(w.calls.at(-1)!.system.includes("refund_limit"), "the declared limit is offered by id");
   w.script.reply = { sentences: [{ text: "Noted.", sources: [] }], limit: "refund_limit" };
-  await w.sayOwner("big refunds should need my OK");
-  assert.deepEqual(w.tightened, [{ limitId: "refund_limit", words: "big refunds should need my OK" }]);
+  await w.sayOwner("anything big going out should need my OK");
+  assert.deepEqual(w.tightened, [{ limitId: "refund_limit", words: "anything big going out should need my OK" }]);
   const none = world();
   none.script.reply = { sentences: [{ text: "Noted.", sources: [] }], limit: "refund_limit" };
-  assert.match((await none.sayOwner("big refunds should need my OK"))!.text, /not as a limit Guard enforces/u);
+  assert.match((await none.sayOwner("anything big going out should need my OK"))!.text, /not as a limit Guard enforces/u);
   assert.equal(none.store.assistant!.memory!.notes[0].kind, "instruction");
 });
 

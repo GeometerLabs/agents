@@ -123,6 +123,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
    */
   // the owner's recordings from their page, in memory only until their step listens (only with a voice service and the assistant: otherwise there is no record button)
   const pageAudio = options.voice && settings.assistant ? createAudioDrop({ now: () => clock.now() }) : undefined;
+  // W1 hold-to-talk: a chat guest's recordings, in memory only, in a drop of their own (a flood of guests never pushes out the owner's); only with a voice service, else the chat shows no button
+  const chatAudio = options.voice ? createAudioDrop({ now: () => clock.now(), max: 16 }) : undefined;
   const agentOver = (store: Store, record: ReturnType<typeof createRecord>, use: Services) => createAgent({
     settings, clock, ...use, messaging: channelMessaging(use.messaging, () => (store.channel ??= emptyChannelState()), clock, options.push ? (to, text) => { options.push!.customer(to, text); } : undefined),
     // item 11h: a WhatsApp booking's own page link, made here (the agent has no node:crypto): 24 random bytes, sent once, only the hash kept
@@ -133,7 +135,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}),
     // item 11e: how the shop's assistant reads the owner's words (only when the assistant is on)
     ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(options.talker ? { talker: options.talker } : {}),
-    ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}),
+    ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}), ...(chatAudio ? { chatAudio: (ref: string) => chatAudio.get(ref) } : {}),
   });
   const kit: RuntimeKit<Store, Settings, RefundContext> = {
     pathway: PATHWAY,
@@ -151,7 +153,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     // stays on the booking as a WhatsApp customer's does (it is how the owner reaches them), and the record is kept whole.
     compactStore(store, beforeMs) {
       const ended = (id: string) => { const b = store.bookings.get(id); return !b || ["cancelled", "completed", "expired"].includes(b.state) || (b.state === "enquiry" && b.startMs === undefined); };
-      let changed = compactChannel(store.channel, beforeMs, ended);
+      let changed = compactChannel(store.channel, beforeMs, ended, (conversation) => [...store.bookings.values()].some((b) => b.customer === conversation && !ended(b.id)));
       for (const b of store.bookings.values()) {
         if (!b.contact?.name || !ended(b.id) || (b.endMs ?? 0) >= beforeMs) continue;
         delete b.contact.name;
@@ -183,6 +185,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       // W2: a chat guest has made a booking when a booking beyond the first enquiry is theirs (the page then offers "keep this chat"); nothing is saved here
       chatWork: (store, conversation) => [...store.bookings.values()].filter((b) => b.customer === conversation && b.state !== "enquiry" && b.state !== "confirming_details").length,
       ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
+      ...(chatAudio ? { chatVoice: (audio: { bytes: Uint8Array; mime: string }) => chatAudio.put(audio.bytes, audio.mime) } : {}),
       // the receipts of the page's own booking, and the accountant's files (the runtime lets only the owner's session reach them), both from the saved record
       documents: (store, entries, key, language) => documentsOf(settings, store, entries, key, language),
       accountantFiles: (_store, entries, period) => exportFilesOf(settings, entries, period),

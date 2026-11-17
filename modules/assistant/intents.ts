@@ -63,8 +63,10 @@ const KIND_WORDS: readonly [OwnerKind, readonly string[]][] = [
 ];
 const KIND_RES: readonly [OwnerKind, RegExp][] = KIND_WORDS.map(([kind, words]) => [kind, wordRe([...words], "iu")]);
 
-/** A case reference: a letter the templates use, a hyphen and digits. Bookings b-, Fees f- and q- (a request to the owner), Orders o-. */
-const REF_RE = /(?<![\p{L}\p{N}])([bfqo])-(\d{1,6})(?![\p{N}])/iu;
+/** A case reference: a letter the templates use, a hyphen and digits. Bookings b-, Fees f- and q- (a request to the owner), Orders o-, and (17 Nov 2026) g- for a chat guest ("Chat guest 3" is g-3), who has no booking but may be answered. */
+const REF_RE = /(?<![\p{L}\p{N}])([bfqog])-(\d{1,6})(?![\p{N}])/iu;
+/** The owner says "chat guest 3" as the pages and messages call them; the rules read it as g-3, so every later step sees one kind of reference. */
+const GUEST_WORDS = /(?<![\p{L}\p{N}])chat\s+guest\s+(\d{1,6})(?![\p{N}])/giu;
 
 /** An amount with a rupee sign or word before or after it. Without one a number is never read as money: "close 16" must not be ₹16. */
 const AMOUNT_RE = /(?:₹|rs\.?|inr|रु\.?|रुपये|रुपए)\s*(\d{1,3}(?:,\d{2,3})+|\d+)(?:\.(\d{1,2}))?|(\d{1,3}(?:,\d{2,3})+|\d+)(?:\.(\d{1,2}))?\s*(?:₹|rs\b|rupees?\b|रुपये|रुपए|രൂപ|ರೂಪಾಯ|ರೂ\.?)/iu;
@@ -96,6 +98,7 @@ export function messageWords(text: string, ref: string): string | undefined {
 
 /** The rules' reading: the first kind whose words are in the message, and every value the words give. */
 export function readOwnerRules(text: string, context: OwnerContext): OwnerIntent {
+  text = text.replace(GUEST_WORDS, "g-$1");
   const plainText = canon(text);
   const refHit = REF_RE.exec(plainText);
   const ref = refHit ? `${refHit[1].toLowerCase()}-${Number(refHit[2])}` : undefined;
@@ -170,7 +173,7 @@ export const ownerReading: Reading<OwnerIntent, OwnerContext, ParseOptionsBase> 
     if (raw.language === "hi" || raw.language === "en" || raw.language === "ml" || raw.language === "kn") out.language = raw.language;
     if (isObj(raw.date) && typeof raw.date.kind === "string") out.date = raw.date as unknown as DatePhrase;
     if (isObj(raw.time) && typeof raw.time.hour === "number" && typeof raw.time.minute === "number") out.time = raw.time as unknown as TimePhrase;
-    if (typeof raw.ref === "string" && /^[bfqo]-\d{1,6}$/u.test(raw.ref)) out.ref = raw.ref;
+    if (typeof raw.ref === "string" && /^[bfqog]-\d{1,6}$/u.test(raw.ref)) out.ref = raw.ref;
     if (typeof raw.amountPaise === "number" && Number.isSafeInteger(raw.amountPaise) && raw.amountPaise > 0) out.amountPaise = raw.amountPaise;
     if (typeof raw.note === "string" && /^n-\d{1,4}$/u.test(raw.note)) out.note = raw.note;
     if (typeof raw.words === "string" && raw.words.trim() !== "" && raw.words.length <= 900) out.words = raw.words;

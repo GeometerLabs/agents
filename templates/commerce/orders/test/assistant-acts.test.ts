@@ -109,7 +109,7 @@ test("a refund of an advance the owner kept: a card with the amount, the tap ref
   assert.equal(w.payments.refunds().length, 0);
   await owner(w, "refund o-1");
   const card = lastCard(w);
-  assert.match(card.text, /^Refund ₹120 to \+919844444444 for o-1\?/u);
+  assert.match(card.text, /^Refund ₹120 of the advance to \+919844444444 \(o-1\)\?/u);
   await tapOwner(w, card.yes);
   assert.deepEqual(w.payments.refunds().map((r) => r.amount), [12_000]);
 });

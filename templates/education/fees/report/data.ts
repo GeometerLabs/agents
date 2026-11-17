@@ -82,7 +82,7 @@ export const NOT_COUNTED: readonly NotCountedId[] = ["cash-and-transfers", "read
 const UPI_NOT_COUNTED: Partial<Record<NotCountedId, NotCountedId>> = { "cash-and-transfers": "cash-and-transfers-upi", "outside-agent": "outside-agent-upi" };
 
 /** The templates whose message is a fee reminder, and the ones that are receipts, by the name the record keeps in `refs.templates`. */
-export const REMINDER_TEMPLATES: readonly string[] = ["fee_reminder", "fee_overdue", "fee_overdue_late"];
+export const REMINDER_TEMPLATES: readonly string[] = ["fee_reminder", "fee_reminder_family", "fee_reminder_family_page", "fee_overdue", "fee_overdue_late"];
 export const RECEIPT_TEMPLATES: readonly string[] = ["fee_received", "fee_part_received"];
 
 export interface Amount { count: number; paise: number }

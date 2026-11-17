@@ -20,6 +20,8 @@ import type { RecordEntry } from "../../../../modules/record/record.ts";
 import { bookingsJournal } from "./accounting.ts";
 import { serviceName } from "./settings.ts";
 import type { Settings } from "./settings.ts";
+import { isChatConversation } from "../../../../modules/channels/conversation.ts";
+import { guestLabel } from "../../../../modules/channels/chat-guest.ts";
 import type { Booking, Store } from "./booking.ts";
 
 /** A service as the page shows it: its first name in each language, its price (the list price, the only price ever quoted) and how long it takes. */
@@ -140,7 +142,7 @@ export interface OwnerItem {
   actions: OwnerActionName[];
   amountPaise: number;
   customer: { phone: string; name?: string };
-  channel: "whatsapp" | "web" | "mcp";
+  channel: "whatsapp" | "web" | "mcp" | "chat";
   serviceId?: string;
   startMs?: number;
   /** For a refund owed: why, in the template's words ("cancelled", ...). */
@@ -156,9 +158,9 @@ export interface OwnerItem {
 }
 
 const digestOf = (parts: unknown[]): string => createHash("sha256").update(JSON.stringify(parts)).digest("hex").slice(0, 32);
-const customerOf = (b: Booking | undefined, phone: string) => (b?.contact ? { phone: b.contact.phone, ...(b.contact.name ? { name: b.contact.name } : {}) } : { phone });
+const plainCustomerOf = (b: Booking | undefined, phone: string) => (b?.contact ? { phone: b.contact.phone, ...(b.contact.name ? { name: b.contact.name } : {}) } : { phone });
 const claimOf = (b: Booking): { claimedAtMs?: number; upiRef?: string } => ({ ...(b.claimAtMs !== undefined ? { claimedAtMs: b.claimAtMs } : {}), ...(b.claimRef ? { upiRef: b.claimRef } : {}) });
-const channelOf = (b: Booking | undefined): OwnerItem["channel"] => b?.channel ?? "whatsapp";
+const plainChannelOf = (b: Booking | undefined): OwnerItem["channel"] => b?.channel ?? "whatsapp";
 
 /**
  * Everything the owner can answer from their page: a deposit to mark received (UPI), a refund the owner owes and marks sent (UPI), a late cancellation's refund the agent
@@ -168,6 +170,9 @@ const channelOf = (b: Booking | undefined): OwnerItem["channel"] => b?.channel ?
  */
 export function ownerItems(settings: Settings, store: Store, nowMs?: number): { items: OwnerItem[]; upcoming: { case: string; startMs: number; serviceId?: string; customer: { phone: string; name?: string }; channel: OwnerItem["channel"]; state: string }[] } {
   const items: OwnerItem[] = [];
+  // 17 Nov 2026: a guest of the shop's chat is "Chat guest 3" to the owner (chat-guest.ts), never "chat:..."; their number is the words, so the page shows no phone for them
+  const customerOf = (b: Booking | undefined, phone: string): { phone: string; name?: string } => (isChatConversation(phone) ? { phone: "", name: guestLabel(store.channel, phone, settings.owner.language) } : plainCustomerOf(b, phone));
+  const channelOf = (b: Booking | undefined): OwnerItem["channel"] => (b && isChatConversation(b.customer) ? "chat" : plainChannelOf(b));
   for (const r of store.upi?.requests ?? []) {
     const b = store.bookings.get(r.reference);
     if (!b || b.state !== "awaiting_deposit" || !r.code || (r.status !== "created" && r.status !== "partially_paid")) continue;

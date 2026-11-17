@@ -104,9 +104,9 @@ export const VAPID_TTL_S = 12 * 60 * 60;
  * The Authorization header's value for one push service: `vapid t=<JWT>, k=<public key>`. `aud` is the push service's origin; `sub` is how the service can reach
  * whoever runs the sender: the shop's own page address (never a person's e-mail).
  */
-export function vapidHeader(keys: VapidKeys, o: { audience: string; subject: string; nowS: number }): string {
+export function vapidHeader(keys: VapidKeys, o: { audience: string; subject: string; nowS: number; ttlS?: number }): string {
   const header = b64u(Buffer.from(JSON.stringify({ typ: "JWT", alg: "ES256" })));
-  const claims = b64u(Buffer.from(JSON.stringify({ aud: o.audience, exp: o.nowS + VAPID_TTL_S, sub: o.subject })));
+  const claims = b64u(Buffer.from(JSON.stringify({ aud: o.audience, exp: o.nowS + (o.ttlS ?? VAPID_TTL_S), sub: o.subject })));
   const signer = createSign("SHA256");
   signer.update(`${header}.${claims}`);
   const signature = signer.sign({ key: createPrivateKey({ key: keys.privateJwk, format: "jwk" }), dsaEncoding: "ieee-p1363" });

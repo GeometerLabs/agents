@@ -16,6 +16,9 @@ import type { Built, Draft, StepResult, Body } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
+import { readGoLiveCertificate as stockGoLive } from "../../templates/commerce/stock-orders/report/go-live.ts";
+import { writeStockReport } from "../../templates/commerce/stock-orders/report/run.ts";
+import { applyStockBusiness, applyStockRules, buildStockSettings, newStockDraft, runtimeForStock, stockBusinessBody, stockDraftFromShop, stockLimitLines, stockMessageCeiling, stockRulesBody, stockWords, summaryStock } from "./stock.ts";
 import { feesBusinessBody, feesRulesBody, activityFees, messageCeiling, summaryFees } from "./views-fees.ts";
 import type { Helpers } from "./views-fees.ts";
 import { activityOrders, ordersBusinessBody, ordersMessageCeiling, ordersRulesBody, summaryOrders } from "./views-orders.ts";
@@ -33,6 +36,8 @@ export interface ReportKind {
 export const REPORTS: Record<string, ReportKind> = {
   bookings: { readGoLive: bookingsGoLive, write: ({ data, ...run }) => writeClientReport({ ...run, entries: data.entries, bookings: data.bookings }) },
   fees: { readGoLive: feesGoLive, write: ({ data, ...run }) => writeFeesReport({ ...run, entries: data.entries, dues: data.dues ?? [] }) },
+  // Stock orders: a report from the export's purchase orders (Exported.stock), written by its own report (templates/commerce/stock-orders/report/run.ts)
+  "stock-orders": { readGoLive: stockGoLive, write: ({ data, ...run }) => writeStockReport({ ...run, entries: data.entries, orders: (data.stock ?? []) as never }) },
   orders: { readGoLive: ordersGoLive, write: ({ data, ...run }) => writeOrdersReport({ ...run, entries: data.entries, orders: data.orders ?? [] }) },
 };
 // Looks up the report writer for a template; an unknown or missing kind is treated as Bookings, the original template, so an old shop still gets its report.
@@ -61,6 +66,14 @@ export interface Setup {
 }
 
 export const SETUPS: Record<string, Setup> = {
+  "stock-orders": {
+    newDraft: newStockDraft, draftFromShop: stockDraftFromShop, applyBusiness: applyStockBusiness, applyRules: applyStockRules, build: buildStockSettings,
+    // a Stock orders shop calls WhatsApp and nothing else: no payments, no calendar
+    runtime: runtimeForStock, limitLines: stockLimitLines,
+    titles: (w) => stockWords(w).steps, businessBody: stockBusinessBody, rulesBody: stockRulesBody,
+    pieces: (c, settings, _data, _month, included) => ({ summary: summaryStock(c, settings), states: stockWords(c.w).shop.states, messages: stockMessageCeiling(c, settings, included) }),
+    messages: stockMessageCeiling,
+  },
   fees: {
     newDraft: newFeesDraft, draftFromShop: feesDraftFromShop, applyBusiness: applyFeesBusiness, applyRules: applyFeesRules, build: buildFeesSettings, runtime: runtimeForFees, limitLines: feesLimitLines,
     titles: (w) => w.setup.fees.steps, businessBody: feesBusinessBody, rulesBody: feesRulesBody,

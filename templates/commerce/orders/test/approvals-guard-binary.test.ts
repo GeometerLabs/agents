@@ -105,7 +105,7 @@ owner-${HARNESS_GUARD.tenant} = "\${file:${join(dir, "owner_notify_secret")}}"
  * the error goes on: an open stand-in server kept this test file's process alive after the failure, holding the machine's test lock for 36 minutes (14 Nov 2026).
  */
 async function standinsAndGuard(settings: ReturnType<typeof annapurnaRazorpay>, approvalTtlSeconds?: number): Promise<{ standins: Awaited<ReturnType<typeof startStandins>>; guard: RealGuard }> {
-  const standins = await startStandins({ razorpayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
+  const standins = await startStandins({ gatewayWebhookSecret: "x", whatsappAppSecret: "y" }, { port: 0 });
   try { return { standins, guard: await startRealGuard(settings, standins.port, approvalTtlSeconds) }; } catch (e) { await standins.close(); throw e; }
 }
 

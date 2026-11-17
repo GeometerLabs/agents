@@ -321,7 +321,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     // went out. So a gateway shop needs WhatsApp for now; a shop with no WhatsApp takes UPI (the owner marks payments and refunds on their page). Refused by name.
     if (razorpay && !facts.hasWhatsApp) problems.push({ rule: "whatsapp-none-gateway", message: `${shop.name} has no WhatsApp number but takes payments through a gateway. A refund the gateway's Guard holds is asked of the owner on WhatsApp, so a gateway shop needs its WhatsApp number for now. Give it its number, or take UPI (the owner marks payments and refunds on their page).` });
     if (razorpay) { try { specs.razorpay = gatewaySpec(shop.settings, identity("razorpay"), server.approvalHours, server.limits.razorpayLinksPerHour, undefined, template.gatewaySpec); } catch (e) { problems.push({ rule: "razorpay-limits", message: (e as Error).message }); } }
-    if (facts.hasWhatsApp) specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour, ...(facts.whatsappRoute ? { route: facts.whatsappRoute } : {}) });
+    if (facts.hasWhatsApp) specs.whatsapp = whatsappSpec(identity("whatsapp"), { phoneNumberId: facts.phoneNumberId, messagesPerHour: server.limits.whatsappMessagesPerHour, ...(facts.whatsappRoute ? { route: facts.whatsappRoute } : {}), ...(template.guardRecipients && !facts.whatsappRoute ? { recipients: template.guardRecipients(shop.settings) } : {}) });
     specs.push = pushSpec(identity("push"), PUSH_LIMITS);
     if (kinds.includes("calendar")) specs.calendar = calendarSpec(identity("calendar"), { calendarId: facts.calendarId, createdPerHour: server.limits.calendarEventsCreatedPerHour, deletedPerDay: server.limits.calendarEventsDeletedPerDay });
     for (const kind of kinds) {
@@ -340,13 +340,19 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
         ...(kinds.includes("calendar") ? { calendar: { baseUrl: guardUrl(names.guard(shop.name, "calendar")), calendarId: facts.calendarId, agentTokenFile: `${SECRETS}/agent_calendar` } } : {}),
         ...(facts.hasWhatsApp ? { messaging: { baseUrl: guardUrl(names.guard(shop.name, "whatsapp")), phoneNumberId: facts.phoneNumberId, ...(facts.whatsappRoute ?? {}), agentTokenFile: `${SECRETS}/agent_whatsapp` } } : {}),
         // item 11h: every push goes through the shop's own push Guard
-        push: { baseUrl: guardUrl(names.guard(shop.name, "push")), agentTokenFile: `${SECRETS}/agent_push` },
+        push: { baseUrl: guardUrl(names.guard(shop.name, "push")), agentTokenFile: `${SECRETS}/agent_push`, ...(server.pages && server.pushRelay ? { relayKey: server.pushRelay.publicKey, relayShop: shop.name } : {}) },
         timeoutMs: facts.timeoutMs,
       },
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
     // Item 11h: a runtime pinned to a version from before 14 Nov 2026 knows no push service and needs WhatsApp. Push is then left out (with its Guard), and a shop with no
     // WhatsApp is refused, since such a runtime would not start.
+    // W3: a runtime from before 17 Nov 2026 does not know the relay's two fields and would refuse them: they go first, so it keeps its push (its own key; no Streetlist app phones)
+    if (!check(runtime, "/").ok && server.pushRelay) {
+      const { relayKey: _k, relayShop: _s, ...ownPush } = (runtime.services as { push: Record<string, unknown> }).push;
+      const lean = { ...runtime, services: { ...(runtime.services as object), push: ownPush } };
+      if (check(lean, "/").ok) { runtime = lean; notes.push(`${shop.name} is pinned to a template version from before the Streetlist app, so it sends alerts with its own key only (no alerts to the Streetlist app's phones). Update the template, and they are on from the next deploy.`); }
+    }
     if (!check(runtime, "/").ok) {
       const { push: _push, ...noPush } = runtime.services as Record<string, unknown>;
       const without = { ...runtime, services: noPush };

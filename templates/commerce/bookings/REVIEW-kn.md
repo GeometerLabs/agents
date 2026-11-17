@@ -8,7 +8,7 @@ What to look for first: (1) is each message polite, short and something a shop c
 
 Amounts are always written as ₹450 with Western digits, dates, times, service names and links are filled in from the booking's record, never translated.
 
-## 1. Messages to the customer (59)
+## 1. Messages to the customer (60)
 
 | Template id | When it is sent | Text (Kannada) | Meaning (the English template) | Native reviewer: OK / change to … |
 | --- | --- | --- | --- | --- |
@@ -23,6 +23,7 @@ Amounts are always written as ₹450 with Western digits, dates, times, service 
 | `slot_unavailable` | The time is taken or already past | ಕ್ಷಮಿಸಿ, ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ಲಭ್ಯವಿಲ್ಲ. ಬೇರೆ ಯಾವ ಸಮಯ ನಿಮಗೆ ಆಗುತ್ತದೆ? | Sorry, Tue 10 Nov, 6:00 pm is not available. What other time would work for you? |  |
 | `outside_hours` | The shop is closed then | ಕ್ಷಮಿಸಿ, ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ನಾವು ಮುಚ್ಚಿರುತ್ತೇವೆ. ಬೇರೆ ಯಾವ ಸಮಯ ನಿಮಗೆ ಆಗುತ್ತದೆ? | Sorry, we're closed at Tue 10 Nov, 6:00 pm. What other time would work for you? |  |
 | `hold_failed` | The calendar could not hold the slot | ಕ್ಷಮಿಸಿ, ಈಗ ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ಸ್ಲಾಟ್ ಕಾಯ್ದಿರಿಸಲು ಆಗಲಿಲ್ಲ, ಹಾಗಾಗಿ ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ಕೆಲವು ನಿಮಿಷ ಬಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Sorry, I couldn't hold Tue 10 Nov, 6:00 pm just now, so nothing is booked. I've let the owner know. Please try again in a few minutes. |  |
+| `chat_shop_busy` | A chat guest asks for a time while the shop already has as many unpaid holds as its cap (the shop is not asked, nothing is held) | ಅಂಗಡಿಯಲ್ಲಿ ಈಗ ಪಾವತಿಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಬುಕಿಂಗ್‌ಗಳು ಬಹಳ ಇವೆ, ಹಾಗಾಗಿ ಏನನ್ನೂ ಕಾಯ್ದಿರಿಸಿಲ್ಲ. ಸ್ವಲ್ಪ ಹೊತ್ತಿನ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ, ಅಥವಾ ಅಂಗಡಿಗೆ ಕರೆ ಮಾಡಿ. | The shop has many bookings waiting for payment right now, so nothing is held. Please try again in a little while, or call the shop. |  |
 | `link_failed` | The payment link could not be made | ಕ್ಷಮಿಸಿ, ಈಗ ಪಾವತಿ ಲಿಂಕ್ ಮಾಡಲು ಆಗಲಿಲ್ಲ, ಹಾಗಾಗಿ ಏನೂ ಬುಕ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ. | Sorry, I couldn't make the payment link just now, so nothing is booked. I've let the owner know. |  |
 | `booked` | Calendar and deposit both recorded | ಬುಕ್ ಆಗಿದೆ! ಹೇರ್ ಕಟ್, ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00. ನಿಮ್ಮ ₹200 ಮುಂಗಡ ಹಣ ಸಿಕ್ಕಿದೆ. ಬರಲು ಆಗದಿದ್ದರೆ ಕನಿಷ್ಠ 24 ಗಂಟೆ ಮೊದಲು ರದ್ದು ಮಾಡಿ, ಮುಂಗಡ ಹಣ ಮರಳಿ ಸಿಗುತ್ತದೆ. | You're booked! Haircut, Tue 10 Nov, 6:00 pm. We got your ₹200 deposit. Can't make it? Cancel at least 24 hours before and your deposit comes back. |  |
 | `couldnt_confirm` | Deposit received but the calendar could not confirm | ನಿಮ್ಮ ₹200 ಮುಂಗಡ ಹಣ ಸಿಕ್ಕಿದೆ, ಆದರೆ ನಮ್ಮ ಕ್ಯಾಲೆಂಡರ್‌ನಲ್ಲಿ ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್, ಸಂಜೆ 6:00 ಇನ್ನೂ ಖಚಿತವಾಗಿಲ್ಲ, ಹಾಗಾಗಿ ಬುಕ್ ಆಗಿಲ್ಲ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಿದ್ದೇನೆ, ಅವರು ನಿಮ್ಮನ್ನು ಸಂಪರ್ಕಿಸುತ್ತಾರೆ. | We got your ₹200 deposit, but I couldn't confirm Tue 10 Nov, 6:00 pm in our calendar yet, so it's not booked. I've told the owner, and they'll get in touch with you. |  |
@@ -759,6 +760,14 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `setup.character.stripHelp` | ಪ್ರತಿ ಮುಖವನ್ನೂ ಈ ಅಂಗಡಿಗೆ ಮಾತ್ರ ಬರೆಯಲಾಗುತ್ತದೆ. ಎಂಟು ಹೊಸವುಗಳಿಗೆ ಮತ್ತೆ ರೋಲ್ ಮಾಡಿ. | Each face is drawn for this shop only. Roll for eight new ones. |  |
 | `setup.character.faceLabel` | ಮುಖ 3 / 8 | Face 3 of 8 |  |
 | `setup.character.roll` | ಹೊಸ ಮುಖಗಳನ್ನು ರೋಲ್ ಮಾಡಿ | Roll new faces |  |
+| `setup.character.paintLegend` | ಬೋರ್ಡಿನ ಬಣ್ಣ | Signboard colour |  |
+| `setup.character.paintHelp` | ಅಂಗಡಿಯ ಚಾಟ್‌ನ ಮೇಲಿನ ಪಟ್ಟಿ, ನಿಜವಾದ ಅಂಗಡಿ ಬೋರ್ಡಿನಂತೆ ಬಣ್ಣ ಹಚ್ಚಿದ್ದು. ಪ್ರತಿ ಬಣ್ಣದ ಜೊತೆ ಅದರ ಮೇಲೆ ಸುಲಭವಾಗಿ ಓದಬಹುದಾದ ಬರಹದ ಬಣ್ಣ ಬರುತ್ತದೆ. | The strip at the top of the shop's chat, painted like a real shop board. Each colour comes with writing that is easy to read on it. |  |
+| `setup.character.paintNone` | ತಿಳಿ ಹಸಿರು | Soft green |  |
+| `setup.character.paints.pink` | ಗುಲಾಬಿ | Pink |  |
+| `setup.character.paints.blue` | ನೀಲಿ | Blue |  |
+| `setup.character.paints.green` | ಎಲೆ ಹಸಿರು | Leaf green |  |
+| `setup.character.paints.marigold` | ಚೆಂಡು ಹೂವಿನ ಹಳದಿ | Marigold |  |
+| `setup.character.paints.brick` | ಇಟ್ಟಿಗೆ ಕೆಂಪು | Brick red |  |
 | `setup.character.colourLegend` | ಬಣ್ಣ | Colour |  |
 | `setup.character.auto` | ತಾನಾಗಿ | Auto |  |
 | `setup.character.autoLabel` | ತಾನಾಗಿ: ಶೈಲಿಯ ಸ್ವಂತ ಬಣ್ಣ | Auto: the style's own colour |  |
@@ -778,6 +787,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `setup.character.problems.style` | ಐದು ಶೈಲಿಗಳಲ್ಲಿ ಒಂದನ್ನು ಆರಿಸಿ. | Pick one of the five styles. |  |
 | `setup.character.problems.face` | ಸಾಲಿನಿಂದ ಒಂದು ಮುಖ ಆರಿಸಿ. | Pick a face from the row. |  |
 | `setup.character.problems.colour` | ತೋರಿಸಿದ ಬಣ್ಣಗಳಲ್ಲಿ ಒಂದನ್ನು ಅಥವಾ ತಾನಾಗಿ ಆರಿಸಿ. | Pick one of the colours shown, or Auto. |  |
+| `setup.character.problems.paint` | ತೋರಿಸಿದ ಬೋರ್ಡ್ ಬಣ್ಣಗಳಲ್ಲಿ ಒಂದನ್ನು ಆರಿಸಿ. | Pick one of the signboard colours shown. |  |
 | `setup.character.problems.personality` | ಮಾತನಾಡುವ ರೀತಿಯನ್ನು ಆರಿಸಿ. | Pick how it talks. |  |
 | `setup.character.shopTitle` | ಅಂಗಡಿಯ ಸಹಾಯಕ | The shop's assistant |  |
 | `setup.character.shopNone` | ಈ ಅಂಗಡಿಗೆ ಇನ್ನೂ ಸಹಾಯಕ ಇಲ್ಲ. ಸೆಟಪ್‌ನ ಸಹಾಯಕ ಹಂತದಲ್ಲಿ ಮಾಡಿ. | This shop has no assistant yet. Make one in the setup's assistant step. |  |
@@ -1500,6 +1510,16 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.thread` | ಮಾತುಕತೆ | Conversation |  |
 | `chat.alertsHead` | ಅಂಗಡಿ ಉತ್ತರಿಸಿದಾಗ ಫೋನ್ ತಿಳಿಸಬೇಕೆ? | Want a buzz when the shop answers? |  |
 | `chat.onStreetlist` | Streetlist ನಲ್ಲಿ | on Streetlist |  |
+| `chat.more.confirmed` | ಖಚಿತವಾಯಿತು. ಅಂಗಡಿಯ ಸ್ವಂತ ದಾಖಲೆಯಲ್ಲಿ ಇದೆ. | Confirmed. The shop's own record has it. |  |
+| `chat.more.paid` | ಹಣ ಬಂದಿದೆ. ಅಂಗಡಿಯ ಸ್ವಂತ ದಾಖಲೆಯಲ್ಲಿ ಇದೆ. | Payment received. The shop's own record has it. |  |
+| `chat.more.hold` | ಮಾತನಾಡಲು ಒತ್ತಿ ಹಿಡಿಯಿರಿ | Hold to talk |  |
+| `chat.more.release` | ಕಳುಹಿಸಲು ಬಿಡಿ | Release to send |  |
+| `chat.more.listening` | ಕೇಳಲಾಗುತ್ತಿದೆ | Listening |  |
+| `chat.more.voiceNote` | ಧ್ವನಿ ಸಂದೇಶ | Voice message |  |
+| `chat.more.micBlocked` | ಈ ಪುಟಕ್ಕೆ ಮೈಕ್ರೊಫೋನ್ ಆಫ್ ಆಗಿದೆ. ಬದಲಿಗೆ ಟೈಪ್ ಮಾಡಬಹುದು. | The microphone is off for this page. You can type instead. |  |
+| `chat.more.link` | ನಮ್ಮೊಂದಿಗೆ ಚಾಟ್ ಮಾಡಿ | Chat with us |  |
+| `chat.more.linkAbout` | ಅಂಗಡಿಯೊಂದಿಗೆ ಚಾಟ್ ತೆರೆಯುತ್ತದೆ | Opens the chat with the shop |  |
+| `chat.guest` | ಚಾಟ್ ಅತಿಥಿ | Chat guest |  |
 | `chat.quick.bookings.1` | ಬೆಲೆ ನೋಡಿ | See prices |  |
 | `chat.quick.bookings.2` | ಸಮಯ ಬುಕ್ ಮಾಡಿ | Book a time |  |
 | `chat.quick.bookings.3` | ನೀವು ಎಲ್ಲಿದ್ದೀರಿ? | Where are you? |  |

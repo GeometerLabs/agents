@@ -31,6 +31,7 @@ import { classesSection } from "./owner-classes.ts";
 import { OWNER, PAGE } from "./words.ts";
 import { OWNER_MORE } from "./words-orders-fees.ts";
 import { OWNER_MONEY } from "./words-money.ts";
+import { STOCK_WORDS } from "./words-stock.ts";
 import { CARD_LABELS } from "../assistant/words.ts";
 import { characterLine, talkBox, talkScript } from "../assistant/app/talk.ts";
 import { ASSISTANT_OF, themeColour } from "../assistant/character.ts";
@@ -102,13 +103,22 @@ export function ownerPage(o: OwnerPageInput): string {
   const what = (i: { serviceId?: string; startMs?: number; what?: string }) => [i.what ?? service(i.serviceId), i.startMs !== undefined ? formatSlot(i.startMs, tz, o.language) : ""].filter(Boolean).join(", ");
   const from = (ch: OwnerItemView["channel"]) => (v.kind && ch === "web" ? more.webPage : w.from[ch]);
   // a fee is a parent's: the student's name and the parent's number, with no channel to name
-  const who = (c: OwnerItemView["customer"], ch: OwnerItemView["channel"]) => (v.kind === "fees" ? `${c.name ? `${c.name}, ` : ""}${c.phone}` : w.who(c.name, c.phone, from(ch)));
+  // a chat guest is "Chat guest 3" with no phone (chat-guest.ts): the words and where they wrote from, never an empty number
+  const who = (c: OwnerItemView["customer"], ch: OwnerItemView["channel"]) => (ch === "chat" ? `${c.name ?? ""} (${from(ch)})` : v.kind === "fees" ? `${c.name ? `${c.name}, ` : ""}${c.phone}` : w.who(c.name, c.phone, from(ch)));
   const item = (i: OwnerItemView): Raw => {
     const amount = formatInr(i.amountPaise / 100);
     const b = (action: string, label: string, quiet = false) => button(o.base, { source: "runtime", action, case: i.case, digest: i.digest }, label, quiet, o.csrf);
     const card = (tag: TagKey, text: string | Raw, buttons: Raw[], tone?: Tone, label?: string) => waitingCard(o.language, { tag, ...(label ? { label } : {}), ...(tone ? { tone } : {}), amountPaise: i.amountPaise, text, buttons });
     // money clarity: a deposit says which booking it is (the UPI note), when the customer said they paid and the UPI reference they typed, so the owner ticks the right one
     const payLines = (): Raw => html`<br><small class="note">${v.kind === "fees" ? "" : `${money.reference(i.case)} `}${i.claimedAtMs !== undefined ? `${money.claimedAt(formatSlot(i.claimedAtMs, tz, o.language))} ` : ""}${i.upiRef ? money.upiRef(i.upiRef) : ""}</small>`;
+    // Stock orders: the supplier is `customer.name`, `what` is the order already written in the owner's language; an approval is the agent's own approval card (card id and digest)
+    if (i.kind === "po_approval" || i.kind === "po_silent" || i.kind === "po_receive") {
+      const sw = STOCK_WORDS[o.language];
+      const supplier = i.customer.name ?? i.customer.phone;
+      if (i.kind === "po_approval") return card("assistant", sw.approve(supplier, i.what ?? "", amount), [b("card_yes", sw.yes), b("card_no", sw.no, true)], "wait", sw.tagApprove);
+      if (i.kind === "po_silent") return card("assistant", sw.silent(supplier, i.what ?? ""), [b("retry", sw.askAgain)], "bad", sw.tagSilent);
+      return card("assistant", sw.receive(supplier, i.what ?? ""), [b("received", sw.received)], "info", sw.tagReceive);
+    }
     if (i.kind === "deposit") return card("payment", html`${w.deposit(who(i.customer, i.channel), amount, what(i))}${payLines()}`, [b("received", w.received(amount))], i.claimedAtMs !== undefined ? "info" : "wait", i.claimedAtMs !== undefined ? money.tagSaysPaid : undefined);
     if (i.kind === "late_deposit") return card("payment", html`${money.lateDeposit(who(i.customer, i.channel), amount, what(i))}${payLines()}<br><small class="note">${money.lateAfter}</small>`, [b("received", w.received(amount))], "bad", money.tagLate);
     if (i.kind === "refund_owed") return card("refundToSend", w.refundOwed(who(i.customer, i.channel), amount, i.why ?? ""), [b("refunded", w.refundSent), ...(i.actions.includes("kept") ? [b("kept", v.kind === "orders" ? more.keptOrder : w.kept, true)] : [])]);
@@ -127,7 +137,8 @@ export function ownerPage(o: OwnerPageInput): string {
   })}` : "";
   // money clarity (Fees): the open fees the owner may mark paid by hand (cash, or a bank transfer the agent cannot see), folded: a centre has a fee for every student
   const cash = v.cash && v.cash.length > 0 ? html`<h2>${money.cashTitle}</h2><details class="fold"><summary>${money.cashNote}</summary>${v.cash.map((c) => html`<div class="item s-plain"><p>${money.cashRow(c.student, c.what)}</p><div class="acts">${button(o.base, { source: "runtime", action: "cash", case: c.case, digest: c.digest }, money.cashButton(formatInr(c.amountPaise / 100)), false, o.csrf)}${button(o.base, { source: "runtime", action: "bank", case: c.case, digest: c.digest }, money.bankButton(formatInr(c.amountPaise / 100)), false, o.csrf)}${c.amountPaise > 100 ? partForm(o.base, { action: "cash", case: c.case, digest: c.digest, maxInr: c.amountPaise / 100 - 1 }, money.cashPartLabel, money.cashPartButton, o.csrf) : ""}</div></div>`)}</details>` : "";
-  const coming = v.kind === "fees" ? "" : html`<h2>${v.kind === "orders" ? more.upcomingOrders : w.upcoming}</h2>
+  const coming = v.kind === "fees" ? "" : v.kind === "stock" ? html`<h2>${STOCK_WORDS[o.language].coming}</h2>
+${v.upcoming.length > 0 ? html`<ul class="rows">${v.upcoming.map((u) => html`<li><b>${formatSlot(u.startMs, tz, o.language)}</b><span>${u.what ?? ""}</span></li>`)}</ul>` : html`<p class="card">${STOCK_WORDS[o.language].noneComing}</p>`}` : html`<h2>${v.kind === "orders" ? more.upcomingOrders : w.upcoming}</h2>
 ${v.upcoming.length > 0 ? html`<ul class="rows">${v.upcoming.map((u) => html`<li><b>${formatSlot(u.startMs, tz, o.language)}</b><span>${u.what ?? service(u.serviceId)} · ${who(u.customer, u.channel)}</span></li>`)}</ul>` : html`<p class="card">${v.kind === "orders" ? more.noneComingOrders : w.noneComing}</p>`}`;
   const ask = (a: RelayAsk): Raw => {
     const b = (action: "approve" | "deny", label: string, quiet = false) => button(o.base, { source: "relay", action, case: a.approval, digest: a.digest }, label, quiet, o.csrf);

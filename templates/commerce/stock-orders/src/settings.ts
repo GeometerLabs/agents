@@ -7,6 +7,8 @@
 // whole quantity, worked out in code (order.ts), never by the AI.
 import { LANGUAGES, LANGUAGE_NAMES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
+import { readAssistantSettings } from "../../../../modules/assistant/settings.ts";
+import type { AssistantSettings } from "../../../../modules/assistant/settings.ts";
 import { isValidTimeZone } from "../../../../modules/core/time.ts";
 
 const languageList = () => LANGUAGES.map((l) => `"${l}" (${LANGUAGE_NAMES[l]})`).join(", ");
@@ -61,6 +63,8 @@ export interface Settings {
   };
   /** When a supplier who has not answered an order is asked again, hours after it went out (the same order, never a new one). The last is when the owner is told. */
   followUpHours: number[];
+  /** The shop's assistant (the owner's conversation, the morning line, the character; modules/assistant/settings.ts). Left out: no assistant, the fixed phrases only. */
+  assistant?: AssistantSettings;
 }
 
 export type SettingsResult = { ok: true; settings: Settings } | { ok: false; errors: string[] };
@@ -76,7 +80,7 @@ const isMoney = (v: unknown): v is number => typeof v === "number" && Number.isF
 export function validateSettings(input: unknown): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the shop's name, suppliers, catalogue and limits."] };
-  unknownKeys(input, ["name", "address", "timezone", "languages", "owner", "items", "units", "suppliers", "catalogue", "limits", "followUpHours"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "languages", "owner", "items", "units", "suppliers", "catalogue", "limits", "followUpHours", "assistant"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the shop's name (\"name\").");
@@ -92,13 +96,14 @@ export function validateSettings(input: unknown): SettingsResult {
   const catalogue = readCatalogue(input.catalogue, items, units, suppliers, errors);
   const limits = readLimits(input.limits, errors);
   const followUpHours = readFollowUp(input.followUpHours, errors);
+  const assistant = readAssistantSettings(input.assistant, errors);
 
   if (errors.length === 0 && limits) {
     for (const l of catalogue) if (l.priceInr > limits.maxPerOrderInr) errors.push(`One unit of ${l.item} from ${l.supplier} costs ₹${l.priceInr}, more than the most one order may be worth (₹${limits.maxPerOrderInr}): it could never be ordered. Raise "limits.maxPerOrderInr" or fix the price.`);
     if (limits.maxPerOrderInr > limits.monthlyBudgetInr) errors.push(`The most for one order (₹${limits.maxPerOrderInr}) is above the month's budget (₹${limits.monthlyBudgetInr}). Make the order limit the smaller number.`);
   }
   if (errors.length > 0 || !owner || !limits) return { ok: false, errors };
-  const settings: Settings = { name: (name as string).trim(), ...(typeof input.address === "string" ? { address: input.address } : {}), timezone: timezone as string, languages, owner, items, units, suppliers, catalogue, limits, followUpHours };
+  const settings: Settings = { name: (name as string).trim(), ...(typeof input.address === "string" ? { address: input.address } : {}), timezone: timezone as string, languages, owner, items, units, suppliers, catalogue, limits, followUpHours, ...(assistant ? { assistant } : {}) };
   return { ok: true, settings };
 }
 
@@ -202,8 +207,9 @@ function readCatalogue(v: unknown, items: Item[], units: Unit[], suppliers: Supp
 function readLimits(v: unknown, errors: string[]): Settings["limits"] | undefined {
   if (!isObj(v)) { errors.push("Add the limits (\"limits\": maxPerOrderInr, monthlyBudgetInr)."); return undefined; }
   unknownKeys(v, ["maxPerOrderInr", "monthlyBudgetInr", "maxQuantity"], "\"limits\"", errors);
-  if (!isMoney(v.maxPerOrderInr)) errors.push("\"limits.maxPerOrderInr\" must be an amount in rupees above 0: the most one order may be worth.");
-  if (!isMoney(v.monthlyBudgetInr)) errors.push("\"limits.monthlyBudgetInr\" must be an amount in rupees above 0: the most a month's orders may add up to.");
+  // whole rupees: the owner tightens them by a tap (chat-limits.ts), and those limits are whole numbers
+  if (!isMoney(v.maxPerOrderInr) || !Number.isInteger(v.maxPerOrderInr)) errors.push("\"limits.maxPerOrderInr\" must be a whole number of rupees above 0: the most one order may be worth.");
+  if (!isMoney(v.monthlyBudgetInr) || !Number.isInteger(v.monthlyBudgetInr)) errors.push("\"limits.monthlyBudgetInr\" must be a whole number of rupees above 0: the most a month's orders may add up to.");
   const maxQuantity = v.maxQuantity ?? 500;
   if (!isWhole(maxQuantity) || maxQuantity < 1) errors.push("\"limits.maxQuantity\" must be a whole number of at least 1.");
   return errors.length === 0 || (isMoney(v.maxPerOrderInr) && isMoney(v.monthlyBudgetInr)) ? { maxPerOrderInr: Number(v.maxPerOrderInr), monthlyBudgetInr: Number(v.monthlyBudgetInr), maxQuantity: Number(maxQuantity) } : undefined;

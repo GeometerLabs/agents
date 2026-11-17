@@ -213,7 +213,7 @@ export interface OwnerWords {
   privateNote: string;
   none: string; waiting: string; upcoming: string; noneComing: string;
   who: (name: string | undefined, phone: string, from: string) => string;
-  from: Record<"whatsapp" | "web" | "mcp", string>;
+  from: Record<"whatsapp" | "web" | "mcp" | "chat", string>;
   deposit: (who: string, amount: string, what: string) => string; received: (amount: string) => string;
   refundOwed: (who: string, amount: string, why: string) => string; refundSent: string; kept: string;
   lateRefund: (who: string, what: string, amount: string) => string; refundIt: string; keepIt: string;
@@ -228,7 +228,7 @@ export const OWNER: W<OwnerWords> = {
     privateNote: "This page is private. Anyone with its address can answer for you, so do not share it. The person who set up your shop can switch this link off and give you a new one.",
     none: "Nothing waits for you just now.", waiting: "Waiting for your answer", upcoming: "Coming bookings", noneComing: "No bookings in the coming week.",
     who: (name, phone, from) => `${name ? `${name}, ` : ""}${phone} (${from})`,
-    from: { whatsapp: "WhatsApp", web: "booking page", mcp: "AI assistant" },
+    from: { whatsapp: "WhatsApp", web: "booking page", mcp: "AI assistant", chat: "chat on the page" },
     deposit: (who, amount, what) => `${who} should pay ${amount} for ${what}. Has it reached your UPI app?`,
     received: (amount) => `Yes, ${amount} received`,
     refundOwed: (who, amount, why) => `You owe ${who} ${amount} back (${why}). Send it from your UPI app, then press:`,
@@ -253,7 +253,7 @@ export const OWNER: W<OwnerWords> = {
     privateNote: "यह पेज निजी है। जिसके पास इसका पता है, वह आपकी ओर से जवाब दे सकता है, इसलिए इसे किसी से साझा मत कीजिए। आपकी दुकान सेट करने वाले इस लिंक को बंद करके नया दे सकते हैं।",
     none: "अभी आपके लिए कुछ नहीं है।", waiting: "आपके जवाब का इंतज़ार", upcoming: "आने वाली बुकिंग", noneComing: "अगले हफ़्ते कोई बुकिंग नहीं है।",
     who: (name, phone, from) => `${name ? `${name}, ` : ""}${phone} (${from})`,
-    from: { whatsapp: "WhatsApp", web: "बुकिंग पेज", mcp: "AI सहायक" },
+    from: { whatsapp: "WhatsApp", web: "बुकिंग पेज", mcp: "AI सहायक", chat: "पेज की चैट" },
     deposit: (who, amount, what) => `${who} को ${what} के लिए ${amount} देने हैं। क्या यह आपके UPI ऐप में आ गया?`,
     received: (amount) => `हाँ, ${amount} मिल गए`,
     refundOwed: (who, amount, why) => `आपको ${who} को ${amount} लौटाने हैं (${why})। अपने UPI ऐप से भेजिए, फिर दबाइए:`,
@@ -278,7 +278,7 @@ export const OWNER: W<OwnerWords> = {
     privateNote: "ഈ പേജ് സ്വകാര്യമാണ്. ഇതിന്റെ വിലാസമുള്ള ആർക്കും നിങ്ങൾക്കുവേണ്ടി മറുപടി നൽകാം, അതിനാൽ ഇത് പങ്കിടരുത്. നിങ്ങളുടെ കട സജ്ജമാക്കിയ ആൾക്ക് ഈ ലിങ്ക് ഓഫാക്കി പുതിയത് തരാം.",
     none: "ഇപ്പോൾ നിങ്ങൾക്കായി ഒന്നും കാത്തിരിക്കുന്നില്ല.", waiting: "നിങ്ങളുടെ മറുപടിക്കായി", upcoming: "വരുന്ന ബുക്കിംഗുകൾ", noneComing: "വരുന്ന ആഴ്ച ബുക്കിംഗുകളില്ല.",
     who: (name, phone, from) => `${name ? `${name}, ` : ""}${phone} (${from})`,
-    from: { whatsapp: "WhatsApp", web: "ബുക്കിംഗ് പേജ്", mcp: "AI സഹായി" },
+    from: { whatsapp: "WhatsApp", web: "ബുക്കിംഗ് പേജ്", mcp: "AI സഹായി", chat: "പേജിലെ ചാറ്റ്" },
     deposit: (who, amount, what) => `${who} ${what}-ന് ${amount} അടയ്ക്കണം. അത് നിങ്ങളുടെ UPI ആപ്പിൽ എത്തിയോ?`,
     received: (amount) => `അതെ, ${amount} കിട്ടി`,
     refundOwed: (who, amount, why) => `നിങ്ങൾ ${who}-ന് ${amount} തിരികെ നൽകണം (${why}). നിങ്ങളുടെ UPI ആപ്പിൽ നിന്ന് അയച്ചിട്ട് അമർത്തൂ:`,
@@ -303,7 +303,7 @@ export const OWNER: W<OwnerWords> = {
     privateNote: "ಈ ಪುಟ ಖಾಸಗಿ. ಇದರ ವಿಳಾಸ ಇರುವ ಯಾರಾದರೂ ನಿಮ್ಮ ಪರವಾಗಿ ಉತ್ತರಿಸಬಹುದು, ಆದ್ದರಿಂದ ಇದನ್ನು ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ನಿಮ್ಮ ಅಂಗಡಿಯನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರು ಈ ಲಿಂಕ್ ನಿಲ್ಲಿಸಿ ಹೊಸದನ್ನು ಕೊಡಬಹುದು.",
     none: "ಈಗ ನಿಮಗಾಗಿ ಏನೂ ಕಾಯುತ್ತಿಲ್ಲ.", waiting: "ನಿಮ್ಮ ಉತ್ತರಕ್ಕಾಗಿ", upcoming: "ಮುಂದಿನ ಬುಕಿಂಗ್‌ಗಳು", noneComing: "ಮುಂದಿನ ವಾರ ಯಾವುದೇ ಬುಕಿಂಗ್ ಇಲ್ಲ.",
     who: (name, phone, from) => `${name ? `${name}, ` : ""}${phone} (${from})`,
-    from: { whatsapp: "WhatsApp", web: "ಬುಕಿಂಗ್ ಪುಟ", mcp: "AI ಸಹಾಯಕ" },
+    from: { whatsapp: "WhatsApp", web: "ಬುಕಿಂಗ್ ಪುಟ", mcp: "AI ಸಹಾಯಕ", chat: "ಪುಟದ ಚಾಟ್" },
     deposit: (who, amount, what) => `${who} ${what} ಗಾಗಿ ${amount} ಪಾವತಿಸಬೇಕು. ಅದು ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ಗೆ ಬಂದಿದೆಯೇ?`,
     received: (amount) => `ಹೌದು, ${amount} ಬಂದಿದೆ`,
     refundOwed: (who, amount, why) => `ನೀವು ${who} ಗೆ ${amount} ಮರಳಿ ನೀಡಬೇಕು (${why}). ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಿಂದ ಕಳುಹಿಸಿ, ನಂತರ ಒತ್ತಿ:`,
