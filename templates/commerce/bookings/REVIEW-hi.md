@@ -1489,12 +1489,11 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.id.backButton` | मेरी चैट यहाँ खोलें | Open my chat here |  |
 | `chat.id.backUsed` | यह लिंक पहले इस्तेमाल हो चुका है। चैट पेज से नया माँगिए। | This link was used already. Ask for a new one from the chat page. |  |
 | `chat.id.backExpired` | यह लिंक चल नहीं रहा। चैट पेज से नया माँगिए। | This link has run out. Ask for a new one from the chat page. |  |
-| `chat.id.backDone` | आपकी चैट इस फ़ोन पर खुल गई है। | Your chat is open on this phone. |  |
 | `chat.id.sendMyLinks` | मुझे मेरी बुकिंग का लिंक भेजें | Send me my booking link |  |
 | `chat.id.myLinksSent` | आपके WhatsApp पर भेज दिया। | Sent to your WhatsApp. |  |
 | `chat.id.myLinksNone` | अभी भेजने के लिए कोई लिंक नहीं है। | There is no link to send yet. |  |
 | `chat.id.deleteButton` | मेरी चैट हटाएँ | Delete my chat |  |
-| `chat.id.deleteAsk` | यह चैट हटाएँ? यहाँ के आपके संदेश और इस फ़ोन का लॉक हट जाएँगे। बुकिंग या भुगतान के लिए कानून जो माँगता है, दुकान वह रखती है। | Delete this chat? Your messages here and this phone's lock are removed. The shop keeps what the law needs for a booking or a payment. |  |
+| `chat.id.deleteAsk` | यह चैट हटाएँ? यहाँ के आपके संदेश हट जाएँगे, और इस फ़ोन पर चैट रखने वाली चाबी भी। बुकिंग या भुगतान के लिए कानून जो माँगता है, दुकान वह रखती है। | Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The shop keeps what the law needs for a booking or a payment. |  |
 | `chat.id.deleteYes` | हाँ, हटाएँ | Yes, delete |  |
 | `chat.id.deleteNo` | नहीं, रहने दें | No, keep it |  |
 | `chat.id.deleteDone` | हट गई। यह चैट अब इस दुकान के पास नहीं है। | Deleted. This chat is gone from this shop. |  |

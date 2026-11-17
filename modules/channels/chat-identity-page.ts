@@ -29,7 +29,7 @@ export function identityBlock(a: IdentityBlockArgs): { html: string; script: str
     return { html: `<section class="idbox"><p class="sys">${esc(w.parentNote)}</p><p class="sys"><a class="btn quiet" href="${esc(a.parent.back)}">${esc(w.parentBack)}</a></p></section>`, script: "" };
   }
   const html = `<section class="idbox" id="idbox">
-<div class="card" id="keep" hidden><h2>${esc(w.keepHead)}</h2><p id="keepBody">${esc(w.keepBody)}</p><button type="button" id="keepGo">${esc(w.keepButton)}</button>
+<div class="card" id="keep" hidden><div id="keepTop" hidden><h2>${esc(w.keepHead)}</h2><p id="keepBody">${esc(w.keepBody)}</p><button type="button" id="keepGo">${esc(w.keepButton)}</button></div>
 <div id="numAsk" hidden><p>${esc(w.numberAsk)}</p><label class="sr" for="num">${esc(w.numberLabel)}</label><input id="num" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91" maxlength="20"><button type="button" id="numGo" class="quiet">${esc(w.numberSave)}</button></div>
 <p class="sys" id="keepMsg" role="status"></p></div>
 <p class="sys" id="nolock" hidden>${esc(w.keepNoLock)}</p>
@@ -58,11 +58,12 @@ export function identityBlock(a: IdentityBlockArgs): { html: string; script: str
   async function refresh() {
     let s; try { const r = await fetch(base + "/id/state", { credentials: "same-origin", headers: { accept: "application/json" } }); if (!r.ok) return; s = await r.json(); } catch { return; }
     last = s; if (hasLock === null) hasLock = await lock();
-    const kept = s.keys > 0;
-    // offered only when it helps: after a booking or an order, and only to a phone that can keep it; a phone with no screen lock is told so, once, plainly
-    show("keep", (s.offer && hasLock) || (kept && !s.number)); show("nolock", !!s.offer && !hasLock);
+    const kept = !!s.here, canKeep = !!s.offer && hasLock;
+    // offered only when it helps: after a booking or an order, and only to a phone that can keep it; a phone with no screen lock is told so, once, plainly. The number for a new phone
+    // is asked whenever there is a booking or an order and none was given, with or without a screen lock.
+    show("keep", canKeep || kept || (s.work > 0 && !s.number)); show("keepTop", canKeep || kept); show("nolock", !!s.offer && !hasLock);
     if (kept) { show("keepGo", false); $("keepBody").textContent = W.keepDone; }
-    show("numAsk", kept && !s.number);
+    show("numAsk", (kept || s.work > 0) && !s.number);
     show("before", s.work === 0 && !kept);
     show("foot", !!s.known || kept); show("linksGo", !!s.number);
   }
@@ -111,7 +112,7 @@ export function identityBlock(a: IdentityBlockArgs): { html: string; script: str
     try { for (const k of ["chat-draft:" + base, "chat-unsent:" + base]) localStorage.removeItem(k); } catch {}
     say("footMsg", W.deleteDone); show("delBox", false); setTimeout(() => location.reload(), 900);
   });
-  refresh(); setInterval(() => { if (!document.hidden && !(last.keys > 0 && last.number)) refresh(); }, 10000);
+  refresh(); setInterval(() => { if (!document.hidden && !(last.here && last.number)) refresh(); }, 10000);
 })();`;
   return { html, script };
 }

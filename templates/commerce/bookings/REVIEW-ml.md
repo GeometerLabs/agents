@@ -1536,12 +1536,11 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.id.backButton` | എന്റെ ചാറ്റ് ഇവിടെ തുറക്കൂ | Open my chat here |  |
 | `chat.id.backUsed` | ഈ ലിങ്ക് മുമ്പേ ഉപയോഗിച്ചു. ചാറ്റ് പേജിൽ നിന്ന് പുതിയത് ചോദിക്കൂ. | This link was used already. Ask for a new one from the chat page. |  |
 | `chat.id.backExpired` | ഈ ലിങ്കിന്റെ സമയം കഴിഞ്ഞു. ചാറ്റ് പേജിൽ നിന്ന് പുതിയത് ചോദിക്കൂ. | This link has run out. Ask for a new one from the chat page. |  |
-| `chat.id.backDone` | നിങ്ങളുടെ ചാറ്റ് ഈ ഫോണിൽ തുറന്നിരിക്കുന്നു. | Your chat is open on this phone. |  |
 | `chat.id.sendMyLinks` | എന്റെ ബുക്കിംഗ് ലിങ്ക് അയയ്ക്കൂ | Send me my booking link |  |
 | `chat.id.myLinksSent` | നിങ്ങളുടെ WhatsApp-ലേക്ക് അയച്ചു. | Sent to your WhatsApp. |  |
 | `chat.id.myLinksNone` | അയയ്ക്കാൻ ഇതുവരെ ലിങ്ക് ഒന്നുമില്ല. | There is no link to send yet. |  |
 | `chat.id.deleteButton` | എന്റെ ചാറ്റ് ഇല്ലാതാക്കൂ | Delete my chat |  |
-| `chat.id.deleteAsk` | ഈ ചാറ്റ് ഇല്ലാതാക്കട്ടെ? ഇവിടത്തെ നിങ്ങളുടെ സന്ദേശങ്ങളും ഈ ഫോണിന്റെ ലോക്കും നീക്കും. ബുക്കിംഗിനോ പണമടയ്ക്കലിനോ നിയമം ആവശ്യപ്പെടുന്നത് കട സൂക്ഷിക്കും. | Delete this chat? Your messages here and this phone's lock are removed. The shop keeps what the law needs for a booking or a payment. |  |
+| `chat.id.deleteAsk` | ഈ ചാറ്റ് ഇല്ലാതാക്കട്ടെ? ഇവിടത്തെ നിങ്ങളുടെ സന്ദേശങ്ങളും ഈ ഫോണിൽ ചാറ്റ് സൂക്ഷിക്കുന്ന താക്കോലും നീക്കും. ബുക്കിംഗിനോ പണമടയ്ക്കലിനോ നിയമം ആവശ്യപ്പെടുന്നത് കട സൂക്ഷിക്കും. | Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The shop keeps what the law needs for a booking or a payment. |  |
 | `chat.id.deleteYes` | അതെ, ഇല്ലാതാക്കൂ | Yes, delete |  |
 | `chat.id.deleteNo` | വേണ്ട, ഇരിക്കട്ടെ | No, keep it |  |
 | `chat.id.deleteDone` | ഇല്ലാതാക്കി. ഈ ചാറ്റ് ഇനി ഈ കടയുടെ പക്കലില്ല. | Deleted. This chat is gone from this shop. |  |

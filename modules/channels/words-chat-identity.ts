@@ -21,7 +21,7 @@ export interface IdentityWords {
   /** The optional number, given on the keep box. */
   numberAsk: string; numberSave: string; numberSaved: string;
   /** The link's own page (opened from WhatsApp on the new phone). */
-  backHead: string; backBody: string; backButton: string; backUsed: string; backExpired: string; backDone: string;
+  backHead: string; backBody: string; backButton: string; backUsed: string; backExpired: string;
   /** "Send me my booking link", when the number is known. */
   sendMyLinks: string; myLinksSent: string; myLinksNone: string;
   /** Delete my chat: the button, the question, the two answers, what goes and what stays, and the result. */
@@ -40,9 +40,9 @@ export const IDENTITY: Record<Language, IdentityWords> = {
     linkSent: "If we have that number, a link is on its way. It works once, for 15 minutes.", wait: "Please wait a little before asking again.", badNumber: "That does not look like a phone number.",
     numberAsk: "If you get a new phone, we can send a link to your WhatsApp. Add your number (you can skip this).", numberSave: "Save my number", numberSaved: "Saved. On a new phone, tap I have a new phone.",
     backHead: "Welcome back", backBody: "Open your chat on this phone?", backButton: "Open my chat here", backUsed: "This link was used already. Ask for a new one from the chat page.",
-    backExpired: "This link has run out. Ask for a new one from the chat page.", backDone: "Your chat is open on this phone.",
+    backExpired: "This link has run out. Ask for a new one from the chat page.",
     sendMyLinks: "Send me my booking link", myLinksSent: "Sent to your WhatsApp.", myLinksNone: "There is no link to send yet.",
-    deleteButton: "Delete my chat", deleteAsk: "Delete this chat? Your messages here and this phone's lock are removed. The shop keeps what the law needs for a booking or a payment.", deleteYes: "Yes, delete", deleteNo: "No, keep it",
+    deleteButton: "Delete my chat", deleteAsk: "Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The shop keeps what the law needs for a booking or a payment.", deleteYes: "Yes, delete", deleteNo: "No, keep it",
     deleteDone: "Deleted. This chat is gone from this shop.",
     parentNote: "This chat is only for you. It opens from your private fee page, and it talks about your own fees. To pay, go back to your fee page.", parentBack: "Back to my fees", parentAsk: "Ask about this fee",
   },
@@ -55,9 +55,9 @@ export const IDENTITY: Record<Language, IdentityWords> = {
     linkSent: "अगर हमारे पास वह नंबर है तो लिंक भेजा जा रहा है। यह एक बार, 15 मिनट तक चलेगा।", wait: "दोबारा माँगने से पहले थोड़ा रुकिए।", badNumber: "यह फ़ोन नंबर जैसा नहीं लग रहा।",
     numberAsk: "नया फ़ोन लें तो हम आपके WhatsApp पर लिंक भेज सकते हैं। अपना नंबर जोड़ें (छोड़ भी सकते हैं)।", numberSave: "मेरा नंबर रखें", numberSaved: "रख लिया। नए फ़ोन पर \"मेरा नया फ़ोन है\" दबाएँ।",
     backHead: "फिर से स्वागत है", backBody: "अपनी चैट इस फ़ोन पर खोलें?", backButton: "मेरी चैट यहाँ खोलें", backUsed: "यह लिंक पहले इस्तेमाल हो चुका है। चैट पेज से नया माँगिए।",
-    backExpired: "यह लिंक चल नहीं रहा। चैट पेज से नया माँगिए।", backDone: "आपकी चैट इस फ़ोन पर खुल गई है।",
+    backExpired: "यह लिंक चल नहीं रहा। चैट पेज से नया माँगिए।",
     sendMyLinks: "मुझे मेरी बुकिंग का लिंक भेजें", myLinksSent: "आपके WhatsApp पर भेज दिया।", myLinksNone: "अभी भेजने के लिए कोई लिंक नहीं है।",
-    deleteButton: "मेरी चैट हटाएँ", deleteAsk: "यह चैट हटाएँ? यहाँ के आपके संदेश और इस फ़ोन का लॉक हट जाएँगे। बुकिंग या भुगतान के लिए कानून जो माँगता है, दुकान वह रखती है।", deleteYes: "हाँ, हटाएँ", deleteNo: "नहीं, रहने दें",
+    deleteButton: "मेरी चैट हटाएँ", deleteAsk: "यह चैट हटाएँ? यहाँ के आपके संदेश हट जाएँगे, और इस फ़ोन पर चैट रखने वाली चाबी भी। बुकिंग या भुगतान के लिए कानून जो माँगता है, दुकान वह रखती है।", deleteYes: "हाँ, हटाएँ", deleteNo: "नहीं, रहने दें",
     deleteDone: "हट गई। यह चैट अब इस दुकान के पास नहीं है।",
     parentNote: "यह चैट सिर्फ़ आपके लिए है। यह आपके निजी फ़ीस पेज से खुलती है और आपकी अपनी फ़ीस की बात करती है। भुगतान के लिए अपने फ़ीस पेज पर लौटें।", parentBack: "मेरी फ़ीस पर लौटें", parentAsk: "इस फ़ीस के बारे में पूछें",
   },
@@ -70,9 +70,9 @@ export const IDENTITY: Record<Language, IdentityWords> = {
     linkSent: "ആ നമ്പർ ഞങ്ങളുടെ പക്കലുണ്ടെങ്കിൽ ഒരു ലിങ്ക് അയയ്ക്കുന്നുണ്ട്. ഇത് ഒരിക്കൽ മാത്രം, 15 മിനിറ്റ് പ്രവർത്തിക്കും.", wait: "വീണ്ടും ചോദിക്കുന്നതിനു മുമ്പ് അൽപം കാത്തിരിക്കൂ.", badNumber: "ഇത് ഫോൺ നമ്പർ പോലെ തോന്നുന്നില്ല.",
     numberAsk: "പുതിയ ഫോൺ വാങ്ങിയാൽ നിങ്ങളുടെ WhatsApp-ലേക്ക് ഒരു ലിങ്ക് അയയ്ക്കാം. നിങ്ങളുടെ നമ്പർ ചേർക്കൂ (വേണമെങ്കിൽ ഒഴിവാക്കാം).", numberSave: "എന്റെ നമ്പർ സൂക്ഷിക്കൂ", numberSaved: "സൂക്ഷിച്ചു. പുതിയ ഫോണിൽ \"എനിക്ക് പുതിയ ഫോൺ ഉണ്ട്\" തൊടൂ.",
     backHead: "വീണ്ടും സ്വാഗതം", backBody: "നിങ്ങളുടെ ചാറ്റ് ഈ ഫോണിൽ തുറക്കട്ടെ?", backButton: "എന്റെ ചാറ്റ് ഇവിടെ തുറക്കൂ", backUsed: "ഈ ലിങ്ക് മുമ്പേ ഉപയോഗിച്ചു. ചാറ്റ് പേജിൽ നിന്ന് പുതിയത് ചോദിക്കൂ.",
-    backExpired: "ഈ ലിങ്കിന്റെ സമയം കഴിഞ്ഞു. ചാറ്റ് പേജിൽ നിന്ന് പുതിയത് ചോദിക്കൂ.", backDone: "നിങ്ങളുടെ ചാറ്റ് ഈ ഫോണിൽ തുറന്നിരിക്കുന്നു.",
+    backExpired: "ഈ ലിങ്കിന്റെ സമയം കഴിഞ്ഞു. ചാറ്റ് പേജിൽ നിന്ന് പുതിയത് ചോദിക്കൂ.",
     sendMyLinks: "എന്റെ ബുക്കിംഗ് ലിങ്ക് അയയ്ക്കൂ", myLinksSent: "നിങ്ങളുടെ WhatsApp-ലേക്ക് അയച്ചു.", myLinksNone: "അയയ്ക്കാൻ ഇതുവരെ ലിങ്ക് ഒന്നുമില്ല.",
-    deleteButton: "എന്റെ ചാറ്റ് ഇല്ലാതാക്കൂ", deleteAsk: "ഈ ചാറ്റ് ഇല്ലാതാക്കട്ടെ? ഇവിടത്തെ നിങ്ങളുടെ സന്ദേശങ്ങളും ഈ ഫോണിന്റെ ലോക്കും നീക്കും. ബുക്കിംഗിനോ പണമടയ്ക്കലിനോ നിയമം ആവശ്യപ്പെടുന്നത് കട സൂക്ഷിക്കും.", deleteYes: "അതെ, ഇല്ലാതാക്കൂ", deleteNo: "വേണ്ട, ഇരിക്കട്ടെ",
+    deleteButton: "എന്റെ ചാറ്റ് ഇല്ലാതാക്കൂ", deleteAsk: "ഈ ചാറ്റ് ഇല്ലാതാക്കട്ടെ? ഇവിടത്തെ നിങ്ങളുടെ സന്ദേശങ്ങളും ഈ ഫോണിൽ ചാറ്റ് സൂക്ഷിക്കുന്ന താക്കോലും നീക്കും. ബുക്കിംഗിനോ പണമടയ്ക്കലിനോ നിയമം ആവശ്യപ്പെടുന്നത് കട സൂക്ഷിക്കും.", deleteYes: "അതെ, ഇല്ലാതാക്കൂ", deleteNo: "വേണ്ട, ഇരിക്കട്ടെ",
     deleteDone: "ഇല്ലാതാക്കി. ഈ ചാറ്റ് ഇനി ഈ കടയുടെ പക്കലില്ല.",
     parentNote: "ഈ ചാറ്റ് നിങ്ങൾക്ക് മാത്രമുള്ളതാണ്. ഇത് നിങ്ങളുടെ സ്വകാര്യ ഫീസ് പേജിൽ നിന്ന് തുറക്കുന്നു, നിങ്ങളുടെ സ്വന്തം ഫീസിനെക്കുറിച്ച് സംസാരിക്കുന്നു. അടയ്ക്കാൻ നിങ്ങളുടെ ഫീസ് പേജിലേക്ക് മടങ്ങൂ.", parentBack: "എന്റെ ഫീസിലേക്ക് മടങ്ങൂ", parentAsk: "ഈ ഫീസിനെക്കുറിച്ച് ചോദിക്കൂ",
   },
@@ -85,9 +85,9 @@ export const IDENTITY: Record<Language, IdentityWords> = {
     linkSent: "ಆ ನಂಬರ್ ನಮ್ಮ ಬಳಿ ಇದ್ದರೆ ಲಿಂಕ್ ಹೋಗುತ್ತಿದೆ. ಇದು ಒಮ್ಮೆ ಮಾತ್ರ, 15 ನಿಮಿಷ ಕೆಲಸ ಮಾಡುತ್ತದೆ.", wait: "ಮತ್ತೆ ಕೇಳುವ ಮೊದಲು ಸ್ವಲ್ಪ ಕಾಯಿರಿ.", badNumber: "ಇದು ಫೋನ್ ನಂಬರ್‌ನಂತೆ ಕಾಣುತ್ತಿಲ್ಲ.",
     numberAsk: "ಹೊಸ ಫೋನ್ ಬಂದರೆ ನಿಮ್ಮ WhatsApp ಗೆ ಲಿಂಕ್ ಕಳುಹಿಸಬಹುದು. ನಿಮ್ಮ ನಂಬರ್ ಸೇರಿಸಿ (ಬೇಡವಾದರೆ ಬಿಡಬಹುದು).", numberSave: "ನನ್ನ ನಂಬರ್ ಇಟ್ಟುಕೊಳ್ಳಿ", numberSaved: "ಇಟ್ಟುಕೊಂಡಿದ್ದೇವೆ. ಹೊಸ ಫೋನಿನಲ್ಲಿ \"ನನಗೆ ಹೊಸ ಫೋನ್ ಇದೆ\" ಒತ್ತಿ.",
     backHead: "ಮತ್ತೆ ಸ್ವಾಗತ", backBody: "ನಿಮ್ಮ ಚಾಟ್ ಅನ್ನು ಈ ಫೋನಿನಲ್ಲಿ ತೆರೆಯಲೇ?", backButton: "ನನ್ನ ಚಾಟ್ ಇಲ್ಲಿ ತೆರೆಯಿರಿ", backUsed: "ಈ ಲಿಂಕ್ ಈಗಾಗಲೇ ಬಳಸಲಾಗಿದೆ. ಚಾಟ್ ಪುಟದಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ.",
-    backExpired: "ಈ ಲಿಂಕ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಚಾಟ್ ಪುಟದಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ.", backDone: "ನಿಮ್ಮ ಚಾಟ್ ಈ ಫೋನಿನಲ್ಲಿ ತೆರೆದಿದೆ.",
+    backExpired: "ಈ ಲಿಂಕ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಚಾಟ್ ಪುಟದಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ.",
     sendMyLinks: "ನನ್ನ ಬುಕಿಂಗ್ ಲಿಂಕ್ ಕಳುಹಿಸಿ", myLinksSent: "ನಿಮ್ಮ WhatsApp ಗೆ ಕಳುಹಿಸಿದ್ದೇವೆ.", myLinksNone: "ಕಳುಹಿಸಲು ಇನ್ನೂ ಲಿಂಕ್ ಇಲ್ಲ.",
-    deleteButton: "ನನ್ನ ಚಾಟ್ ಅಳಿಸಿ", deleteAsk: "ಈ ಚಾಟ್ ಅಳಿಸಲೇ? ಇಲ್ಲಿನ ನಿಮ್ಮ ಸಂದೇಶಗಳು ಮತ್ತು ಈ ಫೋನಿನ ಲಾಕ್ ತೆಗೆಯುತ್ತೇವೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿಗೆ ಕಾನೂನು ಕೇಳುವುದನ್ನು ಅಂಗಡಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ.", deleteYes: "ಹೌದು, ಅಳಿಸಿ", deleteNo: "ಬೇಡ, ಇರಲಿ",
+    deleteButton: "ನನ್ನ ಚಾಟ್ ಅಳಿಸಿ", deleteAsk: "ಈ ಚಾಟ್ ಅಳಿಸಲೇ? ಇಲ್ಲಿನ ನಿಮ್ಮ ಸಂದೇಶಗಳನ್ನು ಮತ್ತು ಈ ಫೋನಿನಲ್ಲಿ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳುವ ಕೀಲಿಯನ್ನು ತೆಗೆಯುತ್ತೇವೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿಗೆ ಕಾನೂನು ಕೇಳುವುದನ್ನು ಅಂಗಡಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ.", deleteYes: "ಹೌದು, ಅಳಿಸಿ", deleteNo: "ಬೇಡ, ಇರಲಿ",
     deleteDone: "ಅಳಿಸಲಾಗಿದೆ. ಈ ಚಾಟ್ ಇನ್ನು ಈ ಅಂಗಡಿಯ ಬಳಿ ಇಲ್ಲ.",
     parentNote: "ಈ ಚಾಟ್ ನಿಮಗೆ ಮಾತ್ರ. ಇದು ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟದಿಂದ ತೆರೆಯುತ್ತದೆ ಮತ್ತು ನಿಮ್ಮ ಸ್ವಂತ ಶುಲ್ಕದ ಬಗ್ಗೆ ಮಾತನಾಡುತ್ತದೆ. ಪಾವತಿಸಲು ನಿಮ್ಮ ಶುಲ್ಕ ಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ.", parentBack: "ನನ್ನ ಶುಲ್ಕಕ್ಕೆ ಹಿಂತಿರುಗಿ", parentAsk: "ಈ ಶುಲ್ಕದ ಬಗ್ಗೆ ಕೇಳಿ",
   },

@@ -90,7 +90,7 @@ export function createChatIdentity(deps: ChatIdentityDeps) {
       if (op === "state") {
         const keys = identity.state(handle);
         const work = channel.chatWork(thread);
-        return answer(200, { keys: keys.keys, number: keys.number, work, offer: seen.known && work > 0 && keys.keys === 0, restored: thread !== handle, known: seen.known });
+        return answer(200, { keys: keys.keys, here: keys.here, number: keys.number, work, offer: seen.known && work > 0 && !keys.here, restored: thread !== handle, known: seen.known });
       }
       if (op === "signin_options") return rp ? answer(200, { options: identity.signinOptions(rp, now) }) : answer(404, { error: "This shop has no page address yet." });
       if (op === "signin") {

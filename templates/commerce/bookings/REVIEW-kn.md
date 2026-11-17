@@ -1536,12 +1536,11 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.id.backButton` | ನನ್ನ ಚಾಟ್ ಇಲ್ಲಿ ತೆರೆಯಿರಿ | Open my chat here |  |
 | `chat.id.backUsed` | ಈ ಲಿಂಕ್ ಈಗಾಗಲೇ ಬಳಸಲಾಗಿದೆ. ಚಾಟ್ ಪುಟದಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ. | This link was used already. Ask for a new one from the chat page. |  |
 | `chat.id.backExpired` | ಈ ಲಿಂಕ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಚಾಟ್ ಪುಟದಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ. | This link has run out. Ask for a new one from the chat page. |  |
-| `chat.id.backDone` | ನಿಮ್ಮ ಚಾಟ್ ಈ ಫೋನಿನಲ್ಲಿ ತೆರೆದಿದೆ. | Your chat is open on this phone. |  |
 | `chat.id.sendMyLinks` | ನನ್ನ ಬುಕಿಂಗ್ ಲಿಂಕ್ ಕಳುಹಿಸಿ | Send me my booking link |  |
 | `chat.id.myLinksSent` | ನಿಮ್ಮ WhatsApp ಗೆ ಕಳುಹಿಸಿದ್ದೇವೆ. | Sent to your WhatsApp. |  |
 | `chat.id.myLinksNone` | ಕಳುಹಿಸಲು ಇನ್ನೂ ಲಿಂಕ್ ಇಲ್ಲ. | There is no link to send yet. |  |
 | `chat.id.deleteButton` | ನನ್ನ ಚಾಟ್ ಅಳಿಸಿ | Delete my chat |  |
-| `chat.id.deleteAsk` | ಈ ಚಾಟ್ ಅಳಿಸಲೇ? ಇಲ್ಲಿನ ನಿಮ್ಮ ಸಂದೇಶಗಳು ಮತ್ತು ಈ ಫೋನಿನ ಲಾಕ್ ತೆಗೆಯುತ್ತೇವೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿಗೆ ಕಾನೂನು ಕೇಳುವುದನ್ನು ಅಂಗಡಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. | Delete this chat? Your messages here and this phone's lock are removed. The shop keeps what the law needs for a booking or a payment. |  |
+| `chat.id.deleteAsk` | ಈ ಚಾಟ್ ಅಳಿಸಲೇ? ಇಲ್ಲಿನ ನಿಮ್ಮ ಸಂದೇಶಗಳನ್ನು ಮತ್ತು ಈ ಫೋನಿನಲ್ಲಿ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳುವ ಕೀಲಿಯನ್ನು ತೆಗೆಯುತ್ತೇವೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿಗೆ ಕಾನೂನು ಕೇಳುವುದನ್ನು ಅಂಗಡಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. | Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The shop keeps what the law needs for a booking or a payment. |  |
 | `chat.id.deleteYes` | ಹೌದು, ಅಳಿಸಿ | Yes, delete |  |
 | `chat.id.deleteNo` | ಬೇಡ, ಇರಲಿ | No, keep it |  |
 | `chat.id.deleteDone` | ಅಳಿಸಲಾಗಿದೆ. ಈ ಚಾಟ್ ಇನ್ನು ಈ ಅಂಗಡಿಯ ಬಳಿ ಇಲ್ಲ. | Deleted. This chat is gone from this shop. |  |

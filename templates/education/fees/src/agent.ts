@@ -1326,7 +1326,7 @@ export function createAgent(deps: AgentDeps): Agent {
     store.seenMessages.add(msg.id);
     const tapped = msg.reply ? intentFromReply(msg.reply.id) : null;
     const read = tapped ? { intent: tapped, understood: RULES } : await readIntent(msg.text, { rulesOnly: true });
-    log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}) }, { notes: "a public question from the chat on the centre's page; no fee or student is read for it", refs: { messageId: msg.id, channel: "chat" } });
+    log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(tapped ? { reply: msg.reply!.id } : {}) }, { notes: parentOfChat(store, phone) ? "a message in a parent's own chat on their private fee page; only that parent's own open fees are read for it" : "a public question from the chat on the centre's page; no fee or student is read for it", refs: { messageId: msg.id, channel: "chat" } });
     if (read.intent.kind === "stop") return onStop(phone);
     if (customer.optedOut) return;
     const parent = parentOfChat(store, phone);
