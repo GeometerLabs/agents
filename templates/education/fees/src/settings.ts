@@ -7,6 +7,8 @@ import type { Language } from "../../../../modules/language/languages.ts";
 import { readApprovers } from "../../../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../../../modules/approvals/people.ts";
 import { isValidTimeZone } from "../../../../modules/core/time.ts";
+import { BACK_DUES_MAX, JOINING_RULES, parseJoined } from "./joining.ts";
+import type { BackDue, JoiningRule } from "./joining.ts";
 import { readPaymentSettings } from "../../../../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../../../../modules/payments/providers/index.ts";
 
@@ -27,6 +29,13 @@ export interface Student {
   batchId: string;
   /** The language this parent is written to. Left out: the centre's first language. */
   language?: Language;
+  /**
+   * The day the student joined, "2026-11-18". Read only when the centre's rule for a part month is not "usual" (`joiningMidMonth`), so a centre that sets no rule is
+   * not changed by it. Left out: nothing special.
+   */
+  joined?: string;
+  /** Earlier months still unpaid when the agent started, entered by the owner: each is opened once as a fee of its own, carried and reminded (src/joining.ts). */
+  backDues?: BackDue[];
 }
 
 export interface Settings {
@@ -43,6 +52,11 @@ export interface Settings {
     /** Days after the due day before a late fee is added. */
     graceDays: number;
   };
+  /**
+   * What a student who joins after the 1st owes for the joining month (src/joining.ts): "usual" (today's behaviour, the default), "full", "prorata" (the days left, as a
+   * share of the month) or "nextMonth". Needs the student's `joined` date.
+   */
+  joiningMidMonth?: JoiningRule;
   /** Whole rupees added once when the grace days are over and the fee is still not paid. 0: no late fee. */
   lateFeeInr: number;
   reminders: {
@@ -87,7 +101,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the centre's name, batches, students and so on."] };
 
-  unknownKeys(input, ["name", "address", "timezone", "languages", "batches", "students", "due", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "assistant"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "languages", "batches", "students", "due", "joiningMidMonth", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "assistant"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the centre's name (\"name\").");
@@ -100,6 +114,9 @@ export function validateSettings(input: unknown): SettingsResult {
   const batches = readBatches(input.batches, languages, errors);
   const owner = readOwner(input.owner, errors);
   const students = readStudents(input.students, batches, languages, owner?.whatsapp, errors);
+  const joiningMidMonth = input.joiningMidMonth ?? "usual";
+  if (!JOINING_RULES.includes(joiningMidMonth as JoiningRule)) errors.push(`The rule for a student who joins mid-month ("joiningMidMonth") must be one of ${JOINING_RULES.map((r) => `"${r}"`).join(", ")}.`);
+
   const cheapest = batches.length > 0 ? Math.min(...batches.map((b) => b.monthlyFeeInr)) : undefined;
   const due = readDue(input.due, errors);
   const lateFeeInr = input.lateFeeInr === undefined ? 0 : readWhole(input.lateFeeInr, "the late fee (\"lateFeeInr\")", 0, cheapest ?? 1_000_000, errors, cheapest !== undefined ? `a late fee is never more than the cheapest monthly fee (₹${cheapest})` : undefined);
@@ -119,6 +136,7 @@ export function validateSettings(input: unknown): SettingsResult {
     partPayments: partPayments as Settings["partPayments"], waiver: waiver as Settings["waiver"], refund: refund as Settings["refund"],
     payment: payment as Settings["payment"], owner: owner as Settings["owner"],
   };
+  if (joiningMidMonth !== "usual") settings.joiningMidMonth = joiningMidMonth as JoiningRule; // left out when "usual": a centre that sets nothing keeps its settings as they were
   if (typeof address === "string") settings.address = address;
   if (approvers) settings.approvers = approvers;
   if (assistant) settings.assistant = assistant;
@@ -220,23 +238,40 @@ function readStudents(v: unknown, batches: Batch[], languages: Language[], owner
   v.forEach((raw, i) => {
     const label = isObj(raw) && typeof raw.name === "string" ? `Student "${raw.name}"` : `Student number ${i + 1}`;
     if (!isObj(raw)) { errors.push(`${label} must be an object with name, parent and batch.`); return; }
-    unknownKeys(raw, ["name", "parent", "batch", "language"], label, errors);
+    unknownKeys(raw, ["name", "parent", "batch", "language", "joined", "backDues"], label, errors);
     const studentName = typeof raw.name === "string" ? raw.name.trim() : "";
     if (studentName === "") errors.push(`${label} needs a name ("name").`);
     if (typeof raw.parent !== "string" || !PHONE.test(raw.parent)) errors.push(`${label} needs the parent's WhatsApp number ("parent"), starting with + and the country code, then digits only, for example +919800000000.`);
     else if (raw.parent === ownerNumber) errors.push(`${label}: the parent's number is the owner's. The owner's number is for the owner's replies, not for a parent.`);
     if (typeof raw.batch !== "string" || !batches.some((b) => b.id === raw.batch)) errors.push(`${label} needs a batch ("batch") that is one of the ids in "batches".`);
     if (raw.language !== undefined && (!LANGUAGES.includes(raw.language as Language) || !languages.includes(raw.language as Language))) errors.push(`${label}'s language ("language") must be one of the centre's languages: ${languages.map((l) => `"${l}"`).join(", ")}.`);
+    if (raw.joined !== undefined && (typeof raw.joined !== "string" || parseJoined(raw.joined) === undefined)) errors.push(`${label}'s joining day ("joined") must be a real date written like 2026-11-18.`);
+    const backDues = readBackDues(raw.backDues, label, batches.find((b) => b.id === raw.batch), errors);
     if (studentName !== "" && typeof raw.parent === "string") {
       const key = `${raw.parent}|${studentName.toLowerCase()}`;
       if (seen.has(key)) errors.push(`${label} is listed twice for the same parent number.`);
       seen.add(key);
     }
     if (studentName !== "" && typeof raw.parent === "string" && PHONE.test(raw.parent) && typeof raw.batch === "string" && batches.some((b) => b.id === raw.batch)) {
-      students.push({ name: studentName, parent: raw.parent, batchId: raw.batch, ...(raw.language ? { language: raw.language as Language } : {}) });
+      students.push({ name: studentName, parent: raw.parent, batchId: raw.batch, ...(raw.language ? { language: raw.language as Language } : {}), ...(typeof raw.joined === "string" ? { joined: raw.joined } : {}), ...(backDues.length > 0 ? { backDues } : {}) });
     }
   });
   return students;
+}
+
+/** A student's earlier unpaid months: "2026-09" and a whole-rupee amount each, never more than the dearest batch's fee (a payment link is bounded by it, see highestDueInr). */
+function readBackDues(v: unknown, label: string, batch: Batch | undefined, errors: string[]): BackDue[] {
+  if (v === undefined) return [];
+  if (!Array.isArray(v) || v.length > BACK_DUES_MAX) { errors.push(`${label}'s earlier unpaid months ("backDues") must be a list of at most ${BACK_DUES_MAX}, each like {"month": "2026-09", "amountInr": 1500}.`); return []; }
+  const out: BackDue[] = [];
+  for (const item of v) {
+    const ok = isObj(item) && typeof item.month === "string" && /^\d{4}-(0[1-9]|1[0-2])$/u.test(item.month) && isWhole(item.amountInr) && item.amountInr >= 1 && item.amountInr <= (batch?.monthlyFeeInr ?? 1_000_000);
+    if (!ok) { errors.push(`${label} has an earlier unpaid month ("backDues") that is not like {"month": "2026-09", "amountInr": 1500} (the amount is whole rupees, at most the batch's monthly fee).`); continue; }
+    const entry = item as { month: string; amountInr: number };
+    if (out.some((x) => x.month === entry.month)) errors.push(`${label} lists the earlier month ${entry.month} twice in "backDues".`);
+    else out.push({ month: entry.month, amountInr: entry.amountInr });
+  }
+  return out;
 }
 
 function readDue(v: unknown, errors: string[]): Settings["due"] | undefined {

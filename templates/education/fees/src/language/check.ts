@@ -8,13 +8,14 @@ export function checkFactsOf(facts: MessageFacts): CheckFacts {
   return {
     language: facts.language,
     timeZone: facts.timeZone,
-    amountsInr: [facts.feeInr, facts.lateFeeInr, facts.balanceInr, facts.paidInr, facts.receivedInr, facts.waiverInr, facts.refundInr, facts.waiverLimitInr].filter((v): v is number => v !== undefined),
+    amountsInr: [facts.feeInr, facts.lateFeeInr, facts.balanceInr, facts.paidInr, facts.receivedInr, facts.waiverInr, facts.refundInr, facts.waiverLimitInr, ...(facts.family ?? []).map((l) => l.balanceInr)].filter((v): v is number => v !== undefined),
     counts: [facts.graceDays, facts.approvalHours, facts.openFeesCount, facts.approvalsLeft].filter((v): v is number => v !== undefined),
     shownMs: facts.dueMs,
-    momentsMs: [],
+    // a reminder that lists several fees states each one's own due date (the first is `shownMs` too); nothing else
+    momentsMs: (facts.family ?? []).map((l) => l.dueMs),
     // the payment link, and (item 11h) the parent's own private page in a message to that parent
-    links: [facts.link, facts.pageLink].filter((v): v is string => v !== undefined),
-    literals: [facts.businessName, facts.studentName, facts.batchName, facts.monthLabel, facts.dueRef, facts.requestRef, facts.customerPhone, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner],
+    links: [facts.link, facts.pageLink, ...(facts.family ?? []).map((l) => l.link)].filter((v): v is string => v !== undefined),
+    literals: [...(facts.family ?? []).flatMap((l) => [l.studentName, l.batchName, l.monthLabel, l.dueRef]), facts.businessName, facts.studentName, facts.batchName, facts.monthLabel, facts.dueRef, facts.requestRef, facts.customerPhone, facts.approvalCode, facts.upiId, facts.payee, facts.upiCode, facts.partner],
   };
 }
 

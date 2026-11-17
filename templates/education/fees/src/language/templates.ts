@@ -6,6 +6,12 @@ import { formatDate, formatInr } from "../../../../../modules/language/format.ts
 import type { Language } from "../../../../../modules/language/languages.ts";
 import { localParts } from "../../../../../modules/core/time.ts";
 
+/**
+ * One open fee in a reminder that lists several (a parent with more than one child, or with an earlier month still unpaid): each keeps its OWN payment link, so a payment
+ * on a link is counted on that one fee and no other. Every value comes from that fee's record.
+ */
+export interface FamilyLine { studentName: string; batchName: string; monthLabel: string; balanceInr: number; dueMs: number; link: string; dueRef: string }
+
 /** The values of this student-month's record that a message may use. The outgoing check reads the same object. */
 export interface MessageFacts {
   language: Language;
@@ -55,6 +61,8 @@ export interface MessageFacts {
    * keeps only its hash (src/due.ts parentLinks); the outgoing check allows this link and the payment link, and no other.
    */
   pageLink?: string;
+  /** Only the one reminder that lists several of a parent's open fees (`fee_reminder_family`): one line for each, oldest due date first. */
+  family?: FamilyLine[];
 }
 
 export type TemplateId =
@@ -77,7 +85,7 @@ export type TemplateId =
   | "owner_approval_waiting" | "owner_approval_closed" | "owner_approval_refused"
   // the agent: a person at the server settled an uncertain refund as made (Guard's already_done), so it is done and not sent again
   | "owner_refund_settled"
-  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PageTemplateId;
+  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId;
 
 /**
  * Item 11h: the reminders with the parent's private page in them, used whenever the centre has a page (its pages file): the same words as the three reminders, and a
@@ -86,6 +94,13 @@ export type TemplateId =
  * speaker's review (REVIEW-ml.md, REVIEW-kn.md).
  */
 export type PageTemplateId = "fee_reminder_page" | "fee_overdue_page" | "fee_overdue_late_page" | "fee_page_link";
+
+/**
+ * One reminder that lists every open fee of a parent who has more than one (two children, or an earlier month still unpaid), each with its own amount, date and
+ * payment link, so the parent gets one message and each payment still goes to the fee its link is for. It is also a WhatsApp template (meta-templates.ts): the lines are
+ * its one value. Hindi, Malayalam and Kannada are machine-written and wait for a native speaker's review (REVIEW-hi.md, REVIEW-ml.md, REVIEW-kn.md).
+ */
+export type FamilyTemplateId = "fee_reminder_family" | "fee_reminder_family_page";
 
 /**
  * The licence's wind-down and final stop (plan B13; modules/licence). The parent's line answers a request to pay while online fee payment is paused; the owner's two
@@ -111,7 +126,8 @@ export const TEMPLATE_NAMES = { customer: "fee_update", reminder: "fee_reminder_
 
 type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
-type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId | PageTemplateId>, Template>;
+type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId>, Template>;
+type FamilySet = Record<FamilyTemplateId, Template>;
 type PageSet = Record<PageTemplateId, Template>;
 type UpiSet = Record<UpiTemplateId, Template>;
 type LicenceSet = Record<LicenceTemplateId, Template>;
@@ -529,7 +545,37 @@ const pageKn: PageSet = {
   fee_page_link: (f) => `ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟ (${f.businessName}): ${page(f)} ಇದರಲ್ಲಿ ನಿಮ್ಮ ಮಕ್ಕಳ ಶುಲ್ಕ ಮತ್ತು ಪಾವತಿಸುವ ವಿಧಾನ ಇದೆ. ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ಸಂದೇಶಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...pageEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...pageHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...pageMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...pageKn } };
+// ---- one reminder for several open fees (a parent with two children, or an earlier month unpaid) -----------------------------------------------------------------
+// Each line is one fee: who, which batch, which month, what is still to pay, the due date and THAT fee's own payment link. Lines are joined with " | " (a WhatsApp
+// template value cannot hold a line break). The amounts, dates and links all come from the fees' records and are read by the outgoing check like any other message.
+const payLine = (f: MessageFacts, link: string): string => (f.upiId ? `${link} (UPI ID ${f.upiId}, ${need(f, "payee")})` : link);
+const lineOf: Record<Language, (f: MessageFacts, l: FamilyLine) => string> = {
+  en: (f, l) => `${l.studentName}, ${l.batchName}, ${l.monthLabel}: ${formatInr(l.balanceInr)}, due ${formatDate(localParts(l.dueMs, f.timeZone), f.language)}, pay here: ${payLine(f, l.link)}`,
+  hi: (f, l) => `${l.studentName}, ${l.batchName}, ${l.monthLabel}: ${formatInr(l.balanceInr)}, देय तारीख ${formatDate(localParts(l.dueMs, f.timeZone), f.language)}, यहाँ भुगतान करें: ${payLine(f, l.link)}`,
+  ml: (f, l) => `${l.studentName}, ${l.batchName}, ${l.monthLabel}: ${formatInr(l.balanceInr)}, അടയ്ക്കേണ്ട തീയതി ${formatDate(localParts(l.dueMs, f.timeZone), f.language)}, ഇവിടെ അടയ്ക്കാം: ${payLine(f, l.link)}`,
+  kn: (f, l) => `${l.studentName}, ${l.batchName}, ${l.monthLabel}: ${formatInr(l.balanceInr)}, ಕೊನೆಯ ದಿನಾಂಕ ${formatDate(localParts(l.dueMs, f.timeZone), f.language)}, ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${payLine(f, l.link)}`,
+};
+/** The lines of a family reminder as the one text (and the one WhatsApp template value) they are. */
+export const familyLines = (f: MessageFacts): string => need(f, "family").map((l) => lineOf[f.language](f, l)).join(" | ");
+
+const familyEn: FamilySet = {
+  fee_reminder_family: (f) => `Fee reminder from ${f.businessName}. Open fees: ${familyLines(f)}. Reply STOP if you do not want these reminders.`,
+  fee_reminder_family_page: (f) => `Fee reminder from ${f.businessName}. Open fees: ${familyLines(f)}. Your private fees page shows them all: ${page(f)} Please do not share it. Reply STOP if you do not want these reminders.`,
+};
+const familyHi: FamilySet = {
+  fee_reminder_family: (f) => `फीस की याद: ${f.businessName}। बाकी फीस: ${familyLines(f)}। ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
+  fee_reminder_family_page: (f) => `फीस की याद: ${f.businessName}। बाकी फीस: ${familyLines(f)}। आपका निजी फीस पेज सब दिखाता है: ${page(f)} कृपया इसे किसी से साझा न करें। ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।`,
+};
+const familyMl: FamilySet = {
+  fee_reminder_family: (f) => `ഫീസ് ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}. അടയ്ക്കാനുള്ള ഫീസുകൾ: ${familyLines(f)}. ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
+  fee_reminder_family_page: (f) => `ഫീസ് ഓർമ്മപ്പെടുത്തൽ: ${f.businessName}. അടയ്ക്കാനുള്ള ഫീസുകൾ: ${familyLines(f)}. നിങ്ങളുടെ സ്വകാര്യ ഫീസ് പേജ് എല്ലാം കാണിക്കുന്നു: ${page(f)} ദയവായി ഇത് ആരുമായും പങ്കുവയ്ക്കരുത്. ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.`,
+};
+const familyKn: FamilySet = {
+  fee_reminder_family: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ಬಾಕಿ ಶುಲ್ಕಗಳು: ${familyLines(f)}. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
+  fee_reminder_family_page: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ಬಾಕಿ ಶುಲ್ಕಗಳು: ${familyLines(f)}. ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟ ಎಲ್ಲವನ್ನೂ ತೋರಿಸುತ್ತದೆ: ${page(f)} ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
+};
+
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...pageEn, ...familyEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...pageHi, ...familyHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...pageMl, ...familyMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...pageKn, ...familyKn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

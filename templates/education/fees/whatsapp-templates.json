@@ -700,6 +700,170 @@
     ]
   },
   {
+    "name": "fee_reminder_family",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "फीस की याद: {{1}}। बाकी फीस: {{2}}। ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma, कक्षा 8, नवंबर 2026: ₹1,200, देय तारीख गुरुवार, 5 नवंबर, यहाँ भुगतान करें: https://rzp.io/i/example | Anaya Sharma, कक्षा 8, अक्टूबर 2026: ₹1,200, देय तारीख सोमवार, 5 अक्टूबर, यहाँ भुगतान करें: https://rzp.io/i/example2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder_family",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Fee reminder from {{1}}. Open fees: {{2}}. Reply STOP if you do not want these reminders.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma, class 8, Nov 2026: ₹1,200, due Thu 5 Nov, pay here: https://rzp.io/i/example | Anaya Sharma, class 8, Oct 2026: ₹1,200, due Mon 5 Oct, pay here: https://rzp.io/i/example2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder_family",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഫീസ് ഓർമ്മപ്പെടുത്തൽ: {{1}}. അടയ്ക്കാനുള്ള ഫീസുകൾ: {{2}}. ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma, എട്ടാം ക്ലാസ്, നവംബർ 2026: ₹1,200, അടയ്ക്കേണ്ട തീയതി വ്യാഴം, 5 നവംബർ, ഇവിടെ അടയ്ക്കാം: https://rzp.io/i/example | Anaya Sharma, എട്ടാം ക്ലാസ്, ഒക്ടോബർ 2026: ₹1,200, അടയ്ക്കേണ്ട തീയതി തിങ്കൾ, 5 ഒക്ടോബർ, ഇവിടെ അടയ്ക്കാം: https://rzp.io/i/example2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder_family",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಶುಲ್ಕದ ನೆನಪು: {{1}}. ಬಾಕಿ ಶುಲ್ಕಗಳು: {{2}}. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma, 8ನೇ ತರಗತಿ, ನವೆಂಬರ್ 2026: ₹1,200, ಕೊನೆಯ ದಿನಾಂಕ ಗುರುವಾರ, 5 ನವೆಂಬರ್, ಇಲ್ಲಿ ಪಾವತಿಸಿ: https://rzp.io/i/example | Anaya Sharma, 8ನೇ ತರಗತಿ, ಅಕ್ಟೋಬರ್ 2026: ₹1,200, ಕೊನೆಯ ದಿನಾಂಕ ಸೋಮವಾರ, 5 ಅಕ್ಟೋಬರ್, ಇಲ್ಲಿ ಪಾವತಿಸಿ: https://rzp.io/i/example2"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder_family_page",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "फीस की याद: {{1}}। बाकी फीस: {{2}}। आपका निजी फीस पेज सब दिखाता है: {{3}} कृपया इसे किसी से साझा न करें। ये याद दिलाने वाले संदेश नहीं चाहिए तो STOP लिखें।",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma, कक्षा 8, नवंबर 2026: ₹1,200, देय तारीख गुरुवार, 5 नवंबर, यहाँ भुगतान करें: https://rzp.io/i/example | Anaya Sharma, कक्षा 8, अक्टूबर 2026: ₹1,200, देय तारीख सोमवार, 5 अक्टूबर, यहाँ भुगतान करें: https://rzp.io/i/example2",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder_family_page",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Fee reminder from {{1}}. Open fees: {{2}}. Your private fees page shows them all: {{3}} Please do not share it. Reply STOP if you do not want these reminders.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma, class 8, Nov 2026: ₹1,200, due Thu 5 Nov, pay here: https://rzp.io/i/example | Anaya Sharma, class 8, Oct 2026: ₹1,200, due Mon 5 Oct, pay here: https://rzp.io/i/example2",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder_family_page",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ഫീസ് ഓർമ്മപ്പെടുത്തൽ: {{1}}. അടയ്ക്കാനുള്ള ഫീസുകൾ: {{2}}. നിങ്ങളുടെ സ്വകാര്യ ഫീസ് പേജ് എല്ലാം കാണിക്കുന്നു: {{3}} ദയവായി ഇത് ആരുമായും പങ്കുവയ്ക്കരുത്. ഈ ഓർമ്മപ്പെടുത്തലുകൾ വേണ്ടെങ്കിൽ STOP എന്ന് മറുപടി നൽകുക.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma, എട്ടാം ക്ലാസ്, നവംബർ 2026: ₹1,200, അടയ്ക്കേണ്ട തീയതി വ്യാഴം, 5 നവംബർ, ഇവിടെ അടയ്ക്കാം: https://rzp.io/i/example | Anaya Sharma, എട്ടാം ക്ലാസ്, ഒക്ടോബർ 2026: ₹1,200, അടയ്ക്കേണ്ട തീയതി തിങ്കൾ, 5 ഒക്ടോബർ, ഇവിടെ അടയ്ക്കാം: https://rzp.io/i/example2",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "fee_reminder_family_page",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಶುಲ್ಕದ ನೆನಪು: {{1}}. ಬಾಕಿ ಶುಲ್ಕಗಳು: {{2}}. ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟ ಎಲ್ಲವನ್ನೂ ತೋರಿಸುತ್ತದೆ: {{3}} ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Bright Tuition Centre",
+              "Aarav Sharma, 8ನೇ ತರಗತಿ, ನವೆಂಬರ್ 2026: ₹1,200, ಕೊನೆಯ ದಿನಾಂಕ ಗುರುವಾರ, 5 ನವೆಂಬರ್, ಇಲ್ಲಿ ಪಾವತಿಸಿ: https://rzp.io/i/example | Anaya Sharma, 8ನೇ ತರಗತಿ, ಅಕ್ಟೋಬರ್ 2026: ₹1,200, ಕೊನೆಯ ದಿನಾಂಕ ಸೋಮವಾರ, 5 ಅಕ್ಟೋಬರ್, ಇಲ್ಲಿ ಪಾವತಿಸಿ: https://rzp.io/i/example2",
+              "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
     "name": "fee_received",
     "language": "hi",
     "category": "UTILITY",

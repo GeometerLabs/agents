@@ -79,7 +79,7 @@ How it works: [modules/Explanation.md](../../../modules/Explanation.md), "Orders
 
 With an `"assistant": {}` block in the settings, the owner can also write in their own words, in four languages, and the assistant answers in text: "who owes fees", "what needs me" (a payment a parent says they made, a refund owed, a waiver or a refund request comes as a card), "message f-3 The class moves to 5 pm".
 Anything that moves money, and a message to a customer, comes back as a card with the exact change, done only by a tap; a card's yes on something waiting is the owner's
-own fixed reply (`approve`/`deny`), which keeps working as before. Cancelling or refunding from the chat is not in the first release. A short morning line goes to the owner
+own fixed reply (`approve`/`deny`), which keeps working as before. "cancel f-3" (the owner takes off what is still owed) and "refund f-3" (money back on a paid fee, above the limit Guard holds it) are cards of the owner's own, with the agent's own paths behind them (17 Nov 2026). A short morning line goes to the owner
 from 08:00. How it works: [modules/Explanation.md](../../../modules/Explanation.md#the-shops-assistant-item-11e-decision-43-12-nov-2026).
 
 ## Languages
@@ -99,6 +99,8 @@ A centre is a JSON file ([bright-tuition-upi.example.json](settings/bright-tuiti
 | `students` | Each student: name, the parent's WhatsApp number, the batch, and the parent's language (left out: the centre's first language) |
 | `due` | The day of the month the fee is due (1 to 28) and the grace days before a late fee |
 | `lateFeeInr` | Added once, after the grace days, if the fee is still unpaid. 0: none. Never more than the cheapest fee |
+| `joiningMidMonth` | What a student whose `joined` date is after the 1st owes for the joining month: `usual` (the default: `joined` is ignored, as before), `full`, `prorata` (the days left as a share of the month, whole rupees) or `nextMonth` |
+| a student's `joined`, `backDues` | The day the student joined (`2026-11-18`), and earlier months still unpaid when the agent started (`[{"month": "2026-09", "amountInr": 1500}]`, at most the batch's fee), each carried as a fee of its own |
 | `reminders` | Days from the due day (negative is before), the hour (6 to 21), and the most reminders for one fee in a month |
 | `partPayments` | Whether a parent may pay part, and the least a first part may be |
 | `waiver.limitInr` | The most the agent takes off one student's month on its own. 0: every request goes to the owner |

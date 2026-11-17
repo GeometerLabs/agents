@@ -16,7 +16,7 @@ These templates handle other people's money or decisions, in places where trust 
 
 **4. A correction never erases.** A wrong entry is fixed by a new line. Both lines stay in the record and on the statement. A quiet rewrite is the thing the whole design exists to show.
 
-**5. The statement is the product.** The money is not moved by the agent, so the value is that everyone who gave or saved can read the record about them, in their language, signed, with totals. That is B28's "many witnesses" idea. It is described here as planned, because B28 is not built. The specs say so in the status line, in the statement section and in the last paragraph.
+**5. The statement is the product.** The money is not moved by the agent, so the value is that everyone who gave or saved can read the record about them, in their language, signed, with totals. That is B28's "many witnesses" idea. B28's modules are built (17 Nov 2026 check), but no community template uses them, so the statement is described here as planned for a group. The specs say so in the status line, in the statement section and in the last paragraph.
 
 **6. Privacy defaults assume a shared phone.** A woman in a self-help group may not want her husband to see her savings or a loan. So reminders show the group's name and the day, not the amount; the amount is opt-in; the statement opens with a code the member chose; a member sees her own detail and the totals; nothing is ever posted to a group chat; nobody is named to others as late. The treasurer and book-keeper see more, because they make the entries.
 

@@ -106,6 +106,8 @@ export interface OwnerMoneyWords {
   lateDeposit: (who: string, amount: string, what: string) => string; lateAfter: string;
   /** Fees: "paid another way?". */
   cashTitle: string; cashNote: string; cashRow: (student: string, what: string) => string; cashButton: (amount: string) => string; bankButton: (amount: string) => string;
+  /** Fees, 17 Nov 2026: marking only part of a fee received in cash: the label of the rupee box and the button. */
+  cashPartLabel: string; cashPartButton: string;
 }
 
 export const OWNER_MONEY: W<OwnerMoneyWords> = {
@@ -118,6 +120,7 @@ export const OWNER_MONEY: W<OwnerMoneyWords> = {
     lateAfter: "After Yes you choose: refund it, or keep it for a booking you make by hand.",
     cashTitle: "Paid in cash or by bank?", cashNote: "If a parent paid you another way, mark it here. The fee is marked paid and the parent is told.",
     cashRow: (student, what) => `${student}, ${what}`, cashButton: (amount) => `Paid ${amount} in cash`, bankButton: (amount) => `Paid ${amount} by bank transfer`,
+    cashPartLabel: "Received only part? How much (₹)", cashPartButton: "Mark this part received in cash",
   },
   hi: {
     saysPaid: "ग्राहक कहते हैं कि पेमेंट कर दिया", waitingPay: "पेमेंट का इंतज़ार", waitingPayNote: "जब तक पैसे आपके UPI ऐप में न दिखें, कुछ करना नहीं है। UPI नोट में बुकिंग रेफ़रेंस देखिए।",
@@ -128,6 +131,7 @@ export const OWNER_MONEY: W<OwnerMoneyWords> = {
     lateAfter: "\"हाँ\" के बाद आप चुनते हैं: वापस करें, या हाथ से की गई बुकिंग के लिए रख लें।",
     cashTitle: "नकद या बैंक से दिया?", cashNote: "अगर किसी अभिभावक ने दूसरे तरीके से दिया है, तो यहाँ दर्ज कीजिए। फीस चुकता मानी जाएगी और अभिभावक को बताया जाएगा।",
     cashRow: (student, what) => `${student}, ${what}`, cashButton: (amount) => `${amount} नकद मिले`, bankButton: (amount) => `${amount} बैंक से मिले`,
+    cashPartLabel: "सिर्फ़ कुछ हिस्सा मिला? कितना (₹)", cashPartButton: "यह हिस्सा नकद मिला लिखें",
   },
   ml: {
     saysPaid: "ഉപഭോക്താക്കൾ അടച്ചു എന്ന് പറയുന്നു", waitingPay: "പേയ്‌മെന്റിനായി കാത്തിരിക്കുന്നു", waitingPayNote: "പണം നിങ്ങളുടെ UPI ആപ്പിൽ കാണുന്നതുവരെ ഒന്നും ചെയ്യേണ്ടതില്ല. UPI കുറിപ്പിൽ ബുക്കിംഗ് റഫറൻസ് നോക്കൂ.",
@@ -138,6 +142,7 @@ export const OWNER_MONEY: W<OwnerMoneyWords> = {
     lateAfter: "\"അതെ\" എന്നതിനുശേഷം നിങ്ങൾ തിരഞ്ഞെടുക്കും: തിരികെ നൽകുക, അല്ലെങ്കിൽ കൈകൊണ്ട് ചെയ്യുന്ന ബുക്കിംഗിനായി സൂക്ഷിക്കുക.",
     cashTitle: "പണമായോ ബാങ്ക് വഴിയോ അടച്ചോ?", cashNote: "ഒരു രക്ഷിതാവ് മറ്റൊരു വഴിയിൽ അടച്ചെങ്കിൽ ഇവിടെ രേഖപ്പെടുത്തൂ. ഫീസ് അടച്ചതായി കണക്കാക്കി രക്ഷിതാവിനെ അറിയിക്കും.",
     cashRow: (student, what) => `${student}, ${what}`, cashButton: (amount) => `${amount} പണമായി കിട്ടി`, bankButton: (amount) => `${amount} ബാങ്ക് വഴി കിട്ടി`,
+    cashPartLabel: "ഒരു ഭാഗം മാത്രമാണോ കിട്ടിയത്? എത്ര (₹)", cashPartButton: "ഈ ഭാഗം പണമായി കിട്ടിയെന്ന് രേഖപ്പെടുത്തുക",
   },
   kn: {
     saysPaid: "ಗ್ರಾಹಕರು ಪಾವತಿಸಿದ್ದೇವೆ ಎನ್ನುತ್ತಿದ್ದಾರೆ", waitingPay: "ಪಾವತಿಗಾಗಿ ಕಾಯುತ್ತಿದೆ", waitingPayNote: "ಹಣ ನಿಮ್ಮ UPI ಆ್ಯಪ್‌ನಲ್ಲಿ ಕಾಣುವವರೆಗೆ ಏನೂ ಮಾಡಬೇಕಾಗಿಲ್ಲ. UPI ಟಿಪ್ಪಣಿಯಲ್ಲಿ ಬುಕಿಂಗ್ ರೆಫರೆನ್ಸ್ ನೋಡಿ.",
@@ -148,5 +153,6 @@ export const OWNER_MONEY: W<OwnerMoneyWords> = {
     lateAfter: "\"ಹೌದು\" ನಂತರ ನೀವು ಆರಿಸುತ್ತೀರಿ: ಮರುಪಾವತಿಸಿ, ಅಥವಾ ಕೈಯಿಂದ ಮಾಡುವ ಬುಕಿಂಗ್‌ಗಾಗಿ ಇಟ್ಟುಕೊಳ್ಳಿ.",
     cashTitle: "ನಗದು ಅಥವಾ ಬ್ಯಾಂಕ್ ಮೂಲಕ ಪಾವತಿಸಿದ್ದಾರೆಯೇ?", cashNote: "ಪೋಷಕರು ಬೇರೆ ರೀತಿಯಲ್ಲಿ ಪಾವತಿಸಿದ್ದರೆ ಇಲ್ಲಿ ಗುರುತಿಸಿ. ಶುಲ್ಕ ಪಾವತಿಯಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿ ಪೋಷಕರಿಗೆ ತಿಳಿಸಲಾಗುತ್ತದೆ.",
     cashRow: (student, what) => `${student}, ${what}`, cashButton: (amount) => `${amount} ನಗದಾಗಿ ಸಿಕ್ಕಿತು`, bankButton: (amount) => `${amount} ಬ್ಯಾಂಕ್ ಮೂಲಕ ಸಿಕ್ಕಿತು`,
+    cashPartLabel: "ಒಂದು ಭಾಗ ಮಾತ್ರ ಸಿಕ್ಕಿತೇ? ಎಷ್ಟು (₹)", cashPartButton: "ಈ ಭಾಗ ನಗದಾಗಿ ಸಿಕ್ಕಿತು ಎಂದು ಗುರುತಿಸಿ",
   },
 };

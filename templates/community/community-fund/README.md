@@ -1,6 +1,6 @@
 # Community and committee funds (planned)
 
-> **Status: a spec, not a template.** Nothing here runs, and no committee has used it. Comment on it in this repository's GitHub Discussions. It would be built on the fee and dues collection template (B16), after that exists. Read [../README.md](../README.md) first.
+> **Status: a spec, not a template.** Nothing here runs, and no committee has used it. Comment on it in this repository's GitHub Discussions. It would be built on the fee and dues collection template (B16, built as Fees), but it needs a real committee, a legal review and a payment provider for groups first. Read [../README.md](../README.md) first.
 
 ## The job
 
@@ -68,7 +68,7 @@ This template does four things:
 
 ## The contributor statement
 
-Every contributor gets the same signed statement in her or his language. It is the same for everyone, apart from the line about her or his own contributions. This is the "many witnesses" idea (B28): the same record is on every contributor's phone, so a quiet change by one person would not match the other copies. **B28 is not built, and nothing here is claimed until it is.**
+Every contributor gets the same signed statement in her or his language. It is the same for everyone, apart from the line about her or his own contributions. This is the "many witnesses" idea (B28): the same record is on every contributor's phone, so a quiet change by one person would not match the other copies. **B28's modules are built (signed statements, record, verify code: `modules/record`, `modules/papers`); this spec is not, and nothing here is claimed until a real group has used it.**
 
 Made-up numbers:
 
@@ -174,7 +174,7 @@ Follows [../../SELL-GUIDE.md](../../SELL-GUIDE.md). The seller is a young local 
 | 8 | The setup visit | At a committee meeting: choose the roles and the approvers; type in the approval rule and read it aloud; enter the contributors, who join by their own message; type the opening balance and have the committee agree it; connect the fund's account label; a test gift and a test spend with two approvers; the certificate read aloud; paper copies. Say what platform access it needs and how long it takes |
 | 9 | The first month | Be there for the first spend. Read the first statement with the treasurer. Ask what questions came in. One introduction, never a reward |
 | 10 | When something goes wrong | Stop it first. Tell the secretary before givers find out. Look at the record. A wrong entry is corrected by a line |
-| 11 | Be honest about what's true today | Dated. A spec: nothing built, no committee has used it, the statement signing and public fingerprints are planned (B28), no lawyer has read it |
+| 11 | Be honest about what's true today | Dated. A spec: nothing built, no committee has used it, the signed-statement modules (B28) are built but no community template uses them, no lawyer has read it |
 
 ## Questions for contributors
 
@@ -187,4 +187,4 @@ Follows [../../SELL-GUIDE.md](../../SELL-GUIDE.md). The seller is a young local 
 
 ## What this spec does not claim
 
-It does not claim the template exists, that spending will be right, that givers' money is protected, or that records can't be altered. It claims one thing about the design: a change to the record would show, because every contributor holds a signed copy. That claim is not true until B28 is built.
+It does not claim the template exists, that spending will be right, that givers' money is protected, or that records can't be altered. It claims one thing about the design: a change to the record would show, because every contributor holds a signed copy. That claim is not true until a community template uses the built signed-statement modules (B28) with a real group.

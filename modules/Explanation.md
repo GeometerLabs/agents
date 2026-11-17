@@ -928,7 +928,7 @@ in the owner's language (`owner.language`).
 | **Ask** | a day's list ("tomorrow", "bookings on Sunday", "कल की बुकिंग"), money in, what needs me | who owes, money in, what needs me | open orders, money in, what needs me |
 | **Act, said in passing, undoable** | close a day, reopen it; move a booking ("move b-14 to 5pm", "shift b-14 to Friday"), through the agent's own reschedule with both slot rules checked first and the customer told; undo | – | – |
 | **Act, as a card** | cancel a booking (with its deposit back), refund a cancelled booking's deposit (all or part), answer what waits (a late refund, a calendar retry, a UPI deposit to mark, a refund sent), message a customer | answer what waits (a waiver, a refund request), message a parent | answer what waits (a big order, a late refund), message a customer |
-| **Not from the chat** | loosening a limit (the Operator's panel) | loosening a limit, cancelling or refunding a fee (Deferred) | loosening a limit, cancelling or refunding an order (Deferred) |
+| **Not from the chat** | loosening a limit (the Operator's panel) | loosening a limit (cancel and refund a fee are cards since 17 Nov 2026, templates/education/fees/Explanation.md) | loosening a limit, cancelling or refunding an order (Deferred) |
 
 The owner's fixed phrases come first and are unchanged: `today`, `tomorrow`, `approve|deny|retry b-14` (Fees `q-N`, Orders `o-N`), `received K7M2QX` and its button,
 `move <code>`, `terms`, `I agree`, and the relay's `approve K7M2QX`. A card's yes on something waiting **is** the owner's fixed reply (`wire.ts ownerReply`): the agent handles it

@@ -21,7 +21,7 @@ test("a reminder is pushed to the parent's page conversation without its links; 
     kit.clock.set(at(2, 13));
     await first.runtime.tick();
     const mine = pushed.filter((p) => p.conversation === `parent:${parentRef(PARENT)}`);
-    assert.equal(mine.length, 2, "the Sharmas have two children: one reminder, one push, for each");
+    assert.equal(mine.length, 1, "the Sharmas have two children: one reminder that lists both, so one push");
     for (const p of mine) { assert.ok(p.text.length > 0); assert.doesNotMatch(p.text, /https?:\/\//u, "no address travels in a push"); }
     const sentToParent = kit.messaging.outbox().filter((m) => m.to === PARENT);
     assert.ok(sentToParent.some((m) => /https:\/\/partners\.example\/s\/bright\/f\//u.test(m.text)), "the message on WhatsApp still carries the parent's private link");
