@@ -303,3 +303,29 @@ Fees students keep their own language (it was set to the centre's first); Fees, 
 Tests (`test/keep.test.ts`, written 17 Nov, not run): the function on its own; then for each of the four templates a saved shop with every block the form has no box for,
 read into the form, one field edited, built as the save route does, and everything but the edited field equal; removed students, items, slots and suppliers take their
 hidden fields with them; a corrected spelling keeps back dues; a plan that still uses a removed slot is refused.
+
+## A Classes part in the Fees phone form (17 Nov 2026, owner's item 7)
+
+A Fees centre with a `classes` block used to be set up only by a builder-written file, and the old phone form dropped the block on any edit. Now step 1 of the Fees form
+(the centre, batches and students) ends with a Classes part, in words an Operator can read at a glance:
+
+- **One box, one class on each line**: "Class 8, Mon, 16:00, 45" (the batch as typed above, the day, the start time on a 24-hour clock, how many minutes; the minutes may be left
+  out: 60). A box was chosen over seven tick-boxes for the days because a batch's classes often start at different times on different days (the Classes example has Mon and Thu
+  at 17:00; a real timetable has Mon 17:00 and Thu 18:30); one box shows any saved timetable as it is and writes it back unchanged. The box is filled from the saved block when a
+  centre is changed, the batch by the name the form shows.
+- **Empty box = no Classes**: no `classes` block is written, the centre is the Fees centre it always was, and a saved block is dropped (the Operator emptied the box on purpose).
+- **One switch**: "An old unpaid month also holds back the class link" (`classes.oldDuesStopLink`, owner 17 Nov; the stream `classes-old-dues-17nov` adds the field to the settings
+  and its reader). Written only when on; absent means off, so the form works on both sides of that merge. Until the two are merged this branch's own settings check does not
+  know the key and says so in words if it is switched on.
+- **Kept, not asked**: the block's `linkLeadMinutes` (30) and `materialMaxMb` (10) keep their saved value or the default; they are not boxes (`materialMaxMb` is a server file
+  limit an Operator does not need; asked for later by a builder in the file). keep.ts owns `timetable` and `oldDuesStopLink` of the block, nothing else.
+- **Refused in words** (four languages, `words-classes.ts`): a line that is not "batch, day, time", a batch that is not typed above, a day other than Mon to Sun, a time that is
+  not a 24-hour time, minutes outside 10 to 240, the same class twice, more than 60 lines. Each says its row.
+
+**What is not in the form, and why**: the lead asked for each batch's class link and the teacher's number. Neither is a setting. The class link is conversation state the
+teacher sends on WhatsApp ("link", the class, the address; `src/classes/state.ts`, `parse.ts`), changed whenever a class moves, and the teacher is whoever messages from the
+owner's number, which the Languages step already asks for. A form field would need a second place to write conversation state and would be stale after the first
+WhatsApp link; adding fields to `src/classes/settings.ts` would also collide with the old-dues stream editing the same lines. The form says so in one sentence instead. See
+Deferred.md ("A class link from the panel").
+
+Tests: `test/classes-form.test.ts` (written 17 Nov, not run), and the Fees round trips in `test/keep.test.ts`.

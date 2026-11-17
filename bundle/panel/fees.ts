@@ -13,6 +13,8 @@ import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
 import { KEEP, keepHidden } from "./keep.ts";
+import { dayNumber } from "../../templates/education/fees/src/classes/settings.ts";
+import { classesWords } from "./words-classes.ts";
 
 /** A phone form with room for this many batches and students. A centre with more is set up by a builder, who can write the file. */
 export const MAX_BATCHES = 6;
@@ -31,6 +33,13 @@ export interface FeesForm {
   partAllowed: boolean; partMin: string;
   waiver: string; refund: string;
   /**
+   * The Classes part (17 Nov, item 7): one class on each line, "batch, day, start time, minutes" ("Class 8, Mon, 16:00, 45"). Empty: the centre has no `classes` block. A draft from before
+   * this has neither field.
+   */
+  timetable?: string;
+  /** Classes: an old unpaid month also holds back the class link (`classes.oldDuesStopLink`). Written only when on; absent means off. */
+  oldDuesStopLink?: boolean;
+  /**
    * Kept from a centre being changed, never typed (17 Nov, item 7): the id each batch row had, by row, so a renamed batch is still the batch its students' dues and its timetable
    * belong to. The rest of what the form does not show is put back from the saved settings by keep.ts when the centre is saved.
    */
@@ -40,6 +49,27 @@ export interface FeesForm {
 const text = (v: string | undefined, max = 120) => (v ?? "").trim().slice(0, max);
 const WHOLE = /^\d{1,9}$/u;
 const SIGNED = /^-?\d{1,3}$/u;
+
+/** How many class lines the box takes (the settings allow 14 a batch, and a form has 6 batches: 6 x 10 is more than a small centre writes). */
+export const MAX_CLASS_LINES = 60;
+const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const DAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+
+/**
+ * One class line as typed: "Class 8, Mon, 16:00, 45". The last three parts are the day, the start time and the minutes (the minutes may be left out: 60), so a batch's name may hold a
+ * comma. Nothing is judged here; the steps and the build say what is wrong.
+ */
+export function timetableLine(line: string): { batch: string; day: string; time: string; minutes: string } | undefined {
+  const parts = line.split(",").map((p) => p.trim());
+  const withMinutes = parts.length >= 4 && /^\d{1,4}$/u.test(parts[parts.length - 1]);
+  const rest = withMinutes ? parts.slice(0, -1) : parts;
+  if (rest.length < 3) return undefined;
+  const batch = rest.slice(0, -2).join(", ");
+  return batch === "" ? undefined : { batch, day: rest[rest.length - 2], time: rest[rest.length - 1], minutes: withMinutes ? parts[parts.length - 1] : "60" };
+}
+const padTime = (t: string): string => (/^\d:\d{2}$/u.test(t) ? `0${t}` : t);
+const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/u;
+const classLines = (v: string): string[] => v.split(/\r?\n/u).map((l) => l.trim()).filter((l) => l !== "");
 
 const blankBatches = (): FeesForm["batches"] => Array.from({ length: MAX_BATCHES }, () => ({ name: "", fee: "" }));
 /** A Fees draft has no use for Bookings' form, but the shared steps read the centre's name from `form.name`, so that is where the name lives. */
@@ -52,7 +82,7 @@ export function newFeesDraft(id: string, accountId: string, template: Template, 
     form: emptyShopForm(), windowHours: "", primaryLanguage: example.languages[0], otherLanguages: [], ownerLanguage: example.owner.language, ownerNumber: "",
     whatsapp: { businessNumber: "", numberId: "" }, calendar: { id: "" }, gateway: { mode: "live", keyId: "" }, payment: newPayment(), expectedBookings: "", done: 0,
     fees: {
-      address: "", batches: blankBatches(), students: "",
+      address: "", batches: blankBatches(), students: "", timetable: "", oldDuesStopLink: false,
       dueDay: String(example.due.day), graceDays: String(example.due.graceDays), lateFee: String(example.lateFeeInr),
       reminderDays: example.reminders.daysFromDue.join(", "), reminderHour: String(example.reminders.hour), reminderMost: String(example.reminders.maxPerMonth),
       partAllowed: example.partPayments.allowed, partMin: String(example.partPayments.minInr), waiver: String(example.waiver.limitInr), refund: String(example.refund.limitInr),
@@ -66,6 +96,8 @@ export function feesDraftFromShop(id: string, accountId: string, templateId: str
   const batches = blankBatches();
   s.batches.slice(0, MAX_BATCHES).forEach((b, i) => { batches[i] = { name: batchName(b, first), fee: String(b.monthlyFeeInr) }; });
   const students = s.students.map((x) => `${x.name}, ${x.parent}, ${batchName(s.batches.find((b) => b.id === x.batchId) ?? s.batches[0], first)}`).join("\n");
+  // the Classes part, from the saved block: one line for each class, the batch by the name the form shows
+  const timetable = s.batches.flatMap((b) => (s.classes?.timetable[b.id] ?? []).map((c) => `${batchName(b, first)}, ${DAY_SHORT[c.day]}, ${String(c.hour).padStart(2, "0")}:${String(c.minute).padStart(2, "0")}, ${c.minutes}`)).join("\n");
   return {
     id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: { ...emptyShopForm(), name: s.name }, windowHours: "",
     primaryLanguage: first, otherLanguages: s.languages.slice(1), ownerLanguage: s.owner.language, ownerNumber: s.owner.whatsapp,
@@ -76,6 +108,7 @@ export function feesDraftFromShop(id: string, accountId: string, templateId: str
       address: s.address ?? "", batches, students,
       dueDay: String(s.due.day), graceDays: String(s.due.graceDays), lateFee: String(s.lateFeeInr), reminderDays: s.reminders.daysFromDue.join(", "), reminderHour: String(s.reminders.hour), reminderMost: String(s.reminders.maxPerMonth),
       partAllowed: s.partPayments.allowed, partMin: String(s.partPayments.minInr), waiver: String(s.waiver.limitInr), refund: String(s.refund.limitInr),
+      timetable, oldDuesStopLink: (s.classes as { oldDuesStopLink?: boolean } | undefined)?.oldDuesStopLink === true,
       keepIds: s.batches.slice(0, MAX_BATCHES).map((b) => b.id),
     },
   };
@@ -109,6 +142,8 @@ export function applyFeesBusiness(draft: Draft, body: Body, w: Words): StepResul
   const address = text(body.address, 120);
   const batches = Array.from({ length: MAX_BATCHES }, (_, i) => ({ name: text(body[`batch_name_${i}`], 60), fee: text(body[`batch_fee_${i}`], 9) }));
   const students = (body.students ?? "").slice(0, 40_000);
+  const timetable = (body.timetable ?? "").slice(0, 8000);
+  const oldDuesStopLink = body.oldDuesStopLink === "on";
   if (name === "") problems.push(s.nameEmpty);
   let used = 0;
   batches.forEach((b, i) => {
@@ -120,7 +155,7 @@ export function applyFeesBusiness(draft: Draft, body: Body, w: Words): StepResul
   if (used === 0) problems.push(f.noBatch);
   // Kept even when something is wrong, so the form comes back as it was typed.
   draft.form = { ...draft.form, name };
-  draft.fees = { ...feesOf(draft), address, batches, students };
+  draft.fees = { ...feesOf(draft), address, batches, students, timetable, oldDuesStopLink };
   const lines = students.split(/\r?\n/u).map((l) => l.trim()).filter((l) => l !== "");
   if (lines.length === 0) problems.push(f.noStudents);
   else if (lines.length > MAX_STUDENTS) problems.push(f.tooMany(MAX_STUDENTS));
@@ -133,7 +168,30 @@ export function applyFeesBusiness(draft: Draft, body: Body, w: Words): StepResul
       if (!known.has(parts.slice(2).join(",").toLowerCase())) problems.push(f.studentBatch(i + 1, parts.slice(2).join(",").slice(0, 60)));
     });
   }
+  problems.push(...classProblems(timetable, new Set(batches.filter((b) => b.name !== "").map((b) => b.name.toLowerCase())), w));
   return { problems };
+}
+
+/** The Classes box: each line refused in the person's language, with its row. An empty box is fine (no Classes). */
+function classProblems(timetable: string, known: Set<string>, w: Words): string[] {
+  const c = classesWords(w).problems;
+  const rows = classLines(timetable);
+  if (rows.length > MAX_CLASS_LINES) return [c.tooMany(MAX_CLASS_LINES)];
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  rows.forEach((line, i) => {
+    const x = timetableLine(line);
+    if (!x) { problems.push(c.lineBad(i + 1)); return; }
+    if (!known.has(x.batch.toLowerCase())) problems.push(c.batch(i + 1, x.batch.slice(0, 60)));
+    const day = dayNumber(x.day);
+    if (day === undefined) problems.push(c.day(i + 1));
+    if (!CLOCK.test(padTime(x.time))) problems.push(c.time(i + 1));
+    if (!WHOLE.test(x.minutes) || Number(x.minutes) < 10 || Number(x.minutes) > 240) problems.push(c.minutes(i + 1));
+    const key = `${x.batch.toLowerCase()}|${day}|${padTime(x.time)}`;
+    if (seen.has(key)) problems.push(c.twice(i + 1));
+    seen.add(key);
+  });
+  return problems;
 }
 
 // ---- step 2: the rules of the month ----------------------------------------------------------------------------------------------------
@@ -186,6 +244,15 @@ export function buildFeesSettings(draft: Draft, example: Settings, saved?: unkno
     return { name: parts[0], parent: normalizePhone(parts[1] ?? "") ?? parts[1], batch: lookup.get(parts.slice(2).join(",").toLowerCase()) ?? parts.slice(2).join(","), ...(languages.length > 1 ? { language: languages[0] } : {}) };
   });
   const whole = (v: string) => (WHOLE.test(v) ? Number(v) : Number.NaN);
+  // The Classes part: the lines that read become the timetable by batch id; a form with no class line has no `classes` block (keep.ts then drops a saved one: the Operator emptied the box)
+  const timetable: Record<string, { day: string; time: string; minutes: number }[]> = {};
+  for (const line of classLines(fees.timetable ?? "")) {
+    const x = timetableLine(line);
+    const id = x ? lookup.get(x.batch.toLowerCase()) : undefined;
+    const day = x ? dayNumber(x.day) : undefined;
+    if (x && id && day !== undefined) (timetable[id] ??= []).push({ day: DAY_KEYS[day], time: padTime(x.time), minutes: whole(x.minutes) });
+  }
+  const classes = Object.keys(timetable).length > 0 ? { timetable, ...(fees.oldDuesStopLink ? { oldDuesStopLink: true } : {}) } : undefined;
   // The rules step shows the centre's limits before the accounts step has asked for the UPI ID: until it is given, the lines are worked out with a stand-in UPI ID
   // (PREVIEW_PAYMENT; they do not depend on it), never as a gateway centre.
   // The save cannot be reached before the accounts step has checked the UPI ID.
@@ -202,6 +269,7 @@ export function buildFeesSettings(draft: Draft, example: Settings, saved?: unkno
     payment,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
     ...approversFromDraft(draft),
+    ...(classes ? { classes } : {}),
   };
   const written = saved === undefined ? raw : keepHidden(raw, saved, KEEP.fees);
   const checked = validateSettings(written);

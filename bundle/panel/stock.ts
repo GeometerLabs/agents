@@ -18,6 +18,7 @@ import { whatsappDraftOf } from "./setup.ts";
 import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
 import { KEEP, keepHidden } from "./keep.ts";
+import { wordsLanguage } from "./languages.ts";
 import { html, raw } from "./html.ts";
 import type { Raw } from "./html.ts";
 import type { Helpers } from "./views-fees.ts";
@@ -129,9 +130,8 @@ export const STOCK_PANEL_WORDS: Record<Language, StockPanelWords> = {
   },
 };
 
-const LANGUAGE_BY_NAME: Record<string, Language> = { English: "en", "हिन्दी": "hi", "മലയാളം": "ml", "ಕನ್ನಡ": "kn" };
 /** The stock words for the panel's words of one language (found by its language name, so the shared words files need no new section). */
-export const stockWords = (w: Words): StockPanelWords => STOCK_PANEL_WORDS[LANGUAGE_BY_NAME[w.languageName] ?? "en"];
+export const stockWords = (w: Words): StockPanelWords => STOCK_PANEL_WORDS[wordsLanguage(w)];
 const stockOf = (draft: Draft): StockForm => (draft as unknown as { stock: StockForm }).stock;
 
 // ---- reading the two boxes ----------------------------------------------------------------------------------------------------------

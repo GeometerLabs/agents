@@ -114,3 +114,13 @@ Not built, or built only as far as said. The first block needs another part of t
 - **The page refreshes on reload only.** A crash test takes minutes; the page says it is running until the builder reloads. Done when: the page carries a plain meta refresh while a crash test runs (no script).
 
 - **A parent link from the Operator panel (item 1's leftover, 14 Nov): not built.** A parent's private link is made by the Fees agent (in a reminder, or the owner's "send a new link"), kept only as a hash, and sent to the parent's WhatsApp. For the panel to show one the runtime would have to hand a parent's link to the Operator, which holds a parent's private page in the Operator's hands; the design keeps the owner and the parent as the only holders. The Fees shop page says where parents' links come from. Done when: the owner says who the link is for (an Operator testing a centre: a demo parent is the better answer; a parent with no WhatsApp: the owner's page "send a new link" already reaches a parent's number).
+
+## Classes in the Fees phone form (17 Nov 2026)
+
+- **A class link and the teacher's number from the panel.** The Classes part of the Fees form has the timetable and the old-dues switch only. The class link is conversation state
+  the teacher sends on WhatsApp (`templates/education/fees/src/classes/state.ts`), not a setting, and the teacher is the owner's number the Languages step already asks for, so there is
+  nothing to type and no settings field to write. Revisit when: an Operator asks to set the first link while setting a centre up. Done when: the panel can write a batch's starting
+  link into the shop's conversation state (an agreed route, not a settings field) and the Fees settings need no change.
+- **`materialMaxMb` and `linkLeadMinutes` are not boxes.** They keep their saved value or the default (10 MB, 30 minutes); a builder changes them in the file. Revisit when: an Operator needs a bigger file or an earlier link. Done when: the Classes part shows them as plain numbers.
+- **Day names are typed in English.** The Classes box wants Mon to Sun in Latin letters in every language (like "+91" in the numbers); the help says so in four languages. Revisit when: Operators mistype them. Done when: the box takes the day words of the four languages (the settings reader's `dayNumber` knows English only).
+- **More than six batches** stay as saved when a centre is edited here (keep.ts), but their students and classes cannot be edited in the form: a builder edits the file.

@@ -8,6 +8,10 @@ import { ml } from "./words.ml.ts";
 
 export const WORDS: Record<Language, Words> = { en, hi, ml, kn };
 
+const LANGUAGE_BY_NAME: Record<string, Language> = { English: "en", "हिन्दी": "hi", "മലയാളം": "ml", "ಕನ್ನಡ": "kn" };
+/** The language code of a word set (found by its own name), for the pieces of the panel whose words live beside their code, not in the shared words files (stock.ts, words-classes.ts, words-presets.ts). */
+export const wordsLanguage = (w: Words): Language => LANGUAGE_BY_NAME[w.languageName] ?? "en";
+
 /**
  * REVIEW MARKERS. English is the source. Hindi, Malayalam and Kannada are machine-written, so each is marked "machine-written" until a native reader has
  * read every line (Malayalam and Kannada on the REVIEW sheets, section 7; Hindi by a native reader outside the sheets, as before). The page says so in
