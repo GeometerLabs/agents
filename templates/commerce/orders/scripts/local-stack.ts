@@ -141,7 +141,7 @@ export async function startLocalStack(options: LocalStackOptions = {}): Promise<
     }, { port: options.ports?.inbox ?? 0 });
     closers.push(() => inbox.close());
     const standins = await startStandins({
-      clock, inboxUrl: inbox.url, razorpayWebhookSecret: secret("razorpay"), whatsappAppSecret: secret("whatsapp"), phoneNumberId: PHONE_NUMBER_ID,
+      clock, inboxUrl: inbox.url, gatewayWebhookSecret: secret("razorpay"), whatsappAppSecret: secret("whatsapp"), phoneNumberId: PHONE_NUMBER_ID,
     }, { port: options.ports?.standins ?? 0 });
     closers.push(() => standins.close());
     const guard = await startStubGuard({
