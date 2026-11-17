@@ -1,5 +1,5 @@
-// The Razorpay and WhatsApp stand-ins as one server, shared by Fees and Orders (each passes its own approved templates): the wire formats over HTTP, in front of the existing in-memory fakes. One process, one port, two sets of paths that do not
-// collide: /v1/... (Razorpay), /v26.0/{id}/messages (WhatsApp), and /_standin/... (control). There is no new state: createFakePayments and createFakeMessaging are the only
+// The payment gateway's and WhatsApp's stand-ins as one server, shared by Fees and Orders (each passes its own approved templates): the wire formats over HTTP, in front of the existing in-memory fakes. One process, one port, two sets of paths that do not
+// collide: the gateway's own paths (from the registry), /v26.0/{id}/messages (WhatsApp), and /_standin/... (control). There is no new state: createFakePayments and createFakeMessaging are the only
 // source of it, so the tests of the fakes keep their meaning. There is no calendar, so there is no Google stand-in here (Bookings has its own server).
 //
 // A fault the fake plans as "lost reply" makes the server cut the connection AFTER the fake stored the change, so the client sees no answer (and the live adapter raises
@@ -12,7 +12,8 @@ import { createFakeMessaging } from "../messaging/messaging.ts";
 import { createFakePayments } from "../payments/payments.ts";
 import { LostReply } from "./http.ts";
 import type { Handler, StandinReply } from "./http.ts";
-import { razorpayStandin } from "../payments/providers/razorpay/standin.ts";
+import { GATEWAYS } from "../payments/providers/index.ts";
+import { gatewayRuntime } from "../payments/providers/runtime.ts";
 import { approveTemplates, whatsappStandin } from "./whatsapp.ts";
 import type { TemplateCatalogue } from "./whatsapp.ts";
 import { controlStandin } from "./control.ts";
@@ -22,7 +23,9 @@ export interface StandinsConfig {
   clock?: Clock;
   /** Where signed webhooks are delivered (the inbox), for example http://127.0.0.1:8788. */
   inboxUrl?: string;
-  razorpayWebhookSecret: string;
+  /** The id of the gateway to play (the registry's); with one gateway there is no need to say. */
+  gateway?: string;
+  gatewayWebhookSecret: string;
   whatsappAppSecret: string;
   phoneNumberId?: string;
   /** What reading the WhatsApp number's own details shows (a connection check compares them with what the shop or centre gave). */
@@ -71,10 +74,11 @@ async function startStandins(template: PaymentsStandinsTemplate, config: Standin
   const fakes: Fakes = { payments: config.fakes?.payments ?? createFakePayments(clock), messaging: config.fakes?.messaging ?? createFakeMessaging(clock) };
   approveTemplates(fakes.messaging, STANDIN_TEMPLATES);
   let authorizationSeen = 0;
+  const gateway = config.gateway ?? GATEWAYS[0].id;
   const handlers: Handler[] = [
-    razorpayStandin(fakes.payments),
+    gatewayRuntime(gateway).standin.handler(fakes.payments),
     whatsappStandin(fakes.messaging, STANDIN_TEMPLATES, { phoneNumberId: config.phoneNumberId, displayPhoneNumber: config.displayPhoneNumber, verifiedName: config.verifiedName }),
-    controlStandin({ fakes, inboxUrl: config.inboxUrl, razorpayWebhookSecret: config.razorpayWebhookSecret, whatsappAppSecret: config.whatsappAppSecret, phoneNumberId: config.phoneNumberId, authorizationSeen: () => authorizationSeen }),
+    controlStandin({ fakes, inboxUrl: config.inboxUrl, gateway, gatewayWebhookSecret: config.gatewayWebhookSecret, whatsappAppSecret: config.whatsappAppSecret, phoneNumberId: config.phoneNumberId, authorizationSeen: () => authorizationSeen }),
   ];
 
   const server = createServer(async (req, res) => {
