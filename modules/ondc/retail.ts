@@ -212,6 +212,7 @@ export function orderMessage(o: OrderIn, stage: RetailStage, c: Caller): Out | n
   };
   if (stage !== "on_select" && stage !== "on_init") { g.need("record_times", o.createdMs); }
   const cancel = stage === "on_cancel" ? (o.cancel ?? (status.cancelled ? { reason: status.cancelled, by: "seller" as const } : undefined)) : undefined;
+  if (stage === "on_cancel" && !cancel) g.need("cancel_reason", undefined);
   const gst = g.need("gstin", f.gstin);
   const pan = g.need("pan", f.pan);
   const order = {

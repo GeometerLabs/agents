@@ -87,6 +87,7 @@ export function bookingMessage(b: BookingIn, stage: ServiceStage, c: Caller): Ou
   const late = stage === "on_confirm" || stage === "on_status" || stage === "on_cancel";
   const cancel = stage === "on_cancel" ? (b.cancel ?? (status.cancelled ? { reason: status.cancelled, by: "seller" as const } : undefined)) : undefined;
 
+  if (stage === "on_cancel" && !cancel) g.need("cancel_reason", undefined);
   const lines = [{ title: b.service.name, paise: b.service.pricePaise, type: "item" }];
   if (cancel?.refundPaise) lines.push({ title: "refund", paise: -cancel.refundPaise, type: "refund" });
   const total = lines.reduce((n, l) => n + l.paise, 0);

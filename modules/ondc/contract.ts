@@ -92,7 +92,7 @@ export function retailOrder(stage: RetailStage, mode: "pickup" | "delivery", slo
   ]);
   const side = mode === "delivery" ? "end" : "start"; // the slot is when the buyer receives (delivery) or collects (pickup)
   const times: Spec = slot ? at(O, [[`fulfillments.${side}.time.range.start`, "r"], [`fulfillments.${side}.time.range.end`, "r"]]) : [];
-  const cancel: Spec = stage === "on_cancel" ? at(O, [["cancellation.cancelled_by", "r"], ["cancellation.reason.id", "r"]]) : [];
+  const cancel: Spec = stage === "on_cancel" ? at(O, [["cancellation.cancelled_by", "cancel_reason"], ["cancellation.reason.id", "cancel_reason"]]) : [];
   return [...base, ...full, ...(stage === "on_confirm" ? [] : times), ...cancel];
 }
 
@@ -131,7 +131,7 @@ export const servicesOrder = (stage: "on_select" | "on_init" | "on_confirm" | "o
       ["payments.params.bank_account_number", "settlement_account"], ["payments.tags.list.value", "finder_fee"],
     ] as Spec)),
     ...(stage === "on_select" || stage === "on_init" ? [] : ([["id", "r"], ["created_at", "record_times"], ["updated_at", "record_times"], ["cancellation_terms.cancellation_fee", "r"], ["xinput.form.url", "service_form"]] as Spec)),
-    ...(stage === "on_cancel" ? ([["cancellation.cancelled_by", "r"], ["cancellation.reason.descriptor.code", "r"]] as Spec) : []),
+    ...(stage === "on_cancel" ? ([["cancellation.cancelled_by", "cancel_reason"], ["cancellation.reason.descriptor.code", "cancel_reason"]] as Spec) : []),
   ]),
 ];
 
