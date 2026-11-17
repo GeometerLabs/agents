@@ -31,7 +31,7 @@ const NB = "(?<![\\p{L}\\p{M}])";
 const CLAIM_WORDS: Record<ClaimKind, RegExp> = {
   assure: U(`${NB}(?:guarantee[ds]?|guaranteeing|promise[ds]?|promising|assure[ds]?|assurance|for sure|definitely|certainly|absolutely|sure thing|no doubt|100 ?%)${NL}|गारंटी|गारण्टी|वादा|पक्का|यक़ीन|यकीन|भरोसा दिल|ഉറപ്പ്|ഉറപ്പാ|വാക്ക് നൽ|ഗ്യാരണ്ടി|ഗ്യാരന്റി|ಖಾತರಿ|ಖಾತ್ರಿ|ಭರವಸೆ|ಗ್ಯಾರಂಟಿ|ವಾಗ್ದಾನ`),
   speaks_for_owner: U(`${NB}(?:the owner (?:says|said|has|will|agreed|approved|allows?|allowed)|owner (?:says|said|agreed|approved)|we (?:will|shall|can promise)|we'll|i will make sure|will be honou?red|has agreed|has approved|is allowed)${NL}|मालिक ने|मालिक कहते|मालिक ने कहा|हम करेंगे|हम देंगे|करवा देंगे|ഉടമ പറഞ്ഞു|ഉടമ സമ്മതിച്ചു|ഉടമ അനുവദിച്ചു|ഞങ്ങൾ ചെയ്യും|ഞങ്ങൾ തരും|ಮಾಲೀಕರು ಹೇಳಿ|ಮಾಲೀಕರು ಒಪ್ಪಿ|ನಾವು ಮಾಡುತ್ತೇವೆ|ನಾವು ಕೊಡುತ್ತೇವೆ`),
-  money_off: U(`${NB}(?:free|complimentary|discount(?:s|ed)?|waive[ds]?|waiver|refund(?:s|ed)?|cashback|no charge|on the house|half price|offer(?:s)? you)${NL}|\\d\\s*(?:%|per ?cent)\\s*off|मुफ़्त|मुफ्त|फ्री|डिस्काउंट|छूट|रिफंड|माफ़|माफ|सौजन्य|സൗജന്യം|ഫ്രീ|ഡിസ്കൗണ്ട്|ഇളവ്|റീഫണ്ട്|ഒഴിവാക്ക|ಉಚಿತ|ಫ್ರೀ|ಡಿಸ್ಕೌಂಟ್|ರಿಯಾಯಿತಿ|ರೀಫಂಡ್|ಮನ್ನಾ`),
+  money_off: U(`${NB}(?:free(?! (?:time|times|slot|slots|day|days|hour|hours|appointment|appointments|on|at|from|today|tomorrow|now|this|next))|complimentary|discount(?:s|ed)?|waive[ds]?|waiver|refund(?:s|ed)?|cashback|no charge|on the house|half price|offer(?:s)? you)${NL}|\\d\\s*(?:%|per ?cent)\\s*off|मुफ़्त|मुफ्त|फ्री|डिस्काउंट|छूट|रिफंड|माफ़|माफ|सौजन्य|സൗജന്യം|ഫ്രീ|ഡിസ്കൗണ്ട്|ഇളവ്|റീഫണ്ട്|ഒഴിവാക്ക|ಉಚಿತ|ಫ್ರೀ|ಡಿಸ್ಕೌಂಟ್|ರಿಯಾಯಿತಿ|ರೀಫಂಡ್|ಮನ್ನಾ`),
 };
 
 /** Words that say something happened. Only the template's own messages, written from the record, may say these. */
