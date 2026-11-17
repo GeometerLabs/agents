@@ -9,6 +9,8 @@ import type { Decision } from "../limits/limits.ts";
 import type { InboundMessage, Messaging } from "../messaging/messaging.ts";
 import type { ActionRecord, Outcome } from "../record/record.ts";
 import type { AiPolicy, AiStore } from "../understanding/ai-state.ts";
+import type { TalkModel } from "../understanding/talk.ts";
+import type { LimitHook } from "./talk-owner.ts";
 import { createAssistant, kindsOf } from "./conversation.ts";
 import type { Assistant, AssistantDeps } from "./conversation.ts";
 import { amountOf } from "./intents.ts";
@@ -27,6 +29,12 @@ export interface AgentAssistantDeps {
   record: ActionRecord;
   policy: AiPolicy;
   ownerParser?: OwnerParser;
+  /** The talk model (block M), built at the runtime's start. Left out: no talk. The owner's talk and customers' talk both use it (assistant/talk-run.ts). */
+  talker?: TalkModel;
+  /** The limits half of the chat (M2). Left out: a rule that names a limit is saved as a note. */
+  limits?: LimitHook;
+  /** A keyed digest of a note's text (the record's key). Left out: a plain one. */
+  digest?: (text: string) => string;
   /** The owner's voice notes, heard through the agent's shared listener (conversation.ts AssistantDeps.hearing). Left out: voice is off for the shop. */
   hearing?: AssistantDeps["hearing"];
   /** The template's record writer, by case id. */
@@ -50,6 +58,7 @@ export function assistantForAgent(d: AgentAssistantDeps): Assistant | undefined 
       log: (action, outcome, inputs, more) => d.log(null, owner, action, outcome, inputs, more),
       tellOwner: d.ownerNotice,
     }),
+    talk: { ...(d.talker ? { model: d.talker } : {}), policy: d.policy, customers: s.assistant.talk?.customers !== false, ...(d.limits ? { limits: d.limits } : {}), ...(d.digest ? { digest: d.digest } : {}) },
     log: d.log,
     ...(d.hearing ? { hearing: d.hearing } : {}),
     entries: () => d.record.entries(),

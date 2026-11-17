@@ -11,6 +11,7 @@ import type { Language } from "../language/languages.ts";
 import type { LocalDate } from "../core/time.ts";
 import type { TimePhrase } from "../language/dates.ts";
 import type { CardAction } from "./state.ts";
+import type { PublicContext, TalkSource } from "./talk-types.ts";
 
 /** A skill's name. The record's `skill` ref carries it, so a line says which skill acted. */
 export type SkillName = "bookings" | "fees" | "orders" | (string & {});
@@ -112,6 +113,17 @@ export interface OwnerSkill {
   problems(): number;
   /** The opening hours on a date, as minutes from midnight, or null when closed that weekday (Bookings). Left out: the skill keeps no hours. */
   hours?(date: LocalDate): { open: number; close: number } | null;
+  // ---- reads for the talk (block M): what the model may rest a reply on, as sources (talk-types.ts) ----
+  /**
+   * The shop's own numbers for the owner's talk: counts and money by weekday and week, top services, cancellations, unpaid fees, open orders. Counts only: no customer's
+   * name or number. Each line is a source with an id starting "r:". Pure over the store. Left out: the owner's talk has no numbers of this skill to speak from.
+   */
+  facts?(nowMs: number): TalkSource[];
+  /**
+   * What a customer's talk may use: the shop's services and prices, its hours, the next free times or open slots, and THIS customer's own open case (never another's), as
+   * sources ("s:" for settings, "r:" for reads), and the shop's own links. Pure over the store. Left out: no customer talk for this skill.
+   */
+  publicContext?(phone: string, nowMs: number): PublicContext;
   // ---- acts ----
   /**
    * Close a date: the date is already in the assistant's closed days (so the free times leave it out); the skill tells each customer booked that day, through `notify`

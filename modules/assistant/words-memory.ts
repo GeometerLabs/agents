@@ -3,6 +3,7 @@
 // words are the owner's own and are "literals": the check lets the owner's words repeat, like a message the owner asked to send). The Hindi, Malayalam and Kannada are
 // machine-written and are on the review sheets (bundle/panel/review.ts, "shop memory").
 import type { Language } from "../language/languages.ts";
+import type { CheckFacts } from "../language/check.ts";
 import type { Writer } from "./words.ts";
 
 export interface NoteListed { id: string; text: string; kind: string; audience: "owner" | "everyone"; untilMs?: number }
@@ -25,11 +26,20 @@ export interface MemoryMessageData {
   note_not_a_limit: { id: string };
   /** The owner's talk failed a check, or the model could not answer: the fixed line with the shop's real numbers. */
   talk_fallback: { waiting: number; today?: number };
+  /** A talk reply that passed the talk checks (talk-check.ts): its words, and the facts those checks found, so the outgoing check reads the same values. */
+  talk_reply: { text: string; facts: CheckFacts };
   /** The talk is off (button mode, AI cap, no model): what the owner can say. */
   talk_off: Record<string, never>;
 }
 export type MemoryMessageId = keyof MemoryMessageData;
 type Words = { [K in MemoryMessageId]: (d: MemoryMessageData[K], w: Writer) => string };
+
+/** A checked talk reply: the words as they are, with the facts the talk's own checks used noted for the outgoing check (check.ts reads the same values). */
+const talkReply = (d: MemoryMessageData["talk_reply"], w: Writer): string => {
+  w.facts.amountsInr.push(...d.facts.amountsInr); w.facts.counts.push(...d.facts.counts); w.facts.momentsMs.push(...d.facts.momentsMs); w.facts.links.push(...d.facts.links);
+  w.facts.literals.push(...(d.facts.literals.filter((l): l is string => l !== undefined)));
+  return d.text;
+};
 
 const who = (a: "owner" | "everyone", l: Record<"owner" | "everyone", string>) => l[a];
 
@@ -47,6 +57,7 @@ export const MEMORY_WORDS: Record<Language, Words> = {
     note_need_words: (_d, w) => `What shall I remember? For example: ${w.lit("remember we close at 6 on Saturdays")}.`,
     note_not_a_limit: (d, w) => `I saved this as a note (${w.lit(d.id)}), not as a limit Guard enforces. I will follow it when I talk, but it does not stop anything by itself.`,
     talk_fallback: (d, w) => `I could not answer that just now.${d.today !== undefined ? ` Today: ${w.n(d.today)}.` : ""} Waiting for you: ${w.n(d.waiting)}. Say "help" to see what I can do.`,
+    talk_reply: talkReply,
     talk_off: () => "I can only answer set requests right now. Say \"help\" to see them.",
   },
   hi: {
@@ -62,6 +73,7 @@ export const MEMORY_WORDS: Record<Language, Words> = {
     note_need_words: (_d, w) => `क्या याद रखूँ? जैसे: ${w.lit("याद रखना शनिवार को 6 बजे बंद होता है")}।`,
     note_not_a_limit: (d, w) => `मैंने इसे नोट (${w.lit(d.id)}) के रूप में रखा है, Guard की लागू की हुई सीमा के रूप में नहीं। बातचीत में मैं इसे मानूँगा, पर यह अपने आप कुछ नहीं रोकता।`,
     talk_fallback: (d, w) => `मैं अभी इसका जवाब नहीं दे सका।${d.today !== undefined ? ` आज: ${w.n(d.today)}।` : ""} आपके इंतज़ार में: ${w.n(d.waiting)}। मैं क्या कर सकता हूँ, यह देखने के लिए "help" कहें।`,
+    talk_reply: talkReply,
     talk_off: () => "अभी मैं सिर्फ़ तय अनुरोधों का जवाब दे सकता हूँ। उन्हें देखने के लिए \"help\" कहें।",
   },
   ml: {
@@ -77,6 +89,7 @@ export const MEMORY_WORDS: Record<Language, Words> = {
     note_need_words: (_d, w) => `എന്താണ് ഓർത്തുവെക്കേണ്ടത്? ഉദാഹരണം: ${w.lit("remember ശനിയാഴ്ച 6-ന് അടയ്ക്കും")}.`,
     note_not_a_limit: (d, w) => `ഇത് ഒരു കുറിപ്പായി (${w.lit(d.id)}) സൂക്ഷിച്ചു, Guard നടപ്പാക്കുന്ന പരിധിയായിട്ടല്ല. സംസാരിക്കുമ്പോൾ ഞാൻ ഇത് പാലിക്കും, പക്ഷേ ഇത് സ്വയം ഒന്നും തടയില്ല.`,
     talk_fallback: (d, w) => `എനിക്ക് ഇപ്പോൾ ഇതിന് മറുപടി നൽകാനായില്ല.${d.today !== undefined ? ` ഇന്ന്: ${w.n(d.today)}.` : ""} നിങ്ങളുടെ മറുപടി കാത്തിരിക്കുന്നത്: ${w.n(d.waiting)}. എനിക്ക് എന്ത് ചെയ്യാമെന്ന് കാണാൻ "help" എന്ന് പറയുക.`,
+    talk_reply: talkReply,
     talk_off: () => "ഇപ്പോൾ നിശ്ചിത അഭ്യർത്ഥനകൾക്ക് മാത്രമേ മറുപടി നൽകാനാകൂ. അവ കാണാൻ \"help\" എന്ന് പറയുക.",
   },
   kn: {
@@ -92,6 +105,7 @@ export const MEMORY_WORDS: Record<Language, Words> = {
     note_need_words: (_d, w) => `ಏನನ್ನು ನೆನಪಿಟ್ಟುಕೊಳ್ಳಲಿ? ಉದಾಹರಣೆಗೆ: ${w.lit("remember ಶನಿವಾರ 6ಕ್ಕೆ ಮುಚ್ಚುತ್ತೇವೆ")}.`,
     note_not_a_limit: (d, w) => `ಇದನ್ನು ಟಿಪ್ಪಣಿಯಾಗಿ (${w.lit(d.id)}) ಇಟ್ಟಿದ್ದೇನೆ, Guard ಜಾರಿಗೊಳಿಸುವ ಮಿತಿಯಾಗಿ ಅಲ್ಲ. ಮಾತನಾಡುವಾಗ ನಾನು ಇದನ್ನು ಪಾಲಿಸುತ್ತೇನೆ, ಆದರೆ ಇದು ತಾನಾಗಿ ಏನನ್ನೂ ತಡೆಯುವುದಿಲ್ಲ.`,
     talk_fallback: (d, w) => `ನನಗೆ ಈಗ ಇದಕ್ಕೆ ಉತ್ತರಿಸಲಾಗಲಿಲ್ಲ.${d.today !== undefined ? ` ಇಂದು: ${w.n(d.today)}.` : ""} ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವುದು: ${w.n(d.waiting)}. ನಾನು ಏನು ಮಾಡಬಲ್ಲೆ ಎಂದು ನೋಡಲು "help" ಎನ್ನಿ.`,
+    talk_reply: talkReply,
     talk_off: () => "ಈಗ ನಾನು ನಿಗದಿತ ವಿನಂತಿಗಳಿಗೆ ಮಾತ್ರ ಉತ್ತರಿಸಬಲ್ಲೆ. ಅವನ್ನು ನೋಡಲು \"help\" ಎನ್ನಿ.",
   },
 };
