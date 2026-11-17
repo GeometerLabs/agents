@@ -1,0 +1,6 @@
+# A real shop's folder (its owner's number, the customers' numbers and the orders) belongs in the builder's own private repository, never in
+# this public one. Only the made-up examples (*.example) are kept here.
+clients/*
+!clients/*.example/
+# Each client agent keeps its saved state here (customers' phone numbers and orders); never commit it.
+clients/*/data/

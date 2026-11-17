@@ -1,7 +1,7 @@
 // This month in counts, for the shop page: the monthly report's own numbers (bookings, deposits, refunds, what it said no to, the owner's approvals),
 // worked out from the record the deployer exports. Counts only. A record with no export, or one that cannot be read, is "not shared yet", not zero.
 import { join } from "node:path";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { buildMonthlyReport } from "../../templates/commerce/bookings/report/data.ts";
 import { monthRange } from "../../modules/report/months.ts";
 import type { MonthlyReport } from "../../templates/commerce/bookings/report/data.ts";
@@ -20,7 +20,7 @@ import type { Order } from "../../templates/commerce/orders/src/order.ts";
 import type { Settings as OrdersSettings } from "../../templates/commerce/orders/src/settings.ts";
 
 /** What the deployer exported for a shop: its record, and its bookings (Bookings), its fees (Fees, `dues`) or its orders (Orders). */
-export interface Exported { entries: ReturnType<typeof readEntries>; bookings: ReturnType<typeof readBookings>; dues?: Due[]; orders?: Order[] }
+export interface Exported { entries: ReturnType<typeof readEntries>; bookings: ReturnType<typeof readBookings>; dues?: Due[]; orders?: Order[]; /** Stock orders: the purchase orders (purchase-orders.json), as the deployer exported them. */ stock?: unknown[] }
 
 /** The record and bookings (or fees, or orders) the deployer exports to exports/<shop>/, or null when they are not there or not readable. */
 export function readExport(dir: string): Exported | null {
@@ -29,7 +29,9 @@ export function readExport(dir: string): Exported | null {
   const dues = join(dir, "dues.json");
   const orders = join(dir, "orders.json");
   if (!existsSync(record)) return null;
+  const purchase = join(dir, "purchase-orders.json");
   try {
+    if (existsSync(purchase)) return { entries: readEntries(record), bookings: [], stock: JSON.parse(readFileSync(purchase, "utf8")) as unknown[] };
     if (existsSync(bookings)) return { entries: readEntries(record), bookings: readBookings(bookings) };
     if (existsSync(dues)) return { entries: readEntries(record), bookings: [], dues: readDues(dues) };
     if (existsSync(orders)) return { entries: readEntries(record), bookings: [], orders: readOrders(orders) };

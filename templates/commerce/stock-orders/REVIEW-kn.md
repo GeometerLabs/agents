@@ -117,3 +117,157 @@ A button is at most 20 letters and a label never carries an amount. A tap carrie
 
 The agent names the month of the budget in English letters ("Nov 2026") in every language; a reviewer may ask for the local name.
 
+## 4. The monthly report
+
+The report says how many orders were placed, answered by the supplier, received in full or in part, and how much of the budget was used. It never says an order was paid unless the owner marked it.
+
+### The monthly report on WhatsApp, with sample numbers
+
+```text
+*ಮಾಸಿಕ ವರದಿ: Glow Unisex Salon · ಫೆಬ್ರವರಿ 2027*
+ನೀಡಿದ ಆರ್ಡರ್‌ಗಳು: *9* · ಪೂರೈಕೆದಾರರು OK ಎಂದರು: *7* · ಪೂರ್ತಿ ಬಂತು: *4* · ಭಾಗಶಃ ಬಂತು: *1* · ತಪ್ಪು ವಸ್ತು: *1*
+ಪೂರೈಕೆದಾರರು ಇಲ್ಲ ಎಂದರು: *1* · ಪೂರೈಕೆದಾರರ ಉತ್ತರ ಇಲ್ಲ: *1* · ರದ್ದಾದ ಅಥವಾ ಕಳುಹಿಸದ: *0*
+ಬಳಸಿದ ಬಜೆಟ್: *₹20,000 ರಲ್ಲಿ ₹9,000 · ಹಣ ಕೊಟ್ಟಿದ್ದೆಂದು ಗುರುತಿಸಿದ್ದು (ನಿಮ್ಮ ಟಿಪ್ಪಣಿ): 2*
+ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: *3*
+*ಪರಿಶೀಲಿಸದ್ದು*: ನಿಜವಾದ WhatsApp · ನಿಜವಾದ ಪೂರೈಕೆದಾರರ ಉತ್ತರಗಳು · ಪೂರೈಕೆದಾರರಿಗೆ ಹಣ ಕೊಡುವುದು · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಮತ್ತು 10 (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
+ಕೋಡ್: 7K2M-9QXD · ಪೂರ್ಣ ವರದಿ: https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html
+ನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ: https://geometer.dev/verify/#sha256:5555555555555555555555555555555555555555555555555555555555555555
+ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ.
+ಸಿದ್ಧಪಡಿಸಿದವರು: Divya, Sri Sai Digital · Geometer
+★ ಇನ್ನೋವೇಟರ್
+```
+
+### The owner's text, with sample numbers
+
+```text
+Glow Unisex Salon · ಫೆಬ್ರವರಿ 2027 · ಅಭ್ಯಾಸದ ನಕಲಿ ವ್ಯವಸ್ಥೆಗಳು, ಟೆಸ್ಟ್ ಹಣ
+ನೀಡಿದ ಆರ್ಡರ್‌ಗಳು: 9 · ಪೂರೈಕೆದಾರರು OK ಎಂದರು: 7 · ಪೂರ್ತಿ ಬಂತು: 4 · ಭಾಗಶಃ ಬಂತು: 1 · ತಪ್ಪು ವಸ್ತು: 1
+ಪೂರೈಕೆದಾರರು ಇಲ್ಲ ಎಂದರು: 1 · ಪೂರೈಕೆದಾರರ ಉತ್ತರ ಇಲ್ಲ: 1 · ರದ್ದಾದ ಅಥವಾ ಕಳುಹಿಸದ: 0
+ಬಳಸಿದ ಬಜೆಟ್: ₹20,000 ರಲ್ಲಿ ₹9,000 · ಹಣ ಕೊಟ್ಟಿದ್ದೆಂದು ಗುರುತಿಸಿದ್ದು (ನಿಮ್ಮ ಟಿಪ್ಪಣಿ): 2
+ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: 3 (ತಿಂಗಳ ಬಜೆಟ್‌ಗಿಂತ ಹೆಚ್ಚಿನ ಆರ್ಡರ್‌ಗಳು: 2 · ನಿಮ್ಮ ಒಪ್ಪಿದ ಪಟ್ಟಿಯಲ್ಲಿ ಇಲ್ಲದ ಪೂರೈಕೆದಾರರು: 1)
+ಪರಿಶೀಲಿಸದ್ದು: ನಿಜವಾದ WhatsApp · ನಿಜವಾದ ಪೂರೈಕೆದಾರರ ಉತ್ತರಗಳು · ಪೂರೈಕೆದಾರರಿಗೆ ಹಣ ಕೊಡುವುದು · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಮತ್ತು 10 (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ). ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.
+```
+
+### Every word and phrase of the report
+
+| Id | Text (Kannada) | Meaning (English) | Native reviewer: OK / change to … |
+| --- | --- | --- | --- |
+| `agent` | ಸ್ಟಾಕ್ ಆರ್ಡರ್ ಏಜೆಂಟ್ | Stock orders agent |  |
+| `monthlyReport` | ಮಾಸಿಕ ವರದಿ | Monthly report |  |
+| `goLiveCertificate` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ | Go-live certificate |  |
+| `fullReport` | ಪೂರ್ಣ ವರದಿ | Full report |  |
+| `checkGenuine` | ನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ | Check it is genuine |  |
+| `helpLine` | ಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ. | Write to support. A person answers. |  |
+| `promise` | ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಇಲ್ಲದೆ ಯಾವ ಆರ್ಡರ್ ಕೂಡ ಪೂರೈಕೆದಾರರಿಗೆ ಹೋಗುವುದಿಲ್ಲ; ಏಜೆಂಟ್ ಯಾರಿಗೂ ಹಣ ಕೊಡುವುದಿಲ್ಲ. | Nothing goes to a supplier without your approval; the agent pays no one. |  |
+| `handRun` | ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ. | Checks were run by hand. |  |
+| `sourceTag.stand-in` | ಅಭ್ಯಾಸದ ನಕಲಿ ವ್ಯವಸ್ಥೆಗಳು, ಟೆಸ್ಟ್ ಹಣ | stand-in services, test money |  |
+| `sourceTag.test-mode` | ಟೆಸ್ಟ್ ಮೋಡ್, ಟೆಸ್ಟ್ ಹಣ | test mode, test money |  |
+| `more` | ಮತ್ತು 12 (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ) | and 12 more (see the full report) |  |
+| `budgetOf` | ₹20,000 ರಲ್ಲಿ ₹9,000 | ₹9,000 of ₹20,000 |  |
+| `label.placed` | ನೀಡಿದ ಆರ್ಡರ್‌ಗಳು | Orders placed |  |
+| `label.acknowledged` | ಪೂರೈಕೆದಾರರು OK ಎಂದರು | Supplier said OK |  |
+| `label.receivedFull` | ಪೂರ್ತಿ ಬಂತು | Received in full |  |
+| `label.partReceived` | ಭಾಗಶಃ ಬಂತು | Part received |  |
+| `label.wrongItem` | ತಪ್ಪು ವಸ್ತು | Wrong item |  |
+| `label.supplierSaidNo` | ಪೂರೈಕೆದಾರರು ಇಲ್ಲ ಎಂದರು | Supplier said no |  |
+| `label.noAnswer` | ಪೂರೈಕೆದಾರರ ಉತ್ತರ ಇಲ್ಲ | No answer from the supplier |  |
+| `label.neverSent` | ರದ್ದಾದ ಅಥವಾ ಕಳುಹಿಸದ | Cancelled or never sent |  |
+| `label.budgetUsed` | ಬಳಸಿದ ಬಜೆಟ್ | Budget used |  |
+| `label.budgetLeft` | ಉಳಿದ ಬಜೆಟ್ | Budget left |  |
+| `label.markedPaid` | ಹಣ ಕೊಟ್ಟಿದ್ದೆಂದು ಗುರುತಿಸಿದ್ದು (ನಿಮ್ಮ ಟಿಪ್ಪಣಿ) | Marked paid by you (your note) |  |
+| `label.asked` | ನಿಮ್ಮನ್ನು ಕೇಳಲಾಯಿತು | You were asked |  |
+| `label.approved` | ನೀವು ಒಪ್ಪಿದ್ದು | You approved |  |
+| `label.saidNo` | ನೀವು ಇಲ್ಲ ಎಂದಿರಿ | You said no |  |
+| `label.stopped` | ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು | Stopped by your limits |  |
+| `label.notChecked` | ಪರಿಶೀಲಿಸದ್ದು | Not checked |  |
+| `stop.monthly-budget` | ತಿಂಗಳ ಬಜೆಟ್‌ಗಿಂತ ಹೆಚ್ಚಿನ ಆರ್ಡರ್‌ಗಳು | Orders over the month's budget |  |
+| `stop.per-order-cap` | ಒಂದು ಆರ್ಡರ್‌ನ ಮಿತಿಗಿಂತ ಹೆಚ್ಚಿನವು | Orders above your one-order limit |  |
+| `stop.order-quantity` | ತಪ್ಪಿನಂತೆ ಕಂಡ ಪ್ರಮಾಣಗಳು | Quantities that looked like a slip |  |
+| `stop.approved-supplier-only` | ನಿಮ್ಮ ಒಪ್ಪಿದ ಪಟ್ಟಿಯಲ್ಲಿ ಇಲ್ಲದ ಪೂರೈಕೆದಾರರು | Suppliers not on your approved list |  |
+| `stop.approval-matches-order` | ಆರ್ಡರ್‌ಗೆ ಹೊಂದದ ಒಪ್ಪಿಗೆಗಳು | Approvals that no longer matched the order |  |
+| `stop.one-order-per-request` | ಒಂದು ಕೋರಿಕೆಯಿಂದ ಎರಡನೇ ಆರ್ಡರ್ | A second order from one request |  |
+| `stop.reply-from-supplier` | ಪೂರೈಕೆದಾರರದ್ದಲ್ಲದ ಉತ್ತರಗಳು | Replies that were not the supplier's |  |
+| `stop.send-only-when-approved` | ಒಪ್ಪಿಗೆ ಇಲ್ಲದ ಕಳುಹಿಸುವಿಕೆಗಳು | Sends that were not approved |  |
+| `stop.message-matches-record` | ದಾಖಲೆಗೆ ಹೊಂದದ ಸಂದೇಶಗಳು | Messages that did not match the record |  |
+| `stop.opt-out` | STOP ನಂತರದ ಸಂದೇಶಗಳು | Messages after STOP |  |
+| `stop.other` | ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದ ಬೇರೆ ಏನೋ | Something else your limits held back |  |
+| `notChecked.whatsapp` | ನಿಜವಾದ WhatsApp | real WhatsApp |  |
+| `notChecked.supplier` | ನಿಜವಾದ ಪೂರೈಕೆದಾರರ ಉತ್ತರಗಳು | real suppliers' replies |  |
+| `notChecked.paying` | ಪೂರೈಕೆದಾರರಿಗೆ ಹಣ ಕೊಡುವುದು | paying a supplier |  |
+| `notChecked.review` | ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ | a native speaker's review of the wording |  |
+| `notTested.real-whatsapp` | ನಿಜವಾದ WhatsApp: ನಿಜವಾದ ಖಾತೆ, Meta ಯ ನಿಜವಾದ ಟೆಂಪ್ಲೇಟ್ ಅನುಮೋದನೆ, ನಿಜವಾದ ಪೂರೈಕೆದಾರರ ಫೋನ್ | Real WhatsApp: a real account, a real Meta template approval, a real supplier's phone |  |
+| `notTested.native-review` | ಹಿಂದಿ, ಮಲಯಾಳಂ ಮತ್ತು ಕನ್ನಡ ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ | A native speaker's review of the Hindi, Malayalam and Kannada wording |  |
+| `notTested.model-reading` | ಮಾಲೀಕರ ಕೋರಿಕೆಯನ್ನು AI ಮಾದರಿ ಓದುವುದು (ನಿಯಮಗಳ ಓದುಗ ಮಾತ್ರ ಪ್ರಯತ್ನಿಸಲಾಯಿತು; ಓದಲಾಗದ ಕೋರಿಕೆಯ ಬಗ್ಗೆ ಕೇಳಲಾಗುತ್ತದೆ, ಊಹಿಸುವುದಿಲ್ಲ) | An owner's request read by an AI model (only the rule reader was tried; a request it cannot read is asked about, not guessed) |  |
+| `notTested.supplier-formats` | ನಿಜವಾದ ಪೂರೈಕೆದಾರರು ಉತ್ತರಿಸುವ ಹಲವು ವಿಧಗಳು (ವಾಯ್ಸ್ ನೋಟ್, ಬಿಲ್‌ನ ಫೋಟೋ, ಬೇರೆ ಲಿಪಿ, ಹಳೆಯ ಸಂದೇಶವನ್ನು ಉಲ್ಲೇಖಿಸುವ ಉತ್ತರ) | The many ways real suppliers answer (a voice note, a photo of a bill, another script, a reply that quotes an older message) |  |
+| `notTested.restart` | ಒಪ್ಪಿಗೆಯ ನಡುವೆ ರೀಸ್ಟಾರ್ಟ್ (ಪರಿಶೀಲನೆಗಳಲ್ಲಿ ಎಲ್ಲವೂ ಮೆಮೊರಿಯಲ್ಲಿತ್ತು) | A restart in the middle of an approval (the checks kept everything in memory) |  |
+| `notTested.paying` | ಪೂರೈಕೆದಾರರಿಗೆ ಹಣ ಕೊಡುವುದು (ಏಜೆಂಟ್ ಯಾರಿಗೂ ಹಣ ಕೊಡುವುದಿಲ್ಲ; ನಿಮ್ಮದೇ ಟಿಪ್ಪಣಿ ನಿಮ್ಮ ಮಾತು ಮಾತ್ರ) | Paying a supplier (the agent pays no one; your own note is only your word) |  |
+| `notTested.invoice` | ಪೂರೈಕೆದಾರರ ಇನ್‌ವಾಯ್ಸ್, ಕ್ಯಾಟಲಾಗ್‌ಗಿಂತ ಬೇರೆ ಬೆಲೆ, ಪೂರೈಕೆದಾರರ ಭಾಗಶಃ ಸಾಗಣೆ ಸೂಚನೆ, ಸರಕು ಹಿಂತಿರುಗಿಸುವುದು | A supplier's invoice, a price that differs from the catalogue, a part-shipment note from the supplier, a return of goods |  |
+| `notTested.real-month` | ಒಪ್ಪಿಗೆ ತೆರೆದಿರುವಾಗ ತಿಂಗಳು ಬದಲಾಗುವುದು | A month that turns while an approval is open |  |
+| `notTested.own-settings` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅವು ಉದಾಹರಣೆ ಅಂಗಡಿ Glow Unisex Salon ಮೇಲೆ ನಡೆದವು) | These checks on this shop's own settings (the go-live certificate says they ran on the example shop, Glow Unisex Salon) |  |
+| `notTested.other-settings` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅವು ಬೇರೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು) | These checks on this shop's own settings (the go-live certificate says they ran on different settings) |  |
+| `notTested.no-go-live-certificate` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಯಾವುದೇ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಟ್ಟಿಲ್ಲ) | These checks on this shop's own settings (no go-live certificate was given) |  |
+| `notTested.go-live-untrusted` | ಈ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ (ಕೊಟ್ಟ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರವನ್ನು ನಂಬಲಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ಬಳಸಲಿಲ್ಲ) | These checks on this shop's own settings (the go-live certificate that was given could not be trusted, so it was not used) |  |
+| `notTested.situations-skipped` | ಈ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆಸಲಾಗದ ಸಂದರ್ಭಗಳು (ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರದಲ್ಲಿ ಹೆಸರಿಸಲಾಗಿದೆ) | Situations these settings could not run (named in the go-live certificate) |  |
+| `notCounted.goods-really-arrived` | ಸರಕು ನಿಜವಾಗಿ ಬಂತೇ ಎಂದು: ನಿಮ್ಮದೇ ದಾಖಲೆಯನ್ನು ಮಾತ್ರ ಎಣಿಸಲಾಗುತ್ತದೆ | Whether the goods really arrived: only your own mark is counted |  |
+| `notCounted.payments` | ಪೂರೈಕೆದಾರರಿಗೆ ಪಾವತಿಗಳು: ಈ ಏಜೆಂಟ್ ಯಾರಿಗೂ ಹಣ ಕೊಡುವುದಿಲ್ಲ ಮತ್ತು ಯಾವ ಪಾವತಿಯನ್ನೂ ನೋಡಲಾಗದು; ನಿಮ್ಮದೇ ಟಿಪ್ಪಣಿಯನ್ನು ಮಾತ್ರ ಎಣಿಸಲಾಗುತ್ತದೆ | Payments to suppliers: this agent pays no one and cannot see a payment; only your own note is counted |  |
+| `notCounted.outside-agent` | ಏಜೆಂಟ್‌ನ ಹೊರಗೆ ನೀಡಿದ ಆರ್ಡರ್‌ಗಳು (ಫೋನ್‌ನಲ್ಲಿ, ನೇರವಾಗಿ ಅಥವಾ ಬೇರೆ ಚಾಟ್‌ನಲ್ಲಿ) | Orders placed outside the agent (by phone, in person or in another chat) |  |
+| `notCounted.read-receipts` | ಪೂರೈಕೆದಾರರು ಸಂದೇಶ ಓದಿದರೇ ಎಂದು | Whether a supplier read a message |  |
+| `notCounted.rule-breaks` | ಏಜೆಂಟ್ ನೋಡದ ನಿಯಮ ಉಲ್ಲಂಘನೆಗಳು: ದಾಖಲೆಯಲ್ಲಿ ಏಜೆಂಟ್ ಮಾಡಿದ್ದು ಮತ್ತು ತಡೆಯಲ್ಪಟ್ಟದ್ದು ಮಾತ್ರ ಇದೆ | Rule breaks the agent did not see: the record holds what the agent did and what it was stopped from doing |  |
+| `cert.date` | ದಿನಾಂಕ | Date |  |
+| `cert.held` | 15 ಸಂದರ್ಭಗಳಲ್ಲಿ 14 ಸರಿಯಾಗಿ ನಿಂತವು. 1 ತಪ್ಪಿದವು. 12 ವಿಷಯಗಳನ್ನು ಪರಿಶೀಲಿಸಿಲ್ಲ. | Held 14 of 15 situations. 1 failed. 12 not tested. |  |
+| `cert.intro` | ಆರಂಭಿಸುವ ಮೊದಲು ತಪ್ಪಾಗಬಹುದಾದ ಸಂದರ್ಭಗಳನ್ನು ನಾವು ಪ್ರಯತ್ನಿಸಿದೆವು: ಆರ್ಡರ್ ಸಂದೇಶದ ಕಳೆದುಹೋದ ಉತ್ತರ, ಎಂದೂ ಉತ್ತರಿಸದ ಪೂರೈಕೆದಾರ, ಬಜೆಟ್‌ನ ಕೊನೆಯ ಭಾಗಕ್ಕೆ ಎರಡು ಆರ್ಡರ್‌ಗಳ ಪೈಪೋಟಿ, ನೀವು ಒಪ್ಪಿದ ನಂತರ ಬದಲಾಗುವ ಪ್ರಮಾಣ ಅಥವಾ ಬೆಲೆ, ನಿಮ್ಮ ಪಟ್ಟಿಯಲ್ಲಿ ಇಲ್ಲದ ಪೂರೈಕೆದಾರ, ಮತ್ತು ತಪ್ಪು ವಸ್ತು ಬರುವುದು. | Before switching on, we tried situations that could go wrong: a lost reply to an order message, a supplier who never answers, two orders racing for the last of the budget, a quantity or price that changes after you approve, a supplier who is not on your list, and a wrong item arriving. |  |
+| `cert.yourLimits` | ನಿಮ್ಮ ಮಿತಿಗಳು | Your limits |  |
+| `cert.paidRule` | ನೀವು ಅದೇ ಆರ್ಡರ್ ಅನ್ನು ಒಪ್ಪುವವರೆಗೆ ಏನೂ ಪೂರೈಕೆದಾರರಿಗೆ ಹೋಗುವುದಿಲ್ಲ, ಮತ್ತು ಏಜೆಂಟ್ ಯಾರಿಗೂ ಹಣ ಕೊಡುವುದಿಲ್ಲ | Nothing goes to a supplier until you approve that exact order, and the agent pays no one |  |
+| `cert.budget` | ತಿಂಗಳ ಬಜೆಟ್: ₹20,000, ಆರ್ಡರ್ ಒಪ್ಪಿದಾಗ ಮೀಸಲಿಡಲಾಗುತ್ತದೆ | Budget for the month: ₹20,000, set aside when you approve an order |  |
+| `cert.cap` | ಒಂದು ಆರ್ಡರ್ ಗರಿಷ್ಠ ₹12,000 | One order is at most ₹12,000 |  |
+| `cert.maxQty` | ಒಂದು ಆರ್ಡರ್‌ನಲ್ಲಿ ಒಂದು ವಸ್ತುವಿನ ಗರಿಷ್ಠ 200 ಘಟಕಗಳು | At most 200 units of one item in one order |  |
+| `cert.suppliers` | 2 ಒಪ್ಪಿದ ಪೂರೈಕೆದಾರರು; 1 ಪಟ್ಟಿಯಲ್ಲಿದ್ದಾರೆ ಆದರೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ (ಆರ್ಡರ್ ಹೋಗುವುದಿಲ್ಲ) | 2 approved suppliers; 1 on the list but paused (never ordered from) |  |
+| `cert.followUp` | ಉತ್ತರಿಸದ ಪೂರೈಕೆದಾರರನ್ನು 4, 24 ಗಂಟೆಗಳ ನಂತರ ಮತ್ತೆ ಕೇಳಲಾಗುತ್ತದೆ; ಕೊನೆಯ ಬಾರಿಯ ನಂತರ ನಿಮಗೆ ತಿಳಿಸಲಾಗುತ್ತದೆ | A supplier who has not answered is asked again after 4, 24 hours; after the last time you are told |  |
+| `cert.notAGrade` | ಇದು ಪ್ರಯತ್ನಿಸಿದ ಸಂದರ್ಭಗಳ ಎಣಿಕೆ ಮಾತ್ರ. ಇದು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ಕೊಡುವುದಿಲ್ಲ. | This counts the situations tried. It does not grade the agent. |  |
+| `cert.didNotHold` | ತಪ್ಪಿದವು | Did not hold |  |
+| `cert.handRunLine` | ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಿದ್ದು ನಿಜವಾದ WhatsApp ಮೇಲೆ ಅಲ್ಲ, ಅಭ್ಯಾಸದ ವ್ಯವಸ್ಥೆಗಳ ಮೇಲೆ (stand-in services). ಯಾವ ಹಣವೂ ಚಲಿಸಲಿಲ್ಲ. | Checks were run by hand against stand-in services, not real WhatsApp. No money moved. |  |
+| `cert.checkedOn` | ಪರಿಶೀಲನೆ ನಡೆದದ್ದು | Checks run on |  |
+| `goLive.heading` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆ | Go-live checks |  |
+| `goLive.own` | ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆಯೇ ನಡೆದವು, 2 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರದ ಪ್ರಕಾರ. | The go-live checks ran on this shop's own settings, in the go-live certificate of 2 Nov 2026. |  |
+| `goLive.example` | 2 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅದರ ಪರಿಶೀಲನೆಗಳು ಉದಾಹರಣೆ ಅಂಗಡಿ Glow Unisex Salon ಮೇಲೆ ನಡೆದವು, ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ಅಲ್ಲ. | The go-live certificate of 2 Nov 2026 says its checks ran on the example shop, Glow Unisex Salon, not on this shop's own settings. |  |
+| `goLive.different` | 2 Nov 2026 ರ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಹೇಳುವುದು: ಅದರ ಪರಿಶೀಲನೆಗಳು ಈ ಅಂಗಡಿಗಿಂತ ಬೇರೆ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು, ಆದ್ದರಿಂದ ಈ ಅಂಗಡಿಯ ಸ್ವಂತ ಸೆಟ್ಟಿಂಗ್‌ಗಳು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತವೆ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | The go-live certificate of 2 Nov 2026 says its checks ran on different settings from this shop's, so it does not show how this shop's own settings behave. |  |
+| `goLive.untrusted` | ಒಂದು ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಡಲಾಗಿತ್ತು, ಆದರೆ ಅದನ್ನು ನಂಬಲಾಗಲಿಲ್ಲ (ಅದರಲ್ಲಿ ಸಹಿ ಇಲ್ಲ, ಸಹಿ ಹೊಂದುವುದಿಲ್ಲ, ಅಥವಾ ಅದು ಈ ಏಜೆಂಟ್‌ನ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರವೇ ಅಲ್ಲ), ಆದ್ದರಿಂದ ಬಳಸಲಿಲ್ಲ. | A go-live certificate was given, but it could not be trusted (it is not signed, its signature does not fit, or it is not a go-live certificate of this agent), so it was not used. |  |
+| `goLive.none` | ಯಾವುದೇ ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರ ಕೊಟ್ಟಿಲ್ಲ, ಆದ್ದರಿಂದ ಆರಂಭಿಸುವ ಮೊದಲಿನ ಪರಿಶೀಲನೆಗಳು ಯಾವ ಸೆಟ್ಟಿಂಗ್‌ಗಳ ಮೇಲೆ ನಡೆದವು ಎಂದು ಈ ದಾಖಲೆ ಹೇಳುವುದಿಲ್ಲ. | No go-live certificate was given, so this document does not say what the go-live checks ran on. |  |
+| `goLive.signedWith` | ಪರಿಶೀಲನಾ ಪ್ರಮಾಣಪತ್ರಕ್ಕೆ ಸಹಿ ಮಾಡಿದ್ದು key-3f9a1c ಎಂಬ ಕೀಲಿಯಿಂದ. ಆ ಕೀಲಿ ಯಾರ ಬಳಿ ಇದೆ ಎಂದು ಕೀಲಿ ತೋರಿಸುವುದಿಲ್ಲ. | The go-live certificate is signed with key-3f9a1c. A key does not show who holds it. |  |
+| `page.numbers` | ಅಂಕಿಅಂಶಗಳು | The numbers |  |
+| `page.item` | ಏನು | What |  |
+| `page.count` | ಎಷ್ಟು | How many |  |
+| `page.amount` | ಮೊತ್ತ | Amount |  |
+| `page.ordersHeading` | ಈ ತಿಂಗಳು ಒಪ್ಪಿದ ಆರ್ಡರ್‌ಗಳು | Orders approved in this month |  |
+| `page.budgetHeading` | ತಿಂಗಳ ಬಜೆಟ್ | The month's budget |  |
+| `page.monthlyBudget` | ತಿಂಗಳ ಬಜೆಟ್ | Budget for the month |  |
+| `page.ownersNoteHeading` | ನಿಮ್ಮದೇ ಟಿಪ್ಪಣಿ | Your own note |  |
+| `page.suppliersHeading` | ಪೂರೈಕೆದಾರರ ಪ್ರಕಾರ | By supplier |  |
+| `page.supplier` | ಪೂರೈಕೆದಾರ | Supplier |  |
+| `page.stoppedHeading` | ನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು | What your limits stopped |  |
+| `page.rule` | ಮಿತಿ | Limit |  |
+| `page.times` | ಬಾರಿ | Times |  |
+| `page.notCountedHeading` | ಎಣಿಸದ್ದು | Not counted |  |
+| `page.notTestedHeading` | ಪರಿಶೀಲಿಸದ್ದು | Not tested |  |
+| `page.unconfirmed` | WhatsApp ದೃಢಪಡಿಸದ ಆರ್ಡರ್ ಸಂದೇಶಗಳು | Order messages WhatsApp did not confirm |  |
+| `page.checkHeading` | ಈ ದಾಖಲೆಯನ್ನು ಪರಿಶೀಲಿಸಿ | Check this document |  |
+| `page.code` | ಕೋಡ್ | Code |  |
+| `page.digest` | ಡೈಜೆಸ್ಟ್ | Digest |  |
+| `page.countedFrom` | ಎಲ್ಲಿಂದ ಎಣಿಸಿದ್ದು | Counted from |  |
+| `page.setUpBy` | ಸಿದ್ಧಪಡಿಸಿದವರು | Set up by |  |
+| `page.madeOn` | ಮಾಡಿದ ದಿನ | Made on |  |
+| `page.signedBy` | ಸಹಿ ಮಾಡಿದವರು | Signed by |  |
+| `page.notSigned` | ಸಹಿ ಇಲ್ಲ | Not signed |  |
+| `page.signatureNote` | ಈ ದಾಖಲೆಯನ್ನು ಯಾರು ಮಾಡಿದರು ಮತ್ತು ಅದು ಬದಲಾಗಿಲ್ಲ ಎಂದು ಸಹಿ ತೋರಿಸುತ್ತದೆ. ಇದರಲ್ಲಿ ಎಣಿಸಿದ್ದೆಲ್ಲ ಪೂರ್ಣ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | A signature shows who made this document and that it has not changed. It does not show that what it counts is complete. |  |
+| `page.scanToCheck` | ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. ಇದರ .json ಫೈಲ್ ಬೇಕಾಗುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲಿಂಕ್‌ನಲ್ಲಿ ಸಹಿ ಮಾಡಿದ ಕೀ ಇಲ್ಲ: ಯಾರು ಸಹಿ ಮಾಡಿದರು ಎಂದು ತಿಳಿಯಲು ಇಲ್ಲಿ ತೋರಿಸಿದ ಕೀಯನ್ನು ನಿಮ್ಮ ಆಪರೇಟರ್ ಅಥವಾ Geometer ತಂಡ ನೀಡಿದ ಕೀಯೊಂದಿಗೆ ಹೋಲಿಸಿ. | Scan to check this paper on geometer.dev. You will need its .json file. The check runs in your browser and nothing is sent. The link does not name a signing key: to know who signed, compare the key shown here with one your Operator or Geometer's team gave you. |  |
+| `page.scanSummary` | ಈ ದಾಖಲೆಯನ್ನು geometer.dev ನಲ್ಲಿ ಪರಿಶೀಲಿಸಲು ಈ ಕೋಡ್ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಅಥವಾ ಲಿಂಕ್ ತೆರೆಯಿರಿ. ದಾಖಲೆ ನಿಜವಾದುದೇ, ಅದನ್ನು ಯಾರು ನೀಡಿದರು, ಮತ್ತು ಈ ಪುಟದೊಂದಿಗೆ ಹೋಲಿಸಲು ಲೆಕ್ಕಗಳನ್ನು ಅದು ತೋರಿಸುತ್ತದೆ. ಪರಿಶೀಲನೆ ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ನಡೆಯುತ್ತದೆ, ದಾಖಲೆಯ ಬಗ್ಗೆ ಏನೂ ಕಳುಹಿಸಲಾಗುವುದಿಲ್ಲ. ಲೆಕ್ಕಗಳು ಸತ್ಯ ಎಂದು ಅದು ತೋರಿಸುವುದಿಲ್ಲ. | Scan this code, or open the link, to check this paper on geometer.dev. It shows whether the paper is genuine, who issued it, and the figures to compare with this page. The check runs on your phone and nothing about the paper is sent. It does not show that the numbers are true. |  |
+| `page.notAGrade` | ಇವು ದಾಖಲೆಯಲ್ಲಿ ಕಾಣುವ ವಿಷಯಗಳ ಎಣಿಕೆ. ಇವು ಏಜೆಂಟ್‌ಗೆ ಅಂಕ ಅಥವಾ ದರ್ಜೆ ನೀಡುವುದಿಲ್ಲ. | These are counts of what the record shows. They do not grade the agent. |  |
+| `page.period` | ಅವಧಿ | Period |  |
+| `page.showWhatWeDid` | ನಾವು ಮಾಡಿದ್ದನ್ನು ತೋರಿಸಿ ▸ | Show what we did ▸ |  |
+| `page.byActionHeading` | ಏಜೆಂಟ್ ಮಾಡಿದ್ದು, ಕೆಲಸದ ಪ್ರಕಾರ | What the agent did, by action |  |
+| `page.action` | ಕೆಲಸ | Action |  |
+| `page.agentVersion` | ಏಜೆಂಟ್ ಆವೃತ್ತಿ | Agent version |  |
+| `page.limitsDigest` | ಮಿತಿಗಳ ಡೈಜೆಸ್ಟ್ | Limits digest |  |
+| `page.recordDigest` | ದಾಖಲೆಯ ಡೈಜೆಸ್ಟ್ | Record digest |  |
+| `page.liveServices` | ನಿಜವಾದ ವ್ಯವಸ್ಥೆಗಳು | Live services |  |
+

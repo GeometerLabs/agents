@@ -4,7 +4,9 @@ Market: Commerce (a salon, a small retailer or an input dealer that reorders fro
 
 A WhatsApp agent for the owner. The owner writes "order 10 boxes of hair colour from Ravi Traders" (or marks an item low). The agent works out the **exact order** from the owner's approved supplier list and catalogue (supplier, item, unit, last price; the total is worked out in code), shows it as a **card the owner approves**, **reserves the month's budget with that approval**, sends the order to the supplier's WhatsApp number as a template message, records the supplier's OK, asks a silent supplier again about **the same order**, and records the delivery when the owner marks it received (all, part, or the wrong item). **The supplier's OK is not receipt of goods, and receipt is not payment.** Paying the supplier is not built: the owner pays as today and may note "paid po-3".
 
-**What this folder is, and is not.** Built and **checked against stand-in services only** (a stand-in WhatsApp). **No shop is live on it**, no real supplier has been messaged, and no real Meta template has been approved. It is a first version: the agent, its limits, its messages in four languages, its crash-test situations, the review sheets and an English sell guide. The runtime server, the owner's page, the signed monthly report and the panel's setup forms are not built (see [Deferred.md](Deferred.md)). It has no dependencies; most of the care is in [`agents/modules/`](../../../modules/README.md).
+**What this folder is, and is not.** Built and **checked against stand-in services only** (a stand-in WhatsApp). **No shop is live on it**, no real supplier has been messaged, and no real Meta template has been approved. It is deployable like Bookings, Orders and Fees: a runtime server with a saved store (`server/`), the owner's page, the shop's assistant, the panel's phone setup, a Guard list of the numbers a message may go to, a monthly report and go-live certificate, and sell guides and one-pagers in four languages. The tests were written and have not all been run together yet (see Explanation.md). Paying the supplier, a real WhatsApp test and the rest are in [Deferred.md](Deferred.md). It has no dependencies; most of the care is in [`agents/modules/`](../../../modules/README.md).
+
+**One thing a restart cannot promise.** A step is saved when it ends. If the process dies after WhatsApp took an order message and before the step is saved, the step runs again and the order message goes out a second time (the same order number, so the supplier sees it is the same order). A step that only finds Guard down is thrown away before anything is sent, and the send is not repeated. This is the same window every template has for its sends; Deferred.md has the row.
 
 ## Run it
 
@@ -57,7 +59,7 @@ English, Hindi, Malayalam and Kannada. All messages are fixed templates; every i
 
 ## Sell it
 
-[`sell/guide.en.md`](sell/guide.en.md) (English only so far). The one claim about money-adjacent behaviour: "No order goes to a supplier without your yes, and it is always the exact order you saw."
+[`sell/guide.en.md`](sell/guide.en.md) (English, Hindi, Malayalam and Kannada; the last three are machine-written and wait for a native reader; the one-pagers and the ask cards are in the same four). The one claim about money-adjacent behaviour: "No order goes to a supplier without your yes, and it is always the exact order you saw."
 
 ## What is in the folder
 
@@ -65,10 +67,18 @@ English, Hindi, Malayalam and Kannada. All messages are fixed templates; every i
 | --- | --- |
 | `src/agent.ts`, `src/order.ts` | The agent (one event in, done, back) and the order, its states and the budget worked out from the orders |
 | `src/limits.ts`, `src/settings.ts`, `src/reading.ts` | The pure limits, the settings and their checks, the rule reader |
+| `src/assistant.ts`, `src/channel.ts`, `src/chat-limits.ts`, `src/guard-limits.ts` | The shop's assistant skill (open orders, what waits, the talk's reads; its acts are the agent's own approve, decline and cancel), the owner's page items, the two limits the owner may tighten by a tap, the numbers Guard lets a message go to |
+| `server/` | The runtime: start, config, services, the saved store and its snapshot, on `modules/runtime` |
+| `report/` | The monthly report (orders placed, answered, received, part or wrong, budget used; "paid" only when the owner marked it) and the go-live certificate |
+| `clients/glow-salon.example/` | An example shop folder to start the server on (`node server/main.ts --client ...`) |
 | `src/language/` | The messages in four languages, the button labels, the Meta template list, the outgoing check's facts |
 | `src/harness.ts` | The agent on the in-memory fakes, with a clock you move |
 | `crash-test/`, `scripts/` | The situations, the plan that picks them from any shop's settings, the not-tested list, the hand check, the generators |
 | `sell/`, `whatsapp-templates.json`, `REVIEW-*.md` | The sell guide, the list to submit to Meta, the review sheets |
+
+## Deploying it
+
+`geometer shop add --template stock-orders` finds it from `template.json` (the panel's phone form has two steps: the shop with its suppliers and catalogue lines, then the cap and the budget). A shop's WhatsApp is required: runtime.json must name `messaging`, and there is no payment service. The Guard in front of WhatsApp is given the owner's number and the approved suppliers' numbers only (`approved-recipients-only`, from `src/guard-limits.ts`); the per-order cap and the month's budget are held by the agent and the approval card, not by Guard (a WhatsApp message carries no amount Guard can read). The owner's page lists orders waiting for their yes, orders no supplier has answered, and deliveries to mark; there is no public page for this template.
 
 ## What is not done yet
 
@@ -82,7 +92,7 @@ Modules it imports: `assistant/` (the approval card, cards.ts, state.ts), `core/
 
 <!-- modules it uses: made by modules/module-map.ts from the imports; run `node modules/module-map.ts --write` -->
 
-The shared modules Stock orders uses, from its code's own imports: [`assistant/`](../../../modules/README.md#what-is-here), [`core/`](../../../modules/README.md#what-is-here), [`crash-test/`](../../../modules/README.md#what-is-here), [`language/`](../../../modules/README.md#what-is-here), [`limits/`](../../../modules/README.md#what-is-here), [`messaging/`](../../../modules/README.md#what-is-here), [`record/`](../../../modules/README.md#what-is-here), [`reminders/`](../../../modules/README.md#what-is-here), [`understanding/`](../../../modules/README.md#what-is-here).
+The shared modules Stock orders uses, from its code's own imports: [`assistant/`](../../../modules/README.md#what-is-here), [`channels/`](../../../modules/README.md#what-is-here), [`core/`](../../../modules/README.md#what-is-here), [`crash-test/`](../../../modules/README.md#what-is-here), [`language/`](../../../modules/README.md#what-is-here), [`licence/`](../../../modules/README.md#what-is-here), [`limits/`](../../../modules/README.md#what-is-here), [`messaging/`](../../../modules/README.md#what-is-here), [`push/`](../../../modules/README.md#what-is-here), [`record/`](../../../modules/README.md#what-is-here), [`reminders/`](../../../modules/README.md#what-is-here), [`report/`](../../../modules/README.md#what-is-here), [`runtime/`](../../../modules/README.md#what-is-here), [`understanding/`](../../../modules/README.md#what-is-here).
 
 What each one does and what a template hands it: the table in [modules/README.md](../../../modules/README.md#what-is-here). A new template uses the same modules the same way.
 

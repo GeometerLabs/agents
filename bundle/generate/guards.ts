@@ -136,7 +136,7 @@ export const PANEL_READS: Record<string, string[]> = { ...Object.fromEntries(GAT
  * (modules/messaging/gupshup.ts GUPSHUP_ROUTES), and its read is the app's health, which says nothing about the number: the panel's check for such a shop says "Gupshup
  * answered for app <id>", never that the number is confirmed (panel/checks.ts checkGupshup).
  */
-export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number; route?: WhatsAppRoute }): LimitsSpec {
+export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messagesPerHour: number; route?: WhatsAppRoute; /** Stock orders: the only numbers a message may go to (its owner and its approved suppliers); Meta direct only. */ recipients?: string[] }): LimitsSpec {
   if (o.route?.provider === "gupshup-selfserve") {
     // Item 11c. The self-serve API carries the app in the BODY of both send routes, as form fields (`source`, the app's number, and `src.name`, its name), and in the PATH of
     // the template list. Guard's compiler refuses an exact rule on a dotted field name ("a dotted (nested) name is not followed"), so `src.name` cannot be pinned: the send is
@@ -173,6 +173,8 @@ export function whatsappSpec(id: SpecIdentity, o: { phoneNumberId: string; messa
     rules: [
       { id: "own-number-only", kind: "argument_allowlist", operation: "send", field: "phone_number_id", match: "exact", allowed_values: [o.phoneNumberId] },
       { id: "own-number-read", kind: "argument_allowlist", operation: "read_number", field: "phone_number_id", match: "exact", allowed_values: [o.phoneNumberId] },
+      // Stock orders writes only to its owner and its approved suppliers: the list is exact, so a send to anyone else is refused whatever the agent does
+      ...(o.recipients && o.recipients.length > 0 ? [{ id: "approved-recipients-only", kind: "argument_allowlist" as const, operation: "send", field: "to", match: "exact" as const, allowed_values: o.recipients }] : []),
     ],
     limits: [count("messages-per-hour", "send", o.messagesPerHour, 3600)],
     intents: [], fail_policy: [],

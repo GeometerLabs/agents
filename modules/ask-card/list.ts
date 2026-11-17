@@ -16,8 +16,8 @@
 import type { Language } from "../language/languages.ts";
 
 /** The three templates the bundle can run (bundle/lib/kinds.ts). */
-export type CardTemplate = "bookings" | "orders" | "fees";
-export const CARD_TEMPLATES: readonly CardTemplate[] = ["bookings", "orders", "fees"];
+export type CardTemplate = "bookings" | "orders" | "fees" | "stock-orders";
+export const CARD_TEMPLATES: readonly CardTemplate[] = ["bookings", "orders", "fees", "stock-orders"];
 
 /** One piece of text in every language. A missing language is a type error, so a card can never lose one. */
 export type Words = Record<Language, string>;
@@ -481,11 +481,69 @@ const FEES: ListItem[] = [
   },
 ];
 
-/** The whole list: every shop's items first, then the template's own. */
+// ---- Stock orders: what its own settings ask (templates/commerce/stock-orders/src/settings.ts). It takes no payment, so the UPI line of the first block is left out. ----
+
+const STOCK: ListItem[] = [
+  {
+    id: "suppliers", group: "template",
+    what: w(
+      "Each supplier the shop orders from: the name and the supplier's WhatsApp number",
+      "दुकान जिन सप्लायरों से मँगाती है उनमें से हर एक: नाम और सप्लायर का WhatsApp नंबर",
+      "കട ഓർഡർ ചെയ്യുന്ന ഓരോ സപ്ലയറും: പേരും സപ്ലയറുടെ WhatsApp നമ്പറും",
+      "ಅಂಗಡಿ ಆರ್ಡರ್ ಮಾಡುವ ಪ್ರತಿ ಸರಬರಾಜುದಾರ: ಹೆಸರು ಮತ್ತು ಸರಬರಾಜುದಾರರ WhatsApp ನಂಬರ್"),
+    why: w(
+      "Orders go only to these numbers, and only an answer from the supplier's own number counts as theirs. Read each number back to the owner.",
+      "ऑर्डर सिर्फ़ इन्हीं नंबरों पर जाते हैं, और सप्लायर के अपने नंबर से आया जवाब ही उनका माना जाता है। हर नंबर मालिक को पढ़कर सुनाइए।",
+      "ഓർഡറുകൾ ഈ നമ്പറുകളിലേക്ക് മാത്രമേ പോകൂ, സപ്ലയറുടെ സ്വന്തം നമ്പറിൽ നിന്നുള്ള മറുപടി മാത്രമേ അവരുടേതായി കണക്കാക്കൂ. ഓരോ നമ്പറും ഉടമയെ വായിച്ചു കേൾപ്പിക്കൂ.",
+      "ಆರ್ಡರ್‌ಗಳು ಈ ನಂಬರ್‌ಗಳಿಗೆ ಮಾತ್ರ ಹೋಗುತ್ತವೆ, ಮತ್ತು ಸರಬರಾಜುದಾರರ ಸ್ವಂತ ನಂಬರ್‌ನಿಂದ ಬಂದ ಉತ್ತರ ಮಾತ್ರ ಅವರದೆಂದು ಪರಿಗಣಿಸಲಾಗುತ್ತದೆ. ಪ್ರತಿ ನಂಬರ್ ಅನ್ನು ಮಾಲೀಕರಿಗೆ ಓದಿ ಹೇಳಿ."),
+  },
+  {
+    id: "catalogue", group: "template",
+    what: w(
+      "What the shop orders: for each item, the supplier, the pack (box, piece, bag) and the last price",
+      "दुकान क्या मँगाती है: हर चीज़ के लिए सप्लायर, पैक (डिब्बा, नग, बोरी) और पिछला दाम",
+      "കട എന്തൊക്കെ ഓർഡർ ചെയ്യുന്നു: ഓരോ സാധനത്തിനും സപ്ലയർ, പായ്ക്ക് (ബോക്സ്, എണ്ണം, ചാക്ക്), അവസാന വില",
+      "ಅಂಗಡಿ ಏನು ಆರ್ಡರ್ ಮಾಡುತ್ತದೆ: ಪ್ರತಿ ವಸ್ತುವಿಗೆ ಸರಬರಾಜುದಾರ, ಪ್ಯಾಕ್ (ಬಾಕ್ಸ್, ಒಂದು, ಚೀಲ) ಮತ್ತು ಕೊನೆಯ ಬೆಲೆ"),
+    why: w(
+      "The same item from two suppliers, or by the box and by the piece, is two lines. A box is never worked out as ten pieces.",
+      "एक ही चीज़ दो सप्लायरों से, या डिब्बे में और नग में, दो अलग लाइनें हैं। डिब्बे को कभी दस नग नहीं माना जाता।",
+      "ഒരേ സാധനം രണ്ട് സപ്ലയർമാരിൽ നിന്ന്, അല്ലെങ്കിൽ ബോക്സിലും എണ്ണത്തിലും, രണ്ട് വരികളാണ്. ഒരു ബോക്സിനെ ഒരിക്കലും പത്ത് എണ്ണമായി കണക്കാക്കില്ല.",
+      "ಒಂದೇ ವಸ್ತು ಇಬ್ಬರು ಸರಬರಾಜುದಾರರಿಂದ, ಅಥವಾ ಬಾಕ್ಸ್‌ನಲ್ಲಿ ಮತ್ತು ಒಂದೊಂದಾಗಿ, ಎರಡು ಸಾಲುಗಳು. ಒಂದು ಬಾಕ್ಸ್ ಅನ್ನು ಎಂದಿಗೂ ಹತ್ತು ಎಂದು ಲೆಕ್ಕಿಸುವುದಿಲ್ಲ."),
+  },
+  {
+    id: "order-cap", group: "template",
+    what: w(
+      "The most one order may be worth",
+      "एक ऑर्डर ज़्यादा से ज़्यादा कितने का हो सकता है",
+      "ഒരു ഓർഡറിന് പരമാവധി എത്ര മൂല്യമാകാം",
+      "ಒಂದು ಆರ್ಡರ್ ಗರಿಷ್ಠ ಎಷ್ಟು ಮೌಲ್ಯದ್ದಾಗಬಹುದು"),
+    why: w(
+      "In whole rupees. It is a hard stop: the owner's yes cannot raise it. It must not be below the dearest single item.",
+      "पूरे रुपयों में। यह पक्की रोक है: मालिक की हाँ इसे नहीं बढ़ा सकती। यह सबसे महँगी एक चीज़ से कम नहीं होनी चाहिए।",
+      "മുഴുവൻ രൂപയിൽ. ഇത് ഉറച്ച പരിധിയാണ്: ഉടമയുടെ സമ്മതത്തിന് ഇത് കൂട്ടാനാകില്ല. ഏറ്റവും വിലകൂടിയ ഒരു സാധനത്തേക്കാൾ കുറവാകരുത്.",
+      "ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ. ಇದು ಗಟ್ಟಿ ಮಿತಿ: ಮಾಲೀಕರ ಒಪ್ಪಿಗೆ ಇದನ್ನು ಹೆಚ್ಚಿಸಲಾರದು. ಅತ್ಯಂತ ದುಬಾರಿ ಒಂದು ವಸ್ತುವಿಗಿಂತ ಕಡಿಮೆ ಇರಬಾರದು."),
+  },
+  {
+    id: "monthly-budget", group: "template",
+    what: w(
+      "The most a month's supplier orders may add up to",
+      "महीने के सप्लायर ऑर्डर कुल मिलाकर ज़्यादा से ज़्यादा कितने हो सकते हैं",
+      "മാസത്തെ സപ്ലയർ ഓർഡറുകൾ ആകെ പരമാവധി എത്ര ആകാം",
+      "ತಿಂಗಳ ಸರಬರಾಜು ಆರ್ಡರ್‌ಗಳು ಒಟ್ಟು ಗರಿಷ್ಠ ಎಷ್ಟು ಆಗಬಹುದು"),
+    why: w(
+      "In whole rupees, and not below the most for one order. An order's amount is kept from this the moment the owner approves it.",
+      "पूरे रुपयों में, और एक ऑर्डर की सीमा से कम नहीं। मालिक के मंज़ूर करते ही ऑर्डर की रकम इसमें से रख ली जाती है।",
+      "മുഴുവൻ രൂപയിൽ, ഒരു ഓർഡറിന്റെ പരിധിയിൽ കുറയരുത്. ഉടമ അനുവദിക്കുന്ന നിമിഷം ഓർഡറിന്റെ തുക ഇതിൽ നിന്ന് മാറ്റിവയ്ക്കും.",
+      "ಪೂರ್ಣ ರೂಪಾಯಿಗಳಲ್ಲಿ, ಮತ್ತು ಒಂದು ಆರ್ಡರ್‌ನ ಮಿತಿಗಿಂತ ಕಡಿಮೆ ಅಲ್ಲ. ಮಾಲೀಕರು ಒಪ್ಪಿದ ಕ್ಷಣ ಆರ್ಡರ್‌ನ ಮೊತ್ತವನ್ನು ಇದರಿಂದ ಮೀಸಲಿಡಲಾಗುತ್ತದೆ."),
+  },
+];
+
+/** The whole list: every shop's items first, then the template's own. Stock orders takes no payment, so it leaves out the UPI line. */
 export const LIST: Record<CardTemplate, ListItem[]> = {
   bookings: [...ALWAYS, ...BOOKINGS],
   orders: [...ALWAYS, ...ORDERS],
   fees: [...ALWAYS, ...FEES],
+  "stock-orders": [...ALWAYS.filter((i) => i.id !== "upi"), ...STOCK],
 };
 
 // ---- the words around the list --------------------------------------------------------------------------------------------
@@ -495,6 +553,7 @@ export const TEMPLATE_NAMES: Record<CardTemplate, Words> = {
   bookings: w("Bookings", "बुकिंग", "ബുക്കിംഗ്", "ಬುಕಿಂಗ್"),
   orders: w("Orders", "ऑर्डर", "ഓർഡർ", "ಆರ್ಡರ್"),
   fees: w("Fees", "फीस", "ഫീസ്", "ಶುಲ್ಕ"),
+  "stock-orders": w("Stock orders", "स्टॉक ऑर्डर", "സ്റ്റോക്ക് ഓർഡർ", "ಸ್ಟಾಕ್ ಆರ್ಡರ್"),
 };
 
 export const TITLE: Words = w("What to ask the shop for", "दुकान से क्या माँगना है", "കടയോട് എന്തൊക്കെ ചോദിക്കണം", "ಅಂಗಡಿಯಿಂದ ಏನು ಕೇಳಬೇಕು");

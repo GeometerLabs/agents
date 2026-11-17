@@ -162,7 +162,7 @@ export const kn: Words = {
     trial: (day) => `ಟ್ರಯಲ್ ಪರವಾನಗಿ: ಕೊನೆಯ ದಿನ ${day}. ಮರುದಿನದಿಂದ, ಅಂಗಡಿ ಪ್ಲಾನ್‌ಗೆ ಬರುವವರೆಗೆ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ.`,
   },
   setup: {
-    title: "ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ", chooseTemplate: "ಇದು ಏನು ಮಾಡಬೇಕು?", templateNames: { bookings: "ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್", fees: "ತರಗತಿಗಳ ಶುಲ್ಕ ವಸೂಲಿ", orders: "ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಮೊದಲೇ ಆರ್ಡರ್" },
+    title: "ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ", chooseTemplate: "ಇದು ಏನು ಮಾಡಬೇಕು?", templateNames: { "stock-orders": "ಸರಬರಾಜುದಾರರಿಂದ ಸ್ಟಾಕ್ ಆರ್ಡರ್", bookings: "ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್", fees: "ತರಗತಿಗಳ ಶುಲ್ಕ ವಸೂಲಿ", orders: "ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಮೊದಲೇ ಆರ್ಡರ್" },
     templateElsewhere: "ಇದನ್ನು ಬಿಲ್ಡರ್ ಪ್ಲಗಿನ್ ಮೂಲಕ ಸಿದ್ಧಪಡಿಸುತ್ತಾರೆ. ಫೋನ್ ಸೆಟಪ್‌ನಲ್ಲಿ ಇದು ಇನ್ನೂ ಇಲ್ಲ.", start: "ಆರಂಭಿಸಿ", progress: (n, o) => `ಹಂತ ${n} (ಒಟ್ಟು ${o})`,
     steps: { business: "ಅಂಗಡಿಯ ವಿವರ", deposit: "ಮುಂಗಡ ಹಣ ಮತ್ತು ರದ್ದುಮಾಡುವುದು", languages: "ಭಾಷೆಗಳು ಮತ್ತು ನಿಮ್ಮ ನಂಬರ್", accounts: "ಅಂಗಡಿಯ ಖಾತೆಗಳನ್ನು ಜೋಡಿಸಿ", checks: "ಪರಿಶೀಲನೆಗಳು", character: "ಅಂಗಡಿಯ ಸಹಾಯಕ" },
     problemsTitle: "ದಯವಿಟ್ಟು ಇದನ್ನು ಸರಿಪಡಿಸಿ:", fallback: (e) => `ಒಂದು ವಿಷಯ ಸರಿಪಡಿಸಬೇಕು: ${e}`,
@@ -335,6 +335,8 @@ export const kn: Words = {
       whatsapp_token_renewal: (_id, _amount, hours) => `Gupshup ಮೂಲಕ WhatsApp: ಈ ಅಂಗಡಿಯ ಟೋಕನ್ ಅನ್ನು ನವೀಕರಿಸಲು ಆಗಲಿಲ್ಲ. ಈಗಿನದು ${hours} ಗಂಟೆಗಳಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ, ಅದರ ನಂತರ ಯಾವ ಸಂದೇಶವೂ ಹೋಗುವುದಿಲ್ಲ. ಸರ್ವರ್ ನೋಡಿ (geometer logs refresher) ಅಥವಾ ಹೊಸ Gupshup universal token ಕೊಡಿ.`,
       whatsapp_token_credential: (_id, _amount, hours) => `Gupshup ಮೂಲಕ WhatsApp: ಸರ್ವರ್‌ನ Gupshup universal token ${credentialEnds(hours)} (geometer gupshup-token <file>).`,
       message_not_delivered: (id) => `${id} ಗಾಗಿ ಕಳುಹಿಸಿದ WhatsApp ಸಂದೇಶ ಫೋನ್ ತಲುಪಲಿಲ್ಲ (ಅದು ವಿಫಲವಾಯಿತು ಎಂದು WhatsApp ತಿಳಿಸಿತು): ಆ ವ್ಯಕ್ತಿಯನ್ನು ಬೇರೆ ರೀತಿಯಲ್ಲಿ ಸಂಪರ್ಕಿಸಿ`,
+      supplier_no_answer: (id) => `ಆರ್ಡರ್ ${id}: ಮತ್ತೆ ಕೇಳಿದರೂ ಸರಬರಾಜುದಾರರು ಉತ್ತರಿಸಿಲ್ಲ: ಅವರಿಗೆ ಕರೆ ಮಾಡಿ, ಅಥವಾ ಆರ್ಡರ್ ಅವರಿಗೆ ತಲುಪದಿದ್ದರೆ ರದ್ದುಮಾಡಿ`,
+      goods_not_received: (id) => `ಆರ್ಡರ್ ${id}: ಸರಬರಾಜುದಾರರು ಒಪ್ಪಿದ್ದಾರೆ ಆದರೆ ಒಂದು ವಾರದಿಂದ ಏನೂ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿಲ್ಲ: ಅವರನ್ನು ಕೇಳಿ, ಅಥವಾ ಬಂದದ್ದನ್ನು ಗುರುತಿಸಿ`,
       upi_payment_unconfirmed: (id, amount) => `${id} ಗಾಗಿ ${amount} UPI ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಇನ್ನೂ ಖಚಿತಪಡಿಸಿಲ್ಲ: UPI ಆ್ಯಪ್ ನೋಡಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿ`,
       upi_refund_owed: (id, amount) => `${id} ಗಾಗಿ ${amount} ರೀಫಂಡ್ ಮಾಲೀಕರು ನೀಡಬೇಕಿದೆ, ಇನ್ನೂ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿಲ್ಲ: ಮಾಲೀಕರಿಗೆ ನೆನಪಿಸಿ`,
     },

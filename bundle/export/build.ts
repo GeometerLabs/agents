@@ -148,7 +148,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
       else try {
         guardSpec = src.limitsSpec?.(checked.settings, kind.id);
         if (guardSpec === undefined) {
-          guardSpec = kind.gatewaySpec(checked.settings, { tenant: req.shop, name: `${req.shop}-${gatewayOf(checked.settings.payment)!.id}`, version: 1, reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
+          guardSpec = kind.gatewaySpec!(checked.settings, { tenant: req.shop, name: `${req.shop}-${gatewayOf(checked.settings.payment)!.id}`, version: 1, reviewedBy: "made for this export, not reviewed" }, { approvalTtlSeconds: 86_400 });
           specNote = " This server's own settings (geometer.json) could not be read, so it was made with the default approval time and caps: it may differ from the one Guard enforces.";
           warnings.push("The server's own settings could not be read, so the limits were made with the defaults.");
         }
@@ -186,8 +186,8 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
 
   // ---- the record and the cases, as JSON lines
   const record = jsonLines(src.exportFile("record.json"), "The record", warnings);
-  const casesName = template === "orders" ? "orders.json" : template === "fees" ? "dues.json" : "bookings.json";
-  const cases = jsonLines(src.exportFile(casesName), template === "orders" ? "The orders" : template === "fees" ? "The fees" : "The bookings", warnings);
+  const casesName = template === "stock-orders" ? "purchase-orders.json" : template === "orders" ? "orders.json" : template === "fees" ? "dues.json" : "bookings.json";
+  const cases = jsonLines(src.exportFile(casesName), template === "stock-orders" ? "The purchase orders" : template === "orders" ? "The orders" : template === "fees" ? "The fees" : "The bookings", warnings);
   const recordAsOf = src.exportedAt() ?? null;
   if (src.exportFile("record.json") === undefined) { notes.push("The deployer had not yet exported this shop's record when this package was made, so record/ is empty."); }
   else notes.push(`The record is as the deployer last exported it${recordAsOf ? ` (${recordAsOf})` : ""}. Customers' phone numbers (and, for a Fees centre, students' names) are fingerprints in it, as in the monthly reports: see PEOPLE IN THE RECORD in README.txt for what that covers.`);
