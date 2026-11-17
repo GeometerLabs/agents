@@ -1301,6 +1301,31 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `personality.brief.greetingNamed` | ഇത് {name}, {shop}-ന്റെ അസിസ്റ്റന്റ്. | This is {name}, {shop}'s assistant. |  |
 | `personality.brief.morningOpening` | രാവിലത്തെ വിവരം: {shop}-ന്റെ അസിസ്റ്റന്റ്. | Morning summary from the assistant of {shop}. |  |
 | `personality.brief.morningSignOff` | കൂടുതലിന് മറുപടി നൽകുക. | Reply for more. |  |
+| `memory.note_saved` | ഓർത്തുവെച്ചു (n-3): "closed on Sunday". ഞാൻ നിങ്ങളോട് സംസാരിക്കുമ്പോൾ മാത്രം ഇത് ഉപയോഗിക്കും. ഒരു ദിവസത്തിനുള്ളിൽ "undo" എന്ന് പറയുക, അല്ലെങ്കിൽ "forget n-3". | Remembered (n-3): "closed on Sunday". Only I use it, when I talk with you. Say "undo" within a day, or "forget n-3". |  |
+| `memory.note_proposal` | ഇത് ഞാൻ ഓർത്തുവെക്കട്ടെ? "closed on Sunday" (ഉപഭോക്താക്കളോട് പറഞ്ഞേക്കാം) | Shall I remember this? "closed on Sunday" (customers may be told it) |  |
+| `memory.note_declined` | ശരി, ഞാൻ ഇത് ഓർത്തുവെക്കില്ല. | Alright, I will not remember that. |  |
+| `memory.notes_list` | എന്റെ ഓർമ്മയിൽ 2 കാര്യങ്ങളുണ്ട്: • n-3 [നിങ്ങൾ മാത്രം] closed on Sunday • n-4 [ഉപഭോക്താക്കളും] closed on Sunday ഒന്ന് നീക്കാൻ "forget n-3" എന്ന് പറയുക. | I remember 2: • n-3 [you only] closed on Sunday • n-4 [customers too] closed on Sunday Say "forget n-3" to remove one. |  |
+| `memory.note_forgotten` | മറന്നു: n-3. വാക്കുകൾ കടയുടെ സ്റ്റോറിൽ നിന്ന് നീക്കി; ബാക്കപ്പുകൾ അവയുടെ സമയത്ത് ഇല്ലാതാകും. | Forgotten: n-3. The words are gone from the shop's store; backups age out on their own schedule. |  |
+| `memory.note_undone` | തിരിച്ചെടുത്തു: n-3 ഇനി ഓർമ്മയിലില്ല. | Undone: I no longer remember n-3. |  |
+| `memory.note_unknown` | n-9 എന്ന കുറിപ്പ് ഇല്ല. "എന്താണ് ഓർമ്മയുള്ളത്?" എന്ന് ചോദിച്ച് നോക്കുക. | I have no note n-9. Say "what do you remember?" to see them. |  |
+| `memory.note_full` | ഞാൻ 80 കുറിപ്പുകൾ വരെ സൂക്ഷിക്കും. ആദ്യം ഒന്ന് മറക്കാൻ പറയുക. | I can keep 80 notes open. Forget one first. |  |
+| `memory.note_too_long` | ഒരു കുറിപ്പിന് ഇത് വളരെ നീളമുള്ളതാണ് (പരമാവധി 280 അക്ഷരം). ചുരുക്കി പറയുക. | That is too long for one note (at most 280 characters). Please say it shorter. |  |
+| `memory.note_need_words` | എന്താണ് ഓർത്തുവെക്കേണ്ടത്? ഉദാഹരണം: remember ശനിയാഴ്ച 6-ന് അടയ്ക്കും. | What shall I remember? For example: remember we close at 6 on Saturdays. |  |
+| `memory.note_not_a_limit` | ഇത് ഒരു കുറിപ്പായി (n-3) സൂക്ഷിച്ചു, Guard നടപ്പാക്കുന്ന പരിധിയായിട്ടല്ല. സംസാരിക്കുമ്പോൾ ഞാൻ ഇത് പാലിക്കും, പക്ഷേ ഇത് സ്വയം ഒന്നും തടയില്ല. | I saved this as a note (n-3), not as a limit Guard enforces. I will follow it when I talk, but it does not stop anything by itself. |  |
+| `memory.talk_fallback` | എനിക്ക് ഇപ്പോൾ ഇതിന് മറുപടി നൽകാനായില്ല. ഇന്ന്: 5. നിങ്ങളുടെ മറുപടി കാത്തിരിക്കുന്നത്: 2. എനിക്ക് എന്ത് ചെയ്യാമെന്ന് കാണാൻ "help" എന്ന് പറയുക. | I could not answer that just now. Today: 5. Waiting for you: 2. Say "help" to see what I can do. |  |
+| `memory.talk_off` | ഇപ്പോൾ നിശ്ചിത അഭ്യർത്ഥനകൾക്ക് മാത്രമേ മറുപടി നൽകാനാകൂ. അവ കാണാൻ "help" എന്ന് പറയുക. | I can only answer set requests right now. Say "help" to see them. |  |
+| `memory.button.remember` | ഓർത്തുവെക്കൂ | Remember |  |
+| `memory.button.no` | വേണ്ട | No |  |
+| `card.fees.cancel_money` | ഫീസ് f-3 (Priya, November 2026) റദ്ദാക്കി ₹1,500 ബാക്കി ഒഴിവാക്കട്ടെ? പണം ഒന്നും നീങ്ങുന്നില്ല. | Cancel fee f-3 (Priya, November 2026) and waive the ₹1,500 balance? No money moves. |  |
+| `card.fees.cancel_none` | ഫീസ് f-3 (Priya, November 2026) റദ്ദാക്കട്ടെ? ഒന്നും ബാക്കിയില്ല. | Cancel fee f-3 (Priya, November 2026)? Nothing is owed. |  |
+| `card.fees.refund` | f-3-ന്റെ ഫീസിൽ നിന്ന് Priya-ക്ക് ₹500 തിരികെ നൽകട്ടെ? | Refund ₹500 of the fee to Priya (f-3)? |  |
+| `card.orders.cancel_money` | ഓർഡർ o-5 (Priya, 2 cakes) റദ്ദാക്കി ₹1,500 അഡ്വാൻസ് തിരികെ നൽകട്ടെ? | Cancel order o-5 (Priya, 2 cakes) and refund the ₹1,500 advance? |  |
+| `card.orders.cancel_none` | ഓർഡർ o-5 (Priya, 2 cakes) റദ്ദാക്കട്ടെ? അഡ്വാൻസ് ഒന്നും അടച്ചിട്ടില്ല. | Cancel order o-5 (Priya, 2 cakes)? No advance was paid. |  |
+| `card.orders.refund` | o-5-ന്റെ അഡ്വാൻസിൽ നിന്ന് Priya-ക്ക് ₹500 തിരികെ നൽകട്ടെ? | Refund ₹500 of the advance to Priya (o-5)? |  |
+| `refusal.fees.already_back` | ഫീസ് f-3-ന്റെ പേയ്‌മെന്റ് ഇതിനകം തിരികെ പോകുന്നു, അതിനാൽ എനിക്ക് ഇവിടെ നിന്ന് വീണ്ടും തിരികെ നൽകാനാകില്ല. ദയവായി രക്ഷിതാവിനോട് നേരിട്ട് പറയുക. | The payment on fee f-3 is already going back, so I can't refund it again from here. Please tell the parent yourself. |  |
+| `refusal.fees.cancel_first` | ഫീസ് f-3 ഇപ്പോഴും തുറന്നിരിക്കുന്നു. പേയ്‌മെന്റ് തിരികെ നൽകാൻ ആദ്യം അത് റദ്ദാക്കുക: cancel f-3. | Fee f-3 is still open. To give the payment back, cancel it first: cancel f-3. |  |
+| `refusal.orders.already_back` | ഓർഡർ o-5-ന്റെ അഡ്വാൻസ് ഇതിനകം തിരികെ പോകുന്നു, അതിനാൽ എനിക്ക് ഇവിടെ നിന്ന് റദ്ദാക്കാനാകില്ല. ദയവായി ഉപഭോക്താവിനോട് നേരിട്ട് പറയുക. | The advance on order o-5 is already going back, so I can't cancel it from here. Please tell the customer yourself. |  |
+| `refusal.orders.cancel_first` | ഓർഡർ o-5 ഇപ്പോഴും നിലവിലുണ്ട്. അഡ്വാൻസ് തിരികെ നൽകാൻ അത് റദ്ദാക്കുക: cancel o-5. | Order o-5 is still on. To give the advance back, cancel it: cancel o-5. |  |
 | `owner.first.chromeTitle` | ഈ പേജിന് Chrome വേണം | This page needs Chrome |  |
 | `owner.first.chromeBody` | ഈ ബ്രൗസറിന് നിങ്ങളുടെ ഫോണിൽ സൈൻ ഇൻ സജ്ജമാക്കാനാവില്ല. ഈ പേജ് Chrome-ൽ തുറക്കൂ, അല്ലെങ്കിൽ ലിങ്ക് കോപ്പി ചെയ്ത് Chrome-ൽ പേസ്റ്റ് ചെയ്യൂ. | This browser can't set up sign-in on your phone. Open this page in Chrome, or copy the link and paste it into Chrome. |  |
 | `owner.first.chromeOpen` | Chrome-ൽ തുറക്കൂ | Open in Chrome |  |
@@ -1448,3 +1473,6 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.owner.back` | നിങ്ങളുടെ കടയിലേക്ക് മടങ്ങുക | Back to your shop |  |
 | `limits.owner.never` | ഒരിക്കലും ഇല്ല | never |  |
 | `limits.owner.yourShop` | നിങ്ങളുടെ കട | Your shop |  |
+| `owner.money.cashPartLabel` | ഒരു ഭാഗം മാത്രമാണോ കിട്ടിയത്? എത്ര (₹) | Received only part? How much (₹) |  |
+| `owner.money.cashPartButton` | ഈ ഭാഗം പണമായി കിട്ടിയെന്ന് രേഖപ്പെടുത്തുക | Mark this part received in cash |  |
+
