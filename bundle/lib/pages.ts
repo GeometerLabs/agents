@@ -27,6 +27,8 @@ import { publicUrl, serverPaths } from "./server.ts";
 import type { ServerConfig } from "./server.ts";
 import { stableJson, writeAtomic } from "./util.ts";
 import { CHARACTER_DIR, CHARACTER_MANIFEST, readCharacterManifest } from "../../modules/channels/character-files.ts";
+import { isPaint } from "../../modules/channels/chat-paint.ts";
+import type { PaintId } from "../../modules/channels/chat-paint.ts";
 
 export const PAGE_SETTINGS_FILE = "page.json";
 /** Fleet's routes (monorepo apps/fleet/src/page-slugs-api.ts). */
@@ -63,6 +65,14 @@ export const pageSettingsFile = (dir: string, shop: string): string => join(serv
 export const pagesStatusFile = (dir: string, shop: string): string => join(serverPaths(dir).status, "pages", `${shop}.json`);
 /** Item 11i: the front's copy of the shop's character pictures (lib/character.ts makes it), beside its pages.json. */
 export const frontCharacterDirOf = (dir: string, shop: string): string => secretFile(dir, "inbox", shop, CHARACTER_DIR);
+/** The shop's signboard paint from its own settings (`assistant.character.paint`, the panel's Character step), or undefined (the head's own green tint). */
+export function paintOfShop(dir: string, shop: string): PaintId | undefined {
+  try {
+    const settings = JSON.parse(read(join(serverPaths(dir).shop(shop), "settings.json")) ?? "") as { assistant?: { character?: { paint?: unknown } } };
+    const paint = settings.assistant?.character?.paint;
+    return isPaint(paint) ? paint : undefined;
+  } catch { return undefined; }
+}
 /** The version of the set the front serves for a shop now (what pages.json hands the runtime), or undefined when it serves none. */
 export const frontCharacterVersion = (dir: string, shop: string): string | undefined => readCharacterManifest(read(join(frontCharacterDirOf(dir, shop), CHARACTER_MANIFEST)))?.version;
 
@@ -148,8 +158,9 @@ export function ownerBaseOf(o: { publicUrl: string; pagesDomain?: string; shop: 
 /**
  * The addresses a shop's runtime and front are handed (pages-file.ts). The owner's view is on the pages domain only for a shop this server's door serves.
  * `character`: item 11i, the version of the character pictures the front serves for the shop (lib/character.ts), so the runtime can link to them.
+ * `paint`: the shop's signboard paint for its chat (chat-paint.ts), from settings.assistant.character.paint, so the front paints the chat's head with nothing asked of the runtime.
  */
-export function pagesFileFor(server: ServerConfig, shop: string, settings: PageSettings, status: PageStatus | undefined, character?: string): PagesFile {
+export function pagesFileFor(server: ServerConfig, shop: string, settings: PageSettings, status: PageStatus | undefined, character?: string, paint?: PaintId): PagesFile {
   const base = `${publicUrl(server)}/s/${shop}`;
   const claimed = claimedOf(settings, status);
   return {
@@ -161,6 +172,7 @@ export function pagesFileFor(server: ServerConfig, shop: string, settings: PageS
     ...(settings.partner ? { partner: settings.partner } : {}),
     ...(server.panel.enabled ? { panelUrl: `${publicUrl(server)}/shops/${shop}` } : {}),
     ...(character ? { character: { version: character } } : {}),
+    ...(paint ? { paint } : {}),
   };
 }
 
@@ -240,7 +252,7 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
       if (r.status === 200) { lines.push(`${shop}: its page name ${status.slug} is given back.`); status = { schema: 1, at }; writeStatus(shop, status); }
     }
     // the addresses, for the runtime (its owner's sign-in links) and the front (the door's slug, the QR's stable address)
-    const text = `${stableJson(pagesFileFor(server, shop, settings, status, frontCharacterVersion(dir, shop)))}\n`;
+    const text = `${stableJson(pagesFileFor(server, shop, settings, status, frontCharacterVersion(dir, shop), paintOfShop(dir, shop)))}\n`;
     if (readPagesFile(text) === undefined) { lines.push(`${shop}: its pages file would not read back; not written.`); continue; }
     for (const copy of pagesCopies(dir, shop)) if (keep(copy, text)) lines.push(`${shop}: its page addresses are handed to ${copy.includes(join("secrets", "inbox")) ? "the front" : "the runtime"}.`);
     // the panel's "sign out every device", to the runtime, which reads it on every request

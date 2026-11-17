@@ -18,6 +18,8 @@ import type { Language } from "../language/languages.ts";
 import type { Mood } from "./mood.ts";
 import { PERSONALITIES } from "./personality.ts";
 import type { Personality } from "./personality.ts";
+import { isPaint } from "../channels/chat-paint.ts";
+import type { PaintId } from "../channels/chat-paint.ts";
 
 /** The five styles, in the order the panel offers them (Clay first: the owner's pick on the approved page). All CC0 1.0 in @dicebear/styles 10.6.0. */
 export const CHARACTER_STYLES = ["clay", "critters", "sprouts", "moods", "pixelbot"] as const;
@@ -93,6 +95,11 @@ export interface Character {
   seed?: string;
   /** One of the style's eight palette colours (hex, no "#"), or left out for DiceBear's own pick ("Auto"). */
   colour?: string;
+  /**
+   * The shop's signboard paint in its chat (17 Nov 2026; chat-paint.ts: pink, blue, green, marigold, brick). Not part of the drawn picture: it is never in a `Look`, so choosing
+   * a paint draws nothing again. Left out: the head's own green tint.
+   */
+  paint?: PaintId;
   /** Changes only the assistant's own small talk (personality.ts). */
   personality: Personality;
 }
@@ -124,7 +131,7 @@ export const seedOf = (c: Pick<Character, "seed">, shopId: string): string => c.
 export const themeColour = (c: Pick<Character, "colour"> | undefined): string => (c?.colour ? `#${c.colour}` : "#0f766e");
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
-const KEYS = ["name", "style", "seed", "colour", "personality"];
+const KEYS = ["name", "style", "seed", "colour", "paint", "personality"];
 
 /** Check a character setting. Every problem is a plain sentence the panel can show; a missing part takes its default. */
 export function readCharacter(raw: unknown, errors: string[]): Character | undefined {
@@ -148,6 +155,10 @@ export function readCharacter(raw: unknown, errors: string[]): Character | undef
     const c = typeof raw.colour === "string" ? raw.colour.replace(/^#/u, "").toLowerCase() : "";
     if (!STYLE_INFO[out.style].palette.includes(c)) errors.push(`The character's "colour" must be one of the ${STYLE_INFO[out.style].name} colours (${STYLE_INFO[out.style].palette.join(", ")}), or left out for DiceBear's own.`);
     else out.colour = c;
+  }
+  if (raw.paint !== undefined) {
+    if (!isPaint(raw.paint)) errors.push('The character\'s "paint" must be one of: pink, blue, green, marigold, brick, or left out for the head\'s own green.');
+    else out.paint = raw.paint;
   }
   if (raw.personality !== undefined) {
     if (!(PERSONALITIES as readonly unknown[]).includes(raw.personality)) errors.push(`The character's "personality" must be one of: ${PERSONALITIES.join(", ")}.`);

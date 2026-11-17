@@ -253,6 +253,34 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (cid !== undefined && !/^[A-Za-z0-9-]{1,64}$/u.test(cid)) return send(res, 400, { error: "cid is a send's id." });
       return send(res, 200, channel.chat(handle, { ...(after !== null ? { after: Number(after) } : {}), ...(cid ? { cid } : {}) }));
     }
+    // W1 hold-to-talk: a chat guest's recording, from the shop's front (which checked the page's own origin and rates). Held in this process's memory only, in a drop of its own;
+    // the saved event carries its reference, never the audio. The guest is named by the hash of their handle, as for every chat route; nothing else of the request is trusted.
+    if (path === "/internal/channel/chat-voice") {
+      only("POST");
+      if (!channel.chatVoice) return send(res, 404, { error: "Voice is not on for this shop." });
+      const handle = url.searchParams.get("handle") ?? "";
+      const language = url.searchParams.get("lang") ?? "";
+      const id = url.searchParams.get("id") ?? "";
+      if (!HANDLE_HASH.test(handle)) return send(res, 400, { error: "handle is the guest's hash: 64 hex digits." });
+      if (!(LANGUAGES as readonly string[]).includes(language)) return send(res, 400, { error: `lang is one of ${LANGUAGES.join(", ")}.` });
+      if (!/^[A-Za-z0-9-]{1,64}$/u.test(id)) return send(res, 400, { error: "id is a send's id." });
+      const kind = /^audio\/(ogg|webm)\b/iu.exec(header(req, "content-type") ?? "")?.[1]?.toLowerCase();
+      if (!kind) return send(res, 415, { error: "Send the recording as audio/ogg or audio/webm (Opus)." });
+      const event = { kind: "chat_message" as const, id, handle, language: language as Language };
+      if (!chatAllowed(event)) return send(res, 429, { error: "Too many messages. Wait a minute.", rate: true }, { "retry-after": "60" });
+      let bytes: Buffer;
+      try { bytes = await readBytes(req, MAX_VOICE_BYTES); } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        throw e;
+      }
+      if (bytes.length === 0) return send(res, 400, { error: "The recording is empty." });
+      // the type is written by us, not copied from the request
+      const ref = channel.chatVoice({ bytes: new Uint8Array(bytes), mime: `audio/${kind}; codecs=opus` });
+      const counts = runtime.submit([{ ...event, voice: ref }]);
+      send(res, 200, counts);
+      runtime.kick();
+      return;
+    }
     if (path === "/internal/channel/offer") {
       only("GET");
       const q = url.searchParams;

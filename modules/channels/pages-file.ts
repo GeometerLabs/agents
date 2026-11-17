@@ -5,6 +5,8 @@
 // Nothing in it is secret. The pages domain is never written in code: these addresses come from fleet's answer to the deployer's claim.
 import { readFileSync } from "node:fs";
 import type { CharacterPictures } from "../assistant/character.ts";
+import { isPaint } from "./chat-paint.ts";
+import type { PaintId } from "./chat-paint.ts";
 
 export const PAGES_FILE = "pages.json";
 
@@ -33,6 +35,11 @@ export interface PagesFile {
    * <url or base>/character/<face>.<format>?v=<version> (the morning line's picture and sticker); left out, it sends no picture.
    */
   character?: { version: string };
+  /**
+   * The shop's signboard paint, by its id (chat-paint.ts: pink, blue, green, marigold, brick): the colour of the strip at the top of its chat, chosen in the panel's Character step
+   * and handed here with the pages file so the front needs nothing from the runtime to paint it. Left out: the head's own green tint.
+   */
+  paint?: PaintId;
 }
 
 const HTTPS = /^https:\/\/[a-z0-9.-]+(:\d{1,5})?(\/[A-Za-z0-9._~%/-]*)?$/u;
@@ -66,6 +73,7 @@ export function readPagesFile(text: string | undefined): PagesFile | undefined {
     ...(isMapLink(f.map) ? { map: f.map } : {}),
     ...(typeof f.partner === "object" && f.partner !== null && typeof (f.partner as { name?: unknown }).name === "string" && (f.partner as { name: string }).name.length > 0 && (f.partner as { name: string }).name.length <= 60 && typeof (f.partner as { phone?: unknown }).phone === "string" && PHONE_SHAPE.test((f.partner as { phone: string }).phone)
       ? { partner: { name: (f.partner as { name: string }).name, phone: (f.partner as { phone: string }).phone } } : {}),
+    ...(isPaint(f.paint) ? { paint: f.paint } : {}),
     ...(typeof f.character === "object" && f.character !== null && typeof (f.character as { version?: unknown }).version === "string" && /^[0-9a-f]{16}$/u.test((f.character as { version: string }).version) ? { character: { version: (f.character as { version: string }).version } } : {}),
   };
 }

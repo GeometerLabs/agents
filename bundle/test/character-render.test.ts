@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { RENDERER, STICKER_MAX_BYTES, drawSvg, fingerprintOf, renderSet, setIsCurrent, writeCharacterSet } from "../character/render.ts";
 import type { Look } from "../character/render.ts";
 import { CHARACTER_STYLES, EYES_AND_MOUTH, FACES, STYLE_INFO } from "../../modules/assistant/character.ts";
-import { CHARACTER_MANIFEST, characterReader, pictureFiles, readCharacterManifest } from "../../modules/channels/character-files.ts";
+import { CHARACTER_MANIFEST, animFile, animFiles, characterReader, pictureFiles, readCharacterManifest } from "../../modules/channels/character-files.ts";
 import { characterDirOf, lookOf, syncCharacters } from "../lib/character.ts";
 import { frontCharacterDirOf, frontCharacterVersion, pagesFileFor } from "../lib/pages.ts";
 
@@ -89,7 +89,7 @@ test("a set: every mood as SVG, PNG (640 px) and WebP (a 512 px lossless sticker
     for (const style of CHARACTER_STYLES) {
       const look: Look = { style, seed: "veena-salon-3f2a1c-0", colour: STYLE_INFO[style].palette[1] };
       const set = await renderSet(look);
-      assert.deepEqual([...set.keys()].sort(), pictureFiles().sort(), style);
+      assert.deepEqual([...set.keys()].sort(), [...pictureFiles(), ...animFiles()].sort(), style);
       for (const f of FACES) {
         const svg = set.get(`${f}.svg`)!, png = set.get(`${f}.png`)!, webp = set.get(`${f}.webp`)!;
         assert.ok(svg.length < 32 * 1024, `${style} ${f}: SVG ${svg.length} bytes`);
@@ -99,6 +99,10 @@ test("a set: every mood as SVG, PNG (640 px) and WebP (a 512 px lossless sticker
         const info = webpInfo(webp);
         assert.deepEqual([info.w, info.h, info.alpha], [512, 512, true], `${style} ${f}`);
         assert.ok(webp.length <= STICKER_MAX_BYTES && webp.length < 20 * 1024, `${style} ${f}: WebP ${webp.length} bytes`);
+        // 17 Nov 2026: DiceBear's own "slow" animation, a separate file; the still has no keyframes at all and is the picture for reduced motion
+        const anim = set.get(animFile(f))!.toString("utf8");
+        assert.ok(/@keyframes/u.test(anim) && !/<script|eval\(/u.test(anim) && anim.length < 40 * 1024, `${style} ${f}: animated SVG`);
+        assert.ok(!/@keyframes/u.test(svg.toString("utf8")), `${style} ${f}: the still has no animation`);
       }
       const again = await renderSet(look);
       for (const [name, bytes] of set) assert.ok(bytes.equals(again.get(name)!), `${style} ${name}: the same bytes`);
@@ -116,7 +120,8 @@ test("a set is drawn once: kept while the look is the same, drawn again for a ne
     const m = readCharacterManifest(readFileSync(join(dir, CHARACTER_MANIFEST), "utf8"))!;
     assert.deepEqual(m.look, look);
     assert.deepEqual(m.renderer, RENDERER);
-    for (const name of pictureFiles()) assert.equal(sha(readFileSync(join(dir, name))), m.files[name].sha256, name);
+    for (const name of [...pictureFiles(), ...animFiles()]) assert.equal(sha(readFileSync(join(dir, name))), m.files[name].sha256, name);
+    assert.ok(characterReader(dir)()!.animation!("well")!.bytes.toString("utf8").includes("@keyframes"), "the reader serves the animated picture");
     const stamp = statSync(join(dir, "well.png")).mtimeMs;
     assert.deepEqual(await writeCharacterSet(dir, look), { drawn: false, version: first.version }, "the same look: nothing drawn");
     assert.equal(statSync(join(dir, "well.png")).mtimeMs, stamp, "nothing written");

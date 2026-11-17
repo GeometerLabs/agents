@@ -79,12 +79,14 @@ import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../.
 import type { LocalDate } from "../../../../modules/core/time.ts";
 import { LICENCE_RULE, UNRESTRICTED, guardLicenceDecision } from "../../../../modules/licence/rules.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
-import { conversationOf } from "../../../../modules/channels/conversation.ts";
+import { conversationOf, isChatConversation } from "../../../../modules/channels/conversation.ts";
+import { guestLabel } from "../../../../modules/channels/chat-guest.ts";
+import { markMoment } from "../../../../modules/channels/outbox.ts";
 import { phoneDigits } from "../../../../modules/channels/contact.ts";
 import { CHANNEL_LIMITS, DAY_MS, emptyChannelState } from "../../../../modules/channels/state.ts";
 import type { ChannelState } from "../../../../modules/channels/state.ts";
 import type { ChannelBook, ChannelEvent, ChatMessage, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
-import { chatTurn } from "../../../../modules/channels/chat.ts";
+import { chatPingGate, chatTurn } from "../../../../modules/channels/chat.ts";
 import type { PageAudio } from "../../../../modules/voice/turn.ts";
 import { ownerItems } from "./channel.ts";
 import type { Heard, VoiceService } from "../../../../modules/voice/voice.ts";
@@ -127,6 +129,8 @@ export interface AgentDeps {
    * only (modules/channels/owner-audio.ts). Left out: no recording is ever found, and the owner is asked to type.
    */
   pageAudio?: (ref: string) => PageAudio | undefined;
+  /** W1 hold-to-talk: a chat guest's recording by the reference its chat_message carries (the runtime's own, separate memory, so guests never push out the owner's). */
+  chatAudio?: (ref: string) => PageAudio | undefined;
   /** The shop's licence right now (modules/licence; the runtime reads client/licence.json). Left out: never restricted. */
   licence?: () => LicenceNow;
   /** B72: the shop terms the owner can read and agree to on WhatsApp (modules/terms). Left out, or returning undefined: the feature is off for this shop. */
@@ -202,7 +206,7 @@ export function createAgent(deps: AgentDeps): Agent {
   };
   const languageOf = (phone: string, b?: Booking | null) => b?.language ?? store.customers.get(phone)?.language ?? settings.languages[0];
   /** The number a message names for this conversation: a channel booking's is the one its customer typed (item 11d), never its "web:..." conversation. */
-  const shownPhone = (phone: string, b: Booking | null): string => (b?.channel && b.contact ? b.contact.phone : phone);
+  const shownPhone = (phone: string, b: Booking | null): string => (b?.channel && b.contact ? b.contact.phone : isChatConversation(phone) ? guestLabel(store.channel, phone, settings.owner.language) : phone); // a chat guest is "Chat guest 3" to the owner, never "chat:..."
   /** Item 11e: the dates the owner closed through the shop's assistant; the free times and the within-hours limit leave them out. */
   const closedDays = (): readonly string[] => store.assistant?.closedDays ?? [];
 
@@ -262,9 +266,13 @@ export function createAgent(deps: AgentDeps): Agent {
       ...(a.to === "customer" && a.reminder ? [checkNoMessageAfterStop({ isReminder: true, bookingConfirmed: a.booking?.state === "confirmed", customerOptedOut: optedOut })] : []),
       ...(a.booking && (a.templates.includes("booked") || a.templates.includes("upi_booked")) ? [checkConfirmOnlyWhenRecorded({ record, booking: a.booking.id, ...(ownerConfirms ? { depositPaise } : {}) })] : []),
       ...(licence().state === "stopped" ? [stoppedGate] : []),
+      ...chatPingGate(store.channel, a, clock.now(), tz), // W1: what a chat guest may make the shop tell the owner is bounded per guest per day
     ],
     log: (booking, phone, action, outcome, inputs, more) => log(booking, phone, action, outcome, inputs, more),
     heldBack: async (a) => { await say({ booking: a.booking, phone: a.phone, to: "owner", templates: ["owner_message_held"] }); },
+    // W1: the chat marks the lines the record stands behind (the "booked" message is gated by checkConfirmOnlyWhenRecorded above; UPI's is sent after the owner marked the money)
+    moment: (a) => (a.templates.includes("upi_booked") ? "paid" : a.templates.includes("booked") ? "confirmed" : undefined),
+    markMoment: (id, moment) => markMoment(channelState(), id, moment),
   });
 
   const tellCustomer = (b: Booking | null, phone: string, templates: TemplateId[], more: { refundInr?: number; slotMs?: number; shown?: Decision[]; reminder?: boolean; action?: Action; offer?: Offer; image?: SayArgs["image"]; markedInr?: number; pageLink?: string } = {}) =>
@@ -807,9 +815,21 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /** Hold the slot, create the deposit link, and send the quote. */
+  /** Unpaid holds that came from the page, its API, MCP or the chat (the shop's cap counts them together), not counting booking `except`. */
+  const unpaidChannelHolds = (except: string): number => [...store.bookings.values()].filter((x) => x.id !== except && x.state === "awaiting_deposit" && (x.channel !== undefined || isChatConversation(x.customer))).length;
+
   async function proceedToHold(b: Booking, prefix: TemplateId[], shown: Decision[]): Promise<void> {
     const phone = b.customer;
     if (!licence().takesNewWork) { clearSlot(b); if (b.state !== "enquiry") moveTo(b, "enquiry"); return pausedReply(phone, "hold"); } // nothing held, nothing kept for later
+    // W1: a chat guest's hold counts in the shop's cap on unpaid holds, like a hold from the booking page (the page's own check is in onChannel). A guest at the cap is told so, in plain
+    // words, and nothing is held; the owner is not asked, so a flood of fresh guests makes no work for them.
+    if (isChatConversation(phone) && unpaidChannelHolds(b.id) >= CHANNEL_LIMITS.unpaidHoldsPerShop) {
+      log(b, phone, "channel_booking", "blocked", { channel: "chat", serviceId: b.serviceId }, { refs: { channel: "chat", reason: "shop_busy" }, notes: `the shop already has ${CHANNEL_LIMITS.unpaidHoldsPerShop} unpaid holds from its page, its API and its chat; nothing more is held until one is paid, cancelled or ends` });
+      moveTo(b, "enquiry");
+      await tellCustomer(b, phone, [...prefix, "chat_shop_busy"], { shown });
+      clearSlot(b);
+      return;
+    }
     const held = await tryHold(b);
     if (!held.ok && held.why === "paused") { clearSlot(b); if (b.state !== "enquiry") moveTo(b, "enquiry"); return pausedReply(phone, "hold", held.decisions[0]); } // Guard's licence check: nothing held, nothing kept for later
     if (!held.ok) {
@@ -1374,7 +1394,8 @@ export function createAgent(deps: AgentDeps): Agent {
       const heard = await listen(msg);
       if (!heard?.ok) return onVoiceNote(msg, heard ?? undefined);
       voiceHeard = heard;
-      msg = { id: msg.id, from: msg.from, text: heard.text, timestamp: msg.timestamp };
+      msg.onHeard?.(heard.text); // a chat guest's bubble shows the words heard (W1 hold-to-talk)
+      msg = { id: msg.id, from: msg.from, text: heard.text, timestamp: msg.timestamp, ...(msg.noModel ? { noModel: true as const } : {}) };
     }
     if (msg.from === owner) return onOwnerMessage(msg);
     if (msg.image) return onPicture(msg);
@@ -1599,7 +1620,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const timeProblem = channelTimeProblem(service, e.startMs);
     if (timeProblem) return refuse(timeProblem, "the start asked for is not one the shop can offer (off its slot grid, too soon to pay in time, too far ahead, or outside its hours); nothing was held");
     // The typed number is not verified, so these only slow one person down; the per-shop cap and the hold's own end are what bound a flood.
-    const live = [...store.bookings.values()].filter((b) => b.channel !== undefined && b.state === "awaiting_deposit");
+    const live = [...store.bookings.values()].filter((b) => (b.channel !== undefined || isChatConversation(b.customer)) && b.state === "awaiting_deposit"); // a chat guest's hold counts in the shop's cap too
     if (live.filter((b) => b.contact && phoneDigits(b.contact.phone) === digits).length >= CHANNEL_LIMITS.holdsPerPhone) return refuse("phone_busy", `this number already has ${CHANNEL_LIMITS.holdsPerPhone} unpaid holds from the booking page; nothing more is held for it until one is paid, cancelled or ends`);
     if (Object.values(state.requests).filter((r) => r.phone === digits && now - r.atMs < DAY_MS).length >= CHANNEL_LIMITS.startsPerPhonePerDay) return refuse("phone_day", `this number started ${CHANNEL_LIMITS.startsPerPhonePerDay} bookings from the booking page in the last 24 hours; no more today`);
     if (live.length >= CHANNEL_LIMITS.unpaidHoldsPerShop) return refuse("shop_busy", `the shop already has ${CHANNEL_LIMITS.unpaidHoldsPerShop} unpaid holds from the booking page and its API; nothing more is held until one is paid, cancelled or ends`);
@@ -1681,7 +1702,7 @@ export function createAgent(deps: AgentDeps): Agent {
    * all its checks, then the menu), under the guest's own conversation. modules/channels/chat.ts says how the send is kept, made once and capped.
    */
   async function onChatMessage(e: ChatMessage): Promise<void> {
-    await chatTurn({ state: channelState(), ai: store, now: clock.now(), timeZone: tz, kind: "bookings", run: onMessage, setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
+    await chatTurn({ state: channelState(), ai: store, now: clock.now(), timeZone: tz, kind: "bookings", run: onMessage, ...(deps.chatAudio ? { audio: deps.chatAudio } : {}), setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
   }
 
   async function handle(event: AgentEvent): Promise<void> {

@@ -49,12 +49,14 @@ import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
 import { CHAT_LIMITS } from "./chat-limits.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { ordersSkill } from "./assistant.ts";
-import { conversationOf } from "../../../../modules/channels/conversation.ts";
+import { conversationOf, isChatConversation } from "../../../../modules/channels/conversation.ts";
+import { guestLabel } from "../../../../modules/channels/chat-guest.ts";
+import { markMoment } from "../../../../modules/channels/outbox.ts";
 import { phoneDigits } from "../../../../modules/channels/contact.ts";
 import { CHANNEL_LIMITS, DAY_MS, emptyChannelState } from "../../../../modules/channels/state.ts";
 import type { ChannelState } from "../../../../modules/channels/state.ts";
 import type { ChannelEvent, ChannelOrder, ChatMessage, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
-import { chatTurn } from "../../../../modules/channels/chat.ts";
+import { chatPingGate, chatTurn } from "../../../../modules/channels/chat.ts";
 import type { PageAudio } from "../../../../modules/voice/turn.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
 import { dateOf, ownerItems } from "./channel.ts";
@@ -123,6 +125,8 @@ export interface AgentDeps {
    * (modules/channels/owner-audio.ts). Left out: no recording is ever found, and the owner is asked to type.
    */
   pageAudio?: (ref: string) => PageAudio | undefined;
+  /** W1 hold-to-talk: a chat guest's recording by the reference its chat_message carries (the runtime's own, separate memory, so guests never push out the owner's). */
+  chatAudio?: (ref: string) => PageAudio | undefined;
 }
 
 export type AgentEvent =
@@ -192,7 +196,7 @@ export function createAgent(deps: AgentDeps): Agent {
   };
   const languageOf = (phone: string, o?: Order | null): Language => o?.language ?? store.customers.get(phone)?.language ?? settings.languages[0];
   /** The number a message names for this conversation: a page order's is the one its customer typed (item 11h), never its "web:..." conversation. */
-  const shownPhone = (phone: string, o: Order | null): string => (o?.channel && o.contact ? o.contact.phone : phone);
+  const shownPhone = (phone: string, o: Order | null): string => (o?.channel && o.contact ? o.contact.phone : isChatConversation(phone) ? guestLabel(store.channel, phone, settings.owner.language) : phone); // a chat guest is "Chat guest 3" to the owner, never "chat:..."
 
   function log(o: Order | null, phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string>; language?: Language } = {}) {
     return record.append({ conversation: phone, booking: o?.id || null, action, inputs, outcome, language: languageOf(phone, o), ...more });
@@ -233,9 +237,13 @@ export function createAgent(deps: AgentDeps): Agent {
     gates: (a) => [
       ...(a.booking && (a.templates.includes("order_confirmed") || a.templates.includes("upi_order_confirmed")) ? [checkConfirmOnlyWhenRecorded({ record, order: a.booking.id, advancePaise: (a.booking.advanceInr ?? 0) * 100 })] : []),
       ...(licence().state === "stopped" ? [stoppedGate] : []),
+      ...chatPingGate(store.channel, a, clock.now(), tz), // W1: what a chat guest may make the shop tell the owner is bounded per guest per day
     ],
     log: (order, phone, action, outcome, inputs, more) => log(order, phone, action, outcome, inputs, more),
     heldBack: async (a) => { await say({ booking: a.booking, phone: a.phone, to: "owner", templates: ["owner_message_held"] }); },
+    // W1: the chat marks the lines the record stands behind ("confirmed" is gated by checkConfirmOnlyWhenRecorded above; UPI's goes out after the owner marked the money; the balance receipt after it was recorded)
+    moment: (a) => (a.templates.includes("upi_order_confirmed") || a.templates.includes("balance_paid") ? "paid" : a.templates.includes("order_confirmed") ? "confirmed" : undefined),
+    markMoment: (id, moment) => markMoment(channelState(), id, moment),
   });
 
   const tellCustomer = (o: Order | null, phone: string, templates: TemplateId[], more: More = {}) => say({ booking: o, phone, to: "customer", templates, ...more });
@@ -502,6 +510,14 @@ export function createAgent(deps: AgentDeps): Agent {
     const phone = o.customer;
     const now = clock.now();
     if (!licence().takesNewWork) { o.slotId = undefined; if (o.state !== "enquiry") moveTo(o, "enquiry"); return pausedReply(phone, "hold"); } // nothing held, nothing kept for later
+    // W1: a chat guest's order counts in the shop's cap on unpaid orders, like one from the page (the page's own check is in onChannel). At the cap the guest is told so and nothing
+    // is held; the owner is not asked.
+    if (isChatConversation(phone) && [...store.orders.values()].filter((x) => x.id !== o.id && (x.channel !== undefined || isChatConversation(x.customer)) && (x.state === "awaiting_advance" || x.state === "awaiting_owner")).length >= CHANNEL_LIMITS.unpaidHoldsPerShop) {
+      log(o, phone, "channel_order", "blocked", { channel: "chat" }, { refs: { channel: "chat", reason: "shop_busy" }, notes: `the shop already has ${CHANNEL_LIMITS.unpaidHoldsPerShop} unpaid orders from its page, its API and its chat; nothing more is held until one is paid, cancelled or ends` });
+      if (o.state !== "enquiry") moveTo(o, "enquiry");
+      await tellCustomer(o, phone, [...ctx.prefix, "chat_shop_busy"], { shown: ctx.shown });
+      return;
+    }
     const avail = availability(o);
     if (avail.blocked) {
       log(o, phone, "check_order", "blocked", { date: o.date, slot: o.slotId }, { decisions: avail.decisions });
@@ -1125,7 +1141,8 @@ export function createAgent(deps: AgentDeps): Agent {
       const heard = await listen(msg);
       if (!heard?.ok) return onVoiceNote(msg, heard ?? undefined);
       voiceHeard = heard;
-      msg = { id: msg.id, from: msg.from, text: heard.text, timestamp: msg.timestamp };
+      msg.onHeard?.(heard.text); // a chat guest's bubble shows the words heard (W1 hold-to-talk)
+      msg = { id: msg.id, from: msg.from, text: heard.text, timestamp: msg.timestamp, ...(msg.noModel ? { noModel: true as const } : {}) };
     }
     if (msg.from === owner) return onOwnerMessage(msg);
     if (msg.image) return onPicture(msg);
@@ -1350,7 +1367,7 @@ export function createAgent(deps: AgentDeps): Agent {
    * all its checks, then the menu), under the guest's own conversation. modules/channels/chat.ts says how the send is kept, made once and capped.
    */
   async function onChatMessage(e: ChatMessage): Promise<void> {
-    await chatTurn({ state: channelState(), ai: store, now: clock.now(), timeZone: tz, kind: "orders", run: onMessage, setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
+    await chatTurn({ state: channelState(), ai: store, now: clock.now(), timeZone: tz, kind: "orders", run: onMessage, ...(deps.chatAudio ? { audio: deps.chatAudio } : {}), setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
   }
 
   async function handle(event: AgentEvent): Promise<void> {
@@ -1433,7 +1450,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (problem) return refuse(problem.reason, problem.notes, problem.decisions);
     // The typed number is not verified, so these only slow one person down; the per-shop cap and the hold's own end are what bound a flood. An order waiting for the
     // owner counts too: each one asks the owner.
-    const live = [...store.orders.values()].filter((o) => o.channel !== undefined && (o.state === "awaiting_advance" || o.state === "awaiting_owner"));
+    const live = [...store.orders.values()].filter((o) => (o.channel !== undefined || isChatConversation(o.customer)) && (o.state === "awaiting_advance" || o.state === "awaiting_owner")); // a chat guest's order counts in the cap too
     if (live.filter((o) => o.contact && phoneDigits(o.contact.phone) === digits).length >= CHANNEL_LIMITS.holdsPerPhone) return refuse("phone_busy", `this number already has ${CHANNEL_LIMITS.holdsPerPhone} unpaid orders from the shop's page; nothing more is held for it until one is paid, cancelled or ends`);
     if (Object.values(state.requests).filter((r) => r.phone === digits && now - r.atMs < DAY_MS).length >= CHANNEL_LIMITS.startsPerPhonePerDay) return refuse("phone_day", `this number started ${CHANNEL_LIMITS.startsPerPhonePerDay} orders from the shop's page in the last 24 hours; no more today`);
     if (live.length >= CHANNEL_LIMITS.unpaidHoldsPerShop) return refuse("shop_busy", `the shop already has ${CHANNEL_LIMITS.unpaidHoldsPerShop} unpaid orders from its page and its API; nothing more is held until one is paid, cancelled or ends`);
