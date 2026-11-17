@@ -295,6 +295,9 @@ as before, so a kept value that no longer fits is refused in the validator's wor
 names a slot the Operator removed. The save route passes the saved settings as a new third argument of each `build` (`build(draft, example, saved?)`); a new shop and the step
 previews pass none and behave as before.
 
+One trap found while writing it: Bookings checks its base settings a second time (`settingsFromForm` re-validates them), and a CHECKED `assistant` block (`morningAt`) is not valid input, so the
+Bookings base leaves `assistant` out; it comes back from the saved file in keepHidden, and `withCharacter` writes the raw block at the save, as before. `approvers` is the same shape in and out.
+
 Other changes that follow from "start from the saved shop": the Bookings form no longer takes the example's slot minutes, buffer, hold minutes, refund limit, reminders and
 time zone for a shop that exists (it starts from the shop's own); Fees keeps a batch's id by its row, so renaming "Class 9" keeps its students' dues and its timetable;
 Fees students keep their own language (it was set to the centre's first); Fees, Orders and Stock keep the shop's time zone. What this superseded is gone: Orders' `keep.cutoffs`,

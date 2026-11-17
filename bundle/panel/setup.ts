@@ -364,7 +364,10 @@ export type Built = { ok: true; settings: Settings } | { ok: false; errors: stri
  */
 export function buildSettings(draft: Draft, example: Settings, saved?: unknown): Built {
   const checkedSaved = saved === undefined ? undefined : validateSettings(saved);
-  const base = checkedSaved?.ok ? checkedSaved.settings : example;
+  // The base is checked again by settingsFromForm (applyLanguage), so it must be valid as INPUT: a checked `assistant` block (`morningAt`) is not (assistantSettingsJson says why).
+  // The block is not the form's, so it is left out of the base and comes back from the saved file in keepHidden (and withCharacter at the save).
+  const { assistant: _assistant, ...checkedBase } = (checkedSaved?.ok ? checkedSaved.settings : example) as Settings;
+  const base = checkedBase as Settings;
   const first = settingsFromForm({ ...draft.form, language: draft.primaryLanguage }, base);
   if (!first.ok) return first;
   const s = first.settings;

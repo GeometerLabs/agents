@@ -140,7 +140,7 @@ test("Fees: a renamed batch is still the same batch (its id, its students, its t
 
 test("Fees: a centre with more batches than the form takes keeps the rest", () => {
   const saved = savedFees();
-  for (let i = 0; i < 4; i++) saved.batches.push({ id: `extra-${i}`, names: { en: [`Extra ${i}`] }, monthlyFeeInr: 700 });
+  for (let i = 0; i < 4; i++) saved.batches.push({ id: `extra-${i}`, names: { hi: [`अतिरिक्त ${i}`], en: [`Extra ${i}`], ml: [`അധികം ${i}`], kn: [`ಹೆಚ್ಚುವರಿ ${i}`] }, monthlyFeeInr: 700 });
   const built = feesBuild(feesDraft(saved), saved) as any;
   assert.ok(built.ok, built.errors?.join("; "));
   assert.deepEqual(built.settings.batches.map((b: any) => b.id).slice(-1), ["extra-3"]);
@@ -248,6 +248,9 @@ function savedBookings(): any {
   s.services[0].resource = "tractor";
   s.services.push({ id: "plough-half-day", names: { kn: ["ನೇಗಿಲು ಅರ್ಧ ದಿನ"], hi: ["हल आधा दिन"] }, priceInr: 1800, durationMinutes: 240 });
   s.deposit.holdMinutes = 45;
+  // the blocks the form has no box for beside the address: a person who also approves refunds, and the shop's assistant as the Character step wrote it
+  s.approvers = { people: [{ id: "approver-1", whatsapp: "+919800000099", language: "kn" }] };
+  s.assistant = { morning: { at: "07:30" }, character: { name: "Mithra", style: "clay", seed: "hosahalli-3f2a1c-4", personality: "warm" } };
   return s;
 }
 
@@ -260,7 +263,9 @@ test("Bookings: editing the deposit keeps the address, the reminders, the slot a
   const s = must(built) as any;
   assert.equal(s.deposit.amountInr, 1500);
   assert.equal(s.deposit.holdMinutes, 45);
-  assert.equal(s.address, original.address);
+  assert.equal(s.address, saved.address, "the address is the raw file's, not only what the check made of it");
+  assert.deepEqual(s.approvers, original.approvers);
+  assert.deepEqual(s.assistant, original.assistant);
   assert.deepEqual(s.reminders, original.reminders);
   assert.equal(s.slotMinutes, 120);
   assert.equal(s.bufferMinutes, 60);
