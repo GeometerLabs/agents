@@ -133,6 +133,11 @@ export interface ChannelKit<Store> {
    */
   parent?(store: Store, linkHash: string): unknown | null;
   /**
+   * Classes (Fees add-on): the reading material of one batch, for the parent whose private link has this hash NOW: the batch's files (from the centre's own folder), or the
+   * one file `fileId` names. Null when the link opens nothing, or none of the parent's students in the batch may open it now. Async: it reads the disk. Left out by a template with no material.
+   */
+  material?(store: Store, linkHash: string, batchId: string, fileId?: string): Promise<unknown | null>;
+  /**
    * Integration of items 11d and 11e: hold a recording the owner made on their page, in memory only, and give its reference for an `owner_message` event. Left out
    * when the shop has no voice service or no assistant: the page then shows no record button, and the route answers that voice is off.
    */
@@ -243,6 +248,8 @@ export interface RuntimeChannel {
   accountantFiles?(period: string): ExportFile[];
   /** The kit's parent read (above), when it has one. */
   parent?(linkHash: string): unknown | null;
+  /** The kit's material read (above), when it has one. */
+  material?(linkHash: string, batchId: string, fileId?: string): Promise<unknown | null>;
   /** The kit's ownerVoice (above), when it has one. */
   ownerVoice?(audio: { bytes: Uint8Array; mime: string }): string;
 }
@@ -452,6 +459,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
         ...(kit.channel.documents ? { documents: (key: DocumentsKey, language: Language) => kit.channel!.documents!(kit.parse(snapshot), entries, key, language) } : {}),
         ...(kit.channel.accountantFiles ? { accountantFiles: (period: string) => kit.channel!.accountantFiles!(kit.parse(snapshot), entries, period) } : {}),
         ...(kit.channel.parent ? { parent: (linkHash: string) => kit.channel!.parent!(kit.parse(snapshot), linkHash) } : {}),
+        ...(kit.channel.material ? { material: (linkHash: string, batchId: string, fileId?: string) => kit.channel!.material!(kit.parse(snapshot), linkHash, batchId, fileId) } : {}),
         ...(kit.channel.ownerVoice ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => kit.channel!.ownerVoice!(audio) } : {}),
       } satisfies RuntimeChannel,
     } : {}),

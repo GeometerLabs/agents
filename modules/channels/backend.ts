@@ -194,7 +194,17 @@ export interface ChannelBackend {
   feesOffer?(): Promise<FeesOffer>;
   parentView?(linkHash: string): Promise<ParentView | null>;
   feeConfirmView?(handleHash: string): Promise<FeeConfirmView | null>;
+  /**
+   * Classes (Fees add-on): a batch's reading material for the parent whose private link has this hash now: the files, or (with `file`) one file's bytes. Null when the link
+   * opens nothing or none of the parent's students in the batch may open it now (a student who left the batch or is past their fee's grace days). Left out: no material is served.
+   */
+  material?(linkHash: string, batchId: string, file?: string): Promise<MaterialAnswer | null>;
 }
+
+/** What the reading-material read answers (templates/education/fees/src/classes/view.ts and server/materials.ts make it): the page's words, or one file. */
+export type MaterialAnswer =
+  | { kind: "list"; batch: Record<Language, string>; students: string[]; files: { id: string; name: string; bytes: number }[]; left: number; maxMb: number }
+  | { kind: "file"; name: string; type: string; base64: string };
 
 /** What the front asks of the approvals relay, for a shop whose Guard holds refunds for the owner (a gateway shop). */
 export interface RelayBackend {
@@ -250,6 +260,11 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     async feeConfirmView(handleHash) {
       const r = await call(`${o.url}/internal/channel/request?handle=${handleHash}`, { headers: headers() }, timeout);
       return r.status === 404 ? null : json<FeeConfirmView>(r);
+    },
+    async material(linkHash, batchId, file) {
+      const p = new URLSearchParams({ link: linkHash, batch: batchId, ...(file ? { file } : {}) });
+      const r = await call(`${o.url}/internal/channel/material?${p}`, { headers: headers() }, timeout);
+      return r.status === 404 ? null : json<MaterialAnswer>(r);
     },
     async documents(key, language) {
       const p = new URLSearchParams("handle" in key ? { handle: key.handle } : { link: key.link });

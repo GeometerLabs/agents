@@ -17,6 +17,8 @@
 //   GET  /internal/channel/offer?service=&from=YYYY-MM-DD&days=N   the services, prices and free times
 //   GET  /internal/channel/request?handle=<64 hex>    one request by its handle's hash
 //   GET  /internal/channel/parent?link=<64 hex>       item 11h (Fees): what a parent's private link opens, by the link's hash; 404 for a hash no parent has now
+//   GET  /internal/channel/material?link=<64 hex>&batch=<id>[&file=<id>]   Classes (Fees add-on): the reading material of one batch for the parent whose link has this hash now (the files'
+//                                                     list, or one file as base64); 404 when the link opens nothing or no student of theirs in the batch may open it
 //   GET  /internal/channel/owner                     what waits for the owner (x-owner-link needed)
 //   GET  /internal/channel/documents?handle=<hash>|link=<hash>&lang=xx   the receipts, bills and refund notes of the page with that handle's (or parent link's) hash, newest first.
 //                                                     Never by a case id: a holder of the channel token cannot walk the cases. Empty for a hash no page has.
@@ -244,6 +246,17 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (!HANDLE_HASH.test(link)) return send(res, 400, { error: "link is the link's hash: 64 hex digits." });
       const view = channel.parent?.(link) ?? null;
       return view ? send(res, 200, view) : send(res, 404, { error: "No parent has this link." });
+    }
+    // Classes (Fees add-on): a batch's reading material for a parent's private link. The runtime checks the link by its hash AND that a student of theirs may open this batch now.
+    if (path === "/internal/channel/material") {
+      only("GET");
+      const link = url.searchParams.get("link") ?? "";
+      const batch = url.searchParams.get("batch") ?? "";
+      const file = url.searchParams.get("file") ?? undefined;
+      if (!HANDLE_HASH.test(link)) return send(res, 400, { error: "link is the link's hash: 64 hex digits." });
+      if (!/^[a-z0-9-]{1,40}$/u.test(batch) || (file !== undefined && !/^[0-9a-f]{12}$/u.test(file))) return send(res, 400, { error: "batch is a batch id and file a file id (12 hex digits)." });
+      const answer = channel.material ? await channel.material(link, batch, file) : null;
+      return answer ? send(res, 200, answer) : send(res, 404, { error: "Nothing is open here." });
     }
     // ---- item 11f: the owner's sign-in ----
     if (path === "/internal/channel/owner-signin") {
