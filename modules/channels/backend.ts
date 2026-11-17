@@ -81,6 +81,11 @@ export interface OwnerParentView { ref: string; phone: string; students: string[
  * binds a press to the fee as shown (its balance and payments), so a stale press or a second one does nothing.
  */
 export interface OwnerCashView { case: string; digest: string; student: string; what: string; amountPaise: number }
+/** Classes on the owner's page (templates/education/fees/src/classes/view.ts): `case` and `digest` are what a press names and is bound to. */
+export interface OwnerClassesView {
+  pending: { case: string; digest: string; batch: Record<Language, string>; startMs: number; students: { n: number; name: string; missed: boolean }[] }[];
+  doubts: { case: string; digest: string; student: string; batch: Record<Language, string>; text: string; atMs: number }[];
+}
 export interface OwnerView {
   shop: { name: string; timezone: string; ownerLanguage: Language };
   /** Item 11h: the template, for the page's headings. Left out: Bookings. */
@@ -92,6 +97,8 @@ export interface OwnerView {
   parents?: OwnerParentView[];
   /** Money clarity (Fees): the open fees the owner may mark paid by hand. */
   cash?: OwnerCashView[];
+  /** Classes (Fees add-on): the classes waiting for attendance and the open doubts. Left out by a centre without Classes. */
+  classes?: OwnerClassesView;
   /**
    * Item 11e: the shop's assistant's view (its open cards, answered by id and digest; the mood; the talk), when the shop has the assistant. Left out otherwise.
    * `listen`: the shop has a voice service, so the page offers hold-to-record.
