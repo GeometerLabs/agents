@@ -11,7 +11,7 @@ export type GapKey =
   | "retail_domain" | "service_domain" | "city_code" | "shop_gps" | "shop_address_parts" | "shop_phone" | "shop_description" | "shop_images" | "shop_rating"
   | "gstin" | "pan" | "fssai" | "serviceability_radius" | "item_description" | "item_images" | "retail_category" | "veg_nonveg" | "menu_categories"
   | "return_policy" | "prep_time" | "tat" | "settlement_account" | "finder_fee" | "tax_breakup" | "record_times" | "service_creds" | "service_form" | "service_category"
-  | "supplier_ondc_ids";
+  | "supplier_ondc_ids" | "cancel_reason";
 
 export interface GapInfo { severity: "required" | "expected"; what: string; fields: string[]; setting: string }
 
@@ -44,6 +44,7 @@ export const GAPS: Record<GapKey, GapInfo> = {
   service_creds: { severity: "required", what: "the provider's credentials as ONDC lists them", fields: ["providers.creds"], setting: "ondc.creds" },
   service_form: { severity: "required", what: "the form a services order carries (a checklist), which no shop of ours has", fields: ["order.xinput"], setting: "ondc.serviceForm" },
   service_category: { severity: "required", what: "the ONDC category ids of each service", fields: ["items.category_ids", "providers.categories"], setting: "ondc.serviceCategoryIds" },
+  cancel_reason: { severity: "required", what: "why an order or booking was cancelled (the record keeps that it was, not why)", fields: ["cancellation.reason.id"], setting: "a cancel reason kept on the order and the booking" },
   supplier_ondc_ids: { severity: "required", what: "the supplier's own ONDC provider, location, item and fulfillment ids (a supplier we order from by WhatsApp has none)", fields: ["provider.id", "provider.locations.id", "items.id", "items.fulfillment_ids"], setting: "supplier.ondc" },
 };
 
