@@ -184,6 +184,7 @@ export const hi: Words = {
     business: {
       name: demo.formName, services: demo.formServices, serviceName: demo.formServiceName, also: demo.formAlso, price: demo.formPrice, minutes: demo.formMinutes, opens: demo.formOpens, closes: demo.formCloses, openOn: demo.formDays,
       hint: "सेवा की जो कीमत आप लिखेंगे, एजेंट उससे कम में कभी राज़ी नहीं होगा।", dayNames: demo.dayNames,
+      capacity: "एक साथ कितनी बुकिंग चल सकती हैं (दो कुर्सियाँ: 2)", capacityBad: "एक साथ चलने वाली बुकिंग की संख्या 1 से 50 के बीच पूरी संख्या में लिखिए, जैसे 1।",
     },
     depositStep: { amount: demo.formDeposit, window: "कम से कम इतने घंटे पहले रद्द करें", windowHint: "अगर ग्राहक इससे पहले रद्द करता है तो जमा राशि लौट जाती है। इसके बाद रद्द करने पर फ़ैसला आप करते हैं।", whatThisMeans: "आपके लिए इसका मतलब" },
     limits: {

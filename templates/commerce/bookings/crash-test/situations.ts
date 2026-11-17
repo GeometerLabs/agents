@@ -25,6 +25,8 @@ import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { languageOfScript } from "../../../../modules/language/format.ts";
 import { createRecord } from "../../../../modules/record/record.ts";
+import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
+import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { HOUR, MINUTE, daysBetween, localParts, timeFromMinutes, zonedToMs } from "../../../../modules/core/time.ts";
 import { createMonthlyReport } from "../report/monthly-job.ts";
 import { STRINGS } from "../report/strings.ts";
@@ -569,6 +571,48 @@ function build(shop: Shop): Built[] {
       expect("The slot was freed in the calendar", bookingEvents(w).length === 0);
       expect(`The deposit of ${money(D)} was refunded on the payments service`, refundedPaise(w) === D * 100, JSON.stringify(w.payments.refunds()));
       expect("The customer was told", w.lastTextTo(CUSTOMER).includes(money(D)), w.lastTextTo(CUSTOMER));
+      return results;
+    },
+  });
+
+  // 14b. (17 Nov 2026) Razorpay made the refund but the reply was lost: the agent looks before it asks again, so the money goes back once
+  out.push(!farSlot ? skip("refund-lost-reply", "Razorpay made the refund but the reply was lost", farReason) : {
+    id: "refund-lost-reply",
+    title: "Razorpay made the refund but the reply was lost",
+    how: `The customer books a time more than ${W} hours ahead, pays, and cancels. The refund reaches the payments service and its answer never comes back; the agent has to look at the service's own list instead of asking again${lenientNote}`,
+    async run() {
+      const { results, expect } = checker();
+      const w = world({ settings: lenient });
+      const says = sayings(shop, en, farSlot);
+      await bookAndPay(w, says.book);
+      w.payments.inject("refund", "lostReply");
+      await w.say(says.cancel);
+      expect("The slot was freed in the calendar", bookingEvents(w).length === 0, JSON.stringify(w.calendar.events()));
+      expect(`The payments service holds exactly one refund (not two), of ${money(D)}`, w.payments.refunds().length === 1 && refundedPaise(w) === D * 100, JSON.stringify(w.payments.refunds()));
+      expect("The agent asked for the refund once, and looked at the service's list instead of asking again", w.payments.calls.filter((c) => c.op === "refund").length === 1, `refund calls: ${w.payments.calls.filter((c) => c.op === "refund").length}`);
+      expect("The customer was told the refund", w.textsTo(CUSTOMER).some((t) => t.includes(money(D))), w.lastTextTo(CUSTOMER));
+      return results;
+    },
+  });
+
+  // 14c. (17 Nov 2026) The licence's wind-down: no new work, and what is already owed goes on
+  out.push(!farSlot ? skip("licence-wind-down", "The licence's wind-down: no new bookings, refunds still go back", farReason) : {
+    id: "licence-wind-down",
+    title: "The licence's wind-down: no new bookings, refunds still go back",
+    how: `A customer has booked and paid. Then the shop's licence enters its wind-down. A second customer asks to book and is told it is paused; the first cancels and is still refunded${lenientNote}`,
+    async run() {
+      const { results, expect } = checker();
+      let now: LicenceNow = UNRESTRICTED;
+      const w = world({ settings: lenient, licence: () => now });
+      const says = sayings(shop, en, farSlot);
+      await bookAndPay(w, says.book);
+      now = { state: "wind_down", restricted: true, takesNewWork: false, paidThrough: w.clock.now() + 30 * 24 * HOUR, exportUntil: null, partner: "the hand check" };
+      await w.say(says.book, { from: OTHER_CUSTOMER });
+      expect("The second customer was answered, and the record shows the licence refused the new work", w.textsTo(OTHER_CUSTOMER).length > 0 && w.record.entries().some((e) => e.action === "new_work" && e.outcome === "blocked"), w.lastTextTo(OTHER_CUSTOMER));
+      expect("No second payment link and no second calendar event were made", w.payments.links().length === 1 && bookingEvents(w).length === 1, `links ${w.payments.links().length}, events ${bookingEvents(w).length}`);
+      await w.say(says.cancel);
+      expect("The first customer's cancellation went through and freed the slot", bookingEvents(w).length === 0, JSON.stringify(w.calendar.events()));
+      expect(`Their deposit of ${money(D)} was still refunded`, refundedPaise(w) === D * 100, JSON.stringify(w.payments.refunds()));
       return results;
     },
   });

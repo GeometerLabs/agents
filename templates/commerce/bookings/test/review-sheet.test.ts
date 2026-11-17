@@ -23,7 +23,7 @@ test("a template with no line saying when it is sent is refused in words, naming
   assert.deepEqual(missingWhen(["owner_day_bookings", "no_such_template" as TemplateId]), ["no_such_template"]);
 });
 
-for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]) {
+for (const language of ["hi", "ml", "kn"] as const satisfies readonly ReviewLanguage[]) {
   const committed = readFileSync(new URL(`../REVIEW-${language}.md`, import.meta.url), "utf8");
 
   test(`REVIEW-${language}.md opens with the machine-written warning and has a column for the native reviewer`, () => {
@@ -53,8 +53,9 @@ for (const language of ["ml", "kn"] as const satisfies readonly ReviewLanguage[]
   });
 
   test(`REVIEW-${language}.md lists every word the parser knows and every sample sentence`, () => {
-    const w = WORDS[language];
-    for (const word of [...w.today, ...w.tomorrow, ...w.dayAfterTomorrow, ...w.yesterday, ...w.weekdays.flat(), ...w.next, ...w.thisWeek, ...w.months.flat(), ...w.morning, ...w.afternoon, ...w.evening, ...w.night,
+    // Hindi (17 Nov 2026) has no shared word list: its parser words are in rule-parser.ts, so the sheet shows sentences only
+    const w = language === "hi" ? undefined : WORDS[language];
+    if (w) for (const word of [...w.today, ...w.tomorrow, ...w.dayAfterTomorrow, ...w.yesterday, ...w.weekdays.flat(), ...w.next, ...w.thisWeek, ...w.months.flat(), ...w.morning, ...w.afternoon, ...w.evening, ...w.night,
       ...w.greetingsWithTime, ...w.oclock, ...w.yes, ...w.no, ...w.greeting, ...w.book, ...w.cancel, ...w.reschedule, ...w.stop, ...w.stopPhrases, ...w.free, ...w.rupee, ...w.overrideTopics, ...w.overrideVerbs, ...w.hints]) {
       assert.ok(committed.includes(word), `"${word}" is missing from REVIEW-${language}.md`);
     }

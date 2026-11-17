@@ -802,6 +802,8 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `setup.business.dayNames.5` | വ്യാഴം | Thu |  |
 | `setup.business.dayNames.6` | വെള്ളി | Fri |  |
 | `setup.business.dayNames.7` | ശനി | Sat |  |
+| `setup.business.capacity` | ഒരേ സമയം എത്ര ബുക്കിംഗ് നടക്കാം (രണ്ട് കസേര: 2) | How many bookings can run at the same time (two chairs: 2) |  |
+| `setup.business.capacityBad` | ഒരേ സമയം നടക്കുന്ന ബുക്കിംഗുകളുടെ എണ്ണം 1 മുതൽ 50 വരെ ഒരു പൂർണ്ണസംഖ്യയായി എഴുതൂ, ഉദാഹരണത്തിന് 1. | Write how many bookings can run at the same time as a whole number from 1 to 50, for example 1. |  |
 | `setup.depositStep.amount` | ഡെപ്പോസിറ്റ് ₹ | Deposit ₹ |  |
 | `setup.depositStep.window` | തുടങ്ങുന്നതിന് കുറഞ്ഞത് ഇത്ര മണിക്കൂർ മുമ്പ് റദ്ദാക്കണം | Cancel at least this many hours before |  |
 | `setup.depositStep.windowHint` | ഇത്രയും മുമ്പ് ഒരു ഉപഭോക്താവ് റദ്ദാക്കിയാൽ ഡെപ്പോസിറ്റ് തിരികെ നൽകും. അതിനു ശേഷമാണെങ്കിൽ തീരുമാനം നിങ്ങളുടേത്. | If a customer cancels at least this long before, the deposit goes back. Later than that, you decide. |  |
