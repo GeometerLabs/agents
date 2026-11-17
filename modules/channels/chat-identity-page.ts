@@ -33,10 +33,11 @@ export function identityBlock(a: IdentityBlockArgs): { html: string; script: str
 <div id="numAsk" hidden><p>${esc(w.numberAsk)}</p><label class="sr" for="num">${esc(w.numberLabel)}</label><input id="num" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91" maxlength="20"><button type="button" id="numGo" class="quiet">${esc(w.numberSave)}</button></div>
 <p class="sys" id="keepMsg" role="status"></p></div>
 <p class="sys" id="nolock" hidden>${esc(w.keepNoLock)}</p>
-<div class="card" id="before" hidden><h2>${esc(w.beenBefore)}</h2><button type="button" id="openGo" class="quiet">${esc(w.openMine)}</button><p class="sys">${esc(w.otherPhoneLine)}</p>
+<div class="card" id="before" hidden><button type="button" id="beforeGo" class="quiet" aria-expanded="false" aria-controls="beforeBox">${esc(w.beenBefore)}</button>
+<div id="beforeBox" hidden><button type="button" id="openGo" class="quiet">${esc(w.openMine)}</button><p class="sys">${esc(w.otherPhoneLine)}</p>
 <button type="button" id="newGo" class="quiet">${esc(w.newPhone)}</button>
 <div id="newBox" hidden><p>${esc(w.newPhoneBody)}</p><label class="sr" for="num2">${esc(w.numberLabel)}</label><input id="num2" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91" maxlength="20"><button type="button" id="linkGo">${esc(w.sendLink)}</button></div>
-<p class="sys" id="beforeMsg" role="status"></p></div>
+<p class="sys" id="beforeMsg" role="status"></p></div></div>
 <div class="idfoot" id="foot" hidden><button type="button" id="linksGo" class="quiet" hidden>${esc(w.sendMyLinks)}</button><button type="button" id="delGo" class="quiet">${esc(w.deleteButton)}</button>
 <div class="card" id="delBox" hidden><p>${esc(w.deleteAsk)}</p><button type="button" id="delYes">${esc(w.deleteYes)}</button><button type="button" id="delNo" class="quiet">${esc(w.deleteNo)}</button></div>
 <p class="sys" id="footMsg" role="status"></p></div>
@@ -94,6 +95,8 @@ export function identityBlock(a: IdentityBlockArgs): { html: string; script: str
     return !!r.ok;
   };
   $("keepGo").addEventListener("click", keep);
+  // "Been here before?" is one quiet line until it is pressed, so a first-time visitor's chat is not crowded
+  $("beforeGo").addEventListener("click", () => { const open = $("beforeBox").hidden; show("beforeBox", open); $("beforeGo").setAttribute("aria-expanded", String(open)); });
   $("openGo").addEventListener("click", openMine);
   $("newGo").addEventListener("click", () => show("newBox", true));
   $("linkGo").addEventListener("click", () => sendNumber("recover", "num2", "beforeMsg", W.linkSent));
