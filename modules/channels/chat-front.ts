@@ -122,7 +122,7 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
   // W2: a guest's identity (keep this chat, a new phone, delete my chat); a parent's chat has none, their link is who they are
   if (sub === "/id" || sub.startsWith("/id/")) {
     if (parent) return kit.sendHtml(res, 404, NOT_FOUND);
-    return identityRoute(kit, a, { sub, hash, base, path, languageOf: async () => kit.languageOf(req, url, (await shopOf(a, kind)).languages) });
+    return identityRoute(kit, a, { sub, hash, base, path, languageOf: async (form) => kit.languageOf(req, url, (await shopOf(a, kind)).languages, form) });
   }
 
   // the animations' player and files: static, public, a year's cache (the player's address carries its version), served only to this page's own policy

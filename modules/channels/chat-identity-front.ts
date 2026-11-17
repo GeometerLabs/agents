@@ -40,7 +40,8 @@ export interface IdentityRouteArgs {
   /** https://<page>/chat, and the cookie's path. */
   base: string;
   path: string;
-  languageOf: () => Promise<Language>;
+  /** The page's language; a post passes its form so the button's own `lang` field is read (the page said which language it was drawn in). */
+  languageOf: (form?: URLSearchParams) => Promise<Language>;
 }
 
 export async function identityRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean }, c: IdentityRouteArgs): Promise<void> {
@@ -54,7 +55,9 @@ export async function identityRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boo
   // ---- the page the number-confirming link opens (from WhatsApp, on any phone: it names a link, not a guest) ----
   const confirm = /^\/id\/confirm(?:\/([A-Za-z0-9_-]{43}))?$/u.exec(c.sub);
   if (confirm) {
-    const language = await c.languageOf();
+    // the button's post carries the page's `lang`, so its answer is in the language the guest was reading, not the phone's default
+    const posted = method === "POST" && !confirm[1] ? new URLSearchParams((await kit.readBody(req, kit.maxForm)) ?? "") : undefined;
+    const language = await c.languageOf(posted);
     const w = IDENTITY[language];
     const frame = (text: string, form: string, tail = "") => kit.sendHtml(res, 200, `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="${PAGE_REFERRER}"><title>${esc(w.confirmHead)}</title><style>${CHAT_CSS}</style></head><body class="chat"><main class="thread"><div class="wrap"><h1>${esc(w.confirmHead)}</h1><div class="card"><p>${esc(text)}</p>${form}</div></div></main></body></html>`, { "content-security-policy": PAGE_POLICY, "x-robots-tag": "noindex" });
     if (method === "GET" && confirm[1]) {
@@ -70,7 +73,7 @@ export async function identityRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boo
     if (method === "POST" && !confirm[1]) {
       if (!kit.sameOrigin(req, shop)) return kit.sendHtml(res, 403, "<!doctype html><p>Forms from another site are refused.</p>");
       if (!limiter.take("chat", address) || limiter.over("wrong", address)) return kit.sendHtml(res, 429, NOT_FOUND, { "retry-after": "60" });
-      const token = new URLSearchParams((await kit.readBody(req, kit.maxForm)) ?? "").get("token") ?? "";
+      const token = posted?.get("token") ?? "";
       const r = await backend.chatId({ op: "confirm_use", token, via });
       if (r.body.ok === true) return frame(w.confirmDone, "");
       limiter.take("wrong", address);
