@@ -18,7 +18,7 @@ import { createRecord } from "../../../../../modules/record/record.ts";
 import { glowSalon } from "../../src/harness.ts";
 import { startStandins } from "../../standins/server.ts";
 import type { RunningStandins } from "../../standins/server.ts";
-import { whatsappWebhookBody } from "../../standins/control.ts";
+import { whatsappWebhookBody } from "../../../../../modules/standins/whatsapp.ts";
 import { razorpayWebhookBody } from "../../../../../modules/payments/providers/razorpay/standin.ts";
 import { zonedToMs } from "../../../../../modules/core/time.ts";
 

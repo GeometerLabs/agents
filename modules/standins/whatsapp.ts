@@ -128,3 +128,16 @@ export function whatsappStandin(messaging: FakeMessaging, catalogue: TemplateCat
     }
   };
 }
+
+/** A WhatsApp webhook body for one customer text. `from` has no plus and the time is epoch seconds as a string, as Meta writes them. */
+export function whatsappWebhookBody(message: { id: string; from: string; text: string; timestamp: number }, phoneNumberId: string): string {
+  const digits = message.from.replace(/^\+/u, "");
+  return JSON.stringify({
+    object: "whatsapp_business_account",
+    entry: [{ id: "standin-waba", changes: [{ field: "messages", value: {
+      messaging_product: "whatsapp", metadata: { display_phone_number: "15550000000", phone_number_id: phoneNumberId },
+      contacts: [{ profile: { name: "Stand-in customer" }, wa_id: digits }],
+      messages: [{ from: digits, id: message.id, timestamp: String(Math.floor(message.timestamp / 1000)), type: "text", text: { body: message.text } }],
+    } }] }],
+  });
+}
