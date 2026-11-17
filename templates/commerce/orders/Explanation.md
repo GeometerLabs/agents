@@ -144,3 +144,8 @@ A home tiffin service sells a month of meals for one price, paid in advance. Thi
 **Words.** Eighteen messages (`src/plans/templates.ts`), checked against the record before they are sent like every other. Three go out unasked and are WhatsApp templates too: `plan_renewal`, `plan_pause_done`, `plan_skip_done` (list to submit in `whatsapp-templates.json`). The Hindi, Malayalam and Kannada lines, the customer's plan words and the report's plan lines are machine-written and are on the three REVIEW sheets.
 
 **Tests.** `test/plans.test.ts` (the settings, the period dates, the ledger's rules, and the agent end to end on the fakes) and five crash-test situations that run only on a shop with plans (`crash-test/plans.ts`: a skip just after the cut-off, a pause spanning a renewal date, a renewal paid twice, a cancel while a reminder is queued, a credit and a refund for the same day). Not tested on a real WhatsApp, payment provider or UPI account.
+
+## "menu" shows the menu (18 Nov 2026)
+
+A chat guest's first quick tap sends the word "menu", and the rule reader took it for an unknown sentence ("Sorry, I didn't understand"). `MENU_RE` in `src/adapters/rule-parser.ts` reads "menu" and its Hindi, Malayalam and Kannada spellings as the greeting, which shows the menu with its prices; a WhatsApp customer who types "menu" gets the same.
+
