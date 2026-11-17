@@ -72,8 +72,9 @@ export function ordersSkill(deps: OrdersSkillDeps): OwnerSkill {
     return ownerItems(settings, store, deps.nowMs()).items.map((i): Waiting => {
       const o = store.orders.get(i.case);
       const a = ANSWERS[i.kind];
+      // the "time ran out" advance (a hold that ended where money may have come) is asked as the advance is: "did it reach your UPI?" (the same mark, the same button)
       return {
-        case: i.case, kind: i.kind, amountPaise: i.amountPaise, who: o ? whoOf(o) : i.customer.name ?? i.customer.phone, what: o ? what(o) : i.what, money: true,
+        case: i.case, kind: i.kind === "late_deposit" ? "deposit" : i.kind, amountPaise: i.amountPaise, who: o ? whoOf(o) : i.customer.name ?? i.customer.phone, what: o ? what(o) : i.what, money: true,
         yes: a.yes, ...(a.no ? { no: a.no } : {}), fields: { pageDigest: i.digest, amountPaise: i.amountPaise },
         reply: i.code && (i.kind === "deposit" || i.kind === "late_deposit" || i.kind === "refund_owed") ? { id: markButtonId(i.kind === "refund_owed" ? "refunded" : "received", i.code) } : null,
       };
