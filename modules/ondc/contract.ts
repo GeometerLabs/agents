@@ -90,7 +90,8 @@ export function retailOrder(stage: RetailStage, mode: "pickup" | "delivery", slo
     ["id", "r"], ["state", "r"], ["created_at", "record_times"], ["updated_at", "record_times"], ["billing.created_at", "c"], ["billing.updated_at", "c"], ["fulfillments.provider_id", "r"],
     ...withBuyer, ...FULFILMENT_START, ...PAYMENT,
   ]);
-  const times: Spec = slot ? at(O, [["fulfillments.start.time.range.start", "r"], ["fulfillments.start.time.range.end", "r"], ...(mode === "delivery" ? ([["fulfillments.end.time.range.start", "r"], ["fulfillments.end.time.range.end", "r"]] as Spec) : [])]) : [];
+  const side = mode === "delivery" ? "end" : "start"; // the slot is when the buyer receives (delivery) or collects (pickup)
+  const times: Spec = slot ? at(O, [[`fulfillments.${side}.time.range.start`, "r"], [`fulfillments.${side}.time.range.end`, "r"]]) : [];
   const cancel: Spec = stage === "on_cancel" ? at(O, [["cancellation.cancelled_by", "r"], ["cancellation.reason.id", "r"]]) : [];
   return [...base, ...full, ...(stage === "on_confirm" ? [] : times), ...cancel];
 }
@@ -107,7 +108,7 @@ export const servicesOnSearch: Spec = [
   ...at("message.catalog.", [["fulfillments.id", "r"], ["fulfillments.type", "r"], ["payments.id", "r"], ["payments.type", "r"], ["descriptor.name", "r"], ["descriptor.short_desc", "shop_description"]]),
   ...at(SL, [
     ["id", "r"], ["descriptor.name", "r"], ["time.label", "r"], ["time.range.start", "r"], ["time.range.end", "r"], ["time.schedule.frequency", "r"], ["locations.id", "r"], ["locations.gps", "shop_gps"],
-    ["locations.address", "shop_address_parts"], ["locations.area_code", "shop_address_parts"], ["categories.id", "service_category"], ["creds.id", "service_creds"], ["creds.type", "service_creds"],
+    ["locations.address", "r"], ["locations.area_code", "shop_address_parts"], ["categories.id", "service_category"], ["creds.id", "service_creds"], ["creds.type", "service_creds"],
     ["items.id", "r"], ["items.descriptor.name", "r"], ["items.descriptor.images", "item_images"], ["items.price.currency", "r"], ["items.price.value", "r"],
     ["items.quantity.unitized.measure.unit", "r"], ["items.quantity.unitized.measure.value", "r"], ["items.cancellation_terms.cancellation_fee", "r"],
     ["items.category_ids", "service_category"], ["items.fulfillment_ids", "r"], ["items.location_ids", "r"], ["items.time.range.start", "r"], ["items.time.range.end", "r"], ["items.time.schedule.frequency", "r"],
@@ -118,7 +119,7 @@ export const servicesOrder = (stage: "on_select" | "on_init" | "on_confirm" | "o
   ...at(O, [
     ["status", "r"], ["provider.id", "r"], ["items.id", "r"], ["items.location_ids", "r"], ["items.fulfillment_ids", "r"], ["items.quantity.selected.count", "r"], ["items.category_ids", "service_category"],
     ["fulfillments.type", "r"], ["fulfillments.id", "r"], ["fulfillments.state.descriptor.code", "r"], ["fulfillments.tracking", "r"], ["fulfillments.rateable", "r"], ["fulfillments.stops.type", "r"],
-    ["fulfillments.stops.location.id", "r"], ["fulfillments.stops.location.descriptor.name", "r"], ["fulfillments.stops.location.gps", "shop_gps"], ["fulfillments.stops.location.address", "shop_address_parts"],
+    ["fulfillments.stops.location.id", "r"], ["fulfillments.stops.location.descriptor.name", "r"], ["fulfillments.stops.location.gps", "shop_gps"], ["fulfillments.stops.location.address", "r"],
     ["fulfillments.stops.location.city.name", "shop_address_parts"], ["fulfillments.stops.location.country.code", "r"], ["fulfillments.stops.location.area_code", "shop_address_parts"],
     ["fulfillments.stops.location.state.name", "shop_address_parts"], ["fulfillments.stops.contact.phone", "shop_phone"], ["fulfillments.stops.time.label", "r"],
     ["fulfillments.stops.time.range.start", "r"], ["fulfillments.stops.time.range.end", "r"],
@@ -147,7 +148,7 @@ const B2B_ITEMS: Spec = [
 ];
 const B2B_BUYER: Spec = [
   ["billing.name", "r"], ["billing.phone", "shop_phone"], ["billing.tax_id", "gstin"], ["billing.state.name", "shop_address_parts"], ["billing.city.name", "shop_address_parts"],
-  ["fulfillments.stops.location.address", "shop_address_parts"], ["fulfillments.stops.location.city.name", "shop_address_parts"], ["fulfillments.stops.location.country.code", "r"],
+  ["fulfillments.stops.location.address", "r"], ["fulfillments.stops.location.city.name", "shop_address_parts"], ["fulfillments.stops.location.country.code", "r"],
   ["fulfillments.stops.location.state.name", "shop_address_parts"], ["fulfillments.stops.contact.phone", "shop_phone"],
 ];
 export const b2bRequest = (stage: "select" | "init" | "confirm"): Spec => [
@@ -174,7 +175,7 @@ function present(node: Json, parts: string[]): boolean {
 }
 export const hasPath = (msg: unknown, path: string): boolean => present(msg, path.split("."));
 
-export interface Problem { path: string; why: "missing from our record" | "missing but the caller gave it" | "missing and its gap is not reported" | "present though its gap is reported" }
+export interface Problem { path: string; why: "missing from our record" | "missing but the caller gave it" | "missing and its gap is not reported" }
 
 /** Hold a built message to its list. `callerGave` says whether the caller handed in the context and buyer details the "c" paths echo. */
 export function checkRequired(msg: unknown, spec: Spec, gapKeys: readonly GapKey[], callerGave: boolean): Problem[] {
@@ -183,8 +184,7 @@ export function checkRequired(msg: unknown, spec: Spec, gapKeys: readonly GapKey
     const there = hasPath(msg, path);
     if (source === "r") { if (!there) out.push({ path, why: "missing from our record" }); }
     else if (source === "c") { if (!there && callerGave) out.push({ path, why: "missing but the caller gave it" }); }
-    else if (gapKeys.includes(source)) { if (there) out.push({ path, why: "present though its gap is reported" }); }
-    else if (!there) out.push({ path, why: "missing and its gap is not reported" });
+    else if (!there && !gapKeys.includes(source)) out.push({ path, why: "missing and its gap is not reported" });
   }
   return out;
 }

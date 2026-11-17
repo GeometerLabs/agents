@@ -162,5 +162,6 @@ export interface PurchaseIn {
   receivedQty: number;
   unitPaise: Paise;
   totalPaise: Paise;
+  createdMs: number;
   nowMs: number;
 }
