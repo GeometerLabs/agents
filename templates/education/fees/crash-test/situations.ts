@@ -27,6 +27,7 @@ import { planShop } from "./shop.ts";
 import { RAZORPAY_ONLY, buildUpiSituations } from "./upi.ts";
 import { capabilitiesOf } from "../../../../modules/payments/providers/index.ts";
 import type { Shop } from "./shop.ts";
+import { buildClassSituations } from "./classes.ts";
 
 export { SAYS } from "./says.ts";
 export { runSituation } from "../../../../modules/crash-test/situations.ts";
@@ -658,7 +659,7 @@ export function buildSituations(settings: Settings): { situations: Situation[]; 
 
   // A UPI centre (B33): the situations written around a Razorpay payment link are named as not run, and the UPI ones run instead (crash-test/upi.ts).
   const all: Built[] = !capabilitiesOf(shop.settings.payment).confirmsAutomatically ? [...list.map((s): Built => ("skip" in s ? s : { id: s.id, title: s.title, skip: RAZORPAY_ONLY })), ...buildUpiSituations(shop)] : list;
-  const situations = all.filter((s): s is Situation => "run" in s);
+  const situations = [...all.filter((s): s is Situation => "run" in s), ...buildClassSituations(shop.settings)]; // Classes' own, only for a centre that has it
   const skipped: Skipped[] = all.filter((s): s is { id: string; title: string; skip: string } => "skip" in s).map((s) => ({ id: s.id, title: s.title, reason: s.skip }));
   return { situations, skipped };
 }

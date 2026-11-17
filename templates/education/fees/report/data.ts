@@ -126,6 +126,11 @@ export interface FeesReport {
    * from the evidence pack alone. Left out when the whole record has no money lines, which keeps the bytes of every report made without money.
    */
   accounting?: { summary: AccountingSummary; legacy: LegacyMap };
+  /**
+   * Classes (the Fees add-on): counted from the record, only for a centre with the `classes` block (a Fees centre's report is as it was). `held` is classes whose attendance the
+   * teacher confirmed; `attendanceMarked` the students marked in them. Delivery of a link is not attendance and attendance is not learning: nothing here says either.
+   */
+  classes?: { held: number; linksSent: number; attendanceMarked: number; missedNotes: number; doubts: number };
   /** The head of the centre's record as a hash-chained ledger when the report was made (see Bookings' report/data.ts), or null when no ledger was named. Part of the signed bytes. */
   anchor: LedgerHead | null;
 }
@@ -268,6 +273,15 @@ export function buildFeesReport(input: ReportInput): FeesReport {
   const midnight = { hour: 0, minute: 0 };
   const nextMonth: LocalDate = firstDay.month === 12 ? { year: firstDay.year + 1, month: 1, day: 1 } : { year: firstDay.year, month: firstDay.month + 1, day: 1 };
   const wholeMonth = zonedToMs({ ...firstDay, day: 1 }, midnight, settings.timezone) === from && zonedToMs(nextMonth, midnight, settings.timezone) === to;
+  // ---- Classes: counted at the entries Classes writes (src/classes/run.ts CLASS_ACTIONS), only for a centre that has it ----
+  const attendance = month.filter((e) => e.action === "class_attendance" && e.outcome === "confirmed");
+  const classes = settings.classes ? {
+    held: attendance.length,
+    linksSent: toParents.filter((x) => templatesOf(x).includes("class_link")).length,
+    attendanceMarked: attendance.reduce((n, e) => n + Number(e.refs.present ?? 0) + Number(e.refs.absent ?? 0), 0),
+    missedNotes: toParents.filter((x) => templatesOf(x).includes("class_missed_note")).length,
+    doubts: month.filter((e) => e.action === "class_doubt" && e.outcome === "confirmed" && e.refs.answered === undefined).length,
+  } : undefined;
   return {
     format: "geometer-fees-report/1",
     pathway: PATHWAY,
@@ -291,6 +305,7 @@ export function buildFeesReport(input: ReportInput): FeesReport {
     notTested: notTestedForReport(goLive, settings),
     goLive,
     ...(accounting ? { accounting } : {}),
+    ...(classes ? { classes } : {}),
     anchor: input.ledger ? headOf(input.entries, input.ledger.tenant) : null,
   };
 }
