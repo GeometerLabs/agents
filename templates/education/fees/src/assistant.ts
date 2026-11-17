@@ -12,7 +12,7 @@ import type { RefundResult } from "../../../../modules/payments/refunds.ts";
 import type { CardAction } from "../../../../modules/assistant/state.ts";
 import type { InboundMessage } from "../../../../modules/messaging/messaging.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
-import { ownerItems } from "./channel.ts";
+import { ownerItems, parentOfChat } from "./channel.ts";
 import type { OwnerItem } from "./channel.ts";
 import { CASH_LINK, balancePaise, monthLabel, openDues } from "./due.ts";
 import type { Due, Store } from "./due.ts";
