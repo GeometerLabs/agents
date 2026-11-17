@@ -31,7 +31,7 @@ export function pendingClasses(settings: Settings, state: ClassesState, nowMs: n
 
 /** A student's fees as the saved state shows them (every fee the student has, paid ones too: only an open one with something owed past its grace days stops access). */
 export const feeSnapshots = (store: Store, parent: string, studentName: string): FeeSnapshot[] =>
-  [...store.dues.values()].filter((d) => d.customer === parent && d.studentName === studentName).map((d) => ({ state: d.state, dueDate: d.dueDate, balancePaise: balancePaise(d) }));
+  [...store.dues.values()].filter((d) => d.customer === parent && d.studentName === studentName).map((d) => ({ state: d.state, dueDate: d.dueDate, balancePaise: balancePaise(d), backDue: !!d.backDue }));
 
 const namesOf = (settings: Settings, batchId: string): Record<Language, string> => {
   const batch = settings.batches.find((b) => b.id === batchId);
@@ -43,7 +43,7 @@ export interface MaterialView { batch: Record<Language, string>; students: strin
 
 /**
  * Can this contact open the reading material of this batch right now? `parent` is the contact whose private link this is (src/channel.ts parentOf), or undefined for a link
- * no one has. At least one of their students must be in the batch, have agreed (or be an adult), and be paid or within the grace days (rules.ts checkClassAccess): a
+ * no one has. At least one of their students must be in the batch, have agreed (or be an adult), and have every ordinary fee paid or within the grace days, a back due too only when the centre set `oldDuesStopLink` (rules.ts checkClassAccess): a
  * student who left the batch, or whose fee is past its grace days, no longer opens it, and neither does the link of a contact none of whose students is entitled.
  */
 export function materialView(settings: Settings, store: Store, parent: string | undefined, batchId: string, nowMs: number): MaterialView | null {
@@ -51,7 +51,7 @@ export function materialView(settings: Settings, store: Store, parent: string | 
   const mine = settings.students.filter((s) => s.parent === parent && s.batchId === batchId);
   const entitled = mine.filter((s) => checkClassAccess({
     inBatch: true, consent: s.adult ? "adult" : store.classes?.consent[s.parent]?.answer ?? "waiting", readOk: true,
-    fees: feeSnapshots(store, s.parent, s.name), graceDays: settings.due.graceDays, nowMs, timeZone: settings.timezone,
+    fees: feeSnapshots(store, s.parent, s.name), graceDays: settings.due.graceDays, oldDuesStopLink: settings.classes.oldDuesStopLink, nowMs, timeZone: settings.timezone,
   }).verdict === "allow");
   return entitled.length > 0 ? { batch: namesOf(settings, batchId), students: entitled.map((s) => s.name) } : null;
 }
