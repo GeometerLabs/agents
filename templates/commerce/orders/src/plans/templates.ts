@@ -15,8 +15,8 @@ export type PlanTemplateId =
   // to the owner
   | "owner_plan_started" | "owner_plan_cancelled";
 
-/** The record's values a plan message may use beyond the order's own: how many meals, how many days were not taken, and the period's first and last day (as moments). */
-export interface PlanFacts { meals?: number; creditDays?: number; fromMs?: number; toMs?: number }
+/** The record's values a plan message may use beyond the order's own: how many meals, and the period's first and last day (as moments). */
+export interface PlanFacts { meals?: number; fromMs?: number; toMs?: number }
 
 type Template = (f: MessageFacts) => string;
 export type PlanSet = Record<PlanTemplateId, Template>;
@@ -48,7 +48,6 @@ export function planTemplates(h: PlanHelpers): Record<Language, PlanSet> {
   const meals = (f: MessageFacts) => plan(f, "meals");
   const from = (f: MessageFacts) => dayAt(f, plan(f, "fromMs"));
   const to = (f: MessageFacts) => dayAt(f, plan(f, "toMs"));
-  const credit = (f: MessageFacts) => plan(f, "creditDays");
   const ref = (f: MessageFacts) => need(f, "orderRef");
   const phone = (f: MessageFacts) => need(f, "customerPhone");
 
@@ -63,12 +62,12 @@ export function planTemplates(h: PlanHelpers): Record<Language, PlanSet> {
     plan_resume_done: (f) => `Your ${items(f)} plan starts again from ${day(f)}.`,
     plan_cutoff_refused: (f) => `Sorry, it is too late for ${day(f)}: that day closed at ${cutAt(f)}. Nothing was changed.`,
     plan_no_meal: (f) => `There is no meal of your ${items(f)} plan on ${day(f)}, or it is already skipped or paused. Nothing was changed.`,
-    plan_cancelled: (f) => `Your ${items(f)} plan is cancelled. No meal is sent or charged for the days after the ones already closed.${f.refundInr !== undefined ? ` ${inr(f, "refundInr")} for ${credit(f)} meals not sent is being refunded.` : ""}`,
+    plan_cancelled: (f) => `Your ${items(f)} plan is cancelled. No meal is sent or charged for the days after the ones already closed.`,
     plan_renewal: (f) => `Your ${items(f)} plan renews from ${day(f)}. Amount ${inr(f, "advanceInr")} (plan price ${inr(f, "totalInr")}). Please pay by ${cutAt(f)}: ${need(f, "link")}. Thank you.`,
     plan_lapsed: (f) => `Your ${items(f)} plan was not renewed in time, so it has stopped. Write "monthly plan" to start again.`,
     plan_hold_expired: (f) => `The hold on your ${items(f)} plan has ended because the payment was not received in time. Write "monthly plan" to start again.`,
-    plan_credit_refund: (f) => `${inr(f, "refundInr")} for ${credit(f)} meals of your ${items(f)} plan that were not sent is being refunded.`,
-    plan_credit_refund_pending: (f) => `The owner will confirm your ${inr(f, "refundInr")} refund for ${credit(f)} meals of your ${items(f)} plan shortly.`,
+    plan_credit_refund: (f) => `${inr(f, "refundInr")} of your ${items(f)} plan that was not used is being refunded.`,
+    plan_credit_refund_pending: (f) => `The owner will confirm your ${inr(f, "refundInr")} refund for your ${items(f)} plan shortly.`,
     owner_plan_started: (f) => `New monthly plan ${ref(f)}: ${phone(f)}, ${items(f)}, ${meals(f)} meals from ${from(f)} to ${to(f)}, ${how(f)}.`,
     owner_plan_cancelled: (f) => `Plan ${ref(f)} (${items(f)}, ${phone(f)}) is cancelled. Do not make meals for the days after the cancellation.`,
   };
@@ -84,12 +83,12 @@ export function planTemplates(h: PlanHelpers): Record<Language, PlanSet> {
     plan_resume_done: (f) => `आपका ${items(f)} प्लान ${day(f)} से फिर शुरू हो रहा है।`,
     plan_cutoff_refused: (f) => `माफ़ कीजिए, ${day(f)} के लिए अब देर हो चुकी है: वह दिन ${cutAt(f)} पर बंद हो गया। कुछ भी बदला नहीं गया।`,
     plan_no_meal: (f) => `${day(f)} को आपके ${items(f)} प्लान का कोई भोजन नहीं है, या वह पहले ही छोड़ा या रोका जा चुका है। कुछ भी बदला नहीं गया।`,
-    plan_cancelled: (f) => `आपका ${items(f)} प्लान रद्द हो गया है। पहले से बंद हो चुके दिनों के बाद कोई भोजन नहीं भेजा जाएगा और न ही पैसे लिए जाएंगे।${f.refundInr !== undefined ? ` न भेजे गए ${credit(f)} भोजन के ${inr(f, "refundInr")} आपको वापस किए जा रहे हैं।` : ""}`,
+    plan_cancelled: (f) => `आपका ${items(f)} प्लान रद्द हो गया है। पहले से बंद हो चुके दिनों के बाद कोई भोजन नहीं भेजा जाएगा और न ही पैसे लिए जाएंगे।`,
     plan_renewal: (f) => `आपका ${items(f)} प्लान ${day(f)} से नवीनीकृत हो रहा है। राशि ${inr(f, "advanceInr")} (प्लान की कीमत ${inr(f, "totalInr")})। कृपया ${cutAt(f)} तक भुगतान करें: ${need(f, "link")}। धन्यवाद।`,
     plan_lapsed: (f) => `आपका ${items(f)} प्लान समय पर नवीनीकृत नहीं हुआ, इसलिए बंद हो गया है। फिर शुरू करने के लिए "monthly plan" लिखें।`,
     plan_hold_expired: (f) => `आपके ${items(f)} प्लान की रोक खत्म हो गई क्योंकि भुगतान समय पर नहीं मिला। फिर शुरू करने के लिए "monthly plan" लिखें।`,
-    plan_credit_refund: (f) => `आपके ${items(f)} प्लान के न भेजे गए ${credit(f)} भोजन के ${inr(f, "refundInr")} आपको वापस किए जा रहे हैं।`,
-    plan_credit_refund_pending: (f) => `आपके ${items(f)} प्लान के ${credit(f)} भोजन के ${inr(f, "refundInr")} की वापसी की पुष्टि मालिक जल्द करेंगे।`,
+    plan_credit_refund: (f) => `आपके ${items(f)} प्लान के अनुपयोगी ${inr(f, "refundInr")} आपको वापस किए जा रहे हैं।`,
+    plan_credit_refund_pending: (f) => `आपके ${items(f)} प्लान के ${inr(f, "refundInr")} की वापसी की पुष्टि मालिक जल्द करेंगे।`,
     owner_plan_started: (f) => `नया मासिक प्लान ${ref(f)}: ${phone(f)}, ${items(f)}, ${from(f)} से ${to(f)} तक ${meals(f)} भोजन, ${how(f)}।`,
     owner_plan_cancelled: (f) => `प्लान ${ref(f)} (${items(f)}, ${phone(f)}) रद्द हो गया है। रद्द करने के बाद के दिनों के लिए भोजन न बनाएं।`,
   };
@@ -105,12 +104,12 @@ export function planTemplates(h: PlanHelpers): Record<Language, PlanSet> {
     plan_resume_done: (f) => `നിങ്ങളുടെ ${items(f)} പ്ലാൻ ${day(f)} മുതൽ വീണ്ടും തുടങ്ങും.`,
     plan_cutoff_refused: (f) => `ക്ഷമിക്കണം, ${day(f)}-ന് ഇനി വൈകിപ്പോയി: ആ ദിവസം ${cutAt(f)}-ന് അടച്ചു. ഒന്നും മാറ്റിയിട്ടില്ല.`,
     plan_no_meal: (f) => `${day(f)}-ന് നിങ്ങളുടെ ${items(f)} പ്ലാനിൽ ഭക്ഷണമില്ല, അല്ലെങ്കിൽ അത് ഇതിനകം ഒഴിവാക്കുകയോ നിർത്തിവയ്ക്കുകയോ ചെയ്തു. ഒന്നും മാറ്റിയിട്ടില്ല.`,
-    plan_cancelled: (f) => `നിങ്ങളുടെ ${items(f)} പ്ലാൻ റദ്ദാക്കി. ഇതിനകം അടച്ച ദിവസങ്ങൾക്ക് ശേഷം ഭക്ഷണം അയയ്ക്കുകയോ പണം ഈടാക്കുകയോ ചെയ്യില്ല.${f.refundInr !== undefined ? ` അയയ്ക്കാത്ത ${credit(f)} ഭക്ഷണത്തിന്റെ ${inr(f, "refundInr")} നിങ്ങൾക്ക് തിരികെ നൽകുന്നു.` : ""}`,
+    plan_cancelled: (f) => `നിങ്ങളുടെ ${items(f)} പ്ലാൻ റദ്ദാക്കി. ഇതിനകം അടച്ച ദിവസങ്ങൾക്ക് ശേഷം ഭക്ഷണം അയയ്ക്കുകയോ പണം ഈടാക്കുകയോ ചെയ്യില്ല.`,
     plan_renewal: (f) => `നിങ്ങളുടെ ${items(f)} പ്ലാൻ ${day(f)} മുതൽ പുതുക്കുന്നു. തുക ${inr(f, "advanceInr")} (പ്ലാൻ വില ${inr(f, "totalInr")}). ദയവായി ${cutAt(f)}-നകം പണമടയ്ക്കൂ: ${need(f, "link")}. നന്ദി.`,
     plan_lapsed: (f) => `നിങ്ങളുടെ ${items(f)} പ്ലാൻ സമയത്തിന് പുതുക്കിയില്ല, അതിനാൽ നിലച്ചു. വീണ്ടും തുടങ്ങാൻ "monthly plan" എന്ന് എഴുതൂ.`,
     plan_hold_expired: (f) => `നിങ്ങളുടെ ${items(f)} പ്ലാനിന്റെ കാത്തിരിപ്പ് അവസാനിച്ചു, കാരണം പണം സമയത്തിന് കിട്ടിയില്ല. വീണ്ടും തുടങ്ങാൻ "monthly plan" എന്ന് എഴുതൂ.`,
-    plan_credit_refund: (f) => `നിങ്ങളുടെ ${items(f)} പ്ലാനിൽ അയയ്ക്കാത്ത ${credit(f)} ഭക്ഷണത്തിന്റെ ${inr(f, "refundInr")} തിരികെ നൽകുന്നു.`,
-    plan_credit_refund_pending: (f) => `നിങ്ങളുടെ ${items(f)} പ്ലാനിലെ ${credit(f)} ഭക്ഷണത്തിന്റെ ${inr(f, "refundInr")} റീഫണ്ട് ഉടമ ഉടൻ സ്ഥിരീകരിക്കും.`,
+    plan_credit_refund: (f) => `നിങ്ങളുടെ ${items(f)} പ്ലാനിൽ ഉപയോഗിക്കാത്ത ${inr(f, "refundInr")} തിരികെ നൽകുന്നു.`,
+    plan_credit_refund_pending: (f) => `നിങ്ങളുടെ ${items(f)} പ്ലാനിലെ ${inr(f, "refundInr")} റീഫണ്ട് ഉടമ ഉടൻ സ്ഥിരീകരിക്കും.`,
     owner_plan_started: (f) => `പുതിയ മാസ പ്ലാൻ ${ref(f)}: ${phone(f)}, ${items(f)}, ${from(f)} മുതൽ ${to(f)} വരെ ${meals(f)} ഭക്ഷണം, ${how(f)}.`,
     owner_plan_cancelled: (f) => `പ്ലാൻ ${ref(f)} (${items(f)}, ${phone(f)}) റദ്ദാക്കി. റദ്ദാക്കിയതിന് ശേഷമുള്ള ദിവസങ്ങളിൽ ഭക്ഷണം ഉണ്ടാക്കരുത്.`,
   };
@@ -126,12 +125,12 @@ export function planTemplates(h: PlanHelpers): Record<Language, PlanSet> {
     plan_resume_done: (f) => `ನಿಮ್ಮ ${items(f)} ಪ್ಲಾನ್ ${day(f)} ರಿಂದ ಮತ್ತೆ ಶುರುವಾಗುತ್ತದೆ.`,
     plan_cutoff_refused: (f) => `ಕ್ಷಮಿಸಿ, ${day(f)} ಗೆ ಈಗ ತಡವಾಗಿದೆ: ಆ ದಿನ ${cutAt(f)} ಕ್ಕೆ ಮುಚ್ಚಿದೆ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ.`,
     plan_no_meal: (f) => `${day(f)} ರಂದು ನಿಮ್ಮ ${items(f)} ಪ್ಲಾನ್‌ನಲ್ಲಿ ಊಟ ಇಲ್ಲ, ಅಥವಾ ಅದನ್ನು ಈಗಾಗಲೇ ಬಿಡಲಾಗಿದೆ ಅಥವಾ ನಿಲ್ಲಿಸಲಾಗಿದೆ. ಏನನ್ನೂ ಬದಲಾಯಿಸಿಲ್ಲ.`,
-    plan_cancelled: (f) => `ನಿಮ್ಮ ${items(f)} ಪ್ಲಾನ್ ರದ್ದಾಗಿದೆ. ಈಗಾಗಲೇ ಮುಚ್ಚಿದ ದಿನಗಳ ನಂತರ ಊಟ ಕಳುಹಿಸುವುದಿಲ್ಲ, ಹಣವನ್ನೂ ಪಡೆಯುವುದಿಲ್ಲ.${f.refundInr !== undefined ? ` ಕಳುಹಿಸದ ${credit(f)} ಊಟದ ${inr(f, "refundInr")} ನಿಮಗೆ ಮರಳಿಸಲಾಗುತ್ತಿದೆ.` : ""}`,
+    plan_cancelled: (f) => `ನಿಮ್ಮ ${items(f)} ಪ್ಲಾನ್ ರದ್ದಾಗಿದೆ. ಈಗಾಗಲೇ ಮುಚ್ಚಿದ ದಿನಗಳ ನಂತರ ಊಟ ಕಳುಹಿಸುವುದಿಲ್ಲ, ಹಣವನ್ನೂ ಪಡೆಯುವುದಿಲ್ಲ.`,
     plan_renewal: (f) => `ನಿಮ್ಮ ${items(f)} ಪ್ಲಾನ್ ${day(f)} ರಿಂದ ನವೀಕರಣವಾಗುತ್ತಿದೆ. ಮೊತ್ತ ${inr(f, "advanceInr")} (ಪ್ಲಾನ್ ಬೆಲೆ ${inr(f, "totalInr")}). ದಯವಿಟ್ಟು ${cutAt(f)} ರೊಳಗೆ ಪಾವತಿಸಿ: ${need(f, "link")}. ಧನ್ಯವಾದ.`,
     plan_lapsed: (f) => `ನಿಮ್ಮ ${items(f)} ಪ್ಲಾನ್ ಸಮಯಕ್ಕೆ ನವೀಕರಣವಾಗಲಿಲ್ಲ, ಆದ್ದರಿಂದ ನಿಂತಿದೆ. ಮತ್ತೆ ಶುರು ಮಾಡಲು "monthly plan" ಎಂದು ಬರೆಯಿರಿ.`,
     plan_hold_expired: (f) => `ನಿಮ್ಮ ${items(f)} ಪ್ಲಾನ್‌ನ ಕಾಯ್ದಿರಿಸುವಿಕೆ ಮುಗಿದಿದೆ, ಏಕೆಂದರೆ ಪಾವತಿ ಸಮಯಕ್ಕೆ ಬರಲಿಲ್ಲ. ಮತ್ತೆ ಶುರು ಮಾಡಲು "monthly plan" ಎಂದು ಬರೆಯಿರಿ.`,
-    plan_credit_refund: (f) => `ನಿಮ್ಮ ${items(f)} ಪ್ಲಾನ್‌ನಲ್ಲಿ ಕಳುಹಿಸದ ${credit(f)} ಊಟದ ${inr(f, "refundInr")} ನಿಮಗೆ ಮರಳಿಸಲಾಗುತ್ತಿದೆ.`,
-    plan_credit_refund_pending: (f) => `ನಿಮ್ಮ ${items(f)} ಪ್ಲಾನ್‌ನ ${credit(f)} ಊಟದ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಅನ್ನು ಮಾಲೀಕರು ಶೀಘ್ರದಲ್ಲೇ ಖಚಿತಪಡಿಸುತ್ತಾರೆ.`,
+    plan_credit_refund: (f) => `ನಿಮ್ಮ ${items(f)} ಪ್ಲಾನ್‌ನಲ್ಲಿ ಬಳಸದ ${inr(f, "refundInr")} ನಿಮಗೆ ಮರಳಿಸಲಾಗುತ್ತಿದೆ.`,
+    plan_credit_refund_pending: (f) => `ನಿಮ್ಮ ${items(f)} ಪ್ಲಾನ್‌ನ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಅನ್ನು ಮಾಲೀಕರು ಶೀಘ್ರದಲ್ಲೇ ಖಚಿತಪಡಿಸುತ್ತಾರೆ.`,
     owner_plan_started: (f) => `ಹೊಸ ತಿಂಗಳ ಪ್ಲಾನ್ ${ref(f)}: ${phone(f)}, ${items(f)}, ${from(f)} ರಿಂದ ${to(f)} ವರೆಗೆ ${meals(f)} ಊಟ, ${how(f)}.`,
     owner_plan_cancelled: (f) => `ಪ್ಲಾನ್ ${ref(f)} (${items(f)}, ${phone(f)}) ರದ್ದಾಗಿದೆ. ರದ್ದತಿಯ ನಂತರದ ದಿನಗಳಿಗೆ ಊಟ ಮಾಡಬೇಡಿ.`,
   };

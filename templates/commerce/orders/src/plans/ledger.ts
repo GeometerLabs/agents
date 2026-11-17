@@ -17,6 +17,8 @@ import { addDays, zonedToMs, parseClock, timeFromMinutes } from "../../../../../
 import type { LocalDate } from "../../../../../modules/core/time.ts";
 import { allow, block } from "../../../../../modules/limits/limits.ts";
 import type { Decision } from "../../../../../modules/limits/limits.ts";
+import type { Reminder } from "../../../../../modules/reminders/reminders.ts";
+import { localParts } from "../../../../../modules/core/time.ts";
 import type { Language } from "../../../../../modules/language/languages.ts";
 import type { Cutoff } from "../settings.ts";
 import { creditInr, dateOfKey, firstMealOnOrAfter, keyOf, mealDates, periodRange } from "./periods.ts";
@@ -41,6 +43,10 @@ export interface PlanPeriod {
   state: PeriodState;
   /** A first period's hold: while it runs, the period's meals hold their places in the slot. */
   holdUntilMs?: number;
+  /** A renewal: the moment it must be paid by (the cut-off of its first meal day); unpaid after it, the plan lapses. */
+  payByMs?: number;
+  /** A renewal's reminder before that moment, sent once while the plan still stands and the period is unpaid. */
+  reminders?: Reminder[];
   paidAtMs?: number;
   /** Set once, when the period's days not taken are counted: carried to the balance or refunded. A period never has two. */
   settlement?: { kind: "carried" | "refunded" | "none"; amountInr: number; days: number; atMs: number };
@@ -69,6 +75,8 @@ export interface Plan {
   /** Credit carried and not yet used, oldest first. */
   balance: BalancePiece[];
   cancelledAtMs?: number;
+  /** When a delivery plan asked for its address (it is dropped if none comes within the shop's hold). */
+  askedAtMs?: number;
 }
 
 export interface PlansState { plans: Record<string, Plan> }
@@ -84,9 +92,9 @@ export const cutoffMsFor = (rules: PlanRules, key: string): number =>
 
 const open = (rules: PlanRules, key: string, nowMs: number): boolean => nowMs < cutoffMsFor(rules, key);
 
-/** The plan a customer has now: the latest that is not over. */
+/** The plan a customer has now: the latest that is running (a delivery plan still asking for its address is kept apart, under `pending:<phone>`). */
 export const planOfCustomer = (state: PlansState | undefined, customer: string): Plan | undefined =>
-  plansOf(state).reverse().find((p) => p.customer === customer && (p.state === "active" || p.state === "awaiting_address"));
+  plansOf(state).reverse().find((p) => p.customer === customer && p.state === "active");
 
 export const periodOfDay = (plan: Plan, key: string): PlanPeriod | undefined => plan.periods.find((p) => key >= p.from && key <= p.to);
 
@@ -251,4 +259,11 @@ export function returnBalance(plan: Plan, pieces: BalancePiece[]): void {
     const front = plan.balance[0];
     if (front && front.orderId === piece.orderId) front.amountInr += piece.amountInr; else plan.balance.unshift({ ...piece });
   }
+}
+
+/** Tomorrow's meals for each slot that has any: the kitchen's number, read from the ledger for the owner (the morning line and the owner's page). */
+export function mealsTomorrow(state: PlansState | undefined, timeZone: string, nowMs: number): { slotId: string; count: number; key: string }[] {
+  const key = keyOf(addDays(localParts(nowMs, timeZone), 1));
+  const slots = [...new Set(plansOf(state).map((p) => p.slotId))];
+  return slots.map((slotId) => ({ slotId, count: mealsOn(state, key, slotId, nowMs), key })).filter((m) => m.count > 0);
 }
