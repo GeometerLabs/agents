@@ -11,11 +11,16 @@ import { CARD_LABELS, write } from "../words.ts";
 import type { MessageData, MessageId } from "../words.ts";
 import { assistantCatalogue, assistantSubmissions, dayFacts, morningFacts, render, templateMessageFor } from "../templates.ts";
 import type { PrepareRefusal } from "../skill.ts";
+import { viewOf } from "../limits-card.ts";
+import { bigOrderLimit as bigOrderLimitOf, ordersPerDayLimit, refundLimit as refundLimitOf } from "../../limits/chat-limit-kinds.ts";
 
 const TZ = "Asia/Kolkata";
 const SUN = { year: 2026, month: 11, day: 15 };
 const AT_4PM = Date.UTC(2026, 10, 15, 10, 30); // 4:00 pm in India
 const rows = [{ case: "b-14", startMs: AT_4PM, what: "Haircut", who: "Priya", state: "confirmed" }];
+const refundLimit = viewOf(refundLimitOf("cancellation.refundLimitInr", () => ({ min: 0, max: 5000 })));
+const perDayLimit = viewOf(ordersPerDayLimit("orders.maxPerDay", () => ({ min: 1, max: 100 })));
+const bigOrderLimit = viewOf(bigOrderLimitOf("owner.approveOverInr", () => ({ min: 0, max: 100000 })));
 const SAMPLES: { [K in MessageId]: MessageData[K][] } = {
   day_list: [{ date: SUN, rows, closed: false }, { date: SUN, rows: [], closed: true }],
   owes_list: [{ rows: [{ case: "f-3", who: "Arjun", what: "November", amountPaise: 150_000 }] }, { rows: [] }],
@@ -31,17 +36,24 @@ const SAMPLES: { [K in MessageId]: MessageData[K][] } = {
   move_failed: (["no_case", "not_live", "outside_hours", "taken", "past", "failed"] as const).map((why) => ({ ref: "b-14", why, toMs: AT_4PM })),
   need_date: [{ kind: "close_day" }, { kind: "reopen_day" }],
   need_words: [{ ref: "b-14" }],
-  refusal: (["no_case", "not_yours", "not_live", "not_booked", "already_back", "cancel_first", "nothing_paid", "too_much", "nothing_waiting", "no_window", "opted_out", "amount_not_on_record", "busy", "not_here"] as PrepareRefusal[])
+  refusal: (["no_case", "not_yours", "not_live", "not_booked", "already_back", "cancel_first", "nothing_paid", "too_much", "nothing_waiting", "no_window", "opted_out", "amount_not_on_record", "busy", "not_here", "limit_not_tighter"] as PrepareRefusal[])
     .map((why) => ({ why, ref: "b-14", who: "Priya", paidPaise: 20_000 })),
   card: [
     { kind: "cancel", who: "Priya", ref: "b-14", what: "Haircut, Sun 15 Nov, 4:00 pm", amountPaise: 20_000, code: "K7M2QX", hasNo: true },
     { kind: "cancel", who: "Priya", ref: "b-14", what: "Haircut", amountPaise: 0, code: "K7M2QX", hasNo: true },
     { kind: "refund", who: "Priya", ref: "b-14", what: "Haircut", amountPaise: 120_000, aboveLimit: true, code: "K7M2QX", hasNo: true },
     { kind: "message", who: "Priya", ref: "b-14", what: "Haircut", amountPaise: 0, words: "Running 15 minutes late", code: "K7M2QX", hasNo: true },
+    { kind: "limit", who: "", ref: "limit:refund_limit", what: "refund_limit", amountPaise: 50_000, code: "K7M2QX", hasNo: true, limit: { ...refundLimit, now: 1000, to: 500 } },
+    { kind: "limit", who: "", ref: "limit:big_order_limit", what: "big_order_limit", amountPaise: 300_000, code: "K7M2QX", hasNo: true, limit: { ...bigOrderLimit, now: 0, to: 3000 } },
     ...["late_refund", "calendar", "deposit", "refund_owed", "waiver", "refund_request", "big_order"].map((itemKind) => ({ kind: "answer", itemKind, who: "Priya", ref: "b-14", what: "Haircut", amountPaise: 20_000, code: "K7M2QX", hasNo: itemKind !== "deposit" })),
   ],
   done: (["cancelled", "refund_sent", "held_by_guard", "owed_by_owner", "sent", "answered", "failed", "not_sent"] as const).map((note) => ({ note, who: "Priya", ref: "b-14", amountPaise: 20_000 })),
   refused: [{}], refused_before: [{ atMs: AT_4PM }], card_changed: [{}], card_closed: [{}], card_expired: [{}], card_unknown: [{}], limit_no: [{}],
+  limit: [
+    { what: "pending", limit: refundLimit, to: 500 }, { what: "active", limit: refundLimit, to: 500 }, { what: "failed", limit: refundLimit, from: 1000 }, { what: "failed", limit: refundLimit, from: 1000, why: "the deploy did not go through" },
+    { what: "not_tighter", limit: refundLimit, now: 200, to: 500 }, { what: "need_value", limit: refundLimit }, { what: "which", limits: [refundLimit, perDayLimit] }, { what: "loosen_app" },
+    { what: "active", limit: bigOrderLimit, to: 0 }, { what: "pending", limit: perDayLimit, to: 20 },
+  ],
   help: [{ name: "Mithra", shop: "Glow Salon", kinds: ["day", "waiting", "money", "close_day", "move", "cancel", "message", "undo", "owes", "open_orders"] }],
   not_understood: [{ kinds: ["day", "waiting", "close_day"] }], not_offered: [{}], voice_unheard: [{}],
   owner_words: [{ shop: "Glow Salon", words: "Running 15 minutes late, sorry!" }],
