@@ -37,7 +37,7 @@ test("cancel a paid order: a card with the exact change; nothing happens before 
   await orderAndPay(w);
   await owner(w, "cancel o-1");
   const card = lastCard(w);
-  assert.match(card.text, /^Cancel o-1 \(\+919844444444, .*\) and refund the ₹120 deposit\?/u);
+  assert.match(card.text, /^Cancel order o-1 \(\+919844444444, .*\) and refund the ₹120 advance\?/u);
   assert.equal(w.orderOf(AMIT)!.state, "confirmed", "nothing changes before the tap");
   assert.equal(w.payments.refunds().length, 0);
   await tapOwner(w, card.yes);
@@ -75,7 +75,7 @@ test("cancel an order still waiting for its advance: no money moves, the link is
   assert.equal(w.orderOf(AMIT)!.state, "awaiting_advance");
   await owner(w, "cancel o-1");
   const card = lastCard(w);
-  assert.match(card.text, /^Cancel o-1 \(\+919844444444, .*\)\? No deposit was paid\./u);
+  assert.match(card.text, /^Cancel order o-1 \(\+919844444444, .*\)\? No advance was paid\./u);
   await tapOwner(w, card.yes);
   assert.equal(w.orderOf(AMIT)!.state, "cancelled");
   assert.equal(w.payments.refunds().length, 0);

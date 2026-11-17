@@ -72,7 +72,7 @@ const personalityFlat = (language: Language): Map<string, string> => flatWords({
 
 /**
  * Block M (17 Nov 2026): what the shop's assistant says about its memory and the owner's talk (modules/assistant/words-memory.ts), the Remember / No buttons, and the cards
- * worded for Fees and Orders (a fee's balance and an order's advance, not a "deposit"), under the ids "memory.*" and "card.<skill>.*". Each is written with made-up values, so
+ * worded for Fees and Orders (a fee's balance and an order's advance, not a "deposit"), under the ids "memory.*", "card.<skill>.*" and "refusal.<skill>.*". Each is written with made-up values, so
  * a native reviewer reads whole sentences; the note's own words, ids and amounts are filled in by the assistant and never translated.
  */
 const memoryFlat = (language: Language): Map<string, string> => {
@@ -87,6 +87,8 @@ const memoryFlat = (language: Language): Map<string, string> => {
   out.set("memory.button.remember", NOTE_LABELS[language].yes); out.set("memory.button.no", NOTE_LABELS[language].no);
   const card = (skill: string, kind: string, amountPaise: number) => cardQuestion({ kind, skill, who: "Priya", ref: skill === "fees" ? "f-3" : "o-5", what: skill === "fees" ? "November 2026" : "2 cakes", amountPaise, code: "K7M2QX", hasNo: true }, language, "Asia/Kolkata");
   for (const skill of ["fees", "orders"]) { out.set(`card.${skill}.cancel_money`, card(skill, "cancel", 150_000)); out.set(`card.${skill}.cancel_none`, card(skill, "cancel", 0)); out.set(`card.${skill}.refund`, card(skill, "refund", 50_000)); }
+  // The two refusals that name the money going back, worded for Fees (a payment) and Orders (an advance); Bookings' say "deposit" and are on the main sheet.
+  for (const skill of ["fees", "orders"]) for (const why of ["already_back", "cancel_first"] as const) out.set(`refusal.${skill}.${why}`, writeAssistant("refusal", { why, ref: skill === "fees" ? "f-3" : "o-5", skill }, language, "Asia/Kolkata").text);
   return out;
 };
 

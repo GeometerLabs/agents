@@ -68,9 +68,9 @@ export type PrepareRefusal =
   | "not_yours" // the reference is another skill's
   | "not_live" // it is cancelled, done or expired
   | "not_booked" // still being asked about (no time agreed yet): nothing to cancel
-  | "already_back" // the deposit is already going back: the booking cannot be cancelled with a refund from here
-  | "cancel_first" // a refund of a booking that still stands: cancel it (its own card) to give the deposit back
-  | "not_here" // the skill does not take this act from the chat in the first release (Fees and Orders: cancel and refund)
+  | "already_back" // the money (a deposit, a fee's payment, an order's advance) is already going back; words.ts words it by skill (SKILL_REFUSAL)
+  | "cancel_first" // a refund of a case that still stands: cancel it (its own card) to give the money back; worded by skill
+  | "not_here" // the skill does not take this act from the chat (Fees, when the owner's app is read-only: cancel and refund; a limit card of another kind)
   | "nothing_paid" // a refund with nothing paid
   | "too_much" // more than was paid
   | "nothing_waiting" // no answer is waiting on that case
