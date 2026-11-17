@@ -38,6 +38,8 @@ const periodsOf = (language: "hi" | "ml" | "kn") => alternation(Object.values(DA
 // "വൈകുന്നേരം 6:00" or "ಸಂಜೆ 6:00". Exactly what the formatters write; the period word is part of the time, so a wrong one is caught.
 const DATE_RE = new RegExp(`(?:${WEEKDAYS})\\s*,?\\s*\\d{1,2}\\s+(?:${MONTHS})`, "giu");
 const TIME_RE = new RegExp(`(?:${periodsOf("hi")})\\s+\\d{1,2}:\\d{2}\\s+बजे|(?:${periodsOf("ml")}|${periodsOf("kn")})\\s+\\d{1,2}:\\d{2}|\\d{1,2}:\\d{2}\\s*(?:am|pm)`, "giu");
+/** Sentence punctuation that may follow a link and is not part of it, including the Hindi danda ("।", "॥"), which Hindi text puts straight after a link (17 Nov 2026: Fees' Hindi family reminder ended its last link with "।" and was held back). */
+const TRAILING_PUNCTUATION = /[.,;:!?।॥]+$/u;
 const URL_RE = /(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}\/[^\s)]*/giu;
 /** A UPI payment request (modules/payments/providers/upi/link.ts). It holds the shop's UPI ID and an amount, so it is read before anything else and must be the record's own, whole. */
 const UPI_RE = /upi:\/\/[^\s)]*/giu;
@@ -115,7 +117,7 @@ export function checkText(finalText: string, facts: CheckFacts): CheckResult {
   // A UPI link first: its UPI ID and its amount are part of it, so they are not read on their own. Only the record's own link, exactly.
   const upiLinks = tokens(UPI_RE, text);
   for (const u of upiLinks) {
-    const cleaned = u.text.replace(/[.,;:!?]+$/u, "");
+    const cleaned = u.text.replace(TRAILING_PUNCTUATION, "");
     if (!allowed.urls.has(cleaned.toLowerCase())) problems.push(`The message has the UPI link "${cleaned}", which is not the payment request in the record.`);
   }
   text = mask(text, upiLinks);
@@ -126,7 +128,7 @@ export function checkText(finalText: string, facts: CheckFacts): CheckResult {
   // Links: only the payment link in the record.
   const urls = tokens(URL_RE, text);
   for (const u of urls) {
-    const cleaned = u.text.replace(/[.,;:!?]+$/u, "");
+    const cleaned = u.text.replace(TRAILING_PUNCTUATION, "");
     if (!allowed.urls.has(cleaned.toLowerCase())) problems.push(`The message has the link "${cleaned}", which is not the payment link in the record.`);
   }
   text = mask(text, urls);
