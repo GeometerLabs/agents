@@ -38,4 +38,6 @@
 - **The slot's limit is not shown with a number** ("3 left") in the list of slots; a full slot is only left out. Done when: a shop asks for it.
 - **A customer's page order is not reminded on WhatsApp** (it has no number the agent may write to); its page shows the slot. Done when: the page takes web push for it (modules/push).
 - **Real-phone and real-provider tries** of everything above: none. Every figure and message is from stand-ins.
+- **Money that arrives on the balance link of an order cancelled meanwhile.** The link is closed when the owner or the customer cancels, and a payment on it afterwards is not counted and not refunded by the agent (the owner
+  sees it in the payment account). Trigger: the first such payment in a pilot. Done when: the agent refunds a payment on a balance link whose order is cancelled, through the same Guard.
 

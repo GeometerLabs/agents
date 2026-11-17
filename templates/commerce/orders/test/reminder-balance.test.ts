@@ -106,7 +106,7 @@ test("a customer cannot mark the balance, and nor can a word on an order with no
   await confirmed(w);
   await w.say("balance o-1 cash");
   assert.equal(w.orderOf(AMIT)!.balance, undefined);
-  const full = razorpay({ advance: { mode: "full", percent: 100, holdMinutes: 30 } });
+  const full = razorpay({ advance: { mode: "full", holdMinutes: 30 } });
   await confirmed(full);
   await full.ownerSays("balance o-1 cash");
   assert.match(full.lastTextTo(full.owner), /no balance to mark/u);
