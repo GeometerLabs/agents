@@ -15,8 +15,8 @@ import { OWNER_MARKED_KINDS } from "./guards.ts";
 
 
 /** Item 11h: the customer side of a shop's page, from its pathway (none for a pathway that has no page: an agent someone else wrote has no runtime of ours). */
-const channelKind = (pathway: string | undefined): "bookings" | "orders" | "fees" | undefined =>
-  pathway === undefined || pathway === "bookings" ? "bookings" : pathway === "orders" ? "orders" : pathway === "fees" ? "fees" : undefined;
+const channelKind = (pathway: string | undefined): "bookings" | "orders" | "fees" | "stock" | undefined =>
+  pathway === undefined || pathway === "bookings" ? "bookings" : pathway === "orders" ? "orders" : pathway === "fees" ? "fees" : pathway === "stock-orders" ? "stock" : undefined;
 
 export interface ShopWebhooks {
   verification: "meta-signature" | "path-token";

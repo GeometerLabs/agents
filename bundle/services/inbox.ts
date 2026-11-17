@@ -40,7 +40,7 @@ export interface InboxShopConfig {
    * runtime with the shop's CHANNEL token only (never the internal token above, which this process also holds for the webhooks: the isolation is per token, not per
    * process; Explanation.md says what that means), and to the relay with the relay token, for a shop whose Guard holds refunds.
    */
-  channel?: { publicUrl: string; /** Item 11h: the shop's template, which decides its customer side (modules/channels/front.ts). Left out: Bookings. */ kind?: "bookings" | "orders" | "fees" };
+  channel?: { publicUrl: string; /** Item 11h: the shop's template, which decides its customer side (modules/channels/front.ts). Left out: Bookings. */ kind?: "bookings" | "orders" | "fees" | "stock" };
 }
 
 
