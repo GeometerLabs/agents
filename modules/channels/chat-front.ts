@@ -116,7 +116,7 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
 
   if (sub === "/push" && method === "POST") {
     if (!kit.sameOrigin(req, shop)) return kit.sendJson(res, 403, { error: "Calls from another site's page are refused." });
-    if (!backend.push || !hash || parent || !limiter.take("chat", address)) return kit.sendJson(res, backend.push && hash ? 429 : 404, { error: "Alerts are not on here." });
+    if (!backend.push || !hash || parent || !limiter.take("chat", address)) return kit.sendJson(res, backend.push && hash && !parent ? 429 : 404, { error: "Alerts are not on here." });
     let body: Record<string, unknown>;
     try { body = JSON.parse((await kit.readBody(req, kit.maxForm)) ?? "") as Record<string, unknown>; } catch { return kit.sendJson(res, 400, { error: "Send JSON." }); }
     const r = await backend.push({ op: "customer_subscribe", handle: hash, subscription: body.subscription });
