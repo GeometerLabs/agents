@@ -338,6 +338,8 @@ export const hi: Words = {
       whatsapp_token_renewal: (_id, _amount, hours) => `Gupshup से WhatsApp: इस दुकान का टोकन नया नहीं हो पाया। अभी वाला टोकन ${hours} घंटे में ख़त्म होगा, उसके बाद कोई संदेश नहीं जाएगा। सर्वर देखिए (geometer logs refresher) या Gupshup का नया universal token दीजिए।`,
       whatsapp_token_credential: (_id, _amount, hours) => `Gupshup से WhatsApp: सर्वर का Gupshup universal token ${credentialEnds(hours)} (geometer gupshup-token <file>)।`,
       message_not_delivered: (id) => `${id} के लिए भेजा गया WhatsApp संदेश फ़ोन तक नहीं पहुँचा (WhatsApp ने बताया कि वह विफल रहा): उस व्यक्ति से किसी और तरह संपर्क कीजिए`,
+      supplier_no_answer: (id) => `ऑर्डर ${id}: दोबारा पूछने पर भी सप्लायर ने जवाब नहीं दिया: उन्हें फ़ोन करें, या ऑर्डर उन तक न पहुँचा हो तो रद्द करें`,
+      goods_not_received: (id) => `ऑर्डर ${id}: सप्लायर ने मान लिया था पर एक हफ़्ते से कुछ मिला हुआ दर्ज नहीं है: उनसे पूछें, या जो आया उसे दर्ज करें`,
       upi_payment_unconfirmed: (id, amount) => `${id} के लिए ${amount} का UPI पेमेंट मालिक ने अभी पक्का नहीं किया: मालिक से अपना UPI ऐप देखने को कहिए`,
       upi_refund_owed: (id, amount) => `${id} का ${amount} का रिफंड मालिक पर बाकी है और अभी हो गया नहीं लिखा गया: मालिक को याद दिलाइए`,
     },

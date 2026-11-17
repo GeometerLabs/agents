@@ -11,6 +11,7 @@ import { createRecord } from "../../../../modules/record/record.ts";
 import type { ActionRecord } from "../../../../modules/record/record.ts";
 import { createAgent } from "./agent.ts";
 import type { Agent } from "./agent.ts";
+import { REPORT_TEMPLATE_NAMES } from "../report/whatsapp.ts";
 import { META_TEMPLATE_NAMES } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES } from "./language/templates.ts";
 import { createStore } from "./order.ts";
@@ -71,7 +72,7 @@ export function createWorld(options: WorldOptions = {}): World {
   let settings = options.settings ?? glowSalon();
   const clock = fakeClock(options.nowMs ?? zonedToMs({ year: 2026, month: 11, day: 9 }, { hour: 10, minute: 0 }, settings.timezone));
   const messaging = createFakeMessaging(clock);
-  for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) if (!options.unapproved?.includes(name)) for (const language of LANGUAGES) messaging.approve(name, language);
+  for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES, ...REPORT_TEMPLATE_NAMES]) if (!options.unapproved?.includes(name)) for (const language of LANGUAGES) messaging.approve(name, language);
   const record = createRecord(clock);
   const store = createStore();
   let agent = createAgent({ settings, clock, messaging, record, store });

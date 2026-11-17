@@ -650,5 +650,277 @@
         }
       }
     ]
+  },
+  {
+    "name": "stock_monthly_report",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "*मासिक रिपोर्ट: {{1}}*\nदिए गए ऑर्डर: *{{2}}* · सप्लायर ने OK कहा: *{{3}}* · पूरा माल आया: *{{4}}* · कुछ माल आया: *{{5}}* · गलत सामान: *{{6}}*\nसप्लायर ने मना किया: *{{7}}* · सप्लायर का जवाब नहीं: *{{8}}* · रद्द या भेजे नहीं गए: *{{9}}*\nइस्तेमाल हुआ बजट: *{{10}}*\nआपकी सीमाओं ने रोका: *{{11}}*\n*जाँचा नहीं गया*: {{12}}। जाँच हाथ से की गई।\nकोड: {{13}} · पूरी रिपोर्ट: {{14}}\nअसली है या नहीं, जाँचें: {{15}}\nसपोर्ट को लिखें। एक इंसान जवाब देता है।\nतैयार किया: {{16}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Unisex Salon · फरवरी 2027",
+              "9",
+              "7",
+              "4",
+              "1",
+              "1",
+              "1",
+              "1",
+              "0",
+              "₹20,000 में से ₹9,000 · आपने भुगतान दर्ज किया (आपका नोट): 2",
+              "3",
+              "असली WhatsApp · असली सप्लायर के जवाब · सप्लायर को पैसे देना · शब्दों की किसी मूल भाषी से जाँच · और 10 (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAQAD7HYMdtfjVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.vv5O7CGK4abVQwEqt804NE5labc4lCf_1zxL3gxqPdd0PpWcfm9nMIYTIxLlfw1xZHrM0O_po3wKDN00iDnaCg",
+              "Divya, Sri Sai Digital"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_monthly_report",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "*Monthly report: {{1}}*\nOrders placed: *{{2}}* · Supplier said OK: *{{3}}* · Received in full: *{{4}}* · Part received: *{{5}}* · Wrong item: *{{6}}*\nSupplier said no: *{{7}}* · No answer from the supplier: *{{8}}* · Cancelled or never sent: *{{9}}*\nBudget used: *{{10}}*\nStopped by your limits: *{{11}}*\n*Not checked*: {{12}}. Checks were run by hand.\nCode: {{13}} · Full report: {{14}}\nCheck it is genuine: {{15}}\nWrite to support. A person answers.\nSet up by: {{16}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Unisex Salon · Feb 2027",
+              "9",
+              "7",
+              "4",
+              "1",
+              "1",
+              "1",
+              "1",
+              "0",
+              "₹9,000 of ₹20,000 · Marked paid by you (your note): 2",
+              "3",
+              "real WhatsApp · real suppliers' replies · paying a supplier · a native speaker's review of the wording · and 10 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAQAD7HYMdtfjVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.vv5O7CGK4abVQwEqt804NE5labc4lCf_1zxL3gxqPdd0PpWcfm9nMIYTIxLlfw1xZHrM0O_po3wKDN00iDnaCg",
+              "Divya, Sri Sai Digital"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_monthly_report",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "*പ്രതിമാസ റിപ്പോർട്ട്: {{1}}*\nനൽകിയ ഓർഡറുകൾ: *{{2}}* · വിതരണക്കാരൻ OK പറഞ്ഞു: *{{3}}* · മുഴുവൻ വന്നു: *{{4}}* · ഭാഗികമായി വന്നു: *{{5}}* · തെറ്റായ സാധനം: *{{6}}*\nവിതരണക്കാരൻ ഇല്ല എന്ന് പറഞ്ഞു: *{{7}}* · വിതരണക്കാരന്റെ മറുപടി ഇല്ല: *{{8}}* · റദ്ദാക്കിയതോ അയയ്ക്കാത്തതോ: *{{9}}*\nഉപയോഗിച്ച ബജറ്റ്: *{{10}}*\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: *{{11}}*\n*പരിശോധിക്കാത്തത്*: {{12}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{13}} · പൂർണ്ണ റിപ്പോർട്ട്: {{14}}\nയഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക: {{15}}\nസപ്പോർട്ടിന് എഴുതുക. ഒരു വ്യക്തി മറുപടി നൽകും.\nതയ്യാറാക്കിയത്: {{16}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Unisex Salon · ഫെബ്രുവരി 2027",
+              "9",
+              "7",
+              "4",
+              "1",
+              "1",
+              "1",
+              "1",
+              "0",
+              "₹20,000-ൽ ₹9,000 · പണം നൽകിയതായി കുറിച്ചത് (നിങ്ങളുടെ കുറിപ്പ്): 2",
+              "3",
+              "യഥാർത്ഥ WhatsApp · യഥാർത്ഥ വിതരണക്കാരുടെ മറുപടികൾ · വിതരണക്കാരന് പണം നൽകൽ · മാതൃഭാഷക്കാരന്റെ പരിശോധന · +10 (പൂർണ്ണ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "https://geometer.dev/verify/#sha256:5555555555555555555555555555555555555555555555555555555555555555",
+              "Divya, Sri Sai Digital"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_monthly_report",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "*ಮಾಸಿಕ ವರದಿ: {{1}}*\nನೀಡಿದ ಆರ್ಡರ್‌ಗಳು: *{{2}}* · ಪೂರೈಕೆದಾರರು OK ಎಂದರು: *{{3}}* · ಪೂರ್ತಿ ಬಂತು: *{{4}}* · ಭಾಗಶಃ ಬಂತು: *{{5}}* · ತಪ್ಪು ವಸ್ತು: *{{6}}*\nಪೂರೈಕೆದಾರರು ಇಲ್ಲ ಎಂದರು: *{{7}}* · ಪೂರೈಕೆದಾರರ ಉತ್ತರ ಇಲ್ಲ: *{{8}}* · ರದ್ದಾದ ಅಥವಾ ಕಳುಹಿಸದ: *{{9}}*\nಬಳಸಿದ ಬಜೆಟ್: *{{10}}*\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: *{{11}}*\n*ಪರಿಶೀಲಿಸದ್ದು*: {{12}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{13}} · ಪೂರ್ಣ ವರದಿ: {{14}}\nನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ: {{15}}\nಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ.\nಸಿದ್ಧಪಡಿಸಿದವರು: {{16}} · Geometer",
+        "example": {
+          "body_text": [
+            [
+              "Glow Unisex Salon · ಫೆಬ್ರವರಿ 2027",
+              "9",
+              "7",
+              "4",
+              "1",
+              "1",
+              "1",
+              "1",
+              "0",
+              "₹20,000 ರಲ್ಲಿ ₹9,000 · ಹಣ ಕೊಟ್ಟಿದ್ದೆಂದು ಗುರುತಿಸಿದ್ದು (ನಿಮ್ಮ ಟಿಪ್ಪಣಿ): 2",
+              "3",
+              "ನಿಜವಾದ WhatsApp · ನಿಜವಾದ ಪೂರೈಕೆದಾರರ ಉತ್ತರಗಳು · ಪೂರೈಕೆದಾರರಿಗೆ ಹಣ ಕೊಡುವುದು · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಮತ್ತು 10 (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "https://geometer.dev/verify/#sha256:5555555555555555555555555555555555555555555555555555555555555555",
+              "Divya, Sri Sai Digital"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_monthly_report_innovator",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "*मासिक रिपोर्ट: {{1}}*\nदिए गए ऑर्डर: *{{2}}* · सप्लायर ने OK कहा: *{{3}}* · पूरा माल आया: *{{4}}* · कुछ माल आया: *{{5}}* · गलत सामान: *{{6}}*\nसप्लायर ने मना किया: *{{7}}* · सप्लायर का जवाब नहीं: *{{8}}* · रद्द या भेजे नहीं गए: *{{9}}*\nइस्तेमाल हुआ बजट: *{{10}}*\nआपकी सीमाओं ने रोका: *{{11}}*\n*जाँचा नहीं गया*: {{12}}। जाँच हाथ से की गई।\nकोड: {{13}} · पूरी रिपोर्ट: {{14}}\nअसली है या नहीं, जाँचें: {{15}}\nसपोर्ट को लिखें। एक इंसान जवाब देता है।\nतैयार किया: {{16}} · Geometer\n★ इनोवेटर",
+        "example": {
+          "body_text": [
+            [
+              "Glow Unisex Salon · फरवरी 2027",
+              "9",
+              "7",
+              "4",
+              "1",
+              "1",
+              "1",
+              "1",
+              "0",
+              "₹20,000 में से ₹9,000 · आपने भुगतान दर्ज किया (आपका नोट): 2",
+              "3",
+              "असली WhatsApp · असली सप्लायर के जवाब · सप्लायर को पैसे देना · शब्दों की किसी मूल भाषी से जाँच · और 10 (पूरी रिपोर्ट में)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-hi.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAQAD7HYMdtfjVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.vv5O7CGK4abVQwEqt804NE5labc4lCf_1zxL3gxqPdd0PpWcfm9nMIYTIxLlfw1xZHrM0O_po3wKDN00iDnaCg",
+              "Divya, Sri Sai Digital"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_monthly_report_innovator",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "*Monthly report: {{1}}*\nOrders placed: *{{2}}* · Supplier said OK: *{{3}}* · Received in full: *{{4}}* · Part received: *{{5}}* · Wrong item: *{{6}}*\nSupplier said no: *{{7}}* · No answer from the supplier: *{{8}}* · Cancelled or never sent: *{{9}}*\nBudget used: *{{10}}*\nStopped by your limits: *{{11}}*\n*Not checked*: {{12}}. Checks were run by hand.\nCode: {{13}} · Full report: {{14}}\nCheck it is genuine: {{15}}\nWrite to support. A person answers.\nSet up by: {{16}} · Geometer\n★ Innovator",
+        "example": {
+          "body_text": [
+            [
+              "Glow Unisex Salon · Feb 2027",
+              "9",
+              "7",
+              "4",
+              "1",
+              "1",
+              "1",
+              "1",
+              "0",
+              "₹9,000 of ₹20,000 · Marked paid by you (your note): 2",
+              "3",
+              "real WhatsApp · real suppliers' replies · paying a supplier · a native speaker's review of the wording · and 10 more (see the full report)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-en.html",
+              "https://geometer.dev/verify/#s1.AQAABzIwMjctMDIIYm9va2luZ3MKR2xvdyBTYWxvbhZEaXZ5YSwgU3JpIFNhaSBEaWdpdGFsCCaAtmvAuAIFAwIBAQAD7HYMdtfjVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU.vv5O7CGK4abVQwEqt804NE5labc4lCf_1zxL3gxqPdd0PpWcfm9nMIYTIxLlfw1xZHrM0O_po3wKDN00iDnaCg",
+              "Divya, Sri Sai Digital"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_monthly_report_innovator",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "*പ്രതിമാസ റിപ്പോർട്ട്: {{1}}*\nനൽകിയ ഓർഡറുകൾ: *{{2}}* · വിതരണക്കാരൻ OK പറഞ്ഞു: *{{3}}* · മുഴുവൻ വന്നു: *{{4}}* · ഭാഗികമായി വന്നു: *{{5}}* · തെറ്റായ സാധനം: *{{6}}*\nവിതരണക്കാരൻ ഇല്ല എന്ന് പറഞ്ഞു: *{{7}}* · വിതരണക്കാരന്റെ മറുപടി ഇല്ല: *{{8}}* · റദ്ദാക്കിയതോ അയയ്ക്കാത്തതോ: *{{9}}*\nഉപയോഗിച്ച ബജറ്റ്: *{{10}}*\nനിങ്ങളുടെ പരിധികൾ തടഞ്ഞത്: *{{11}}*\n*പരിശോധിക്കാത്തത്*: {{12}}. പരിശോധനകൾ കൈകൊണ്ട് ചെയ്തു.\nകോഡ്: {{13}} · പൂർണ്ണ റിപ്പോർട്ട്: {{14}}\nയഥാർത്ഥമാണോ എന്ന് പരിശോധിക്കുക: {{15}}\nസപ്പോർട്ടിന് എഴുതുക. ഒരു വ്യക്തി മറുപടി നൽകും.\nതയ്യാറാക്കിയത്: {{16}} · Geometer\n★ ഇന്നൊവേറ്റർ",
+        "example": {
+          "body_text": [
+            [
+              "Glow Unisex Salon · ഫെബ്രുവരി 2027",
+              "9",
+              "7",
+              "4",
+              "1",
+              "1",
+              "1",
+              "1",
+              "0",
+              "₹20,000-ൽ ₹9,000 · പണം നൽകിയതായി കുറിച്ചത് (നിങ്ങളുടെ കുറിപ്പ്): 2",
+              "3",
+              "യഥാർത്ഥ WhatsApp · യഥാർത്ഥ വിതരണക്കാരുടെ മറുപടികൾ · വിതരണക്കാരന് പണം നൽകൽ · മാതൃഭാഷക്കാരന്റെ പരിശോധന · +10 (പൂർണ്ണ റിപ്പോർട്ടിൽ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-ml.html",
+              "https://geometer.dev/verify/#sha256:5555555555555555555555555555555555555555555555555555555555555555",
+              "Divya, Sri Sai Digital"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "stock_monthly_report_innovator",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "*ಮಾಸಿಕ ವರದಿ: {{1}}*\nನೀಡಿದ ಆರ್ಡರ್‌ಗಳು: *{{2}}* · ಪೂರೈಕೆದಾರರು OK ಎಂದರು: *{{3}}* · ಪೂರ್ತಿ ಬಂತು: *{{4}}* · ಭಾಗಶಃ ಬಂತು: *{{5}}* · ತಪ್ಪು ವಸ್ತು: *{{6}}*\nಪೂರೈಕೆದಾರರು ಇಲ್ಲ ಎಂದರು: *{{7}}* · ಪೂರೈಕೆದಾರರ ಉತ್ತರ ಇಲ್ಲ: *{{8}}* · ರದ್ದಾದ ಅಥವಾ ಕಳುಹಿಸದ: *{{9}}*\nಬಳಸಿದ ಬಜೆಟ್: *{{10}}*\nನಿಮ್ಮ ಮಿತಿಗಳು ತಡೆದದ್ದು: *{{11}}*\n*ಪರಿಶೀಲಿಸದ್ದು*: {{12}}. ಪರಿಶೀಲನೆಗಳನ್ನು ಕೈಯಾರೆ ಮಾಡಲಾಗಿದೆ.\nಕೋಡ್: {{13}} · ಪೂರ್ಣ ವರದಿ: {{14}}\nನಿಜವಾದುದೇ ಎಂದು ಪರಿಶೀಲಿಸಿ: {{15}}\nಸಪೋರ್ಟ್‌ಗೆ ಬರೆಯಿರಿ. ಒಬ್ಬ ವ್ಯಕ್ತಿ ಉತ್ತರಿಸುತ್ತಾರೆ.\nಸಿದ್ಧಪಡಿಸಿದವರು: {{16}} · Geometer\n★ ಇನ್ನೋವೇಟರ್",
+        "example": {
+          "body_text": [
+            [
+              "Glow Unisex Salon · ಫೆಬ್ರವರಿ 2027",
+              "9",
+              "7",
+              "4",
+              "1",
+              "1",
+              "1",
+              "1",
+              "0",
+              "₹20,000 ರಲ್ಲಿ ₹9,000 · ಹಣ ಕೊಟ್ಟಿದ್ದೆಂದು ಗುರುತಿಸಿದ್ದು (ನಿಮ್ಮ ಟಿಪ್ಪಣಿ): 2",
+              "3",
+              "ನಿಜವಾದ WhatsApp · ನಿಜವಾದ ಪೂರೈಕೆದಾರರ ಉತ್ತರಗಳು · ಪೂರೈಕೆದಾರರಿಗೆ ಹಣ ಕೊಡುವುದು · ಪದಗಳ ಬಗ್ಗೆ ಮಾತೃಭಾಷಿಕರ ಪರಿಶೀಲನೆ · ಮತ್ತು 10 (ಪೂರ್ಣ ವರದಿಯಲ್ಲಿ)",
+              "7K2M-9QXD",
+              "https://reports.example.com/r/3f9a1c7d2b8e4f60/report-2027-02-kn.html",
+              "https://geometer.dev/verify/#sha256:5555555555555555555555555555555555555555555555555555555555555555",
+              "Divya, Sri Sai Digital"
+            ]
+          ]
+        }
+      }
+    ]
   }
 ]
