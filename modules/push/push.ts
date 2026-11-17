@@ -11,13 +11,15 @@ import { ApiError } from "../core/faults.ts";
 import type { Messaging, OutboundMessage } from "../messaging/messaging.ts";
 import { fitNotification } from "./sender.ts";
 import type { PushSender } from "./sender.ts";
-import type { BrowserSubscription, OwnerChoice, PushStore } from "./store.ts";
+import type { BrowserSubscription, OwnerChoice, PushStore, Signer } from "./store.ts";
 
 export interface Push {
   /** Is push on for this shop (its runtime has a push Guard)? Off: nothing is queued, and the pages do not offer it. */
   on: boolean;
   /** The shop's VAPID public key, for the pages' `applicationServerKey`. */
   publicKey(): string;
+  /** Streetlist's one push key (its public half) when this shop sends through the relay (a shop served through the door), else undefined. The chat page subscribes with it. */
+  relayKey(): string | undefined;
   /** An alert to the owner's phones. The ids queued: none means no phone allowed alerts. */
   owner(text: string, tag?: string): string[];
   /** An alert to a customer page's phones (`conversation`: the page's "web:..." conversation). */
@@ -26,12 +28,13 @@ export interface Push {
   setChoice(c: OwnerChoice): void;
   /** Phones that get the owner's alerts now. */
   ownerPhones(): number;
-  subscribe(who: string, s: BrowserSubscription): { ok: true; id: string } | { ok: false; why: string };
+  /** `signer`: "streetlist" only for a phone that subscribed through the Streetlist app (refused when this shop has no relay). */
+  subscribe(who: string, s: BrowserSubscription, signer?: Signer): { ok: true; id: string } | { ok: false; why: string };
   unsubscribe(who: string, endpoint: string): boolean;
   phones(who: string): number;
 }
 
-export function createPush(o: { store: PushStore; sender: PushSender; shopName: string; clock: Clock; on: boolean }): Push {
+export function createPush(o: { store: PushStore; sender: PushSender; shopName: string; clock: Clock; on: boolean; relayKey?: string }): Push {
   const { store, sender, clock } = o;
   const queue = (who: string, kind: "owner" | "customer", text: string, tag: string): string[] => {
     if (!o.on) return [];
@@ -42,12 +45,17 @@ export function createPush(o: { store: PushStore; sender: PushSender; shopName: 
   return {
     on: o.on,
     publicKey: () => store.vapid().publicKey,
+    relayKey: () => (o.on ? o.relayKey : undefined),
     owner: (text, tag = "owner") => queue("owner", "owner", text, tag),
     customer: (conversation, text) => queue(conversation, "customer", text, "update"),
     choice: () => store.choice(),
     setChoice: (c) => store.setChoice(c),
     ownerPhones: () => store.phones("owner"),
-    subscribe: (who, s) => (o.on ? store.subscribe(who, s, clock.now()) : { ok: false, why: "push is not on for this shop" }),
+    subscribe: (who, s, signer = "own") => {
+      if (!o.on) return { ok: false, why: "push is not on for this shop" };
+      if (signer === "streetlist" && !o.relayKey) return { ok: false, why: "this shop does not send through the Streetlist app" };
+      return store.subscribe(who, s, clock.now(), signer);
+    },
     unsubscribe: (who, endpoint) => store.unsubscribe(who, endpoint, clock.now()),
     phones: (who) => store.phones(who),
   };

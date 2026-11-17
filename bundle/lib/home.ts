@@ -23,9 +23,9 @@ import { dirname, join, resolve } from "node:path";
 import { Refused, stableJson } from "./util.ts";
 
 /** The top-level names the home owns, as a visitor types them (`/shops`, `/assets/...`). Every one is in fleet's RESERVED_SLUGS. */
-export const HOME_TOP: readonly string[] = ["shops", "partners", "privacy", "examples", "assets", "demo"];
+export const HOME_TOP: readonly string[] = ["shops", "partners", "privacy", "chats", "examples", "assets", "demo"];
 /** Single files at the top that are not slugs (a dot is never in a slug). robots.txt is not here: Caddy answers it, merged with the door's. */
-export const HOME_FILES: readonly string[] = ["favicon.svg"];
+export const HOME_FILES: readonly string[] = ["favicon.svg", "sw.js", "manifest.webmanifest", "apple-touch-icon.png", "streetlist-192.png", "streetlist-512.png", "streetlist-maskable.png"];
 /** Pages inside /examples/, as the home builds them (a name here is a file examples/<name>.html). Any lowercase name is accepted, the shape is checked on install. */
 export const HOME_EXAMPLE_NAME = /^[a-z0-9][a-z0-9-]{0,60}$/u;
 /**

@@ -1,177 +1,119 @@
-// The server's one approvals relay: the pathway's own relay (templates/commerce/bookings/approvals/), one instance per shop, each with that shop's owner, that
-// shop's Guard and its own state folder, behind /c/<shop>. Each owner's approver secret is in its own file and only that shop's relay reads it.
+// Streetlist's push relay (W3, 17 Nov 2026; plan next-phase.md section 1a, "The talk on every door"): the one place that holds the Streetlist app's push key and signs with it.
 //
-// An agent someone else wrote has an entry too (kind "own-agent"), with what its way of taking money needs (B71):
-//   - a gateway with a module: the relay asks the owner about a refund its Guard holds, with the payment read from the gateway's own record (agent/relay-context.ts);
-//   - its own API (B71 part 2): the relay asks the owner about a call its reviewed spec holds, in words that say only what Guard holds (modules/approvals/own-api-voice.ts);
-//   - a module the owner marks (UPI, B71 part 2): no relay; the owner-marked desk (services/desk.ts), which takes the owner's replies here and serves the agent's
-//     desk Guard on a port of its own (DESK_PORT), never this one.
+// WHY THERE IS ONE KEY. A phone that installs the Streetlist app has ONE service worker, at streetlist.in's root, shared by every shop's chat, and a browser gives a worker
+// one push subscription made for one key. So the app subscribes once with Streetlist's public key, and each shop the customer allows alerts for is handed that same
+// subscription. A shop never holds the key, so a shop cannot sign: its runtime encrypts each alert for the phone itself (RFC 8291, modules/push, exactly as for a phone
+// on its own key) and asks THIS to sign (RFC 8292) and post it.
 //
-//   CONFIG=/etc/geometer/relay.json PORT=8795 HOST=0.0.0.0 [DESK_PORT=8796] node bundle/services/relay.ts
-import { channelMessaging } from "../../modules/channels/outbox.ts";
-import { emptyChannelState } from "../../modules/channels/state.ts";
-import { existsSync, readFileSync } from "node:fs";
-import { createServer } from "node:http";
-import { join } from "node:path";
-import { createGuardClient, createRuntimeClient } from "../../modules/approvals/clients.ts";
-import type { GuardClient } from "../../modules/approvals/clients.ts";
-import { createRelay as bookingsRelay } from "../../templates/commerce/bookings/approvals/relay.ts";
-import { createRelay as feesRelay } from "../../templates/education/fees/approvals/relay.ts";
-import { createRelay as ordersRelay } from "../../templates/commerce/orders/approvals/relay.ts";
-import { createRelay as sharedRelay, lastInboundKey } from "../../modules/approvals/relay.ts";
-import type { Relay, RelayOptions, RelayPerson } from "../../modules/approvals/relay.ts";
-import { readHeldCall } from "../../modules/approvals/held-call.ts";
-import type { HeldCallSpec } from "../../modules/approvals/held-call.ts";
-import { ownApiVoice } from "../../modules/approvals/own-api-voice.ts";
-import { names } from "../generate/shop.ts";
-import { relayHandler } from "../../modules/approvals/server.ts";
-import { ownerSessionChecker } from "../../modules/channels/owner-access.ts";
-import { openRelayStore } from "../../modules/approvals/store.ts";
-import { createLiveMessaging } from "../../modules/messaging/providers.ts";
-import { systemClock } from "../../modules/core/clock.ts";
-import type { Clock } from "../../modules/core/clock.ts";
-import { ownAgentRuntime, ownApiRuntime } from "../agent/relay-context.ts";
-import { createDeskHost, deskServer } from "./desk.ts";
-import type { DeskConfig, DeskHost } from "./desk.ts";
-import { createRouter } from "../lib/router.ts";
-import { OWNER_LINK_FILE, readOwnerLink } from "../../modules/channels/owner-link.ts";
-import type { Handler } from "../lib/router.ts";
+// WHAT IT SEES. Only what the push sender always saw: the push service's host, the subscription's path (the endpoint), and ciphertext it cannot open (it holds no
+// decryption key and never imports the decryption code). It reads no words, no name, no phone number.
+//
+// WHERE IT RUNS. In the server's push sender (services/push.ts), not in the door. Why: the runtime reaches only its own Guards, and the push Guard reaches only the sender,
+// on the `push` network (generate/compose.ts); the door sits on the `pages` network, is reachable from the internet through Caddy, and handles builders' traffic, so it is the
+// worst place for a signing key. The sender is already the one container that reaches the push services, only behind a shop's push Guard (host allowlist, daily caps).
+// This file is the pure part (checks, limits, signing, the key file); push.ts calls it.
+//
+// WHAT IT WILL SIGN. A call that is well formed (modules/push/hosts.ts pushCallProblem), names a shop this server runs, is for a push service on the exact list, and is within
+// the shop's limits. It signs and posts in ONE step and never hands the signed header back: a VAPID signature is bound only to the push service's origin, so a header that
+// came back out would work for every Streetlist subscription at that service until it expired. Its claims are built here (`aud` from the checked host, a short `exp`), never
+// from the call. Its own refusals are 400 (a call that is not one) or 429 (a limit); never 401, 403, 404 or 410, because the runtime's sender reads those as "the phone's
+// subscription is dead" and would drop a good phone.
+//
+// THE SECRET. The private key is a file handed in like the server's other keys (secrets/push/streetlist_vapid.json, 0600, mounted read-only at /run/secrets); it is never in
+// the repository. `node bundle/services/relay.ts make-key <file>` makes one (it refuses to overwrite). Only the PUBLIC half goes into geometer.json (`pushRelay.publicKey`),
+// which generates each shop's runtime.json so the chat page can subscribe phones with it.
+import { chmodSync, existsSync, openSync, readFileSync, writeSync, closeSync } from "node:fs";
+import { createPrivateKey, createPublicKey } from "node:crypto";
+import { newVapidKeys, vapidHeader } from "../../modules/push/crypto.ts";
+import type { VapidKeys } from "../../modules/push/crypto.ts";
+import { pushCallProblem } from "../../modules/push/hosts.ts";
+import type { PushCall } from "../../modules/push/hosts.ts";
 
-/** The words each template's relay asks the owner in. An agent someone else wrote on a gateway has none of its own, and is asked in Bookings' words. */
-const RELAYS: Record<string, (options: Omit<RelayOptions, "voice">) => Relay> = { bookings: bookingsRelay, fees: feesRelay, orders: ordersRelay };
+/** How long a signature lasts: a push is posted within seconds, so 15 minutes (RFC 8292 allows up to 24 hours). */
+export const RELAY_SIGNATURE_S = 15 * 60;
 
-export interface RelayShopConfig {
-  /** Which template's words the owner is asked in ("bookings" when left out). */
-  pathway?: string;
-  /** An agent someone else wrote has no runtime: the context of a held call is read from Guard and the provider (agent/relay-context.ts). */
-  kind?: "own-agent";
-  /** The money Guard's admin port, where held calls are read. Left out for an agent whose money the owner marks: it has the desk and no relay. */
-  guardAdminUrl?: string;
-  approverId?: string;
-  agentId: string;
-  runtimeUrl?: string;
-  /** An own agent on a gateway with a module: its id, and its Guard's agent port, where the reading agent reads a payment (who paid, and when). */
-  gateway?: { id: string; guardUrl: string };
-  /** An own agent on its own API (B71 part 2): the Guard's tool and the calls its reviewed spec holds for the owner. */
-  ownApi?: HeldCallSpec;
-  /** An own agent on a module the owner marks (UPI, B71 part 2): its desk. */
-  desk?: DeskConfig;
-  business?: { name: string; timeZone: string; ownerLanguage: "en" | "hi" | "ml" | "kn" };
-  /** Item 11h: left out for a shop with no WhatsApp. The bundle refuses a gateway shop with none (generate/shop.ts `whatsapp-none-gateway`), so today only an entry that has nothing to ask lacks it. */
-  whatsappGuardUrl?: string;
-  ownerWhatsapp: string;
-  phoneNumberId: string;
-  /** Item 11b: the shop's WhatsApp Guard fronts Gupshup (with the shop's Gupshup app id). Left out: Meta direct. */
-  provider?: "gupshup" | "gupshup-selfserve";
-  appId?: string;
-  /** Item 11c, Gupshup self-serve: the app's name and number. */
-  appName?: string;
-  sourceNumber?: string;
-  /** Folder with internal_token, relay_token, owner_notify_secret, read_token and agent_whatsapp for this shop (B37: and approver_<id>_notify_secret for each other approver; B71: desk_token for a desk). */
-  secretsDir: string;
-  stateDir: string;
-  /** B37: the shop's other approvers. `approverId` is then the owner's id among them ("owner"). Left out: the owner alone. */
-  approvers?: RelayPerson[];
+/** The limits, per shop: a small shop's alerts are few, and Guard's own daily caps are the lasting backstop (these are in memory and restart with the sender). */
+export interface RelayLimits { perShopPerMinute: number; perShopPerDay: number; perPhonePerDay: number }
+export const RELAY_LIMITS: RelayLimits = { perShopPerMinute: 60, perShopPerDay: 1500, perPhonePerDay: 50 };
+
+export type RelayAnswer =
+  | { ok: true; call: PushCall & { vapid: string } }
+  | { ok: false; status: 400 | 429 | 503; error: string };
+
+export interface Relay {
+  /** Check, count and sign one call. On `ok`, `call` is the same call with the signed header, for the sender to post and never to return. */
+  sign(call: PushCall): RelayAnswer;
+  /** The public half of the key, as the pages subscribe with it. */
+  publicKey: string;
+  /** The shops it signs for. */
+  shops: readonly string[];
 }
 
-/**
- * A Guard client that reads the approver credential from its file on every call. The credential Guard issues expires (the production profile requires
- * it), and the deployer writes a fresh one to the file before that: the relay never holds an admin token and never has to restart.
- */
-export function rereadingGuardClient(c: RelayShopConfig, read: (path: string) => string | undefined): GuardClient {
-  const make = () => createGuardClient({
-    adminUrl: c.guardAdminUrl ?? "", readToken: read(`${c.secretsDir}/read_token`) ?? "", approverId: c.approverId ?? "", approverSecret: read(`${c.secretsDir}/owner_notify_secret`) ?? "", now: () => Date.now(),
-    ...(c.approvers && c.approvers.length > 0 ? { secretOf: (id: string) => (c.approvers!.some((p) => p.id === id) ? read(`${c.secretsDir}/${names.approverSecretFile(id)}`) : undefined) } : {}),
-  });
-  return { reviews: () => make().reviews(), notify: (approval, decision, approver) => make().notify(approval, decision, approver) };
+/** A key file's content, checked: the private key is a P-256 key and the public key is its own. Throws in plain words. */
+export function parseRelayKeys(text: string): VapidKeys {
+  let raw: unknown;
+  try { raw = JSON.parse(text); } catch { throw new Error("The relay key file is not JSON."); }
+  const k = raw as Partial<VapidKeys> | null;
+  const jwk = k?.privateJwk;
+  if (!k || typeof k.publicKey !== "string" || !jwk || jwk.kty !== "EC" || jwk.crv !== "P-256" || typeof jwk.x !== "string" || typeof jwk.y !== "string" || typeof jwk.d !== "string") throw new Error("The relay key file must hold {privateJwk, publicKey}, a P-256 key.");
+  const derived = createPublicKey(createPrivateKey({ key: jwk, format: "jwk" })).export({ format: "jwk" }) as { x: string; y: string };
+  const raw65 = Buffer.concat([Buffer.from([4]), Buffer.from(derived.x, "base64url"), Buffer.from(derived.y, "base64url")]).toString("base64url");
+  if (raw65 !== k.publicKey) throw new Error("The relay key file's public key is not the public half of its private key.");
+  return { privateJwk: { kty: "EC", crv: "P-256", x: jwk.x, y: jwk.y, d: jwk.d }, publicKey: k.publicKey };
 }
 
-/** One entry of relay.json, running: the approvals relay (a shop, or an own agent on a gateway or its own API), or the desk (an own agent on UPI), never both. */
-export interface RunningShop { relay?: Relay; desk?: DeskHost; /** The desk's token, read from its file on every call. */ deskToken?: () => string | undefined; handler: Handler; close(): void }
+/** Reads and checks the key file. */
+export const readRelayKeys = (file: string): VapidKeys => parseRelayKeys(readFileSync(file, "utf8"));
 
-// Builds one shop's relay (and its owner-marked desk when it has one) from that shop's own secrets. Throws at start if a secret file is missing, so a misconfigured shop fails at deploy and not on the first refund.
-export function shopRelay(name: string, c: RelayShopConfig, read: (path: string) => string | undefined, log: (line: string) => void, clock: Clock = systemClock): RunningShop {
-  const need = (file: string): string => {
-    const v = read(`${c.secretsDir}/${file}`);
-    if (!v) throw new Error(`${name}: the secret file ${file} is missing or empty in ${c.secretsDir}.`);
-    return v;
+/** Makes a new key file, 0600, refusing to overwrite one. Returns the public key to put in geometer.json (`pushRelay.publicKey`). */
+export function makeRelayKeyFile(file: string): string {
+  if (existsSync(file)) throw new Error(`${file} already exists; a new key would orphan every phone subscribed to the old one. Move it away on purpose first.`);
+  const keys = newVapidKeys();
+  const fd = openSync(file, "wx", 0o600);
+  try { writeSync(fd, `${JSON.stringify(keys)}\n`); } finally { closeSync(fd); }
+  chmodSync(file, 0o600);
+  return keys.publicKey;
+}
+
+export function createRelay(o: { keys: VapidKeys; shops: readonly string[]; subject: string; now?: () => number; limits?: Partial<RelayLimits> }): Relay {
+  const now = o.now ?? Date.now;
+  const limits = { ...RELAY_LIMITS, ...o.limits };
+  const known = new Set(o.shops);
+  /** Times of the calls signed, by "shop" and by "shop/phone", pruned as they age out. */
+  const seen = new Map<string, number[]>();
+  const DAY = 86_400_000;
+  const within = (key: string, ms: number, t: number): number[] => (seen.get(key) ?? []).filter((x) => t - x < ms);
+  const take = (key: string, ms: number, cap: number, t: number): boolean => { const list = within(key, ms, t); if (list.length >= cap) { seen.set(key, list); return false; } return true; };
+  const note = (key: string, t: number): void => { const list = within(key, DAY, t); list.push(t); seen.set(key, list); };
+  let swept = 0;
+
+  return {
+    publicKey: o.keys.publicKey,
+    shops: [...known],
+    sign(call) {
+      // a call that is not one (shape, host list, path, ttl, topic, body size): the same check the sender makes for every push, here with `relay` instead of `vapid`
+      const problem = pushCallProblem(call);
+      if (problem) return { ok: false, status: 400, error: problem };
+      const shop = call.relay;
+      if (shop === undefined) return { ok: false, status: 400, error: "this is not a relay call" };
+      if (!known.has(shop)) return { ok: false, status: 400, error: "that shop is not one this server runs" };
+      const t = now();
+      if (t - swept > 60_000) { swept = t; for (const [k, v] of seen) { const keep = v.filter((x) => t - x < DAY); if (keep.length) seen.set(k, keep); else seen.delete(k); } }
+      const phone = `${shop}/${call.sub}`;
+      if (!take(`shop ${shop}`, 60_000, limits.perShopPerMinute, t) || !take(`shop ${shop}`, DAY, limits.perShopPerDay, t) || !take(`phone ${phone}`, DAY, limits.perPhonePerDay, t)) {
+        return { ok: false, status: 429, error: "too many pushes for this shop just now" };
+      }
+      note(`shop ${shop}`, t);
+      note(`phone ${phone}`, t);
+      const vapid = vapidHeader(o.keys, { audience: `https://${call.host}`, subject: o.subject, nowS: Math.floor(t / 1000), ttlS: RELAY_SIGNATURE_S });
+      const { relay: _shop, ...rest } = call;
+      return { ok: true, call: { ...rest, vapid } };
+    },
   };
-  // the relay and the desk speak the shop's own WhatsApp Guard, so they use its provider (item 11b: Gupshup, or Meta direct when left out). Item 11h: an entry with
-  // no WhatsApp gets a messaging that sends nothing (each send is refused as not sent and recorded so), never a crash at start
-  const whatsapp = (window: { lastInboundAt(phone: string): number | undefined }) => c.whatsappGuardUrl
-    ? createLiveMessaging({ baseUrl: c.whatsappGuardUrl, phoneNumberId: c.phoneNumberId, ...(c.provider ? { provider: c.provider, appId: c.appId, appName: c.appName, sourceNumber: c.sourceNumber } : {}), agentToken: need("agent_whatsapp") }, { clock, window })
-    : channelMessaging(undefined, () => emptyChannelState(), clock);
-
-  // an own agent whose money the owner marks: the desk, and no relay (nothing is ever held for the owner: the owner sends every refund)
-  if (c.desk) {
-    if (c.kind !== "own-agent" || !c.business) throw new Error(`${name}: a desk is for an agent someone else wrote, with its business in relay.json.`);
-    const desk = createDeskHost({ name, config: c.desk, ownerWhatsapp: c.ownerWhatsapp, business: c.business, file: join(c.stateDir, "desk.json"), messaging: whatsapp, clock, log });
-    need("desk_token");
-    return { desk, deskToken: () => read(`${c.secretsDir}/desk_token`), handler: relayHandler(desk, need("relay_token")), close: () => undefined };
-  }
-
-  if (!c.guardAdminUrl || !c.approverId) throw new Error(`${name}: relay.json names no Guard to read held calls from.`);
-  const store = openRelayStore(c.stateDir);
-  const guard = rereadingGuardClient(c, read);
-  const messaging = whatsapp({ lastInboundAt: (phone) => Number(store.getMeta(lastInboundKey(phone, c.ownerWhatsapp))) || undefined });
-  const common = {
-    clock, store, ownerWhatsapp: c.ownerWhatsapp, expectedAgent: c.agentId, guard, messaging,
-    ...(c.approvers && c.approvers.length > 0 ? { approvers: c.approvers, ownerApproverId: c.approverId } : {}),
-    log: (line: string) => log(`[${name}] ${line}`),
-  };
-  let relay: Relay;
-  if (c.kind === "own-agent" && c.ownApi) {
-    // its own API: the calls its reviewed spec holds, in words that say only what Guard holds; after a yes the agent sends the identical call again
-    const spec = c.ownApi;
-    relay = sharedRelay({ ...common, voice: ownApiVoice, readHeld: (item) => readHeldCall(item, spec), runtime: ownApiRuntime({ guard, spec, business: c.business! }) });
-  } else {
-    const pathway = c.pathway ?? "bookings";
-    if (!Object.hasOwn(RELAYS, pathway)) throw new Error(`${name}: the approvals relay has no words for the pathway "${pathway}".`);
-    relay = RELAYS[pathway]({
-      ...common,
-      runtime: c.kind === "own-agent"
-        ? ownAgentRuntime({ guard, gateway: { id: c.gateway!.id, baseUrl: c.gateway!.guardUrl, token: () => need("record_token") }, business: c.business! })
-        : createRuntimeClient({ url: c.runtimeUrl!, token: need("internal_token") }),
-    });
-  }
-  need("owner_notify_secret"); // the reading credential is issued by the deployer once the Guard is up (and renewed before it expires), so it may not exist yet
-  for (const p of c.approvers ?? []) need(names.approverSecretFile(p.id));
-  // item 11d: the owner's private page may show and answer this shop's asks, with the owner's link, checked against the deployer's copy of its hash (lib/owner-link.ts)
-  const ownerLink = () => readOwnerLink(read(`${c.secretsDir}/${OWNER_LINK_FILE}`));
-  // item 11f: an owner signed in on the shop's page answers with a session, which only the runtime can vouch for (with the internal token the relay already holds)
-  const ownerSession = c.runtimeUrl && c.kind !== "own-agent" ? ownerSessionChecker({ url: c.runtimeUrl, token: need("internal_token") }) : undefined;
-  return { relay, handler: relayHandler(relay, need("relay_token"), { ownerLink, ...(ownerSession ? { ownerSession } : {}) }), close: () => store.close() };
 }
-
-const readFile = (path: string): string | undefined => (existsSync(path) ? readFileSync(path, "utf8").trim() : undefined);
 
 if (import.meta.main) {
-  const config = JSON.parse(readFileSync(process.env.CONFIG ?? "/etc/geometer/relay.json", "utf8")) as { shops: Record<string, RelayShopConfig> };
-  const log = (line: string) => console.error(line);
-  const running: RunningShop[] = [];
-  try { for (const [name, c] of Object.entries(config.shops)) running.push(shopRelay(name, c, readFile, log)); } catch (e) { console.error((e as Error).message); process.exit(2); }
-  const handler = createRouter(Object.fromEntries(Object.keys(config.shops).map((name, i) => [name, running[i].handler])));
-  const server = createServer(handler);
-  server.requestTimeout = 10_000;
-  server.headersTimeout = 5_000;
-  const relays = running.flatMap((r) => (r.relay ? [r.relay] : []));
-  for (const r of relays) { r.start(5_000); void r.poll(); }
-  // the desks: their own port (the desk Guards are its only callers), and a tick a minute for the owner's reminders and any reply left unhandled
-  const desks = running.flatMap((r) => (r.desk ? [{ host: r.desk, token: r.deskToken! }] : []));
-  let deskServerRunning: ReturnType<typeof createServer> | undefined;
-  if (desks.length > 0) {
-    if (!process.env.DESK_PORT) { console.error("relay.json has an agent's desk, but DESK_PORT is not set: its Guard could not reach it."); process.exit(2); }
-    deskServerRunning = createServer(deskServer(desks));
-    deskServerRunning.requestTimeout = 10_000;
-    deskServerRunning.headersTimeout = 5_000;
-    deskServerRunning.listen(Number(process.env.DESK_PORT), process.env.HOST ?? "127.0.0.1", () => log(`Owner-marked desk for ${desks.length} agent(s) on port ${process.env.DESK_PORT}.`));
-    const tick = setInterval(() => { for (const d of desks) void d.host.tick().catch((e) => log(`A desk tick failed: ${(e as Error).message}`)); }, 60_000);
-    tick.unref();
-    for (const d of desks) void d.host.tick().catch(() => undefined); // owner messages left unhandled by a restart are handled now
-  }
-  server.listen(Number(process.env.PORT ?? 8795), process.env.HOST ?? "127.0.0.1", () => log(`Approvals relay for ${relays.length} shop(s), reading each shop's Guard every 5 s. Each owner's approver secret is read by that shop's relay only.`));
-  for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => {
-    server.closeAllConnections(); deskServerRunning?.closeAllConnections();
-    void Promise.all([...relays.map((r) => r.stop()), ...desks.map((d) => d.host.idle())]).then(() => { running.forEach((r) => r.close()); deskServerRunning?.close(); server.close(() => process.exit(0)); });
-  });
+  const [command, file] = process.argv.slice(2);
+  if (command !== "make-key" || !file) { console.error("Usage: node bundle/services/relay.ts make-key <file>   (makes Streetlist's push key file, 0600; prints the public key for geometer.json pushRelay.publicKey)"); process.exit(2); }
+  try { console.log(makeRelayKeyFile(file)); } catch (e) { console.error((e as Error).message); process.exit(1); }
 }

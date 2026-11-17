@@ -333,9 +333,15 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   // Item 11h: the server's push sender. On `push` (only the shops' push Guards reach it) and egress (the push services). No secret, no volume but the app.
   // PUSH_SERVICE_OVERRIDE only when geometer.json's `upstreams` names a `push-service` (a test server's stand-in).
   const pushOverride = server.upstreams?.["push-service"];
+  // W3: with `pushRelay` in geometer.json the sender also signs for the Streetlist app's phones (services/relay.ts): the private key is a file in secrets/push/ the owner makes
+  // with `node bundle/services/relay.ts make-key`, mounted read-only here; the shops it signs for are this server's. Without `pushRelay` nothing about it changes.
+  const relayOn = server.pages !== undefined && server.pushRelay !== undefined;
   if (shops.length > 0) add(PUSH_SERVICE, node(["node", "/app/bundle/services/push.ts"], {
-    environment: { PORT: String(PUSH_PORT), HOST: "0.0.0.0", ...(pushOverride ? { PUSH_SERVICE_OVERRIDE: `${pushOverride.tls ? "https" : "http"}://${pushOverride.host}` } : {}) },
-    volumes: [appVolume],
+    environment: {
+      PORT: String(PUSH_PORT), HOST: "0.0.0.0", ...(pushOverride ? { PUSH_SERVICE_OVERRIDE: `${pushOverride.tls ? "https" : "http"}://${pushOverride.host}` } : {}),
+      ...(relayOn ? { PUSH_RELAY_KEY_FILE: "/run/secrets/streetlist_vapid.json", PUSH_RELAY_SHOPS: shops.map((s) => s.name).join(","), PUSH_RELAY_SUBJECT: `https://${server.pages!.domain}` } : {}),
+    },
+    volumes: [appVolume, ...(relayOn ? [`${secretDir("push")}:/run/secrets:ro`] : [])],
     networks: { [PUSH_NETWORK]: {}, egress: {} }, healthcheck: healthWget(PUSH_PORT, "/healthz"),
   }));
   add("ops", node(["node", "/app/bundle/services/ops.ts", "run"], {
@@ -546,13 +552,13 @@ export function pagesSites(pages: { domain: string; extraDomains: string[] }): s
     `\t\t\t\t# the addresses Firebase's cleanUrls and trailingSlash=false change: the .html and the trailing-slash forms go to the clean one`,
     `\t\t\t\t@home-index-html path /index.html`,
     `\t\t\t\tredir @home-index-html / 301`,
-    `\t\t\t\t@home-html path_regexp home-html ^/(shops|partners|privacy|demo|examples/[a-z0-9-]+|demo/[a-z0-9-]+)\\.html$`,
+    `\t\t\t\t@home-html path_regexp home-html ^/(shops|partners|privacy|chats|demo|examples/[a-z0-9-]+|demo/[a-z0-9-]+)\\.html$`,
     `\t\t\t\tredir @home-html /{re.home-html.1} 301`,
-    `\t\t\t\t@home-slash path_regexp home-slash ^/(shops|partners|privacy|examples|examples/[a-z0-9-]+|demo|demo/[a-z0-9-]+)/$`,
+    `\t\t\t\t@home-slash path_regexp home-slash ^/(shops|partners|privacy|chats|examples|examples/[a-z0-9-]+|demo|demo/[a-z0-9-]+)/$`,
     `\t\t\t\tredir @home-slash /{re.home-slash.1} 301`,
     `\t\t\t\tredir /examples ${HOME_EXAMPLES_REDIRECT} 302`,
     `\t\t\t\t# the home's own addresses: a page, a picture or a hashed file; anything missing under them is the home's 404 page`,
-    `\t\t\t\t@home-area path / /shops /partners /privacy /favicon.svg /examples /examples/* /assets /assets/* /demo /demo/*`,
+    `\t\t\t\t@home-area path / /shops /partners /privacy /chats /favicon.svg /sw.js /manifest.webmanifest /apple-touch-icon.png /streetlist-192.png /streetlist-512.png /streetlist-maskable.png /examples /examples/* /assets /assets/* /demo /demo/*`,
     `\t\t\t\thandle @home-area {`,
     `\t\t\t\t\troute {`,
     `\t\t\t\t\t\t# a page is read, not posted to: GET and HEAD only (the door would otherwise take the name for a shop's)`,
@@ -567,6 +573,9 @@ export function pagesSites(pages: { domain: string; extraDomains: string[] }): s
     `\t\t\t\t\t\t@home-page not path /assets/*`,
     `\t\t\t\t\t\theader @home-page Content-Security-Policy "${HOME_CSP}"`,
     `\t\t\t\t\t\theader @home-page Cache-Control "no-cache"`,
+    // the web app manifest (W3): Caddy's file server does not know the .webmanifest type, and Firebase serves it as this
+    `\t\t\t\t\t\t@home-manifest path /manifest.webmanifest`,
+    `\t\t\t\t\t\theader @home-manifest Content-Type "application/manifest+json"`,
     `\t\t\t\t\t\t@home-found file {`,
     `\t\t\t\t\t\t\ttry_files {path}.html {path} {path}index.html`,
     `\t\t\t\t\t\t}`,

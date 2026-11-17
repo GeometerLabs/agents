@@ -361,7 +361,7 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       const push = options.push;
       const op = typeof body.op === "string" ? body.op : "";
       if (!push || !push.on) return send(res, op === "key" ? 200 : 404, { on: false });
-      if (op === "key") return send(res, 200, { on: true, publicKey: push.publicKey() });
+      if (op === "key") return send(res, 200, { on: true, publicKey: push.publicKey(), ...(push.relayKey() ? { relayKey: push.relayKey() } : {}) });
       const whatsapp = options.hasWhatsApp === true;
       if (op.startsWith("owner_")) {
         if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
@@ -392,7 +392,7 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
           if (op === "customer_subscribe" && !chatSt.answered) return send(res, 403, { error: "Alerts are offered after the first answer." });
           const who = chatConversationOf(handle);
           if (op === "customer_subscribe") {
-            const r = push.subscribe(who, body.subscription as BrowserSubscription);
+            const r = push.subscribe(who, body.subscription as BrowserSubscription, body.signer === "streetlist" ? "streetlist" : "own");
             if (!r.ok) return send(res, 400, { error: r.why });
           } else if (op === "customer_unsubscribe") {
             if (typeof body.endpoint !== "string") return send(res, 400, { error: "Send the endpoint to stop." });
@@ -408,7 +408,7 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
         if (!ch && !parentWho) return send(res, 404, { error: "No page with alerts has this handle." });
         const who = parentWho ?? conversationOf(ch!, handle);
         if (op === "customer_subscribe") {
-          const r = push.subscribe(who, body.subscription as BrowserSubscription);
+          const r = push.subscribe(who, body.subscription as BrowserSubscription, body.signer === "streetlist" ? "streetlist" : "own");
           if (!r.ok) return send(res, 400, { error: r.why });
         } else if (op === "customer_unsubscribe") {
           if (typeof body.endpoint !== "string") return send(res, 400, { error: "Send the endpoint to stop." });
