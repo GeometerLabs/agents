@@ -113,7 +113,7 @@ export interface Due {
  * in a reminder or by the owner's "send a new link". One per parent: a new one replaces the old, which then opens nothing. Kept in the saved state, so it survives a
  * restart and a handover (the state moves with the shop; the owner's panel-made link does not).
  */
-export interface ParentLink { hash: string; atMs: number; via: "reminder" | "owner" }
+export interface ParentLink { hash: string; atMs: number; via: "reminder" | "owner" | "classes" }
 
 /**
  * Item 11h: a payment's confirmation page, by the hash of the handle the parent's "I have paid" made (on their private page). It names the fee and the parent, so the
