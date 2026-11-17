@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { discoverTemplates } from "../panel/templates.ts";
 import { SETUPS, setupOf, reportOf } from "../panel/setups.ts";
 import { STOCK_PANEL_WORDS, applyStockBusiness, applyStockRules, buildStockSettings, catalogueLine, newStockDraft, runtimeForStock, stockDraftFromShop, supplierLine } from "../panel/stock.ts";
-import { WORDS } from "../panel/words.ts";
+import { WORDS } from "../panel/languages.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import { glowSalon } from "../../templates/commerce/stock-orders/src/harness.ts";
 import { validateRuntimeConfig } from "../../templates/commerce/stock-orders/server/config.ts";
