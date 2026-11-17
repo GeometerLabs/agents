@@ -234,7 +234,7 @@ test("the confirm page: looking shows one button and uses nothing up; the button
     assert.ok((await done.text()).includes(IDENTITY.en.confirmDone));
     assert.equal(w.identity.numberOf(thread), "919811111111");
     assert.ok((await (await w.form("/chat/id/confirm", { token: link.token, lang: "en" })).text()).includes(IDENTITY.en.backUsed));
-    assert.ok((await (await w.get(`/chat/id/confirm/${"z".repeat(43)}`)).text()).includes(IDENTITY.en.backUsed));
+    assert.ok((await (await w.get(`/chat/id/confirm/${"z".repeat(43)}?lang=en`)).text()).includes(IDENTITY.en.backUsed));
     assert.equal((await w.form("/chat/id/confirm", { token: link.token, lang: "en" }, { origin: "https://evil.example" })).status, 403);
   } finally { await w.done(); }
 });
