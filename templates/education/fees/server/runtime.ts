@@ -35,7 +35,9 @@ import { createAudioDrop } from "../../../../modules/channels/owner-audio.ts";
 import type { CharacterPictures } from "../../../../modules/assistant/character.ts";
 import { ownerAppView, publicCharacter } from "../../../../modules/assistant/app/view.ts";
 import { UNRESTRICTED } from "../../../../modules/licence/rules.ts";
-import { documentsOf, exportFilesOf, feeConfirmView, feesOffer, ownerView, parentView } from "../src/channel.ts";
+import { documentsOf, exportFilesOf, feeConfirmView, feesOffer, ownerView, parentOf, parentView } from "../src/channel.ts";
+import { materialView } from "../src/classes/view.ts";
+import type { Materials } from "./materials.ts";
 
 export const PATHWAY = "fees";
 export { RETRY_DELAYS_MS };
@@ -78,6 +80,8 @@ export interface RuntimeOptions {
    * no file: no page, and the reminders are as they were.
    */
   pages?: () => PagesFile | undefined;
+  /** Classes: the centre's reading-material folder (server/materials.ts). Left out: no material is served, and a material link opens nothing. */
+  materials?: Materials;
   retryDelaysMs?: number[];
   guardWaitMs?: number;
   guardLookAgainMs?: number[];
@@ -173,6 +177,15 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       },
       view: (store, handleHash) => feeConfirmView(settings, store, handleHash),
       parent: (store, linkHash) => parentView(settings, store, linkHash),
+      // Classes: a batch's reading material for a parent's private link: the link's parent must have a student in the batch who may open it now (src/classes/view.ts, from the
+      // saved state), and only then is the folder read. A file is named by its id from a fresh listing, never by a path.
+      ...(settings.classes && options.materials ? { material: async (store: Store, linkHash: string, batchId: string, fileId?: string) => {
+        const view = materialView(settings, store, parentOf(store, linkHash), batchId, clock.now());
+        if (!view) return null;
+        if (fileId === undefined) { const { files, left } = options.materials!.list(batchId); return { kind: "list" as const, batch: view.batch, students: view.students, files: files.map(({ id, name, bytes }) => ({ id, name, bytes })), left, maxMb: settings.classes!.materialMaxMb }; }
+        const file = options.materials!.read(batchId, fileId);
+        return file ? { kind: "file" as const, name: file.name, type: file.type, base64: file.bytes.toString("base64") } : null;
+      } } : {}),
       ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
       // the receipts of the page's own fees, and the accountant's files (the runtime lets only the owner's session reach them), both from the saved record
       documents: (store, entries, key, language) => documentsOf(settings, store, entries, key, language),

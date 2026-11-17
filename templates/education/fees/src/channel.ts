@@ -22,6 +22,7 @@ import { feesJournal } from "./accounting.ts";
 import { batchName } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import { balancePaise, monthLabel, owedPaise, paidPaise } from "./due.ts";
+import { ownerClassesView } from "./classes/view.ts";
 import type { Due, Store } from "./due.ts";
 
 /** What the centre's own page says: its name, address, languages and how parents pay. `paused`: the centre's licence takes no new fee payments now. */
@@ -244,6 +245,8 @@ export function ownerView(settings: Settings, store: Store, nowMs: number | unde
     upcoming: [],
     parents: parentsList(settings, store),
     cash: cashList(settings, store),
+    // Classes: the classes waiting for attendance and the open doubts (only a centre with Classes has the key)
+    ...(settings.classes ? { classes: ownerClassesView(settings, store, nowMs ?? Date.now()) } : {}),
     money: ownerMoney({
       journal: feesJournal(entries), entries, nowMs: nowMs ?? Date.now(), timeZone: settings.timezone,
       refundsUntold: [...store.dues.values()].flatMap((d) => (d.refundsUntold ?? []).map((u) => ({ case: d.id, amountInr: u.amountInr }))),

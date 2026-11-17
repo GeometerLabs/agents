@@ -24,6 +24,9 @@ const codec = snapshotCodec<Store>(1, [
   // that has sent no link never has them, so its snapshot is as it was
   { name: "parentLinks", kind: "optional-object" },
   { name: "confirmations", kind: "optional-object" },
+  // Classes (src/classes/state.ts): the class links, the sessions with who was sent what and who was marked, the consent answers and the doubts. A centre without Classes
+  // never has it, so its snapshot is as it was. Every field is here on purpose: a field left out would be lost at the end of each step.
+  { name: "classes", kind: "optional-object" },
 ]);
 
 export const serializeStore: (store: Store) => string = codec.serialize;

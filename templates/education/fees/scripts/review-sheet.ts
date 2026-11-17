@@ -8,6 +8,7 @@
 import { pathToFileURL } from "node:url";
 import { SAYS } from "../crash-test/says.ts";
 import { FEE_WORDS, parseIntent } from "../src/adapters/rule-parser.ts";
+import { CLASS_WORDS } from "../src/classes/parse.ts";
 import type { Intent } from "../src/adapters/model.ts";
 import { brightTuition } from "../src/harness.ts";
 import { LABELS } from "../src/language/interactive.ts";
@@ -34,6 +35,28 @@ const WHEN: Record<TemplateId, string> = {
   fee_reminder_family: "One reminder for a parent with more than one open fee (two children, or an earlier month still unpaid): each fee on its own line with its amount, due date and its own payment link",
   fee_reminder_family_page: "The same family reminder (fee_reminder_family) for a centre that has a page: with a line giving the parent's private fees page, which is not to be shared",
   fee_page_link: "The owner pressed \"Send a new link\" on their page: the parent's new private fees page (the old link stops working)",
+  class_consent_ask: "Classes: the first message to a contact for a student under 18 (the parent): may class links and reading material be sent to this number? Buttons Yes / No",
+  class_consent_yes: "The contact said yes to the first question",
+  class_consent_no: "The contact said no to the first question: nothing of the classes is sent to this number",
+  class_link: "Shortly before a class, to a student whose fee is paid or within the grace days: the class's date, time and the teacher's link, which is not to be shared",
+  class_next: "The contact asked when the next class is (\"next class\", \"timetable\"): each student's next class from the timetable",
+  class_next_none: "The same question, and the timetable has no class for their batches",
+  class_not_entitled: "The contact asked for the class link or the material and the fee is unpaid and past its grace days: why it is not sent",
+  class_doubt_ask: "The contact wrote the word for a doubt alone: asked to write it in one message. The agent never answers subject questions",
+  class_doubt_thanks: "The doubt was collected and handed to the teacher",
+  class_missed_note: "After the teacher marked a student absent and confirmed the class: a short note to the contact (never before the teacher marks)",
+  class_material_link: "The contact asked for the reading material (or the teacher shared it): the contact's private page for the batch's files, which opens only while the student is entitled",
+  class_material_none: "The contact asked for the reading material and the centre has no page address to serve it from",
+  owner_class_attendance: "To the teacher, once a class has ended: attendance is needed (reply \"present\" or \"class\")",
+  owner_class_roster: "To the teacher, after they wrote \"class\": the numbered students of the oldest unmarked class, with the Everyone came button",
+  owner_class_marked: "To the teacher, after they confirmed attendance: how many present, absent and how many notes went to parents",
+  owner_class_no_link: "To the teacher, once before a class: no class link is set for it",
+  owner_class_link_set: "To the teacher, after they pasted a class link: it is saved and when it goes out",
+  owner_class_doubts_waiting: "To the teacher: doubts from a batch are waiting (reply \"doubts\" to read them)",
+  owner_class_doubts: "To the teacher, after they wrote \"doubts\": the open doubts, each with its code",
+  owner_class_nothing: "To the teacher: no class waits for attendance and no doubt is open",
+  owner_class_unknown: "To the teacher: a class command that could not be read, with what they can write",
+  owner_class_shared: "To the teacher, after \"share <batch>\": how many students were sent the material link and how many were not",
   fee_received: "The payment record shows the whole fee paid: the receipt (never sent from what a parent said)",
   fee_part_received: "The payment record shows part of the fee paid: the receipt, and what is still to pay",
   fee_pay_link: "The parent asked for the payment link (or tapped Pay now): the link for what is still owed",
@@ -223,6 +246,10 @@ export function reviewSheet(language: ReviewLanguage): string {
     feeRow("take money off the fee (a discount, a waiver)", "discount, concession, waive", FEE_WORDS.discount),
     feeRow("money back", "refund, money back", FEE_WORDS.refund),
     feeRow("talk to the owner", "owner, talk to", FEE_WORDS.owner),
+    // Classes (a centre with the classes block only reads these)
+    feeRow("Classes: when is the next class, the timetable, the class link", "next class, timetable, class link", CLASS_WORDS.next),
+    feeRow("Classes: the reading material (notes, worksheet, PDF)", "notes, material, worksheet", CLASS_WORDS.material),
+    feeRow("Classes: a doubt for the teacher (the agent never answers it)", "doubt", CLASS_WORDS.doubt),
   ];
   // the shared word lists (yes, no, stop, rupee, ...) have no Hindi entry (Hindi is read by the parser's own lists, listed above), as in the Orders sheet
   if (language !== "hi") {

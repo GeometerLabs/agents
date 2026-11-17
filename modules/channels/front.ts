@@ -555,6 +555,17 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
         while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !now.cash?.some((c) => c.digest === digest)) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
         return "sent";
       }
+      // Classes (Fees add-on): the teacher's marks and "answered", bound to the class or doubt as the page showed it (its digest); the agent checks it again in the step
+      if (action === "present" || action === "absent" || action === "answered") {
+        const base = theCase.split(".")[0];
+        const shown = action === "answered" ? state.view.classes?.doubts.some((d) => d.case === theCase && d.digest === digest) : state.view.classes?.pending.some((c) => c.case === base && c.digest === digest);
+        if (!shown) return "changed";
+        const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action, case: theCase, digest }], token);
+        if (r === "refused") return "denied_link";
+        const deadline = Date.now() + (options.waitMs ?? 3_000);
+        while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !(now.classes?.pending.some((c) => c.digest === digest) || now.classes?.doubts.some((d) => d.digest === digest))) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
+        return "sent";
+      }
       const shown = state.view.items.find((i) => i.case === theCase && i.digest === digest && i.actions.includes(action));
       if (!shown) return "changed"; // already answered (here or on WhatsApp), or changed since it was shown: nothing is sent
       const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action: action as never, case: theCase, digest }], token);

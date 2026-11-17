@@ -5,12 +5,17 @@
 import { formatDate, formatInr } from "../../../../../modules/language/format.ts";
 import type { Language } from "../../../../../modules/language/languages.ts";
 import { localParts } from "../../../../../modules/core/time.ts";
+import { CLASS_TEMPLATES } from "../classes/words.ts";
+import type { ClassTemplateId } from "../classes/words.ts";
 
 /**
  * One open fee in a reminder that lists several (a parent with more than one child, or with an earlier month still unpaid): each keeps its OWN payment link, so a payment
  * on a link is counted on that one fee and no other. Every value comes from that fee's record.
  */
 export interface FamilyLine { studentName: string; batchName: string; monthLabel: string; balanceInr: number; dueMs: number; link: string; dueRef: string }
+
+/** One student's next class in the message that answers "when is the next class?": every value comes from the timetable and the settings. */
+export interface ClassLine { studentName: string; batchName: string; startMs: number }
 
 /** The values of this student-month's record that a message may use. The outgoing check reads the same object. */
 export interface MessageFacts {
@@ -63,6 +68,27 @@ export interface MessageFacts {
   pageLink?: string;
   /** Only the one reminder that lists several of a parent's open fees (`fee_reminder_family`): one line for each, oldest due date first. */
   family?: FamilyLine[];
+  // ---- Classes (src/classes/): the values of a class's own messages. Each comes from the timetable, the teacher's saved link or the class's record, never from a parent's words.
+  /** The class this message is about: its start. */
+  classMs?: number;
+  /** The teacher's class link (a Meet or Zoom address). The outgoing check allows it, and no other link. */
+  classLink?: string;
+  /** The private reading-material page's address (the parent's page address and the batch). Allowed by the check like the class link. */
+  materialLink?: string;
+  /** The numbered names the teacher marks attendance against ("1 Aarav, 2 Rohan"). A literal: only ever sent to the owner. */
+  roster?: string;
+  /** A student's doubt, as the teacher reads it. A literal: only ever sent to the owner. */
+  doubtText?: string;
+  /** The next class of each of a contact's students, for the timetable answer. */
+  classLines?: ClassLine[];
+  /** Minutes before a class the link is sent; counts the owner's messages state. */
+  leadMinutes?: number;
+  presentCount?: number;
+  absentCount?: number;
+  notedCount?: number;
+  waitingCount?: number;
+  sentCount?: number;
+  heldCount?: number;
 }
 
 export type TemplateId =
@@ -85,7 +111,7 @@ export type TemplateId =
   | "owner_approval_waiting" | "owner_approval_closed" | "owner_approval_refused"
   // the agent: a person at the server settled an uncertain refund as made (Guard's already_done), so it is done and not sent again
   | "owner_refund_settled"
-  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId;
+  | UpiTemplateId | LicenceTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId | ClassTemplateId;
 
 /**
  * Item 11h: the reminders with the parent's private page in them, used whenever the centre has a page (its pages file): the same words as the three reminders, and a
@@ -126,7 +152,7 @@ export const TEMPLATE_NAMES = { customer: "fee_update", reminder: "fee_reminder_
 
 type Template = (f: MessageFacts) => string;
 type TemplateSet = Record<TemplateId, Template>;
-type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId>, Template>;
+type BaseSet = Record<Exclude<TemplateId, UpiTemplateId | GuardWaitTemplateId | PageTemplateId | FamilyTemplateId | ClassTemplateId>, Template>;
 type FamilySet = Record<FamilyTemplateId, Template>;
 type PageSet = Record<PageTemplateId, Template>;
 type UpiSet = Record<UpiTemplateId, Template>;
@@ -575,7 +601,7 @@ const familyKn: FamilySet = {
   fee_reminder_family_page: (f) => `ಶುಲ್ಕದ ನೆನಪು: ${f.businessName}. ಬಾಕಿ ಶುಲ್ಕಗಳು: ${familyLines(f)}. ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟ ಎಲ್ಲವನ್ನೂ ತೋರಿಸುತ್ತದೆ: ${page(f)} ದಯವಿಟ್ಟು ಇದನ್ನು ಯಾರೊಂದಿಗೂ ಹಂಚಿಕೊಳ್ಳಬೇಡಿ. ಈ ನೆನಪುಗಳು ಬೇಡವಾದರೆ STOP ಎಂದು ಉತ್ತರಿಸಿ.`,
 };
 
-export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...pageEn, ...familyEn }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...pageHi, ...familyHi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...pageMl, ...familyMl }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...pageKn, ...familyKn } };
+export const TEMPLATES: Record<Language, TemplateSet> = { en: { ...en, ...upiEn, ...licenceEn, ...waitEn, ...pageEn, ...familyEn, ...CLASS_TEMPLATES.en }, hi: { ...hi, ...upiHi, ...licenceHi, ...waitHi, ...pageHi, ...familyHi, ...CLASS_TEMPLATES.hi }, ml: { ...ml, ...upiMl, ...licenceMl, ...waitMl, ...pageMl, ...familyMl, ...CLASS_TEMPLATES.ml }, kn: { ...kn, ...upiKn, ...licenceKn, ...waitKn, ...pageKn, ...familyKn, ...CLASS_TEMPLATES.kn } };
 
 /** Write one message from the record. Throws if the record lacks something the message needs. */
 export function render(id: TemplateId, facts: MessageFacts): string {

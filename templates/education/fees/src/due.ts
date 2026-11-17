@@ -21,6 +21,7 @@ import { batchName, batchOf } from "./settings.ts";
 import type { PartMonth } from "./joining.ts";
 import type { Batch, Settings, Student } from "./settings.ts";
 import type { MessageFacts } from "./language/templates.ts";
+import type { ClassesState } from "./classes/state.ts";
 
 export type DueState = "open" | "paid" | "closed";
 
@@ -112,7 +113,7 @@ export interface Due {
  * in a reminder or by the owner's "send a new link". One per parent: a new one replaces the old, which then opens nothing. Kept in the saved state, so it survives a
  * restart and a handover (the state moves with the shop; the owner's panel-made link does not).
  */
-export interface ParentLink { hash: string; atMs: number; via: "reminder" | "owner" }
+export interface ParentLink { hash: string; atMs: number; via: "reminder" | "owner" | "classes" }
 
 /**
  * Item 11h: a payment's confirmation page, by the hash of the handle the parent's "I have paid" made (on their private page). It names the fee and the parent, so the
@@ -147,6 +148,8 @@ export interface Store {
   parentLinks?: Record<string, ParentLink>;
   /** Item 11h: the confirmation pages parents' presses made, by their handles' hashes. Left out until the first one. */
   confirmations?: Record<string, FeeConfirmation>;
+  /** Classes (src/classes/): the class links, the sessions, the consent answers and the doubts. Left out until the first class is touched, and for a centre without Classes. */
+  classes?: ClassesState;
 }
 
 export function createStore(): Store {

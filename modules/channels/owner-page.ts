@@ -27,6 +27,7 @@ import type { Raw } from "../core/html.ts";
 import { formatInr, formatSlot } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import type { OwnerItemView, OwnerView, RelayAsk } from "./backend.ts";
+import { classesSection } from "./owner-classes.ts";
 import { OWNER, PAGE } from "./words.ts";
 import { OWNER_MORE } from "./words-orders-fees.ts";
 import { OWNER_MONEY } from "./words-money.ts";
@@ -183,6 +184,7 @@ ${waiting.length > 0 || !anything ? html`<h2>${w.waiting}</h2>${waiting.length >
 ${waitingPay.length > 0 ? html`<h2>${money.waitingPay}</h2><p class="note">${money.waitingPayNote}</p>${waitingPay.map(item)}` : ""}
 ${lateOnly.length > 0 ? html`<h2>${money.lateHeading}</h2><p class="note">${money.lateNote}</p>${lateOnly.map(item)}` : ""}
 ${v.money ? ownerMoneySection(v.money, o.language, o.exportLinks, tz) : ""}
+${v.classes ? classesSection(v.classes, o.language, tz, (action, c, digest, label, quiet) => button(o.base, { source: "runtime", action, case: c, digest }, label, quiet, o.csrf)) : ""}
 ${coming}${parents}${cash}
 ${app ? raw(talkBox({ base: o.base, language: o.language, lines: app.talk, assistantName: app.character.name ?? ASSISTANT_OF[o.language](v.shop.name), ...(o.csrf ? { csrf: o.csrf } : {}), listen: app.listen === true, bare: true })) : ""}
 ${o.alerts && !leadAlerts ? raw(o.alerts) : ""}

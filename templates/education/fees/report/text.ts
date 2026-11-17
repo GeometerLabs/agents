@@ -56,6 +56,9 @@ export function ownerText(report: FeesReport, language: Language): string {
     pair(s.label.wasAsked, owner.asked), pair(s.label.approved, owner.approved), pair(s.label.saidNo, owner.denied),
   ].join(" · ");
 
+  // Classes: one more line, only for a centre that has it (a Fees centre's five lines are as they were)
+  const classLine = report.classes ? [pair(s.classes.held, report.classes.held), pair(s.classes.linksSent, report.classes.linksSent), pair(s.classes.attendance, report.classes.attendanceMarked), pair(s.classes.missedNotes, report.classes.missedNotes), pair(s.classes.doubts, report.classes.doubts)].join(" · ") : "";
+
   const byCount = RULE_IDS.filter((r) => stopped.byRule[r] > 0).sort((a, b) => stopped.byRule[b] - stopped.byRule[a]); // ties keep the rules' own order
   const shown = byCount.slice(0, 3).map((r) => pair(s.stop[r], stopped.byRule[r]));
   const stoppedLine = stopped.total === 0 ? pair(s.label.stoppedByLimits, 0)
@@ -63,7 +66,7 @@ export function ownerText(report: FeesReport, language: Language): string {
 
   const notChecked = `${pair(s.label.notChecked, notCheckedList(report, language))}${language === "hi" ? "।" : "."} ${s.handRun}`;
 
-  return [title, moneyLine, doneLine, stoppedLine, notChecked].join("\n");
+  return [title, moneyLine, doneLine, ...(classLine ? [classLine] : []), stoppedLine, notChecked].join("\n");
 }
 
 /** The owner's messages for a language choice: one, or two for "both". */
