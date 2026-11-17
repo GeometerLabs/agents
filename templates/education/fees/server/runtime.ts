@@ -63,6 +63,8 @@ export interface RuntimeOptions {
   terms?: () => import("../../../../modules/terms/terms.ts").TermsFile | undefined;
   /** Item 11e: the owner's router for the shop's assistant (modules/assistant/reading.ts). Left out: the rules alone read the owner's words. */
   ownerParser?: OwnerParser;
+  /** Block M: the shop's talk model (modules/assistant/understanding.ts buildTalker). Left out: no talk, and everyone gets the fixed answers. */
+  talker?: import("../../../../modules/understanding/talk.ts").TalkModel;
   /** Item 11f: the owner's sign-in on the shop's page (modules/channels/owner-signin.ts), made by the shared start. Left out: none. */
   ownerSignin?: OwnerSignin;
   /** Item 11h: the shop's web push. A message kept for a page's conversation is also pushed to the phones that allowed alerts on that page. Left out: none. */
@@ -142,7 +144,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     keepCounters: keepStoreCounters,
     services: services as unknown as Record<string, unknown>,
     createAgent: ({ store, record, services: watched }) => createAgent({
-      settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}), ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}),
+      settings, clock, ...(watched as unknown as Services), parser, record, store, ai: policy, ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}), ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(options.talker ? { talker: options.talker } : {}),
       pageBase, linkMemory, ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}),
     }),
     // Item 11h: a confirmation page is kept while its fee is open, and for CONFIRMATION_KEEP_MS after it was pressed once the fee is settled. A parent's link is never

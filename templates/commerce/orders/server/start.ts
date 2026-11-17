@@ -27,7 +27,7 @@ import { createRuntime } from "./runtime.ts";
 import type { Runtime } from "./runtime.ts";
 import { buildServices } from "./services.ts";
 import type { LiveModule } from "./services.ts";
-import { OWNER_UNDERSTANDING } from "../../../../modules/assistant/understanding.ts";
+import { OWNER_UNDERSTANDING, buildTalker } from "../../../../modules/assistant/understanding.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 
 export { parserArguments, readToken };
@@ -85,7 +85,9 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
       const voice = speech ? buildVoice(speech, { clock, languages: client.settings.languages, log }) : undefined;
       // Item 11e: the shop's assistant reads the owner's words through the same steps, with the owner's reading (modules/assistant/reading.ts). Only when it is on.
       const ownerParser = client.settings.assistant ? understanding(client as ClientFolder, { clock, log: () => undefined }, OWNER_UNDERSTANDING as never).parser as OwnerParser : undefined;
-      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), ...(push ? { push } : {}),
+      // block M: the talk model, built once here (modules/assistant/understanding.ts buildTalker): the shop's `talk` block, else its language model
+      const talker = client.settings.assistant ? buildTalker(client as ClientFolder, { clock, log }) : undefined;
+      return createRuntime({ settings: client.settings, store, clock, services, ...(voice ? { voice } : {}), parser: options.parser ?? reading.parser, ...(ownerParser ? { ownerParser } : {}), ...(talker ? { talker } : {}), ai: reading.ai, report: monthlyReportSetup(client as ClientFolder, log), pathwayVersion: pathwayVersion(), licence: licenceReader(client.folder, clock), terms: termsReader(client.folder), ...(recordKey ? { recordKey } : {}), ...(ownerSignin ? { ownerSignin } : {}), ...(push ? { push } : {}),
         // item 11i: the character's pictures, as the deployer hands their version over in pages.json (read on every use)
         pictures: () => picturesOf(pagesReader(join(client.folder, PAGES_FILE))()), log });
     },

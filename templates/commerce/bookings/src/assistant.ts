@@ -18,11 +18,13 @@ import type { RecordEntry } from "../../../../modules/record/record.ts";
 import type { RefundResult } from "../../../../modules/payments/refunds.ts";
 import { LIVE_STATES, latestBooking } from "./booking.ts";
 import type { Booking, Store } from "./booking.ts";
-import { hoursOn, serviceName } from "./settings.ts";
+import { WEEKDAY_KEYS, hoursOn, serviceName } from "./settings.ts";
 import { ownerItems } from "./channel.ts";
 import type { OwnerItem } from "./channel.ts";
 import type { Settings } from "./settings.ts";
-import { formatSlot } from "../../../../modules/language/format.ts";
+import { formatInr, formatSlot } from "../../../../modules/language/format.ts";
+import type { PublicContext, TalkSource } from "../../../../modules/assistant/talk-types.ts";
+import { isClosedDay } from "../../../../modules/assistant/conversation.ts";
 
 /** The agent's own paths the skill's acts use. Each is the function the agent already runs for the same thing; the skill adds no other way to act. */
 export interface BookingsActs {
@@ -69,6 +71,77 @@ const ROUTING_WORDS = {
 
 /** The states whose customer expects to come: told when their day is closed, and again if it opens. */
 const COMING: Booking["state"][] = ["confirmed", "needs_owner", "awaiting_deposit"];
+
+
+const DAY_MS = 86_400_000;
+const WEEKDAY_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+/** What a customer is told about their own booking, in words that state how things stand and do not say that something was done (the talk may not say "booked" or "confirmed"). */
+const STATE_WORDS: Partial<Record<Booking["state"], string>> = {
+  enquiry: "still being arranged, no time agreed yet", confirming_details: "waiting for the customer's yes to the time", awaiting_deposit: "waiting for the deposit to hold the time", needs_owner: "waiting for the owner to look at it",
+  confirmed: "in the shop's book for that time",
+};
+
+/**
+ * The reads the shop's talk rests on (block M), kept with the other reads: pure over the store, no customer's name or number in what the OWNER's talk gets (counts only), and in
+ * what a CUSTOMER's talk gets only the shop's public settings, free times from the shop's own bookings, and that customer's own live booking.
+ */
+function talkReads(deps: BookingsSkillDeps, whoOf: (b: Booking) => string): Pick<OwnerSkill, "facts" | "publicContext"> {
+  const { settings, store } = deps;
+  const tz = settings.timezone;
+  const lang = settings.owner.language;
+  const stands = (b: Booking) => b.state === "confirmed" || b.state === "needs_owner" || b.state === "completed";
+  return {
+    facts(nowMs) {
+      const out: TalkSource[] = [];
+      const start = zonedToMs(localParts(nowMs, tz), { hour: 0, minute: 0 }, tz);
+      const inDay = (b: Booking, from: number, to: number) => b.startMs !== undefined && b.startMs >= from && b.startMs < to;
+      const all = [...store.bookings.values()];
+      const today = all.filter((b) => stands(b) && inDay(b, start, start + DAY_MS));
+      out.push({ id: "r:today", kind: "record", text: `Bookings today: ${today.length}${today[0]?.startMs !== undefined ? `, the first at ${formatSlot(Math.min(...today.map((b) => b.startMs!)), tz, lang)}` : ""}.`, momentsMs: today.map((b) => b.startMs!) });
+      const week = (from: number, to: number) => all.filter((b) => stands(b) && inDay(b, from, to)).length;
+      out.push({ id: "r:week", kind: "record", text: `Bookings in the last 7 days: ${week(start - 7 * DAY_MS, start)}. In the next 7 days: ${week(start, start + 7 * DAY_MS)}.` });
+      const weekdays = new Array<number>(7).fill(0);
+      for (const b of all) if (stands(b) && b.startMs !== undefined && b.startMs >= start - 28 * DAY_MS && b.startMs < start) weekdays[weekdayOf(localParts(b.startMs, tz))] += 1;
+      out.push({ id: "r:weekdays", kind: "record", text: `Bookings by weekday over the last 28 days: ${WEEKDAY_EN.map((d, i) => `${d} ${weekdays[i]}`).join(", ")}.` });
+      const bySvc = new Map<string, number>();
+      for (const b of all) if (stands(b) && b.serviceId && b.startMs !== undefined && b.startMs >= start - 28 * DAY_MS) bySvc.set(b.serviceId, (bySvc.get(b.serviceId) ?? 0) + 1);
+      const top = [...bySvc.entries()].sort((x, y) => y[1] - x[1]).slice(0, 3).map(([id, n]) => ({ name: serviceName(settings.services.find((v) => v.id === id) ?? { id, names: {}, priceInr: 0, durationMinutes: 0 }, lang), n }));
+      out.push({ id: "r:top", kind: "record", text: top.length ? `Top services over the last 28 days: ${top.map((t) => `${t.name} ${t.n}`).join(", ")}.` : "No bookings in the last 28 days.", literals: top.map((t) => t.name) });
+      out.push({ id: "r:cancelled", kind: "record", text: `Cancelled bookings over the last 28 days: ${all.filter((b) => b.state === "cancelled" && b.startMs !== undefined && b.startMs >= start - 28 * DAY_MS).length}. Waiting for the owner now: ${all.filter((b) => b.state === "needs_owner").length}.` });
+      return out;
+    },
+    publicContext(phone, nowMs) {
+      const language = store.customers.get(phone)?.language ?? settings.languages[0] ?? lang;
+      const sources: TalkSource[] = [{ id: "s:shop", kind: "setting", text: `${settings.name}${settings.address ? `, ${settings.address}` : ""}. Bookings are made on WhatsApp.`, literals: [settings.name, ...(settings.address ? [settings.address] : [])] }];
+      for (const svc of settings.services) { const name = serviceName(svc, language); sources.push({ id: `s:svc:${svc.id}`, kind: "setting", text: `${name}: ${formatInr(svc.priceInr)}, ${svc.durationMinutes} minutes.`, amountsInr: [svc.priceInr], literals: [name] }); }
+      const hours = WEEKDAY_KEYS.map((k, i) => { const h = settings.openingHours[k]; return `${WEEKDAY_EN[i]} ${h ? `${h.open} to ${h.close}` : "closed"}`; });
+      sources.push({ id: "s:hours", kind: "setting", text: `Opening hours: ${hours.join(", ")}.` });
+      sources.push({ id: "s:deposit", kind: "setting", text: `A deposit of ${formatInr(settings.deposit.amountInr)} holds a time for ${settings.deposit.holdMinutes} minutes. The deposit is refundable if the booking is cancelled at least ${settings.cancellation.windowHours} hours before it; later, the owner decides.`, amountsInr: [settings.deposit.amountInr] });
+      // the next free times, from the shop's own bookings (the same list the agent's own free-time finder reads), a few days ahead
+      const minutes = Math.min(...settings.services.map((v) => v.durationMinutes));
+      const busy = [...store.bookings.values()].filter((b) => ["awaiting_deposit", "needs_owner", "confirmed"].includes(b.state) && b.startMs !== undefined && b.endMs !== undefined).map((b) => [b.startMs!, b.endMs! + settings.bufferMinutes * 60_000] as const);
+      const free: number[] = [];
+      for (let d = 0; d < 4 && free.length < 6; d++) {
+        const date = addDays(localParts(nowMs, tz), d);
+        const h = hoursOn(settings, weekdayOf(date));
+        if (!h || isClosedDay(store.assistant, date)) continue;
+        for (let m = h.open; m + minutes <= h.close && free.length < 6; m += settings.slotMinutes) {
+          const at = zonedToMs(date, { hour: Math.floor(m / 60), minute: m % 60 }, tz);
+          if (at <= nowMs + 30 * 60_000 || busy.some(([a, z]) => at < z && at + minutes * 60_000 > a)) continue;
+          free.push(at);
+        }
+      }
+      sources.push({ id: "r:free", kind: "record", text: free.length ? `Next free times: ${free.map((ms) => formatSlot(ms, tz, language)).join("; ")}.` : "No free time in the next few days.", momentsMs: free });
+      const mine = latestBooking(store, phone, LIVE_STATES);
+      if (mine) {
+        const svc = settings.services.find((v) => v.id === mine.serviceId);
+        sources.push({ id: "r:case", kind: "record", text: `This customer's own booking ${mine.id}: ${svc ? serviceName(svc, language) : "a service"}${mine.startMs !== undefined ? `, ${formatSlot(mine.startMs, tz, language)}` : ""}, ${STATE_WORDS[mine.state] ?? mine.state}.`, literals: [mine.id, ...(svc ? [serviceName(svc, language)] : [])], ...(mine.startMs !== undefined ? { momentsMs: [mine.startMs] } : {}) });
+      }
+      void whoOf;
+      return { sources, links: [] } satisfies PublicContext;
+    },
+  };
+}
 
 export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
   const { settings, store } = deps;
@@ -236,6 +309,7 @@ export function bookingsSkill(deps: BookingsSkillDeps): OwnerSkill {
       await acts.applyMove(b, startMs, endMs);
       return b.startMs === startMs ? { ok: true, fromMs, toMs: startMs } : { ok: false, why: "failed" };
     },
+    ...talkReads(deps, whoOf),
     prepare,
     execute,
   };
