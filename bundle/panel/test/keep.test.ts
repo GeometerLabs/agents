@@ -123,6 +123,7 @@ test("Fees: a renamed batch is still the same batch (its id, its students, its t
   const d = feesDraft(saved);
   d.fees!.batches[1].name = "Class IX";
   d.fees!.students = d.fees!.students.replace("कक्षा 9", "Class IX");
+  d.fees!.timetable = d.fees!.timetable!.replace("कक्षा 9", "Class IX");
   const built = feesBuild(d, saved) as any;
   assert.ok(built.ok, built.errors?.join("; "));
   assert.equal(built.settings.batches[1].id, "class-9");

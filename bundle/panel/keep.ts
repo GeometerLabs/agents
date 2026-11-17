@@ -141,9 +141,11 @@ const BOOKINGS: KeepSpec = {
   lists: { services: { owned: [...NAMED, "priceInr", "durationMinutes"], names: true, shown: 4 } }, // shown = demo/personalise.ts MAX_SERVICES (test/keep.test.ts checks it)
 };
 
-/** Fees (fees.ts). Not owned, so kept: `joiningMidMonth`, a student's `joined`, `backDues` and `adult`, a student's own language, a batch's other names, the `classes` block (until the Classes part of the form, Part 3, owns it). */
+/** Fees (fees.ts). Not owned, so kept: `joiningMidMonth`, a student's `joined`, `backDues` and `adult`, a student's own language, a batch's other names, the Classes block's lead minutes and file limit. */
 const FEES: KeepSpec = {
-  owned: ["name", "address", "languages", "batches", "students", "due", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers"],
+  owned: ["name", "address", "languages", "batches", "students", "due", "lateFeeInr", "reminders", "partPayments", "waiver", "refund", "payment", "owner", "approvers", "classes"],
+  // the Classes block: the form owns the timetable and the old-dues switch; the lead minutes and the file limit stay as saved
+  objects: { classes: ["timetable", "oldDuesStopLink"] },
   lists: {
     batches: { owned: [...NAMED, "monthlyFeeInr"], names: true, shown: 6 }, // shown = fees.ts MAX_BATCHES (test/keep.test.ts checks it)
     students: { owned: ["name", "parent", "batch"], prefer: ["language"], pair: pairStudents },

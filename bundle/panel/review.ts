@@ -25,6 +25,7 @@ import { WORDS as LIMITS_PANEL_WORDS } from "./views-limits.ts";
 import { OWNER_MONEY } from "../../modules/channels/words-money.ts";
 import { STOCK_WORDS } from "../../modules/channels/words-stock.ts";
 import { STOCK_PANEL_WORDS } from "./stock.ts";
+import { CLASSES_WORDS } from "./words-classes.ts";
 import { WORDS as LIMITS_OWNER_WORDS } from "../../modules/channels/owner-limits-page.ts";
 import { CHAT, QUICK } from "../../modules/channels/words-chat.ts";
 import { IDENTITY } from "../../modules/channels/words-chat-identity.ts";
@@ -42,6 +43,10 @@ const stockSamples: Record<string, unknown[]> = {
   "stock.panel.problems.lineTwice": [3], "stock.panel.problems.capAbovePrice": ["₹1,200"], "stock.panel.shop.messages.line": [6],
 };
 const stockFlat = (language: Language): Map<string, string> => flatWords({ stock: { owner: STOCK_WORDS[language], panel: STOCK_PANEL_WORDS[language] } }, stockSamples);
+/** The Classes part of the Fees phone form (17 Nov 2026; words-classes.ts), under the ids "classes.*", each refusal with a made-up row and batch. */
+const classesFlat = (language: Language): Map<string, string> => flatWords({ classes: CLASSES_WORDS[language] }, {
+  "classes.problems.tooMany": [60], "classes.problems.lineBad": [2], "classes.problems.batch": [2, "Class 8"], "classes.problems.day": [2], "classes.problems.time": [2], "classes.problems.minutes": [2], "classes.problems.twice": [2],
+});
 import { CHATS_LIST_WORDS } from "../../modules/channels/chats-list.ts";
 
 export type ReviewLanguage = "hi" | "ml" | "kn";
@@ -145,8 +150,8 @@ const chatIdentityFlat = (language: Language): Map<string, string> => flatWords(
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...classesFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...classesFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 
