@@ -16,6 +16,7 @@ import { formatDate, formatTime } from "../../../../modules/language/format.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { addDays, localParts, sameDate, zonedToMs, parseClock, timeFromMinutes } from "../../../../modules/core/time.ts";
 import type { LocalDate } from "../../../../modules/core/time.ts";
+import type { Reminder } from "../../../../modules/reminders/reminders.ts";
 import type { GuardHold, RefundIssue, RefundRetry, UntoldRefund } from "../../../../modules/payments/refunds.ts";
 import type { AssistantState } from "../../../../modules/assistant/state.ts";
 import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
@@ -113,6 +114,17 @@ export interface Order {
    * hex>", modules/channels/conversation.ts), never the typed number, so nothing finds it by number and nothing is sent to that number on WhatsApp.
    */
   channel?: "web" | "mcp";
+  /**
+   * The reminder before the slot (17 Nov 2026), made when the order is confirmed and only if the shop's settings ask for one (`reminder.hoursBefore`): the moment and
+   * whether it was sent (modules/reminders). Cleared when the order is cancelled or done, so it can never go out for an order that does not stand.
+   */
+  reminders?: Reminder[];
+  /**
+   * The balance (the total less the advance), paid when the order is collected or delivered (17 Nov 2026). It is its own record, never part of the advance: the owner
+   * marks it received (cash or UPI), or, on a gateway shop, the owner sends a link for it and the payments service's own record confirms it (`by: "provider"`).
+   * `linkId` and `linkUrl` are that link. Left out until something about the balance happens.
+   */
+  balance?: { amountInr: number; paid?: { by: "cash" | "upi" | "provider"; atMs: number; paymentId?: string }; linkId?: string; linkUrl?: string };
   /** Item 11h: the hash of the order's handle (modules/channels/handle.ts): the only thing that reaches it from the page, the API or MCP. */
   handle?: string;
   /** Item 11h: the name and number the customer typed (not verified): what the owner sees, and what the per-number limits count. */
@@ -214,6 +226,16 @@ export function ordersOn(store: Store, date: LocalDate, nowMs: number, exceptId 
   return n;
 }
 
+/**
+ * How many orders hold a place in one slot on one day (a slot's `maxOrders`): worked out from the orders, like the day's count, so a restart or a cancellation can never
+ * leave a number that disagrees with them. Not counting `exceptId` (the order being checked).
+ */
+export function ordersInSlot(store: Store, date: LocalDate, slotId: string, nowMs: number, exceptId = ""): number {
+  let n = 0;
+  for (const o of store.orders.values()) if (o.id !== exceptId && o.slotId === slotId && sameDay(o.date, date) && holdsStock(o, nowMs)) n++;
+  return n;
+}
+
 // ---- the slot, the cut-off and what a message may say ----------------------------------------------------------------
 
 /** Fix the slot's moments for the order: the date's start and end of the window, and the cut-off. Needs a date and a slot. */
@@ -240,7 +262,7 @@ export const itemsText = (settings: Settings, lines: readonly OrderLine[], langu
   lines.map((l) => `${l.qty} × ${itemName(itemOf(settings, l.itemId)!, language)}`).join(", ");
 
 /** The values of this order's record that a message may use. Everything comes from the order and the settings, never from message text. */
-export function factsFor(settings: Settings, order: Order | null, language: Language, extra: { customerPhone?: string; refundInr?: number; menu?: boolean; areas?: boolean; slotChoices?: { fromMs: number; toMs: number }[]; upiCode?: string; markedInr?: number; leftInr?: number; itemId?: string; leftCount?: number; nowMs?: number } = {}): MessageFacts {
+export function factsFor(settings: Settings, order: Order | null, language: Language, extra: { customerPhone?: string; refundInr?: number; menu?: boolean; areas?: boolean; slotChoices?: { fromMs: number; toMs: number }[]; upiCode?: string; markedInr?: number; leftInr?: number; itemId?: string; leftCount?: number; nowMs?: number; link?: string } = {}): MessageFacts {
   const payTo = ownerMarkedOf(settings.payment)?.payTo; // who the customer pays, when the owner marks payments (B71)
   const item = extra.itemId ? itemOf(settings, extra.itemId) : undefined;
   const dateMs = order?.date ? zonedToMs(order.date, { hour: 0, minute: 0 }, settings.timezone) : undefined;
@@ -268,7 +290,7 @@ export function factsFor(settings: Settings, order: Order | null, language: Lang
     mode: order?.mode,
     area: order?.area,
     address: order?.address,
-    link: order?.linkUrl,
+    link: extra.link ?? order?.linkUrl,
     holdMinutes: order?.holdExpiresAt !== undefined && order.state === "awaiting_advance" && extra.nowMs !== undefined ? Math.max(1, Math.round((order.holdExpiresAt - extra.nowMs!) / 60_000)) : settings.advance.holdMinutes,
     windowHours: settings.cancellation.windowHours,
     maxItems: settings.orders.maxItemsPerOrder,

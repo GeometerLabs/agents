@@ -47,6 +47,7 @@ export function ownerText(report: OrdersReport, language: Language): string {
   const title = [oneLine(report.shop.name), periodLabel(report.period, language), tag].filter(Boolean).join(" · ");
   const moneyLine = [
     pair(moneyLabels(language, report.paidBy).collected, rupees(money.collected.paise)),
+    money.balanceCollected ? pair(s.label.balanceCollected, rupees(money.balanceCollected.paise)) : "",
     pair(s.label.stillToCollect, sold.toCollect.count > 0 ? `${rupees(sold.toCollect.paise)} (${s.label.orders}: ${sold.toCollect.count})` : rupees(0)),
     money.givenBack.count > 0 ? pair(moneyLabels(language, report.paidBy).givenBack, rupees(money.givenBack.paise)) : "",
   ].filter(Boolean).join(" · ");

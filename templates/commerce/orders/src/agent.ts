@@ -63,6 +63,7 @@ import type { Heard, VoiceService } from "../../../../modules/voice/voice.ts";
 import { VOICE_WHY, createListener, failedMarks, voiceMarks } from "../../../../modules/voice/turn.ts";
 import type { HeardOk } from "../../../../modules/voice/turn.ts";
 import { detectLanguage } from "../../../../modules/understanding/rules.ts";
+import { hoursBefore, scheduleAround, takeDue } from "../../../../modules/reminders/reminders.ts";
 import { ensureLink as makeLink } from "../../../../modules/payments/links.ts";
 import type { PaymentEvent, Payments } from "../../../../modules/payments/payments.ts";
 import { createRefunds, recheckLine } from "../../../../modules/payments/refunds.ts";
@@ -81,14 +82,14 @@ import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
 import { coerceIntent } from "./adapters/model.ts";
 import type { Intent, IntentParser, ParseContext, ParseOptions } from "./adapters/model.ts";
 import { isPaidClaim, parseIntent } from "./adapters/rule-parser.ts";
-import { addLine, countOf, factsFor, fixSlot, latestOrder, moveTo, newDraft, ordersOn, register, slotMoments, takenOf, totalOf } from "./order.ts";
+import { addLine, countOf, factsFor, fixSlot, latestOrder, moveTo, newDraft, ordersInSlot, ordersOn, register, slotMoments, takenOf, totalOf } from "./order.ts";
 import type { Order, Pending, Store } from "./order.ts";
 import { buttonsFor, intentFromReply, itemList, ownerMarkButtons, slotList } from "./language/interactive.ts";
 import type { ButtonId } from "./language/interactive.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
 import type { MessageFacts, TemplateId } from "./language/templates.ts";
-import { areaOf, checkBeforeCutoff, checkConfirmOnlyWhenRecorded, checkDayCap, checkDeliveryArea, checkMessageMatchesRecord, checkOneAdvancePerOrder, checkOrderSize, checkPriceAtOrAboveMenu, checkRefundLimit, checkStock } from "./limits.ts";
+import { areaOf, checkBeforeCutoff, checkConfirmOnlyWhenRecorded, checkDayCap, checkDeliveryArea, checkMessageMatchesRecord, checkOneAdvancePerOrder, checkOrderSize, checkPriceAtOrAboveMenu, checkRefundLimit, checkSlotCap, checkStock } from "./limits.ts";
 import { advanceFor, allSlots, itemName, itemOf, slotOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 
@@ -145,7 +146,7 @@ type Offer =
   // the owner's UPI buttons ("Received ₹200", "Refund sent"), each carrying its one-use code
   | { kind: "owner_upi"; choices: Choice[]; body?: TemplateId[] };
 
-interface SayArgs { booking: Order | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; shown?: Decision[]; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; markedInr?: number; leftInr?: number; itemId?: string; leftCount?: number; areas?: boolean }
+interface SayArgs { booking: Order | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; shown?: Decision[]; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; markedInr?: number; leftInr?: number; itemId?: string; leftCount?: number; areas?: boolean; /** the balance's own link (17 Nov 2026), not the advance's */ link?: string }
 type More = Omit<SayArgs, "booking" | "phone" | "to" | "templates">;
 
 /** What a step tells the customer along with the words that ask for what is missing. */
@@ -219,7 +220,7 @@ export function createAgent(deps: AgentDeps): Agent {
     languageOf: (phone, order) => languageOf(phone, order),
     optedOut: (phone) => customerOf(phone).optedOut,
     factsFor: (a, language) => factsFor(settings, a.booking, language, {
-      customerPhone: shownPhone(a.phone, a.booking), refundInr: a.refundInr, menu: a.templates.includes("menu") || a.offer?.kind === "items", areas: a.areas, itemId: a.itemId, leftCount: a.leftCount,
+      customerPhone: shownPhone(a.phone, a.booking), refundInr: a.refundInr, menu: a.templates.includes("menu") || a.offer?.kind === "items", areas: a.areas, itemId: a.itemId, leftCount: a.leftCount, ...(a.link ? { link: a.link } : {}),
       ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.windows } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, nowMs: clock.now(),
     }),
     interactiveFor: (a, facts, language) => buildInteractive(a.offer!, a.templates, facts, language),
@@ -316,7 +317,13 @@ export function createAgent(deps: AgentDeps): Agent {
   /** The slots of a mode whose cut-off has not passed on a date, as windows a list can offer. */
   function openWindows(mode: "pickup" | "delivery", date: LocalDate): { id: string; fromMs: number; toMs: number }[] {
     const probe = { date } as Order;
-    return slotMoments(settings, mode, date).filter((w) => { probe.slotId = w.id; return fixSlot(settings, probe) && probe.cutoffMs! > clock.now(); });
+    return slotMoments(settings, mode, date).filter((w) => { probe.slotId = w.id; return fixSlot(settings, probe) && probe.cutoffMs! > clock.now() && !slotIsFull(date, w.id); });
+  }
+
+  /** A slot with a limit of its own (`maxOrders`) whose places are all taken for that day: it is not offered, and an order for it is refused in `availability`. */
+  function slotIsFull(date: LocalDate, slotId: string): boolean {
+    const max = slotOf(settings, slotId)?.slot.maxOrders;
+    return max !== undefined && ordersInSlot(store, date, slotId, clock.now()) >= max;
   }
 
   /** The slot a time the customer typed means ("1 pm" is the slot that starts at 1 pm), among the slots of the mode (or both modes). */
@@ -386,6 +393,13 @@ export function createAgent(deps: AgentDeps): Agent {
     const cap = checkDayCap({ ordersOnDay: ordersOn(store, o.date!, now, o.id), maxPerDay: settings.orders.maxPerDay });
     decisions.push(cap);
     if (cap.verdict === "block") return { blocked: { id: "day_full", more: {} }, decisions };
+    // a slot's own limit, in the same step as the order (17 Nov 2026): only for a slot that has one, so every other order's record is as it was
+    const slotMax = slotOf(settings, o.slotId)?.slot.maxOrders;
+    if (slotMax !== undefined) {
+      const slotCap = checkSlotCap({ ordersInSlot: ordersInSlot(store, o.date!, o.slotId!, now, o.id), maxOrders: slotMax });
+      decisions.push(slotCap);
+      if (slotCap.verdict === "block") return { blocked: { id: "slot_full", more: {} }, decisions };
+    }
     return { blocked: null, decisions };
   }
 
@@ -408,6 +422,18 @@ export function createAgent(deps: AgentDeps): Agent {
     }
     if (!o.slotId) {
       const windows = openWindows(o.mode, o.date);
+      const modeSlots = (o.mode === "pickup" ? settings.pickup.slots : settings.delivery!.slots);
+      const probe = { date: o.date } as Order;
+      const full = modeSlots.find((s) => { probe.slotId = s.id; return fixSlot(settings, probe) && probe.cutoffMs! > now && slotIsFull(o.date!, s.id); });
+      if (windows.length === 0 && full) {
+        // every slot still open that day is full (a slot's own limit), which is not the same as closed: say so for the first full one, and ask for another day
+        o.slotId = full.id;
+        fixSlot(settings, o);
+        ctx.shown.push(checkSlotCap({ ordersInSlot: ordersInSlot(store, o.date, full.id, now, o.id), maxOrders: full.maxOrders }));
+        await say1(["slot_full"]);
+        o.slotId = undefined;
+        return;
+      }
       if (windows.length === 0) {
         // every slot of that day has closed: say so for the first one, and ask for another day
         o.slotId = (o.mode === "pickup" ? settings.pickup.slots : settings.delivery!.slots)[0].id;
@@ -428,7 +454,7 @@ export function createAgent(deps: AgentDeps): Agent {
     ctx.shown.push(...avail.decisions);
     if (avail.blocked) {
       log(o, phone, "check_order", "blocked", { date: o.date, slot: o.slotId }, { decisions: avail.decisions });
-      if (avail.blocked.id === "after_cutoff") o.slotId = undefined;
+      if (avail.blocked.id === "after_cutoff" || avail.blocked.id === "slot_full") o.slotId = undefined;
       await say1([avail.blocked.id], avail.blocked.more);
       return;
     }
@@ -475,7 +501,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (avail.blocked) {
       log(o, phone, "check_order", "blocked", { date: o.date, slot: o.slotId }, { decisions: avail.decisions });
       if (o.state !== "enquiry") moveTo(o, "enquiry");
-      if (avail.blocked.id === "after_cutoff") o.slotId = undefined;
+      if (avail.blocked.id === "after_cutoff" || avail.blocked.id === "slot_full") o.slotId = undefined;
       o.pending = [];
       await tellCustomer(o, phone, [...ctx.prefix, avail.blocked.id], { shown: [...ctx.shown, ...avail.decisions], ...avail.blocked.more });
       return;
@@ -585,6 +611,7 @@ export function createAgent(deps: AgentDeps): Agent {
   /** Compare the payments service's record of this order's link with what the agent has counted. */
   async function reconcilePayments(o: Order): Promise<MarkOutcome | void> {
     if (ownerConfirms) return reconcileMarks(o); // the owner's marks are this module's payment record
+    await reconcileBalance(o); // a link for the balance (below) is read the same way, and never counts as the advance
     if (!o.linkId) return;
     const link = await payments.fetchRequest(o.linkId);
     if (!link) { log(o, o.customer, "record_payment", "failed", { linkId: o.linkId }, { notes: "the payments service has no such link" }); return; }
@@ -620,6 +647,8 @@ export function createAgent(deps: AgentDeps): Agent {
     o.holdExpiresAt = undefined;
     moveTo(o, "confirmed");
     log(o, o.customer, "confirm_order", "confirmed", { lines: o.lines, date: o.date, slot: o.slotId, mode: o.mode }, { notes: "the payment record shows the whole advance" });
+    // the reminder before the slot, only for a shop that asked for one (settings.reminder); past moments are never scheduled (modules/reminders)
+    if (settings.reminder && o.slotStartMs !== undefined) o.reminders = scheduleAround(o.slotStartMs, hoursBefore([settings.reminder.hoursBefore]), clock.now());
     await tellCustomer(o, o.customer, [ownerConfirms ? "upi_order_confirmed" : "order_confirmed"], { offer: cancelOrOwner });
     await tellOwner(o, o.customer, o.mode === "delivery" ? "owner_delivery_confirmed" : "owner_order_confirmed");
   }
@@ -924,6 +953,10 @@ export function createAgent(deps: AgentDeps): Agent {
     if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another Operator or builder. The panel checks the code before it moves anything" }); return; }
     // B72: "terms" sends the shop terms to the owner and "I agree" records the agreement (modules/terms/owner.ts). Off unless the shop was handed a terms file.
     if (await handleOwnerTerms(msg, { setup: deps.terms?.(), shopName: settings.name, ownerNumber: owner, ownerLanguage: settings.owner.language, messaging, record, log: (action, outcome, inputs, more) => log(null, owner, action, outcome, inputs, more) })) return;
+    // 17 Nov 2026: "balance o-3 cash", "balance o-3 upi" or "balance o-3 link": the balance paid when the order is collected or delivered. A fixed command like "approve", so the
+    // assistant never reads it as something else.
+    const balanceCommand = BALANCE_COMMAND.exec(msg.text);
+    if (balanceCommand) return onOwnerBalance(balanceCommand[1].toLowerCase(), balanceCommand[2].toLowerCase() as "cash" | "upi" | "link");
     // Item 11e: the shop's assistant reads what no fixed phrase is (this command is one). A shop without an "assistant" block: exactly as before.
     if (assistant && !OWNER_COMMAND.test(msg.text) && (await assistant.onOwnerMessage(msg))) return;
     const m = OWNER_COMMAND.exec(msg.text);
@@ -965,6 +998,62 @@ export function createAgent(deps: AgentDeps): Agent {
     if (ownerRefunds) { await oweBack(o, refund.paymentId, refund.amountInr * 100, "the owner approved a refund after a late cancellation", { customer: "upi_refund_owed", decisions: [limit] }); return; }
     const result = await requestRefund(o, refund.paymentId, refund.amountInr, [limit], overLimit(refund.amountInr), askedByOwner); // with other approvers the owner is named as asking: if Guard holds it, someone else approves
     await afterRefund(o, result, { paymentId: refund.paymentId, amountInr: refund.amountInr, done: { customer: "refund_approved" }, held: "cancelled_refund_pending", requestedBy: askedByOwner });
+  }
+
+  // ---- the balance, paid when the order is collected or delivered (17 Nov 2026) ------------------------------------------------------
+  //
+  // The advance and the balance are two records. The advance is the payment record's (a gateway's list, or the owner's UPI mark) and confirms the order; the balance is
+  // what is left of the total, and is recorded on its own line (`record_balance`), never added to "advance collected". It is known in one of two ways: the owner marks it
+  // received (cash or UPI: "balance o-3 cash"), or, on a gateway shop, the owner asks for a link for it ("balance o-3 link") and the payments service's own list shows it paid.
+  // What a customer says never marks it. It can be marked on a confirmed order or one that is completed (the slot's end completes an order whether the balance came or not).
+
+  const balanceInrOf = (o: Order): number => Math.max(0, (o.totalInr ?? 0) - (o.advanceInr ?? 0));
+
+  async function onOwnerBalance(ref: string, how: "cash" | "upi" | "link"): Promise<void> {
+    const o = store.orders.get(ref);
+    const due = o && (o.state === "confirmed" || o.state === "completed") && o.balance?.paid === undefined ? balanceInrOf(o) : 0;
+    if (!o || due === 0 || (how === "link" && !can.confirmsAutomatically)) {
+      log(o ?? null, owner, "record_balance", "blocked", { how, ref }, { notes: !o ? "no such order" : due === 0 ? "there is no balance to mark: the order is not confirmed or finished, nothing is left to pay, or it is already marked" : "a link for the balance is for a shop whose payments service confirms payments itself" });
+      await say({ booking: null, phone: owner, to: "owner", templates: ["owner_balance_none"] });
+      return;
+    }
+    if (how !== "link") { await markBalance(o, how); return; }
+    log(o, owner, "create_balance_link", "attempted", { amountPaise: due * 100 });
+    const { link, error } = await makeLink(payments, { reference: `${o.id}.b`, amountPaise: due * 100, description: `${settings.name} balance` });
+    if (!link) {
+      log(o, owner, "create_balance_link", error ? "failed" : "unconfirmed", { amountPaise: due * 100 }, { notes: error ?? "the payments service does not show the link" });
+      await tellOwner(o, o.customer, "owner_link_failed");
+      return;
+    }
+    o.balance = { ...(o.balance ?? {}), amountInr: due, linkId: link.id, linkUrl: link.pay_url };
+    log(o, owner, "create_balance_link", "confirmed", { amountPaise: due * 100 }, { refs: { linkId: link.id, amountPaise: String(due * 100) } });
+    await tellCustomer(o, o.customer, ["balance_link"], { link: link.pay_url });
+  }
+
+  /** Record the balance as received, on its own line, and tell the customer and the owner. Once: an order whose balance is marked is not marked again. */
+  async function markBalance(o: Order, by: "cash" | "upi" | "provider", paymentId?: string): Promise<void> {
+    if (o.balance?.paid) return;
+    const amountInr = balanceInrOf(o);
+    o.balance = { ...(o.balance ?? {}), amountInr, paid: { by, atMs: clock.now(), ...(paymentId ? { paymentId } : {}) } };
+    log(o, by === "provider" ? o.customer : owner, "record_balance", "confirmed", { by, amountInr }, {
+      refs: { balancePaise: String(amountInr * 100), by, ...(paymentId ? { paymentId } : {}) },
+      notes: by === "provider" ? "the payments service's own list shows the balance's link paid" : "the owner marked the balance received at pickup or delivery, from their own number",
+    });
+    await tellCustomer(o, o.customer, ["balance_paid"]);
+    await tellOwner(o, o.customer, "owner_balance_marked");
+  }
+
+  /** Read the balance link's payments from the payments service's own list. A payment that is not exactly the balance is not counted, and says so in the record. */
+  async function reconcileBalance(o: Order): Promise<void> {
+    if (!o.balance?.linkId || o.balance.paid) return;
+    const link = await payments.fetchRequest(o.balance.linkId);
+    if (!link) { log(o, o.customer, "record_balance", "failed", { linkId: o.balance.linkId }, { notes: "the payments service has no such link" }); return; }
+    for (const payment of link.payments) {
+      if (o.handledPayments.includes(payment.id)) continue;
+      o.handledPayments.push(payment.id);
+      if (payment.amount === o.balance.amountInr * 100) { await markBalance(o, "provider", payment.id); return; }
+      log(o, o.customer, "record_balance", "blocked", { paymentId: payment.id, amount: payment.amount }, { refs: { paymentId: payment.id }, notes: "a payment on the balance's link that is not the balance: it is not counted, and the owner looks at it in the payment account" });
+    }
   }
 
   // ---- STOP --------------------------------------------------------------------------------------------------------
@@ -1108,7 +1197,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const paymentId = event.payload.payment?.id;
     const linkId = event.payload.request?.id ?? event.payload.payment?.request_id
       ?? (paymentId ? (await payments.listRequests({ payment_id: paymentId }))[0]?.id : undefined);
-    const o = linkId ? orders.find((x) => x.linkId === linkId) : undefined;
+    const o = linkId ? orders.find((x) => x.linkId === linkId || x.balance?.linkId === linkId) : undefined;
     if (!o) {
       log(null, owner, "receive_payment_event", "blocked", { id: event.id, event: event.event }, { notes: "no order has this payment link, so the event is ignored" });
       store.seenEvents.add(event.id);
@@ -1129,8 +1218,14 @@ export function createAgent(deps: AgentDeps): Agent {
     if (can.readsSettlements) await readSettlementsOnce({ payments, accounting: books, record, conversation: owner, language: settings.languages[0], nowMs: now, timeZone: tz }); // yesterday's settlement rows, once a day (modules/accounting/settlements.ts)
     for (const o of [...store.orders.values()]) {
       if (o.state === "awaiting_advance" && o.holdExpiresAt !== undefined && o.holdExpiresAt <= now) await expireHold(o);
+      // the reminder: one message, however many moments fell due while the agent was not running, and never for an order that no longer stands or whose slot has begun
+      if (o.reminders) {
+        if (o.state !== "confirmed") o.reminders = undefined;
+        else if (o.slotStartMs! > now && takeDue(o.reminders, now).due) await tellCustomer(o, o.customer, ["order_reminder"]);
+      }
       if (o.state === "confirmed" && o.slotEndMs !== undefined && o.slotEndMs <= now) {
         moveTo(o, "completed");
+        o.reminders = undefined;
         // the advance is applied to the order when it is done; an order with no advance posts nothing
         const own = (money: Record<string, string>) => log(o, o.customer, "complete_order", "confirmed", { endMs: o.slotEndMs }, Object.keys(money).length > 0 ? { refs: money } : {});
         if (o.advancePaymentId && advancePaise(o) > 0) books.post({ kind: "applied", case: o.id, amountPaise: advancePaise(o), service: "orders" }, own); else own({});
@@ -1330,8 +1425,36 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- item 11e: the shop's assistant (modules/assistant) -------------------------------------------------------------
   // On only when the settings have an "assistant" block. Orders is its one skill here; answering what waits is the owner's own fixed reply (src/assistant.ts).
+  // The owner's own cancel and refund (17 Nov 2026): the agent's paths with the owner as the one asking. The owner's yes is the card's tap, so unlike the customer's "cancel"
+  // (onCancel) nobody is asked a second time; the refund is the same one, through the same limit and Guard, and is held above the limit like the owner's "approve o-5".
+  const ownerCancelRefund = async (o: Order, amountInr: number, why: string, customer: { upi: TemplateId; done: TemplateId; held: TemplateId }) => {
+    const limit = checkRefundLimit({ amountInr, limitInr: settings.refund.limitInr, paidInr: o.advanceInr ?? amountInr, ownerApproved: true });
+    if (ownerRefunds) { await oweBack(o, o.advancePaymentId!, amountInr * 100, why, { customer: customer.upi, decisions: [limit] }); return "owed" as const; }
+    const result = await requestRefund(o, o.advancePaymentId!, amountInr, [limit], overLimit(amountInr), askedByOwner);
+    await afterRefund(o, result, { paymentId: o.advancePaymentId!, amountInr, done: { customer: customer.done }, held: customer.held, requestedBy: askedByOwner } as never);
+    return result;
+  };
   const assistant = assistantForAgent({
-    settings, store, skill: ordersSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg) }),
+    settings, store, skill: ordersSkill({
+      settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg), entries: () => record.entries(),
+      acts: {
+        ownerRefunds,
+        // a confirmed order the owner cancels: the stock is free at once (it is no longer confirmed), then the advance goes back
+        async cancelPaid(o, back, why) {
+          o.pending = [];
+          o.reminders = undefined;
+          moveTo(o, "cancelled");
+          log(o, o.customer, "cancel_order", "confirmed", { by: "owner" }, { refs: { by: "owner", via: "assistant" }, notes: why });
+          return ownerCancelRefund(o, back, why, { upi: "upi_cancelled_refund_owed", done: "cancelled_refund", held: "cancelled_refund_pending" });
+        },
+        async cancelWaiting(o, why) {
+          if (o.state === "awaiting_owner") { moveTo(o, "cancelled"); o.pending = []; log(o, o.customer, "cancel_order", "confirmed", { state: "awaiting_owner", by: "owner" }, { refs: { by: "owner", via: "assistant" }, notes: why }); return; }
+          await cancelWaiting(o, why);
+        },
+        tellCancelled: (o) => tellCustomer(o, o.customer, ["cancelled_no_advance"]),
+        refund: (o, _paymentId, amountInr, why) => ownerCancelRefund(o, amountInr, why, { upi: "upi_refund_owed", done: "refund_approved", held: "cancelled_refund_pending" }),
+      },
+    }),
     clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}),
     // the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out
     ...(deps.voice ? { hearing: { hear: createListener({ voice: deps.voice, reader, isCommander: () => false, optedOut: () => false }) } } : {}),
@@ -1346,3 +1469,5 @@ export function createAgent(deps: AgentDeps): Agent {
 
 /** The owner's fixed command about something the agent asked them ("approve o-3", "deny o-3"). Item 11e names it so the assistant lets it pass. */
 const OWNER_COMMAND = /^\s*(approve|deny)\s+(o-\d+)\s*$/i;
+/** The owner's word that the balance was paid at pickup or delivery ("balance o-3 cash"), or that a link for it is wanted ("balance o-3 link", a gateway shop). */
+const BALANCE_COMMAND = /^\s*balance\s+(o-\d+)\s+(cash|upi|link)\s*$/i;

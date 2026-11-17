@@ -33,6 +33,7 @@ export function reportSection(envelope: Envelope<OrdersReport>, language: Langua
 
   const numbers = table([{ text: p.item }, { text: p.count, n: true }, { text: p.amount, n: true }], [
     [esc(labels.collected), ...amount(r.money.collected)],
+    ...(r.money.balanceCollected ? [[esc(s.label.balanceCollected), ...amount(r.money.balanceCollected)]] : []),
     [esc(labels.givenBack), ...amount(r.money.givenBack)],
     // refunds a person settled by their word (B75): one row per person, never counted as given back
     ...(r.money.settledByWord ?? []).map((w) => [esc(s.settledByWord(settledWho(w.by))), ...amount(w)]),

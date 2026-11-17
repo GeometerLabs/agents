@@ -36,6 +36,11 @@ export interface Slot {
   names?: Partial<Record<Language, string[]>>;
   /** This slot's own cut-off. Left out: the shop's `cutoff`. */
   cutoff?: Cutoff;
+  /**
+   * The most orders for this one slot on one day (17 Nov 2026), counted the way the day's count is: confirmed orders and ones whose hold has not run out. The agent checks it
+   * in the same step as the order, and a full slot is not offered. Left out: no limit of its own (the day's limit and the stock still hold), as before.
+   */
+  maxOrders?: number;
 }
 
 export interface Settings {
@@ -60,6 +65,11 @@ export interface Settings {
   delivery?: { slots: Slot[]; area: string[] };
   /** The advance the customer pays to confirm: all of the order ("full") or a part of it ("part", `percent` of the total, rounded up to a whole rupee). */
   advance: { mode: "full" | "part"; percent: number; holdMinutes: number };
+  /**
+   * A reminder to the customer before the slot (17 Nov 2026): this many hours before it starts, to a customer with a confirmed order, once. Left out: no reminder, as before.
+   * The reminders' timing is modules/reminders'; the words are the template `order_reminder`.
+   */
+  reminder?: { hoursBefore: number };
   cancellation: {
     /** Cancel at least this long before the slot starts and the advance is refunded; later and the owner decides. */
     windowHours: number;
@@ -95,7 +105,7 @@ const PHONE = /^\+\d{10,15}$/;
 export function validateSettings(input: unknown): SettingsResult {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the shop's name, menu, slots and so on."] };
-  unknownKeys(input, ["name", "address", "timezone", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "cancellation", "refund", "payment", "owner", "approvers", "assistant"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "languages", "menu", "orders", "cutoff", "pickup", "delivery", "advance", "reminder", "cancellation", "refund", "payment", "owner", "approvers", "assistant"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the shop's name (\"name\").");
@@ -111,6 +121,7 @@ export function validateSettings(input: unknown): SettingsResult {
   const pickup = readSlots(input.pickup, "pickup", new Set<string>(), errors, true);
   const delivery = readDelivery(input.delivery, new Set(pickup.map((s) => s.id)), errors);
   const advance = readAdvance(input.advance, errors);
+  const reminder = readReminder(input.reminder, errors);
   const cancellation = readCancellation(input.cancellation, errors);
   const refund = readRefund(input.refund, errors);
   const payment = readPayment(input.payment, errors);
@@ -124,7 +135,7 @@ export function validateSettings(input: unknown): SettingsResult {
   if (errors.length > 0) return { ok: false, errors };
   const settings: Settings = {
     name: (name as string).trim(), timezone: timezone as string, languages, menu, orders: orders as Settings["orders"], cutoff: cutoff as Cutoff, pickup: { slots: pickup },
-    advance: advance as Settings["advance"], cancellation: cancellation as Settings["cancellation"], refund: refund as Settings["refund"], payment: payment as Settings["payment"], owner: owner as Settings["owner"],
+    advance: advance as Settings["advance"], ...(reminder ? { reminder } : {}), cancellation: cancellation as Settings["cancellation"], refund: refund as Settings["refund"], payment: payment as Settings["payment"], owner: owner as Settings["owner"],
   };
   if (delivery) settings.delivery = delivery;
   if (approvers) settings.approvers = approvers;
@@ -183,6 +194,15 @@ function readWhole(v: unknown, label: string, min: number, max: number, errors: 
   if (!isWhole(v)) { errors.push(`Set ${label} as a whole number, for example ${Math.max(min, 1)}.`); return undefined; }
   if (v < min || v > max) { errors.push(`${label.charAt(0).toUpperCase() + label.slice(1)} must be between ${min} and ${max}, not ${v}${why ? ` (${why})` : ""}.`); return undefined; }
   return v;
+}
+
+/** The optional reminder before the slot: {"hoursBefore": 2}. Left out: none. */
+function readReminder(v: unknown, errors: string[]): Settings["reminder"] | undefined {
+  if (v === undefined) return undefined;
+  if (!isObj(v)) { errors.push("The reminder (\"reminder\") must look like {\"hoursBefore\": 2}."); return undefined; }
+  unknownKeys(v, ["hoursBefore"], "the reminder", errors);
+  const hoursBefore = readWhole(v.hoursBefore, "how many hours before the slot to remind the customer (\"reminder.hoursBefore\")", 1, 168, errors);
+  return hoursBefore === undefined ? undefined : { hoursBefore };
 }
 
 function readLanguages(v: unknown, errors: string[]): Language[] {
@@ -269,7 +289,7 @@ function readSlots(v: unknown, where: "pickup" | "delivery", used: Set<string>, 
   raw.forEach((s, i) => {
     const label = isObj(s) && typeof s.id === "string" ? `The ${where} slot "${s.id}"` : `${where} slot number ${i + 1}`;
     if (!isObj(s)) { errors.push(`${label} must be an object with id, from and to.`); return; }
-    unknownKeys(s, ["id", "from", "to", "names", "cutoff"], label, errors);
+    unknownKeys(s, ["id", "from", "to", "names", "cutoff", "maxOrders"], label, errors);
     const id = s.id;
     if (typeof id !== "string" || !/^[a-z0-9-]+$/.test(id)) errors.push(`${label} needs an id made of lowercase letters, digits and dashes, for example "lunch".`);
     else if (used.has(id)) errors.push(`Two slots share the id "${id}". Each slot (pickup or delivery) needs its own id.`);
@@ -280,7 +300,8 @@ function readSlots(v: unknown, where: "pickup" | "delivery", used: Set<string>, 
     else if (to <= from) errors.push(`${label} must end after it starts.`);
     const cutoff = s.cutoff === undefined ? undefined : readCutoff(s.cutoff, `${label}'s cut-off`, errors);
     const names = readSlotNames(s.names, label, errors);
-    if (typeof id === "string" && from !== null && to !== null && to > from && (s.cutoff === undefined || cutoff)) slots.push({ id, from: s.from as string, to: s.to as string, ...(names ? { names } : {}), ...(cutoff ? { cutoff } : {}) });
+    const maxOrders = s.maxOrders === undefined ? undefined : readWhole(s.maxOrders, `the most orders for ${label.charAt(0).toLowerCase()}${label.slice(1)} ("maxOrders")`, 1, 10_000, errors);
+    if (typeof id === "string" && from !== null && to !== null && to > from && (s.cutoff === undefined || cutoff) && (s.maxOrders === undefined || maxOrders !== undefined)) slots.push({ id, from: s.from as string, to: s.to as string, ...(names ? { names } : {}), ...(cutoff ? { cutoff } : {}), ...(maxOrders !== undefined ? { maxOrders } : {}) });
   });
   return slots;
 }
