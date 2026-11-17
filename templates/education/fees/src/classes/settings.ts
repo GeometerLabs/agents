@@ -10,7 +10,8 @@
 //   "classes": {
 //     "timetable": { "class-10": [ { "day": "mon", "time": "17:00", "minutes": 60 }, { "day": "thu", "time": "17:00", "minutes": 60 } ] },
 //     "linkLeadMinutes": 30,        the link goes this long before the class starts (5 to 180; default 30)
-//     "materialMaxMb": 10           the largest file a private material page hands out (1 to 100; default 10)
+//     "materialMaxMb": 10,          the largest file a private material page hands out (1 to 100; default 10)
+//     "oldDuesStopLink": false      true: a carried back due stops the class link and the material like an ordinary fee; false (default): only ordinary fees do (owner, 17 Nov 2026)
 //   }
 import type { Batch } from "../settings.ts";
 import { parseClock } from "../../../../../modules/core/time.ts";
@@ -23,6 +24,8 @@ export interface ClassesSettings {
   timetable: Record<string, ClassSlot[]>;
   linkLeadMinutes: number;
   materialMaxMb: number;
+  /** A carried back due stops the class link and the material (as an ordinary fee past its grace days does). Default false: only ordinary fees decide. */
+  oldDuesStopLink: boolean;
 }
 
 export const DEFAULT_LEAD_MINUTES = 30;
@@ -47,7 +50,7 @@ export function dayNumber(v: unknown): number | undefined {
 export function readClasses(v: unknown, batches: readonly Batch[], errors: string[]): ClassesSettings | undefined {
   if (v === undefined) return undefined;
   if (!isObj(v)) { errors.push("The classes block (\"classes\") must look like {\"timetable\": {\"class-10\": [{\"day\": \"mon\", \"time\": \"17:00\", \"minutes\": 60}]}}."); return undefined; }
-  for (const key of Object.keys(v)) if (!["timetable", "linkLeadMinutes", "materialMaxMb"].includes(key)) errors.push(`I don't know what "${key}" means in the classes block. Allowed: timetable, linkLeadMinutes, materialMaxMb.`);
+  for (const key of Object.keys(v)) if (!["timetable", "linkLeadMinutes", "materialMaxMb", "oldDuesStopLink"].includes(key)) errors.push(`I don't know what "${key}" means in the classes block. Allowed: timetable, linkLeadMinutes, materialMaxMb, oldDuesStopLink.`);
 
   const timetable: Record<string, ClassSlot[]> = {};
   if (!isObj(v.timetable) || Object.keys(v.timetable).length === 0) errors.push("Add the timetable (\"classes.timetable\"): for each batch id, a list of classes like {\"day\": \"mon\", \"time\": \"17:00\", \"minutes\": 60}.");
@@ -78,5 +81,6 @@ export function readClasses(v: unknown, batches: readonly Batch[], errors: strin
   if (!isWhole(lead) || lead < 5 || lead > 180) errors.push("The minutes before a class when its link is sent (\"classes.linkLeadMinutes\") must be a whole number from 5 to 180.");
   const mb = v.materialMaxMb === undefined ? DEFAULT_MATERIAL_MB : v.materialMaxMb;
   if (!isWhole(mb) || mb < 1 || mb > 100) errors.push("The largest reading-material file (\"classes.materialMaxMb\") must be a whole number of megabytes from 1 to 100.");
-  return { timetable, linkLeadMinutes: isWhole(lead) ? lead : DEFAULT_LEAD_MINUTES, materialMaxMb: isWhole(mb) ? mb : DEFAULT_MATERIAL_MB };
+  if (v.oldDuesStopLink !== undefined && typeof v.oldDuesStopLink !== "boolean") errors.push("Whether an old due stops the class link (\"classes.oldDuesStopLink\") must be true or false.");
+  return { timetable, linkLeadMinutes: isWhole(lead) ? lead : DEFAULT_LEAD_MINUTES, materialMaxMb: isWhole(mb) ? mb : DEFAULT_MATERIAL_MB, oldDuesStopLink: v.oldDuesStopLink === true };
 }
