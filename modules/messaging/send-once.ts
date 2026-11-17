@@ -65,6 +65,7 @@ export interface SendIntent {
   status: SendStatus;
   /** How many times it has been claimed. */
   tries: number;
+  /** When it was last claimed. Left out after the owner's "Try now": then it is due at the next run, whatever the clock says. */
   lastTryMs?: number;
   endedMs?: number;
   /** Why it ended as it did (a refusal's words, or that the process stopped). */
@@ -114,7 +115,7 @@ export const nextTryMs = (i: SendIntent): number => (i.lastTryMs ?? 0) + RETRY_A
  */
 export function retryNow(state: SendOnceState, id: string): SendIntent | undefined {
   const intent = openRefusals(state).find((i) => i.id === id);
-  if (intent) intent.lastTryMs = 0;
+  if (intent) delete intent.lastTryMs; // no last try = nothing to wait for (a bare 0 only worked while the clock was past the first hour of 1970)
   return intent;
 }
 
@@ -141,7 +142,7 @@ const endingOf: Record<SaidOutcome, "confirmed" | "unconfirmed" | "failed" | "bl
 
 /** Is this intent waiting to be claimed: asked for and not tried, or refused and due again? */
 function due(i: SendIntent, now: number): boolean {
-  return i.status === "queued" || (i.status === "failed" && i.tries < MAX_TRIES && (i.lastTryMs ?? 0) + RETRY_AFTER_MS <= now);
+  return i.status === "queued" || (i.status === "failed" && i.tries < MAX_TRIES && (i.lastTryMs === undefined || i.lastTryMs + RETRY_AFTER_MS <= now));
 }
 
 /** Write an ending, move the case, save. Returns the ending the case heard (a third refusal is `gave_up`). */
