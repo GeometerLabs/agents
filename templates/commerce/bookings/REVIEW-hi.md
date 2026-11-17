@@ -693,6 +693,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `licence.trial` | ट्रायल लाइसेंस: आख़िरी दिन 10 Dec 2026 है। अगले दिन से, दुकान के प्लान पर आने तक नई बुकिंग रुकी रहेगी। | Trial licence: the last day is 10 Dec 2026. From the next day, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | दुकान सेट करें | Set up a shop |  |
 | `setup.chooseTemplate` | यह क्या काम करेगा? | What will it do? |  |
+| `setup.templateNames.stock-orders` | सप्लायर से स्टॉक मँगाना | Restocking from suppliers |  |
 | `setup.templateNames.bookings` | जमा राशि के साथ बुकिंग | Bookings with a deposit |  |
 | `setup.templateNames.fees` | कक्षाओं की फीस वसूली | Fee collection for classes |  |
 | `setup.templateNames.orders` | एडवांस के साथ प्री-ऑर्डर | Pre-orders with an advance |  |
@@ -1010,6 +1011,8 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `inbox.kinds.whatsapp_token_renewal` | Gupshup से WhatsApp: इस दुकान का टोकन नया नहीं हो पाया। अभी वाला टोकन 6 घंटे में ख़त्म होगा, उसके बाद कोई संदेश नहीं जाएगा। सर्वर देखिए (geometer logs refresher) या Gupshup का नया universal token दीजिए। | WhatsApp through Gupshup: this shop's token could not be renewed. The one in use ends in 6 hours, and then no message goes out. Check the server (geometer logs refresher) or hand in a new Gupshup universal token. |  |
 | `inbox.kinds.whatsapp_token_credential` | Gupshup से WhatsApp: सर्वर का Gupshup universal token 5 दिन में ख़त्म होगा। उससे पहले नया दीजिए (geometer gupshup-token <file>)। | WhatsApp through Gupshup: the server's Gupshup universal token ends in 5 days. Hand in a new one before then (geometer gupshup-token <file>). |  |
 | `inbox.kinds.message_not_delivered` | b-3 के लिए भेजा गया WhatsApp संदेश फ़ोन तक नहीं पहुँचा (WhatsApp ने बताया कि वह विफल रहा): उस व्यक्ति से किसी और तरह संपर्क कीजिए | A WhatsApp message for b-3 never reached the phone (WhatsApp reported it failed): reach the person another way |  |
+| `inbox.kinds.supplier_no_answer` | ऑर्डर po-3: दोबारा पूछने पर भी सप्लायर ने जवाब नहीं दिया: उन्हें फ़ोन करें, या ऑर्डर उन तक न पहुँचा हो तो रद्द करें | Order po-3: the supplier has not answered, even after asking again: call them, or cancel the order if it never reached them |  |
+| `inbox.kinds.goods_not_received` | ऑर्डर po-3: सप्लायर ने मान लिया था पर एक हफ़्ते से कुछ मिला हुआ दर्ज नहीं है: उनसे पूछें, या जो आया उसे दर्ज करें | Order po-3: the supplier accepted it but nothing has been marked received for a week: ask them, or mark what arrived |  |
 | `inbox.kinds.upi_payment_unconfirmed` | b-3 के लिए ₹200 का UPI पेमेंट मालिक ने अभी पक्का नहीं किया: मालिक से अपना UPI ऐप देखने को कहिए | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
 | `inbox.kinds.upi_refund_owed` | b-3 का ₹200 का रिफंड मालिक पर बाकी है और अभी हो गया नहीं लिखा गया: मालिक को याद दिलाइए | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |
 | `inbox.fallback` | b-3 पर किसी इंसान को देखना है (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |
@@ -1279,6 +1282,8 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `memory.talk_off` | अभी मैं सिर्फ़ तय अनुरोधों का जवाब दे सकता हूँ। उन्हें देखने के लिए "help" कहें। | I can only answer set requests right now. Say "help" to see them. |  |
 | `memory.button.remember` | याद रखें | Remember |  |
 | `memory.button.no` | नहीं | No |  |
+| `card.stock-orders.cancel` | ऑर्डर o-5 (Priya, 2 cakes) रद्द करें? सप्लायर को कुछ नहीं गया है। | Cancel order o-5 (Priya, 2 cakes)? Nothing has gone to the supplier. |  |
+| `card.stock-orders.approve` | ऑर्डर o-5 मंज़ूर करें: Priya से 2 cakes, कुल ₹12,000? यह सप्लायर को जाएगा और महीने का बजट इसके लिए रखा जाएगा। | Approve order o-5: 2 cakes from Priya, ₹12,000 in all? It goes to the supplier and the month's budget is kept for it. |  |
 | `card.fees.cancel_money` | फीस f-3 (Priya, November 2026) रद्द करें और ₹1,500 बकाया माफ़ करें? कोई पैसा नहीं जाता। | Cancel fee f-3 (Priya, November 2026) and waive the ₹1,500 balance? No money moves. |  |
 | `card.fees.cancel_none` | फीस f-3 (Priya, November 2026) रद्द करें? कुछ बकाया नहीं है। | Cancel fee f-3 (Priya, November 2026)? Nothing is owed. |  |
 | `card.fees.refund` | f-3 की फीस में से Priya को ₹500 लौटाएँ? | Refund ₹500 of the fee to Priya (f-3)? |  |
@@ -1396,6 +1401,10 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.assistant.bigOrder.rule` | {v} से ऊपर के ऑर्डर पर पैसे माँगने से पहले आपकी मंज़ूरी चाहिए | Orders above {v} need your approval before any payment is asked |  |
 | `limits.assistant.perDay.name` | एक दिन के ऑर्डर | orders a day |  |
 | `limits.assistant.perDay.rule` | एक दिन में ज़्यादा से ज़्यादा {v} ऑर्डर | At most {v} orders a day |  |
+| `limits.assistant.orderCap.name` | एक ऑर्डर की सीमा | order cap |  |
+| `limits.assistant.orderCap.rule` | सप्लायर को जाने वाला कोई भी एक ऑर्डर {v} से ज़्यादा का नहीं हो सकता | No single supplier order may be worth more than {v} |  |
+| `limits.assistant.monthlyBudget.name` | महीने का बजट | monthly budget |  |
+| `limits.assistant.monthlyBudget.rule` | महीने के सप्लायर ऑर्डर कुल मिलाकर ज़्यादा से ज़्यादा {v} तक हो सकते हैं | The month's supplier orders may add up to at most {v} |  |
 | `limits.assistant.card` | ₹500 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए. अभी: ₹1000. | Refunds above ₹500 need your approval. Now: ₹1000. |  |
 | `limits.assistant.never` | कभी नहीं | never |  |
 | `limits.assistant.say.pending` | प्रतीक्षा में: ₹500 से ऊपर के रिफंड के लिए आपकी मंज़ूरी चाहिए। यह यहाँ अभी से लागू है, और चालू होते ही मैं बता दूँगा। | Pending: Refunds above ₹500 need your approval. It already applies here, and I'll tell you when it is Active. |  |
@@ -1482,6 +1491,72 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.quick.fees.1` | क्लास का समय | Class timings |  |
 | `chat.quick.fees.2` | फ़ीस | Fees |  |
 | `chat.quick.fees.3` | टीचर से बात करें | Talk to the teacher |  |
+| `stock.owner.tagApprove` | मंज़ूर करने को ऑर्डर | Order to approve |  |
+| `stock.owner.tagSilent` | सप्लायर का जवाब नहीं | No answer from supplier |  |
+| `stock.owner.tagReceive` | माल आने का निशान | Delivery to mark |  |
+| `stock.owner.tagUnsure` | पक्का नहीं हुआ | Could not confirm |  |
+| `stock.owner.tagRefused` | भेजा नहीं गया | Not sent |  |
+| `stock.owner.approve` | Ravi Traders से 10 box hair colour का ऑर्डर, कुल ₹12,000। यह सप्लायर को तभी जाएगा जब आप मंज़ूर करेंगे, और तब महीने का बजट इसके लिए रखा जाएगा। | Order 10 box hair colour from Ravi Traders, ₹12,000 in all. It goes to the supplier only when you approve, and the month's budget is kept for it then. |  |
+| `stock.owner.silent` | Ravi Traders ने ऑर्डर po-3: 10 box hair colour का जवाब नहीं दिया। आप उसी ऑर्डर के बारे में उनसे फिर पूछ सकते हैं। | Ravi Traders has not answered the order po-3: 10 box hair colour. You can ask them again about the same order. |  |
+| `stock.owner.receive` | Ravi Traders ने ऑर्डर po-3: 10 box hair colour मान लिया। माल आ जाए तो निशान लगाएँ। | Ravi Traders accepted the order po-3: 10 box hair colour. Mark it when the goods arrive. |  |
+| `stock.owner.unsure` | हम पक्का नहीं कर पाए कि Ravi Traders को ऑर्डर po-3 मिला। कृपया उनसे पूछ लें। | We could not confirm that Ravi Traders got order po-3. Please check with them. |  |
+| `stock.owner.gotIt` | उन्हें मिल गया | They got it |  |
+| `stock.owner.sendAgain` | फिर भेजें | Send it again |  |
+| `stock.owner.refused` | WhatsApp ने Ravi Traders को आपका ऑर्डर (po-3) नहीं लिया। कुछ भेजा नहीं गया। मैं 10:30 पर फिर कोशिश करूँगा। आप उन्हें फ़ोन भी कर सकते हैं। | WhatsApp did not take your order to Ravi Traders (po-3). Nothing was sent. I will try again at 10:30. You can also call them. |  |
+| `stock.owner.tryNow` | अभी कोशिश करें | Try now |  |
+| `stock.owner.cancelOrder` | ऑर्डर रद्द करें | Cancel order |  |
+| `stock.owner.yes` | मंज़ूर करें | Approve |  |
+| `stock.owner.no` | मना करें | Decline |  |
+| `stock.owner.askAgain` | फिर पूछें | Ask again |  |
+| `stock.owner.received` | सब मिल गया | All received |  |
+| `stock.owner.coming` | सप्लायर के पास ऑर्डर | Orders with suppliers |  |
+| `stock.owner.noneComing` | किसी सप्लायर पर कोई ऑर्डर बाकी नहीं। | No orders are waiting on a supplier. |  |
+| `stock.panel.steps.business` | दुकान, सप्लायर और सूची | Shop, suppliers and catalogue |  |
+| `stock.panel.steps.rules` | सीमाएँ | Limits |  |
+| `stock.panel.business.name` | दुकान का नाम | Shop name |  |
+| `stock.panel.business.address` | पता | Address |  |
+| `stock.panel.business.suppliers` | सप्लायर | Suppliers |  |
+| `stock.panel.business.suppliersHelp` | हर लाइन में एक सप्लायर: नाम, फिर +91 के साथ WhatsApp नंबर। जैसे: Ravi Traders, +919876500001 | One supplier on each line: the name, then the WhatsApp number with +91. Example: Ravi Traders, +919876500001 |  |
+| `stock.panel.business.catalogue` | आप क्या मँगाते हैं | What you order |  |
+| `stock.panel.business.catalogueHelp` | जो मँगाते हैं उसकी हर चीज़ की एक लाइन: चीज़, सप्लायर, पैक, पिछला दाम रुपये में। चाहें तो कम होने पर कितना मँगाना है। जैसे: हेयर कलर, Ravi Traders, डिब्बा, 1200, 10 | One line for each thing you order: item, supplier, pack, last price in rupees. Optionally, how many to order when you say it is low. Example: hair colour, Ravi Traders, box, 1200, 10 |  |
+| `stock.panel.rules.cap` | एक ऑर्डर कितने का हो सकता है (रुपये) | Most one order may be worth (rupees) |  |
+| `stock.panel.rules.capHelp` | यह पक्की रोक है: आपकी हाँ इसे नहीं बढ़ा सकती। बाद में एक टैप से इसे और कम कर सकते हैं। | A hard stop: your yes cannot raise it. You can tighten it later by a tap. |  |
+| `stock.panel.rules.budget` | महीने के ऑर्डर कुल कितने हो सकते हैं (रुपये) | Most the month's orders may add up to (rupees) |  |
+| `stock.panel.rules.budgetHelp` | ऑर्डर मंज़ूर करते ही उसके लिए रख लिया जाता है। | Kept for an order when you approve it. |  |
+| `stock.panel.problems.noSuppliers` | कम से कम एक सप्लायर जोड़ें। | Add at least one supplier. |  |
+| `stock.panel.problems.tooManySuppliers` | इस फ़ॉर्म में ज़्यादा से ज़्यादा 12 सप्लायर आते हैं। | This form takes at most 12 suppliers. |  |
+| `stock.panel.problems.supplierBad` | सप्लायर लाइन 2: नाम लिखें, फिर +91 के साथ WhatsApp नंबर। | Supplier line 2: write the name, then the WhatsApp number with +91. |  |
+| `stock.panel.problems.supplierTwice` | सप्लायर लाइन 2: Ravi Traders दो बार लिखा है। | Supplier line 2: Ravi Traders is listed twice. |  |
+| `stock.panel.problems.numberTwice` | सप्लायर लाइन 2: यह नंबर पहले से दूसरे सप्लायर का है। | Supplier line 2: that number is another supplier's already. |  |
+| `stock.panel.problems.noLines` | जो मँगाते हैं उसकी कम से कम एक लाइन जोड़ें। | Add at least one line of what you order. |  |
+| `stock.panel.problems.tooManyLines` | इस फ़ॉर्म में ज़्यादा से ज़्यादा 40 लाइनें आती हैं। | This form takes at most 40 lines. |  |
+| `stock.panel.problems.lineBad` | लाइन 3: चीज़, सप्लायर, पैक और दाम कॉमा से अलग करके लिखें। | Line 3: write the item, the supplier, the pack and the price, separated by commas. |  |
+| `stock.panel.problems.lineSupplier` | लाइन 3: Ravi आपके सप्लायरों में नहीं है। | Line 3: Ravi is not in your suppliers. |  |
+| `stock.panel.problems.priceBad` | लाइन 3: दाम 0 से ऊपर रुपयों की संख्या होना चाहिए, ज़्यादा से ज़्यादा दो दशमलव। | Line 3: the price must be a number of rupees above 0, with at most two decimals. |  |
+| `stock.panel.problems.reorderBad` | लाइन 3: कम होने पर मँगाने की संख्या 1 या उससे ज़्यादा पूरी संख्या होनी चाहिए। | Line 3: the number to order when low must be a whole number of 1 or more. |  |
+| `stock.panel.problems.lineTwice` | लाइन 3: वही चीज़, सप्लायर और पैक दो बार लिखा है। | Line 3: the same item, supplier and pack is listed twice. |  |
+| `stock.panel.problems.capBad` | एक ऑर्डर की सीमा 0 से ऊपर पूरे रुपये होनी चाहिए। | The most one order may be worth must be a whole number of rupees above 0. |  |
+| `stock.panel.problems.budgetBad` | महीने का बजट 0 से ऊपर पूरे रुपये होना चाहिए। | The month's budget must be a whole number of rupees above 0. |  |
+| `stock.panel.problems.capAbovePrice` | एक नग ₹1,200 का है, जो एक ऑर्डर की सीमा से ज़्यादा है: उसे कभी मँगाया नहीं जा सकेगा। सीमा बढ़ाएँ या दाम ठीक करें। | One unit costs ₹1,200, more than the most one order may be worth: it could never be ordered. Raise the limit or fix the price. |  |
+| `stock.panel.problems.capAboveBudget` | एक ऑर्डर की सीमा महीने के बजट से ऊपर है। ऑर्डर की सीमा छोटी रखें। | The most for one order is above the month's budget. Make the order limit the smaller number. |  |
+| `stock.panel.shop.suppliers` | सप्लायर | Suppliers |  |
+| `stock.panel.shop.catalogue` | आप क्या मँगाते हैं | What you order |  |
+| `stock.panel.shop.rules` | सीमाएँ | Limits |  |
+| `stock.panel.shop.messages.heading` | एक ऑर्डर के संदेश | Messages for one order |  |
+| `stock.panel.shop.messages.line` | हर ऑर्डर पर लगभग 6 संदेश: सप्लायर को ऑर्डर, चुप रहने पर दो बार तक पूछना, और आपको सूचनाएँ। | About 6 messages for each order: the order to the supplier, up to two asks if they are silent, and notes to you. |  |
+| `stock.panel.shop.messages.note` | यह अंदाज़ा है, सीमा नहीं। जवाब इसके ऊपर आते हैं। | A planning figure, not a limit. Replies come on top. |  |
+| `stock.panel.shop.states.awaiting_approval` | आपकी हाँ का इंतज़ार | Waiting for your yes |  |
+| `stock.panel.shop.states.approved` | भेजा जा रहा है | Being sent |  |
+| `stock.panel.shop.states.sent` | सप्लायर के पास | With the supplier |  |
+| `stock.panel.shop.states.send_unknown` | शायद भेजा गया | Maybe sent |  |
+| `stock.panel.shop.states.supplier_declined` | सप्लायर नहीं दे सकता | Supplier cannot supply |  |
+| `stock.panel.shop.states.cancelled` | रद्द | Cancelled |  |
+| `chat.list.yourChats` | आपकी चैट | Your chats |  |
+| `chat.list.installHead` | Streetlist को अपने फ़ोन पर रखें | Keep Streetlist on your phone |  |
+| `chat.list.installBody` | एक टैप में अपनी चैट खोलें, और दुकान का जवाब आते ही जानें। | Open your chats in one tap, and hear when a shop replies. |  |
+| `chat.list.installButton` | फ़ोन में जोड़ें | Add to your phone |  |
+| `chat.list.notNow` | अभी नहीं | Not now |  |
+| `chat.list.iphone` | Share बटन दबाएँ, फिर Add to Home Screen। | Tap the Share button, then Add to Home Screen. |  |
 | `chat.id.keepHead` | यह चैट अपने फ़ोन पर रखें | Keep this chat on your phone |  |
 | `chat.id.keepBody` | यह चैट रखने के लिए अपनी उँगली या स्क्रीन लॉक का इस्तेमाल करें। कोई पासवर्ड नहीं। | Use your fingerprint or screen lock to keep this chat. No password. |  |
 | `chat.id.keepButton` | यह चैट रखें | Keep this chat |  |
@@ -1503,7 +1578,11 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.id.badNumber` | यह फ़ोन नंबर जैसा नहीं लग रहा। | That does not look like a phone number. |  |
 | `chat.id.numberAsk` | नया फ़ोन लें तो हम आपके WhatsApp पर लिंक भेज सकते हैं। अपना नंबर जोड़ें (छोड़ भी सकते हैं)। | If you get a new phone, we can send a link to your WhatsApp. Add your number (you can skip this). |  |
 | `chat.id.numberSave` | मेरा नंबर रखें | Save my number |  |
-| `chat.id.numberSaved` | रख लिया। नए फ़ोन पर "मेरा नया फ़ोन है" दबाएँ। | Saved. On a new phone, tap I have a new phone. |  |
+| `chat.id.numberSaved` | उस नंबर पर संदेश भेजा है। उसका लिंक दबाकर बताइए कि यह आपका है। | We sent a message to that number. Tap its link to confirm it is yours. |  |
+| `chat.id.confirmHead` | अपना नंबर पक्का करें | Confirm your number |  |
+| `chat.id.confirmBody` | दबाकर पक्का करें कि यह आपका नंबर है। | Tap to confirm this is your number. |  |
+| `chat.id.confirmButton` | हाँ, यह मेरा नंबर है | Yes, this is my number |  |
+| `chat.id.confirmDone` | धन्यवाद। आपका नंबर इस चैट के लिए रख लिया गया है। | Thank you. Your number is saved for this chat. |  |
 | `chat.id.backHead` | फिर से स्वागत है | Welcome back |  |
 | `chat.id.backBody` | अपनी चैट इस फ़ोन पर खोलें? | Open your chat on this phone? |  |
 | `chat.id.backButton` | मेरी चैट यहाँ खोलें | Open my chat here |  |

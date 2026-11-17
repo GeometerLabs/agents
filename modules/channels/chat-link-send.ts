@@ -1,6 +1,7 @@
 // Sending a customer the one link they asked for, through the shop's own WhatsApp (W2, 17 Nov 2026). Two uses, both the customer's own asking on the chat page:
 //   recover   "I have a new phone": the number they type is looked up among the numbers customers gave (chat-identity.ts); if a thread has it, a one-use link that opens that
 //             thread on the new phone goes to that number, as the utility template `chat_new_phone`;
+//   confirm   the number a guest typed on the keep box: a one-use link goes to it ("Tap to confirm this is your number") and the number becomes the thread's contact only when it is tapped;
 //   links     "Send me my booking link": the shop's own page links already in this thread (a booking's or an order's own page) go to the number this thread gave, as `chat_my_link`.
 // It is the core's, like the owner's sign-in (owner-signin.ts): the runtime's HTTP layer makes the event (the front's channel token cannot), the core hands it here before the
 // agent sees it, so it changes no booking and the record shows each send. Why a step and not the HTTP route: only a step may write the record, and it has the shop's messaging.
@@ -23,7 +24,7 @@ import type { ChannelState } from "./state.ts";
 import { CHAT_LINK_TEMPLATES } from "./words-chat-identity.ts";
 
 /** The runtime's own event for a link to send. Never from outside: the front's channel token can send only the channel events. */
-export interface ChatLinkEvent { kind: "chat_link"; id: string; what: "recover" | "links"; language: Language; /** recover: the number asked for (digits). */ phone?: string; /** links: the thread's hash. */ handle?: string }
+export interface ChatLinkEvent { kind: "chat_link"; id: string; what: "recover" | "links" | "confirm"; language: Language; /** recover, confirm: the number (digits). */ phone?: string; /** links, confirm: the thread's hash. */ handle?: string }
 
 export interface ChatLinksSetup { identity: ChatIdentity; pages: () => PagesFile | undefined; shopName: string; clock: Clock; log?: (line: string) => void }
 
@@ -94,6 +95,18 @@ export function createChatLinks(setup: ChatLinksSetup) {
         const r = await sendTemplate(wa, `+${event.phone}`, "chat_new_phone", event.language, [setup.shopName, `${base}/chat/id/back/${link.token}`]);
         if (r.outcome === "failed") identity.linkUnsent(link.id); // nobody has it: it can never be used
         ctx.record.append({ conversation: chatConversationOf(guest), action: "chat_link", outcome: r.outcome, inputs: { what: "recover", link: link.id }, language: event.language, ...(r.note ? { notes: r.note } : {}), refs: { to: "customer", what: "recover", link: link.id, ...(r.sent ? { messageId: r.sent.id } : {}) } });
+        return;
+      }
+
+      if (event.what === "confirm") {
+        // a number typed on the keep box counts only once whoever holds it taps this link: a mistyped number never ties a recovery to the wrong thread
+        const thread = event.handle ? identity.resolve(event.handle) : undefined;
+        if (!thread || !event.phone) { log("A number was to be confirmed for no thread: none was sent."); return; }
+        if (stopped(ctx.store, event.phone)) { log("A number to confirm said STOP: none was sent."); return; }
+        const pending = identity.issueConfirm(thread, event.phone, now);
+        const r = await sendTemplate(wa, `+${event.phone}`, "chat_confirm_number", event.language, [setup.shopName, `${base}/chat/id/confirm/${pending.token}`]);
+        if (r.outcome === "failed") identity.confirmUnsent(pending.id);
+        ctx.record.append({ conversation: chatConversationOf(thread), action: "chat_link", outcome: r.outcome, inputs: { what: "confirm", link: pending.id }, language: event.language, ...(r.note ? { notes: r.note } : {}), refs: { to: "customer", what: "confirm", link: pending.id, ...(r.sent ? { messageId: r.sent.id } : {}) } });
         return;
       }
 

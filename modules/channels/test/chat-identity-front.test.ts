@@ -166,7 +166,9 @@ test("the calls are the page's own: another site's form is refused, no cookie is
     // a typed number is checked before anything is sent: "abc" is no number
     assert.equal((await w.post("/chat/id/recover", { number: "abc" }, { cookie })).status, 400);
     assert.equal((await w.post("/chat/id/number", { number: "98111 11111" }, { cookie })).status, 200);
-    assert.equal(w.identity.numberOf(guestHash("glow", handleOf(cookie))), "919811111111", "kept as digits with the country code");
+    const asked = w.submitted.findLast((e) => e.kind === "chat_link");
+    assert.deepEqual([asked?.what, asked?.phone], ["confirm", "919811111111"], "asked to confirm, as digits with the country code");
+    assert.equal(w.identity.numberOf(guestHash("glow", handleOf(cookie))), undefined, "not kept until its holder taps the link");
   } finally { await w.done(); }
 });
 
@@ -212,6 +214,28 @@ test("the link's page shows one button and uses nothing up; the button's post us
     const used = await (await w.get(url, { cookie: phone })).text();
     assert.ok(used.includes(IDENTITY.en.backUsed));
     assert.equal((await w.get(`/chat/id/back/${"z".repeat(43)}`, { cookie: phone })).status, 200, "a made-up link is the same page as a used one");
+  } finally { await w.done(); }
+});
+
+// ---- confirming a number ------------------------------------------------------------------------------------------------------------------------------
+
+test("the confirm page: looking shows one button and uses nothing up; the button keeps the number for the thread, once; a made-up link is the same page as a used one", async () => {
+  const w = await world();
+  try {
+    const cookie = await guestWho(w);
+    const thread = guestHash("glow", handleOf(cookie));
+    const link = w.identity.issueConfirm(thread, "919811111111", w.clock.now());
+    const url = `/chat/id/confirm/${link.token}?lang=en`;
+    const html = await (await w.get(url)).text();
+    assert.ok(html.includes(IDENTITY.en.confirmBody));
+    assert.match(html, /<form method="post" action="[^"]*\/chat\/id\/confirm">/u);
+    assert.equal(w.identity.numberOf(thread), undefined, "looking kept nothing");
+    const done = await w.form("/chat/id/confirm", { token: link.token });
+    assert.ok((await done.text()).includes(IDENTITY.en.confirmDone));
+    assert.equal(w.identity.numberOf(thread), "919811111111");
+    assert.ok((await (await w.form("/chat/id/confirm", { token: link.token })).text()).includes(IDENTITY.en.backUsed));
+    assert.ok((await (await w.get(`/chat/id/confirm/${"z".repeat(43)}`)).text()).includes(IDENTITY.en.backUsed));
+    assert.equal((await w.form("/chat/id/confirm", { token: link.token }, { origin: "https://evil.example" })).status, 403);
   } finally { await w.done(); }
 });
 

@@ -9,6 +9,7 @@
 //   POST <chat>/id/recover            "I have a new phone": a one-use link is sent to the number (the answer is the same whether or not the shop has it)
 //   POST <chat>/id/links              "send me my booking link", to the number the guest gave
 //   POST <chat>/id/forget             delete my chat (the cookie is cleared with the answer)
+//   GET  <chat>/id/confirm/<token>    the page the number-confirming link opens (WhatsApp, any phone): one button, a form post       POST <chat>/id/confirm   the button: the number becomes the thread's contact
 //   GET  <chat>/id/back/<token>       the page the new-phone link opens: one button, which is a form post (a GET, a scanner or a preview uses nothing up)
 //   POST <chat>/id/back               the button: the link is used up and this phone is tied to the thread
 //
@@ -49,6 +50,34 @@ export async function identityRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boo
   const via = a.viaDoor ? "door" : "direct";
   const tooMany = () => kit.sendJson(res, 429, { error: "wait" }, { "retry-after": "60" });
   if (!backend.chatId) return kit.sendHtml(res, 404, NOT_FOUND);
+
+  // ---- the page the number-confirming link opens (from WhatsApp, on any phone: it names a link, not a guest) ----
+  const confirm = /^\/id\/confirm(?:\/([A-Za-z0-9_-]{43}))?$/u.exec(c.sub);
+  if (confirm) {
+    const language = await c.languageOf();
+    const w = IDENTITY[language];
+    const frame = (text: string, form: string, tail = "") => kit.sendHtml(res, 200, `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><meta name="referrer" content="${PAGE_REFERRER}"><title>${esc(w.confirmHead)}</title><style>${CHAT_CSS}</style></head><body class="chat"><main class="thread"><div class="wrap"><h1>${esc(w.confirmHead)}</h1><div class="card"><p>${esc(text)}</p>${form}</div></div></main></body></html>`, { "content-security-policy": PAGE_POLICY, "x-robots-tag": "noindex" });
+    if (method === "GET" && confirm[1]) {
+      if (!limiter.take("read", address) || limiter.over("wrong", address)) return kit.sendHtml(res, 429, NOT_FOUND, { "retry-after": "60" });
+      const r = await backend.chatId({ op: "confirm_state", token: confirm[1], via });
+      const state = (r.body.state as string | undefined) ?? "unknown";
+      if (state === "unknown") limiter.take("wrong", address);
+      // looking uses nothing up: the button's post does
+      return state === "valid"
+        ? frame(w.confirmBody, `<form method="post" action="${esc(c.base)}/id/confirm"><input type="hidden" name="token" value="${esc(confirm[1])}"><input type="hidden" name="lang" value="${language}"><button type="submit">${esc(w.confirmButton)}</button></form>`)
+        : frame(state === "expired" ? w.backExpired : w.backUsed, "");
+    }
+    if (method === "POST" && !confirm[1]) {
+      if (!kit.sameOrigin(req, shop)) return kit.sendHtml(res, 403, "<!doctype html><p>Forms from another site are refused.</p>");
+      if (!limiter.take("chat", address) || limiter.over("wrong", address)) return kit.sendHtml(res, 429, NOT_FOUND, { "retry-after": "60" });
+      const token = new URLSearchParams((await kit.readBody(req, kit.maxForm)) ?? "").get("token") ?? "";
+      const r = await backend.chatId({ op: "confirm_use", token, via });
+      if (r.body.ok === true) return frame(w.confirmDone, "");
+      limiter.take("wrong", address);
+      return frame(r.body.state === "expired" ? w.backExpired : w.backUsed, "");
+    }
+    return kit.sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET, POST" });
+  }
 
   // ---- the page the new-phone link opens ----
   const back = /^\/id\/back(?:\/([A-Za-z0-9_-]{43}))?$/u.exec(c.sub);
