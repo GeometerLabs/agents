@@ -41,6 +41,8 @@ import { dayFacts, render as renderTemplate, templateMessageFor } from "./templa
 import type { AssistantTemplateId, TemplateFacts } from "./templates.ts";
 import type { AiPolicy, AiStore } from "../understanding/ai-state.ts";
 import type { TalkModel } from "../understanding/talk.ts";
+import { MEMORY_ACTION, addNote, closeNote, memoryOf, memoryRefs, panelAuthority } from "../memory/memory.ts";
+import type { Audience, NoteKind, NoteLang } from "../memory/memory.ts";
 import { createNotes, parseNoteReply } from "./notes.ts";
 import { customerTalk } from "./talk-customer.ts";
 import { ownerTalk } from "./talk-owner.ts";
@@ -638,10 +640,25 @@ export function createAssistant(deps: AssistantDeps) {
   /** The mood now, from the skills' reads and the clock (mood.ts), and the pictures that show it (to the owner, and to the public). */
   const mood = () => shopMood(skills, state(), clock.now(), tz);
 
+  /**
+   * The Operator or the builder, in the panel (which authenticated them), adds a note to this shop's memory or closes one. The authority is made here from who the panel says
+   * they are; the owner is not told (they see the note in their app and can delete it). The panel's transport to a running runtime is not built yet (Deferred); this is the
+   * runtime's side of it, ready for the event that carries it.
+   */
+  function onPanelNote(a: { by: "operator" | "builder" } & ({ action: "add"; kind: NoteKind; text: string; lang?: NoteLang; audience?: Audience; untilMs?: number } | { action: "close"; id: string })): { ok: true; id: string } | { ok: false; why: string } {
+    const auth = panelAuthority(a.by);
+    const c = { nowMs: clock.now(), ...(deps.talk?.digest ? { digest: deps.talk.digest } : {}) };
+    const m = memoryOf(state());
+    const r = a.action === "add" ? addNote(m, auth, { kind: a.kind, text: a.text, lang: a.lang ?? "en", ...(a.audience ? { audience: a.audience } : {}), ...(a.untilMs !== undefined ? { untilMs: a.untilMs } : {}) }, c) : closeNote(m, auth, a.id, c);
+    if (!r.ok) return { ok: false, why: r.why };
+    logLine(null, MEMORY_ACTION, "confirmed", a.action === "add" ? { note: r.note.id, text: r.note.text } : { note: r.note.id, digest: r.note.digest }, memoryRefs(r.note, a.action === "add" ? "added" : "ended"), `the ${a.by} ${a.action === "add" ? "added a note to" : "closed a note of"} the shop's memory in the panel; the record keeps its id, kind and who, never its words`);
+    return { ok: true, id: r.note.id };
+  }
+
   /** The owner deleted a note from their app (an `owner_action` forget_note, checked at the runtime against the owner's link or session). */
   async function onPageForget(id: string): Promise<void> { await onPage(() => notes.forget(id)); }
 
-  return { onOwnerMessage, onPageCard, onPageMessage, onPageVoice, onPageForget, hearOwner, onTick, mood, kinds: context.kinds, talkToCustomer, notesForApp: notes.forApp };
+  return { onOwnerMessage, onPageCard, onPageMessage, onPageVoice, onPageForget, onPanelNote, hearOwner, onTick, mood, kinds: context.kinds, talkToCustomer, notesForApp: notes.forApp };
 }
 export type Assistant = ReturnType<typeof createAssistant>;
 
