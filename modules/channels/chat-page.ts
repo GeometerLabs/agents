@@ -23,6 +23,7 @@ import type { Personality } from "../assistant/personality.ts";
 import { ASSISTANT_OF, FACE_WORDS, pictureWords } from "../assistant/character.ts";
 import type { Language } from "../language/languages.ts";
 import { ALERT_WORDS, ALERTS_SCRIPT } from "../push/pages.ts";
+import { CHATS_LIST_WORDS, INSTALL_SCRIPT, JOIN_SCRIPT, SHARE_ICON } from "./chats-list.ts";
 import type { ChatThread } from "./chat.ts";
 import { HOLD_TO_RECORD } from "../assistant/app/talk.ts";
 import { CHAT_CSS, ICON, THEME_KEY, themeSwitch } from "./look.ts";
@@ -73,8 +74,13 @@ export interface ChatPageArgs {
   art?: { base: string; version: string; animated: boolean };
   /** The shop has a voice service: draw hold to talk. Without it there is no button and no gap. */
   listen?: boolean;
-  /** The shop's VAPID public key, when push is on. */
+  /** The key alerts are subscribed with, when push is on: the shop's own VAPID public key, or Streetlist's (`pushVia`). */
   pushKey?: string;
+  /**
+   * Set when the page is served through the Streetlist door and the shop sends through Streetlist's one push key (W3): the app's own worker at the site's root and its
+   * scope. Left out: the shop's own worker under this page and the shop's own key.
+   */
+  pushVia?: { sw: string; scope: string };
   /** True only when the page is served on the Streetlist pages domain (the front says so); a builder's shop on its own domain shows no Streetlist mark. */
   onStreetlist: boolean;
   /** The font's address (served by the front), and whether it is on. */
@@ -144,9 +150,10 @@ ${a.shop.contact?.phone ? `<p class="callrow"><a class="btn quiet" href="${esc(t
 <p class="banner" id="offline" role="status" hidden>${esc(w.offline)}</p>
 <main class="thread" id="thread" role="log" aria-live="polite" aria-label="${esc(w.thread)}" tabindex="-1"><div class="wrap" id="lines">
 <p class="sys">${esc(w.note)} ${esc(w.kept(a.thread.retentionDays))}</p>
-${a.onStreetlist ? `<p class="sys"><a href="https://streetlist.in" rel="noopener">${STREETLIST_TILE}${esc(w.onStreetlist)}</a></p>` : ""}
+${a.onStreetlist ? `<p class="sys"><a href="https://streetlist.in" rel="noopener">${STREETLIST_TILE}${esc(w.onStreetlist)}</a> · <a href="/chats">${esc(CHATS_LIST_WORDS[a.language].yourChats)}</a></p>` : ""}
 ${thread}${opening}
-<div id="alerts-slot" class="alerts-slot"${a.thread.answered && a.pushKey ? "" : " hidden"}>${a.pushKey ? `<p class="sys">${esc(w.alertsHead)}</p><div id="alerts" class="card" hidden data-key="${esc(a.pushKey)}" data-sw="${esc(a.base)}/sw.js" data-scope="${esc(a.base)}/" data-save="${esc(a.base)}/push" data-done="${esc(alerts.customerOn)}" data-saved="${esc(alerts.customerOn)}" data-blocked="${esc(alerts.blocked)}" data-failed="${esc(alerts.failed)}"><button type="button" id="alerts-on">${esc(alerts.customer)}</button><p id="alerts-msg" class="note" role="status" aria-live="polite"></p></div>` : ""}</div>
+<div id="alerts-slot" class="alerts-slot"${a.thread.answered && a.pushKey ? "" : " hidden"}>${a.pushKey ? `<p class="sys">${esc(w.alertsHead)}</p><div id="alerts" class="card" hidden data-key="${esc(a.pushKey)}" data-sw="${esc(a.pushVia?.sw ?? `${a.base}/sw.js`)}" data-scope="${esc(a.pushVia?.scope ?? `${a.base}/`)}"${a.pushVia ? ' data-signer="streetlist"' : ""} data-save="${esc(a.base)}/push" data-done="${esc(alerts.customerOn)}" data-saved="${esc(alerts.customerOn)}" data-blocked="${esc(alerts.blocked)}" data-failed="${esc(alerts.failed)}"><button type="button" id="alerts-on">${esc(alerts.customer)}</button><p id="alerts-msg" class="note" role="status" aria-live="polite"></p></div>` : ""}</div>
+${a.onStreetlist ? `<div id="install-slot" class="alerts-slot" hidden><p class="sys">${esc(CHATS_LIST_WORDS[a.language].installHead)}</p><div class="card"><p class="note">${esc(CHATS_LIST_WORDS[a.language].installBody)}</p><button type="button" id="install-go" hidden>${esc(CHATS_LIST_WORDS[a.language].installButton)}</button><p id="install-ios" class="note ios" hidden>${SHARE_ICON}<span>${esc(CHATS_LIST_WORDS[a.language].iphone)}</span></p><button type="button" id="install-later" class="quiet">${esc(CHATS_LIST_WORDS[a.language].notNow)}</button></div></div>` : ""}
 </div></main>
 <div class="notes" id="notes">${a.shop.paused ? `<div class="state s-plain wrap"><span class="stamp">${esc(stamp.paused)}</span><p class="status">${esc(w.paused)}</p></div>` : closed ? `<div class="state s-plain wrap"><span class="stamp">${esc(stamp.closed)}</span><p class="status">${esc(w.closed(hours))}</p></div>` : ""}${a.notice === "rate" ? `<div class="state s-bad wrap" role="alert"><p class="status">${esc(w.rate)}</p></div>` : ""}${a.thread.capped ? `<div class="state s-info wrap"><p class="status">${esc(w.capped)}</p></div>` : ""}</div>
 ${a.listen ? `<p class="rec-hint" id="rec-hint" hidden>${ICON.mic}<span>${esc(more.hold)}</span></p>` : ""}
@@ -159,7 +166,7 @@ ${a.listen ? `<p class="rec-hint" id="rec-hint" hidden>${ICON.mic}<span>${esc(mo
   const $ = (id) => document.getElementById(id);
   const M = { player: base + "/m/lottie.js?v=${LOTTIE_VERSION}", dir: base + "/m/" }, ST = ${j(stills)}, WELL = ${j(wellWords)};
   const lines = $("lines"), thread = $("thread"), box = $("box"), taps = $("taps"), notes = $("notes");
-  let last = ${last?.n ?? 0}, lastCid = null, waiting = false, timer = null, slowTimer = null;
+  let last = ${last?.n ?? 0}, answeredSeen = ${a.thread.answered}, lastCid = null, waiting = false, timer = null, slowTimer = null;
   const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch {} } };
   // the language the guest picked, remembered; a link with no ?lang= goes to it
   try { const p = new URLSearchParams(location.search).get("lang"); if (p) store.set("chat-lang", p); else { const s = store.get("chat-lang"); if (s && s !== lang && ${j(a.shop.languages)}.includes(s)) { location.replace("?lang=" + s); return; } } } catch {}
@@ -243,7 +250,7 @@ ${a.listen ? `<p class="rec-hint" id="rec-hint" hidden>${ICON.mic}<span>${esc(mo
         if (l.choices) showTaps(l.choices, false);
       }
       face(); stamp();
-      if (d.answered && $("alerts") ) $("alerts-slot").hidden = false;
+      if (d.answered) { answeredSeen = true; if ($("alerts")) $("alerts-slot").hidden = false; ${a.onStreetlist ? "installMaybe(); " : ""}}
       if (d.capped) note("info", W.capped);
       if (d.send === "failed") { waiting = false; undots(); }
       if (d.send === "done" && !d.lines.some((l) => l.who === "shop")) waiting = waiting && true;
@@ -274,9 +281,28 @@ ${a.listen ? `  ${HOLD_TO_RECORD}
     onFail: (blocked) => { rec.classList.remove("on"); recNote(""); if (blocked) note("info", W.micBlocked); },
   }) && hint && !store.get("chat-rec-used")) hint.hidden = false;` : ""}
 ${a.pushKey ? ALERTS_SCRIPT : ""}
+${a.onStreetlist ? `${JOIN_SCRIPT}${INSTALL_SCRIPT}
+// this shop joins the phone's Streetlist chats list once the guest has said something, and keeps its row's last line and seen mark up to date
+const slugNow = location.pathname.split("/")[1] || "";
+// the list shows the shop's calm "well" face by its own address on this site (the page draws its face from a data: picture, which the Streetlist site's policy would not load)
+const faceOf = () => ${c?.picture ? "true" : "false"} && slugNow ? "/" + slugNow + "/character/well.svg" : undefined;
+const keepRow = () => {
+  if (!(last > 0)) return;
+  const runs = lines.querySelectorAll(".run[data-n]");
+  const run = runs[runs.length - 1];
+  const p = run && run.querySelector("p.b");
+  const text = p ? Array.from(p.childNodes).filter((n) => !(n.classList && n.classList.contains("sr"))).map((n) => n.textContent).join("") : "";
+  const tm = run && run.querySelector("time");
+  const at = tm ? (Number(tm.dataset.ms) || Date.parse(tm.getAttribute("datetime") || "")) : NaN;
+  joinChat({ slug: slugNow, name: ${j(a.shop.name)}, face: faceOf(), paint: ${j(a.paint ?? null)}, last: text, lastBy: p && p.classList.contains("you") ? "you" : "shop", at: Number.isFinite(at) ? at : undefined, seen: last, answered: answeredSeen });
+};
+keepRow();
+new MutationObserver(keepRow).observe(lines, { childList: true });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) keepRow(); });
+if (answeredSeen) installMaybe();` : ""}
 })();`;
 
-  return `<!doctype html><html lang="${a.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><meta name="theme-color" content="#e2f2e9"><meta name="referrer" content="strict-origin"><title>${esc(a.shop.name)} · ${esc(w.title)}</title><style>${css}</style></head>
+  return `<!doctype html><html lang="${a.language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex"><meta name="theme-color" content="#e2f2e9">${a.onStreetlist ? `<link rel="manifest" href="${esc(new URL(a.base).origin)}/manifest.webmanifest"><link rel="apple-touch-icon" href="${esc(new URL(a.base).origin)}/apple-touch-icon.png">` : ""}<meta name="referrer" content="strict-origin"><title>${esc(a.shop.name)} · ${esc(w.title)}</title><style>${css}</style></head>
 ${body}
 <script nonce="${esc(a.nonce)}">${script}</script></body></html>`;
 }

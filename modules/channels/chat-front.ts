@@ -56,8 +56,22 @@ export const guestCookie = (path: string, handle: string): string => `${CHAT_COO
  * recording, the animations' files), its alerts' worker, the one font, and the shop's own character pictures (`<page>/character/`, for DiceBear's animation and the well face).
  * It is PAGE_POLICY with its `img-src` widened, never a second `img-src` (a browser reads only the first). Every other page keeps PAGE_POLICY.
  */
-export const chatPolicy = (base: string, nonce: string, home?: string): string =>
-  `${PAGE_POLICY.replace("img-src data:", home ? `img-src data: ${home}/character/` : "img-src data:")}; script-src 'nonce-${nonce}' ${base}/m/lottie.js; connect-src ${base}/send ${base}/thread ${base}/push ${base}/voice ${base}/m/; worker-src ${base}/sw.js; font-src ${base}/font.woff2`;
+// One policy for the chat page (17 Nov merge of W1b and W3): W1b's character pictures (img-src), the lazily loaded Lottie player and the voice route; and, through the
+// Streetlist door, W3's app manifest and, when the shop sends through Streetlist's one push key, the app's own root worker. Each at its exact address, never 'self'
+// (the pages origin is shared by every shop).
+export const chatPolicy = (base: string, nonce: string, home?: string, app?: { origin: string; worker: boolean }): string =>
+  `${PAGE_POLICY.replace("img-src data:", home ? `img-src data: ${home}/character/` : "img-src data:")}; script-src 'nonce-${nonce}' ${base}/m/lottie.js; connect-src ${base}/send ${base}/thread ${base}/push ${base}/voice ${base}/m/; worker-src ${base}/sw.js${app?.worker ? ` ${app.origin}/sw.js` : ""}; font-src ${base}/font.woff2${app ? `; manifest-src ${app.origin}/manifest.webmanifest` : ""}`;
+
+/**
+ * Which key and worker alerts use on this page, in one place so the page that offers them and the call that takes them cannot disagree (W3). Served through the Streetlist
+ * door (`viaDoor`) by a shop that has a relay, a phone subscribes with Streetlist's ONE key and the app's root worker, and the shop is told to use the relay for it
+ * (`signer`); any other page keeps the shop's own key and its own worker under the page.
+ */
+export function pushChoice(key: { publicKey?: unknown; relayKey?: unknown } | undefined, viaDoor: boolean, publicUrl: string): { key: string; via?: { sw: string; scope: string }; signer: "own" | "streetlist" } | undefined {
+  if (typeof key?.publicKey !== "string") return undefined;
+  if (viaDoor && typeof key.relayKey === "string") { const origin = new URL(publicUrl).origin; return { key: key.relayKey, via: { sw: `${origin}/sw.js`, scope: `${origin}/` }, signer: "streetlist" }; }
+  return { key: key.publicKey, signer: "own" };
+}
 
 let font: Buffer | undefined;
 const fontBytes = (): Buffer => (font ??= readFileSync(new URL("./fonts/baloo-2-latin-wght-normal.woff2", import.meta.url)));
@@ -149,7 +163,9 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     if (!backend.push || !hash || !limiter.take("chat", address)) return kit.sendJson(res, backend.push && hash ? 429 : 404, { error: "Alerts are not on here." });
     let body: Record<string, unknown>;
     try { body = JSON.parse((await kit.readBody(req, kit.maxForm)) ?? "") as Record<string, unknown>; } catch { return kit.sendJson(res, 400, { error: "Send JSON." }); }
-    const r = await backend.push({ op: "customer_subscribe", handle: hash, subscription: body.subscription });
+    // Streetlist's one key only on a page served through the door, and only when the shop has a relay (the runtime refuses it otherwise)
+    const signer = a.viaDoor && body.signer === "streetlist" ? "streetlist" : undefined;
+    const r = await backend.push({ op: "customer_subscribe", handle: hash, subscription: body.subscription, ...(signer ? { signer } : {}) });
     return kit.sendJson(res, r.status === 200 ? 200 : r.status === 403 ? 403 : r.status === 404 ? 404 : 400, r.status === 200 ? { result: "done" } : { error: String(r.body.error ?? "That was not taken.") });
   }
 
@@ -185,7 +201,7 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     }
     const thread = guest ? await backend.chat(guest) : { lines: [], answered: false, capped: false, retentionDays: 30 };
     const key = backend.push ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
-    const pushKey = key?.body.on === true && typeof key.body.publicKey === "string" ? key.body.publicKey : undefined;
+    const choice = key?.body.on === true ? pushChoice(key.body, a.viaDoor, shop.publicUrl) : undefined;
     const nonce = randomBytes(16).toString("base64");
     const read = thread as { personality?: string; listen?: boolean };
     // the character's pictures (for DiceBear's animation and the well face): only when the shop's own set is drawn; the animated files are optional in a set
@@ -195,10 +211,10 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     const personality = (PERSONALITIES as readonly string[]).includes(read.personality ?? "") ? read.personality as Personality : undefined;
     const html = chatPage({
       shop: offer, kind, language, base, home: shop.publicUrl, nonce, thread,
-      ...(personality ? { personality } : {}), ...(paint && isPaint(paint) ? { paint } : {}), ...(art ? { art } : {}), ...(read.listen === true ? { listen: true } : {}), ...(pushKey ? { pushKey } : {}),
+      ...(personality ? { personality } : {}), ...(paint && isPaint(paint) ? { paint } : {}), ...(art ? { art } : {}), ...(read.listen === true ? { listen: true } : {}), ...(choice ? { pushKey: choice.key, ...(choice.via ? { pushVia: choice.via } : {}) } : {}),
       onStreetlist: a.viaDoor, fontUrl: `${base}/font.woff2`, ...(url.searchParams.get("notice") === "rate" ? { notice: "rate" as const } : {}),
     });
-    return kit.sendHtml(res, 200, html, { "content-security-policy": chatPolicy(base, nonce, art ? shop.publicUrl : undefined), "x-robots-tag": "noindex", ...(cookie ? { "set-cookie": cookie } : {}) });
+    return kit.sendHtml(res, 200, html, { "content-security-policy": chatPolicy(base, nonce, art ? shop.publicUrl : undefined, a.viaDoor ? { origin: new URL(shop.publicUrl).origin, worker: choice?.signer === "streetlist" } : undefined), "x-robots-tag": "noindex", ...(cookie ? { "set-cookie": cookie } : {}) });
   }
 
   return kit.sendHtml(res, 404, NOT_FOUND);

@@ -41,6 +41,7 @@ const stockSamples: Record<string, unknown[]> = {
   "stock.panel.problems.lineTwice": [3], "stock.panel.problems.capAbovePrice": ["₹1,200"], "stock.panel.shop.messages.line": [6],
 };
 const stockFlat = (language: Language): Map<string, string> => flatWords({ stock: { owner: STOCK_WORDS[language], panel: STOCK_PANEL_WORDS[language] } }, stockSamples);
+import { CHATS_LIST_WORDS } from "../../modules/channels/chats-list.ts";
 
 export type ReviewLanguage = "hi" | "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
@@ -135,10 +136,13 @@ const cashPartFlat = (language: Language): Map<string, string> => new Map([["own
  */
 const chatFlat = (language: Language): Map<string, string> => flatWords({ chat: { ...CHAT[language], more: CHAT_MORE[language], guest: CHAT_GUEST[language], quick: Object.fromEntries(Object.entries(QUICK).map(([kind, q]) => [kind, q.label[language]])) } }, { "chat.closed": ["10:00–20:00"], "chat.kept": [30] });
 
+/** W3, the chat page's lines about the Streetlist app (17 Nov 2026): the "Your chats" link and the install prompt (modules/channels/chats-list.ts), under the ids "chat.list.*". The Streetlist site's /chats page has the same lines plus its own (its docs/Review-words.md). */
+const chatListFlat = (language: Language): Map<string, string> => flatWords({ chat: { list: CHATS_LIST_WORDS[language] } });
+
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...chatListFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...chatListFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 
