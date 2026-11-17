@@ -276,10 +276,10 @@ test("Call the shop is in the head, alerts are offered only after an answer, and
 });
 
 test("every state of the review's screens draws, in four languages, with the shop's own paint", () => {
-  for (const state of ["empty", "answered", "long", "sending", "failed", "slow", "offline", "capped", "closed", "paused", "alerts"]) {
+  for (const state of ["empty", "answered", "long", "sending", "failed", "slow", "offline", "capped", "closed", "paused", "alerts", "confirmed", "paid", "confirmed-live", "paid-live", "voice", "recording", "busy"]) {
     for (const language of LANGUAGES) {
-      const { html } = screen(state, new URLSearchParams(`lang=${language}&paint=ff7a59`));
-      assert.match(html, /--paint:#ff7a59;--paint-ink:#/u);
+      const { html } = screen(state, new URLSearchParams(`lang=${language}&paint=pink`));
+      assert.match(html, /--paint:#c4386f;--paint-ink:#ffffff/u);
       assert.ok(html.length < 60_000, `${state} ${language} stays light`);
     }
   }

@@ -112,11 +112,12 @@ export function withFace(backend: ChannelBackend, files: (() => CharacterFiles |
  * Batch 5: every offer's shop carries the shop's own phone and map link from its pages.json, so every customer page (the front page, a booking's, an order's, a fee's,
  * and each "not found" or "waiting" state) can show "Call the shop" and a map link without each page being handed the file. Read per request, like the face.
  */
-export function withContact(backend: ChannelBackend, pages: (() => PagesFile | undefined) | undefined): ChannelBackend {
+export function withContact(backend: ChannelBackend, pages: (() => PagesFile | undefined) | undefined, chatHref?: string): ChannelBackend {
   if (!pages) return backend;
-  const add = <T extends { shop: { contact?: { phone?: string; map?: string } } }>(o: T): T => {
+  // `chatHref` (17 Nov 2026): the shop's chat, so every customer page has one clear "Chat with us" button (contact-bar.ts shopContact); only a shop whose runtime has a chat
+  const add = <T extends { shop: { contact?: { phone?: string; map?: string; chat?: string } } }>(o: T): T => {
     const p = pages();
-    return p && (p.phone || p.map) ? { ...o, shop: { ...o.shop, contact: { ...(p.phone ? { phone: p.phone } : {}), ...(p.map ? { map: p.map } : {}) } } } : o;
+    return p && (p.phone || p.map || chatHref) ? { ...o, shop: { ...o.shop, contact: { ...(p.phone ? { phone: p.phone } : {}), ...(p.map ? { map: p.map } : {}), ...(chatHref ? { chat: chatHref } : {}) } } } : o;
   };
   return {
     ...backend,
@@ -283,7 +284,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // item 11i: every offer a page is drawn from carries the shop's public face (withFace)
     const withPicture: FrontShop = found.character ? { ...doorShop, backend: withFace(doorShop.backend, found.character) } : doorShop;
     // batch 5: and the shop's phone and map link (withContact)
-    const shop: FrontShop = found.pages ? { ...withPicture, backend: withContact(withPicture.backend, found.pages) } : withPicture;
+    const shop: FrontShop = found.pages ? { ...withPicture, backend: withContact(withPicture.backend, found.pages, withPicture.backend.chat ? `${doorShop.publicUrl}/chat` : undefined) } : withPicture;
     if (pages?.partner) partnerOf.set(res, pages.partner);
     // batch 3: name the shop's Operator for the door, whose error pages (a shop that is down) have nobody else to ask; the door keeps it and never passes it on
     if (typeof door === "string" && pages?.partner) res.setHeader(CONTACT_HEADER, Buffer.from(JSON.stringify({ n: pages.partner.name, p: pages.partner.phone }), "utf8").toString("base64url"));

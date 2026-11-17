@@ -11,6 +11,7 @@ import type { PagesFile } from "./pages-file.ts";
 import { FIRST_WORDS } from "./words-owner-first.ts";
 import { SIGNIN_CSS } from "./look.ts";
 import { PAGE } from "./words.ts";
+import { CHAT_MORE } from "./words-chat-more.ts";
 
 /**
  * The header the shop's front sets on its pages for the front door (bundle/services/door.ts): the Operator's contact as base64url JSON {n: name, p: "+91...", l?: languages}.
@@ -31,13 +32,14 @@ export function partnerBar(language: Language, pages: Pick<PagesFile, "partner">
 }
 
 /** What the front adds to an offer's shop: the shop's phone and map link (either may be missing). */
-export interface ShopContact { phone?: string; map?: string }
+export interface ShopContact { phone?: string; map?: string; chat?: string }
 
 /** The shop's call and map links, under the head of a customer page. Nothing when the shop has neither. */
 export function shopContact(language: Language, c: ShopContact | undefined): Raw {
-  if (!c || (!c.phone && !c.map)) return html``;
+  if (!c || (!c.phone && !c.map && !c.chat)) return html``;
   const w = FIRST_WORDS[language];
-  return html`<div class="who">${c.phone ? html`<a class="btn quiet" href="${telLink(c.phone)}">${w.shopCall}</a>` : ""}${c.map ? html`<a class="btn quiet" href="${c.map}" rel="noopener">${w.shopMap}</a>` : ""}</div>`;
+  // "Chat with us" first and marigold-free (the page's one inviting action stays its own); a plain link, so it works with no script
+  return html`<div class="who">${c.chat ? html`<a class="btn" href="${c.chat}" aria-label="${CHAT_MORE[language].linkAbout}">${CHAT_MORE[language].link}</a>` : ""}${c.phone ? html`<a class="btn quiet" href="${telLink(c.phone)}">${w.shopCall}</a>` : ""}${c.map ? html`<a class="btn quiet" href="${c.map}" rel="noopener">${w.shopMap}</a>` : ""}</div>`;
 }
 
 /**
