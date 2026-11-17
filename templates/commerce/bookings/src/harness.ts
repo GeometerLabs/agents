@@ -91,6 +91,8 @@ export interface World {
 }
 
 export interface WorldOptions {
+  /** Block M: the shop's talk model (a script in the tests). Left out: no talk. */
+  talker?: import("../../../../modules/understanding/talk.ts").TalkModel;
   settings?: Settings;
   /** The moment the world starts; default Tue 3 Nov 2026, 10:00 in India. */
   nowMs?: number;
@@ -140,7 +142,7 @@ export function createWorld(options: WorldOptions = {}): World {
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
-  const agent = createAgent({ settings, clock, ...(options.terms ? { terms: options.terms } : {}), calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.pageLink ? { pageLink: options.pageLink } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}), ...(options.pageAudio ? { pageAudio: options.pageAudio } : {}) });
+  const agent = createAgent({ settings, clock, ...(options.talker ? { talker: options.talker } : {}), ...(options.terms ? { terms: options.terms } : {}), calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.pageLink ? { pageLink: options.pageLink } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}), ...(options.pageAudio ? { pageAudio: options.pageAudio } : {}) });
   let deliveredEvents = 0;
 
   const world: World = {
