@@ -25,6 +25,8 @@ const ORDER_LIST = [
   ...inBoth((w) => w.book),
 ];
 const ORDER_RE = wordRe(ORDER_LIST);
+// "menu" (and its native spellings) shows the menu with its prices, as hello does: the chat page's first quick tap sends exactly this word (modules/channels/words-chat.ts QUICK), and a WhatsApp customer types it too
+const MENU_RE = wordRe(["menu", "मेन्यू", "मेनू", "മെനു", "ಮೆನು"]);
 const PICKUP_WORDS = ["pickup", "pick up", "pick-up", "collect", "takeaway", "take away", "take-away", "come and take", "aake le", "lene aunga", "lene aaunga", "पिकअप", "पिक अप", "लेने आ", "खुद ले", "പിക്കപ്പ്", "പിക്ക് അപ്പ്", "വന്ന് എടുക്ക", "ಪಿಕಪ್", "ಪಿಕ್ ಅಪ್", "ನಾನೇ ಬಂದು"];
 const PICKUP_RE = phraseRe(PICKUP_WORDS);
 const DELIVERY_WORDS = ["deliver", "delivery", "home delivery", "send it to", "bhej do", "bhejna", "pahuncha", "डिलीवरी", "डिलिवरी", "पहुँचा", "पहुंचा", "घर पर", "ഡെലിവറി", "വീട്ടിൽ എത്തിക്ക", "എത്തിച്ച", "ಡೆಲಿವರಿ", "ಮನೆಗೆ ತಲುಪಿಸ", "ತಲುಪಿಸ"];
@@ -129,7 +131,7 @@ export function parseIntent(text: string, context: ParseContext): Intent {
   else if (hasDetails || ORDER_RE.test(t)) intent.kind = "order";
   else if (shortReply && NO_RE.test(t) && !YES_RE.test(t)) intent.kind = "no";
   else if (shortReply && YES_RE.test(t)) intent.kind = "yes";
-  else if (GREETING_RE.test(t)) intent.kind = "greeting";
+  else if (GREETING_RE.test(t) || MENU_RE.test(t)) intent.kind = "greeting";
   return intent;
 }
 

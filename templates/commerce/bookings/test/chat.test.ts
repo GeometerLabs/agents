@@ -9,6 +9,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fakeClock } from "../../../../modules/core/clock.ts";
+import { esc } from "../../../../modules/core/html.ts";
 import { frontHandler } from "../../../../modules/channels/front.ts";
 import type { FrontShop } from "../../../../modules/channels/front.ts";
 import { runtimeBackend } from "../../../../modules/channels/backend.ts";
@@ -92,7 +93,8 @@ test("a send made again with the same id is answered once, and the thread is the
     assert.equal(t.lines.filter((l) => l.who === "you").length, 1, "one line for the guest");
     assert.equal(t.lines.filter((l) => l.who === "shop").length, 1, "one answer");
     const reload = await (await w.page("/chat", { headers: { cookie } })).text();
-    assert.ok(reload.includes(t.lines[0].text) && reload.includes(t.lines.at(-1)!.text.slice(0, 20)));
+    // the page escapes what it draws ("Today's menu" is "Today&#39;s menu" in its markup)
+    assert.ok(reload.includes(esc(t.lines[0].text)) && reload.includes(esc(t.lines.at(-1)!.text.slice(0, 20))));
     const tail = await w.thread(cookie, `?after=${t.lines.at(-1)!.n}&cid=s-1`);
     assert.equal(tail.lines.length, 0);
     assert.equal(tail.send, "done", "the page can tell its send's step has run");
