@@ -1,6 +1,6 @@
 # Meeting follow-through (planned)
 
-> **Status: a spec, not a template.** Nothing here runs, and no group has used it. Comment on it in this repository's GitHub Discussions. It would be built in Phase 3, after the fee and dues collection template (B16) and the voice module (B29). Read [../README.md](../README.md) first.
+> **Status: a spec, not a template.** Nothing here runs, and no group has used it. Comment on it in this repository's GitHub Discussions. It would be built in Phase 3 on the fee and dues collection template (B16, built as Fees) and the voice module (B29, built), but it needs a real group and a legal review first. Read [../README.md](../README.md) first.
 
 ## The job
 
@@ -87,7 +87,7 @@ Not checked: whether the work was good, and anything not shown above.
 Code 8M3Q1T · scan or type it to check this statement is unchanged.
 ```
 
-- **The same statement is on every member's phone.** This is the "many witnesses" idea (B28): a quiet change to the record would not match the other copies. **B28 is not built, and nothing here is claimed until it is.**
+- **The same statement is on every member's phone.** This is the "many witnesses" idea (B28): a quiet change to the record would not match the other copies. **B28's modules are built (signed statements, record, verify code: `modules/record`, `modules/papers`); this spec is not, and nothing here is claimed until a real group has used it.**
 - **Signed, with a code anyone can check** (planned; the verify page needs the owner's yes before it is deployed). A signature shows the statement is unchanged. It does not show a task was well done.
 - **Read aloud** on request (B29). **A paper copy** for the next meeting.
 - **A person can tap "this is wrong"** on any line. It is recorded and shown to the confirmer.
