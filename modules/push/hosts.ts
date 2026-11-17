@@ -19,7 +19,14 @@ export const PUSH_ROUTES = { owner: "/v1/push/owner", customer: "/v1/push/custom
  * place the sender takes the host from), the subscription's path, its short id (Guard's per-phone count), how long the push service may keep it, the VAPID
  * header, and the encrypted body in base64url.
  */
-export interface PushCall { host: string; path: string; sub: string; ttl: number; urgency: "very-low" | "low" | "normal" | "high"; topic?: string; vapid: string; body: string }
+export interface PushCall { host: string; path: string; sub: string; ttl: number; urgency: "very-low" | "low" | "normal" | "high"; topic?: string; vapid?: string; relay?: string; body: string }
+
+/**
+ * W3 (17 Nov 2026): a phone subscribed through the Streetlist app has the app's ONE push key, which no shop holds. Such a call carries `relay` (the shop's name on its server)
+ * in place of `vapid`, and the push sender signs it with Streetlist's key and posts it in one step (bundle/services/push-relay.ts): the signed header is never handed back,
+ * because a VAPID signature is bound only to the push service's origin and one returned would work for every Streetlist subscription at that service.
+ */
+export const RELAY_SHOP = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u;
 
 /** Why a push call is refused before anything goes out, or null. The runtime's sender and the server's push sender both ask. */
 export function pushCallProblem(c: unknown): string | null {
@@ -31,7 +38,19 @@ export function pushCallProblem(c: unknown): string | null {
   if (!Number.isInteger(o.ttl) || (o.ttl as number) < 0 || (o.ttl as number) > 28 * 24 * 3600) return "ttl is 0 to 28 days in seconds";
   if (!["very-low", "low", "normal", "high"].includes(o.urgency as string)) return "urgency is very-low, low, normal or high";
   if (o.topic !== undefined && (typeof o.topic !== "string" || !/^[A-Za-z0-9_-]{1,32}$/u.test(o.topic))) return "topic is up to 32 base64url characters";
-  if (typeof o.vapid !== "string" || !/^vapid t=[A-Za-z0-9_.-]+, k=[A-Za-z0-9_-]+$/u.test(o.vapid) || o.vapid.length > 1000) return "vapid is the VAPID Authorization header";
+  // either the shop signed it (vapid) or Streetlist's relay is asked to (relay), never both and never neither
+  if (o.relay !== undefined) {
+    if (typeof o.relay !== "string" || !RELAY_SHOP.test(o.relay)) return "relay is the shop's name on this server";
+    if (o.vapid !== undefined) return "a call to the relay carries no vapid header: the relay signs it";
+  } else if (typeof o.vapid !== "string" || !/^vapid t=[A-Za-z0-9_.-]+, k=[A-Za-z0-9_-]+$/u.test(o.vapid) || o.vapid.length > 1000) return "vapid is the VAPID Authorization header";
   if (typeof o.body !== "string" || !/^[A-Za-z0-9_-]{1,5600}$/u.test(o.body)) return "body is the encrypted message in base64url, at most 4 KB";
   return null;
+}
+
+/** A shop's address name on the pages domain (the same shape as fleet's rule and the door's SLUG): what the Streetlist app's worker puts in a notification's tag and opens on a tap. */
+export const PAGE_SLUG = /^(?!.*--)(?![0-9]+$)[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/u;
+/** The shop's slug from its page address (pages.json `url`, https://<pages domain>/<slug>), or undefined when it has none of the right shape. */
+export function slugOfPage(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try { const first = new URL(url).pathname.split("/").filter(Boolean)[0]; return first && PAGE_SLUG.test(first) ? first : undefined; } catch { return undefined; }
 }

@@ -16,7 +16,13 @@ import type { PushStore, Waiting } from "./store.ts";
 export interface PushGuard { baseUrl: string; agentToken?: string }
 
 /** What a phone's service worker receives, inside the encryption: the words and a tag. The worker opens its own page when tapped; no address travels. */
-export interface PushPayload { title: string; body: string; tag: string }
+export interface PushPayload { title: string; body: string; tag: string; /** The shop's own address name, only on a push for a phone of the Streetlist app: the app's worker makes the tag from it and opens that shop's chat. */ slug?: string }
+
+/**
+ * How a shop reaches the Streetlist app's phones (W3). `shop` is the shop's name on its server, which the relay checks against the shops it knows; `slug` is its address
+ * name on the pages domain (from its pages file), put inside the encrypted payload. Left out (a shop not served through the door): its phones are all "own", signed here.
+ */
+export interface PushRelay { shop: string; slug: () => string | undefined }
 
 /** How long a push service may keep an owner's alert (a day: the owner's app lists everything anyway) and a customer's (12 hours). */
 export const OWNER_TTL_S = 24 * 60 * 60;
@@ -28,7 +34,7 @@ export const fitNotification = (text: string, max = 300): string => {
   return [...one].length <= max ? one : `${[...one].slice(0, max - 1).join("")}…`;
 };
 
-export function createPushSender(o: { store: PushStore; guard: PushGuard | undefined; subject: () => string | undefined; clock: Clock; log?: (line: string) => void; fetchImpl?: typeof fetch; everyMs?: number }) {
+export function createPushSender(o: { store: PushStore; guard: PushGuard | undefined; subject: () => string | undefined; clock: Clock; relay?: PushRelay; log?: (line: string) => void; fetchImpl?: typeof fetch; everyMs?: number }) {
   const log = o.log ?? (() => undefined);
   const fetchImpl = o.fetchImpl ?? fetch;
   let running: Promise<void> | undefined;
@@ -38,8 +44,12 @@ export function createPushSender(o: { store: PushStore; guard: PushGuard | undef
   async function one(w: Waiting): Promise<void> {
     const now = o.clock.now();
     const subject = o.subject();
-    if (!o.guard || !subject) { o.store.settle(w.id, "later", now); return; }
-    const payload: PushPayload = { title: w.title, body: w.body, tag: w.tag };
+    // a phone of the Streetlist app is signed by Streetlist's relay, not here (the shop never holds that key); a shop with no relay cannot reach it at all
+    const relayed = w.sub.signer === "streetlist";
+    if (relayed && !o.relay) { log("A push for a Streetlist app phone was not sent: this shop has no relay."); o.store.settle(w.id, "refused", now); return; }
+    if (!o.guard || (!relayed && !subject)) { o.store.settle(w.id, "later", now); return; }
+    const slug = relayed ? o.relay!.slug() : undefined;
+    const payload: PushPayload = { title: w.title, body: w.body, tag: w.tag, ...(slug ? { slug } : {}) };
     let body: Buffer;
     try { body = encryptPush(Buffer.from(JSON.stringify(payload)), { p256dh: w.sub.p256dh, auth: w.sub.auth }, { padTo: 128 }); }
     catch (e) { log(`A push could not be encrypted (${(e as Error).message}); the phone's subscription is dropped.`); o.store.drop(w.sub.id, "bad_keys", now); return; }
@@ -48,7 +58,7 @@ export function createPushSender(o: { store: PushStore; guard: PushGuard | undef
       ttl: w.kind === "owner" ? OWNER_TTL_S : CUSTOMER_TTL_S, urgency: w.kind === "owner" ? "high" : "normal",
       // one topic per phone and kind: a phone that was offline gets the newest alert, not a pile (its page lists everything anyway)
       topic: `${w.kind}-${w.sub.id}`,
-      vapid: vapidHeader(o.store.vapid(), { audience: `https://${w.sub.host}`, subject, nowS: Math.floor(now / 1000) }),
+      ...(relayed ? { relay: o.relay!.shop } : { vapid: vapidHeader(o.store.vapid(), { audience: `https://${w.sub.host}`, subject: subject!, nowS: Math.floor(now / 1000) }) }),
       body: body.toString("base64url"),
     };
     let status = 0;

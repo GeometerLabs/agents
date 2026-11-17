@@ -340,13 +340,19 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
         ...(kinds.includes("calendar") ? { calendar: { baseUrl: guardUrl(names.guard(shop.name, "calendar")), calendarId: facts.calendarId, agentTokenFile: `${SECRETS}/agent_calendar` } } : {}),
         ...(facts.hasWhatsApp ? { messaging: { baseUrl: guardUrl(names.guard(shop.name, "whatsapp")), phoneNumberId: facts.phoneNumberId, ...(facts.whatsappRoute ?? {}), agentTokenFile: `${SECRETS}/agent_whatsapp` } } : {}),
         // item 11h: every push goes through the shop's own push Guard
-        push: { baseUrl: guardUrl(names.guard(shop.name, "push")), agentTokenFile: `${SECRETS}/agent_push` },
+        push: { baseUrl: guardUrl(names.guard(shop.name, "push")), agentTokenFile: `${SECRETS}/agent_push`, ...(server.pages && server.pushRelay ? { relayKey: server.pushRelay.publicKey, relayShop: shop.name } : {}) },
         timeoutMs: facts.timeoutMs,
       },
       ...(facts.parser ? { parser: { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${SECRETS}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) } } : {}),
     };
     // Item 11h: a runtime pinned to a version from before 14 Nov 2026 knows no push service and needs WhatsApp. Push is then left out (with its Guard), and a shop with no
     // WhatsApp is refused, since such a runtime would not start.
+    // W3: a runtime from before 17 Nov 2026 does not know the relay's two fields and would refuse them: they go first, so it keeps its push (its own key; no Streetlist app phones)
+    if (!check(runtime, "/").ok && server.pushRelay) {
+      const { relayKey: _k, relayShop: _s, ...ownPush } = (runtime.services as { push: Record<string, unknown> }).push;
+      const lean = { ...runtime, services: { ...(runtime.services as object), push: ownPush } };
+      if (check(lean, "/").ok) { runtime = lean; notes.push(`${shop.name} is pinned to a template version from before the Streetlist app, so it sends alerts with its own key only (no alerts to the Streetlist app's phones). Update the template, and they are on from the next deploy.`); }
+    }
     if (!check(runtime, "/").ok) {
       const { push: _push, ...noPush } = runtime.services as Record<string, unknown>;
       const without = { ...runtime, services: noPush };

@@ -296,6 +296,11 @@ body.chat { display: flex; flex-direction: column; height: var(--vvh, 100dvh); o
 .callrow .btn { min-height: 44px; margin: 0; padding: .3em 1em; }
 .alerts-slot .alerts { margin: 0; }
 .alerts-slot .card { margin: 6px 0; }
+/* the install prompt on a chat served through Streetlist (W3): one big button, or on an iPhone the one-line Share hint with its icon, and a quiet "Not now" */
+#install-go { width: 100%; }
+#install-slot .quiet { margin-top: 6px; }
+.note.ios { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.share-i { flex: none; width: 26px; height: 26px; fill: none; stroke: var(--green); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 @media (max-width: 340px) { .b { max-width: 90%; } .taps { margin-left: 0; } }
 /* ---- motion's places (17 Nov 2026): the head's picture, a moment the record marks, hold to talk ---- */
 .face-p { flex: none; display: block; line-height: 0; border-radius: 14px; }

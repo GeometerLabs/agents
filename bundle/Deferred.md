@@ -519,3 +519,15 @@ The service is `bundle/services/speech/` (README there). It was written and test
 - **The settings file is rewritten as indented JSON** (one number changed). Its formatting is not kept byte for byte; the old file is kept beside the journal.
 - **Not run in a real shop:** the runtime's restart on a settings change is read from the compose file (the runtime service's files are `client/settings.json`, `runtime.json` and
   `pathway.lock`, hashed, and a changed hash restarts it: `bundle/generate/compose.ts`, `deploy.ts bringUp`), not observed. If it did not restart, the change fails after five minutes and the file goes back.
+
+## Streetlist's push relay (W3, 17 Nov 2026): what is left
+
+| Item | Why not now | Done when |
+|---|---|---|
+| **The key is not made, so the relay is off.** The owner makes it (`node bundle/services/push-relay.ts make-key secrets/push/streetlist_vapid.json`), puts `pushRelay.publicKey` in geometer.json and deploys. | A secret the owner places; deploys need their yes. | The first deploy with `pushRelay` shows "The Streetlist relay is on for N shop(s)" in the sender's log. |
+| **Fleet's `RESERVED_SLUGS` must gain `chats`** (monorepo, apps/fleet/src/page-slugs.ts). | Another repository. | `bundle/test/home.test.ts` and fleet's own test pass. |
+| **The relay trusts the shop name a runtime sends.** A compromised runtime could name another shop on the same server and use that shop's relay count. | Guard does not stamp the caller's name on a passed-on call. | Guard adds the name, or each push Guard maps to its shop. |
+| **The relay's counts are in memory** (a restart clears them; Guard's daily caps stay). | Enough for a small shop; one more file otherwise. | A restart shows a flood that Guard did not catch. |
+| **One key, one relay: no key rotation.** A new key orphans every subscribed phone (they must subscribe again from a chat page). | Rare; the file refuses to be overwritten so it is never done by accident. | A rotation is wanted: both keys signed for a while, the page subscribing with the new one. |
+| **The `relay` field passing a real push Guard, the proof's stand-in push service, and a phone are untested.** | One test pass, no Docker. | A proof run with one shop on the relay and one off it. |
+
