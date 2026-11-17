@@ -16,6 +16,9 @@ import { WORDS as PAGES_BLOCK_WORDS } from "./views-pages.ts";
 import { WORDS as DOOR_WORDS } from "../services/door-pages.ts";
 import { FIRST_WORDS } from "../../modules/channels/words-owner-first.ts";
 import { PERSONALITIES, SMALL_TALK } from "../../modules/assistant/personality.ts";
+import { limitReviewLines } from "../../modules/assistant/limits-card.ts";
+import { LIMIT_WORDS } from "../../modules/limits/chat-limit-kinds.ts";
+import { WORDS as LIMITS_PANEL_WORDS } from "./views-limits.ts";
 
 export type ReviewLanguage = "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
@@ -72,12 +75,14 @@ const firstSamples: Record<string, unknown[]> = {
   "owner.first.alertsOn": [2], "owner.first.partner": ["Divya"], "door.help": ["Divya"],
   "pages.block.live": ["https://pages.example/glow-salon"], "pages.block.problem": ["that name is taken"], "pages.block.setupNote": ["10:30 UTC"], "pages.block.recoveryOn": ["2026-11-14"], "pages.block.cardOwner": ["https://pages.example/glow-salon/owner/recover"],
 };
+/** "Limits, tightened by a tap" (17 Nov 2026): the limits' names and rules, the card and every message about a limit (ids "limits.assistant.*"), and the panel's list of changes ("limits.panel.*"). */
+const limitsFlat = (language: Language): Map<string, string> => flatWords({ limits: { assistant: limitReviewLines(language, LIMIT_WORDS), panel: LIMITS_PANEL_WORDS[language] } });
 const firstFlat = (language: Language): Map<string, string> => flatWords({ owner: { first: FIRST_WORDS[language] }, door: DOOR_WORDS[language], pages: { block: PAGES_BLOCK_WORDS[language] } }, firstSamples);
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...firstFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...firstFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...firstFlat(language), ...limitsFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...firstFlat("en"), ...limitsFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

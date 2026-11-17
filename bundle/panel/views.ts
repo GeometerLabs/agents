@@ -8,6 +8,7 @@ import { newCharacterDraft } from "./character.ts";
 import { DEFAULT_PROVIDER, GATEWAYS, providerById } from "../../modules/payments/providers/index.ts";
 import { readFileSync } from "node:fs";
 import { LANGUAGES } from "../../modules/language/languages.ts";
+import { limitChangesBlock } from "./views-limits.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { languageOptions } from "../../templates/commerce/bookings/demo/personalise.ts";
 import type { ShopForm } from "../../templates/commerce/bookings/demo/personalise.ts";
@@ -384,6 +385,8 @@ ${whyList.length > 0 ? html`<ul>${whyList}</ul>` : ""}
   <li class="info"><span class="mark">·</span><span>${status?.deploy?.at ? w.lastDeploy(when(status.deploy.at, c.lang)) : w.neverDeployed}${status?.versions ? html`<br><small class="note">${w.versions(status.versions.pathway ?? "?", status.versions.bundle ?? "?")}</small>` : ""}</span></li>
   <li class="info"><span class="mark">·</span><span>${status?.backups?.lastCopyAt ? w.backupCopy(when(status.backups.lastCopyAt, c.lang)) : w.backupNone}<br>${status?.backups?.lastDrillAt ? w.backupDrill(when(status.backups.lastDrillAt, c.lang), status.backups.drillOk === true) : w.backupDrillNone}</span></li>
 </ul>
+
+${limitChangesBlock(c, status?.limitChanges)}
 
 <h2>${w.activity}</h2>
 ${v.own ? ownActivityBlock(c, v) : ""}
