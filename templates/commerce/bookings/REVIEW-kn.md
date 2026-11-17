@@ -1301,6 +1301,31 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `personality.brief.greetingNamed` | ಇದು {name}, {shop} ನ ಸಹಾಯಕ. | This is {name}, {shop}'s assistant. |  |
 | `personality.brief.morningOpening` | ಬೆಳಗಿನ ಮಾಹಿತಿ: {shop} ನ ಸಹಾಯಕ. | Morning summary from the assistant of {shop}. |  |
 | `personality.brief.morningSignOff` | ಹೆಚ್ಚಿನದಕ್ಕೆ ಉತ್ತರಿಸಿ. | Reply for more. |  |
+| `memory.note_saved` | ನೆನಪಿಟ್ಟುಕೊಂಡೆ (n-3): "closed on Sunday". ನಿಮ್ಮೊಂದಿಗೆ ಮಾತನಾಡುವಾಗ ಮಾತ್ರ ನಾನು ಇದನ್ನು ಬಳಸುತ್ತೇನೆ. ಒಂದು ದಿನದೊಳಗೆ "undo" ಎನ್ನಿ, ಅಥವಾ "forget n-3". | Remembered (n-3): "closed on Sunday". Only I use it, when I talk with you. Say "undo" within a day, or "forget n-3". |  |
+| `memory.note_proposal` | ಇದನ್ನು ನಾನು ನೆನಪಿಟ್ಟುಕೊಳ್ಳಲೇ? "closed on Sunday" (ಗ್ರಾಹಕರಿಗೆ ಹೇಳಬಹುದು) | Shall I remember this? "closed on Sunday" (customers may be told it) |  |
+| `memory.note_declined` | ಸರಿ, ಇದನ್ನು ನೆನಪಿಟ್ಟುಕೊಳ್ಳುವುದಿಲ್ಲ. | Alright, I will not remember that. |  |
+| `memory.notes_list` | ನನಗೆ 2 ವಿಷಯ ನೆನಪಿದೆ: • n-3 [ನೀವು ಮಾತ್ರ] closed on Sunday • n-4 [ಗ್ರಾಹಕರೂ] closed on Sunday ಒಂದನ್ನು ತೆಗೆಯಲು "forget n-3" ಎನ್ನಿ. | I remember 2: • n-3 [you only] closed on Sunday • n-4 [customers too] closed on Sunday Say "forget n-3" to remove one. |  |
+| `memory.note_forgotten` | ಮರೆತೆ: n-3. ಪದಗಳು ಅಂಗಡಿಯ ಸ್ಟೋರ್‌ನಿಂದ ಹೋಗಿವೆ; ಬ್ಯಾಕಪ್‌ಗಳು ತಮ್ಮ ಸಮಯದಲ್ಲಿ ಇಲ್ಲವಾಗುತ್ತವೆ. | Forgotten: n-3. The words are gone from the shop's store; backups age out on their own schedule. |  |
+| `memory.note_undone` | ಹಿಂತೆಗೆದುಕೊಂಡೆ: n-3 ಇನ್ನು ನೆನಪಿಲ್ಲ. | Undone: I no longer remember n-3. |  |
+| `memory.note_unknown` | n-9 ಎಂಬ ಟಿಪ್ಪಣಿ ಇಲ್ಲ. "ಏನು ನೆನಪಿದೆ?" ಎಂದು ಕೇಳಿ ನೋಡಿ. | I have no note n-9. Say "what do you remember?" to see them. |  |
+| `memory.note_full` | ನಾನು 80 ಟಿಪ್ಪಣಿಗಳವರೆಗೆ ಇಟ್ಟುಕೊಳ್ಳುತ್ತೇನೆ. ಮೊದಲು ಒಂದನ್ನು ಮರೆಯಲು ಹೇಳಿ. | I can keep 80 notes open. Forget one first. |  |
+| `memory.note_too_long` | ಒಂದು ಟಿಪ್ಪಣಿಗೆ ಇದು ತುಂಬಾ ಉದ್ದ (ಗರಿಷ್ಠ 280 ಅಕ್ಷರ). ಚಿಕ್ಕದಾಗಿ ಹೇಳಿ. | That is too long for one note (at most 280 characters). Please say it shorter. |  |
+| `memory.note_need_words` | ಏನನ್ನು ನೆನಪಿಟ್ಟುಕೊಳ್ಳಲಿ? ಉದಾಹರಣೆಗೆ: remember ಶನಿವಾರ 6ಕ್ಕೆ ಮುಚ್ಚುತ್ತೇವೆ. | What shall I remember? For example: remember we close at 6 on Saturdays. |  |
+| `memory.note_not_a_limit` | ಇದನ್ನು ಟಿಪ್ಪಣಿಯಾಗಿ (n-3) ಇಟ್ಟಿದ್ದೇನೆ, Guard ಜಾರಿಗೊಳಿಸುವ ಮಿತಿಯಾಗಿ ಅಲ್ಲ. ಮಾತನಾಡುವಾಗ ನಾನು ಇದನ್ನು ಪಾಲಿಸುತ್ತೇನೆ, ಆದರೆ ಇದು ತಾನಾಗಿ ಏನನ್ನೂ ತಡೆಯುವುದಿಲ್ಲ. | I saved this as a note (n-3), not as a limit Guard enforces. I will follow it when I talk, but it does not stop anything by itself. |  |
+| `memory.talk_fallback` | ನನಗೆ ಈಗ ಇದಕ್ಕೆ ಉತ್ತರಿಸಲಾಗಲಿಲ್ಲ. ಇಂದು: 5. ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವುದು: 2. ನಾನು ಏನು ಮಾಡಬಲ್ಲೆ ಎಂದು ನೋಡಲು "help" ಎನ್ನಿ. | I could not answer that just now. Today: 5. Waiting for you: 2. Say "help" to see what I can do. |  |
+| `memory.talk_off` | ಈಗ ನಾನು ನಿಗದಿತ ವಿನಂತಿಗಳಿಗೆ ಮಾತ್ರ ಉತ್ತರಿಸಬಲ್ಲೆ. ಅವನ್ನು ನೋಡಲು "help" ಎನ್ನಿ. | I can only answer set requests right now. Say "help" to see them. |  |
+| `memory.button.remember` | ನೆನಪಿಡಿ | Remember |  |
+| `memory.button.no` | ಬೇಡ | No |  |
+| `card.fees.cancel_money` | ಫೀಸ್ f-3 (Priya, November 2026) ರದ್ದುಮಾಡಿ ₹1,500 ಬಾಕಿ ಮನ್ನಾ ಮಾಡಲೇ? ಯಾವ ಹಣವೂ ಹೋಗುವುದಿಲ್ಲ. | Cancel fee f-3 (Priya, November 2026) and waive the ₹1,500 balance? No money moves. |  |
+| `card.fees.cancel_none` | ಫೀಸ್ f-3 (Priya, November 2026) ರದ್ದುಮಾಡಲೇ? ಏನೂ ಬಾಕಿ ಇಲ್ಲ. | Cancel fee f-3 (Priya, November 2026)? Nothing is owed. |  |
+| `card.fees.refund` | f-3 ಫೀಸ್‌ನಿಂದ Priya ಅವರಿಗೆ ₹500 ಹಿಂತಿರುಗಿಸಲೇ? | Refund ₹500 of the fee to Priya (f-3)? |  |
+| `card.orders.cancel_money` | ಆರ್ಡರ್ o-5 (Priya, 2 cakes) ರದ್ದುಮಾಡಿ ₹1,500 ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಲೇ? | Cancel order o-5 (Priya, 2 cakes) and refund the ₹1,500 advance? |  |
+| `card.orders.cancel_none` | ಆರ್ಡರ್ o-5 (Priya, 2 cakes) ರದ್ದುಮಾಡಲೇ? ಅಡ್ವಾನ್ಸ್ ಪಾವತಿಸಿಲ್ಲ. | Cancel order o-5 (Priya, 2 cakes)? No advance was paid. |  |
+| `card.orders.refund` | o-5 ಅಡ್ವಾನ್ಸ್‌ನಿಂದ Priya ಅವರಿಗೆ ₹500 ಹಿಂತಿರುಗಿಸಲೇ? | Refund ₹500 of the advance to Priya (o-5)? |  |
+| `refusal.fees.already_back` | ಫೀಸ್ f-3 ನ ಪಾವತಿ ಈಗಾಗಲೇ ಹಿಂತಿರುಗುತ್ತಿದೆ, ಹಾಗಾಗಿ ನಾನು ಇಲ್ಲಿಂದ ಮತ್ತೆ ಹಿಂತಿರುಗಿಸಲಾಗದು. ದಯವಿಟ್ಟು ಪೋಷಕರಿಗೆ ನೀವೇ ತಿಳಿಸಿ. | The payment on fee f-3 is already going back, so I can't refund it again from here. Please tell the parent yourself. |  |
+| `refusal.fees.cancel_first` | ಫೀಸ್ f-3 ಇನ್ನೂ ಬಾಕಿ ಇದೆ. ಪಾವತಿ ಹಿಂತಿರುಗಿಸಲು ಮೊದಲು ಅದನ್ನು ರದ್ದು ಮಾಡಿ: cancel f-3. | Fee f-3 is still open. To give the payment back, cancel it first: cancel f-3. |  |
+| `refusal.orders.already_back` | ಆರ್ಡರ್ o-5 ನ ಅಡ್ವಾನ್ಸ್ ಈಗಾಗಲೇ ಹಿಂತಿರುಗುತ್ತಿದೆ, ಹಾಗಾಗಿ ನಾನು ಇಲ್ಲಿಂದ ರದ್ದು ಮಾಡಲಾಗದು. ದಯವಿಟ್ಟು ಗ್ರಾಹಕರಿಗೆ ನೀವೇ ತಿಳಿಸಿ. | The advance on order o-5 is already going back, so I can't cancel it from here. Please tell the customer yourself. |  |
+| `refusal.orders.cancel_first` | ಆರ್ಡರ್ o-5 ಇನ್ನೂ ಚಾಲ್ತಿಯಲ್ಲಿದೆ. ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಲು ಅದನ್ನು ರದ್ದು ಮಾಡಿ: cancel o-5. | Order o-5 is still on. To give the advance back, cancel it: cancel o-5. |  |
 | `owner.first.chromeTitle` | ಈ ಪುಟಕ್ಕೆ Chrome ಬೇಕು | This page needs Chrome |  |
 | `owner.first.chromeBody` | ಈ ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನಿಮ್ಮ ಫೋನ್‌ನ ಸೈನ್ ಇನ್ ಹೊಂದಿಸಲು ಆಗುವುದಿಲ್ಲ. ಈ ಪುಟವನ್ನು Chrome ನಲ್ಲಿ ತೆರೆಯಿರಿ, ಅಥವಾ ಲಿಂಕ್ ನಕಲಿಸಿ Chrome ನಲ್ಲಿ ಅಂಟಿಸಿ. | This browser can't set up sign-in on your phone. Open this page in Chrome, or copy the link and paste it into Chrome. |  |
 | `owner.first.chromeOpen` | Chrome ನಲ್ಲಿ ತೆರೆಯಿರಿ | Open in Chrome |  |
@@ -1448,3 +1473,6 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.owner.back` | ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ | Back to your shop |  |
 | `limits.owner.never` | ಎಂದಿಗೂ ಇಲ್ಲ | never |  |
 | `limits.owner.yourShop` | ನಿಮ್ಮ ಅಂಗಡಿ | Your shop |  |
+| `owner.money.cashPartLabel` | ಒಂದು ಭಾಗ ಮಾತ್ರ ಸಿಕ್ಕಿತೇ? ಎಷ್ಟು (₹) | Received only part? How much (₹) |  |
+| `owner.money.cashPartButton` | ಈ ಭಾಗ ನಗದಾಗಿ ಸಿಕ್ಕಿತು ಎಂದು ಗುರುತಿಸಿ | Mark this part received in cash |  |
+

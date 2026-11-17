@@ -362,6 +362,30 @@ test("what needs me is the owner page's list (one list): a deposit waiting on a 
   assert.deepEqual(ownerItems(w.settings, w.store, w.clock.now()).items, [], "and nothing waits on the page any more");
 });
 
+test("what needs me lists a late deposit (a UPI hold that ended where money may have come): it is a deposit card, and its yes is the late \"received\" mark with its one-use code", async () => {
+  // Found 17 Nov 2026: the assistant had no answer for the page's `late_deposit` item, so "what needs me" threw as soon as one was listed. (No customer's "I have paid" is said
+  // here: that late claim comes only from the booking's own web page, so this is the 48-hour listing of an ended hold, which is the same item.)
+  const upi = JSON.parse(readFileSync(new URL("../settings/glow-salon-upi.example.json", import.meta.url), "utf8")) as Record<string, unknown>;
+  const w = createWorld({ settings: parseSettings({ ...upi, assistant: {} }) });
+  await w.say(BOOK);
+  await w.advance(61 + 60); // the hold (60 minutes) runs out and the agent expires it
+  assert.equal(w.store.bookings.get("b-1")!.state, "expired");
+  const page = ownerItems(w.settings, w.store, w.clock.now()).items;
+  assert.deepEqual(page.map((i) => [i.case, i.kind]), [["b-1", "late_deposit"]], "the owner's page lists the ended hold");
+  const skill = bookingsSkill({ settings: w.settings, store: w.store, nowMs: () => w.clock.now(), entries: () => w.record.entries(), optedOut: () => false });
+  assert.deepEqual(skill.waiting().map((i) => [i.case, i.amountPaise]), page.map((i) => [i.case, i.amountPaise]), "and so does the assistant, without throwing");
+  await owner(w, "what needs me");
+  assert.ok(w.textsTo(w.owner).includes("Things that need you: 1. Each one is below."));
+  const card = lastCard(w);
+  assert.match(card.text, /reach your UPI\?/u, "shown as a deposit card");
+  assert.equal(card.no, undefined, "with only the one answer");
+  await tapOwner(w, card.yes);
+  assert.equal(w.store.bookings.get("b-1")!.state, "expired", "never booked again by itself");
+  assert.ok(recordOf(w, "owner_marked_paid").some((e) => e.refs.markedBy === "owner"), "the tap is the owner's own received mark, with its code");
+  assert.equal(w.upiRefunds("b-1").length, 1, "the late mark owes the money back (or keep, for a booking made by hand)");
+  assert.deepEqual(ownerItems(w.settings, w.store, w.clock.now()).items.filter((i) => i.kind === "late_deposit"), [], "and the ended hold no longer waits");
+});
+
 /** The owner answers a card on their page: the front posts the card's id and the digest the page showed (item 11d's owner_action, card_yes / card_no). */
 const pagePress = (w: World, card: { id: string; digest: string }, answer: "yes" | "no", id = `page-${card.id}-${answer}-${w.clock.now()}`) =>
   w.agent.handle({ kind: "owner_action", id, action: answer === "yes" ? "card_yes" : "card_no", case: card.id, digest: card.digest });

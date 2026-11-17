@@ -22,6 +22,7 @@ import { NOTE_LABELS } from "../../modules/assistant/words-memory.ts";
 import { limitReviewLines } from "../../modules/assistant/limits-card.ts";
 import { LIMIT_WORDS } from "../../modules/limits/chat-limit-kinds.ts";
 import { WORDS as LIMITS_PANEL_WORDS } from "./views-limits.ts";
+import { OWNER_MONEY } from "../../modules/channels/words-money.ts";
 import { WORDS as LIMITS_OWNER_WORDS } from "../../modules/channels/owner-limits-page.ts";
 
 export type ReviewLanguage = "hi" | "ml" | "kn";
@@ -72,7 +73,7 @@ const personalityFlat = (language: Language): Map<string, string> => flatWords({
 
 /**
  * Block M (17 Nov 2026): what the shop's assistant says about its memory and the owner's talk (modules/assistant/words-memory.ts), the Remember / No buttons, and the cards
- * worded for Fees and Orders (a fee's balance and an order's advance, not a "deposit"), under the ids "memory.*" and "card.<skill>.*". Each is written with made-up values, so
+ * worded for Fees and Orders (a fee's balance and an order's advance, not a "deposit"), under the ids "memory.*", "card.<skill>.*" and "refusal.<skill>.*". Each is written with made-up values, so
  * a native reviewer reads whole sentences; the note's own words, ids and amounts are filled in by the assistant and never translated.
  */
 const memoryFlat = (language: Language): Map<string, string> => {
@@ -87,6 +88,8 @@ const memoryFlat = (language: Language): Map<string, string> => {
   out.set("memory.button.remember", NOTE_LABELS[language].yes); out.set("memory.button.no", NOTE_LABELS[language].no);
   const card = (skill: string, kind: string, amountPaise: number) => cardQuestion({ kind, skill, who: "Priya", ref: skill === "fees" ? "f-3" : "o-5", what: skill === "fees" ? "November 2026" : "2 cakes", amountPaise, code: "K7M2QX", hasNo: true }, language, "Asia/Kolkata");
   for (const skill of ["fees", "orders"]) { out.set(`card.${skill}.cancel_money`, card(skill, "cancel", 150_000)); out.set(`card.${skill}.cancel_none`, card(skill, "cancel", 0)); out.set(`card.${skill}.refund`, card(skill, "refund", 50_000)); }
+  // The two refusals that name the money going back, worded for Fees (a payment) and Orders (an advance); Bookings' say "deposit" and are on the main sheet.
+  for (const skill of ["fees", "orders"]) for (const why of ["already_back", "cancel_first"] as const) out.set(`refusal.${skill}.${why}`, writeAssistant("refusal", { why, ref: skill === "fees" ? "f-3" : "o-5", skill }, language, "Asia/Kolkata").text);
   return out;
 };
 
@@ -103,10 +106,13 @@ const firstSamples: Record<string, unknown[]> = {
 const limitsFlat = (language: Language): Map<string, string> => flatWords({ limits: { assistant: limitReviewLines(language, LIMIT_WORDS), panel: LIMITS_PANEL_WORDS[language], owner: LIMITS_OWNER_WORDS[language] } }, { "limits.owner.range": ["₹0", "₹5,000"] });
 const firstFlat = (language: Language): Map<string, string> => flatWords({ owner: { first: FIRST_WORDS[language] }, door: DOOR_WORDS[language], pages: { block: PAGES_BLOCK_WORDS[language] } }, firstSamples);
 
+/** Fees, 17 Nov 2026: the owner page's rupee box for a fee received only in part, in cash (modules/channels/words-money.ts), under the ids "owner.money.cashPart*". */
+const cashPartFlat = (language: Language): Map<string, string> => new Map([["owner.money.cashPartLabel", OWNER_MONEY[language].cashPartLabel], ["owner.money.cashPartButton", OWNER_MONEY[language].cashPartButton]]);
+
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

@@ -47,6 +47,17 @@ test("a Fees or Orders card says fee, balance and advance, never deposit; Bookin
   assert.match(cardQuestion({ kind: "cancel", skill: "fees", who: "Priya", ref: "f-3", what: "Nov 2026", amountPaise: 150_000, code: "K7M2QX", hasNo: true }, "en", TZ), /waive the ₹1,500 balance\? No money moves/u);
 });
 
+test("the refusals that name money going back say payment (Fees) or advance (Orders), never deposit, in four languages; Bookings' stay as they were", () => {
+  for (const language of LANGUAGES) for (const skill of ["fees", "orders"]) for (const why of ["already_back", "cancel_first"] as const) {
+    const text = write("refusal", { why, ref: skill === "fees" ? "f-3" : "o-5", skill }, language, TZ).text;
+    assert.ok(!/deposit|जमा राशि|ഡെപ്പോസിറ്റ്|ಠೇವಣಿ/u.test(text), `${skill} ${why} ${language}: ${text}`);
+  }
+  assert.match(write("refusal", { why: "already_back", ref: "f-3", skill: "fees" }, "en", TZ).text, /payment on fee f-3/u);
+  assert.match(write("refusal", { why: "cancel_first", ref: "o-5", skill: "orders" }, "en", TZ).text, /give the advance back/u);
+  assert.equal(write("refusal", { why: "already_back", ref: "b-14", skill: "bookings" }, "en", TZ).text, write("refusal", { why: "already_back", ref: "b-14" }, "en", TZ).text);
+  assert.match(write("refusal", { why: "cancel_first", ref: "b-14" }, "en", TZ).text, /give the deposit back/u);
+});
+
 test("assistant.talk.customers false is read, written back, and anything else is refused", () => {
   const errors: string[] = [];
   const off = readAssistantSettings({ talk: { customers: false } }, errors);
