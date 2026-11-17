@@ -39,17 +39,28 @@ export function checkWithinHours(input: { settings: Settings; service: Service; 
   return allow("within-hours", "The whole booking falls inside opening hours.");
 }
 
-// no-double-booking: one customer per slot. `others` come from the calendar's own record (holds count).
-export interface BusyEvent { start: number; end: number; bookingRef: string; tentativeUntil?: number }
+// no-double-booking: one customer per slot, or as many as the shop has units of the thing booked (two chairs, two tractors; 17 Nov 2026).
+// `others` come from the calendar's own record (holds count). `units` is how many bookings may overlap on the candidate's resource (default 1: the old rule, any overlap blocks).
+// An event with a `resource` only counts against a booking of that same resource; an event with none (another tool's, or one whose service is unknown) counts against every resource, as before.
+export interface BusyEvent { start: number; end: number; bookingRef: string; tentativeUntil?: number; resource?: string }
 
-export function checkNoDoubleBooking(input: { startMs: number; endMs: number; bufferMinutes: number; ownBookingRef: string; others: BusyEvent[]; nowMs: number }): Decision {
-  const { startMs, endMs, bufferMinutes, ownBookingRef, others, nowMs } = input;
+export function checkNoDoubleBooking(input: { startMs: number; endMs: number; bufferMinutes: number; ownBookingRef: string; others: BusyEvent[]; nowMs: number; resource?: string; units?: number }): Decision {
+  const { startMs, endMs, bufferMinutes, ownBookingRef, others, nowMs, resource } = input;
+  const units = input.units ?? 1;
   const buffer = bufferMinutes * MINUTE;
-  const clash = others.find((e) =>
+  const clashing = others.filter((e) =>
     e.bookingRef !== ownBookingRef
     && !(e.tentativeUntil !== undefined && e.tentativeUntil <= nowMs) // an expired hold no longer blocks anyone
+    && (e.resource === undefined || resource === undefined || e.resource === resource)
     && e.start < endMs + buffer && startMs < e.end + buffer);
-  if (clash) return block("no-double-booking", `Another booking or hold already uses that time${bufferMinutes > 0 ? ` (including the ${bufferMinutes}-minute gap kept between bookings)` : ""}.`);
+  // The same booking is often listed twice (its calendar event and the shop's own hold): it is one use of one unit. Only matters above one unit.
+  const seen = new Set<string>();
+  const uses = units === 1 ? clashing : clashing.filter((e) => e.bookingRef === "" || e.bookingRef === "foreign" || !seen.has(e.bookingRef) && !!seen.add(e.bookingRef));
+  // The most that are in use at once while this booking would run (each event keeps its buffer after it): look at its start and at each start inside it.
+  const until = endMs + buffer;
+  const depthAt = (t: number) => uses.filter((e) => e.start <= t && t < e.end + buffer).length;
+  const busiest = uses.length === 0 ? 0 : Math.max(depthAt(startMs), ...uses.filter((e) => e.start > startMs && e.start < until).map((e) => depthAt(e.start)));
+  if (busiest >= units) return block("no-double-booking", units > 1 ? `All ${units} are already in use then${bufferMinutes > 0 ? ` (including the ${bufferMinutes}-minute gap kept between bookings)` : ""}.` : `Another booking or hold already uses that time${bufferMinutes > 0 ? ` (including the ${bufferMinutes}-minute gap kept between bookings)` : ""}.`);
   return allow("no-double-booking", "Nothing else in the calendar uses that time.");
 }
 

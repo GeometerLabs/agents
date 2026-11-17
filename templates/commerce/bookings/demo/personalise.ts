@@ -1,7 +1,7 @@
 // Making the demo about THIS shop in 30 seconds: a small form (name, services with prices, deposit, hours, language)
 // becomes a settings object, and the existing validation says what is wrong in its own plain words.
 // The form never reaches past the settings: the agent, the rules and the stand-ins are untouched.
-import { WEEKDAY_KEYS, serviceName, validateSettings } from "../src/settings.ts";
+import { SHARED_RESOURCE, WEEKDAY_KEYS, serviceName, unitsFor, validateSettings } from "../src/settings.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Service, Settings, SettingsResult } from "../src/settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
@@ -19,6 +19,8 @@ export interface ShopForm {
   opens: string;
   closes: string;
   days: boolean[]; // Sunday first
+  /** 17 Nov: how many bookings may run at the same time on the shop's shared pool (two chairs: "2"). Left out or empty: one, as before. */
+  capacity?: string;
 }
 
 /** Every customer language the demo can use (read from LANGUAGES, so new language packs appear on their own). */
@@ -76,7 +78,7 @@ export function formFromSettings(settings: Settings): ShopForm {
     id: s.id, ...rowNames(s, language), price: String(s.priceInr), minutes: String(s.durationMinutes),
   }));
   while (services.length < MAX_SERVICES) services.push({ id: "", name: "", also: "", price: "", minutes: "30" });
-  return { name: settings.name, language, services, deposit: String(settings.deposit.amountInr), ...openingOf(settings) };
+  return { name: settings.name, language, services, deposit: String(settings.deposit.amountInr), ...openingOf(settings), capacity: String(unitsFor(settings, undefined)) };
 }
 
 // ---- the settings, from the form ----------------------------------------------------------------------------------
@@ -114,7 +116,9 @@ export function settingsFromForm(input: unknown, base: Settings): SettingsResult
     let key = same ? id : slug(name) || `service-${i + 1}`;
     while (taken.has(key)) key = `${key}-${i + 1}`;
     taken.add(key);
-    return [{ id: key, names, priceInr: whole(price), durationMinutes: whole(text(r.minutes, 6) || "30") }];
+    // a service that stays keeps the machine or chair it uses (its "resource"); the form does not change it
+    const resource = old?.resource;
+    return [{ id: key, names, priceInr: whole(price), durationMinutes: whole(text(r.minutes, 6) || "30"), ...(resource !== undefined && same ? { resource } : {}) }];
   });
 
   const open = text(form.opens, 5);
@@ -124,6 +128,11 @@ export function settingsFromForm(input: unknown, base: Settings): SettingsResult
   const openingHours = hoursUntouched
     ? current.openingHours
     : Object.fromEntries(WEEKDAY_KEYS.map((k, d) => [k, days[d] ? { open, close } : null]));
+
+  const capacityText = text(form.capacity, 2);
+  const capacity = capacityText === "" ? unitsFor(current, undefined) : whole(capacityText);
+  const others = Object.entries(current.resources ?? {}).filter(([id]) => id !== SHARED_RESOURCE);
+  const resources = capacity === 1 && others.length === 0 ? undefined : { [SHARED_RESOURCE]: capacity, ...Object.fromEntries(others) };
 
   const deposit = text(form.deposit, 12);
   const depositValue = whole(deposit);
@@ -135,6 +144,8 @@ export function settingsFromForm(input: unknown, base: Settings): SettingsResult
     openingHours,
     slotMinutes: current.slotMinutes,
     bufferMinutes: current.bufferMinutes,
+    // the shared pool's units come from the form; any other resource (a tractor, a pump set) stays as the file has it. One unit and nothing else listed leaves the key out, as before.
+    ...(resources ? { resources } : {}),
     deposit: { amountInr: depositValue, holdMinutes: current.deposit.holdMinutes },
     // The refund limit is never below the deposit, so a second payment is handed back at once and only late cancellations ask the owner.
     cancellation: { windowHours: current.cancellation.windowHours, refundLimitInr: typeof depositValue === "number" ? Math.max(current.cancellation.refundLimitInr, depositValue) : current.cancellation.refundLimitInr },

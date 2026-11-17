@@ -220,7 +220,7 @@ test("scripts: go-live-certificate.ts then client-report.ts --go-live on the sam
   assert.equal(certify("glow.json", "glow-cert").status, 0);
   const a = reportFor("glow.json", "glow-a", "--go-live", join(dir, "glow-cert", "go-live-certificate.json"));
   assert.equal(a.status, 0, a.stderr);
-  assert.ok(a.stdout.includes("says its checks ran on this shop's own settings: held 38 of 38, 0 failed") && a.stdout.includes(keys.keyId), a.stdout);
+  assert.ok(a.stdout.includes("says its checks ran on this shop's own settings: held 40 of 40, 0 failed") && a.stdout.includes(keys.keyId), a.stdout);
   assert.deepEqual(tree(join(dir, "glow-a")), SIX);
   assert.equal(doc("glow-a").goLive.status, "own");
   assert.deepEqual(doc("glow-a").notTested, baseList);

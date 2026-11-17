@@ -24,7 +24,7 @@ import { LIMIT_WORDS } from "../../modules/limits/chat-limit-kinds.ts";
 import { WORDS as LIMITS_PANEL_WORDS } from "./views-limits.ts";
 import { WORDS as LIMITS_OWNER_WORDS } from "../../modules/channels/owner-limits-page.ts";
 
-export type ReviewLanguage = "ml" | "kn";
+export type ReviewLanguage = "hi" | "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
 
 /** Every sentence of a word set, by path ("shop.stopTitle"); a phrase that takes values is shown with the sample values in SAMPLE_ARGS. */

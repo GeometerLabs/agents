@@ -163,8 +163,11 @@ export function applyBusiness(draft: Draft, body: Body, w: Words): StepResult {
   const days = [0, 1, 2, 3, 4, 5, 6].map((d) => body[`day_${d}`] === "on");
   if (!CLOCK.test(opens) || !CLOCK.test(closes) || opens >= closes) problems.push(s.hoursBad);
   if (!days.some(Boolean)) problems.push(s.noDay);
+  // 17 Nov: how many bookings may run at the same time (the shared pool); a form from before this field leaves it empty, which is one
+  const capacity = text(body.capacity, 2) || "1";
+  if (!WHOLE.test(capacity) || Number(capacity) < 1 || Number(capacity) > 50) problems.push(w.setup.business.capacityBad);
   // Kept even when something is wrong, so the form comes back as it was typed.
-  draft.form = { ...draft.form, name, services, opens, closes, days };
+  draft.form = { ...draft.form, name, services, opens, closes, days, capacity };
   return { problems };
 }
 
