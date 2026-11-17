@@ -81,6 +81,17 @@ export function createChatIdentity(deps: ChatIdentityDeps) {
       const op = body.op;
       const language: Language = LANGUAGES.includes(body.language as Language) ? body.language as Language : "en";
       const channel = deps.runtime.channel;
+      // the confirm page is opened from WhatsApp on any phone: it names a link, not a guest
+      if (op === "confirm_state" || op === "confirm_use") {
+        const token = typeof body.token === "string" && LINK_TOKEN.test(body.token) ? body.token : undefined;
+        if (identity.wrongLinks.locked(now)) return answer(429, { reason: "wait" });
+        if (!token) { identity.wrongLinks.note(now); return answer(404, { state: "unknown" }); }
+        if (op === "confirm_state") { const state = identity.confirmState(token, now); if (state === "unknown") identity.wrongLinks.note(now); return answer(200, { state }); }
+        const r = identity.confirmNumber(token, now);
+        if (r.ok) return answer(200, { ok: true });
+        if (r.state === "unknown") identity.wrongLinks.note(now);
+        return answer(200, { ok: false, state: r.state });
+      }
       if (!channel || !handle) return answer(400, { error: "Send a guest's hash." });
       const thread = identity.resolve(handle);
       const seen = channel.chatState(thread);
@@ -112,8 +123,11 @@ export function createChatIdentity(deps: ChatIdentityDeps) {
         const digits = typeof body.digits === "string" ? body.digits : "";
         if (!DIGITS.test(digits)) return answer(400, { reason: "bad_number" });
         if (!seen.known) return answer(404, { error: "There is no chat yet." });
-        identity.setNumber(handle, digits, now);
-        return answer(200, { ok: true });
+        // not kept yet: a link goes to the number, and it is the thread's contact only when its holder taps it (chat-link-send.ts, identity.confirmNumber)
+        if (!identity.countConfirmAsk(handle, digits, now)) return answer(429, { reason: "wait" });
+        deps.runtime.submit([{ kind: "chat_link", id: randomUUID(), what: "confirm", language, phone: digits, handle: thread }]);
+        deps.runtime.kick();
+        return answer(200, { ok: true, pending: true });
       }
       // "I have a new phone": counted per number and per shop FIRST, then always the same answer, whether or not a thread has the number
       if (op === "recover") {

@@ -54,16 +54,16 @@ export function identityBlock(a: IdentityBlockArgs): { html: string; script: str
   const post = async (op, body) => { try { const r = await fetch(base + "/id/" + op, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify(body || {}) }); let j = {}; try { j = await r.json(); } catch {} return Object.assign({ http: r.status }, j); } catch { return { http: 0 }; } };
   const show = (id, on) => { const e = $(id); if (e) e.hidden = !on; };
   const lock = async () => { try { return !!(window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch { return false; } };
-  let hasLock = null, last = {};
+  let hasLock = null, last = {}, asked = false;
   async function refresh() {
     let s; try { const r = await fetch(base + "/id/state", { credentials: "same-origin", headers: { accept: "application/json" } }); if (!r.ok) return; s = await r.json(); } catch { return; }
     last = s; if (hasLock === null) hasLock = await lock();
     const kept = !!s.here, canKeep = !!s.offer && hasLock;
     // offered only when it helps: after a booking or an order, and only to a phone that can keep it; a phone with no screen lock is told so, once, plainly. The number for a new phone
     // is asked whenever there is a booking or an order and none was given, with or without a screen lock.
-    show("keep", canKeep || kept || (s.work > 0 && !s.number)); show("keepTop", canKeep || kept); show("nolock", !!s.offer && !hasLock);
+    show("keep", canKeep || kept || asked || (s.work > 0 && !s.number)); show("keepTop", canKeep || kept); show("nolock", !!s.offer && !hasLock);
     if (kept) { show("keepGo", false); $("keepBody").textContent = W.keepDone; }
-    show("numAsk", (kept || s.work > 0) && !s.number);
+    show("numAsk", (kept || s.work > 0) && !s.number && !asked);
     show("before", s.work === 0 && !kept);
     show("foot", !!s.known || kept); show("linksGo", !!s.number);
   }
@@ -101,7 +101,7 @@ export function identityBlock(a: IdentityBlockArgs): { html: string; script: str
   $("openGo").addEventListener("click", openMine);
   $("newGo").addEventListener("click", () => show("newBox", true));
   $("linkGo").addEventListener("click", () => sendNumber("recover", "num2", "beforeMsg", W.linkSent));
-  $("numGo").addEventListener("click", async () => { if (await sendNumber("number", "num", "keepMsg", W.numberSaved)) refresh(); });
+  $("numGo").addEventListener("click", async () => { if (await sendNumber("number", "num", "keepMsg", W.numberSaved)) { asked = true; show("numAsk", false); say("keepMsg", W.numberSaved); } });
   $("linksGo").addEventListener("click", async () => { say("footMsg", ""); const r = await post("links"); say("footMsg", r.ok ? W.myLinksSent : r.reason === "no_number" ? W.myLinksNone : W.wait); });
   $("delGo").addEventListener("click", () => show("delBox", true));
   $("delNo").addEventListener("click", () => show("delBox", false));

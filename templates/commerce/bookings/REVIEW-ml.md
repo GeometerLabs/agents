@@ -740,6 +740,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `licence.trial` | ട്രയൽ ലൈസൻസ്: അവസാന ദിവസം 10 Dec 2026 ആണ്. പിറ്റേന്ന് മുതൽ, കട ഒരു പ്ലാനിൽ ആകുന്നതുവരെ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | Trial licence: the last day is 10 Dec 2026. From the next day, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
 | `setup.chooseTemplate` | ഇത് എന്ത് ചെയ്യും? | What will it do? |  |
+| `setup.templateNames.stock-orders` | സപ്ലയർമാരിൽ നിന്ന് സ്റ്റോക്ക് ഓർഡർ | Restocking from suppliers |  |
 | `setup.templateNames.bookings` | ഡെപ്പോസിറ്റോടെ ബുക്കിംഗ് | Bookings with a deposit |  |
 | `setup.templateNames.fees` | ക്ലാസുകളുടെ ഫീസ് പിരിവ് | Fee collection for classes |  |
 | `setup.templateNames.orders` | അഡ്വാൻസോടെ പ്രീ-ഓർഡർ | Pre-orders with an advance |  |
@@ -1057,6 +1058,8 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `inbox.kinds.whatsapp_token_renewal` | Gupshup വഴിയുള്ള WhatsApp: ഈ കടയുടെ ടോക്കൺ പുതുക്കാനായില്ല. ഇപ്പോഴത്തേത് 6 മണിക്കൂറിൽ തീരും, അതിനുശേഷം ഒരു സന്ദേശവും പോകില്ല. സെർവർ നോക്കൂ (geometer logs refresher), അല്ലെങ്കിൽ പുതിയ Gupshup universal token നൽകൂ. | WhatsApp through Gupshup: this shop's token could not be renewed. The one in use ends in 6 hours, and then no message goes out. Check the server (geometer logs refresher) or hand in a new Gupshup universal token. |  |
 | `inbox.kinds.whatsapp_token_credential` | Gupshup വഴിയുള്ള WhatsApp: സെർവറിന്റെ Gupshup universal token 5 ദിവസത്തിൽ തീരും. അതിനുമുമ്പ് പുതിയത് നൽകൂ (geometer gupshup-token <file>). | WhatsApp through Gupshup: the server's Gupshup universal token ends in 5 days. Hand in a new one before then (geometer gupshup-token <file>). |  |
 | `inbox.kinds.message_not_delivered` | b-3-നുള്ള WhatsApp സന്ദേശം ഫോണിൽ എത്തിയില്ല (അത് പരാജയപ്പെട്ടെന്ന് WhatsApp അറിയിച്ചു): ആ വ്യക്തിയെ മറ്റൊരു വഴിക്ക് ബന്ധപ്പെടുക | A WhatsApp message for b-3 never reached the phone (WhatsApp reported it failed): reach the person another way |  |
+| `inbox.kinds.supplier_no_answer` | ഓർഡർ po-3: വീണ്ടും ചോദിച്ചിട്ടും സപ്ലയർ മറുപടി നൽകിയില്ല: അവരെ വിളിക്കുക, അല്ലെങ്കിൽ ഓർഡർ അവർക്ക് എത്തിയിട്ടില്ലെങ്കിൽ റദ്ദാക്കുക | Order po-3: the supplier has not answered, even after asking again: call them, or cancel the order if it never reached them |  |
+| `inbox.kinds.goods_not_received` | ഓർഡർ po-3: സപ്ലയർ സ്വീകരിച്ചു, പക്ഷേ ഒരാഴ്ചയായി ഒന്നും കിട്ടിയതായി രേഖപ്പെടുത്തിയിട്ടില്ല: അവരോട് ചോദിക്കുക, അല്ലെങ്കിൽ എത്തിയത് രേഖപ്പെടുത്തുക | Order po-3: the supplier accepted it but nothing has been marked received for a week: ask them, or mark what arrived |  |
 | `inbox.kinds.upi_payment_unconfirmed` | b-3-നുള്ള ₹200 UPI പേയ്മെന്റ് ഉടമ ഇതുവരെ ഉറപ്പാക്കിയിട്ടില്ല: UPI ആപ്പ് നോക്കാൻ ഉടമയോട് പറയുക | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
 | `inbox.kinds.upi_refund_owed` | b-3-ന്റെ ₹200 റീഫണ്ട് ഉടമ നൽകാനുണ്ട്, ഇതുവരെ ചെയ്തതായി രേഖപ്പെടുത്തിയിട്ടില്ല: ഉടമയെ ഓർമ്മിപ്പിക്കുക | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |
 | `inbox.fallback` | b-3-ൽ ഒരാൾ നോക്കേണ്ടതുണ്ട് (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |
@@ -1326,6 +1329,8 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `memory.talk_off` | ഇപ്പോൾ നിശ്ചിത അഭ്യർത്ഥനകൾക്ക് മാത്രമേ മറുപടി നൽകാനാകൂ. അവ കാണാൻ "help" എന്ന് പറയുക. | I can only answer set requests right now. Say "help" to see them. |  |
 | `memory.button.remember` | ഓർത്തുവെക്കൂ | Remember |  |
 | `memory.button.no` | വേണ്ട | No |  |
+| `card.stock-orders.cancel` | ഓർഡർ o-5 (Priya, 2 cakes) റദ്ദാക്കട്ടെ? സപ്ലയർക്ക് ഒന്നും പോയിട്ടില്ല. | Cancel order o-5 (Priya, 2 cakes)? Nothing has gone to the supplier. |  |
+| `card.stock-orders.approve` | ഓർഡർ o-5 അനുവദിക്കട്ടെ: Priya-ൽ നിന്ന് 2 cakes, ആകെ ₹12,000? ഇത് സപ്ലയർക്ക് പോകും, മാസത്തെ ബജറ്റ് ഇതിനായി മാറ്റിവയ്ക്കും. | Approve order o-5: 2 cakes from Priya, ₹12,000 in all? It goes to the supplier and the month's budget is kept for it. |  |
 | `card.fees.cancel_money` | ഫീസ് f-3 (Priya, November 2026) റദ്ദാക്കി ₹1,500 ബാക്കി ഒഴിവാക്കട്ടെ? പണം ഒന്നും നീങ്ങുന്നില്ല. | Cancel fee f-3 (Priya, November 2026) and waive the ₹1,500 balance? No money moves. |  |
 | `card.fees.cancel_none` | ഫീസ് f-3 (Priya, November 2026) റദ്ദാക്കട്ടെ? ഒന്നും ബാക്കിയില്ല. | Cancel fee f-3 (Priya, November 2026)? Nothing is owed. |  |
 | `card.fees.refund` | f-3-ന്റെ ഫീസിൽ നിന്ന് Priya-ക്ക് ₹500 തിരികെ നൽകട്ടെ? | Refund ₹500 of the fee to Priya (f-3)? |  |
@@ -1443,6 +1448,10 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.assistant.bigOrder.rule` | {v}-ന് മുകളിലുള്ള ഓർഡറുകൾക്ക് പണം ചോദിക്കുന്നതിന് മുമ്പ് നിങ്ങളുടെ അനുമതി വേണം | Orders above {v} need your approval before any payment is asked |  |
 | `limits.assistant.perDay.name` | ദിവസത്തെ ഓർഡറുകൾ | orders a day |  |
 | `limits.assistant.perDay.rule` | ഒരു ദിവസം പരമാവധി {v} ഓർഡറുകൾ | At most {v} orders a day |  |
+| `limits.assistant.orderCap.name` | ഒരു ഓർഡറിന്റെ പരിധി | order cap |  |
+| `limits.assistant.orderCap.rule` | സപ്ലയർക്കുള്ള ഒരു ഓർഡറും {v}-ൽ കൂടുതൽ മൂല്യമുള്ളതാകരുത് | No single supplier order may be worth more than {v} |  |
+| `limits.assistant.monthlyBudget.name` | മാസ ബജറ്റ് | monthly budget |  |
+| `limits.assistant.monthlyBudget.rule` | മാസത്തെ സപ്ലയർ ഓർഡറുകൾ ആകെ പരമാവധി {v} വരെ ആകാം | The month's supplier orders may add up to at most {v} |  |
 | `limits.assistant.card` | ₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇപ്പോൾ: ₹1000. | Refunds above ₹500 need your approval. Now: ₹1000. |  |
 | `limits.assistant.never` | ഒരിക്കലും ഇല്ല | never |  |
 | `limits.assistant.say.pending` | കാത്തിരിക്കുന്നു: ₹500-ന് മുകളിലുള്ള റീഫണ്ടുകൾക്ക് നിങ്ങളുടെ അനുമതി വേണം. ഇത് ഇവിടെ ഇപ്പോൾ തന്നെ ബാധകമാണ്, പ്രാബല്യത്തിൽ വരുമ്പോൾ ഞാൻ അറിയിക്കാം. | Pending: Refunds above ₹500 need your approval. It already applies here, and I'll tell you when it is Active. |  |
@@ -1529,6 +1538,72 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.quick.fees.1` | ക്ലാസ് സമയം | Class timings |  |
 | `chat.quick.fees.2` | ഫീസ് | Fees |  |
 | `chat.quick.fees.3` | ടീച്ചറോട് സംസാരിക്കൂ | Talk to the teacher |  |
+| `stock.owner.tagApprove` | അനുവദിക്കാൻ ഓർഡർ | Order to approve |  |
+| `stock.owner.tagSilent` | സപ്ലയർ മറുപടി നൽകിയില്ല | No answer from supplier |  |
+| `stock.owner.tagReceive` | സാധനം എത്തിയത് രേഖപ്പെടുത്തുക | Delivery to mark |  |
+| `stock.owner.tagUnsure` | ഉറപ്പിക്കാനായില്ല | Could not confirm |  |
+| `stock.owner.tagRefused` | അയച്ചില്ല | Not sent |  |
+| `stock.owner.approve` | Ravi Traders-ൽ നിന്ന് 10 box hair colour ഓർഡർ, ആകെ ₹12,000. നിങ്ങൾ അനുവദിച്ചാൽ മാത്രമേ ഇത് സപ്ലയർക്ക് പോകൂ, അപ്പോൾ മാസത്തെ ബജറ്റ് ഇതിനായി മാറ്റിവയ്ക്കും. | Order 10 box hair colour from Ravi Traders, ₹12,000 in all. It goes to the supplier only when you approve, and the month's budget is kept for it then. |  |
+| `stock.owner.silent` | Ravi Traders ഓർഡർ po-3: 10 box hair colour-ന് മറുപടി നൽകിയില്ല. അതേ ഓർഡറിനെക്കുറിച്ച് വീണ്ടും ചോദിക്കാം. | Ravi Traders has not answered the order po-3: 10 box hair colour. You can ask them again about the same order. |  |
+| `stock.owner.receive` | Ravi Traders ഓർഡർ po-3: 10 box hair colour സ്വീകരിച്ചു. സാധനം എത്തുമ്പോൾ രേഖപ്പെടുത്തുക. | Ravi Traders accepted the order po-3: 10 box hair colour. Mark it when the goods arrive. |  |
+| `stock.owner.unsure` | Ravi Traders-ന് ഓർഡർ po-3 കിട്ടിയെന്ന് ഉറപ്പിക്കാൻ ഞങ്ങൾക്കായില്ല. ദയവായി അവരോട് ചോദിച്ചു നോക്കൂ. | We could not confirm that Ravi Traders got order po-3. Please check with them. |  |
+| `stock.owner.gotIt` | അവർക്ക് കിട്ടി | They got it |  |
+| `stock.owner.sendAgain` | വീണ്ടും അയയ്ക്കൂ | Send it again |  |
+| `stock.owner.refused` | Ravi Traders-ലേക്കുള്ള നിങ്ങളുടെ ഓർഡർ (po-3) WhatsApp സ്വീകരിച്ചില്ല. ഒന്നും അയച്ചിട്ടില്ല. 10:30-ന് ഞാൻ വീണ്ടും ശ്രമിക്കും. നിങ്ങൾക്ക് അവരെ വിളിക്കുകയും ചെയ്യാം. | WhatsApp did not take your order to Ravi Traders (po-3). Nothing was sent. I will try again at 10:30. You can also call them. |  |
+| `stock.owner.tryNow` | ഇപ്പോൾ ശ്രമിക്കൂ | Try now |  |
+| `stock.owner.cancelOrder` | ഓർഡർ റദ്ദാക്കൂ | Cancel order |  |
+| `stock.owner.yes` | അനുവദിക്കൂ | Approve |  |
+| `stock.owner.no` | വേണ്ട | Decline |  |
+| `stock.owner.askAgain` | വീണ്ടും ചോദിക്കൂ | Ask again |  |
+| `stock.owner.received` | എല്ലാം കിട്ടി | All received |  |
+| `stock.owner.coming` | സപ്ലയർമാരുടെ പക്കലുള്ള ഓർഡറുകൾ | Orders with suppliers |  |
+| `stock.owner.noneComing` | ഒരു സപ്ലയറുടെയും പക്കൽ ഓർഡറുകൾ ബാക്കിയില്ല. | No orders are waiting on a supplier. |  |
+| `stock.panel.steps.business` | കട, സപ്ലയർമാർ, പട്ടിക | Shop, suppliers and catalogue |  |
+| `stock.panel.steps.rules` | പരിധികൾ | Limits |  |
+| `stock.panel.business.name` | കടയുടെ പേര് | Shop name |  |
+| `stock.panel.business.address` | വിലാസം | Address |  |
+| `stock.panel.business.suppliers` | സപ്ലയർമാർ | Suppliers |  |
+| `stock.panel.business.suppliersHelp` | ഓരോ വരിയിലും ഒരു സപ്ലയർ: പേര്, പിന്നെ +91 സഹിതം WhatsApp നമ്പർ. ഉദാഹരണം: Ravi Traders, +919876500001 | One supplier on each line: the name, then the WhatsApp number with +91. Example: Ravi Traders, +919876500001 |  |
+| `stock.panel.business.catalogue` | നിങ്ങൾ ഓർഡർ ചെയ്യുന്നവ | What you order |  |
+| `stock.panel.business.catalogueHelp` | ഓർഡർ ചെയ്യുന്ന ഓരോന്നിനും ഒരു വരി: സാധനം, സപ്ലയർ, പായ്ക്ക്, അവസാന വില രൂപയിൽ. വേണമെങ്കിൽ, കുറവാണെന്ന് പറയുമ്പോൾ എത്ര ഓർഡർ ചെയ്യണം. ഉദാഹരണം: ഹെയർ കളർ, Ravi Traders, ബോക്സ്, 1200, 10 | One line for each thing you order: item, supplier, pack, last price in rupees. Optionally, how many to order when you say it is low. Example: hair colour, Ravi Traders, box, 1200, 10 |  |
+| `stock.panel.rules.cap` | ഒരു ഓർഡറിന് പരമാവധി മൂല്യം (രൂപ) | Most one order may be worth (rupees) |  |
+| `stock.panel.rules.capHelp` | ഇത് ഉറച്ച പരിധിയാണ്: നിങ്ങളുടെ സമ്മതം ഇത് കൂട്ടില്ല. പിന്നീട് ഒരു ടാപ്പിൽ ഇത് കുറയ്ക്കാം. | A hard stop: your yes cannot raise it. You can tighten it later by a tap. |  |
+| `stock.panel.rules.budget` | മാസത്തെ ഓർഡറുകൾ ആകെ പരമാവധി (രൂപ) | Most the month's orders may add up to (rupees) |  |
+| `stock.panel.rules.budgetHelp` | ഒരു ഓർഡർ അനുവദിക്കുമ്പോൾ അതിനായി മാറ്റിവയ്ക്കും. | Kept for an order when you approve it. |  |
+| `stock.panel.problems.noSuppliers` | ഒരു സപ്ലയറെങ്കിലും ചേർക്കുക. | Add at least one supplier. |  |
+| `stock.panel.problems.tooManySuppliers` | ഈ ഫോമിൽ പരമാവധി 12 സപ്ലയർമാർ. | This form takes at most 12 suppliers. |  |
+| `stock.panel.problems.supplierBad` | സപ്ലയർ വരി 2: പേരും പിന്നെ +91 സഹിതം WhatsApp നമ്പറും എഴുതുക. | Supplier line 2: write the name, then the WhatsApp number with +91. |  |
+| `stock.panel.problems.supplierTwice` | സപ്ലയർ വരി 2: Ravi Traders രണ്ടുതവണ ഉണ്ട്. | Supplier line 2: Ravi Traders is listed twice. |  |
+| `stock.panel.problems.numberTwice` | സപ്ലയർ വരി 2: ഈ നമ്പർ മറ്റൊരു സപ്ലയറുടേതാണ്. | Supplier line 2: that number is another supplier's already. |  |
+| `stock.panel.problems.noLines` | ഓർഡർ ചെയ്യുന്നവയുടെ ഒരു വരിയെങ്കിലും ചേർക്കുക. | Add at least one line of what you order. |  |
+| `stock.panel.problems.tooManyLines` | ഈ ഫോമിൽ പരമാവധി 40 വരികൾ. | This form takes at most 40 lines. |  |
+| `stock.panel.problems.lineBad` | വരി 3: സാധനം, സപ്ലയർ, പായ്ക്ക്, വില എന്നിവ കോമ കൊണ്ട് വേർതിരിച്ച് എഴുതുക. | Line 3: write the item, the supplier, the pack and the price, separated by commas. |  |
+| `stock.panel.problems.lineSupplier` | വരി 3: Ravi നിങ്ങളുടെ സപ്ലയർമാരിൽ ഇല്ല. | Line 3: Ravi is not in your suppliers. |  |
+| `stock.panel.problems.priceBad` | വരി 3: വില 0-ന് മുകളിലുള്ള രൂപയുടെ സംഖ്യയായിരിക്കണം, പരമാവധി രണ്ട് ദശാംശം. | Line 3: the price must be a number of rupees above 0, with at most two decimals. |  |
+| `stock.panel.problems.reorderBad` | വരി 3: കുറയുമ്പോൾ ഓർഡർ ചെയ്യേണ്ട എണ്ണം 1 ഓ അതിൽ കൂടുതലോ ഉള്ള പൂർണ്ണസംഖ്യ ആയിരിക്കണം. | Line 3: the number to order when low must be a whole number of 1 or more. |  |
+| `stock.panel.problems.lineTwice` | വരി 3: ഒരേ സാധനം, സപ്ലയർ, പായ്ക്ക് രണ്ടുതവണ ഉണ്ട്. | Line 3: the same item, supplier and pack is listed twice. |  |
+| `stock.panel.problems.capBad` | ഒരു ഓർഡറിന്റെ പരിധി 0-ന് മുകളിലുള്ള പൂർണ്ണ രൂപയായിരിക്കണം. | The most one order may be worth must be a whole number of rupees above 0. |  |
+| `stock.panel.problems.budgetBad` | മാസത്തെ ബജറ്റ് 0-ന് മുകളിലുള്ള പൂർണ്ണ രൂപയായിരിക്കണം. | The month's budget must be a whole number of rupees above 0. |  |
+| `stock.panel.problems.capAbovePrice` | ഒന്നിന് ₹1,200 വിലയുണ്ട്, ഒരു ഓർഡറിന്റെ പരിധിയേക്കാൾ കൂടുതൽ: ഇത് ഒരിക്കലും ഓർഡർ ചെയ്യാനാകില്ല. പരിധി കൂട്ടുക അല്ലെങ്കിൽ വില ശരിയാക്കുക. | One unit costs ₹1,200, more than the most one order may be worth: it could never be ordered. Raise the limit or fix the price. |  |
+| `stock.panel.problems.capAboveBudget` | ഒരു ഓർഡറിന്റെ പരിധി മാസത്തെ ബജറ്റിനേക്കാൾ കൂടുതലാണ്. ഓർഡർ പരിധി ചെറിയ സംഖ്യയാക്കുക. | The most for one order is above the month's budget. Make the order limit the smaller number. |  |
+| `stock.panel.shop.suppliers` | സപ്ലയർമാർ | Suppliers |  |
+| `stock.panel.shop.catalogue` | നിങ്ങൾ ഓർഡർ ചെയ്യുന്നവ | What you order |  |
+| `stock.panel.shop.rules` | പരിധികൾ | Limits |  |
+| `stock.panel.shop.messages.heading` | ഒരു ഓർഡറിന്റെ സന്ദേശങ്ങൾ | Messages for one order |  |
+| `stock.panel.shop.messages.line` | ഓരോ ഓർഡറിനും ഏകദേശം 6 സന്ദേശങ്ങൾ: സപ്ലയർക്കുള്ള ഓർഡർ, മറുപടി ഇല്ലെങ്കിൽ രണ്ടുവരെ ചോദ്യങ്ങൾ, നിങ്ങൾക്കുള്ള അറിയിപ്പുകൾ. | About 6 messages for each order: the order to the supplier, up to two asks if they are silent, and notes to you. |  |
+| `stock.panel.shop.messages.note` | ഇത് ഒരു കണക്കുകൂട്ടൽ മാത്രമാണ്, പരിധിയല്ല. മറുപടികൾ ഇതിനുപുറമെ. | A planning figure, not a limit. Replies come on top. |  |
+| `stock.panel.shop.states.awaiting_approval` | നിങ്ങളുടെ സമ്മതത്തിനായി കാത്തിരിക്കുന്നു | Waiting for your yes |  |
+| `stock.panel.shop.states.approved` | അയയ്ക്കുന്നു | Being sent |  |
+| `stock.panel.shop.states.sent` | സപ്ലയറുടെ പക്കൽ | With the supplier |  |
+| `stock.panel.shop.states.send_unknown` | ഒരുപക്ഷേ അയച്ചു | Maybe sent |  |
+| `stock.panel.shop.states.supplier_declined` | സപ്ലയർക്ക് നൽകാനാവില്ല | Supplier cannot supply |  |
+| `stock.panel.shop.states.cancelled` | റദ്ദാക്കി | Cancelled |  |
+| `chat.list.yourChats` | നിങ്ങളുടെ ചാറ്റുകൾ | Your chats |  |
+| `chat.list.installHead` | Streetlist ഫോണിൽ സൂക്ഷിക്കൂ | Keep Streetlist on your phone |  |
+| `chat.list.installBody` | ഒറ്റ തൊടലിൽ ചാറ്റുകൾ തുറക്കാം, കട മറുപടി തന്നാൽ അറിയാം. | Open your chats in one tap, and hear when a shop replies. |  |
+| `chat.list.installButton` | ഫോണിൽ ചേർക്കൂ | Add to your phone |  |
+| `chat.list.notNow` | ഇപ്പോൾ വേണ്ട | Not now |  |
+| `chat.list.iphone` | Share ബട്ടൺ അമർത്തൂ, പിന്നെ Add to Home Screen. | Tap the Share button, then Add to Home Screen. |  |
 | `chat.id.keepHead` | ഈ ചാറ്റ് നിങ്ങളുടെ ഫോണിൽ സൂക്ഷിക്കൂ | Keep this chat on your phone |  |
 | `chat.id.keepBody` | ഈ ചാറ്റ് സൂക്ഷിക്കാൻ നിങ്ങളുടെ വിരലടയാളമോ സ്ക്രീൻ ലോക്കോ ഉപയോഗിക്കൂ. പാസ്‌വേഡ് വേണ്ട. | Use your fingerprint or screen lock to keep this chat. No password. |  |
 | `chat.id.keepButton` | ഈ ചാറ്റ് സൂക്ഷിക്കൂ | Keep this chat |  |
@@ -1550,7 +1625,11 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.id.badNumber` | ഇത് ഫോൺ നമ്പർ പോലെ തോന്നുന്നില്ല. | That does not look like a phone number. |  |
 | `chat.id.numberAsk` | പുതിയ ഫോൺ വാങ്ങിയാൽ നിങ്ങളുടെ WhatsApp-ലേക്ക് ഒരു ലിങ്ക് അയയ്ക്കാം. നിങ്ങളുടെ നമ്പർ ചേർക്കൂ (വേണമെങ്കിൽ ഒഴിവാക്കാം). | If you get a new phone, we can send a link to your WhatsApp. Add your number (you can skip this). |  |
 | `chat.id.numberSave` | എന്റെ നമ്പർ സൂക്ഷിക്കൂ | Save my number |  |
-| `chat.id.numberSaved` | സൂക്ഷിച്ചു. പുതിയ ഫോണിൽ "എനിക്ക് പുതിയ ഫോൺ ഉണ്ട്" തൊടൂ. | Saved. On a new phone, tap I have a new phone. |  |
+| `chat.id.numberSaved` | ആ നമ്പറിലേക്ക് ഒരു സന്ദേശം അയച്ചിട്ടുണ്ട്. ഇത് നിങ്ങളുടേതാണെന്ന് ഉറപ്പിക്കാൻ അതിലെ ലിങ്ക് തൊടൂ. | We sent a message to that number. Tap its link to confirm it is yours. |  |
+| `chat.id.confirmHead` | നിങ്ങളുടെ നമ്പർ ഉറപ്പിക്കൂ | Confirm your number |  |
+| `chat.id.confirmBody` | ഇത് നിങ്ങളുടെ നമ്പറാണെന്ന് ഉറപ്പിക്കാൻ തൊടൂ. | Tap to confirm this is your number. |  |
+| `chat.id.confirmButton` | അതെ, ഇത് എന്റെ നമ്പറാണ് | Yes, this is my number |  |
+| `chat.id.confirmDone` | നന്ദി. നിങ്ങളുടെ നമ്പർ ഈ ചാറ്റിനായി സൂക്ഷിച്ചിട്ടുണ്ട്. | Thank you. Your number is saved for this chat. |  |
 | `chat.id.backHead` | വീണ്ടും സ്വാഗതം | Welcome back |  |
 | `chat.id.backBody` | നിങ്ങളുടെ ചാറ്റ് ഈ ഫോണിൽ തുറക്കട്ടെ? | Open your chat on this phone? |  |
 | `chat.id.backButton` | എന്റെ ചാറ്റ് ഇവിടെ തുറക്കൂ | Open my chat here |  |

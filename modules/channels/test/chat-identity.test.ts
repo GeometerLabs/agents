@@ -290,15 +290,15 @@ test("the words are in four languages, never say passkey, sign in, login or erro
   assert.match(IDENTITY.en.deleteAsk, /law/u, "what stays is said in one line");
 });
 
-test("the two link templates: four languages, utility, a body that neither starts nor ends with a value, the two values in order", () => {
-  assert.deepEqual(CHAT_LINK_TEMPLATES.map((t) => t.name), ["chat_new_phone", "chat_my_link"]);
+test("the three link templates: four languages, utility, a body that neither starts nor ends with a value, the two values in order", () => {
+  assert.deepEqual(CHAT_LINK_TEMPLATES.map((t) => t.name), ["chat_new_phone", "chat_my_link", "chat_confirm_number"]);
   for (const t of CHAT_LINK_TEMPLATES) for (const language of LANGUAGES) {
     const body = t.bodies[language];
     assert.ok(!body.startsWith("{") && !body.endsWith("}"), `${t.name}.${language}`);
     assert.ok(body.indexOf("{shop}") < body.indexOf("{link}"), `${t.name}.${language}: shop first, link second`);
   }
   const list = chatLinkSubmissions();
-  assert.equal(list.length, 8);
+  assert.equal(list.length, 12);
   assert.ok(list.every((x) => x.category === "UTILITY" && /^[a-z_]+$/u.test(x.name) && x.components[0]!.type === "BODY" && /\{\{1\}\}.*\{\{2\}\}/u.test((x.components[0] as { text: string }).text)));
   assert.deepEqual(JSON.parse(readFileSync(new URL("../chat-link-templates.json", import.meta.url), "utf8")), JSON.parse(JSON.stringify(list)), "run: node modules/channels/scripts/chat-link-templates.ts");
 });
@@ -418,7 +418,14 @@ test("'send me my booking link' needs a number this thread gave, and is asked of
   const d = door();
   try {
     assert.deepEqual((await d.routes.call({ op: "links", handle: H1 })).body, { ok: false, reason: "no_number" });
-    assert.equal((await d.routes.call({ op: "number", handle: H1, digits: NUMBER })).body.ok, true);
+    // a typed number is not kept yet: a link goes to it, and it counts when its holder taps it
+    assert.deepEqual((await d.routes.call({ op: "number", handle: H1, digits: NUMBER, language: "hi" })).body, { ok: true, pending: true });
+    assert.deepEqual(d.submitted.at(-1), { kind: "chat_link", id: d.submitted.at(-1)!.id, what: "confirm", language: "hi", phone: NUMBER, handle: H1 });
+    assert.deepEqual((await d.routes.call({ op: "links", handle: H1 })).body, { ok: false, reason: "no_number" }, "still no number until it is confirmed");
+    const pending = d.s.identity.issueConfirm(H1, NUMBER, T0);
+    assert.equal((await d.routes.call({ op: "confirm_state", token: pending.token })).body.state, "valid");
+    assert.equal((await d.routes.call({ op: "confirm_use", token: pending.token })).body.ok, true);
+    assert.equal(d.s.identity.numberOf(H1), NUMBER);
     assert.equal((await d.routes.call({ op: "links", handle: H1, language: "hi" })).body.ok, true);
     assert.deepEqual(d.submitted.at(-1), { kind: "chat_link", id: d.submitted.at(-1)!.id, what: "links", language: "hi", handle: H1 });
   } finally { d.s.done(); }
@@ -557,5 +564,63 @@ test("when the shop's retention clears a thread, the beat drops its keys, number
     // a beat with no state to read (no store) drops nothing
     w.links.tick();
     assert.equal(w.s.identity.state(H3).keys, 1);
+  } finally { w.s.done(); }
+});
+
+// ---- a number counts only once its holder taps the link sent to it (W2 fix c) -------------------------------------------------------------------------------
+
+test("a typed number waits: it is nobody's contact until the link sent to it is tapped, once, in time", () => {
+  const s = store();
+  try {
+    const a = s.identity.issueConfirm(H1, NUMBER, T0);
+    assert.equal(s.identity.numberOf(H1), undefined);
+    assert.equal(s.identity.guestOfNumber(NUMBER), undefined, "a recovery cannot be tied to a number nobody confirmed");
+    assert.equal(s.identity.confirmState(a.token, T0 + 1), "valid");
+    assert.equal(s.identity.confirmState(a.token, T0 + 2), "valid", "looking uses nothing up");
+    assert.deepEqual(s.identity.confirmNumber(a.token, T0 + 3), { ok: true });
+    assert.equal(s.identity.numberOf(H1), NUMBER);
+    assert.equal(s.identity.guestOfNumber(NUMBER), H1);
+    assert.deepEqual(s.identity.confirmNumber(a.token, T0 + 4), { ok: false, state: "used" });
+    const b = s.identity.issueConfirm(H3, "919822222222", T0 + 10);
+    assert.deepEqual(s.identity.confirmNumber(b.token, T0 + 10 + RECOVERY_LINK_MS + 1), { ok: false, state: "expired" });
+    assert.equal(s.identity.numberOf(H3), undefined);
+    const c = s.identity.issueConfirm(H3, "919822222222", T0 + 20); const d = s.identity.issueConfirm(H3, "919833333333", T0 + 21);
+    assert.equal(s.identity.confirmState(c.token, T0 + 22), "replaced");
+    assert.equal(s.identity.confirmState("not a token", T0), "unknown");
+    s.identity.confirmUnsent(d.id);
+    assert.equal(s.identity.confirmState(d.token, T0 + 23), "unknown", "a link that never went out can never be used");
+    for (const f of [s.file, `${s.file}-wal`]) if (existsSync(f)) assert.ok(!readFileSync(f).includes(c.token), "only the token's hash is kept");
+  } finally { s.done(); }
+});
+
+test("asking to confirm a number is counted per number, per thread and per shop, and a deleted chat takes a waiting number with it", () => {
+  const s = store();
+  try {
+    assert.ok(s.identity.countConfirmAsk(H1, NUMBER, T0) && s.identity.countConfirmAsk(H1, NUMBER, T0 + 1));
+    assert.equal(s.identity.countConfirmAsk(H1, NUMBER, T0 + 2), false, "two an hour for one number");
+    const link = s.identity.issueConfirm(H1, NUMBER, T0);
+    s.identity.forget(H1);
+    assert.equal(s.identity.confirmState(link.token, T0 + 1), "unknown");
+  } finally { s.done(); }
+});
+
+test("the confirm step sends the third template to the typed number, names only the link's short id in the record, and sends nothing to a number that said STOP", async () => {
+  const w = linkWorld();
+  try {
+    await w.links.run({ kind: "chat_link", id: "c1", what: "confirm", language: "ml", phone: NUMBER, handle: H1 }, { messaging: w.fake, record: w.record, store: w.store0 });
+    const sent = w.fake.outbox();
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0]!.templateName, "chat_confirm_number");
+    assert.equal(sent[0]!.to, `+${NUMBER}`);
+    const token = /\/chat\/id\/confirm\/([A-Za-z0-9_-]{43})/u.exec(sent[0]!.text)?.[1];
+    assert.ok(token);
+    assert.equal(w.s.identity.confirmState(token!, T0 + 1), "valid");
+    assert.equal(w.s.identity.numberOf(H1), undefined, "sending confirms nothing");
+    assert.ok(!JSON.stringify(w.lines).includes(token!) && !JSON.stringify(w.lines).includes(NUMBER));
+    const stop = linkWorld({ stop: true });
+    try {
+      await stop.links.run({ kind: "chat_link", id: "c2", what: "confirm", language: "en", phone: NUMBER, handle: H1 }, { messaging: stop.fake, record: stop.record, store: stop.store0 });
+      assert.equal(stop.fake.outbox().length, 0);
+    } finally { stop.s.done(); }
   } finally { w.s.done(); }
 });
