@@ -5,10 +5,10 @@ import type { MessageFacts } from "./templates.ts";
 
 export function checkFactsOf(f: MessageFacts): CheckFacts {
   const rows = f.lines ?? [];
-  const amounts = [f.unitPriceInr, f.totalInr, f.budgetInr, f.reservedInr, f.leftInr, f.capInr, f.limitInr, ...rows.map((r) => r.totalInr)].filter((n): n is number => n !== undefined);
-  const counts = [f.qty, f.receivedQty, f.moreQty, f.hours, f.maxQty, ...rows.flatMap((r) => [r.qty, r.receivedQty])].filter((n): n is number => n !== undefined);
+  const amounts = [f.unitPriceInr, f.totalInr, f.budgetInr, f.reservedInr, f.leftInr, f.capInr, f.limitInr, ...rows.map((r) => r.totalInr), ...(f.choices ?? []).map((c) => c.priceInr)].filter((n): n is number => n !== undefined);
+  const counts = [f.qty, f.receivedQty, f.moreQty, f.saidQty, f.hours, f.maxQty, ...rows.flatMap((r) => [r.qty, r.receivedQty])].filter((n): n is number => n !== undefined);
   return {
     language: f.language, timeZone: f.timeZone, amountsInr: amounts, counts, momentsMs: [], links: [],
-    literals: [f.businessName, f.supplierName, f.itemName, f.unitName, f.orderRef, f.code, f.monthLabel, ...(f.options ?? []), ...(f.refs ?? []), ...rows.flatMap((r) => [r.ref, r.itemName, r.unitName, r.supplierName])],
+    literals: [f.businessName, f.supplierName, f.itemName, f.unitName, f.orderRef, f.code, f.monthLabel, ...(f.options ?? []), ...(f.refs ?? []), ...rows.flatMap((r) => [r.ref, r.itemName, r.unitName, r.supplierName, r.stateWord]), ...(f.choices ?? []).flatMap((c) => [c.supplierName, c.unitName]), f.stateWord, f.example],
   };
 }
