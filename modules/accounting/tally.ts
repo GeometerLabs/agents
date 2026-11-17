@@ -31,6 +31,8 @@ export interface TallyOptions {
   company?: string;
   /** The accountant's own name for an account code (accounts.ts codes); any left out keep accounts.ts accountantName. */
   ledgerNames?: Readonly<Record<string, string>>;
+  /** Set by export.ts only when the period has an old due (Fees): the narration of those vouchers ends with "old due <month>". */
+  oldDueOf?: (e: RecordEntry) => string | undefined;
 }
 
 /** The groups TallyPrime has by default and the ledgers here use. */
@@ -84,7 +86,7 @@ function envelope(report: string, company: string | undefined, body: string): st
 /** A case id is `b-14` or `f-3.2`; a long run of digits could be a phone number and is left out (the same guard as export.ts). */
 const caseRef = (c: string | null): string => (c === null || /\d{8,}/u.test(c) ? "" : c);
 
-function narrationOf(first: Line, refs: Readonly<Record<string, string>>): string {
+function narrationOf(first: Line, refs: Readonly<Record<string, string>>, oldDue = ""): string {
   const bits: string[] = [first.kind.replace(/_/gu, " ")];
   const c = caseRef(first.case);
   if (c) bits.push(c);
@@ -92,6 +94,7 @@ function narrationOf(first: Line, refs: Readonly<Record<string, string>>): strin
   if (refs.refundId) bits.push(`refund ${refs.refundId}`);
   if (refs.settlementId) bits.push(`settlement ${refs.settlementId}`);
   if (refs.utr) bits.push(`UTR ${refs.utr}`);
+  if (oldDue) bits.push(oldDue);
   return bits.join(", ");
 }
 
@@ -106,6 +109,7 @@ export function tallyFiles(i: { lines: readonly Line[]; entries: readonly Record
     return n;
   };
   const bySeq = new Map(i.entries.map((e) => [e.seq, e.refs]));
+  const oldDueBySeq = new Map(i.entries.map((e) => [e.seq, i.oldDueOf?.(e)]));
   const entries = new Map<number, Line[]>();
   for (const l of i.lines) { const group = entries.get(l.seq); if (group) group.push(l); else entries.set(l.seq, [l]); }
 
@@ -130,7 +134,7 @@ export function tallyFiles(i: { lines: readonly Line[]; entries: readonly Record
       const paise = debit ? l.debitPaise : l.creditPaise;
       entriesXml += `<ALLLEDGERENTRIES.LIST><LEDGERNAME>${xml(name)}</LEDGERNAME><ISDEEMEDPOSITIVE>${debit ? "Yes" : "No"}</ISDEEMEDPOSITIVE><AMOUNT>${debit ? "-" : ""}${rupees(paise)}</AMOUNT></ALLLEDGERENTRIES.LIST>\n`;
     }
-    vouchers += `<VOUCHER VCHTYPE="${type}" ACTION="Create" OBJVIEW="Accounting Voucher View"><DATE>${date}</DATE><VOUCHERTYPENAME>${type}</VOUCHERTYPENAME><VOUCHERNUMBER>${xml(number)}</VOUCHERNUMBER><NARRATION>${xml(narrationOf(first, bySeq.get(seq) ?? {}))}</NARRATION>\n${entriesXml}</VOUCHER>\n`;
+    vouchers += `<VOUCHER VCHTYPE="${type}" ACTION="Create" OBJVIEW="Accounting Voucher View"><DATE>${date}</DATE><VOUCHERTYPENAME>${type}</VOUCHERTYPENAME><VOUCHERNUMBER>${xml(number)}</VOUCHERNUMBER><NARRATION>${xml(narrationOf(first, bySeq.get(seq) ?? {}, oldDueBySeq.get(seq) ? `old due ${oldDueBySeq.get(seq)}` : ""))}</NARRATION>\n${entriesXml}</VOUCHER>\n`;
   }
   const masters = [...ledgers].map(([name, group]) => `<LEDGER NAME="${xml(name)}" ACTION="Create"><NAME>${xml(name)}</NAME><PARENT>${xml(group)}</PARENT></LEDGER>\n`).join("");
   return { masters: envelope("All Masters", i.company, masters), vouchers: envelope("Vouchers", i.company, vouchers) };

@@ -32,7 +32,17 @@ export interface ExportInput {
   journal: Journal; entries: readonly RecordEntry[]; period: string; timeZone: string;
   /** Given (even as `{}`), the two best-effort Tally files are made, with this company name and the accountant's own ledger names (tally.ts). Left out: no Tally files. */
   tally?: TallyOptions;
+  /**
+   * Optional (Fees only today): says a record entry belongs to an old due, an earlier month that was unpaid when the agent started, and which month ("2026-09"). The
+   * owner decided (17 Nov 2026) that each centre's accountant tallies old dues as they prefer, so the files only mark them plainly: the journal sheet gets a last column
+   * `note` ("old due 2026-09") and the Tally narration the same words, only when a line of the period carries a mark. Left out, or no mark in the period, every file is
+   * byte for byte what it was (Bookings and Orders never pass it).
+   */
+  oldDueOf?: (e: RecordEntry) => string | undefined;
 }
+
+/** The plain words an accountant reads beside a line that belongs to an old due. English only, like the rest of these files. */
+export const oldDueNote = (month: string): string => `old due ${month}`;
 
 /** Rupees with exactly 2 decimals from integer paise, by integer arithmetic. */
 export function rupees(paise: number): string {
@@ -126,11 +136,13 @@ export function accountantFiles(i: ExportInput): ExportFile[] {
   const inRange = (iso: string): boolean => { const t = Date.parse(iso); return t >= range.fromMs && t < range.toMs; };
   const bySeq = new Map(i.entries.map((e) => [e.seq, e]));
 
-  const journalRows: (string | number)[][] = [["date", "voucher_no", "voucher_type", "account", "debit", "credit", "method", "evidence", "case_ref", "payment_id", "refund_id", "record_seq"]];
+  const oldDue = (seq: number): string => { const e = bySeq.get(seq); const m = e && i.oldDueOf ? i.oldDueOf(e) : undefined; return m ? oldDueNote(m) : ""; };
+  const anyOldDue = i.oldDueOf !== undefined && i.journal.lines.some((l) => inRange(l.at) && oldDue(l.seq) !== "");
+  const journalRows: (string | number)[][] = [["date", "voucher_no", "voucher_type", "account", "debit", "credit", "method", "evidence", "case_ref", "payment_id", "refund_id", "record_seq", ...(anyOldDue ? ["note"] : [])]];
   for (const l of i.journal.lines) {
     if (!inRange(l.at)) continue;
     const refs = bySeq.get(l.seq)?.refs ?? {};
-    journalRows.push([dateOf(Date.parse(l.at), i.timeZone), l.doc ?? `J-${l.seq}`, voucherType(l), accountantName(l.account), rupees(l.debitPaise), rupees(l.creditPaise), l.method ?? "", l.evidence ?? "", caseRef(l.case), refs.paymentId ?? "", refs.refundId ?? "", l.seq]);
+    journalRows.push([dateOf(Date.parse(l.at), i.timeZone), l.doc ?? `J-${l.seq}`, voucherType(l), accountantName(l.account), rupees(l.debitPaise), rupees(l.creditPaise), l.method ?? "", l.evidence ?? "", caseRef(l.case), refs.paymentId ?? "", refs.refundId ?? "", l.seq, ...(anyOldDue ? [oldDue(l.seq)] : [])]);
   }
 
   const docRows: (string | number)[][] = [["number", "date", "type", "amount", "note"]];
@@ -161,12 +173,12 @@ export function accountantFiles(i: ExportInput): ExportFile[] {
   // The Tally files are best effort and never the only copy: if they cannot be made, the CSV files are still complete and the README says why.
   let tally: { masters: string; vouchers: string } | null = null;
   let tallyWhy = "";
-  if (i.tally) try { tally = tallyFiles({ lines: i.journal.lines.filter((l) => inRange(l.at)), entries: i.entries, timeZone: i.timeZone, ...i.tally }); } catch (e) { tallyWhy = (e as Error).message; }
+  if (i.tally) try { tally = tallyFiles({ lines: i.journal.lines.filter((l) => inRange(l.at)), entries: i.entries, timeZone: i.timeZone, ...(anyOldDue ? { oldDueOf: i.oldDueOf } : {}), ...i.tally }); } catch (e) { tallyWhy = (e as Error).message; }
 
   const readme = [
     `Files for the period ${i.period} (${i.period.length === 7 ? "one month" : "one financial year, 1 April to 31 March"}), dates in the shop's time zone (${i.timeZone}).`,
     "",
-    `${names.journal}: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.`,
+    `${names.journal}: one row for each line the shop's books wrote, in the order they were written. Each payment, refund and bill is two or more lines whose debit and credit add up to the same amount. Columns: date (YYYY-MM-DD), voucher_no (the document's number, or J-<n> where no document was issued), voucher_type, account, debit, credit, method, evidence (provider: the payment service's own record; owner_mark: the owner marked it; person_word: a person said it was done), case_ref, payment_id, refund_id, record_seq.${anyOldDue ? " A last column, note, says \"old due 2026-09\" on every line of a fee for an earlier month that was unpaid when the agent started (the owner typed it in the settings): the books post it as an ordinary fee, and the accountant moves it where they prefer." : ""}`,
     `${names.documents}: every receipt, bill and refund note issued in the period, with its number, date, type and amount. Numbers that were skipped have one row for each run of them ("RCT/26-27/0003 to RCT/26-27/10002"): "not used: the shop's data was restored" when the shop's data was restored from a copy and the numbers moved on so none is used twice, and "missing" for any other gap (which should not happen).`,
     ...(settlementCsv ? [`${names.settlements}: one row for each settlement the payment service paid into the bank: settlement_id, utr (the bank's reference, to tick against the bank statement), settled_on, gross (what customers paid), fee_without_gst, gst_on_fee, refunds, adjustments, and net (gross less the fee, the GST, refunds and adjustments, for the rows the books counted: rows_left_out is how many rows of that settlement are not in the books, such as a payment that did not go through the assistant, and the bank received those too).`] : []),
     "",

@@ -62,7 +62,7 @@ node templates/education/fees/approvals/main.ts    # the approvals relay: asks t
 ## What the owner sees
 
 - A message for each thing that needs them: an approval, a parent who says they paid with nothing on record, a payment link that could not be made, a message held back, a parent who sent STOP, a parent who asked to talk.
-- **The monthly report**, on WhatsApp on the 1st from 09:00, once: collected, still to collect, given back, reminders sent, what was taken off, what the owner was asked, approved and refused, what the limits stopped, and what was not checked. A page behind a link has the whole report, signed, in the owner's language (see The monthly report).
+- **The monthly report**, on WhatsApp on the 1st from 09:00, once: collected (this period's fees, and on its own line old dues collected when an earlier unpaid month was paid), still to collect, given back, reminders sent, what was taken off, what the owner was asked, approved and refused, what the limits stopped, and what was not checked. A page behind a link has the whole report, signed, in the owner's language (see The monthly report).
 
 ## A parent's private page (item 11h)
 
