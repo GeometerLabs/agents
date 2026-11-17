@@ -11,6 +11,7 @@ import type { Language } from "../language/languages.ts";
 import type { LocalDate } from "../core/time.ts";
 import type { TimePhrase } from "../language/dates.ts";
 import type { CardAction } from "./state.ts";
+import type { LimitCardView } from "./limits-card.ts";
 
 /** A skill's name. The record's `skill` ref carries it, so a line says which skill acted. */
 export type SkillName = "bookings" | "fees" | "orders" | (string & {});
@@ -44,7 +45,9 @@ export type Proposal =
   | { kind: "cancel"; case: string }
   | { kind: "refund"; case: string; amountPaise?: number }
   | { kind: "answer"; case: string; answer: "yes" | "no"; itemKind: string }
-  | { kind: "message"; case: string; words: string };
+  | { kind: "message"; case: string; words: string }
+  /** Tighten a declared limit (limits-card.ts): `case` is "limit:<id>", `to` the value read from the owner's words by rule. */
+  | { kind: "limit"; case: string; to: number };
 
 /** A proposal checked against the store as it is now: the exact action and what the card shows, or why it cannot be done. */
 export type Prepared =
@@ -52,7 +55,7 @@ export type Prepared =
     ok: true;
     action: CardAction;
     /** What the card says, from the same fields: who, the case, what it is about, the amount (0 when none). */
-    shown: { who: string; what: string; amountPaise: number; words?: string };
+    shown: { who: string; what: string; amountPaise: number; words?: string; /** A limit card: the rule and its value now and proposed (limits-card.ts). */ limit?: LimitCardView };
     /** Above the shop's limit: after the tap Guard holds it and the owner approves once more (the relay's card). The card says so before the tap. */
     aboveLimit?: boolean;
   }
@@ -73,7 +76,8 @@ export type PrepareRefusal =
   | "no_window" // the customer has not written in 24 hours: WhatsApp allows only approved templates
   | "opted_out" // the customer sent STOP
   | "amount_not_on_record" // a message with an amount the case does not have
-  | "busy"; // the case is in the middle of something (a refund Guard holds, a check in progress)
+  | "busy" // the case is in the middle of something (a refund Guard holds, a check in progress)
+  | "limit_not_tighter"; // a limit: the value is not strictly tighter than the limit in force now (or is out of bounds)
 
 /** Why a booking cannot move there. words.ts words each one. */
 export type MoveRefusal = "no_case" | "not_live" | "outside_hours" | "taken" | "past" | "failed";

@@ -156,6 +156,8 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       linkState: (token: string) => { const w = who(); return w ? access.linkState(token, w, clock.now()) : "unknown" as const; },
       consume: (token: string) => { const w = who(); return w ? access.consume(token, w, clock.now()) : { ok: false as const, state: "unknown" as const }; },
       check: (session: string) => { const w = who(); return w ? access.check(session, w, clock.now(), setup.endBefore()) : undefined; },
+      /** The same, and only when the session was made with a passkey (the owner's limits page). */
+      checkPasskey: (session: string) => { const w = who(); return w ? access.checkPasskey(session, w, clock.now(), setup.endBefore()) : undefined; },
       end: (session: string) => access.end(session, clock.now()),
       // ---- item 11h: passkeys (each answers "unknown" or nothing for a shop with no pages file or no grants reader) ----
       shopName: setup.shopName,

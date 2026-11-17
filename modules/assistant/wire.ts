@@ -5,6 +5,7 @@
 // Also the two pieces every skill's `prepare` and `execute` share: the owner's fixed reply a card's tap stands for, and the check on a message's words.
 import type { Clock } from "../core/clock.ts";
 import type { Language } from "../language/languages.ts";
+import type { ChatLimit } from "../limits/chat-limits.ts";
 import type { Decision } from "../limits/limits.ts";
 import type { InboundMessage, Messaging } from "../messaging/messaging.ts";
 import type { ActionRecord, Outcome } from "../record/record.ts";
@@ -12,6 +13,7 @@ import type { AiPolicy, AiStore } from "../understanding/ai-state.ts";
 import { createAssistant, kindsOf } from "./conversation.ts";
 import type { Assistant, AssistantDeps } from "./conversation.ts";
 import { amountOf } from "./intents.ts";
+import { createLimits } from "./limits-card.ts";
 import { createOwnerReader } from "./reading.ts";
 import type { OwnerParser } from "./reading.ts";
 import type { AssistantSettings } from "./settings.ts";
@@ -29,6 +31,8 @@ export interface AgentAssistantDeps {
   ownerParser?: OwnerParser;
   /** The owner's voice notes, heard through the agent's shared listener (conversation.ts AssistantDeps.hearing). Left out: voice is off for the shop. */
   hearing?: AssistantDeps["hearing"];
+  /** The template's declared chat-changeable limits (its src/chat-limits.ts): the owner may tighten them by a card. Left out: limits stay the Operator's. */
+  limits?: readonly ChatLimit[];
   /** The template's record writer, by case id. */
   log(caseId: string | null, phone: string, action: string, outcome: Outcome, inputs: unknown, more: { notes?: string; refs?: Record<string, string>; decisions?: Decision[]; language?: Language }): void;
   /** The template's own words to the owner when the AI allowance runs out or a model fails (the same notices its customers' reader sends). */
@@ -42,11 +46,17 @@ export function assistantForAgent(d: AgentAssistantDeps): Assistant | undefined 
   const s = d.settings;
   if (!s.assistant) return undefined;
   const owner = s.owner.whatsapp;
+  // the limits are one more skill (limits-card.ts), so a card for a limit takes exactly the path of every other card
+  const limits = d.limits ? createLimits({
+    declared: d.limits, settings: s, store: d.store, nowMs: () => d.clock.now(),
+    log: (action, outcome, inputs, refs, notes) => d.log(null, owner, action, outcome, inputs, { refs, ...(notes ? { notes } : {}), language: s.owner.language }),
+  }) : undefined;
+  const skills = limits ? [d.skill, limits.skill] : [d.skill];
   return createAssistant({
     shop: { name: s.name, timezone: s.timezone, owner: s.owner, settings: s.assistant },
-    store: d.store, skills: [d.skill], clock: d.clock, messaging: d.messaging,
+    store: d.store, skills, clock: d.clock, messaging: d.messaging, ...(limits ? { limits } : {}),
     read: createOwnerReader({
-      ...(d.ownerParser ? { parser: d.ownerParser } : {}), kinds: kindsOf([d.skill]), policy: d.policy, store: d.store, clock: d.clock, timeZone: s.timezone,
+      ...(d.ownerParser ? { parser: d.ownerParser } : {}), kinds: kindsOf(skills), ...(limits ? { limitRule: limits.looksLikeRule } : {}), policy: d.policy, store: d.store, clock: d.clock, timeZone: s.timezone,
       log: (action, outcome, inputs, more) => d.log(null, owner, action, outcome, inputs, more),
       tellOwner: d.ownerNotice,
     }),

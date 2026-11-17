@@ -32,7 +32,14 @@ export interface OwnerIntent extends IntentBase {
 }
 
 /** What the reading is told about the shop: the kinds its skills offer. A kind not offered is read but answered "this shop's assistant does not take that". */
-export interface OwnerContext { kinds: readonly OwnerKind[] }
+export interface OwnerContext {
+  kinds: readonly OwnerKind[];
+  /**
+   * Does this text state a rule about one of the shop's declared limits ("refunds above ₹500 need my OK")? Given by the assistant (limits-card.ts looksLikeLimitRule);
+   * left out, nothing is read as a limit rule. Asked only when the words name no case, so "refund ₹500 to b-14" is still a refund.
+   */
+  limitRule?: (text: string) => boolean;
+}
 
 /** The words for each kind, every language together (owners mix them), in the order they are tried. The first kind whose words are in the message wins. */
 const KIND_WORDS: readonly [OwnerKind, readonly string[]][] = [
@@ -104,6 +111,8 @@ export function readOwnerRules(text: string, context: OwnerContext): OwnerIntent
     const at = first(KIND_RES.find(([k]) => k === "message")![1]);
     if (at !== Infinity && KIND_RES.every(([k, re]) => k === "message" || first(re) > at)) { const words = messageWords(text, ref); return { kind: "message", ...base, ...(words ? { words } : {}) }; }
   }
+  // A rule about a limit ("refunds above ₹500 need my OK") names no case: it is read as a limit before the kind words can take it for a refund or a list
+  if (!ref && context.limitRule?.(text)) return { kind: "limit", ...base };
   for (const [kind, re] of KIND_RES) {
     if (!re.test(withoutRef)) continue;
     // A message is only a message to a customer when it names one: "बताओ कल की बुकिंग" (tell me tomorrow's bookings) is a question, not something to send.

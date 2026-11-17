@@ -19,6 +19,8 @@ import { serviceName } from "../src/settings.ts";
 import type { Settings } from "../src/settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { RETRY_DELAYS_MS, createRuntimeCore } from "../../../../modules/runtime/core.ts";
+import { createLimitsKit } from "../../../../modules/limits/runtime-limits.ts";
+import { CHAT_LIMITS } from "../src/chat-limits.ts";
 import type { OwnerSignin } from "../../../../modules/channels/owner-signin.ts";
 import type { LicenceNow } from "../../../../modules/licence/rules.ts";
 import { createBookingsLicenceNotice } from "./licence.ts";
@@ -202,6 +204,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     },
   };
   return createRuntimeCore({
+    // "Limits, tightened by a tap": the limits the owner may change, put into the settings the agent reads before every step (modules/limits/runtime-limits.ts)
+    limits: createLimitsKit({ declared: CHAT_LIMITS, settings, clock, owner: settings.owner }),
     settings, store: options.store, clock, messaging: services.messaging, pathwayVersion: options.pathwayVersion, kit, ai: policy,
     monthly: options.report ? createMonthlyReport(options.report) : undefined,
     // Item 11e: the owner's morning line, from Bookings read-only over the store (no acts; the record's money lines are the job's own to read)

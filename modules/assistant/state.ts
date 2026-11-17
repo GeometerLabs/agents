@@ -6,6 +6,8 @@
 // the days the owner closed, what can still be undone, and the last few lines of the owner's talk in the app. It holds no customer's words except a message the owner
 // asked to send, which goes with its card; the card closes when it is sent or refused, and the words go with it after a day (compactAssistant).
 import { DAY } from "../core/time.ts";
+import { compactChanges } from "../limits/chat-limits.ts";
+import type { LimitChange } from "../limits/chat-limits.ts";
 
 /** What a card does when the owner taps yes: the skill, the case and the exact fields the skill read from its store. Immutable once the card is made. */
 export interface CardAction {
@@ -79,13 +81,19 @@ export interface AssistantState {
   closedDays: string[];
   undo: UndoRecord[];
   talk: TalkLine[];
+  /**
+   * Limits the owner changed (modules/limits/chat-limits.ts): Pending until the deployer reports Guard has the new value, then Active, or Failed. The runtime's own
+   * checks use the tighter of the settings and any pending tightening at once. A store from before has none; assistantOf adds the empty list.
+   */
+  limitChanges: LimitChange[];
 }
 
-export const emptyAssistantState = (): AssistantState => ({ seq: 0, cards: [], refused: [], closedDays: [], undo: [], talk: [] });
+export const emptyAssistantState = (): AssistantState => ({ seq: 0, cards: [], refused: [], closedDays: [], undo: [], talk: [], limitChanges: [] });
 
 /** The state in a store, made on first use. A store from before the assistant has none, and loads as it was. */
 export function assistantOf(store: { assistant?: AssistantState }): AssistantState {
   if (!store.assistant) store.assistant = emptyAssistantState();
+  store.assistant.limitChanges ??= [];
   return store.assistant;
 }
 
@@ -118,6 +126,7 @@ export function compactAssistant(state: AssistantState, nowMs: number, todayIso:
   const days = state.closedDays.filter((d) => d >= todayIso);
   gone += state.closedDays.length - days.length;
   state.closedDays = days;
+  gone += compactChanges(state.limitChanges ??= []);
   if (state.talk.length > TALK_LINES) { gone += state.talk.length - TALK_LINES; state.talk = state.talk.slice(-TALK_LINES); }
   return gone;
 }
