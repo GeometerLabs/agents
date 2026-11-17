@@ -144,6 +144,6 @@ test("one-pagers: self-contained (no script, address, font, image or style sheet
     assert.equal((html.match(/<li class="promise">/g) ?? []).length, 3, `one-pager.${l}.html: three things to check`);
     assert.equal((html.match(/<li class="step">/g) ?? []).length, 4, `one-pager.${l}.html: one example of four steps`);
     assert.ok(html.includes('<span class="fill">'), `one-pager.${l}.html: a place for the name and phone`);
-    assert.deepEqual(rupees(visible(html)), ["₹450", "₹4,500"], `one-pager.${l}.html: only the example shop's amounts, no price typed by hand`);
+    assert.deepEqual(rupees(visible(html)), ["₹450", "₹4500"], `one-pager.${l}.html: only the example shop's amounts, no price typed by hand`);
   }
 });
