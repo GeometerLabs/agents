@@ -12,6 +12,7 @@ import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
+import { KEEP, keepHidden } from "./keep.ts";
 
 /** A phone form with room for this many batches and students. A centre with more is set up by a builder, who can write the file. */
 export const MAX_BATCHES = 6;
@@ -29,6 +30,11 @@ export interface FeesForm {
   reminderDays: string; reminderHour: string; reminderMost: string;
   partAllowed: boolean; partMin: string;
   waiver: string; refund: string;
+  /**
+   * Kept from a centre being changed, never typed (17 Nov, item 7): the id each batch row had, by row, so a renamed batch is still the batch its students' dues and its timetable
+   * belong to. The rest of what the form does not show is put back from the saved settings by keep.ts when the centre is saved.
+   */
+  keepIds?: string[];
 }
 
 const text = (v: string | undefined, max = 120) => (v ?? "").trim().slice(0, max);
@@ -70,6 +76,7 @@ export function feesDraftFromShop(id: string, accountId: string, templateId: str
       address: s.address ?? "", batches, students,
       dueDay: String(s.due.day), graceDays: String(s.due.graceDays), lateFee: String(s.lateFeeInr), reminderDays: s.reminders.daysFromDue.join(", "), reminderHour: String(s.reminders.hour), reminderMost: String(s.reminders.maxPerMonth),
       partAllowed: s.partPayments.allowed, partMin: String(s.partPayments.minInr), waiver: String(s.waiver.limitInr), refund: String(s.refund.limitInr),
+      keepIds: s.batches.slice(0, MAX_BATCHES).map((b) => b.id),
     },
   };
 }
@@ -161,12 +168,17 @@ export function applyFeesRules(draft: Draft, body: Body, w: Words): StepResult {
 
 // ---- the settings, and the folder ---------------------------------------------------------------------------------------------------------
 
-/** The form, the languages and the owner become the Fees settings; `validateSettings` is the last word. */
-export function buildFeesSettings(draft: Draft, example: Settings): Built {
+/**
+ * The form, the languages and the owner become the Fees settings; `validateSettings` is the last word. `saved` is the centre's settings.json as written, for a centre being
+ * changed: everything the form does not show (a student's `backDues`, `joined` and `adult`, the `classes` block's other keys, `joiningMidMonth`, a batch's other names) is put
+ * back from it by keepHidden before the check (keep.ts). Left out (a new centre, a preview): built from the form alone.
+ */
+export function buildFeesSettings(draft: Draft, example: Settings, saved?: unknown): Built {
   const fees = feesOf(draft);
   const languages: Language[] = [draft.primaryLanguage as Language, ...(draft.otherLanguages as Language[])];
-  const rows = fees.batches.filter((b) => b.name !== "" && b.fee !== "");
-  const ids = idsFrom(rows.map((b) => b.name), "batch");
+  const filled = fees.batches.map((b, row) => ({ b, row })).filter(({ b }) => b.name !== "" && b.fee !== "");
+  const rows = filled.map(({ b }) => b);
+  const ids = idsFrom(rows.map((b) => b.name), "batch", filled.map(({ row }) => fees.keepIds?.[row]));
   const names = (n: string) => Object.fromEntries(languages.map((l) => [l, [n]]));
   const lookup = new Map(rows.map((b, i) => [b.name.toLowerCase(), ids[i]]));
   const students = fees.students.split(/\r?\n/u).map((l) => l.trim()).filter((l) => l !== "").map((line) => {
@@ -180,7 +192,7 @@ export function buildFeesSettings(draft: Draft, example: Settings): Built {
   const upi = !providerById(paymentModuleOf(draft))?.gateway;
   const payment = upi && (vpaProblem(draft.payment?.upiId) !== null || payeeProblem(draft.payment?.payee) !== null) ? PREVIEW_PAYMENT : paymentBlock(draft);
   const raw = {
-    name: draft.form.name, ...(fees.address !== "" ? { address: fees.address } : {}), timezone: example.timezone, languages,
+    name: draft.form.name, ...(fees.address !== "" ? { address: fees.address } : {}), timezone: (saved as { timezone?: string } | undefined)?.timezone ?? example.timezone, languages,
     batches: rows.map((b, i) => ({ id: ids[i], names: names(b.name), monthlyFeeInr: whole(b.fee) })),
     students,
     due: { day: whole(fees.dueDay), graceDays: whole(fees.graceDays) }, lateFeeInr: whole(fees.lateFee),
@@ -191,9 +203,10 @@ export function buildFeesSettings(draft: Draft, example: Settings): Built {
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
     ...approversFromDraft(draft),
   };
-  const checked = validateSettings(raw);
-  // `raw` is the shape a builder writes (and `shop add --template fees` takes): the checked settings name a student's batch differently.
-  return checked.ok ? ({ ok: true, settings: checked.settings as never, raw } as Built) : { ok: false, errors: checked.errors };
+  const written = saved === undefined ? raw : keepHidden(raw, saved, KEEP.fees);
+  const checked = validateSettings(written);
+  // `written` is the shape a builder writes (and `shop add --template fees` takes): the checked settings name a student's batch differently.
+  return checked.ok ? ({ ok: true, settings: checked.settings as never, raw: written } as Built) : { ok: false, errors: checked.errors };
 }
 
 /** The centre's limits as one sentence each, in the person's language: the same lines the go-live certificate prints. From the draft when it builds, nothing when it does not yet. */

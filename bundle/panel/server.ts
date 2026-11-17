@@ -1016,10 +1016,11 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     if (!d.shopId) return notFound(r);
     const example = exampleOf(template);
     const own = setupOf(template.setup);
-    const built = own ? own.build(d, example) : buildSettings(d, example);
+    // item 7 (17 Nov): a shop being changed starts from the settings it has saved, so what the form does not show is kept (keep.ts)
+    const before = d.editing ? rawSettings(shops, d.shopId) : undefined;
+    const built = own ? own.build(d, example, before) : buildSettings(d, example, before);
     // What is written is what a builder would write: Fees' settings are checked into another shape (a student's "batch" becomes "batchId"), so its form keeps the shape it was checked from.
     // item 11i: the assistant block the shop had is kept as it was, with this step's character when the step was finished (character.ts withCharacter)
-    const before = d.editing ? rawSettings(shops, d.shopId) : undefined;
     const written = (b: typeof built): unknown => (b.ok ? withCharacter((b as { raw?: unknown }).raw ?? b.settings, d.character, before, d.shopId as string) : undefined);
     const w = r.ctx().w;
     const gateway = providerById(paymentModuleOf(d))?.gateway !== undefined; // B71: a payments service is named only for a shop that chose a gateway
