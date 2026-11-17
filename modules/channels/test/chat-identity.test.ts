@@ -536,3 +536,26 @@ test("'send me my booking link': only the shop's own page links already in the t
     assert.equal(w.fake.outbox().length, 1);
   } finally { w.s.done(); }
 });
+
+// ---- retention: a cleared thread takes its keys, number and ties with it (W2 fix b) ---------------------------------------------------------------------------
+
+test("when the shop's retention clears a thread, the beat drops its keys, number, user id and ties; a thread the shop still has is untouched", () => {
+  const w = linkWorld();
+  try {
+    const a = keep(w.s.identity, H1); const b = keep(w.s.identity, H3);
+    w.s.identity.setNumber(H1, NUMBER, T0); w.s.identity.setNumber(H3, "919822222222", T0);
+    w.s.identity.tie(H2, H1, T0);
+    // the shop still has H3's thread, and H1's was cleared by compactChannel (no guest, no lines)
+    w.channel.chat = { [chatConversationOf(H3)]: { startedMs: T0, lastMs: T0, said: [], day: "2026-11-17", turns: 0, messages: 0 } };
+    w.links.tick({ store: w.store0 });
+    assert.deepEqual(w.s.identity.state(H1), { keys: 0, here: false, number: false });
+    assert.equal(w.s.identity.resolve(H2), H2, "the tied phone is untied");
+    assert.equal(w.s.identity.guestOfNumber(NUMBER), undefined);
+    assert.equal(w.s.identity.signin(H2, RP, softSignin(a.p, signinOptions(w.s.identity, T0 + 1), RP.origin), T0 + 2).ok, false, "the old key opens nothing");
+    assert.deepEqual(w.s.identity.state(H3), { keys: 1, here: true, number: true });
+    assert.equal(w.s.identity.signin(H2, RP, softSignin(b.p, signinOptions(w.s.identity, T0 + 3), RP.origin), T0 + 4).ok, true);
+    // a beat with no state to read (no store) drops nothing
+    w.links.tick();
+    assert.equal(w.s.identity.state(H3).keys, 1);
+  } finally { w.s.done(); }
+});

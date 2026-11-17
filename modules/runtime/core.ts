@@ -391,7 +391,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
       await agent.giveUp?.(event, { service: down!, tell: false });
       givenUp.add(down!);
     }
-    if (event.kind === "tick") { compact(store); signin?.tick({ record }); }
+    if (event.kind === "tick") { compact(store); signin?.tick({ record, store }); } // W2: the store too, so the chat identity can drop what a cleared thread leaves (chat-link-send.ts)
 
     // The owner's licence notice rides on the clock's beat too, after the agent's own work, and saves around its send the same way (modules/licence/notice.ts).
     if (event.kind === "tick" && options.licenceNotice) {

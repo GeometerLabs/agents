@@ -69,8 +69,15 @@ export function createChatLinks(setup: ChatLinksSetup) {
   return {
     takes: (event: { kind: string }): boolean => event.kind === "chat_link",
 
-    /** On the clock's beat: what the identity file keeps past its use goes (chat-identity.ts purge). */
-    tick: (): void => identity.purge(clock.now()),
+    /**
+     * On the clock's beat: what the identity file keeps past its use goes (chat-identity.ts purge), and a thread the shop has cleared (its words went with the conversation
+     * retention, chat.ts compactChannel) takes its keys, number and ties with it. Without the shop's state (a caller that has none) no thread is dropped.
+     */
+    tick: (ctx?: { store?: unknown }): void => {
+      identity.purge(clock.now());
+      const chat = ctx?.store === undefined ? undefined : ((ctx.store as { channel?: ChannelState }).channel?.chat ?? {});
+      if (chat) identity.dropGone((thread) => chatConversationOf(thread) in chat);
+    },
 
     async run(event: ChatLinkEvent, ctx: { messaging: Messaging; record: ActionRecord; store: unknown }): Promise<void> {
       const now = clock.now();
@@ -113,7 +120,7 @@ export type ChatLinks = ReturnType<typeof createChatLinks>;
 export function withChatLinks<S extends { takes(event: { kind: string; message?: unknown }): boolean; run(event: never, ctx: never): Promise<void> }>(signin: S, links: ChatLinks): S {
   return {
     ...signin,
-    tick: (ctx: unknown) => { links.tick(); (signin as unknown as { tick?(c: unknown): void }).tick?.(ctx); },
+    tick: (ctx: { store?: unknown }) => { links.tick(ctx); (signin as unknown as { tick?(c: unknown): void }).tick?.(ctx); },
     takes: (event: { kind: string; message?: unknown }) => links.takes(event) || signin.takes(event),
     run: (event: { kind: string }, ctx: { messaging: Messaging; record: ActionRecord; store: unknown }) => (event.kind === "chat_link" ? links.run(event as ChatLinkEvent, ctx) : (signin.run as (e: unknown, c: unknown) => Promise<void>)(event, ctx)),
   } as S;

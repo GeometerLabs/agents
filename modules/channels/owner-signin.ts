@@ -143,7 +143,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
     },
 
     /** On the clock's beat: the panel's "sign out every device", said once in the record when the runtime first sees it. */
-    tick(ctx: { record: ActionRecord }): void {
+    tick(ctx: { record: ActionRecord; store?: unknown }): void {
       const endBefore = setup.endBefore();
       if (endBefore === undefined) return;
       const ended = access.endAllBefore(endBefore, clock.now());
