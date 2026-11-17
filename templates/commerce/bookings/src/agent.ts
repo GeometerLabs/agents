@@ -83,7 +83,8 @@ import { conversationOf } from "../../../../modules/channels/conversation.ts";
 import { phoneDigits } from "../../../../modules/channels/contact.ts";
 import { CHANNEL_LIMITS, DAY_MS, emptyChannelState } from "../../../../modules/channels/state.ts";
 import type { ChannelState } from "../../../../modules/channels/state.ts";
-import type { ChannelBook, ChannelEvent, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
+import type { ChannelBook, ChannelEvent, ChatMessage, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
+import { chatTurn } from "../../../../modules/channels/chat.ts";
 import type { PageAudio } from "../../../../modules/voice/turn.ts";
 import { ownerItems } from "./channel.ts";
 import type { Heard, VoiceService } from "../../../../modules/voice/voice.ts";
@@ -1391,7 +1392,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const tapped = msg.reply ? intentFromReply(msg.reply.id, settings) : null;
     const { intent, note, understood } = tapped
       ? { intent: tapped, note: undefined, understood: RULES }
-      : await readIntent(msg.text, { rulesOnly: mode.buttons || customer.optedOut, slots: () => candidateSlots(latestBooking(store, phone, ["enquiry", "confirming_details"])?.serviceId) }); // an opted-out customer gets no reply, so no model is paid to read it
+      : await readIntent(msg.text, { rulesOnly: mode.buttons || customer.optedOut || msg.noModel === true, slots: () => candidateSlots(latestBooking(store, phone, ["enquiry", "confirming_details"])?.serviceId) }); // an opted-out customer gets no reply, so no model is paid to read it
     countUnderstood(understood);
     if (intent.language && settings.languages.includes(intent.language)) customer.language = intent.language;
     else if (voiceHeard && !customer.language && settings.languages.includes(voiceHeard.language)) customer.language = voiceHeard.language; // the language they spoke, when the words do not say
@@ -1422,7 +1423,7 @@ export function createAgent(deps: AgentDeps): Agent {
         default:
           if (!licence().takesNewWork) return await pausedReply(phone, "menu");
           // block M: the shop's assistant may answer, from what customers may be told (false: the talk is off, a check failed, or nothing was said; the menu goes as before)
-          if (!msg.reply && await assistant?.talkToCustomer({ phone, text: msg.text, language: languageOf(phone), ...(intent.overrideAttempt ? { overrideAttempt: true } : {}), menu: (askOwner) => (askOwner ? { buttons: buttonsFor(languageOf(phone), ["owner"]) } : { list: serviceList(settings, languageOf(phone)) }) })) return;
+          if (!msg.reply && !msg.noModel && await assistant?.talkToCustomer({ phone, text: msg.text, language: languageOf(phone), ...(intent.overrideAttempt ? { overrideAttempt: true } : {}), menu: (askOwner) => (askOwner ? { buttons: buttonsFor(languageOf(phone), ["owner"]) } : { list: serviceList(settings, languageOf(phone)) }) })) return;
           await tellCustomer(null, phone, ["didnt_understand"], { offer: servicesOffer(["didnt_understand"]) });
       }
     } finally {
@@ -1674,12 +1675,22 @@ export function createAgent(deps: AgentDeps): Agent {
     return assistant.onPageVoice({ ...base, text: "", voiceNote: true, ...(audio ? { audio } : {}) });
   }
 
+
+  /**
+   * W1, the chat on the shop's page: a guest's send is run as the SAME step as a WhatsApp customer's message (the template's own flow first, then the customer talk of block M with
+   * all its checks, then the menu), under the guest's own conversation. modules/channels/chat.ts says how the send is kept, made once and capped.
+   */
+  async function onChatMessage(e: ChatMessage): Promise<void> {
+    await chatTurn({ state: channelState(), ai: store, now: clock.now(), timeZone: tz, kind: "bookings", run: onMessage, setLanguage: (conversation, language) => { if (settings.languages.includes(language)) customerOf(conversation).language = language; } }, e);
+  }
+
   async function handle(event: AgentEvent): Promise<void> {
     noteLicence();
     if (event.kind === "recovery") return onRecovery(event);
     if (event.kind === "channel_request") return onChannel(event);
     if (event.kind === "owner_action") return onOwnerAction(event);
     if (event.kind === "owner_message") return onOwnerPageMessage(event);
+    if (event.kind === "chat_message") return onChatMessage(event);
     if (event.kind === "message") return onMessage(event.message);
     if (event.kind === "payment_event") return onPaymentEvent(event.event);
     if (event.kind === "approval_decision") return refunds.onApprovalDecision(event);

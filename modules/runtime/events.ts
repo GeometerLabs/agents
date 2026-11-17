@@ -43,7 +43,7 @@ export function eventKey(event: IncomingEvent): string {
   // Handling is safe to repeat: the agent looks at the refunds first, and a decision for a hold it no longer has does nothing.
   if (event.kind === "approval_decision") return `approval_decision:${event.approval}:${event.decision}:${event.id ?? ""}`;
   if (event.kind === "recovery") return `recovery:${event.id}`;
-  if (event.kind === "channel_request" || event.kind === "owner_action" || event.kind === "owner_signin" || event.kind === "owner_message") return channelEventKey(event); // the panel gives each request its own id, so pressing a button twice is one request
+  if (event.kind === "channel_request" || event.kind === "owner_action" || event.kind === "owner_signin" || event.kind === "owner_message" || event.kind === "chat_message") return channelEventKey(event); // the panel gives each request its own id, so pressing a button twice is one request
   if (event.kind === "owner_access") return `owner_access:${event.id}`;
   if (event.kind === "limit_settled" || event.kind === "owner_limit") return limitsEventKey(event);
   // the same report sent again is one; a message's delivered and read are two

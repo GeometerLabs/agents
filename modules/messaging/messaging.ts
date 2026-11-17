@@ -33,6 +33,11 @@ export interface InboundMessage {
    */
   image?: true;
   /**
+   * W1 (chat on the shop's page): set by the runtime, never by a person, when this chat guest has used the day's model turns. The agent then reads the words with the rules
+   * only and does not ask the shop's talk model, exactly as in button mode (the buttons and the menu still work). WhatsApp messages never carry it.
+   */
+  noModel?: true;
+  /**
    * Set when the customer tapped a button or a list row instead of writing: the id that row had when we sent it (language/interactive.ts), and which kind it was.
    * `text` is the row's title, as WhatsApp sends it. The agent looks the id up and reads no words, so no model is asked.
    */

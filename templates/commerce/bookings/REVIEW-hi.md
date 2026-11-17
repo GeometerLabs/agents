@@ -1428,4 +1428,38 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.owner.yourShop` | आपकी दुकान | Your shop |  |
 | `owner.money.cashPartLabel` | सिर्फ़ कुछ हिस्सा मिला? कितना (₹) | Received only part? How much (₹) |  |
 | `owner.money.cashPartButton` | यह हिस्सा नकद मिला लिखें | Mark this part received in cash |  |
+| `chat.title` | चैट | Chat |  |
+| `chat.placeholder` | संदेश लिखें | Write a message |  |
+| `chat.send` | भेजें | Send |  |
+| `chat.label` | आपका संदेश | Your message |  |
+| `chat.back` | दुकान का पेज | Shop page |  |
+| `chat.sending` | भेज रहे हैं | Sending |  |
+| `chat.sent` | भेज दिया | Sent |  |
+| `chat.failed` | गया नहीं। फिर से भेजने के लिए दबाएँ। | Not sent. Tap to send again. |  |
+| `chat.retry` | फिर से भेजें | Send again |  |
+| `chat.offline` | आप ऑफ़लाइन हैं। वापस आते ही संदेश चले जाएँगे। | You are offline. Messages will go when you are back. |  |
+| `chat.slow` | जवाब लिख रहे हैं | Writing back |  |
+| `chat.rate` | एक साथ बहुत हो गया। एक मिनट रुकिए, फिर कोशिश करें। | That was a lot at once. Wait a minute, then send again. |  |
+| `chat.capped` | आज के लिए लिखे जवाब बस इतने। नीचे के बटन अब भी चलते हैं। | That is enough typed answers for today. The buttons below still work. |  |
+| `chat.closed` | दुकान अभी बंद है। आप फिर भी पूछ सकते हैं। 10:00–20:00 | The shop is closed now. You can still ask. 10:00–20:00 |  |
+| `chat.paused` | दुकान अभी नया काम नहीं ले रही। आप सवाल पूछ सकते हैं। | The shop is not taking new work just now. You can still ask questions. |  |
+| `chat.empty` | अभी कोई संदेश नहीं। | No messages yet. |  |
+| `chat.gone` | रखने के समय से पुराने संदेश हटा दिए जाते हैं। | Messages older than the keeping time are cleared. |  |
+| `chat.help` | आप क्या करना चाहेंगे? | What would you like to do? |  |
+| `chat.note` | जवाब दुकान के असिस्टेंट से आते हैं। बुकिंग या भुगतान तभी माना जाता है जब दुकान का अपना रिकॉर्ड यही कहे। | Replies come from the shop's assistant. A booking or a payment counts only when the shop's own record says so. |  |
+| `chat.kept` | यह चैट दुकान के फ़ोन पर 30 दिन रखी जाती है। | This chat is kept on the shop's phone for 30 days. |  |
+| `chat.you` | आप | You |  |
+| `chat.shop` | दुकान | Shop |  |
+| `chat.thread` | बातचीत | Conversation |  |
+| `chat.alertsHead` | दुकान जवाब दे तो फ़ोन बजे? | Want a buzz when the shop answers? |  |
+| `chat.onStreetlist` | Streetlist पर | on Streetlist |  |
+| `chat.quick.bookings.1` | दाम देखें | See prices |  |
+| `chat.quick.bookings.2` | समय बुक करें | Book a time |  |
+| `chat.quick.bookings.3` | आप कहाँ हैं? | Where are you? |  |
+| `chat.quick.orders.1` | आज का मेन्यू | Today's menu |  |
+| `chat.quick.orders.2` | ऑर्डर करें | Order |  |
+| `chat.quick.orders.3` | लेने का समय | Pickup times |  |
+| `chat.quick.fees.1` | क्लास का समय | Class timings |  |
+| `chat.quick.fees.2` | फ़ीस | Fees |  |
+| `chat.quick.fees.3` | टीचर से बात करें | Talk to the teacher |  |
 

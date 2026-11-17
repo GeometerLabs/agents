@@ -27,6 +27,12 @@ export const FRONT_LIMITS = {
   signin: { max: 3, perMs: 10 * 60_000 },
   /** Item 11f: sign-in link requests for one shop from every address together (under "shop:<name>"): many addresses cannot fill the runtime's task list with them. */
   shopSignins: { max: 10, perMs: 10 * 60_000 },
+  /** W1, the chat on the shop's page: sends, per address. The runtime has its own rate per guest and per shop (chat.ts CHAT_LIMITS) whatever the address. */
+  chat: { max: 40, perMs: 10 * 60_000 },
+  /** W1: sends to one shop from every address together (under "shop:<name>"). */
+  shopChats: { max: 300, perMs: 10 * 60_000 },
+  /** W1: new guest handles made for one address (a page opened with no cookie): a handle costs nothing, so the door counts how often one address asks for a fresh one. */
+  chatStarts: { max: 10, perMs: 60 * 60_000 },
 } as const satisfies Record<string, Window>;
 
 export type LimitKind = keyof typeof FRONT_LIMITS;
