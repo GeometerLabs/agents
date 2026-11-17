@@ -27,7 +27,7 @@ test("a month chased after a restart: the day the agent first ran is remembered,
     const second = kit.open();
     await second.runtime.tick();
     const sent = kit.messaging.outbox().filter((m) => m.to === PARENT);
-    assert.equal(sent.length, 2, "the Sharmas have two children: one reminder for each");
+    assert.equal(sent.length, 1, "the Sharmas have two children: one reminder that lists both");
     assert.ok(kit.messaging.outbox().length >= 5, "every student's parent was reminded");
     assert.deepEqual(second.runtime.status().fees, { open: 5 });
 

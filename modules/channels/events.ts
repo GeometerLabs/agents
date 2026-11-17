@@ -58,7 +58,14 @@ export type ChannelRequest = ChannelBook | ChannelOrder | ChannelFee | ChannelOt
  */
 export const OWNER_ACTIONS = ["received", "refunded", "kept", "approve", "deny", "retry", "card_yes", "card_no", "send_link", "revoke_link", "cash", "bank"] as const;
 export type OwnerActionName = (typeof OWNER_ACTIONS)[number];
-export interface OwnerAction { kind: "owner_action"; id: string; action: OwnerActionName; case: string; digest: string }
+export interface OwnerAction {
+  kind: "owner_action"; id: string; action: OwnerActionName; case: string; digest: string;
+  /**
+   * Fees, "cash" and "bank" only: the owner marks only THIS much of the fee received by hand (a part), in paise, always whole rupees. Left out: the whole balance, as before.
+   * The agent checks it against the balance shown (src/agent.ts onOwnerCash); the front only checks its shape.
+   */
+  amountPaise?: number;
+}
 
 /**
  * Integration of items 11d and 11e: the owner's words from the talk box on their page, read by the shop's assistant (its answer is shown on the page). From the
@@ -112,7 +119,10 @@ export function checkChannelEvent(raw: unknown): { ok: true; event: ChannelEvent
     if (typeof raw.case !== "string" || !CASE_ID.test(raw.case)) return { ok: false, error: 'An owner_action names its case ("b-3").' };
     if ((raw.action === "card_yes" || raw.action === "card_no") && !CARD_ID.test(raw.case)) return { ok: false, error: 'A card\'s answer names the card ("c-3").' };
     if (typeof raw.digest !== "string" || !DIGEST.test(raw.digest)) return { ok: false, error: "An owner_action carries the digest of the action as it was shown (32 hex digits)." };
-    return { ok: true, event: { kind: "owner_action", id: raw.id, action: raw.action as OwnerActionName, case: raw.case, digest: raw.digest } };
+    // a part of a fee marked received by hand: whole rupees, as paise; any other action ignores it
+    const part = (raw.action === "cash" || raw.action === "bank") && raw.amountPaise !== undefined;
+    if (part && (typeof raw.amountPaise !== "number" || !Number.isInteger(raw.amountPaise) || raw.amountPaise < 100 || raw.amountPaise > 10_000_000_00 || raw.amountPaise % 100 !== 0)) return { ok: false, error: "A part marked received is a whole number of rupees, given as paise (amountPaise)." };
+    return { ok: true, event: { kind: "owner_action", id: raw.id, action: raw.action as OwnerActionName, case: raw.case, digest: raw.digest, ...(part ? { amountPaise: raw.amountPaise as number } : {}) } };
   }
   // item 11f: only the kind and the id are read; anything else sent with it (a number above all) is dropped, never used
   if (raw.kind === "owner_signin") return { ok: true, event: { kind: "owner_signin", id: raw.id } };

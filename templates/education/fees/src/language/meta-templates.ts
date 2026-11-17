@@ -15,11 +15,11 @@ import { localParts } from "../../../../../modules/core/time.ts";
 import { monthLabel } from "../due.ts";
 import { batchName } from "../settings.ts";
 import type { Settings } from "../settings.ts";
-import { dueDate, inr, need, payTo, render } from "./templates.ts";
+import { dueDate, familyLines, inr, need, payTo, render } from "./templates.ts";
 import type { MessageFacts, TemplateId } from "./templates.ts";
 
 /** The record values a template can use, and where each comes from. */
-export type Slot = "business" | "student" | "batch" | "month" | "fee" | "late" | "balance" | "paid" | "received" | "waiver" | "refund" | "limit" | "date" | "link" | "phone" | "ref" | "req" | "code" | "hours" | "upiCode" | "partner" | "openFees" | "page";
+export type Slot = "business" | "student" | "batch" | "month" | "fee" | "late" | "balance" | "paid" | "received" | "waiver" | "refund" | "limit" | "date" | "link" | "phone" | "ref" | "req" | "code" | "hours" | "upiCode" | "partner" | "openFees" | "page" | "lines";
 const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   business: (f) => f.businessName,
   student: (f) => need(f, "studentName"),
@@ -44,6 +44,7 @@ const VALUE: Record<Slot, (f: MessageFacts) => string> = {
   partner: (f) => need(f, "partner"),
   openFees: (f) => String(need(f, "openFeesCount")),
   page: (f) => need(f, "pageLink"),
+  lines: (f) => familyLines(f), // the several fees of a family reminder, as one value (templates.ts)
 };
 
 /** The stand-in values a message is written once with, and the slot each becomes. Each is unlike anything a template says on its own. */
@@ -53,6 +54,9 @@ const STAND_IN_DUE_MS = Date.UTC(2030, 5, 14, 0, 0); // a date no message of our
 const STAND_IN_HOURS = 7_000_009;
 const STAND_IN_COUNT: Partial<Record<Slot, number>> = { openFees: 7_000_010 };
 
+/** The family reminder is written once with one stand-in fee line; the whole rendered line is then the template's `{lines}`. */
+const STAND_IN_FAMILY = [{ studentName: "§student§", batchName: "§batch§", monthLabel: "§month§", balanceInr: 7_000_003, dueMs: STAND_IN_DUE_MS, link: "§link§", dueRef: "§ref§" }];
+
 function standInFacts(language: Language): MessageFacts {
   const facts: MessageFacts = { language, timeZone: "UTC", businessName: STAND_IN_TEXT.business!, dueMs: STAND_IN_DUE_MS, approvalHours: STAND_IN_HOURS, openFeesCount: STAND_IN_COUNT.openFees };
   const set = facts as unknown as Record<string, unknown>;
@@ -60,12 +64,15 @@ function standInFacts(language: Language): MessageFacts {
   for (const [slot, key] of Object.entries(names)) set[key] = STAND_IN_TEXT[slot as Slot];
   const amounts: Partial<Record<Slot, string>> = { fee: "feeInr", late: "lateFeeInr", balance: "balanceInr", paid: "paidInr", received: "receivedInr", waiver: "waiverInr", refund: "refundInr", limit: "waiverLimitInr" };
   for (const [slot, key] of Object.entries(amounts)) set[key] = STAND_IN_AMOUNT[slot as Slot];
+  facts.family = STAND_IN_FAMILY;
   return facts;
 }
 
 /** The message written once with stand-ins, and each stand-in turned into its {slot}: the wording of the template, in a language. */
 function bodyOf(id: TemplateId, language: Language): string {
-  let text = render(id, standInFacts(language));
+  const facts = standInFacts(language);
+  let text = render(id, facts);
+  if (id === "fee_reminder_family" || id === "fee_reminder_family_page") text = text.split(familyLines(facts)).join("{lines}");
   for (const [slot, stand] of Object.entries(STAND_IN_TEXT)) text = text.split(stand!).join(`{${slot}}`);
   for (const [slot, n] of Object.entries(STAND_IN_AMOUNT)) text = text.split(formatInr(n)).join(`{${slot}}`);
   text = text.split(formatDate(localParts(STAND_IN_DUE_MS, "UTC"), language)).join("{date}");
@@ -90,6 +97,9 @@ export const META_TEMPLATES: readonly MetaTemplate<TemplateId>[] = [
   template("fee_overdue_page", "fee_overdue_page", "customer"),
   template("fee_overdue_late_page", "fee_overdue_late_page", "customer"),
   template("fee_page_link", "fee_page_link", "customer"),
+  // 17 Nov 2026: one reminder that lists every open fee of a parent with several children, or with an earlier month unpaid (each line keeps its own link)
+  template("fee_reminder_family", "fee_reminder_family", "customer"),
+  template("fee_reminder_family_page", "fee_reminder_family_page", "customer"),
   template("fee_received", "fee_received", "customer"),
   template("fee_part_received", "fee_part_received", "customer"),
   template("owner_waiver_asks", "owner_waiver_request", "owner"),
@@ -142,6 +152,10 @@ export function exampleFacts(settings: Settings, language: Language): MessageFac
     waiverInr: settings.waiver.limitInr || 100, refundInr: batch.monthlyFeeInr, waiverLimitInr: settings.waiver.limitInr,
     dueMs: Date.UTC(2026, 10, 4, 18, 30), // Thu 5 Nov 2026 at midnight in India
     link: "https://rzp.io/i/example", dueRef: "f-3", requestRef: "q-2", customerPhone: "+919811111111", approvalCode: "K7M2QX", approvalHours: 24, approvalsLeft: 1, upiCode: "P4XR9T", payee: settings.name,
+    family: [
+      { studentName: settings.students[0].name, batchName: batchName(batch, language), monthLabel: monthLabel({ month: "2026-11" }, language), balanceInr: batch.monthlyFeeInr, dueMs: Date.UTC(2026, 10, 4, 18, 30), link: "https://rzp.io/i/example", dueRef: "f-3" },
+      { studentName: settings.students[Math.min(1, settings.students.length - 1)].name, batchName: batchName(batch, language), monthLabel: monthLabel({ month: "2026-10" }, language), balanceInr: batch.monthlyFeeInr, dueMs: Date.UTC(2026, 9, 4, 18, 30), link: "https://rzp.io/i/example2", dueRef: "f-2" },
+    ],
     partner: "Divya, Sri Sai Digital", openFeesCount: 4, pageLink: "https://pages.example/bright-tuition/f/Abc123Def456Ghi789Jkl012Mno345Pq",
   };
 }

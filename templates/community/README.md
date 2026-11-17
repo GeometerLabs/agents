@@ -25,7 +25,7 @@ The built community template, equipment rental, is not here: it runs on the Book
 - **The agent never moves money.** It records and reminds. The group's money stays in the group's own account.
 - **Limits sit outside the AI.** What may be sent, what counts as paid and who may mark a cash payment are rules checked in code, in plain words, and written to the record.
 - **"Done" is judged from records,** not from what the agent or a person says.
-- **Everyone can see the record that is about them,** in their own language, as a signed statement on their own phone. This is the "many witnesses" idea (B28). **B28 is not built.** These specs describe how the statements would work; they claim nothing the code does not do today.
+- **Everyone can see the record that is about them,** in their own language, as a signed statement on their own phone. This is the "many witnesses" idea (B28). **B28's modules are built** (`modules/record`, `modules/papers`: the signed statement, the verify code, the daily fingerprint), **and no community template uses them yet.** These specs describe how the statements would work for a group; they claim nothing the code does not do today.
 - **A change shows.** We say "can't be quietly rewritten without it showing". We do not say tamper-proof, safe or guaranteed.
 - **Legal review comes first.** Each spec names the laws to look at. None of it is legal advice, and none of it has been reviewed by a lawyer.
 - **No earnings claims.** No spec says what anyone will make.

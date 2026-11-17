@@ -59,7 +59,7 @@ test("planned: the limits every community template shares are in every spec's ow
     assert.ok(text.includes("no message after stop"), `${name}: no message after STOP`);
     assert.ok(text.includes("a correction never erases"), `${name}: corrections never erase`);
     assert.ok(text.includes("get legal review before launch"), `${name}: legal review comes first`);
-    assert.ok(text.includes("b28 is not built"), `${name}: it must say the signed statements are not built`);
+    assert.ok(text.includes("b28's modules are built"), `${name}: it must say the modules are built and the spec is not`);
     assert.ok(text.includes("dpdp"), `${name}: data protection`);
     assert.ok(text.includes("counted, published beside the technical results, never graded"), `${name}: the human outcome is counted, not graded`);
   }
@@ -100,7 +100,7 @@ test("planned: planned/README.md and the root README list exactly these specs, a
   assert.ok(section.includes("equipment-rental") && section.includes("templates/commerce/bookings"), "the root README lists equipment rental, built as a Bookings variant");
   assert.ok(planned.includes("not runnable") || planned.includes("It is not runnable"), "planned/README.md says a planned template is not runnable");
   assert.ok(planned.includes("node --test templates/community/"));
-  for (const word of ["B28 is not built"]) assert.ok(planned.includes(word));
+  for (const word of ["B28's modules are built"]) assert.ok(planned.includes(word));
 });
 
 test("planned: every relative link in the specs goes somewhere", () => {

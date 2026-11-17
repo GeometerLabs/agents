@@ -14,12 +14,12 @@ import { META_TEMPLATES } from "../src/language/meta-templates.ts";
 const BASE = "https://pages.example/bright-tuition";
 const LINK = /https:\/\/pages\.example\/bright-tuition\/f\/([A-Za-z0-9_-]{32})/u;
 
-test("with a page, each parent's reminder carries their own private link, the same for both of a parent's children, and only its hash is kept", async () => {
+test("with a page, each parent's reminder carries their own private link (one reminder for both of a parent's children), and only its hash is kept", async () => {
   const w = createWorld({ pageBase: () => BASE });
   await w.goto({ year: 2026, month: 11, day: 2 }, { hour: 10, minute: 0 });
   const sharma = w.textsTo(SHARMA_PARENT).map((t) => LINK.exec(t)?.[1]);
-  assert.equal(sharma.length, 2);
-  assert.ok(sharma[0] && sharma[0] === sharma[1], "one link for the parent, in both children's reminders");
+  assert.equal(sharma.length, 1, "one reminder for both children");
+  assert.ok(sharma[0], "and it carries the parent's one link");
   const rohan = LINK.exec(w.lastTextTo(ROHAN_PARENT))?.[1];
   assert.ok(rohan && rohan !== sharma[0], "another parent's link is another link");
   assert.match(w.lastTextTo(ROHAN_PARENT), /See your children's fees on your private page: .* Please do not share it\./u);

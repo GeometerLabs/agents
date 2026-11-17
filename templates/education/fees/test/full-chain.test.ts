@@ -69,12 +69,12 @@ test("the month opens: a reminder with a payment link goes to each parent, in th
     await openTheMonth(s);
     const w = witnesses(s);
     assert.deepEqual(w.links.map((l) => [l.reference_id, l.amount]), [["f-1.1", 180_000], ["f-2.1", 120_000], ["f-3.1", 150_000], ["f-4.1", 120_000], ["f-5.1", 180_000]]);
-    assert.equal(w.sentTo(SHARMA_PARENT).length, 2, "the Sharmas have two children: one reminder each");
+    assert.equal(w.sentTo(SHARMA_PARENT).length, 1, "the Sharmas have two children: one reminder that lists both");
     for (const parent of [SHARMA_PARENT, MEERA_PARENT, KIRAN_PARENT, ROHAN_PARENT]) {
       const sent = w.sentTo(parent);
       assert.ok(sent.length >= 1, parent);
       assert.equal(sent[0].kind, "template", "the parent has not written, so the 24-hour window is closed and a reminder goes as an approved template");
-      assert.equal(sent[0].templateName, "fee_reminder");
+      assert.equal(sent[0].templateName, parent === SHARMA_PARENT ? "fee_reminder_family" : "fee_reminder");
     }
     assert.equal(languageOfScript(w.sentTo(SHARMA_PARENT)[0].text), "hi");
     assert.equal(languageOfScript(w.sentTo(MEERA_PARENT)[0].text), "ml");

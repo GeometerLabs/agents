@@ -39,6 +39,7 @@ import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
 import { CHAT_LIMITS } from "./chat-limits.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import { feesSkill } from "./assistant.ts";
+import type { FeesActs } from "./assistant.ts";
 import { newHandle, parentLinkHash } from "../../../../modules/channels/handle.ts";
 import type { ChannelEvent, ChannelFee, OwnerAction, OwnerMessage } from "../../../../modules/channels/events.ts";
 import type { PageAudio } from "../../../../modules/voice/turn.ts";
@@ -57,6 +58,7 @@ import { detectLanguage } from "../../../../modules/understanding/rules.ts";
 import { ensureLink as makeLink } from "../../../../modules/payments/links.ts";
 import type { Payment, PaymentEvent, PaymentRequest, Payments } from "../../../../modules/payments/payments.ts";
 import { createRefunds, recheckLine } from "../../../../modules/payments/refunds.ts";
+import type { RefundResult } from "../../../../modules/payments/refunds.ts";
 import { feesAccounting } from "./accounting.ts";
 import type { Action, ActionRecord, Outcome } from "../../../../modules/record/record.ts";
 import { takeDue } from "../../../../modules/reminders/reminders.ts";
@@ -65,7 +67,7 @@ import { RULES } from "../../../../modules/understanding/model.ts";
 import { createReader } from "../../../../modules/understanding/reader.ts";
 import { coerceIntent } from "./adapters/model.ts";
 import type { Intent, IntentParser, ParseOptions } from "./adapters/model.ts";
-import { CASH_LINK, balanceInr, balancePaise, duesOf, factsFor, monthKey, moveTo, newDue, newRequestId, openDues, owedPaise, paidPaise, register } from "./due.ts";
+import { CASH_LINK, balanceInr, balancePaise, duesOf, factsFor, monthKey, monthLabel, moveTo, newDue, newRequestId, openDues, owedPaise, paidPaise, register } from "./due.ts";
 import type { CountedPayment, Customer, Due, Pending, Store } from "./due.ts";
 import { LABELS, buttonsFor, intentFromReply } from "./language/interactive.ts";
 import type { Choice } from "../../../../modules/language/interactive.ts";
@@ -80,9 +82,10 @@ import { readSettlementsOnce } from "../../../../modules/accounting/settlements.
 import type { ButtonId } from "./language/interactive.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
-import type { MessageFacts, TemplateId } from "./language/templates.ts";
+import type { FamilyLine, MessageFacts, TemplateId } from "./language/templates.ts";
 import { checkFeeLink, checkMessageMatchesRecord, checkNoReminderOncePaid, checkOneRefundPerPayment, checkPaidOnlyWhenRecorded, checkReminderCap, checkRefundLimit, checkWaiver } from "./limits.ts";
-import { highestDueInr } from "./settings.ts";
+import { batchName, batchOf, highestDueInr } from "./settings.ts";
+import { feeForMonth, isJoiningMonth, parseJoined } from "./joining.ts";
 import type { Settings } from "./settings.ts";
 
 export interface AgentDeps {
@@ -146,7 +149,7 @@ const HOURLY = HOUR; // the owner is told about the same parent at most this oft
 
 /** Buttons with words above them; `choices` are the owner's UPI buttons (each carries its one-use code) instead of the named ones. */
 type Offer = { kind: "buttons"; buttons: ButtonId[]; dueId?: string; body?: TemplateId[]; choices?: Choice[] };
-interface SayArgs { booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; /** Item 11h: the parent's private page, in a message to that parent only. */ pageLink?: string }
+interface SayArgs { family?: FamilyLine[]; booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; /** Item 11h: the parent's private page, in a message to that parent only. */ pageLink?: string }
 
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, messaging, parser, record, store } = deps;
@@ -203,12 +206,12 @@ export function createAgent(deps: AgentDeps): Agent {
     owner: { whatsapp: owner, language: settings.owner.language },
     languageOf: (phone, due) => languageOf(phone, due),
     optedOut: (phone) => customerOf(phone).optedOut,
-    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode, ...(a.pageLink && a.to === "customer" ? { pageLink: a.pageLink } : {}) }),
+    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode, ...(a.family ? { family: a.family } : {}), ...(a.pageLink && a.to === "customer" ? { pageLink: a.pageLink } : {}) }),
     interactiveFor: (a, facts, language): InteractiveMessage => {
       const offer = a.offer!;
       return { body: (offer.body ?? a.templates).map((id) => render(id, facts)).join(" "), buttons: offer.choices ?? buttonsFor(language, offer.buttons, offer.dueId) };
     },
-    inputsOf: (a) => ({ refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef }),
+    inputsOf: (a) => ({ ...(a.family ? { family: a.family.map((l) => l.dueRef) } : {}), refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef }),
     gates: (a) => {
       const due = a.booking;
       const out: Decision[] = [];
@@ -461,6 +464,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- payment links: one for what is still owed ---------------------------------------------------------------------
 
+  const batchById = (id: string) => settings.batches.find((b) => b.id === id);
   const linkOf = (due: Due) => due.links.find((l) => l.id === due.currentLinkId);
   const paidOnLink = (due: Due, linkId: string) => due.payments.filter((p) => p.linkId === linkId).reduce((n, p) => n + p.amountPaise, 0);
 
@@ -559,25 +563,45 @@ export function createAgent(deps: AgentDeps): Agent {
     const now = clock.now();
     const today = localParts(now, tz);
     const next = today.month === 12 ? { year: today.year + 1, month: 1 } : { year: today.year, month: today.month + 1 };
+    const rule = settings.joiningMidMonth ?? "usual"; // "usual" runs exactly the code that was here before the rule existed
     for (const student of settings.students) {
+      const language = student.language ?? store.customers.get(student.parent)?.language ?? settings.languages[0];
+      const has = (key: string) => [...store.dues.values()].some((d) => d.customer === student.parent && d.studentName === student.name && d.month === key);
+      // Earlier months the owner listed as unpaid when the agent started: each is a fee of its own (its own link and payments), opened once and reminded now
+      for (const back of student.backDues ?? []) {
+        if (has(back.month)) continue;
+        const [year, month] = back.month.split("-").map(Number);
+        const date = dueDateOf(year, month);
+        const due = register(store, newDue(settings, student, language, back.month, date, dueMsOf(date), back.amountInr));
+        due.backDue = true;
+        due.reminders = [{ atMs: now, sent: false }];
+        books.post({ kind: "fee_charged", case: due.id, amountPaise: due.feeInr * 100 }, (m) => log(due, due.customer, "open_fee", "confirmed", { month: back.month, feeInr: due.feeInr, backDue: true }, { refs: { month: back.month, amountPaise: String(due.feeInr * 100), backDue: "true", ...m }, notes: `an earlier unpaid month for ${due.studentName} (${back.month}), entered by the owner in the settings, carried as a fee of its own` }));
+      }
+      const joined = rule !== "usual" && student.joined ? parseJoined(student.joined) : undefined;
       for (const m of [{ year: today.year, month: today.month }, next]) {
         const key = monthKey(m);
-        if ([...store.dues.values()].some((d) => d.customer === student.parent && d.studentName === student.name && d.month === key)) continue;
-        const date = dueDateOf(m.year, m.month);
+        if (has(key)) continue;
+        const owed = feeForMonth(rule, batchOf(settings, student).monthlyFeeInr, joined, m.year, m.month);
+        if (!owed.owed) continue; // not joined yet, or the centre starts a mid-month joiner's fee next month
+        const joiningNow = isJoiningMonth(joined, m.year, m.month);
+        let date = dueDateOf(m.year, m.month);
+        // a student who joins after the due day is due on the joining day, so the grace days (and any late fee) count from then, not from a day before they came
+        if (joiningNow && dueMsOf(date) < dueMsOf(joined!)) date = joined!;
         const moments = reminderMoments(date);
         if (now < Math.min(...moments)) continue;
-        if (Math.min(...moments) < store.startedAtMs) continue; // its first reminder day came before the agent first ran: that month is not chased
-        const due = register(store, newDue(settings, student, student.language ?? store.customers.get(student.parent)?.language ?? settings.languages[0], key, date, dueMsOf(date)));
+        if (!joiningNow && Math.min(...moments) < store.startedAtMs) continue; // its first reminder day came before the agent first ran: that month is not chased (a new joiner's fee is new, so it is)
+        const due = register(store, newDue(settings, student, language, key, date, dueMsOf(date), owed.feeInr));
+        if (owed.part) due.partMonth = owed.part;
         // Every reminder day is kept, the ones that have passed too: opened on the first reminder's day, or later, the ones already due go as ONE message (the shared rule).
         due.reminders = moments.map((atMs) => ({ atMs, sent: false }));
-        books.post({ kind: "fee_charged", case: due.id, amountPaise: due.feeInr * 100 }, (m) => log(due, due.customer, "open_fee", "confirmed", { month: key, feeInr: due.feeInr }, { refs: { month: key, amountPaise: String(due.feeInr * 100), ...m }, notes: `the fee for ${due.studentName}, ${key}, is open` }));
+        books.post({ kind: "fee_charged", case: due.id, amountPaise: due.feeInr * 100 }, (m2) => log(due, due.customer, "open_fee", "confirmed", { month: key, feeInr: due.feeInr }, { refs: { month: key, amountPaise: String(due.feeInr * 100), ...(owed.part ? { partMonth: owed.part.rule, joined: owed.part.joined } : {}), ...m2 }, notes: owed.part ? `the fee for ${due.studentName}, ${key}, is open (the student joined on ${owed.part.joined}: ${owed.part.rule === "prorata" ? `${owed.part.days} of ${owed.part.daysInMonth} days` : "the full month"}, by the centre's rule)` : `the fee for ${due.studentName}, ${key}, is open` }));
       }
     }
   }
 
   /** The grace days are over and the fee is not paid: add the late fee once. It is read from the payment record first, so a fee paid on the last day gets none. */
   async function addLateFee(due: Due): Promise<void> {
-    if (settings.lateFeeInr <= 0 || due.lateFeeInr > 0 || due.state !== "open") return;
+    if (settings.lateFeeInr <= 0 || due.lateFeeInr > 0 || due.state !== "open" || due.backDue) return; // a carried back due has the amount the owner gave: no late fee on top
     if (customerOf(due.customer).optedOut) return; // a parent who has asked for no messages cannot be told of a new charge, so none is added
     const after = zonedToMs(addDays(due.dueDate, settings.due.graceDays + 1), MIDNIGHT, tz);
     if (clock.now() < after) return;
@@ -616,7 +640,18 @@ export function createAgent(deps: AgentDeps): Agent {
       }
       return; // the reminder stays due and is tried again
     }
+    // A parent with more than one open fee (two children, or an earlier month still unpaid) gets ONE message that lists them all, each with its own link
+    const others = await otherOpenFees(due, now);
     takeDue(due.reminders, now);
+    if (others.length > 0) {
+      for (const o of others) if (o.reminders.some((x) => !x.sent && x.atMs <= now)) { takeDue(o.reminders, now); if (o.remindersSent < settings.reminders.maxPerMonth) o.remindersSent += 1; }
+      const lines = [due, ...others].sort((a, b) => a.dueMs - b.dueMs).map((d): FamilyLine => ({ studentName: d.studentName, batchName: batchName(batchById(d.batchId)!, due.language), monthLabel: monthLabel(d, due.language), balanceInr: balanceInr(d), dueMs: d.dueMs, link: linkOf(d)!.url, dueRef: d.id }));
+      const pageOfFamily = linkFor(due.customer); // a centre with a page: the one message also carries the parent's private page, as every reminder does
+      const sentFamily = await tellCustomer(due, due.customer, [pageOfFamily ? "fee_reminder_family_page" : "fee_reminder_family"], { reminder: true, readOk: true, offer: ownerButton, family: lines, ...(pageOfFamily ? { pageLink: pageOfFamily.url } : {}) });
+      if (sentFamily) due.remindersSent += 1;
+      if (sentFamily && pageOfFamily) keepLink(due.customer, pageOfFamily.token, "reminder");
+      return;
+    }
     const startOfToday = zonedToMs({ year: localParts(now, tz).year, month: localParts(now, tz).month, day: localParts(now, tz).day }, MIDNIGHT, tz);
     // item 11h: with a page, the reminder carries the parent's private link (the same one while its hash is the saved one, else a new one); without, it is as it was
     const pageLink = linkFor(due.customer);
@@ -625,6 +660,25 @@ export function createAgent(deps: AgentDeps): Agent {
     const sent = await tellCustomer(due, due.customer, [template], { reminder: true, readOk: true, offer: feeButtons(due), image: await qrOf(due), ...(pageLink ? { pageLink: pageLink.url } : {}) });
     if (sent) due.remindersSent += 1;
     if (sent && pageLink) keepLink(due.customer, pageLink.token, "reminder");
+  }
+
+  /**
+   * The parent's other open fees to list with this one: each is read from the payments service first and counted (a fee the record shows paid is never listed, and the
+   * "no reminder once paid" check runs for it too), and has a link for exactly what is still owed. A fee whose record could not be read, or whose link could not be made,
+   * is left out and gets its own reminder when its turn comes. Only fees that are owed now are listed: their reminder is due, or their due date has passed.
+   */
+  async function otherOpenFees(due: Due, now: number): Promise<Due[]> {
+    const out: Due[] = [];
+    for (const o of openDues(store, due.customer)) {
+      if (o === due || o.state !== "open" || !(o.reminders.some((x) => !x.sent && x.atMs <= now) || o.dueMs <= now)) continue;
+      const read = await reconcile(o);
+      await settle(o, read.fresh);
+      if (o.state !== "open" || !read.ok || balancePaise(o) <= 0) continue;
+      if (checkNoReminderOncePaid({ record, dueId: o.id, owedPaise: owedPaise(o), readOk: true }).verdict === "block") continue;
+      if (!(await currentLink(o)).ok || !linkOf(o)) continue;
+      out.push(o);
+    }
+    return out;
   }
 
   // ---- item 11h: the parent's private link -------------------------------------------------------------------------------------------------------------
@@ -752,7 +806,8 @@ export function createAgent(deps: AgentDeps): Agent {
 
   /**
    * Money clarity: the owner marks an open fee paid in cash (or by a bank transfer the agent cannot see), from their page's "paid another way?" list. The page showed the
-   * fee with a digest of its balance and payments; with any other digest nothing is done. The mark is for the whole balance, counted as a payment of its own kind
+   * fee with a digest of its balance and payments; with any other digest nothing is done. The mark is for the whole balance (or, with `amountPaise`, a part of it: each mark
+   * is a payment of its own and a record line of its own, and the fee stays open for the rest), counted as a payment of its own kind
    * (CASH_LINK) and written to the record as the owner's mark ("owner_marked_paid", with `via: "cash"`), which is exactly what the rules read as the record showing the
    * money: the parent is told it was received, reminders stop, the accounts count it (modules/accounting; the owner's money page shows it), and a UPI centre's report counts it as marked by the owner; a gateway centre's signed report does not yet (modules/Deferred.md, "The accounting module"). Open payment links are closed, so a payment that still
    * comes on one is counted and goes back as an extra. Nothing is sent to a payments service, and no rule of Guard or of the ledger changes.
@@ -764,12 +819,20 @@ export function createAgent(deps: AgentDeps): Agent {
       log(due, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "the fee is not as the owner's page showed it (paid, waived or changed since): nothing was marked" });
       return;
     }
-    const amountPaise = balancePaise(due);
+    const balance = balancePaise(due);
+    // The whole balance, or (17 Nov 2026) only a part the owner typed: whole rupees, at least ₹1, never more than what is owed. A part leaves the fee open for the rest.
+    const amountPaise = e.amountPaise ?? balance;
+    if (amountPaise < 100 || amountPaise % 100 !== 0 || amountPaise > balance) {
+      log(due, owner, "owner_page_action", "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "the amount marked is not whole rupees, or is more than what is owed on the fee: nothing was marked" });
+      return;
+    }
     const via = e.action === "bank" ? "bank" : "cash"; // Q7: the owner says which, and the books file it under cash in hand or the bank
     const counted: CountedPayment = { id: `cash-${due.id}-${due.payments.filter((p) => p.linkId === CASH_LINK).length + 1}`, amountPaise, linkId: CASH_LINK };
     due.payments.push(counted);
     log(due, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: "the owner marked this fee paid in cash (or by a transfer the agent cannot see) on their private page" });
     books.post({ kind: "received", case: due.id, paymentId: counted.id, amountPaise, method: via, evidence: "owner_mark", for: "fee" }, (m) => log(due, owner, MARK_ACTIONS.marked, "confirmed", { via, amountPaise }, { refs: { paymentId: counted.id, amountPaise: String(amountPaise), markedBy: "owner", via, ...m }, notes: "marked paid by owner: paid by hand (cash or a bank transfer), from the owner's own page; no payments service holds it" }));
+    // a part marked: the link the parent pays is made again for exactly what is still owed (the old one is closed if it can be), before they are told it was received
+    if (amountPaise < balance) await currentLink(due);
     await settle(due, [counted]);
     if (due.state !== "open") await closeOpenLinks(due);
   }
@@ -1065,10 +1128,19 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     log(due, owner, "owner_decision", "confirmed", { command }, { decisions: [once, limit], refs: said });
-    if (ownerRefunds) { await oweBack(due, pending.paymentId, pending.amountInr * 100, "the owner approved the refund the parent asked for", [once, limit]); return; }
-    // with other approvers (B37) the owner is named as asking for it: if Guard holds it, someone else approves it
-    const result = await requestRefund(due, pending.paymentId, pending.amountInr, [once, limit], overLimit(pending.amountInr), askedByOwner);
-    await afterRefund(due, result, { paymentId: pending.paymentId, amountInr: pending.amountInr, done: { customer: "fee_refund_approved" }, held: "fee_refund_pending", requestedBy: askedByOwner });
+    await sendOwnerRefund(due, pending.paymentId, pending.amountInr, "the owner approved the refund the parent asked for", [once, limit]);
+  }
+
+  /**
+   * A refund the owner has decided on, the one path for every way the owner can decide it: "approve q-3" (a parent asked) and the shop's assistant's refund card. The
+   * checks (one refund for a payment, the limit with the owner's yes) were made by the caller and are recorded with the refund. A UPI centre's owner pays it back by hand
+   * (recorded as owed); a gateway refund goes through Guard like any other (held above the limit), and the owner is named as asking when others approve (B37).
+   */
+  async function sendOwnerRefund(due: Due, paymentId: string, amountInr: number, why: string, decisions: Decision[]): Promise<RefundResult | "owed"> {
+    if (ownerRefunds) { await oweBack(due, paymentId, amountInr * 100, why, decisions); return "owed"; }
+    const result = await requestRefund(due, paymentId, amountInr, decisions, overLimit(amountInr), askedByOwner);
+    await afterRefund(due, result, { paymentId, amountInr, done: { customer: "fee_refund_approved" }, held: "fee_refund_pending", requestedBy: askedByOwner });
+    return result;
   }
 
   // ---- events --------------------------------------------------------------------------------------------------------------
@@ -1260,11 +1332,36 @@ export function createAgent(deps: AgentDeps): Agent {
     log(null, phone, GUARD_WAIT_ENTRY, "failed", line.inputs, { notes: line.notes, refs: line.refs });
   }
 
+  // ---- the owner's cancel and refund from the chat (the shop's assistant's acts) ---------------------------------------------------------------------------
+  // The skill adds no way to move money of its own: each act is a path the agent already has, with the same limits. A cancel is the owner's waiver of the whole balance (the
+  // very applyWaiver of "approve q-3"), after the record is read again; a refund is the owner's decision sent as the same refund ("approve q-4" on a parent's request).
+  const feesActs: FeesActs = {
+    owner, ownerRefunds,
+    async cancelFee(due, amountInr) {
+      const { fresh } = await reconcile(due);
+      await settle(due, fresh);
+      // only this exact action: the fee is still open and still owes what the card showed
+      if (due.state !== "open" || balanceInr(due) !== amountInr || amountInr < 1) return false;
+      const decision = checkWaiver({ amountInr, balanceInr: balanceInr(due), alreadyWaivedInr: due.waivedInr, limitInr: settings.waiver.limitInr, ownerApproved: true });
+      if (decision.verdict !== "allow") { log(due, owner, "waive_fee", "blocked", { amountInr }, { decisions: [decision], notes: "the owner's cancel of this fee was not applied" }); return false; }
+      await applyWaiver(due, amountInr, "owner", [decision]);
+      if (due.state !== "open") await closeOpenLinks(due); // nothing more is asked on this fee
+      return due.state !== "open";
+    },
+    async refund(due, paymentId, amountInr, why) {
+      const payment = await payments.fetchPayment(paymentId).catch(() => null);
+      const once = checkOneRefundPerPayment({ paymentId, refundedPaise: payment?.amount_refunded ?? 0 });
+      const limit = checkRefundLimit({ amountInr, limitInr: settings.refund.limitInr, paidInr: (payment?.amount ?? 0) / 100, ownerApproved: true });
+      if (once.verdict === "block" || limit.verdict === "block") { log(due, owner, "refund", "blocked", { paymentId, amountInr }, { decisions: [once, limit], refs: { paymentId, amountPaise: String(amountInr * 100) }, notes: "the owner's refund from the shop's assistant was not sent" }); return "denied"; }
+      return sendOwnerRefund(due, paymentId, amountInr, why, [once, limit]);
+    },
+  };
+
   // ---- item 11e: the shop's assistant (modules/assistant) -------------------------------------------------------------
   // On only when the settings have an "assistant" block. Fees is its one skill here; answering what waits is the owner's own fixed reply (src/assistant.ts).
   const assistant = assistantForAgent({
     limits: CHAT_LIMITS, // "Limits, tightened by a tap" (chat-limits.ts): the owner may tighten these by a card
-    settings, store, skill: feesSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg) }),
+    settings, store, skill: feesSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false, answer: (msg) => onOwnerMessage(msg), entries: () => record.entries(), acts: feesActs }),
     clock, messaging, record, policy, ...(deps.ownerParser ? { ownerParser: deps.ownerParser } : {}), ...(deps.talker ? { talker: deps.talker } : {}),
     // the owner's voice notes (B29 with item 11e): the same shared listener as a customer's (voice allowed, the day's count, the month's spend), never leaving the owner out
     ...(deps.voice ? { hearing: { hear: createListener({ voice: deps.voice, reader, isCommander: () => false, optedOut: () => false }) } } : {}),
