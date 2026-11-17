@@ -248,3 +248,24 @@ export function createLimits(d: LimitsDeps) {
   return { skill, read: (text: string, forced?: string) => readLimitRequest(text, d.declared, forced), say, unannounced, inForceNow, declared: d.declared, looksLikeRule: (text: string) => looksLikeLimitRule(text, d.declared) };
 }
 export type Limits = ReturnType<typeof createLimits>;
+
+// ---- for the native reviewer ----------------------------------------------------------------------------------------------------------------------------------
+
+/**
+ * Every line of this file's words in one language, by id, for the review sheets (bundle/panel/review.ts, ids "limits.*"): the shared limits' names and rules, the card's
+ * question and every other message, each with a sample value so a reviewer reads a whole sentence. The real writer notes values for the outgoing check; this one does not.
+ */
+export function limitReviewLines(language: Language, limits: Record<string, { name: Record<Language, string>; rule: Record<Language, string> }>): Record<string, string> {
+  const w: LimitWriter = { inr: (paise) => `₹${paise / 100}`, n: String, lit: (t) => t };
+  const sample: LimitView = { id: "refund_limit", unit: "inr", zeroIsOff: false, name: limits.refund.name, rule: limits.refund.rule };
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(limits)) { out[`${k}.name`] = v.name[language]; out[`${k}.rule`] = v.rule[language]; }
+  out.card = limitCardLine({ ...sample, now: 1000, to: 500 }, language, w);
+  out.never = NEVER[language];
+  for (const s of [
+    { what: "pending", limit: sample, to: 500 }, { what: "active", limit: sample, to: 500 }, { what: "failed", limit: sample, from: 1000, why: "Guard did not answer" },
+    { what: "not_tighter", limit: sample, now: 200, to: 500 }, { what: "need_value", limit: sample }, { what: "which", limits: [sample] }, { what: "loosen_app" },
+  ] as LimitSay[]) out[`say.${s.what}`] = limitLine(s, language, w);
+  out.notTighterRefusal = NOT_TIGHTER_REFUSAL[language];
+  return out;
+}
