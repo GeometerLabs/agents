@@ -6,9 +6,9 @@
 
 | Left open | Why | Revisit when |
 | --- | --- | --- |
-| **The code.** No settings reader, no ledger, no reminders, no statements | Specs first | Fee and dues collection (B16) exists, then the shared modules are moved out of Bookings (B30) |
-| **Records anyone can check (B28):** the signed statements, the verify code, the public daily fingerprint, the verify page on geometer.dev | Not built. The specs describe it as planned. The verify page needs the owner's yes before any deploy | B28 is built |
-| **Voice (B29):** read-aloud statements, voice notes | Not built | B29 is built (Phase 2 in the plan) |
+| **The code.** No settings reader, no ledger, no reminders, no statements | Specs first | A real group is found, the legal review is done and a group payment provider is chosen. B16 (Fees) and the shared modules (B30, `modules/`) are built; a community template would grow from them |
+| **Records anyone can check (B28):** the signed statements, the verify code, the public daily fingerprint, the verify page on geometer.dev | The modules are built (`modules/record`, `modules/papers`, read 17 Nov 2026); no community template uses them, and the verify page on geometer.dev needs the owner's yes before any deploy | A community template is built on them and the owner says yes to the page |
+| **Voice (B29):** read-aloud statements, voice notes | The voice module is built (`modules/voice`); no community template reads a statement aloud or takes a meeting's voice note yet | A community template is built and a group wants it |
 | **Legal review.** Chit funds, money lending, deposit schemes, trusts and societies, FCRA, DPDP | No lawyer has read any spec. The specs name laws to ask about, not conclusions | Before any launch, per state |
 | **A payment provider that gives a group an account and a record the agent can read.** A self-help group or a committee may not be able to open one | If none will, UPI payments to the group's bank account become "marked by" entries too, and the statement says "not checked with the bank" for them | A provider is chosen and tried with a real group |
 | **Price and who pays** | A group is not a shop. Open question for Geometer | Geometer decides; then the sell guides can name one |

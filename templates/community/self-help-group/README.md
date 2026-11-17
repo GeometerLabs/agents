@@ -1,6 +1,6 @@
 # Self-help group savings and repayments (planned)
 
-> **Status: a spec, not a template.** Nothing here runs, and no group has used it. Comment on it in this repository's GitHub Discussions. It would be built on the fee and dues collection template (B16), after that exists. Read [../README.md](../README.md) first.
+> **Status: a spec, not a template.** Nothing here runs, and no group has used it. Comment on it in this repository's GitHub Discussions. It would be built on the fee and dues collection template (B16, built as Fees), but it needs a real group, a legal review and a payment provider for groups first. Read [../README.md](../README.md) first.
 
 ## The job
 
@@ -65,7 +65,7 @@ The statement totals show the two apart: "₹X by UPI, ₹Y marked as cash". Whe
 
 ## The member statement
 
-After each meeting every member gets a **signed statement** in her language: her own payments, the group's totals, and what was not checked. This is the "many witnesses" idea (B28): the same record is on every member's phone, so a quiet change by one person would not match the other copies. **B28 is not built, and nothing here is claimed until it is.**
+After each meeting every member gets a **signed statement** in her language: her own payments, the group's totals, and what was not checked. This is the "many witnesses" idea (B28): the same record is on every member's phone, so a quiet change by one person would not match the other copies. **B28's modules are built (signed statements, record, verify code: `modules/record`, `modules/papers`); this spec is not, and nothing here is claimed until a real group has used it.**
 
 What a member sees (made-up numbers):
 
@@ -166,7 +166,7 @@ Follows [../../SELL-GUIDE.md](../../SELL-GUIDE.md). The seller is a young local 
 | 8 | The setup visit | At a meeting with everyone present: each member joins by her own message; choose the treasurer, the book-keeper and the dispute person; enter the contribution and the meeting day; enter the loans from the group's own book, confirmed by a second person; read the opening balances aloud and have each member agree hers; test payment; the certificate read aloud; paper copies. Say what platform access it needs (a WhatsApp number for the group's setup, the group's own payment account) and how long it takes |
 | 9 | The first month | Be at the first meeting. Read the first statements together. Ask the book-keeper what changed for her. Ask for one introduction, never a reward |
 | 10 | When something goes wrong | Stop it first. Tell the leaders before the members find out. Look at the record with the book-keeper. A wrong payment is corrected by a line, never erased |
-| 11 | Be honest about what's true today | Dated. This is a spec: nothing is built, no group has used it, the statements and the public fingerprints are planned (B28), and no lawyer has reviewed it |
+| 11 | Be honest about what's true today | Dated. This is a spec: nothing is built, no group has used it, the signed-statement modules (B28) are built but no community template uses them, and no lawyer has reviewed it |
 
 ## Questions for contributors
 
@@ -179,4 +179,4 @@ Follows [../../SELL-GUIDE.md](../../SELL-GUIDE.md). The seller is a young local 
 
 ## What this spec does not claim
 
-It does not claim the template exists, that any law is satisfied, that a member's savings are protected, or that records can't be altered. It claims one thing about the design: a change to the record would show, because every member holds a signed copy of her own page. That claim is not true until B28 is built.
+It does not claim the template exists, that any law is satisfied, that a member's savings are protected, or that records can't be altered. It claims one thing about the design: a change to the record would show, because every member holds a signed copy of her own page. That claim is not true until a community template uses the built signed-statement modules (B28) with a real group.
