@@ -91,8 +91,8 @@ for (const lang of LANGS) {
   test(`Fees in ${lang}, through the built modules: the first reminder is already there, the parent says they paid (nothing yet), then pays with test money`, async () => {
     const built = await load("demo/fees/index.js");
     const quick = built.createQuick(await built.makeShop(lang));
-    // One reminder per child: the Hindi example family (the Sharmas) has two children at the centre, every other family one.
-    assert.equal(quick.logs.customer.length, lang === "hi" ? 2 : 1, "the reminders went out on their own, one for each child");
+    // One reminder per parent: the Hindi example family (the Sharmas) has two children at the centre, and since 17 Nov a parent with several open fees gets ONE reminder that lists them (fee_reminder_family).
+    assert.equal(quick.logs.customer.length, 1, "the reminder went out on its own, one for the parent");
     for (const reminder of quick.logs.customer) assert.match(reminder.text, /pay\.example/u);
     assert.ok(quick.shop.payable());
     await quick.say("customer", quick.shop.chips[0]);

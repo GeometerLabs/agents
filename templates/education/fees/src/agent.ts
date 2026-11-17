@@ -578,7 +578,9 @@ export function createAgent(deps: AgentDeps): Agent {
         const date = dueDateOf(year, month);
         const due = register(store, newDue(settings, student, language, back.month, date, dueMsOf(date), back.amountInr));
         due.backDue = true;
-        due.reminders = [{ atMs: now, sent: false }];
+        // Reminded at the centre's own reminder hour, not at whatever minute the agent first ran (a reminder at 09:00 when the centre said 10:00 is not what was promised, and
+        // would go alone, an hour before the month's own reminder that lists it again). Started after that hour today: it goes now.
+        due.reminders = [{ atMs: Math.max(now, zonedToMs({ year: today.year, month: today.month, day: today.day }, { hour: settings.reminders.hour, minute: 0 }, tz)), sent: false }];
         books.post({ kind: "fee_charged", case: due.id, amountPaise: due.feeInr * 100 }, (m) => log(due, due.customer, "open_fee", "confirmed", { month: back.month, feeInr: due.feeInr, backDue: true }, { refs: { month: back.month, amountPaise: String(due.feeInr * 100), backDue: "true", ...m }, notes: `an earlier unpaid month for ${due.studentName} (${back.month}), entered by the owner in the settings, carried as a fee of its own` }));
       }
       const joined = rule !== "usual" && student.joined ? parseJoined(student.joined) : undefined;
