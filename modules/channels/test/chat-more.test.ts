@@ -207,7 +207,8 @@ test("hold to talk is drawn only when the shop has a voice service: no button an
   assert.ok(withVoice.includes(CHAT_MORE.hi.hold));
   assert.match(withVoice, /audioBitsPerSecond: 24000/u);
   assert.match(withVoice, /audio\/ogg;codecs=opus", "audio\/webm;codecs=opus"/u);
-  assert.match(screen("recording", new URLSearchParams("lang=ml")).html, /class="rec-note"/u);
+  // the review screen draws the recording note by script (as the page's own recNote does), so it is named as a class the script sets
+  assert.match(screen("recording", new URLSearchParams("lang=ml")).html, /className = "rec-note"/u);
 });
 
 // ---- the owner's view of a guest -------------------------------------------------------------------------------------------------------------------
