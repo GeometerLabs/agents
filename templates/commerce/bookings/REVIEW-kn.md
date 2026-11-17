@@ -1475,4 +1475,38 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.owner.yourShop` | ನಿಮ್ಮ ಅಂಗಡಿ | Your shop |  |
 | `owner.money.cashPartLabel` | ಒಂದು ಭಾಗ ಮಾತ್ರ ಸಿಕ್ಕಿತೇ? ಎಷ್ಟು (₹) | Received only part? How much (₹) |  |
 | `owner.money.cashPartButton` | ಈ ಭಾಗ ನಗದಾಗಿ ಸಿಕ್ಕಿತು ಎಂದು ಗುರುತಿಸಿ | Mark this part received in cash |  |
+| `chat.title` | ಚಾಟ್ | Chat |  |
+| `chat.placeholder` | ಸಂದೇಶ ಬರೆಯಿರಿ | Write a message |  |
+| `chat.send` | ಕಳುಹಿಸಿ | Send |  |
+| `chat.label` | ನಿಮ್ಮ ಸಂದೇಶ | Your message |  |
+| `chat.back` | ಅಂಗಡಿಯ ಪುಟ | Shop page |  |
+| `chat.sending` | ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ | Sending |  |
+| `chat.sent` | ಕಳುಹಿಸಿದೆ | Sent |  |
+| `chat.failed` | ಹೋಗಲಿಲ್ಲ. ಮತ್ತೆ ಕಳುಹಿಸಲು ಒತ್ತಿ. | Not sent. Tap to send again. |  |
+| `chat.retry` | ಮತ್ತೆ ಕಳುಹಿಸಿ | Send again |  |
+| `chat.offline` | ನೀವು ಆಫ್‌ಲೈನ್ ಇದ್ದೀರಿ. ನೀವು ಮರಳಿದಾಗ ಸಂದೇಶಗಳು ಹೋಗುತ್ತವೆ. | You are offline. Messages will go when you are back. |  |
+| `chat.slow` | ಉತ್ತರ ಬರೆಯಲಾಗುತ್ತಿದೆ | Writing back |  |
+| `chat.rate` | ಒಮ್ಮೆಲೇ ಬಹಳ ಆಯಿತು. ಒಂದು ನಿಮಿಷ ಕಾದು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | That was a lot at once. Wait a minute, then send again. |  |
+| `chat.capped` | ಇಂದಿಗೆ ಟೈಪ್ ಮಾಡಿದ ಉತ್ತರಗಳು ಇಷ್ಟೇ. ಕೆಳಗಿನ ಬಟನ್‌ಗಳು ಇನ್ನೂ ಕೆಲಸ ಮಾಡುತ್ತವೆ. | That is enough typed answers for today. The buttons below still work. |  |
+| `chat.closed` | ಅಂಗಡಿ ಈಗ ಮುಚ್ಚಿದೆ. ಆದರೂ ಕೇಳಬಹುದು. 10:00–20:00 | The shop is closed now. You can still ask. 10:00–20:00 |  |
+| `chat.paused` | ಅಂಗಡಿ ಈಗ ಹೊಸ ಕೆಲಸ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿಲ್ಲ. ಪ್ರಶ್ನೆಗಳನ್ನು ಕೇಳಬಹುದು. | The shop is not taking new work just now. You can still ask questions. |  |
+| `chat.empty` | ಇನ್ನೂ ಸಂದೇಶಗಳಿಲ್ಲ. | No messages yet. |  |
+| `chat.gone` | ಇಡುವ ಸಮಯಕ್ಕಿಂತ ಹಳೆಯ ಸಂದೇಶಗಳನ್ನು ತೆಗೆಯಲಾಗುತ್ತದೆ. | Messages older than the keeping time are cleared. |  |
+| `chat.help` | ನೀವು ಏನು ಮಾಡಲು ಬಯಸುತ್ತೀರಿ? | What would you like to do? |  |
+| `chat.note` | ಉತ್ತರಗಳು ಅಂಗಡಿಯ ಸಹಾಯಕರಿಂದ ಬರುತ್ತವೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಅಂಗಡಿಯ ಸ್ವಂತ ದಾಖಲೆ ಹೇಳಿದಾಗ ಮಾತ್ರ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ. | Replies come from the shop's assistant. A booking or a payment counts only when the shop's own record says so. |  |
+| `chat.kept` | ಈ ಚಾಟ್ ಅಂಗಡಿಯ ಫೋನ್‌ನಲ್ಲಿ 30 ದಿನ ಇರುತ್ತದೆ. | This chat is kept on the shop's phone for 30 days. |  |
+| `chat.you` | ನೀವು | You |  |
+| `chat.shop` | ಅಂಗಡಿ | Shop |  |
+| `chat.thread` | ಮಾತುಕತೆ | Conversation |  |
+| `chat.alertsHead` | ಅಂಗಡಿ ಉತ್ತರಿಸಿದಾಗ ಫೋನ್ ತಿಳಿಸಬೇಕೆ? | Want a buzz when the shop answers? |  |
+| `chat.onStreetlist` | Streetlist ನಲ್ಲಿ | on Streetlist |  |
+| `chat.quick.bookings.1` | ಬೆಲೆ ನೋಡಿ | See prices |  |
+| `chat.quick.bookings.2` | ಸಮಯ ಬುಕ್ ಮಾಡಿ | Book a time |  |
+| `chat.quick.bookings.3` | ನೀವು ಎಲ್ಲಿದ್ದೀರಿ? | Where are you? |  |
+| `chat.quick.orders.1` | ಇಂದಿನ ಮೆನು | Today's menu |  |
+| `chat.quick.orders.2` | ಆರ್ಡರ್ ಮಾಡಿ | Order |  |
+| `chat.quick.orders.3` | ತೆಗೆದುಕೊಳ್ಳುವ ಸಮಯ | Pickup times |  |
+| `chat.quick.fees.1` | ತರಗತಿಯ ಸಮಯ | Class timings |  |
+| `chat.quick.fees.2` | ಶುಲ್ಕ | Fees |  |
+| `chat.quick.fees.3` | ಶಿಕ್ಷಕರೊಂದಿಗೆ ಮಾತನಾಡಿ | Talk to the teacher |  |
 

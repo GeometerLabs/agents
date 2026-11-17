@@ -1475,4 +1475,38 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.owner.yourShop` | നിങ്ങളുടെ കട | Your shop |  |
 | `owner.money.cashPartLabel` | ഒരു ഭാഗം മാത്രമാണോ കിട്ടിയത്? എത്ര (₹) | Received only part? How much (₹) |  |
 | `owner.money.cashPartButton` | ഈ ഭാഗം പണമായി കിട്ടിയെന്ന് രേഖപ്പെടുത്തുക | Mark this part received in cash |  |
+| `chat.title` | ചാറ്റ് | Chat |  |
+| `chat.placeholder` | സന്ദേശം എഴുതൂ | Write a message |  |
+| `chat.send` | അയയ്ക്കൂ | Send |  |
+| `chat.label` | നിങ്ങളുടെ സന്ദേശം | Your message |  |
+| `chat.back` | കടയുടെ പേജ് | Shop page |  |
+| `chat.sending` | അയയ്ക്കുന്നു | Sending |  |
+| `chat.sent` | അയച്ചു | Sent |  |
+| `chat.failed` | പോയില്ല. വീണ്ടും അയയ്ക്കാൻ തൊടൂ. | Not sent. Tap to send again. |  |
+| `chat.retry` | വീണ്ടും അയയ്ക്കൂ | Send again |  |
+| `chat.offline` | നിങ്ങൾ ഓഫ്‌ലൈനാണ്. തിരിച്ചെത്തുമ്പോൾ സന്ദേശങ്ങൾ പോകും. | You are offline. Messages will go when you are back. |  |
+| `chat.slow` | മറുപടി എഴുതുന്നു | Writing back |  |
+| `chat.rate` | ഒറ്റയടിക്ക് കൂടുതലായി. ഒരു മിനിറ്റ് കാത്തിരുന്ന് വീണ്ടും ശ്രമിക്കൂ. | That was a lot at once. Wait a minute, then send again. |  |
+| `chat.capped` | ഇന്നത്തേക്ക് ടൈപ്പ് ചെയ്ത മറുപടികൾ ഇത്രയും. താഴത്തെ ബട്ടണുകൾ ഇപ്പോഴും പ്രവർത്തിക്കും. | That is enough typed answers for today. The buttons below still work. |  |
+| `chat.closed` | കട ഇപ്പോൾ അടഞ്ഞിരിക്കുന്നു. എങ്കിലും ചോദിക്കാം. 10:00–20:00 | The shop is closed now. You can still ask. 10:00–20:00 |  |
+| `chat.paused` | കട ഇപ്പോൾ പുതിയ ജോലി എടുക്കുന്നില്ല. ചോദ്യങ്ങൾ ചോദിക്കാം. | The shop is not taking new work just now. You can still ask questions. |  |
+| `chat.empty` | ഇതുവരെ സന്ദേശങ്ങളില്ല. | No messages yet. |  |
+| `chat.gone` | സൂക്ഷിക്കുന്ന സമയത്തിലും പഴയ സന്ദേശങ്ങൾ നീക്കം ചെയ്യും. | Messages older than the keeping time are cleared. |  |
+| `chat.help` | നിങ്ങൾക്ക് എന്താണ് ചെയ്യേണ്ടത്? | What would you like to do? |  |
+| `chat.note` | മറുപടികൾ കടയുടെ അസിസ്റ്റന്റിൽ നിന്നാണ്. ബുക്കിംഗോ പേയ്‌മെന്റോ കടയുടെ സ്വന്തം രേഖ പറയുമ്പോൾ മാത്രമേ കണക്കാകൂ. | Replies come from the shop's assistant. A booking or a payment counts only when the shop's own record says so. |  |
+| `chat.kept` | ഈ ചാറ്റ് കടയുടെ ഫോണിൽ 30 ദിവസം സൂക്ഷിക്കും. | This chat is kept on the shop's phone for 30 days. |  |
+| `chat.you` | നിങ്ങൾ | You |  |
+| `chat.shop` | കട | Shop |  |
+| `chat.thread` | സംഭാഷണം | Conversation |  |
+| `chat.alertsHead` | കട മറുപടി തന്നാൽ ഫോൺ അറിയിക്കണോ? | Want a buzz when the shop answers? |  |
+| `chat.onStreetlist` | Streetlist-ൽ | on Streetlist |  |
+| `chat.quick.bookings.1` | വില കാണൂ | See prices |  |
+| `chat.quick.bookings.2` | സമയം ബുക്ക് ചെയ്യൂ | Book a time |  |
+| `chat.quick.bookings.3` | നിങ്ങൾ എവിടെയാണ്? | Where are you? |  |
+| `chat.quick.orders.1` | ഇന്നത്തെ മെനു | Today's menu |  |
+| `chat.quick.orders.2` | ഓർഡർ ചെയ്യൂ | Order |  |
+| `chat.quick.orders.3` | എടുക്കാനുള്ള സമയം | Pickup times |  |
+| `chat.quick.fees.1` | ക്ലാസ് സമയം | Class timings |  |
+| `chat.quick.fees.2` | ഫീസ് | Fees |  |
+| `chat.quick.fees.3` | ടീച്ചറോട് സംസാരിക്കൂ | Talk to the teacher |  |
 
