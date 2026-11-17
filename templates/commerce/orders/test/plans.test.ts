@@ -192,7 +192,7 @@ test("the renewal: asked once, with the credit taken off, paid by a mark, matche
   assert.equal(w.upiRefunds(AMIT).length, 0, "nothing refunded: the credit was carried");
 });
 
-test("a renewal not paid before its first meal closes lapses, charges nothing, and gives the credit back", async () => {
+test("a renewal not paid before its first meal closes lapses, charges nothing, and the unused credit is refunded", async () => {
   const w = await subscribed();
   await w.say("skip 12 nov", { from: AMIT });
   await w.goto({ year: 2026, month: 12, day: 8 }, { hour: 21, minute: 0 });
@@ -202,8 +202,9 @@ test("a renewal not paid before its first meal closes lapses, charges nothing, a
   await w.goto({ year: 2026, month: 12, day: 9 }, { hour: 21, minute: 0 }); // the cut-off of the first meal day, 10 Dec, was 9 Dec 8 pm
   assert.equal(plan.state, "lapsed");
   assert.equal(plan.periods[1].state, "lapsed");
-  assert.equal(plan.balance.reduce((n, p) => n + p.amountInr, 0), carried);
-  assert.match(w.lastTextTo(AMIT), /was not renewed in time/u);
+  assert.equal(plan.balance.length, 0, "the unused credit goes back through the refund path: a plan that has ended has no next payment to take it off");
+  assert.equal(w.store.upi!.refunds.reduce((n, r) => n + r.amountPaise, 0), carried * 100);
+  assert.match(w.textsTo(AMIT).join("\n"), /was not renewed in time/u);
 });
 
 test("a cancel while the renewal's reminder is queued: the reminder never goes out and nothing more is delivered or charged", async () => {
