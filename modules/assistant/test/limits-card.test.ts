@@ -115,7 +115,7 @@ test("a settled change is told to the owner once: Active, or failed with the pre
   assert.deepEqual(told.map((t) => t.say.what), ["active", "failed"]);
   const w = new Writer("en", "Asia/Kolkata");
   assert.match(limitLine(told[0].say, "en", w), /^Active: Refunds above ₹500 need your approval\./);
-  assert.match(limitLine(told[1].say, "en", new Writer("en", "Asia/Kolkata")), /previous limit is still in force: Refunds above ₹500/, "what is in force now (l-1 is active), not this change's own `from`");
+  assert.match(limitLine(told[1].say, "en", new Writer("en", "Asia/Kolkata")), /previous limit is still in force: Refunds above ₹100/, "what is in force now, not this change's own `from`: l-1 is active (₹500) and the pending tightening l-3 counts at once (₹100), as inForce says");
   assert.doesNotMatch(limitLine(told[1].say, "en", new Writer("en", "Asia/Kolkata")), /deploy did not go through/, "the deployer's reason stays in the record and the panel");
   assert.deepEqual(s.limits.unannounced(), [], "said once");
   assert.equal(s.state.limitChanges.find((c) => c.id === "l-3")?.told, undefined, "a pending one is not announced");
