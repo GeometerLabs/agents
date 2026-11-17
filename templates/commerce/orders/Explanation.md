@@ -79,3 +79,38 @@ The Orders page takes the same money parts as Bookings' (templates/commerce/book
 ## The books (the accounting module, 15 Nov 2026)
 
 Orders keeps no money sums of its own any more. Every money line it writes goes through `modules/accounting/post.ts`: `record_payment` (an advance or an extra payment), the owner's marks, the advance applied to an order, and every refund owed, made or cancelled (through `modules/payments/refunds.ts`). `src/accounting.ts` holds the frozen map (`ORDERS_LEGACY`) that reads records written before the books, and the constructor the agent uses. The monthly report's money figures come from the journal (`modules/accounting/figures.ts`); the old sums are kept only in `test/accounting-figures.test.ts`, which holds the two equal on every crash-test world and checks the books after each one (`modules/accounting/invariants.ts`). The report also carries the signed books summary and a "Money this month" block, a customer's own page lists its receipts, and the owner's app has the Money section and the accountant's downloads. How it all works: `modules/Explanation.md`, "The accounting module"; what is left: `modules/Deferred.md`.
+
+## Finishing Orders (17 Nov 2026)
+
+What was added, and why. Every change is written to leave a shop that sets nothing new exactly as it was (its records, its report bytes, its messages).
+
+- **The stand-in server and the local stack** (`standins/`, `scripts/local-stack.ts`, `npm run stack`), as Bookings and Fees have them: the Razorpay and WhatsApp wire formats
+  in front of the fakes, signed webhooks to the inbox, a stub Guard and the approvals relay beside the runtime. The stack always pays through Razorpay (the example shop takes
+  UPI, which has no gateway to try). `test/full-chain.test.ts` runs it; `test/approvals-guard-binary.test.ts` runs the **real** `geo-guard` binary on a temp folder
+  (needs no Docker; skipped, and says so, when the binary is not built). `test/runtime-kit.ts` is the runtime on fakes that second test uses. All three were written on 17 Nov
+  and not run in that session (the owner asked for one test pass at the end).
+- **A slot's own limit** (`maxOrders` on a pickup or delivery slot). Counted from the orders the way the day's count is (`ordersInSlot`, never a counter), checked in
+  `availability()` in the same step as the order, so a WhatsApp order, a page order, the owner's late yes and a late payment all meet it. A full slot is not offered in the
+  list of slots, the page's offer shows it as not open, and when every open slot of a day is full the customer is told so (`slot_full`), not that orders have closed. It is the rule
+  `within-day-cap` again (a new rule id would add a key to every report's "stopped" table and change every report's bytes), with the slot's own words in the reason.
+- **A reminder before the slot** (`reminder: { "hoursBefore": 2 }`). Made when an order is confirmed, by modules/reminders (a moment already past is not scheduled; if several
+  fell due, one goes), sent from the tick, only while the order still stands, cleared when it is cancelled or done. Left out: no reminder, as before. It goes out unasked, so it has
+  a Meta template (`order_reminder`, the pickup wording; a delivery reminder names the place and goes as the generic name, like a delivery's confirmation).
+- **The balance paid at pickup or delivery.** The advance and the balance are two records. The advance is the payment record's and confirms the order. The balance is the total less
+  the advance and is written on its own line (`record_balance`, with `balancePaise`), never added to "advance collected" and never posted as an advance in the books (the books
+  have no "balance" kind; the accounting module is shared, so a new kind there is a decision of its own, see Deferred). The owner says `balance o-3 cash`, `balance o-3 upi` or,
+  on a gateway shop, `balance o-3 link` (the agent makes a link for exactly the balance, the customer gets it, and the payments service's own list is what shows it paid,
+  `by: "provider"`). A customer's words never mark it. It can be marked on a confirmed order or a finished one. The report keeps two figures: "advance collected" and, only when
+  there is one, "balance collected at pickup" (`money.balanceCollected`, left out when none, so older reports keep their bytes); what is "still to collect" no longer counts an
+  order whose balance was marked. The monthly WhatsApp message is an approved template with a fixed body and does not carry it (Deferred).
+- **The "time ran out" card for the owner.** An expired UPI hold whose one-use code is still live is listed on the owner's page as `late_deposit` for 48 hours (14 days after the
+  customer said they paid), as Bookings does. "Received" on it is the same mark as WhatsApp's; after the close it is the late mark (`lateMark`): never confirmed again by itself,
+  owed back, or kept for an order the owner takes by hand. The assistant words it as an advance (`deposit`), because the module's words know that kind.
+- **Cancel and refund from the owner's chat.** `ordersSkill` now takes `acts` (the agent's own cancel and refund paths), as Bookings' skill does. A card shows the exact change; the
+  tap refunds exactly what it showed through the same limit and Guard as "approve o-3" (above the limit Guard holds it for the owner's second yes); on a UPI shop the owner owes
+  the refund. An order still waiting for its advance, or for the owner's yes to a big one, is cancelled with no money moving. The owner's cancel does not ask the owner again
+  (the customer's `onCancel` does, on a late cancellation): the owner is the one asking.
+
+New Hindi, Malayalam and Kannada lines (the templates `slot_full`, `order_reminder`, `balance_paid`, `balance_link`, `owner_balance_marked`, `owner_balance_none`, and the report
+label "balance collected at pickup") are machine-written and are on the three REVIEW sheets.
+

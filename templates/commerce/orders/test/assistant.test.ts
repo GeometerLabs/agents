@@ -1,5 +1,5 @@
 // The shop's assistant on an Orders shop (item 11e): off without an "assistant" block; on, "open orders" answers from the saved orders, a big order waiting for the
-// owner comes as a card whose Refuse is the owner's own "deny o-1", and cancelling from the chat says it is not in this release. Uses the dev harness with the fakes.
+// owner comes as a card whose Refuse is the owner's own "deny o-1", (cancelling and refunding from the chat are tried in test/assistant-acts.test.ts). Uses the dev harness with the fakes.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -41,11 +41,4 @@ test("open orders, and a big order waiting comes as a card whose Refuse is the o
   await w.tap(card.interactive!.buttons![1].id, { from: w.owner });
   assert.equal(o.state, "cancelled");
   assert.ok(w.record.entries().some((e) => e.action === "owner_decision" && e.outcome === "confirmed" && e.refs.command === "deny"));
-});
-
-test("cancelling an order from the chat is not in this release, and says so", async () => {
-  const w = withAssistant();
-  bigOrderWaiting(w);
-  await w.ownerSays("cancel o-1");
-  assert.equal(w.lastTextTo(w.owner), "That can't be done from the chat for o-1 in this version. Use the message I sent you about it, or ask your Operator.");
 });

@@ -110,7 +110,13 @@ export interface OrdersReport {
    * `givenBack` is what the payments service's own record confirmed (or, UPI, the owner marked sent). `settledByWord` (B75, 12 Nov 2026) are refunds a person at the
    * server settled as made by their word (Guard's already_done): never counted as given back, grouped by who said so. Left out when there are none (older bytes kept).
    */
-  money: { collected: Amount; givenBack: Amount; settledByWord?: SettledByWord[];
+  money: { collected: Amount; givenBack: Amount;
+    /**
+     * The balance, paid when the order was collected or delivered (17 Nov 2026): what the owner marked received (cash or UPI) or the balance's link showed paid, from the
+     * record's `record_balance` lines. Its own figure: never part of `collected`, which is the advance. Left out when none (older bytes kept).
+     */
+    balanceCollected?: Amount;
+    settledByWord?: SettledByWord[];
     /** Money the books count and the rows above leave out (a payment made twice, the owner's own marks on a gateway shop); only when one is above 0. */
     booksOnly?: BooksOnly };
   /** Present only for a UPI shop (B33): the money is what the owner MARKED, and every document labels it so. Left out for a Razorpay shop, which keeps its bytes. */
@@ -238,6 +244,8 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
   const accounting = reportAccounting(all, ORDERS_LEGACY, new Date(from).toISOString(), new Date(to).toISOString());
   const collected = figures.received;
   const givenBack = { count: figures.refunds.count, paise: figures.refunds.paise };
+  const balanceCollected = emptyAmount();
+  for (const e of month) if (e.action === "record_balance" && e.outcome === "confirmed") add(balanceCollected, e.refs.balancePaise);
   const byWord = settledByWordOf(month).rows; // a person's word, by who said it (modules/report/settled-by-word.ts)
 
   // ---- orders: each at its own confirmed entry, once per order ----
@@ -270,7 +278,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
   for (const o of ofMonth) for (const l of o.lines) qty.set(l.itemId, (qty.get(l.itemId) ?? 0) + l.qty);
   const items: SoldItem[] = settings.menu.filter((i) => qty.has(i.id)).map((i) => ({ id: i.id, names: Object.fromEntries(LANGUAGES.map((l) => [l, itemName(i, l)])) as Record<Language, string>, qty: qty.get(i.id)! }));
   const toCollect = emptyAmount();
-  for (const o of ofMonth.filter((x) => x.state === "confirmed")) {
+  for (const o of ofMonth.filter((x) => x.state === "confirmed" && x.balance?.paid === undefined)) { // a balance already marked received is no longer to collect
     const left = Math.max(0, (o.totalInr ?? 0) - (o.advanceInr ?? 0));
     if (left > 0) add(toCollect, left * 100);
   }
@@ -298,7 +306,7 @@ export function buildOrdersReport(input: ReportInput): OrdersReport {
     madeAt: new Date(madeAt).toISOString(),
     policyDigest: policyDigest(settings),
     record: { entries: month.length, digest: digestOf(all.map(entryDigest)), byAction },
-    money: { collected, givenBack, ...(byWord.length > 0 ? { settledByWord: byWord } : {}), ...(booksOnly ? { booksOnly } : {}) },
+    money: { collected, givenBack, ...(balanceCollected.count > 0 ? { balanceCollected } : {}), ...(byWord.length > 0 ? { settledByWord: byWord } : {}), ...(booksOnly ? { booksOnly } : {}) },
     ...(upi ? { paidBy: "owner-marked" as const } : {}),
     orders, sold, owner,
     customers: { stopped: new Set(month.filter((e) => e.action === "opt_out" && e.outcome === "confirmed").map((e) => e.conversation)).size },
