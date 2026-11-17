@@ -6,6 +6,7 @@
 // Everything here is an allowlist: a field is in a view because the page shows it. Never the owner's one-use code, never another customer, never a record line, and
 // never the delivery address as typed (only its place on the shop's list). Prices are the shop's own, from the settings: nothing in a view is worked out from what a
 // customer sent.
+import { planName, planTypeOf } from "./plans/settings.ts";
 import { createHash } from "node:crypto";
 import { leftOn } from "../../../../modules/payments/owner-marked/ledger.ts";
 import type { MarkedRequest } from "../../../../modules/payments/owner-marked/ledger.ts";
@@ -189,7 +190,7 @@ const channelOf = (o: Order | undefined): OwnerItem["channel"] => o?.channel ?? 
 
 /** The order in the owner's words: its lines from the shop's menu ("2 × Veg thali, 1 × Curd"). */
 export const orderWhat = (settings: Settings, o: Order, language: Language = settings.owner.language): string =>
-  o.lines.map((l) => { const item = itemOf(settings, l.itemId); return `${l.qty} × ${item ? itemName(item, language) : l.itemId}`; }).join(", ");
+  o.plan ? `${planName(planTypeOf(settings.plans, o.plan.typeId)!, language)} (monthly plan)` : o.lines.map((l) => { const item = itemOf(settings, l.itemId); return `${l.qty} × ${item ? itemName(item, language) : l.itemId}`; }).join(", ");
 
 /**
  * Everything the owner can answer from their page: an advance to mark received (UPI), a refund the owner owes and marks sent (UPI), a big order to accept or refuse,

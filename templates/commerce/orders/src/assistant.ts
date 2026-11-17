@@ -7,7 +7,7 @@
 // here decides a refund's size beyond what was paid, or moves money another way. With no `acts` (the morning line) the skill only reads.
 import { checkWords, ownerReply } from "../../../../modules/assistant/wire.ts";
 import { markButtonId } from "../../../../modules/payments/owner-marked/owner.ts";
-import { ownerItems } from "./channel.ts";
+import { orderWhat, ownerItems } from "./channel.ts";
 import type { OwnerItem } from "./channel.ts";
 import type { Executed, OpenRow, OwnerSkill, Prepared, Proposal, WaitingItem } from "../../../../modules/assistant/skill.ts";
 import type { CardAction } from "../../../../modules/assistant/state.ts";
@@ -16,6 +16,7 @@ import type { RecordEntry } from "../../../../modules/record/record.ts";
 import type { RefundResult } from "../../../../modules/payments/refunds.ts";
 import { LIVE_STATES } from "./order.ts";
 import type { Order, Store } from "./order.ts";
+import { mealsTomorrow } from "./plans/ledger.ts";
 import { itemName } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 
@@ -59,7 +60,7 @@ const OPEN: Order["state"][] = ["awaiting_owner", "awaiting_advance", "confirmed
 export function ordersSkill(deps: OrdersSkillDeps): OwnerSkill {
   const { store, settings } = deps;
   /** The order's lines in the owner's language, "2 × cake, 1 × bread", from the shop's own menu. */
-  const what = (o: Order) => o.lines.map((l) => { const item = settings.menu.find((m) => m.id === l.itemId); return `${l.qty} × ${item ? itemName(item, settings.owner.language) : l.itemId}`; }).join(", ");
+  const what = (o: Order) => o.plan ? orderWhat(settings, o) : o.lines.map((l) => { const item = settings.menu.find((m) => m.id === l.itemId); return `${l.qty} × ${item ? itemName(item, settings.owner.language) : l.itemId}`; }).join(", ");
 
   /**
    * What waits for the owner, as a card can show it (and the fields its digest is over), from the owner page's list. The card's fields carry the page item's digest,
@@ -156,6 +157,8 @@ export function ordersSkill(deps: OrdersSkillDeps): OwnerSkill {
     open() {
       const rows: OpenRow[] = [];
       for (const o of store.orders.values()) if (OPEN.includes(o.state)) rows.push({ case: o.id, who: whoOf(o), what: what(o), amountPaise: (o.totalInr ?? 0) * 100, state: o.state });
+      // Monthly plans (17 Nov 2026), read only: tomorrow's meals for each slot, the kitchen's number, from the plans' ledger (src/plans/ledger.ts). A shop without plans adds nothing.
+      if (settings.plans) for (const m of mealsTomorrow(store.plans, settings.timezone, deps.nowMs())) rows.push({ case: `plan-${m.slotId}`, who: "Monthly plans", what: `${m.count} meals tomorrow, ${m.slotId}`, amountPaise: 0, state: "plan_meals" });
       return rows;
     },
     waiting: () => waitingNow().map(({ fields: _f, reply: _r, ...item }) => item),
