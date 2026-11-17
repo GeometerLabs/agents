@@ -69,15 +69,18 @@ export type TemplateId =
   // to the customer: asking what is missing
   | "menu" | "pick_items" | "ask_when" | "ask_how" | "ask_slot" | "ask_address" | "confirm_details" | "confirm_buttons"
   // to the customer: what the rules say no to
-  | "price_floor" | "too_many_items" | "out_of_stock" | "sold_out" | "day_full" | "after_cutoff" | "outside_area"
+  | "price_floor" | "too_many_items" | "out_of_stock" | "sold_out" | "day_full" | "slot_full" | "after_cutoff" | "outside_area"
   // to the customer: the quote, the order, and what happens to the money
   | "quote_and_link" | "already_waiting" | "link_failed" | "order_confirmed" | "hold_expired" | "stock_gone_refund" | "cutoff_passed_refund" | "refund_unused"
   | "duplicate_refund" | "duplicate_refund_pending" | "cancelled_refund" | "cancelled_refund_pending" | "cancelled_late" | "cancelled_no_advance" | "cancelled_draft" | "no_order_found"
   | "refund_approved" | "refund_denied" | "refund_checking" | "refund_confirmed" | "refund_expired" | "big_order_asked" | "big_order_denied"
+  // 17 Nov 2026: the reminder before the slot, and the balance paid when the order is collected or delivered (its receipt, and the link a gateway shop's owner sends)
+  | "order_reminder" | "balance_paid" | "balance_link"
   | "didnt_understand" | "voice_note" | "voice_note_retry" | "ask_cancel" | "kept" | "told_owner" | "couldnt_tell_owner"
   // to the owner. Every line starts and ends with fixed words, because each one that goes out unasked is also a WhatsApp template (meta-templates.ts) and Meta rejects a body
   // that starts or ends with a value. The one exception is the reply to the owner's own message, which needs no template.
   | "owner_order_confirmed" | "owner_delivery_confirmed" | "owner_big_order" | "owner_order_cancelled" | "owner_late_cancellation" | "owner_duplicate_payment" | "owner_payment_unused" | "owner_link_failed"
+  | "owner_balance_marked" | "owner_balance_none"
   | "owner_message_held" | "owner_opted_out" | "owner_unknown_command" | "owner_wants_to_talk"
   // button mode: the agent reads with the rules only and answers with buttons and lists (modules/understanding/ai-state.ts). Each says why, and that every limit still holds.
   | "owner_ai_allowance" | "owner_ai_off" | "owner_ai_fault"
@@ -179,6 +182,10 @@ const en: BaseSet = {
   out_of_stock: (f) => `Sorry, only ${need(f, "leftCount")} ${need(f, "itemName")} left for ${day(f)}. Please change the order, or pick another day.`,
   sold_out: (f) => `Sorry, ${need(f, "itemName")} is sold out for ${day(f)}. Please pick something else, or another day.`,
   day_full: (f) => `Sorry, we cannot take any more orders for ${day(f)}. Please pick another day.`,
+  slot_full: (f) => `Sorry, the slot for ${when(f)} is full. Please pick another time or day.`,
+  order_reminder: (f) => `Reminder: your order (${items(f)}) is for ${when(f)}, ${how(f)}. ${rest(f)}`,
+  balance_paid: (f) => `Thank you! The balance of ${inr(f, "balanceInr")} for your order ${need(f, "orderRef")} (${when(f)}) is received. Nothing more to pay.`,
+  balance_link: (f) => `The balance for your order (${items(f)}, ${when(f)}) is ${inr(f, "balanceInr")}. You can pay it here: ${need(f, "link")}`,
   after_cutoff: (f) => `Sorry, orders for ${when(f)} closed at ${cutAt(f)}. Please pick another day or time.`,
   outside_area: (f) => `Sorry, we do not deliver to that address. We deliver to: ${places(f)}. You can pick up instead.`,
   quote_and_link: (f) => `${items(f)} for ${when(f)}, ${how(f)}. Total ${inr(f, "totalInr")}. To confirm, pay ${inr(f, "advanceInr")} here: ${payTo(f)} (I'll hold your order for ${need(f, "holdMinutes")} minutes.)${f.upiId ? " The owner confirms the payment, then I'll message you." : ""}`,
@@ -236,6 +243,8 @@ const en: BaseSet = {
   owner_approval_closed: (f) => `The ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} has been approved by the others, so your answer is no longer needed. Thank you.`,
   owner_approval_refused: (f) => `The ${inr(f, "refundInr")} refund for ${need(f, "customerPhone")} was refused by one of the people who approve refunds, so it will not be sent, and they will be told.`,
   owner_refund_settled: (f) => `Refund done: ${inr(f, "refundInr")} for ${need(f, "customerPhone")}. The person who set up your agent checked it and marked it as made, so it is not sent a second time.`,
+  owner_balance_marked: (f) => `Noted: the balance ${inr(f, "balanceInr")} for order ${need(f, "orderRef")} from ${need(f, "customerPhone")} is recorded as received.`,
+  owner_balance_none: () => `There is no balance to mark for that order. Write "balance", the order reference, and cash, upi or link.`,
 };
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -256,6 +265,10 @@ const hi: BaseSet = {
   out_of_stock: (f) => `माफ़ कीजिए, ${day(f)} के लिए ${need(f, "itemName")} सिर्फ़ ${need(f, "leftCount")} बचे हैं। कृपया ऑर्डर बदलिए, या कोई और दिन चुनिए।`,
   sold_out: (f) => `माफ़ कीजिए, ${day(f)} के लिए ${need(f, "itemName")} ख़त्म हो चुका है। कृपया कुछ और चुनिए, या कोई और दिन।`,
   day_full: (f) => `माफ़ कीजिए, ${day(f)} के लिए अब और ऑर्डर नहीं ले सकते। कृपया कोई और दिन चुनिए।`,
+  slot_full: (f) => `माफ़ कीजिए, ${when(f)} का स्लॉट भर चुका है। कृपया कोई और समय या दिन चुनिए।`,
+  order_reminder: (f) => `याद दिला दें: आपका ऑर्डर (${items(f)}) ${when(f)} के लिए है, ${how(f)}। ${rest(f)}`,
+  balance_paid: (f) => `धन्यवाद! आपके ऑर्डर ${need(f, "orderRef")} (${when(f)}) की बाकी रकम ${inr(f, "balanceInr")} मिल गई है। अब कुछ देना नहीं है।`,
+  balance_link: (f) => `आपके ऑर्डर (${items(f)}, ${when(f)}) की बाकी रकम ${inr(f, "balanceInr")} है। आप इसे यहाँ दे सकते हैं: ${need(f, "link")}`,
   after_cutoff: (f) => `माफ़ कीजिए, ${when(f)} के ऑर्डर ${cutAt(f)} पर बंद हो गए। कृपया कोई और दिन या समय चुनिए।`,
   outside_area: (f) => `माफ़ कीजिए, हम उस पते पर डिलीवरी नहीं करते। हम यहाँ डिलीवरी करते हैं: ${places(f)}। आप खुद आकर ले जा सकते हैं।`,
   quote_and_link: (f) => `${items(f)}, ${when(f)}, ${how(f)}। कुल ${inr(f, "totalInr")}। पक्का करने के लिए ${inr(f, "advanceInr")} यहाँ भेजें: ${payTo(f)} (आपका ऑर्डर ${need(f, "holdMinutes")} मिनट के लिए रोका गया है।)${f.upiId ? " पैसे आने पर मालिक पक्का करेंगे, फिर मैं आपको संदेश भेजूँगा।" : ""}`,
@@ -313,6 +326,8 @@ const hi: BaseSet = {
   owner_approval_closed: (f) => `सूचना: ${need(f, "customerPhone")} के ${inr(f, "refundInr")} के रिफंड को दूसरों ने मंज़ूरी दे दी है, इसलिए अब आपके जवाब की ज़रूरत नहीं है। धन्यवाद।`,
   owner_approval_refused: (f) => `सूचना: ${need(f, "customerPhone")} के ${inr(f, "refundInr")} के रिफंड को मंज़ूरी देने वालों में से एक ने मना कर दिया है, इसलिए यह नहीं भेजा जाएगा, और उन्हें बता दिया जाएगा।`,
   owner_refund_settled: (f) => `रिफंड हो गया: ${need(f, "customerPhone")} को ${inr(f, "refundInr")}। आपका एजेंट सेट करने वाले व्यक्ति ने इसे जाँचकर पूरा हुआ दर्ज किया है, इसलिए यह दोबारा नहीं भेजा जाएगा।`,
+  owner_balance_marked: (f) => `दर्ज हो गया: ${need(f, "customerPhone")} के ऑर्डर ${need(f, "orderRef")} की बाकी रकम ${inr(f, "balanceInr")} मिली हुई दर्ज की गई।`,
+  owner_balance_none: () => `उस ऑर्डर की कोई बाकी रकम दर्ज करने को नहीं है। "balance", ऑर्डर का संदर्भ, और cash, upi या link लिखिए।`,
 };
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -333,6 +348,10 @@ const ml: BaseSet = {
   out_of_stock: (f) => `ക്ഷമിക്കണം, ${day(f)}-ന് ${need(f, "itemName")} ${need(f, "leftCount")} എണ്ണം മാത്രമേ ബാക്കിയുള്ളൂ. ദയവായി ഓർഡർ മാറ്റൂ, അല്ലെങ്കിൽ മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കൂ.`,
   sold_out: (f) => `ക്ഷമിക്കണം, ${day(f)}-ന് ${need(f, "itemName")} തീർന്നു. ദയവായി മറ്റൊന്ന് തിരഞ്ഞെടുക്കൂ, അല്ലെങ്കിൽ മറ്റൊരു ദിവസം.`,
   day_full: (f) => `ക്ഷമിക്കണം, ${day(f)}-ന് ഇനി ഓർഡറുകൾ എടുക്കാൻ കഴിയില്ല. ദയവായി മറ്റൊരു ദിവസം തിരഞ്ഞെടുക്കൂ.`,
+  slot_full: (f) => `ക്ഷമിക്കണം, ${when(f)} സ്ലോട്ട് നിറഞ്ഞു. ദയവായി മറ്റൊരു സമയമോ ദിവസമോ തിരഞ്ഞെടുക്കൂ.`,
+  order_reminder: (f) => `ഓർമ്മപ്പെടുത്തൽ: നിങ്ങളുടെ ഓർഡർ (${items(f)}) ${when(f)}-ന് ആണ്, ${how(f)}. ${rest(f)}`,
+  balance_paid: (f) => `നന്ദി! നിങ്ങളുടെ ഓർഡർ ${need(f, "orderRef")} (${when(f)}) ന്റെ ബാക്കി ${inr(f, "balanceInr")} കിട്ടി. ഇനി ഒന്നും അടയ്ക്കാനില്ല.`,
+  balance_link: (f) => `നിങ്ങളുടെ ഓർഡറിന്റെ (${items(f)}, ${when(f)}) ബാക്കി തുക ${inr(f, "balanceInr")} ആണ്. ഇവിടെ അടയ്ക്കാം: ${need(f, "link")}`,
   after_cutoff: (f) => `ക്ഷമിക്കണം, ${when(f)}-ലേക്കുള്ള ഓർഡറുകൾ ${cutAt(f)}-ന് അവസാനിച്ചു. ദയവായി മറ്റൊരു ദിവസമോ സമയമോ തിരഞ്ഞെടുക്കൂ.`,
   outside_area: (f) => `ക്ഷമിക്കണം, ആ വിലാസത്തിലേക്ക് ഞങ്ങൾ ഡെലിവറി ചെയ്യുന്നില്ല. ഞങ്ങൾ ഡെലിവറി ചെയ്യുന്നത്: ${places(f)}. പകരം വന്ന് എടുക്കാം.`,
   quote_and_link: (f) => `${items(f)}, ${when(f)}, ${how(f)}. ആകെ ${inr(f, "totalInr")}. ഉറപ്പിക്കാൻ ${inr(f, "advanceInr")} ഇവിടെ അടയ്ക്കൂ: ${payTo(f)} (ഓർഡർ ${need(f, "holdMinutes")} മിനിറ്റ് നിങ്ങൾക്കായി മാറ്റിവച്ചിട്ടുണ്ട്.)${f.upiId ? " പണം എത്തുമ്പോൾ ഉടമ ഉറപ്പിക്കും, പിന്നെ ഞാൻ സന്ദേശം അയയ്ക്കും." : ""}`,
@@ -390,6 +409,8 @@ const ml: BaseSet = {
   owner_approval_closed: (f) => `അറിയിപ്പ്: ${need(f, "customerPhone")}-ന്റെ ${inr(f, "refundInr")} റീഫണ്ടിന് മറ്റുള്ളവർ അനുമതി നൽകി, അതിനാൽ ഇനി നിങ്ങളുടെ മറുപടി ആവശ്യമില്ല. നന്ദി.`,
   owner_approval_refused: (f) => `അറിയിപ്പ്: ${need(f, "customerPhone")}-ന്റെ ${inr(f, "refundInr")} റീഫണ്ട് അനുമതി നൽകുന്നവരിൽ ഒരാൾ നിരസിച്ചു, അതിനാൽ ഇത് അയയ്ക്കില്ല, അവരെ അറിയിക്കും.`,
   owner_refund_settled: (f) => `റീഫണ്ട് പൂർത്തിയായി: ${need(f, "customerPhone")}-ന്റെ ${inr(f, "refundInr")}. നിങ്ങളുടെ ഏജന്റ് സജ്ജമാക്കിയ ആൾ ഇത് പരിശോധിച്ച് നടന്നതായി രേഖപ്പെടുത്തി, അതിനാൽ ഇത് വീണ്ടും അയയ്ക്കില്ല.`,
+  owner_balance_marked: (f) => `രേഖപ്പെടുത്തി: ${need(f, "customerPhone")} ന്റെ ഓർഡർ ${need(f, "orderRef")} ന്റെ ബാക്കി ${inr(f, "balanceInr")} കിട്ടിയതായി രേഖപ്പെടുത്തി.`,
+  owner_balance_none: () => `ആ ഓർഡറിന് രേഖപ്പെടുത്താൻ ബാക്കി തുകയില്ല. "balance", ഓർഡർ റഫറൻസ്, പിന്നെ cash, upi അല്ലെങ്കിൽ link എന്നിവ എഴുതൂ.`,
 };
 
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -410,6 +431,10 @@ const kn: BaseSet = {
   out_of_stock: (f) => `ಕ್ಷಮಿಸಿ, ${day(f)} ಕ್ಕೆ ${need(f, "itemName")} ${need(f, "leftCount")} ಮಾತ್ರ ಉಳಿದಿದೆ. ದಯವಿಟ್ಟು ಆರ್ಡರ್ ಬದಲಿಸಿ, ಅಥವಾ ಬೇರೆ ದಿನ ಆಯ್ಕೆಮಾಡಿ.`,
   sold_out: (f) => `ಕ್ಷಮಿಸಿ, ${day(f)} ಕ್ಕೆ ${need(f, "itemName")} ಖಾಲಿಯಾಗಿದೆ. ದಯವಿಟ್ಟು ಬೇರೆ ಏನಾದರೂ ಆಯ್ಕೆಮಾಡಿ, ಅಥವಾ ಬೇರೆ ದಿನ.`,
   day_full: (f) => `ಕ್ಷಮಿಸಿ, ${day(f)} ಕ್ಕೆ ಇನ್ನು ಆರ್ಡರ್ ತೆಗೆದುಕೊಳ್ಳಲು ಆಗುವುದಿಲ್ಲ. ದಯವಿಟ್ಟು ಬೇರೆ ದಿನ ಆಯ್ಕೆಮಾಡಿ.`,
+  slot_full: (f) => `ಕ್ಷಮಿಸಿ, ${when(f)} ಸ್ಲಾಟ್ ತುಂಬಿದೆ. ದಯವಿಟ್ಟು ಬೇರೆ ಸಮಯ ಅಥವಾ ದಿನ ಆಯ್ಕೆಮಾಡಿ.`,
+  order_reminder: (f) => `ನೆನಪಿಸುವುದು: ನಿಮ್ಮ ಆರ್ಡರ್ (${items(f)}) ${when(f)} ಕ್ಕೆ ಇದೆ, ${how(f)}. ${rest(f)}`,
+  balance_paid: (f) => `ಧನ್ಯವಾದ! ನಿಮ್ಮ ಆರ್ಡರ್ ${need(f, "orderRef")} (${when(f)}) ರ ಉಳಿದ ${inr(f, "balanceInr")} ಸಿಕ್ಕಿದೆ. ಇನ್ನು ಏನೂ ಪಾವತಿಸಬೇಕಿಲ್ಲ.`,
+  balance_link: (f) => `ನಿಮ್ಮ ಆರ್ಡರ್‌ನ (${items(f)}, ${when(f)}) ಉಳಿದ ಮೊತ್ತ ${inr(f, "balanceInr")}. ಇಲ್ಲಿ ಪಾವತಿಸಬಹುದು: ${need(f, "link")}`,
   after_cutoff: (f) => `ಕ್ಷಮಿಸಿ, ${when(f)} ರ ಆರ್ಡರ್‌ಗಳು ${cutAt(f)} ಕ್ಕೆ ಮುಗಿದಿವೆ. ದಯವಿಟ್ಟು ಬೇರೆ ದಿನ ಅಥವಾ ಸಮಯ ಆಯ್ಕೆಮಾಡಿ.`,
   outside_area: (f) => `ಕ್ಷಮಿಸಿ, ಆ ವಿಳಾಸಕ್ಕೆ ನಾವು ಡೆಲಿವರಿ ಮಾಡುವುದಿಲ್ಲ. ನಾವು ಡೆಲಿವರಿ ಮಾಡುವ ಸ್ಥಳಗಳು: ${places(f)}. ಬದಲಿಗೆ ನೀವೇ ಬಂದು ತೆಗೆದುಕೊಳ್ಳಬಹುದು.`,
   quote_and_link: (f) => `${items(f)}, ${when(f)}, ${how(f)}. ಒಟ್ಟು ${inr(f, "totalInr")}. ಖಚಿತಪಡಿಸಲು ${inr(f, "advanceInr")} ಇಲ್ಲಿ ಪಾವತಿಸಿ: ${payTo(f)} (ನಿಮ್ಮ ಆರ್ಡರ್ ಅನ್ನು ${need(f, "holdMinutes")} ನಿಮಿಷ ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ.)${f.upiId ? " ಹಣ ಬಂದಾಗ ಮಾಲೀಕರು ಖಚಿತಪಡಿಸುತ್ತಾರೆ, ನಂತರ ನಾನು ಸಂದೇಶ ಕಳುಹಿಸುತ್ತೇನೆ." : ""}`,
@@ -467,6 +492,8 @@ const kn: BaseSet = {
   owner_approval_closed: (f) => `ಸೂಚನೆ: ${need(f, "customerPhone")} ಅವರ ${inr(f, "refundInr")} ರೀಫಂಡ್‌ಗೆ ಇತರರು ಅನುಮತಿ ನೀಡಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಈಗ ನಿಮ್ಮ ಉತ್ತರ ಬೇಕಿಲ್ಲ. ಧನ್ಯವಾದ.`,
   owner_approval_refused: (f) => `ಸೂಚನೆ: ${need(f, "customerPhone")} ಅವರ ${inr(f, "refundInr")} ರೀಫಂಡ್ ಅನ್ನು ಅನುಮತಿ ನೀಡುವವರಲ್ಲಿ ಒಬ್ಬರು ನಿರಾಕರಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗುವುದು.`,
   owner_refund_settled: (f) => `ರೀಫಂಡ್ ಆಗಿದೆ: ${need(f, "customerPhone")} ಅವರ ${inr(f, "refundInr")}. ನಿಮ್ಮ ಏಜೆಂಟ್ ಅನ್ನು ಸಿದ್ಧಪಡಿಸಿದವರು ಇದನ್ನು ಪರಿಶೀಲಿಸಿ ಆಗಿದೆ ಎಂದು ದಾಖಲಿಸಿದ್ದಾರೆ, ಆದ್ದರಿಂದ ಇದನ್ನು ಮತ್ತೆ ಕಳುಹಿಸುವುದಿಲ್ಲ.`,
+  owner_balance_marked: (f) => `ದಾಖಲಾಗಿದೆ: ${need(f, "customerPhone")} ಅವರ ಆರ್ಡರ್ ${need(f, "orderRef")} ರ ಉಳಿದ ${inr(f, "balanceInr")} ಬಂದಿದೆ ಎಂದು ದಾಖಲಿಸಲಾಗಿದೆ.`,
+  owner_balance_none: () => `ಆ ಆರ್ಡರ್‌ಗೆ ದಾಖಲಿಸಲು ಉಳಿದ ಮೊತ್ತವಿಲ್ಲ. "balance", ಆರ್ಡರ್ ಉಲ್ಲೇಖ, ಮತ್ತು cash, upi ಅಥವಾ link ಎಂದು ಬರೆಯಿರಿ.`
 };
 
 // ---- UPI, marked paid by the owner (plan B33; modules/payments/owner-marked) ------------------------------------------------------------

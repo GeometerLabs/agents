@@ -12,6 +12,7 @@
     "whatsapp-templates": "node scripts/whatsapp-templates.ts",
     "serve": "node server/main.ts",
     "inbox": "node inbox/main.ts",
+    "stack": "node scripts/local-stack.ts",
     "approvals": "node approvals/main.ts",
     "go-live-certificate": "node scripts/go-live-certificate.ts",
     "client-report": "node scripts/client-report.ts"
