@@ -8,9 +8,11 @@
 //    nothing when tapped again.
 //  - The month's budget is not a counter: it is worked out from the orders (order.ts reservedPaise). It is checked and reserved in ONE synchronous step with the approval
 //    (approve() below has no await inside it), so two orders racing for the last of the budget cannot both get it.
-//  - The order message goes only through createSay (modules/messaging/say.ts), whose gates include `send-only-when-approved`. It is sent once. If the provider's reply is lost
-//    it may still have gone out: the order is marked `send_unknown`, is NEVER sent again as an order, and the supplier is asked about the same order number
-//    ("this is not a new order") when the follow-up time comes. A request (the owner's WhatsApp message id) makes at most one order.
+//  - The order message goes only through createSay (modules/messaging/say.ts), whose gates include `send-only-when-approved`, and only by SEND ONCE (modules/messaging/send-once.ts):
+//    the step records an intent, and after the step is saved the runtime writes a claim, saves, sends and writes the ending. A claim with no ending (the process died) or a lost
+//    reply means it may still have gone out: the order is marked `send_unknown`, is NEVER sent again by itself, the owner is asked ("They got it" / "Send it again", a fresh act
+//    of theirs) and the supplier is asked about the same order number ("this is not a new order") when the follow-up time comes. A refusal that says nothing went out is tried
+//    again an hour later, three tries at most. A request (the owner's WhatsApp message id) makes at most one order.
 //  - What the supplier said, what arrived and whether it was paid are three different things (order.ts): the supplier's OK is not receipt, and the owner's receipt mark is not
 //    payment. Only an answer from the supplier's own number counts as the supplier's. This agent never pays anyone: "paid po-3" is the owner's own note.
 //  - Everything a message states (items, units, quantities, amounts, order numbers) is written from the record by a fixed template and read back against it before it is sent.
@@ -39,6 +41,9 @@ import type { CardAction, CardRecord } from "../../../../modules/assistant/state
 import { assistantOf } from "../../../../modules/assistant/state.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
 import { createSay } from "../../../../modules/messaging/say.ts";
+import type { SaidOutcome } from "../../../../modules/messaging/say.ts";
+import { nextIntentId, openUnknowns, queueSend, resolveUnknown, runSendOnce, sendOnceOf } from "../../../../modules/messaging/send-once.ts";
+import type { SendEnding, SendIntent } from "../../../../modules/messaging/send-once.ts";
 import type { Decision } from "../../../../modules/limits/limits.ts";
 import { strictest } from "../../../../modules/limits/limits.ts";
 import type { Action, ActionRecord, Outcome } from "../../../../modules/record/record.ts";
@@ -68,6 +73,12 @@ export interface AgentDeps {
   ownerParser?: OwnerParser;
   /** The talk model (block M). Left out: no talk. */
   talker?: TalkModel;
+  /**
+   * Who sends the messages the step asked for (send once, modules/messaging/send-once.ts). The runtime sets this: the step only records them, and the runtime sends them after
+   * the step is saved (`agent.sendOnce.run`). Left out (the harness, the browser demo, tests that drive the agent alone): `handle` sends them itself when its step ends, through
+   * the same claim-send-ending code, with nothing to save.
+   */
+  sendLater?: boolean;
 }
 
 /** What the runtime hands the agent: a WhatsApp message, the clock, or an owner's press or words from their page. Every other kind is the runtime's own and does nothing here. */
@@ -75,7 +86,13 @@ export type AgentEvent = RuntimeEvent;
 
 export interface Agent {
   handle(event: AgentEvent): Promise<void>;
+  /** The messages the step asked for, sent once (see `sendLater`). The runtime calls it after the step's save. */
+  sendOnce: { run(save: () => void): Promise<void> };
 }
+
+/** The two messages that go through send once: the order itself (it commits the owner, so a repeat can mean goods twice), and a reminder to the supplier about it. */
+const ORDER_KIND = "purchase_order";
+const CHECK_KIND = "supplier_check";
 
 /** What goes with the words: the approval card's buttons, a list of ways to order, or the supplier's OK / cannot-supply buttons. */
 type Offer = { kind: "card"; code: string; body?: TemplateId[] } | { kind: "choices"; options: string[]; body?: TemplateId[] } | { kind: "supplier"; body?: TemplateId[] };
@@ -348,7 +365,7 @@ export function createAgent(deps: AgentDeps): Agent {
     log(o, owner, "owner_decision", "confirmed", { decision: "approve", ...cardRef, ...(card ? { digest: card.digest } : {}), totalPaise: o.totalPaise }, { decisions: [...decisions, matched], notes: "the owner approved exactly this order; the budget is reserved", refs: { ...cardRef, evidence: "owner_marked", month } });
     // ---- end of the one step; the rest talks to WhatsApp ----
     await tellOwner(o, "order_approved", { facts: budgetFacts(o.id, o.totalPaise) });
-    await sendOrder(o);
+    queueOrder(o);
     return true;
   }
 
@@ -369,17 +386,93 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- the order goes to the supplier ---------------------------------------------------------------------------------------------
 
-  /** Send the order message ONCE. Only an approved order is sent, and an order that is not "approved" (already sent, unknown, failed) is never sent from here again. */
-  async function sendOrder(o: PurchaseOrder): Promise<void> {
+  /**
+   * Ask for the order message to go, ONCE. Only an approved order is queued, and an order that is not "approved" (already sent, unknown, failed) never is from here. The step
+   * does not send: it records the intent (message id, supplier, template, values, the order) and the runtime sends it after the step is saved, writing a claim first and
+   * the ending after (send once). If the process dies in between, the order is marked `send_unknown` and is never sent again by itself (settleIntent below).
+   */
+  function queueOrder(o: PurchaseOrder): void {
     if (o.state !== "approved") return;
+    const state = sendOnceOf(store);
+    if (state.intents.some((i) => i.caseId === o.id && i.kind === ORDER_KIND && (i.status === "queued" || i.status === "claimed" || i.status === "failed"))) return; // one live message per order
     const supplier = supplierOf(settings, o.supplier);
-    const outcome = await say.outcome({ booking: o, phone: supplier.whatsapp, to: "customer", templates: ["supplier_order"], offer: { kind: "supplier" }, action: "send_order" });
-    if (outcome === "held_back") { o.state = "send_blocked"; await tellOwner(o, "send_blocked"); return; }
-    if (outcome === "not_sent") { o.state = "send_failed"; await tellOwner(o, "send_failed"); return; }
+    queueSend(state, { id: nextIntentId(state, o.id, ORDER_KIND), kind: ORDER_KIND, caseId: o.id, to: supplier.whatsapp, toName: supplier.name, templates: ["supplier_order"], values: { orderRef: o.id, supplierName: supplier.name, qty: o.qty, unitPriceInr: o.unitPaise / 100, totalInr: o.totalPaise / 100 }, createdMs: clock.now() });
+  }
+
+  /** Ask for a reminder to the supplier about the SAME order (never a new order). Its ending is recorded; a reminder whose outcome is unknown is not sent again by itself either. */
+  function queueCheck(o: PurchaseOrder): void {
+    const state = sendOnceOf(store);
+    const supplier = supplierOf(settings, o.supplier);
+    queueSend(state, { id: nextIntentId(state, o.id, CHECK_KIND), kind: CHECK_KIND, caseId: o.id, to: supplier.whatsapp, toName: supplier.name, templates: ["supplier_check"], values: { orderRef: o.id, supplierName: supplier.name }, createdMs: clock.now() });
+  }
+
+  // ---- send once: how the runtime sends what the step asked for (modules/messaging/send-once.ts) -----------------------------------
+
+  const intentAction = (i: SendIntent): Action => (i.kind === ORDER_KIND ? "send_order" : "ask_supplier_again");
+  const intentRefs = (i: SendIntent) => ({ intent: i.id, kind: i.kind, to: "customer" });
+
+  /** Send the intent through the one way out (say: gates, words, read-back), unless the order has moved on since it was asked for: then nothing goes and the line says so. */
+  async function deliverIntent(i: SendIntent): Promise<SaidOutcome> {
+    const o = store.orders.get(i.caseId);
+    const stale = !o || (i.kind === ORDER_KIND ? o.state !== "approved" : o.ack !== "none" || (o.state !== "sent" && o.state !== "send_unknown"));
+    if (stale) { log(o ?? null, i.to, intentAction(i), "blocked", { intent: i.id }, { refs: intentRefs(i), notes: "the order is not in the state this message was asked for in, so nothing was sent" }); return "held_back"; }
+    return say.outcome({
+      booking: o, phone: i.to, to: "customer", templates: i.templates as TemplateId[], action: intentAction(i), facts: i.values as Partial<MessageFacts>,
+      ...(i.kind === ORDER_KIND ? { offer: { kind: "supplier" as const } } : {}),
+    });
+  }
+
+  /** The order moves with the ending, in the store and saved with it, so the order's state and the message's ending are one fact. A reminder moves nothing. */
+  function settleIntent(i: SendIntent, ending: SendEnding): void {
+    const o = store.orders.get(i.caseId);
+    if (!o || i.kind !== ORDER_KIND || o.state !== "approved" || ending === "failed") return; // `failed` waits for its next try
+    if (ending === "gave_up") { o.state = "send_failed"; return; }
+    if (ending === "blocked") { o.state = "send_blocked"; return; }
     o.sentMs = clock.now();
-    o.state = outcome === "accepted" ? "sent" : "send_unknown";
+    o.state = ending === "confirmed" ? "sent" : "send_unknown";
     o.asks = scheduleAround(o.sentMs, settings.followUpHours.map((h) => h * HOUR), o.sentMs);
-    await tellOwner(o, outcome === "accepted" ? "sent_ok" : "sent_unknown");
+  }
+
+  /** After the ending is saved: the owner is told what happened to the order message, once. */
+  async function tellIntent(i: SendIntent, ending: SendEnding): Promise<void> {
+    const o = store.orders.get(i.caseId);
+    if (!o || i.kind !== ORDER_KIND) return;
+    if (ending === "confirmed" && o.state === "sent") await tellOwner(o, "sent_ok");
+    else if (ending === "unconfirmed" && o.state === "send_unknown") await tellOwner(o, "sent_unknown");
+    else if (ending === "gave_up" && o.state === "send_failed") await tellOwner(o, "send_failed");
+    else if (ending === "blocked" && o.state === "send_blocked") await tellOwner(o, "send_blocked");
+  }
+
+  const sendOnce = {
+    run: async (save: () => void): Promise<void> => {
+      if (!store.sendOnce) return; // nothing was ever asked for: leave the saved state as it is
+      await runSendOnce({
+        state: sendOnceOf(store), now: () => clock.now(), save,
+        recordClaim: (i) => { log(store.orders.get(i.caseId) ?? null, i.to, intentAction(i), "attempted", { intent: i.id }, { refs: intentRefs(i) }); },
+        recordEnding: (i, ending, note) => { log(store.orders.get(i.caseId) ?? null, i.to, intentAction(i), ending, { intent: i.id }, { notes: note, refs: intentRefs(i) }); },
+        deliver: deliverIntent, settle: settleIntent, notify: tellIntent,
+      });
+    },
+  };
+
+  /** The order message the owner was asked about, that may or may not have gone out and that they have not answered yet. */
+  const unsureOf = (o: PurchaseOrder): SendIntent | undefined => (o.state === "send_unknown" ? openUnknowns(store.sendOnce, ORDER_KIND).find((i) => i.caseId === o.id) : undefined);
+
+  /** "They got it": the owner's word that the supplier has the order. Nothing is sent; the order is with the supplier as far as the owner says, and the supplier is still asked on schedule. */
+  async function onGotIt(o: PurchaseOrder): Promise<void> {
+    const u = unsureOf(o);
+    if (!u || !resolveUnknown(sendOnceOf(store), u.id, "owner_got_it")) return;
+    o.state = "sent";
+    log(o, owner, "owner_decision", "confirmed", { decision: "supplier_got_it", intent: u.id }, { notes: "the owner says the supplier got the order; nothing was sent", refs: { evidence: "owner_marked", intent: u.id } });
+  }
+
+  /** "Send it again": the owner's own act, a NEW message with a new claim. Never made by the machine: the first one may have gone out, and only the owner can accept that risk. */
+  async function onSendAgain(o: PurchaseOrder): Promise<void> {
+    const u = unsureOf(o);
+    if (!u || !resolveUnknown(sendOnceOf(store), u.id, "owner_send_again")) return;
+    o.state = "approved";
+    log(o, owner, "owner_decision", "confirmed", { decision: "send_again", intent: u.id }, { notes: "the owner chose to send the order again, knowing the first may have reached the supplier", refs: { evidence: "owner_marked", intent: u.id } });
+    queueOrder(o);
   }
 
   // ---- the supplier answers --------------------------------------------------------------------------------------------------------
@@ -492,7 +585,7 @@ export function createAgent(deps: AgentDeps): Agent {
     if (o.state !== "send_failed") { await tellOwner(o, "order_not_open", { facts: { stateWord: stateWord(o, ownerLanguage) } }); return; }
     o.state = "approved";
     log(o, owner, "owner_decision", "confirmed", { decision: "send_again" }, { refs: { evidence: "owner_marked" } });
-    await sendOrder(o);
+    queueOrder(o);
   }
 
   async function onChange(o: PurchaseOrder, qty: number | undefined): Promise<void> {
@@ -674,8 +767,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (o.ack !== "none" || (o.state !== "sent" && o.state !== "send_unknown") || o.asks.length === 0) continue;
       const due = takeDue(o.asks, clock.now());
       if (!due.due) continue;
-      const supplier = supplierOf(settings, o.supplier);
-      await tellSupplier(o, supplier, "supplier_check", { action: "ask_supplier_again" });
+      queueCheck(o);
       if (o.asks.every((r) => r.sent) && o.silentToldMs === undefined) {
         o.silentToldMs = clock.now();
         await tellOwner(o, "owner_supplier_silent", { facts: { hours: Math.round((clock.now() - (o.sentMs ?? clock.now())) / HOUR) } });
@@ -707,13 +799,15 @@ export function createAgent(deps: AgentDeps): Agent {
     log(o, owner, "owner_page_action", "confirmed", { action: e.action, case: e.case }, { refs: page, notes: "pressed by the owner on their page; done exactly as the same words on WhatsApp" });
     if (e.action === "received") return onReceipt(o, undefined, { id: `owner-page:${e.id}`, from: owner, text: "", timestamp: clock.now() });
     if (e.action === "retry") return askSupplierAgain(o);
+    if (e.action === "got_it") return onGotIt(o);
+    if (e.action === "send_again") return onSendAgain(o);
   }
 
   /** Ask the supplier about the SAME order now (the page's "ask again"): never a new order, and only an order the supplier has not answered. */
   async function askSupplierAgain(o: PurchaseOrder): Promise<void> {
     if (o.ack !== "none" || (o.state !== "sent" && o.state !== "send_unknown")) return;
     o.askedMs = clock.now(); // the page's digest reads it, so a second press of the same button does nothing
-    await tellSupplier(o, supplierOf(settings, o.supplier), "supplier_check", { action: "ask_supplier_again" });
+    queueCheck(o);
   }
 
   // ---- the shop's assistant (modules/assistant): on only with an "assistant" settings block. Its acts are this agent's own paths ----------------------------------
@@ -731,17 +825,26 @@ export function createAgent(deps: AgentDeps): Agent {
     optedOut: (phone) => store.optedOut.has(digits(phone)),
   });
 
+  /** One event, the step's work. What it asks to be sent (the order, a reminder) is only recorded here: see `queueOrder`. */
+  async function dispatch(event: AgentEvent): Promise<void> {
+    if (event.kind === "tick") { await tick(); await assistant?.onTick(); return; }
+    if (event.kind === "message") return handleMessage(event.message);
+    if (event.kind === "owner_action") return onOwnerAction(event);
+    if (event.kind === "owner_message") {
+      if (!assistant) { log(null, owner, "owner_page_message", "blocked", {}, { refs: { channel: "owner_page" }, notes: "the owner's talk box is the shop's assistant's, and this shop has none: nothing was read" }); return; }
+      return assistant.onPageMessage({ id: `owner-page:${event.id}`, from: owner, text: event.text, timestamp: clock.now() });
+    }
+    // every other kind (a sign-in, a limit settling, a recovery, a payment event) is the runtime's own: Stock orders has no payments and nothing to recover by hand
+  }
+
   return {
     async handle(event) {
-      if (event.kind === "tick") { await tick(); await assistant?.onTick(); return; }
-      if (event.kind === "message") return handleMessage(event.message);
-      if (event.kind === "owner_action") return onOwnerAction(event);
-      if (event.kind === "owner_message") {
-        if (!assistant) { log(null, owner, "owner_page_message", "blocked", {}, { refs: { channel: "owner_page" }, notes: "the owner's talk box is the shop's assistant's, and this shop has none: nothing was read" }); return; }
-        return assistant.onPageMessage({ id: `owner-page:${event.id}`, from: owner, text: event.text, timestamp: clock.now() });
-      }
-      // every other kind (a sign-in, a limit settling, a recovery, a payment event) is the runtime's own: Stock orders has no payments and nothing to recover by hand
+      await dispatch(event);
+      // Run alone (the harness, the browser demo) there is no runtime to send after a save, so the step sends what it asked for as its last act, through the same
+      // claim-send-ending code (nothing to save here). The runtime sets `sendLater` and calls `sendOnce.run` itself, after its save.
+      if (!deps.sendLater) await sendOnce.run(() => undefined);
     },
+    sendOnce,
   };
 }
 

@@ -23,7 +23,7 @@ import { checkText } from "../language/check.ts";
 import { WindowClosedError } from "../core/faults.ts";
 import type { Messaging, OutboundMessage } from "../messaging/messaging.ts";
 import type { ActionRecord, Outcome } from "../record/record.ts";
-import { nothingWasSent } from "../report/monthly-job.ts";
+import { MAX_TRIES, RETRY_AFTER_MS, nothingWasSent } from "../messaging/send-once.ts";
 import { isClosedDay, isoDate, moneyOn, shopMood } from "./conversation.ts";
 import type { AssistantShop } from "./conversation.ts";
 import { openCards } from "./cards.ts";
@@ -36,8 +36,7 @@ import type { MorningToday } from "./templates.ts";
 
 /** How long after its hour the morning line may still go. */
 export const MORNING_WINDOW_MS = 4 * HOUR;
-export const RETRY_AFTER_MS = HOUR;
-export const MAX_TRIES = 3;
+export { MAX_TRIES, RETRY_AFTER_MS };
 
 export interface MorningContext<Store extends { assistant?: AssistantState }> {
   clock: Clock;
