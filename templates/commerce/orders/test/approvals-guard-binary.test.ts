@@ -238,7 +238,7 @@ test("held → relay asks once → the owner approves → a signed notify → th
     await relay.poll(); await relay.poll();
     const asked = whatsapp.sentTo(owner);
     assert.equal(asked.length, 1);
-    assert.equal(asked[0].templateName, "owner_refund_needs_approval");
+    assert.equal(asked[0].templateName, "owner_order_refund_approval");
     const code = codeOf(asked[0].text);
     assert.match(asked[0].text, new RegExp(`refund ₹${(advance / 100).toLocaleString("en-IN")} for ${AMIT.replace("+", "\\+")} \\(order o-1`, "u"));
 
@@ -269,7 +269,7 @@ test("held → relay asks once → the owner approves → a signed notify → th
     const states = (await (await admin(guard, "/admin/approvals")).json() as any).approvals.map((a: any) => a.state);
     assert.deepEqual(states, ["consumed"], "one approval, used once");
     assert.deepEqual(runtime.status().refunds, { waitingForOwner: 0, beingSentAgain: 0, needBuilder: { total: 0 } });
-    assert.equal(whatsapp.sentTo(owner).filter((m) => m.templateName === "owner_refund_needs_approval").length, 1, "the owner was asked exactly once");
+    assert.equal(whatsapp.sentTo(owner).filter((m) => m.templateName === "owner_order_refund_approval").length, 1, "the owner was asked exactly once");
     // everything the relay and the agent did leaves no code or secret in a log line
     assert.ok(!lines.join("\n").includes(code) && !lines.join("\n").includes(guard.ownerSecret));
     // nothing more happens, however long it is left
@@ -290,6 +290,6 @@ test("a denied refund against the real Guard: the owner says no, nothing is refu
     assert.equal(standins.fakes.payments.refunds().length, 0);
     for (let i = 0; i < 3; i++) { await relay.poll(); await runtime.tick(); }
     assert.equal((await (await admin(guard, "/admin/approvals?state=pending")).json() as any).approvals.length, 0, "the agent did not ask Guard again, so Guard holds nothing new");
-    assert.equal(whatsapp.sentTo(owner).filter((m) => m.templateName === "owner_refund_needs_approval").length, 1);
+    assert.equal(whatsapp.sentTo(owner).filter((m) => m.templateName === "owner_order_refund_approval").length, 1);
   });
 });

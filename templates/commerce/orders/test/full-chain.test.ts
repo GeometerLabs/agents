@@ -69,7 +69,7 @@ test("a refund above the limit: the stub Guard holds it, the relay asks the owne
     // the customer cancels inside the window: the whole ₹120 advance is to go back, above the ₹100 limit, so the refund is held (and the agent does not ask the owner itself)
     await control(s, "/_standin/whatsapp/inbound", { from: AMIT, text: "cancel", id: "wamid.cancel-1" });
     await s.settle();
-    const owner = () => s.standins.fakes.messaging.sentTo(s.owner).filter((m) => m.templateName === "owner_refund_needs_approval");
+    const owner = () => s.standins.fakes.messaging.sentTo(s.owner).filter((m) => m.templateName === "owner_order_refund_approval");
     assert.equal(witnesses(s).refunds.length, 0, "held, not sent");
     assert.equal(s.guard.model.reviews("x", true).length, 1);
     assert.equal(owner().length, 0, "the relay has not asked yet");
