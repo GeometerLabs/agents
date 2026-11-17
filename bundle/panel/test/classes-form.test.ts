@@ -100,10 +100,9 @@ test("the old-dues switch is written only when on, and the Fees block it belongs
   applyFeesBusiness(d, body, en);
   assert.equal(d.fees!.oldDuesStopLink, true);
   const built = buildFeesSettings(d, example) as any;
-  // classes-old-dues-17nov adds this key to the Fees settings; until that is merged this branch's own check does not know it and says so in words
-  const known = validateSettings({ ...json("bright-tuition-classes.example.json"), classes: { ...json("bright-tuition-classes.example.json").classes, oldDuesStopLink: true } }).ok;
-  if (known) assert.equal(built.raw.classes.oldDuesStopLink, true);
-  else assert.ok(!built.ok && built.errors.some((e: string) => e.includes("oldDuesStopLink")), "the check names the key it does not know");
+  assert.ok(built.ok, built.errors?.join("; "));
+  assert.equal(built.raw.classes.oldDuesStopLink, true);
+  assert.equal(built.settings.classes.oldDuesStopLink, true);
   d.fees!.oldDuesStopLink = false;
   assert.equal(("oldDuesStopLink" in (buildFeesSettings(d, example) as any).raw.classes), false);
 });

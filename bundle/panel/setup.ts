@@ -54,6 +54,8 @@ export interface Draft {
   done: number;
   /** Item 11i: the Character step's choices (character.ts). Made when the step is first shown; a draft from before has none. */
   character?: CharacterDraft;
+  /** Fees: students whose old dues, joining day or adult mark were not carried over by the last save (the parent's number changed); the checks page says so, in the Operator's language. */
+  lostDetails?: string[];
   /**
    * What the shop does (17 Nov 2026, presets.ts): a preset's id, or the trade the Operator typed under "Other" (cleaned and length-bounded). Kept in the shop's meta when it is saved,
    * never in settings.json and never sent to a customer. A draft from before, or a builder's, has none.
@@ -355,7 +357,8 @@ export function upiProblems(id: string, payee: string, w: Words): string[] {
 
 // ---- the settings, and the folder ---------------------------------------------------------------------------------------------------------
 
-export type Built = { ok: true; settings: Settings } | { ok: false; errors: string[] };
+/** `lost`: names of saved students whose hidden details could not be carried over (keep.ts studentsWithoutSafeMatch); only Fees sets it. */
+export type Built = { ok: true; settings: Settings; lost?: string[] } | { ok: false; errors: string[] };
 
 /**
  * The demo's own form-to-settings, then this step's languages, owner and window on top; validateSettings is the last word. `saved` is the shop's settings.json as written, for a shop

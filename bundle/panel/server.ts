@@ -1067,6 +1067,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     try { const drawn = await ensureShopCharacter(config.serverDir, d.shopId, written(built)); if (drawn?.drawn) log(`shop ${d.shopId}: its character's pictures drawn (${drawn.version})`); }
     catch (e) { log(`shop ${d.shopId}: its character's pictures could not be drawn now (${(e as Error).message}); the deployer draws them`); }
     d.saved = true; d.editing = true;
+    d.lostDetails = (built as { lost?: string[] }).lost ?? []; // students whose old details could not be carried over: the checks page says so
     store.write(`drafts/${d.id}.json`, d);
     log(`shop ${d.shopId} saved by ${r.account!.id}`);
     redirect(r, `/setup/${d.id}/${template.steps.indexOf("checks") + 1}`);

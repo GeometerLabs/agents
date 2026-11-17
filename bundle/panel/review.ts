@@ -27,6 +27,7 @@ import { STOCK_WORDS } from "../../modules/channels/words-stock.ts";
 import { STOCK_PANEL_WORDS } from "./stock.ts";
 import { CLASSES_WORDS } from "./words-classes.ts";
 import { PRESET_WORDS } from "./words-presets.ts";
+import { KEEP_WORDS } from "./words-keep.ts";
 import { PHONE_TEMPLATES, PRESETS_DIR, loadPresets, presetTexts } from "./presets.ts";
 import { WORDS as LIMITS_OWNER_WORDS } from "../../modules/channels/owner-limits-page.ts";
 import { CHAT, QUICK } from "../../modules/channels/words-chat.ts";
@@ -58,6 +59,8 @@ const presetsFlat = (language: Language): Map<string, string> => {
   for (const p of loadPresets(PRESETS_DIR, PHONE_TEMPLATES)) for (const [id, text] of presetTexts(p, language)) out.set(id, text);
   return out;
 };
+/** What the save says when a student's earlier details could not be carried over (words-keep.ts), under the id "keep.lost". */
+const keepFlat = (language: Language): Map<string, string> => flatWords({ keep: KEEP_WORDS[language] }, { "keep.lost": ["Rahul"] });
 import { CHATS_LIST_WORDS } from "../../modules/channels/chats-list.ts";
 
 export type ReviewLanguage = "hi" | "ml" | "kn";
@@ -161,8 +164,8 @@ const chatIdentityFlat = (language: Language): Map<string, string> => flatWords(
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...classesFlat(language), ...presetsFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...classesFlat("en"), ...presetsFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...classesFlat(language), ...presetsFlat(language), ...keepFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...classesFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

@@ -68,8 +68,9 @@ const byId = (built: Obj[], saved: Obj[]): (Obj | undefined)[] => {
 };
 
 /**
- * Fees students have no id. They are matched by the settings' own key (the parent's number and the lowercased name), then, so that a corrected spelling or number does not
- * cost a student their back dues, by the same name alone, then by the same parent and batch: each only when exactly one saved student and one typed student fit.
+ * Fees students have no id. They are matched by the settings' own key (the parent's number and the lowercased name), then, so that a corrected spelling does not cost a student
+ * their back dues, by the same parent's number and the same batch, only when exactly one saved and one typed student fit. A match ALWAYS keeps the parent's number: a student
+ * is never matched by name alone, because a removed "Rahul" of one family and a new "Rahul" of another would otherwise hand the first family's old dues to the second.
  */
 export function pairStudents(built: Obj[], saved: Obj[]): (Obj | undefined)[] {
   const name = (x: Obj) => String(x.name ?? "").trim().toLowerCase();
@@ -79,17 +80,27 @@ export function pairStudents(built: Obj[], saved: Obj[]): (Obj | undefined)[] {
     const j = saved.findIndex((s, k) => !used.has(k) && s.parent === b.parent && name(s) === name(b));
     if (j >= 0) { used.add(j); out[i] = saved[j]; }
   });
-  const unique = (same: (b: Obj, s: Obj) => boolean): void => {
-    built.forEach((b, i) => {
-      if (out[i]) return;
-      const others = built.filter((o, k) => k !== i && !out[k] && same(b, o));
-      const fits = saved.map((s, k) => [s, k] as const).filter(([s, k]) => !used.has(k) && same(b, s));
-      if (others.length === 0 && fits.length === 1) { used.add(fits[0][1]); out[i] = fits[0][0]; }
-    });
-  };
-  unique((a, b) => name(a) === name(b));
-  unique((a, b) => a.parent === b.parent && a.batch === b.batch);
+  built.forEach((b, i) => {
+    if (out[i]) return;
+    const same = (a: Obj, c: Obj) => a.parent === c.parent && a.batch === c.batch;
+    const others = built.filter((o, k) => k !== i && !out[k] && same(b, o));
+    const fits = saved.map((s, k) => [s, k] as const).filter(([s, k]) => !used.has(k) && same(b, s));
+    if (others.length === 0 && fits.length === 1) { used.add(fits[0][1]); out[i] = fits[0][0]; }
+  });
   return out;
+}
+
+const hasDetails = (s: Obj): boolean => (Array.isArray(s.backDues) && s.backDues.length > 0) || typeof s.joined === "string" || s.adult === true;
+
+/**
+ * The saved students whose hidden details (back dues, joining day, adult) could not be carried over although a typed student has the same name: the parent's number changed, and a
+ * number is the only safe proof it is the same family. The save says so, by name, so the Operator can ask for the details to be added again. A student simply removed is not listed.
+ */
+export function studentsWithoutSafeMatch(built: Obj[], saved: Obj[]): string[] {
+  const pairs = pairStudents(built, saved);
+  const matched = new Set(pairs.filter(Boolean));
+  const name = (x: Obj) => String(x.name ?? "").trim().toLowerCase();
+  return saved.filter((s) => !matched.has(s) && hasDetails(s) && built.some((b, i) => !pairs[i] && name(b) === name(s))).map((s) => String(s.name));
 }
 
 /** One entry: the saved keys the form does not write, then what the form wrote, then the keys where the saved value wins. */

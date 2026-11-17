@@ -13,7 +13,8 @@ import { buildSettings, draftFromShop } from "../setup.ts";
 import { buildFeesSettings, feesDraftFromShop, MAX_BATCHES } from "../fees.ts";
 import { buildOrdersSettings, ordersDraftFromShop } from "../orders.ts";
 import { buildStockSettings, stockDraftFromShop } from "../stock.ts";
-import { KEEP, keepHidden, pairStudents } from "../keep.ts";
+import { withCharacter } from "../character.ts";
+import { KEEP, keepHidden, pairStudents, studentsWithoutSafeMatch } from "../keep.ts";
 
 const json = (path: string): any => JSON.parse(readFileSync(new URL(`../../../templates/${path}`, import.meta.url), "utf8"));
 const meta = { schema: 1, receipts: {} } as never;
@@ -48,11 +49,13 @@ test("keepHidden: an entry kept even when the entry's saved language is no longe
   assert.equal(out.students[0].language, "en");
 });
 
-test("pairStudents: the same name and number; a corrected number or a corrected spelling still finds the student; two possible matches find none", () => {
+test("pairStudents: the same name and number; a corrected spelling with the same number and batch still finds the student; a changed number never does; two possible matches find none", () => {
   const saved = [{ name: "Meera Nair", parent: "+911", batch: "b9" }, { name: "Aarav", parent: "+912", batch: "b10" }, { name: "Anaya", parent: "+912", batch: "b10" }];
   const built = [{ name: "meera nair", parent: "+911", batch: "b9" }];
   assert.equal(pairStudents(built, saved)[0], saved[0]);
-  assert.equal(pairStudents([{ name: "Meera Nair", parent: "+919", batch: "b9" }], saved)[0], saved[0], "number corrected");
+  assert.equal(pairStudents([{ name: "Meera Nair", parent: "+919", batch: "b9" }], saved)[0], undefined, "a changed number is another family: never matched, not even by name");
+  assert.deepEqual(studentsWithoutSafeMatch([{ name: "Meera Nair", parent: "+919", batch: "b9" }], [{ ...saved[0], backDues: [{ month: "2026-09", amountInr: 1 }] }]), ["Meera Nair"]);
+  assert.deepEqual(studentsWithoutSafeMatch([], [{ ...saved[0], backDues: [{ month: "2026-09", amountInr: 1 }] }]), [], "a student simply removed is not reported");
   assert.equal(pairStudents([{ name: "Meera Nayar", parent: "+911", batch: "b9" }], saved)[0], saved[0], "spelling corrected");
   assert.equal(pairStudents([{ name: "Aryan", parent: "+912", batch: "b10" }], saved)[0], undefined, "two siblings fit: no guess");
 });
@@ -108,14 +111,41 @@ test("Fees: a student the Operator removed takes joined, backDues and adult with
   assert.equal(zoya.joined, undefined);
 });
 
-test("Fees: a student whose spelling or number was corrected keeps the back dues", () => {
+test("Fees: a student whose spelling was corrected (same parent number, same batch) keeps the back dues", () => {
   const saved = savedFees();
   const d = feesDraft(saved);
-  d.fees!.students = d.fees!.students.replace("Meera Nair, +919822222222", "Meera Nayar, +919822299999");
+  d.fees!.students = d.fees!.students.replace("Meera Nair, +919822222222", "Meera Nayar, +919822222222");
   const built = feesBuild(d, saved) as any;
   assert.ok(built.ok, built.errors?.join("; "));
-  const meera = built.settings.students.find((x: any) => x.name === "Meera Nayar");
-  assert.deepEqual(meera.backDues, [{ month: "2026-09", amountInr: 1000 }]);
+  assert.deepEqual(built.settings.students.find((x: any) => x.name === "Meera Nayar").backDues, [{ month: "2026-09", amountInr: 1000 }]);
+  assert.equal(built.lost, undefined);
+});
+
+test("Fees: a changed parent's number never carries a student's details to the new number: the details are dropped and the save names the student", () => {
+  const saved = savedFees();
+  const d = feesDraft(saved);
+  d.fees!.students = d.fees!.students.replace("Meera Nair, +919822222222", "Meera Nair, +919822299999");
+  const built = feesBuild(d, saved) as any;
+  assert.ok(built.ok, built.errors?.join("; "));
+  const meera = built.settings.students.find((x: any) => x.name === "Meera Nair");
+  assert.equal(meera.backDues, undefined);
+  assert.equal(meera.language, "hi", "not even her own language moves: she is a new student of this centre");
+  assert.deepEqual(built.lost, ["Meera Nair"]);
+});
+
+test("Fees: a removed Rahul of one family and a new Rahul of another: the first family's old dues are not given to the second", () => {
+  const saved = savedFees();
+  saved.students.push({ name: "Rahul", parent: "+919877700001", batch: "class-8", backDues: [{ month: "2026-09", amountInr: 1000 }], joined: "2026-10-01" });
+  const d = feesDraft(saved);
+  d.fees!.students = d.fees!.students.replace(/Rahul, \+919877700001, [^\n]+/u, "Rahul, +919877700002, कक्षा 8");
+  const built = feesBuild(d, saved) as any;
+  assert.ok(built.ok, built.errors?.join("; "));
+  const rahul = built.settings.students.filter((x: any) => x.name === "Rahul");
+  assert.equal(rahul.length, 1);
+  assert.equal(rahul[0].parent, "+919877700002");
+  assert.deepEqual([rahul[0].backDues, rahul[0].joined], [undefined, undefined]);
+  assert.ok(!JSON.stringify(built.raw).includes("2026-10-01"));
+  assert.deepEqual(built.lost, ["Rahul"]);
 });
 
 test("Fees: a renamed batch is still the same batch (its id, its students, its timetable); a back due above a lowered fee is refused in words, not dropped", () => {
@@ -285,4 +315,64 @@ test("Bookings: a service the Operator removed takes its resource with it", () =
   assert.ok(!built.services.some((x: any) => x.id === "rotavator-half-day"));
   assert.ok(built.services.every((x: any) => x.resource !== "tractor"), "the removed service's resource went with it");
   assert.deepEqual(built.resources, { shop: 2, tractor: 2 }, "the pools are the shop's, not the service's");
+});
+
+// ---- an edit leaves every optional block the form does not show byte for byte ------------------------------------------------------------------
+
+/** What an edit of one field leaves: the saved file with that one field changed, compared as text, block by block. */
+function sameBlocks(raw: any, saved: any, blocks: string[], note: string): void {
+  for (const k of blocks) assert.equal(JSON.stringify(raw[k]), JSON.stringify(saved[k]), `${note}: "${k}" is exactly as saved`);
+}
+const ASSISTANT = { morning: { at: "07:30" }, talk: { customers: false }, character: { name: "Mithra", style: "clay", seed: "shop-3f2a1c-4", personality: "warm" } };
+
+test("Bookings: the assistant (with its talk setting) and the other blocks the form has no box for come back byte for byte after an edit; the written file is the raw one", () => {
+  const saved = savedBookings();
+  saved.assistant = ASSISTANT;
+  const original = must(validateBookings(saved)) as any;
+  const d = draftFromShop("d1", "a1", "bookings", "hosahalli", original, undefined, meta, NOW);
+  d.form.deposit = "1500";
+  const built = buildSettings(d, original, saved);
+  assert.ok(built.ok);
+  // what the save writes: withCharacter puts the saved raw assistant back over the checked one
+  const written = withCharacter((built as any).settings, undefined, saved, "hosahalli") as any;
+  sameBlocks(written, saved, ["assistant"], "Bookings");
+  const s = (built as any).settings;
+  assert.equal(JSON.stringify(s.reminders), JSON.stringify(saved.reminders));
+  assert.equal(s.address, saved.address);
+  assert.equal(s.slotMinutes, saved.slotMinutes);
+  assert.equal(s.deposit.holdMinutes, 45);
+});
+
+test("Orders, Fees and Stock orders: every block the form does not show comes back byte for byte after an edit of one field", () => {
+  const o = savedOrders();
+  o.reminder = { hoursBefore: 3 };
+  o.assistant = ASSISTANT;
+  const od = ordersDraft(o);
+  od.orders!.refund = "250";
+  const ob = ordersBuild(od, o);
+  assert.ok(ob.ok, ob.errors?.join("; "));
+  sameBlocks(ob.raw, o, ["plans", "reminder", "assistant"], "Orders");
+  assert.equal(JSON.stringify(ob.raw.pickup.slots.map((x: any) => [x.cutoff, x.maxOrders])), JSON.stringify(o.pickup.slots.map((x: any) => [x.cutoff, x.maxOrders])));
+
+  const f = savedFees();
+  f.assistant = ASSISTANT;
+  const fd = feesDraft(f);
+  fd.fees!.batches[0].fee = "1300";
+  const fb = feesBuild(fd, f) as any;
+  assert.ok(fb.ok, fb.errors?.join("; "));
+  sameBlocks(fb.raw, f, ["assistant", "joiningMidMonth"], "Fees");
+  assert.equal(JSON.stringify(fb.raw.classes.timetable), JSON.stringify(f.classes.timetable));
+  assert.equal(fb.raw.classes.linkLeadMinutes, 45);
+  assert.equal(JSON.stringify(fb.raw.students.map((x: any) => [x.joined, x.backDues, x.adult])), JSON.stringify(f.students.map((x: any) => [x.joined, x.backDues, x.adult])));
+
+  const st = savedStock();
+  st.assistant = ASSISTANT;
+  st.followUpHours = [2, 12];
+  const sd = stockDraft(st);
+  (sd as any).stock.maxPerOrderInr = "15000";
+  const sb = stockBuild(sd, st);
+  assert.ok(sb.ok, sb.errors?.join("; "));
+  sameBlocks(sb.raw, st, ["assistant", "followUpHours"], "Stock orders");
+  assert.equal(sb.raw.limits.maxQuantity, st.limits.maxQuantity);
+  assert.equal(JSON.stringify(sb.raw.suppliers), JSON.stringify(st.suppliers));
 });

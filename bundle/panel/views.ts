@@ -18,6 +18,7 @@ import type { CostLine, MonthlyCost } from "./cost.ts";
 import type { CheckResult } from "./checks.ts";
 import type { LiveView, ShopStatus } from "./contract.ts";
 import { presetWords } from "./words-presets.ts";
+import { keepWords } from "./words-keep.ts";
 import { html, raw } from "./html.ts";
 import type { Raw } from "./html.ts";
 import type { PlanView } from "./plan.ts";
@@ -680,7 +681,7 @@ export function setupChecksPage(c: Ctx, v: ChecksView): string {
   const w = c.w.setup;
   const k = w.checks;
   const d = v.draft;
-  const head = html`<p class="note">${w.progress(v.now + 1, v.steps.length)}</p>${stepsBar(c, v.steps, v.now)}<h1>${w.steps.checks}</h1>${errorsBox(c, v.problems)}`;
+  const head = html`<p class="note">${w.progress(v.now + 1, v.steps.length)}</p>${stepsBar(c, v.steps, v.now)}<h1>${w.steps.checks}</h1>${errorsBox(c, v.problems)}${(d.lostDetails ?? []).map((n) => html`<div class="notice" role="status">${keepWords(c.w).lost(n)}</div>`)}`;
   const hand = v.checks?.hand;
   const back = html`<a class="btn" href="/setup/${d.id}/${v.now}">${c.w.common.back}</a>`;
   if (!v.saved) {

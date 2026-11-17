@@ -12,7 +12,7 @@ import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
-import { KEEP, keepHidden } from "./keep.ts";
+import { KEEP, keepHidden, studentsWithoutSafeMatch } from "./keep.ts";
 import { dayNumber } from "../../templates/education/fees/src/classes/settings.ts";
 import { classesWords } from "./words-classes.ts";
 
@@ -274,7 +274,8 @@ export function buildFeesSettings(draft: Draft, example: Settings, saved?: unkno
   const written = saved === undefined ? raw : keepHidden(raw, saved, KEEP.fees);
   const checked = validateSettings(written);
   // `written` is the shape a builder writes (and `shop add --template fees` takes): the checked settings name a student's batch differently.
-  return checked.ok ? ({ ok: true, settings: checked.settings as never, raw: written } as Built) : { ok: false, errors: checked.errors };
+  const lost = saved === undefined ? [] : studentsWithoutSafeMatch(students, ((saved as { students?: unknown[] }).students ?? []).filter((x): x is Record<string, unknown> => typeof x === "object" && x !== null));
+  return checked.ok ? ({ ok: true, settings: checked.settings as never, raw: written, ...(lost.length > 0 ? { lost } : {}) } as Built) : { ok: false, errors: checked.errors };
 }
 
 /** The centre's limits as one sentence each, in the person's language: the same lines the go-live certificate prints. From the draft when it builds, nothing when it does not yet. */
