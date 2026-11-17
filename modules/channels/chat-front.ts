@@ -18,6 +18,8 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { GUEST_HANDLE, guestHash, newGuestHandle } from "./handle.ts";
 import { chatPage } from "./chat-page.ts";
+import { identityRoute } from "./chat-identity-front.ts";
+import { identityBlock } from "./chat-identity-page.ts";
 import { MOMENTS, LOTTIE_VERSION } from "./chat-motion.ts";
 import { MAX_VOICE_BYTES } from "./owner-audio.ts";
 import { isPaint } from "./chat-paint.ts";
@@ -60,7 +62,7 @@ export const guestCookie = (path: string, handle: string): string => `${CHAT_COO
 // Streetlist door, W3's app manifest and, when the shop sends through Streetlist's one push key, the app's own root worker. Each at its exact address, never 'self'
 // (the pages origin is shared by every shop).
 export const chatPolicy = (base: string, nonce: string, home?: string, app?: { origin: string; worker: boolean }): string =>
-  `${PAGE_POLICY.replace("img-src data:", home ? `img-src data: ${home}/character/` : "img-src data:")}; script-src 'nonce-${nonce}' ${base}/m/lottie.js; connect-src ${base}/send ${base}/thread ${base}/push ${base}/voice ${base}/m/; worker-src ${base}/sw.js${app?.worker ? ` ${app.origin}/sw.js` : ""}; font-src ${base}/font.woff2${app ? `; manifest-src ${app.origin}/manifest.webmanifest` : ""}`;
+  `${PAGE_POLICY.replace("img-src data:", home ? `img-src data: ${home}/character/` : "img-src data:")}; script-src 'nonce-${nonce}' ${base}/m/lottie.js; connect-src ${base}/send ${base}/thread ${base}/push ${base}/voice ${base}/m/ ${base}/id/; worker-src ${base}/sw.js${app?.worker ? ` ${app.origin}/sw.js` : ""}; font-src ${base}/font.woff2${app ? `; manifest-src ${app.origin}/manifest.webmanifest` : ""}`;
 
 /**
  * Which key and worker alerts use on this page, in one place so the page that offers them and the call that takes them cannot disagree (W3). Served through the Streetlist
@@ -91,17 +93,22 @@ async function shopOf(a: RouteArgs, kind: ChatKind) {
   return (await b.offer({})).shop;
 }
 
-export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean }): Promise<void> {
+/**
+ * `parent` (W2): the chat on a parent's private fee page, reached by front-fees.ts at <page>/f/<link>/chat with `rest` rewritten to start at "/chat". The parent's link is the
+ * identity: there is no cookie, no guest and no keys, the runtime opens the link's hash to the parent's own thread, and the page's note says the chat is theirs.
+ */
+export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean; parent?: { link: string; hash: string } }): Promise<void> {
   const { req, res, url, shop, name, rest, method, address } = a;
   const { limiter } = kit;
   const backend = shop.backend;
   const kind: ChatKind = shop.kind ?? "bookings";
   if (!backend.chat) return kit.sendHtml(res, 404, NOT_FOUND);
-  const base = `${shop.publicUrl}/chat`;
+  const parent = a.parent;
+  const base = parent ? `${shop.publicUrl}/f/${parent.link}/chat` : `${shop.publicUrl}/chat`;
   const path = `${new URL(shop.publicUrl).pathname.replace(/\/$/u, "")}/chat`;
   const sub = rest === "/chat" || rest === "/chat/" ? "" : rest.slice("/chat".length);
-  const handle = guestFromCookie(req.headers.cookie);
-  const hash = handle ? guestHash(name, handle) : undefined;
+  const handle = parent ? undefined : guestFromCookie(req.headers.cookie);
+  const hash = parent ? parent.hash : handle ? guestHash(name, handle) : undefined;
   const tooMany = (language: Language) => kit.sendJson(res, 429, { error: CHAT[language].rate }, { "retry-after": "60" });
 
   if (sub === "/font.woff2" && method === "GET") {
@@ -109,6 +116,12 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     res.writeHead(200, { "content-type": "font/woff2", "content-length": bytes.length, "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" });
     res.end(bytes);
     return;
+  }
+
+  // W2: a guest's identity (keep this chat, a new phone, delete my chat); a parent's chat has none, their link is who they are
+  if (sub === "/id" || sub.startsWith("/id/")) {
+    if (parent) return kit.sendHtml(res, 404, NOT_FOUND);
+    return identityRoute(kit, a, { sub, hash, base, path, languageOf: async () => kit.languageOf(req, url, (await shopOf(a, kind)).languages) });
   }
 
   // the animations' player and files: static, public, a year's cache (the player's address carries its version), served only to this page's own policy
@@ -123,7 +136,7 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
 
   if (sub === "/voice" && method === "POST") {
     if (!kit.sameOrigin(req, shop)) return kit.sendJson(res, 403, { error: "Calls from another site's page are refused." });
-    if (!backend.chatVoice) return kit.sendJson(res, 404, { error: "Voice is not on here." });
+    if (!backend.chatVoice || parent) return kit.sendJson(res, 404, { error: "Voice is not on here." });
     const offer = await shopOf(a, kind);
     const asked = url.searchParams.get("lang");
     const language = offer.languages.includes(asked as Language) ? asked as Language : kit.languageOf(req, url, offer.languages);
@@ -142,7 +155,7 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
   }
 
   if (sub === "/sw.js" && method === "GET") {
-    const k = backend.push ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
+    const k = backend.push && !parent ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
     if (!k || k.body.on !== true) return kit.sendHtml(res, 404, NOT_FOUND);
     res.writeHead(200, { "content-type": "text/javascript; charset=utf-8", "content-length": Buffer.byteLength(CUSTOMER_SW), "cache-control": "no-cache", "content-security-policy": "default-src 'none'", "x-content-type-options": "nosniff" });
     res.end(CUSTOMER_SW);
@@ -154,13 +167,13 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     if (!hash) return kit.sendJson(res, 200, { lines: [], answered: false, capped: false, retentionDays: 30 });
     const after = Number(url.searchParams.get("after") ?? "0");
     const cid = url.searchParams.get("cid") ?? undefined;
-    const read = await backend.chat(hash, { ...(Number.isInteger(after) && after > 0 ? { after } : {}), ...(cid && /^[A-Za-z0-9-]{1,64}$/u.test(cid) ? { cid } : {}) });
+    const read = await backend.chat(hash, { ...(Number.isInteger(after) && after > 0 ? { after } : {}), ...(cid && /^[A-Za-z0-9-]{1,64}$/u.test(cid) ? { cid } : {}), ...(parent ? { parent: parent.hash } : {}) });
     return kit.sendJson(res, 200, read);
   }
 
   if (sub === "/push" && method === "POST") {
     if (!kit.sameOrigin(req, shop)) return kit.sendJson(res, 403, { error: "Calls from another site's page are refused." });
-    if (!backend.push || !hash || !limiter.take("chat", address)) return kit.sendJson(res, backend.push && hash ? 429 : 404, { error: "Alerts are not on here." });
+    if (!backend.push || !hash || parent || !limiter.take("chat", address)) return kit.sendJson(res, backend.push && hash && !parent ? 429 : 404, { error: "Alerts are not on here." });
     let body: Record<string, unknown>;
     try { body = JSON.parse((await kit.readBody(req, kit.maxForm)) ?? "") as Record<string, unknown>; } catch { return kit.sendJson(res, 400, { error: "Send JSON." }); }
     // Streetlist's one key only on a page served through the door, and only when the shop has a relay (the runtime refuses it otherwise)
@@ -181,7 +194,7 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     if (!hash) return json ? kit.sendJson(res, 400, { error: "Open the chat page first." }) : back();
     if (!limiter.take("chat", address) || !limiter.take("shopChats", `shop:${name}`)) return json ? tooMany(language) : back("rate");
     const id = typeof raw.id === "string" && /^[A-Za-z0-9-]{1,64}$/u.test(raw.id) ? raw.id : randomUUID();
-    const event = { kind: "chat_message", id, handle: hash, language, ...(raw.tap !== undefined ? { tap: raw.tap } : raw.quick !== undefined ? { quick: Number(raw.quick) } : { text: raw.text }) };
+    const event = { kind: "chat_message", id, handle: hash, language, ...(parent ? { parent: parent.hash } : {}), ...(raw.tap !== undefined ? { tap: raw.tap } : raw.quick !== undefined ? { quick: Number(raw.quick) } : { text: raw.text }) };
     const checked = checkChannelEvent(event);
     if (!checked.ok) return json ? kit.sendJson(res, 400, { error: checked.error }) : back();
     const r = await backend.submit([checked.event as ChannelEvent]);
@@ -195,12 +208,12 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     const language = kit.languageOf(req, url, offer.languages);
     let cookie: string | undefined;
     let guest = hash;
-    if (!guest) {
+    if (!guest && !parent) {
       // a fresh handle costs nothing to make, so how often one address asks for one is counted; past it the page still opens (read-only) and sends nothing until the cookie comes
       if (limiter.take("chatStarts", address)) { const fresh = newGuestHandle(); cookie = guestCookie(path, fresh); guest = guestHash(name, fresh); }
     }
-    const thread = guest ? await backend.chat(guest) : { lines: [], answered: false, capped: false, retentionDays: 30 };
-    const key = backend.push ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
+    const thread = guest ? await backend.chat(guest, parent ? { parent: parent.hash } : {}) : { lines: [], answered: false, capped: false, retentionDays: 30 };
+    const key = backend.push && !parent ? await backend.push({ op: "key" }).catch(() => undefined) : undefined;
     const choice = key?.body.on === true ? pushChoice(key.body, a.viaDoor, shop.publicUrl) : undefined;
     const nonce = randomBytes(16).toString("base64");
     const read = thread as { personality?: string; listen?: boolean };
@@ -210,7 +223,8 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     const paint = a.pages?.paint;
     const personality = (PERSONALITIES as readonly string[]).includes(read.personality ?? "") ? read.personality as Personality : undefined;
     const html = chatPage({
-      shop: offer, kind, language, base, home: shop.publicUrl, nonce, thread,
+      shop: offer, kind, language, base, home: parent ? `${shop.publicUrl}/f/${parent.link}` : shop.publicUrl, nonce, thread,
+      identity: identityBlock({ language, base, ...(parent ? { parent: { back: `${shop.publicUrl}/f/${parent.link}?lang=${language}` } } : {}) }),
       ...(personality ? { personality } : {}), ...(paint && isPaint(paint) ? { paint } : {}), ...(art ? { art } : {}), ...(read.listen === true ? { listen: true } : {}), ...(choice ? { pushKey: choice.key, ...(choice.via ? { pushVia: choice.via } : {}) } : {}),
       onStreetlist: a.viaDoor, fontUrl: `${base}/font.woff2`, ...(url.searchParams.get("notice") === "rate" ? { notice: "rate" as const } : {}),
     });

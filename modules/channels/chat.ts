@@ -90,6 +90,17 @@ export function chatThread(state: ChannelState | undefined, hash: string, o: { a
   return { lines: out, answered: shop.length > 0, capped: guest !== undefined && guest.day === o.dayKey && guest.turns >= CHAT_LIMITS.modelTurnsPerDay, retentionDays: o.retentionDays };
 }
 
+/**
+ * W2, "delete my chat": the thread's words go, the guest's own lines and the shop's lines to it, with the day's counts. The runtime's HTTP layer has already taken the guest's passkeys,
+ * number and ties away (chat-identity.ts forget) and the alert subscriptions; the record keeps its digests and the bookings and payments keep what the law needs (a booking or an order
+ * is the shop's own, not the chat's). A booking that finishes later may still write one line to this conversation; nothing reads it (the cookie is cleared, so the guest's hash is
+ * never asked for again) and the retention takes it off with the rest.
+ */
+export function forgetChat(state: ChannelState, conversation: string): void {
+  if (state.chat) { delete state.chat[conversation]; if (Object.keys(state.chat).length === 0) delete state.chat; }
+  state.outbox = state.outbox.filter((m) => m.to !== conversation);
+}
+
 /** The shop's day for a moment, the key the saved caps are counted under. */
 export const chatDay = (nowMs: number, timeZone: string): string => dayLocal(nowMs, timeZone);
 
@@ -121,6 +132,7 @@ const modelCalls = (ai: AiStore, now: number, timeZone: string): number => { con
  */
 export async function chatTurn(d: ChatTurnDeps, e: ChatMessage): Promise<ChatTurnResult> {
   const conversation = chatConversationOf(e.handle);
+  if (e.forget) { forgetChat(d.state, conversation); return "done"; } // before anything is made or counted: a deleted chat leaves no guest behind
   const day = chatDay(d.now, d.timeZone);
   const guest = ((d.state.chat ??= {})[conversation] ??= newGuest(d.now, day));
   if (guest.said.some((m) => m.cid === e.id)) return "repeat";

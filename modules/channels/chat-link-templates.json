@@ -1,0 +1,242 @@
+[
+  {
+    "name": "chat_new_phone",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "नए फ़ोन पर {{1}} के साथ आपकी चैट खोलने का आपका लिंक: {{2}} यह एक बार, 15 मिनट तक चलेगा। अगर आपने यह नहीं माँगा, तो इस संदेश को छोड़ दीजिए।",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "chat_new_phone",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Your link to open your chat with {{1}} on a new phone: {{2}} It works once, for 15 minutes. If you did not ask for it, ignore this message.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "chat_new_phone",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "പുതിയ ഫോണിൽ {{1}}-മായുള്ള നിങ്ങളുടെ ചാറ്റ് തുറക്കാനുള്ള ലിങ്ക്: {{2}} ഇത് ഒരിക്കൽ മാത്രം, 15 മിനിറ്റ് പ്രവർത്തിക്കും. നിങ്ങൾ ചോദിച്ചതല്ലെങ്കിൽ ഈ സന്ദേശം അവഗണിക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "chat_new_phone",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ಹೊಸ ಫೋನಿನಲ್ಲಿ {{1}} ಜೊತೆಗಿನ ನಿಮ್ಮ ಚಾಟ್ ತೆರೆಯುವ ಲಿಂಕ್: {{2}} ಇದು ಒಮ್ಮೆ ಮಾತ್ರ, 15 ನಿಮಿಷ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ನೀವು ಕೇಳದಿದ್ದರೆ ಈ ಸಂದೇಶವನ್ನು ಬಿಟ್ಟುಬಿಡಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "chat_my_link",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "आपका लिंक, {{1}} से: {{2}} अगर आपने यह नहीं माँगा, तो इस संदेश को छोड़ दीजिए।",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "chat_my_link",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Your link from {{1}}: {{2}} If you did not ask for it, ignore this message.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "chat_my_link",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "നിങ്ങളുടെ ലിങ്ക്, {{1}}-ൽ നിന്ന്: {{2}} നിങ്ങൾ ചോദിച്ചതല്ലെങ്കിൽ ഈ സന്ദേശം അവഗണിക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "chat_my_link",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "ನಿಮ್ಮ ಲಿಂಕ್, {{1}} ಇಂದ: {{2}} ನೀವು ಕೇಳದಿದ್ದರೆ ಈ ಸಂದೇಶವನ್ನು ಬಿಟ್ಟುಬಿಡಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "chat_confirm_number",
+    "language": "hi",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "{{1}} के साथ आपकी चैट के लिए यह आपका नंबर है, यह पक्का करने को दबाइए: {{2}} यह एक बार, 15 मिनट तक चलेगा। अगर आपने यह नहीं माँगा, तो इस संदेश को छोड़ दीजिए।",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "chat_confirm_number",
+    "language": "en",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "Tap to confirm this is your number for your chat with {{1}}: {{2}} It works once, for 15 minutes. If you did not ask for it, ignore this message.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "chat_confirm_number",
+    "language": "ml",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "{{1}}-മായുള്ള നിങ്ങളുടെ ചാറ്റിന് ഇത് നിങ്ങളുടെ നമ്പറാണെന്ന് ഉറപ്പിക്കാൻ തൊടൂ: {{2}} ഇത് ഒരിക്കൽ മാത്രം, 15 മിനിറ്റ് പ്രവർത്തിക്കും. നിങ്ങൾ ചോദിച്ചതല്ലെങ്കിൽ ഈ സന്ദേശം അവഗണിക്കൂ.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "chat_confirm_number",
+    "language": "kn",
+    "category": "UTILITY",
+    "parameter_format": "positional",
+    "components": [
+      {
+        "type": "BODY",
+        "text": "{{1}} ಜೊತೆಗಿನ ನಿಮ್ಮ ಚಾಟ್‌ಗೆ ಇದು ನಿಮ್ಮ ನಂಬರ್ ಎಂದು ಖಚಿತಪಡಿಸಲು ಒತ್ತಿ: {{2}} ಇದು ಒಮ್ಮೆ ಮಾತ್ರ, 15 ನಿಮಿಷ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ನೀವು ಕೇಳದಿದ್ದರೆ ಈ ಸಂದೇಶವನ್ನು ಬಿಟ್ಟುಬಿಡಿ.",
+        "example": {
+          "body_text": [
+            [
+              "Glow Salon",
+              "https://streetlist.in/glow/chat/id/back/example"
+            ]
+          ]
+        }
+      }
+    ]
+  }
+]

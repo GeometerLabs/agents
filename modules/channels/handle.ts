@@ -47,6 +47,13 @@ export const GUEST_HANDLE = /^[A-Za-z0-9_-]{43}$/u;
  */
 export const guestHash = (shop: string, handle: string): string => createHash("sha256").update(`chat-guest:${shop}:${handle}`).digest("hex");
 
+/**
+ * W2: a parent's chat on their private fee page. The thread is the PARENT's, not the link's (a link is made again at a reminder, a chat must survive that), so its hash is
+ * made from the parent's stable ref (fees src/channel.ts parentRef, "p-" and 12 hex digits). The prefix keeps it apart from a guest's hash and from a parent's link hash.
+ * The runtime makes it from the link's hash at its door; the Fees agent finds the parent from the conversation it names.
+ */
+export const parentChatHash = (ref: string): string => createHash("sha256").update(`parent-chat:${ref}`).digest("hex");
+
 // The channels' names and conversations are in conversation.ts (no imports, so an agent in the browser demo can use them); they are passed on from here too.
 export { CHANNELS, chatConversationOf, conversationOf, isChannelConversation, isChatConversation } from "./conversation.ts";
 export type { ChannelName } from "./conversation.ts";

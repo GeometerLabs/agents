@@ -27,6 +27,7 @@ import { STOCK_WORDS } from "../../modules/channels/words-stock.ts";
 import { STOCK_PANEL_WORDS } from "./stock.ts";
 import { WORDS as LIMITS_OWNER_WORDS } from "../../modules/channels/owner-limits-page.ts";
 import { CHAT, QUICK } from "../../modules/channels/words-chat.ts";
+import { IDENTITY } from "../../modules/channels/words-chat-identity.ts";
 import { CHAT_MORE } from "../../modules/channels/words-chat-more.ts";
 import { CHAT_GUEST } from "../../modules/channels/chat-guest.ts";
 
@@ -139,10 +140,13 @@ const chatFlat = (language: Language): Map<string, string> => flatWords({ chat: 
 /** W3, the chat page's lines about the Streetlist app (17 Nov 2026): the "Your chats" link and the install prompt (modules/channels/chats-list.ts), under the ids "chat.list.*". The Streetlist site's /chats page has the same lines plus its own (its docs/Review-words.md). */
 const chatListFlat = (language: Language): Map<string, string> => flatWords({ chat: { list: CHATS_LIST_WORDS[language] } });
 
+/** W2, keep this chat, open it on a new phone, delete my chat and a parent's chat (17 Nov 2026; modules/channels/words-chat-identity.ts), under the ids "chat.id.*". The two WhatsApp link templates are in modules/channels/chat-link-templates.json. */
+const chatIdentityFlat = (language: Language): Map<string, string> => flatWords({ chat: { id: IDENTITY[language] } });
+
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...chatListFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...chatListFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

@@ -740,6 +740,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `licence.trial` | ಟ್ರಯಲ್ ಪರವಾನಗಿ: ಕೊನೆಯ ದಿನ 10 Dec 2026. ಮರುದಿನದಿಂದ, ಅಂಗಡಿ ಪ್ಲಾನ್‌ಗೆ ಬರುವವರೆಗೆ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | Trial licence: the last day is 10 Dec 2026. From the next day, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
 | `setup.chooseTemplate` | ಇದು ಏನು ಮಾಡಬೇಕು? | What will it do? |  |
+| `setup.templateNames.stock-orders` | ಸರಬರಾಜುದಾರರಿಂದ ಸ್ಟಾಕ್ ಆರ್ಡರ್ | Restocking from suppliers |  |
 | `setup.templateNames.bookings` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್ | Bookings with a deposit |  |
 | `setup.templateNames.fees` | ತರಗತಿಗಳ ಶುಲ್ಕ ವಸೂಲಿ | Fee collection for classes |  |
 | `setup.templateNames.orders` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಮೊದಲೇ ಆರ್ಡರ್ | Pre-orders with an advance |  |
@@ -1057,6 +1058,8 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `inbox.kinds.whatsapp_token_renewal` | Gupshup ಮೂಲಕ WhatsApp: ಈ ಅಂಗಡಿಯ ಟೋಕನ್ ಅನ್ನು ನವೀಕರಿಸಲು ಆಗಲಿಲ್ಲ. ಈಗಿನದು 6 ಗಂಟೆಗಳಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ, ಅದರ ನಂತರ ಯಾವ ಸಂದೇಶವೂ ಹೋಗುವುದಿಲ್ಲ. ಸರ್ವರ್ ನೋಡಿ (geometer logs refresher) ಅಥವಾ ಹೊಸ Gupshup universal token ಕೊಡಿ. | WhatsApp through Gupshup: this shop's token could not be renewed. The one in use ends in 6 hours, and then no message goes out. Check the server (geometer logs refresher) or hand in a new Gupshup universal token. |  |
 | `inbox.kinds.whatsapp_token_credential` | Gupshup ಮೂಲಕ WhatsApp: ಸರ್ವರ್‌ನ Gupshup universal token 5 ದಿನಗಳಲ್ಲಿ ಮುಗಿಯುತ್ತದೆ. ಅದಕ್ಕೂ ಮೊದಲು ಹೊಸದನ್ನು ಕೊಡಿ (geometer gupshup-token <file>). | WhatsApp through Gupshup: the server's Gupshup universal token ends in 5 days. Hand in a new one before then (geometer gupshup-token <file>). |  |
 | `inbox.kinds.message_not_delivered` | b-3 ಗಾಗಿ ಕಳುಹಿಸಿದ WhatsApp ಸಂದೇಶ ಫೋನ್ ತಲುಪಲಿಲ್ಲ (ಅದು ವಿಫಲವಾಯಿತು ಎಂದು WhatsApp ತಿಳಿಸಿತು): ಆ ವ್ಯಕ್ತಿಯನ್ನು ಬೇರೆ ರೀತಿಯಲ್ಲಿ ಸಂಪರ್ಕಿಸಿ | A WhatsApp message for b-3 never reached the phone (WhatsApp reported it failed): reach the person another way |  |
+| `inbox.kinds.supplier_no_answer` | ಆರ್ಡರ್ po-3: ಮತ್ತೆ ಕೇಳಿದರೂ ಸರಬರಾಜುದಾರರು ಉತ್ತರಿಸಿಲ್ಲ: ಅವರಿಗೆ ಕರೆ ಮಾಡಿ, ಅಥವಾ ಆರ್ಡರ್ ಅವರಿಗೆ ತಲುಪದಿದ್ದರೆ ರದ್ದುಮಾಡಿ | Order po-3: the supplier has not answered, even after asking again: call them, or cancel the order if it never reached them |  |
+| `inbox.kinds.goods_not_received` | ಆರ್ಡರ್ po-3: ಸರಬರಾಜುದಾರರು ಒಪ್ಪಿದ್ದಾರೆ ಆದರೆ ಒಂದು ವಾರದಿಂದ ಏನೂ ಬಂದಿದೆ ಎಂದು ಗುರುತಿಸಿಲ್ಲ: ಅವರನ್ನು ಕೇಳಿ, ಅಥವಾ ಬಂದದ್ದನ್ನು ಗುರುತಿಸಿ | Order po-3: the supplier accepted it but nothing has been marked received for a week: ask them, or mark what arrived |  |
 | `inbox.kinds.upi_payment_unconfirmed` | b-3 ಗಾಗಿ ₹200 UPI ಪಾವತಿಯನ್ನು ಮಾಲೀಕರು ಇನ್ನೂ ಖಚಿತಪಡಿಸಿಲ್ಲ: UPI ಆ್ಯಪ್ ನೋಡಲು ಮಾಲೀಕರಿಗೆ ಹೇಳಿ | UPI payment of ₹200 for b-3 is not yet confirmed by the owner: ask the owner to check their UPI app |  |
 | `inbox.kinds.upi_refund_owed` | b-3 ಗಾಗಿ ₹200 ರೀಫಂಡ್ ಮಾಲೀಕರು ನೀಡಬೇಕಿದೆ, ಇನ್ನೂ ಮುಗಿದಿದೆ ಎಂದು ಗುರುತಿಸಿಲ್ಲ: ಮಾಲೀಕರಿಗೆ ನೆನಪಿಸಿ | Refund of ₹200 for b-3 is owed by the owner and not yet marked done: remind the owner |  |
 | `inbox.fallback` | b-3 ನಲ್ಲಿ ಒಬ್ಬರು ನೋಡಬೇಕಿದೆ (upi_unconfirmed) | b-3 needs a person (upi_unconfirmed) |  |
@@ -1326,6 +1329,8 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `memory.talk_off` | ಈಗ ನಾನು ನಿಗದಿತ ವಿನಂತಿಗಳಿಗೆ ಮಾತ್ರ ಉತ್ತರಿಸಬಲ್ಲೆ. ಅವನ್ನು ನೋಡಲು "help" ಎನ್ನಿ. | I can only answer set requests right now. Say "help" to see them. |  |
 | `memory.button.remember` | ನೆನಪಿಡಿ | Remember |  |
 | `memory.button.no` | ಬೇಡ | No |  |
+| `card.stock-orders.cancel` | ಆರ್ಡರ್ o-5 (Priya, 2 cakes) ರದ್ದುಮಾಡಲೇ? ಸರಬರಾಜುದಾರರಿಗೆ ಏನೂ ಹೋಗಿಲ್ಲ. | Cancel order o-5 (Priya, 2 cakes)? Nothing has gone to the supplier. |  |
+| `card.stock-orders.approve` | ಆರ್ಡರ್ o-5 ಒಪ್ಪಲೇ: Priya ಅವರಿಂದ 2 cakes, ಒಟ್ಟು ₹12,000? ಇದು ಸರಬರಾಜುದಾರರಿಗೆ ಹೋಗುತ್ತದೆ ಮತ್ತು ತಿಂಗಳ ಬಜೆಟ್ ಇದಕ್ಕಾಗಿ ಮೀಸಲಿಡಲಾಗುತ್ತದೆ. | Approve order o-5: 2 cakes from Priya, ₹12,000 in all? It goes to the supplier and the month's budget is kept for it. |  |
 | `card.fees.cancel_money` | ಫೀಸ್ f-3 (Priya, November 2026) ರದ್ದುಮಾಡಿ ₹1,500 ಬಾಕಿ ಮನ್ನಾ ಮಾಡಲೇ? ಯಾವ ಹಣವೂ ಹೋಗುವುದಿಲ್ಲ. | Cancel fee f-3 (Priya, November 2026) and waive the ₹1,500 balance? No money moves. |  |
 | `card.fees.cancel_none` | ಫೀಸ್ f-3 (Priya, November 2026) ರದ್ದುಮಾಡಲೇ? ಏನೂ ಬಾಕಿ ಇಲ್ಲ. | Cancel fee f-3 (Priya, November 2026)? Nothing is owed. |  |
 | `card.fees.refund` | f-3 ಫೀಸ್‌ನಿಂದ Priya ಅವರಿಗೆ ₹500 ಹಿಂತಿರುಗಿಸಲೇ? | Refund ₹500 of the fee to Priya (f-3)? |  |
@@ -1443,6 +1448,10 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.assistant.bigOrder.rule` | {v} ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಆರ್ಡರ್‌ಗಳಿಗೆ ಪಾವತಿ ಕೇಳುವ ಮೊದಲು ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು | Orders above {v} need your approval before any payment is asked |  |
 | `limits.assistant.perDay.name` | ದಿನದ ಆರ್ಡರ್‌ಗಳು | orders a day |  |
 | `limits.assistant.perDay.rule` | ದಿನಕ್ಕೆ ಗರಿಷ್ಠ {v} ಆರ್ಡರ್‌ಗಳು | At most {v} orders a day |  |
+| `limits.assistant.orderCap.name` | ಒಂದು ಆರ್ಡರ್‌ನ ಮಿತಿ | order cap |  |
+| `limits.assistant.orderCap.rule` | ಸರಬರಾಜುದಾರರಿಗೆ ಹೋಗುವ ಯಾವುದೇ ಒಂದು ಆರ್ಡರ್ {v} ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಮೌಲ್ಯದ್ದಾಗಿರಬಾರದು | No single supplier order may be worth more than {v} |  |
+| `limits.assistant.monthlyBudget.name` | ತಿಂಗಳ ಬಜೆಟ್ | monthly budget |  |
+| `limits.assistant.monthlyBudget.rule` | ತಿಂಗಳ ಸರಬರಾಜು ಆರ್ಡರ್‌ಗಳು ಒಟ್ಟು ಗರಿಷ್ಠ {v} ವರೆಗೆ ಇರಬಹುದು | The month's supplier orders may add up to at most {v} |  |
 | `limits.assistant.card` | ₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಈಗ: ₹1000. | Refunds above ₹500 need your approval. Now: ₹1000. |  |
 | `limits.assistant.never` | ಎಂದಿಗೂ ಇಲ್ಲ | never |  |
 | `limits.assistant.say.pending` | ಬಾಕಿ ಇದೆ: ₹500 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೀಫಂಡ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅನುಮೋದನೆ ಬೇಕು. ಇದು ಇಲ್ಲಿ ಈಗಲೇ ಅನ್ವಯಿಸುತ್ತದೆ, ಜಾರಿಗೆ ಬಂದಾಗ ನಾನು ತಿಳಿಸುತ್ತೇನೆ. | Pending: Refunds above ₹500 need your approval. It already applies here, and I'll tell you when it is Active. |  |
@@ -1529,4 +1538,112 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.quick.fees.1` | ತರಗತಿಯ ಸಮಯ | Class timings |  |
 | `chat.quick.fees.2` | ಶುಲ್ಕ | Fees |  |
 | `chat.quick.fees.3` | ಶಿಕ್ಷಕರೊಂದಿಗೆ ಮಾತನಾಡಿ | Talk to the teacher |  |
+| `stock.owner.tagApprove` | ಒಪ್ಪಬೇಕಾದ ಆರ್ಡರ್ | Order to approve |  |
+| `stock.owner.tagSilent` | ಸರಬರಾಜುದಾರರ ಉತ್ತರವಿಲ್ಲ | No answer from supplier |  |
+| `stock.owner.tagReceive` | ಸರಕು ಬಂದದ್ದನ್ನು ಗುರುತಿಸಿ | Delivery to mark |  |
+| `stock.owner.tagUnsure` | ಖಚಿತವಾಗಿಲ್ಲ | Could not confirm |  |
+| `stock.owner.tagRefused` | ಕಳುಹಿಸಿಲ್ಲ | Not sent |  |
+| `stock.owner.approve` | Ravi Traders ಅವರಿಂದ 10 box hair colour ಆರ್ಡರ್, ಒಟ್ಟು ₹12,000. ನೀವು ಒಪ್ಪಿದರೆ ಮಾತ್ರ ಇದು ಸರಬರಾಜುದಾರರಿಗೆ ಹೋಗುತ್ತದೆ, ಆಗ ತಿಂಗಳ ಬಜೆಟ್ ಇದಕ್ಕಾಗಿ ಮೀಸಲಿಡಲಾಗುತ್ತದೆ. | Order 10 box hair colour from Ravi Traders, ₹12,000 in all. It goes to the supplier only when you approve, and the month's budget is kept for it then. |  |
+| `stock.owner.silent` | Ravi Traders ಆರ್ಡರ್ po-3: 10 box hair colour ಗೆ ಉತ್ತರಿಸಿಲ್ಲ. ಅದೇ ಆರ್ಡರ್ ಬಗ್ಗೆ ಮತ್ತೆ ಕೇಳಬಹುದು. | Ravi Traders has not answered the order po-3: 10 box hair colour. You can ask them again about the same order. |  |
+| `stock.owner.receive` | Ravi Traders ಆರ್ಡರ್ po-3: 10 box hair colour ಒಪ್ಪಿದ್ದಾರೆ. ಸರಕು ಬಂದಾಗ ಗುರುತಿಸಿ. | Ravi Traders accepted the order po-3: 10 box hair colour. Mark it when the goods arrive. |  |
+| `stock.owner.unsure` | Ravi Traders ಅವರಿಗೆ ಆರ್ಡರ್ po-3 ತಲುಪಿತೇ ಎಂದು ನಮಗೆ ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಲಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಅವರನ್ನು ಕೇಳಿ. | We could not confirm that Ravi Traders got order po-3. Please check with them. |  |
+| `stock.owner.gotIt` | ಅವರಿಗೆ ಸಿಕ್ಕಿತು | They got it |  |
+| `stock.owner.sendAgain` | ಮತ್ತೆ ಕಳುಹಿಸಿ | Send it again |  |
+| `stock.owner.refused` | Ravi Traders ಅವರಿಗೆ ನಿಮ್ಮ ಆರ್ಡರ್ (po-3) ಅನ್ನು WhatsApp ಸ್ವೀಕರಿಸಲಿಲ್ಲ. ಏನನ್ನೂ ಕಳುಹಿಸಿಲ್ಲ. 10:30 ಕ್ಕೆ ನಾನು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸುತ್ತೇನೆ. ನೀವು ಅವರಿಗೆ ಕರೆಯನ್ನೂ ಮಾಡಬಹುದು. | WhatsApp did not take your order to Ravi Traders (po-3). Nothing was sent. I will try again at 10:30. You can also call them. |  |
+| `stock.owner.tryNow` | ಈಗ ಪ್ರಯತ್ನಿಸಿ | Try now |  |
+| `stock.owner.cancelOrder` | ಆರ್ಡರ್ ರದ್ದು ಮಾಡಿ | Cancel order |  |
+| `stock.owner.yes` | ಒಪ್ಪಿ | Approve |  |
+| `stock.owner.no` | ಬೇಡ | Decline |  |
+| `stock.owner.askAgain` | ಮತ್ತೆ ಕೇಳಿ | Ask again |  |
+| `stock.owner.received` | ಎಲ್ಲಾ ಬಂತು | All received |  |
+| `stock.owner.coming` | ಸರಬರಾಜುದಾರರ ಬಳಿ ಇರುವ ಆರ್ಡರ್‌ಗಳು | Orders with suppliers |  |
+| `stock.owner.noneComing` | ಯಾವ ಸರಬರಾಜುದಾರರ ಬಳಿಯೂ ಆರ್ಡರ್ ಬಾಕಿ ಇಲ್ಲ. | No orders are waiting on a supplier. |  |
+| `stock.panel.steps.business` | ಅಂಗಡಿ, ಸರಬರಾಜುದಾರರು, ಪಟ್ಟಿ | Shop, suppliers and catalogue |  |
+| `stock.panel.steps.rules` | ಮಿತಿಗಳು | Limits |  |
+| `stock.panel.business.name` | ಅಂಗಡಿಯ ಹೆಸರು | Shop name |  |
+| `stock.panel.business.address` | ವಿಳಾಸ | Address |  |
+| `stock.panel.business.suppliers` | ಸರಬರಾಜುದಾರರು | Suppliers |  |
+| `stock.panel.business.suppliersHelp` | ಪ್ರತಿ ಸಾಲಿನಲ್ಲಿ ಒಬ್ಬ ಸರಬರಾಜುದಾರ: ಹೆಸರು, ನಂತರ +91 ಸಹಿತ WhatsApp ಸಂಖ್ಯೆ. ಉದಾಹರಣೆ: Ravi Traders, +919876500001 | One supplier on each line: the name, then the WhatsApp number with +91. Example: Ravi Traders, +919876500001 |  |
+| `stock.panel.business.catalogue` | ನೀವು ಆರ್ಡರ್ ಮಾಡುವುದು | What you order |  |
+| `stock.panel.business.catalogueHelp` | ಆರ್ಡರ್ ಮಾಡುವ ಪ್ರತಿಯೊಂದಕ್ಕೂ ಒಂದು ಸಾಲು: ವಸ್ತು, ಸರಬರಾಜುದಾರ, ಪ್ಯಾಕ್, ಕೊನೆಯ ಬೆಲೆ ರೂಪಾಯಿಗಳಲ್ಲಿ. ಬೇಕಿದ್ದರೆ, ಕಡಿಮೆ ಎಂದಾಗ ಎಷ್ಟು ಆರ್ಡರ್ ಮಾಡಬೇಕು. ಉದಾಹರಣೆ: ಹೇರ್ ಕಲರ್, Ravi Traders, ಬಾಕ್ಸ್, 1200, 10 | One line for each thing you order: item, supplier, pack, last price in rupees. Optionally, how many to order when you say it is low. Example: hair colour, Ravi Traders, box, 1200, 10 |  |
+| `stock.panel.rules.cap` | ಒಂದು ಆರ್ಡರ್ ಗರಿಷ್ಠ ಎಷ್ಟು ಮೌಲ್ಯದ್ದಾಗಬಹುದು (ರೂಪಾಯಿ) | Most one order may be worth (rupees) |  |
+| `stock.panel.rules.capHelp` | ಇದು ಗಟ್ಟಿ ಮಿತಿ: ನಿಮ್ಮ ಒಪ್ಪಿಗೆ ಇದನ್ನು ಹೆಚ್ಚಿಸಲಾರದು. ನಂತರ ಒಂದು ಟ್ಯಾಪ್‌ನಲ್ಲಿ ಇದನ್ನು ಇನ್ನೂ ಕಡಿಮೆ ಮಾಡಬಹುದು. | A hard stop: your yes cannot raise it. You can tighten it later by a tap. |  |
+| `stock.panel.rules.budget` | ತಿಂಗಳ ಆರ್ಡರ್‌ಗಳು ಒಟ್ಟು ಗರಿಷ್ಠ ಎಷ್ಟು (ರೂಪಾಯಿ) | Most the month's orders may add up to (rupees) |  |
+| `stock.panel.rules.budgetHelp` | ಆರ್ಡರ್ ಒಪ್ಪಿದ ತಕ್ಷಣ ಅದಕ್ಕಾಗಿ ಮೀಸಲಿಡಲಾಗುತ್ತದೆ. | Kept for an order when you approve it. |  |
+| `stock.panel.problems.noSuppliers` | ಕನಿಷ್ಠ ಒಬ್ಬ ಸರಬರಾಜುದಾರರನ್ನು ಸೇರಿಸಿ. | Add at least one supplier. |  |
+| `stock.panel.problems.tooManySuppliers` | ಈ ಫಾರ್ಮ್‌ನಲ್ಲಿ ಗರಿಷ್ಠ 12 ಸರಬರಾಜುದಾರರು. | This form takes at most 12 suppliers. |  |
+| `stock.panel.problems.supplierBad` | ಸರಬರಾಜುದಾರ ಸಾಲು 2: ಹೆಸರು, ನಂತರ +91 ಸಹಿತ WhatsApp ಸಂಖ್ಯೆ ಬರೆಯಿರಿ. | Supplier line 2: write the name, then the WhatsApp number with +91. |  |
+| `stock.panel.problems.supplierTwice` | ಸರಬರಾಜುದಾರ ಸಾಲು 2: Ravi Traders ಎರಡು ಬಾರಿ ಇದೆ. | Supplier line 2: Ravi Traders is listed twice. |  |
+| `stock.panel.problems.numberTwice` | ಸರಬರಾಜುದಾರ ಸಾಲು 2: ಈ ಸಂಖ್ಯೆ ಈಗಾಗಲೇ ಇನ್ನೊಬ್ಬ ಸರಬರಾಜುದಾರರದು. | Supplier line 2: that number is another supplier's already. |  |
+| `stock.panel.problems.noLines` | ಆರ್ಡರ್ ಮಾಡುವುದರ ಕನಿಷ್ಠ ಒಂದು ಸಾಲು ಸೇರಿಸಿ. | Add at least one line of what you order. |  |
+| `stock.panel.problems.tooManyLines` | ಈ ಫಾರ್ಮ್‌ನಲ್ಲಿ ಗರಿಷ್ಠ 40 ಸಾಲುಗಳು. | This form takes at most 40 lines. |  |
+| `stock.panel.problems.lineBad` | ಸಾಲು 3: ವಸ್ತು, ಸರಬರಾಜುದಾರ, ಪ್ಯಾಕ್ ಮತ್ತು ಬೆಲೆಯನ್ನು ಅಲ್ಪವಿರಾಮದಿಂದ ಬೇರ್ಪಡಿಸಿ ಬರೆಯಿರಿ. | Line 3: write the item, the supplier, the pack and the price, separated by commas. |  |
+| `stock.panel.problems.lineSupplier` | ಸಾಲು 3: Ravi ನಿಮ್ಮ ಸರಬರಾಜುದಾರರಲ್ಲಿ ಇಲ್ಲ. | Line 3: Ravi is not in your suppliers. |  |
+| `stock.panel.problems.priceBad` | ಸಾಲು 3: ಬೆಲೆ 0 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ರೂಪಾಯಿ ಸಂಖ್ಯೆಯಾಗಿರಬೇಕು, ಗರಿಷ್ಠ ಎರಡು ದಶಮಾಂಶ. | Line 3: the price must be a number of rupees above 0, with at most two decimals. |  |
+| `stock.panel.problems.reorderBad` | ಸಾಲು 3: ಕಡಿಮೆ ಎಂದಾಗ ಆರ್ಡರ್ ಮಾಡುವ ಸಂಖ್ಯೆ 1 ಅಥವಾ ಹೆಚ್ಚಿನ ಪೂರ್ಣಸಂಖ್ಯೆ ಆಗಿರಬೇಕು. | Line 3: the number to order when low must be a whole number of 1 or more. |  |
+| `stock.panel.problems.lineTwice` | ಸಾಲು 3: ಅದೇ ವಸ್ತು, ಸರಬರಾಜುದಾರ ಮತ್ತು ಪ್ಯಾಕ್ ಎರಡು ಬಾರಿ ಇದೆ. | Line 3: the same item, supplier and pack is listed twice. |  |
+| `stock.panel.problems.capBad` | ಒಂದು ಆರ್ಡರ್‌ನ ಮಿತಿ 0 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಪೂರ್ಣ ರೂಪಾಯಿಗಳಾಗಿರಬೇಕು. | The most one order may be worth must be a whole number of rupees above 0. |  |
+| `stock.panel.problems.budgetBad` | ತಿಂಗಳ ಬಜೆಟ್ 0 ಕ್ಕಿಂತ ಹೆಚ್ಚಿನ ಪೂರ್ಣ ರೂಪಾಯಿಗಳಾಗಿರಬೇಕು. | The month's budget must be a whole number of rupees above 0. |  |
+| `stock.panel.problems.capAbovePrice` | ಒಂದಕ್ಕೆ ₹1,200 ಬೆಲೆ, ಒಂದು ಆರ್ಡರ್‌ನ ಮಿತಿಗಿಂತ ಹೆಚ್ಚು: ಇದನ್ನು ಎಂದಿಗೂ ಆರ್ಡರ್ ಮಾಡಲಾಗದು. ಮಿತಿ ಹೆಚ್ಚಿಸಿ ಅಥವಾ ಬೆಲೆ ಸರಿಪಡಿಸಿ. | One unit costs ₹1,200, more than the most one order may be worth: it could never be ordered. Raise the limit or fix the price. |  |
+| `stock.panel.problems.capAboveBudget` | ಒಂದು ಆರ್ಡರ್‌ನ ಮಿತಿ ತಿಂಗಳ ಬಜೆಟ್‌ಗಿಂತ ಹೆಚ್ಚಿದೆ. ಆರ್ಡರ್ ಮಿತಿಯನ್ನು ಚಿಕ್ಕ ಸಂಖ್ಯೆಯನ್ನಾಗಿ ಮಾಡಿ. | The most for one order is above the month's budget. Make the order limit the smaller number. |  |
+| `stock.panel.shop.suppliers` | ಸರಬರಾಜುದಾರರು | Suppliers |  |
+| `stock.panel.shop.catalogue` | ನೀವು ಆರ್ಡರ್ ಮಾಡುವುದು | What you order |  |
+| `stock.panel.shop.rules` | ಮಿತಿಗಳು | Limits |  |
+| `stock.panel.shop.messages.heading` | ಒಂದು ಆರ್ಡರ್‌ನ ಸಂದೇಶಗಳು | Messages for one order |  |
+| `stock.panel.shop.messages.line` | ಪ್ರತಿ ಆರ್ಡರ್‌ಗೆ ಸುಮಾರು 6 ಸಂದೇಶಗಳು: ಸರಬರಾಜುದಾರರಿಗೆ ಆರ್ಡರ್, ಉತ್ತರ ಇಲ್ಲದಿದ್ದರೆ ಎರಡು ಬಾರಿಯವರೆಗೆ ಕೇಳುವುದು, ಮತ್ತು ನಿಮಗೆ ಸೂಚನೆಗಳು. | About 6 messages for each order: the order to the supplier, up to two asks if they are silent, and notes to you. |  |
+| `stock.panel.shop.messages.note` | ಇದು ಯೋಜನೆಯ ಅಂದಾಜು, ಮಿತಿಯಲ್ಲ. ಉತ್ತರಗಳು ಇದರ ಮೇಲೆ ಬರುತ್ತವೆ. | A planning figure, not a limit. Replies come on top. |  |
+| `stock.panel.shop.states.awaiting_approval` | ನಿಮ್ಮ ಒಪ್ಪಿಗೆಗಾಗಿ ಕಾಯುತ್ತಿದೆ | Waiting for your yes |  |
+| `stock.panel.shop.states.approved` | ಕಳುಹಿಸಲಾಗುತ್ತಿದೆ | Being sent |  |
+| `stock.panel.shop.states.sent` | ಸರಬರಾಜುದಾರರ ಬಳಿ | With the supplier |  |
+| `stock.panel.shop.states.send_unknown` | ಬಹುಶಃ ಕಳುಹಿಸಲಾಗಿದೆ | Maybe sent |  |
+| `stock.panel.shop.states.supplier_declined` | ಸರಬರಾಜುದಾರರಿಂದ ಆಗದು | Supplier cannot supply |  |
+| `stock.panel.shop.states.cancelled` | ರದ್ದು | Cancelled |  |
+| `chat.list.yourChats` | ನಿಮ್ಮ ಚಾಟ್‌ಗಳು | Your chats |  |
+| `chat.list.installHead` | Streetlist ಅನ್ನು ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಇಟ್ಟುಕೊಳ್ಳಿ | Keep Streetlist on your phone |  |
+| `chat.list.installBody` | ಒಂದೇ ಒತ್ತಿನಲ್ಲಿ ಚಾಟ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ, ಅಂಗಡಿ ಉತ್ತರಿಸಿದಾಗ ತಿಳಿಯಿರಿ. | Open your chats in one tap, and hear when a shop replies. |  |
+| `chat.list.installButton` | ಫೋನ್‌ಗೆ ಸೇರಿಸಿ | Add to your phone |  |
+| `chat.list.notNow` | ಈಗ ಬೇಡ | Not now |  |
+| `chat.list.iphone` | Share ಬಟನ್ ಒತ್ತಿ, ನಂತರ Add to Home Screen. | Tap the Share button, then Add to Home Screen. |  |
+| `chat.id.keepHead` | ಈ ಚಾಟ್ ಅನ್ನು ನಿಮ್ಮ ಫೋನಿನಲ್ಲಿ ಇಟ್ಟುಕೊಳ್ಳಿ | Keep this chat on your phone |  |
+| `chat.id.keepBody` | ಈ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳಲು ನಿಮ್ಮ ಬೆರಳಚ್ಚು ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್ ಬಳಸಿ. ಪಾಸ್‌ವರ್ಡ್ ಬೇಡ. | Use your fingerprint or screen lock to keep this chat. No password. |  |
+| `chat.id.keepButton` | ಈ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳಿ | Keep this chat |  |
+| `chat.id.keepDone` | ಆಯಿತು. ಈ ಚಾಟ್ ಈ ಫೋನಿನಲ್ಲಿ ಇದೆ. | Done. This chat is kept on this phone. |  |
+| `chat.id.keepNoLock` | ಈ ಫೋನಿಗೆ ಸ್ಕ್ರೀನ್ ಲಾಕ್ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳಲು ಆಗುವುದಿಲ್ಲ. ಅತಿಥಿಯಾಗಿ ಚಾಟ್ ಮುಂದುವರಿಸಬಹುದು, ನಿಮ್ಮ ಬುಕಿಂಗ್ ಲಿಂಕ್ ಕೆಲಸ ಮಾಡುತ್ತಲೇ ಇರುತ್ತದೆ. | This phone has no screen lock, so it cannot keep the chat. You can still chat as a guest, and your booking link keeps working. |  |
+| `chat.id.keepFailed` | ಅದು ಆಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಬಹುದು, ಅಥವಾ ಅತಿಥಿಯಾಗಿ ಮುಂದುವರಿಸಬಹುದು. | That did not work. You can try again, or carry on as a guest. |  |
+| `chat.id.beenBefore` | ಮೊದಲು ಬಂದಿದ್ದೀರಾ? | Been here before? |  |
+| `chat.id.openMine` | ಬೆರಳಚ್ಚು ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್‌ನಿಂದ ನನ್ನ ಚಾಟ್ ತೆರೆಯಿರಿ | Open my chat with my fingerprint or screen lock |  |
+| `chat.id.otherPhoneLine` | ಹೊಸ ಫೋನಿನಲ್ಲಿ ಕೇಳಿದಾಗ "ಇನ್ನೊಂದು ಫೋನ್" ಆರಿಸಿ, ಹಳೆಯ ಫೋನನ್ನು ಇದರ ಪಕ್ಕದಲ್ಲಿ ಹಿಡಿಯಿರಿ. | On a new phone, choose "another phone" when it asks, and hold your old phone next to this one. |  |
+| `chat.id.otherShop` | ಅದು ಬೇರೆ ಅಂಗಡಿಯದು. ಈ ಅಂಗಡಿಯದನ್ನು ಆರಿಸಿ, ಅಥವಾ "ನನಗೆ ಹೊಸ ಫೋನ್ ಇದೆ" ಒತ್ತಿ. | That one is for another shop. Pick the one for this shop, or tap I have a new phone. |  |
+| `chat.id.openFailed` | ನಿಮ್ಮ ಚಾಟ್ ತೆರೆಯಲು ಆಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ, ಅಥವಾ "ನನಗೆ ಹೊಸ ಫೋನ್ ಇದೆ" ಒತ್ತಿ. | We could not open your chat. Try again, or tap I have a new phone. |  |
+| `chat.id.openDone` | ನಿಮ್ಮ ಚಾಟ್ ಈ ಫೋನಿನಲ್ಲಿ ತೆರೆದಿದೆ. | Your chat is open on this phone. |  |
+| `chat.id.newPhone` | ನನಗೆ ಹೊಸ ಫೋನ್ ಇದೆ | I have a new phone |  |
+| `chat.id.newPhoneBody` | ನೀವು ನಮಗೆ ಕೊಟ್ಟ WhatsApp ನಂಬರ್ ಬರೆಯಿರಿ. ಅಲ್ಲಿಗೆ ಒಂದು ಲಿಂಕ್ ಕಳುಹಿಸುತ್ತೇವೆ. | Type the WhatsApp number you gave us. We will send a link there. |  |
+| `chat.id.numberLabel` | WhatsApp ನಂಬರ್ | WhatsApp number |  |
+| `chat.id.sendLink` | ನನಗೆ ಲಿಂಕ್ ಕಳುಹಿಸಿ | Send me a link |  |
+| `chat.id.linkSent` | ಆ ನಂಬರ್ ನಮ್ಮ ಬಳಿ ಇದ್ದರೆ ಲಿಂಕ್ ಹೋಗುತ್ತಿದೆ. ಇದು ಒಮ್ಮೆ ಮಾತ್ರ, 15 ನಿಮಿಷ ಕೆಲಸ ಮಾಡುತ್ತದೆ. | If we have that number, a link is on its way. It works once, for 15 minutes. |  |
+| `chat.id.wait` | ಮತ್ತೆ ಕೇಳುವ ಮೊದಲು ಸ್ವಲ್ಪ ಕಾಯಿರಿ. | Please wait a little before asking again. |  |
+| `chat.id.badNumber` | ಇದು ಫೋನ್ ನಂಬರ್‌ನಂತೆ ಕಾಣುತ್ತಿಲ್ಲ. | That does not look like a phone number. |  |
+| `chat.id.numberAsk` | ಹೊಸ ಫೋನ್ ಬಂದರೆ ನಿಮ್ಮ WhatsApp ಗೆ ಲಿಂಕ್ ಕಳುಹಿಸಬಹುದು. ನಿಮ್ಮ ನಂಬರ್ ಸೇರಿಸಿ (ಬೇಡವಾದರೆ ಬಿಡಬಹುದು). | If you get a new phone, we can send a link to your WhatsApp. Add your number (you can skip this). |  |
+| `chat.id.numberSave` | ನನ್ನ ನಂಬರ್ ಇಟ್ಟುಕೊಳ್ಳಿ | Save my number |  |
+| `chat.id.numberSaved` | ಆ ನಂಬರ್‌ಗೆ ಸಂದೇಶ ಕಳುಹಿಸಿದ್ದೇವೆ. ಅದು ನಿಮ್ಮದೇ ಎಂದು ಖಚಿತಪಡಿಸಲು ಅದರ ಲಿಂಕ್ ಒತ್ತಿ. | We sent a message to that number. Tap its link to confirm it is yours. |  |
+| `chat.id.confirmHead` | ನಿಮ್ಮ ನಂಬರ್ ಖಚಿತಪಡಿಸಿ | Confirm your number |  |
+| `chat.id.confirmBody` | ಇದು ನಿಮ್ಮ ನಂಬರ್ ಎಂದು ಖಚಿತಪಡಿಸಲು ಒತ್ತಿ. | Tap to confirm this is your number. |  |
+| `chat.id.confirmButton` | ಹೌದು, ಇದು ನನ್ನ ನಂಬರ್ | Yes, this is my number |  |
+| `chat.id.confirmDone` | ಧನ್ಯವಾದ. ನಿಮ್ಮ ನಂಬರ್ ಈ ಚಾಟ್‌ಗಾಗಿ ಇಟ್ಟುಕೊಂಡಿದ್ದೇವೆ. | Thank you. Your number is saved for this chat. |  |
+| `chat.id.backHead` | ಮತ್ತೆ ಸ್ವಾಗತ | Welcome back |  |
+| `chat.id.backBody` | ನಿಮ್ಮ ಚಾಟ್ ಅನ್ನು ಈ ಫೋನಿನಲ್ಲಿ ತೆರೆಯಲೇ? | Open your chat on this phone? |  |
+| `chat.id.backButton` | ನನ್ನ ಚಾಟ್ ಇಲ್ಲಿ ತೆರೆಯಿರಿ | Open my chat here |  |
+| `chat.id.backUsed` | ಈ ಲಿಂಕ್ ಈಗಾಗಲೇ ಬಳಸಲಾಗಿದೆ. ಚಾಟ್ ಪುಟದಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ. | This link was used already. Ask for a new one from the chat page. |  |
+| `chat.id.backExpired` | ಈ ಲಿಂಕ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಚಾಟ್ ಪುಟದಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ. | This link has run out. Ask for a new one from the chat page. |  |
+| `chat.id.sendMyLinks` | ನನ್ನ ಬುಕಿಂಗ್ ಲಿಂಕ್ ಕಳುಹಿಸಿ | Send me my booking link |  |
+| `chat.id.myLinksSent` | ನಿಮ್ಮ WhatsApp ಗೆ ಕಳುಹಿಸಿದ್ದೇವೆ. | Sent to your WhatsApp. |  |
+| `chat.id.myLinksNone` | ಕಳುಹಿಸಲು ಇನ್ನೂ ಲಿಂಕ್ ಇಲ್ಲ. | There is no link to send yet. |  |
+| `chat.id.deleteButton` | ನನ್ನ ಚಾಟ್ ಅಳಿಸಿ | Delete my chat |  |
+| `chat.id.deleteAsk` | ಈ ಚಾಟ್ ಅಳಿಸಲೇ? ಇಲ್ಲಿನ ನಿಮ್ಮ ಸಂದೇಶಗಳನ್ನು ಮತ್ತು ಈ ಫೋನಿನಲ್ಲಿ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳುವ ಕೀಲಿಯನ್ನು ತೆಗೆಯುತ್ತೇವೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿಗೆ ಕಾನೂನು ಕೇಳುವುದನ್ನು ಅಂಗಡಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. | Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The shop keeps what the law needs for a booking or a payment. |  |
+| `chat.id.deleteYes` | ಹೌದು, ಅಳಿಸಿ | Yes, delete |  |
+| `chat.id.deleteNo` | ಬೇಡ, ಇರಲಿ | No, keep it |  |
+| `chat.id.deleteDone` | ಅಳಿಸಲಾಗಿದೆ. ಈ ಚಾಟ್ ಇನ್ನು ಈ ಅಂಗಡಿಯ ಬಳಿ ಇಲ್ಲ. | Deleted. This chat is gone from this shop. |  |
+| `chat.id.parentNote` | ಈ ಚಾಟ್ ನಿಮಗೆ ಮಾತ್ರ. ಇದು ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟದಿಂದ ತೆರೆಯುತ್ತದೆ ಮತ್ತು ನಿಮ್ಮ ಸ್ವಂತ ಶುಲ್ಕದ ಬಗ್ಗೆ ಮಾತನಾಡುತ್ತದೆ. ಪಾವತಿಸಲು ನಿಮ್ಮ ಶುಲ್ಕ ಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ. | This chat is only for you. It opens from your private fee page, and it talks about your own fees. To pay, go back to your fee page. |  |
+| `chat.id.parentBack` | ನನ್ನ ಶುಲ್ಕಕ್ಕೆ ಹಿಂತಿರುಗಿ | Back to my fees |  |
+| `chat.id.parentAsk` | ಈ ಶುಲ್ಕದ ಬಗ್ಗೆ ಕೇಳಿ | Ask about this fee |  |
 

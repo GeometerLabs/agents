@@ -84,6 +84,11 @@ export const OWNER_MESSAGE_MAX = 900;
  */
 export interface ChatMessage {
   kind: "chat_message"; id: string; handle: string; language: Language; text?: string; tap?: string; quick?: 1 | 2 | 3;
+  /** W2, "delete my chat": the words and the guest's lines of this thread are taken off (chat.ts forgetChat). Instead of text, tap or quick. */
+  forget?: true;
+  /** W2, a parent's chat on their private fee page: the HASH of the parent's link (handle.ts parentLinkHash). The runtime opens it at its door, checks it opens a parent now and
+   *  replaces `handle` with the parent's own thread (handle.ts parentChatHash); it is never kept. Only a Fees centre takes it. */
+  parent?: string;
   /**
    * Hold-to-talk (17 Nov 2026): the reference of a recording the runtime holds in memory (chat-audio via the template's runtime), set ONLY by the runtime's own HTTP layer,
    * never the audio. `checkChannelEvent` never reads one from the front, so a `voice` sent from outside is dropped like any other field.
@@ -158,9 +163,11 @@ export function checkChannelEvent(raw: unknown): { ok: true; event: ChannelEvent
     if (typeof raw.handle !== "string" || !HANDLE_HASH.test(raw.handle)) return { ok: false, error: "A chat_message carries the guest's hash (64 hex digits), never the handle." };
     if (!LANGUAGES.includes(raw.language as Language)) return { ok: false, error: `A chat_message's language is one of ${LANGUAGES.join(", ")}.` };
     const text = typeof raw.text === "string" ? raw.text.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/gu, "").trim() : undefined;
-    const ways = [text !== undefined, raw.tap !== undefined, raw.quick !== undefined].filter(Boolean).length;
-    if (ways !== 1) return { ok: false, error: "A chat_message is text, a tap or a quick tap: one of them." };
-    const base = { kind: "chat_message" as const, id: raw.id, handle: raw.handle, language: raw.language as Language };
+    const ways = [text !== undefined, raw.tap !== undefined, raw.quick !== undefined, raw.forget !== undefined].filter(Boolean).length;
+    if (ways !== 1) return { ok: false, error: "A chat_message is text, a tap, a quick tap or a forget: one of them." };
+    if (raw.parent !== undefined && (typeof raw.parent !== "string" || !HANDLE_HASH.test(raw.parent))) return { ok: false, error: "A parent's chat names the parent's link by its hash (64 hex digits)." };
+    const base = { kind: "chat_message" as const, id: raw.id, handle: raw.handle, language: raw.language as Language, ...(raw.parent !== undefined ? { parent: raw.parent as string } : {}) };
+    if (raw.forget !== undefined) return raw.forget === true ? { ok: true, event: { ...base, forget: true as const } } : { ok: false, error: "forget is true." };
     if (text !== undefined) {
       if (text.length === 0 || [...text].length > CHAT_TEXT_MAX) return { ok: false, error: `A chat_message's text is 1 to ${CHAT_TEXT_MAX} characters.` };
       return { ok: true, event: { ...base, text } };

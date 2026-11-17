@@ -197,7 +197,12 @@ export interface ChannelBackend {
    * W1, the chat on the shop's page: a guest's thread by the HASH of their handle (handle.ts guestHash), after line `after`, and where the send `cid` stands. Never throws
    * for an unknown guest: that is an empty thread. Left out: the shop has no chat.
    */
-  chat?(guestHash: string, q?: { after?: number; cid?: string }): Promise<ChatRead>;
+  chat?(guestHash: string, q?: { after?: number; cid?: string; parent?: string }): Promise<ChatRead>;
+  /**
+   * W2: the guest's identity (keep this chat, open it on another phone, a new phone's link, delete my chat), one call by op (chat-identity-http.ts). `body` carries the guest's hash
+   * as `handle` and the op's own fields; the answer is the runtime's status and JSON. Left out: the shop has no chat identity.
+   */
+  chatId?(body: Record<string, unknown>): Promise<{ status: number; body: Record<string, unknown> }>;
   /**
    * W1 hold-to-talk: a guest's recording, passed to the runtime as it came (the runtime holds it in memory only and listens in the guest's step). "off": the shop has no voice
    * service; "slow": the runtime's own per-guest or per-shop rate said wait.
@@ -277,8 +282,13 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
       return r.status === 404 ? null : json<OrderView>(r);
     },
     async chat(guestHash, q = {}) {
-      const p = new URLSearchParams({ handle: guestHash, ...(q.after ? { after: String(q.after) } : {}), ...(q.cid ? { cid: q.cid } : {}) });
+      const p = new URLSearchParams({ handle: guestHash, ...(q.after ? { after: String(q.after) } : {}), ...(q.cid ? { cid: q.cid } : {}), ...(q.parent ? { parent: q.parent } : {}) });
       return json<ChatRead>(await call(`${o.url}/internal/channel/chat?${p}`, { headers: headers() }, timeout));
+    },
+    async chatId(body) {
+      const r = await call(`${o.url}/internal/channel/chat-id`, { method: "POST", headers: headers(), body: JSON.stringify(body) }, timeout);
+      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async chatVoice(guestHash, send, audio) {
       const p = new URLSearchParams({ handle: guestHash, lang: send.language, id: send.id });
