@@ -512,7 +512,7 @@ test("variant guide: the Hindi, Malayalam and Kannada variants carry the machine
 test("variant guide: what it says about the example shop and the check is what the settings and the hand check say today", async () => {
   const shop = rentalSettings();
   const run = await runOn(shop);
-  assert.deepEqual([run.results.filter((r) => r.held).length, run.results.length, run.skipped.length], [33, 33, 0]);
+  assert.deepEqual([run.results.filter((r) => r.held).length, run.results.length, run.skipped.length], [35, 35, 0]);
   assert.deepEqual(run.results.filter((r) => r.situation.leftOut).map((r) => r.situation.id), ["outside-hours"]);
   const [job] = shop.services;
   assert.deepEqual([job.priceInr, shop.deposit.amountInr, shop.cancellation.refundLimitInr, shop.deposit.holdMinutes, shop.cancellation.windowHours, shop.slotMinutes], [3200, 1000, 1000, 30, 24, 120]);

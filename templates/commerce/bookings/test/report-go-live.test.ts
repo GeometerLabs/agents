@@ -248,7 +248,7 @@ test("scripts: go-live-certificate.ts then client-report.ts --go-live on the sam
 
   // (c) every way a certificate cannot be trusted: a plain sentence, exit 0, and the same six files
   const good = readFileSync(join(dir, "glow-cert", "go-live-certificate.json"), "utf8");
-  writeFileSync(join(dir, "tampered.json"), good.replace('"held":38', '"held":37'));
+  writeFileSync(join(dir, "tampered.json"), good.replace('"held":40', '"held":39'));
   const unsigned = run("go-live-certificate.ts", "--settings", join(dir, "glow.json"), "--lang", "en", "--out", join(dir, "unsigned"));
   assert.equal(unsigned.status, 0);
   const notACertificate = join(dir, "glow-a", "report-2026-11.json"); // signed, valid, but a monthly report
