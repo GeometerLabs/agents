@@ -67,7 +67,7 @@ export const ALERTS_SCRIPT = `(() => {
   const post = (url, body) => fetch(url, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", ...(d.csrf ? { "x-owner-csrf": d.csrf } : {}) }, body: JSON.stringify(body) }).then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); });
   const reg = navigator.serviceWorker.register(d.sw, { scope: d.scope });
   box.hidden = false;
-  // On the Streetlist app's ONE shared subscription (data-signer) the phone "has a subscription" the moment ANY shop took it, so the button cannot be hidden by that alone: this
+  // On the app's ONE shared subscription (data-signer) the phone "has a subscription" the moment ANY shop took it, so the button cannot be hidden by that alone: this
   // shop must have taken it too. Each shop's page remembers the endpoint ITS own save address last accepted (per page, in this browser); a shop's own subscription is its own.
   const mark = d.signer ? "alerts-shop:" + d.save : null;
   const known = (s) => { if (!s) return false; if (!mark) return true; try { return localStorage.getItem(mark) === s.endpoint; } catch (e) { return false; } };
@@ -80,7 +80,7 @@ export const ALERTS_SCRIPT = `(() => {
       const r = await reg;
       let s = await r.pushManager.getSubscription();
       // a subscription made for another key (the shop's server was restored, or set up again) would be refused by the push service: it is made again.
-      // (On the Streetlist app's one shared subscription (data-signer) this happens only if Streetlist's own key changed; a shop's page never unsubscribes it otherwise,
+      // (On the app's one shared subscription (data-signer) this happens only if the app's own key changed; a shop's page never unsubscribes it otherwise,
       // because every shop in the app shares it.)
       const had = s && s.options && s.options.applicationServerKey ? new Uint8Array(s.options.applicationServerKey) : null;
       if (s && had && (had.length !== key.length || had.some((b, i) => b !== key[i]))) { await s.unsubscribe(); s = null; }
