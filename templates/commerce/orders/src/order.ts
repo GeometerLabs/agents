@@ -27,6 +27,7 @@ import { advanceFor, cutoffOf, itemName, itemOf, slotOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import type { MessageFacts } from "./language/templates.ts";
 import { planMealsInSlot } from "./plans/ledger.ts";
+import { planName, planTypeOf } from "./plans/settings.ts";
 import type { PlansState } from "./plans/ledger.ts";
 
 export type OrderState = "enquiry" | "awaiting_owner" | "awaiting_advance" | "confirmed" | "expired" | "cancelled" | "completed";
@@ -287,6 +288,7 @@ export function factsFor(settings: Settings, order: Order | null, language: Lang
     menu: (extra.menu ? settings.menu : []).map((i) => ({ name: itemName(i, language), priceInr: i.priceInr })),
     ...(extra.areas && settings.delivery ? { areas: settings.delivery.area } : {}),
     ...(order && order.lines.length > 0 ? { itemsText: itemsText(settings, order.lines, language), quantities: order.lines.map((l) => l.qty) } : {}),
+    ...(order?.plan ? { itemsText: planName(planTypeOf(settings.plans, order.plan.typeId)!, language) } : {}), // a plan's period payment: the plan's name is "the items"
     ...(item ? { itemName: itemName(item, language), priceInr: item.priceInr } : {}),
     ...(extra.leftCount !== undefined ? { leftCount: extra.leftCount } : {}),
     totalInr: total,

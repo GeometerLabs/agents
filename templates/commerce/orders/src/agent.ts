@@ -90,6 +90,7 @@ import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
 import type { MessageFacts, TemplateId } from "./language/templates.ts";
 import { areaOf, checkBeforeCutoff, checkConfirmOnlyWhenRecorded, checkDayCap, checkDeliveryArea, checkMessageMatchesRecord, checkOneAdvancePerOrder, checkOrderSize, checkPriceAtOrAboveMenu, checkRefundLimit, checkSlotCap, checkStock } from "./limits.ts";
+import { createPlans } from "./plans/flow.ts";
 import { advanceFor, allSlots, itemName, itemOf, slotOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 
@@ -146,7 +147,7 @@ type Offer =
   // the owner's UPI buttons ("Received ₹200", "Refund sent"), each carrying its one-use code
   | { kind: "owner_upi"; choices: Choice[]; body?: TemplateId[] };
 
-interface SayArgs { booking: Order | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; shown?: Decision[]; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; markedInr?: number; leftInr?: number; itemId?: string; leftCount?: number; areas?: boolean; /** the balance's own link (17 Nov 2026), not the advance's */ link?: string }
+interface SayArgs { booking: Order | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; refundInr?: number; shown?: Decision[]; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; markedInr?: number; leftInr?: number; itemId?: string; leftCount?: number; areas?: boolean; /** the balance's own link (17 Nov 2026), not the advance's */ link?: string; /** monthly plans (17 Nov 2026): facts laid over the order's own (src/plans/flow.ts) */ facts?: Partial<MessageFacts> }
 type More = Omit<SayArgs, "booking" | "phone" | "to" | "templates">;
 
 /** What a step tells the customer along with the words that ask for what is missing. */
@@ -219,10 +220,10 @@ export function createAgent(deps: AgentDeps): Agent {
     owner: { whatsapp: owner, language: settings.owner.language },
     languageOf: (phone, order) => languageOf(phone, order),
     optedOut: (phone) => customerOf(phone).optedOut,
-    factsFor: (a, language) => factsFor(settings, a.booking, language, {
+    factsFor: (a, language) => ({ ...factsFor(settings, a.booking, language, {
       customerPhone: shownPhone(a.phone, a.booking), refundInr: a.refundInr, menu: a.templates.includes("menu") || a.offer?.kind === "items", areas: a.areas, itemId: a.itemId, leftCount: a.leftCount, ...(a.link ? { link: a.link } : {}),
       ...(a.offer?.kind === "slots" ? { slotChoices: a.offer.windows } : {}), upiCode: a.upiCode, markedInr: a.markedInr, leftInr: a.leftInr, nowMs: clock.now(),
-    }),
+    }), ...(a.facts ?? {}) }),
     interactiveFor: (a, facts, language) => buildInteractive(a.offer!, a.templates, facts, language),
     inputsOf: (a) => ({ refundInr: a.refundInr, ...(a.markedInr !== undefined ? { markedInr: a.markedInr } : {}) }), // never the owner's code
     gates: (a) => [
@@ -631,6 +632,7 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   async function afterAdvance(o: Order): Promise<void> {
+    if (o.plan && o.state !== "awaiting_advance") return refundUnbookable(o, "inactive"); // a plan's period that no longer stands: the payment came too late and goes back
     if (o.state === "awaiting_advance") return completeOrder(o);
     if (o.state === "expired") {
       // The hold ran out before the money came. If the cut-off has not passed and the stock and the day still allow it, take the order again; if not, give the money back.
@@ -644,6 +646,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   /** The advance is recorded: the order is confirmed, the customer is told, and so is the owner (what to prepare, and where it goes). */
   async function completeOrder(o: Order): Promise<void> {
+    if (o.plan) return plans!.onPaid(o); // a plan's period (17 Nov 2026): the payment record shows it, so its meals are owed (src/plans/flow.ts); the owner's UPI mark and a gateway's list both end here
     o.holdExpiresAt = undefined;
     moveTo(o, "confirmed");
     log(o, o.customer, "confirm_order", "confirmed", { lines: o.lines, date: o.date, slot: o.slotId, mode: o.mode }, { notes: "the payment record shows the whole advance" });
@@ -732,7 +735,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   /** "I have paid", the words, or a screenshot: thanks, the owner will confirm, a screenshot is not proof. The owner is asked to look, at most once an hour per order. */
   async function onPaidClaim(phone: string, via: "button" | "words" | "screenshot", upiRef?: string): Promise<void> {
-    const o = latestOrder(store, phone, ["awaiting_advance"]);
+    const o = latestOrder(store, phone, ["awaiting_advance"]) ?? plans?.awaitingOrderOf(phone); // a plan's period waiting for its payment is theirs too
     const request = o ? requestOf(o) : undefined;
     if (!o || !request) {
       log(null, phone, MARK_ACTIONS.claim, "blocked", { claim: "paid", via }, { notes: "the customer says they paid, and no UPI advance is waiting for them; nothing is marked paid", refs: { to: "owner", via } });
@@ -1131,6 +1134,8 @@ export function createAgent(deps: AgentDeps): Agent {
       log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(voiceHeard ? { voice: true } : {}) }, { refs: { messageId: msg.id, step: "rules", ...(voiceHeard ? { ...voiceMarks(voiceHeard), costMicroInr: String(voiceHeard.costMicroInr) } : {}) } });
       return onPaidClaim(phone, "words");
     }
+    // Monthly plans (17 Nov 2026): a shop with a `plans` block reads a message about a plan (subscribe, skip, pause, resume, cancel the plan) from plain words, before any model
+    if (plans && !msg.reply && !customer.optedOut && (await plans.onMessage(phone, msg.text, languageOf(phone)))) return;
     // A delivery order waits for an address: the next plain message is it, unless it is a stop, a cancel, a request to talk to the owner, or a change to pickup.
     const addressing = !msg.reply && !customer.optedOut ? latestOrder(store, phone, ["enquiry"]) : undefined;
     if (addressing?.awaitingAddress) {
@@ -1177,7 +1182,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   /** "I have paid" with a module that confirms by itself: the agent looks at the payment record again and says what it shows. It never confirms an order on the customer's word. */
   async function onPaidReadBack(phone: string): Promise<void> {
-    const o = latestOrder(store, phone, ["awaiting_advance"]);
+    const o = latestOrder(store, phone, ["awaiting_advance"]) ?? plans?.awaitingOrderOf(phone);
     if (!o) { await tellCustomer(null, phone, ["didnt_understand"], { offer: itemsOffer(["didnt_understand"]) }); return; }
     await reconcilePayments(o); // if the record shows it, the order is confirmed and the customer told, by the usual path
     if (o.state === "awaiting_advance") await tellAlreadyWaiting(o);
@@ -1227,6 +1232,7 @@ export function createAgent(deps: AgentDeps): Agent {
     await closeLinksAtStop();
     if (can.readsSettlements) await readSettlementsOnce({ payments, accounting: books, record, conversation: owner, language: settings.languages[0], nowMs: now, timeZone: tz }); // yesterday's settlement rows, once a day (modules/accounting/settlements.ts)
     for (const o of [...store.orders.values()]) {
+      if (o.plan) continue; // a plan's period is watched by the plan (hold, renewal reminder, lapse): src/plans/flow.ts
       if (o.state === "awaiting_advance" && o.holdExpiresAt !== undefined && o.holdExpiresAt <= now) await expireHold(o);
       // the reminder: one message, however many moments fell due while the agent was not running, and never for an order that no longer stands or whose slot has begun
       if (o.reminders) {
@@ -1241,7 +1247,57 @@ export function createAgent(deps: AgentDeps): Agent {
         if (o.advancePaymentId && advancePaise(o) > 0) books.post({ kind: "applied", case: o.id, amountPaise: advancePaise(o), service: "orders" }, own); else own({});
       }
     }
+    await plans?.onTick(); // monthly plans (17 Nov 2026): meals delivered, renewals asked, unpaid ones lapsed
   }
+
+  // ---- monthly plans (17 Nov 2026) -------------------------------------------------------------------------------------------------------------
+  // On only with a `plans` block in the settings (src/plans/flow.ts holds the rules; these are the agent's own paths it is handed). A period's payment is an Order record
+  // with `plan` set, so the payment link, the owner's UPI mark, a duplicate payment and a late one run through the code above unchanged.
+
+  /** The period's payment link (and a UPI shop's request and the owner's note): the same steps as an order's advance link, for the period's amount. */
+  async function askPlanPayment(o: Order): Promise<"ok" | "failed" | "paused"> {
+    const phone = o.customer;
+    const paise = advancePaise(o);
+    log(o, phone, "create_advance_link", "attempted", { amountPaise: paise });
+    const { link, error, suspended } = await makeLink(payments, { reference: o.id, amountPaise: paise, description: `${settings.name} monthly plan` });
+    if (!link && suspended) { log(o, phone, "create_advance_link", "blocked", { amountPaise: paise }, { decisions: [guardLicenceDecision(suspended.guard.reason)], notes: suspended.message }); return "paused"; }
+    if (!link) { log(o, phone, "create_advance_link", error ? "failed" : "unconfirmed", { amountPaise: paise }, { notes: error ?? "the payments service does not show the link" }); await tellOwner(o, phone, "owner_link_failed"); return "failed"; }
+    o.linkId = link.id;
+    o.linkUrl = link.pay_url;
+    log(o, phone, "create_advance_link", "confirmed", { amountPaise: paise }, { refs: { linkId: link.id } });
+    if (ownerConfirms) {
+      const request = requestOf(o)!;
+      if (!record.confirmedRefs(o.id, MARK_ACTIONS.request, "requestId").includes(request.id)) log(o, phone, MARK_ACTIONS.request, "confirmed", { amountPaise: request.amountPaise }, { refs: { requestId: request.id, reference: o.id, amountPaise: String(request.amountPaise) }, notes: "a UPI request to the shop's own UPI ID for a plan's period; it counts as paid only when the owner marks it received" });
+      await tellOwner(o, phone, "owner_upi_expected", { upiCode: request.code ?? undefined, offer: receivedButtons(request, request.amountPaise) });
+    }
+    return "ok";
+  }
+
+  /** Give back part of a period's payment (days not taken, or what is unused when a plan ends): the agent's refund path, never more than the payment. */
+  async function refundPlanCredit(o: Order, amountInr: number, why: string): Promise<unknown> {
+    if (!o.advancePaymentId || !o.advanceInr || amountInr <= 0) return "nothing";
+    const amount = Math.min(amountInr, o.advanceInr);
+    const limit = checkRefundLimit({ amountInr: amount, limitInr: settings.refund.limitInr, paidInr: o.advanceInr });
+    if (limit.verdict === "block") { log(o, o.customer, "refund", "blocked", { paymentId: o.advancePaymentId, amountInr: amount }, { decisions: [limit], refs: { paymentId: o.advancePaymentId, amountPaise: String(amount * 100) } }); return "stopped"; }
+    if (ownerRefunds) { await oweBack(o, o.advancePaymentId, amount * 100, why, { customer: "upi_refund_owed", decisions: [limit] }); return "owed"; }
+    const result = await requestRefund(o, o.advancePaymentId, amount, [limit], limit.verdict !== "allow");
+    await afterRefund(o, result, { paymentId: o.advancePaymentId, amountInr: amount, done: { customer: "plan_credit_refund" }, held: "plan_credit_refund_pending" });
+    return result;
+  }
+
+  const plans = settings.plans ? createPlans({
+    settings, store, clock, ownerConfirms,
+    takesNewWork: () => licence().takesNewWork,
+    log: (o, phone, action, outcome, inputs, more) => log(o, phone, action as Action, outcome as Outcome, inputs, more),
+    tell: (o, phone, template, more) => tellCustomer(o, phone, [template as TemplateId], (more ?? {}) as More),
+    tellOwner: (o, phone, template, more) => tellOwner(o, phone, template as TemplateId, (more ?? {}) as More),
+    askPayment: askPlanPayment,
+    qr: async (o) => { const request = ownerConfirms ? requestOf(o) : undefined; return request && !o.channel ? qrOf(request) : undefined; },
+    reconcile: (o) => reconcilePayments(o),
+    cancelWaiting: (o, why) => cancelWaiting(o, why),
+    refund: refundPlanCredit,
+    applied: (o, amountInr) => { if (o.advancePaymentId && amountInr > 0) books.post({ kind: "applied", case: o.id, amountPaise: amountInr * 100, service: "orders" }, (money) => log(o, o.customer, "plan_applied", "confirmed", { amountInr }, { refs: money })); },
+  }) : undefined;
 
   // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------
   //   recheck_payment   read the payments service's own list for this order's link, and record any payment not yet counted (the normal path, with its rules)
