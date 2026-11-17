@@ -73,7 +73,7 @@ export interface MessageData extends MemoryMessageData {
   need_date: { kind: "close_day" | "reopen_day" };
   need_words: { ref: string };
   refusal: { why: PrepareRefusal; ref: string; who?: string; paidPaise?: number };
-  card: { kind: string; itemKind?: string; who: string; ref: string; what: string; amountPaise: number; words?: string; aboveLimit?: boolean; code: string; hasNo: boolean };
+  card: { kind: string; /** The skill the card is for ("fees", "orders", "bookings"): a few cards word their money differently (words.ts SKILL_ASK). */ skill?: string; itemKind?: string; who: string; ref: string; what: string; amountPaise: number; words?: string; aboveLimit?: boolean; code: string; hasNo: boolean };
   done: { note: "cancelled" | "refund_sent" | "held_by_guard" | "owed_by_owner" | "sent" | "answered" | "failed" | "not_sent"; who: string; ref: string; amountPaise: number };
   refused: Record<string, never>;
   refused_before: { atMs: number };
@@ -163,7 +163,7 @@ const REFUSAL: Record<Language, Record<PrepareRefusal, (w: Writer, d: MessageDat
 };
 
 /** The question a card asks, by what it does. `itemKind` words an answer to something already waiting. */
-const CARD_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> = {
+const BASE_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> = {
   en: (w, d) => {
     const who = w.lit(d.who); const ref = w.lit(d.ref);
     if (d.kind === "cancel") return d.amountPaise > 0 ? `Cancel ${ref} (${who}, ${w.lit(d.what)}) and refund the ${w.inr(d.amountPaise)} deposit?` : `Cancel ${ref} (${who}, ${w.lit(d.what)})? No deposit was paid.`;
@@ -220,6 +220,36 @@ const CARD_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> 
     if (d.itemKind === "big_order") return `${who} ಅವರ ಆರ್ಡರ್ ${ref} (${w.lit(d.what)}, ${w.inr(d.amountPaise)}) ಸ್ವೀಕರಿಸಬೇಕೆ?`;
     return `${ref}: ${who}, ${w.lit(d.what)}, ${w.inr(d.amountPaise)}. ಮುಂದುವರಿಯಬೇಕೆ?`;
   },
+};
+
+/**
+ * A card's question for a skill whose money is not a "deposit": Fees' cancel waives the whole balance of a fee (no money moves) and Orders' cancel gives an advance back.
+ * Keyed by the skill, in four languages; every other card is worded by BASE_ASK. (The ids are on the review sheets, bundle/panel/review.ts "shop memory and talk".)
+ */
+const SKILL_ASK: Record<Language, Partial<Record<"fees" | "orders", (w: Writer, d: MessageData["card"]) => string | undefined>>> = {
+  en: {
+    fees: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `Cancel fee ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) and waive the ${w.inr(d.amountPaise)} balance? No money moves.` : `Cancel fee ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)})? Nothing is owed.`) : d.kind === "refund" ? `Refund ${w.inr(d.amountPaise)} of the fee to ${w.lit(d.who)} (${w.lit(d.ref)})?` : undefined),
+    orders: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `Cancel order ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) and refund the ${w.inr(d.amountPaise)} advance?` : `Cancel order ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)})? No advance was paid.`) : d.kind === "refund" ? `Refund ${w.inr(d.amountPaise)} of the advance to ${w.lit(d.who)} (${w.lit(d.ref)})?` : undefined),
+  },
+  hi: {
+    fees: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `फीस ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) रद्द करें और ${w.inr(d.amountPaise)} बकाया माफ़ करें? कोई पैसा नहीं जाता।` : `फीस ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) रद्द करें? कुछ बकाया नहीं है।`) : d.kind === "refund" ? `${w.lit(d.ref)} की फीस में से ${w.lit(d.who)} को ${w.inr(d.amountPaise)} लौटाएँ?` : undefined),
+    orders: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `ऑर्डर ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) रद्द करें और ${w.inr(d.amountPaise)} एडवांस लौटाएँ?` : `ऑर्डर ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) रद्द करें? कोई एडवांस नहीं दिया गया था।`) : d.kind === "refund" ? `${w.lit(d.ref)} के एडवांस में से ${w.lit(d.who)} को ${w.inr(d.amountPaise)} लौटाएँ?` : undefined),
+  },
+  ml: {
+    fees: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `ഫീസ് ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) റദ്ദാക്കി ${w.inr(d.amountPaise)} ബാക്കി ഒഴിവാക്കട്ടെ? പണം ഒന്നും നീങ്ങുന്നില്ല.` : `ഫീസ് ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) റദ്ദാക്കട്ടെ? ഒന്നും ബാക്കിയില്ല.`) : d.kind === "refund" ? `${w.lit(d.ref)}-ന്റെ ഫീസിൽ നിന്ന് ${w.lit(d.who)}-ക്ക് ${w.inr(d.amountPaise)} തിരികെ നൽകട്ടെ?` : undefined),
+    orders: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `ഓർഡർ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) റദ്ദാക്കി ${w.inr(d.amountPaise)} അഡ്വാൻസ് തിരികെ നൽകട്ടെ?` : `ഓർഡർ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) റദ്ദാക്കട്ടെ? അഡ്വാൻസ് ഒന്നും അടച്ചിട്ടില്ല.`) : d.kind === "refund" ? `${w.lit(d.ref)}-ന്റെ അഡ്വാൻസിൽ നിന്ന് ${w.lit(d.who)}-ക്ക് ${w.inr(d.amountPaise)} തിരികെ നൽകട്ടെ?` : undefined),
+  },
+  kn: {
+    fees: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `ಫೀಸ್ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) ರದ್ದುಮಾಡಿ ${w.inr(d.amountPaise)} ಬಾಕಿ ಮನ್ನಾ ಮಾಡಲೇ? ಯಾವ ಹಣವೂ ಹೋಗುವುದಿಲ್ಲ.` : `ಫೀಸ್ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) ರದ್ದುಮಾಡಲೇ? ಏನೂ ಬಾಕಿ ಇಲ್ಲ.`) : d.kind === "refund" ? `${w.lit(d.ref)} ಫೀಸ್‌ನಿಂದ ${w.lit(d.who)} ಅವರಿಗೆ ${w.inr(d.amountPaise)} ಹಿಂತಿರುಗಿಸಲೇ?` : undefined),
+    orders: (w, d) => (d.kind === "cancel" ? (d.amountPaise > 0 ? `ಆರ್ಡರ್ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) ರದ್ದುಮಾಡಿ ${w.inr(d.amountPaise)} ಅಡ್ವಾನ್ಸ್ ಹಿಂತಿರುಗಿಸಲೇ?` : `ಆರ್ಡರ್ ${w.lit(d.ref)} (${w.lit(d.who)}, ${w.lit(d.what)}) ರದ್ದುಮಾಡಲೇ? ಅಡ್ವಾನ್ಸ್ ಪಾವತಿಸಿಲ್ಲ.`) : d.kind === "refund" ? `${w.lit(d.ref)} ಅಡ್ವಾನ್ಸ್‌ನಿಂದ ${w.lit(d.who)} ಅವರಿಗೆ ${w.inr(d.amountPaise)} ಹಿಂತಿರುಗಿಸಲೇ?` : undefined),
+  },
+};
+
+const CARD_ASK: Record<Language, (w: Writer, d: MessageData["card"]) => string> = {
+  en: (w, d) => (d.skill ? SKILL_ASK.en[d.skill as "fees"]?.(w, d) : undefined) ?? BASE_ASK.en(w, d),
+  hi: (w, d) => (d.skill ? SKILL_ASK.hi[d.skill as "fees"]?.(w, d) : undefined) ?? BASE_ASK.hi(w, d),
+  ml: (w, d) => (d.skill ? SKILL_ASK.ml[d.skill as "fees"]?.(w, d) : undefined) ?? BASE_ASK.ml(w, d),
+  kn: (w, d) => (d.skill ? SKILL_ASK.kn[d.skill as "fees"]?.(w, d) : undefined) ?? BASE_ASK.kn(w, d),
 };
 
 /** The line under every card: how to answer without the buttons. The code is the card's own; it is a literal (its digits are not a value). */

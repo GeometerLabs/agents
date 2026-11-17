@@ -16,6 +16,9 @@ import { WORDS as PAGES_BLOCK_WORDS } from "./views-pages.ts";
 import { WORDS as DOOR_WORDS } from "../services/door-pages.ts";
 import { FIRST_WORDS } from "../../modules/channels/words-owner-first.ts";
 import { PERSONALITIES, SMALL_TALK } from "../../modules/assistant/personality.ts";
+import { cardQuestion, write as writeAssistant } from "../../modules/assistant/words.ts";
+import type { MessageData } from "../../modules/assistant/words.ts";
+import { NOTE_LABELS } from "../../modules/assistant/words-memory.ts";
 
 export type ReviewLanguage = "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
@@ -64,6 +67,26 @@ const agentsFlat = (language: Language): Map<string, string> => flatWords({ agen
 const personalityFlat = (language: Language): Map<string, string> => flatWords({ personality: Object.fromEntries(PERSONALITIES.map((p) => [p, SMALL_TALK[p][language]])) });
 
 /**
+ * Block M (17 Nov 2026): what the shop's assistant says about its memory and the owner's talk (modules/assistant/words-memory.ts), the Remember / No buttons, and the cards
+ * worded for Fees and Orders (a fee's balance and an order's advance, not a "deposit"), under the ids "memory.*" and "card.<skill>.*". Each is written with made-up values, so
+ * a native reviewer reads whole sentences; the note's own words, ids and amounts are filled in by the assistant and never translated.
+ */
+const memoryFlat = (language: Language): Map<string, string> => {
+  const out = new Map<string, string>();
+  const say = <K extends keyof MessageData>(id: K, data: MessageData[K]) => out.set(`memory.${id}`, writeAssistant(id, data, language, "Asia/Kolkata").text);
+  const note = { id: "n-3", text: "closed on Sunday", kind: "fact", audience: "owner" as const };
+  say("note_saved", { id: "n-3", text: "closed on Sunday", audience: "owner", undoable: true });
+  say("note_proposal", { text: "closed on Sunday", audience: "everyone" });
+  say("note_declined", {}); say("notes_list", { notes: [note, { ...note, id: "n-4", audience: "everyone" }] }); say("note_forgotten", { id: "n-3" }); say("note_undone", { id: "n-3" });
+  say("note_unknown", { id: "n-9" }); say("note_full", { max: 80 }); say("note_too_long", { max: 280 }); say("note_need_words", {}); say("note_not_a_limit", { id: "n-3" });
+  say("talk_fallback", { waiting: 2, today: 5 }); say("talk_off", {});
+  out.set("memory.button.remember", NOTE_LABELS[language].yes); out.set("memory.button.no", NOTE_LABELS[language].no);
+  const card = (skill: string, kind: string, amountPaise: number) => cardQuestion({ kind, skill, who: "Priya", ref: skill === "fees" ? "f-3" : "o-5", what: skill === "fees" ? "November 2026" : "2 cakes", amountPaise, code: "K7M2QX", hasNo: true }, language, "Asia/Kolkata");
+  for (const skill of ["fees", "orders"]) { out.set(`card.${skill}.cancel_money`, card(skill, "cancel", 150_000)); out.set(`card.${skill}.cancel_none`, card(skill, "cancel", 0)); out.set(`card.${skill}.refund`, card(skill, "refund", 50_000)); }
+  return out;
+};
+
+/**
  * The words added for the owner's first sign-in and who to call (14 Nov 2026), under the ids "owner.first.*" (the passkey page's Chrome and screen-lock lines, the alerts'
  * second step, the Operator bar, the shop's links), "door.*" (the door's error pages) and "pages.block.*" (the panel's shop page block, its QR page and recovery card),
  * so they reach the same native reviewer. Values a phrase takes are shown with a sample.
@@ -76,8 +99,8 @@ const firstFlat = (language: Language): Map<string, string> => flatWords({ owner
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...firstFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...firstFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

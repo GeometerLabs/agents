@@ -312,7 +312,7 @@ export function createAssistant(deps: AssistantDeps) {
       { card: card.id, skill: skill.name, kind: proposal.kind, digest, case: proposal.case, ...(prepared.shown.amountPaise > 0 ? { amountPaise: String(prepared.shown.amountPaise) } : {}) },
       "a card with the exact change was shown to the owner; nothing is done until they tap it");
     const cardData = {
-      kind: proposal.kind, ...(proposal.kind === "answer" ? { itemKind: proposal.itemKind } : {}), who: prepared.shown.who, ref: proposal.case, what: prepared.shown.what,
+      kind: proposal.kind, skill: skill.name, ...(proposal.kind === "answer" ? { itemKind: proposal.itemKind } : {}), who: prepared.shown.who, ref: proposal.case, what: prepared.shown.what,
       amountPaise: prepared.shown.amountPaise, ...(prepared.shown.words !== undefined ? { words: prepared.shown.words } : {}), ...(prepared.aboveLimit ? { aboveLimit: true } : {}), code, hasNo,
     };
     // the owner's page shows the same question beside the card's buttons, without the code (items 11d and 11e together)
