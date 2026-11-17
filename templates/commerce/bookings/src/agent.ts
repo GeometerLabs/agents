@@ -72,7 +72,7 @@ import { capabilitiesOf, ownerMarkedOf } from "../../../../modules/payments/prov
 import { readSettlementsOnce } from "../../../../modules/accounting/settlements.ts";
 import type { ButtonId } from "./language/interactive.ts";
 import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
-import { calendarModule, hoursOn, serviceName } from "./settings.ts";
+import { SHARED_RESOURCE, calendarModule, hoursOn, serviceName, unitsFor } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import { HOUR, MINUTE, addDays, localParts, weekdayOf, zonedToMs } from "../../../../modules/core/time.ts";
@@ -276,7 +276,10 @@ export function createAgent(deps: AgentDeps): Agent {
   const OFFER_ROWS = 9; // a list holds ten rows, and the last is the row that reaches the owner
 
   /** A calendar event as the double-booking limit reads it: a tentative event (a hold) stops blocking when its hold ends. */
-  const busyOf = (e: CalendarEvent): BusyEvent => ({ start: e.start, end: e.end, bookingRef: e.bookingRef, tentativeUntil: e.status === "tentative" ? e.holdExpiresAt : undefined });
+  const busyOf = (e: CalendarEvent): BusyEvent => ({ start: e.start, end: e.end, bookingRef: e.bookingRef, tentativeUntil: e.status === "tentative" ? e.holdExpiresAt : undefined, resource: resourceOfRef(e.bookingRef) });
+  /** The resource a booking uses up (17 Nov, several at once): its service's, or the shared "shop" pool. An event that is not one of this shop's bookings has none, and blocks every resource. */
+  const resourceOf = (service: Settings["services"][number] | undefined): string => service?.resource ?? SHARED_RESOURCE;
+  const resourceOfRef = (ref: string): string | undefined => { const x = store.bookings.get(ref); return x === undefined ? undefined : resourceOf(serviceOf(x)); };
 
   /**
    * The times the shop's own bookings hold, read from the bookings themselves (11 Nov, the last slot): the shop's own saved state is the authority for its holds, the way
@@ -289,8 +292,8 @@ export function createAgent(deps: AgentDeps): Agent {
     const held: BusyEvent[] = [];
     for (const x of store.bookings.values()) {
       if (x.id === exceptId || x.startMs === undefined || x.endMs === undefined) continue;
-      if (x.state === "awaiting_deposit" && x.holdExpiresAt !== undefined) held.push({ start: x.startMs, end: x.endMs, bookingRef: x.id, tentativeUntil: x.holdExpiresAt });
-      else if (x.state === "needs_owner" || x.state === "confirmed") held.push({ start: x.startMs, end: x.endMs, bookingRef: x.id });
+      if (x.state === "awaiting_deposit" && x.holdExpiresAt !== undefined) held.push({ start: x.startMs, end: x.endMs, bookingRef: x.id, tentativeUntil: x.holdExpiresAt, resource: resourceOf(serviceOf(x)) });
+      else if (x.state === "needs_owner" || x.state === "confirmed") held.push({ start: x.startMs, end: x.endMs, bookingRef: x.id, resource: resourceOf(serviceOf(x)) });
     }
     return held;
   }
@@ -310,7 +313,7 @@ export function createAgent(deps: AgentDeps): Agent {
     for (let m = Math.ceil(hours.open / grid) * grid; m + service.durationMinutes <= hours.close; m += grid) {
       const startMs = zonedToMs(date, { hour: Math.floor(m / 60), minute: m % 60 }, tz);
       if (startMs <= now + settings.deposit.holdMinutes * MINUTE) continue; // the customer needs the hold's time to pay before it starts
-      const clash = checkNoDoubleBooking({ startMs, endMs: startMs + service.durationMinutes * MINUTE, bufferMinutes: settings.bufferMinutes, ownBookingRef: "", nowMs: now, others });
+      const clash = checkNoDoubleBooking({ startMs, endMs: startMs + service.durationMinutes * MINUTE, bufferMinutes: settings.bufferMinutes, ownBookingRef: "", nowMs: now, others, resource: resourceOf(service), units: unitsFor(settings, service) });
       if (clash.verdict !== "block") free.push(startMs);
     }
     return free;
@@ -731,7 +734,7 @@ export function createAgent(deps: AgentDeps): Agent {
     const nearby = await calendar.conflicts(start - buffer, end + buffer);
     return {
       hours: checkWithinHours({ settings, service: serviceOf(b)!, startMs: start, closedDays: closedDays() }),
-      clash: checkNoDoubleBooking({ startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(), others: [...nearby.map(busyOf), ...heldByBookings(b.id)] }),
+      clash: checkNoDoubleBooking({ startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(), others: [...nearby.map(busyOf), ...heldByBookings(b.id)], resource: resourceOf(serviceOf(b)), units: unitsFor(settings, serviceOf(b)) }),
     };
   }
 
@@ -747,7 +750,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if (!(e instanceof TimeoutError) && !(e instanceof ApiError)) throw e;
       return { unread: (e as Error).message };
     }
-    const clash = checkNoDoubleBooking({ startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(), others: nearby.map(busyOf) });
+    const clash = checkNoDoubleBooking({ startMs: start, endMs: end, bufferMinutes: settings.bufferMinutes, ownBookingRef: b.id, nowMs: clock.now(), others: nearby.map(busyOf), resource: resourceOf(serviceOf(b)), units: unitsFor(settings, serviceOf(b)) });
     return { clash: clash.verdict === "block" ? clash : null };
   }
 
@@ -1191,6 +1194,16 @@ export function createAgent(deps: AgentDeps): Agent {
     log(b, b.customer, "reschedule_booking", "attempted", want);
     const found = await ensureEvent(b, want);
     if (found.event) {
+      // 17 Nov: the calendar is read again after the move (as after a hold): Google takes an overlapping event without a word. If another event is on the new time now, or the
+      // calendar cannot be read to say it is not, the event goes back to the old time and the booking stays where it was.
+      const meanwhile = await takenMeanwhile(b, move.startMs, move.endMs);
+      if ("unread" in meanwhile || meanwhile.clash) {
+        const taken = !("unread" in meanwhile);
+        log(b, b.customer, "reschedule_booking", taken ? "blocked" : "unconfirmed", want, { ...(taken ? { decisions: [meanwhile.clash!] } : {}), refs: { eventId: found.event.id }, notes: taken ? "another event was written on the new time while the booking was being moved: it goes back to its old time" : `the calendar could not be read again after the move (${meanwhile.unread}): it goes back to its old time` });
+        await ensureEvent(b, { start: b.startMs!, end: b.endMs!, status: "confirmed" });
+        await tellCustomer(b, b.customer, [taken ? "slot_unavailable" : "reschedule_failed"], { slotMs: move.startMs, ...(taken ? { shown: [meanwhile.clash!] } : {}) });
+        return;
+      }
       b.startMs = move.startMs;
       b.endMs = move.endMs;
       b.reminders = reminderSchedule(settings, b.startMs, clock.now());

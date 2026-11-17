@@ -22,7 +22,15 @@ export interface Service {
   /** Whole rupees. This is also the floor: the agent never quotes or agrees below it. */
   priceInr: number;
   durationMinutes: number;
+  /** 17 Nov: which thing this service uses up (a chair, a tractor), a key of `Settings.resources`. Left out: the shop's shared pool, "shop", as every service was before. */
+  resource?: string;
 }
+
+/** The shared pool every service without its own `resource` draws from. */
+export const SHARED_RESOURCE = "shop";
+
+/** The longest one booking can be: a whole day (24 hours; it must still start and end on one day inside one opening window). Was 480 (8 hours) before 17 Nov, for a harvester's full day. */
+export const MAX_DURATION_MINUTES = 1440;
 
 export interface OpeningHours { open: string; close: string } // "10:00", "20:00"
 
@@ -34,6 +42,11 @@ export interface Settings {
   openingHours: Record<WeekdayKey, OpeningHours | null>; // null = closed that day
   slotMinutes: number; // bookings start on this grid
   bufferMinutes: number; // gap kept after each booking
+  /**
+   * 17 Nov: how many bookings may run at once, per resource: {"shop": 2} is two chairs, {"tractor": 1, "pump": 2} a tractor and two pump sets (each service names its
+   * resource). A resource not listed has one unit, and a file with no "resources" key behaves exactly as before: one booking at a time for the whole shop.
+   */
+  resources?: Record<string, number>;
   deposit: { amountInr: number; holdMinutes: number };
   cancellation: {
     /** Cancel at least this long before the start and the deposit is refunded; later and the owner decides. */
@@ -76,7 +89,7 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ["The settings must be an object with the business's name, services, hours and so on."] };
 
-  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "deposit", "cancellation", "languages", "owner", "approvers", "reminders", "payment", "calendar", "assistant"], "the settings", errors);
+  unknownKeys(input, ["name", "address", "timezone", "services", "openingHours", "slotMinutes", "bufferMinutes", "resources", "deposit", "cancellation", "languages", "owner", "approvers", "reminders", "payment", "calendar", "assistant"], "the settings", errors);
 
   const name = input.name;
   if (typeof name !== "string" || name.trim() === "") errors.push("Add the business's name (\"name\").");
@@ -92,7 +105,8 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
   const languages = readLanguages(input.languages, errors);
   const slotMinutes = readWhole(input.slotMinutes, "the slot length (\"slotMinutes\")", 5, 240, errors);
   const bufferMinutes = input.bufferMinutes === undefined ? 0 : readWhole(input.bufferMinutes, "the buffer time (\"bufferMinutes\")", 0, 240, errors);
-  const services = readServices(input.services, languages, errors);
+  const resources = readResources(input.resources, errors);
+  const services = readServices(input.services, languages, errors, resources);
   const openingHours = readHours(input.openingHours, errors);
   const deposit = readDeposit(input.deposit, services, errors);
   const cancellation = readCancellation(input.cancellation, errors);
@@ -123,6 +137,7 @@ export function validateSettings(input: unknown, options: { ownApi?: boolean } =
     reminders,
   } as Settings;
   if (typeof address === "string") settings.address = address;
+  if (resources) settings.resources = resources;
   if (approvers) settings.approvers = approvers;
   if (calendar) settings.calendar = calendar;
   if (assistant) settings.assistant = assistant;
@@ -150,6 +165,9 @@ export function hoursOn(settings: Settings, weekday: number): { open: number; cl
   if (!h) return null;
   return { open: parseClock(h.open) as number, close: parseClock(h.close) as number };
 }
+
+/** How many bookings may run at once on a service's resource (one when nothing says more). */
+export const unitsFor = (settings: Pick<Settings, "resources">, service: Pick<Service, "resource"> | undefined): number => settings.resources?.[service?.resource ?? SHARED_RESOURCE] ?? 1;
 
 // ---- readers: each pushes plain-words problems and returns a best-effort value ---------------------------------
 
@@ -186,7 +204,19 @@ function readLanguages(v: unknown, errors: string[]): Language[] {
   return out.length > 0 ? out : ["hi", "en"];
 }
 
-function readServices(v: unknown, languages: Language[], errors: string[]): Service[] {
+function readResources(v: unknown, errors: string[]): Record<string, number> | undefined {
+  if (v === undefined) return undefined;
+  if (!isObj(v) || Object.keys(v).length === 0) { errors.push('"resources" must say how many bookings can run at once for each thing, for example {"shop": 2} for two chairs.'); return undefined; }
+  const out: Record<string, number> = {};
+  for (const [id, n] of Object.entries(v)) {
+    if (!/^[a-z0-9-]+$/.test(id)) errors.push(`The resource "${id}" needs a name made of lowercase letters, digits and dashes, for example "tractor".`);
+    else if (!isWhole(n) || n < 1 || n > 50) errors.push(`The number for "${id}" in "resources" must be a whole number from 1 to 50, not ${JSON.stringify(n)}.`);
+    else out[id] = n;
+  }
+  return out;
+}
+
+function readServices(v: unknown, languages: Language[], errors: string[], resources?: Record<string, number>): Service[] {
   if (!Array.isArray(v) || v.length === 0) {
     errors.push("Add at least one service (\"services\") with a name, a price in rupees and a duration.");
     return [];
@@ -197,7 +227,7 @@ function readServices(v: unknown, languages: Language[], errors: string[]): Serv
   v.forEach((raw, i) => {
     const label = isObj(raw) && typeof raw.id === "string" ? `Service "${raw.id}"` : `Service number ${i + 1}`;
     if (!isObj(raw)) { errors.push(`${label} must be an object with id, names, priceInr and durationMinutes.`); return; }
-    unknownKeys(raw, ["id", "names", "priceInr", "durationMinutes"], label, errors);
+    unknownKeys(raw, ["id", "names", "priceInr", "durationMinutes", "resource"], label, errors);
     const id = raw.id;
     if (typeof id !== "string" || !/^[a-z0-9-]+$/.test(id)) errors.push(`${label} needs an id made of lowercase letters, digits and dashes, for example "haircut".`);
     else if (seenIds.has(id)) errors.push(`Two services share the id "${id}". Each id must be different.`);
@@ -224,9 +254,10 @@ function readServices(v: unknown, languages: Language[], errors: string[]): Serv
       }
     }
     if (!isWhole(raw.priceInr) || raw.priceInr < 1) errors.push(`${label} needs a price in whole rupees (\"priceInr\"), for example 450. This is also the lowest price the agent will ever agree to.`);
-    if (!isWhole(raw.durationMinutes) || raw.durationMinutes < 5 || raw.durationMinutes > 480) errors.push(`${label} needs a duration in whole minutes (\"durationMinutes\"), between 5 and 480.`);
+    if (!isWhole(raw.durationMinutes) || raw.durationMinutes < 5 || raw.durationMinutes > MAX_DURATION_MINUTES) errors.push(`${label} needs a duration in whole minutes (\"durationMinutes\"), between 5 and ${MAX_DURATION_MINUTES}.`);
+    if (raw.resource !== undefined && (typeof raw.resource !== "string" || (raw.resource !== SHARED_RESOURCE && !resources?.[raw.resource]))) errors.push(`${label} uses the resource ${JSON.stringify(raw.resource)}, which is not listed in "resources". Add it there with how many can run at once.`);
     if (typeof id === "string" && isWhole(raw.priceInr) && isWhole(raw.durationMinutes)) {
-      services.push({ id, names, priceInr: raw.priceInr, durationMinutes: raw.durationMinutes });
+      services.push({ id, names, priceInr: raw.priceInr, durationMinutes: raw.durationMinutes, ...(typeof raw.resource === "string" ? { resource: raw.resource } : {}) });
     }
   });
   return services;
