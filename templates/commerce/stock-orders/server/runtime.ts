@@ -2,9 +2,10 @@
 // nothing half done, is explained once for every template in modules/runtime/core.ts. This file gives it Stock orders: its store, its agent, how its orders are counted and the
 // owner's page.
 //
-// One thing a step cannot promise, and the README says so: a step is saved when it ends. If the process dies AFTER WhatsApp took an order message and BEFORE the step is saved,
-// the step runs again from the last saved state and sends that order message once more (the same order number, which the supplier sees). A step that only finds Guard
-// down is different: that is thrown away before anything is sent, and the send is not repeated. See Deferred.md ("a send before its save").
+// A step is saved when it ends, so a message sent INSIDE a step could go out twice if the process died after WhatsApp took it and before the save. The order message (and the
+// reminder to the supplier) is therefore not sent by the step: the step records an intent, and this runtime sends it after the step's save with a saved claim before the send
+// and a saved ending after (modules/messaging/send-once.ts, called from modules/runtime/core.ts). A claim with no ending is never sent again; the owner is asked. A step that
+// only finds Guard down is thrown away before anything is sent. Messages that are only words to the owner still go in the step: a repeat of those is a nuisance, not a debt.
 import { createAgent } from "../src/agent.ts";
 import type { AgentEvent } from "../src/agent.ts";
 import { createStore } from "../src/order.ts";
@@ -98,7 +99,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     services: services as unknown as Record<string, unknown>,
     // the step's watched services, when the runtime hands them (guard-wait.ts), else the shop's own
     createAgent: ({ store, record, services: watched }) => createAgent({
-      settings, clock, messaging: ((watched ?? services) as unknown as Services).messaging, record, store, ai: policy,
+      settings, clock, messaging: ((watched ?? services) as unknown as Services).messaging, record, store, ai: policy, sendLater: true, // the runtime sends the order message after the step is saved (modules/messaging/send-once.ts)
       ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(options.talker ? { talker: options.talker } : {}),
     }),
     countCases: countByState,

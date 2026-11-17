@@ -101,6 +101,12 @@ export interface RunnableAgent {
    * `tell` also give the customer the template's words for it. `tell` is false when the customer already heard something from this step, so they are not told twice.
    */
   giveUp?(event: RuntimeEvent, why: { service: string; tell: boolean }): Promise<void>;
+  /**
+   * Send once (modules/messaging/send-once.ts): the agent records a message that commits someone (a purchase order) as an intent in the store instead of sending it in the
+   * step, and this sends it. The runtime calls `run` AFTER the step's own save, so the claim, the send and the ending are each saved around the send: a process that dies
+   * in between is never able to send the message twice. `save` writes the store and the record as they are now. Left out: the agent has no such message.
+   */
+  sendOnce?: { run(save: () => void): Promise<void> };
 }
 
 /** The monthly report's job, as the runtime uses it (modules/report/monthly-job.ts). */
@@ -407,6 +413,14 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
       catch (e) { log(`The owner's morning line could not be made: ${(e as Error).message}`); }
     }
     save(store, record, taskId);
+    // Send once: what the step asked to be sent (a purchase order) goes now that the step is saved, claim first, ending after, each saved (modules/messaging/send-once.ts).
+    // It also runs on every tick, so a refused message is tried again when its hour is up and a claim left by a dead process is found and never sent again. In the licence's
+    // final stop nothing is sent: the intent waits. This is the same agent as the step's: its calls are watched like the step's, but the step is over, so a Guard down here
+    // is only a refusal ("nothing went out") that the next run tries again.
+    if (agent.sendOnce && options.licence?.().state !== "stopped") {
+      try { await agent.sendOnce.run(() => save(store, record)); }
+      catch (e) { log(`A message waiting to be sent could not be sent: ${(e as Error).message}`); }
+    }
     if (!isTask) tickMemory.clear(); // what it sent is saved as sent now, so the memory of it is done with
   }
 

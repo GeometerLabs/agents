@@ -56,7 +56,7 @@ export type ChannelRequest = ChannelBook | ChannelOrder | ChannelFee | ChannelOt
  * cards: `card_yes` / `card_no`, whose case is the card's id ("c-3") and whose digest is the card's own. A card's answer goes through the same binding as a tap on
  * WhatsApp (modules/assistant/cards.ts judgeCard): one use, and the action read again from the store must still have the card's digest.
  */
-export const OWNER_ACTIONS = ["received", "refunded", "kept", "approve", "deny", "retry", "card_yes", "card_no", "send_link", "revoke_link", "cash", "bank", "present", "absent", "answered"] as const;
+export const OWNER_ACTIONS = ["received", "refunded", "kept", "approve", "deny", "retry", "card_yes", "card_no", "send_link", "revoke_link", "cash", "bank", "present", "absent", "answered", "got_it", "send_again", "try_now", "cancel_order"] as const;
 export type OwnerActionName = (typeof OWNER_ACTIONS)[number];
 export interface OwnerAction {
   kind: "owner_action"; id: string; action: OwnerActionName; case: string; digest: string;
