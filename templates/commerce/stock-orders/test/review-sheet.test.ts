@@ -8,6 +8,7 @@ import { TEMPLATES } from "../src/language/templates.ts";
 import type { TemplateId } from "../src/language/templates.ts";
 import { metaSubmissions } from "../src/language/meta-templates.ts";
 import { glowSalon } from "../src/harness.ts";
+import { reportSubmissions } from "../report/whatsapp.ts";
 
 const WARNING = "Machine-written. Waiting for a native speaker's review before any real shop sees it.";
 
@@ -25,5 +26,5 @@ for (const language of ["hi", "ml", "kn"] as const) {
 
 test("whatsapp-templates.json is what the script writes", () => {
   const committed = readFileSync(new URL("../whatsapp-templates.json", import.meta.url), "utf8");
-  assert.equal(committed.trimEnd(), JSON.stringify(metaSubmissions(glowSalon()), null, 2));
+  assert.equal(committed.trimEnd(), JSON.stringify([...metaSubmissions(glowSalon()), ...reportSubmissions()], null, 2)); // the same list scripts/whatsapp-templates.ts writes: the shop's messages, then the monthly report's
 });

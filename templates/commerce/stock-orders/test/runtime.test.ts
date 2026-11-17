@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { fakeClock } from "../../../../modules/core/clock.ts";
 import { zonedToMs } from "../../../../modules/core/time.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
+import { defaultCharacter } from "../../../../modules/assistant/character.ts";
 import { createFakeMessaging } from "../../../../modules/messaging/messaging.ts";
 import { RAVI, createWorld, glowSalon } from "../src/harness.ts";
 import { TEMPLATE_NAMES } from "../src/language/templates.ts";
@@ -58,7 +59,7 @@ test("an approval, a restart and a supplier's answer end exactly as they do in t
 });
 
 test("the store round-trips every field: the orders, the handled messages, the requests, opt-outs, the question asked, the assistant's part and the counter", async () => {
-  const w = createWorld({ settings: { ...settings, assistant: { morningAt: null, character: undefined as never } } });
+  const w = createWorld({ settings: { ...settings, assistant: { morningAt: null, character: defaultCharacter() } } });
   await w.ownerSays("order 10 boxes of hair colour from Ravi Traders");
   await w.ownerSays("shampoo");
   w.store.optedOut.add("919999999999");

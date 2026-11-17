@@ -23,6 +23,7 @@ import type { Clock } from "../../../../modules/core/clock.ts";
 import type { RuntimeEvent } from "../../../../modules/runtime/events.ts";
 import type { OwnerAction } from "../../../../modules/channels/events.ts";
 import { assistantForAgent } from "../../../../modules/assistant/wire.ts";
+import { looksLikeLimitRule } from "../../../../modules/assistant/limits-card.ts";
 import type { OwnerParser } from "../../../../modules/assistant/reading.ts";
 import type { TalkModel } from "../../../../modules/understanding/talk.ts";
 import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
@@ -729,6 +730,9 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     const reading = readOwnerText(settings, m.text);
+    // "monthly budget at most ₹15,000" holds the word "budget", which the status reading takes for "how is my budget?". A sentence that states a rule about one of the limits the owner
+    // may tighten (chat-limits.ts) is the assistant's, so it makes a limit card; without the assistant it stays a status question as before.
+    if (assistant && reading.kind === "status" && looksLikeLimitRule(m.text, CHAT_LIMITS) && (await assistant.onOwnerMessage(m))) return;
     // an answer to a question of ours comes first, unless the owner wrote a new request or a command
     if (store.asking && !(reading.kind === "command" || reading.kind === "status" || (reading.kind === "order" && reading.item))) {
       if (await onAnswer(m, store.asking)) return;
