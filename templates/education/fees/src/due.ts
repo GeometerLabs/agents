@@ -18,6 +18,7 @@ import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { Reminder } from "../../../../modules/reminders/reminders.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
 import { batchName, batchOf } from "./settings.ts";
+import type { PartMonth } from "./joining.ts";
 import type { Batch, Settings, Student } from "./settings.ts";
 import type { MessageFacts } from "./language/templates.ts";
 
@@ -85,6 +86,13 @@ export interface Due {
   stoppedRefunds?: string[];
   /** Refunds the payments service's list settled whose customer has not been told yet (modules/payments/refunds.ts): listed on the to-do list until a message is accepted. */
   refundsUntold?: UntoldRefund[];
+  /** The student joined part-way through this month and the centre's rule priced it (src/joining.ts); the fee above is already the price. Left out for an ordinary month. */
+  partMonth?: PartMonth;
+  /**
+   * An earlier month that was still unpaid when the agent started, entered by the owner in the settings (a student's `backDues`): carried here as a fee of its own, so it is
+   * matched by its own payments and its own link. No late fee is added to it (the owner gave the amount) and it is reminded once, with the family message if there is more than one.
+   */
+  backDue?: boolean;
   /** Each of these keeps one kind of notice from being sent again within its time, so one kind never keeps another quiet. */
   claimTellAtMs?: number; // the owner was told a parent says the fee is paid and the record shows nothing
   discountTellAtMs?: number; // the owner was told a parent asked for a discount without an amount
@@ -214,11 +222,11 @@ export function factsFor(settings: Settings, due: Due | null, language: Language
 }
 
 /** A student of the centre as the first of the month's fees is opened for. */
-export function newDue(settings: Settings, student: Student, language: Language, month: string, dueDate: LocalDate, dueMs: number): Due {
+export function newDue(settings: Settings, student: Student, language: Language, month: string, dueDate: LocalDate, dueMs: number, feeInr?: number): Due {
   const batch = batchOf(settings, student);
   return {
     id: "", studentName: student.name, batchId: batch.id, customer: student.parent, language, month, dueDate, dueMs,
-    feeInr: batch.monthlyFeeInr, lateFeeInr: 0, waivedInr: 0, state: "open", links: [], linkSeq: 0, payments: [], reminders: [], remindersSent: 0, pending: [], waiverDenied: false,
+    feeInr: feeInr ?? batch.monthlyFeeInr, lateFeeInr: 0, waivedInr: 0, state: "open", links: [], linkSeq: 0, payments: [], reminders: [], remindersSent: 0, pending: [], waiverDenied: false,
   };
 }
 
