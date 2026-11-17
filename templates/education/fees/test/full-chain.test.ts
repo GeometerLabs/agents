@@ -17,7 +17,7 @@ import { languageOfScript } from "../../../../modules/language/format.ts";
 import { KIRAN_PARENT, MEERA_PARENT, ROHAN_PARENT, SHARMA_PARENT, brightTuition } from "../src/harness.ts";
 import { PHONE_NUMBER_ID, startLocalStack } from "../scripts/local-stack.ts";
 import type { LocalStack } from "../scripts/local-stack.ts";
-import { whatsappWebhookBody } from "../standins/control.ts";
+import { whatsappWebhookBody } from "../../../../modules/standins/whatsapp.ts";
 
 const settings = brightTuition();
 const at = (day: number, hour: number, minute = 0) => zonedToMs({ year: 2026, month: 11, day }, { hour, minute }, settings.timezone);

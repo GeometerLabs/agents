@@ -9,6 +9,7 @@ import { signMeta } from "../../../../modules/messaging/webhooks.ts";
 import { signRazorpay } from "../../../../modules/payments/providers/razorpay/webhook.ts";
 import { ok } from "../../../../modules/standins/http.ts";
 import type { Handler, StandinReply } from "../../../../modules/standins/http.ts";
+import { whatsappWebhookBody } from "../../../../modules/standins/whatsapp.ts";
 import { razorpayWebhookBody } from "../../../../modules/payments/providers/razorpay/standin.ts";
 
 export interface Fakes { payments: FakePayments; calendar: FakeCalendar; messaging: FakeMessaging }
@@ -26,21 +27,6 @@ export interface ControlConfig {
 }
 
 const bad = (message: string): StandinReply => ({ status: 400, body: { error: message } });
-
-// ---- the webhooks the providers would send ----------------------------------------------------------------------------------
-
-/** A WhatsApp webhook body for one customer text. `from` has no plus and the time is epoch seconds as a string, as Meta writes them. */
-export function whatsappWebhookBody(message: { id: string; from: string; text: string; timestamp: number }, phoneNumberId: string): string {
-  const digits = message.from.replace(/^\+/u, "");
-  return JSON.stringify({
-    object: "whatsapp_business_account",
-    entry: [{ id: "standin-waba", changes: [{ field: "messages", value: {
-      messaging_product: "whatsapp", metadata: { display_phone_number: "15550000000", phone_number_id: phoneNumberId },
-      contacts: [{ profile: { name: "Stand-in customer" }, wa_id: digits }],
-      messages: [{ from: digits, id: message.id, timestamp: String(Math.floor(message.timestamp / 1000)), type: "text", text: { body: message.text } }],
-    } }] }],
-  });
-}
 
 // ---- the routes ---------------------------------------------------------------------------------------------------------------
 
