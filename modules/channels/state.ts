@@ -4,7 +4,24 @@
 import { HOUR } from "../core/time.ts";
 
 /** One message the agent "sent" to a channel's customer: what their booking page shows under the booking. */
-export interface OutboxMessage { id: string; to: string; text: string; atMs: number }
+export interface OutboxMessage {
+  id: string; to: string; text: string; atMs: number;
+  /** A chat guest's thread only (W1): the buttons or list rows the shop's message came with, so the page can draw them and a tap can be checked against them. */
+  choices?: ChatChoice[];
+}
+
+/** A button or a list row, as a chat thread keeps it: the id the template gave it (it is what the agent reads back), the words, and a row's one-line note. */
+export interface ChatChoice { id: string; title: string; hint?: string; /** True for a list row (WhatsApp's kind of reply), else a button. */ list?: true }
+
+/** What a guest typed or tapped, in order with the shop's messages (their ids come from the same counter). `cid`: the page's own id for the send, so a retry is one line. */
+export interface ChatSaid { id: string; cid: string; text: string; atMs: number }
+
+/**
+ * One guest's chat (W1, 17 Nov 2026), by its conversation ("chat:" and 16 hex digits). `said`: the guest's own lines, capped (CHAT_THREAD_MAX); the shop's lines are the
+ * outbox's. `day`, `turns`, `messages`: the shop-zone day these counts are for, how many typed sends may have asked the model, and how many sends in all (the saved caps
+ * of chat.ts CHAT_LIMITS). Nothing here identifies a person: the handle itself is in the guest's cookie only, and the hash that names the conversation is one way.
+ */
+export interface ChatGuest { startedMs: number; lastMs: number; said: ChatSaid[]; day: string; turns: number; messages: number }
 
 /**
  * A request from a channel, by its handle's hash. `booking`: the booking it made. `refused`: why none was made (a reason name the page words; the record says the rest).
@@ -12,12 +29,14 @@ export interface OutboxMessage { id: string; to: string; text: string; atMs: num
  */
 export interface ChannelRequestRecord { atMs: number; channel: string; booking?: string; refused?: string; phone?: string }
 
-export interface ChannelState { seq: number; outbox: OutboxMessage[]; requests: Record<string, ChannelRequestRecord> }
+export interface ChannelState { seq: number; outbox: OutboxMessage[]; requests: Record<string, ChannelRequestRecord>; /** W1: the chat guests, by conversation. Left out until the first guest writes, so a shop with no chat saves exactly what it did. */ chat?: Record<string, ChatGuest> }
 
 export const emptyChannelState = (): ChannelState => ({ seq: 0, outbox: [], requests: {} });
 
 /** The most a conversation keeps: a booking's page shows its latest messages, and a step can never grow the store without bound. */
 export const OUTBOX_PER_CONVERSATION = 20;
+/** The most a chat guest's thread keeps of each side (the shop's lines in the outbox, the guest's in `said`): a reload shows the last of a real conversation, and nothing grows without bound. */
+export const CHAT_THREAD_MAX = 60;
 
 /**
  * The limits a step enforces on bookings from channels (the front adds per-address limits before anything is saved: limits.ts). The typed number is not verified, so the
@@ -51,6 +70,14 @@ export function compactChannel(state: ChannelState | undefined, beforeMs: number
   const keep = state.outbox.filter((m) => m.atMs >= beforeMs); // the page of a booking still going shows its state, which is kept; only old words go
   changed += state.outbox.length - keep.length;
   state.outbox = keep;
+  // W1: a chat thread is kept for the same time (the shop's retention); a guest with no line left is forgotten whole, so the thread, its counts and its day are gone
+  for (const [conversation, guest] of Object.entries(state.chat ?? {})) {
+    const said = guest.said.filter((m) => m.atMs >= beforeMs);
+    changed += guest.said.length - said.length;
+    guest.said = said;
+    if (said.length === 0 && !state.outbox.some((m) => m.to === conversation)) { delete state.chat![conversation]; changed++; }
+  }
+  if (state.chat && Object.keys(state.chat).length === 0) delete state.chat;
   return changed;
 }
 

@@ -34,6 +34,19 @@ export const HANDLE_HASH = /^[0-9a-f]{64}$/u;
  */
 export const parentLinkHash = (link: string): string => createHash("sha256").update(`parent-link:${link}`).digest("hex");
 
+/**
+ * W1, the chat on the shop's page: a guest's handle is 32 random bytes in base64url (43 characters), longer than a booking's: it is a login for a conversation, kept in an
+ * HttpOnly cookie scoped to the shop's chat path, never in an address. Its own shape, so a booking's handle can never be taken for a guest's, nor the other way round.
+ */
+export const newGuestHandle = (): string => randomBytes(32).toString("base64url");
+export const GUEST_HANDLE = /^[A-Za-z0-9_-]{43}$/u;
+
+/**
+ * The hash the runtime keeps and finds a guest's thread by (64 hex digits). The SHOP's name is part of it, so a handle sent to another shop (a copied cookie, a guess)
+ * names a different, empty conversation there: one shop's guest is never found at another shop. The prefix keeps it apart from every other hash in the repo.
+ */
+export const guestHash = (shop: string, handle: string): string => createHash("sha256").update(`chat-guest:${shop}:${handle}`).digest("hex");
+
 // The channels' names and conversations are in conversation.ts (no imports, so an agent in the browser demo can use them); they are passed on from here too.
-export { CHANNELS, conversationOf, isChannelConversation } from "./conversation.ts";
+export { CHANNELS, chatConversationOf, conversationOf, isChannelConversation, isChatConversation } from "./conversation.ts";
 export type { ChannelName } from "./conversation.ts";

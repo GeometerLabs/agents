@@ -76,7 +76,17 @@ export interface OwnerMessage { kind: "owner_message"; id: string; text: string;
 /** The longest message the talk box takes (the box's own maxlength). */
 export const OWNER_MESSAGE_MAX = 900;
 
-export type ChannelEvent = ChannelRequest | OwnerAction | OwnerSigninEvent | OwnerMessage;
+/**
+ * W1, the chat on the shop's page (17 Nov 2026): one send from a guest. `handle` is the HASH of the guest's handle for this shop (handle.ts guestHash), never the handle;
+ * `id` is the page's own id for this send, so the same send made again (a retry after a bad network) is the same task and is answered once. Exactly one of `text` (typed,
+ * 1 to CHAT_TEXT_MAX characters), `tap` (the id of a button or list row the shop's message offered: the runtime checks it was offered) or `quick` (1 to 3: one of the three
+ * taps of an empty chat, words-chat.ts QUICK). It carries no authority and no number: the agent reads it exactly as it reads the same words from a WhatsApp customer.
+ */
+export interface ChatMessage { kind: "chat_message"; id: string; handle: string; language: Language; text?: string; tap?: string; quick?: 1 | 2 | 3 }
+/** The longest typed send (the page's own maxlength). */
+export const CHAT_TEXT_MAX = 500;
+
+export type ChannelEvent = ChannelRequest | OwnerAction | OwnerSigninEvent | OwnerMessage | ChatMessage;
 
 /**
  * The task key of a request that STARTS something with its own handle: a booking, an order (item 11h), or a parent's press that made a confirmation page. One task per
@@ -85,11 +95,15 @@ export type ChannelEvent = ChannelRequest | OwnerAction | OwnerSigninEvent | Own
  */
 export const channelStartKey = (handleHash: string): string => `channel_book:${handleHash}`;
 
+/** The task key of one chat send (the runtime reads it to say whether a send's step has run, has not, or ended without its work done). */
+export const chatTaskKey = (handleHash: string, id: string): string => `chat_message:${handleHash}:${id}`;
+
 /** The task key: a booking, an order or a parent's press is made once per handle, however often it is sent; a cancel or a claim once per press (the front's own id for it). */
 export function channelEventKey(e: ChannelEvent): string {
   if (e.kind === "owner_action") return `owner_action:${e.id}`;
   if (e.kind === "owner_signin") return `owner_signin:${e.id}`; // one per press: the limits, not the key, bound how many
   if (e.kind === "owner_message") return `owner_message:${e.id}`; // one per send from the page
+  if (e.kind === "chat_message") return chatTaskKey(e.handle, e.id); // one per send from a guest: the same send again is the same task, so it is answered once
   return e.op === "cancel" || e.op === "paid" ? `channel_${e.op}:${e.handle}:${e.id}` : channelStartKey(e.handle);
 }
 
@@ -132,7 +146,26 @@ export function checkChannelEvent(raw: unknown): { ok: true; event: ChannelEvent
     if (text.length === 0 || text.length > OWNER_MESSAGE_MAX) return { ok: false, error: `An owner_message carries the owner's words: 1 to ${OWNER_MESSAGE_MAX} characters.` };
     return { ok: true, event: { kind: "owner_message", id: raw.id, text } };
   }
-  if (raw.kind !== "channel_request") return { ok: false, error: 'The kind must be "channel_request", "owner_action", "owner_message" or "owner_signin".' };
+  // W1: a guest's send in the chat. Exactly one way of saying it; nothing else of the body is read.
+  if (raw.kind === "chat_message") {
+    if (typeof raw.handle !== "string" || !HANDLE_HASH.test(raw.handle)) return { ok: false, error: "A chat_message carries the guest's hash (64 hex digits), never the handle." };
+    if (!LANGUAGES.includes(raw.language as Language)) return { ok: false, error: `A chat_message's language is one of ${LANGUAGES.join(", ")}.` };
+    const text = typeof raw.text === "string" ? raw.text.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/gu, "").trim() : undefined;
+    const ways = [text !== undefined, raw.tap !== undefined, raw.quick !== undefined].filter(Boolean).length;
+    if (ways !== 1) return { ok: false, error: "A chat_message is text, a tap or a quick tap: one of them." };
+    const base = { kind: "chat_message" as const, id: raw.id, handle: raw.handle, language: raw.language as Language };
+    if (text !== undefined) {
+      if (text.length === 0 || [...text].length > CHAT_TEXT_MAX) return { ok: false, error: `A chat_message's text is 1 to ${CHAT_TEXT_MAX} characters.` };
+      return { ok: true, event: { ...base, text } };
+    }
+    if (raw.tap !== undefined) {
+      if (typeof raw.tap !== "string" || !/^[A-Za-z0-9:_.-]{1,200}$/u.test(raw.tap)) return { ok: false, error: "A tap names the button or row's id." };
+      return { ok: true, event: { ...base, tap: raw.tap } };
+    }
+    if (raw.quick !== 1 && raw.quick !== 2 && raw.quick !== 3) return { ok: false, error: "A quick tap is 1, 2 or 3." };
+    return { ok: true, event: { ...base, quick: raw.quick } };
+  }
+  if (raw.kind !== "channel_request") return { ok: false, error: 'The kind must be "channel_request", "owner_action", "owner_message", "owner_signin" or "chat_message".' };
   if (!CHANNELS.includes(raw.channel as ChannelName)) return { ok: false, error: 'A channel_request\'s channel is "web" or "mcp".' };
   if (typeof raw.handle !== "string" || !HANDLE_HASH.test(raw.handle)) return { ok: false, error: "A channel_request carries its handle's hash (64 hex digits), never the handle." };
   const base = { kind: "channel_request" as const, id: raw.id, channel: raw.channel as ChannelName, handle: raw.handle };

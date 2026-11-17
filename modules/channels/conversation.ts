@@ -11,5 +11,14 @@ export const CHANNELS: readonly ChannelName[] = ["web", "mcp"];
  */
 export const conversationOf = (channel: ChannelName, hash: string): string => `${channel}:${hash.slice(0, 16)}`;
 
-/** Is this conversation a channel's (its messages go to the booking's own page, never to WhatsApp)? */
-export const isChannelConversation = (conversation: string): boolean => /^(?:web|mcp):[0-9a-f]{16}$/u.test(conversation);
+/**
+ * W1, the chat on the shop's page (17 Nov 2026): a guest's conversation is "chat:" and 16 hex digits of the guest handle's hash (handle.ts guestHash). It is not one of
+ * the `ChannelName`s above (those are what a booking request may claim to come from); it is only a place messages go, so it has its own helpers.
+ */
+export const chatConversationOf = (hash: string): string => `chat:${hash.slice(0, 16)}`;
+
+/** Is this conversation a guest's chat on the shop's page? */
+export const isChatConversation = (conversation: string): boolean => /^chat:[0-9a-f]{16}$/u.test(conversation);
+
+/** Is this conversation a channel's (its messages go to the booking's own page or the chat thread, never to WhatsApp)? */
+export const isChannelConversation = (conversation: string): boolean => /^(?:web|mcp|chat):[0-9a-f]{16}$/u.test(conversation);

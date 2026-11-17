@@ -61,6 +61,7 @@ import { createOrderOps } from "./order-ops.ts";
 import type { OrderOps } from "./order-ops.ts";
 import { orderRoute } from "./front-orders.ts";
 import { feeRoute } from "./front-fees.ts";
+import { chatRoute } from "./chat-front.ts";
 import { svgDataUri } from "./character-files.ts";
 import type { CharacterFiles } from "./character-files.ts";
 import { FACES, PICTURE_FORMATS, themeColour } from "../assistant/character.ts";
@@ -296,6 +297,10 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // ---- item 11i: the character's pictures (every template's shop has them) ----
     const picture = PICTURE_PATH.exec(rest);
     if (picture) return pictureRoute(req, res, found, picture[1] as Face | "now", picture[2] as PictureFormat, method, address);
+
+    // W1: the chat on the shop's page, for every kind of shop, before the shop's own customer routes (an Orders or Fees shop would not otherwise reach it).
+    // `viaDoor`: the page is served on the Streetlist pages domain, the only place that shows the Streetlist mark.
+    if (rest === "/chat" || rest.startsWith("/chat/")) return chatRoute(kit, { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}), viaDoor: doorShop !== found });
 
     // item 11h: an Orders shop's and a Fees centre's customer side are their own; the owner's page and the QR code below are every shop's
     const ownerPath = /^\/o\/[^/]+(\/.*)?$/u.test(rest) || rest === "/owner" || rest.startsWith("/owner/");
