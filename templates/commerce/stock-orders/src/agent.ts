@@ -1,0 +1,654 @@
+// The Stock orders agent: handle(event) processes ONE inbound WhatsApp message (the owner's or a supplier's) or ONE tick of the clock, and returns. Each call is a separate
+// step, so the engine can later drive the agent one task at a time.
+//
+// How it stays honest (the design rules in the catalogue's "What adding Guard actually requires", section T07):
+//  - The agent builds the exact order and the owner approves THAT: a card bound to the supplier, the supplier's number, the item, the unit, the quantity, the unit price, the
+//    total in paise and the budget month (modules/assistant/cards.ts). On the owner's tap the order is read again as it is NOW and compared with the card; if anything
+//    differs (the quantity was changed, the settings' price moved, the month turned) nothing is sent and a new card is made. A card answered once, replaced, or run out does
+//    nothing when tapped again.
+//  - The month's budget is not a counter: it is worked out from the orders (order.ts reservedPaise). It is checked and reserved in ONE synchronous step with the approval
+//    (approve() below has no await inside it), so two orders racing for the last of the budget cannot both get it.
+//  - The order message goes only through createSay (modules/messaging/say.ts), whose gates include `send-only-when-approved`. It is sent once. If the provider's reply is lost
+//    it may still have gone out: the order is marked `send_unknown`, is NEVER sent again as an order, and the supplier is asked about the same order number
+//    ("this is not a new order") when the follow-up time comes. A request (the owner's WhatsApp message id) makes at most one order.
+//  - What the supplier said, what arrived and whether it was paid are three different things (order.ts): the supplier's OK is not receipt, and the owner's receipt mark is not
+//    payment. Only an answer from the supplier's own number counts as the supplier's. This agent never pays anyone: "paid po-3" is the owner's own note.
+//  - Everything a message states (items, units, quantities, amounts, order numbers) is written from the record by a fixed template and read back against it before it is sent.
+//  - The agent never guesses: an item, a supplier, a unit or a quantity it cannot tell is asked (a list or a question), and a unit is never converted into another.
+// The care that is the same for every template is in modules/: sending a message (messaging/say.ts), the approval cards (assistant/cards.ts), reminders (reminders/), the
+// record (record/). What is left here is stock orders: the catalogue, the order's states and its words.
+import type { Clock } from "../../../../modules/core/clock.ts";
+import { HOUR, localParts } from "../../../../modules/core/time.ts";
+import { canon } from "../../../../modules/language/format.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { MONTH_NAMES } from "../../../../modules/language/format.ts";
+import type { InteractiveMessage } from "../../../../modules/language/interactive.ts";
+import { clip } from "../../../../modules/language/interactive.ts";
+import { actionDigest, cardButtonId, closeCard, expireCards, judgeReply, makeCard, parseCardReply } from "../../../../modules/assistant/cards.ts";
+import type { CardReply } from "../../../../modules/assistant/cards.ts";
+import type { CardAction, CardRecord } from "../../../../modules/assistant/state.ts";
+import { assistantOf } from "../../../../modules/assistant/state.ts";
+import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
+import { createSay } from "../../../../modules/messaging/say.ts";
+import type { Decision } from "../../../../modules/limits/limits.ts";
+import { strictest } from "../../../../modules/limits/limits.ts";
+import type { Action, ActionRecord, Outcome } from "../../../../modules/record/record.ts";
+import { scheduleAround, takeDue } from "../../../../modules/reminders/reminders.ts";
+import { NO_RE, YES_RE, isStop } from "../../../../modules/understanding/rules.ts";
+import { LABELS, pickId, supplierButtonId } from "./language/labels.ts";
+import { TEMPLATE_NAMES, STATE_WORDS, money, render } from "./language/templates.ts";
+import type { MessageFacts, StateKey, StatusRow, TemplateId } from "./language/templates.ts";
+import { templateMessage } from "./language/meta-templates.ts";
+import { checkApprovalMatches, checkApprovedSupplier, checkMessageMatchesRecord, checkOneOrderPerRequest, checkQuantity, checkSendOnlyWhenApproved, proposalChecks } from "./limits.ts";
+import { createStore, currentLine, holdsBudget, isOpen, monthOf, nextOrderId, orderRefOf, reservedPaise, totalOfPaise, unansweredFor, unitPaiseOf } from "./order.ts";
+import type { Asking, PurchaseOrder, Store } from "./order.ts";
+import { quantityIn, readOwnerText, supplierIn, unitIn, padded } from "./reading.ts";
+import type { Reading } from "./reading.ts";
+import { itemOf, lineByKey, lineKey, nameIn, supplierOf, unitOf } from "./settings.ts";
+import type { Line, Settings, Supplier } from "./settings.ts";
+
+export interface AgentDeps {
+  settings: Settings;
+  clock: Clock;
+  messaging: Messaging;
+  record: ActionRecord;
+  store: Store;
+}
+
+export type AgentEvent =
+  | { kind: "message"; message: InboundMessage } // the owner's or a supplier's WhatsApp message
+  | { kind: "tick" }; // time has passed: let cards run out and ask silent suppliers again
+
+export interface Agent {
+  handle(event: AgentEvent): Promise<void>;
+}
+
+/** What goes with the words: the approval card's buttons, a list of ways to order, or the supplier's OK / cannot-supply buttons. */
+type Offer = { kind: "card"; code: string; body?: TemplateId[] } | { kind: "choices"; options: string[]; body?: TemplateId[] } | { kind: "supplier"; body?: TemplateId[] };
+
+interface SayArgs {
+  /** The order the message is about, or null (a draft that was never made, a message about no order). */
+  booking: PurchaseOrder | null;
+  phone: string;
+  to: "customer" | "owner";
+  templates: TemplateId[];
+  shown?: Decision[];
+  action?: Action;
+  offer?: Offer;
+  /** Facts the message needs that the order does not hold: the budget's figures, the month, a number the owner wrote. */
+  facts?: Partial<MessageFacts>;
+}
+
+/** The card is for 24 hours (modules/assistant/cards.ts); an owner who is asked and does not answer is not asked again by itself. */
+const ASKING_FOR_MS = 6 * HOUR;
+const HANDLED_KEEP = 500;
+const SKILL = "stock-orders";
+
+export function createAgent(deps: AgentDeps): Agent {
+  const { settings, clock, messaging, record, store } = deps;
+  const owner = settings.owner.whatsapp;
+  const tz = settings.timezone;
+  const digits = (n: string) => n.replace(/\D/gu, "");
+  const supplierByNumber = (from: string): Supplier | undefined => settings.suppliers.find((s) => digits(s.whatsapp) === digits(from));
+  const ownerLanguage = settings.owner.language;
+  const cards = () => assistantOf(store);
+
+  const languageOf = (phone: string): Language => (digits(phone) === digits(owner) ? ownerLanguage : supplierByNumber(phone)?.language ?? settings.languages[0]);
+
+  function log(o: PurchaseOrder | null, phone: string, action: Action, outcome: Outcome, inputs: unknown, more: { decisions?: Decision[]; notes?: string; refs?: Record<string, string> } = {}) {
+    return record.append({ conversation: phone, booking: o?.id || null, action, inputs, outcome, language: languageOf(phone), ...more });
+  }
+
+  // ---- the facts a message is written from ---------------------------------------------------------------------------------------
+
+  const monthLabel = (ms: number): string => { const p = localParts(ms, tz); return `${MONTH_NAMES.en[p.month - 1]} ${p.year}`; };
+
+  /** The budget's figures for a month, with one order left out of what is reserved (the one being decided), in rupees. */
+  function budgetFacts(exceptId?: string, totalPaise = 0): Partial<MessageFacts> {
+    const month = monthOf(clock.now(), tz);
+    const reserved = reservedPaise(store, month, exceptId);
+    const budget = settings.limits.monthlyBudgetInr;
+    return { budgetInr: budget, reservedInr: reserved / 100, leftInr: Math.max(0, budget * 100 - reserved - totalPaise) / 100, capInr: settings.limits.maxPerOrderInr, monthLabel: monthLabel(clock.now()) };
+  }
+
+  function factsFor(a: SayArgs, language: Language): MessageFacts {
+    const o = a.booking;
+    const base: MessageFacts = { language, timeZone: tz, businessName: settings.name };
+    if (o) {
+      const supplier = supplierOf(settings, o.supplier);
+      Object.assign(base, {
+        supplierName: supplier.name, itemName: nameIn(itemOf(settings, o.item).names, language), unitName: nameIn(unitOf(settings, o.unit).names, language),
+        qty: o.qty, unitPriceInr: o.unitPaise / 100, totalInr: o.totalPaise / 100, ...(o.id ? { orderRef: o.id } : {}),
+      });
+    }
+    const facts = { ...base, ...(a.facts ?? {}) } as MessageFacts;
+    if (a.offer?.kind === "choices") {
+      facts.choices = a.offer.options.map((k) => {
+        const l = lineByKey(settings, k)!;
+        return { supplierName: supplierOf(settings, l.supplier).name, unitName: nameIn(unitOf(settings, l.unit).names, language), priceInr: l.priceInr };
+      });
+    }
+    return facts;
+  }
+
+  function interactiveFor(a: SayArgs, facts: MessageFacts, language: Language): InteractiveMessage {
+    const offer = a.offer!;
+    const body = (offer.body ?? a.templates).map((id) => render(id, facts)).join(" ");
+    const labels = LABELS[language];
+    if (offer.kind === "card") return { body, buttons: [{ id: cardButtonId("yes", offer.code), title: labels.approve }, { id: cardButtonId("no", offer.code), title: labels.decline }] };
+    if (offer.kind === "supplier") return { body, buttons: [{ id: supplierButtonId("ack", a.booking!.id), title: labels.supplierYes }, { id: supplierButtonId("nack", a.booking!.id), title: labels.supplierNo }] };
+    return {
+      body,
+      list: {
+        button: labels.choose,
+        rows: offer.options.map((k, i) => {
+          const c = facts.choices![i];
+          return { id: pickId(i), title: clip(`${c.supplierName} (${c.unitName})`, 24), description: clip(`${money(c.priceInr)} / ${c.unitName}`, 72) };
+        }),
+      },
+    };
+  }
+
+  /**
+   * The one way a message leaves the agent: rendered from the record, checked against it, sent, read back. "customer" is the supplier here. The gates: opt-out and
+   * message-matches-record (shared), and `send-only-when-approved` for every message that carries or repeats an order.
+   */
+  const say = createSay<SayArgs, MessageFacts>({
+    messaging,
+    voice: {
+      render: (id, facts) => render(id as TemplateId, facts),
+      templateMessage: (a) => templateMessage({ ...a, ids: a.ids as TemplateId[] }),
+      genericNames: { ...TEMPLATE_NAMES, reminder: TEMPLATE_NAMES.customer },
+      matches: (text, facts) => checkMessageMatchesRecord({ text, facts }),
+    },
+    owner: { whatsapp: owner, language: ownerLanguage },
+    languageOf: (phone) => languageOf(phone),
+    optedOut: (phone) => store.optedOut.has(digits(phone)),
+    factsFor: (a, language) => factsFor(a, language),
+    interactiveFor: (a, facts, language) => interactiveFor(a, facts, language),
+    inputsOf: () => ({}), // never the owner's one-use code
+    gates: (a) => (a.to === "customer" && a.templates.some((t) => t === "supplier_order" || t === "supplier_check") && a.booking
+      ? [checkSendOnlyWhenApproved({ approved: a.booking.approvedMs !== undefined && holdsBudget(a.booking), supplier: supplierOf(settings, a.booking.supplier) })] : []),
+    log: (order, phone, action, outcome, inputs, more) => log(order, phone, action, outcome, inputs, more),
+    heldBack: async (a) => { if (a.booking?.id) await tellOwner(a.booking, "owner_message_held"); },
+  });
+
+  const tellOwner = (o: PurchaseOrder | null, template: TemplateId | TemplateId[], more: Partial<SayArgs> = {}) =>
+    say({ booking: o, phone: owner, to: "owner", templates: Array.isArray(template) ? template : [template], ...more });
+  const tellSupplier = (o: PurchaseOrder, supplier: Supplier, template: TemplateId, more: Partial<SayArgs> = {}) =>
+    say({ booking: o, phone: supplier.whatsapp, to: "customer", templates: [template], ...more });
+
+  // ---- the owner's catalogue questions ---------------------------------------------------------------------------------------------
+
+  const itemNames = (language: Language): string[] => settings.items.map((i) => nameIn(i.names, language));
+  const approvedLines = (): Line[] => settings.catalogue.filter((l) => supplierOf(settings, l.supplier).approved);
+  const draftOf = (line: Line, qty: number): PurchaseOrder => ({
+    id: "", requestId: "", lowStock: false, supplier: line.supplier, line: lineKey(line), item: line.item, unit: line.unit, qty, unitPaise: unitPaiseOf(line), totalPaise: totalOfPaise(unitPaiseOf(line), qty),
+    state: "void", createdMs: clock.now(), ack: "none", receipt: "none", receivedQty: 0, asks: [],
+  });
+
+  /** An example request in the owner's language, from the catalogue's first line: what "I could not tell" suggests. */
+  function exampleRequest(language: Language): string {
+    const l = settings.catalogue[0];
+    return `order ${l.reorderQty ?? 10} ${nameIn(unitOf(settings, l.unit).names, language)} ${nameIn(itemOf(settings, l.item).names, language)} from ${supplierOf(settings, l.supplier).name}`;
+  }
+  const didntUnderstand = () => tellOwner(null, "didnt_understand", { facts: { orderRef: "po-1", example: exampleRequest(ownerLanguage) } });
+
+  const stateKeyOf = (o: PurchaseOrder): StateKey => {
+    if (o.state === "awaiting_approval") return "awaiting";
+    if (o.state === "approved") return "sending";
+    if (o.state === "send_unknown") return "unknown";
+    if (o.state === "send_failed") return "failed";
+    if (o.state === "send_blocked") return "blocked";
+    if (o.receipt === "part") return "part";
+    return o.ack === "accepted" ? "accepted" : "sent";
+  };
+  const stateWord = (o: PurchaseOrder, language: Language): string => STATE_WORDS[language][stateKeyOf(o)];
+
+  // ---- a request becomes an order with a card --------------------------------------------------------------------------------------
+
+  /** A line of the catalogue and a quantity, from one request: the checks, then the order and its card, or the plain reason it was not made. */
+  async function propose(args: { requestId: string; lowStock: boolean; line: Line; qty: number; phone: string }): Promise<void> {
+    const { requestId, lowStock, line, qty, phone } = args;
+    const supplier = supplierOf(settings, line.supplier);
+    const once = checkOneOrderPerRequest({ requestId, requests: store.requests });
+    if (once.verdict !== "allow") { log(null, phone, "propose_order", "blocked", { requestId }, { decisions: [once], notes: once.reason }); return; }
+    // a low-stock mark never makes a second order while one for the same line is still open
+    const open = lowStock ? [...store.orders.values()].find((o) => o.line === lineKey(line) && (o.state === "awaiting_approval" || isOpen(o))) : undefined;
+    if (open) { await tellOwner(open, "already_open"); log(open, phone, "propose_order", "blocked", { requestId, lowStock }, { notes: "an order for this line is already open" }); return; }
+
+    const draft = draftOf(line, qty);
+    const month = monthOf(clock.now(), tz);
+    const reserved = reservedPaise(store, month);
+    const decisions = proposalChecks({ settings, supplier, qty, totalPaise: draft.totalPaise, reservedPaise: reserved });
+    const worst = strictest(decisions);
+    if (worst.verdict !== "allow") {
+      const template: TemplateId = ({ "approved-supplier-only": "blocked_supplier", "order-quantity": "blocked_qty", "per-order-cap": "blocked_cap", "monthly-budget": "blocked_budget" } as Record<string, TemplateId>)[worst.ruleId] ?? "blocked_budget";
+      log(null, phone, "propose_order", "blocked", { requestId, line: lineKey(line), qty }, { decisions, notes: worst.reason });
+      await tellOwner(draft, template, { facts: { ...budgetFacts(), saidQty: qty, maxQty: settings.limits.maxQuantity } });
+      return;
+    }
+    const order: PurchaseOrder = { ...draft, id: nextOrderId(store), requestId, lowStock, state: "awaiting_approval", createdMs: clock.now() };
+    store.orders.set(order.id, order);
+    store.requests.set(requestId, order.id);
+    log(order, phone, "propose_order", "held_for_owner", { requestId, line: lineKey(line), qty, totalPaise: order.totalPaise }, { decisions, notes: "waiting for the owner's approval" });
+    await showCard(order, []);
+  }
+
+  /** The card's action, from the order as it stands and the catalogue as it stands now: exactly the fields the owner approves. */
+  function actionOf(o: PurchaseOrder, line: Line): CardAction {
+    return {
+      kind: "order", skill: SKILL, case: o.id,
+      fields: { supplier: o.supplier, supplierWhatsapp: supplierOf(settings, o.supplier).whatsapp, item: o.item, unit: o.unit, qty: o.qty, unitPaise: unitPaiseOf(line), totalPaise: totalOfPaise(unitPaiseOf(line), o.qty), currency: "INR", month: monthOf(clock.now(), tz) },
+    };
+  }
+
+  /** Make (or remake) the order's card and show it. Any older open card of this order is void first (modules/assistant/cards.ts makeCard). */
+  async function showCard(o: PurchaseOrder, prefix: TemplateId[]): Promise<void> {
+    const line = currentLine(settings, o)!;
+    const { card, code } = makeCard(cards(), actionOf(o, line), { kind: "order", order: o.id }, clock.now());
+    log(o, owner, "ask_owner", "held_for_owner", { card: card.id, digest: card.digest }, { refs: { card: card.id, kind: "order_approval" } });
+    const facts = budgetFacts(o.id, o.totalPaise);
+    await tellOwner(o, [...prefix, "card"], { offer: { kind: "card", code, body: [...prefix, "card"] }, facts: { ...facts, code } });
+  }
+
+  // ---- the owner answers a card ----------------------------------------------------------------------------------------------------
+
+  /** Is the card's order still exactly what it showed? Read as the order and the catalogue are NOW (the judge compares the digests). */
+  function currentOf(card: CardRecord): { ok: true; action: CardAction } | { ok: false; why: string } {
+    const o = store.orders.get(card.action.case);
+    if (!o || o.state !== "awaiting_approval") return { ok: false, why: "the order is not waiting for approval any more" };
+    const line = currentLine(settings, o);
+    if (!line) return { ok: false, why: "the item is no longer in the catalogue" };
+    return { ok: true, action: actionOf(o, line) };
+  }
+
+  async function onCardReply(reply: CardReply): Promise<void> {
+    const verdict = judgeReply(cards(), reply, clock.now(), currentOf);
+    switch (verdict.verdict) {
+      case "unknown": await tellOwner(null, "card_unknown"); return;
+      case "closed": await tellOwner(null, "card_closed"); return;
+      case "gone": closeCard(cards(), verdict.card, "void", clock.now()); await tellOwner(null, "card_closed"); return;
+      case "expired": {
+        closeCard(cards(), verdict.card, "expired", clock.now());
+        const o = store.orders.get(verdict.card.action.case);
+        if (o && o.state === "awaiting_approval") o.state = "void";
+        await tellOwner(null, "card_expired");
+        return;
+      }
+      case "refuse": {
+        closeCard(cards(), verdict.card, "refused", clock.now());
+        const o = store.orders.get(verdict.card.action.case)!;
+        if (o.state === "awaiting_approval") o.state = "declined";
+        log(o, owner, "owner_decision", "confirmed", { decision: "decline", card: verdict.card.id }, { refs: { evidence: "owner_marked", card: verdict.card.id } });
+        await tellOwner(o, "order_declined");
+        return;
+      }
+      case "changed": {
+        // the order, the price or the month moved since the card was shown: that approval does not count. The order is brought up to date and asked about again.
+        closeCard(cards(), verdict.card, "void", clock.now());
+        const o = store.orders.get(verdict.card.action.case)!;
+        const line = currentLine(settings, o)!;
+        const same = checkApprovalMatches({ same: false, what: "price or month" });
+        o.unitPaise = unitPaiseOf(line);
+        o.totalPaise = totalOfPaise(o.unitPaise, o.qty);
+        log(o, owner, "owner_decision", "blocked", { decision: "approve", card: verdict.card.id }, { decisions: [same], notes: same.reason, refs: { card: verdict.card.id } });
+        await recheckAndShow(o, ["card_changed"]);
+        return;
+      }
+      case "do": await approve(verdict.card); return;
+    }
+  }
+
+  /** After a change the order is checked again (cap, budget) before a new card is shown; a change that now breaks a limit ends the order. */
+  async function recheckAndShow(o: PurchaseOrder, prefix: TemplateId[]): Promise<void> {
+    const decisions = proposalChecks({ settings, supplier: supplierOf(settings, o.supplier), qty: o.qty, totalPaise: o.totalPaise, reservedPaise: reservedPaise(store, monthOf(clock.now(), tz), o.id) });
+    const worst = strictest(decisions);
+    if (worst.verdict !== "allow") {
+      o.state = "void";
+      const template: TemplateId = ({ "approved-supplier-only": "blocked_supplier", "order-quantity": "blocked_qty", "per-order-cap": "blocked_cap", "monthly-budget": "blocked_budget" } as Record<string, TemplateId>)[worst.ruleId] ?? "blocked_budget";
+      log(o, owner, "propose_order", "blocked", { qty: o.qty, totalPaise: o.totalPaise }, { decisions, notes: worst.reason });
+      await tellOwner(o, template, { facts: { ...budgetFacts(o.id), saidQty: o.qty, maxQty: settings.limits.maxQuantity } });
+      return;
+    }
+    await showCard(o, prefix);
+  }
+
+  /**
+   * The approval. Everything from the checks to the reservation is ONE synchronous step (no await): the budget is read from the orders, checked and reserved by
+   * changing this order's state before anything else can run, so two approvals racing for the last of the budget cannot both be given it.
+   */
+  async function approve(card: CardRecord): Promise<void> {
+    const o = store.orders.get(card.action.case)!;
+    const supplier = supplierOf(settings, o.supplier);
+    const month = monthOf(clock.now(), tz);
+    const decisions = proposalChecks({ settings, supplier, qty: o.qty, totalPaise: o.totalPaise, reservedPaise: reservedPaise(store, month, o.id) });
+    const worst = strictest(decisions);
+    if (worst.verdict !== "allow") {
+      closeCard(cards(), card, "void", clock.now());
+      o.state = "void";
+      log(o, owner, "owner_decision", "blocked", { decision: "approve", card: card.id }, { decisions, notes: worst.reason, refs: { card: card.id } });
+      const template: TemplateId = worst.ruleId === "approved-supplier-only" ? "blocked_supplier" : worst.ruleId === "per-order-cap" ? "blocked_cap" : "blocked_budget";
+      await tellOwner(o, template, { facts: { ...budgetFacts(o.id), saidQty: o.qty, maxQty: settings.limits.maxQuantity } });
+      return;
+    }
+    closeCard(cards(), card, "done", clock.now());
+    o.state = "approved";
+    o.approvedMs = clock.now();
+    o.budgetMonth = month;
+    const matched = checkApprovalMatches({ same: true });
+    log(o, owner, "owner_decision", "confirmed", { decision: "approve", card: card.id, digest: card.digest, totalPaise: o.totalPaise }, { decisions: [...decisions, matched], notes: "the owner approved exactly this order; the budget is reserved", refs: { card: card.id, evidence: "owner_marked", month } });
+    // ---- end of the one step; the rest talks to WhatsApp ----
+    await tellOwner(o, "order_approved", { facts: budgetFacts(o.id, o.totalPaise) });
+    await sendOrder(o);
+  }
+
+  // ---- the order goes to the supplier ---------------------------------------------------------------------------------------------
+
+  /** Send the order message ONCE. Only an approved order is sent, and an order that is not "approved" (already sent, unknown, failed) is never sent from here again. */
+  async function sendOrder(o: PurchaseOrder): Promise<void> {
+    if (o.state !== "approved") return;
+    const supplier = supplierOf(settings, o.supplier);
+    const outcome = await say.outcome({ booking: o, phone: supplier.whatsapp, to: "customer", templates: ["supplier_order"], offer: { kind: "supplier" }, action: "send_order" });
+    if (outcome === "held_back") { o.state = "send_blocked"; await tellOwner(o, "send_blocked"); return; }
+    if (outcome === "not_sent") { o.state = "send_failed"; await tellOwner(o, "send_failed"); return; }
+    o.sentMs = clock.now();
+    o.state = outcome === "accepted" ? "sent" : "send_unknown";
+    o.asks = scheduleAround(o.sentMs, settings.followUpHours.map((h) => h * HOUR), o.sentMs);
+    await tellOwner(o, outcome === "accepted" ? "sent_ok" : "sent_unknown");
+  }
+
+  // ---- the supplier answers --------------------------------------------------------------------------------------------------------
+
+  async function onSupplierMessage(m: InboundMessage, supplier: Supplier): Promise<void> {
+    log(null, m.from, "receive_message", "confirmed", { text: m.text, reply: m.reply?.id }, { refs: { from: "supplier", supplier: supplier.id, messageId: m.id } });
+    if (isStop(canon(m.text))) {
+      store.optedOut.add(digits(m.from));
+      log(null, m.from, "opt_out", "confirmed", {}, { refs: { supplier: supplier.id } });
+      await tellOwner(null, "owner_supplier_stopped", { facts: { supplierName: supplier.name } });
+      return;
+    }
+    // which order: a button names it; a typed answer may name it; otherwise the one order this supplier has not answered yet
+    const tapped = m.reply ? /^(ack|nack):(po-\d+)$/u.exec(m.reply.id) : null;
+    const typedRef = tapped ? undefined : orderRefOf(m.text);
+    const answerRef = tapped?.[2] ?? typedRef;
+    const t = canon(m.text);
+    const yes = tapped ? tapped[1] === "ack" : YES_RE.test(t) && !NO_RE.test(t);
+    const no = tapped ? tapped[1] === "nack" : NO_RE.test(t) && !YES_RE.test(t);
+    const waiting = unansweredFor(store, supplier.id);
+    const target = answerRef ? store.orders.get(answerRef) : waiting.length === 1 ? waiting[0] : undefined;
+    if (target && target.supplier !== supplier.id) { log(target, m.from, "supplier_reply", "blocked", {}, { notes: "that order is not this supplier's" }); return; }
+    if (!yes && !no) {
+      if (waiting.length === 0) return;
+      if (waiting.length === 1) await tellSupplier(waiting[0], supplier, "supplier_unclear");
+      else await tellSupplier(waiting[0], supplier, "supplier_which", { facts: { refs: waiting.map((o) => o.id) } });
+      return;
+    }
+    if (!target) {
+      // a bare "ok" with several orders waiting (or none) is never applied to one of them by guess
+      if (waiting.length > 1) await tellSupplier(waiting[0], supplier, "supplier_which", { facts: { refs: waiting.map((o) => o.id) } });
+      else log(null, m.from, "supplier_reply", "blocked", {}, { notes: "no order of this supplier is waiting for an answer" });
+      return;
+    }
+    if (target.ack !== "none" || (target.state !== "sent" && target.state !== "send_unknown")) { log(target, m.from, "supplier_reply", "blocked", {}, { notes: "this order was answered already or is not out with the supplier" }); return; }
+    target.ack = yes ? "accepted" : "declined";
+    target.ackMs = clock.now();
+    for (const r of target.asks) r.sent = true; // no more asking: they answered
+    if (!yes) target.state = "supplier_declined"; // the budget is released: it is worked out from the state
+    else if (target.state === "send_unknown") target.state = "sent"; // the supplier's own reply shows the order did arrive
+    log(target, m.from, "supplier_reply", "confirmed", { answer: yes ? "accepted" : "declined" }, { refs: { evidence: "supplier_reply", supplier: supplier.id, messageId: m.id } });
+    await tellSupplier(target, supplier, yes ? "supplier_thanks_yes" : "supplier_thanks_no");
+    await tellOwner(target, yes ? "owner_supplier_accepted" : "owner_supplier_declined");
+  }
+
+  // ---- the owner's commands about an order -----------------------------------------------------------------------------------------
+
+  /** The order a command is about: named, or the only one that fits (by the item if one is named). Undefined when there is none or several. */
+  function targetOf(r: Extract<Reading, { kind: "command" }>, fits: (o: PurchaseOrder) => boolean): PurchaseOrder | undefined {
+    if (r.ref) return store.orders.get(r.ref);
+    const all = [...store.orders.values()].filter((o) => fits(o) && (!r.item || o.item === r.item));
+    return all.length === 1 ? all[0] : undefined;
+  }
+
+  async function onCommand(r: Extract<Reading, { kind: "command" }>, m: InboundMessage): Promise<void> {
+    const o = targetOf(r, (x) => (r.command === "change" ? x.state === "awaiting_approval" : r.command === "send" ? x.state === "send_failed" : r.command === "cancel" ? x.state === "awaiting_approval" || x.state === "send_failed" || x.state === "send_blocked" : holdsBudget(x)));
+    if (!o) {
+      if (r.ref) await tellOwner(null, "no_such_order", { facts: { orderRef: r.ref } });
+      else await tellStatus(); // no number and no single fit: the open list shows the numbers
+      return;
+    }
+    switch (r.command) {
+      case "receive": case "wrong": await onReceipt(o, r.command === "wrong" ? "wrong" : r.qty, m); return;
+      case "paid": return onPaid(o);
+      case "cancel": return onCancel(o);
+      case "send": return onResend(o);
+      case "change": return onChange(o, r.qty);
+    }
+  }
+
+  async function onReceipt(o: PurchaseOrder, said: number | "wrong" | undefined, m: InboundMessage): Promise<void> {
+    if (!holdsBudget(o) || o.receipt === "full" || o.receipt === "wrong_item") { await tellOwner(o, "order_not_open", { facts: { stateWord: stateWord(o, ownerLanguage) } }); return; }
+    const remaining = o.qty - o.receivedQty;
+    if (said === "wrong") {
+      o.receipt = "wrong_item"; o.receiptMs = clock.now();
+      log(o, owner, "mark_receipt", "confirmed", { receipt: "wrong_item" }, { refs: { evidence: "owner_marked", receipt: "wrong_item", messageId: m.id } });
+      await tellOwner(o, "received_wrong");
+      return;
+    }
+    const qty = said ?? remaining;
+    if (qty < 1 || qty > remaining) { await tellOwner(o, "receive_too_many", { facts: { saidQty: qty, moreQty: remaining, receivedQty: o.receivedQty } }); return; }
+    o.receivedQty += qty;
+    o.receipt = o.receivedQty >= o.qty ? "full" : "part";
+    o.receiptMs = clock.now();
+    log(o, owner, "mark_receipt", "confirmed", { qty, receivedQty: o.receivedQty }, { refs: { evidence: "owner_marked", receipt: o.receipt, messageId: m.id } });
+    await tellOwner(o, o.receipt === "full" ? "received_full" : "received_part", { facts: { receivedQty: o.receivedQty, moreQty: o.qty - o.receivedQty } });
+  }
+
+  async function onPaid(o: PurchaseOrder): Promise<void> {
+    if (!holdsBudget(o)) { await tellOwner(o, "order_not_open", { facts: { stateWord: stateWord(o, ownerLanguage) } }); return; }
+    o.paidOutsideMs = clock.now();
+    log(o, owner, "mark_paid_outside", "confirmed", {}, { notes: "the owner says they paid the supplier themselves; this agent pays nothing and cannot check it", refs: { evidence: "owner_marked" } });
+    await tellOwner(o, "paid_outside_noted");
+  }
+
+  async function onCancel(o: PurchaseOrder): Promise<void> {
+    if (o.state === "awaiting_approval") {
+      for (const c of cards().cards) if (c.state === "open" && c.action.case === o.id) closeCard(cards(), c, "void", clock.now());
+    } else if (o.state !== "send_failed" && o.state !== "send_blocked") {
+      await tellOwner(o, holdsBudget(o) ? "cannot_cancel" : "order_not_open", { facts: { stateWord: stateWord(o, ownerLanguage) } });
+      return;
+    }
+    o.state = "cancelled";
+    log(o, owner, "owner_decision", "confirmed", { decision: "cancel" }, { notes: "cancelled before it was with the supplier; the budget is released", refs: { evidence: "owner_marked" } });
+    await tellOwner(o, "cancelled");
+  }
+
+  async function onResend(o: PurchaseOrder): Promise<void> {
+    // only an order the provider refused (so nothing went out) is sent again; one whose reply was lost is never sent again as an order
+    if (o.state !== "send_failed") { await tellOwner(o, "order_not_open", { facts: { stateWord: stateWord(o, ownerLanguage) } }); return; }
+    o.state = "approved";
+    log(o, owner, "owner_decision", "confirmed", { decision: "send_again" }, { refs: { evidence: "owner_marked" } });
+    await sendOrder(o);
+  }
+
+  async function onChange(o: PurchaseOrder, qty: number | undefined): Promise<void> {
+    if (qty === undefined) { await didntUnderstand(); return; }
+    if (o.state !== "awaiting_approval") { await tellOwner(o, "order_not_open", { facts: { stateWord: stateWord(o, ownerLanguage) } }); return; }
+    const line = currentLine(settings, o)!;
+    const q = checkQuantity({ qty, maxQuantity: settings.limits.maxQuantity });
+    if (q.verdict !== "allow") { await tellOwner(draftOf(line, qty), "blocked_qty", { facts: { saidQty: qty, maxQty: settings.limits.maxQuantity } }); return; }
+    o.qty = qty;
+    o.unitPaise = unitPaiseOf(line);
+    o.totalPaise = totalOfPaise(o.unitPaise, qty);
+    log(o, owner, "change_order", "held_for_owner", { qty, totalPaise: o.totalPaise }, { notes: "the order changed, so its earlier card no longer counts" });
+    await recheckAndShow(o, ["card_changed"]);
+  }
+
+  /** The approved order that was asked to change: a message after approval cannot change it. */
+  async function afterApproval(r: Reading, o: PurchaseOrder | undefined): Promise<boolean> {
+    if (r.kind === "command" && r.command === "change" && o && holdsBudget(o)) { await tellOwner(o, "cannot_change"); return true; }
+    return false;
+  }
+
+  async function tellStatus(): Promise<void> {
+    const month = monthOf(clock.now(), tz);
+    const open = [...store.orders.values()].filter((o) => o.state === "awaiting_approval" || isOpen(o)).slice(-8);
+    const language = ownerLanguage;
+    const lines: StatusRow[] = open.map((o) => ({ ref: o.id, itemName: nameIn(itemOf(settings, o.item).names, language), unitName: nameIn(unitOf(settings, o.unit).names, language), supplierName: supplierOf(settings, o.supplier).name, qty: o.qty, receivedQty: o.receivedQty, totalInr: o.totalPaise / 100, stateWord: stateWord(o, language) }));
+    const reserved = reservedPaise(store, month) / 100;
+    await tellOwner(null, open.length === 0 ? "status_empty" : "status", { facts: { lines, budgetInr: settings.limits.monthlyBudgetInr, reservedInr: reserved, monthLabel: monthLabel(clock.now()) } });
+  }
+
+  // ---- reading a request and asking what it cannot tell -------------------------------------------------------------------------
+
+  /** Settle a request on one line and a quantity, or ask for the quantity. */
+  async function settle(args: { requestId: string; lowStock: boolean; line: Line; qty?: number; phone: string }): Promise<void> {
+    const qty = args.qty ?? (args.lowStock ? args.line.reorderQty : undefined);
+    if (qty === undefined) {
+      store.asking = { kind: "qty", requestId: args.requestId, lowStock: args.lowStock, item: args.line.item, options: [lineKey(args.line)], askedMs: clock.now() };
+      await tellOwner(draftOf(args.line, 1), "ask_qty");
+      return;
+    }
+    await propose({ requestId: args.requestId, lowStock: args.lowStock, line: args.line, qty, phone: args.phone });
+  }
+
+  async function askWhich(args: { requestId: string; lowStock: boolean; item: string; qty?: number; lines: Line[] }): Promise<void> {
+    const options = args.lines.slice(0, 10).map(lineKey);
+    store.asking = { kind: "line", requestId: args.requestId, lowStock: args.lowStock, item: args.item, ...(args.qty !== undefined ? { qty: args.qty } : {}), options, askedMs: clock.now() };
+    await tellOwner(null, "ask_line", { offer: { kind: "choices", options }, facts: { itemName: nameIn(itemOf(settings, args.item).names, ownerLanguage) } });
+  }
+
+  async function onRequest(r: Extract<Reading, { kind: "order" }>, m: InboundMessage): Promise<void> {
+    const language = ownerLanguage;
+    if (!r.item) { await tellOwner(null, "item_unknown", { facts: { options: itemNames(language) } }); return; }
+    // a supplier the owner named that is not on the list (or is paused) is refused before anything else
+    if (r.unknownSupplier || (r.supplier && !supplierOf(settings, r.supplier).approved)) {
+      const named = r.supplier ? supplierOf(settings, r.supplier) : undefined;
+      const decision = checkApprovedSupplier({ supplier: named, named: r.unknownSupplier });
+      log(null, owner, "propose_order", "blocked", { requestId: m.id, supplier: r.supplier ?? "unknown" }, { decisions: [decision], notes: decision.reason });
+      await tellOwner(null, "blocked_supplier", { facts: { supplierName: named?.name ?? r.unknownSupplier! } });
+      return;
+    }
+    let lines = settings.catalogue.filter((l) => l.item === r.item);
+    if (lines.length === 0) { await tellOwner(null, "item_unknown", { facts: { options: itemNames(language) } }); return; }
+    if (r.supplier) {
+      const theirs = lines.filter((l) => l.supplier === r.supplier);
+      lines = theirs.length > 0 ? theirs : lines.filter((l) => supplierOf(settings, l.supplier).approved);
+    } else {
+      const ok = lines.filter((l) => supplierOf(settings, l.supplier).approved);
+      if (ok.length === 0) {
+        const decision = checkApprovedSupplier({ supplier: supplierOf(settings, lines[0].supplier) });
+        log(null, owner, "propose_order", "blocked", { requestId: m.id }, { decisions: [decision], notes: decision.reason });
+        await tellOwner(null, "blocked_supplier", { facts: { supplierName: supplierOf(settings, lines[0].supplier).name } });
+        return;
+      }
+      lines = ok;
+    }
+    if (lines.length === 0) { await tellOwner(null, "item_unknown", { facts: { options: itemNames(language) } }); return; }
+    if (r.unit) {
+      const byUnit = lines.filter((l) => l.unit === r.unit);
+      if (byUnit.length > 0) lines = byUnit; // else the unit asked for is not sold that way: the owner is asked, nothing is converted
+    }
+    if (lines.length === 1 && (!r.unit || lines[0].unit === r.unit)) { await settle({ requestId: m.id, lowStock: r.lowStock, line: lines[0], ...(r.qty !== undefined ? { qty: r.qty } : {}), phone: owner }); return; }
+    await askWhich({ requestId: m.id, lowStock: r.lowStock, item: r.item, ...(r.qty !== undefined ? { qty: r.qty } : {}), lines });
+  }
+
+  /** The owner's answer to a question the agent asked (a list row, a supplier or unit named, or the number). Returns false when the message is not an answer. */
+  async function onAnswer(m: InboundMessage, a: Asking): Promise<boolean> {
+    if (clock.now() - a.askedMs > ASKING_FOR_MS) { store.asking = undefined; return false; }
+    if (a.kind === "qty") {
+      const q = quantityIn(m.text);
+      if (q === undefined) return false;
+      store.asking = undefined;
+      await propose({ requestId: a.requestId, lowStock: a.lowStock, line: lineByKey(settings, a.options[0])!, qty: q, phone: owner });
+      return true;
+    }
+    let key: string | undefined;
+    const picked = m.reply ? /^pick:(\d+)$/u.exec(m.reply.id) : null;
+    if (picked) key = a.options[Number(picked[1])];
+    else {
+      const words = padded(m.text);
+      const supplier = supplierIn(settings, words);
+      const unit = unitIn(settings, words);
+      const fit = a.options.map((k) => lineByKey(settings, k)!).filter((l) => (!supplier || l.supplier === supplier) && (!unit || l.unit === unit));
+      if ((supplier || unit) && fit.length === 1) key = lineKey(fit[0]);
+    }
+    if (!key) return false;
+    store.asking = undefined;
+    const qty = a.qty ?? quantityIn(picked ? "" : m.text);
+    await settle({ requestId: a.requestId, lowStock: a.lowStock, line: lineByKey(settings, key)!, ...(qty !== undefined ? { qty } : {}), phone: owner });
+    return true;
+  }
+
+  // ---- inbound ----------------------------------------------------------------------------------------------------------------------
+
+  async function onOwnerMessage(m: InboundMessage): Promise<void> {
+    log(null, owner, "receive_message", "confirmed", { text: m.text, reply: m.reply?.id }, { refs: { from: "owner", messageId: m.id } });
+    const card = parseCardReply(m);
+    if (card) { await onCardReply(card); return; }
+    const reading = readOwnerText(settings, m.text);
+    // an answer to a question of ours comes first, unless the owner wrote a new request or a command
+    if (store.asking && !(reading.kind === "command" || reading.kind === "status" || (reading.kind === "order" && reading.item))) {
+      if (await onAnswer(m, store.asking)) return;
+    } else if (store.asking && m.reply?.id.startsWith("pick:")) {
+      if (await onAnswer(m, store.asking)) return;
+    }
+    switch (reading.kind) {
+      case "status": await tellStatus(); return;
+      case "command": {
+        const named = reading.ref ? store.orders.get(reading.ref) : undefined;
+        if (await afterApproval(reading, named)) return;
+        await onCommand(reading, m);
+        return;
+      }
+      case "order": {
+        if (reading.tied) { await tellOwner(null, "item_unknown", { facts: { options: itemNames(ownerLanguage) } }); return; }
+        await onRequest(reading, m);
+        return;
+      }
+      case "other": await didntUnderstand(); return;
+    }
+  }
+
+  async function handleMessage(m: InboundMessage): Promise<void> {
+    // a message the provider delivers twice is handled once: it can make no second order, no second approval
+    if (store.handled.includes(m.id)) { log(null, m.from, "receive_message", "blocked", {}, { notes: "this message was delivered twice and handled once", refs: { messageId: m.id } }); return; }
+    store.handled.push(m.id);
+    if (store.handled.length > HANDLED_KEEP) store.handled.splice(0, store.handled.length - HANDLED_KEEP);
+    if (digits(m.from) === digits(owner)) { await onOwnerMessage(m); return; }
+    const supplier = supplierByNumber(m.from);
+    if (supplier) { await onSupplierMessage(m, supplier); return; }
+    log(null, m.from, "receive_message", "blocked", {}, { notes: "this number is neither the owner's nor a listed supplier's, so nothing is done", refs: { messageId: m.id } });
+  }
+
+  // ---- the clock --------------------------------------------------------------------------------------------------------------------
+
+  async function tick(): Promise<void> {
+    if (store.asking && clock.now() - store.asking.askedMs > ASKING_FOR_MS) store.asking = undefined;
+    for (const card of expireCards(cards(), clock.now())) {
+      const o = store.orders.get(card.action.case);
+      if (o && o.state === "awaiting_approval") { o.state = "void"; log(o, owner, "owner_decision", "blocked", { decision: "expired", card: card.id }, { notes: "the card ran out; nothing was sent" }); await tellOwner(o, "card_expired"); }
+    }
+    // a supplier who has not answered is asked again about the SAME order (never a new one); after the last ask the owner is told once
+    for (const o of [...store.orders.values()]) {
+      if (o.ack !== "none" || (o.state !== "sent" && o.state !== "send_unknown") || o.asks.length === 0) continue;
+      const due = takeDue(o.asks, clock.now());
+      if (!due.due) continue;
+      const supplier = supplierOf(settings, o.supplier);
+      await tellSupplier(o, supplier, "supplier_check", { action: "ask_supplier_again" });
+      if (o.asks.every((r) => r.sent) && o.silentToldMs === undefined) {
+        o.silentToldMs = clock.now();
+        await tellOwner(o, "owner_supplier_silent", { facts: { hours: Math.round((clock.now() - (o.sentMs ?? clock.now())) / HOUR) } });
+      }
+    }
+  }
+
+  return {
+    async handle(event) {
+      if (event.kind === "tick") return tick();
+      return handleMessage(event.message);
+    },
+  };
+}
+
+export { createStore };
