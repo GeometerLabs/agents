@@ -13,6 +13,7 @@ import { localParts } from "../core/time.ts";
 import { MONTH_NAMES, formatDate, formatInr } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import type { FeeConfirmView, FeeLine, FeesOffer, ParentView } from "./backend.ts";
+import { IDENTITY } from "./words-chat-identity.ts";
 import { PAGE } from "./words.ts";
 import { FEE_PAGE } from "./words-orders-fees.ts";
 import { layout, stateBlock, upiBox, upiRefField } from "./page.ts";
@@ -63,7 +64,7 @@ const feeHead = (f: FeeLine, timeZone: string, language: Language): Raw =>
  * A parent's private page: their students, then each fee with its amounts; an open one with how to pay and "I have paid" (both forms post to this page's own
  * address, with a nonce so a double tap is one press). `base` is <the centre's page>/f/<link>.
  */
-export function parentPage(o: { shop: PageShop; offer: FeesOffer; language: Language; base: string; view: ParentView; nonce: string; notice?: string; /** Batch 3: "Tell me on this phone" (push/pages.ts customerAlertsBox), already drawn, keyed by the parent. */ alerts?: string; /** The "Receipts" box (channels/receipts.ts receiptsBox), already drawn: a booking's, an order's or a fee's documents. */ receipts?: Raw | "" }): string {
+export function parentPage(o: { shop: PageShop; offer: FeesOffer; language: Language; base: string; view: ParentView; nonce: string; notice?: string; /** W2: the centre has a chat: this page offers "Ask about this fee" (the parent's own chat, opened from this link). */ chat?: boolean; /** Batch 3: "Tell me on this phone" (push/pages.ts customerAlertsBox), already drawn, keyed by the parent. */ alerts?: string; /** The "Receipts" box (channels/receipts.ts receiptsBox), already drawn: a booking's, an order's or a fee's documents. */ receipts?: Raw | "" }): string {
   const w = FEE_PAGE[o.language];
   const s = o.offer.shop;
   const tz = s.timezone;
@@ -82,7 +83,7 @@ export function parentPage(o: { shop: PageShop; offer: FeesOffer; language: Lang
     shop: s, language: o.language, title: w.title(s.name), selfPath: o.base, ...(open ? { refreshSeconds: 60 } : {}),
     body: html`<p class="note private">${raw(ICON.lock)}<span>${w.privateNote}</span></p>${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
 <h2>${w.students}</h2><ul class="list">${o.view.students.map((x) => html`<li class="card">${x.name} <small class="note">(${x.batch[o.language]})</small></li>`)}</ul>
-<h2>${w.fees}</h2>${o.view.dues.length > 0 ? fees : html`<p class="card">${w.none}</p>`}${o.receipts ?? ""}${o.alerts ? raw(o.alerts) : ""}`,
+<h2>${w.fees}</h2>${o.view.dues.length > 0 ? fees : html`<p class="card">${w.none}</p>`}${o.chat ? html`<p><a class="btn quiet" href="${o.base}/chat?lang=${o.language}">${IDENTITY[o.language].parentAsk}</a></p>` : ""}${o.receipts ?? ""}${o.alerts ? raw(o.alerts) : ""}`,
   });
 }
 

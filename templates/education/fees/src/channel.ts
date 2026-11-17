@@ -12,6 +12,8 @@ import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
 import type { OwnerActionName } from "../../../../modules/channels/events.ts";
+import { chatConversationOf } from "../../../../modules/channels/conversation.ts";
+import { parentChatHash } from "../../../../modules/channels/handle.ts";
 import type { FeeConfirmView, FeeLine, FeesOffer, OwnerCashView, OwnerParentView, ParentView, PayInstructions } from "../../../../modules/channels/backend.ts";
 import { caseDocuments } from "../../../../modules/accounting/case-documents.ts";
 import type { DocumentsKey } from "../../../../modules/accounting/case-documents.ts";
@@ -37,6 +39,16 @@ export function feesOffer(settings: Settings, paused: boolean): FeesOffer {
 /** The parent whose private link has this hash NOW, or undefined. A replaced or revoked link's hash is no one's, so it opens nothing. */
 export function parentOf(store: Store, linkHash: string): string | undefined {
   for (const [parent, link] of Object.entries(store.parentLinks ?? {})) if (link.hash === linkHash) return parent;
+  return undefined;
+}
+
+/**
+ * W2, a parent's chat on their private fee page: the parent whose chat conversation this is, or undefined (a guest of the centre's public chat). The conversation is made from the
+ * parent's stable ref (handle.ts parentChatHash), not from their link, so it survives a new link; a parent who has no link now has no chat. Used by the agent (what the chat may
+ * talk about) and by the talk's reads (whose open fee the model may be given).
+ */
+export function parentOfChat(store: Store, conversation: string): string | undefined {
+  for (const parent of Object.keys(store.parentLinks ?? {})) if (chatConversationOf(parentChatHash(parentRef(parent))) === conversation) return parent;
   return undefined;
 }
 

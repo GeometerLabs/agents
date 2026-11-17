@@ -182,6 +182,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
         catch { return { ...base, serviceId: query.serviceId, days: [], calendarUnread: true }; }
       },
       view: (store, handleHash) => bookingView(settings, store, handleHash, clock.now()),
+      // W2: a chat guest has made a booking when a booking beyond the first enquiry is theirs (the page then offers "keep this chat"); nothing is saved here
+      chatWork: (store, conversation) => [...store.bookings.values()].filter((b) => b.customer === conversation && b.state !== "enquiry" && b.state !== "confirming_details").length,
       ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
       ...(chatAudio ? { chatVoice: (audio: { bytes: Uint8Array; mime: string }) => chatAudio.put(audio.bytes, audio.mime) } : {}),
       // the receipts of the page's own booking, and the accountant's files (the runtime lets only the owner's session reach them), both from the saved record

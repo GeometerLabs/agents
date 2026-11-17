@@ -32,6 +32,8 @@ export interface Push {
   subscribe(who: string, s: BrowserSubscription, signer?: Signer): { ok: true; id: string } | { ok: false; why: string };
   unsubscribe(who: string, endpoint: string): boolean;
   phones(who: string): number;
+  /** W2, "delete my chat": the conversation's phones stop getting alerts. */
+  forget(who: string): number;
 }
 
 export function createPush(o: { store: PushStore; sender: PushSender; shopName: string; clock: Clock; on: boolean; relayKey?: string }): Push {
@@ -58,6 +60,7 @@ export function createPush(o: { store: PushStore; sender: PushSender; shopName: 
     },
     unsubscribe: (who, endpoint) => store.unsubscribe(who, endpoint, clock.now()),
     phones: (who) => store.phones(who),
+    forget: (who) => store.forget(who, clock.now()),
   };
 }
 

@@ -168,6 +168,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
         return character ? { ...offer, shop: { ...offer.shop, character } } : offer;
       },
       view: (store, handleHash) => orderView(settings, store, handleHash),
+      // W2: a chat guest has made an order when an order beyond the first enquiry is theirs (the page then offers "keep this chat"); nothing is saved here
+      chatWork: (store, conversation) => [...store.orders.values()].filter((o) => o.customer === conversation && o.state !== "enquiry").length,
       ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
       ...(chatAudio ? { chatVoice: (audio: { bytes: Uint8Array; mime: string }) => chatAudio.put(audio.bytes, audio.mime) } : {}),
       // the receipts of the page's own order, and the accountant's files (the runtime lets only the owner's session reach them), both from the saved record
