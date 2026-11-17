@@ -8,7 +8,7 @@ import { WORDS } from "../../../../modules/language/words.ts";
 import { SAYS } from "../crash-test/says.ts";
 import { reportStringRows, sampleOwnerText } from "../report/review.ts";
 import { sampleMessage } from "../report/whatsapp.ts";
-import { EXAMPLES, reviewSheet } from "../scripts/review-sheet.ts";
+import { EXAMPLES, cell, reviewSheet } from "../scripts/review-sheet.ts";
 import type { ReviewLanguage } from "../scripts/review-sheet.ts";
 import { FEE_WORDS } from "../src/adapters/rule-parser.ts";
 import { brightTuition } from "../src/harness.ts";
@@ -31,8 +31,8 @@ for (const language of ["hi", "ml", "kn"] as const satisfies readonly ReviewLang
   test(`REVIEW-${language}.md lists every template, as the agent really writes it`, () => {
     for (const id of Object.keys(TEMPLATES[language]) as TemplateId[]) {
       assert.ok(committed.includes(`\`${id}\``), `${id} is not in REVIEW-${language}.md`);
-      assert.ok(committed.includes(render(id, exampleFacts(centre, language))), `${id} reads differently now: run  node templates/education/fees/scripts/review-sheet.ts ${language} > templates/education/fees/REVIEW-${language}.md`);
-      assert.ok(committed.includes(render(id, exampleFacts(centre, "en"))), `the English meaning of ${id} is missing`);
+      assert.ok(committed.includes(cell(render(id, exampleFacts(centre, language)))), `${id} reads differently now: run  node templates/education/fees/scripts/review-sheet.ts ${language} > templates/education/fees/REVIEW-${language}.md`);
+      assert.ok(committed.includes(cell(render(id, exampleFacts(centre, "en")))), `the English meaning of ${id} is missing`);
     }
   });
 
