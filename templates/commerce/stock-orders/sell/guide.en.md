@@ -114,7 +114,7 @@ When it starts I will look after it with you. You can call me on [your number].
 
 ## 8. The setup visit
 
-1. Write the supplier list with the owner: name, WhatsApp number, language, and whether each is approved.
+1. Write the supplier list with the owner: name, WhatsApp number, language, and whether each is approved. Ask for what is on the card "What to ask the shop for" (`sell/ask-card.en.md`); it also says what not to promise.
 2. Write the catalogue: each item, supplier, unit (box, piece, bottle) and the last price. Ask the owner to check every price.
 3. Set the limits with the owner: the most one order may be worth, and the month's budget.
 4. Show the owner the card once, with test numbers, and have the owner tap Approve and Decline.

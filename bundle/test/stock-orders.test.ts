@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { discoverTemplates } from "../panel/templates.ts";
 import { SETUPS, setupOf, reportOf } from "../panel/setups.ts";
 import { STOCK_PANEL_WORDS, applyStockBusiness, applyStockRules, buildStockSettings, catalogueLine, newStockDraft, runtimeForStock, stockDraftFromShop, supplierLine } from "../panel/stock.ts";
-import { WORDS } from "../panel/words.ts";
+import { WORDS } from "../panel/languages.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import { glowSalon } from "../../templates/commerce/stock-orders/src/harness.ts";
 import { validateRuntimeConfig } from "../../templates/commerce/stock-orders/server/config.ts";
@@ -72,7 +72,7 @@ test("its runtime.json has WhatsApp and nothing else, and passes the template's 
 
 test("every word of the setup, the owner's page and the limits exists in four languages", () => {
   for (const l of LANGUAGES) {
-    assert.ok(STOCK_PANEL_WORDS[l].business.suppliersHelp && STOCK_WORDS[l].tagApprove && WORDS[l].setUp !== undefined, l);
+    assert.ok(STOCK_PANEL_WORDS[l].business.suppliersHelp && STOCK_WORDS[l].tagApprove && WORDS[l].nav.setUp !== undefined, l);
     assert.equal(typeof STOCK_PANEL_WORDS[l].problems.capAbovePrice("₹1"), "string");
     assert.ok(orderCapLimit("a.b", () => ({ min: 1, max: 2 })).name[l] && monthlyBudgetLimit("a.b", () => ({ min: 1, max: 2 })).rule[l].includes("{v}"));
   }

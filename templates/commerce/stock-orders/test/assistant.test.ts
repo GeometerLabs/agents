@@ -69,7 +69,7 @@ test("a cancel is prepared only for an order that has not gone out, and shows no
 
 test("a limit card tapped in a Stock orders shop reaches the assistant, not the order judge", async () => {
   const w = createWorld({ settings: withAssistant() });
-  await w.ownerSays("monthly budget 15000");
+  await w.ownerSays("monthly budget at most ₹15000"); // a rule states a limit and an amount with its rupee sign: a bare number is never money (modules/assistant/limits-card.ts)
   const limitCard = openCards(w).find((c) => c.action.kind === "limit");
   assert.ok(limitCard, "the owner's words about the budget make a limit card");
   await w.ownerSays(`yes ${w.cardCode()}`);

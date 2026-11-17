@@ -16,8 +16,6 @@ Take this to the visit and tick each item with the owner. Ask for these and noth
   The name WhatsApp shows has to match what the shop calls itself in public.
 - [ ] **Be ready for Meta to ask the shop to verify its business later**
   Which documents Meta will accept for a small shop is not confirmed yet. Do not tell the shop that no papers will be needed.
-- [ ] **(Optional) Only if the shop has, or wants, its own Razorpay account: the owner makes it on their own phone**
-  UPI is the usual way and needs no gateway account. Razorpay's keys and codes are made by the owner and are never written in a chat or on paper.
 
 ## For this template
 
