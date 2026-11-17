@@ -72,7 +72,7 @@ test("its runtime.json has WhatsApp and nothing else, and passes the template's 
 
 test("every word of the setup, the owner's page and the limits exists in four languages", () => {
   for (const l of LANGUAGES) {
-    assert.ok(STOCK_PANEL_WORDS[l].business.suppliersHelp && STOCK_WORDS[l].tagApprove && WORDS[l].setUp !== undefined, l);
+    assert.ok(STOCK_PANEL_WORDS[l].business.suppliersHelp && STOCK_WORDS[l].tagApprove && WORDS[l].nav.setUp !== undefined, l);
     assert.equal(typeof STOCK_PANEL_WORDS[l].problems.capAbovePrice("₹1"), "string");
     assert.ok(orderCapLimit("a.b", () => ({ min: 1, max: 2 })).name[l] && monthlyBudgetLimit("a.b", () => ({ min: 1, max: 2 })).rule[l].includes("{v}"));
   }
