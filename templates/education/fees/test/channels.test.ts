@@ -85,8 +85,7 @@ test("each parent's link, from the reminder, opens only their own students; a ty
     await w.tickAt(w.clock.now()); // the agent's first beat: nothing is due yet
     await w.tickAt(FIRST_REMINDER);
     const sharma = w.linksTo(SHARMA);
-    assert.equal(sharma.length, 2, "two reminders, one for each of the Sharmas' children");
-    assert.equal(sharma[0], sharma[1], "with the same link: one per parent, made once in the step");
+    assert.equal(sharma.length, 1, "one reminder for both of the Sharmas' children, with the parent's one private link");
     const nair = w.linksTo(NAIR);
     assert.equal(nair.length, 1);
     assert.notEqual(nair[0], sharma[0], "each parent has their own link");

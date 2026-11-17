@@ -64,7 +64,7 @@ import { RULES } from "../../../../modules/understanding/model.ts";
 import { createReader } from "../../../../modules/understanding/reader.ts";
 import { coerceIntent } from "./adapters/model.ts";
 import type { Intent, IntentParser, ParseOptions } from "./adapters/model.ts";
-import { CASH_LINK, balanceInr, balancePaise, duesOf, factsFor, monthKey, moveTo, newDue, newRequestId, openDues, owedPaise, paidPaise, register } from "./due.ts";
+import { CASH_LINK, balanceInr, balancePaise, duesOf, factsFor, monthKey, monthLabel, moveTo, newDue, newRequestId, openDues, owedPaise, paidPaise, register } from "./due.ts";
 import type { CountedPayment, Customer, Due, Pending, Store } from "./due.ts";
 import { LABELS, buttonsFor, intentFromReply } from "./language/interactive.ts";
 import type { Choice } from "../../../../modules/language/interactive.ts";
@@ -79,9 +79,9 @@ import { readSettlementsOnce } from "../../../../modules/accounting/settlements.
 import type { ButtonId } from "./language/interactive.ts";
 import { templateMessage } from "./language/meta-templates.ts";
 import { TEMPLATE_NAMES, render } from "./language/templates.ts";
-import type { MessageFacts, TemplateId } from "./language/templates.ts";
+import type { FamilyLine, MessageFacts, TemplateId } from "./language/templates.ts";
 import { checkFeeLink, checkMessageMatchesRecord, checkNoReminderOncePaid, checkOneRefundPerPayment, checkPaidOnlyWhenRecorded, checkReminderCap, checkRefundLimit, checkWaiver } from "./limits.ts";
-import { batchOf, highestDueInr } from "./settings.ts";
+import { batchName, batchOf, highestDueInr } from "./settings.ts";
 import { feeForMonth, isJoiningMonth, parseJoined } from "./joining.ts";
 import type { Settings } from "./settings.ts";
 
@@ -144,7 +144,7 @@ const HOURLY = HOUR; // the owner is told about the same parent at most this oft
 
 /** Buttons with words above them; `choices` are the owner's UPI buttons (each carries its one-use code) instead of the named ones. */
 type Offer = { kind: "buttons"; buttons: ButtonId[]; dueId?: string; body?: TemplateId[]; choices?: Choice[] };
-interface SayArgs { booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; /** Item 11h: the parent's private page, in a message to that parent only. */ pageLink?: string }
+interface SayArgs { family?: FamilyLine[]; booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; /** Item 11h: the parent's private page, in a message to that parent only. */ pageLink?: string }
 
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, messaging, parser, record, store } = deps;
@@ -201,12 +201,12 @@ export function createAgent(deps: AgentDeps): Agent {
     owner: { whatsapp: owner, language: settings.owner.language },
     languageOf: (phone, due) => languageOf(phone, due),
     optedOut: (phone) => customerOf(phone).optedOut,
-    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode, ...(a.pageLink && a.to === "customer" ? { pageLink: a.pageLink } : {}) }),
+    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode, ...(a.family ? { family: a.family } : {}), ...(a.pageLink && a.to === "customer" ? { pageLink: a.pageLink } : {}) }),
     interactiveFor: (a, facts, language): InteractiveMessage => {
       const offer = a.offer!;
       return { body: (offer.body ?? a.templates).map((id) => render(id, facts)).join(" "), buttons: offer.choices ?? buttonsFor(language, offer.buttons, offer.dueId) };
     },
-    inputsOf: (a) => ({ refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef }),
+    inputsOf: (a) => ({ ...(a.family ? { family: a.family.map((l) => l.dueRef) } : {}), refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef }),
     gates: (a) => {
       const due = a.booking;
       const out: Decision[] = [];
@@ -459,6 +459,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- payment links: one for what is still owed ---------------------------------------------------------------------
 
+  const batchById = (id: string) => settings.batches.find((b) => b.id === id);
   const linkOf = (due: Due) => due.links.find((l) => l.id === due.currentLinkId);
   const paidOnLink = (due: Due, linkId: string) => due.payments.filter((p) => p.linkId === linkId).reduce((n, p) => n + p.amountPaise, 0);
 
@@ -634,7 +635,18 @@ export function createAgent(deps: AgentDeps): Agent {
       }
       return; // the reminder stays due and is tried again
     }
+    // A parent with more than one open fee (two children, or an earlier month still unpaid) gets ONE message that lists them all, each with its own link
+    const others = await otherOpenFees(due, now);
     takeDue(due.reminders, now);
+    if (others.length > 0) {
+      for (const o of others) if (o.reminders.some((x) => !x.sent && x.atMs <= now)) { takeDue(o.reminders, now); if (o.remindersSent < settings.reminders.maxPerMonth) o.remindersSent += 1; }
+      const lines = [due, ...others].sort((a, b) => a.dueMs - b.dueMs).map((d): FamilyLine => ({ studentName: d.studentName, batchName: batchName(batchById(d.batchId)!, due.language), monthLabel: monthLabel(d, due.language), balanceInr: balanceInr(d), dueMs: d.dueMs, link: linkOf(d)!.url, dueRef: d.id }));
+      const pageOfFamily = linkFor(due.customer); // a centre with a page: the one message also carries the parent's private page, as every reminder does
+      const sentFamily = await tellCustomer(due, due.customer, [pageOfFamily ? "fee_reminder_family_page" : "fee_reminder_family"], { reminder: true, readOk: true, offer: ownerButton, family: lines, ...(pageOfFamily ? { pageLink: pageOfFamily.url } : {}) });
+      if (sentFamily) due.remindersSent += 1;
+      if (sentFamily && pageOfFamily) keepLink(due.customer, pageOfFamily.token, "reminder");
+      return;
+    }
     const startOfToday = zonedToMs({ year: localParts(now, tz).year, month: localParts(now, tz).month, day: localParts(now, tz).day }, MIDNIGHT, tz);
     // item 11h: with a page, the reminder carries the parent's private link (the same one while its hash is the saved one, else a new one); without, it is as it was
     const pageLink = linkFor(due.customer);
@@ -643,6 +655,25 @@ export function createAgent(deps: AgentDeps): Agent {
     const sent = await tellCustomer(due, due.customer, [template], { reminder: true, readOk: true, offer: feeButtons(due), image: await qrOf(due), ...(pageLink ? { pageLink: pageLink.url } : {}) });
     if (sent) due.remindersSent += 1;
     if (sent && pageLink) keepLink(due.customer, pageLink.token, "reminder");
+  }
+
+  /**
+   * The parent's other open fees to list with this one: each is read from the payments service first and counted (a fee the record shows paid is never listed, and the
+   * "no reminder once paid" check runs for it too), and has a link for exactly what is still owed. A fee whose record could not be read, or whose link could not be made,
+   * is left out and gets its own reminder when its turn comes. Only fees that are owed now are listed: their reminder is due, or their due date has passed.
+   */
+  async function otherOpenFees(due: Due, now: number): Promise<Due[]> {
+    const out: Due[] = [];
+    for (const o of openDues(store, due.customer)) {
+      if (o === due || o.state !== "open" || !(o.reminders.some((x) => !x.sent && x.atMs <= now) || o.dueMs <= now)) continue;
+      const read = await reconcile(o);
+      await settle(o, read.fresh);
+      if (o.state !== "open" || !read.ok || balancePaise(o) <= 0) continue;
+      if (checkNoReminderOncePaid({ record, dueId: o.id, owedPaise: owedPaise(o), readOk: true }).verdict === "block") continue;
+      if (!(await currentLink(o)).ok || !linkOf(o)) continue;
+      out.push(o);
+    }
+    return out;
   }
 
   // ---- item 11h: the parent's private link -------------------------------------------------------------------------------------------------------------
