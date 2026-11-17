@@ -54,6 +54,11 @@ export const runtimeHasWhatsApp = (runtime: { mode?: string; services?: unknown 
 };
 
 export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: true }, { name: "calendar", extra: "calendarId", calendar: true }, MESSAGING_SERVICE, PUSH_SERVICE];
+/**
+ * Stock orders (17 Nov 2026): WhatsApp is the whole point (the order goes to a supplier on it), so unlike every other template the messaging service may NOT be left out,
+ * and there is no payment service at all (the agent pays nobody). Push is the owner's, as everywhere.
+ */
+export const STOCK_SERVICES: ServiceShape = [{ ...MESSAGING_SERVICE, mayLack: undefined } as never, PUSH_SERVICE];
 export const FEES_SERVICES: ServiceShape = [{ name: "payments", payment: true }, MESSAGING_SERVICE, PUSH_SERVICE];
 
 /** Where the live adapters should call: the services the template names, and how long to wait for any one of them. */

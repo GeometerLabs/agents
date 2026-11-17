@@ -78,7 +78,7 @@ export interface FrontShop {
   /** Item 11f: the shop's page addresses (pages.json), read on every request. Left out: no pages domain and no owner sign-in for this shop. */
   pages?: () => PagesFile | undefined;
   /** Item 11h: the shop's template, which decides its customer side. Left out: Bookings (every shop before item 11h). */
-  kind?: "bookings" | "orders" | "fees";
+  kind?: "bookings" | "orders" | "fees" | "stock";
   /** Item 11i: the shop's character pictures (character-files.ts characterReader over its folder), read on every request. Left out: the shop shows no face. */
   character?: () => CharacterFiles | undefined;
 }
@@ -299,6 +299,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
 
     // item 11h: an Orders shop's and a Fees centre's customer side are their own; the owner's page and the QR code below are every shop's
     const ownerPath = /^\/o\/[^/]+(\/.*)?$/u.test(rest) || rest === "/owner" || rest.startsWith("/owner/");
+    // Stock orders talks to suppliers on WhatsApp and has no customers: only the owner's page (and the character's pictures above) is here, never a booking page, API or MCP
+    if (shop.kind === "stock" && !ownerPath && rest !== "/qr.svg") return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
     if ((shop.kind === "orders" || shop.kind === "fees") && !ownerPath && rest !== "/qr.svg") {
       const args: RouteArgs = { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}) };
       return shop.kind === "orders" ? orderRoute(kit, args, orderOpsOf(name, shop)) : feeRoute(kit, args);
@@ -524,11 +526,13 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       // item 11e: one of the assistant's cards, by its id and digest (no code is ever on the page); the runtime's card binding decides what happens
       if (action === "card_yes" || action === "card_no") {
         const card = state.view.app?.cards.find((c) => c.id === theCase && c.digest === digest);
-        if (!card || (action === "card_no" && !card.hasNo)) return "changed";
+        // Stock orders lists its own approval card as an item (case = the card's id), not in the app's cards
+        const itemCard = state.view.items.find((i) => i.case === theCase && i.digest === digest && i.actions.includes(action));
+        if ((!card && !itemCard) || (card && action === "card_no" && !card.hasNo)) return "changed";
         const r = await shop.backend.submit([{ kind: "owner_action", id: randomUUID(), action, case: theCase, digest }], token);
         if (r === "refused") return "denied_link";
         const deadline = Date.now() + (options.waitMs ?? 3_000);
-        while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || !now.app?.cards.some((c) => c.id === theCase)) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
+        while (Date.now() < deadline) { const now = await shop.backend.owner(token); if (!now || (!now.app?.cards.some((c) => c.id === theCase) && !now.items.some((i) => i.case === theCase && i.digest === digest))) return "done"; await new Promise((r2) => setTimeout(r2, 200)); }
         return "sent";
       }
       // item 11h (Fees): a parent's private link, sent anew or switched off, bound to the link's state as the page showed it

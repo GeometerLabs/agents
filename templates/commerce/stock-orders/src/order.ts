@@ -10,9 +10,11 @@
 // The month's budget is NOT a counter. It is worked out from the orders every time (reservedPaise): an order holds budget from the moment the owner approves it until it is
 // cancelled, declined by the supplier or never sent, so a crash, a restart or a race cannot leave a number that disagrees with the orders.
 import { localParts } from "../../../../modules/core/time.ts";
+import type { AiState } from "../../../../modules/understanding/ai-state.ts";
 import type { AssistantState } from "../../../../modules/assistant/state.ts";
 import type { Reminder } from "../../../../modules/reminders/reminders.ts";
-import { lineKey, paise } from "./settings.ts";
+import type { CardAction } from "../../../../modules/assistant/state.ts";
+import { lineKey, paise, supplierOf } from "./settings.ts";
 import type { Line, Settings } from "./settings.ts";
 
 export type OrderState =
@@ -59,6 +61,8 @@ export interface PurchaseOrder {
   /** When the supplier is asked again (reminders/reminders.ts); the last one also tells the owner. */
   asks: Reminder[];
   silentToldMs?: number;
+  /** When the owner asked the supplier again from their page (about this same order). */
+  askedMs?: number;
 }
 
 /** What the agent is waiting for the owner to answer, when it had to ask: never guessed. */
@@ -77,16 +81,18 @@ export interface Asking {
 export interface Store {
   orders: Map<string, PurchaseOrder>;
   /** The owner's message ids already handled, in order, and the order each made: a message delivered twice makes nothing twice. */
-  handled: string[];
+  handled: Set<string>;
   requests: Map<string, string>;
   asking?: Asking;
   optedOut: Set<string>;
   seq: number;
   /** The approval cards (modules/assistant/cards.ts): kept in the same store, so a card and the order it is for change together. */
   assistant?: AssistantState;
+  /** The month's AI counts (modules/understanding/ai-state.ts): the runtime keeps them with the store. Left out until the first message is read. */
+  ai?: AiState;
 }
 
-export const createStore = (): Store => ({ orders: new Map(), handled: [], requests: new Map(), optedOut: new Set(), seq: 0 });
+export const createStore = (): Store => ({ orders: new Map(), handled: new Set(), requests: new Map(), optedOut: new Set(), seq: 0 });
 
 export function nextOrderId(store: Store): string {
   store.seq += 1;
@@ -125,3 +131,18 @@ export const unansweredFor = (store: Store, supplier: string): PurchaseOrder[] =
 export const currentLine = (settings: Settings, o: PurchaseOrder): Line | undefined => settings.catalogue.find((l) => lineKey(l) === o.line);
 
 export const orderRefOf = (text: string): string | undefined => /\bpo-?\s*(\d{1,6})\b/iu.exec(text)?.[1] ? `po-${/\bpo-?\s*(\d{1,6})\b/iu.exec(text)![1]}` : undefined;
+
+/** The assistant's and the agent's skill name: the record's `skill` ref and the card's. */
+export const SKILL = "stock-orders";
+
+/**
+ * The exact action an approval card is bound to: the supplier and its number, the item, the unit, the quantity, the unit price and total in paise, the currency and the budget
+ * month, read from the order and the catalogue line as they are NOW. One place: the agent's own card, the assistant's card for the same order and the owner page's item all
+ * use it, so a card made by any of them has the same digest and a change under any of them voids all of them.
+ */
+export function approvalAction(settings: Settings, o: PurchaseOrder, line: Line, nowMs: number): CardAction {
+  return {
+    kind: "order", skill: SKILL, case: o.id,
+    fields: { supplier: o.supplier, supplierWhatsapp: supplierOf(settings, o.supplier).whatsapp, item: o.item, unit: o.unit, qty: o.qty, unitPaise: unitPaiseOf(line), totalPaise: totalOfPaise(unitPaiseOf(line), o.qty), currency: "INR", month: monthOf(nowMs, settings.timezone) },
+  };
+}
