@@ -45,7 +45,7 @@ test("an order travels the whole chain: the customer writes, the advance link is
     assert.ok(link, "the agent made the advance link at the stand-in");
     assert.equal(link.amount, 12_000, "two veg thali at ₹120 is ₹240, and the advance is half");
     assert.deepEqual(s.runtime!.runtime.status().orders, { awaiting_advance: 1 });
-    assert.deepEqual(statuses(await control(s, "/_standin/razorpay/pay", { request_id: link.id })), [200]);
+    assert.deepEqual(statuses(await control(s, "/_standin/razorpay/pay", { request_id: link.id })), [200, 200]);
     await s.settle();
     assert.equal(witnesses(s).captured.length, 1);
     assert.deepEqual(s.runtime!.runtime.status().orders, { confirmed: 1 });

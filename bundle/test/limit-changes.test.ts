@@ -61,7 +61,7 @@ test("a pending tightening is written to the settings file, deployed, read back 
     assert.equal(JSON.parse(readFileSync(join(w.shopDir, "settings.json"), "utf8")).deposit.amountInr, 200, "nothing else changed");
     assert.ok(readdirSync(join(serverPaths(w.dir).state, "limit-changes", SHOP)).some((f) => f.endsWith(".settings.before.json") || f === "l-1.json"));
     assert.equal(w.s.deploys, 1);
-    assert.deepEqual(w.s.settled, [`${SHOP}-l-1-active`]);
+    assert.deepEqual(w.s.settled, [`${SHOP}-l-1-active:active`]);
     assert.equal(w.changes[0].state, "active");
     assert.ok(lines.some((l) => /is Active/u.test(l)));
     assert.ok(!existsSync(join(serverPaths(w.dir).state, "limit-changes", SHOP, "l-1.json")), "the journal is done with");
@@ -137,7 +137,7 @@ test("the deployer restarting in the middle: a journal that says written is not 
     assert.equal(w.s.deploys, 1, "no second deploy");
     assert.equal(w.changes[0].state, "active");
     assert.equal(w.fileValue(), 100);
-    assert.deepEqual(w.s.settled, [`${SHOP}-l-1-active`, `${SHOP}-l-1-active`], "the same request id both times, so the runtime takes it as one");
+    assert.deepEqual(w.s.settled, [`${SHOP}-l-1-active:active`, `${SHOP}-l-1-active:active`], "the same request id both times, so the runtime takes it as one");
   } finally { w.done(); }
 });
 

@@ -12,7 +12,7 @@ const errorsOf = (change: (s: any) => void): string[] => { const s = raw(); chan
 
 test("every example shop's settings are valid, and UPI is the default example", () => {
   const files = readdirSync(dir).filter((f) => f.endsWith(".example.json"));
-  assert.equal(files.length, 3);
+  assert.equal(files.length, 4);
   for (const f of files) assert.ok(validateSettings(JSON.parse(readFileSync(new URL(f, dir), "utf8"))).ok, f);
   assert.equal(annapurna().payment.module, "upi");
 });
