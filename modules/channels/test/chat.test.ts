@@ -24,6 +24,7 @@ import type { ChannelBackend } from "../backend.ts";
 import { CHAT, QUICK } from "../words-chat.ts";
 import { LANGUAGES } from "../../language/languages.ts";
 import { screen } from "../chat-screens.ts";
+import { esc } from "../../core/html.ts";
 
 const TZ = "Asia/Kolkata";
 const NOW = Date.UTC(2026, 10, 17, 6, 0);
@@ -252,7 +253,7 @@ test("the empty chat greets in the shop's personality with three taps in the gue
     const html = page({ language, personality: "cheerful" });
     for (const label of QUICK.bookings.label[language]) assert.ok(html.includes(label), `${language}: ${label}`);
     assert.match(html, /data-quick="1"/u);
-    assert.ok(html.includes(CHAT[language].note), "the quiet note");
+    assert.ok(html.includes(esc(CHAT[language].note)), "the quiet note (as the page escapes it)");
     assert.match(html, new RegExp(`<html lang="${language}">`, "u"));
   }
   assert.ok(page({ personality: "brief" }).includes("This is Glow Salon&#39;s assistant.") || page({ personality: "brief" }).includes("Glow Salon"));
