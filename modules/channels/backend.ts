@@ -64,7 +64,7 @@ export type BookingView =
  * payment a parent says they made), `waiver` and `refund_request`. `what` is what it is about, already in the owner's language, for a kind no service names.
  */
 export interface OwnerItemView {
-  kind: "deposit" | "late_deposit" | "refund_owed" | "late_refund" | "calendar" | "big_order" | "waiver" | "refund_request" | "po_approval" | "po_silent" | "po_receive"; case: string; digest: string; actions: string[]; amountPaise: number;
+  kind: "deposit" | "late_deposit" | "refund_owed" | "late_refund" | "calendar" | "big_order" | "waiver" | "refund_request" | "po_approval" | "po_silent" | "po_receive" | "po_unsure" | "po_refused"; case: string; digest: string; actions: string[]; amountPaise: number;
   customer: { phone: string; name?: string }; channel: "whatsapp" | "web" | "mcp" | "chat"; serviceId?: string; startMs?: number; why?: string; what?: string;
   /**
    * Money clarity: for a `deposit` or a `late_deposit`, when the customer said they paid (left out: nobody said so, the hold is only waiting) and the UPI reference they
