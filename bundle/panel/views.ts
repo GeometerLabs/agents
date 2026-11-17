@@ -553,6 +553,7 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
   ${d.form.services.map((r, i) => html`<div class="svc"><input type="hidden" name="svc_id_${i}" value="${r.id}">
     ${text(b.serviceName, `svc_name_${i}`, r.name, { max: 80 })}${text(b.also, `svc_also_${i}`, r.also, { max: 200 })}
     <div class="row">${text(b.price, `svc_price_${i}`, r.price, { mode: "numeric", max: 9 })}${text(b.minutes, `svc_minutes_${i}`, r.minutes, { mode: "numeric", max: 3 })}</div></div>`)}
+  ${text(b.capacity, "capacity", d.form.capacity ?? "1", { mode: "numeric", max: 2 })}
   <div class="row">${text(b.opens, "opens", d.form.opens, { type: "time", max: 5 })}${text(b.closes, "closes", d.form.closes, { type: "time", max: 5 })}</div>
   <div class="field"><span>${b.openOn}</span><div class="days">${b.dayNames.map((n, i) => html`<label><input type="checkbox" name="day_${i}" ${d.form.days[i] ? raw("checked") : ""}> ${n}</label>`)}</div></div>
   ${back}${next}</form>`;

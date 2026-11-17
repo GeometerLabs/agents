@@ -89,7 +89,7 @@ test("the benefit lines are the ones in the pricing document, in all four langua
   }
 });
 
-for (const language of ["ml", "kn"] as const) {
+for (const language of ["hi", "ml", "kn"] as const) {
   test(`REVIEW-${language}.md carries every line of the panel's ${language} words, as section 7`, () => {
     const committed = readFileSync(new URL(`../../../templates/commerce/bookings/REVIEW-${language}.md`, import.meta.url), "utf8");
     const section = panelReviewSection(language);

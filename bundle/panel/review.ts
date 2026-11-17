@@ -17,7 +17,7 @@ import { WORDS as DOOR_WORDS } from "../services/door-pages.ts";
 import { FIRST_WORDS } from "../../modules/channels/words-owner-first.ts";
 import { PERSONALITIES, SMALL_TALK } from "../../modules/assistant/personality.ts";
 
-export type ReviewLanguage = "ml" | "kn";
+export type ReviewLanguage = "hi" | "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
 
 /** Every sentence of a word set, by path ("shop.stopTitle"); a phrase that takes values is shown with the sample values in SAMPLE_ARGS. */

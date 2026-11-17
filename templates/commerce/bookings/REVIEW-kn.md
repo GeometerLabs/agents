@@ -802,6 +802,8 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `setup.business.dayNames.5` | ಗುರು | Thu |  |
 | `setup.business.dayNames.6` | ಶುಕ್ರ | Fri |  |
 | `setup.business.dayNames.7` | ಶನಿ | Sat |  |
+| `setup.business.capacity` | ಒಂದೇ ಸಮಯದಲ್ಲಿ ಎಷ್ಟು ಬುಕಿಂಗ್ ನಡೆಯಬಹುದು (ಎರಡು ಕುರ್ಚಿ: 2) | How many bookings can run at the same time (two chairs: 2) |  |
+| `setup.business.capacityBad` | ಒಂದೇ ಸಮಯದಲ್ಲಿ ನಡೆಯುವ ಬುಕಿಂಗ್ ಸಂಖ್ಯೆಯನ್ನು 1 ರಿಂದ 50 ರ ನಡುವೆ ಪೂರ್ಣ ಸಂಖ್ಯೆಯಾಗಿ ಬರೆಯಿರಿ, ಉದಾಹರಣೆಗೆ 1. | Write how many bookings can run at the same time as a whole number from 1 to 50, for example 1. |  |
 | `setup.depositStep.amount` | ಮುಂಗಡ ಹಣ ₹ | Deposit ₹ |  |
 | `setup.depositStep.window` | ಕನಿಷ್ಠ ಇಷ್ಟು ಗಂಟೆ ಮೊದಲು ರದ್ದುಮಾಡಬೇಕು | Cancel at least this many hours before |  |
 | `setup.depositStep.windowHint` | ಗ್ರಾಹಕರು ಇಷ್ಟು ಮೊದಲೇ ರದ್ದುಮಾಡಿದರೆ ಮುಂಗಡ ಹಣ ಹಿಂತಿರುಗುತ್ತದೆ. ಅದಕ್ಕಿಂತ ತಡವಾದರೆ ತೀರ್ಮಾನ ನಿಮ್ಮದು. | If a customer cancels at least this long before, the deposit goes back. Later than that, you decide. |  |

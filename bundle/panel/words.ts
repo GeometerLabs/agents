@@ -104,7 +104,7 @@ export interface Words {
       problems: { name: string; style: string; face: string; colour: string; personality: string };
       shopTitle: string; shopNone: string; shopNotDrawn: string; profileTitle: string; profileHelp: string; download: string;
     };
-    business: { name: string; services: string; serviceName: string; also: string; price: string; minutes: string; opens: string; closes: string; openOn: string; hint: string; dayNames: string[] };
+    business: { name: string; services: string; serviceName: string; also: string; price: string; minutes: string; opens: string; closes: string; openOn: string; hint: string; dayNames: string[]; /** how many bookings can run at the same time (two chairs), and its problem line */ capacity: string; capacityBad: string };
     depositStep: { amount: string; window: string; windowHint: string; whatThisMeans: string };
     limits: {
       price: string; hours: string; deposit(amount: string, minutes: number): string; refund(hours: number, limit: string): string; booked: string; language: string; charge: string;
@@ -418,6 +418,7 @@ export const en: Words = {
     business: {
       name: demo.formName, services: demo.formServices, serviceName: demo.formServiceName, also: demo.formAlso, price: demo.formPrice, minutes: demo.formMinutes, opens: demo.formOpens, closes: demo.formCloses, openOn: demo.formDays,
       hint: "A service's price is also the lowest the agent will ever agree to.", dayNames: demo.dayNames,
+      capacity: "How many bookings can run at the same time (two chairs: 2)", capacityBad: "Write how many bookings can run at the same time as a whole number from 1 to 50, for example 1.",
     },
     depositStep: { amount: demo.formDeposit, window: "Cancel at least this many hours before", windowHint: "If a customer cancels at least this long before, the deposit goes back. Later than that, you decide.", whatThisMeans: "What this means for you" },
     limits: {
