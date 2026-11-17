@@ -141,6 +141,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   const pageBase = () => { const p = options.pages?.(); return p ? p.url ?? p.base : undefined; };
   // the owner's recordings from their page, in memory only until their step listens (only with a voice service and the assistant: otherwise there is no record button)
   const pageAudio = options.voice && settings.assistant ? createAudioDrop({ now: () => clock.now() }) : undefined;
+  // W1 hold-to-talk: a chat guest's recordings, in memory only, in a drop of their own (a flood of guests never pushes out the owner's); only with a voice service, else the chat shows no button
+  const chatAudio = options.voice ? createAudioDrop({ now: () => clock.now(), max: 16 }) : undefined;
   const skillOver = (store: Store) => feesSkill({ settings, store, nowMs: () => clock.now(), optedOut: (phone) => store.customers.get(phone)?.optedOut ?? false });
   const kit: RuntimeKit<Store, Settings, RefundContext> = {
     pathway: PATHWAY,
@@ -153,7 +155,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     services: services as unknown as Record<string, unknown>,
     createAgent: ({ store, record, services: watched }) => createAgent({
       settings, clock, ...(watched as unknown as Services), messaging: channelMessaging((watched as unknown as Services).messaging, () => (store.channel ??= emptyChannelState()), clock, options.push ? (to, text) => { options.push!.customer(to, text); } : undefined), parser, record, store, ai: policy, ...(options.voice ? { voice: options.voice } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.terms ? { terms: options.terms } : {}), ...(options.ownerParser ? { ownerParser: options.ownerParser } : {}), ...(options.talker ? { talker: options.talker } : {}),
-      pageBase, linkMemory, ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}),
+      pageBase, linkMemory, ...(pageAudio ? { pageAudio: (ref: string) => pageAudio.get(ref) } : {}), ...(chatAudio ? { chatAudio: (ref: string) => chatAudio.get(ref) } : {}),
     }),
     // Item 11h: a confirmation page is kept while its fee is open, and for CONFIRMATION_KEEP_MS after it was pressed once the fee is settled. A parent's link is never
     // taken off here: it is the parent's until a new one replaces it or the owner switches it off.
@@ -189,6 +191,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
         return file ? { kind: "file" as const, name: file.name, type: file.type, base64: file.bytes.toString("base64") } : null;
       } } : {}),
       ...(pageAudio ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => pageAudio.put(audio.bytes, audio.mime) } : {}),
+      ...(chatAudio ? { chatVoice: (audio: { bytes: Uint8Array; mime: string }) => chatAudio.put(audio.bytes, audio.mime) } : {}),
       // the receipts of the page's own fees, and the accountant's files (the runtime lets only the owner's session reach them), both from the saved record
       documents: (store, entries, key, language) => documentsOf(settings, store, entries, key, language),
       accountantFiles: (_store, entries, period) => exportFilesOf(settings, entries, period),

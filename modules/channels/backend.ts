@@ -198,6 +198,11 @@ export interface ChannelBackend {
    * for an unknown guest: that is an empty thread. Left out: the shop has no chat.
    */
   chat?(guestHash: string, q?: { after?: number; cid?: string }): Promise<ChatRead>;
+  /**
+   * W1 hold-to-talk: a guest's recording, passed to the runtime as it came (the runtime holds it in memory only and listens in the guest's step). "off": the shop has no voice
+   * service; "slow": the runtime's own per-guest or per-shop rate said wait.
+   */
+  chatVoice?(guestHash: string, send: { id: string; language: Language }, audio: { bytes: Buffer; mime: string }): Promise<"saved" | "off" | "slow">;
   /** Item 11h: the same reads, for an Orders shop (its offer and an order by its handle's hash). */
   orderOffer?(): Promise<OrderOffer>;
   orderView?(handleHash: string): Promise<OrderView | null>;
@@ -274,6 +279,14 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     async chat(guestHash, q = {}) {
       const p = new URLSearchParams({ handle: guestHash, ...(q.after ? { after: String(q.after) } : {}), ...(q.cid ? { cid: q.cid } : {}) });
       return json<ChatRead>(await call(`${o.url}/internal/channel/chat?${p}`, { headers: headers() }, timeout));
+    },
+    async chatVoice(guestHash, send, audio) {
+      const p = new URLSearchParams({ handle: guestHash, lang: send.language, id: send.id });
+      const r = await call(`${o.url}/internal/channel/chat-voice?${p}`, { method: "POST", headers: headers(undefined, { "content-type": audio.mime }), body: new Uint8Array(audio.bytes) }, timeout);
+      if (r.status === 404) return "off";
+      if (r.status === 429) return "slow";
+      if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`);
+      return "saved";
     },
     async feesOffer() { return json<FeesOffer>(await call(`${o.url}/internal/channel/offer`, { headers: headers() }, timeout)); },
     async parentView(linkHash) {

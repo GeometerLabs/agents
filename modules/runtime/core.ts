@@ -146,6 +146,11 @@ export interface ChannelKit<Store> {
    * when the shop has no voice service or no assistant: the page then shows no record button, and the route answers that voice is off.
    */
   ownerVoice?(audio: { bytes: Uint8Array; mime: string }): string;
+  /**
+   * W1 hold-to-talk: hold a recording a chat guest made on the shop's page, in memory only, and give its reference for a `chat_message`'s `voice`. A drop of its own (never the
+   * owner's), so a flood of guests cannot push out the owner's recordings. Left out when the shop has no voice service: the chat then shows no button.
+   */
+  chatVoice?(audio: { bytes: Uint8Array; mime: string }): string;
 }
 
 /** What a template gives the runtime. */
@@ -263,17 +268,20 @@ export interface RuntimeChannel {
   material?(linkHash: string, batchId: string, fileId?: string): Promise<unknown | null>;
   /** The kit's ownerVoice (above), when it has one. */
   ownerVoice?(audio: { bytes: Uint8Array; mime: string }): string;
+  /** W1: the kit's chatVoice (above), when it has one. */
+  chatVoice?(audio: { bytes: Uint8Array; mime: string }): string;
   /** W1: a chat guest's thread by its hash (an empty one for a guest never seen), and where its latest send stands (`cid`: the page's id for it). */
   chat(handleHash: string, q: { after?: number; cid?: string }): ChatRead;
   /** W1: has this guest written, and has the shop answered? The push route reads these (alerts are offered only after an answer). */
   chatState(handleHash: string): { known: boolean; answered: boolean };
 }
 
-/** What the page reads of a chat: the thread, how the latest send stands, and the character's small-talk personality and paint colour (settings.assistant.character). */
+/** What the page reads of a chat: the thread, how the latest send stands, the character's small-talk personality (settings.assistant.character) and whether hold-to-talk is on. The signboard's paint is not here: it travels in the shop's pages file (pages-file.ts). */
 export interface ChatRead extends ChatThread {
   send?: "pending" | "done" | "failed";
   personality?: string;
-  paint?: string;
+  /** Hold-to-talk is on (the shop has a voice service): the page draws the button; without it there is none, not a hidden one. */
+  listen?: true;
 }
 
 export type { InboundMessage, Language };
@@ -489,8 +497,8 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
           const now = clock.now();
           const read: ChatRead = chatThread(channel, handleHash, { ...(q.after !== undefined ? { after: q.after } : {}), retentionDays: options.retentionDays ?? CONVERSATION_RETENTION_DAYS, now, dayKey: chatDay(now, settings.timezone) });
           const task = q.cid ? db.taskState?.(chatTaskKey(handleHash, q.cid)) : undefined;
-          const character = (settings as { assistant?: { character?: { personality?: string; colour?: string } } }).assistant?.character;
-          return { ...read, ...(task ? { send: task === "failed" ? "failed" as const : task === "done" ? "done" as const : "pending" as const } : {}), ...(character?.personality ? { personality: character.personality } : {}), ...(character?.colour ? { paint: character.colour } : {}) };
+          const character = (settings as { assistant?: { character?: { personality?: string } } }).assistant?.character;
+          return { ...read, ...(task ? { send: task === "failed" ? "failed" as const : task === "done" ? "done" as const : "pending" as const } : {}), ...(character?.personality ? { personality: character.personality } : {}), ...(kit.channel!.chatVoice ? { listen: true as const } : {}) };
         },
         chatState(handleHash: string) {
           const channel = (kit.parse(snapshot) as { channel?: ChannelState }).channel;
@@ -501,6 +509,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
         ...(kit.channel.parent ? { parent: (linkHash: string) => kit.channel!.parent!(kit.parse(snapshot), linkHash) } : {}),
         ...(kit.channel.material ? { material: (linkHash: string, batchId: string, fileId?: string) => kit.channel!.material!(kit.parse(snapshot), linkHash, batchId, fileId) } : {}),
         ...(kit.channel.ownerVoice ? { ownerVoice: (audio: { bytes: Uint8Array; mime: string }) => kit.channel!.ownerVoice!(audio) } : {}),
+        ...(kit.channel.chatVoice ? { chatVoice: (audio: { bytes: Uint8Array; mime: string }) => kit.channel!.chatVoice!(audio) } : {}),
       } satisfies RuntimeChannel,
     } : {}),
 

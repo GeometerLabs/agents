@@ -84,6 +84,7 @@ const WHEN: Record<TemplateId, string> = {
   slot_unavailable: "The time is taken or already past",
   outside_hours: "The shop is closed then",
   hold_failed: "The calendar could not hold the slot",
+  chat_shop_busy: "A chat guest asks for a time while the shop already has as many unpaid holds as its cap (the shop is not asked, nothing is held)",
   link_failed: "The payment link could not be made",
   booked: "Calendar and deposit both recorded",
   booked_page_link: "A booking made on WhatsApp, in a shop with a page: the last lines of the booked message, with the private link to the booking's own page (made for this message; the link in the quote stays good too)",

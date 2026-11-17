@@ -82,7 +82,14 @@ export const OWNER_MESSAGE_MAX = 900;
  * 1 to CHAT_TEXT_MAX characters), `tap` (the id of a button or list row the shop's message offered: the runtime checks it was offered) or `quick` (1 to 3: one of the three
  * taps of an empty chat, words-chat.ts QUICK). It carries no authority and no number: the agent reads it exactly as it reads the same words from a WhatsApp customer.
  */
-export interface ChatMessage { kind: "chat_message"; id: string; handle: string; language: Language; text?: string; tap?: string; quick?: 1 | 2 | 3 }
+export interface ChatMessage {
+  kind: "chat_message"; id: string; handle: string; language: Language; text?: string; tap?: string; quick?: 1 | 2 | 3;
+  /**
+   * Hold-to-talk (17 Nov 2026): the reference of a recording the runtime holds in memory (chat-audio via the template's runtime), set ONLY by the runtime's own HTTP layer,
+   * never the audio. `checkChannelEvent` never reads one from the front, so a `voice` sent from outside is dropped like any other field.
+   */
+  voice?: string;
+}
 /** The longest typed send (the page's own maxlength). */
 export const CHAT_TEXT_MAX = 500;
 

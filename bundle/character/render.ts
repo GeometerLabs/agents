@@ -20,7 +20,7 @@ import { dirname, join } from "node:path";
 import { Avatar, Style } from "../vendor/dicebear-core/lib/index.js";
 import { CHARACTER_STYLES, EYES_AND_MOUTH, FACES, PICTURE_FORMATS, STYLE_INFO } from "../../modules/assistant/character.ts";
 import type { CharacterStyle, Face, PictureFormat } from "../../modules/assistant/character.ts";
-import { CHARACTER_MANIFEST, pictureFiles, readCharacterManifest } from "../../modules/channels/character-files.ts";
+import { CHARACTER_MANIFEST, animFile, animFiles, pictureFiles, readCharacterManifest } from "../../modules/channels/character-files.ts";
 import type { CharacterManifest } from "../../modules/channels/character-files.ts";
 
 const VENDOR = new URL("../vendor/", import.meta.url);
@@ -29,7 +29,8 @@ const vendorFile = (path: string): Buffer => readFileSync(new URL(path, VENDOR))
 /** What drew a set: the vendored packages' versions, and this file's layout (sizes, margins). A change to either draws every set again. */
 export const RENDERER: Record<string, string> = (() => {
   const v = JSON.parse(vendorFile("vendor.json").toString("utf8")) as { packages: Record<string, { package: string; version: string }> };
-  return { ...Object.fromEntries(Object.values(v.packages).map((p) => [p.package, p.version])), layout: "1" };
+  // layout 2 (17 Nov 2026): every mood also has DiceBear's own "slow" animation as <face>-anim.svg, so a set drawn with layout 1 is drawn again once
+  return { ...Object.fromEntries(Object.values(v.packages).map((p) => [p.package, p.version])), layout: "2" };
 })();
 
 /** The sizes each format is drawn at. PNG: 640 px, the profile photo size WhatsApp shows best. WebP: WhatsApp's sticker size, 512 px with a 16 px clear margin. */
@@ -56,9 +57,9 @@ const CLEAR = "010203";
 
 /**
  * DiceBear's drawing of a look: in a mood (its approved eyes and mouth), or with no mood for the panel's strip (the seed's own face). `tile: false` leaves out the
- * background tile (stickers). Throws on a look outside the approved styles and palettes.
+ * background tile (stickers); `animate: true` draws DiceBear's "slow" animation (SVG only). Throws on a look outside the approved styles and palettes.
  */
-export function drawSvg(look: Look, face?: Face, o: { tile?: boolean } = {}): string {
+export function drawSvg(look: Look, face?: Face, o: { tile?: boolean; animate?: boolean } = {}): string {
   if (!(CHARACTER_STYLES as readonly string[]).includes(look.style)) throw new Error(`There is no character style "${look.style}".`);
   const info = STYLE_INFO[look.style];
   if (look.colour !== undefined && !info.palette.includes(look.colour)) throw new Error(`"${look.colour}" is not one of the ${info.name} colours.`);
@@ -66,6 +67,9 @@ export function drawSvg(look: Look, face?: Face, o: { tile?: boolean } = {}): st
   if (face) { const [eyes, mouth] = EYES_AND_MOUTH[look.style][face]; options.eyesVariant = [eyes]; options.mouthVariant = [mouth]; }
   if (look.colour) options[`${info.colourOption}Color`] = [look.colour];
   if (o.tile === false) options.backgroundColor = [CLEAR];
+  // DiceBear's own "slow" animation (a gentle squash and a peek of the eyes), the way Streetlist's draw.ts asks for it. It is a separate file, never the still: the still is
+  // the picture for a phone that asks for less motion and for every place that cannot animate (a profile photo, a sticker, the owner's app).
+  if (o.animate) options.animationVariant = ["slow"];
   let svg = new Avatar(styleOf(look.style), options as never).toString().replace(/<metadata[\s>][\s\S]*?<\/metadata>/u, "");
   if (o.tile === false) {
     const before = svg;
@@ -119,13 +123,14 @@ const stickerSvg = (look: Look, face: Face): string => {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZES.sticker} ${SIZES.sticker}" width="${SIZES.sticker}" height="${SIZES.sticker}">${inner}</svg>`;
 };
 
-/** Every mood of a look, in the three formats: file name to bytes (character-files.ts pictureFiles names them). */
+/** Every mood of a look, in the three formats and animated (character-files.ts pictureFiles and animFiles name them): file name to bytes. */
 export async function renderSet(look: Look): Promise<Map<string, Buffer>> {
   const r = await loadRaster();
   const out = new Map<string, Buffer>();
   for (const face of FACES) {
     const svg = drawSvg(look, face);
     out.set(`${face}.svg`, Buffer.from(svg, "utf8"));
+    out.set(animFile(face), Buffer.from(drawSvg(look, face, { animate: true }), "utf8"));
     out.set(`${face}.png`, r.svgToPixels(svg, SIZES.png).png);
     const s = r.svgToPixels(stickerSvg(look, face), SIZES.sticker);
     const webp = r.webp(s.pixels, s.width, s.height);
@@ -145,7 +150,7 @@ export function setIsCurrent(dir: string, look: Look): boolean {
   let m: CharacterManifest | undefined;
   try { m = readCharacterManifest(readFileSync(join(dir, CHARACTER_MANIFEST), "utf8")); } catch { return false; }
   if (!m || m.fingerprint !== fingerprintOf(look)) return false;
-  return pictureFiles().every((name) => {
+  return [...pictureFiles(), ...animFiles()].every((name) => {
     try { return createHash("sha256").update(readFileSync(join(dir, name))).digest("hex") === m!.files[name].sha256; } catch { return false; }
   });
 }

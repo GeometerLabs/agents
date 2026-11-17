@@ -53,6 +53,8 @@ export const MAX_REQUEST_BYTES = 64 * 1024;
  * own limit for it (modules/channels/owner-audio.ts). Never for a builder's server: its owner view is redirected to its own domain before any body is read.
  */
 export const isOwnerVoice = (rest: string): boolean => /^\/(owner|o\/[^/]+)\/voice$/u.test(rest);
+/** W1 hold-to-talk: a chat guest's recording is a body of the same size (a shop on this server only: the door passes no chat to a builder's own server). */
+export const isChatVoice = (rest: string): boolean => rest === "/chat/voice";
 /** A page passed back: the booking page is tens of KB; a builder's server that sends more is cut off, not streamed for ever. */
 export const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 
@@ -390,7 +392,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     }
     let body: Buffer | undefined;
     if (method === "POST") {
-      const read = await readRequestBody(req, isLocal && isOwnerVoice(rest) ? MAX_VOICE_BYTES : MAX_REQUEST_BYTES);
+      const read = await readRequestBody(req, isLocal && (isOwnerVoice(rest) || isChatVoice(rest)) ? MAX_VOICE_BYTES : MAX_REQUEST_BYTES);
       if (read === "too_big") return own(res, 413, pageOf(res, "tooBig"));
       body = read;
     }

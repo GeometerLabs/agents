@@ -21,6 +21,13 @@ export const PICTURE_TYPES: Record<PictureFormat, string> = { svg: "image/svg+xm
 /** Every file a complete set holds: five moods in three formats. */
 export const pictureFiles = (): string[] => FACES.flatMap((f) => PICTURE_FORMATS.map((x) => `${f}.${x}`));
 
+/**
+ * The animated picture of a mood (17 Nov 2026): DiceBear's own "slow" animation as `<face>-anim.svg`, for the chat on the shop's page. It is kept apart from `pictureFiles` on
+ * purpose: those are what makes a set complete, and a set drawn before animation existed must still be read (its faces keep showing) until the deployer draws it again.
+ */
+export const animFile = (face: Face): string => `${face}-anim.svg`;
+export const animFiles = (): string[] => FACES.map(animFile);
+
 export interface CharacterManifest {
   schema: 1;
   /** The first 16 hex digits of `fingerprint`: the `?v=` of every link, so a new set is a new address and no cache shows an old face. */
@@ -50,13 +57,25 @@ export function readCharacterManifest(text: string | undefined): CharacterManife
     if (!isObj(f) || typeof f.bytes !== "number" || !Number.isSafeInteger(f.bytes) || f.bytes <= 0 || typeof f.sha256 !== "string" || !HEX(64).test(f.sha256)) return undefined;
     files[name] = { bytes: f.bytes, sha256: f.sha256 };
   }
+  // the animated pictures are optional: each one listed is checked the same way, and a set with none still reads
+  for (const name of animFiles()) {
+    const f = m.files[name];
+    if (f === undefined) continue;
+    if (!isObj(f) || typeof f.bytes !== "number" || !Number.isSafeInteger(f.bytes) || f.bytes <= 0 || typeof f.sha256 !== "string" || !HEX(64).test(f.sha256)) return undefined;
+    files[name] = { bytes: f.bytes, sha256: f.sha256 };
+  }
   const look = { style: m.look.style as CharacterStyle, seed: m.look.seed, ...(typeof m.look.colour === "string" ? { colour: m.look.colour } : {}) };
   return { schema: 1, version: m.version, fingerprint: m.fingerprint, look, renderer: Object.fromEntries(Object.entries(m.renderer).filter(([, v]) => typeof v === "string")) as Record<string, string>, files };
 }
 
 /** One picture, ready to serve. */
 export interface Picture { bytes: Buffer; sha256: string; type: string }
-export interface CharacterFiles { version: string; picture(face: Face, format: PictureFormat): Picture | undefined }
+export interface CharacterFiles {
+  version: string;
+  picture(face: Face, format: PictureFormat): Picture | undefined;
+  /** The mood's animated SVG (DiceBear's "slow" animation), when the set has it. */
+  animation?(face: Face): Picture | undefined;
+}
 
 /**
  * A reader over a shop's `character/` folder, asked on every request (the manifest is a few hundred bytes, a picture a few KB), so a new set is served as soon as
@@ -67,17 +86,18 @@ export const characterReader = (dir: string): (() => CharacterFiles | undefined)
   try { text = readFileSync(join(dir, CHARACTER_MANIFEST), "utf8"); } catch { return undefined; }
   const m = readCharacterManifest(text);
   if (!m) return undefined;
+  const read = (name: string, type: string): Picture | undefined => {
+    const want = m.files[name];
+    if (!want) return undefined;
+    let bytes: Buffer;
+    try { bytes = readFileSync(join(dir, name)); } catch { return undefined; }
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    return sha256 === want.sha256 ? { bytes, sha256, type } : undefined;
+  };
   return {
     version: m.version,
-    picture(face, format) {
-      const name = `${face}.${format}`;
-      const want = m.files[name];
-      if (!want) return undefined;
-      let bytes: Buffer;
-      try { bytes = readFileSync(join(dir, name)); } catch { return undefined; }
-      const sha256 = createHash("sha256").update(bytes).digest("hex");
-      return sha256 === want.sha256 ? { bytes, sha256, type: PICTURE_TYPES[format] } : undefined;
-    },
+    picture: (face, format) => read(`${face}.${format}`, PICTURE_TYPES[format]),
+    animation: (face) => read(animFile(face), PICTURE_TYPES.svg),
   };
 };
 

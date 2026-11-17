@@ -297,6 +297,24 @@ body.chat { display: flex; flex-direction: column; height: var(--vvh, 100dvh); o
 .alerts-slot .alerts { margin: 0; }
 .alerts-slot .card { margin: 6px 0; }
 @media (max-width: 340px) { .b { max-width: 90%; } .taps { margin-left: 0; } }
+/* ---- motion's places (17 Nov 2026): the head's picture, a moment the record marks, hold to talk ---- */
+.face-p { flex: none; display: block; line-height: 0; border-radius: 14px; }
+.moment { display: flex; align-items: center; gap: 10px; max-width: min(82%, 26rem); margin: 2px 0 0 38px; padding: 8px 12px 8px 8px; border-radius: 14px; background: var(--ok-bg); color: var(--ink); font-weight: 650; font-size: .95rem; line-height: 1.35; }
+.moment b { font-weight: 650; }
+.art { position: relative; flex: none; width: 44px; height: 44px; }
+.art > svg, .art .anim, .art .anim > svg { display: block; width: 100%; height: 100%; }
+.art .anim { position: absolute; inset: 0; }
+.art.playing > svg { visibility: hidden; }
+.hello-art { display: none; justify-content: center; height: 72px; margin: 0 0 4px; }
+.hello-art.on { display: flex; }
+.hello-art .art { width: 72px; height: 72px; }
+.rec { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; margin: 0; padding: 0; border: 1.5px solid var(--line2); border-radius: 50%; background: var(--card); color: var(--ink); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.rec svg { width: 24px; height: 24px; }
+.rec.on { background: var(--bad); border-color: var(--bad); color: #fff; }
+.rec-hint { display: flex; align-items: center; gap: 8px; margin: 0; padding: 4px 16px 0; color: var(--soft); font-size: .9rem; }
+.rec-hint svg { width: 18px; height: 18px; flex: none; }
+.rec-note { display: flex; align-items: center; gap: 8px; margin: 0; padding: 6px 16px; background: var(--bad-bg); color: var(--bad); font-weight: 650; font-size: .95rem; }
+.rec-note i { width: 10px; height: 10px; border-radius: 50%; background: var(--bad); flex: none; }
 `;
 
 /** The style sheets, shrunk once. Each page puts its own in a <style> (the pages' policy allows inline styles only). */
