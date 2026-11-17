@@ -1462,4 +1462,43 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.quick.fees.1` | क्लास का समय | Class timings |  |
 | `chat.quick.fees.2` | फ़ीस | Fees |  |
 | `chat.quick.fees.3` | टीचर से बात करें | Talk to the teacher |  |
+| `chat.id.keepHead` | यह चैट अपने फ़ोन पर रखें | Keep this chat on your phone |  |
+| `chat.id.keepBody` | यह चैट रखने के लिए अपनी उँगली या स्क्रीन लॉक का इस्तेमाल करें। कोई पासवर्ड नहीं। | Use your fingerprint or screen lock to keep this chat. No password. |  |
+| `chat.id.keepButton` | यह चैट रखें | Keep this chat |  |
+| `chat.id.keepDone` | हो गया। यह चैट इस फ़ोन पर रखी है। | Done. This chat is kept on this phone. |  |
+| `chat.id.keepNoLock` | इस फ़ोन में स्क्रीन लॉक नहीं है, इसलिए चैट रखी नहीं जा सकती। आप मेहमान की तरह चैट कर सकते हैं, और आपकी बुकिंग का लिंक चलता रहेगा। | This phone has no screen lock, so it cannot keep the chat. You can still chat as a guest, and your booking link keeps working. |  |
+| `chat.id.keepFailed` | यह नहीं हो पाया। आप फिर कोशिश कर सकते हैं, या मेहमान की तरह चलते रहें। | That did not work. You can try again, or carry on as a guest. |  |
+| `chat.id.beenBefore` | पहले आए हैं? | Been here before? |  |
+| `chat.id.openMine` | अपनी उँगली या स्क्रीन लॉक से मेरी चैट खोलें | Open my chat with my fingerprint or screen lock |  |
+| `chat.id.otherPhoneLine` | नए फ़ोन पर पूछे तो "दूसरा फ़ोन" चुनें, और अपना पुराना फ़ोन इसके पास रखें। | On a new phone, choose "another phone" when it asks, and hold your old phone next to this one. |  |
+| `chat.id.otherShop` | वह दूसरी दुकान का है। इस दुकान वाला चुनें, या "मेरा नया फ़ोन है" दबाएँ। | That one is for another shop. Pick the one for this shop, or tap I have a new phone. |  |
+| `chat.id.openFailed` | आपकी चैट खुल नहीं पाई। फिर कोशिश करें, या "मेरा नया फ़ोन है" दबाएँ। | We could not open your chat. Try again, or tap I have a new phone. |  |
+| `chat.id.openDone` | आपकी चैट इस फ़ोन पर खुल गई है। | Your chat is open on this phone. |  |
+| `chat.id.newPhone` | मेरा नया फ़ोन है | I have a new phone |  |
+| `chat.id.newPhoneBody` | जो WhatsApp नंबर आपने हमें दिया था, वह लिखें। हम वहाँ एक लिंक भेजेंगे। | Type the WhatsApp number you gave us. We will send a link there. |  |
+| `chat.id.numberLabel` | WhatsApp नंबर | WhatsApp number |  |
+| `chat.id.sendLink` | मुझे लिंक भेजें | Send me a link |  |
+| `chat.id.linkSent` | अगर हमारे पास वह नंबर है तो लिंक भेजा जा रहा है। यह एक बार, 15 मिनट तक चलेगा। | If we have that number, a link is on its way. It works once, for 15 minutes. |  |
+| `chat.id.wait` | दोबारा माँगने से पहले थोड़ा रुकिए। | Please wait a little before asking again. |  |
+| `chat.id.badNumber` | यह फ़ोन नंबर जैसा नहीं लग रहा। | That does not look like a phone number. |  |
+| `chat.id.numberAsk` | नया फ़ोन लें तो हम आपके WhatsApp पर लिंक भेज सकते हैं। अपना नंबर जोड़ें (छोड़ भी सकते हैं)। | If you get a new phone, we can send a link to your WhatsApp. Add your number (you can skip this). |  |
+| `chat.id.numberSave` | मेरा नंबर रखें | Save my number |  |
+| `chat.id.numberSaved` | रख लिया। नए फ़ोन पर "मेरा नया फ़ोन है" दबाएँ। | Saved. On a new phone, tap I have a new phone. |  |
+| `chat.id.backHead` | फिर से स्वागत है | Welcome back |  |
+| `chat.id.backBody` | अपनी चैट इस फ़ोन पर खोलें? | Open your chat on this phone? |  |
+| `chat.id.backButton` | मेरी चैट यहाँ खोलें | Open my chat here |  |
+| `chat.id.backUsed` | यह लिंक पहले इस्तेमाल हो चुका है। चैट पेज से नया माँगिए। | This link was used already. Ask for a new one from the chat page. |  |
+| `chat.id.backExpired` | यह लिंक चल नहीं रहा। चैट पेज से नया माँगिए। | This link has run out. Ask for a new one from the chat page. |  |
+| `chat.id.backDone` | आपकी चैट इस फ़ोन पर खुल गई है। | Your chat is open on this phone. |  |
+| `chat.id.sendMyLinks` | मुझे मेरी बुकिंग का लिंक भेजें | Send me my booking link |  |
+| `chat.id.myLinksSent` | आपके WhatsApp पर भेज दिया। | Sent to your WhatsApp. |  |
+| `chat.id.myLinksNone` | अभी भेजने के लिए कोई लिंक नहीं है। | There is no link to send yet. |  |
+| `chat.id.deleteButton` | मेरी चैट हटाएँ | Delete my chat |  |
+| `chat.id.deleteAsk` | यह चैट हटाएँ? यहाँ के आपके संदेश और इस फ़ोन का लॉक हट जाएँगे। बुकिंग या भुगतान के लिए कानून जो माँगता है, दुकान वह रखती है। | Delete this chat? Your messages here and this phone's lock are removed. The shop keeps what the law needs for a booking or a payment. |  |
+| `chat.id.deleteYes` | हाँ, हटाएँ | Yes, delete |  |
+| `chat.id.deleteNo` | नहीं, रहने दें | No, keep it |  |
+| `chat.id.deleteDone` | हट गई। यह चैट अब इस दुकान के पास नहीं है। | Deleted. This chat is gone from this shop. |  |
+| `chat.id.parentNote` | यह चैट सिर्फ़ आपके लिए है। यह आपके निजी फ़ीस पेज से खुलती है और आपकी अपनी फ़ीस की बात करती है। भुगतान के लिए अपने फ़ीस पेज पर लौटें। | This chat is only for you. It opens from your private fee page, and it talks about your own fees. To pay, go back to your fee page. |  |
+| `chat.id.parentBack` | मेरी फ़ीस पर लौटें | Back to my fees |  |
+| `chat.id.parentAsk` | इस फ़ीस के बारे में पूछें | Ask about this fee |  |
 
