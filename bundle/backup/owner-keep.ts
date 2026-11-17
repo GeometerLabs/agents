@@ -8,6 +8,10 @@
 //                         would offer a different passkey for the shop).
 //   push.sqlite:          subs (each subscription's push address and its two keys: together a SECRET, whoever holds them can encrypt to that phone), the shop's VAPID keys
 //                         (a subscription only accepts pushes signed by the key it was made with, so the keys must come back with it) and the owner's choice (meta owner_choice).
+//   chat-identity.sqlite: (W2, 17 Nov 2026) the customers' keys for the chat (public keys and counters), each thread's own WebAuthn user id, the number a guest gave for a new phone,
+//                         which phones hold a key and which phones are tied to which thread, so a restored shop does not turn every returning customer back into a stranger.
+//                         Not kept: one-time links, challenges and counters (short-lived). The export ("leave with your shop") carries the record, not this file, as it carries
+//                         neither owner-access.sqlite nor push.sqlite; and removing a shop removes its whole data volume, this file with it.
 // Not kept: sessions (a restore signs the browser in again with the passkey, one tap), one-time links, challenges, counters and the waiting alerts. They are short-lived
 // and a restore is a good moment for them to start fresh.
 // The file is encrypted to the owner's key like the rest of the snapshot (snapshot.ts). Passkey public keys are not secrets, but the file is handled as the record is, as
@@ -22,6 +26,7 @@ import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { OWNER_ACCESS_FILE, openOwnerAccess } from "../../modules/channels/owner-access.ts";
 import { PUSH_FILE, openPushStore } from "../../modules/push/store.ts";
+import { CHAT_IDENTITY_FILE, openChatIdentity } from "../../modules/channels/chat-identity.ts";
 
 /** The object in the snapshot, and the file it opens to. */
 export const OWNER_KEEP_OBJECT = "runtime/owner-keep.json.gz.age";
@@ -32,7 +37,10 @@ export interface OwnerKeep {
   schema: 1;
   ownerAccess: { meta: Row[]; passkeys: Row[]; grantsUsed: Row[] };
   push: { meta: Row[]; subs: Row[] };
+  /** W2: the customers' chat keys and ties. Left out of a snapshot made before it, and when the shop has none. */
+  chatIdentity?: { creds: Row[]; users: Row[]; contact: Row[]; phones: Row[]; alias: Row[] };
 }
+const CHAT_TABLES = ["creds", "users", "contact", "phones", "alias"] as const;
 
 /** The meta names each side keeps (anything else in meta, like the sign-out marker, is not carried). */
 const ACCESS_META = ["webauthn_user"];
@@ -49,12 +57,15 @@ const metaOf = (file: string, names: string[]): Row[] => rows(file, `SELECT name
 /** What the owner would lose, read from the shop's data folder. Null when there is nothing (no passkey, no subscription): then nothing goes in the snapshot. */
 export function readOwnerKeep(dataDir: string): OwnerKeep | null {
   const access = join(dataDir, OWNER_ACCESS_FILE); const push = join(dataDir, PUSH_FILE);
+  const chat = join(dataDir, CHAT_IDENTITY_FILE);
+  const chatIdentity = { creds: rows(chat, "SELECT * FROM creds ORDER BY made_at"), users: rows(chat, "SELECT * FROM users"), contact: rows(chat, "SELECT * FROM contact"), phones: rows(chat, "SELECT * FROM phones"), alias: rows(chat, "SELECT * FROM alias") };
   const keep: OwnerKeep = {
     schema: 1,
     ownerAccess: { meta: metaOf(access, ACCESS_META), passkeys: rows(access, "SELECT * FROM passkeys ORDER BY made_at"), grantsUsed: rows(access, "SELECT * FROM grants_used ORDER BY used_at") },
     push: { meta: metaOf(push, PUSH_META), subs: rows(push, "SELECT * FROM subs WHERE dead_at IS NULL ORDER BY made_at") },
   };
-  return keep.ownerAccess.passkeys.length === 0 && keep.push.subs.length === 0 ? null : keep;
+  if (chatIdentity.creds.length > 0 || chatIdentity.contact.length > 0) keep.chatIdentity = chatIdentity;
+  return keep.ownerAccess.passkeys.length === 0 && keep.push.subs.length === 0 && !keep.chatIdentity ? null : keep;
 }
 
 /** Why a file is not an owner-keep file, or null. A restore checks this before anything is stopped. */
@@ -62,6 +73,7 @@ export function ownerKeepProblem(v: unknown): string | null {
   const k = v as Partial<OwnerKeep> | null;
   if (!k || typeof k !== "object" || k.schema !== 1 || !k.ownerAccess || !k.push) return "not an owner-keep file (schema 1)";
   for (const a of [k.ownerAccess.meta, k.ownerAccess.passkeys, k.ownerAccess.grantsUsed, k.push.meta, k.push.subs]) if (!Array.isArray(a)) return "a table of it is not a list";
+  if (k.chatIdentity !== undefined) for (const t of CHAT_TABLES) if (!Array.isArray(k.chatIdentity[t])) return `the chat identity's ${t} is not a list`;
   return null;
 }
 
@@ -78,7 +90,7 @@ function putRows(db: DatabaseSync, table: string, list: Row[]): number {
   return n;
 }
 
-export interface Put { passkeys: number; subscriptions: number }
+export interface Put { passkeys: number; subscriptions: number; chatKeys?: number }
 
 /** Put the snapshot's passkeys and subscriptions into the shop's data folder, with the runtime stopped. The stores' own open functions make the tables if the files are new. */
 export function putOwnerKeep(dataDir: string, keep: OwnerKeep): Put {
@@ -108,6 +120,15 @@ export function putOwnerKeep(dataDir: string, keep: OwnerKeep): Put {
     result.subscriptions = putRows(push, "subs", keep.push.subs);
     push.exec("COMMIT");
   } finally { push.close(); }
+  if (keep.chatIdentity) {
+    openChatIdentity(join(dataDir, CHAT_IDENTITY_FILE)).close();
+    const chat = new DatabaseSync(join(dataDir, CHAT_IDENTITY_FILE));
+    try {
+      chat.exec("BEGIN IMMEDIATE");
+      for (const t of CHAT_TABLES) { const n = putRows(chat, t, keep.chatIdentity[t]); if (t === "creds") result.chatKeys = n; } // a row the live file has is left as it is
+      chat.exec("COMMIT");
+    } finally { chat.close(); }
+  }
   return result;
 }
 
