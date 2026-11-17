@@ -115,9 +115,9 @@ export const CHAT_LINK_TEMPLATES: readonly ChatLinkTemplate[] = [
     name: "chat_my_link", usedFor: "A customer who gave this number asked the chat to send their booking or order link again",
     bodies: {
       en: "Your link from {shop}: {link} If you did not ask for it, ignore this message.",
-      hi: "{shop} से आपका लिंक: {link} अगर आपने यह नहीं माँगा, तो इस संदेश को छोड़ दीजिए।",
-      ml: "{shop}-ൽ നിന്നുള്ള നിങ്ങളുടെ ലിങ്ക്: {link} നിങ്ങൾ ചോദിച്ചതല്ലെങ്കിൽ ഈ സന്ദേശം അവഗണിക്കൂ.",
-      kn: "{shop} ಇಂದ ನಿಮ್ಮ ಲಿಂಕ್: {link} ನೀವು ಕೇಳದಿದ್ದರೆ ಈ ಸಂದೇಶವನ್ನು ಬಿಟ್ಟುಬಿಡಿ.",
+      hi: "आपका लिंक, {shop} से: {link} अगर आपने यह नहीं माँगा, तो इस संदेश को छोड़ दीजिए।",
+      ml: "നിങ്ങളുടെ ലിങ്ക്, {shop}-ൽ നിന്ന്: {link} നിങ്ങൾ ചോദിച്ചതല്ലെങ്കിൽ ഈ സന്ദേശം അവഗണിക്കൂ.",
+      kn: "ನಿಮ್ಮ ಲಿಂಕ್, {shop} ಇಂದ: {link} ನೀವು ಕೇಳದಿದ್ದರೆ ಈ ಸಂದೇಶವನ್ನು ಬಿಟ್ಟುಬಿಡಿ.",
     },
   },
 ];
