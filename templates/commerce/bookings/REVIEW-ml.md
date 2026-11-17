@@ -1509,4 +1509,43 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.quick.fees.1` | ക്ലാസ് സമയം | Class timings |  |
 | `chat.quick.fees.2` | ഫീസ് | Fees |  |
 | `chat.quick.fees.3` | ടീച്ചറോട് സംസാരിക്കൂ | Talk to the teacher |  |
+| `chat.id.keepHead` | ഈ ചാറ്റ് നിങ്ങളുടെ ഫോണിൽ സൂക്ഷിക്കൂ | Keep this chat on your phone |  |
+| `chat.id.keepBody` | ഈ ചാറ്റ് സൂക്ഷിക്കാൻ നിങ്ങളുടെ വിരലടയാളമോ സ്ക്രീൻ ലോക്കോ ഉപയോഗിക്കൂ. പാസ്‌വേഡ് വേണ്ട. | Use your fingerprint or screen lock to keep this chat. No password. |  |
+| `chat.id.keepButton` | ഈ ചാറ്റ് സൂക്ഷിക്കൂ | Keep this chat |  |
+| `chat.id.keepDone` | കഴിഞ്ഞു. ഈ ചാറ്റ് ഈ ഫോണിൽ സൂക്ഷിച്ചിട്ടുണ്ട്. | Done. This chat is kept on this phone. |  |
+| `chat.id.keepNoLock` | ഈ ഫോണിൽ സ്ക്രീൻ ലോക്ക് ഇല്ല, അതുകൊണ്ട് ചാറ്റ് സൂക്ഷിക്കാൻ കഴിയില്ല. അതിഥിയായി ചാറ്റ് തുടരാം, നിങ്ങളുടെ ബുക്കിംഗ് ലിങ്ക് പ്രവർത്തിക്കുകയും ചെയ്യും. | This phone has no screen lock, so it cannot keep the chat. You can still chat as a guest, and your booking link keeps working. |  |
+| `chat.id.keepFailed` | അത് നടന്നില്ല. വീണ്ടും ശ്രമിക്കാം, അല്ലെങ്കിൽ അതിഥിയായി തുടരാം. | That did not work. You can try again, or carry on as a guest. |  |
+| `chat.id.beenBefore` | മുമ്പ് വന്നിട്ടുണ്ടോ? | Been here before? |  |
+| `chat.id.openMine` | വിരലടയാളം അല്ലെങ്കിൽ സ്ക്രീൻ ലോക്ക് ഉപയോഗിച്ച് എന്റെ ചാറ്റ് തുറക്കൂ | Open my chat with my fingerprint or screen lock |  |
+| `chat.id.otherPhoneLine` | പുതിയ ഫോണിൽ ചോദിക്കുമ്പോൾ "മറ്റൊരു ഫോൺ" തിരഞ്ഞെടുക്കൂ, പഴയ ഫോൺ ഇതിനടുത്ത് പിടിക്കൂ. | On a new phone, choose "another phone" when it asks, and hold your old phone next to this one. |  |
+| `chat.id.otherShop` | അത് മറ്റൊരു കടയുടേതാണ്. ഈ കടയുടേത് തിരഞ്ഞെടുക്കൂ, അല്ലെങ്കിൽ "എനിക്ക് പുതിയ ഫോൺ ഉണ്ട്" തൊടൂ. | That one is for another shop. Pick the one for this shop, or tap I have a new phone. |  |
+| `chat.id.openFailed` | നിങ്ങളുടെ ചാറ്റ് തുറക്കാനായില്ല. വീണ്ടും ശ്രമിക്കൂ, അല്ലെങ്കിൽ "എനിക്ക് പുതിയ ഫോൺ ഉണ്ട്" തൊടൂ. | We could not open your chat. Try again, or tap I have a new phone. |  |
+| `chat.id.openDone` | നിങ്ങളുടെ ചാറ്റ് ഈ ഫോണിൽ തുറന്നിരിക്കുന്നു. | Your chat is open on this phone. |  |
+| `chat.id.newPhone` | എനിക്ക് പുതിയ ഫോൺ ഉണ്ട് | I have a new phone |  |
+| `chat.id.newPhoneBody` | നിങ്ങൾ ഞങ്ങൾക്ക് തന്ന WhatsApp നമ്പർ എഴുതൂ. അവിടേക്ക് ഒരു ലിങ്ക് അയയ്ക്കാം. | Type the WhatsApp number you gave us. We will send a link there. |  |
+| `chat.id.numberLabel` | WhatsApp നമ്പർ | WhatsApp number |  |
+| `chat.id.sendLink` | എനിക്ക് ലിങ്ക് അയയ്ക്കൂ | Send me a link |  |
+| `chat.id.linkSent` | ആ നമ്പർ ഞങ്ങളുടെ പക്കലുണ്ടെങ്കിൽ ഒരു ലിങ്ക് അയയ്ക്കുന്നുണ്ട്. ഇത് ഒരിക്കൽ മാത്രം, 15 മിനിറ്റ് പ്രവർത്തിക്കും. | If we have that number, a link is on its way. It works once, for 15 minutes. |  |
+| `chat.id.wait` | വീണ്ടും ചോദിക്കുന്നതിനു മുമ്പ് അൽപം കാത്തിരിക്കൂ. | Please wait a little before asking again. |  |
+| `chat.id.badNumber` | ഇത് ഫോൺ നമ്പർ പോലെ തോന്നുന്നില്ല. | That does not look like a phone number. |  |
+| `chat.id.numberAsk` | പുതിയ ഫോൺ വാങ്ങിയാൽ നിങ്ങളുടെ WhatsApp-ലേക്ക് ഒരു ലിങ്ക് അയയ്ക്കാം. നിങ്ങളുടെ നമ്പർ ചേർക്കൂ (വേണമെങ്കിൽ ഒഴിവാക്കാം). | If you get a new phone, we can send a link to your WhatsApp. Add your number (you can skip this). |  |
+| `chat.id.numberSave` | എന്റെ നമ്പർ സൂക്ഷിക്കൂ | Save my number |  |
+| `chat.id.numberSaved` | സൂക്ഷിച്ചു. പുതിയ ഫോണിൽ "എനിക്ക് പുതിയ ഫോൺ ഉണ്ട്" തൊടൂ. | Saved. On a new phone, tap I have a new phone. |  |
+| `chat.id.backHead` | വീണ്ടും സ്വാഗതം | Welcome back |  |
+| `chat.id.backBody` | നിങ്ങളുടെ ചാറ്റ് ഈ ഫോണിൽ തുറക്കട്ടെ? | Open your chat on this phone? |  |
+| `chat.id.backButton` | എന്റെ ചാറ്റ് ഇവിടെ തുറക്കൂ | Open my chat here |  |
+| `chat.id.backUsed` | ഈ ലിങ്ക് മുമ്പേ ഉപയോഗിച്ചു. ചാറ്റ് പേജിൽ നിന്ന് പുതിയത് ചോദിക്കൂ. | This link was used already. Ask for a new one from the chat page. |  |
+| `chat.id.backExpired` | ഈ ലിങ്കിന്റെ സമയം കഴിഞ്ഞു. ചാറ്റ് പേജിൽ നിന്ന് പുതിയത് ചോദിക്കൂ. | This link has run out. Ask for a new one from the chat page. |  |
+| `chat.id.backDone` | നിങ്ങളുടെ ചാറ്റ് ഈ ഫോണിൽ തുറന്നിരിക്കുന്നു. | Your chat is open on this phone. |  |
+| `chat.id.sendMyLinks` | എന്റെ ബുക്കിംഗ് ലിങ്ക് അയയ്ക്കൂ | Send me my booking link |  |
+| `chat.id.myLinksSent` | നിങ്ങളുടെ WhatsApp-ലേക്ക് അയച്ചു. | Sent to your WhatsApp. |  |
+| `chat.id.myLinksNone` | അയയ്ക്കാൻ ഇതുവരെ ലിങ്ക് ഒന്നുമില്ല. | There is no link to send yet. |  |
+| `chat.id.deleteButton` | എന്റെ ചാറ്റ് ഇല്ലാതാക്കൂ | Delete my chat |  |
+| `chat.id.deleteAsk` | ഈ ചാറ്റ് ഇല്ലാതാക്കട്ടെ? ഇവിടത്തെ നിങ്ങളുടെ സന്ദേശങ്ങളും ഈ ഫോണിന്റെ ലോക്കും നീക്കും. ബുക്കിംഗിനോ പണമടയ്ക്കലിനോ നിയമം ആവശ്യപ്പെടുന്നത് കട സൂക്ഷിക്കും. | Delete this chat? Your messages here and this phone's lock are removed. The shop keeps what the law needs for a booking or a payment. |  |
+| `chat.id.deleteYes` | അതെ, ഇല്ലാതാക്കൂ | Yes, delete |  |
+| `chat.id.deleteNo` | വേണ്ട, ഇരിക്കട്ടെ | No, keep it |  |
+| `chat.id.deleteDone` | ഇല്ലാതാക്കി. ഈ ചാറ്റ് ഇനി ഈ കടയുടെ പക്കലില്ല. | Deleted. This chat is gone from this shop. |  |
+| `chat.id.parentNote` | ഈ ചാറ്റ് നിങ്ങൾക്ക് മാത്രമുള്ളതാണ്. ഇത് നിങ്ങളുടെ സ്വകാര്യ ഫീസ് പേജിൽ നിന്ന് തുറക്കുന്നു, നിങ്ങളുടെ സ്വന്തം ഫീസിനെക്കുറിച്ച് സംസാരിക്കുന്നു. അടയ്ക്കാൻ നിങ്ങളുടെ ഫീസ് പേജിലേക്ക് മടങ്ങൂ. | This chat is only for you. It opens from your private fee page, and it talks about your own fees. To pay, go back to your fee page. |  |
+| `chat.id.parentBack` | എന്റെ ഫീസിലേക്ക് മടങ്ങൂ | Back to my fees |  |
+| `chat.id.parentAsk` | ഈ ഫീസിനെക്കുറിച്ച് ചോദിക്കൂ | Ask about this fee |  |
 

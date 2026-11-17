@@ -1509,4 +1509,43 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.quick.fees.1` | ತರಗತಿಯ ಸಮಯ | Class timings |  |
 | `chat.quick.fees.2` | ಶುಲ್ಕ | Fees |  |
 | `chat.quick.fees.3` | ಶಿಕ್ಷಕರೊಂದಿಗೆ ಮಾತನಾಡಿ | Talk to the teacher |  |
+| `chat.id.keepHead` | ಈ ಚಾಟ್ ಅನ್ನು ನಿಮ್ಮ ಫೋನಿನಲ್ಲಿ ಇಟ್ಟುಕೊಳ್ಳಿ | Keep this chat on your phone |  |
+| `chat.id.keepBody` | ಈ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳಲು ನಿಮ್ಮ ಬೆರಳಚ್ಚು ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್ ಬಳಸಿ. ಪಾಸ್‌ವರ್ಡ್ ಬೇಡ. | Use your fingerprint or screen lock to keep this chat. No password. |  |
+| `chat.id.keepButton` | ಈ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳಿ | Keep this chat |  |
+| `chat.id.keepDone` | ಆಯಿತು. ಈ ಚಾಟ್ ಈ ಫೋನಿನಲ್ಲಿ ಇದೆ. | Done. This chat is kept on this phone. |  |
+| `chat.id.keepNoLock` | ಈ ಫೋನಿಗೆ ಸ್ಕ್ರೀನ್ ಲಾಕ್ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳಲು ಆಗುವುದಿಲ್ಲ. ಅತಿಥಿಯಾಗಿ ಚಾಟ್ ಮುಂದುವರಿಸಬಹುದು, ನಿಮ್ಮ ಬುಕಿಂಗ್ ಲಿಂಕ್ ಕೆಲಸ ಮಾಡುತ್ತಲೇ ಇರುತ್ತದೆ. | This phone has no screen lock, so it cannot keep the chat. You can still chat as a guest, and your booking link keeps working. |  |
+| `chat.id.keepFailed` | ಅದು ಆಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಬಹುದು, ಅಥವಾ ಅತಿಥಿಯಾಗಿ ಮುಂದುವರಿಸಬಹುದು. | That did not work. You can try again, or carry on as a guest. |  |
+| `chat.id.beenBefore` | ಮೊದಲು ಬಂದಿದ್ದೀರಾ? | Been here before? |  |
+| `chat.id.openMine` | ಬೆರಳಚ್ಚು ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್‌ನಿಂದ ನನ್ನ ಚಾಟ್ ತೆರೆಯಿರಿ | Open my chat with my fingerprint or screen lock |  |
+| `chat.id.otherPhoneLine` | ಹೊಸ ಫೋನಿನಲ್ಲಿ ಕೇಳಿದಾಗ "ಇನ್ನೊಂದು ಫೋನ್" ಆರಿಸಿ, ಹಳೆಯ ಫೋನನ್ನು ಇದರ ಪಕ್ಕದಲ್ಲಿ ಹಿಡಿಯಿರಿ. | On a new phone, choose "another phone" when it asks, and hold your old phone next to this one. |  |
+| `chat.id.otherShop` | ಅದು ಬೇರೆ ಅಂಗಡಿಯದು. ಈ ಅಂಗಡಿಯದನ್ನು ಆರಿಸಿ, ಅಥವಾ "ನನಗೆ ಹೊಸ ಫೋನ್ ಇದೆ" ಒತ್ತಿ. | That one is for another shop. Pick the one for this shop, or tap I have a new phone. |  |
+| `chat.id.openFailed` | ನಿಮ್ಮ ಚಾಟ್ ತೆರೆಯಲು ಆಗಲಿಲ್ಲ. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ, ಅಥವಾ "ನನಗೆ ಹೊಸ ಫೋನ್ ಇದೆ" ಒತ್ತಿ. | We could not open your chat. Try again, or tap I have a new phone. |  |
+| `chat.id.openDone` | ನಿಮ್ಮ ಚಾಟ್ ಈ ಫೋನಿನಲ್ಲಿ ತೆರೆದಿದೆ. | Your chat is open on this phone. |  |
+| `chat.id.newPhone` | ನನಗೆ ಹೊಸ ಫೋನ್ ಇದೆ | I have a new phone |  |
+| `chat.id.newPhoneBody` | ನೀವು ನಮಗೆ ಕೊಟ್ಟ WhatsApp ನಂಬರ್ ಬರೆಯಿರಿ. ಅಲ್ಲಿಗೆ ಒಂದು ಲಿಂಕ್ ಕಳುಹಿಸುತ್ತೇವೆ. | Type the WhatsApp number you gave us. We will send a link there. |  |
+| `chat.id.numberLabel` | WhatsApp ನಂಬರ್ | WhatsApp number |  |
+| `chat.id.sendLink` | ನನಗೆ ಲಿಂಕ್ ಕಳುಹಿಸಿ | Send me a link |  |
+| `chat.id.linkSent` | ಆ ನಂಬರ್ ನಮ್ಮ ಬಳಿ ಇದ್ದರೆ ಲಿಂಕ್ ಹೋಗುತ್ತಿದೆ. ಇದು ಒಮ್ಮೆ ಮಾತ್ರ, 15 ನಿಮಿಷ ಕೆಲಸ ಮಾಡುತ್ತದೆ. | If we have that number, a link is on its way. It works once, for 15 minutes. |  |
+| `chat.id.wait` | ಮತ್ತೆ ಕೇಳುವ ಮೊದಲು ಸ್ವಲ್ಪ ಕಾಯಿರಿ. | Please wait a little before asking again. |  |
+| `chat.id.badNumber` | ಇದು ಫೋನ್ ನಂಬರ್‌ನಂತೆ ಕಾಣುತ್ತಿಲ್ಲ. | That does not look like a phone number. |  |
+| `chat.id.numberAsk` | ಹೊಸ ಫೋನ್ ಬಂದರೆ ನಿಮ್ಮ WhatsApp ಗೆ ಲಿಂಕ್ ಕಳುಹಿಸಬಹುದು. ನಿಮ್ಮ ನಂಬರ್ ಸೇರಿಸಿ (ಬೇಡವಾದರೆ ಬಿಡಬಹುದು). | If you get a new phone, we can send a link to your WhatsApp. Add your number (you can skip this). |  |
+| `chat.id.numberSave` | ನನ್ನ ನಂಬರ್ ಇಟ್ಟುಕೊಳ್ಳಿ | Save my number |  |
+| `chat.id.numberSaved` | ಇಟ್ಟುಕೊಂಡಿದ್ದೇವೆ. ಹೊಸ ಫೋನಿನಲ್ಲಿ "ನನಗೆ ಹೊಸ ಫೋನ್ ಇದೆ" ಒತ್ತಿ. | Saved. On a new phone, tap I have a new phone. |  |
+| `chat.id.backHead` | ಮತ್ತೆ ಸ್ವಾಗತ | Welcome back |  |
+| `chat.id.backBody` | ನಿಮ್ಮ ಚಾಟ್ ಅನ್ನು ಈ ಫೋನಿನಲ್ಲಿ ತೆರೆಯಲೇ? | Open your chat on this phone? |  |
+| `chat.id.backButton` | ನನ್ನ ಚಾಟ್ ಇಲ್ಲಿ ತೆರೆಯಿರಿ | Open my chat here |  |
+| `chat.id.backUsed` | ಈ ಲಿಂಕ್ ಈಗಾಗಲೇ ಬಳಸಲಾಗಿದೆ. ಚಾಟ್ ಪುಟದಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ. | This link was used already. Ask for a new one from the chat page. |  |
+| `chat.id.backExpired` | ಈ ಲಿಂಕ್‌ನ ಸಮಯ ಮುಗಿದಿದೆ. ಚಾಟ್ ಪುಟದಿಂದ ಹೊಸದನ್ನು ಕೇಳಿ. | This link has run out. Ask for a new one from the chat page. |  |
+| `chat.id.backDone` | ನಿಮ್ಮ ಚಾಟ್ ಈ ಫೋನಿನಲ್ಲಿ ತೆರೆದಿದೆ. | Your chat is open on this phone. |  |
+| `chat.id.sendMyLinks` | ನನ್ನ ಬುಕಿಂಗ್ ಲಿಂಕ್ ಕಳುಹಿಸಿ | Send me my booking link |  |
+| `chat.id.myLinksSent` | ನಿಮ್ಮ WhatsApp ಗೆ ಕಳುಹಿಸಿದ್ದೇವೆ. | Sent to your WhatsApp. |  |
+| `chat.id.myLinksNone` | ಕಳುಹಿಸಲು ಇನ್ನೂ ಲಿಂಕ್ ಇಲ್ಲ. | There is no link to send yet. |  |
+| `chat.id.deleteButton` | ನನ್ನ ಚಾಟ್ ಅಳಿಸಿ | Delete my chat |  |
+| `chat.id.deleteAsk` | ಈ ಚಾಟ್ ಅಳಿಸಲೇ? ಇಲ್ಲಿನ ನಿಮ್ಮ ಸಂದೇಶಗಳು ಮತ್ತು ಈ ಫೋನಿನ ಲಾಕ್ ತೆಗೆಯುತ್ತೇವೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿಗೆ ಕಾನೂನು ಕೇಳುವುದನ್ನು ಅಂಗಡಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. | Delete this chat? Your messages here and this phone's lock are removed. The shop keeps what the law needs for a booking or a payment. |  |
+| `chat.id.deleteYes` | ಹೌದು, ಅಳಿಸಿ | Yes, delete |  |
+| `chat.id.deleteNo` | ಬೇಡ, ಇರಲಿ | No, keep it |  |
+| `chat.id.deleteDone` | ಅಳಿಸಲಾಗಿದೆ. ಈ ಚಾಟ್ ಇನ್ನು ಈ ಅಂಗಡಿಯ ಬಳಿ ಇಲ್ಲ. | Deleted. This chat is gone from this shop. |  |
+| `chat.id.parentNote` | ಈ ಚಾಟ್ ನಿಮಗೆ ಮಾತ್ರ. ಇದು ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟದಿಂದ ತೆರೆಯುತ್ತದೆ ಮತ್ತು ನಿಮ್ಮ ಸ್ವಂತ ಶುಲ್ಕದ ಬಗ್ಗೆ ಮಾತನಾಡುತ್ತದೆ. ಪಾವತಿಸಲು ನಿಮ್ಮ ಶುಲ್ಕ ಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ. | This chat is only for you. It opens from your private fee page, and it talks about your own fees. To pay, go back to your fee page. |  |
+| `chat.id.parentBack` | ನನ್ನ ಶುಲ್ಕಕ್ಕೆ ಹಿಂತಿರುಗಿ | Back to my fees |  |
+| `chat.id.parentAsk` | ಈ ಶುಲ್ಕದ ಬಗ್ಗೆ ಕೇಳಿ | Ask about this fee |  |
 
