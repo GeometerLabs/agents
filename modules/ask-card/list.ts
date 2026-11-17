@@ -481,7 +481,7 @@ const FEES: ListItem[] = [
   },
 ];
 
-// ---- Stock orders: what its own settings ask (templates/commerce/stock-orders/src/settings.ts). It takes no payment, so the UPI line of the first block is left out. ----
+// ---- Stock orders: what its own settings ask (templates/commerce/stock-orders/src/settings.ts). It takes no payment, so the UPI and Razorpay lines of the first block are left out. ----
 
 const STOCK: ListItem[] = [
   {
@@ -538,12 +538,16 @@ const STOCK: ListItem[] = [
   },
 ];
 
-/** The whole list: every shop's items first, then the template's own. Stock orders takes no payment, so it leaves out the UPI line. */
+/**
+ * The whole list: every shop's items first, then the template's own. Stock orders takes no payment from anyone (the owner pays suppliers outside the chat, and its
+ * runtime has no payment service), so it leaves out the two payment lines: the shop's UPI ID (customers pay it) and its own Razorpay account.
+ */
+const NO_PAYMENT_LINES = new Set(["upi", "razorpay"]);
 export const LIST: Record<CardTemplate, ListItem[]> = {
   bookings: [...ALWAYS, ...BOOKINGS],
   orders: [...ALWAYS, ...ORDERS],
   fees: [...ALWAYS, ...FEES],
-  "stock-orders": [...ALWAYS.filter((i) => i.id !== "upi"), ...STOCK],
+  "stock-orders": [...ALWAYS.filter((i) => !NO_PAYMENT_LINES.has(i.id)), ...STOCK],
 };
 
 // ---- the words around the list --------------------------------------------------------------------------------------------

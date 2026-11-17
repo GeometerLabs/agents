@@ -44,10 +44,21 @@ test("a translated item is really translated, not the English copied", () => {
   for (const t of CARD_TEMPLATES) for (const item of LIST[t]) for (const l of TRANSLATED) assert.notEqual(item.what[l], item.what.en, `${t}.${item.id}.what.${l} is the English`);
 });
 
+/**
+ * The one explicit exception to "every card asks for everything": Stock orders takes no money from anyone. The shop's UPI ID is where CUSTOMERS pay the shop, and Stock orders has
+ * no customers (its public pages answer 404) and no payment service in its runtime (the owner pays suppliers outside the chat), so asking for a UPI ID, or a Razorpay account,
+ * would send the Operator after something the agent never uses. Nothing else is exempt.
+ */
+const NO_PAYMENT_CARDS = new Set<string>(["stock-orders"]);
+const PAYMENT_LINES = ["upi", "razorpay"];
+
 test("every card has the always-asked items: UPI ID, shop number, owner's phone, the WhatsApp (Facebook) login, the public name and the verification line", () => {
   for (const t of CARD_TEMPLATES) {
     const ids = askCardFor(t, "en").items.map((i) => i.id);
-    for (const id of ["upi", "shop-whatsapp", "owner-phone", "meta-login", "public-name", "verification"]) assert.ok(ids.includes(id), `${t}: ${id} is on the card`);
+    for (const id of ["upi", "shop-whatsapp", "owner-phone", "meta-login", "public-name", "verification"]) {
+      if (id === "upi" && NO_PAYMENT_CARDS.has(t)) { assert.ok(!ids.includes(id), `${t}: takes no payment, so no UPI ID is asked for`); continue; }
+      assert.ok(ids.includes(id), `${t}: ${id} is on the card`);
+    }
     for (const l of LANGUAGES) {
       const login = askCardFor(t, l).items.find((i) => i.id === "meta-login")!;
       assert.ok(login.what.includes("Facebook") && login.what.includes("Meta"), `${t}.${l}: the login line names Facebook and Meta`);
@@ -86,7 +97,7 @@ test("no price and no percentage on the card (a price is written in prices/ only
   for (const t of CARD_TEMPLATES) for (const l of LANGUAGES) assert.ok(!/₹|\d\s?%/.test(renderMarkdown(askCardFor(t, l))), `${t}.${l}`);
 });
 
-test("Google Calendar is optional and only on Bookings; Razorpay and the shop's own Gupshup account (11c) are optional everywhere; nothing else is", () => {
+test("Google Calendar is optional and only on Bookings; Razorpay (where the template takes payment) and the shop's own Gupshup account (11c) are optional everywhere; nothing else is", () => {
   const bookings = askCardFor("bookings", "en").items;
   const calendar = bookings.find((i) => i.id === "calendar")!;
   assert.equal(calendar.optional, true);
@@ -96,9 +107,10 @@ test("Google Calendar is optional and only on Bookings; Razorpay and the shop's 
   for (const l of LANGUAGES) assert.ok(askCardFor("bookings", l).items.find((i) => i.id === "calendar")!.optional);
   for (const t of ["orders", "fees"] as const) assert.ok(!askCardFor(t, "en").items.some((i) => i.id === "calendar"), `${t}: no calendar on the card`);
   for (const t of CARD_TEMPLATES) {
+    for (const id of PAYMENT_LINES) assert.equal(askCardFor(t, "en").items.some((i) => i.id === id), !NO_PAYMENT_CARDS.has(t), `${t}: the ${id} line is on the card unless the template takes no payment`);
     const optional = askCardFor(t, "en").items.filter((i) => i.optional).map((i) => i.id).sort();
     // item 11h: the shop's WhatsApp number and its login are optional too (a shop can start with its page alone)
-    assert.deepEqual(optional, ({ bookings: ["calendar", "gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], orders: ["delivery-area", "gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], fees: ["gupshup-account", "meta-login", "razorpay", "shop-whatsapp"] })[t]);
+    assert.deepEqual(optional, ({ bookings: ["calendar", "gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], orders: ["delivery-area", "gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], fees: ["gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], "stock-orders": ["gupshup-account", "meta-login", "shop-whatsapp"] })[t]);
   }
 });
 
