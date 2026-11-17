@@ -96,7 +96,11 @@ export async function limitStep(ctx: LimitContext, io: LimitIO, shop: string, ki
   const fail = async (why: string, restore: boolean): Promise<void> => {
     if (restore && limit) {
       const now = readText(settingsPath(ctx.dir, shop));
-      const back = now === undefined ? undefined : withValue(now, limit.path, c.from);
+      // the number the file held before THIS change wrote it (its own copy), not the change's `from`, which can be a pending tightening that never reached the file
+      const beforeText = readText(join(journalDir(ctx.dir, shop), `${c.id}.settings.before.json`));
+      let held: unknown;
+      try { held = beforeText === undefined ? undefined : getPath(JSON.parse(beforeText), limit.path); } catch { held = undefined; }
+      const back = now === undefined ? undefined : withValue(now, limit.path, typeof held === "number" ? held : c.from);
       if (back?.ok && back.text !== now) writeAtomic(settingsPath(ctx.dir, shop), back.text); // the normal pass then deploys the old file again if a deploy had taken the new one
     }
     const told = await io.settle(shop, `${shop}-${c.id}-failed`, c.id, "failed", why);

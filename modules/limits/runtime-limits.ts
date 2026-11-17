@@ -13,7 +13,7 @@ import type { Language } from "../language/languages.ts";
 import type { ActionRecord } from "../record/record.ts";
 import { assistantOf, nextId } from "../assistant/state.ts";
 import type { AssistantState } from "../assistant/state.ts";
-import { applyInForce, getAt, inForce, judgeChange, limitBase, limitNamed } from "./chat-limits.ts";
+import { applyInForce, inForce, judgeChange, limitBase, limitNamed } from "./chat-limits.ts";
 import type { ChatLimit, ChangeDirection, LimitChange } from "./chat-limits.ts";
 
 /** The deployer says what became of a change: Guard reports the new value (active), or something failed and the previous limit stands (failed). */
@@ -148,10 +148,4 @@ export function createLimitsKit<Store extends { assistant?: AssistantState }>(o:
       };
     },
   };
-}
-
-/** The value at a limit's path in a settings text the deployer holds (for the deployer's read of the file): a whole number or undefined. */
-export function valueIn(settings: unknown, limit: ChatLimit): number | undefined {
-  const v = getAt(settings, limit.path);
-  return typeof v === "number" && Number.isSafeInteger(v) ? v : undefined;
 }

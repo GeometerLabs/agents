@@ -34,11 +34,10 @@ export interface LimitCardView extends LimitView { now: number; to: number }
 export type LimitSay =
   | { what: "pending"; limit: LimitView; to: number }
   | { what: "active"; limit: LimitView; to: number }
-  | { what: "failed"; limit: LimitView; from: number; why?: string }
+  | { what: "failed"; limit: LimitView; from: number }
   | { what: "not_tighter"; limit: LimitView; now: number; to: number }
   | { what: "need_value"; limit: LimitView }
-  | { what: "which"; limits: readonly LimitView[] }
-  | { what: "loosen_app" };
+  | { what: "which"; limits: readonly LimitView[] };
 
 /** The facts writer words.ts passes (structurally: this file must not import words.ts, which imports this one). */
 export interface LimitWriter { inr(paise: number): string; n(count: number): string; lit(text: string): string }
@@ -70,11 +69,11 @@ export function limitLine(s: LimitSay, language: Language, w: LimitWriter): stri
   switch (s.what) {
     case "pending": return PENDING_LINE[language](`${PENDING[language]}: ${ruleText(s.limit, s.to, language, w)}`);
     case "active": return `${ACTIVE[language]}: ${ruleText(s.limit, s.to, language, w)}.`;
-    case "failed": return FAILED_LINE[language](ruleText(s.limit, s.from, language, w), s.why !== undefined ? w.lit(s.why) : undefined);
+    // the deployer's reason stays in the record and the panel: it is English words and may hold numbers the outgoing check would refuse, and then the owner would never hear
+    case "failed": return FAILED_LINE[language](ruleText(s.limit, s.from, language, w));
     case "not_tighter": return NOT_TIGHTER_LINE[language](s.limit.name[language], valueText(s.limit, s.now, language, w), valueText(s.limit, s.to, language, w));
     case "need_value": return NEED_VALUE_LINE[language](s.limit.name[language], s.limit.unit);
     case "which": return WHICH_LINE[language](s.limits.map((l) => w.lit(l.name[language])).join(", "));
-    case "loosen_app": return LOOSEN_LINE[language];
   }
 }
 
@@ -84,11 +83,11 @@ const PENDING_LINE: Record<Language, (head: string) => string> = {
   ml: (h) => `${h}. ഇത് ഇവിടെ ഇപ്പോൾ തന്നെ ബാധകമാണ്, പ്രാബല്യത്തിൽ വരുമ്പോൾ ഞാൻ അറിയിക്കാം.`,
   kn: (h) => `${h}. ಇದು ಇಲ್ಲಿ ಈಗಲೇ ಅನ್ವಯಿಸುತ್ತದೆ, ಜಾರಿಗೆ ಬಂದಾಗ ನಾನು ತಿಳಿಸುತ್ತೇನೆ.`,
 };
-const FAILED_LINE: Record<Language, (previous: string, why?: string) => string> = {
-  en: (p, why) => `That did not go through${why ? ` (${why})` : ""}. The previous limit is still in force: ${p}. You can try again.`,
-  hi: (p, why) => `यह नहीं हो पाया${why ? ` (${why})` : ""}। पहले वाली सीमा ही लागू है: ${p}। आप फिर कोशिश कर सकते हैं।`,
-  ml: (p, why) => `ഇത് നടന്നില്ല${why ? ` (${why})` : ""}. മുമ്പത്തെ പരിധി തന്നെ ഇപ്പോഴും പ്രാബല്യത്തിൽ: ${p}. വീണ്ടും ശ്രമിക്കാം.`,
-  kn: (p, why) => `ಇದು ಆಗಲಿಲ್ಲ${why ? ` (${why})` : ""}. ಹಿಂದಿನ ಮಿತಿಯೇ ಈಗಲೂ ಜಾರಿಯಲ್ಲಿದೆ: ${p}. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಬಹುದು.`,
+const FAILED_LINE: Record<Language, (previous: string) => string> = {
+  en: (p) => `That did not go through. The previous limit is still in force: ${p}. You can try again.`,
+  hi: (p) => `यह नहीं हो पाया। पहले वाली सीमा ही लागू है: ${p}। आप फिर कोशिश कर सकते हैं।`,
+  ml: (p) => `ഇത് നടന്നില്ല. മുമ്പത്തെ പരിധി തന്നെ ഇപ്പോഴും പ്രാബല്യത്തിൽ: ${p}. വീണ്ടും ശ്രമിക്കാം.`,
+  kn: (p) => `ಇದು ಆಗಲಿಲ್ಲ. ಹಿಂದಿನ ಮಿತಿಯೇ ಈಗಲೂ ಜಾರಿಯಲ್ಲಿದೆ: ${p}. ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಬಹುದು.`,
 };
 const NOT_TIGHTER_LINE: Record<Language, (name: string, now: string, to: string) => string> = {
   en: (n, now, to) => `Your ${n} is ${now} now, so ${to} would loosen it, not tighten it. I only tighten from here; to loosen, open your own app and sign in with your passkey.`,
@@ -108,13 +107,6 @@ const WHICH_LINE: Record<Language, (names: string) => string> = {
   ml: (n) => `ഏത് പരിധിയാണ് ഉദ്ദേശിക്കുന്നത്? എനിക്ക് ഇവ കർശനമാക്കാം: ${n}. മറ്റെന്തിനും ഞാൻ അത് ഒരു കുറിപ്പായി സൂക്ഷിക്കാം.`,
   kn: (n) => `ಯಾವ ಮಿತಿಯನ್ನು ಹೇಳುತ್ತಿದ್ದೀರಿ? ನಾನು ಇವನ್ನು ಬಿಗಿಗೊಳಿಸಬಲ್ಲೆ: ${n}. ಉಳಿದದ್ದಕ್ಕೆ ಅದನ್ನು ಟಿಪ್ಪಣಿಯಾಗಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತೇನೆ.`,
 };
-const LOOSEN_LINE: Record<Language, string> = {
-  en: "Loosening a limit is done in your own app, after you sign in with your passkey. I can only tighten one from here, with your tap.",
-  hi: "सीमा को ढीला करना आपके अपने ऐप में होता है, पासकी से साइन इन करने के बाद। मैं यहाँ से आपके टैप पर सिर्फ़ कस सकता हूँ।",
-  ml: "പരിധി അയവുള്ളതാക്കുന്നത് പാസ്‌കീ ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്ത ശേഷം നിങ്ങളുടെ സ്വന്തം ആപ്പിലാണ്. നിങ്ങളുടെ ടാപ്പോടെ ഇവിടെ നിന്ന് കർശനമാക്കാൻ മാത്രമേ എനിക്ക് കഴിയൂ.",
-  kn: "ಮಿತಿಯನ್ನು ಸಡಿಲಗೊಳಿಸುವುದು ಪಾಸ್‌ಕೀಯಿಂದ ಸೈನ್ ಇನ್ ಆದ ಮೇಲೆ ನಿಮ್ಮ ಸ್ವಂತ ಆ್ಯಪ್‌ನಲ್ಲಿ ಆಗುತ್ತದೆ. ನಿಮ್ಮ ಟ್ಯಾಪ್‌ನೊಂದಿಗೆ ನಾನು ಇಲ್ಲಿಂದ ಬಿಗಿಗೊಳಿಸಬಲ್ಲೆ ಮಾತ್ರ.",
-};
-
 /** The one fixed line when a card's yes finds the limit is no longer tightened by the value (another change landed first). */
 export const NOT_TIGHTER_REFUSAL: Record<Language, string> = {
   en: "That value no longer tightens the limit in force now, so nothing was changed. Loosening is done in your own app, with your passkey.",
@@ -184,7 +176,7 @@ export const limitCase = (id: string): string => `limit:${id}`;
 export function createLimits(d: LimitsDeps) {
   const base = limitBase(d.declared, d.settings);
   const changes = (): LimitChange[] => assistantOf(d.store).limitChanges;
-  const inForceNow = (l: ChatLimit): number | undefined => (base[l.id] === undefined ? undefined : inForce(l, base[l.id], changes()));
+  const inForceNow = (l: ChatLimit): number => inForce(l, base[l.id] ?? 0, changes());
 
   /** The chat's check: strictly tighter than what is in force now, inside the hard bounds. */
   function check(l: ChatLimit, to: number) {
@@ -229,7 +221,8 @@ export function createLimits(d: LimitsDeps) {
     if (read.kind === "need_value") return { what: "need_value", limit: viewOf(read.limit) };
     const r = check(read.limit, read.to);
     if (r.ok) return undefined;
-    return r.why === "not_tighter" ? { what: "not_tighter", limit: viewOf(read.limit), now: r.from, to: read.to } : { what: "which", limits: d.declared.map(viewOf) };
+    // not tighter: say so with both values; anything else (a negative or too small value) asks for the value again
+    return r.why === "not_tighter" ? { what: "not_tighter", limit: viewOf(read.limit), now: r.from, to: read.to } : { what: "need_value", limit: viewOf(read.limit) };
   }
 
   /** Changes that settled since the owner was last told, each with the words; marked told. Called on the beat (conversation.ts onTick). */
@@ -240,12 +233,13 @@ export function createLimits(d: LimitsDeps) {
       const l = limitNamed(d.declared, c.limit);
       if (!l) { c.told = true; continue; }
       c.told = true;
-      out.push({ change: c, say: c.state === "active" ? { what: "active", limit: viewOf(l), to: c.to } : { what: "failed", limit: viewOf(l), from: c.from, ...(c.why ? { why: c.why } : {}) } });
+      // a failure says what is in force NOW (after chained changes it is not always this change's `from`)
+      out.push({ change: c, say: c.state === "active" ? { what: "active", limit: viewOf(l), to: c.to } : { what: "failed", limit: viewOf(l), from: inForceNow(l) } });
     }
     return out;
   }
 
-  return { skill, read: (text: string, forced?: string) => readLimitRequest(text, d.declared, forced), say, unannounced, inForceNow, declared: d.declared, looksLikeRule: (text: string) => looksLikeLimitRule(text, d.declared) };
+  return { skill, read: (text: string, forced?: string) => readLimitRequest(text, d.declared, forced), say, unannounced, declared: d.declared, looksLikeRule: (text: string) => looksLikeLimitRule(text, d.declared) };
 }
 export type Limits = ReturnType<typeof createLimits>;
 
@@ -263,8 +257,8 @@ export function limitReviewLines(language: Language, limits: Record<string, { na
   out.card = limitCardLine({ ...sample, now: 1000, to: 500 }, language, w);
   out.never = NEVER[language];
   for (const s of [
-    { what: "pending", limit: sample, to: 500 }, { what: "active", limit: sample, to: 500 }, { what: "failed", limit: sample, from: 1000, why: "Guard did not answer" },
-    { what: "not_tighter", limit: sample, now: 200, to: 500 }, { what: "need_value", limit: sample }, { what: "which", limits: [sample] }, { what: "loosen_app" },
+    { what: "pending", limit: sample, to: 500 }, { what: "active", limit: sample, to: 500 }, { what: "failed", limit: sample, from: 1000 },
+    { what: "not_tighter", limit: sample, now: 200, to: 500 }, { what: "need_value", limit: sample }, { what: "which", limits: [sample] },
   ] as LimitSay[]) out[`say.${s.what}`] = limitLine(s, language, w);
   out.notTighterRefusal = NOT_TIGHTER_REFUSAL[language];
   return out;
