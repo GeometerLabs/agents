@@ -15,6 +15,7 @@ import { CUSTOMER_SW, customerAlertsBox } from "../push/pages.ts";
 import { HANDLE, NONCE, handleFromNonce, handleHash, newHandle, parentLinkHash } from "./handle.ts";
 import { feeConfirmPage, feesCentrePage, parentLinkGone, parentPage } from "./fee-page.ts";
 import { PAGE } from "./words.ts";
+import { materialPage } from "./material-page.ts";
 import { DOCUMENT_SUB, documentHtml, receiptsBox, receiptsOf } from "./receipts.ts";
 import type { FrontKit, RouteArgs } from "./front.ts";
 
@@ -38,7 +39,7 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
 
   // ---- a parent's private page ----
   // "<link>/" is the page too: a tapped alert opens its worker's scope, which ends in a slash
-  const f = /^\/f\/([^/]+)(\/|\/pay|\/paid|\/sw\.js|\/push|\/d\/.+)?$/u.exec(rest);
+  const f = /^\/f\/([^/]+)(\/|\/pay|\/paid|\/sw\.js|\/push|\/d\/.+|\/m\/[a-z0-9-]{1,40}(?:\/[0-9a-f]{12})?)?$/u.exec(rest);
   if (f) {
     const link = f[1];
     if (limiter.over("wrong", address)) return tooMany();
@@ -91,12 +92,27 @@ export async function feeRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
       }
       return kit.redirect(res, `${base}?lang=${language}`);
     }
-    if (method !== "GET" || (sub && !sub.startsWith("/d/"))) return kit.sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
+    if (method !== "GET" || (sub && !sub.startsWith("/d/") && !sub.startsWith("/m/"))) return kit.sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" });
     if (!limiter.take("read", address)) return tooMany();
     const view = await backend.parentView(linkHash);
     if (!view) return gone();
     const language = kit.languageOf(req, url, offer.shop.languages);
     // this parent's receipts: only those of the fees this link opens now (the runtime finds them by the link's hash, so another parent's number is a plain not-found)
+    // Classes: a batch's reading material, only if the runtime says this link's parent has a student in the batch who may open it NOW (the link, the batch and the fee are
+    // checked there, from the saved state). A file goes as a download with its own type; nothing the visitor typed becomes a path (the file is named by an id).
+    const material = sub ? /^\/m\/([a-z0-9-]+)(?:\/([0-9a-f]{12}))?$/u.exec(sub) : null;
+    if (material) {
+      const answer = backend.material ? await backend.material(linkHash, material[1], material[2]).catch(() => null) : null;
+      if (!answer || (material[2] ? answer.kind !== "file" : answer.kind !== "list")) { limiter.take("wrong", address); return nothing(); }
+      if (answer.kind === "file") {
+        const bytes = Buffer.from(answer.base64, "base64");
+        const safe = answer.name.replace(/[^A-Za-z0-9._-]+/gu, "_");
+        res.writeHead(200, { "content-type": answer.type, "content-length": bytes.length, "content-disposition": `attachment; filename="${safe}"`, "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'", "cache-control": "private, no-store", "x-robots-tag": "noindex" });
+        res.end(bytes);
+        return;
+      }
+      return kit.sendHtml(res, 200, materialPage({ shop: { name, publicUrl: shop.publicUrl }, offer, language, base: `${base}/m/${material[1]}`, view: answer }), { "x-robots-tag": "noindex" });
+    }
     const docs = await receiptsOf(backend, { link: linkHash }, language);
     const docPath = sub ? DOCUMENT_SUB.exec(sub) : null;
     if (docPath) {

@@ -87,6 +87,9 @@ import { checkFeeLink, checkMessageMatchesRecord, checkNoReminderOncePaid, check
 import { batchName, batchOf, highestDueInr } from "./settings.ts";
 import { feeForMonth, isJoiningMonth, parseJoined } from "./joining.ts";
 import type { Settings } from "./settings.ts";
+import { createClasses } from "./classes/run.ts";
+import type { ClassFacts } from "./classes/run.ts";
+import type { FeeSnapshot } from "./classes/rules.ts";
 
 export interface AgentDeps {
   settings: Settings;
@@ -149,7 +152,7 @@ const HOURLY = HOUR; // the owner is told about the same parent at most this oft
 
 /** Buttons with words above them; `choices` are the owner's UPI buttons (each carries its one-use code) instead of the named ones. */
 type Offer = { kind: "buttons"; buttons: ButtonId[]; dueId?: string; body?: TemplateId[]; choices?: Choice[] };
-interface SayArgs { family?: FamilyLine[]; booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; /** Item 11h: the parent's private page, in a message to that parent only. */ pageLink?: string }
+interface SayArgs { family?: FamilyLine[]; booking: Due | null; phone: string; to: "customer" | "owner"; templates: TemplateId[]; receivedInr?: number; waiverInr?: number; refundInr?: number; paidInr?: number; requestRef?: string; shown?: Decision[]; reminder?: boolean; readOk?: boolean; action?: Action; offer?: Offer; image?: { link: string; caption: TemplateId[] }; upiCode?: string; /** Item 11h: the parent's private page, in a message to that parent only. */ pageLink?: string; /** Classes: the values of a class message (src/classes/run.ts), added to the facts it is written and checked from. */ cls?: ClassFacts; /** Classes: decisions that gate this message (the class-access and missed-note rules), recorded beside it. */ gate?: Decision[] }
 
 export function createAgent(deps: AgentDeps): Agent {
   const { settings, clock, messaging, parser, record, store } = deps;
@@ -206,7 +209,7 @@ export function createAgent(deps: AgentDeps): Agent {
     owner: { whatsapp: owner, language: settings.owner.language },
     languageOf: (phone, due) => languageOf(phone, due),
     optedOut: (phone) => customerOf(phone).optedOut,
-    factsFor: (a, language) => factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode, ...(a.family ? { family: a.family } : {}), ...(a.pageLink && a.to === "customer" ? { pageLink: a.pageLink } : {}) }),
+    factsFor: (a, language) => ({ ...factsFor(settings, a.booking, language, { customerPhone: a.phone, refundInr: a.refundInr, receivedInr: a.receivedInr, waiverInr: a.waiverInr, requestRef: a.requestRef, paidInr: a.paidInr, upiCode: a.upiCode, ...(a.family ? { family: a.family } : {}), ...(a.pageLink && a.to === "customer" ? { pageLink: a.pageLink } : {}) }), ...(a.cls ?? {}) }),
     interactiveFor: (a, facts, language): InteractiveMessage => {
       const offer = a.offer!;
       return { body: (offer.body ?? a.templates).map((id) => render(id, facts)).join(" "), buttons: offer.choices ?? buttonsFor(language, offer.buttons, offer.dueId) };
@@ -221,6 +224,7 @@ export function createAgent(deps: AgentDeps): Agent {
       }
       if (due && a.templates.some((t) => t === "fee_received" || t === "fee_already_paid")) out.push(checkPaidOnlyWhenRecorded({ record, dueId: due.id, owedPaise: owedPaise(due), needsAll: true }));
       if (due && a.templates.includes("fee_part_received")) out.push(checkPaidOnlyWhenRecorded({ record, dueId: due.id, owedPaise: owedPaise(due), needsAll: false }));
+      if (a.gate) out.push(...a.gate); // Classes: the class link and the missed-class note carry their own rule
       if (licence().state === "stopped") out.push(stoppedGate);
       return out;
     },
@@ -705,13 +709,13 @@ export function createAgent(deps: AgentDeps): Agent {
   }
 
   /** The link went out: it is the parent's link from now on (its hash only), and the one before opens nothing. Said in the record without the link. */
-  function keepLink(parent: string, token: string, via: "reminder" | "owner"): void {
+  function keepLink(parent: string, token: string, via: "reminder" | "owner" | "classes"): void {
     const hash = parentLinkHash(token);
     deps.linkMemory?.set(parent, token);
     if (parentLinks()[parent]?.hash === hash) return; // the same link as before: nothing changes
     const replaced = parentLinks()[parent] !== undefined;
     parentLinks()[parent] = { hash, atMs: clock.now(), via };
-    log(null, parent, "parent_link", "confirmed", { via }, { refs: { via, ...(replaced ? { replaced: "yes" } : {}) }, notes: `the parent's private fees link was sent ${via === "owner" ? "at the owner's press on their page" : "in a fee reminder"}; only its hash is kept${replaced ? ", and the link it replaces opens nothing from now on" : ""}` });
+    log(null, parent, "parent_link", "confirmed", { via }, { refs: { via, ...(replaced ? { replaced: "yes" } : {}) }, notes: `the parent's private fees link was sent ${via === "owner" ? "at the owner's press on their page" : via === "classes" ? "with a reading-material message" : "in a fee reminder"}; only its hash is kept${replaced ? ", and the link it replaces opens nothing from now on" : ""}` });
   }
 
   /** The owner switched a parent's link off: it opens nothing from now on, and nor do the confirmation pages made through it. */
@@ -790,6 +794,12 @@ export function createAgent(deps: AgentDeps): Agent {
       return;
     }
     if (e.action === "cash" || e.action === "bank") return onOwnerCash(e);
+    if (e.action === "present" || e.action === "absent" || e.action === "answered") {
+      // Classes: the teacher's tap on their page (a class's attendance, a missed student, a doubt answered), bound to what the page showed by its digest
+      const done = classes ? await classes.onPageAction(e.action, e.case, e.digest) : false;
+      log(null, owner, "owner_page_action", done ? "confirmed" : "blocked", { action: e.action, case: e.case }, { refs: { channel: "owner_page", action: e.action }, notes: done ? "pressed by the teacher on their page" : "what the owner's page showed is not what waits now (already marked or answered, or gone): nothing was done" });
+      return;
+    }
     const item = ownerItems(settings, store).find((x) => x.case === e.case && x.digest === e.digest && x.actions.includes(e.action));
     const due = store.dues.get(e.case) ?? null;
     if (!item) {
@@ -1075,6 +1085,8 @@ export function createAgent(deps: AgentDeps): Agent {
     if (moving) { log(null, owner, HANDOVER_ACTION, "confirmed", { command: "handover" }, { refs: { command: "handover", handover: handoverHash(moving) }, notes: "the owner agreed, from their own number, to hand the shop to another Operator or builder. The panel checks the code before it moves anything" }); return; }
     // B72: "terms" sends the shop terms to the owner and "I agree" records the agreement (modules/terms/owner.ts). Off unless the shop was handed a terms file.
     if (await handleOwnerTerms(msg, { setup: deps.terms?.(), shopName: settings.name, ownerNumber: owner, ownerLanguage: settings.owner.language, messaging, record, log: (action, outcome, inputs, more) => log(null, owner, action, outcome, inputs, more) })) return;
+    // Classes: the teacher's class link, attendance, doubts and material (fixed words, like "approve q-3"; src/classes/parse.ts). A centre without Classes: never reached.
+    if (classes && (await classes.onTeacher(msg))) return;
     // Item 11e: the shop's assistant reads what no fixed phrase is (this command is one). A shop without an "assistant" block: exactly as before.
     if (assistant && !OWNER_COMMAND.test(msg.text) && (await assistant.onOwnerMessage(msg))) return;
     const m = OWNER_COMMAND.exec(msg.text);
@@ -1170,6 +1182,8 @@ export function createAgent(deps: AgentDeps): Agent {
 
     const phone = msg.from;
     const customer = customerOf(phone);
+    // Classes: a message in the class words ("next class", "notes", "doubt", a tap on the consent buttons) is answered here, with no model; any other message, STOP above all, goes on as it always did
+    if (classes && !customer.optedOut && (await classes.onContact(msg, () => log(null, phone, "receive_message", "confirmed", { text: msg.text, id: msg.id, ...(msg.reply ? { reply: msg.reply.id } : {}) }, { notes: "a message about classes, read by the class word lists (no model)", refs: { messageId: msg.id } })))) return;
     const mode = reader.mode();
     // A tap on a button is read by looking its id up: no words are read, so no model is asked, whatever the mode. An id that is none of ours is read as words.
     const tapped = msg.reply ? intentFromReply(msg.reply.id) : null;
@@ -1257,6 +1271,7 @@ export function createAgent(deps: AgentDeps): Agent {
       await addLateFee(due);
       if (due.state === "open") await remind(due);
     }
+    if (working && classes) await classes.onTick(); // Classes: the class links, the attendance question, the missed-class notes and the doubts waiting (src/classes/run.ts)
   }
 
   // ---- recovery: the panel's to-do list asks the agent to look again, or ask again -----------------------------------------------------------------------
@@ -1356,6 +1371,29 @@ export function createAgent(deps: AgentDeps): Agent {
       return sendOwnerRefund(due, paymentId, amountInr, why, [once, limit]);
     },
   };
+
+  // ---- Classes (src/classes/): on only when the settings have a "classes" block --------------------------------------------------------------------------
+  // It sends nothing of its own accord: every message goes through `say` above (the outgoing check, STOP, the record, the licence), and the class link reads the payments
+  // again first, exactly as a fee reminder does. A centre without the block never builds it, and the agent is the Fees agent it was.
+  const classes = settings.classes ? createClasses({
+    settings: settings as Settings & { classes: NonNullable<Settings["classes"]> }, store, nowMs: () => clock.now(), owner,
+    log: (phone, action, outcome, inputs, more) => log(null, phone, action, outcome, inputs, more),
+    tellContact: (phone, template, cls, more = {}) => say.outcome({ booking: null, phone, to: "customer", templates: [template], cls, ...(more.gate ? { gate: more.gate } : {}), ...(more.choices ? { offer: { kind: "buttons", buttons: [], choices: more.choices } } : {}) }),
+    tellTeacher: (template, cls, more = {}) => say.outcome({ booking: null, phone: owner, to: "owner", templates: [template], cls, ...(more.choices ? { offer: { kind: "buttons", buttons: [], choices: more.choices } } : {}) }),
+    async feesOf(parent, studentName) {
+      let readOk = true;
+      const fees: FeeSnapshot[] = [];
+      for (const due of [...store.dues.values()].filter((d) => d.customer === parent && d.studentName === studentName)) {
+        if (due.state === "open") { const read = await reconcile(due); await settle(due, read.fresh); if (!read.ok) readOk = false; } // the record is read again before the rule is applied
+        fees.push({ state: due.state, dueDate: due.dueDate, balancePaise: balancePaise(due) });
+      }
+      return { readOk, fees };
+    },
+    optedOut: (phone) => customerOf(phone).optedOut,
+    languageOf: (phone) => languageOf(phone),
+    noteLanguage(phone, language) { const c = customerOf(phone); if (!c.language && language && settings.languages.includes(language)) c.language = language; },
+    pageLink(parent) { const made = linkFor(parent); return made ? { url: made.url, keep: () => keepLink(parent, made.token, "classes") } : undefined; },
+  }) : undefined;
 
   // ---- item 11e: the shop's assistant (modules/assistant) -------------------------------------------------------------
   // On only when the settings have an "assistant" block. Fees is its one skill here; answering what waits is the owner's own fixed reply (src/assistant.ts).
