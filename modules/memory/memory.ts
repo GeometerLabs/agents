@@ -171,6 +171,16 @@ export function forgetNote(m: MemoryState, a: Authority, id: string, c: WriteCon
   return { ok: true, note: n };
 }
 
+/** Close a note without removing its words ("ended"): the Operator or the builder takes a note out of use. Its text stays 30 days for undo, then goes with the other closed notes. */
+export function closeNote(m: MemoryState, a: Authority, id: string, c: WriteContext): { ok: true; note: Note } | { ok: false; why: WriteFailure } {
+  requireAuthority(a);
+  const n = find(m, id);
+  if (!n) return { ok: false, why: "no_such_note" };
+  if (n.closed) return { ok: false, why: "already_closed" };
+  n.closed = { atMs: c.nowMs, by: a.by, why: "ended" };
+  return { ok: true, note: n };
+}
+
 /** Closed on the tick, after `untilMs`. Needs no authority: time is not a writer, and nothing is added. Returns the notes it closed. */
 export function endExpired(m: MemoryState, nowMs: number): Note[] {
   const ended: Note[] = [];
