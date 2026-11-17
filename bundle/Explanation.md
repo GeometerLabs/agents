@@ -1252,3 +1252,28 @@ Names did not change: identifiers, JSON keys, flags, URL paths and file names st
 
 **The clash.** "operator" already meant the person who runs a server (speech model fetch, Guard's admin, a builder's own server). Where it meant that, the text now says "the server admin" so the two meanings never meet. What stays: Guard's `operator:` prefix in a settled-by value (data), the identity paper's `operator` field (who runs the agent: an Operator or a builder), and the sample streamer's `operator.ts` console (file and npm script names).
 
+
+
+## Limits, tightened by a tap: the deployer's part (17 Nov 2026)
+
+`lib/limit-changes.ts`, called every pass of the loop (`apply.ts runLimitChanges`, after the shop pass). For each deployed shop whose template declares limits the owner may
+change, the deployer reads the runtime's limits and changes through ops (`ops limits <shop>`, which calls `GET /internal/limit-changes` with the internal token it
+holds) and carries the **oldest Pending change, one at a time per shop**, to the end:
+
+1. **Check again against the file.** A tightening must be strictly tighter than the number in `shops/<shop>/settings.json`; a loosening strictly looser and inside the
+   template's hard bounds; only a path the template declared (`Kind.chatLimits`) is ever written; the whole file must still pass the template's settings check.
+2. **Write the one number**, after a journal (`state/limit-changes/<shop>/<id>.json`) and a copy of the old file (`<id>.settings.before.json`).
+3. **Deploy** the shop: the checked deploy makes Guard's spec again from the file, restarts that shop's Guard and reads each running Guard's policy digest.
+4. **Read back.** Each running Guard still reports the policy digest that was compiled, and the restarted runtime reports the new number from the file.
+5. **Settle** through ops (`limit-settled`): Active, or failed. On any failure the file goes back to the previous number (a deploy that had taken the new one is undone by
+   the normal pass, which sees the file differ from what was applied) and the runtime is told failed with the reason in plain words.
+
+Safe to stop anywhere: the journal says how far it got, a number already in the file is not written twice, the settle word has one request id per change and result (the
+runtime takes a repeat as one), and the runtime's own Pending state is the queue. A runtime that does not answer changes nothing. A runtime that has not restarted is waited
+for (30 passes, about five minutes), then the change fails and the file goes back.
+
+**What "read back" is, honestly.** Guard's `/admin/status` reports its policy *digest*, not the numbers in it. So the read-back is the digest of the running spec (made from
+the new file) plus the runtime's own report of the file's value. A Guard that reported the limit values itself is in Deferred.
+
+The panel shows every change and its state (`status/<shop>.json` `limitChanges`, `panel/views-limits.ts`); a loosening is shown as news for the Operator, never as a task: it
+needs nobody's answer. The words (four languages) are on the review sheets (`limits.*` ids in section 7).

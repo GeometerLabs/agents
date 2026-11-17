@@ -1234,3 +1234,41 @@ a "Modules it uses" section at the end of each template's README, between two ma
 behind or a module folder has no row, and says the command that fixes it: `node modules/module-map.ts --write`. A new module needs only its row's first three columns
 written by hand; a new template needs its folder added to `USERS` in `module-map.ts`. Module-to-module use is left to the code: it is many lines and nobody reads it.
 What a template hands each module stays in the table's third column, written by hand, because it is a description, not a list.
+
+
+## Limits, tightened by a tap (17 Nov 2026, block M; plan next-phase.md section 1a, decision 58)
+
+The owner can tighten a limit by saying so ("refunds above ₹500 need my OK"), and loosen one in their own app behind their passkey. The chat never becomes a second
+place where limits live: a change ends in the settings file Guard's spec is made from, and the chat's tap only starts it.
+
+**What a template declares.** `templates/*/src/chat-limits.ts` (one small file each, so the settings code is untouched) lists the limits the owner may change: an id, the
+settings path, the unit (rupees or a count), which direction tightens, the hard bounds, and the words in four languages (shared in `limits/chat-limit-kinds.ts`, so
+Bookings, Fees and Orders say "refund limit" alike). Only real settings fields are declared: Bookings `cancellation.refundLimitInr`; Fees `waiver.limitInr`,
+`refund.limitInr`; Orders `owner.approveOverInr` (0 means never, so any number is tighter), `refund.limitInr`, `orders.maxPerDay`. "Bookings per number a day" is not a
+Bookings setting, so it is not declared (Deferred).
+
+**The rule, in `limits/chat-limits.ts` (pure).** `isStrictlyTighter` compares numbers, never words: ₹500 loosens a limit of ₹200 and is refused. `inForce` is the
+settings value, then any active change the file has not caught up with, then the tighter of that and every *pending tightening* (it is only stricter). A pending
+loosening and a failed change never count. `judgeChange` adds the hard bounds and "busy" (a loosening waits while another change to the same limit is pending).
+
+**The draft and the card (`assistant/limits-card.ts`).** The rules read which declared limit (its words, in any of the four languages) and the value (a rupee amount
+needs a rupee sign; a count is the first whole number). A talk model may only *name* a declared limit by id (`onLimit(text, forced)`), never write a value. The limits are
+one more `OwnerSkill`, so the card is the existing binding unchanged: `prepare` reads the limit in force NOW, so the digest (limit, value now, new value) differs if a
+change landed between the card and the tap, and the old card is void. A value that is not tighter gets words, not a card ("Your refund limit is ₹200 now, so ₹500 would
+loosen it... to loosen, open your own app"). A rule that names no declared limit is not ours: the talk (stream M1) saves it as a note.
+
+**The tap and what the runtime does.** `execute` writes a `LimitChange` (`pending`) into the assistant's state, saved in the same step, and puts the tighter value into the
+settings object the agent reads: the core (`runtime/core.ts`, option `limits`) calls `apply` before every step, so the runtime's checks use the tighter value at once and
+return to the previous one if the change fails. Its words say Pending ("it already applies here"). The record gets a `limit_change` line when it is made and one when it
+settles. When the deployer settles a change, the assistant says Active, or that the previous limit is still in force, on its next beat (once; `told`).
+
+**Settling and the owner's page are events only the runtime's own HTTP layer makes** (`limits/runtime-limits.ts`): `limit_settled` from the deployer through
+`POST /internal/limit-changes` (the internal token, via ops), and `owner_limit` from `POST /internal/channel/owner-limits`. The inbox's `/internal/events` cannot carry
+either. The owner's page reads with any good owner credential, but a change needs a session made with a passkey (`owner-access.ts checkPasskey`: the session's link id is a
+passkey's). The direction is decided in the step from the numbers, and the bounds are checked again there, so the page cannot ask for more than the template allows.
+
+**The owner's limits page** (`channels/owner-limits-page.ts`, `<owner app>/limits`): each limit, its value in force, its range, a form only for a passkey session, and the
+recent changes with their state. Without a passkey it says so and offers sign-out to sign in again. It is the only place a loosening, or an undo, is made.
+
+**Not tested on a real model or provider.** The talk model's naming of a limit has the seam (`onLimit`'s `forced`) and no model behind it yet; the tests use the rules.
+Tests for this section were written on 17 Nov and not run at the time of writing (the owner asked for one pass at the end).
