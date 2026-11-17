@@ -176,6 +176,11 @@ export interface ChannelBackend {
    */
   push?(body: Record<string, unknown>, owner?: OwnerCred): Promise<{ status: number; body: Record<string, unknown> }>;
   /**
+   * "Limits, tightened by a tap": the owner's limits page. With no `post`, a read (the limits, their value in force, the changes, and `passkey`: whether this session was
+   * made with a passkey). With `post`, a change; the runtime refuses it (403 `passkey_needed`) unless the session was made with a passkey. Left out: no limits page.
+   */
+  limits?(owner: OwnerCred, post?: { id: string; limit: string; to: number }): Promise<{ status: number; body: Record<string, unknown> }>;
+  /**
    * Items 11d and 11e: a recording from the owner's page, passed to the runtime as it came (the runtime holds it in memory only). "off": the shop's assistant has no
    * voice service; "refused": the owner's credential is not good.
    */
@@ -279,6 +284,11 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     },
     async push(body, owner) {
       const r = await call(`${o.url}/internal/channel/push`, { method: "POST", headers: headers(owner), body: JSON.stringify(body) }, timeout);
+      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
+    },
+    async limits(owner, post) {
+      const r = await call(`${o.url}/internal/channel/owner-limits`, { method: post ? "POST" : "GET", headers: headers(owner), ...(post ? { body: JSON.stringify(post) } : {}) }, timeout);
       if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
       return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
