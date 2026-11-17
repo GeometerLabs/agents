@@ -1,0 +1,222 @@
+{
+  "name": "Annapurna Tiffins",
+  "address": "14 Temple Road, Kakkanad, Kochi",
+  "timezone": "Asia/Kolkata",
+  "languages": [
+    "en",
+    "hi"
+  ],
+  "menu": [
+    {
+      "id": "veg-thali",
+      "names": {
+        "en": [
+          "veg thali",
+          "thali"
+        ],
+        "hi": [
+          "वेज थाली",
+          "थाली"
+        ]
+      },
+      "priceInr": 120,
+      "dailyStock": 12
+    },
+    {
+      "id": "chicken-meal",
+      "names": {
+        "en": [
+          "chicken meal",
+          "chicken thali"
+        ],
+        "hi": [
+          "चिकन मील",
+          "चिकन थाली"
+        ]
+      },
+      "priceInr": 160,
+      "dailyStock": 8
+    },
+    {
+      "id": "curd",
+      "names": {
+        "en": [
+          "curd",
+          "curd cup"
+        ],
+        "hi": [
+          "दही"
+        ]
+      },
+      "priceInr": 20,
+      "dailyStock": 30
+    }
+  ],
+  "orders": {
+    "maxPerDay": 8,
+    "maxItemsPerOrder": 10,
+    "daysAhead": 7
+  },
+  "cutoff": {
+    "daysBefore": 1,
+    "time": "20:00"
+  },
+  "pickup": {
+    "slots": [
+      {
+        "id": "lunch",
+        "from": "12:00",
+        "to": "13:00",
+        "names": {
+          "en": [
+            "lunch"
+          ],
+          "hi": [
+            "लंच"
+          ]
+        },
+        "cutoff": {
+          "daysBefore": 0,
+          "time": "09:00"
+        },
+        "maxOrders": 14
+      },
+      {
+        "id": "dinner",
+        "from": "19:00",
+        "to": "20:00",
+        "names": {
+          "en": [
+            "dinner"
+          ],
+          "hi": [
+            "डिनर"
+          ]
+        },
+        "cutoff": {
+          "daysBefore": 0,
+          "time": "15:00"
+        }
+      }
+    ]
+  },
+  "delivery": {
+    "slots": [
+      {
+        "id": "lunch-home",
+        "from": "12:30",
+        "to": "13:30",
+        "names": {
+          "en": [
+            "lunch"
+          ],
+          "hi": [
+            "लंच"
+          ]
+        },
+        "cutoff": {
+          "daysBefore": 0,
+          "time": "09:00"
+        }
+      },
+      {
+        "id": "dinner-home",
+        "from": "19:30",
+        "to": "20:30",
+        "names": {
+          "en": [
+            "dinner"
+          ],
+          "hi": [
+            "डिनर"
+          ]
+        },
+        "cutoff": {
+          "daysBefore": 0,
+          "time": "15:00"
+        }
+      }
+    ],
+    "area": [
+      "Kakkanad",
+      "Edappally",
+      "Infopark"
+    ]
+  },
+  "advance": {
+    "mode": "part",
+    "percent": 50,
+    "holdMinutes": 30
+  },
+  "cancellation": {
+    "windowHours": 6
+  },
+  "refund": {
+    "limitInr": 300
+  },
+  "payment": {
+    "module": "upi",
+    "upi": {
+      "id": "annapurna@okicici",
+      "payee": "Annapurna Tiffins"
+    }
+  },
+  "owner": {
+    "whatsapp": "+919800000001",
+    "language": "en",
+    "approveOverInr": 1000
+  },
+  "plans": {
+    "types": [
+      {
+        "id": "lunch-weekdays",
+        "names": {
+          "en": [
+            "lunch plan",
+            "monthly lunch"
+          ],
+          "hi": [
+            "लंच प्लान",
+            "मासिक लंच"
+          ]
+        },
+        "slotId": "lunch",
+        "weekdays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "priceInr": 2400
+      },
+      {
+        "id": "home-lunch",
+        "names": {
+          "en": [
+            "home lunch plan",
+            "home delivery plan"
+          ],
+          "hi": [
+            "घर लंच प्लान"
+          ]
+        },
+        "slotId": "lunch-home",
+        "weekdays": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "priceInr": 2900
+      }
+    ],
+    "cutoff": {
+      "daysBefore": 1,
+      "time": "20:00"
+    },
+    "credits": "carry"
+  }
+}
