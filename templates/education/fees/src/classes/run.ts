@@ -123,7 +123,7 @@ export function createClasses(ctx: ClassesCtx) {
   /** The access decision after the payment record is read again. This is the one place the rule is applied for a send. */
   async function entitlement(s: Student): Promise<Decision> {
     const { readOk, fees } = await ctx.feesOf(s.parent, s.name);
-    return checkClassAccess({ inBatch: !!batchOf(s.batchId) && settings.students.includes(s), consent: consentOf(s), readOk, fees, graceDays: settings.due.graceDays, nowMs: ctx.nowMs(), timeZone: tz });
+    return checkClassAccess({ inBatch: !!batchOf(s.batchId) && settings.students.includes(s), consent: consentOf(s), readOk, fees, graceDays: settings.due.graceDays, oldDuesStopLink: classes.oldDuesStopLink, nowMs: ctx.nowMs(), timeZone: tz });
   }
 
   // ---- the clock ------------------------------------------------------------------------------------------------------------------------------------------------

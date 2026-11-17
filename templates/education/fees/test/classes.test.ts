@@ -52,6 +52,11 @@ test("the classes block is read, defaults are filled, and a wrong one is said in
   assert.match(bad((r) => { r.classes.linkLeadMinutes = 2; }), /linkLeadMinutes/u);
   assert.match(bad((r) => { r.classes.materialMaxMb = 0; }), /materialMaxMb/u);
   assert.match(bad((r) => { r.classes.colour = 1; }), /colour/u);
+  assert.equal(s.classes!.oldDuesStopLink, false, "left out: an old due does not stop the link");
+  assert.match(bad((r) => { r.classes.oldDuesStopLink = "yes"; }), /oldDuesStopLink.*true or false/u, "a non-boolean is refused in plain words");
+  assert.match(bad((r) => { r.classes.oldDuesStopLink = 1; }), /oldDuesStopLink/u);
+  const strict = raw(); strict.classes.oldDuesStopLink = true;
+  assert.equal(parseSettings(strict).classes!.oldDuesStopLink, true);
 });
 
 test("a centre without the block is exactly as it was: no classes key, and no Classes code runs", async () => {
@@ -133,6 +138,53 @@ test("the first message asks consent, nothing else of Classes goes before the an
   assert.equal(w.messaging.sentTo(AARAV).filter((m) => m.text.includes(LINK)).length, 1, "once, however often the clock beats");
   const sent = w.record.entries().find((e) => e.conversation === AARAV && e.refs.templates === "class_link")!;
   assert.ok(sent.decisions.some((d) => d.ruleId === "class-access" && d.verdict === "allow"), "the access decision is recorded beside the message");
+});
+
+test("class-access and a back due: by default only ordinary fees decide; with oldDuesStopLink a back due blocks like any fee; waived or paid changes nothing", () => {
+  const base = { inBatch: true, consent: "yes" as const, readOk: true, graceDays: 5, timeZone: tz, nowMs: day(12, 9) };
+  const old = (state: "open" | "paid" | "closed" = "open") => ({ state, dueDate: { year: 2026, month: 9, day: 1 }, balancePaise: state === "open" ? 90_000 : 0, backDue: true });
+  const ordinary = { state: "open" as const, dueDate: { year: 2026, month: 11, day: 5 }, balancePaise: 180_000 };
+  const inGrace = { ...ordinary, dueDate: { year: 2026, month: 11, day: 10 } };
+  // only a back due is unpaid: the link and the material go by default, and the record says why
+  const byDefault = checkClassAccess({ ...base, fees: [old(), inGrace] });
+  assert.equal(byDefault.verdict, "allow");
+  assert.match(byDefault.reason, /old due does not stop the class link/u);
+  assert.equal(checkClassAccess({ ...base, oldDuesStopLink: false, fees: [old()] }).verdict, "allow");
+  // the centre asked for the stricter rule: the same back due now blocks, and the reason names it
+  const strict = checkClassAccess({ ...base, oldDuesStopLink: true, fees: [old(), inGrace] });
+  assert.equal(strict.verdict, "block");
+  assert.match(strict.reason, /old due/u);
+  // an ordinary fee past its grace days blocks in both cases
+  assert.equal(checkClassAccess({ ...base, fees: [old(), ordinary] }).verdict, "block");
+  assert.equal(checkClassAccess({ ...base, oldDuesStopLink: true, fees: [old(), ordinary] }).verdict, "block");
+  // a paid or waived (closed) back due changes nothing either way
+  for (const state of ["paid", "closed"] as const) {
+    assert.equal(checkClassAccess({ ...base, fees: [old(state), inGrace] }).verdict, "allow");
+    assert.equal(checkClassAccess({ ...base, oldDuesStopLink: true, fees: [old(state), inGrace] }).verdict, "allow");
+  }
+});
+
+test("a back due and the class link, end to end: it goes by default, is held with oldDuesStopLink, and the back due is still opened and reminded", async () => {
+  const run = async (stop: boolean) => {
+    const r = raw(); r.classes.oldDuesStopLink = stop;
+    r.students = r.students.map((x: any) => (x.name === "Rohan Mehta" ? { ...x, backDues: [{ month: "2026-09", amountInr: 900 }] } : x));
+    const w = createWorld({ settings: parseSettings(r) });
+    await w.tick();
+    await w.ownerSays(`link class 10 ${LINK}`);
+    w.clock.set(day(2, 16, 31)); await w.tick(); await w.tick();
+    const back = [...w.store.dues.values()].find((d) => d.studentName === "Rohan Mehta" && d.backDue);
+    assert.ok(back && back.state === "open" && back.lateFeeInr === 0, "the back due is opened, open, and never given a late fee");
+    const linked = w.messaging.sentTo(ROHAN).filter((m) => m.text.includes(LINK)).length;
+    // the material page reads the same rule from the saved state
+    const material = materialView(w.settings, w.store, ROHAN, "class-10", day(2, 16, 31));
+    return { linked, material };
+  };
+  const byDefault = await run(false);
+  assert.equal(byDefault.linked, 1, "a student whose only unpaid fee is a back due gets the class link");
+  assert.ok(byDefault.material, "and the reading material");
+  const strict = await run(true);
+  assert.equal(strict.linked, 0, "with oldDuesStopLink the same student gets neither");
+  assert.equal(strict.material, null);
 });
 
 test("a student whose fee is past its grace days gets no link, and gets it after paying (the record is read again at send time)", async () => {
