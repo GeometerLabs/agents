@@ -21,6 +21,7 @@ import { batchName, batchOf } from "./settings.ts";
 import type { PartMonth } from "./joining.ts";
 import type { Batch, Settings, Student } from "./settings.ts";
 import type { MessageFacts } from "./language/templates.ts";
+import type { ClassesState } from "./classes/state.ts";
 
 export type DueState = "open" | "paid" | "closed";
 
@@ -147,6 +148,8 @@ export interface Store {
   parentLinks?: Record<string, ParentLink>;
   /** Item 11h: the confirmation pages parents' presses made, by their handles' hashes. Left out until the first one. */
   confirmations?: Record<string, FeeConfirmation>;
+  /** Classes (src/classes/): the class links, the sessions, the consent answers and the doubts. Left out until the first class is touched, and for a centre without Classes. */
+  classes?: ClassesState;
 }
 
 export function createStore(): Store {
