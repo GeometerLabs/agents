@@ -41,7 +41,7 @@ test("the services catalogue of each example: required fields, exact money, the 
     const out = services.onSearch(catalogueOf(settings, "client-1", NOW), SAMPLE_CALLER);
     const a = audit(out, servicesOnSearch, false);
     assert.deepEqual({ missing: a.missing, money: a.money }, { missing: [], money: [] }, name);
-    assert.deepEqual(keys(out), ["city_code", "item_images", "service_category", "service_creds", "service_domain", "shop_address_parts", "shop_description", "shop_gps", "tax_breakup"].sort(), name);
+    assert.deepEqual(keys(out), ["city_code", "item_images", "service_category", "service_creds", "service_domain", "shop_address_parts", "shop_description", "shop_gps"].sort(), name);
     const items = (out.message.catalog as any).providers[0].items as any[];
     assert.deepEqual(items.map((i) => i.price.value), settings.services.map((s) => String(s.priceInr)), name);
     assert.deepEqual(items.map((i) => i.quantity.unitized.measure.value), settings.services.map((s) => String(s.durationMinutes)), name);
@@ -60,7 +60,7 @@ test("every state, every stage: the booking is a scheduled fulfillment with its 
         const out = services.bookingMessage(view, stage, SAMPLE_CALLER);
         if (none) { assert.equal(out, null, `${name} ${state}`); continue; }
         const a = audit(out!, servicesOrder(stage), false);
-        assert.deepEqual({ missing: a.missing, money: a.money, sums: a.sums, flags: out!.flags }, { missing: [], money: [], sums: null, flags: [] }, `${name} ${state} ${stage}`);
+        assert.deepEqual({ missing: a.missing, money: a.money, sums: a.sums, flags: out!.flags }, { missing: [], money: [], sums: true, flags: [] }, `${name} ${state} ${stage}`);
         const o = out!.message.order as any;
         const range = o.fulfillments[0].stops[0].time.range;
         assert.deepEqual([range.start, range.end], ["2026-11-18T05:00:00.000Z", new Date(make(settings, state).endMs!).toISOString()]);

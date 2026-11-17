@@ -11,6 +11,8 @@ export const SAMPLE_CALLER: Caller = {
   transactionId: "t-1", messageId: "m-1", timestampMs: Date.UTC(2026, 10, 17, 6, 30), bapId: "buyer.example", bapUri: "https://buyer.example/ondc", bppId: "seller.example", bppUri: "https://seller.example/ondc", cityCode: "std:0484",
   buyer: { name: "Test Buyer", phone: "9000000000", email: "buyer@example.invalid", address: { name: "Home", building: "Flat 1", locality: "Test Road", city: "Kochi", state: "Kerala", country: "IND", areaCode: "682030" }, gps: "10.0,76.3", at: "2026-11-17T06:00:00.000Z" },
   pay: { uri: "upi://pay?pa=test@bank&am=1.00", method: "upi", reference: "ref-1" },
+  // what a supplier's on_init would have said, for a B2B confirm to echo
+  supplierTerms: { cancellation_terms: [{ fulfillment_state: { descriptor: { code: "Pending" } }, cancellation_fee: { percentage: "0" } }], tags: [{ descriptor: { code: "bpp_terms" }, list: [{ descriptor: { code: "max_liability" }, value: "0" }] }] },
 };
 
 export const RETAIL_ORDER_STATES = ["Created", "Accepted", "In-progress", "Completed", "Cancelled"];

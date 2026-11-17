@@ -174,7 +174,7 @@ test("B2B buyer side: select, init and confirm; supplier ids and our GSTIN are g
   assert.equal(b2b.purchaseRequest(purchase("awaiting_approval"), "confirm", SAMPLE_CALLER), null);
   assert.ok(b2b.purchaseRequest(purchase("awaiting_approval"), "select", SAMPLE_CALLER)); // a preview of what would be asked
   const full = b2b.purchaseRequest(purchase("sent", { paidOutside: true, supplier: { id: "ravi", name: "Ravi Traders", ondc: SUPPLIER_IDS } }, FILLED), "confirm", SAMPLE_CALLER)!;
-  assert.deepEqual(keys(full), ["settlement_account"].sort()); // the one thing a buyer never needs, left as a note
+  assert.deepEqual(keys(full), []); // with the supplier's ids and the shop's own facts, nothing is missing
   const order = full.message.order as any;
   assert.deepEqual([order.payments[0].status, order.payments[0].params.amount, order.quote.price.value, order.items[0].quantity.selected.count, order.billing.tax_id], ["PAID", "4500", "4500", 10, "32AAAAA0000A1Z5"]);
   assert.equal(b2b.purchaseRequest(purchase("sent", { totalPaise: 1 }), "confirm", SAMPLE_CALLER)!.flags[0].kind, "record_total_mismatch");

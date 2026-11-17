@@ -23,7 +23,7 @@ function locationOf(g: ReturnType<typeof collector>, s: Party) {
   const a = f.address;
   const parts = a?.city && a.state && a.areaCode ? a : undefined;
   g.need("shop_address_parts", parts);
-  return { id: LOCATION(s), gps: g.need("shop_gps", f.gps), address: s.address, city: { code: f.cityCode, name: parts?.city }, country: { code: "IND" }, state: parts && { code: parts.state }, area_code: parts?.areaCode };
+  return { id: LOCATION(s), gps: g.need("shop_gps", f.gps), address: s.address, city: { code: f.cityCode, name: parts?.city }, country: { code: "IND" }, state: parts && { name: parts.state }, area_code: parts?.areaCode };
 }
 
 /** `on_search`: the shop's services as one provider, each with its duration, its cancellation terms and its bookable times. */
