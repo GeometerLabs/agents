@@ -65,6 +65,13 @@ export interface ExportRequest {
   shop: string;
   now: number;
   exportedBy?: { name: string; role: string };
+  /**
+   * "operator" (the default): what the Operator or builder takes from the panel. "owner" (block S, "Get my shop's file"): what the OWNER asked for and may keep. The owner's
+   * package is the same format, from this one shop's files only, with these differences: the deployer's status.json (the server's own versions and backup state, the
+   * Operator's side) is left out; the record must be in the keyed form (customers are fingerprints only the shop's key can match), and an older unkeyed record makes it refuse
+   * until the server's next export, rather than hand an owner something that can be guessed back; the manifest says which profile it is.
+   */
+  profile?: "operator" | "owner";
 }
 
 export interface ManifestFile { path: string; sha256: string; bytes: number }
@@ -76,6 +83,8 @@ export interface Manifest {
   pathway: string | null;
   exportedAt: string;
   exportedBy?: { name: string; role: string };
+  /** Who the package was made for: absent in packages made before block S (they are the Operator's). */
+  profile?: "operator" | "owner";
   /** When the deployer last exported the record this package holds. Anything after it is not in the package. */
   recordAsOf: string | null;
   counts: { recordEntries: number; cases: number; reports: number; certificates: number; settingsVersions: number };
@@ -189,6 +198,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   const casesName = template === "stock-orders" ? "purchase-orders.json" : template === "orders" ? "orders.json" : template === "fees" ? "dues.json" : "bookings.json";
   const cases = jsonLines(src.exportFile(casesName), template === "stock-orders" ? "The purchase orders" : template === "orders" ? "The orders" : template === "fees" ? "The fees" : "The bookings", warnings);
   const recordAsOf = src.exportedAt() ?? null;
+  if (req.profile === "owner") notes.push("This is the owner's file: made at the owner's own request, from this shop's files only. settings.json and the settings history are the owner's own list of people, as written; keep them private.");
   if (src.exportFile("record.json") === undefined) { notes.push("The deployer had not yet exported this shop's record when this package was made, so record/ is empty."); }
   else notes.push(`The record is as the deployer last exported it${recordAsOf ? ` (${recordAsOf})` : ""}. Customers' phone numbers (and, for a Fees centre, students' names) are fingerprints in it, as in the monthly reports: see PEOPLE IN THE RECORD in README.txt for what that covers.`);
   // B69: the form is what the export job says it wrote, never guessed from the fingerprints' shape: the old and the new look the same. No marker means an export from before the keyed form.
@@ -199,6 +209,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
     ? { form: PERSON_FORM, keyed: true, inputsKeyed: form.inputs.keyed, inputsOlder: form.inputs.older, messageIdsOlder: form.messageIds.older }
     : { form: src.exportFile("record.json") === undefined ? "none: there is no record in this package" : OLD_PERSON_FORM, keyed: false };
   if (src.exportFile("record.json") !== undefined && !personForm.keyed) warnings.push("The record in this package was exported before keyed fingerprints: its customer numbers and students' names can be worked back by anyone holding it. The server's next export (within a quarter of an hour) uses the keyed form.");
+  if (req.profile === "owner" && src.exportFile("record.json") !== undefined && !personForm.keyed) throw new ExportError("The shop's record has not been exported in the keyed form yet (the server does it every quarter of an hour), so the owner's file waits for the next export: customers' numbers must not be handed over in a form that can be guessed back.");
   put("record/record.jsonl", record.lines.length > 0 ? `${record.lines.join("\n")}\n` : "");
   put("record/cases.jsonl", cases.lines.length > 0 ? `${cases.lines.join("\n")}\n` : "");
 
@@ -222,7 +233,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   // ---- who served the shop
   const assignment = src.shopFile("assignment.json");
   if (assignment !== undefined) put("assignment.json", assignment.endsWith("\n") ? assignment : `${assignment}\n`);
-  if (statusText !== undefined && status !== undefined) put("status.json", json(status));
+  if (statusText !== undefined && status !== undefined && req.profile !== "owner") put("status.json", json(status)); // the owner's file leaves the server's own state out
 
   // ---- the papers the panel made
   let reports = 0;
@@ -243,6 +254,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   const manifest: Manifest = {
     schema: 1, format: EXPORT_FORMAT, shop: req.shop, template, pathway: lock, exportedAt: new Date(req.now).toISOString(),
     ...(req.exportedBy ? { exportedBy: req.exportedBy } : {}),
+    ...(req.profile ? { profile: req.profile } : {}),
     recordAsOf,
     counts: { recordEntries: record.count, cases: cases.count, reports, certificates, settingsVersions: history.length },
     personFingerprints: personForm,

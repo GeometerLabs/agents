@@ -1664,6 +1664,42 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.tuition.prefill.batches.2.names` | ഒമ്പതാം ക്ലാസ് | Class 9 |  |
 | `preset.tuition.prefill.batches.3.names` | പത്താം ക്ലാസ് | Class 10 |  |
 | `keep.lost` | Rahul-ന്റെ പഴയ കുടിശ്ശികയും മുമ്പത്തെ മറ്റ് വിവരങ്ങളും സൂക്ഷിച്ചില്ല, കാരണം രക്ഷിതാവിന്റെ നമ്പർ മാറി. അവ വീണ്ടും ചേർക്കാൻ നിങ്ങളുടെ ബിൽഡറോട് പറയുക. | Rahul's old dues and other earlier details were not kept, because the parent's number changed. Ask your builder to add them again. |  |
+| `leave.assistant.leave_file_asked` | ശരി. നിങ്ങളുടെ കടയുടെ ഫയൽ ഏകദേശം അര മണിക്കൂറിൽ നിങ്ങളുടെ ആപ്പ് പേജിൽ ഉണ്ടാകും, എടുക്കാനുള്ള ബട്ടണും. ബട്ടൺ ഒരു തവണ മാത്രം, 3 ദിവസം വരെ പ്രവർത്തിക്കും. ഇതിന് നിങ്ങളുടെ Operator വേണ്ട, അവരോട് ചോദിക്കുന്നുമില്ല. | Done. Your shop's file will be on your app page in about half an hour, with a button to take it. The button works once and for 3 days. You do not need your Operator for this, and they are not asked. |  |
+| `leave.assistant.leave_file_again` | കുറച്ചുമുമ്പ് നിങ്ങൾ കടയുടെ ഫയൽ ചോദിച്ചിരുന്നു. അത് വരുന്നുണ്ട്; കുറച്ച് കഴിഞ്ഞ് ആപ്പ് പേജ് നോക്കൂ. | You asked for your shop's file a short while ago. It is on its way; look on your app page in a little while. |  |
+| `leave.assistant.leave_operator_asked` | ശരി. മറ്റൊരു Operator വേണമെന്ന് ഞാൻ നിങ്ങളുടെ Operator-നെ അറിയിച്ചു. നിങ്ങൾ സമ്മതിക്കാതെ ഒന്നും മാറില്ല: Operator പുതിയ ആളുടെ പേര് നൽകും, നിങ്ങൾക്ക് ഒരു കോഡ് കിട്ടും, അത് "move" എന്നും കോഡും ചേർത്ത് ഇവിടെ അയയ്ക്കണം. 14 ദിവസത്തിൽ ഒന്നും നടന്നില്ലെങ്കിൽ Geometer സഹായിക്കും. | Done. I have told your Operator that you want another one. Nothing changes until you agree: your Operator names the new person, you get a code, and you send it here as "move" and the code. If nothing happens in 14 days, Geometer will help you. |  |
+| `leave.assistant.leave_operator_again` | കുറച്ചുമുമ്പ് നിങ്ങൾ Operator-നെ മാറ്റാൻ പറഞ്ഞിരുന്നു, അവരെ അറിയിച്ചിട്ടുണ്ട്. കോഡ് അയയ്ക്കുന്നതുവരെ ഒന്നും മാറില്ല. | You asked to change your Operator a short while ago, and they have been told. Nothing changes until you send the code. |  |
+| `leave.page.title` | നിങ്ങളുടെ കട നിങ്ങളുടേതാണ് | Your shop is yours |  |
+| `leave.page.intro` | നിങ്ങളുടേതായ എല്ലാം എപ്പോൾ വേണമെങ്കിലും എടുക്കാം, അല്ലെങ്കിൽ മറ്റൊരു Operator-നെ ചോദിക്കാം. നിങ്ങളുടെ Operator-ന്റെ അനുവാദം ചോദിക്കില്ല. | You can take everything that is yours, or ask for another Operator, whenever you like. Your Operator is not asked for permission. |  |
+| `leave.page.fileButton` | എന്റെ കടയുടെ ഫയൽ | Get my shop's file |  |
+| `leave.page.fileNone` | നിങ്ങളുടെ കടയുടെ സെറ്റിംഗ്സ്, രേഖകൾ, റിപ്പോർട്ടുകൾ എന്നിവയുടെ ഒരു ഫയൽ, സൂക്ഷിക്കാൻ. ഏകദേശം അര മണിക്കൂറിൽ ഇവിടെ എത്തും. | A file with your shop's settings, records and reports, to keep. It will be here in about half an hour. |  |
+| `leave.page.fileAsked` | ചോദിച്ചു. ഫയൽ ഏകദേശം അര മണിക്കൂറിൽ ഇവിടെ എത്തും. | Asked. Your file will be here in about half an hour. |  |
+| `leave.page.fileReady` | നിങ്ങളുടെ ഫയൽ തയ്യാറാണ്. താഴെയുള്ള ബട്ടൺ ഒരു തവണ മാത്രം, 21 Nov, 3:30 pm വരെ പ്രവർത്തിക്കും. | Your file is ready. The button below works once, until 21 Nov, 3:30 pm. |  |
+| `leave.page.take` | ഫയൽ എടുക്കുക | Take the file |  |
+| `leave.page.fileTaken` | നിങ്ങൾ ഫയൽ എടുത്തു. പുതിയത് വേണമെങ്കിൽ വീണ്ടും ചോദിക്കൂ. | You took your file. Ask again for a new one. |  |
+| `leave.page.fileExpired` | ആ ഫയലിന്റെ സമയം കഴിഞ്ഞു. പുതിയതിന് വീണ്ടും ചോദിക്കൂ. | That file ran out. Ask again for a new one. |  |
+| `leave.page.operatorButton` | എന്റെ Operator-നെ മാറ്റുക | Change my Operator |  |
+| `leave.page.operatorNote` | നിങ്ങളുടെ Operator-നെ ഉടൻ അറിയിക്കും. നിങ്ങൾ സമ്മതിക്കാതെ ഒന്നും മാറില്ല: കടയുടെ WhatsApp നമ്പറിലേക്ക് അയയ്ക്കാൻ ഒരു കോഡ് കിട്ടും. 14 ദിവസത്തിൽ ഒന്നും നടന്നില്ലെങ്കിൽ Geometer സഹായിക്കും. | Your Operator is told at once. Nothing changes until you agree: you will get a code to send to the shop's WhatsApp number. If nothing happens in 14 days, Geometer will help you. |  |
+| `leave.page.asked` | ശരി. ചോദിച്ചു. വിവരങ്ങൾ താഴെയുള്ള സംഭാഷണത്തിലുണ്ട്. | Done. Asked. Details are in the chat below. |  |
+| `leave.panel.heading` | ഉടമയുടെ സ്വന്തം ആവശ്യങ്ങൾ | The owner's own asks |  |
+| `leave.panel.fileAsked` | ഉടമ 18 Nov ന് തന്റെ കടയുടെ ഫയൽ ചോദിച്ചു. അത് അവർക്കായി ഉണ്ടാക്കുന്നു, അവർക്ക് മാത്രം കാണിക്കുന്നു. നിങ്ങൾ ഒന്നും ചെയ്യേണ്ടതില്ല. | The owner asked for their shop's file on 18 Nov. It is made for them and shown only to them. You do not need to do anything. |  |
+| `leave.panel.fileReady` | ഫയൽ ഉടമയുടെ ആപ്പിൽ തയ്യാറാണ്, 21 Nov വരെ. | The file is ready in the owner's app, until 21 Nov. |  |
+| `leave.panel.fileTaken` | ഉടമ തന്റെ ഫയൽ എടുത്തു. | The owner took their file. |  |
+| `leave.panel.fileExpired` | ഉടമ എടുക്കുംമുമ്പ് ഫയലിന്റെ സമയം കഴിഞ്ഞു. പുതിയ ആവശ്യത്തിൽ പുതിയത് ഉണ്ടാക്കും. | The file ran out before the owner took it. A new ask makes a new one. |  |
+| `leave.panel.fileProblem` | ഫയൽ ഇതുവരെ ഉണ്ടാക്കാനായില്ല: The record is not ready yet. കുറച്ച് മിനിറ്റിൽ വീണ്ടും ശ്രമിക്കും. | The file could not be made yet: The record is not ready yet. It is tried again in a few minutes. |  |
+| `leave.panel.fileNote` | അവരുടെ ഫയൽ അവരുടേതാണ്. നിങ്ങളുടെ അനുവാദം ചോദിക്കില്ല, തടയാനും കഴിയില്ല. | Their file is theirs. You are not asked for permission and you cannot stop it. |  |
+| `leave.panel.operatorAsked` | ഉടമ 18 Nov ന് മറ്റൊരു Operator-നെ ചോദിച്ചു. | The owner asked for another Operator on 18 Nov. |  |
+| `leave.panel.operatorDo` | താഴെയുള്ള ബട്ടൺ ഉപയോഗിച്ച് ഉടമ ആഗ്രഹിക്കുന്ന Operator-ന് കട മാറ്റിനൽകൂ. എന്തെങ്കിലും മാറുംമുമ്പ് ഉടമ സ്വന്തം കോഡ് കൊണ്ട് സമ്മതിക്കും. | Please move the shop to the Operator the owner wants, with the button below. The owner still agrees with their own code before anything changes. |  |
+| `leave.panel.operatorStart` | ഈ കട മറ്റൊരു Operator-ന് നൽകുക | Move this shop to another Operator |  |
+| `leave.panel.operatorWaiting` | ഒരു മാറ്റം ഉടമയുടെ കോഡിനായി കാത്തിരിക്കുന്നു. | A move is waiting for the owner's code. |  |
+| `leave.panel.operatorClock` | ഒന്നും ചെയ്തില്ലെങ്കിൽ 9 ദിവസത്തിൽ ഈ കട Geometer-ന് കാണിക്കും, അവർ ഉടമയെ സഹായിക്കും. | If nothing is done, Geometer is shown this shop in 9 days, and will help the owner. |  |
+| `leave.panel.strandedNote` | ഈ ഉടമകൾ 14 ദിവസത്തിലധികം മുമ്പ് മറ്റൊരു Operator-നെ ചോദിച്ചു, ഒന്നും നടന്നിട്ടില്ല. Geometer അവരെ ഒരാളെ കണ്ടെത്താൻ സഹായിക്കുന്നു, വേണമെങ്കിൽ കടയുടെ ബാക്കപ്പിൽ നിന്ന്. | These owners asked for another Operator more than 14 days ago and nothing has happened. Geometer helps them find one, from the shop's backups if needed. |  |
+| `leave.panel.strandedTitle` | മറ്റൊരു Operator-നായി കാത്തിരിക്കുന്ന ഉടമകൾ | Owners waiting for another Operator |  |
+| `leave.panel.strandedNone` | ആരും കാത്തിരിക്കുന്നില്ല. | No owner is waiting. |  |
+| `leave.panel.strandedRow` | Glow Salon: 1 Nov ന് ചോദിച്ചു. ഇപ്പോഴത്തെ Operator: Divya. | Glow Salon: asked on 1 Nov. Operator now: Divya. |  |
+| `leave.panel.fleetTold` | Geometer-ന്റെ ബില്ലിംഗിൽ ഇപ്പോൾ കട Ravi Digital-ന്റെ പക്കലാണ്. | Geometer's billing now has the shop with Ravi Digital. |  |
+| `leave.panel.fleetWaiting` | Geometer-ന്റെ ബില്ലിംഗിനെ ഇതുവരെ അറിയിക്കാനായില്ല. ഏതാനും മിനിറ്റിൽ വീണ്ടും ശ്രമിക്കും; അതുവരെ കടയുടെ ബിൽ പഴയ Operator-ക്കാണ്. | Geometer's billing has not been told yet. It is tried again every few minutes; until then the shop is still billed to the old Operator. |  |
+| `leave.panel.fleetRefused` | Geometer-ന്റെ ബില്ലിംഗ് മാറ്റം സ്വീകരിച്ചില്ല: That Operator does not serve here yet. support-ന് എഴുതൂ, അവർ കൈകൊണ്ട് ശരിയാക്കും. | Geometer's billing did not take the move: That Operator does not serve here yet. Write to support and they will fix it by hand. |  |
+| `leave.panel.fleetNoId` | Ravi Digital-ന്റെ അക്കൗണ്ടിന് Geometer-ൽ Operator ഐഡി ഇല്ല, അതിനാൽ ബില്ലിംഗിനെ അറിയിച്ചില്ല. support-ന് എഴുതൂ, അവർ കൈകൊണ്ട് ശരിയാക്കും. | Ravi Digital's account has no Operator id with Geometer, so billing was not told. Write to support and they will fix it by hand. |  |
 | `chat.list.yourChats` | നിങ്ങളുടെ ചാറ്റുകൾ | Your chats |  |
 | `chat.list.installHead` | Streetlist ഫോണിൽ സൂക്ഷിക്കൂ | Keep Streetlist on your phone |  |
 | `chat.list.installBody` | ഒറ്റ തൊടലിൽ ചാറ്റുകൾ തുറക്കാം, കട മറുപടി തന്നാൽ അറിയാം. | Open your chats in one tap, and hear when a shop replies. |  |

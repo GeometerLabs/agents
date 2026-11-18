@@ -18,6 +18,8 @@ import { greeting } from "./personality.ts";
 import type { Personality } from "./personality.ts";
 import { MEMORY_WORDS } from "./words-memory.ts";
 import type { MemoryMessageData } from "./words-memory.ts";
+import { LEAVE_WORDS } from "./words-leave.ts";
+import type { LeaveMessageData } from "./words-leave.ts";
 
 /** Formats values in one language and remembers each one for the outgoing check. */
 export class Writer {
@@ -54,7 +56,7 @@ const openRow = (w: Writer, r: OpenRow) => `${w.lit(r.who)}, ${w.lit(r.what)}: $
 export const LIST_ROWS = 12;
 
 /** The data each message is written from (the shop-memory and talk messages are in words-memory.ts). */
-export interface MessageData extends MemoryMessageData {
+export interface MessageData extends MemoryMessageData, LeaveMessageData {
   day_list: { date: LocalDate; rows: DayRow[]; closed: boolean };
   owes_list: { rows: OweRow[] };
   open_list: { rows: OpenRow[] };
@@ -95,7 +97,7 @@ export interface MessageData extends MemoryMessageData {
 }
 export type MessageId = keyof MessageData;
 
-type Words = { [K in Exclude<MessageId, keyof MemoryMessageData>]: (d: MessageData[K], w: Writer) => string };
+type Words = { [K in Exclude<MessageId, keyof MemoryMessageData | keyof LeaveMessageData>]: (d: MessageData[K], w: Writer) => string };
 
 /** "and 4 more" after a cut list. */
 const more = (w: Writer, total: number, l: Record<Language, (n: string) => string>) => (total > LIST_ROWS ? `\n${l[w.language](w.n(total - LIST_ROWS))}` : "");
@@ -535,7 +537,7 @@ const W: Record<Language, Words> = {
 /** One message written in a language: its text and the facts the outgoing check reads. Throws only on a programming error (a missing word). */
 export function write<K extends MessageId>(id: K, data: MessageData[K], language: Language, timeZone: string): { text: string; facts: CheckFacts } {
   const w = new Writer(language, timeZone);
-  const own = (W[language] as Record<string, (d: unknown, w: Writer) => string>)[id] ?? (MEMORY_WORDS[language] as Record<string, (d: unknown, w: Writer) => string>)[id];
+  const own = (W[language] as Record<string, (d: unknown, w: Writer) => string>)[id] ?? (MEMORY_WORDS[language] as Record<string, (d: unknown, w: Writer) => string>)[id] ?? (LEAVE_WORDS[language] as Record<string, (d: unknown, w: Writer) => string>)[id];
   const text = own(data, w);
   return { text, facts: w.check() };
 }

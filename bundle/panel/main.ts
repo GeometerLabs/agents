@@ -15,6 +15,7 @@ import { writeFileSync } from "node:fs";
 import { ExportError } from "../export/build.ts";
 import { createDocuments } from "./documents.ts";
 import { exportShop } from "./export.ts";
+import { stagedPath } from "../lib/owner-file.ts";
 import { createShops } from "./shops.ts";
 import { PaperError, createPapers } from "./papers.ts";
 import { linkFleetPartner, listAccounts, makeConfirmLink, makeInviteLink, makeResetLink, openStores, signOutAccount, startPanel } from "./server.ts";
@@ -64,13 +65,16 @@ try {
     console.log(JSON.stringify({ ok: true, ...makeConfirmLink(config, { kind: values.kind, shop: values.shop, ...(changes ? { changes } : {}), ...(values.note ? { note: values.note } : {}) }) }));
   } else if (command === "export") {
     // the panel builds the shop's export (it alone can open the papers it keeps): `--json` prints one line the deployer's CLI reads, `--out FILE` writes the .tar.gz here
-    const { values, positionals } = parseArgs({ args: rest, allowPositionals: true, options: { json: { type: "boolean" }, out: { type: "string" } } });
+    const { values, positionals } = parseArgs({ args: rest, allowPositionals: true, options: { json: { type: "boolean" }, out: { type: "string" }, "owner-file": { type: "boolean" } } });
     const shop = positionals[0];
-    if (!shop) throw new ConfigError("Say which shop: export <shop> [--out FILE | --json].");
+    if (!shop) throw new ConfigError("Say which shop: export <shop> [--out FILE | --json | --owner-file].");
     try {
       const { store } = openStores(config);
-      const { built, tgz } = exportShop(config, createShops(config, store), createDocuments(store), shop, Date.now(), { name: "geometer export", role: "server" });
-      if (values.out) { writeFileSync(values.out, tgz, { mode: 0o644 }); console.log(`Wrote ${values.out} (${built.manifest.files.length} files).`); }
+      // `--owner-file` (block S): the OWNER's package, staged next to the shop's own settings for the deployer to copy into the shop's runtime folder; prints one short line, never the bytes
+      const ownerFile = values["owner-file"] === true;
+      const { built, tgz } = exportShop(config, createShops(config, store), createDocuments(store), shop, Date.now(), ownerFile ? { name: "the owner", role: "owner" } : { name: "geometer export", role: "server" }, ownerFile ? "owner" : undefined);
+      if (ownerFile) { writeFileSync(stagedPath(config.serverDir, shop), tgz, { mode: 0o644 }); console.log(JSON.stringify({ ok: true, name: built.name, warnings: built.warnings })); }
+      else if (values.out) { writeFileSync(values.out, tgz, { mode: 0o644 }); console.log(`Wrote ${values.out} (${built.manifest.files.length} files).`); }
       else console.log(JSON.stringify({ ok: true, name: built.name, warnings: built.warnings, tgz: tgz.toString("base64") }));
     } catch (e) {
       if (!(e instanceof ExportError) && !/not a shop name/u.test((e as Error).message)) throw e;

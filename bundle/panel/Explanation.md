@@ -369,3 +369,8 @@ has been through the step.
 Tests (written 17 Nov, not run): `test/presets.test.ts` (every file validates; every preset in every language goes through its form's real steps and builds settings the template accepts;
 refusals; the typed trade; the four languages), `test/presets-flow.test.ts` (the first screen in four languages, a trade button, Something else, the trade in the meta and on the page,
 escaped). Three existing assertions moved from `GET /setup` to `GET /setup/other` (fees-flow, orders-flow, setup tests).
+
+## The owner's own asks (18 Nov 2026, block S)
+
+The shop's page has a block "The owner's own asks" (`leave.ts`, `words-leave.ts`) when the owner asked, from the exported record, for their file or for another Operator. The file is not the Operator's to approve or stop: the block says so and only reports where it stands (asked, ready until, taken, ran out, or why it could not be made yet, from `status/leave/<shop>.json` which holds no link). For another Operator it says what to do, links to the existing handover page, shows "a move is waiting for the owner's code" while one is, and the days left of 14. `/stranded` (builder accounts, linked from the shops list) lists owners who have waited more than 14 days (the rule is `modules/approvals/leave.ts` `stranded`). After a finished move the handover page says what Geometer's billing was told (`lib/fleet-move.ts`). The asks reach the panel with the exported record, up to a quarter of an hour later; see Deferred. Tests: `test/leave.test.ts`.
+
