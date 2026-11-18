@@ -24,7 +24,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
     loadClient,
     async build(client, { store, clock, log, recordKey, ownerSignin, push }) {
       // no WhatsApp: the push-only stand-in. A message to the owner is pushed when a phone has alerts on and otherwise refused with a plain sentence (the owner's app lists it).
-      const messaging = pushMessaging(undefined, push, client.settings.owner.whatsapp, clock);
+      const messaging = pushMessaging(undefined, push, () => client.settings.owner.whatsapp, clock);
       const reading = understanding(client as never, { clock, log }, OWNER_UNDERSTANDING as never);
       const talker = buildTalker(client as never, { clock, log });
       return createRuntime({

@@ -101,10 +101,13 @@ export function ownerRoute(push: Push | undefined, hasWhatsApp: boolean): "whats
  * unchanged (or are refused as not sent when there is no WhatsApp). A push stands in for a send: its id is "push-..." and `getMessage` knows it, so the record
  * says the alert went, and names it by that id.
  */
-export function pushMessaging(base: Messaging | undefined, push: Push | undefined, owner: string, clock: Clock): Messaging {
+export function pushMessaging(base: Messaging | undefined, push: Push | undefined, ownerNow: string | (() => string), clock: Clock): Messaging {
+  // Why a function is allowed: the owner's number can change while the runtime runs (a sale's change applies after 48 hours with no restart, owner-access.ts effectiveNumber), so a
+  // template passes `() => settings.owner.whatsapp` and the number is read on every send, never fixed at start.
+  const ownerOf = (): string => (typeof ownerNow === "function" ? ownerNow() : ownerNow);
   const sent = new Map<string, OutboundMessage>();
   const noWhatsApp = () => new ApiError(400, "This shop has no WhatsApp number, and the owner has no phone with alerts on, so nothing was sent; the owner's app shows what waits for them.");
-  const isOwner = (to: string) => sameNumber(to, owner);
+  const isOwner = (to: string) => sameNumber(to, ownerOf());
   /** The alert as a stand-in message, kept so getMessage can answer for it. */
   const asMessage = (to: string, kind: OutboundMessage["kind"], text: string, ids: string[]): OutboundMessage => {
     const m: OutboundMessage = { id: `push-${ids[0]}`, to, kind, text, sentAt: clock.now(), afterOptOut: false, acceptedAs: "push" };

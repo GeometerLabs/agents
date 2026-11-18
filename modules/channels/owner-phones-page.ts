@@ -25,7 +25,7 @@ interface Words {
   codes: string; codesNone: string; codesHave: (day: string) => string; codesMake: string; codesRemake: string; codesNote: string; codesTitle: string; codesShow: string;
   needPasskey: string; back: string; onePhone: string; noPhones: string;
   bannerNew: (when: string, label: string) => string; itWasMe: string; removeIt: string; bannerRequest: (by: string, when: string) => string; cancel: string; cancelled: string;
-  labelNote: string; alertsTitle: string; alertsNote: string; alertSince: (day: string) => string; stop: string; bannerNumber: string; bannerOwner: (when: string) => string; bannerCodesMade: (when: string, label: string) => string; bannerRemoved: (when: string, label: string) => string; bannerCodes: string; makeCodes: string; refused: string; operator: string; openPhones: string;
+  labelNote: string; alertsTitle: string; alertsNote: string; alertSince: (day: string) => string; stop: string; bannerNumber: string; lockedTo: (last4: string) => string; bannerOwner: (when: string) => string; bannerCodesMade: (when: string, label: string) => string; bannerRemoved: (when: string, label: string) => string; bannerCodes: string; makeCodes: string; refused: string; operator: string; openPhones: string;
 }
 /** Exported so the review sheets list these lines too (review.ts, ids "phones.*"). */
 export const WORDS: Record<Language, Words> = {
@@ -48,6 +48,7 @@ export const WORDS: Record<Language, Words> = {
     labelNote: "The names are what each phone said about itself when it was added.",
     alertsTitle: "Alerts on your phones", alertsNote: "These phones get your shop's alerts. Stop one you do not know.", alertSince: (d) => `Alerts since ${d}`, stop: "Stop",
     bannerNumber: "The Operator's panel shows a different owner number. Your messages still come to your number.",
+    lockedTo: (n) => `Messages go to your number ending ${n}. Not yours? Tell your Operator, or Geometer.`,
     bannerOwner: (when) => `The owner's number for this shop was changed. Every phone that opens your shop stops working on ${when} unless you cancel.`,
     bannerCodesMade: (when, label) => `New recovery codes were made on ${when}${label ? ` (${label})` : ""}. Not you? Remove that phone.`, bannerRemoved: (when, label) => `A phone was removed on ${when}${label ? ` (${label})` : ""}.`,
     bannerCodes: "Make your own codes now, so only you hold them.", makeCodes: "Make my codes", refused: "That did not work. Sign out, sign in with your phone's fingerprint and try again.", operator: "Your Operator", openPhones: "Your phones",
@@ -71,6 +72,7 @@ export const WORDS: Record<Language, Words> = {
     labelNote: "ये नाम वही हैं जो हर फ़ोन ने जुड़ते समय अपने बारे में बताए।",
     alertsTitle: "आपके फ़ोनों पर अलर्ट", alertsNote: "ये फ़ोन आपकी दुकान के अलर्ट पाते हैं। जो फ़ोन आप नहीं पहचानते, उसे रोक दीजिए।", alertSince: (d) => `${d} से अलर्ट`, stop: "रोकें",
     bannerNumber: "ऑपरेटर के पैनल में मालिक का नंबर कुछ और दिख रहा है। आपके संदेश अब भी आपके नंबर पर आते हैं।",
+    lockedTo: (n) => `संदेश आपके उस नंबर पर आते हैं जो ${n} पर खत्म होता है। आपका नहीं है? अपने ऑपरेटर या Geometer को बताइए।`,
     bannerOwner: (when) => `इस दुकान के लिए मालिक का नंबर बदला गया है। आप रद्द न करें तो दुकान खोलने वाले सारे फ़ोन ${when} को बंद हो जाएँगे।`,
     bannerCodesMade: (when, label) => `${when} को नए रिकवरी कोड बनाए गए${label ? ` (${label})` : ""}। आपने नहीं बनाए? वह फ़ोन हटा दीजिए।`, bannerRemoved: (when, label) => `${when} को एक फ़ोन हटाया गया${label ? ` (${label})` : ""}।`,
     bannerCodes: "अपने कोड अभी बनाइए, ताकि वे सिर्फ़ आपके पास रहें।", makeCodes: "मेरे कोड बनाएँ", refused: "यह नहीं हो पाया। साइन आउट करके अपने फ़ोन के फ़िंगरप्रिंट से साइन इन कीजिए और फिर कोशिश कीजिए।", operator: "आपके ऑपरेटर", openPhones: "आपके फ़ोन",
@@ -94,6 +96,7 @@ export const WORDS: Record<Language, Words> = {
     labelNote: "ഓരോ ഫോണും ചേർക്കുമ്പോൾ സ്വയം പറഞ്ഞ പേരുകളാണ് ഇവ.",
     alertsTitle: "നിങ്ങളുടെ ഫോണുകളിലെ അലർട്ടുകൾ", alertsNote: "ഈ ഫോണുകൾക്ക് നിങ്ങളുടെ കടയുടെ അലർട്ടുകൾ കിട്ടുന്നു. നിങ്ങൾക്ക് അറിയാത്തത് നിർത്തൂ.", alertSince: (d) => `${d} മുതൽ അലർട്ടുകൾ`, stop: "നിർത്തൂ",
     bannerNumber: "ഓപ്പറേറ്ററുടെ പാനലിൽ ഉടമയുടെ നമ്പർ വേറൊന്നായി കാണിക്കുന്നു. നിങ്ങളുടെ സന്ദേശങ്ങൾ ഇപ്പോഴും നിങ്ങളുടെ നമ്പറിലേക്ക് തന്നെ വരുന്നു.",
+    lockedTo: (n) => `സന്ദേശങ്ങൾ ${n} എന്നതിൽ അവസാനിക്കുന്ന നിങ്ങളുടെ നമ്പറിലേക്കാണ് വരുന്നത്. നിങ്ങളുടേതല്ലേ? ഓപ്പറേറ്ററോടോ Geometer-നോടോ പറയൂ.`,
     bannerOwner: (when) => `ഈ കടയുടെ ഉടമയുടെ നമ്പർ മാറ്റി. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും ${when}-ന് പ്രവർത്തിക്കില്ല.`,
     bannerCodesMade: (when, label) => `${when}-ന് പുതിയ റിക്കവറി കോഡുകൾ ഉണ്ടാക്കി${label ? ` (${label})` : ""}. നിങ്ങളല്ലേ? ആ ഫോൺ നീക്കൂ.`, bannerRemoved: (when, label) => `${when}-ന് ഒരു ഫോൺ നീക്കി${label ? ` (${label})` : ""}.`,
     bannerCodes: "നിങ്ങളുടെ സ്വന്തം കോഡുകൾ ഇപ്പോൾ ഉണ്ടാക്കൂ, അത് നിങ്ങളുടെ കയ്യിൽ മാത്രമിരിക്കട്ടെ.", makeCodes: "എന്റെ കോഡുകൾ ഉണ്ടാക്കൂ", refused: "അത് നടന്നില്ല. സൈൻ ഔട്ട് ചെയ്ത് ഫോണിന്റെ ഫിംഗർപ്രിന്റ് ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്ത് വീണ്ടും ശ്രമിക്കൂ.", operator: "നിങ്ങളുടെ ഓപ്പറേറ്റർ", openPhones: "നിങ്ങളുടെ ഫോണുകൾ",
@@ -117,6 +120,7 @@ export const WORDS: Record<Language, Words> = {
     labelNote: "ಪ್ರತಿ ಫೋನ್ ಸೇರಿಸುವಾಗ ತನ್ನ ಬಗ್ಗೆ ಹೇಳಿದ ಹೆಸರುಗಳು ಇವು.",
     alertsTitle: "ನಿಮ್ಮ ಫೋನ್‌ಗಳಲ್ಲಿನ ಅಲರ್ಟ್‌ಗಳು", alertsNote: "ಈ ಫೋನ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅಂಗಡಿಯ ಅಲರ್ಟ್‌ಗಳು ಬರುತ್ತವೆ. ನಿಮಗೆ ಗೊತ್ತಿಲ್ಲದ್ದನ್ನು ನಿಲ್ಲಿಸಿ.", alertSince: (d) => `${d} ರಿಂದ ಅಲರ್ಟ್‌ಗಳು`, stop: "ನಿಲ್ಲಿಸಿ",
     bannerNumber: "ಆಪರೇಟರ್‌ನ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಮಾಲೀಕರ ನಂಬರ್ ಬೇರೆಯಾಗಿ ತೋರುತ್ತಿದೆ. ನಿಮ್ಮ ಸಂದೇಶಗಳು ಈಗಲೂ ನಿಮ್ಮ ನಂಬರ್‌ಗೇ ಬರುತ್ತವೆ.",
+    lockedTo: (n) => `ಸಂದೇಶಗಳು ${n} ರಲ್ಲಿ ಕೊನೆಗೊಳ್ಳುವ ನಿಮ್ಮ ನಂಬರ್‌ಗೆ ಬರುತ್ತವೆ. ನಿಮ್ಮದಲ್ಲವೇ? ನಿಮ್ಮ ಆಪರೇಟರ್‌ಗೆ ಅಥವಾ Geometer ಗೆ ಹೇಳಿ.`,
     bannerOwner: (when) => `ಈ ಅಂಗಡಿಯ ಮಾಲೀಕರ ನಂಬರ್ ಬದಲಾಯಿಸಲಾಗಿದೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳು ${when} ರಂದು ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ.`,
     bannerCodesMade: (when, label) => `${when} ರಂದು ಹೊಸ ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಲಾಗಿದೆ${label ? ` (${label})` : ""}. ನೀವಲ್ಲವೇ? ಆ ಫೋನ್ ತೆಗೆಯಿರಿ.`, bannerRemoved: (when, label) => `${when} ರಂದು ಒಂದು ಫೋನ್ ತೆಗೆಯಲಾಗಿದೆ${label ? ` (${label})` : ""}.`,
     bannerCodes: "ನಿಮ್ಮ ಸ್ವಂತ ಕೋಡ್‌ಗಳನ್ನು ಈಗಲೇ ಮಾಡಿ, ಅವು ನಿಮ್ಮ ಬಳಿ ಮಾತ್ರ ಇರಲಿ.", makeCodes: "ನನ್ನ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿ", refused: "ಅದು ಆಗಲಿಲ್ಲ. ಸೈನ್ ಔಟ್ ಆಗಿ, ಫೋನ್‌ನ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.", operator: "ನಿಮ್ಮ ಆಪರೇಟರ್", openPhones: "ನಿಮ್ಮ ಫೋನ್‌ಗಳು",
@@ -182,7 +186,7 @@ ${v.passkeySession ? html`<p><a class="btn quiet" href="${o.base}/phones?remove=
   const add = v.passkeySession ? html`<h2>${w.add}</h2><p class="note">${w.addNote}</p>${tap(o.base, "add", o.csrf, w.add, {}, true)}` : "";
   return shell(lang, w.title, html`<h1>${w.title}</h1>
 ${o.notice ? html`<p class="notice" role="status">${o.notice === "removed" ? w.removed : o.notice === "cancelled" ? w.cancelled : w.refused}</p>` : ""}
-${raw(banners)}<p class="note">${w.intro}</p>${state}${rows}${v.phones.length > 0 ? html`<p class="note">${w.labelNote}</p>` : ""}${add}${alertsList}${codes}
+${raw(banners)}<p class="note">${w.intro}</p>${v.lockedLast4 ? html`<p class="calm">${w.lockedTo(v.lockedLast4)}</p>` : ""}${state}${rows}${v.phones.length > 0 ? html`<p class="note">${w.labelNote}</p>` : ""}${add}${alertsList}${codes}
 ${o.hosted ? html`<p class="note">${LOST_HELP[lang]}</p>` : ""}
 <p><a href="${o.base}/?lang=${lang}">${w.back}</a></p>`);
 }

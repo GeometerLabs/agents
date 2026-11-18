@@ -92,14 +92,27 @@ export interface OwnerSigninSetup {
   endBefore: () => number | undefined;
   /** Item 11h: the panel's setup QR, recovery card and "remove the owner's passkeys" (owner-grants.ts), read fresh. Left out: no passkeys. */
   grants?: () => OwnerGrants | undefined;
+  /** The owner as the SETTINGS say (whatsapp = the settings' own number, untouched by the runtime). Every use goes through `ownerNumber()` below, never this field directly. */
   owner: { whatsapp: string; language: Language };
-  /** The owner number the SETTINGS name, when `owner.whatsapp` was set to the number the shop was locked with instead (start.ts). Left out: they are the same. */
-  settingsOwner?: string;
   /** An alert to the owner's phones with web push on (modules/push), for the Operator's removal request. Left out: no push, and the owner's app shows the request. */
   alert?: (text: Record<Language, string>) => void;
   shopName: string;
   clock: Clock;
   log?: (line: string) => void;
+}
+
+/**
+ * Make the settings' `owner.whatsapp` (the object every template reads on every step) answer with the EFFECTIVE number on every read (owner-access.ts effectiveNumber), and
+ * log when the settings and the lock disagree. The settings file is never changed and no value is fixed: the getter asks the store each time. Returns the settings' own number
+ * as it was when this ran, which the owner sign-in compares with the lock.
+ */
+export function followLockedNumber(owner: { whatsapp: string }, access: OwnerAccess, log: (line: string) => void): string {
+  const settingsNumber = owner.whatsapp;
+  access.learnNumber(settingsNumber);
+  const locked = access.boundNumber();
+  if (locked && sameNumber(locked, settingsNumber) === false) log("The owner's number in the settings is not the one this shop was locked with; the owner's messages keep going to the locked number until the owner confirms the change.");
+  Object.defineProperty(owner, "whatsapp", { enumerable: true, configurable: true, get: () => access.effectiveNumber(settingsNumber) });
+  return settingsNumber;
 }
 
 const sameNumber = (a: string, b: string) => a.replace(/\D/gu, "") === b.replace(/\D/gu, "");
@@ -109,9 +122,18 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
   access.noteStart(clock.now()); // a request that fell due while the runtime was down is given a day more, and the owner is told again (owner-access.ts noteStart)
   const log = setup.log ?? (() => undefined);
   /** The owner as the settings and the deployer say now; undefined while the shop has no pages file (no owner sign-in at all). */
-  /** The owner number the settings say NOW (the runtime may keep using the locked one in `owner`: start.ts), for noticing a change the Operator made. */
-  const settingsWho = (): OwnerNow | undefined => { const p = setup.pages(); return p ? { owner: setup.settingsOwner ?? owner.whatsapp, base: p.ownerBase } : undefined; };
-  const who = (): OwnerNow | undefined => { const p = setup.pages(); return p ? { owner: owner.whatsapp, base: p.ownerBase } : undefined; };
+  /** The owner number the settings say NOW, for noticing a change the Operator made (owner-access.ts watchOwner compares it with the locked one). */
+  const settingsWho = (): OwnerNow | undefined => { const p = setup.pages(); return p ? { owner: owner.whatsapp, base: p.ownerBase } : undefined; };
+  /**
+   * The number the owner is reached on, evaluated on EVERY use (owner-access.ts effectiveNumber says why it is never a value fixed at start): the locked number while the
+   * shop is locked, the settings' number otherwise. The files are read into the store first, so a change that has just become due has already opened the gate: a sign-in or
+   * a registration in that moment binds to the number the settings say, never to the one the shop was locked with a moment ago.
+   */
+  const ownerNumber = (): string => {
+    if (setup.grants) access.sync(setup.grants(), clock.now());
+    return access.effectiveNumber(owner.whatsapp);
+  };
+  const who = (): OwnerNow | undefined => { const p = setup.pages(); return p ? { owner: ownerNumber(), base: p.ownerBase } : undefined; };
 
   /**
    * The moment before which no passkey works. The runtime's OWN value (owner-access.ts): the Operator's file can no longer set it once the owner holds a passkey, only
@@ -123,7 +145,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
   const endBefore = (): number | undefined => access.clampEndBefore(setup.endBefore(), clock.now());
 
   /** Is this the owner's "open my app"? Only from the owner's own number, only the fixed phrases, and only when the shop has an owner view to open. */
-  const isOpenMyApp = (m: InboundMessage): boolean => sameNumber(m.from, owner.whatsapp) && !m.reply && m.text !== "" && OPEN_MY_APP.includes(phraseOf(m.text)) && who() !== undefined;
+  const isOpenMyApp = (m: InboundMessage): boolean => sameNumber(m.from, ownerNumber()) && !m.reply && m.text !== "" && OPEN_MY_APP.includes(phraseOf(m.text)) && who() !== undefined;
 
   /**
    * One link, if the shop's limits allow it: issued, sent in the owner's open window, and the outcome recorded under the link's short id. Item 11h: on WhatsApp only,
@@ -137,14 +159,14 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
     // counted first, as every request is, so a shop with no WhatsApp cannot have its record flooded by asking either
     const wa = whatsappOf(ctx0.messaging);
     if (!wa) {
-      ctx0.record.append({ conversation: owner.whatsapp, action: "owner_signin", outcome: "blocked", inputs: { via }, language: owner.language, notes: "This shop has no WhatsApp, so no sign-in link is sent: the owner signs in with their passkey (or the Operator's setup QR or recovery card).", refs: { to: "owner", via } });
+      ctx0.record.append({ conversation: w.owner, action: "owner_signin", outcome: "blocked", inputs: { via }, language: owner.language, notes: "This shop has no WhatsApp, so no sign-in link is sent: the owner signs in with their passkey (or the Operator's setup QR or recovery card).", refs: { to: "owner", via } });
       return;
     }
     const ctx = { ...ctx0, messaging: wa };
     const language = owner.language;
-    const base = { conversation: owner.whatsapp, action: "owner_signin" as const, language };
+    const base = { conversation: w.owner, action: "owner_signin" as const, language };
     // the window first: a link cannot go as free text when it is closed, and nothing is issued that could not be sent
-    const open = await ctx.messaging.isWindowOpen(owner.whatsapp).catch(() => false);
+    const open = await ctx.messaging.isWindowOpen(w.owner).catch(() => false);
     if (!open) {
       ctx.record.append({ ...base, outcome: "blocked", inputs: { via }, notes: "The owner's WhatsApp window is closed, so a sign-in link cannot go as a message. The page tells the owner to send \"open my app\" to the shop's number.", refs: { to: "owner", via } });
       return;
@@ -155,7 +177,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
     let note: string | undefined;
     try {
       // previews are off in the live adapter (whatsapp.ts), so WhatsApp itself does not fetch the link
-      sent = await ctx.messaging.sendText(owner.whatsapp, SIGNIN_MESSAGE[language](setup.shopName, `${w.base}/in/${link.token}`));
+      sent = await ctx.messaging.sendText(w.owner, SIGNIN_MESSAGE[language](setup.shopName, `${w.base}/in/${link.token}`));
       outcome = (await ctx.messaging.getMessage(sent.id)) ? "confirmed" : "unconfirmed";
     } catch (e) {
       outcome = !sent && nothingWasSent(e) ? "failed" : "unconfirmed";
@@ -175,13 +197,13 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
     /** Handle one event the core gave here (`takes` said yes). */
     async run(event: OwnerSigninEvent | OwnerAccessEvent | { kind: "message"; message: InboundMessage }, ctx: { messaging: Messaging; record: ActionRecord; store?: unknown }): Promise<void> {
       if (event.kind === "owner_access" && event.what === "file_taken") {
-        ctx.record.append({ conversation: owner.whatsapp, action: FILE_TAKEN, outcome: "confirmed", inputs: { ask: event.ask ?? "" }, language: owner.language, refs: { ask: event.ask ?? "", session: event.session }, notes: "the owner's session took the file of their shop; the server's copy is deleted" });
+        ctx.record.append({ conversation: ownerNumber(), action: FILE_TAKEN, outcome: "confirmed", inputs: { ask: event.ask ?? "" }, language: owner.language, refs: { ask: event.ask ?? "", session: event.session }, notes: "the owner's session took the file of their shop; the server's copy is deleted" });
         return;
       }
       if (event.kind === "owner_access") {
         const how = event.how ? { how: event.how } : {};
         const label = event.label ? { label: event.label } : {};
-        ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs: { what: event.what, session: event.session, ...how, ...label }, language: owner.language, refs: { what: event.what, session: event.session, ...how, ...label } });
+        ctx.record.append({ conversation: ownerNumber(), action: "owner_session", outcome: "confirmed", inputs: { what: event.what, session: event.session, ...how, ...label }, language: owner.language, refs: { what: event.what, session: event.session, ...how, ...label } });
         return;
       }
       await sendLink(event.kind === "message" ? "whatsapp" : "page", ctx);
@@ -196,7 +218,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
         const w = settingsWho();
         if (w) access.watchOwner(w, clock.now()); // a different owner number in the settings after the lock is a request, not a change (owner-access.ts)
         for (const n of access.takeNotes()) {
-          const line = (inputs: Record<string, string>) => ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs, language: owner.language, refs: inputs });
+          const line = (inputs: Record<string, string>) => ctx.record.append({ conversation: ownerNumber(), action: "owner_session", outcome: "confirmed", inputs, language: owner.language, refs: inputs });
           if (n.what === "reset") line({ what: "owner_reset", at: new Date(n.at).toISOString(), by: n.by, reason: n.reason });
           else if (n.what === "removal_asked") {
             line({ what: "removal_asked", by: n.askedBy, effectiveAt: new Date(n.effectiveAt).toISOString() });
@@ -217,7 +239,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       if (endAt === undefined) return;
       const ended = access.endAllBefore(endAt, clock.now());
       if (ended === undefined) return;
-      ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs: { what: "all_ended", endBefore: endAt }, language: owner.language, refs: { what: "all_ended", count: String(ended) } });
+      ctx.record.append({ conversation: ownerNumber(), action: "owner_session", outcome: "confirmed", inputs: { what: "all_ended", endBefore: endAt }, language: owner.language, refs: { what: "all_ended", count: String(ended) } });
     },
 
     /** What the runtime's HTTP layer uses: each reads the owner and the address as they are now. */

@@ -391,6 +391,18 @@ export function openOwnerAccess(file: string) {
       const b = boundKey();
       if (b !== undefined && lockAt() !== undefined && ownerKey(number) === b && metaStr("bound_number") === undefined) db.prepare("INSERT INTO meta (name, value) VALUES ('bound_number', ?) ON CONFLICT(name) DO NOTHING").run(number.replace(/\D/gu, ""));
     },
+    /**
+     * THE number every owner-facing path uses, worked out on EVERY use and never fixed at start: while the shop is locked and its binding is known, the number it was
+     * locked with; otherwise (never locked, or the gate opened again by an applied change, a removal or Geometer's reset) the number the settings say now.
+     * Why not a value set once at start: a legitimate sale applies the change 48 hours later WITHOUT a restart, and a value fixed at start would still be the previous
+     * owner's number, so the new owner would be bound to it and every later start would send approvals, alerts and sign-in links to the previous owner.
+     */
+    effectiveNumber(settingsNumber: string): string {
+      api.learnNumber(settingsNumber); // an existing or restored shop that did not record the digits learns them when the settings still agree
+      const locked = api.boundNumber();
+      // the store keeps digits only; the settings and WhatsApp know the number as +country code and digits, so give it back in that form
+      return locked !== undefined ? `+${locked}` : settingsNumber;
+    },
     /** Does the owner number in the settings differ from the one the shop was locked with? (The owner's phones say so, and their messages keep going to the locked number.) */
     numberDiffers(settings: OwnerNow): boolean { const b = boundKey(); return b !== undefined && lockAt() !== undefined && ownerKey(settings.owner) !== b; },
     /**
@@ -705,6 +717,7 @@ export function openOwnerAccess(file: string) {
         seenThrough: Math.max(0, ...phones.filter((r) => r.made_at > through && r.id !== me.passkey).map((r) => r.made_at), ...newsRows.map((n) => n.at)),
         ...(removal ? { removal } : {}),
         ownCodesAt: codes.at ?? undefined, passkeySession: me.passkey !== undefined,
+        ...(api.boundNumber() ? { lockedLast4: api.boundNumber()!.slice(-4) } : {}),
       };
     },
 
@@ -805,6 +818,8 @@ export interface PhonesView {
   passkeySession: boolean;
   /** The Operator's settings name another owner number than the one the shop was locked with: the owner's messages still go to the number it was locked with. */
   numberDiffers?: boolean;
+  /** The last 4 digits of the number the shop is locked with (where the owner's messages go), so the owner can catch a wrong one. Absent while the shop is not locked or the digits are unknown. */
+  lockedLast4?: string;
 }
 
 /**
