@@ -11,7 +11,9 @@ import { generateSigningKey, verifyCard, verifyDocument, verifyNotice } from "..
 import { createChecker } from "../../discovery/check.ts";
 import { readFeed } from "../../discovery/feed.ts";
 import { trustFeed } from "../../discovery/trust.ts";
-import { createShopProtocol, NOTICE_EVERY_MS } from "../../runtime/shop-protocol.ts";
+import { createShopProtocol, NOTICE_EVERY_MS, underPage } from "../../runtime/shop-protocol.ts";
+import { DirectoryIndex } from "../../discovery/index.ts";
+import { handleNotice } from "../../discovery/notices.ts";
 import { createListingsKit } from "../kit.ts";
 import type { ListingOp } from "../kit.ts";
 import { listingsOf } from "../listings.ts";
@@ -178,6 +180,9 @@ test("the card is signed with the shop's key, and only a card for this shop is s
     { ...card, supportedInterfaces: [] },
     { ...card, provider: { url: "https://evil.example/" } },
     { ...card, supportedInterfaces: [{ url: `${PAGE}.evil.example/mcp` }] },
+    { ...card, supportedInterfaces: [{ url: `${PAGE}/../other-shop/mcp` }] },
+    { ...card, supportedInterfaces: [{ url: `http://pages.example/rani-pets/mcp` }] },
+    { ...card, supportedInterfaces: [{ url: `https://user:pw@pages.example/rani-pets/mcp` }] },
     { ...card, price: 1.5 },
     [], "x", null,
   ]) assert.equal(w.protocol.card({ page: PAGE, card: bad }), "bad", JSON.stringify(bad).slice(0, 60));
@@ -212,4 +217,40 @@ test("with no key (a store that keeps none) nothing is signed", () => {
   assert.equal(none.feed({ page: PAGE, name: "x", languages: [] }), null);
   assert.equal(none.check({ page: PAGE, ids: ["l-1"] }), null);
   assert.equal(none.notice({ page: PAGE }), undefined);
+});
+
+test("what is under the shop's page is decided by parsing the address: a dot-dot, another scheme, another host or a user name is not", () => {
+  assert.equal(underPage(PAGE, `${PAGE}/api/v1`), true);
+  assert.equal(underPage(PAGE, `${PAGE}/`), true);
+  assert.equal(underPage(PAGE, PAGE), true);
+  for (const bad of [`${PAGE}/../other/mcp`, `${PAGE}/%2e%2e/other`, "http://pages.example/rani-pets/x", "https://pages.example/rani-petsx", "https://pages.example:8443/rani-pets/x", "https://u:p@pages.example/rani-pets/x", "https://evil.example/rani-pets/x", "not a url", 3, undefined]) assert.equal(underPage(PAGE, bad), false, String(bad));
+});
+
+test("turning the switch off after a notice went out is a change too: one notice for it, signed, and then none", () => {
+  const w = shopWorld();
+  const first = w.protocol.notice({ page: PAGE })!;
+  w.protocol.delivered(first.fingerprint);
+  w.clock.advance(NOTICE_EVERY_MS + 1);
+  w.run(op({ op: "shop", visible: false }, "r-off"));
+  const off = w.protocol.notice({ page: PAGE })!;
+  assert.ok(off, "the directory is told, so it drops the shop now and not at its next six-hourly read");
+  assert.equal((off.notice as any).feed, `${PAGE}/listings.json`);
+  assert.ok(verifyNotice(off.notice as any, w.key.publicKey).ok);
+  assert.match(off.fingerprint, /^[A-Za-z0-9_-]{43}$/u, "a fingerprint the runtime's own acknowledgement route accepts");
+  w.protocol.delivered(off.fingerprint);
+  w.clock.advance(NOTICE_EVERY_MS + 1);
+  assert.equal(w.protocol.notice({ page: PAGE }), undefined, "and nothing more while it stays off");
+  w.run(op({ op: "shop", visible: true }, "r-on"));
+  assert.ok(w.protocol.notice({ page: PAGE }), "turned on again, the feed is a change again");
+});
+
+test("the directory's own notice handler takes the shop's notice: the address and the shape follow its rules", () => {
+  const w = shopWorld();
+  const ix = new DirectoryIndex(":memory:");
+  const cfg = { index: ix, served: ["pages.example"], configured: [], now: () => NOW };
+  const notice = w.protocol.notice({ page: PAGE })!.notice;
+  assert.equal(handleNotice(cfg, notice).status, 202);
+  assert.deepEqual(ix.feeds().map((f) => f.url), [`${PAGE}/listings.json`]);
+  assert.equal(handleNotice({ ...cfg, served: ["other.example"] }, notice).status, 403, "not a domain this directory serves");
+  assert.equal(handleNotice(cfg, { ...(notice as object), sig: "x".repeat(86) }).status, 202, "an unknown shop's hint is taken (it only gets the feed read); a known shop's must verify (discovery/test/notices.test.ts)");
 });

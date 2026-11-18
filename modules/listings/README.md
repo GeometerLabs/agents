@@ -156,7 +156,7 @@ key it sees for a shop page. So the key must stay with the **shop**, not with wh
   snapshot, so the owner's export of the listings (a plain file) never holds it.
 * **In the owner's file** ("Get my shop's file"): `shop-key/shop-key.json`, in the owner's package only (`bundle/export/build.ts`; the Operator's package never has it). The export job writes it from
   the database at mode 0600 (`bundle/backup/export.ts writeShopKey`). To restore a shop from that file on a new server, put the file in the shop's data folder as `shop-key.json` before the shop
-  first starts: the runtime adopts it once and renames it `shop-key.json.adopted`. A key the shop already has is never replaced by a file.
+  first starts: the runtime adopts it once and deletes the file (no second plaintext copy is left beside the database). A key the shop already has is never replaced by a file.
 * **Never logged, never sent**: the log says only the public key id. Only the public key and the key id leave the shop (in the feed's `signature`). The front, the inbox and the directory never hold it:
   the front asks the runtime for each signed document and passes it on.
 

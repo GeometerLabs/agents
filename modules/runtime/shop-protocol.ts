@@ -18,10 +18,27 @@ import { LANGS } from "../listings/listings.ts";
 import type { Lang } from "../listings/listings.ts";
 import { changeNotice, checkAnswer, feedFingerprint, shopFacts, signedFeed } from "../listings/protocol.ts";
 
+/**
+ * Is `value` an address inside the shop's page: https, the same origin, no user or password, and a path at or under the page's own path? Parsed with URL, so `<page>/../other` and
+ * `<page>.evil.example` are what they really are (the same rule discovery/feed.ts `under` applies to a feed).
+ */
+export function underPage(page: string, value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  try {
+    const p = new URL(page);
+    const u = new URL(value);
+    const base = p.pathname.replace(/\/+$/u, "");
+    return u.protocol === "https:" && p.protocol === "https:" && u.origin === p.origin && !u.username && !u.password && (u.pathname === base || u.pathname.startsWith(`${base}/`));
+  } catch { return false; }
+}
+
 /** One notice at most this often per shop (specs/shop-feed.md). */
 export const NOTICE_EVERY_MS = 60_000;
 /** A card larger than this is not a card for a shop: it is refused unsigned. */
 const MAX_CARD_BYTES = 32 * 1024;
+
+/** The fingerprint a notice for "the shop stopped showing itself" carries: 43 base64url characters like a feed's, but no hash of a feed is this. */
+const HIDDEN = "hidden".repeat(8).slice(0, 43).padEnd(43, "-");
 
 export interface ShopProtocolOptions {
   read(): PublicListingsRead;
@@ -60,7 +77,7 @@ export function createShopProtocol(o: ShopProtocolOptions) {
       const c = q.card;
       if (typeof c !== "object" || c === null || Array.isArray(c) || JSON.stringify(c).length > MAX_CARD_BYTES) return "bad";
       const card = c as Doc;
-      const under = (u: unknown): boolean => typeof u === "string" && (u === q.page || u.startsWith(`${q.page}/`));
+      const under = (u: unknown): boolean => underPage(q.page, u);
       const interfaces = card.supportedInterfaces;
       const provider = card.provider as { url?: unknown } | undefined;
       if (!Array.isArray(interfaces) || interfaces.length === 0 || !interfaces.every((i) => under((i as { url?: unknown } | null)?.url)) || !under(provider?.url)) return "bad";
@@ -75,7 +92,12 @@ export function createShopProtocol(o: ShopProtocolOptions) {
       const key = o.key();
       const read = o.read();
       const now = o.now();
-      if (!key || !read.shop.visible || now - deliveredAt < NOTICE_EVERY_MS) return undefined;
+      if (!key || now - deliveredAt < NOTICE_EVERY_MS) return undefined;
+      // the owner turned the switch off after a notice went out: that is a change too (the feed is now a 404), and the directory should drop the shop at once, not at its next six-hourly read
+      if (!read.shop.visible) {
+        if (deliveredFingerprint === undefined || deliveredFingerprint === HIDDEN) return undefined;
+        return { notice: changeNotice(`${q.page}/listings.json`, new Date(now).toISOString(), key) as unknown as Doc, fingerprint: HIDDEN };
+      }
       const feed = buildFeed(stateOfPublic(read), shopFacts({ name: o.name?.() ?? "", page: q.page }), now);
       const fingerprint = feedFingerprint(feed);
       if (fingerprint === deliveredFingerprint) return undefined;

@@ -3,7 +3,7 @@
 // and it already holds each shop's internal token. So the inbox ASKS each runtime "is a notice due?" and carries the answer across. No network rule changes, and the runtime still only answers.
 //
 //   every pass, for each shop:  GET  <runtime>/internal/feed-notice   204: nothing due.   200 {notice, fingerprint}: a signed notice (the shop's own key made it; this file only carries it)
-//                               POST <directory>/feed-changed <notice>  202: taken.       429: wait and try again next pass.   another refusal: not taken, and not repeated
+//                               POST <directory>/feed-changed <notice>  202: taken.       429 or 5xx: try again next pass.   another refusal: not taken, and not repeated
 //                               POST <runtime>/internal/feed-notice {fingerprint}   tells the runtime it was delivered (it then waits a minute and sends the next only for a real change)
 //
 // A notice is only a hint: the directory takes nothing from it but "read the feed again", and checks the feed's own signature. So the worst a lost or repeated notice does is one extra or one
@@ -50,7 +50,9 @@ export function createCourier(o: CourierOptions) {
           if (typeof notice !== "object" || notice === null || typeof fingerprint !== "string") { result.down++; continue; }
           const sent = await fetchImpl(`${o.directoryUrl.replace(/\/+$/u, "")}/feed-changed`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(notice), signal: timeout() });
           sentAt.push(now());
-          if (sent.status === 429) { result.waiting++; continue; } // the directory said wait: the notice stays pending in the runtime
+          // the directory said wait (429), or is down or failing (5xx): the notice stays pending in the runtime and is offered again next pass (the directory learns a new shop only from a notice
+          // or its own list, so a notice must not be dropped because the directory was restarting)
+          if (sent.status === 429 || sent.status >= 500) { result.waiting++; continue; }
           if (sent.status === 202 || sent.status === 200) result.sent++;
           else { result.refused++; log(`feed notice: the directory did not take ${shop.name}'s notice (${sent.status}); it will not be sent again until the feed changes`); }
           // taken, or refused for a reason that sending the same notice again cannot change: either way the runtime is told, so it does not offer the same one every pass

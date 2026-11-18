@@ -81,6 +81,7 @@ import { MAX_VOICE_BYTES } from "../channels/owner-audio.ts";
 import { MAX_PHOTO_BYTES, PHOTO_ID, checkPhoto, photoIdOf } from "../listings/photo.ts";
 import { checkOwnerListing } from "../listings/kit.ts";
 import { checkIds } from "../listings/protocol.ts";
+import { underPage } from "./shop-protocol.ts";
 import { checkOwnerStock } from "../stock/kit.ts";
 import { HANDLE_HASH } from "../channels/handle.ts";
 import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts";
@@ -572,7 +573,7 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (typeof q.page !== "string" || !mine || (q.page !== mine.url && q.page !== mine.base)) return send(res, 400, { error: "page is an address of this shop." });
       if (path.endsWith("shop-feed")) {
         const languages = Array.isArray(q.languages) ? q.languages.filter((l): l is string => typeof l === "string") : [];
-        if (typeof q.name !== "string" || q.name.length === 0 || q.name.length > 120 || (q.chat !== undefined && (typeof q.chat !== "string" || !q.chat.startsWith(`${q.page}/`)))) return send(res, 400, { error: "name is the shop's name; chat, when given, is under the shop's page." });
+        if (typeof q.name !== "string" || q.name.length === 0 || q.name.length > 120 || (q.chat !== undefined && !underPage(q.page, q.chat))) return send(res, 400, { error: "name is the shop's name; chat, when given, is under the shop's page." });
         const feed = signed.feed({ page: q.page, name: q.name, languages, ...(typeof q.chat === "string" ? { chat: q.chat } : {}) });
         return feed ? send(res, 200, feed) : send(res, 404, { error: "The shop does not show itself." });
       }

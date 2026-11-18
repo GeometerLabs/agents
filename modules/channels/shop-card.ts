@@ -30,7 +30,7 @@ export function shopCard(o: ShopCardOptions): Record<string, unknown> {
   const what = o.trade ? `${o.trade}` : "a local shop";
   return {
     name: o.name,
-    description: `${o.name} is ${what} on Streetlist. A program can read what the shop has, ask the shop to confirm an item is still there and at what price, and use the shop's own operations. Everything is answered from the shop's own record, with no language model, and signed with the shop's own key.`,
+    description: `${o.name} is ${what} on Streetlist. A program can read what the shop has, ask the shop to confirm an item is still there and at what price, and use the shop's own operations. Answers are read from the shop's own record, with no language model. The shop's feed, its answers to a check and this card are signed with the shop's own key.`,
     supportedInterfaces: [
       ...(o.mcp ? [{ url: `${o.page}mcp`, protocolBinding: "MCP", protocolVersion: MCP_VERSIONS[0] }] : []),
       { url: `${o.page}api/v1`, protocolBinding: "HTTPS-JSON", protocolVersion: "1" },

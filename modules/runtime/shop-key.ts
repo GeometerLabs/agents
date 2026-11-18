@@ -6,8 +6,9 @@
 // It is never written to the record, the state snapshot, a log or a response. Only the PUBLIC key and its id leave the shop (in the feed's signature and the card).
 //
 // A second way in, for a shop restored from the owner's file onto a new server: if the data folder holds `shop-key.json` (the file the owner's package carries, put there by whoever
-// restores the shop) and the database has no key yet, that key is adopted, and the file is renamed so it is used once and is not left lying beside the database.
-import { existsSync, readFileSync, renameSync } from "node:fs";
+// restores the shop) and the database has no key yet, that key is adopted, and the file is deleted so the key is not left beside the database as a second plaintext copy (the database, the
+// backup and the owner's file hold it, and the owner still has the file they brought).
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { generateSigningKey, privateText, signingKeyFromText } from "../signing/index.ts";
 import type { SigningKey } from "../signing/index.ts";
@@ -48,7 +49,7 @@ export function loadShopKey(store: DurableStore, o: { dataDir?: string; nowMs: n
     const adopted = readShopKeyFile(readFileSync(file, "utf8"));
     if (adopted) {
       const text = keys.ensure(() => adopted.privateKey, o.nowMs);
-      try { renameSync(file, `${file}.adopted`); } catch { /* the key is kept either way; a file left behind is only untidy */ }
+      try { rmSync(file, { force: true }); } catch { /* the key is kept either way; a file left behind is only untidy */ }
       o.log?.(`The shop's signing key (id ${adopted.key.keyId}) was taken from ${SHOP_KEY_FILE}.`);
       return signingKeyFromText(text);
     }
