@@ -233,7 +233,7 @@ export function createPool(o: PoolOptions, hooks: PoolHooks): Pool {
   const watchdog = setInterval(() => {
     for (const w of [...pool, ...quarantine.values()]) {
       if (!w.worker) continue;
-      if (now() - w.lastPong > t.dead) { log(`worker ${w.id}: it has not answered for ${Math.round(t.dead / 1000)} s; it is stopped.`); void w.worker.terminate(); }
+      if (now() - w.lastPong > t.dead) { log(`worker ${w.id}: it has not answered for ${(t.dead / 1000).toFixed(1)} s; it is stopped.`); void w.worker.terminate(); }
       else w.worker.postMessage({ t: "ping" });
     }
   }, t.ping);
