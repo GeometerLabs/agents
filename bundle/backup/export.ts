@@ -26,7 +26,7 @@ import { ledgerEntries } from "../../modules/record/ledger.ts";
 import { PERSON_FORM, keyIdOf, personFingerprint } from "../../modules/record/fingerprint.ts";
 import { parseKey } from "../../modules/record/key-file.ts";
 import { readSnapshot } from "../../modules/runtime/store.ts";
-import { SHOP_KEY_FILE, shopKeyFileText } from "../../modules/runtime/shop-key.ts";
+import { shopKeyFileText } from "../../modules/runtime/shop-key.ts";
 
 export interface ExportJob { shops: { name: string; db: string; out: string; /** The file (mounted read-only) that holds the shop's key (B69): the job file names it, never carries it. */ personKeyFile: string }[] }
 /**
@@ -36,7 +36,9 @@ export interface ExportJob { shops: { name: string; db: string; out: string; /**
  * panel's own setting is the panel's, and this count is fleet's.
  * `ledger`: the head of the record's ledger (B28), or why there is none (a record with a gap is not chained).
  */
-export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; orders?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string; ledger?: { seq: number; head: string } | { error: string } }
+export interface Exported { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; orders?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string; ledger?: { seq: number; head: string } | { error: string };
+  /** The text of the shop's `shop-key.json` (a PRIVATE key), for the deployer only: it reads it from this job's output and writes the file itself (see shopKeyFileOf). Never logged, never in a file this job writes. */
+  shopKeyFile?: string }
 
 /** What person-form.json holds: which form this export's fingerprints use. `inputs` and `messageIds` count the record's entries by how they were written (older entries keep what they were). */
 export interface PersonForm { schema: 1; form: typeof PERSON_FORM; /** Which key made this export's fingerprints (keyIdOf). */ keyId: string; inputs: { keyed: number; older: number }; messageIds: { fingerprinted: number; older: number } }
@@ -66,24 +68,22 @@ function priceRates(): UsageRates {
 
 /** One consistent read of the shop's record and state, written as two files, each by writing a temporary file and renaming it. A shop with no readable key is not exported, never exported unkeyed. */
 /**
- * Block S phase B2: the shop's OWN signing key (modules/runtime/shop-key.ts), written beside the record's export as `shop-key.json`, mode 0600, for the OWNER'S file only (export/build.ts adds it to
- * a package made with the owner profile and to no other). The key is the shop's identity in every directory: whoever serves the shop next needs it for the shop to stay itself. It is read from the
- * same database as everything else here and is never in record.json, listings.json or any file the Operator's package carries. A database from before the key table, or a shop that has made no
- * key yet, writes nothing (and an older file is removed, so a key that is gone is not left behind). Returns whether a file was written.
+ * Block S phase B2: the shop's OWN signing key (modules/runtime/shop-key.ts), as the text of `shop-key.json`, for the OWNER'S file only (export/build.ts adds it to a package made with the owner
+ * profile and to no other). The key is the shop's identity in every directory: whoever serves the shop next needs it for the shop to stay itself. It is read from the same database as everything
+ * else here and is never in record.json, listings.json or any file the Operator's package carries. A database from before the key table, or a shop that has made no key yet, gives undefined.
+ *
+ * It is RETURNED, not written to the exports folder. This job runs as root with only DAC_OVERRIDE and DAC_READ_SEARCH (no CHOWN), so a file it wrote would be root's and the builder of the owner's
+ * file (the panel's container, or the deployer, both running as the deployer's user: lib/secrets.ts panelUser) could not read a private key at 0600, and 0644 would put it where every record
+ * export sits. The deployer takes the text from this job's output and writes the file itself (backup/jobs.ts placeShopKeyFile), as its own user, 0600.
  */
-export function writeShopKey(dbFile: string, outDir: string): boolean {
-  const file = join(outDir, SHOP_KEY_FILE);
+export function shopKeyFileOf(dbFile: string): string | undefined {
   let text: string | undefined;
   let db: DatabaseSync | undefined;
   try {
     db = new DatabaseSync(dbFile, { readOnly: true });
     text = (db.prepare("SELECT private_key FROM shop_key WHERE id = 1").get() as { private_key: string } | undefined)?.private_key;
   } catch { text = undefined; } finally { db?.close(); }
-  if (text === undefined) { rmSync(file, { force: true }); return false; }
-  const tmp = `${file}.tmp`;
-  writeFileSync(tmp, shopKeyFileText(text), { mode: 0o600 });
-  renameSync(tmp, file);
-  return true;
+  return text === undefined ? undefined : shopKeyFileText(text);
 }
 
 export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates = priceRates()): Exported {
@@ -165,8 +165,9 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
       }
     } catch { /* a runtime older than the photo table has none to export */ } finally { pdb.close(); }
   }
-  // Block S phase B2: the shop's own signing key, for the owner's file (see writeShopKey)
-  try { writeShopKey(shop.db, shop.out); } catch { /* a key that cannot be written leaves the owner's file without it, and the file says so */ }
+  // Block S phase B2: the shop's own signing key, for the owner's file. Handed back in the result for the deployer to write (see shopKeyFileOf); a key that cannot be read leaves the owner's file without it, and the file says so.
+  let shopKeyFile: string | undefined;
+  try { shopKeyFile = shopKeyFileOf(shop.db); } catch { shopKeyFile = undefined; }
   // Block S phase A3: the shop's own stock count (its lines, low marks and last movements) in the owner's file, so leaving with the shop keeps the count. Only a shop that counts something gets it.
   const stockState = (state ? (JSON.parse(state.snapshot) as { assistant?: { stock?: { lines?: unknown[] } } }).assistant?.stock : undefined);
   if (stockState && (stockState.lines?.length ?? 0) > 0) {
@@ -176,7 +177,7 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   }
   let open: Record<string, number> | undefined;
   if (!isListingsOnly) try { open = countsByKind(obligations.detect({ template: isStock ? "stock-orders" : isOrders ? "orders" : isFees ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }
-  return { name: shop.name, ok: true, entries: entries.length, ...(isListingsOnly ? {} : isOrders || isStock ? { orders: cases.length } : isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}) };
+  return { name: shop.name, ok: true, entries: entries.length, ...(isListingsOnly ? {} : isOrders || isStock ? { orders: cases.length } : isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}), ...(shopKeyFile ? { shopKeyFile } : {}) };
 }
 
 if (import.meta.main) {
