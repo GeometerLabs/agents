@@ -14,6 +14,7 @@ import { panelRuntime } from "./helpers.ts";
 import { world } from "./world.ts";
 import { buildExport } from "../export/build.ts";
 import type { ExportSources } from "../export/build.ts";
+import { sourcesFor } from "../export/sources.ts";
 import { SHOP_KEY_FILE, loadShopKey, readShopKeyFile } from "../../modules/runtime/shop-key.ts";
 import { openStore } from "../../modules/runtime/store.ts";
 
