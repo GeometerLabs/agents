@@ -20,13 +20,22 @@ LISTINGS_IMPL=go LISTINGS_GO_BIN=go/bin/listings node --test --test-concurrency=
 * `owner-control.contract.test.ts` covers who controls the owner's sign-in (bundle/Explanation.md "Who controls the owner's sign-in"), rule by rule and each attack the security
   review proved, through HTTP and the files the deployer writes (owner-grants.json, owner-reset.json, owner-sessions.json, settings.json, runtime.json). Its 48-hour, one-day and
   15-minute rules run on the TEST clock: `makeShop({clock: true})` starts the shop with `GEOMETER_TEST=1 GEOMETER_TEST_CLOCK_FILE=<file>` and `shop.advance(ms)` moves it
-  (modules/runtime/test-clock.ts, go/internal/testclock: honoured only for a "fakes" shop; a live shop refuses to start with it). Its push test is TypeScript only.
+  (modules/runtime/test-clock.ts, go/internal/testclock: honoured only for a "fakes" shop; a live shop refuses to start with it). Its push cases (the lock ends the link's
+  subscription, only a phone subscribes after it, removing a phone ends its alerts; and every alert, opened by a soft browser from what a fake push Guard was sent, is
+  TypeScript's words in the owner's language) run on both runtimes.
 * `cross-restart.test.ts` runs the TypeScript runtime and the Go runtime **in turn on one folder** (both ways), so the store files are proved interchangeable, the owner-control
   state included (the lock, a request, own codes, a removed phone, the cool-down after a cancel).
 
+* `routes.contract.test.ts` (the owner's limits page and the deployer's limit-changes, "Get my shop's file", web push through a fake push Guard, `push-harness.ts`),
+  `stock.contract.test.ts`, `assistant.contract.test.ts` (the owner's talk-and-cards page, the same scripts on both runtimes compared line for line), `unicode.contract.test.ts`,
+  `rates.contract.test.ts`, `restored.contract.test.ts` and `shared.contract.test.ts` (the shared process, `shared-harness.ts`) cover the rest of a listings shop; `words-fresh.test.ts`
+  fails when the Go runtime's packed words (go/scripts/gen_words.ts) are stale.
 * `differential.test.ts` gives both runtimes the SAME requests and compares the answers: the owner's form (whitespace, rounding, UTF-16 lengths), the place, the feed, and which of 21 model drafts the
   grounding checks let through.
 * `measure.ts` is not a test: it prints cold start, resident memory and request latency for the runtime named by `LISTINGS_IMPL`.
 
-Six tests are **TypeScript only** and are skipped, with the reason, for a runtime that does not serve them: the owner's talk-and-cards page (`GET /internal/channel/owner`; its cards, and the owner's taps on them, are how a draft is shown), web push, the owner's limits page, the owner's Stock page, "Get my shop's file" (`owner-file`) and the deployer's `/internal/limit-changes`. They are what a
-runtime must still add to be a drop-in replacement.
+No test is TypeScript only. A test is skipped only when what it needs is not there, and says so: a Go binary (`go/bin/listings`, `go/bin/listings-shared`) for the tests that run the
+two runtimes in turn, and the morning-question cases in the first 20 minutes after midnight in India (the shop's morning hour would fall on yesterday).
+
+**No runtime process outlives a run.** Every process the harnesses start goes through `children.ts`: its own process group, stopped at the end of every test, killed on exit and on
+SIGINT, SIGTERM or SIGHUP, and a process still alive when the run ends fails the run and is named. Only a SIGKILL of the test process itself is beyond it.

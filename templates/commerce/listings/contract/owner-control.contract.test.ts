@@ -605,7 +605,7 @@ describe("restarts and restores", () => {
   });
 });
 
-// ---- web push (TypeScript only: the Go runtime serves no push yet, go/TRIAL.md "Left out" 2) -------------------------------------------------------------------------
+// ---- web push: who may subscribe, and what ends a subscription, both runtimes ------------------------------------------------------------------------------------
 
 /** A browser subscription at a push service the shop allows: a P-256 public key and a 16-byte secret, made up. */
 function subscription(): Record<string, unknown> {
@@ -646,6 +646,32 @@ describe("the owner's alerts follow the phone", () => {
     const mine = (await list(s, p1.session)).alerts[0].id;
     assert.deepEqual((await phones(s, p1.session, { op: "stop_alert", id: mine })).body, { stopped: true });
     assert.equal((await panel(s)).alertPhones, 0);
+  });
+
+  test("ATTACK: the panel's link subscribing while the first phone registers: no subscription of the link's outlives the lock", async () => {
+    // TypeScript runs each route's owner steps without interleaving; a runtime that serves requests side by side must hold "may this link subscribe?" and the subscription
+    // together, or one that passed "not locked" could land just after the first passkey ended the unbound ones. Whatever the order, none may be left.
+    const guard = await fakePushGuard();
+    const s = await boot({ services: { push: { baseUrl: `http://127.0.0.1:${guard}` } } });
+    const push = (body: Record<string, unknown>) => s.call("/internal/channel/push", { owner: s.owner, body });
+    const ro = await passkey(s, "register_options", { grant: qr(s.setup) });
+    const phone = newSoftPasskey(rp.rpId);
+    // the link keeps subscribing, four at a time, from before the registration is sent until three rounds after it has answered, so some are in flight across the lock
+    let registered = false;
+    const answers: { status: number; body: any }[] = [];
+    const flooding = (async () => {
+      for (let after = 0; !registered || after < 3; after += registered ? 1 : 0) {
+        answers.push(...await Promise.all(Array.from({ length: 4 }, () => push({ op: "owner_subscribe", subscription: subscription() }))));
+      }
+    })();
+    await new Promise((r) => setTimeout(r, 5));
+    const done = await passkey(s, "register", { grant: qr(s.setup), response: softRegister(phone, ro.body.options, rp.origin), ua: ANDROID }).finally(() => { registered = true; });
+    await flooding;
+    assert.ok(answers.some((a) => a.status === 200) && answers.some((a) => a.status === 403), "the link subscribed both before the lock and after it");
+    assert.equal(done.status, 200, JSON.stringify(done.body));
+    for (const a of answers) assert.ok(a.status === 200 || a.status === 403, `${a.status} ${JSON.stringify(a.body)}`);
+    assert.equal((await panel(s)).alertPhones, 0, "a link's subscription outlived the lock");
+    assert.equal((await push({ op: "owner_subscribe", subscription: subscription() })).status, 403);
   });
 });
 
