@@ -622,6 +622,6 @@ volume rt-data-listings:  <shop>/data/   agent.db and the owner's passkeys, sess
 
 Adding a shop writes a folder and changes **no compose service**; the process finds it within seconds. Removing, moving or restoring a shop first takes its folder away and waits for the process to
 let it go (`GET /shared/shops` on the door no longer names it). A shop that takes an agent is moved into a runtime of its own with its listings, photos, record and passkeys
-(`bundle/lib/listings-move.ts`). The model Guard knows each shop under its own agent id; a shop's own model use is limited by its runtime allowance (the Guard's daily cap is one number for the server). Fleet needs no change: a shop with no plan row is reported and never billed.
+(`bundle/lib/listings-move.ts`). The model Guard knows each shop under its own agent id; a shop's own model use is limited by its runtime budget (the caps module, plan `listings-only`) (the Guard's daily cap is one number for the server). Fleet needs no change: a shop with no plan row is reported and never billed.
 How it works, why it is not a container per shop, the isolation rules and the first sign-in of an owner with no WhatsApp are in
 [templates/commerce/listings/README.md](../templates/commerce/listings/README.md). `geometer shop add <name> --template listings` makes one by hand; the panel offers "Only show what the shop has (free)".
