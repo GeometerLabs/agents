@@ -580,6 +580,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `shop.backupNone` | സെർവറിന് പുറത്ത് ഇതുവരെ കോപ്പി ഇല്ല. | No copy off the server yet. |  |
 | `shop.backupDrill` | ബാക്കപ്പ് തിരിച്ചെടുത്ത് നോക്കിയ അവസാന പരിശോധന: 4 Nov 2026, 04:00, പൊരുത്തപ്പെട്ടു | Last restore check: 4 Nov 2026, 04:00, it matched |  |
 | `shop.backupDrillNone` | ബാക്കപ്പ് തിരിച്ചെടുത്ത് ഇതുവരെ നോക്കിയിട്ടില്ല. | No restore check yet. |  |
+| `shop.pausedLine` | undefined വരെ നിർത്തിവച്ചിരിക്കുന്നു: ഈ കടയുടെ പേജുകൾ വീണ്ടും വീണ്ടും പരാജയപ്പെട്ടു. സന്ദർശകർ "ഉടൻ തിരിച്ചെത്തും" പേജ് കാണുന്നു. അതിന്റെ ഫയലുകൾ നോക്കൂ, അല്ലെങ്കിൽ Geometer-ന് എഴുതൂ. | Paused until undefined: this shop's pages failed again and again. Its visitors see "back soon". Look at its files, or write to Geometer. |  |
 | `shop.settings` | ഈ കടയെക്കുറിച്ച് ഏജന്റിന് അറിയാവുന്നത് | What the agent knows about this shop |  |
 | `shop.settingsEdit` | ക്രമീകരണങ്ങൾ മാറ്റൂ | Change settings |  |
 | `shop.summaryServices` | സേവനങ്ങൾ | Services |  |

@@ -533,6 +533,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `shop.backupNone` | सर्वर के बाहर अभी कोई कॉपी नहीं है। | No copy off the server yet. |  |
 | `shop.backupDrill` | आख़िरी बार कॉपी से डेटा वापस लाकर जाँचा: 4 Nov 2026, 04:00, मेल खा गया | Last restore check: 4 Nov 2026, 04:00, it matched |  |
 | `shop.backupDrillNone` | कॉपी से डेटा वापस लाकर जाँचना अभी हुआ नहीं। | No restore check yet. |  |
+| `shop.pausedLine` | undefined तक रुकी हुई: इस दुकान के पेज बार-बार फेल हुए। इसके ग्राहकों को "जल्द वापस" पेज दिखता है। इसकी फ़ाइलें देखिए, या Geometer को लिखिए। | Paused until undefined: this shop's pages failed again and again. Its visitors see "back soon". Look at its files, or write to Geometer. |  |
 | `shop.settings` | एजेंट इस दुकान के बारे में क्या जानता है | What the agent knows about this shop |  |
 | `shop.settingsEdit` | सेटिंग बदलें | Change settings |  |
 | `shop.summaryServices` | सेवाएँ | Services |  |
