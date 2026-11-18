@@ -316,9 +316,15 @@ func (a *Access) RemovePhone(sessionID, phoneID string, who Who, rp RelyingParty
 		if _, err := x.Exec("UPDATE sessions SET ended_at = ?, ended_why = 'phone_removed' WHERE link_id = ? AND ended_at IS NULL", now, "pk-"+target.ID); err != nil {
 			return err
 		}
-		// what the removed phone made goes with it: its recovery codes and its "add a phone" links are a way back in that the owner never chose to keep
-		if _, err := x.Exec("UPDATE own_codes SET voided_at = ? WHERE by_passkey = ? AND voided_at IS NULL", now, target.ID); err != nil {
-			return err
+		// what the removed phone made goes with it: its recovery codes and its "add a phone" links are a way back in that the owner never chose to keep. WHY the one
+		// exception: a phone removing ITSELF as the last phone is the owner's own, twice-confirmed choice, and the confirm page promises "you can only get back in with your own
+		// recovery codes" (owner-phones-page.ts lastAsk). Those codes were made by that same phone, so voiding them would leave the owner nothing. A phone removed by ANOTHER
+		// phone is different (an intruder phone must not keep a way back), so its codes go; its "add a phone" links go in both cases (a link is a way in for whoever holds it).
+		keepCodes := wasLast && target.ID == me.passkey
+		if !keepCodes {
+			if _, err := x.Exec("UPDATE own_codes SET voided_at = ? WHERE by_passkey = ? AND voided_at IS NULL", now, target.ID); err != nil {
+				return err
+			}
 		}
 		if _, err := x.Exec("UPDATE own_setups SET voided_at = ? WHERE by_passkey = ? AND voided_at IS NULL", now, target.ID); err != nil {
 			return err
