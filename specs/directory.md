@@ -114,7 +114,48 @@ The same search is a server-rendered page for people (it works without JavaScrip
 
 ## The buyer's assistant (optional)
 
-A buyer may ask in their own words or by voice: "Persian kitten near Thrissur?". An assistant turns the question into a search (words,
-category, place, distance) and the results into a short answer in the buyer's language, naming only listings the directory returned. It
-never ranks (the order above does), never sees a shop's conversations, and the buyer's words are cleaned of numbers and names before a
-model sees them. It runs only where its owner turned a model on; without one, the search box gives the same results.
+A buyer may type a question in their own words: "Persian kitten near Thrissur?". An assistant turns the question into a **typed search**, the directory searches and
+orders with its own code (the order above, unchanged), and a short line in the buyer's language is put over the normal results. It runs only where its owner has
+turned a model on **and approved a budget**; without either, there is no box and the search is exactly as described above.
+
+**What the assistant may do.** Read the question, and give back one typed search. Nothing else it says is ever used.
+
+```json
+{ "words": ["persian", "kitten"], "wordsEn": ["persian", "kitten"], "category": "pets",
+  "place": { "kind": "town", "town": "Thrissur" }, "radiusKm": 10, "maxPrice": 9000 }
+```
+
+`words` are the buyer's key words in their own language, one word each (letters, marks, digits, `'` and `-`; at most 8, each at most 30 characters); `wordsEn` the same in
+English (tried only if `words` find nothing); `category` is one of the fixed list or left out; `place.kind` is `town` (with the town's name), `near_me` or `none`; `radiusKm`
+is a whole number 1 to 500; `maxPrice` a whole number of rupees 1 to 10,000,000. A model's answer must be exactly this shape. **One thing wrong anywhere drops the whole
+answer**, and the buyer's words are searched as typed.
+
+**What it must never do.** Rank, answer from its own knowledge, name a shop, or see a shop's conversation. The directory's order never reads anything the assistant wrote
+beyond the typed search's fields, and a shop is asked about item ids only, as always.
+
+**Steps, cheapest first.** (1) Rules, no model: "within 10 km", "under 5000" and "near me" are read by pattern, and these numbers win over a model's. (2) A decision model,
+where the category and the town are choices: when it is sure of both, no language model is asked. (3) A language model, only when step 2 is unsure or absent.
+
+**Cleaning.** Before any model sees the words: phone numbers, e-mail addresses, links, names after "my name is" and exact addresses (a house or door number, a street name)
+are taken out. The text of a question is never written to a log or a store; only counts are kept.
+
+**Caps.** Every model call is counted against the directory's own budget (a month's rupees and a number of calls a day, for all buyers together) and one buyer's own number of
+questions a day (kept in memory, per address, as a salted hash). Proposed values: INR 2,500 a month, 1,500 calls a day, 12 questions a buyer a day.
+
+**The line over the results.** A template filled from the results in the buyer's language: "3 shops near Thrissur have “Persian kitten”. The nearest is 1.4 km away." If a
+model writes the line instead, every number, price, distance and name in it must be in the results (the grounding rules of `modules/assistant/talk-check.ts`), and it says
+nothing about health, breed quality or "verified"; if not, the template line is used. The results are the normal cards with "Chat with the shop".
+
+**Over a cap, with no model, or with an answer that does not fit:** the box searches the words as typed, with no model, and says once, in the buyer's language, "Searching
+your words as typed today." Never silence, never an error.
+
+**Where it is offered.** The search page has one more box, "Ask in your own words", which sends `GET /search?ask=<words>` (plus `lat`, `lon` and `lang` as the search has).
+With `Accept: application/json` or `format=json` the answer is the search answer above with one more member:
+
+```json
+"assistant": { "how": "decision", "search": { "...the typed search..." }, "line": "1 shop near Thrissur has “persian kitten”.", "notice": null }
+```
+
+`how` is `rules`, `decision`, `model` or `plain`; `search` is `null` for `plain`; `notice` is the one plain sentence when the words were searched as typed. On MCP the same is
+the tool `ask` (`question`, optional `lat`, `lon`, `lang`), listed, and in the Agent Card, only where the assistant is on. There is no microphone: a voice box would need a
+voice service the directory can use, which it does not have yet.

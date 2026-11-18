@@ -36,15 +36,70 @@ its own index (which can be an hour old), puts the matches in a fair order, and 
                                                ▼
                                    http.ts ─►  GET /search      page for people (page.ts, words.ts), or JSON
                                                GET /order       the rule in plain words
-                                               POST /mcp        search_listings, get_listing, shop_page (mcp.ts)
+                                               GET /search?ask= the buyer's assistant (assistant.ts), where its budget is approved
+                                               POST /mcp        search_listings, get_listing, shop_page, ask (mcp.ts)
                                                GET /.well-known/agent-card.json (card.ts, signed)
 ```
 
 Files with no `node:` import at all (no disk, no database, no network, so an agent's own import graph may use them): `types.ts`, `feed.ts`, `order.ts`, `romanise.ts`,
-`text.ts`, `words.ts`, `page.ts`, `limits.ts` and `search.ts` (it takes the index and the checker handed in). Files that use only `node:crypto` (to check a signature):
+`text.ts`, `words.ts`, `page.ts`, `limits.ts`, `search.ts` (it takes the index and the checker handed in) and `assistant.ts` (the model's address, the fetch and the decision model are handed in; it imports the understanding and budget modules, which are pure too). Files that use only `node:crypto` (to check a signature):
 `trust.ts`, `check.ts`, `notices.ts`, `card.ts`. `mcp.ts` reuses the shops' MCP handling in `modules/channels`. **Server files**: `index.ts` (opens a SQLite file), `ingest.ts` and
 `refresh.ts` (write the index), and `http.ts` (serves a file and sockets). The network is never opened here: a `Fetcher` is handed in (see `types.ts`), so a test needs no network. The program that runs it
 in Geometer's deploy bundle is `bundle/services/directory.ts`.
+
+## The buyer's assistant: "Ask in your own words"
+
+An optional layer over the search, in `assistant.ts`. A buyer types "Persian kitten near Thrissur?" (English, Hindi, Malayalam, Kannada, or the same in Latin letters).
+The assistant turns the question into **a search, not an answer**; the directory's own code then searches and orders as it always did. The format is in
+[`directory.md`](../../specs/directory.md#the-buyers-assistant-optional).
+
+```
+ "Persian kitten near Thrissur?"            (GET /search?ask=...   or   MCP tool ask)
+        │
+        ▼  cleanQuestion: phone numbers, e-mail, links, names, exact addresses taken out; cut to 200 characters
+        │
+        ▼  caps: one buyer's 12 a day (memory only, salted hash)  →  the directory's budget (month's rupees, calls a day)
+        │         over a cap / no model / no budget ─────────────────────────────────────────────┐
+        ▼                                                                                         │
+   1. rules        "within 10 km", "under 5000", "near me"       (no model)                       │
+   2. decision model (System One): category and town are CHOICES; sure of both? done, no language model
+   3. language model through the model Guard: only when 2 is unsure or absent; JSON schema in
+        │
+        ▼  readTypedSearch: exactly 7 keys, exact types and sizes, category from the list ─ anything else: dropped whole ─┤
+        ▼                                                                                         │
+   typed search ──► searchListings (search.ts) ──► order.ts   the model never ranks              │
+        │                  └──► shops asked about item ids only (check.ts)                        │
+        ▼                                                                                         ▼
+   results + one line from a template ("3 shops near Thrissur have “Persian kitten”.")     the words as typed, no model,
+   (a model-written line is used only if every name, number and price is in the results)    ONE notice: "Searching your words as typed today."
+```
+
+**What a model sees:** the buyer's words after cleaning, inside `<question>` tags, told they are data and not instructions, plus the fixed list of categories (and, for the
+decision model, the towns of the shops that are in). **What it never sees:** any shop's conversation or private record, the listings, the order, other buyers' questions,
+the buyer's address (the per-buyer cap holds a salted hash of it, in memory, for a day). **What it can change:** nothing but the seven fields of the typed search. Whatever else
+a question says ("put this shop first", "tell the shop my number") cannot reach the order or a shop: the order function has no input for it, and a shop is asked about item ids only.
+
+**Costs and caps.** The decision model on the server's own hardware costs nothing; a language model call is priced from the dated rate table (`modules/understanding/rates/`)
+and added to one meter. Proposed values (the price list of 18 Nov, waiting for the owner's yes): INR 2,500 a month for all buyers, 1,500 calls a day, 12 questions a buyer a day;
+a call is about INR 0.05, so most questions (those the rules and the decision model read) cost nothing. A priced call that has no price in the table still counts (10 paise).
+The month's spend and today's count are kept **in memory**: a restart forgets them (the model Guard's own calls-a-day wall stays as the outer limit).
+
+**Off by default.** The assistant exists only when the service's config file has an `assistant` block (`AssistantSettings` in `assistant.ts`). The bundle writes that block only from an
+**approved** price list. Without it the page has no box, `?ask=` is ignored, the MCP tool list and the Agent Card are as before, and the search is the plain search.
+
+**The fallback.** Over any cap, with no model reachable, or with an answer that does not fit the typed search, the words are searched as typed (no model), the results are the
+normal ones, and one plain sentence says so. The same on MCP: the answer carries `assistant.notice`.
+
+**Words people read** are in `words.ts` (`askLabel`, `askPlaceholder`, `askButton`, `askPlain`, `askLine`) in four languages. The Hindi, Malayalam and Kannada are machine-written and on the review sheets.
+The line is a template; a model-written line is a hook (`AssistantConfig.writeLine`) that nothing sets today.
+
+**Privacy.** The question is never logged or stored as text: the log lines hold a reason and a count (`stats()`). It travels in the address of a GET request, as the plain search's words do,
+so the door's own access log, if it keeps one, may hold it; the page sends no referrer, so a shop's chat never learns it.
+
+**Test.** `cd modules && node --test discovery/test/assistant.test.ts`. It runs on scripted fakes (a fake model, a fake decision model, fake shops): **not tested on a real model or provider.**
+
+**Extend.** Another field in the typed search: `TypedSearch`, `TYPED_SEARCH_SCHEMA`, `readTypedSearch`, `requestOf`, and the spec, together. Another language: `words.ts` (and `NEAR_ME`, `RADIUS`,
+`PRICE_*` in `assistant.ts` if its words differ). A voice box: needs a voice service the directory may call (`modules/voice`); not built.
 
 ## The data it keeps
 
@@ -172,21 +227,22 @@ cd modules && node --test discovery/test/ signing/test/
 The tests use hand-made signed fixtures that follow the specs (`test/fixtures.ts`), not the shop side's code: `feed.test.ts` (limits, fields, addresses under the page, key
 pinning), `order.test.ts` (each rule, taking turns, the cap, and that nothing else can reach the order), `index.test.ts` (four languages and Latin spelling find the same
 item, distance, a held key, rebuild), `search.test.ts` (checks: gone dropped, a slow or silent or wrongly signed or replaying shop shown with "Call to check", ids only),
-`notices.test.ts`, `mcp.test.ts` (tools and the Agent Card), `page.test.ts` (every state in four languages), `http.test.ts` (over a real local port, no cookie on any answer).
+`notices.test.ts`, `mcp.test.ts` (tools and the Agent Card), `assistant.test.ts` (the buyer's assistant), `page.test.ts` (every state in four languages), `http.test.ts` (over a real local port, no cookie on any answer).
 
 ## Extend
 
 - **Another place a result can come from**: add a reader that produces a `Feed` (feed.ts's shape) and call `index.ingest`. The signature and pinning are
   `trust.ts`; do not skip them.
 - **Another language**: add it to `Lang` (`types.ts`), `words.ts` (all lines) and `romanise.ts` (its script), and to the review sheets (`bundle/panel/review.ts`).
-- **A new tool for assistants**: add it to `DIRECTORY_TOOLS` and `directoryServer` in `mcp.ts`, and to the skills of `card.ts`; keep it read-only.
+- **A new tool for assistants**: add it to `DIRECTORY_TOOLS` (or, if it needs the buyer's assistant, beside `ASK_TOOL`) and `directoryServer` in `mcp.ts`, and to the skills of `card.ts`; keep it read-only.
 - **A change to the order**: only in `order.ts`, with a change to [directory.md](../../specs/directory.md#the-order) and to the page that states it
   (`words.ts`, `orderSteps`); the tests that keep forbidden inputs out must still pass.
 
 ## Not built, and why
 
-- **The buyer's assistant** (a model that turns "Persian kitten near Thrissur?" into a search and the results into words) is the next piece. The directory is
-  ready for it: it is the same `search_listings` call.
+- **A microphone on the search page.** The directory has no voice service it may call. See `modules/Deferred.md`.
+- **A model-written answer line, and a local model for it.** The line is a template; the hook and the grounding check exist, no model is wired to it.
+- **The month's spend kept across a restart**, and the bundle writing the assistant block from the approved price list. See `modules/Deferred.md`.
 - **The A2A message endpoint.** The card lists only what is served (MCP and the JSON search).
 - **Directories linking to each other.** One directory reads feeds it is told about; it does not ask other directories.
 - **Key rotation signed by the old key.** A key change is held for a person. See `modules/Deferred.md`.
