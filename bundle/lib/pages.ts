@@ -18,7 +18,7 @@
 import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { OWNER_SESSIONS_FILE } from "../../modules/channels/owner-access.ts";
-import { OWNER_GRANTS_FILE, RECOVERY_CODES, SETUP_MS, newRecoveryCode, newSetupToken, readOwnerGrants, recoveryHash, setupHash } from "../../modules/channels/owner-grants.ts";
+import { OWNER_GRANTS_FILE, OWNER_RESET_FILE, RECOVERY_CODES, REMOVAL_WAIT_MS, SETUP_MS, newRecoveryCode, newSetupToken, readOwnerGrants, readOwnerReset, recoveryHash, setupHash } from "../../modules/channels/owner-grants.ts";
 import type { OwnerGrants } from "../../modules/channels/owner-grants.ts";
 import { PAGES_FILE, PHONE_SHAPE, isMapLink, readPagesFile } from "../../modules/channels/pages-file.ts";
 import type { PagesFile } from "../../modules/channels/pages-file.ts";
@@ -126,15 +126,45 @@ export function makeOwnerRecovery(dir: string, shop: string, now: Date): string[
   return codes;
 }
 
-/** "Remove the owner's passkeys" (a lost phone): every passkey made before now stops working, and the setup QR and recovery card are cleared too. */
+/**
+ * "Remove the owner's passkeys" BEFORE the owner holds one (the panel works as it did): every passkey made before now stops working, and the setup QR and recovery card
+ * are cleared too. Once the owner holds a passkey the runtime ignores this value (owner-access.ts); use `requestOwnerPasskeyRemoval`.
+ */
 export function removeOwnerPasskeys(dir: string, shop: string, now: Date): void {
   writeGrants(dir, shop, { schema: 1, passkeysBefore: now.toISOString() });
 }
 
+/**
+ * The Operator's REQUEST to remove every passkey, for an owner who lost every phone (owner's item 2): written as `pendingRemoval`. The runtime times it from when it
+ * first sees it (REMOVAL_WAIT_MS), tells the owner at once on every phone, lets the owner cancel, and applies it itself; this file never removes anything by itself.
+ * Asking again while one waits writes a new `askedAt`, which restarts the wait: the Operator gains nothing by it.
+ */
+export function requestOwnerPasskeyRemoval(dir: string, shop: string, by: string, now: Date): void {
+  writeGrants(dir, shop, { ...readGrants(dir, shop), pendingRemoval: { askedBy: by.slice(0, 80), askedAt: now.toISOString(), effectiveAt: new Date(now.getTime() + REMOVAL_WAIT_MS).toISOString() } });
+}
+
+export const ownerResetFile = (dir: string, shop: string): string => join(serverPaths(dir).shop(shop), OWNER_RESET_FILE);
+/** How long the QR that comes with Geometer's reset works: the admin may need to send it to the owner, so longer than the Operator's 15 minutes. */
+export const RESET_QR_MS = 60 * 60_000;
+
+/**
+ * Geometer's reset (`geometer owner reset`, a server-admin command, never the panel): written to the admin-only OWNER_RESET_FILE, and the panel's grants file is replaced by
+ * one holding ONLY the one new setup QR (the Operator's old QR, card and any pending request are gone). The runtime then voids every QR, card and own code, ends every
+ * session, sets passkeysBefore to the reset moment and opens the gate for that one QR (owner-access.ts). Returns the QR's token, to show ONCE.
+ */
+export function resetOwnerSignin(dir: string, shop: string, o: { reason: string; by: string; now: Date }): { token: string; expiresAt: Date } {
+  const token = newSetupToken();
+  const expiresAt = new Date(o.now.getTime() + RESET_QR_MS);
+  writeAtomic(ownerResetFile(dir, shop), `${stableJson({ schema: 1, at: o.now.toISOString(), reason: o.reason.slice(0, 300), by: o.by.slice(0, 80) })}\n`);
+  writeGrants(dir, shop, { schema: 1, setup: { sha256: setupHash(token), createdAt: o.now.toISOString(), expiresAt: expiresAt.toISOString() } });
+  return { token, expiresAt };
+}
+
 /** When the current card and the last QR were made, and passkeys last removed, for the panel's block. Never a hash. */
-export function ownerGrantsSummary(dir: string, shop: string): { setupAt?: string; recoveryAt?: string; removedAt?: string } {
+export function ownerGrantsSummary(dir: string, shop: string): { setupAt?: string; recoveryAt?: string; removedAt?: string; resetAt?: string; resetReason?: string } {
   const g = readGrants(dir, shop);
-  return { ...(g.setup ? { setupAt: g.setup.createdAt } : {}), ...(g.recovery ? { recoveryAt: g.recovery.createdAt } : {}), ...(g.passkeysBefore ? { removedAt: g.passkeysBefore } : {}) };
+  const reset = readOwnerReset(read(ownerResetFile(dir, shop)));
+  return { ...(g.setup ? { setupAt: g.setup.createdAt } : {}), ...(g.recovery ? { recoveryAt: g.recovery.createdAt } : {}), ...(g.passkeysBefore ? { removedAt: g.passkeysBefore } : {}), ...(reset ? { resetAt: reset.at, resetReason: reset.reason } : {}) };
 }
 
 export function readPagesStatus(dir: string, shop: string): PageStatus | undefined {
@@ -262,6 +292,8 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
     keep(join(clientDir(dir, shop), OWNER_SESSIONS_FILE), endAll);
     // item 11h: the Operator's setup QR, recovery card and "remove the owner's passkeys" (hashes only), to the runtime, which reads it on every request
     if (keep(join(clientDir(dir, shop), OWNER_GRANTS_FILE), read(ownerGrantsFile(dir, shop)))) lines.push(`${shop}: the owner's sign-in codes are handed to the runtime.`);
+    // owner's item 2: Geometer's reset, a separate admin-only file, handed to the runtime the same way (and removed there when the admin's is gone)
+    if (keep(join(clientDir(dir, shop), OWNER_RESET_FILE), read(ownerResetFile(dir, shop)))) lines.push(`${shop}: Geometer's reset of the owner's sign-in is handed to the runtime.`);
   }
 
   // a shop that is no longer deployed here gives its name back (it cools at fleet; a mistaken removal undone within 90 days keeps it and its page id)
