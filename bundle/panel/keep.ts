@@ -120,13 +120,30 @@ function mergeEntry(built: Obj, saved: Obj | undefined, rule: ListRule, language
   return entry;
 }
 
+/** The same value with every object's keys in one fixed order, so two values that say the same thing compare equal whatever order their keys came in. */
+const canonical = (v: unknown): unknown => (Array.isArray(v) ? v.map(canonical) : isObj(v) ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, canonical(v[k])])) : v);
+
+/** What the form built for a part, laid out like the saved part: equal in content: the saved one itself; otherwise the saved key order for the keys that remain, new keys after. */
+function sameOrder(built: unknown, saved: unknown): unknown {
+  if (saved === undefined) return built;
+  if (JSON.stringify(canonical(built)) === JSON.stringify(canonical(saved))) return clone(saved);
+  if (!isObj(built) || !isObj(saved)) return built;
+  return Object.fromEntries([...Object.keys(saved).filter((k) => k in built), ...Object.keys(built).filter((k) => !(k in saved))].map((k) => [k, built[k]]));
+}
+
 /** The settings the form built, with everything the form does not own put back from the saved settings. `saved` undefined (a new shop): the built settings as they are. */
 export function keepHidden(built: unknown, saved: unknown, spec: KeepSpec): unknown {
   if (!isObj(built) || !isObj(saved)) return built;
   let out: Obj = clone(without(saved, spec.owned));
   for (const [key, value] of Object.entries(built)) {
     const parts = spec.objects?.[key];
-    out[key] = parts && isObj(value) && isObj(saved[key]) ? { ...clone(without(saved[key] as Obj, parts)), ...value } : value;
+    if (parts && isObj(value) && isObj(saved[key])) {
+      const before = saved[key] as Obj;
+      const merged: Obj = { ...clone(without(before, parts)), ...value };
+      // a part the form owns that says the same as before stays as it was, byte for byte; one that changed keeps the saved order of what remains, new keys after
+      for (const part of parts) if (part in value) merged[part] = sameOrder(value[part], before[part]);
+      out[key] = merged;
+    } else out[key] = value;
   }
   const languages = Array.isArray(built.languages) ? built.languages.filter((l): l is string => typeof l === "string") : [];
   for (const [path, rule] of Object.entries(spec.lists ?? {})) {
