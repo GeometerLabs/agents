@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { validateRuntimeConfig } from "../../templates/commerce/bookings/server/config.ts";
 import { isBudgetConfig } from "../../modules/budget/budget.ts";
 import { planShop, withBudget } from "../generate/shop.ts";
-import { WORST_CALL_MICRO_INR, budgetFor, discoveryBudgetFor, wallNotes } from "../lib/budget.ts";
+import { WORST_CALL_MICRO_INR, budgetFor, discoveryBudgetFor, priceListNotes, wallNotes } from "../lib/budget.ts";
 import { isOwnerAssistantRead, summarizeUsage, usageRatesFrom } from "../lib/usage.ts";
 import { PRICES_DIR, latestPriceList, latestProposedPriceList, loadPriceList } from "../panel/cost.ts";
 import { budgetOf, planView } from "../panel/plan.ts";
@@ -114,4 +114,11 @@ test("the model Guard's wall is checked against the shops' budgets and said in p
   assert.equal(notes.length, 1);
   assert.match(notes[0], /50 calls a day/u);
   assert.equal(WORST_CALL_MICRO_INR >= 140_000, true, "the dearest call is at least the table's own price for the longest prompt and reply");
+});
+
+test("an unreadable price list is said in the deploy, not hidden as 'no budget'", () => {
+  assert.deepEqual(priceListNotes(() => inForce), []);
+  const notes = priceListNotes(() => { throw new Error("no such folder"); });
+  assert.equal(notes.length, 1);
+  assert.match(notes[0], /could not be read \(no such folder\).*no shop was given a model budget/u);
 });
