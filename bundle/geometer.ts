@@ -43,6 +43,9 @@
 //                                phone, setup QR, recovery code and signed-in device of the owner stops at once, any pending removal request is cancelled, and ONE new one-use setup
 //                                QR is made. The link is printed once (and a PNG of the QR written to --qr-out when you name a file). The shop's record and the Operator's panel
 //                                say it was reset, with your reason. Only here, never from the panel: on a builder's own server the builder is the admin.
+//   owner requests               every shop with an Operator's request to remove the owner's phones, or a changed owner number, waiting for its 48 hours (shop, kind, who asked,
+//                                first seen, when it applies), from the shops' exported records. The deployer writes the same list to status/owner-requests.json on every pass.
+//                                For the pilot, Geometer runs this every day and phones the owner of any shop it lists.
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
 //                                runs the panel's read-only connection checks (WhatsApp number, Razorpay key, calendar) inside the panel container; when they all confirm
 //                                the panel records the ids in shops/<shop>/pins.json, and the next deploy or `apply` pins the Guards to them.

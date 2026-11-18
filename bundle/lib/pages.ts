@@ -316,5 +316,17 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
     }
     rmSync(pagesStatusFile(dir, shop), { force: true });
   }
+  // A reset belongs to the shop it was made for: when that shop is gone from this server, its reset file and the panel's note go too, so a LATER shop with the same name
+  // never inherits a reset window (which would lock its Operator out of the QR) or a reset QR.
+  const adminDir = dirname(serverPaths(dir).adminOwnerReset("x"));
+  if (existsSync(adminDir)) {
+    for (const f of readdirSync(adminDir).filter((n) => n.endsWith(".json"))) {
+      const gone = f.slice(0, -5);
+      if (existsSync(serverPaths(dir).shop(gone))) continue;
+      rmSync(join(adminDir, f), { force: true });
+      rmSync(serverPaths(dir).ownerResetNote(gone), { force: true });
+      lines.push(`${gone}: removed from this server, so its owner reset is deleted.`);
+    }
+  }
   return lines;
 }

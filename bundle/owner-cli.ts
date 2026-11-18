@@ -13,13 +13,22 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { textQrPng } from "../modules/qr/png.ts";
 import { ownerBaseOf, readPageSettings, readPagesStatus, resetOwnerSignin } from "./lib/pages.ts";
-import { loadServer, publicUrl, serverPaths } from "./lib/server.ts";
+import { readOwnerRequests } from "./lib/owner-requests.ts";
+import { listShops, loadServer, publicUrl, serverPaths } from "./lib/server.ts";
 import { shopNameProblem } from "./lib/util.ts";
 
 export interface OwnerResetFlags { reason?: string; by?: string; qrOut?: string }
 
 export function ownerCommand(dir: string, sub: string | undefined, shop: string | undefined, flags: OwnerResetFlags, io: { log: (line: string) => void; now: () => Date }): number {
-  if (sub !== "reset") throw new Error('Usage: geometer owner reset <shop> --reason "..." --by NAME [--qr-out <file.png>]');
+  // `owner requests`: every shop with an Operator's removal request or a changed owner number waiting for its 48 hours (the pilot's daily check: phone the owner)
+  if (sub === "requests") {
+    const shops = listShops(dir);
+    const waiting = readOwnerRequests(dir, shops);
+    if (waiting.length === 0) { io.log("No owner request is waiting on this server."); return 0; }
+    for (const r of waiting) io.log(`${r.shop}: ${r.kind === "removal" ? "removal of every phone" : "owner number changed"}; asked by ${r.askedBy || "the Operator"}; first seen ${r.firstSeen}; applies ${r.appliesAt || "?"}. Phone the owner.`);
+    return 0;
+  }
+  if (sub !== "reset") throw new Error('Usage: geometer owner reset <shop> --reason "..." --by NAME [--qr-out <file.png>]  |  geometer owner requests');
   const problem = shop === undefined ? 'Say which shop: geometer owner reset <shop> --reason "..." --by NAME [--qr-out <file.png>]' : shopNameProblem(shop);
   if (problem || shop === undefined) throw new Error(problem as string);
   if (!existsSync(serverPaths(dir).shop(shop))) throw new Error(`There is no shop called ${shop} on this server.`);

@@ -232,3 +232,16 @@ test("owner's item 2: the Operator's removal request and Geometer's reset reach 
     assert.equal(existsSync(join(client, "owner-reset.json")), false, "taken away when the admin's is gone");
   } finally { b.done(); }
 });
+
+test("re-review C(b): when a shop is removed its owner reset and the panel's note go, so a later shop with the same name inherits nothing", async () => {
+  const b = folder("own");
+  try {
+    resetOwnerSignin(b.dir, "ravi", { reason: "owner lost every phone", by: "Naval", now: T0 });
+    await b.sync(["ravi"], new Date(T0.getTime() + 1000));
+    assert.ok(existsSync(join(b.dir, "admin", "owner-reset", "ravi.json")) && existsSync(join(b.dir, "status", "owner-reset", "ravi.json")));
+    rmSync(join(b.dir, "shops", "ravi"), { recursive: true, force: true });
+    await b.sync([], new Date(T0.getTime() + 2000));
+    assert.equal(existsSync(join(b.dir, "admin", "owner-reset", "ravi.json")), false);
+    assert.equal(existsSync(join(b.dir, "status", "owner-reset", "ravi.json")), false);
+  } finally { b.done(); }
+});
