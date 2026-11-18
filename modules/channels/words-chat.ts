@@ -31,7 +31,7 @@ export const CHAT: Record<Language, ChatWords> = {
     offline: "You are offline. Messages will go when you are back.", slow: "Writing back", rate: "That was a lot at once. Wait a minute, then send again.",
     capped: "That is enough typed answers for today. The buttons below still work.", closed: (h) => `The shop is closed now. You can still ask. ${h}`, paused: "The shop is not taking new work just now. You can still ask questions.", empty: "No messages yet.", gone: "Messages older than the keeping time are cleared.",
     help: "What would you like to do?",
-    note: "Replies come from the shop's assistant. A booking or a payment counts only when the shop's own record says so.", kept: (d) => `This chat is kept on the shop's phone for ${d} days.`, you: "You", shop: "Shop", thread: "Conversation",
+    note: "The shop's assistant replies here. A booking or a payment counts once the shop's record shows it.", kept: (d) => `The shop keeps this chat for ${d} days.`, you: "You", shop: "Shop", thread: "Conversation",
     alertsHead: "Want a buzz when the shop answers?", onStreetlist: "on Streetlist",
   },
   hi: {
@@ -40,7 +40,7 @@ export const CHAT: Record<Language, ChatWords> = {
     offline: "आप ऑफ़लाइन हैं। वापस आते ही संदेश चले जाएँगे।", slow: "जवाब लिख रहे हैं", rate: "एक साथ बहुत हो गया। एक मिनट रुकिए, फिर कोशिश करें।",
     capped: "आज के लिए लिखे जवाब बस इतने। नीचे के बटन अब भी चलते हैं।", closed: (h) => `दुकान अभी बंद है। आप फिर भी पूछ सकते हैं। ${h}`, paused: "दुकान अभी नया काम नहीं ले रही। आप सवाल पूछ सकते हैं।", empty: "अभी कोई संदेश नहीं।", gone: "रखने के समय से पुराने संदेश हटा दिए जाते हैं।",
     help: "आप क्या करना चाहेंगे?",
-    note: "जवाब दुकान के असिस्टेंट से आते हैं। बुकिंग या भुगतान तभी माना जाता है जब दुकान का अपना रिकॉर्ड यही कहे।", kept: (d) => `यह चैट दुकान के फ़ोन पर ${d} दिन रखी जाती है।`, you: "आप", shop: "दुकान", thread: "बातचीत",
+    note: "दुकान का असिस्टेंट यहाँ जवाब देता है। बुकिंग या भुगतान तभी गिना जाता है जब दुकान के रिकॉर्ड में दिखे।", kept: (d) => `दुकान यह चैट ${d} दिन रखती है।`, you: "आप", shop: "दुकान", thread: "बातचीत",
     alertsHead: "दुकान जवाब दे तो फ़ोन बजे?", onStreetlist: "Streetlist पर",
   },
   ml: {
@@ -49,7 +49,7 @@ export const CHAT: Record<Language, ChatWords> = {
     offline: "നിങ്ങൾ ഓഫ്‌ലൈനാണ്. തിരിച്ചെത്തുമ്പോൾ സന്ദേശങ്ങൾ പോകും.", slow: "മറുപടി എഴുതുന്നു", rate: "ഒറ്റയടിക്ക് കൂടുതലായി. ഒരു മിനിറ്റ് കാത്തിരുന്ന് വീണ്ടും ശ്രമിക്കൂ.",
     capped: "ഇന്നത്തേക്ക് ടൈപ്പ് ചെയ്ത മറുപടികൾ ഇത്രയും. താഴത്തെ ബട്ടണുകൾ ഇപ്പോഴും പ്രവർത്തിക്കും.", closed: (h) => `കട ഇപ്പോൾ അടഞ്ഞിരിക്കുന്നു. എങ്കിലും ചോദിക്കാം. ${h}`, paused: "കട ഇപ്പോൾ പുതിയ ജോലി എടുക്കുന്നില്ല. ചോദ്യങ്ങൾ ചോദിക്കാം.", empty: "ഇതുവരെ സന്ദേശങ്ങളില്ല.", gone: "സൂക്ഷിക്കുന്ന സമയത്തിലും പഴയ സന്ദേശങ്ങൾ നീക്കം ചെയ്യും.",
     help: "നിങ്ങൾക്ക് എന്താണ് ചെയ്യേണ്ടത്?",
-    note: "മറുപടികൾ കടയുടെ അസിസ്റ്റന്റിൽ നിന്നാണ്. ബുക്കിംഗോ പേയ്‌മെന്റോ കടയുടെ സ്വന്തം രേഖ പറയുമ്പോൾ മാത്രമേ കണക്കാകൂ.", kept: (d) => `ഈ ചാറ്റ് കടയുടെ ഫോണിൽ ${d} ദിവസം സൂക്ഷിക്കും.`, you: "നിങ്ങൾ", shop: "കട", thread: "സംഭാഷണം",
+    note: "കടയുടെ അസിസ്റ്റന്റ് ഇവിടെ മറുപടി നൽകും. ബുക്കിംഗോ പേയ്‌മെന്റോ കടയുടെ രേഖയിൽ കാണുമ്പോൾ മാത്രം കണക്കാകും.", kept: (d) => `കട ഈ ചാറ്റ് ${d} ദിവസം സൂക്ഷിക്കും.`, you: "നിങ്ങൾ", shop: "കട", thread: "സംഭാഷണം",
     alertsHead: "കട മറുപടി തന്നാൽ ഫോൺ അറിയിക്കണോ?", onStreetlist: "Streetlist-ൽ",
   },
   kn: {
@@ -58,7 +58,7 @@ export const CHAT: Record<Language, ChatWords> = {
     offline: "ನೀವು ಆಫ್‌ಲೈನ್ ಇದ್ದೀರಿ. ನೀವು ಮರಳಿದಾಗ ಸಂದೇಶಗಳು ಹೋಗುತ್ತವೆ.", slow: "ಉತ್ತರ ಬರೆಯಲಾಗುತ್ತಿದೆ", rate: "ಒಮ್ಮೆಲೇ ಬಹಳ ಆಯಿತು. ಒಂದು ನಿಮಿಷ ಕಾದು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
     capped: "ಇಂದಿಗೆ ಟೈಪ್ ಮಾಡಿದ ಉತ್ತರಗಳು ಇಷ್ಟೇ. ಕೆಳಗಿನ ಬಟನ್‌ಗಳು ಇನ್ನೂ ಕೆಲಸ ಮಾಡುತ್ತವೆ.", closed: (h) => `ಅಂಗಡಿ ಈಗ ಮುಚ್ಚಿದೆ. ಆದರೂ ಕೇಳಬಹುದು. ${h}`, paused: "ಅಂಗಡಿ ಈಗ ಹೊಸ ಕೆಲಸ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿಲ್ಲ. ಪ್ರಶ್ನೆಗಳನ್ನು ಕೇಳಬಹುದು.", empty: "ಇನ್ನೂ ಸಂದೇಶಗಳಿಲ್ಲ.", gone: "ಇಡುವ ಸಮಯಕ್ಕಿಂತ ಹಳೆಯ ಸಂದೇಶಗಳನ್ನು ತೆಗೆಯಲಾಗುತ್ತದೆ.",
     help: "ನೀವು ಏನು ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?",
-    note: "ಉತ್ತರಗಳು ಅಂಗಡಿಯ ಸಹಾಯಕರಿಂದ ಬರುತ್ತವೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಅಂಗಡಿಯ ಸ್ವಂತ ದಾಖಲೆ ಹೇಳಿದಾಗ ಮಾತ್ರ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ.", kept: (d) => `ಈ ಚಾಟ್ ಅಂಗಡಿಯ ಫೋನ್‌ನಲ್ಲಿ ${d} ದಿನ ಇರುತ್ತದೆ.`, you: "ನೀವು", shop: "ಅಂಗಡಿ", thread: "ಮಾತುಕತೆ",
+    note: "ಅಂಗಡಿಯ ಅಸಿಸ್ಟೆಂಟ್ ಇಲ್ಲಿ ಉತ್ತರಿಸುತ್ತದೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಅಂಗಡಿಯ ದಾಖಲೆಯಲ್ಲಿ ಕಂಡಾಗ ಮಾತ್ರ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ.", kept: (d) => `ಅಂಗಡಿ ಈ ಚಾಟ್ ಅನ್ನು ${d} ದಿನ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ.`, you: "ನೀವು", shop: "ಅಂಗಡಿ", thread: "ಮಾತುಕತೆ",
     alertsHead: "ಅಂಗಡಿ ಉತ್ತರಿಸಿದಾಗ ಫೋನ್ ತಿಳಿಸಬೇಕೆ?", onStreetlist: "Streetlist ನಲ್ಲಿ",
   },
 };

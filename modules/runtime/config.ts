@@ -7,6 +7,8 @@
 // A template says that in a `ServiceShape`, and gives its own settings check to `loadClientFolder`.
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, resolve } from "node:path";
+import { isBudgetConfig } from "../budget/budget.ts";
+import type { BudgetConfig } from "../budget/budget.ts";
 import { LANGUAGES } from "../language/languages.ts";
 import { licenceNow, parseLicenceFile } from "../licence/rules.ts";
 import type { LicenceFile, LicenceNow } from "../licence/rules.ts";
@@ -167,6 +169,11 @@ export interface RuntimeConfig {
    */
   model?: "normal" | "off";
   allowance?: AllowanceConfig;
+  /**
+   * The shop's model budget (budget/budget.ts): the month's rupees for every model call and a daily cap for each feature. Written by the bundle from the price list for the
+   * shop's plan; left out: no budget of the shop's own (fleet's cap, `model`, still applies). Read at the runtime's start.
+   */
+  budget?: BudgetConfig;
   /** Minutes of button mode after a model step fails. Default 5. */
   pauseMinutes?: number;
   report?: ReportConfig;
@@ -338,7 +345,7 @@ function readReport(raw: unknown, folder: string, dataDir: string, errors: strin
 export function readRuntimeConfig(input: unknown, folder: string, shape: ServiceShape): { ok: true; config: RuntimeConfig } | { ok: false; errors: string[] } {
   const errors: string[] = [];
   if (!isObj(input)) return { ok: false, errors: ['runtime.json must be an object like {"mode": "fakes"}.'] };
-  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser", "talk", "decision", "ai", "model", "allowance", "pauseMinutes", "report", "speech"], "runtime.json", errors);
+  unknownKeys(input, ["mode", "host", "port", "dataDir", "tickSeconds", "services", "parser", "talk", "decision", "ai", "model", "allowance", "budget", "pauseMinutes", "report", "speech"], "runtime.json", errors);
 
   if (input.mode !== "fakes" && input.mode !== "live") errors.push('Set "mode" to "fakes" (stand-in services, for a local run) or "live" (real services through Guard).');
   const host = input.host ?? "127.0.0.1";
@@ -373,6 +380,7 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
   if (input.ai !== undefined && input.ai !== "on" && input.ai !== "buttons") errors.push('"ai" must be "on" (the default) or "buttons" (no AI: the agent reads with the rules and answers with buttons and lists).');
   if (input.model !== undefined && input.model !== "normal" && input.model !== "off") errors.push('"model" must be "normal" (the default) or "off" (the month\'s AI cap: the language model is left out; the rules and the decision model keep answering).');
   const allowance = input.allowance !== undefined ? readAllowance(input.allowance, errors) : undefined;
+  if (input.budget !== undefined && !isBudgetConfig(input.budget)) errors.push('"budget" must be {"monthlyMicroInr": a whole number of millionths of a rupee, "daily": {"owner_talk": 40, "listing_draft": 10, ...}} (budget/budget.ts): the shop\'s month budget for every model call, and a daily cap for each feature. The bundle writes it from the price list; leave it out for no budget of the shop\'s own.');
   if (input.pauseMinutes !== undefined && (!Number.isInteger(input.pauseMinutes) || (input.pauseMinutes as number) < 1 || (input.pauseMinutes as number) > 1440)) errors.push('"pauseMinutes" must be a whole number of minutes from 1 to 1440: how long the agent uses buttons after a model step fails. Default 5.');
 
   const report = input.report !== undefined && isText(dataDir) ? readReport(input.report, folder, isAbsolute(dataDir) ? dataDir : resolve(folder, dataDir), errors) : undefined;
@@ -382,7 +390,7 @@ export function readRuntimeConfig(input: unknown, folder: string, shape: Service
 
   if (errors.length > 0) return { ok: false, errors };
   const dir = dataDir as string;
-  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(talk ? { talk } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(input.model !== undefined ? { model: input.model as "normal" | "off" } : {}), ...(allowance ? { allowance } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}), ...(report ? { report } : {}) , ...(speech ? { speech } : {}) } };
+  return { ok: true, config: { mode: input.mode as "fakes" | "live", host: host as string, port: port as number, dataDir: isAbsolute(dir) ? dir : resolve(folder, dir), tickSeconds: tickSeconds as number, ...(services ? { services } : {}), ...(parser ? { parser } : {}), ...(talk ? { talk } : {}), ...(decision ? { decision } : {}), ...(input.ai !== undefined ? { ai: input.ai as "on" | "buttons" } : {}), ...(input.model !== undefined ? { model: input.model as "normal" | "off" } : {}), ...(allowance ? { allowance } : {}), ...(input.budget !== undefined ? { budget: input.budget as BudgetConfig } : {}), ...(input.pauseMinutes !== undefined ? { pauseMinutes: input.pauseMinutes as number } : {}), ...(report ? { report } : {}) , ...(speech ? { speech } : {}) } };
 }
 
 /** pathway.lock holds one line, `bookings@0.1.0` (blank lines and # comments are allowed). */

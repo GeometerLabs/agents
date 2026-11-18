@@ -18,6 +18,9 @@ import { join, resolve } from "node:path";
 import { parseLock } from "../../modules/runtime/config.ts";
 import { KINDS, kindFor, kindNames } from "./kinds.ts";
 import { parseAssignmentFile, parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
+import { latestPriceList } from "../panel/cost.ts";
+import { budgetFor } from "./budget.ts";
+import type { BudgetConfig } from "../../modules/budget/budget.ts";
 import { readAnswerFile } from "./fleet.ts";
 import { serverIdProblem, shopNameProblem } from "./util.ts";
 import { SELF_HOSTED_PROVIDER, isBuilderRate } from "../../modules/understanding/rates.ts";
@@ -174,6 +177,12 @@ export interface ServerConfig {
    * its chat page can subscribe a phone with it. Left out: no shop sends to the Streetlist app's phones.
    */
   pushRelay?: { publicKey: string };
+  /**
+   * Block S (18 Nov 2026): the directory of local shops that runs beside the front door (bundle/services/directory.ts), only with `pages`. `feeds` are feed addresses to read besides the
+   * shops that send a "my feed changed" notice (for example a builder's own domain: https://shops.example/s/ravi/listings.json); `area` is what the directory's Agent Card says it covers.
+   * Both optional: a server with a pages domain has a directory either way.
+   */
+  directory?: { feeds: string[]; area?: string };
 }
 
 /** A pages domain: a lowercase host name with a dot, no scheme, port or path (the same rule as fleet's `pages.domain`). */
@@ -304,6 +313,14 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
       errors.push('"pushRelay" must say {"publicKey": "<the push key\'s public half>"}: 65 bytes in base64url, printed by `node bundle/services/push-relay.ts make-key <file>`. The private half is a file in secrets/push/, never here.');
     }
   }
+  if (o.directory !== undefined) {
+    const d = isObj(o.directory) ? o.directory : undefined;
+    const feeds = d && Array.isArray(d.feeds) ? d.feeds : d && d.feeds === undefined ? [] : undefined;
+    if (o.pages === undefined) errors.push('"directory" needs "pages": the directory runs beside the pages domain\'s front door.');
+    if (!d || Object.keys(d).some((x) => x !== "feeds" && x !== "area") || !feeds || feeds.length > 200 || !feeds.every((f) => typeof f === "string" && /^https:\/\/[^\s/]+\/\S{0,300}$/u.test(f)) || (d.area !== undefined && (typeof d.area !== "string" || d.area.length > 60))) {
+      errors.push('"directory" must say {"feeds": ["https://<domain>/<shop page>/listings.json", ...], "area": "<what it covers, for its card>"}: both optional, at most 200 feeds.');
+    }
+  }
   errors.push(...pagesProblems(o.pages, typeof o.domain === "string" ? o.domain : "", isObj(o.panel) && o.panel.mode === "hosted"));
   if (o.gupshupTokenHeader !== undefined && o.gupshupTokenHeader !== "bearer" && o.gupshupTokenHeader !== "bare") errors.push('"gupshupTokenHeader" must be "bearer" or "bare": how a renewed Gupshup app token is sent.');
   if (fleetId !== undefined && (typeof fleetId !== "string" || serverIdProblem(fleetId))) errors.push('"fleet.deploymentId" must be the server id fleet gave this server when it was paired (pairing.json).');
@@ -324,6 +341,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     heartbeatSeconds: typeof o.heartbeatSeconds === "number" && o.heartbeatSeconds >= 5 ? o.heartbeatSeconds : 60,
     ...(licenceKeys && licenceKeys.every((k) => typeof k === "string") ? { licence: { keys: licenceKeys as string[] } } : {}),
     ...(isObj(o.pushRelay) && typeof o.pushRelay.publicKey === "string" ? { pushRelay: { publicKey: o.pushRelay.publicKey } } : {}),
+    ...(isObj(o.directory) ? { directory: { feeds: Array.isArray(o.directory.feeds) ? o.directory.feeds.filter((f): f is string => typeof f === "string") : [], ...(typeof o.directory.area === "string" ? { area: o.directory.area } : {}) } } : {}),
     ...(isObj(o.pages) && typeof o.pages.domain === "string" ? { pages: { domain: o.pages.domain, extraDomains: Array.isArray(o.pages.extraDomains) ? o.pages.extraDomains.filter((d): d is string => typeof d === "string") : [] } } : {}),
     ports: { http: isObj(o.ports) && Number.isInteger(o.ports.http) ? o.ports.http as number : 80, https: isObj(o.ports) && Number.isInteger(o.ports.https) ? o.ports.https as number : 443 },
   };
@@ -408,6 +426,12 @@ export interface ShopFolder {
    */
   fleetModel?: "off";
   /**
+   * The shop's model budget (decision 60; bundle/lib/budget.ts): worked out from the price list IN FORCE and the plan fleet named, for a shop on Geometer's server with a plan.
+   * Undefined for a builder's own shop (it brings its own AI key), when no list in force has a budget (until the owner says yes), or when an entry is missing: then nothing is
+   * added to the shop's runtime config.
+   */
+  budget?: BudgetConfig;
+  /**
    * Who the owner's monthly report says set the shop up: shops/<shop>/report.json if it has one, else the panel's attribution (owner.json: "Divya, local Operator"), else
    * DEFAULT_PREPARED_BY. `preparedBySource` says which, so a deploy can tell the builder when it had to fall back.
    */
@@ -417,6 +441,11 @@ export interface ShopFolder {
   innovator: boolean;
   /** Plain-words problems reading the folder (missing file, bad JSON, bad settings). */
   problems: string[];
+}
+
+/** The price list in force (never a proposal), or an empty one when the folder has none, so a shop is never refused because the prices could not be read: it just gets no budget. */
+function inForceList(): { rates: Record<string, never> } | ReturnType<typeof latestPriceList> {
+  try { return latestPriceList(); } catch { return { rates: {} }; }
 }
 
 /** Read one shop's desired state. Never throws: what is wrong comes back as `problems`. */
@@ -475,5 +504,6 @@ export function readShop(dir: string, name: string): ShopFolder {
   const answer = readAnswerFile(serverPaths(dir).fleetAnswer(name));
   const fleetAi = answer?.ai === "buttons" && answer.plan !== null ? "buttons" as const : undefined;
   const fleetModel = answer?.model === "off" && answer.plan !== null ? "off" as const : undefined;
-  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), ...(fleetModel ? { fleetModel } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
+  const budget = answer?.plan ? budgetFor(answer.plan, inForceList()) : undefined;
+  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), ...(fleetModel ? { fleetModel } : {}), ...(budget ? { budget } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
 }

@@ -18,6 +18,8 @@ import type { InboundMessage, Messaging } from "../messaging/messaging.ts";
 import type { RefundIssue, RefundIssueKind } from "../payments/refunds.ts";
 import { createRecord } from "../record/record.ts";
 import type { ActionRecord, RecordEntry } from "../record/record.ts";
+import { summaryOf as budgetSummaryOf } from "../budget/budget.ts";
+import type { BudgetSummary } from "../budget/budget.ts";
 import { summaryOf } from "../understanding/ai-state.ts";
 import type { AiPolicy, AiState, AiSummary } from "../understanding/ai-state.ts";
 import type { IncomingEvent, RuntimeEvent } from "./events.ts";
@@ -27,6 +29,10 @@ import type { DurableStore, PhotoRow, TaskCounts, WindowStore } from "./store.ts
 import { PHOTO_GRACE_MS, createListingsKit } from "../listings/kit.ts";
 import type { ListingOp, OwnerListingsView, PublicListingsRead } from "../listings/kit.ts";
 import type { Failure } from "../listings/listings.ts";
+import { createStockKit } from "../stock/kit.ts";
+import type { ItemRef, OwnerStockEvent, OwnerStockView } from "../stock/kit.ts";
+import type { Failure as StockFailure } from "../stock/stock.ts";
+import { menuStockId, supplyStockId } from "../stock/stock.ts";
 import { createRunner } from "./tasks.ts";
 import { WaitingForGuard, guardAnswers, sendMemory, watchStep } from "./guard-wait.ts";
 import { afterRestore, readRestoreNote, retireRestoreNote } from "./restored.ts";
@@ -62,8 +68,12 @@ export interface BaseStatus {
   steps: number;
   errors: number;
   startedAt: string;
-  /** This month's understanding: messages read at each step, the estimated cost in micro-rupees, the allowance, and whether the agent is in button mode and why. Counts only. */
-  ai: AiSummary;
+  /**
+   * This month's understanding: messages read at each step, the estimated cost in micro-rupees, the allowance, and whether the agent is in button mode and why. Counts only.
+   * `budget`: the shop's model budget (budget/budget.ts) as the panel's plan line reads it: the month's rupees, how much is used, the level, and each feature's calls and daily
+   * cap; left out when the shop has no budget (so a shop without one reports the same status as before).
+   */
+  ai: AiSummary & { budget?: BudgetSummary };
 }
 
 /**
@@ -302,6 +312,14 @@ export interface RuntimeChannel {
     putPhoto(row: Omit<PhotoRow, "atMs">): void;
     uploadsLeft(): number;
   };
+  /**
+   * Block S phase A3, the shop's one stock count (the store's `assistant.stock`, modules/stock): the owner's Stock page's data in their language, and what an owner op would do now (a
+   * pre-check for the page's notice). Left out for a shop with no assistant.
+   */
+  stock?: {
+    ownerView(language?: Language): OwnerStockView;
+    check(event: OwnerStockEvent): StockFailure | undefined;
+  };
 }
 
 /** What the page reads of a chat: the thread, how the latest send stands, the character's small-talk personality (settings.assistant.character) and whether hold-to-talk is on. The signboard's paint is not here: it travels in the shop's pages file (pages-file.ts). */
@@ -323,6 +341,10 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
   // checked the owner; they are run here, in the step, like the limits' events, so the change is saved with everything else and no template's agent has to know about them.
   const shopPeople = settings as { owner?: { whatsapp: string; language: Language }; assistant?: unknown };
   const listings = shopPeople.assistant && shopPeople.owner && db.photos ? createListingsKit<Store & { assistant?: import("../assistant/state.ts").AssistantState }>({ owner: shopPeople.owner, timezone: settings.timezone }) : undefined;
+
+  // Block S phase A3: the shop's one stock count. The owner's steps on their Stock page are events (like the listings'), run here in the step. The items the owner may count besides the shop's
+  // listings come from the template's own settings (Orders' menu, Stock orders' items), read without importing any template: only the fields' names are known here.
+  const stock = shopPeople.assistant && shopPeople.owner ? createStockKit<Store & { assistant?: import("../assistant/state.ts").AssistantState }>({ owner: shopPeople.owner, items: (language) => templateItems(settings, language) }) : undefined;
 
   // What the last saved step left. Replaced only after a save succeeds. The status reads these, never a step in progress.
   const saved = db.loadState();
@@ -398,6 +420,8 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
       else if (event.kind === "owner_signin" || event.kind === "owner_access") log("A sign-in event came for a shop with no owner sign-in (no pages file yet); it was dropped.");
       else if (listings?.takes(event)) listings.run(event as Parameters<typeof listings.run>[0], { store, record, nowMs: clock.now() });
       else if (event.kind === "owner_listing" || event.kind === "owner_photo") log("A listings event came for a shop that has no assistant; it was dropped.");
+      else if (stock?.takes(event)) stock.run(event as OwnerStockEvent, { store, record, nowMs: clock.now() });
+      else if (event.kind === "owner_stock") log("A stock event came for a shop that has no assistant; it was dropped.");
       else if (limits?.takes(event)) { limits.run(event as Parameters<typeof limits.run>[0], { store, record }); limits.apply(store); }
       else if (event.kind === "limit_settled" || event.kind === "owner_limit") log("A limit event came for a shop that has no limits the owner may change; it was dropped.");
       else await agent.handle(event);
@@ -519,7 +543,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
       recordLength: entries.length,
       ...runner.counters(),
       startedAt,
-      ai: summaryOf(kit.parse(snapshot), policy, clock.now(), settings.timezone),
+      ai: (() => { const parsed = kit.parse(snapshot); const budget = budgetSummaryOf(parsed, policy.budget, clock.now(), settings.timezone); return { ...summaryOf(parsed, policy, clock.now(), settings.timezone), ...(budget ? { budget } : {}) }; })(),
     }) as BaseStatus & Record<string, unknown>,
 
     refundContext: (receipt) => kit.refundContext(kit.parse(snapshot), settings, receipt),
@@ -561,6 +585,12 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
             uploadsLeft: () => listings.uploadsLeft(kit.parse(snapshot), clock.now()),
           },
         } : {}),
+        ...(stock ? {
+          stock: {
+            ownerView: (language?: Language) => stock.ownerView(kit.parse(snapshot), clock.now(), language),
+            check: (event: OwnerStockEvent) => stock.check(kit.parse(snapshot), event, clock.now()),
+          },
+        } : {}),
         ...(kit.channel.documents ? { documents: (key: DocumentsKey, language: Language) => kit.channel!.documents!(kit.parse(snapshot), entries, key, language) } : {}),
         ...(kit.channel.accountantFiles ? { accountantFiles: (period: string) => kit.channel!.accountantFiles!(kit.parse(snapshot), entries, period) } : {}),
         ...(kit.channel.parent ? { parent: (linkHash: string) => kit.channel!.parent!(kit.parse(snapshot), linkHash) } : {}),
@@ -580,4 +610,25 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
       db.close();
     },
   };
+}
+
+/**
+ * The items of the template's own settings that the owner may count (modules/stock): Orders' menu items ("menu:<id>") and Stock orders' items ("supply:<id>", with the unit when every catalogue
+ * line for the item uses the same one). The runtime core is generic, so it reads only these two field names and imports nothing from a template; a template with neither (Bookings, Fees)
+ * offers none, and the owner counts only their listings.
+ */
+function templateItems(settings: object, language: Language): ItemRef[] {
+  const s = settings as { menu?: { id?: unknown; names?: Record<string, unknown> }[]; items?: { id?: unknown; names?: Record<string, unknown> }[]; catalogue?: { item?: unknown; unit?: unknown }[] };
+  const nameOf = (names: Record<string, unknown> | undefined, id: string): string => {
+    const v = names?.[language] ?? names?.en;
+    return (Array.isArray(v) ? String(v[0] ?? "") : typeof v === "string" ? v : "") || id;
+  };
+  const out: ItemRef[] = [];
+  for (const m of s.menu ?? []) if (typeof m.id === "string") out.push({ id: menuStockId(m.id), name: nameOf(m.names, m.id) });
+  for (const i of s.items ?? []) {
+    if (typeof i.id !== "string") continue;
+    const units = new Set((s.catalogue ?? []).filter((l) => l.item === i.id).map((l) => String(l.unit)));
+    out.push({ id: supplyStockId(i.id), name: nameOf(i.names, i.id), ...(units.size === 1 ? { unit: [...units][0] } : {}) });
+  }
+  return out;
 }

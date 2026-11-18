@@ -137,6 +137,10 @@ and the `confirmedMs` the owner was shown, so an old question does nothing.
   "feed changed" notice are a later part, built on top of this file.
 * The feed and the page carry only what a visitor may already see. No customer, no number of any customer, no owner's number, no draft, no sold listing.
 
+## Quantity and the stock count
+
+`qty` is the owner's own number when they said one ("two kittens"). If the owner also **counts** the listing (the Stock page in their app, `modules/stock`, id `listing:l-3`), the count is the quantity: the feed's `items[].quantity` and the page show the count, and the listing leaves the page, the feed and the shop's talk by itself when the count reaches 0 (the owner's list marks it sold out). Nothing is written to the listing for this: `qty`, the words, the price and the digest of its card stay as the owner made them, and one place (the stock line) holds the count. The morning question "Still have it? Yes" on such a listing sets the count to the number the owner first said (or 1) and it shows again. A listing nobody counts is exactly as described above. See [`../stock/README.md`](../stock/README.md).
+
 ## Pets
 
 A pets listing shows the shop's registration under the Prevention of Cruelty to Animals (Pet Shop) Rules, 2018 as "Registration (the owner says): ...", never as checked.

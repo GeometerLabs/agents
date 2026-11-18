@@ -143,6 +143,13 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
       }
     } catch { /* a runtime older than the photo table has none to export */ } finally { pdb.close(); }
   }
+  // Block S phase A3: the shop's own stock count (its lines, low marks and last movements) in the owner's file, so leaving with the shop keeps the count. Only a shop that counts something gets it.
+  const stockState = (state ? (JSON.parse(state.snapshot) as { assistant?: { stock?: { lines?: unknown[] } } }).assistant?.stock : undefined);
+  if (stockState && (stockState.lines?.length ?? 0) > 0) {
+    const tmp = join(shop.out, ".stock.json.tmp");
+    writeFileSync(tmp, JSON.stringify(stockState), { mode: 0o644 });
+    renameSync(tmp, join(shop.out, "stock.json"));
+  }
   let open: Record<string, number> | undefined;
   if (!isListingsOnly) try { open = countsByKind(obligations.detect({ template: isStock ? "stock-orders" : isOrders ? "orders" : isFees ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }
   return { name: shop.name, ok: true, entries: entries.length, ...(isListingsOnly ? {} : isOrders || isStock ? { orders: cases.length } : isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}) };

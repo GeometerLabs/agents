@@ -222,6 +222,13 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
     for (const ph of src.listingPhotos?.() ?? []) put(`listings/photos/${ph.name}`, ph.bytes);
     notes.push("listings/listings.json holds what the shop showed on its page (every listing with its words in each language, its price, when the owner last confirmed it, and the owner's switch and place); listings/photos/ holds its photos, with their location data already removed. A new server can show them again.");
   }
+  // block S phase A3: the shop's own stock count (modules/stock) goes with the shop too; a package without a count says nothing about it
+  const stockText = src.exportFile("stock.json");
+  if (stockText !== undefined) {
+    put("stock/stock.json", stockText);
+    notes.push("stock/stock.json holds the shop's own stock count: each item the owner counted, how many there were, the owner's low mark and the last changes (each a sale, a delivery or the owner's own correction). No customer's name or number is in it.");
+  }
+
 
   // ---- the record as geometer-verify's evidence pack (B28), the daily fingerprints, the agent's id (B36)
   const ledgerText = src.exportFile("ledger.json");

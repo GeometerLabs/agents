@@ -8,7 +8,7 @@ import { paiseOfRupees } from "../../../../modules/ondc/money.ts";
 import type { Catalogue, OrderIn, PaymentPart, Party } from "../../../../modules/ondc/types.ts";
 import { advanceFor, allSlots, itemName, itemOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
-import { takenOf } from "./order.ts";
+import { countedLeft, takenOf } from "./order.ts";
 import type { Order, OrderState, Store } from "./order.ts";
 
 /** Every Orders state, for the mapping's totality test (the test also reads order.ts, so a new state fails there first). */
@@ -22,7 +22,7 @@ export function catalogueOf(settings: Settings, store: Store, clientId: string, 
   const today = { year: t.year, month: t.month, day: t.day };
   return {
     seller: party(settings, clientId),
-    items: settings.menu.map((i) => ({ id: i.id, name: itemName(i, settings.languages[0]), pricePaise: paiseOfRupees(i.priceInr), kind: "goods" as const, available: Math.max(0, i.dailyStock - takenOf(store, today, i.id, nowMs)), maxPerOrder: settings.orders.maxItemsPerOrder })),
+    items: settings.menu.map((i) => ({ id: i.id, name: itemName(i, settings.languages[0]), pricePaise: paiseOfRupees(i.priceInr), kind: "goods" as const, available: Math.min(Math.max(0, i.dailyStock - takenOf(store, today, i.id, nowMs)), countedLeft(store, i.id, nowMs) ?? Infinity), maxPerOrder: settings.orders.maxItemsPerOrder })),
     slots: allSlots(settings).map(({ slot, mode }) => ({ id: slot.id, mode, from: slot.from, to: slot.to })),
     ...(settings.delivery ? { areas: settings.delivery.area } : {}),
     cancellationWindowHours: settings.cancellation.windowHours,

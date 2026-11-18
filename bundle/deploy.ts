@@ -14,7 +14,7 @@ import { chownSync, existsSync, readFileSync, readdirSync, rmSync } from "node:f
 import { join, resolve, sep } from "node:path";
 import { composeServer } from "./generate/compose.ts";
 import type { Composed, Dirs, PanelOptions, ShopDeploy } from "./generate/compose.ts";
-import { GUPSHUP_GUARD_ADMIN_FILE, GUPSHUP_UNIVERSAL_TOKEN_FILE, doorConfig, inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
+import { GUPSHUP_GUARD_ADMIN_FILE, GUPSHUP_UNIVERSAL_TOKEN_FILE, directoryConfig, doorConfig, inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
 import type { ShopWebhooks } from "./generate/configs.ts";
 import { PANEL_READS, guardToml, ownerNumbers } from "./generate/guards.ts";
 import type { GuardLicence } from "./generate/guards.ts";
@@ -31,6 +31,7 @@ import { moveOutOfShared, needsMove } from "./lib/listings-move.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { RECORD_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, speechKeyHandedIn, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
+import { priceListNotes, wallNotes } from "./lib/budget.ts";
 import { placeRuntimeReportKey } from "./lib/report-key.ts";
 import { NO_MODEL, fleetIdOf, listShops, loadServer, modelChosen, readShop, serverPaths } from "./lib/server.ts";
 import type { ServerConfig, ShopFolder } from "./lib/server.ts";
@@ -452,6 +453,9 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   // item 11f: the pages domain's front door, on a server that answers for it (no secret in it: fleet's lookups are public)
   const door = doorConfig(server);
   if (door) writeAtomic(join(p.generated, "door", "door.json"), door);
+  // block S: the directory of local shops beside it (no secret in its config either)
+  const directory = directoryConfig(server);
+  if (directory) writeAtomic(join(p.generated, "directory", "directory.json"), directory);
   // the deployment key goes to the one container that sends heartbeats
   if (server.fleet) writeSecretFile(secretFile(ctx.dir, "ops", "fleet_key"), readSecretFile(resolve(ctx.dir, server.fleet.keyFile)) ?? "");
   // the continuous copy (Litestream) is gone since 9 Nov 2026: its config held a bucket key, and its own key is no longer read by anything, so neither is kept
@@ -556,6 +560,9 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   if (!licence.on) problems.push(licence.problem);
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }, licenceFor(server, licence.on, g.plan.kind, p.folder.name, ownNumbersOf(p.folder))));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
+  // decision 60: the model Guard's wall (a count of calls a day for the whole server) against the shops' own budgets: said, never refused
+  for (const n of priceListNotes()) ctx.log(`note: ${n}`);
+  for (const n of wallNotes(server.model.callsPerDay, prepared.map((p) => p.folder.budget))) ctx.log(`note: ${n}`);
   const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);
   const modelPlan = planModelGuard(server, 1);
   const prevModel = state.model;

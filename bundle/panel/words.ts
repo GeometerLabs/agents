@@ -80,6 +80,8 @@ export interface Words {
     price(price: string): string; priceBuilder(price: string): string; builderLicence: string; priceNote: string; innovator: string;
     buttons: string; buttonsWhy: Record<"overage_unfunded" | "other", string>;
     warn: Record<"allowance_80" | "balance_80" | "whatsapp_unsettled" | "ai_cap", string>;
+    /** The shop's own model budget (decision 60), said from the runtime's status while most of it, or all of it, is used. Amounts are filled in by the panel, never translated. */
+    budget: { warn(used: string, limit: string): string; full(limit: string): string };
   };
   /**
    * The shop's licence (B13), from the signed lease the server keeps: where it stands and what that means for customers, its dates, fleet's renew link, and a note
@@ -219,7 +221,7 @@ export const SAMPLE_ARGS: Record<string, unknown[]> = {
   "shop.summaryDeposit": ["₹200", 15], "shop.summaryCancel": [24, "₹200"], "shop.waiting": [2], "shop.needBuilder": [1], "shop.approvalsLine": [3, 2, 1],
   "shop.makeReport": ["2026-11"], "shop.stopTitle": ["Glow Salon"], "shop.stopAsked": ["4 Nov 2026, 10:30"], "shop.detailsPrices": ["2026-11-03"],
   "cost.fromRecord": [38], "cost.assumption": [40], "cost.subtotal": [3], "cost.priceList": ["2026-11-03"],
-  "plan.is": ["Business"], "plan.included": [3000],
+  "plan.is": ["Business"], "plan.included": [3000], "plan.budget.warn": ["₹16", "₹20"], "plan.budget.full": ["₹20"],
   // Getters: the list is read when a sample is used (the review sheet, the words test), not whenever the panel loads its words.
   get "plan.price"() { return [listRupees("plan.business.fee")]; }, get "plan.priceBuilder"() { return [listRupees("licence.builder.fee")]; },
   "licence.paidThrough": ["8 Dec 2026"], "licence.windDownOn": ["7 Jan 2027"], "licence.extended": ["21 Dec 2026"], "licence.stopOn": ["6 Feb 2027"], "licence.exportUntil": ["7 May 2027"], "licence.stale": ["5 Dec 2026"], "licence.trial": ["10 Dec 2026"],
@@ -381,6 +383,10 @@ export const en: Words = {
       balance_80: "80% of the recharge balance is used. Recharge before it runs out.",
       whatsapp_unsettled: "Some WhatsApp charges are not paid from the balance yet. Recharge to settle them.",
       ai_cap: "This shop has used its AI allowance for the month. It keeps answering with rules and menus; the full AI comes back on the 1st.",
+    },
+    budget: {
+      warn: (used, limit) => `Most of this shop's model budget for the month is used (${used} of ${limit}). The owner has been told. If it runs out, the assistant answers with buttons and fixed answers until the 1st.`,
+      full: (limit) => `This shop's model budget for the month (${limit}) is used up. The owner has been told. Buttons, rules and fixed answers go on; the assistant's own words come back on the 1st.`,
     },
   },
   licence: {

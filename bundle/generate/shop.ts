@@ -2,6 +2,7 @@
 // shop also gets a push Guard (its owner's alerts, and its customers' who allowed them), and a shop whose runtime.json names no messaging service has no WhatsApp.
 // This file is pure (no files, no Docker, no clock), so every rule that can refuse a deploy is tested without a machine.
 import type { LimitsSpec } from "../../modules/payments/guard-limits.ts";
+import type { BudgetConfig } from "../../modules/budget/budget.ts";
 import { OWNER_APPROVER } from "../../modules/approvals/people.ts";
 import type { ApproversSettings } from "../../modules/approvals/people.ts";
 import { KINDS, kindFor, guardsOf, hasCalendar as shopHasCalendar, runtimeHasWhatsApp } from "../lib/kinds.ts";
@@ -228,6 +229,19 @@ export function withFleetModel(runtime: Record<string, unknown>, fleetModel: "of
 }
 
 /**
+ * The shop's model budget (decision 60; bundle/lib/budget.ts reads it from the price list in force for the shop's plan): the GENERATED runtime config gets `"budget"`, the
+ * month's rupees for every model call and a daily cap for each feature (modules/budget/README.md). Like `ai` and `model` above: the generated config only, and only if the
+ * pathway's own validator accepts the key, because a runtime that does not know it refuses to start; then the shop has fleet's cap alone and a note says so.
+ */
+export function withBudget(runtime: Record<string, unknown>, budget: BudgetConfig | undefined, validate: RuntimeValidator, notes: string[]): Record<string, unknown> {
+  if (!budget || Object.keys(runtime).length === 0) return runtime;
+  const withIt = { ...runtime, budget };
+  if (validate(withIt, "/").ok) return withIt;
+  if (validate(runtime, "/").ok) notes.push("this shop has a model budget in the price list, but this template version does not know the budget setting yet, so only fleet's cap limits its model spend. Update the template, and the budget is written on the next deploy.");
+  return runtime;
+}
+
+/**
  * Who answers the shop's language model, named in the GENERATED parser (`provider`), so the runtime prices each call from the rate table's line for that provider and
  * model, the record's cost counts, and fleet's month AI cap (`ai.cap`, from the heartbeat's `model_micro_inr`) can trip. Before 11 Nov the parser named none, so the
  * runtime took the host of its own address, `g-model`, which no line prices: every deployed shop's model calls were unpriced. The name is `modelProvider`'s: the
@@ -413,6 +427,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
     runtime = withTalk(runtime, facts.talk, server.model, check, notes);
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
     runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
+    runtime = withBudget(runtime, shop.budget, check, notes);
     // 17b: the server's paper key exists where the panel is on, and a deploy has just copied it for the runtime, as the runtime's own (lib/report-key.ts, any deployer uid).
     // Named only when that copy is there: a runtime told about a key it cannot read would not start, which is worse than an unsigned report.
     const signingKeyFile = server.panel.enabled && o.reportKeyReadable === true ? `${SECRETS}/${RUNTIME_SIGNING_KEY_FILE}` : undefined;

@@ -15,6 +15,7 @@
 // the decision model's timeout and then pay step 2 anyway. So after a few failures in a short time the decision model is left out for a while and step 2 reads the
 // message at once; one message after the pause tries it again. The shop stays in AI mode; the record says so (an `ai_mode` line) and so does the status.
 import { MINUTE, localParts } from "../core/time.ts";
+import type { BudgetConfig, BudgetState } from "../budget/budget.ts";
 
 /** The steps a pause can be put on: the decision model. (The language model has the fault pause: when it fails with nothing after it, the shop moves to buttons.) */
 export const BREAKER_STEPS = ["decision"] as const;
@@ -54,6 +55,11 @@ export interface AiState {
   speech?: { notes: number; /** The shop's local day the `today` count is for, and how many notes were listened to that day: the day's limit survives a restart because it is kept here. */ day?: string; today?: number };
   /** Calls this month whose provider and model have no price in the table (their cost is not in the total). */
   unpriced: number;
+  /**
+   * The shop's model budget (budget/budget.ts): calls today and this month by feature, the notices already sent, and the keys of calls already paid for. Left out until the first
+   * call under a budget (and in a store saved before it), so a shop with no budget saves the same bytes. It starts again in a new month (the spend it is judged on does too).
+   */
+  budget?: BudgetState;
   /** A model step failed: until this moment the agent reads with buttons and the rules only. */
   pausedUntilMs?: number;
   /** How each paused-able step has been doing. Left out until a step first fails, and in a store saved before this existed. */
@@ -78,6 +84,8 @@ export interface AiPolicy {
   override?: () => "auto" | "buttons";
   /** The AI cap: "off" leaves the language model (step 2) out; the rules and the decision model keep answering. Asked on every message, like `override`. Left out: "normal". */
   model?: () => "normal" | "off";
+  /** The shop's model budget (budget/budget.ts): the month's rupees and a daily cap for each feature. Left out: no budget of its own (fleet's cap still applies). */
+  budget?: BudgetConfig;
   /** The monthly allowance for steps 1 and 2. Either limit reached puts the shop in button mode for the rest of the month. Left out: no limit. */
   allowance?: { messages?: number; costMicroInr?: number };
   /** How long button mode lasts after a model step fails. Default 5 minutes. */

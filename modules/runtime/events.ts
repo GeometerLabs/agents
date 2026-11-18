@@ -11,6 +11,8 @@ import type { LimitsEvent } from "../limits/runtime-limits.ts";
 import { limitsEventKey } from "../limits/runtime-limits.ts";
 import type { ListingsEvent } from "../listings/kit.ts";
 import { listingsEventKey } from "../listings/kit.ts";
+import { stockEventKey } from "../stock/kit.ts";
+import type { OwnerStockEvent } from "../stock/kit.ts";
 
 /** Ticks come from our own clock, never from outside. */
 export type IncomingEvent =
@@ -37,7 +39,8 @@ export type IncomingEvent =
   | LimitsEvent
   // Block S, the shop's listings (modules/listings/kit.ts): the owner took a photo in, or used their listings page. Like the limits' events, made only by the runtime's own HTTP layer
   // after it checked the owner, and run by the core, never by the agent.
-  | ListingsEvent;
+  | ListingsEvent
+  | OwnerStockEvent;
 
 /** What a runtime hands its agent: an incoming event, or time passing. */
 export type RuntimeEvent = IncomingEvent | { kind: "tick" };
@@ -56,6 +59,7 @@ export function eventKey(event: IncomingEvent): string {
   if (event.kind === "chat_link") return `chat_link:${event.id}`;
   if (event.kind === "limit_settled" || event.kind === "owner_limit") return limitsEventKey(event);
   if (event.kind === "owner_listing" || event.kind === "owner_photo") return listingsEventKey(event);
+  if (event.kind === "owner_stock") return stockEventKey(event);
   // the same report sent again is one; a message's delivered and read are two
   if (event.kind === "message_status") return `message_status:${event.status.ids.join("|")}:${event.status.status}`;
   return `payment_event:${event.event.id}`;

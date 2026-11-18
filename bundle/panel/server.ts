@@ -557,7 +557,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const report = settings && data && !own ? monthlyFromExport(settings, data, month, "live", now()) : undefined;
     const notice = new URL(r.req.url ?? "/", "http://x").searchParams.get("notice");
     const pagesNotice = new URL(r.req.url ?? "/", "http://x").searchParams.get("pages");
-    const plan = planView(shops.fleet(id), prices, config.mode === "own"); // a panel on a builder's own server: the builder licence
+    const plan = planView(shops.fleet(id), prices, config.mode === "own", counts?.ai?.budget); // a panel on a builder's own server: the builder licence; the shop's own model budget comes from its runtime's status (decision 60)
     const licence = licenceView(read.ok ? read.status.licence : undefined, shops.fleet(id)?.licence, now());
     const view: ShopView = {
       id, name: settings?.name ?? id, live, status: read.ok ? read.status : undefined, ...(stop ? { stopRequestedAt: stop.requestedAt } : {}),

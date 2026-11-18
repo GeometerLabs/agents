@@ -397,12 +397,18 @@ export function freshnessOf(l: Pick<Listing, "state" | "confirmedMs" | "publishe
 /** Is it shown to the public: live, and not hidden for want of a confirm. A sold, removed or draft listing is never public. */
 export const isPublic = (l: Listing, nowMs: number): boolean => l.state === "live" && freshnessOf(l, nowMs) !== "hidden";
 
-/** The listings the public sees, newest confirmed first. */
-export const publicListings = (s: ListingsState, nowMs: number): Listing[] =>
-  s.items.filter((l) => isPublic(l, nowMs)).sort((a, b) => (b.confirmedMs ?? 0) - (a.confirmedMs ?? 0) || b.createdMs - a.createdMs);
+/**
+ * The listings the public sees, newest confirmed first. `soldOut` is the ids of counted listings whose stock is at 0 (modules/stock `soldOutListings`): they sell themselves, so they are
+ * left out here WITHOUT writing anything to the listing (its words, price and card digest stay as the owner made them). Left out: no counting, exactly as before.
+ */
+export const publicListings = (s: ListingsState, nowMs: number, soldOut?: ReadonlySet<string>): Listing[] =>
+  s.items.filter((l) => isPublic(l, nowMs) && !soldOut?.has(l.id)).sort((a, b) => (b.confirmedMs ?? 0) - (a.confirmedMs ?? 0) || b.createdMs - a.createdMs);
 
 /** Live listings the owner still sees but the public does not (hidden for want of a confirm): "confirm to show again". */
 export const hiddenListings = (s: ListingsState, nowMs: number): Listing[] => s.items.filter((l) => l.state === "live" && freshnessOf(l, nowMs) === "hidden");
+
+/** The live listings' titles in a language, for the owner's Stock page (which listings may be counted). */
+export const liveListingTitles = (s: ListingsState, lang: Lang): { id: string; title: string }[] => s.items.filter((l) => l.state === "live").map((l) => ({ id: l.id, title: textIn(l, lang).title }));
 
 /** The owner's own list: drafts, live (hidden ones too), newest first. */
 export const ownersListings = (s: ListingsState): Listing[] => s.items.filter((l) => l.state === "draft" || l.state === "live").sort((a, b) => b.createdMs - a.createdMs);
