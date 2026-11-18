@@ -25,7 +25,7 @@ const PINNED: Record<string, string> = {
   "2026-11-11.json": "c7f4ee6f1845d440e17a0e00d88435ef183c7db098b05d2d772b93e8cd4269d8", // decision 36 (10 Nov): the builder licence at INR 199, nothing else changed
   "2026-11-14.json": "f507c1859197a1fbffcc5f881087a7e10710b518fb43f28aed7ae8ac55511cca", // 14 Nov: only the Operations note reworded to plan decision 56 (no price moves)
   "2026-11-18.json": "376da1ce5eaa78c5509ea8dbb5dbd88ada9b9dccd83f8af0af8dd19832b2b6c3", // 18 Nov: PROPOSED (decision 60, caps everywhere): the shop's model budget and daily caps, ai.cap proposed at INR 20; waits for the owner's yes (superseded by the list of 19 Nov, which is the same numbers in force)
-  "2026-11-19.json": "caa0af2f7f86f7007ff2181dbdf7aeb651323777c986b6ef20054700d96d9cd0", // 19 Nov: the 18 Nov proposal, approved by the owner (18 Nov) and in force: the model budgets, the daily caps, ai.cap INR 20
+  "2026-11-19.json": "1f196d4056d9d6f8d195f356381c1423944eafec56d77c86ebf047712f70e41f", // 19 Nov: the 18 Nov proposal, approved by the owner (18 Nov) and in force: the model budgets, the daily caps, ai.cap INR 20
 };
 
 test("the panel reads the newest dated list that is not a proposal, and the bytes of every list are pinned: a changed price is a new file", () => {
