@@ -1664,6 +1664,42 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.tuition.prefill.batches.2.names` | 9ನೇ ತರಗತಿ | Class 9 |  |
 | `preset.tuition.prefill.batches.3.names` | 10ನೇ ತರಗತಿ | Class 10 |  |
 | `keep.lost` | Rahul ಅವರ ಹಳೆಯ ಬಾಕಿ ಮತ್ತು ಇತರ ಹಿಂದಿನ ವಿವರಗಳನ್ನು ಉಳಿಸಿಕೊಳ್ಳಲಿಲ್ಲ, ಏಕೆಂದರೆ ಪೋಷಕರ ನಂಬರ್ ಬದಲಾಯಿತು. ಅವನ್ನು ಮತ್ತೆ ಸೇರಿಸಲು ನಿಮ್ಮ ಬಿಲ್ಡರ್‌ಗೆ ಹೇಳಿ. | Rahul's old dues and other earlier details were not kept, because the parent's number changed. Ask your builder to add them again. |  |
+| `leave.assistant.leave_file_asked` | ಆಯಿತು. ನಿಮ್ಮ ಅಂಗಡಿಯ ಫೈಲ್ ಸುಮಾರು ಅರ್ಧ ಗಂಟೆಯಲ್ಲಿ ನಿಮ್ಮ ಆ್ಯಪ್ ಪುಟದಲ್ಲಿ ಇರುತ್ತದೆ, ತೆಗೆದುಕೊಳ್ಳಲು ಬಟನ್ ಕೂಡ. ಬಟನ್ ಒಂದೇ ಬಾರಿ, 3 ದಿನ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಇದಕ್ಕೆ ನಿಮ್ಮ Operator ಬೇಕಿಲ್ಲ, ಅವರನ್ನು ಕೇಳುವುದೂ ಇಲ್ಲ. | Done. Your shop's file will be on your app page in about half an hour, with a button to take it. The button works once and for 3 days. You do not need your Operator for this, and they are not asked. |  |
+| `leave.assistant.leave_file_again` | ಸ್ವಲ್ಪ ಮೊದಲು ನೀವು ಅಂಗಡಿಯ ಫೈಲ್ ಕೇಳಿದ್ದೀರಿ. ಅದು ಬರುತ್ತಿದೆ; ಸ್ವಲ್ಪ ಹೊತ್ತಿನ ನಂತರ ಆ್ಯಪ್ ಪುಟ ನೋಡಿ. | You asked for your shop's file a short while ago. It is on its way; look on your app page in a little while. |  |
+| `leave.assistant.leave_operator_asked` | ಆಯಿತು. ನೀವು ಬೇರೆ Operator ಬಯಸುತ್ತೀರಿ ಎಂದು ನಿಮ್ಮ Operator ಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ನೀವು ಒಪ್ಪುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ: Operator ಹೊಸ ವ್ಯಕ್ತಿಯ ಹೆಸರು ನೀಡುತ್ತಾರೆ, ನಿಮಗೆ ಒಂದು ಕೋಡ್ ಸಿಗುತ್ತದೆ, ಅದನ್ನು ಇಲ್ಲಿ "move" ಮತ್ತು ಕೋಡ್ ಎಂದು ಕಳುಹಿಸಿ. 14 ದಿನದಲ್ಲಿ ಏನೂ ಆಗದಿದ್ದರೆ Geometer ನಿಮಗೆ ಸಹಾಯ ಮಾಡುತ್ತದೆ. | Done. I have told your Operator that you want another one. Nothing changes until you agree: your Operator names the new person, you get a code, and you send it here as "move" and the code. If nothing happens in 14 days, Geometer will help you. |  |
+| `leave.assistant.leave_operator_again` | ಸ್ವಲ್ಪ ಮೊದಲು ನೀವು Operator ಬದಲಾಯಿಸಲು ಕೇಳಿದ್ದೀರಿ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. ಕೋಡ್ ಕಳುಹಿಸುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. | You asked to change your Operator a short while ago, and they have been told. Nothing changes until you send the code. |  |
+| `leave.page.title` | ನಿಮ್ಮ ಅಂಗಡಿ ನಿಮ್ಮದೇ | Your shop is yours |  |
+| `leave.page.intro` | ನಿಮ್ಮದಾದ ಎಲ್ಲವನ್ನೂ ಯಾವಾಗ ಬೇಕಾದರೂ ತೆಗೆದುಕೊಳ್ಳಬಹುದು, ಅಥವಾ ಬೇರೆ Operator ಕೇಳಬಹುದು. ನಿಮ್ಮ Operator ಅವರ ಅನುಮತಿ ಕೇಳುವುದಿಲ್ಲ. | You can take everything that is yours, or ask for another Operator, whenever you like. Your Operator is not asked for permission. |  |
+| `leave.page.fileButton` | ನನ್ನ ಅಂಗಡಿಯ ಫೈಲ್ | Get my shop's file |  |
+| `leave.page.fileNone` | ನಿಮ್ಮ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳು, ದಾಖಲೆಗಳು ಮತ್ತು ವರದಿಗಳ ಒಂದು ಫೈಲ್, ಇಟ್ಟುಕೊಳ್ಳಲು. ಸುಮಾರು ಅರ್ಧ ಗಂಟೆಯಲ್ಲಿ ಇಲ್ಲಿ ಬರುತ್ತದೆ. | A file with your shop's settings, records and reports, to keep. It will be here in about half an hour. |  |
+| `leave.page.fileAsked` | ಕೇಳಲಾಗಿದೆ. ಫೈಲ್ ಸುಮಾರು ಅರ್ಧ ಗಂಟೆಯಲ್ಲಿ ಇಲ್ಲಿ ಬರುತ್ತದೆ. | Asked. Your file will be here in about half an hour. |  |
+| `leave.page.fileReady` | ನಿಮ್ಮ ಫೈಲ್ ಸಿದ್ಧ. ಕೆಳಗಿನ ಬಟನ್ ಒಂದೇ ಬಾರಿ, 21 Nov, 3:30 pm ವರೆಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ. | Your file is ready. The button below works once, until 21 Nov, 3:30 pm. |  |
+| `leave.page.take` | ಫೈಲ್ ತೆಗೆದುಕೊಳ್ಳಿ | Take the file |  |
+| `leave.page.fileTaken` | ನೀವು ಫೈಲ್ ತೆಗೆದುಕೊಂಡಿರಿ. ಹೊಸದು ಬೇಕಾದರೆ ಮತ್ತೆ ಕೇಳಿ. | You took your file. Ask again for a new one. |  |
+| `leave.page.fileExpired` | ಆ ಫೈಲ್‌ನ ಸಮಯ ಮುಗಿಯಿತು. ಹೊಸದಕ್ಕೆ ಮತ್ತೆ ಕೇಳಿ. | That file ran out. Ask again for a new one. |  |
+| `leave.page.operatorButton` | ನನ್ನ Operator ಬದಲಿಸಿ | Change my Operator |  |
+| `leave.page.operatorNote` | ನಿಮ್ಮ Operator ಗೆ ತಕ್ಷಣ ತಿಳಿಸಲಾಗುತ್ತದೆ. ನೀವು ಒಪ್ಪುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ: ಅಂಗಡಿಯ WhatsApp ಸಂಖ್ಯೆಗೆ ಕಳುಹಿಸಲು ನಿಮಗೆ ಒಂದು ಕೋಡ್ ಸಿಗುತ್ತದೆ. 14 ದಿನದಲ್ಲಿ ಏನೂ ಆಗದಿದ್ದರೆ Geometer ಸಹಾಯ ಮಾಡುತ್ತದೆ. | Your Operator is told at once. Nothing changes until you agree: you will get a code to send to the shop's WhatsApp number. If nothing happens in 14 days, Geometer will help you. |  |
+| `leave.page.asked` | ಆಯಿತು. ಕೇಳಲಾಗಿದೆ. ವಿವರ ಕೆಳಗಿನ ಮಾತುಕತೆಯಲ್ಲಿದೆ. | Done. Asked. Details are in the chat below. |  |
+| `leave.panel.heading` | ಮಾಲೀಕರ ಸ್ವಂತ ಕೋರಿಕೆಗಳು | The owner's own asks |  |
+| `leave.panel.fileAsked` | ಮಾಲೀಕರು 18 Nov ರಂದು ತಮ್ಮ ಅಂಗಡಿಯ ಫೈಲ್ ಕೇಳಿದ್ದಾರೆ. ಅದು ಅವರಿಗಾಗಿ ಮಾಡಲಾಗುತ್ತದೆ ಮತ್ತು ಅವರಿಗೆ ಮಾತ್ರ ತೋರಿಸಲಾಗುತ್ತದೆ. ನೀವು ಏನೂ ಮಾಡಬೇಕಿಲ್ಲ. | The owner asked for their shop's file on 18 Nov. It is made for them and shown only to them. You do not need to do anything. |  |
+| `leave.panel.fileReady` | ಫೈಲ್ ಮಾಲೀಕರ ಆ್ಯಪ್‌ನಲ್ಲಿ ಸಿದ್ಧವಾಗಿದೆ, 21 Nov ವರೆಗೆ. | The file is ready in the owner's app, until 21 Nov. |  |
+| `leave.panel.fileTaken` | ಮಾಲೀಕರು ತಮ್ಮ ಫೈಲ್ ತೆಗೆದುಕೊಂಡರು. | The owner took their file. |  |
+| `leave.panel.fileExpired` | ಮಾಲೀಕರು ತೆಗೆದುಕೊಳ್ಳುವ ಮೊದಲೇ ಫೈಲ್‌ನ ಸಮಯ ಮುಗಿಯಿತು. ಹೊಸ ಕೋರಿಕೆಗೆ ಹೊಸದನ್ನು ಮಾಡಲಾಗುತ್ತದೆ. | The file ran out before the owner took it. A new ask makes a new one. |  |
+| `leave.panel.fileProblem` | ಫೈಲ್ ಇನ್ನೂ ಮಾಡಲಾಗಲಿಲ್ಲ: The record is not ready yet. ಕೆಲವು ನಿಮಿಷಗಳಲ್ಲಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲಾಗುತ್ತದೆ. | The file could not be made yet: The record is not ready yet. It is tried again in a few minutes. |  |
+| `leave.panel.fileNote` | ಅವರ ಫೈಲ್ ಅವರದೇ. ನಿಮ್ಮ ಅನುಮತಿ ಕೇಳುವುದಿಲ್ಲ, ನೀವು ತಡೆಯಲೂ ಆಗುವುದಿಲ್ಲ. | Their file is theirs. You are not asked for permission and you cannot stop it. |  |
+| `leave.panel.operatorAsked` | ಮಾಲೀಕರು 18 Nov ರಂದು ಬೇರೆ Operator ಕೇಳಿದ್ದಾರೆ. | The owner asked for another Operator on 18 Nov. |  |
+| `leave.panel.operatorDo` | ದಯವಿಟ್ಟು ಕೆಳಗಿನ ಬಟನ್ ಬಳಸಿ ಮಾಲೀಕರು ಬಯಸುವ Operator ಗೆ ಅಂಗಡಿಯನ್ನು ವರ್ಗಾಯಿಸಿ. ಏನಾದರೂ ಬದಲಾಗುವ ಮೊದಲು ಮಾಲೀಕರು ತಮ್ಮ ಕೋಡ್‌ನಿಂದ ಒಪ್ಪುತ್ತಾರೆ. | Please move the shop to the Operator the owner wants, with the button below. The owner still agrees with their own code before anything changes. |  |
+| `leave.panel.operatorStart` | ಈ ಅಂಗಡಿಯನ್ನು ಬೇರೆ Operator ಗೆ ನೀಡಿ | Move this shop to another Operator |  |
+| `leave.panel.operatorWaiting` | ಒಂದು ಬದಲಾವಣೆ ಮಾಲೀಕರ ಕೋಡ್‌ಗಾಗಿ ಕಾಯುತ್ತಿದೆ. | A move is waiting for the owner's code. |  |
+| `leave.panel.operatorClock` | ಏನೂ ಮಾಡದಿದ್ದರೆ 9 ದಿನದಲ್ಲಿ ಈ ಅಂಗಡಿ Geometer ಗೆ ತೋರಿಸಲಾಗುತ್ತದೆ, ಅವರು ಮಾಲೀಕರಿಗೆ ಸಹಾಯ ಮಾಡುತ್ತಾರೆ. | If nothing is done, Geometer is shown this shop in 9 days, and will help the owner. |  |
+| `leave.panel.strandedNote` | ಈ ಮಾಲೀಕರು 14 ದಿನಕ್ಕಿಂತ ಹಿಂದೆ ಬೇರೆ Operator ಕೇಳಿದ್ದಾರೆ, ಏನೂ ಆಗಿಲ್ಲ. Geometer ಅವರಿಗೆ ಒಬ್ಬರನ್ನು ಹುಡುಕಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ, ಬೇಕಾದರೆ ಅಂಗಡಿಯ ಬ್ಯಾಕಪ್‌ನಿಂದ. | These owners asked for another Operator more than 14 days ago and nothing has happened. Geometer helps them find one, from the shop's backups if needed. |  |
+| `leave.panel.strandedTitle` | ಬೇರೆ Operator ಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಮಾಲೀಕರು | Owners waiting for another Operator |  |
+| `leave.panel.strandedNone` | ಯಾವ ಮಾಲೀಕರೂ ಕಾಯುತ್ತಿಲ್ಲ. | No owner is waiting. |  |
+| `leave.panel.strandedRow` | Glow Salon: 1 Nov ರಂದು ಕೇಳಿದ್ದಾರೆ. ಈಗಿನ Operator: Divya. | Glow Salon: asked on 1 Nov. Operator now: Divya. |  |
+| `leave.panel.fleetTold` | Geometer ಬಿಲ್ಲಿಂಗ್‌ನಲ್ಲಿ ಈಗ ಅಂಗಡಿ Ravi Digital ಅವರ ಬಳಿ ಇದೆ. | Geometer's billing now has the shop with Ravi Digital. |  |
+| `leave.panel.fleetWaiting` | Geometer ಬಿಲ್ಲಿಂಗ್‌ಗೆ ಇನ್ನೂ ತಿಳಿಸಲಾಗಿಲ್ಲ. ಕೆಲವು ನಿಮಿಷಗಳಿಗೊಮ್ಮೆ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲಾಗುತ್ತದೆ; ಅಲ್ಲಿಯವರೆಗೆ ಅಂಗಡಿಯ ಬಿಲ್ ಹಳೆಯ Operator ಗೆ ಹೋಗುತ್ತದೆ. | Geometer's billing has not been told yet. It is tried again every few minutes; until then the shop is still billed to the old Operator. |  |
+| `leave.panel.fleetRefused` | Geometer ಬಿಲ್ಲಿಂಗ್ ಬದಲಾವಣೆಯನ್ನು ಸ್ವೀಕರಿಸಲಿಲ್ಲ: That Operator does not serve here yet. support ಗೆ ಬರೆಯಿರಿ, ಅವರು ಕೈಯಿಂದ ಸರಿಪಡಿಸುತ್ತಾರೆ. | Geometer's billing did not take the move: That Operator does not serve here yet. Write to support and they will fix it by hand. |  |
+| `leave.panel.fleetNoId` | Ravi Digital ಅವರ ಖಾತೆಗೆ Geometer ನಲ್ಲಿ Operator ಐಡಿ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಬಿಲ್ಲಿಂಗ್‌ಗೆ ತಿಳಿಸಲಿಲ್ಲ. support ಗೆ ಬರೆಯಿರಿ, ಅವರು ಕೈಯಿಂದ ಸರಿಪಡಿಸುತ್ತಾರೆ. | Ravi Digital's account has no Operator id with Geometer, so billing was not told. Write to support and they will fix it by hand. |  |
 | `chat.list.yourChats` | ನಿಮ್ಮ ಚಾಟ್‌ಗಳು | Your chats |  |
 | `chat.list.installHead` | Streetlist ಅನ್ನು ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಇಟ್ಟುಕೊಳ್ಳಿ | Keep Streetlist on your phone |  |
 | `chat.list.installBody` | ಒಂದೇ ಒತ್ತಿನಲ್ಲಿ ಚಾಟ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ, ಅಂಗಡಿ ಉತ್ತರಿಸಿದಾಗ ತಿಳಿಯಿರಿ. | Open your chats in one tap, and hear when a shop replies. |  |
