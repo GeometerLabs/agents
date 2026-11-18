@@ -89,7 +89,7 @@ test("the public read has live, not-hidden listings only, without who wrote them
   const later = NOW + HIDE_AFTER_MS + DAY;
   assert.equal(kit.publicRead(w.store, later).listings.length, 0);
   assert.equal(kit.ownerView(w.store, later).listings[0].freshness, "hidden");
-  assert.equal(kit.publicPhoto(w.store, PH.id, NOW), undefined, "the photo was taken by listing l-1 but is not in the draft's or sold's; l-1 holds it");
+  assert.ok(kit.publicPhoto(w.store, PH.id, NOW), "listing l-1 is public and holds the photo");
 });
 
 test("photos: the public may fetch only a public listing's; the owner any the shop holds; the clean-up keeps what the state holds", () => {

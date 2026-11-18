@@ -169,3 +169,18 @@ test("'Still have it?' asks at most 3 a day after the morning hour; Yes renews, 
   assert.equal(ls.items.find((l) => second.action.case === `listing:${l.id}`)!.state, "sold");
   void HOUR;
 });
+
+test("pets: a customer's answer never says an animal is healthy or vaccinated unless the listing says so, and then as 'the owner says'", async () => {
+  const w = world();
+  const ls = listingsOf((w.store.assistant ??= { seq: 0, cards: [], refused: [], closedDays: [], undo: [], talk: [], limitChanges: [] }));
+  ls.items.push({ id: "l-1", state: "live", category: "pets", ownerLang: "en", words: { en: { title: "Persian kitten", text: "Playful." } }, pricePaise: 800000, priceNote: "each", photos: [], createdMs: NOW, publishedMs: NOW, confirmedMs: NOW, by: "owner", from: "app", claims: ["vaccinated"] });
+  ls.items.push({ id: "l-2", state: "live", category: "pets", ownerLang: "en", words: { en: { title: "Tabby kitten", text: "Playful." } }, photos: [], createdMs: NOW, publishedMs: NOW, confirmedMs: NOW, by: "owner", from: "app" });
+  ls.seq = 2;
+  const ask = async (reply: unknown) => { w.script.reply = reply; const before = w.messaging.sentTo(CUSTOMER).length; const sent = await w.assistant.talkToCustomer({ phone: CUSTOMER, text: "is the kitten healthy?", language: "en" }); return { sent, n: w.messaging.sentTo(CUSTOMER).length - before }; };
+  const unsure = await ask({ sentences: [{ text: "The Tabby kitten is healthy.", sources: ["s:l-2"] }], ask_owner: false });
+  assert.deepEqual([unsure.sent, unsure.n], [false, 0]);
+  const none = await ask({ sentences: [{ text: "Yes, healthy and vaccinated.", sources: [] }], ask_owner: false });
+  assert.deepEqual([none.sent, none.n], [false, 0]);
+  const said = await ask({ sentences: [{ text: "The owner says: vaccinated.", sources: ["s:l-1"] }], ask_owner: false });
+  assert.deepEqual([said.sent, said.n], [true, 1]);
+});

@@ -10,12 +10,13 @@
 // "Change" is not a third answer of a card: it is the owner editing the draft on the listings page of their app, which voids the old card and makes a new one (conversation.ts).
 import { ownerAuthority } from "../memory/memory.ts";
 import type { NoteFrom } from "../memory/memory.ts";
-import { LANGS, LISTING_ACTION, confirm, listingById, listingRefs, listingsOf, markSold, publish, textIn } from "../listings/listings.ts";
+import { LANGS, LISTING_ACTION, confirm, freshnessOf, listingById, listingRefs, listingsOf, markSold, publicListings, publish, textIn } from "../listings/listings.ts";
 import type { Listing } from "../listings/listings.ts";
-import { LISTING_WORDS } from "../listings/words.ts";
+import { LISTING_WORDS, priceLine } from "../listings/words.ts";
 import type { Language } from "../language/languages.ts";
 import type { Outcome } from "../record/record.ts";
 import type { Executed, OwnerSkill, Prepared, Proposal } from "./skill.ts";
+import type { TalkSource } from "./talk-types.ts";
 import { assistantOf } from "./state.ts";
 import type { AssistantState, CardAction } from "./state.ts";
 
@@ -55,6 +56,9 @@ export function createListings(d: ListingsDeps) {
     routing: { refs: /^listing:l-\d+$/u, buttonPrefixes: [], words: {}, liveCaseOf: () => undefined },
     waiting: () => [],
     problems: () => 0,
+    // what a customer's talk may say about the shop's listings: the PUBLIC ones only, as the shop's own settings (a claim such as "the owner says" is backed by a source that says it, and a
+    // pets listing's health words are there only when the owner's own words had them). Nothing about a draft, a sold or a hidden listing, and nothing about who or when it was asked.
+    publicContext: (_phone, nowMs) => ({ sources: listingSources(state(), nowMs), links: [] }),
     prepare(p: Proposal): Prepared {
       if (p.kind !== "listing" && p.kind !== "listing_ask") return { ok: false, why: "not_here" };
       const id = ID.exec(p.case)?.[1];
@@ -104,3 +108,21 @@ export function createListings(d: ListingsDeps) {
   return { skill, categoryName };
 }
 export type Listings = ReturnType<typeof createListings>;
+
+/**
+ * The public listings as talk sources ("s:l-3"). English text with the owner's own price and note, the quantity, the freshness in words, and, for a pets listing, the owner's own
+ * claims as "The owner says: ...", so a customer's answer can repeat exactly those and nothing more. The category line ("Category: pets") is what the pets check in talk-check.ts looks for.
+ */
+export function listingSources(s: ReturnType<typeof listingsOf>, nowMs: number): TalkSource[] {
+  return publicListings(s, nowMs).map((l) => {
+    const t = textIn(l, "en");
+    const price = l.pricePaise !== undefined ? priceLine(l.pricePaise, l.priceNote, "en") : "no price set (ask the shop)";
+    const fresh = freshnessOf(l, nowMs) === "fresh" ? "confirmed by the owner within 3 days" : "not confirmed lately: call the shop to check";
+    const claims = l.claims && l.claims.length > 0 ? ` The owner says: ${l.claims.join("; ")}.` : "";
+    return {
+      id: `s:${l.id}`, kind: "setting" as const,
+      text: `Listing ${l.id}. Category: ${l.category}. ${t.title}.${t.text ? ` ${t.text}` : ""} Price: ${price}.${l.qty !== undefined ? ` Quantity: ${l.qty}.` : ""} ${fresh}.${claims}`,
+      ...(l.pricePaise !== undefined ? { amountsInr: [l.pricePaise / 100] } : {}), literals: [t.title, l.id],
+    };
+  });
+}
