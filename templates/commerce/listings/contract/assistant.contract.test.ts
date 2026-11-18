@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { IMPL, REPO, draftAnswer, makeShop, startFakeModel } from "./harness.ts";
+import { IMPL, REPO, draftAnswer, makeShop, startFakeModel, tinyJpeg } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
 
 const shops: Shop[] = [];
@@ -341,4 +341,215 @@ describe("the clock's beat: a card past its time closes, and a tap on it is answ
     await new Promise((r) => setTimeout(r, 1500));
     assert.equal((await cards(s)).length, 0, "not asked again");
   });
+});
+
+// ---- the owner's commands: help, undo, a limit, leaving, money, a case -------------------------------------------------------------------------------------------
+
+/** Say each text in turn and keep every line of talk that appeared, in order (the page shows only the last 20, so a long script is read as it goes). */
+async function sayAll(s: Shop, texts: string[], prefix = "k"): Promise<[string, string][]> {
+  const seen = new Set<string>();
+  const all: [string, string][] = [];
+  const take = async () => { for (const l of (await page(s)).app.talk) { const k = `${l.atMs}|${l.from}|${l.text}`; if (!seen.has(k)) { seen.add(k); all.push([l.from, l.text]); } } };
+  for (const [i, text] of texts.entries()) { await say(s, `${prefix}-${i}`, text); await take(); }
+  return all;
+}
+
+/** What the owner would see and what the record would say, after whatever has been done: only what a runtime must agree on (no clock times, no random ask ids). */
+async function observe(s: Shop): Promise<any> {
+  const v = await page(s);
+  const keep = ["owner_card", "owner_assistant", "owner_file_asked", "operator_change_asked", "listing_draft", "listing", "stock"];
+  return {
+    talk: v.app.talk.map((l: any) => [l.from, l.text]),
+    cards: v.app.cards.map((c: any) => [c.id, c.digest, c.skill, c.kind, c.case, c.amountPaise, c.who, c.hasNo, c.question]),
+    mood: [v.app.mood, v.app.face, v.app.closedToday],
+    record: record(s).filter((e) => keep.includes(e.action) && !(e.action === "listing" && e.notes.startsWith("the Operator's place"))).map((e) => [e.action, e.outcome, { ...e.refs, ...(e.refs.ask ? { ask: "ask_" } : {}) }, e.notes, e.language, e.conversation === "owner" ? "owner" : "number"]),
+    public: (await publicListings(s)).map((l: any) => l.id),
+    owner: (await ownerListings(s)).map((l: any) => [l.id, l.state]),
+    ai: (await s.call("/status")).body.ai.messages,
+  };
+}
+
+const COMMANDS: Record<string, string[]> = {
+  en: ["help", "undo", "what needs me", "limit", "get my shop's file", "get my shop's file", "change my operator", "change my operator", "money today", "money tomorrow", "money yesterday", "cancel b-14", "refund b-3", "message b-3", "message b-3 hello", "tomorrow", "hello there", "for sale: undo", "help me put it on my page", "limit for sale 500", "approve K7M2QX", "no thanks", "yes ABCDE"],
+  hi: ["मदद", "वापस लो", "मेरे लिए क्या है", "लिमिट", "मेरी दुकान की फाइल", "मेरी दुकान की फाइल", "ऑपरेटर बदल दो", "ऑपरेटर बदल दो", "आज कितना आया", "कल कितना आया", "b-14 रद्द करो", "रिफंड b-3", "b-3 ko bolo ki hello", "नमस्ते जी", "बिक्री के लिए: वापस लो"],
+  ml: ["സഹായം", "പഴയപടി", "എനിക്ക് എന്താണ് ബാക്കി", "പരിധി", "എന്റെ കടയുടെ ഫയൽ", "എന്റെ കടയുടെ ഫയൽ", "ഓപ്പറേറ്റർ മാറ്റണം", "ഓപ്പറേറ്റർ മാറ്റണം", "ഇന്ന് എത്ര കിട്ടി", "നാളെ എത്ര കിട്ടി", "b-14 റദ്ദാക്കുക", "റീഫണ്ട് b-3", "ഹലോ"],
+  kn: ["ಸಹಾಯ", "ಹಿಂದಿನಂತೆ", "ನನಗೆ ಏನು ಬಾಕಿ", "ಮಿತಿ", "ನನ್ನ ಅಂಗಡಿಯ ಫೈಲ್", "ನನ್ನ ಅಂಗಡಿಯ ಫೈಲ್", "ಬೇರೆ ಆಪರೇಟರ್", "ಬೇರೆ ಆಪರೇಟರ್", "ಇಂದು ಎಷ್ಟು ಬಂತು", "ನಾಳೆ ಎಷ್ಟು ಬಂತು", "b-14 ರದ್ದು", "ರೀಫಂಡ್ b-3", "ನಮಸ್ಕಾರ"],
+};
+
+describe("the owner's commands are not listings, and each is answered", () => {
+  test("a command that says 'for sale' or 'on my page' is a command: nothing is drafted, the model is never asked", async () => {
+    const { s, fake } = await withModel();
+    await say(s, "c-1", "for sale: undo");
+    assert.equal((await lastSaid(s)), "There is nothing to undo.");
+    await say(s, "c-2", "help me put it on my page");
+    assert.ok((await lastSaid(s)).includes("You can say, for example"), "help");
+    await say(s, "c-3", "limit for sale 500");
+    assert.ok((await lastSaid(s)).startsWith("Which limit"));
+    await say(s, "c-4", "cancel b-1 it was for sale on my page");
+    assert.equal(await lastSaid(s), "Nothing has the number b-1.");
+    assert.equal(fake.calls, 0);
+    assert.deepEqual(await ownerListings(s), []);
+    assert.deepEqual(lines(s, "owner_assistant").map((e) => e.refs.intent), ["undo", "help", "limit", "cancel"]);
+    // a photo waiting does not turn a command into a listing either; a plain sentence with a photo still is one
+    const up = await s.call("/internal/channel/owner-photo", { owner: s.owner, raw: tinyJpeg(), type: "image/jpeg" });
+    assert.equal(up.status, 200, JSON.stringify(up.body)); await s.settle();
+    await say(s, "c-6", "undo");
+    assert.equal(fake.calls, 0); assert.deepEqual(await ownerListings(s), []);
+    await say(s, "c-7", "two brass lamps, 450 rupees");
+    assert.equal(fake.calls, 1);
+    assert.equal((await ownerListings(s)).length, 1);
+  });
+
+  test("words that are a plain sentence about a thing for sale are a listing, not a command", async () => {
+    const { s, fake } = await withModel();
+    await say(s, "c-1", "kittens for sale");
+    assert.equal(fake.calls, 1); assert.equal((await cards(s)).length, 1);
+  });
+
+  test("the leave asks are taken once an hour, and each names its ask in the record", async () => {
+    const s = await boot();
+    await say(s, "l-1", "get my shop's file"); await say(s, "l-2", "get my shop's file");
+    await say(s, "l-3", "change my operator"); await say(s, "l-4", "change my operator");
+    const file = lines(s, "owner_file_asked"), op = lines(s, "operator_change_asked");
+    assert.equal(file.length, 1); assert.equal(op.length, 1);
+    assert.match(file[0].refs.ask, /^ask_[0-9a-f]{12}$/u); assert.equal(file[0].refs.via, "page");
+    assert.match(op[0].refs.ask, /^ask_[0-9a-f]{12}$/u);
+    const t = await talk(s);
+    assert.notEqual(t[1].text, t[3].text, "the second ask is told it is already on its way");
+  });
+
+  test("the month's AI counts say the owner's words were read by the rules (a listing is not counted)", async () => {
+    const s = await boot();
+    await say(s, "r-1", "help"); await say(s, "r-2", "undo"); await say(s, "r-3", "something odd");
+    assert.deepEqual((await s.call("/status")).body.ai.messages, { rules: 3, decision: 0, model: 0 });
+  });
+
+  test("the owner's notes, if the TypeScript runtime kept any, are shown on the page and left alone", async () => {
+    const s = await boot();
+    await say(s, "n-0", "help");
+    await s.stop();
+    const db = new DatabaseSync(join(s.dataDir, "agent.db"));
+    const shape = JSON.parse((db.prepare("select shape from state_shape").get() as { shape: string }).shape);
+    shape.assistant.memory = { notes: [{ id: "n-1", kind: "fact", text: "closed on Sunday", lang: "en", audience: "owner", by: "owner", from: "app", atMs: 1, digest: "d" }, { id: "n-2", kind: "fact", text: "", lang: "en", audience: "owner", by: "owner", from: "app", atMs: 1, digest: "d", textGone: true }, { id: "n-3", kind: "fact", text: "old", lang: "en", audience: "owner", by: "owner", from: "app", atMs: 1, digest: "d", closed: { atMs: 2, by: "owner", why: "forgotten" } }], proposals: [], refused: [], seq: 3 };
+    db.prepare("update state_shape set shape = ?").run(JSON.stringify(shape)); db.close();
+    await s.start();
+    assert.deepEqual((await page(s)).app.notes, [{ id: "n-1", text: "closed on Sunday", kind: "fact", audience: "owner" }]);
+    await say(s, "n-1", "help"); // a step saves the state again: the notes survive it
+    assert.equal((await page(s)).app.notes.length, 1);
+  });
+});
+
+describe("the same script on a TypeScript shop and a Go shop: what the owner reads is the same, line for line, in each language", () => {
+  for (const lang of ["en", "hi", "ml", "kn"] as const) {
+    test(`the owner's commands in ${lang}`, BOTH, async () => {
+      const seen: Record<string, any> = {};
+      for (const impl of ["ts", "go"] as const) {
+        const s = await boot({ ownerLanguage: lang }, impl);
+        const all = await sayAll(s, COMMANDS[lang]);
+        seen[impl] = { ...(await observe(s)), talk: all };
+      }
+      assert.deepEqual(seen.go.talk, seen.ts.talk, "the talk");
+      assert.deepEqual(seen.go.record, seen.ts.record, "the record");
+      assert.deepEqual(seen.go, seen.ts);
+      assert.equal(seen.ts.talk.length, COMMANDS[lang].length * 2 - (lang === "en" ? 1 : 0) - (lang === "hi" ? 0 : 0), "the owner's line, then one answer for each; no answer for a relay's reply");
+      assert.ok(seen.ts.record.some((r: any) => r[0] === "owner_file_asked") && seen.ts.record.some((r: any) => r[0] === "operator_change_asked"));
+    });
+  }
+
+  for (const lang of ["en", "hi", "ml", "kn"] as const) {
+    test(`a draft, its card and every way to answer it, in ${lang}`, BOTH, async () => {
+      const seen: Record<string, any> = {};
+      for (const impl of ["ts", "go"] as const) {
+        const { s } = await withModel({ ownerLanguage: lang }, () => draftAnswer("Kittens <b> & \"co\" \\ 🐱", "Playful kittens, looking for a home."), impl);
+        const c1 = await draft(s);
+        await say(s, "q-1", "what needs me");                    // c-2 replaces c-1
+        await tap(s, "a-1", "card_yes", c1);                       // the voided one: already answered
+        const c2 = (await cards(s))[0];
+        await tap(s, "a-2", "card_yes", { id: c2.id, digest: "f".repeat(32) }); // a digest that is not the card's
+        await s.call("/internal/channel/owner-listing", { owner: s.owner, body: { id: "e-1", op: { op: "edit", id: "l-1", title: "Kitten pair" } } }); await s.settle();
+        await tap(s, "a-3", "card_yes", c2);                       // changed: void, a new card
+        const c3 = (await cards(s))[0];
+        await say(s, "m-2", "a lamp for sale on my page, 450 rupees each"); // a second card, with a price note
+        await tap(s, "a-4", "card_no", (await cards(s)).find((c: any) => c.case === "listing:l-2"));
+        await tap(s, "a-5", "card_yes", c3);                       // published
+        await tap(s, "a-6", "card_yes", c3);                       // closed
+        seen[impl] = await observe(s);
+      }
+      assert.deepEqual(seen.go, seen.ts);
+      assert.equal(seen.ts.public.length, 1);
+      assert.ok(seen.ts.talk.length >= 8);
+    });
+  }
+
+  test("what the assistant says when a draft is refused, or the model is off or over its cap (English)", BOTH, async () => {
+    const seen: Record<string, any> = {};
+    const answers: Record<string, (o: string) => unknown> = {
+      numbers: () => draftAnswer("Kittens", "Two lovely kittens, 12 weeks."), claims: () => draftAnswer("Kittens", "A 100% guarantee."), health: () => draftAnswer("Kittens", "Healthy and vaccinated kittens."),
+      shape: () => ({ nonsense: true }),
+    };
+    for (const impl of ["ts", "go"] as const) {
+      const out: any[] = [];
+      for (const [name, answer] of Object.entries(answers)) {
+        const { s } = await withModel({}, answer, impl);
+        await say(s, "m-1", "two kittens for sale on my page, 800 rupees");
+        out.push([name, await observe(s)]);
+      }
+      { // a protected animal, before the model is asked; an owner with no model at all; a cap of one a day; a month's budget for two
+        const { s, fake } = await withModel({}, undefined, impl);
+        await say(s, "p-1", "a monkey for sale on my page, 800 rupees");
+        out.push(["protected", await observe(s), fake.calls]);
+      }
+      { const s = await boot({}, impl); await say(s, "n-1", "two kittens for sale on my page"); out.push(["no model", await observe(s)]); }
+      { const { s, fake } = await withModel({ budget: { monthlyMicroInr: 50_000_000, daily: { listing_draft: 1 } } }, undefined, impl);
+        await say(s, "d-1", "a lamp for sale on my page, 450 rupees"); await say(s, "d-2", "a bowl for sale on my page, 100 rupees"); out.push(["day cap", await observe(s), fake.calls]); }
+      { const { s, fake } = await withModel({ budget: { monthlyMicroInr: 150_000, daily: { listing_draft: 50 } } }, undefined, impl);
+        for (const i of [1, 2, 3]) await say(s, `b-${i}`, `item number ${i} for sale on my page`); out.push(["month budget", await observe(s), fake.calls]); }
+      seen[impl] = out;
+    }
+    assert.deepEqual(seen.go, seen.ts);
+    const said = (name: string) => seen.ts.find((o: any) => o[0] === name)[1].talk.filter((l: any) => l[0] === "assistant").map((l: any) => l[1]);
+    assert.ok(said("numbers")[0].includes("price"), said("numbers")[0]);
+    assert.ok(said("protected")[0].includes("monkey"));
+    assert.ok(said("no model")[0].includes("when my assistant is on"));
+    assert.equal(seen.ts.find((o: any) => o[0] === "day cap")[2], 1);
+    assert.equal(seen.ts.find((o: any) => o[0] === "month budget")[2], 2);
+    assert.match(said("month budget").at(-1), /back on \w+ \d+ \w+/u, "the month's line names the date it is back");
+  });
+
+  test("what is not in the Go runtime says so rather than pretend: notes (remember, what do you remember, forget) and a money question about a weekday or a written date", BOTH, async () => {
+    const s = await boot({}, "go");
+    const asked = ["remember we close at six", "what do you remember?", "forget 3", "money on 16 nov", "money monday"];
+    for (const [i, t] of asked.entries()) { await say(s, `g-${i}`, t); assert.equal(await lastSaid(s), "This shop's assistant doesn't handle that.", t); }
+    assert.deepEqual(lines(s, "owner_assistant").map((e) => e.refs.intent), ["remember", "notes", "forget", "money", "money"]);
+  });
+});
+
+describe("TypeScript and Go take turns on one folder: a card one made is answered by the other, so the digests agree", () => {
+  for (const [first, second] of [["ts", "go"], ["go", "ts"]] as const) {
+    test(`a card made by ${first} is answered by ${second}`, BOTH, async () => {
+      const { s } = await withModel({}, () => draftAnswer("Kittens <b> & \"co\" \\ 🐱", "Playful kittens <i> & more."), first);
+      const c = await draft(s);
+      await s.stop(); await s.start(second);
+      const again = (await cards(s))[0];
+      assert.deepEqual(again, c, `${second} reads the card ${first} made`);
+      await say(s, "q-1", "what needs me");                       // the second runtime makes a card of its own for the same listing
+      const c2 = (await cards(s))[0];
+      assert.equal(c2.id, "c-2"); assert.equal(c2.digest, c.digest, `the two runtimes digest the same fields to the same value`);
+      await tap(s, "a-1", "card_yes", c2);
+      assert.equal((await publicListings(s)).length, 1);
+      await s.stop(); await s.start(first);
+      await tap(s, "a-2", "card_yes", c2);                         // the first runtime finds it closed
+      assert.equal(lines(s, "owner_card").at(-1).notes, "the card is already done: nothing was done");
+      assert.equal((await publicListings(s)).length, 1);
+    });
+    test(`a card made by ${first}, tapped by ${second} after the draft was edited, is voided`, BOTH, async () => {
+      const { s } = await withModel({}, undefined, first);
+      const c = await draft(s);
+      await s.stop(); await s.start(second);
+      await s.call("/internal/channel/owner-listing", { owner: s.owner, body: { id: "e-1", op: { op: "edit", id: "l-1", title: "Other kittens" } } }); await s.settle();
+      await tap(s, "a-1", "card_yes", c);
+      assert.equal((await publicListings(s)).length, 0);
+      assert.equal((await cards(s))[0].id, "c-2");
+    });
+  }
 });
