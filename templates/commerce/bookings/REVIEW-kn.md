@@ -2004,4 +2004,9 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `directory.foot` | ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳ ಒಂದು ಪಟ್ಟಿ. | A directory of local shops. |  |
 | `directory.assistants` | AI ಸಹಾಯಕರಿಗೆ | For AI assistants |  |
 | `directory.choices` | ಇನ್ನಷ್ಟು ಆಯ್ಕೆಗಳು | More choices |  |
+| `directory.askLabel` | ನಿಮ್ಮ ಸ್ವಂತ ಮಾತುಗಳಲ್ಲಿ ಕೇಳಿ | Ask in your own words |  |
+| `directory.askPlaceholder` | ತ್ರಿಶೂರ್ ಹತ್ತಿರ ಪರ್ಷಿಯನ್ ಬೆಕ್ಕಿನ ಮರಿ? | Persian kitten near Thrissur? |  |
+| `directory.askButton` | ಕೇಳಿ | Ask |  |
+| `directory.askPlain` | ಇಂದು ನೀವು ಬರೆದ ಪದಗಳನ್ನು ಹಾಗೆಯೇ ಹುಡುಕಲಾಗುತ್ತಿದೆ. | Searching your words as typed today. |  |
+| `directory.askLine` | Thrissur ಹತ್ತಿರದ 3 ಅಂಗಡಿಗಳಲ್ಲಿ “Persian kitten” ಇದೆ. ಹತ್ತಿರದ್ದು 1.4 ಕಿ.ಮೀ ದೂರದಲ್ಲಿದೆ. | 3 shops near Thrissur have “Persian kitten”. The nearest is 1.4 km away. |  |
 
