@@ -252,6 +252,13 @@ export function openOwnerAccess(file: string) {
         setMeta("adopted", 1);
       }
     }
+    // A locked shop with no bound identity (a restore into an empty folder carries the passkeys but did not always carry the binding, and an older runtime never made one)
+    // is bound NOW to the owner the existing passkeys were made for, never to whatever the settings say today: if the Operator already changed the number, `watchOwner`
+    // then raises the request instead of the shop quietly following the new number.
+    if (boundKey() === undefined && lockAt() !== undefined) {
+      const row = db.prepare("SELECT owner_key FROM passkeys WHERE made_at >= ? ORDER BY made_at LIMIT 1").get(metaNum("reopen_at") ?? 0) as { owner_key: string } | undefined;
+      if (row) setMeta("bound_owner", row.owner_key);
+    }
     const reset = file?.reset;
     // Every time a FILE names is clamped to this runtime's own clock the first time it is seen, and remembered by its raw value: a reset dated 2099 would move every cutoff to
     // 2099 and make every later, real reset look older (an instant total lockout, and no way back). The raw value is remembered so a far date is applied once, not again on every read.
@@ -437,7 +444,10 @@ export function openOwnerAccess(file: string) {
       // another owner now, or the shop's page moved. Once the owner holds a passkey, "the owner" is the identity the shop was locked with (effKey), NOT whatever number
       // the Operator's settings form says now: a changed number must neither lock the owner out (their passkeys and sessions stay good) nor let a session for the new number in.
       if (r.owner_key !== effKey(who) || r.base !== who.base) return undefined;
-      if (endBefore !== undefined && r.made_at < endBefore) return undefined;
+      // Once the owner holds a passkey the panel's "sign out every device" ends WhatsApp-link sessions only. A passkey session ends by the owner's own action, a removal or an
+      // owner change that applied, or Geometer's reset: otherwise the button, pressed every few seconds beside a removal request, would keep the owner signed out for the whole
+      // of its 48 hours.
+      if (endBefore !== undefined && r.made_at < endBefore && !(r.link_id.startsWith("pk-") && lockAt() !== undefined)) return undefined;
       return { id: r.id };
     },
 
@@ -468,7 +478,7 @@ export function openOwnerAccess(file: string) {
     endAllBefore(endBefore: number, now: number): number | undefined {
       const seen = (db.prepare("SELECT value FROM meta WHERE name = 'end_before'").get() as { value: string } | undefined)?.value;
       if (seen !== undefined && Number(seen) >= endBefore) return undefined;
-      const r = db.prepare("UPDATE sessions SET ended_at = ?, ended_why = 'panel' WHERE ended_at IS NULL AND made_at < ?").run(now, endBefore);
+      const r = db.prepare("UPDATE sessions SET ended_at = ?, ended_why = 'panel' WHERE ended_at IS NULL AND made_at < ? AND NOT (link_id LIKE 'pk-%' AND ?)").run(now, endBefore, lockAt() !== undefined ? 1 : 0);
       db.prepare("INSERT INTO meta (name, value) VALUES ('end_before', ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value").run(String(endBefore));
       return Number(r.changes);
     },

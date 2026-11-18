@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { openOwnerAccess, ownerKey } from "../owner-access.ts";
 import type { OwnerAccess, RelyingParty } from "../owner-access.ts";
@@ -33,6 +34,8 @@ function world() {
   const qr = (token: string, at: number, expiresAt = at + 15 * 60_000): OwnerGrants["setup"] => ({ sha256: setupHash(token), createdAt: new Date(at).toISOString(), expiresAt: new Date(expiresAt).toISOString() });
   return { access, db, phone, qr, dir, done: () => { db.close(); access.close(); rmSync(dir, { recursive: true, force: true }); } };
 }
+/** The store hashes a session token this way (owner-access.ts sessionHash); a test that needs a known token writes its hash. */
+const sessionHashFor = (token: string): string => createHash("sha256").update(`owner-session:${token}`).digest("hex");
 const f = (o: Partial<OwnerGrants> = {}): OwnerGrants => ({ schema: 1, ...o });
 const pend = (at: number): OwnerGrants => f({ pendingRemoval: { askedBy: "Divya", askedAt: new Date(at).toISOString(), effectiveAt: new Date(at + REMOVAL_WAIT_MS).toISOString() } });
 const recovery = (codes: string[], at: number): OwnerGrants["recovery"] => ({ codes: codes.map(recoveryHash), createdAt: new Date(at).toISOString() });
@@ -271,4 +274,27 @@ test("finding 9: after a restart a due request is moved to a day later and said 
     assert.equal(c.access.pendingRemoval(again, T0 + 3 * HOUR), undefined, "asked again an hour after the cancel: not heard yet");
     assert.ok(c.access.pendingRemoval(again, T0 + 2 * HOUR + 25 * HOUR), "a day after the cancel it is heard, with its own 48 hours");
   } finally { c.done(); }
+});
+
+// ---- re-review B: after the lock "sign out every device" ends link sessions only ----
+test("re-review B: once locked, the panel's sign-out of every device never ends a passkey session, however often it is pressed; before the lock it ends everything as before", () => {
+  const w = world(); try {
+    w.access.sync(f(), T0);
+    const link = w.access.issue({ ...WHO, via: "whatsapp", now: T0 + 100 });
+    const byLink = w.access.consume(link.token, WHO, T0 + 101);
+    assert.ok(byLink.ok);
+    const first = w.access.clampEndBefore(T0 + 500, T0 + 500)!;
+    assert.equal(w.access.check(byLink.session, WHO, T0 + 600, first), undefined, "before the lock the button ends the link session");
+    const p = w.phone("p1", T0 + 1000);
+    const tok = "t".repeat(43);
+    w.db.prepare("UPDATE sessions SET hash = ? WHERE id = ?").run(sessionHashFor(tok), p.sid);
+    // the Operator presses the button every 10 s for a minute
+    for (let i = 1; i <= 6; i++) {
+      const at = T0 + HOUR + i * 10_000;
+      const eb = w.access.clampEndBefore(at, at)!;
+      assert.ok(w.access.check(tok, WHO, at + 1, eb), `press ${i}: the owner's passkey session still stands`);
+      w.access.endAllBefore(eb, at);
+    }
+    assert.ok(w.access.check(tok, WHO, T0 + 2 * HOUR, w.access.clampEndBefore(T0 + HOUR + 60_000, T0 + HOUR + 60_000)));
+  } finally { w.done(); }
 });
