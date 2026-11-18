@@ -12,6 +12,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	xnorm "golang.org/x/text/unicode/norm"
 )
 
 // A cue is a piece of a pattern with the edges it needs.
@@ -268,11 +270,11 @@ func mustAll(fold bool, patterns ...string) []*regexp.Regexp {
 	return out
 }
 
-// foldText makes a text and a word list the same form before they are compared: the Devanagari nukta dropped, so "मुफ़्त" and "मुफ्त" (typed either way) are the same word. The
-// TypeScript side decomposes the whole text first (NFD) and drops U+093C; Go's standard library cannot decompose, so the eight precomposed nukta letters (U+0958 to U+095F) are mapped by hand.
-var nuktaFold = strings.NewReplacer("क़", "क", "ख़", "ख", "ग़", "ग", "ज़", "ज", "ड़", "ड", "ढ़", "ढ", "फ़", "फ", "य़", "य", "़", "")
+// fold makes a text and a word list the same form before they are compared: decomposed (NFD), with the Devanagari nukta (U+093C) dropped, so "मुफ़्त" and "मुफ्त" (typed either way)
+// are the same word. It is exactly modules/assistant/talk-check.ts `fold`: x/text's NFD splits the eight precomposed nukta letters (U+0958 to U+095F) itself, so nothing is hand-folded.
+func fold(s string) string { return strings.ReplaceAll(xnorm.NFD.String(s), "\u093c", "") }
 
-func norm(s string) string { return nuktaFold.Replace(plain(s)) }
+func norm(s string) string { return fold(plain(s)) }
 
 type compiledClaim struct {
 	bounded, rest *regexp.Regexp
@@ -283,9 +285,9 @@ var claims = func() map[string]*compiledClaim {
 	out := map[string]*compiledClaim{}
 	for name, w := range claimWordTable {
 		c := &compiledClaim{notAfter: w.NotAfter}
-		c.bounded = regexp.MustCompile("(?i)(?:" + nuktaFold.Replace(w.Bounded) + ")")
+		c.bounded = regexp.MustCompile("(?i)(?:" + fold(w.Bounded) + ")")
 		if w.Rest != "" {
-			c.rest = regexp.MustCompile("(?i)" + nuktaFold.Replace(w.Rest))
+			c.rest = regexp.MustCompile("(?i)" + fold(w.Rest))
 		}
 		out[name] = c
 	}
