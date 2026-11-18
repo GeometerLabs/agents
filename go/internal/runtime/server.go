@@ -360,6 +360,8 @@ func (s *Server) channelRoute(w http.ResponseWriter, r *http.Request, path strin
 		return s.signed(w, r, path)
 	case "/internal/channel/owner-listing":
 		return s.ownerListing(w, r)
+	case "/internal/channel/owner-stock":
+		return s.ownerStockRoute(w, r)
 	case "/internal/channel/owner-photo":
 		return s.ownerPhoto(w, r)
 	case "/internal/channel/owner-signin":

@@ -264,6 +264,8 @@ func (r *Runtime) step(ev map[string]any, taskID string) error {
 		switch ev["kind"] {
 		case "owner_listing":
 			r.ownerListing(snap, rec, ev, now)
+		case "owner_stock":
+			r.ownerStock(snap, rec, ev, now)
 		case "owner_photo":
 			r.ownerPhoto(snap, rec, ev, now)
 		case "owner_access":
@@ -333,6 +335,9 @@ func (r *Runtime) ownerListing(snap *Snap, rec *recorder, ev map[string]any, now
 		return
 	}
 	d := digestOf(ev["op"])
+	if res.Listing != nil && res.Change == "confirmed" {
+		r.restoreAfterConfirm(snap, rec, res.Listing, fmt.Sprint(ev["id"]), now) // the Confirm button's stock side, before the listing's own line (as TypeScript)
+	}
 	if res.Listing != nil {
 		r.listingLine(rec, res.Change, *res.Listing, map[string]any{"op": op.Op, "listing": res.Listing.ID, "digest": d}, "confirmed", "the owner changed their listings in their app; the record keeps the listing's id, category and who, never its words")
 		return
@@ -397,6 +402,9 @@ func (r *Runtime) beat(snap *Snap, rec *recorder, now int64) {
 		return
 	}
 	r.lastDaily = now
+	if snap.Stock != nil {
+		snap.Stock.Tidy(now)
+	}
 	if snap.hasList {
 		snap.Listings.Tidy(now)
 		if gone, err := r.o.Store.PrunePhotos(snap.Listings.PhotoIDs(), now-listings.PhotoGraceMs); err != nil {
