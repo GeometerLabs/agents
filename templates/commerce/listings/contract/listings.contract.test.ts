@@ -583,8 +583,7 @@ describe("the store survives a restart", () => {
   });
 });
 
-// Routes a TypeScript listings shop answers that the Go runtime does not serve. They are tested here for TypeScript only, and skipped (with the reason) for Go, so the count of what is not
-// ported shows in the test output. A route that is another kind of shop's (chat is hidden by the listings front, the voice and documents routes answer 404 here too) is not listed.
+// The owner's talk-and-cards page: the one route a Go shop still lacks is tested for TypeScript only until the assistant is ported (see assistant.contract.test.ts for the full cases).
 const NOT_IN_GO = { skip: IMPL !== "ts" && "not ported to the Go runtime (go/TRIAL.md, Left out)" };
 describe("TypeScript only: routes the Go runtime does not serve", () => {
   test("GET /internal/channel/owner: the owner's talk-and-cards page (the whole assistant's view)", NOT_IN_GO, async () => {
@@ -594,29 +593,5 @@ describe("TypeScript only: routes the Go runtime does not serve", () => {
     assert.equal(r.status, 200);
     assert.equal(r.body.kind, "listings");
     assert.equal(typeof r.body.app, "object");
-  });
-  test("POST /internal/channel/push {op: key}: the shop's web-push key (off without a push service)", NOT_IN_GO, async () => {
-    const s = await boot();
-    const r = await s.call("/internal/channel/push", { owner: s.owner, body: { op: "key" } });
-    assert.equal(r.status, 200); assert.equal(r.body.on, false);
-  });
-  test("GET /internal/channel/owner-limits: the owner's limits page's data", NOT_IN_GO, async () => {
-    const s = await boot();
-    const r = await s.call("/internal/channel/owner-limits", { owner: s.owner });
-    assert.equal(r.status, 200); assert.ok(Array.isArray(r.body.limits)); assert.equal(r.body.passkey, false);
-  });
-  test("GET /internal/channel/owner-stock: the owner's Stock page's data", NOT_IN_GO, async () => {
-    const s = await boot();
-    const r = await s.call("/internal/channel/owner-stock", { owner: s.owner });
-    assert.equal(r.status, 200); assert.deepEqual(r.body, { rows: [], candidates: [], attention: 0 });
-  });
-  test("GET /internal/channel/owner-file: \"Get my shop's file\", for the owner's session only (a link is refused)", NOT_IN_GO, async () => {
-    const s = await boot();
-    assert.equal((await s.call("/internal/channel/owner-file", { owner: s.owner })).status, 403);
-  });
-  test("GET /internal/limit-changes: the deployer's view of the limits the owner may change", NOT_IN_GO, async () => {
-    const s = await boot();
-    const r = await s.call("/internal/limit-changes");
-    assert.equal(r.status, 200); assert.deepEqual(r.body, { limits: [], changes: [] });
   });
 });
