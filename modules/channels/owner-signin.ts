@@ -210,7 +210,10 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
     },
 
     /** On the clock's beat: the panel's "sign out every device", said once in the record when the runtime first sees it. */
-    tick(ctx: { record: ActionRecord; store?: unknown }): void {
+    tick(ctx: { record: ActionRecord; store?: unknown }): string[] {
+      // The keys of the notices said in this step. They are NOT marked told here: the step's record line is only committed when the core saves the step, so the core calls
+      // `markTold` with these keys after that save. A crash or a failed save before it then tells again rather than never ("tells twice rather than never").
+      const told: string[] = [];
       // owner's item 2: read the Operator's request and Geometer's reset into the runtime's own state (so a request starts its wait, and a due one applies, even when no
       // page is open), and say each once in the record. An Operator's request also reaches the owner's phones with alerts on, at once.
       if (setup.grants) {
@@ -223,24 +226,28 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
           else if (n.what === "removal_asked") {
             line({ what: "removal_asked", by: n.askedBy, effectiveAt: new Date(n.effectiveAt).toISOString() });
             setup.alert?.(REMOVAL_ALERT(n.askedBy));
-            access.markTold(n.key); // after the line and the push, so a crash between them tells again rather than never
+            told.push(n.key);
           } else if (n.what === "removal_extended") {
             line({ what: "removal_extended", effectiveAt: new Date(n.effectiveAt).toISOString() });
             setup.alert?.(n.kind === "owner_change" ? OWNER_CHANGE_ALERT : REMOVAL_ALERT(n.askedBy));
-            access.markTold(n.key);
+            told.push(n.key);
           } else if (n.what === "owner_change_asked") {
             line({ what: "owner_change_asked", effectiveAt: new Date(n.effectiveAt).toISOString() });
             setup.alert?.(OWNER_CHANGE_ALERT);
-            access.markTold(n.key);
+            told.push(n.key);
           } else line({ what: "removal_applied", at: new Date(n.at).toISOString() });
         }
       }
       const endAt = endBefore();
-      if (endAt === undefined) return;
+      if (endAt === undefined) return told;
       const ended = access.endAllBefore(endAt, clock.now());
-      if (ended === undefined) return;
+      if (ended === undefined) return told;
       ctx.record.append({ conversation: ownerNumber(), action: "owner_session", outcome: "confirmed", inputs: { what: "all_ended", endBefore: endAt }, language: owner.language, refs: { what: "all_ended", count: String(ended) } });
+      return told;
     },
+
+    /** Mark the notices of a tick told, once the step holding their record lines is saved (see `tick`). */
+    markTold(keys: string[]): void { for (const key of keys) access.markTold(key); },
 
     /** What the runtime's HTTP layer uses: each reads the owner and the address as they are now. */
     http: {
