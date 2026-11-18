@@ -466,6 +466,50 @@ describe("web push on, through a fake push Guard", () => {
   });
 });
 
+describe("web push: the sender drains what was queued to the Guard", () => {
+  // No route of this shop makes an alert yet in every runtime, so the queue is filled the way a runtime would fill it (a row in push.sqlite, for a subscribed phone) while the shop is
+  // stopped; the shop's sender finds it and posts it to the Guard. Go sends at start; TypeScript on its timer (15 s), so the wait is long.
+  for (const [name, answer, then] of [
+    ["a Guard that takes it: the phone reads the words, the Guard heard the shop's credential and a signature that verifies", { status: 201 }, "sent"],
+    ["a Guard that refuses it with a reason: it is not tried again", { status: 403, reason: "daily_cap" }, "refused"],
+    ["a push service that says the phone is gone: the subscription is forgotten", { status: 410 }, "gone"],
+  ] as const) {
+    test(name, { timeout: 60_000 }, async () => {
+      const { shop: s, guard } = await bootPush();
+      guard.answer = { ...answer };
+      const b = softBrowser();
+      assert.equal((await push(s, { op: "owner_subscribe", subscription: b.subscription })).status, 200);
+      const key = (await push(s, { op: "key" })).body.publicKey;
+      await s.stop();
+      const db = new DatabaseSync(join(s.dataDir, "push.sqlite"));
+      const sub = db.prepare("SELECT id FROM subs WHERE dead_at IS NULL").get() as { id: string };
+      const now = Date.now();
+      db.prepare("INSERT INTO queue (id, sub_id, kind, title, body, tag, made_at, next_at, state) VALUES ('aaaaaaaaaaaa', ?, 'owner', 'Glow Pets', ?, 'phones', ?, ?, 'waiting')").run(sub.id, "A new phone \u20b9 was added", now, now);
+      db.close();
+      await s.start();
+      for (let i = 0; i < 480 && guard.calls.length === 0; i++) await new Promise((r) => setTimeout(r, 50));
+      assert.equal(guard.calls.length, 1, "the sender posted it");
+      const { path, authorization, call } = guard.calls[0];
+      assert.equal(path, "/v1/push/owner"); assert.equal(authorization, `Bearer ${GUARD_TOKEN}`);
+      assert.equal(call.host, "fcm.googleapis.com"); assert.equal(call.urgency, "high"); assert.equal(call.ttl, 86400);
+      assert.equal(call.sub, sub.id); assert.equal(call.topic, `owner-${sub.id}`); assert.equal(call.path, new URL(b.subscription.endpoint).pathname);
+      assert.equal(vapidChecks(call, key), true, "ES256 for the push service's origin, the shop's page as the contact");
+      assert.deepEqual(b.open(call), { title: "Glow Pets", body: "A new phone \u20b9 was added", tag: "phones" });
+      assert.throws(() => softBrowser().open(call), "another browser opens nothing");
+      // what came of it is kept in the queue
+      let state = "";
+      for (let i = 0; i < 100 && state !== then; i++) {
+        await new Promise((r) => setTimeout(r, 50));
+        const ro = new DatabaseSync(join(s.dataDir, "push.sqlite"), { readOnly: true });
+        try { state = (ro.prepare("SELECT state FROM queue WHERE id = 'aaaaaaaaaaaa'").get() as { state: string }).state; } finally { ro.close(); }
+      }
+      assert.equal(state, then);
+      if (then === "gone") assert.equal((await push(s, { op: "owner_state" })).body.phones, 0);
+      else assert.equal((await push(s, { op: "owner_state" })).body.phones, 1);
+    });
+  }
+});
+
 describe("web push across a change of runtime", { skip: !existsSync(bin) && `no Go binary at ${bin}` }, () => {
   for (const [first, second] of [["ts", "go"], ["go", "ts"]] as const) {
     test(`a subscription and the choice made at ${first} are the shop's at ${second}, with the same key`, async () => {

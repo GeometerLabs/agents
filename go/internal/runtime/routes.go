@@ -7,7 +7,8 @@ package runtime
 // `checkPasskey`), which passkey (a push subscription is tied to the phone it was made from, `passkeyOf`), and does the owner hold a passkey at all, so the Operator's link is closed
 // (`lockState().locked`). `internal/access` does not export these yet (the owner-control work ports them), so the questions are asked through PasskeySessions. The default answers them
 // by READING owner-access.sqlite read-only, the same file `access` writes (sessions.link_id is "pk-<passkey id>" for a passkey session; the lock is the first passkey made since the gate
-// last opened). It never writes, and when the file cannot be read every answer is "no" (the safe side: nothing that needs a passkey is allowed). When `access` exports the same, call
+// last opened). It never writes, and when the file cannot be read every answer is the refusing one: no session is a passkey session, and the shop counts as locked (the safe side: nothing
+// that needs a passkey is allowed, and the panel's link changes nothing). When `access` exports the same, call
 // SetPasskeySessions with an implementation over it and the file reader is not used.
 
 import (
@@ -160,11 +161,11 @@ func (f *fileSessions) meta(name string) (float64, bool) {
 func (f *fileSessions) Locked() bool {
 	db := f.conn()
 	if db == nil {
-		return false
+		return true // the store cannot be read: refuse what the lock refuses (an unreadable file must not open the Operator's link)
 	}
 	reopen, _ := f.meta("reopen_at")
 	var first sql.NullInt64
-	if db.QueryRow("SELECT min(made_at) FROM passkeys WHERE made_at >= ?", int64(reopen)).Scan(&first) == nil && first.Valid {
+	if err := db.QueryRow("SELECT min(made_at) FROM passkeys WHERE made_at >= ?", int64(reopen)).Scan(&first); err != nil || first.Valid {
 		return true
 	}
 	if reset, ok := f.meta("reset_at"); ok {
