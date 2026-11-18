@@ -457,7 +457,8 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
       await agent.giveUp?.(event, { service: down!, tell: false });
       givenUp.add(down!);
     }
-    if (event.kind === "tick") { compact(store); signin?.tick({ record, store }); } // W2: the store too, so the chat identity can drop what a cleared thread leaves (chat-link-send.ts)
+    let toldKeys: string[] = []; // the sign-in notices this step said; marked told only after the step is saved (owner-signin.ts `tick`)
+    if (event.kind === "tick") { compact(store); toldKeys = signin?.tick({ record, store }) ?? []; } // W2: the store too, so the chat identity can drop what a cleared thread leaves (chat-link-send.ts)
 
     // The owner's licence notice rides on the clock's beat too, after the agent's own work, and saves around its send the same way (modules/licence/notice.ts).
     if (event.kind === "tick" && options.licenceNotice) {
@@ -479,6 +480,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
       catch (e) { log(`The owner's morning line could not be made: ${(e as Error).message}`); }
     }
     save(store, record, taskId);
+    signin?.markTold(toldKeys); // the record line is committed now: a crash or failed save before this tells the notice again rather than never
     // Send once: what the step asked to be sent (a purchase order) goes now that the step is saved, claim first, ending after, each saved (modules/messaging/send-once.ts).
     // It also runs on every tick, so a refused message is tried again when its hour is up and a claim left by a dead process is found and never sent again. In the licence's
     // final stop nothing is sent: the intent waits. This is the same agent as the step's: its calls are watched like the step's, but the step is over, so a Guard down here
