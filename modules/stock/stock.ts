@@ -393,7 +393,7 @@ export function unbookedHolds(s: StockState | undefined, id: StockId, facts: rea
 /** A delivery fact as the Stock orders agent reads it from a purchase order the owner marked received (a wrong item is not passed). */
 export interface DeliveryFact {
   key: string; id: StockId; cumulative: number; unit?: string;
-  /** When the owner last marked something received on this purchase order. A total last marked at or before the line's start is HISTORY: the count the owner gave already has those goods. */
+  /** When the owner last marked something received on this purchase order. A total last marked BEFORE the line's start (strictly: a mark in the same millisecond is after it) is HISTORY: the count the owner gave already has those goods. */
   atMs?: number;
 }
 
@@ -404,7 +404,7 @@ export function reconcileDeliveries(s: StockState, src: Source, facts: readonly 
   for (const f of facts) {
     const line = lineOf(s, f.id);
     // goods that came before counting began are in the owner's count already: remember the total (so a later mark adds only the difference) and move nothing
-    if (line && f.atMs !== undefined && f.atMs <= line.startedMs && line.applied[f.key] === undefined) { line.applied[f.key] = { qty: f.cumulative, took: f.cumulative, atMs: c.nowMs }; continue; }
+    if (line && f.atMs !== undefined && f.atMs < line.startedMs && line.applied[f.key] === undefined) { line.applied[f.key] = { qty: f.cumulative, took: f.cumulative, atMs: c.nowMs }; continue; }
     const r = received(s, src, f.id, f.key, f.cumulative, f.unit, c);
     if (r.ok) continue;
     // a refusal is reported once per delivery quantity: the line remembers it under "refused:<key>", so the next tick does not tell the owner again

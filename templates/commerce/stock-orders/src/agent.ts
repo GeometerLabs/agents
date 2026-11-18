@@ -828,8 +828,7 @@ export function createAgent(deps: AgentDeps): Agent {
       if ((a.asked ?? 0) === 1) talkToOwner(STOCK_LINE_WORDS[ownerLanguage].reorderAsk(itemNameOf(itemId), a.count, supplierOf(settings, lines[0].supplier).name));
       if (lines.length === 1) await settle({ requestId, lowStock: true, line: lines[0], phone: owner });
       else await askWhich({ requestId, lowStock: true, item: itemId, lines });
-      // no order and no question left open means a limit stopped it and the owner was told: that crossing is done
-      if (!store.asking && !store.requests.has(requestId)) ackAlert(st, a.line, a.crossing);
+            if (!store.asking) ackAlert(st, a.line, a.crossing); // an order was made, or a limit stopped it and the owner was told: this crossing is done (only an open question keeps it queued)
       return; // one question at a time; the next alert waits for the next tick
     }
   }
