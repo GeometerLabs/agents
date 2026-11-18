@@ -97,7 +97,8 @@ confirm, the freshness may change and the order is made **again by the same func
 A listing carries its words in English, Hindi, Malayalam and Kannada (the owner's own, and the ones an assistant wrote). The index holds all of them, so a
 search in any language finds the item. The feed carries native script, so a buyer typing Latin letters ("billi", "poocha", "bekku") would miss it; the `rom`
 column holds a rough Latin spelling of every word (`romanise.ts`: long vowels short, doubled letters one, "kh" as "k", a final "a" dropped) and a search is
-turned into the same spelling. It is deliberately loose and matches by word start. The tokenizer is configured to keep Indic vowel signs inside words (the
+turned into the same spelling. It is deliberately loose and matches by word start. A word that names the shop's town or pincode (the `place` column) counts toward "every word" but
+never makes an item a match by itself, so "persian kitten Thrissur" does not list everything a Thrissur shop sells (and so spends no shop checks on it). The tokenizer is configured to keep Indic vowel signs inside words (the
 default one cuts a word at every sign).
 
 ## Protocols

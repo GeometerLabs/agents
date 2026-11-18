@@ -11,7 +11,11 @@
 // under the door's rules for an outgoing address: https only, a DNS name, the name resolved here and refused when any answer is a private, loopback, link-local or reserved address,
 // connected to the address checked, no redirect followed, the body capped. A feed is capped at 1 MB while it is read.
 //
-// Once a minute it reads the feeds that are due (modules/discovery/refresh.ts): hinted by a notice (at most once a minute per feed), never read, or not read for six hours.
+// A shop whose feed came signed by a key other than the one pinned is HELD (its items leave every search) and the change is listed for a person: the service says so in its log
+// every time it happens, and `docker exec <directory> node /app/bundle/services/directory.ts changes` lists them, `... accept <shop page>` accepts one (the shop is read again at
+// once). There is no panel view of them yet (bundle/Deferred.md).
+//
+// Every 20 seconds it reads the feeds that are due (modules/discovery/refresh.ts): hinted by a notice (at most once a minute per feed), never read, or not read for six hours.
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { join } from "node:path";
@@ -85,6 +89,17 @@ if (import.meta.main) {
   mkdirSync(config.dataDir, { recursive: true, mode: 0o700 });
   const log = (line: string) => console.error(line);
   const index = new DirectoryIndex(join(config.dataDir, "directory.sqlite"));
+  // the person's side: list the key changes that wait, or accept one (run beside the service, in its container, through `docker exec`)
+  if (process.argv[2] === "changes") {
+    const list = index.keyChanges();
+    console.log(list.length === 0 ? "No key change waits." : list.map((c) => `${c.page}  pinned ${c.pinnedKeyId}  offered ${c.offeredKeyId}  seen ${new Date(c.seenAt).toISOString()}`).join("\n"));
+    process.exit(0);
+  }
+  if (process.argv[2] === "accept") {
+    const ok = index.acceptKeyChange(String(process.argv[3] ?? ""), Date.now());
+    console.log(ok ? "Accepted: the shop's feed is read again within a minute." : "No key change waits for that shop page.");
+    process.exit(ok ? 0 : 1);
+  }
   const now = Date.now();
   for (const url of config.feeds) { if (feedAllowed(url, { served: config.served, configured: config.feeds })) index.addFeed(url, "config", now); else log(`directory: ${url} is not a feed address it will read`); }
   const fetch = directoryFetcher({ served: config.served, doorUrl: config.doorUrl });
@@ -97,13 +112,17 @@ if (import.meta.main) {
   const server = createServer(handler);
   server.requestTimeout = 15_000;
   server.headersTimeout = 5_000;
-  server.listen(Number(process.env.PORT ?? DIRECTORY_PORT), process.env.HOST ?? "127.0.0.1", () => log(`The directory listens for ${config.origin}: ${index.counts().items} items from ${index.counts().shops} shops.`));
+  server.listen(Number(process.env.PORT ?? DIRECTORY_PORT), process.env.HOST ?? "127.0.0.1", () => log(`The directory listens for ${config.origin}: ${index.counts().items} items from ${index.counts().shops} shops; ${index.keyChanges().length} key changes wait for a person.`));
   // read the feeds that are due: now, then every 20 seconds (a hint waits at most that long after its minute; a first read is at once)
   let running = false;
   const tick = async (): Promise<void> => {
     if (running) return;
     running = true;
-    try { await refreshDue({ index, fetch }); } catch (e) { log(`directory: a refresh failed (${(e as Error).name})`); } finally { running = false; }
+    try {
+      const done = await refreshDue({ index, fetch });
+      // what a person needs to hear: a held shop, a refused feed, a dropped one (a feed address is public; nothing about a buyer is ever here)
+      for (const [url, result] of Object.entries(done)) if (result === "held" || result === "refused" || result === "dropped") log(`directory: ${url} was ${result}${result === "held" ? ` (a key change waits for a person: ${index.keyChanges().length} in all)` : result === "refused" ? ` (${index.feed(url)?.error ?? "not a good feed"})` : ""}`);
+    } catch (e) { log(`directory: a refresh failed (${(e as Error).name})`); } finally { running = false; }
   };
   void tick();
   setInterval(() => void tick(), 20_000).unref();

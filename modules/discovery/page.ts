@@ -13,6 +13,7 @@
 // Pure: it returns strings (and the policy and the script), reads nothing and sends nothing.
 import { esc } from "../core/html.ts";
 import { CUSTOMER_CSS } from "../channels/look.ts";
+import { PAINTS } from "../channels/chat-paint.ts";
 import { CATEGORIES, LANGS } from "./types.ts";
 import type { Lang } from "./types.ts";
 import { DIRECTORY_WORDS, LANGUAGE_LABEL } from "./words.ts";
@@ -40,6 +41,13 @@ export const pagePolicy = (origin: string, nonce: string): string =>
 
 const FONT_FACE = (url: string): string => `@font-face{font-family:"Baloo 2";font-style:normal;font-weight:400 800;font-display:swap;src:url(${url}) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}`;
 
+/**
+ * What a card with no photo shows: a flat tile in one of the five signboard paints Streetlist's own shops wear (channels/chat-paint.ts; each with the one text colour that
+ * reads on it at AA), by the item's kind. No new colours are made here.
+ */
+const KIND_PAINT: Record<string, keyof typeof PAINTS | undefined> = { pets: "marigold", food: "green", clothes: "pink", home: "blue", electronics: "blue", vehicles_and_cycles: "brick", services: "green", other: undefined };
+const KIND_TILES = Object.entries(KIND_PAINT).map(([kind, paint]) => (paint ? `.k-${kind}{--k:${PAINTS[paint].hex};--ki:${PAINTS[paint].ink}}` : `.k-${kind}{--k:var(--plain-bg);--ki:var(--ink)}`)).join("");
+
 /** The page's own styles, on top of the shops' style sheet: the form, the photo cards, the kinds' flat colours. Flat colours only, as everywhere. */
 const CSS = `
 :root{--display:"Baloo 2",system-ui,sans-serif}
@@ -53,8 +61,9 @@ form.search label{display:block;margin:14px 0 6px;font-weight:650}
 form.search input[type=search],form.search input[type=text],form.search select{width:100%;min-height:48px;padding:10px 12px;border:1.5px solid var(--line2);border-radius:12px;background:var(--card);color:var(--ink);font:inherit}
 form.search select{appearance:auto}
 form.search .note{margin:6px 0 0}
-form.search .row{display:grid;gap:0 12px}
-@media (min-width:30rem){form.search .row{grid-template-columns:1fr 1fr}}
+details.choices{margin:6px 0 0}details.choices summary{display:list-item;padding:11px 0;min-height:44px;cursor:pointer;font-weight:650;color:var(--green)}
+form.search .pair{display:grid;gap:0 12px}
+@media (min-width:30rem){form.search .pair{grid-template-columns:1fr 1fr}}
 #near{margin-top:12px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0;padding:0}
 .chip{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;background:var(--card);border:1.5px solid var(--line2);color:var(--ink);text-decoration:none;font-weight:600}
@@ -62,7 +71,8 @@ form.search .row{display:grid;gap:0 12px}
 .count{margin:0 0 12px;font-weight:650;color:var(--soft)}
 .results{display:grid;gap:14px;margin:0;padding:0}
 .res{display:grid;overflow:hidden;padding:0;margin:0}
-.ph{position:relative;aspect-ratio:4/3;background:var(--k,var(--plain-bg));display:flex;align-items:center;justify-content:center;color:var(--ink);font:650 1.1rem var(--display)}
+.ph{position:relative;aspect-ratio:4/3;background:var(--k,var(--plain-bg));display:flex;align-items:center;justify-content:center;color:var(--ki,var(--ink));font:650 1.2rem var(--display)}
+.ph.no{aspect-ratio:16/5}
 .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .res .body{padding:12px 14px 14px}
 .res h2{margin:0 0 6px;font-size:1.25rem}
@@ -75,7 +85,7 @@ form.search .row{display:grid;gap:0 12px}
 .res .btn{margin-top:10px;width:100%}
 .note.why{margin:4px 0 0}
 .more{display:flex;margin:18px 0 0}
-.k-pets{--k:#fde3a7}.k-food{--k:#cfeadb}.k-clothes{--k:#d9e6fb}.k-home{--k:#f3d9e6}.k-electronics{--k:#dfe0f5}.k-vehicles_and_cycles{--k:#d6ece8}.k-services{--k:#f0e4d2}.k-other{--k:#eceee9}
+${KIND_TILES}
 .state-page{margin:8px 0 18px}
 .state-page h2{margin-top:0}
 ol.order{margin:0 0 8px;padding:0 0 0 1.3rem}ol.order li{margin:0 0 .7em}
@@ -131,11 +141,13 @@ function form(ctx: PageContext, f: FormValues): string {
   const located = f.lat !== "" && f.lon !== "";
   const kinds = [`<option value=""${f.category === "" ? " selected" : ""}>${esc(w.anyKind)}</option>`, ...CATEGORIES.map((c) => `<option value="${c}"${f.category === c ? " selected" : ""}>${esc(w.kinds[c])}</option>`)].join("");
   const radii = [`<option value=""${f.radius_km === "" ? " selected" : ""}>${esc(w.anyDistance)}</option>`, ...[5, 10, 25, 50].map((n) => `<option value="${n}"${f.radius_km === String(n) ? " selected" : ""}>${esc(w.km(n))}</option>`)].join("");
+  const open = f.category !== "" || f.radius_km !== "" || f.town !== "" || located;
   return `<form class="search" action="/search" method="get" role="search">
 <label for="q">${esc(w.searchLabel)}</label><input id="q" name="q" type="search" value="${esc(f.q)}" placeholder="${esc(w.placeholder)}" maxlength="200" autocomplete="off" enterkeyhint="search">
-<div class="row"><div><label for="category">${esc(w.kindLabel)}</label><select id="category" name="category">${kinds}</select></div>
+<details class="choices"${open ? " open" : ""}><summary>${esc(w.choices)}</summary>
+<div class="pair"><div><label for="category">${esc(w.kindLabel)}</label><select id="category" name="category">${kinds}</select></div>
 <div><label for="radius">${esc(w.radiusLabel)}</label><select id="radius" name="radius_km">${radii}</select></div></div>
-<label for="town">${esc(w.townLabel)}</label><input id="town" name="town" type="text" value="${esc(f.town)}" maxlength="80" autocomplete="address-level2" aria-describedby="town-hint"><p class="note" id="town-hint">${esc(w.townHint)}</p>
+<label for="town">${esc(w.townLabel)}</label><input id="town" name="town" type="text" value="${esc(f.town)}" maxlength="80" autocomplete="address-level2" aria-describedby="town-hint"><p class="note" id="town-hint">${esc(w.townHint)}</p></details>
 <input type="hidden" name="lat" value="${esc(f.lat)}"><input type="hidden" name="lon" value="${esc(f.lon)}">
 <p class="note" id="near-set"${located ? "" : " hidden"}>${esc(w.nearMeSet)}</p>
 <button type="button" id="near" class="quiet" hidden>${esc(w.nearMe)}</button>
@@ -152,7 +164,7 @@ function card(ctx: PageContext, r: SearchResultItem): string {
   const fresh = sure ? `<span class="stamp ok">${esc(freshness(w, r.item.confirmed, ctx.now))}</span>` : `<span class="stamp wait">${esc(w.callToCheck)}</span>`;
   const where = r.shop.distanceKm !== null ? w.away(km(r.shop.distanceKm)) : w.inTown(r.shop.town);
   const chat = r.chat + (ctx.lang === "en" ? "" : `&lang=${ctx.lang}`);
-  return `<li class="card res"><div class="ph k-${r.item.category}">${photoOk ? `<img src="${esc(r.item.photo!)}" alt="${esc(w.photoOf(r.item.title))}" loading="lazy" decoding="async" width="400" height="300">` : `<span>${esc(w.kinds[r.item.category] ?? "")}</span>`}</div>
+  return `<li class="card res"><div class="ph k-${r.item.category}${photoOk ? "" : " no"}">${photoOk ? `<img src="${esc(r.item.photo!)}" alt="${esc(w.photoOf(r.item.title))}" loading="lazy" decoding="async" width="400" height="300">` : `<span>${esc(w.kinds[r.item.category] ?? "")}</span>`}</div>
 <div class="body"><h2 lang="${r.item.lang}">${esc(r.item.title)}</h2>${r.item.machineWritten ? `<p class="tag">${esc(w.machine)}</p>` : ""}${price}
 <p class="meta">${fresh}<span>${esc(where)}</span></p>${sure ? "" : `<p class="note why">${esc(w.callToCheckWhy)}</p>`}
 <p class="shop">${esc(r.shop.name)} <span>· ${esc(r.shop.town)}</span></p>

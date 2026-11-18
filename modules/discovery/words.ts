@@ -22,6 +22,8 @@ export interface DirectoryWords {
   orderLink: string; orderTitle: string; orderIntro: string; orderSteps: string[]; orderNever: string; orderNeverBody: string; orderAsk: string; orderAskBody: string; orderWords: string; orderWordsBody: string; orderPrivate: string; orderPrivateBody: string; back: string;
   /** The foot. */
   foot: string; assistants: string;
+  /** The fold that holds the kind, the distance and the town (added last, so the review sheet keeps its order). */
+  choices: string;
 }
 
 const EN: DirectoryWords = {
@@ -42,7 +44,7 @@ const EN: DirectoryWords = {
   orderNever: "Never by money", orderNeverBody: "No payment, plan or Operator changes the order. A shop cannot pay to be first, and neither can we. The same rule is in the open code.",
   orderAsk: "Asking the shop", orderAskBody: "Before you see a result, we ask the shop “do you still have this?”. The question holds only the item, never your words, your place or who you are. If the shop does not answer, you still see the item, with “Call to check”.",
   orderWords: "Words by an assistant", orderWordsBody: "A shop's words may be written in other languages by an assistant from the owner's own words. Those are marked.", orderPrivate: "What we keep", orderPrivateBody: "No account and no cookie. We count how many searches there were in a day, nothing about who searched or for what.",
-  back: "Back to search", foot: "A directory of local shops.", assistants: "For AI assistants",
+  back: "Back to search", foot: "A directory of local shops.", assistants: "For AI assistants", choices: "More choices",
 };
 
 const HI: DirectoryWords = {
@@ -63,7 +65,7 @@ const HI: DirectoryWords = {
   orderNever: "पैसे से कभी नहीं", orderNeverBody: "कोई भुगतान, प्लान या ऑपरेटर क्रम नहीं बदलता। कोई दुकान पैसे देकर पहले नहीं आ सकती, और हम भी नहीं ला सकते। यही नियम खुले कोड में भी है।",
   orderAsk: "दुकान से पूछना", orderAskBody: "नतीजा दिखाने से पहले हम दुकान से पूछते हैं “क्या यह अभी आपके पास है?”। सवाल में सिर्फ़ चीज़ होती है, आपके शब्द, आपकी जगह या आप कौन हैं, यह कभी नहीं। दुकान जवाब न दे तो भी चीज़ दिखती है, “फ़ोन करके पूछें” के साथ।",
   orderWords: "सहायक के लिखे शब्द", orderWordsBody: "दुकान के शब्द दूसरी भाषाओं में एक सहायक मालिक के अपने शब्दों से लिख सकता है। ऐसे शब्दों पर निशान लगा होता है।", orderPrivate: "हम क्या रखते हैं", orderPrivateBody: "कोई खाता नहीं और कोई कुकी नहीं। हम सिर्फ़ गिनते हैं कि एक दिन में कितनी खोजें हुईं, किसने या क्या खोजा यह नहीं।",
-  back: "खोज पर वापस", foot: "स्थानीय दुकानों की एक सूची।", assistants: "एआई सहायकों के लिए",
+  back: "खोज पर वापस", foot: "स्थानीय दुकानों की एक सूची।", assistants: "एआई सहायकों के लिए", choices: "और विकल्प",
 };
 
 const ML: DirectoryWords = {
@@ -84,7 +86,7 @@ const ML: DirectoryWords = {
   orderNever: "പണം കൊണ്ട് ഒരിക്കലുമില്ല", orderNeverBody: "ഒരു പണമടയ്ക്കലോ പ്ലാനോ ഓപ്പറേറ്ററോ ക്രമം മാറ്റില്ല. ഒരു കടയ്ക്കും പണം കൊടുത്ത് ആദ്യം വരാനാവില്ല, ഞങ്ങൾക്കും ആവില്ല. ഇതേ നിയമം തുറന്ന കോഡിലുമുണ്ട്.",
   orderAsk: "കടയോട് ചോദിക്കുന്നത്", orderAskBody: "ഫലം കാണിക്കുന്നതിന് മുമ്പ് ഞങ്ങൾ കടയോട് “ഇത് ഇപ്പോഴും ഉണ്ടോ?” എന്ന് ചോദിക്കുന്നു. ചോദ്യത്തിൽ സാധനം മാത്രമേ ഉള്ളൂ, നിങ്ങളുടെ വാക്കുകളോ സ്ഥലമോ നിങ്ങൾ ആരെന്നോ ഒരിക്കലുമില്ല. കട മറുപടി തന്നില്ലെങ്കിലും സാധനം “വിളിച്ച് ചോദിക്കൂ” എന്നതോടെ കാണും.",
   orderWords: "സഹായി എഴുതിയ വാക്കുകൾ", orderWordsBody: "ഒരു കടയുടെ വാക്കുകൾ ഉടമയുടെ സ്വന്തം വാക്കുകളിൽ നിന്ന് ഒരു സഹായി മറ്റ് ഭാഷകളിൽ എഴുതിയതാകാം. അവയ്ക്ക് അടയാളമുണ്ട്.", orderPrivate: "ഞങ്ങൾ സൂക്ഷിക്കുന്നത്", orderPrivateBody: "അക്കൗണ്ടില്ല, കുക്കിയുമില്ല. ഒരു ദിവസം എത്ര തിരയലുകൾ ഉണ്ടായി എന്ന് മാത്രം എണ്ണുന്നു, ആര് എന്ത് തിരഞ്ഞു എന്നില്ല.",
-  back: "തിരയലിലേക്ക് മടങ്ങുക", foot: "നാട്ടിലെ കടകളുടെ ഒരു പട്ടിക.", assistants: "AI സഹായികൾക്ക്",
+  back: "തിരയലിലേക്ക് മടങ്ങുക", foot: "നാട്ടിലെ കടകളുടെ ഒരു പട്ടിക.", assistants: "AI സഹായികൾക്ക്", choices: "കൂടുതൽ തിരഞ്ഞെടുപ്പുകൾ",
 };
 
 const KN: DirectoryWords = {
@@ -105,7 +107,7 @@ const KN: DirectoryWords = {
   orderNever: "ಹಣದಿಂದ ಎಂದಿಗೂ ಇಲ್ಲ", orderNeverBody: "ಯಾವ ಪಾವತಿ, ಯೋಜನೆ ಅಥವಾ ಆಪರೇಟರ್ ಕೂಡ ಕ್ರಮವನ್ನು ಬದಲಾಯಿಸುವುದಿಲ್ಲ. ಯಾವ ಅಂಗಡಿಯೂ ಹಣ ಕೊಟ್ಟು ಮೊದಲು ಬರಲಾಗದು, ನಾವೂ ತರಲಾಗದು. ಇದೇ ನಿಯಮ ತೆರೆದ ಕೋಡ್‌ನಲ್ಲೂ ಇದೆ.",
   orderAsk: "ಅಂಗಡಿಯನ್ನು ಕೇಳುವುದು", orderAskBody: "ಫಲಿತಾಂಶ ತೋರಿಸುವ ಮೊದಲು ನಾವು ಅಂಗಡಿಯನ್ನು “ಇದು ಇನ್ನೂ ಇದೆಯೇ?” ಎಂದು ಕೇಳುತ್ತೇವೆ. ಪ್ರಶ್ನೆಯಲ್ಲಿ ವಸ್ತು ಮಾತ್ರ ಇರುತ್ತದೆ, ನಿಮ್ಮ ಪದಗಳು, ನಿಮ್ಮ ಸ್ಥಳ ಅಥವಾ ನೀವು ಯಾರು ಎಂಬುದು ಎಂದಿಗೂ ಇಲ್ಲ. ಅಂಗಡಿ ಉತ್ತರಿಸದಿದ್ದರೂ ವಸ್ತು “ಕರೆ ಮಾಡಿ ಕೇಳಿ” ಎಂಬುದರೊಂದಿಗೆ ಕಾಣುತ್ತದೆ.",
   orderWords: "ಸಹಾಯಕ ಬರೆದ ಪದಗಳು", orderWordsBody: "ಅಂಗಡಿಯ ಪದಗಳನ್ನು ಮಾಲೀಕರ ಸ್ವಂತ ಪದಗಳಿಂದ ಒಬ್ಬ ಸಹಾಯಕ ಬೇರೆ ಭಾಷೆಗಳಲ್ಲಿ ಬರೆದಿರಬಹುದು. ಅವುಗಳಿಗೆ ಗುರುತು ಇರುತ್ತದೆ.", orderPrivate: "ನಾವು ಇಟ್ಟುಕೊಳ್ಳುವುದು", orderPrivateBody: "ಖಾತೆ ಇಲ್ಲ, ಕುಕೀ ಇಲ್ಲ. ಒಂದು ದಿನದಲ್ಲಿ ಎಷ್ಟು ಹುಡುಕಾಟಗಳು ನಡೆದವು ಎಂದು ಮಾತ್ರ ಎಣಿಸುತ್ತೇವೆ, ಯಾರು ಏನು ಹುಡುಕಿದರು ಎಂದಲ್ಲ.",
-  back: "ಹುಡುಕಾಟಕ್ಕೆ ಹಿಂತಿರುಗಿ", foot: "ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳ ಒಂದು ಪಟ್ಟಿ.", assistants: "AI ಸಹಾಯಕರಿಗೆ",
+  back: "ಹುಡುಕಾಟಕ್ಕೆ ಹಿಂತಿರುಗಿ", foot: "ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳ ಒಂದು ಪಟ್ಟಿ.", assistants: "AI ಸಹಾಯಕರಿಗೆ", choices: "ಇನ್ನಷ್ಟು ಆಯ್ಕೆಗಳು",
 };
 
 export const DIRECTORY_WORDS: Record<Lang, DirectoryWords> = { en: EN, hi: HI, ml: ML, kn: KN };

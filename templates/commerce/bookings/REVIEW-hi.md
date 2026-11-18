@@ -1773,3 +1773,4 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `directory.back` | खोज पर वापस | Back to search |  |
 | `directory.foot` | स्थानीय दुकानों की एक सूची। | A directory of local shops. |  |
 | `directory.assistants` | एआई सहायकों के लिए | For AI assistants |  |
+| `directory.choices` | और विकल्प | More choices |  |

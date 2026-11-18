@@ -34,7 +34,8 @@ test("the town and the category word are searchable, and every word is asked for
   assert.deepEqual(ids(ix, "thrissur"), ["l-3", "l-4"]);
   assert.deepEqual(ids(ix, "pets"), ["l-3"]);
   const both = ix.candidates({ words: searchWords("persian kitten thrissur") });
-  assert.deepEqual(both.map((h) => [h.item.id, h.fit]), [["l-3", 0]]);
+  assert.deepEqual(both.map((h) => [h.item.id, h.fit]), [["l-3", 0]], "the town counts toward every word, but does not make the cat food a match");
+  assert.deepEqual(ix.candidates({ words: searchWords("kitten dog thrissur") }).map((h) => [h.item.id, h.fit]), [["l-3", 1]], "some words, and the town is not one of the words that matter");
   const some = ix.candidates({ words: searchWords("persian dog") });
   assert.deepEqual(some.map((h) => [h.item.id, h.fit]), [["l-3", 1]], "one of two words is a weaker fit");
   assert.deepEqual(searchWords("Persian kitten near me in Thrissur"), ["persian", "kitten", "thrissur"], "filler words are dropped");
@@ -92,6 +93,22 @@ test("the index is a cache: it is thrown away and made again from the stored fee
   assert.deepEqual(r, { feeds: 2, refused: 0 });
   assert.deepEqual(ix.candidates({ words: [] }).map((h) => `${h.shop.page}|${h.item.id}|${h.item.price?.value}`).sort(), before);
   assert.equal(ix.pinOf(a.page)!.keyId, a.key.keyId);
+});
+
+test("a rebuild keeps a held shop held and its key change listed, and skips a kept copy signed by an earlier key", () => {
+  const s = shop("rani-pets");
+  const ix = loaded(s);
+  const impostor = shop("rani-pets", { key: generateSigningKey() });
+  assert.equal(ingestFeed(ix, s.feedUrl, JSON.stringify(impostor.feed([item(s.page, "l-3")])), null, NOW + 1000).state, "held");
+  assert.deepEqual(rebuildIndex(ix, NOW + 2000), { feeds: 1, refused: 0 });
+  assert.equal(ix.keyChanges().length, 1, "the change is still listed");
+  assert.equal(ix.shop(s.page)!.status, "held");
+  assert.deepEqual(ids(ix, "kitten"), [], "and the shop is still out of the search");
+  // a person accepts the new key; before the new feed is read, a rebuild finds the kept copy signed by the old key: it is skipped, not held again
+  ix.acceptKeyChange(s.page, NOW + 3000);
+  assert.deepEqual(rebuildIndex(ix, NOW + 4000), { feeds: 1, refused: 1 });
+  assert.equal(ix.keyChanges().length, 0);
+  assert.equal(ingestFeed(ix, s.feedUrl, JSON.stringify(impostor.feed([item(s.page, "l-3")])), null, NOW + 5000).state, "accepted");
 });
 
 test("a feed that fails its checks never changes the index: bad signature, wrong address, not a feed", () => {
