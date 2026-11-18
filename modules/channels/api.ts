@@ -8,6 +8,8 @@
 //   GET  /api/v1/bookings/{handle}                booking_status
 //   GET  /api/v1/bookings/{handle}/payment        payment_instructions
 //   POST /api/v1/bookings/{handle}/cancel         cancel_booking
+//   POST /api/v1/check  {ids: ["l-3", ...]}       check_items: "do you still have these?" (shop-check/1, specs/shop-check.md): up to 10 listing ids in, the shop's signed answer out.
+//                                                  Read only, answered from the record with no model; every kind of shop has it (a Fees centre and a Stock orders shop have this one route only).
 //
 // A refusal is {"error": {"code", "message"}}: bad_request 400, not_found 404, paused 409, too_many 429, unavailable 503. Changes take JSON only (a browser cannot send it
 // from another site without asking first, and the API answers no such ask), so another site's page cannot book or cancel for someone.
@@ -31,6 +33,7 @@ export const API_ROUTES: Record<OperationName, { method: "GET" | "POST"; path: s
   payment_instructions: { method: "GET", path: "/api/v1/bookings/{handle}/payment" },
   booking_status: { method: "GET", path: "/api/v1/bookings/{handle}" },
   cancel_booking: { method: "POST", path: "/api/v1/bookings/{handle}/cancel" },
+  check_items: { method: "POST", path: "/api/v1/check" },
 };
 
 const STATUS: Record<OpError["code"], number> = { bad_request: 400, not_found: 404, paused: 409, too_many: 429, unavailable: 503 };
@@ -42,6 +45,7 @@ export function apiOperation(method: string, path: string): OperationName | unde
   if (method === "GET" && path === "/api/v1/services") return "list_services";
   if (method === "GET" && path === "/api/v1/slots") return "free_slots";
   if (method === "POST" && path === "/api/v1/bookings") return "start_booking";
+  if (method === "POST" && path === "/api/v1/check") return "check_items";
   const m = /^\/api\/v1\/bookings\/([^/]+)(\/payment|\/cancel)?$/u.exec(path);
   if (!m) return undefined;
   if (method === "GET" && m[2] === undefined) return "booking_status";
@@ -71,6 +75,7 @@ export async function apiRequest(ops: Ops, o: { method: string; path: string; qu
       case "booking_status": value = await ops.booking_status({ handle, language: o.query.get("language") ?? undefined }); break;
       case "payment_instructions": value = await ops.payment_instructions({ handle }); break;
       case "cancel_booking": value = await ops.cancel_booking({ handle, language: body.language }); break;
+      case "check_items": value = await ops.check_items({ ids: body.ids, format: body.format }); break;
     }
     return { status: 200, body: value };
   } catch (e) {
@@ -88,12 +93,14 @@ export const ORDER_API_ROUTES: Record<OrderOperationName, { method: "GET" | "POS
   payment_instructions: { method: "GET", path: "/api/v1/orders/{handle}/payment" },
   order_status: { method: "GET", path: "/api/v1/orders/{handle}" },
   cancel_order: { method: "POST", path: "/api/v1/orders/{handle}/cancel" },
+  check_items: { method: "POST", path: "/api/v1/check" },
 };
 
 /** Which Orders operation a request is (for the front's limits), or undefined for the index and anything unknown. */
 export function orderApiOperation(method: string, path: string): OrderOperationName | undefined {
   if (method === "GET" && path === "/api/v1/items") return "list_items";
   if (method === "POST" && path === "/api/v1/orders") return "start_order";
+  if (method === "POST" && path === "/api/v1/check") return "check_items";
   const m = /^\/api\/v1\/orders\/([^/]+)(\/payment|\/cancel)?$/u.exec(path);
   if (!m) return undefined;
   if (method === "GET" && m[2] === undefined) return "order_status";
@@ -122,6 +129,7 @@ export async function orderApiRequest(ops: OrderOps, o: { method: string; path: 
       case "order_status": value = await ops.order_status({ handle, language: o.query.get("language") ?? undefined }); break;
       case "payment_instructions": value = await ops.payment_instructions({ handle }); break;
       case "cancel_order": value = await ops.cancel_order({ handle, language: body.language }); break;
+      case "check_items": value = await ops.check_items({ ids: body.ids, format: body.format }); break;
     }
     return { status: 200, body: value };
   } catch (e) {

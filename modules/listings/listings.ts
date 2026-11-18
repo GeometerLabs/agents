@@ -99,6 +99,11 @@ export interface ListingsShop {
   lon?: number;
   /** The registration under the Prevention of Cruelty to Animals (Pet Shop) Rules, 2018, as the owner wrote it. Shown as "the owner says", never as checked. */
   registration?: string;
+  /**
+   * Other directories the owner wants the shop's "my feed changed" notice sent to, besides the server's own: https addresses of a directory's `/feed-changed`, at most 5. THE SHAPE ONLY: nothing
+   * reads or writes it yet (no owner screen, and the courier would have to refuse private addresses first), see modules/Deferred.md "Directories the owner adds".
+   */
+  directories?: string[];
   /** A builder's extra categories (id: lower-case letters, name in the shop's languages). */
   extraCategories?: { id: string; names: Partial<Record<Lang, string>> }[];
 }

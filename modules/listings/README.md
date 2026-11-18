@@ -11,7 +11,8 @@ The listing is the shop's own record, kept in the shop's own store. Everything p
 
 * the "What we have" page (`<shop page>/shop`),
 * schema.org data on that page, for search engines,
-* the open feed at `<shop page>/listings.json`, which follows the open spec [shop-feed/1](../../specs/shop-feed.md),
+* the open feed at `<shop page>/listings.json`, which follows the open spec [shop-feed/1](../../specs/shop-feed.md) and is **signed with the shop's own key**,
+* "do you still have these?" at `POST <shop page>/api/v1/check` ([shop-check/1](../../specs/shop-check.md)) and the shop's Agent Card at `<shop page>/agent-card.json` ([agent-card.md](../../specs/agent-card.md)),
 * the shop's export file and its nightly backup.
 
 The owner's switch "Show my shop on Streetlist and in search" is **off by default**. While it is off, the page is `noindex` and the feed
@@ -34,7 +35,9 @@ export, in an open format.
    listings.ts publish ──► assistant.listings in the shop's store (saved with the step, in the backup)
         │                                   │
         │                                   ├──► front: <shop>/shop        (HTML, photo tiles, JSON-LD when the switch is on)
-        │                                   ├──► front: <shop>/listings.json (shop-feed/1, only when the switch is on)
+        │                                   ├──► front: <shop>/listings.json (shop-feed/1, signed by the runtime, only when the switch is on)
+        │                                   ├──► front: <shop>/agent-card.json (signed, only when the switch is on)
+        │                                   ├──► front: POST <shop>/api/v1/check (answered and signed by the runtime, read only)
         │                                   └──► front: <shop>/listings/photo/<id>.jpg|webp
         ▼
    morning: "Still have the Persian kitten? [Yes] [Sold]"  (at most 3 a day) ──► confirm / sold
@@ -46,7 +49,12 @@ Files:
 |---|---|---|
 | `listings.ts` | The state, every rule (limits, freshness, who may write, pets rules) | No (pure) |
 | `photo.ts` | Reads a photo's kind and size from its bytes, removes EXIF and XMP | No (pure) |
-| `feed.ts` | Builds `listings.json` (shop-feed/1) and the schema.org JSON-LD | No (pure) |
+| `feed.ts` | Builds `listings.json` (shop-feed/1, unsigned) and the schema.org JSON-LD; `feedItem` is the one item builder the check answer uses too | No (pure) |
+| `protocol.ts` | Signs the feed, makes and signs the check answer and the "feed changed" notice, reads a check question (at most 10 ids) | No (node:crypto only) |
+| `../runtime/shop-key.ts`, `../runtime/store.ts` (table `shop_key`) | Makes the shop's key on its first start, keeps it in the shop's database, adopts it from the owner's file | The shop's SQLite file |
+| `../runtime/shop-protocol.ts`, `http.ts` (`/internal/channel/shop-feed`, `shop-check`, `shop-card`, `/internal/feed-notice`) | The runtime's side: builds from its own state and signs; the front and the inbox only carry | The shop's SQLite file |
+| `../channels/shop-card.ts`, `ops.ts` (`check_items`), `storefront.ts` | The card builder, the check operation in the shop's one operation list, and the public routes | Served by the front |
+| `../../bundle/services/notices.ts` | The inbox's courier that carries the notice to the directory | The network, from the inbox |
 | `kit.ts` | The owner's page operations as events the runtime runs in a step; the public and owner reads | No (pure) |
 | `words.ts` | Every line people read, in four languages; the review-sheet lines | No |
 | `../assistant/listing-draft.ts` | Reads the owner's words by rule, asks the talk model, checks its answer | Model call through the model Guard |
@@ -133,9 +141,60 @@ and the `confirmedMs` the owner was shown, so an old question does nothing.
   with its place, each listing as a `Product` with an `Offer` in INR, `InStock`). JSON for the script block is escaped (`<`, `>`, `&`, U+2028/9).
 * `GET|HEAD <shop page>/listings.json`: **exactly [shop-feed/1](../../specs/shop-feed.md)**: names, `price.value` as a decimal string, places as strings, `availability`
   `in_stock | call_to_check`, `Cache-Control: public, max-age=300`, `ETag` with `304`, `Access-Control-Allow-Origin: *`, at most 1 MB and 200 items.
-  The `signature`, `shop.check`, `shop.agentCard` and `shop.trade` members are **left out on purpose**: the shop's key, the check operation, the Agent Card and the
-  "feed changed" notice are a later part, built on top of this file.
+  The `signature` is the shop's (see "The signed feed" below); `shop.check` and `shop.agentCard` are always written. `shop.trade` is **left out**: the shop's trade is in the Operator's panel,
+  which the shop's runtime cannot see (the pages file the deployer writes does not carry it yet), and the spec makes it optional. The storefront page also links to the Agent Card.
 * The feed and the page carry only what a visitor may already see. No customer, no number of any customer, no owner's number, no draft, no sold listing.
+
+## The shop's own key
+
+One Ed25519 key per shop ([modules/signing](../signing/README.md)). It is the shop's identity: it signs the feed, every check answer, the Agent Card and every notice, and a directory pins the first
+key it sees for a shop page. So the key must stay with the **shop**, not with whoever serves it.
+
+* **Made** by the shop's runtime on its first start (`runtime/start.ts` calls `loadShopKey`), once, inside one database transaction.
+* **Kept** in the shop's own database file (`agent.db`, table `shop_key`, one row), next to the record and the listings. That one file is what the nightly snapshot copies (`VACUUM INTO`, encrypted
+  to the owner), what a restore puts back and what a move to another Operator carries, so the key is in the shop's backup and a restore gives the **same key id**. It is not in the state
+  snapshot, so the owner's export of the listings (a plain file) never holds it.
+* **In the owner's file** ("Get my shop's file"): `shop-key/shop-key.json`, in the owner's package only (`bundle/export/build.ts`; the Operator's package never has it). The export job writes it from
+  the database at mode 0600 (`bundle/backup/export.ts writeShopKey`). To restore a shop from that file on a new server, put the file in the shop's data folder as `shop-key.json` before the shop
+  first starts: the runtime adopts it once and deletes the file (no second plaintext copy is left beside the database). A key the shop already has is never replaced by a file.
+* **Never logged, never sent**: the log says only the public key id. Only the public key and the key id leave the shop (in the feed's `signature`). The front, the inbox and the directory never hold it:
+  the front asks the runtime for each signed document and passes it on.
+
+## The signed feed
+
+`runtime/shop-protocol.ts` builds the feed from the runtime's own state (the same public read the page uses) and signs it (`protocol.ts signedFeed`): the canonical JSON of the feed without
+`signature`, Ed25519, `signature { alg, keyId, key, sig }`. The front sends only the shop's page address, name, languages and chat address; the runtime refuses a page that is not an address of this
+shop (its `pages.json`), refuses a chat address off the page, and signs nothing else the front says. Served only while the owner's switch is on (404 otherwise). A directory's own reader
+(`modules/discovery/feed.ts`, `trust.ts`) accepts it and refuses it when a price is changed. A listing with no text (the plain form writes a title only) writes no `text` for that language, because the
+reader refuses an empty string.
+
+## Check: "do you still have these?"
+
+`POST <shop page>/api/v1/check` with `{"ids": ["l-3", "l-7"]}` and the MCP tool `check_items` (`channels/ops.ts checkItemsOp`, one function for Bookings' and Orders' operation lists; a Fees centre and a Stock
+orders shop answer the API route alone). The runtime answers from its record with no model, saying nothing more than the feed would, signs it and stamps it (`at`). At most 10 ids; an id
+that is not public now is `gone` (sold, removed, hidden for 30 days without a confirm, a draft, a counted listing at 0, an id that never was, and every id while the switch is off). It is counted per shop (limit
+kind `check`, 600 a minute under `shop:<name>`), not per address. It reads a copy of the saved state and writes nothing, not even a record line. The question carries ids only, and the front passes only the
+page and the ids to the runtime.
+
+## The Agent Card
+
+`<shop page>/agent-card.json`, while the switch is on. `channels/shop-card.ts` builds it with the A2A 1.0.1 field names the directory's card uses (`discovery/card.ts`): skills `show_listings`, `check_items`
+and the shop's own operations (from the same tool lists the API and MCP are made from), interfaces `MCP` (kinds that have an endpoint) and `HTTPS-JSON`. The runtime signs it with the shop's key (a JWS, the same
+`kid` as the feed) only if every address in it is under the shop's page.
+
+## How a notice gets out
+
+A shop's runtime sits alone on its own internal network and cannot call anything outside it (`bundle/generate/compose.ts`). The server's directory is on the `pages` network. The one service on both the
+network the runtimes' doors are on (`admin`) and the `pages` network is the **inbox**, which already holds each shop's internal token. So the inbox is the courier (`bundle/services/notices.ts`): every 30
+seconds it asks each runtime `GET /internal/feed-notice`, and if a signed notice is due it sends it to `http://directory:8799/feed-changed` and tells the runtime `POST /internal/feed-notice {fingerprint}`.
+No network rule changes, the runtime still only answers, and the notice is a hint (the directory re-reads the signed feed and believes only that).
+
+* **Only a real change**: the runtime hashes the feed's content (without `updated`) and offers a notice only when that differs from the last one delivered. A price change is one; a read is not.
+* **At most one a minute** per shop (the runtime), and at most 15 a minute in all from the inbox (the directory takes 20 a minute from one address). A directory that says wait (`429`) leaves the notice pending
+  in the runtime; a refusal is acknowledged and not repeated until the feed changes again. A restart sends one notice, which is harmless.
+* **Only for a shop with an address on the pages domain** (`pages.json` `url`): the directory accepts a notice only for `https://<pages domain>/<slug>/listings.json` or a feed in its own list.
+* **Other directories**: not built. The shape to add: a list of directory addresses in the shop's settings (`assistant.listings.shop.directories`, https only, at most 5), delivered the same way by the
+  courier; the inbox must then refuse private addresses as the directory's fetcher does. See `modules/Deferred.md`.
 
 ## Quantity and the stock count
 
@@ -156,10 +215,16 @@ pet shop relies on it** (see `modules/Deferred.md`). It only ever refuses, so a 
 * The public read (`kit.publicRead`) is a copy without `by`, `from` or the morning's asks. Drafts, sold, removed and hidden listings are not in it.
 * Customer talk gets public listings as sources (`listing-card.ts listingSources`), so it can answer "how much is the kitten?" only from them.
 * The record keeps a `listing` line per change with ids, category and who, never the words or the price (their keyed digest only).
+* The shop's private key is in the shop's own database and the owner's file only; no feed, answer, card, notice, log, export of the listings or Operator's package holds it. The runtime signs only what it
+  builds itself (the feed, the answer, the notice) and a card whose addresses are all under the shop's own page.
+* A check is read only and tells the shop nothing about the buyer; its answer says no more than the feed.
 
 ## Run and test
 
 No build step. From `agents/`: `node --test modules/listings modules/assistant/test/listings.test.ts modules/channels/test/storefront.test.ts bundle/test/listings-export.test.ts`.
+The shop's side of the open protocol: `modules/listings/test/protocol.test.ts` (signed feed accepted by the directory's own reader, a changed price refused, check answers, the card, the notice),
+`modules/runtime/test/shop-key.test.ts` and `shop-protocol-http.test.ts` (the key, the runtime's routes), `modules/channels/test/shop-protocol.test.ts` (the API, MCP, limits and card through the front for every kind
+of shop), `bundle/test/shop-key-export.test.ts` (the owner's file) and `bundle/test/feed-notices.test.ts` (the courier).
 Syntax of one file without running it: `node modules/module-map.ts` and the repo's checker. The fakes: a scripted talk model (`assistant/test/listings.test.ts`), a fake backend
 (`channels/test/storefront.test.ts`).
 
@@ -172,6 +237,6 @@ Syntax of one file without running it: `node modules/module-map.ts` and the repo
 
 ## What is not built, and why
 
-See `modules/Deferred.md`. In short: the shop's signing key, the check operation, the Agent Card and the "feed changed" notice (a later part on top of this file); a vision model that
-reads the photo (the first version reads the owner's words); the protected-animal list from a primary source; an ONDC mapping of listings; the directory and search (phase B);
+See `modules/Deferred.md`. In short: other directories the owner adds (notices go to the server's own directory only), signing-key rotation signed by the old key, the shop's trade in the feed; a vision model that
+reads the photo (the first version reads the owner's words); the protected-animal list from a primary source; an ONDC mapping of listings; the A2A message endpoint;
 a shop with listings only and no agent (phase C); photos kept in the shop's SQLite file, which is simple and backed up, but would be moved to files if shops grow very large.

@@ -31,6 +31,11 @@ export const FRONT_LIMITS = {
   chat: { max: 40, perMs: 10 * 60_000 },
   /** W1: sends to one shop from every address together (under "shop:<name>"). */
   shopChats: { max: 300, perMs: 10 * 60_000 },
+  /**
+   * Block S phase B2: "do you still have these?" (shop-check/1), counted PER SHOP (under "shop:<name>"), not per address: a directory reaches every shop from one address through the door,
+   * so a per-address limit would stop it after a few shops. A check is read-only, answered from the record with no model and no write, so a generous count a minute costs the shop little.
+   */
+  check: { max: 600, perMs: 60_000 },
   /** W1: new guest handles made for one address (a page opened with no cookie): a handle costs nothing, so the door counts how often one address asks for a fresh one. */
   chatStarts: { max: 10, perMs: 60 * 60_000 },
 } as const satisfies Record<string, Window>;

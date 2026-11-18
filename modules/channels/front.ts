@@ -10,6 +10,11 @@
 //   With the shop's assistant (item 11e), both owner addresses are also the owner's app: <owner base>/ (the page), /manifest.webmanifest, /sw.js, /talk (the talk
 //   box's words) and /voice (a hold-to-record recording, Ogg or WebM Opus); the page's one script runs by a nonce in that response's content policy (appPolicy).
 //
+// Block S phase B2, the shop's open protocol, for every kind of shop (the key is the runtime's; this front only passes signed documents on, backend.ts shopFeed/shopCheck/shopCard):
+//   GET  /s/<shop>/listings.json         the shop's feed, signed (storefront.ts)                GET /s/<shop>/agent-card.json   its A2A Agent Card, signed (shop-card.ts)
+//   POST /s/<shop>/api/v1/check          "do you still have these?" (shop-check/1, ops.ts checkItemsOp): counted per SHOP, not per address (limits.ts `check`). A Fees centre and a
+//                                         Stock orders shop answer this one route under /api and have no MCP endpoint.
+//
 // Item 11i, the shop's character: every shop's mood pictures (drawn on its server, bundle/character/render.ts) are public at stable addresses, for the shop's own
 // page, Streetlist and WhatsApp (which fetches the PNG and WebP itself):
 //   GET  /s/<shop>/character/<well|needs|wrong|closed|busy>.<svg|png|webp>   one mood's picture: an ETag (its sha256), a day's cache, `?v=` ignored (links carry it)
@@ -343,15 +348,17 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     if (rest === "/chat" || rest.startsWith("/chat/")) return chatRoute(kit, { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}), viaDoor: viaDoorShop !== found });
 
     // block S: the storefront ("What we have"), its open feed and its photos, for every kind of shop (a Stock orders shop shows none by default, and these then answer not-found)
-    if (rest === "/shop" || rest === "/listings.json" || rest.startsWith("/listings/photo/")) return storefrontRoute(kit, { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}) });
+    if (rest === "/shop" || rest === "/listings.json" || rest === "/agent-card.json" || rest.startsWith("/listings/photo/")) return storefrontRoute(kit, { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}) });
 
     // item 11h: an Orders shop's and a Fees centre's customer side are their own; the owner's page and the QR code below are every shop's
     const ownerPath = /^\/o\/[^/]+(\/.*)?$/u.test(rest) || rest === "/owner" || rest.startsWith("/owner/");
     // Stock orders talks to suppliers on WhatsApp and has no customers: only the owner's page (and the character's pictures above) is here, never a booking page, API or MCP
+    // block S phase B2: a shop with no booking or order API still answers "do you still have these?" at /api/v1/check (and nothing else under /api): it falls through to the API block below
+    const checkOnly = rest === "/api/v1/check" && (shop.kind === "stock" || shop.kind === "fees" || shop.kind === "listings");
     // a listings-only shop's own address (its page link, its QR code) is its storefront: "What we have"
     if (shop.kind === "listings" && rest === "/") return redirect(res, `${shop.publicUrl}/shop`);
-    if ((shop.kind === "stock" || shop.kind === "listings") && !ownerPath && rest !== "/qr.svg") return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
-    if ((shop.kind === "orders" || shop.kind === "fees") && !ownerPath && rest !== "/qr.svg") {
+    if ((shop.kind === "stock" || shop.kind === "listings") && !ownerPath && rest !== "/qr.svg" && !checkOnly) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+    if ((shop.kind === "orders" || shop.kind === "fees") && !ownerPath && rest !== "/qr.svg" && !checkOnly) {
       const args: RouteArgs = { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}) };
       return shop.kind === "orders" ? orderRoute(kit, args, orderOpsOf(name, shop)) : feeRoute(kit, args);
     }
@@ -359,7 +366,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // ---- the API and the MCP endpoint ----
     if (rest.startsWith("/api/v1")) {
       const op = apiOperation(method, rest);
-      if (!limiter.take(op === "start_booking" ? "book" : op === "cancel_booking" ? "act" : "read", address) || (op === "start_booking" && !limiter.take("shopStarts", `shop:${name}`))) return sendJson(res, 429, { error: { code: "too_many", message: "Too many requests from this address. Wait a few minutes." } }, { "retry-after": "300" });
+      // a check ("do you still have these?") is counted against the SHOP, not the address: a directory reaches every shop from one address (limits.ts `check`)
+      if (!(op === "check_items" ? limiter.take("check", `shop:${name}`) : limiter.take(op === "start_booking" ? "book" : op === "cancel_booking" ? "act" : "read", address)) || (op === "start_booking" && !limiter.take("shopStarts", `shop:${name}`))) return sendJson(res, 429, { error: { code: "too_many", message: "Too many requests from this address. Wait a few minutes." } }, { "retry-after": "300" });
       if (op && (op === "booking_status" || op === "payment_instructions" || op === "cancel_booking") && limiter.over("wrong", address)) return sendJson(res, 429, { error: { code: "too_many", message: "Too many unknown handles from this address." } });
       let body: unknown;
       if (method === "POST") {
@@ -383,7 +391,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       const messages = (Array.isArray(body) ? body : [body]) as { method?: string; params?: { name?: string } }[];
       for (const msg of messages) {
         const tool = msg?.method === "tools/call" ? msg.params?.name : undefined;
-        if (!limiter.take(tool === "start_booking" ? "book" : tool === "cancel_booking" ? "act" : "read", address) || (tool === "start_booking" && !limiter.take("shopStarts", `shop:${name}`))) return sendJson(res, 429, { jsonrpc: "2.0", id: null, error: { code: -32000, message: "Too many requests from this address. Wait a few minutes." } }, { "retry-after": "300" });
+        if (!(tool === "check_items" ? limiter.take("check", `shop:${name}`) : limiter.take(tool === "start_booking" ? "book" : tool === "cancel_booking" ? "act" : "read", address)) || (tool === "start_booking" && !limiter.take("shopStarts", `shop:${name}`))) return sendJson(res, 429, { jsonrpc: "2.0", id: null, error: { code: -32000, message: "Too many requests from this address. Wait a few minutes." } }, { "retry-after": "300" });
       }
       const offer = await shop.backend.offer({});
       const answer = await mcpPost(o.mcp, offer.shop.name, body);

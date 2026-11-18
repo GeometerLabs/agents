@@ -26,6 +26,7 @@ import { ledgerEntries } from "../../modules/record/ledger.ts";
 import { PERSON_FORM, keyIdOf, personFingerprint } from "../../modules/record/fingerprint.ts";
 import { parseKey } from "../../modules/record/key-file.ts";
 import { readSnapshot } from "../../modules/runtime/store.ts";
+import { SHOP_KEY_FILE, shopKeyFileText } from "../../modules/runtime/shop-key.ts";
 
 export interface ExportJob { shops: { name: string; db: string; out: string; /** The file (mounted read-only) that holds the shop's key (B69): the job file names it, never carries it. */ personKeyFile: string }[] }
 /**
@@ -64,6 +65,27 @@ function priceRates(): UsageRates {
 }
 
 /** One consistent read of the shop's record and state, written as two files, each by writing a temporary file and renaming it. A shop with no readable key is not exported, never exported unkeyed. */
+/**
+ * Block S phase B2: the shop's OWN signing key (modules/runtime/shop-key.ts), written beside the record's export as `shop-key.json`, mode 0600, for the OWNER'S file only (export/build.ts adds it to
+ * a package made with the owner profile and to no other). The key is the shop's identity in every directory: whoever serves the shop next needs it for the shop to stay itself. It is read from the
+ * same database as everything else here and is never in record.json, listings.json or any file the Operator's package carries. A database from before the key table, or a shop that has made no
+ * key yet, writes nothing (and an older file is removed, so a key that is gone is not left behind). Returns whether a file was written.
+ */
+export function writeShopKey(dbFile: string, outDir: string): boolean {
+  const file = join(outDir, SHOP_KEY_FILE);
+  let text: string | undefined;
+  let db: DatabaseSync | undefined;
+  try {
+    db = new DatabaseSync(dbFile, { readOnly: true });
+    text = (db.prepare("SELECT private_key FROM shop_key WHERE id = 1").get() as { private_key: string } | undefined)?.private_key;
+  } catch { text = undefined; } finally { db?.close(); }
+  if (text === undefined) { rmSync(file, { force: true }); return false; }
+  const tmp = `${file}.tmp`;
+  writeFileSync(tmp, shopKeyFileText(text), { mode: 0o600 });
+  renameSync(tmp, file);
+  return true;
+}
+
 export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates = priceRates()): Exported {
   if (!existsSync(shop.db)) return { name: shop.name, ok: false, error: "no database yet" };
   let keyText: string;
@@ -143,6 +165,8 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
       }
     } catch { /* a runtime older than the photo table has none to export */ } finally { pdb.close(); }
   }
+  // Block S phase B2: the shop's own signing key, for the owner's file (see writeShopKey)
+  try { writeShopKey(shop.db, shop.out); } catch { /* a key that cannot be written leaves the owner's file without it, and the file says so */ }
   // Block S phase A3: the shop's own stock count (its lines, low marks and last movements) in the owner's file, so leaving with the shop keeps the count. Only a shop that counts something gets it.
   const stockState = (state ? (JSON.parse(state.snapshot) as { assistant?: { stock?: { lines?: unknown[] } } }).assistant?.stock : undefined);
   if (stockState && (stockState.lines?.length ?? 0) > 0) {
