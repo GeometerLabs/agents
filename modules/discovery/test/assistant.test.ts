@@ -412,7 +412,11 @@ async function serve(a?: Assistant) {
   servers.push(server);
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-  return { d, lines, get: (path: string, headers: Record<string, string> = {}) => fetch(`${base}${path}`, { headers }) };
+  return {
+    d, lines, get: (path: string, headers: Record<string, string> = {}) => fetch(`${base}${path}`, { headers }),
+    /** A browser's form post: form-encoded, from this directory's own page. */
+    ask: (fields: Record<string, string>, headers: Record<string, string> = {}) => fetch(`${base}/search/ask`, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded", origin: ORIGIN, ...headers }, body: new URLSearchParams(fields).toString() }),
+  };
 }
 
 test("the page: the ask box only where the assistant is on; ask answers with the line, the normal cards and the form showing what was searched; no cookie, no referrer, nothing logged", async () => {
@@ -420,7 +424,7 @@ test("the page: the ask box only where the assistant is on; ask answers with the
   const start = await (await on.get("/search")).text();
   assert.ok(start.includes('name="ask"') && start.includes(DIRECTORY_WORDS.en.askLabel) && start.includes(DIRECTORY_WORDS.en.askButton));
   assert.ok(!/microphone|getUserMedia|SpeechRecognition/u.test(start), "no microphone: the bundle has no voice service the directory can use");
-  const r = await on.get("/search?ask=Persian%20kitten%20near%20Thrissur%3F");
+  const r = await on.ask({ ask: "Persian kitten near Thrissur?" });
   assert.equal(r.status, 200);
   assert.equal(r.headers.get("set-cookie"), null);
   assert.equal(r.headers.get("referrer-policy"), "no-referrer");
@@ -429,27 +433,36 @@ test("the page: the ask box only where the assistant is on; ask answers with the
   assert.ok(html.includes("Chat with the shop") && html.includes("Persian kitten") && html.includes("Rani Pets"));
   assert.ok(html.includes('value="persian kitten"') && html.includes('<option value="pets" selected>'), "the form shows what was searched");
   assert.ok(!html.includes(DIRECTORY_WORDS.en.askPlain));
-  const hi = await (await on.get("/search?ask=persian%20kitten%20Thrissur&lang=hi")).text();
+  const hi = await (await on.ask({ ask: "persian kitten Thrissur", lang: "hi" })).text();
   assert.ok(hi.includes(DIRECTORY_WORDS.hi.askLine(1, "persian kitten", "Thrissur", null)));
-  const json = await (await on.get("/search?ask=Persian%20kitten%20near%20Thrissur&format=json")).json() as any;
+  const json = await (await on.ask({ ask: "Persian kitten near Thrissur" }, { accept: "application/json" })).json() as any;
   assert.equal(json.format, "directory-search/1");
   assert.equal(json.assistant.how, "decision");
   assert.deepEqual(json.results.map((x: any) => x.item.id), ["l-3"]);
   assert.ok(!on.lines.join("").toLowerCase().includes("kitten"), "the server's log never holds a question");
+  assert.match(start, /<form class="search ask" action="\/search\/ask" method="post"/u, "the box is a POST form: the words are never in an address");
+  assert.equal((await on.get("/search?ask=Persian%20kitten")).status, 200);
+  assert.ok(!(await (await on.get("/search?ask=Persian%20kitten")).text()).includes("Chat with the shop"), "?ask= in an address is not read");
+  assert.equal((await on.ask({ ask: "Persian kitten" }, { origin: "https://evil.example" })).status, 403, "a form from another site is refused");
+  assert.equal((await on.ask({ ask: "Persian kitten" }, { origin: "", "sec-fetch-site": "cross-site" })).status, 403);
+  assert.equal((await on.get("/search/ask")).status, 405);
+  const empty = await on.ask({ ask: "  " });
+  assert.equal(empty.status, 200);
+  assert.ok((await empty.text()).includes(DIRECTORY_WORDS.en.startTitle), "an empty question shows the start page");
 
   const off = await serve();
   const offStart = await (await off.get("/search")).text();
   assert.ok(!offStart.includes('name="ask"') && !offStart.includes(DIRECTORY_WORDS.en.askLabel));
-  const offAsk = await (await off.get("/search?ask=persian%20kitten")).text();
-  assert.ok(offAsk.includes(DIRECTORY_WORDS.en.startTitle), "with the assistant off, ask is not read: the start page, as before");
+  assert.equal((await off.ask({ ask: "persian kitten" })).status, 404, "with the assistant off there is no such address");
+  assert.ok(!(await (await off.get("/search?ask=persian%20kitten")).text()).includes("Chat with the shop"), "and ?ask= in an address is not read");
   const offJson = await (await off.get("/search?q=persian%20kitten&format=json")).json() as any;
   assert.equal(offJson.assistant, undefined);
 });
 
 test("over the budget the page still answers: the words are searched as typed, the plain notice is said once, and no error word appears", async () => {
   const s = await serve(assistant({ systemOne: fakeDecision("pets", "Thrissur").model, perBuyerPerDay: 1 }));
-  await s.get("/search?ask=persian%20kitten%20Thrissur");
-  const html = await (await s.get("/search?ask=persian%20kitten")).text();
+  await s.ask({ ask: "persian kitten Thrissur" });
+  const html = await (await s.ask({ ask: "persian kitten" })).text();
   assert.equal(html.split(DIRECTORY_WORDS.en.askPlain).length - 1, 1, "said once");
   assert.ok(html.includes("Persian kitten") && html.includes("Chat with the shop"), "the plain results are shown");
   assert.ok(!/error|failed|sorry|not working/iu.test(html.replace(/<style>[\s\S]*?<\/style>/u, "")));

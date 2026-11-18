@@ -40,7 +40,7 @@ export interface AssistBits { line: string | null; notice: string | null }
 
 /** The page's content policy: nothing loads but this origin's own photos and the one font; the one script by its nonce; the form posts to /search and nowhere else. */
 export const pagePolicy = (origin: string, nonce: string): string =>
-  `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self'; script-src 'nonce-${nonce}'; form-action ${origin}/search; frame-ancestors 'none'; base-uri 'none'; connect-src 'none'`;
+  `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self'; script-src 'nonce-${nonce}'; form-action ${origin}/search ${origin}/search/ask; frame-ancestors 'none'; base-uri 'none'; connect-src 'none'`;
 
 const FONT_FACE = (url: string): string => `@font-face{font-family:"Baloo 2";font-style:normal;font-weight:400 800;font-display:swap;src:url(${url}) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}`;
 
@@ -161,11 +161,11 @@ ${ctx.lang === "en" ? "" : `<input type="hidden" name="lang" value="${ctx.lang}"
 </form>`;
 }
 
-/** "Ask in your own words": one box, sent to the same address as the search (GET /search?ask=...). Shown only where the assistant is on. The place the buyer set with "Use my location" travels with it. */
+/** "Ask in your own words": one box, a POST form (POST /search/ask, form-encoded, no script), so the words are never in an address. Shown only where the assistant is on. The place the buyer set with "Use my location" travels with it. */
 function askBox(ctx: PageContext, f: FormValues): string {
   const w = DIRECTORY_WORDS[ctx.lang];
   if (!ctx.assistant) return "";
-  return `<form class="search ask" action="/search" method="get" role="search">
+  return `<form class="search ask" action="/search/ask" method="post" role="search">
 <label for="ask">${esc(w.askLabel)}</label><input id="ask" name="ask" type="text" value="${esc(f.ask ?? "")}" placeholder="${esc(w.askPlaceholder)}" maxlength="200" autocomplete="off" enterkeyhint="send">
 ${f.lat !== "" && f.lon !== "" ? `<input type="hidden" name="lat" value="${esc(f.lat)}"><input type="hidden" name="lon" value="${esc(f.lon)}">` : ""}${ctx.lang === "en" ? "" : `<input type="hidden" name="lang" value="${ctx.lang}">`}
 <button type="submit" class="full">${esc(w.askButton)}</button>
