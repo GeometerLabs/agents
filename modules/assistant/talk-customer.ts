@@ -4,7 +4,7 @@
 //  - the customer's words, with numbers, links and names taken out (understanding/redact.ts) before any model sees them.
 // What comes back is checked (talk-check.ts) and only then sent. This file never writes memory and never makes an authority: a customer's message has no path to a note (a
 // test reads this file's source to keep it so). It does nothing at all (the caller keeps the template's own menu) when the shop turned customer talk off, the talk is off
-// (no model, button mode, the AI cap), or the message tried to change the rules.
+// (no model, button mode, the AI cap, the shop's month budget or the day's cap on customers' questions), or the message tried to change the rules.
 import type { Language } from "../language/languages.ts";
 import { recall } from "../memory/memory.ts";
 import type { MemoryState } from "../memory/memory.ts";
@@ -39,14 +39,14 @@ export function customerScope(d: Pick<CustomerTalkDeps, "memory" | "skills">, ph
 
 export async function customerTalk(d: CustomerTalkDeps, a: { phone: string; text: string; language: Language; overrideAttempt?: boolean }): Promise<CustomerTalk> {
   if (!d.customersOn) return { sent: false, reason: "customers_off" };
-  const off = talkOff(d.env);
+  const off = talkOff(d.env, "customer_talk");
   if (off) return { sent: false, reason: off };
   if (a.overrideAttempt) return { sent: false, reason: "override_attempt" }; // "ignore your rules": the menu, with nothing asked of a model
   const nowMs = d.env.clock.now();
   const { sources, links } = customerScope(d, a.phone, nowMs);
   const { system, schema } = customerPrompt({ shop: d.shop, language: a.language, sources });
   const result = await runTalk(d.env, {
-    role: "customer", conversation: a.phone, language: a.language, system, schema, user: redact(a.text).text, speakerText: a.text,
+    role: "customer", conversation: a.phone, language: a.language, system, schema, user: redact(a.text).text, speakerText: a.text, feature: "customer_talk",
     scope: sources, links, literals: [d.shop.name], maxChars: CUSTOMER_CHARS,
   });
   return result.ok ? { sent: true, result } : { sent: false, reason: result.why, result };

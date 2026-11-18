@@ -26,7 +26,8 @@ Since 9 Nov 2026, two price lists and nothing else:
 |---|---|
 | `plan.basic.*`, `plan.business.*`, `plan.operations.*` | **Partners**: the three plans, each a fee and an allowance of messages a month |
 | `overage.extra`, `overage.block` | Extra messages above the allowance, and the block fleet takes them in |
-| `ai.cap` | The model-spend cap per 1,000 messages a shop has |
+| `ai.cap` | The model-spend cap per 1,000 messages a shop has: fleet's outer wall |
+| `ai.budget.*`, `ai.daily.*` | The shop's own model budget (rupees a month, by plan; a small one for a listings-only shop; one for the directory's buyer assistant) and the daily cap on each feature inside it. Read by the bundle, which writes them into the shop's `runtime.json` as `budget`; see `modules/budget/README.md` |
 | `whatsapp.pass-through`, `recharge.*` | WhatsApp at cost, and the partner's balance top-up: its payment fee (passed on at cost), limits, expiry and warning |
 | `licence.builder.*` | **Builders**: the flat licence per live client business, and its fair-use line |
 | `innovator.places` | The Innovator badge's 100 places (a badge, not a price) |
@@ -55,3 +56,4 @@ After adding a list here, run `node prices/render.ts`, then each copy's sync and
 | `2026-11-09.json` | Two price lists: partners (Basic ₹149, Business ₹299, Operations ₹999 flat) and builders (₹149 per live client business). The first-100 discount and the half-price self-host licence are gone |
 | `2026-11-11.json` | The builder licence becomes ₹199 per live client business (owner, 10 Nov, decision 36). Nothing else changes. It prices all of November 2026: no invoice had been issued |
 | `2026-11-14.json` | Plan decision 56: the Operations note is reworded (a busy shop or service, branches, or three or more services together; Business covers two services at one place). No price moves |
+| `2026-11-18.json` | **Proposed** (plan decision 60, "caps everywhere"): the shop's model budget by plan (Basic ₹20, Business ₹60, Operations ₹200 a month, listings-only ₹6, the directory's buyer assistant ₹2,500), the daily cap on each feature, and `ai.cap` at ₹20 per 1,000 messages instead of 15. It waits for the owner's yes: until then no shop gets a budget and fleet's cap stays ₹15 |

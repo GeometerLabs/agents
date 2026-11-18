@@ -18,6 +18,9 @@ import { join, resolve } from "node:path";
 import { parseLock } from "../../modules/runtime/config.ts";
 import { KINDS, kindFor, kindNames } from "./kinds.ts";
 import { parseAssignmentFile, parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
+import { latestPriceList } from "../panel/cost.ts";
+import { budgetFor } from "./budget.ts";
+import type { BudgetConfig } from "../../modules/budget/budget.ts";
 import { readAnswerFile } from "./fleet.ts";
 import { serverIdProblem, shopNameProblem } from "./util.ts";
 import { SELF_HOSTED_PROVIDER, isBuilderRate } from "../../modules/understanding/rates.ts";
@@ -408,6 +411,12 @@ export interface ShopFolder {
    */
   fleetModel?: "off";
   /**
+   * The shop's model budget (decision 60; bundle/lib/budget.ts): worked out from the price list IN FORCE and the plan fleet named, for a shop on Geometer's server with a plan.
+   * Undefined for a builder's own shop (it brings its own AI key), when no list in force has a budget (until the owner says yes), or when an entry is missing: then nothing is
+   * added to the shop's runtime config.
+   */
+  budget?: BudgetConfig;
+  /**
    * Who the owner's monthly report says set the shop up: shops/<shop>/report.json if it has one, else the panel's attribution (owner.json: "Divya, local Operator"), else
    * DEFAULT_PREPARED_BY. `preparedBySource` says which, so a deploy can tell the builder when it had to fall back.
    */
@@ -417,6 +426,11 @@ export interface ShopFolder {
   innovator: boolean;
   /** Plain-words problems reading the folder (missing file, bad JSON, bad settings). */
   problems: string[];
+}
+
+/** The price list in force (never a proposal), or an empty one when the folder has none, so a shop is never refused because the prices could not be read: it just gets no budget. */
+function inForceList(): { rates: Record<string, never> } | ReturnType<typeof latestPriceList> {
+  try { return latestPriceList(); } catch { return { rates: {} }; }
 }
 
 /** Read one shop's desired state. Never throws: what is wrong comes back as `problems`. */
@@ -475,5 +489,6 @@ export function readShop(dir: string, name: string): ShopFolder {
   const answer = readAnswerFile(serverPaths(dir).fleetAnswer(name));
   const fleetAi = answer?.ai === "buttons" && answer.plan !== null ? "buttons" as const : undefined;
   const fleetModel = answer?.model === "off" && answer.plan !== null ? "off" as const : undefined;
-  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), ...(fleetModel ? { fleetModel } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
+  const budget = answer?.plan ? budgetFor(answer.plan, inForceList()) : undefined;
+  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), ...(fleetModel ? { fleetModel } : {}), ...(budget ? { budget } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
 }
