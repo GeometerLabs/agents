@@ -10,7 +10,6 @@ package listings
 import (
 	"math"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -270,7 +269,7 @@ func mustAll(fold bool, patterns ...string) []*regexp.Regexp {
 }
 
 // foldText makes a text and a word list the same form before they are compared: the Devanagari nukta dropped, so "मुफ़्त" and "मुफ्त" (typed either way) are the same word. The
-// TypeScript side decomposes the whole text first (NFD) and drops U+093C; Go's standard library cannot decompose, so the nine precomposed nukta letters are mapped by hand.
+// TypeScript side decomposes the whole text first (NFD) and drops U+093C; Go's standard library cannot decompose, so the eight precomposed nukta letters (U+0958 to U+095F) are mapped by hand.
 var nuktaFold = strings.NewReplacer("क़", "क", "ख़", "ख", "ग़", "ग", "ज़", "ज", "ड़", "ड", "ढ़", "ढ", "फ़", "फ", "य़", "य", "़", "")
 
 func norm(s string) string { return nuktaFold.Replace(plain(s)) }
@@ -379,14 +378,4 @@ func GroundedIn(ownerText string, words map[string]LangText, claimList []string)
 		}
 	}
 	return ""
-}
-
-// sortedKeys is for tests that want a stable order.
-func sortedKeys(m map[float64]bool) []float64 {
-	out := make([]float64, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	sort.Float64s(out)
-	return out
 }
