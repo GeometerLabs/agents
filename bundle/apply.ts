@@ -9,7 +9,7 @@ import { agentDesiredHash, deployAgent } from "./agent/deploy.ts";
 import { finishRotations } from "./agent/rotate.ts";
 import { listAgents, readAgent } from "./agent/folder.ts";
 import { recordAgents } from "./agent/records.ts";
-import { Refused, adminCall, deploy, desiredHashOf, desiredOf, ops, renewRelayCredential } from "./deploy.ts";
+import { Refused, adminCall, compose, deploy, desiredHashOf, desiredOf, ops, renewRelayCredential } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { listShops, loadServer, readShop, serverPaths } from "./lib/server.ts";
 import { RECOVERY_FILE, parseRecoveryRequest, parseStopRequest } from "./lib/requests.ts";
@@ -22,12 +22,16 @@ import { syncOwnerLinks } from "./lib/owner-link.ts";
 import { syncLimitChanges } from "./lib/limit-changes.ts";
 import type { LimitIO } from "./lib/limit-changes.ts";
 import { syncPages } from "./lib/pages.ts";
+import { clearStale, stagedPath, syncOwnerFiles } from "./lib/owner-file.ts";
+import type { OwnerFileIO } from "./lib/owner-file.ts";
+import { buildExport, packageTarGz } from "./export/build.ts";
+import { sourcesFor } from "./export/sources.ts";
 import { syncCharacters } from "./lib/character.ts";
 import { processAgentRequests } from "./agent/requests.ts";
 import { claimPaperSigner } from "./lib/signer-claim.ts";
 import { applyServerSettings } from "./server-settings.ts";
 import { updateStatus } from "./lib/status.ts";
-import { shopNameProblem, sha256Hex, stableJson } from "./lib/util.ts";
+import { shopNameProblem, sha256Hex, stableJson, writeAtomic } from "./lib/util.ts";
 
 /** What a shop is asked to be: its three files, and the names of the secrets waiting for it. */
 export function desiredSignature(ctx: Context, shop: string): string {
@@ -320,6 +324,40 @@ export async function runPages(ctx: Context): Promise<string[]> {
 }
 
 /**
+ * "Get my shop's file" (block S): on every loop, each shop whose owner asked for their file (in the exported record) gets it made with the owner profile and copied into its own
+ * runtime folder; a file that was taken or ran out is deleted (lib/owner-file.ts). Cheap when nobody asked: a read of each shop's exported record.
+ */
+export async function runOwnerFiles(ctx: Context, io: OwnerFileIO = realOwnerFileIO(ctx)): Promise<string[]> {
+  const shops = Object.entries(loadState(ctx.dir).shops).filter(([, s]) => s.applied).map(([n]) => n);
+  clearStale(ctx.dir, shops); // a staged build nobody collected (a crash between building and copying) is not kept
+  const lines = await syncOwnerFiles({ dir: ctx.dir, shops, now: ctx.now(), io });
+  lines.forEach((l) => ctx.log(l));
+  return lines;
+}
+
+/** The real hands: the panel's container builds it (it alone opens the papers it keeps); a server with no panel builds it here from the files that exist. */
+export function realOwnerFileIO(ctx: Context): OwnerFileIO {
+  return {
+    async build(shop) {
+      const staged = stagedPath(ctx.dir, shop);
+      if (loadServer(ctx.dir).panel.enabled) {
+        const r = await compose(ctx, ["exec", "-T", "panel", "node", "/app/bundle/panel/main.ts", "export", shop, "--owner-file", "--json"], { timeoutMs: 120_000 });
+        let reply: { ok: boolean; error?: string; name?: string; warnings?: string[] } | undefined;
+        try { reply = JSON.parse(r.stdout.trim().split("\n").at(-1) ?? ""); } catch { /* said below */ }
+        if (!reply?.ok || !reply.name) return { ok: false, error: reply?.error ?? (r.stderr.trim() || "the panel did not answer").slice(0, 300) };
+        return { ok: true, name: reply.name, staged, warnings: reply.warnings ?? [] };
+      }
+      try {
+        const now = ctx.now().getTime();
+        const built = buildExport(sourcesFor(ctx.dir, shop), { shop, now, exportedBy: { name: "the owner", role: "owner" }, profile: "owner" });
+        writeAtomic(staged, packageTarGz(built, now));
+        return { ok: true, name: built.name, staged, warnings: built.warnings };
+      } catch (e) { return { ok: false, error: (e as Error).message }; }
+    },
+  };
+}
+
+/**
  * Item 11d: the owner's approvals links, on every loop: each deployed shop's runtime and relay get the hash the panel wrote, or lose it when the panel revoked the link
  * (lib/owner-link.ts). So a revoked link stops within one pass. Cheap: a file read per shop, written only when it changed.
  */
@@ -364,7 +402,7 @@ export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);
   for (;;) {
     // the server's own settings first (the panel's first run): a shop deployed in the same pass then finds the model and its key in place
-    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); await runLimitChanges(ctx); runLicence(ctx); runOwnerLinks(ctx); await runCharacters(ctx); await runPages(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
+    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); await runLimitChanges(ctx); runLicence(ctx); runOwnerLinks(ctx); await runCharacters(ctx); await runPages(ctx); await runOwnerFiles(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
     await ctx.sleep(everyMs);
   }
 }
