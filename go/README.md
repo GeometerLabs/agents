@@ -1,8 +1,7 @@
 # Go runtime for a listings-only shop (a trial)
 
 A listings-only shop is the smallest kind: it only shows what it has (`templates/commerce/listings`). This folder is **the shop's runtime written in Go**, built as a trial of whether code
-that runs inside a shop can be Go (decision 61, `docs` repo `plans/next-phase.md` section 1c). The results are in [TRIAL.md](TRIAL.md). It is not wired into the deployer or the
-shared process: it runs ONE shop, the way `templates/commerce/listings/server/main.ts` does, and it reads the same folder.
+that runs inside a shop can be Go (decision 61, `docs` repo `plans/next-phase.md` section 1c). The results are in [TRIAL.md](TRIAL.md). It is not wired into the deployer: `cmd/listings` runs ONE shop, the way `templates/commerce/listings/server/main.ts` does, and it reads the same folder.
 
 What stays TypeScript: the front (`modules/channels/front.ts`), the deployer, the panel, the directory. They call this runtime over HTTP and cannot tell which one answered; the
 **contract** in `templates/commerce/listings/contract/` is what both must pass.
@@ -38,6 +37,8 @@ internal/listings/       the listings: state and rules, the owner's ops, the pub
 internal/access/         the owner's sessions, sign-in links, passkeys (WebAuthn) and the Operator's setup code, in owner-access.sqlite (modules/channels owner-*.ts, webauthn.ts)
 internal/push/            web push: the push store (push.sqlite, the TypeScript runtime's own file), RFC 8291 encryption, VAPID, the sender to the shop's push Guard (modules/push)
 internal/budget/         the shop's model budget and the month's AI counts (modules/budget, modules/understanding/ai-state.ts)
+internal/shared/         the multi-shop host (the Go twin of modules/runtime/shared.ts): finds shop folders, routes /shop/<name>/..., contains a shop that panics or sticks (strikes, quarantine in a child process, pause); read its header first
+cmd/listings-shared/     main of the multi-shop host (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS, STATE_DIR; `--one <shop>` is the child it starts for a quarantined shop)
 internal/runtime/        the runtime: the folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes
 scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the TypeScript word lists (talk-check.ts), so the four-language words are never retyped
 ```
