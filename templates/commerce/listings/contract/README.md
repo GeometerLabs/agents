@@ -19,8 +19,9 @@ LISTINGS_IMPL=go LISTINGS_GO_BIN=go/bin/listings node --test --test-concurrency=
   SQLite file's format.
 * `cross-restart.test.ts` runs the TypeScript runtime and the Go runtime **in turn on one folder** (both ways), so the store files are proved interchangeable.
 
-* `differential.test.ts` gives both runtimes the SAME requests and compares the answers: the owner's form (whitespace, rounding, UTF-16 lengths), the place, the feed, and which of 19 model drafts the
+* `differential.test.ts` gives both runtimes the SAME requests and compares the answers: the owner's form (whitespace, rounding, UTF-16 lengths), the place, the feed, and which of 21 model drafts the
   grounding checks let through.
 * `measure.ts` is not a test: it prints cold start, resident memory and request latency for the runtime named by `LISTINGS_IMPL`.
 
-The one TypeScript-only test is `GET /internal/channel/owner` (the owner's talk-and-cards page: the whole assistant's view), which a Go runtime does not serve.
+Six tests are **TypeScript only** and are skipped, with the reason, for a runtime that does not serve them: the owner's talk-and-cards page (`GET /internal/channel/owner`; its cards, and the owner's taps on them, are how a draft is shown), web push, the owner's limits page, the owner's Stock page, "Get my shop's file" (`owner-file`) and the deployer's `/internal/limit-changes`. They are what a
+runtime must still add to be a drop-in replacement.

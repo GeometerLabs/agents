@@ -52,14 +52,16 @@ const DRAFTS: [string, string, string, string[]?][] = [
   ["list this: a brass lamp for 1,500 rupees", "Brass lamp", "Old and heavy."],
   ["list this: a brass lamp for 1,500 rupees", "Brass lamp", "Costs 1500."],
   ["list this: a brass lamp for 1,500 rupees", "Brass lamp", "Costs 15,000."],
+  ["put it on my page: 5 kg rice, 60 rupees per kg", "Rice", "Fresh rice."],
+  ["put it on my page: rice", "Rice", "Fresh rice, for sale at 12 rupees."],
+  ["put it on my page: rice", "Rice", "Fresh rice."],
 ];
 
-// Words the TypeScript runtime does NOT take as a listing although they say "put it on my page", or takes as something else, because the assistant first reads them with its owner
-// rules (modules/assistant/intents.ts readOwnerRules: a number and a unit read as a stock count, "rice" read as a question) and, when the words are no listing at all, answers them
-// with the talk model. The Go runtime does not port those rules (go/TRIAL.md, "left out"), so these three DIFFER and are not compared; they are here so the difference is on record.
-//   ["something nice" -> TS asks the owner-talk model (1 call, no draft); Go asks nothing]
-//   ["put it on my page: 5 kg rice, 60 rupees per kg" -> TS: 0 calls (read as another kind of request); Go: drafts it]
-//   ["put it on my page: rice" -> TS: 0 calls; Go: 1 call, refused by the grounding check]
+// The one phrase left out of the comparison: words that are no listing at all ("something nice") are, in the TypeScript runtime, answered with the assistant's talk model (one call, and a
+// call whose answer cannot be used then puts the shop's model on a 5-minute pause, ai-state.ts). Go does not port the talk, so it asks nothing. It is left out because that pause
+// would also change what comes after it in a shared shop. Checked alone in fresh shops: TypeScript 1 call, no draft, mode "buttons"; Go 0 calls, mode "ai".
+// (Two phrases that first looked different, "put it on my page: 5 kg rice, 60 rupees per kg" and "put it on my page: rice", differed only because that pause was in force; in fresh
+// shops both runtimes agree, so they are compared below.)
 
 describe("TypeScript and Go answer the same", { skip: !existsSync(bin) && `no Go binary at ${bin}` }, () => {
   test("the owner's form, the place, the public read and the signed feed's items", async () => {

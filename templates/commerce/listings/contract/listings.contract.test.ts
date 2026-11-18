@@ -5,8 +5,9 @@
 // What a signature must satisfy is checked with the TypeScript signing module, so an implementation has to write byte-identical canonical JSON (RFC 8785) signed with Ed25519.
 // Assertions are on status codes and machine fields (`state`, `why`, `format`), never on English sentences.
 //
-// ROUTES NOT IN THIS SUITE for a listings-only shop, and why: /internal/channel/owner (the owner's talk-and-cards page: the whole assistant's app view) is tested for the TypeScript
-// runtime only (see the last test); the chat, push, voice, limits and stock routes are not routes of this kind of shop's front (a listings-only shop has no chat and no WhatsApp).
+// ROUTES THAT ARE TESTED FOR TYPESCRIPT ONLY (the last suite): a TypeScript listings shop also answers the owner's talk-and-cards page (whose cards, and the owner's taps on them, are how a draft is shown), web push, the owner's
+// limits page, the owner's Stock page, "Get my shop's file" and the deployer's limit-changes. A runtime that does not serve them is not a drop-in replacement; their tests are skipped
+// for it WITH the reason, so the count shows in the test output. Not listed: the chat (the listings front hides it), voice and documents (404 here too).
 import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -582,13 +583,40 @@ describe("the store survives a restart", () => {
   });
 });
 
-describe("TypeScript only: the owner's talk-and-cards page", () => {
-  test("GET /internal/channel/owner answers the owner's app view (not ported to Go: it is the whole assistant)", { skip: IMPL !== "ts" && "the owner's app view is not part of the Go runtime" }, async () => {
+// Routes a TypeScript listings shop answers that the Go runtime does not serve. They are tested here for TypeScript only, and skipped (with the reason) for Go, so the count of what is not
+// ported shows in the test output. A route that is another kind of shop's (chat is hidden by the listings front, the voice and documents routes answer 404 here too) is not listed.
+const NOT_IN_GO = { skip: IMPL !== "ts" && "not ported to the Go runtime (go/TRIAL.md, Left out)" };
+describe("TypeScript only: routes the Go runtime does not serve", () => {
+  test("GET /internal/channel/owner: the owner's talk-and-cards page (the whole assistant's view)", NOT_IN_GO, async () => {
     const s = await boot();
     assert.equal((await s.call("/internal/channel/owner")).status, 403);
     const r = await s.call("/internal/channel/owner", { owner: s.owner });
     assert.equal(r.status, 200);
     assert.equal(r.body.kind, "listings");
     assert.equal(typeof r.body.app, "object");
+  });
+  test("POST /internal/channel/push {op: key}: the shop's web-push key (off without a push service)", NOT_IN_GO, async () => {
+    const s = await boot();
+    const r = await s.call("/internal/channel/push", { owner: s.owner, body: { op: "key" } });
+    assert.equal(r.status, 200); assert.equal(r.body.on, false);
+  });
+  test("GET /internal/channel/owner-limits: the owner's limits page's data", NOT_IN_GO, async () => {
+    const s = await boot();
+    const r = await s.call("/internal/channel/owner-limits", { owner: s.owner });
+    assert.equal(r.status, 200); assert.ok(Array.isArray(r.body.limits)); assert.equal(r.body.passkey, false);
+  });
+  test("GET /internal/channel/owner-stock: the owner's Stock page's data", NOT_IN_GO, async () => {
+    const s = await boot();
+    const r = await s.call("/internal/channel/owner-stock", { owner: s.owner });
+    assert.equal(r.status, 200); assert.deepEqual(r.body, { rows: [], candidates: [], attention: 0 });
+  });
+  test("GET /internal/channel/owner-file: \"Get my shop's file\", for the owner's session only (a link is refused)", NOT_IN_GO, async () => {
+    const s = await boot();
+    assert.equal((await s.call("/internal/channel/owner-file", { owner: s.owner })).status, 403);
+  });
+  test("GET /internal/limit-changes: the deployer's view of the limits the owner may change", NOT_IN_GO, async () => {
+    const s = await boot();
+    const r = await s.call("/internal/limit-changes");
+    assert.equal(r.status, 200); assert.deepEqual(r.body, { limits: [], changes: [] });
   });
 });

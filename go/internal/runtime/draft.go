@@ -7,7 +7,6 @@ package runtime
 // question, "undo") is not here: see go/TRIAL.md "left out".
 
 import (
-	"fmt"
 	"strconv"
 
 	"github.com/GeometerLabs/agents/go/internal/budget"
@@ -104,7 +103,6 @@ func (r *Runtime) ownerMessage(snap *Snap, rec *recorder, ev map[string]any, now
 	made.From = "app" // the owner wrote from their page
 	rec.append(NewLine{Conversation: number, Action: "listing", Outcome: "confirmed", Inputs: map[string]any{"listing": made.ID, "category": made.Category}, Language: lang, Refs: refsOf(made, "drafted"),
 		Notes: "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it"})
-	_ = fmt.Sprint
 	return nil
 }
 

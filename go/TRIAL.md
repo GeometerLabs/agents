@@ -7,9 +7,9 @@ language for code that runs inside a shop **if this trial passes**. This file is
 
 | rule | result | the honest reading |
 | --- | --- | --- |
-| The Go shop passes the contract, and the contract passes against TypeScript | **Yes.** TypeScript: 36 of 36. Go: 35 of 35, with 1 test skipped on purpose (`GET /internal/channel/owner`, the owner's talk-and-cards page, which Go does not serve) | passes as the contract is written. The contract leaves that one route out for Go, and it is the route the owner's page needs: see "Left out". So this is a pass of the contract, not a drop-in replacement of the TypeScript runtime |
+| The Go shop passes the contract, and the contract passes against TypeScript | **Yes, with six tests skipped for Go.** TypeScript: 41 of 41. Go: 35 pass, 0 fail, **6 skipped with their reason** | the 35 are everything a Go shop is built to do. The 6 are routes a TypeScript listings shop also answers and the Go runtime does not: the owner's talk-and-cards page (and with it the cards by which an owner shows a draft), web push, the owner's limits page, the owner's Stock page, **"Get my shop's file"** (`owner-file`, the "leave with your shop" route) and the deployer's `/internal/limit-changes`. So this is a pass of the contract for the part that was ported, **not a drop-in replacement of the TypeScript runtime**: see "Left out" |
 | 30 MB or less idle | **Yes.** 18.5 MB after start, 20.3 MB after 50 warm-up requests | with 200 listings in the store it is 28.2 MB, and 29.2 MB after 1,200 more requests: it is under the rule but with no room. TypeScript's same single shop is 130 MB (see the table) |
-| Built within the time box, no more fix rounds than the TypeScript streams needed | **2 fix rounds** against the contract (the lead compares with the TypeScript streams' count) | listed below; neither was a design problem |
+| Built within the time box, no more fix rounds than the TypeScript streams needed | **2 fix rounds** against the contract, plus 1 run of the differential test that failed and was resolved without a Go change (the lead compares with the TypeScript streams' count) | listed below; neither Go change was a design problem. Roughly an hour and ten minutes by the clock (it was first read about ten minutes in; the start is an estimate) |
 | The demo has a working path | **Yes**: keep the demo in TypeScript, held to the contract; a Go demo needs TinyGo and a reflection-free state codec (below) | no TinyGo was downloaded |
 
 ## The contract
@@ -22,8 +22,8 @@ with the day's cap and the month's cap each stopping it, and the store surviving
 
 * `cross-restart.test.ts`: TypeScript and Go **take turns on one folder**, both orders. What one wrote (listings, a photo, the shop's key, a passkey, a session) the other reads and uses.
   And the two runtimes make the same files: `agent.db` and `owner-access.sqlite` have identical `sqlite_master` text and `PRAGMA user_version` (5).
-* `differential.test.ts`: the same 14 owner ops and 19 model drafts given to both, answers compared. It found no difference in the ops, and none in 19 grounding cases; it found three
-  differences that are scope (the assistant's reading rules, "Left out" 3).
+* `differential.test.ts`: the same 14 owner ops and 21 model drafts given to both, answers compared. No difference in the ops or in the 21 grounding cases. One phrase ("something
+  nice") is left out of the comparison and is a real difference, "Left out" 3.
 * `measure.ts`: the numbers below.
 
 While making the contract pass against TypeScript (it must pass there first) I corrected the contract, not the runtime, nine times: my expectations were wrong (an id with an underscore, a
@@ -37,7 +37,10 @@ check that read the record after a later sign-in). **No TypeScript bug was found
 | --- | --- | --- | --- |
 | 1 | first run against Go | all 30: the process died at start with `regexp: invalid repeat count {16,1400}` (RE2 allows at most 1000) | the 16 to 1400 length of a credential id is checked in code, the pattern says only which characters |
 | 2 | second run | 1 of 30: the feed notice answered 204 where it must send one | `now - math.MinInt64` overflows in 64 bits (TypeScript starts "no notice delivered" at minus infinity); a zero "delivered at" means none |
-| | third run | 30 of 30. The cross-restart tests, the schema comparison and the differential ran after, and passed first time | |
+| | third run | 30 of 30. The cross-restart tests (2) and the schema comparison passed first time | |
+| (d) | the differential test, first run | its grounding test showed 3 phrases where the two runtimes differed | **no Go change.** I first took them for a scope difference and wrote that down; a reviewer asked me to check, and in fresh shops two of the three agree. They differed only because the phrase before them had put the TypeScript shop's model on a 5-minute pause (a failed talk call, `ai-state.ts`). The test now keeps the two phrases in the comparison and leaves out the one that caused the pause |
+
+So: **2 fixes to Go**, and 1 failing run of an extra test that ended in a change to the test. If the lead counts a failing run of an extra test as a round, it is 3.
 
 One more kind of round, not counted: the first `go build` failed to compile (a name used twice); fixed at once.
 
@@ -58,7 +61,7 @@ One run each (the cold starts are five runs). `scripts` are in `contract/measure
 | check request (3 ids), p50 / p95 of 500 | 0.41 / 0.54 ms | **0.30 / 0.52 ms** |
 | owner list, p50 / p95 of 200 | 0.39 / 0.47 ms | **0.25 / 0.39 ms** |
 | what is shipped | the `node` executable, 147 MB, and the TypeScript source: 355 non-test files, 3.9 MB, in `modules/` and the template | one binary, 20.6 MB (14.1 MB with `-ldflags "-s -w"`) |
-| build | none (types are stripped as the file loads) | clean cache: 17.7 s wall through the heat lock, which adds 10 s of cooldown (so about 8 s of build; 34 s of CPU); a one-file change: the cooldown plus under a second |
+| build | none (types are stripped as the file loads) | after `go clean -cache`: **7.7 s** wall (34 s of CPU), timed inside the heat lock; a one-file change: 0.5 s |
 | lines of code | the TypeScript files the port was read from: 6.4k lines (comments included), of which only parts apply to a listings shop | 7.4k lines, comments included (466 are whole-line comments, and there are more at the ends of lines) |
 
 Notes on the numbers:
@@ -69,7 +72,7 @@ Notes on the numbers:
   the Go runtime holds many shops in one process (goroutines, one SQLite file each). I did not build or measure that.
 * The 200 listings cost Go 8 MB (SQLite's page cache and the garbage of 200 steps); setting `GOGC` to 50 or 25 changed nothing. TypeScript's cost was 11 MB.
 * Go's feed is slower than TypeScript's at p50 (it builds, canonicalises and signs on every request, as TypeScript does; V8 is quicker at the string work). Both are about a millisecond.
-* The build numbers include the one-time download of the three modules only in the sense that it was done before; the clean build starts from an empty build cache (`go clean -cache`), not an empty module cache.
+* The clean build starts from an empty build cache (`go clean -cache`), not an empty module cache: the three modules were downloaded once before.
 
 ## What was built (the Go code map is in README.md)
 
@@ -89,10 +92,16 @@ copied by hand into Go, in the same four languages, and the differential test co
    question, the budget notices, undo. It is about 4.7k lines of TypeScript plus its words, and it is not "the runtime of a listings-only shop" so much as the shop's assistant. **Without
    it a draft the Go runtime makes cannot be published by the owner** (the "Show it" tap is a card). The Go runtime does draft, check and save it as state `draft`; the owner can edit or
    remove it, and a shop that goes back to the TypeScript runtime has the draft in its list. This is the largest gap and the first thing the lead should weigh.
-2. **The rest of the shop's other routes**: chat, push, voice, limits, stock, documents, accounting, parent and material. They are not routes of a listings-only shop's front (it has no
-   chat, no WhatsApp and no money); they answer 404. `POST /internal/events` (the inbox's) answers 400; `/internal/recover`, `/internal/refund-context`, `/internal/limit-changes` answer 404.
-3. **The assistant's reading of the owner's words** (`readOwnerRules`): the TypeScript runtime reads "put it on my page: 5 kg rice" as another kind of request before it is a listing, and
-   answers words that are no listing with the talk model. Go takes any words with a listing cue (or with a photo waiting) as a listing. The differential found exactly this on three phrases.
+2. **Routes a TypeScript listings shop answers and Go does not** (found by asking a TypeScript shop; the six TypeScript-only tests in the contract): web push (`push`: the key, the owner's
+   phones), the owner's limits page (`owner-limits`) and the deployer's `/internal/limit-changes`, the owner's Stock page (`owner-stock`), and **"Get my shop's file" (`owner-file`)**:
+   without it the owner cannot take their shop's file out of the Go runtime, which is the heart of "leave with your shop" (the deployer's own backup and export read the SQLite file and
+   still work). `/status` reports `alertPhones: 0`, which is right only while the shop has no push service (TypeScript counts the owner's phones when it has one). Go answers 404 to
+   these, 400 to `owner_action` and to every event kind but the two it takes, and 400 to the inbox's `POST /internal/events`. The customer-side routes (chat, voice, documents, parent,
+   material, offer-with-days) are not what a listings front calls: the front hides the chat for this kind, and the TypeScript shop answers 404 to voice and documents too.
+3. **The assistant's reading of the owner's words.** The TypeScript runtime answers words that are no listing at all ("something nice") with the owner-talk model; Go asks nothing. The
+   differential found this on one phrase. What I did **not** port and did **not** test is the other half of that reading, `readOwnerRules`, which keeps the owner's commands (undo, help,
+   cancel, a refund, closing a day) from being taken as a listing when they also say "on my page". Go takes any words with a listing cue (or a photo waiting) as a listing, so an owner
+   command containing "for sale" would be drafted. I have no case that shows it, one way or the other.
 4. **Stock counting** (`modules/stock`): Go reads a counted listing's count (so the public read leaves out a counted listing at 0, and shows the count) and never changes it.
 5. **A price list**: every model call is counted "unpriced" (10 paise against the budget, `DEFAULT_UNPRICED_CALL_MICRO_INR`). The TypeScript runtime prices a call from the dated rate
    tables (`modules/understanding/rates/*.json`) and a builder's own rate. For a shop on a real provider the Go budget would run out sooner than the TypeScript budget would.
@@ -101,9 +110,11 @@ copied by hand into Go, in the same four languages, and the differential test co
    from a backup and started on Go would not skip its listing ids.
 8. **The shared process** (`shared.ts`): the router, the worker pool, the watchdog, quarantine, "back soon", `/shared/shops`. One shop per process only.
 9. **Unicode normalisation.** TypeScript puts words in NFC (and the claim lists in NFD) before it compares them. Go's standard library cannot; it lives in `golang.org/x/text/unicode/norm`,
-   which this trial was **not approved to add**. Text is taken as typed (composed, in practice), and the five precomposed Devanagari nukta letters are folded by hand. A phone that sends
+   which this trial was **not approved to add**. Text is taken as typed (composed, in practice), and the eight precomposed Devanagari nukta letters (U+0958 to U+095F) are folded by hand. A phone that sends
    Malayalam or Kannada in decomposed form could be judged differently by the two runtimes. **Needs approval if the trial goes on: `golang.org/x/text`.**
-10. Small: the digest of an owner op in the record is made over Go's key order, so it differs from TypeScript's for the same op (the record's content, not any behaviour).
+10. **Unknown members of the typed parts are dropped.** The state is carried through raw only for the rest of `assistant` (cards, talk, notes, memory, stock). The parts Go models (each
+    listing, the listings' shop block, `ai` and its budget) are read into typed structs; a member the TypeScript runtime adds to one of those later is lost when Go saves.
+11. Small: the digest of an owner op in the record is made over Go's key order, so it differs from TypeScript's for the same op (the record's content, not any behaviour).
 
 ## What the port cost, as lessons
 
@@ -138,6 +149,7 @@ So the demo does not run the shop's HTTP runtime, its SQLite file or its passkey
 
 ## What to look at next, if Go goes on
 
+0. Be sure what "leave with your shop" needs: the `owner-file` route, and the file the deployer copies, both belong to the runtime's side.
 1. Decide what the owner's talk-and-cards page is: ported, or kept in TypeScript with the Go runtime behind it (the front already talks to the runtime only over HTTP, so a TypeScript
    assistant service could sit beside the Go store; that is a design, not something I tried).
 2. A multi-shop Go process (the TypeScript pool's job) before the free shared server is compared on memory.
