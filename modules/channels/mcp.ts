@@ -24,6 +24,17 @@ interface Tool<Name extends string = OperationName> { name: Name; description: s
 const HANDLE = { type: "string", description: "The booking's handle, as start_booking returned it. It is the only way to reach the booking: keep it private." };
 const LANGUAGE = { type: "string", enum: ["en", "hi", "ml", "kn"], description: "The customer's language for names and messages (one of the shop's)." };
 
+/**
+ * `check_items` (specs/shop-check.md), the one tool every shop's endpoint has: up to ten item ids in, the shop's signed answer out. Read only. No tool takes a customer's own details, and this one
+ * takes nothing about a buyer at all.
+ */
+const CHECK_TOOL: Tool<"check_items"> = {
+  name: "check_items",
+  description: "Ask whether up to ten of the shop's listed items are still there, and at what price and quantity (shop-check/1). Answered from the shop's own record, signed with the shop's own key, and stamped with the time it was made. Tells the shop nothing about who is asking. An id the shop does not list now is gone.",
+  inputSchema: { type: "object", properties: { ids: { type: "array", minItems: 1, maxItems: 10, items: { type: "string" }, description: "Item ids as the shop's feed gives them, such as l-3." } }, required: ["ids"], additionalProperties: false },
+  annotations: { readOnlyHint: true, openWorldHint: false },
+};
+
 /** The tools, one per operation, in the operations' order. */
 export const TOOLS: Tool[] = [
   { name: "list_services", description: "The shop's services with their prices (in rupees) and durations, the deposit, how long a time is held for payment, the cancellation window, and how the deposit is paid.", inputSchema: { type: "object", properties: { language: LANGUAGE }, additionalProperties: false }, annotations: { readOnlyHint: true, openWorldHint: false } },
@@ -32,6 +43,7 @@ export const TOOLS: Tool[] = [
   { name: "payment_instructions", description: "How to pay the deposit of a held booking: the shop's UPI ID, the amount and a UPI link, or the shop's payment link.", inputSchema: { type: "object", properties: { handle: HANDLE }, required: ["handle"], additionalProperties: false }, annotations: { readOnlyHint: true, openWorldHint: false } },
   { name: "booking_status", description: "A booking's state (held, booked, cancelled, ...), its time, and the shop's messages about it.", inputSchema: { type: "object", properties: { handle: HANDLE, language: LANGUAGE }, required: ["handle"], additionalProperties: false }, annotations: { readOnlyHint: true, openWorldHint: false } },
   { name: "cancel_booking", description: "Cancel a booking. Inside the shop's cancellation window the deposit comes back; later, the owner decides.", inputSchema: { type: "object", properties: { handle: HANDLE, language: LANGUAGE }, required: ["handle"], additionalProperties: false }, annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false } },
+  CHECK_TOOL,
 ];
 
 const ORDER_HANDLE = { type: "string", description: "The order's handle, as start_order returned it. It is the only way to reach the order: keep it private." };
@@ -43,6 +55,7 @@ export const ORDER_TOOLS: Tool<OrderOperationName>[] = [
   { name: "payment_instructions", description: "How to pay the advance of a held order: the shop's UPI ID, the amount and a UPI link, or the shop's payment link.", inputSchema: { type: "object", properties: { handle: ORDER_HANDLE }, required: ["handle"], additionalProperties: false }, annotations: { readOnlyHint: true, openWorldHint: false } },
   { name: "order_status", description: "An order's state (held, confirmed, cancelled, ...), its items at the shop's prices, its day and slot, and the shop's messages about it.", inputSchema: { type: "object", properties: { handle: ORDER_HANDLE, language: LANGUAGE }, required: ["handle"], additionalProperties: false }, annotations: { readOnlyHint: true, openWorldHint: false } },
   { name: "cancel_order", description: "Cancel an order. Inside the shop's cancellation window the advance comes back; later, the owner decides.", inputSchema: { type: "object", properties: { handle: ORDER_HANDLE, language: LANGUAGE }, required: ["handle"], additionalProperties: false }, annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false } },
+  CHECK_TOOL,
 ];
 
 /** What one endpoint serves: its tools, the functions behind them, and how it introduces itself. Bookings' and (item 11h) Orders'. */

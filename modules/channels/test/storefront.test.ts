@@ -10,6 +10,8 @@ import type { ChannelBackend, OwnerView } from "../backend.ts";
 import type { PublicListingsRead } from "../../listings/kit.ts";
 import { storefrontPolicy } from "../storefront.ts";
 import { LISTING_WORDS } from "../../listings/words.ts";
+import { createShopProtocol } from "../../runtime/shop-protocol.ts";
+import { generateSigningKey, verifyDocument } from "../../signing/index.ts";
 
 const TOKEN = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJ0123456";
 const PUBLIC = "https://partners.example/s/paws";
@@ -27,10 +29,16 @@ const VIEW: OwnerView = {
 const JPEG = Uint8Array.from([0xff, 0xd8, 0xff, 0xd9]);
 
 function setup(read: PublicListingsRead | null) {
+  // the shop's runtime signs (the front never holds a key): the fake runtime does it with the real protocol over what the fake says is public
+  const key = generateSigningKey();
+  const protocol = createShopProtocol({ read: () => read ?? { shop: { visible: false }, listings: [] }, key: () => key, now: () => Date.now(), name: () => "Paws & Co" });
   const calls = { ops: [] as Record<string, unknown>[], photos: [] as { type: string; bytes: number }[] };
   const backend = {
     offer: async () => ({ shop: SHOP, services: [] }), submit: async () => "saved", view: async () => null, owner: async () => VIEW,
     listings: async () => read,
+    shopFeed: async (q: Parameters<typeof protocol.feed>[0]) => protocol.feed(q),
+    shopCheck: async (q: Parameters<typeof protocol.check>[0]) => protocol.check(q),
+    shopCard: async (q: { page: string; card: Record<string, unknown> }) => { const c = protocol.card(q); return c === "bad" ? null : c; },
     listingPhoto: async (id: string) => (id === "ph-0123456789ab" ? { type: "image/jpeg", bytes: Buffer.from(JPEG) } : null),
     ownerListings: async (_o: unknown, post?: { id: string; op: Record<string, unknown> }) => {
       if (!post) return { status: 200, body: { shop: read?.shop ?? { visible: false }, listings: [], pending: [], uploadsLeft: 30, maxLive: 50, liveCount: 0, categories: [{ id: "pets", names: {} }, { id: "other", names: {} }] } };
@@ -40,7 +48,7 @@ function setup(read: PublicListingsRead | null) {
     ownerPhoto: async (_o: unknown, p: { bytes: Buffer; type: string }) => { calls.photos.push({ type: p.type, bytes: p.bytes.length }); return { status: 200, body: { photo: { id: "ph-0123456789ab", type: p.type, width: 10, height: 10, bytes: p.bytes.length } } }; },
     chat: async () => ({ lines: [], answered: false, capped: false, retentionDays: 30 }),
   } as unknown as ChannelBackend;
-  return { backend, calls };
+  return { backend, calls, key };
 }
 async function serve<T>(backend: ChannelBackend, run: (base: string) => Promise<T>): Promise<T> {
   const server = createServer(frontHandler({ shops: { paws: { publicUrl: PUBLIC, backend } }, waitMs: 10 }));
@@ -83,7 +91,8 @@ test("with the switch off the storefront is noindex and serves no feed; with it 
     assert.equal(j.items[0].photos[0].url, `${PUBLIC}/listings/photo/ph-0123456789ab.jpg`);
     assert.equal(j.shop.place.town, "Thrissur");
     assert.equal(j.shop.registration.source, "owner");
-    assert.ok(!/"by"|"from"|whatsapp|signature/u.test(JSON.stringify(j)));
+    assert.ok(!/"by"|"from"|whatsapp/u.test(JSON.stringify(j)));
+    assert.ok(verifyDocument(j).ok, "the feed is signed with the shop's key (made by the runtime, passed on by the front)");
     assert.equal((await fetch(`${b}/listings.json`, { headers: { "if-none-match": etag } })).status, 304, "a reader that sends If-None-Match gets 304");
     assert.equal((await fetch(`${b}/listings.json`, { method: "HEAD" })).status, 200);
     assert.match(text, /<link rel="alternate" type="application\/json" title="shop-feed\/1"/u);

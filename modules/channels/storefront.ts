@@ -9,13 +9,17 @@
 //
 // The look is Streetlist's (look.ts: flat colours, the head's green, Baloo 2 for the heading when the shop has the chat's font), 360 px first, every tile with an accessible name, no script.
 //
+// Block S phase B2, the shop's open protocol: `listings.json` is SIGNED with the shop's own key and `<page>/agent-card.json` is the shop's A2A Agent Card (also signed), both served only while the
+// owner's switch is on. The key is the runtime's, never this process's: the front asks the runtime (backend.ts shopFeed, shopCard) for each signed document and passes it on. A shop whose
+// runtime cannot sign serves no feed and no card (an unsigned feed is one no directory would take). `POST <page>/api/v1/check` is a shop operation, not a storefront route (ops.ts checkItemsOp).
+//
 // Photos: `GET <page>/listings/photo/<id>.jpg|webp`, an address built from the photo's own id (never an uploaded name), with its own type, `nosniff` and a year's cache. The page's content policy
 // names that one folder in its single `img-src` (never 'self'), like the chat's character pictures.
 import { createHash } from "node:crypto";
 import { html, raw } from "../core/html.ts";
 import type { Raw } from "../core/html.ts";
 import type { Language } from "../language/languages.ts";
-import { FEED_MAX_BYTES, buildFeed, buildJsonLd, jsonForScript, photoPath } from "../listings/feed.ts";
+import { FEED_MAX_BYTES, buildJsonLd, jsonForScript, photoPath } from "../listings/feed.ts";
 import { stateOfPublic } from "../listings/kit.ts";
 import type { PublicListingsRead } from "../listings/kit.ts";
 import { freshnessOf, isVisible, textIn } from "../listings/listings.ts";
@@ -27,6 +31,7 @@ import type { FrontKit, RouteArgs } from "./front.ts";
 import { PAGE_POLICY } from "./front.ts"; // used when a request is handled, never while the modules load (front.ts imports this file)
 import { layout } from "./page.ts";
 import type { PagesFile } from "./pages-file.ts";
+import { shopCard, skillsFor } from "./shop-card.ts";
 
 /** The content policy of the storefront: PAGE_POLICY with its single `img-src` widened by the photos' own folder (and the font's one address when it has one). Never 'self', never a second img-src. */
 export const storefrontPolicy = (publicUrl: string, font?: string): string =>
@@ -89,7 +94,7 @@ ${read.listings.length > 0 ? html`<div class="sf-grid">${read.listings.map(tile)
   const font = o.fontUrl ? `@font-face{font-family:"Baloo 2";font-style:normal;font-weight:400 800;font-display:swap;src:url(${o.fontUrl}) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122}:root{--display:"Baloo 2",system-ui,sans-serif}` : "";
   // schema.org data and the canonical address: only while the switch is on
   const head = visible
-    ? raw(`<link rel="canonical" href="${page.replace(/"/gu, "&quot;")}"><link rel="alternate" type="application/json" title="shop-feed/1" href="${o.shop.publicUrl.replace(/"/gu, "&quot;")}/listings.json"><script type="application/ld+json">${jsonForScript(buildJsonLd(state, feedShop, o.language, o.nowMs))}</script>`)
+    ? raw(`<link rel="canonical" href="${page.replace(/"/gu, "&quot;")}"><link rel="alternate" type="application/json" title="shop-feed/1" href="${o.shop.publicUrl.replace(/"/gu, "&quot;")}/listings.json"><link rel="alternate" type="application/json" title="A2A Agent Card" href="${o.shop.publicUrl.replace(/"/gu, "&quot;")}/agent-card.json"><script type="application/ld+json">${jsonForScript(buildJsonLd(state, feedShop, o.language, o.nowMs))}</script>`)
     : undefined;
   return layout({
     shop: o.offer.shop, language: o.language, title: w.pageTitle(o.shop.name), body, selfPath: page, css: font + STOREFRONT_CSS, indexable: visible,
@@ -97,13 +102,13 @@ ${read.listings.length > 0 ? html`<div class="sf-grid">${read.listings.map(tile)
   });
 }
 
-/** The storefront's three public addresses under a shop's page. `/shop` is the page, `/listings.json` the open feed, `/listings/photo/<id>.<ext>` a photo. */
+/** The storefront's public addresses under a shop's page. `/shop` is the page, `/listings.json` the signed open feed, `/agent-card.json` the signed Agent Card, `/listings/photo/<id>.<ext>` a photo. */
 export async function storefrontRoute(kit: FrontKit, a: RouteArgs): Promise<void> {
   const { req, res, url, shop, name, rest, method, address } = a;
   const nothing = () => kit.sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
   const backend = shop.backend;
   if (!backend.listings) return nothing();
-  if (method !== "GET" && !(method === "HEAD" && rest === "/listings.json")) return kit.sendHtml(res, 405, "<!doctype html><p>Use GET here.</p>", { allow: "GET" });
+  if (method !== "GET" && !(method === "HEAD" && (rest === "/listings.json" || rest === "/agent-card.json"))) return kit.sendHtml(res, 405, "<!doctype html><p>Use GET here.</p>", { allow: "GET" });
   if (!kit.limiter.take("read", address)) return kit.sendHtml(res, 429, "<!doctype html><p>Too many requests. Wait a few minutes.</p>", { "retry-after": "300" });
 
   // a photo, by its own id
@@ -122,14 +127,21 @@ export async function storefrontRoute(kit: FrontKit, a: RouteArgs): Promise<void
   if (!read) return nothing();
   const nowMs = Date.now();
 
-  // the open feed (shop-feed/1): only while the owner's switch is on; GET and HEAD; an ETag, so a reader that sends If-None-Match gets 304 when nothing changed
-  if (rest === "/listings.json") {
-    if (method !== "GET" && method !== "HEAD") return kit.sendHtml(res, 405, "<!doctype html><p>Use GET here.</p>", { allow: "GET, HEAD" });
-    if (!isVisible(stateOfPublic(read))) return nothing();
+  // the open feed (shop-feed/1): only while the owner's switch is on; GET and HEAD; an ETag, so a reader that sends If-None-Match gets 304 when nothing changed. The runtime builds it and signs it with the
+  // shop's key; a signed feed is the same bytes until the shop's record changes (Ed25519 signs the same bytes the same way), so the ETag moves only when the feed does.
+  if (rest === "/listings.json" || rest === "/agent-card.json") {
+    if (!isVisible(stateOfPublic(read)) || (rest === "/listings.json" ? !backend.shopFeed : !backend.shopCard)) return nothing();
     const offer = await backend.offer({});
-    const feed = buildFeed(stateOfPublic(read), { name: offer.shop.name, page: shop.publicUrl, languages: offer.shop.languages, ...(backend.chat ? { chat: `${shop.publicUrl}/chat` } : {}) }, nowMs);
-    const body = JSON.stringify(feed);
-    if (Buffer.byteLength(body) > FEED_MAX_BYTES) return kit.sendJson(res, 500, { error: "The feed is over 1 MB." });
+    let signed: Record<string, unknown> | null;
+    if (rest === "/listings.json") {
+      signed = await backend.shopFeed!({ page: shop.publicUrl, name: offer.shop.name, languages: offer.shop.languages, ...(backend.chat ? { chat: `${shop.publicUrl}/chat` } : {}) });
+    } else {
+      const { skills, mcp } = skillsFor(shop.kind ?? "bookings");
+      signed = await backend.shopCard!({ page: shop.publicUrl, card: shopCard({ name: offer.shop.name, page: `${shop.publicUrl}/`, skills, mcp }) });
+    }
+    if (!signed) return nothing(); // the runtime says the shop shows nothing (the switch is off there, or it has no key)
+    const body = JSON.stringify(signed);
+    if (rest === "/listings.json" && Buffer.byteLength(body) > FEED_MAX_BYTES) return kit.sendJson(res, 500, { error: "The feed is over 1 MB." });
     const etag = `"${createHash("sha256").update(body).digest("base64url").slice(0, 22)}"`;
     const headers = { "access-control-allow-origin": "*", "cache-control": "public, max-age=300", etag, "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'" };
     if (req.headers["if-none-match"] === etag) { res.writeHead(304, headers); res.end(); return; }

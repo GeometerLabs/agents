@@ -46,7 +46,8 @@ export async function orderRoute(kit: FrontKit, a: RouteArgs, ops: { web: OrderO
   // ---- the API and the MCP endpoint ----
   if (rest.startsWith("/api/v1")) {
     const op = orderApiOperation(method, rest);
-    if (!limiter.take(op === "start_order" ? "book" : op === "cancel_order" ? "act" : "read", address) || (op === "start_order" && !limiter.take("shopStarts", `shop:${name}`))) return kit.sendJson(res, 429, { error: { code: "too_many", message: "Too many requests from this address. Wait a few minutes." } }, { "retry-after": "300" });
+    // a check is counted against the SHOP, not the address: a directory reaches every shop from one address (limits.ts `check`)
+    if (!(op === "check_items" ? limiter.take("check", `shop:${name}`) : limiter.take(op === "start_order" ? "book" : op === "cancel_order" ? "act" : "read", address)) || (op === "start_order" && !limiter.take("shopStarts", `shop:${name}`))) return kit.sendJson(res, 429, { error: { code: "too_many", message: "Too many requests from this address. Wait a few minutes." } }, { "retry-after": "300" });
     if (op && (op === "order_status" || op === "payment_instructions" || op === "cancel_order") && limiter.over("wrong", address)) return kit.sendJson(res, 429, { error: { code: "too_many", message: "Too many unknown handles from this address." } });
     let body: unknown;
     if (method === "POST") {
@@ -70,7 +71,7 @@ export async function orderRoute(kit: FrontKit, a: RouteArgs, ops: { web: OrderO
     const messages = (Array.isArray(body) ? body : [body]) as { method?: string; params?: { name?: string } }[];
     for (const msg of messages) {
       const tool = msg?.method === "tools/call" ? msg.params?.name : undefined;
-      if (!limiter.take(tool === "start_order" ? "book" : tool === "cancel_order" ? "act" : "read", address) || (tool === "start_order" && !limiter.take("shopStarts", `shop:${name}`))) return kit.sendJson(res, 429, { jsonrpc: "2.0", id: null, error: { code: -32000, message: "Too many requests from this address. Wait a few minutes." } }, { "retry-after": "300" });
+      if (!(tool === "check_items" ? limiter.take("check", `shop:${name}`) : limiter.take(tool === "start_order" ? "book" : tool === "cancel_order" ? "act" : "read", address)) || (tool === "start_order" && !limiter.take("shopStarts", `shop:${name}`))) return kit.sendJson(res, 429, { jsonrpc: "2.0", id: null, error: { code: -32000, message: "Too many requests from this address. Wait a few minutes." } }, { "retry-after": "300" });
     }
     const offer = await shop.backend.orderOffer();
     const answer = await serverPost(ordersServer(ops.mcp, offer.shop.name), body);

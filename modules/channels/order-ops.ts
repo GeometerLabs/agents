@@ -12,12 +12,12 @@ import type { Language } from "../language/languages.ts";
 import { normaliseName, normalisePhone } from "./contact.ts";
 import { ADDRESS_MAX, ORDER_LINES_MAX, ORDER_QTY_MAX } from "./events.ts";
 import { HANDLE, handleHash, newHandle } from "./handle.ts";
-import { OpError, isoInZone } from "./ops.ts";
+import { OpError, checkItemsOp, isoInZone } from "./ops.ts";
 import type { OpsContext } from "./ops.ts";
 import type { OfferItem, OrderOffer, OrderView } from "./backend.ts";
 
 /** The operations, by the names the API's paths and the MCP tools use. One list: api.ts and mcp.ts are both checked against it. */
-export const ORDER_OPERATIONS = ["list_items", "start_order", "payment_instructions", "order_status", "cancel_order"] as const;
+export const ORDER_OPERATIONS = ["list_items", "start_order", "payment_instructions", "order_status", "cancel_order", "check_items"] as const;
 export type OrderOperationName = (typeof ORDER_OPERATIONS)[number];
 
 const ID = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/u;
@@ -151,6 +151,9 @@ export function createOrderOps(ctx: OpsContext) {
       const v = await settle(handle, (x) => x.status !== before.status || ("messages" in x && x.messages.length !== before.messages.length));
       return { ...orderOut(handle, v, offer, language), note: "The cancellation follows the shop's rule: inside its window the advance comes back; later, the owner decides." };
     },
+
+    /** shop-check/1: the same function Bookings' operations carry (ops.ts `checkItemsOp`). An item id is a listing id; a menu item is not one, so it answers gone. */
+    check_items: (args: { ids?: unknown; format?: unknown }) => checkItemsOp(ctx, args),
 
     /** The page's "I have paid" (not an operation for assistants): the owner is asked to look; nothing is marked paid. `upiRef`: the reference the customer typed, checked again in events.ts. */
     async say_paid(handle: string, upiRef?: string) {
