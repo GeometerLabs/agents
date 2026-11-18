@@ -65,6 +65,8 @@ type SenderOptions struct {
 	Log     func(string)
 	Client  *http.Client
 	Every   time.Duration
+	// OnPanic, when set, is told of a panic in a pass instead of the panic ending the process (the shared host charges it to the shop). Unset: the panic propagates as before.
+	OnPanic func(any)
 }
 
 // Sender drains the store's queue to the Guard.
@@ -222,18 +224,30 @@ func (s *Sender) Start() {
 		defer close(s.done)
 		t := time.NewTicker(s.o.Every)
 		defer t.Stop()
-		s.Pass() // what was queued when the last process stopped
+		s.safePass() // what was queued when the last process stopped
 		for {
 			select {
 			case <-s.stop:
 				return
 			case <-s.kick:
-				s.Pass()
+				s.safePass()
 			case <-t.C:
-				s.Pass()
+				s.safePass()
 			}
 		}
 	}()
+}
+
+// safePass is Pass with the panic contained when the host asked for that (OnPanic): the loop goes on to the next pass.
+func (s *Sender) safePass() {
+	if s.o.OnPanic != nil {
+		defer func() {
+			if p := recover(); p != nil {
+				s.o.OnPanic(p)
+			}
+		}()
+	}
+	s.Pass()
 }
 
 // Stop finishes the pass in hand and stops the timer.

@@ -91,6 +91,7 @@ func (r *Runtime) initPush() error {
 	}
 	sender := push.NewSender(push.SenderOptions{
 		Store: st, Guard: guard, Now: r.o.Now, Relay: relay, Log: r.o.Log,
+		OnPanic: func(p any) { r.panicked("push sender", p) },
 		// the VAPID contact: the shop's page (never a person's e-mail)
 		Subject: func() string {
 			if u, base, ok := r.PagesURL(); ok {

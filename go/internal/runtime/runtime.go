@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/access"
@@ -37,6 +38,9 @@ type Options struct {
 	RecordKey []byte
 	Log       func(string)
 	Now       func() int64
+	// OnPanic is the shared host's: a panic in a request, in the runner (a step or the clock) or in the push sender is handed to it and the goroutine goes on, instead of the process
+	// ending. Unset (the single-shop binary): nothing is recovered in the runner, exactly as before.
+	OnPanic func(where string, v any)
 }
 
 // Runtime is one running shop.
@@ -59,6 +63,8 @@ type Runtime struct {
 	broken    string
 	shopKey   *signing.Key
 	lastDaily int64
+
+	stepSince atomic.Int64 // when the step in hand began (ms), 0 between steps: the host's watchdog reads it
 
 	kick chan struct{}
 	stop chan struct{}
@@ -116,20 +122,44 @@ func (r *Runtime) Start(tick time.Duration) {
 		defer close(r.done)
 		t := time.NewTicker(tick)
 		defer t.Stop()
-		r.drain() // anything saved but not finished when the last process stopped runs now
+		r.guarded("drain", r.drain) // anything saved but not finished when the last process stopped runs now
 		for {
 			select {
 			case <-r.stop:
 				return
 			case <-r.kick:
-				r.drain()
+				r.guarded("drain", r.drain)
 			case <-t.C:
-				r.tick()
-				r.drain()
+				r.guarded("tick", r.tick)
+				r.guarded("drain", r.drain)
 			}
 		}
 	}()
 }
+
+// guarded runs one pass of the runner's loop. With a host's OnPanic a panic is handed to it and the loop lives on (one shop's panic must not end every shop's process); without
+// one it propagates as it always did.
+func (r *Runtime) guarded(where string, f func()) {
+	if r.o.OnPanic != nil {
+		defer func() {
+			if p := recover(); p != nil {
+				r.stepSince.Store(0)
+				r.panicked(where, p)
+			}
+		}()
+	}
+	f()
+}
+
+func (r *Runtime) panicked(where string, p any) {
+	r.o.Log(fmt.Sprintf("A panic in the %s: %v", where, p))
+	if r.o.OnPanic != nil {
+		r.o.OnPanic(where, p)
+	}
+}
+
+// StepSince is when the step in hand began (Unix ms), or 0 when the runner is between steps. A step that has been going for a long time is a stuck one.
+func (r *Runtime) StepSince() int64 { return r.stepSince.Load() }
 
 // Kick lets the queue run.
 func (r *Runtime) Kick() {
@@ -256,6 +286,8 @@ func (r *Runtime) recorder() *recorder {
 }
 
 func (r *Runtime) step(ev map[string]any, taskID string) error {
+	r.stepSince.Store(r.o.Now())
+	defer r.stepSince.Store(0)
 	r.mu.RLock()
 	text := r.snapshot
 	r.mu.RUnlock()

@@ -125,13 +125,22 @@ func readJSON(w http.ResponseWriter, r *http.Request, max int64) (any, bool) {
 	return v, true
 }
 
-// Listen starts serving on host:port (port 0 picks a free one).
-func Listen(rt *Runtime, token string, channelToken string, host string, port int) (*Server, error) {
+// NewServer is one shop's HTTP face without a listener: the shared host (internal/shared) routes to Handler() itself. Listen is this plus a listener of its own.
+func NewServer(rt *Runtime, token string, channelToken string) *Server {
 	s := &Server{rt: rt, token: sha256.Sum256([]byte(token))}
 	if channelToken != "" {
 		c := sha256.Sum256([]byte(channelToken))
 		s.channel = &c
 	}
+	return s
+}
+
+// Handler is the shop's routes as an http.Handler (with the per-request panic recovery).
+func (s *Server) Handler() http.Handler { return http.HandlerFunc(s.serve) }
+
+// Listen starts serving on host:port (port 0 picks a free one).
+func Listen(rt *Runtime, token string, channelToken string, host string, port int) (*Server, error) {
+	s := NewServer(rt, token, channelToken)
 	ln, err := net.Listen("tcp", net.JoinHostPort(host, fmt.Sprint(port)))
 	if err != nil {
 		if strings.Contains(err.Error(), "address already in use") {
@@ -140,7 +149,7 @@ func Listen(rt *Runtime, token string, channelToken string, host string, port in
 		return nil, err
 	}
 	s.URL = "http://" + ln.Addr().String()
-	s.http = &http.Server{Handler: http.HandlerFunc(s.serve), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 15 * time.Second, IdleTimeout: 5 * time.Second, MaxHeaderBytes: 64 << 10}
+	s.http = &http.Server{Handler: s.Handler(), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 15 * time.Second, IdleTimeout: 5 * time.Second, MaxHeaderBytes: 64 << 10}
 	go func() { _ = s.http.Serve(ln) }()
 	return s, nil
 }
@@ -157,7 +166,7 @@ func (s *Server) Close() {
 func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if p := recover(); p != nil {
-			s.rt.o.Log(fmt.Sprintf("Request failed: %v", p))
+			s.rt.panicked("request", p)
 			send(w, 500, errBody("The runtime could not handle that. Send it again."))
 		}
 	}()
