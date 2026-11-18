@@ -7,7 +7,6 @@
 // RSS comes from `ps -o rss=` (kilobytes of resident memory of the shop's own process). The requests are made one after another over one keep-alive connection by Node's fetch, the
 // same client for both runtimes, so the client's own cost is the same on both sides.
 import { execFileSync } from "node:child_process";
-import { spawn } from "node:child_process";
 import { IMPL, PAGE, makeShop } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 

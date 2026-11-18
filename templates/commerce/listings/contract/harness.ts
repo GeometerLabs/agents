@@ -7,7 +7,7 @@
 //   LISTINGS_IMPL=ts   (default)  node templates/commerce/listings/server/main.ts --client <folder>
 //   LISTINGS_IMPL=go              the built binary named by LISTINGS_GO_BIN (default <repo>/go/bin/listings) with the same arguments
 // Both read the same folder, the same token files (INTERNAL_TOKEN_FILE, CHANNEL_TOKEN_FILE, RECORD_KEY_FILE) and the same runtime.json, so one folder serves both.
-import { spawn } from "node:child_process";
+// Every process is started and stopped through children.ts, which stops it at the end of each test and fails the run if one is still alive when the run ends.
 import type { ChildProcess } from "node:child_process";
 import { createServer } from "node:http";
 import type { Server } from "node:http";
@@ -21,6 +21,7 @@ import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../../../../modul
 import { OWNER_GRANTS_FILE, OWNER_RESET_FILE, SETUP_MS, newSetupToken, setupHash } from "../../../../modules/channels/owner-grants.ts";
 import { OWNER_SESSIONS_FILE } from "../../../../modules/channels/owner-access.ts";
 import { TEST_CLOCK_FILE, TEST_SWITCH } from "../../../../modules/runtime/test-clock.ts";
+import { spawnChild, stopChild } from "./children.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** The repository root, found from this file's own address. */
@@ -66,7 +67,7 @@ export interface Shop {
   port: number;
   /** Call the shop over HTTP. `as` picks the credential: the internal token, the channel token (default for /internal/channel/*), and the owner's link or session. */
   call(path: string, o?: { method?: string; token?: string | null; owner?: string; session?: string; body?: unknown; raw?: Uint8Array; type?: string; headers?: Record<string, string> }): Promise<{ status: number; body: any; headers: Headers; bytes: Uint8Array }>;
-  /** Stop the process (SIGTERM) and wait for it to be gone. */
+  /** Stop the process (SIGTERM, then SIGKILL after 4 s) and wait for it to be gone. */
   stop(): Promise<void>;
   /** Start it (or again) on the same folder and port. `impl` overrides LISTINGS_IMPL, for the cross-restart test that runs the two in turn on one folder. */
   start(impl?: "ts" | "go"): Promise<void>;
@@ -169,30 +170,37 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
       return { status: r.status, body, headers: r.headers, bytes };
     },
     async start(impl = IMPL) {
+      // a start while the last process still runs would lose the only handle to it: it is stopped first
+      await stopChild(child);
       const { cmd, args } = command(impl);
       output = "";
       // the test clock only when the test asks for it; otherwise the two variables are taken out, so a shell that has them set cannot change an ordinary test
       const env: Record<string, string | undefined> = { ...process.env, INTERNAL_TOKEN_FILE: join(secrets, "internal_token"), CHANNEL_TOKEN_FILE: join(secrets, "channel_token"), RECORD_KEY_FILE: join(secrets, "record_key") };
       delete env[TEST_SWITCH]; delete env[TEST_CLOCK_FILE];
       if (o.clock) { env[TEST_SWITCH] = "1"; env[TEST_CLOCK_FILE] = clockFile; }
-      child = spawn(cmd, args, { env, stdio: ["ignore", "pipe", "pipe"] });
-      child.stdout!.on("data", (d: Buffer) => { output += d.toString(); });
-      child.stderr!.on("data", (d: Buffer) => { output += d.toString(); });
-      const early = new Promise<never>((_, reject) => child!.once("exit", (code) => reject(new Error(`the shop exited early (${code}):\n${output}`))));
+      const c = spawnChild(cmd, args, { env, stdio: ["ignore", "pipe", "pipe"] }, `the ${impl} listings shop in ${root}`);
+      child = c;
+      c.stdout!.on("data", (d: Buffer) => { output += d.toString(); });
+      c.stderr!.on("data", (d: Buffer) => { output += d.toString(); });
+      const onExit = (code: number | null): void => { exitedEarly?.(new Error(`the shop exited early (${code}):\n${output}`)); };
+      let exitedEarly: ((e: Error) => void) | undefined;
+      const early = new Promise<never>((_, reject) => { exitedEarly = reject; c.once("exit", onExit); });
       const ready = (async () => {
         for (let i = 0; i < 200; i++) {
+          if (c.exitCode !== null || c.signalCode !== null) throw new Error(`the shop exited early (${c.exitCode ?? c.signalCode}):\n${output}`);
           try { if ((await fetch(`${url}/healthz`)).status === 200) return; } catch { /* not listening yet */ }
           await new Promise((r) => setTimeout(r, 50));
         }
         throw new Error(`the shop did not answer /healthz in 10 s:\n${output}`);
       })();
-      await Promise.race([ready, early]);
-      child.removeAllListeners("exit");
+      try { await Promise.race([ready, early]); } catch (e) {
+        await stopChild(c); // a shop that never answered is not left running
+        child = undefined;
+        throw e;
+      } finally { c.removeListener("exit", onExit); }
     },
     async stop() {
-      const c = child;
-      if (!c || c.exitCode !== null) return;
-      await new Promise<void>((resolve) => { c.once("exit", () => resolve()); c.kill("SIGTERM"); setTimeout(() => c.kill("SIGKILL"), 4000).unref(); });
+      await stopChild(child);
       child = undefined;
     },
     async settle() {
@@ -205,7 +213,8 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
     },
     log: () => output,
     pid: () => child?.pid,
-    cleanup() { void shop.stop(); rmSync(root, { recursive: true, force: true }); },
+    // after stop(): the folder goes (a process still running here is children.ts's to stop and report)
+    cleanup() { rmSync(root, { recursive: true, force: true }); },
     now: () => Date.now() + offset,
     advance(ms) {
       if (!o.clock) throw new Error("this shop was made without the test clock (makeShop({clock: true}))");

@@ -3,8 +3,8 @@
 //
 //   ts  node templates/commerce/listings/server/shared-main.ts   (SHARED_WORKERS threads, as the container runs it)
 //   go  the binary named by LISTINGS_SHARED_GO_BIN (default <repo>/go/bin/listings-shared)
-// Both read the same folders and the same environment (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS).
-import { spawn } from "node:child_process";
+// Both read the same folders and the same environment (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS). The process is started and stopped through children.ts (its own process
+// group, so the Go host's child for a quarantined shop goes with it; stopped at the end of each test; a leak fails the run).
 import type { ChildProcess } from "node:child_process";
 import { createServer } from "node:http";
 import { randomBytes } from "node:crypto";
@@ -13,6 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../../../../modules/channels/owner-link.ts";
 import { PAGE, REPO, VERSION } from "./harness.ts";
+import { spawnChild, stopChild } from "./children.ts";
 
 export type Impl = "ts" | "go";
 export const GO_SHARED_BIN = process.env.LISTINGS_SHARED_GO_BIN ?? join(REPO, "go", "bin", "listings-shared");
@@ -76,7 +77,7 @@ export async function startHost(impl: Impl, root: Root, o: { scanSeconds?: numbe
   const [cmd, args] = impl === "go" ? [GO_SHARED_BIN, []] : [process.execPath, [join(REPO, "templates", "commerce", "listings", "server", "shared-main.ts")]];
   const t0 = performance.now();
   let readyMs = 0;
-  const child: ChildProcess = spawn(cmd, args, { env, stdio: ["ignore", "pipe", "pipe"] });
+  const child: ChildProcess = spawnChild(cmd, args, { env, stdio: ["ignore", "pipe", "pipe"] }, `the ${impl} shared process in ${root.dir}`);
   let output = "";
   child.stdout!.on("data", (d: Buffer) => { output += d.toString(); });
   child.stderr!.on("data", (d: Buffer) => { output += d.toString(); });
@@ -98,7 +99,8 @@ export async function startHost(impl: Impl, root: Root, o: { scanSeconds?: numbe
     }
     throw new Error(`the shared process did not hold ${o.expect} shop(s) in 30 s:\n${output}`);
   })();
-  await Promise.race([held, exited]);
+  // a host that never got ready is not left running (it had no handle the caller could stop)
+  try { await Promise.race([held, exited]); } catch (e) { await stopChild(child, 5000); throw e; }
   const heldMs = performance.now() - t0;
   child.removeAllListeners("exit");
   const host: Host = {
@@ -112,10 +114,7 @@ export async function startHost(impl: Impl, root: Root, o: { scanSeconds?: numbe
       const r = await fetch(`${url}/shop/${shop}${path}`, { method: c.body !== undefined ? "POST" : "GET", headers, ...(c.body !== undefined ? { body: JSON.stringify(c.body) } : {}) });
       return { status: r.status, body: await r.json().catch(() => null), headers: r.headers };
     },
-    async stop() {
-      if (child.exitCode !== null || child.signalCode !== null) return;
-      await new Promise<void>((resolve) => { child.once("exit", () => resolve()); child.kill("SIGTERM"); setTimeout(() => child.kill("SIGKILL"), 5000).unref(); });
-    },
+    async stop() { await stopChild(child, 5000); },
   };
   return host;
 }
