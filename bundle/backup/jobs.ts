@@ -183,7 +183,9 @@ export async function runExports(ctx: Context): Promise<{ ok: boolean; lines: st
   // each shop's export folder is made here first, so it is the deployer's own: the root job can still write in it, and the deployer can then replace the shop's key file in it (placeShopKeyFile)
   for (const n of shops) ensureDir(serverPaths(ctx.dir).exportsOf(n));
   writeFileSync(jobFile, JSON.stringify({ shops: shops.map((n) => ({ name: n, db: dbOf(state, n), out: `/out/${n}`, personKeyFile: `/run/person-keys/${n}` })) }), { mode: 0o644 });
-  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...dataMounts(server, state, shops), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
+  // "--log-driver none": this job's output carries each shop's PRIVATE key (shopKeyFile, read just below), so Docker must not copy it into a log file on the server's disk while
+  // the job runs (--rm deletes the log only at the end). The output still reaches this process through the attached run.
+  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "--log-driver", "none", "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...dataMounts(server, state, shops), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
   rmSync(jobFile, { force: true });
   const out = lastJson(r.stdout) as { results?: { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; orders?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string; shopKeyFile?: string }[] } | undefined;
   if (r.code !== 0 || !out?.results) return { ok: false, lines: [`The export job failed: ${r.stderr.trim().split("\n").slice(-2).join(" | ") || `exit ${r.code}`}`] };
