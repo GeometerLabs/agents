@@ -346,6 +346,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // item 11h: an Orders shop's and a Fees centre's customer side are their own; the owner's page and the QR code below are every shop's
     const ownerPath = /^\/o\/[^/]+(\/.*)?$/u.test(rest) || rest === "/owner" || rest.startsWith("/owner/");
     // Stock orders talks to suppliers on WhatsApp and has no customers: only the owner's page (and the character's pictures above) is here, never a booking page, API or MCP
+    // a listings-only shop's own address (its page link, its QR code) is its storefront: "What we have"
+    if (shop.kind === "listings" && rest === "/") return redirect(res, `${shop.publicUrl}/shop`);
     if ((shop.kind === "stock" || shop.kind === "listings") && !ownerPath && rest !== "/qr.svg") return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
     if ((shop.kind === "orders" || shop.kind === "fees") && !ownerPath && rest !== "/qr.svg") {
       const args: RouteArgs = { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}) };

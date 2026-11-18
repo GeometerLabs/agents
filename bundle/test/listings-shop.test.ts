@@ -3,7 +3,7 @@
 // preset, the move into a runtime of its own when the shop takes an agent (its listings kept), and the backup's paths.
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { composeServer } from "../generate/compose.ts";
@@ -226,4 +226,43 @@ test("the form: name, town, trade and languages make the shop; no payment or Wha
   assert.equal(SETUPS.listings.runtime("", { wire: "openai", model: "m" }).services && Object.keys(SETUPS.listings.runtime("", undefined).services as object).length, 0, "runtime.json names no service");
   d.ownerNumber = "+919812345678";
   assert.equal((buildListingsSettings(d, example) as { settings: ReturnType<typeof parseSettings> }).settings.owner.whatsapp, "+919812345678");
+});
+
+// ---- backup, the owner's file, and the heartbeat ----------------------------------------------------------------------------------------------------
+
+test("backup: the shared volume is mounted ONCE for every shared shop, and each shop's database is its own folder of it", async () => {
+  const { dataMounts, dbOf, sharedOf } = await import("../backup/jobs.ts");
+  const state = { schema: 1, shops: {
+    "sree-pets": { index: 0, guards: {}, lockHistory: [], applied: { pathway: "listings@0.1.0" } },
+    "glow-pets": { index: 0, guards: {}, lockHistory: [], applied: { pathway: "listings@0.1.0" } },
+    "glow-salon": { index: 1, guards: {}, lockHistory: [], applied: { pathway: "bookings@0.1.0" } },
+  } } as unknown as State;
+  const server = serverConfig({});
+  assert.equal(sharedOf(state, "sree-pets"), true);
+  assert.equal(sharedOf(state, "glow-salon"), false);
+  assert.equal(dbOf(state, "sree-pets"), "/v/rt-data-listings/sree-pets/data/agent.db");
+  assert.equal(dbOf(state, "glow-pets"), "/v/rt-data-listings/glow-pets/data/agent.db");
+  assert.equal(dbOf(state, "glow-salon"), "/v/rt-data-glow-salon/data/agent.db");
+  const mounts = dataMounts(server, state, ["sree-pets", "glow-pets", "glow-salon"]);
+  assert.deepEqual(mounts.filter((m) => m !== "-v"), [`geometer-acme-vps-1_rt-data-listings:/v/rt-data-listings`, `geometer-acme-vps-1_rt-data-glow-salon:/v/rt-data-glow-salon`], "two shared shops, one mount: Docker refuses the same mount point twice");
+});
+
+test("the owner's file and the export carry a listings-only shop: its record and its listings, and no cases file", async () => {
+  const { exportShop } = await import("../backup/export.ts");
+  const root = listingsShopFile();
+  const keyFile = join(root, "person-key");
+  writeFileSync(keyFile, "0f".repeat(32), { mode: 0o600 });
+  const out = join(root, "out");
+  const r = exportShop({ name: "sree-pets", db: join(root, "agent.db"), out, personKeyFile: keyFile } as never);
+  assert.equal(r.ok, true, JSON.stringify(r));
+  const files = readdirSync(out).sort();
+  assert.ok(files.includes("record.json") && files.includes("listings.json") && files.includes("person-form.json"), files.join(", "));
+  assert.ok(!files.some((f) => /^(bookings|dues|orders|purchase-orders)\.json$/u.test(f)), "no cases file for a shop with no cases");
+  const listed = JSON.parse(readFileSync(join(out, "listings.json"), "utf8")) as { items?: { words: { en: { title: string } } }[] } | { words: { en: { title: string } } }[];
+  assert.match(JSON.stringify(listed), /Two Persian kittens/u);
+});
+
+test("the heartbeat carries a listings-only shop's counts in the one map fleet reads", async () => {
+  const src = readFileSync(new URL("../services/heartbeat.ts", import.meta.url), "utf8");
+  assert.match(src, /known\?\.orders \?\? known\?\.listings/u);
 });

@@ -50,11 +50,11 @@ import type { RecordFacts, Seal, ShopSnapshot } from "./snapshot.ts";
 export const project = (server: ServerConfig) => `geometer-${server.id.replace(/_/gu, "-")}`;
 const volume = (server: ServerConfig, v: string) => `${project(server)}_${v}`;
 /** Does this shop run on the shared process (a listings-only shop)? Its data is one folder of the shared volume, not a volume of its own. */
-const sharedOf = (state: State, shop: string): boolean => isShared(state.shops[shop]?.applied?.pathway.split("@")[0]);
+export const sharedOf = (state: State, shop: string): boolean => isShared(state.shops[shop]?.applied?.pathway.split("@")[0]);
 /** Where the shop's database is, in a job container that has mounted its data volume at `/v/<volume>`. */
-const dbOf = (state: State, shop: string): string => dbPathOf(`/v/${dataVolumeOf(shop, sharedOf(state, shop))}`, shop, sharedOf(state, shop));
+export const dbOf = (state: State, shop: string): string => dbPathOf(`/v/${dataVolumeOf(shop, sharedOf(state, shop))}`, shop, sharedOf(state, shop));
 /** The `docker run` arguments that mount the data volumes of these shops, each volume ONCE (the shared one holds many shops) at `/v/<volume>`. */
-function dataMounts(server: ServerConfig, state: State, shops: readonly string[]): string[] {
+export function dataMounts(server: ServerConfig, state: State, shops: readonly string[]): string[] {
   const vols = [...new Set(shops.map((n) => dataVolumeOf(n, sharedOf(state, n))))];
   return vols.flatMap((v) => ["-v", `${volume(server, v)}:/v/${v}`]);
 }

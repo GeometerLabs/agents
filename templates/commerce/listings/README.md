@@ -54,6 +54,10 @@ apart by construction** (next section), and the **one thing a shop can reach is 
 * **Let go.** Removing a shop, moving it into a runtime of its own, or restoring it from a backup first **takes its folder away** (`pathway.lock` first; `bundle/deploy.ts`
   `letGoOfListings`). The process stops that shop (its step in hand finishes; its store is closed) and answers "nothing here" for it. The deployer then **waits until
   `/shared/shops` no longer names the shop** before it copies or replaces the file, because a database that is open must not be copied (`bundle/lib/listings-move.ts` `letGoShared`).
+  `/shared/shops` names a shop until its store is **closed**, not only until it stops being served; and if the process cannot be asked, the deployer waits and then gives up: it never
+  takes silence for "let go" (only a container known to be down counts).
+* **Removal keeps the file.** Nothing deletes a shop's folder in the shared volume. A new shop with the name of a removed one is **refused** by the deployer (`shared-name-taken`), because it
+  would start on the old store and the old owner's passkey (every owner with no number has the same marker, so the passkey matches). A person moves the old folder aside first.
 * **A bad folder** (half written, the wrong version, a broken file) is logged once and skipped; the other shops run on. It is tried again when its files change.
 * **One version.** Every shop in the process runs this checkout's version of the template. A shop pinned to another version is refused by the deployer in words (`shared-version`),
   before anything is written.
@@ -117,8 +121,13 @@ phone check for an owner who **signs up alone** is not built yet (Deferred).
 4. **No shared state in the code.** Checked on 18 Nov 2026: the runtime, channels, assistant, push and listings modules keep nothing about a shop at module level (the only module-level
    caches are fonts and time formatters, the same for every shop). New code must keep it so: **never key a module-level map by anything a shop owns.**
 5. **One way out.** The container is on one network with the model Guard and its door, and nothing else. Each shop reaches the model Guard with **its own credential** (its own agent id),
-   so the model Guard counts and limits each shop on its own.
-6. **One shop failing never stops the others** (a bad folder is skipped; the process stays healthy).
+   so the model Guard **knows** each shop (its record names the agent, and the shop's agent can be switched off by itself: `ops stop <shop>`). **What limits each shop's model use is the
+   shop's own runtime allowance** (`runtime.json` `allowance`, from `LISTINGS_ALLOWANCE`: the month's messages and rupees the shop's own calls may add up to), counted in that shop's own
+   store. The model Guard's own cap (`model-calls-per-day`) is **one number for the whole server**, shared by every shop on it: a flood from one shop's owner is stopped by that shop's
+   allowance first, but a server-wide spike can still use up the day's calls for everyone (Deferred: a cap per agent at the Guard).
+6. **A shop that fails to start does not stop the others** (a bad folder is skipped; the process stays healthy). An error inside a request is caught by that shop's own server. What the
+   process cannot promise is protection from a crash that escapes every `try` (an unhandled rejection): that would take the whole process down, and every shop with it, until the container
+   restarts (seconds; each shop's saved steps resume). One process per shop is the price of ruling that out; it is Deferred, with its trigger.
 
 `templates/commerce/listings/test/shared-shops.test.ts` runs two real shops on one process and presents every credential of one to the other (channel token, internal token, owner link, grant,
 session, photo id); `modules/runtime/test/shared.test.ts` tests the finding, restarting and letting go with stand-ins.
@@ -126,10 +135,12 @@ session, photo id); `modules/runtime/test/shared.test.ts` tests the finding, res
 ## Taking an agent, and leaving
 
 A listings-only shop that takes an agent (Bookings, Orders, Fees, Stock orders) **keeps its file**. The deployer (`bundle/lib/listings-move.ts`, called by `bundle/deploy.ts` when the pin
-changes from a shared template to another): lets the shop go and waits; converts the saved state (`bundle/lib/listings-carry.ts`: the new template's own store holding the listings and the AI
-counts, written by its own codec, as one step with no new record line); copies the folder into the shop's own volume `rt-data-<shop>`; keeps the old folder as `.moved-<shop>-<time>`; and
-gives the shop an address of its own. The SQLite file is the same in every template (same tables, same schema number), so the **record's chain, the photos and the owner's passkeys come
-along**. "Get my shop's file" and "Change my Operator" work as for any shop (`bundle/backup`, `modules/approvals/leave.ts`): nothing in them knows the template.
+changes from a shared template to another): lets the shop go and waits; **copies** the folder into the shop's own volume `rt-data-<shop>` (the shared volume is only read); **converts the
+copy** (`bundle/lib/listings-carry.ts`: the new template's own store holding the listings and the AI counts, written by its own codec, as one step with no new record line); only then sets
+the old folder aside as `.moved-<shop>-<time>`; and gives the shop an address of its own. If anything fails before that last step the shared file is exactly as it was, the shop's folder is
+written back, and the shop is on the shared process again. The SQLite file is the same in every template (same tables, same schema number), so the **record's chain and the photos come
+along**. The owner's passkeys come along too, **but a passkey belongs to the owner's number**: an owner who had none and is now given one in the new settings (a template that sends
+WhatsApp needs a real number) is given a new sign-in code by the Operator. "Get my shop's file" and "Change my Operator" work as for any shop (`bundle/backup`, `modules/approvals/leave.ts`): nothing in them knows the template.
 
 The Operator changes the shop's pin and gives it the new template's settings (today by hand; a panel button is not built yet, see Deferred).
 

@@ -310,7 +310,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     }), [`${dirs.generated}/shops/${shop.name}/client/runtime.json`, `${dirs.generated}/shops/${shop.name}/client/settings.json`, `${dirs.generated}/shops/${shop.name}/client/pathway.lock`]);
   }
   // The shared process for the listings-only shops: ONE container, one door, whatever their number. It has no Guard of its own (these shops take no money and send no WhatsApp); its
-  // only way out is the model Guard, on the network it shares with it alone, and each shop reaches that Guard with its own credential, so each is counted and limited on its own.
+  // only way out is the model Guard, on the network it shares with it alone, and each shop reaches that Guard with its own credential, so the Guard knows each by its own id; each shop's own runtime allowance limits its use (the Guard's daily cap is one number for the server).
   //   /app                  the app, read-only: the one version of the template every shop on this process runs (a shop pinned to another is refused by the deployer)
   //   /shops                generated/listings/: one folder per shop, `<shop>/client/` (settings.json, runtime.json, pathway.lock LAST, pages.json, owner-grants.json, ...), read-only
   //   /run/secrets          secrets/rt-listings/: one folder per shop (internal_token, channel_token, record_key, agent_model), read-only
@@ -457,7 +457,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   const body: Record<string, Y> = { name: `geometer-${server.id.replace(/_/gu, "-")}`, services: Object.fromEntries(Object.entries(services).map(([n, s]) => [n, s.block as Y])), networks, volumes };
   return {
     compose: `# Written by the Geometer deploy bundle on every deploy. Do not edit: change a shop's files and deploy again.\n${yaml(body)}\n`,
-    caddyfile: caddyfile(server, agents, shops.map((s) => s.name)),
+    caddyfile: caddyfile(server, agents, shops.map((s) => s.name), allShops.length > 0),
     services,
   };
 }
@@ -505,7 +505,7 @@ function reportsHandlers(shops: readonly string[]): string[] {
 }
 
 /** Caddy: HTTPS for the builder's domain (a local certificate for localhost), and only a few places behind it: the inbox, the shops' report pages, a Guard of an agent someone else wrote, and the panel. */
-export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shops: readonly string[] = []): string {
+export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shops: readonly string[] = [], anyShop: boolean = shops.length > 0): string {
   const local = isLocalDomain(server.domain);
   return [
     `# Written by the Geometer deploy bundle. Caddy reaches the inbox, the relay and the panel (the only containers on its network), and serves each shop's report pages from a read-only folder.`,
@@ -514,7 +514,8 @@ export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shop
     ...(local ? [`\ttls internal`] : []),
     `\thandle /c/* {`, `\t\treverse_proxy inbox:${INBOX_PORT}`, `\t}`,
     // item 11d: each shop's public booking page, its API, its MCP endpoint and the owner's private page, served by the inbox process (modules/channels/front.ts)
-    ...(shops.length > 0 ? [`\thandle /s/* {`, `\t\treverse_proxy inbox:${INBOX_PORT}`, `\t}`] : []),
+    // /s/* is every shop's page, a listings-only shop's too (`anyShop`); only a shop with a container of its own has report pages (`shops`)
+    ...(anyShop ? [`\thandle /s/* {`, `\t\treverse_proxy inbox:${INBOX_PORT}`, `\t}`] : []),
     ...reportsHandlers([...shops].sort()),
     // an agent someone else wrote calls Guard here, not the service: each of its Guards has its own path, and only that Guard's agent port is behind it
     ...agents.flatMap((a) => a.guards.flatMap((g) => [`\thandle_path /g/${a.name}/${g.kind}/* {`, `\t\treverse_proxy ${g.service}:${GUARD_PORT}`, `\t}`])),

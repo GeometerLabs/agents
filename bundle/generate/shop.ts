@@ -334,7 +334,7 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
   if (shop.settings && problems.length === 0 && template.shared) {
     // A listings-only shop has NO Guard of its own and no container: it runs on the shared process. Its generated runtime.json says where its data and secrets are inside that process,
     // that it listens on the loopback address on a port of its own choosing (the process routes to it), that it calls no service, and the model it may use for drafts: through the
-    // server's one model Guard with this shop's own credential, so the model Guard counts and limits each shop on its own.
+    // server's one model Guard with this shop's own credential, so the model Guard knows each shop by its own agent id (its record, its own switch); what limits a shop's use is its runtime allowance below, since the Guard's daily cap is one number for the whole server.
     const paths = sharedPaths(shop.name);
     runtime = { mode: "live", host: "127.0.0.1", port: 0, dataDir: paths.data, ...(facts.tickSeconds !== undefined ? { tickSeconds: facts.tickSeconds } : {}), services: {}, allowance: { ...LISTINGS_ALLOWANCE } };
     if (facts.parser) runtime.parser = { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${paths.secrets}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) };

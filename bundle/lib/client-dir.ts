@@ -9,10 +9,11 @@ import { join } from "node:path";
 import { isShared } from "./kinds.ts";
 import { serverPaths } from "./server.ts";
 import { loadState } from "./state.ts";
+import type { State } from "./state.ts";
 
 /** The pathway a shop runs now (`listings`), or the one it is pinned to when nothing has been applied; undefined for a folder that has neither. */
-export function pathwayOfShop(dir: string, shop: string): string | undefined {
-  const applied = loadState(dir).shops[shop]?.applied?.pathway;
+export function pathwayOfShop(dir: string, shop: string, state?: State): string | undefined {
+  const applied = (state ?? loadState(dir)).shops[shop]?.applied?.pathway;
   if (applied) return applied.split("@")[0];
   const lock = join(serverPaths(dir).shop(shop), "pathway.lock");
   if (!existsSync(lock)) return undefined;
@@ -21,4 +22,5 @@ export function pathwayOfShop(dir: string, shop: string): string | undefined {
 }
 
 /** The folder the shop's running runtime reads its client files from. */
-export const clientDir = (dir: string, shop: string): string => join(serverPaths(dir).generated, isShared(pathwayOfShop(dir, shop)) ? "listings" : "shops", shop, "client");
+/** `state`: the deployer's state in memory, mid-deploy, when what is applied is not on disk yet (a shop moving from the shared process to a runtime of its own). */
+export const clientDir = (dir: string, shop: string, state?: State): string => join(serverPaths(dir).generated, isShared(pathwayOfShop(dir, shop, state)) ? "listings" : "shops", shop, "client");

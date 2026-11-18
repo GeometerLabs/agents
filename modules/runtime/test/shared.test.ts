@@ -113,6 +113,30 @@ test("a shop whose folder goes (a removed shop, or one that moved into a runtime
   assert.equal((await get(p, "/shop/a-shop/healthz")).status, 200);
 });
 
+test("a shop that is stopping is still NAMED until its store is closed: a deployer must not copy a file that is open", async () => {
+  const root = mkdtempSync(join(tmpdir(), "shared-"));
+  dirs.push(root);
+  folder(root, "slow");
+  let release!: () => void;
+  const gate = new Promise<void>((ok) => { release = ok; });
+  let closed = false;
+  const p = await startShared({
+    source: folderSource({ clientsDir: join(root, "clients"), secretsDir: join(root, "secrets") }), port: 0, scanSeconds: 3600,
+    start: async () => ({ server: { port: 9 }, stop: async () => { await gate; closed = true; } }),
+  });
+  procs.push(p);
+  rmSync(join(root, "clients", "slow", "client", "pathway.lock"));
+  const letting = p.scan();
+  await new Promise((ok) => setTimeout(ok, 50));
+  assert.equal(closed, false);
+  assert.deepEqual((await get(p, "/shared/shops")).body, { shops: ["slow"] }, "still named while its step finishes and its store closes");
+  assert.equal((await get(p, "/shop/slow/status")).status, 404, "but no longer served");
+  release();
+  await letting;
+  assert.equal(closed, true);
+  assert.deepEqual((await get(p, "/shared/shops")).body, { shops: [] }, "named no more once it is closed");
+});
+
 test("a shop that fails to start is logged and skipped, said once, and tried again only when its files change; the process stays healthy", async () => {
   const { root, p, log } = await boot(["good", "bad"], { fail: ["bad"] });
   assert.deepEqual(p.held(), ["good"]);
