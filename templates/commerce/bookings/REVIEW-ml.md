@@ -580,6 +580,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `shop.backupNone` | സെർവറിന് പുറത്ത് ഇതുവരെ കോപ്പി ഇല്ല. | No copy off the server yet. |  |
 | `shop.backupDrill` | ബാക്കപ്പ് തിരിച്ചെടുത്ത് നോക്കിയ അവസാന പരിശോധന: 4 Nov 2026, 04:00, പൊരുത്തപ്പെട്ടു | Last restore check: 4 Nov 2026, 04:00, it matched |  |
 | `shop.backupDrillNone` | ബാക്കപ്പ് തിരിച്ചെടുത്ത് ഇതുവരെ നോക്കിയിട്ടില്ല. | No restore check yet. |  |
+| `shop.pausedLine` | undefined വരെ നിർത്തിവച്ചിരിക്കുന്നു: ഈ കടയുടെ പേജുകൾ വീണ്ടും വീണ്ടും പരാജയപ്പെട്ടു. സന്ദർശകർ "ഉടൻ തിരിച്ചെത്തും" പേജ് കാണുന്നു. അതിന്റെ ഫയലുകൾ നോക്കൂ, അല്ലെങ്കിൽ Geometer-ന് എഴുതൂ. | Paused until undefined: this shop's pages failed again and again. Its visitors see "back soon". Look at its files, or write to Geometer. |  |
 | `shop.settings` | ഈ കടയെക്കുറിച്ച് ഏജന്റിന് അറിയാവുന്നത് | What the agent knows about this shop |  |
 | `shop.settingsEdit` | ക്രമീകരണങ്ങൾ മാറ്റൂ | Change settings |  |
 | `shop.summaryServices` | സേവനങ്ങൾ | Services |  |
@@ -719,6 +720,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `plan.warn.ai_cap` | ഈ കട ഈ മാസത്തെ AI പരിധി ഉപയോഗിച്ചുകഴിഞ്ഞു. നിയമങ്ങളും മെനുവും ഉപയോഗിച്ച് മറുപടി തുടരും; മുഴുവൻ AI അടുത്ത മാസം 1-ന് തിരികെ വരും. | This shop has used its AI allowance for the month. It keeps answering with rules and menus; the full AI comes back on the 1st. |  |
 | `plan.budget.warn` | ഈ കടയുടെ ഈ മാസത്തെ മോഡൽ ബജറ്റിൽ ഭൂരിഭാഗവും ഉപയോഗിച്ചു (₹20-ൽ ₹16). ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. തീർന്നാൽ അസിസ്റ്റന്റ് 1-ാം തീയതി വരെ ബട്ടണുകളും സ്ഥിര ഉത്തരങ്ങളും ഉപയോഗിക്കും. | Most of this shop's model budget for the month is used (₹16 of ₹20). The owner has been told. If it runs out, the assistant answers with buttons and fixed answers until the 1st. |  |
 | `plan.budget.full` | ഈ കടയുടെ ഈ മാസത്തെ മോഡൽ ബജറ്റ് (₹20) തീർന്നു. ഉടമയെ അറിയിച്ചിട്ടുണ്ട്. ബട്ടണുകളും നിയമങ്ങളും സ്ഥിര ഉത്തരങ്ങളും തുടരും; അസിസ്റ്റന്റിന്റെ സ്വന്തം വാക്കുകൾ 1-ാം തീയതി തിരിച്ചുവരും. | This shop's model budget for the month (₹20) is used up. The owner has been told. Buttons, rules and fixed answers go on; the assistant's own words come back on the 1st. |  |
+| `plan.budget.own` | മോഡൽ ബജറ്റ്: മാസം ₹40, ഈ കടയ്ക്കായി 2026-11-19-ന് നിശ്ചയിച്ചത്: busy shop, owner asked | Model budget: ₹40 a month, set for this shop on 2026-11-19: busy shop, owner asked |  |
 | `licence.heading` | ലൈസൻസ് | Licence |  |
 | `licence.states.active` | ലൈസൻസ് ശരിയാണ് | Licence in order |  |
 | `licence.states.reminder` | ലൈസൻസ് പണം അടയ്ക്കാനുണ്ട് | Licence payment due |  |

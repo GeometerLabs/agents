@@ -395,6 +395,7 @@ ${whyList.length > 0 ? html`<ul>${whyList}</ul>` : ""}
 <ul class="plain">
   <li><span class="mark">${status?.limits ? (status.limits.proven === status.limits.of ? "✓" : "!") : "·"}</span><span>${status?.limits ? c.w.shops.limits(status.limits.proven, status.limits.of) : c.w.shops.limitsUnknown}${status?.limits && status.limits.unprovable.length > 0 ? html`<br><small class="note">${w.unprovable(status.limits.unprovable.join(", "))}</small>` : ""}</span></li>
   <li class="info"><span class="mark">·</span><span>${status?.deploy?.at ? w.lastDeploy(when(status.deploy.at, c.lang)) : w.neverDeployed}${status?.versions ? html`<br><small class="note">${w.versions(status.versions.pathway ?? "?", status.versions.bundle ?? "?")}</small>` : ""}</span></li>
+  ${status?.paused ? html`<li><span class="mark">!</span><span>${w.pausedLine(when(status.paused.until, c.lang))}</span></li>` : ""}
   <li class="info"><span class="mark">·</span><span>${status?.backups?.lastCopyAt ? w.backupCopy(when(status.backups.lastCopyAt, c.lang)) : w.backupNone}<br>${status?.backups?.lastDrillAt ? w.backupDrill(when(status.backups.lastDrillAt, c.lang), status.backups.drillOk === true) : w.backupDrillNone}</span></li>
 </ul>
 

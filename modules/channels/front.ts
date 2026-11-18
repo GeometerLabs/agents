@@ -64,6 +64,7 @@ import type { OwnerLimitsView } from "./owner-limits-page.ts";
 import { DOCUMENT_SUB, documentHtml, receiptsBox, receiptsOf } from "./receipts.ts";
 import { exportPeriods } from "../accounting/periods.ts";
 import { CONTACT_HEADER, shopErrorPage } from "./contact-bar.ts";
+import { BACK_SOON } from "./words-back-soon.ts";
 import type { OwnerCred } from "./backend.ts";
 import { CSRF_HEADER, csrfMatches, ownerSessionRoute } from "./owner-session.ts";
 import type { PagesFile } from "./pages-file.ts";
@@ -1012,6 +1013,8 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       if (!res.headersSent) {
         // the shop's runtime did not answer: in the visitor's language, with the Operator's number when this shop's file names one (partnerOf, set when the shop was found)
         const l = languageOf(req, new URL(req.url ?? "/", "http://front"), LANGUAGES);
+        // a shop the shared process paused (a shop that kept stopping its worker): the "back soon" sentence, and a long Retry-After, not the generic text
+        if (e instanceof BackendError && e.backSoon) return sendHtml(res, 503, shopErrorPage(l, BACK_SOON[l], partnerOf.get(res)), { "retry-after": "3600" });
         sendHtml(res, 503, shopErrorPage(l, PAGE[l].calendarUnread, partnerOf.get(res)), { "retry-after": "60" });
       }
     });

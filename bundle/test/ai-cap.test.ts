@@ -91,6 +91,8 @@ test("an older pathway that does not know model: the cap is skipped, the shop ke
 
 test("the cap is part of what the shop is asked to be: off changes the desired hash, normal restores it, and a shop that never had it keeps its hash", () => {
   const t = tempServer(); try {
+    // the baseline is a fleet answer with the plan and no flag: since 19 Nov the plan gives the shop a model budget, and the budget is part of the desired hash (deploy.ts desiredOf)
+    putAnswer(t.paths, answer({ model: undefined, warn: [] }));
     const plain = desiredHashOf(t.shop("glow-salon"));
     putAnswer(t.paths, answer({ model: "normal" }));
     assert.equal(desiredHashOf(t.shop("glow-salon")), plain, "'normal' is nothing");
@@ -105,6 +107,8 @@ test("the deployer redeploys a shop when fleet caps it, writes model: off, and r
   const w = world();
   try {
     w.handIn("glow-salon");
+    // the baseline is a fleet answer with the plan and no flag: since 19 Nov the plan gives the shop a model budget, and the budget is part of the desired hash (deploy.ts desiredOf)
+    putAnswer(w.paths, answer({ model: undefined, warn: [] }));
     await deploy(w.ctx);
     const first = loadState(w.root).shops["glow-salon"].applied!.desiredHash;
     putAnswer(w.paths, answer());

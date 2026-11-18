@@ -580,6 +580,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `shop.backupNone` | ಸರ್ವರ್‌ನ ಹೊರಗೆ ಇನ್ನೂ ಯಾವುದೇ ಪ್ರತಿ ಇಲ್ಲ. | No copy off the server yet. |  |
 | `shop.backupDrill` | ಬ್ಯಾಕಪ್ ಮರಳಿ ತಂದು ನೋಡಿದ ಕೊನೆಯ ಪರೀಕ್ಷೆ: 4 Nov 2026, 04:00, ಮೂಲದ ಜೊತೆ ಹೊಂದಿತು | Last restore check: 4 Nov 2026, 04:00, it matched |  |
 | `shop.backupDrillNone` | ಬ್ಯಾಕಪ್ ಮರಳಿ ತಂದು ನೋಡುವ ಪರೀಕ್ಷೆ ಇನ್ನೂ ಆಗಿಲ್ಲ. | No restore check yet. |  |
+| `shop.pausedLine` | undefined ವರೆಗೆ ನಿಲ್ಲಿಸಲಾಗಿದೆ: ಈ ಅಂಗಡಿಯ ಪುಟಗಳು ಮತ್ತೆ ಮತ್ತೆ ವಿಫಲವಾದವು. ಭೇಟಿ ನೀಡುವವರಿಗೆ "ಶೀಘ್ರದಲ್ಲೇ ಬರುತ್ತೇವೆ" ಪುಟ ಕಾಣುತ್ತದೆ. ಅದರ ಫೈಲ್‌ಗಳನ್ನು ನೋಡಿ, ಅಥವಾ Geometer ಗೆ ಬರೆಯಿರಿ. | Paused until undefined: this shop's pages failed again and again. Its visitors see "back soon". Look at its files, or write to Geometer. |  |
 | `shop.settings` | ಈ ಅಂಗಡಿಯ ಬಗ್ಗೆ ಏಜೆಂಟ್‌ಗೆ ತಿಳಿದಿರುವುದು | What the agent knows about this shop |  |
 | `shop.settingsEdit` | ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಬದಲಾಯಿಸಿ | Change settings |  |
 | `shop.summaryServices` | ಸೇವೆಗಳು | Services |  |
@@ -719,6 +720,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `plan.warn.ai_cap` | ಈ ಅಂಗಡಿ ಈ ತಿಂಗಳ AI ಮಿತಿಯನ್ನು ಬಳಸಿಯಾಗಿದೆ. ಇದು ನಿಯಮಗಳು ಮತ್ತು ಮೆನುಗಳಿಂದ ಉತ್ತರಿಸುವುದನ್ನು ಮುಂದುವರಿಸುತ್ತದೆ; ಪೂರ್ಣ AI ಮುಂದಿನ ತಿಂಗಳ 1ನೇ ತಾರೀಖು ಮರಳಿ ಬರುತ್ತದೆ. | This shop has used its AI allowance for the month. It keeps answering with rules and menus; the full AI comes back on the 1st. |  |
 | `plan.budget.warn` | ಈ ಅಂಗಡಿಯ ಈ ತಿಂಗಳ ಮಾಡೆಲ್ ಬಜೆಟ್‌ನ ಹೆಚ್ಚಿನ ಭಾಗ ಬಳಕೆಯಾಗಿದೆ (₹20 ರಲ್ಲಿ ₹16). ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. ಮುಗಿದರೆ ಅಸಿಸ್ಟೆಂಟ್ 1ನೇ ತಾರೀಖಿನವರೆಗೆ ಬಟನ್‌ಗಳು ಮತ್ತು ನಿಗದಿತ ಉತ್ತರಗಳಿಂದ ಕೆಲಸ ಮಾಡುತ್ತದೆ. | Most of this shop's model budget for the month is used (₹16 of ₹20). The owner has been told. If it runs out, the assistant answers with buttons and fixed answers until the 1st. |  |
 | `plan.budget.full` | ಈ ಅಂಗಡಿಯ ಈ ತಿಂಗಳ ಮಾಡೆಲ್ ಬಜೆಟ್ (₹20) ಮುಗಿದಿದೆ. ಮಾಲೀಕರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. ಬಟನ್‌ಗಳು, ನಿಯಮಗಳು ಮತ್ತು ನಿಗದಿತ ಉತ್ತರಗಳು ಮುಂದುವರಿಯುತ್ತವೆ; ಅಸಿಸ್ಟೆಂಟ್‌ನ ಸ್ವಂತ ಮಾತುಗಳು 1ನೇ ತಾರೀಖಿಗೆ ಮರಳುತ್ತವೆ. | This shop's model budget for the month (₹20) is used up. The owner has been told. Buttons, rules and fixed answers go on; the assistant's own words come back on the 1st. |  |
+| `plan.budget.own` | ಮಾಡೆಲ್ ಬಜೆಟ್: ತಿಂಗಳಿಗೆ ₹40, ಈ ಅಂಗಡಿಗಾಗಿ 2026-11-19 ರಂದು ನಿಗದಿಪಡಿಸಲಾಗಿದೆ: busy shop, owner asked | Model budget: ₹40 a month, set for this shop on 2026-11-19: busy shop, owner asked |  |
 | `licence.heading` | ಪರವಾನಗಿ | Licence |  |
 | `licence.states.active` | ಪರವಾನಗಿ ಸರಿಯಾಗಿದೆ | Licence in order |  |
 | `licence.states.reminder` | ಪರವಾನಗಿ ಪಾವತಿ ಬಾಕಿ ಇದೆ | Licence payment due |  |

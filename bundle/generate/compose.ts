@@ -47,7 +47,7 @@ import { agentNames } from "../agent/plan.ts";
 import { DESK_PORT, GUPSHUP_TOKEN_MOUNT, LICENCE_MOUNT, OWNER_MARKED_KINDS, PUSH_PORT, PUSH_SERVICE } from "./guards.ts";
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import type { GuardKind } from "./guards.ts";
-import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, SHARED, names } from "./shop.ts";
+import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, SHARED, SHARED_POOL, names, sharedMemLimitMb } from "./shop.ts";
 import { DIRECTORY_PORT, DOOR_INTERNAL_PORT, DOOR_PORT, DOOR_ROBOTS_DISALLOW, NOTHING_HEADER } from "../services/door.ts";
 import { HOME_EXAMPLES_REDIRECT, HOME_MOUNT, HOME_ROBOTS_DISALLOW, HOME_SITE_ROOT } from "../lib/home.ts";
 
@@ -339,7 +339,9 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       networks: { [SHARED.net]: {}, admin: { ipv4_address: doorIp } },
     });
     add(SHARED.runtime, node(["node", "/app/templates/commerce/listings/server/shared-main.ts"], {
-      environment: { SHOPS_DIR: "/shops", SECRETS_DIR: "/run/secrets", HOST: "0.0.0.0", PORT: String(RUNTIME_PORT), SCAN_SECONDS: "5" },
+      environment: { SHOPS_DIR: "/shops", SECRETS_DIR: "/run/secrets", HOST: "0.0.0.0", PORT: String(RUNTIME_PORT), SCAN_SECONDS: "5", SHARED_WORKERS: String(SHARED_POOL.workers), SHARED_WORKER_MB: String(SHARED_POOL.workerMb) },
+      // the outer memory wall (shop.ts SHARED_POOL): the workers' limits cap V8's heap only, so this is what stops Buffers or SQLite memory from taking the server
+      mem_limit: `${sharedMemLimitMb()}m`,
       volumes: [`${dirs.app}:/app:ro`, `${dirs.generated}/listings:/shops:ro`, `${dirs.secrets}/${SHARED.runtime}:/run/secrets:ro`, `${SHARED.dataVolume}:${HOME_DIR}`],
       networks: { [SHARED.net]: {} },
       healthcheck: healthWget(RUNTIME_PORT, "/readyz"),

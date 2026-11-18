@@ -17,7 +17,7 @@
 // code keeps them apart by construction: nothing here is keyed by anything but the shop's own object (no module-level state in the runtime holds a shop's data: checked on
 // 18 Nov, the only module-level caches are fonts and time formatters, the same for everyone), and the tests cross every credential from one shop to another.
 //
-// CRASH CONTAINMENT (18 Nov 2026). Shops share one operating-system process, so one shop's failure must never become every shop's. Every per-shop path is contained:
+// CRASH CONTAINMENT (18 Nov 2026; the worker pool 19 Nov 2026). Shops share one operating-system process, so one shop's failure must never become every shop's. Every per-shop path is contained:
 //   - a request: each shop's own server catches a handler's error and answers 500 for that request alone (modules/runtime/http.ts);
 //   - the clock: `runtime.tick()` never rejects (ticker.ts), and a step that throws is a failed task of that shop (core.ts);
 //   - the start (opening the store, reading the folder): caught here, logged once, the shop skipped and tried again after a back-off;
@@ -25,8 +25,21 @@
 //     stopped and started again, after a back-off that doubles each time (BACKOFF_MS, up to MAX_BACKOFF_MS) and starts over when the shop has been well again;
 //   - anything that still escapes every try (an unhandled rejection or exception): the process keeps running (a handler is installed, so Node does not exit), it is logged once, and the
 //     shop it came from, found through the async context the shop was started in, is counted as a bad look and so restarted alone. If the shop cannot be told, it is logged and nothing else happens.
-// What this cannot rule out is a shop that blocks the event loop (an endless loop) or exhausts memory: that takes every shop on the process with it, and only a process for each shop
-// (or a few worker threads) would stop it. That costs about 40 to 60 MB a shop instead of a few MB, so it is not done (Deferred, with its trigger).
+// What a try cannot catch is a shop that BLOCKS THE EVENT LOOP (an endless loop, a pathological regex, a huge synchronous job) or EXHAUSTS MEMORY. In one thread that takes every shop with it.
+// With a `pool` the shops run in a small pool of WORKER THREADS instead (shared-pool.ts; the thread's side is shared-worker.ts), and that is contained too:
+//   - each shop's own `start` runs INSIDE a worker, and its own HTTP server listens on the loopback address inside that worker, so the router here still forwards by port, exactly as before;
+//     this thread keeps finding the shops, routing, /healthz, /readyz, /shared/shops and the supervision. K workers (SHARED_WORKERS, default 4); a new shop goes to the least loaded one;
+//   - a worker has a memory limit (resourceLimits, SHARED_WORKER_MB, default 256): one that runs out exits, and only its shops are out while it is started again;
+//   - a WATCHDOG pings every worker every 2 s; one silent for 10 s is blocked, and is terminate()d (which stops even a busy loop) and started again with its shops. Until then the other
+//     workers, and this thread, answer as usual. Shops of the lost worker get a quick 503 with Retry-After, never a hang (a request to a shop's server also has a 10 s timeout);
+//   - WHO WAS IT: a worker writes the shop whose code is running into a shared slot, which this thread can read while the worker is stuck. That shop gets a STRIKE; if the slot is empty,
+//     every shop of that worker with a request in flight does. 2 strikes in 30 minutes move the shop to a worker of its own with half the memory (128 MB); 3 failures there in an hour
+//     PAUSE it: its pages answer a friendly "back soon" page in the shop's language (the template gives it, `backSoon`), it is named in the log, in /readyz and in /shared/shops (`paused`),
+//     and it is tried again after 6 hours, or at once when its files change. Every number is a named constant in shared-pool.ts with its reason.
+// Why a pool and not a thread per shop: measured on Node 26, one thread that loads the listings start code and opens an HTTP server costs about 33 MB (and starts in about 0.17 s). Hundreds of
+// always-on threads do not fit a 4 GB server; four to eight workers hold the same shops in a few hundred MB, and quarantine spends the extra thread only on a shop that has earned it.
+// What is still not contained: a shop that is only SLOW (a long but finite synchronous stretch under 10 s) holds its worker's other shops up for that long and is not struck; and the sync
+// parts of a shop's code that run outside any shop context are charged to every shop with a request in flight (Deferred).
 //
 // A shop that fails to start (a folder half written, the wrong version, a bad file) is logged and skipped; the others run on. It is tried again when its files change, and after a back-off.
 import { AsyncLocalStorage } from "node:async_hooks";
@@ -35,6 +48,8 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createServer, request as httpRequest } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { join } from "node:path";
+import { createPool } from "./shared-pool.ts";
+import type { Pool, PoolOptions, PoolStatus } from "./shared-pool.ts";
 
 /** A shop's name, as everywhere (fleet's page slugs, the compose names): lower case letters, digits and dashes. */
 export const SHOP_NAME = /^[a-z0-9][a-z0-9-]{0,39}$/u;
@@ -73,12 +88,26 @@ export function folderSource(o: { clientsDir: string; secretsDir: string }): Sho
 }
 
 /** What the shared process needs of a started shop: the port of its own server, and a way to let it go (the step in hand finishes, the store is closed). */
-export interface HeldShop { server: { port: number }; stop(): Promise<void> }
+export interface HeldShop {
+  server: { port: number };
+  stop(): Promise<void>;
+  // The three below are set only by a shop that lives in a pool thread (shared-pool.ts); a shop started in this thread has none and is routed as before.
+  /** Why this shop cannot be served just now: its thread is being started again, or it is paused ("back soon"). The port is not used then. */
+  down?(): "restarting" | "paused" | undefined;
+  /** A request to this shop begins; the function it returns is called when it ends. The pool counts requests in flight to name the culprit of a thread that dies with none running. */
+  track?(): () => void;
+  /** How long the router waits for this shop's own server (ms); the default is 30 000. A pooled shop gets less: a blocked thread must not hold a visitor. */
+  timeoutMs?: number;
+}
 
 export interface SharedOptions {
   source: ShopSource;
-  /** Start one shop with its own folder and tokens, listening on the loopback address on a port of its own. The template's `startClient`. */
-  start(paths: ShopPaths, listen: { host: string; port: number }): Promise<HeldShop>;
+  /** Start one shop with its own folder and tokens, listening on the loopback address on a port of its own. The template's `startClient`. It runs IN THIS THREAD: give `pool` instead to run shops in worker threads. */
+  start?(paths: ShopPaths, listen: { host: string; port: number }): Promise<HeldShop>;
+  /** Run the shops in a small pool of worker threads (shared-pool.ts), so a shop that blocks the loop or eats memory takes only its own thread's shops down, briefly. `startModule` is the template's start as a module. */
+  pool?: PoolOptions;
+  /** The page for a PAUSED shop (a shop that kept stopping its worker), in the shop's own language: the template gives it its words and look. Without it a plain JSON 503 is sent. */
+  backSoon?(paths: ShopPaths, req: IncomingMessage): { html: string; json: unknown };
   /** The address the front side listens on. 0.0.0.0 in the container (the door forwards to it); 127.0.0.1 by default. */
   host?: string;
   /** The front port (8780, the same as a single shop's runtime). 0: any free one. */
@@ -103,6 +132,8 @@ export interface SharedProcess {
   scan(): Promise<ScanResult>;
   /** The shops held now, by name. */
   held(): string[];
+  /** The pool's threads, the shops in quarantine and the shops paused (empty without a pool). */
+  pool(): PoolStatus;
   stop(): Promise<void>;
 }
 
@@ -137,6 +168,14 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
     log(`${name}: ${why}; it will be tried again after a pause (the other shops go on).`);
   };
   let queue: Promise<unknown> = Promise.resolve();
+  if (!o.start && !o.pool) throw new Error("startShared needs `start` (shops in this thread) or `pool` (shops in worker threads).");
+  const pool: Pool | undefined = o.pool ? createPool(o.pool, {
+    now, log,
+    // a throw nothing caught, inside a pool thread: one bad look for that shop, as for a shop in this thread (see `contain` below)
+    bad: (name) => { if (heldShops.has(name)) bad.set(name, (bad.get(name) ?? 0) + 1); },
+    // a shop that could not be started again after its thread was: let go, and the scan starts it again after the usual back-off
+    lost: (name, why) => { queue = queue.then(async () => { await letGo(name, why); hurt(name, why); }).catch(() => undefined); },
+  }) : undefined;
 
   async function letGo(name: string, why: string): Promise<void> {
     const h = heldShops.get(name);
@@ -162,7 +201,7 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
       if (!have && heldShops.size >= MAX_SHOPS) { result.failed.push({ shop: name, why: `this process holds at most ${MAX_SHOPS} shops` }); continue; }
       if (have) await letGo(name, "its files changed");
       try {
-        const shop = await whose.run(name, () => o.start(o.source.paths(name), { host: "127.0.0.1", port: 0 }));
+        const shop = await whose.run(name, () => pool ? pool.start(o.source.paths(name), fingerprint) : o.start!(o.source.paths(name), { host: "127.0.0.1", port: 0 }));
         heldShops.set(name, { fingerprint, shop });
         failedAt.delete(name);
         (have ? result.restarted : result.started).push(name);
@@ -179,6 +218,7 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
     // a shop that is held but not well: looked at on every scan; three bad looks in a row and THAT shop is stopped (the next scan starts it again, after its back-off)
     for (const name of [...heldShops.keys()]) {
       const h = heldShops.get(name)!;
+      if (h.shop.down?.()) { bad.delete(name); continue; } // its thread is starting again, or it is paused: the pool is looking after it, and a probe would only find nothing
       if (await probe(h.shop.server.port)) { bad.delete(name); if (backoff.has(name) && !failedAt.has(name)) backoff.delete(name); continue; }
       const n = (bad.get(name) ?? 0) + 1;
       bad.set(name, n);
@@ -191,12 +231,25 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
   }
   const scan = (): Promise<ScanResult> => { const next = queue.then(scanOnce, scanOnce); queue = next.catch(() => undefined); return next; };
 
-  const json = (res: ServerResponse, status: number, body: unknown): void => { res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }); res.end(JSON.stringify(body)); };
+  const json = (res: ServerResponse, status: number, body: unknown, extra: Record<string, string> = {}): void => { res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...extra }); res.end(JSON.stringify(body)); };
+  /** A paused shop's pages: the template's "back soon" page (html when the visitor asks for a page, json for the front's own calls), 503, Retry-After an hour so nothing hammers it, and `x-back-soon` so the front (backend.ts BackendError.backSoon) can say it in the visitor's language. */
+  function backSoon(req: IncomingMessage, res: ServerResponse, name: string): void {
+    const page = o.backSoon?.(o.source.paths(name), req);
+    if (!page) return json(res, 503, { error: "This shop is paused for a while. Please come back later." }, { "retry-after": "3600", "x-back-soon": "1" });
+    if ((req.headers.accept ?? "").includes("text/html")) { res.writeHead(503, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "retry-after": "3600", "x-back-soon": "1" }); res.end(page.html); return; }
+    json(res, 503, page.json, { "retry-after": "3600", "x-back-soon": "1" });
+  }
 
   /** Pass the request to the shop's own server, byte for byte, with the shop's own credential still on it: the check is the shop's. */
   function forward(req: IncomingMessage, res: ServerResponse, name: string, rest: string, search: string): void {
     const h = heldShops.get(name);
     if (!h) return json(res, 404, { error: "There is nothing here." });
+    // a shop whose thread is being started again: a quick 503 with Retry-After, never a wait for a port that is not there
+    const down = h.shop.down?.();
+    if (down === "paused") return backSoon(req, res, name);
+    if (down) return json(res, 503, { error: "This shop is starting again. Please try in a moment." }, { "retry-after": "2" });
+    const done = h.shop.track?.();
+    if (done) { res.on("close", done); }
     const headers: Record<string, string | string[]> = {};
     for (const [k, v] of Object.entries(req.headers)) if (v !== undefined && !HOP.has(k)) headers[k] = v;
     headers.host = `127.0.0.1:${h.shop.server.port}`;
@@ -206,16 +259,18 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
       res.writeHead(r.statusCode ?? 502, out);
       r.pipe(res);
     });
-    up.setTimeout(30_000, () => up.destroy(new Error("the shop did not answer in time")));
-    up.on("error", () => { if (!res.headersSent) json(res, 502, { error: "The shop could not be reached just now." }); else res.destroy(); });
+    up.setTimeout(h.shop.timeoutMs ?? 30_000, () => up.destroy(new Error("the shop did not answer in time")));
+    // a pooled shop that cannot be reached is almost always its thread being stopped and started again: tell the visitor to come back in a moment
+    up.on("error", () => { if (!res.headersSent) { if (h.shop.timeoutMs) json(res, 503, { error: "This shop is busy. Please try in a moment." }, { "retry-after": "2" }); else json(res, 502, { error: "The shop could not be reached just now." }); } else res.destroy(); });
     req.on("aborted", () => up.destroy());
     req.pipe(up);
   }
 
   const server: Server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://shared");
-    if (url.pathname === "/healthz" || url.pathname === "/readyz") return json(res, 200, { ok: true, shops: heldShops.size });
-    if (url.pathname === "/shared/shops" && req.method === "GET") return json(res, 200, { shops: [...new Set([...heldShops.keys(), ...closing])].sort() });
+    // paused/quarantined: the one place the Operator (and the deployer's checks) can see a shop that keeps hurting its worker; the process itself stays healthy
+    if (url.pathname === "/healthz" || url.pathname === "/readyz") { const st = pool?.status(); return json(res, 200, { ok: true, shops: heldShops.size, ...(st ? { paused: st.paused, quarantined: st.quarantined } : {}) }); }
+    if (url.pathname === "/shared/shops" && req.method === "GET") return json(res, 200, { shops: [...new Set([...heldShops.keys(), ...closing])].sort(), ...(pool ? { paused: pool.status().paused, pausedDetail: pool.status().pausedDetail } : {}) });
     const m = SHOP_ROUTE.exec(url.pathname);
     if (m) return forward(req, res, m[1], m[2] ?? "/", url.search);
     json(res, 404, { error: "There is nothing here." });
@@ -247,6 +302,7 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
   return {
     port, url: `http://${(o.host ?? "127.0.0.1").includes(":") ? `[${o.host}]` : (o.host ?? "127.0.0.1")}:${port}`,
     scan, held: () => [...new Set([...heldShops.keys(), ...closing])].sort(),
+    pool: () => pool?.status() ?? { workers: [], quarantined: [], paused: [], pausedDetail: [] },
     async stop() {
       clearInterval(timer);
       process.off("unhandledRejection", onRejection);
@@ -254,6 +310,7 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
       await queue.catch(() => undefined);
       await new Promise<void>((done) => { server.closeAllConnections(); server.close(() => done()); });
       await Promise.all([...heldShops.keys()].map((n) => letGo(n, "the process is stopping")));
+      await pool?.close();
     },
   };
 }
