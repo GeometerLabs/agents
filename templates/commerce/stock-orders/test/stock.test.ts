@@ -96,7 +96,7 @@ test("a counted item at its low mark starts one reorder through the existing flo
   assert.equal(w.orders().length, 1, "once per crossing: more ticks make no second order");
 });
 
-test("a second fall to the low mark after a restock is a new crossing and a new reorder; the same crossing never makes two", async () => {
+test("one crossing makes one reorder, even when the owner cancels it: the same crossing never makes a second", async () => {
   const w = createWorld();
   count(w, "hair-oil", 2, { low: 2, unit: "bottle" }); // starts at the mark: crossing 1
   await w.tick();
