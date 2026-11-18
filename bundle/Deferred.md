@@ -537,3 +537,10 @@ The service is `bundle/services/speech/` (README there). It was written and test
 - [ ] **A stranded shop is listed, not rescued.** `/stranded` (builder accounts) lists the shop; moving it (a restore from the backup under a new Operator) is Geometer's admin's by hand with `restore-snapshot.ts` and the plan call. Done when: a one-step "restore this shop under another Operator" exists, with the owner's code.
 - [ ] **`geometer import <package>` is not built** (next-phase 3.1 item 4), so the owner's file can be read and verified by anyone but not yet loaded into a new server by one command.
 
+## The directory service (block S, 18 Nov 2026): what it leaves out
+
+- **Which shops to read.** The directory reads feeds that a shop's notice names and the addresses in `geometer.json` `directory.feeds`. It does not yet ask fleet which shops have listing on, so a shop whose notice never arrives waits for the next time something names it. Done when fleet answers a public list of pages with listing on and the service reads it hourly (modules/Deferred.md).
+- **A real Docker run.** Nothing here was started in Docker (the machine rule). The container's networks, volume, user and health check are tested as generated text only. Done when a deploy on a test server shows `/search` through Caddy and the door, and a shop's feed read through `door:8798`.
+- **The directory's per-address limit sees the door's address for builder shops' checks**, because it asks through the door's own port, which has no per-visitor limit; a builder's server sees the door as one address (as it does for every page already; see "builder's front sees the door as one address" above) and limits it. Done when the door forwards a signed "on behalf of the directory" marker the builder's front can rate-limit separately.
+- **Photos on other domains** are not shown on the search page (modules/Deferred.md).
+
