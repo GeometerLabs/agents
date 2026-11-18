@@ -40,6 +40,9 @@ import { actionDigest, cardButtonId, cardByCode, cardById, closeCard, expireCard
 import type { CardReply } from "../../../../modules/assistant/cards.ts";
 import type { CardAction, CardRecord } from "../../../../modules/assistant/state.ts";
 import { assistantOf } from "../../../../modules/assistant/state.ts";
+import { STOCK_ACTION, ackAlert, lowRequestId, pendingAlerts, reconcileDeliveries, shopRecord, stockRefs, supplyStockId } from "../../../../modules/stock/stock.ts";
+import type { DeliveryFact } from "../../../../modules/stock/stock.ts";
+import { STOCK_LINE_WORDS } from "../../../../modules/stock/words.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
 import { createSay } from "../../../../modules/messaging/say.ts";
 import type { SaidOutcome } from "../../../../modules/messaging/say.ts";
@@ -577,6 +580,7 @@ export function createAgent(deps: AgentDeps): Agent {
     o.receivedQty += qty;
     o.receipt = o.receivedQty >= o.qty ? "full" : "part";
     o.receiptMs = clock.now();
+    syncDeliveries(); // a counted item's count goes up at the owner's mark, by exactly what they marked
     log(o, owner, "mark_receipt", "confirmed", { qty, receivedQty: o.receivedQty }, { refs: { evidence: "owner_marked", receipt: o.receipt, messageId: m.id } });
     await tellOwner(o, o.receipt === "full" ? "received_full" : "received_part", { facts: { receivedQty: o.receivedQty, moreQty: o.qty - o.receivedQty } });
   }
@@ -770,7 +774,56 @@ export function createAgent(deps: AgentDeps): Agent {
 
   // ---- the clock --------------------------------------------------------------------------------------------------------------------
 
+  // ---- the shop's stock count (modules/stock) --------------------------------------------------------------------------------------
+
+  /** One line in the owner's app (the assistant's talk box); the WhatsApp templates are not changed (a new one would need Meta's approval). Bounded by the assistant's own trimming. */
+  const talkToOwner = (text: string): void => { assistantOf(store).talk.push({ atMs: clock.now(), from: "assistant", text }); };
+  const itemNameOf = (itemId: string): string => nameIn(itemOf(settings, itemId).names, ownerLanguage);
+
+  /**
+   * Deliveries the owner marked received are added to the count of a COUNTED item, once: each purchase order is booked under `delivery:<po>` with the quantity received so far, so a part
+   * delivery then the rest adds each piece once and a repeat adds nothing. A wrong item adds nothing beyond what was marked received before it. A delivery in another unit than the count is not
+   * added (a unit is never converted) and the owner is told once. An item nobody counts has no stock line and nothing here touches it.
+   */
+  function syncDeliveries(): void {
+    const st = store.assistant?.stock;
+    if (!st || st.lines.length === 0) return;
+    const facts: DeliveryFact[] = [...store.orders.values()].filter((o) => o.receivedQty > 0).map((o) => ({ key: `delivery:${o.id}`, id: supplyStockId(o.item), cumulative: o.receivedQty, unit: o.unit }));
+    const before = st.lines.map((l) => l.count).join(",");
+    const refused = reconcileDeliveries(st, shopRecord("stock-orders"), facts, { nowMs: clock.now() });
+    if (st.lines.map((l) => l.count).join(",") !== before) log(null, owner, STOCK_ACTION, "confirmed", { deliveries: facts.length }, { refs: stockRefs("supply:*", "received", "shop"), notes: "goods the owner marked received were added to the stock count (each purchase order once, by the quantity received so far)" });
+    for (const f of refused) {
+      const o = store.orders.get(f.key.slice("delivery:".length));
+      log(o ?? null, owner, STOCK_ACTION, "blocked", { delivery: f.key, unit: f.unit }, { refs: stockRefs(f.id, "received", "shop"), notes: "the delivery is in another unit than the count, so it was not added; units are never converted" });
+      talkToOwner(STOCK_LINE_WORDS[ownerLanguage].unitRefused(itemNameOf(f.id.slice("supply:".length)), st.lines.find((l) => l.id === f.id)?.unit ?? ""));
+    }
+  }
+
+  /**
+   * An item the owner counts has fallen to its low mark: ONE reorder per crossing, through the existing flow. The alert is taken off the queue first (so a failure cannot make a second one), then
+   * the same `settle` an owner's "low rice" uses makes the order and its approval card, with the crossing as the request id (a second ask for the same crossing makes no second order). The
+   * budget, the cap, the approved supplier and the owner's yes are all unchanged: this only starts the flow, it never approves anything. The question "Rice 5 kg is low (3 left). Order from
+   * Ravi?" goes to the owner's app beside the card.
+   */
+  async function lowStockTick(): Promise<void> {
+    const st = store.assistant?.stock;
+    if (!st) return;
+    for (const a of pendingAlerts(st, "supply")) {
+      ackAlert(st, a.line, a.crossing);
+      const itemId = a.line.slice("supply:".length);
+      if (!settings.items.some((i) => i.id === itemId)) continue;
+      const lines = approvedLines().filter((l) => l.item === itemId);
+      log(null, owner, STOCK_ACTION, "confirmed", { item: a.line, count: a.count, crossing: a.crossing }, { refs: stockRefs(a.line, "low", "shop"), notes: "a counted item fell to its low mark; the reorder flow was started (nothing is approved by this)" });
+      if (lines.length === 0) { talkToOwner(STOCK_LINE_WORDS[ownerLanguage].runningLow(itemNameOf(itemId), a.count)); continue; }
+      talkToOwner(STOCK_LINE_WORDS[ownerLanguage].reorderAsk(itemNameOf(itemId), a.count, supplierOf(settings, lines[0].supplier).name));
+      if (lines.length === 1) await settle({ requestId: lowRequestId(a), lowStock: true, line: lines[0], phone: owner });
+      else await askWhich({ requestId: lowRequestId(a), lowStock: true, item: itemId, lines });
+    }
+  }
+
   async function tick(): Promise<void> {
+    syncDeliveries();
+    await lowStockTick();
     if (store.asking && clock.now() - store.asking.askedMs > ASKING_FOR_MS) store.asking = undefined;
     // An order that waits must always have a card to answer. Whoever expires cards first (this tick or the assistant's), an order left with no open card is closed here and the
     // owner is told, so no order is stranded awaiting an answer nobody can give.

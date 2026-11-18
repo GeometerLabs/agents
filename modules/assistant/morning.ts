@@ -24,6 +24,7 @@ import { WindowClosedError } from "../core/faults.ts";
 import type { Messaging, OutboundMessage } from "../messaging/messaging.ts";
 import type { ActionRecord, Outcome } from "../record/record.ts";
 import { MAX_TRIES, RETRY_AFTER_MS, nothingWasSent } from "../messaging/send-once.ts";
+import { lowLines } from "../stock/stock.ts";
 import { isClosedDay, isoDate, moneyOn, shopMood } from "./conversation.ts";
 import type { AssistantShop } from "./conversation.ts";
 import { openCards } from "./cards.ts";
@@ -103,7 +104,10 @@ export function createMorningJob<Store extends { assistant?: AssistantState }>(s
       if (s.owes) { const owes = s.owes(); parts.push({ owes: owes.length, owedPaise: owes.reduce((n, r) => n + r.amountPaise, 0) }); }
       if (s.open) parts.push({ open: s.open().length });
     }
-    const something = parts.some((t) => ("bookings" in t ? t.bookings : "owes" in t ? t.owes : t.open) > 0);
+    // the shop's stock (modules/stock): items the owner counts that are at their low mark and have no Stock orders flow to ask (those get a reorder card instead)
+    const lowN = lowLines(state?.stock, "supply").length;
+    if (lowN > 0) parts.push({ low: lowN });
+    const something = parts.some((t) => ("bookings" in t ? t.bookings : "owes" in t ? t.owes : "low" in t ? t.low : t.open) > 0);
     const waiting = skills.reduce((n, s) => n + s.waiting().length, 0) + (state ? openCards(state, now).length : 0);
     const money = moneyOn(ctx.record.entries(), addDays(today, -1), tz);
     if (!something && money.paise === 0 && waiting === 0) { finished = key; return { done: false, why: "quiet" }; }
