@@ -22,6 +22,8 @@
 // the inbox too, where the shops' public booking pages and the owners' private pages are served (modules/channels/front.ts), each shop's with its own channel token.
 // Item 11f, on a server that answers for the pages domain (geometer.json `pages`): one more container, `door` (services/door.ts), on `pages` (internal: Caddy, the door
 // and the inbox only) and `egress` (fleet's lookups and builders' servers). It holds no secret and reaches no panel, relay or Guard.
+// Block S (18 Nov 2026), on the same servers: one more, `directory` (services/directory.ts), the directory of local shops, on `pages` and `egress`, reached only through the
+// door (which forwards /search and the other directory paths to it) and keeping its cache in a volume of its own (DIRECTORY_VOLUME) that no backup copies.
 //
 // The monthly report pages. The runtime writes them into <data volume>/data/reports/<32 random hex digits>/. Caddy mounts that one folder of each shop's data volume,
 // read-only, at /srv/r/<shop> (and nothing else of the volume: the database and the record are not in Caddy's reach), and serves https://<domain>/r/<shop>/<hex>/<file>
@@ -46,7 +48,7 @@ import { DESK_PORT, GUPSHUP_TOKEN_MOUNT, LICENCE_MOUNT, OWNER_MARKED_KINDS, PUSH
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import type { GuardKind } from "./guards.ts";
 import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, names } from "./shop.ts";
-import { DOOR_PORT, DOOR_ROBOTS_DISALLOW, NOTHING_HEADER } from "../services/door.ts";
+import { DIRECTORY_PORT, DOOR_INTERNAL_PORT, DOOR_PORT, DOOR_ROBOTS_DISALLOW, NOTHING_HEADER } from "../services/door.ts";
 import { HOME_EXAMPLES_REDIRECT, HOME_MOUNT, HOME_ROBOTS_DISALLOW, HOME_SITE_ROOT } from "../lib/home.ts";
 
 export const FORWARDER_IMAGE = "busybox:1.37.0";
@@ -204,6 +206,13 @@ export const REFRESHER_GUPSHUP_DIR = "/run/gupshup-out";
 export const nodeUser = "1000:1000";
 /** The relay's volume (its home folder): the approvals relay's store and each owner-marked desk's ledger (state/<name>/desk.json), which the nightly snapshot reads. */
 export const RELAY_STATE_VOLUME = "relay-state";
+/**
+ * Block S: the directory's volume (its home folder, so Docker makes it owned by the node user): its search index and its signing key. The index is a CACHE, rebuilt from the shops' own
+ * feeds, so this volume is deliberately NOT in any backup (backup/jobs.ts names the volumes it copies and this is not one of them); a lost volume is read again from the feeds. The key is
+ * only the directory's card's, so losing it only changes the card's key id.
+ */
+export const DIRECTORY_VOLUME = "directory-data";
+export const DIRECTORY_DATA_DIR = "/home/node/directory";
 const guardUser = "65532:65532"; // the user the Guard image runs as
 const healthWget = (port: number, path: string) => ({ test: ["CMD", "wget", "-q", "-O", "/dev/null", `http://127.0.0.1:${port}${path}`], interval: "10s", timeout: "3s", retries: 3, start_period: "10s" });
 
@@ -372,10 +381,18 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   const door = server.pages && server.fleet;
   if (door) {
     add("door", node(["node", "/app/bundle/services/door.ts"], {
-      environment: { CONFIG: "/etc/geometer/door.json", PORT: String(DOOR_PORT), HOST: "0.0.0.0" },
+      environment: { CONFIG: "/etc/geometer/door.json", PORT: String(DOOR_PORT), INTERNAL_PORT: String(DOOR_INTERNAL_PORT), HOST: "0.0.0.0" },
       volumes: [appVolume, `${dirs.generated}/door:/etc/geometer:ro`],
       networks: { [PAGES_NETWORK]: {}, egress: {} }, healthcheck: healthWget(DOOR_PORT, "/healthz"),
     }), [`${dirs.generated}/door/door.json`]);
+    // block S: the directory of local shops. Reached only through the door (the door forwards /search, /order, /feed-changed, /mcp and the Agent Card to it; Caddy does not name it).
+    // On `pages` (to reach the door's own port, which reads this server's shops for it) and `egress` (only to read the feeds of builders' servers named in geometer.json: it reaches
+    // no panel, relay, Guard or runtime, none of which share a network with it). Its own volume holds its cache; it holds no secret and no shop's data.
+    add("directory", node(["node", "/app/bundle/services/directory.ts"], {
+      environment: { CONFIG: "/etc/geometer/directory.json", PORT: String(DIRECTORY_PORT), HOST: "0.0.0.0" },
+      volumes: [appVolume, `${dirs.generated}/directory:/etc/geometer:ro`, `${DIRECTORY_VOLUME}:/home/node`],
+      networks: { [PAGES_NETWORK]: {}, egress: {} }, healthcheck: healthWget(DIRECTORY_PORT, "/healthz"),
+    }), [`${dirs.generated}/directory/directory.json`]);
   }
   // -- the speech service (optional). It sits alone on `speech`, a network with no route out, and publishes no port: the speech Guard joins that network and is the only caller. It has no
   // secrets of its own (a shared token only when asked), no Docker socket, a read-only root, and its models folder is mounted read-only. Memory is capped because the Indic model holds
@@ -413,7 +430,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     ...(shops.length > 0 ? { [PUSH_NETWORK]: { internal: true, ipam: { config: [{ subnet: net.subnets.push }] } } } : {}),
   };
   for (const s of shops) networks[names.net(s.name)] = { internal: true, ipam: { config: [{ subnet: shopSubnet(server, s.index) }] } };
-  const volumes: Record<string, Y> = { "google-auth": {}, [RELAY_STATE_VOLUME]: {}, "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {}, ...(shops.some((s) => s.gupshupRenewed) ? { [GUPSHUP_AUTH_VOLUME]: {} } : {}) };
+  const volumes: Record<string, Y> = { "google-auth": {}, [RELAY_STATE_VOLUME]: {}, ...(door ? { [DIRECTORY_VOLUME]: {} } : {}), "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {}, ...(shops.some((s) => s.gupshupRenewed) ? { [GUPSHUP_AUTH_VOLUME]: {} } : {}) };
   for (const s of shops) {
     volumes[names.dataVolume(s.name)] = {};
     for (const g of s.guards) volumes[names.stateVolume(s.name, g.kind as Exclude<GuardKind, "model">)] = {};

@@ -174,6 +174,12 @@ export interface ServerConfig {
    * its chat page can subscribe a phone with it. Left out: no shop sends to the Streetlist app's phones.
    */
   pushRelay?: { publicKey: string };
+  /**
+   * Block S (18 Nov 2026): the directory of local shops that runs beside the front door (bundle/services/directory.ts), only with `pages`. `feeds` are feed addresses to read besides the
+   * shops that send a "my feed changed" notice (for example a builder's own domain: https://shops.example/s/ravi/listings.json); `area` is what the directory's Agent Card says it covers.
+   * Both optional: a server with a pages domain has a directory either way.
+   */
+  directory?: { feeds: string[]; area?: string };
 }
 
 /** A pages domain: a lowercase host name with a dot, no scheme, port or path (the same rule as fleet's `pages.domain`). */
@@ -304,6 +310,14 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
       errors.push('"pushRelay" must say {"publicKey": "<the push key\'s public half>"}: 65 bytes in base64url, printed by `node bundle/services/push-relay.ts make-key <file>`. The private half is a file in secrets/push/, never here.');
     }
   }
+  if (o.directory !== undefined) {
+    const d = isObj(o.directory) ? o.directory : undefined;
+    const feeds = d && Array.isArray(d.feeds) ? d.feeds : d && d.feeds === undefined ? [] : undefined;
+    if (o.pages === undefined) errors.push('"directory" needs "pages": the directory runs beside the pages domain\'s front door.');
+    if (!d || Object.keys(d).some((x) => x !== "feeds" && x !== "area") || !feeds || feeds.length > 200 || !feeds.every((f) => typeof f === "string" && /^https:\/\/[^\s/]+\/\S{0,300}$/u.test(f)) || (d.area !== undefined && (typeof d.area !== "string" || d.area.length > 60))) {
+      errors.push('"directory" must say {"feeds": ["https://<domain>/<shop page>/listings.json", ...], "area": "<what it covers, for its card>"}: both optional, at most 200 feeds.');
+    }
+  }
   errors.push(...pagesProblems(o.pages, typeof o.domain === "string" ? o.domain : "", isObj(o.panel) && o.panel.mode === "hosted"));
   if (o.gupshupTokenHeader !== undefined && o.gupshupTokenHeader !== "bearer" && o.gupshupTokenHeader !== "bare") errors.push('"gupshupTokenHeader" must be "bearer" or "bare": how a renewed Gupshup app token is sent.');
   if (fleetId !== undefined && (typeof fleetId !== "string" || serverIdProblem(fleetId))) errors.push('"fleet.deploymentId" must be the server id fleet gave this server when it was paired (pairing.json).');
@@ -324,6 +338,7 @@ export function parseServer(raw: unknown): { config: ServerConfig; errors: strin
     heartbeatSeconds: typeof o.heartbeatSeconds === "number" && o.heartbeatSeconds >= 5 ? o.heartbeatSeconds : 60,
     ...(licenceKeys && licenceKeys.every((k) => typeof k === "string") ? { licence: { keys: licenceKeys as string[] } } : {}),
     ...(isObj(o.pushRelay) && typeof o.pushRelay.publicKey === "string" ? { pushRelay: { publicKey: o.pushRelay.publicKey } } : {}),
+    ...(isObj(o.directory) ? { directory: { feeds: Array.isArray(o.directory.feeds) ? o.directory.feeds.filter((f): f is string => typeof f === "string") : [], ...(typeof o.directory.area === "string" ? { area: o.directory.area } : {}) } } : {}),
     ...(isObj(o.pages) && typeof o.pages.domain === "string" ? { pages: { domain: o.pages.domain, extraDomains: Array.isArray(o.pages.extraDomains) ? o.pages.extraDomains.filter((d): d is string => typeof d === "string") : [] } } : {}),
     ports: { http: isObj(o.ports) && Number.isInteger(o.ports.http) ? o.ports.http as number : 80, https: isObj(o.ports) && Number.isInteger(o.ports.https) ? o.ports.https as number : 443 },
   };

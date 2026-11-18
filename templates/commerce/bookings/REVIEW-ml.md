@@ -1748,4 +1748,75 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.id.parentNote` | ഈ ചാറ്റ് നിങ്ങൾക്ക് മാത്രമുള്ളതാണ്. ഇത് നിങ്ങളുടെ സ്വകാര്യ ഫീസ് പേജിൽ നിന്ന് തുറക്കുന്നു, നിങ്ങളുടെ സ്വന്തം ഫീസിനെക്കുറിച്ച് സംസാരിക്കുന്നു. അടയ്ക്കാൻ നിങ്ങളുടെ ഫീസ് പേജിലേക്ക് മടങ്ങൂ. | This chat is only for you. It opens from your private fee page, and it talks about your own fees. To pay, go back to your fee page. |  |
 | `chat.id.parentBack` | എന്റെ ഫീസിലേക്ക് മടങ്ങൂ | Back to my fees |  |
 | `chat.id.parentAsk` | ഈ ഫീസിനെക്കുറിച്ച് ചോദിക്കൂ | Ask about this fee |  |
-
+| `directory.title` | അടുത്തുള്ളത് കണ്ടെത്തുക | Find it near you |  |
+| `directory.sub` | നാട്ടിലെ കടകളിൽ ഇപ്പോൾ എന്തുണ്ടെന്ന് നോക്കൂ. | See what local shops have right now. |  |
+| `directory.searchLabel` | നിങ്ങൾക്ക് എന്താണ് വേണ്ടത്? | What do you want? |  |
+| `directory.placeholder` | പേർഷ്യൻ പൂച്ചക്കുട്ടി | Persian kitten |  |
+| `directory.kindLabel` | തരം | Kind |  |
+| `directory.anyKind` | എന്തും | Anything |  |
+| `directory.kinds.pets` | വളർത്തുമൃഗങ്ങൾ | Pets |  |
+| `directory.kinds.food` | ഭക്ഷണം | Food |  |
+| `directory.kinds.clothes` | വസ്ത്രങ്ങൾ | Clothes |  |
+| `directory.kinds.home` | വീട്ടിലേക്ക് | For the home |  |
+| `directory.kinds.electronics` | ഇലക്ട്രോണിക്സ് | Electronics |  |
+| `directory.kinds.vehicles_and_cycles` | വാഹനങ്ങളും സൈക്കിളും | Vehicles and cycles |  |
+| `directory.kinds.services` | സേവനങ്ങൾ | Services |  |
+| `directory.kinds.other` | മറ്റുള്ളവ | Other |  |
+| `directory.townLabel` | നിങ്ങളുടെ നഗരം | Your town |  |
+| `directory.townHint` | എല്ലാം കാണാൻ ഒഴിച്ചിടുക | Leave empty to see all |  |
+| `directory.nearMe` | എന്റെ സ്ഥലം ഉപയോഗിക്കുക | Use my location |  |
+| `directory.nearMeSet` | നിങ്ങളുടെ സ്ഥലം കിട്ടി | Your location is set |  |
+| `directory.radiusLabel` | എത്ര ദൂരം | How far |  |
+| `directory.anyDistance` | ഏത് ദൂരവും | Any distance |  |
+| `directory.km` | 10 കിലോമീറ്റർ | 10 km |  |
+| `directory.search` | തിരയുക | Search |  |
+| `directory.language` | ഭാഷ | Language |  |
+| `directory.resultsFor` | “Persian kitten” എന്നതിന് 3 ഫലങ്ങൾ | 3 results for “Persian kitten” |  |
+| `directory.resultsNoWords` | 3 സാധനങ്ങൾ കണ്ടു | 3 things found |  |
+| `directory.ask` | കടയോട് ചോദിക്കൂ | Ask the shop |  |
+| `directory.confirmedToday` | ഇന്ന് ഉറപ്പിച്ചത് | Confirmed today |  |
+| `directory.confirmedYesterday` | ഇന്നലെ ഉറപ്പിച്ചത് | Confirmed yesterday |  |
+| `directory.confirmedDays` | 3 ദിവസം മുമ്പ് ഉറപ്പിച്ചത് | Confirmed 3 days ago |  |
+| `directory.callToCheck` | വിളിച്ച് ചോദിക്കൂ | Call to check |  |
+| `directory.callToCheckWhy` | കട ഇപ്പോൾ പറഞ്ഞില്ല. പോകുന്നതിന് മുമ്പ് വിളിച്ച് ചോദിക്കൂ. | The shop did not say just now. Call to check before you go. |  |
+| `directory.away` | 1.4 കിലോമീറ്റർ അകലെ | 1.4 km away |  |
+| `directory.inTown` | Thrissur-ൽ | In Thrissur |  |
+| `directory.chat` | കടയോട് സംസാരിക്കൂ | Chat with the shop |  |
+| `directory.chatLabel` | കടയോട് സംസാരിക്കൂ: Rani Pets, Persian kitten സംബന്ധിച്ച് | Chat with the shop: Rani Pets, about Persian kitten |  |
+| `directory.machine` | സഹായി എഴുതിയ വാക്കുകൾ | Words by an assistant |  |
+| `directory.noPhoto` | ഫോട്ടോ ഇല്ല | No photo |  |
+| `directory.photoOf` | Persian kitten-ന്റെ ഫോട്ടോ | Photo of Persian kitten |  |
+| `directory.unanswered` | 2 കട ഇപ്പോൾ മറുപടി തന്നില്ല. അതിന്റെ വരിയിൽ “വിളിച്ച് ചോദിക്കൂ” എന്നുണ്ട്. | 2 shops did not answer just now. Their lines say “Call to check”. |  |
+| `directory.more` | കൂടുതൽ കാണിക്കൂ | Show more |  |
+| `directory.clear` | തിരയൽ മായ്ക്കുക | Clear the search |  |
+| `directory.startTitle` | നാട്ടിലെ കടകളിൽ എന്തുണ്ടെന്ന് തിരയൂ | Search what local shops have |  |
+| `directory.startBody` | വേണ്ടത് എഴുതൂ, അല്ലെങ്കിൽ ഒരു തരം തിരഞ്ഞെടുക്കൂ. ഓരോ കടയും ഇപ്പോൾ ഉള്ളത് മാത്രം കാണിക്കുന്നു, നിങ്ങൾ കാണുന്നതിന് മുമ്പ് ഞങ്ങൾ കടയോട് ഉറപ്പ് ചോദിക്കുന്നു. | Type what you want, or pick a kind. Each shop shows only what it has now, and we ask the shop to confirm before you see it. |  |
+| `directory.tryThese` | ഇങ്ങനെ നോക്കൂ | Try |  |
+| `directory.examples.1` | പേർഷ്യൻ പൂച്ചക്കുട്ടി | Persian kitten |  |
+| `directory.examples.2` | സൈക്കിൾ | bicycle |  |
+| `directory.examples.3` | ജന്മദിന കേക്ക് | birthday cake |  |
+| `directory.noneTitle` | ഒന്നും കണ്ടില്ല | Nothing found |  |
+| `directory.noneBody` | ഇപ്പോൾ ഒരു കടയിലും ഇത് ഇല്ല. കുറച്ച് വാക്കുകൾ എഴുതൂ, മറ്റൊരു തരം നോക്കൂ, അല്ലെങ്കിൽ ദൂരം കൂട്ടൂ. | No shop has this right now. Try fewer words, another kind, or a bigger distance. |  |
+| `directory.badTitle` | ആ തിരയൽ നടന്നില്ല | That search did not work |  |
+| `directory.busyTitle` | ഒരു മിനിറ്റ് കാത്തിരിക്കൂ | Please wait a minute |  |
+| `directory.busyBody` | ഈ ഫോണിൽ നിന്ന് ഇപ്പോൾ ഒരുപാട് തിരയലുകൾ ഉണ്ടായി. ഒരു മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | There have been many searches from this phone just now. Try again in a minute. |  |
+| `directory.downTitle` | തിരയൽ ഇപ്പോൾ പ്രവർത്തിക്കുന്നില്ല | The search is not working right now |  |
+| `directory.downBody` | കുറച്ച് മിനിറ്റ് കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ. | Please try again in a few minutes. |  |
+| `directory.orderLink` | ഫലങ്ങളുടെ ക്രമം എങ്ങനെ | How results are ordered |  |
+| `directory.orderTitle` | ഫലങ്ങളുടെ ക്രമം എങ്ങനെ | How results are ordered |  |
+| `directory.orderIntro` | ഓരോ തിരയലും എല്ലാവർക്കും ഒരേ ക്രമത്തിലാണ്. ഞങ്ങൾ ഉപയോഗിക്കുന്ന ക്രമത്തിൽ അത് ഇതാ. | Every search is put in the same order for everyone. Here it is, in the order we use it. |  |
+| `directory.orderSteps.1` | എത്ര യോജിക്കുന്നു. നിങ്ങൾ എഴുതിയതെല്ലാം ഉള്ള കടകൾ, ചിലത് മാത്രം ഉള്ള കടകൾക്ക് മുമ്പ് വരുന്നു. | How well it fits. Shops that have everything you typed come before shops that have some of it. |  |
+| `directory.orderSteps.2` | എത്ര അടുത്താണ്. അടുത്ത കടകൾ ആദ്യം, പടിപടിയായി: 2, 5, 10, 25, 50 കിലോമീറ്റർ വരെ, പിന്നെ അതിലും അകലെ. | How near it is. Closer shops come first, in steps: up to 2 km, 5 km, 10 km, 25 km, 50 km, then farther. |  |
+| `directory.orderSteps.3` | എത്ര പുതിയതാണ്. ഒരേ പടിയിൽ, കട ഉറപ്പിച്ചത് “വിളിച്ച് ചോദിക്കൂ” എന്നതിന് മുമ്പ് വരുന്നു. | How fresh it is. In the same step, what the shop confirmed comes before “Call to check”. |  |
+| `directory.orderSteps.4` | ഊഴം. ഒരേ പടിയിലെ കടകൾ ഊഴം വച്ച് വരുന്നു, ഊഴം ഓരോ ദിവസവും ഓരോ തിരയലിലും മാറുന്നു, അതിനാൽ ഒരു കടയും എപ്പോഴും ആദ്യം വരില്ല. | Turns. Shops in the same step take turns, and the turns change every day and with every search, so no shop is always first. |  |
+| `directory.orderNever` | പണം കൊണ്ട് ഒരിക്കലുമില്ല | Never by money |  |
+| `directory.orderNeverBody` | ഒരു പണമടയ്ക്കലോ പ്ലാനോ ഓപ്പറേറ്ററോ ക്രമം മാറ്റില്ല. ഒരു കടയ്ക്കും പണം കൊടുത്ത് ആദ്യം വരാനാവില്ല, ഞങ്ങൾക്കും ആവില്ല. ഇതേ നിയമം തുറന്ന കോഡിലുമുണ്ട്. | No payment, plan or Operator changes the order. A shop cannot pay to be first, and neither can we. The same rule is in the open code. |  |
+| `directory.orderAsk` | കടയോട് ചോദിക്കുന്നത് | Asking the shop |  |
+| `directory.orderAskBody` | ഫലം കാണിക്കുന്നതിന് മുമ്പ് ഞങ്ങൾ കടയോട് “ഇത് ഇപ്പോഴും ഉണ്ടോ?” എന്ന് ചോദിക്കുന്നു. ചോദ്യത്തിൽ സാധനം മാത്രമേ ഉള്ളൂ, നിങ്ങളുടെ വാക്കുകളോ സ്ഥലമോ നിങ്ങൾ ആരെന്നോ ഒരിക്കലുമില്ല. കട മറുപടി തന്നില്ലെങ്കിലും സാധനം “വിളിച്ച് ചോദിക്കൂ” എന്നതോടെ കാണും. | Before you see a result, we ask the shop “do you still have this?”. The question holds only the item, never your words, your place or who you are. If the shop does not answer, you still see the item, with “Call to check”. |  |
+| `directory.orderWords` | സഹായി എഴുതിയ വാക്കുകൾ | Words by an assistant |  |
+| `directory.orderWordsBody` | ഒരു കടയുടെ വാക്കുകൾ ഉടമയുടെ സ്വന്തം വാക്കുകളിൽ നിന്ന് ഒരു സഹായി മറ്റ് ഭാഷകളിൽ എഴുതിയതാകാം. അവയ്ക്ക് അടയാളമുണ്ട്. | A shop's words may be written in other languages by an assistant from the owner's own words. Those are marked. |  |
+| `directory.orderPrivate` | ഞങ്ങൾ സൂക്ഷിക്കുന്നത് | What we keep |  |
+| `directory.orderPrivateBody` | അക്കൗണ്ടില്ല, കുക്കിയുമില്ല. ഒരു ദിവസം എത്ര തിരയലുകൾ ഉണ്ടായി എന്ന് മാത്രം എണ്ണുന്നു, ആര് എന്ത് തിരഞ്ഞു എന്നില്ല. | No account and no cookie. We count how many searches there were in a day, nothing about who searched or for what. |  |
+| `directory.back` | തിരയലിലേക്ക് മടങ്ങുക | Back to search |  |
+| `directory.foot` | നാട്ടിലെ കടകളുടെ ഒരു പട്ടിക. | A directory of local shops. |  |
+| `directory.assistants` | AI സഹായികൾക്ക് | For AI assistants |  |

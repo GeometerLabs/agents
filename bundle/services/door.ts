@@ -11,6 +11,9 @@
 //   ...  /<slug>[/<rest>]         the shop's page. A shop on this server: forwarded to the inbox's front as /s/<shop>/<rest>, with `x-geometer-door: <slug>`.
 //                                 A builder's client: the customer view, the API and MCP forwarded to https://<their server>/s/<shop>/<rest> as a pure
 //                                 pass-through; the owner's view (/owner..., /o/...) redirected to their own domain, so no owner sign-in crosses this door.
+//   /search, /search/..., /order, /feed-changed, /mcp, /.well-known/agent-card.json
+//                                 the directory of local shops (modules/discovery, the `directory` service, bundle/services/directory.ts): forwarded to it BEFORE any name is taken for a
+//                                 shop's, so these names can never be a shop here (fleet reserves them too, so none is ever made). Without a directory on this server they are the friendly 404.
 //   any host that is an extra domain: redirected to the primary domain, the path kept (an old or a country domain keeps every printed link working).
 //
 // The pages domain is never written in code: the primary and the extra domains are this service's config (geometer.json `pages`). Fleet's slug registry
@@ -35,12 +38,20 @@ import type { DoorContact, DoorKey } from "./door-pages.ts";
 import type { PartnerCard } from "./card-page.ts";
 
 export const DOOR_PORT = 8797;
+/**
+ * The second port, for the directory only (never in Caddy's file, so no visitor can reach it): the same door, but for a caller that is this server's own directory: it reads
+ * shop feeds and asks shops to confirm through the door like any visitor would, without the visitors' per-address limits (the directory is one address that makes many calls),
+ * and it needs no Host header. It reaches nothing a visitor cannot: the same routes, the same refusals of private addresses.
+ */
+export const DOOR_INTERNAL_PORT = 8798;
+/** Where the directory service (bundle/services/directory.ts) listens: the door forwards the directory's paths to http://directory:8799, and the directory's own health check asks here. */
+export const DIRECTORY_PORT = 8799;
 export const DOOR_HEADER = "x-geometer-door";
 /**
  * What the door's /robots.txt disallows. Caddy answers /robots.txt on the pages domain itself when the Streetlist home is served there (generate/compose.ts
  * homeHandlers) and adds the home's own disallowed paths to these, so this list is the single place the door's lines are written.
  */
-export const DOOR_ROBOTS_DISALLOW: readonly string[] = ["/*/owner", "/*/o/", "/*/f/", "/*/fee/", "/*/order/"];
+export const DOOR_ROBOTS_DISALLOW: readonly string[] = ["/*/owner", "/*/o/", "/*/f/", "/*/fee/", "/*/order/", "/search"];
 /**
  * Set on the door's own "there is no page here" answers (an unknown name or address). Caddy, when it serves the Streetlist home on this domain, swaps such an answer
  * for the home's friendly 404 page (the same one Firebase showed); the header is never set on a shop's own page or on any other status.
@@ -57,6 +68,12 @@ export const isOwnerVoice = (rest: string): boolean => /^\/(owner|o\/[^/]+)\/voi
 export const isChatVoice = (rest: string): boolean => rest === "/chat/voice";
 /** A page passed back: the booking page is tens of KB; a builder's server that sends more is cut off, not streamed for ever. */
 export const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
+
+/** The addresses the directory answers (docs above). `/order` is the page that states the fair order; `/search` also has /search/font.woff2. */
+export const isDirectoryPath = (pathname: string): boolean => {
+  const p = pathname.length > 1 ? pathname.replace(/\/+$/u, "") : pathname; // a trailing slash is the same address ("/order/")
+  return p === "/search" || p.startsWith("/search/") || p === "/order" || p === "/feed-changed" || p === "/mcp" || p === "/.well-known/agent-card.json";
+};
 
 /** The same shape as fleet's rule (page-slugs.ts slugCheck), without the reserved list: fleet answers "unknown" for those, and this only spares fleet the junk. */
 export const SLUG = /^(?!.*--)(?![0-9]+$)[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/u;
@@ -196,6 +213,10 @@ export interface DoorOptions {
   registry: Registry;
   /** The inbox's front, where this server's shops are: http://inbox:8788. */
   localUrl: string;
+  /** The directory service's address (http://directory:8799), where /search and the other directory paths go. Left out: they are the friendly 404. */
+  directoryUrl?: string;
+  /** This handler is the directory's own port (DOOR_INTERNAL_PORT): no per-visitor limits, any Host is the primary domain, and the directory's paths are not forwarded back to it. */
+  internal?: boolean;
   /** How to reach this server's front (plain http on the private network) and a builder's server (https, guarded). Tests give their own. */
   local?: Transport;
   remote?: Transport;
@@ -252,7 +273,7 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
   const log = o.log ?? (() => undefined);
   const now = o.now ?? Date.now;
   const limits = doorLimiter(now);
-  const take = limits.take;
+  const take = o.internal ? () => true : limits.take;
   const local = o.local ?? nodeTransport();
   const remote = o.remote ?? nodeTransport(guardedLookup());
   const primaryOrigin = `https://${o.primary}`;
@@ -321,8 +342,35 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     return undefined;
   }
 
+  /**
+   * The directory's answer passed back as it is (it is our own code: it sets its own policy, and never a cookie), and only what it needs passed to it: the language and
+   * type headers, the visitor's address (the last X-Forwarded-For entry, which the directory limits by) and a POST's body. No cookie, no Authorization, no Origin.
+   */
+  async function forwardToDirectory(req: IncomingMessage, res: ServerResponse, url: URL, visitor: string): Promise<void> {
+    const headers: Record<string, string> = { "x-forwarded-for": visitor, "x-forwarded-proto": "https" };
+    for (const h of ["accept", "accept-language", "content-type", "if-none-match"]) { const v = req.headers[h]; if (typeof v === "string") headers[h] = v; }
+    let body: Buffer | undefined;
+    if ((req.method ?? "GET") === "POST") {
+      const read = await readRequestBody(req, MAX_REQUEST_BYTES);
+      if (read === "too_big") return own(res, 413, pageOf(res, "tooBig"));
+      body = read;
+      headers["content-length"] = String(read.length);
+    }
+    let up: Upstream;
+    try { up = await local(new URL(`${url.pathname}${url.search}`, o.directoryUrl), { method: req.method ?? "GET", headers, ...(body ? { body } : {}), timeoutMs: 10_000 }); } catch (e) {
+      log(`door: the directory could not be reached (${(e as { code?: string }).code ?? "error"})`);
+      return own(res, 502, pageOf(res, "notAnswering"), "text/html; charset=utf-8", { "retry-after": "60" });
+    }
+    const out: Record<string, string | string[]> = {};
+    for (const [k, v] of Object.entries(up.headers)) if (v !== undefined && !HOP_BY_HOP.has(k) && k !== CONTACT_HEADER && k !== "set-cookie") out[k] = v;
+    out["strict-transport-security"] = HSTS;
+    out["content-length"] = String(up.body.length);
+    res.writeHead(up.status, out);
+    res.end(req.method === "HEAD" ? undefined : up.body);
+  }
+
   async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
-    const host = String(req.headers.host ?? "").toLowerCase().replace(/:\d+$/u, "");
+    const host = o.internal ? o.primary : String(req.headers.host ?? "").toLowerCase().replace(/:\d+$/u, "");
     const url = new URL(req.url ?? "/", primaryOrigin);
     const method = req.method ?? "GET";
     // the container's own health check asks from inside, by address, with no pages Host: it is answered before the host is looked at, and says only "ok"
@@ -335,6 +383,12 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
     if (url.pathname === "/") return own(res, 200, pageOf(res, "home"), "text/html; charset=utf-8", { "cache-control": "public, max-age=3600" });
     const visitor = visitorOf(req);
     if (!take("all", visitor)) return own(res, 429, pageOf(res, "waitMinute"), "text/html; charset=utf-8", { "retry-after": "60" });
+
+    // the directory of local shops: these names go to it before any name is taken for a shop's (they would match a slug, or fail the slug rule, and neither is right)
+    if (isDirectoryPath(url.pathname)) {
+      if (!o.directoryUrl || o.internal) return nothing(res);
+      return forwardToDirectory(req, res, url, visitor);
+    }
 
     // an Operator's calling card: /@handle (a browser or a QR reader may send the @ as %40). The shape is checked before fleet is asked, and anything fleet does not
     // show (unknown, unpublished) is one and the same 404, counted against the visitor like an unknown shop name.
@@ -409,12 +463,20 @@ export function doorHandler(o: DoorOptions): (req: IncomingMessage, res: ServerR
 }
 
 /** The door's config file (generate/configs.ts doorConfig writes it): the domains, this server's id at fleet, fleet's address and the inbox's front. */
-export interface DoorConfig { primary: string; extra: string[]; deploymentId: string; fleetUrl: string; localUrl: string }
+export interface DoorConfig { primary: string; extra: string[]; deploymentId: string; fleetUrl: string; localUrl: string; directoryUrl?: string }
 
 if (import.meta.main) {
   const config = JSON.parse(readFileSync(process.env.CONFIG ?? "/etc/geometer/door.json", "utf8")) as DoorConfig;
-  const server = createServer(doorHandler({ ...config, registry: fleetRegistry({ fleetUrl: config.fleetUrl }), log: (line) => console.error(line) }));
+  const registry = fleetRegistry({ fleetUrl: config.fleetUrl });
+  const server = createServer(doorHandler({ ...config, registry, log: (line) => console.error(line) }));
   server.requestTimeout = 15_000;
   server.headersTimeout = 5_000;
   server.listen(Number(process.env.PORT ?? DOOR_PORT), process.env.HOST ?? "127.0.0.1", () => console.error(`The front door listens for ${[config.primary, ...config.extra].join(", ")}.`));
+  // the directory's own port (only when this server has a directory): the same door with no per-visitor limits, reachable on the pages network by the directory alone
+  if (config.directoryUrl) {
+    const internal = createServer(doorHandler({ ...config, registry, internal: true, log: (line) => console.error(line) }));
+    internal.requestTimeout = 15_000;
+    internal.headersTimeout = 5_000;
+    internal.listen(Number(process.env.INTERNAL_PORT ?? DOOR_INTERNAL_PORT), process.env.HOST ?? "127.0.0.1", () => console.error("The front door listens on its own port for the directory."));
+  }
 }
