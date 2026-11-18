@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "id": "salon",
+  "names": {
+    "en": "Salon or beauty parlour",
+    "hi": "सैलून या ब्यूटी पार्लर",
+    "ml": "സലൂൺ അല്ലെങ്കിൽ ബ്യൂട്ടി പാർലർ",
+    "kn": "ಸಲೂನ್ ಅಥವಾ ಬ್ಯೂಟಿ ಪಾರ್ಲರ್"
+  },
+  "template": "bookings",
+  "prefill": {
+    "services": [
+      {
+        "names": {
+          "en": "Haircut",
+          "hi": "हेयरकट",
+          "ml": "ഹെയർകട്ട്",
+          "kn": "ಹೇರ್‌ಕಟ್"
+        },
+        "priceInr": 300,
+        "minutes": 30
+      },
+      {
+        "names": {
+          "en": "Facial",
+          "hi": "फेशियल",
+          "ml": "ഫേഷ്യൽ",
+          "kn": "ಫೇಶಿಯಲ್"
+        },
+        "priceInr": 800,
+        "minutes": 60
+      },
+      {
+        "names": {
+          "en": "Hair spa",
+          "hi": "हेयर स्पा",
+          "ml": "ഹെയർ സ്പാ",
+          "kn": "ಹೇರ್ ಸ್ಪಾ"
+        },
+        "priceInr": 1200,
+        "minutes": 75
+      },
+      {
+        "names": {
+          "en": "Manicure",
+          "hi": "मैनिक्योर",
+          "ml": "മാനിക്യൂർ",
+          "kn": "ಮ್ಯಾನಿಕ್ಯೂರ್"
+        },
+        "priceInr": 500,
+        "minutes": 45
+      }
+    ],
+    "depositInr": 100,
+    "windowHours": 12,
+    "opens": "10:00",
+    "closes": "20:00",
+    "days": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "capacity": 2
+  },
+  "character": {
+    "personality": "cheerful",
+    "paint": "pink"
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "id": "clinic",
+  "names": {
+    "en": "Clinic or physiotherapy",
+    "hi": "क्लिनिक या फ़िज़ियोथेरेपी",
+    "ml": "ക്ലിനിക് അല്ലെങ്കിൽ ഫിസിയോതെറാപ്പി",
+    "kn": "ಕ್ಲಿನಿಕ್ ಅಥವಾ ಫಿಸಿಯೋಥೆರಪಿ"
+  },
+  "template": "bookings",
+  "prefill": {
+    "services": [
+      {
+        "names": {
+          "en": "Consultation",
+          "hi": "परामर्श",
+          "ml": "കൺസൾട്ടേഷൻ",
+          "kn": "ಸಮಾಲೋಚನೆ"
+        },
+        "priceInr": 500,
+        "minutes": 20
+      },
+      {
+        "names": {
+          "en": "Physiotherapy session",
+          "hi": "फ़िज़ियोथेरेपी सत्र",
+          "ml": "ഫിസിയോതെറാപ്പി സെഷൻ",
+          "kn": "ಫಿಸಿಯೋಥೆರಪಿ ಸೆಷನ್"
+        },
+        "priceInr": 700,
+        "minutes": 45
+      },
+      {
+        "names": {
+          "en": "Follow-up visit",
+          "hi": "फ़ॉलो-अप विज़िट",
+          "ml": "ഫോളോ-അപ്പ് സന്ദർശനം",
+          "kn": "ಫಾಲೋ-ಅಪ್ ಭೇಟಿ"
+        },
+        "priceInr": 300,
+        "minutes": 15
+      }
+    ],
+    "depositInr": 100,
+    "windowHours": 6,
+    "opens": "09:00",
+    "closes": "18:00",
+    "days": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ]
+  },
+  "character": {
+    "personality": "warm",
+    "paint": "blue"
+  }
+}

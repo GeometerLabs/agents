@@ -60,7 +60,8 @@ test("no delivery slots and no places is a shop that does not deliver; all of th
 test("a shop that exists is read back into the same form: its ids and its slots' own cut-offs are kept, so its orders still find them", () => {
   const again = ordersDraftFromShop("d2", "a1", "orders", "annapurna", example, undefined, { schema: 1, receipts: {} } as never, "2026-11-05T00:00:00Z");
   assert.equal(again.form.name, "Annapurna Tiffins");
-  const rebuilt = buildOrdersSettings(again, example);
+  // a slot's own cut-off is not in the form: since 17 Nov (keep.ts) it is put back from the shop's saved settings, which the save passes as the third argument
+  const rebuilt = buildOrdersSettings(again, example, example);
   assert.ok(rebuilt.ok, rebuilt.ok ? "" : rebuilt.errors.join("; "));
   if (!rebuilt.ok) return;
   const s = rebuilt.settings as unknown as Settings;

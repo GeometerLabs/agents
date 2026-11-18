@@ -42,10 +42,13 @@ const newRoll = (): string => randomBytes(3).toString("hex");
 /** The eight seeds of a roll for a shop. Every seed starts with the shop's id. */
 export const stripSeeds = (shopId: string, roll: string): string[] => Array.from({ length: STRIP }, (_, i) => `${shopId}-${roll}-${i}`);
 
-/** The step's starting point for a new shop: Clay, a fresh roll with its first face picked, Auto colour, no name, the warm personality. */
-export const newCharacterDraft = (shopId: string): CharacterDraft => {
+/** The step's starting point for a new shop: Clay, a fresh roll with its first face picked, Auto colour, no name, the warm personality (or a preset's suggested personality and paint). */
+export const newCharacterDraft = (shopId: string, suggest?: { personality?: string; paint?: string }): CharacterDraft => {
   const roll = newRoll();
-  return { style: "clay", roll, seed: stripSeeds(shopId, roll)[0], name: "", personality: "warm", chosen: false };
+  // a preset's suggestion (presets.ts) only starts the step on its values; `chosen` stays false, so nothing is written until the Operator has been through the step
+  const personality = (PERSONALITIES as readonly string[]).includes(suggest?.personality ?? "") ? (suggest!.personality as Personality) : "warm";
+  const paint = isPaint(suggest?.paint) ? suggest!.paint : undefined;
+  return { style: "clay", roll, seed: stripSeeds(shopId, roll)[0], name: "", personality, ...(paint ? { paint } : {}), chosen: false };
 };
 
 /** The step's draft for a shop that exists: its saved character (chosen), or a new one when its settings have none. */

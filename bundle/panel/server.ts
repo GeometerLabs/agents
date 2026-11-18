@@ -67,7 +67,10 @@ import { createSessions } from "./session.ts";
 import type { Session } from "./session.ts";
 import { applyAccounts, applyBusiness, applyDeposit, applyLanguages, buildSettings, draftFromShop, keepWhatsAppProvider, newDraft, paymentModuleOf, runtimeFor } from "./setup.ts";
 import { gatewayOf, providerById } from "../../modules/payments/providers/index.ts";
-import { reportOf, setupOf } from "./setups.ts";
+import { SETUPS, reportOf, setupOf } from "./setups.ts";
+import { PRESETS_DIR, applyPreset, cleanTrade, loadPresets, tradeLabel } from "./presets.ts";
+import { setupOtherPage, setupStartPage } from "./views-presets.ts";
+import { presetWords } from "./words-presets.ts";
 import type { Body, Draft } from "./setup.ts";
 import { applyCharacter, characterDraftFromSettings, newCharacterDraft, withCharacter } from "./character.ts";
 import { ensureShopCharacter, characterDirOf } from "../lib/character.ts";
@@ -87,7 +90,7 @@ import { backupKeyFile, backupKeyPage, serverPage } from "./views-server.ts";
 import { discoverTemplates } from "./templates.ts";
 import type { Template } from "./templates.ts";
 import { createVault, loadKeyFile, plainVault } from "./vault.ts";
-import { errorPage, handoverPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, resetPage, setupChecksPage, signinPage, setupStartPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
+import { errorPage, handoverPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, resetPage, setupChecksPage, signinPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
 import type { ChecksView, Ctx, HandoverView, ShopCardView, ShopView } from "./views.ts";
 import { WORDS, isDraftLanguage } from "./languages.ts";
 
@@ -157,6 +160,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const loginByAddress = createLimiter(20, 15 * 60_000, now);
   const loginByName = createLimiter(5, 15 * 60_000, now);
   const templates = () => discoverTemplates(config.templatesDir);
+  // the trades of the first set-up question (presets.ts): data files next to the panel, read once; a broken one stops the panel here, naming the file
+  const presets = loadPresets(PRESETS_DIR, ["bookings", ...Object.keys(SETUPS)]);
+  const offeredPresets = () => presets.filter((p) => templates().some((t) => t.id === p.template));
   const signingKey = config.signingKeyFile ? loadPrivateKey(config.signingKeyFile) : undefined;
   const staleMs = config.staleMinutes * 60_000;
   const canInvite = config.mode === "own";
@@ -546,6 +552,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const licence = licenceView(read.ok ? read.status.licence : undefined, shops.fleet(id)?.licence, now());
     const view: ShopView = {
       id, name: settings?.name ?? id, live, status: read.ok ? read.status : undefined, ...(stop ? { stopRequestedAt: stop.requestedAt } : {}),
+      ...(tradeLabel(shops.meta(id).trade, presets, c.lang) ? { trade: tradeLabel(shops.meta(id).trade, presets, c.lang) } : {}),
       summary: settings && !own ? summaryOf(c, settings) : undefined,
       // a Fees or Orders shop: its own pieces, with the plan's allowance from the price list in force; Bookings: the cost table
       ...(own ? (settings ? { own: own.pieces(c, settings, data, month, prices.rates["plan.business.allowance"]?.count ?? null, now()) } : {}) : { cost: costFor(id, settings ?? ({ reminders: { hoursBefore: [24, 2] }, deposit: { amountInr: 0 } } as unknown as Settings)) }),
@@ -907,12 +914,27 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     body(r.res, 200, PICTURE_TYPES[r.params[2] as PictureFormat], pic.bytes, { "cache-control": "private, max-age=86400", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'", ...(download ? { "content-disposition": `attachment; filename="${ref.id}-whatsapp-photo.${r.params[2]}"` } : {}) });
   });
 
-  on("GET", /^\/setup$/u, "user", (r) => page(r, 200, setupStartPage(r.ctx(), templates())));
+  on("GET", /^\/setup$/u, "user", (r) => page(r, 200, setupStartPage(r.ctx(), offeredPresets())));
+  on("GET", /^\/setup\/other$/u, "user", (r) => page(r, 200, setupOtherPage(r.ctx(), templates(), { trade: "", problems: [] })));
+  // A new shop starts from a trade button (`preset`: the form is prefilled with that trade's examples), or from "Something else" (`trade`: the Operator's own words, and `template`: the kind
+  // of work; the form starts empty). A bare `template` (a builder's own start, the old form) starts as it always did, with no trade.
   on("POST", /^\/setup$/u, "user", async (r) => {
-    const template = templates().find((t) => t.id === r.form.template && (t.setup === "bookings" || setupOf(t.setup)));
+    const c = r.ctx();
+    const preset = r.form.preset !== undefined ? offeredPresets().find((p) => p.id === r.form.preset) : undefined;
+    if (r.form.preset !== undefined && !preset) return notFound(r);
+    const typedGiven = r.form.trade !== undefined;
+    const typed = typedGiven ? cleanTrade(r.form.trade) : undefined;
+    const template = templates().find((t) => t.id === (preset ? preset.template : r.form.template) && (t.setup === "bookings" || setupOf(t.setup)));
+    if (typedGiven && (typed === undefined || (!template && (r.form.template ?? "") === ""))) {
+      // the box is empty, or Enter was pressed before a kind of work was picked: ask again, keeping what was written
+      return page(r, 400, setupOtherPage(c, templates(), { trade: typed ?? "", problems: [typed === undefined ? presetWords(c.w).typedEmpty : presetWords(c.w).kindQuestion] }));
+    }
     if (!template) return notFound(r);
     const id = randomBytes(12).toString("hex");
-    store.write(`drafts/${id}.json`, (setupOf(template.setup)?.newDraft ?? newDraft)(id, r.account!.id, template, exampleOf(template), new Date(now()).toISOString()));
+    const draft = (setupOf(template.setup)?.newDraft ?? newDraft)(id, r.account!.id, template, exampleOf(template), new Date(now()).toISOString());
+    if (preset) applyPreset(draft, preset, c.lang);
+    else if (typed !== undefined) draft.trade = { typed };
+    store.write(`drafts/${id}.json`, draft);
     redirect(r, `/setup/${id}/1`);
   });
 
@@ -953,7 +975,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     if (back) return redirect(r, back);
     const step = template.steps[n - 1];
     // item 11i: the Character step's first look rolls this shop's first row of faces, kept in the draft so a reload shows the same row
-    if (step === "character" && !d.character) { d.character = newCharacterDraft(d.shopId ?? "shop"); store.write(`drafts/${d.id}.json`, d); }
+    if (step === "character" && !d.character) { d.character = newCharacterDraft(d.shopId ?? "shop", d.suggestCharacter); store.write(`drafts/${d.id}.json`, d); }
     page(r, 200, step === "checks" ? setupChecksPage(r.ctx(), checksView(r, d, template, [])) : setupStepPage(r.ctx(), stepView(r, d, template, n, []), step));
   });
 
@@ -1016,10 +1038,11 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     if (!d.shopId) return notFound(r);
     const example = exampleOf(template);
     const own = setupOf(template.setup);
-    const built = own ? own.build(d, example) : buildSettings(d, example);
+    // item 7 (17 Nov): a shop being changed starts from the settings it has saved, so what the form does not show is kept (keep.ts)
+    const before = d.editing ? rawSettings(shops, d.shopId) : undefined;
+    const built = own ? own.build(d, example, before) : buildSettings(d, example, before);
     // What is written is what a builder would write: Fees' settings are checked into another shape (a student's "batch" becomes "batchId"), so its form keeps the shape it was checked from.
     // item 11i: the assistant block the shop had is kept as it was, with this step's character when the step was finished (character.ts withCharacter)
-    const before = d.editing ? rawSettings(shops, d.shopId) : undefined;
     const written = (b: typeof built): unknown => (b.ok ? withCharacter((b as { raw?: unknown }).raw ?? b.settings, d.character, before, d.shopId as string) : undefined);
     const w = r.ctx().w;
     const gateway = providerById(paymentModuleOf(d))?.gateway !== undefined; // B71: a payments service is named only for a shop that chose a gateway
@@ -1038,11 +1061,13 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       // Another shop took this name after step 1. Nothing of it was touched.
       return page(r, 409, setupChecksPage(r.ctx(), { ...checksView(r, d, template, [w.setup.fallback("A shop with this name already exists on the server, so this one was not saved. Start the setup again with another name.")]), saved: false }));
     }
-    shops.saveMeta(d.shopId, { ...shops.meta(d.shopId), ...(d.expectedBookings ? { expectedBookings: Number(d.expectedBookings) } : {}) });
+    // what the shop does (a trade button's id, or the Operator's own words) is kept in the meta, once, when the shop is first saved; an edit keeps what is there
+    shops.saveMeta(d.shopId, { ...shops.meta(d.shopId), ...(d.expectedBookings ? { expectedBookings: Number(d.expectedBookings) } : {}), ...(d.trade ? { trade: d.trade } : {}) });
     // item 11i: every mood drawn once into the shop's own data (shops/<shop>/character), only when the look changed; the deployer draws it on its next pass if this fails
     try { const drawn = await ensureShopCharacter(config.serverDir, d.shopId, written(built)); if (drawn?.drawn) log(`shop ${d.shopId}: its character's pictures drawn (${drawn.version})`); }
     catch (e) { log(`shop ${d.shopId}: its character's pictures could not be drawn now (${(e as Error).message}); the deployer draws them`); }
     d.saved = true; d.editing = true;
+    d.lostDetails = (built as { lost?: string[] }).lost ?? []; // students whose old details could not be carried over: the checks page says so
     store.write(`drafts/${d.id}.json`, d);
     log(`shop ${d.shopId} saved by ${r.account!.id}`);
     redirect(r, `/setup/${d.id}/${template.steps.indexOf("checks") + 1}`);

@@ -268,3 +268,104 @@ An account that signs in with geometer.dev has no passphrase, so it gets none. T
 who runs this server", on Geometer's server "write to hello@geometer.dev from the email you gave us". `geometer panel accounts` lists sign-in names and how each
 signs in (never a hash or a token); `geometer panel signout <handle>` ends one account's sessions now.
 
+
+## The phone form never drops what it does not show (17 Nov 2026, owner's item 7)
+
+Each phone form built a shop's settings from its own boxes, so editing a shop deleted every field the form had no box for. A Fees student's `backDues`, `joined` and
+`adult` went; so did a Classes centre's whole `classes` block, an Orders shop's `plans`, `reminder` and each slot's own cut-off, a Stock supplier's `approved` (an edit
+approved a supplier the owner had not), and a Bookings shop's address, a service's chair or tractor (`resource`), hold minutes, reminders and slot minutes (its form
+started from the example's values, not the shop's). An Operator who corrected one fee deleted the old dues and their reminders stopped.
+
+**The rule, one function** (`keep.ts`): start from the settings the shop saved (the raw settings.json, read at save time as the character step already did) and replace
+only what the form owns. `keepHidden(built, saved, spec)`:
+
+- a top-level key the form owns and no longer writes (a cleared address, a removed delivery area, no approvers) is deleted, not brought back;
+- a top-level key the form does not own (`plans`, `reminder`, `joiningMidMonth`, `followUpHours`, and any field another stream adds tomorrow) is kept as saved;
+- `limits` in Stock is shared: the form owns two numbers, `maxQuantity` stays;
+- a list the form owns is matched to the saved entries by `id`; a matched entry keeps every key the form does not write (a slot's `cutoff` and `maxOrders`, a service's
+  `resource`, a supplier's `aliases`/`language`/`approved`); an entry the Operator removed is simply not in the built list, so it goes with all its fields;
+- an entry's `names`: when the name the form shows is the saved name, every saved name (the other languages, the other ways customers say it) is kept;
+- Fees students have no id: they are matched by the settings' own duplicate key (the parent's number and the lowercased name), then, so that a corrected spelling or number
+  does not cost a student their back dues, by the same name alone, then by the same parent and batch, each only when exactly one saved and one typed student fit
+  (two siblings with one parent number are never guessed);
+- a centre with more batches (or a shop with more services) than the form has rows for keeps the rest after the form's own (`shown`), because the form cannot show them.
+
+Only the keys each form OWNS are listed (`KEEP` in keep.ts); no list of hidden keys exists to go out of date. The result goes through the template's own `validateSettings`
+as before, so a kept value that no longer fits is refused in the validator's words and nothing is saved: a back due above every fee that was lowered, a plan that still
+names a slot the Operator removed. The save route passes the saved settings as a new third argument of each `build` (`build(draft, example, saved?)`); a new shop and the step
+previews pass none and behave as before.
+
+One trap found while writing it: Bookings checks its base settings a second time (`settingsFromForm` re-validates them), and a CHECKED `assistant` block (`morningAt`) is not valid input, so the
+Bookings base leaves `assistant` out; it comes back from the saved file in keepHidden, and `withCharacter` writes the raw block at the save, as before. `approvers` is the same shape in and out.
+
+Other changes that follow from "start from the saved shop": the Bookings form no longer takes the example's slot minutes, buffer, hold minutes, refund limit, reminders and
+time zone for a shop that exists (it starts from the shop's own); Fees keeps a batch's id by its row, so renaming "Class 9" keeps its students' dues and its timetable;
+Fees students keep their own language (it was set to the centre's first); Fees, Orders and Stock keep the shop's time zone. What this superseded is gone: Orders' `keep.cutoffs`,
+`keep.maxOrders`, `keep.reminder` and Stock's `keep.maxQuantity`, `keep.followUpHours` (the draft carries only the ids a name had).
+
+Tests (`test/keep.test.ts`, written 17 Nov, not run): the function on its own; then for each of the four templates a saved shop with every block the form has no box for,
+read into the form, one field edited, built as the save route does, and everything but the edited field equal; removed students, items, slots and suppliers take their
+hidden fields with them; a corrected spelling keeps back dues; a plan that still uses a removed slot is refused.
+
+## A Classes part in the Fees phone form (17 Nov 2026, owner's item 7)
+
+A Fees centre with a `classes` block used to be set up only by a builder-written file, and the old phone form dropped the block on any edit. Now step 1 of the Fees form
+(the centre, batches and students) ends with a Classes part, in words an Operator can read at a glance:
+
+- **One box, one class on each line**: "Class 8, Mon, 16:00, 45" (the batch as typed above, the day, the start time on a 24-hour clock, how many minutes; the minutes may be left
+  out: 60). A box was chosen over seven tick-boxes for the days because a batch's classes often start at different times on different days (the Classes example has Mon and Thu
+  at 17:00; a real timetable has Mon 17:00 and Thu 18:30); one box shows any saved timetable as it is and writes it back unchanged. The box is filled from the saved block when a
+  centre is changed, the batch by the name the form shows.
+- **Empty box = no Classes**: no `classes` block is written, the centre is the Fees centre it always was, and a saved block is dropped (the Operator emptied the box on purpose).
+- **One switch**: "An old unpaid month also holds back the class link" (`classes.oldDuesStopLink`, owner 17 Nov; the stream `classes-old-dues-17nov` adds the field to the settings
+  and its reader). Written only when on; absent means off, so the form works on both sides of that merge. Until the two are merged this branch's own settings check does not
+  know the key and says so in words if it is switched on.
+- **Kept, not asked**: the block's `linkLeadMinutes` (30) and `materialMaxMb` (10) keep their saved value or the default; they are not boxes (`materialMaxMb` is a server file
+  limit an Operator does not need; asked for later by a builder in the file). keep.ts owns `timetable` and `oldDuesStopLink` of the block, nothing else.
+- **Refused in words** (four languages, `words-classes.ts`): a line that is not "batch, day, time", a batch that is not typed above, a day other than Mon to Sun, a time that is
+  not a 24-hour time, minutes outside 10 to 240, the same class twice, more than 60 lines. Each says its row.
+
+**What is not in the form, and why**: the lead asked for each batch's class link and the teacher's number. Neither is a setting. The class link is conversation state the
+teacher sends on WhatsApp ("link", the class, the address; `src/classes/state.ts`, `parse.ts`), changed whenever a class moves, and the teacher is whoever messages from the
+owner's number, which the Languages step already asks for. A form field would need a second place to write conversation state and would be stale after the first
+WhatsApp link; adding fields to `src/classes/settings.ts` would also collide with the old-dues stream editing the same lines. The form says so in one sentence instead. See
+Deferred.md ("A class link from the panel").
+
+Tests: `test/classes-form.test.ts` (written 17 Nov, not run), and the Fees round trips in `test/keep.test.ts`.
+
+## Presets: "What does the shop do?" (17 Nov 2026, owner: "P yes but have an Other option operator can specify")
+
+Operators think in trades ("salon", "tuition", "tiffin"), not in our template names, so the first question of a new shop is now **What does the shop do?**, as big buttons in the
+Operator's language, one for each trade, plus **Something else**. This replaces the old first screen, which listed the templates by name; the template list moved to the page
+behind Something else.
+
+**A preset is data on top of one existing template** (`presets.ts`, `presets/<id>.json`, `presets/README.md`): an id; the trade's name in four languages; the base template (and
+variant); what the form starts with (example services, menu items or batches, pickup slots or catalogue lines, with example prices); the default rules within the template's own
+bounds; and the shop assistant's suggested personality and signboard paint. It adds no agent code, no new settings field, no new rule and no test of a money path: the examples go
+into the same boxes an Operator would type into (in the language they read the panel in; the first step says "the prices are only examples, check each"), stay editable, and pass
+through the template's own `validateSettings` when the shop is saved. "Mood" in the brief is the personality (warm, cheerful, brief): it is the one mood an Operator chooses; the faces'
+moods follow the shop's real state and are never chosen. A suggestion only starts the Character step on those values; `chosen` stays false, so nothing is written until the Operator
+has been through the step.
+
+- **Where**: `bundle/panel/presets/`, not `templates/`: templates.ts finds templates by `template.json` in `templates/<domain>/<name>/`, and a preset in that tree could be mistaken for one or
+  met by anything else that walks `templates/`. The panel's own folder is where `vote-options.json` already lives.
+- **One reader and validator** (`readPreset`, `loadPresets`): a preset naming an unknown template, a variant the template does not have, or a variant the phone form cannot set up yet is
+  refused with the reason; so is a missing language, a prefill outside the template's bounds (a deposit above the cheapest service, a late fee above the cheapest fee, `maxItemsPerOrder`
+  times the dearest item above a day's refund cap, an unknown paint), a timetable without the Classes variant, or a key nobody knows. A broken file stops the panel at start, naming the file.
+- **The first set (8)**: salon or beauty parlour, clinic or physiotherapy (Bookings); tuition centre, music or dance or yoga classes (Fees with Classes, now that the form has the Classes part);
+  home bakery or cakes, sweets and snacks pre-orders, catering (Orders); shop restocking from suppliers (Stock orders). Tiffin (Orders with `plans`) and equipment hire (Bookings `rental`)
+  are not shipped: their variants are known to the reader as "later", so a file for them is refused until the form has their step (Deferred.md). A Stock orders preset can carry no
+  supplier: its catalogue lines name a placeholder ("My supplier") and the Operator writes their own supplier and number.
+- **Something else**: the Operator writes the trade in their own words (up to 40 characters; control characters and runs of spaces cleaned, nothing else changed), then picks the kind of
+  work from today's template list in plain words ("Bookings with a deposit", "Pre-orders with an advance", "Fee collection for classes", "Restocking from suppliers"); the form starts empty
+  as today. It is one page and one form: the kind of work is the button that sends it, and a form sent by Enter before a kind was picked is asked again (a hidden first button sends an
+  empty kind), so a kind is never chosen for someone.
+- **Where the trade is kept**: the shop's meta (`trade: { preset }` or `{ typed }`), written when the shop is first saved, never in settings.json (the agent's settings are untouched) and never
+  sent to a customer by this change. The panel shows it on the shop's page ("Kind of shop"); a preset by its name in the reader's language, the typed words escaped. Fleet and Streetlist are not
+  changed (Deferred.md).
+- **Words**: the first screen's words are in `words-presets.ts` (four languages, found by the panel's language name, like `words-classes.ts`); the trades' names and example names are in the preset
+  files; all of it is machine-written in Hindi, Malayalam and Kannada and on the review sheets (ids `preset.*`, `classes.*`).
+
+Tests (written 17 Nov, not run): `test/presets.test.ts` (every file validates; every preset in every language goes through its form's real steps and builds settings the template accepts;
+refusals; the typed trade; the four languages), `test/presets-flow.test.ts` (the first screen in four languages, a trade button, Something else, the trade in the meta and on the page,
+escaped). Three existing assertions moved from `GET /setup` to `GET /setup/other` (fees-flow, orders-flow, setup tests).

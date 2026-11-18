@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "id": "sweets",
+  "names": {
+    "en": "Sweets and snacks, pre-orders",
+    "hi": "मिठाई और नमकीन, पहले से ऑर्डर",
+    "ml": "മധുരവും പലഹാരങ്ങളും, മുൻകൂർ ഓർഡർ",
+    "kn": "ಸಿಹಿ ಮತ್ತು ತಿಂಡಿ, ಮೊದಲೇ ಆರ್ಡರ್"
+  },
+  "template": "orders",
+  "prefill": {
+    "menu": [
+      {
+        "names": {
+          "en": "Laddu 500 g",
+          "hi": "लड्डू 500 ग्राम",
+          "ml": "ലഡ്ഡു 500 ഗ്രാം",
+          "kn": "ಲಡ್ಡು 500 ಗ್ರಾಂ"
+        },
+        "priceInr": 350,
+        "dailyStock": 20
+      },
+      {
+        "names": {
+          "en": "Halwa 500 g",
+          "hi": "हलवा 500 ग्राम",
+          "ml": "ഹൽവ 500 ഗ്രാം",
+          "kn": "ಹಲ್ವಾ 500 ಗ್ರಾಂ"
+        },
+        "priceInr": 300,
+        "dailyStock": 20
+      },
+      {
+        "names": {
+          "en": "Mixture 500 g",
+          "hi": "नमकीन मिक्सचर 500 ग्राम",
+          "ml": "മിക്സ്ചർ 500 ഗ്രാം",
+          "kn": "ಮಿಕ್ಸ್ಚರ್ 500 ಗ್ರಾಂ"
+        },
+        "priceInr": 200,
+        "dailyStock": 30
+      },
+      {
+        "names": {
+          "en": "Murukku 500 g",
+          "hi": "मुरुक्कु 500 ग्राम",
+          "ml": "മുറുക്ക് 500 ഗ്രാം",
+          "kn": "ಚಕ್ಕುಲಿ 500 ಗ್ರಾಂ"
+        },
+        "priceInr": 220,
+        "dailyStock": 20
+      }
+    ],
+    "pickup": [
+      {
+        "from": "10:00",
+        "to": "13:00",
+        "names": {
+          "en": "morning",
+          "hi": "सुबह",
+          "ml": "രാവിലെ",
+          "kn": "ಬೆಳಿಗ್ಗೆ"
+        }
+      },
+      {
+        "from": "16:00",
+        "to": "19:00",
+        "names": {
+          "en": "evening",
+          "hi": "शाम",
+          "ml": "വൈകുന്നേരം",
+          "kn": "ಸಂಜೆ"
+        }
+      }
+    ],
+    "cutoffDays": 2,
+    "cutoffTime": "18:00",
+    "advance": {
+      "mode": "part",
+      "percent": 50
+    },
+    "maxItemsPerOrder": 10
+  },
+  "character": {
+    "personality": "cheerful",
+    "paint": "marigold"
+  }
+}

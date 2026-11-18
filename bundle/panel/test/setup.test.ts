@@ -208,7 +208,7 @@ test("it asks only for what the template uses, and a template added to templates
   const b = await boot({ templatesDir: templates });
   try {
     const divya = await b.account("divya", "partner");
-    const list = await divya.get("/setup");
+    const list = await divya.get("/setup/other");
     assert.ok(list.plain.includes('value="mini"') && list.plain.includes(WORDS.en.setup.templateElsewhere));
     assert.equal((await divya.post("/setup", { template: "elsewhere" }, "/setup")).status, 404, "a template the phone form cannot set up is not started");
     const start = await divya.post("/setup", { template: "mini" }, "/setup");

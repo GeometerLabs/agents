@@ -25,6 +25,10 @@ import { WORDS as LIMITS_PANEL_WORDS } from "./views-limits.ts";
 import { OWNER_MONEY } from "../../modules/channels/words-money.ts";
 import { STOCK_WORDS } from "../../modules/channels/words-stock.ts";
 import { STOCK_PANEL_WORDS } from "./stock.ts";
+import { CLASSES_WORDS } from "./words-classes.ts";
+import { PRESET_WORDS } from "./words-presets.ts";
+import { KEEP_WORDS } from "./words-keep.ts";
+import { PHONE_TEMPLATES, PRESETS_DIR, loadPresets, presetTexts } from "./presets.ts";
 import { WORDS as LIMITS_OWNER_WORDS } from "../../modules/channels/owner-limits-page.ts";
 import { CHAT, QUICK } from "../../modules/channels/words-chat.ts";
 import { IDENTITY } from "../../modules/channels/words-chat-identity.ts";
@@ -42,6 +46,21 @@ const stockSamples: Record<string, unknown[]> = {
   "stock.panel.problems.lineTwice": [3], "stock.panel.problems.capAbovePrice": ["₹1,200"], "stock.panel.shop.messages.line": [6],
 };
 const stockFlat = (language: Language): Map<string, string> => flatWords({ stock: { owner: STOCK_WORDS[language], panel: STOCK_PANEL_WORDS[language] } }, stockSamples);
+/** The Classes part of the Fees phone form (17 Nov 2026; words-classes.ts), under the ids "classes.*", each refusal with a made-up row and batch. */
+const classesFlat = (language: Language): Map<string, string> => flatWords({ classes: CLASSES_WORDS[language] }, {
+  "classes.problems.tooMany": [60], "classes.problems.lineBad": [2], "classes.problems.batch": [2, "Class 8"], "classes.problems.day": [2], "classes.problems.time": [2], "classes.problems.minutes": [2], "classes.problems.twice": [2],
+});
+/**
+ * The first set-up question (17 Nov 2026; words-presets.ts and bundle/panel/presets/*.json): its words under "preset.words.*", then each trade's name under "preset.<id>.name" and each
+ * example name the form is filled with under "preset.<id>.prefill.*", so a native reader checks what an Operator sees on the first screen and in the first form.
+ */
+const presetsFlat = (language: Language): Map<string, string> => {
+  const out = flatWords({ preset: { words: PRESET_WORDS[language] } });
+  for (const p of loadPresets(PRESETS_DIR, PHONE_TEMPLATES)) for (const [id, text] of presetTexts(p, language)) out.set(id, text);
+  return out;
+};
+/** What the save says when a student's earlier details could not be carried over (words-keep.ts), under the id "keep.lost". */
+const keepFlat = (language: Language): Map<string, string> => flatWords({ keep: KEEP_WORDS[language] }, { "keep.lost": ["Rahul"] });
 import { CHATS_LIST_WORDS } from "../../modules/channels/chats-list.ts";
 
 export type ReviewLanguage = "hi" | "ml" | "kn";
@@ -145,8 +164,8 @@ const chatIdentityFlat = (language: Language): Map<string, string> => flatWords(
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...classesFlat(language), ...presetsFlat(language), ...keepFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...classesFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

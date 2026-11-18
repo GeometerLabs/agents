@@ -11,6 +11,7 @@ import type { ShopForm } from "../../templates/commerce/bookings/demo/personalis
 import { normaliseVpa, payeeProblem, vpaProblem } from "../../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../../modules/payments/providers/index.ts";
 import { checkSecret } from "./secrets.ts";
+import { KEEP, keepHidden } from "./keep.ts";
 import { GUPSHUP_APP_NAME } from "../../modules/messaging/gupshup-selfserve.ts";
 import { DEFAULT_PROVIDER, gatewayOf, ownerMarkedOf, providerById } from "../../modules/payments/providers/index.ts";
 import type { SecretName } from "./contract.ts";
@@ -53,6 +54,15 @@ export interface Draft {
   done: number;
   /** Item 11i: the Character step's choices (character.ts). Made when the step is first shown; a draft from before has none. */
   character?: CharacterDraft;
+  /** Fees: students whose old dues, joining day or adult mark were not carried over by the last save (the parent's number changed); the checks page says so, in the Operator's language. */
+  lostDetails?: string[];
+  /**
+   * What the shop does (17 Nov 2026, presets.ts): a preset's id, or the trade the Operator typed under "Other" (cleaned and length-bounded). Kept in the shop's meta when it is saved,
+   * never in settings.json and never sent to a customer. A draft from before, or a builder's, has none.
+   */
+  trade?: { preset?: string; typed?: string };
+  /** A preset's suggested personality and signboard paint, applied when the Character step first rolls its faces (the Operator still chooses; `chosen` stays false). */
+  suggestCharacter?: { personality?: string; paint?: string };
 }
 
 /** The module is a provider's id (modules/payments/providers): UPI's ID and payee are kept here, a gateway's key in `Draft.gateway`. */
@@ -347,11 +357,21 @@ export function upiProblems(id: string, payee: string, w: Words): string[] {
 
 // ---- the settings, and the folder ---------------------------------------------------------------------------------------------------------
 
-export type Built = { ok: true; settings: Settings } | { ok: false; errors: string[] };
+/** `lost`: names of saved students whose hidden details could not be carried over (keep.ts studentsWithoutSafeMatch); only Fees sets it. */
+export type Built = { ok: true; settings: Settings; lost?: string[] } | { ok: false; errors: string[] };
 
-/** The demo's own form-to-settings, then this step's languages, owner and window on top; validateSettings is the last word. */
-export function buildSettings(draft: Draft, example: Settings): Built {
-  const first = settingsFromForm({ ...draft.form, language: draft.primaryLanguage }, example);
+/**
+ * The demo's own form-to-settings, then this step's languages, owner and window on top; validateSettings is the last word. `saved` is the shop's settings.json as written, for a shop
+ * being changed (17 Nov, item 7): the form then starts from what the shop has (its hold minutes, reminders, slots, per-day hours and a service's chair, not the example's), and what
+ * the form does not show is put back by keepHidden before the check. Left out (a new shop, a preview): the example is the start, as before.
+ */
+export function buildSettings(draft: Draft, example: Settings, saved?: unknown): Built {
+  const checkedSaved = saved === undefined ? undefined : validateSettings(saved);
+  // The base is checked again by settingsFromForm (applyLanguage), so it must be valid as INPUT: a checked `assistant` block (`morningAt`) is not (assistantSettingsJson says why).
+  // The block is not the form's, so it is left out of the base and comes back from the saved file in keepHidden (and withCharacter at the save).
+  const { assistant: _assistant, ...checkedBase } = (checkedSaved?.ok ? checkedSaved.settings : example) as Settings;
+  const base = checkedBase as Settings;
+  const first = settingsFromForm({ ...draft.form, language: draft.primaryLanguage }, base);
   if (!first.ok) return first;
   const s = first.settings;
   const deposit = s.deposit.amountInr;
@@ -363,9 +383,10 @@ export function buildSettings(draft: Draft, example: Settings): Built {
     languages,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
     ...approversFromDraft(draft),
-    cancellation: { windowHours: WHOLE.test(draft.windowHours) ? Number(draft.windowHours) : s.cancellation.windowHours, refundLimitInr: Math.max(example.cancellation.refundLimitInr, deposit) },
+    cancellation: { windowHours: WHOLE.test(draft.windowHours) ? Number(draft.windowHours) : s.cancellation.windowHours, refundLimitInr: Math.max(base.cancellation.refundLimitInr, deposit) },
   };
-  return validateSettings(raw);
+  // `approvers` is the form's own: left out of `raw` when the Operator gave none, so keepHidden deletes the saved ones too
+  return validateSettings(saved === undefined ? raw : keepHidden(raw, saved, KEEP.bookings));
 }
 
 /**

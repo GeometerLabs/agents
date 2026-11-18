@@ -2,6 +2,7 @@
 // students, the form for the rules of the month, the centre's settings in plain words on the shop page, the month's counts, and the messages a centre can use. The shell,
 // the steps bar and the shared steps (languages, accounts, checks) are views.ts's; it hands over the two small helpers it shares.
 import { formatInr } from "../../modules/language/format.ts";
+import { STRINGS } from "../../templates/education/fees/report/strings.ts";
 import { batchName } from "../../templates/education/fees/src/settings.ts";
 import type { Settings } from "../../templates/education/fees/src/settings.ts";
 import type { FeesReport } from "../../templates/education/fees/report/data.ts";
@@ -13,6 +14,7 @@ import { languageOptions } from "../../templates/commerce/bookings/demo/personal
 import type { Ctx, TemplateActivity, TemplateMessages, TemplateSummary } from "./views.ts";
 import { formatRupees } from "./cost.ts";
 import type { Draft } from "./setup.ts";
+import { classesWords } from "./words-classes.ts";
 
 /** The helpers views.ts shares with the Fees pages. */
 export interface Helpers {
@@ -25,6 +27,7 @@ const feesOf = (d: Draft): FeesForm => (d as unknown as { fees: FeesForm }).fees
 /** Step 1: the centre, its batches and fees, and its students. */
 export function feesBusinessBody(c: Ctx, d: Draft, action: string, back: Raw | string, next: Raw, h: Helpers): Raw {
   const b = c.w.setup.fees.business;
+  const k = classesWords(c.w);
   const f = feesOf(d);
   return html`<form method="post" action="${action}">${h.csrf}
   ${h.text(b.name, "name", d.form.name, { max: 80 })}
@@ -32,6 +35,9 @@ export function feesBusinessBody(c: Ctx, d: Draft, action: string, back: Raw | s
   <h2>${b.batches}</h2><p class="note">${b.batchesHint}</p>
   ${f.batches.slice(0, MAX_BATCHES).map((r, i) => html`<div class="svc"><div class="row">${h.text(b.batchName, `batch_name_${i}`, r.name, { max: 60 })}${h.text(b.batchFee, `batch_fee_${i}`, r.fee, { mode: "numeric", max: 9 })}</div></div>`)}
   <label class="field"><span>${b.students}</span><textarea name="students" rows="8" autocomplete="off" spellcheck="false">${f.students}</textarea><p class="help">${b.studentsHelp}</p></label>
+  <h2>${k.heading}</h2><p class="note">${k.linkNote}</p>
+  <label class="field"><span>${k.label}</span><textarea name="timetable" rows="5" autocomplete="off" spellcheck="false">${f.timetable ?? ""}</textarea><p class="help">${k.help}</p></label>
+  <div class="field"><div class="days"><label><input type="checkbox" name="oldDuesStopLink" ${f.oldDuesStopLink ? raw("checked") : ""}> ${k.oldDues}</label></div><p class="help">${k.oldDuesHelp}</p></div>
   ${back}${next}</form>`;
 }
 
@@ -72,6 +78,8 @@ export function activityFees(c: Ctx, r: FeesReport): TemplateActivity {
     lines: [
       `${a.opened}: ${r.fees.opened} · ${a.paidInFull}: ${r.fees.paidInFull} · ${a.partlyPaid}: ${r.fees.partlyPaid} · ${a.stillOpen}: ${r.fees.stillOpen}`,
       `${a.collected}: ${formatRupees(r.money.collected.paise)} · ${a.stillToCollect}: ${formatRupees(r.fees.stillToCollect.paise)}`,
+      // present only when old dues were paid this month (the report keeps them apart from this month's own fees); the label is the report's own word
+      ...(r.money.oldDues ? [`${STRINGS[c.lang].label.oldDuesCollected}: ${formatRupees(r.money.oldDues.paise)}`] : []),
       `${a.reminders}: ${r.reminders.sent} · ${c.w.shop.saidNo}: ${r.stopped.total}`,
     ],
     owner: r.owner,

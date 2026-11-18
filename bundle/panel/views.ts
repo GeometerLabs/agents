@@ -17,6 +17,8 @@ import { formatRupees } from "./cost.ts";
 import type { CostLine, MonthlyCost } from "./cost.ts";
 import type { CheckResult } from "./checks.ts";
 import type { LiveView, ShopStatus } from "./contract.ts";
+import { presetWords } from "./words-presets.ts";
+import { keepWords } from "./words-keep.ts";
 import { html, raw } from "./html.ts";
 import type { Raw } from "./html.ts";
 import type { PlanView } from "./plan.ts";
@@ -57,7 +59,7 @@ const dateFmt = (lang: string) => new Intl.DateTimeFormat(`${lang}-IN-u-nu-latn`
 // Dates are always shown in India time and Western digits, in the reader's language, so a shop owner reads the same clock the bookings use; a bad or missing date gives "" rather than "Invalid Date" on a page.
 export const when = (iso: string | undefined | null, lang: string): string => (iso && Number.isFinite(Date.parse(iso)) ? dateFmt(lang).format(new Date(iso)) : "");
 
-const csrf = (c: Ctx) => html`<input type="hidden" name="_csrf" value="${c.csrf}">`;
+export const csrf = (c: Ctx) => html`<input type="hidden" name="_csrf" value="${c.csrf}">`;
 /** The link to the shop's papers page (views-papers.ts). Hindi, Malayalam and Kannada machine-written, waiting for native review. */
 const PAPERS_LINK: Record<Language, string> = { en: "Statements, case records and the agent's paper", hi: "विवरण, मामलों के रिकॉर्ड और एजेंट का काग़ज़", ml: "വിവരങ്ങൾ, കേസ് രേഖകൾ, ഏജന്റിന്റെ രേഖ", kn: "ವಿವರಗಳು, ಪ್ರಕರಣ ದಾಖಲೆಗಳು ಮತ್ತು ಏಜೆಂಟ್ ಕಾಗದ" };
 const roleWord = (c: Ctx, role: "builder" | "partner") => c.w.roles[role];
@@ -257,6 +259,8 @@ export interface ShopView {
   status: ShopStatus | undefined;
   stopRequestedAt?: string;
   summary: { services: string[]; hours: string[]; deposit: string; cancel: string; languages: string; owner: string } | undefined;
+  /** What the shop does, in the reader's words: a preset's name in their language, or the trade the Operator typed (escaped where it is shown). Left out for a shop set up before presets. */
+  trade?: string;
   /** Bookings' running-cost model. A Fees or Orders shop has none (it has `own`): the model is of bookings, and a wrong cost line is worse than none. */
   cost?: MonthlyCost;
   /** What a Fees or Orders shop's page shows in place of Bookings' summary, activity and cost (setups.ts builds it). */
@@ -374,6 +378,7 @@ export function shopPage(c: Ctx, v: ShopView): string {
   const status = v.status;
   const whyList = v.live.why.map((k) => html`<li>${c.w.why[k]}</li>`);
   return layout(c, v.name, html`<h1>${v.name}</h1>
+${v.trade ? html`<p class="note">${presetWords(c.w).tradeLabel}: ${v.trade}</p>` : ""}
 ${v.notice ? html`<div class="notice" role="status">${v.notice}</div>` : ""}
 <p class="big">${liveLine(c, v.live)}</p>
 ${v.stopRequestedAt && v.live.code === "stopping" ? html`<p>${w.stopAsked(when(v.stopRequestedAt, c.lang))}</p>` : ""}
@@ -499,15 +504,6 @@ ${o.already ? html`<div class="notice">${w.stopAsked(when(o.at, c.lang))}</div><
 
 // ---- the setup --------------------------------------------------------------------------------------------------------------------------
 
-// First setup screen: choose the template. Templates without a phone setup are listed but not clickable, so nobody starts a flow that cannot finish.
-export function setupStartPage(c: Ctx, templates: Template[]): string {
-  const w = c.w.setup;
-  return layout(c, w.title, html`<h1>${w.title}</h1>
-<p class="big">${w.chooseTemplate}</p>
-<div class="cards">${templates.map((t) => t.setup === "bookings" || setupOf(t.setup) ? html`<form method="post" action="/setup">${csrf(c)}<input type="hidden" name="template" value="${t.id}">
-  <button class="btn primary wide" type="submit">${w.templateNames[t.id] ?? t.id} · ${w.start}</button></form>` : html`<div class="shopcard"><div class="name">${w.templateNames[t.id] ?? t.id}</div><div class="meta">${w.templateElsewhere}</div></div>`)}</div>`);
-}
-
 const stepsBar = (c: Ctx, steps: string[], now: number): Raw => html`<ol class="steps" aria-label="${c.w.setup.progress(now + 1, steps.length)}">${steps.map((_, i) => html`<li class="${i < now ? "done" : i === now ? "now" : ""}"></li>`)}</ol>`;
 const errorsBox = (c: Ctx, problems: string[]): Raw => (problems.length === 0 ? raw("") : html`<div class="errors" role="alert"><b>${c.w.setup.problemsTitle}</b><ul>${problems.map((p) => html`<li>${p}</li>`)}</ul></div>`);
 const text = (label: string, name: string, value: string, o: { type?: string; help?: string; mode?: string; autocomplete?: string; max?: number } = {}): Raw =>
@@ -539,7 +535,9 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
   const d = v.draft;
   const own = setupOf(v.template.setup);
   const title = own && (step === "business" || step === "deposit") ? own.titles(c.w)[step === "business" ? "business" : "rules"] : w.steps[step];
-  const head = html`<p class="note">${w.progress(v.now + 1, v.steps.length)}</p>${stepsBar(c, v.steps, v.now)}<h1>${title}</h1>${errorsBox(c, v.problems)}`;
+  // a shop that started from a trade (presets.ts): its first form is full of example prices, and says so
+  const prefilled = step === "business" && d.trade?.preset && !d.editing ? html`<p class="note">${presetWords(c.w).prefillNote}</p>` : "";
+  const head = html`<p class="note">${w.progress(v.now + 1, v.steps.length)}</p>${stepsBar(c, v.steps, v.now)}<h1>${title}</h1>${errorsBox(c, v.problems)}${prefilled}`;
   const back = v.now > 0 ? html`<a class="btn" href="/setup/${d.id}/${v.now}">${c.w.common.back}</a> ` : "";
   const next = html`<button class="btn primary" type="submit">${c.w.common.next}</button>`;
   const shared = { csrf: csrf(c), text };
@@ -683,7 +681,7 @@ export function setupChecksPage(c: Ctx, v: ChecksView): string {
   const w = c.w.setup;
   const k = w.checks;
   const d = v.draft;
-  const head = html`<p class="note">${w.progress(v.now + 1, v.steps.length)}</p>${stepsBar(c, v.steps, v.now)}<h1>${w.steps.checks}</h1>${errorsBox(c, v.problems)}`;
+  const head = html`<p class="note">${w.progress(v.now + 1, v.steps.length)}</p>${stepsBar(c, v.steps, v.now)}<h1>${w.steps.checks}</h1>${errorsBox(c, v.problems)}${(d.lostDetails ?? []).map((n) => html`<div class="notice" role="status">${keepWords(c.w).lost(n)}</div>`)}`;
   const hand = v.checks?.hand;
   const back = html`<a class="btn" href="/setup/${d.id}/${v.now}">${c.w.common.back}</a>`;
   if (!v.saved) {

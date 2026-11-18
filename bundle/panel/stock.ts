@@ -17,6 +17,8 @@ import type { ShopMeta } from "./shops.ts";
 import { whatsappDraftOf } from "./setup.ts";
 import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
+import { KEEP, keepHidden } from "./keep.ts";
+import { wordsLanguage } from "./languages.ts";
 import { html, raw } from "./html.ts";
 import type { Raw } from "./html.ts";
 import type { Helpers } from "./views-fees.ts";
@@ -33,8 +35,8 @@ export interface StockForm {
   /** One catalogue line on each: item, supplier, unit, price, and (left out or typed) how many a low-stock mark orders. */
   catalogue: string;
   maxPerOrderInr: string; monthlyBudgetInr: string;
-  /** Kept from a shop being changed so its orders still find their lines, and so editing here drops nothing the form has no box for. */
-  keep?: { ids: Record<string, string>; maxQuantity: number; followUpHours: number[] };
+  /** Kept from a shop being changed so its orders still find their lines: the id a name had. What the form has no box for (the follow-up hours, the most units, a supplier's approval) is put back by keep.ts from the saved settings. */
+  keep?: { ids: Record<string, string> };
 }
 
 // ---- the words of the forms, in four languages -------------------------------------------------------------------------------------
@@ -128,9 +130,8 @@ export const STOCK_PANEL_WORDS: Record<Language, StockPanelWords> = {
   },
 };
 
-const LANGUAGE_BY_NAME: Record<string, Language> = { English: "en", "हिन्दी": "hi", "മലയാളം": "ml", "ಕನ್ನಡ": "kn" };
 /** The stock words for the panel's words of one language (found by its language name, so the shared words files need no new section). */
-export const stockWords = (w: Words): StockPanelWords => STOCK_PANEL_WORDS[LANGUAGE_BY_NAME[w.languageName] ?? "en"];
+export const stockWords = (w: Words): StockPanelWords => STOCK_PANEL_WORDS[wordsLanguage(w)];
 const stockOf = (draft: Draft): StockForm => (draft as unknown as { stock: StockForm }).stock;
 
 // ---- reading the two boxes ----------------------------------------------------------------------------------------------------------
@@ -185,7 +186,7 @@ export function stockDraftFromShop(id: string, accountId: string, templateId: st
     id, accountId, template: templateId, createdAt: now, shopId, editing: true, saved: true, form: { ...emptyShopForm(), name: s.name }, windowHours: "",
     primaryLanguage: first, otherLanguages: s.languages.slice(1), ownerLanguage: s.owner.language, ownerNumber: s.owner.whatsapp, whatsapp: whatsappDraftOf(meta, runtime),
     calendar: { id: "" }, gateway: { mode: "live", keyId: "" }, payment: newPayment(), expectedBookings: "", done: Number.MAX_SAFE_INTEGER,
-    stock: { address: s.address ?? "", suppliers, catalogue, maxPerOrderInr: String(s.limits.maxPerOrderInr), monthlyBudgetInr: String(s.limits.monthlyBudgetInr), keep: { ids, maxQuantity: s.limits.maxQuantity, followUpHours: s.followUpHours } } satisfies StockForm,
+    stock: { address: s.address ?? "", suppliers, catalogue, maxPerOrderInr: String(s.limits.maxPerOrderInr), monthlyBudgetInr: String(s.limits.monthlyBudgetInr), keep: { ids } } satisfies StockForm,
   } as Draft;
 }
 
@@ -247,11 +248,15 @@ export function applyStockRules(draft: Draft, body: Body, w: Words): StepResult 
 
 // ---- the settings, and the runtime -----------------------------------------------------------------------------------------------------------
 
-export function buildStockSettings(draft: Draft, _example: Settings): Built {
+/**
+ * The form becomes the Stock orders settings; `validateSettings` is the last word. `saved` is the shop's settings.json as written, for a shop being changed: the follow-up hours,
+ * the most units in one order and each supplier's aliases, language and approval are put back from it (keep.ts), so an edit never approves a supplier the owner had not.
+ */
+export function buildStockSettings(draft: Draft, _example: Settings, saved?: unknown): Built {
   const f = stockOf(draft);
   const languages: Language[] = [draft.primaryLanguage as Language, ...(draft.otherLanguages as Language[])];
   const named = (n: string) => Object.fromEntries(languages.map((l) => [l, [n]]));
-  const keep = f.keep ?? { ids: {}, maxQuantity: 500, followUpHours: [4, 24] };
+  const keep = f.keep ?? { ids: {} };
   const sup = lines(f.suppliers).map(supplierLine).flatMap((x) => (x ? [x] : []));
   const supplierIds = idsFrom(sup.map((x) => x.name), "supplier", sup.map((x) => keep.ids[`s:${x.name.toLowerCase()}`]));
   const rows = lines(f.catalogue).map(catalogueLine).flatMap((x) => (x ? [x] : []));
@@ -262,7 +267,7 @@ export function buildStockSettings(draft: Draft, _example: Settings): Built {
   const unitIds = idsFrom(unitNames, "unit", unitNames.map((n) => keep.ids[`u:${n.toLowerCase()}`]));
   const idOf = (list: string[], ids: string[], n: string) => ids[list.findIndex((x) => x.toLowerCase() === n.toLowerCase())];
   const raw = {
-    name: draft.form.name, ...(f.address !== "" ? { address: f.address } : {}), timezone: "Asia/Kolkata", languages,
+    name: draft.form.name, ...(f.address !== "" ? { address: f.address } : {}), timezone: (saved as { timezone?: string } | undefined)?.timezone ?? "Asia/Kolkata", languages,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage },
     items: itemNames.map((n, i) => ({ id: itemIds[i], names: named(n) })), units: unitNames.map((n, i) => ({ id: unitIds[i], names: named(n) })),
     suppliers: sup.map((x, i) => ({ id: supplierIds[i], name: x.name, aliases: [], whatsapp: x.number, language: languages[0], approved: true })),
@@ -270,11 +275,11 @@ export function buildStockSettings(draft: Draft, _example: Settings): Built {
       item: idOf(itemNames, itemIds, r.item), supplier: supplierIds[sup.findIndex((x) => x.name.toLowerCase() === r.supplier.toLowerCase())] ?? r.supplier, unit: idOf(unitNames, unitIds, r.unit),
       priceInr: Number(r.price), ...(r.reorder ? { reorderQty: Number(r.reorder) } : {}),
     })),
-    limits: { maxPerOrderInr: Number(f.maxPerOrderInr), monthlyBudgetInr: Number(f.monthlyBudgetInr), maxQuantity: keep.maxQuantity },
-    followUpHours: keep.followUpHours,
+    limits: { maxPerOrderInr: Number(f.maxPerOrderInr), monthlyBudgetInr: Number(f.monthlyBudgetInr) },
   };
-  const checked = validateSettings(raw);
-  return checked.ok ? ({ ok: true, settings: checked.settings as never, raw } as Built) : { ok: false, errors: checked.errors };
+  const written = saved === undefined ? raw : keepHidden(raw, saved, KEEP["stock-orders"]);
+  const checked = validateSettings(written);
+  return checked.ok ? ({ ok: true, settings: checked.settings as never, raw: written } as Built) : { ok: false, errors: checked.errors };
 }
 
 /** The limits as one sentence each, in the person's language: the same lines the go-live certificate prints. */
