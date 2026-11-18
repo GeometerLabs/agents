@@ -1310,3 +1310,7 @@ The shop's runtime (`modules/runtime/owner-file.ts`) serves it at `<owner app>/f
 
 **Tests (written 18 Nov, not run).** `modules/approvals/test/leave.test.ts`, `modules/assistant/test/leave.test.ts`, `modules/runtime/test/owner-file.test.ts`, `modules/channels/test/owner-file-front.test.ts`, `bundle/test/owner-profile.test.ts`, `bundle/test/owner-file.test.ts`, `bundle/test/fleet-move.test.ts`, `bundle/panel/test/leave.test.ts`; monorepo `apps/fleet/test/shop-move-api.test.ts`. Not tested: a real Docker panel container staging the file (the staged path is the shop folder both mount), a real fleet.
 
+
+## The shop's model budget in the bundle (18 Nov 2026, stream `caps-18nov`)
+
+The numbers are in the proposed price list `prices/2026-11-18.json` (`ai.budget.*`, `ai.daily.*`); `lib/budget.ts` turns a shop's plan into the `budget` block of its runtime config from the list IN FORCE, so no shop gets one until the owner says yes. `generate/shop.ts withBudget` writes it into the generated runtime.json only if the template version knows the key. The deploy prints a note when the model Guard's daily wall is out of line with the shops' budgets (`wallNotes`; never a refusal). The panel's plan block shows a line while a shop is at 80% of its budget or used up, read from the runtime's `/status`. A listing draft's record line is now counted in the usage meter (`lib/usage.ts`), so fleet's cap and its 50% alert see it. The design, the map of every model call and the fallbacks are in `modules/budget/README.md`.
