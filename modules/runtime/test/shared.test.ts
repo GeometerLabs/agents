@@ -137,12 +137,12 @@ test("a shop that is stopping is still NAMED until its store is closed: a deploy
   assert.deepEqual((await get(p, "/shared/shops")).body, { shops: [] }, "named no more once it is closed");
 });
 
-test("a shop that fails to start is logged and skipped, said once, and tried again only when its files change; the process stays healthy", async () => {
+test("a shop that fails to start is logged and skipped, said once, tried again only after a back-off or when its files change; the process stays healthy", async () => {
   const { root, p, log } = await boot(["good", "bad"], { fail: ["bad"] });
   assert.deepEqual(p.held(), ["good"]);
   assert.ok(log.some((l) => l.startsWith("bad: it did not start") && l.includes("the other shops go on")));
   const again = await p.scan();
-  assert.deepEqual(again.failed, [{ shop: "bad", why: "failed before, files unchanged" }]);
+  assert.deepEqual(again.failed, [{ shop: "bad", why: "waiting to be tried again" }], "not tried again at once: a back-off");
   assert.equal(log.filter((l) => l.startsWith("bad: it did not start")).length, 1, "said once");
   assert.equal((await get(p, "/healthz")).status, 200);
   assert.equal((await get(p, "/readyz")).body.ok, true);
@@ -161,4 +161,38 @@ test("a folder whose name is not a shop name (capitals, a dot, an underscore) is
   mkdirSync(join(root, "clients", "Not_A_Shop", "client"), { recursive: true });
   mkdirSync(join(root, "clients", ".moved-x", "client"), { recursive: true });
   assert.deepEqual((await p.scan()).started, []);
+});
+
+test("a shop whose store throws on every step leaves the other shop answering; it is restarted ALONE, after a back-off that doubles, and the process lives", async () => {
+  const root = mkdtempSync(join(tmpdir(), "shared-"));
+  dirs.push(root);
+  folder(root, "good"); folder(root, "broken");
+  const log: string[] = [];
+  const fake = standIn(log);
+  let clock = 1_000_000;
+  const p = await startShared({
+    source: folderSource({ clientsDir: join(root, "clients"), secretsDir: join(root, "secrets") }), port: 0, scanSeconds: 3600, backoffMs: 1000, now: () => clock, log: (l) => log.push(l),
+    start: fake.start,
+    // the broken shop's /readyz says what a runtime says when `db.ping()` throws: the store cannot be read. The good shop's answers.
+    probe: async (port) => port !== (fake.open.get("broken")?.server.address() as { port: number } | undefined)?.port,
+  });
+  procs.push(p);
+  assert.deepEqual(fake.starts, ["good", "broken"]);
+  await p.scan(); await p.scan();
+  assert.deepEqual(fake.starts, ["good", "broken"], "two bad looks are not yet a restart");
+  const r = await p.scan();
+  assert.deepEqual(r.letGo, ["broken"], "the third bad look stops that shop alone");
+  assert.equal((await get(p, "/shop/good/x")).body.shop, "good", "the other shop answers throughout");
+  assert.equal((await get(p, "/healthz")).status, 200);
+  assert.deepEqual((await p.scan()).failed, [{ shop: "broken", why: "waiting to be tried again" }], "not started again at once");
+  clock += 1001;
+  assert.deepEqual((await p.scan()).started, ["broken"], "started again after the pause, alone");
+  assert.equal(fake.starts.filter((n) => n === "good").length, 1, "the good shop was never restarted");
+  // broken again three looks later: the pause is twice as long
+  await p.scan(); await p.scan(); await p.scan();
+  clock += 1500;
+  assert.deepEqual((await p.scan()).failed, [{ shop: "broken", why: "waiting to be tried again" }], "the second pause is 2 s, not 1 s");
+  clock += 600;
+  assert.deepEqual((await p.scan()).started, ["broken"]);
+  assert.equal(fake.starts.filter((n) => n === "good").length, 1);
 });

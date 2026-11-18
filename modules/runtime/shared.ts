@@ -17,7 +17,19 @@
 // code keeps them apart by construction: nothing here is keyed by anything but the shop's own object (no module-level state in the runtime holds a shop's data: checked on
 // 18 Nov, the only module-level caches are fonts and time formatters, the same for everyone), and the tests cross every credential from one shop to another.
 //
-// A shop that fails to start (a folder half written, the wrong version, a bad file) is logged and skipped; the others run on. It is tried again when its files change.
+// CRASH CONTAINMENT (18 Nov 2026). Shops share one operating-system process, so one shop's failure must never become every shop's. Every per-shop path is contained:
+//   - a request: each shop's own server catches a handler's error and answers 500 for that request alone (modules/runtime/http.ts);
+//   - the clock: `runtime.tick()` never rejects (ticker.ts), and a step that throws is a failed task of that shop (core.ts);
+//   - the start (opening the store, reading the folder): caught here, logged once, the shop skipped and tried again after a back-off;
+//   - a shop that stays broken (its store cannot be read, its queue is wedged): its /readyz is looked at on every scan, and after FAILURES_TO_RESTART bad looks in a row THAT shop alone is
+//     stopped and started again, after a back-off that doubles each time (BACKOFF_MS, up to MAX_BACKOFF_MS) and starts over when the shop has been well again;
+//   - anything that still escapes every try (an unhandled rejection or exception): the process keeps running (a handler is installed, so Node does not exit), it is logged once, and the
+//     shop it came from, found through the async context the shop was started in, is counted as a bad look and so restarted alone. If the shop cannot be told, it is logged and nothing else happens.
+// What this cannot rule out is a shop that blocks the event loop (an endless loop) or exhausts memory: that takes every shop on the process with it, and only a process for each shop
+// (or a few worker threads) would stop it. That costs about 40 to 60 MB a shop instead of a few MB, so it is not done (Deferred, with its trigger).
+//
+// A shop that fails to start (a folder half written, the wrong version, a bad file) is logged and skipped; the others run on. It is tried again when its files change, and after a back-off.
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { createServer, request as httpRequest } from "node:http";
@@ -74,6 +86,12 @@ export interface SharedOptions {
   /** How often to look for new, changed and removed shops, in seconds (default 5). Folders are looked at, not watched: file watching on a bind mount is unreliable. */
   scanSeconds?: number;
   log?: (line: string) => void;
+  /** Is this shop answering "ready" on its own port? Default: GET /readyz on the loopback address. A seam for tests. */
+  probe?(port: number): Promise<boolean>;
+  /** The first back-off before a broken shop is started again (default 5000 ms); it doubles each time up to MAX_BACKOFF_MS. */
+  backoffMs?: number;
+  /** The clock, for the back-off (default Date.now). */
+  now?: () => number;
 }
 
 export interface ScanResult { started: string[]; restarted: string[]; letGo: string[]; failed: { shop: string; why: string }[] }
@@ -89,6 +107,14 @@ export interface SharedProcess {
 }
 
 const MAX_SHOPS = 500;
+const FAILURES_TO_RESTART = 3;
+const MAX_BACKOFF_MS = 5 * 60_000;
+
+/** The shop a piece of async work belongs to: set where a shop is started, and carried by Node through the timers, sockets and promises that shop makes. */
+const whose = new AsyncLocalStorage<string>();
+const readyProbe = async (port: number): Promise<boolean> => {
+  try { return (await fetch(`http://127.0.0.1:${port}/readyz`, { signal: AbortSignal.timeout(2000) })).status === 200; } catch { return false; }
+};
 const HOP = new Set(["connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailer", "transfer-encoding", "upgrade", "host"]);
 
 export async function startShared(o: SharedOptions): Promise<SharedProcess> {
@@ -98,11 +124,24 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
   const closing = new Set<string>();
   /** A shop that failed, with the fingerprint it failed at: not tried again until its files change, and said once. */
   const failedAt = new Map<string, string>();
+  const now = o.now ?? Date.now;
+  const probe = o.probe ?? readyProbe;
+  /** Bad looks in a row, per held shop. */
+  const bad = new Map<string, number>();
+  /** After a failure: how many in a row, and when the shop may be started again. */
+  const backoff = new Map<string, { n: number; notBefore: number }>();
+  const hurt = (name: string, why: string): void => {
+    const b = backoff.get(name) ?? { n: 0, notBefore: 0 };
+    const n = b.n + 1;
+    backoff.set(name, { n, notBefore: now() + Math.min(MAX_BACKOFF_MS, (o.backoffMs ?? 5000) * 2 ** (n - 1)) });
+    log(`${name}: ${why}; it will be tried again after a pause (the other shops go on).`);
+  };
   let queue: Promise<unknown> = Promise.resolve();
 
   async function letGo(name: string, why: string): Promise<void> {
     const h = heldShops.get(name);
     if (!h) return;
+    bad.delete(name);
     heldShops.delete(name); // first: a request that arrives while the shop is stopping gets "nothing here", never a half-closed shop
     closing.add(name);
     try { await h.shop.stop(); } catch (e) { log(`${name}: it did not stop cleanly (${(e as Error).message}).`); } finally { closing.delete(name); }
@@ -118,11 +157,12 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
       const fingerprint = o.source.fingerprint(name);
       const have = heldShops.get(name);
       if (have && have.fingerprint === fingerprint) continue;
-      if (!have && failedAt.get(name) === fingerprint) { result.failed.push({ shop: name, why: "failed before, files unchanged" }); continue; }
+      const wait = backoff.get(name);
+      if (!have && wait && now() < wait.notBefore) { result.failed.push({ shop: name, why: "waiting to be tried again" }); continue; }
       if (!have && heldShops.size >= MAX_SHOPS) { result.failed.push({ shop: name, why: `this process holds at most ${MAX_SHOPS} shops` }); continue; }
       if (have) await letGo(name, "its files changed");
       try {
-        const shop = await o.start(o.source.paths(name), { host: "127.0.0.1", port: 0 });
+        const shop = await whose.run(name, () => o.start(o.source.paths(name), { host: "127.0.0.1", port: 0 }));
         heldShops.set(name, { fingerprint, shop });
         failedAt.delete(name);
         (have ? result.restarted : result.started).push(name);
@@ -130,10 +170,22 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
       } catch (e) {
         // one bad folder never stops the others
         const why = (e as Error).message.split("\n")[0];
+        if (failedAt.get(name) !== fingerprint) backoff.delete(name); // changed files: a fresh count
         failedAt.set(name, fingerprint);
         result.failed.push({ shop: name, why });
-        log(`${name}: it did not start (${why}); the other shops go on.`);
+        hurt(name, `it did not start (${why})`);
       }
+    }
+    // a shop that is held but not well: looked at on every scan; three bad looks in a row and THAT shop is stopped (the next scan starts it again, after its back-off)
+    for (const name of [...heldShops.keys()]) {
+      const h = heldShops.get(name)!;
+      if (await probe(h.shop.server.port)) { bad.delete(name); if (backoff.has(name) && !failedAt.has(name)) backoff.delete(name); continue; }
+      const n = (bad.get(name) ?? 0) + 1;
+      bad.set(name, n);
+      if (n < FAILURES_TO_RESTART) continue;
+      await letGo(name, "it has not been ready for several looks");
+      result.letGo.push(name);
+      hurt(name, "it was not ready");
     }
     return result;
   }
@@ -175,6 +227,19 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
   await new Promise<void>((resolve, reject) => { server.once("error", reject); server.listen(o.port ?? 8780, o.host ?? "127.0.0.1", () => resolve()); });
   const port = (server.address() as { port: number }).port;
 
+  // what escapes every try: kept off the process's back, said once, and charged to the shop it came from when that can be told
+  const said = new Set<string>();
+  const contain = (kind: string) => (e: unknown): void => {
+    const shop = whose.getStore();
+    const line = `${shop ?? "(no shop)"}: ${kind}: ${(e as Error)?.message ?? String(e)}`;
+    if (!said.has(line)) { said.add(line); log(line.split("\n")[0]); }
+    if (shop && heldShops.has(shop)) bad.set(shop, (bad.get(shop) ?? 0) + 1);
+  };
+  const onRejection = contain("an unhandled rejection");
+  const onException = contain("an uncaught exception");
+  process.on("unhandledRejection", onRejection);
+  process.on("uncaughtException", onException);
+
   await scan();
   const timer = setInterval(() => { void scan(); }, Math.max(1, o.scanSeconds ?? 5) * 1000);
   timer.unref();
@@ -184,6 +249,8 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
     scan, held: () => [...new Set([...heldShops.keys(), ...closing])].sort(),
     async stop() {
       clearInterval(timer);
+      process.off("unhandledRejection", onRejection);
+      process.off("uncaughtException", onException);
       await queue.catch(() => undefined);
       await new Promise<void>((done) => { server.closeAllConnections(); server.close(() => done()); });
       await Promise.all([...heldShops.keys()].map((n) => letGo(n, "the process is stopping")));
