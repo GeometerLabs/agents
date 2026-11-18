@@ -1614,8 +1614,8 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.empty` | ಇನ್ನೂ ಸಂದೇಶಗಳಿಲ್ಲ. | No messages yet. |  |
 | `chat.gone` | ಇಡುವ ಸಮಯಕ್ಕಿಂತ ಹಳೆಯ ಸಂದೇಶಗಳನ್ನು ತೆಗೆಯಲಾಗುತ್ತದೆ. | Messages older than the keeping time are cleared. |  |
 | `chat.help` | ನೀವು ಏನು ಮಾಡಲು ಬಯಸುತ್ತೀರಿ? | What would you like to do? |  |
-| `chat.note` | ಉತ್ತರಗಳು ಅಂಗಡಿಯ ಸಹಾಯಕರಿಂದ ಬರುತ್ತವೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಅಂಗಡಿಯ ಸ್ವಂತ ದಾಖಲೆ ಹೇಳಿದಾಗ ಮಾತ್ರ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ. | Replies come from the shop's assistant. A booking or a payment counts only when the shop's own record says so. |  |
-| `chat.kept` | ಈ ಚಾಟ್ ಅಂಗಡಿಯ ಫೋನ್‌ನಲ್ಲಿ 30 ದಿನ ಇರುತ್ತದೆ. | This chat is kept on the shop's phone for 30 days. |  |
+| `chat.note` | ಅಂಗಡಿಯ ಅಸಿಸ್ಟೆಂಟ್ ಇಲ್ಲಿ ಉತ್ತರಿಸುತ್ತದೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಅಂಗಡಿಯ ದಾಖಲೆಯಲ್ಲಿ ಕಂಡಾಗ ಮಾತ್ರ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ. | The shop's assistant replies here. A booking or a payment counts once the shop's record shows it. |  |
+| `chat.kept` | ಅಂಗಡಿ ಈ ಚಾಟ್ ಅನ್ನು 30 ದಿನ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. | The shop keeps this chat for 30 days. |  |
 | `chat.you` | ನೀವು | You |  |
 | `chat.shop` | ಅಂಗಡಿ | Shop |  |
 | `chat.thread` | ಮಾತುಕತೆ | Conversation |  |
@@ -1858,4 +1858,121 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.id.parentNote` | ಈ ಚಾಟ್ ನಿಮಗೆ ಮಾತ್ರ. ಇದು ನಿಮ್ಮ ಖಾಸಗಿ ಶುಲ್ಕ ಪುಟದಿಂದ ತೆರೆಯುತ್ತದೆ ಮತ್ತು ನಿಮ್ಮ ಸ್ವಂತ ಶುಲ್ಕದ ಬಗ್ಗೆ ಮಾತನಾಡುತ್ತದೆ. ಪಾವತಿಸಲು ನಿಮ್ಮ ಶುಲ್ಕ ಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ. | This chat is only for you. It opens from your private fee page, and it talks about your own fees. To pay, go back to your fee page. |  |
 | `chat.id.parentBack` | ನನ್ನ ಶುಲ್ಕಕ್ಕೆ ಹಿಂತಿರುಗಿ | Back to my fees |  |
 | `chat.id.parentAsk` | ಈ ಶುಲ್ಕದ ಬಗ್ಗೆ ಕೇಳಿ | Ask about this fee |  |
+| `stockline.title` | ಸ್ಟಾಕ್ | Stock |  |
+| `stockline.back` | ಹಿಂದಕ್ಕೆ | Back |  |
+| `stockline.intro` | ಲೆಕ್ಕ ಇಡಬೇಕಾದ ವಸ್ತುಗಳನ್ನು ಎಣಿಸಿ. ಎಣಿಸದ ವಸ್ತು ಮೊದಲಿನಂತೆಯೇ ಇರುತ್ತದೆ. | Count what you want to keep track of. An item you do not count works as before. |  |
+| `stockline.empty` | ಇನ್ನೂ ಏನನ್ನೂ ಎಣಿಸಿಲ್ಲ. | Nothing is counted yet. |  |
+| `stockline.soldOut` | ಮಾರಾಟವಾಗಿದೆ | Sold out |  |
+| `stockline.low` | ಕಡಿಮೆಯಾಗುತ್ತಿದೆ | Running low |  |
+| `stockline.setCount` | ಎಣಿಕೆ ಹೊಂದಿಸಿ | Set the count |  |
+| `stockline.newCount` | ಈಗ ಎಷ್ಟಿದೆ? | How many are there now? |  |
+| `stockline.save` | ಉಳಿಸಿ | Save |  |
+| `stockline.soldOne` | 1 ಮಾರಾಟವಾಯಿತು | Sold 1 |  |
+| `stockline.stop` | ಎಣಿಸುವುದನ್ನು ನಿಲ್ಲಿಸಿ | Stop counting |  |
+| `stockline.stopHelp` | ಈ ವಸ್ತು ಎಣಿಕೆ ಇಲ್ಲದೆ ಮೊದಲಿನಂತೆ ನಡೆಯುತ್ತದೆ. | The item works as before, with no count. |  |
+| `stockline.addTitle` | ಇನ್ನೊಂದು ವಸ್ತುವನ್ನು ಎಣಿಸಿ | Count another item |  |
+| `stockline.addItem` | ವಸ್ತು | Item |  |
+| `stockline.addCount` | ಈಗ ಎಷ್ಟಿದೆ? | How many are there now? |  |
+| `stockline.addLow` | ಎಷ್ಟಕ್ಕೆ ಇಳಿದಾಗ ತಿಳಿಸಬೇಕು (ಬೇಕಿದ್ದರೆ) | Tell me when it is down to (optional) |  |
+| `stockline.addButton` | ಎಣಿಸಲು ಶುರುಮಾಡಿ | Start counting |  |
+| `stockline.nothingToAdd` | ಎಲ್ಲ ವಸ್ತುಗಳನ್ನೂ ಈಗಾಗಲೇ ಎಣಿಸಲಾಗುತ್ತಿದೆ. | Every item is counted already. |  |
+| `stockline.history` | ಇತ್ತೀಚೆಗೆ | Lately |  |
+| `stockline.moves.started` | ಎಣಿಕೆ ಶುರುವಾಯಿತು | Counting started |  |
+| `stockline.moves.sold` | ಮಾರಾಟವಾಯಿತು | Sold |  |
+| `stockline.moves.returned` | ವಾಪಸ್ ಸೇರಿಸಲಾಯಿತು | Put back |  |
+| `stockline.moves.received` | ಬಂದಿತು | Received |  |
+| `stockline.moves.corrected` | ಎಣಿಕೆ ಸರಿಪಡಿಸಲಾಯಿತು | Count corrected |  |
+| `stockline.kinds.listing` | ನಿಮ್ಮ ಪುಟದಲ್ಲಿ | On your page |  |
+| `stockline.kinds.menu` | ನಿಮ್ಮ ಮೆನುವಿನಲ್ಲಿ | On your menu |  |
+| `stockline.kinds.supply` | ನಿಮ್ಮ ಸರಬರಾಜುದಾರರಿಂದ | From your suppliers |  |
+| `stockline.saved` | ಉಳಿಸಲಾಗಿದೆ. | Saved. |  |
+| `stockline.notices.stale` | ನೀವು ನೋಡುತ್ತಿರುವಾಗ ಎಣಿಕೆ ಬದಲಾಯಿತು. ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಉಳಿಸಿ. | The count changed while you were looking. Check it and save again. |  |
+| `stockline.notices.bad_count` | ಎಣಿಕೆ 0 ಅಥವಾ ಹೆಚ್ಚಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ. | A count is a whole number, 0 or more. |  |
+| `stockline.notices.bad_low` | ಕಡಿಮೆ ಮಿತಿ 0 ಅಥವಾ ಹೆಚ್ಚಿನ ಪೂರ್ಣ ಸಂಖ್ಯೆ. | The low mark is a whole number, 0 or more. |  |
+| `stockline.notices.bad_id` | ಈ ವಸ್ತು ಈ ಅಂಗಡಿಯದಲ್ಲ. | That item is not one this shop has. |  |
+| `stockline.notices.bad_text` | ಆ ಹೆಸರು ಅಥವಾ ಘಟಕ ತುಂಬಾ ಉದ್ದವಾಗಿದೆ. | That name or unit is too long. |  |
+| `stockline.notices.exists` | ಈ ವಸ್ತುವನ್ನು ಈಗಾಗಲೇ ಎಣಿಸಲಾಗುತ್ತಿದೆ. | That item is counted already. |  |
+| `stockline.notices.full` | ಒಂದು ಅಂಗಡಿ ಇದಕ್ಕಿಂತ ಹೆಚ್ಚು ವಸ್ತುಗಳನ್ನು ಎಣಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ. | That is the most items a shop can count. |  |
+| `stockline.notices.no_such_line` | ಈ ವಸ್ತುವನ್ನು ಎಣಿಸುತ್ತಿಲ್ಲ. | That item is not counted. |  |
+| `stockline.notices.unit` | ಆ ಡೆಲಿವರಿ ಎಣಿಕೆಯ ಘಟಕಕ್ಕಿಂತ ಬೇರೆ ಘಟಕದಲ್ಲಿದೆ, ಆದ್ದರಿಂದ ಸೇರಿಸಲಿಲ್ಲ. | That delivery is in another unit than the count, so it was not added. |  |
+| `stockline.left` | 12 kg ಉಳಿದಿದೆ | 12 kg left |  |
+| `stockline.lowMark` | 3 ಅಥವಾ ಕಡಿಮೆಯಾದಾಗ ತಿಳಿಸಿ | Tell me at 3 or less |  |
+| `stockline.short` | 2 ಕಡಿಮೆ ಇತ್ತು | short by 2 |  |
+| `stockline.runningLow` | Rice 5 kg ಕಡಿಮೆಯಾಗುತ್ತಿದೆ (3 ಉಳಿದಿದೆ). | Rice 5 kg is running low (3 left). |  |
+| `stockline.reorderAsk` | Rice 5 kg ಕಡಿಮೆ ಇದೆ (3 ಉಳಿದಿದೆ). Ravi Traders ಅವರಿಂದ ಆರ್ಡರ್ ಮಾಡಲೇ? | Rice 5 kg is low (3 left). Order from Ravi Traders? |  |
+| `stockline.morningLow` | ಕಡಿಮೆಯಾಗುತ್ತಿರುವವು: 2 | running low: 2 |  |
+| `stockline.unitRefused` | Rice 5 kg ಡೆಲಿವರಿಯನ್ನು ಎಣಿಕೆಗೆ ಸೇರಿಸಲಿಲ್ಲ: ಎಣಿಕೆ bagನಲ್ಲಿದೆ, ಡೆಲಿವರಿ ಬೇರೆ ಘಟಕದಲ್ಲಿದೆ. | A delivery of Rice 5 kg was not added to the count: the count is in bag and the delivery is in another unit. |  |
+| `directory.title` | ನಿಮ್ಮ ಹತ್ತಿರ ಹುಡುಕಿ | Find it near you |  |
+| `directory.sub` | ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳಲ್ಲಿ ಈಗ ಏನಿದೆ ಎಂದು ನೋಡಿ. | See what local shops have right now. |  |
+| `directory.searchLabel` | ನಿಮಗೆ ಏನು ಬೇಕು? | What do you want? |  |
+| `directory.placeholder` | ಪರ್ಷಿಯನ್ ಬೆಕ್ಕಿನ ಮರಿ | Persian kitten |  |
+| `directory.kindLabel` | ಬಗೆ | Kind |  |
+| `directory.anyKind` | ಏನಾದರೂ | Anything |  |
+| `directory.kinds.pets` | ಸಾಕುಪ್ರಾಣಿಗಳು | Pets |  |
+| `directory.kinds.food` | ಆಹಾರ | Food |  |
+| `directory.kinds.clothes` | ಬಟ್ಟೆಗಳು | Clothes |  |
+| `directory.kinds.home` | ಮನೆಗಾಗಿ | For the home |  |
+| `directory.kinds.electronics` | ಎಲೆಕ್ಟ್ರಾನಿಕ್ಸ್ | Electronics |  |
+| `directory.kinds.vehicles_and_cycles` | ವಾಹನಗಳು ಮತ್ತು ಸೈಕಲ್ | Vehicles and cycles |  |
+| `directory.kinds.services` | ಸೇವೆಗಳು | Services |  |
+| `directory.kinds.other` | ಇತರೆ | Other |  |
+| `directory.townLabel` | ನಿಮ್ಮ ಊರು | Your town |  |
+| `directory.townHint` | ಎಲ್ಲವನ್ನೂ ನೋಡಲು ಖಾಲಿ ಬಿಡಿ | Leave empty to see all |  |
+| `directory.nearMe` | ನನ್ನ ಸ್ಥಳ ಬಳಸಿ | Use my location |  |
+| `directory.nearMeSet` | ನಿಮ್ಮ ಸ್ಥಳ ಸಿಕ್ಕಿದೆ | Your location is set |  |
+| `directory.radiusLabel` | ಎಷ್ಟು ದೂರ | How far |  |
+| `directory.anyDistance` | ಯಾವ ದೂರವಾದರೂ | Any distance |  |
+| `directory.km` | 10 ಕಿ.ಮೀ | 10 km |  |
+| `directory.search` | ಹುಡುಕಿ | Search |  |
+| `directory.language` | ಭಾಷೆ | Language |  |
+| `directory.resultsFor` | “Persian kitten” ಗೆ 3 ಫಲಿತಾಂಶಗಳು | 3 results for “Persian kitten” |  |
+| `directory.resultsNoWords` | 3 ವಸ್ತುಗಳು ಸಿಕ್ಕವು | 3 things found |  |
+| `directory.ask` | ಅಂಗಡಿಯನ್ನು ಕೇಳಿ | Ask the shop |  |
+| `directory.confirmedToday` | ಇಂದು ಖಚಿತಪಡಿಸಲಾಗಿದೆ | Confirmed today |  |
+| `directory.confirmedYesterday` | ನಿನ್ನೆ ಖಚಿತಪಡಿಸಲಾಗಿದೆ | Confirmed yesterday |  |
+| `directory.confirmedDays` | 3 ದಿನಗಳ ಹಿಂದೆ ಖಚಿತಪಡಿಸಲಾಗಿದೆ | Confirmed 3 days ago |  |
+| `directory.callToCheck` | ಕರೆ ಮಾಡಿ ಕೇಳಿ | Call to check |  |
+| `directory.callToCheckWhy` | ಅಂಗಡಿ ಈಗ ಹೇಳಿಲ್ಲ. ಹೋಗುವ ಮೊದಲು ಕರೆ ಮಾಡಿ ಕೇಳಿ. | The shop did not say just now. Call to check before you go. |  |
+| `directory.away` | 1.4 ಕಿ.ಮೀ ದೂರ | 1.4 km away |  |
+| `directory.inTown` | Thrissur ನಲ್ಲಿ | In Thrissur |  |
+| `directory.chat` | ಅಂಗಡಿಯೊಂದಿಗೆ ಮಾತನಾಡಿ | Chat with the shop |  |
+| `directory.chatLabel` | ಅಂಗಡಿಯೊಂದಿಗೆ ಮಾತನಾಡಿ: Rani Pets, Persian kitten ಬಗ್ಗೆ | Chat with the shop: Rani Pets, about Persian kitten |  |
+| `directory.machine` | ಸಹಾಯಕ ಬರೆದ ಪದಗಳು | Words by an assistant |  |
+| `directory.noPhoto` | ಫೋಟೋ ಇಲ್ಲ | No photo |  |
+| `directory.photoOf` | Persian kitten ಫೋಟೋ | Photo of Persian kitten |  |
+| `directory.unanswered` | 2 ಅಂಗಡಿ ಈಗ ಉತ್ತರಿಸಲಿಲ್ಲ. ಅದರ ಸಾಲಿನಲ್ಲಿ “ಕರೆ ಮಾಡಿ ಕೇಳಿ” ಎಂದಿದೆ. | 2 shops did not answer just now. Their lines say “Call to check”. |  |
+| `directory.more` | ಇನ್ನಷ್ಟು ತೋರಿಸಿ | Show more |  |
+| `directory.clear` | ಹುಡುಕಾಟ ತೆರವುಗೊಳಿಸಿ | Clear the search |  |
+| `directory.startTitle` | ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳಲ್ಲಿ ಏನಿದೆ ಎಂದು ಹುಡುಕಿ | Search what local shops have |  |
+| `directory.startBody` | ನಿಮಗೆ ಬೇಕಾದುದನ್ನು ಬರೆಯಿರಿ, ಅಥವಾ ಒಂದು ಬಗೆಯನ್ನು ಆರಿಸಿ. ಪ್ರತಿ ಅಂಗಡಿಯೂ ಈಗ ಇರುವುದನ್ನು ಮಾತ್ರ ತೋರಿಸುತ್ತದೆ, ನೀವು ನೋಡುವ ಮೊದಲು ನಾವು ಅಂಗಡಿಯನ್ನು ಕೇಳಿ ಖಚಿತಪಡಿಸುತ್ತೇವೆ. | Type what you want, or pick a kind. Each shop shows only what it has now, and we ask the shop to confirm before you see it. |  |
+| `directory.tryThese` | ಹೀಗೆ ಹುಡುಕಿ | Try |  |
+| `directory.examples.1` | ಪರ್ಷಿಯನ್ ಬೆಕ್ಕಿನ ಮರಿ | Persian kitten |  |
+| `directory.examples.2` | ಸೈಕಲ್ | bicycle |  |
+| `directory.examples.3` | ಹುಟ್ಟುಹಬ್ಬದ ಕೇಕ್ | birthday cake |  |
+| `directory.noneTitle` | ಏನೂ ಸಿಗಲಿಲ್ಲ | Nothing found |  |
+| `directory.noneBody` | ಈಗ ಯಾವ ಅಂಗಡಿಯಲ್ಲೂ ಇದು ಇಲ್ಲ. ಕಡಿಮೆ ಪದಗಳನ್ನು ಬರೆಯಿರಿ, ಬೇರೆ ಬಗೆ ಆರಿಸಿ, ಅಥವಾ ದೂರ ಹೆಚ್ಚಿಸಿ. | No shop has this right now. Try fewer words, another kind, or a bigger distance. |  |
+| `directory.badTitle` | ಆ ಹುಡುಕಾಟ ಆಗಲಿಲ್ಲ | That search did not work |  |
+| `directory.busyTitle` | ದಯವಿಟ್ಟು ಒಂದು ನಿಮಿಷ ಕಾಯಿರಿ | Please wait a minute |  |
+| `directory.busyBody` | ಈ ಫೋನಿನಿಂದ ಈಗ ತುಂಬಾ ಹುಡುಕಾಟಗಳು ನಡೆದಿವೆ. ಒಂದು ನಿಮಿಷದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | There have been many searches from this phone just now. Try again in a minute. |  |
+| `directory.downTitle` | ಹುಡುಕಾಟ ಈಗ ಕೆಲಸ ಮಾಡುತ್ತಿಲ್ಲ | The search is not working right now |  |
+| `directory.downBody` | ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | Please try again in a few minutes. |  |
+| `directory.orderLink` | ಫಲಿತಾಂಶಗಳ ಕ್ರಮ ಹೇಗೆ | How results are ordered |  |
+| `directory.orderTitle` | ಫಲಿತಾಂಶಗಳ ಕ್ರಮ ಹೇಗೆ | How results are ordered |  |
+| `directory.orderIntro` | ಪ್ರತಿ ಹುಡುಕಾಟವೂ ಎಲ್ಲರಿಗೂ ಒಂದೇ ಕ್ರಮದಲ್ಲಿರುತ್ತದೆ. ನಾವು ಬಳಸುವ ಕ್ರಮದಲ್ಲಿ ಅದು ಇಲ್ಲಿದೆ. | Every search is put in the same order for everyone. Here it is, in the order we use it. |  |
+| `directory.orderSteps.1` | ಎಷ್ಟು ಹೊಂದುತ್ತದೆ. ನೀವು ಬರೆದುದೆಲ್ಲ ಇರುವ ಅಂಗಡಿಗಳು, ಕೆಲವು ಮಾತ್ರ ಇರುವ ಅಂಗಡಿಗಳಿಗಿಂತ ಮೊದಲು ಬರುತ್ತವೆ. | How well it fits. Shops that have everything you typed come before shops that have some of it. |  |
+| `directory.orderSteps.2` | ಎಷ್ಟು ಹತ್ತಿರ. ಹತ್ತಿರದ ಅಂಗಡಿಗಳು ಮೊದಲು, ಹಂತ ಹಂತವಾಗಿ: 2, 5, 10, 25, 50 ಕಿ.ಮೀ ವರೆಗೆ, ನಂತರ ಅದಕ್ಕಿಂತ ದೂರ. | How near it is. Closer shops come first, in steps: up to 2 km, 5 km, 10 km, 25 km, 50 km, then farther. |  |
+| `directory.orderSteps.3` | ಎಷ್ಟು ತಾಜಾ. ಒಂದೇ ಹಂತದಲ್ಲಿ, ಅಂಗಡಿ ಖಚಿತಪಡಿಸಿದ್ದು “ಕರೆ ಮಾಡಿ ಕೇಳಿ” ಎನ್ನುವುದಕ್ಕಿಂತ ಮೊದಲು ಬರುತ್ತದೆ. | How fresh it is. In the same step, what the shop confirmed comes before “Call to check”. |  |
+| `directory.orderSteps.4` | ಸರದಿ. ಒಂದೇ ಹಂತದ ಅಂಗಡಿಗಳು ಸರದಿಯಂತೆ ಬರುತ್ತವೆ, ಸರದಿ ಪ್ರತಿ ದಿನ ಮತ್ತು ಪ್ರತಿ ಹುಡುಕಾಟದೊಂದಿಗೆ ಬದಲಾಗುತ್ತದೆ, ಆದ್ದರಿಂದ ಯಾವ ಅಂಗಡಿಯೂ ಯಾವಾಗಲೂ ಮೊದಲಲ್ಲ. | Turns. Shops in the same step take turns, and the turns change every day and with every search, so no shop is always first. |  |
+| `directory.orderNever` | ಹಣದಿಂದ ಎಂದಿಗೂ ಇಲ್ಲ | Never by money |  |
+| `directory.orderNeverBody` | ಯಾವ ಪಾವತಿ, ಯೋಜನೆ ಅಥವಾ ಆಪರೇಟರ್ ಕೂಡ ಕ್ರಮವನ್ನು ಬದಲಾಯಿಸುವುದಿಲ್ಲ. ಯಾವ ಅಂಗಡಿಯೂ ಹಣ ಕೊಟ್ಟು ಮೊದಲು ಬರಲಾಗದು, ನಾವೂ ತರಲಾಗದು. ಇದೇ ನಿಯಮ ತೆರೆದ ಕೋಡ್‌ನಲ್ಲೂ ಇದೆ. | No payment, plan or Operator changes the order. A shop cannot pay to be first, and neither can we. The same rule is in the open code. |  |
+| `directory.orderAsk` | ಅಂಗಡಿಯನ್ನು ಕೇಳುವುದು | Asking the shop |  |
+| `directory.orderAskBody` | ಫಲಿತಾಂಶ ತೋರಿಸುವ ಮೊದಲು ನಾವು ಅಂಗಡಿಯನ್ನು “ಇದು ಇನ್ನೂ ಇದೆಯೇ?” ಎಂದು ಕೇಳುತ್ತೇವೆ. ಪ್ರಶ್ನೆಯಲ್ಲಿ ವಸ್ತು ಮಾತ್ರ ಇರುತ್ತದೆ, ನಿಮ್ಮ ಪದಗಳು, ನಿಮ್ಮ ಸ್ಥಳ ಅಥವಾ ನೀವು ಯಾರು ಎಂಬುದು ಎಂದಿಗೂ ಇಲ್ಲ. ಅಂಗಡಿ ಉತ್ತರಿಸದಿದ್ದರೂ ವಸ್ತು “ಕರೆ ಮಾಡಿ ಕೇಳಿ” ಎಂಬುದರೊಂದಿಗೆ ಕಾಣುತ್ತದೆ. | Before you see a result, we ask the shop “do you still have this?”. The question holds only the item, never your words, your place or who you are. If the shop does not answer, you still see the item, with “Call to check”. |  |
+| `directory.orderWords` | ಸಹಾಯಕ ಬರೆದ ಪದಗಳು | Words by an assistant |  |
+| `directory.orderWordsBody` | ಅಂಗಡಿಯ ಪದಗಳನ್ನು ಮಾಲೀಕರ ಸ್ವಂತ ಪದಗಳಿಂದ ಒಬ್ಬ ಸಹಾಯಕ ಬೇರೆ ಭಾಷೆಗಳಲ್ಲಿ ಬರೆದಿರಬಹುದು. ಅವುಗಳಿಗೆ ಗುರುತು ಇರುತ್ತದೆ. | A shop's words may be written in other languages by an assistant from the owner's own words. Those are marked. |  |
+| `directory.orderPrivate` | ನಾವು ಇಟ್ಟುಕೊಳ್ಳುವುದು | What we keep |  |
+| `directory.orderPrivateBody` | ಖಾತೆ ಇಲ್ಲ, ಕುಕೀ ಇಲ್ಲ. ಒಂದು ದಿನದಲ್ಲಿ ಎಷ್ಟು ಹುಡುಕಾಟಗಳು ನಡೆದವು ಎಂದು ಮಾತ್ರ ಎಣಿಸುತ್ತೇವೆ, ಯಾರು ಏನು ಹುಡುಕಿದರು ಎಂದಲ್ಲ. | No account and no cookie. We count how many searches there were in a day, nothing about who searched or for what. |  |
+| `directory.back` | ಹುಡುಕಾಟಕ್ಕೆ ಹಿಂತಿರುಗಿ | Back to search |  |
+| `directory.foot` | ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳ ಒಂದು ಪಟ್ಟಿ. | A directory of local shops. |  |
+| `directory.assistants` | AI ಸಹಾಯಕರಿಗೆ | For AI assistants |  |
+| `directory.choices` | ಇನ್ನಷ್ಟು ಆಯ್ಕೆಗಳು | More choices |  |
 

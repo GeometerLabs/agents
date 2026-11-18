@@ -1567,8 +1567,8 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.empty` | अभी कोई संदेश नहीं। | No messages yet. |  |
 | `chat.gone` | रखने के समय से पुराने संदेश हटा दिए जाते हैं। | Messages older than the keeping time are cleared. |  |
 | `chat.help` | आप क्या करना चाहेंगे? | What would you like to do? |  |
-| `chat.note` | जवाब दुकान के असिस्टेंट से आते हैं। बुकिंग या भुगतान तभी माना जाता है जब दुकान का अपना रिकॉर्ड यही कहे। | Replies come from the shop's assistant. A booking or a payment counts only when the shop's own record says so. |  |
-| `chat.kept` | यह चैट दुकान के फ़ोन पर 30 दिन रखी जाती है। | This chat is kept on the shop's phone for 30 days. |  |
+| `chat.note` | दुकान का असिस्टेंट यहाँ जवाब देता है। बुकिंग या भुगतान तभी गिना जाता है जब दुकान के रिकॉर्ड में दिखे। | The shop's assistant replies here. A booking or a payment counts once the shop's record shows it. |  |
+| `chat.kept` | दुकान यह चैट 30 दिन रखती है। | The shop keeps this chat for 30 days. |  |
 | `chat.you` | आप | You |  |
 | `chat.shop` | दुकान | Shop |  |
 | `chat.thread` | बातचीत | Conversation |  |
@@ -1811,4 +1811,121 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.id.parentNote` | यह चैट सिर्फ़ आपके लिए है। यह आपके निजी फ़ीस पेज से खुलती है और आपकी अपनी फ़ीस की बात करती है। भुगतान के लिए अपने फ़ीस पेज पर लौटें। | This chat is only for you. It opens from your private fee page, and it talks about your own fees. To pay, go back to your fee page. |  |
 | `chat.id.parentBack` | मेरी फ़ीस पर लौटें | Back to my fees |  |
 | `chat.id.parentAsk` | इस फ़ीस के बारे में पूछें | Ask about this fee |  |
+| `stockline.title` | स्टॉक | Stock |  |
+| `stockline.back` | वापस | Back |  |
+| `stockline.intro` | जिन चीज़ों का हिसाब रखना है उनकी गिनती रखें। जिसे आप नहीं गिनते वह पहले की तरह चलता है। | Count what you want to keep track of. An item you do not count works as before. |  |
+| `stockline.empty` | अभी कुछ भी गिना नहीं गया है। | Nothing is counted yet. |  |
+| `stockline.soldOut` | बिक गया | Sold out |  |
+| `stockline.low` | कम पड़ रहा है | Running low |  |
+| `stockline.setCount` | गिनती तय करें | Set the count |  |
+| `stockline.newCount` | अभी कितने हैं? | How many are there now? |  |
+| `stockline.save` | सहेजें | Save |  |
+| `stockline.soldOne` | 1 बिका | Sold 1 |  |
+| `stockline.stop` | गिनना बंद करें | Stop counting |  |
+| `stockline.stopHelp` | यह चीज़ बिना गिनती के पहले की तरह चलेगी। | The item works as before, with no count. |  |
+| `stockline.addTitle` | एक और चीज़ गिनें | Count another item |  |
+| `stockline.addItem` | चीज़ | Item |  |
+| `stockline.addCount` | अभी कितने हैं? | How many are there now? |  |
+| `stockline.addLow` | कितने बचने पर बताएँ (चाहें तो) | Tell me when it is down to (optional) |  |
+| `stockline.addButton` | गिनना शुरू करें | Start counting |  |
+| `stockline.nothingToAdd` | हर चीज़ पहले से गिनी जा रही है। | Every item is counted already. |  |
+| `stockline.history` | हाल में | Lately |  |
+| `stockline.moves.started` | गिनती शुरू हुई | Counting started |  |
+| `stockline.moves.sold` | बिका | Sold |  |
+| `stockline.moves.returned` | वापस जोड़ा | Put back |  |
+| `stockline.moves.received` | मिला | Received |  |
+| `stockline.moves.corrected` | गिनती सुधारी | Count corrected |  |
+| `stockline.kinds.listing` | आपके पेज पर | On your page |  |
+| `stockline.kinds.menu` | आपके मेन्यू में | On your menu |  |
+| `stockline.kinds.supply` | आपके सप्लायर से | From your suppliers |  |
+| `stockline.saved` | सहेज लिया। | Saved. |  |
+| `stockline.notices.stale` | देखते समय गिनती बदल गई। उसे जाँचकर फिर सहेजें। | The count changed while you were looking. Check it and save again. |  |
+| `stockline.notices.bad_count` | गिनती पूरी संख्या होती है, 0 या उससे ज़्यादा। | A count is a whole number, 0 or more. |  |
+| `stockline.notices.bad_low` | कम की सीमा पूरी संख्या होती है, 0 या उससे ज़्यादा। | The low mark is a whole number, 0 or more. |  |
+| `stockline.notices.bad_id` | यह चीज़ इस दुकान की नहीं है। | That item is not one this shop has. |  |
+| `stockline.notices.bad_text` | वह नाम या इकाई बहुत लंबी है। | That name or unit is too long. |  |
+| `stockline.notices.exists` | यह चीज़ पहले से गिनी जा रही है। | That item is counted already. |  |
+| `stockline.notices.full` | एक दुकान इससे ज़्यादा चीज़ें नहीं गिन सकती। | That is the most items a shop can count. |  |
+| `stockline.notices.no_such_line` | यह चीज़ गिनी नहीं जा रही। | That item is not counted. |  |
+| `stockline.notices.unit` | वह डिलीवरी गिनती की इकाई से अलग इकाई में है, इसलिए नहीं जोड़ी गई। | That delivery is in another unit than the count, so it was not added. |  |
+| `stockline.left` | 12 kg बचे | 12 kg left |  |
+| `stockline.lowMark` | 3 या उससे कम होने पर बताएँ | Tell me at 3 or less |  |
+| `stockline.short` | 2 कम थे | short by 2 |  |
+| `stockline.runningLow` | Rice 5 kg कम पड़ रहा है (3 बचे)। | Rice 5 kg is running low (3 left). |  |
+| `stockline.reorderAsk` | Rice 5 kg कम है (3 बचे)। Ravi Traders से मँगवाएँ? | Rice 5 kg is low (3 left). Order from Ravi Traders? |  |
+| `stockline.morningLow` | कम पड़ रहे: 2 | running low: 2 |  |
+| `stockline.unitRefused` | Rice 5 kg की डिलीवरी गिनती में नहीं जोड़ी गई: गिनती bag में है और डिलीवरी दूसरी इकाई में है। | A delivery of Rice 5 kg was not added to the count: the count is in bag and the delivery is in another unit. |  |
+| `directory.title` | अपने पास खोजें | Find it near you |  |
+| `directory.sub` | देखें कि आपके आस-पास की दुकानों में अभी क्या है। | See what local shops have right now. |  |
+| `directory.searchLabel` | आपको क्या चाहिए? | What do you want? |  |
+| `directory.placeholder` | फ़ारसी बिल्ली का बच्चा | Persian kitten |  |
+| `directory.kindLabel` | किस तरह का | Kind |  |
+| `directory.anyKind` | कुछ भी | Anything |  |
+| `directory.kinds.pets` | पालतू जानवर | Pets |  |
+| `directory.kinds.food` | खाने की चीज़ें | Food |  |
+| `directory.kinds.clothes` | कपड़े | Clothes |  |
+| `directory.kinds.home` | घर के लिए | For the home |  |
+| `directory.kinds.electronics` | इलेक्ट्रॉनिक्स | Electronics |  |
+| `directory.kinds.vehicles_and_cycles` | गाड़ियाँ और साइकिल | Vehicles and cycles |  |
+| `directory.kinds.services` | सेवाएँ | Services |  |
+| `directory.kinds.other` | दूसरा | Other |  |
+| `directory.townLabel` | आपका शहर | Your town |  |
+| `directory.townHint` | सब देखने के लिए खाली छोड़ें | Leave empty to see all |  |
+| `directory.nearMe` | मेरी जगह इस्तेमाल करें | Use my location |  |
+| `directory.nearMeSet` | आपकी जगह मिल गई | Your location is set |  |
+| `directory.radiusLabel` | कितनी दूर तक | How far |  |
+| `directory.anyDistance` | कितनी भी दूरी | Any distance |  |
+| `directory.km` | 10 किमी | 10 km |  |
+| `directory.search` | खोजें | Search |  |
+| `directory.language` | भाषा | Language |  |
+| `directory.resultsFor` | “Persian kitten” के लिए 3 नतीजे | 3 results for “Persian kitten” |  |
+| `directory.resultsNoWords` | 3 चीज़ें मिलीं | 3 things found |  |
+| `directory.ask` | दुकान से पूछें | Ask the shop |  |
+| `directory.confirmedToday` | आज पक्का किया गया | Confirmed today |  |
+| `directory.confirmedYesterday` | कल पक्का किया गया | Confirmed yesterday |  |
+| `directory.confirmedDays` | 3 दिन पहले पक्का किया गया | Confirmed 3 days ago |  |
+| `directory.callToCheck` | फ़ोन करके पूछें | Call to check |  |
+| `directory.callToCheckWhy` | दुकान ने अभी नहीं बताया। जाने से पहले फ़ोन करके पूछ लें। | The shop did not say just now. Call to check before you go. |  |
+| `directory.away` | 1.4 किमी दूर | 1.4 km away |  |
+| `directory.inTown` | Thrissur में | In Thrissur |  |
+| `directory.chat` | दुकान से बात करें | Chat with the shop |  |
+| `directory.chatLabel` | दुकान से बात करें: Rani Pets, Persian kitten के बारे में | Chat with the shop: Rani Pets, about Persian kitten |  |
+| `directory.machine` | सहायक के लिखे शब्द | Words by an assistant |  |
+| `directory.noPhoto` | फ़ोटो नहीं है | No photo |  |
+| `directory.photoOf` | Persian kitten की फ़ोटो | Photo of Persian kitten |  |
+| `directory.unanswered` | 2 दुकान ने अभी जवाब नहीं दिया। उसकी पंक्ति में “फ़ोन करके पूछें” लिखा है। | 2 shops did not answer just now. Their lines say “Call to check”. |  |
+| `directory.more` | और दिखाएँ | Show more |  |
+| `directory.clear` | खोज हटाएँ | Clear the search |  |
+| `directory.startTitle` | देखें स्थानीय दुकानों में क्या है | Search what local shops have |  |
+| `directory.startBody` | जो चाहिए वह लिखें, या कोई तरह चुनें। हर दुकान वही दिखाती है जो उसके पास अभी है, और आपके देखने से पहले हम दुकान से पक्का करवाते हैं। | Type what you want, or pick a kind. Each shop shows only what it has now, and we ask the shop to confirm before you see it. |  |
+| `directory.tryThese` | आज़माएँ | Try |  |
+| `directory.examples.1` | फ़ारसी बिल्ली का बच्चा | Persian kitten |  |
+| `directory.examples.2` | साइकिल | bicycle |  |
+| `directory.examples.3` | जन्मदिन का केक | birthday cake |  |
+| `directory.noneTitle` | कुछ नहीं मिला | Nothing found |  |
+| `directory.noneBody` | अभी किसी दुकान के पास यह नहीं है। कम शब्द लिखें, दूसरी तरह चुनें, या दूरी बढ़ाएँ। | No shop has this right now. Try fewer words, another kind, or a bigger distance. |  |
+| `directory.badTitle` | यह खोज नहीं हो पाई | That search did not work |  |
+| `directory.busyTitle` | कृपया एक मिनट रुकें | Please wait a minute |  |
+| `directory.busyBody` | इस फ़ोन से अभी बहुत खोजें हुई हैं। एक मिनट बाद फिर कोशिश करें। | There have been many searches from this phone just now. Try again in a minute. |  |
+| `directory.downTitle` | खोज अभी काम नहीं कर रही | The search is not working right now |  |
+| `directory.downBody` | कृपया कुछ मिनट बाद फिर कोशिश करें। | Please try again in a few minutes. |  |
+| `directory.orderLink` | नतीजों का क्रम कैसे बनता है | How results are ordered |  |
+| `directory.orderTitle` | नतीजों का क्रम कैसे बनता है | How results are ordered |  |
+| `directory.orderIntro` | हर खोज सबके लिए एक ही क्रम में लगती है। वह क्रम यहाँ है, जिस तरह हम उसे लगाते हैं। | Every search is put in the same order for everyone. Here it is, in the order we use it. |  |
+| `directory.orderSteps.1` | कितना मेल खाता है। जिन दुकानों में आपके लिखे सारे शब्द मिलते हैं, वे कुछ शब्द मिलने वाली दुकानों से पहले आती हैं। | How well it fits. Shops that have everything you typed come before shops that have some of it. |  |
+| `directory.orderSteps.2` | कितना पास है। पास की दुकानें पहले आती हैं, सीढ़ियों में: 2 किमी, 5 किमी, 10 किमी, 25 किमी, 50 किमी तक, फिर उससे दूर। | How near it is. Closer shops come first, in steps: up to 2 km, 5 km, 10 km, 25 km, 50 km, then farther. |  |
+| `directory.orderSteps.3` | कितना ताज़ा है। एक ही सीढ़ी में, जो दुकान ने पक्का किया है वह “फ़ोन करके पूछें” से पहले आता है। | How fresh it is. In the same step, what the shop confirmed comes before “Call to check”. |  |
+| `directory.orderSteps.4` | बारी। एक ही सीढ़ी की दुकानें बारी-बारी से आती हैं, और बारी हर दिन और हर खोज के साथ बदलती है, इसलिए कोई दुकान हमेशा पहले नहीं रहती। | Turns. Shops in the same step take turns, and the turns change every day and with every search, so no shop is always first. |  |
+| `directory.orderNever` | पैसे से कभी नहीं | Never by money |  |
+| `directory.orderNeverBody` | कोई भुगतान, प्लान या ऑपरेटर क्रम नहीं बदलता। कोई दुकान पैसे देकर पहले नहीं आ सकती, और हम भी नहीं ला सकते। यही नियम खुले कोड में भी है। | No payment, plan or Operator changes the order. A shop cannot pay to be first, and neither can we. The same rule is in the open code. |  |
+| `directory.orderAsk` | दुकान से पूछना | Asking the shop |  |
+| `directory.orderAskBody` | नतीजा दिखाने से पहले हम दुकान से पूछते हैं “क्या यह अभी आपके पास है?”। सवाल में सिर्फ़ चीज़ होती है, आपके शब्द, आपकी जगह या आप कौन हैं, यह कभी नहीं। दुकान जवाब न दे तो भी चीज़ दिखती है, “फ़ोन करके पूछें” के साथ। | Before you see a result, we ask the shop “do you still have this?”. The question holds only the item, never your words, your place or who you are. If the shop does not answer, you still see the item, with “Call to check”. |  |
+| `directory.orderWords` | सहायक के लिखे शब्द | Words by an assistant |  |
+| `directory.orderWordsBody` | दुकान के शब्द दूसरी भाषाओं में एक सहायक मालिक के अपने शब्दों से लिख सकता है। ऐसे शब्दों पर निशान लगा होता है। | A shop's words may be written in other languages by an assistant from the owner's own words. Those are marked. |  |
+| `directory.orderPrivate` | हम क्या रखते हैं | What we keep |  |
+| `directory.orderPrivateBody` | कोई खाता नहीं और कोई कुकी नहीं। हम सिर्फ़ गिनते हैं कि एक दिन में कितनी खोजें हुईं, किसने या क्या खोजा यह नहीं। | No account and no cookie. We count how many searches there were in a day, nothing about who searched or for what. |  |
+| `directory.back` | खोज पर वापस | Back to search |  |
+| `directory.foot` | स्थानीय दुकानों की एक सूची। | A directory of local shops. |  |
+| `directory.assistants` | एआई सहायकों के लिए | For AI assistants |  |
+| `directory.choices` | और विकल्प | More choices |  |
 
