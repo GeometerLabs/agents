@@ -1,6 +1,6 @@
 // Chat review capture (18 Nov 2026): starts the screens server (modules/channels/chat-screens.ts), opens every state of the chat page in a real browser and writes, into the
 // output folder: one screenshot per state (full page, device scale 2), results.json, summary.md and contact-sheet.html. For each screenshot it also records what a reviewer must
-// check: console errors and blocked requests, WCAG 2 A/AA failures (axe-core), sideways overflow, tap targets under 44 px, text clipped by overflow:hidden, and the words the
+// check: console errors and blocked requests, WCAG 2 A/AA failures (axe-core), sideways overflow, tap targets under 44 px, text clipped by overflow:hidden (not screen-reader-only text or an ellipsis on purpose), and the words the
 // chat must never show ("passkey", "session", "error", "retry", "AI", "bot"). The "-big" shots set the root font size to 200% (the large-text persona); "-still" asks the
 // browser for reduced motion.
 //
@@ -83,7 +83,13 @@ for (const j of jobs) {
       const vis = (e) => { const r = e.getBoundingClientRect(); const s = getComputedStyle(e); return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none"; };
       const sel = (e) => e.tagName.toLowerCase() + (e.id ? "#" + e.id : "") + (e.className && typeof e.className === "string" ? "." + e.className.trim().split(/\s+/).join(".") : "");
       const tap = [...document.querySelectorAll("button,a[href],[role=button],input:not([type=hidden]),select,textarea,summary")].filter(vis).map((e) => { const r = e.getBoundingClientRect(); return { sel: sel(e), text: (e.innerText || e.getAttribute("aria-label") || "").trim().slice(0, 40), w: Math.round(r.width), h: Math.round(r.height) }; }).filter((t) => t.w < 44 || t.h < 44);
-      const clipped = [...document.querySelectorAll("body *")].filter((e) => { const s = getComputedStyle(e); return (s.overflowX === "hidden" || s.overflow === "hidden") && e.scrollWidth > e.clientWidth + 1 && vis(e); }).map((e) => ({ sel: sel(e), text: (e.innerText || "").trim().slice(0, 40), scroll: e.scrollWidth, client: e.clientWidth }));
+      const clipped = [...document.querySelectorAll("body *")].filter((e) => {
+        const s = getComputedStyle(e);
+        // not a problem: screen-reader-only text (the .sr class, or anything clipped to a pixel on purpose) and a name cut with an ellipsis on purpose (the call strip)
+        const r = e.getBoundingClientRect();
+        if (e.classList.contains("sr") || r.width <= 2 || r.height <= 2 || s.textOverflow === "ellipsis") return false;
+        return (s.overflowX === "hidden" || s.overflow === "hidden") && e.scrollWidth > e.clientWidth + 1 && vis(e);
+      }).map((e) => ({ sel: sel(e), text: (e.innerText || "").trim().slice(0, 40), scroll: e.scrollWidth, client: e.clientWidth }));
       const text = document.body.innerText || "";
       const words = WORDS.filter((w) => new RegExp(`(^|[^\\p{L}\\p{N}])${w}($|[^\\p{L}\\p{N}])`, "iu").test(text));
       return { axeV, overflow: document.documentElement.scrollWidth > innerWidth, sw: document.documentElement.scrollWidth, iw: innerWidth, tap, clipped, words };
