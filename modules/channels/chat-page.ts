@@ -149,8 +149,10 @@ export function chatPage(a: ChatPageArgs): string {
 <div class="taps" id="taps">${tapsHtml(quick.map((title, i) => ({ n: i + 1, title, go: a.kind !== "fees" && i === 1 })))}</div>`
     : `<div class="taps" id="taps">${tapsHtml(choices.map((x) => ({ id: x.id, title: x.title, ...(x.hint ? { hint: x.hint } : {}) })))}</div>`;
 
+  const strip = a.shop.contact?.phone ? `<div class="strip" id="strip"${sign} hidden><div class="strip-in"><span class="strip-name">${esc(a.shop.name)}</span><a class="strip-call" href="${esc(telLink(a.shop.contact.phone))}" aria-label="${esc(first.shopCall)}">${ICON.phone}</a></div></div>
+` : "";
   const body = `<body class="chat" data-lang="${a.language}">
-<header class="sign"${sign}><div class="wrap"><div class="sign-top"><div class="sign-in">${c?.picture ? `<picture class="face-p" id="face-pic">${animUrl ? `<source srcset="${esc(animUrl)}" type="image/svg+xml" media="(prefers-reduced-motion: no-preference)">` : ""}<img class="face-c" id="face-src" src="${esc(c.picture)}" width="52" height="52" data-mood="${esc(mood ?? "")}" alt="${esc(pictureWords(a.language, a.shop.name, c.face ?? "well", c.name))}"></picture>` : ""}<div><h1>${esc(a.shop.name)}</h1>${c ? `<p class="mood${mood ? ` m-${mood}` : ""}">${esc(ASSISTANT_OF[a.language](a.shop.name, c.name))}${mood ? ` · ${esc(FACE_WORDS[a.language][mood])}` : ""}</p>` : ""}</div></div>
+${strip}<header class="sign"${sign}><div class="wrap"><div class="sign-top"><div class="sign-in">${c?.picture ? `<picture class="face-p" id="face-pic">${animUrl ? `<source srcset="${esc(animUrl)}" type="image/svg+xml" media="(prefers-reduced-motion: no-preference)">` : ""}<img class="face-c" id="face-src" src="${esc(c.picture)}" width="52" height="52" data-mood="${esc(mood ?? "")}" alt="${esc(pictureWords(a.language, a.shop.name, c.face ?? "well", c.name))}"></picture>` : ""}<div><h1>${esc(a.shop.name)}</h1>${c ? `<p class="mood${mood ? ` m-${mood}` : ""}">${esc(ASSISTANT_OF[a.language](a.shop.name, c.name))}${mood ? ` · ${esc(FACE_WORDS[a.language][mood])}` : ""}</p>` : ""}</div></div>
 ${themeSwitch(esc(OWNER_LOOK[a.language].theme))}</div>
 <div class="sign-acts">${a.shop.contact?.phone ? `<a class="btn quiet callbtn" href="${esc(telLink(a.shop.contact.phone))}">${esc(first.shopCall)}</a>` : ""}<details class="lang"><summary aria-label="${esc(PAGE[a.language].language)}">${LANGUAGE_LABEL[a.language]}</summary><div>${langs}</div></details></div></div></header>
 <p class="banner" id="offline" role="status" hidden>${esc(w.offline)}</p>
@@ -274,6 +276,9 @@ ${a.listen ? `<p class="rec-hint" id="rec-hint" hidden>${ICON.mic}<span>${esc(mo
   const d0 = store.get(KEY); if (d0) { box.value = d0; fit(); }
   const off = $("offline"); const net = () => { off.hidden = navigator.onLine; }; addEventListener("online", net); addEventListener("offline", net); net();
   for (const s of pending()) { const run = mk("you", s.text || s.label || "", Date.now(), ""); run.dataset.cid = s.id; lines.insertBefore(run, $("alerts-slot")); failed(run, s); }
+  // "Call the shop" stays one tap away: when the head has scrolled out of view, a slim strip (the shop's name and a call button) sticks to the top; it holds no space, so nothing jumps
+  const strip = $("strip"), head = document.querySelector(".sign");
+  if (strip && head && window.IntersectionObserver) new IntersectionObserver((e) => { strip.hidden = e[0].isIntersecting; }, { threshold: 0 }).observe(head);
   face(); stamp(); down(); schedule(waiting ? 1500 : 9000);
   // the page opens at the latest line, and stays there while things above it settle (the font, the keep box, the card that appears after the first look) until the guest moves it themselves
   let moved = false; for (const ev of ["wheel", "touchstart", "keydown", "pointerdown"]) addEventListener(ev, () => { moved = true; }, { passive: true, once: true });
