@@ -48,7 +48,8 @@ The index is a cache. It holds only what the feeds say, and it can be thrown awa
 Results are in this order, and in no other:
 
 1. **Fit.** Items that match every word of the search, then items that match some of them. When the search names a category, only
-   that category.
+   that category. A word that names the shop's town or pincode counts toward "every word" but never makes an item a match by itself:
+   "persian kitten Thrissur" lists the Thrissur shops' kittens, not everything a Thrissur shop sells.
 2. **Distance.** Nearer first, in bands: 0–2 km, 2–5 km, 5–10 km, 10–25 km, 25–50 km, over 50 km. Without the buyer's place, the
    buyer's town first, then the rest.
 3. **Freshness.** In stock before "call to check" within a band.
@@ -74,6 +75,9 @@ A search gives up to 10 results; more are fetched with `offset=10`, `20`, ... (t
 the same way. At most 3 items of one shop stand in the first 10, while other shops have items to put there.
 
 ## The search API
+
+The same address answers a person with a page and a program with JSON: it answers JSON when the request says `Accept: application/json`
+(and not `text/html`) or has `format=json`, and the page otherwise. Programs should send `Accept: application/json`.
 
 ```http
 GET /search?q=persian+kitten&category=pets&lat=10.52&lon=76.21&town=Thrissur&radius_km=25&lang=ml&offset=0

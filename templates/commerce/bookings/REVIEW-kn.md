@@ -1820,3 +1820,4 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `directory.back` | ಹುಡುಕಾಟಕ್ಕೆ ಹಿಂತಿರುಗಿ | Back to search |  |
 | `directory.foot` | ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳ ಒಂದು ಪಟ್ಟಿ. | A directory of local shops. |  |
 | `directory.assistants` | AI ಸಹಾಯಕರಿಗೆ | For AI assistants |  |
+| `directory.choices` | ಇನ್ನಷ್ಟು ಆಯ್ಕೆಗಳು | More choices |  |

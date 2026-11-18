@@ -1820,3 +1820,4 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `directory.back` | തിരയലിലേക്ക് മടങ്ങുക | Back to search |  |
 | `directory.foot` | നാട്ടിലെ കടകളുടെ ഒരു പട്ടിക. | A directory of local shops. |  |
 | `directory.assistants` | AI സഹായികൾക്ക് | For AI assistants |  |
+| `directory.choices` | കൂടുതൽ തിരഞ്ഞെടുപ്പുകൾ | More choices |  |

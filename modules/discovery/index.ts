@@ -34,11 +34,21 @@ export interface IndexQuery { words: string[]; category?: Category; point?: { la
 export interface Hit { shop: ShopRow; item: ItemRow; fit: 0 | 1; distanceKm: number | null; sameTown: boolean }
 
 const q = (w: string): string => `"${w.replaceAll('"', "")}"`;
-/** FTS5 text for one word: it starts a word in the titles, the texts or the place, or its Latin skeleton starts a word in the spelling column. */
-function termOf(word: string): string {
+/** A word's Latin skeleton as the index compares it: the last vowel is not asked for (a word may take an ending: "bekku", "bekkina"), as the match is by word start. */
+function skeletonOf(word: string): string {
   let sk = skeleton(word).replace(/[^a-z0-9]/gu, "");
-  if (sk.length >= 4) sk = sk.replace(/[aeiou]$/u, ""); // a word may take an ending ("bekku", "bekkina"): the match is by start, so the last vowel is not asked for
-  return `({title body place} : ${q(word)}*${sk.length >= 2 ? ` OR rom : ${q(sk)}*` : ""})`;
+  if (sk.length >= 4) sk = sk.replace(/[aeiou]$/u, "");
+  return sk;
+}
+/** FTS5 text for a word in what an item SAYS: it starts a word in the titles or the texts, or its Latin skeleton starts a word in the spelling column (which holds the category's word too). */
+function contentTerm(word: string): string {
+  const sk = skeletonOf(word);
+  return `({title body} : ${q(word)}*${sk.length >= 2 ? ` OR rom : ${q(sk)}*` : ""})`;
+}
+/** The same, or the word names the shop's town or pincode (the `place` column, which also holds the town's skeleton). A place word counts toward "every word" and never makes an item a match by itself. */
+function anyTerm(word: string): string {
+  const sk = skeletonOf(word);
+  return `({title body place} : ${q(word)}*${sk.length >= 2 ? ` OR rom : ${q(sk)}* OR place : ${q(sk)}*` : ""})`;
 }
 
 const json = (v: unknown): string => JSON.stringify(v);
@@ -143,12 +153,13 @@ export class DirectoryIndex {
         .run(s.page, feedUrl, s.name, s.trade ?? null, s.place.town, s.place.pincode ?? null, s.place.lat ? Number(s.place.lat) : null, s.place.lon ? Number(s.place.lon) : null, s.chat, s.check, s.agentCard ?? null, s.registration ? json(s.registration) : null, json(s.languages), pin.keyId, pin.key, feed.updated);
       const add = this.db.prepare("INSERT INTO items (shop_page, id, category, title, text, owner_language, machine, price_value, price_note, quantity, photos, availability, confirmed, item_page) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
       const addWords = this.db.prepare("INSERT INTO items_fts (rowid, title, body, rom, place) VALUES (?, ?, ?, ?, ?)");
-      const place = normal(`${s.place.town} ${s.place.pincode ?? ""}`);
+      // the place is the town and pincode as written, and the town's Latin skeleton (so "thrissur" finds a shop whose town is written in Malayalam)
+      const place = `${normal(`${s.place.town} ${s.place.pincode ?? ""}`)} ${skeleton(s.place.town)}`;
       for (const it of feed.items) {
         const r = add.run(s.page, it.id, it.category, json(it.title), json(it.text), it.ownerLanguage, json(it.machineWritten), it.price?.value ?? null, it.price?.note ?? null, it.quantity ?? null, json(it.photos), it.availability, it.confirmed, it.page);
         const title = normal(Object.values(it.title).join(" ")), body = normal(Object.values(it.text).join(" "));
-        // the category's own word and the town are searchable too: "pets" and "Thrissur" are things people type
-        const rom = `${skeleton(`${title} ${body} ${s.place.town}`)} ${it.category.replaceAll("_", " ")}`;
+        // the category's own word is searchable ("pets" is a thing people type); the town is in `place`, not here, so a town word never makes an unrelated item a match
+        const rom = `${skeleton(`${title} ${body}`)} ${it.category.replaceAll("_", " ")}`;
         addWords.run(r.lastInsertRowid, title, body, rom, place);
       }
       this.db.prepare("INSERT INTO feeds (url, source, added_at) VALUES (?, 'notice', ?) ON CONFLICT(url) DO NOTHING").run(feedUrl, now);
@@ -206,8 +217,10 @@ export class DirectoryIndex {
       rowids = { all: new Set(rows.map((r) => r.rid)), any: rows.map((r) => r.rid) };
     } else {
       const run = (match: string): number[] => (this.db.prepare(`SELECT items.rowid AS rid FROM items_fts JOIN items ON items.rowid = items_fts.rowid JOIN shops ON shops.page = items.shop_page WHERE items_fts MATCH ? AND shops.status = 'ok'${filter} LIMIT ${MAX_CANDIDATES}`).all(match, ...extra) as { rid: number }[]).map((r) => r.rid);
-      const terms = words.map(termOf);
-      rowids = { all: new Set(run(terms.join(" AND "))), any: terms.length > 1 ? run(terms.join(" OR ")) : [...new Set(run(terms[0]))] };
+      // every word, each found in the item's words OR in its shop's place; then the items that have at least one word in what they SAY (so "persian kitten Thrissur" never lists every item of a Thrissur shop)
+      const every = run(words.map(anyTerm).join(" AND "));
+      const some = run(words.map(contentTerm).join(" OR "));
+      rowids = { all: new Set(every), any: [...new Set([...every, ...some])] };
     }
     const hits: Hit[] = [];
     const get = this.db.prepare("SELECT * FROM items WHERE rowid = ?");

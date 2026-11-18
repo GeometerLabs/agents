@@ -49,6 +49,7 @@ test("the start page, in four languages: the form with labelled fields, examples
     assert.match(h, /<input id="q" name="q" type="search"/u);
     assert.match(h, /<label for="town">/u);
     assert.match(h, /<select id="category" name="category">/u);
+    assert.ok(h.includes(`<details class="choices"><summary>${w.choices}</summary>`), "kind, distance and town are folded away until wanted");
     assert.ok(h.includes('href="/order'), "the order page is linked from every page");
     assert.ok(h.includes('<meta name="robots" content="noindex">'), "search pages are not for search engines");
     assert.equal([...h.matchAll(/<script/gu)].length, 1);
@@ -103,7 +104,8 @@ test("words an assistant wrote are marked; a photo from another address is not s
   const h = page("en", { state: "results", answer: answer([result({ item: { machineWritten: true, photo: "https://cdn.example/p.jpg" } })]) });
   assert.ok(h.includes('class="tag">Words by an assistant<'));
   assert.ok(!h.includes("cdn.example") && !h.includes("<img"));
-  assert.ok(h.includes('class="ph k-pets"') && h.includes("<span>Pets</span>"));
+  assert.ok(h.includes('class="ph k-pets no"') && h.includes("<span>Pets</span>"));
+  assert.ok(h.includes(".k-pets{--k:#f2a516;--ki:#3d1708}") && h.includes(".k-food{--k:#177a5e"), "the tiles wear the signboard paints, with the text colour that reads on each");
   assert.ok(!page("en", { state: "results", answer: answer([result()]) }).includes("Words by an assistant"));
 });
 
@@ -130,6 +132,7 @@ test("the other states each have a page of their own: nothing found, a request t
 
 test("the form keeps what was typed, and a map point is shown as set", () => {
   const h = page("en", { state: "none" }, { q: "kitten", category: "pets", town: "Thrissur", lat: "10.52", lon: "76.21", radius_km: "25" });
+  assert.ok(h.includes('<details class="choices" open>'), "a choice made opens the fold");
   assert.ok(h.includes('value="kitten"') && h.includes('<option value="pets" selected>') && h.includes('value="Thrissur"') && h.includes('<option value="25" selected>'));
   assert.ok(h.includes('name="lat" value="10.52"') && h.includes('name="lon" value="76.21"'));
   assert.ok(h.includes('<p class="note" id="near-set">Your location is set</p>'));
