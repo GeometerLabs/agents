@@ -21,7 +21,11 @@ import { CHAT_COOKIE, chatPolicy, guestFromCookie } from "../chat-front.ts";
 import { frontHandler } from "../front.ts";
 import type { FrontShop } from "../front.ts";
 import type { ChannelBackend } from "../backend.ts";
-import { CHAT, QUICK } from "../words-chat.ts";
+import { CHAT, QUICK, forKind } from "../words-chat.ts";
+import { identityBlock } from "../chat-identity-page.ts";
+import { IDENTITY } from "../words-chat-identity.ts";
+import { CHAT_MORE } from "../words-chat-more.ts";
+import { FIRST_WORDS } from "../words-owner-first.ts";
 import { LANGUAGES } from "../../language/languages.ts";
 import { screen } from "../chat-screens.ts";
 import { esc } from "../../core/html.ts";
@@ -274,6 +278,42 @@ test("Call the shop is in the head, alerts are offered only after an answer, and
   assert.doesNotMatch(answered, /id="alerts-slot" class="alerts-slot" hidden/u);
   assert.doesNotMatch(page({ pushKey: undefined }), /id="alerts-on"/u);
   for (const language of LANGUAGES) for (const bad of [/\bbot\b/iu, /\bsafe\b/iu, /guarantee/iu, /passkey/iu, /\bcookie\b/iu]) assert.doesNotMatch(page({ language }).replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/gu, ""), bad);
+});
+
+test("a Fees chat never says shop: head, call button, strip, note, retention line, footer and moments say centre, in four languages; the other kinds keep shop", () => {
+  // the words a shop is called in each language (the Malayalam one only as a whole word, so "ഹെയർകട്ട്" is not caught)
+  const SHOP_WORD: Record<string, RegExp> = { en: /\bshops?\b/iu, hi: /दुकान/u, ml: /(?<![\p{L}\p{M}])കട(?![\p{L}\p{M}])|കടയ/u, kn: /ಅಂಗಡಿ/u };
+  const CENTRE: Record<string, string> = { en: "centre", hi: "केंद्र", ml: "കേന്ദ്ര", kn: "ಕೇಂದ್ರ" };
+  const thread = { lines: [{ n: 1, who: "shop" as const, text: "Hello", atMs: NOW, moment: "confirmed" as const }], answered: true, capped: false, retentionDays: 30 };
+  for (const language of LANGUAGES) {
+    for (const o of [{}, { thread }]) {
+      const html = page({ kind: "fees", language, pushKey: "KEY", identity: identityBlock({ kind: "fees", language, base: "https://p.example/glow/chat" }), ...o });
+      // the page's own words: no style, and no script (its code and class names call the sender "shop"; its words are checked through the tables below)
+      const visible = html.replace(/<style[\s\S]*?<\/style>/gu, "").replace(/<script[\s\S]*?<\/script>/gu, "").replace(/\s(?:class|id|data-[a-z-]+)="[^"]*"/gu, "");
+      assert.doesNotMatch(visible.replace(/Glow Salon/gu, ""), SHOP_WORD[language], `${language}: no shop word on a Fees chat`);
+      assert.ok(visible.includes(CENTRE[language]), `${language}: says centre`);
+    }
+    // the call words, the strip's accessible name and the note, exactly
+    const fees = page({ kind: "fees", language });
+    assert.ok(fees.includes(esc(forKind("fees", language, FIRST_WORDS[language]).shopCall)));
+    assert.ok(fees.includes(esc(forKind("fees", language, CHAT[language]).note)));
+    assert.ok(fees.includes(esc(forKind("fees", language, CHAT[language]).kept(30))));
+    assert.ok(page({ kind: "bookings", language }).includes(esc(CHAT[language].note)), `${language}: Bookings keeps shop`);
+    assert.ok(page({ kind: "orders", language }).includes(esc(FIRST_WORDS[language].shopCall)), `${language}: Orders keeps shop`);
+  }
+  // every line of every table the page reads, as text, in four languages (the script's words are among them)
+  for (const language of LANGUAGES) {
+    const all = JSON.stringify([forKind("fees", language, CHAT[language]), forKind("fees", language, CHAT_MORE[language]), forKind("fees", language, FIRST_WORDS[language]), forKind("fees", language, IDENTITY[language])]
+      .map((t) => Object.values(t).map((v) => (typeof v === "function" ? (v as (n: number) => string)(30) : v))));
+    assert.doesNotMatch(all.replace(/\{shop\}/gu, ""), SHOP_WORD[language], `${language}: no table line says shop`);
+  }
+  assert.equal(forKind("fees", "en", FIRST_WORDS.en).shopCall, "Call the centre");
+  assert.equal(forKind("fees", "en", CHAT.en).note, "The centre's assistant replies here. A booking or a payment counts once the centre's record shows it.");
+  assert.equal(forKind("fees", "en", CHAT.en).kept(30), "The centre keeps this chat for 30 days.");
+  assert.equal(forKind("fees", "en", IDENTITY.en).deleteDone, "Deleted. This chat is gone from this centre.");
+  // a name placeholder is a shop's name, not the word shop
+  assert.match(forKind("fees", "en", { a: "Your link from {shop}: x" }).a, /\{shop\}/u);
+  assert.equal(forKind("bookings", "en", CHAT.en), CHAT.en);
 });
 
 test("every state of the review's screens draws, in four languages, with the shop's own paint", () => {

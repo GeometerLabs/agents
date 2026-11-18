@@ -32,7 +32,7 @@ import { PAINTS, isPaint } from "./chat-paint.ts";
 import type { PaintId } from "./chat-paint.ts";
 import { LOTTIE_VERSION, MOMENT_SCRIPT, STILLS } from "./chat-motion.ts";
 import { CHAT_MORE } from "./words-chat-more.ts";
-import { CHAT, QUICK } from "./words-chat.ts";
+import { CHAT, QUICK, forKind } from "./words-chat.ts";
 import type { ChatKind } from "./words-chat.ts";
 import { telLink } from "./contact-bar.ts";
 import { FIRST_WORDS } from "./words-owner-first.ts";
@@ -98,8 +98,8 @@ const j = (v: unknown): string => JSON.stringify(v).replace(/</gu, "\\u003c");
 
 /** The lines of the thread as markup (the script draws later ones the same way): runs of one side, the character's small face on the first shop bubble of a run. */
 function linesHtml(lines: ChatThread["lines"], a: ChatPageArgs, face: boolean): string {
-  const w = CHAT[a.language];
-  const m = CHAT_MORE[a.language];
+  const w = forKind(a.kind, a.language, CHAT[a.language]);
+  const m = forKind(a.kind, a.language, CHAT_MORE[a.language]);
   let side: string | undefined;
   return lines.map((l) => {
     const first = l.who !== side;
@@ -110,18 +110,18 @@ function linesHtml(lines: ChatThread["lines"], a: ChatPageArgs, face: boolean): 
 }
 
 export function chatPage(a: ChatPageArgs): string {
-  const w = CHAT[a.language];
+  const w = forKind(a.kind, a.language, CHAT[a.language]);
   const c = a.shop.character;
   const mood = c?.face && c.picture ? c.face : undefined;
   // the paint and the one text colour that reads on it come from the table (chat-paint.ts, contrast checked at AA by a test), never from a guess about light or dark
   const paint = a.paint !== undefined && isPaint(a.paint) ? PAINTS[a.paint] : undefined;
   const sign = paint ? ` style="--paint:${paint.hex};--paint-ink:${paint.ink}"` : "";
-  const more = CHAT_MORE[a.language];
+  const more = forKind(a.kind, a.language, CHAT_MORE[a.language]);
   // the head's picture: the still is the <img> (reduced motion, no script, a fetch that fails); DiceBear's "slow" animation is a <source> only a phone that welcomes motion uses
   const animUrl = a.art?.animated && mood ? `${a.art.base}/${mood}-anim.svg?v=${a.art.version}` : undefined;
   const wellUrl = a.art ? `${a.art.base}/well.svg?v=${a.art.version}` : undefined;
   const wellAnim = a.art?.animated ? `${a.art.base}/well-anim.svg?v=${a.art.version}` : undefined;
-  const first = FIRST_WORDS[a.language];
+  const first = forKind(a.kind, a.language, FIRST_WORDS[a.language]);
   const last = a.thread.lines.at(-1);
   const empty = a.thread.lines.length === 0;
   const quick = QUICK[a.kind].label[a.language];

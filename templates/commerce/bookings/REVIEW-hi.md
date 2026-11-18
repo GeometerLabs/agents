@@ -1594,6 +1594,20 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.quick.fees.1` | क्लास का समय | Class timings |  |
 | `chat.quick.fees.2` | फ़ीस | Fees |  |
 | `chat.quick.fees.3` | टीचर से बात करें | Talk to the teacher |  |
+| `chat.centre.back` | केंद्र का पेज | Centre page |  |
+| `chat.centre.closed` | केंद्र अभी बंद है। आप फिर भी पूछ सकते हैं। 10:00–20:00 | The centre is closed now. You can still ask. 10:00–20:00 |  |
+| `chat.centre.paused` | केंद्र अभी नया काम नहीं ले रहा। आप सवाल पूछ सकते हैं। | The centre is not taking new work just now. You can still ask questions. |  |
+| `chat.centre.note` | केंद्र का असिस्टेंट यहाँ जवाब देता है। बुकिंग या भुगतान तभी गिना जाता है जब केंद्र के रिकॉर्ड में दिखे। | The centre's assistant replies here. A booking or a payment counts once the centre's record shows it. |  |
+| `chat.centre.kept` | केंद्र यह चैट 30 दिन रखता है। | The centre keeps this chat for 30 days. |  |
+| `chat.centre.shop` | केंद्र | Centre |  |
+| `chat.centre.alertsHead` | केंद्र जवाब दे तो फ़ोन बजे? | Want a buzz when the centre answers? |  |
+| `chat.centre.more.confirmed` | पक्का हो गया। केंद्र के अपने रिकॉर्ड में है। | Confirmed. The centre's own record has it. |  |
+| `chat.centre.more.paid` | भुगतान मिल गया। केंद्र के अपने रिकॉर्ड में है। | Payment received. The centre's own record has it. |  |
+| `chat.centre.more.linkAbout` | केंद्र से चैट खुलती है | Opens the chat with the centre |  |
+| `chat.centre.id.otherShop` | वह दूसरा केंद्र का है। इस केंद्र वाला चुनें, या "मेरा नया फ़ोन है" दबाएँ। | That one is for another centre. Pick the one for this centre, or tap I have a new phone. |  |
+| `chat.centre.id.deleteAsk` | यह चैट हटाएँ? यहाँ के आपके संदेश हट जाएँगे, और इस फ़ोन पर चैट रखने वाली चाबी भी। बुकिंग या भुगतान के लिए कानून जो माँगता है, केंद्र वह रखता है। | Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The centre keeps what the law needs for a booking or a payment. |  |
+| `chat.centre.id.deleteDone` | हट गई। यह चैट अब इस केंद्र के पास नहीं है। | Deleted. This chat is gone from this centre. |  |
+| `chat.centre.first.shopCall` | केंद्र को कॉल करें | Call the centre |  |
 | `stock.owner.tagApprove` | मंज़ूर करने को ऑर्डर | Order to approve |  |
 | `stock.owner.tagSilent` | सप्लायर का जवाब नहीं | No answer from supplier |  |
 | `stock.owner.tagReceive` | माल आने का निशान | Delivery to mark |  |

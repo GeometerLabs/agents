@@ -231,7 +231,7 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     const html = chatPage({
       ...(about ? { about } : {}),
       shop: offer, kind, language, base, home: parent ? `${shop.publicUrl}/f/${parent.link}` : shop.publicUrl, nonce, thread,
-      identity: identityBlock({ language, base, ...(parent ? { parent: { back: `${shop.publicUrl}/f/${parent.link}?lang=${language}` } } : {}) }),
+      identity: identityBlock({ kind, language, base, ...(parent ? { parent: { back: `${shop.publicUrl}/f/${parent.link}?lang=${language}` } } : {}) }),
       ...(personality ? { personality } : {}), ...(paint && isPaint(paint) ? { paint } : {}), ...(art ? { art } : {}), ...(read.listen === true ? { listen: true } : {}), ...(choice ? { pushKey: choice.key, ...(choice.via ? { pushVia: choice.via } : {}) } : {}),
       onStreetlist: a.viaDoor, fontUrl: `${base}/font.woff2`, ...(url.searchParams.get("notice") === "rate" ? { notice: "rate" as const } : {}),
     });
