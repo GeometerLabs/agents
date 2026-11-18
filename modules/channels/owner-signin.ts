@@ -32,8 +32,15 @@ import { relyingParty } from "./webauthn.ts";
 /** The runtime's own record events for a session (never from the front: the front's channel token can send only the channel events). */
 export interface OwnerAccessEvent {
   kind: "owner_access"; id: string;
-  /** Item 11h: "passkey_added" when the owner registered a passkey (from the Operator's QR or a recovery code); `how` says what signed them in. */
-  what: "signed_in" | "signed_out" | "passkey_added" | "file_taken"; session: string; how?: "link" | "passkey" | "setup" | "recovery";
+  /**
+   * Item 11h: "passkey_added" when the owner registered a passkey (from the Operator's QR or a recovery code); `how` says what signed them in. Owner's item 2 ("no
+   * Operator holds a shop hostage"): "phone_removed" (the owner took a phone away), "codes_made" (the owner made their own recovery codes) and "removal_cancelled"
+   * (the owner stopped the Operator's request); `session` names the owner's session that did it. The runtime's own findings (the Operator's request seen and applied,
+   * Geometer's reset) are written by `tick`, not sent as events.
+   */
+  what: "signed_in" | "signed_out" | "passkey_added" | "file_taken" | "phone_removed" | "codes_made" | "removal_cancelled"; session: string; how?: "link" | "passkey" | "setup" | "recovery" | "own_phone" | "reset";
+  /** "passkey_added": the coarse label of the new phone ("Android, Chrome"), so the record says which phone was added. */
+  label?: string;
   /** "file_taken" (leave with your shop): the owner's session took the shop's file made for this ask (modules/approvals/leave.ts), so the server can delete its copy. */
   ask?: string;
 }
@@ -61,6 +68,14 @@ export const SIGNIN_MESSAGE: Record<Language, (shop: string, link: string) => st
   kn: (shop, link) => `${shop} ಪುಟಕ್ಕೆ ನಿಮ್ಮ ಸೈನ್ ಇನ್ ಲಿಂಕ್. ಇದು ಒಮ್ಮೆ ಮಾತ್ರ, 10 ನಿಮಿಷ ಕೆಲಸ ಮಾಡುತ್ತದೆ:\n${link}\nನೀವು ಕೇಳದಿದ್ದರೆ ಈ ಸಂದೇಶವನ್ನು ಬಿಟ್ಟುಬಿಡಿ.`,
 };
 
+/** The push alert when the Operator asks to remove every phone: it names no code and no link, only that the owner can stop it in their app. */
+export const REMOVAL_ALERT = (by: string): Record<Language, string> => ({
+  en: `${by || "Your Operator"} asked to remove every phone that opens your shop. It happens in 2 days unless you cancel. Open your app to stop it.`,
+  hi: `${by || "आपके ऑपरेटर"} ने आपकी दुकान खोलने वाले हर फ़ोन को हटाने को कहा है। आप रद्द न करें तो यह 2 दिन में हो जाएगा। रोकने के लिए अपना ऐप खोलिए।`,
+  ml: `${by || "നിങ്ങളുടെ ഓപ്പറേറ്റർ"} നിങ്ങളുടെ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും നീക്കാൻ ആവശ്യപ്പെട്ടു. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ 2 ദിവസത്തിൽ അത് നടക്കും. തടയാൻ നിങ്ങളുടെ ആപ്പ് തുറക്കൂ.`,
+  kn: `${by || "ನಿಮ್ಮ ಆಪರೇಟರ್"} ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 2 ದಿನದಲ್ಲಿ ಆಗುತ್ತದೆ. ನಿಲ್ಲಿಸಲು ನಿಮ್ಮ ಆಪ್ ತೆರೆಯಿರಿ.`,
+});
+
 export interface OwnerSigninSetup {
   access: OwnerAccess;
   /** The shop's addresses, read fresh (the deployer may change them at any time). Without them the shop has no owner sign-in, and the phrase goes to the agent. */
@@ -70,6 +85,8 @@ export interface OwnerSigninSetup {
   /** Item 11h: the panel's setup QR, recovery card and "remove the owner's passkeys" (owner-grants.ts), read fresh. Left out: no passkeys. */
   grants?: () => OwnerGrants | undefined;
   owner: { whatsapp: string; language: Language };
+  /** An alert to the owner's phones with web push on (modules/push), for the Operator's removal request. Left out: no push, and the owner's app shows the request. */
+  alert?: (text: Record<Language, string>) => void;
   shopName: string;
   clock: Clock;
   log?: (line: string) => void;
@@ -83,8 +100,11 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
   /** The owner as the settings and the deployer say now; undefined while the shop has no pages file (no owner sign-in at all). */
   const who = (): OwnerNow | undefined => { const p = setup.pages(); return p ? { owner: owner.whatsapp, base: p.ownerBase } : undefined; };
 
-  /** The panel's "remove the owner's passkeys" moment, if there is one. */
-  const passkeysBefore = (): number | undefined => { const at = setup.grants?.()?.passkeysBefore; return at ? Date.parse(at) : undefined; };
+  /**
+   * The moment before which no passkey works. The runtime's OWN value (owner-access.ts): the Operator's file can no longer set it once the owner holds a passkey, only
+   * ask for it to be set after a wait the owner can cancel.
+   */
+  const passkeysBefore = (): number | undefined => access.passkeysBefore(setup.grants?.(), clock.now());
 
   /** Is this the owner's "open my app"? Only from the owner's own number, only the fixed phrases, and only when the shop has an owner view to open. */
   const isOpenMyApp = (m: InboundMessage): boolean => sameNumber(m.from, owner.whatsapp) && !m.reply && m.text !== "" && OPEN_MY_APP.includes(phraseOf(m.text)) && who() !== undefined;
@@ -143,7 +163,9 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
         return;
       }
       if (event.kind === "owner_access") {
-        ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs: { what: event.what, session: event.session, ...(event.how ? { how: event.how } : {}) }, language: owner.language, refs: { what: event.what, session: event.session, ...(event.how ? { how: event.how } : {}) } });
+        const how = event.how ? { how: event.how } : {};
+        const label = event.label ? { label: event.label } : {};
+        ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs: { what: event.what, session: event.session, ...how, ...label }, language: owner.language, refs: { what: event.what, session: event.session, ...how, ...label } });
         return;
       }
       await sendLink(event.kind === "message" ? "whatsapp" : "page", ctx);
@@ -151,6 +173,19 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
 
     /** On the clock's beat: the panel's "sign out every device", said once in the record when the runtime first sees it. */
     tick(ctx: { record: ActionRecord; store?: unknown }): void {
+      // owner's item 2: read the Operator's request and Geometer's reset into the runtime's own state (so a request starts its wait, and a due one applies, even when no
+      // page is open), and say each once in the record. An Operator's request also reaches the owner's phones with alerts on, at once.
+      if (setup.grants) {
+        access.sync(setup.grants(), clock.now());
+        for (const n of access.takeNotes()) {
+          const line = (inputs: Record<string, string>) => ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs, language: owner.language, refs: inputs });
+          if (n.what === "reset") line({ what: "owner_reset", at: new Date(n.at).toISOString(), by: n.by, reason: n.reason });
+          else if (n.what === "removal_asked") {
+            line({ what: "removal_asked", by: n.askedBy, effectiveAt: new Date(n.effectiveAt).toISOString() });
+            setup.alert?.(REMOVAL_ALERT(n.askedBy));
+          } else line({ what: "removal_applied", at: new Date(n.at).toISOString() });
+        }
+      }
       const endBefore = setup.endBefore();
       if (endBefore === undefined) return;
       const ended = access.endAllBefore(endBefore, clock.now());
@@ -168,6 +203,9 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       end: (session: string) => access.end(session, clock.now()),
       // ---- item 11h: passkeys (each answers "unknown" or nothing for a shop with no pages file or no grants reader) ----
       shopName: setup.shopName,
+      /** The owner's language and the shop's clock, for the new-phone alert (modules/runtime/http.ts). */
+      ownerLanguage: owner.language,
+      now: (): number => clock.now(),
       passkeysOn: (): boolean => setup.grants !== undefined && who() !== undefined,
       grantState: (g: Grant) => { const w = who(); return w && setup.grants ? access.grantState(g, setup.grants(), clock.now()) : "unknown" as const; },
       /** Too many wrong recovery codes today: the front says "wait" and nothing is checked. A wrong one is counted by `noteWrongCode`. */
@@ -178,10 +216,10 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
         if (!w || !setup.grants) return { ok: false as const, state: "unknown" as const };
         return access.registrationOptions(g, setup.grants(), w, relyingParty(w.base), setup.shopName || "Shop", clock.now());
       },
-      register: (g: Grant, response: RegistrationResponse) => {
+      register: (g: Grant, response: RegistrationResponse, label = "") => {
         const w = who();
         if (!w || !setup.grants) return { ok: false as const, state: "unknown" as const };
-        return access.register(g, setup.grants(), w, relyingParty(w.base), response, clock.now());
+        return access.register(g, setup.grants(), w, relyingParty(w.base), response, clock.now(), label);
       },
       signinOptions: () => { const w = who(); return w && setup.grants ? access.signinOptions(w, relyingParty(w.base), clock.now(), passkeysBefore()) : { count: 0 }; },
       signin: (response: AssertionResponse) => {
@@ -190,6 +228,29 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
         return access.signin(response, w, relyingParty(w.base), clock.now(), passkeysBefore());
       },
       passkeys: () => { const w = who(); return w && setup.grants ? access.passkeys(w, relyingParty(w.base), passkeysBefore()) : []; },
+      // ---- owner's item 2: the owner's phones. Each takes the owner's SESSION and checks it here (a link made in the panel opens none of them) ----
+      /** The phones page's data, or undefined when the session is not good. */
+      phones: (session: string) => {
+        const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), setup.endBefore()) : undefined;
+        return w && ok ? access.phonesView(ok.id, w, relyingParty(w.base), setup.grants!(), clock.now()) : undefined;
+      },
+      dismissPhones: (session: string): boolean => { const w = who(); const ok = w ? access.check(session, w, clock.now(), setup.endBefore()) : undefined; if (ok) access.dismiss(ok.id); return ok !== undefined; },
+      removePhone: (session: string, phoneId: string, confirmLast: boolean) => {
+        const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), setup.endBefore()) : undefined;
+        if (!w || !ok) return { ok: false as const, why: "session" as const };
+        return access.removePhone(ok.id, phoneId, w, relyingParty(w.base), setup.grants!(), clock.now(), confirmLast);
+      },
+      /** The owner's own codes, from a PASSKEY session only. Returned once. */
+      makeCodes: (session: string): string[] | undefined => { const w = who(); const ok = w && setup.grants ? access.checkPasskey(session, w, clock.now(), setup.endBefore()) : undefined; return ok ? access.makeOwnCodes(ok.id, setup.grants!(), clock.now()) : undefined; },
+      /** "Add a phone": the link's address for the owner's new phone (a PASSKEY session only). Returned once. */
+      addPhone: (session: string): { url: string; expiresAt: number } | undefined => {
+        const w = who(); const ok = w && setup.grants ? access.checkPasskey(session, w, clock.now(), setup.endBefore()) : undefined;
+        const made = ok ? access.addPhone(ok.id, setup.grants!(), clock.now()) : undefined;
+        return w && made ? { url: `${w.base}/setup/${made.token}`, expiresAt: made.expiresAt } : undefined;
+      },
+      cancelRemoval: (session: string): boolean => { const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), setup.endBefore()) : undefined; return ok ? access.cancelRemoval(setup.grants!(), clock.now()) : false; },
+      /** For the panel's probe (/status): whether the shop is locked (the owner holds a passkey) and the Operator's pending request. Counts and times only. */
+      lockState: () => { const g = setup.grants?.(); return { locked: access.locked(g, clock.now()), removal: access.pendingRemoval(g, clock.now()) }; },
     },
   };
 }
