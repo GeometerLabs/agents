@@ -7,3 +7,5 @@ For local Operators (18 and over). This is the short guide for the visit. The ow
 **At the visit.** Bring [the card of what to ask for](ask-card.en.md). Set the shop up on the panel (name, town, what it sells, languages, the owner), then make the owner's first sign-in code on the shop's page and let the owner scan it with their own phone.
 
 **What to say.** "Your shop's page shows what you have today. Nothing is shown on Streetlist or in search until you switch it on yourself."
+
+<!-- Made by prices/render.ts from guide.en.src.md and the price list in force. Edit that file, then run: node prices/render.ts -->
