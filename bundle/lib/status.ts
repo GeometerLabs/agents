@@ -29,6 +29,8 @@ export interface ShopStatus {
   usage?: UsageTotals & { at: string };
   /** The unfinished-work list's counts by kind, as of the last export (modules/unfinished). Ops sends them as `open_obligations`. Kind ids and counts only. */
   obligations?: { counts: Record<string, number>; at: string };
+  /** A listings-only shop the shared process has PAUSED (it kept stopping its worker thread; modules/runtime/shared-pool.ts). Written by the deployer's loop from `/shared/shops`, cleared when it is not paused. `until` is ISO; `why` is the process's own words (for `geometer status`; the panel shows a fixed plain line). */
+  paused?: { until: string; why: string; at: string };
   /** The shop's licence (B13), worked out on this server from the signed lease (lib/licence.ts). The panel shows it; the runtime reads its own copy (client/licence.json). */
   licence?: StatusLicence & { at: string };
   /**

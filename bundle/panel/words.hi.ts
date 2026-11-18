@@ -71,7 +71,7 @@ export const hi: Words = {
     status: "स्थिति", versions: (p, b) => `टेम्पलेट ${p}, बंडल ${b}`, lastDeploy: (at) => `पिछला अपडेट: ${at}`, neverDeployed: "अभी तक अपडेट नहीं हुआ।",
     limitsHeading: "सीमाएँ", unprovable: (l) => `इनकी अलग से जाँच नहीं हो सकती: ${l}`,
     backups: "बैकअप", backupCopy: (at) => `सर्वर के बाहर आख़िरी कॉपी: ${at}`, backupNone: "सर्वर के बाहर अभी कोई कॉपी नहीं है।",
-    backupDrill: (at, ok) => `आख़िरी बार कॉपी से डेटा वापस लाकर जाँचा: ${at}, ${ok ? "मेल खा गया" : "मेल नहीं खाया"}`, backupDrillNone: "कॉपी से डेटा वापस लाकर जाँचना अभी हुआ नहीं।",
+    backupDrill: (at, ok) => `आख़िरी बार कॉपी से डेटा वापस लाकर जाँचा: ${at}, ${ok ? "मेल खा गया" : "मेल नहीं खाया"}`, backupDrillNone: "कॉपी से डेटा वापस लाकर जाँचना अभी हुआ नहीं।", pausedLine: (until) => `${until} तक रुकी हुई: इस दुकान के पेज बार-बार फेल हुए। इसके ग्राहकों को "जल्द वापस" पेज दिखता है। इसकी फ़ाइलें देखिए, या Geometer को लिखिए।`,
     settings: "एजेंट इस दुकान के बारे में क्या जानता है", settingsEdit: "सेटिंग बदलें", summaryServices: "सेवाएँ", summaryHours: "खुलने का समय", hoursRange: (o, c) => `${o} से ${c} तक`, summaryClosed: "बंद",
     summaryDeposit: (a, m) => `जमा राशि ${a}; इसके लिए स्लॉट ${m} मिनट रोका जाता है`,
     summaryCancel: (h, l) => `कम से कम ${h} घंटे पहले रद्द करने पर जमा राशि लौट जाती है; ${l} से ज़्यादा रिफंड देने से पहले यह आपसे पूछता है`, summaryLanguages: "ग्राहकों की भाषाएँ", summaryOwner: "मालिक का WhatsApp",

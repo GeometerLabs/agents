@@ -18,11 +18,12 @@ everything else with the assistant.
               the inbox's front (modules/channels/front.ts)  ·  ops  ·  the deployer
                                    │  http://door-listings:8780/shop/<name>/...
                                    ▼
-   ┌──────────────────────  rt-listings: ONE container, ONE process  ───────────────────────────────────┐
-   │   router (modules/runtime/shared.ts)         looks at /shops every few seconds                      │
-   │   /shop/glow-pets/…  ──►  shop "glow-pets"   own server 127.0.0.1:p1 · own tokens · own store       │
-   │   /shop/sree-cycles/… ──► shop "sree-cycles" own server 127.0.0.1:p2 · own tokens · own store       │
-   │   /healthz /readyz /shared/shops             (the process is up; which shops it holds)              │
+   ┌──────────────────────  rt-listings: ONE container, ONE main thread + K worker threads  ───────────┐
+   │   router (modules/runtime/shared.ts)         looks at /shops every few seconds, pings the workers  │
+   │   /shop/<name>/…  ──►  the shop's own server 127.0.0.1:p, inside the worker that holds it           │
+   │        worker 1: glow-pets, …        worker 2: sree-cycles, …       (K = 4; ≤ 256 MB each)          │
+   │        quarantine worker: one shop that hurt a worker twice (128 MB)   ·   paused: "back soon"      │
+   │   /healthz /readyz /shared/shops             (the process is up; which shops it holds or paused)   │
    └─────────────────────────────────────────────────────────────────────────────────────────────────────┘
         │ read-only mounts                                             │ one volume, a folder per shop
         │  /shops/<shop>/client/   settings.json, runtime.json,        │  /home/node/<shop>/data/agent.db      (the store)
@@ -43,6 +44,28 @@ A container per shop (with its Guards, forwarders, network and reports folder) i
 shop has nothing to guard: it takes no payment and sends no message. A container, a door and a network for each would cost more than the shop earns (nothing, by design), and would cap a
 server at a few hundred shops. One process holds hundreds, each a few MB. What the shared process costs is that the shops live in one operating-system process, so **the code keeps them
 apart by construction** (next section), and the **one thing a shop can reach is the model Guard**.
+
+### What the shared process costs, and what keeps one shop from taking the others down
+
+The shops share one operating-system process, so the code keeps their **data** apart by construction (next section). Their **failures** are kept apart in layers (the full account is the
+CRASH CONTAINMENT header of `modules/runtime/shared.ts`): a handler's error is a 500 for that request; a shop that stays broken is restarted alone with a back-off; and, since 19 Nov 2026, a
+shop that **blocks the event loop** (an endless loop, a pathological regex) or **runs out of memory** takes down only the **worker thread** it runs in.
+
+* **A pool, not a thread per shop.** Measured on Node 26: one worker thread that loads this template's start code and opens an HTTP server costs about **33 MB** and starts in about **0.17 s**.
+  Hundreds of always-on threads would not fit a 4 GB server, so the shops share **K worker threads** (`SHARED_WORKERS`, default 4; a new shop goes to the least loaded). Each shop's own server
+  still listens on the loopback address, now inside its worker; the router forwards by port as before.
+* **Memory limit.** Each worker has an old-generation heap limit (`SHARED_WORKER_MB`, default 256). A worker that runs out of memory exits and is started again with its shops.
+* **Watchdog.** The main thread pings every worker every 2 s; one that has not answered for 10 s is `terminate()`d (which stops even a busy loop) and started again. Its shops get a quick
+  `503` with `Retry-After` meanwhile; the other workers answer throughout.
+* **Finding the culprit.** A worker writes the shop it is running into a shared slot (around every request, tick and task), so the main thread can read it even when the worker is stuck.
+  That shop gets a **strike**; if the slot is empty, every shop of that worker with a request in flight does.
+* **Quarantine.** **2 strikes in 30 minutes** move a shop to a worker of its own with **half the memory** (128 MB). **3 failures there within an hour** **pause** it: its pages answer a
+  "back soon" page (`server/back-soon.ts`, in the visitor's language: `?lang=`, the browser's, or the shop's own; the Operator's Call and WhatsApp when the shop's `pages.json` names one).
+  The process says so in its log (`<shop>: PAUSED ...`) and names the shop in `/readyz` and `/shared/shops` (`paused`), which is where the Operator and the deployer look. It is tried
+  again after **6 hours**, or at once when its files change; on that second chance one more failure pauses it again.
+* **Fixed cost.** About 33 MB x 4 workers = 130 MB, plus a quarantine worker (about 33 MB, 128 MB at most) only for a shop that earned it. `SHARED_WORKERS=0` runs the shops in the main thread
+  with no isolation (the way it ran before), for a machine too small for threads.
+* **Not contained:** a shop that is only **slow** (a long but finite stretch under 10 s) holds its worker's other shops up for that long and is not struck (`bundle/Deferred.md`).
 
 ### Adding, changing and letting go of a shop (no new container, no restart)
 

@@ -42,7 +42,7 @@ export interface Words {
   shop: {
     status: string; versions(pathway: string, bundle: string): string; lastDeploy(at: string): string; neverDeployed: string;
     limitsHeading: string; unprovable(list: string): string;
-    backups: string; backupCopy(at: string): string; backupNone: string; backupDrill(at: string, matched: boolean): string; backupDrillNone: string;
+    backups: string; backupCopy(at: string): string; backupNone: string; backupDrill(at: string, matched: boolean): string; backupDrillNone: string; /** A listings-only shop the shared process paused: when it ends. */ pausedLine(until: string): string;
     settings: string; settingsEdit: string; summaryServices: string; summaryHours: string; hoursRange(open: string, close: string): string; summaryClosed: string; summaryDeposit(amount: string, minutes: number): string;
     summaryCancel(hours: number, limit: string): string; summaryLanguages: string; summaryOwner: string;
     activity: string; activityNote: string; noRecord: string; waiting(n: number): string; needBuilder(n: number): string;
@@ -308,7 +308,7 @@ export const en: Words = {
   shop: {
     status: "Status", versions: (p, b) => `Template ${p}, bundle ${b}`, lastDeploy: (at) => `Last update: ${at}`, neverDeployed: "Not updated yet.",
     limitsHeading: "Limits", unprovable: (l) => `These cannot be tested on their own: ${l}`,
-    backups: "Backups", backupCopy: (at) => `Last copy off the server: ${at}`, backupNone: "No copy off the server yet.", backupDrill: (at, ok) => `Last restore check: ${at}, ${ok ? "it matched" : "it did not match"}`, backupDrillNone: "No restore check yet.",
+    backups: "Backups", backupCopy: (at) => `Last copy off the server: ${at}`, backupNone: "No copy off the server yet.", backupDrill: (at, ok) => `Last restore check: ${at}, ${ok ? "it matched" : "it did not match"}`, backupDrillNone: "No restore check yet.", pausedLine: (until) => `Paused until ${until}: this shop's pages failed again and again. Its visitors see "back soon". Look at its files, or write to Geometer.`,
     settings: "What the agent knows about this shop", settingsEdit: "Change settings", summaryServices: "Services", summaryHours: "Open", hoursRange: (o, c) => `${o} to ${c}`, summaryClosed: "closed",
     summaryDeposit: (a, m) => `Deposit ${a}; the slot is held ${m} minutes while it is paid`,
     summaryCancel: (h, l) => `Deposit goes back if cancelled at least ${h} hours before; it asks you before refunding more than ${l}`, summaryLanguages: "Customer languages", summaryOwner: "Owner's WhatsApp",
