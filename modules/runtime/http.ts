@@ -758,13 +758,16 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
     if (path === "/internal/channel/owner-file") {
       only("GET");
       const session = header(req, OWNER_SESSION_HEADER);
-      if (session === undefined || options.ownerSignin?.check(session) === undefined) return send(res, 403, { error: "The owner's session is not valid." });
+      const checked = session === undefined ? undefined : options.ownerSignin?.check(session);
+      if (session === undefined || checked === undefined) return send(res, 403, { error: "The owner's session is not valid." });
       if (!options.ownerFile) throw new HttpError(404, "There is nothing here.");
       const take = url.searchParams.get("take");
       if (take === null) return send(res, 200, options.ownerFile.state());
       const got = OWNER_FILE_ID.test(take) ? options.ownerFile.take(take) : undefined;
       if (!got) throw new HttpError(404, "There is nothing here.");
-      recordAccess("file_taken", session, undefined, got.meta.ask);
+      // the record names the session by its short id, as every other owner_access line does, NEVER by the token the browser sent: the record is read by the
+      // deployer and kept in backups, and a live session token there would let anyone who reads it act as the owner (found by the Go port's contract, 19 Nov)
+      recordAccess("file_taken", checked.id, undefined, got.meta.ask);
       res.writeHead(200, { "content-type": "application/gzip", "content-disposition": `attachment; filename="${got.meta.name}"`, "content-length": got.bytes.length, "cache-control": "no-store", "x-content-type-options": "nosniff" });
       res.end(got.bytes);
       return;
