@@ -114,7 +114,8 @@ test("finding 1: after the lock a changed owner number keeps the owner's passkey
     assert.equal(w.access.check(byLink.session, NEW, T0 + HOUR + 2), undefined, "a session for the new number is refused for owner actions");
     // the request: seen by the runtime, shown on the owner's phone, cancellable
     w.access.watchOwner(NEW, T0 + HOUR + 5);
-    assert.deepEqual(w.access.takeNotes().map((n) => n.what), ["owner_change_asked"]);
+    const asked = w.access.takeNotes(); assert.deepEqual(asked.map((n) => n.what), ["owner_change_asked"]);
+    for (const n of asked) if ("key" in n) w.access.markTold(n.key); // what the tick does once the push and the record line are out
     const v = w.access.phonesView(a.sid, NEW, rp, f0, T0 + HOUR + 6)!;
     assert.deepEqual([v.removal?.kind, v.removal?.effectiveAt], ["owner_change", T0 + HOUR + 5 + REMOVAL_WAIT_MS]);
     assert.equal(w.access.passkeys(NEW, rp, w.access.passkeysBefore(f0, T0 + HOUR + 7)).length, 1, "nothing applied yet");
@@ -333,7 +334,8 @@ test("re-review 9: a request is extended by a restart once, not again at every r
     const ask = pend(T0 + HOUR);
     w.access.sync(ask, T0 + HOUR); w.access.takeNotes();
     w.access.noteStart(T0 + 40 * HOUR);
-    assert.deepEqual(w.access.takeNotes().map((n) => n.what), ["removal_extended"]);
+    const ext = w.access.takeNotes(); assert.deepEqual(ext.map((n) => n.what), ["removal_extended"]);
+    for (const n of ext) if ("key" in n) w.access.markTold(n.key);
     const once = w.access.pendingRemoval(ask, T0 + 40 * HOUR + 1)!.effectiveAt;
     w.access.noteStart(T0 + 60 * HOUR);
     assert.deepEqual(w.access.takeNotes(), [], "a second restart does not extend it again");

@@ -132,7 +132,9 @@ export function openOwnerAccess(file: string) {
     -- the Operator's removal requests as this store timed them: seen_at is when WE first saw the request, effective_at = seen_at + REMOVAL_WAIT_MS
     CREATE TABLE IF NOT EXISTS removals (
       asked_at TEXT PRIMARY KEY, asked_by TEXT NOT NULL, seen_at INTEGER NOT NULL, effective_at INTEGER NOT NULL,
-      state TEXT NOT NULL CHECK (state IN ('pending', 'cancelled', 'applied', 'withdrawn')), at INTEGER NOT NULL
+      state TEXT NOT NULL CHECK (state IN ('pending', 'cancelled', 'applied', 'withdrawn')), at INTEGER NOT NULL,
+      -- 1 once the owner's phones were told and the record line written (the tick does both, then sets this); see takeNotes
+      told INTEGER NOT NULL DEFAULT 1
     );
     -- what each phone (a passkey, or a session made by a link) has been told about: new passkeys made after "through" are announced to it until it dismisses them
     CREATE TABLE IF NOT EXISTS phone_seen (subject TEXT PRIMARY KEY, through INTEGER NOT NULL);
@@ -141,6 +143,9 @@ export function openOwnerAccess(file: string) {
   if (!(db.prepare("PRAGMA table_info(passkeys)").all() as { name: string }[]).some((c) => c.name === "label")) db.exec("ALTER TABLE passkeys ADD COLUMN label TEXT");
   // at most one restart-extension per request (review item 9): a runtime restarted every few hours must not postpone a request for ever
   if (!(db.prepare("PRAGMA table_info(removals)").all() as { name: string }[]).some((c) => c.name === "extended")) db.exec("ALTER TABLE removals ADD COLUMN extended INTEGER NOT NULL DEFAULT 0");
+  // The request notice used to live only in memory (a restart before the next tick lost the push and the record line while the 48 hours still ran). `told` is kept in the file:
+  // a store made before it has every old request counted as told (their notices were sent or are lost already); new rows are written with told = 0 below.
+  if (!(db.prepare("PRAGMA table_info(removals)").all() as { name: string }[]).some((c) => c.name === "told")) db.exec("ALTER TABLE removals ADD COLUMN told INTEGER NOT NULL DEFAULT 1");
   for (const t of ["own_codes", "own_setups"]) if (!(db.prepare(`PRAGMA table_info(${t})`).all() as { name: string }[]).some((c) => c.name === "by_passkey")) db.exec(`ALTER TABLE ${t} ADD COLUMN by_passkey TEXT`);
   type LinkRow = { id: string; made_at: number; expires_at: number; state: string; owner_key: string; base: string };
   type SessionRow = { id: string; link_id: string; made_at: number; expires_at: number; ended_at: number | null; owner_key: string; base: string };
@@ -226,8 +231,9 @@ export function openOwnerAccess(file: string) {
   const cancelledRecently = (now: number): boolean => db.prepare("SELECT 1 FROM removals WHERE state = 'cancelled' AND at > ?").get(now - 24 * 60 * 60_000) !== undefined;
   const endSessionsBefore = (t: number, now: number, why: string): void => { db.prepare("UPDATE sessions SET ended_at = ?, ended_why = ? WHERE ended_at IS NULL AND made_at < ?").run(now, why, t); };
   /** Things the runtime should write in the record once (the tick does), found while reading the files. */
-  type Note = { what: "reset"; at: number; reason: string; by: string } | { what: "removal_asked"; askedBy: string; askedAt: string; effectiveAt: number } | { what: "removal_applied"; at: number } | { what: "owner_change_asked"; effectiveAt: number } | { what: "removal_extended"; kind: "removal" | "owner_change"; askedBy: string; effectiveAt: number };
-  const notes: Note[] = [];
+  type Note = { what: "reset"; at: number; reason: string; by: string } | { what: "removal_asked"; askedBy: string; askedAt: string; effectiveAt: number; key: string } | { what: "removal_applied"; at: number } | { what: "owner_change_asked"; effectiveAt: number; key: string } | { what: "removal_extended"; kind: "removal" | "owner_change"; askedBy: string; effectiveAt: number; key: string };
+  /** In-memory notes: only the ones that are not a request (a reset, a request applied). A request's notice is a row in `removals` with told = 0, so it survives a restart. */
+  const notes: Extract<Note, { what: "reset" | "removal_applied" }>[] = [];
   /** Remember the QR and the card hashes the file holds now, the first time this store sees each. */
   const noteSeen = (file: OwnerGrants | undefined, firstSeen: number): void => {
     // anything the panel's file shows during a reset window is born void: it must not wake up when the window closes (the first passkey after the reset would
@@ -297,8 +303,7 @@ export function openOwnerAccess(file: string) {
       // a request the owner has no way to have seen yet starts its wait NOW, whatever time the file says: a back-dated request must not apply at once
       db.prepare("UPDATE removals SET state = 'withdrawn', at = ? WHERE state = 'pending' AND asked_at NOT LIKE 'owner-change:%'").run(now);
       const effectiveAt = now + REMOVAL_WAIT_MS;
-      db.prepare("INSERT INTO removals (asked_at, asked_by, seen_at, effective_at, state, at) VALUES (?, ?, ?, ?, 'pending', ?)").run(p.askedAt, p.askedBy, now, effectiveAt, now);
-      notes.push({ what: "removal_asked", askedBy: p.askedBy, askedAt: p.askedAt, effectiveAt });
+      db.prepare("INSERT INTO removals (asked_at, asked_by, seen_at, effective_at, state, at, told) VALUES (?, ?, ?, ?, 'pending', ?, 0)").run(p.askedAt, p.askedBy, now, effectiveAt, now);
     }
     for (const due of db.prepare("SELECT asked_at, effective_at FROM removals WHERE state = 'pending' AND effective_at <= ?").all(now) as { asked_at: string; effective_at: number }[]) {
       // nobody cancelled in time: every passkey made before the moment stops, every session made before it ends, and the gate opens for a new QR
@@ -345,7 +350,17 @@ export function openOwnerAccess(file: string) {
     /** Read the files into this store (see `reconcile`); the runtime's tick calls it so a request or a reset is seen even when nobody opens a page. */
     sync(file: OwnerGrants | undefined, now: number): void { reconcile(file, now); },
     /** What `sync` found that the record should say, once each. */
-    takeNotes(): Note[] { return notes.splice(0); },
+    takeNotes(): Note[] {
+      // Why from the file: a reconcile done by an HTTP call (the panel's /status probe) followed by a restart before the next tick used to lose the request's notice, while its
+      // 48 hours still ran: the owner got no push and `geometer owner requests` never listed it. Every request still pending and not yet told is returned, until `markTold`.
+      const untold = (db.prepare("SELECT asked_at, asked_by, effective_at, extended FROM removals WHERE state = 'pending' AND told = 0 ORDER BY seen_at").all() as { asked_at: string; asked_by: string; effective_at: number; extended: number }[]).map((r): Note =>
+        r.asked_at.startsWith("owner-change:") ? (r.extended ? { what: "removal_extended", kind: "owner_change", askedBy: r.asked_by, effectiveAt: r.effective_at, key: r.asked_at } : { what: "owner_change_asked", effectiveAt: r.effective_at, key: r.asked_at })
+        : r.extended ? { what: "removal_extended", kind: "removal", askedBy: r.asked_by, effectiveAt: r.effective_at, key: r.asked_at }
+        : { what: "removal_asked", askedBy: r.asked_by, askedAt: r.asked_at, effectiveAt: r.effective_at, key: r.asked_at });
+      return [...notes.splice(0), ...untold];
+    },
+    /** The tick has pushed and written the record line for this request: never again. Called AFTER both, so a crash between them tells twice rather than never. */
+    markTold(key: string): void { db.prepare("UPDATE removals SET told = 1 WHERE asked_at = ?").run(key); },
     /**
      * The runtime has just (re)started. A request that would fall due while it was not running, or within a day of its start, is moved to a day after the start and
      * said again: an owner whose phones were off, or an outage nobody chose, must not lose the wait (a request must be SEEN for its whole time to count). Called once.
@@ -353,8 +368,8 @@ export function openOwnerAccess(file: string) {
     noteStart(now: number): void {
       const rows = db.prepare("SELECT asked_at, asked_by, effective_at FROM removals WHERE state = 'pending' AND extended = 0 AND effective_at < ?").all(now + 24 * 60 * 60_000) as { asked_at: string; asked_by: string; effective_at: number }[];
       for (const r of rows) {
-        db.prepare("UPDATE removals SET effective_at = ?, extended = 1 WHERE asked_at = ?").run(now + 24 * 60 * 60_000, r.asked_at);
-        notes.push({ what: "removal_extended", kind: r.asked_at.startsWith("owner-change:") ? "owner_change" : "removal", askedBy: r.asked_by, effectiveAt: now + 24 * 60 * 60_000 });
+        // told = 0: the owner is told the new time too, and a restart before the tick must not lose that
+        db.prepare("UPDATE removals SET effective_at = ?, extended = 1, told = 0 WHERE asked_at = ?").run(now + 24 * 60 * 60_000, r.asked_at);
       }
     },
 
@@ -395,12 +410,10 @@ export function openOwnerAccess(file: string) {
       if (!had && cancelledRecently(now)) return;
       const effectiveAt = now + REMOVAL_WAIT_MS;
       if (had) {
-        db.prepare("UPDATE removals SET state = 'pending', seen_at = ?, effective_at = ?, at = ?, extended = 0 WHERE asked_at = ?").run(now, effectiveAt, now, key);
-        notes.push({ what: "owner_change_asked", effectiveAt });
+        db.prepare("UPDATE removals SET state = 'pending', seen_at = ?, effective_at = ?, at = ?, extended = 0, told = 0 WHERE asked_at = ?").run(now, effectiveAt, now, key);
         return;
       }
-      db.prepare("INSERT INTO removals (asked_at, asked_by, seen_at, effective_at, state, at) VALUES (?, 'the owner number', ?, ?, 'pending', ?)").run(key, now, effectiveAt, now);
-      notes.push({ what: "owner_change_asked", effectiveAt });
+      db.prepare("INSERT INTO removals (asked_at, asked_by, seen_at, effective_at, state, at, told) VALUES (?, 'the owner number', ?, ?, 'pending', ?, 0)").run(key, now, effectiveAt, now);
     },
     /** The owner cancels the Operator's request. True when one was waiting. The same request, asked again, is not heard again (a new request needs a new `askedAt`). */
     cancelRemoval(file: OwnerGrants | undefined, now: number): boolean {

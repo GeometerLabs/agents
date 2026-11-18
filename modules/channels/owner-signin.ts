@@ -201,12 +201,15 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
           else if (n.what === "removal_asked") {
             line({ what: "removal_asked", by: n.askedBy, effectiveAt: new Date(n.effectiveAt).toISOString() });
             setup.alert?.(REMOVAL_ALERT(n.askedBy));
+            access.markTold(n.key); // after the line and the push, so a crash between them tells again rather than never
           } else if (n.what === "removal_extended") {
             line({ what: "removal_extended", effectiveAt: new Date(n.effectiveAt).toISOString() });
             setup.alert?.(n.kind === "owner_change" ? OWNER_CHANGE_ALERT : REMOVAL_ALERT(n.askedBy));
+            access.markTold(n.key);
           } else if (n.what === "owner_change_asked") {
             line({ what: "owner_change_asked", effectiveAt: new Date(n.effectiveAt).toISOString() });
             setup.alert?.(OWNER_CHANGE_ALERT);
+            access.markTold(n.key);
           } else line({ what: "removal_applied", at: new Date(n.at).toISOString() });
         }
       }
