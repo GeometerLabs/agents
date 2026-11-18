@@ -56,7 +56,8 @@ export interface PoolHooks {
   /** A shop could not be started again after its thread was: let it go and try it after the usual back-off. */
   lost(name: string, why: string): void;
 }
-export interface PoolStatus { workers: { id: string; quarantine: boolean; running: boolean; shops: string[] }[]; quarantined: string[]; paused: string[] }
+/** `pausedDetail` is what the deployer copies into the shop's status file for the Operator: why, and when the pause ends (epoch ms). */
+export interface PoolStatus { workers: { id: string; quarantine: boolean; running: boolean; shops: string[] }[]; quarantined: string[]; paused: string[]; pausedDetail: { shop: string; why: string; until: number }[] }
 export interface Pool {
   /** Start one shop in a thread (a quarantine thread when it is quarantined). `fingerprint` changing forgets its strikes and its pause: someone fixed it. */
   start(paths: ShopPaths, fingerprint: string): Promise<HeldShop>;
@@ -65,7 +66,7 @@ export interface Pool {
 }
 
 /** What the pool remembers about a shop by name, so a shop that is stopped and started again does not get a clean sheet; dropped when its fingerprint (its files) changes. */
-interface Memory { fingerprint: string; strikes: number[]; failures: number[]; quarantined: boolean; pausedUntil: number; timer?: NodeJS.Timeout }
+interface Memory { fingerprint: string; strikes: number[]; failures: number[]; quarantined: boolean; pausedUntil: number; pausedWhy?: string; timer?: NodeJS.Timeout }
 type State = "starting" | "up" | "restarting" | "paused";
 interface Rec { name: string; idx: number; paths: ShopPaths; w: W; state: State; epoch: number; inflight: number; held: HeldShop }
 interface W {
@@ -182,7 +183,7 @@ export function createPool(o: PoolOptions, hooks: PoolHooks): Pool {
 
   function pause(name: string, why: string): void {
     const m = mem(name);
-    m.pausedUntil = now() + t.pause; m.failures = [];
+    m.pausedUntil = now() + t.pause; m.pausedWhy = why; m.failures = [];
     log(`${name}: PAUSED: ${why}. Its pages say "back soon"; it is tried again in ${Math.round(t.pause / 3_600_000)} hours or when its files change. The Operator should look at it.`);
     const rec = recs.get(name);
     if (rec) { rec.w.recs.delete(name); rec.state = "paused"; rec.held.server.port = 0; armResume(rec); retire(rec.w); }
@@ -280,6 +281,7 @@ export function createPool(o: PoolOptions, hooks: PoolHooks): Pool {
       workers: [...pool, ...quarantine.values()].map((w) => ({ id: w.id, quarantine: w.quarantine, running: !!w.worker, shops: [...w.recs.keys()].sort() })),
       quarantined: [...memory].filter(([n, m]) => m.quarantined && recs.has(n)).map(([n]) => n).sort(),
       paused: [...recs.values()].filter((r) => r.state === "paused").map((r) => r.name).sort(),
+      pausedDetail: [...recs.values()].filter((r) => r.state === "paused").map((r) => ({ shop: r.name, why: mem(r.name).pausedWhy ?? "", until: mem(r.name).pausedUntil })).sort((a, b) => a.shop.localeCompare(b.shop)),
     }),
     async close() {
       closed = true;

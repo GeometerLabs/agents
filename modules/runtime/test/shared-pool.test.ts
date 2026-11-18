@@ -72,7 +72,7 @@ test("K workers share the shops out evenly, and a normal request goes through un
   const r = await call(p, "c", "/anything?x=1", { authorization: "Bearer t" });
   assert.deepEqual(r.body, { shop: "c", path: "/anything?x=1", auth: "Bearer t" });
   assert.equal((await call(p, "nobody")).status, 404);
-  assert.deepEqual((await (await fetch(`${p.url}/shared/shops`)).json()), { shops: ["a", "b", "c", "d"], paused: [] });
+  assert.deepEqual((await (await fetch(`${p.url}/shared/shops`)).json()), { shops: ["a", "b", "c", "d"], paused: [], pausedDetail: [] });
 });
 
 test("a shop that loops forever: only its worker's shops are out, briefly, with a quick 503; the others answer throughout; the slot names the culprit, and two strikes put it on a worker of its own", async () => {

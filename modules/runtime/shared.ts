@@ -49,7 +49,7 @@ import { createServer, request as httpRequest } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { join } from "node:path";
 import { createPool } from "./shared-pool.ts";
-import type { Pool, PoolOptions } from "./shared-pool.ts";
+import type { Pool, PoolOptions, PoolStatus } from "./shared-pool.ts";
 
 /** A shop's name, as everywhere (fleet's page slugs, the compose names): lower case letters, digits and dashes. */
 export const SHOP_NAME = /^[a-z0-9][a-z0-9-]{0,39}$/u;
@@ -133,7 +133,7 @@ export interface SharedProcess {
   /** The shops held now, by name. */
   held(): string[];
   /** The pool's threads, the shops in quarantine and the shops paused (empty without a pool). */
-  pool(): { workers: { id: string; quarantine: boolean; running: boolean; shops: string[] }[]; quarantined: string[]; paused: string[] };
+  pool(): PoolStatus;
   stop(): Promise<void>;
 }
 
@@ -270,7 +270,7 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
     const url = new URL(req.url ?? "/", "http://shared");
     // paused/quarantined: the one place the Operator (and the deployer's checks) can see a shop that keeps hurting its worker; the process itself stays healthy
     if (url.pathname === "/healthz" || url.pathname === "/readyz") { const st = pool?.status(); return json(res, 200, { ok: true, shops: heldShops.size, ...(st ? { paused: st.paused, quarantined: st.quarantined } : {}) }); }
-    if (url.pathname === "/shared/shops" && req.method === "GET") return json(res, 200, { shops: [...new Set([...heldShops.keys(), ...closing])].sort(), ...(pool ? { paused: pool.status().paused } : {}) });
+    if (url.pathname === "/shared/shops" && req.method === "GET") return json(res, 200, { shops: [...new Set([...heldShops.keys(), ...closing])].sort(), ...(pool ? { paused: pool.status().paused, pausedDetail: pool.status().pausedDetail } : {}) });
     const m = SHOP_ROUTE.exec(url.pathname);
     if (m) return forward(req, res, m[1], m[2] ?? "/", url.search);
     json(res, 404, { error: "There is nothing here." });
@@ -302,7 +302,7 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
   return {
     port, url: `http://${(o.host ?? "127.0.0.1").includes(":") ? `[${o.host}]` : (o.host ?? "127.0.0.1")}:${port}`,
     scan, held: () => [...new Set([...heldShops.keys(), ...closing])].sort(),
-    pool: () => pool?.status() ?? { workers: [], quarantined: [], paused: [] },
+    pool: () => pool?.status() ?? { workers: [], quarantined: [], paused: [], pausedDetail: [] },
     async stop() {
       clearInterval(timer);
       process.off("unhandledRejection", onRejection);

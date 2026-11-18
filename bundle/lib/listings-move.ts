@@ -34,6 +34,17 @@ export async function sharedHeld(ctx: Context): Promise<string[] | undefined> {
   try { const j = JSON.parse(r.stdout) as { shops?: unknown }; return Array.isArray(j.shops) ? j.shops.filter((x): x is string => typeof x === "string") : undefined; } catch { return undefined; }
 }
 
+/** What `/shared/shops` says about shops the process has PAUSED (shared-pool.ts), or undefined when it cannot be asked: the deployer copies it into the shops' status files (lib/listings-paused.ts). */
+export async function sharedHeldDetail(ctx: Context): Promise<{ pausedDetail: { shop: string; why: string; until: number }[] } | undefined> {
+  const r = await compose(ctx, ["exec", "-T", SHARED.runtime, "wget", "-q", "-O", "-", `http://127.0.0.1:${RUNTIME_PORT}/shared/shops`], { timeoutMs: 20_000 });
+  if (r.code !== 0) return undefined;
+  try {
+    const j = JSON.parse(r.stdout) as { pausedDetail?: unknown };
+    const list = Array.isArray(j.pausedDetail) ? j.pausedDetail : [];
+    return { pausedDetail: list.filter((x): x is { shop: string; why: string; until: number } => typeof x?.shop === "string" && typeof x?.until === "number").map((x) => ({ shop: x.shop, why: String(x.why ?? "").slice(0, 300), until: x.until })) };
+  } catch { return undefined; }
+}
+
 /** Is the shared container NOT running (so nothing has any shop's file open)? Only a clean "no running container" says so: an exec that failed for another reason is not an answer. */
 async function sharedIsDown(ctx: Context): Promise<boolean> {
   const r = await compose(ctx, ["ps", "--status", "running", "-q", SHARED.runtime], { timeoutMs: 20_000 });
