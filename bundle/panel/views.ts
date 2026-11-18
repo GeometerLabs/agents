@@ -335,7 +335,7 @@ ${p.plan ? html`<p class="big">${w.is(w.names[p.plan])}${p.innovator ? html` <sp
   ${price ? html`<li class="info"><span class="mark">·</span><span>${price}<br><small class="note">${w.priceNote}</small></span></li>` : ""}
 </ul>` : html`<p class="note">${w.none}</p>`}
 ${p.buttons ? html`<div class="notice" role="status"><b>${w.buttons}</b><br>${w.buttonsWhy[p.reason === "overage_unfunded" ? "overage_unfunded" : "other"]}</div>` : ""}
-${warns.length > 0 ? html`<ul class="plain">${warns.map((k) => html`<li class="warn"><span class="mark">!</span><span>${w.warn[k]}</span></li>`)}</ul>` : ""}`;
+${warns.length > 0 || p.budget ? html`<ul class="plain">${warns.map((k) => html`<li class="warn"><span class="mark">!</span><span>${w.warn[k]}</span></li>`)}${p.budget && !(p.budget.level === "full" && warns.includes("ai_cap")) ? html`<li class="warn"><span class="mark">!</span><span>${p.budget.level === "full" ? w.budget.full(formatRupees(p.budget.limitPaise)) : w.budget.warn(formatRupees(p.budget.usedPaise), formatRupees(p.budget.limitPaise))}</span></li>` : ""}</ul>` : ""}`;
 }
 
 function costTable(c: Ctx, cost: MonthlyCost): Raw {

@@ -17,6 +17,7 @@ import { WORDS as DOOR_WORDS } from "../services/door-pages.ts";
 import { FIRST_WORDS } from "../../modules/channels/words-owner-first.ts";
 import { PERSONALITIES, SMALL_TALK } from "../../modules/assistant/personality.ts";
 import { cardQuestion, write as writeAssistant } from "../../modules/assistant/words.ts";
+import { DAY_FEATURES } from "../../modules/assistant/words-budget.ts";
 import type { MessageData } from "../../modules/assistant/words.ts";
 import { NOTE_LABELS } from "../../modules/assistant/words-memory.ts";
 import { limitReviewLines } from "../../modules/assistant/limits-card.ts";
@@ -66,6 +67,17 @@ const presetsFlat = (language: Language): Map<string, string> => {
  * "Leave with your shop" (block S, 18 Nov 2026): the assistant's four answers (ids "leave.assistant.*"), the owner's page part with its two buttons and the file's states
  * ("leave.page.*"), and the Operator's panel lines, including what fleet was told and the stranded list ("leave.panel.*"), each with made-up values.
  */
+/**
+ * The shop's model budget (decision 60, 18 Nov 2026): what the assistant tells the owner when most of the month's budget is used, when it is used up, when a feature's day is used
+ * (one line per feature) and when a listing cannot be written for either reason (ids "budget.assistant.*"). The Operator's two lines are with "plan.budget.*" in the panel's words.
+ */
+const budgetFlat = (language: Language): Map<string, string> => {
+  const out = new Map<string, string>();
+  const back = { year: 2026, month: 12, day: 1 };
+  for (const line of ["warn", "full", "listing_month"] as const) out.set(`budget.assistant.${line}`, writeAssistant("budget_line", { line, backOn: back }, language, "Asia/Kolkata").text);
+  for (const feature of DAY_FEATURES) out.set(`budget.assistant.day.${feature}`, writeAssistant("budget_line", { line: "day", feature }, language, "Asia/Kolkata").text);
+  return out;
+};
 const leaveFlat = (language: Language): Map<string, string> => {
   const out = new Map<string, string>();
   for (const id of ["leave_file_asked", "leave_file_again", "leave_operator_asked", "leave_operator_again"] as const) out.set(`leave.assistant.${id}`, writeAssistant(id, {}, language, "Asia/Kolkata").text);
@@ -184,8 +196,8 @@ const chatIdentityFlat = (language: Language): Map<string, string> => flatWords(
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...listingsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...classesFlat(language), ...presetsFlat(language), ...keepFlat(language), ...leaveFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...listingsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...classesFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...leaveFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...listingsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...classesFlat(language), ...presetsFlat(language), ...keepFlat(language), ...leaveFlat(language), ...budgetFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...listingsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...classesFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...leaveFlat("en"), ...budgetFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 
