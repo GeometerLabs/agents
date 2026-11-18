@@ -60,6 +60,26 @@ export const names = {
   approverSecretFile: (person: string) => `approver_${person}_notify_secret`,
 };
 
+/**
+ * The shared process for listings-only shops (18 Nov 2026; modules/runtime/shared.ts): ONE container for every such shop on a server, with one door on the admin network, one
+ * network that holds only it and the model Guard, and ONE data volume with a folder per shop (`/home/node/<shop>/data/agent.db`, the same layout inside as any shop's volume,
+ * one level down). `index` is the shared process's place in the address plan: the shops' own are 1 to 199 (lib/state.ts), so 200 is never a shop's.
+ */
+export const SHARED = { runtime: "rt-listings", door: "door-listings", dataVolume: "rt-data-listings", net: "net-listings", index: 200 } as const;
+/** The compose volume that holds a shop's data: its own, or the shared one. */
+export const dataVolumeOf = (shop: string, shared: boolean): string => (shared ? SHARED.dataVolume : names.dataVolume(shop));
+/** A shop's database inside a mount of its data volume (the backup jobs mount the volume at `mount`): `<mount>/data/agent.db`, or one folder down for a shared shop. */
+export const dbPathOf = (mount: string, shop: string, shared: boolean): string => (shared ? `${mount}/${shop}/data/agent.db` : `${mount}/data/agent.db`);
+/** In the shared process's container: the shop's data folder, its client folder and its secrets folder. */
+export const sharedPaths = (shop: string) => ({ data: `${HOME_DIR}/${shop}/data`, client: `/shops/${shop}/client`, secrets: `/run/secrets/${shop}` });
+/** The secrets folder (under secrets/) that holds a shop's runtime credentials: `rt-<shop>`, or `rt-listings/<shop>` for a shop on the shared process (mounted whole at /run/secrets). */
+export const secretsHolderOf = (shop: string, shared: boolean): string => (shared ? `${SHARED.runtime}/${shop}` : names.runtime(shop));
+/**
+ * A listings-only shop's monthly AI allowance, until the caps stream's budgets land (modules/limits, 18 Nov 2026: "Geometer pays its model use within a small cap"). The numbers are
+ * the cap on the shop's own model use (drafting listings, answering the owner): provisional, named here so the one place to change is one line (Deferred.md).
+ */
+export const LISTINGS_ALLOWANCE = { messages: 300, costInr: 25 } as const;
+
 export interface GuardPlan {
   kind: GuardKind;
   /** The compose service (and container) name. */
@@ -311,6 +331,20 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
   const guards: GuardPlan[] = [];
   let runtime: Record<string, unknown> = {};
 
+  if (shop.settings && problems.length === 0 && template.shared) {
+    // A listings-only shop has NO Guard of its own and no container: it runs on the shared process. Its generated runtime.json says where its data and secrets are inside that process,
+    // that it listens on the loopback address on a port of its own choosing (the process routes to it), that it calls no service, and the model it may use for drafts: through the
+    // server's one model Guard with this shop's own credential, so the model Guard counts and limits each shop on its own.
+    const paths = sharedPaths(shop.name);
+    runtime = { mode: "live", host: "127.0.0.1", port: 0, dataDir: paths.data, ...(facts.tickSeconds !== undefined ? { tickSeconds: facts.tickSeconds } : {}), services: {}, allowance: { ...LISTINGS_ALLOWANCE } };
+    if (facts.parser) runtime.parser = { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${paths.secrets}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) };
+    runtime = withModelProvider(runtime, server.model, check, notes);
+    runtime = withTalk(runtime, facts.talk, server.model, check, notes);
+    runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
+    runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
+    if (!check(runtime, "/").ok) problems.push({ rule: "runtime-config", message: `${shop.name}: the generated runtime.json is not one this template accepts.` });
+    return { shop: shop.name, guards: [], runtime, notes, problems };
+  }
   if (shop.settings && problems.length === 0) {
     const identity = (kind: GuardKind) => ({ tenant: shop.name, name: `${shop.name}-${kind}`, version: versions[kind] ?? 1, reviewedBy: server.reviewedBy });
     const specs: Record<Exclude<GuardKind, "model">, LimitsSpec | undefined> = { razorpay: undefined, whatsapp: undefined, calendar: undefined, push: undefined };

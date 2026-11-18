@@ -5,7 +5,7 @@ import { BUNDLE_VERSION, fleetIdOf, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { ADMIN_FORWARD_PORT, HEALTH_PORT, INBOX_PORT, OPS_FLEET_DIR, OPS_STATUS_DIR, RELAY_PORT, REFRESHER_GUPSHUP_DIR, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
 import type { AgentDeploy, ShopDeploy } from "./compose.ts";
-import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
+import { GUARD_PORT, RUNTIME_PORT, SHARED, names } from "./shop.ts";
 import { stableJson } from "../lib/util.ts";
 import type { ApproverPerson } from "../../modules/approvals/people.ts";
 import type { WhatsAppRoute } from "./guards.ts";
@@ -65,7 +65,10 @@ const agentIp = (server: ServerConfig, a: AgentDeploy, kind: Three) => addressin
 const hasGuard = (a: AgentDeploy, kind: string) => a.guards.some((g) => g.kind === kind);
 
 /** Where the shared services reach a shop's runtime: its door, on the admin network. */
-const runtimeUrl = (server: ServerConfig, shop: ShopDeploy) => url(addressing(server).adminIp(shop.name, "door", shop.index), RUNTIME_PORT);
+const runtimeUrl = (server: ServerConfig, shop: ShopDeploy) => shop.shared
+  // a listings-only shop is one folder on the shared process: its own door is the shared one, and the shop's name is the first part of every path (modules/runtime/shared.ts)
+  ? `${url(addressing(server).adminIp(undefined, "door", SHARED.index), RUNTIME_PORT)}/shop/${shop.name}`
+  : url(addressing(server).adminIp(shop.name, "door", shop.index), RUNTIME_PORT);
 
 /** Where each Guard's admin port is reached: the forwarder's address on the admin network. */
 export function guardAdmin(server: ServerConfig, shop: Pick<ShopDeploy, "name" | "index">, kind: Three) {

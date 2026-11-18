@@ -8,9 +8,10 @@ import { readTermsFile } from "../../modules/terms/terms.ts";
 import type { TermsFile } from "../../modules/terms/terms.ts";
 import { serverPaths } from "./server.ts";
 import { stableJson, writeAtomic } from "./util.ts";
+import { clientDir } from "./client-dir.ts";
 
 export const termsSourceFile = (dir: string, shop: string): string => join(serverPaths(dir).shop(shop), "terms.json");
-const handedFile = (dir: string, shop: string): string => join(serverPaths(dir).generated, "shops", shop, "client", "terms.json");
+const handedFile = (dir: string, shop: string): string => join(clientDir(dir, shop), "terms.json");
 
 /** What the Operator entered for this shop, or undefined when nothing valid is there. */
 export function readShopTerms(dir: string, shop: string): TermsFile | undefined {
