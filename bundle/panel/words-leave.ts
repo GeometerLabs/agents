@@ -23,6 +23,11 @@ export interface PanelLeaveWords {
   strandedTitle: string;
   strandedNone: string;
   strandedRow: (shop: string, since: string, operator: string) => string;
+  /** After a move: what fleet (which bills the Operator) was told. */
+  fleetTold: (to: string) => string;
+  fleetWaiting: string;
+  fleetRefused: (why: string) => string;
+  fleetNoId: (to: string) => string;
 }
 
 export const PANEL_LEAVE: Record<Language, PanelLeaveWords> = {
@@ -43,6 +48,10 @@ export const PANEL_LEAVE: Record<Language, PanelLeaveWords> = {
     strandedTitle: "Owners waiting for another Operator",
     strandedNone: "No owner is waiting.",
     strandedRow: (shop, since, operator) => `${shop}: asked on ${since}. Operator now: ${operator}.`,
+    fleetTold: (to) => `Geometer's billing now has the shop with ${to}.`,
+    fleetWaiting: "Geometer's billing has not been told yet. It is tried again every few minutes; until then the shop is still billed to the old Operator.",
+    fleetRefused: (why) => `Geometer's billing did not take the move: ${why} Write to support and they will fix it by hand.`,
+    fleetNoId: (to) => `${to}'s account has no Operator id with Geometer, so billing was not told. Write to support and they will fix it by hand.`,
   },
   hi: {
     heading: "मालिक की अपनी माँगें",
@@ -61,6 +70,10 @@ export const PANEL_LEAVE: Record<Language, PanelLeaveWords> = {
     strandedTitle: "दूसरे Operator का इंतज़ार करते मालिक",
     strandedNone: "कोई मालिक इंतज़ार में नहीं है।",
     strandedRow: (shop, since, operator) => `${shop}: ${since} को माँगा। अभी का Operator: ${operator}।`,
+    fleetTold: (to) => `Geometer की बिलिंग में अब दुकान ${to} के पास है।`,
+    fleetWaiting: "Geometer की बिलिंग को अभी बताया नहीं जा सका। हर कुछ मिनट में फिर कोशिश होती है; तब तक दुकान का बिल पुराने Operator को जाता है।",
+    fleetRefused: (why) => `Geometer की बिलिंग ने बदलाव नहीं लिया: ${why} support को लिखिए, वे हाथ से ठीक कर देंगे।`,
+    fleetNoId: (to) => `${to} के खाते में Geometer के पास Operator आईडी नहीं है, इसलिए बिलिंग को नहीं बताया गया। support को लिखिए, वे हाथ से ठीक कर देंगे।`,
   },
   ml: {
     heading: "ഉടമയുടെ സ്വന്തം ആവശ്യങ്ങൾ",
@@ -79,6 +92,10 @@ export const PANEL_LEAVE: Record<Language, PanelLeaveWords> = {
     strandedTitle: "മറ്റൊരു Operator-നായി കാത്തിരിക്കുന്ന ഉടമകൾ",
     strandedNone: "ആരും കാത്തിരിക്കുന്നില്ല.",
     strandedRow: (shop, since, operator) => `${shop}: ${since} ന് ചോദിച്ചു. ഇപ്പോഴത്തെ Operator: ${operator}.`,
+    fleetTold: (to) => `Geometer-ന്റെ ബില്ലിംഗിൽ ഇപ്പോൾ കട ${to}-ന്റെ പക്കലാണ്.`,
+    fleetWaiting: "Geometer-ന്റെ ബില്ലിംഗിനെ ഇതുവരെ അറിയിക്കാനായില്ല. ഏതാനും മിനിറ്റിൽ വീണ്ടും ശ്രമിക്കും; അതുവരെ കടയുടെ ബിൽ പഴയ Operator-ക്കാണ്.",
+    fleetRefused: (why) => `Geometer-ന്റെ ബില്ലിംഗ് മാറ്റം സ്വീകരിച്ചില്ല: ${why} support-ന് എഴുതൂ, അവർ കൈകൊണ്ട് ശരിയാക്കും.`,
+    fleetNoId: (to) => `${to}-ന്റെ അക്കൗണ്ടിന് Geometer-ൽ Operator ഐഡി ഇല്ല, അതിനാൽ ബില്ലിംഗിനെ അറിയിച്ചില്ല. support-ന് എഴുതൂ, അവർ കൈകൊണ്ട് ശരിയാക്കും.`,
   },
   kn: {
     heading: "ಮಾಲೀಕರ ಸ್ವಂತ ಕೋರಿಕೆಗಳು",
@@ -97,6 +114,10 @@ export const PANEL_LEAVE: Record<Language, PanelLeaveWords> = {
     strandedTitle: "ಬೇರೆ Operator ಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಮಾಲೀಕರು",
     strandedNone: "ಯಾವ ಮಾಲೀಕರೂ ಕಾಯುತ್ತಿಲ್ಲ.",
     strandedRow: (shop, since, operator) => `${shop}: ${since} ರಂದು ಕೇಳಿದ್ದಾರೆ. ಈಗಿನ Operator: ${operator}.`,
+    fleetTold: (to) => `Geometer ಬಿಲ್ಲಿಂಗ್‌ನಲ್ಲಿ ಈಗ ಅಂಗಡಿ ${to} ಅವರ ಬಳಿ ಇದೆ.`,
+    fleetWaiting: "Geometer ಬಿಲ್ಲಿಂಗ್‌ಗೆ ಇನ್ನೂ ತಿಳಿಸಲಾಗಿಲ್ಲ. ಕೆಲವು ನಿಮಿಷಗಳಿಗೊಮ್ಮೆ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲಾಗುತ್ತದೆ; ಅಲ್ಲಿಯವರೆಗೆ ಅಂಗಡಿಯ ಬಿಲ್ ಹಳೆಯ Operator ಗೆ ಹೋಗುತ್ತದೆ.",
+    fleetRefused: (why) => `Geometer ಬಿಲ್ಲಿಂಗ್ ಬದಲಾವಣೆಯನ್ನು ಸ್ವೀಕರಿಸಲಿಲ್ಲ: ${why} support ಗೆ ಬರೆಯಿರಿ, ಅವರು ಕೈಯಿಂದ ಸರಿಪಡಿಸುತ್ತಾರೆ.`,
+    fleetNoId: (to) => `${to} ಅವರ ಖಾತೆಗೆ Geometer ನಲ್ಲಿ Operator ಐಡಿ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಬಿಲ್ಲಿಂಗ್‌ಗೆ ತಿಳಿಸಲಿಲ್ಲ. support ಗೆ ಬರೆಯಿರಿ, ಅವರು ಕೈಯಿಂದ ಸರಿಪಡಿಸುತ್ತಾರೆ.`,
   },
 };
 

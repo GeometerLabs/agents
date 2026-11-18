@@ -48,6 +48,8 @@ import type { Unmet } from "./golive.ts";
 import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
 import { createHandover } from "./handover.ts";
 import { createLeave } from "./leave.ts";
+import { readFleetMove, readFleetMoveStatus, writeFleetMove } from "../lib/fleet-move.ts";
+import { panelLeave } from "./words-leave.ts";
 import { createTerms } from "./terms.ts";
 import { termsLinkWord, termsPage } from "./views-terms.ts";
 import { createChannels } from "./channels.ts";
@@ -151,7 +153,11 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const goLive = createGoLive(config, shops, store);
   const confirmations = createConfirmations(store, now);
   // item 11d: a shop that moves to another Operator loses the owner's link the old Operator made; the new Operator makes the owner a new one
-  const handover = createHandover(shops, accounts, store, now, (shop) => channels.revoke(shop));
+  const handover = createHandover(shops, accounts, store, now, (shop, move) => {
+    channels.revoke(shop);
+    // block S: fleet must learn who holds the shop now, or the old Operator stays billed. Written for the deployer, which alone holds the deployment key (lib/fleet-move.ts)
+    writeFleetMove(config.serverDir, shop, { codeHash: move.codeHash, partner: accounts.byId(move.to.accountId)?.fleetPartner ?? null, to: move.to.accountName, at: new Date(now()).toISOString() });
+  });
   // block S: the owner's own asks (their file, another Operator), read from the record and the deployer's status; the Operator sees them and cannot stop them
   const leave = createLeave(config.serverDir, shops, handover, now);
   const terms = createTerms(shops, config.serverDir); // B72: shop terms agreed on WhatsApp; off unless geometer.json says so
@@ -773,12 +779,19 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     voicePageFor(r, ref.id);
   });
   // moving a shop to another Operator or builder (B38), with the owner's agreement from their own number
+  // block S: what fleet was told about the finished move (lib/fleet-move.ts), in the Operator's words; nothing while the deployer has not looked yet
+  const fleetNoteOf = (c: ReturnType<Req["ctx"]>, id: string): string | undefined => {
+    const st = readFleetMoveStatus(config.serverDir, id);
+    const mv = readFleetMove(config.serverDir, id);
+    const w = panelLeave(c.w);
+    return !st || !mv || st.codeHash !== mv.codeHash ? undefined : st.state === "told" ? w.fleetTold(mv.to) : st.state === "waiting" ? w.fleetWaiting : st.state === "refused" ? w.fleetRefused(st.message ?? "") : st.state === "no_id" ? w.fleetNoId(mv.to) : undefined;
+  };
   const handoverPageFor = (r: Req, id: string, extra: Partial<HandoverView> = {}): void => {
     const state = handover.check(id);
     const c = r.ctx();
     const base = { id, name: shops.settings(id)?.name ?? id, history: shops.assignment(id)?.history ?? [], values: { to: "", reason: "" } };
     const view: HandoverView =
-      state.state === "done" ? { ...base, stage: "done", to: state.assignment.current.accountName }
+      state.state === "done" ? { ...base, stage: "done", to: state.assignment.current.accountName, ...(fleetNoteOf(c, id) ? { fleetNote: fleetNoteOf(c, id)! } : {}) }
       : state.state === "waiting" ? { ...base, stage: extra.code ? "asked" : "waiting", to: state.move.to.accountName }
       : state.state === "expired" ? { ...base, stage: "expired" } : { ...base, stage: "form" };
     page(r, extra.problem ? 400 : 200, handoverPage(c, { ...view, ...extra, history: shops.assignment(id)?.history ?? [] }));
