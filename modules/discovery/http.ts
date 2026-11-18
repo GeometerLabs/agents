@@ -3,10 +3,12 @@
 // file and the network; the door forwards these addresses to it.
 //
 //   GET  /search            the people's page (HTML), or the JSON `directory-search/1` when the caller asks for JSON (`Accept: application/json` or `format=json`)
+//   POST /search/ask        "Ask in your own words" (only where the buyer's assistant is on, assistant.ts): a form-encoded body `ask`, optional `lat`, `lon`, `lang`; answered directly with the page
+//                           (or JSON with `assistant` for a caller that asks for JSON). A POST, so the buyer's words are never in an address (access logs, history, a screenshot)
 //   GET  /search/font.woff2 Baloo 2's Latin subset (SIL OFL, channels/fonts/OFL-baloo-2.txt): the page's headings and buttons
 //   GET  /order             the page that states the fair order in plain words
 //   POST /feed-changed      "my feed changed" (shop-feed-changed/1): a hint only (notices.ts)
-//   POST /mcp               the MCP endpoint (mcp.ts): search_listings, get_listing, shop_page
+//   POST /mcp               the MCP endpoint (mcp.ts): search_listings, get_listing, shop_page, and ask where the assistant is on
 //   GET  /.well-known/agent-card.json   the directory's signed A2A Agent Card
 //   GET  /healthz           "ok"
 //
@@ -26,9 +28,12 @@ import { directoryServer } from "./mcp.ts";
 import { EMPTY_FORM, orderPage, pagePolicy, searchPage } from "./page.ts";
 import type { FormValues, PageContext, SearchView } from "./page.ts";
 import { searchListings } from "./search.ts";
+import { MAX_QUESTION, askListings } from "./assistant.ts";
+import type { Asked, Assistant } from "./assistant.ts";
 import type { SearchDeps, SearchRequest } from "./search.ts";
 
 const MAX_MCP_BYTES = 16 * 1024;
+const MAX_ASK_BYTES = 2 * 1024;
 /** What one address may do in a window. A phone shares one address with a street, so these are generous; a program that crawls is stopped. */
 export const LIMITS = { search: { max: 40, perMs: 60_000 }, mcp: { max: 90, perMs: 60_000 }, notice: { max: 20, perMs: 60_000 }, pages: { max: 120, perMs: 60_000 } } as const;
 
@@ -39,6 +44,8 @@ export interface DirectoryHttpDeps {
   /** The signed Agent Card (built once at start, or on each call if it changes). */
   card: () => Record<string, unknown>;
   notices: Omit<NoticeConfig, "index">;
+  /** The buyer's assistant (assistant.ts). Left out: no "Ask in your own words" box, no `ask` tool, and the search is exactly the plain search. Made only from an approved budget. */
+  assistant?: Assistant;
   now?: () => number;
   log?: (line: string) => void;
 }
@@ -91,7 +98,7 @@ export function directoryHandler(deps: DirectoryHttpDeps): (req: IncomingMessage
     if (path === "/healthz" && method === "GET") return send(res, 200, "ok", "text/plain; charset=utf-8");
 
     const nonce = randomBytes(16).toString("base64url");
-    const ctx = (lang: Lang): PageContext => ({ origin: deps.origin, lang, now: now(), nonce, fontUrl: "/search/font.woff2" });
+    const ctx = (lang: Lang): PageContext => ({ origin: deps.origin, lang, now: now(), nonce, fontUrl: "/search/font.woff2", assistant: deps.assistant !== undefined });
     const lang = languageOf(url.searchParams.get("lang"), req.headers["accept-language"]);
 
     if (path === "/search/font.woff2" && (method === "GET" || method === "HEAD")) {
@@ -112,7 +119,7 @@ export function directoryHandler(deps: DirectoryHttpDeps): (req: IncomingMessage
       const p = url.searchParams;
       const asked: SearchRequest = { q: p.get("q") ?? undefined, category: p.get("category") ?? undefined, lat: p.get("lat") ?? undefined, lon: p.get("lon") ?? undefined, town: p.get("town") ?? undefined, radius_km: p.get("radius_km") ?? undefined, lang, offset: p.get("offset") ?? undefined };
       const wantsJson = p.get("format") === "json" || (/application\/json/u.test(String(req.headers.accept ?? "")) && !/text\/html/u.test(String(req.headers.accept ?? "")));
-      const form: FormValues = { q: String(p.get("q") ?? "").slice(0, 200), category: p.get("category") ?? "", town: String(p.get("town") ?? "").slice(0, 80), lat: String(p.get("lat") ?? "").slice(0, 12), lon: String(p.get("lon") ?? "").slice(0, 12), radius_km: p.get("radius_km") ?? "" };
+      let form: FormValues = { q: String(p.get("q") ?? "").slice(0, 200), category: p.get("category") ?? "", town: String(p.get("town") ?? "").slice(0, 80), lat: String(p.get("lat") ?? "").slice(0, 12), lon: String(p.get("lon") ?? "").slice(0, 12), radius_km: p.get("radius_km") ?? "" };
       if (!limiter.take("search", who)) {
         return wantsJson ? json(res, 429, { error: "Too many searches from this address; try again in a minute." }, { "retry-after": "60" }) : html(res, 429, nonce, searchPage(ctx(lang), form, { state: "busy" }), { "retry-after": "60", "cache-control": "no-store", "x-robots-tag": "noindex" });
       }
@@ -127,6 +134,35 @@ export function directoryHandler(deps: DirectoryHttpDeps): (req: IncomingMessage
       if (wantsJson) return json(res, answer.ok ? 200 : 400, answer.ok ? answer.answer : { error: answer.error }, { "access-control-allow-origin": "*", "x-robots-tag": "noindex" });
       view = !answer.ok ? { state: "bad", message: answer.error } : answer.answer.results.length === 0 ? { state: "none" } : { state: "results", answer: answer.answer };
       return html(res, answer.ok ? 200 : 400, nonce, searchPage(ctx(lang), form, view), { "cache-control": "no-store", "x-robots-tag": "noindex" });
+    }
+
+    if (path === "/search/ask") {
+      if (method !== "POST" || !deps.assistant) return method !== "POST" && deps.assistant ? json(res, 405, { error: "Use POST." }, { allow: "POST" }) : send(res, 404, "Not here", "text/plain; charset=utf-8", { "cache-control": "no-store" });
+      // a form from another site is refused: the Origin of a browser's form post is this directory's own, or (older browsers) Sec-Fetch-Site says so
+      const origin = String(req.headers.origin ?? ""), site = String(req.headers["sec-fetch-site"] ?? "");
+      if (origin !== "" ? origin !== deps.origin : site !== "" && site !== "same-origin" && site !== "none") return html(res, 403, nonce, "<!doctype html><p>Forms from another site are refused.</p>", { "cache-control": "no-store" });
+      const wantsJson = /application\/json/u.test(String(req.headers.accept ?? "")) && !/text\/html/u.test(String(req.headers.accept ?? ""));
+      const text = await readBody(req, MAX_ASK_BYTES);
+      const body = new URLSearchParams(text ?? "");
+      const askLang = languageOf(body.get("lang"), req.headers["accept-language"]);
+      const ask = String(body.get("ask") ?? "").trim().slice(0, MAX_QUESTION);
+      const lat = String(body.get("lat") ?? "").slice(0, 12), lon = String(body.get("lon") ?? "").slice(0, 12);
+      let form: FormValues = { ...EMPTY_FORM, lat, lon, ask };
+      if (!limiter.take("search", who)) return wantsJson ? json(res, 429, { error: "Too many searches from this address; try again in a minute." }, { "retry-after": "60" }) : html(res, 429, nonce, searchPage(ctx(askLang), form, { state: "busy" }), { "retry-after": "60", "cache-control": "no-store", "x-robots-tag": "noindex" });
+      if (text === undefined || ask === "") return wantsJson ? json(res, 400, { error: "ask must be the buyer's words, in a form-encoded body of at most 2 KB." }) : html(res, 200, nonce, searchPage(ctx(askLang), form, { state: "start" }), { "cache-control": "no-store", "x-robots-tag": "noindex" });
+      let assisted: Asked;
+      try {
+        // the assistant reads the question (cleaned first, never logged), the directory's own code searches and orders, a template line says it
+        assisted = await askListings(deps.search, deps.assistant, { question: ask, lang: askLang, who, ...(lat && lon ? { lat, lon } : {}) });
+      } catch (e) {
+        log(`directory: a search failed (${(e as Error).name})`); // the error's kind only, never the question
+        return wantsJson ? json(res, 503, { error: "The search is not working right now." }, { "retry-after": "120" }) : html(res, 503, nonce, searchPage(ctx(askLang), form, { state: "down" }), { "retry-after": "120", "cache-control": "no-store", "x-robots-tag": "noindex" });
+      }
+      const answer = assisted.searched;
+      if (wantsJson) return json(res, answer.ok ? 200 : 400, answer.ok ? { ...answer.answer, assistant: { how: assisted.how, search: assisted.search, line: assisted.line, notice: assisted.notice } } : { error: answer.error }, { "access-control-allow-origin": "*", "x-robots-tag": "noindex" });
+      form = { ...assisted.form, ask };
+      const view: SearchView = !answer.ok ? { state: "bad", message: answer.error } : answer.answer.results.length === 0 ? { state: "none" } : { state: "results", answer: answer.answer };
+      return html(res, answer.ok ? 200 : 400, nonce, searchPage(ctx(askLang), form, view, { line: assisted.line, notice: assisted.notice }), { "cache-control": "no-store", "x-robots-tag": "noindex" });
     }
 
     if (path === "/feed-changed") {
@@ -149,7 +185,7 @@ export function directoryHandler(deps: DirectoryHttpDeps): (req: IncomingMessage
       // each tool call counts as a search against the address, as a shop's endpoint counts a call; the protocol's own messages (initialize, list) are cheap and free
       const messages = (Array.isArray(body) ? body : [body]) as { method?: string }[];
       for (const m of messages) if (!limiter.take(m?.method === "tools/call" ? "search" : "mcp", who)) return json(res, 429, { jsonrpc: "2.0", id: null, error: { code: -32000, message: "Too many requests from this address; try again in a minute." } }, { "retry-after": "60" });
-      const answer = await serverPost(directoryServer(deps.search), body);
+      const answer = await serverPost(directoryServer(deps.search, { ...(deps.assistant ? { assistant: deps.assistant } : {}), who }), body);
       if (answer.status === 202) { res.writeHead(202, { "cache-control": "no-store", ...base }); return void res.end(); }
       return json(res, answer.status, answer.body, { "access-control-allow-origin": "*" });
     }

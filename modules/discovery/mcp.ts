@@ -5,6 +5,7 @@
 //   search_listings   words, category, place, distance -> results in THE fair order (order.ts), each confirmed by its shop where the shop answers (search.ts)
 //   get_listing       one listing by its shop's page and its id, confirmed by the shop
 //   shop_page         one shop: its name, place, how to chat, and what it lists
+//   ask               (only where the buyer's assistant is on) the buyer's own words -> a typed search, run by search_listings' own code, with the results in the same call
 //
 // Nothing here ranks: the order is the same function the people's page uses, so an assistant sees the order a buyer would. And nothing here sends a shop the buyer's words:
 // a shop is asked about item ids only.
@@ -13,6 +14,8 @@ import type { McpServer } from "../channels/mcp.ts";
 import { CATEGORIES } from "./types.ts";
 import { searchListings, wordsFor } from "./search.ts";
 import type { SearchDeps } from "./search.ts";
+import { MAX_QUESTION, askListings } from "./assistant.ts";
+import type { Assistant } from "./assistant.ts";
 
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
 const LANGUAGE = { type: "string", enum: ["en", "hi", "ml", "kn"], description: "The buyer's language for titles (a listing carries its words in all four; one an assistant wrote is marked machineWritten)." };
@@ -24,11 +27,32 @@ export const DIRECTORY_TOOLS = [
   { name: "shop_page", description: "One shop: its name, trade, town, where to chat with it and its Agent Card, and the listings it has (not confirmed one by one: use get_listing for that). A registration number, where a shop shows one, is the owner's own word and is not checked by anyone.", inputSchema: { type: "object", properties: { shop: SHOP, lang: LANGUAGE }, required: ["shop"], additionalProperties: false }, annotations: READ_ONLY },
 ] as const;
 
+/**
+ * The assistant's tool, listed only where the assistant is on (an approved budget). For another AI assistant that holds the buyer's words and does not want to turn them into a search
+ * itself: it gets the typed search that was run (compact JSON, for a program) and the results in the fair order, in one call. It spends from the directory's own budget and the
+ * per-address cap; over either, the words are searched as given and `notice` says so. Read-only like the others.
+ */
+export const ASK_TOOL = {
+  name: "ask",
+  description: "Give the buyer's own words (any of English, Hindi, Malayalam, Kannada, or the same in Latin letters) and get what local shops have, in one call. The directory turns the words into a typed search (returned as `assistant.search`: words, wordsEn, category, place, radiusKm, maxPrice), runs it with its own code, and returns the results in the same fair order as search_listings, each confirmed by its shop where the shop answers. `assistant.line` is a short line in the buyer's language built from the results; say only what the results say. When the directory's assistant is over its daily or monthly cap, the words are searched exactly as given and `assistant.notice` says so. Phone numbers, e-mail addresses, links, names and exact addresses in the words are removed before any model sees them; no shop ever receives the words.",
+  inputSchema: { type: "object", properties: { question: { type: "string", minLength: 1, maxLength: MAX_QUESTION, description: "What the buyer wants, in their own words." }, lat: { type: "string", description: "The buyer's latitude, decimal degrees as a string, for near me and distances." }, lon: { type: "string", description: "The buyer's longitude, decimal degrees as a string." }, lang: LANGUAGE }, required: ["question"], additionalProperties: false },
+  annotations: READ_ONLY,
+} as const;
+
 export const DIRECTORY_TOOL_NAMES = DIRECTORY_TOOLS.map((t) => t.name);
 
 /** The directory's endpoint over a search and its index. */
-export function directoryServer(deps: SearchDeps, o: { name?: string } = {}): McpServer {
+export function directoryServer(deps: SearchDeps, o: { name?: string; /** The buyer's assistant, when it is on: adds the `ask` tool. */ assistant?: Assistant; /** Who is calling (an address), for the per-buyer cap. Never kept as it is. */ who?: string } = {}): McpServer {
   async function call(name: string, args: Record<string, unknown>): Promise<unknown> {
+    if (name === "ask" && o.assistant) {
+      const question = typeof args.question === "string" ? args.question.trim() : "";
+      if (question === "") throw new OpError("bad_request", "question must be the buyer's words");
+      const lang = (["en", "hi", "ml", "kn"] as const).find((l) => l === args.lang) ?? "en";
+      const lat = typeof args.lat === "string" ? args.lat : undefined, lon = typeof args.lon === "string" ? args.lon : undefined;
+      const r = await askListings(deps, o.assistant, { question, lang, who: o.who ?? "mcp", ...(lat !== undefined && lon !== undefined ? { lat, lon } : {}) });
+      if (!r.searched.ok) throw new OpError("bad_request", r.searched.error);
+      return { ...r.searched.answer, assistant: { how: r.how, search: r.search, line: r.line, notice: r.notice } };
+    }
     if (name === "search_listings") {
       const r = await searchListings(deps, args);
       if (!r.ok) throw new OpError("bad_request", r.error);
@@ -59,7 +83,7 @@ export function directoryServer(deps: SearchDeps, o: { name?: string } = {}): Mc
     };
   }
   return {
-    tools: DIRECTORY_TOOLS as unknown as McpServer["tools"], names: DIRECTORY_TOOL_NAMES, call,
+    tools: (o.assistant ? [...DIRECTORY_TOOLS, ASK_TOOL] : DIRECTORY_TOOLS) as unknown as McpServer["tools"], names: o.assistant ? [...DIRECTORY_TOOL_NAMES, ASK_TOOL.name] : DIRECTORY_TOOL_NAMES, call,
     info: { name: "geometer-directory", title: o.name ?? "Directory of local shops" },
     instructions: "Find what local shops have. Search with the buyer's own words; results are in a fair order that no payment can change, and each is confirmed by its shop when the shop answers. Report only what the results say. You cannot buy or book here: open a result's `chat` link to talk to the shop.",
   };
