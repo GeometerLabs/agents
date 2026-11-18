@@ -26,7 +26,7 @@ export const IMPL = (process.env.LISTINGS_IMPL ?? "ts") as "ts" | "go";
 export const PAGE = "https://pages.example/glow-pets";
 export const OWNER_BASE = "https://pages.example/owner";
 /** The pathway version the TS runtime pins a folder to (package.json), so a folder written here starts on both implementations. */
-const VERSION = (JSON.parse(readFileSync(join(REPO, "templates", "commerce", "listings", "package.json"), "utf8")) as { version: string }).version;
+export const VERSION = (JSON.parse(readFileSync(join(REPO, "templates", "commerce", "listings", "package.json"), "utf8")) as { version: string }).version;
 
 const hex = (n: number): string => randomBytes(n).toString("hex");
 
@@ -56,6 +56,8 @@ export interface Shop {
   settle(): Promise<any>;
   /** What the process printed (stdout and stderr), for a failure message. */
   log(): string;
+  /** The shop process's id (for measuring its memory). */
+  pid(): number | undefined;
   cleanup(): void;
 }
 
@@ -148,6 +150,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
       throw new Error(`the queue did not drain in 5 s:\n${output}`);
     },
     log: () => output,
+    pid: () => child?.pid,
     cleanup() { void shop.stop(); rmSync(root, { recursive: true, force: true }); },
   };
   return shop;
