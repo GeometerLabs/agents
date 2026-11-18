@@ -26,6 +26,7 @@ import { fleetIdOf, readShop, serverPaths } from "./server.ts";
 import type { ServerConfig } from "./server.ts";
 import { readStatus, updateStatus } from "./status.ts";
 import { sha256Hex, stableJson, writeAtomic } from "./util.ts";
+import { clientDir } from "./client-dir.ts";
 
 // Where the licence files live on the server, in one place for the deployer and the status writer; `inbox` is the one folder ops may write, so nothing in it is trusted until checked.
 export const licencePaths = (dir: string) => {
@@ -33,7 +34,7 @@ export const licencePaths = (dir: string) => {
   return { root, lease: join(root, "lease"), seen: join(root, "seen.json"), extensions: join(root, "extensions"), inbox: join(serverPaths(dir).fleet, "lease") };
 };
 // The licence.json copy placed in a shop's generated client folder, so the shop's own agent can read its licence state without reaching the server's state folder.
-export const clientLicenceFile = (dir: string, shop: string): string => join(serverPaths(dir).generated, "shops", shop, "client", "licence.json");
+export const clientLicenceFile = (dir: string, shop: string): string => join(clientDir(dir, shop), "licence.json");
 
 interface Mark { serial: number; issued_at: number }
 export interface Seen { schema: 1; newest_issued_at: number; kept: Mark | null; inbox: string | null }

@@ -8,11 +8,12 @@ import { OWNER_LINK_FILE, readOwnerLink } from "../../modules/channels/owner-lin
 import { secretFile } from "./secrets.ts";
 import { serverPaths } from "./server.ts";
 import { stableJson, writeAtomic } from "./util.ts";
+import { clientDir } from "./client-dir.ts";
 
 /** Where the panel writes a shop's link (its hash only). */
 export const ownerLinkSource = (dir: string, shop: string): string => join(serverPaths(dir).shop(shop), OWNER_LINK_FILE);
 /** The two copies the deployer keeps in step with it. */
-export const ownerLinkCopies = (dir: string, shop: string): string[] => [join(serverPaths(dir).generated, "shops", shop, "client", OWNER_LINK_FILE), secretFile(dir, "relay", shop, OWNER_LINK_FILE)];
+export const ownerLinkCopies = (dir: string, shop: string): string[] => [join(clientDir(dir, shop), OWNER_LINK_FILE), secretFile(dir, "relay", shop, OWNER_LINK_FILE)];
 
 const read = (path: string): string | undefined => { try { return readFileSync(path, "utf8"); } catch { return undefined; } };
 
