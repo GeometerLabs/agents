@@ -139,6 +139,7 @@ describe("the five ops, and what the public sees of the count", () => {
     await stock(s, "s-1", { op: "start", id: L1, count: 5, low: 2, unit: "pc" });
     assert.deepEqual(rowsOf(await page(s)), [{ id: L1, name: "Two Persian kittens", unit: "pc", count: 5, low: 2, isLow: false, soldOut: false, kind: "listing", moves: [{ kind: "started", delta: 5, after: 5, by: "owner" }] }]);
     assert.deepEqual(await qty(), [["l-1", 5]], "a counted listing shows its count as its quantity");
+    assert.equal((await s.call("/internal/channel/shop-check", { body: { page: PAGE, ids: ["l-1"] } })).body.items[0].quantity, 5, "and so does the signed check answer");
     const mine = (await ownerList(s)).listings[0];
     assert.equal(mine.counted, true); assert.equal(mine.qty, 5); assert.ok(!mine.soldOut);
 
@@ -203,8 +204,9 @@ describe("the five ops, and what the public sees of the count", () => {
   });
 });
 
+// `bad_id` cannot be reached through the page: the shape check answers 400 for an item id that does not look like one, and the page never sends the `aliases` that are its other cause.
 describe("the rules refuse at the page (422 with a why) and the shape is checked first (400)", () => {
-  test("bad_count, bad_low, bad_text, exists, no_such_line and stale", async () => {
+  test("bad_count, bad_low and bad_text (a count, a low mark, a name or unit too long in UTF-16 units)", async () => {
     const s = await boot();
     for (const count of [-1, 1.5, 1_000_001]) await refused(s, "x-1", { op: "start", id: L1, count }, "bad_count");
     assert.equal((await s.call(PATH, { owner: s.owner, body: { id: "x-1", op: { op: "start", id: L1, count: 1_000_000 } } })).status, 200, "a million is the most");
@@ -283,6 +285,10 @@ describe("a request id counts once, and a low mark speaks once per crossing", ()
     assert.deepEqual(await stock(s, "s-2", { op: "sold", id: L1, qty: 3 }), { saved: 1, duplicates: 0 });
     assert.deepEqual(await stock(s, "s-2", { op: "sold", id: L1, qty: 3 }), { saved: 0, duplicates: 1 }, "the retry is told it was a duplicate");
     assert.equal((await page(s)).rows[0].count, 7, "taken once");
+    // the retry of a `correct` that worked: its `shown` is now stale, but the request id was served, so the answer is the duplicate, not a 422 (the key is checked before staleness)
+    await stock(s, "s-c", { op: "correct", id: L1, to: 5, shown: 7 });
+    assert.deepEqual(await stock(s, "s-c", { op: "correct", id: L1, to: 5, shown: 7 }), { saved: 0, duplicates: 1 });
+    await stock(s, "s-d", { op: "correct", id: L1, to: 7 });
     assert.deepEqual(await stock(s, "s-2", { op: "correct", id: L1, to: 50 }), { saved: 0, duplicates: 1 }, "the id names the act, whatever the retry says");
     assert.equal((await page(s)).rows[0].count, 7);
     await stock(s, "s-3", { op: "sold", id: L1, qty: 3 });
