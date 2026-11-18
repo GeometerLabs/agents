@@ -2,7 +2,7 @@
 // at fleet with the deployment key and hands the shop's runtime and front their addresses; a confirmed name is not asked again for a day, a refused one not for
 // ten minutes; "own" and a removed shop give the name back; the panel's "sign out every device" reaches the runtime; the owner's view is on the pages domain only
 // for a shop this server's door serves; and the pages domain is a setting of Geometer's Operator server, never geometer.dev. Written 12 Nov 2026.
-import { makeOwnerRecovery, makeOwnerSetup, removeOwnerPasskeys } from "../lib/pages.ts";
+import { makeOwnerRecovery, makeOwnerSetup, removeOwnerPasskeys, requestOwnerPasskeyRemoval, resetOwnerSignin } from "../lib/pages.ts";
 import { grantInFile, readOwnerGrants } from "../../modules/channels/owner-grants.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -199,4 +199,30 @@ test("generated: the pages domain's site reaches only the door, the door is on i
   assert.equal(doorConfig(builder), undefined);
   assert.ok(!caddyfile(builder).includes("door:"));
   assert.equal(composeServer(builder, dirs, [], {}).services.door, undefined);
+});
+
+test("owner's item 2: the Operator's removal request and Geometer's reset reach the runtime as files; the request is a request (no passkeysBefore) and the reset file is handed over and taken away again", async () => {
+  const b = folder("own");
+  try {
+    const made = makeOwnerSetup(b.dir, "ravi", T0);
+    requestOwnerPasskeyRemoval(b.dir, "ravi", "Divya", new Date(T0.getTime() + 1000));
+    await b.sync(["ravi"], new Date(T0.getTime() + 2000));
+    const client = join(b.dir, "generated", "shops", "ravi", "client");
+    const handed = readOwnerGrants(readFileSync(join(client, "owner-grants.json"), "utf8"))!;
+    assert.equal(handed.passkeysBefore, undefined, "a request removes nothing by itself");
+    assert.equal(handed.pendingRemoval?.askedBy, "Divya");
+    assert.equal(Date.parse(handed.pendingRemoval!.effectiveAt) - Date.parse(handed.pendingRemoval!.askedAt), 48 * 60 * 60_000);
+    assert.equal(handed.setup?.sha256 !== undefined && made.token.length > 0, true, "the QR in the file is untouched by the request");
+    assert.equal(existsSync(join(client, "owner-reset.json")), false, "no reset yet");
+
+    const reset = resetOwnerSignin(b.dir, "ravi", { reason: "owner lost every phone", by: "Naval", now: new Date(T0.getTime() + 3000) });
+    await b.sync(["ravi"], new Date(T0.getTime() + 4000));
+    assert.equal(JSON.parse(readFileSync(join(client, "owner-reset.json"), "utf8")).by, "Naval", "handed to the runtime");
+    const after = readOwnerGrants(readFileSync(join(client, "owner-grants.json"), "utf8"))!;
+    assert.equal(after.pendingRemoval, undefined, "the request is gone with the reset");
+    assert.equal(grantInFile({ kind: "setup", token: reset.token }, after, T0.getTime() + 5000), "valid");
+    rmSync(join(b.dir, "shops", "ravi", "owner-reset.json"));
+    await b.sync(["ravi"], new Date(T0.getTime() + 6000));
+    assert.equal(existsSync(join(client, "owner-reset.json")), false, "taken away when the admin's is gone");
+  } finally { b.done(); }
 });
