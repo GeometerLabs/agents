@@ -3,9 +3,10 @@
 import { agentNames } from "../agent/plan.ts";
 import { BUNDLE_VERSION, fleetIdOf, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
-import { ADMIN_FORWARD_PORT, HEALTH_PORT, INBOX_PORT, OPS_FLEET_DIR, OPS_STATUS_DIR, RELAY_PORT, REFRESHER_GUPSHUP_DIR, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
+import { ADMIN_FORWARD_PORT, DIRECTORY_DATA_DIR, HEALTH_PORT, INBOX_PORT, OPS_FLEET_DIR, OPS_STATUS_DIR, RELAY_PORT, REFRESHER_GUPSHUP_DIR, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
 import type { AgentDeploy, ShopDeploy } from "./compose.ts";
 import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
+import { DIRECTORY_PORT, DOOR_INTERNAL_PORT } from "../services/door.ts";
 import { stableJson } from "../lib/util.ts";
 import type { ApproverPerson } from "../../modules/approvals/people.ts";
 import type { WhatsAppRoute } from "./guards.ts";
@@ -181,7 +182,19 @@ export function refresherConfig(server: ServerConfig, shops: (ShopDeploy & { web
  */
 export function doorConfig(server: ServerConfig): string | undefined {
   if (!server.pages || !server.fleet) return undefined;
-  return stableJson({ primary: server.pages.domain, extra: server.pages.extraDomains, deploymentId: fleetIdOf(server), fleetUrl: server.fleet.url, localUrl: `http://inbox:${INBOX_PORT}` });
+  return stableJson({ primary: server.pages.domain, extra: server.pages.extraDomains, deploymentId: fleetIdOf(server), fleetUrl: server.fleet.url, localUrl: `http://inbox:${INBOX_PORT}`, directoryUrl: `http://directory:${DIRECTORY_PORT}` });
+}
+
+/**
+ * Block S: the directory's config (services/directory.ts), on every server that has the door (the directory is reached through it). No secret: the directory's own signing key is made in
+ * its own folder. `served` are the pages domains it serves (a notice is taken for a feed under one of them), `doorUrl` is the door's own port, which reads this server's shops for it.
+ */
+export function directoryConfig(server: ServerConfig): string | undefined {
+  if (!server.pages || !server.fleet) return undefined;
+  return stableJson({
+    origin: `https://${server.pages.domain}`, served: [server.pages.domain, ...server.pages.extraDomains], doorUrl: `http://door:${DOOR_INTERNAL_PORT}`, dataDir: DIRECTORY_DATA_DIR,
+    feeds: server.directory?.feeds ?? [], provider: { organization: "Geometer", url: `https://${server.pages.domain}` }, ...(server.directory?.area ? { area: server.directory.area } : {}),
+  });
 }
 
 // The ops container's config: where every Guard's admin port and every runtime is, plus the fleet link. Ops is the only place that holds all admin tokens, so this file names token FILES, never the tokens.

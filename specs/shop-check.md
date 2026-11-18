@@ -43,7 +43,9 @@ MCP: the tool `check_items` with the argument `{ "ids": ["l-3", "l-7"] }`.
 | `gone` | Sold, removed, hidden, not confirmed for 30 days, or never shown in the feed. A directory drops it. |
 
 The answer says no more than the feed would say about the same items. It is signed like the feed ([shop-feed.md](shop-feed.md#the-signature)),
-over the canonical JSON of the answer without `signature`, with the same key.
+over the canonical JSON of the answer without `signature`, with the same key. The answer also says when it was made (`at`); a directory
+ignores an answer whose `at` is more than two minutes from its own clock, so a recorded "in stock" cannot be played back later. A
+directory also ignores an answer that names another page than the shop it asked, and any item it did not ask about.
 
 ## Rules
 

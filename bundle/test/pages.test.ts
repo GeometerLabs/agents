@@ -194,7 +194,7 @@ test("generated: the pages domain's site reaches only the door, the door is on i
   assert.ok((c.services.caddy.block as { volumes: unknown[] }).volumes.includes("/srv/home:/srv/home:ro"));
   assert.ok(!((composeServer(serverConfig({ panel: { enabled: true } }), dirs, [], {}).services.caddy.block as { volumes: unknown[] }).volumes).includes("/srv/home:/srv/home:ro"), "a server with no pages domain mounts none");
   assert.match(c.compose, /\n  pages:\n    internal: true/u, "the pages network has no way out of its own");
-  assert.deepEqual(JSON.parse(doorConfig(hosted)!), { primary: "pages.example", extra: ["old.example"], deploymentId: "acme-vps-1", fleetUrl: "https://fleet.example", localUrl: "http://inbox:8788" });
+  assert.deepEqual(JSON.parse(doorConfig(hosted)!), { primary: "pages.example", extra: ["old.example"], deploymentId: "acme-vps-1", fleetUrl: "https://fleet.example", localUrl: "http://inbox:8788", directoryUrl: "http://directory:8799" });
   const builder = serverConfig({ panel: { enabled: true } });
   assert.equal(doorConfig(builder), undefined);
   assert.ok(!caddyfile(builder).includes("door:"));

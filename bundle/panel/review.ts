@@ -39,6 +39,7 @@ import { CHAT, QUICK } from "../../modules/channels/words-chat.ts";
 import { IDENTITY } from "../../modules/channels/words-chat-identity.ts";
 import { CHAT_MORE } from "../../modules/channels/words-chat-more.ts";
 import { CHAT_GUEST } from "../../modules/channels/chat-guest.ts";
+import { DIRECTORY_SAMPLES, DIRECTORY_WORDS } from "../../modules/discovery/words.ts";
 
 /**
  * Stock orders (17 Nov 2026): the owner page's words for what waits (ids "stock.owner.*"), the phone setup's forms and refusals and the shop page's lines (ids "stock.panel.*"), each with
@@ -93,6 +94,12 @@ const leaveFlat = (language: Language): Map<string, string> => {
 /** What the save says when a student's earlier details could not be carried over (words-keep.ts), under the id "keep.lost". */
 const keepFlat = (language: Language): Map<string, string> => flatWords({ keep: KEEP_WORDS[language] }, { "keep.lost": ["Rahul"] });
 import { CHATS_LIST_WORDS } from "../../modules/channels/chats-list.ts";
+
+/**
+ * Block S (18 Nov 2026): the directory's search page and the page that states the fair order (modules/discovery/words.ts), under the ids "directory.*", each line with a made-up value where it
+ * takes one. Hindi, Malayalam and Kannada are machine-written and wait here for a native reader.
+ */
+const directoryFlat = (language: Language): Map<string, string> => flatWords({ directory: DIRECTORY_WORDS[language] }, Object.fromEntries(Object.entries(DIRECTORY_SAMPLES).map(([k, v]) => [`directory.${k}`, v])));
 
 export type ReviewLanguage = "hi" | "ml" | "kn";
 export interface Row { id: string; text: string; english: string }
@@ -199,8 +206,8 @@ const chatIdentityFlat = (language: Language): Map<string, string> => flatWords(
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...listingsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...classesFlat(language), ...presetsFlat(language), ...keepFlat(language), ...leaveFlat(language), ...budgetFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language), ...stocklineFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...listingsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...classesFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...leaveFlat("en"), ...budgetFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en"), ...stocklineFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...listingsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...stockFlat(language), ...classesFlat(language), ...presetsFlat(language), ...keepFlat(language), ...leaveFlat(language), ...budgetFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language), ...stocklineFlat(language), ...directoryFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...listingsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...stockFlat("en"), ...classesFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...leaveFlat("en"), ...budgetFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en"), ...stocklineFlat("en"), ...directoryFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

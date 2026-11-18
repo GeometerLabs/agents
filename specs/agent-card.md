@@ -17,8 +17,12 @@ A shop's card exists only while the owner has turned on "Show my shop on Streetl
 
 ## What a shop's card says
 
-The card follows the field names of the A2A specification (version 1.0). The code that builds it (`modules/listings/`) reads the
-specification and follows it exactly; this table says what we put in, not the schema.
+The card follows the field names of the A2A specification, **version 1.0.1** (the `a2aproject/A2A` repository, tag `v1.0.1`, commit
+`3303592588e388e62e0f69f701af531d2f4e3991`, read 18 Nov 2026 from `specification/a2a.proto` and `docs/specification.md`). In JSON the
+members are: `name`, `description`, `supportedInterfaces` (each `url`, `protocolBinding`, `protocolVersion`), `provider` (`organization`,
+`url`), `version`, `documentationUrl`, `capabilities`, `defaultInputModes`, `defaultOutputModes`, `skills` (each `id`, `name`,
+`description`, `tags`, `examples`, `inputModes`, `outputModes`) and `signatures`. The code that builds a shop's card
+(`modules/listings/`) and a directory's card (`modules/discovery/card.ts`) follows them exactly; this table says what we put in, not the schema.
 
 | Content | Value |
 |---|---|
@@ -27,7 +31,29 @@ specification and follows it exactly; this table says what we put in, not the sc
 | Skills | `show_listings` (what the shop has: the [shop feed](shop-feed.md)); `check_items` ([shop-check](shop-check.md)); and the shop's own work from its API, such as `book`, `order` or `fees` (the same operations as `modules/channels/api.ts`). Each skill names its input and output formats and gives one example. |
 | Interfaces | The shop's MCP endpoint (`<shop page>/mcp`) and its JSON API (`<shop page>/api/v1`). |
 | Input and output | `application/json` only. No free-text skill: a shop's program takes typed requests and answers from its record. |
-| Signature | The card is signed with the shop's own key (the same key as its feed), as A2A version 1.0 allows for signed cards. |
+| Signature | The card is signed with the shop's own key (the same key as its feed), as A2A allows for signed cards: see "How a card is signed" below. |
+
+### The interfaces: what `protocolBinding` says
+
+In A2A the `protocolBinding` of an interface is an **open string** ("to be easily extended for other protocol bindings"; the ones the
+specification names are `JSONRPC`, `GRPC` and `HTTP+JSON`, and those mean an A2A message endpoint). We do not serve one yet, so we do **not**
+use those names. We list the interfaces we do serve under their own names, and put that protocol's own version in `protocolVersion`:
+
+| `protocolBinding` | At | `protocolVersion` |
+|---|---|---|
+| `MCP` | the MCP endpoint (a shop's `<shop page>/mcp`; a directory's `/mcp`) | the newest MCP version it speaks (`2025-11-25`) |
+| `HTTPS-JSON` | the JSON API (a shop's `<shop page>/api/v1`; a directory's `/search`) | `1` |
+
+A client that only speaks A2A finds no binding it knows and can tell its user so; one that speaks MCP takes the first.
+
+### How a card is signed
+
+As the A2A specification's section 8.4 says: a JSON Web Signature (RFC 7515) over the RFC 8785 canonical JSON of the card without its
+`signatures` member, with members that hold only a default value left out (an empty list is left out). The signature is
+`{ "protected": base64url({"alg":"EdDSA","typ":"JOSE","kid":<key id>}), "signature": base64url(sig) }`, where the signing input is
+`protected + "." + base64url(canonical card)`. `EdDSA` with Ed25519 is the JOSE name from RFC 8037. `kid` is the same key id the feed uses
+([shop-feed.md](shop-feed.md#the-signature)), so a reader who pinned the key for the feed checks the card with it. The code is
+`modules/signing/jws.ts`.
 
 **Not served yet (said plainly):** the A2A message endpoint itself (sending A2A tasks to a shop). Until it is built, a client talks to a
 shop through its MCP endpoint or its JSON API, which the card names. This is in `modules/Deferred.md`.
@@ -38,8 +64,9 @@ shop through its MCP endpoint or its JSON API, which the card names. This is in 
 |---|---|
 | Name and description | "Directory of local shops" and the towns it covers. |
 | Skills | `search_listings` (words, category, place, distance; results in the fair order), `get_listing`, `shop_page`. See [directory.md](directory.md). |
-| Interfaces | The directory's MCP endpoint (`/mcp`) and its JSON search API (`/search`). |
-| Signature | Signed with the directory's own key. |
+| Interfaces | The directory's MCP endpoint (`/mcp`, binding `MCP`) and its JSON search API (`/search`, binding `HTTPS-JSON`). |
+| Provider | Whoever runs the directory (its organisation name and address). |
+| Signature | Signed with the directory's own key, kept in the directory's data folder (a directory that loses the file makes a new key; the card then has a new `kid`). |
 
 ## Why A2A, and why not more of it yet
 
