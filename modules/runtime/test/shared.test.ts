@@ -178,7 +178,8 @@ test("a shop whose store throws on every step leaves the other shop answering; i
   });
   procs.push(p);
   assert.deepEqual(fake.starts.sort(), ["broken", "good"]);
-  await p.scan(); await p.scan();
+  // the scan that started the shops was the first look; this one is the second
+  await p.scan();
   assert.deepEqual(fake.starts.sort(), ["broken", "good"], "two bad looks are not yet a restart");
   const r = await p.scan();
   assert.deepEqual(r.letGo, ["broken"], "the third bad look stops that shop alone");
