@@ -37,6 +37,8 @@ type Options struct {
 	RecordKey []byte
 	Log       func(string)
 	Now       func() int64
+	// Push is the shop's web push for the owner-control rules (owner.go OwnerPush); nil: the Go runtime serves no push yet
+	Push OwnerPush
 }
 
 // Runtime is one running shop.
@@ -47,6 +49,9 @@ type Runtime struct {
 	clock   budget.Clock
 	proto   *listings.Protocol
 	started int64
+
+	// ownerMu is the owner lock (owner.go): every owner sequence, the tick's owner part and every read of the owner's number hold it, so none interleaves with another
+	ownerMu sync.Mutex
 
 	mu        sync.RWMutex
 	snapshot  string
@@ -101,6 +106,10 @@ func New(o Options) (*Runtime, error) {
 		}
 	}
 	r.proto = listings.NewProtocol(r.publicRead, r.signingKey, o.Now, func() string { return o.Client.Settings.Name })
+	// the owner's sign-in starts: the locked number learned, and a request that fell due while the runtime was down given a day more (owner.go ownerStart)
+	if err := r.ownerStart(); err != nil {
+		return nil, err
+	}
 	return r, nil
 }
 
@@ -237,8 +246,10 @@ func (r *Runtime) tick() {
 
 // ---- one step --------------------------------------------------------------------------------------------------------------------------------------------
 
+// owner is the owner's number and language for a step's record lines: the EFFECTIVE number (the locked one while the shop is locked), as the settings' getter answers in
+// TypeScript, never the settings' number taken at its word.
 func (r *Runtime) owner() (string, string) {
-	return r.o.Client.Settings.Owner.Whatsapp, r.o.Client.Settings.Owner.Language
+	return r.ownerNumberForLines(), r.o.Client.Settings.Owner.Language
 }
 
 // recordKey for the record's digests.
@@ -258,8 +269,9 @@ func (r *Runtime) step(ev map[string]any, taskID string) error {
 	}
 	rec := r.recorder()
 	now := r.o.Now()
+	var told []string
 	if ev == nil {
-		r.beat(snap, rec, now)
+		told = r.beat(snap, rec, now)
 	} else {
 		switch ev["kind"] {
 		case "owner_listing":
@@ -278,7 +290,12 @@ func (r *Runtime) step(ev map[string]any, taskID string) error {
 			r.o.Log(fmt.Sprintf("An event of kind %v came for a listings-only shop run by the Go runtime, which does not take it; it was dropped.", ev["kind"]))
 		}
 	}
-	return r.save(snap, rec, taskID)
+	if err := r.save(snap, rec, taskID); err != nil {
+		return err
+	}
+	// a request's notice is marked told only now that its record line is saved: a crash before this tells it again rather than never
+	r.markTold(told)
+	return nil
 }
 
 // save saves what the step has done so far, whole or not at all, and only then treats it as the saved state.
@@ -355,8 +372,10 @@ func (r *Runtime) ownerPhoto(snap *Snap, rec *recorder, ev map[string]any, now i
 
 // ---- the owner's sign-in events ---------------------------------------------------------------------------------------------------------------------------
 
+// ownerAccess writes a sign-in event in the record (owner-signin.ts run): the session's start or end, a passkey added (with the phone's coarse label), a phone removed, codes
+// made, a request cancelled. The conversation is the owner's number as it is now (the files read first).
 func (r *Runtime) ownerAccess(rec *recorder, ev map[string]any) {
-	number, lang := r.owner()
+	number, lang := r.ownerNumberRead(), r.o.Client.Settings.Owner.Language
 	what, _ := ev["what"].(string)
 	session, _ := ev["session"].(string)
 	inputs := map[string]any{"what": what, "session": session}
@@ -364,37 +383,56 @@ func (r *Runtime) ownerAccess(rec *recorder, ev map[string]any) {
 	if how, ok := ev["how"].(string); ok && how != "" {
 		inputs["how"], refs["how"] = how, how
 	}
+	if label, ok := ev["label"].(string); ok && label != "" {
+		inputs["label"], refs["label"] = label, label
+	}
 	rec.append(NewLine{Conversation: number, Action: "owner_session", Outcome: "confirmed", Inputs: inputs, Language: lang, Refs: refs})
+}
+
+// ownerNumberRead is owner-signin.ts ownerNumber(): the files read into the store, then the effective number.
+func (r *Runtime) ownerNumberRead() string {
+	if r.o.Access == nil {
+		return r.settingsNumber()
+	}
+	r.ownerMu.Lock()
+	defer r.ownerMu.Unlock()
+	n, err := r.oNumber()
+	if err != nil {
+		r.o.Log("The owner's number could not be worked out: " + err.Error())
+	}
+	return n
 }
 
 // ownerSignin is a press of "send me a link" on the owner's page. A listings-only shop has no WhatsApp, so no link is sent: the owner signs in with their passkey. The attempt is
 // counted first, as every request is, so the record cannot be flooded by asking.
 func (r *Runtime) ownerSignin(rec *recorder, now int64) {
-	number, lang := r.owner()
-	if r.o.Access == nil || r.pages() == nil {
+	lang := r.o.Client.Settings.Owner.Language
+	if r.o.Access == nil {
+		r.o.Log("A sign-in event came for a shop with no owner sign-in (no pages file yet); it was dropped.")
+		return
+	}
+	r.ownerMu.Lock()
+	w, ok, _ := r.oWho()
+	allowed := ok && r.o.Access.TryAttempt(now)
+	r.ownerMu.Unlock()
+	if !ok {
 		r.o.Log("A sign-in link was asked for, but this shop has no pages file yet (its next deploy writes one): none was sent.")
 		return
 	}
-	if !r.o.Access.TryAttempt(now) {
+	if !allowed {
 		r.o.Log("A sign-in link was asked for more often than the shop's limit (3 a quarter of an hour, 10 a day): none was sent.")
 		return
 	}
-	rec.append(NewLine{Conversation: number, Action: "owner_signin", Outcome: "blocked", Inputs: map[string]any{"via": "page"}, Language: lang, Refs: map[string]string{"to": "owner", "via": "page"},
+	rec.append(NewLine{Conversation: w.Owner, Action: "owner_signin", Outcome: "blocked", Inputs: map[string]any{"via": "page"}, Language: lang, Refs: map[string]string{"to": "owner", "via": "page"},
 		Notes: "This shop has no WhatsApp, so no sign-in link is sent: the owner signs in with their passkey (or the Operator's setup QR or recovery card)."})
 }
 
-// beat is the clock's beat: the panel's "sign out every device" said once in the record, and once a day the clean-up of drafts and of photos no listing holds.
-func (r *Runtime) beat(snap *Snap, rec *recorder, now int64) {
-	number, lang := r.owner()
-	if r.o.Access != nil {
-		if before, ok := access.EndBefore(filepath.Join(r.o.Client.Folder, access.OwnerSessionsFile)); ok {
-			if n, err := r.o.Access.EndAllBefore(before, now); err == nil && n >= 0 {
-				rec.append(NewLine{Conversation: number, Action: "owner_session", Outcome: "confirmed", Inputs: map[string]any{"what": "all_ended", "endBefore": before}, Language: lang, Refs: map[string]string{"what": "all_ended", "count": fmt.Sprint(n)}})
-			}
-		}
-	}
+// beat is the clock's beat: the owner's part (owner.go ownerBeat: the Operator's request and Geometer's reset read, the owner's number watched, each finding said once, the
+// panel's "sign out every device" said once), then, once a day, the clean-up of drafts and of photos no listing holds. It returns the requests to mark told once the step is saved.
+func (r *Runtime) beat(snap *Snap, rec *recorder, now int64) []string {
+	told := r.ownerBeat(rec, now)
 	if now-r.lastDaily < listings.Day {
-		return
+		return told
 	}
 	r.lastDaily = now
 	if snap.hasList {
@@ -405,6 +443,7 @@ func (r *Runtime) beat(snap *Snap, rec *recorder, now int64) {
 			r.o.Log(fmt.Sprintf("Deleted %d photo(s) no listing holds any more.", gone))
 		}
 	}
+	return told
 }
 
 // ---- reads, from the last saved state -----------------------------------------------------------------------------------------------------------------------

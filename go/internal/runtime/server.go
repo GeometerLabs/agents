@@ -9,7 +9,10 @@ package runtime
 //	GET  /internal/owner-session             204 when x-owner-session is good (the internal token): the approvals relay asks, so it never takes the front's word for who the owner is
 //	GET/POST /internal/feed-notice           the signed "my feed changed" notice to carry to the directory (the internal token)
 //	/internal/channel/...                    the channel token: events (an owner_message, an owner_signin), offer, listings, listing-photo, shop-feed, shop-check, shop-card,
-//	                                         owner-listing, owner-photo, owner-signin, owner-passkey, owner-signout
+//	                                         owner-listing, owner-photo, owner-signin, owner-passkey, owner-phones, owner-signout
+//
+// The owner routes (owner-signin, owner-passkey, owner-phones, owner-signout, the owner's credential on every owner route, /status's lock, owner-session) check everything in
+// owner.go, under the owner lock, in the order modules/runtime/http.ts checks it.
 //
 // The routes of other kinds of shop (a chat, bookings, orders, fees, push, voice, limits, stock, the owner's talk-and-cards page) are not this shop's: they answer 404.
 
@@ -224,8 +227,13 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		// how the owner can sign in and hear (counts only), for the panel's go-live
-		st["ownerAccess"] = map[string]any{"passkeys": s.rt.Passkeys(), "alertPhones": 0}
+		// how the owner can sign in and hear (counts only), for the panel's go-live; and (owner control) whether the shop is locked and the Operator's pending request, for the
+		// panel to SHOW: the runtime has already decided both, whatever the panel does
+		oa, err := s.rt.OwnerAccessStatus()
+		if err != nil {
+			return err
+		}
+		st["ownerAccess"] = oa
 		send(w, 200, st)
 	case "/internal/owner-session":
 		if err := only(r, "GET"); err != nil {
@@ -235,7 +243,7 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) error {
 			unauthorised(w)
 			return nil
 		}
-		if sess := r.Header.Get(access.OwnerSessionHeader); sess != "" && s.rt.SessionOK(sess) {
+		if sess, sent := header(r, access.OwnerSessionHeader); sent && s.rt.SessionOK(sess) {
 			w.Header().Set("cache-control", "no-store")
 			w.WriteHeader(204)
 		} else {
@@ -299,13 +307,25 @@ func (s *Server) feedNotice(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-// ownerAuthorised: the owner, from the front: the panel-made link against the hash the folder holds now, or a session this runtime made and still holds good. Both are checked HERE.
+// header is a request header as Node hands it to http.ts: sent or not, and when sent more than once its values joined with ", " (so a doubled credential header reads as no
+// credential at all, the same refusal as TypeScript's, rather than as its first value).
+func header(r *http.Request, name string) (string, bool) {
+	v := r.Header.Values(name)
+	if len(v) == 0 {
+		return "", false
+	}
+	return strings.Join(v, ", "), true
+}
+
+// ownerAuthorised: the owner, from the front: the panel-made link against the hash the folder holds now, or a session this runtime made and still holds good (the owner as the
+// lock says, the address unchanged, not ended by the panel's sign-out). Both are checked HERE.
 func (s *Server) ownerAuthorised(r *http.Request) bool {
-	if s.rt.OwnerLinkOK(r.Header.Get(access.OwnerLinkHeader)) {
+	link, _ := header(r, access.OwnerLinkHeader)
+	if s.rt.OwnerLinkOK(link) {
 		return true
 	}
-	sess := r.Header.Get(access.OwnerSessionHeader)
-	return sess != "" && s.rt.SessionOK(sess)
+	sess, sent := header(r, access.OwnerSessionHeader)
+	return sent && s.rt.SessionOK(sess)
 }
 
 var ownerRefused = "The owner's link is not valid (it may have been revoked)."
@@ -366,16 +386,16 @@ func (s *Server) channelRoute(w http.ResponseWriter, r *http.Request, path strin
 		return s.ownerSignin(w, r)
 	case "/internal/channel/owner-passkey":
 		return s.ownerPasskey(w, r)
+	case "/internal/channel/owner-phones":
+		return s.ownerPhones(w, r)
 	case "/internal/channel/owner-signout":
 		if err := only(r, "POST"); err != nil {
 			return err
 		}
-		ended := ""
-		if sess := r.Header.Get(access.OwnerSessionHeader); sess != "" && rt.o.Access != nil {
-			ended = rt.EndSession(sess)
-		}
+		sess, _ := header(r, access.OwnerSessionHeader)
+		ended := rt.EndSession(sess)
 		if ended != "" {
-			rt.RecordAccess("signed_out", ended, "")
+			rt.RecordAccess("signed_out", ended, "", "")
 		}
 		send(w, 200, map[string]any{"ended": ended != ""})
 	default:
@@ -606,14 +626,10 @@ func (s *Server) signed(w http.ResponseWriter, r *http.Request, path string) err
 }
 
 func (s *Server) ownerSignin(w http.ResponseWriter, r *http.Request) error {
-	link := r.Header.Get(access.OwnerSigninHeader)
+	link, _ := header(r, access.OwnerSigninHeader)
 	rt := s.rt
 	if r.Method == "GET" {
-		state := "unknown"
-		if rt.o.Access != nil {
-			state = rt.LinkState(link)
-		}
-		send(w, 200, map[string]any{"state": state})
+		send(w, 200, map[string]any{"state": rt.LinkState(link)})
 		return nil
 	}
 	if err := only(r, "POST"); err != nil {
@@ -628,89 +644,45 @@ func (s *Server) ownerSignin(w http.ResponseWriter, r *http.Request) error {
 		send(w, 403, map[string]any{"state": state})
 		return nil
 	}
-	rt.RecordAccess("signed_in", sess.ID, "link")
+	rt.RecordAccess("signed_in", sess.ID, "link", "")
 	send(w, 200, map[string]any{"session": sess.Token, "expires_at_ms": sess.ExpiresAt})
 	return nil
 }
 
+// ownerPasskey: the passkey route (item 11h): one route, the step in the body; every check is in owner.go OwnerPasskey.
 func (s *Server) ownerPasskey(w http.ResponseWriter, r *http.Request) error {
 	if err := only(r, "POST"); err != nil {
 		return err
 	}
-	rt := s.rt
 	raw, ok := readJSON(w, r, 32*1024)
 	if !ok {
 		return nil
 	}
 	body, _ := raw.(map[string]any)
-	if rt.o.Access == nil || !rt.PasskeysOn() {
-		send(w, 403, map[string]any{"state": "unknown", "why": "Passkeys are not on for this shop."})
+	status, out, err := s.rt.OwnerPasskey(body)
+	if err != nil {
+		return err
+	}
+	send(w, status, out)
+	return nil
+}
+
+// ownerPhones: "Phones that can open your shop" (owner control): ONLY a session made here, never the panel's link; every rule is in owner.go OwnerPhones.
+func (s *Server) ownerPhones(w http.ResponseWriter, r *http.Request) error {
+	if err := only(r, "POST"); err != nil {
+		return err
+	}
+	raw, ok := readJSON(w, r, 4*1024)
+	if !ok {
 		return nil
 	}
-	var grant *access.Grant
-	if g, ok := body["grant"].(map[string]any); ok {
-		if t, ok := g["token"].(string); ok && g["kind"] == "setup" {
-			grant = &access.Grant{Kind: "setup", Token: cut(t, 64)}
-		} else if c, ok := g["code"].(string); ok && g["kind"] == "recovery" {
-			grant = &access.Grant{Kind: "recovery", Code: cut(c, 40)}
-		}
+	body, _ := raw.(map[string]any)
+	sess, sent := header(r, access.OwnerSessionHeader)
+	status, out, err := s.rt.OwnerPhones(sess, sent, body)
+	if err != nil {
+		return err
 	}
-	switch op := body["op"]; op {
-	case "grant_state", "register_options", "register":
-		if grant == nil {
-			send(w, 400, errBody(`Send "grant": {"kind": "setup", "token"} or {"kind": "recovery", "code"}.`))
-			return nil
-		}
-		// a recovery code is a guess until it matches: too many wrong ones today and none is looked at
-		if grant.Kind == "recovery" && rt.CodesLocked() {
-			send(w, 403, map[string]any{"state": "locked"})
-			return nil
-		}
-		state := rt.GrantState(*grant)
-		if grant.Kind == "recovery" && state == "unknown" {
-			rt.NoteWrongCode()
-		}
-		switch op {
-		case "grant_state":
-			send(w, 200, map[string]any{"state": state, "shop": rt.ShopName()})
-		case "register_options":
-			options, st := rt.RegistrationOptions(*grant)
-			if options == nil {
-				send(w, 403, map[string]any{"state": st})
-			} else {
-				send(w, 200, map[string]any{"options": options})
-			}
-		default:
-			response, _ := body["response"].(map[string]any)
-			done := rt.Register(*grant, response)
-			if !done.OK {
-				out := map[string]any{"state": done.State}
-				if done.Why != "" {
-					out["why"] = done.Why
-				}
-				send(w, 403, out)
-				return nil
-			}
-			rt.RecordAccess("passkey_added", done.Passkey, grant.Kind)
-			rt.RecordAccess("signed_in", done.Session.ID, "passkey")
-			send(w, 200, map[string]any{"session": done.Session.Token, "expires_at_ms": done.Session.ExpiresAt})
-		}
-	case "status":
-		send(w, 200, map[string]any{"count": rt.Passkeys()})
-	case "signin_options":
-		send(w, 200, rt.SigninOptions())
-	case "signin":
-		response, _ := body["response"].(map[string]any)
-		done := rt.Signin(response)
-		if !done.OK {
-			send(w, 403, map[string]any{"why": done.Why})
-			return nil
-		}
-		rt.RecordAccess("signed_in", done.Session.ID, "passkey")
-		send(w, 200, map[string]any{"session": done.Session.Token, "expires_at_ms": done.Session.ExpiresAt})
-	default:
-		send(w, 400, errBody("op is grant_state, register_options, register, signin_options or signin."))
-	}
+	send(w, status, out)
 	return nil
 }
 

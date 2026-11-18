@@ -7,6 +7,8 @@ import { existsSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { newSoftPasskey, softRegister, softSignin } from "../../../../modules/channels/test/soft-authenticator.ts";
+import type { SoftPasskey } from "../../../../modules/channels/test/soft-authenticator.ts";
+import { REMOVAL_WAIT_MS, SETUP_MS, newRecoveryCode, recoveryHash, setupHash } from "../../../../modules/channels/owner-grants.ts";
 import { OWNER_BASE, PAGE, REPO, makeShop, tinyJpeg } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 
@@ -85,4 +87,87 @@ describe("the two runtimes make the same files", { skip: !existsSync(bin) && `no
     assert.equal(made.go.store, made.ts.store, "agent.db");
     assert.equal(made.go.access, made.ts.access, "owner-access.sqlite");
   });
+});
+
+// ---- owner control (19 Nov 2026) on one folder: the gate's memory is the same rows, so a shop moved between the runtimes keeps its lock, its requests and its phones ----------
+
+const ANDROID = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
+const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
+const HOUR = 3_600_000;
+const iso = (t: number): string => new Date(t).toISOString();
+const passkey = (s: Shop, op: string, extra: Record<string, unknown> = {}) => s.call("/internal/channel/owner-passkey", { body: { op, ...extra } });
+const grantState = async (s: Shop, grant: Record<string, unknown>): Promise<string> => (await passkey(s, "grant_state", { grant })).body.state;
+async function registerPhone(s: Shop, grant: Record<string, unknown>, ua: string): Promise<{ phone: SoftPasskey; session: string }> {
+  const ro = await passkey(s, "register_options", { grant });
+  assert.equal(ro.status, 200, JSON.stringify(ro.body));
+  const phone = newSoftPasskey(rp.rpId);
+  const r = await passkey(s, "register", { grant, response: softRegister(phone, ro.body.options, rp.origin), ua });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  return { phone, session: r.body.session };
+}
+async function signsIn(s: Shop, phone: SoftPasskey): Promise<boolean> {
+  const so = await passkey(s, "signin_options");
+  if (!so.body.options) return false;
+  return (await passkey(s, "signin", { response: softSignin(phone, so.body.options, rp.origin) })).status === 200;
+}
+const phones = (s: Shop, session: string, body: Record<string, unknown>) => s.call("/internal/channel/owner-phones", { session, body });
+const ownerAccess = async (s: Shop) => (await s.call("/status")).body.ownerAccess;
+/** The owner-access file's schema as SQLite keeps it (the text of every CREATE, after every ALTER). */
+const accessSchema = (s: Shop): string => {
+  const db = new DatabaseSync(join(s.dataDir, "owner-access.sqlite"), { readOnly: true });
+  try { return JSON.stringify(db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name").all()); } finally { db.close(); }
+};
+
+describe("owner control on one folder, the runtimes in turn", { skip: !existsSync(bin) && `no Go binary at ${bin}` }, () => {
+  for (const [first, second] of [["ts", "go"], ["go", "ts"]] as const) {
+    test(`${first} locks, asks and makes codes; ${second} reads it all, cancels and removes a phone; ${first} reads that back`, async () => {
+      const s = await makeShop({ clock: true, owner: "+919800000001" }); shops.push(s);
+      const card = newRecoveryCode();
+      s.writeGrants({ schema: 1, setup: { sha256: setupHash(s.setup), createdAt: iso(s.now()), expiresAt: iso(s.now() + SETUP_MS) }, recovery: { codes: [recoveryHash(card)], createdAt: iso(s.now()) } });
+      await s.start(first);
+      const p1 = await registerPhone(s, { kind: "setup", token: s.setup }, ANDROID);
+      const own = (await phones(s, p1.session, { op: "codes" })).body.codes as string[];
+      assert.equal(own.length, 5);
+      const link = String((await phones(s, p1.session, { op: "add_phone" })).body.url).split("/setup/")[1];
+      s.advance(60_000);
+      const p2 = await registerPhone(s, { kind: "setup", token: link }, IPHONE);
+      const p2codes = (await phones(s, p2.session, { op: "codes" })).body.codes as string[];
+      const askedAt = s.now();
+      s.writeGrants({ schema: 1, pendingRemoval: { askedBy: "Divya", askedAt: iso(askedAt), effectiveAt: iso(askedAt + REMOVAL_WAIT_MS) } });
+      const before = await ownerAccess(s);
+      assert.equal(before.locked, true); assert.equal(before.removal.askedBy, "Divya");
+      const view1 = (await phones(s, p1.session, { op: "list" })).body;
+      const schema1 = accessSchema(s);
+      await s.stop();
+
+      await s.start(second);
+      assert.equal(accessSchema(s), schema1, "the second runtime leaves the first one's schema as it is");
+      const after = await ownerAccess(s);
+      assert.deepEqual([after.locked, after.removal, after.passkeys], [true, before.removal, 2], "the same lock, the same request timed the same, the same phones");
+      const view2 = (await phones(s, p1.session, { op: "list" })).body;
+      assert.deepEqual(view2.phones, view1.phones, "the phones list (ids, labels, how each came, this phone)");
+      assert.deepEqual([view2.announce, view2.news, view2.ownCodesAt, view2.lockedLast4, view2.removal], [view1.announce, view1.news, view1.ownCodesAt, view1.lockedLast4, view1.removal]);
+      assert.equal(await signsIn(s, p1.phone), true); assert.equal(await signsIn(s, p2.phone), true);
+      assert.equal(await grantState(s, { kind: "recovery", code: own[0] }), "valid", "the owner's own codes");
+      assert.equal(await grantState(s, { kind: "recovery", code: card }), "unknown", "the card the own codes voided");
+      assert.deepEqual((await phones(s, p1.session, { op: "cancel_removal" })).body, { cancelled: true });
+      const p2id = view2.phones.find((p: { mine: boolean }) => !p.mine).id;
+      assert.equal((await phones(s, p1.session, { op: "remove", id: p2id })).status, 200);
+      assert.equal(await grantState(s, { kind: "recovery", code: p2codes[0] }), "unknown");
+      await s.stop();
+
+      await s.start(first);
+      assert.equal(accessSchema(s), schema1);
+      const back = await ownerAccess(s);
+      assert.deepEqual([back.locked, back.removal, back.passkeys], [true, undefined, 1], "the cancel and the removal the second runtime made");
+      assert.equal(await signsIn(s, p2.phone), false, "the removed phone stays removed");
+      assert.equal(await signsIn(s, p1.phone), true);
+      assert.equal(await grantState(s, { kind: "recovery", code: p2codes[1] }), "unknown");
+      assert.equal(await grantState(s, { kind: "recovery", code: own[1] }), "valid");
+      // the day's quiet after the cancel holds across the move: a new request now is not heard
+      s.advance(HOUR);
+      s.writeGrants({ schema: 1, pendingRemoval: { askedBy: "Divya", askedAt: iso(s.now()), effectiveAt: iso(s.now() + REMOVAL_WAIT_MS) } });
+      assert.equal((await ownerAccess(s)).removal, undefined);
+    });
+  }
 });
