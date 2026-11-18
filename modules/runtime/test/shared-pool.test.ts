@@ -16,7 +16,7 @@ after(async () => { for (const p of procs) await p.stop(); for (const d of dirs)
 
 const FAKE = new URL("./pool-fake-shop.ts", import.meta.url).href;
 /** Fast numbers: a ping every 40 ms, a worker silent for 400 ms is blocked, a start again after 20 ms. A worker is given 48 MB so a leak ends in well under a second. */
-const FAST: Omit<PoolOptions, "startModule"> = { workers: 2, workerMb: 48, quarantineMb: 48, pingMs: 40, deadAfterMs: 400, restartDelayMs: 20, proxyTimeoutMs: 1500, stopWaitMs: 2000 };
+const FAST: Omit<PoolOptions, "startModule"> = { workers: 2, workerMb: 48, quarantineMb: 48, pingMs: 40, deadAfterMs: 500, restartDelayMs: 20, proxyTimeoutMs: 1500, stopWaitMs: 2000 };
 
 function folder(root: string, name: string, mode = "ok", extra: object = {}): void {
   const client = join(root, "clients", name, "client");
@@ -113,12 +113,12 @@ test("a shop that loops forever: only its worker's shops are out, briefly, with 
 });
 
 test("a shop that allocates without limit: its worker runs out of memory and restarts, the shop is named, and the other workers answer", async () => {
-  const t = await boot({ hog: "leak", b: "ok", c: "ok" }); // hog on w0 with c; b on w1
+  const t = await boot({ hog: "leak", b: "ok", c: "ok" }); // shops start in name order: b and hog on w0, c alone on w1
   await crashOnce(t, "hog", "/leak");
   assert.ok(t.log.some((l) => l.includes("memory limit")), "it was V8's limit that ended the worker");
   assert.equal(lostCount(t.log, "hog"), 1);
-  assert.equal((await call(t.p, "b")).status, 200, "the other worker was never touched");
-  await until("hog's worker is back with its shops", async () => (await call(t.p, "c")).status === 200 && (await call(t.p, "hog")).status === 200);
+  assert.equal((await call(t.p, "c")).status, 200, "the other worker was never touched");
+  await until("hog's worker is back with its shops", async () => (await call(t.p, "b")).status === 200 && (await call(t.p, "hog")).status === 200);
   assert.equal((await fetch(`${t.p.url}/healthz`)).status, 200, "the process itself never stopped");
 });
 

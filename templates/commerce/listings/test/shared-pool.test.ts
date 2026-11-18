@@ -17,6 +17,8 @@ const roots: string[] = [];
 const procs: SharedProcess[] = [];
 after(async () => { for (const p of procs) await p.stop(); for (const r of roots) rmSync(r, { recursive: true, force: true }); });
 
+/** The page is HTML: an apostrophe in the English sentence is written as an entity. */
+const escaped = (text: string): string => text.replace(/&/gu, "&amp;").replace(/'/gu, "&#39;");
 const hex = (n: number) => randomUUID().replace(/-/gu, "").repeat(4).slice(0, n);
 
 /** A shop's folder as the deployer writes it (the lock last), with a language of its own. */
@@ -60,10 +62,10 @@ test("the back-soon page speaks the language asked (?lang, then the browser, the
   const req = (url: string, acceptLanguage?: string) => ({ url, headers: acceptLanguage ? { "accept-language": acceptLanguage } : {} }) as unknown as IncomingMessage;
   for (const l of ["en", "hi", "ml", "kn"] as const) {
     const page = backSoon(paths, req(`/?lang=${l}`));
-    assert.ok(page.html.includes(`lang="${l}"`) && page.html.includes(BACK_SOON[l]), `${l}: the page is in ${l}`);
+    assert.ok(page.html.includes(`lang="${l}"`) && page.html.includes(escaped(BACK_SOON[l])), `${l}: the page is in ${l}`);
     assert.deepEqual(page.json, { error: { code: "unavailable", message: BACK_SOON[l] }, backSoon: true });
   }
   assert.ok(backSoon(paths, req("/", "hi-IN,hi;q=0.9,en;q=0.8")).html.includes(BACK_SOON.hi), "the browser's language when none is asked");
-  assert.ok(backSoon(paths, req("/")).html.includes(BACK_SOON.ml), "the shop's own first language when the browser says nothing we speak");
-  assert.ok(backSoon(paths, req("/", "fr-FR")).html.includes(BACK_SOON.ml));
+  assert.ok(backSoon(paths, req("/")).html.includes(escaped(BACK_SOON.ml)), "the shop's own first language when the browser says nothing we speak");
+  assert.ok(backSoon(paths, req("/", "fr-FR")).html.includes(escaped(BACK_SOON.ml)));
 });
