@@ -21,6 +21,8 @@ const backend = {
   // the sign-in the real runtime backend has (modules/channels/backend.ts); /owner needs these and a pages file
   linkState: async () => "unknown", signin: async () => ({ state: "unknown" }), signout: async () => undefined,
   chat: async () => ({ lines: [], answered: false, capped: false, retentionDays: 30 }), // a backend that HAS a chat: the front must still not offer it for this kind
+  // the signed feed comes from the runtime, which holds the shop's key (block S B2, backend.ts shopFeed); this fake stands in for it, as storefront.test.ts's does
+  shopFeed: async (q: { page: string; name: string; languages: string[] }) => ({ format: "shop-feed/1", updated: new Date(0).toISOString(), shop: { name: q.name, page: q.page, languages: q.languages, place: { town: "Thrissur" } }, items: [], signature: { alg: "Ed25519", keyId: "test", key: "test", sig: "test" } }),
 } as unknown as ChannelBackend;
 
 async function serve<T>(run: (base: string) => Promise<T>): Promise<T> {
