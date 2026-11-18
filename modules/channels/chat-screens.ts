@@ -34,7 +34,13 @@ const playerJs = readFileSync(new URL("./vendor/lottie/lottie_light.min.js", imp
 /** A stand-in for DiceBear's animated drawing of a mood: the same square tile, with a gentle squash, so the review sees the animated source and the swap to the well face. */
 const animatedFace = (mood: string): string => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84"><style>@media (prefers-reduced-motion: no-preference){.f{transform-origin:42px 84px;animation:s 2.4s ease-in-out infinite}@keyframes s{50%{transform:scale(1.04,.96)}}}</style><g class="f"><rect width="84" height="84" fill="${mood === "well" ? "#c9efd5" : "#ffd9a0"}"/><circle cx="30" cy="38" r="5"/><circle cx="54" cy="38" r="5"/><path d="M28 56q14 12 28 0" fill="none" stroke="#000" stroke-width="4"/></g></svg>`;
 /** A DiceBear-like tile stands in for the character's picture: a flat square, so the review sees the head's layout (the real picture is the shop's own drawing). */
-const FACE = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84"><rect width="84" height="84" fill="#ffd9a0"/><circle cx="30" cy="38" r="5"/><circle cx="54" cy="38" r="5"/><path d="M28 56q14 12 28 0" fill="none" stroke="#000" stroke-width="4"/></svg>')}`;
+/** Each kind of shop has its own sample name and face tile colour (the face seed), so the review never mistakes an Orders page for the salon's. */
+const SHOPS: Record<ChatKind, { name: string; helper: string; tile: string; ground: string }> = {
+  bookings: { name: "Glow Salon", helper: "Glow", tile: "#ffd9a0", ground: "MG Road, Kochi" },
+  orders: { name: "Annapurna Tiffins", helper: "Anna", tile: "#ffc6b8", ground: "Temple Road, Thrissur" },
+  fees: { name: "Bright Tuition Centre", helper: "Bright", tile: "#bcd8ff", ground: "Church Road, Kozhikode" },
+};
+const faceFor = (kind: ChatKind): string => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84"><rect width="84" height="84" fill="${SHOPS[kind].tile}"/><circle cx="30" cy="38" r="5"/><circle cx="54" cy="38" r="5"/><path d="M28 56q14 12 28 0" fill="none" stroke="#000" stroke-width="4"/></svg>`)}`;
 
 /**
  * What each kind of shop says in the sample threads (18 Nov 2026): the Bookings salon, the Orders kitchen (a menu with prices as taps, an order held, then confirmed and paid, with
@@ -136,8 +142,8 @@ export function screen(state: string, q: URLSearchParams, base = BASE): { html: 
   if (state === "paints") return { html: paintsPage(), csp: "default-src 'none'; style-src 'unsafe-inline'" };
   const page = chatPage({
     shop: {
-      name: "Glow Salon", address: "MG Road, Kochi", languages: [...LANGUAGES], paused: state === "paused",
-      character: { name: "Glow", face: closed ? "closed" : state === "busy" ? "busy" : "well", picture: FACE },
+      name: SHOPS[kind].name, address: SHOPS[kind].ground, languages: [...LANGUAGES], paused: state === "paused",
+      character: { name: SHOPS[kind].helper, face: closed ? "closed" : state === "busy" ? "busy" : "well", picture: faceFor(kind) },
       contact: { phone: "+919811111111" },
       hours: { sun: null, mon: { open: "10:00", close: "20:00" }, tue: { open: "10:00", close: "20:00" }, wed: { open: "10:00", close: "20:00" }, thu: { open: "10:00", close: "20:00" }, fri: { open: "10:00", close: "20:00" }, sat: { open: "10:00", close: "18:00" } },
     },
