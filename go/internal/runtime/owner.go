@@ -156,16 +156,34 @@ func (r *Runtime) OwnerLinkOK(token string) bool {
 // SessionOK: a session this runtime made and still holds good (the owner, as the lock says, and the address unchanged; made after the panel's last "sign out every device",
 // which after the lock ends link sessions only).
 func (r *Runtime) SessionOK(token string) bool {
+	_, good := r.SessionCheck(token)
+	return good
+}
+
+// SessionCheck is SessionOK with the session's short id, for a route that names the session in the record: the id of the same check that let the request in, never the token
+// the browser sent (http.ts owner-file: a live token in the record would let anyone who reads it act as the owner).
+func (r *Runtime) SessionCheck(token string) (string, bool) {
+	if r.o.Access == nil {
+		return "", false
+	}
+	r.ownerMu.Lock()
+	defer r.ownerMu.Unlock()
+	id, good, err := r.oCheck(token)
+	if err != nil {
+		r.o.Log("The owner's session could not be checked: " + err.Error())
+	}
+	return id, good
+}
+
+// PasskeysOn: the shop has an owner sign-in and a pages file (owner-signin.ts passkeysOn).
+func (r *Runtime) PasskeysOn() bool {
 	if r.o.Access == nil {
 		return false
 	}
 	r.ownerMu.Lock()
 	defer r.ownerMu.Unlock()
-	_, good, err := r.oCheck(token)
-	if err != nil {
-		r.o.Log("The owner's session could not be checked: " + err.Error())
-	}
-	return good
+	on, _ := r.oPasskeysOn()
+	return on
 }
 
 // LinkState is what a sign-in link is now.

@@ -8,6 +8,8 @@ import (
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
+
+	xnorm "golang.org/x/text/unicode/norm"
 )
 
 // utf16Len is JavaScript's `string.length`: UTF-16 code units. A Malayalam title's limit of 80 is counted the way the TypeScript side counts it.
@@ -93,9 +95,10 @@ func compileWords(alternatives string) *regexp.Regexp {
 }
 
 // plain is modules/language/format.ts `plain`: Devanagari, Malayalam and Kannada digits turned into 0-9, old-style Malayalam chillus made new-style, zero-width joiners removed.
-// The TypeScript version first normalises to NFC; Go's standard library has no Unicode normalisation (it lives in golang.org/x/text, which this trial may not add), so text is
-// taken as it is typed, which is composed in practice (see TRIAL.md).
+// Like the TypeScript version it first puts the text in NFC (golang.org/x/text/unicode/norm, approved 19 Nov 2026), so a phone that sends Malayalam, Kannada or Hindi decomposed
+// (a vowel sign sent as its two halves, a nukta letter as letter + U+093C) is read as the same words as one that sends it composed.
 func plain(text string) string {
+	text = xnorm.NFC.String(text)
 	for _, c := range oldChillu {
 		text = strings.ReplaceAll(text, c[0], c[1])
 	}

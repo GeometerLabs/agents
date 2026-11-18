@@ -8,13 +8,15 @@ package runtime
 //	GET  /status                             counts only (the internal token)
 //	GET  /internal/owner-session             204 when x-owner-session is good (the internal token): the approvals relay asks, so it never takes the front's word for who the owner is
 //	GET/POST /internal/feed-notice           the signed "my feed changed" notice to carry to the directory (the internal token)
-//	/internal/channel/...                    the channel token: events (an owner_message, an owner_signin), offer, listings, listing-photo, shop-feed, shop-check, shop-card,
-//	                                         owner-listing, owner-photo, owner-signin, owner-passkey, owner-phones, owner-signout
+//	/internal/channel/...                    the channel token: events (an owner_message, an owner_action, an owner_signin), offer, listings, listing-photo, shop-feed,
+//	                                         shop-check, shop-card, owner (the talk-and-cards page), owner-listing, owner-stock, owner-photo, owner-signin, owner-passkey,
+//	                                         owner-phones, owner-signout, owner-limits, owner-file, push
+//	GET/POST /internal/limit-changes         the deployer's word about a limit change (the internal token)
 //
-// The owner routes (owner-signin, owner-passkey, owner-phones, owner-signout, the owner's credential on every owner route, /status's lock, owner-session) check everything in
-// owner.go, under the owner lock, in the order modules/runtime/http.ts checks it.
+// The owner routes (owner-signin, owner-passkey, owner-phones, owner-signout, the owner's credential on every owner route, /status's lock, owner-session, and the owner's side of
+// push) check everything in owner.go, under the owner lock, in the order modules/runtime/http.ts checks it.
 //
-// The routes of other kinds of shop (a chat, bookings, orders, fees, push, voice, limits, stock, the owner's talk-and-cards page) are not this shop's: they answer 404.
+// The routes of other kinds of shop (a chat, bookings, orders, fees, voice) are not this shop's: they answer 404.
 
 import (
 	"context"
@@ -127,13 +129,22 @@ func readJSON(w http.ResponseWriter, r *http.Request, max int64) (any, bool) {
 	return v, true
 }
 
-// Listen starts serving on host:port (port 0 picks a free one).
-func Listen(rt *Runtime, token string, channelToken string, host string, port int) (*Server, error) {
+// NewServer is one shop's HTTP face without a listener: the shared host (internal/shared) routes to Handler() itself. Listen is this plus a listener of its own.
+func NewServer(rt *Runtime, token string, channelToken string) *Server {
 	s := &Server{rt: rt, token: sha256.Sum256([]byte(token))}
 	if channelToken != "" {
 		c := sha256.Sum256([]byte(channelToken))
 		s.channel = &c
 	}
+	return s
+}
+
+// Handler is the shop's routes as an http.Handler (with the per-request panic recovery).
+func (s *Server) Handler() http.Handler { return http.HandlerFunc(s.serve) }
+
+// Listen starts serving on host:port (port 0 picks a free one).
+func Listen(rt *Runtime, token string, channelToken string, host string, port int) (*Server, error) {
+	s := NewServer(rt, token, channelToken)
 	ln, err := net.Listen("tcp", net.JoinHostPort(host, fmt.Sprint(port)))
 	if err != nil {
 		if strings.Contains(err.Error(), "address already in use") {
@@ -142,7 +153,7 @@ func Listen(rt *Runtime, token string, channelToken string, host string, port in
 		return nil, err
 	}
 	s.URL = "http://" + ln.Addr().String()
-	s.http = &http.Server{Handler: http.HandlerFunc(s.serve), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 15 * time.Second, IdleTimeout: 5 * time.Second, MaxHeaderBytes: 64 << 10}
+	s.http = &http.Server{Handler: s.Handler(), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 15 * time.Second, IdleTimeout: 5 * time.Second, MaxHeaderBytes: 64 << 10}
 	go func() { _ = s.http.Serve(ln) }()
 	return s, nil
 }
@@ -159,7 +170,7 @@ func (s *Server) Close() {
 func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if p := recover(); p != nil {
-			s.rt.o.Log(fmt.Sprintf("Request failed: %v", p))
+			s.rt.panicked("request", p)
 			send(w, 500, errBody("The runtime could not handle that. Send it again."))
 		}
 	}()
@@ -251,6 +262,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) error {
 		}
 	case "/internal/feed-notice":
 		return s.feedNotice(w, r)
+	case "/internal/limit-changes":
+		return s.limitChangesRoute(w, r)
 	case "/internal/events":
 		if err := only(r, "POST"); err != nil {
 			return err
@@ -378,8 +391,19 @@ func (s *Server) channelRoute(w http.ResponseWriter, r *http.Request, path strin
 		_, _ = w.Write(row.Bytes)
 	case "/internal/channel/shop-feed", "/internal/channel/shop-check", "/internal/channel/shop-card":
 		return s.signed(w, r, path)
+	case "/internal/channel/owner":
+		if err := only(r, "GET"); err != nil {
+			return err
+		}
+		if !s.ownerAuthorised(r) {
+			send(w, 403, errBody(ownerRefused))
+			return nil
+		}
+		send(w, 200, rt.OwnerPage())
 	case "/internal/channel/owner-listing":
 		return s.ownerListing(w, r)
+	case "/internal/channel/owner-stock":
+		return s.ownerStockRoute(w, r)
 	case "/internal/channel/owner-photo":
 		return s.ownerPhoto(w, r)
 	case "/internal/channel/owner-signin":
@@ -388,6 +412,12 @@ func (s *Server) channelRoute(w http.ResponseWriter, r *http.Request, path strin
 		return s.ownerPasskey(w, r)
 	case "/internal/channel/owner-phones":
 		return s.ownerPhones(w, r)
+	case "/internal/channel/owner-limits":
+		return s.ownerLimitsRoute(w, r)
+	case "/internal/channel/owner-file":
+		return s.ownerFileRoute(w, r)
+	case "/internal/channel/push":
+		return s.pushRoute(w, r)
 	case "/internal/channel/owner-signout":
 		if err := only(r, "POST"); err != nil {
 			return err
@@ -445,8 +475,19 @@ func (s *Server) events(w http.ResponseWriter, r *http.Request) error {
 			events = append(events, map[string]any{"kind": "owner_message", "id": id, "text": t})
 		case "owner_signin":
 			events = append(events, map[string]any{"kind": "owner_signin", "id": id})
+		case "owner_action":
+			ev, msg := checkOwnerAction(e, id)
+			if msg != "" {
+				send(w, 400, errBody(msg))
+				return nil
+			}
+			if !s.ownerAuthorised(r) {
+				send(w, 403, errBody(ownerRefused))
+				return nil
+			}
+			events = append(events, ev)
 		default:
-			send(w, 400, errBody(`A listings-only shop takes the owner's "owner_message" and "owner_signin" here.`))
+			send(w, 400, errBody(`A listings-only shop takes the owner's "owner_message", "owner_action" and "owner_signin" here.`))
 			return nil
 		}
 	}
@@ -457,6 +498,42 @@ func (s *Server) events(w http.ResponseWriter, r *http.Request) error {
 	send(w, 200, map[string]any{"saved": saved, "duplicates": dup})
 	s.rt.Kick()
 	return nil
+}
+
+var (
+	ownerActions = []string{"received", "refunded", "kept", "approve", "deny", "retry", "card_yes", "card_no", "send_link", "revoke_link", "cash", "bank", "present", "absent", "answered", "got_it", "send_again", "try_now", "cancel_order"}
+	caseID       = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$`)
+	cardID       = regexp.MustCompile(`^c-\d{1,9}$`)
+	digest32     = regexp.MustCompile(`^[0-9a-f]{32}$`)
+)
+
+// checkOwnerAction is events.ts `checkChannelEvent` for an owner_action: every action name is accepted and saved (the ones a listings-only shop has no use for are ignored in the step), a
+// card's answer must name a card ("c-3") and carry the digest it was shown, and the shape is checked BEFORE the owner is (a bad shape is 400, then 403).
+func checkOwnerAction(e map[string]any, id string) (map[string]any, string) {
+	action, _ := e["action"].(string)
+	if !contains(ownerActions, action) {
+		return nil, "An owner_action's action is one of " + strings.Join(ownerActions, ", ") + "."
+	}
+	cs, _ := e["case"].(string)
+	if !caseID.MatchString(cs) {
+		return nil, `An owner_action names its case ("b-3").`
+	}
+	if (action == "card_yes" || action == "card_no") && !cardID.MatchString(cs) {
+		return nil, `A card's answer names the card ("c-3").`
+	}
+	digest, _ := e["digest"].(string)
+	if !digest32.MatchString(digest) {
+		return nil, "An owner_action carries the digest of the action as it was shown (32 hex digits)."
+	}
+	ev := map[string]any{"kind": "owner_action", "id": id, "action": action, "case": cs, "digest": digest}
+	if _, given := e["amountPaise"]; given && (action == "cash" || action == "bank") {
+		n, ok := e["amountPaise"].(float64)
+		if !ok || n != float64(int64(n)) || n < 100 || n > 10_000_000_00 || int64(n)%100 != 0 {
+			return nil, "A part marked received is a whole number of rupees, at least 1."
+		}
+		ev["amountPaise"] = int64(n)
+	}
+	return ev, ""
 }
 
 func isSpace(r rune) bool {

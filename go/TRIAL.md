@@ -88,7 +88,7 @@ copied by hand into Go, in the same four languages, and the differential test co
 
 ## Left out of the Go runtime, and why
 
-1. **The owner's talk-and-cards page** (`GET /internal/channel/owner`, `owner_action`). It is the whole assistant's view: cards, the talk list, notes and memory, the morning "Still have it?"
+1. **(Ported 18 Nov, wave 1a: GET owner, owner_action, a draft makes a card, the beat's expiry and morning question, the budget notices; the owner's memory, the router's models and the owner-talk model are NOT: see `internal/assistant` and the report of the port. The text below is what the gap was.)** **The owner's talk-and-cards page** (`GET /internal/channel/owner`, `owner_action`). It is the whole assistant's view: cards, the talk list, notes and memory, the morning "Still have it?"
    question, the budget notices, undo. It is about 4.7k lines of TypeScript plus its words, and it is not "the runtime of a listings-only shop" so much as the shop's assistant. **Without
    it a draft the Go runtime makes cannot be published by the owner** (the "Show it" tap is a card). The Go runtime does draft, check and save it as state `draft`; the owner can edit or
    remove it, and a shop that goes back to the TypeScript runtime has the draft in its list. This is the largest gap and the first thing the lead should weigh.
@@ -98,7 +98,7 @@ copied by hand into Go, in the same four languages, and the differential test co
    still work). `/status` reports `alertPhones: 0`, which is right only while the shop has no push service (TypeScript counts the owner's phones when it has one). Go answers 404 to
    these, 400 to `owner_action` and to every event kind but the two it takes, and 400 to the inbox's `POST /internal/events`. The customer-side routes (chat, voice, documents, parent,
    material, offer-with-days) are not what a listings front calls: the front hides the chat for this kind, and the TypeScript shop answers 404 to voice and documents too.
-3. **The assistant's reading of the owner's words.** The TypeScript runtime answers words that are no listing at all ("something nice") with the owner-talk model; Go asks nothing. The
+3. **(Ported 18 Nov for the rule reader; the owner-talk model and the router's models are not.)** **The assistant's reading of the owner's words.** The TypeScript runtime answers words that are no listing at all ("something nice") with the owner-talk model; Go asks nothing. The
    differential found this on one phrase. What I did **not** port and did **not** test is the other half of that reading, `readOwnerRules`, which keeps the owner's commands (undo, help,
    cancel, a refund, closing a day) from being taken as a listing when they also say "on my page". Go takes any words with a listing cue (or a photo waiting) as a listing, so an owner
    command containing "for sale" would be drafted. I have no case that shows it, one way or the other.
@@ -155,3 +155,33 @@ So the demo does not run the shop's HTTP runtime, its SQLite file or its passkey
 2. A multi-shop Go process (the TypeScript pool's job) before the free shared server is compared on memory.
 3. Approval for `golang.org/x/text` (normalisation), and the price list.
 4. Run the three-line check in CI: contract against both, cross-restart, differential.
+
+## Wave 1a (19 Nov 2026): the Go listings runtime made complete
+
+Wave 1a finishes the Go side of the listings-only shop so that wave 1b can delete the TypeScript it replaces. Built in four branches (stock; limits, file and push; the multi-shop host; the owner's talk-and-cards page) and merged here. The old "Left out" list above is the trial's; this section says what changed.
+
+**Contract.** The six TypeScript-only stubs are gone, replaced by real cases that pass on both runtimes: `routes.contract.test.ts` (owner-limits, limit-changes, owner-file, push, with a fake push Guard), `stock.contract.test.ts`, `assistant.contract.test.ts` (cards, publish by tap, talk lines, rules, the same scripts run on both runtimes and compared line for line), `unicode.contract.test.ts`, `rates.contract.test.ts`, `restored.contract.test.ts`, `words-fresh.test.ts`, `shared.contract.test.ts` (the TypeScript shared process and the Go multi-shop process on the same scenarios). The whole directory passes on Go except one test that fails on both runtimes and is not ours: the `owner-access.sqlite` schema comparison in `cross-restart.test.ts` (main's owner-control tables; the owner-control port is another agent's branch).
+
+**Ported:** owner talk-and-cards page (GET owner, `owner_action` card yes/no with the digest rule, a draft makes a card, publish by tap, "Still have it?", expiry and compaction on the beat, budget notices), `readOwnerRules` (so owner commands are never drafted as listings), leave-with-your-shop asks, owner-limits and `/internal/limit-changes` (a listings shop declares no limits), owner-stock with its writes and the Confirm restore, owner-file (byte-for-byte, used-file shared with TypeScript), web push (store in TypeScript's `push.sqlite`, VAPID, sender through the push Guard), the price list (embedded copy of the dated rate tables, kept equal by a test; builder rate), the restore note, Unicode normalisation (`golang.org/x/text/unicode/norm`: NFC in `plain`, NFD fold; the hand-folding is gone), words packed per language and unpacked on first use.
+
+**Multi-shop process** (`go/internal/shared`, `go/cmd/listings-shared`): one process holds every shop of a server, same folder layout, routing, `/healthz` `/readyz` `/shared/shops` JSON (including `paused`/`pausedDetail`), back-soon with `x-back-soon: 1`. A panic in a shop's request, runner or sender is recovered at that goroutine and charged to the shop; strikes, quarantine and pause use `shared-pool.ts`'s numbers. A goroutine cannot be killed, so a stuck shop is contained by a 10 s request deadline (503 and a strike), a watchdog on the runner (60 s, longer than the TypeScript 10 s because the model call runs inside the step), and, for a repeat offender, a child process of the same binary started only after the in-process copy is proven to have released the store (otherwise the shop is "stranded", answers back-soon, and moves when the abandoned work ends). Not recoverable in Go, and so not contained: stack overflow, running out of memory, a concurrent map write, `os.Exit` in shop code; the supervisor restarts the process and nobody is charged. Set `STATE_DIR` or strike memory is kept in memory only.
+
+**Measurements** (same laptop, one process at a time, TypeScript shared process with 4 worker threads, three requests per shop):
+
+| shops | TS RSS after start / after requests | Go RSS after start / after requests | TS cold to all held | Go cold to all held |
+| --- | --- | --- | --- | --- |
+| 1 | 155 / 156 MB | 21 / 22 MB | 326 ms | 55 ms |
+| 10 | 261 / 265 MB | 29 / 31 MB | 887 ms | 105 ms |
+| 100 | 358 / 391 MB | 102 / 104 MB | 1,599 ms | 610 ms |
+
+One Go shop alone (`measure.ts`): idle 20.1 MB (was 19.5), 22.9 MB after 50 requests, 29.6 MB with 200 listings; binary 23.0 MB (16.2 MB with `-ldflags "-s -w"`). The first owner message in a process costs about 4.7 MB once (compiling the rule regexes), not per shop. The packed words are 17 KB in total. The trial's "Go is slower at p50 on the feed" finding was not re-measured. The 30 MB rule for one shop now has almost no room (29.6 MB with 200 listings), and `collate` (x/text, used for TypeScript's `localeCompare` in the Stock page) adds about 1.7 MB to the binary.
+
+**Not ported, so wave 1b cannot delete these TypeScript files yet:**
+- the owner-talk model answer for words no rule reads (`talk-owner.ts`, `talk-prompt.ts`, `talk-run.ts`, `talk-check.ts`, `talk-types.ts`, `listingSources`, `language/check.ts`): unknown words get the "not understood" line;
+- the router's decision and language models (`reading.ts`, `understanding.ts`, the model parts of `intents.ts`);
+- memory writes (`notes.ts`, `words-memory.ts`, `modules/memory`): the page shows notes, but remember/notes/forget answer "doesn't handle that"; date phrases in a money question; voice; the morning line (`morning.ts`) and with it the licence's final stop, which in a listings shop only gates the morning line; first-step seeding of the Operator's town;
+- the back-soon page uses a small inline stand-in for the front's stylesheet (the front reads the header and JSON);
+- `limitChanges` compaction.
+The TypeScript shared pool (`shared-pool.ts`, `shared-worker.ts`, `shared.ts`) is replaced by the Go host only once the deployer runs `listings-shared`.
+
+**TypeScript findings (reported, not fixed):** `http.ts` passes the session's secret token (not its short id) to `recordAccess("file_taken")`, so the `owner_file_taken` record line holds a live session token (Go writes the short id; the contract has a `todo` for TypeScript); the Stock page's pre-check and the step disagree on a listing title over 60 units (200, then a blocked line); `start` accepts a stock id of a listing that does not exist; with no declared limits "limit" answers "I can tighten: ." with an empty list; `get my shop's file for sale` is drafted as a listing; the restore entry says ids moved on by 100,000 though a listings store has no counter; `status.ownerAccess.locked` makes one existing contract test fail on TypeScript at the base. Seams left for the owner-control agent: `PasskeySessions` (`routes.go`), `Runtime.PushOwner`, `Runtime.Push().DropUnbound` on the first passkey.

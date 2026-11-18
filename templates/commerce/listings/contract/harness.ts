@@ -38,13 +38,20 @@ export interface ShopOptions {
   budget?: { monthlyMicroInr: number; daily: Record<string, number> };
   /** The fake model server's port; with it, runtime.json names it as the parser. */
   modelPort?: number;
+  /** Overrides of the model line of runtime.json (the provider and model name decide the price from the rate table). */
+  parser?: { provider?: string; model?: string };
   /** The owner's number in settings.json (left out: the owner gave none, and the runtime uses its "no number" marker). */
   owner?: string;
-  /** runtime.json's tickSeconds (default 3600, so no tick happens in a test unless it asks: the owner-control notices are written by the tick). */
+  /** The owner's language in settings.json (default "en"): the language the assistant talks to the owner in, and the owner's alerts are written in. */
+  ownerLanguage?: "en" | "hi" | "ml" | "kn";
+  /** The beat of the clock in seconds (runtime.json `tickSeconds`, at least 1; default 3600, so no tick happens in a test unless it asks: the owner-control notices are written by
+   * the tick). */
   tickSeconds?: number;
+  /** The `assistant` block of settings.json (default `{}`: the assistant on with its defaults): the character, the morning hour. */
+  assistant?: Record<string, unknown>;
   /** Run the shop on the TEST clock (modules/runtime/test-clock.ts): the machine's clock plus an offset the test moves with `advance`. */
   clock?: boolean;
-  /** runtime.json's services (default none); the push test names a push Guard. */
+  /** runtime.json's services (default none); the push tests name a push Guard. */
   services?: Record<string, unknown>;
 }
 
@@ -115,10 +122,10 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   writeFileSync(join(secrets, "internal_token"), internal);
   writeFileSync(join(secrets, "channel_token"), channel);
   writeFileSync(join(secrets, "record_key"), hex(32));
-  const settings = (number: string | undefined) => JSON.stringify({ name: "Glow Pets", place: { town: "Thrissur", pincode: "680001" }, trade: "pets", timezone: "Asia/Kolkata", languages: ["en", "ml"], owner: { language: "en", ...(number ? { whatsapp: number } : {}) }, assistant: {} });
+  const settings = (number: string | undefined) => JSON.stringify({ name: "Glow Pets", place: { town: "Thrissur", pincode: "680001" }, trade: "pets", timezone: "Asia/Kolkata", languages: ["en", "ml"], owner: { language: o.ownerLanguage ?? "en", ...(number ? { whatsapp: number } : {}) }, assistant: o.assistant ?? {} });
   writeFileSync(join(client, "settings.json"), settings(o.owner));
   const runtime: Record<string, unknown> = { mode: "fakes", host: "127.0.0.1", port, dataDir, tickSeconds: o.tickSeconds ?? 3600, services: o.services ?? {} };
-  if (o.modelPort !== undefined) runtime.parser = { wire: "openai", baseUrl: `http://127.0.0.1:${o.modelPort}/v1`, model: "fake-model", timeoutMs: 5000 };
+  if (o.modelPort !== undefined) runtime.parser = { wire: "openai", baseUrl: `http://127.0.0.1:${o.modelPort}/v1`, model: "fake-model", timeoutMs: 5000, ...(o.parser ?? {}) };
   if (o.budget) runtime.budget = o.budget;
   writeFileSync(join(client, "runtime.json"), JSON.stringify(runtime));
   writeFileSync(join(client, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(owner, new Date())));
