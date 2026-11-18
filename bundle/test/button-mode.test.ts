@@ -98,6 +98,8 @@ test("only a plain, readable answer for a shop with a plan turns buttons on: nor
 
 test("a flip is part of what the shop is asked to be: it changes the desired hash, and flipping back restores it; a shop that never had it keeps the hash it had", () => {
   const t = tempServer(); try {
+    // the baseline is a fleet answer with the plan and no flag: since 19 Nov the plan gives the shop a model budget, and the budget is part of the desired hash (deploy.ts desiredOf)
+    putAnswer(t.paths, answer({ ai: "normal", reason: undefined }));
     const plain = desiredHashOf(t.shop("glow-salon"));
     assert.equal(desiredHashOf({ ...t.shop("glow-salon"), fleetAi: undefined }), plain);
     putAnswer(t.paths, answer({ ai: "normal" }));
@@ -115,6 +117,8 @@ test("the deployer redeploys a shop when fleet flips it, and writes the setting 
     const logs: string[] = [];
     w.ctx.log = (line) => logs.push(line);
     w.handIn("glow-salon");
+    // the baseline is a fleet answer with the plan and no flag: since 19 Nov the plan gives the shop a model budget, and the budget is part of the desired hash (deploy.ts desiredOf)
+    putAnswer(w.paths, answer({ ai: "normal", reason: undefined }));
     await deploy(w.ctx);
     const first = loadState(w.root).shops["glow-salon"].applied!.desiredHash;
     assert.deepEqual((await applyOnce(w.ctx)).skipped, ["glow-salon"], "nothing changed");

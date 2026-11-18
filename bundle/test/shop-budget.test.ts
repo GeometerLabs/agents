@@ -154,9 +154,11 @@ test("fleet's `bought` is read whole and above zero only, from an answer that ha
 
 /** Run `geometer ...` in process against a temp server and collect what it says. */
 async function geometer(root: string, ...args: string[]): Promise<{ code: number; out: string }> {
-  const out: string[] = []; const log = console.log;
+  // refusals go to console.error (geometer.ts main), so both streams are captured
+  const out: string[] = []; const log = console.log; const error = console.error;
   console.log = (...a: unknown[]) => out.push(a.join(" "));
-  try { const code = await main([...args, "--server", root]); return { code, out: out.join("\n") }; } finally { console.log = log; }
+  console.error = (...a: unknown[]) => out.push(a.join(" "));
+  try { const code = await main([...args, "--server", root]); return { code, out: out.join("\n") }; } finally { console.log = log; console.error = error; }
 }
 
 test("geometer shop budget: shows the plan's numbers, sets the override with a reason, says when fleet's cap must be raised too, and clears", async () => {
