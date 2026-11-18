@@ -36,24 +36,70 @@ const animatedFace = (mood: string): string => `<svg xmlns="http://www.w3.org/20
 /** A DiceBear-like tile stands in for the character's picture: a flat square, so the review sees the head's layout (the real picture is the shop's own drawing). */
 const FACE = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84"><rect width="84" height="84" fill="#ffd9a0"/><circle cx="30" cy="38" r="5"/><circle cx="54" cy="38" r="5"/><path d="M28 56q14 12 28 0" fill="none" stroke="#000" stroke-width="4"/></svg>')}`;
 
-function threadFor(state: string, now: number): ChatThread {
+/**
+ * What each kind of shop says in the sample threads (18 Nov 2026): the Bookings salon, the Orders kitchen (a menu with prices as taps, an order held, then confirmed and paid, with
+ * a pickup slot) and the Fees centre (its public questions, and with ?parent=1 a parent's own fee with its pay line). The review so sees each template's real content, not the salon's.
+ */
+interface Sample { ask: string; menu: string; choices: { id: string; title: string; hint?: string }[]; yes: string; held: (paid: boolean) => string; done: (paid: boolean) => string; work: boolean }
+function sample(kind: ChatKind, parent: boolean): Sample {
+  if (kind === "orders") {
+    return {
+      ask: "Today's menu", menu: "Today's menu. Tap what you would like.",
+      choices: [{ id: "item:dosa", title: "Masala dosa", hint: "₹60" }, { id: "item:idli", title: "Idli, 3 pieces", hint: "₹40" }, { id: "item:coffee", title: "Filter coffee", hint: "₹25" }],
+      yes: "1 masala dosa, please",
+      held: (paid) => paid ? "Held: 1 masala dosa, ₹60, pickup at 1:30 pm. Pay ₹60 with UPI, then tap I have paid." : "Held: 1 masala dosa, ₹60, pickup at 1:30 pm. Tap Confirm to place it.",
+      done: (paid) => paid ? "Payment of ₹60 received. Your order is placed, pickup at 1:30 pm." : "Order placed: 1 masala dosa, pickup at 1:30 pm.", work: true,
+    };
+  }
+  if (kind === "fees" && parent) {
+    return {
+      ask: "My fee", menu: "Your child's June fee is ₹1,200, due on 10 June. Pay with UPI: upi://pay?pa=centre@upi&pn=Bright%20Centre&am=1200\nThen tap I have paid.",
+      choices: [{ id: "fee:paid", title: "I have paid", hint: "₹1,200" }, { id: "fee:due", title: "When is it due?" }],
+      yes: "I have paid", held: () => "Noted. The centre checks its record and tells you here.", done: () => "Payment of ₹1,200 received. June fee is paid.", work: true,
+    };
+  }
+  if (kind === "fees") {
+    return {
+      ask: "Fee questions", menu: "What would you like to know?",
+      choices: [{ id: "q:fee", title: "Fees for each class", hint: "Class 5 · ₹1,200 a month" }, { id: "q:due", title: "Due dates", hint: "The 10th of each month" }, { id: "q:pay", title: "How to pay", hint: "UPI or at the desk" }, { id: "q:time", title: "Class timings" }],
+      yes: "How to pay", held: () => "You can pay by UPI or at the desk. Parents get their own fee link from the centre.", done: () => "You can pay by UPI or at the desk. Parents get their own fee link from the centre.", work: false,
+    };
+  }
+  return {
+    ask: "Book a time", menu: "Which service would you like?",
+    choices: [{ id: "svc:haircut", title: "Haircut", hint: "₹450 · 30 minutes" }, { id: "svc:colour", title: "Colour", hint: "₹1,800 · 90 minutes" }],
+    yes: "Yes, book it",
+    held: (paid) => paid ? "Held until 10:30. Pay ₹200 with UPI, then tap I have paid." : "Held. Tap Confirm to book it.",
+    done: (paid) => paid ? "Payment of ₹200 received. Your haircut is booked for 5:00 pm tomorrow." : "Booked: haircut tomorrow at 5:00 pm.", work: true,
+  };
+}
+
+/** Whether the thread of this state holds a booking, an order or a fee (what the real /id/state reports as `work`: the number box is offered only then). */
+const hasWork = (state: string, kind: ChatKind, parent: boolean): boolean => {
+  const sm = sample(kind, parent);
+  if (!sm.work) return false;
+  return ["confirmed", "confirmed-live", "paid", "paid-live", "long", "keep"].includes(state) || (kind === "fees" && parent && !["empty", "closed", "paused"].includes(state));
+};
+
+function threadFor(state: string, now: number, kind: ChatKind = "bookings", parent = false): ChatThread {
   const t = (n: number, who: "you" | "shop", text: string, choices?: { id: string; title: string; hint?: string }[]) => ({ n, who, text, atMs: now - (10 - n) * 60_000, ...(choices ? { choices } : {}) });
   const base = { answered: true, capped: state === "capped", retentionDays: 30 };
+  const sm = sample(kind, parent);
   if (state === "empty" || state === "closed" || state === "paused") return { lines: [], answered: false, capped: false, retentionDays: 30 };
-  if (state === "answered" || state === "alerts" || state === "capped") return { ...base, lines: [t(1, "you", "Book a time"), t(2, "shop", "Which service would you like?", [{ id: "svc:haircut", title: "Haircut", hint: "₹450 · 30 minutes" }, { id: "svc:colour", title: "Colour", hint: "₹1,800 · 90 minutes" }])] };
+  if (state === "answered" || state === "alerts" || state === "capped") return { ...base, lines: [t(1, "you", sm.ask), t(2, "shop", sm.menu, sm.choices)] };
   if (state === "confirmed" || state === "confirmed-live" || state === "paid" || state === "paid-live") {
     const live = state.endsWith("-live");
     const paid = state.startsWith("paid");
-    const first = [t(1, "you", "Yes, book it"), t(2, "shop", paid ? "Held until 10:30. Pay ₹200 with UPI, then tap I have paid." : "Held. Tap Confirm to book it.")];
-    return { ...base, lines: live ? first : [...first, { ...t(3, "shop", paid ? "Payment of ₹200 received. Your haircut is booked for 5:00 pm tomorrow." : "Booked: haircut tomorrow at 5:00 pm."), moment: paid ? "paid" as const : "confirmed" as const }] };
+    const first = [t(1, "you", sm.yes), t(2, "shop", sm.held(paid))];
+    return { ...base, lines: live ? first : [...first, { ...t(3, "shop", sm.done(paid)), moment: paid ? "paid" as const : "confirmed" as const }] };
   }
   if (state === "long") return { ...base, lines: [t(1, "you", "പ്രീമിയം ഹെയർകട്ട് നാളെ വൈകുന്നേരം അഞ്ചുമണിക്ക് ബുക്ക് ചെയ്യാമോ എന്ന് ചോദിക്കാനാണ് ഞാൻ എഴുതുന്നത്"), t(2, "shop", "Held until 10:30. Pay ₹200 with UPI: https://example.com/pay/with/a/very/long/path/that/must/not/break/the/layout/at/three-twenty-pixels\nThen tap I have paid.")] };
-  return { ...base, lines: [t(1, "you", "What is the price of a haircut?"), t(2, "shop", "A haircut is ₹450 and takes 30 minutes.")] };
+  return { ...base, lines: [t(1, "you", "What is the price?"), t(2, "shop", kind === "orders" ? "A masala dosa is ₹60." : kind === "fees" ? "Class 5 is ₹1,200 a month." : "A haircut is ₹450 and takes 30 minutes.")] };
 }
 
 /** The arriving line of a "-live" state, answered by the screens' own /thread, so the page's poll finds it exactly as it would from a shop. */
-const arriving = (state: string, now: number) => ({
-  lines: [{ n: 3, who: "shop", atMs: now, text: state.startsWith("paid") ? "Payment of ₹200 received. Your haircut is booked for 5:00 pm tomorrow." : "Booked: haircut tomorrow at 5:00 pm.", moment: state.startsWith("paid") ? "paid" : "confirmed" }],
+const arriving = (state: string, now: number, kind: ChatKind, parent: boolean) => ({
+  lines: [{ n: 3, who: "shop", atMs: now, text: sample(kind, parent).done(state.startsWith("paid")), moment: state.startsWith("paid") ? "paid" : "confirmed" }],
   answered: true, capped: false, retentionDays: 30,
 });
 
@@ -78,7 +124,7 @@ const seed = (state: string, nonce: string, language: Language): string => {
 /** The "paints" page: every signboard paint with its text colour and the contrast the review checks (4.5 or more), each next to what it is on. Plain, not the chat itself. */
 function paintsPage(): string {
   const rows = PAINT_IDS.map((id) => `<li style="background:${PAINTS[id].hex};color:${PAINTS[id].ink};padding:14px 16px;font:700 1.2rem system-ui;display:flex;justify-content:space-between"><span>${id}</span><span>${PAINTS[id].hex} on ${PAINTS[id].ink}: ${contrastRatio(PAINTS[id].hex, PAINTS[id].ink).toFixed(2)} : 1</span></li>`).join("");
-  return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signboard paints</title><ul style="list-style:none;margin:0;padding:0">${rows}</ul><p style="font:1rem system-ui;padding:12px 16px">Open any state with ?paint=&lt;id&gt; to see the whole head on a paint.</p>`;
+  return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signboard paints</title><ul style="list-style:none;margin:0;padding:0">${rows}</ul><p style="font:1rem system-ui;padding:12px 16px">Open any state with ?paint=&lt;id&gt; to see the whole head on a paint.</p></html>`;
 }
 
 export function screen(state: string, q: URLSearchParams, base = BASE): { html: string; csp: string } {
@@ -95,7 +141,7 @@ export function screen(state: string, q: URLSearchParams, base = BASE): { html: 
       contact: { phone: "+919811111111" },
       hours: { sun: null, mon: { open: "10:00", close: "20:00" }, tue: { open: "10:00", close: "20:00" }, wed: { open: "10:00", close: "20:00" }, thu: { open: "10:00", close: "20:00" }, fri: { open: "10:00", close: "20:00" }, sat: { open: "10:00", close: "18:00" } },
     },
-    kind, language, base, home: "http://127.0.0.1/s/glow", nonce, thread: threadFor(state, now), personality: "cheerful",
+    kind, language, base, home: "http://127.0.0.1/s/glow", nonce, thread: threadFor(state, now, kind, q.get("parent") === "1"), personality: "cheerful",
     ...(isPaint(q.get("paint")) ? { paint: q.get("paint") as keyof typeof PAINTS } : {}),
     art: { base: `${base.replace(/\/chat$/u, "")}/character`, version: "screens", animated: true },
     ...(state === "voice" || state === "recording" ? { listen: true } : {}),
@@ -110,6 +156,7 @@ export function screen(state: string, q: URLSearchParams, base = BASE): { html: 
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const port = Number(process.argv[2] ?? 8799);
+  let lastKind: ChatKind = "bookings", lastParent = false;
   let lastState = "confirmed-live"; // the "-live" states' arriving line is the one the last page asked for
   createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://x");
@@ -121,10 +168,15 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const face = /^\/character\/([a-z]+)(-anim)?\.svg$/u.exec(url.pathname);
     if (face) { res.writeHead(200, { "content-type": "image/svg+xml", "cache-control": "no-store" }); res.end(animatedFace(face[1])); return; }
     // W2: what the identity part's script asks (chat-identity-front.ts): "keep" offers the keep box, "newphone" is a fresh guest, any other state is a guest mid-chat with the delete button
-    if (url.pathname === "/id/state") { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify(lastState === "newphone" ? { keys: 0, here: false, number: false, work: 0, offer: false, restored: false, known: false } : { keys: 0, here: false, number: false, work: 1, offer: lastState === "keep", restored: false, known: true })); return; }
-    if (url.pathname === "/thread") { res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }); res.end(JSON.stringify(Number(url.searchParams.get("after") ?? "0") >= 2 ? arriving(lastState, Date.now()) : { lines: [], answered: true, capped: false, retentionDays: 30 })); return; }
+    // the real page's answer: `work` is 1 only when the thread holds a booking, an order or a fee, so the number box shows only where it would on a real shop
+    if (url.pathname === "/id/state") { const work = hasWork(lastState, lastKind, lastParent) ? 1 : 0; res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify(lastState === "newphone" ? { keys: 0, here: false, number: false, work: 0, offer: false, restored: false, known: false } : { keys: 0, here: false, number: false, work, offer: lastState === "keep", restored: false, known: true })); return; }
+    // the alerts state registers the page's worker: a small stand-in served as script (a real shop serves its own), so the review shows no console error
+    if (url.pathname === "/sw.js") { res.writeHead(200, { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-store" }); res.end("// screens stand-in worker: takes no events\nself.addEventListener('install', () => self.skipWaiting());\n"); return; }
+    if (url.pathname === "/thread") { res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" }); res.end(JSON.stringify(Number(url.searchParams.get("after") ?? "0") >= 2 ? arriving(lastState, Date.now(), lastKind, lastParent) : { lines: [], answered: true, capped: false, retentionDays: 30 })); return; }
     if (!(STATES as readonly string[]).includes(state)) { res.writeHead(200, { "content-type": "text/html; charset=utf-8" }); res.end(`<!doctype html><meta charset="utf-8"><title>Chat screens</title><ul>${STATES.map((s) => `<li><a href="/${s}">${s}</a>`).join("")}</ul>`); return; }
     lastState = state;
+    lastKind = (["bookings", "orders", "fees"].includes(url.searchParams.get("kind") ?? "") ? url.searchParams.get("kind") : "bookings") as ChatKind;
+    lastParent = url.searchParams.get("parent") === "1";
     const { html, csp } = screen(state, url.searchParams, `http://127.0.0.1:${port}`);
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "content-security-policy": csp });
     res.end(html);
