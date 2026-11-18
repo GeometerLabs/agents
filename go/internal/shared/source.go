@@ -49,11 +49,13 @@ func (f FolderSource) Ready(name string) bool {
 
 // Fingerprint: only the three files that decide how the shop runs; pages.json, owner-grants.json and the like are read fresh by the shop on every request and need no restart.
 func (f FolderSource) Fingerprint(name string) string {
-	h := sha256.New()
-	for _, file := range []string{"settings.json", "runtime.json", "pathway.lock"} {
+	h := sha256.New() // the same text as shared.ts: the three files joined by a NUL, so a strike memory file is readable by either
+	for i, file := range []string{"settings.json", "runtime.json", "pathway.lock"} {
 		b, _ := os.ReadFile(filepath.Join(f.Paths(name).ClientFolder, file))
+		if i > 0 {
+			h.Write([]byte{0})
+		}
 		h.Write(b)
-		h.Write([]byte{0})
 	}
 	return hex.EncodeToString(h.Sum(nil))[:16]
 }

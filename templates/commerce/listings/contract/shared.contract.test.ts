@@ -10,7 +10,9 @@
 // fake shops in go/internal/shared/host_test.go and, for TypeScript, modules/runtime/test/shared-pool.test.ts.
 import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { verifyDocument } from "../../../../modules/signing/index.ts";
 import { PAGE } from "./harness.ts";
@@ -150,3 +152,45 @@ for (const impl of impls) {
     });
   });
 }
+
+// GO ONLY: a quarantined shop in a process of its own. The shipped binary has no fault hooks, so the strike memory (a small json file in STATE_DIR, which the host reads at its start) is
+// SEEDED with "quarantined" and the host must start the shop straight in a child (`listings-shared --one <shop>`): the real spawn, the proxy and the shop's own token check, end to end.
+describe("shared process: a quarantined shop in a process of its own (Go)", { skip: haveGo() ? false : "go/bin/listings-shared is not built" }, () => {
+  /** A host with the strike memory seeded: glow-pets quarantined. */
+  async function seeded() {
+    const root = makeRoot();
+    roots.push(root);
+    const shops = { "glow-pets": writeShop(root, "glow-pets"), "sree-cycles": writeShop(root, "sree-cycles") };
+    const client = join(root.clients, "glow-pets", "client");
+    // the fingerprint is the TypeScript one: the three files joined by a NUL, sha-256, 16 hex digits
+    const fingerprint = createHash("sha256").update(["settings.json", "runtime.json", "pathway.lock"].map((f) => readFileSync(join(client, f), "utf8")).join("\u0000")).digest("hex").slice(0, 16);
+    mkdirSync(join(root.dir, "state"), { recursive: true });
+    writeFileSync(join(root.dir, "state", "shared-strikes.json"), JSON.stringify({ "glow-pets": { fingerprint, quarantined: true } }));
+    const host = await startHost("go", root, { shops, expect: 2 });
+    hosts.push(host);
+    const kids = () => { try { return execFileSync("pgrep", ["-P", String(host.pid)]).toString().trim().split("\n").filter(Boolean); } catch { return []; } };
+    const gone = (pid: string) => until("the child is gone", () => { try { execFileSync("kill", ["-0", pid], { stdio: "ignore" }); return false; } catch { return true; } });
+    return { host, shops, kids, gone };
+  }
+  test("a seeded quarantine starts the shop in a child process; the child is gone when the host stops", async () => {
+    const { host, shops, kids, gone } = await seeded();
+    assert.deepEqual((await host.get("/healthz")).body.quarantined, ["glow-pets"]);
+    assert.equal(kids().length, 1, "one child process, for the quarantined shop only");
+    const a = shops["glow-pets"]; const b = shops["sree-cycles"];
+    assert.equal((await host.call("glow-pets", "/internal/channel/listings", { token: a.channel })).status, 200, "served through the proxy");
+    assert.equal((await host.call("glow-pets", "/internal/channel/listings", { token: b.channel })).status, 401, "the child's own token check refuses another shop's token");
+    assert.equal((await host.call("glow-pets", "/readyz")).status, 200);
+    assert.equal((await host.call("sree-cycles", "/internal/channel/listings", { token: b.channel })).status, 200, "the other shop runs in the host");
+    const child = kids()[0];
+    await host.stop();
+    await gone(child);
+  });
+
+  test("a child never outlives a host that died without cleaning up (it watches the pipe the host holds)", async () => {
+    const { host, kids, gone } = await seeded();
+    const child = kids()[0];
+    assert.ok(child);
+    process.kill(host.pid, "SIGKILL");
+    await gone(child); // otherwise the restarted host would start a second owner of the same store
+  });
+});

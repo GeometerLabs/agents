@@ -26,11 +26,12 @@
 //     shop whose files changed: the new copy is not started while the old one still holds the store.
 //   - A shop let go closes its store BEFORE /shared/shops stops naming it (a deployer must not move an open file): the shop's name is held until the release is proven.
 //
-// WHAT CANNOT BE RECOVERED. Go cannot recover from a stack overflow, running out of memory, a concurrent map write, a deadlock of every goroutine, or a runtime.Goexit/os.Exit in
-// shop code: each of those ends the WHOLE process and with it every shop in it. (The TypeScript pool turned an out-of-memory thread into a restart of one worker; Go has nothing like
+// WHAT CANNOT BE RECOVERED. Go cannot recover from a stack overflow, running out of memory, a concurrent map write, a deadlock of every goroutine: each of those ends the WHOLE process and with it every shop in it. (The TypeScript pool turned an out-of-memory thread into a restart of one worker; Go has nothing like
 // that.) The supervisor (the container's restart policy) brings the process back; the strike memory is not charged to anyone for such a death because nobody knows who it was.
 // Quarantine in a child is the protection after the fact: a shop that keeps hurting the process is moved out only if it is caught by a recoverable fault (a panic, a timeout, a
 // stuck step), and a shop that causes a fatal fault is a risk to every shop in the process until it is paused by hand (remove its folder, or its lock file).
+// Also fatal: a panic in a goroutine of the shop's code that no guard wraps (internal/runtime guards its request, runner and push-sender goroutines; any goroutine added later
+// must be guarded the same way, or one panic there ends every shop). os.Exit and log.Fatal in shop code end the process too (runtime.Goexit only ends its own goroutine).
 // Not contained either: a shop that is only SLOW but under the deadlines, or that eats memory slowly (no per-shop limit exists); the host's memory is the container's limit.
 package shared
 
@@ -103,7 +104,7 @@ type Limits struct {
 	FailuresToPause     int           // 3: it had a process of its own and still failed again and again
 	Pause               time.Duration // 6 hours: long enough to stop the churn, short enough that nobody has to remember it
 	RequestTimeout      time.Duration // 10 s (PROXY_TIMEOUT_MS): listing pages are quick; a hang must never hold a visitor for the front's whole minute
-	StuckAfter          time.Duration // 10 s (DEAD_AFTER_MS): a runner inside one step this long is stuck
+	StuckAfter          time.Duration // 60 s: a runner inside one step this long is stuck. Not the TypeScript 10 s: there a step waiting on the model did not block the loop, here it is inside the step the whole time, and a model call may last its timeout (12 s by default, more when runtime.json says so). A spinning step in Go only burns a core and holds nobody else up, so slow detection costs little
 	WatchEvery          time.Duration // 2 s (PING_MS)
 	StopWait            time.Duration // 10 s: how long a shop may take to let go of its store before it is called stranded
 	StartWait           time.Duration // 30 s: how long a shop (or a child) may take to start
@@ -115,7 +116,7 @@ type Limits struct {
 func DefaultLimits() Limits {
 	return Limits{
 		StrikeWindow: 30 * time.Minute, StrikesToQuarantine: 2, QuarantineWindow: time.Hour, FailuresToPause: 3, Pause: 6 * time.Hour,
-		RequestTimeout: 10 * time.Second, StuckAfter: 10 * time.Second, WatchEvery: 2 * time.Second, StopWait: 10 * time.Second, StartWait: 30 * time.Second,
+		RequestTimeout: 10 * time.Second, StuckAfter: 60 * time.Second, WatchEvery: 2 * time.Second, StopWait: 10 * time.Second, StartWait: 30 * time.Second,
 		ChildDelay: 250 * time.Millisecond, Backoff: 5 * time.Second,
 	}
 }

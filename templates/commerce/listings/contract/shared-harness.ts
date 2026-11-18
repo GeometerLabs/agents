@@ -55,6 +55,9 @@ async function freePort(): Promise<number> {
 
 export interface Host {
   url: string;
+  /** Milliseconds from spawning the process until /readyz first answered 200, and until every wanted shop was held. */
+  readyMs: number;
+  heldMs: number;
   pid: number;
   log(): string;
   /** GET/POST a path of the shared process itself (not a shop's). */
@@ -71,6 +74,8 @@ export async function startHost(impl: Impl, root: Root, o: { scanSeconds?: numbe
   const port = await freePort();
   const env = { ...process.env, SHOPS_DIR: root.clients, SECRETS_DIR: root.secrets, HOST: "127.0.0.1", PORT: String(port), SCAN_SECONDS: String(o.scanSeconds ?? 1), SHARED_WORKERS: String(o.workers ?? 2), STATE_DIR: join(root.dir, "state") };
   const [cmd, args] = impl === "go" ? [GO_SHARED_BIN, []] : [process.execPath, [join(REPO, "templates", "commerce", "listings", "server", "shared-main.ts")]];
+  const t0 = performance.now();
+  let readyMs = 0;
   const child: ChildProcess = spawn(cmd, args, { env, stdio: ["ignore", "pipe", "pipe"] });
   let output = "";
   child.stdout!.on("data", (d: Buffer) => { output += d.toString(); });
@@ -79,7 +84,7 @@ export async function startHost(impl: Impl, root: Root, o: { scanSeconds?: numbe
   const url = `http://127.0.0.1:${port}`;
   const ready = (async () => {
     for (let i = 0; i < 400; i++) {
-      try { if ((await fetch(`${url}/readyz`)).status === 200) return; } catch { /* not listening yet */ }
+      try { if ((await fetch(`${url}/readyz`)).status === 200) { readyMs = performance.now() - t0; return; } } catch { /* not listening yet */ }
       await new Promise((r) => setTimeout(r, 50));
     }
     throw new Error(`the shared process did not answer /readyz in 20 s:\n${output}`);
@@ -94,9 +99,10 @@ export async function startHost(impl: Impl, root: Root, o: { scanSeconds?: numbe
     throw new Error(`the shared process did not hold ${o.expect} shop(s) in 30 s:\n${output}`);
   })();
   await Promise.race([held, exited]);
+  const heldMs = performance.now() - t0;
   child.removeAllListeners("exit");
   const host: Host = {
-    url, pid: child.pid!, log: () => output,
+    url, pid: child.pid!, readyMs, heldMs, log: () => output,
     async get(path) { const r = await fetch(`${url}${path}`); return { status: r.status, body: await r.json().catch(() => null) }; },
     async call(shop, path, c = {}) {
       const folder = o.shops?.[shop];
@@ -107,7 +113,7 @@ export async function startHost(impl: Impl, root: Root, o: { scanSeconds?: numbe
       return { status: r.status, body: await r.json().catch(() => null), headers: r.headers };
     },
     async stop() {
-      if (child.exitCode !== null) return;
+      if (child.exitCode !== null || child.signalCode !== null) return;
       await new Promise<void>((resolve) => { child.once("exit", () => resolve()); child.kill("SIGTERM"); setTimeout(() => child.kill("SIGKILL"), 5000).unref(); });
     },
   };

@@ -25,6 +25,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -102,6 +103,7 @@ type slot struct {
 	released chan struct{} // closed when the in-process copy has let go of the store (set once the release began)
 	timer    *time.Timer   // the end of a pause
 	why      string        // why it is stranded
+	until    int64         // when a stranded shop's "pause" is said to end (fixed when it was stranded, so the deployer does not rewrite its status file on every look)
 	stopping bool          // being let go: a child's exit is no failure
 	delay    time.Duration // the wait before the next try of a child that keeps exiting
 	upAt     time.Time     // when its child started
@@ -123,6 +125,10 @@ type Host struct {
 	backoff map[string]backoffState
 
 	opMu sync.Mutex
+
+	// lastBeat is when the host's own watch loop last ran (Unix ms). A host that was stalled (a machine that slept, a long pause) makes EVERY timer fire late, so a deadline missed
+	// after a stall says nothing about a shop: nobody is struck then (the TypeScript watchdog does the same: `stalled`).
+	lastBeat atomic.Int64
 
 	ln      net.Listener
 	front   *http.Server
@@ -151,6 +157,10 @@ func New(o Options) (*Host, error) {
 		return nil, errors.New("a host needs a Source and a Starter")
 	}
 	h.mem = loadMemory(o.StateDir)
+	h.lastBeat.Store(h.now())
+	if o.StateDir == "" {
+		h.log("STATE_DIR is not set: the strike memory lives in this process only, so a restart gives every shop a clean sheet (and a quarantined shop comes back into this process).")
+	}
 	ln, err := net.Listen("tcp", o.Addr)
 	if err != nil {
 		return nil, err
@@ -347,7 +357,7 @@ func (h *Host) Status() Status {
 			st.PausedDetail = append(st.PausedDetail, PausedDetail{n, h.mem[n].PausedWhy, h.mem[n].PausedUntil})
 		case stStranded:
 			st.Paused = append(st.Paused, n)
-			st.PausedDetail = append(st.PausedDetail, PausedDetail{n, s.why, h.now() + h.lim.Pause.Milliseconds()})
+			st.PausedDetail = append(st.PausedDetail, PausedDetail{n, s.why, s.until})
 		}
 		if s.g != nil {
 			st.Abandoned += int(s.g.abandon.Load())
@@ -531,7 +541,7 @@ func (h *Host) move(s *slot) {
 	rel := h.release(s)
 	if !waitFor(rel, h.lim.StopWait) {
 		h.mu.Lock()
-		s.st = stStranded
+		s.st, s.until = stStranded, h.now()+h.lim.Pause.Milliseconds()
 		s.why = fmt.Sprintf("it is stuck: its store is still held by a step that has not finished, so it cannot move to a process of its own yet (%d request(s) given up on); it moves when that ends, or when this process is restarted", s.g.abandon.Load())
 		h.mu.Unlock()
 		h.log(fmt.Sprintf("%s: STRANDED: %s.", s.name, s.why))
@@ -816,7 +826,7 @@ func (h *Host) startShop(name, fp string) error {
 		return err
 	}
 	s.shop, s.st = shop, stUp
-	s.g = &guard{inner: shop.Handler(), timeout: h.lim.RequestTimeout, charge: func(why string) { h.charge(s, why) }}
+	s.g = &guard{inner: shop.Handler(), timeout: h.lim.RequestTimeout, charge: func(why string) { h.charge(s, why) }, stalled: h.stalled}
 	h.mu.Lock()
 	h.slots[name] = s
 	h.mu.Unlock()
@@ -832,7 +842,6 @@ func (h *Host) startWithin(name string, p Paths, hooks Hooks) (Shop, error) {
 		err  error
 	}
 	ch := make(chan result, 1)
-	rel := make(chan struct{})
 	go func() {
 		var r result
 		func() {
@@ -844,7 +853,6 @@ func (h *Host) startWithin(name string, p Paths, hooks Hooks) (Shop, error) {
 			r.shop, r.err = h.o.Start(p, hooks)
 		}()
 		ch <- r // buffered: never blocks
-		close(rel)
 	}()
 	t := time.NewTimer(h.lim.StartWait)
 	defer t.Stop()
@@ -852,8 +860,11 @@ func (h *Host) startWithin(name string, p Paths, hooks Hooks) (Shop, error) {
 	case r := <-ch:
 		return r.shop, r.err
 	case <-t.C:
-		h.hold(name, rel)
-		go func() { // a start that finishes late: let the shop go at once, so its store is not left open
+		// a start that finishes late: its shop is closed at once, and only then is the name free to start again, so its store is never left open under a new copy
+		late := make(chan struct{})
+		h.hold(name, late)
+		go func() {
+			defer close(late)
 			if r := <-ch; r.shop != nil {
 				r.shop.Close()
 			}
@@ -936,7 +947,15 @@ func probe(port int, timeout time.Duration) bool {
 
 // watch is the watchdog: a runner that has been inside ONE step for longer than StuckAfter is stuck. The step cannot be killed, so it is charged a strike (once per StuckAfter while
 // it stays stuck: a second strike is how a shop whose runner is stuck for good reaches quarantine).
+// stalled: did the host's own loop stop for longer than three beats (it ran late, so did everything else)?
+func (h *Host) stalled() bool { return h.now()-h.lastBeat.Load() > 3*h.lim.WatchEvery.Milliseconds() }
+
 func (h *Host) watch() {
+	stalled := h.stalled()
+	h.lastBeat.Store(h.now())
+	if stalled {
+		return // judged nobody this round: the clocks start again from now
+	}
 	type look struct {
 		s       *slot
 		shop    Shop
