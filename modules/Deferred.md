@@ -377,3 +377,16 @@ The design and what was weighed are in [Explanation.md](Explanation.md#shop-memo
 | Listing ids after a restore from a snapshot (the store's counter skip does not move `assistant.listings.seq`) | The assistant's counters are not in the template codecs' `count` fields (same gap as the memory's) | The skip moves optional-object counters too |
 | Photos kept as rows in the shop's SQLite file | Simple and backed up; a shop with 50 listings holds at most about 225 MB | A shop outgrows it: move them to files with their own backup object |
 | Phase B (directory and search), phase C (listings-only shops) | Next phases of the plan | Per the plan |
+
+## One shared stock count (18 Nov 2026, block S phase A3)
+
+| What | Why not now | Done when |
+|---|---|---|
+| **Importing an item list or counts from a billing app** | Owner listed it as later; it needs a named billing app's export format and a check of each row before it becomes a count | A shop names its billing app and a sample export is read: rows become `startCounting` calls the owner confirms |
+| **Barcode scanning** | Needs the phone's camera in the owner's page and a barcode on each item; no shop asked yet | The owner's page can scan and a barcode maps to a stock id |
+| **"Sold 2" in the owner's talk** (words or voice) | The Stock page has it; the talk reading would need a new intent and its words in four languages | The assistant's reader names the item and the number by rule and makes the keyed sale with the owner's authority |
+| **A WhatsApp template for the low-stock question** ("Rice 5 kg is low (3 left). Order from Ravi?") | A new template needs Meta's approval; the question goes to the owner's app and the existing order card goes to WhatsApp | The template is approved and `tellOwner` carries it before the card |
+| **The "Shop with stock" preset** | A preset adds no settings field and counting is chosen per item in the app, so there is nothing for a preset to turn on | Counting becomes a setting a preset may fill (for example a list of counted items), or a first-question step offers it |
+| **Linking two items to one line from the app** (a listing and a Stock orders item for the same rice) | The `aliases` of a line work and are tested, but only the panel or a builder can set them today | The Stock page offers "this is the same as ..." |
+| **Counts per day or per place** (a day's production, a second shop) | One count per item, whole numbers; a day's own limit stays Orders' `dailyStock` | A shop that needs it, with a decision on what a count per day means for a cancelled order |
+| **The review sheets** | The words are on `bundle/panel/review.ts` as `stockline.*`; the committed sheets (`REVIEW-hi/ml/kn.md`) were not regenerated here to avoid four streams conflicting | The lead regenerates them once on main (`node bundle/panel/review-sheet.ts hi|ml|kn`) |
