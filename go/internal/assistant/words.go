@@ -184,6 +184,7 @@ type RuleWords struct {
 	LeaveFile      []string            `json:"leaveFile"`
 	LeaveOperator  []string            `json:"leaveOperator"`
 	Remember, List []string
+	Dates          struct{ Today, Tomorrow, DayAfter, Yesterday []string }
 }
 
 var (
@@ -200,11 +201,15 @@ func Rules() *RuleWords {
 			LeaveOperator []string            `json:"leaveOperator"`
 			Remember      []string            `json:"remember"`
 			List          []string            `json:"list"`
+			Dates         struct {
+				Today, Tomorrow, DayAfter, Yesterday []string
+			} `json:"dates"`
 		}
 		if err := json.NewDecoder(bytes.NewReader(gunzip("rules.json.gz"))).Decode(&raw); err != nil {
 			panic("the packed rules are not JSON")
 		}
 		rulesWords = &RuleWords{Kinds: raw.Kinds, LeaveFile: raw.LeaveFile, LeaveOperator: raw.LeaveOperator, Remember: raw.Remember, List: raw.List}
+		rulesWords.Dates.Today, rulesWords.Dates.Tomorrow, rulesWords.Dates.DayAfter, rulesWords.Dates.Yesterday = raw.Dates.Today, raw.Dates.Tomorrow, raw.Dates.DayAfter, raw.Dates.Yesterday
 	})
 	return rulesWords
 }

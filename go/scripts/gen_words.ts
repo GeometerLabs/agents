@@ -24,6 +24,7 @@ import { formatDate, formatTime } from "../../modules/language/format.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { PERSONALITIES } from "../../modules/assistant/personality.ts";
+import { WORDS } from "../../modules/language/words.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "..");
@@ -129,6 +130,8 @@ function rules(): unknown {
     leaveOperator: listAfter(leave, "const OPERATOR = new RegExp([", "\n].join"),
     remember: new Function(`return ${memory.slice(memory.indexOf("const REMEMBER = [") + "const REMEMBER = ".length, memory.indexOf("].join", memory.indexOf("const REMEMBER")) + 1)}`)() as string[],
     list: listAfter(memory, "const LIST = new RegExp([", "\n].join"),
+    // the Malayalam and Kannada words for today, tomorrow, the day after and yesterday (modules/language/words.ts): the Hindi and English ones are in dates.ts's own patterns
+    dates: { today: [...WORDS.ml.today, ...WORDS.kn.today], tomorrow: [...WORDS.ml.tomorrow, ...WORDS.kn.tomorrow], dayAfter: [...WORDS.ml.dayAfterTomorrow, ...WORDS.kn.dayAfterTomorrow], yesterday: [...WORDS.ml.yesterday, ...WORDS.kn.yesterday] },
   };
 }
 
