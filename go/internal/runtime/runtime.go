@@ -63,6 +63,8 @@ type Runtime struct {
 	kick chan struct{}
 	stop chan struct{}
 	done chan struct{}
+
+	routes *routes // owner-limits, owner-file and push (routes.go)
 }
 
 // New builds the runtime over an open store and starts its runner.
@@ -101,11 +103,15 @@ func New(o Options) (*Runtime, error) {
 		}
 	}
 	r.proto = listings.NewProtocol(r.publicRead, r.signingKey, o.Now, func() string { return o.Client.Settings.Name })
+	if err := r.initRoutes(); err != nil {
+		return nil, err
+	}
 	return r, nil
 }
 
 // Start runs the queue and the clock's beat until Close.
 func (r *Runtime) Start(tick time.Duration) {
+	r.startRoutes()
 	go func() {
 		defer close(r.done)
 		t := time.NewTicker(tick)
@@ -137,6 +143,7 @@ func (r *Runtime) Kick() {
 func (r *Runtime) Close() {
 	close(r.stop)
 	<-r.done
+	r.closeRoutes()
 }
 
 // ---- events ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -268,6 +275,8 @@ func (r *Runtime) step(ev map[string]any, taskID string) error {
 			r.ownerPhoto(snap, rec, ev, now)
 		case "owner_access":
 			r.ownerAccess(rec, ev)
+		case "limit_settled", "owner_limit":
+			r.limitEvent(snap, rec, ev)
 		case "owner_signin":
 			r.ownerSignin(rec, now)
 		case "owner_message":
@@ -356,6 +365,9 @@ func (r *Runtime) ownerPhoto(snap *Snap, rec *recorder, ev map[string]any, now i
 // ---- the owner's sign-in events ---------------------------------------------------------------------------------------------------------------------------
 
 func (r *Runtime) ownerAccess(rec *recorder, ev map[string]any) {
+	if r.fileTakenStep(rec, ev) {
+		return
+	}
 	number, lang := r.owner()
 	what, _ := ev["what"].(string)
 	session, _ := ev["session"].(string)
