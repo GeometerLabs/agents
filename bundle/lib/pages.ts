@@ -174,6 +174,7 @@ export function pagesFileFor(server: ServerConfig, shop: string, settings: PageS
     ...(server.panel.enabled ? { panelUrl: `${publicUrl(server)}/shops/${shop}` } : {}),
     ...(character ? { character: { version: character } } : {}),
     ...(paint ? { paint } : {}),
+    ...(server.panel.mode === "hosted" ? { hosted: true as const } : {}),
   };
 }
 
