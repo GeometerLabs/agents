@@ -39,6 +39,7 @@ import type { AssistantState, CardRecord } from "./state.ts";
 import type { DayRow, OwnerSkill, Prepared, Proposal } from "./skill.ts";
 import { dayFacts, render as renderTemplate, templateMessageFor } from "./templates.ts";
 import type { AssistantTemplateId, TemplateFacts } from "./templates.ts";
+import { stateFor } from "../understanding/ai-state.ts";
 import type { AiPolicy, AiStore } from "../understanding/ai-state.ts";
 import type { TalkModel } from "../understanding/talk.ts";
 import { MEMORY_ACTION, addNote, closeNote, memoryOf, memoryRefs, ownerAuthority, panelAuthority } from "../memory/memory.ts";
@@ -55,6 +56,8 @@ import type { AskKind } from "../approvals/leave.ts";
 import { customerTalk } from "./talk-customer.ts";
 import { ownerTalk } from "./talk-owner.ts";
 import type { LimitHook } from "./talk-owner.ts";
+import { takeDayNotice, takeNotices } from "../budget/budget.ts";
+import type { Feature } from "../budget/budget.ts";
 import { talkOff } from "./talk-run.ts";
 import type { TalkEnv } from "./talk-run.ts";
 import { limitCase, viewOf } from "./limits-card.ts";
@@ -256,10 +259,13 @@ export function createAssistant(deps: AssistantDeps) {
    * The owner's words that no rule or router read: answered as a conversation when the talk is on. False when it is off (no model, button mode, the AI cap): the caller
    * then gives today's fixed answer. A reply that fails a check is not sent: the owner gets a fixed line with the shop's real numbers instead.
    */
-  async function talkToOwner(text: string): Promise<boolean> {
-    if (!deps.talk || !talkEnv || talkOff(talkEnv)) return false;
+  async function talkToOwner(text: string, key?: string): Promise<boolean> {
+    if (!deps.talk || !talkEnv) return false;
+    const off = talkOff(talkEnv, "owner_talk", key);
+    if (off === "again") return true; // the same message delivered again: it was answered the first time, so nothing is said twice
+    if (off) { await capNotice(off, "owner_talk"); return false; }
     const s = state();
-    const r = await ownerTalk({ env: talkEnv, shop: { ...promptShop, owner: shop.owner }, memory: s.memory, skills, chat: s.chat ?? [], ...(talkLimits() ? { limits: talkLimits()! } : {}) }, { text, language: shop.owner.language });
+    const r = await ownerTalk({ env: talkEnv, shop: { ...promptShop, owner: shop.owner }, memory: s.memory, skills, chat: s.chat ?? [], ...(talkLimits() ? { limits: talkLimits()! } : {}) }, { text, language: shop.owner.language, ...(key !== undefined ? { key } : {}) });
     if (!r.ran) return false;
     if (!r.result.ok) {
       const today = skills.find((x) => x.day);
@@ -290,7 +296,7 @@ export function createAssistant(deps: AssistantDeps) {
   async function talkToCustomer(a: { phone: string; text: string; language: Language; overrideAttempt?: boolean; menu?: (askOwner: boolean) => { buttons?: Choice[]; list?: { button: string; rows: Choice[] } } }): Promise<boolean> {
     if (!deps.talk || !talkEnv) return false;
     const r = await customerTalk({ env: talkEnv, shop: promptShop, customersOn: deps.talk.customers !== false, memory: deps.store.assistant?.memory, skills }, a);
-    if (!r.sent) return false;
+    if (!r.sent) { await capNotice(r.reason, "customer_talk"); return false; } // a customer is never told: they get the template's menu; the owner is told once a day
     const menu = a.menu?.(r.result.answer.askOwner);
     // the template's own button and row words are its, not the model's: the outgoing check reads them as the names they are
     const own = menu ? [...(menu.buttons ?? []).map((b) => b.title), ...(menu.list ? [menu.list.button, ...menu.list.rows.flatMap((x) => [x.title, x.description ?? ""])] : [])].filter((x) => x !== "") : [];
@@ -592,6 +598,43 @@ export function createAssistant(deps: AssistantDeps) {
     await reopenDay({ year: y, month: m, day: d });
   }
 
+  // ---- the model budget's words to the owner (budget/budget.ts) ----
+  /** The first day of next month in the shop's zone: when the budget is back ("it is back on 1 December"). */
+  function nextMonthStart(): LocalDate {
+    const t = todayIn(clock.now(), tz);
+    return t.month === 12 ? { year: t.year + 1, month: 1, day: 1 } : { year: t.year, month: t.month + 1, day: 1 };
+  }
+
+  /**
+   * A budget line to the owner in BOTH places: the app's talk list (always, so it is there when the owner's 24-hour window is closed and WhatsApp can only carry a plain nudge)
+   * and WhatsApp. When the owner is already talking in the app, the one line goes there. A failed send is never tried again by the caller: the notice is marked told first.
+   */
+  async function tellBudget(data: MessageData["budget_line"]): Promise<void> {
+    if (toPage) { await tell("budget_line", data); return; }
+    try { await onPage(() => tell("budget_line", data)); } catch { /* nothing */ }
+    try { await tell("budget_line", data); } catch { /* outside the 24-hour window: the app has it */ }
+  }
+
+  /** A feature stopped for the day: tell the owner once that day, in their words (never a customer). The month's own notices are the beat's (budgetBeat). */
+  async function capNotice(reason: string, feature: Feature): Promise<void> {
+    if (reason !== "day" || !deps.talk?.policy.budget || !takeDayNotice(deps.store, feature, clock.now(), tz)) return;
+    await tellBudget({ line: "day", feature });
+  }
+
+  /**
+   * The month's two notices, each once: most of the budget is used, and it is used up (the model is then left out and buttons, rules and fixed answers go on). To the owner's
+   * app always (its talk list) and to WhatsApp while a message can be sent. They are marked told first (budget.ts), so a failed send is not tried again every beat. The Operator
+   * reads the same state in the panel (the runtime's status carries the budget summary).
+   */
+  async function budgetBeat(): Promise<void> {
+    const cfg = deps.talk?.policy.budget;
+    if (!cfg) return;
+    for (const line of takeNotices(deps.store, cfg, clock.now(), tz)) {
+      await tellBudget({ line, backOn: nextMonthStart() });
+      logLine(null, "ai_mode", "confirmed", { reason: "budget", notice: line }, { mode: `budget_${line}`, reason: "budget", month: stateFor(deps.store, clock.now(), tz).month }, line === "warn" ? "the owner was told that most of this month's model budget is used" : "the owner was told that this month's model budget is used up: the language model is off until the 1st; buttons, rules and fixed answers go on");
+    }
+  }
+
   // ---- listings (block S, phase A; listing-draft.ts, listing-card.ts) ----
   /** Kinds of reading that are an act on a case or a limit or the memory: they win over a listing even with photos waiting. The weaker ones (a list, money) lose to a clear cue. */
   const STRONG: readonly OwnerKind[] = ["remember", "notes", "forget", "undo", "help", "limit", "cancel", "refund", "message", "close_day", "reopen_day", "move"];
@@ -601,7 +644,7 @@ export function createAssistant(deps: AssistantDeps) {
    * quantity from the words by rule, the four languages' words from the talk model, every number and claim checked against the owner's words) and offers ONE card. The owner's
    * tap publishes it. True when the words were taken as a listing (whatever came of them); false when they are something else.
    */
-  async function listingFromWords(text: string): Promise<boolean> {
+  async function listingFromWords(text: string, key?: string): Promise<boolean> {
     const now = clock.now();
     const ls = listingsOf(state());
     const waiting = pendingPhotos(ls, now);
@@ -609,9 +652,15 @@ export function createAssistant(deps: AssistantDeps) {
     if (waiting.length === 0 && !cue) return false;
     const rules = readOwnerRules(text, context);
     if (rules.ref || STRONG.includes(rules.kind as OwnerKind) || (rules.kind !== "unknown" && !cue)) return false;
-    if (!talkEnv || talkOff(talkEnv)) { await tell("listing_line", { line: "need_model" }); return true; }
-    const out = await draftFromWords({ env: talkEnv, shopName: shop.name, ownerLanguage: shop.owner.language }, { text });
-    if (!out.ok) { await tell("listing_line", { line: "refused", why: out.why, ...(out.animal ? { animal: out.animal } : {}) }); return true; }
+    if (!talkEnv) { await tell("listing_line", { line: "need_model" }); return true; }
+    const off = talkOff(talkEnv, "listing_draft", key);
+    // over a cap the draft falls back to the plain form in the owner's app (the words say so); off for any other reason it is the old line
+    if (off === "again") return true; // the same words delivered again: the first one was answered
+    if (off === "budget" || off === "day") { await tellBudget(off === "budget" ? { line: "listing_month", backOn: nextMonthStart() } : { line: "day", feature: "listing_draft" }); return true; }
+    if (off) { await tell("listing_line", { line: "need_model" }); return true; }
+    const out = await draftFromWords({ env: talkEnv, shopName: shop.name, ownerLanguage: shop.owner.language, ...(key !== undefined ? { key } : {}) }, { text });
+    if (!out.ok && (out.why === "over_budget" || out.why === "over_day")) { await tellBudget(out.why === "over_budget" ? { line: "listing_month", backOn: nextMonthStart() } : { line: "day", feature: "listing_draft" }); return true; }
+    if (!out.ok) { await tell("listing_line", { line: "refused", why: out.why as Exclude<typeof out.why, "over_budget" | "over_day">, ...(out.animal ? { animal: out.animal } : {}) }); return true; }
     const made = draftListing(ls, { ...out.input, photos: takePhotos(ls, waiting.map((p) => p.id), now) }, { nowMs: now });
     if (!made.ok) { await tell("listing_line", { line: "refused", why: made.why }); return true; }
     made.value.from = toPage ? "app" : "whatsapp";
@@ -663,7 +712,7 @@ export function createAssistant(deps: AssistantDeps) {
     const noteTap = parseNoteReply(msg);
     if (noteTap) { await notes.onProposalReply(noteTap); return true; }
     // the shop's listings (block S): words with a photo waiting, or words that say "put this on my page", make a draft listing and its card (never anything public)
-    if (deps.listings && (await listingFromWords(msg.text))) return true;
+    if (deps.listings && (await listingFromWords(msg.text, `o:${msg.id}`))) return true;
     const read = await deps.read(msg.text);
     const intent = read.intent;
     logLine(null, ASSISTANT_ACTIONS.read, "confirmed", { intent: intent.kind }, { intent: intent.kind, ...read.refs, ...(intent.ref ? { case: intent.ref } : {}) }, read.note);
@@ -700,7 +749,7 @@ export function createAssistant(deps: AssistantDeps) {
         await propose(proposal);
         break;
       }
-      default: if (!(await talkToOwner(msg.text))) await tell("not_understood", { kinds: context.kinds });
+      default: if (!(await talkToOwner(msg.text, `o:${msg.id}`))) await tell("not_understood", { kinds: context.kinds });
     }
     return true;
   }
@@ -775,6 +824,7 @@ export function createAssistant(deps: AssistantDeps) {
     for (const c of expireCards(s, now)) logLine(c.action.case, ASSISTANT_ACTIONS.card, "blocked", { card: c.id }, { card: c.id, skill: c.action.skill, kind: c.action.kind, digest: c.digest, decision: "none" }, "the card ran out without a tap: nothing was done");
     compactAssistant(s, now, isoDate(today()));
     await askFresh(); // "Still have the Persian kitten?" (listings; at most 3 a day)
+    await budgetBeat(); // most of the month's model budget used, and used up: each once
     notes.tick(); // notes past their end are closed; closed notes lose their text after 30 days (modules/memory)
     // a limit change that settled since the owner was last told: Active, or failed with the previous limit still in force (the runtime's core settles it, limits/runtime-limits.ts)
     // (marked told first: a failed send, such as outside the owner's 24-hour window, is not tried again every beat; the owner's app shows the state either way)

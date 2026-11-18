@@ -3,7 +3,7 @@
 // status.json is left out; the manifest says whose it is; and no key or secret is in it.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ExportError, buildExport } from "../export/build.ts";
 import { sourcesFor } from "../export/sources.ts";
@@ -18,6 +18,8 @@ function exportRecord(root: string, shop: string, o: { keyed: boolean; marker?: 
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "record.json"), JSON.stringify([entry(1, "c-aaaaaaaaaaaa", "receive_message"), entry(2, "c-aaaaaaaaaaaa", o.marker ?? "hold_slot")]));
   writeFileSync(join(dir, "bookings.json"), JSON.stringify([{ id: "b-1", customer: "p-bbbbbbbbbbbb", state: "confirmed", pending: [] }]));
+  // an unkeyed export has no marker: a marker left by an earlier call on the same folder must not make it look keyed
+  if (!o.keyed) rmSync(join(dir, "person-form.json"), { force: true });
   if (o.keyed) writeFileSync(join(dir, "person-form.json"), JSON.stringify({ form: PERSON_FORM, inputs: { keyed: 2, older: 0 }, messageIds: { older: 0 } }));
 }
 const owner = { name: "the owner", role: "owner" };

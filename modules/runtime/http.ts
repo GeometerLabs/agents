@@ -73,6 +73,7 @@ import { checkChannelEvent } from "../channels/events.ts";
 import { MAX_VOICE_BYTES } from "../channels/owner-audio.ts";
 import { MAX_PHOTO_BYTES, PHOTO_ID, checkPhoto, photoIdOf } from "../listings/photo.ts";
 import { checkOwnerListing } from "../listings/kit.ts";
+import { checkOwnerStock } from "../stock/kit.ts";
 import { HANDLE_HASH } from "../channels/handle.ts";
 import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts";
 import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "../channels/owner-access.ts";
@@ -560,6 +561,27 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (!checked.ok) return send(res, 400, { error: checked.error });
       // the same rules the step will apply, asked now, so the page can say why before anything is saved (the step checks again: a race changes nothing the rules refuse)
       const why = channel.listings.check(checked.event.op);
+      if (why) return send(res, 422, { why, error: `The shop's rules refuse that (${why}).` });
+      const counts = runtime.submit([checked.event]);
+      send(res, 200, counts);
+      runtime.kick();
+      return;
+    }
+    // block S phase A3: the owner's Stock page (the one shared stock count). Their credential, checked here; a customer has no route to it.
+    if (path === "/internal/channel/owner-stock") {
+      if (!channel.stock) throw new HttpError(404, "There is nothing here.");
+      if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+      if (req.method === "GET") { const lang = url.searchParams.get("lang") ?? undefined; return send(res, 200, channel.stock.ownerView(lang && LANGUAGES.includes(lang as Language) ? lang as Language : undefined)); }
+      only("POST");
+      let body: unknown;
+      try { body = JSON.parse(await readBody(req, 4 * 1024)); } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const checked = checkOwnerStock(body);
+      if (!checked.ok) return send(res, 400, { error: checked.error });
+      // the same rules the step will apply, asked now, so the page can say why before anything is saved (the step checks again: a race changes nothing the rules refuse)
+      const why = channel.stock.check(checked.event);
       if (why) return send(res, 422, { why, error: `The shop's rules refuse that (${why}).` });
       const counts = runtime.submit([checked.event]);
       send(res, 200, counts);

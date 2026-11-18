@@ -3,11 +3,12 @@
 //
 // The parser is the router (router.ts) or the rule parser alone. Whether a message may spend at all is decided here, from the store's AI state
 // (ai-state.ts): in button mode the parser is asked to read with the rules only, a decision model that keeps failing is left out for a while, and under the AI cap
-// (`model: "off"`) the language model is left out for the rest of the month (both through `skipSteps`).
+// (`model: "off"`), or once the shop's own month budget is used up or the router's daily cap is reached (budget/budget.ts), the language model is left out (all through `skipSteps`).
 import type { Language } from "../language/languages.ts";
 import type { Clock } from "../core/clock.ts";
 import { MINUTE } from "../core/time.ts";
 import type { Action, Outcome } from "../record/record.ts";
+import { gate, modelOff, record } from "../budget/budget.ts";
 import { DEFAULT_BREAKER, DEFAULT_PAUSE_MINUTES, addSpeech, dayLocal, speechNotesToday, modeOf, noteStep, pausedSteps, stateFor, takeAnnouncements } from "./ai-state.ts";
 import type { AiPolicy, AiStore, ButtonReason } from "./ai-state.ts";
 import { RULES } from "./model.ts";
@@ -38,7 +39,9 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
       // A step that keeps failing is left out for a while: the parser is told, and the next step reads the message at once. Under the AI cap the language model is
       // left out: the rules and the decision model read the message, and what neither can read stays the rules' reading (the agent then sends the menu).
       const paused: Step[] = pausedSteps(store, clock.now(), timeZone);
-      const skipSteps: Step[] = policy.model?.() === "off" ? [...paused, "model"] : paused;
+      // (the router's language step is one feature of the shop's budget: off when fleet says so, when the month's budget is used up, or when today's calls of it are used)
+      const modelLeftOut = modelOff(store, policy, clock.now(), timeZone) !== null || !gate(store, policy.budget, "router", clock.now(), timeZone).ok;
+      const skipSteps: Step[] = modelLeftOut ? [...paused, "model"] : paused;
       const asked = skipSteps.length > 0 ? { ...options, skipSteps } : options;
       // A parser that can say why it fell back (the model parser) gets that said in the record.
       const read = parser.parseDetailed ? await parser.parseDetailed(text, context, asked) : { intent: await parser.parse(text, context), fallbackReason: undefined, understood: undefined };
@@ -70,6 +73,8 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
     const state = stateFor(store, clock.now(), timeZone);
     state[u.step] += 1;
     if (u.costMicroInr === null) state.unpriced += 1; else state.costMicroInr += u.costMicroInr;
+    // the language step was asked (whatever it answered): one call of the router's feature against the budget. The decision model is Laya on the shop's own server: not a budget item.
+    if (u.tried.includes("model")) record(store, policy.budget, "router", { costMicroInr: u.step === "model" ? u.costMicroInr : null }, clock.now(), timeZone);
     if (u.step === "rules" && u.failed.length > 0) state.pausedUntilMs = clock.now() + (policy.pauseMinutes ?? DEFAULT_PAUSE_MINUTES) * MINUTE;
     // The decision model's pause: it answering (even "unsure") ends an outage; it failing counts only when the language model was asked after it AND answered, because
     // only then did something take over, and the pause says the language model reads each message. With nothing after it, or with that down too, a failure is the fault above.
@@ -102,14 +107,23 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
   }
 
   /**
-   * The AI cap: one line in the record, once a month, when the language model is first left out. Nobody else is told from here: fleet tells the Operator (its `ai_cap`
-   * alert and warning), the owner's service does not change in a way they would notice, and a customer whose message the rules cannot read gets the menu.
+   * The AI cap: one line in the record, once a month, when the language model is first left out, whether fleet's cap did it (`model: "off"`) or the shop's own month budget
+   * (budget/budget.ts). Nobody is told from HERE: fleet tells the Operator about its cap (`ai_cap`), the assistant tells the owner about the budget (its own notices, once, in
+   * their language), and a customer whose message the rules cannot read gets the menu.
    */
   function announceModelOff(): void {
-    if (policy.model?.() !== "off") return;
+    const why = modelOff(store, policy, clock.now(), timeZone);
+    if (!why) return;
     const state = stateFor(store, clock.now(), timeZone);
     if (state.told.modelOff === state.month) return;
     state.told.modelOff = state.month;
+    if (why === "budget") {
+      deps.log("ai_mode", "confirmed", { reason: "budget", month: state.month }, {
+        notes: `This shop has used its own model budget for the month (${state.month}). The language model is left out until the 1st: the rules, the buttons and the decision model (step 1) keep answering, the owner's talk, customers' open questions and listing drafts use their fixed answers and the plain form. Every limit still holds. The owner is told once by the assistant; the Operator sees it in the panel.`,
+        refs: { mode: "model_off", reason: "budget", month: state.month },
+      });
+      return;
+    }
     deps.log("ai_mode", "confirmed", { reason: "ai_cap", month: state.month }, {
       notes: `This shop has used its AI allowance for the month (${state.month}): its model spend reached the plan's cap, so the shop's config says model: off. The language model (step 2) is left out until fleet turns it back on, on the 1st. The rules and the decision model (step 1) keep answering; a message they cannot read gets the menu, as in button mode. Every limit still holds. Fleet tells the Operator; no customer or owner is told.`,
       refs: { mode: "model_off", reason: "ai_cap", month: state.month },
@@ -147,9 +161,9 @@ export function createReader<I extends IntentBase, C, O extends ParseOptionsBase
 
   /**
    * May a voice note be listened to right now? Voice is model spend, so it stops with the rest of it: in button mode (the allowance is used up, the shop was switched to
-   * buttons, or a model just failed) and under the AI cap (`model: "off"`) a voice note gets the line asking the customer to type, and the speech provider is not asked.
+   * buttons, or a model just failed) and under the AI cap (`model: "off"`) or with the shop's month budget used up a voice note gets the line asking the customer to type, and the speech provider is not asked.
    */
-  const voiceAllowed = (): boolean => !mode().buttons && policy.model?.() !== "off";
+  const voiceAllowed = (): boolean => !mode().buttons && modelOff(store, policy, clock.now(), timeZone) === null;
 
   /** Voice notes listened to today, from the saved state. */
   const notesToday = (): number => speechNotesToday(store, clock.now(), timeZone);

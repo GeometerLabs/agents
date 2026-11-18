@@ -122,6 +122,7 @@ export function buildUnderstanding<Parser, Intent extends IntentBase, Context, O
     override: aiOverrideReader(client.folder, rt.ai === "buttons" ? "buttons" : "auto"),
     model: modelSwitchReader(client.folder, rt.model === "off" ? "off" : "normal"),
     ...(rt.allowance ? { allowance: { ...(rt.allowance.messages !== undefined ? { messages: rt.allowance.messages } : {}), ...(rt.allowance.costInr !== undefined ? { costMicroInr: Math.round(rt.allowance.costInr * 1_000_000) } : {}) } } : {}),
+    ...(rt.budget ? { budget: rt.budget } : {}),
     ...(rt.pauseMinutes !== undefined ? { pauseMinutes: rt.pauseMinutes } : {}),
   };
   return { parser, ai };

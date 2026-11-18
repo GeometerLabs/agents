@@ -10,6 +10,7 @@ Disallow: /*/o/
 Disallow: /*/f/
 Disallow: /*/fee/
 Disallow: /*/order/
+Disallow: /search
 Disallow: /examples/
 ROBOTS 200
 		}

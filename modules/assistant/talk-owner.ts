@@ -12,7 +12,7 @@ import type { TalkLine } from "./state.ts";
 import { OWNER_CHARS, historyText, ownerPrompt } from "./talk-prompt.ts";
 import type { PromptShop } from "./talk-prompt.ts";
 import { runTalk, talkOff } from "./talk-run.ts";
-import type { TalkEnv, TalkResult } from "./talk-run.ts";
+import type { TalkEnv, TalkOffReason, TalkResult } from "./talk-run.ts";
 import type { TalkSource } from "./talk-types.ts";
 
 /** The room the notes get in the owner's prompt. */
@@ -37,10 +37,10 @@ export interface OwnerTalkDeps {
   limits?: LimitHook;
 }
 
-export type OwnerTalk = { ran: false; reason: "no_model" | "buttons" | "cap" } | { ran: true; result: TalkResult };
+export type OwnerTalk = { ran: false; reason: TalkOffReason } | { ran: true; result: TalkResult };
 
-export async function ownerTalk(d: OwnerTalkDeps, a: { text: string; language: Language }): Promise<OwnerTalk> {
-  const off = talkOff(d.env);
+export async function ownerTalk(d: OwnerTalkDeps, a: { text: string; language: Language; key?: string }): Promise<OwnerTalk> {
+  const off = talkOff(d.env, "owner_talk", a.key);
   if (off) return { ran: false, reason: off };
   const nowMs = d.env.clock.now();
   const notes: TalkSource[] = d.memory ? recall(d.memory, { audience: "owner", budget: OWNER_NOTES_BUDGET, nowMs }).map((n) => ({ id: n.id, kind: "note" as const, text: `${n.kind}${n.audience === "everyone" ? ", customers may be told" : ", owner only"}: ${n.text}` })) : [];
@@ -50,7 +50,7 @@ export async function ownerTalk(d: OwnerTalkDeps, a: { text: string; language: L
   const limits = d.limits?.declared() ?? [];
   const { system, schema } = ownerPrompt({ shop: d.shop, language: a.language, sources, limits });
   const result = await runTalk(d.env, {
-    role: "owner", conversation: d.shop.owner.whatsapp, language: a.language, system, schema, user: historyText(d.chat) + redact(a.text).text, speakerText: a.text,
+    role: "owner", conversation: d.shop.owner.whatsapp, language: a.language, system, schema, user: historyText(d.chat) + redact(a.text).text, speakerText: a.text, feature: "owner_talk", ...(a.key !== undefined ? { key: a.key } : {}),
     scope: sources, links: d.skills.flatMap((s) => s.publicContext?.("", nowMs).links ?? []), literals: [d.shop.name], maxChars: OWNER_CHARS,
   });
   return { ran: true, result };

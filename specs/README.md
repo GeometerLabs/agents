@@ -58,5 +58,6 @@ an old reader would misread does: it gets `/2`, and the writer keeps serving `/1
 |---|---|---|
 | A shop's listings, its feed, its key and its check answers | `modules/listings/` | `modules/listings/README.md` |
 | Stock counts shared by listings, Orders and Stock orders | `modules/stock/` | `modules/stock/README.md` |
+| Signing: canonical JSON, Ed25519 keys, signed feeds, check answers, notices and Agent Cards | `modules/signing/` | `modules/signing/README.md` |
 | A directory: reading feeds, the index, the order, search, MCP | `modules/discovery/` | `modules/discovery/README.md` |
 | The mapping to Beckn/ONDC | `modules/ondc/` | `modules/Explanation.md`, "Mapping to Beckn and ONDC" |
