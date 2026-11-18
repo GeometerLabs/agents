@@ -69,7 +69,7 @@ export function readListingWords(text: string): OwnerListingWords {
   const pricePaise = amountOf(t);
   const note = PRICE_NOTE.exec(t)?.[0];
   // take the price's own digits out, then look for a lone quantity
-  const withoutPrice = pricePaise !== undefined ? t.replace(/(?:₹|rs\.?|inr|रु\.?|रुपये|रुपए)\s*[\d,]+(?:\.\d{1,2})?|[\d,]+(?:\.\d{1,2})?\s*(?:₹|rs\b|rupees?\b|रुपये|रुपए|രൂപ|ರೂಪಾಯ|ರೂ\.?)/giu, " ") : t;
+  const withoutPrice = pricePaise !== undefined ? t.replace(/(?:₹|rs\.?|inr|रु\.?|रुपये|रुपए)\s*[\d,]+(?:\.\d{1,2})?|\d[\d,]*(?:\.\d{1,2})?\s*(?:₹|rs\b|rupees?\b|रुपये|रुपए|രൂപ|ರೂಪಾಯ|ರೂ\.?)/giu, " ") : t;
   const nums = [...numbersIn(withoutPrice)].filter((n) => Number.isInteger(n) && n >= 1 && n <= 9999);
   const qty = nums.length === 1 && !/\b(?:kg|kilo|g|ml|litre|liter|inch|cm|month|months|year|years|weeks?|days?)\b/iu.test(withoutPrice) ? nums[0] : undefined;
   const lang = languageOfScript(text);

@@ -742,6 +742,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `licence.trial` | ട്രയൽ ലൈസൻസ്: അവസാന ദിവസം 10 Dec 2026 ആണ്. പിറ്റേന്ന് മുതൽ, കട ഒരു പ്ലാനിൽ ആകുന്നതുവരെ പുതിയ ബുക്കിംഗുകൾ നിർത്തും. | Trial licence: the last day is 10 Dec 2026. From the next day, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | ഒരു കട സെറ്റ് അപ്പ് ചെയ്യൂ | Set up a shop |  |
 | `setup.chooseTemplate` | ഇത് എന്ത് ചെയ്യും? | What will it do? |  |
+| `setup.templateNames.listings` | കടയിൽ എന്തുണ്ടെന്ന് മാത്രം കാണിക്കുക (സൗജന്യം) | Only show what the shop has (free) |  |
 | `setup.templateNames.stock-orders` | സപ്ലയർമാരിൽ നിന്ന് സ്റ്റോക്ക് ഓർഡർ | Restocking from suppliers |  |
 | `setup.templateNames.bookings` | ഡെപ്പോസിറ്റോടെ ബുക്കിംഗ് | Bookings with a deposit |  |
 | `setup.templateNames.fees` | ക്ലാസുകളുടെ ഫീസ് പിരിവ് | Fee collection for classes |  |
@@ -1700,6 +1701,33 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `stock.panel.shop.states.send_unknown` | ഒരുപക്ഷേ അയച്ചു | Maybe sent |  |
 | `stock.panel.shop.states.supplier_declined` | സപ്ലയർക്ക് നൽകാനാവില്ല | Supplier cannot supply |  |
 | `stock.panel.shop.states.cancelled` | റദ്ദാക്കി | Cancelled |  |
+| `listingsShop.panel.steps.business` | കട | The shop |  |
+| `listingsShop.panel.steps.rules` | കട | The shop |  |
+| `listingsShop.panel.business.name` | കടയുടെ പേര് | Shop name |  |
+| `listingsShop.panel.business.town` | ടൗൺ അല്ലെങ്കിൽ ഗ്രാമം | Town or village |  |
+| `listingsShop.panel.business.townHelp` | ആളുകൾ കട കണ്ടെത്തുന്ന സ്ഥലം, ഉദാഹരണം തൃശൂർ. | Where people will find the shop, for example Thrissur. |  |
+| `listingsShop.panel.business.pincode` | പിൻകോഡ് (അറിയാമെങ്കിൽ) | Pincode (if you know it) |  |
+| `listingsShop.panel.business.pincodeHelp` | ആറ് അക്കങ്ങൾ. അടുത്തുള്ളവർക്ക് കട കണ്ടെത്താൻ ഇത് സഹായിക്കും. | Six digits. It helps people nearby find the shop. |  |
+| `listingsShop.panel.business.trade` | കട എന്താണ് വിൽക്കുന്നത്, കുറച്ച് വാക്കുകളിൽ | What the shop sells, in a few words |  |
+| `listingsShop.panel.business.tradeHelp` | നിങ്ങളുടെ സ്വന്തം വാക്കുകളിൽ, ഉദാഹരണം പഴയ സൈക്കിളുകൾ. ഇത് നിങ്ങൾക്കും കടയുടെ പേജിനും ഉള്ള ഒരു പേര് മാത്രം. | In your own words, for example second-hand cycles. It is only a label for you and the shop's page. |  |
+| `listingsShop.panel.languages.ownerNumberHelp` | ഉടമയുടെ ഫോൺ നമ്പർ രാജ്യത്തിന്റെ കോഡ് സഹിതം, ഉദാഹരണം +91 98765 43210. ഇത് ഒഴിച്ചിടാം: അപ്പോൾ കടയുടെ പേജിൽ നിങ്ങൾ കാണിക്കുന്ന ഒരിക്കൽ മാത്രം ഉപയോഗിക്കാവുന്ന കോഡ് കൊണ്ട് ഉടമ ആദ്യമായി സൈൻ ഇൻ ചെയ്യും. | The owner's phone number with the country code, for example +91 98765 43210. You may leave it empty: the owner then signs in the first time with a one-use code that you show them on the shop's page. |  |
+| `listingsShop.panel.problems.townBad` | ടൗൺ അല്ലെങ്കിൽ ഗ്രാമം എഴുതുക, ഒരു ചെറിയ വരി. | Write the town or village, one short line. |  |
+| `listingsShop.panel.problems.pincodeBad` | പിൻകോഡ് ആറ് അക്കമാണ്, 0 കൊണ്ട് തുടങ്ങില്ല. ഇത് ഒഴിച്ചിടാം. | The pincode is six digits, not starting with 0. You may leave it empty. |  |
+| `listingsShop.panel.problems.tradeBad` | കട എന്താണ് വിൽക്കുന്നതെന്ന് കുറച്ച് വാക്കുകളിൽ എഴുതുക, ഒരു ചെറിയ വരി. | Write what the shop sells in a few words, one short line. |  |
+| `listingsShop.panel.shop.heading` | ഈ കട കാണിക്കുന്നത് | What this shop shows |  |
+| `listingsShop.panel.shop.town` | ടൗൺ | Town |  |
+| `listingsShop.panel.shop.trade` | വിൽക്കുന്നത് | Sells |  |
+| `listingsShop.panel.shop.free` | സൗജന്യം: പണം എടുക്കില്ല, WhatsApp സന്ദേശങ്ങൾ അയയ്ക്കില്ല. | Free: it takes no money and sends no WhatsApp messages. |  |
+| `listingsShop.panel.checks.lines.1` | കടയുടെ കൈവശം എന്താണുള്ളതെന്ന് കട സ്വന്തം പേജിൽ കാണിക്കുന്നു. ഇത് സൗജന്യമാണ്: ബുക്കിംഗോ ഓർഡറോ ഫീസോ ഇല്ല, പണം കൈകാര്യം ചെയ്യില്ല, WhatsApp സന്ദേശങ്ങൾ അയയ്ക്കില്ല. | The shop shows what it has on its own page. It is free: it takes no bookings, orders or fees, holds no money and sends no WhatsApp messages. |  |
+| `listingsShop.panel.checks.lines.2` | ബാക്കിയെല്ലാം ഉടമ സ്വന്തം ആപ്പിൽ ചെയ്യുന്നു: എന്താണുള്ളതെന്ന് പറയുന്നു, അസിസ്റ്റന്റ് ലിസ്റ്റിംഗ് എഴുതുന്നു, ഒരു ടാപ്പിൽ ഉടമ അത് കാണിക്കുന്നു. അസിസ്റ്റന്റ് "ഇപ്പോഴും ഉണ്ടോ?" എന്ന് ചോദിക്കും, ഉടമ ഉണ്ട് അല്ലെങ്കിൽ വിറ്റു എന്ന് ഉത്തരം നൽകും. | The owner does the rest in their own app: they say what they have, the assistant writes the listing, and they tap to show it. The assistant asks "Still have it?" and the owner answers Yes or Sold. |  |
+| `listingsShop.panel.checks.lines.3` | ഉടമ "എന്റെ കട Streetlist-ലും സെർച്ചിലും കാണിക്കുക" ഓണാക്കുന്നതുവരെ Streetlist-ലോ സെർച്ചിലോ ഒന്നും കാണിക്കില്ല. | Nothing is shown on Streetlist or in search until the owner switches "Show my shop on Streetlist and in search" on. |  |
+| `listingsShop.panel.checks.lines.4` | അസിസ്റ്റന്റിന്റെ മോഡൽ ഉപയോഗത്തിന്റെ ചെലവ് Geometer വഹിക്കുന്നു, മാസത്തിൽ ഒരു ചെറിയ പരിധി വരെ. | Geometer pays for the assistant's model use, up to a small limit each month. |  |
+| `listingsShop.panel.checks.saveFirst` | ഇത് നോക്കുക, എന്നിട്ട് കട സേവ് ചെയ്യുക. | Check this, then save the shop. |  |
+| `listingsShop.panel.checks.saved` | സേവ് ചെയ്തു. ഒരു മിനിറ്റിനുള്ളിൽ സെർവർ കട സജ്ജമാക്കും. | Saved. The server sets the shop up within a minute. |  |
+| `listingsShop.panel.checks.waiting` | സെർവർ ഇതുവരെ ഈ കട സജ്ജമാക്കിയിട്ടില്ല. ഒരു മിനിറ്റ് കഴിഞ്ഞ് ഈ പേജിലേക്ക് വരൂ. | The server has not set this shop up yet. Come back to this page in a minute. |  |
+| `listingsShop.panel.checks.deployed` | കട സെർവറിൽ സജ്ജമായി. | The shop is set up on the server. |  |
+| `listingsShop.panel.checks.next` | അടുത്തത്: ഉടമയ്ക്ക് ആദ്യത്തെ സൈൻ ഇൻ കോഡ് നൽകുക. ഇത് കടയുടെ പേജിൽ ഉണ്ടാക്കാം, ഒരിക്കൽ മാത്രവും കുറച്ച് മിനിറ്റ് മാത്രവും പ്രവർത്തിക്കും, ഉടമ ഇത് സ്വന്തം ഫോണിൽ തുറക്കും. | Next: give the owner their first sign-in code. It is made on the shop's page, works once and for a few minutes, and the owner opens it on their own phone. |  |
+| `listingsShop.panel.checks.openShop` | കടയുടെ പേജ് തുറക്കുക | Open the shop's page |  |
 | `classes.heading` | ക്ലാസുകൾ | Classes |  |
 | `classes.label` | ക്ലാസ് സമയം | Class times |  |
 | `classes.help` | കേന്ദ്രത്തിന് നിശ്ചിത ക്ലാസ് സമയം ഇല്ലെങ്കിൽ ഇത് ഒഴിച്ചിടുക. ഓരോ വരിയിലും ഒരു ക്ലാസ്: ബാച്ച്, ദിവസം, തുടങ്ങുന്ന സമയം, എത്ര മിനിറ്റ്. ഉദാഹരണം: ക്ലാസ് 8, Mon, 16:00, 45. ദിവസം ഇങ്ങനെ എഴുതുക: Mon, Tue, Wed, Thu, Fri, Sat, Sun. | Leave this empty if the centre has no set class times. One class on each line: the batch, the day, the start time, how many minutes. Example: Class 8, Mon, 16:00, 45. Write the day as Mon, Tue, Wed, Thu, Fri, Sat or Sun. |  |
@@ -1754,6 +1782,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.salon.prefill.services.2.names` | ഫേഷ്യൽ | Facial |  |
 | `preset.salon.prefill.services.3.names` | ഹെയർ സ്പാ | Hair spa |  |
 | `preset.salon.prefill.services.4.names` | മാനിക്യൂർ | Manicure |  |
+| `preset.shows-only.name` | കടയിൽ എന്തുണ്ടെന്ന് മാത്രം കാണിക്കുക (സൗജന്യം) | Only show what the shop has (free) |  |
 | `preset.sweets.name` | മധുരവും പലഹാരങ്ങളും, മുൻകൂർ ഓർഡർ | Sweets and snacks, pre-orders |  |
 | `preset.sweets.prefill.menu.1.names` | ലഡ്ഡു 500 ഗ്രാം | Laddu 500 g |  |
 | `preset.sweets.prefill.menu.2.names` | ഹൽവ 500 ഗ്രാം | Halwa 500 g |  |
@@ -1975,4 +2004,9 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `directory.foot` | നാട്ടിലെ കടകളുടെ ഒരു പട്ടിക. | A directory of local shops. |  |
 | `directory.assistants` | AI സഹായികൾക്ക് | For AI assistants |  |
 | `directory.choices` | കൂടുതൽ തിരഞ്ഞെടുപ്പുകൾ | More choices |  |
+| `directory.askLabel` | നിങ്ങളുടെ സ്വന്തം വാക്കുകളിൽ ചോദിക്കൂ | Ask in your own words |  |
+| `directory.askPlaceholder` | തൃശൂരിന് അടുത്ത് പേർഷ്യൻ പൂച്ചക്കുട്ടി? | Persian kitten near Thrissur? |  |
+| `directory.askButton` | ചോദിക്കൂ | Ask |  |
+| `directory.askPlain` | ഇന്ന് നിങ്ങൾ എഴുതിയ വാക്കുകൾ അതുപോലെ തിരയുന്നു. | Searching your words as typed today. |  |
+| `directory.askLine` | Thrissurന് അടുത്തുള്ള 3 കടകളിൽ “Persian kitten” ഉണ്ട്. ഏറ്റവും അടുത്തത് 1.4 കി.മീ അകലെയാണ്. | 3 shops near Thrissur have “Persian kitten”. The nearest is 1.4 km away. |  |
 

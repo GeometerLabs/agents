@@ -1,0 +1,9 @@
+{
+  "name": "Sree Pet Corner",
+  "place": { "town": "Thrissur", "pincode": "680001" },
+  "trade": "pets",
+  "timezone": "Asia/Kolkata",
+  "languages": ["en", "ml"],
+  "owner": { "language": "ml" },
+  "assistant": {}
+}

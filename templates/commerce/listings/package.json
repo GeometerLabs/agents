@@ -1,0 +1,8 @@
+{
+  "name": "geometer-pathway-listings",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A shop that only shows what it has: the owner says what is in stock, the assistant drafts the listing, the owner publishes it with a tap. No bookings, orders or fees, no money, no WhatsApp. Many such shops share one light process on a server, each with its own store file. Checked against stand-in services. No dependencies.",
+  "scripts": { "test": "node --test test/" }
+}

@@ -24,6 +24,10 @@ export interface DirectoryWords {
   foot: string; assistants: string;
   /** The fold that holds the kind, the distance and the town (added last, so the review sheet keeps its order). */
   choices: string;
+  /** The buyer's assistant (assistant.ts), added last so the review sheet keeps its order: the box, the one plain notice, and the short line over the results. */
+  askLabel: string; askPlaceholder: string; askButton: string; askPlain: string;
+  /** "3 shops near Thrissur have “Persian kitten”. The nearest is 1.4 km away." `town` and `nearestKm` are null when there is none. Built from the results by a template, never by a model. */
+  askLine: (shops: number, what: string, town: string | null, nearestKm: string | null) => string;
 }
 
 const EN: DirectoryWords = {
@@ -45,6 +49,8 @@ const EN: DirectoryWords = {
   orderAsk: "Asking the shop", orderAskBody: "Before you see a result, we ask the shop “do you still have this?”. The question holds only the item, never your words, your place or who you are. If the shop does not answer, you still see the item, with “Call to check”.",
   orderWords: "Words by an assistant", orderWordsBody: "A shop's words may be written in other languages by an assistant from the owner's own words. Those are marked.", orderPrivate: "What we keep", orderPrivateBody: "No account and no cookie. We count how many searches there were in a day, nothing about who searched or for what.",
   back: "Back to search", foot: "A directory of local shops.", assistants: "For AI assistants", choices: "More choices",
+  askLabel: "Ask in your own words", askPlaceholder: "Persian kitten near Thrissur?", askButton: "Ask", askPlain: "Searching your words as typed today.",
+  askLine: (n, what, town, km) => `${n === 1 ? "1 shop" : `${n} shops`} ${town ? `near ${town} ` : ""}${n === 1 ? "has" : "have"} “${what}”.${km ? ` The nearest is ${km} km away.` : ""}`,
 };
 
 const HI: DirectoryWords = {
@@ -66,6 +72,8 @@ const HI: DirectoryWords = {
   orderAsk: "दुकान से पूछना", orderAskBody: "नतीजा दिखाने से पहले हम दुकान से पूछते हैं “क्या यह अभी आपके पास है?”। सवाल में सिर्फ़ चीज़ होती है, आपके शब्द, आपकी जगह या आप कौन हैं, यह कभी नहीं। दुकान जवाब न दे तो भी चीज़ दिखती है, “फ़ोन करके पूछें” के साथ।",
   orderWords: "सहायक के लिखे शब्द", orderWordsBody: "दुकान के शब्द दूसरी भाषाओं में एक सहायक मालिक के अपने शब्दों से लिख सकता है। ऐसे शब्दों पर निशान लगा होता है।", orderPrivate: "हम क्या रखते हैं", orderPrivateBody: "कोई खाता नहीं और कोई कुकी नहीं। हम सिर्फ़ गिनते हैं कि एक दिन में कितनी खोजें हुईं, किसने या क्या खोजा यह नहीं।",
   back: "खोज पर वापस", foot: "स्थानीय दुकानों की एक सूची।", assistants: "एआई सहायकों के लिए", choices: "और विकल्प",
+  askLabel: "अपने शब्दों में पूछें", askPlaceholder: "थ्रिस्सूर के पास फ़ारसी बिल्ली का बच्चा?", askButton: "पूछें", askPlain: "आज आपके शब्द जैसे लिखे हैं वैसे ही खोजे जा रहे हैं।",
+  askLine: (n, what, town, km) => `${town ? `${town} के पास ` : ""}${n === 1 ? "1 दुकान में" : `${n} दुकानों में`} “${what}” है।${km ? ` सबसे पास वाली ${km} किमी दूर है।` : ""}`,
 };
 
 const ML: DirectoryWords = {
@@ -87,6 +95,8 @@ const ML: DirectoryWords = {
   orderAsk: "കടയോട് ചോദിക്കുന്നത്", orderAskBody: "ഫലം കാണിക്കുന്നതിന് മുമ്പ് ഞങ്ങൾ കടയോട് “ഇത് ഇപ്പോഴും ഉണ്ടോ?” എന്ന് ചോദിക്കുന്നു. ചോദ്യത്തിൽ സാധനം മാത്രമേ ഉള്ളൂ, നിങ്ങളുടെ വാക്കുകളോ സ്ഥലമോ നിങ്ങൾ ആരെന്നോ ഒരിക്കലുമില്ല. കട മറുപടി തന്നില്ലെങ്കിലും സാധനം “വിളിച്ച് ചോദിക്കൂ” എന്നതോടെ കാണും.",
   orderWords: "സഹായി എഴുതിയ വാക്കുകൾ", orderWordsBody: "ഒരു കടയുടെ വാക്കുകൾ ഉടമയുടെ സ്വന്തം വാക്കുകളിൽ നിന്ന് ഒരു സഹായി മറ്റ് ഭാഷകളിൽ എഴുതിയതാകാം. അവയ്ക്ക് അടയാളമുണ്ട്.", orderPrivate: "ഞങ്ങൾ സൂക്ഷിക്കുന്നത്", orderPrivateBody: "അക്കൗണ്ടില്ല, കുക്കിയുമില്ല. ഒരു ദിവസം എത്ര തിരയലുകൾ ഉണ്ടായി എന്ന് മാത്രം എണ്ണുന്നു, ആര് എന്ത് തിരഞ്ഞു എന്നില്ല.",
   back: "തിരയലിലേക്ക് മടങ്ങുക", foot: "നാട്ടിലെ കടകളുടെ ഒരു പട്ടിക.", assistants: "AI സഹായികൾക്ക്", choices: "കൂടുതൽ തിരഞ്ഞെടുപ്പുകൾ",
+  askLabel: "നിങ്ങളുടെ സ്വന്തം വാക്കുകളിൽ ചോദിക്കൂ", askPlaceholder: "തൃശൂരിന് അടുത്ത് പേർഷ്യൻ പൂച്ചക്കുട്ടി?", askButton: "ചോദിക്കൂ", askPlain: "ഇന്ന് നിങ്ങൾ എഴുതിയ വാക്കുകൾ അതുപോലെ തിരയുന്നു.",
+  askLine: (n, what, town, km) => `${town ? `${town}ന് അടുത്തുള്ള ` : ""}${n === 1 ? "1 കടയിൽ" : `${n} കടകളിൽ`} “${what}” ഉണ്ട്.${km ? ` ഏറ്റവും അടുത്തത് ${km} കി.മീ അകലെയാണ്.` : ""}`,
 };
 
 const KN: DirectoryWords = {
@@ -108,6 +118,8 @@ const KN: DirectoryWords = {
   orderAsk: "ಅಂಗಡಿಯನ್ನು ಕೇಳುವುದು", orderAskBody: "ಫಲಿತಾಂಶ ತೋರಿಸುವ ಮೊದಲು ನಾವು ಅಂಗಡಿಯನ್ನು “ಇದು ಇನ್ನೂ ಇದೆಯೇ?” ಎಂದು ಕೇಳುತ್ತೇವೆ. ಪ್ರಶ್ನೆಯಲ್ಲಿ ವಸ್ತು ಮಾತ್ರ ಇರುತ್ತದೆ, ನಿಮ್ಮ ಪದಗಳು, ನಿಮ್ಮ ಸ್ಥಳ ಅಥವಾ ನೀವು ಯಾರು ಎಂಬುದು ಎಂದಿಗೂ ಇಲ್ಲ. ಅಂಗಡಿ ಉತ್ತರಿಸದಿದ್ದರೂ ವಸ್ತು “ಕರೆ ಮಾಡಿ ಕೇಳಿ” ಎಂಬುದರೊಂದಿಗೆ ಕಾಣುತ್ತದೆ.",
   orderWords: "ಸಹಾಯಕ ಬರೆದ ಪದಗಳು", orderWordsBody: "ಅಂಗಡಿಯ ಪದಗಳನ್ನು ಮಾಲೀಕರ ಸ್ವಂತ ಪದಗಳಿಂದ ಒಬ್ಬ ಸಹಾಯಕ ಬೇರೆ ಭಾಷೆಗಳಲ್ಲಿ ಬರೆದಿರಬಹುದು. ಅವುಗಳಿಗೆ ಗುರುತು ಇರುತ್ತದೆ.", orderPrivate: "ನಾವು ಇಟ್ಟುಕೊಳ್ಳುವುದು", orderPrivateBody: "ಖಾತೆ ಇಲ್ಲ, ಕುಕೀ ಇಲ್ಲ. ಒಂದು ದಿನದಲ್ಲಿ ಎಷ್ಟು ಹುಡುಕಾಟಗಳು ನಡೆದವು ಎಂದು ಮಾತ್ರ ಎಣಿಸುತ್ತೇವೆ, ಯಾರು ಏನು ಹುಡುಕಿದರು ಎಂದಲ್ಲ.",
   back: "ಹುಡುಕಾಟಕ್ಕೆ ಹಿಂತಿರುಗಿ", foot: "ಸ್ಥಳೀಯ ಅಂಗಡಿಗಳ ಒಂದು ಪಟ್ಟಿ.", assistants: "AI ಸಹಾಯಕರಿಗೆ", choices: "ಇನ್ನಷ್ಟು ಆಯ್ಕೆಗಳು",
+  askLabel: "ನಿಮ್ಮ ಸ್ವಂತ ಮಾತುಗಳಲ್ಲಿ ಕೇಳಿ", askPlaceholder: "ತ್ರಿಶೂರ್ ಹತ್ತಿರ ಪರ್ಷಿಯನ್ ಬೆಕ್ಕಿನ ಮರಿ?", askButton: "ಕೇಳಿ", askPlain: "ಇಂದು ನೀವು ಬರೆದ ಪದಗಳನ್ನು ಹಾಗೆಯೇ ಹುಡುಕಲಾಗುತ್ತಿದೆ.",
+  askLine: (n, what, town, km) => `${town ? `${town} ಹತ್ತಿರದ ` : ""}${n === 1 ? "1 ಅಂಗಡಿಯಲ್ಲಿ" : `${n} ಅಂಗಡಿಗಳಲ್ಲಿ`} “${what}” ಇದೆ.${km ? ` ಹತ್ತಿರದ್ದು ${km} ಕಿ.ಮೀ ದೂರದಲ್ಲಿದೆ.` : ""}`,
 };
 
 export const DIRECTORY_WORDS: Record<Lang, DirectoryWords> = { en: EN, hi: HI, ml: ML, kn: KN };
@@ -117,5 +129,5 @@ export const LANGUAGE_LABEL: Record<Lang, string> = { en: "English", hi: "हि
 
 /** The sample values the review sheet shows for the lines that take values. */
 export const DIRECTORY_SAMPLES: Record<string, unknown[]> = {
-  km: [10], resultsFor: [3, "Persian kitten"], resultsNoWords: [3], confirmedDays: [3], away: ["1.4"], inTown: ["Thrissur"], chatLabel: ["Rani Pets", "Persian kitten"], photoOf: ["Persian kitten"], unanswered: [2],
+  km: [10], resultsFor: [3, "Persian kitten"], resultsNoWords: [3], confirmedDays: [3], away: ["1.4"], inTown: ["Thrissur"], chatLabel: ["Rani Pets", "Persian kitten"], photoOf: ["Persian kitten"], unanswered: [2], askLine: [3, "Persian kitten", "Thrissur", "1.4"],
 };

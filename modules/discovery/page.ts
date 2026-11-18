@@ -22,7 +22,7 @@ import { dayOf } from "./search.ts";
 import type { SearchAnswer, SearchResultItem } from "./search.ts";
 
 /** What the form shows (the buyer's own request, as typed). */
-export interface FormValues { q: string; category: string; town: string; lat: string; lon: string; radius_km: string }
+export interface FormValues { q: string; category: string; town: string; lat: string; lon: string; radius_km: string; /** The buyer's words in the "Ask in your own words" box, when they used it. */ ask?: string }
 export const EMPTY_FORM: FormValues = { q: "", category: "", town: "", lat: "", lon: "", radius_km: "" };
 
 export type SearchView =
@@ -33,11 +33,14 @@ export type SearchView =
   | { state: "busy" }
   | { state: "down" };
 
-export interface PageContext { origin: string; lang: Lang; now: number; nonce: string; fontUrl: string }
+export interface PageContext { origin: string; lang: Lang; now: number; nonce: string; fontUrl: string; /** The buyer's assistant is on (assistant.ts): the page shows the "Ask in your own words" box. Off: the page is exactly the plain search. */ assistant?: boolean }
+
+/** What the assistant adds over the results: the short line and, when the words were searched as typed, the one plain notice. */
+export interface AssistBits { line: string | null; notice: string | null }
 
 /** The page's content policy: nothing loads but this origin's own photos and the one font; the one script by its nonce; the form posts to /search and nowhere else. */
 export const pagePolicy = (origin: string, nonce: string): string =>
-  `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self'; script-src 'nonce-${nonce}'; form-action ${origin}/search; frame-ancestors 'none'; base-uri 'none'; connect-src 'none'`;
+  `default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; font-src 'self'; script-src 'nonce-${nonce}'; form-action ${origin}/search ${origin}/search/ask; frame-ancestors 'none'; base-uri 'none'; connect-src 'none'`;
 
 const FONT_FACE = (url: string): string => `@font-face{font-family:"Baloo 2";font-style:normal;font-weight:400 800;font-display:swap;src:url(${url}) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}`;
 
@@ -85,6 +88,8 @@ form.search .pair{display:grid;gap:0 12px}
 .res .btn{margin-top:10px;width:100%}
 .note.why{margin:4px 0 0}
 .more{display:flex;margin:18px 0 0}
+.askline{margin:0 0 12px;font-weight:650}
+form.ask{margin-bottom:12px}
 ${KIND_TILES}
 .state-page{margin:8px 0 18px}
 .state-page h2{margin-top:0}
@@ -108,7 +113,7 @@ export function freshness(w: DirectoryWords, confirmed: string, now: number): st
   return days <= 0 ? w.confirmedToday : days === 1 ? w.confirmedYesterday : w.confirmedDays(days);
 }
 
-const km = (n: number): string => (n < 10 ? n.toFixed(1) : String(Math.round(n)));
+export const km = (n: number): string => (n < 10 ? n.toFixed(1) : String(Math.round(n)));
 
 /** An address on this directory with these parameters (empty ones left out). */
 export function link(path: string, params: Record<string, string | undefined>): string {
@@ -156,6 +161,17 @@ ${ctx.lang === "en" ? "" : `<input type="hidden" name="lang" value="${ctx.lang}"
 </form>`;
 }
 
+/** "Ask in your own words": one box, a POST form (POST /search/ask, form-encoded, no script), so the words are never in an address. Shown only where the assistant is on. The place the buyer set with "Use my location" travels with it. */
+function askBox(ctx: PageContext, f: FormValues): string {
+  const w = DIRECTORY_WORDS[ctx.lang];
+  if (!ctx.assistant) return "";
+  return `<form class="search ask" action="/search/ask" method="post" role="search">
+<label for="ask">${esc(w.askLabel)}</label><input id="ask" name="ask" type="text" value="${esc(f.ask ?? "")}" placeholder="${esc(w.askPlaceholder)}" maxlength="200" autocomplete="off" enterkeyhint="send">
+${f.lat !== "" && f.lon !== "" ? `<input type="hidden" name="lat" value="${esc(f.lat)}"><input type="hidden" name="lon" value="${esc(f.lon)}">` : ""}${ctx.lang === "en" ? "" : `<input type="hidden" name="lang" value="${ctx.lang}">`}
+<button type="submit" class="full">${esc(w.askButton)}</button>
+</form>`;
+}
+
 function card(ctx: PageContext, r: SearchResultItem): string {
   const w = DIRECTORY_WORDS[ctx.lang];
   const photoOk = r.item.photo !== null && r.item.photo.startsWith(`${ctx.origin}/`);
@@ -172,7 +188,7 @@ function card(ctx: PageContext, r: SearchResultItem): string {
 }
 
 /** The whole search page for a view. */
-export function searchPage(ctx: PageContext, f: FormValues, view: SearchView): string {
+export function searchPage(ctx: PageContext, f: FormValues, view: SearchView, assist?: AssistBits): string {
   const w = DIRECTORY_WORDS[ctx.lang];
   const params = formParams(f, ctx.lang);
   let main = "";
@@ -195,9 +211,12 @@ ${view.answer.next !== null ? `<a class="btn quiet more" href="${esc(link("/sear
   } else {
     main = `<section class="state-page state s-info" role="status"><h2>${esc(w.downTitle)}</h2><p>${esc(w.downBody)}</p></section>`;
   }
+  if (assist && (view.state === "results" || view.state === "none")) {
+    main = `${assist.notice ? `<p class="notice" role="status">${esc(assist.notice)}</p>` : ""}${assist.line ? `<p class="askline" role="status">${esc(assist.line)}</p>` : ""}${main}`;
+  }
   const title = f.q.trim() !== "" ? f.q.trim() : w.title;
   return `${head(ctx, title, { noindex: true })}<header class="top"><div class="wrap"><h1>${esc(w.title)}</h1><p>${esc(w.sub)}</p>${langNav(ctx, "/search", { ...formParams(f, ctx.lang), lang: undefined })}</div></header>
-<main class="wrap">${form(ctx, f)}${main}</main>${foot(ctx)}<script nonce="${ctx.nonce}">${NEAR_SCRIPT}</script></body></html>`;
+<main class="wrap">${askBox(ctx, f)}${form(ctx, f)}${main}</main>${foot(ctx)}<script nonce="${ctx.nonce}">${NEAR_SCRIPT}</script></body></html>`;
 }
 
 /** The page that states the order in plain words; linked from every search page. */

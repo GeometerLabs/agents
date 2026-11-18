@@ -108,7 +108,8 @@ test("the page shows 'What we have': the price or Ask the shop, the freshness in
     assert.ok(!/guaranteed|verified|certified/iu.test(text));
     const hi = await (await fetch(`${b}/shop?lang=hi`)).text();
     assert.ok(hi.includes(LISTING_WORDS.hi.heading));
-    assert.ok(hi.includes(LISTING_WORDS.hi.machine) === false, "the hindi words here are present for l-1, so no machine note is needed for it, but l-2 has only English: its page says so");
+    assert.ok(hi.includes(LISTING_WORDS.hi.machine), "l-1 has Hindi words but they are machine-written (the owner wrote English), and l-2 has English only: the Hindi page says so");
+    assert.ok(!text.includes(LISTING_WORDS.en.machine), "the English page shows the owner's own words, so no machine note");
   });
 });
 
