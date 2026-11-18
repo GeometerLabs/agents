@@ -14,9 +14,7 @@ import (
 // touchStock is `stockOf(store.assistant ??= ...)`: the assistant's state and an empty stock count are made on first use. Unlike Touch it makes no listings state (TypeScript's stock
 // kit does not either).
 func (s *Snap) touchStock() *listings.Stock {
-	if s.assistant == nil {
-		s.assistant = freshAssistant()
-	}
+	s.ensureA()
 	if s.Stock == nil {
 		s.Stock = listings.NewStock()
 	}

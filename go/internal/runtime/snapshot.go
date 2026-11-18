@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/GeometerLabs/agents/go/internal/assistant"
 	"github.com/GeometerLabs/agents/go/internal/budget"
 	"github.com/GeometerLabs/agents/go/internal/listings"
 	"github.com/GeometerLabs/agents/go/internal/signing"
@@ -19,17 +20,22 @@ const Format = 1
 
 // Snap is the state, parsed.
 type Snap struct {
-	assistant map[string]json.RawMessage // nil: the shop has none yet
+	// A is the assistant's own state, typed (internal/assistant/state.go: seq, cards, refused, closedDays, undo, talk, chat); nil: the shop has none yet. `assistant` is its Rest: the members this
+	// runtime keeps as raw JSON because other code owns them (limitChanges, listings, stock, memory) or because no version here knows them.
+	A         *assistant.State
+	assistant map[string]json.RawMessage
 	Listings  listings.State
 	hasList   bool
 	Stock     *listings.Stock
 	AI        *budget.AI
 }
 
-// freshAssistant is what the TypeScript runtime makes on first use of the assistant's state.
-func freshAssistant() map[string]json.RawMessage {
-	return map[string]json.RawMessage{"seq": json.RawMessage("0"), "cards": json.RawMessage("[]"), "refused": json.RawMessage("[]"), "closedDays": json.RawMessage("[]"),
-		"undo": json.RawMessage("[]"), "talk": json.RawMessage("[]"), "limitChanges": json.RawMessage("[]")}
+// ensureA makes the assistant's state on first use, as the TypeScript runtime's `assistantOf` does (the empty state, with its list of limit changes).
+func (s *Snap) ensureA() {
+	if s.A == nil {
+		s.A = assistant.Fresh()
+		s.assistant = s.A.Rest
+	}
 }
 
 // Parse reads a snapshot; "" is the state of a shop that has had no step yet.
@@ -46,7 +52,11 @@ func ParseSnap(text string) (*Snap, error) {
 	if err := json.Unmarshal([]byte(text), &raw); err != nil || raw.Format != Format {
 		return nil, fmt.Errorf("the saved state is not in a format this version can read. It was probably written by another version of the pathway")
 	}
-	s.assistant, s.AI = raw.Assistant, raw.AI
+	s.AI = raw.AI
+	if raw.Assistant != nil {
+		s.A = assistant.FromMembers(raw.Assistant)
+		s.assistant = s.A.Rest
+	}
 	if l, ok := s.assistant["listings"]; ok {
 		if err := json.Unmarshal(l, &s.Listings); err != nil {
 			return nil, fmt.Errorf("the saved listings cannot be read: %w", err)
@@ -79,9 +89,7 @@ func ParseSnap(text string) (*Snap, error) {
 
 // Touch makes the shop's assistant state and its listings, as the TypeScript `listingsOf(store.assistant ??= ...)` does on first use.
 func (s *Snap) Touch() *listings.State {
-	if s.assistant == nil {
-		s.assistant = freshAssistant()
-	}
+	s.ensureA()
 	s.hasList = true
 	return &s.Listings
 }
@@ -93,11 +101,8 @@ func (s *Snap) Serialize() (string, error) {
 		Assistant map[string]json.RawMessage `json:"assistant,omitempty"`
 		AI        *budget.AI                 `json:"ai,omitempty"`
 	}{Format: Format, AI: s.AI}
-	if s.assistant != nil {
-		out.Assistant = map[string]json.RawMessage{}
-		for k, v := range s.assistant {
-			out.Assistant[k] = v
-		}
+	if s.A != nil {
+		out.Assistant = s.A.Members()
 		if s.hasList {
 			l, err := signing.Marshal(s.Listings)
 			if err != nil {
