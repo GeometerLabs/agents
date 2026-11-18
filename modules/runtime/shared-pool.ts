@@ -177,7 +177,7 @@ export function createPool(o: PoolOptions, hooks: PoolHooks): Pool {
       if (m.failures.length >= t.pauseAfter) pause(name, `it failed ${m.failures.length} times on a thread of its own within ${Math.round(t.qWindow / 60_000)} minutes`);
     } else {
       m.strikes = recent([...m.strikes, now()], t.strikeWindow);
-      if (m.strikes.length >= t.strikesToQuarantine) { m.quarantined = true; log(`${name}: it brought a worker down ${m.strikes.length} times within ${Math.round(t.strikeWindow / 60_000)} minutes; it now runs on a worker of its own, with less memory.`); }
+      if (m.strikes.length >= t.strikes) { m.quarantined = true; log(`${name}: it brought a worker down ${m.strikes.length} times within ${Math.round(t.strikeWindow / 60_000)} minutes; it now runs on a worker of its own, with less memory.`); }
     }
   }
 
@@ -231,9 +231,15 @@ export function createPool(o: PoolOptions, hooks: PoolHooks): Pool {
   }
 
   // the watchdog: a thread that has not answered for DEAD_AFTER is blocked (or stuck in a loop); terminate() stops even a busy loop, and the "exit" it causes does the rest
+  // A stall of THIS thread (a busy machine, a long GC) delays every pong the same way, so "silent for DEAD_AFTER" would then be true of every worker at once: when the tick itself came late, nobody is
+  // judged this round; the clocks start again from now.
+  let lastTick = now();
   const watchdog = setInterval(() => {
+    const stalled = now() - lastTick > t.ping * 3;
+    lastTick = now();
     for (const w of [...pool, ...quarantine.values()]) {
       if (!w.worker) continue;
+      if (stalled) w.lastPong = now();
       if (now() - w.lastPong > t.dead) { log(`worker ${w.id}: it has not answered for ${(t.dead / 1000).toFixed(1)} s; it is stopped.`); void w.worker.terminate(); }
       else w.worker.postMessage({ t: "ping" });
     }
