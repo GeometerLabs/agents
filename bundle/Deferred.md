@@ -545,3 +545,11 @@ The service is `bundle/services/speech/` (README there). It was written and test
 - **Held feeds and refused feeds have no panel view.** The service logs each one and `docker exec <directory> node /app/bundle/services/directory.ts changes` lists the key changes waiting for a person (`accept <shop page>` accepts one). Done when the panel's server page lists them with an accept button for the server's admin.
 - **Photos on other domains** are not shown on the search page (modules/Deferred.md).
 
+
+## The shop's key and the notice courier (18 Nov 2026, block S phase B2)
+
+| What | Why not now | Done when |
+|---|---|---|
+| **The owner's file may be made without the shop's key on a real server.** The export job writes `exports/<shop>/shop-key.json` as root at mode 0600 and cannot `chown` (its capabilities are `DAC_OVERRIDE` and `DAC_READ_SEARCH` only); the builder (the panel's container or the deployer) may be another user. | Docker and a real server were not run; world-readable (0644) would put a private key where every record export sits. | On a real server: make an owner's file and look for `shop-key/shop-key.json`. If it is missing, either add `CHOWN` to that one job and chown the file to the exports folder's owner, or build the key file in the deployer's own step from the volume, and add a test that reads it as the builder's user. |
+| **No deployer step places the owner's key file on a new server.** The runtime adopts `shop-key.json` from its data folder if it is there before the first start; nothing puts it there. | Moving a shop between servers by hand is rare and the nightly snapshot already carries the key. | A `geometer restore --owner-file <file>` (or an import in the panel) that unpacks the owner's package, puts `shop-key/shop-key.json` in the data folder and the listings back. |
+| **Directories the owner adds.** The courier sends to the server's own directory only (`directoryUrl`). | See `modules/Deferred.md`. | See `modules/Deferred.md`. |

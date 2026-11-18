@@ -65,7 +65,7 @@ test("a shop restored from the owner's file adopts its key once, and a file besi
   const s = openStore(fresh);
   assert.equal(loadShopKey(s, { dataDir: fresh, nowMs: 1 })!.keyId, original.keyId, "the new server's shop has the key the owner's file carried");
   assert.ok(!existsSync(join(fresh, SHOP_KEY_FILE)), "the file is used once and not left beside the database");
-  assert.ok(existsSync(join(fresh, `${SHOP_KEY_FILE}.adopted`)));
+  assert.ok(!existsSync(join(fresh, `${SHOP_KEY_FILE}.adopted`)), "and no second copy of the private key is left under another name");
   s.close();
 
   const has = temp();
