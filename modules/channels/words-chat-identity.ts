@@ -24,7 +24,7 @@ export interface IdentityWords {
   confirmHead: string; confirmBody: string; confirmButton: string; confirmDone: string;
   /** The link's own page (opened from WhatsApp on the new phone). */
   backHead: string; backBody: string; backButton: string; backUsed: string; backExpired: string;
-  /** "Send me my booking link", when the number is known. */
+  /** "Send me my booking link", when the number is known. Written for a salon; an Orders guest reads "order link" and a Fees parent "fee page link" (words-chat.ts forKind, 19 Nov 2026). */
   sendMyLinks: string; myLinksSent: string; myLinksNone: string;
   /** Delete my chat: the button, the question, the two answers, what goes and what stays, and the result. */
   deleteButton: string; deleteAsk: string; deleteYes: string; deleteNo: string; deleteDone: string;
