@@ -56,6 +56,8 @@ type ModelConfig struct {
 	AgentTokenFile string `json:"agentTokenFile"`
 	Provider       string `json:"provider"`
 	KeyEnv         string `json:"keyEnv"`
+	// Rate is a builder's own price for a model they host, for provider "self-hosted" (runtime.json parser.rate).
+	Rate *budget.BuilderRate `json:"rate"`
 }
 
 // Runtime is runtime.json, checked.

@@ -35,6 +35,8 @@ export interface ShopOptions {
   budget?: { monthlyMicroInr: number; daily: Record<string, number> };
   /** The fake model server's port; with it, runtime.json names it as the parser. */
   modelPort?: number;
+  /** Overrides of the model line of runtime.json (the provider and model name decide the price from the rate table). */
+  parser?: { provider?: string; model?: string };
 }
 
 export interface Shop {
@@ -87,7 +89,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   writeFileSync(join(secrets, "record_key"), hex(32));
   writeFileSync(join(client, "settings.json"), JSON.stringify({ name: "Glow Pets", place: { town: "Thrissur", pincode: "680001" }, trade: "pets", timezone: "Asia/Kolkata", languages: ["en", "ml"], owner: { language: "en" }, assistant: {} }));
   const runtime: Record<string, unknown> = { mode: "fakes", host: "127.0.0.1", port, dataDir, tickSeconds: 3600, services: {} };
-  if (o.modelPort !== undefined) runtime.parser = { wire: "openai", baseUrl: `http://127.0.0.1:${o.modelPort}/v1`, model: "fake-model", timeoutMs: 5000 };
+  if (o.modelPort !== undefined) runtime.parser = { wire: "openai", baseUrl: `http://127.0.0.1:${o.modelPort}/v1`, model: "fake-model", timeoutMs: 5000, ...(o.parser ?? {}) };
   if (o.budget) runtime.budget = o.budget;
   writeFileSync(join(client, "runtime.json"), JSON.stringify(runtime));
   writeFileSync(join(client, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(owner, new Date())));

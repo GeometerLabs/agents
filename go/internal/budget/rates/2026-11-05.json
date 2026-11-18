@@ -1,0 +1,89 @@
+{
+  "format": "geometer-model-rates/1",
+  "date": "2026-11-05",
+  "about": "The one table of what a model call costs: the runtime prices messages from it, the evaluation script prints its cost column from it, and a bundle test checks every model price in a bundle price list against it. US dollars per million tokens. A line holds from this file's date until a later file has a line for the same provider and model. Never edited after it is committed (a test pins its bytes): a changed price is a new file with a new date. A model in no line is UNKNOWN, never free. 'provider' is the name runtime.json gives the model, for example deepinfra.",
+  "inrPerUsd": {
+    "rate": 87,
+    "source": "docs/product/economics-and-pricing.md",
+    "read": "2026-11-05",
+    "note": "Rupees to the dollar, as the runtime has always used it, so no stored cost changes. The economics note says 88 (and the proposed bundle price list follows it); its examples come out the same at 87 or 88. The owner decides, in a new dated file."
+  },
+  "rates": [
+    {
+      "provider": "laya",
+      "model": "*",
+      "inputUsdPerMillion": 0,
+      "outputUsdPerMillion": 0,
+      "quality": "assumed",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-05",
+      "note": "Runs on the shop server's own CPU (section 3.2): no price per call. Zero here means no per-call charge, not an unknown price."
+    },
+    {
+      "provider": "jev",
+      "model": "*",
+      "inputUsdPerMillion": 0.042,
+      "outputUsdPerMillion": 0.042,
+      "quality": "second-hand",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-05",
+      "note": "About $0.042 per million tokens, as the Laya page quotes it (section 3.2); a 1,500 token request is about INR 0.0055. Confirm on the first invoice."
+    },
+    {
+      "provider": "deepinfra",
+      "model": "*",
+      "modelPattern": "deepseek.*v4\\.1.*flash",
+      "inputUsdPerMillion": 0.16,
+      "outputUsdPerMillion": 0.48,
+      "cachedInputUsdPerMillion": 0.004,
+      "quality": "second-hand",
+      "source": "docs/product/economics-and-pricing.md",
+      "read": "2026-11-05",
+      "note": "DeepSeek V4.1 Flash, DeepInfra Flex tier (section 3.2, third-party trackers; Standard is $0.20 / $0.60). Check deepinfra.com. Any id naming DeepSeek V4.1 Flash matches, because DeepInfra's exact id is not confirmed."
+    },
+    {
+      "provider": "anthropic",
+      "model": "claude-haiku-5-5",
+      "inputUsdPerMillion": 0.1,
+      "outputUsdPerMillion": 0.5,
+      "quality": "official",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "read": "2026-11-03",
+      "note": "Prompts up to 100,000 tokens; cache reads ($0.01) not used. Reasoning is billed as output, so real usage can be higher. As in the bundle lists of 3 and 4 Nov."
+    },
+    {
+      "provider": "google",
+      "model": "gemini-3.1-flash-lite",
+      "inputUsdPerMillion": 0.25,
+      "outputUsdPerMillion": 1.5,
+      "quality": "official-undated",
+      "source": "https://aistudio.google.com/docs/pricing",
+      "read": "2026-11-03",
+      "note": "Paid tier only (the free tier's text is used for training, which WhatsApp's terms forbid). The page has no date. As in the bundle lists of 3 and 4 Nov."
+    },
+    {
+      "provider": "google",
+      "model": "gemini-3.5-flash-lite",
+      "inputUsdPerMillion": 0.3,
+      "outputUsdPerMillion": 2.5,
+      "quality": "official-undated",
+      "source": "https://aistudio.google.com/docs/pricing",
+      "read": "2026-11-03",
+      "note": "Thinking tokens count as output. The page has no date. As in the bundle lists of 3 and 4 Nov."
+    },
+    {
+      "provider": "openai",
+      "model": "gpt-6-luna",
+      "inputUsdPerMillion": 0.1,
+      "outputUsdPerMillion": 0.5,
+      "quality": "official-undated",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "read": "2026-11-03",
+      "note": "The page has no date. As in the bundle lists of 3 and 4 Nov."
+    }
+  ],
+  "notPriced": {
+    "sarvam/sarvam-105b-conversations": "Sarvam's price page shows display names only, so which listed price is this model's is not confirmed. https://www.sarvam.ai/api-pricing",
+    "groq/openai/gpt-oss-20b": "No price was read."
+  }
+}
