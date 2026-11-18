@@ -48,10 +48,20 @@ export interface DirectoryConfig {
   provider: { organization: string; url: string };
   area?: string;
   /**
-   * The buyer's assistant (modules/discovery/assistant.ts). Left out, and so OFF, until the owner approves the price list that holds the directory's budget (`ai.budget.discovery`): the
-   * search page then has no "Ask in your own words" box and the plain search works exactly as before. The bundle does not write this block yet (Deferred).
+   * The buyer's assistant (modules/discovery/assistant.ts). Left out, and so OFF, when no price list in force holds the directory's budget (`ai.budget.discovery`; in force from 19 Nov 2026): the
+   * search page then has no "Ask in your own words" box and the plain search works exactly as before. The bundle writes it (generate/configs.ts directoryConfig) from the price list in force
+   * and only on a server that has a model; the credential is a file the bundle mounts (`assistant.agentTokenFile`).
    */
   assistant?: AssistantSettings;
+}
+
+/** A fetch that adds the directory's agent credential for the model Guard; undefined with no file named, and undefined (with a line) when the file cannot be read or is empty. */
+export function bearerFetch(file: string | undefined, log: (line: string) => void = () => undefined): typeof fetch | undefined {
+  if (!file) return undefined;
+  let token = "";
+  try { token = readFileSync(file, "utf8").trim(); } catch { token = ""; }
+  if (token === "") { log(`directory: the assistant's credential file ${file} cannot be read or is empty, so the assistant is off`); return undefined; }
+  return (url, init) => fetch(url, { ...init, headers: { ...(init?.headers as Record<string, string> | undefined), authorization: `Bearer ${token}` } });
 }
 
 /**
@@ -111,7 +121,9 @@ if (import.meta.main) {
   for (const url of config.feeds) { if (feedAllowed(url, { served: config.served, configured: config.feeds })) index.addFeed(url, "config", now); else log(`directory: ${url} is not a feed address it will read`); }
   const fetch = directoryFetcher({ served: config.served, doorUrl: config.doorUrl });
   const key = loadKey(config.dataDir);
-  const assistant = assistantFromSettings(config.assistant, process.env, log);
+  // the assistant's call to the model goes to the model Guard with the directory's own agent credential (read here from its file; a missing file leaves the assistant off, never calling with none)
+  const assistantFetch = bearerFetch(config.assistant?.agentTokenFile, log);
+  const assistant = config.assistant?.agentTokenFile && !assistantFetch ? null : assistantFromSettings(config.assistant, process.env, log, assistantFetch);
   const card = directoryCard({ origin: config.origin, provider: config.provider, ...(config.area ? { area: config.area } : {}), key, ...(assistant ? { assistant: true } : {}) });
   const handler = directoryHandler({
     search: { index, checker: createChecker({ fetch }), origin: config.origin }, origin: config.origin,

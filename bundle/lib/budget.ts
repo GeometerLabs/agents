@@ -72,3 +72,17 @@ export function wallNotes(callsPerDay: number | undefined, shopBudgets: readonly
 export function priceListNotes(read: () => unknown = latestPriceList): string[] {
   try { read(); return []; } catch (e) { return [`the price list could not be read (${(e as Error).message}), so no shop was given a model budget: only fleet's cap limits their model spend. Check that prices/ is in this checkout.`]; }
 }
+
+/** The directory's credential at the model Guard: its own agent id, so the Guard knows it from every shop (its record, its own switch). */
+export const DIRECTORY_AGENT_ID = "directory-assistant";
+
+/**
+ * The directory's buyer assistant for THIS server, or undefined (and the assistant is off): the server has the door and so the directory (pages domain and fleet), a model is
+ * chosen, and the price list in force has the directory's budget (`discoveryBudgetFor`). One question for the config file, the compose file and the model Guard's agent list,
+ * so the three can never disagree.
+ */
+export function directoryAssistant(server: { pages?: unknown; fleet?: unknown; model: { model: string } }, list?: BudgetRates): ReturnType<typeof discoveryBudgetFor> {
+  if (!server.pages || !server.fleet || server.model.model === "") return undefined;
+  if (list) return discoveryBudgetFor(list);
+  try { return discoveryBudgetFor(latestPriceList()); } catch { return undefined; }
+}

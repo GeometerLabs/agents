@@ -58,6 +58,11 @@ export const INBOX_PORT = 8788;
 export const PAGES_NETWORK = "pages";
 /** Item 11h: the network only the shops' push Guards and the server's push sender share. */
 export const PUSH_NETWORK = "push";
+/**
+ * Decision 60: the one network the directory's buyer assistant uses to reach the model Guard, and nothing else is on it (internal: no route out). The model Guard's forwarder joins it
+ * (answering to `g-model`, as on every shop's network) and the directory does; the directory still reaches only the door (pages), feeds (egress) and this Guard.
+ */
+export const ASSISTANT_NETWORK = "assistant";
 /** Item 11h: where the push Guards' admin addresses start on the `admin` network: past every shop's four (a shop's index is under 224, so 16 + 4 * 223 + 3 < 2048). */
 export const PUSH_ADMIN_BASE = 2048;
 export const RELAY_PORT = 8795;
@@ -163,7 +168,7 @@ export interface Addressing {
 export function addressing(server: ServerConfig): Addressing {
   const base = server.network.base;
   return {
-    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21`, gate: `${base}.232.0/24`, speech: `${base}.233.0/24`, pages: `${base}.236.0/24`, push: `${base}.237.0/24` },
+    subnets: { front: `${base}.238.0/24`, egress: `${base}.239.0/24`, admin: `${base}.240.0/20`, panel: `${base}.224.0/21`, gate: `${base}.232.0/24`, speech: `${base}.233.0/24`, pages: `${base}.236.0/24`, push: `${base}.237.0/24`, assistant: `${base}.234.0/24` },
     panelIp(kind, index) {
       const n = 16 + index * 4 + slotOf(kind);
       return `${base}.${224 + (n >> 8)}.${n & 255}`;
@@ -247,7 +252,7 @@ export interface PanelOptions {
 }
 
 // The whole server as compose services plus the files each needs. Pure: it returns text and touches neither disk nor Docker, so a deploy can be checked before anything starts.
-export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { panel?: PanelOptions; /** `uid:gid` ops runs as, so it can write the fleet folder. Left out: the node image's user. */ opsUser?: string; /** agents someone else wrote: their Guards, nothing more */ agents?: AgentDeploy[]; /** Geometer's speech service (bundle/services/speech): left out = no container and no network. */ speech?: SpeechOptions }): Composed {
+export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { panel?: PanelOptions; /** `uid:gid` ops runs as, so it can write the fleet folder. Left out: the node image's user. */ opsUser?: string; /** agents someone else wrote: their Guards, nothing more */ agents?: AgentDeploy[]; /** Geometer's speech service (bundle/services/speech): left out = no container and no network. */ speech?: SpeechOptions; /** Decision 60: the directory's buyer assistant is on (the price list in force has its budget and a model is chosen): the model Guard and the directory share the `assistant` network, and the directory has its credential folder. */ assistant?: boolean }): Composed {
   const agents = features.agents ?? [];
   // A listings-only shop is not a container: it is a folder of the one shared process (below). Everything per shop (Guards, runtime, door, network, volume, report folder, push) is for
   // the shops that are not. A server with no listings-only shop composes byte for byte as it did before they existed.
@@ -348,7 +353,9 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     }
   }
   // the model Guard serves the shops' runtimes; a server that holds only agents someone else wrote has no use for it
-  if (allShops.length > 0) guard(modelGuard, shopNets, net.adminIp(undefined, "model"), []);
+  // decision 60: with the directory's assistant on (the deploy says so from the price list in force), the model Guard is also reachable on `assistant`, where only the directory is
+  const assistantOn = features.assistant === true && Boolean(server.pages && server.fleet) && allShops.length > 0;
+  if (allShops.length > 0) guard(modelGuard, [...shopNets, ...(assistantOn ? [ASSISTANT_NETWORK] : [])], net.adminIp(undefined, "model"), []);
 
   // -- the shared services
   const appVolume = `${dirs.app}:/app:ro`;
@@ -424,8 +431,8 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     // no panel, relay, Guard or runtime, none of which share a network with it). Its own volume holds its cache; it holds no secret and no shop's data.
     add("directory", node(["node", "/app/bundle/services/directory.ts"], {
       environment: { CONFIG: "/etc/geometer/directory.json", PORT: String(DIRECTORY_PORT), HOST: "0.0.0.0" },
-      volumes: [appVolume, `${dirs.generated}/directory:/etc/geometer:ro`, `${DIRECTORY_VOLUME}:/home/node`],
-      networks: { [PAGES_NETWORK]: {}, egress: {} }, healthcheck: healthWget(DIRECTORY_PORT, "/healthz"),
+      volumes: [appVolume, `${dirs.generated}/directory:/etc/geometer:ro`, `${DIRECTORY_VOLUME}:/home/node`, ...(assistantOn ? [`${secretDir("directory")}:/run/secrets:ro`] : [])],
+      networks: { [PAGES_NETWORK]: {}, egress: {}, ...(assistantOn ? { [ASSISTANT_NETWORK]: {} } : {}) }, healthcheck: healthWget(DIRECTORY_PORT, "/healthz"),
     }), [`${dirs.generated}/directory/directory.json`]);
   }
   // -- the speech service (optional). It sits alone on `speech`, a network with no route out, and publishes no port: the speech Guard joins that network and is the only caller. It has no
@@ -460,6 +467,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     ...(server.panel.enabled && features.panel ? { panel: { internal: true, ipam: { config: [{ subnet: net.subnets.panel }] } } } : {}),
     ...(agents.length > 0 ? { [agentNames.gate]: { internal: true, ipam: { config: [{ subnet: net.subnets.gate }] } } } : {}),
     ...(door ? { [PAGES_NETWORK]: { internal: true, ipam: { config: [{ subnet: net.subnets.pages }] } } } : {}),
+    ...(assistantOn ? { [ASSISTANT_NETWORK]: { internal: true, ipam: { config: [{ subnet: net.subnets.assistant }] } } } : {}),
     ...(features.speech ? { speech: { internal: true, ipam: { config: [{ subnet: net.subnets.speech }] } } } : {}),
     ...(shops.length > 0 ? { [PUSH_NETWORK]: { internal: true, ipam: { config: [{ subnet: net.subnets.push }] } } } : {}),
   };
