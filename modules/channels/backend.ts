@@ -93,8 +93,8 @@ export interface OwnerClassesView {
 }
 export interface OwnerView {
   shop: { name: string; timezone: string; ownerLanguage: Language };
-  /** Item 11h: the template, for the page's headings. Left out: Bookings. "stock": a Stock orders shop (an owner page only: no public page). */
-  kind?: "orders" | "fees" | "stock";
+  /** Item 11h: the template, for the page's headings. Left out: Bookings. "stock": a Stock orders shop (an owner page only: no public page). "listings": a listings-only shop (an owner page, the storefront and the feed; no chat, nothing waiting). */
+  kind?: "orders" | "fees" | "stock" | "listings";
   services: OfferService[];
   items: OwnerItemView[];
   upcoming: { case: string; startMs: number; serviceId?: string; what?: string; customer: { phone: string; name?: string }; channel: OwnerItemView["channel"]; state: string }[];

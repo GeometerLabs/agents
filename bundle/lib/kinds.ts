@@ -19,6 +19,17 @@ import { writeGoLiveCertificate as stockWrite } from "../../templates/commerce/s
 import { approvedRecipients as stockRecipients } from "../../templates/commerce/stock-orders/src/guard-limits.ts";
 import { validateSettings as stockSettings } from "../../templates/commerce/stock-orders/src/settings.ts";
 import { validateRuntimeConfig as stockRuntime } from "../../templates/commerce/stock-orders/server/config.ts";
+import { CHAT_LIMITS as listingsChatLimits } from "../../templates/commerce/listings/src/chat-limits.ts";
+import { validateSettings as listingsSettings } from "../../templates/commerce/listings/src/settings.ts";
+import { validateRuntimeConfig as listingsRuntime } from "../../templates/commerce/listings/server/config.ts";
+import { createStore as bookingsStore } from "../../templates/commerce/bookings/src/booking.ts";
+import { serializeStore as bookingsSerialize } from "../../templates/commerce/bookings/server/snapshot.ts";
+import { createStore as ordersStore } from "../../templates/commerce/orders/src/order.ts";
+import { serializeStore as ordersSerialize } from "../../templates/commerce/orders/server/snapshot.ts";
+import { createStore as feesStore } from "../../templates/education/fees/src/due.ts";
+import { serializeStore as feesSerialize } from "../../templates/education/fees/server/snapshot.ts";
+import { createStore as stockStore } from "../../templates/commerce/stock-orders/src/order.ts";
+import { serializeStore as stockSerialize } from "../../templates/commerce/stock-orders/server/snapshot.ts";
 import type { LimitsSpec, LimitsSpecIdentity, PaymentCaps } from "../../modules/payments/guard-limits.ts";
 import type { ReportLanguage } from "../../modules/report/text.ts";
 import { runOn as bookingsRunOn } from "../../templates/commerce/bookings/crash-test/situations.ts";
@@ -80,12 +91,25 @@ export const hasCalendar = (kind: { guards: readonly ServiceKind[] }, settings: 
 export interface HandCheckSummaryLike { held: number; total: number; checks: number; failedTitles: string[]; ranOn?: string; notRun?: string[] }
 export interface GoLiveCertificateLike { checks: { failed: number }; notTested: unknown[] }
 
+/** What a listings-only shop's store holds that another template's store can take over: the assistant's part (the listings, cards, memory) and the month's AI counts. */
+export interface CarriedState { assistant?: unknown; ai?: unknown }
+
 export interface Kind {
-  id: "bookings" | "fees" | "orders" | "stock-orders";
-  /** The file the deployer exports this template's cases to (backup/export.ts), and what the runtime's status and the export call them. */
-  casesFile: "bookings.json" | "dues.json" | "orders.json" | "purchase-orders.json";
+  id: "bookings" | "fees" | "orders" | "stock-orders" | "listings";
+  /**
+   * True for a template that runs on the server's ONE shared process (templates/commerce/listings): no Guard, no container, no network of its own, a folder in the shared data
+   * volume. Everything that is per shop for the other templates (compose services, secrets folders, the data volume, the client folder) asks this first (lib/shared.ts).
+   */
+  shared?: true;
+  /** The file the deployer exports this template's cases to (backup/export.ts), and what the runtime's status and the export call them. Left out: a template with no cases (listings-only). */
+  casesFile?: "bookings.json" | "dues.json" | "orders.json" | "purchase-orders.json";
   /** What the runtime's status calls the cases. Stock orders says "orders" too (its status counts its purchase orders by state under that name). */
-  casesName: "bookings" | "fees" | "orders";
+  casesName: "bookings" | "fees" | "orders" | "listings";
+  /**
+   * A new store of THIS template that holds `carried` and nothing else, as the saved text the runtime reads: how a listings-only shop that takes an agent keeps its listings
+   * (bundle/lib/listings-move.ts). Left out by the listings template itself (a shop never moves into it from another template).
+   */
+  storeWith?(carried: CarriedState): string;
   /** The Guards a shop of this template has. */
   guards: readonly ServiceKind[];
   /** Check a settings.json; the settings come back in the template's own shape (`any`: the bundle reads only what every template has: name, timezone, owner). */
@@ -99,13 +123,18 @@ export interface Kind {
   /** The numbers the shop's WhatsApp Guard lets a message go to, when the template writes only to a fixed list (Stock orders: its owner and its approved suppliers). Left out: any number. */
   guardRecipients?(settings: any): string[];
   /** The checks and papers the panel makes: the same hand check the template's scripts run, on this shop's own settings, and the go-live certificate from it. */
-  papers: {
+  papers?: {
     runOn(settings: any): Promise<unknown>;
     summariseRun(run: any): HandCheckSummaryLike;
     buildGoLiveCertificate(input: { settings: any; handCheck: any; issuedAt: number }): GoLiveCertificateLike;
     policyDigest(settings: any): string;
     writeGoLiveCertificate(run: { settings: any; handCheck: any; language: ReportLanguage; out: string; key?: import("node:crypto").KeyObject; preparedBy?: string; now: number }): { files: string[] };
   };
+}
+
+/** `Kind.storeWith` for a template: its own empty store with the carried parts put in, written by its own codec. */
+function carry<S extends object>(create: () => S, serialize: (s: S) => string): (c: CarriedState) => string {
+  return (c) => serialize({ ...create(), ...(c.assistant ? { assistant: c.assistant } : {}), ...(c.ai ? { ai: c.ai } : {}) });
 }
 
 export const KINDS: Record<string, Kind> = {
@@ -115,6 +144,7 @@ export const KINDS: Record<string, Kind> = {
     guards: ["razorpay", "whatsapp", "calendar"],
     validateSettings: bookingsSettings,
     chatLimits: bookingsChatLimits,
+    storeWith: carry(bookingsStore, bookingsSerialize),
     validateRuntimeConfig: bookingsRuntime,
     gatewaySpec: bookingsSpec,
     papers: { runOn: bookingsRunOn, summariseRun: bookingsSummary, buildGoLiveCertificate: bookingsCertificate, policyDigest: bookingsDigest, writeGoLiveCertificate: bookingsWrite },
@@ -125,6 +155,7 @@ export const KINDS: Record<string, Kind> = {
     guards: ["razorpay", "whatsapp"],
     validateSettings: feesSettings,
     chatLimits: feesChatLimits,
+    storeWith: carry(feesStore, feesSerialize),
     validateRuntimeConfig: feesRuntime,
     gatewaySpec: feesSpec,
     papers: { runOn: feesRunOn, summariseRun: feesSummary, buildGoLiveCertificate: feesCertificate, policyDigest: feesDigest, writeGoLiveCertificate: feesWrite },
@@ -135,6 +166,7 @@ export const KINDS: Record<string, Kind> = {
     guards: ["razorpay", "whatsapp"],
     validateSettings: ordersSettings,
     chatLimits: ordersChatLimits,
+    storeWith: carry(ordersStore, ordersSerialize),
     validateRuntimeConfig: ordersRuntime,
     gatewaySpec: ordersSpec,
     papers: { runOn: ordersRunOn, summariseRun: ordersSummary, buildGoLiveCertificate: ordersCertificate, policyDigest: ordersDigest, writeGoLiveCertificate: ordersWrite },
@@ -148,8 +180,19 @@ export const KINDS: Record<string, Kind> = {
     guardRecipients: stockRecipients,
     validateSettings: stockSettings,
     chatLimits: stockChatLimits,
+    storeWith: carry(stockStore, stockSerialize),
     validateRuntimeConfig: stockRuntime,
     papers: { runOn: stockRunOn, summariseRun: stockSummary, buildGoLiveCertificate: stockCertificate, policyDigest: stockDigest, writeGoLiveCertificate: stockWrite },
+  },
+  // Listings only (18 Nov 2026): a shop that only shows what it has. No Guard, no money, no WhatsApp: it runs on the server's one shared process (modules/runtime/shared.ts) and is free.
+  // It has no hand check or go-live paper (nothing it does can move money or send a message), so `papers` is left out and every place that makes one asks first.
+  listings: {
+    id: "listings", shared: true,
+    casesName: "listings",
+    guards: [],
+    validateSettings: listingsSettings,
+    chatLimits: listingsChatLimits,
+    validateRuntimeConfig: listingsRuntime,
   },
 };
 
@@ -158,3 +201,6 @@ export const kindFor = (pathway: string | undefined): Kind | undefined => (pathw
 
 /** The names of the templates this bundle runs, for a sentence that lists them. */
 export const kindNames = (): string => Object.keys(KINDS).join(", ");
+
+/** Does a shop of this pathway run on the server's shared process (no container, no Guards of its own)? False for a pathway this bundle does not know. */
+export const isShared = (pathway: string | undefined): boolean => kindFor(pathway)?.shared === true;

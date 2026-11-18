@@ -163,7 +163,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const terms = createTerms(shops, config.serverDir); // B72: shop terms agreed on WhatsApp; off unless geometer.json says so
   const channels = createChannels(config.serverDir, config.publicUrl); // item 11d: each shop's page, MCP endpoint and the owner's approvals link (channels.ts)
   /** Item 11h: the templates whose shops have a page and an owner's page: Bookings (item 11d), Orders and Fees. */
-  const hasPage = (kind: string | undefined): boolean => kind === "bookings" || kind === "orders" || kind === "fees" || kind === "stock-orders";
+  const hasPage = (kind: string | undefined): boolean => kind === "bookings" || kind === "orders" || kind === "fees" || kind === "stock-orders" || kind === "listings";
   const secure = isSecure(config);
   const sessions = createSessions(secret, { secure, now });
   const loginByAddress = createLimiter(20, 15 * 60_000, now);
@@ -574,14 +574,14 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       termsLink: terms.on() ? termsLinkWord(c.lang) : undefined,
       // item 11d: a shop whose template has a page (Bookings; item 11h: Orders and Fees too), and only a panel that knows the server's public address can show its links
       // Stock orders has an owner's page and no public page, so there is no booking-page block to show for it
-      ...(hasPage(kindId) && kindId !== "stock-orders" && channels.view(id) ? { channels: channels.view(id)!, channelsKind: kindId as "bookings" | "orders" | "fees" } : {}),
+      ...(hasPage(kindId) && kindId !== "stock-orders" && kindId !== "listings" && channels.view(id) ? { channels: channels.view(id)!, channelsKind: kindId as "bookings" | "orders" | "fees" } : {}),
       // item 11f: the shop's page on the pages domain (its short name, where it stands at fleet) and the owner's sessions; a builder chooses "hub" or "own"
       ...(hasPage(kindId) ? { pages: { settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), ...(readPagesStatus(config.serverDir, id) ? { status: readPagesStatus(config.serverDir, id)! } : {}), canChoose: config.mode === "own", grants: ownerGrantsSummary(config.serverDir, id) } } : {}),
       ...(pagesNotice === "ended" || pagesNotice === "bad" || pagesNotice === "removed" ? { pagesNotice } : {}),
       // item 11i: the shop's assistant, for a template with the Character step: its name and the version of its drawn pictures
       ...(templates().find((t) => t.id === kindId)?.steps.includes("character") ? { character: (() => { const raw = rawSettings(shops, id); const a = raw?.assistant ? readAssistantSettings(raw.assistant, []) : undefined; const version = characterReader(characterDirOf(config.serverDir, id))()?.version; return { has: a !== undefined, shop: settings?.name ?? id, ...(a?.character.name ? { name: a.character.name } : {}), ...(version && a ? { version } : {}) }; })() } : {}),
       voiceLink: voiceLinkWord(c.lang),
-      papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
+      papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings) && kindId !== "listings", month },
       isBuilder: r.account!.role === "builder",
       ...(r.account!.role === "builder" ? { details: { statusJson: read.ok ? JSON.stringify(read.status, null, 2) : "—", pins: JSON.stringify(shops.pins(id) ?? {}, null, 2), runtimeJson: JSON.stringify(counts ?? {}, null, 2) } } : {}),
       limitsText: !settings ? [] : own ? own.limitLines({} as unknown as Draft, settings, c.lang, settings) : Object.values(limitList(c, { form: { deposit: String(settings.deposit.amountInr) }, windowHours: String(settings.cancellation.windowHours) } as unknown as Draft, settings.deposit.holdMinutes)),

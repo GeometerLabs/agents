@@ -5,7 +5,7 @@ import { BUNDLE_VERSION, fleetIdOf, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { ADMIN_FORWARD_PORT, DIRECTORY_DATA_DIR, HEALTH_PORT, INBOX_PORT, OPS_FLEET_DIR, OPS_STATUS_DIR, RELAY_PORT, REFRESHER_GUPSHUP_DIR, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
 import type { AgentDeploy, ShopDeploy } from "./compose.ts";
-import { GUARD_PORT, RUNTIME_PORT, names } from "./shop.ts";
+import { GUARD_PORT, RUNTIME_PORT, SHARED, names } from "./shop.ts";
 import { DIRECTORY_PORT, DOOR_INTERNAL_PORT } from "../services/door.ts";
 import { stableJson } from "../lib/util.ts";
 import type { ApproverPerson } from "../../modules/approvals/people.ts";
@@ -16,8 +16,8 @@ import { OWNER_MARKED_KINDS } from "./guards.ts";
 
 
 /** Item 11h: the customer side of a shop's page, from its pathway (none for a pathway that has no page: an agent someone else wrote has no runtime of ours). */
-const channelKind = (pathway: string | undefined): "bookings" | "orders" | "fees" | "stock" | undefined =>
-  pathway === undefined || pathway === "bookings" ? "bookings" : pathway === "orders" ? "orders" : pathway === "fees" ? "fees" : pathway === "stock-orders" ? "stock" : undefined;
+const channelKind = (pathway: string | undefined): "bookings" | "orders" | "fees" | "stock" | "listings" | undefined =>
+  pathway === undefined || pathway === "bookings" ? "bookings" : pathway === "orders" ? "orders" : pathway === "fees" ? "fees" : pathway === "stock-orders" ? "stock" : pathway === "listings" ? "listings" : undefined;
 
 export interface ShopWebhooks {
   verification: "meta-signature" | "path-token";
@@ -66,7 +66,10 @@ const agentIp = (server: ServerConfig, a: AgentDeploy, kind: Three) => addressin
 const hasGuard = (a: AgentDeploy, kind: string) => a.guards.some((g) => g.kind === kind);
 
 /** Where the shared services reach a shop's runtime: its door, on the admin network. */
-const runtimeUrl = (server: ServerConfig, shop: ShopDeploy) => url(addressing(server).adminIp(shop.name, "door", shop.index), RUNTIME_PORT);
+const runtimeUrl = (server: ServerConfig, shop: ShopDeploy) => shop.shared
+  // a listings-only shop is one folder on the shared process: its own door is the shared one, and the shop's name is the first part of every path (modules/runtime/shared.ts)
+  ? `${url(addressing(server).adminIp(undefined, "door", SHARED.index), RUNTIME_PORT)}/shop/${shop.name}`
+  : url(addressing(server).adminIp(shop.name, "door", shop.index), RUNTIME_PORT);
 
 /** Where each Guard's admin port is reached: the forwarder's address on the admin network. */
 export function guardAdmin(server: ServerConfig, shop: Pick<ShopDeploy, "name" | "index">, kind: Three) {

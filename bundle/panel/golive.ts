@@ -84,6 +84,8 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
       const settings = shops.settings(shop);
       if (!settings) return undefined;
       const papers = kindOf(shop).papers;
+      // a listings-only shop moves no money and sends no message, so it has no hand check and no go-live paper
+      if (!papers) return undefined;
       const ran = await papers.runOn(settings);
       const summary = papers.summariseRun(ran);
       const certificate = papers.buildGoLiveCertificate({ settings, handCheck: summary, issuedAt: now() });
@@ -112,10 +114,11 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
 
     /** What still stands between this shop and "Ready to go live". Empty when nothing does. */
     unmet(shop: string, settings: any): Unmet[] {
+      if (!kindOf(shop).papers) return []; // nothing to check or prove: see `run`
       const checks = stored(shop);
       const out: Unmet[] = [];
       if (!checks || checks.hand.total === 0 || checks.hand.held < checks.hand.total) out.push("hand-check");
-      else if (checks.settingsDigest !== kindOf(shop).papers.policyDigest(settings)) out.push("settings-changed");
+      else if (checks.settingsDigest !== kindOf(shop).papers!.policyDigest(settings)) out.push("settings-changed");
       const read = shops.status(shop);
       if (!read.ok || read.status.deploy?.state !== "applied") out.push("deploy");
       else if (!read.status.limits || read.status.limits.of === 0 || read.status.limits.proven < read.status.limits.of) out.push("limits");
@@ -130,8 +133,9 @@ export function createGoLive(config: PanelConfig, shops: Shops, store: Store) {
       if (!settings) return { ok: false, unmet: ["settings-changed"] };
       const unmet = api.unmet(shop, settings);
       if (unmet.length > 0) return { ok: false, unmet };
+      if (!kindOf(shop).papers) return { ok: true, files: [] };
       const checks = stored(shop) as StoredChecks;
-      const files = docs.make(shop, "go-live", (scratch) => kindOf(shop).papers.writeGoLiveCertificate({ settings, handCheck: checks.hand, language: settings.owner.language, out: scratch, key, preparedBy, now: now() }).files);
+      const files = docs.make(shop, "go-live", (scratch) => kindOf(shop).papers!.writeGoLiveCertificate({ settings, handCheck: checks.hand, language: settings.owner.language, out: scratch, key, preparedBy, now: now() }).files);
       shops.saveMeta(shop, { ...shops.meta(shop), readyAt: iso(now()) });
       return { ok: true, files };
     },

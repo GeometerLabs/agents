@@ -1532,6 +1532,14 @@ The one test pass after W1, W1b, W2 and W3 were merged found these in the chat p
 
 **Not tested on a real model or provider:** the drafting call is tested on a scripted fake only.
 
+## 18 Nov 2026: the shared runtime process (modules/runtime/shared.ts)
+
+**What.** `startShared` holds many shops in one process: it finds shop folders (`ShopSource`, `folderSource` is the deployer's layout), starts each with the template's own start on a loopback port of its
+own (`StartOptions.listen`, new in `modules/runtime/start.ts`), routes `/shop/<name>/<rest>` to it, restarts one shop when its three config files change, and lets one go when its folder is gone.
+**Why.** Shops that hold no money and send no message need no Guard and no container (block S, phase C). **Rules it relies on.** Each shop gets its own token FILES (never the environment), its own
+`dataDir`, and checks its own credentials: the router checks none. No module may keep a shop's data at module level (checked 18 Nov: only fonts and time formatters are). A shop that fails to
+start is logged once and skipped. `LISTINGS_SERVICES` (`modules/runtime/config.ts`) is a service shape with no required service. The front treats kind `listings` like `stock` for the customer side
+(owner page, storefront and feed only) and offers no chat. Tests (written, not run): `modules/runtime/test/shared.test.ts`.
 ## The model budget: one meter, one monthly budget, a cap on every feature (18 Nov 2026, stream `caps-18nov`)
 
 **Why.** The owner approved a hosted model (DeepInfra, through the model Guard) for the owner's talk, customers' open questions, listing drafts in four languages and, later, the buyer's discovery assistant (plan decision 60). "Add caps everywhere." Before this, the only model-spend cap was fleet's `ai.cap` (₹15 per 1,000 messages, set from the heartbeat, which lags and which turned off only the router's language step), and the chat's 20 model turns a day for one guest. A busy owner could use the month's money in talk turns, and a bug could spend it in an afternoon.

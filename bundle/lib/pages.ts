@@ -29,6 +29,7 @@ import { stableJson, writeAtomic } from "./util.ts";
 import { CHARACTER_DIR, CHARACTER_MANIFEST, readCharacterManifest } from "../../modules/channels/character-files.ts";
 import { isPaint } from "../../modules/channels/chat-paint.ts";
 import type { PaintId } from "../../modules/channels/chat-paint.ts";
+import { clientDir } from "./client-dir.ts";
 
 export const PAGE_SETTINGS_FILE = "page.json";
 /** Fleet's routes (monorepo apps/fleet/src/page-slugs-api.ts). */
@@ -77,7 +78,7 @@ export function paintOfShop(dir: string, shop: string): PaintId | undefined {
 export const frontCharacterVersion = (dir: string, shop: string): string | undefined => readCharacterManifest(read(join(frontCharacterDirOf(dir, shop), CHARACTER_MANIFEST)))?.version;
 
 /** The two copies of pages.json the deployer keeps: the runtime's client folder and the inbox's folder for the shop. */
-export const pagesCopies = (dir: string, shop: string): string[] => [join(serverPaths(dir).generated, "shops", shop, "client", PAGES_FILE), secretFile(dir, "inbox", shop, PAGES_FILE)];
+export const pagesCopies = (dir: string, shop: string): string[] => [join(clientDir(dir, shop), PAGES_FILE), secretFile(dir, "inbox", shop, PAGES_FILE)];
 
 /** The shop's choice, read field by field. Without a file: "hub" on Geometer's Operator server (panel mode hosted), "own" on a builder's server (decision 44). */
 export function readPageSettings(dir: string, shop: string, hosted: boolean): PageSettings {
@@ -257,9 +258,9 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
     for (const copy of pagesCopies(dir, shop)) if (keep(copy, text)) lines.push(`${shop}: its page addresses are handed to ${copy.includes(join("secrets", "inbox")) ? "the front" : "the runtime"}.`);
     // the panel's "sign out every device", to the runtime, which reads it on every request
     const endAll = read(join(serverPaths(dir).shop(shop), OWNER_SESSIONS_FILE));
-    keep(join(serverPaths(dir).generated, "shops", shop, "client", OWNER_SESSIONS_FILE), endAll);
+    keep(join(clientDir(dir, shop), OWNER_SESSIONS_FILE), endAll);
     // item 11h: the Operator's setup QR, recovery card and "remove the owner's passkeys" (hashes only), to the runtime, which reads it on every request
-    if (keep(join(serverPaths(dir).generated, "shops", shop, "client", OWNER_GRANTS_FILE), read(ownerGrantsFile(dir, shop)))) lines.push(`${shop}: the owner's sign-in codes are handed to the runtime.`);
+    if (keep(join(clientDir(dir, shop), OWNER_GRANTS_FILE), read(ownerGrantsFile(dir, shop)))) lines.push(`${shop}: the owner's sign-in codes are handed to the runtime.`);
   }
 
   // a shop that is no longer deployed here gives its name back (it cools at fleet; a mistaken removal undone within 90 days keeps it and its page id)
