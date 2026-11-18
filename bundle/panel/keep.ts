@@ -202,4 +202,7 @@ const STOCK: KeepSpec = {
   },
 };
 
-export const KEEP: Record<string, KeepSpec> = { bookings: BOOKINGS, fees: FEES, orders: ORDERS, "stock-orders": STOCK };
+/** Listings only (listings.ts). The form owns the name, the place, the trade, the languages and the owner; the time zone and the assistant's block are kept as saved. */
+const LISTINGS: KeepSpec = { owned: ["name", "place", "trade", "languages", "owner"] };
+
+export const KEEP: Record<string, KeepSpec> = { bookings: BOOKINGS, fees: FEES, orders: ORDERS, "stock-orders": STOCK, listings: LISTINGS };

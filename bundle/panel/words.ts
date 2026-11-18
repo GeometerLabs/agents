@@ -400,7 +400,7 @@ export const en: Words = {
     trial: (day) => `Trial licence: the last day is ${day}. From the next day, new bookings pause until the shop is on a plan.`,
   },
   setup: {
-    title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { "stock-orders": "Restocking from suppliers", bookings: "Bookings with a deposit", fees: "Fee collection for classes", orders: "Pre-orders with an advance" },
+    title: "Set up a shop", chooseTemplate: "What will it do?", templateNames: { listings: "Only show what the shop has (free)", "stock-orders": "Restocking from suppliers", bookings: "Bookings with a deposit", fees: "Fee collection for classes", orders: "Pre-orders with an advance" },
     templateElsewhere: "A builder sets this one up with the plugin. The phone setup does not have it yet.", start: "Start", progress: (n, o) => `Step ${n} of ${o}`,
     steps: { business: "The business", deposit: "Deposit and cancellation", languages: "Languages and your number", accounts: "Connect the shop's accounts", checks: "Checks", character: "The shop's assistant" },
     problemsTitle: "Please fix this:", fallback: (e) => `One thing needs fixing: ${e}`,

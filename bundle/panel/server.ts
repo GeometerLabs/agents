@@ -163,7 +163,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const terms = createTerms(shops, config.serverDir); // B72: shop terms agreed on WhatsApp; off unless geometer.json says so
   const channels = createChannels(config.serverDir, config.publicUrl); // item 11d: each shop's page, MCP endpoint and the owner's approvals link (channels.ts)
   /** Item 11h: the templates whose shops have a page and an owner's page: Bookings (item 11d), Orders and Fees. */
-  const hasPage = (kind: string | undefined): boolean => kind === "bookings" || kind === "orders" || kind === "fees" || kind === "stock-orders";
+  const hasPage = (kind: string | undefined): boolean => kind === "bookings" || kind === "orders" || kind === "fees" || kind === "stock-orders" || kind === "listings";
   const secure = isSecure(config);
   const sessions = createSessions(secret, { secure, now });
   const loginByAddress = createLimiter(20, 15 * 60_000, now);
@@ -574,7 +574,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       termsLink: terms.on() ? termsLinkWord(c.lang) : undefined,
       // item 11d: a shop whose template has a page (Bookings; item 11h: Orders and Fees too), and only a panel that knows the server's public address can show its links
       // Stock orders has an owner's page and no public page, so there is no booking-page block to show for it
-      ...(hasPage(kindId) && kindId !== "stock-orders" && channels.view(id) ? { channels: channels.view(id)!, channelsKind: kindId as "bookings" | "orders" | "fees" } : {}),
+      ...(hasPage(kindId) && kindId !== "stock-orders" && kindId !== "listings" && channels.view(id) ? { channels: channels.view(id)!, channelsKind: kindId as "bookings" | "orders" | "fees" } : {}),
       // item 11f: the shop's page on the pages domain (its short name, where it stands at fleet) and the owner's sessions; a builder chooses "hub" or "own"
       ...(hasPage(kindId) ? { pages: { settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), ...(readPagesStatus(config.serverDir, id) ? { status: readPagesStatus(config.serverDir, id)! } : {}), canChoose: config.mode === "own", grants: ownerGrantsSummary(config.serverDir, id) } } : {}),
       ...(pagesNotice === "ended" || pagesNotice === "bad" || pagesNotice === "removed" ? { pagesNotice } : {}),
