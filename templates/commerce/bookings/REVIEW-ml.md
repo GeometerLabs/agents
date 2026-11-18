@@ -1598,6 +1598,72 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `stock.panel.shop.states.send_unknown` | ഒരുപക്ഷേ അയച്ചു | Maybe sent |  |
 | `stock.panel.shop.states.supplier_declined` | സപ്ലയർക്ക് നൽകാനാവില്ല | Supplier cannot supply |  |
 | `stock.panel.shop.states.cancelled` | റദ്ദാക്കി | Cancelled |  |
+| `classes.heading` | ക്ലാസുകൾ | Classes |  |
+| `classes.label` | ക്ലാസ് സമയം | Class times |  |
+| `classes.help` | കേന്ദ്രത്തിന് നിശ്ചിത ക്ലാസ് സമയം ഇല്ലെങ്കിൽ ഇത് ഒഴിച്ചിടുക. ഓരോ വരിയിലും ഒരു ക്ലാസ്: ബാച്ച്, ദിവസം, തുടങ്ങുന്ന സമയം, എത്ര മിനിറ്റ്. ഉദാഹരണം: ക്ലാസ് 8, Mon, 16:00, 45. ദിവസം ഇങ്ങനെ എഴുതുക: Mon, Tue, Wed, Thu, Fri, Sat, Sun. | Leave this empty if the centre has no set class times. One class on each line: the batch, the day, the start time, how many minutes. Example: Class 8, Mon, 16:00, 45. Write the day as Mon, Tue, Wed, Thu, Fri, Sat or Sun. |  |
+| `classes.linkNote` | ഓരോ ക്ലാസിന്റെയും ലിങ്ക് ടീച്ചർ ഉടമയുടെ നമ്പറിൽ നിന്ന് WhatsApp-ൽ അയയ്ക്കും, ക്ലാസിന് മുമ്പ് രക്ഷിതാക്കൾക്ക് കിട്ടും. ലിങ്കിനായി ഇവിടെ ഒന്നും ടൈപ്പ് ചെയ്യേണ്ട. | The teacher sends each class's link on WhatsApp from the owner's number, and the parents get it before the class. There is nothing to type here for the link. |  |
+| `classes.oldDues` | പഴയ അടയ്ക്കാത്ത മാസവും ക്ലാസ് ലിങ്ക് തടയട്ടെ | An old unpaid month also holds back the class link |  |
+| `classes.oldDuesHelp` | ഓഫ്: ഈ മാസത്തെ ഫീസ് മാത്രം ലിങ്ക് തടയും. ഓൺ: പഴയ മാസം അടയ്ക്കാത്ത കുട്ടിക്കും ലിങ്ക് പോകില്ല. | Off: only this month's fee holds the link back. On: a student with an old unpaid month does not get the link either. |  |
+| `classes.problems.tooMany` | ഇവിടെ പരമാവധി 60 ക്ലാസുകൾ എഴുതാം. | At most 60 classes can be written here. |  |
+| `classes.problems.lineBad` | ക്ലാസ് വരി 2: ബാച്ച്, ദിവസം, തുടങ്ങുന്ന സമയം, മിനിറ്റ് എന്നിവ കോമ കൊണ്ട് വേർതിരിച്ച് എഴുതുക. | Class line 2: write the batch, the day, the start time and the minutes, separated by commas. |  |
+| `classes.problems.batch` | ക്ലാസ് വരി 2: "Class 8" നിങ്ങളുടെ ബാച്ചുകളിൽ ഇല്ല. | Class line 2: "Class 8" is not one of your batches. |  |
+| `classes.problems.day` | ക്ലാസ് വരി 2: ദിവസം Mon, Tue, Wed, Thu, Fri, Sat അല്ലെങ്കിൽ Sun ആയിരിക്കണം. | Class line 2: the day must be Mon, Tue, Wed, Thu, Fri, Sat or Sun. |  |
+| `classes.problems.time` | ക്ലാസ് വരി 2: തുടങ്ങുന്ന സമയം 16:00 പോലെ ആയിരിക്കണം (24 മണിക്കൂർ ക്ലോക്ക്). | Class line 2: the start time must look like 16:00 (24-hour clock). |  |
+| `classes.problems.minutes` | ക്ലാസ് വരി 2: ദൈർഘ്യം 10 മുതൽ 240 വരെ പൂർണ്ണ മിനിറ്റ് ആയിരിക്കണം. | Class line 2: the length must be a whole number of minutes from 10 to 240. |  |
+| `classes.problems.twice` | ക്ലാസ് വരി 2: ഒരേ ബാച്ചും ദിവസവും സമയവും രണ്ടുതവണ എഴുതിയിട്ടുണ്ട്. | Class line 2: the same batch, day and time is written twice. |  |
+| `preset.words.question` | കട എന്ത് ചെയ്യുന്നു? | What does the shop do? |  |
+| `preset.words.other` | മറ്റൊന്ന് | Something else |  |
+| `preset.words.typedLabel` | നിങ്ങളുടെ കട എന്ത് ചെയ്യുന്നു, സ്വന്തം വാക്കുകളിൽ? | What does the shop do, in your own words? |  |
+| `preset.words.typedHelp` | കുറച്ച് വാക്കുകൾ മതി. ഉദാഹരണം: തയ്യൽക്കാരൻ, പൂക്കട, ട്യൂട്ടർ. | A few words are enough. For example: tailor, florist, tutor. |  |
+| `preset.words.kindQuestion` | ഇവയിൽ ഏതാണ് നിങ്ങളുടെ രീതിയോട് ഏറ്റവും അടുത്തത്? | Which of these is closest to how it works? |  |
+| `preset.words.typedEmpty` | കട എന്ത് ചെയ്യുന്നു എന്ന് കുറച്ച് വാക്കുകളിൽ എഴുതുക. | Write what the shop does, in a few words. |  |
+| `preset.words.prefillNote` | ഇവിടത്തെ വിലകളും സമയങ്ങളും ഉദാഹരണങ്ങൾ മാത്രമാണ്. ഓരോന്നും പരിശോധിച്ച് നിങ്ങളുടേതാക്കി മാറ്റുക. | The prices and times here are only examples. Check each one and change it to yours. |  |
+| `preset.words.tradeLabel` | കടയുടെ തരം | Kind of shop |  |
+| `preset.arts.name` | സംഗീതം, നൃത്തം അല്ലെങ്കിൽ യോഗ ക്ലാസുകൾ | Music, dance or yoga classes |  |
+| `preset.arts.prefill.batches.1.names` | തുടക്കക്കാർ | Beginners |  |
+| `preset.arts.prefill.batches.2.names` | ഇടത്തരം | Intermediate |  |
+| `preset.arts.prefill.batches.3.names` | വാരാന്ത്യ ബാച്ച് | Weekend batch |  |
+| `preset.bakery.name` | ഹോം ബേക്കറി അല്ലെങ്കിൽ കേക്ക് | Home bakery or cakes |  |
+| `preset.bakery.prefill.menu.1.names` | കേക്ക് 1 കിലോ | Cake 1 kg |  |
+| `preset.bakery.prefill.menu.2.names` | കപ്പ്കേക്ക് 6 എണ്ണം | Cupcakes box of 6 |  |
+| `preset.bakery.prefill.menu.3.names` | കുക്കീസ് 250 ഗ്രാം | Cookies 250 g |  |
+| `preset.bakery.prefill.pickup.1.names` | രാവിലെ | morning |  |
+| `preset.bakery.prefill.pickup.2.names` | വൈകുന്നേരം | evening |  |
+| `preset.catering.name` | കാറ്ററിംഗ് | Catering |  |
+| `preset.catering.prefill.menu.1.names` | 10 പേർക്കുള്ള ഭക്ഷണം | Meals for 10 people |  |
+| `preset.catering.prefill.menu.2.names` | 10 പേർക്കുള്ള ലഘുഭക്ഷണ ട്രേ | Snack tray for 10 people |  |
+| `preset.catering.prefill.menu.3.names` | മധുര ബോക്സ് 20 എണ്ണം | Sweet box 20 pieces |  |
+| `preset.catering.prefill.pickup.1.names` | രാവിലെ | morning |  |
+| `preset.catering.prefill.pickup.2.names` | ഉച്ചകഴിഞ്ഞ് | afternoon |  |
+| `preset.clinic.name` | ക്ലിനിക് അല്ലെങ്കിൽ ഫിസിയോതെറാപ്പി | Clinic or physiotherapy |  |
+| `preset.clinic.prefill.services.1.names` | കൺസൾട്ടേഷൻ | Consultation |  |
+| `preset.clinic.prefill.services.2.names` | ഫിസിയോതെറാപ്പി സെഷൻ | Physiotherapy session |  |
+| `preset.clinic.prefill.services.3.names` | ഫോളോ-അപ്പ് സന്ദർശനം | Follow-up visit |  |
+| `preset.restock.name` | സപ്ലയർമാരിൽ നിന്ന് കടയ്ക്ക് സ്റ്റോക്ക് ഓർഡർ | Shop restocking from suppliers |  |
+| `preset.restock.prefill.supplier` | എന്റെ സപ്ലയർ | My supplier |  |
+| `preset.restock.prefill.items.1.names` | അരി 25 കിലോ | Rice 25 kg |  |
+| `preset.restock.prefill.items.1.unit` | ചാക്ക് | bag |  |
+| `preset.restock.prefill.items.2.names` | പാചക എണ്ണ 15 ലിറ്റർ | Cooking oil 15 L |  |
+| `preset.restock.prefill.items.2.unit` | ടിൻ | tin |  |
+| `preset.restock.prefill.items.3.names` | സോപ്പ് | Soap |  |
+| `preset.restock.prefill.items.3.unit` | കാർട്ടൺ | carton |  |
+| `preset.salon.name` | സലൂൺ അല്ലെങ്കിൽ ബ്യൂട്ടി പാർലർ | Salon or beauty parlour |  |
+| `preset.salon.prefill.services.1.names` | ഹെയർകട്ട് | Haircut |  |
+| `preset.salon.prefill.services.2.names` | ഫേഷ്യൽ | Facial |  |
+| `preset.salon.prefill.services.3.names` | ഹെയർ സ്പാ | Hair spa |  |
+| `preset.salon.prefill.services.4.names` | മാനിക്യൂർ | Manicure |  |
+| `preset.sweets.name` | മധുരവും പലഹാരങ്ങളും, മുൻകൂർ ഓർഡർ | Sweets and snacks, pre-orders |  |
+| `preset.sweets.prefill.menu.1.names` | ലഡ്ഡു 500 ഗ്രാം | Laddu 500 g |  |
+| `preset.sweets.prefill.menu.2.names` | ഹൽവ 500 ഗ്രാം | Halwa 500 g |  |
+| `preset.sweets.prefill.menu.3.names` | മിക്സ്ചർ 500 ഗ്രാം | Mixture 500 g |  |
+| `preset.sweets.prefill.menu.4.names` | മുറുക്ക് 500 ഗ്രാം | Murukku 500 g |  |
+| `preset.sweets.prefill.pickup.1.names` | രാവിലെ | morning |  |
+| `preset.sweets.prefill.pickup.2.names` | വൈകുന്നേരം | evening |  |
+| `preset.tuition.name` | ട്യൂഷൻ സെന്റർ | Tuition centre |  |
+| `preset.tuition.prefill.batches.1.names` | എട്ടാം ക്ലാസ് | Class 8 |  |
+| `preset.tuition.prefill.batches.2.names` | ഒമ്പതാം ക്ലാസ് | Class 9 |  |
+| `preset.tuition.prefill.batches.3.names` | പത്താം ക്ലാസ് | Class 10 |  |
+| `keep.lost` | Rahul-ന്റെ പഴയ കുടിശ്ശികയും മുമ്പത്തെ മറ്റ് വിവരങ്ങളും സൂക്ഷിച്ചില്ല, കാരണം രക്ഷിതാവിന്റെ നമ്പർ മാറി. അവ വീണ്ടും ചേർക്കാൻ നിങ്ങളുടെ ബിൽഡറോട് പറയുക. | Rahul's old dues and other earlier details were not kept, because the parent's number changed. Ask your builder to add them again. |  |
 | `chat.list.yourChats` | നിങ്ങളുടെ ചാറ്റുകൾ | Your chats |  |
 | `chat.list.installHead` | Streetlist ഫോണിൽ സൂക്ഷിക്കൂ | Keep Streetlist on your phone |  |
 | `chat.list.installBody` | ഒറ്റ തൊടലിൽ ചാറ്റുകൾ തുറക്കാം, കട മറുപടി തന്നാൽ അറിയാം. | Open your chats in one tap, and hear when a shop replies. |  |

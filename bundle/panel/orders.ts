@@ -15,6 +15,7 @@ import type { Body, Built, Draft, StepResult } from "./setup.ts";
 import type { ShopMeta } from "./shops.ts";
 import type { Template } from "./templates.ts";
 import type { Words } from "./words.ts";
+import { KEEP, keepHidden } from "./keep.ts";
 
 /** A phone form with room for this many menu items. A shop with more is set up by a builder, who can write the file. */
 export const MAX_ITEMS = 30;
@@ -34,8 +35,11 @@ export interface OrdersForm {
   area: string;
   advanceMode: "full" | "part"; advancePercent: string; holdMinutes: string;
   maxPerDay: string; maxItems: string; daysAhead: string; windowHours: string; refund: string; approveOver: string;
-  /** Kept from a shop being changed, so its orders still find their items and slots: the id a name had ("i:veg thali", "p:lunch", "d:lunch"), and a slot's own cut-off by id. Never typed. */
-  keep?: { ids: Record<string, string>; cutoffs: Record<string, { daysBefore: number; time: string }>; /** 17 Nov 2026: a slot's own most orders by id, and the reminder, kept so editing a shop here never drops what the form has no box for. */ maxOrders?: Record<string, number>; reminder?: { hoursBefore: number } };
+  /**
+   * Kept from a shop being changed, so its orders still find their items and slots: the id a name had ("i:veg thali", "p:lunch", "d:lunch"). Never typed. What the form has no box for
+   * (a slot's own cut-off and most orders, the reminder, the monthly plans) is not carried here: keep.ts puts it back from the saved settings when the shop is saved (17 Nov, item 7).
+   */
+  keep?: { ids: Record<string, string> };
 }
 
 const text = (v: string | undefined, max = 120) => (v ?? "").trim().slice(0, max);
@@ -96,13 +100,9 @@ export function newOrdersDraft(id: string, accountId: string, template: Template
 export function ordersDraftFromShop(id: string, accountId: string, templateId: string, shopId: string, s: Settings, runtime: Record<string, any> | undefined, meta: ShopMeta, now: string): Draft {
   const first = s.languages[0];
   const ids: Record<string, string> = {};
-  const cutoffs: Record<string, { daysBefore: number; time: string }> = {};
-  const maxOrders: Record<string, number> = {};
   const slotText = (slots: Slot[], mode: "p" | "d") => slots.map((x) => {
     const name = x.names?.[first]?.[0] ?? x.names?.en?.[0] ?? x.id; // a slot with no name keeps its id as its name, so the id is made again
     ids[`${mode}:${name.toLowerCase()}`] = x.id;
-    if (x.cutoff) cutoffs[x.id] = { ...x.cutoff };
-    if (x.maxOrders !== undefined) maxOrders[x.id] = x.maxOrders;
     return `${x.from}-${x.to}, ${name}`;
   }).join("\n");
   const menu = s.menu.map((i) => { const n = itemName(i, first); ids[`i:${n.toLowerCase()}`] = i.id; return `${n}, ${i.priceInr}, ${i.dailyStock}`; }).join("\n");
@@ -116,7 +116,7 @@ export function ordersDraftFromShop(id: string, accountId: string, templateId: s
       address: s.address ?? "", menu, cutoffDays: String(s.cutoff.daysBefore), cutoffTime: s.cutoff.time, pickup: slotText(s.pickup.slots, "p"), delivery: slotText(s.delivery?.slots ?? [], "d"), area: (s.delivery?.area ?? []).join(", "),
       advanceMode: s.advance.mode, advancePercent: String(s.advance.mode === "part" ? s.advance.percent : 50), holdMinutes: String(s.advance.holdMinutes),
       maxPerDay: String(s.orders.maxPerDay), maxItems: String(s.orders.maxItemsPerOrder), daysAhead: String(s.orders.daysAhead), windowHours: String(s.cancellation.windowHours),
-      refund: String(s.refund.limitInr), approveOver: String(s.owner.approveOverInr), keep: { ids, cutoffs, ...(Object.keys(maxOrders).length > 0 ? { maxOrders } : {}), ...(s.reminder ? { reminder: s.reminder } : {}) },
+      refund: String(s.refund.limitInr), approveOver: String(s.owner.approveOverInr), keep: { ids },
     } satisfies OrdersForm,
   };
 }
@@ -197,12 +197,15 @@ export function applyOrdersRules(draft: Draft, body: Body, w: Words): StepResult
 
 // ---- the settings, and the folder ---------------------------------------------------------------------------------------------------------
 
-/** The form, the languages and the owner become the Orders settings; `validateSettings` is the last word. */
-export function buildOrdersSettings(draft: Draft, example: Settings): Built {
+/**
+ * The form, the languages and the owner become the Orders settings; `validateSettings` is the last word. `saved` is the shop's settings.json as written, for a shop being changed:
+ * what the form does not show (`plans`, the reminder, a slot's own cut-off, an item's other names) is put back from it by keepHidden before the check (keep.ts).
+ */
+export function buildOrdersSettings(draft: Draft, example: Settings, saved?: unknown): Built {
   const f = ordersOf(draft);
   const languages: Language[] = [draft.primaryLanguage as Language, ...(draft.otherLanguages as Language[])];
   const named = (n: string) => Object.fromEntries(languages.map((l) => [l, [n]]));
-  const keep = f.keep ?? { ids: {}, cutoffs: {} };
+  const keep = f.keep ?? { ids: {} };
   const items = lines(f.menu).map((l) => menuLine(l)).flatMap((m) => (m ? [m] : []));
   const itemIds = idsFrom(items.map((m) => m.name), "item", items.map((m) => keep.ids[`i:${m.name.toLowerCase()}`]));
   const pickup = lines(f.pickup).map((l) => slotLine(l)).flatMap((m) => (m ? [m] : []));
@@ -210,7 +213,7 @@ export function buildOrdersSettings(draft: Draft, example: Settings): Built {
   // one id for each slot across both lists: the pathway wants a slot's id to be its own, pickup or delivery
   const all = [...pickup, ...delivery];
   const slotIds = idsFrom(all.map((m) => m.name), "slot", all.map((m, i) => keep.ids[`${i < pickup.length ? "p" : "d"}:${m.name.toLowerCase()}`]));
-  const slotOf = (m: (typeof all)[number], i: number) => ({ id: slotIds[i], from: m.from, to: m.to, ...(m.name !== "" ? { names: named(m.name) } : {}), ...(keep.cutoffs[slotIds[i]] ? { cutoff: keep.cutoffs[slotIds[i]] } : {}), ...(keep.maxOrders?.[slotIds[i]] !== undefined ? { maxOrders: keep.maxOrders[slotIds[i]] } : {}) });
+  const slotOf = (m: (typeof all)[number], i: number) => ({ id: slotIds[i], from: m.from, to: m.to, ...(m.name !== "" ? { names: named(m.name) } : {}) });
   const places = placesOf(f.area);
   const n = (v: string) => (WHOLE.test(v) ? Number(v) : Number.NaN);
   // The rules step shows the shop's limits before the accounts step has asked for the UPI ID: until it is given, the lines are worked out with a stand-in UPI ID
@@ -219,22 +222,22 @@ export function buildOrdersSettings(draft: Draft, example: Settings): Built {
   const upi = !providerById(paymentModuleOf(draft))?.gateway;
   const payment = upi && (vpaProblem(draft.payment?.upiId) !== null || payeeProblem(draft.payment?.payee) !== null) ? PREVIEW_PAYMENT : paymentBlock(draft);
   const raw = {
-    name: draft.form.name, ...(f.address !== "" ? { address: f.address } : {}), timezone: example.timezone, languages,
+    name: draft.form.name, ...(f.address !== "" ? { address: f.address } : {}), timezone: (saved as { timezone?: string } | undefined)?.timezone ?? example.timezone, languages,
     menu: items.map((m, i) => ({ id: itemIds[i], names: named(m.name), priceInr: n(m.price), dailyStock: n(m.stock) })),
     orders: { maxPerDay: n(f.maxPerDay), maxItemsPerOrder: n(f.maxItems), daysAhead: n(f.daysAhead) },
     cutoff: { daysBefore: n(f.cutoffDays), time: f.cutoffTime },
     pickup: { slots: pickup.map((m, i) => slotOf(m, i)) },
     ...(delivery.length > 0 || places.length > 0 ? { delivery: { slots: delivery.map((m, i) => slotOf(m, pickup.length + i)), area: places } } : {}),
     advance: f.advanceMode === "full" ? { mode: "full", holdMinutes: n(f.holdMinutes) } : { mode: "part", percent: n(f.advancePercent), holdMinutes: n(f.holdMinutes) },
-    ...(keep.reminder ? { reminder: keep.reminder } : {}),
     cancellation: { windowHours: n(f.windowHours) }, refund: { limitInr: n(f.refund) },
     payment,
     owner: { whatsapp: draft.ownerNumber, language: draft.ownerLanguage, approveOverInr: n(f.approveOver) },
     ...approversFromDraft(draft),
   };
-  const checked = validateSettings(raw);
-  // `raw` is the shape a builder writes (and `shop add --template orders` takes), with the form's own ids kept.
-  return checked.ok ? ({ ok: true, settings: checked.settings as never, raw } as Built) : { ok: false, errors: checked.errors };
+  const written = saved === undefined ? raw : keepHidden(raw, saved, KEEP.orders);
+  const checked = validateSettings(written);
+  // `written` is the shape a builder writes (and `shop add --template orders` takes), with the form's own ids kept.
+  return checked.ok ? ({ ok: true, settings: checked.settings as never, raw: written } as Built) : { ok: false, errors: checked.errors };
 }
 
 /** The shop's limits as one sentence each, in the person's language: the same lines the go-live certificate prints. From the draft when it builds, nothing when it does not yet. */

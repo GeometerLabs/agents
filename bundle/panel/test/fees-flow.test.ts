@@ -53,11 +53,11 @@ const shopIdOf = (b: Boot): string => {
 };
 const readdirOf = (dir: string): string[] => readdirSync(dir);
 
-test("the start page offers Fees with a button, and the six steps write the folder `shop add --template fees` writes: Fees settings, no calendar, fees@version, the Operator as owner", async () => {
+test("the Something else page offers Fees with a button, and the six steps write the folder `shop add --template fees` writes: Fees settings, no calendar, fees@version, the Operator as owner", async () => {
   const b = await boot({}, { standins: true });
   try {
     const divya = await b.account("divya", "partner");
-    const start = (await divya.get("/setup")).plain;
+    const start = (await divya.get("/setup/other")).plain;
     assert.ok(start.includes(WORDS.en.setup.templateNames.fees) && start.includes(`name="template" value="fees"`), "Fees has its start button");
     const { replies } = await setUpFees(divya, b);
     const pages = replies.join("\n");

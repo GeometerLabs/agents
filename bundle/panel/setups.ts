@@ -49,8 +49,8 @@ export interface Setup {
   draftFromShop(id: string, accountId: string, templateId: string, shopId: string, settings: any, runtime: Record<string, any> | undefined, meta: ShopMeta, now: string): Draft;
   applyBusiness(draft: Draft, body: Body, w: Words): StepResult;
   applyRules(draft: Draft, body: Body, w: Words): StepResult;
-  /** The settings the draft makes (`raw`, when there is one, is what a builder would write and what is saved). */
-  build(draft: Draft, example: any): Built;
+  /** The settings the draft makes (`raw`, when there is one, is what a builder would write and what is saved). `saved`: the shop's settings.json as written, when it is being changed: what the form does not show is kept from it (keep.ts). */
+  build(draft: Draft, example: any, saved?: unknown): Built;
   /** runtime.json: who things are. */
   runtime(phoneNumberId: string, serverModel?: { wire: string; model: string }, gateway?: boolean): Record<string, unknown>;
   /** The shop's limits as one sentence each, in the person's language (the certificate's own lines). */

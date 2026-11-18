@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "id": "tuition",
+  "names": {
+    "en": "Tuition centre",
+    "hi": "ट्यूशन सेंटर",
+    "ml": "ട്യൂഷൻ സെന്റർ",
+    "kn": "ಟ್ಯೂಷನ್ ಸೆಂಟರ್"
+  },
+  "template": "fees",
+  "variant": "classes",
+  "prefill": {
+    "batches": [
+      {
+        "names": {
+          "en": "Class 8",
+          "hi": "कक्षा 8",
+          "ml": "എട്ടാം ക്ലാസ്",
+          "kn": "8ನೇ ತರಗತಿ"
+        },
+        "feeInr": 1200
+      },
+      {
+        "names": {
+          "en": "Class 9",
+          "hi": "कक्षा 9",
+          "ml": "ഒമ്പതാം ക്ലാസ്",
+          "kn": "9ನೇ ತರಗತಿ"
+        },
+        "feeInr": 1500
+      },
+      {
+        "names": {
+          "en": "Class 10",
+          "hi": "कक्षा 10",
+          "ml": "പത്താം ക്ലാസ്",
+          "kn": "10ನೇ ತರಗತಿ"
+        },
+        "feeInr": 1800
+      }
+    ],
+    "dueDay": 5,
+    "graceDays": 5,
+    "lateFeeInr": 100,
+    "timetable": [
+      {
+        "batch": 0,
+        "day": "mon",
+        "time": "16:00",
+        "minutes": 60
+      },
+      {
+        "batch": 0,
+        "day": "thu",
+        "time": "16:00",
+        "minutes": 60
+      },
+      {
+        "batch": 1,
+        "day": "tue",
+        "time": "16:30",
+        "minutes": 60
+      },
+      {
+        "batch": 1,
+        "day": "fri",
+        "time": "16:30",
+        "minutes": 60
+      },
+      {
+        "batch": 2,
+        "day": "wed",
+        "time": "17:30",
+        "minutes": 90
+      },
+      {
+        "batch": 2,
+        "day": "sat",
+        "time": "17:30",
+        "minutes": 90
+      }
+    ]
+  },
+  "character": {
+    "personality": "warm",
+    "paint": "green"
+  }
+}

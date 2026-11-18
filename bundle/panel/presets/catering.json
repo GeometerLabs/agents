@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "id": "catering",
+  "names": {
+    "en": "Catering",
+    "hi": "कैटरिंग",
+    "ml": "കാറ്ററിംഗ്",
+    "kn": "ಕ್ಯಾಟರಿಂಗ್"
+  },
+  "template": "orders",
+  "prefill": {
+    "menu": [
+      {
+        "names": {
+          "en": "Meals for 10 people",
+          "hi": "10 लोगों का खाना",
+          "ml": "10 പേർക്കുള്ള ഭക്ഷണം",
+          "kn": "10 ಜನರಿಗೆ ಊಟ"
+        },
+        "priceInr": 2500,
+        "dailyStock": 3
+      },
+      {
+        "names": {
+          "en": "Snack tray for 10 people",
+          "hi": "10 लोगों की नाश्ते की ट्रे",
+          "ml": "10 പേർക്കുള്ള ലഘുഭക്ഷണ ട്രേ",
+          "kn": "10 ಜನರಿಗೆ ತಿಂಡಿ ಟ್ರೇ"
+        },
+        "priceInr": 1200,
+        "dailyStock": 3
+      },
+      {
+        "names": {
+          "en": "Sweet box 20 pieces",
+          "hi": "मिठाई का डिब्बा 20 पीस",
+          "ml": "മധുര ബോക്സ് 20 എണ്ണം",
+          "kn": "ಸಿಹಿ ಬಾಕ್ಸ್ 20 ತುಂಡು"
+        },
+        "priceInr": 900,
+        "dailyStock": 5
+      }
+    ],
+    "pickup": [
+      {
+        "from": "08:00",
+        "to": "12:00",
+        "names": {
+          "en": "morning",
+          "hi": "सुबह",
+          "ml": "രാവിലെ",
+          "kn": "ಬೆಳಿಗ್ಗೆ"
+        }
+      },
+      {
+        "from": "14:00",
+        "to": "18:00",
+        "names": {
+          "en": "afternoon",
+          "hi": "दोपहर",
+          "ml": "ഉച്ചകഴിഞ്ഞ്",
+          "kn": "ಮಧ್ಯಾಹ್ನ"
+        }
+      }
+    ],
+    "cutoffDays": 2,
+    "cutoffTime": "18:00",
+    "advance": {
+      "mode": "part",
+      "percent": 30
+    },
+    "maxItemsPerOrder": 2
+  },
+  "character": {
+    "personality": "brief",
+    "paint": "brick"
+  }
+}

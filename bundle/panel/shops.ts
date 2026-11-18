@@ -26,6 +26,11 @@ export interface ShopMeta {
   gateway?: { provider: string; mode: "live" | "test"; keyId: string };
   calendar?: { shareAddress?: string };
   receipts: Partial<Record<SecretName, string>>;
+  /**
+   * What the shop does (17 Nov 2026): a preset's id (presets.ts), or the trade the Operator typed under "Other". The panel shows it; Streetlist can read it later as the shop's kind
+   * (Deferred.md). Written when the shop is first saved; left out for a shop set up before this.
+   */
+  trade?: { preset?: string; typed?: string };
   readyAt?: string;
   /** What the person said when they confirmed go-live through a one-time link: written down as their statement, not as something checked. */
   goLiveStatement?: { at: string; by: string; whatsappTemplatesSeenApproved: boolean; keysHandedInThroughGuard: boolean };

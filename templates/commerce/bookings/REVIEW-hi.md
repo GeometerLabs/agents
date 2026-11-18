@@ -1551,6 +1551,72 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `stock.panel.shop.states.send_unknown` | शायद भेजा गया | Maybe sent |  |
 | `stock.panel.shop.states.supplier_declined` | सप्लायर नहीं दे सकता | Supplier cannot supply |  |
 | `stock.panel.shop.states.cancelled` | रद्द | Cancelled |  |
+| `classes.heading` | कक्षाएँ | Classes |  |
+| `classes.label` | कक्षाओं का समय | Class times |  |
+| `classes.help` | अगर केंद्र में कक्षा का तय समय नहीं है तो इसे खाली छोड़ें। हर लाइन में एक कक्षा: बैच, दिन, शुरू होने का समय, कितने मिनट। जैसे: कक्षा 8, Mon, 16:00, 45। दिन ऐसे लिखें: Mon, Tue, Wed, Thu, Fri, Sat, Sun। | Leave this empty if the centre has no set class times. One class on each line: the batch, the day, the start time, how many minutes. Example: Class 8, Mon, 16:00, 45. Write the day as Mon, Tue, Wed, Thu, Fri, Sat or Sun. |  |
+| `classes.linkNote` | हर कक्षा का लिंक टीचर मालिक के नंबर से WhatsApp पर भेजते हैं, और माता-पिता को कक्षा से पहले मिल जाता है। लिंक के लिए यहाँ कुछ लिखना नहीं है। | The teacher sends each class's link on WhatsApp from the owner's number, and the parents get it before the class. There is nothing to type here for the link. |  |
+| `classes.oldDues` | पुराना बकाया महीना भी कक्षा का लिंक रोके | An old unpaid month also holds back the class link |  |
+| `classes.oldDuesHelp` | बंद: सिर्फ़ इस महीने की फीस लिंक रोकती है। चालू: जिस विद्यार्थी का पुराना महीना बाकी है, उसे भी लिंक नहीं जाता। | Off: only this month's fee holds the link back. On: a student with an old unpaid month does not get the link either. |  |
+| `classes.problems.tooMany` | यहाँ ज़्यादा से ज़्यादा 60 कक्षाएँ लिखी जा सकती हैं। | At most 60 classes can be written here. |  |
+| `classes.problems.lineBad` | कक्षा की लाइन 2: बैच, दिन, शुरू होने का समय और मिनट कॉमा से अलग करके लिखें। | Class line 2: write the batch, the day, the start time and the minutes, separated by commas. |  |
+| `classes.problems.batch` | कक्षा की लाइन 2: "Class 8" आपके बैचों में नहीं है। | Class line 2: "Class 8" is not one of your batches. |  |
+| `classes.problems.day` | कक्षा की लाइन 2: दिन Mon, Tue, Wed, Thu, Fri, Sat या Sun होना चाहिए। | Class line 2: the day must be Mon, Tue, Wed, Thu, Fri, Sat or Sun. |  |
+| `classes.problems.time` | कक्षा की लाइन 2: शुरू होने का समय 16:00 जैसा होना चाहिए (24 घंटे की घड़ी)। | Class line 2: the start time must look like 16:00 (24-hour clock). |  |
+| `classes.problems.minutes` | कक्षा की लाइन 2: समय 10 से 240 के बीच पूरे मिनट होना चाहिए। | Class line 2: the length must be a whole number of minutes from 10 to 240. |  |
+| `classes.problems.twice` | कक्षा की लाइन 2: वही बैच, दिन और समय दो बार लिखा है। | Class line 2: the same batch, day and time is written twice. |  |
+| `preset.words.question` | दुकान क्या काम करती है? | What does the shop do? |  |
+| `preset.words.other` | कुछ और | Something else |  |
+| `preset.words.typedLabel` | आपकी दुकान क्या करती है, अपने शब्दों में? | What does the shop do, in your own words? |  |
+| `preset.words.typedHelp` | कुछ शब्द काफ़ी हैं। जैसे: दर्ज़ी, फूलवाला, ट्यूटर। | A few words are enough. For example: tailor, florist, tutor. |  |
+| `preset.words.kindQuestion` | इनमें से कौन-सा आपके काम के सबसे करीब है? | Which of these is closest to how it works? |  |
+| `preset.words.typedEmpty` | दुकान क्या करती है, यह कुछ शब्दों में लिखें। | Write what the shop does, in a few words. |  |
+| `preset.words.prefillNote` | यहाँ के दाम और समय सिर्फ़ उदाहरण हैं। हर एक को जाँचें और अपना लिखें। | The prices and times here are only examples. Check each one and change it to yours. |  |
+| `preset.words.tradeLabel` | दुकान का प्रकार | Kind of shop |  |
+| `preset.arts.name` | संगीत, नृत्य या योग की कक्षाएँ | Music, dance or yoga classes |  |
+| `preset.arts.prefill.batches.1.names` | शुरुआती | Beginners |  |
+| `preset.arts.prefill.batches.2.names` | मध्यम स्तर | Intermediate |  |
+| `preset.arts.prefill.batches.3.names` | सप्ताहांत बैच | Weekend batch |  |
+| `preset.bakery.name` | होम बेकरी या केक | Home bakery or cakes |  |
+| `preset.bakery.prefill.menu.1.names` | केक 1 किलो | Cake 1 kg |  |
+| `preset.bakery.prefill.menu.2.names` | कपकेक 6 का डिब्बा | Cupcakes box of 6 |  |
+| `preset.bakery.prefill.menu.3.names` | कुकीज़ 250 ग्राम | Cookies 250 g |  |
+| `preset.bakery.prefill.pickup.1.names` | सुबह | morning |  |
+| `preset.bakery.prefill.pickup.2.names` | शाम | evening |  |
+| `preset.catering.name` | कैटरिंग | Catering |  |
+| `preset.catering.prefill.menu.1.names` | 10 लोगों का खाना | Meals for 10 people |  |
+| `preset.catering.prefill.menu.2.names` | 10 लोगों की नाश्ते की ट्रे | Snack tray for 10 people |  |
+| `preset.catering.prefill.menu.3.names` | मिठाई का डिब्बा 20 पीस | Sweet box 20 pieces |  |
+| `preset.catering.prefill.pickup.1.names` | सुबह | morning |  |
+| `preset.catering.prefill.pickup.2.names` | दोपहर | afternoon |  |
+| `preset.clinic.name` | क्लिनिक या फ़िज़ियोथेरेपी | Clinic or physiotherapy |  |
+| `preset.clinic.prefill.services.1.names` | परामर्श | Consultation |  |
+| `preset.clinic.prefill.services.2.names` | फ़िज़ियोथेरेपी सत्र | Physiotherapy session |  |
+| `preset.clinic.prefill.services.3.names` | फ़ॉलो-अप विज़िट | Follow-up visit |  |
+| `preset.restock.name` | सप्लायर से दुकान का स्टॉक मँगाना | Shop restocking from suppliers |  |
+| `preset.restock.prefill.supplier` | मेरा सप्लायर | My supplier |  |
+| `preset.restock.prefill.items.1.names` | चावल 25 किलो | Rice 25 kg |  |
+| `preset.restock.prefill.items.1.unit` | बोरी | bag |  |
+| `preset.restock.prefill.items.2.names` | खाने का तेल 15 लीटर | Cooking oil 15 L |  |
+| `preset.restock.prefill.items.2.unit` | टिन | tin |  |
+| `preset.restock.prefill.items.3.names` | साबुन | Soap |  |
+| `preset.restock.prefill.items.3.unit` | कार्टन | carton |  |
+| `preset.salon.name` | सैलून या ब्यूटी पार्लर | Salon or beauty parlour |  |
+| `preset.salon.prefill.services.1.names` | हेयरकट | Haircut |  |
+| `preset.salon.prefill.services.2.names` | फेशियल | Facial |  |
+| `preset.salon.prefill.services.3.names` | हेयर स्पा | Hair spa |  |
+| `preset.salon.prefill.services.4.names` | मैनिक्योर | Manicure |  |
+| `preset.sweets.name` | मिठाई और नमकीन, पहले से ऑर्डर | Sweets and snacks, pre-orders |  |
+| `preset.sweets.prefill.menu.1.names` | लड्डू 500 ग्राम | Laddu 500 g |  |
+| `preset.sweets.prefill.menu.2.names` | हलवा 500 ग्राम | Halwa 500 g |  |
+| `preset.sweets.prefill.menu.3.names` | नमकीन मिक्सचर 500 ग्राम | Mixture 500 g |  |
+| `preset.sweets.prefill.menu.4.names` | मुरुक्कु 500 ग्राम | Murukku 500 g |  |
+| `preset.sweets.prefill.pickup.1.names` | सुबह | morning |  |
+| `preset.sweets.prefill.pickup.2.names` | शाम | evening |  |
+| `preset.tuition.name` | ट्यूशन सेंटर | Tuition centre |  |
+| `preset.tuition.prefill.batches.1.names` | कक्षा 8 | Class 8 |  |
+| `preset.tuition.prefill.batches.2.names` | कक्षा 9 | Class 9 |  |
+| `preset.tuition.prefill.batches.3.names` | कक्षा 10 | Class 10 |  |
+| `keep.lost` | Rahul का पुराना बकाया और पहले की दूसरी जानकारी नहीं रखी गई, क्योंकि माता-पिता का नंबर बदल गया। अपने बिल्डर से उन्हें फिर से जुड़वाएँ। | Rahul's old dues and other earlier details were not kept, because the parent's number changed. Ask your builder to add them again. |  |
 | `chat.list.yourChats` | आपकी चैट | Your chats |  |
 | `chat.list.installHead` | Streetlist को अपने फ़ोन पर रखें | Keep Streetlist on your phone |  |
 | `chat.list.installBody` | एक टैप में अपनी चैट खोलें, और दुकान का जवाब आते ही जानें। | Open your chats in one tap, and hear when a shop replies. |  |
