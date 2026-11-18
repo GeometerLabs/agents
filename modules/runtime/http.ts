@@ -9,6 +9,9 @@
 //                                                runtime's core settles the change in a step. It cannot make a change, only settle one the runtime made.
 //   GET  /status                                counts only, never message content (bearer token)
 //   GET  /internal/refund-context?receipt=...   read-only: the booking or fee behind a refund Guard holds, for the approvals relay (bearer token)
+//   GET  /internal/feed-notice                  block S phase B2 (bearer token, the inbox's): the signed "my feed changed" notice to carry to the directory, or 204 when nothing changed, one went less than
+//                                                a minute ago, the switch is off or the shop has no address on the pages domain. {"notice", "fingerprint"}
+//   POST /internal/feed-notice  {"fingerprint"} the inbox's word that the notice reached the directory (so the next one waits a minute and only a real change sends another)
 //   GET  /healthz                               the process is up
 //   GET  /readyz                                the store can be read and the queue is going
 //
@@ -33,6 +36,10 @@
 //   POST /internal/channel/owner-limits  {"id","limit","to"}   a change from the owner's limits page; only with a session made by a PASSKEY (403 {"state":"passkey_needed"} otherwise)
 //   GET  /internal/channel/listings                  block S: the shop's PUBLIC listings (live, not hidden, none sold or drafted) and the owner's switch and place; the channel token alone
 //                                                     (the same things the shop's public page shows). Nothing private is in it.
+//   POST /internal/channel/shop-feed  {page,name,languages,chat?}   block S phase B2: the shop's SIGNED feed (shop-feed/1), made here with the shop's own key; 404 while the owner's switch is off.
+//   POST /internal/channel/shop-check {page,ids}                    the SIGNED answer to "do you still have these?" (shop-check/1), read from the record, at most 10 ids; every id gone while the switch is off
+//   POST /internal/channel/shop-card  {page,card}                   the front's Agent Card for this shop, signed with the shop's key; refused unless every address in it is under the shop's page
+//                                                     `page` must be an address of THIS shop (its pages file); nothing else the front says is signed. The key never leaves this process.
 //   GET  /internal/channel/listing-photo?id=ph-<12 hex>   one photo's bytes with its own type: only a photo of a public listing now, or (with the owner's credential) any the shop holds
 //   GET  /internal/channel/owner-listing             the owner's listings page's data (the owner's credential): the listings with their state, the photos waiting, the switch and place
 //   POST /internal/channel/owner-listing  {"id","op":{...}}   an op from the owner's listings page (publish_form, edit, confirm, sold, remove, shop); the owner's credential; checked
@@ -73,6 +80,7 @@ import { checkChannelEvent } from "../channels/events.ts";
 import { MAX_VOICE_BYTES } from "../channels/owner-audio.ts";
 import { MAX_PHOTO_BYTES, PHOTO_ID, checkPhoto, photoIdOf } from "../listings/photo.ts";
 import { checkOwnerListing } from "../listings/kit.ts";
+import { checkIds } from "../listings/protocol.ts";
 import { checkOwnerStock } from "../stock/kit.ts";
 import { HANDLE_HASH } from "../channels/handle.ts";
 import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts";
@@ -131,6 +139,8 @@ export interface ServerOptions {
   hasWhatsApp?: boolean;
   /** W2: a chat guest's identity (keep this chat, a new phone, delete my chat) and the door's translations (modules/channels/chat-identity-http.ts). Left out: every guest is the cookie alone. */
   chatIdentity?: ChatIdentityRoutes;
+  /** Block S phase B2: the shop's page addresses (pages.json), read on every call. A signed document is made only for an address that is this shop's (`url` on the pages domain, or `base`); without it, none is. */
+  pages?: () => { base: string; url?: string } | undefined;
 }
 
 export interface RunningServer {
@@ -547,6 +557,35 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       res.end(Buffer.from(row.bytes));
       return;
     }
+    // block S phase B2: the signed feed, check answer and card. The runtime builds and signs; the front only passes the page's address and the ids. The key is this process's alone.
+    if (path === "/internal/channel/shop-feed" || path === "/internal/channel/shop-check" || path === "/internal/channel/shop-card") {
+      only("POST");
+      const signed = channel.listings?.signed;
+      if (!signed) throw new HttpError(404, "There is nothing here.");
+      let body: unknown;
+      try { body = JSON.parse(await readBody(req, path.endsWith("shop-card") ? 40 * 1024 : 4 * 1024)); } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const q = typeof body === "object" && body !== null && !Array.isArray(body) ? body as Record<string, unknown> : {};
+      const mine = options.pages?.();
+      if (typeof q.page !== "string" || !mine || (q.page !== mine.url && q.page !== mine.base)) return send(res, 400, { error: "page is an address of this shop." });
+      if (path.endsWith("shop-feed")) {
+        const languages = Array.isArray(q.languages) ? q.languages.filter((l): l is string => typeof l === "string") : [];
+        if (typeof q.name !== "string" || q.name.length === 0 || q.name.length > 120 || (q.chat !== undefined && (typeof q.chat !== "string" || !q.chat.startsWith(`${q.page}/`)))) return send(res, 400, { error: "name is the shop's name; chat, when given, is under the shop's page." });
+        const feed = signed.feed({ page: q.page, name: q.name, languages, ...(typeof q.chat === "string" ? { chat: q.chat } : {}) });
+        return feed ? send(res, 200, feed) : send(res, 404, { error: "The shop does not show itself." });
+      }
+      if (path.endsWith("shop-check")) {
+        const asked = checkIds({ ids: q.ids });
+        if (!asked.ok) return send(res, 400, { error: asked.error });
+        const answer = signed.check({ page: q.page, ids: asked.ids });
+        return answer ? send(res, 200, answer) : send(res, 404, { error: "This shop cannot sign." });
+      }
+      const card = signed.card({ page: q.page, card: q.card });
+      if (card === "bad") return send(res, 400, { error: "That is not a card for this shop." });
+      return card ? send(res, 200, card) : send(res, 404, { error: "The shop does not show itself." });
+    }
     if (path === "/internal/channel/owner-listing") {
       if (!channel.listings) throw new HttpError(404, "There is nothing here.");
       if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
@@ -712,6 +751,29 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       send(res, 200, counts);
       runtime.kick();
       return;
+    }
+    // block S phase B2: the "my feed changed" notice, for the inbox to carry to the directory (the runtime has no route out; services/inbox.ts is on the network the directory is on). It only
+    // reads and signs; the notice is a hint, and the directory takes nothing from it but "read the feed again".
+    if (path === "/internal/feed-notice") {
+      if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." }, { "www-authenticate": "Bearer", ...closing });
+      const signed = runtime.channel?.listings?.signed;
+      const page = options.pages?.()?.url; // only a shop on the pages domain has a feed address a directory accepts
+      if (!signed || !page) { res.writeHead(204, { "cache-control": "no-store" }); return void res.end(); }
+      if (req.method === "GET") {
+        const next = signed.notice({ page });
+        if (!next) { res.writeHead(204, { "cache-control": "no-store" }); return void res.end(); }
+        return send(res, 200, next);
+      }
+      only("POST");
+      let body: unknown;
+      try { body = JSON.parse(await readBody(req, 1024)); } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, closing); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const fingerprint = (body as { fingerprint?: unknown } | null)?.fingerprint;
+      if (typeof fingerprint !== "string" || !/^[A-Za-z0-9_-]{43}$/u.test(fingerprint)) return send(res, 400, { error: "fingerprint is the one the notice came with." });
+      signed.delivered(fingerprint);
+      return send(res, 200, { ok: true });
     }
     if (path === "/internal/recover") {
       only("POST");

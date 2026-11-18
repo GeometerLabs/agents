@@ -25,6 +25,12 @@ export interface FeedShop {
   languages?: Lang[];
   /** The shop's chat address, when it has a chat. */
   chat?: string;
+  /** Where a directory asks "do you still have these?" (shop-check/1), `<page>/api/v1/check`. Left out: the feed names none (the unsigned form the page's tests read). */
+  check?: string;
+  /** The shop's Agent Card, `<page>/agent-card.json`. Left out: the feed names none. */
+  agentCard?: string;
+  /** The shop's trade in plain words, when the runtime can see it. Left out otherwise (the runtime cannot see the panel's meta today: modules/listings/README.md). */
+  trade?: string;
 }
 
 /** A photo's exact public address, under the shop's page (not the door's stable `/p/...` page address). */
@@ -44,42 +50,51 @@ export interface Feed {
   format: typeof FEED_FORMAT;
   updated: string;
   shop: {
-    name: string; page: string; languages: Lang[];
+    name: string; page: string; languages: Lang[]; trade?: string;
     place?: { town: string; pincode?: string; lat?: string; lon?: string };
-    chat?: string;
+    chat?: string; check?: string; agentCard?: string;
     registration?: { kind: "pet-shop"; number: string; source: "owner" };
   };
-  items: {
-    id: string; page: string; category: string;
-    title: Partial<Record<Lang, string>>; text: Partial<Record<Lang, string>>;
-    ownerLanguage: Lang; machineWritten: Lang[];
-    price: { value: string; currency: "INR"; note?: string } | null;
-    quantity?: number;
-    photos: { url: string; type: string; width: number; height: number }[];
-    availability: "in_stock" | "call_to_check";
-    confirmed: string;
-  }[];
+  items: FeedItem[];
+}
+
+export interface FeedItem {
+  id: string; page: string; category: string;
+  title: Partial<Record<Lang, string>>; text: Partial<Record<Lang, string>>;
+  ownerLanguage: Lang; machineWritten: Lang[];
+  price: { value: string; currency: "INR"; note?: string } | null;
+  quantity?: number;
+  photos: { url: string; type: string; width: number; height: number }[];
+  availability: "in_stock" | "call_to_check";
+  confirmed: string;
+}
+
+/** One public listing as the feed writes it. The check answer (protocol.ts) takes its price, quantity, availability and confirmed time from this same function, so the two can never say different things. */
+export function feedItem(shop: FeedShop, l: Listing, nowMs: number): FeedItem {
+  return {
+    id: l.id, page: listingUrl(shop, l), category: SPEC_CATEGORY[l.category] ?? l.category,
+    title: Object.fromEntries(LANGS.filter((k) => l.words[k]).map((k) => [k, l.words[k]!.title])) as Partial<Record<Lang, string>>,
+    // a language with no text (the owner's plain form writes the title only) is left out, not written as "": a reader refuses an empty string (discovery/feed.ts), and the item with it
+    text: Object.fromEntries(LANGS.filter((k) => l.words[k]?.text).map((k) => [k, l.words[k]!.text])) as Partial<Record<Lang, string>>,
+    ownerLanguage: l.ownerLang, machineWritten: LANGS.filter((k) => l.words[k] && k !== l.ownerLang),
+    price: l.pricePaise !== undefined ? { value: decimal(l.pricePaise), currency: "INR" as const, ...(l.priceNote ? { note: l.priceNote } : {}) } : null,
+    // a whole number only: a signature is made over canonical JSON, which has no floats (a stock count is always whole, but a signed file must not depend on that)
+    ...(l.qty !== undefined && Number.isSafeInteger(l.qty) && l.qty >= 0 ? { quantity: l.qty } : {}),
+    photos: l.photos.slice(0, 3).map((p) => ({ url: photoUrl(shop, p), type: p.type, width: p.width, height: p.height })),
+    availability: freshnessOf(l, nowMs) === "fresh" ? "in_stock" as const : "call_to_check" as const,
+    confirmed: new Date(l.confirmedMs ?? l.publishedMs ?? l.createdMs).toISOString(),
+  };
 }
 
 /**
- * The open feed (listings.json), exactly shop-feed/1 (specs/shop-feed.md): public listings only. `signature`, `shop.check`, `shop.agentCard` and `shop.trade` are left out on purpose:
- * the shop's key, the check and the Agent Card are a later part, built on top of this file (see README.md, "What is not built").
+ * The open feed (listings.json), exactly shop-feed/1 (specs/shop-feed.md): public listings only, unsigned. The shop's runtime signs it (protocol.ts `signedFeed`); `shop.check`,
+ * `shop.agentCard` and `shop.trade` are written when the caller gives them (the runtime always gives the first two; it cannot see the trade).
  */
 export function buildFeed(state: ListingsState, shop: FeedShop, nowMs: number): Feed {
   const s = state.shop;
   const owner = state.items.find((l) => l.state !== "draft")?.ownerLang;
   const languages = shop.languages ?? (owner ? [owner, ...LANGS.filter((k) => k !== owner)] : [...LANGS]);
-  const items = publicListings(state, nowMs).slice(0, FEED_MAX_ITEMS).map((l) => ({
-    id: l.id, page: listingUrl(shop, l), category: SPEC_CATEGORY[l.category] ?? l.category,
-    title: Object.fromEntries(LANGS.filter((k) => l.words[k]).map((k) => [k, l.words[k]!.title])) as Partial<Record<Lang, string>>,
-    text: Object.fromEntries(LANGS.filter((k) => l.words[k]).map((k) => [k, l.words[k]!.text])) as Partial<Record<Lang, string>>,
-    ownerLanguage: l.ownerLang, machineWritten: LANGS.filter((k) => l.words[k] && k !== l.ownerLang),
-    price: l.pricePaise !== undefined ? { value: decimal(l.pricePaise), currency: "INR" as const, ...(l.priceNote ? { note: l.priceNote } : {}) } : null,
-    ...(l.qty !== undefined ? { quantity: l.qty } : {}),
-    photos: l.photos.slice(0, 3).map((p) => ({ url: photoUrl(shop, p), type: p.type, width: p.width, height: p.height })),
-    availability: freshnessOf(l, nowMs) === "fresh" ? "in_stock" as const : "call_to_check" as const,
-    confirmed: new Date(l.confirmedMs ?? l.publishedMs ?? l.createdMs).toISOString(),
-  }));
+  const items = publicListings(state, nowMs).slice(0, FEED_MAX_ITEMS).map((l) => feedItem(shop, l, nowMs));
   // "updated": the last time anything in the shop's listings changed (a confirm, a sale, a removal, a publish), so a reader's ETag moves only when the file does
   const times = state.items.flatMap((l) => [l.createdMs, l.publishedMs, l.confirmedMs, l.soldMs, l.removedMs].filter((t): t is number => t !== undefined));
   const updated = new Date(times.length > 0 ? Math.max(...times) : nowMs).toISOString();
@@ -87,8 +102,11 @@ export function buildFeed(state: ListingsState, shop: FeedShop, nowMs: number): 
     format: FEED_FORMAT, updated,
     shop: {
       name: shop.name, page: `${shop.page}/`, languages,
+      ...(shop.trade ? { trade: shop.trade } : {}),
       ...(s.town ? { place: { town: s.town, ...(s.pincode ? { pincode: s.pincode } : {}), ...(s.lat !== undefined && s.lon !== undefined ? { lat: degrees(s.lat), lon: degrees(s.lon) } : {}) } } : {}),
       ...(shop.chat ? { chat: shop.chat } : {}),
+      ...(shop.check ? { check: shop.check } : {}),
+      ...(shop.agentCard ? { agentCard: shop.agentCard } : {}),
       ...(s.registration ? { registration: { kind: "pet-shop" as const, number: s.registration, source: "owner" as const } } : {}),
     },
     items,

@@ -271,7 +271,7 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   let server: RunningServer;
   try {
     // the owner's link is read from the client folder on every request (the deployer writes and removes it), so a revoked link stops without a restart
-    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}), ...(ownerSignin ? { ownerSignin: ownerSignin.http, ownerFile: openOwnerFile({ clientFolder: client.folder, dataDir: client.runtime.dataDir, now: () => clock.now() }) } : {}), ...(push ? { push, hasWhatsApp: runtimeHasWhatsApp(client.runtime) } : {}), ...(chatIdentityRoutes ? { chatIdentity: chatIdentityRoutes } : {}) });
+    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}), ...(ownerSignin ? { ownerSignin: ownerSignin.http, ownerFile: openOwnerFile({ clientFolder: client.folder, dataDir: client.runtime.dataDir, now: () => clock.now() }) } : {}), ...(push ? { push, hasWhatsApp: runtimeHasWhatsApp(client.runtime) } : {}), ...(chatIdentityRoutes ? { chatIdentity: chatIdentityRoutes } : {}), pages });
   } catch (e) {
     await runtime.close();
     ownerAccess?.close();
