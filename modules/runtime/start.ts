@@ -9,10 +9,10 @@ import { CHAT_IDENTITY_FILE, openChatIdentity } from "../channels/chat-identity.
 import { createChatLinks, withChatLinks } from "../channels/chat-link-send.ts";
 import { createChatIdentity } from "../channels/chat-identity-http.ts";
 import type { RuntimeChannel } from "./core.ts";
-import { createOwnerSignin } from "../channels/owner-signin.ts";
+import { createOwnerSignin, followLockedNumber } from "../channels/owner-signin.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import { PAGES_FILE, pagesReader } from "../channels/pages-file.ts";
-import { OWNER_GRANTS_FILE, ownerGrantsReader } from "../channels/owner-grants.ts";
+import { OWNER_GRANTS_FILE, OWNER_RESET_FILE, ownerGrantsReader } from "../channels/owner-grants.ts";
 import { openOwnerFile } from "./owner-file.ts";
 import { PUSH_FILE, openPushStore } from "../push/store.ts";
 import { createPushSender } from "../push/sender.ts";
@@ -229,11 +229,23 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   // the shop's addresses (pages.json) and the panel's "sign out every device" (owner-sessions.json) are read from the client folder on every use.
   const owner = (client.settings as { owner?: { whatsapp: string; language: Language } }).owner;
   const ownerAccess = channelToken && owner ? openOwnerAccess(join(client.runtime.dataDir, OWNER_ACCESS_FILE)) : undefined;
+  // Owner's item 2: once the owner holds a passkey the shop keeps talking to the number it was LOCKED with. If the Operator's settings name another number, every owner-facing
+  // WhatsApp send, "open my app" and owner message uses the locked one, and the change is a request the owner can cancel (a 48-hour wait).
+  // The number is a FUNCTION evaluated on every use (ownerAccess.effectiveNumber: the locked number while the shop is locked, the settings' number otherwise), never a value fixed
+  // at start: a legitimate sale applies the change 48 hours later with no restart, and a value fixed at start would still be the previous owner's number then (the new owner would
+  // be bound to it, and every later start would send their approvals and sign-in links to the previous owner). The settings file is never changed; the templates read
+  // `settings.owner.whatsapp` on every step, so it is a getter over that function, and the sign-in gets the settings' own number to compare with.
+  const settingsNumber = owner?.whatsapp;
+  if (ownerAccess && owner) followLockedNumber(owner, ownerAccess, log);
   const ownerSigninBase = ownerAccess && owner ? createOwnerSignin({
     access: ownerAccess, pages: pagesReader(join(client.folder, PAGES_FILE)), endBefore: () => readEndBefore(join(client.folder, OWNER_SESSIONS_FILE)),
     // item 11h: the Operator's setup QR and recovery card, as the deployer copies the panel's file here
-    grants: ownerGrantsReader(join(client.folder, OWNER_GRANTS_FILE)),
-    owner, shopName: (client.settings as { name?: string }).name ?? "", clock, log,
+    // owner's item 2: Geometer's reset is a second file the panel never writes (owner-grants.ts), merged in by the reader
+    grants: ownerGrantsReader(join(client.folder, OWNER_GRANTS_FILE), join(client.folder, OWNER_RESET_FILE)),
+    // the Operator's request to remove every phone reaches the owner's phones with alerts on (`push` is made just below; it is only used once the runtime runs)
+    alert: (text) => { if (push?.on) push.owner(text[owner.language], "phones"); },
+    // the settings' own number, as read at start (the sign-in works out the number to use from it on every use)
+    owner: { whatsapp: settingsNumber!, get language() { return owner.language; } }, shopName: (client.settings as { name?: string }).name ?? "", clock, log,
   }) : undefined;
   // W2: a chat guest's identity (keys per thread, the number they gave, one-use links), in a file of its own beside the store, for a shop with a page and an owner. Its links go out through
   // the owner's sign-in (the core hands that its events before the agent), so no template passes anything more along.

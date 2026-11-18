@@ -15,10 +15,10 @@
 //
 // Fleet is asked only when something changed (a new slug, a choice of "own", a removed shop) or once a day (the claim is idempotent), and a refused claim is not
 // sent again for ten minutes unless the slug changes. The deployment key is the deployer's (as for the paper signer's claim); no other container holds it.
-import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { OWNER_SESSIONS_FILE } from "../../modules/channels/owner-access.ts";
-import { OWNER_GRANTS_FILE, RECOVERY_CODES, SETUP_MS, newRecoveryCode, newSetupToken, readOwnerGrants, recoveryHash, setupHash } from "../../modules/channels/owner-grants.ts";
+import { OWNER_GRANTS_FILE, OWNER_RESET_FILE, RECOVERY_CODES, REMOVAL_WAIT_MS, RESET_QR_MS, SETUP_MS, newRecoveryCode, newSetupToken, readOwnerGrants, readOwnerReset, recoveryHash, setupHash } from "../../modules/channels/owner-grants.ts";
 import type { OwnerGrants } from "../../modules/channels/owner-grants.ts";
 import { PAGES_FILE, PHONE_SHAPE, isMapLink, readPagesFile } from "../../modules/channels/pages-file.ts";
 import type { PagesFile } from "../../modules/channels/pages-file.ts";
@@ -126,15 +126,48 @@ export function makeOwnerRecovery(dir: string, shop: string, now: Date): string[
   return codes;
 }
 
-/** "Remove the owner's passkeys" (a lost phone): every passkey made before now stops working, and the setup QR and recovery card are cleared too. */
+/**
+ * "Remove the owner's passkeys" BEFORE the owner holds one (the panel works as it did): every passkey made before now stops working, and the setup QR and recovery card
+ * are cleared too. Once the owner holds a passkey the runtime ignores this value (owner-access.ts); use `requestOwnerPasskeyRemoval`.
+ */
 export function removeOwnerPasskeys(dir: string, shop: string, now: Date): void {
   writeGrants(dir, shop, { schema: 1, passkeysBefore: now.toISOString() });
 }
 
+/**
+ * The Operator's REQUEST to remove every passkey, for an owner who lost every phone (owner's item 2): written as `pendingRemoval`. The runtime times it from when it
+ * first sees it (REMOVAL_WAIT_MS), tells the owner at once on every phone, lets the owner cancel, and applies it itself; this file never removes anything by itself.
+ * Asking again while one waits writes a new `askedAt`, which restarts the wait: the Operator gains nothing by it.
+ */
+export function requestOwnerPasskeyRemoval(dir: string, shop: string, by: string, now: Date): void {
+  writeGrants(dir, shop, { ...readGrants(dir, shop), pendingRemoval: { askedBy: by.slice(0, 80), askedAt: now.toISOString(), effectiveAt: new Date(now.getTime() + REMOVAL_WAIT_MS).toISOString() } });
+}
+
+export const ownerResetFile = (dir: string, shop: string): string => serverPaths(dir).adminOwnerReset(shop);
+export { RESET_QR_MS };
+
+/**
+ * Geometer's reset (`geometer owner reset`, a server-admin command, never the panel): written to the admin-only OWNER_RESET_FILE, and the panel's grants file is replaced by
+ * one holding ONLY the one new setup QR (the Operator's old QR, card and any pending request are gone). The runtime then voids every QR, card and own code, ends every
+ * session, sets passkeysBefore to the reset moment and opens the gate for that one QR (owner-access.ts). Returns the QR's token, to show ONCE.
+ */
+export function resetOwnerSignin(dir: string, shop: string, o: { reason: string; by: string; now: Date }): { token: string; expiresAt: Date } {
+  const token = newSetupToken();
+  const expiresAt = new Date(o.now.getTime() + RESET_QR_MS);
+  // the QR's hash goes in the admin-only reset file, and the panel's grants file is emptied: the runtime accepts the reset QR from the reset file only, so the Operator's
+  // panel buttons cannot replace it, and nothing the panel writes can stand in for it (owner-access.ts "inResetWindow")
+  mkdirSync(dirname(ownerResetFile(dir, shop)), { recursive: true, mode: 0o700 });
+  writeAtomic(ownerResetFile(dir, shop), `${stableJson({ schema: 1, at: o.now.toISOString(), reason: o.reason.slice(0, 300), by: o.by.slice(0, 80), setup: { sha256: setupHash(token), expiresAt: expiresAt.toISOString() } })}\n`);
+  writeGrants(dir, shop, { schema: 1 });
+  return { token, expiresAt };
+}
+
 /** When the current card and the last QR were made, and passkeys last removed, for the panel's block. Never a hash. */
-export function ownerGrantsSummary(dir: string, shop: string): { setupAt?: string; recoveryAt?: string; removedAt?: string } {
+export function ownerGrantsSummary(dir: string, shop: string): { setupAt?: string; recoveryAt?: string; removedAt?: string; resetAt?: string; resetReason?: string } {
   const g = readGrants(dir, shop);
-  return { ...(g.setup ? { setupAt: g.setup.createdAt } : {}), ...(g.recovery ? { recoveryAt: g.recovery.createdAt } : {}), ...(g.passkeysBefore ? { removedAt: g.passkeysBefore } : {}) };
+  // for display only, from the note the deployer wrote under status/ (the panel cannot read the admin's file, and a forged note changes one line of words)
+  const reset = readOwnerReset(read(serverPaths(dir).ownerResetNote(shop)));
+  return { ...(g.setup ? { setupAt: g.setup.createdAt } : {}), ...(g.recovery ? { recoveryAt: g.recovery.createdAt } : {}), ...(g.passkeysBefore ? { removedAt: g.passkeysBefore } : {}), ...(reset ? { resetAt: reset.at, resetReason: reset.reason } : {}) };
 }
 
 export function readPagesStatus(dir: string, shop: string): PageStatus | undefined {
@@ -174,6 +207,7 @@ export function pagesFileFor(server: ServerConfig, shop: string, settings: PageS
     ...(server.panel.enabled ? { panelUrl: `${publicUrl(server)}/shops/${shop}` } : {}),
     ...(character ? { character: { version: character } } : {}),
     ...(paint ? { paint } : {}),
+    ...(server.panel.mode === "hosted" ? { hosted: true as const } : {}),
   };
 }
 
@@ -261,6 +295,13 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
     keep(join(clientDir(dir, shop), OWNER_SESSIONS_FILE), endAll);
     // item 11h: the Operator's setup QR, recovery card and "remove the owner's passkeys" (hashes only), to the runtime, which reads it on every request
     if (keep(join(clientDir(dir, shop), OWNER_GRANTS_FILE), read(ownerGrantsFile(dir, shop)))) lines.push(`${shop}: the owner's sign-in codes are handed to the runtime.`);
+    // owner's item 2: Geometer's reset, a separate admin-only file (admin/owner-reset/, not mounted into the panel), handed to the runtime the same way (and removed there when
+    // the admin's is gone). The panel gets a note of it with no QR in it, under status/, which it mounts read-only.
+    const resetText = read(ownerResetFile(dir, shop));
+    if (keep(join(clientDir(dir, shop), OWNER_RESET_FILE), resetText)) lines.push(`${shop}: Geometer's reset of the owner's sign-in is handed to the runtime.`);
+    const reset = readOwnerReset(resetText);
+    const note = serverPaths(dir).ownerResetNote(shop);
+    if (reset) { mkdirSync(dirname(note), { recursive: true }); keep(note, `${stableJson({ schema: 1, at: reset.at, reason: reset.reason, by: reset.by })}\n`); } else keep(note, undefined);
   }
 
   // a shop that is no longer deployed here gives its name back (it cools at fleet; a mistaken removal undone within 90 days keeps it and its page id)
@@ -274,6 +315,18 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
       lines.push(`${shop}: removed from this server, so its page name ${status.slug} is given back.`);
     }
     rmSync(pagesStatusFile(dir, shop), { force: true });
+  }
+  // A reset belongs to the shop it was made for: when that shop is gone from this server, its reset file and the panel's note go too, so a LATER shop with the same name
+  // never inherits a reset window (which would lock its Operator out of the QR) or a reset QR.
+  const adminDir = dirname(serverPaths(dir).adminOwnerReset("x"));
+  if (existsSync(adminDir)) {
+    for (const f of readdirSync(adminDir).filter((n) => n.endsWith(".json"))) {
+      const gone = f.slice(0, -5);
+      if (existsSync(serverPaths(dir).shop(gone))) continue;
+      rmSync(join(adminDir, f), { force: true });
+      rmSync(serverPaths(dir).ownerResetNote(gone), { force: true });
+      lines.push(`${gone}: removed from this server, so its owner reset is deleted.`);
+    }
   }
   return lines;
 }

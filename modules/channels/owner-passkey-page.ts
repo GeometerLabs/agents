@@ -242,7 +242,7 @@ export async function passkeyRoute(deps: PasskeyDeps, a: { req: IncomingMessage;
       return deps.sendJson(res, 200, { options: r.body.options });
     }
     const body = await json();
-    return finished(await call({ op: "register", grant, response: body.response }), true);
+    return finished(await call({ op: "register", grant, response: body.response, ua: String(req.headers["user-agent"] ?? "").slice(0, 400) }), true);
   }
 
   // ---- the recovery card ----
@@ -269,7 +269,7 @@ export async function passkeyRoute(deps: PasskeyDeps, a: { req: IncomingMessage;
       if (r.status !== 200) { if (r.body.state === "unknown") deps.limiter.take("wrong", address); return deps.sendJson(res, 403, { message: w.state[(r.body.state as keyof PasskeyWords["state"]) ?? "unknown"] ?? w.failed }); }
       return deps.sendJson(res, 200, { options: r.body.options });
     }
-    return finished(await call({ op: "register", grant, response: body.response }), true);
+    return finished(await call({ op: "register", grant, response: body.response, ua: String(req.headers["user-agent"] ?? "").slice(0, 400) }), true);
   }
 
   // ---- signing in with the passkey ----

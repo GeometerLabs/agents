@@ -434,3 +434,12 @@ The design and what was weighed are in [Explanation.md](Explanation.md#shop-memo
 | **The owner's file now carries the shop's key (built, not yet seen on a real server).** The root export job hands the key's text back in its output and the deployer writes `exports/<shop>/shop-key.json` at 0600 as its own user (the user the panel runs as), so the builder can read it; no capability was added (`bundle/backup/jobs.ts placeShopKeyFile`, `bundle/backup/export.ts shopKeyFileOf`, test `bundle/test/shop-key-export.test.ts`). | Docker and a real server were not run in this stream. | On the setup day: make an owner's file on the Operator server and look for `shop-key/shop-key.json`. |
 | **A shop's public key fingerprint in the owner's app** (so an owner can read it out to a buyer or a partner). | No words for it in four languages yet; optional in the plan. | A line on the owner's app's shop page with the first 8 characters of the key id, on the review sheets. |
 | **A real directory is not asked in the tests.** The feed, answer and notice are checked with the directory's own reader and checker on fakes, not over a network. | No Docker in this stream. | One run on a server with the directory service up: a price change, a notice, a re-read and a check from the search page. |
+
+## Who controls the owner's sign-in (19 Nov 2026): what is left
+
+| What | Why not now | Done when |
+|---|---|---|
+| **The owner's own first sign-in is still opened by the Operator's QR.** The rule that closes the Operator's QR, card and "remove the passkeys" starts at the owner's first passkey. | The visit needs a first grant from someone, and a shop with no WhatsApp has no other channel to the owner. | The first sign-in can need something only the owner has (a code to their own number where there is one); until then `geometer owner reset` covers an Operator who scanned first. |
+| **A phone's alert subscription is not tied to the phone's sign-in.** Removing a phone ends its sessions, not its web push subscription. | The subscription belongs to the alerts box and carries no session. | A subscription ends with the session that made it. |
+| **Times on the phones page and in the alerts are India's time.** | The runtime reads no per-shop time zone for the owner's view. | The view reads the shop's `timezone`. |
+| **Hindi, Malayalam and Kannada words for the phones page and its alerts are machine-written** (review sheets, ids `phones.*`). | Waiting for the native readers. | They have said yes. |

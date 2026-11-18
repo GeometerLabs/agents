@@ -296,7 +296,7 @@ export interface ShopView {
   channelsKind?: "bookings" | "orders" | "fees";
   /** Item 11f: the shop's page on the pages domain and the owner's sessions (views-pages.ts). Left out for a template without a booking page. */
   pages?: import("./views-pages.ts").PagesView;
-  pagesNotice?: "ended" | "bad" | "removed";
+  pagesNotice?: "ended" | "bad" | "removed" | "locked" | "requested";
 }
 
 /**

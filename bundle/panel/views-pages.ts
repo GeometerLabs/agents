@@ -14,7 +14,7 @@ import { printedCode } from "../../modules/channels/owner-grants.ts";
 import type { PageSettings, PageStatus } from "../lib/pages.ts";
 
 /** What the block shows: the choice, what came of it at fleet, and whether this panel may choose "own" (a builder's server) or always "hub" (Geometer's). */
-export interface PagesView { settings: PageSettings; status?: PageStatus; canChoose: boolean; /** Item 11h: when the last QR and card were made, and passkeys removed. */ grants?: { setupAt?: string; recoveryAt?: string; removedAt?: string } }
+export interface PagesView { settings: PageSettings; status?: PageStatus; canChoose: boolean; /** Item 11h: when the last QR and card were made, and passkeys removed. */ grants?: { setupAt?: string; recoveryAt?: string; removedAt?: string; resetAt?: string; resetReason?: string }; /** Owner's item 2: what the shop's runtime says (from /status): the owner holds a passkey (so the QR and the card are closed), and the Operator's pending request. */ access?: { locked: boolean; removal?: { askedBy: string; effectiveAt: string } } }
 
 interface Words {
   heading: string; note: string; choice: string; hub: string; own: string; slug: string; slugNote: string; whatsapp: string; whatsappNote: string; save: string;
@@ -25,6 +25,11 @@ interface Words {
   /** Batch 3 and 5: the shop's phone and map, the Operator's name and number (what the owner's app and the error pages show), and the QR page's "wait until green". */
   shopPhone: string; shopPhoneNote: string; map: string; mapNote: string; partnerName: string; partnerPhone: string; partnerNote: string;
   setupWait: string; setupReady: string; setupWaitNote: string; cardQr: string; cardMachine: string;
+  /**
+   * Owner's item 2 ("no Operator holds a shop hostage"): once the owner holds a passkey the runtime closes the setup QR and the card and makes "remove the passkeys" a
+   * request with a wait. The panel only SHOWS that (the runtime decides whatever this page does).
+   */
+  locked: string; askRemove: string; askRemoveNote: string; requested: string; pending: (by: string, when: string) => string; resetLine: (day: string, reason: string) => string; lockedNotice: string;
 }
 /** Exported so the native reviewer's sheet lists these lines too (review.ts, ids "pages.block.*"). */
 export const WORDS: Record<Language, Words> = {
@@ -41,6 +46,8 @@ export const WORDS: Record<Language, Words> = {
     setupTitle: "Setup QR code for the owner", setupNote: (until) => `Works once, for this shop only, until ${until}. The owner scans it with their phone's camera, then touches the fingerprint reader. Showing a new code stops this one.`,
     cardTitle: "Recovery card", cardNote: "Print this page and give it to the owner. Each code works once. Nobody can see these codes again, not even here.", cardOwner: (url) => `Lost your phone? Open ${url} and type one code.`,
     printNote: "Use your browser's Print.", back: "Back to the shop",
+    locked: "The owner now holds their own sign-in. A new phone is added from the owner's app, or with the owner's recovery codes.", askRemove: "Ask to remove the owner's passkeys", askRemoveNote: "For an owner who lost every phone and has no codes. The owner is told at once and can cancel; if they do not, it happens after 48 hours, and only then can you show a new setup QR code.",
+    requested: "Asked. The owner sees it in their app now. If they do not cancel, it happens in 48 hours.", pending: (by, when) => `${by} asked to remove the owner's passkeys. It happens on ${when} unless the owner cancels.`, resetLine: (day, reason) => `Geometer reset the owner's sign-in on ${day}: ${reason}`, lockedNotice: "The owner now holds their own sign-in. A new phone is added from the owner's app, or with the owner's recovery codes.",
     shopPhone: "The shop's phone number on the page", shopPhoneNote: "With the country code, like +918012345678. The page shows \"Call the shop\". A landline works too.",
     map: "Map link", mapNote: "Paste the shop's link from Google Maps (Share, then Copy link). The page shows \"Find us on the map\".",
     partnerName: "Your name, for the owner", partnerPhone: "Your phone number, for the owner", partnerNote: "The owner's app and every error page show your name with Call and WhatsApp buttons. Fill in both, or neither.",
@@ -60,6 +67,8 @@ export const WORDS: Record<Language, Words> = {
     setupTitle: "मालिक के लिए सेटअप QR कोड", setupNote: (until) => `एक बार, सिर्फ़ इसी दुकान के लिए, ${until} तक चलेगा। मालिक इसे फ़ोन के कैमरे से स्कैन करें, फिर फ़िंगरप्रिंट छुएँ। नया कोड दिखाने पर यह बंद हो जाता है।`,
     cardTitle: "रिकवरी कार्ड", cardNote: "यह पेज छापकर मालिक को दीजिए। हर कोड एक बार चलता है। ये कोड फिर कोई नहीं देख सकता, यहाँ भी नहीं।", cardOwner: (url) => `फ़ोन खो गया? ${url} खोलिए और एक कोड लिखिए।`,
     printNote: "ब्राउज़र का Print इस्तेमाल करें।", back: "दुकान पर वापस",
+    locked: "अब मालिक के पास अपना साइन-इन है। नया फ़ोन मालिक के ऐप से, या मालिक के रिकवरी कोड से जुड़ता है।", askRemove: "मालिक की पासकी हटाने का अनुरोध करें", askRemoveNote: "ऐसे मालिक के लिए जिसके सारे फ़ोन खो गए और जिसके पास कोड नहीं हैं। मालिक को तुरंत बताया जाता है और वे रद्द कर सकते हैं; न करें तो 48 घंटे बाद यह होता है, और तभी आप नया सेटअप QR कोड दिखा सकते हैं।",
+    requested: "अनुरोध हो गया। मालिक को अपने ऐप में अभी दिखेगा। वे रद्द न करें तो 48 घंटे में हो जाएगा।", pending: (by, when) => `${by} ने मालिक की पासकी हटाने को कहा है। मालिक रद्द न करें तो यह ${when} को होगा।`, resetLine: (day, reason) => `Geometer ने ${day} को मालिक का साइन-इन रीसेट किया: ${reason}`, lockedNotice: "अब मालिक के पास अपना साइन-इन है। नया फ़ोन मालिक के ऐप से, या मालिक के रिकवरी कोड से जुड़ता है।",
     shopPhone: "पेज पर दुकान का फ़ोन नंबर", shopPhoneNote: "देश कोड के साथ, जैसे +918012345678। पेज पर \"दुकान को कॉल करें\" दिखेगा। लैंडलाइन भी चलता है।",
     map: "मैप लिंक", mapNote: "दुकान का Google Maps लिंक चिपकाइए (Share, फिर Copy link)। पेज पर \"नक्शे पर देखें\" दिखेगा।",
     partnerName: "आपका नाम, मालिक के लिए", partnerPhone: "आपका फ़ोन नंबर, मालिक के लिए", partnerNote: "मालिक के ऐप और हर एरर पेज पर आपका नाम, कॉल और WhatsApp बटन के साथ दिखेगा। दोनों भरिए, या कोई नहीं।",
@@ -79,6 +88,8 @@ export const WORDS: Record<Language, Words> = {
     setupTitle: "ഉടമയ്ക്കുള്ള സെറ്റപ്പ് QR കോഡ്", setupNote: (until) => `ഒരിക്കൽ മാത്രം, ഈ കടയ്ക്ക് മാത്രം, ${until} വരെ പ്രവർത്തിക്കും. ഉടമ ഫോൺ ക്യാമറ കൊണ്ട് സ്കാൻ ചെയ്ത് വിരലടയാളം തൊടണം. പുതിയ കോഡ് കാണിച്ചാൽ ഇത് നിൽക്കും.`,
     cardTitle: "റിക്കവറി കാർഡ്", cardNote: "ഈ പേജ് പ്രിന്റ് ചെയ്ത് ഉടമയ്ക്ക് കൊടുക്കൂ. ഓരോ കോഡും ഒരിക്കൽ മാത്രം. ഈ കോഡുകൾ ഇനി ആർക്കും കാണാനാവില്ല, ഇവിടെയും.", cardOwner: (url) => `ഫോൺ നഷ്ടപ്പെട്ടോ? ${url} തുറന്ന് ഒരു കോഡ് ടൈപ്പ് ചെയ്യൂ.`,
     printNote: "ബ്രൗസറിലെ Print ഉപയോഗിക്കൂ.", back: "കടയിലേക്ക് മടങ്ങൂ",
+    locked: "ഇപ്പോൾ ഉടമയ്ക്ക് സ്വന്തം സൈൻ ഇൻ ഉണ്ട്. പുതിയ ഫോൺ ഉടമയുടെ ആപ്പിൽ നിന്നോ ഉടമയുടെ റിക്കവറി കോഡുകൾ കൊണ്ടോ ചേർക്കാം.", askRemove: "ഉടമയുടെ പാസ്‌കീകൾ നീക്കാൻ ആവശ്യപ്പെടുക", askRemoveNote: "എല്ലാ ഫോണുകളും നഷ്ടപ്പെട്ട്, കോഡുകളുമില്ലാത്ത ഉടമയ്ക്കായി. ഉടമയെ ഉടൻ അറിയിക്കും, അവർക്ക് റദ്ദാക്കാം; റദ്ദാക്കിയില്ലെങ്കിൽ 48 മണിക്കൂറിന് ശേഷം നടക്കും, അപ്പോൾ മാത്രമേ പുതിയ സെറ്റപ്പ് QR കോഡ് കാണിക്കാനാകൂ.",
+    requested: "അഭ്യർത്ഥിച്ചു. ഉടമയ്ക്ക് ഇപ്പോൾ അവരുടെ ആപ്പിൽ കാണാം. റദ്ദാക്കിയില്ലെങ്കിൽ 48 മണിക്കൂറിൽ നടക്കും.", pending: (by, when) => `${by} ഉടമയുടെ പാസ്‌കീകൾ നീക്കാൻ ആവശ്യപ്പെട്ടു. ഉടമ റദ്ദാക്കിയില്ലെങ്കിൽ ${when}-ന് നടക്കും.`, resetLine: (day, reason) => `${day}-ന് Geometer ഉടമയുടെ സൈൻ ഇൻ റീസെറ്റ് ചെയ്തു: ${reason}`, lockedNotice: "ഇപ്പോൾ ഉടമയ്ക്ക് സ്വന്തം സൈൻ ഇൻ ഉണ്ട്. പുതിയ ഫോൺ ഉടമയുടെ ആപ്പിൽ നിന്നോ ഉടമയുടെ റിക്കവറി കോഡുകൾ കൊണ്ടോ ചേർക്കാം.",
     shopPhone: "പേജിൽ കടയുടെ ഫോൺ നമ്പർ", shopPhoneNote: "രാജ്യ കോഡ് സഹിതം, ഉദാ. +918012345678. പേജിൽ \"കടയെ വിളിക്കൂ\" കാണും. ലാൻഡ്‌ലൈനും ചേരും.",
     map: "മാപ്പ് ലിങ്ക്", mapNote: "കടയുടെ Google Maps ലിങ്ക് പേസ്റ്റ് ചെയ്യൂ (Share, പിന്നെ Copy link). പേജിൽ \"മാപ്പിൽ കാണൂ\" കാണും.",
     partnerName: "നിങ്ങളുടെ പേര്, ഉടമയ്ക്കായി", partnerPhone: "നിങ്ങളുടെ ഫോൺ നമ്പർ, ഉടമയ്ക്കായി", partnerNote: "ഉടമയുടെ ആപ്പിലും ഓരോ എറർ പേജിലും നിങ്ങളുടെ പേര്, വിളിക്കാനും WhatsApp-നും ബട്ടണുകളോടെ കാണും. രണ്ടും നൽകൂ, അല്ലെങ്കിൽ ഒന്നും വേണ്ട.",
@@ -98,6 +109,8 @@ export const WORDS: Record<Language, Words> = {
     setupTitle: "ಮಾಲೀಕರಿಗಾಗಿ ಸೆಟಪ್ QR ಕೋಡ್", setupNote: (until) => `ಒಮ್ಮೆ ಮಾತ್ರ, ಈ ಅಂಗಡಿಗೆ ಮಾತ್ರ, ${until} ವರೆಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಮಾಲೀಕರು ಫೋನ್ ಕ್ಯಾಮೆರಾದಿಂದ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಬೆರಳಚ್ಚು ಮುಟ್ಟಬೇಕು. ಹೊಸ ಕೋಡ್ ತೋರಿಸಿದರೆ ಇದು ನಿಲ್ಲುತ್ತದೆ.`,
     cardTitle: "ರಿಕವರಿ ಕಾರ್ಡ್", cardNote: "ಈ ಪುಟವನ್ನು ಮುದ್ರಿಸಿ ಮಾಲೀಕರಿಗೆ ಕೊಡಿ. ಪ್ರತಿ ಕೋಡ್ ಒಮ್ಮೆ ಮಾತ್ರ. ಈ ಕೋಡ್‌ಗಳನ್ನು ಮತ್ತೆ ಯಾರೂ ನೋಡಲಾಗದು, ಇಲ್ಲಿಯೂ.", cardOwner: (url) => `ಫೋನ್ ಕಳೆದುಹೋಯಿತೇ? ${url} ತೆರೆದು ಒಂದು ಕೋಡ್ ಟೈಪ್ ಮಾಡಿ.`,
     printNote: "ಬ್ರೌಸರ್‌ನ Print ಬಳಸಿ.", back: "ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ",
+    locked: "ಈಗ ಮಾಲೀಕರ ಬಳಿ ಅವರ ಸ್ವಂತ ಸೈನ್ ಇನ್ ಇದೆ. ಹೊಸ ಫೋನ್ ಅನ್ನು ಮಾಲೀಕರ ಆಪ್‌ನಿಂದ ಅಥವಾ ಮಾಲೀಕರ ರಿಕವರಿ ಕೋಡ್‌ಗಳಿಂದ ಸೇರಿಸಲಾಗುತ್ತದೆ.", askRemove: "ಮಾಲೀಕರ ಪಾಸ್‌ಕೀಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿ", askRemoveNote: "ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ಕಳೆದುಕೊಂಡು, ಕೋಡ್‌ಗಳೂ ಇಲ್ಲದ ಮಾಲೀಕರಿಗಾಗಿ. ಮಾಲೀಕರಿಗೆ ತಕ್ಷಣ ತಿಳಿಸಲಾಗುತ್ತದೆ, ಅವರು ರದ್ದುಗೊಳಿಸಬಹುದು; ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 48 ಗಂಟೆಗಳ ನಂತರ ಆಗುತ್ತದೆ, ಆಗ ಮಾತ್ರ ಹೊಸ ಸೆಟಪ್ QR ಕೋಡ್ ತೋರಿಸಬಹುದು.",
+    requested: "ಕೇಳಲಾಗಿದೆ. ಮಾಲೀಕರಿಗೆ ಈಗ ಅವರ ಆಪ್‌ನಲ್ಲಿ ಕಾಣುತ್ತದೆ. ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 48 ಗಂಟೆಗಳಲ್ಲಿ ಆಗುತ್ತದೆ.", pending: (by, when) => `${by} ಮಾಲೀಕರ ಪಾಸ್‌ಕೀಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ಮಾಲೀಕರು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ${when} ರಂದು ಆಗುತ್ತದೆ.`, resetLine: (day, reason) => `${day} ರಂದು Geometer ಮಾಲೀಕರ ಸೈನ್ ಇನ್ ರೀಸೆಟ್ ಮಾಡಿದೆ: ${reason}`, lockedNotice: "ಈಗ ಮಾಲೀಕರ ಬಳಿ ಅವರ ಸ್ವಂತ ಸೈನ್ ಇನ್ ಇದೆ. ಹೊಸ ಫೋನ್ ಅನ್ನು ಮಾಲೀಕರ ಆಪ್‌ನಿಂದ ಅಥವಾ ಮಾಲೀಕರ ರಿಕವರಿ ಕೋಡ್‌ಗಳಿಂದ ಸೇರಿಸಲಾಗುತ್ತದೆ.",
     shopPhone: "ಪುಟದಲ್ಲಿ ಅಂಗಡಿಯ ಫೋನ್ ನಂಬರ್", shopPhoneNote: "ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ, ಉದಾ. +918012345678. ಪುಟದಲ್ಲಿ \"ಅಂಗಡಿಗೆ ಕರೆ ಮಾಡಿ\" ಕಾಣುತ್ತದೆ. ಲ್ಯಾಂಡ್‌ಲೈನ್ ಕೂಡ ಆಗುತ್ತದೆ.",
     map: "ಮ್ಯಾಪ್ ಲಿಂಕ್", mapNote: "ಅಂಗಡಿಯ Google Maps ಲಿಂಕ್ ಅಂಟಿಸಿ (Share, ನಂತರ Copy link). ಪುಟದಲ್ಲಿ \"ನಕ್ಷೆಯಲ್ಲಿ ನೋಡಿ\" ಕಾಣುತ್ತದೆ.",
     partnerName: "ನಿಮ್ಮ ಹೆಸರು, ಮಾಲೀಕರಿಗಾಗಿ", partnerPhone: "ನಿಮ್ಮ ಫೋನ್ ನಂಬರ್, ಮಾಲೀಕರಿಗಾಗಿ", partnerNote: "ಮಾಲೀಕರ ಆಪ್‌ನಲ್ಲಿ ಮತ್ತು ಪ್ರತಿ ದೋಷ ಪುಟದಲ್ಲಿ ನಿಮ್ಮ ಹೆಸರು, ಕರೆ ಮತ್ತು WhatsApp ಬಟನ್‌ಗಳೊಂದಿಗೆ ಕಾಣುತ್ತದೆ. ಎರಡನ್ನೂ ತುಂಬಿ, ಅಥವಾ ಯಾವುದನ್ನೂ ಬೇಡ.",
@@ -109,7 +122,7 @@ export const WORDS: Record<Language, Words> = {
 const csrf = (c: Ctx) => html`<input type="hidden" name="_csrf" value="${c.csrf}">`;
 
 /** The block on the shop page. */
-export function pagesBlock(c: Ctx, id: string, v: PagesView, notice?: "ended" | "bad" | "removed"): Raw {
+export function pagesBlock(c: Ctx, id: string, v: PagesView, notice?: "ended" | "bad" | "removed" | "locked" | "requested"): Raw {
   const w = WORDS[c.lang];
   const s = v.settings;
   const st = v.status;
@@ -132,11 +145,18 @@ ${v.canChoose ? html`<label class="field"><span>${w.choice}</span><select name="
 <button class="btn" type="submit">${w.save}</button></form>
 <h3>${w.signin}</h3><p class="note">${w.signinNote}</p>
 ${notice === "removed" ? html`<div class="notice" role="status">${w.removed}</div>` : ""}
+${notice === "locked" ? html`<div class="notice" role="alert">${w.lockedNotice}</div>` : ""}
+${notice === "requested" ? html`<div class="notice" role="status">${w.requested}</div>` : ""}
+${v.grants?.resetAt ? html`<div class="notice" role="note">${w.resetLine(v.grants.resetAt.slice(0, 10), v.grants.resetReason ?? "")}</div>` : ""}
+${v.access?.locked ? html`
+<p class="note">${w.locked}</p>
+${v.access.removal ? html`<div class="notice" role="status">${w.pending(v.access.removal.askedBy, v.access.removal.effectiveAt.slice(0, 16).replace("T", " ") + " UTC")}</div>` : html`<p class="note">${w.askRemoveNote}</p>
+<form method="post" action="/shops/${id}/owner-passkeys/remove">${csrf(c)}<button class="btn danger" type="submit">${w.askRemove}</button></form>`}` : html`
 ${v.grants?.recoveryAt ? html`<p class="note">${w.recoveryOn(v.grants.recoveryAt.slice(0, 10))}</p>` : ""}
 <form method="post" action="/shops/${id}/owner-setup">${csrf(c)}<button class="btn" type="submit">${w.setupMake}</button></form>
 <form method="post" action="/shops/${id}/owner-recovery">${csrf(c)}<button class="btn" type="submit">${w.recoveryMake}</button></form>
 <p class="note">${w.removeNote}</p>
-<form method="post" action="/shops/${id}/owner-passkeys/remove">${csrf(c)}<button class="btn danger" type="submit">${w.remove}</button></form>
+<form method="post" action="/shops/${id}/owner-passkeys/remove">${csrf(c)}<button class="btn danger" type="submit">${w.remove}</button></form>`}
 <h3>${w.sessions}</h3><p class="note">${w.sessionsNote}</p>
 ${notice === "ended" ? html`<div class="notice" role="status">${w.ended}</div>` : ""}
 <form method="post" action="/shops/${id}/owner-sessions/end">${csrf(c)}<button class="btn danger" type="submit">${w.endAll}</button></form>`;

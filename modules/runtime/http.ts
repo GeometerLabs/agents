@@ -55,6 +55,8 @@
 //   GET  /internal/channel/owner-signin   x-owner-signin: <link>     what the link is now (valid, used, expired, replaced, unknown); nothing is used up
 //   POST /internal/channel/owner-signin   x-owner-signin: <link>     use the link up (once) and make a session: {"session", "expires_at_ms"}, or 403 {"state"}
 //   POST /internal/channel/owner-signout  x-owner-session: <token>   end that session
+//   POST /internal/channel/owner-phones   x-owner-session: <token>   {"op": "list" | "dismiss" | "remove" {id, confirm_last?} | "codes" | "add_phone" | "cancel_removal"}: the owner's
+//                                         own list of phones and what they control (owner's item 2); a session only, and "codes" and "add_phone" only from a passkey session
 //   GET  /internal/owner-session          x-owner-session, with the INBOX's internal token: 204 when the session is good. The approvals relay asks this, so it
 //                                         never takes the front's word for who the owner is.
 // Item 11h, passkeys (owner-access.ts, webauthn.ts): one route, the step in the body. Every check is HERE; the front carries the browser's answers.
@@ -95,7 +97,8 @@ import { OWNER_CHOICES } from "../push/store.ts";
 import type { BrowserSubscription, OwnerChoice } from "../push/store.ts";
 import { chatConversationOf, conversationOf } from "../channels/conversation.ts";
 import type { ChatIdentityRoutes } from "../channels/chat-identity-http.ts";
-import type { OwnerSignin } from "../channels/owner-signin.ts";
+import type { OwnerAccessEvent, OwnerSignin } from "../channels/owner-signin.ts";
+import { CODES_ALERT, NEW_PHONE_ALERT, REMOVED_ALERT, phoneLabel } from "../channels/owner-phones.ts";
 import type { OwnerLinkFile } from "../channels/owner-link.ts";
 import type { RuntimeChannel } from "./core.ts";
 import { LANGUAGES } from "../language/languages.ts";
@@ -227,8 +230,8 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
     return session !== undefined && options.ownerSignin?.check(session) !== undefined;
   };
   /** A session's start or end, for the record: an event of the runtime's own, saved and run as a step like any other. */
-  const recordAccess = (what: "signed_in" | "signed_out" | "passkey_added" | "file_taken", session: string, how?: "link" | "passkey" | "setup" | "recovery", ask?: string): void => {
-    runtime.submit([{ kind: "owner_access", id: randomUUID(), what, session, ...(how ? { how } : {}), ...(ask ? { ask } : {}) }]);
+  const recordAccess = (what: OwnerAccessEvent["what"], session: string, how?: OwnerAccessEvent["how"], ask?: string, label?: string): void => {
+    runtime.submit([{ kind: "owner_access", id: randomUUID(), what, session, ...(how ? { how } : {}), ...(ask ? { ask } : {}), ...(label ? { label } : {}) }]);
     runtime.kick();
   };
 
@@ -403,10 +406,17 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
           const r = signin.registrationOptions(grant);
           return r.ok ? send(res, 200, { options: r.options }) : send(res, 403, { state: r.state });
         }
-        const done = signin.register(grant, body.response as RegistrationResponse);
+        // the front passes the browser's User-Agent; only its coarse label ("Android, Chrome") is kept, never the User-Agent itself
+        const label = phoneLabel(body.ua);
+        const done = signin.register(grant, body.response as RegistrationResponse, label);
         if (!done.ok) return send(res, 403, { state: done.state, ...("why" in done && done.why ? { why: done.why } : {}) });
-        recordAccess("passkey_added", done.passkey, grant.kind);
+        recordAccess("passkey_added", done.passkey, grant.kind, undefined, label);
+        // the lock: every owner alert subscription made before it (or from a link) belongs to no phone of the owner's, so the Operator who subscribed their own phone at the
+        // setup visit stops hearing the shop here
+        if (done.firstOfLock) options.push?.dropUnbound();
         recordAccess("signed_in", done.id, "passkey");
+        // a new phone is announced: the owner's other phones with alerts on get a push now (the others see a banner on their next open). The first phone has no "other".
+        if (options.push?.on && signin.passkeys().length > 1) options.push.owner(NEW_PHONE_ALERT(signin.now(), label)[signin.ownerLanguage], "phones");
         return send(res, 200, { session: done.session, expires_at_ms: done.expiresAt });
       }
       if (op === "status") return send(res, 200, { count: signin.passkeys().length });
@@ -418,6 +428,62 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
         return send(res, 200, { session: done.session, expires_at_ms: done.expiresAt });
       }
       return send(res, 400, { error: "op is grant_state, register_options, register, signin_options or signin." });
+    }
+    // ---- owner's item 2: "Phones that can open your shop". ONLY a session made here (never the panel's link, which the Operator holds): the owner's own list of phones,
+    // the news of a new one, removing one, their own recovery codes, "add a phone", and cancelling the Operator's request to remove every phone. Every rule is checked HERE.
+    if (path === "/internal/channel/owner-phones") {
+      only("POST");
+      let body: Record<string, unknown>;
+      try { body = JSON.parse(await readBody(req, 4 * 1024)) as Record<string, unknown>; } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const signin = options.ownerSignin;
+      const session = header(req, OWNER_SESSION_HEADER);
+      const good = session !== undefined && signin?.passkeysOn() ? signin.check(session) : undefined;
+      if (!signin || !session || !good) return send(res, 403, { state: "signed_out" });
+      const op = body.op;
+      if (op === "list") {
+        const v = signin.phones(session);
+        if (!v) return send(res, 403, { state: "signed_out" });
+        // the alerts that reach the owner's phones, each with the phone it came from (the phones page lists them with Stop)
+        const alerts = (options.push?.on ? options.push.ownerSubs() : []).map((a) => ({ id: a.id, madeAt: a.madeAt, ...(v.phones.find((p) => p.id === a.ref)?.label ? { label: v.phones.find((p) => p.id === a.ref)!.label! } : {}) }));
+        return send(res, 200, { ...v, alerts, language: signin.ownerLanguage, now: signin.now() });
+      }
+      if (op === "stop_alert") {
+        // only a passkey session (a phone of the owner's) may stop an alert subscription
+        if (signin.passkeyOf(session) === undefined) return send(res, 403, { state: "passkey_needed" });
+        const done = typeof body.id === "string" && options.push?.dropOwnerSub(body.id.slice(0, 32)) === true;
+        return send(res, done ? 200 : 404, { stopped: done });
+      }
+      if (op === "dismiss") { signin.dismissPhones(session, typeof body.through === "number" ? body.through : undefined); return send(res, 200, { ok: true }); }
+      if (op === "remove") {
+        const r = signin.removePhone(session, typeof body.id === "string" ? body.id.slice(0, 32) : "", body.confirm_last === true);
+        if (!r.ok) return send(res, r.why === "session" ? 403 : r.why === "last" ? 409 : 404, { state: r.why });
+        recordAccess("phone_removed", r.removed.id, undefined, undefined, r.removed.label);
+        // the alerts that phone asked for end with it, and every other phone is told (banner on its next open, and a push now)
+        options.push?.dropRef(r.removed.id);
+        if (options.push?.on) options.push.owner(REMOVED_ALERT(signin.now(), r.removed.label ?? "")[signin.ownerLanguage], "phones");
+        return send(res, 200, { ok: true, wasLast: r.wasLast });
+      }
+      if (op === "codes") {
+        const codes = signin.makeCodes(session);
+        if (!codes) return send(res, 403, { state: "passkey_needed" });
+        recordAccess("codes_made", good.id);
+        // a set of codes is a way back in: the owner's other phones are told, like a new phone
+        if (options.push?.on) options.push.owner(CODES_ALERT(signin.now(), "")[signin.ownerLanguage], "phones");
+        return send(res, 200, { codes });
+      }
+      if (op === "add_phone") {
+        const made = signin.addPhone(session);
+        return made ? send(res, 200, { url: made.url, expires_at_ms: made.expiresAt }) : send(res, 403, { state: "passkey_needed" });
+      }
+      if (op === "cancel_removal") {
+        const done = signin.cancelRemoval(session);
+        if (done) { recordAccess("removal_cancelled", good.id); }
+        return send(res, 200, { cancelled: done });
+      }
+      return send(res, 400, { error: "op is list, dismiss, remove, codes, add_phone or cancel_removal." });
     }
     if (path === "/internal/channel/owner-signout") {
       only("POST");
@@ -440,8 +506,16 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       const whatsapp = options.hasWhatsApp === true;
       if (op.startsWith("owner_")) {
         if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+        // The panel's owner link is the OPERATOR's: once the owner holds a passkey it may not subscribe a phone to the owner's alerts (which can carry what the shop says to
+        // the owner), change the owner's choice or drop a subscription. Only a signed-in session may, and a subscription is tied to the phone (passkey) it was made from.
+        const session = header(req, OWNER_SESSION_HEADER);
+        const ownerSession = session !== undefined && options.ownerSignin?.check(session) !== undefined ? session : undefined;
+        if (!ownerSession && op !== "owner_state" && options.ownerSignin?.passkeysOn() && options.ownerSignin.lockState().locked) return send(res, 403, { error: "Sign in with the owner's phone to change alerts." });
         if (op === "owner_subscribe") {
-          const r = push.subscribe("owner", body.subscription as BrowserSubscription);
+          const ref = ownerSession ? options.ownerSignin?.passkeyOf(ownerSession) : undefined;
+          // once locked, only a PHONE (a passkey session) may subscribe: a subscription with no phone could never be ended by removing one
+          if (!ref && options.ownerSignin?.passkeysOn() && options.ownerSignin.lockState().locked) return send(res, 403, { error: "Sign in with your phone's fingerprint to turn on alerts." });
+          const r = push.subscribe("owner", body.subscription as BrowserSubscription, "own", ref);
           if (!r.ok) return send(res, 400, { error: r.why });
           // the first phone with alerts: both ways for a shop with WhatsApp (the owner can then pick), push alone for one without
           if (push.ownerPhones() === 1 && push.choice() === "whatsapp") push.setChoice(whatsapp ? "both" : "push");
@@ -716,7 +790,13 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (!authorised(req)) return send(res, 401, { error: "A bearer token is needed." }, { "www-authenticate": "Bearer", ...closing });
       // batch 3: how the owner can sign in and hear (counts only), for the panel's go-live: a shop with no WhatsApp may not go live until one passkey exists and one phone has alerts
       const signin = options.ownerSignin;
-      const ownerAccess = { passkeys: signin?.passkeysOn() ? signin.passkeys().length : 0, alertPhones: options.push?.on ? options.push.ownerPhones() : 0 };
+      // owner's item 2: `locked` (the owner holds a passkey, so the Operator's QR and card are closed) and the Operator's pending removal request, for the panel to SHOW; the
+      // runtime has already decided both, whatever the panel does
+      const lock = signin?.passkeysOn() ? signin.lockState() : undefined;
+      const ownerAccess = {
+        passkeys: signin?.passkeysOn() ? signin.passkeys().length : 0, alertPhones: options.push?.on ? options.push.ownerPhones() : 0,
+        ...(lock ? { locked: lock.locked, ...(lock.removal ? { removal: { askedBy: lock.removal.askedBy, effectiveAt: new Date(lock.removal.effectiveAt).toISOString() } } : {}) } : {}),
+      };
       return send(res, 200, { ...runtime.status(), ownerAccess });
     }
     if (path === "/internal/owner-session") {

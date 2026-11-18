@@ -22,13 +22,25 @@
 //     here; each shop also has its own WebAuthn user id (`userId`), so registering for a second shop never replaces the first shop's passkey on the phone;
 //   - a credential is good only for the owner number it was made for, and only if made after the panel's "remove the owner's passkeys" (`passkeysBefore`);
 //   - wrong recovery codes are counted per shop (WRONG_CODE_LIMIT a day), on top of the front's per-address count.
+//
+// "No Operator holds a shop hostage" (owner's item 2). The Operator's files (owner-grants.ts) are never taken at their word once the owner holds a passkey:
+//   - the shop is LOCKED once any passkey has been made since the gate last opened (`reopen_at`). A setup QR or a recovery code is good only if THIS store first saw
+//     it (`grants_seen`) no later than that first passkey, so an Operator who makes a QR or a card afterwards (a changed panel, or a hand-written file) gets nothing;
+//   - `passkeysBefore` is this store's own value (meta `passkeys_before`), not the file's: the file's is adopted once, for shops from before this rule. The
+//     Operator's way to lock every phone out is a REQUEST (file.pendingRemoval) which this store times itself, REMOVAL_WAIT_MS from the moment it first saw it (never
+//     from the time the file claims, which a hand-written file could back-date), and which the owner can cancel. Only when it applies does the gate reopen;
+//   - the owner's OWN recovery codes and "add a phone" links are made and kept here (`own_codes`, `own_setups`), never in the Operator's file;
+//   - Geometer's reset (file.reset, from the server admin's own file) reopens the gate at once, voids every QR, card and own code, and ends every session made before it.
 import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
-import { grantHash, grantInFile } from "./owner-grants.ts";
+import { RECOVERY_CODE, RECOVERY_CODES, REMOVAL_WAIT_MS, RESET_QR_MS, normalCode, SETUP_MS, grantHash, grantInFile, newRecoveryCode, newSetupToken, recoveryHash, setupHash } from "./owner-grants.ts";
 import type { Grant, OwnerGrants } from "./owner-grants.ts";
 import { ALGORITHMS, PasskeyError, verifyAssertion, verifyRegistration } from "./webauthn.ts";
 import type { StoredCredential } from "./webauthn.ts";
+import type { PhoneVia } from "./owner-phones.ts";
+
+const RECOVERY_SHAPE = (code: string): boolean => RECOVERY_CODE.test(normalCode(code));
 
 export const OWNER_ACCESS_FILE = "owner-access.sqlite";
 /** The panel's "sign out every device" (shops/<shop>/owner-sessions.json), copied by the deployer to the runtime's client folder: {schema: 1, endBefore}. */
@@ -109,7 +121,32 @@ export function openOwnerAccess(file: string) {
     );
     CREATE TABLE IF NOT EXISTS grants_used (hash TEXT PRIMARY KEY, kind TEXT NOT NULL, used_at INTEGER NOT NULL, passkey_id TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS wrong_codes (at INTEGER NOT NULL);
+    -- the Operator's QR and card hashes as THIS store first saw them: the gate (see the header) compares first_seen with the first passkey
+    CREATE TABLE IF NOT EXISTS grants_seen (hash TEXT PRIMARY KEY, kind TEXT NOT NULL, first_seen INTEGER NOT NULL, voided_at INTEGER);
+    -- the owner's own recovery codes (hashes only, made from the owner's app) and "add a phone" links; the Operator's file never holds these
+    -- by_passkey: the phone that made each set of codes and each "add a phone" link, so removing that phone takes back what it made (a removed phone must not keep a way in)
+    CREATE TABLE IF NOT EXISTS own_codes (hash TEXT PRIMARY KEY, made_at INTEGER NOT NULL, voided_at INTEGER, by_passkey TEXT);
+    CREATE TABLE IF NOT EXISTS own_setups (hash TEXT PRIMARY KEY, made_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, voided_at INTEGER, by_passkey TEXT);
+    -- news the other phones are told once: codes made, a phone removed (a phone ADDED is read from the passkeys table)
+    CREATE TABLE IF NOT EXISTS news (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, kind TEXT NOT NULL CHECK (kind IN ('codes', 'removed')), label TEXT, by_id TEXT);
+    -- the Operator's removal requests as this store timed them: seen_at is when WE first saw the request, effective_at = seen_at + REMOVAL_WAIT_MS
+    CREATE TABLE IF NOT EXISTS removals (
+      asked_at TEXT PRIMARY KEY, asked_by TEXT NOT NULL, seen_at INTEGER NOT NULL, effective_at INTEGER NOT NULL,
+      state TEXT NOT NULL CHECK (state IN ('pending', 'cancelled', 'applied', 'withdrawn')), at INTEGER NOT NULL,
+      -- 1 once the owner's phones were told and the record line written (the tick does both, then sets this); see takeNotes
+      told INTEGER NOT NULL DEFAULT 1
+    );
+    -- what each phone (a passkey, or a session made by a link) has been told about: new passkeys made after "through" are announced to it until it dismisses them
+    CREATE TABLE IF NOT EXISTS phone_seen (subject TEXT PRIMARY KEY, through INTEGER NOT NULL);
   `);
+  // A safe migration for a store made before the phones list: the label (coarse platform and browser, owner-phones.ts) is new; an old row keeps NULL and shows as "a phone".
+  if (!(db.prepare("PRAGMA table_info(passkeys)").all() as { name: string }[]).some((c) => c.name === "label")) db.exec("ALTER TABLE passkeys ADD COLUMN label TEXT");
+  // at most one restart-extension per request (review item 9): a runtime restarted every few hours must not postpone a request for ever
+  if (!(db.prepare("PRAGMA table_info(removals)").all() as { name: string }[]).some((c) => c.name === "extended")) db.exec("ALTER TABLE removals ADD COLUMN extended INTEGER NOT NULL DEFAULT 0");
+  // The request notice used to live only in memory (a restart before the next tick lost the push and the record line while the 48 hours still ran). `told` is kept in the file:
+  // a store made before it has every old request counted as told (their notices were sent or are lost already); new rows are written with told = 0 below.
+  if (!(db.prepare("PRAGMA table_info(removals)").all() as { name: string }[]).some((c) => c.name === "told")) db.exec("ALTER TABLE removals ADD COLUMN told INTEGER NOT NULL DEFAULT 1");
+  for (const t of ["own_codes", "own_setups"]) if (!(db.prepare(`PRAGMA table_info(${t})`).all() as { name: string }[]).some((c) => c.name === "by_passkey")) db.exec(`ALTER TABLE ${t} ADD COLUMN by_passkey TEXT`);
   type LinkRow = { id: string; made_at: number; expires_at: number; state: string; owner_key: string; base: string };
   type SessionRow = { id: string; link_id: string; made_at: number; expires_at: number; ended_at: number | null; owner_key: string; base: string };
   const linkByHash = db.prepare("SELECT id, made_at, expires_at, state, owner_key, base FROM links WHERE hash = ?");
@@ -161,10 +198,241 @@ export function openOwnerAccess(file: string) {
   }
   /** Is a passkey row good now for this owner, on this RP ID, made after the panel's "remove the owner's passkeys"? */
   const passkeyGood = (r: PasskeyRow & { removed_at: number | null }, who: OwnerNow, rp: RelyingParty, passkeysBefore?: number): boolean =>
-    r.removed_at === null && r.owner_key === ownerKey(who.owner) && r.rp_id === rp.rpId && (passkeysBefore === undefined || r.made_at >= passkeysBefore);
+    r.removed_at === null && r.owner_key === effKey(who) && r.rp_id === rp.rpId && (passkeysBefore === undefined || r.made_at >= passkeysBefore);
   const b64 = (s: unknown, max: number): Buffer | undefined => (typeof s === "string" && s.length > 0 && s.length <= max && /^[A-Za-z0-9_-]+$/u.test(s) ? Buffer.from(s, "base64url") : undefined);
 
+  // ---- who controls the owner's sign-in: the gate, the requests, the reset (see the header) ----
+  const metaNum = (name: string): number | undefined => { const r = db.prepare("SELECT value FROM meta WHERE name = ?").get(name) as { value: string } | undefined; return r ? Number(r.value) : undefined; };
+  const setMeta = (name: string, v: number): void => { db.prepare("INSERT INTO meta (name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value").run(name, String(v)); };
+  const metaStr = (name: string): string | undefined => (db.prepare("SELECT value FROM meta WHERE name = ?").get(name) as { value: string } | undefined)?.value;
+  /** The owner identity the shop was LOCKED with (hash of their number), set by the first passkey and cleared whenever the gate opens. */
+  const boundKey = (): string | undefined => metaStr("bound_owner");
+  const effKey = (who: OwnerNow): string => boundKey() ?? ownerKey(who.owner);
+  const unbind = (): void => { db.prepare("DELETE FROM meta WHERE name = 'bound_owner'").run(); };
+  const raiseMeta = (name: string, v: number): void => { if (v > (metaNum(name) ?? 0)) setMeta(name, v); };
+  /** When the shop got locked: the first passkey made since the gate last opened (rows the owner or a removal later took away still count: the owner held one). */
+  const lockAt = (): number | undefined => {
+    const r = db.prepare("SELECT min(made_at) AS m FROM passkeys WHERE made_at >= ?").get(metaNum("reopen_at") ?? 0) as { m: number | null };
+    return r.m ?? undefined;
+  };
+  /**
+   * From Geometer's reset until the owner's first passkey after it. In this window the shop is locked for the Operator (the panel shows it locked) and the runtime accepts
+   * ONLY the reset's own QR: a panel QR or card made now would otherwise undo the reset by the Operator's own buttons (nothing is "locked" while no phone exists).
+   */
+  const inResetWindow = (): boolean => {
+    const at = metaNum("reset_at");
+    if (at === undefined) return false;
+    return (db.prepare("SELECT 1 FROM passkeys WHERE made_at >= ? LIMIT 1").get(at) as unknown) === undefined;
+  };
+  /** The reset in the file, but only the one this store has applied (so a changed file cannot swap in another QR). */
+  const appliedReset = (file: OwnerGrants | undefined): NonNullable<OwnerGrants["reset"]> | undefined =>
+    file?.reset && Date.parse(file.reset.at) === metaNum("reset_raw") ? file.reset : undefined;
+  /** The owner cancelled a request (of either kind) within the last day: the Operator waits before the next one is heard. */
+  const cancelledRecently = (now: number): boolean => db.prepare("SELECT 1 FROM removals WHERE state = 'cancelled' AND at > ?").get(now - 24 * 60 * 60_000) !== undefined;
+  const endSessionsBefore = (t: number, now: number, why: string): void => { db.prepare("UPDATE sessions SET ended_at = ?, ended_why = ? WHERE ended_at IS NULL AND made_at < ?").run(now, why, t); };
+  /** Things the runtime should write in the record once (the tick does), found while reading the files. */
+  type Note = { what: "reset"; at: number; reason: string; by: string } | { what: "removal_asked"; askedBy: string; askedAt: string; effectiveAt: number; key: string } | { what: "removal_applied"; at: number } | { what: "owner_change_asked"; effectiveAt: number; key: string } | { what: "removal_extended"; kind: "removal" | "owner_change"; askedBy: string; effectiveAt: number; key: string };
+  /** In-memory notes: only the ones that are not a request (a reset, a request applied). A request's notice is a row in `removals` with told = 0, so it survives a restart. */
+  const notes: Extract<Note, { what: "reset" | "removal_applied" }>[] = [];
+  /** Remember the QR and the card hashes the file holds now, the first time this store sees each. */
+  const noteSeen = (file: OwnerGrants | undefined, firstSeen: number): void => {
+    // anything the panel's file shows during a reset window is born void: it must not wake up when the window closes (the first passkey after the reset would
+    // otherwise make a card staged in the window look "seen before the lock")
+    const window = inResetWindow();
+    const ins = db.prepare("INSERT OR IGNORE INTO grants_seen (hash, kind, first_seen, voided_at) VALUES (?, ?, ?, ?)");
+    const born = window ? firstSeen : null;
+    if (file?.setup) ins.run(file.setup.sha256, "setup", firstSeen, born);
+    for (const c of file?.recovery?.codes ?? []) ins.run(c, "recovery", firstSeen, born);
+  };
+  /**
+   * Read the Operator's and the admin's files into this store's own state. Called by everything that depends on them, so no path can skip it. Idempotent. Order: adopt a
+   * shop from before this rule, apply Geometer's reset, remember the QR and card hashes, time the Operator's request, apply a request whose wait is over.
+   */
+  function reconcile(file: OwnerGrants | undefined, now: number): void {
+    if (metaNum("adopted") === undefined) {
+      const first = lockAt();
+      // a shop whose owner already holds a passkey keeps the QR and card that exist today (first seen "at the first passkey"), and the file's own passkeysBefore, once
+      if (file !== undefined || first === undefined) {
+        // clamped to now: a file value in the future would otherwise make every passkey made from now on "older" than the cutoff (a total lockout)
+        if (file?.passkeysBefore) setMeta("passkeys_before", Math.min(Date.parse(file.passkeysBefore), now));
+        noteSeen(file, first ?? now);
+        // a shop that is already locked is bound to the owner its first passkey was made for
+        const firstRow = first === undefined ? undefined : db.prepare("SELECT owner_key FROM passkeys WHERE made_at >= ? ORDER BY made_at LIMIT 1").get(metaNum("reopen_at") ?? 0) as { owner_key: string } | undefined;
+        if (firstRow && boundKey() === undefined) setMeta("bound_owner", firstRow.owner_key);
+        setMeta("adopted", 1);
+      }
+    }
+    // A locked shop with no bound identity (a restore into an empty folder carries the passkeys but did not always carry the binding, and an older runtime never made one)
+    // is bound NOW to the owner the existing passkeys were made for, never to whatever the settings say today: if the Operator already changed the number, `watchOwner`
+    // then raises the request instead of the shop quietly following the new number.
+    if (boundKey() === undefined && lockAt() !== undefined) {
+      const row = db.prepare("SELECT owner_key FROM passkeys WHERE made_at >= ? ORDER BY made_at LIMIT 1").get(metaNum("reopen_at") ?? 0) as { owner_key: string } | undefined;
+      if (row) setMeta("bound_owner", row.owner_key);
+    }
+    const reset = file?.reset;
+    // Every time a FILE names is clamped to this runtime's own clock the first time it is seen, and remembered by its raw value: a reset dated 2099 would move every cutoff to
+    // 2099 and make every later, real reset look older (an instant total lockout, and no way back). The raw value is remembered so a far date is applied once, not again on every read.
+    const resetRaw = reset ? Date.parse(reset.at) : undefined;
+    if (reset && resetRaw !== undefined && resetRaw !== metaNum("reset_raw") && Math.min(resetRaw, now) > (metaNum("reset_at") ?? 0)) {
+      const at = Math.min(resetRaw, now);
+      setMeta("reset_raw", resetRaw);
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        setMeta("reset_at", at); raiseMeta("passkeys_before", at); raiseMeta("reopen_at", at); unbind();
+        // every QR, card, own code and "add a phone" link made before the reset stops; the QR the admin makes with the reset is first seen after it and so works
+        db.prepare("UPDATE grants_seen SET voided_at = ? WHERE first_seen < ? AND voided_at IS NULL").run(at, at);
+        db.prepare("UPDATE own_codes SET voided_at = ? WHERE voided_at IS NULL").run(at);
+        db.prepare("UPDATE own_setups SET voided_at = ? WHERE voided_at IS NULL").run(at);
+        db.prepare("UPDATE removals SET state = 'cancelled', at = ? WHERE state = 'pending'").run(at);
+        endSessionsBefore(at, now, "reset");
+        db.exec("COMMIT");
+      } catch (e) { db.exec("ROLLBACK"); throw e; }
+      notes.push({ what: "reset", at, reason: reset.reason, by: reset.by });
+    }
+    noteSeen(file, now);
+    const applied = appliedReset(file);
+    if (applied?.setup) db.prepare("INSERT OR IGNORE INTO grants_seen (hash, kind, first_seen) VALUES (?, 'reset', ?)").run(applied.setup.sha256, now);
+    const p = file?.pendingRemoval;
+    // a fresh request right after the owner cancelled one waits a day first: otherwise the Operator could post again at once, every time, until the owner is not looking
+    const cooling = cancelledRecently(now);
+    // a request posted while a reset window is open is void for good: it must not start its 48 hours the day the owner registers again
+    if (p && inResetWindow() && !db.prepare("SELECT 1 FROM removals WHERE asked_at = ?").get(p.askedAt)) {
+      db.prepare("INSERT INTO removals (asked_at, asked_by, seen_at, effective_at, state, at) VALUES (?, ?, ?, ?, 'withdrawn', ?)").run(p.askedAt, p.askedBy, now, now, now);
+    }
+    if (p && !cooling && !db.prepare("SELECT 1 FROM removals WHERE asked_at = ?").get(p.askedAt) && lockAt() !== undefined && Date.parse(p.askedAt) > (metaNum("reset_at") ?? 0)) {
+      // a request the owner has no way to have seen yet starts its wait NOW, whatever time the file says: a back-dated request must not apply at once
+      db.prepare("UPDATE removals SET state = 'withdrawn', at = ? WHERE state = 'pending' AND asked_at NOT LIKE 'owner-change:%'").run(now);
+      const effectiveAt = now + REMOVAL_WAIT_MS;
+      db.prepare("INSERT INTO removals (asked_at, asked_by, seen_at, effective_at, state, at, told) VALUES (?, ?, ?, ?, 'pending', ?, 0)").run(p.askedAt, p.askedBy, now, effectiveAt, now);
+    }
+    for (const due of db.prepare("SELECT asked_at, effective_at FROM removals WHERE state = 'pending' AND effective_at <= ?").all(now) as { asked_at: string; effective_at: number }[]) {
+      // nobody cancelled in time: every passkey made before the moment stops, every session made before it ends, and the gate opens for a new QR
+      db.prepare("UPDATE removals SET state = 'applied', at = ? WHERE asked_at = ?").run(due.effective_at, due.asked_at);
+      raiseMeta("passkeys_before", due.effective_at); raiseMeta("reopen_at", due.effective_at); unbind();
+      endSessionsBefore(due.effective_at, now, "removal");
+      notes.push({ what: "removal_applied", at: due.effective_at });
+    }
+  }
+  /** May this QR or card hash work now? Seen by this store, not voided, not before the gate last opened, and (once locked) no later than the first passkey. */
+  function grantAllowed(hash: string): boolean {
+    const r = db.prepare("SELECT first_seen, voided_at, kind FROM grants_seen WHERE hash = ?").get(hash) as { first_seen: number; voided_at: number | null; kind: string } | undefined;
+    if (!r || r.voided_at !== null || r.first_seen < (metaNum("reopen_at") ?? 0)) return false;
+    if (inResetWindow()) return r.kind === "reset"; // only Geometer's own QR, until the owner has a phone again
+    const locked = lockAt();
+    return locked === undefined || r.first_seen <= locked;
+  }
+  /** A session's subject for the "new phone" banner, and the passkey it was made by (if any). */
+  function subjectOf(sessionId: string): { subject: string; passkey?: string; madeAt: number; via?: string } | undefined {
+    const r = db.prepare("SELECT link_id, made_at FROM sessions WHERE id = ?").get(sessionId) as { link_id: string; made_at: number } | undefined;
+    if (!r) return undefined;
+    if (r.link_id.startsWith("pk-")) {
+      const pk = db.prepare("SELECT made_at, via FROM passkeys WHERE id = ?").get(r.link_id.slice(3)) as { made_at: number; via: string } | undefined;
+      if (pk) return { subject: `pk:${r.link_id.slice(3)}`, passkey: r.link_id.slice(3), madeAt: pk.made_at, via: pk.via };
+    }
+    return { subject: `s:${sessionId}`, madeAt: r.made_at };
+  }
+  type PhoneRow = PasskeyRow & { removed_at: number | null; used_at: number | null; via: string; label: string | null };
+  const goodPhones = (who: OwnerNow, rp: RelyingParty, passkeysBefore?: number): PhoneRow[] =>
+    (db.prepare("SELECT * FROM passkeys WHERE removed_at IS NULL ORDER BY made_at").all() as PhoneRow[]).filter((r) => passkeyGood(r, who, rp, passkeysBefore));
+
   const api = {
+    /**
+     * The panel's "sign out every device" moment, clamped to this runtime's clock the first time each value is seen. A file value in the future would refuse every session,
+     * including the passkey sign-in that follows, for as long as it lasts (a total lockout by one form); clamped, it ends the sessions made before the runtime saw it and
+     * never one made after.
+     */
+    clampEndBefore(raw: number | undefined, now: number): number | undefined {
+      if (raw === undefined) return undefined;
+      if (metaNum("eb_raw") !== raw) { setMeta("eb_raw", raw); setMeta("eb_val", Math.min(raw, now)); }
+      return metaNum("eb_val");
+    },
+
+    /** Read the files into this store (see `reconcile`); the runtime's tick calls it so a request or a reset is seen even when nobody opens a page. */
+    sync(file: OwnerGrants | undefined, now: number): void { reconcile(file, now); },
+    /** What `sync` found that the record should say, once each. */
+    takeNotes(): Note[] {
+      // Why from the file: a reconcile done by an HTTP call (the panel's /status probe) followed by a restart before the next tick used to lose the request's notice, while its
+      // 48 hours still ran: the owner got no push and `geometer owner requests` never listed it. Every request still pending and not yet told is returned, until `markTold`.
+      const untold = (db.prepare("SELECT asked_at, asked_by, effective_at, extended FROM removals WHERE state = 'pending' AND told = 0 ORDER BY seen_at").all() as { asked_at: string; asked_by: string; effective_at: number; extended: number }[]).map((r): Note =>
+        r.asked_at.startsWith("owner-change:") ? (r.extended ? { what: "removal_extended", kind: "owner_change", askedBy: r.asked_by, effectiveAt: r.effective_at, key: r.asked_at } : { what: "owner_change_asked", effectiveAt: r.effective_at, key: r.asked_at })
+        : r.extended ? { what: "removal_extended", kind: "removal", askedBy: r.asked_by, effectiveAt: r.effective_at, key: r.asked_at }
+        : { what: "removal_asked", askedBy: r.asked_by, askedAt: r.asked_at, effectiveAt: r.effective_at, key: r.asked_at });
+      return [...notes.splice(0), ...untold];
+    },
+    /** The tick has pushed and written the record line for this request: never again. Called AFTER both, so a crash between them tells twice rather than never. */
+    markTold(key: string): void { db.prepare("UPDATE removals SET told = 1 WHERE asked_at = ?").run(key); },
+    /**
+     * The runtime has just (re)started. A request that would fall due while it was not running, or within a day of its start, is moved to a day after the start and
+     * said again: an owner whose phones were off, or an outage nobody chose, must not lose the wait (a request must be SEEN for its whole time to count). Called once.
+     */
+    noteStart(now: number): void {
+      const rows = db.prepare("SELECT asked_at, asked_by, effective_at FROM removals WHERE state = 'pending' AND extended = 0 AND effective_at < ?").all(now + 24 * 60 * 60_000) as { asked_at: string; asked_by: string; effective_at: number }[];
+      for (const r of rows) {
+        // told = 0: the owner is told the new time too, and a restart before the tick must not lose that
+        db.prepare("UPDATE removals SET effective_at = ?, extended = 1, told = 0 WHERE asked_at = ?").run(now + 24 * 60 * 60_000, r.asked_at);
+      }
+    },
+
+    /** The moment before which no passkey works: this store's own, never the Operator's file's (see the header). */
+    passkeysBefore(file: OwnerGrants | undefined, now: number): number | undefined { reconcile(file, now); return metaNum("passkeys_before"); },
+    /** Has the owner a passkey since the gate last opened? Then the Operator's QR and card are closed, and "remove the passkeys" is a request. */
+    locked(file: OwnerGrants | undefined, now: number): boolean { reconcile(file, now); return lockAt() !== undefined || inResetWindow(); },
+    /** The Operator's pending request as this store timed it, if one is waiting. */
+    pendingRemoval(file: OwnerGrants | undefined, now: number): { kind: "removal" | "owner_change"; askedBy: string; askedAt: string; seenAt: number; effectiveAt: number } | undefined {
+      reconcile(file, now);
+      // the one that would apply first (a removal and an owner-number change can both be waiting)
+      const r = db.prepare("SELECT asked_by, asked_at, seen_at, effective_at FROM removals WHERE state = 'pending' ORDER BY effective_at LIMIT 1").get() as { asked_by: string; asked_at: string; seen_at: number; effective_at: number } | undefined;
+      return r ? { kind: r.asked_at.startsWith("owner-change:") ? "owner_change" : "removal", askedBy: r.asked_by, askedAt: r.asked_at, seenAt: r.seen_at, effectiveAt: r.effective_at } : undefined;
+    },
+    /** The shop was locked with this owner's number, if the runtime knows it in plain digits (it learns it at the first passkey, or the first start where the settings still agree). */
+    boundNumber(): string | undefined { return boundKey() !== undefined && lockAt() !== undefined ? metaStr("bound_number") : undefined; },
+    /** The settings name the locked owner's number: remember it in plain digits (an existing shop, or a restored one, did not record it). */
+    learnNumber(number: string): void {
+      const b = boundKey();
+      if (b !== undefined && lockAt() !== undefined && ownerKey(number) === b && metaStr("bound_number") === undefined) db.prepare("INSERT INTO meta (name, value) VALUES ('bound_number', ?) ON CONFLICT(name) DO NOTHING").run(number.replace(/\D/gu, ""));
+    },
+    /**
+     * THE number every owner-facing path uses, worked out on EVERY use and never fixed at start: while the shop is locked and its binding is known, the number it was
+     * locked with; otherwise (never locked, or the gate opened again by an applied change, a removal or Geometer's reset) the number the settings say now.
+     * Why not a value set once at start: a legitimate sale applies the change 48 hours later WITHOUT a restart, and a value fixed at start would still be the previous
+     * owner's number, so the new owner would be bound to it and every later start would send approvals, alerts and sign-in links to the previous owner.
+     */
+    effectiveNumber(settingsNumber: string): string {
+      api.learnNumber(settingsNumber); // an existing or restored shop that did not record the digits learns them when the settings still agree
+      const locked = api.boundNumber();
+      // the store keeps digits only; the settings and WhatsApp know the number as +country code and digits, so give it back in that form
+      return locked !== undefined ? `+${locked}` : settingsNumber;
+    },
+    /** Does the owner number in the settings differ from the one the shop was locked with? (The owner's phones say so, and their messages keep going to the locked number.) */
+    numberDiffers(settings: OwnerNow): boolean { const b = boundKey(); return b !== undefined && lockAt() !== undefined && ownerKey(settings.owner) !== b; },
+    /**
+     * The owner's number in the settings, as the panel's edit form can change it, checked against the identity the shop was locked with. A DIFFERENT number after the
+     * lock is not "the owner changed": it is a request with the same wait as a removal (the owner sees it on every phone and can cancel; until it applies, a session for
+     * the new number opens nothing). Called on the clock's beat and by every phones call. Before the lock the settings are the owner, as they always were.
+     */
+    watchOwner(who: OwnerNow, now: number): void {
+      const bound = boundKey();
+      if (bound === undefined || lockAt() === undefined) return;
+      const current = ownerKey(who.owner);
+      if (current === bound) { db.prepare("UPDATE removals SET state = 'withdrawn', at = ? WHERE state = 'pending' AND asked_at LIKE 'owner-change:%'").run(now); return; }
+      const key = `owner-change:${current}`;
+      const had = db.prepare("SELECT state, at FROM removals WHERE asked_at = ?").get(key) as { state: string; at: number } | undefined;
+      // a cancelled number may be asked again after the same day's quiet as a removal (it could not be, before); a pending or applied one is not asked twice
+      if (had && !(had.state === "cancelled" && now - had.at >= 24 * 60 * 60_000 && !cancelledRecently(now))) return;
+      if (!had && cancelledRecently(now)) return;
+      const effectiveAt = now + REMOVAL_WAIT_MS;
+      if (had) {
+        db.prepare("UPDATE removals SET state = 'pending', seen_at = ?, effective_at = ?, at = ?, extended = 0, told = 0 WHERE asked_at = ?").run(now, effectiveAt, now, key);
+        return;
+      }
+      db.prepare("INSERT INTO removals (asked_at, asked_by, seen_at, effective_at, state, at, told) VALUES (?, 'the owner number', ?, ?, 'pending', ?, 0)").run(key, now, effectiveAt, now);
+    },
+    /** The owner cancels the Operator's request. True when one was waiting. The same request, asked again, is not heard again (a new request needs a new `askedAt`). */
+    cancelRemoval(file: OwnerGrants | undefined, now: number): boolean {
+      reconcile(file, now);
+      return Number(db.prepare("UPDATE removals SET state = 'cancelled', at = ? WHERE state = 'pending'").run(now).changes) > 0;
+    },
+
     /**
      * Count one request for a link, if the shop's limits allow it. Every attempt counts, whether or not a link then goes out (a closed WhatsApp window), so the
      * record's lines about links are bounded too. Old attempts are dropped as it goes.
@@ -223,8 +491,13 @@ export function openOwnerAccess(file: string) {
       if (!ACCESS_TOKEN.test(token)) return undefined;
       const r = sessionByHash.get(sessionHash(token)) as SessionRow | undefined;
       if (!r || r.ended_at !== null || r.expires_at <= now) return undefined;
-      if (r.owner_key !== ownerKey(who.owner) || r.base !== who.base) return undefined; // another owner now, or the shop's page moved
-      if (endBefore !== undefined && r.made_at < endBefore) return undefined;
+      // another owner now, or the shop's page moved. Once the owner holds a passkey, "the owner" is the identity the shop was locked with (effKey), NOT whatever number
+      // the Operator's settings form says now: a changed number must neither lock the owner out (their passkeys and sessions stay good) nor let a session for the new number in.
+      if (r.owner_key !== effKey(who) || r.base !== who.base) return undefined;
+      // Once the owner holds a passkey the panel's "sign out every device" ends WhatsApp-link sessions only. A passkey session ends by the owner's own action, a removal or an
+      // owner change that applied, or Geometer's reset: otherwise the button, pressed every few seconds beside a removal request, would keep the owner signed out for the whole
+      // of its 48 hours.
+      if (endBefore !== undefined && r.made_at < endBefore && !(r.link_id.startsWith("pk-") && lockAt() !== undefined)) return undefined;
       return { id: r.id };
     },
 
@@ -255,7 +528,7 @@ export function openOwnerAccess(file: string) {
     endAllBefore(endBefore: number, now: number): number | undefined {
       const seen = (db.prepare("SELECT value FROM meta WHERE name = 'end_before'").get() as { value: string } | undefined)?.value;
       if (seen !== undefined && Number(seen) >= endBefore) return undefined;
-      const r = db.prepare("UPDATE sessions SET ended_at = ?, ended_why = 'panel' WHERE ended_at IS NULL AND made_at < ?").run(now, endBefore);
+      const r = db.prepare("UPDATE sessions SET ended_at = ?, ended_why = 'panel' WHERE ended_at IS NULL AND made_at < ? AND NOT (link_id LIKE 'pk-%' AND ?)").run(now, endBefore, lockAt() !== undefined ? 1 : 0);
       db.prepare("INSERT INTO meta (name, value) VALUES ('end_before', ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value").run(String(endBefore));
       return Number(r.changes);
     },
@@ -264,10 +537,35 @@ export function openOwnerAccess(file: string) {
 
     /** A grant (the setup QR's token or a recovery code) as it stands now: the panel's file, and this store's memory of grants used. */
     grantState(g: Grant, file: OwnerGrants | undefined, now: number): GrantState {
+      reconcile(file, now);
+      const hash = grantHash(g);
+      const used = !!db.prepare("SELECT 1 FROM grants_used WHERE hash = ?").get(hash);
+      // the owner's own "add a phone" link and own codes live here, not in the Operator's file, so the gate does not apply to them
+      if (g.kind === "setup") {
+        const own = db.prepare("SELECT expires_at, voided_at FROM own_setups WHERE hash = ?").get(hash) as { expires_at: number; voided_at: number | null } | undefined;
+        if (own) return own.voided_at !== null ? "unknown" : used ? "used" : own.expires_at > now ? "valid" : "expired";
+      } else if (RECOVERY_SHAPE(g.code)) {
+        const own = db.prepare("SELECT voided_at FROM own_codes WHERE hash = ?").get(hash) as { voided_at: number | null } | undefined;
+        if (own) return own.voided_at !== null ? "unknown" : used ? "used" : "valid";
+      }
+      // Geometer's own reset QR (its hash is in the admin's reset file, not the panel's): one use, an hour from first sight, and only while the window is open or after use
+      const act = appliedReset(file);
+      if (g.kind === "setup" && act?.setup && hash === act.setup.sha256) {
+        const seen = db.prepare("SELECT first_seen, voided_at FROM grants_seen WHERE hash = ?").get(hash) as { first_seen: number; voided_at: number | null } | undefined;
+        if (!seen || seen.voided_at !== null) return "unknown";
+        if (used) return "used";
+        if (!inResetWindow()) return "unknown";
+        return now >= Math.min(Date.parse(act.setup.expiresAt), seen.first_seen + RESET_QR_MS) ? "expired" : "valid";
+      }
       const inFile = grantInFile(g, file, now);
-      if (inFile === "unknown") return "unknown";
-      if (db.prepare("SELECT 1 FROM grants_used WHERE hash = ?").get(grantHash(g))) return "used";
-      return inFile;
+      if (inFile === "unknown" || !grantAllowed(hash)) return "unknown";
+      // A setup QR is good for SETUP_MS from when THIS runtime first saw it, whatever expiry the file claims: the Operator writes the file, and a QR dated 2099 prepared
+      // before the lock would otherwise work for ever.
+      if (g.kind === "setup") {
+        const seen = db.prepare("SELECT first_seen FROM grants_seen WHERE hash = ?").get(hash) as { first_seen: number };
+        if (now >= seen.first_seen + SETUP_MS) return used ? "used" : "expired";
+      }
+      return used ? "used" : inFile;
     },
 
     /** Item 11h: too many wrong recovery codes for this shop today? (Each wrong one counts; a right one does not.) */
@@ -284,7 +582,7 @@ export function openOwnerAccess(file: string) {
     registrationOptions(g: Grant, file: OwnerGrants | undefined, who: OwnerNow, rp: RelyingParty, shopName: string, now: number): { ok: true; options: Record<string, unknown> } | { ok: false; state: Exclude<GrantState, "valid"> } {
       const state = api.grantState(g, file, now);
       if (state !== "valid") return { ok: false, state };
-      const have = (db.prepare("SELECT cred_id FROM passkeys WHERE removed_at IS NULL AND owner_key = ? AND rp_id = ?").all(ownerKey(who.owner), rp.rpId) as { cred_id: string }[]).map((r) => r.cred_id);
+      const have = (db.prepare("SELECT cred_id FROM passkeys WHERE removed_at IS NULL AND owner_key = ? AND rp_id = ?").all(effKey(who), rp.rpId) as { cred_id: string }[]).map((r) => r.cred_id);
       let challenge: string;
       try { challenge = newChallenge("register", now, grantHash(g)); } catch (e) { if (e instanceof PasskeyError) return { ok: false, state: "locked" as never }; throw e; }
       return {
@@ -305,13 +603,17 @@ export function openOwnerAccess(file: string) {
      * Finish a registration: the browser's answer checked (webauthn.ts) against the challenge made for THIS grant, then, in one transaction, the challenge and the
      * grant used up, the credential kept and a session made for this browser. Returns the session token ONCE.
      */
-    register(g: Grant, file: OwnerGrants | undefined, who: OwnerNow, rp: RelyingParty, response: RegistrationResponse, now: number):
-      { ok: true; session: string; id: string; expiresAt: number; passkey: string } | { ok: false; state: Exclude<GrantState, "valid"> | "refused"; why?: string } {
+    register(g: Grant, file: OwnerGrants | undefined, who: OwnerNow, rp: RelyingParty, response: RegistrationResponse, now: number, label = ""):
+      { ok: true; session: string; id: string; expiresAt: number; passkey: string; firstOfLock: boolean } | { ok: false; state: Exclude<GrantState, "valid"> | "refused"; why?: string } {
       const state = api.grantState(g, file, now);
       if (state !== "valid") return { ok: false, state };
       const clientData = b64(response?.clientDataJSON, 4096); const attestation = b64(response?.attestationObject, 16_384);
       if (!clientData || !attestation) return { ok: false, state: "refused", why: "The browser's answer is not complete." };
       const gh = grantHash(g);
+      // how this phone got in, for the owner's list: their own app's "add a phone" link, Geometer's reset QR, the Operator's QR, or a recovery code (the card's or their own)
+      const via: PhoneVia = g.kind === "recovery" ? (db.prepare("SELECT 1 FROM own_codes WHERE hash = ?").get(gh) ? "own_code" : "recovery")
+        : db.prepare("SELECT 1 FROM own_setups WHERE hash = ?").get(gh) ? "own_phone"
+        : appliedReset(file)?.setup?.sha256 === gh ? "reset" : "setup";
       const challenge = challengeOf(clientData, "register", now, gh);
       if (!challenge) return { ok: false, state: "refused", why: "The answer is for no challenge of this setup that is still open." };
       let cred: StoredCredential;
@@ -323,15 +625,23 @@ export function openOwnerAccess(file: string) {
         if (db.prepare("SELECT 1 FROM grants_used WHERE hash = ?").get(gh)) { db.exec("ROLLBACK"); return { ok: false, state: "used" }; }
         if (db.prepare("SELECT 1 FROM passkeys WHERE cred_id = ?").get(cred.id)) { db.exec("ROLLBACK"); return { ok: false, state: "refused", why: "This passkey is already kept here." }; }
         const id = newId();
-        db.prepare("INSERT INTO passkeys (id, cred_id, jwk, alg, sign_count, backed_up, made_at, owner_key, rp_id, via) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-          .run(id, cred.id, JSON.stringify(cred.jwk), cred.alg, cred.signCount, cred.backedUp ? 1 : 0, now, ownerKey(who.owner), rp.rpId, g.kind);
+        db.prepare("INSERT INTO passkeys (id, cred_id, jwk, alg, sign_count, backed_up, made_at, owner_key, rp_id, via, label) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+          .run(id, cred.id, JSON.stringify(cred.jwk), cred.alg, cred.signCount, cred.backedUp ? 1 : 0, now, effKey(who), rp.rpId, via, label ? label.slice(0, 60) : null);
+        // the first passkey of this lock binds the shop to the owner it was made for (cleared when the gate opens again)
+        const firstOfLock = boundKey() === undefined;
+        if (firstOfLock) {
+          setMeta("bound_owner", effKey(who));
+          // the plain digits too, so the runtime can keep talking to THIS number if the Operator's settings later name another (start.ts); the owner's own number, in the
+          // shop's own database, which already holds it in the settings
+          db.prepare("INSERT INTO meta (name, value) VALUES ('bound_number', ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value").run(who.owner.replace(/\D/gu, ""));
+        }
         db.prepare("INSERT INTO grants_used (hash, kind, used_at, passkey_id) VALUES (?, ?, ?, ?)").run(gh, g.kind, now, id);
         // at most MAX_PASSKEYS: the one used longest ago goes
         const kept = db.prepare("SELECT id FROM passkeys WHERE removed_at IS NULL ORDER BY coalesce(used_at, made_at) DESC").all() as { id: string }[];
         for (const old of kept.slice(MAX_PASSKEYS)) db.prepare("UPDATE passkeys SET removed_at = ?, removed_why = 'too_many' WHERE id = ?").run(now, old.id);
-        const s = startSession(ownerKey(who.owner), who.base, `pk-${id}`, now);
+        const s = startSession(effKey(who), who.base, `pk-${id}`, now);
         db.exec("COMMIT");
-        return { ok: true, ...s, passkey: id };
+        return { ok: true, ...s, passkey: id, firstOfLock };
       } catch (e) { if (db.isTransaction) db.exec("ROLLBACK"); throw e; }
     },
 
@@ -374,9 +684,115 @@ export function openOwnerAccess(file: string) {
     },
 
     /** The owner's passkeys here, for their page (when each was made and last used). No key, no id the browser knows. */
-    passkeys(who: OwnerNow, rp: RelyingParty, passkeysBefore?: number): { id: string; madeAt: number; usedAt?: number; via: string }[] {
-      return (db.prepare("SELECT * FROM passkeys WHERE removed_at IS NULL ORDER BY made_at").all() as (PasskeyRow & { removed_at: number | null; used_at: number | null; via: string })[])
-        .filter((r) => passkeyGood(r, who, rp, passkeysBefore)).map((r) => ({ id: r.id, madeAt: r.made_at, ...(r.used_at !== null ? { usedAt: r.used_at } : {}), via: r.via }));
+    passkeys(who: OwnerNow, rp: RelyingParty, passkeysBefore?: number): { id: string; madeAt: number; usedAt?: number; via: string; label?: string }[] {
+      return goodPhones(who, rp, passkeysBefore).map((r) => ({ id: r.id, madeAt: r.made_at, ...(r.used_at !== null ? { usedAt: r.used_at } : {}), via: r.via, ...(r.label ? { label: r.label } : {}) }));
+    },
+
+    // ---- "Phones that can open your shop": the owner's own view and control (owner's item 2). Every call names a session this store has already checked. ----
+
+    /**
+     * What the owner's phones page and the banners need: each phone (this one marked), the phones made since this phone last dismissed the news, the Operator's request
+     * if one waits, and whether the owner holds their own recovery codes. `passkeySession`: this session came from a passkey (own codes and "add a phone" need that).
+     */
+    phonesView(sessionId: string, who: OwnerNow, rp: RelyingParty, file: OwnerGrants | undefined, now: number): PhonesView | undefined {
+      reconcile(file, now);
+      const me = subjectOf(sessionId);
+      if (!me) return undefined;
+      const pb = metaNum("passkeys_before");
+      const phones = goodPhones(who, rp, pb);
+      // What this phone has been told. A phone the OWNER added themselves (from their own phone, or with their own code) starts from its own birth. Any other phone
+      // (the Operator's QR, the card, a reset) starts from 0 and so sees every other phone once: an Operator's phone made before the owner's must not sit unannounced.
+      const fresh = me.passkey !== undefined && me.via !== "own_phone" && me.via !== "own_code" ? 0 : me.madeAt;
+      const through = (db.prepare("SELECT through FROM phone_seen WHERE subject = ?").get(me.subject) as { through: number } | undefined)?.through ?? fresh;
+      const newsRows = (db.prepare("SELECT kind, at, label, by_id FROM news WHERE at > ? ORDER BY at").all(through) as { kind: "codes" | "removed"; at: number; label: string | null; by_id: string | null }[])
+        .filter((n) => n.by_id !== (me.passkey ?? me.subject));
+      const removal = api.pendingRemoval(file, now);
+      const codes = db.prepare("SELECT max(made_at) AS at FROM own_codes WHERE voided_at IS NULL").get() as { at: number | null };
+      const row = (r: PhoneRow) => ({ id: r.id, madeAt: r.made_at, ...(r.used_at !== null ? { usedAt: r.used_at } : {}), via: r.via, ...(r.label ? { label: r.label } : {}) });
+      return {
+        phones: phones.map((r) => ({ ...row(r), mine: r.id === me.passkey })),
+        announce: phones.filter((r) => r.made_at > through && r.id !== me.passkey).map(row),
+        news: newsRows.map((n) => ({ kind: n.kind, at: n.at, ...(n.label ? { label: n.label } : {}) })),
+        // the moment the banner reaches: "It was me" dismisses up to here, not up to whatever was added since the page was drawn
+        seenThrough: Math.max(0, ...phones.filter((r) => r.made_at > through && r.id !== me.passkey).map((r) => r.made_at), ...newsRows.map((n) => n.at)),
+        ...(removal ? { removal } : {}),
+        ownCodesAt: codes.at ?? undefined, passkeySession: me.passkey !== undefined,
+        ...(api.boundNumber() ? { lockedLast4: api.boundNumber()!.slice(-4) } : {}),
+      };
+    },
+
+    /** The passkey id a session was made by, or undefined for a session made by a link. */
+    passkeyOfSession(sessionId: string): string | undefined { return subjectOf(sessionId)?.passkey; },
+
+    /** This phone has seen the news about every phone made so far: its banner goes (a phone made later brings it back). */
+    dismiss(sessionId: string, now: number, through?: number): void {
+      const me = subjectOf(sessionId);
+      if (!me) return;
+      // up to the moment the banner SHOWED (the page posts it), never up to "the newest phone now": one added between the page and the tap must still be announced
+      const latest = through !== undefined && Number.isFinite(through) ? Math.min(through, now) : Math.min(now, Math.max((db.prepare("SELECT max(made_at) AS at FROM passkeys").get() as { at: number | null }).at ?? 0, (db.prepare("SELECT max(at) AS at FROM news").get() as { at: number | null }).at ?? 0));
+      db.prepare("INSERT INTO phone_seen (subject, through) VALUES (?, ?) ON CONFLICT(subject) DO UPDATE SET through = max(through, excluded.through)").run(me.subject, latest);
+    },
+
+    /**
+     * The owner removes one phone: it stops working at once, and so does every session it made. The LAST phone is refused unless `confirmLast` (the page asks twice, in
+     * plain words, before it sends it): then the owner holds nothing but their own recovery codes and the Operator's request.
+     */
+    removePhone(sessionId: string, phoneId: string, who: OwnerNow, rp: RelyingParty, file: OwnerGrants | undefined, now: number, confirmLast: boolean):
+      { ok: true; removed: { id: string; label?: string }; wasLast: boolean } | { ok: false; why: "unknown" | "last" } {
+      reconcile(file, now);
+      // only a PASSKEY session may take a phone away: a WhatsApp link is whoever holds that phone, and must not be able to strip every phone of the owner
+      const me = subjectOf(sessionId);
+      if (!me?.passkey) return { ok: false, why: "unknown" };
+      const phones = goodPhones(who, rp, metaNum("passkeys_before"));
+      const target = phones.find((r) => r.id === phoneId);
+      if (!target) return { ok: false, why: "unknown" };
+      const wasLast = phones.length === 1;
+      if (wasLast && !confirmLast) return { ok: false, why: "last" };
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        db.prepare("UPDATE passkeys SET removed_at = ?, removed_why = 'owner' WHERE id = ? AND removed_at IS NULL").run(now, target.id);
+        db.prepare("UPDATE sessions SET ended_at = ?, ended_why = 'phone_removed' WHERE link_id = ? AND ended_at IS NULL").run(now, `pk-${target.id}`);
+        // what the removed phone made goes with it: its recovery codes and its "add a phone" links are a way back in that the owner never chose to keep
+        db.prepare("UPDATE own_codes SET voided_at = ? WHERE by_passkey = ? AND voided_at IS NULL").run(now, target.id);
+        db.prepare("UPDATE own_setups SET voided_at = ? WHERE by_passkey = ? AND voided_at IS NULL").run(now, target.id);
+        db.prepare("INSERT INTO news (at, kind, label, by_id) VALUES (?, 'removed', ?, ?)").run(now, target.label, me.passkey);
+        db.exec("COMMIT");
+      } catch (e) { db.exec("ROLLBACK"); throw e; }
+      return { ok: true, removed: { id: target.id, ...(target.label ? { label: target.label } : {}) }, wasLast };
+    },
+
+    /**
+     * The owner makes their OWN recovery codes (only from a passkey session: a link on WhatsApp is whoever holds the phone). Shown ONCE by the caller. Every code of
+     * the Operator's printed card stops working (voided here, so a copy the Operator kept is worth nothing), and so does any earlier set of the owner's own.
+     */
+    makeOwnCodes(sessionId: string, file: OwnerGrants | undefined, now: number): string[] | undefined {
+      reconcile(file, now);
+      const me = subjectOf(sessionId);
+      if (!me?.passkey) return undefined;
+      const codes = Array.from({ length: RECOVERY_CODES }, newRecoveryCode);
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        // an earlier set of THIS phone's goes; another phone's stays (a phone that makes codes must not be able to void the owner's real ones, and removing it takes back its own)
+        db.prepare("UPDATE own_codes SET voided_at = ? WHERE voided_at IS NULL AND by_passkey = ?").run(now, me.passkey);
+        // EVERY QR and code hash the Operator's file has ever shown this store, whatever "kind" the file put it under: a card code's hash staged in the QR's slot would
+        // otherwise survive the owner's own codes and come back later
+        db.prepare("UPDATE grants_seen SET voided_at = ? WHERE voided_at IS NULL").run(now);
+        for (const c of codes) db.prepare("INSERT INTO own_codes (hash, made_at, by_passkey) VALUES (?, ?, ?)").run(recoveryHash(c), now, me.passkey);
+        db.prepare("INSERT INTO news (at, kind, label, by_id) VALUES (?, 'codes', ?, ?)").run(now, (db.prepare("SELECT label FROM passkeys WHERE id = ?").get(me.passkey) as { label: string | null } | undefined)?.label ?? null, me.passkey);
+        db.exec("COMMIT");
+      } catch (e) { db.exec("ROLLBACK"); throw e; }
+      return codes;
+    },
+
+    /** "Add a phone": a one-use setup link made by the owner's own phone (a passkey session only), for SETUP_MS. The token is returned ONCE; the page shows it as a QR. */
+    addPhone(sessionId: string, file: OwnerGrants | undefined, now: number): { token: string; expiresAt: number } | undefined {
+      reconcile(file, now);
+      const me = subjectOf(sessionId);
+      if (!me?.passkey) return undefined;
+      db.prepare("DELETE FROM own_setups WHERE expires_at < ?").run(now - 24 * 60 * 60_000);
+      const token = newSetupToken();
+      db.prepare("INSERT INTO own_setups (hash, made_at, expires_at, by_passkey) VALUES (?, ?, ?, ?)").run(setupHash(token), now, now + SETUP_MS, me.passkey);
+      return { token, expiresAt: now + SETUP_MS };
     },
 
     close(): void { if (db.isOpen) db.close(); },
@@ -384,6 +800,27 @@ export function openOwnerAccess(file: string) {
   return api;
 }
 export type OwnerAccess = ReturnType<typeof openOwnerAccess>;
+
+/** What the owner's phones page needs (see `phonesView`). Times are milliseconds. */
+export interface PhoneEntry { id: string; madeAt: number; usedAt?: number; via: string; label?: string }
+export interface PhonesView {
+  phones: (PhoneEntry & { mine: boolean })[];
+  /** Phones made since this phone last dismissed the news (never this phone itself). */
+  announce: PhoneEntry[];
+  /** Codes made or a phone removed by ANOTHER phone since this phone last dismissed the news. */
+  news: { kind: "codes" | "removed"; at: number; label?: string }[];
+  /** The moment the banner reaches, for "It was me" to dismiss exactly that much. */
+  seenThrough: number;
+  /** The Operator's request to remove every phone, timed by this runtime. */
+  removal?: { kind: "removal" | "owner_change"; askedBy: string; askedAt: string; seenAt: number; effectiveAt: number };
+  /** When the owner made their own recovery codes (the newest set still good), if they did. */
+  ownCodesAt?: number;
+  passkeySession: boolean;
+  /** The Operator's settings name another owner number than the one the shop was locked with: the owner's messages still go to the number it was locked with. */
+  numberDiffers?: boolean;
+  /** The last 4 digits of the number the shop is locked with (where the owner's messages go), so the owner can catch a wrong one. Absent while the shop is not locked or the digits are unknown. */
+  lockedLast4?: string;
+}
 
 /**
  * The relay's question to the runtime about a session (GET /internal/owner-session, the runtime's internal token): true only on a 204. Used by the approvals relay

@@ -54,7 +54,7 @@ import { createTerms } from "./terms.ts";
 import { termsLinkWord, termsPage } from "./views-terms.ts";
 import { createChannels } from "./channels.ts";
 import { PHONE_SHAPE, isMapLink } from "../../modules/channels/pages-file.ts";
-import { SLUG_SHAPE, WHATSAPP_NUMBER, endOwnerSessions, makeOwnerRecovery, makeOwnerSetup, ownerBaseOf, ownerGrantsSummary, readPageSettings, readPagesStatus, removeOwnerPasskeys, writePageSettings } from "../lib/pages.ts";
+import { SLUG_SHAPE, WHATSAPP_NUMBER, endOwnerSessions, makeOwnerRecovery, makeOwnerSetup, ownerBaseOf, ownerGrantsSummary, readPageSettings, readPagesStatus, removeOwnerPasskeys, requestOwnerPasskeyRemoval, writePageSettings } from "../lib/pages.ts";
 import { ownerSetupPage, recoveryCardPage } from "./views-pages.ts";
 import { ownerLinkMadePage } from "./views-channels.ts";
 import { applyVoice, keepSpeech, voiceFormOf, voiceOf } from "./voice.ts";
@@ -576,8 +576,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       // Stock orders has an owner's page and no public page, so there is no booking-page block to show for it
       ...(hasPage(kindId) && kindId !== "stock-orders" && kindId !== "listings" && channels.view(id) ? { channels: channels.view(id)!, channelsKind: kindId as "bookings" | "orders" | "fees" } : {}),
       // item 11f: the shop's page on the pages domain (its short name, where it stands at fleet) and the owner's sessions; a builder chooses "hub" or "own"
-      ...(hasPage(kindId) ? { pages: { settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), ...(readPagesStatus(config.serverDir, id) ? { status: readPagesStatus(config.serverDir, id)! } : {}), canChoose: config.mode === "own", grants: ownerGrantsSummary(config.serverDir, id) } } : {}),
-      ...(pagesNotice === "ended" || pagesNotice === "bad" || pagesNotice === "removed" ? { pagesNotice } : {}),
+      ...(hasPage(kindId) ? { pages: { settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), ...(readPagesStatus(config.serverDir, id) ? { status: readPagesStatus(config.serverDir, id)! } : {}), canChoose: config.mode === "own", grants: ownerGrantsSummary(config.serverDir, id), ...(ownerAccessOf(counts) ? { access: ownerAccessOf(counts)! } : {}) } } : {}),
+      ...(pagesNotice === "ended" || pagesNotice === "bad" || pagesNotice === "removed" || pagesNotice === "locked" || pagesNotice === "requested" ? { pagesNotice } : {}),
       // item 11i: the shop's assistant, for a template with the Character step: its name and the version of its drawn pictures
       ...(templates().find((t) => t.id === kindId)?.steps.includes("character") ? { character: (() => { const raw = rawSettings(shops, id); const a = raw?.assistant ? readAssistantSettings(raw.assistant, []) : undefined; const version = characterReader(characterDirOf(config.serverDir, id))()?.version; return { has: a !== undefined, shop: settings?.name ?? id, ...(a?.character.name ? { name: a.character.name } : {}), ...(version && a ? { version } : {}) }; })() } : {}),
       voiceLink: voiceLinkWord(c.lang),
@@ -646,25 +646,38 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     const domain = readPagesDomain(config.serverDir);
     return ownerBaseOf({ publicUrl: config.publicUrl, ...(domain ? { pagesDomain: domain } : {}), shop: id, settings: readPageSettings(config.serverDir, id, config.mode === "hosted"), status: readPagesStatus(config.serverDir, id) });
   };
-  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-setup$/u, "user", (r) => {
+  // Owner's item 2 ("no Operator holds a shop hostage"): once the owner holds a passkey the RUNTIME closes the setup QR and the card (owner-access.ts: it would not honour
+  // one made now), and turns "remove the passkeys" into a request with a wait. This panel only asks the runtime (its /status) so it can say so plainly and not hand the
+  // Operator a QR that would not work; it is a courtesy, not the lock. A runtime that does not answer is treated as "not locked": the runtime still decides.
+  const ownerLocked = async (id: string) => { const a = (await shops.probeRuntime(id)).counts?.ownerAccess as { locked?: boolean; removal?: unknown } | undefined; return { locked: a?.locked === true, pending: a?.removal !== undefined }; };
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-setup$/u, "user", async (r) => {
     const ref = shops.find(r.account!, r.params[0]);
     const base = ref && hasPage(shops.kind(ref.id)) ? ownerBase(ref.id) : undefined;
     if (!ref || !base) return notFound(r);
+    if ((await ownerLocked(ref.id)).locked) return redirect(r, `/shops/${ref.id}?pages=locked`);
     const made = makeOwnerSetup(config.serverDir, ref.id, new Date(now()));
     log(`owner's setup QR of ${ref.id} made by ${r.account!.id}`); // the token itself is never logged
     page(r, 200, ownerSetupPage(r.ctx(), ref.id, `${base}/setup/${made.token}`, made.expiresAt));
   });
-  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-recovery$/u, "user", (r) => {
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-recovery$/u, "user", async (r) => {
     const ref = shops.find(r.account!, r.params[0]);
     const base = ref && hasPage(shops.kind(ref.id)) ? ownerBase(ref.id) : undefined;
     if (!ref || !base) return notFound(r);
+    if ((await ownerLocked(ref.id)).locked) return redirect(r, `/shops/${ref.id}?pages=locked`);
     const codes = makeOwnerRecovery(config.serverDir, ref.id, new Date(now()));
     log(`owner's recovery card of ${ref.id} made by ${r.account!.id}`); // the codes are never logged
     page(r, 200, recoveryCardPage(r.ctx(), ref.id, shops.settings(ref.id)?.name ?? ref.id, codes, `${base}/recover`, shops.settings(ref.id)?.owner?.language ?? r.ctx().lang));
   });
-  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-passkeys\/remove$/u, "user", (r) => {
+  on("POST", /^\/shops\/([a-z0-9-]{1,40})\/owner-passkeys\/remove$/u, "user", async (r) => {
     const ref = shops.find(r.account!, r.params[0]);
     if (!ref || !hasPage(shops.kind(ref.id))) return notFound(r);
+    const state = await ownerLocked(ref.id);
+    if (state.locked) {
+      // the owner holds a passkey: a REQUEST, which the runtime times (48 hours), shows to the owner at once and applies itself unless the owner cancels
+      if (!state.pending) requestOwnerPasskeyRemoval(config.serverDir, ref.id, r.account!.name, new Date(now()));
+      log(`removal of every owner passkey of ${ref.id} ${state.pending ? "already waiting" : "requested"} by ${r.account!.id}`);
+      return redirect(r, `/shops/${ref.id}?pages=requested`);
+    }
     removeOwnerPasskeys(config.serverDir, ref.id, new Date(now()));
     log(`every owner passkey of ${ref.id} removed by ${r.account!.id}`);
     redirect(r, `/shops/${ref.id}?pages=removed`);
@@ -1304,4 +1317,12 @@ export function makeConfirmLink(config: PanelConfig, o: { kind: "limits" | "go-l
   }
   const { token, confirmation } = createConfirmations(store, config.now).create({ kind: o.kind, shop: o.shop, digest, ...(o.changes ? { changes: o.changes } : {}), ...(o.note ? { note: o.note } : {}) });
   return { link: `${config.publicUrl ?? `http://${config.host}:${config.port}`}/confirm/${token}`, expiresAt: confirmation.expiresAt };
+}
+
+/** What the runtime's /status says about the owner's sign-in lock (owner's item 2), for the shop page to SHOW. Undefined when the runtime did not say (down, or an older one). */
+function ownerAccessOf(counts: Record<string, any> | undefined): { locked: boolean; removal?: { askedBy: string; effectiveAt: string } } | undefined {
+  const a = counts?.ownerAccess;
+  if (!a || typeof a.locked !== "boolean") return undefined;
+  const r = a.removal;
+  return { locked: a.locked, ...(r && typeof r.askedBy === "string" && typeof r.effectiveAt === "string" ? { removal: { askedBy: r.askedBy, effectiveAt: r.effectiveAt } } : {}) };
 }
