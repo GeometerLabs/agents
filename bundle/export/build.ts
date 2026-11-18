@@ -153,7 +153,7 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   if (kind) {
     const checked = kind.validateSettings(settings);
     if (checked.ok) {
-      try { policyDigest = kind.papers.policyDigest(checked.settings); } catch { warnings.push("The policy digest could not be worked out."); }
+      try { policyDigest = kind.papers?.policyDigest(checked.settings) ?? null; } catch { warnings.push("The policy digest could not be worked out."); }
       // B71: only a shop that chose the gateway has a gateway Guard; a UPI shop's limits are the agent's own, and the file says so rather than show a spec nobody enforces
       if (!gatewayOf(checked.settings.payment)) { guardSpec = null; specNote = " This shop takes UPI, marked paid by the owner: no gateway Guard holds limits for it, so there is no gateway spec (null). Its limits are the agent's own, in settings.json."; }
       else try {
