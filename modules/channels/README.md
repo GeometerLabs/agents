@@ -28,6 +28,7 @@ shape of what it is sent, applies per-address limits, and passes everything to t
 | `POST /api/v1/check` | "Do you still have these?" up to 10 item ids; read only; counted per shop | [shop-check.md](../../specs/shop-check.md) |
 | `/api/v1/...`, `/mcp` | The shop's own operations (Bookings: services, free times, start a booking, ...; Orders: the menu, start an order, ...), and `check_items` | `api.ts`, `mcp.ts` |
 | `/chat`, `/o/<link>`, `/owner/...` | The chat; the owner's private page | `CHAT.md` |
+| `/owner/phones` (and `/phones/remove`, `/dismiss`, `/cancel`, `/codes`, `/add`) | "Phones that can open your shop": the owner's own list, a banner when a phone is added, removing one (the last only after a second confirm), "Make my own recovery codes", "Add a phone", and cancelling the Operator's request to remove every phone. A signed-in session only; every rule is the runtime's (`owner-access.ts`) | `owner-phones-page.ts`, `bundle/Explanation.md` |
 
 The operation lists (`OPERATIONS` in `ops.ts`, `ORDER_OPERATIONS` in `order-ops.ts`), the API's routes (`api.ts`), and the MCP tools (`mcp.ts`) are checked against each other by a test. A Fees centre and a Stock
 orders shop have no API or MCP of their own; they answer `/api/v1/check` alone.

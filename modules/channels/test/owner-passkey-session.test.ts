@@ -46,6 +46,12 @@ test("a session made by a link is good but is not a passkey session; one made by
     if (!again.ok) return;
     assert.ok(access.checkPasskey(again.session, OWNER, T0 + 7000), "and so is a later passkey sign-in");
     assert.equal(access.checkPasskey("x".repeat(43), OWNER, T0 + 7000), undefined, "a token nobody has is neither");
-    assert.equal(access.checkPasskey(registered.session, { ...OWNER, owner: "+919800000002" }, T0 + 7000), undefined, "another owner's number is refused");
+    // once the owner holds a passkey the shop keeps the identity it was locked with: a new number in the Operator's settings neither ends the owner's passkey session nor
+    // lets a session for that number in (owner-control-review.test.ts, finding 1); a LINK session for the new number is the one refused
+    assert.ok(access.checkPasskey(registered.session, { ...OWNER, owner: "+919800000002" }, T0 + 7000), "the owner's passkey session survives a changed number in the settings");
+    const other = { ...OWNER, owner: "+919800000002" };
+    const newLink = access.consume(access.issue({ ...other, via: "whatsapp", now: T0 + 7500 }).token, other, T0 + 7600);
+    assert.ok(newLink.ok);
+    assert.equal(access.check(newLink.session, other, T0 + 7700), undefined, "a session for the new number is refused");
   } finally { access.close(); rmSync(dir, { recursive: true, force: true }); }
 });

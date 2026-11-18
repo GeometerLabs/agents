@@ -3,16 +3,33 @@
 // deployer, which copies the file to the shop's runtime on every pass of its loop (bundle/lib/pages.ts), and by the runtime (owner-access.ts), which checks a
 // token or a code against the copy it reads on every request and remembers, in its own store, which ones were used.
 //
-//   shops/<shop>/owner-grants.json   {"schema": 1, "setup"?: {sha256, createdAt, expiresAt}, "recovery"?: {codes: [sha256...], createdAt}, "passkeysBefore"?: ISO}
+//   shops/<shop>/owner-grants.json   {"schema": 1, "setup"?: {sha256, createdAt, expiresAt}, "recovery"?: {codes: [sha256...], createdAt}, "passkeysBefore"?: ISO,
+//                                     "pendingRemoval"?: {askedBy, askedAt: ISO, effectiveAt: ISO}}
+//   shops/<shop>/owner-reset.json     {"schema": 1, "at": ISO, "reason", "by"}   Geometer's reset (`geometer owner reset`), a SERVER-ADMIN file the panel never writes
 //
 // Why a file and not a call: the panel holds no secret and cannot reach a runtime (bundle/Explanation.md); the owner's link (item 11d) and "sign out every device"
 // already travel this way. Why hashes: the panel shows the QR and the card once; nobody who reads the server's files afterwards can use them. A new QR replaces
 // the old one, a new card replaces every code of the old one, and `passkeysBefore` (the panel's "remove the owner's passkeys", for a lost phone) makes every
 // passkey registered before it stop working. Nothing here passes through Geometer or Firebase: the shop's own server checks everything.
+//
+// WHO CONTROLS THE OWNER'S SIGN-IN (owner's item 2, "no Operator holds a shop hostage"): this file is the OPERATOR's, so the runtime (owner-access.ts) never takes it
+// at its word once the owner holds a passkey. `passkeysBefore` written here is honoured only as the runtime first finds it (a shop from before this rule); after
+// the first passkey the Operator's way to lock out every phone is `pendingRemoval`, a REQUEST the runtime applies itself after REMOVAL_WAIT_MS, counted from when
+// the runtime first saw it, never from the time the file claims, and which the owner can cancel on any phone. A QR or a card first seen by the runtime after the
+// first passkey does not work. Geometer's reset is a separate file (OWNER_RESET_FILE) that only the server's admin writes.
 import { createHash, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 export const OWNER_GRANTS_FILE = "owner-grants.json";
+/** How long the QR that comes with Geometer's reset works, from when the runtime first sees it: the admin may need to send it to the owner. */
+export const RESET_QR_MS = 60 * 60_000;
+/** Geometer's reset (a dispute, or an Operator who kept the first QR): written only by `geometer owner reset`, never by the panel. */
+export const OWNER_RESET_FILE = "owner-reset.json";
+/**
+ * How long an Operator's "remove the owner's passkeys" waits once the owner holds a passkey. Long enough that an owner who looks at their phone once a day, or
+ * gets a push alert, can cancel it; short enough that an owner who really lost every phone is not locked out for a week.
+ */
+export const REMOVAL_WAIT_MS = 48 * 60 * 60_000;
 /** How long a setup QR works: enough for the owner to scan it and touch the fingerprint reader during the visit or a video call. */
 export const SETUP_MS = 15 * 60_000;
 /** How many codes a recovery card has. Each works once. */
@@ -23,6 +40,26 @@ export interface OwnerGrants {
   setup?: { sha256: string; createdAt: string; expiresAt: string };
   recovery?: { codes: string[]; createdAt: string };
   passkeysBefore?: string;
+  /** The Operator's request to remove every passkey, once the owner holds one. `effectiveAt` is the panel's own reckoning; the runtime works out its own (REMOVAL_WAIT_MS from first sight). */
+  pendingRemoval?: { askedBy: string; askedAt: string; effectiveAt: string };
+  /**
+   * Geometer's reset. NEVER read from owner-grants.json (the Operator's panel writes that file, and a forged reset would reopen the shop to the Operator): the runtime's
+   * reader fills it from OWNER_RESET_FILE only (ownerGrantsReader).
+   */
+  reset?: { at: string; reason: string; by: string; setup?: { sha256: string; expiresAt: string } };
+}
+
+/** Geometer's reset file, field by field; anything that does not read is no reset. */
+export function readOwnerReset(text: string | undefined): OwnerGrants["reset"] | undefined {
+  if (text === undefined) return undefined;
+  try {
+    const f = JSON.parse(text) as Record<string, unknown>;
+    if (f.schema !== 1 || !isTime(f.at) || typeof f.reason !== "string" || typeof f.by !== "string") return undefined;
+    const s = f.setup as Record<string, unknown> | undefined;
+    // the reset's own QR lives HERE, in the admin's file, and nowhere the panel writes: from a reset until the owner's first passkey after it, the runtime accepts only this one
+    const setup = s && typeof s.sha256 === "string" && HEX64.test(s.sha256) && isTime(s.expiresAt) ? { setup: { sha256: s.sha256, expiresAt: s.expiresAt } } : {};
+    return { at: f.at, reason: f.reason.slice(0, 300), by: f.by.slice(0, 80), ...setup };
+  } catch { return undefined; }
 }
 
 /** The setup QR's token: 32 random bytes in base64url, the same shape as a sign-in link's. */
@@ -55,14 +92,20 @@ export function readOwnerGrants(text: string | undefined): OwnerGrants | undefin
   const r = f.recovery as Record<string, unknown> | undefined;
   if (r && Array.isArray(r.codes) && r.codes.length <= 20 && r.codes.every((c) => typeof c === "string" && HEX64.test(c)) && isTime(r.createdAt)) out.recovery = { codes: r.codes as string[], createdAt: r.createdAt };
   if (isTime(f.passkeysBefore)) out.passkeysBefore = f.passkeysBefore;
+  const p = f.pendingRemoval as Record<string, unknown> | undefined;
+  if (p && typeof p.askedBy === "string" && isTime(p.askedAt) && isTime(p.effectiveAt)) out.pendingRemoval = { askedBy: p.askedBy.slice(0, 80), askedAt: p.askedAt, effectiveAt: p.effectiveAt };
   return out;
 }
 
-/** A reader that looks at the file on every call, so a new QR, a new card or a removal is seen at once. */
-export const ownerGrantsReader = (file: string): (() => OwnerGrants | undefined) => () => {
-  let text: string | undefined;
-  try { text = readFileSync(file, "utf8"); } catch { text = undefined; }
-  return readOwnerGrants(text);
+/**
+ * A reader that looks at the files on every call, so a new QR, a new card, a request or a reset is seen at once. `resetFile` (Geometer's reset) is read apart from
+ * the panel's file and merged in, so the panel's file can never carry one.
+ */
+export const ownerGrantsReader = (file: string, resetFile?: string): (() => OwnerGrants | undefined) => () => {
+  const text = (f: string): string | undefined => { try { return readFileSync(f, "utf8"); } catch { return undefined; } };
+  const reset = resetFile ? readOwnerReset(text(resetFile)) : undefined;
+  const grants = readOwnerGrants(text(file)) ?? (reset ? { schema: 1 as const } : undefined);
+  return grants && reset ? { ...grants, reset } : grants;
 };
 
 /** A grant the owner presents: the setup QR's token, or a code from the card. Its hash names it in the runtime's store (which remembers it was used). */

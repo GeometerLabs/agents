@@ -9,6 +9,8 @@ import { grantInFile, readOwnerGrants } from "../../../modules/channels/owner-gr
 import { randomBytes } from "node:crypto";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { createServer } from "node:http";
+import { mkdirSync } from "node:fs";
 import { createGoLive } from "../golive.ts";
 import { createShops } from "../shops.ts";
 import { createStore } from "../store.ts";
@@ -108,5 +110,76 @@ test("the accounts step's \"Start without WhatsApp for now\": nothing about What
     assert.ok(!f.replies.some((r) => /secret-missing|WhatsApp token/u.test(r)), "no WhatsApp key was asked for");
     const checks = await divya.get(`/setup/${f.draft}/6`);
     assert.match(checks.plain, /No WhatsApp: the owner signs in with their fingerprint/u, "the checks step says what the owner needs instead");
+  } finally { await b.close(); }
+});
+
+// Owner's item 2 ("no Operator holds a shop hostage"): once the shop's runtime says the owner holds a passkey, the panel refuses the setup QR and the card with a plain line,
+// and "remove the owner's passkeys" becomes a REQUEST (a pendingRemoval in the file, never a passkeysBefore) that the owner sees and the runtime times. The panel only asks the
+// runtime (a stand-in answering /status here); the runtime's own refusal, whatever the panel does, is tested in modules/channels/test/owner-control.test.ts.
+test("the owner holds a passkey: the panel refuses the setup QR and the card, and turns 'remove the passkeys' into a request that waits", async () => {
+  const access: { locked: boolean; removal?: { askedBy: string; effectiveAt: string } } = { locked: false };
+  const runtime = createServer((req, res) => {
+    res.setHeader("content-type", "application/json");
+    if (req.url === "/readyz") return void res.end(JSON.stringify({ ok: true }));
+    if (req.url === "/status" && req.headers.authorization === "Bearer runtime-token") return void res.end(JSON.stringify({ ownerAccess: { passkeys: access.locked ? 1 : 0, alertPhones: 0, ...access } }));
+    res.statusCode = 401; res.end("{}");
+  });
+  await new Promise<void>((r) => runtime.listen(0, "127.0.0.1", r));
+  const url = `http://127.0.0.1:${(runtime.address() as { port: number }).port}`;
+  const tokenDir = mkdtempSync(join(tmpdir(), "geo-token-"));
+  mkdirSync(tokenDir, { recursive: true });
+  writeFileSync(join(tokenDir, "glow-salon"), "runtime-token\n", { mode: 0o600 });
+  const b = await boot({ publicUrl: "https://shops.example.test", runtimeUrl: url, runtimeTokenFile: join(tokenDir, "{shop}") });
+  try {
+    const arjun = await b.account("arjun", "builder");
+    b.addShop("glow-salon", { name: "Glow Salon" });
+    const file = join(b.dir, "shops", "glow-salon", "owner-grants.json");
+    // not locked: everything as it was
+    assert.match((await arjun.get("/shops/glow-salon")).plain, /Show the setup QR code/u);
+    assert.equal((await arjun.post("/shops/glow-salon/owner-setup", {}, "/shops/glow-salon")).status, 200);
+
+    // locked: no QR, no card, a plain line, and nothing written
+    access.locked = true;
+    const before = readFileSync(file, "utf8");
+    const page = (await arjun.get("/shops/glow-salon")).plain;
+    assert.match(page, /The owner now holds their own sign-in\. A new phone is added from the owner's app, or with the owner's recovery codes\./u);
+    assert.doesNotMatch(page, /Show the setup QR code|Print a recovery card/u);
+    assert.match(page, /Ask to remove the owner's passkeys/u);
+    for (const route of ["owner-setup", "owner-recovery"]) {
+      const r = await arjun.post(`/shops/glow-salon/${route}`, {}, "/shops/glow-salon");
+      assert.deepEqual([r.status, r.location], [303, "/shops/glow-salon?pages=locked"], route);
+    }
+    assert.equal(readFileSync(file, "utf8"), before, "nothing was written");
+    assert.match((await arjun.get("/shops/glow-salon?pages=locked")).plain, /The owner now holds their own sign-in/u);
+
+    // "remove the passkeys" is a request: who asked, when, when it would take effect; no passkeysBefore
+    const asked = await arjun.post("/shops/glow-salon/owner-passkeys/remove", {}, "/shops/glow-salon");
+    assert.deepEqual([asked.status, asked.location], [303, "/shops/glow-salon?pages=requested"]);
+    const written = readOwnerGrants(readFileSync(file, "utf8"))!;
+    assert.equal(written.passkeysBefore, undefined, "the panel never removes a passkey by itself now");
+    assert.equal(written.pendingRemoval?.askedBy, "ARJUN");
+    assert.equal(Date.parse(written.pendingRemoval!.effectiveAt) - Date.parse(written.pendingRemoval!.askedAt), 48 * 60 * 60_000);
+    assert.match((await arjun.get("/shops/glow-salon?pages=requested")).plain, /Asked\. The owner sees it in their app now/u);
+
+    // the runtime has seen it: the page shows who asked and when, offers no second request, and a press changes nothing
+    access.removal = { askedBy: "ARJUN", effectiveAt: "2026-11-21T10:00:00.000Z" };
+    const waiting = (await arjun.get("/shops/glow-salon")).plain;
+    assert.match(waiting, /ARJUN asked to remove the owner's passkeys\. It happens on 2026-11-21 10:00 UTC unless the owner cancels\./u);
+    assert.doesNotMatch(waiting, /Ask to remove the owner's passkeys/u);
+    const same = readFileSync(file, "utf8");
+    await arjun.post("/shops/glow-salon/owner-passkeys/remove", {}, "/shops/glow-salon");
+    assert.equal(readFileSync(file, "utf8"), same, "a second press does not restart the wait");
+  } finally { await b.close(); await new Promise<void>((r) => { runtime.closeAllConnections(); runtime.close(() => r()); }); }
+});
+
+test("Geometer's reset shows the Operator one line in the panel: the day and the reason", async () => {
+  const b = await boot({ publicUrl: "https://shops.example.test" });
+  try {
+    const arjun = await b.account("arjun", "builder");
+    b.addShop("glow-salon", { name: "Glow Salon" });
+    assert.doesNotMatch((await arjun.get("/shops/glow-salon")).plain, /Geometer reset the owner's sign-in/u);
+    mkdirSync(join(b.dir, "status", "owner-reset"), { recursive: true });
+    writeFileSync(join(b.dir, "status", "owner-reset", "glow-salon.json"), JSON.stringify({ schema: 1, at: "2026-11-19T09:30:00.000Z", reason: "the owner lost every phone", by: "Naval" }));
+    assert.match((await arjun.get("/shops/glow-salon")).plain, /Geometer reset the owner's sign-in on 2026-11-19: the owner lost every phone/u);
   } finally { await b.close(); }
 });

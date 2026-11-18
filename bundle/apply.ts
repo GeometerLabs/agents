@@ -33,6 +33,7 @@ import { processAgentRequests } from "./agent/requests.ts";
 import { claimPaperSigner } from "./lib/signer-claim.ts";
 import { applyServerSettings } from "./server-settings.ts";
 import { updateStatus } from "./lib/status.ts";
+import { writeOwnerRequests } from "./lib/owner-requests.ts";
 import { shopNameProblem, sha256Hex, stableJson, writeAtomic } from "./lib/util.ts";
 
 /** What a shop is asked to be: its three files, and the names of the secrets waiting for it. */
@@ -329,6 +330,14 @@ export async function runPages(ctx: Context): Promise<string[]> {
  * "Get my shop's file" (block S): on every loop, each shop whose owner asked for their file (in the exported record) gets it made with the owner profile and copied into its own
  * runtime folder; a file that was taken or ran out is deleted (lib/owner-file.ts). Cheap when nobody asked: a read of each shop's exported record.
  */
+/** Each pass: the owner's waiting requests (an Operator's removal request, a changed owner number), written to status/owner-requests.json for the pilot's daily check (`geometer owner requests`). */
+export async function runOwnerRequests(ctx: Context): Promise<string[]> {
+  const shops = Object.entries(loadState(ctx.dir).shops).filter(([, s]) => s.applied).map(([n]) => n);
+  const lines = writeOwnerRequests(ctx.dir, shops, ctx.now());
+  lines.forEach((l) => ctx.log(l));
+  return lines;
+}
+
 export async function runOwnerFiles(ctx: Context, io: OwnerFileIO = realOwnerFileIO(ctx)): Promise<string[]> {
   const shops = Object.entries(loadState(ctx.dir).shops).filter(([, s]) => s.applied).map(([n]) => n);
   clearStale(ctx.dir, shops); // a staged build nobody collected (a crash between building and copying) is not kept
@@ -424,7 +433,7 @@ export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);
   for (;;) {
     // the server's own settings first (the panel's first run): a shop deployed in the same pass then finds the model and its key in place
-    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); await runLimitChanges(ctx); await runListingsPaused(ctx); runLicence(ctx); runOwnerLinks(ctx); await runCharacters(ctx); await runPages(ctx); await runOwnerFiles(ctx); await runFleetMoves(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
+    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); await runLimitChanges(ctx); await runListingsPaused(ctx); runLicence(ctx); runOwnerLinks(ctx); await runCharacters(ctx); await runPages(ctx); await runOwnerFiles(ctx); await runOwnerRequests(ctx); await runFleetMoves(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
     await ctx.sleep(everyMs);
   }
 }

@@ -54,7 +54,7 @@ export async function startClient(options: StartOptions): Promise<RunningClient>
     async build(client, { store, clock, log, recordKey, ownerSignin, push }) {
       const raw = await buildServices(client.runtime, { clock, window: { lastInboundAt: (phone) => store.lastInboundAt(phone) }, say: log, loadLive: options.loadLive });
       // every message to the owner by the owner's choice of WhatsApp, push or both; the supplier's messages are WhatsApp only (the push wrapper passes them through)
-      const services = { messaging: pushMessaging(runtimeHasWhatsApp(client.runtime) ? raw.messaging as Messaging | undefined : undefined, push, client.settings.owner.whatsapp, clock) };
+      const services = { messaging: pushMessaging(runtimeHasWhatsApp(client.runtime) ? raw.messaging as Messaging | undefined : undefined, push, () => client.settings.owner.whatsapp, clock) };
       // the allowance and the outside switch, and (only for a shop whose settings have the assistant) the owner's reading and the talk model
       const reading = understanding(client as never, { clock, log: client.settings.assistant ? log : () => undefined }, OWNER_UNDERSTANDING as never);
       const ownerParser = client.settings.assistant ? reading.parser as unknown as OwnerParser : undefined;

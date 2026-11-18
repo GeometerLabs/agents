@@ -40,6 +40,11 @@ export interface PagesFile {
    * and handed here with the pages file so the front needs nothing from the runtime to paint it. Left out: the head's own green tint.
    */
   paint?: PaintId;
+  /**
+   * True on Geometer's own Operator server (the panel's mode "hosted"), where Geometer can step in for an owner who lost every phone and their codes: the owner's sign-in
+   * page then says to write to hello@geometer.dev. On a builder's own server it is left out and the page shows nothing about it (the builder is the admin there).
+   */
+  hosted?: true;
 }
 
 const HTTPS = /^https:\/\/[a-z0-9.-]+(:\d{1,5})?(\/[A-Za-z0-9._~%/-]*)?$/u;
@@ -74,6 +79,7 @@ export function readPagesFile(text: string | undefined): PagesFile | undefined {
     ...(typeof f.partner === "object" && f.partner !== null && typeof (f.partner as { name?: unknown }).name === "string" && (f.partner as { name: string }).name.length > 0 && (f.partner as { name: string }).name.length <= 60 && typeof (f.partner as { phone?: unknown }).phone === "string" && PHONE_SHAPE.test((f.partner as { phone: string }).phone)
       ? { partner: { name: (f.partner as { name: string }).name, phone: (f.partner as { phone: string }).phone } } : {}),
     ...(isPaint(f.paint) ? { paint: f.paint } : {}),
+    ...(f.hosted === true ? { hosted: true as const } : {}),
     ...(typeof f.character === "object" && f.character !== null && typeof (f.character as { version?: unknown }).version === "string" && /^[0-9a-f]{16}$/u.test((f.character as { version: string }).version) ? { character: { version: (f.character as { version: string }).version } } : {}),
   };
 }

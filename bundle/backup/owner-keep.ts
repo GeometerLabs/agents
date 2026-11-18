@@ -35,7 +35,8 @@ export const OWNER_KEEP_FILE = "runtime/owner-keep.json";
 type Row = Record<string, string | number | null>;
 export interface OwnerKeep {
   schema: 1;
-  ownerAccess: { meta: Row[]; passkeys: Row[]; grantsUsed: Row[] };
+  /** `ownCodes` (owner's item 2): the owner's own recovery codes, as hashes. Left out of a snapshot made before them. */
+  ownerAccess: { meta: Row[]; passkeys: Row[]; grantsUsed: Row[]; ownCodes?: Row[]; grantsSeen?: Row[]; removals?: Row[]; ownSetups?: Row[] };
   push: { meta: Row[]; subs: Row[] };
   /** W2: the customers' chat keys and ties. Left out of a snapshot made before it, and when the shop has none. */
   chatIdentity?: { creds: Row[]; users: Row[]; contact: Row[]; phones: Row[]; alias: Row[] };
@@ -43,7 +44,11 @@ export interface OwnerKeep {
 const CHAT_TABLES = ["creds", "users", "contact", "phones", "alias"] as const;
 
 /** The meta names each side keeps (anything else in meta, like the sign-out marker, is not carried). */
-const ACCESS_META = ["webauthn_user"];
+// Owner's item 2: the runtime's own gate (owner-access.ts) is carried too, so a shop moved to another server keeps "the owner holds a passkey" and the moment passkeys were
+// last cleared; without them a restored shop would take the old Operator card as new.
+// Every meta value the gate's decisions rest on (owner-access.ts): a restore that dropped any of them would weaken the lock. "end_before" is left out on purpose: it only says which
+// sign-out-everything the runtime has already said once in the record.
+const ACCESS_META = ["webauthn_user", "passkeys_before", "reopen_at", "reset_at", "reset_raw", "adopted", "bound_owner", "bound_number", "eb_raw", "eb_val"];
 const PUSH_META = ["vapid", "owner_choice"];
 
 /** All rows of a query, or none when the file or the table is not there (an older shop, or no sign-in yet). */
@@ -61,7 +66,7 @@ export function readOwnerKeep(dataDir: string): OwnerKeep | null {
   const chatIdentity = { creds: rows(chat, "SELECT * FROM creds ORDER BY made_at"), users: rows(chat, "SELECT * FROM users"), contact: rows(chat, "SELECT * FROM contact"), phones: rows(chat, "SELECT * FROM phones"), alias: rows(chat, "SELECT * FROM alias") };
   const keep: OwnerKeep = {
     schema: 1,
-    ownerAccess: { meta: metaOf(access, ACCESS_META), passkeys: rows(access, "SELECT * FROM passkeys ORDER BY made_at"), grantsUsed: rows(access, "SELECT * FROM grants_used ORDER BY used_at") },
+    ownerAccess: { meta: metaOf(access, ACCESS_META), passkeys: rows(access, "SELECT * FROM passkeys ORDER BY made_at"), grantsUsed: rows(access, "SELECT * FROM grants_used ORDER BY used_at"), ownCodes: rows(access, "SELECT * FROM own_codes ORDER BY made_at"), grantsSeen: rows(access, "SELECT * FROM grants_seen ORDER BY first_seen"), removals: rows(access, "SELECT * FROM removals ORDER BY seen_at"), ownSetups: rows(access, "SELECT * FROM own_setups ORDER BY made_at") },
     push: { meta: metaOf(push, PUSH_META), subs: rows(push, "SELECT * FROM subs WHERE dead_at IS NULL ORDER BY made_at") },
   };
   if (chatIdentity.creds.length > 0 || chatIdentity.contact.length > 0) keep.chatIdentity = chatIdentity;
@@ -108,6 +113,11 @@ export function putOwnerKeep(dataDir: string, keep: OwnerKeep): Put {
     putRows(access, "meta", keep.ownerAccess.meta.filter((m) => ACCESS_META.includes(String(m.name))));
     result.passkeys = putRows(access, "passkeys", keep.ownerAccess.passkeys);
     putRows(access, "grants_used", keep.ownerAccess.grantsUsed);
+    // the gate's memory comes back too, or a restored shop would take every QR and card in the Operator's file as new (and so as good); voided and cancelled rows stay so
+    if (keep.ownerAccess.ownCodes) putRows(access, "own_codes", keep.ownerAccess.ownCodes);
+    if (keep.ownerAccess.grantsSeen) putRows(access, "grants_seen", keep.ownerAccess.grantsSeen);
+    if (keep.ownerAccess.removals) putRows(access, "removals", keep.ownerAccess.removals);
+    if (keep.ownerAccess.ownSetups) putRows(access, "own_setups", keep.ownerAccess.ownSetups);
     access.exec("COMMIT");
   } finally { access.close(); }
   const push = new DatabaseSync(join(dataDir, PUSH_FILE));

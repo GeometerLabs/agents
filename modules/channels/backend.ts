@@ -188,6 +188,11 @@ export interface ChannelBackend {
    */
   push?(body: Record<string, unknown>, owner?: OwnerCred): Promise<{ status: number; body: Record<string, unknown> }>;
   /**
+   * Owner's item 2: one step of "Phones that can open your shop" (list, dismiss the news, remove one, make the owner's own recovery codes, add a phone, cancel the
+   * Operator's request), for the owner's SESSION only (never the panel's link). The runtime checks everything (modules/runtime/http.ts "owner-phones").
+   */
+  phones?(session: string, body: Record<string, unknown>): Promise<{ status: number; body: Record<string, unknown> }>;
+  /**
    * "Limits, tightened by a tap": the owner's limits page. With no `post`, a read (the limits, their value in force, the changes, and `passkey`: whether this session was
    * made with a passkey). With `post`, a change; the runtime refuses it (403 `passkey_needed`) unless the session was made with a passkey. Left out: no limits page.
    */
@@ -385,6 +390,11 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     async push(body, owner) {
       const r = await call(`${o.url}/internal/channel/push`, { method: "POST", headers: headers(owner), body: JSON.stringify(body) }, timeout);
       if (r.status >= 500) throw answered(r);
+      return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
+    },
+    async phones(session, body) {
+      const r = await call(`${o.url}/internal/channel/owner-phones`, { method: "POST", headers: headers({ session }), body: JSON.stringify(body) }, timeout);
+      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
       return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async limits(owner, post) {

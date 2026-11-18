@@ -36,6 +36,9 @@ import { PANEL_LEAVE } from "./words-leave.ts";
 import { LEAVE_PAGE } from "../../modules/channels/words-leave.ts";
 import { PHONE_TEMPLATES, PRESETS_DIR, loadPresets, presetTexts } from "./presets.ts";
 import { WORDS as LIMITS_OWNER_WORDS } from "../../modules/channels/owner-limits-page.ts";
+import { WORDS as PHONES_WORDS } from "../../modules/channels/owner-phones-page.ts";
+import { CODES_ALERT, LOST_HELP, NEW_PHONE_ALERT, REMOVED_ALERT } from "../../modules/channels/owner-phones.ts";
+import { OWNER_CHANGE_ALERT, REMOVAL_ALERT } from "../../modules/channels/owner-signin.ts";
 import { CHAT, QUICK, forKind } from "../../modules/channels/words-chat.ts";
 import { IDENTITY } from "../../modules/channels/words-chat-identity.ts";
 import { CHAT_MORE } from "../../modules/channels/words-chat-more.ts";
@@ -182,6 +185,7 @@ const memoryFlat = (language: Language): Map<string, string> => {
 const firstSamples: Record<string, unknown[]> = {
   "owner.first.alertsOn": [2], "owner.first.partner": ["Divya"], "door.help": ["Divya"],
   "pages.block.live": ["https://pages.example/glow-salon"], "pages.block.problem": ["that name is taken"], "pages.block.setupNote": ["10:30 UTC"], "pages.block.recoveryOn": ["2026-11-14"], "pages.block.cardOwner": ["https://pages.example/glow-salon/owner/recover"],
+  "pages.block.pending": ["Divya", "2026-11-21 10:00 UTC"], "pages.block.resetLine": ["2026-11-19", "the owner lost every phone"],
 };
 /** "Limits, tightened by a tap" (17 Nov 2026): the limits' names and rules, the card and every message about a limit (ids "limits.assistant.*"), the panel's list of changes ("limits.panel.*") and the owner's limits page ("limits.owner.*"). */
 /** Block S (18 Nov 2026): every line about listings (modules/listings/words.ts): the storefront, the owner's listings page, the card, the morning question, the refusals; ids "listings.*". */
@@ -189,6 +193,24 @@ const listingsFlat = (language: Language): Map<string, string> => new Map(Object
 /** The shop's stock count (block S phase A3; modules/stock/words.ts): the owner's Stock page, "running low", the reorder question and the morning line's part, under the ids "stockline.*" ("stock.*" is Stock orders'). */
 const stocklineFlat = (language: Language): Map<string, string> => new Map(Object.entries(stockReviewLines(language)).map(([k, v]) => [`stockline.${k}`, v]));
 const limitsFlat = (language: Language): Map<string, string> => flatWords({ limits: { assistant: limitReviewLines(language, LIMIT_WORDS), panel: LIMITS_PANEL_WORDS[language], owner: LIMITS_OWNER_WORDS[language] } }, { "limits.owner.range": ["₹0", "₹5,000"] });
+/**
+ * "No Operator holds a shop hostage" (19 Nov 2026): the owner's "Phones that can open your shop" page, its banners and refusals (ids "phones.*"), the push alerts for a new phone
+ * and for the Operator's request (ids "phones.alert.*") and the one line for an owner who lost everything (id "phones.lostHelp", shown only on Geometer's Operator server). The
+ * panel's own new lines are under "pages.block.*" (locked, askRemove, pending, resetLine ...).
+ */
+const phonesFlat = (language: Language): Map<string, string> => {
+  const out = flatWords({ phones: PHONES_WORDS[language] }, {
+    "phones.added": ["19 Nov 2026"], "phones.lastUsed": ["19 Nov, 3:42 pm"], "phones.removeAsk": ["Android, Chrome"], "phones.addHow": ["4:30 pm"], "phones.codesHave": ["19 Nov 2026"],
+    "phones.bannerNew": ["19 Nov, 3:42 pm", "Android, Chrome"], "phones.bannerRequest": ["Divya", "21 Nov, 10:00 am"], "phones.bannerOwner": ["21 Nov, 10:00 am"], "phones.lockedTo": ["0001"], "phones.alertSince": ["19 Nov 2026"], "phones.bannerCodesMade": ["19 Nov, 3:42 pm", "Android, Chrome"], "phones.bannerRemoved": ["19 Nov, 3:42 pm", "Android, Chrome"],
+  });
+  out.set("phones.lostHelp", LOST_HELP[language]);
+  out.set("phones.alert.newPhone", NEW_PHONE_ALERT(Date.UTC(2026, 10, 19, 10, 12), "Android, Chrome")[language]);
+  out.set("phones.alert.request", REMOVAL_ALERT("Divya")[language]);
+  out.set("phones.alert.ownerChange", OWNER_CHANGE_ALERT[language]);
+  out.set("phones.alert.codes", CODES_ALERT(Date.UTC(2026, 10, 19, 10, 12), "Android, Chrome")[language]);
+  out.set("phones.alert.removed", REMOVED_ALERT(Date.UTC(2026, 10, 19, 10, 12), "Android, Chrome")[language]);
+  return out;
+};
 const firstFlat = (language: Language): Map<string, string> => flatWords({ owner: { first: FIRST_WORDS[language] }, door: DOOR_WORDS[language], pages: { block: PAGES_BLOCK_WORDS[language] } }, firstSamples);
 
 /** Fees, 17 Nov 2026: the owner page's rupee box for a fee received only in part, in cash (modules/channels/words-money.ts), under the ids "owner.money.cashPart*". */
@@ -227,8 +249,8 @@ const chatIdentityFlat = (language: Language): Map<string, string> => flatWords(
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...listingsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...chatKindFlat(language), ...stockFlat(language), ...listingsShopFlat(language), ...classesFlat(language), ...presetsFlat(language), ...keepFlat(language), ...leaveFlat(language), ...budgetFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language), ...stocklineFlat(language), ...directoryFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...listingsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...chatKindFlat("en"), ...stockFlat("en"), ...listingsShopFlat("en"), ...classesFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...leaveFlat("en"), ...budgetFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en"), ...stocklineFlat("en"), ...directoryFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...phonesFlat(language), ...listingsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...chatKindFlat(language), ...stockFlat(language), ...listingsShopFlat(language), ...classesFlat(language), ...presetsFlat(language), ...keepFlat(language), ...leaveFlat(language), ...budgetFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language), ...stocklineFlat(language), ...directoryFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...phonesFlat("en"), ...listingsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...chatKindFlat("en"), ...stockFlat("en"), ...listingsShopFlat("en"), ...classesFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...leaveFlat("en"), ...budgetFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en"), ...stocklineFlat("en"), ...directoryFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

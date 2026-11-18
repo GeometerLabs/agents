@@ -235,6 +235,13 @@ export function serverPaths(dir: string) {
     requests: join(root, "requests"),
     stopRequest: (name: string) => join(root, "requests", `${name}.stop.json`),
     exports: join(root, "exports"),
+    /**
+     * Geometer's reset of an owner's sign-in (`geometer owner reset`, bundle/owner-cli.ts): admin/owner-reset/<shop>.json. NOT under shops/ and NOT mounted into the panel
+     * (generate/compose.ts mounts shops/ read-write into it), so a compromised panel process cannot write one: that file reopens the shop, so only the admin may.
+     */
+    adminOwnerReset: (name: string) => join(root, "admin", "owner-reset", `${name}.json`),
+    /** What the panel may show of a reset (day, reason, who; never the QR): the deployer writes it under status/, which the panel mounts read-only. */
+    ownerResetNote: (name: string) => join(root, "status", "owner-reset", `${name}.json`),
     /** The speech service's model files (filled by the server admin's fetch-models; mounted read-only into the service). */
     speechModels: join(root, "speech-models"),
     /** The Streetlist home's installed builds and the `current` link (lib/home.ts); Caddy mounts the folder read-only on a server with a pages domain. */

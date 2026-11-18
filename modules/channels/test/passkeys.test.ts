@@ -183,8 +183,9 @@ test("sign-in with the passkey: no WhatsApp, a session; a replayed answer, anoth
     glowPhone.count -= 1;
     assert.match((glow.access.signin(softSignin(glowPhone, o4.options as never, RP.origin, { still: true }), OWNER, RP, T0 + 31_000) as { why: string }).why, /counter/u);
 
-    // a new owner number in the settings: the old owner's passkey no longer signs in
-    assert.equal(glow.access.signinOptions({ ...OWNER, owner: "+919800000002" }, RP, T0 + 40_000).count, 0);
+    // a new owner number in the settings (the Operator's form): once the owner holds a passkey the shop keeps the identity it was locked with, so the owner is NOT locked
+    // out by it; the change is a request with a wait instead (modules/channels/test/owner-control-review.test.ts, finding 1)
+    assert.equal(glow.access.signinOptions({ ...OWNER, owner: "+919800000002" }, RP, T0 + 40_000).count, 1);
     // the panel's "remove the owner's passkeys": made before it, not offered and not taken
     assert.equal(glow.access.signinOptions(OWNER, RP, T0 + 50_000, T0 + 45_000).count, 0);
     const o5 = glow.access.signinOptions(OWNER, RP, T0 + 50_000);
