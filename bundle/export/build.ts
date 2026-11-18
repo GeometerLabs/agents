@@ -1,4 +1,5 @@
-// Export a shop (plan B38): everything that is the shop's, in an open format a person can read and a program can check, with no key or secret in it.
+// Export a shop (plan B38): everything that is the shop's, in an open format a person can read and a program can check, with no key or secret in it. (One exception, in the OWNER'S file only: the
+// shop's own signing key, shop-key/shop-key.json, because it is the shop's identity in directories and the owner's to keep. No other package carries it.)
 //
 // One builder serves `geometer export <shop>` and the panel's download. It reads only files (the shop's folder, the deployer's export of its record, the papers the panel
 // made) and never talks to the shop's runtime or to any service, so it works for a shop that is stopped, a server whose runtime is down, and a shop whose subscription lapsed.
@@ -223,6 +224,13 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
     notes.push("listings/listings.json holds what the shop showed on its page (every listing with its words in each language, its price, when the owner last confirmed it, and the owner's switch and place); listings/photos/ holds its photos, with their location data already removed. A new server can show them again.");
   }
   // block S phase A3: the shop's own stock count (modules/stock) goes with the shop too; a package without a count says nothing about it
+  // block S phase B2: the shop's OWN signing key (modules/runtime/shop-key.ts), in the OWNER'S file and no other package. It is the shop's identity in every directory, so a shop that changes its
+  // Operator or moves to a new server must be able to take it along (the new runtime adopts it from its data folder). It is the one key in any package, and the owner's alone to hand on.
+  const keyText = req.profile === "owner" ? src.exportFile("shop-key.json") : undefined;
+  if (keyText !== undefined) {
+    put("shop-key/shop-key.json", keyText);
+    notes.push("shop-key/shop-key.json is the shop's own signing key: it signs the shop's feed and its answers in every directory, so a directory still knows the shop after it moves. It is yours alone. Keep it private, and give it only to whoever serves the shop next (they put it in the shop's data folder as shop-key.json before the shop starts).");
+  } else if (req.profile === "owner" && listingsText !== undefined) notes.push("The shop's own signing key is not in this file (the server had not written it for the file yet). Ask again in a little while if you want to take the shop's identity in directories with you.");
   const stockText = src.exportFile("stock.json");
   if (stockText !== undefined) {
     put("stock/stock.json", stockText);
@@ -361,7 +369,7 @@ HOW TO CHECK IT
   geo-verify does not read the papers under reports/ and certificates/: they are in the report format; each names the ledger head it was made at ("anchor").
 
 WHAT IS NOT IN IT, AND WHY
-  - No key and no secret: no WhatsApp token, payment key, webhook secret, calendar key, signing key, passphrase or session. A shop moved to someone new needs new ones, entered by whoever serves it.
+  - No key and no secret: no WhatsApp token, payment key, webhook secret, calendar key, the panel's signing key, passphrase or session. A shop moved to someone new needs new ones, entered by whoever serves it.${m.profile === "owner" ? "\n    The one exception is in the owner's file only: shop-key/shop-key.json is the shop's OWN signing key (it signs the shop's feed in directories). It is yours; keep it private." : ""}
   - The shop's own accounts. The WhatsApp number, the payment account and the calendar belong to the shop; accounts.json only says which ones they were.
   - Customers' phone numbers and students' names in the record and the cases: these are fingerprints only the shop's key can match. See PEOPLE IN THE RECORD for what that covers and what it does not; settings.json is the main exception.
   - Anything after ${m.recordAsOf ?? "the deployer's last export of the record (it had made none)"}: the record is as the deployer last exported it.
