@@ -404,6 +404,14 @@ test("the owner's phones: the list with labels, a new phone is announced by bann
     const opened = await w.page(`/o/${w.ownerToken}/phones?lang=en`);
     assert.ok([302, 303, 404].includes(opened.status), "the panel link opens no phones page here");
 
+    // review finding 7: the Operator's panel link may not put a phone on the owner's alerts once the owner holds a passkey; a phone's alerts are tied to that phone
+    const operatorPhone = phone("https://fcm.googleapis.com/fcm/send/operator-phone");
+    assert.equal((await w.json(`/o/${w.ownerToken}/push/subscribe`, { subscription: operatorPhone.subscription })).status, 403, "the panel link cannot subscribe");
+    const secondAlerts = phone("https://fcm.googleapis.com/fcm/send/owner-phone-2");
+    w.setCookie(B);
+    assert.equal((await w.json("/owner/push/subscribe", { subscription: secondAlerts.subscription }, { "x-owner-csrf": csrfFor(B) })).status, 200);
+    w.setCookie(A);
+
     // two phones listed; remove the second (one confirm), and its session ends
     const two = await (await w.page("/owner/phones?lang=en")).text();
     const ids = [...two.matchAll(/phones\?remove=([0-9a-f]{12})/gu)].map((m) => m[1]);
@@ -414,6 +422,15 @@ test("the owner's phones: the list with labels, a new phone is announced by bann
     assert.match(gone.headers.get("location") ?? "", /n=removed/u);
     w.setCookie(B);
     assert.equal((await w.page("/owner/?lang=en")).status, 303, "the removed phone is signed out");
+
+    // its alerts ended with it: the next alert (the other phones are told codes were made) reaches the first phone only, never the removed one
+    const sinceRemoval = w.pushes.length;
+    w.setCookie(A);
+    assert.equal((await w.form("/owner/phones/codes", { csrf: csrfFor(A) })).status, 200);
+    const told = await w.pushedTo(sinceRemoval, "/v1/push/owner");
+    const paths = told.filter((p) => p.route === "/v1/push/owner").map((p) => p.call.path);
+    assert.ok(paths.includes(ownerAlerts.path), "the first phone is told");
+    assert.ok(!paths.includes(secondAlerts.path), "the removed phone is not");
 
     // the last phone: a plain remove is refused at the runtime and the page asks again in stronger words; only the second yes removes it
     w.setCookie(A);
