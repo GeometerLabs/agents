@@ -1502,6 +1502,11 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `phones.cancel` | अनुरोध रद्द करें | Cancel the request |  |
 | `phones.cancelled` | रद्द हो गया। आपके फ़ोन बने रहेंगे। | Cancelled. Your phones stay. |  |
 | `phones.labelNote` | ये नाम वही हैं जो हर फ़ोन ने जुड़ते समय अपने बारे में बताए। | The names are what each phone said about itself when it was added. |  |
+| `phones.alertsTitle` | आपके फ़ोनों पर अलर्ट | Alerts on your phones |  |
+| `phones.alertsNote` | ये फ़ोन आपकी दुकान के अलर्ट पाते हैं। जो फ़ोन आप नहीं पहचानते, उसे रोक दीजिए। | These phones get your shop's alerts. Stop one you do not know. |  |
+| `phones.alertSince` | 19 Nov 2026 से अलर्ट | Alerts since 19 Nov 2026 |  |
+| `phones.stop` | रोकें | Stop |  |
+| `phones.bannerNumber` | ऑपरेटर के पैनल में मालिक का नंबर कुछ और दिख रहा है। आपके संदेश अब भी आपके नंबर पर आते हैं। | The Operator's panel shows a different owner number. Your messages still come to your number. |  |
 | `phones.bannerOwner` | इस दुकान के लिए मालिक का नंबर बदला गया है। आप रद्द न करें तो दुकान खोलने वाले सारे फ़ोन 21 Nov, 10:00 am को बंद हो जाएँगे। | The owner's number for this shop was changed. Every phone that opens your shop stops working on 21 Nov, 10:00 am unless you cancel. |  |
 | `phones.bannerCodesMade` | 19 Nov, 3:42 pm को नए रिकवरी कोड बनाए गए (Android, Chrome)। आपने नहीं बनाए? वह फ़ोन हटा दीजिए। | New recovery codes were made on 19 Nov, 3:42 pm (Android, Chrome). Not you? Remove that phone. |  |
 | `phones.bannerRemoved` | 19 Nov, 3:42 pm को एक फ़ोन हटाया गया (Android, Chrome)। | A phone was removed on 19 Nov, 3:42 pm (Android, Chrome). |  |

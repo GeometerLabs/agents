@@ -1549,6 +1549,11 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `phones.cancel` | ಮನವಿ ರದ್ದುಗೊಳಿಸಿ | Cancel the request |  |
 | `phones.cancelled` | ರದ್ದಾಗಿದೆ. ನಿಮ್ಮ ಫೋನ್‌ಗಳು ಹಾಗೆಯೇ ಇರುತ್ತವೆ. | Cancelled. Your phones stay. |  |
 | `phones.labelNote` | ಪ್ರತಿ ಫೋನ್ ಸೇರಿಸುವಾಗ ತನ್ನ ಬಗ್ಗೆ ಹೇಳಿದ ಹೆಸರುಗಳು ಇವು. | The names are what each phone said about itself when it was added. |  |
+| `phones.alertsTitle` | ನಿಮ್ಮ ಫೋನ್‌ಗಳಲ್ಲಿನ ಅಲರ್ಟ್‌ಗಳು | Alerts on your phones |  |
+| `phones.alertsNote` | ಈ ಫೋನ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅಂಗಡಿಯ ಅಲರ್ಟ್‌ಗಳು ಬರುತ್ತವೆ. ನಿಮಗೆ ಗೊತ್ತಿಲ್ಲದ್ದನ್ನು ನಿಲ್ಲಿಸಿ. | These phones get your shop's alerts. Stop one you do not know. |  |
+| `phones.alertSince` | 19 Nov 2026 ರಿಂದ ಅಲರ್ಟ್‌ಗಳು | Alerts since 19 Nov 2026 |  |
+| `phones.stop` | ನಿಲ್ಲಿಸಿ | Stop |  |
+| `phones.bannerNumber` | ಆಪರೇಟರ್‌ನ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಮಾಲೀಕರ ನಂಬರ್ ಬೇರೆಯಾಗಿ ತೋರುತ್ತಿದೆ. ನಿಮ್ಮ ಸಂದೇಶಗಳು ಈಗಲೂ ನಿಮ್ಮ ನಂಬರ್‌ಗೇ ಬರುತ್ತವೆ. | The Operator's panel shows a different owner number. Your messages still come to your number. |  |
 | `phones.bannerOwner` | ಈ ಅಂಗಡಿಯ ಮಾಲೀಕರ ನಂಬರ್ ಬದಲಾಯಿಸಲಾಗಿದೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳು 21 Nov, 10:00 am ರಂದು ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | The owner's number for this shop was changed. Every phone that opens your shop stops working on 21 Nov, 10:00 am unless you cancel. |  |
 | `phones.bannerCodesMade` | 19 Nov, 3:42 pm ರಂದು ಹೊಸ ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಲಾಗಿದೆ (Android, Chrome). ನೀವಲ್ಲವೇ? ಆ ಫೋನ್ ತೆಗೆಯಿರಿ. | New recovery codes were made on 19 Nov, 3:42 pm (Android, Chrome). Not you? Remove that phone. |  |
 | `phones.bannerRemoved` | 19 Nov, 3:42 pm ರಂದು ಒಂದು ಫೋನ್ ತೆಗೆಯಲಾಗಿದೆ (Android, Chrome). | A phone was removed on 19 Nov, 3:42 pm (Android, Chrome). |  |
