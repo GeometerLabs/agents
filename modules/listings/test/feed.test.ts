@@ -20,48 +20,55 @@ const make = (s: ReturnType<typeof emptyListings>, input: Partial<DraftInput> = 
   return p.value;
 };
 
-test("the feed carries live public listings only, in its documented shape", () => {
+test("the feed is exactly shop-feed/1: live public listings only, strings for money and places, the spec's names", () => {
   const s = emptyListings();
   setShop(s, owner, { visible: true, town: "Thrissur", pincode: "680001", point: { lat: 10.52, lon: 76.21 }, registration: "PS/KL/2026/123" });
   const a = make(s);
   const sold = make(s, { words: { en: { title: "Sold cat", text: "" } } });
   markSold(s, owner, sold.id, { nowMs: NOW });
   draft(s, { category: "other", ownerLang: "en", words: { en: { title: "A draft", text: "" } } }, { nowMs: NOW });
-  const old = make(s, { words: { en: { title: "Old one", text: "" } } });
-  const f = buildFeed(s, shop, NOW + HIDE_AFTER_MS - DAY);
-  assert.equal(f.format, FEED_FORMAT);
-  assert.deepEqual(f.shop.place, { town: "Thrissur", pincode: "680001", lat: 10.52, lon: 76.21, country: "IN" });
-  assert.deepEqual(f.shop.registration, { text: "PS/KL/2026/123", by: "the owner says" });
-  assert.deepEqual(f.listings.map((l) => l.id).sort(), [a.id, old.id].sort());
-  const l = f.listings.find((x) => x.id === a.id)!;
-  assert.deepEqual(l.price, { amount: 8000, currency: "INR", note: "each" });
-  assert.equal(l.freshness, "check");
+  const old = make(s, { words: { en: { title: "Old one", text: "" } }, category: "vehicles" });
+  const f = buildFeed(s, { ...shop, languages: ["en", "hi"], chat: `${shop.page}/chat` }, NOW + HIDE_AFTER_MS - DAY);
+  assert.equal(f.format, "shop-feed/1");
+  assert.equal(FEED_FORMAT, "shop-feed/1");
+  assert.deepEqual(f.shop.place, { town: "Thrissur", pincode: "680001", lat: "10.52", lon: "76.21" });
+  assert.deepEqual(f.shop.registration, { kind: "pet-shop", number: "PS/KL/2026/123", source: "owner" });
+  assert.deepEqual(f.shop.languages, ["en", "hi"]);
+  assert.equal(f.shop.page, `${shop.page}/`);
+  assert.ok(!("signature" in f) && !("check" in f.shop) && !("agentCard" in f.shop), "the key, the check and the Agent Card are not built yet");
+  assert.deepEqual(f.items.map((l) => l.id).sort(), [a.id, old.id].sort());
+  const l = f.items.find((x) => x.id === a.id)!;
+  assert.deepEqual(l.price, { value: "8000.00", currency: "INR", note: "each" });
+  assert.equal(l.availability, "call_to_check");
   assert.deepEqual(l.machineWritten, ["hi"]);
+  assert.equal(l.ownerLanguage, "en");
+  assert.equal(l.quantity, 2);
   assert.equal(l.photos[0].url, `https://pages.streetlist.in/s/paws${photoPath(photo.id, photo.type)}`);
   assert.ok(!/\/p\//u.test(l.photos[0].url), "not the door's stable page address");
-  const later = buildFeed(s, shop, NOW + HIDE_AFTER_MS + 1);
-  assert.equal(later.listings.length, 0, "nothing past 30 days without a confirm");
+  assert.equal(f.items.find((x) => x.id === old.id)!.category, "vehicles_and_cycles");
+  assert.match(l.confirmed, /^\d{4}-\d\d-\d\dT/u);
+  assert.equal(buildFeed(s, shop, NOW + HIDE_AFTER_MS + 1).items.length, 0, "nothing past 30 days without a confirm");
+  assert.equal(buildFeed(s, shop, NOW).items.find((x) => x.id === a.id)!.availability, "in_stock");
 });
 
-test("a listing with no price says nothing about one (ask the shop)", () => {
+test("a listing with no price has price null (ask the shop); money is a string, never a float", () => {
   const s = emptyListings();
-  const l = make(s, { pricePaise: undefined, priceNote: undefined });
-  const f = buildFeed(s, shop, NOW);
-  assert.equal(f.listings[0].price, undefined);
+  make(s, { pricePaise: undefined, priceNote: undefined });
+  assert.equal(buildFeed(s, shop, NOW).items[0].price, null);
   const ld = buildJsonLd(s, shop, "en", NOW) as { "@graph": { offers?: { price?: string } }[] };
   assert.equal(ld["@graph"][1].offers?.price, undefined);
-  assert.equal(l.pricePaise, undefined);
+  const t = emptyListings();
+  make(t, { pricePaise: 12550 });
+  assert.equal(buildFeed(t, shop, NOW).items[0].price?.value, "125.50");
 });
 
-test("nothing private is in the feed or the JSON-LD: no customer's number, no draft, no owner's number unless given as the shop's public one", () => {
+test("nothing private is in the feed or the JSON-LD: no customer's number, no draft, no owner's number; the page's public phone only in schema.org", () => {
   const s = emptyListings();
   make(s);
-  const quiet = buildFeed(s, { name: "Paws", page: shop.page }, NOW);
-  assert.ok(!JSON.stringify(quiet).includes("98765"));
-  assert.equal(quiet.shop.phone, undefined);
-  const withPhone = buildFeed(s, shop, NOW);
-  assert.equal(withPhone.shop.phone, shop.phone);
-  assert.ok(!/"by"|"from"|digest|confirmedMs|askedMs/u.test(JSON.stringify(withPhone.listings)));
+  const f = buildFeed(s, { name: "Paws", page: shop.page }, NOW);
+  assert.ok(!JSON.stringify(f).includes("98765"));
+  assert.ok(!/"by"|"from"|digest|confirmedMs|askedMs|phone|telephone/u.test(JSON.stringify(f)));
+  assert.ok(JSON.stringify(buildJsonLd(s, shop, "en", NOW)).includes("+91 98765 43210"));
 });
 
 test("JSON-LD: the shop is a Store with its place, each public listing a Product with an INR Offer in stock", () => {

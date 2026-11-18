@@ -10,14 +10,21 @@ import { EXTENSION } from "./photo.ts";
 import { LANGS, freshnessOf, publicListings, textIn } from "./listings.ts";
 import type { Lang, Listing, ListingsState } from "./listings.ts";
 
-export const FEED_FORMAT = "geometer-listings/1";
+export const FEED_FORMAT = "shop-feed/1";
+/** The spec's limits: at most 1 MB and 200 items (a shop shows at most 50, so the item limit is a guard, not a squeeze). */
+export const FEED_MAX_ITEMS = 200;
+export const FEED_MAX_BYTES = 1_000_000;
 
 export interface FeedShop {
   name: string;
-  /** The shop's public page, absolute ("https://pages.streetlist.in/s/glow-salon"). */
+  /** The shop's public page, absolute, no trailing slash ("https://pages.streetlist.in/s/glow-salon"). */
   page: string;
-  /** The shop's public contact number only when its page already shows one (the shop's settings contact). Left out otherwise. */
+  /** The shop's public contact number only when its page already shows one (the shop's settings contact). Used for schema.org only: shop-feed/1 has no phone field. */
   phone?: string;
+  /** The languages the shop answers in, the owner's first. */
+  languages?: Lang[];
+  /** The shop's chat address, when it has a chat. */
+  chat?: string;
 }
 
 /** A photo's exact public address, under the shop's page (not the door's stable `/p/...` page address). */
@@ -26,52 +33,65 @@ const photoUrl = (shop: FeedShop, p: Listing["photos"][number]): string => `${sh
 const listingUrl = (shop: FeedShop, l: Listing): string => `${shop.page}/shop#${l.id}`;
 
 const rupees = (paise: number): string => (paise % 100 === 0 ? String(paise / 100) : (paise / 100).toFixed(2));
+/** Exact rupees as a decimal string with two places, never a float ("8000.00"). */
+const decimal = (paise: number): string => `${Math.floor(paise / 100)}.${String(paise % 100).padStart(2, "0")}`;
+/** Degrees as a string with at most 6 decimals, so every language reads them alike. */
+const degrees = (n: number): string => String(Number(n.toFixed(6)));
+/** The spec writes the vehicles category in full. */
+const SPEC_CATEGORY: Record<string, string> = { vehicles: "vehicles_and_cycles" };
 
 export interface Feed {
   format: typeof FEED_FORMAT;
-  generatedAt: string;
-  shop: { name: string; page: string; place: { town?: string; pincode?: string; lat?: number; lon?: number; country: "IN" }; phone?: string; registration?: { text: string; by: "the owner says" } };
-  listings: {
-    id: string; url: string; category: string;
+  updated: string;
+  shop: {
+    name: string; page: string; languages: Lang[];
+    place?: { town: string; pincode?: string; lat?: string; lon?: string };
+    chat?: string;
+    registration?: { kind: "pet-shop"; number: string; source: "owner" };
+  };
+  items: {
+    id: string; page: string; category: string;
     title: Partial<Record<Lang, string>>; text: Partial<Record<Lang, string>>;
-    /** The languages whose words were machine-written (the owner's own language is not among them). */
-    machineWritten: Lang[]; ownerLanguage: Lang;
-    /** The owner's price: absent means "ask the shop". `note` is the owner's own ("each", "per kg"). */
-    price?: { amount: number; currency: "INR"; note?: string };
+    ownerLanguage: Lang; machineWritten: Lang[];
+    price: { value: string; currency: "INR"; note?: string } | null;
     quantity?: number;
     photos: { url: string; type: string; width: number; height: number }[];
-    /** "fresh": the owner confirmed it within 3 days. "check": it is older, call the shop to check. Hidden listings are not in the file. */
-    freshness: "fresh" | "check";
-    confirmedAt: string;
-    /** A pets listing's claims about the animal exist only as the owner's own words. */
-    ownerSays?: string[];
+    availability: "in_stock" | "call_to_check";
+    confirmed: string;
   }[];
 }
 
-/** The open feed (listings.json): public listings only. */
+/**
+ * The open feed (listings.json), exactly shop-feed/1 (specs/shop-feed.md): public listings only. `signature`, `shop.check`, `shop.agentCard` and `shop.trade` are left out on purpose:
+ * the shop's key, the check and the Agent Card are a later part, built on top of this file (see README.md, "What is not built").
+ */
 export function buildFeed(state: ListingsState, shop: FeedShop, nowMs: number): Feed {
   const s = state.shop;
+  const owner = state.items.find((l) => l.state !== "draft")?.ownerLang;
+  const languages = shop.languages ?? (owner ? [owner, ...LANGS.filter((k) => k !== owner)] : [...LANGS]);
+  const items = publicListings(state, nowMs).slice(0, FEED_MAX_ITEMS).map((l) => ({
+    id: l.id, page: listingUrl(shop, l), category: SPEC_CATEGORY[l.category] ?? l.category,
+    title: Object.fromEntries(LANGS.filter((k) => l.words[k]).map((k) => [k, l.words[k]!.title])) as Partial<Record<Lang, string>>,
+    text: Object.fromEntries(LANGS.filter((k) => l.words[k]).map((k) => [k, l.words[k]!.text])) as Partial<Record<Lang, string>>,
+    ownerLanguage: l.ownerLang, machineWritten: LANGS.filter((k) => l.words[k] && k !== l.ownerLang),
+    price: l.pricePaise !== undefined ? { value: decimal(l.pricePaise), currency: "INR" as const, ...(l.priceNote ? { note: l.priceNote } : {}) } : null,
+    ...(l.qty !== undefined ? { quantity: l.qty } : {}),
+    photos: l.photos.slice(0, 3).map((p) => ({ url: photoUrl(shop, p), type: p.type, width: p.width, height: p.height })),
+    availability: freshnessOf(l, nowMs) === "fresh" ? "in_stock" as const : "call_to_check" as const,
+    confirmed: new Date(l.confirmedMs ?? l.publishedMs ?? l.createdMs).toISOString(),
+  }));
+  // "updated": the last time anything in the shop's listings changed (a confirm, a sale, a removal, a publish), so a reader's ETag moves only when the file does
+  const times = state.items.flatMap((l) => [l.createdMs, l.publishedMs, l.confirmedMs, l.soldMs, l.removedMs].filter((t): t is number => t !== undefined));
+  const updated = new Date(times.length > 0 ? Math.max(...times) : nowMs).toISOString();
   return {
-    format: FEED_FORMAT,
-    generatedAt: new Date(nowMs).toISOString(),
+    format: FEED_FORMAT, updated,
     shop: {
-      name: shop.name, page: shop.page,
-      place: { ...(s.town ? { town: s.town } : {}), ...(s.pincode ? { pincode: s.pincode } : {}), ...(s.lat !== undefined && s.lon !== undefined ? { lat: s.lat, lon: s.lon } : {}), country: "IN" },
-      ...(shop.phone ? { phone: shop.phone } : {}),
-      ...(s.registration ? { registration: { text: s.registration, by: "the owner says" as const } } : {}),
+      name: shop.name, page: `${shop.page}/`, languages,
+      ...(s.town ? { place: { town: s.town, ...(s.pincode ? { pincode: s.pincode } : {}), ...(s.lat !== undefined && s.lon !== undefined ? { lat: degrees(s.lat), lon: degrees(s.lon) } : {}) } } : {}),
+      ...(shop.chat ? { chat: shop.chat } : {}),
+      ...(s.registration ? { registration: { kind: "pet-shop" as const, number: s.registration, source: "owner" as const } } : {}),
     },
-    listings: publicListings(state, nowMs).map((l) => ({
-      id: l.id, url: listingUrl(shop, l), category: l.category,
-      title: Object.fromEntries(LANGS.filter((k) => l.words[k]).map((k) => [k, l.words[k]!.title])) as Partial<Record<Lang, string>>,
-      text: Object.fromEntries(LANGS.filter((k) => l.words[k]).map((k) => [k, l.words[k]!.text])) as Partial<Record<Lang, string>>,
-      machineWritten: LANGS.filter((k) => l.words[k] && k !== l.ownerLang), ownerLanguage: l.ownerLang,
-      ...(l.pricePaise !== undefined ? { price: { amount: l.pricePaise / 100, currency: "INR" as const, ...(l.priceNote ? { note: l.priceNote } : {}) } } : {}),
-      ...(l.qty !== undefined ? { quantity: l.qty } : {}),
-      photos: l.photos.map((p) => ({ url: photoUrl(shop, p), type: p.type, width: p.width, height: p.height })),
-      freshness: freshnessOf(l, nowMs) === "fresh" ? "fresh" as const : "check" as const,
-      confirmedAt: new Date(l.confirmedMs ?? l.publishedMs ?? l.createdMs).toISOString(),
-      ...(l.claims && l.claims.length > 0 ? { ownerSays: l.claims } : {}),
-    })),
+    items,
   };
 }
 
