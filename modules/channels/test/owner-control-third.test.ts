@@ -56,18 +56,18 @@ test("a request seen by an HTTP-style call and then a restart before any tick is
     const record = createRecord(clock);
     const alerts: string[] = [];
     const signin = createOwnerSignin({ access, pages: () => PAGES, endBefore: () => undefined, grants: () => ask, owner: { whatsapp: A, language: "en" }, alert: (t) => alerts.push(t.en), shopName: "Glow", clock });
-    signin.tick({ record });
+    signin.markTold(signin.tick({ record })); // as the core does, once the step is saved
     const lines = () => record.entries().filter((e) => e.action === "owner_session" && (e.refs.what === "removal_asked" || e.refs.what === "removal_extended"));
     assert.equal(alerts.length, 1, "the owner's phones are told once");
     assert.equal(lines().length, 1, "the record has one line for it");
-    signin.tick({ record });
+    signin.markTold(signin.tick({ record })); // as the core does, once the step is saved
     assert.equal(alerts.length, 1, "a second tick does not push again");
     assert.equal(lines().length, 1, "and does not write the line again");
     // the same for a restart AFTER the tell: nothing is told again
     access.close();
     access = openOwnerAccess(path);
     const again = createOwnerSignin({ access, pages: () => PAGES, endBefore: () => undefined, grants: () => ask, owner: { whatsapp: A, language: "en" }, alert: (t) => alerts.push(t.en), shopName: "Glow", clock });
-    again.tick({ record });
+    again.markTold(again.tick({ record })); // as the core does, once the step is saved
     assert.equal(alerts.length, 1, "a restart after the tell does not tell again (the request is 48 hours from due: no extension either)");
     assert.equal(lines().length, 1);
     access.close();
@@ -89,8 +89,8 @@ test("an owner-number change seen before a restart is told by the tick too, once
     const record = createRecord(clock);
     const alerts: string[] = [];
     const signin = createOwnerSignin({ access, pages: () => PAGES, endBefore: () => undefined, grants: () => f0, owner: { whatsapp: B, language: "en" }, alert: (t) => alerts.push(t.en), shopName: "Glow", clock });
-    signin.tick({ record });
-    signin.tick({ record });
+    signin.markTold(signin.tick({ record })); // as the core does, once the step is saved
+    signin.markTold(signin.tick({ record })); // as the core does, once the step is saved
     assert.equal(record.entries().filter((e) => e.refs.what === "owner_change_asked" || e.refs.what === "removal_extended").length, 1);
     assert.equal(alerts.length, 1);
     access.close();
@@ -138,18 +138,18 @@ test("a full sale: the change applies after 48 hours with NO restart, the new ow
     const aLink = p.access.issue({ ...aWho, via: "whatsapp", now: s.clock.now() });
     const aSession = p.access.consume(aLink.token, aWho, s.clock.now() + 1);
     assert.ok(aSession.ok);
-    p.signin.tick({ record: p.record }); // the tick sees the settings name B: a request, and the owner (A) is told
+    p.signin.markTold(p.signin.tick({ record: p.record })); // as the core does, once the step is saved // the tick sees the settings name B: a request, and the owner (A) is told
     assert.equal(p.settings.owner.whatsapp, A, "while the request waits, messages still go to A");
     // 48 hours pass; the tick applies the change; NOBODY restarts
     s.clock.set(s.clock.now() + 49 * HOUR);
-    p.signin.tick({ record: p.record });
+    p.signin.markTold(p.signin.tick({ record: p.record })); // as the core does, once the step is saved
     assert.equal(p.settings.owner.whatsapp, B, "the change applied: the very next send goes to the settings' number, with no restart");
     // the new owner registers with a new QR (the gate is open)
     const q2 = newSetupToken(); const f2 = qr(q2, s.clock.now()); s.setFile(f2);
     p.access.sync(f2, s.clock.now());
     const reg = register(p.access, f2, q2, { owner: p.settings.owner.whatsapp, base: OWNER_BASE }, s.clock.now() + 1000);
     assert.equal(p.access.boundNumber(), B.replace(/\D/gu, ""), "bound to B, not to the old number");
-    p.signin.tick({ record: p.record });
+    p.signin.markTold(p.signin.tick({ record: p.record })); // as the core does, once the step is saved
     // a RESTART
     p.close();
     s.clock.set(s.clock.now() + HOUR);
@@ -180,7 +180,7 @@ test("after Geometer's reset the number follows the settings with no restart, an
     const now = s.clock.now() + HOUR;
     s.clock.set(now);
     s.setFile({ schema: 1, reset: { at: iso(now), by: "Geometer", reason: "sold", setup: { sha256: setupHash(resetQr), createdAt: iso(now), expiresAt: iso(now + 15 * 60_000) } } } as OwnerGrants);
-    p.signin.tick({ record: p.record });
+    p.signin.markTold(p.signin.tick({ record: p.record })); // as the core does, once the step is saved
     assert.equal(p.settings.owner.whatsapp, B, "the lock is gone: messages follow the settings, no restart needed");
     const reg = register(p.access, s.file(), resetQr, { owner: p.settings.owner.whatsapp, base: OWNER_BASE }, now + 1000);
     assert.equal(p.access.boundNumber(), B.replace(/\D/gu, ""));
@@ -198,11 +198,11 @@ test("the hostage case still holds: a change the owner cancels keeps every owner
   try {
     const s = lockedWithA(path);
     let p = s.p;
-    p.signin.tick({ record: p.record });
+    p.signin.markTold(p.signin.tick({ record: p.record })); // as the core does, once the step is saved
     assert.equal(p.access.pendingRemoval(s.file(), s.clock.now())?.kind, "owner_change");
     assert.equal(p.access.cancelRemoval(s.file(), s.clock.now() + 1000), true, "the owner cancels");
     s.clock.set(s.clock.now() + 3 * DAY);
-    p.signin.tick({ record: p.record });
+    p.signin.markTold(p.signin.tick({ record: p.record })); // as the core does, once the step is saved
     assert.equal(p.settings.owner.whatsapp, A, "still A, however long the settings say B");
     assert.equal(p.signin.takes({ kind: "message", message: { id: "m1", from: B, text: "open my app", at: s.clock.now(), kind: "text" } as never }), false, "B cannot open the app");
     p.close();

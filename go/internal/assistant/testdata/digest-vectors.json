@@ -1,0 +1,75 @@
+[
+ {
+  "kind": "listing",
+  "case": "listing:l-1",
+  "fields": {
+   "category": "pets",
+   "ownerLang": "en",
+   "from": "app",
+   "photos": "",
+   "title_en": "Persian kittens",
+   "text_en": "Playful <kittens> & more",
+   "pricePaise": 800000,
+   "qty": 2
+  },
+  "digest": "5b80f26b1fbb18664a1d5185a93b26ef"
+ },
+ {
+  "kind": "listing",
+  "case": "listing:l-2",
+  "fields": {
+   "category": "pets",
+   "title_en": "line sep  \b\f\n\r\t\u0001\u001f \"q\" back\\slash ",
+   "text_en": "emoji 🐱 and é and ക"
+  },
+  "digest": "7c8d2c49e26e3acb3899da068ca5cd0a"
+ },
+ {
+  "kind": "listing",
+  "case": "listing:l-3",
+  "fields": {
+   "a": true,
+   "b": false,
+   "c": 12.5,
+   "d": 0,
+   "e": -3,
+   "f": 1e+21,
+   "g": 123456789012,
+   "h": ""
+  },
+  "digest": "145878d655e233f4bd2638b75ba8a117"
+ },
+ {
+  "kind": "listing",
+  "case": "listing:l-4",
+  "fields": {
+   "ü": 1,
+   "z": 2,
+   "a": 3,
+   "Z": 4,
+   "🐱": 5,
+   "￿": 6,
+   "": 7
+  },
+  "digest": "b83034fbbf8390cb34a0b0e932049202"
+ },
+ {
+  "kind": "listing",
+  "case": "listing:l-5",
+  "fields": {
+   "claims": "vaccinated | pure breed",
+   "priceNote": "each",
+   "photos": "ph-aaaaaaaaaaaa,ph-bbbbbbbbbbbb"
+  },
+  "digest": "8622c2be81edccf8fd688f791896333c"
+ },
+ {
+  "kind": "listing_ask",
+  "case": "listing:l-6",
+  "fields": {
+   "title": "Still have it?",
+   "confirmedMs": 1795024186120
+  },
+  "digest": "08dc640ab34f273f8850c97ab116001f"
+ }
+]

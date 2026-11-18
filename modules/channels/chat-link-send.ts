@@ -133,7 +133,8 @@ export type ChatLinks = ReturnType<typeof createChatLinks>;
 export function withChatLinks<S extends { takes(event: { kind: string; message?: unknown }): boolean; run(event: never, ctx: never): Promise<void> }>(signin: S, links: ChatLinks): S {
   return {
     ...signin,
-    tick: (ctx: { store?: unknown }) => { links.tick(ctx); (signin as unknown as { tick?(c: unknown): void }).tick?.(ctx); },
+    // the sign-in's tick answers with the keys of the notices it said, which the core marks told after the step is saved: pass them on, or every beat tells them again
+    tick: (ctx: { store?: unknown }): string[] => { links.tick(ctx); return (signin as unknown as { tick?(c: unknown): string[] | void }).tick?.(ctx) ?? []; },
     takes: (event: { kind: string; message?: unknown }) => links.takes(event) || signin.takes(event),
     run: (event: { kind: string }, ctx: { messaging: Messaging; record: ActionRecord; store: unknown }) => (event.kind === "chat_link" ? links.run(event as ChatLinkEvent, ctx) : (signin.run as (e: unknown, c: unknown) => Promise<void>)(event, ctx)),
   } as S;

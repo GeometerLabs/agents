@@ -752,8 +752,12 @@ export function openOwnerAccess(file: string) {
       try {
         db.prepare("UPDATE passkeys SET removed_at = ?, removed_why = 'owner' WHERE id = ? AND removed_at IS NULL").run(now, target.id);
         db.prepare("UPDATE sessions SET ended_at = ?, ended_why = 'phone_removed' WHERE link_id = ? AND ended_at IS NULL").run(now, `pk-${target.id}`);
-        // what the removed phone made goes with it: its recovery codes and its "add a phone" links are a way back in that the owner never chose to keep
-        db.prepare("UPDATE own_codes SET voided_at = ? WHERE by_passkey = ? AND voided_at IS NULL").run(now, target.id);
+        // what the removed phone made goes with it: its recovery codes and its "add a phone" links are a way back in that the owner never chose to keep. WHY the one
+        // exception: a phone removing ITSELF as the last phone is the owner's own, twice-confirmed choice, and the confirm page promises "you can only get back in with your own
+        // recovery codes" (owner-phones-page.ts lastAsk). Those codes were made by that same phone, so voiding them would leave the owner nothing. A phone removed by ANOTHER
+        // phone is different (an intruder phone must not keep a way back), so its codes go; its "add a phone" links go in both cases (a link is a way in for whoever holds it).
+        const keepCodes = wasLast && target.id === me.passkey;
+        if (!keepCodes) db.prepare("UPDATE own_codes SET voided_at = ? WHERE by_passkey = ? AND voided_at IS NULL").run(now, target.id);
         db.prepare("UPDATE own_setups SET voided_at = ? WHERE by_passkey = ? AND voided_at IS NULL").run(now, target.id);
         db.prepare("INSERT INTO news (at, kind, label, by_id) VALUES (?, 'removed', ?, ?)").run(now, target.label, me.passkey);
         db.exec("COMMIT");
