@@ -1531,3 +1531,32 @@ The one test pass after W1, W1b, W2 and W3 were merged found these in the chat p
 **Decisions to know.** The owner's switch, place and pet-shop registration are kept in the shop's own state (not `settings.json`, which only the deployer writes), so no second settings writer exists. The storefront is its own page (`/shop`), because the booking, order and fee pages and the chat must stay `noindex`; the front page gets a button to it. "Ask about this" opens the chat with the listing's name in the greeting and in the composer, so the guest's first line tells the owner which listing; no new event field was needed. The morning question is a card ("Still have it? Yes / Sold"), not a change to the approved morning template. The feed follows `specs/shop-feed.md` (without the signature, the check and the Agent Card, which a later part adds).
 
 **Not tested on a real model or provider:** the drafting call is tested on a scripted fake only.
+
+## The model budget: one meter, one monthly budget, a cap on every feature (18 Nov 2026, stream `caps-18nov`)
+
+**Why.** The owner approved a hosted model (DeepInfra, through the model Guard) for the owner's talk, customers' open questions, listing drafts in four languages and, later, the buyer's discovery assistant (plan decision 60). "Add caps everywhere." Before this, the only model-spend cap was fleet's `ai.cap` (₹15 per 1,000 messages, set from the heartbeat, which lags and which turned off only the router's language step), and the chat's 20 model turns a day for one guest. A busy owner could use the month's money in talk turns, and a bug could spend it in an afternoon.
+
+**What was found when the model calls were mapped** (the full table is in `budget/README.md`). There was already ONE meter, `ai.costMicroInr`, which the router, the talk, the drafts and voice all add to. So nothing new was metered. What was missing: a budget the shop itself enforces at once, a cap per feature, a fallback each feature could name, and a notice before the end. Also, a listing draft's record line was not counted in `bundle/lib/usage.ts`, so fleet's cap and its 50% alert could not see it: that is fixed.
+
+**What was built** (`modules/budget/`, pure, no disk):
+
+- `gate` before a call and `record` after it. The gate says yes, or `month`, `day` (this feature's daily cap) or `again` (this message was already paid for). The count is of calls asked, not answers used, because a refused draft still cost tokens.
+- `modelOff`, one question for "is the language model left out?" (fleet says so, or the shop's own budget is used up). The talk, the router's language step, voice and the notices all ask it. The router's language step and the daily caps share `gate`.
+- The state is in the same `ai` state as the month's spend (`ai.budget`), so a new month resets both and a shop with no budget saves the same bytes as before.
+- `talkOff(env, feature, key)` (talk-run.ts) now says why: `no_model`, `buttons`, `cap` (fleet), `budget`, `day`, `again`. `askMetered` takes the feature and the key.
+- The notices: `takeNotices` (80% and used-up, once each a month) on the assistant's beat; `takeDayNotice` once a day per feature. Their words are in `assistant/words-budget.ts`, four languages, machine-written for hi, ml and kn and on the review sheets. Every date goes through the Writer so the outgoing check can read it, and the line says what STILL works.
+- The numbers: the proposed price list `prices/2026-11-18.json` (`ai.budget.*`, `ai.daily.*`, `ai.cap` at ₹20). It is `"status": "proposed"`, so the bundle, which reads only lists in force, gives no shop a budget until the owner says yes. `bundle/lib/budget.ts` turns a plan into the `budget` block; `bundle/generate/shop.ts withBudget` writes it into the generated runtime config only if the template version knows the key (the same pattern as `ai` and `model`).
+- The Operator: the runtime's `/status` carries `ai.budget`; the panel's plan block shows a line while the shop is at 80% or used up (`bundle/panel/plan.ts budgetOf`). Fleet's contract was not touched.
+- The model Guard's wall: `wallProblems` and a deploy note (`bundle/lib/budget.ts wallNotes`).
+
+**Decisions worth knowing.**
+
+- *The shop's own budget equals fleet's cap for the plan's allowance* (₹20, ₹60, ₹200). The shop's own trips at once and fleet's check is the second line, so the two cannot tell the owner different things. The proposed `ai.cap` goes from ₹15 to ₹20 per 1,000 messages for that reason, and because the hosted model now does more than reading messages (a talk turn is about ₹0.06, a four-language draft about ₹0.10, at the table's DeepSeek rate).
+- *Over the month's budget is "model off", not "button mode".* Button mode also switches off the decision model (Laya), which costs nothing. So the budget leaves out only what costs money, and rules, buttons and Laya keep reading.
+- *A customer is never told about a cap.* They get the rule-based reading and the template's menu. Only the owner is told, once a day, and the Operator's panel shows the state.
+- *The router's day cap and its owner notice.* The router's day cap is recorded and the language step is left out; the owner is not told about it (it changes nothing they would see: the menu appears for a message the rules cannot read). Each other day cap tells the owner once.
+- *The same message is not paid for twice.* The owner's message id is the key. A customer's retry is stopped by the inbox's event key; the customer talk does not carry a key yet (see Deferred).
+- *The morning line cannot carry a new line.* It is a WhatsApp template approved by Meta. The owner is told in a message of its own and in the app.
+- *A call may pass the line by the calls already running* (about one call, a few paise). Said in the README as the bound.
+
+**Not tested on a real model or provider.** Tests: `budget/test/budget.test.ts`, `budget/test/budget-flow.test.ts`, `bundle/test/model-budget.test.ts` (written 18 Nov, not run by this stream; the lead's pass runs them).

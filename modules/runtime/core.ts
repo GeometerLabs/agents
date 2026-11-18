@@ -18,6 +18,8 @@ import type { InboundMessage, Messaging } from "../messaging/messaging.ts";
 import type { RefundIssue, RefundIssueKind } from "../payments/refunds.ts";
 import { createRecord } from "../record/record.ts";
 import type { ActionRecord, RecordEntry } from "../record/record.ts";
+import { summaryOf as budgetSummaryOf } from "../budget/budget.ts";
+import type { BudgetSummary } from "../budget/budget.ts";
 import { summaryOf } from "../understanding/ai-state.ts";
 import type { AiPolicy, AiState, AiSummary } from "../understanding/ai-state.ts";
 import type { IncomingEvent, RuntimeEvent } from "./events.ts";
@@ -62,8 +64,12 @@ export interface BaseStatus {
   steps: number;
   errors: number;
   startedAt: string;
-  /** This month's understanding: messages read at each step, the estimated cost in micro-rupees, the allowance, and whether the agent is in button mode and why. Counts only. */
-  ai: AiSummary;
+  /**
+   * This month's understanding: messages read at each step, the estimated cost in micro-rupees, the allowance, and whether the agent is in button mode and why. Counts only.
+   * `budget`: the shop's model budget (budget/budget.ts) as the panel's plan line reads it: the month's rupees, how much is used, the level, and each feature's calls and daily
+   * cap; left out when the shop has no budget (so a shop without one reports the same status as before).
+   */
+  ai: AiSummary & { budget?: BudgetSummary };
 }
 
 /**
@@ -519,7 +525,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
       recordLength: entries.length,
       ...runner.counters(),
       startedAt,
-      ai: summaryOf(kit.parse(snapshot), policy, clock.now(), settings.timezone),
+      ai: (() => { const parsed = kit.parse(snapshot); const budget = budgetSummaryOf(parsed, policy.budget, clock.now(), settings.timezone); return { ...summaryOf(parsed, policy, clock.now(), settings.timezone), ...(budget ? { budget } : {}) }; })(),
     }) as BaseStatus & Record<string, unknown>,
 
     refundContext: (receipt) => kit.refundContext(kit.parse(snapshot), settings, receipt),

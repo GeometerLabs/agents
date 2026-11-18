@@ -89,8 +89,12 @@ export function whatsappTypeOf(entry: unknown): WhatsappType | undefined {
 
 /** A customer's message the agent handled: logged `receive_message`, confirmed. A repeated delivery is logged `blocked` and is not a message. */
 export const isCustomerMessage = (entry: unknown): boolean => isObj(entry) && entry.action === "receive_message" && entry.outcome === "confirmed";
-/** Item 11e: the owner's words, read by the shop's assistant (modules/assistant, `owner_assistant`), and block M's talk turns (`talk`, owner's or customer's): what a model cost is the shop's AI spend, but they are not customer messages. */
-export const isOwnerAssistantRead = (entry: unknown): boolean => isObj(entry) && (entry.action === "owner_assistant" || entry.action === "talk") && entry.outcome === "confirmed";
+/**
+ * Item 11e: the owner's words, read by the shop's assistant (modules/assistant, `owner_assistant`), block M's talk turns (`talk`, owner's or customer's) and a listing's draft
+ * (`listing_draft`, block S; counted from 18 Nov 2026, decision 60, because a draft is a four-language model call and fleet's cap and its 50% alert must see it): what a model
+ * cost is the shop's AI spend, but they are not customer messages.
+ */
+export const isOwnerAssistantRead = (entry: unknown): boolean => isObj(entry) && (entry.action === "owner_assistant" || entry.action === "talk" || entry.action === "listing_draft") && entry.outcome === "confirmed";
 
 // ---- the estimate ------------------------------------------------------------------------------------------------------------------------------------------
 
