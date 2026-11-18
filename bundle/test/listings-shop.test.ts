@@ -83,8 +83,11 @@ test("one shared container, one door and one network for every listings-only sho
   assert.equal(JSON.stringify(three.services["door-listings"]), JSON.stringify(two.services["door-listings"]));
   assert.deepEqual(two.services["rt-listings"].files, [], "no file is listed, so adding a shop restarts nothing");
   const block = two.services["rt-listings"].block;
-  assert.deepEqual(Object.keys(block.environment as object).sort(), ["HOST", "PORT", "SCAN_SECONDS", "SHOPS_DIR", "SECRETS_DIR"].sort(), "no token, key or token file in the environment: every shop's are files handed to that shop alone");
+  assert.deepEqual(Object.keys(block.environment as object).sort(), ["HOST", "PORT", "SCAN_SECONDS", "SHARED_WORKERS", "SHARED_WORKER_MB", "SHOPS_DIR", "SECRETS_DIR"].sort(), "no token, key or token file in the environment: every shop's are files handed to that shop alone");
   assert.ok(!JSON.stringify(block).includes("INTERNAL_TOKEN_FILE") && !JSON.stringify(block).includes("RECORD_KEY_FILE") && !JSON.stringify(block).includes("CHANNEL_TOKEN_FILE"));
+  assert.equal(block.mem_limit, "1536m", "the container's outer memory wall: 4 workers x 256 MB + 512 MB for the main thread, buffers, SQLite and a quarantine worker");
+  assert.equal((block.environment as Record<string, string>).SHARED_WORKERS, "4");
+  assert.equal((block.environment as Record<string, string>).SHARED_WORKER_MB, "256");
   const mounts = (block.volumes as string[]);
   assert.ok(mounts.includes("/srv/generated/listings:/shops:ro"), "its shops' client folders only, read-only");
   assert.ok(mounts.includes(`/srv/secrets/${SHARED.runtime}:/run/secrets:ro`));
