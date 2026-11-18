@@ -9,9 +9,10 @@ package runtime
 //	GET  /internal/owner-session             204 when x-owner-session is good (the internal token): the approvals relay asks, so it never takes the front's word for who the owner is
 //	GET/POST /internal/feed-notice           the signed "my feed changed" notice to carry to the directory (the internal token)
 //	/internal/channel/...                    the channel token: events (an owner_message, an owner_signin), offer, listings, listing-photo, shop-feed, shop-check, shop-card,
-//	                                         owner-listing, owner-photo, owner-signin, owner-passkey, owner-signout
+//	                                         owner-listing, owner-photo, owner-signin, owner-passkey, owner-signout, owner-limits, owner-file, push
+//	GET/POST /internal/limit-changes         the deployer's word about a limit change (the internal token)
 //
-// The routes of other kinds of shop (a chat, bookings, orders, fees, push, voice, limits, stock, the owner's talk-and-cards page) are not this shop's: they answer 404.
+// The routes of other kinds of shop (a chat, bookings, orders, fees, voice, stock, the owner's talk-and-cards page) are not this shop's: they answer 404.
 
 import (
 	"context"
@@ -225,7 +226,7 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 		// how the owner can sign in and hear (counts only), for the panel's go-live
-		st["ownerAccess"] = map[string]any{"passkeys": s.rt.Passkeys(), "alertPhones": 0}
+		st["ownerAccess"] = map[string]any{"passkeys": s.rt.Passkeys(), "alertPhones": s.rt.AlertPhones()}
 		send(w, 200, st)
 	case "/internal/owner-session":
 		if err := only(r, "GET"); err != nil {
@@ -243,6 +244,8 @@ func (s *Server) route(w http.ResponseWriter, r *http.Request) error {
 		}
 	case "/internal/feed-notice":
 		return s.feedNotice(w, r)
+	case "/internal/limit-changes":
+		return s.limitChangesRoute(w, r)
 	case "/internal/events":
 		if err := only(r, "POST"); err != nil {
 			return err
@@ -366,6 +369,12 @@ func (s *Server) channelRoute(w http.ResponseWriter, r *http.Request, path strin
 		return s.ownerSignin(w, r)
 	case "/internal/channel/owner-passkey":
 		return s.ownerPasskey(w, r)
+	case "/internal/channel/owner-limits":
+		return s.ownerLimitsRoute(w, r)
+	case "/internal/channel/owner-file":
+		return s.ownerFileRoute(w, r)
+	case "/internal/channel/push":
+		return s.pushRoute(w, r)
 	case "/internal/channel/owner-signout":
 		if err := only(r, "POST"); err != nil {
 			return err
