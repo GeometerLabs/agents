@@ -63,8 +63,9 @@ test("the day is the shop's own day, not UTC's", () => {
   const c = cfg({ daily: { owner_talk: 1 } });
   const lateEvening = Date.parse("2026-11-10T23:30:00+05:30"); // 18:00 UTC the same day
   record(s, c, "owner_talk", { costMicroInr: 1 }, lateEvening, TZ);
-  assert.equal(gate(s, c, "owner_talk", lateEvening + HOUR, TZ).ok, true, "half past midnight at the shop is a new day (still 19:00 UTC of the old one)");
+  // time only moves forward: the state keeps one day, so asking about an earlier moment after a later one would (rightly) start that earlier day's counts again
   assert.equal(gate(s, c, "owner_talk", lateEvening + 10 * 60_000, TZ).ok, false, "ten minutes later, still the same day");
+  assert.equal(gate(s, c, "owner_talk", lateEvening + HOUR, TZ).ok, true, "half past midnight at the shop is a new day (still 19:00 UTC of the old one)");
 });
 
 test("the month's budget stops every feature together, as fleet's AI cap does, and a new month resets it", () => {
