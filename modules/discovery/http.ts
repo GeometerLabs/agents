@@ -3,10 +3,11 @@
 // file and the network; the door forwards these addresses to it.
 //
 //   GET  /search            the people's page (HTML), or the JSON `directory-search/1` when the caller asks for JSON (`Accept: application/json` or `format=json`)
+//                           `?ask=<the buyer's own words>` (only where the buyer's assistant is on, assistant.ts): the assistant turns the words into a search; the JSON then also has `assistant`
 //   GET  /search/font.woff2 Baloo 2's Latin subset (SIL OFL, channels/fonts/OFL-baloo-2.txt): the page's headings and buttons
 //   GET  /order             the page that states the fair order in plain words
 //   POST /feed-changed      "my feed changed" (shop-feed-changed/1): a hint only (notices.ts)
-//   POST /mcp               the MCP endpoint (mcp.ts): search_listings, get_listing, shop_page
+//   POST /mcp               the MCP endpoint (mcp.ts): search_listings, get_listing, shop_page, and ask where the assistant is on
 //   GET  /.well-known/agent-card.json   the directory's signed A2A Agent Card
 //   GET  /healthz           "ok"
 //
@@ -26,6 +27,8 @@ import { directoryServer } from "./mcp.ts";
 import { EMPTY_FORM, orderPage, pagePolicy, searchPage } from "./page.ts";
 import type { FormValues, PageContext, SearchView } from "./page.ts";
 import { searchListings } from "./search.ts";
+import { MAX_QUESTION, askListings } from "./assistant.ts";
+import type { Asked, Assistant } from "./assistant.ts";
 import type { SearchDeps, SearchRequest } from "./search.ts";
 
 const MAX_MCP_BYTES = 16 * 1024;
@@ -39,6 +42,8 @@ export interface DirectoryHttpDeps {
   /** The signed Agent Card (built once at start, or on each call if it changes). */
   card: () => Record<string, unknown>;
   notices: Omit<NoticeConfig, "index">;
+  /** The buyer's assistant (assistant.ts). Left out: no "Ask in your own words" box, no `ask` tool, and the search is exactly the plain search. Made only from an approved budget. */
+  assistant?: Assistant;
   now?: () => number;
   log?: (line: string) => void;
 }
@@ -91,7 +96,7 @@ export function directoryHandler(deps: DirectoryHttpDeps): (req: IncomingMessage
     if (path === "/healthz" && method === "GET") return send(res, 200, "ok", "text/plain; charset=utf-8");
 
     const nonce = randomBytes(16).toString("base64url");
-    const ctx = (lang: Lang): PageContext => ({ origin: deps.origin, lang, now: now(), nonce, fontUrl: "/search/font.woff2" });
+    const ctx = (lang: Lang): PageContext => ({ origin: deps.origin, lang, now: now(), nonce, fontUrl: "/search/font.woff2", assistant: deps.assistant !== undefined });
     const lang = languageOf(url.searchParams.get("lang"), req.headers["accept-language"]);
 
     if (path === "/search/font.woff2" && (method === "GET" || method === "HEAD")) {
@@ -112,21 +117,31 @@ export function directoryHandler(deps: DirectoryHttpDeps): (req: IncomingMessage
       const p = url.searchParams;
       const asked: SearchRequest = { q: p.get("q") ?? undefined, category: p.get("category") ?? undefined, lat: p.get("lat") ?? undefined, lon: p.get("lon") ?? undefined, town: p.get("town") ?? undefined, radius_km: p.get("radius_km") ?? undefined, lang, offset: p.get("offset") ?? undefined };
       const wantsJson = p.get("format") === "json" || (/application\/json/u.test(String(req.headers.accept ?? "")) && !/text\/html/u.test(String(req.headers.accept ?? "")));
-      const form: FormValues = { q: String(p.get("q") ?? "").slice(0, 200), category: p.get("category") ?? "", town: String(p.get("town") ?? "").slice(0, 80), lat: String(p.get("lat") ?? "").slice(0, 12), lon: String(p.get("lon") ?? "").slice(0, 12), radius_km: p.get("radius_km") ?? "" };
+      const ask = deps.assistant ? String(p.get("ask") ?? "").trim().slice(0, MAX_QUESTION) : "";
+      let form: FormValues = { q: String(p.get("q") ?? "").slice(0, 200), category: p.get("category") ?? "", town: String(p.get("town") ?? "").slice(0, 80), lat: String(p.get("lat") ?? "").slice(0, 12), lon: String(p.get("lon") ?? "").slice(0, 12), radius_km: p.get("radius_km") ?? "" };
       if (!limiter.take("search", who)) {
         return wantsJson ? json(res, 429, { error: "Too many searches from this address; try again in a minute." }, { "retry-after": "60" }) : html(res, 429, nonce, searchPage(ctx(lang), form, { state: "busy" }), { "retry-after": "60", "cache-control": "no-store", "x-robots-tag": "noindex" });
       }
-      const empty = !form.q && !form.category && !form.town && !form.lat && !form.lon;
+      form.ask = ask;
+      const empty = !form.q && !form.category && !form.town && !form.lat && !form.lon && !ask;
       if (!wantsJson && empty) return html(res, 200, nonce, searchPage(ctx(lang), form, { state: "start" }), { "cache-control": "no-store", "x-robots-tag": "noindex" });
       let view: SearchView;
       let answer: Awaited<ReturnType<typeof searchListings>>;
-      try { answer = await searchListings(deps.search, asked); } catch (e) {
+      let assisted: Asked | undefined;
+      try {
+        if (ask !== "" && deps.assistant) {
+          // "Ask in your own words": the assistant reads the question (cleaned first, never logged), the directory's own code searches and orders, a template line says it
+          assisted = await askListings(deps.search, deps.assistant, { question: ask, lang, who, ...(asked.lat && asked.lon ? { lat: String(asked.lat), lon: String(asked.lon) } : {}) });
+          answer = assisted.searched;
+          form = { ...assisted.form, ask };
+        } else answer = await searchListings(deps.search, asked);
+      } catch (e) {
         log(`directory: a search failed (${(e as Error).name})`); // the error's kind only, never the search
         return wantsJson ? json(res, 503, { error: "The search is not working right now." }, { "retry-after": "120" }) : html(res, 503, nonce, searchPage(ctx(lang), form, { state: "down" }), { "retry-after": "120", "cache-control": "no-store", "x-robots-tag": "noindex" });
       }
-      if (wantsJson) return json(res, answer.ok ? 200 : 400, answer.ok ? answer.answer : { error: answer.error }, { "access-control-allow-origin": "*", "x-robots-tag": "noindex" });
+      if (wantsJson) return json(res, answer.ok ? 200 : 400, answer.ok ? { ...answer.answer, ...(assisted ? { assistant: { how: assisted.how, search: assisted.search, line: assisted.line, notice: assisted.notice } } : {}) } : { error: answer.error }, { "access-control-allow-origin": "*", "x-robots-tag": "noindex" });
       view = !answer.ok ? { state: "bad", message: answer.error } : answer.answer.results.length === 0 ? { state: "none" } : { state: "results", answer: answer.answer };
-      return html(res, answer.ok ? 200 : 400, nonce, searchPage(ctx(lang), form, view), { "cache-control": "no-store", "x-robots-tag": "noindex" });
+      return html(res, answer.ok ? 200 : 400, nonce, searchPage(ctx(lang), form, view, assisted ? { line: assisted.line, notice: assisted.notice } : undefined), { "cache-control": "no-store", "x-robots-tag": "noindex" });
     }
 
     if (path === "/feed-changed") {
@@ -149,7 +164,7 @@ export function directoryHandler(deps: DirectoryHttpDeps): (req: IncomingMessage
       // each tool call counts as a search against the address, as a shop's endpoint counts a call; the protocol's own messages (initialize, list) are cheap and free
       const messages = (Array.isArray(body) ? body : [body]) as { method?: string }[];
       for (const m of messages) if (!limiter.take(m?.method === "tools/call" ? "search" : "mcp", who)) return json(res, 429, { jsonrpc: "2.0", id: null, error: { code: -32000, message: "Too many requests from this address; try again in a minute." } }, { "retry-after": "60" });
-      const answer = await serverPost(directoryServer(deps.search), body);
+      const answer = await serverPost(directoryServer(deps.search, { ...(deps.assistant ? { assistant: deps.assistant } : {}), who }), body);
       if (answer.status === 202) { res.writeHead(202, { "cache-control": "no-store", ...base }); return void res.end(); }
       return json(res, answer.status, answer.body, { "access-control-allow-origin": "*" });
     }

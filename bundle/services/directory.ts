@@ -22,6 +22,8 @@ import { join } from "node:path";
 import { DirectoryIndex } from "../../modules/discovery/index.ts";
 import { directoryCard } from "../../modules/discovery/card.ts";
 import { createChecker } from "../../modules/discovery/check.ts";
+import { assistantFromSettings } from "../../modules/discovery/assistant.ts";
+import type { AssistantSettings } from "../../modules/discovery/assistant.ts";
 import { directoryHandler } from "../../modules/discovery/http.ts";
 import { feedAllowed } from "../../modules/discovery/notices.ts";
 import { refreshDue } from "../../modules/discovery/refresh.ts";
@@ -45,6 +47,11 @@ export interface DirectoryConfig {
   feeds: string[];
   provider: { organization: string; url: string };
   area?: string;
+  /**
+   * The buyer's assistant (modules/discovery/assistant.ts). Left out, and so OFF, until the owner approves the price list that holds the directory's budget (`ai.budget.discovery`): the
+   * search page then has no "Ask in your own words" box and the plain search works exactly as before. The bundle does not write this block yet (Deferred).
+   */
+  assistant?: AssistantSettings;
 }
 
 /**
@@ -104,10 +111,11 @@ if (import.meta.main) {
   for (const url of config.feeds) { if (feedAllowed(url, { served: config.served, configured: config.feeds })) index.addFeed(url, "config", now); else log(`directory: ${url} is not a feed address it will read`); }
   const fetch = directoryFetcher({ served: config.served, doorUrl: config.doorUrl });
   const key = loadKey(config.dataDir);
-  const card = directoryCard({ origin: config.origin, provider: config.provider, ...(config.area ? { area: config.area } : {}), key });
+  const assistant = assistantFromSettings(config.assistant, process.env, log);
+  const card = directoryCard({ origin: config.origin, provider: config.provider, ...(config.area ? { area: config.area } : {}), key, ...(assistant ? { assistant: true } : {}) });
   const handler = directoryHandler({
     search: { index, checker: createChecker({ fetch }), origin: config.origin }, origin: config.origin,
-    card: () => card, notices: { served: config.served, configured: config.feeds }, log,
+    card: () => card, notices: { served: config.served, configured: config.feeds }, log, ...(assistant ? { assistant } : {}),
   });
   const server = createServer(handler);
   server.requestTimeout = 15_000;
