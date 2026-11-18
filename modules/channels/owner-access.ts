@@ -34,7 +34,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
-import { RECOVERY_CODE, RECOVERY_CODES, REMOVAL_WAIT_MS, normalCode, SETUP_MS, grantHash, grantInFile, newRecoveryCode, newSetupToken, recoveryHash, setupHash } from "./owner-grants.ts";
+import { RECOVERY_CODE, RECOVERY_CODES, REMOVAL_WAIT_MS, RESET_QR_MS, normalCode, SETUP_MS, grantHash, grantInFile, newRecoveryCode, newSetupToken, recoveryHash, setupHash } from "./owner-grants.ts";
 import type { Grant, OwnerGrants } from "./owner-grants.ts";
 import { ALGORITHMS, PasskeyError, verifyAssertion, verifyRegistration } from "./webauthn.ts";
 import type { StoredCredential } from "./webauthn.ts";
@@ -204,15 +204,31 @@ export function openOwnerAccess(file: string) {
     const r = db.prepare("SELECT min(made_at) AS m FROM passkeys WHERE made_at >= ?").get(metaNum("reopen_at") ?? 0) as { m: number | null };
     return r.m ?? undefined;
   };
+  /**
+   * From Geometer's reset until the owner's first passkey after it. In this window the shop is locked for the Operator (the panel shows it locked) and the runtime accepts
+   * ONLY the reset's own QR: a panel QR or card made now would otherwise undo the reset by the Operator's own buttons (nothing is "locked" while no phone exists).
+   */
+  const inResetWindow = (): boolean => {
+    const at = metaNum("reset_at");
+    if (at === undefined) return false;
+    return (db.prepare("SELECT 1 FROM passkeys WHERE made_at >= ? LIMIT 1").get(at) as unknown) === undefined;
+  };
+  /** The reset in the file, but only the one this store has applied (so a changed file cannot swap in another QR). */
+  const appliedReset = (file: OwnerGrants | undefined): NonNullable<OwnerGrants["reset"]> | undefined =>
+    file?.reset && Date.parse(file.reset.at) === metaNum("reset_raw") ? file.reset : undefined;
   const endSessionsBefore = (t: number, now: number, why: string): void => { db.prepare("UPDATE sessions SET ended_at = ?, ended_why = ? WHERE ended_at IS NULL AND made_at < ?").run(now, why, t); };
   /** Things the runtime should write in the record once (the tick does), found while reading the files. */
   type Note = { what: "reset"; at: number; reason: string; by: string } | { what: "removal_asked"; askedBy: string; askedAt: string; effectiveAt: number } | { what: "removal_applied"; at: number } | { what: "owner_change_asked"; effectiveAt: number };
   const notes: Note[] = [];
   /** Remember the QR and the card hashes the file holds now, the first time this store sees each. */
   const noteSeen = (file: OwnerGrants | undefined, firstSeen: number): void => {
-    const ins = db.prepare("INSERT OR IGNORE INTO grants_seen (hash, kind, first_seen) VALUES (?, ?, ?)");
-    if (file?.setup) ins.run(file.setup.sha256, "setup", firstSeen);
-    for (const c of file?.recovery?.codes ?? []) ins.run(c, "recovery", firstSeen);
+    // anything the panel's file shows during a reset window is born void: it must not wake up when the window closes (the first passkey after the reset would
+    // otherwise make a card staged in the window look "seen before the lock")
+    const window = inResetWindow();
+    const ins = db.prepare("INSERT OR IGNORE INTO grants_seen (hash, kind, first_seen, voided_at) VALUES (?, ?, ?, ?)");
+    const born = window ? firstSeen : null;
+    if (file?.setup) ins.run(file.setup.sha256, "setup", firstSeen, born);
+    for (const c of file?.recovery?.codes ?? []) ins.run(c, "recovery", firstSeen, born);
   };
   /**
    * Read the Operator's and the admin's files into this store's own state. Called by everything that depends on them, so no path can skip it. Idempotent. Order: adopt a
@@ -253,6 +269,8 @@ export function openOwnerAccess(file: string) {
       notes.push({ what: "reset", at, reason: reset.reason, by: reset.by });
     }
     noteSeen(file, now);
+    const applied = appliedReset(file);
+    if (applied?.setup) db.prepare("INSERT OR IGNORE INTO grants_seen (hash, kind, first_seen) VALUES (?, 'reset', ?)").run(applied.setup.sha256, now);
     const p = file?.pendingRemoval;
     if (p && !db.prepare("SELECT 1 FROM removals WHERE asked_at = ?").get(p.askedAt) && lockAt() !== undefined && Date.parse(p.askedAt) > (metaNum("reset_at") ?? 0)) {
       // a request the owner has no way to have seen yet starts its wait NOW, whatever time the file says: a back-dated request must not apply at once
@@ -271,8 +289,9 @@ export function openOwnerAccess(file: string) {
   }
   /** May this QR or card hash work now? Seen by this store, not voided, not before the gate last opened, and (once locked) no later than the first passkey. */
   function grantAllowed(hash: string): boolean {
-    const r = db.prepare("SELECT first_seen, voided_at FROM grants_seen WHERE hash = ?").get(hash) as { first_seen: number; voided_at: number | null } | undefined;
+    const r = db.prepare("SELECT first_seen, voided_at, kind FROM grants_seen WHERE hash = ?").get(hash) as { first_seen: number; voided_at: number | null; kind: string } | undefined;
     if (!r || r.voided_at !== null || r.first_seen < (metaNum("reopen_at") ?? 0)) return false;
+    if (inResetWindow()) return r.kind === "reset"; // only Geometer's own QR, until the owner has a phone again
     const locked = lockAt();
     return locked === undefined || r.first_seen <= locked;
   }
@@ -306,7 +325,7 @@ export function openOwnerAccess(file: string) {
     /** The moment before which no passkey works: this store's own, never the Operator's file's (see the header). */
     passkeysBefore(file: OwnerGrants | undefined, now: number): number | undefined { reconcile(file, now); return metaNum("passkeys_before"); },
     /** Has the owner a passkey since the gate last opened? Then the Operator's QR and card are closed, and "remove the passkeys" is a request. */
-    locked(file: OwnerGrants | undefined, now: number): boolean { reconcile(file, now); return lockAt() !== undefined; },
+    locked(file: OwnerGrants | undefined, now: number): boolean { reconcile(file, now); return lockAt() !== undefined || inResetWindow(); },
     /** The Operator's pending request as this store timed it, if one is waiting. */
     pendingRemoval(file: OwnerGrants | undefined, now: number): { kind: "removal" | "owner_change"; askedBy: string; askedAt: string; seenAt: number; effectiveAt: number } | undefined {
       reconcile(file, now);
@@ -448,6 +467,15 @@ export function openOwnerAccess(file: string) {
         const own = db.prepare("SELECT voided_at FROM own_codes WHERE hash = ?").get(hash) as { voided_at: number | null } | undefined;
         if (own) return own.voided_at !== null ? "unknown" : used ? "used" : "valid";
       }
+      // Geometer's own reset QR (its hash is in the admin's reset file, not the panel's): one use, an hour from first sight, and only while the window is open or after use
+      const act = appliedReset(file);
+      if (g.kind === "setup" && act?.setup && hash === act.setup.sha256) {
+        const seen = db.prepare("SELECT first_seen, voided_at FROM grants_seen WHERE hash = ?").get(hash) as { first_seen: number; voided_at: number | null } | undefined;
+        if (!seen || seen.voided_at !== null) return "unknown";
+        if (used) return "used";
+        if (!inResetWindow()) return "unknown";
+        return now >= Math.min(Date.parse(act.setup.expiresAt), seen.first_seen + RESET_QR_MS) ? "expired" : "valid";
+      }
       const inFile = grantInFile(g, file, now);
       if (inFile === "unknown" || !grantAllowed(hash)) return "unknown";
       // A setup QR is good for SETUP_MS from when THIS runtime first saw it, whatever expiry the file claims: the Operator writes the file, and a QR dated 2099 prepared
@@ -504,7 +532,7 @@ export function openOwnerAccess(file: string) {
       // how this phone got in, for the owner's list: their own app's "add a phone" link, Geometer's reset QR, the Operator's QR, or a recovery code (the card's or their own)
       const via: PhoneVia = g.kind === "recovery" ? "recovery"
         : db.prepare("SELECT 1 FROM own_setups WHERE hash = ?").get(gh) ? "own_phone"
-        : file?.reset && file.setup && Date.parse(file.setup.createdAt) >= Date.parse(file.reset.at) ? "reset" : "setup";
+        : appliedReset(file)?.setup?.sha256 === gh ? "reset" : "setup";
       const challenge = challengeOf(clientData, "register", now, gh);
       if (!challenge) return { ok: false, state: "refused", why: "The answer is for no challenge of this setup that is still open." };
       let cred: StoredCredential;

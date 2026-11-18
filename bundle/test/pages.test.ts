@@ -3,7 +3,7 @@
 // ten minutes; "own" and a removed shop give the name back; the panel's "sign out every device" reaches the runtime; the owner's view is on the pages domain only
 // for a shop this server's door serves; and the pages domain is a setting of Geometer's Operator server, never geometer.dev. Written 12 Nov 2026.
 import { makeOwnerRecovery, makeOwnerSetup, removeOwnerPasskeys, requestOwnerPasskeyRemoval, resetOwnerSignin } from "../lib/pages.ts";
-import { grantInFile, readOwnerGrants } from "../../modules/channels/owner-grants.ts";
+import { grantInFile, readOwnerGrants, readOwnerReset, setupHash } from "../../modules/channels/owner-grants.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -220,8 +220,14 @@ test("owner's item 2: the Operator's removal request and Geometer's reset reach 
     assert.equal(JSON.parse(readFileSync(join(client, "owner-reset.json"), "utf8")).by, "Naval", "handed to the runtime");
     const after = readOwnerGrants(readFileSync(join(client, "owner-grants.json"), "utf8"))!;
     assert.equal(after.pendingRemoval, undefined, "the request is gone with the reset");
-    assert.equal(grantInFile({ kind: "setup", token: reset.token }, after, T0.getTime() + 5000), "valid");
-    rmSync(join(b.dir, "shops", "ravi", "owner-reset.json"));
+    assert.equal(after.setup, undefined, "the panel's slot is empty: the reset QR is in the reset file only");
+    const handedReset = readOwnerReset(readFileSync(join(client, "owner-reset.json"), "utf8"))!;
+    assert.equal(handedReset.setup?.sha256, setupHash(reset.token));
+    // the panel gets a note (day, reason, who), never the QR, under status/ (mounted read-only into it)
+    const note = readFileSync(join(b.dir, "status", "owner-reset", "ravi.json"), "utf8");
+    assert.ok(note.includes("owner lost every phone") && !note.includes(handedReset.setup!.sha256));
+    assert.equal(existsSync(join(b.dir, "shops", "ravi", "owner-reset.json")), false, "never under shops/, which the panel mounts read-write");
+    rmSync(join(b.dir, "admin", "owner-reset", "ravi.json"));
     await b.sync(["ravi"], new Date(T0.getTime() + 6000));
     assert.equal(existsSync(join(client, "owner-reset.json")), false, "taken away when the admin's is gone");
   } finally { b.done(); }

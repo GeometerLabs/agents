@@ -21,6 +21,8 @@ import { createHash, randomBytes, randomInt, timingSafeEqual } from "node:crypto
 import { readFileSync } from "node:fs";
 
 export const OWNER_GRANTS_FILE = "owner-grants.json";
+/** How long the QR that comes with Geometer's reset works, from when the runtime first sees it: the admin may need to send it to the owner. */
+export const RESET_QR_MS = 60 * 60_000;
 /** Geometer's reset (a dispute, or an Operator who kept the first QR): written only by `geometer owner reset`, never by the panel. */
 export const OWNER_RESET_FILE = "owner-reset.json";
 /**
@@ -44,7 +46,7 @@ export interface OwnerGrants {
    * Geometer's reset. NEVER read from owner-grants.json (the Operator's panel writes that file, and a forged reset would reopen the shop to the Operator): the runtime's
    * reader fills it from OWNER_RESET_FILE only (ownerGrantsReader).
    */
-  reset?: { at: string; reason: string; by: string };
+  reset?: { at: string; reason: string; by: string; setup?: { sha256: string; expiresAt: string } };
 }
 
 /** Geometer's reset file, field by field; anything that does not read is no reset. */
@@ -53,7 +55,10 @@ export function readOwnerReset(text: string | undefined): OwnerGrants["reset"] |
   try {
     const f = JSON.parse(text) as Record<string, unknown>;
     if (f.schema !== 1 || !isTime(f.at) || typeof f.reason !== "string" || typeof f.by !== "string") return undefined;
-    return { at: f.at, reason: f.reason.slice(0, 300), by: f.by.slice(0, 80) };
+    const s = f.setup as Record<string, unknown> | undefined;
+    // the reset's own QR lives HERE, in the admin's file, and nowhere the panel writes: from a reset until the owner's first passkey after it, the runtime accepts only this one
+    const setup = s && typeof s.sha256 === "string" && HEX64.test(s.sha256) && isTime(s.expiresAt) ? { setup: { sha256: s.sha256, expiresAt: s.expiresAt } } : {};
+    return { at: f.at, reason: f.reason.slice(0, 300), by: f.by.slice(0, 80), ...setup };
   } catch { return undefined; }
 }
 

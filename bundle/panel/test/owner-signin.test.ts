@@ -178,7 +178,8 @@ test("Geometer's reset shows the Operator one line in the panel: the day and the
     const arjun = await b.account("arjun", "builder");
     b.addShop("glow-salon", { name: "Glow Salon" });
     assert.doesNotMatch((await arjun.get("/shops/glow-salon")).plain, /Geometer reset the owner's sign-in/u);
-    writeFileSync(join(b.dir, "shops", "glow-salon", "owner-reset.json"), JSON.stringify({ schema: 1, at: "2026-11-19T09:30:00.000Z", reason: "the owner lost every phone", by: "Naval" }));
+    mkdirSync(join(b.dir, "status", "owner-reset"), { recursive: true });
+    writeFileSync(join(b.dir, "status", "owner-reset", "glow-salon.json"), JSON.stringify({ schema: 1, at: "2026-11-19T09:30:00.000Z", reason: "the owner lost every phone", by: "Naval" }));
     assert.match((await arjun.get("/shops/glow-salon")).plain, /Geometer reset the owner's sign-in on 2026-11-19: the owner lost every phone/u);
   } finally { await b.close(); }
 });
