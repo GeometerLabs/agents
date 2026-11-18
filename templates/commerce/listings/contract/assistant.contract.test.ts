@@ -291,6 +291,18 @@ describe("the clock's beat: a card past its time closes, and a tap on it is answ
     assert.fail("the closed card was not compacted");
   });
 
+  test("the month's budget notices: 'most is used' and 'used up', each once, on the beat, in the owner's talk and said in the record", async () => {
+    const { s } = await withModel({ tickSeconds: 1, budget: { monthlyMicroInr: 150_000, daily: { listing_draft: 50 } } });
+    await say(s, "m-1", "item number 1 for sale on my page"); await say(s, "m-2", "item number 2 for sale on my page");
+    for (let i = 0; i < 60 && lines(s, "ai_mode").length < 2; i++) await new Promise((r) => setTimeout(r, 100));
+    assert.deepEqual(lines(s, "ai_mode").map((e) => [e.refs.mode, e.refs.reason, e.outcome]), [["budget_warn", "budget", "confirmed"], ["budget_full", "budget", "confirmed"]]);
+    const said = (await talk(s)).filter((l) => l.from === "assistant").map((l) => l.text);
+    assert.equal(said.length, 2); assert.ok(said[0].includes("Tue 1 Dec") || /back on \w+ 1 \w+/u.test(said[0]), said[0]);
+    await new Promise((r) => setTimeout(r, 1300));
+    assert.equal(lines(s, "ai_mode").length, 2, "each once a month");
+    assert.equal((await talk(s)).filter((l) => l.from === "assistant").length, 2);
+  });
+
   test("the morning question: 'Still have it?' for a listing not confirmed in a while, a card with Yes and Sold", async () => {
     // the owner's morning hour is ten minutes ago, so the question is due now; the listing was confirmed two and a half days ago
     const ist = new Date(Date.now() - 15 * 60_000 + 5.5 * 3600_000);
@@ -357,7 +369,7 @@ async function sayAll(s: Shop, texts: string[], prefix = "k"): Promise<[string, 
 /** What the owner would see and what the record would say, after whatever has been done: only what a runtime must agree on (no clock times, no random ask ids). */
 async function observe(s: Shop): Promise<any> {
   const v = await page(s);
-  const keep = ["owner_card", "owner_assistant", "owner_file_asked", "operator_change_asked", "listing_draft", "listing", "stock"];
+  const keep = ["owner_card", "owner_assistant", "owner_file_asked", "operator_change_asked", "listing_draft", "listing", "stock", "ai_mode", "send_message"];
   return {
     talk: v.app.talk.map((l: any) => [l.from, l.text]),
     cards: v.app.cards.map((c: any) => [c.id, c.digest, c.skill, c.kind, c.case, c.amountPaise, c.who, c.hasNo, c.question]),
@@ -514,6 +526,18 @@ describe("the same script on a TypeScript shop and a Go shop: what the owner rea
     assert.equal(seen.ts.find((o: any) => o[0] === "day cap")[2], 1);
     assert.equal(seen.ts.find((o: any) => o[0] === "month budget")[2], 2);
     assert.match(said("month budget").at(-1), /back on \w+ \d+ \w+/u, "the month's line names the date it is back");
+  });
+
+  test("the month's budget notices on the beat are the same on both runtimes", BOTH, async () => {
+    const seen: Record<string, any> = {};
+    for (const impl of ["ts", "go"] as const) {
+      const { s } = await withModel({ tickSeconds: 1, budget: { monthlyMicroInr: 150_000, daily: { listing_draft: 50 } } }, undefined, impl);
+      await say(s, "m-1", "item number 1 for sale on my page"); await say(s, "m-2", "item number 2 for sale on my page");
+      for (let i = 0; i < 60 && lines(s, "ai_mode").length < 2; i++) await new Promise((r) => setTimeout(r, 100));
+      seen[impl] = await observe(s);
+    }
+    assert.deepEqual(seen.go, seen.ts);
+    assert.ok(seen.ts.record.some((r: any) => r[0] === "send_message"));
   });
 
   test("what is not in the Go runtime says so rather than pretend: notes (remember, what do you remember, forget) and a money question about a weekday or a written date", BOTH, async () => {

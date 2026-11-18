@@ -610,7 +610,27 @@ func (c *conv) onTick() {
 	if c.snap.Stock != nil {
 		c.snap.Stock.Tidy(c.now)
 	}
+	c.budgetBeat()
 	c.askFresh()
+}
+
+// budgetBeat is conversation.ts `budgetBeat`: the month's two notices, each once ("most of the budget is used", "used up"). To the owner's page (its talk list), and then to WhatsApp, which
+// a listings-only shop does not have: TypeScript's attempt fails and says so in the record ("send_message failed"), so this writes that line too, to leave the same record.
+func (c *conv) budgetBeat() {
+	cfg := c.r.policy.Budget
+	if cfg == nil {
+		return
+	}
+	for _, line := range budget.TakeNotices(&c.snap.AI, cfg, c.r.clock, c.now) {
+		c.tellBudget(line, "")
+		c.logLine("send_message", "failed", map[string]any{"to": "owner", "templates": []string{"assistant_budget_line"}}, map[string]string{"to": "owner"}, "this reply has no approved WhatsApp template, so it goes only while the person's 24-hour window is open")
+		notes := "the owner was told that most of this month's model budget is used"
+		if line == "full" {
+			notes = "the owner was told that this month's model budget is used up: the language model is off until the 1st; buttons, rules and fixed answers go on"
+		}
+		month := budget.For(&c.snap.AI, c.r.clock, c.now).Month
+		c.logLine("ai_mode", "confirmed", map[string]any{"reason": "budget", "notice": line}, map[string]string{"mode": "budget_" + line, "reason": "budget", "month": month}, notes)
+	}
 }
 
 // askFresh is the morning question: at most 3 a day, only after the owner's morning hour, each a card ("Still have it?" Yes / Sold) bound to the listing and the confirm the owner was last shown.
