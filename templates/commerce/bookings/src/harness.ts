@@ -50,6 +50,8 @@ export interface World {
   record: ActionRecord;
   store: Store;
   agent: Agent;
+  /** Make the agent again over the same world, as the runtime does at every step: reads of the settings (the owner's number) are taken again. */
+  renew(): void;
   owner: string;
   /** A customer sends a message and the agent handles it. Pass `id` to reuse a WhatsApp message id. */
   say(text: string, options?: { from?: string; id?: string; image?: boolean }): Promise<InboundMessage>;
@@ -142,11 +144,14 @@ export function createWorld(options: WorldOptions = {}): World {
   for (const name of [...Object.values(TEMPLATE_NAMES), ...META_TEMPLATE_NAMES]) for (const language of LANGUAGES) messaging.approve(name, language);
   if (options.interactive === false) delete (messaging as { sendInteractive?: unknown }).sendInteractive;
   const record = createRecord(clock);
-  const agent = createAgent({ settings, clock, ...(options.talker ? { talker: options.talker } : {}), ...(options.terms ? { terms: options.terms } : {}), calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.pageLink ? { pageLink: options.pageLink } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}), ...(options.pageAudio ? { pageAudio: options.pageAudio } : {}) });
+  // made again by `renew()`: the runtime makes the agent afresh for every step (runtime/core.ts), so a number the owner is reached on is read again at each step
+  const makeAgent = () => createAgent({ settings, clock, ...(options.talker ? { talker: options.talker } : {}), ...(options.terms ? { terms: options.terms } : {}), calendar, payments, messaging, parser: options.parser ?? createRuleParser(), record, store, ...(options.ai ? { ai: options.ai } : {}), ...(options.qrImage ? { qrImage: options.qrImage } : {}), ...(options.pageLink ? { pageLink: options.pageLink } : {}), ...(options.licence ? { licence: options.licence } : {}), ...(options.voice ? { voice: options.voice } : {}), ...(options.pageAudio ? { pageAudio: options.pageAudio } : {}) });
+  let agent = makeAgent();
   let deliveredEvents = 0;
 
   const world: World = {
     settings, clock, calendar, payments, guard, messaging, record, store, agent, owner: settings.owner.whatsapp,
+    renew() { agent = makeAgent(); world.agent = agent; },
     async say(text, o = {}) {
       const message = messaging.receive(o.from ?? CUSTOMER, text, { ...(o.id ? { id: o.id } : {}), ...(o.image ? { image: true } : {}) });
       await agent.handle({ kind: "message", message });
