@@ -103,6 +103,9 @@ export function panelAuthority(by: "operator" | "builder"): Authority {
   return a;
 }
 
+/** True for an authority this module made. Other modules that write only for a person with authority (modules/listings) ask this, so there is ONE set of makers. */
+export const isAuthority = (a: unknown): a is Authority => typeof a === "object" && a !== null && issued.has(a);
+
 /** Throws on anything that is not an authority this module made: a forged `{ by: "owner" }` object, a customer's event, nothing. */
 function requireAuthority(a: unknown): asserts a is Authority {
   if (typeof a !== "object" || a === null || !issued.has(a)) throw new Error("Only the owner, the Operator or the builder can change the shop's memory.");
