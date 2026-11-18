@@ -608,3 +608,20 @@ The first builder's way in is `node bundle/geometer.ts panel invite --role build
 ## Running it on your laptop
 
 Docker Desktop works for a trial (use `--domain localhost` and `--http-port 8080 --https-port 8443`; Caddy makes its own certificate). The test of the whole server on real Docker is `bundle/test/proof/run.ts`. It needs `node:26-alpine`, Caddy, MinIO, and a Guard image that reads `[licence]` with RFC 8032's published test key built in (`GUARD_IMAGE`, default `geo-guard:local-b14`; that key is for tests only). It sets the server up the way pairing does: `init --licence-key` with that key, then a lease listing every shop it adds, before the first deploy. It runs every bundle container inside one cgroup capped at 2 CPUs and 4 GiB. At 1, 5 and 10 shops (the default; 25 stop Docker Desktop's engine on a laptop, so `--shops 1,5,10,25` is for the real Operator server, see Deferred.md) it takes less than the 65 minutes the 25-shop run needed (not timed at 1, 5 and 10 yet); `--only <phase,...>` runs some phases. A release need not repeat a full proof when nothing it exercises changed: `node bundle/test/proof/same-as-last.ts <last results.json>` (with `GUARD_INPUT_DIGEST` set to the monorepo's digest of `R16-guard-unchanged`) says skip (exit 0), run the core set (10) or run everything (20); `results.json` records the bundle and modules trees, the Guard digest and the phases that ran. The ordinary tests (`cd bundle && npm test`) need no Docker.
+
+## Listings-only shops (one shared process)
+
+A shop that only shows what it has (template `listings`, free) takes no money and sends no WhatsApp, so it has **no Guard and no container of its own**. Every such shop on a server runs in ONE container, `rt-listings`,
+behind one door, `door-listings`, on one network (`net-listings`) that holds only that container, its door and the model Guard. Each shop is a folder, not a service:
+
+```
+generated/listings/<shop>/client/        the shop's settings.json, runtime.json, pathway.lock (written last), pages.json, owner-grants.json ...   -> /shops (read-only)
+secrets/rt-listings/<shop>/              internal_token, channel_token, record_key, agent_model                                                     -> /run/secrets (read-only)
+volume rt-data-listings:  <shop>/data/   agent.db and the owner's passkeys, sessions and alert files: laid out as any shop's volume, one level down -> /home/node
+```
+
+Adding a shop writes a folder and changes **no compose service**; the process finds it within seconds. Removing, moving or restoring a shop first takes its folder away and waits for the process to
+let it go (`GET /shared/shops` on the door no longer names it). A shop that takes an agent is moved into a runtime of its own with its listings, photos, record and passkeys
+(`bundle/lib/listings-move.ts`). The model Guard counts each shop under its own agent id. Fleet needs no change: a shop with no plan row is reported and never billed.
+How it works, why it is not a container per shop, the isolation rules and the first sign-in of an owner with no WhatsApp are in
+[templates/commerce/listings/README.md](../templates/commerce/listings/README.md). `geometer shop add <name> --template listings` makes one by hand; the panel offers "Only show what the shop has (free)".

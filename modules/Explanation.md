@@ -1531,3 +1531,12 @@ The one test pass after W1, W1b, W2 and W3 were merged found these in the chat p
 **Decisions to know.** The owner's switch, place and pet-shop registration are kept in the shop's own state (not `settings.json`, which only the deployer writes), so no second settings writer exists. The storefront is its own page (`/shop`), because the booking, order and fee pages and the chat must stay `noindex`; the front page gets a button to it. "Ask about this" opens the chat with the listing's name in the greeting and in the composer, so the guest's first line tells the owner which listing; no new event field was needed. The morning question is a card ("Still have it? Yes / Sold"), not a change to the approved morning template. The feed follows `specs/shop-feed.md` (without the signature, the check and the Agent Card, which a later part adds).
 
 **Not tested on a real model or provider:** the drafting call is tested on a scripted fake only.
+
+## 18 Nov 2026: the shared runtime process (modules/runtime/shared.ts)
+
+**What.** `startShared` holds many shops in one process: it finds shop folders (`ShopSource`, `folderSource` is the deployer's layout), starts each with the template's own start on a loopback port of its
+own (`StartOptions.listen`, new in `modules/runtime/start.ts`), routes `/shop/<name>/<rest>` to it, restarts one shop when its three config files change, and lets one go when its folder is gone.
+**Why.** Shops that hold no money and send no message need no Guard and no container (block S, phase C). **Rules it relies on.** Each shop gets its own token FILES (never the environment), its own
+`dataDir`, and checks its own credentials: the router checks none. No module may keep a shop's data at module level (checked 18 Nov: only fonts and time formatters are). A shop that fails to
+start is logged once and skipped. `LISTINGS_SERVICES` (`modules/runtime/config.ts`) is a service shape with no required service. The front treats kind `listings` like `stock` for the customer side
+(owner page, storefront and feed only) and offers no chat. Tests (written, not run): `modules/runtime/test/shared.test.ts`.
