@@ -40,6 +40,9 @@ export function budgetFor(plan: string | null | undefined, list: BudgetRates, ex
 }
 
 /** The plan's own numbers (scaled by what was bought), before any override. Exported for `geometer shop budget`, which shows the plan's numbers next to the override. */
+/** Bought messages count toward the budget in steps of this many (see planBudget): fewer redeploys than fleet's 100-message blocks. */
+export const BOUGHT_STEP = 1000;
+
 export function planBudget(plan: string | null | undefined, list: BudgetRates, bought = 0): BudgetConfig | undefined {
   if (plan !== "basic" && plan !== "business" && plan !== "operations" && plan !== "listings-only") return undefined;
   const micro = (id: string) => list.rates[id]?.micro;
@@ -60,7 +63,11 @@ export function planBudget(plan: string | null | undefined, list: BudgetRates, b
   const perThousandRouter = count("ai.daily.router");
   if (allowance === undefined || allowance < 1 || owner === undefined || perThousandCustomer === undefined || perThousandRouter === undefined) return undefined;
   // messages bought are whole and never negative; anything else is ignored rather than guessed at
-  const extra = Number.isSafeInteger(bought) && bought > 0 ? bought : 0;
+  const raw = Number.isSafeInteger(bought) && bought > 0 ? bought : 0;
+  // BOUGHT_STEP: the budget moves in steps of 1,000 bought messages (rounded UP), not with every block fleet takes (100 messages). A changed budget redeploys the shop
+  // (deploy.ts desiredOf), so following each block would restart a busy shop several times a day; a step of 1,000 restarts it at most once per INR 49 of extra messages.
+  // Rounded up, the shop's own budget is never below fleet's cap for the messages really bought; fleet's cap (aicap.ts) stays the outer wall between steps.
+  const extra = raw === 0 ? 0 : Math.ceil(raw / BOUGHT_STEP) * BOUGHT_STEP;
   const messages = allowance + extra;
   const scaled = (perThousand: number) => Math.max(1, Math.ceil((perThousand * messages) / 1000));
   // monthly = the plan's budget x messages / allowance, rounded up: with nothing bought this is the list's number exactly (integer micro-rupees divide exactly)

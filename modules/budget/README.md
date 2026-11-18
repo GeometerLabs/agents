@@ -164,12 +164,12 @@ Two things can make one shop's budget different from its plan's. Both are worked
 **1. Buying more messages grows the budget.** Fleet's own wall grows when a shop buys more messages: it is `ai.cap` for each 1,000 messages of the allowance plus the ones bought. The shop's own budget used to stay at the plan's number, so a busy Basic shop that bought 1,000 more messages had a wall of ₹40 at fleet but was stopped at ₹20 by its own budget. Now fleet's answer to each heartbeat says how many extra messages the shop bought this month (`bought`; left out when none), and the bundle scales the budget the same way:
 
 ```
-messages = allowance + bought
+messages = allowance + bought, with bought rounded UP to a whole 1,000 (BOUGHT_STEP)
 monthly  = ai.budget.<plan> x messages / allowance          (rounded up)
 customer_talk and router a day = (the list's number per 1,000) x messages / 1,000   (rounded up)
 ```
 
-Basic with nothing bought is ₹20 a month. With 1,000 bought it is ₹40, and customer questions a day go from 60 to 120. The owner's talk and drafts a day do not change. A listings-only shop is free and buys nothing, so it never scales. The answer is read when the deployer works the shop out, and the budget is part of what a shop is asked to be, so on the deployer's next pass (a minute or two while it runs) the shop is redeployed with the new numbers: a top-up bought mid-month needs no manual deploy. An answer written in an earlier month is not trusted for `bought`.
+Basic with nothing bought is ₹20 a month. With 1,000 bought it is ₹40, and customer questions a day go from 60 to 120. The owner's talk and drafts a day do not change. A listings-only shop is free and buys nothing, so it never scales. The answer is read when the deployer works the shop out, and the budget is part of what a shop is asked to be, so on the deployer's next pass (a minute or two while it runs) the shop is redeployed with the new numbers: a top-up bought mid-month needs no manual deploy. An answer written in an earlier month is not trusted for `bought`. The budget moves in **steps of 1,000 bought messages** (rounded up), not with each block of 100 that fleet takes: each change redeploys the shop, so a busy shop is restarted at most once for each ₹49 of extra messages, not several times a day. Rounded up, the shop's budget is never below fleet's cap; between steps fleet's cap is the wall that stops it.
 
 **2. The server admin can give one shop a budget of its own.** For a shop the plan does not fit (the owner's example: a busy Basic shop), on the server:
 
