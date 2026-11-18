@@ -218,14 +218,19 @@ export function openOwnerAccess(file: string) {
       const first = lockAt();
       // a shop whose owner already holds a passkey keeps the QR and card that exist today (first seen "at the first passkey"), and the file's own passkeysBefore, once
       if (file !== undefined || first === undefined) {
-        if (file?.passkeysBefore) setMeta("passkeys_before", Date.parse(file.passkeysBefore));
+        // clamped to now: a file value in the future would otherwise make every passkey made from now on "older" than the cutoff (a total lockout)
+        if (file?.passkeysBefore) setMeta("passkeys_before", Math.min(Date.parse(file.passkeysBefore), now));
         noteSeen(file, first ?? now);
         setMeta("adopted", 1);
       }
     }
     const reset = file?.reset;
-    if (reset && Date.parse(reset.at) > (metaNum("reset_at") ?? 0)) {
-      const at = Date.parse(reset.at);
+    // Every time a FILE names is clamped to this runtime's own clock the first time it is seen, and remembered by its raw value: a reset dated 2099 would move every cutoff to
+    // 2099 and make every later, real reset look older (an instant total lockout, and no way back). The raw value is remembered so a far date is applied once, not again on every read.
+    const resetRaw = reset ? Date.parse(reset.at) : undefined;
+    if (reset && resetRaw !== undefined && resetRaw !== metaNum("reset_raw") && Math.min(resetRaw, now) > (metaNum("reset_at") ?? 0)) {
+      const at = Math.min(resetRaw, now);
+      setMeta("reset_raw", resetRaw);
       db.exec("BEGIN IMMEDIATE");
       try {
         setMeta("reset_at", at); raiseMeta("passkeys_before", at); raiseMeta("reopen_at", at);
@@ -275,6 +280,17 @@ export function openOwnerAccess(file: string) {
     (db.prepare("SELECT * FROM passkeys WHERE removed_at IS NULL ORDER BY made_at").all() as PhoneRow[]).filter((r) => passkeyGood(r, who, rp, passkeysBefore));
 
   const api = {
+    /**
+     * The panel's "sign out every device" moment, clamped to this runtime's clock the first time each value is seen. A file value in the future would refuse every session,
+     * including the passkey sign-in that follows, for as long as it lasts (a total lockout by one form); clamped, it ends the sessions made before the runtime saw it and
+     * never one made after.
+     */
+    clampEndBefore(raw: number | undefined, now: number): number | undefined {
+      if (raw === undefined) return undefined;
+      if (metaNum("eb_raw") !== raw) { setMeta("eb_raw", raw); setMeta("eb_val", Math.min(raw, now)); }
+      return metaNum("eb_val");
+    },
+
     /** Read the files into this store (see `reconcile`); the runtime's tick calls it so a request or a reset is seen even when nobody opens a page. */
     sync(file: OwnerGrants | undefined, now: number): void { reconcile(file, now); },
     /** What `sync` found that the record should say, once each. */
@@ -407,6 +423,12 @@ export function openOwnerAccess(file: string) {
       }
       const inFile = grantInFile(g, file, now);
       if (inFile === "unknown" || !grantAllowed(hash)) return "unknown";
+      // A setup QR is good for SETUP_MS from when THIS runtime first saw it, whatever expiry the file claims: the Operator writes the file, and a QR dated 2099 prepared
+      // before the lock would otherwise work for ever.
+      if (g.kind === "setup") {
+        const seen = db.prepare("SELECT first_seen FROM grants_seen WHERE hash = ?").get(hash) as { first_seen: number };
+        if (now >= seen.first_seen + SETUP_MS) return used ? "used" : "expired";
+      }
       return used ? "used" : inFile;
     },
 
@@ -588,7 +610,9 @@ export function openOwnerAccess(file: string) {
       db.exec("BEGIN IMMEDIATE");
       try {
         db.prepare("UPDATE own_codes SET voided_at = ? WHERE voided_at IS NULL").run(now);
-        db.prepare("UPDATE grants_seen SET voided_at = ? WHERE kind = 'recovery' AND voided_at IS NULL").run(now);
+        // EVERY QR and code hash the Operator's file has ever shown this store, whatever "kind" the file put it under: a card code's hash staged in the QR's slot would
+        // otherwise survive the owner's own codes and come back later
+        db.prepare("UPDATE grants_seen SET voided_at = ? WHERE voided_at IS NULL").run(now);
         for (const c of codes) db.prepare("INSERT INTO own_codes (hash, made_at) VALUES (?, ?)").run(recoveryHash(c), now);
         db.exec("COMMIT");
       } catch (e) { db.exec("ROLLBACK"); throw e; }
