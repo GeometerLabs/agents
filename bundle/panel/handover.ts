@@ -44,8 +44,8 @@ export type MoveState =
 const GEOMETER_LIKE = /geometer|fleet|^server$|^system$|^admin$/iu;
 
 // The handover flow (ask, wait for the owner's "move CODE" by WhatsApp, finish): keeps only the code's hash and expires after 72 hours so a stale code moves nothing. `now` is injectable for tests.
-/** `onMoved` (item 11d): called once a shop has moved, so what the old Operator was given for it stops working (the owner's approvals link, which they made). */
-export function createHandover(shops: Shops, accounts: Accounts, store: Store, now: () => number, onMoved?: (shop: string) => void) {
+/** `onMoved` (item 11d): called once a shop has moved, so what the old Operator was given for it stops working (the owner's approvals link, which they made). Block S: it also gets the move, so the server can tell fleet who is billed now (lib/fleet-move.ts). */
+export function createHandover(shops: Shops, accounts: Accounts, store: Store, now: () => number, onMoved?: (shop: string, move: PendingMove) => void) {
   const key = (shop: string) => `handover/${shop}.json`;
   const iso = (ms: number) => new Date(ms).toISOString();
   const read = (shop: string) => store.read<PendingMove>(key(shop));
@@ -80,7 +80,7 @@ export function createHandover(shops: Shops, accounts: Accounts, store: Store, n
         if (!served || served.accountId !== move.from.accountId) { store.remove(key(shop)); return { state: "none" }; }
         const assignment = shops.assign(shop, move.to, move.reason, { at: found.at, codeHash: move.codeHash });
         store.remove(key(shop));
-        onMoved?.(shop);
+        onMoved?.(shop, move);
         return { state: "done", assignment };
       }
       return now() > Date.parse(move.expiresAt) ? { state: "expired", move } : { state: "waiting", move };

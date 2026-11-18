@@ -485,6 +485,8 @@ export interface HandoverView {
   id: string;
   name: string;
   stage: "form" | "asked" | "waiting" | "expired" | "done";
+  /** After a finished move: what fleet (Geometer's billing) was told, in words (leave words, fleet*). */
+  fleetNote?: string;
   problem?: string;
   /** Shown once, when the request is made; never kept. */
   code?: string;
@@ -505,7 +507,7 @@ export function handoverPage(c: Ctx, v: HandoverView): string {
   return layout(c, w.heading, html`<h1>${w.heading}</h1>
 <p class="big">${v.name}</p>
 ${v.problem ? html`<ul class="errors" role="alert"><li>${v.problem}</li></ul>` : ""}
-${v.stage === "done" ? html`<div class="notice" role="status">${w.done(v.to ?? "")}</div>` : ""}
+${v.stage === "done" ? html`<div class="notice" role="status">${w.done(v.to ?? "")}</div>${v.fleetNote ? html`<p class="note">${v.fleetNote}</p>` : ""}` : ""}
 ${v.stage === "asked" ? html`<h2>${w.askTitle}</h2><p>${w.ask(v.code ?? "")}</p><code class="addr">move ${v.code}</code><p class="note">${w.askNote}</p><p>${w.waiting(v.to ?? "")}</p><p><a class="btn" href="/shops/${v.id}/handover">${w.check}</a></p>${cancel}` : ""}
 ${v.stage === "waiting" ? html`<h2>${w.askTitle}</h2><p>${w.waiting(v.to ?? "")}</p><p><a class="btn" href="/shops/${v.id}/handover">${w.check}</a></p>${cancel}` : ""}
 ${v.stage === "expired" ? html`<div class="notice" role="status">${w.expired}</div>` : ""}

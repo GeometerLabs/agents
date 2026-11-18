@@ -23,6 +23,7 @@ import { syncLimitChanges } from "./lib/limit-changes.ts";
 import type { LimitIO } from "./lib/limit-changes.ts";
 import { syncPages } from "./lib/pages.ts";
 import { clearStale, stagedPath, syncOwnerFiles } from "./lib/owner-file.ts";
+import { syncFleetMoves } from "./lib/fleet-move.ts";
 import type { OwnerFileIO } from "./lib/owner-file.ts";
 import { buildExport, packageTarGz } from "./export/build.ts";
 import { sourcesFor } from "./export/sources.ts";
@@ -335,6 +336,14 @@ export async function runOwnerFiles(ctx: Context, io: OwnerFileIO = realOwnerFil
   return lines;
 }
 
+/** "Telling fleet about a handover" (block S): on every loop, a shop the panel moved to another Operator gets its move told to fleet (lib/fleet-move.ts). Cheap: one file read per shop. */
+export async function runFleetMoves(ctx: Context): Promise<string[]> {
+  const shops = Object.entries(loadState(ctx.dir).shops).filter(([, s]) => s.applied).map(([n]) => n);
+  const lines = await syncFleetMoves({ dir: ctx.dir, server: loadServer(ctx.dir), shops, now: ctx.now() });
+  lines.forEach((l) => ctx.log(l));
+  return lines;
+}
+
 /** The real hands: the panel's container builds it (it alone opens the papers it keeps); a server with no panel builds it here from the files that exist. */
 export function realOwnerFileIO(ctx: Context): OwnerFileIO {
   return {
@@ -402,7 +411,7 @@ export async function watch(ctx: Context, everyMs = 10_000): Promise<void> {
   ctx.log(`Watching ${serverPaths(ctx.dir).shops} (and the secrets inbox) every ${Math.round(everyMs / 1000)} s. Press Ctrl+C to stop.`);
   for (;;) {
     // the server's own settings first (the panel's first run): a shop deployed in the same pass then finds the model and its key in place
-    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); await runLimitChanges(ctx); runLicence(ctx); runOwnerLinks(ctx); await runCharacters(ctx); await runPages(ctx); await runOwnerFiles(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
+    try { await processStopRequests(ctx); await processRecoveryRequests(ctx); await processAgentRequests(ctx); await applyServerSettings(ctx); await applyOnce(ctx); await runLimitChanges(ctx); runLicence(ctx); runOwnerLinks(ctx); await runCharacters(ctx); await runPages(ctx); await runOwnerFiles(ctx); await runFleetMoves(ctx); await runDueJobs(ctx); if (ctx.now().getTime() - lastRefresh >= 60_000) { lastRefresh = ctx.now().getTime(); await refreshStatuses(ctx); } } catch (e) { ctx.log(`The deployer hit a problem and will try again: ${(e as Error).message}`); }
     await ctx.sleep(everyMs);
   }
 }
