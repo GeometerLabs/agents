@@ -323,9 +323,36 @@ describe("the owner's own codes and phones", () => {
     assert.deepEqual([gone.status, gone.body.wasLast], [200, true]);
     assert.equal(await good(s, p1.session), false);
     assert.equal(await offered(s), 0, "no phone opens the shop now");
-    // FINDING (reported, not changed): the codes the removed phone made go with it, so after removing the LAST phone even the owner's own codes are void,
-    // although the confirm page says the owner "can only get back in with your own recovery codes" (owner-phones-page.ts lastAsk)
-    assert.equal(await grantState(s, code(ownerCodes[1])), "unknown");
+    // The rule (19 Nov): the owner's last phone removing ITSELF keeps the codes it made, because the confirm page tells the owner their own recovery codes are the way back
+    // (owner-phones-page.ts lastAsk). The codes were made by that same phone, so voiding them would have left nothing.
+    assert.equal(await grantState(s, code(ownerCodes[1])), "valid", "the codes the last phone made stay: they are the owner's way back");
+    const back = await register(s, code(ownerCodes[1]), IPHONE);
+    assert.equal(await good(s, back.session), true, "an owner's own code registers a new phone after the last one removed itself");
+  });
+
+  test("a phone removed by ANOTHER phone loses its codes and links; the last phone removing itself keeps the codes it made", async () => {
+    const { s, p1, p1id } = await lockedShop();
+    s.advance(MIN);
+    const p2 = await register(s, qr(await addPhoneLink(s, p1.session)), IPHONE);
+    s.advance(MIN);
+    const p3 = await register(s, qr(await addPhoneLink(s, p1.session)), ANDROID);
+    const p2id = (await list(s, p2.session)).phones.find((p: any) => p.mine).id as string;
+    const p3id = (await list(s, p3.session)).phones.find((p: any) => p.mine).id as string;
+    // C (an intruder's phone) makes codes and a link; B (p2) removes C
+    const cCodes = (await phones(s, p3.session, { op: "codes" })).body.codes as string[];
+    const cLink = await addPhoneLink(s, p3.session);
+    assert.equal(await grantState(s, code(cCodes[0])), "valid");
+    assert.equal((await phones(s, p2.session, { op: "remove", id: p3id })).status, 200);
+    assert.equal(await grantState(s, code(cCodes[0])), "unknown", "removed by another phone: its codes are void");
+    assert.equal(await grantState(s, qr(cLink)), "unknown", "and its link");
+    // B makes its own codes, A (p1) goes, then B, now the last phone, removes itself: B's codes still work
+    const bCodes = (await phones(s, p2.session, { op: "codes" })).body.codes as string[];
+    assert.equal((await phones(s, p2.session, { op: "remove", id: p1id })).status, 200);
+    const gone = await phones(s, p2.session, { op: "remove", id: p2id, confirm_last: true });
+    assert.deepEqual([gone.status, gone.body.wasLast], [200, true]);
+    assert.equal(await offered(s), 0, "no phone opens the shop now");
+    assert.equal(await grantState(s, code(bCodes[0])), "valid", "the last phone's own codes stay");
+    assert.equal(await good((s), (await register(s, code(bCodes[0]), ANDROID)).session), true, "and register a new phone");
   });
 });
 
