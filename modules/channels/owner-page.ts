@@ -40,6 +40,8 @@ import { partnerBar } from "./contact-bar.ts";
 import { ownerMoneySection } from "../accounting/owner-money-render.ts";
 import type { ExportLinks } from "../accounting/owner-money-render.ts";
 import { FIRST_WORDS } from "./words-owner-first.ts";
+import { LEAVE_PAGE } from "./words-leave.ts";
+import type { OwnerFileState } from "./owner-file.ts";
 import type { PagesFile } from "./pages-file.ts";
 import { ICON, OWNER_CSS, themeScript, themeSwitch } from "./look.ts";
 import { OWNER_LOOK } from "./words-look.ts";
@@ -73,6 +75,11 @@ export interface OwnerPageInput {
    * page leaves this out and its Money section has no download card.
    */
   exportLinks?: ExportLinks;
+  /**
+   * "Leave with your shop" (block S): for a signed-in owner's SESSION only (the panel's link shows none of it, and the runtime would refuse it). The state of the file, and
+   * the session's form token for the two buttons.
+   */
+  leave?: { file: OwnerFileState; csrf?: string };
   /** Item 11i: the character's picture in the shop's mood now, as a data: address (front.ts reads it from the shop's own pictures). Left out: none drawn yet. */
   picture?: string;
 }
@@ -90,6 +97,17 @@ function button(base: string, f: { source: "runtime" | "relay"; action: string; 
 /** One thing waiting, as a card: a tag saying what it is (in its meaning's colour), the amount large, the sentence, and its answers side by side. */
 function waitingCard(language: Language, o: { tag: TagKey; /** Money clarity: a tag of its own words (words-money.ts), in place of the shared one. */ label?: string; tone?: Tone; amountPaise: number; text: string | Raw; buttons: Raw[] }): Raw {
   return html`<div class="item s-${o.tone ?? "wait"}"><div class="top"><span class="stamp">${o.label ?? OWNER_LOOK[language].tag[o.tag]}</span>${o.amountPaise > 0 ? html`<span class="amt">${formatInr(o.amountPaise / 100)}</span>` : ""}</div><p>${o.text}</p><div class="acts">${o.buttons}</div></div>`;
+}
+
+/** "Your shop is yours": the two buttons, and the file when there is one. The file's button is a plain link to a page that serves it once; nothing here reads the file. */
+function leaveSection(o: OwnerPageInput, l: NonNullable<OwnerPageInput["leave"]>): Raw {
+  const w = LEAVE_PAGE[o.language];
+  const post = (what: "file" | "operator", label: string) => html`<form method="post" action="${o.base}/leave">${l.csrf ? html`<input type="hidden" name="csrf" value="${l.csrf}">` : ""}<input type="hidden" name="what" value="${what}"><button class="no" type="submit">${label}</button></form>`;
+  const tz = o.view.shop.timezone;
+  const file = l.file.state === "ready"
+    ? html`<p class="notice" role="status">${w.fileReady(formatSlot(Date.parse(l.file.expiresAt), tz, o.language))}</p><p><a class="btn yes" href="${o.base}/file/${l.file.id}" download>${w.take}</a></p>`
+    : html`<p class="note">${l.file.state === "taken" ? w.fileTaken : l.file.state === "expired" ? w.fileExpired : w.fileNone}</p>`;
+  return html`<section class="leave" aria-labelledby="leave-h"><h2 id="leave-h">${w.title}</h2><p class="note">${w.intro}</p>${file}<div class="acts">${post("file", w.fileButton)}</div><p class="note">${w.operatorNote}</p><div class="acts">${post("operator", w.operatorButton)}</div></section>`;
 }
 
 export function ownerPage(o: OwnerPageInput): string {
@@ -201,6 +219,7 @@ ${v.classes ? classesSection(v.classes, o.language, tz, (action, c, digest, labe
 ${coming}${parents}${cash}
 ${app ? raw(talkBox({ base: o.base, language: o.language, lines: app.talk, assistantName: app.character.name ?? ASSISTANT_OF[o.language](v.shop.name), ...(o.csrf ? { csrf: o.csrf } : {}), listen: app.listen === true, bare: true })) : ""}
 ${o.alerts && !leadAlerts ? raw(o.alerts) : ""}
+${o.leave ? leaveSection(o, o.leave) : ""}
 ${o.limitsLink ? html`<p><a href="${o.limitsLink.href}">${o.limitsLink.label}</a></p>` : ""}
 ${o.signOut ? html`<form method="post" action="${o.signOut.action}">${o.csrf ? html`<input type="hidden" name="csrf" value="${o.csrf}">` : ""}<button class="no full" type="submit">${o.signOut.label}</button></form>` : ""}
 </main></body></html>`.markup}`;
