@@ -28,7 +28,7 @@ import { allSlots, itemName, itemOf } from "./settings.ts";
 import type { Settings } from "./settings.ts";
 import { isChatConversation } from "../../../../modules/channels/conversation.ts";
 import { guestLabel } from "../../../../modules/channels/chat-guest.ts";
-import { fixSlot, ordersInSlot, ordersOn, takenOf } from "./order.ts";
+import { countedLeft, fixSlot, ordersInSlot, ordersOn, takenOf } from "./order.ts";
 import type { Order, OrderState, Store } from "./order.ts";
 
 /** "2026-11-16": a day as the page, the API and the event name it. */
@@ -76,7 +76,7 @@ export function orderOffer(settings: Settings, store: Store, nowMs: number, paus
     const date = addDays({ year: today.year, month: today.month, day: today.day }, d);
     // a slot with a limit of its own (`maxOrders`) that is full for the day is not open: the page cannot offer what the agent would refuse (agent.ts availability)
     const slots = allSlots(settings).map(({ slot }) => { const at = slotOn(settings, date, slot.id); const full = slot.maxOrders !== undefined && ordersInSlot(store, date, slot.id, nowMs) >= slot.maxOrders; return { id: slot.id, mode: at.mode, fromMs: at.fromMs, toMs: at.toMs, open: at.cutoffMs > nowMs && !full }; });
-    const left = Object.fromEntries(settings.menu.map((i) => [i.id, Math.max(0, i.dailyStock - takenOf(store, date, i.id, nowMs))]));
+    const left = Object.fromEntries(settings.menu.map((i) => [i.id, Math.min(Math.max(0, i.dailyStock - takenOf(store, date, i.id, nowMs)), countedLeft(store, i.id, nowMs) ?? Infinity)]));
     days.push({ date: isoOf(date), slots, left, full: ordersOn(store, date, nowMs) >= settings.orders.maxPerDay });
   }
   return {

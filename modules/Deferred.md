@@ -387,3 +387,17 @@ The design and what was weighed are in [Explanation.md](Explanation.md#shop-memo
 | **A builder's own server has no shop budget.** A shop with no plan from fleet brings its own AI key. | The builder pays for their own model. | A builder's own `geometer.json` budget block, if builders ask for it. |
 | **The owner cannot see the month's breakdown by feature** (the `ai.budget.by` counts are in `/status` and the panel's data). | A page for it is design work. | A small card in the owner's app: "this month: talk, customers, listings". |
 | **A shop with no assistant gets no budget notice.** The 80% and used-up notices run on the assistant's beat (`onTick`); a template without one reports only through the panel line and the record. | Every template that has the talk has the assistant; the others spend only on the router. | Move the beat's check to the runtime's own tick. Done when a shop with no assistant still tells its owner. |
+
+## One shared stock count (18 Nov 2026, block S phase A3)
+
+| What | Why not now | Done when |
+|---|---|---|
+| **A purchase order part-received before counting began and finished after** | The purchase order keeps only the total received and the time of the last mark, not each piece's time, so after counting began the whole total is added | The purchase order keeps each mark's time and quantity, and the count adds only the marks after it began (until then the owner corrects the count with one tap) |
+| **Importing an item list or counts from a billing app** | Owner listed it as later; it needs a named billing app's export format and a check of each row before it becomes a count | A shop names its billing app and a sample export is read: rows become `startCounting` calls the owner confirms |
+| **Barcode scanning** | Needs the phone's camera in the owner's page and a barcode on each item; no shop asked yet | The owner's page can scan and a barcode maps to a stock id |
+| **"Sold 2" in the owner's talk** (words or voice) | The Stock page has it; the talk reading would need a new intent and its words in four languages | The assistant's reader names the item and the number by rule and makes the keyed sale with the owner's authority |
+| **A WhatsApp template for the low-stock question** ("Rice 5 kg is low (3 left). Order from Ravi?") | A new template needs Meta's approval; the question goes to the owner's app and the existing order card goes to WhatsApp | The template is approved and `tellOwner` carries it before the card |
+| **The "Shop with stock" preset** | A preset adds no settings field and counting is chosen per item in the app, so there is nothing for a preset to turn on | Counting becomes a setting a preset may fill (for example a list of counted items), or a first-question step offers it |
+| **Linking two items to one line from the app** (a listing and a Stock orders item for the same rice) | The `aliases` of a line work and are tested, but only the panel or a builder can set them today | The Stock page offers "this is the same as ..." |
+| **Counts per day or per place** (a day's production, a second shop) | One count per item, whole numbers; a day's own limit stays Orders' `dailyStock` | A shop that needs it, with a decision on what a count per day means for a cancelled order |
+| **The review sheets** | The words are on `bundle/panel/review.ts` as `stockline.*`; the committed sheets (`REVIEW-hi/ml/kn.md`) were not regenerated here to avoid four streams conflicting | The lead regenerates them once on main (`node bundle/panel/review-sheet.ts hi|ml|kn`) |
