@@ -132,6 +132,24 @@ export function openPushStore(file: string) {
       return rows.length;
     },
 
+    /** The owner's live alert subscriptions, for the owner's phones page (which phone each came from, and when). */
+    ownerSubs(): { id: string; ref?: string; madeAt: number }[] {
+      return (db.prepare("SELECT id, ref, made_at FROM subs WHERE who = 'owner' AND dead_at IS NULL ORDER BY made_at").all() as { id: string; ref: string | null; made_at: number }[]).map((r) => ({ id: r.id, ...(r.ref ? { ref: r.ref } : {}), madeAt: r.made_at }));
+    },
+    /** The owner stops one alert subscription from their phones page. True when it was theirs and live. */
+    dropOwnerSub(id: string, now: number): boolean {
+      const r = db.prepare("SELECT id FROM subs WHERE id = ? AND who = 'owner' AND dead_at IS NULL").get(id) as { id: string } | undefined;
+      if (!r) return false;
+      api.drop(r.id, "owner_stopped", now);
+      return true;
+    },
+    /** The shop was locked by the owner's first passkey: every owner subscription made before it, or from a link, has no phone to answer to and ends. Returns how many. */
+    dropUnbound(now: number): number {
+      const rows = db.prepare("SELECT id FROM subs WHERE who = 'owner' AND ref IS NULL AND dead_at IS NULL").all() as { id: string }[];
+      for (const r of rows) api.drop(r.id, "lock", now);
+      return rows.length;
+    },
+
     /** W2, "delete my chat": every phone of `who` stops getting alerts and its waiting pushes go (the same end as an unsubscribe). Returns how many. */
     forget(who: string, now: number): number {
       const rows = live(who);

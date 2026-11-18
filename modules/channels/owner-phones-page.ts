@@ -16,7 +16,7 @@ import { OWNER_CSS } from "./look.ts";
 import { printedCode } from "./owner-grants.ts";
 
 /** The runtime's list answer, as the front passes it on (times in ms). */
-export type PhonesAnswer = PhonesView & { language: Language; now: number };
+export type PhonesAnswer = PhonesView & { language: Language; now: number; /** The alert subscriptions that reach the owner, each with the phone it came from. */ alerts?: { id: string; madeAt: number; label?: string }[] };
 
 interface Words {
   title: string; link: string; intro: string; thisPhone: string; aPhone: string; added: (day: string) => string; via: Record<"setup" | "recovery" | "own_phone" | "own_code" | "reset", string>;
@@ -25,7 +25,7 @@ interface Words {
   codes: string; codesNone: string; codesHave: (day: string) => string; codesMake: string; codesRemake: string; codesNote: string; codesTitle: string; codesShow: string;
   needPasskey: string; back: string; onePhone: string; noPhones: string;
   bannerNew: (when: string, label: string) => string; itWasMe: string; removeIt: string; bannerRequest: (by: string, when: string) => string; cancel: string; cancelled: string;
-  labelNote: string; bannerOwner: (when: string) => string; bannerCodesMade: (when: string, label: string) => string; bannerRemoved: (when: string, label: string) => string; bannerCodes: string; makeCodes: string; refused: string; operator: string; openPhones: string;
+  labelNote: string; alertsTitle: string; alertsNote: string; alertSince: (day: string) => string; stop: string; bannerNumber: string; bannerOwner: (when: string) => string; bannerCodesMade: (when: string, label: string) => string; bannerRemoved: (when: string, label: string) => string; bannerCodes: string; makeCodes: string; refused: string; operator: string; openPhones: string;
 }
 /** Exported so the review sheets list these lines too (review.ts, ids "phones.*"). */
 export const WORDS: Record<Language, Words> = {
@@ -46,6 +46,8 @@ export const WORDS: Record<Language, Words> = {
     bannerNew: (when, label) => `A new phone was added on ${when}${label ? ` (${label})` : ""}. Not you? Remove it.`, itWasMe: "It was me", removeIt: "Remove it",
     bannerRequest: (by, when) => `${by} asked to remove every phone that can open your shop. It will happen on ${when} unless you cancel.`, cancel: "Cancel the request", cancelled: "Cancelled. Your phones stay.",
     labelNote: "The names are what each phone said about itself when it was added.",
+    alertsTitle: "Alerts on your phones", alertsNote: "These phones get your shop's alerts. Stop one you do not know.", alertSince: (d) => `Alerts since ${d}`, stop: "Stop",
+    bannerNumber: "The Operator's panel shows a different owner number. Your messages still come to your number.",
     bannerOwner: (when) => `The owner's number for this shop was changed. Every phone that opens your shop stops working on ${when} unless you cancel.`,
     bannerCodesMade: (when, label) => `New recovery codes were made on ${when}${label ? ` (${label})` : ""}. Not you? Remove that phone.`, bannerRemoved: (when, label) => `A phone was removed on ${when}${label ? ` (${label})` : ""}.`,
     bannerCodes: "Make your own codes now, so only you hold them.", makeCodes: "Make my codes", refused: "That did not work. Sign out, sign in with your phone's fingerprint and try again.", operator: "Your Operator", openPhones: "Your phones",
@@ -67,6 +69,8 @@ export const WORDS: Record<Language, Words> = {
     bannerNew: (when, label) => `${when} को एक नया फ़ोन जोड़ा गया${label ? ` (${label})` : ""}। आपने नहीं जोड़ा? उसे हटा दीजिए।`, itWasMe: "मैंने ही जोड़ा", removeIt: "हटाइए",
     bannerRequest: (by, when) => `${by} ने आपकी दुकान खोलने वाले हर फ़ोन को हटाने को कहा है। आप रद्द न करें तो यह ${when} को हो जाएगा।`, cancel: "अनुरोध रद्द करें", cancelled: "रद्द हो गया। आपके फ़ोन बने रहेंगे।",
     labelNote: "ये नाम वही हैं जो हर फ़ोन ने जुड़ते समय अपने बारे में बताए।",
+    alertsTitle: "आपके फ़ोनों पर अलर्ट", alertsNote: "ये फ़ोन आपकी दुकान के अलर्ट पाते हैं। जो फ़ोन आप नहीं पहचानते, उसे रोक दीजिए।", alertSince: (d) => `${d} से अलर्ट`, stop: "रोकें",
+    bannerNumber: "ऑपरेटर के पैनल में मालिक का नंबर कुछ और दिख रहा है। आपके संदेश अब भी आपके नंबर पर आते हैं।",
     bannerOwner: (when) => `इस दुकान के लिए मालिक का नंबर बदला गया है। आप रद्द न करें तो दुकान खोलने वाले सारे फ़ोन ${when} को बंद हो जाएँगे।`,
     bannerCodesMade: (when, label) => `${when} को नए रिकवरी कोड बनाए गए${label ? ` (${label})` : ""}। आपने नहीं बनाए? वह फ़ोन हटा दीजिए।`, bannerRemoved: (when, label) => `${when} को एक फ़ोन हटाया गया${label ? ` (${label})` : ""}।`,
     bannerCodes: "अपने कोड अभी बनाइए, ताकि वे सिर्फ़ आपके पास रहें।", makeCodes: "मेरे कोड बनाएँ", refused: "यह नहीं हो पाया। साइन आउट करके अपने फ़ोन के फ़िंगरप्रिंट से साइन इन कीजिए और फिर कोशिश कीजिए।", operator: "आपके ऑपरेटर", openPhones: "आपके फ़ोन",
@@ -88,6 +92,8 @@ export const WORDS: Record<Language, Words> = {
     bannerNew: (when, label) => `${when}-ന് ഒരു പുതിയ ഫോൺ ചേർത്തു${label ? ` (${label})` : ""}. നിങ്ങളല്ലേ? അത് നീക്കൂ.`, itWasMe: "ഞാൻ തന്നെയാണ്", removeIt: "നീക്കൂ",
     bannerRequest: (by, when) => `${by} നിങ്ങളുടെ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും നീക്കാൻ ആവശ്യപ്പെട്ടു. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ ${when}-ന് അത് നടക്കും.`, cancel: "അഭ്യർത്ഥന റദ്ദാക്കൂ", cancelled: "റദ്ദാക്കി. നിങ്ങളുടെ ഫോണുകൾ അതേപടി തുടരും.",
     labelNote: "ഓരോ ഫോണും ചേർക്കുമ്പോൾ സ്വയം പറഞ്ഞ പേരുകളാണ് ഇവ.",
+    alertsTitle: "നിങ്ങളുടെ ഫോണുകളിലെ അലർട്ടുകൾ", alertsNote: "ഈ ഫോണുകൾക്ക് നിങ്ങളുടെ കടയുടെ അലർട്ടുകൾ കിട്ടുന്നു. നിങ്ങൾക്ക് അറിയാത്തത് നിർത്തൂ.", alertSince: (d) => `${d} മുതൽ അലർട്ടുകൾ`, stop: "നിർത്തൂ",
+    bannerNumber: "ഓപ്പറേറ്ററുടെ പാനലിൽ ഉടമയുടെ നമ്പർ വേറൊന്നായി കാണിക്കുന്നു. നിങ്ങളുടെ സന്ദേശങ്ങൾ ഇപ്പോഴും നിങ്ങളുടെ നമ്പറിലേക്ക് തന്നെ വരുന്നു.",
     bannerOwner: (when) => `ഈ കടയുടെ ഉടമയുടെ നമ്പർ മാറ്റി. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും ${when}-ന് പ്രവർത്തിക്കില്ല.`,
     bannerCodesMade: (when, label) => `${when}-ന് പുതിയ റിക്കവറി കോഡുകൾ ഉണ്ടാക്കി${label ? ` (${label})` : ""}. നിങ്ങളല്ലേ? ആ ഫോൺ നീക്കൂ.`, bannerRemoved: (when, label) => `${when}-ന് ഒരു ഫോൺ നീക്കി${label ? ` (${label})` : ""}.`,
     bannerCodes: "നിങ്ങളുടെ സ്വന്തം കോഡുകൾ ഇപ്പോൾ ഉണ്ടാക്കൂ, അത് നിങ്ങളുടെ കയ്യിൽ മാത്രമിരിക്കട്ടെ.", makeCodes: "എന്റെ കോഡുകൾ ഉണ്ടാക്കൂ", refused: "അത് നടന്നില്ല. സൈൻ ഔട്ട് ചെയ്ത് ഫോണിന്റെ ഫിംഗർപ്രിന്റ് ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്ത് വീണ്ടും ശ്രമിക്കൂ.", operator: "നിങ്ങളുടെ ഓപ്പറേറ്റർ", openPhones: "നിങ്ങളുടെ ഫോണുകൾ",
@@ -109,6 +115,8 @@ export const WORDS: Record<Language, Words> = {
     bannerNew: (when, label) => `${when} ರಂದು ಹೊಸ ಫೋನ್ ಸೇರಿಸಲಾಗಿದೆ${label ? ` (${label})` : ""}. ನೀವಲ್ಲವೇ? ಅದನ್ನು ತೆಗೆಯಿರಿ.`, itWasMe: "ನಾನೇ", removeIt: "ತೆಗೆಯಿರಿ",
     bannerRequest: (by, when) => `${by} ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ${when} ರಂದು ಆಗುತ್ತದೆ.`, cancel: "ಮನವಿ ರದ್ದುಗೊಳಿಸಿ", cancelled: "ರದ್ದಾಗಿದೆ. ನಿಮ್ಮ ಫೋನ್‌ಗಳು ಹಾಗೆಯೇ ಇರುತ್ತವೆ.",
     labelNote: "ಪ್ರತಿ ಫೋನ್ ಸೇರಿಸುವಾಗ ತನ್ನ ಬಗ್ಗೆ ಹೇಳಿದ ಹೆಸರುಗಳು ಇವು.",
+    alertsTitle: "ನಿಮ್ಮ ಫೋನ್‌ಗಳಲ್ಲಿನ ಅಲರ್ಟ್‌ಗಳು", alertsNote: "ಈ ಫೋನ್‌ಗಳಿಗೆ ನಿಮ್ಮ ಅಂಗಡಿಯ ಅಲರ್ಟ್‌ಗಳು ಬರುತ್ತವೆ. ನಿಮಗೆ ಗೊತ್ತಿಲ್ಲದ್ದನ್ನು ನಿಲ್ಲಿಸಿ.", alertSince: (d) => `${d} ರಿಂದ ಅಲರ್ಟ್‌ಗಳು`, stop: "ನಿಲ್ಲಿಸಿ",
+    bannerNumber: "ಆಪರೇಟರ್‌ನ ಪ್ಯಾನೆಲ್‌ನಲ್ಲಿ ಮಾಲೀಕರ ನಂಬರ್ ಬೇರೆಯಾಗಿ ತೋರುತ್ತಿದೆ. ನಿಮ್ಮ ಸಂದೇಶಗಳು ಈಗಲೂ ನಿಮ್ಮ ನಂಬರ್‌ಗೇ ಬರುತ್ತವೆ.",
     bannerOwner: (when) => `ಈ ಅಂಗಡಿಯ ಮಾಲೀಕರ ನಂಬರ್ ಬದಲಾಯಿಸಲಾಗಿದೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳು ${when} ರಂದು ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ.`,
     bannerCodesMade: (when, label) => `${when} ರಂದು ಹೊಸ ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಲಾಗಿದೆ${label ? ` (${label})` : ""}. ನೀವಲ್ಲವೇ? ಆ ಫೋನ್ ತೆಗೆಯಿರಿ.`, bannerRemoved: (when, label) => `${when} ರಂದು ಒಂದು ಫೋನ್ ತೆಗೆಯಲಾಗಿದೆ${label ? ` (${label})` : ""}.`,
     bannerCodes: "ನಿಮ್ಮ ಸ್ವಂತ ಕೋಡ್‌ಗಳನ್ನು ಈಗಲೇ ಮಾಡಿ, ಅವು ನಿಮ್ಮ ಬಳಿ ಮಾತ್ರ ಇರಲಿ.", makeCodes: "ನನ್ನ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿ", refused: "ಅದು ಆಗಲಿಲ್ಲ. ಸೈನ್ ಔಟ್ ಆಗಿ, ಫೋನ್‌ನ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.", operator: "ನಿಮ್ಮ ಆಪರೇಟರ್", openPhones: "ನಿಮ್ಮ ಫೋನ್‌ಗಳು",
@@ -148,6 +156,7 @@ export function phonesBanner(o: { base: string; language: Language; csrf?: strin
   for (const n of v.news.slice(-3)) {
     parts.push(html`<div class="notice" role="alert"><p>${n.kind === "codes" ? w.bannerCodesMade(dayAndTime(n.at, o.language), n.label ?? "") : w.bannerRemoved(dayAndTime(n.at, o.language), n.label ?? "")}</p>${dismiss}</div>`);
   }
+  if (v.numberDiffers) parts.push(html`<div class="notice" role="status"><p>${w.bannerNumber}</p></div>`);
   // the prompt only for a phone that can do it (a passkey session) and once the owner holds a phone of their own: right after the first sign-in
   if (v.ownCodesAt === undefined && v.passkeySession && v.phones.length > 0) parts.push(html`<div class="notice" role="status"><p>${w.bannerCodes}</p>${tap(o.base, "codes", o.csrf, w.makeCodes)}</div>`);
   return parts.map((p) => p.markup).join("");
@@ -168,10 +177,12 @@ ${v.passkeySession ? html`<p><a class="btn quiet" href="${o.base}/phones?remove=
   const banners = phonesBanner({ base: o.base, language: lang, ...(o.csrf ? { csrf: o.csrf } : {}), view: v });
   const codes = html`<h2>${w.codes}</h2>${v.ownCodesAt !== undefined ? html`<p class="calm">${w.codesHave(dayOnly(v.ownCodesAt, lang))}</p>` : html`<p class="note">${w.codesNone}</p>`}
 <p class="note">${w.codesNote}</p>${v.passkeySession ? tap(o.base, "codes", o.csrf, v.ownCodesAt !== undefined ? w.codesRemake : w.codesMake, {}, v.ownCodesAt !== undefined) : html`<p class="notice">${w.needPasskey}</p>${o.signOut ? html`<form method="post" action="${o.signOut.action}">${csrfField(o.csrf)}<button class="no full" type="submit">${o.signOut.label}</button></form>` : ""}`}`;
+  // the alerts that reach the owner, each with the phone it came from; a passkey session may stop one (so an alert the owner does not know can be ended)
+  const alertsList = (v.alerts ?? []).length === 0 ? "" : html`<h2>${w.alertsTitle}</h2><p class="note">${w.alertsNote}</p>${(v.alerts ?? []).map((a) => html`<section class="card"><h3>${a.label ?? w.aPhone}</h3><p class="note">${w.alertSince(dayOnly(a.madeAt, lang))}</p>${v.passkeySession ? tap(o.base, "alert-stop", o.csrf, w.stop, { id: a.id }, true) : ""}</section>`)}`;
   const add = v.passkeySession ? html`<h2>${w.add}</h2><p class="note">${w.addNote}</p>${tap(o.base, "add", o.csrf, w.add, {}, true)}` : "";
   return shell(lang, w.title, html`<h1>${w.title}</h1>
 ${o.notice ? html`<p class="notice" role="status">${o.notice === "removed" ? w.removed : o.notice === "cancelled" ? w.cancelled : w.refused}</p>` : ""}
-${raw(banners)}<p class="note">${w.intro}</p>${state}${rows}${v.phones.length > 0 ? html`<p class="note">${w.labelNote}</p>` : ""}${add}${codes}
+${raw(banners)}<p class="note">${w.intro}</p>${state}${rows}${v.phones.length > 0 ? html`<p class="note">${w.labelNote}</p>` : ""}${add}${alertsList}${codes}
 ${o.hosted ? html`<p class="note">${LOST_HELP[lang]}</p>` : ""}
 <p><a href="${o.base}/?lang=${lang}">${w.back}</a></p>`);
 }

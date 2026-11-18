@@ -411,6 +411,9 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
         const done = signin.register(grant, body.response as RegistrationResponse, label);
         if (!done.ok) return send(res, 403, { state: done.state, ...("why" in done && done.why ? { why: done.why } : {}) });
         recordAccess("passkey_added", done.passkey, grant.kind, undefined, label);
+        // the lock: every owner alert subscription made before it (or from a link) belongs to no phone of the owner's, so the Operator who subscribed their own phone at the
+        // setup visit stops hearing the shop here
+        if (done.firstOfLock) options.push?.dropUnbound();
         recordAccess("signed_in", done.id, "passkey");
         // a new phone is announced: the owner's other phones with alerts on get a push now (the others see a banner on their next open). The first phone has no "other".
         if (options.push?.on && signin.passkeys().length > 1) options.push.owner(NEW_PHONE_ALERT(signin.now(), label)[signin.ownerLanguage], "phones");
@@ -442,7 +445,16 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       const op = body.op;
       if (op === "list") {
         const v = signin.phones(session);
-        return v ? send(res, 200, { ...v, language: signin.ownerLanguage, now: signin.now() }) : send(res, 403, { state: "signed_out" });
+        if (!v) return send(res, 403, { state: "signed_out" });
+        // the alerts that reach the owner's phones, each with the phone it came from (the phones page lists them with Stop)
+        const alerts = (options.push?.on ? options.push.ownerSubs() : []).map((a) => ({ id: a.id, madeAt: a.madeAt, ...(v.phones.find((p) => p.id === a.ref)?.label ? { label: v.phones.find((p) => p.id === a.ref)!.label! } : {}) }));
+        return send(res, 200, { ...v, alerts, language: signin.ownerLanguage, now: signin.now() });
+      }
+      if (op === "stop_alert") {
+        // only a passkey session (a phone of the owner's) may stop an alert subscription
+        if (signin.passkeyOf(session) === undefined) return send(res, 403, { state: "passkey_needed" });
+        const done = typeof body.id === "string" && options.push?.dropOwnerSub(body.id.slice(0, 32)) === true;
+        return send(res, done ? 200 : 404, { stopped: done });
       }
       if (op === "dismiss") { signin.dismissPhones(session, typeof body.through === "number" ? body.through : undefined); return send(res, 200, { ok: true }); }
       if (op === "remove") {
@@ -500,7 +512,10 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
         const ownerSession = session !== undefined && options.ownerSignin?.check(session) !== undefined ? session : undefined;
         if (!ownerSession && op !== "owner_state" && options.ownerSignin?.passkeysOn() && options.ownerSignin.lockState().locked) return send(res, 403, { error: "Sign in with the owner's phone to change alerts." });
         if (op === "owner_subscribe") {
-          const r = push.subscribe("owner", body.subscription as BrowserSubscription, "own", ownerSession ? options.ownerSignin?.passkeyOf(ownerSession) : undefined);
+          const ref = ownerSession ? options.ownerSignin?.passkeyOf(ownerSession) : undefined;
+          // once locked, only a PHONE (a passkey session) may subscribe: a subscription with no phone could never be ended by removing one
+          if (!ref && options.ownerSignin?.passkeysOn() && options.ownerSignin.lockState().locked) return send(res, 403, { error: "Sign in with your phone's fingerprint to turn on alerts." });
+          const r = push.subscribe("owner", body.subscription as BrowserSubscription, "own", ref);
           if (!r.ok) return send(res, 400, { error: r.why });
           // the first phone with alerts: both ways for a shop with WhatsApp (the owner can then pick), push alone for one without
           if (push.ownerPhones() === 1 && push.choice() === "whatsapp") push.setChoice(whatsapp ? "both" : "push");

@@ -93,6 +93,8 @@ export interface OwnerSigninSetup {
   /** Item 11h: the panel's setup QR, recovery card and "remove the owner's passkeys" (owner-grants.ts), read fresh. Left out: no passkeys. */
   grants?: () => OwnerGrants | undefined;
   owner: { whatsapp: string; language: Language };
+  /** The owner number the SETTINGS name, when `owner.whatsapp` was set to the number the shop was locked with instead (start.ts). Left out: they are the same. */
+  settingsOwner?: string;
   /** An alert to the owner's phones with web push on (modules/push), for the Operator's removal request. Left out: no push, and the owner's app shows the request. */
   alert?: (text: Record<Language, string>) => void;
   shopName: string;
@@ -107,6 +109,8 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
   access.noteStart(clock.now()); // a request that fell due while the runtime was down is given a day more, and the owner is told again (owner-access.ts noteStart)
   const log = setup.log ?? (() => undefined);
   /** The owner as the settings and the deployer say now; undefined while the shop has no pages file (no owner sign-in at all). */
+  /** The owner number the settings say NOW (the runtime may keep using the locked one in `owner`: start.ts), for noticing a change the Operator made. */
+  const settingsWho = (): OwnerNow | undefined => { const p = setup.pages(); return p ? { owner: setup.settingsOwner ?? owner.whatsapp, base: p.ownerBase } : undefined; };
   const who = (): OwnerNow | undefined => { const p = setup.pages(); return p ? { owner: owner.whatsapp, base: p.ownerBase } : undefined; };
 
   /**
@@ -189,7 +193,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       // page is open), and say each once in the record. An Operator's request also reaches the owner's phones with alerts on, at once.
       if (setup.grants) {
         access.sync(setup.grants(), clock.now());
-        const w = who();
+        const w = settingsWho();
         if (w) access.watchOwner(w, clock.now()); // a different owner number in the settings after the lock is a request, not a change (owner-access.ts)
         for (const n of access.takeNotes()) {
           const line = (inputs: Record<string, string>) => ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs, language: owner.language, refs: inputs });
@@ -252,8 +256,10 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       /** The phones page's data, or undefined when the session is not good. */
       phones: (session: string) => {
         const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), endBefore()) : undefined;
-        if (w && ok) access.watchOwner(w, clock.now());
-        return w && ok ? access.phonesView(ok.id, w, relyingParty(w.base), setup.grants!(), clock.now()) : undefined;
+        const sw = settingsWho();
+        if (sw && ok) access.watchOwner(sw, clock.now());
+        const view = w && ok ? access.phonesView(ok.id, w, relyingParty(w.base), setup.grants!(), clock.now()) : undefined;
+        return view && sw && access.numberDiffers(sw) ? { ...view, numberDiffers: true } : view;
       },
       dismissPhones: (session: string, through?: number): boolean => { const w = who(); const ok = w ? access.check(session, w, clock.now(), endBefore()) : undefined; if (ok) access.dismiss(ok.id, clock.now(), through); return ok !== undefined; },
       /** Only a PASSKEY session may take a phone away (a WhatsApp link is whoever holds that phone). */
@@ -274,7 +280,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       },
       cancelRemoval: (session: string): boolean => { const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), endBefore()) : undefined; return ok ? access.cancelRemoval(setup.grants!(), clock.now()) : false; },
       /** For the panel's probe (/status): whether the shop is locked (the owner holds a passkey) and the Operator's pending request. Counts and times only. */
-      lockState: () => { const w = who(); if (w) access.watchOwner(w, clock.now()); const g = setup.grants?.(); return { locked: access.locked(g, clock.now()), removal: access.pendingRemoval(g, clock.now()) }; },
+      lockState: () => { const w = settingsWho(); if (w) access.watchOwner(w, clock.now()); const g = setup.grants?.(); return { locked: access.locked(g, clock.now()), removal: access.pendingRemoval(g, clock.now()) }; },
     },
   };
 }

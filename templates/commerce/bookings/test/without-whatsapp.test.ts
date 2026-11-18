@@ -364,6 +364,7 @@ test("the owner's phones: the list with labels, a new phone is announced by bann
     assert.match(listHtml, /This phone/u);
     assert.match(listHtml, /Only one phone can open your shop now/u);
     assert.doesNotMatch(listHtml, /<script/u);
+    assert.match(listHtml, /Alerts on your phones/u, "the alerts that reach the owner are listed, each with its phone");
     const home = await (await w.page("/owner/?lang=en")).text();
     assert.match(home, /Make your own codes now, so only you hold them/u, "right after the first sign-in");
     assert.match(home, /Phones that can open your shop/u, "the link from the owner's page");
