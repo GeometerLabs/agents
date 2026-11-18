@@ -176,7 +176,7 @@ test("pets: a customer's answer never says an animal is healthy or vaccinated un
   ls.items.push({ id: "l-1", state: "live", category: "pets", ownerLang: "en", words: { en: { title: "Persian kitten", text: "Playful." } }, pricePaise: 800000, priceNote: "each", photos: [], createdMs: NOW, publishedMs: NOW, confirmedMs: NOW, by: "owner", from: "app", claims: ["vaccinated"] });
   ls.items.push({ id: "l-2", state: "live", category: "pets", ownerLang: "en", words: { en: { title: "Tabby kitten", text: "Playful." } }, photos: [], createdMs: NOW, publishedMs: NOW, confirmedMs: NOW, by: "owner", from: "app" });
   ls.seq = 2;
-  const ask = async (reply: unknown) => { w.script.reply = reply; const before = w.messaging.sentTo(CUSTOMER).length; const sent = await w.assistant.talkToCustomer({ phone: CUSTOMER, text: "is the kitten healthy?", language: "en" }); return { sent, n: w.messaging.sentTo(CUSTOMER).length - before }; };
+  const ask = async (reply: unknown) => { w.script.reply = reply; w.messaging.receive(CUSTOMER, "is the kitten healthy?"); /* the customer wrote, so their 24-hour window is open */ const before = w.messaging.sentTo(CUSTOMER).length; const sent = await w.assistant.talkToCustomer({ phone: CUSTOMER, text: "is the kitten healthy?", language: "en" }); return { sent, n: w.messaging.sentTo(CUSTOMER).length - before }; };
   const unsure = await ask({ sentences: [{ text: "The Tabby kitten is healthy.", sources: ["s:l-2"] }], ask_owner: false });
   assert.deepEqual([unsure.sent, unsure.n], [false, 0]);
   const none = await ask({ sentences: [{ text: "Yes, healthy and vaccinated.", sources: [] }], ask_owner: false });
