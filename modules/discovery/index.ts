@@ -199,6 +199,10 @@ export class DirectoryIndex {
     return s && r ? { shop: s, item: this.itemOf(r) } : undefined;
   }
   itemsOf(page: string): ItemRow[] { return (this.db.prepare("SELECT * FROM items WHERE shop_page = ? ORDER BY id").all(page) as Row[]).map((r) => this.itemOf(r)); }
+  /** The towns of the shops that are in, the most common first: the choices the buyer's assistant may name (assistant.ts). Public facts from open feeds; at most `limit`. */
+  towns(limit = 30): string[] {
+    return (this.db.prepare("SELECT town FROM shops WHERE status = 'ok' GROUP BY town ORDER BY COUNT(*) DESC, town LIMIT ?").all(limit) as { town: string }[]).map((r) => r.town);
+  }
   counts(): { shops: number; items: number } {
     return { shops: (this.db.prepare("SELECT COUNT(*) AS n FROM shops WHERE status = 'ok'").get() as { n: number }).n, items: (this.db.prepare("SELECT COUNT(*) AS n FROM items JOIN shops ON shops.page = items.shop_page WHERE shops.status = 'ok'").get() as { n: number }).n };
   }

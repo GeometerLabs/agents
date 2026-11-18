@@ -108,7 +108,7 @@ export function freshness(w: DirectoryWords, confirmed: string, now: number): st
   return days <= 0 ? w.confirmedToday : days === 1 ? w.confirmedYesterday : w.confirmedDays(days);
 }
 
-const km = (n: number): string => (n < 10 ? n.toFixed(1) : String(Math.round(n)));
+export const km = (n: number): string => (n < 10 ? n.toFixed(1) : String(Math.round(n)));
 
 /** An address on this directory with these parameters (empty ones left out). */
 export function link(path: string, params: Record<string, string | undefined>): string {
