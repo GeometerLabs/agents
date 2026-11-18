@@ -41,7 +41,8 @@ function file(o: { token?: string; codes?: string[]; at?: number; pending?: { as
     ...(o.codes ? { recovery: { codes: o.codes.map(recoveryHash), createdAt: new Date(at).toISOString() } } : {}),
     ...(o.passkeysBefore !== undefined ? { passkeysBefore: new Date(o.passkeysBefore).toISOString() } : {}),
     ...(o.pending ? { pendingRemoval: { askedBy: o.pending.by ?? "Divya", askedAt: new Date(o.pending.askedAt).toISOString(), effectiveAt: new Date(o.pending.askedAt + REMOVAL_WAIT_MS).toISOString() } } : {}),
-    ...(o.reset ? { reset: { at: new Date(o.reset.at).toISOString(), reason: o.reset.reason ?? "owner lost every phone", by: o.reset.by ?? "Naval" } } : {}),
+    // Geometer's reset carries its own QR (the token given for the file), exactly as the admin's file does; the panel's slot is empty in a reset
+    ...(o.reset ? { reset: { at: new Date(o.reset.at).toISOString(), reason: o.reset.reason ?? "owner lost every phone", by: o.reset.by ?? "Naval", ...(o.token ? { setup: { sha256: setupHash(o.token), expiresAt: new Date(o.reset.at + 60 * 60_000).toISOString() } } : {}) } } : {}),
   };
 }
 
@@ -331,6 +332,7 @@ test("Geometer's reset: the old QR, the card, the owner's own codes and every se
     // the admin's command: its own file, and a grants file holding ONLY the new QR
     const at = T0 + 2 * HOUR; const fresh = newSetupToken();
     const f1 = file({ token: fresh, at, reset: { at, reason: "owner lost every phone; checked on a video call", by: "Naval" } });
+    delete f1.setup; // the reset's QR is in the reset, never in the panel's slot
     assert.equal(access.passkeysBefore(f1, at + 5), at);
     assert.deepEqual(access.takeNotes().map((n) => n.what), ["reset"]);
     assert.equal(access.check(a.session, OWNER, at + 6), undefined, "every session ended");
@@ -359,7 +361,7 @@ test("the runtime's reader takes Geometer's reset only from its own file: a rese
     writeFileSync(grants, JSON.stringify({ schema: 1, reset: { at: new Date(T0).toISOString(), reason: "forged", by: "Operator" } }));
     assert.equal(read()?.reset, undefined, "a forged reset in the panel's file");
     writeFileSync(reset, JSON.stringify({ schema: 1, at: new Date(T0).toISOString(), reason: "owner lost every phone", by: "Naval" }));
-    assert.deepEqual(read()?.reset, { at: new Date(T0).toISOString(), reason: "owner lost every phone", by: "Naval" });
+    assert.deepEqual(read()?.reset, { at: new Date(T0).toISOString(), reason: "owner lost every phone", by: "Naval" }); // no QR in this one: setup is optional
     rmSync(grants);
     assert.equal(read()?.reset?.by, "Naval", "a reset with no grants file still reads");
     writeFileSync(reset, "{nope");

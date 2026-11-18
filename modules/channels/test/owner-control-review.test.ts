@@ -154,3 +154,29 @@ test("finding 1: if nobody cancels, the number change applies like a removal (ph
     assert.ok(c.access.check(a.session, WHO, T0 + 4 * DAY));
   } finally { c.done(); }
 });
+
+// ---- finding 2: Geometer's reset must not be undone by the panel's own buttons ----
+test("finding 2: after a reset the shop stays locked for the Operator until the owner has a phone again; only the reset's own QR works, and the phone is labelled from it", () => {
+  const w = world(); try {
+    const q0 = newSetupToken(); const f0 = f({ setup: w.qr(q0, T0) });
+    w.access.sync(f0, T0);
+    w.phone("p1", T0 + 1000);
+    const R = T0 + DAY; const adminQr = newSetupToken();
+    const reset = { at: new Date(R).toISOString(), reason: "dispute", by: "geometer", setup: { sha256: setupHash(adminQr), expiresAt: new Date(R + HOUR).toISOString() } };
+    const admin = f({ reset });
+    assert.equal(w.access.locked(admin, R + 5000), true, "no phone exists, yet the panel stays locked: the reset window");
+    // the Operator presses "new setup QR" and "print a recovery card" in the panel (the panel writes the grants file; the reset stays in the admin's file)
+    const opQr = newSetupToken(); const code = newRecoveryCode();
+    const opFile = f({ reset, setup: w.qr(opQr, R + 60_000), recovery: recovery([code], R + 60_000) });
+    assert.equal(w.access.grantState({ kind: "setup", token: opQr }, opFile, R + 70_000), "unknown", "the Operator's QR is refused in the window");
+    assert.equal(w.access.grantState({ kind: "recovery", code }, opFile, R + 70_000), "unknown", "and so is its card");
+    assert.equal(w.access.grantState({ kind: "setup", token: adminQr }, opFile, R + 70_000), "valid", "Geometer's QR is not overwritten by the panel's file");
+    assert.equal(w.access.grantState({ kind: "setup", token: adminQr }, opFile, R + 2 * HOUR), "expired");
+    // the owner registers with it: labelled "reset", the window closes, and the card staged in the window stays dead
+    const a = enrol(w.access, WHO, opFile, { kind: "setup", token: adminQr }, R + 100_000);
+    assert.equal(w.access.passkeys(WHO, relyingParty(WHO.base), w.access.passkeysBefore(opFile, R + 200_000))[0].via, "reset");
+    assert.equal(w.access.grantState({ kind: "recovery", code }, opFile, R + 30 * DAY), "unknown", "a card made in the window never becomes valid");
+    assert.equal(w.access.grantState({ kind: "setup", token: adminQr }, opFile, R + 100_500), "used");
+    assert.ok(a.session);
+  } finally { w.done(); }
+});

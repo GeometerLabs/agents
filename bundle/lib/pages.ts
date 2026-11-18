@@ -15,10 +15,10 @@
 //
 // Fleet is asked only when something changed (a new slug, a choice of "own", a removed shop) or once a day (the claim is idempotent), and a refused claim is not
 // sent again for ten minutes unless the slug changes. The deployment key is the deployer's (as for the paper signer's claim); no other container holds it.
-import { existsSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { OWNER_SESSIONS_FILE } from "../../modules/channels/owner-access.ts";
-import { OWNER_GRANTS_FILE, OWNER_RESET_FILE, RECOVERY_CODES, REMOVAL_WAIT_MS, SETUP_MS, newRecoveryCode, newSetupToken, readOwnerGrants, readOwnerReset, recoveryHash, setupHash } from "../../modules/channels/owner-grants.ts";
+import { OWNER_GRANTS_FILE, OWNER_RESET_FILE, RECOVERY_CODES, REMOVAL_WAIT_MS, RESET_QR_MS, SETUP_MS, newRecoveryCode, newSetupToken, readOwnerGrants, readOwnerReset, recoveryHash, setupHash } from "../../modules/channels/owner-grants.ts";
 import type { OwnerGrants } from "../../modules/channels/owner-grants.ts";
 import { PAGES_FILE, PHONE_SHAPE, isMapLink, readPagesFile } from "../../modules/channels/pages-file.ts";
 import type { PagesFile } from "../../modules/channels/pages-file.ts";
@@ -143,9 +143,8 @@ export function requestOwnerPasskeyRemoval(dir: string, shop: string, by: string
   writeGrants(dir, shop, { ...readGrants(dir, shop), pendingRemoval: { askedBy: by.slice(0, 80), askedAt: now.toISOString(), effectiveAt: new Date(now.getTime() + REMOVAL_WAIT_MS).toISOString() } });
 }
 
-export const ownerResetFile = (dir: string, shop: string): string => join(serverPaths(dir).shop(shop), OWNER_RESET_FILE);
-/** How long the QR that comes with Geometer's reset works: the admin may need to send it to the owner, so longer than the Operator's 15 minutes. */
-export const RESET_QR_MS = 60 * 60_000;
+export const ownerResetFile = (dir: string, shop: string): string => serverPaths(dir).adminOwnerReset(shop);
+export { RESET_QR_MS };
 
 /**
  * Geometer's reset (`geometer owner reset`, a server-admin command, never the panel): written to the admin-only OWNER_RESET_FILE, and the panel's grants file is replaced by
@@ -155,15 +154,19 @@ export const RESET_QR_MS = 60 * 60_000;
 export function resetOwnerSignin(dir: string, shop: string, o: { reason: string; by: string; now: Date }): { token: string; expiresAt: Date } {
   const token = newSetupToken();
   const expiresAt = new Date(o.now.getTime() + RESET_QR_MS);
-  writeAtomic(ownerResetFile(dir, shop), `${stableJson({ schema: 1, at: o.now.toISOString(), reason: o.reason.slice(0, 300), by: o.by.slice(0, 80) })}\n`);
-  writeGrants(dir, shop, { schema: 1, setup: { sha256: setupHash(token), createdAt: o.now.toISOString(), expiresAt: expiresAt.toISOString() } });
+  // the QR's hash goes in the admin-only reset file, and the panel's grants file is emptied: the runtime accepts the reset QR from the reset file only, so the Operator's
+  // panel buttons cannot replace it, and nothing the panel writes can stand in for it (owner-access.ts "inResetWindow")
+  mkdirSync(dirname(ownerResetFile(dir, shop)), { recursive: true, mode: 0o700 });
+  writeAtomic(ownerResetFile(dir, shop), `${stableJson({ schema: 1, at: o.now.toISOString(), reason: o.reason.slice(0, 300), by: o.by.slice(0, 80), setup: { sha256: setupHash(token), expiresAt: expiresAt.toISOString() } })}\n`);
+  writeGrants(dir, shop, { schema: 1 });
   return { token, expiresAt };
 }
 
 /** When the current card and the last QR were made, and passkeys last removed, for the panel's block. Never a hash. */
 export function ownerGrantsSummary(dir: string, shop: string): { setupAt?: string; recoveryAt?: string; removedAt?: string; resetAt?: string; resetReason?: string } {
   const g = readGrants(dir, shop);
-  const reset = readOwnerReset(read(ownerResetFile(dir, shop)));
+  // for display only, from the note the deployer wrote under status/ (the panel cannot read the admin's file, and a forged note changes one line of words)
+  const reset = readOwnerReset(read(serverPaths(dir).ownerResetNote(shop)));
   return { ...(g.setup ? { setupAt: g.setup.createdAt } : {}), ...(g.recovery ? { recoveryAt: g.recovery.createdAt } : {}), ...(g.passkeysBefore ? { removedAt: g.passkeysBefore } : {}), ...(reset ? { resetAt: reset.at, resetReason: reset.reason } : {}) };
 }
 
@@ -292,8 +295,13 @@ export async function syncPages(o: { dir: string; server: ServerConfig; shops: r
     keep(join(clientDir(dir, shop), OWNER_SESSIONS_FILE), endAll);
     // item 11h: the Operator's setup QR, recovery card and "remove the owner's passkeys" (hashes only), to the runtime, which reads it on every request
     if (keep(join(clientDir(dir, shop), OWNER_GRANTS_FILE), read(ownerGrantsFile(dir, shop)))) lines.push(`${shop}: the owner's sign-in codes are handed to the runtime.`);
-    // owner's item 2: Geometer's reset, a separate admin-only file, handed to the runtime the same way (and removed there when the admin's is gone)
-    if (keep(join(clientDir(dir, shop), OWNER_RESET_FILE), read(ownerResetFile(dir, shop)))) lines.push(`${shop}: Geometer's reset of the owner's sign-in is handed to the runtime.`);
+    // owner's item 2: Geometer's reset, a separate admin-only file (admin/owner-reset/, not mounted into the panel), handed to the runtime the same way (and removed there when
+    // the admin's is gone). The panel gets a note of it with no QR in it, under status/, which it mounts read-only.
+    const resetText = read(ownerResetFile(dir, shop));
+    if (keep(join(clientDir(dir, shop), OWNER_RESET_FILE), resetText)) lines.push(`${shop}: Geometer's reset of the owner's sign-in is handed to the runtime.`);
+    const reset = readOwnerReset(resetText);
+    const note = serverPaths(dir).ownerResetNote(shop);
+    if (reset) { mkdirSync(dirname(note), { recursive: true }); keep(note, `${stableJson({ schema: 1, at: reset.at, reason: reset.reason, by: reset.by })}\n`); } else keep(note, undefined);
   }
 
   // a shop that is no longer deployed here gives its name back (it cools at fleet; a mistaken removal undone within 90 days keeps it and its page id)

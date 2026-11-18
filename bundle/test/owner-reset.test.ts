@@ -7,7 +7,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { grantInFile, readOwnerGrants, readOwnerReset } from "../../modules/channels/owner-grants.ts";
+import { grantInFile, readOwnerGrants, readOwnerReset, setupHash } from "../../modules/channels/owner-grants.ts";
 import { main } from "../geometer.ts";
 import { tempServer } from "./helpers.ts";
 
@@ -37,14 +37,15 @@ test("owner reset: one new QR as a link and a PNG, the reason and the name kept 
     assert.match(r.out, /Every phone, setup QR, recovery code and signed-in device of the owner stops working/u);
     assert.deepEqual([...readFileSync(png).subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], "a PNG of the same QR");
 
-    const reset = readOwnerReset(readFileSync(join(t.paths.shop("glow-salon"), "owner-reset.json"), "utf8"))!;
+    const reset = readOwnerReset(readFileSync(t.paths.adminOwnerReset("glow-salon"), "utf8"))!;
     assert.deepEqual([reset.reason, reset.by], ["owner lost every phone; checked on a video call", "Naval"]);
+    assert.ok(!t.paths.adminOwnerReset("glow-salon").includes(`${"shops"}${"/"}`), "not under shops/, which the panel mounts read-write");
     const text = readFileSync(grants, "utf8");
     assert.ok(!text.includes(link![2]), "only the QR's hash is kept");
     const file = readOwnerGrants(text)!;
-    assert.deepEqual([file.recovery, file.pendingRemoval, file.passkeysBefore], [undefined, undefined, undefined], "the card, the request and the old values are gone");
-    assert.equal(grantInFile({ kind: "setup", token: link![2] }, file, Date.parse(reset.at) + 1000), "valid");
-    assert.equal(grantInFile({ kind: "setup", token: link![2] }, file, Date.parse(reset.at) + 61 * 60_000), "expired", "an hour, for the admin to hand it over");
+    assert.deepEqual([file.recovery, file.pendingRemoval, file.passkeysBefore, file.setup], [undefined, undefined, undefined, undefined], "the QR, the card, the request and the old values are gone from the panel's file");
+    assert.equal(reset.setup?.sha256, setupHash(link![2]), "the QR's hash is in the admin's reset file");
+    assert.equal(Date.parse(reset.setup!.expiresAt) - Date.parse(reset.at), 60 * 60_000, "an hour, for the admin to hand it over");
     assert.equal(grantInFile({ kind: "setup", token: old.token }, file, Date.parse(reset.at) + 1000), "unknown", "the Operator's old QR");
   } finally { t.done(); rmSync(scratch, { recursive: true, force: true }); }
 });
@@ -52,7 +53,7 @@ test("owner reset: one new QR as a link and a PNG, the reason and the name kept 
 test("owner reset: a reason and a name are needed, the shop must exist, and nothing is written when it is refused", async () => {
   const t = tempServer();
   try {
-    const resetFile = join(t.paths.shop("glow-salon"), "owner-reset.json");
+    const resetFile = t.paths.adminOwnerReset("glow-salon");
     assert.match((await geometer(t.root, "owner", "reset", "glow-salon", "--by", "Naval")).error ?? "", /Say why/u);
     assert.match((await geometer(t.root, "owner", "reset", "glow-salon", "--reason", "owner lost every phone")).error ?? "", /Say who is resetting it/u);
     assert.match((await geometer(t.root, "owner", "reset", "nope", "--reason", "owner lost every phone", "--by", "Naval")).error ?? "", /no shop called nope/u);
