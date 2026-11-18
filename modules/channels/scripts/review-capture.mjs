@@ -12,6 +12,7 @@
 //   --playwright-from   the path of a package.json whose node_modules hold `playwright-core` (with its Chromium installed) and `axe-core`; default: the PLAYWRIGHT_FROM
 //                       environment variable, else ./package.json. This repository has no browser dependency of its own (it adds none), so point it at any project that has them,
 //                       for example `--playwright-from ../public-web/package.json`.
+//                       The path is relative to the folder the command runs in, so from a worktree give an absolute path.
 // Run it from the repository root (the screens server is started from there). Nothing is sent to any network address but this machine's own.
 import { createRequire } from "node:module";
 import { spawn } from "node:child_process";

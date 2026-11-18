@@ -13,9 +13,13 @@
 import { esc } from "../core/html.ts";
 import type { Language } from "../language/languages.ts";
 import { IDENTITY } from "./words-chat-identity.ts";
+import { forKind } from "./words-chat.ts";
+import type { ChatKind } from "./words-chat.ts";
 
 export interface IdentityBlockArgs {
   language: Language;
+  /** The kind of shop, so a Fees centre's lines say "centre" (words-chat.ts forKind); left out, they say "shop". */
+  kind?: ChatKind;
   /** https://<page>/chat, no trailing slash: the addresses the script calls start with it. */
   base: string;
   /** A parent's private fee page: no keys and no number (the link is their identity); only the note and a way back to the fees. */
@@ -24,7 +28,7 @@ export interface IdentityBlockArgs {
 
 /** The markup and the script for the chat page's identity part. The script is empty when there is nothing to run. */
 export function identityBlock(a: IdentityBlockArgs): { html: string; script: string } {
-  const w = IDENTITY[a.language];
+  const w = forKind(a.kind ?? "bookings", a.language, IDENTITY[a.language]);
   if (a.parent) {
     return { html: `<section class="idbox"><p class="sys">${esc(w.parentNote)}</p><p class="sys"><a class="btn quiet" href="${esc(a.parent.back)}">${esc(w.parentBack)}</a></p></section>`, script: "" };
   }

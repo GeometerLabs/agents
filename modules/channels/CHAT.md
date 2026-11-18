@@ -34,6 +34,10 @@ It is written for people who are not technical: big worded buttons before typing
 - The page opens at the latest line and stays there while things above it settle, until the guest scrolls.
 - Words the guest reads never include "AI", "bot", "session", "error", "retry" or "passkey".
 
+## Shop or centre
+
+A tuition centre is not a shop. On a Fees chat every line that says "shop" says "centre" instead ("Call the centre", "The centre's assistant replies here...", "The centre keeps this chat for 30 days"), in all four languages. It is done with one small per-kind noun table in `words-chat.ts` (`NOUN`, with the case endings Malayalam and Kannada need) and `forKind(kind, language, words)`, which the page applies to the chat, moments, call button and identity-box words; the sentences are not copied per kind. Bookings, Orders and listings keep "shop". The changed lines are on the review sheets as `chat.centre.*` (`node bundle/panel/review-sheet.ts hi|ml|kn`). A test (`test/chat.test.ts`) checks that a Fees chat never says shop.
+
 ## The states
 
 `empty`, `answered`, `long`, `sending`, `failed`, `slow`, `offline`, `capped`, `closed`, `paused`, `alerts`, `confirmed`, `paid`, `confirmed-live`, `paid-live`, `voice`, `recording`, `busy`, `keep`, `newphone`, and `paints` (the five signboard paints and their contrast). Three kinds of shop: `bookings`, `orders`, `fees` (and `fees` with `?parent=1`, a parent's own fee).
