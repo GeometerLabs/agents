@@ -19,6 +19,8 @@ import type { CheckResult } from "./checks.ts";
 import type { LiveView, ShopStatus } from "./contract.ts";
 import { presetWords } from "./words-presets.ts";
 import { keepWords } from "./words-keep.ts";
+import { panelLeave } from "./words-leave.ts";
+import type { LeaveView } from "./leave.ts";
 import { html, raw } from "./html.ts";
 import type { Raw } from "./html.ts";
 import type { PlanView } from "./plan.ts";
@@ -201,6 +203,7 @@ ${o.cards.length === 0 ? html`<p class="big">${w.empty}</p><a class="btn primary
   <div class="meta">${s.setUpBy ? w.setUpBy(s.setUpBy) : w.setUpOnServer}</div>${s.licence && s.licence !== "active" ? html`
   <div class="meta"><b>${c.w.licence.states[s.licence]}</b></div>` : ""}</a>`)}</div>`}
 ${o.agents ?? ""}
+${o.all ? html`<p class="mt"><a href="/stranded">${panelLeave(c.w).strandedTitle}</a></p>` : ""}
 ${o.serverLink && !o.serverToDo ? html`<p class="mt"><a href="/server">This server: its model, backups and keys</a></p>` : ""}`);
 }
 
@@ -273,6 +276,8 @@ export interface ShopView {
   liveCounts?: { bookings: Record<string, number>; waitingForOwner: number; needBuilder: number };
   /** This shop's unfinished work (B31), read from its exported record. */
   inbox?: ShopInbox;
+  /** Block S: the owner's own asks for their file and for another Operator (leave.ts). Left out when the owner has asked for neither. */
+  leave?: LeaveView;
   /** B72: the words of the link to the shop terms page; left out while the feature is off (the page does not exist then). */
   termsLink?: string;
   /** B29: the word for the link to the shop's voice-notes page (always shown; the switch on it is off until turned on). */
@@ -439,6 +444,7 @@ ${v.papers.canMakeReport ? html`<p><a class="btn" href="/shops/${v.id}/papers">$
 ${v.termsLink ? html`<p><a class="btn" href="/shops/${v.id}/terms">${v.termsLink}</a></p>` : ""}
 ${v.voiceLink ? html`<p><a class="btn" href="/shops/${v.id}/voice">${v.voiceLink}</a></p>` : ""}
 
+${v.leave ? leaveBlock(c, v.id, v.leave) : ""}
 <h2>${c.w.takeOut.heading}</h2>
 <p>${c.w.takeOut.text}</p>
 <p><a class="btn" href="/shops/${v.id}/export">${c.w.takeOut.button}</a></p>
@@ -456,6 +462,21 @@ ${v.cost.lines.map((l) => `${l.id}: ${l.uses.join(", ") || "-"} (${l.quality ?? 
   <pre>${v.details.runtimeJson}</pre>
 </details>` : ""}
 `);
+}
+
+/** The owner's own asks, on the shop's page: what they asked, where it stands, and (for another Operator) what to do and how long is left before Geometer is shown the shop. */
+function leaveBlock(c: Ctx, id: string, l: LeaveView): Raw {
+  const w = panelLeave(c.w);
+  const day = (iso: string) => when(iso, c.lang);
+  const file = l.file ? html`<p>${w.fileAsked(day(l.file.askedAt))}</p><p class="note">${l.file.state === "ready" && l.file.until ? w.fileReady(day(l.file.until)) : l.file.state === "taken" ? w.fileTaken : l.file.state === "expired" ? w.fileExpired : l.file.state === "problem" ? w.fileProblem(l.file.problem ?? "") : ""} ${w.fileNote}</p>` : "";
+  const op = l.operator ? html`<p class="notice" role="status">${w.operatorAsked(day(l.operator.askedAt))}</p>${l.operator.handover === "waiting" ? html`<p>${w.operatorWaiting}</p>` : html`<p>${w.operatorDo}</p><p><a class="btn" href="/shops/${id}/handover">${w.operatorStart}</a></p>`}<p class="note">${w.operatorClock(l.operator.daysLeft)}</p>` : "";
+  return html`<h2>${w.heading}</h2>${file}${op}`;
+}
+
+/** Geometer's admin: the shops whose owner asked for another Operator long ago and nothing has happened (decision 17). */
+export function strandedPage(c: Ctx, rows: { shop: string; name: string; when: string; operator: string }[]): string {
+  const w = panelLeave(c.w);
+  return layout(c, w.strandedTitle, html`<h1>${w.strandedTitle}</h1><p class="note">${w.strandedNote}</p>${rows.length === 0 ? html`<p>${w.strandedNone}</p>` : html`<ul class="linklist">${rows.map((r) => html`<li><a href="/shops/${r.shop}">${w.strandedRow(r.name, r.when, r.operator)}</a></li>`)}</ul>`}`);
 }
 
 // ---- moving a shop to someone else (B38) ---------------------------------------------------------------------------------------------------------------

@@ -47,6 +47,7 @@ import { createGoLive } from "./golive.ts";
 import type { Unmet } from "./golive.ts";
 import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
 import { createHandover } from "./handover.ts";
+import { createLeave } from "./leave.ts";
 import { createTerms } from "./terms.ts";
 import { termsLinkWord, termsPage } from "./views-terms.ts";
 import { createChannels } from "./channels.ts";
@@ -90,7 +91,7 @@ import { backupKeyFile, backupKeyPage, serverPage } from "./views-server.ts";
 import { discoverTemplates } from "./templates.ts";
 import type { Template } from "./templates.ts";
 import { createVault, loadKeyFile, plainVault } from "./vault.ts";
-import { errorPage, handoverPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, resetPage, setupChecksPage, signinPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
+import { errorPage, strandedPage, handoverPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, resetPage, setupChecksPage, signinPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
 import type { ChecksView, Ctx, HandoverView, ShopCardView, ShopView } from "./views.ts";
 import { WORDS, isDraftLanguage } from "./languages.ts";
 
@@ -151,6 +152,8 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const confirmations = createConfirmations(store, now);
   // item 11d: a shop that moves to another Operator loses the owner's link the old Operator made; the new Operator makes the owner a new one
   const handover = createHandover(shops, accounts, store, now, (shop) => channels.revoke(shop));
+  // block S: the owner's own asks (their file, another Operator), read from the record and the deployer's status; the Operator sees them and cannot stop them
+  const leave = createLeave(config.serverDir, shops, handover, now);
   const terms = createTerms(shops, config.serverDir); // B72: shop terms agreed on WhatsApp; off unless geometer.json says so
   const channels = createChannels(config.serverDir, config.publicUrl); // item 11d: each shop's page, MCP endpoint and the owner's approvals link (channels.ts)
   /** Item 11h: the templates whose shops have a page and an owner's page: Bookings (item 11d), Orders and Fees. */
@@ -560,6 +563,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       ...(licence ? { licence } : {}),
       ...(report ? { activity: { made: report.bookings.made, cancelled: report.bookings.cancelled, moved: report.bookings.moved, deposits: report.money.deposits.count, refunds: report.money.refunds.count, saidNo: report.stopped.total, owner: report.owner } } : {}),
       inbox: inboxFor(shops, id, now(), unfinished),
+      ...(leave.view(id) ? { leave: leave.view(id)! } : {}),
       ...(counts ? { liveCounts: { bookings: counts[kindFor(kindId)!.casesName] ?? {}, waitingForOwner: Number(counts.refunds?.waitingForOwner ?? 0), needBuilder: Number(counts.refunds?.needBuilder?.total ?? 0) } } : {}),
       termsLink: terms.on() ? termsLinkWord(c.lang) : undefined,
       // item 11d: a shop whose template has a page (Bookings; item 11h: Orders and Fees too), and only a panel that knows the server's public address can show its links
@@ -800,6 +804,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     handover.cancel(ref.id);
     redirect(r, `/shops/${ref.id}/handover`);
   });
+
+  // block S, decision 17: the shops whose owner asked for another Operator more than 14 days ago and nothing happened: Geometer's admin (a builder account on this server) sees them
+  on("GET", /^\/stranded$/u, "builder", (r) => page(r, 200, strandedPage(r.ctx(), leave.stranded().map((s) => ({ ...s, when: when(s.askedAt, r.ctx().lang) })))));
 
   on("GET", /^\/shops\/([a-z0-9-]{1,40})\/stop$/u, "user", (r) => {
     const ref = shops.find(r.account!, r.params[0]);
