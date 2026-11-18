@@ -125,9 +125,12 @@ phone check for an owner who **signs up alone** is not built yet (Deferred).
    shop's own runtime budget** (`runtime.json` `budget`, from the caps module under the plan `listings-only`: the month's rupees and each feature's daily calls; inert until the owner approves the price list that has it), counted in that shop's own
    store. The model Guard's own cap (`model-calls-per-day`) is **one number for the whole server**, shared by every shop on it: a flood from one shop's owner is stopped by that shop's
    budget first, but a server-wide spike can still use up the day's calls for everyone (Deferred: a cap per agent at the Guard).
-6. **A shop that fails to start does not stop the others** (a bad folder is skipped; the process stays healthy). An error inside a request is caught by that shop's own server. What the
-   process cannot promise is protection from a crash that escapes every `try` (an unhandled rejection): that would take the whole process down, and every shop with it, until the container
-   restarts (seconds; each shop's saved steps resume). One process per shop is the price of ruling that out; it is Deferred, with its trigger.
+6. **One shop's failure is that shop's alone** (`modules/runtime/shared.ts`, "crash containment"). A request's error is caught by that shop's server; a step that throws is that shop's failed
+   task; a start that fails is logged once and tried again after a back-off. A shop whose `/readyz` is bad three scans in a row (its store cannot be read, its queue is wedged) is stopped and
+   started again **alone**, after a pause that doubles (5 s up to 5 min). Anything that still escapes every `try` (an unhandled rejection or exception) is caught by a process-level handler,
+   logged once, and charged to the shop it came from (found through the async context the shop was started in), so that shop is restarted alone; the process does not exit. What this cannot
+   rule out is a shop that blocks the event loop or runs the process out of memory: that takes every shop with it. A process for each shop would stop it, at about 40 to 60 MB a shop instead
+   of a few; it is Deferred with its trigger.
 
 `templates/commerce/listings/test/shared-shops.test.ts` runs two real shops on one process and presents every credential of one to the other (channel token, internal token, owner link, grant,
 session, photo id); `modules/runtime/test/shared.test.ts` tests the finding, restarting and letting go with stand-ins.
