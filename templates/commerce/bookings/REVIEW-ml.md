@@ -1554,6 +1554,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `phones.alertSince` | 19 Nov 2026 മുതൽ അലർട്ടുകൾ | Alerts since 19 Nov 2026 |  |
 | `phones.stop` | നിർത്തൂ | Stop |  |
 | `phones.bannerNumber` | ഓപ്പറേറ്ററുടെ പാനലിൽ ഉടമയുടെ നമ്പർ വേറൊന്നായി കാണിക്കുന്നു. നിങ്ങളുടെ സന്ദേശങ്ങൾ ഇപ്പോഴും നിങ്ങളുടെ നമ്പറിലേക്ക് തന്നെ വരുന്നു. | The Operator's panel shows a different owner number. Your messages still come to your number. |  |
+| `phones.lockedTo` | സന്ദേശങ്ങൾ 0001 എന്നതിൽ അവസാനിക്കുന്ന നിങ്ങളുടെ നമ്പറിലേക്കാണ് വരുന്നത്. നിങ്ങളുടേതല്ലേ? ഓപ്പറേറ്ററോടോ Geometer-നോടോ പറയൂ. | Messages go to your number ending 0001. Not yours? Tell your Operator, or Geometer. |  |
 | `phones.bannerOwner` | ഈ കടയുടെ ഉടമയുടെ നമ്പർ മാറ്റി. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും 21 Nov, 10:00 am-ന് പ്രവർത്തിക്കില്ല. | The owner's number for this shop was changed. Every phone that opens your shop stops working on 21 Nov, 10:00 am unless you cancel. |  |
 | `phones.bannerCodesMade` | 19 Nov, 3:42 pm-ന് പുതിയ റിക്കവറി കോഡുകൾ ഉണ്ടാക്കി (Android, Chrome). നിങ്ങളല്ലേ? ആ ഫോൺ നീക്കൂ. | New recovery codes were made on 19 Nov, 3:42 pm (Android, Chrome). Not you? Remove that phone. |  |
 | `phones.bannerRemoved` | 19 Nov, 3:42 pm-ന് ഒരു ഫോൺ നീക്കി (Android, Chrome). | A phone was removed on 19 Nov, 3:42 pm (Android, Chrome). |  |

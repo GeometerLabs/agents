@@ -12,7 +12,7 @@ import { OWNER_ACCESS_FILE, openOwnerAccess } from "../owner-access.ts";
 import type { OwnerAccess } from "../owner-access.ts";
 import { newSetupToken, setupHash } from "../owner-grants.ts";
 import type { OwnerGrants } from "../owner-grants.ts";
-import { createOwnerSignin } from "../owner-signin.ts";
+import { createOwnerSignin, followLockedNumber } from "../owner-signin.ts";
 import type { PagesFile } from "../pages-file.ts";
 import { relyingParty } from "../webauthn.ts";
 import { newSoftPasskey, softRegister } from "./soft-authenticator.ts";
@@ -94,5 +94,137 @@ test("an owner-number change seen before a restart is told by the tick too, once
     assert.equal(record.entries().filter((e) => e.refs.what === "owner_change_asked" || e.refs.what === "removal_extended").length, 1);
     assert.equal(alerts.length, 1);
     access.close();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// ---- the effective owner number: a function evaluated on every use, never a value fixed at start ----
+const OWNER_B = { owner: B, base: OWNER_BASE };
+
+/** One "process": a store opened on `path`, the settings object the templates read (with the effective-number getter, as start.ts makes it) and a sign-in over it. */
+function boot(path: string, settingsNumber: string, clock: ReturnType<typeof fakeClock>, grants: () => OwnerGrants) {
+  const access = openOwnerAccess(path);
+  const settings = { owner: { whatsapp: settingsNumber, language: "en" as const } };
+  const logs: string[] = [];
+  const read = followLockedNumber(settings.owner, access, (l) => logs.push(l));
+  const signin = createOwnerSignin({ access, pages: () => PAGES, endBefore: () => undefined, grants, owner: { whatsapp: read, language: "en" }, shopName: "Glow", clock });
+  const record = createRecord(clock);
+  return { access, settings, signin, record, logs, close: () => access.close() };
+}
+
+/** Lock with owner A, the Operator changes the number to B, the restart turns the override on. Returns the open "process" and the clock. */
+function lockedWithA(path: string) {
+  const clock = fakeClock(T0);
+  const q = newSetupToken(); let file = qr(q, T0);
+  let p = boot(path, A, clock, () => file);
+  p.access.sync(file, T0);
+  const first = register(p.access, file, q, { owner: A, base: OWNER_BASE }, T0 + 1000);
+  assert.equal(p.access.boundNumber(), A.replace(/\D/gu, ""), "locked with A");
+  p.close();
+  // the Operator edits the number to B; the runtime restarts
+  clock.set(T0 + HOUR);
+  p = boot(path, B, clock, () => file);
+  assert.equal(p.settings.owner.whatsapp, A, "after the restart the shop still talks to A");
+  return { p, clock, first, setFile: (f: OwnerGrants) => { file = f; }, file: () => file };
+}
+
+test("a full sale: the change applies after 48 hours with NO restart, the new owner registers, a restart: the shop is bound to B, A's link session is refused, sends go to B", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "owner-third-"));
+  const path = join(dir, OWNER_ACCESS_FILE);
+  try {
+    const s = lockedWithA(path);
+    let p = s.p;
+    // A links a session while A is still the owner (the previous owner's "open my app" later on)
+    const aWho = { owner: A, base: OWNER_BASE };
+    const aLink = p.access.issue({ ...aWho, via: "whatsapp", now: s.clock.now() });
+    const aSession = p.access.consume(aLink.token, aWho, s.clock.now() + 1);
+    assert.ok(aSession.ok);
+    p.signin.tick({ record: p.record }); // the tick sees the settings name B: a request, and the owner (A) is told
+    assert.equal(p.settings.owner.whatsapp, A, "while the request waits, messages still go to A");
+    // 48 hours pass; the tick applies the change; NOBODY restarts
+    s.clock.set(s.clock.now() + 49 * HOUR);
+    p.signin.tick({ record: p.record });
+    assert.equal(p.settings.owner.whatsapp, B, "the change applied: the very next send goes to the settings' number, with no restart");
+    // the new owner registers with a new QR (the gate is open)
+    const q2 = newSetupToken(); const f2 = qr(q2, s.clock.now()); s.setFile(f2);
+    p.access.sync(f2, s.clock.now());
+    const reg = register(p.access, f2, q2, { owner: p.settings.owner.whatsapp, base: OWNER_BASE }, s.clock.now() + 1000);
+    assert.equal(p.access.boundNumber(), B.replace(/\D/gu, ""), "bound to B, not to the old number");
+    p.signin.tick({ record: p.record });
+    // a RESTART
+    p.close();
+    s.clock.set(s.clock.now() + HOUR);
+    p = boot(path, B, s.clock, s.file);
+    assert.equal(p.access.boundNumber(), B.replace(/\D/gu, ""));
+    assert.equal(p.settings.owner.whatsapp, B, "effective number after the restart is B");
+    assert.equal(p.logs.length, 0, "settings and lock agree: nothing to say");
+    assert.equal(p.access.pendingRemoval(s.file(), s.clock.now()), undefined, "no request is raised again for B");
+    assert.equal(p.access.check(aSession.ok ? aSession.session : "", OWNER_B, s.clock.now()), undefined, "A's link session is refused");
+    assert.equal(p.access.check(aSession.ok ? aSession.session : "", aWho, s.clock.now()), undefined, "and refused when asked with A's number too");
+    assert.ok(p.access.check(reg.session, OWNER_B, s.clock.now()), "B's passkey session is good");
+    // owner sends go to B: the sign-in link goes to B's number, and "open my app" is heard from B only
+    assert.equal(p.signin.takes({ kind: "message", message: { id: "m1", from: B, text: "open my app", at: s.clock.now(), kind: "text" } as never }), true);
+    assert.equal(p.signin.takes({ kind: "message", message: { id: "m2", from: A, text: "open my app", at: s.clock.now(), kind: "text" } as never }), false, "the previous owner's 'open my app' is not the owner's");
+    p.close();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("after Geometer's reset the number follows the settings with no restart, and a new registration binds to it", () => {
+  const dir = mkdtempSync(join(tmpdir(), "owner-third-"));
+  const path = join(dir, OWNER_ACCESS_FILE);
+  try {
+    const s = lockedWithA(path);
+    let p = s.p;
+    assert.equal(p.settings.owner.whatsapp, A);
+    // Geometer resets the shop's sign-in (the admin's file, read by the runtime's own reader)
+    const resetQr = newSetupToken();
+    const now = s.clock.now() + HOUR;
+    s.clock.set(now);
+    s.setFile({ schema: 1, reset: { at: iso(now), by: "Geometer", reason: "sold", setup: { sha256: setupHash(resetQr), createdAt: iso(now), expiresAt: iso(now + 15 * 60_000) } } } as OwnerGrants);
+    p.signin.tick({ record: p.record });
+    assert.equal(p.settings.owner.whatsapp, B, "the lock is gone: messages follow the settings, no restart needed");
+    const reg = register(p.access, s.file(), resetQr, { owner: p.settings.owner.whatsapp, base: OWNER_BASE }, now + 1000);
+    assert.equal(p.access.boundNumber(), B.replace(/\D/gu, ""));
+    p.close();
+    p = boot(path, B, s.clock, s.file);
+    assert.equal(p.settings.owner.whatsapp, B);
+    assert.ok(p.access.check(reg.session, OWNER_B, now + 2000));
+    p.close();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("the hostage case still holds: a change the owner cancels keeps every owner message on A, through restarts", () => {
+  const dir = mkdtempSync(join(tmpdir(), "owner-third-"));
+  const path = join(dir, OWNER_ACCESS_FILE);
+  try {
+    const s = lockedWithA(path);
+    let p = s.p;
+    p.signin.tick({ record: p.record });
+    assert.equal(p.access.pendingRemoval(s.file(), s.clock.now())?.kind, "owner_change");
+    assert.equal(p.access.cancelRemoval(s.file(), s.clock.now() + 1000), true, "the owner cancels");
+    s.clock.set(s.clock.now() + 3 * DAY);
+    p.signin.tick({ record: p.record });
+    assert.equal(p.settings.owner.whatsapp, A, "still A, however long the settings say B");
+    assert.equal(p.signin.takes({ kind: "message", message: { id: "m1", from: B, text: "open my app", at: s.clock.now(), kind: "text" } as never }), false, "B cannot open the app");
+    p.close();
+    p = boot(path, B, s.clock, s.file);
+    assert.equal(p.settings.owner.whatsapp, A, "and after a restart too");
+    p.close();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("the phones page says which number the shop is locked to (last 4 digits), in four languages", async () => {
+  const { phonesPage } = await import("../owner-phones-page.ts");
+  const dir = mkdtempSync(join(tmpdir(), "owner-third-"));
+  try {
+    const s = lockedWithA(join(dir, OWNER_ACCESS_FILE));
+    const sid = s.first.id;
+    const view = s.p.access.phonesView(sid, { owner: A, base: OWNER_BASE }, RP, s.file(), s.clock.now())!;
+    assert.equal(view.lockedLast4, "0001");
+    for (const [language, mark] of [["en", "ending 0001"], ["hi", "0001"], ["ml", "0001"], ["kn", "0001"]] as const) {
+      const page = phonesPage({ base: OWNER_BASE, language, view: { ...view, language, now: s.clock.now() }, hosted: false });
+      assert.ok(page.includes(mark), `${language} names the last 4 digits`);
+      assert.ok(!page.includes("919800000001"), "never the whole number");
+    }
+    s.p.close();
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

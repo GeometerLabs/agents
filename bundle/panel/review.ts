@@ -201,7 +201,7 @@ const limitsFlat = (language: Language): Map<string, string> => flatWords({ limi
 const phonesFlat = (language: Language): Map<string, string> => {
   const out = flatWords({ phones: PHONES_WORDS[language] }, {
     "phones.added": ["19 Nov 2026"], "phones.lastUsed": ["19 Nov, 3:42 pm"], "phones.removeAsk": ["Android, Chrome"], "phones.addHow": ["4:30 pm"], "phones.codesHave": ["19 Nov 2026"],
-    "phones.bannerNew": ["19 Nov, 3:42 pm", "Android, Chrome"], "phones.bannerRequest": ["Divya", "21 Nov, 10:00 am"], "phones.bannerOwner": ["21 Nov, 10:00 am"], "phones.alertSince": ["19 Nov 2026"], "phones.bannerCodesMade": ["19 Nov, 3:42 pm", "Android, Chrome"], "phones.bannerRemoved": ["19 Nov, 3:42 pm", "Android, Chrome"],
+    "phones.bannerNew": ["19 Nov, 3:42 pm", "Android, Chrome"], "phones.bannerRequest": ["Divya", "21 Nov, 10:00 am"], "phones.bannerOwner": ["21 Nov, 10:00 am"], "phones.lockedTo": ["0001"], "phones.alertSince": ["19 Nov 2026"], "phones.bannerCodesMade": ["19 Nov, 3:42 pm", "Android, Chrome"], "phones.bannerRemoved": ["19 Nov, 3:42 pm", "Android, Chrome"],
   });
   out.set("phones.lostHelp", LOST_HELP[language]);
   out.set("phones.alert.newPhone", NEW_PHONE_ALERT(Date.UTC(2026, 10, 19, 10, 12), "Android, Chrome")[language]);

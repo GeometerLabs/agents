@@ -1507,6 +1507,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `phones.alertSince` | 19 Nov 2026 से अलर्ट | Alerts since 19 Nov 2026 |  |
 | `phones.stop` | रोकें | Stop |  |
 | `phones.bannerNumber` | ऑपरेटर के पैनल में मालिक का नंबर कुछ और दिख रहा है। आपके संदेश अब भी आपके नंबर पर आते हैं। | The Operator's panel shows a different owner number. Your messages still come to your number. |  |
+| `phones.lockedTo` | संदेश आपके उस नंबर पर आते हैं जो 0001 पर खत्म होता है। आपका नहीं है? अपने ऑपरेटर या Geometer को बताइए। | Messages go to your number ending 0001. Not yours? Tell your Operator, or Geometer. |  |
 | `phones.bannerOwner` | इस दुकान के लिए मालिक का नंबर बदला गया है। आप रद्द न करें तो दुकान खोलने वाले सारे फ़ोन 21 Nov, 10:00 am को बंद हो जाएँगे। | The owner's number for this shop was changed. Every phone that opens your shop stops working on 21 Nov, 10:00 am unless you cancel. |  |
 | `phones.bannerCodesMade` | 19 Nov, 3:42 pm को नए रिकवरी कोड बनाए गए (Android, Chrome)। आपने नहीं बनाए? वह फ़ोन हटा दीजिए। | New recovery codes were made on 19 Nov, 3:42 pm (Android, Chrome). Not you? Remove that phone. |  |
 | `phones.bannerRemoved` | 19 Nov, 3:42 pm को एक फ़ोन हटाया गया (Android, Chrome)। | A phone was removed on 19 Nov, 3:42 pm (Android, Chrome). |  |
