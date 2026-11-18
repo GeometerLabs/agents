@@ -239,28 +239,34 @@ const OWNER = `
  * loads, for the name, headings and buttons only: Hindi, Malayalam and Kannada stay on the phone's own font). Flat colours only, as on every page (no gradients, glows,
  * textures, shadows on text, dashed lines or bobbing: the owner rejected those on 14 Nov). The shop's bubble is shutter green with white text and a squared bottom-left
  * corner, the guest's is card white with ink text and a squared bottom-right, as on the Streetlist home page's phone. Marigold is the one inviting action only.
- * The page is a column the height of the visible screen (script sets --vvh from the visual viewport, so the composer rides above the keyboard); the thread scrolls.
+ * The page scrolls as one page and its bottom bar (the notes and the composer) is `position: sticky; bottom: 0` (18 Nov 2026, after the design review): see .bar below.
  */
 const CHAT = `
-html, body.chat { height: 100%; }
-body.chat { display: flex; flex-direction: column; height: var(--vvh, 100dvh); overflow: hidden; font-family: var(--text); }
+body.chat { display: flex; flex-direction: column; min-height: 100dvh; font-family: var(--text); }
 .display, .sign h1, .tap, .comp button, .sign .mood { font-family: var(--display, var(--text)); }
 .sign { flex: none; background: var(--paint, var(--head)); color: var(--paint-ink, var(--ink)); padding: 10px 0 10px; border-bottom: 1px solid var(--line2); }
-.sign .wrap { position: static; }
-.sign-in { display: flex; gap: 12px; align-items: center; padding-right: 52px; min-height: 60px; }
+.sign .wrap { position: static; display: grid; gap: 8px; }
+/* The head is laid out by wrapping, never by absolute positions (18 Nov 2026 review: at 200% text the language button sat on the assistant's status line). Row one: the face, the
+   name with the status (which may wrap onto more lines) and the light/dark switch. Row two: "Call the shop" and the language button; each wraps to its own line when there is no room. */
+.sign-top { display: flex; align-items: center; gap: 12px; }
+.sign-in { display: flex; flex: 1 1 0; min-width: 0; gap: 12px; align-items: center; min-height: 60px; }
+.sign-in > div { min-width: 0; }
+.sign-acts { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.sign-acts .callbtn { min-height: 44px; margin: 0; padding: .3em 1em; }
 .sign .face-c { width: 52px; height: 52px; border-radius: 14px; }
 .sign h1 { margin: 0; font-size: 1.3rem; line-height: 1.15; font-weight: 700; overflow-wrap: anywhere; }
 .sign .mood { margin: 4px 0 0; padding: .15em .6em; font-size: .82rem; background: var(--card); color: var(--ink); }
-.sign .theme { top: 8px; right: 16px; }
-.sign .lang { position: absolute; top: 56px; right: 16px; }
+.sign .theme { position: static; flex: none; width: 44px; height: 44px; margin: 0; }
+.lang { position: relative; margin-left: auto; }
 .lang summary { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 12px; border-radius: 999px; background: var(--card); color: var(--ink); border: 1px solid var(--line2); font-size: .9rem; cursor: pointer; list-style: none; }
 .lang summary::-webkit-details-marker { display: none; }
-.lang div { position: absolute; right: 0; z-index: 3; display: grid; min-width: 9rem; margin-top: 4px; background: var(--card); border: 1px solid var(--line2); border-radius: 14px; overflow: hidden; }
+.lang div { position: absolute; right: 0; top: 100%; z-index: 3; display: grid; min-width: 9rem; margin-top: 4px; background: var(--card); border: 1px solid var(--line2); border-radius: 14px; overflow: hidden; }
 .lang a, .lang b { display: flex; align-items: center; min-height: 44px; padding: 0 14px; color: var(--ink); text-decoration: none; }
 .lang b { background: var(--pill); color: var(--pill-ink); }
 .banner { flex: none; margin: 0; padding: 8px 16px; background: var(--wait-bg); color: var(--wait); font-size: .92rem; text-align: center; }
-.thread { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 14px 0 8px; scroll-behavior: auto; }
+.thread { flex: 1 0 auto; padding: 14px 0 8px; }
 .thread .wrap { display: grid; gap: 8px; }
+.sys.small { font-size: .74rem; margin-top: -4px; }
 .sys { margin: 0 0 6px; color: var(--soft); font-size: .82rem; text-align: center; }
 .sys a { color: var(--soft); display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; }
 .sys svg { width: 26px; height: 26px; flex: none; }
@@ -286,14 +292,20 @@ body.chat { display: flex; flex-direction: column; height: var(--vvh, 100dvh); o
 .tap small { flex-basis: 100%; color: var(--soft); font-weight: 400; font-size: .85rem; }
 .tap.go { background: var(--mari); border-color: var(--mari); color: #2a1a00; }
 .tap:disabled { opacity: .55; }
-.notes { flex: none; display: grid; gap: 6px; }
+/* The bottom bar (the notes, the hold-to-talk hint and the composer) is part of the page's flow and sticks to the bottom edge (18 Nov 2026 review). Why this and not a fixed bar
+   or a scrolling thread box: the whole page scrolls as one, so the last of the thread (the keep box, cards, the capped notice) is always reachable ABOVE the bar, never under it,
+   and at 200% text, when the head and the bar together fill a small phone, the head simply scrolls away instead of squeezing the conversation to a sliver (it was 40 px tall
+   in the old fixed-height column). The bar is in the flow after the thread, so the bar's own height is never added up by script (no ResizeObserver). The keyboard: a bar stuck
+   to the layout viewport would ride under the keyboard on a phone, so the script puts the keyboard's height in --kb (from the visual viewport) and the bar sticks that far up. */
+.bar { position: sticky; bottom: var(--kb, 0px); z-index: 2; background: var(--paper); }
+.notes { display: grid; gap: 6px; }
 .notes .state { margin: 0 0 6px; padding: 8px 12px; }
 .notes .state .status { margin: 0; font-size: .95rem; font-weight: 600; }
-.comp { flex: none; display: flex; gap: 8px; align-items: flex-end; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line2); }
-.comp textarea { flex: 1 1 auto; min-height: 48px; max-height: 8.5rem; padding: 11px 14px; border-radius: 24px; font: 400 1rem/1.4 var(--text); resize: none; }
-.comp button { flex: none; margin: 0; min-width: 76px; }
-.callrow { margin: 6px 0 0; }
-.callrow .btn { min-height: 44px; margin: 0; padding: .3em 1em; }
+.comp { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line2); }
+/* The message box keeps at least 12em (or the whole row on a phone narrower than that) and takes a whole row when it cannot sit beside the buttons (200% text); the microphone and Send then sit below it. Send grows a little (1 against the box's 100), so alone on a row it fills it. */
+.comp textarea { flex: 100 1 12em; min-width: min(12em, 100%); min-height: 48px; max-height: 8.5rem; padding: 11px 14px; border-radius: 24px; font: 400 1rem/1.4 var(--text); resize: none; }
+.comp button { flex: 1 0 auto; margin: 0; min-width: 76px; min-height: 48px; }
+.comp .rec { flex: none; min-width: 48px; }
 .alerts-slot .alerts { margin: 0; }
 .alerts-slot .card { margin: 6px 0; }
 @media (max-width: 340px) { .b { max-width: 90%; } .taps { margin-left: 0; } }
