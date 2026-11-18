@@ -268,7 +268,13 @@ export function publish(s: ListingsState, a: Authority, id: string, c: WriteCont
 }
 
 /** What the owner may change on a draft or a live listing before or after showing it ("Change"): only the fields the owner gave, each checked as at the draft. */
-export interface Edit { category?: Category; words?: Partial<Record<Lang, LangText>>; pricePaise?: number | null; priceNote?: string | null; qty?: number | null }
+export interface Edit {
+  category?: Category;
+  words?: Partial<Record<Lang, LangText>>;
+  /** The words given replace all the listing's words (the owner changed the title: the machine-written ones no longer say it, so they go) instead of being merged. */
+  replaceWords?: boolean;
+  pricePaise?: number | null; priceNote?: string | null; qty?: number | null;
+}
 
 export function edit(s: ListingsState, a: Authority, id: string, e: Edit): Result<Listing> {
   requireAuthority(a);
@@ -284,7 +290,7 @@ export function edit(s: ListingsState, a: Authority, id: string, e: Edit): Resul
   };
   const bad = checkFields(s, next);
   if (bad) return fail(bad);
-  const merged = { ...l.words, ...(e.words ?? {}) };
+  const merged = e.replaceWords ? { ...(e.words ?? {}) } : { ...l.words, ...(e.words ?? {}) };
   // the owner is the one editing: their own words are what a health claim may come from
   const checked = checkWords(next.category, merged, Object.values(e.words ?? {}).map((w) => `${w?.title ?? ""} ${w?.text ?? ""}`).join(" ") + " " + (l.claims ?? []).join(" "));
   if (!checked.ok) return checked;

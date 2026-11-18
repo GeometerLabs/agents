@@ -4,6 +4,9 @@
 //   state   the agent's Store as one JSON snapshot (see snapshot.ts), kept in pieces (state_shape and state_rows, below)
 //   record  the action record, append-only (the database itself refuses an update or a delete)
 //   window  when each person last messaged us, for WhatsApp's 24-hour rule
+// and (block S, schema 4) listing_photos: the bytes of the photos on the shop's listings, already checked and cleaned (modules/listings/photo.ts), by their own id. They sit in the
+// shop's own database on purpose: the nightly snapshot (VACUUM INTO) and Litestream carry them with nothing new, a restore brings them back with the listings that name them,
+// and the export reads them from the same file.
 // A step is saved in ONE transaction: the new snapshot, the record entries it made and the task's "done" mark. So after a
 // crash you see a step wholly done or not done at all, never half.
 //
@@ -42,6 +45,17 @@ export interface Task {
 
 export interface TaskCounts { pending: number; done: number; failed: number }
 
+/** A listing's photo as kept: the type and size were read from the bytes by modules/listings/photo.ts before it got here. */
+export interface PhotoRow { id: string; type: "image/jpeg" | "image/webp"; width: number; height: number; bytes: Uint8Array; atMs: number }
+export interface PhotoStore {
+  put(p: PhotoRow): void;
+  get(id: string): PhotoRow | undefined;
+  /** Every photo id kept (for the export and the clean-up). */
+  ids(): string[];
+  /** Delete every photo whose id is not in `keep`, and only those older than `olderThanMs` (an upload not yet taken by a listing is not lost). Returns how many went. */
+  prune(keep: ReadonlySet<string>, olderThanMs: number): number;
+}
+
 export interface DurableStore extends WindowStore {
   readonly file: string;
   /** Save new events as pending tasks and note when each sender last wrote. All or nothing. Ids already seen are skipped. */
@@ -75,6 +89,8 @@ export interface DurableStore extends WindowStore {
    * only its outcome is kept (its id, kind, state and error). A done task's text is emptied when it is done. Never touches the record. Returns how many were emptied.
    */
   compactTurns(beforeMs: number): number;
+  /** The photos of the shop's listings (block S): the cleaned bytes by id. Left out in a test double that has none. */
+  photos?: PhotoStore;
   /** Throws if the database cannot be read. */
   ping(): void;
   close(): void;
@@ -144,6 +160,17 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
     if (old) writeSnapshot(db, undefined, splitSnapshot(old.snapshot), old.saved_at);
     db.exec("DROP TABLE state");
   },
+  // Block S (listings): the photos on the shop's listings, as bytes in the shop's own database (see the top of this file).
+  `
+  CREATE TABLE listing_photos (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL CHECK (type IN ('image/jpeg', 'image/webp')),
+    width INTEGER NOT NULL,
+    height INTEGER NOT NULL,
+    bytes BLOB NOT NULL,
+    at_ms INTEGER NOT NULL
+  ) WITHOUT ROWID;
+  `,
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
@@ -309,6 +336,11 @@ export function openStore(dataDir: string): DurableStore {
   const readRecord = db.prepare("SELECT entry FROM record ORDER BY seq");
   const shapeVersion = db.prepare("SELECT version FROM state_shape WHERE id = 1");
   const addEntry = db.prepare("INSERT INTO record (seq, time, conversation, booking, action, outcome, entry) VALUES (?, ?, ?, ?, ?, ?, ?)");
+  const putPhoto = db.prepare("INSERT OR REPLACE INTO listing_photos (id, type, width, height, bytes, at_ms) VALUES (?, ?, ?, ?, ?, ?)");
+  const onePhoto = db.prepare("SELECT id, type, width, height, bytes, at_ms FROM listing_photos WHERE id = ?");
+  const allPhotos = db.prepare("SELECT id FROM listing_photos");
+  const oldPhotos = db.prepare("SELECT id FROM listing_photos WHERE at_ms < ?");
+  const deletePhoto = db.prepare("DELETE FROM listing_photos WHERE id = ?");
   const emptyOldFailed = db.prepare("UPDATE tasks SET payload = '{}' WHERE state = 'failed' AND payload <> '{}' AND received_at < ?");
 
   // The pieces as this handle last read or wrote them, so a step is compared with them without reading the whole state again. Trusted only while the stored version is
@@ -375,6 +407,19 @@ export function openStore(dataDir: string): DurableStore {
       held = saved; // only once the transaction is committed: a save that was rolled back leaves this handle's copy as it was
     },
 
+    photos: {
+      put: (p) => { putPhoto.run(p.id, p.type, p.width, p.height, p.bytes, p.atMs); },
+      get: (id) => {
+        const r = onePhoto.get(id) as { id: string; type: PhotoRow["type"]; width: number; height: number; bytes: Uint8Array; at_ms: number } | undefined;
+        return r ? { id: r.id, type: r.type, width: r.width, height: r.height, bytes: new Uint8Array(r.bytes), atMs: r.at_ms } : undefined;
+      },
+      ids: () => (allPhotos.all() as { id: string }[]).map((r) => r.id),
+      prune: (keep, olderThanMs) => {
+        let gone = 0;
+        for (const r of oldPhotos.all(olderThanMs) as { id: string }[]) if (!keep.has(r.id)) { deletePhoto.run(r.id); gone += 1; }
+        return gone;
+      },
+    },
     lastInboundAt: (phone) => (lastInbound.get(phone) as { last_inbound_at: number } | undefined)?.last_inbound_at,
     compactTurns: (beforeMs) => Number(emptyOldFailed.run(beforeMs).changes),
     ping() { db.prepare("SELECT count(*) FROM sqlite_master").get(); },

@@ -23,7 +23,10 @@ import type { AiPolicy, AiState, AiSummary } from "../understanding/ai-state.ts"
 import type { IncomingEvent, RuntimeEvent } from "./events.ts";
 import type { LicenceNow } from "../licence/rules.ts";
 import type { NoticeContext } from "../licence/notice.ts";
-import type { DurableStore, TaskCounts, WindowStore } from "./store.ts";
+import type { DurableStore, PhotoRow, TaskCounts, WindowStore } from "./store.ts";
+import { PHOTO_GRACE_MS, createListingsKit } from "../listings/kit.ts";
+import type { ListingOp, OwnerListingsView, PublicListingsRead } from "../listings/kit.ts";
+import type { Failure } from "../listings/listings.ts";
 import { createRunner } from "./tasks.ts";
 import { WaitingForGuard, guardAnswers, sendMemory, watchStep } from "./guard-wait.ts";
 import { afterRestore, readRestoreNote, retireRestoreNote } from "./restored.ts";
@@ -285,6 +288,20 @@ export interface RuntimeChannel {
   chatWork(handleHash: string): number;
   /** W1: has this guest written, and has the shop answered? The push route reads these (alerts are offered only after an answer). */
   chatState(handleHash: string): { known: boolean; answered: boolean };
+  /**
+   * Block S, the shop's listings, generic over every template (the store's `assistant.listings`): what the public may see, what the owner's page shows, what an op would do (a
+   * pre-check for the page's notice), the photos (the public gets only those of a public listing now; the owner any the shop holds) and the photo upload's day bound. Left out for a
+   * shop with no assistant, or a store with no photo table.
+   */
+  listings?: {
+    publicRead(): PublicListingsRead;
+    ownerView(): OwnerListingsView;
+    check(op: ListingOp): Failure | undefined;
+    publicPhoto(id: string): PhotoRow | undefined;
+    ownerPhoto(id: string): PhotoRow | undefined;
+    putPhoto(row: Omit<PhotoRow, "atMs">): void;
+    uploadsLeft(): number;
+  };
 }
 
 /** What the page reads of a chat: the thread, how the latest send stands, the character's small-talk personality (settings.assistant.character) and whether hold-to-talk is on. The signboard's paint is not here: it travels in the shop's pages file (pages-file.ts). */
@@ -302,6 +319,10 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
   const { settings, store: db, clock, messaging, pathwayVersion, kit } = options;
   const policy: AiPolicy = options.ai ?? {};
   const log = options.log ?? (() => undefined);
+  // Block S: the shop's listings, for every template at once. The owner's steps (a photo, the form, Confirm, Sold, the switch) are events the runtime's HTTP layer makes after it
+  // checked the owner; they are run here, in the step, like the limits' events, so the change is saved with everything else and no template's agent has to know about them.
+  const shopPeople = settings as { owner?: { whatsapp: string; language: Language }; assistant?: unknown };
+  const listings = shopPeople.assistant && shopPeople.owner && db.photos ? createListingsKit<Store & { assistant?: import("../assistant/state.ts").AssistantState }>({ owner: shopPeople.owner, timezone: settings.timezone }) : undefined;
 
   // What the last saved step left. Replaced only after a save succeeds. The status reads these, never a step in progress.
   const saved = db.loadState();
@@ -338,6 +359,9 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
     const before = clock.now() - (options.retentionDays ?? CONVERSATION_RETENTION_DAYS) * 24 * HOUR;
     const cases = kit.compactStore?.(store, before) ?? 0;
     const turns = db.compactTurns?.(before) ?? 0;
+    // photos no listing holds any more (a draft that was never shown, a removed listing's, an upload nobody used) go, once they are a day old: a photo uploaded a moment ago may still
+    // be waiting for its event to be saved
+    if (listings && db.photos) db.photos.prune(listings.keepIds(store), clock.now() - PHOTO_GRACE_MS);
     if (cases + turns > 0) log(`Deleted the text of conversations that ended more than ${options.retentionDays ?? CONVERSATION_RETENTION_DAYS} days ago: ${turns} failed message(s), ${cases} finished case(s). The record is kept whole.`);
   }
 
@@ -372,6 +396,8 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
       if (event.kind === "message_status") recordMessageStatus(record, event.status, statusContext);
       else if (signin?.takes(event)) await signin.run(event as Parameters<typeof signin.run>[0], { messaging, record, store }); // W2: the store too, for the chat links (chat-link-send.ts, composed into the sign-in in start.ts)
       else if (event.kind === "owner_signin" || event.kind === "owner_access") log("A sign-in event came for a shop with no owner sign-in (no pages file yet); it was dropped.");
+      else if (listings?.takes(event)) listings.run(event as Parameters<typeof listings.run>[0], { store, record, nowMs: clock.now() });
+      else if (event.kind === "owner_listing" || event.kind === "owner_photo") log("A listings event came for a shop that has no assistant; it was dropped.");
       else if (limits?.takes(event)) { limits.run(event as Parameters<typeof limits.run>[0], { store, record }); limits.apply(store); }
       else if (event.kind === "limit_settled" || event.kind === "owner_limit") log("A limit event came for a shop that has no limits the owner may change; it was dropped.");
       else await agent.handle(event);
@@ -524,6 +550,17 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
           const channel = (kit.parse(snapshot) as { channel?: ChannelState }).channel;
           return { known: chatKnown(channel, handleHash), answered: chatAnswered(channel, handleHash) };
         },
+        ...(listings && db.photos ? {
+          listings: {
+            publicRead: () => listings.publicRead(kit.parse(snapshot), clock.now()),
+            ownerView: () => listings.ownerView(kit.parse(snapshot), clock.now()),
+            check: (op: ListingOp) => listings.check(kit.parse(snapshot), op, clock.now()),
+            publicPhoto: (id: string) => (listings.publicPhoto(kit.parse(snapshot), id, clock.now()) ? db.photos!.get(id) : undefined),
+            ownerPhoto: (id: string) => (listings.ownerPhoto(kit.parse(snapshot), id) ? db.photos!.get(id) : undefined),
+            putPhoto: (row: Omit<PhotoRow, "atMs">) => db.photos!.put({ ...row, atMs: clock.now() }),
+            uploadsLeft: () => listings.uploadsLeft(kit.parse(snapshot), clock.now()),
+          },
+        } : {}),
         ...(kit.channel.documents ? { documents: (key: DocumentsKey, language: Language) => kit.channel!.documents!(kit.parse(snapshot), entries, key, language) } : {}),
         ...(kit.channel.accountantFiles ? { accountantFiles: (period: string) => kit.channel!.accountantFiles!(kit.parse(snapshot), entries, period) } : {}),
         ...(kit.channel.parent ? { parent: (linkHash: string) => kit.channel!.parent!(kit.parse(snapshot), linkHash) } : {}),
