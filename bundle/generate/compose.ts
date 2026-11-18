@@ -320,6 +320,8 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
 
   // -- the shared services
   const appVolume = `${dirs.app}:/app:ro`;
+  // block S phase B2: on `pages` the inbox is also the courier of each shop's signed "my feed changed" notice to the directory (services/notices.ts): it is the one service on both the runtimes'
+  // doors' network (admin) and the directory's (pages), so a runtime that cannot call out still gets its notice there, and no network rule changes.
   add("inbox", node(["node", "/app/bundle/services/inbox.ts"], {
     environment: { CONFIG: "/etc/geometer/inbox.json", PORT: String(INBOX_PORT), HOST: "0.0.0.0" },
     volumes: [appVolume, `${dirs.generated}/inbox:/etc/geometer:ro`, `${secretDir("inbox")}:/run/secrets:ro`],
