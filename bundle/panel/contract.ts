@@ -90,6 +90,8 @@ export interface ShopStatus {
   limitChanges?: { id: string; limit: string; from: number; to: number; direction: "tighten" | "loosen"; by: "owner_chat" | "owner_app"; state: "pending" | "active" | "failed"; at: string; why?: string }[];
   /** The cost meter's cumulative counts over the shop's record, as of the last export (bundle/lib/usage.ts). Counts only. */
   usage?: { at?: string; messages: number; byStep: { rules: number; decision: number; model: number }; modelMicroInr: number; /** Calls with no price: their cost is unknown, so `modelMicroInr` is a floor when this is above 0. Absent in an older file. */ unpriced?: number; whatsapp: { service: number; utility: number; marketing: number; estMicroInr: number; estimated: boolean } };
+  /** A listings-only shop the shared process has paused (bundle/lib/listings-paused.ts): when the pause ends (ISO). The panel says so in one plain line. */
+  paused?: { until: string };
   /** The shop's licence (B13), worked out on the server from the signed lease (bundle/lib/licence.ts): what the runtime acts on. Times are ISO. */
   licence?: { state: "active" | "reminder" | "warning" | "wind_down" | "stopped"; listed: boolean; paidThrough: string | null; windDownOn: string | null; stopOn: string | null; exportUntil: string | null; leaseIssuedAt: string | null; extendedUntil: string | null };
 }
@@ -140,6 +142,7 @@ export function parseStatus(textOrNothing: string | undefined): StatusRead {
       };
     }
   }
+  if (isObj(raw.paused) && isoDay(raw.paused.until)) status.paused = { until: isoDay(raw.paused.until) as string };
   const l = raw.licence;
   if (isObj(l) && ["active", "reminder", "warning", "wind_down", "stopped"].includes(l.state as string)) {
     const t = (v: unknown): string | null => isoDay(v) ?? null;

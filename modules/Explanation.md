@@ -1540,6 +1540,16 @@ own (`StartOptions.listen`, new in `modules/runtime/start.ts`), routes `/shop/<n
 `dataDir`, and checks its own credentials: the router checks none. No module may keep a shop's data at module level (checked 18 Nov: only fonts and time formatters are). A shop that fails to
 start is logged once and skipped. `LISTINGS_SERVICES` (`modules/runtime/config.ts`) is a service shape with no required service. The front treats kind `listings` like `stock` for the customer side
 (owner page, storefront and feed only) and offers no chat. Tests (written, not run): `modules/runtime/test/shared.test.ts`.
+
+### 19 Nov 2026: shops in a pool of worker threads (shared-pool.ts, shared-worker.ts)
+
+**What.** `startShared({ pool })` runs each shop's own `start` inside one of K worker threads (default 4) instead of in the main thread; the shop's server still listens on loopback, so the router is unchanged. **Why.** One shop that blocked the event loop
+or ate memory took every shop on the process down. A thread per shop was measured on Node 26 at about 33 MB and 0.17 s, which does not fit hundreds of shops on 4 GB; a small pool plus quarantine does. **How it finds the culprit.** The worker writes
+the shop whose code is running into a SharedArrayBuffer slot from `async_hooks` `before`/`after`, with the shop carried by AsyncLocalStorage (so a continuation after an `await` is named too, which wrapping handlers would miss); the main thread
+reads it after the worker dies or is terminated by the watchdog (ping every 2 s, dead after 10 s). Strikes: 2 in 30 minutes quarantine, 3 failures there in 1 hour pause (6 hours, or files changed). Constants and reasons: `shared-pool.ts`.
+**Choices.** `start` stays an option for the in-thread path (the other templates' tests, `SHARED_WORKERS=0`); the pool takes a module URL because a function cannot be sent to a thread. A paused shop's page is the template's (`backSoon`), so the runtime
+module knows no words. The Operator is told through the log, `/readyz` and `/shared/shops` (`paused`); there is no message path for listings-only shops yet (bundle/Deferred.md). Tests (written, not run): `modules/runtime/test/shared-pool.test.ts`,
+`templates/commerce/listings/test/shared-pool.test.ts`.
 ## The model budget: one meter, one monthly budget, a cap on every feature (18 Nov 2026, stream `caps-18nov`)
 
 **Why.** The owner approved a hosted model (DeepInfra, through the model Guard) for the owner's talk, customers' open questions, listing drafts in four languages and, later, the buyer's discovery assistant (plan decision 60). "Add caps everywhere." Before this, the only model-spend cap was fleet's `ai.cap` (₹15 per 1,000 messages, set from the heartbeat, which lags and which turned off only the router's language step), and the chat's 20 model turns a day for one guest. A busy owner could use the month's money in talk turns, and a bug could spend it in an afternoon.

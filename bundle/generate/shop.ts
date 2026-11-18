@@ -67,6 +67,13 @@ export const names = {
  * one level down). `index` is the shared process's place in the address plan: the shops' own are 1 to 199 (lib/state.ts), so 200 is never a shop's.
  */
 export const SHARED = { runtime: "rt-listings", door: "door-listings", dataVolume: "rt-data-listings", net: "net-listings", index: 200 } as const;
+/**
+ * The shared process's worker pool (modules/runtime/shared-pool.ts) and the container's memory wall, from ONE place so the two cannot drift: the container gets SHARED_WORKERS and SHARED_WORKER_MB
+ * in its environment (compose.ts) and a mem_limit of workers x workerMb + marginMb. The worker limits cap V8's old-generation heap ONLY, not Buffers, SQLite's own memory, the main thread or
+ * the thread stacks, so the margin (512 MB) covers those and the quarantine workers (128 MB each, only for a shop that hurt a worker twice); the container limit is the outer wall.
+ */
+export const SHARED_POOL = { workers: 4, workerMb: 256, marginMb: 512 } as const;
+export const sharedMemLimitMb = (): number => SHARED_POOL.workers * SHARED_POOL.workerMb + SHARED_POOL.marginMb;
 /** The compose volume that holds a shop's data: its own, or the shared one. */
 export const dataVolumeOf = (shop: string, shared: boolean): string => (shared ? SHARED.dataVolume : names.dataVolume(shop));
 /** A shop's database inside a mount of its data volume (the backup jobs mount the volume at `mount`): `<mount>/data/agent.db`, or one folder down for a shared shop. */
