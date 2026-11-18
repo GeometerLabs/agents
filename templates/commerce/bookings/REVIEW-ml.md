@@ -2004,4 +2004,9 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `directory.foot` | നാട്ടിലെ കടകളുടെ ഒരു പട്ടിക. | A directory of local shops. |  |
 | `directory.assistants` | AI സഹായികൾക്ക് | For AI assistants |  |
 | `directory.choices` | കൂടുതൽ തിരഞ്ഞെടുപ്പുകൾ | More choices |  |
+| `directory.askLabel` | നിങ്ങളുടെ സ്വന്തം വാക്കുകളിൽ ചോദിക്കൂ | Ask in your own words |  |
+| `directory.askPlaceholder` | തൃശൂരിന് അടുത്ത് പേർഷ്യൻ പൂച്ചക്കുട്ടി? | Persian kitten near Thrissur? |  |
+| `directory.askButton` | ചോദിക്കൂ | Ask |  |
+| `directory.askPlain` | ഇന്ന് നിങ്ങൾ എഴുതിയ വാക്കുകൾ അതുപോലെ തിരയുന്നു. | Searching your words as typed today. |  |
+| `directory.askLine` | Thrissurന് അടുത്തുള്ള 3 കടകളിൽ “Persian kitten” ഉണ്ട്. ഏറ്റവും അടുത്തത് 1.4 കി.മീ അകലെയാണ്. | 3 shops near Thrissur have “Persian kitten”. The nearest is 1.4 km away. |  |
 

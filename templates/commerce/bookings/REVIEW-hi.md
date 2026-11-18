@@ -1957,4 +1957,9 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `directory.foot` | स्थानीय दुकानों की एक सूची। | A directory of local shops. |  |
 | `directory.assistants` | एआई सहायकों के लिए | For AI assistants |  |
 | `directory.choices` | और विकल्प | More choices |  |
+| `directory.askLabel` | अपने शब्दों में पूछें | Ask in your own words |  |
+| `directory.askPlaceholder` | थ्रिस्सूर के पास फ़ारसी बिल्ली का बच्चा? | Persian kitten near Thrissur? |  |
+| `directory.askButton` | पूछें | Ask |  |
+| `directory.askPlain` | आज आपके शब्द जैसे लिखे हैं वैसे ही खोजे जा रहे हैं। | Searching your words as typed today. |  |
+| `directory.askLine` | Thrissur के पास 3 दुकानों में “Persian kitten” है। सबसे पास वाली 1.4 किमी दूर है। | 3 shops near Thrissur have “Persian kitten”. The nearest is 1.4 km away. |  |
 
