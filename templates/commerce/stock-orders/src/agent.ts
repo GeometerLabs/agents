@@ -40,7 +40,7 @@ import { actionDigest, cardButtonId, cardByCode, cardById, closeCard, expireCard
 import type { CardReply } from "../../../../modules/assistant/cards.ts";
 import type { CardAction, CardRecord } from "../../../../modules/assistant/state.ts";
 import { assistantOf } from "../../../../modules/assistant/state.ts";
-import { STOCK_ACTION, ackAlert, lowRequestId, pendingAlerts, reconcileDeliveries, shopRecord, stockRefs, supplyStockId } from "../../../../modules/stock/stock.ts";
+import { FACT_HORIZON_MS, STOCK_ACTION, ackAlert, lineOf, lowRequestId, noteAsked, pendingAlerts, reconcileDeliveries, shopRecord, stockRefs, supplyStockId } from "../../../../modules/stock/stock.ts";
 import type { DeliveryFact } from "../../../../modules/stock/stock.ts";
 import { STOCK_LINE_WORDS } from "../../../../modules/stock/words.ts";
 import type { InboundMessage, Messaging } from "../../../../modules/messaging/messaging.ts";
@@ -788,7 +788,10 @@ export function createAgent(deps: AgentDeps): Agent {
   function syncDeliveries(): void {
     const st = store.assistant?.stock;
     if (!st || st.lines.length === 0) return;
-    const facts: DeliveryFact[] = [...store.orders.values()].filter((o) => o.receivedQty > 0).map((o) => ({ key: `delivery:${o.id}`, id: supplyStockId(o.item), cumulative: o.receivedQty, unit: o.unit }));
+    // a purchase order received in full long ago is no longer passed (its key is kept longer than this horizon, so it is never added twice); the time of the last mark lets the count tell goods that came before counting began
+    const now = clock.now();
+    const facts: DeliveryFact[] = [...store.orders.values()].filter((o) => o.receivedQty > 0 && (o.receipt !== "full" || now - (o.receiptMs ?? 0) <= FACT_HORIZON_MS))
+      .map((o) => ({ key: `delivery:${o.id}`, id: supplyStockId(o.item), cumulative: o.receivedQty, unit: o.unit, ...(o.receiptMs !== undefined ? { atMs: o.receiptMs } : {}) }));
     const before = st.lines.map((l) => l.count).join(",");
     const refused = reconcileDeliveries(st, shopRecord("stock-orders"), facts, { nowMs: clock.now() });
     if (st.lines.map((l) => l.count).join(",") !== before) log(null, owner, STOCK_ACTION, "confirmed", { deliveries: facts.length }, { refs: stockRefs("supply:*", "received", "shop"), notes: "goods the owner marked received were added to the stock count (each purchase order once, by the quantity received so far)" });
@@ -805,26 +808,36 @@ export function createAgent(deps: AgentDeps): Agent {
    * budget, the cap, the approved supplier and the owner's yes are all unchanged: this only starts the flow, it never approves anything. The question "Rice 5 kg is low (3 left). Order from
    * Ravi?" goes to the owner's app beside the card.
    */
+  /** How many times a low-stock question is asked for one crossing if the owner does not answer it (each question runs out after `ASKING_FOR_MS`). */
+  const MAX_LOW_ASKS = 3;
   async function lowStockTick(): Promise<void> {
     const st = store.assistant?.stock;
     if (!st) return;
     for (const a of pendingAlerts(st, "supply")) {
-      ackAlert(st, a.line, a.crossing);
       const itemId = a.line.slice("supply:".length);
-      if (!settings.items.some((i) => i.id === itemId)) continue;
+      const requestId = lowRequestId(a);
+      // done with this crossing: the count came back above the mark, the item is not one of the shop's, or the reorder for it already exists (made, declined or blocked by a limit: the owner was told)
+      if (!lineOf(st, a.line)?.lowFlag || !settings.items.some((i) => i.id === itemId) || store.requests.has(requestId)) { ackAlert(st, a.line, a.crossing); continue; }
+      // the owner is in the middle of another question: wait (the alert stays queued), never overwrite it
+      if (store.asking) return;
+      // asked a few times and the owner did not answer: stop, so a shop is not nagged (the crossing stays on the Stock page as low)
+      if ((a.asked ?? 0) >= MAX_LOW_ASKS) { ackAlert(st, a.line, a.crossing); continue; }
       const lines = approvedLines().filter((l) => l.item === itemId);
-      log(null, owner, STOCK_ACTION, "confirmed", { item: a.line, count: a.count, crossing: a.crossing }, { refs: stockRefs(a.line, "low", "shop"), notes: "a counted item fell to its low mark; the reorder flow was started (nothing is approved by this)" });
-      if (lines.length === 0) { talkToOwner(STOCK_LINE_WORDS[ownerLanguage].runningLow(itemNameOf(itemId), a.count)); continue; }
-      talkToOwner(STOCK_LINE_WORDS[ownerLanguage].reorderAsk(itemNameOf(itemId), a.count, supplierOf(settings, lines[0].supplier).name));
-      if (lines.length === 1) await settle({ requestId: lowRequestId(a), lowStock: true, line: lines[0], phone: owner });
-      else await askWhich({ requestId: lowRequestId(a), lowStock: true, item: itemId, lines });
+      if (noteAsked(st, a.line, a.crossing) === 1) log(null, owner, STOCK_ACTION, "confirmed", { item: a.line, count: a.count, crossing: a.crossing }, { refs: stockRefs(a.line, "low", "shop"), notes: "a counted item fell to its low mark; the reorder flow was started (nothing is approved by this)" });
+      if (lines.length === 0) { talkToOwner(STOCK_LINE_WORDS[ownerLanguage].runningLow(itemNameOf(itemId), a.count)); ackAlert(st, a.line, a.crossing); continue; }
+      if ((a.asked ?? 0) === 1) talkToOwner(STOCK_LINE_WORDS[ownerLanguage].reorderAsk(itemNameOf(itemId), a.count, supplierOf(settings, lines[0].supplier).name));
+      if (lines.length === 1) await settle({ requestId, lowStock: true, line: lines[0], phone: owner });
+      else await askWhich({ requestId, lowStock: true, item: itemId, lines });
+      // no order and no question left open means a limit stopped it and the owner was told: that crossing is done
+      if (!store.asking && !store.requests.has(requestId)) ackAlert(st, a.line, a.crossing);
+      return; // one question at a time; the next alert waits for the next tick
     }
   }
 
   async function tick(): Promise<void> {
+    if (store.asking && clock.now() - store.asking.askedMs > ASKING_FOR_MS) store.asking = undefined;
     syncDeliveries();
     await lowStockTick();
-    if (store.asking && clock.now() - store.asking.askedMs > ASKING_FOR_MS) store.asking = undefined;
     // An order that waits must always have a card to answer. Whoever expires cards first (this tick or the assistant's), an order left with no open card is closed here and the
     // owner is told, so no order is stranded awaiting an answer nobody can give.
     for (const o of store.orders.values()) {

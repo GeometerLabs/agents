@@ -7,8 +7,8 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { ownerAuthority, panelAuthority } from "../../memory/memory.ts";
 import {
-  ackAlert, correct, countOf, emptyStock, leftFor, listingStockId, lowLines, lowRequestId, menuStockId, ownerRows, ownerSold, pendingAlerts, quantityOfListing, received, reconcileDeliveries,
-  reconcileSales, sale, setLow, shopRecord, soldOutListings, startCounting, stopCounting, supplyStockId, unbookedHolds,
+  APPLIED_KEPT_MS, FACT_HORIZON_MS, SAFE_KEEP_MS, ackAlert, correct, countOf, emptyStock, leftFor, listingStockId, lowLines, lowRequestId, menuStockId, noteAsked, ownerRows, ownerSold, pendingAlerts,
+  quantityOfListing, received, reconcileDeliveries, reconcileSales, restoreAfterYes, sale, setLow, shopRecord, soldOutListings, startCounting, stopCounting, supplyStockId, tidyStock, unbookedHolds,
 } from "../stock.ts";
 import type { OrderFact } from "../stock.ts";
 
@@ -270,4 +270,93 @@ test("the owner's rows put sold-out and low items first, then by name", () => {
   startCounting(s, owner, menuStockId("c"), { count: 1, low: 2, name: "Curd" }, c());
   startCounting(s, owner, menuStockId("d"), { count: 0, name: "Dates" }, c());
   assert.deepEqual(ownerRows(s).map((r) => r.name), ["Dates", "Curd", "Apple", "Bread"]);
+});
+
+// ---- history, the horizon and the keys (the count must not replay what happened before it began) -------------------------------------------------------
+
+const DAYS = 24 * 3_600_000;
+
+test("counting started AFTER an order was completed: that order is history and never moves the count or counts as a hold", () => {
+  const s = emptyStock();
+  const history: OrderFact = { key: "sale:o-1:thali", id: THALI, qty: 4, standing: true, cancelled: false, holding: false, endedMs: NOW - DAYS };
+  startCounting(s, owner, THALI, { count: 10 }, c()); // the owner counts 10 on the shelf now
+  assert.equal(reconcileSales(s, shop, [history], c(1)), 0);
+  assert.equal(countOf(s, THALI), 10, "the 4 sold yesterday were never on the shelf the owner counted");
+  assert.equal(unbookedHolds(s, THALI, [history]), 0, "and they are not a hold either");
+  const today: OrderFact = { ...history, key: "sale:o-2:thali", qty: 1, endedMs: NOW + DAYS };
+  assert.equal(reconcileSales(s, shop, [history, today], c(2)), 1, "an order whose slot is still ahead is booked");
+  assert.equal(countOf(s, THALI), 9);
+});
+
+test("stop counting then start again: the second line does not replay the orders the first one booked", () => {
+  const s = counted(THALI, 10);
+  const fact: OrderFact = { key: "sale:o-1:thali", id: THALI, qty: 3, standing: true, cancelled: false, holding: false, endedMs: NOW + 1000 };
+  reconcileSales(s, shop, [fact], c(1));
+  assert.equal(countOf(s, THALI), 7);
+  stopCounting(s, owner, THALI);
+  fact.endedMs = NOW + 5; // the slot ended soon after, still before the second start below
+  startCounting(s, owner, THALI, { count: 20 }, { nowMs: NOW + 10 });
+  reconcileSales(s, shop, [fact], c(11));
+  assert.equal(countOf(s, THALI), 20, "the order ended before the new line began, so it is history for it");
+});
+
+test("a delivery marked before counting began is in the owner's count already: it moves nothing, and a later mark adds only the difference", () => {
+  const s = emptyStock();
+  startCounting(s, owner, RICE, { count: 5, unit: "bag" }, c());
+  const before = { key: "delivery:po-1", id: RICE, cumulative: 4, unit: "bag", atMs: NOW - DAYS };
+  assert.deepEqual(reconcileDeliveries(s, shop, [before], c(1)), []);
+  assert.equal(countOf(s, RICE), 5);
+  assert.equal(reconcileDeliveries(s, shop, [{ ...before, cumulative: 10, atMs: NOW + 5 }], c(6)).length, 0);
+  assert.equal(countOf(s, RICE), 11, "6 more arrived after counting began");
+});
+
+test("a key outlives every fact that can name it: 120 days later the tidy-up forgets it, and by then the agents no longer pass the order", () => {
+  assert.ok(FACT_HORIZON_MS < SAFE_KEEP_MS && SAFE_KEEP_MS < APPLIED_KEPT_MS, "the horizons are in order");
+  const s = counted(THALI, 10);
+  const fact: OrderFact = { key: "sale:o-1:thali", id: THALI, qty: 3, standing: true, cancelled: false, holding: false, endedMs: NOW + DAYS };
+  reconcileSales(s, shop, [fact], c(1));
+  tidyStock(s, NOW + 100 * DAYS);
+  assert.ok(s.lines[0].applied[fact.key], "kept past the horizon, so an order passed within it is never booked twice");
+  tidyStock(s, NOW + 130 * DAYS);
+  assert.equal(s.lines[0].applied[fact.key], undefined, "forgotten after 120 days");
+  assert.equal(countOf(s, THALI), 7, "forgetting a key never changes the count");
+});
+
+test("more than 400 orders of one item all keep their keys: a busy shop is never replayed", () => {
+  const s = counted(THALI, 1_000_000);
+  const facts: OrderFact[] = Array.from({ length: 700 }, (_, i) => ({ key: `sale:o-${i}:thali`, id: THALI, qty: 1, standing: true, cancelled: false, holding: false, endedMs: NOW + DAYS }));
+  assert.equal(reconcileSales(s, shop, facts, c(1)), 700);
+  assert.equal(countOf(s, THALI), 1_000_000 - 700);
+  assert.equal(Object.keys(s.lines[0].applied).length, 700, "not cut to 400");
+  assert.equal(reconcileSales(s, shop, facts, c(2)), 0, "the next reconcile books nothing");
+  assert.equal(countOf(s, THALI), 1_000_000 - 700);
+});
+
+test("a line started with no unit takes the unit of its first delivery and keeps it", () => {
+  const s = counted(RICE, 0);
+  received(s, shop, RICE, "delivery:po-1", 3, "box", c(1));
+  assert.equal(s.lines[0].unit, "box");
+  assert.deepEqual(received(s, shop, RICE, "delivery:po-2", 5, "piece", c(2)), { ok: false, why: "unit" }, "pieces are never added to boxes");
+  assert.equal(countOf(s, RICE), 3);
+});
+
+test("'Yes, I still have it' on a listing that sold itself sets the count to the number first said, or 1, and does nothing otherwise", () => {
+  const s = counted(KITTEN, 1);
+  assert.equal(restoreAfterYes(s, owner, "l-3", 2, "yes-1", c()), false, "above 0: nothing to restore");
+  ownerSold(s, owner, KITTEN, { qty: 1, reqId: "q" }, c(1));
+  assert.equal(restoreAfterYes(s, owner, "l-3", 2, "yes-2", c(2)), true);
+  assert.equal(countOf(s, KITTEN), 2);
+  ownerSold(s, owner, KITTEN, { qty: 2, reqId: "q2" }, c(3));
+  assert.equal(restoreAfterYes(s, owner, "l-3", undefined, "yes-3", c(4)), true);
+  assert.equal(countOf(s, KITTEN), 1);
+  assert.equal(restoreAfterYes(s, owner, "l-9", 2, "yes-4", c(5)), false, "an uncounted listing is left alone");
+  assert.equal(restoreAfterYes(undefined, owner, "l-3", 2, "yes-5", c()), false);
+  assert.throws(() => restoreAfterYes(s, { by: "owner", from: "app" } as never, "l-3", 2, "yes-6", c()) || correct(s, { by: "owner", from: "app" } as never, KITTEN, { to: 1, reqId: "z" }, c()));
+});
+
+test("a reorder question is counted per crossing", () => {
+  const s = counted(RICE, 2, { low: 3 });
+  assert.equal(noteAsked(s, RICE, 1), 1);
+  assert.equal(noteAsked(s, RICE, 1), 2);
+  assert.equal(noteAsked(s, RICE, 9), 0, "no such crossing");
 });

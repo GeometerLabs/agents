@@ -133,3 +133,42 @@ test("a counted item that reaches its low mark by a sale queues one alert, once"
   reconcile(store);
   assert.equal(pendingAlerts(store.assistant!.stock).length, 1);
 });
+
+// ---- history and the horizon ------------------------------------------------------------------------------------------------------------------------
+
+const DAY = 24 * 3_600_000;
+
+test("counting started after an order was picked up: that order never moves the count and is not a hold", () => {
+  const store = createStore();
+  order(store, "completed", [{ itemId: "thali", qty: 6 }], { slotEndMs: NOW - DAY });
+  withCount(store, "thali", 10); // the owner counts 10 on the shelf, started at NOW
+  assert.equal(reconcile(store), 0);
+  assert.equal(countOf(store.assistant!.stock, menuStockId("thali")), 10);
+  assert.equal(countedLeft(store, "thali", NOW), 10, "the finished order is not held against the count");
+});
+
+test("an order confirmed before counting began but still to be picked up is booked, since its goods are promised", () => {
+  const store = createStore();
+  order(store, "confirmed", [{ itemId: "thali", qty: 2 }], { slotEndMs: NOW + DAY });
+  withCount(store, "thali", 10);
+  assert.equal(countedLeft(store, "thali", NOW), 8, "held until it is booked");
+  reconcile(store);
+  assert.equal(countOf(store.assistant!.stock, menuStockId("thali")), 8);
+});
+
+test("orders that finished long ago are no longer passed to the stock, so their forgotten keys can never book them twice", () => {
+  const store = createStore();
+  order(store, "completed", [{ itemId: "thali", qty: 1 }], { slotEndMs: NOW - 31 * DAY });
+  order(store, "cancelled", [{ itemId: "thali", qty: 1 }], { slotEndMs: NOW - 31 * DAY });
+  order(store, "completed", [{ itemId: "thali", qty: 1 }], { slotEndMs: NOW - 29 * DAY });
+  assert.deepEqual(orderFacts(store, NOW).map((f) => f.key), ["sale:o-3:thali"], "only the one inside the 30-day horizon");
+});
+
+test("more than 400 orders of one item: every one is booked once and the next reconcile books nothing", () => {
+  const store = createStore();
+  for (let i = 0; i < 500; i++) order(store, "confirmed", [{ itemId: "thali", qty: 1 }], { slotEndMs: NOW + DAY });
+  withCount(store, "thali", 100_000);
+  assert.equal(reconcile(store), 500);
+  assert.equal(countOf(store.assistant!.stock, menuStockId("thali")), 100_000 - 500);
+  assert.equal(reconcile(store, NOW + 1000), 0);
+});

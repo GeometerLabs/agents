@@ -168,3 +168,35 @@ test("every line is in all four languages, with the same ids on the review sheet
     assert.match(w.runningLow("Rice 5 kg", 3), /3/u);
   }
 });
+
+// ---- "Still have it? Yes" on a listing that sold itself: the card and the page's Confirm button agree ------------------------------------------------
+
+test("Yes has two doors and they agree: the morning card's Yes and the page's Confirm both set the count to the number the owner first said, once", async () => {
+  const { createListings } = await import("../../assistant/listing-card.ts");
+  for (const door of ["card", "page"] as const) {
+    const w = withKitten();
+    run(w, ev({ op: "start", id: "listing:l-1", count: 1 }, `start-${door}`));
+    run(w, ev({ op: "sold", id: "listing:l-1", qty: 1 }, `sold-${door}`));
+    assert.equal(listingsKit.publicRead(w.store, NOW).listings.length, 0, "sold itself");
+    const l = listingsOf(w.store.assistant!).items[0];
+    if (door === "page") {
+      listingsKit.run({ kind: "owner_listing", id: "c-1", op: { op: "confirm", id: "l-1", confirmedMs: l.confirmedMs! } }, { store: w.store, record: w.record, nowMs: NOW + 1000 });
+    } else {
+      const logged: string[] = [];
+      const listings = createListings({ store: w.store, nowMs: () => NOW + 1000, ownerLanguage: "en", log: (action) => { logged.push(action); } });
+      const done = await listings.skill.execute({ kind: "listing_ask", skill: "listings", case: "listing:l-1", fields: { title: "Persian kitten", confirmedMs: l.confirmedMs!, answer: "yes" } });
+      assert.equal(done.ok, true);
+      assert.ok(logged.includes("stock"), "the correction is recorded");
+    }
+    assert.equal(countOf(stockOf(w.store.assistant!), "listing:l-1"), 2, `${door}: the owner first said 2 kittens`);
+    assert.equal(listingsKit.publicRead(w.store, NOW + 1000).listings.length, 1, `${door}: it shows again`);
+  }
+});
+
+test("a Confirm on a counted listing that still has stock changes no count", () => {
+  const w = withKitten();
+  run(w, ev({ op: "start", id: "listing:l-1", count: 3 }));
+  const l = listingsOf(w.store.assistant!).items[0];
+  listingsKit.run({ kind: "owner_listing", id: "c-2", op: { op: "confirm", id: "l-1", confirmedMs: l.confirmedMs! } }, { store: w.store, record: w.record, nowMs: NOW + 1000 });
+  assert.equal(countOf(stockOf(w.store.assistant!), "listing:l-1"), 3);
+});

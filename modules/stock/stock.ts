@@ -39,9 +39,17 @@ export const MAX_LINES = 300;
 export const MAX_COUNT = 1_000_000;
 /** The movements kept per line for the owner's history; the keys that stop a double count are kept longer (`applied`). */
 export const MAX_MOVES = 30;
-export const MAX_APPLIED = 400;
-/** A key older than this is forgotten (an order or delivery does not change after months); the oldest go first past MAX_APPLIED. */
-export const APPLIED_KEPT_MS = 120 * 24 * 3_600_000;
+/** A soft cap on the keys a line remembers; only keys older than SAFE_KEEP_MS are ever dropped for it, so a busy shop never loses a key an order or delivery can still name. */
+export const MAX_APPLIED = 5000;
+const DAYS = 24 * 3_600_000;
+/**
+ * The three horizons that keep a key alive for as long as a fact can name it. The agents pass only orders and deliveries that are still open or finished within FACT_HORIZON_MS; a key is
+ * kept at least SAFE_KEEP_MS (so the soft cap never drops one a fact can still name) and at most APPLIED_KEPT_MS. FACT_HORIZON_MS < SAFE_KEEP_MS < APPLIED_KEPT_MS, so a key always
+ * outlives every fact that names it, and a fact too old to be passed is never booked again after its key is forgotten.
+ */
+export const FACT_HORIZON_MS = 30 * DAYS;
+export const SAFE_KEEP_MS = 45 * DAYS;
+export const APPLIED_KEPT_MS = 120 * DAYS;
 export const MAX_ALERTS = 50;
 export const MAX_NAME = 60;
 export const MAX_UNIT = 20;
@@ -83,8 +91,8 @@ export interface StockLine {
   startedMs: number;
 }
 
-/** One "this item is low" waiting to be shown: the owner gets one card or one line per crossing. */
-export interface LowAlert { line: StockId; crossing: number; count: number; atMs: number }
+/** One "this item is low" waiting to be shown: the owner gets one card or one line per crossing. `asked` counts how many times a reorder question was started for it (a Stock orders agent gives up after a few). */
+export interface LowAlert { line: StockId; crossing: number; count: number; atMs: number; asked?: number }
 
 export interface StockState {
   lines: StockLine[];
@@ -284,6 +292,8 @@ export function received(s: StockState, src: Source, id: StockId, key: string, c
   const prev = l.applied[key];
   const delta = cumulative - (prev?.qty ?? 0);
   if (delta <= 0) return { ok: true, value: l };
+  // a line started with no unit takes the unit of its first delivery and keeps it, so boxes and pieces of the same item are never added together
+  if (l.unit === undefined && unit !== undefined) l.unit = unit;
   l.applied[key] = { qty: cumulative, took: cumulative, atMs: c.nowMs };
   l.count = Math.min(MAX_COUNT, l.count + delta);
   noteMove(l, { kind: "received", delta, after: l.count, atMs: c.nowMs, by: byOf(src) });
@@ -340,7 +350,14 @@ export const lowRequestId = (a: Pick<LowAlert, "line" | "crossing">): string => 
 // ---- Orders: what is held but not yet booked ---------------------------------------------------------------------------------------------------------
 
 /** One order line as the agent reads it from its own orders: the key its sale is booked under, the item, the quantity, whether the order STANDS (confirmed or completed) and whether it merely HOLDS stock. */
-export interface OrderFact { key: string; id: StockId; qty: number; standing: boolean; cancelled: boolean; holding: boolean }
+export interface OrderFact {
+  key: string; id: StockId; qty: number; standing: boolean; cancelled: boolean; holding: boolean;
+  /**
+   * When the order's sale became final (an Orders order's slot end). An order that ended at or before the line's start is HISTORY: it was sold before the owner began counting, so the
+   * count the owner gave already leaves it out, and it never moves the count or counts as a hold.
+   */
+  endedMs?: number;
+}
 
 /**
  * Bring the counts in line with the orders, once per step: every order that stands is booked, every cancelled one is given back. Orders absent from `facts` (an old order the agent no longer
@@ -354,6 +371,7 @@ export function reconcileSales(s: StockState, src: Source, facts: readonly Order
     if (!l) continue;
     const target = f.standing ? f.qty : f.cancelled ? 0 : undefined;
     if (target === undefined) continue;
+    if (isHistory(l, f)) continue;
     const before = l.applied[f.key]?.qty ?? 0;
     if (target === before) continue;
     settleOut(s, l, f.key, target, src, c);
@@ -362,21 +380,31 @@ export function reconcileSales(s: StockState, src: Source, facts: readonly Order
   return changed;
 }
 
+/** An order that ended before the line began is history, unless the line already booked it (then a cancel must still be able to give it back). */
+const isHistory = (l: StockLine, f: OrderFact): boolean => f.endedMs !== undefined && f.endedMs <= l.startedMs && l.applied[f.key] === undefined;
+
 /** What orders hold of a counted item that is NOT yet in the count: holding or standing orders whose sale key has not been booked. `exceptKey` leaves out the order being checked. */
 export function unbookedHolds(s: StockState | undefined, id: StockId, facts: readonly OrderFact[], exceptKey = ""): number {
   const l = s ? lineOf(s, id) : undefined;
   if (!l) return 0;
-  return facts.filter((f) => f.id === id && f.key !== exceptKey && (f.holding || f.standing) && (l.applied[f.key]?.qty ?? 0) < f.qty).reduce((n, f) => n + f.qty - (l.applied[f.key]?.qty ?? 0), 0);
+  return facts.filter((f) => f.id === id && f.key !== exceptKey && (f.holding || f.standing) && !isHistory(l, f) && (l.applied[f.key]?.qty ?? 0) < f.qty).reduce((n, f) => n + f.qty - (l.applied[f.key]?.qty ?? 0), 0);
 }
 
 /** A delivery fact as the Stock orders agent reads it from a purchase order the owner marked received (a wrong item is not passed). */
-export interface DeliveryFact { key: string; id: StockId; cumulative: number; unit?: string }
+export interface DeliveryFact {
+  key: string; id: StockId; cumulative: number; unit?: string;
+  /** When the owner last marked something received on this purchase order. A total last marked at or before the line's start is HISTORY: the count the owner gave already has those goods. */
+  atMs?: number;
+}
 
 /** Add every delivery not yet in the count. Returns the facts the stock newly refused (a unit that does not match; each reported once) so the agent can say so; the rest are booked once. */
 export function reconcileDeliveries(s: StockState, src: Source, facts: readonly DeliveryFact[], c: WriteContext): DeliveryFact[] {
   requireSource(src);
   const refused: DeliveryFact[] = [];
   for (const f of facts) {
+    const line = lineOf(s, f.id);
+    // goods that came before counting began are in the owner's count already: remember the total (so a later mark adds only the difference) and move nothing
+    if (line && f.atMs !== undefined && f.atMs <= line.startedMs && line.applied[f.key] === undefined) { line.applied[f.key] = { qty: f.cumulative, took: f.cumulative, atMs: c.nowMs }; continue; }
     const r = received(s, src, f.id, f.key, f.cumulative, f.unit, c);
     if (r.ok) continue;
     // a refusal is reported once per delivery quantity: the line remembers it under "refused:<key>", so the next tick does not tell the owner again
@@ -389,6 +417,23 @@ export function reconcileDeliveries(s: StockState, src: Source, facts: readonly 
   return refused;
 }
 
+/** One more reorder question was started for this crossing; returns how many have been. A Stock orders agent stops asking after a few so a shop is not nagged. */
+export function noteAsked(s: StockState, line: StockId, crossing: number): number {
+  const a = s.alerts.find((x) => x.line === line && x.crossing === crossing);
+  if (!a) return 0;
+  a.asked = (a.asked ?? 0) + 1;
+  return a.asked;
+}
+
+/**
+ * "Yes, I still have it" about a listing that sold itself at 0 (the owner's tap on the morning card, or the Confirm button on their page, both come here so the two doors agree): the count is
+ * set to the number the owner first said for the listing, or 1, by the owner's authority. Anything else (an uncounted listing, a count above 0) is left alone. True when the count was set.
+ */
+export function restoreAfterYes(s: StockState | undefined, a: Authority, listingId: string, firstQty: number | undefined, reqId: string, c: WriteContext): boolean {
+  if (!s || countOf(s, listingStockId(listingId)) !== 0) return false;
+  return correct(s, a, listingStockId(listingId), { to: firstQty ?? 1, reqId }, c).ok;
+}
+
 // ---- keeping the state small ------------------------------------------------------------------------------------------------------------------------
 
 function noteMove(l: StockLine, m: Movement): void {
@@ -399,9 +444,9 @@ function noteMove(l: StockLine, m: Movement): void {
 function prune(l: StockLine, nowMs: number): void {
   const keys = Object.keys(l.applied);
   if (keys.length <= MAX_APPLIED) return;
-  for (const k of keys) if (nowMs - l.applied[k].atMs > APPLIED_KEPT_MS) delete l.applied[k];
-  const left = Object.keys(l.applied).sort((a, b) => l.applied[a].atMs - l.applied[b].atMs);
-  for (const k of left.slice(0, Math.max(0, left.length - MAX_APPLIED))) delete l.applied[k];
+  // past the soft cap only keys older than SAFE_KEEP_MS go, oldest first: a key an order or delivery can still name is never dropped
+  const old = keys.filter((k) => nowMs - l.applied[k].atMs > SAFE_KEEP_MS).sort((a, b) => l.applied[a].atMs - l.applied[b].atMs);
+  for (const k of old.slice(0, keys.length - MAX_APPLIED)) delete l.applied[k];
 }
 
 /** On the tick: forget keys old enough that their order or delivery cannot change any more. */

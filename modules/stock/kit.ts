@@ -10,7 +10,7 @@ import type { Language } from "../language/languages.ts";
 import { ownerAuthority } from "../memory/memory.ts";
 import type { ActionRecord } from "../record/record.ts";
 import { listingsOf, liveListingTitles } from "../listings/listings.ts";
-import { STOCK_ACTION, correct, isStockId, kindOf, lineOf, listingStockId, ownerRows, ownerSold, setLow, startCounting, stockOf, stockRefs, stopCounting } from "./stock.ts";
+import { STOCK_ACTION, correct, isStockId, lineOf, listingStockId, ownerRows, ownerSold, setLow, startCounting, stockOf, stockRefs, stopCounting } from "./stock.ts";
 import type { Failure, StockChange, StockId, StockRow, StockState } from "./stock.ts";
 import type { AssistantState } from "../assistant/state.ts";
 
@@ -144,6 +144,3 @@ export function createStockKit<Store extends { assistant?: AssistantState }>(o: 
     },
   };
 }
-
-/** The kind label key of a row's id, for the page's group heading. */
-export const kindLabelOf = (id: StockId): "listing" | "menu" | "supply" => kindOf(id) ?? "listing";

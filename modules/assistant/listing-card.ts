@@ -17,7 +17,7 @@ import type { Language } from "../language/languages.ts";
 import type { Outcome } from "../record/record.ts";
 import type { Executed, OwnerSkill, Prepared, Proposal } from "./skill.ts";
 import type { TalkSource } from "./talk-types.ts";
-import { STOCK_ACTION, correct as correctCount, countOf, listingStockId, quantityOfListing, soldOutListings, stockRefs } from "../stock/stock.ts";
+import { STOCK_ACTION, listingStockId, quantityOfListing, restoreAfterYes, soldOutListings, stockRefs } from "../stock/stock.ts";
 import type { StockState } from "../stock/stock.ts";
 import { assistantOf } from "./state.ts";
 import type { AssistantState, CardAction } from "./state.ts";
@@ -101,11 +101,9 @@ export function createListings(d: ListingsDeps) {
         const r = confirm(s, ownerAuthority(via), l.id, { nowMs: now }, { confirmedMs: Number(action.fields.confirmedMs) });
         if (!r.ok) return { ok: false, note: "failed" };
         log(r.value, "confirmed", { listing: r.value.id }, "the owner said the shop still has it; the listing was confirmed today");
-        // a counted listing that had sold itself at 0: "Yes, I still have it" is the owner's correction of the count, to the number they first said (or 1), and the listing shows again
-        const st = d.store.assistant?.stock;
-        if (st && countOf(st, listingStockId(l.id)) === 0) {
-          const fix = correctCount(st, ownerAuthority(via), listingStockId(l.id), { to: l.qty ?? 1, reqId: `ask-${l.id}-${action.fields.confirmedMs}` }, { nowMs: now });
-          if (fix.ok) d.log(STOCK_ACTION, "confirmed", { op: "correct", item: listingStockId(l.id), to: l.qty ?? 1 }, stockRefs(listingStockId(l.id), "corrected", "owner"), "the owner said the shop still has a listing that had sold itself at 0, so the count was set to the number they first said");
+        // a counted listing that had sold itself at 0: "Yes, I still have it" is the owner's correction of the count (stock.ts restoreAfterYes; the Confirm button on their page does the same)
+        if (restoreAfterYes(d.store.assistant?.stock, ownerAuthority(via), l.id, l.qty, `ask-${l.id}-${action.fields.confirmedMs}`, { nowMs: now })) {
+          d.log(STOCK_ACTION, "confirmed", { op: "correct", item: listingStockId(l.id), to: l.qty ?? 1 }, stockRefs(listingStockId(l.id), "corrected", "owner"), "the owner said the shop still has a listing that had sold itself at 0, so the count was set to the number they first said");
         }
         return { ok: true, note: "done" };
       }

@@ -40,7 +40,7 @@ Files:
 
 | File | What it does | Touches disk or network? |
 |---|---|---|
-| `stock.ts` | The state, the id scheme, every rule: who may write, keyed effects, no double count, low mark, reads | No (pure) |
+| `stock.ts` | The state, the id scheme, every rule: who may write, keyed effects, no double count, history and the horizons, low mark, reads | No (pure) |
 | `kit.ts` | The owner's Stock page operations as events the runtime runs in a step, the pre-check, the owner's view | No (pure) |
 | `words.ts` | Every line people read, in four languages, and the lines for the review sheets | No |
 | `../channels/owner-stock-page.ts` | The owner's Stock page (plain forms, no script) | Served by the front |
@@ -78,6 +78,8 @@ LowAlert { line: string; crossing: number; count: number; atMs: number }
 
 **The id scheme.** `listing:<listing id>` for a listing, `menu:<menu item id>` for an Orders menu item, `supply:<item id>` for a Stock orders item. The prefix names which kind it is, so a line is never confused between the three. A line may carry `aliases` when the owner links two items to one count.
 
+**The export.** `stock.json` is in the owner's file (`bundle/backup/export.ts`, packaged as `stock/stock.json` by `bundle/export/build.ts`), and `assistant.stock` is in the nightly backup with the rest of the shop's state. A shop that counts nothing gets neither file.
+
 **The record.** Every change the owner makes in their app, and every time the agents bring the count in line with their orders or deliveries, leaves a line with the action `stock`: the item's id, its kind, what changed and who. No customer, supplier or phone number is ever in it.
 
 ## Who may change a count, and who may not
@@ -98,7 +100,17 @@ Every effect has a **key**, and the line remembers what each key has already don
 | The owner's **"sold 2"** | the page's request id | the same keyed sale | The form carries one request id, so a double tap or a re-sent form counts once. |
 | The owner's **correction** | the page's request id, and the count the owner was looking at | sets the count | A retry is the same request. If the count moved while the owner looked (a sale came in), the correction is refused as stale instead of overwriting it. |
 
-A count never goes below 0. A sale bigger than the count takes what is there and records the shortfall (`short`); a cancel gives back only what was taken. Old keys are forgotten after 120 days (an order or a delivery does not change after months), and at most 400 are kept per line.
+A count never goes below 0. A sale bigger than the count takes what is there and records the shortfall (`short`); a cancel gives back only what was taken.
+
+### History: a count must not replay what happened before it began
+
+Orders and Stock orders keep their old orders, and pass them to the count on every step, so the count has three rules about time:
+
+1. **What came before counting began is already in the owner's count.** The owner counts what is on the shelf now. An Orders order whose slot ended at or before the line's start is *history*: it never moves the count and never counts as a hold. A delivery last marked received at or before the line's start is remembered (so a later mark adds only the difference) and moves nothing. Stopping a count and starting it again makes a new line, so the same rules apply again.
+2. **A confirmed order whose slot has not ended is booked**, even if it was confirmed before counting began: its goods are promised, so the count falls by it. So count what is on the shelf *including* goods set aside for confirmed orders.
+3. **A key outlives every fact that can name it.** The agents stop passing an order or a delivery 30 days after it finished (`FACT_HORIZON_MS`). A line keeps a key at least 45 days (`SAFE_KEEP_MS`, the only age the soft cap of 5,000 keys may evict) and drops it after 120 days (`APPLIED_KEPT_MS`). So a key is never forgotten while an order could still be passed, and an order too old to be passed cannot be booked again after its key is forgotten.
+
+One edge is not solved (see `modules/Deferred.md`): a purchase order part-received before counting began and finished after is counted in full, because the purchase order keeps only its total, not when each piece came. The owner corrects it with one tap.
 
 ## How Orders uses it (and why Orders stays the source for what an order holds)
 
@@ -118,12 +130,13 @@ The day's own stock (`dailyStock`) still applies. The shop's page shows the smal
 * **Deliveries.** When the owner marks goods received, the purchase order's total received so far is booked under `delivery:<po>`. The unit must match the count's unit; a delivery in another unit is not added, the owner is told once in their app, and nothing is converted.
 * **Low stock.** When a counted item falls to its low mark, one alert is queued per crossing. Stock orders takes it off the queue first, then starts its existing reorder flow with the request id `low:<item>#<crossing>`: the same `settle` the owner's own "low rice" uses. That makes the order and **its approval card** (the budget, the cap, the approved supplier and the owner's yes are all unchanged); this module never approves or sends anything. One crossing makes at most one order, even if the owner cancels it. The question "Rice 5 kg is low (3 left). Order from Ravi Traders?" goes to the owner's app beside the card.
 * An item with several approved suppliers asks which one, as the owner's own request does.
+* If the owner is in the middle of another question, the reorder waits (its alert stays queued); it never overwrites that question. If the owner does not answer the reorder's own question it is asked up to three times (each runs out after 6 hours) and then left alone; the Stock page still shows the item as low.
 
 ## How listings use it
 
 * A counted listing shows its **count** as `items[].quantity` in the open feed ([shop-feed/1](../../specs/shop-feed.md)) and as its quantity on the page. An uncounted listing shows the owner's own quantity if they gave one, as before.
 * At 0 the listing is off the page, the feed and the shop's talk by itself. **Nothing is written to the listing** (its words, price and the digest its card was bound to are untouched); the count is the only thing that changed. The owner's list shows it as sold out.
-* The owner's morning question "Still have it? Yes" on a listing that sold itself at 0 sets the count to the number the owner first said (or 1) and the listing shows again. "Sold" marks it sold as before.
+* "Still have it? Yes" on a listing that sold itself at 0 sets the count to the number the owner first said (or 1) and the listing shows again. The morning card's Yes and the **Confirm** button on the owner's listings page do the same thing (both call `restoreAfterYes`), so the two doors agree. "Sold" marks it sold as before. The owner's listings page marks a counted listing at 0 as sold out.
 
 ## The low mark and the morning line
 
