@@ -17,7 +17,12 @@ LISTINGS_IMPL=go LISTINGS_GO_BIN=go/bin/listings node --test --test-concurrency=
   byte-identical canonical JSON (RFC 8785) signed with Ed25519; the owner's passkey set-up and sign-in with the soft authenticator (ES256 and EdDSA), sessions and sign-out; a listing
   drafted through the fake model under the budget (the day's cap and the month's cap each stop it; what the model makes up is refused); and the store surviving a restart, with the
   SQLite file's format.
-* `cross-restart.test.ts` runs the TypeScript runtime and the Go runtime **in turn on one folder** (both ways), so the store files are proved interchangeable.
+* `owner-control.contract.test.ts` covers who controls the owner's sign-in (bundle/Explanation.md "Who controls the owner's sign-in"), rule by rule and each attack the security
+  review proved, through HTTP and the files the deployer writes (owner-grants.json, owner-reset.json, owner-sessions.json, settings.json, runtime.json). Its 48-hour, one-day and
+  15-minute rules run on the TEST clock: `makeShop({clock: true})` starts the shop with `GEOMETER_TEST=1 GEOMETER_TEST_CLOCK_FILE=<file>` and `shop.advance(ms)` moves it
+  (modules/runtime/test-clock.ts, go/internal/testclock: honoured only for a "fakes" shop; a live shop refuses to start with it). Its push test is TypeScript only.
+* `cross-restart.test.ts` runs the TypeScript runtime and the Go runtime **in turn on one folder** (both ways), so the store files are proved interchangeable, the owner-control
+  state included (the lock, a request, own codes, a removed phone, the cool-down after a cancel).
 
 * `differential.test.ts` gives both runtimes the SAME requests and compares the answers: the owner's form (whitespace, rounding, UTF-16 lengths), the place, the feed, and which of 21 model drafts the
   grounding checks let through.

@@ -38,7 +38,8 @@ type Note struct {
 // lockAt is when the shop got locked: the first passkey made since the gate last opened (rows the owner or a removal later took away still count: the owner held one).
 func lockAt(q execer) (int64, bool) {
 	var m sql.NullInt64
-	if err := q.QueryRow("SELECT min(made_at) AS m FROM passkeys WHERE made_at >= ?", metaOr(q, "reopen_at", 0)).Scan(&m); err != nil || !m.Valid {
+	must(q.QueryRow("SELECT min(made_at) AS m FROM passkeys WHERE made_at >= ?", metaOr(q, "reopen_at", 0)).Scan(&m))
+	if !m.Valid {
 		return 0, false
 	}
 	return m.Int64, true
@@ -52,7 +53,7 @@ func inResetWindow(q execer) bool {
 		return false
 	}
 	var one int
-	return q.QueryRow("SELECT 1 FROM passkeys WHERE made_at >= ? LIMIT 1", at).Scan(&one) == sql.ErrNoRows
+	return !found(q.QueryRow("SELECT 1 FROM passkeys WHERE made_at >= ? LIMIT 1", at).Scan(&one))
 }
 
 // boundKey is the owner identity the shop was LOCKED with (hash of their number), set by the first passkey and cleared whenever the gate opens.
@@ -66,7 +67,10 @@ func (a *Access) effKey(q execer, who Who) string {
 	return OwnerKey(who.Owner)
 }
 
-func unbind(q execer) error { _, err := q.Exec("DELETE FROM meta WHERE name = 'bound_owner'"); return err }
+func unbind(q execer) error {
+	_, err := q.Exec("DELETE FROM meta WHERE name = 'bound_owner'")
+	return err
+}
 
 // appliedReset is the reset in the file, but only the one this store has applied (so a changed file cannot swap in another QR).
 func appliedReset(q execer, file *Grants) *Reset {
@@ -83,7 +87,7 @@ func appliedReset(q execer, file *Grants) *Reset {
 // cancelledRecently: the owner cancelled a request (of either kind) within the last day, so the Operator waits before the next one is heard.
 func cancelledRecently(q execer, now int64) bool {
 	var one int
-	return q.QueryRow("SELECT 1 FROM removals WHERE state = 'cancelled' AND at > ?", now-day).Scan(&one) == nil
+	return found(q.QueryRow("SELECT 1 FROM removals WHERE state = 'cancelled' AND at > ?", now-day).Scan(&one))
 }
 
 func endSessionsBefore(q execer, t, now int64, why string) error {
@@ -93,7 +97,7 @@ func endSessionsBefore(q execer, t, now int64, why string) error {
 
 func exists(q execer, query string, args ...any) bool {
 	var one int
-	return q.QueryRow(query, args...).Scan(&one) == nil
+	return found(q.QueryRow(query, args...).Scan(&one))
 }
 
 // noteSeen remembers the QR and the card hashes the file holds now, the first time this store sees each.
@@ -122,7 +126,7 @@ func noteSeen(q execer, file *Grants, firstSeen int64) error {
 
 func firstOwnerKey(q execer) (string, bool) {
 	var k string
-	if err := q.QueryRow("SELECT owner_key FROM passkeys WHERE made_at >= ? ORDER BY made_at LIMIT 1", metaOr(q, "reopen_at", 0)).Scan(&k); err != nil {
+	if !found(q.QueryRow("SELECT owner_key FROM passkeys WHERE made_at >= ? ORDER BY made_at LIMIT 1", metaOr(q, "reopen_at", 0)).Scan(&k)) {
 		return "", false
 	}
 	return k, true
@@ -306,7 +310,7 @@ func grantAllowed(q execer, hash string) bool {
 	var firstSeen int64
 	var voided sql.NullInt64
 	var kind string
-	if err := q.QueryRow("SELECT first_seen, voided_at, kind FROM grants_seen WHERE hash = ?", hash).Scan(&firstSeen, &voided, &kind); err != nil {
+	if !found(q.QueryRow("SELECT first_seen, voided_at, kind FROM grants_seen WHERE hash = ?", hash).Scan(&firstSeen, &voided, &kind)) {
 		return false
 	}
 	if voided.Valid || firstSeen < metaOr(q, "reopen_at", 0) {
