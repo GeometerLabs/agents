@@ -230,8 +230,11 @@ export const contentHash = (spec: Record<string, unknown>) => sha256Hex(stableJs
 // keeps the hash it has.
 // The monthly report's two live facts (who set the shop up, the Innovator badge) are part of it too, so a change of either redeploys the shop and rewrites its runtime config. They are
 // always in the hash, so every shop deployed before the report existed is redeployed once, which is what writes its `report` block.
-export const desiredOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText" | "preparedBy" | "innovator"> & { fleetAi?: "buttons"; fleetModel?: "off" }) => ({
-  settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, ...(f.fleetAi ? { fleetAi: f.fleetAi } : {}), ...(f.fleetModel ? { fleetModel: f.fleetModel } : {}), report: { preparedBy: f.preparedBy, innovator: f.innovator },
+export const desiredOf = (f: Pick<ShopFolder, "settingsText" | "runtime" | "lockText" | "pinsText" | "preparedBy" | "innovator"> & { fleetAi?: "buttons"; fleetModel?: "off"; budget?: ShopFolder["budget"] }) => ({
+  settings: f.settingsText, runtime: f.runtime, lock: f.lockText, pins: f.pinsText, ...(f.fleetAi ? { fleetAi: f.fleetAi } : {}), ...(f.fleetModel ? { fleetModel: f.fleetModel } : {}),
+  // The model budget is part of what a shop is asked to be (19 Nov 2026): it grows when the shop buys messages, and the admin may override it, and either must reach the running shop
+  // on the deployer's next pass without a manual deploy, as `model: "off"` does. Added only when the shop has one, so a shop with no budget keeps the hash it has.
+  ...(f.budget ? { budget: f.budget } : {}), report: { preparedBy: f.preparedBy, innovator: f.innovator },
 });
 // What the deployer stores as 'applied': equal hashes mean the shop is up to date and is left running untouched.
 export const desiredHashOf = (f: Parameters<typeof desiredOf>[0]): string => sha256Hex(stableJson(desiredOf(f)));
