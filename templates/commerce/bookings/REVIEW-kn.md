@@ -742,6 +742,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `licence.trial` | ಟ್ರಯಲ್ ಪರವಾನಗಿ: ಕೊನೆಯ ದಿನ 10 Dec 2026. ಮರುದಿನದಿಂದ, ಅಂಗಡಿ ಪ್ಲಾನ್‌ಗೆ ಬರುವವರೆಗೆ ಹೊಸ ಬುಕಿಂಗ್ ನಿಲ್ಲುತ್ತದೆ. | Trial licence: the last day is 10 Dec 2026. From the next day, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | ಅಂಗಡಿ ಸಿದ್ಧಪಡಿಸಿ | Set up a shop |  |
 | `setup.chooseTemplate` | ಇದು ಏನು ಮಾಡಬೇಕು? | What will it do? |  |
+| `setup.templateNames.listings` | ಅಂಗಡಿಯಲ್ಲಿ ಏನಿದೆ ಎಂದು ಮಾತ್ರ ತೋರಿಸಿ (ಉಚಿತ) | Only show what the shop has (free) |  |
 | `setup.templateNames.stock-orders` | ಸರಬರಾಜುದಾರರಿಂದ ಸ್ಟಾಕ್ ಆರ್ಡರ್ | Restocking from suppliers |  |
 | `setup.templateNames.bookings` | ಮುಂಗಡ ಹಣದೊಂದಿಗೆ ಬುಕಿಂಗ್ | Bookings with a deposit |  |
 | `setup.templateNames.fees` | ತರಗತಿಗಳ ಶುಲ್ಕ ವಸೂಲಿ | Fee collection for classes |  |
@@ -1700,6 +1701,33 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `stock.panel.shop.states.send_unknown` | ಬಹುಶಃ ಕಳುಹಿಸಲಾಗಿದೆ | Maybe sent |  |
 | `stock.panel.shop.states.supplier_declined` | ಸರಬರಾಜುದಾರರಿಂದ ಆಗದು | Supplier cannot supply |  |
 | `stock.panel.shop.states.cancelled` | ರದ್ದು | Cancelled |  |
+| `listingsShop.panel.steps.business` | ಅಂಗಡಿ | The shop |  |
+| `listingsShop.panel.steps.rules` | ಅಂಗಡಿ | The shop |  |
+| `listingsShop.panel.business.name` | ಅಂಗಡಿಯ ಹೆಸರು | Shop name |  |
+| `listingsShop.panel.business.town` | ಊರು ಅಥವಾ ಗ್ರಾಮ | Town or village |  |
+| `listingsShop.panel.business.townHelp` | ಜನರು ಅಂಗಡಿಯನ್ನು ಹುಡುಕುವ ಸ್ಥಳ, ಉದಾಹರಣೆಗೆ ಮೈಸೂರು. | Where people will find the shop, for example Thrissur. |  |
+| `listingsShop.panel.business.pincode` | ಪಿನ್‌ಕೋಡ್ (ಗೊತ್ತಿದ್ದರೆ) | Pincode (if you know it) |  |
+| `listingsShop.panel.business.pincodeHelp` | ಆರು ಅಂಕೆಗಳು. ಹತ್ತಿರದ ಜನರು ಅಂಗಡಿಯನ್ನು ಹುಡುಕಲು ಇದು ಸಹಾಯ ಮಾಡುತ್ತದೆ. | Six digits. It helps people nearby find the shop. |  |
+| `listingsShop.panel.business.trade` | ಅಂಗಡಿ ಏನು ಮಾರುತ್ತದೆ, ಕೆಲವು ಪದಗಳಲ್ಲಿ | What the shop sells, in a few words |  |
+| `listingsShop.panel.business.tradeHelp` | ನಿಮ್ಮದೇ ಪದಗಳಲ್ಲಿ, ಉದಾಹರಣೆಗೆ ಹಳೆಯ ಸೈಕಲ್‌ಗಳು. ಇದು ನಿಮಗೆ ಮತ್ತು ಅಂಗಡಿಯ ಪುಟಕ್ಕೆ ಒಂದು ಹೆಸರು ಮಾತ್ರ. | In your own words, for example second-hand cycles. It is only a label for you and the shop's page. |  |
+| `listingsShop.panel.languages.ownerNumberHelp` | ಮಾಲೀಕರ ಫೋನ್ ಸಂಖ್ಯೆ ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ, ಉದಾಹರಣೆಗೆ +91 98765 43210. ಇದನ್ನು ಖಾಲಿ ಬಿಡಬಹುದು: ಆಗ ಅಂಗಡಿಯ ಪುಟದಲ್ಲಿ ನೀವು ತೋರಿಸುವ ಒಮ್ಮೆ ಮಾತ್ರ ಬಳಸುವ ಕೋಡ್‌ನಿಂದ ಮಾಲೀಕರು ಮೊದಲ ಬಾರಿ ಸೈನ್ ಇನ್ ಮಾಡುತ್ತಾರೆ. | The owner's phone number with the country code, for example +91 98765 43210. You may leave it empty: the owner then signs in the first time with a one-use code that you show them on the shop's page. |  |
+| `listingsShop.panel.problems.townBad` | ಊರು ಅಥವಾ ಗ್ರಾಮವನ್ನು ಬರೆಯಿರಿ, ಒಂದು ಚಿಕ್ಕ ಸಾಲು. | Write the town or village, one short line. |  |
+| `listingsShop.panel.problems.pincodeBad` | ಪಿನ್‌ಕೋಡ್ ಆರು ಅಂಕೆಗಳು, 0 ದಿಂದ ಶುರುವಾಗುವುದಿಲ್ಲ. ಇದನ್ನು ಖಾಲಿ ಬಿಡಬಹುದು. | The pincode is six digits, not starting with 0. You may leave it empty. |  |
+| `listingsShop.panel.problems.tradeBad` | ಅಂಗಡಿ ಏನು ಮಾರುತ್ತದೆ ಎಂದು ಕೆಲವು ಪದಗಳಲ್ಲಿ ಬರೆಯಿರಿ, ಒಂದು ಚಿಕ್ಕ ಸಾಲು. | Write what the shop sells in a few words, one short line. |  |
+| `listingsShop.panel.shop.heading` | ಈ ಅಂಗಡಿ ತೋರಿಸುವುದು | What this shop shows |  |
+| `listingsShop.panel.shop.town` | ಊರು | Town |  |
+| `listingsShop.panel.shop.trade` | ಮಾರುವುದು | Sells |  |
+| `listingsShop.panel.shop.free` | ಉಚಿತ: ಹಣ ತೆಗೆದುಕೊಳ್ಳುವುದಿಲ್ಲ, WhatsApp ಸಂದೇಶಗಳನ್ನು ಕಳುಹಿಸುವುದಿಲ್ಲ. | Free: it takes no money and sends no WhatsApp messages. |  |
+| `listingsShop.panel.checks.lines.1` | ಅಂಗಡಿಯಲ್ಲಿ ಏನಿದೆ ಎಂದು ಅಂಗಡಿ ತನ್ನ ಪುಟದಲ್ಲಿ ತೋರಿಸುತ್ತದೆ. ಇದು ಉಚಿತ: ಬುಕಿಂಗ್, ಆರ್ಡರ್, ಶುಲ್ಕ ಇಲ್ಲ, ಹಣ ಇಟ್ಟುಕೊಳ್ಳುವುದಿಲ್ಲ, WhatsApp ಸಂದೇಶ ಕಳುಹಿಸುವುದಿಲ್ಲ. | The shop shows what it has on its own page. It is free: it takes no bookings, orders or fees, holds no money and sends no WhatsApp messages. |  |
+| `listingsShop.panel.checks.lines.2` | ಉಳಿದದ್ದನ್ನೆಲ್ಲ ಮಾಲೀಕರು ತಮ್ಮ ಆಪ್‌ನಲ್ಲಿ ಮಾಡುತ್ತಾರೆ: ಏನಿದೆ ಎಂದು ಹೇಳುತ್ತಾರೆ, ಅಸಿಸ್ಟೆಂಟ್ ಲಿಸ್ಟಿಂಗ್ ಬರೆಯುತ್ತದೆ, ಒಂದು ಟ್ಯಾಪ್‌ನಲ್ಲಿ ಮಾಲೀಕರು ಅದನ್ನು ತೋರಿಸುತ್ತಾರೆ. ಅಸಿಸ್ಟೆಂಟ್ "ಇನ್ನೂ ಇದೆಯೇ?" ಎಂದು ಕೇಳುತ್ತದೆ, ಮಾಲೀಕರು ಇದೆ ಅಥವಾ ಮಾರಾಟವಾಯಿತು ಎನ್ನುತ್ತಾರೆ. | The owner does the rest in their own app: they say what they have, the assistant writes the listing, and they tap to show it. The assistant asks "Still have it?" and the owner answers Yes or Sold. |  |
+| `listingsShop.panel.checks.lines.3` | ಮಾಲೀಕರು "ನನ್ನ ಅಂಗಡಿಯನ್ನು Streetlist ಮತ್ತು ಹುಡುಕಾಟದಲ್ಲಿ ತೋರಿಸಿ" ಅನ್ನು ಆನ್ ಮಾಡುವವರೆಗೆ Streetlist ಅಥವಾ ಹುಡುಕಾಟದಲ್ಲಿ ಏನೂ ತೋರಿಸುವುದಿಲ್ಲ. | Nothing is shown on Streetlist or in search until the owner switches "Show my shop on Streetlist and in search" on. |  |
+| `listingsShop.panel.checks.lines.4` | ಅಸಿಸ್ಟೆಂಟ್‌ನ ಮಾದರಿ ಬಳಕೆಯ ವೆಚ್ಚವನ್ನು Geometer ಭರಿಸುತ್ತದೆ, ತಿಂಗಳಿಗೆ ಒಂದು ಸಣ್ಣ ಮಿತಿಯವರೆಗೆ. | Geometer pays for the assistant's model use, up to a small limit each month. |  |
+| `listingsShop.panel.checks.saveFirst` | ಇದನ್ನು ನೋಡಿ, ನಂತರ ಅಂಗಡಿಯನ್ನು ಉಳಿಸಿ. | Check this, then save the shop. |  |
+| `listingsShop.panel.checks.saved` | ಉಳಿಸಲಾಗಿದೆ. ಸರ್ವರ್ ಒಂದು ನಿಮಿಷದಲ್ಲಿ ಅಂಗಡಿಯನ್ನು ಸಿದ್ಧಪಡಿಸುತ್ತದೆ. | Saved. The server sets the shop up within a minute. |  |
+| `listingsShop.panel.checks.waiting` | ಸರ್ವರ್ ಇನ್ನೂ ಈ ಅಂಗಡಿಯನ್ನು ಸಿದ್ಧಪಡಿಸಿಲ್ಲ. ಒಂದು ನಿಮಿಷ ಬಿಟ್ಟು ಈ ಪುಟಕ್ಕೆ ಬನ್ನಿ. | The server has not set this shop up yet. Come back to this page in a minute. |  |
+| `listingsShop.panel.checks.deployed` | ಅಂಗಡಿ ಸರ್ವರ್‌ನಲ್ಲಿ ಸಿದ್ಧವಾಗಿದೆ. | The shop is set up on the server. |  |
+| `listingsShop.panel.checks.next` | ಮುಂದೆ: ಮಾಲೀಕರಿಗೆ ಅವರ ಮೊದಲ ಸೈನ್ ಇನ್ ಕೋಡ್ ಕೊಡಿ. ಇದು ಅಂಗಡಿಯ ಪುಟದಲ್ಲಿ ಮಾಡಲಾಗುತ್ತದೆ, ಒಮ್ಮೆ ಮಾತ್ರ ಮತ್ತು ಕೆಲವೇ ನಿಮಿಷ ಕೆಲಸ ಮಾಡುತ್ತದೆ, ಮಾಲೀಕರು ಇದನ್ನು ತಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ತೆರೆಯುತ್ತಾರೆ. | Next: give the owner their first sign-in code. It is made on the shop's page, works once and for a few minutes, and the owner opens it on their own phone. |  |
+| `listingsShop.panel.checks.openShop` | ಅಂಗಡಿಯ ಪುಟ ತೆರೆಯಿರಿ | Open the shop's page |  |
 | `classes.heading` | ತರಗತಿಗಳು | Classes |  |
 | `classes.label` | ತರಗತಿಯ ಸಮಯ | Class times |  |
 | `classes.help` | ಕೇಂದ್ರಕ್ಕೆ ನಿಗದಿತ ತರಗತಿ ಸಮಯ ಇಲ್ಲದಿದ್ದರೆ ಇದನ್ನು ಖಾಲಿ ಬಿಡಿ. ಪ್ರತಿ ಸಾಲಿನಲ್ಲಿ ಒಂದು ತರಗತಿ: ಬ್ಯಾಚ್, ದಿನ, ಆರಂಭದ ಸಮಯ, ಎಷ್ಟು ನಿಮಿಷ. ಉದಾಹರಣೆ: ತರಗತಿ 8, Mon, 16:00, 45. ದಿನವನ್ನು ಹೀಗೆ ಬರೆಯಿರಿ: Mon, Tue, Wed, Thu, Fri, Sat, Sun. | Leave this empty if the centre has no set class times. One class on each line: the batch, the day, the start time, how many minutes. Example: Class 8, Mon, 16:00, 45. Write the day as Mon, Tue, Wed, Thu, Fri, Sat or Sun. |  |
@@ -1754,6 +1782,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.salon.prefill.services.2.names` | ಫೇಶಿಯಲ್ | Facial |  |
 | `preset.salon.prefill.services.3.names` | ಹೇರ್ ಸ್ಪಾ | Hair spa |  |
 | `preset.salon.prefill.services.4.names` | ಮ್ಯಾನಿಕ್ಯೂರ್ | Manicure |  |
+| `preset.shows-only.name` | ಅಂಗಡಿಯಲ್ಲಿ ಏನಿದೆ ಎಂದು ಮಾತ್ರ ತೋರಿಸಿ (ಉಚಿತ) | Only show what the shop has (free) |  |
 | `preset.sweets.name` | ಸಿಹಿ ಮತ್ತು ತಿಂಡಿ, ಮೊದಲೇ ಆರ್ಡರ್ | Sweets and snacks, pre-orders |  |
 | `preset.sweets.prefill.menu.1.names` | ಲಡ್ಡು 500 ಗ್ರಾಂ | Laddu 500 g |  |
 | `preset.sweets.prefill.menu.2.names` | ಹಲ್ವಾ 500 ಗ್ರಾಂ | Halwa 500 g |  |
