@@ -271,3 +271,61 @@ Glow Unisex Salon · ഫെബ്രുവരി 2027 · പരിശീലന �
 | `page.recordDigest` | രേഖയുടെ ഡൈജസ്റ്റ് | Record digest |  |
 | `page.liveServices` | യഥാർത്ഥ സംവിധാനങ്ങൾ | Live services |  |
 
+| `pages.block.locked` | ഇപ്പോൾ ഉടമയ്ക്ക് സ്വന്തം സൈൻ ഇൻ ഉണ്ട്. പുതിയ ഫോൺ ഉടമയുടെ ആപ്പിൽ നിന്നോ ഉടമയുടെ റിക്കവറി കോഡുകൾ കൊണ്ടോ ചേർക്കാം. | The owner now holds their own sign-in. A new phone is added from the owner's app, or with the owner's recovery codes. |  |
+| `pages.block.askRemove` | ഉടമയുടെ പാസ്‌കീകൾ നീക്കാൻ ആവശ്യപ്പെടുക | Ask to remove the owner's passkeys |  |
+| `pages.block.askRemoveNote` | എല്ലാ ഫോണുകളും നഷ്ടപ്പെട്ട്, കോഡുകളുമില്ലാത്ത ഉടമയ്ക്കായി. ഉടമയെ ഉടൻ അറിയിക്കും, അവർക്ക് റദ്ദാക്കാം; റദ്ദാക്കിയില്ലെങ്കിൽ 48 മണിക്കൂറിന് ശേഷം നടക്കും, അപ്പോൾ മാത്രമേ പുതിയ സെറ്റപ്പ് QR കോഡ് കാണിക്കാനാകൂ. | For an owner who lost every phone and has no codes. The owner is told at once and can cancel; if they do not, it happens after 48 hours, and only then can you show a new setup QR code. |  |
+| `pages.block.requested` | അഭ്യർത്ഥിച്ചു. ഉടമയ്ക്ക് ഇപ്പോൾ അവരുടെ ആപ്പിൽ കാണാം. റദ്ദാക്കിയില്ലെങ്കിൽ 48 മണിക്കൂറിൽ നടക്കും. | Asked. The owner sees it in their app now. If they do not cancel, it happens in 48 hours. |  |
+| `pages.block.pending` | Divya ഉടമയുടെ പാസ്‌കീകൾ നീക്കാൻ ആവശ്യപ്പെട്ടു. ഉടമ റദ്ദാക്കിയില്ലെങ്കിൽ 2026-11-21 10:00 UTC-ന് നടക്കും. | Divya asked to remove the owner's passkeys. It happens on 2026-11-21 10:00 UTC unless the owner cancels. |  |
+| `pages.block.resetLine` | 2026-11-19-ന് Geometer ഉടമയുടെ സൈൻ ഇൻ റീസെറ്റ് ചെയ്തു: the owner lost every phone | Geometer reset the owner's sign-in on 2026-11-19: the owner lost every phone |  |
+| `pages.block.lockedNotice` | ഇപ്പോൾ ഉടമയ്ക്ക് സ്വന്തം സൈൻ ഇൻ ഉണ്ട്. പുതിയ ഫോൺ ഉടമയുടെ ആപ്പിൽ നിന്നോ ഉടമയുടെ റിക്കവറി കോഡുകൾ കൊണ്ടോ ചേർക്കാം. | The owner now holds their own sign-in. A new phone is added from the owner's app, or with the owner's recovery codes. |  |
+| `phones.title` | നിങ്ങളുടെ കട തുറക്കാവുന്ന ഫോണുകൾ | Phones that can open your shop |  |
+| `phones.link` | നിങ്ങളുടെ കട തുറക്കാവുന്ന ഫോണുകൾ | Phones that can open your shop |  |
+| `phones.intro` | ഈ ഫോണുകൾക്ക് മാത്രമേ നിങ്ങളുടെ കടയുടെ ആപ്പ് തുറക്കാനാകൂ. നിങ്ങൾക്ക് അറിയാത്ത ഒരെണ്ണം കണ്ടാൽ അത് നീക്കൂ. | Only these phones can open your shop's app. If you see one you do not know, remove it. |  |
+| `phones.thisPhone` | ഈ ഫോൺ | This phone |  |
+| `phones.aPhone` | ഒരു ഫോൺ | A phone |  |
+| `phones.added` | 19 Nov 2026-ന് ചേർത്തു | Added 19 Nov 2026 |  |
+| `phones.via.setup` | സെറ്റപ്പ് QR കോഡ് ഉപയോഗിച്ച് | with the setup QR code |  |
+| `phones.via.recovery` | റിക്കവറി കോഡ് ഉപയോഗിച്ച് | with a recovery code |  |
+| `phones.via.own_phone` | നിങ്ങളുടെ സ്വന്തം ഫോണിൽ നിന്ന് | from your own phone |  |
+| `phones.via.reset` | Geometer നിങ്ങളുടെ സൈൻ ഇൻ റീസെറ്റ് ചെയ്ത ശേഷം | after Geometer reset your sign-in |  |
+| `phones.lastUsed` | അവസാനം ഉപയോഗിച്ചത് 19 Nov, 3:42 pm | Last used 19 Nov, 3:42 pm |  |
+| `phones.neverUsed` | ഇതുവരെ ഉപയോഗിച്ചിട്ടില്ല | Not used yet |  |
+| `phones.remove` | നീക്കുക | Remove |  |
+| `phones.removeTitle` | ഈ ഫോൺ നീക്കണോ? | Remove this phone? |  |
+| `phones.removeAsk` | Android, Chrome-ന് ഇനി നിങ്ങളുടെ കട തുറക്കാനാകില്ല. | Android, Chrome will not be able to open your shop any more. |  |
+| `phones.removeYes` | അതെ, നീക്കൂ | Yes, remove it |  |
+| `phones.keep` | വേണ്ട, ഇരിക്കട്ടെ | No, keep it |  |
+| `phones.lastTitle` | ഇത് നിങ്ങളുടെ ഒരേയൊരു ഫോണാണ് | This is your only phone |  |
+| `phones.lastAsk` | ഇത് നീക്കിയാൽ നിങ്ങളുടെ സ്വന്തം റിക്കവറി കോഡുകൾ കൊണ്ടോ ഓപ്പറേറ്ററുടെ സഹായം കൊണ്ടോ മാത്രമേ തിരികെ കയറാനാകൂ; അതിന് 2 ദിവസം എടുക്കും. എന്നാലും നീക്കണോ? | If you remove it, you can only get back in with your own recovery codes, or with your Operator's help, which takes 2 days. Remove it anyway? |  |
+| `phones.lastYes` | അതെ, എന്റെ ഒരേയൊരു ഫോൺ നീക്കൂ | Yes, remove my only phone |  |
+| `phones.removed` | ആ ഫോൺ നീക്കി. | That phone is removed. |  |
+| `phones.add` | ഫോൺ ചേർക്കുക | Add a phone |  |
+| `phones.addNote` | ഈ സ്ക്രീനിൽ ഒരിക്കൽ മാത്രം പ്രവർത്തിക്കുന്ന ഒരു കോഡ് കാണിക്കും. 15 മിനിറ്റിനുള്ളിൽ പുതിയ ഫോണിന്റെ ക്യാമറ കൊണ്ട് സ്കാൻ ചെയ്യൂ. | Shows a one-use code on this screen. Scan it with the new phone's camera within 15 minutes. |  |
+| `phones.addTitle` | പുതിയ ഫോൺ ചേർക്കുക | Add a new phone |  |
+| `phones.addHow` | ഇത് പുതിയ ഫോണിന്റെ ക്യാമറ കൊണ്ട് സ്കാൻ ചെയ്ത് അതിന്റെ ഫിംഗർപ്രിന്റ് റീഡറിൽ തൊടൂ. ഇത് ഒരിക്കൽ മാത്രം, 4:30 pm വരെ പ്രവർത്തിക്കും. | Scan this with the new phone's camera and touch its fingerprint reader. It works once, until 4:30 pm. |  |
+| `phones.codes` | നിങ്ങളുടെ സ്വന്തം റിക്കവറി കോഡുകൾ | Your own recovery codes |  |
+| `phones.codesNone` | നിങ്ങൾ ഇതുവരെ സ്വന്തം കോഡുകൾ ഉണ്ടാക്കിയിട്ടില്ല. | You have not made your own codes yet. |  |
+| `phones.codesHave` | നിങ്ങൾ 19 Nov 2026-ന് സ്വന്തം കോഡുകൾ ഉണ്ടാക്കി. അത് നിങ്ങളുടെ കയ്യിൽ മാത്രമാണ്. | You made your own codes on 19 Nov 2026. Only you hold them. |  |
+| `phones.codesMake` | എന്റെ സ്വന്തം റിക്കവറി കോഡുകൾ ഉണ്ടാക്കൂ | Make my own recovery codes |  |
+| `phones.codesRemake` | പുതിയ കോഡുകൾ ഉണ്ടാക്കൂ | Make new codes |  |
+| `phones.codesNote` | കോഡുകൾ ഒരിക്കൽ മാത്രം കാണിക്കും. ഓപ്പറേറ്റർ പ്രിന്റ് ചെയ്ത കോഡുകൾ പ്രവർത്തിക്കില്ല. | The codes show once. The codes your Operator printed stop working. |  |
+| `phones.codesTitle` | നിങ്ങളുടെ റിക്കവറി കോഡുകൾ | Your recovery codes |  |
+| `phones.codesShow` | ഇവ എഴുതിവെച്ച് സുരക്ഷിതമായി സൂക്ഷിക്കൂ. ഓരോന്നും ഒരിക്കൽ പ്രവർത്തിക്കും, വീണ്ടും കാണിക്കില്ല. ഓപ്പറേറ്റർ പ്രിന്റ് ചെയ്ത കോഡുകൾ ഇനി പ്രവർത്തിക്കില്ല. | Write these down and keep them safe. Each works once, and they are never shown again. The codes your Operator printed no longer work. |  |
+| `phones.needPasskey` | കോഡുകൾ ഉണ്ടാക്കാനോ ഫോൺ ചേർക്കാനോ സൈൻ ഔട്ട് ചെയ്ത് ഫോണിന്റെ ഫിംഗർപ്രിന്റ് അല്ലെങ്കിൽ സ്ക്രീൻ ലോക്ക് ഉപയോഗിച്ച് വീണ്ടും സൈൻ ഇൻ ചെയ്യൂ. | To make codes or add a phone, sign out and sign in again with your phone's fingerprint or screen lock. |  |
+| `phones.back` | നിങ്ങളുടെ കടയിലേക്ക് മടങ്ങുക | Back to your shop |  |
+| `phones.onePhone` | ഇപ്പോൾ ഒരു ഫോണിന് മാത്രമേ നിങ്ങളുടെ കട തുറക്കാനാകൂ. | Only one phone can open your shop now. |  |
+| `phones.noPhones` | ഇപ്പോൾ ഒരു ഫോണിനും നിങ്ങളുടെ കട തുറക്കാനാകില്ല. റിക്കവറി കോഡുകൾ ഉപയോഗിക്കൂ, അല്ലെങ്കിൽ ഓപ്പറേറ്ററോട് ചോദിക്കൂ. | No phone can open your shop now. Use your recovery codes, or ask your Operator. |  |
+| `phones.bannerNew` | 19 Nov, 3:42 pm-ന് ഒരു പുതിയ ഫോൺ ചേർത്തു (Android, Chrome). നിങ്ങളല്ലേ? അത് നീക്കൂ. | A new phone was added on 19 Nov, 3:42 pm (Android, Chrome). Not you? Remove it. |  |
+| `phones.itWasMe` | ഞാൻ തന്നെയാണ് | It was me |  |
+| `phones.removeIt` | നീക്കൂ | Remove it |  |
+| `phones.bannerRequest` | Divya നിങ്ങളുടെ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും നീക്കാൻ ആവശ്യപ്പെട്ടു. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ 21 Nov, 10:00 am-ന് അത് നടക്കും. | Divya asked to remove every phone that can open your shop. It will happen on 21 Nov, 10:00 am unless you cancel. |  |
+| `phones.cancel` | അഭ്യർത്ഥന റദ്ദാക്കൂ | Cancel the request |  |
+| `phones.cancelled` | റദ്ദാക്കി. നിങ്ങളുടെ ഫോണുകൾ അതേപടി തുടരും. | Cancelled. Your phones stay. |  |
+| `phones.bannerCodes` | നിങ്ങളുടെ സ്വന്തം കോഡുകൾ ഇപ്പോൾ ഉണ്ടാക്കൂ, അത് നിങ്ങളുടെ കയ്യിൽ മാത്രമിരിക്കട്ടെ. | Make your own codes now, so only you hold them. |  |
+| `phones.makeCodes` | എന്റെ കോഡുകൾ ഉണ്ടാക്കൂ | Make my codes |  |
+| `phones.refused` | അത് നടന്നില്ല. സൈൻ ഔട്ട് ചെയ്ത് ഫോണിന്റെ ഫിംഗർപ്രിന്റ് ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്ത് വീണ്ടും ശ്രമിക്കൂ. | That did not work. Sign out, sign in with your phone's fingerprint and try again. |  |
+| `phones.operator` | നിങ്ങളുടെ ഓപ്പറേറ്റർ | Your Operator |  |
+| `phones.openPhones` | നിങ്ങളുടെ ഫോണുകൾ | Your phones |  |
+| `phones.lostHelp` | എല്ലാ ഫോണുകളും കോഡുകളും നഷ്ടപ്പെട്ടോ, അല്ലെങ്കിൽ ഓപ്പറേറ്റർ സഹായിക്കുന്നില്ലേ? hello@geometer.dev-ലേക്ക് എഴുതൂ. | Lost every phone and your codes, or your Operator will not help? Write to hello@geometer.dev. |  |
+| `phones.alert.newPhone` | നിങ്ങളുടെ കടയിൽ നവം 19, 3:42 PM-ന് ഒരു പുതിയ ഫോൺ ചേർത്തു (Android, Chrome). നിങ്ങളല്ലേ? ആപ്പ് തുറന്ന് ഇത് നീക്കൂ. | A new phone was added to your shop on 19 Nov, 3:42 pm (Android, Chrome). Not you? Open your app and remove it. |  |
+| `phones.alert.request` | Divya നിങ്ങളുടെ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും നീക്കാൻ ആവശ്യപ്പെട്ടു. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ 2 ദിവസത്തിൽ അത് നടക്കും. തടയാൻ നിങ്ങളുടെ ആപ്പ് തുറക്കൂ. | Divya asked to remove every phone that opens your shop. It happens in 2 days unless you cancel. Open your app to stop it. |  |

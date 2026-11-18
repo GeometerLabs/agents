@@ -434,3 +434,61 @@ Annapurna Tiffins · फरवरी 2027 · अभ्यास वाले न
 | `page.recordDigest` | रिकॉर्ड का डाइजेस्ट | Record digest |  |
 | `page.liveServices` | असली सिस्टम | Live services |  |
 
+| `pages.block.locked` | अब मालिक के पास अपना साइन-इन है। नया फ़ोन मालिक के ऐप से, या मालिक के रिकवरी कोड से जुड़ता है। | The owner now holds their own sign-in. A new phone is added from the owner's app, or with the owner's recovery codes. |  |
+| `pages.block.askRemove` | मालिक की पासकी हटाने का अनुरोध करें | Ask to remove the owner's passkeys |  |
+| `pages.block.askRemoveNote` | ऐसे मालिक के लिए जिसके सारे फ़ोन खो गए और जिसके पास कोड नहीं हैं। मालिक को तुरंत बताया जाता है और वे रद्द कर सकते हैं; न करें तो 48 घंटे बाद यह होता है, और तभी आप नया सेटअप QR कोड दिखा सकते हैं। | For an owner who lost every phone and has no codes. The owner is told at once and can cancel; if they do not, it happens after 48 hours, and only then can you show a new setup QR code. |  |
+| `pages.block.requested` | अनुरोध हो गया। मालिक को अपने ऐप में अभी दिखेगा। वे रद्द न करें तो 48 घंटे में हो जाएगा। | Asked. The owner sees it in their app now. If they do not cancel, it happens in 48 hours. |  |
+| `pages.block.pending` | Divya ने मालिक की पासकी हटाने को कहा है। मालिक रद्द न करें तो यह 2026-11-21 10:00 UTC को होगा। | Divya asked to remove the owner's passkeys. It happens on 2026-11-21 10:00 UTC unless the owner cancels. |  |
+| `pages.block.resetLine` | Geometer ने 2026-11-19 को मालिक का साइन-इन रीसेट किया: the owner lost every phone | Geometer reset the owner's sign-in on 2026-11-19: the owner lost every phone |  |
+| `pages.block.lockedNotice` | अब मालिक के पास अपना साइन-इन है। नया फ़ोन मालिक के ऐप से, या मालिक के रिकवरी कोड से जुड़ता है। | The owner now holds their own sign-in. A new phone is added from the owner's app, or with the owner's recovery codes. |  |
+| `phones.title` | वे फ़ोन जो आपकी दुकान खोल सकते हैं | Phones that can open your shop |  |
+| `phones.link` | वे फ़ोन जो आपकी दुकान खोल सकते हैं | Phones that can open your shop |  |
+| `phones.intro` | सिर्फ़ यही फ़ोन आपकी दुकान का ऐप खोल सकते हैं। कोई फ़ोन अनजान दिखे तो उसे हटा दीजिए। | Only these phones can open your shop's app. If you see one you do not know, remove it. |  |
+| `phones.thisPhone` | यह फ़ोन | This phone |  |
+| `phones.aPhone` | एक फ़ोन | A phone |  |
+| `phones.added` | 19 Nov 2026 को जोड़ा गया | Added 19 Nov 2026 |  |
+| `phones.via.setup` | सेटअप QR कोड से | with the setup QR code |  |
+| `phones.via.recovery` | रिकवरी कोड से | with a recovery code |  |
+| `phones.via.own_phone` | आपके अपने फ़ोन से | from your own phone |  |
+| `phones.via.reset` | Geometer के आपका साइन-इन रीसेट करने के बाद | after Geometer reset your sign-in |  |
+| `phones.lastUsed` | आख़िरी बार 19 Nov, 3:42 pm को इस्तेमाल हुआ | Last used 19 Nov, 3:42 pm |  |
+| `phones.neverUsed` | अभी तक इस्तेमाल नहीं हुआ | Not used yet |  |
+| `phones.remove` | हटाएँ | Remove |  |
+| `phones.removeTitle` | यह फ़ोन हटाएँ? | Remove this phone? |  |
+| `phones.removeAsk` | Android, Chrome अब आपकी दुकान नहीं खोल पाएगा। | Android, Chrome will not be able to open your shop any more. |  |
+| `phones.removeYes` | हाँ, हटाइए | Yes, remove it |  |
+| `phones.keep` | नहीं, रहने दीजिए | No, keep it |  |
+| `phones.lastTitle` | यह आपका अकेला फ़ोन है | This is your only phone |  |
+| `phones.lastAsk` | इसे हटाने पर आप अपने रिकवरी कोड से, या अपने ऑपरेटर की मदद से ही वापस आ पाएँगे, जिसमें 2 दिन लगते हैं। फिर भी हटाएँ? | If you remove it, you can only get back in with your own recovery codes, or with your Operator's help, which takes 2 days. Remove it anyway? |  |
+| `phones.lastYes` | हाँ, मेरा अकेला फ़ोन हटाइए | Yes, remove my only phone |  |
+| `phones.removed` | वह फ़ोन हटा दिया गया। | That phone is removed. |  |
+| `phones.add` | फ़ोन जोड़ें | Add a phone |  |
+| `phones.addNote` | इस स्क्रीन पर एक बार चलने वाला कोड दिखता है। नए फ़ोन के कैमरे से 15 मिनट के भीतर स्कैन कीजिए। | Shows a one-use code on this screen. Scan it with the new phone's camera within 15 minutes. |  |
+| `phones.addTitle` | नया फ़ोन जोड़ें | Add a new phone |  |
+| `phones.addHow` | इसे नए फ़ोन के कैमरे से स्कैन कीजिए और उसके फ़िंगरप्रिंट रीडर को छुइए। यह एक बार चलेगा, 4:30 pm तक। | Scan this with the new phone's camera and touch its fingerprint reader. It works once, until 4:30 pm. |  |
+| `phones.codes` | आपके अपने रिकवरी कोड | Your own recovery codes |  |
+| `phones.codesNone` | आपने अपने कोड अभी नहीं बनाए हैं। | You have not made your own codes yet. |  |
+| `phones.codesHave` | आपने अपने कोड 19 Nov 2026 को बनाए। ये सिर्फ़ आपके पास हैं। | You made your own codes on 19 Nov 2026. Only you hold them. |  |
+| `phones.codesMake` | मेरे अपने रिकवरी कोड बनाएँ | Make my own recovery codes |  |
+| `phones.codesRemake` | नए कोड बनाएँ | Make new codes |  |
+| `phones.codesNote` | कोड एक ही बार दिखते हैं। आपके ऑपरेटर के छापे हुए कोड बंद हो जाते हैं। | The codes show once. The codes your Operator printed stop working. |  |
+| `phones.codesTitle` | आपके रिकवरी कोड | Your recovery codes |  |
+| `phones.codesShow` | इन्हें लिख लीजिए और सँभालकर रखिए। हर कोड एक बार चलता है, और ये दोबारा नहीं दिखाए जाते। आपके ऑपरेटर के छापे हुए कोड अब नहीं चलेंगे। | Write these down and keep them safe. Each works once, and they are never shown again. The codes your Operator printed no longer work. |  |
+| `phones.needPasskey` | कोड बनाने या फ़ोन जोड़ने के लिए साइन आउट करके अपने फ़ोन के फ़िंगरप्रिंट या स्क्रीन लॉक से फिर साइन इन कीजिए। | To make codes or add a phone, sign out and sign in again with your phone's fingerprint or screen lock. |  |
+| `phones.back` | अपनी दुकान पर वापस | Back to your shop |  |
+| `phones.onePhone` | अभी सिर्फ़ एक फ़ोन आपकी दुकान खोल सकता है। | Only one phone can open your shop now. |  |
+| `phones.noPhones` | अभी कोई फ़ोन आपकी दुकान नहीं खोल सकता। अपने रिकवरी कोड इस्तेमाल कीजिए, या अपने ऑपरेटर से कहिए। | No phone can open your shop now. Use your recovery codes, or ask your Operator. |  |
+| `phones.bannerNew` | 19 Nov, 3:42 pm को एक नया फ़ोन जोड़ा गया (Android, Chrome)। आपने नहीं जोड़ा? उसे हटा दीजिए। | A new phone was added on 19 Nov, 3:42 pm (Android, Chrome). Not you? Remove it. |  |
+| `phones.itWasMe` | मैंने ही जोड़ा | It was me |  |
+| `phones.removeIt` | हटाइए | Remove it |  |
+| `phones.bannerRequest` | Divya ने आपकी दुकान खोलने वाले हर फ़ोन को हटाने को कहा है। आप रद्द न करें तो यह 21 Nov, 10:00 am को हो जाएगा। | Divya asked to remove every phone that can open your shop. It will happen on 21 Nov, 10:00 am unless you cancel. |  |
+| `phones.cancel` | अनुरोध रद्द करें | Cancel the request |  |
+| `phones.cancelled` | रद्द हो गया। आपके फ़ोन बने रहेंगे। | Cancelled. Your phones stay. |  |
+| `phones.bannerCodes` | अपने कोड अभी बनाइए, ताकि वे सिर्फ़ आपके पास रहें। | Make your own codes now, so only you hold them. |  |
+| `phones.makeCodes` | मेरे कोड बनाएँ | Make my codes |  |
+| `phones.refused` | यह नहीं हो पाया। साइन आउट करके अपने फ़ोन के फ़िंगरप्रिंट से साइन इन कीजिए और फिर कोशिश कीजिए। | That did not work. Sign out, sign in with your phone's fingerprint and try again. |  |
+| `phones.operator` | आपके ऑपरेटर | Your Operator |  |
+| `phones.openPhones` | आपके फ़ोन | Your phones |  |
+| `phones.lostHelp` | हर फ़ोन और अपने कोड खो दिए, या आपका ऑपरेटर मदद नहीं कर रहा? hello@geometer.dev पर लिखिए। | Lost every phone and your codes, or your Operator will not help? Write to hello@geometer.dev. |  |
+| `phones.alert.newPhone` | आपकी दुकान में 19 नव॰, 3:42 pm को एक नया फ़ोन जोड़ा गया (Android, Chrome)। आपने नहीं जोड़ा? अपना ऐप खोलकर इसे हटाइए। | A new phone was added to your shop on 19 Nov, 3:42 pm (Android, Chrome). Not you? Open your app and remove it. |  |
+| `phones.alert.request` | Divya ने आपकी दुकान खोलने वाले हर फ़ोन को हटाने को कहा है। आप रद्द न करें तो यह 2 दिन में हो जाएगा। रोकने के लिए अपना ऐप खोलिए। | Divya asked to remove every phone that opens your shop. It happens in 2 days unless you cancel. Open your app to stop it. |  |
