@@ -270,7 +270,9 @@ export interface RelayBackend {
   decide(owner: OwnerCred, approval: string, digest: string, decision: "approve" | "deny"): Promise<RelayDecision | "refused">;
 }
 
-export class BackendError extends Error {}
+/** `backSoon`: the shop's shared process has PAUSED it (modules/runtime/shared.ts answers 503 with the header x-back-soon): the front shows the "back soon" sentence, not a generic error. */
+export class BackendError extends Error { backSoon = false; }
+const answered = (r: Response): BackendError => { const e = new BackendError(`The shop's system answered ${r.status}.`); e.backSoon = r.status === 503 && r.headers.get("x-back-soon") === "1"; return e; };
 
 async function call(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
   const controller = new AbortController();
@@ -284,7 +286,7 @@ async function call(url: string, init: RequestInit, timeoutMs: number): Promise<
 export function runtimeBackend(o: { url: string; token: string; timeoutMs?: number }): ChannelBackend {
   const timeout = o.timeoutMs ?? 4_000;
   const headers = (owner?: OwnerCred, extra: Record<string, string> = {}) => ({ authorization: `Bearer ${o.token}`, "content-type": "application/json", ...ownerCredHeader(owner), ...extra });
-  const json = async <T>(r: Response): Promise<T> => { if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`); return await r.json() as T; };
+  const json = async <T>(r: Response): Promise<T> => { if (!r.ok) throw answered(r); return await r.json() as T; };
   const signed = async (r: Response): Promise<Record<string, unknown> | null> => (r.status === 404 ? null : json<Record<string, unknown>>(r));
   return {
     async offer(q) {
@@ -298,7 +300,7 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
       const r = await call(`${o.url}/internal/channel/events`, { method: "POST", headers: headers(owner), body: JSON.stringify({ events }) }, timeout);
       if (r.status === 403) return "refused";
       if (r.status === 429) return "slow"; // W1: the runtime's own per-guest or per-shop rate said wait
-      if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`);
+      if (!r.ok) throw answered(r);
       return "saved";
     },
     async view(handleHash) {
@@ -318,7 +320,7 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     },
     async chatId(body) {
       const r = await call(`${o.url}/internal/channel/chat-id`, { method: "POST", headers: headers(), body: JSON.stringify(body) }, timeout);
-      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      if (r.status >= 500) throw answered(r);
       return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async chatVoice(guestHash, send, audio) {
@@ -326,7 +328,7 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
       const r = await call(`${o.url}/internal/channel/chat-voice?${p}`, { method: "POST", headers: headers(undefined, { "content-type": audio.mime }), body: new Uint8Array(audio.bytes) }, timeout);
       if (r.status === 404) return "off";
       if (r.status === 429) return "slow";
-      if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`);
+      if (!r.ok) throw answered(r);
       return "saved";
     },
     async feesOffer() { return json<FeesOffer>(await call(`${o.url}/internal/channel/offer`, { headers: headers() }, timeout)); },
@@ -382,17 +384,17 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     },
     async push(body, owner) {
       const r = await call(`${o.url}/internal/channel/push`, { method: "POST", headers: headers(owner), body: JSON.stringify(body) }, timeout);
-      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      if (r.status >= 500) throw answered(r);
       return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async limits(owner, post) {
       const r = await call(`${o.url}/internal/channel/owner-limits`, { method: post ? "POST" : "GET", headers: headers(owner), ...(post ? { body: JSON.stringify(post) } : {}) }, timeout);
-      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      if (r.status >= 500) throw answered(r);
       return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async passkey(body) {
       const r = await call(`${o.url}/internal/channel/owner-passkey`, { method: "POST", headers: headers(), body: JSON.stringify(body) }, timeout);
-      if (r.status !== 200 && r.status !== 403 && r.status !== 400) throw new BackendError(`The shop's system answered ${r.status}.`);
+      if (r.status !== 200 && r.status !== 403 && r.status !== 400) throw answered(r);
       return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async signout(session) {
@@ -406,7 +408,7 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     async listingPhoto(id, owner) {
       const r = await call(`${o.url}/internal/channel/listing-photo?id=${encodeURIComponent(id)}`, { headers: headers(owner) }, timeout);
       if (r.status === 404 || r.status === 400) return null;
-      if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`);
+      if (!r.ok) throw answered(r);
       return { type: r.headers.get("content-type") ?? "application/octet-stream", bytes: Buffer.from(await r.arrayBuffer()) };
     },
     // block S phase B2: the runtime builds and signs; the front only asks. A 404 is "this shop shows nothing", never an error.
@@ -415,24 +417,24 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     async shopCard(q) { return signed(await call(`${o.url}/internal/channel/shop-card`, { method: "POST", headers: headers(), body: JSON.stringify(q) }, timeout)); },
     async ownerListings(owner, post) {
       const r = await call(`${o.url}/internal/channel/owner-listing`, { method: post ? "POST" : "GET", headers: headers(owner), ...(post ? { body: JSON.stringify(post) } : {}) }, timeout);
-      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      if (r.status >= 500) throw answered(r);
       return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async ownerStock(owner, post, language) {
       const r = await call(`${o.url}/internal/channel/owner-stock${!post && language ? `?lang=${encodeURIComponent(language)}` : ""}`, { method: post ? "POST" : "GET", headers: headers(owner), ...(post ? { body: JSON.stringify(post) } : {}) }, timeout);
-      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      if (r.status >= 500) throw answered(r);
       return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async ownerPhoto(owner, photo) {
       const r = await call(`${o.url}/internal/channel/owner-photo`, { method: "POST", headers: headers(owner, { "content-type": photo.type }), body: new Uint8Array(photo.bytes) }, timeout);
-      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      if (r.status >= 500) throw answered(r);
       return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async ownerVoice(owner, audio) {
       const r = await call(`${o.url}/internal/channel/owner-voice`, { method: "POST", headers: headers(owner, { "content-type": audio.mime }), body: new Uint8Array(audio.bytes) }, timeout);
       if (r.status === 403) return "refused";
       if (r.status === 404) return "off";
-      if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`);
+      if (!r.ok) throw answered(r);
       return "saved";
     },
   };

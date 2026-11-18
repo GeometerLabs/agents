@@ -7,15 +7,11 @@ import { PAGES_FILE, pagesReader } from "../../../../modules/channels/pages-file
 import { shopErrorPage } from "../../../../modules/channels/contact-bar.ts";
 import { LANGUAGES } from "../../../../modules/language/languages.ts";
 import type { Language } from "../../../../modules/language/languages.ts";
+import { BACK_SOON } from "../../../../modules/channels/words-back-soon.ts";
 import type { ShopPaths } from "../../../../modules/runtime/shared.ts";
 import { readFileSync } from "node:fs";
 
-export const BACK_SOON: Record<Language, string> = {
-  en: "This shop's page is taking a short rest and will be back soon. Please try again a little later.",
-  hi: "इस दुकान का पेज थोड़ी देर आराम कर रहा है और जल्द ही वापस आएगा। कृपया कुछ देर बाद फिर कोशिश कीजिए।",
-  ml: "ഈ കടയുടെ പേജ് അൽപ്പനേരം വിശ്രമത്തിലാണ്, ഉടൻ തിരിച്ചെത്തും. കുറച്ചു കഴിഞ്ഞ് വീണ്ടും ശ്രമിക്കൂ.",
-  kn: "ಈ ಅಂಗಡಿಯ ಪುಟ ಸ್ವಲ್ಪ ವಿಶ್ರಾಂತಿಯಲ್ಲಿದೆ, ಶೀಘ್ರದಲ್ಲೇ ಮರಳುತ್ತದೆ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಹೊತ್ತಿನ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
-};
+export { BACK_SOON };
 
 /** Which language to answer in; a file that cannot be read or has no language falls back to English (this page must never fail). */
 function languageOf(p: ShopPaths, req: IncomingMessage): Language {
