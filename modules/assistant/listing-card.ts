@@ -17,6 +17,8 @@ import type { Language } from "../language/languages.ts";
 import type { Outcome } from "../record/record.ts";
 import type { Executed, OwnerSkill, Prepared, Proposal } from "./skill.ts";
 import type { TalkSource } from "./talk-types.ts";
+import { STOCK_ACTION, correct as correctCount, countOf, listingStockId, quantityOfListing, soldOutListings, stockRefs } from "../stock/stock.ts";
+import type { StockState } from "../stock/stock.ts";
 import { assistantOf } from "./state.ts";
 import type { AssistantState, CardAction } from "./state.ts";
 
@@ -58,7 +60,7 @@ export function createListings(d: ListingsDeps) {
     problems: () => 0,
     // what a customer's talk may say about the shop's listings: the PUBLIC ones only, as the shop's own settings (a claim such as "the owner says" is backed by a source that says it, and a
     // pets listing's health words are there only when the owner's own words had them). Nothing about a draft, a sold or a hidden listing, and nothing about who or when it was asked.
-    publicContext: (_phone, nowMs) => ({ sources: listingSources(state(), nowMs), links: [] }),
+    publicContext: (_phone, nowMs) => ({ sources: listingSources(state(), nowMs, d.store.assistant?.stock), links: [] }),
     prepare(p: Proposal): Prepared {
       if (p.kind !== "listing" && p.kind !== "listing_ask") return { ok: false, why: "not_here" };
       const id = ID.exec(p.case)?.[1];
@@ -99,6 +101,12 @@ export function createListings(d: ListingsDeps) {
         const r = confirm(s, ownerAuthority(via), l.id, { nowMs: now }, { confirmedMs: Number(action.fields.confirmedMs) });
         if (!r.ok) return { ok: false, note: "failed" };
         log(r.value, "confirmed", { listing: r.value.id }, "the owner said the shop still has it; the listing was confirmed today");
+        // a counted listing that had sold itself at 0: "Yes, I still have it" is the owner's correction of the count, to the number they first said (or 1), and the listing shows again
+        const st = d.store.assistant?.stock;
+        if (st && countOf(st, listingStockId(l.id)) === 0) {
+          const fix = correctCount(st, ownerAuthority(via), listingStockId(l.id), { to: l.qty ?? 1, reqId: `ask-${l.id}-${action.fields.confirmedMs}` }, { nowMs: now });
+          if (fix.ok) d.log(STOCK_ACTION, "confirmed", { op: "correct", item: listingStockId(l.id), to: l.qty ?? 1 }, stockRefs(listingStockId(l.id), "corrected", "owner"), "the owner said the shop still has a listing that had sold itself at 0, so the count was set to the number they first said");
+        }
         return { ok: true, note: "done" };
       }
       return { ok: false, note: "failed" };
@@ -113,15 +121,15 @@ export type Listings = ReturnType<typeof createListings>;
  * The public listings as talk sources ("s:l-3"). English text with the owner's own price and note, the quantity, the freshness in words, and, for a pets listing, the owner's own
  * claims as "The owner says: ...", so a customer's answer can repeat exactly those and nothing more. The category line ("Category: pets") is what the pets check in talk-check.ts looks for.
  */
-export function listingSources(s: ReturnType<typeof listingsOf>, nowMs: number): TalkSource[] {
-  return publicListings(s, nowMs).map((l) => {
+export function listingSources(s: ReturnType<typeof listingsOf>, nowMs: number, stock?: StockState): TalkSource[] {
+  return publicListings(s, nowMs, soldOutListings(stock)).map((l) => {
     const t = textIn(l, "en");
     const price = l.pricePaise !== undefined ? priceLine(l.pricePaise, l.priceNote, "en") : "no price set (ask the shop)";
     const fresh = freshnessOf(l, nowMs) === "fresh" ? "confirmed by the owner within 3 days" : "not confirmed lately: call the shop to check";
     const claims = l.claims && l.claims.length > 0 ? ` The owner says: ${l.claims.join("; ")}.` : "";
     return {
       id: `s:${l.id}`, kind: "setting" as const,
-      text: `Listing ${l.id}. Category: ${l.category}. ${t.title}.${t.text ? ` ${t.text}` : ""} Price: ${price}.${l.qty !== undefined ? ` Quantity: ${l.qty}.` : ""} ${fresh}.${claims}`,
+      text: `Listing ${l.id}. Category: ${l.category}. ${t.title}.${t.text ? ` ${t.text}` : ""} Price: ${price}.${(quantityOfListing(stock, l.id) ?? l.qty) !== undefined ? ` Quantity: ${quantityOfListing(stock, l.id) ?? l.qty}.` : ""} ${fresh}.${claims}`,
       ...(l.pricePaise !== undefined ? { amountsInr: [l.pricePaise / 100] } : {}), literals: [t.title, l.id],
     };
   });
