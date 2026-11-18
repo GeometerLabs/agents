@@ -76,6 +76,14 @@ export const REMOVAL_ALERT = (by: string): Record<Language, string> => ({
   kn: `${by || "ನಿಮ್ಮ ಆಪರೇಟರ್"} ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 2 ದಿನದಲ್ಲಿ ಆಗುತ್ತದೆ. ನಿಲ್ಲಿಸಲು ನಿಮ್ಮ ಆಪ್ ತೆರೆಯಿರಿ.`,
 });
 
+/** The push alert when the owner's number in the settings was changed after the owner's phones were made: it says nothing the Operator typed, only that it is held for 2 days. */
+export const OWNER_CHANGE_ALERT: Record<Language, string> = {
+  en: "The owner's number for your shop was changed. Every phone that opens your shop stops working in 2 days unless you cancel. Open your app to stop it.",
+  hi: "आपकी दुकान के लिए मालिक का नंबर बदला गया है। आप रद्द न करें तो आपकी दुकान खोलने वाले सारे फ़ोन 2 दिन में बंद हो जाएँगे। रोकने के लिए अपना ऐप खोलिए।",
+  ml: "നിങ്ങളുടെ കടയുടെ ഉടമയുടെ നമ്പർ മാറ്റി. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും 2 ദിവസത്തിൽ പ്രവർത്തിക്കില്ല. തടയാൻ നിങ്ങളുടെ ആപ്പ് തുറക്കൂ.",
+  kn: "ನಿಮ್ಮ ಅಂಗಡಿಯ ಮಾಲೀಕರ ನಂಬರ್ ಬದಲಾಯಿಸಲಾಗಿದೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳು 2 ದಿನದಲ್ಲಿ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. ನಿಲ್ಲಿಸಲು ನಿಮ್ಮ ಆಪ್ ತೆರೆಯಿರಿ.",
+};
+
 export interface OwnerSigninSetup {
   access: OwnerAccess;
   /** The shop's addresses, read fresh (the deployer may change them at any time). Without them the shop has no owner sign-in, and the phrase goes to the agent. */
@@ -180,12 +188,17 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       // page is open), and say each once in the record. An Operator's request also reaches the owner's phones with alerts on, at once.
       if (setup.grants) {
         access.sync(setup.grants(), clock.now());
+        const w = who();
+        if (w) access.watchOwner(w, clock.now()); // a different owner number in the settings after the lock is a request, not a change (owner-access.ts)
         for (const n of access.takeNotes()) {
           const line = (inputs: Record<string, string>) => ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs, language: owner.language, refs: inputs });
           if (n.what === "reset") line({ what: "owner_reset", at: new Date(n.at).toISOString(), by: n.by, reason: n.reason });
           else if (n.what === "removal_asked") {
             line({ what: "removal_asked", by: n.askedBy, effectiveAt: new Date(n.effectiveAt).toISOString() });
             setup.alert?.(REMOVAL_ALERT(n.askedBy));
+          } else if (n.what === "owner_change_asked") {
+            line({ what: "owner_change_asked", effectiveAt: new Date(n.effectiveAt).toISOString() });
+            setup.alert?.(OWNER_CHANGE_ALERT);
           } else line({ what: "removal_applied", at: new Date(n.at).toISOString() });
         }
       }
@@ -235,6 +248,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       /** The phones page's data, or undefined when the session is not good. */
       phones: (session: string) => {
         const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), endBefore()) : undefined;
+        if (w && ok) access.watchOwner(w, clock.now());
         return w && ok ? access.phonesView(ok.id, w, relyingParty(w.base), setup.grants!(), clock.now()) : undefined;
       },
       dismissPhones: (session: string): boolean => { const w = who(); const ok = w ? access.check(session, w, clock.now(), endBefore()) : undefined; if (ok) access.dismiss(ok.id); return ok !== undefined; },
@@ -253,7 +267,7 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       },
       cancelRemoval: (session: string): boolean => { const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), endBefore()) : undefined; return ok ? access.cancelRemoval(setup.grants!(), clock.now()) : false; },
       /** For the panel's probe (/status): whether the shop is locked (the owner holds a passkey) and the Operator's pending request. Counts and times only. */
-      lockState: () => { const g = setup.grants?.(); return { locked: access.locked(g, clock.now()), removal: access.pendingRemoval(g, clock.now()) }; },
+      lockState: () => { const w = who(); if (w) access.watchOwner(w, clock.now()); const g = setup.grants?.(); return { locked: access.locked(g, clock.now()), removal: access.pendingRemoval(g, clock.now()) }; },
     },
   };
 }
