@@ -27,7 +27,7 @@ import type { Fetcher } from "../types.ts";
 import { NOW, item, shop } from "./fixtures.ts";
 
 const ORIGIN = "https://pages.example";
-const MODEL = { wire: "openai", baseUrl: "http://guard.test/v1", model: "some-model" } as const;
+const MODEL = { wire: "openai", baseUrl: "http://guard.test/v1", model: "deepseek-ai/DeepSeek-V4.1-Flash" } as const; // a name the dated rate table prices (deepinfra, deepseek v4.1 flash), so a call has a cost in the meter
 const BUDGET = { monthlyMicroInr: 2_500_000_000, daily: { buyer: 1500 } };
 const servers: Server[] = [];
 after(() => { for (const s of servers) s.close(); });
