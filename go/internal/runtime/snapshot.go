@@ -2,7 +2,7 @@ package runtime
 
 // The shop's state as one JSON text (modules/runtime/snapshot.ts, templates/commerce/listings/server/snapshot.ts): `{"format":1, "assistant":{...}, "ai":{...}}`. Only two fields,
 // and both are here on purpose: `assistant` holds the listings, the cards and the owner's talk; `ai` holds the month's AI counts. This runtime models the listings and the AI counts;
-// every other member of `assistant` (cards, talk, notes, stock, memory, ...) is carried through as raw JSON, so a shop that is run by the TypeScript runtime again loses nothing
+// every other member of `assistant` (cards, talk, notes, memory, ...) is carried through as raw JSON; the stock count is typed (listings/stock.go) and written back, so a shop that is run by the TypeScript runtime again loses nothing
 // by a spell in Go.
 
 import (
@@ -70,6 +70,7 @@ func ParseSnap(text string) (*Snap, error) {
 	if st, ok := s.assistant["stock"]; ok {
 		var stock listings.Stock
 		if json.Unmarshal(st, &stock) == nil {
+			stock.Fix()
 			s.Stock = &stock
 		}
 	}
@@ -103,6 +104,14 @@ func (s *Snap) Serialize() (string, error) {
 				return "", err
 			}
 			out.Assistant["listings"] = l
+		}
+		// the stock count is written back whenever this runtime holds it (a state whose stock could not be read stays as the raw member it was carried as)
+		if s.Stock != nil {
+			st, err := signing.Marshal(s.Stock)
+			if err != nil {
+				return "", err
+			}
+			out.Assistant["stock"] = st
 		}
 	}
 	b, err := signing.Marshal(out)

@@ -424,53 +424,7 @@ func copyWords(w map[string]LangText) map[string]LangText {
 
 // ---- the reads -------------------------------------------------------------------------------------------------------------------------------------------
 
-// Stock is the one stock count's lines as the snapshot holds them (assistant.stock). A listings-only shop's owner may count listings on their Stock page (TypeScript runtime
-// only); this runtime reads the counts so what it shows the public is right, and does not change them.
-type Stock struct {
-	Lines []struct {
-		ID      string   `json:"id"`
-		Count   int64    `json:"count"`
-		Aliases []string `json:"aliases"`
-	} `json:"lines"`
-}
-
-// Count is the count of a listing, if it is counted.
-func (st *Stock) Count(listingID string) (int64, bool) {
-	if st == nil {
-		return 0, false
-	}
-	want := "listing:" + listingID
-	for _, l := range st.Lines {
-		if l.ID == want {
-			return l.Count, true
-		}
-		for _, a := range l.Aliases {
-			if a == want {
-				return l.Count, true
-			}
-		}
-	}
-	return 0, false
-}
-
-// SoldOut is the ids of listings whose line is counted and at 0.
-func (st *Stock) SoldOut() map[string]bool {
-	out := map[string]bool{}
-	if st == nil {
-		return out
-	}
-	for _, l := range st.Lines {
-		if l.Count > 0 {
-			continue
-		}
-		for _, id := range append([]string{l.ID}, l.Aliases...) {
-			if len(id) > 8 && id[:8] == "listing:" {
-				out[id[8:]] = true
-			}
-		}
-	}
-	return out
-}
+// Stock (the one stock count, assistant.stock) is in stock.go.
 
 // PublicRead is what the public page, the feed and the open data read: only what a visitor may see.
 type PublicRead struct {
