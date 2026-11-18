@@ -1,3 +1,4 @@
+// The morning question's rule (listings.ts dueAsks): which live listings the owner is asked "still have it?" about.
 package listings
 
 import "sort"

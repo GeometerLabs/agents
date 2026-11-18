@@ -864,6 +864,166 @@
   "date": null
  },
  {
+  "text": "money 3 may",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money may i think",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "money nov 16",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money 16th of november",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money 25 dec",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money 40 nov",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "money tuesday",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money इतवार",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money 5 नवम्बर",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "paisa shaniwar",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "പണം ഞായറാഴ്ച",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "പണം 10 നവംബർ",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "ಹಣ ಸೋಮವಾರ",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "ಹಣ ನವೆಂಬರ್ 10",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "ഇന്നലെ പണം",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "money yesterday and today",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 0
+ },
+ {
+  "text": "money today 5pm",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 0
+ },
+ {
+  "text": "money day after tomorrow",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 2
+ },
+ {
+  "text": "മറ്റന്നാൾ പണം",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 2
+ },
+ {
+  "text": "ನಾಡಿದ್ದು ಹಣ",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 2
+ },
+ {
   "text": "refund the order",
   "kind": "open_orders",
   "ref": "",

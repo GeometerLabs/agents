@@ -1,3 +1,4 @@
+// Tests of the packed words and their formatters: equal to Node's on the vectors of go/scripts/gen_format_vectors.ts, and every language has the same messages.
 package assistant
 
 import (

@@ -12,7 +12,7 @@
 //
 // The three formatters Go must own are described here as data, not code: the weekday and month names and the order of the date (`date`), the 24 forms of a time of day (`time`,
 // the day-part words of each hour), and the rupee grouping Go writes itself (en-IN: 12,34,567; proved against Node's own in the Go tests).
-import { gzipSync } from "node:zlib";
+import { gunzipSync, gzipSync } from "node:zlib";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -123,6 +123,10 @@ function listAfter(src: string, marker: string, end: string): string[] {
 }
 
 function rules(): unknown {
+  const dates = readFileSync(join(ROOT, "modules", "language", "dates.ts"), "utf8");
+  // every word dates.ts reads as a weekday or a month (its English and Hindi literals, taken from the source, and the Malayalam and Kannada lists of modules/language/words.ts)
+  const weekdays = (listAfter(dates, "const WEEKDAY_WORDS: string[][] = [", "\n];") as unknown as string[][]).flat().concat(WORDS.ml.weekdays.flat(), WORDS.kn.weekdays.flat());
+  const months = (listAfter(dates, "const MONTH_WORDS: string[][] = [", "\n];") as unknown as string[][]).flat().concat(WORDS.ml.months.flat(), WORDS.kn.months.flat());
   const intents = readFileSync(join(ROOT, "modules", "assistant", "intents.ts"), "utf8");
   const leave = readFileSync(join(ROOT, "modules", "assistant", "intents-leave.ts"), "utf8");
   const memory = readFileSync(join(ROOT, "modules", "assistant", "intents-memory.ts"), "utf8");
@@ -134,7 +138,7 @@ function rules(): unknown {
     remember: new Function(`return ${memory.slice(memory.indexOf("const REMEMBER = [") + "const REMEMBER = ".length, memory.indexOf("].join", memory.indexOf("const REMEMBER")) + 1)}`)() as string[],
     list: listAfter(memory, "const LIST = new RegExp([", "\n].join"),
     // the Malayalam and Kannada words for today, tomorrow, the day after and yesterday (modules/language/words.ts): the Hindi and English ones are in dates.ts's own patterns
-    dates: { today: [...WORDS.ml.today, ...WORDS.kn.today], tomorrow: [...WORDS.ml.tomorrow, ...WORDS.kn.tomorrow], dayAfter: [...WORDS.ml.dayAfterTomorrow, ...WORDS.kn.dayAfterTomorrow], yesterday: [...WORDS.ml.yesterday, ...WORDS.kn.yesterday] },
+    dates: { today: [...WORDS.ml.today, ...WORDS.kn.today], tomorrow: [...WORDS.ml.tomorrow, ...WORDS.kn.tomorrow], dayAfter: [...WORDS.ml.dayAfterTomorrow, ...WORDS.kn.dayAfterTomorrow], yesterday: [...WORDS.ml.yesterday, ...WORDS.kn.yesterday], weekdays, months },
   };
 }
 
@@ -146,18 +150,23 @@ export function generate(): Map<string, string> {
   return out;
 }
 
+/** The packed files in `dir` that are out of date: the unpacked text differs from a fresh render (the gzip bytes may differ between zlib versions, so the text is what is compared). */
+export function staleFiles(dir: string, files = generate()): string[] {
+  const stale: string[] = [];
+  for (const [name, text] of files) {
+    let have = "";
+    try { have = gunzipSync(readFileSync(join(dir, `${name}.gz`))).toString("utf8"); } catch { /* missing */ }
+    if (have !== text) stale.push(name);
+  }
+  return stale;
+}
+
 if (import.meta.main) {
   const files = generate();
   if (process.argv.includes("--check")) {
-    // stale when the committed (unpacked) text differs from a fresh render; the gzip bytes themselves may differ between zlib versions, so the text is what is compared
-    const { gunzipSync } = await import("node:zlib");
-    let stale = 0;
-    for (const [name, text] of files) {
-      let have = "";
-      try { have = gunzipSync(readFileSync(join(OUT, `${name}.gz`))).toString("utf8"); } catch { /* missing */ }
-      if (have !== text) { stale++; console.error(`stale: ${name}.gz`); }
-    }
-    process.exitCode = stale ? 1 : 0;
+    const stale = staleFiles(OUT, files);
+    for (const name of stale) console.error(`stale: ${name}.gz`);
+    process.exitCode = stale.length ? 1 : 0;
   } else {
     mkdirSync(OUT, { recursive: true });
     for (const [name, text] of files) writeFileSync(join(OUT, `${name}.gz`), gzipSync(Buffer.from(text), { level: 9, mtime: 0 } as never));

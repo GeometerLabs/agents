@@ -1,3 +1,4 @@
+// Tests of the rule reader: what it reads from each phrase is what TypeScript reads (go/scripts/gen_rules_vectors.ts).
 package assistant
 
 import (

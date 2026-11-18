@@ -36,11 +36,14 @@ internal/signing/        the shop's Ed25519 key, RFC 8785 canonical JSON, the si
 internal/listings/       the listings: state and rules, the owner's ops, the public and owner reads, the feed and check documents, photos, the assistant's draft and its grounding checks
 internal/access/         the owner's sessions, sign-in links, passkeys (WebAuthn) and the Operator's setup code, in owner-access.sqlite (modules/channels owner-*.ts, webauthn.ts)
 internal/push/            web push: the push store (push.sqlite, the TypeScript runtime's own file), RFC 8291 encryption, VAPID, the sender to the shop's push Guard (modules/push)
+internal/assistant/      the owner's assistant: its state (cards, talk, undo, typed; unknown members stay raw), the card binding (the digest TypeScript and Go agree on, the judge), the owner's words read by rule, and the words it says, packed per language (words/*.json.gz, made by scripts/gen_words.ts from the TypeScript words and unpacked once per process per language); the runtime package runs it in a step (assistant.go, draft.go, ownerview.go)
 internal/budget/         the shop's model budget and the month's AI counts (modules/budget, modules/understanding/ai-state.ts)
 internal/shared/         the multi-shop host (the Go twin of modules/runtime/shared.ts): finds shop folders, routes /shop/<name>/..., contains a shop that panics or sticks (strikes, quarantine in a child process, pause); read its header first
 cmd/listings-shared/     main of the multi-shop host (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS, STATE_DIR; `--one <shop>` is the child it starts for a quarantined shop)
 internal/runtime/        the runtime: the folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes
 scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the TypeScript word lists (talk-check.ts), so the four-language words are never retyped
+scripts/gen_words.ts       renders the owner's words (and the lists the rules read) from the TypeScript into internal/assistant/words/*.json.gz; `--check` only compares. `node go/scripts/gen_words.ts` after any change to modules/assistant/words*.ts or modules/listings/words.ts (the test words-fresh fails when it was not run)
+scripts/gen_*_vectors.ts   what the TypeScript digest, formatters and rules give on a set of cases, for the Go tests (internal/assistant/testdata)
 ```
 
 ## Dependencies, and why each
@@ -62,6 +65,6 @@ Indirect modules come in with those three (for example `golang.org/x/crypto`, `g
 
 * Every file starts with what it is and why. A choice that is not obvious says why. Where Go and JavaScript differ (UTF-16 lengths, the whitespace `\s` matches, regular expressions
   with no look-behind, `Math.round`) the comment says which TypeScript behaviour it copies.
-* The shop's state is the TypeScript runtime's JSON, field for field. What this runtime does not model (the assistant's cards, talk, notes, stock, memory) is carried through as raw
+* The shop's state is the TypeScript runtime's JSON, field for field. What this runtime does not model (the assistant's memory, the limit changes, any member a later version adds) is carried through as raw
   JSON, so a shop that goes back to the TypeScript runtime loses nothing.
 * No home-folder paths, no keys; the binary's path in tests comes from `LISTINGS_GO_BIN` or `go/bin/listings`.
