@@ -21,14 +21,14 @@
 import { redact } from "../understanding/redact.ts";
 import { askJson } from "../understanding/model-llm.ts";
 import type { JsonCall, ModelConfig } from "../understanding/model-llm.ts";
-import { SystemOneError } from "../understanding/system-one.ts";
-import type { ChoiceAnswer, Question, SystemOne } from "../understanding/system-one.ts";
+import { SystemOneError, systemOneFromEnv } from "../understanding/system-one.ts";
+import type { ChoiceAnswer, Question, SystemOne, SystemOneConfig } from "../understanding/system-one.ts";
 import { chosenProbability } from "../understanding/model.ts";
 import type { TokenUsage } from "../understanding/model.ts";
 import { costMicroInr, dayOf as utcDay, rateFor } from "../understanding/rates.ts";
 import { stateFor } from "../understanding/ai-state.ts";
 import type { AiStore } from "../understanding/ai-state.ts";
-import { gate, record } from "../budget/budget.ts";
+import { gate, isBudgetConfig, record } from "../budget/budget.ts";
 import type { BudgetConfig } from "../budget/budget.ts";
 import { checkTalk } from "../assistant/talk-check.ts";
 import type { TalkSource } from "../assistant/talk-types.ts";
@@ -314,6 +314,30 @@ export function createAssistant(config: AssistantConfig): Assistant {
     understand, config,
     stats: () => ({ asked, how: { ...how }, refused: { ...refused }, modelCalls, spentMicroInr: stateFor(store, now(), TIME_ZONE).costMicroInr }),
   };
+}
+
+/**
+ * What the directory's config file says about the assistant (bundle/services/directory.ts `assistant`). The numbers come from the price list in force (`ai.budget.discovery`, `ai.daily.discovery`,
+ * `ai.daily.discovery.per-buyer`); a list marked "proposed" gives none, so the config has no `assistant` block and the assistant is off.
+ */
+export interface AssistantSettings {
+  monthlyMicroInr: number;
+  dailyCalls: number;
+  perBuyerPerDay: number;
+  /** The language model, by the model Guard's address. */
+  model?: ModelConfig;
+  provider?: string;
+  /** The decision model; its key (if it needs one) is read from this environment variable by name. */
+  systemOne?: Omit<SystemOneConfig, "apiKey"> & { keyEnv?: string };
+}
+
+/** The assistant a config describes, or null (and a plain line to say why) when the numbers are not a usable budget. Off is the safe answer. */
+export function assistantFromSettings(settings: AssistantSettings | undefined, env: Record<string, string | undefined>, log: (line: string) => void = () => undefined): Assistant | null {
+  if (!settings) return null;
+  const budget = { monthlyMicroInr: settings.monthlyMicroInr, daily: { buyer: settings.dailyCalls } };
+  if (!isBudgetConfig(budget) || !Number.isSafeInteger(settings.perBuyerPerDay) || settings.perBuyerPerDay < 1) { log("directory: the assistant's budget in the config is not usable, so the assistant is off"); return null; }
+  const systemOne = settings.systemOne ? systemOneFromEnv(settings.systemOne, env) : null;
+  return createAssistant({ budget, perBuyerPerDay: settings.perBuyerPerDay, ...(settings.model ? { model: settings.model } : {}), ...(settings.provider ? { provider: settings.provider } : {}), ...(systemOne ? { systemOne } : {}), log });
 }
 
 // ---- from a typed search to the directory's own search ----
