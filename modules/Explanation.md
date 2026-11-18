@@ -700,7 +700,7 @@ And `templates/commerce/orders/test/runtime.test.ts` checks a Guard-held refund'
 If WhatsApp changed its rules tomorrow, a shop keeps working and loses only reach. WhatsApp stays the main channel. Three things depended on it, and each now has a
 way that does not: the owner's sign-in, the owner's alerts, and what a page customer hears.
 
-**The owner's sign-in: the Operator's QR, then a passkey** (`channels/owner-grants.ts`, `owner-access.ts`, `webauthn.ts`, `owner-passkey-page.ts`). Nothing is mediated
+**The owner's sign-in: the Operator's QR, then a passkey** (`channels/owner-grants.ts`, `owner-access.ts`, `webauthn.ts`, `owner-passkey-page.ts`). From the owner's first passkey the Operator's files stop being taken at their word: who controls the sign-in then, and why, is in `bundle/Explanation.md`, "Who controls the owner's sign-in" (the runtime closes the Operator's QR and card, times a removal request for 48 hours, and the owner's app lists, adds, removes and announces phones). Nothing is mediated
 by Geometer or Firebase: the shop's own runtime checks every step.
 - At the setup visit the Operator shows a **setup QR** from the panel: 32 random bytes, one use, that shop only, 15 minutes. The panel keeps only its hash, in
   `shops/<shop>/owner-grants.json`, and the deployer copies the file to the runtime's client folder on each pass (as the owner's link and "sign out every device"
