@@ -2,6 +2,7 @@
 // written: `ai.budget.<plan>` is the month's rupees, `ai.daily.*` the daily cap on each feature. This turns them into the `budget` block of the shop's runtime.json (the shape
 // modules/budget/budget.ts reads), for the shop's plan. It is given the list IN FORCE, never a proposal, so until the owner says yes to a new list no shop gets a budget; and a
 // number the list does not have is never made up: with any needed entry missing the answer is "no budget", and the shop keeps fleet's cap alone.
+import { wallProblems } from "../../modules/budget/budget.ts";
 import type { BudgetConfig } from "../../modules/budget/budget.ts";
 
 /** The part of a price list this needs (bundle/panel/cost.ts PriceList satisfies it). */
@@ -44,4 +45,21 @@ export function discoveryBudgetFor(list: BudgetRates): (BudgetConfig & { perBuye
   const perBuyer = list.rates["ai.daily.discovery.per-buyer"]?.count;
   if (monthly === undefined || daily === undefined || perBuyer === undefined) return undefined;
   return { monthlyMicroInr: monthly, daily: { buyer: daily }, perBuyerPerDay: perBuyer };
+}
+
+/**
+ * The dearest single model call a feature makes, in micro-rupees, for the wall check below: the longest prompt (about 4,000 tokens: the notes, the sources and the last six lines)
+ * and reply (1,200, TALK_MAX_TOKENS) at the standard DeepSeek V4.1 Flash rate in modules/understanding/rates/2026-11-07.json and INR 94 to the dollar is about INR 0.14; the number
+ * here is double that, so the check errs towards a lower wall. Change it only with the rate table.
+ */
+export const WORST_CALL_MICRO_INR = 300_000;
+
+/**
+ * Plain-word notes about the model Guard's wall (`model.callsPerDay`, default 2,000 a day for the whole server) against the shops on the server: a wall that cannot pay for the
+ * shops' own budgets stops them early, and one far above them protects nothing. `wallProblems` (modules/budget) says which; the deploy prints these and goes on.
+ */
+export function wallNotes(callsPerDay: number | undefined, shopBudgets: readonly (BudgetConfig | undefined)[]): string[] {
+  const budgets = shopBudgets.filter((b): b is BudgetConfig => b !== undefined);
+  if (budgets.length === 0) return [];
+  return wallProblems({ callsPerDay: callsPerDay ?? 2000, shopBudgets: budgets, worstCallMicroInr: WORST_CALL_MICRO_INR });
 }
