@@ -8,7 +8,7 @@ build its search; a search engine or an AI assistant may read it too. The shop's
 ## Where it is
 
 - At `<shop page>/listings.json`, for example `https://streetlist.in/glow-salon/listings.json`.
-- The shop's page links to it: `<link rel="alternate" type="application/json" title="shop-feed/1" href="listings.json">`.
+- The shop's "What we have" page (`<shop page>/shop`, the storefront) links to it: `<link rel="alternate" type="application/json" title="shop-feed/1" href=".../listings.json">`, and to the Agent Card next to it.
 - The shop's Agent Card names it (see [agent-card.md](agent-card.md)).
 - It exists only while the owner has turned on "Show my shop on Streetlist and in search". Otherwise the address answers `404`.
 
@@ -42,7 +42,7 @@ build its search; a search engine or an AI assistant may read it too. The shop's
   "items": [
     {
       "id": "l-3",
-      "page": "https://streetlist.in/rani-pets/#l-3",
+      "page": "https://streetlist.in/rani-pets/shop#l-3",
       "category": "pets",
       "title": { "ml": "പേർഷ്യൻ പൂച്ചക്കുട്ടി", "en": "Persian kitten", "hi": "फ़ारसी बिल्ली का बच्चा", "kn": "ಪರ್ಷಿಯನ್ ಬೆಕ್ಕಿನ ಮರಿ" },
       "text": { "ml": "…", "en": "…", "hi": "…", "kn": "…" },
@@ -50,7 +50,7 @@ build its search; a search engine or an AI assistant may read it too. The shop's
       "machineWritten": ["en", "hi", "kn"],
       "price": { "value": "8000.00", "currency": "INR", "note": "each" },
       "quantity": 2,
-      "photos": [{ "url": "https://streetlist.in/rani-pets/photo/ph-9.jpg", "type": "image/jpeg", "width": 1200, "height": 900 }],
+      "photos": [{ "url": "https://streetlist.in/rani-pets/listings/photo/ph-0123456789ab.jpg", "type": "image/jpeg", "width": 1200, "height": 900 }],
       "availability": "in_stock",
       "confirmed": "2026-11-17T04:10:00.000Z"
     }
@@ -71,17 +71,18 @@ build its search; a search engine or an AI assistant may read it too. The shop's
 | `format` | Always `"shop-feed/1"` for this version. |
 | `updated` | When the shop's record last changed anything in this file (ISO 8601, UTC). |
 | `shop.name`, `shop.page` | The shop's public name and page, as the page shows them. |
-| `shop.trade` | The shop's trade in plain words (a preset's name, or what the Operator typed). Optional. |
+| `shop.trade` | The shop's trade in plain words (a preset's name, or what the Operator typed). Optional. Code that cannot see it leaves it out; so does the Geometer runtime today (the Operator's panel holds it, the shop's runtime does not). |
 | `shop.languages` | The languages the shop answers in, the owner's first. |
 | `shop.place` | Where the shop is: `town` (required), `pincode` (optional), `lat` and `lon` (optional, decimal degrees as strings with at most 6 decimals, so every language reads them alike). The owner sets it. |
 | `shop.chat`, `shop.check`, `shop.agentCard` | Where a buyer chats, where a directory asks a [shop-check](shop-check.md), and the shop's Agent Card. |
 | `shop.registration` | Optional. A registration the trade needs (a pet shop's, under the Prevention of Cruelty to Animals (Pet Shop) Rules, 2018), with `source: "owner"`: it is the owner's word, never checked by anyone. A reader must not call it "verified". |
 | `items[].id` | The listing's id in the shop ("l-3"). Never given to another listing. |
+| `items[].page` | Where a person sees this item: the shop's storefront, `<shop page>/shop`, at the item's own tile (`#l-3`). Always under the shop's page. |
 | `items[].category` | One of `pets`, `food`, `clothes`, `home`, `electronics`, `vehicles_and_cycles`, `services`, `other`. |
-| `items[].title`, `items[].text` | The words, in each language the shop has. `ownerLanguage` is what the owner said or typed; the languages in `machineWritten` were written by an assistant from it, and a reader showing them should say so. |
+| `items[].title`, `items[].text` | The words, in each language the shop has (a language with no text, for a listing the owner made with a title only, is left out of `text`, never written as an empty string). `ownerLanguage` is what the owner said or typed; the languages in `machineWritten` were written by an assistant from it, and a reader showing them should say so. |
 | `items[].price` | The owner's price: `value` is rupees as a decimal string with two places (exact; never a float), `currency` is `"INR"`, `note` is optional ("each", "per kg"). `null` means "ask the shop". |
 | `items[].quantity` | How many the shop has, when the owner counts them. Optional. |
-| `items[].photos` | At most 3. Each is a JPEG or WebP at an address under the shop's page, with its location data removed by the shop. |
+| `items[].photos` | At most 3. Each is a JPEG or WebP at an address under the shop's page (`<shop page>/listings/photo/<id>.jpg` or `.webp`), with its location data removed by the shop. |
 | `items[].availability` | `in_stock`: the owner confirmed it in the last 3 days. `call_to_check`: confirmed 3 to 30 days ago. |
 | `items[].confirmed` | When the owner last said it is still there. |
 
@@ -103,13 +104,14 @@ The shop signs the feed with its own Ed25519 key.
 the first key it saw). A different key is not trusted until the change is confirmed some other way; see
 [directory.md](directory.md#keys).
 
-**The key belongs to the shop.** The shop's runtime makes it on its first start and keeps it in the shop's own folder. It is in the
-shop's backup and in the file the owner can take ("Get my shop's file"), so a shop that changes its Operator keeps its key, and every
-directory still knows it.
+**The key belongs to the shop.** The shop's runtime makes it on its first start and keeps it in the shop's own database (the one file that
+holds its record), so it is in the shop's backup and comes back with it. It is also in the file the owner can take ("Get my shop's file"),
+and nowhere else: no other package, log or answer carries it. A shop that changes its Operator, or is restored on a new server, takes its
+database or that file along and keeps its key, so every directory still knows it. Only the public key and its id are ever published.
 
 ## "My feed changed"
 
-When the feed changes, the shop's runtime tells the directories it knows (its server's own directory, and any the owner adds):
+When the feed's content changes, the shop tells the directories it knows (its server's own directory; others the owner adds are a later part):
 
 ```http
 POST <directory>/feed-changed
@@ -119,7 +121,10 @@ Content-Type: application/json
   "keyId": "q3Jt…", "sig": "…" }
 ```
 
-The signature covers the canonical JSON of the notice without `sig`, with the same key as the feed. The notice is only a hint: a
+The signature covers the canonical JSON of the notice without `sig` (that is, over `format`, `feed`, `updated` and `keyId`), with the same key as the feed. `updated` is the feed's own
+`updated`. A shop sends at most one notice a minute, and only when the feed's content really changed since the last one that was taken. A shop with no address a directory serves (one with no
+page on the pages domain) sends none. How a notice travels is the shop's business: Geometer's shop runtime sits on a network with no route out, so the server's inbox carries the notice for
+it (see `modules/listings/README.md`, "How a notice gets out"). The notice is only a hint: a
 directory never takes listings from it. It fetches the feed again (at most once a minute per feed) and believes only what the signed
 feed says. A directory that gets no notices still re-reads each feed at least every 6 hours.
 

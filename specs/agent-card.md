@@ -13,7 +13,9 @@ Linux Foundation. We do not invent our own.
 | A shop | `<shop page>/agent-card.json` (for example `https://streetlist.in/rani-pets/agent-card.json`) | Many shops share one domain, each under its own path, so a shop's card cannot be the domain's `/.well-known/agent-card.json`. A2A also lets a client get a card from a directory or a known URL; the shop's page and feed link to it. |
 | A directory | `/.well-known/agent-card.json` at the directory's own domain | A directory owns its domain. |
 
-A shop's card exists only while the owner has turned on "Show my shop on Streetlist and in search".
+A shop's card exists only while the owner has turned on "Show my shop on Streetlist and in search" (otherwise the address is `404`). The shop's storefront and its feed link to it, and the
+feed names it (`shop.agentCard`). It is served `GET`/`HEAD` with `Cache-Control: public, max-age=300`, an `ETag` and `Access-Control-Allow-Origin: *`. The front builds the card (it knows the
+shop's operations) and the shop's runtime signs it, only after checking that every interface address and the provider address are under the shop's own page.
 
 ## What a shop's card says
 
@@ -26,10 +28,10 @@ members are: `name`, `description`, `supportedInterfaces` (each `url`, `protocol
 
 | Content | Value |
 |---|---|
-| Name and description | The shop's public name and its trade, in the owner's language and English. |
-| Provider | The shop (its name and page). Geometer is not the provider; it only runs the software. |
-| Skills | `show_listings` (what the shop has: the [shop feed](shop-feed.md)); `check_items` ([shop-check](shop-check.md)); and the shop's own work from its API, such as `book`, `order` or `fees` (the same operations as `modules/channels/api.ts`). Each skill names its input and output formats and gives one example. |
-| Interfaces | The shop's MCP endpoint (`<shop page>/mcp`) and its JSON API (`<shop page>/api/v1`). |
+| Name and description | The shop's public name and its trade in plain words ("a local shop" when the trade is not known to the runtime, which is today's case). English only for now; the skills' words are the operations' own. |
+| Provider | The shop (its name and page, `provider.url` = `<shop page>/`). Geometer is not the provider; it only runs the software. `documentationUrl` is the shop's storefront, `<shop page>/shop`. |
+| Skills | `show_listings` (what the shop has: the [shop feed](shop-feed.md)); `check_items` ([shop-check](shop-check.md)); and the shop's own operations from its API, by their own names (`list_services`, `free_slots`, `start_booking`, ... for Bookings; `list_items`, `start_order`, ... for Orders; the same list as `modules/channels/api.ts` and the MCP tools). A Fees centre and a Stock orders shop have no operations of their own, so their cards list the two listing skills only. Each skill names its input and output formats and gives one example. |
+| Interfaces | The shop's MCP endpoint (`<shop page>/mcp`), only for a kind of shop that has one (Bookings, Orders), and its JSON API (`<shop page>/api/v1`), which every kind has (for a Fees centre and a Stock orders shop it is the check route alone). The card lists only what answers. |
 | Input and output | `application/json` only. No free-text skill: a shop's program takes typed requests and answers from its record. |
 | Signature | The card is signed with the shop's own key (the same key as its feed), as A2A allows for signed cards: see "How a card is signed" below. |
 
