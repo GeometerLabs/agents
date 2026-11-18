@@ -583,15 +583,4 @@ describe("the store survives a restart", () => {
   });
 });
 
-// The owner's talk-and-cards page: the one route a Go shop still lacks is tested for TypeScript only until the assistant is ported (see assistant.contract.test.ts for the full cases).
-const NOT_IN_GO = { skip: IMPL !== "ts" && "not ported to the Go runtime (go/TRIAL.md, Left out)" };
-describe("TypeScript only: routes the Go runtime does not serve", () => {
-  test("GET /internal/channel/owner: the owner's talk-and-cards page (the whole assistant's view)", NOT_IN_GO, async () => {
-    const s = await boot();
-    assert.equal((await s.call("/internal/channel/owner")).status, 403);
-    const r = await s.call("/internal/channel/owner", { owner: s.owner });
-    assert.equal(r.status, 200);
-    assert.equal(r.body.kind, "listings");
-    assert.equal(typeof r.body.app, "object");
-  });
-});
+// The owner's talk-and-cards page is covered by assistant.contract.test.ts, the other routes by routes.contract.test.ts, stock.contract.test.ts and shared.contract.test.ts.
