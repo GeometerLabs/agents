@@ -168,9 +168,7 @@ func (s *Server) submitAndAnswer(w http.ResponseWriter, ev map[string]any) error
 // ensureAssistant is state.ts `assistantOf`: the assistant's state made on first use (a store from before it has none), with its list of limit changes. Unlike Touch it does not make the
 // listings: the TypeScript step for a limit event does not either.
 func (s *Snap) ensureAssistant() {
-	if s.assistant == nil {
-		s.assistant = freshAssistant()
-	}
+	s.ensureA()
 	if c, ok := s.assistant["limitChanges"]; !ok || string(bytes.TrimSpace(c)) == "null" {
 		s.assistant["limitChanges"] = json.RawMessage("[]")
 	}
