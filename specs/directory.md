@@ -149,13 +149,10 @@ nothing about health, breed quality or "verified"; if not, the template line is 
 **Over a cap, with no model, or with an answer that does not fit:** the box searches the words as typed, with no model, and says once, in the buyer's language, "Searching
 your words as typed today." Never silence, never an error.
 
-**Where it is offered.** The search page has one more box, "Ask in your own words", which sends `GET /search?ask=<words>` (plus `lat`, `lon` and `lang` as the search has).
-With `Accept: application/json` or `format=json` the answer is the search answer above with one more member:
+**Where it is offered.** The search page has one more box, "Ask in your own words": a form that sends **`POST /search/ask`**, form-encoded (`ask`, and `lat`, `lon` and `lang` as the search has), with no script. It is a POST so that the buyer's words are never in an address (an access log, the browser's history, a screenshot of the address bar). The directory refuses a form whose `Origin` is not its own, and answers the page directly (it does not redirect). A caller that sends `Accept: application/json` gets the search answer above with one more member:
 
 ```json
 "assistant": { "how": "decision", "search": { "...the typed search..." }, "line": "1 shop near Thrissur has “persian kitten”.", "notice": null }
 ```
 
-`how` is `rules`, `decision`, `model` or `plain`; `search` is `null` for `plain`; `notice` is the one plain sentence when the words were searched as typed. On MCP the same is
-the tool `ask` (`question`, optional `lat`, `lon`, `lang`), listed, and in the Agent Card, only where the assistant is on. There is no microphone: a voice box would need a
-voice service the directory can use, which it does not have yet.
+`how` is `rules`, `decision`, `model` or `plain`; `search` is `null` for `plain`; `notice` is the one plain sentence when the words were searched as typed. `GET /search?ask=` is not read. The plain word search stays `GET /search`. On MCP the same is the tool `ask` (`question`, optional `lat`, `lon`, `lang`; MCP is already a POST), listed, and in the Agent Card, only where the assistant is on. There is no microphone: a voice box would need a voice service the directory can use, which it does not have yet.

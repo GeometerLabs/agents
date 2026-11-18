@@ -163,3 +163,17 @@ test("the content policy loads this origin's photos and the font only, runs one 
   assert.ok(p.includes("default-src 'none'") && p.includes("img-src 'self' data:") && p.includes("font-src 'self'") && p.includes("script-src 'nonce-abc'"));
   assert.ok(p.includes("form-action https://pages.example/search") && p.includes("connect-src 'none'") && p.includes("frame-ancestors 'none'"));
 });
+
+test("the 'Ask in your own words' box: only where the assistant is on, a POST form to /search/ask (the words never in an address), allowed by the page's policy, in four languages", () => {
+  for (const lang of LANGS) {
+    const w = DIRECTORY_WORDS[lang];
+    const on = searchPage({ ...ctx(lang), assistant: true }, EMPTY_FORM, { state: "start" });
+    assert.match(on, /<form class="search ask" action="\/search\/ask" method="post"/u);
+    assert.ok(on.includes(w.askLabel) && on.includes(w.askButton) && on.includes('name="ask"'));
+    assert.ok(!on.includes("method=\"get\"") || on.indexOf('action="/search/ask"') < on.indexOf('action="/search"'), "the ask form is the only one that posts");
+    assert.ok(!searchPage(ctx(lang), EMPTY_FORM, { state: "start" }).includes('name="ask"'), "off: the page is the plain search");
+  }
+  assert.ok(pagePolicy(ORIGIN, "N").includes(`form-action ${ORIGIN}/search ${ORIGIN}/search/ask`));
+  const h = searchPage({ ...ctx("en"), assistant: true }, { ...EMPTY_FORM, ask: "Persian <b>kitten</b>" }, { state: "results", answer: answer([result()]) }, { line: "1 shop has “x”.", notice: DIRECTORY_WORDS.en.askPlain });
+  assert.ok(h.includes("Persian &lt;b&gt;kitten") && h.includes("1 shop has") && h.includes(DIRECTORY_WORDS.en.askPlain), "the words are escaped; the line and the one notice are shown");
+});

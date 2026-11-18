@@ -36,7 +36,7 @@ its own index (which can be an hour old), puts the matches in a fair order, and 
                                                ▼
                                    http.ts ─►  GET /search      page for people (page.ts, words.ts), or JSON
                                                GET /order       the rule in plain words
-                                               GET /search?ask= the buyer's assistant (assistant.ts), where its budget is approved
+                                               POST /search/ask the buyer's assistant (assistant.ts), where its budget is approved
                                                POST /mcp        search_listings, get_listing, shop_page, ask (mcp.ts)
                                                GET /.well-known/agent-card.json (card.ts, signed)
 ```
@@ -54,7 +54,7 @@ The assistant turns the question into **a search, not an answer**; the directory
 [`directory.md`](../../specs/directory.md#the-buyers-assistant-optional).
 
 ```
- "Persian kitten near Thrissur?"            (GET /search?ask=...   or   MCP tool ask)
+ "Persian kitten near Thrissur?"            (POST /search/ask, form-encoded   or   MCP tool ask)
         │
         ▼  cleanQuestion: phone numbers, e-mail, links, names, exact addresses taken out; cut to 200 characters
         │
@@ -85,7 +85,7 @@ a call is about INR 0.05, so most questions (those the rules and the decision mo
 The month's spend and today's count are kept **in memory**: a restart forgets them (the model Guard's own calls-a-day wall stays as the outer limit).
 
 **Off by default.** The assistant exists only when the service's config file has an `assistant` block (`AssistantSettings` in `assistant.ts`). The bundle writes that block only from an
-**approved** price list. Without it the page has no box, `?ask=` is ignored, the MCP tool list and the Agent Card are as before, and the search is the plain search.
+**approved** price list. Without it the page has no box, `POST /search/ask` is a 404 and `?ask=` in an address is not read, the MCP tool list and the Agent Card are as before, and the search is the plain search.
 
 **The fallback.** Over any cap, with no model reachable, or with an answer that does not fit the typed search, the words are searched as typed (no model), the results are the
 normal ones, and one plain sentence says so. The same on MCP: the answer carries `assistant.notice`.
@@ -93,7 +93,7 @@ normal ones, and one plain sentence says so. The same on MCP: the answer carries
 **Words people read** are in `words.ts` (`askLabel`, `askPlaceholder`, `askButton`, `askPlain`, `askLine`) in four languages. The Hindi, Malayalam and Kannada are machine-written and on the review sheets.
 The line is a template; a model-written line is a hook (`AssistantConfig.writeLine`) that nothing sets today.
 
-**Privacy.** The question is never logged or stored as text: the log lines hold a reason and a count (`stats()`). It travels in the address of a GET request, as the plain search's words do,
+**Privacy.** The question is never logged or stored as text: the log lines hold a reason and a count (`stats()`). The box is a **POST form** (`POST /search/ask`, form-encoded, no script needed, refused when its Origin is not this directory's own), so the words are never in an address: not in an access log, the browser's history or a screenshot of the address bar. The answer is the page itself, sent directly. The plain word search stays a GET, as it was. One thing to know: the page's "Show more" link is a normal GET carrying the search it ran (the cleaned key words, the kind and the town), so tapping it puts those words, not the question, in an address. The page sends no referrer, so a shop's chat never learns them.
 so the door's own access log, if it keeps one, may hold it; the page sends no referrer, so a shop's chat never learns it.
 
 **Test.** `cd modules && node --test discovery/test/assistant.test.ts`. It runs on scripted fakes (a fake model, a fake decision model, fake shops): **not tested on a real model or provider.**
