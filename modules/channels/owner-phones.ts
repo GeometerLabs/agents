@@ -45,3 +45,14 @@ export const NEW_PHONE_ALERT = (at: number, label: string): Record<Language, str
   ml: `നിങ്ങളുടെ കടയിൽ ${dayAndTime(at, "ml")}-ന് ഒരു പുതിയ ഫോൺ ചേർത്തു${label ? ` (${label})` : ""}. നിങ്ങളല്ലേ? ആപ്പ് തുറന്ന് ഇത് നീക്കൂ.`,
   kn: `ನಿಮ್ಮ ಅಂಗಡಿಗೆ ${dayAndTime(at, "kn")} ರಂದು ಹೊಸ ಫೋನ್ ಸೇರಿಸಲಾಗಿದೆ${label ? ` (${label})` : ""}. ನೀವಲ್ಲವೇ? ಆಪ್ ತೆರೆದು ಇದನ್ನು ತೆಗೆಯಿರಿ.`,
 });
+
+/**
+ * One plain line for an owner whose Operator will not help: written on the owner's sign-in page and phones page, ONLY on Geometer's own Operator server (the pages file
+ * says `hosted`), where Geometer can reset the sign-in after checking (`geometer owner reset`). On a builder's server the builder is the admin and nothing is shown.
+ */
+export const LOST_HELP: Record<Language, string> = {
+  en: "Lost every phone and your codes, or your Operator will not help? Write to hello@geometer.dev.",
+  hi: "हर फ़ोन और अपने कोड खो दिए, या आपका ऑपरेटर मदद नहीं कर रहा? hello@geometer.dev पर लिखिए।",
+  ml: "എല്ലാ ഫോണുകളും കോഡുകളും നഷ്ടപ്പെട്ടോ, അല്ലെങ്കിൽ ഓപ്പറേറ്റർ സഹായിക്കുന്നില്ലേ? hello@geometer.dev-ലേക്ക് എഴുതൂ.",
+  kn: "ಎಲ್ಲಾ ಫೋನ್‌ಗಳು ಮತ್ತು ಕೋಡ್‌ಗಳನ್ನು ಕಳೆದುಕೊಂಡಿರಾ, ಅಥವಾ ಆಪರೇಟರ್ ಸಹಾಯ ಮಾಡುತ್ತಿಲ್ಲವೇ? hello@geometer.dev ಗೆ ಬರೆಯಿರಿ.",
+};

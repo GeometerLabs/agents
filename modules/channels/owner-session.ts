@@ -32,6 +32,7 @@ import type { PagesFile } from "./pages-file.ts";
 import { PAGE } from "./words.ts";
 import { SIGNIN_CSS } from "./look.ts";
 import { partnerBar } from "./contact-bar.ts";
+import { LOST_HELP } from "./owner-phones.ts";
 import { PASSKEY_SCRIPT, PASSKEY_WORDS, isPasskeyRoute, passkeyButton, passkeyPolicy, passkeyRoute } from "./owner-passkey-page.ts";
 
 export const OWNER_COOKIE = "__Secure-geo-owner";
@@ -157,6 +158,7 @@ export function signinPage(o: { base: string; language: Language; pages: PagesFi
   return page(o.language, w.title, html`<h1>${w.title}</h1>
 ${o.notice ? html`<p class="notice" role="status">${o.notice}</p>` : ""}
 ${partnerBar(o.language, o.pages)}${intro}${passkey}${whatsapp}
+${o.pages?.hosted ? html`<p class="note">${LOST_HELP[o.language]}</p>` : ""}
 ${partnerLine(o.language, o.pages?.panelUrl)}`, o.passkeys && o.passkeys.count > 0 ? o.passkeys.nonce : undefined);
 }
 

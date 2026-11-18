@@ -60,6 +60,8 @@ export interface OwnerPageInput {
   signOut?: { action: string; label: string };
   /** "Limits, tightened by a tap": where the owner's limits page is (<base>/limits) and its label. Left out: no link (a shop whose runtime has no limits to change). */
   limitsLink?: { href: string; label: string };
+  /** Owner's item 2: the link to "Phones that can open your shop" (a signed-in session only, and only when the runtime has the phones route). */
+  phonesLink?: { href: string; label: string };
   /** Block S: the owner's listings page (<base>/listings) and its label. Left out: the shop has no assistant, so no listings. */
   listingsLink?: { href: string; label: string };
   /** Block S phase A3: the owner's Stock page (<base>/stock) and its label. Left out: the shop has no assistant, so no stock count. */
@@ -227,6 +229,7 @@ ${o.listingsLink ? html`<p><a href="${o.listingsLink.href}">${o.listingsLink.lab
 ${o.stockLink ? html`<p><a href="${o.stockLink.href}">${o.stockLink.label}</a></p>` : ""}
 ${o.leave ? leaveSection(o, o.leave) : ""}
 ${o.limitsLink ? html`<p><a href="${o.limitsLink.href}">${o.limitsLink.label}</a></p>` : ""}
+${o.phonesLink ? html`<p><a href="${o.phonesLink.href}">${o.phonesLink.label}</a></p>` : ""}
 ${o.signOut ? html`<form method="post" action="${o.signOut.action}">${o.csrf ? html`<input type="hidden" name="csrf" value="${o.csrf}">` : ""}<button class="no full" type="submit">${o.signOut.label}</button></form>` : ""}
 </main></body></html>`.markup}`;
 }

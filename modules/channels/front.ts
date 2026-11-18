@@ -55,6 +55,8 @@ import { LEAVE_PAGE } from "./words-leave.ts";
 import { WORDS as LIMITS_PAGE_WORDS, ownerLimitsPage } from "./owner-limits-page.ts";
 import { listingsPolicy, ownerListingsPage } from "./owner-listings-page.ts";
 import { ownerStockPage, stockPolicy } from "./owner-stock-page.ts";
+import { PHONES_POLICY, WORDS as PHONES_WORDS, addPhonePage, ownCodesPage, phonesBanner, phonesPage, removePhonePage, withBanner } from "./owner-phones-page.ts";
+import type { PhonesAnswer } from "./owner-phones-page.ts";
 import { STOCK_LINE_WORDS } from "../stock/words.ts";
 import { storefrontRoute } from "./storefront.ts";
 import { LISTING_WORDS } from "../listings/words.ts";
@@ -689,7 +691,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     /** A signed-in owner's POST must carry the session's form token; the panel's link is its own secret and needs none. */
     const csrfOk = (given: unknown) => o.csrf === undefined || (typeof token === "object" && "session" in token && csrfMatches(token.session, given));
     // item 11e: the owner's app lives at the same base: the page also at "<base>/" (a service worker controls only pages inside its scope, <base>/), and its four routes
-    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/listings": "GET", "/listings/op": "POST", "/stock": "GET", "/stock/op": "POST", "/listings/photo": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST", "/leave": "POST" };
+    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/listings": "GET", "/listings/op": "POST", "/stock": "GET", "/stock/op": "POST", "/listings/photo": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST", "/leave": "POST", "/phones": "GET", "/phones/remove": "POST", "/phones/dismiss": "POST", "/phones/cancel": "POST", "/phones/codes": "POST", "/phones/add": "POST" };
     // the accountant's files: <owner app>/accounting/<period>/<file>, for the signed-in owner's session only (handled below, once the session is known good)
     const accounting = /^\/accounting\/([^/]+)(?:\/([^/]+))?$/u.exec(sub);
     // block S: the owner's own view of one of their photos, by its id (a draft's, a waiting one): <owner app>/listings/p/<id>
@@ -729,6 +731,15 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     }
     // ---- "Get my shop's file" and "Change my Operator" (block S): only a signed-in owner's SESSION may ask or take; the panel's link, which the Operator made, opens neither ----
     const ownSession = typeof token === "object" && "session" in token ? token.session : undefined;
+    // owner's item 2: the banners (a new phone, the Operator's request to remove every phone, the prompt to make the owner's own codes) on the owner's pages, for a
+    // signed-in session only; the runtime says what is true, and a failure to ask leaves the page without a banner rather than without the page
+    let banner = "";
+    if (ownSession && method === "GET" && shop.backend.phones && ["", "/", "/limits", "/listings", "/stock"].includes(sub)) {
+      try {
+        const r = await shop.backend.phones(ownSession, { op: "list" });
+        if (r.status === 200) banner = phonesBanner({ base, language, ...(o.csrf ? { csrf: o.csrf } : {}), view: r.body as unknown as PhonesAnswer, ...(shop.pages?.()?.partner ? { operatorName: shop.pages()!.partner!.name } : {}) });
+      } catch (e) { log(`The owner's phones could not be read for a banner: ${(e as Error).message}`); }
+    }
     if (fileRoute) {
       const gone404 = () => sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>", { "x-robots-tag": "noindex" });
       if (!ownSession || !shop.backend.ownerFileBytes) return gone404();
@@ -737,6 +748,43 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       res.writeHead(200, { "content-type": "application/gzip", "content-disposition": `attachment; filename="${got.name.replace(/[^A-Za-z0-9._-]/gu, "_")}"`, "content-length": got.bytes.length, "cache-control": "no-store", "x-content-type-options": "nosniff", "x-robots-tag": "noindex", "content-security-policy": "default-src 'none'" });
       res.end(got.bytes);
       return;
+    }
+    // ---- owner's item 2: "Phones that can open your shop". Only a signed-in owner's SESSION (the panel's link, which the Operator made, has none); every rule is the runtime's ----
+    const phonesAt = (n?: string) => `${base}/phones?lang=${language}${n ? `&n=${n}` : ""}`;
+    if (sub === "/phones" || sub.startsWith("/phones/")) {
+      const ph = shop.backend.phones;
+      if (!ownSession || !ph) return redirect(res, `${base}/?lang=${language}`);
+      const noStore = { "x-robots-tag": "noindex", "cache-control": "no-store", "content-security-policy": PHONES_POLICY };
+      const hosted = shop.pages?.()?.hosted === true;
+      const listed = await ph(ownSession, { op: "list" });
+      if (listed.status === 403) return gone();
+      const view = listed.body as unknown as PhonesAnswer;
+      if (sub === "/phones") {
+        const rm = url.searchParams.get("remove");
+        if (rm) {
+          const p = view.phones.find((x) => x.id === rm);
+          return p ? sendHtml(res, 200, removePhonePage({ base, language, ...(o.csrf ? { csrf: o.csrf } : {}), id: p.id, ...(p.label ? { label: p.label } : {}), last: false }), noStore) : redirect(res, phonesAt());
+        }
+        const n = url.searchParams.get("n");
+        return sendHtml(res, 200, phonesPage({ base, language, ...(o.csrf ? { csrf: o.csrf } : {}), view, hosted, ...(n === "removed" || n === "cancelled" || n === "refused" ? { notice: n } : {}), ...(o.signOut ? { signOut: o.signOut } : {}) }), noStore);
+      }
+      const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
+      if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
+      if (sub === "/phones/dismiss") { await ph(ownSession, { op: "dismiss" }); return redirect(res, `${base}/?lang=${language}`); }
+      if (sub === "/phones/cancel") { await ph(ownSession, { op: "cancel_removal" }); return redirect(res, phonesAt("cancelled")); }
+      if (sub === "/phones/remove") {
+        const id = form.get("id") ?? "";
+        const r = await ph(ownSession, { op: "remove", id, confirm_last: form.get("confirm_last") === "yes" });
+        // 409: it is the LAST phone, and the owner has confirmed once; ask again, in stronger words (the runtime refuses it without the second yes)
+        if (r.status === 409) return sendHtml(res, 200, removePhonePage({ base, language, ...(o.csrf ? { csrf: o.csrf } : {}), id, ...(view.phones.find((x) => x.id === id)?.label ? { label: view.phones.find((x) => x.id === id)!.label! } : {}), last: true }), noStore);
+        return redirect(res, r.status === 200 ? phonesAt("removed") : phonesAt());
+      }
+      if (sub === "/phones/codes") {
+        const r = await ph(ownSession, { op: "codes" });
+        return r.status === 200 && Array.isArray(r.body.codes) ? sendHtml(res, 200, ownCodesPage({ base, language, codes: (r.body.codes as unknown[]).map(String) }), noStore) : redirect(res, phonesAt("refused"));
+      }
+      const r = await ph(ownSession, { op: "add_phone" });
+      return r.status === 200 && typeof r.body.url === "string" ? sendHtml(res, 200, addPhonePage({ base, language, url: r.body.url, expiresAt: Number(r.body.expires_at_ms) }), noStore) : redirect(res, phonesAt("refused"));
     }
     if (sub === "/leave") {
       const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
@@ -796,7 +844,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       const view = got.body as unknown as OwnerLimitsView;
       if (sub === "/limits") {
         const n = url.searchParams.get("n");
-        return sendHtml(res, 200, ownerLimitsPage({ base, language, view, ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(n === "asked" || n === "refused" ? { notice: n } : {}) }), { "x-robots-tag": "noindex", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" });
+        return sendHtml(res, 200, withBanner(ownerLimitsPage({ base, language, view, ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(n === "asked" || n === "refused" ? { notice: n } : {}) }), banner), { "x-robots-tag": "noindex", "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" });
       }
       const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
       if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
@@ -836,7 +884,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
         if (got.status !== 200) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
         const nonce = randomUUID().replace(/-/gu, "");
         const n = url.searchParams.get("n") ?? undefined;
-        return sendHtml(res, 200, ownerListingsPage({ base, language, view: got.body as unknown as Parameters<typeof ownerListingsPage>[0]["view"], nonce, ...(o.csrf ? { csrf: o.csrf } : {}), ...(n && /^[a-z_]{1,30}$/u.test(n) ? { notice: n } : {}) }), { "x-robots-tag": "noindex", "content-security-policy": listingsPolicy(base, nonce) });
+        return sendHtml(res, 200, withBanner(ownerListingsPage({ base, language, view: got.body as unknown as Parameters<typeof ownerListingsPage>[0]["view"], nonce, ...(o.csrf ? { csrf: o.csrf } : {}), ...(n && /^[a-z_]{1,30}$/u.test(n) ? { notice: n } : {}) }), banner), { "x-robots-tag": "noindex", "content-security-policy": listingsPolicy(base, nonce) });
       }
       // POST /listings/op: one form, one op; the runtime checks it against the shop's rules first and says why not
       const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
@@ -870,7 +918,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
         if (got.status === 403) return gone();
         if (got.status !== 200) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
         const n = url.searchParams.get("n") ?? undefined;
-        return sendHtml(res, 200, ownerStockPage({ base, language, view: got.body as unknown as Parameters<typeof ownerStockPage>[0]["view"], rid: () => randomUUID(), ...(o.csrf ? { csrf: o.csrf } : {}), ...(n && /^[a-z_]{1,30}$/u.test(n) ? { notice: n } : {}) }), { "x-robots-tag": "noindex", "content-security-policy": stockPolicy(base) });
+        return sendHtml(res, 200, withBanner(ownerStockPage({ base, language, view: got.body as unknown as Parameters<typeof ownerStockPage>[0]["view"], rid: () => randomUUID(), ...(o.csrf ? { csrf: o.csrf } : {}), ...(n && /^[a-z_]{1,30}$/u.test(n) ? { notice: n } : {}) }), banner), { "x-robots-tag": "noindex", "content-security-policy": stockPolicy(base) });
       }
       // POST /stock/op: one form, one op; the runtime checks it against the shop's rules first and says why not. The form's `rid` is the request id, so a double tap is one change.
       const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
@@ -955,7 +1003,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), bare: true }) : undefined;
     // item 11i: the owner's app shows the character in the shop's real mood (all five moods: this is the owner's own view)
     const facePic = state.view.app ? shop.character?.()?.picture(state.view.app.face, "svg") : undefined;
-    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(typeof token === "object" && "session" in token && shop.backend.accountantFiles ? { exportLinks: { base: `${base}/accounting` } } : {}), ...(leave ? { leave } : {}), ...(app && shop.backend.ownerStock ? { stockLink: { href: `${base}/stock?lang=${language}`, label: STOCK_LINE_WORDS[language].title } } : {}), ...(app && shop.backend.ownerListings ? { listingsLink: { href: `${base}/listings?lang=${language}`, label: LISTING_WORDS[language].owner.link } } : {}), ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(shop.backend.limits ? { limitsLink: { href: `${base}/limits?lang=${language}`, label: LIMITS_PAGE_WORDS[language].title } } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
+    return sendHtml(res, 200, withBanner(ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(typeof token === "object" && "session" in token && shop.backend.accountantFiles ? { exportLinks: { base: `${base}/accounting` } } : {}), ...(leave ? { leave } : {}), ...(app && shop.backend.ownerStock ? { stockLink: { href: `${base}/stock?lang=${language}`, label: STOCK_LINE_WORDS[language].title } } : {}), ...(app && shop.backend.ownerListings ? { listingsLink: { href: `${base}/listings?lang=${language}`, label: LISTING_WORDS[language].owner.link } } : {}), ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(shop.backend.limits ? { limitsLink: { href: `${base}/limits?lang=${language}`, label: LIMITS_PAGE_WORDS[language].title } } : {}), ...(ownSession && shop.backend.phones ? { phonesLink: { href: `${base}/phones?lang=${language}`, label: PHONES_WORDS[language].link } } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), banner), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
   }
 
   return (req, res) => {
