@@ -1325,8 +1325,7 @@ folder "whole", so a half-written shop never starts; removing it first is how a 
 
 **Decisions to know.** `index` 0 in `state.json` means "no network address": these shops take no place in the 199-shop pool until they take an agent (`shopIndex` hands out a real one then). Their
 generated client folder is `generated/listings/`, not `generated/shops/`, so the shared process cannot read another template's shop folders (`lib/client-dir.ts`, used by every place that
-hands a file to a running shop). `Kind.papers` and `casesFile` became optional (no hand check, no go-live paper, no cases file). The shop's AI cap is the constant `LISTINGS_ALLOWANCE` in
-`generate/shop.ts` until the caps work lands. The upgrade conversion (`lib/listings-carry.ts`) rewrites only the saved state JSON, as one step with no new record line; the SQLite file is the same in
+hands a file to a running shop). `Kind.papers` and `casesFile` became optional (no hand check, no go-live paper, no cases file). The shop's model budget comes from the caps module under the plan `listings-only` (`lib/server.ts`, `withBudget`), inert until the price list that has it is approved. The upgrade conversion (`lib/listings-carry.ts`) rewrites only the saved state JSON, as one step with no new record line; the SQLite file is the same in
 every template. The old shared folder is kept as `.moved-<shop>-<time>`, never deleted by code. Customer chat is not offered for these shops (`modules/channels/front.ts`, kind `listings`).
 
 **Touched shared files:** `bundle/lib/kinds.ts` (`listings` row, `shared`, `storeWith`, `isShared`), `bundle/generate/{compose,configs,shop}.ts`, `bundle/deploy.ts`, `bundle/backup/{jobs,export}.ts`,

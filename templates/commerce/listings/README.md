@@ -122,9 +122,9 @@ phone check for an owner who **signs up alone** is not built yet (Deferred).
    caches are fonts and time formatters, the same for every shop). New code must keep it so: **never key a module-level map by anything a shop owns.**
 5. **One way out.** The container is on one network with the model Guard and its door, and nothing else. Each shop reaches the model Guard with **its own credential** (its own agent id),
    so the model Guard **knows** each shop (its record names the agent, and the shop's agent can be switched off by itself: `ops stop <shop>`). **What limits each shop's model use is the
-   shop's own runtime allowance** (`runtime.json` `allowance`, from `LISTINGS_ALLOWANCE`: the month's messages and rupees the shop's own calls may add up to), counted in that shop's own
+   shop's own runtime budget** (`runtime.json` `budget`, from the caps module under the plan `listings-only`: the month's rupees and each feature's daily calls; inert until the owner approves the price list that has it), counted in that shop's own
    store. The model Guard's own cap (`model-calls-per-day`) is **one number for the whole server**, shared by every shop on it: a flood from one shop's owner is stopped by that shop's
-   allowance first, but a server-wide spike can still use up the day's calls for everyone (Deferred: a cap per agent at the Guard).
+   budget first, but a server-wide spike can still use up the day's calls for everyone (Deferred: a cap per agent at the Guard).
 6. **A shop that fails to start does not stop the others** (a bad folder is skipped; the process stays healthy). An error inside a request is caught by that shop's own server. What the
    process cannot promise is protection from a crash that escapes every `try` (an unhandled rejection): that would take the whole process down, and every shop with it, until the container
    restarts (seconds; each shop's saved steps resume). One process per shop is the price of ruling that out; it is Deferred, with its trigger.

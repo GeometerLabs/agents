@@ -68,7 +68,7 @@ test("a listings-only shop's plan has no Guard, lists on a port of its own on th
   assert.equal(rt.dataDir, sharedPaths("sree-pets").data);
   assert.deepEqual(rt.services, {});
   assert.equal(rt.parser.agentTokenFile, `${sharedPaths("sree-pets").secrets}/agent_model`);
-  assert.ok(rt.allowance.messages > 0 && rt.allowance.costInr > 0, "a small cap on this shop's own model use");
+  assert.equal(rt.allowance, undefined, "no hand-written cap: the budget is the caps module's");
   assert.ok(!JSON.stringify(rt).includes("agent_push") && !JSON.stringify(rt).includes("agent_whatsapp"));
 });
 
@@ -265,4 +265,15 @@ test("the owner's file and the export carry a listings-only shop: its record and
 test("the heartbeat carries a listings-only shop's counts in the one map fleet reads", async () => {
   const src = readFileSync(new URL("../services/heartbeat.ts", import.meta.url), "utf8");
   assert.match(src, /known\?\.orders \?\? known\?\.listings/u);
+});
+
+test("a listings-only shop's budget is the caps module's, under the plan listings-only, and nothing until a list that has it is in force", async () => {
+  const { budgetFor } = await import("../lib/budget.ts");
+  const list = { rates: { "ai.budget.listings-only": { micro: 6_000_000 }, "ai.daily.listing-draft": { count: 10 }, "ai.daily.listings-only.owner-talk": { count: 30 }, "ai.daily.listings-only.customer-talk": { count: 50 } } };
+  assert.deepEqual(budgetFor("listings-only", list)?.daily, { owner_talk: 30, listing_draft: 10, customer_talk: 50 });
+  assert.equal(budgetFor("listings-only", { rates: {} }), undefined, "a list with no entry gives no budget: the shop is inert, as every shop is before approval");
+  const server = serverConfig({});
+  const settings = parseSettings({ name: "X", place: { town: "T" }, languages: ["en"], owner: { language: "en" } });
+  const folder = { name: "x", settingsText: "", pinsText: "", pins: {}, settings, runtime: { mode: "live", services: {} }, lock: { pathway: "listings", version: "0.1.0" }, lockText: "", problems: [], preparedBy: "x", preparedBySource: "default", innovator: false, budget: budgetFor("listings-only", list) } as never;
+  assert.ok((planShop(server, folder).runtime as Record<string, unknown>).budget, "the generated runtime.json carries the budget");
 });

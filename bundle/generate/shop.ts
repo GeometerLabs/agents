@@ -75,11 +75,6 @@ export const dbPathOf = (mount: string, shop: string, shared: boolean): string =
 export const sharedPaths = (shop: string) => ({ data: `${HOME_DIR}/${shop}/data`, client: `/shops/${shop}/client`, secrets: `/run/secrets/${shop}` });
 /** The secrets folder (under secrets/) that holds a shop's runtime credentials: `rt-<shop>`, or `rt-listings/<shop>` for a shop on the shared process (mounted whole at /run/secrets). */
 export const secretsHolderOf = (shop: string, shared: boolean): string => (shared ? `${SHARED.runtime}/${shop}` : names.runtime(shop));
-/**
- * A listings-only shop's monthly AI allowance, until the caps stream's budgets land (modules/limits, 18 Nov 2026: "Geometer pays its model use within a small cap"). The numbers are
- * the cap on the shop's own model use (drafting listings, answering the owner): provisional, named here so the one place to change is one line (Deferred.md).
- */
-export const LISTINGS_ALLOWANCE = { messages: 300, costInr: 25 } as const;
 
 export interface GuardPlan {
   kind: GuardKind;
@@ -348,14 +343,16 @@ export function planShop(server: ServerConfig, shop: ShopFolder, versions: Parti
   if (shop.settings && problems.length === 0 && template.shared) {
     // A listings-only shop has NO Guard of its own and no container: it runs on the shared process. Its generated runtime.json says where its data and secrets are inside that process,
     // that it listens on the loopback address on a port of its own choosing (the process routes to it), that it calls no service, and the model it may use for drafts: through the
-    // server's one model Guard with this shop's own credential, so the model Guard knows each shop by its own agent id (its record, its own switch); what limits a shop's use is its runtime allowance below, since the Guard's daily cap is one number for the whole server.
+    // server's one model Guard with this shop's own credential, so the model Guard knows each shop by its own agent id (its record, its own switch); what limits a shop's use is its runtime budget (the caps module), since the Guard's daily cap is one number for the whole server.
     const paths = sharedPaths(shop.name);
-    runtime = { mode: "live", host: "127.0.0.1", port: 0, dataDir: paths.data, ...(facts.tickSeconds !== undefined ? { tickSeconds: facts.tickSeconds } : {}), services: {}, allowance: { ...LISTINGS_ALLOWANCE } };
+    runtime = { mode: "live", host: "127.0.0.1", port: 0, dataDir: paths.data, ...(facts.tickSeconds !== undefined ? { tickSeconds: facts.tickSeconds } : {}), services: {} };
     if (facts.parser) runtime.parser = { wire: facts.parser.wire, baseUrl: modelBaseUrl(server.model), model: facts.parser.model, agentTokenFile: `${paths.secrets}/agent_model`, ...(facts.parser.timeoutMs !== undefined ? { timeoutMs: facts.parser.timeoutMs } : {}) };
     runtime = withModelProvider(runtime, server.model, check, notes);
     runtime = withTalk(runtime, facts.talk, server.model, check, notes);
     runtime = withFleetAi(runtime, shop.fleetAi, check, notes);
     runtime = withFleetModel(runtime, shop.fleetModel, check, notes);
+    // the shop's model budget comes from the caps module like any shop's, under the plan "listings-only" (lib/server.ts): inert until the owner approves the price list that has it
+    runtime = withBudget(runtime, shop.budget, check, notes);
     if (!check(runtime, "/").ok) problems.push({ rule: "runtime-config", message: `${shop.name}: the generated runtime.json is not one this template accepts.` });
     return { shop: shop.name, guards: [], runtime, notes, problems };
   }
