@@ -46,7 +46,7 @@ scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the T
 
 ## Dependencies, and why each
 
-Only the three Go modules the owner approved, and what they themselves need (all from proxy.golang.org):
+Only the four Go modules the owner approved, and what they themselves need (all from proxy.golang.org):
 
 | module | why |
 | --- | --- |

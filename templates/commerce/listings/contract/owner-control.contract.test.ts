@@ -10,7 +10,8 @@
 //   a passkeysBefore written into the file after the lock; the owner's own codes void the card; a new phone, codes and a removal are announced; removing a phone takes back
 //   its codes and links (ATTACK) and the last one needs the second confirm; the Operator's request is timed from first sight, back-dating buys nothing, the owner cancels,
 //   a day's quiet, then it applies after 48 hours and only a QR seen after that works; an owner-number change is a request (ATTACK), a cancel sticks for a day, it applies
-//   after 48 hours with no restart and the sale binds the NEW owner; Geometer's reset and its window, in which only the reset's own QR works (ATTACK); a restart does not lose
+//   after 48 hours with no restart and the sale binds the NEW owner; Geometer's reset and its window, in which only the reset's own QR works (ATTACK), read only from its own
+//   file, never from the Operator's (ATTACK); a restart does not lose
 //   a request's notice and extends a request once only (ATTACK); a restore keeps the lock; and (TypeScript only: the Go runtime serves no push) the alerts follow the phone.
 //
 // Not reachable here: a session made by a WhatsApp LINK (a listings-only shop has no WhatsApp, so no link is ever sent), so "a link session may not remove a phone or make
@@ -488,6 +489,19 @@ describe("Geometer's reset", () => {
     s.advance(3 * DAY);
     assert.equal((await panel(s)).removal, undefined);
     assert.equal((await signin(s, p2.phone)).status, 200);
+  });
+
+  test("ATTACK: a reset written into the Operator's own file (owner-grants.json) is never read: the shop stays locked to the owner and its QR is unknown", async () => {
+    const { s, p1 } = await lockedShop({ tickSeconds: 1 });
+    const forged = newSetupToken();
+    s.writeGrants({ ...grants(s), reset: { at: iso(s.now()), reason: "the Operator says so", by: "Geometer", setup: { sha256: setupHash(forged), expiresAt: iso(s.now() + HOUR) } } });
+    const p = await panel(s);
+    assert.equal(p.locked, true);
+    assert.equal(await good(s, p1.session), true, "the owner's session goes on");
+    assert.equal((await signin(s, p1.phone)).status, 200);
+    assert.equal(await grantState(s, qr(forged)), "unknown");
+    await new Promise((r) => setTimeout(r, 2500)); // two ticks
+    assert.equal(lines(s, "owner_reset").length, 0, "no reset in the record");
   });
 
   test("the reset's QR works for an hour from the runtime's first sight, whatever expiry the file says", async () => {
