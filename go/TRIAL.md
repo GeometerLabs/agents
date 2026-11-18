@@ -185,3 +185,30 @@ One Go shop alone (`measure.ts`): idle 20.1 MB (was 19.5), 22.9 MB after 50 requ
 The TypeScript shared pool (`shared-pool.ts`, `shared-worker.ts`, `shared.ts`) is replaced by the Go host only once the deployer runs `listings-shared`.
 
 **TypeScript findings (reported, not fixed):** `http.ts` passes the session's secret token (not its short id) to `recordAccess("file_taken")`, so the `owner_file_taken` record line holds a live session token (Go writes the short id; the contract has a `todo` for TypeScript); the Stock page's pre-check and the step disagree on a listing title over 60 units (200, then a blocked line); `start` accepts a stock id of a listing that does not exist; with no declared limits "limit" answers "I can tighten: ." with an empty list; `get my shop's file for sale` is drafted as a listing; the restore entry says ids moved on by 100,000 though a listings store has no counter; `status.ownerAccess.locked` makes one existing contract test fail on TypeScript at the base. Seams left for the owner-control agent: `PasskeySessions` (`routes.go`), `Runtime.PushOwner`, `Runtime.Push().DropUnbound` on the first passkey.
+
+## Wave 1 merged (19 Nov 2026): owner control and the complete listings shop, in one branch
+
+The Go owner control (the gate, the Operator's 48-hour requests, Geometer's reset, the owner's phones and own codes, the number lock, the test clock) and wave 1a above were built on two
+branches and are merged here, with main's fix to the `owner_file_taken` record line. Where the two met, part A's owner-control code was kept and part B's routes were adapted to it.
+
+**Now complete on both runtimes, the same contract:**
+- **Push honours owner control** (`owner.go`, under the owner lock): after the lock only a passkey session may subscribe, tied to its phone; the panel's owner link gets 403 for
+  subscribe, unsubscribe and choice; the first passkey ends the subscriptions no phone holds; removing a phone ends its subscriptions; the phones page lists alerts and stops one
+  (`stop_alert`, a passkey session only). The check and the subscription are one sequence under the lock, so a link's subscription cannot land after the first passkey's DropUnbound.
+- **The alerts to the owner's phones** (a new phone, codes made, a phone removed, the Operator's request on the tick, an owner-number change on the tick) are TypeScript's words in
+  the owner's language: `scripts/gen_words.ts` renders them from `owner-phones.ts` and `owner-signin.ts`, and the moment they carry (`dayAndTime`) is data taken from Intl's parts,
+  checked on every month and hour; the contract opens each push with a soft browser and compares it with the TypeScript function in Malayalam, Kannada and Hindi.
+- **The limits page's passkey check** asks the access package (the read-only reader of `owner-access.sqlite`, which skipped the store's reconcile, is gone); a store that cannot be
+  read refuses. `/status` reports `locked` and the pending request from the owner control.
+- **"Get my shop's file"** names the session by the short id of the same check that let it in, on both runtimes (the contract's `todo` is a real test now).
+- **The contract harness** leaves no runtime process behind (`contract/children.ts`; a run fails if one is still alive at its end).
+
+**Results** (19 Nov, one run each, through the heat lock): the whole contract folder, **172 of 172 on TypeScript (179 s) and 172 of 172 on Go (97 s), none skipped**;
+the cross-runtime cases (cross-restart, differential, the owner's file and push across a change of runtime, the shared process) run inside both. No runtime process was left
+running after either run. `go vet ./...` and `go test ./...` pass, and `go test -race` on `internal/access`, `internal/runtime` and `internal/shared`. The two failures wave 1a
+reported against TypeScript at its base (the `owner-access.sqlite` schema in `cross-restart.test.ts`, `/status ownerAccess.locked`) pass now: they were the owner control's.
+Binaries: `listings` 23.3 MB (16.4 MB with `-ldflags "-s -w"`), `listings-shared` 23.8 MB (16.8 MB).
+
+**Not ported (wave 1b cannot delete these TypeScript parts yet):** the owner-talk model's answer for words no rule reads; the router's decision and language models; memory
+writes (remember, notes, forget); the morning line and with it the licence's final stop; voice; date phrases in money questions (flagged, not answered); first-step seeding of the
+Operator's town; `limitChanges` compaction.
