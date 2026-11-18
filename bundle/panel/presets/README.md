@@ -13,7 +13,7 @@ template: `templates.ts` finds templates by `template.json` in `templates/<domai
   "schema": 1,
   "id": "salon",                                  // lowercase letters, digits, dashes; the file's name
   "names": { "en": "...", "hi": "...", "ml": "...", "kn": "..." },   // the trade's name; hi, ml, kn are machine-written and on the review sheets
-  "template": "bookings",                         // bookings | fees | orders | stock-orders (what the phone form can set up)
+  "template": "bookings",                         // bookings | fees | orders | stock-orders | listings (what the phone form can set up)
   "variant": "classes",                           // optional; only a variant the phone form can set up: fees "classes" today
   "prefill": { },                                 // by template, see below
   "character": { "personality": "warm", "paint": "pink" }   // optional suggestions for the Character step; the Operator still chooses
@@ -27,6 +27,7 @@ Prefill, by template (every `names` is a name in the four languages, one short l
 | bookings | `services` (1 to 4: `names`, `priceInr`, `minutes`), `depositInr` (at most the cheapest service), `windowHours`, `opens`, `closes`, `days` (0 = Sunday), `capacity` |
 | fees | `batches` (1 to 6: `names`, `feeInr`), `dueDay`, `graceDays`, `lateFeeInr` (at most the cheapest fee); variant `classes` also needs `timetable` (`batch` = the row, `day`, `time`, `minutes`) |
 | orders | `menu` (`names`, `priceInr`, `dailyStock`), `pickup` slots (`from`, `to`, optional `names`), `cutoffDays`, `cutoffTime`, `advance` (`full`, or `part` with `percent`), `maxItemsPerOrder` (times the dearest item at most a day's refund cap) |
+| listings | `{}` (nothing: a listings-only shop has no example values; its first form starts empty) |
 | stock-orders | `supplier` (a placeholder name, never a real person or number), `items` (`names`, `unit`, `priceInr`, optional `reorderQty`), `maxPerOrderInr`, `monthlyBudgetInr` |
 
 A preset naming an unknown template, a variant the template does not have, or a variant the form cannot set up yet is refused. Tiffin (orders with `plans`) and equipment hire

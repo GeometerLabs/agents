@@ -32,7 +32,7 @@ const isWhole = (v: unknown, min: number, max: number): v is number => typeof v 
 export const PRESETS_DIR = new URL("./presets/", import.meta.url).pathname;
 
 /** The templates the phone form can set up: Bookings and one row of setups.ts for each other (test/presets.test.ts checks it is the same list). The review sheets read the presets with it. */
-export const PHONE_TEMPLATES: readonly string[] = ["bookings", "fees", "orders", "stock-orders"];
+export const PHONE_TEMPLATES: readonly string[] = ["bookings", "fees", "orders", "stock-orders", "listings"];
 
 /** The words of one thing in the four languages (Hindi, Malayalam and Kannada machine-written, on the review sheets). */
 export type Names = Record<Language, string>;
@@ -43,6 +43,7 @@ export const VARIANTS: Record<string, { settable: readonly string[]; later: read
   fees: { settable: ["classes"], later: [] },
   orders: { settable: [], later: ["plans"] },
   "stock-orders": { settable: [], later: [] },
+  listings: { settable: [], later: [] },
 };
 
 export interface BookingsPrefill { services: { names: Names; priceInr: number; minutes: number }[]; depositInr: number; windowHours: number; opens: string; closes: string; /** 0 = Sunday */ days: number[]; capacity?: number }
@@ -50,12 +51,15 @@ export interface FeesPrefill { batches: { names: Names; feeInr: number }[]; dueD
 export interface OrdersPrefill { menu: { names: Names; priceInr: number; dailyStock: number }[]; pickup: { from: string; to: string; names?: Names }[]; cutoffDays: number; cutoffTime: string; advance: { mode: "full" } | { mode: "part"; percent: number }; maxItemsPerOrder: number }
 export interface StockPrefill { /** The name of the supplier the catalogue lines name until the Operator writes their own: never a real person or number. */ supplier: Names; items: { names: Names; unit: Names; priceInr: number; reorderQty?: number }[]; maxPerOrderInr: number; monthlyBudgetInr: number }
 
+/** A listings-only shop has no example values: the form starts empty (the Operator writes the town and the shop's words), so its prefill is `{}`. */
+export type ListingsPrefill = Record<string, never>;
+
 export interface Preset {
   id: string;
   names: Names;
   template: string;
   variant?: string;
-  prefill: BookingsPrefill | FeesPrefill | OrdersPrefill | StockPrefill;
+  prefill: BookingsPrefill | FeesPrefill | OrdersPrefill | StockPrefill | ListingsPrefill;
   /** The suggested personality of the shop's assistant (the one mood an Operator chooses; the faces' moods follow the shop's real state) and the signboard paint. Both stay a choice at the Character step. */
   character?: { personality?: string; paint?: string };
 }
@@ -198,6 +202,7 @@ export function readPreset(input: unknown, known: readonly string[]): PresetRead
   else if (template === "fees") prefill = readFees(input.prefill, chosenVariant, errors);
   else if (template === "orders") prefill = readOrders(input.prefill, errors);
   else if (template === "stock-orders") prefill = readStock(input.prefill, errors);
+  else if (template === "listings") { onlyKeys(input.prefill, [], "The prefill", errors); prefill = {} as ListingsPrefill; }
   let character: Preset["character"];
   if (input.character !== undefined) {
     if (!isObj(input.character)) errors.push("\"character\" must be an object.");

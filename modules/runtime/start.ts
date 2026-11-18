@@ -47,6 +47,11 @@ export interface StartOptions<Services = unknown> {
   recordKeyFile?: string;
   /** A file holding the channel token (CHANNEL_TOKEN_FILE), or the environment's: the shop's booking page, API and owner page (modules/channels). Left out: none. */
   channelTokenFile?: string;
+  /**
+   * Where to listen, instead of runtime.json's host and port. The shared process (shared.ts) gives each shop it holds its own port on the loopback address (port 0: any free one),
+   * which only that process can reach: the shop's own server still checks the shop's own tokens, whatever the front says.
+   */
+  listen?: { host: string; port: number };
   clock?: Clock;
   log?: (line: string) => void;
   /** A test seam: how the live adapters are loaded. */
@@ -267,7 +272,7 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   let server: RunningServer;
   try {
     // the owner's link is read from the client folder on every request (the deployer writes and removes it), so a revoked link stops without a restart
-    server = await startServer(runtime, { token, host: client.runtime.host, port: client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}), ...(ownerSignin ? { ownerSignin: ownerSignin.http, ownerFile: openOwnerFile({ clientFolder: client.folder, dataDir: client.runtime.dataDir, now: () => clock.now() }) } : {}), ...(push ? { push, hasWhatsApp: runtimeHasWhatsApp(client.runtime) } : {}), ...(chatIdentityRoutes ? { chatIdentity: chatIdentityRoutes } : {}) });
+    server = await startServer(runtime, { token, host: options.listen?.host ?? client.runtime.host, port: options.listen?.port ?? client.runtime.port, log, ...(channelToken ? { channelToken, ownerLink: ownerLinkReader(join(client.folder, OWNER_LINK_FILE)) } : {}), ...(ownerSignin ? { ownerSignin: ownerSignin.http, ownerFile: openOwnerFile({ clientFolder: client.folder, dataDir: client.runtime.dataDir, now: () => clock.now() }) } : {}), ...(push ? { push, hasWhatsApp: runtimeHasWhatsApp(client.runtime) } : {}), ...(chatIdentityRoutes ? { chatIdentity: chatIdentityRoutes } : {}) });
   } catch (e) {
     await runtime.close();
     ownerAccess?.close();

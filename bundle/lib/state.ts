@@ -162,7 +162,8 @@ export function saveState(dir: string, state: State): void {
 /** A shop's or an agent's network index: the lowest free number from 1 to 199, kept for its life (never reused, so an address never moves). Shops and agents draw from one pool. */
 export function shopIndex(state: State, shop: string): number {
   const have = state.shops[shop]?.index ?? state.agents?.[shop]?.index;
-  if (have !== undefined) return have;
+  // 0 is "no address": a listings-only shop runs on the shared process and takes no place in the pool until it takes an agent (bundle/lib/listings-move.ts), which asks for one here
+  if (have !== undefined && have !== 0) return have;
   const gone = state.removed?.[shop];
   if (gone) throw new Error(`${shop} is the name of an agent removed from this server on ${gone.at.slice(0, 10)} (what it kept is in ${gone.keptIn}). Its Guards' kept stores carry the name, so a new shop or agent under it would start on them: choose another name.`);
   const used = new Set([...Object.values(state.shops), ...Object.values(state.agents ?? {}), ...Object.values(state.removed ?? {})].map((s) => s.index));

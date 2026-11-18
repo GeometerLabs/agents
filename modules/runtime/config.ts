@@ -72,6 +72,11 @@ export const BOOKINGS_SERVICES: ServiceShape = [{ name: "payments", payment: tru
  * and there is no payment service at all (the agent pays nobody). Push is the owner's, as everywhere.
  */
 export const STOCK_SERVICES: ServiceShape = [{ ...MESSAGING_SERVICE, mayLack: undefined } as never, PUSH_SERVICE];
+/**
+ * A listings-only shop (18 Nov 2026) calls NO service: it takes no money and sends no WhatsApp, so it has no Guard of its own. Push is listed (and may be left out) only so the
+ * day a push Guard is given to such shops needs no change here; the shared process hands none today (Deferred).
+ */
+export const LISTINGS_SERVICES: ServiceShape = [PUSH_SERVICE];
 export const FEES_SERVICES: ServiceShape = [{ name: "payments", payment: true }, MESSAGING_SERVICE, PUSH_SERVICE];
 
 /** Where the live adapters should call: the services the template names, and how long to wait for any one of them. */

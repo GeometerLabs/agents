@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "listings",
+  "setup": "listings",
+  "steps": ["business", "languages", "checks"],
+  "accounts": [],
+  "settingsExample": "settings/shop.example.json"
+}

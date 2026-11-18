@@ -10,8 +10,8 @@
 // Docker, the clock and sleeping go through the context, so the tests run all of this against a fake.
 import { gatewayOf, isGatewayKind } from "../modules/payments/providers/index.ts";
 import type { PaymentSettings } from "../modules/payments/providers/index.ts";
-import { chownSync, existsSync, readFileSync, rmSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { chownSync, existsSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { join, resolve, sep } from "node:path";
 import { composeServer } from "./generate/compose.ts";
 import type { Composed, Dirs, PanelOptions, ShopDeploy } from "./generate/compose.ts";
 import { GUPSHUP_GUARD_ADMIN_FILE, GUPSHUP_UNIVERSAL_TOKEN_FILE, directoryConfig, doorConfig, inboxConfig, opsConfig, refresherConfig, relayConfig } from "./generate/configs.ts";
@@ -20,13 +20,14 @@ import { PANEL_READS, guardToml, ownerNumbers } from "./generate/guards.ts";
 import type { GuardLicence } from "./generate/guards.ts";
 import { agentFacts } from "./agent/applied.ts";
 import { noSecretsIn, provenLine, toolNamesMatch, tripwiresHold } from "./generate/rules.ts";
-import { names, planModelGuard, planShop } from "./generate/shop.ts";
+import { SHARED, names, planModelGuard, planShop, secretsHolderOf } from "./generate/shop.ts";
 import type { GuardPlan, ShopPlan } from "./generate/shop.ts";
 import type { CompileResult, GuardTool, TripwireResult } from "./generate/verify.ts";
 import { licencePaths, syncLicence } from "./lib/licence.ts";
 import { syncTerms } from "./lib/terms.ts";
 import { kidOf } from "../modules/licence/token.ts";
-import { KINDS, kindFor, guardsOf, runtimeHasWhatsApp } from "./lib/kinds.ts";
+import { KINDS, isShared, kindFor, guardsOf, runtimeHasWhatsApp } from "./lib/kinds.ts";
+import { moveOutOfShared, needsMove } from "./lib/listings-move.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { RECORD_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, speechKeyHandedIn, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
@@ -142,7 +143,8 @@ interface Credentials { agent: Partial<Record<Three, string>> & Record<"model" |
  * Every credential a shop's containers share: made once, kept in the file of the container that owns it, copied to the containers that must match. `calendar`: whether the shop's
  * template has a calendar. One that has none gets no calendar credentials, no folder for a calendar Guard, and nothing in the token refresher's folder.
  */
-function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar = true, razorpay = true, people: string[] = [], gupshupRenewed = false, whatsapp = true): Credentials {
+function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar = true, razorpay = true, people: string[] = [], gupshupRenewed = false, whatsapp = true, shared = false): Credentials {
+  if (shared) return ensureSharedCredentials(dir, shop, panelOn);
   const rt = names.runtime(shop);
   const internal = ensureSecret(secretFile(dir, rt, "internal_token"), mintSecret);
   const agent = {
@@ -185,6 +187,23 @@ function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar
   // is the runtime's own whoever runs the deployer (follow-up 6, 12 Nov 2026).
   const panel = panelOn ? ensureSecret(secretFile(dir, "panel", names.panelGuardToken), mintGuardToken, 0o600) : undefined;
   return { agent, admin, ...(panel ? { panel } : {}) };
+}
+
+/**
+ * A listings-only shop's credentials (18 Nov 2026): no Guard, so no Guard credential and no admin token. It has what any shop's runtime has (the internal token, the channel token the
+ * front presents, the record's key) in a folder of its own under secrets/rt-listings/<shop>/, which the shared process mounts whole (read-only; each shop's start is handed only that
+ * shop's files), and one credential for the model Guard, under the shop's own agent id, so the model Guard knows this shop (its record, its own switch); the shop's use is limited by its runtime allowance. The inbox still wants the secrets
+ * it asks of every shop (a webhook secret, a WhatsApp app secret and verify token): made here and given to nobody, as a shop with no WhatsApp has them, so nothing can reach it.
+ */
+function ensureSharedCredentials(dir: string, shop: string, panelOn: boolean): Credentials {
+  const holder = secretsHolderOf(shop, true);
+  const internal = ensureSecret(secretFile(dir, holder, "internal_token"), mintSecret);
+  const model = ensureSecret(secretFile(dir, holder, "agent_model"), mintGuardToken);
+  for (const container of ["ops", "inbox"]) writeSecretFile(secretFile(dir, container, shop, "internal_token"), internal);
+  writeSecretFile(secretFile(dir, "inbox", shop, "channel_token"), ensureSecret(secretFile(dir, holder, "channel_token"), mintSecret));
+  for (const f of ["razorpay_webhook_secret", "whatsapp_app_secret", "whatsapp_verify_token"]) ensureSecret(secretFile(dir, "inbox", shop, f), mintSecret);
+  ensureShopPersonKeys(dir, shop, holder, panelOn);
+  return { agent: { model, relay: "" }, admin: {} };
 }
 
 const sha = (value: string) => sha256Hex(value);
@@ -239,14 +258,24 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   const gupshupRenewed = gupshupRenewedFor(ctx.dir, name, gupshup);
   // item 11c: a shop on its own Gupshup account hands in its API key under gupshup_apikey; nothing is renewed for it
   const selfServe = (folder.runtime as { services?: { messaging?: { provider?: unknown } } } | undefined)?.services?.messaging?.provider === "gupshup-selfserve";
-  const placed = o.placeReportKey ? await placeRuntimeReportKey({ runner: ctx.runner, docker: ctx.docker, image: server.appImage, dir: ctx.dir, runtimeFolder: names.runtime(name), panelOn: server.panel.enabled }) : undefined;
+  const shared = isShared(folder.lock?.pathway);
+  const placed = o.placeReportKey && !shared ? await placeRuntimeReportKey({ runner: ctx.runner, docker: ctx.docker, image: server.appImage, dir: ctx.dir, runtimeFolder: names.runtime(name), panelOn: server.panel.enabled }) : undefined;
   const reportKey = placed === undefined ? {} : placed.readable ? { reportKeyReadable: true } : { reportKeyReadable: false, reportKeyWhy: placed.why };
   const planOptions = { ...reportKey, ...(gupshupRenewed ? { gupshupRenewed: true } : {}), ...(speechKeyHandedIn(ctx.dir) ? { speechKeyHandedIn: true } : {}) };
   const first = planShop(server, folder, {}, check, planOptions);
   problems.push(...first.problems);
   notes.push(...first.notes);
   if (folder.lock && !pathwayDir) problems.push({ rule: "pathway-pin", message: `${name} is pinned to ${folder.lock.pathway}@${folder.lock.version}, but this server does not have that version. Put a checkout of it in ${keptDirFor(ctx.appDir, ctx.dir, folder.lock.pathway, folder.lock.version)}, or change the pin once that version has passed the crash test with this shop's settings.` });
-  problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay, gupshup, gupshupRenewed, selfServe, runtimeHasWhatsApp(folder.runtime)));
+  // A listings-only shop hands in no key at all (no payments, no WhatsApp, no calendar). It runs on the shared process, which runs THIS checkout's version of the template: a shop
+  // pinned to another version would not start there (the runtime refuses a version it is not pinned to), so it is refused here, in words, before anything is written.
+  if (shared && pathwayDir && !resolve(pathwayDir).startsWith(`${resolve(ctx.appDir)}${sep}`)) problems.push({ rule: "shared-version", message: `${name} is pinned to ${folder.lock!.pathway}@${folder.lock!.version}, but listings-only shops all run on this server's one shared process, which runs the current checkout's version of the template. Move the pin to the current version (it has no money or messages to hold back).` });
+  // A shop removed from the server leaves its folder in the shared volume (no code deletes an owner's file), and a new shop of the same name would start on that store and accept the
+  // old owner's passkey. So a NEW listings-only shop is refused when the shared volume already holds a folder of its name. (A server whose shared container is not up has none.)
+  if (shared && !state.shops[name]?.applied) {
+    const there = await compose(ctx, ["exec", "-T", SHARED.runtime, "test", "-e", `${HOME_DIR}/${name}`], { timeoutMs: 20_000 });
+    if (there.code === 0) problems.push({ rule: "shared-name-taken", message: `${name}: the shared volume of listings-only shops already holds a folder called ${name} (a shop of that name was here, and its file was kept). A new shop would start on the old shop's file and its owner's passkey. Choose another name, or have the old folder moved aside by hand first.` });
+  }
+  if (!shared) problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay, gupshup, gupshupRenewed, selfServe, runtimeHasWhatsApp(folder.runtime)));
   // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch. The gateway, its credential file and
   // its key's shape are its folder's (B71); a pin for another gateway than the one the shop chose is not this shop's.
   const gateway = gatewayOf((folder.settings as { payment?: PaymentSettings } | undefined)?.payment);
@@ -265,7 +294,8 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   for (const g of first.guards) versions[g.kind] = prev[g.kind]?.contentHash === contentHash(g.spec) ? prev[g.kind].version : (prev[g.kind]?.version ?? 0) + 1;
   const plan = planShop(server, folder, versions, check, planOptions);
   // reserve the network index now, so two shops added together never share one (it is saved only when the deploy goes through)
-  const index = (state.shops[name] ??= { index: shopIndex(state, name), guards: {}, lockHistory: [] }).index;
+  // (a listings-only shop takes no place in the pool: its index is 0, and it asks for one the day it takes an agent)
+  const index = (state.shops[name] ??= { index: shared ? 0 : shopIndex(state, name), guards: {}, lockHistory: [] }).index;
   return {
     prepared: { folder, plan, webhooks, pathwayDir, index, guards: plan.guards.map((g) => ({ plan: g, version: versions[g.kind], contentHash: contentHash(g.spec) })), desiredHash: desiredHashOf(folder), gupshupRenewed },
     problems, notes,
@@ -344,7 +374,7 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
   problems.push(...await serverProblems(ctx, server));
   const lines: string[] = [];
   if (prepared) {
-    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)), hasRazorpay(prepared.guards.map((g) => g.plan)), peopleOf(prepared.guards), prepared.gupshupRenewed, hasWhatsAppGuard(prepared.guards.map((g) => g.plan)));
+    const creds = ensureCredentials(ctx.dir, name, server.panel.enabled, hasCalendar(prepared.guards.map((g) => g.plan)), hasRazorpay(prepared.guards.map((g) => g.plan)), peopleOf(prepared.guards), prepared.gupshupRenewed, hasWhatsAppGuard(prepared.guards.map((g) => g.plan)), isShared(prepared.folder.lock?.pathway));
     const licence = await guardLicenceOn(ctx, server);
     if (!licence.on) problems.push(licence.problem);
     for (const g of prepared.guards) {
@@ -359,7 +389,25 @@ export async function checkShop(ctx: Context, name: string): Promise<{ ok: boole
 
 function deployOf(ctx: Context, name: string, shop: { index: number; applied?: Snapshot }): ShopDeploy {
   const s = shop.applied!;
-  return { name, index: shop.index, pathwayDir: appliedPathwayDir(ctx.appDir, ctx.dir, s) ?? s.pathwayDir, guards: Object.values(s.guards).map((g) => ({ kind: g.kind as GuardPlan["kind"], service: g.service, tenant: name })) };
+  return { name, index: shop.index, ...(isShared(s.pathway.split("@")[0]) ? { shared: true } : {}), pathwayDir: appliedPathwayDir(ctx.appDir, ctx.dir, s) ?? s.pathwayDir, guards: Object.values(s.guards).map((g) => ({ kind: g.kind as GuardPlan["kind"], service: g.service, tenant: name })) };
+}
+
+/**
+ * How a listings-only shop is LET GO (removed from the server, or moved into a runtime of its own): its folder in generated/listings/ is taken away, pathway.lock first. The shared
+ * process looks at its folders every few seconds; a shop whose folder is gone or has no lock is stopped (its step in hand finishes, its store file is closed) and answers
+ * "nothing here". Nothing else is needed: the data stays where it is until the deployer moves or keeps it (bundle/lib/listings-move.ts, which waits for that answer first).
+ */
+export function letGoOfListings(ctx: Context, keep: ReadonlySet<string>): string[] {
+  const root = join(serverPaths(ctx.dir).generated, "listings");
+  if (!existsSync(root)) return [];
+  const gone: string[] = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (!entry.isDirectory() || keep.has(entry.name)) continue;
+    rmSync(join(root, entry.name, "client", "pathway.lock"), { force: true });
+    rmSync(join(root, entry.name), { recursive: true, force: true });
+    gone.push(entry.name);
+  }
+  return gone;
 }
 
 /** Write every generated file for the whole server from what has been applied, and return the compose text. */
@@ -368,7 +416,7 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   const applied = Object.entries(state.shops).filter(([, s]) => s.applied).sort(([a], [b]) => (a < b ? -1 : 1));
   const shops = applied.map(([name, s]) => {
     const snap = s.applied!;
-    const settings = JSON.parse(snap.settingsText) as { owner: { whatsapp: string }; approvers?: ApproversSettings };
+    const settings = JSON.parse(snap.settingsText) as { owner?: { whatsapp?: string }; approvers?: ApproversSettings };
     const runtime = snap.runtime as { services: { messaging?: { phoneNumberId: string; provider?: string; appId?: string; appName?: string; sourceNumber?: string } } };
     // item 11h: a shop with no WhatsApp has no messaging service: its inbox takes no WhatsApp webhook for it (no number is its), and its relay sends nothing on WhatsApp
     const m = runtime.services.messaging ?? { phoneNumberId: "" };
@@ -376,21 +424,25 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
     const whatsappRoute = m.provider === "gupshup" && m.appId ? { whatsappRoute: { provider: "gupshup" as const, appId: m.appId } }
       : m.provider === "gupshup-selfserve" && m.appName && m.sourceNumber ? { whatsappRoute: { provider: "gupshup-selfserve" as const, appName: m.appName, sourceNumber: m.sourceNumber, ...(m.appId ? { appId: m.appId } : {}) } } : {};
     // follow-up 2: from the snapshot, so the compose file mounts the renewed token exactly when the applied Guard was compiled to read it
-    return { ...deployOf(ctx, name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner.whatsapp, phoneNumberId: m.phoneNumberId, ...whatsappRoute, ...(snap.whatsappTokens === "renewed" ? { gupshupRenewed: true } : {}), pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1], ...(settings.approvers ? { approvers: settings.approvers.people } : {}) };
+    return { ...deployOf(ctx, name, s), webhooks: webhooksFor(ctx.dir, name, hasCalendar(Object.values(snap.guards))), ownerWhatsapp: settings.owner?.whatsapp ?? "", phoneNumberId: m.phoneNumberId, ...whatsappRoute, ...(snap.whatsappTokens === "renewed" ? { gupshupRenewed: true } : {}), pathway: snap.pathway.split("@")[0], pathwayVersion: snap.pathway.split("@")[1], ...(settings.approvers ? { approvers: settings.approvers.people } : {}) };
   });
   for (const [name, s] of applied) {
-    const client = join(p.generated, "shops", name, "client");
+    // a listings-only shop's folder is in generated/listings/ (the one folder the shared process mounts), and its pathway.lock is written LAST: the process starts a shop only when
+    // its lock is there, so it never starts one whose files are half written
+    const shared = isShared(s.applied!.pathway.split("@")[0]);
+    const client = join(p.generated, shared ? "listings" : "shops", name, "client");
     writeAtomic(join(client, "settings.json"), s.applied!.settingsText);
     writeAtomic(join(client, "runtime.json"), stableJson(s.applied!.runtime));
     writeAtomic(join(client, "pathway.lock"), s.applied!.lockText);
     for (const g of Object.values(s.applied!.guards)) writeGuardFiles(ctx.dir, g.service, g);
   }
   if (state.modelApplied) writeGuardFiles(ctx.dir, names.modelGuard, state.modelApplied);
+  letGoOfListings(ctx, new Set(applied.filter(([, s]) => isShared(s.applied!.pathway.split("@")[0])).map(([n]) => n)));
   // the licence lease (B13): each runtime is handed its shop's entry before it starts (client/licence.json; no lease kept, or no key pinned, means none is restricted)
-  syncLicence(ctx.dir, server, applied.map(([name]) => name), ctx.now()).forEach((l) => ctx.log(l));
+  syncLicence(ctx.dir, server, applied.map(([name]) => name), ctx.now(), state).forEach((l) => ctx.log(l));
   // B72: the shop terms the owner can agree to on WhatsApp. Handed to a runtime (client/terms.json) only when the server setting is on AND the Operator filled the shop's terms in;
   // otherwise any copy is taken away, so turning the setting off switches the feature off at the next deploy.
-  for (const [name] of applied) syncTerms(ctx.dir, server.panel.termsOnWhatsapp, name);
+  for (const [name] of applied) syncTerms(ctx.dir, server.panel.termsOnWhatsapp, name, state);
   // agents someone else wrote stay in the compose file whenever a shop is deployed (without this, `up --remove-orphans` would take their Guards away)
   const agents = agentFacts(ctx.dir, state);
   for (const a of Object.values(state.agents ?? {})) if (a.applied) for (const g of Object.values(a.applied.guards)) writeGuardFiles(ctx.dir, g.service, g);
@@ -503,7 +555,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   if (problems.length > 0) throw new Refused(problems);
 
   // 2. credentials, then compile and verify every Guard (the model Guard knows every shop's runtime, so it is verified again whenever a shop is added)
-  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)), peopleOf(p.guards), p.gupshupRenewed, hasWhatsAppGuard(p.guards.map((g) => g.plan)))]));
+  const creds = new Map(prepared.map((p) => [p.folder.name, ensureCredentials(ctx.dir, p.folder.name, server.panel.enabled, hasCalendar(p.guards.map((g) => g.plan)), hasRazorpay(p.guards.map((g) => g.plan)), peopleOf(p.guards), p.gupshupRenewed, hasWhatsAppGuard(p.guards.map((g) => g.plan)), isShared(p.folder.lock?.pathway))]));
   const licence = await guardLicenceOn(ctx, server);
   if (!licence.on) problems.push(licence.problem);
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }, licenceFor(server, licence.on, g.plan.kind, p.folder.name, ownNumbersOf(p.folder))));
@@ -516,7 +568,9 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   const prevModel = state.model;
   const modelVersion = prevModel?.contentHash === contentHash(modelPlan.spec) ? prevModel.version : (prevModel?.version ?? 0) + 1;
   const model: PreparedGuard = { plan: planModelGuard(server, modelVersion), version: modelVersion, contentHash: contentHash(modelPlan.spec) };
-  const modelAgents = everyShop.map((s) => ({ id: names.agentId(s), sha: sha(creds.get(s)?.agent.model ?? readSecretFile(secretFile(ctx.dir, names.runtime(s), "agent_model")) ?? "") }));
+  // each shop is an agent of the model Guard under its own id, listings-only shops too (their credential is in the shared folder): the model Guard knows each by its own id (the daily cap at the Guard is one number for the server; each shop's own allowance limits its use)
+  const sharedNow = (s: string): boolean => isShared(prepared.find((p) => p.folder.name === s)?.folder.lock?.pathway ?? state.shops[s]?.applied?.pathway.split("@")[0]);
+  const modelAgents = everyShop.map((s) => ({ id: names.agentId(s), sha: sha(creds.get(s)?.agent.model ?? readSecretFile(secretFile(ctx.dir, secretsHolderOf(s, sharedNow(s)), "agent_model")) ?? "") }));
   problems.push(...await compileAndVerify(ctx, server, undefined, model, { admin: sha(modelAdmin), agents: modelAgents }));
   if (problems.length > 0) throw new Refused(problems);
 
@@ -530,6 +584,15 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   const secretValues = prepared.flatMap((p) => { const c = creds.get(p.folder.name)!; return [...Object.values(c.agent), ...Object.values(c.admin), ...Object.values(c.panel ?? {}), ...["razorpay_authorization", "whatsapp_authorization"].map((f) => readSecretFile(secretFile(ctx.dir, `g-${p.folder.name}-${f.split("_")[0]}`, f)) ?? ""), readSecretFile(secretFile(ctx.dir, names.runtime(p.folder.name), "internal_token")) ?? "", readSecretFile(personKeyFile(ctx.dir, p.folder.name)) ?? "", readSecretFile(secretFile(ctx.dir, names.runtime(p.folder.name), RECORD_KEY_FILE)) ?? ""]; });
   const leaks = noSecretsIn(configs, secretValues.filter(Boolean));
   if (leaks.length > 0) throw new Refused(leaks);
+
+  // A listings-only shop whose pin now names a template with an agent first moves its folder out of the shared process into a runtime of its own (bundle/lib/listings-move.ts):
+  // let go, convert, copy, keep the old copy. Done before anything of the new shop is written, and a shop that cannot be let go stops the deploy with its reason.
+  const staysShared = new Set([...Object.entries(state.shops).filter(([, s]) => isShared(s.applied?.pathway.split("@")[0])).map(([n]) => n), ...prepared.filter((p) => isShared(p.folder.lock?.pathway)).map((p) => p.folder.name)]);
+  const movers = prepared.filter((p) => needsMove(state, p.folder.name, p.folder.lock?.pathway));
+  for (const p of movers) staysShared.delete(p.folder.name);
+  for (const p of movers) {
+    try { ctx.log(await moveOutOfShared(ctx, state, p.folder.name, p.folder.lock!.pathway, { keep: staysShared })); } catch (e) { throw new Refused([{ rule: "listings-move", message: (e as Error).message }]); }
+  }
 
   const at = ctx.now().toISOString();
   for (const p of prepared) {
