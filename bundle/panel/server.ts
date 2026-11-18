@@ -581,7 +581,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       // item 11i: the shop's assistant, for a template with the Character step: its name and the version of its drawn pictures
       ...(templates().find((t) => t.id === kindId)?.steps.includes("character") ? { character: (() => { const raw = rawSettings(shops, id); const a = raw?.assistant ? readAssistantSettings(raw.assistant, []) : undefined; const version = characterReader(characterDirOf(config.serverDir, id))()?.version; return { has: a !== undefined, shop: settings?.name ?? id, ...(a?.character.name ? { name: a.character.name } : {}), ...(version && a ? { version } : {}) }; })() } : {}),
       voiceLink: voiceLinkWord(c.lang),
-      papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings), month },
+      papers: { goLive: goLive.documents(id, "go-live"), monthly: goLive.documents(id, "monthly"), canMakeReport: Boolean(data && settings) && kindId !== "listings", month },
       isBuilder: r.account!.role === "builder",
       ...(r.account!.role === "builder" ? { details: { statusJson: read.ok ? JSON.stringify(read.status, null, 2) : "—", pins: JSON.stringify(shops.pins(id) ?? {}, null, 2), runtimeJson: JSON.stringify(counts ?? {}, null, 2) } } : {}),
       limitsText: !settings ? [] : own ? own.limitLines({} as unknown as Draft, settings, c.lang, settings) : Object.values(limitList(c, { form: { deposit: String(settings.deposit.amountInr) }, windowHours: String(settings.cancellation.windowHours) } as unknown as Draft, settings.deposit.holdMinutes)),

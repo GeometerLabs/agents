@@ -75,7 +75,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
     refundContext: () => null,
     // The owner's page only. There is no booking page, no order page and no chat: the public side is the storefront ("What we have"), which the core serves for every shop.
     channel: {
-      offer: async () => ({ kind: "listings", shop: { name: settings.name } }),
+      // what the storefront and the feed read of the shop (modules/channels/storefront.ts): its name, languages and place. Nothing about money, hours or a booking.
+      offer: async () => ({ kind: "listings", shop: { name: settings.name, timezone: settings.timezone, languages: settings.languages, address: `${settings.place.town}${settings.place.pincode ? ` ${settings.place.pincode}` : ""}`, paused: false } }),
       view: () => null,
       owner: (store) => {
         const app = ownerAppView({ skills: [shopSkill()], state: store.assistant, nowMs: clock.now(), timeZone: settings.timezone, settings: settings.assistant });

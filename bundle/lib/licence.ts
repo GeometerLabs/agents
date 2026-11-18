@@ -27,6 +27,7 @@ import type { ServerConfig } from "./server.ts";
 import { readStatus, updateStatus } from "./status.ts";
 import { sha256Hex, stableJson, writeAtomic } from "./util.ts";
 import { clientDir } from "./client-dir.ts";
+import type { State } from "./state.ts";
 
 // Where the licence files live on the server, in one place for the deployer and the status writer; `inbox` is the one folder ops may write, so nothing in it is trusted until checked.
 export const licencePaths = (dir: string) => {
@@ -34,7 +35,7 @@ export const licencePaths = (dir: string) => {
   return { root, lease: join(root, "lease"), seen: join(root, "seen.json"), extensions: join(root, "extensions"), inbox: join(serverPaths(dir).fleet, "lease") };
 };
 // The licence.json copy placed in a shop's generated client folder, so the shop's own agent can read its licence state without reaching the server's state folder.
-export const clientLicenceFile = (dir: string, shop: string): string => join(clientDir(dir, shop), "licence.json");
+export const clientLicenceFile = (dir: string, shop: string, state?: State): string => join(clientDir(dir, shop, state), "licence.json");
 
 interface Mark { serial: number; issued_at: number }
 export interface Seen { schema: 1; newest_issued_at: number; kept: Mark | null; inbox: string | null }
@@ -175,7 +176,7 @@ const sameLicence = (a: StatusLicence | undefined, b: StatusLicence): boolean =>
  * looked at yet; then hand each deployed shop its entry (client/licence.json, which its runtime reads by its modified time, so no restart) and write the state the panel
  * shows (status/<shop>.json `licence`). A shop is handed a file only once a key is pinned (or it already has one, which is then cleared). Returns lines for the log.
  */
-export function syncLicence(dir: string, server: ServerConfig, shops: readonly string[], now: Date): string[] {
+export function syncLicence(dir: string, server: ServerConfig, shops: readonly string[], now: Date, state?: State): string[] {
   const lines: string[] = [];
   const p = licencePaths(dir);
   let token = "";
@@ -189,7 +190,7 @@ export function syncLicence(dir: string, server: ServerConfig, shops: readonly s
   }
   const kept = keptLicence(dir, server);
   for (const shop of shops) {
-    const file = clientLicenceFile(dir, shop);
+    const file = clientLicenceFile(dir, shop, state);
     if (!existsSync(dirname(file)) || (!kept.pinned && !existsSync(file))) continue; // not deployed yet (the deploy writes it), or nothing to say
     const content = licenceFileFor(kept, shop, readShop(dir, shop).preparedBy);
     const text = stableJson(content);

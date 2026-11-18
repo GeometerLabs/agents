@@ -49,6 +49,8 @@ export interface AdminStatus {
 export interface RuntimeStatus {
   pathway?: string; version?: string;
   bookings?: Record<string, number>;
+  /** What a listings-only shop calls its cases (its listings, by state: draft, live, sold, removed). Counts only, carried in the same `runtime.bookings` map. */
+  listings?: Record<string, number>;
   /** What a Fees runtime calls its cases (its fees, by state). The fleet contract has one map for them, `runtime.bookings`: it carries whichever the runtime has. */
   fees?: Record<string, number>;
   /** An Orders runtime's cases (its orders, by state). */
@@ -177,7 +179,7 @@ export function buildHeartbeat(input: { deploymentId: string; bundleVersion: str
     const delta = since(s, input.baseline[shop.id]);
     if (s && typeof s.startedAt === "string") next[shop.id] = { startedAt: s.startedAt, steps: count(s.steps), errors: count(s.errors) };
     const lastStep = s?.lastStepAt ? Math.max(0, Math.floor((input.now.getTime() - Date.parse(s.lastStepAt)) / 1000)) : null;
-    const bookings = Object.fromEntries(Object.entries(known?.bookings ?? known?.fees ?? known?.orders ?? {}).filter(([k]) => STATE_NAME.test(k)).slice(0, 16).map(([k, v]) => [k, count(v)]));
+    const bookings = Object.fromEntries(Object.entries(known?.bookings ?? known?.fees ?? known?.orders ?? known?.listings ?? {}).filter(([k]) => STATE_NAME.test(k)).slice(0, 16).map(([k, v]) => [k, count(v)]));
     const snapshotAge = ageSeconds(input.now, shop.backups?.lastCopyAt);
     const drillAge = ageSeconds(input.now, shop.backups?.lastDrillAt);
     const drillOk = shop.backups?.drillOk;

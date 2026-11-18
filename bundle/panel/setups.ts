@@ -39,7 +39,7 @@ export const REPORTS: Record<string, ReportKind> = {
   fees: { readGoLive: feesGoLive, write: ({ data, ...run }) => writeFeesReport({ ...run, entries: data.entries, dues: data.dues ?? [] }) },
   // Stock orders: a report from the export's purchase orders (Exported.stock), written by its own report (templates/commerce/stock-orders/report/run.ts)
   "stock-orders": { readGoLive: stockGoLive, write: ({ data, ...run }) => writeStockReport({ ...run, entries: data.entries, orders: (data.stock ?? []) as never }) },
-  // a listings-only shop has no monthly report (nothing counts: no bookings, orders or fees); the panel offers none for it (views.ts, `canMakeReport`)
+  // a listings-only shop has no monthly report (nothing counts: no bookings, orders or fees); the panel offers none for it (server.ts sets `canMakeReport` false for kind listings, so neither the report nor the papers links are drawn)
   listings: { readGoLive: () => { throw new Error("A listings-only shop has no go-live certificate."); }, write: () => { throw new Error("A listings-only shop has no monthly report."); } },
   orders: { readGoLive: ordersGoLive, write: ({ data, ...run }) => writeOrdersReport({ ...run, entries: data.entries, orders: data.orders ?? [] }) },
 };

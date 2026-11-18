@@ -191,7 +191,7 @@ function ensureCredentials(dir: string, shop: string, panelOn: boolean, calendar
 /**
  * A listings-only shop's credentials (18 Nov 2026): no Guard, so no Guard credential and no admin token. It has what any shop's runtime has (the internal token, the channel token the
  * front presents, the record's key) in a folder of its own under secrets/rt-listings/<shop>/, which the shared process mounts whole (read-only; each shop's start is handed only that
- * shop's files), and one credential for the model Guard, under the shop's own agent id, so the model Guard counts and limits this shop on its own. The inbox still wants the secrets
+ * shop's files), and one credential for the model Guard, under the shop's own agent id, so the model Guard knows this shop (its record, its own switch); the shop's use is limited by its runtime allowance. The inbox still wants the secrets
  * it asks of every shop (a webhook secret, a WhatsApp app secret and verify token): made here and given to nobody, as a shop with no WhatsApp has them, so nothing can reach it.
  */
 function ensureSharedCredentials(dir: string, shop: string, panelOn: boolean): Credentials {
@@ -268,6 +268,12 @@ export async function prepareShop(ctx: Context, server: ServerConfig, state: Sta
   // A listings-only shop hands in no key at all (no payments, no WhatsApp, no calendar). It runs on the shared process, which runs THIS checkout's version of the template: a shop
   // pinned to another version would not start there (the runtime refuses a version it is not pinned to), so it is refused here, in words, before anything is written.
   if (shared && pathwayDir && !resolve(pathwayDir).startsWith(`${resolve(ctx.appDir)}${sep}`)) problems.push({ rule: "shared-version", message: `${name} is pinned to ${folder.lock!.pathway}@${folder.lock!.version}, but listings-only shops all run on this server's one shared process, which runs the current checkout's version of the template. Move the pin to the current version (it has no money or messages to hold back).` });
+  // A shop removed from the server leaves its folder in the shared volume (no code deletes an owner's file), and a new shop of the same name would start on that store and accept the
+  // old owner's passkey. So a NEW listings-only shop is refused when the shared volume already holds a folder of its name. (A server whose shared container is not up has none.)
+  if (shared && !state.shops[name]?.applied) {
+    const there = await compose(ctx, ["exec", "-T", SHARED.runtime, "test", "-e", `${HOME_DIR}/${name}`], { timeoutMs: 20_000 });
+    if (there.code === 0) problems.push({ rule: "shared-name-taken", message: `${name}: the shared volume of listings-only shops already holds a folder called ${name} (a shop of that name was here, and its file was kept). A new shop would start on the old shop's file and its owner's passkey. Choose another name, or have the old folder moved aside by hand first.` });
+  }
   if (!shared) problems.push(...missingSecrets(ctx.dir, name, webhooks, calendar, razorpay, gupshup, gupshupRenewed, selfServe, runtimeHasWhatsApp(folder.runtime)));
   // The key handed in must be the account the connection check confirmed: a different account is an error, never a silent switch. The gateway, its credential file and
   // its key's shape are its folder's (B71); a pin for another gateway than the one the shop chose is not this shop's.
@@ -432,10 +438,10 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   if (state.modelApplied) writeGuardFiles(ctx.dir, names.modelGuard, state.modelApplied);
   letGoOfListings(ctx, new Set(applied.filter(([, s]) => isShared(s.applied!.pathway.split("@")[0])).map(([n]) => n)));
   // the licence lease (B13): each runtime is handed its shop's entry before it starts (client/licence.json; no lease kept, or no key pinned, means none is restricted)
-  syncLicence(ctx.dir, server, applied.map(([name]) => name), ctx.now()).forEach((l) => ctx.log(l));
+  syncLicence(ctx.dir, server, applied.map(([name]) => name), ctx.now(), state).forEach((l) => ctx.log(l));
   // B72: the shop terms the owner can agree to on WhatsApp. Handed to a runtime (client/terms.json) only when the server setting is on AND the Operator filled the shop's terms in;
   // otherwise any copy is taken away, so turning the setting off switches the feature off at the next deploy.
-  for (const [name] of applied) syncTerms(ctx.dir, server.panel.termsOnWhatsapp, name);
+  for (const [name] of applied) syncTerms(ctx.dir, server.panel.termsOnWhatsapp, name, state);
   // agents someone else wrote stay in the compose file whenever a shop is deployed (without this, `up --remove-orphans` would take their Guards away)
   const agents = agentFacts(ctx.dir, state);
   for (const a of Object.values(state.agents ?? {})) if (a.applied) for (const g of Object.values(a.applied.guards)) writeGuardFiles(ctx.dir, g.service, g);
@@ -555,7 +561,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   const prevModel = state.model;
   const modelVersion = prevModel?.contentHash === contentHash(modelPlan.spec) ? prevModel.version : (prevModel?.version ?? 0) + 1;
   const model: PreparedGuard = { plan: planModelGuard(server, modelVersion), version: modelVersion, contentHash: contentHash(modelPlan.spec) };
-  // each shop is an agent of the model Guard under its own id, listings-only shops too (their credential is in the shared folder): the model Guard counts and limits each on its own
+  // each shop is an agent of the model Guard under its own id, listings-only shops too (their credential is in the shared folder): the model Guard knows each by its own id (the daily cap at the Guard is one number for the server; each shop's own allowance limits its use)
   const sharedNow = (s: string): boolean => isShared(prepared.find((p) => p.folder.name === s)?.folder.lock?.pathway ?? state.shops[s]?.applied?.pathway.split("@")[0]);
   const modelAgents = everyShop.map((s) => ({ id: names.agentId(s), sha: sha(creds.get(s)?.agent.model ?? readSecretFile(secretFile(ctx.dir, secretsHolderOf(s, sharedNow(s)), "agent_model")) ?? "") }));
   problems.push(...await compileAndVerify(ctx, server, undefined, model, { admin: sha(modelAdmin), agents: modelAgents }));

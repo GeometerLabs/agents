@@ -94,6 +94,8 @@ const HOP = new Set(["connection", "keep-alive", "proxy-authenticate", "proxy-au
 export async function startShared(o: SharedOptions): Promise<SharedProcess> {
   const log = o.log ?? (() => undefined);
   const heldShops = new Map<string, { fingerprint: string; shop: HeldShop }>();
+  /** Shops that are stopping: no longer served, but their store is open until `stop()` finishes, so they are still NAMED by /shared/shops (a deployer must not copy a file that is open). */
+  const closing = new Set<string>();
   /** A shop that failed, with the fingerprint it failed at: not tried again until its files change, and said once. */
   const failedAt = new Map<string, string>();
   let queue: Promise<unknown> = Promise.resolve();
@@ -102,7 +104,8 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
     const h = heldShops.get(name);
     if (!h) return;
     heldShops.delete(name); // first: a request that arrives while the shop is stopping gets "nothing here", never a half-closed shop
-    try { await h.shop.stop(); } catch (e) { log(`${name}: it did not stop cleanly (${(e as Error).message}).`); }
+    closing.add(name);
+    try { await h.shop.stop(); } catch (e) { log(`${name}: it did not stop cleanly (${(e as Error).message}).`); } finally { closing.delete(name); }
     log(`${name}: let go (${why}).`);
   }
 
@@ -160,7 +163,7 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
   const server: Server = createServer((req, res) => {
     const url = new URL(req.url ?? "/", "http://shared");
     if (url.pathname === "/healthz" || url.pathname === "/readyz") return json(res, 200, { ok: true, shops: heldShops.size });
-    if (url.pathname === "/shared/shops" && req.method === "GET") return json(res, 200, { shops: [...heldShops.keys()].sort() });
+    if (url.pathname === "/shared/shops" && req.method === "GET") return json(res, 200, { shops: [...new Set([...heldShops.keys(), ...closing])].sort() });
     const m = SHOP_ROUTE.exec(url.pathname);
     if (m) return forward(req, res, m[1], m[2] ?? "/", url.search);
     json(res, 404, { error: "There is nothing here." });
@@ -178,7 +181,7 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
 
   return {
     port, url: `http://${(o.host ?? "127.0.0.1").includes(":") ? `[${o.host}]` : (o.host ?? "127.0.0.1")}:${port}`,
-    scan, held: () => [...heldShops.keys()].sort(),
+    scan, held: () => [...new Set([...heldShops.keys(), ...closing])].sort(),
     async stop() {
       clearInterval(timer);
       await queue.catch(() => undefined);
