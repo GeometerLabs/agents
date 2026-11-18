@@ -63,7 +63,7 @@ shop through its MCP endpoint or its JSON API, which the card names. This is in 
 | Content | Value |
 |---|---|
 | Name and description | "Directory of local shops" and the towns it covers. |
-| Skills | `search_listings` (words, category, place, distance; results in the fair order), `get_listing`, `shop_page`. See [directory.md](directory.md). |
+| Skills | `search_listings` (words, category, place, distance; results in the fair order), `get_listing`, `shop_page`, and `ask` (the buyer's own words in; a typed search, the results and a short line out) only where the directory's buyer assistant is on. See [directory.md](directory.md). |
 | Interfaces | The directory's MCP endpoint (`/mcp`, binding `MCP`) and its JSON search API (`/search`, binding `HTTPS-JSON`). |
 | Provider | Whoever runs the directory (its organisation name and address). |
 | Signature | Signed with the directory's own key, kept in the directory's data folder (a directory that loses the file makes a new key; the card then has a new `kid`). |
