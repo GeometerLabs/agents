@@ -12,7 +12,7 @@
 // record (which is what lets the panel anchor a paper made from the export). The daily fingerprint (backup/fingerprints.ts) and the restore drill read it.
 //
 //   node bundle/backup/export.ts /job/job.json
-import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { mkdirSync } from "node:fs";
@@ -121,6 +121,25 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
     const tmp = join(shop.out, `.${file}.tmp`);
     writeFileSync(tmp, JSON.stringify(value), { mode: 0o644 });
     renameSync(tmp, join(shop.out, file));
+  }
+  // Block S: the shop's listings (the owner's whole copy: drafts and hidden ones too, never a removed one's words) and their photos, read from the same consistent database. Only a
+  // shop that has listings gets the files, so every other shop's export is as it was.
+  const holder = (state ? (JSON.parse(state.snapshot) as { assistant?: { listings?: { items?: { state?: string }[] } } }).assistant?.listings : undefined);
+  if (holder && (holder.items?.length ?? 0) > 0) {
+    const kept = { ...holder, items: (holder.items ?? []).filter((l) => l.state !== "removed") };
+    const tmp = join(shop.out, ".listings.json.tmp");
+    writeFileSync(tmp, JSON.stringify(kept), { mode: 0o644 });
+    renameSync(tmp, join(shop.out, "listings.json"));
+    const dir = join(shop.out, "listing-photos");
+    rmSync(dir, { recursive: true, force: true }); // a photo that left the shop's listings does not stay in the export
+    mkdirSync(dir, { recursive: true });
+    const pdb = new DatabaseSync(shop.db, { readOnly: true });
+    try {
+      const wanted = new Set((kept.items as { photos?: { id: string }[] }[]).flatMap((l) => (l.photos ?? []).map((p) => p.id)));
+      for (const r of pdb.prepare("SELECT id, type, bytes FROM listing_photos").all() as { id: string; type: string; bytes: Uint8Array }[]) {
+        if (wanted.has(r.id) && /^ph-[0-9a-f]{12}$/u.test(r.id)) writeFileSync(join(dir, `${r.id}.${r.type === "image/webp" ? "webp" : "jpg"}`), r.bytes, { mode: 0o644 });
+      }
+    } catch { /* a runtime older than the photo table has none to export */ } finally { pdb.close(); }
   }
   let open: Record<string, number> | undefined;
   try { open = countsByKind(obligations.detect({ template: isStock ? "stock-orders" : isOrders ? "orders" : isFees ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }

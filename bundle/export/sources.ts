@@ -1,6 +1,6 @@
 // Where the export reads from on a server: the shop's folder, the deployer's export of its record, its status, and (when the panel is there to give them) the papers
 // the panel made and its memory of the shop's accounts. Plain files only; nothing here starts a process or calls a service.
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { gatewaySpec } from "../generate/guards.ts";
 import { kindFor } from "../lib/kinds.ts";
@@ -27,6 +27,8 @@ export function sourcesFor(serverDir: string, shop: string, panel?: PanelParts):
   return {
     shopFile: (name) => readText(join(p.shop(shop), name)),
     exportFile: (name) => readText(join(exports, name)),
+    // block S: the photos of the shop's listings, as the deployer's export wrote them (exports/<shop>/listing-photos/<id>.<ext>)
+    listingPhotos: () => { try { return readdirSync(join(exports, "listing-photos")).filter((n) => /^ph-[0-9a-f]{12}\.(jpg|webp)$/u.test(n)).map((n) => ({ name: n, bytes: readFileSync(join(exports, "listing-photos", n)) })); } catch { return []; } },
     exportedAt: () => { const f = join(exports, "record.json"); return existsSync(f) ? new Date(statSync(f).mtimeMs).toISOString() : undefined; },
     statusText: () => readText(p.statusFile(shop)),
     limitsSpec: (settings, template) => {

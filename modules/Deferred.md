@@ -362,3 +362,18 @@ The design and what was weighed are in [Explanation.md](Explanation.md#shop-memo
 | **A creation time, and a cancel reason, on the record** (17 Nov 2026): Orders and Bookings keep neither, so `order.created_at` and the cancellation reason are gaps. | A change to what the templates store, not a view. | A `createdMs` and a `cancel` on the order and the booking. |
 | **ONDC and Fees** (17 Nov 2026): Fees (a tuition centre's monthly fees) has no ONDC domain and no mapping. | ONDC's retail and services domains do not cover recurring education fees. | An education or fees domain in the network's contracts. |
 | **The mapping has not met a real network participant** (17 Nov 2026). The Store-Service shape, the `advance_split` tag and the delivery categories are our reading of the contracts. | No adapter, no pre-prod account. | The adapter's first run against ONDC's pre-prod. |
+
+
+## Listings (18 Nov 2026, block S phase A)
+
+| What | Why not now | Done when |
+|---|---|---|
+| The shop's signing key, `signature` in the feed, `shop.check`, the Agent Card and the "feed changed" notice (specs/shop-feed.md, shop-check.md, agent-card.md) | Owner asked for them as a later part on top of the feed | A shop's feed carries a verifiable signature and a directory can ask a check |
+| ONDC/Beckn mapping of listings | Owner approved a pure mapping of records only (17 Nov); not part of phase A | `modules/ondc` maps a listing with a test |
+| A vision model reading the photo | Costs more; the first version reads the owner's words | The owner agrees the cost and a model is chosen |
+| **The protected-animal list from a primary source** (starting list: native parrots and parakeets, munias, mynas, native owls, Indian star tortoise and native turtles, monkeys) | Written from general knowledge, not from the Wildlife (Protection) Act schedules | Someone reads the Act's schedules and the Pet Shop Rules 2018 and corrects `PROTECTED_ANIMALS` in `listings/listings.ts` BEFORE a real pet shop uses the pets category |
+| Number words above ten in Hindi, Malayalam and Kannada in the draft's number check | Digits and 1 to 10, 20, 100, dozen are checked; longer words would need a fuller table | A table of number words per language |
+| A WhatsApp tap on the morning question is recorded as coming from the app | The skill's `execute` does not know the door | `execute` is told the door |
+| Listing ids after a restore from a snapshot (the store's counter skip does not move `assistant.listings.seq`) | The assistant's counters are not in the template codecs' `count` fields (same gap as the memory's) | The skip moves optional-object counters too |
+| Photos kept as rows in the shop's SQLite file | Simple and backed up; a shop with 50 listings holds at most about 225 MB | A shop outgrows it: move them to files with their own backup object |
+| Phase B (directory and search), phase C (listings-only shops) | Next phases of the plan | Per the plan |

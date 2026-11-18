@@ -1492,6 +1492,106 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.owner.back` | നിങ്ങളുടെ കടയിലേക്ക് മടങ്ങുക | Back to your shop |  |
 | `limits.owner.never` | ഒരിക്കലും ഇല്ല | never |  |
 | `limits.owner.yourShop` | നിങ്ങളുടെ കട | Your shop |  |
+| `listings.category.pets` | വളർത്തുമൃഗങ്ങൾ | Pets |  |
+| `listings.category.food` | ഭക്ഷണം | Food |  |
+| `listings.category.clothes` | വസ്ത്രങ്ങൾ | Clothes |  |
+| `listings.category.home` | വീട്ടുസാധനങ്ങൾ | Home |  |
+| `listings.category.electronics` | ഇലക്ട്രോണിക്സ് | Electronics |  |
+| `listings.category.vehicles` | വാഹനങ്ങളും സൈക്കിളുകളും | Vehicles and cycles |  |
+| `listings.category.services` | സേവനങ്ങൾ | Services |  |
+| `listings.category.other` | മറ്റുള്ളവ | Other |  |
+| `listings.heading` | ഞങ്ങളുടെ പക്കലുള്ളത് | What we have |  |
+| `listings.pageTitle` | Persian kitten: ഞങ്ങളുടെ പക്കലുള്ളത് | Persian kitten: what we have |  |
+| `listings.askAbout` | ഇതിനെക്കുറിച്ച് ചോദിക്കുക | Ask about this |  |
+| `listings.askShop` | കടയോട് ചോദിക്കുക | Ask the shop |  |
+| `listings.confirmedToday` | ഇന്ന് ഉറപ്പാക്കി | Confirmed today |  |
+| `listings.confirmedAgo` | 2 ദിവസം മുമ്പ് ഉറപ്പാക്കി | Confirmed 2 days ago |  |
+| `listings.callToCheck` | ചോദിക്കാൻ വിളിക്കുക | Call to check |  |
+| `listings.empty` | ഇപ്പോൾ ഒന്നും പട്ടികയിൽ ഇല്ല. എന്തുണ്ടെന്ന് കടയോട് ചോദിക്കുക. | Nothing is listed right now. Ask the shop what is in. |  |
+| `listings.machine` | ഇവിടെ ചില വാക്കുകൾ ഉടമയുടെ സ്വന്തം വാക്കുകളിൽ നിന്ന് യന്ത്രം എഴുതിയതാണ്. | Some words here were written by a machine from the owner's own words. |  |
+| `listings.registration` | രജിസ്ട്രേഷൻ (ഉടമ പറയുന്നത്): Persian kitten | Registration (the owner says): Persian kitten |  |
+| `listings.ownerSays` | ഉടമ പറയുന്നു: Persian kitten | The owner says: Persian kitten |  |
+| `listings.quantity` | 2 ലഭ്യമാണ് | 2 available |  |
+| `listings.photoOf` | ഫോട്ടോ: Persian kitten | Photo: Persian kitten |  |
+| `listings.seeAll` | ഞങ്ങളുടെ പക്കലുള്ളത് കാണുക | See what we have |  |
+| `listings.chatGreeting` | നിങ്ങൾ ചോദിച്ചത്: Persian kitten. എന്താണ് അറിയേണ്ടത്? | You asked about: Persian kitten. What would you like to know? |  |
+| `listings.guestAsked` | ചോദിച്ചത്: Persian kitten | Asked about: Persian kitten |  |
+| `listings.card` | ഇത് നിങ്ങളുടെ പേജിൽ കാണിക്കട്ടെ? Persian kitten. വില: ₹8,000 each. വിഭാഗം: വളർത്തുമൃഗങ്ങൾ. | Show this on your page? Persian kitten. Price: ₹8,000 each. Category: Pets. |  |
+| `listings.show` | കാണിക്കുക | Show it |  |
+| `listings.change` | മാറ്റുക | Change |  |
+| `listings.no` | വേണ്ട | No |  |
+| `listings.still` | Persian kitten ഇപ്പോഴും ഉണ്ടോ? | Still have Persian kitten? |  |
+| `listings.yes` | ഉണ്ട് | Yes |  |
+| `listings.sold` | വിറ്റു | Sold |  |
+| `listings.published` | ചെയ്തു: Persian kitten ഇപ്പോൾ നിങ്ങളുടെ പേജിൽ ഉണ്ട്. ഇത് ഇപ്പോഴും ഉണ്ടെന്ന് ആളുകൾ അറിയാൻ ഓരോ ദിവസം കഴിഞ്ഞും ഒരു ടാപ്പിലൂടെ ഉറപ്പാക്കുക. | Done: Persian kitten is on your page now. Confirm it every few days with one tap, so people know it is still there. |  |
+| `listings.dropped` | ശരി, ഞാൻ ഇത് കാണിക്കില്ല. | Alright, I will not show it. |  |
+| `listings.confirmed` | നന്ദി, Persian kitten നിങ്ങളുടെ പേജിൽ തുടരും. | Thanks, Persian kitten stays on your page. |  |
+| `listings.markedSold` | Persian kitten വിറ്റതായി അടയാളപ്പെടുത്തി, നിങ്ങളുടെ പേജിൽ നിന്ന് മാറ്റി. | Persian kitten is marked sold and is off your page. |  |
+| `listings.needModel` | എന്റെ അസിസ്റ്റന്റ് ഓണായിരിക്കുമ്പോൾ മാത്രമേ നിങ്ങളുടെ വാക്കുകളിൽ നിന്ന് ലിസ്റ്റിംഗ് എഴുതാൻ കഴിയൂ. നിങ്ങളുടെ ആപ്പിലെ എന്റെ പേജിൽ ചേർക്കുക ഫോം ഉപയോഗിക്കുക: ഫോട്ടോ, പേര്, വില. | I can only write a listing from your words when my assistant is on. Use the Add to my page form in your app: a photo, a title and a price. |  |
+| `listings.needPhoto` | ആദ്യം നിങ്ങളുടെ ആപ്പിൽ ഒരു ഫോട്ടോ ചേർക്കുക, എന്നിട്ട് ഇത് എന്താണെന്നും വിലയും പറയുക. | Add a photo first in your app, then tell me what it is and the price. |  |
+| `listings.owner.title` | നിങ്ങളുടെ പേജ്: നിങ്ങളുടെ പക്കലുള്ളത് | Your page: what you have |  |
+| `listings.owner.intro` | നിങ്ങളുടെ പക്കലുള്ളത് ചേർക്കുക, അസിസ്റ്റന്റ് അത് നാല് ഭാഷകളിൽ എഴുതും. കാണിക്കുക എന്ന് ടാപ്പ് ചെയ്താൽ മാത്രമേ അത് കാണൂ. | Add what you have and the assistant writes it in four languages. It shows only after you tap Show it. |  |
+| `listings.owner.switchLabel` | എന്റെ കട Streetlist-ലും സെർച്ചിലും കാണിക്കുക | Show my shop on Streetlist and in search |  |
+| `listings.owner.switchNote` | ആദ്യം ഓഫ് ആണ്. ഓൺ ആക്കിയാൽ നിങ്ങളുടെ ഞങ്ങളുടെ പക്കലുള്ളത് പേജ് സെർച്ച് എൻജിനുകൾക്കും Streetlist-നും കണ്ടെത്താം, അതിന്റെ തുറന്ന ഫയൽ ലഭ്യമാകും. എപ്പോൾ വേണമെങ്കിലും ഓഫ് ആക്കാം. | Off by default. When on, your what-we-have page can be found by search engines and Streetlist, and its open file is served. Turn it off at any time. |  |
+| `listings.owner.switchOn` | ഓൺ | On |  |
+| `listings.owner.switchOff` | ഓഫ് | Off |  |
+| `listings.owner.save` | സേവ് ചെയ്യുക | Save |  |
+| `listings.owner.saved` | സേവ് ചെയ്തു. | Saved. |  |
+| `listings.owner.placeHeading` | നിങ്ങൾ എവിടെയാണ് | Where you are |  |
+| `listings.owner.town` | പട്ടണം | Town |  |
+| `listings.owner.pincode` | പിൻകോഡ് | Pincode |  |
+| `listings.owner.lat` | മാപ്പ് പോയിന്റ്: അക്ഷാംശം | Map point: latitude |  |
+| `listings.owner.lon` | മാപ്പ് പോയിന്റ്: രേഖാംശം | Map point: longitude |  |
+| `listings.owner.registration` | പെറ്റ് ഷോപ്പ് രജിസ്ട്രേഷൻ (നിങ്ങളുടെ സ്വന്തം വാക്കുകൾ) | Pet shop registration (your own words) |  |
+| `listings.owner.registrationNote` | ഇങ്ങനെ കാണിക്കും: രജിസ്ട്രേഷൻ (ഉടമ പറയുന്നത്). ഞങ്ങൾ ഇത് പരിശോധിക്കുന്നില്ല. | Shown as: Registration (the owner says). It is not checked by us. |  |
+| `listings.owner.formHeading` | എന്റെ പേജിൽ ചേർക്കുക | Add to my page |  |
+| `listings.owner.formNote` | ഒരു ഫോട്ടോ, ഒരു പേര്, ഒരു വില. വാക്കുകൾ നിങ്ങളുടെ ഭാഷയിൽ മാത്രം സേവ് ചെയ്യും. | A photo, a title, a price. The words are saved in your language only. |  |
+| `listings.owner.formPhoto` | ഫോട്ടോ | Photo |  |
+| `listings.owner.formTitle` | ഇത് എന്താണ് | What is it |  |
+| `listings.owner.formPrice` | രൂപയിൽ വില (കടയോട് ചോദിക്കുക എന്നതിന് ഒഴിച്ചിടുക) | Price in rupees (leave empty for Ask the shop) |  |
+| `listings.owner.formPriceNote` | ഒന്നിന്, കിലോയ്ക്ക്... | per piece, per kg... |  |
+| `listings.owner.formCategory` | വിഭാഗം | Category |  |
+| `listings.owner.formSubmit` | എന്റെ പേജിൽ കാണിക്കുക | Show it on my page |  |
+| `listings.owner.uploadHeading` | ഫോട്ടോകൾ | Photos |  |
+| `listings.owner.uploadButton` | ഫോട്ടോ ചേർക്കുക | Add a photo |  |
+| `listings.owner.uploaded` | 2 ഫോട്ടോ തയ്യാർ. ഇനി ഇത് എന്താണെന്ന് അസിസ്റ്റന്റിനോട് പറയുക. | 2 photos ready. Now tell the assistant what it is. |  |
+| `listings.owner.listHeading` | നിങ്ങളുടെ പേജിൽ | On your page |  |
+| `listings.owner.none` | ഇതുവരെ ഒന്നുമില്ല. | Nothing yet. |  |
+| `listings.owner.live` | കാണിക്കുന്നു | Showing |  |
+| `listings.owner.draft` | നിങ്ങളുടെ ടാപ്പിനായി കാത്തിരിക്കുന്നു | Waiting for your tap |  |
+| `listings.owner.hidden` | മറച്ചിരിക്കുന്നു: 30 ദിവസമായി ഉറപ്പാക്കിയിട്ടില്ല | Hidden: not confirmed for 30 days |  |
+| `listings.owner.remove` | മാറ്റുക | Take it off |  |
+| `listings.owner.confirmAgain` | വീണ്ടും കാണിക്കാൻ ഉറപ്പാക്കുക | Confirm to show again |  |
+| `listings.owner.markSold` | വിറ്റു | Sold |  |
+| `listings.owner.edit` | മാറ്റുക | Change |  |
+| `listings.owner.link` | നിങ്ങളുടെ പേജിൽ ഉള്ളത് | What you have on your page |  |
+| `listings.owner.back` | നിങ്ങളുടെ കടയിലേക്ക് മടങ്ങുക | Back to your shop |  |
+| `listings.refusal.protectedNote` | സംരക്ഷിത നാടൻ ജീവികളെ വിൽക്കാൻ പാടില്ല, അതിനാൽ അത് ചേർത്തില്ല. | Protected native animals may not be sold, so that was not added. |  |
+| `listings.refusal.protected` | എനിക്ക് ഇത് പട്ടികപ്പെടുത്താൻ കഴിയില്ല: monkeys സംരക്ഷിത ജീവികളാണ്, അവയെ വിൽക്കാൻ പാടില്ല. ദയവായി അവ നിങ്ങളുടെ പേജിൽ ഇടരുത്. | I cannot list that: monkeys are protected animals and may not be sold. Please do not put them on your page. |  |
+| `listings.refusal.health` | നിങ്ങൾ തന്നെ പറഞ്ഞിട്ടില്ലെങ്കിൽ ഒരു മൃഗം ആരോഗ്യമുള്ളതാണെന്നോ വാക്സിൻ എടുത്തതാണെന്നോ ശുദ്ധ ജാതിയാണെന്നോ എനിക്ക് എഴുതാൻ കഴിയില്ല. സത്യമാണെങ്കിൽ നിങ്ങളുടെ സ്വന്തം വാക്കുകളിൽ പറയുക. | I cannot write that an animal is healthy, vaccinated or of a pure breed unless you said so yourself. Tell me in your own words if it is true. |  |
+| `listings.refusal.priceNotInWords` | ഞാൻ എഴുതുമായിരുന്ന വില നിങ്ങൾ പറഞ്ഞതല്ല, അതിനാൽ ലിസ്റ്റിംഗ് ഉണ്ടാക്കിയില്ല. വില ഒന്നുകൂടി പറയുക. | The price I would write is not the one you said, so I did not make the listing. Tell me the price again. |  |
+| `listings.refusal.full` | നിങ്ങൾ ഇതിനകം 50 കാര്യങ്ങൾ കാണിക്കുന്നു. ആദ്യം ഒന്ന് മാറ്റുക. | You already show 50 things. Take one off first. |  |
+| `listings.refusal.tooManyDrafts` | നിങ്ങളുടെ ടാപ്പിനായി ഇതിനകം ലിസ്റ്റിംഗുകൾ കാത്തിരിക്കുന്നു. ആദ്യം അവയ്ക്ക് മറുപടി നൽകുക. | There are already listings waiting for your tap. Answer those first. |  |
+| `listings.refusal.tooLong` | ഇത് വളരെ നീണ്ടതാണ്. ദയവായി ചുരുക്കി പറയുക. | That is too long. Please say it shorter. |  |
+| `listings.refusal.badPrice` | ആ വില ശരിയല്ല. രൂപയുടെ ഒരു പൂർണ്ണസംഖ്യ ഉപയോഗിക്കുക. | That price is not valid. Use a whole number of rupees. |  |
+| `listings.refusal.badQty` | ആ സംഖ്യ ശരിയല്ല. | That number is not valid. |  |
+| `listings.refusal.claims` | നിങ്ങൾ പറയാത്ത വാഗ്ദാനങ്ങളോ ഇളവുകളോ ഉറപ്പുകളോ എനിക്ക് എഴുതാൻ കഴിയില്ല. ഉദ്ദേശിക്കുന്നെങ്കിൽ നിങ്ങൾ തന്നെ പറയുക. | I cannot write promises, discounts or guarantees you did not say. Say them yourself if you mean them. |  |
+| `listings.refusal.modelFailed` | ഇപ്പോൾ അത് എഴുതാൻ കഴിഞ്ഞില്ല. നിങ്ങളുടെ ആപ്പിലെ എന്റെ പേജിൽ ചേർക്കുക ഫോം ഉപയോഗിക്കുക. | I could not write that just now. Use the Add to my page form in your app. |  |
+| `listings.refusal.badCategory` | ആ വിഭാഗം എനിക്ക് അറിയില്ല. | That category is not one I know. |  |
+| `listings.refusal.empty` | ആദ്യം ഇത് എന്താണെന്ന് പറയുക. | Tell me what it is first. |  |
+| `listings.refusal.badPlace` | ആ സ്ഥലം ശരിയല്ല. | That place is not valid. |  |
+| `listings.refusal.tooManyPhotos` | ഒരു ലിസ്റ്റിംഗിൽ 3 ഫോട്ടോ വരെ ആകാം. | A listing has up to 3 photos. |  |
+| `listings.refusal.unknown` | എന്റെ പക്കൽ ആ ലിസ്റ്റിംഗ് ഇല്ല. | I do not have that listing. |  |
+| `listings.refusal.gone` | ആ ലിസ്റ്റിംഗ് ഇപ്പോൾ നിങ്ങളുടെ പേജിൽ ഇല്ല. | That listing is not on your page now. |  |
+| `listings.refusal.photo.empty` | ആ ഫയൽ ശൂന്യമാണ്. | That file is empty. |  |
+| `listings.refusal.photo.too_big` | ആ ഫോട്ടോ വളരെ വലുതാണ്. ചെറുത് ശ്രമിക്കുക. | That photo is too big. Try a smaller one. |  |
+| `listings.refusal.photo.not_a_photo` | അത് JPEG അല്ലെങ്കിൽ WebP ഫോട്ടോ അല്ല. | That is not a JPEG or WebP photo. |  |
+| `listings.refusal.photo.unreadable` | എനിക്ക് ആ ഫോട്ടോ വായിക്കാൻ കഴിഞ്ഞില്ല. | I could not read that photo. |  |
+| `listings.refusal.photo.too_large_sides` | ആ ഫോട്ടോയുടെ വലിപ്പം വളരെ കൂടുതലാണ്. | That photo is too large in size. |  |
+| `listings.refusal.photo.animated` | ചലിക്കുന്ന ചിത്രമല്ല, സ്ഥിര ഫോട്ടോ ഉപയോഗിക്കുക. | Use a still photo, not an animation. |  |
+| `listings.refusal.photo.day` | ഇന്നത്തേക്ക് ഇത്രയും ഫോട്ടോ മതി. നാളെ ശ്രമിക്കുക. | That is enough photos for today. Try tomorrow. |  |
+| `listings.priceAsk` | കടയോട് ചോദിക്കുക | Ask the shop |  |
+| `listings.priceSet` | ₹8,000 each | ₹8,000 each |  |
 | `owner.money.cashPartLabel` | ഒരു ഭാഗം മാത്രമാണോ കിട്ടിയത്? എത്ര (₹) | Received only part? How much (₹) |  |
 | `owner.money.cashPartButton` | ഈ ഭാഗം പണമായി കിട്ടിയെന്ന് രേഖപ്പെടുത്തുക | Mark this part received in cash |  |
 | `chat.title` | ചാറ്റ് | Chat |  |

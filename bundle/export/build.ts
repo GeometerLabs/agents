@@ -41,6 +41,8 @@ export const EXPORT_FORMAT = "geometer-shop-export/1";
 export interface ExportSources {
   /** shops/<shop>/<name>: settings.json, pathway.lock, runtime.json, assignment.json, settings-history.jsonl, status via `status`. */
   shopFile(name: string): string | undefined;
+  /** Block S: the photos of the shop's listings (exports/<shop>/listing-photos/), already cleaned of their location data. Left out by a source with none. */
+  listingPhotos?(): { name: string; bytes: Buffer }[];
   /** exports/<shop>/<name>: record.json, bookings.json, dues.json, orders.json. */
   exportFile(name: string): string | undefined;
   /** When the deployer last wrote the record's export (ISO). */
@@ -212,6 +214,14 @@ export function buildExport(src: ExportSources, req: ExportRequest): BuiltExport
   if (req.profile === "owner" && src.exportFile("record.json") !== undefined && !personForm.keyed) throw new ExportError("The shop's record has not been exported in the keyed form yet (the server does it every quarter of an hour), so the owner's file waits for the next export: customers' numbers must not be handed over in a form that can be guessed back.");
   put("record/record.jsonl", record.lines.length > 0 ? `${record.lines.join("\n")}\n` : "");
   put("record/cases.jsonl", cases.lines.length > 0 ? `${cases.lines.join("\n")}\n` : "");
+
+  // ---- block S: the shop's listings and their photos. They are the shop's own words and pictures, so they go with the shop; a package without them says nothing about them.
+  const listingsText = src.exportFile("listings.json");
+  if (listingsText !== undefined) {
+    put("listings/listings.json", listingsText);
+    for (const ph of src.listingPhotos?.() ?? []) put(`listings/photos/${ph.name}`, ph.bytes);
+    notes.push("listings/listings.json holds what the shop showed on its page (every listing with its words in each language, its price, when the owner last confirmed it, and the owner's switch and place); listings/photos/ holds its photos, with their location data already removed. A new server can show them again.");
+  }
 
   // ---- the record as geometer-verify's evidence pack (B28), the daily fingerprints, the agent's id (B36)
   const ledgerText = src.exportFile("ledger.json");

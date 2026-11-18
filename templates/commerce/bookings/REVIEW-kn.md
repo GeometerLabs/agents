@@ -1492,6 +1492,106 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.owner.back` | ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ | Back to your shop |  |
 | `limits.owner.never` | ಎಂದಿಗೂ ಇಲ್ಲ | never |  |
 | `limits.owner.yourShop` | ನಿಮ್ಮ ಅಂಗಡಿ | Your shop |  |
+| `listings.category.pets` | ಸಾಕುಪ್ರಾಣಿಗಳು | Pets |  |
+| `listings.category.food` | ಆಹಾರ | Food |  |
+| `listings.category.clothes` | ಬಟ್ಟೆಗಳು | Clothes |  |
+| `listings.category.home` | ಮನೆಯ ಸಾಮಾನು | Home |  |
+| `listings.category.electronics` | ಎಲೆಕ್ಟ್ರಾನಿಕ್ಸ್ | Electronics |  |
+| `listings.category.vehicles` | ವಾಹನಗಳು ಮತ್ತು ಸೈಕಲ್‌ಗಳು | Vehicles and cycles |  |
+| `listings.category.services` | ಸೇವೆಗಳು | Services |  |
+| `listings.category.other` | ಇತರೆ | Other |  |
+| `listings.heading` | ನಮ್ಮಲ್ಲಿ ಏನಿದೆ | What we have |  |
+| `listings.pageTitle` | Persian kitten: ನಮ್ಮಲ್ಲಿ ಏನಿದೆ | Persian kitten: what we have |  |
+| `listings.askAbout` | ಇದರ ಬಗ್ಗೆ ಕೇಳಿ | Ask about this |  |
+| `listings.askShop` | ಅಂಗಡಿಯನ್ನು ಕೇಳಿ | Ask the shop |  |
+| `listings.confirmedToday` | ಇಂದು ಖಚಿತಪಡಿಸಲಾಗಿದೆ | Confirmed today |  |
+| `listings.confirmedAgo` | 2 ದಿನಗಳ ಹಿಂದೆ ಖಚಿತಪಡಿಸಲಾಗಿದೆ | Confirmed 2 days ago |  |
+| `listings.callToCheck` | ಕೇಳಲು ಕರೆ ಮಾಡಿ | Call to check |  |
+| `listings.empty` | ಈಗ ಏನೂ ಪಟ್ಟಿಯಲ್ಲಿ ಇಲ್ಲ. ಏನಿದೆ ಎಂದು ಅಂಗಡಿಯನ್ನು ಕೇಳಿ. | Nothing is listed right now. Ask the shop what is in. |  |
+| `listings.machine` | ಇಲ್ಲಿನ ಕೆಲವು ಪದಗಳನ್ನು ಮಾಲೀಕರ ಸ್ವಂತ ಮಾತುಗಳಿಂದ ಯಂತ್ರ ಬರೆದಿದೆ. | Some words here were written by a machine from the owner's own words. |  |
+| `listings.registration` | ನೋಂದಣಿ (ಮಾಲೀಕರು ಹೇಳುವಂತೆ): Persian kitten | Registration (the owner says): Persian kitten |  |
+| `listings.ownerSays` | ಮಾಲೀಕರು ಹೇಳುತ್ತಾರೆ: Persian kitten | The owner says: Persian kitten |  |
+| `listings.quantity` | 2 ಲಭ್ಯವಿದೆ | 2 available |  |
+| `listings.photoOf` | ಫೋಟೋ: Persian kitten | Photo: Persian kitten |  |
+| `listings.seeAll` | ನಮ್ಮಲ್ಲಿ ಏನಿದೆ ನೋಡಿ | See what we have |  |
+| `listings.chatGreeting` | ನೀವು ಕೇಳಿದ್ದು: Persian kitten. ನೀವು ಏನು ತಿಳಿಯಲು ಬಯಸುತ್ತೀರಿ? | You asked about: Persian kitten. What would you like to know? |  |
+| `listings.guestAsked` | ಕೇಳಿದ್ದು: Persian kitten | Asked about: Persian kitten |  |
+| `listings.card` | ಇದನ್ನು ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ತೋರಿಸಲೇ? Persian kitten. ಬೆಲೆ: ₹8,000 each. ವರ್ಗ: ಸಾಕುಪ್ರಾಣಿಗಳು. | Show this on your page? Persian kitten. Price: ₹8,000 each. Category: Pets. |  |
+| `listings.show` | ತೋರಿಸಿ | Show it |  |
+| `listings.change` | ಬದಲಿಸಿ | Change |  |
+| `listings.no` | ಬೇಡ | No |  |
+| `listings.still` | Persian kitten ಇನ್ನೂ ಇದೆಯೇ? | Still have Persian kitten? |  |
+| `listings.yes` | ಹೌದು | Yes |  |
+| `listings.sold` | ಮಾರಾಟವಾಯಿತು | Sold |  |
+| `listings.published` | ಆಯಿತು: Persian kitten ಈಗ ನಿಮ್ಮ ಪುಟದಲ್ಲಿದೆ. ಇದು ಇನ್ನೂ ಇದೆ ಎಂದು ಜನರಿಗೆ ತಿಳಿಯಲು ಕೆಲವು ದಿನಗಳಿಗೊಮ್ಮೆ ಒಂದು ಟ್ಯಾಪ್‌ನಿಂದ ಖಚಿತಪಡಿಸಿ. | Done: Persian kitten is on your page now. Confirm it every few days with one tap, so people know it is still there. |  |
+| `listings.dropped` | ಸರಿ, ನಾನು ಇದನ್ನು ತೋರಿಸುವುದಿಲ್ಲ. | Alright, I will not show it. |  |
+| `listings.confirmed` | ಧನ್ಯವಾದ, Persian kitten ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಉಳಿಯುತ್ತದೆ. | Thanks, Persian kitten stays on your page. |  |
+| `listings.markedSold` | Persian kitten ಮಾರಾಟವಾಯಿತು ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ, ನಿಮ್ಮ ಪುಟದಿಂದ ತೆಗೆಯಲಾಗಿದೆ. | Persian kitten is marked sold and is off your page. |  |
+| `listings.needModel` | ನನ್ನ ಅಸಿಸ್ಟೆಂಟ್ ಆನ್ ಇದ್ದಾಗ ಮಾತ್ರ ನಿಮ್ಮ ಮಾತುಗಳಿಂದ ಲಿಸ್ಟಿಂಗ್ ಬರೆಯಬಲ್ಲೆ. ನಿಮ್ಮ ಆ್ಯಪ್‌ನಲ್ಲಿ ನನ್ನ ಪುಟಕ್ಕೆ ಸೇರಿಸಿ ಫಾರ್ಮ್ ಬಳಸಿ: ಫೋಟೋ, ಹೆಸರು, ಬೆಲೆ. | I can only write a listing from your words when my assistant is on. Use the Add to my page form in your app: a photo, a title and a price. |  |
+| `listings.needPhoto` | ಮೊದಲು ನಿಮ್ಮ ಆ್ಯಪ್‌ನಲ್ಲಿ ಫೋಟೋ ಸೇರಿಸಿ, ನಂತರ ಇದು ಏನು ಮತ್ತು ಬೆಲೆ ಎಷ್ಟು ಎಂದು ಹೇಳಿ. | Add a photo first in your app, then tell me what it is and the price. |  |
+| `listings.owner.title` | ನಿಮ್ಮ ಪುಟ: ನಿಮ್ಮಲ್ಲಿ ಏನಿದೆ | Your page: what you have |  |
+| `listings.owner.intro` | ನಿಮ್ಮಲ್ಲಿರುವುದನ್ನು ಸೇರಿಸಿ, ಅಸಿಸ್ಟೆಂಟ್ ಅದನ್ನು ನಾಲ್ಕು ಭಾಷೆಗಳಲ್ಲಿ ಬರೆಯುತ್ತದೆ. ನೀವು ತೋರಿಸಿ ಎಂದು ಟ್ಯಾಪ್ ಮಾಡಿದ ನಂತರವೇ ಅದು ಕಾಣಿಸುತ್ತದೆ. | Add what you have and the assistant writes it in four languages. It shows only after you tap Show it. |  |
+| `listings.owner.switchLabel` | ನನ್ನ ಅಂಗಡಿಯನ್ನು Streetlist ಮತ್ತು ಹುಡುಕಾಟದಲ್ಲಿ ತೋರಿಸಿ | Show my shop on Streetlist and in search |  |
+| `listings.owner.switchNote` | ಆರಂಭದಲ್ಲಿ ಆಫ್ ಇರುತ್ತದೆ. ಆನ್ ಮಾಡಿದರೆ ನಿಮ್ಮ ನಮ್ಮಲ್ಲಿ ಏನಿದೆ ಪುಟವನ್ನು ಸರ್ಚ್ ಎಂಜಿನ್‌ಗಳು ಮತ್ತು Streetlist ಕಂಡುಕೊಳ್ಳಬಹುದು, ಅದರ ತೆರೆದ ಫೈಲ್ ಲಭ್ಯವಾಗುತ್ತದೆ. ಯಾವಾಗ ಬೇಕಾದರೂ ಆಫ್ ಮಾಡಿ. | Off by default. When on, your what-we-have page can be found by search engines and Streetlist, and its open file is served. Turn it off at any time. |  |
+| `listings.owner.switchOn` | ಆನ್ | On |  |
+| `listings.owner.switchOff` | ಆಫ್ | Off |  |
+| `listings.owner.save` | ಉಳಿಸಿ | Save |  |
+| `listings.owner.saved` | ಉಳಿಸಲಾಗಿದೆ. | Saved. |  |
+| `listings.owner.placeHeading` | ನೀವು ಎಲ್ಲಿದ್ದೀರಿ | Where you are |  |
+| `listings.owner.town` | ಊರು | Town |  |
+| `listings.owner.pincode` | ಪಿನ್‌ಕೋಡ್ | Pincode |  |
+| `listings.owner.lat` | ನಕ್ಷೆಯ ಬಿಂದು: ಅಕ್ಷಾಂಶ | Map point: latitude |  |
+| `listings.owner.lon` | ನಕ್ಷೆಯ ಬಿಂದು: ರೇಖಾಂಶ | Map point: longitude |  |
+| `listings.owner.registration` | ಪೆಟ್ ಶಾಪ್ ನೋಂದಣಿ (ನಿಮ್ಮ ಸ್ವಂತ ಮಾತುಗಳಲ್ಲಿ) | Pet shop registration (your own words) |  |
+| `listings.owner.registrationNote` | ಹೀಗೆ ಕಾಣಿಸುತ್ತದೆ: ನೋಂದಣಿ (ಮಾಲೀಕರು ಹೇಳುವಂತೆ). ನಾವು ಇದನ್ನು ಪರಿಶೀಲಿಸುವುದಿಲ್ಲ. | Shown as: Registration (the owner says). It is not checked by us. |  |
+| `listings.owner.formHeading` | ನನ್ನ ಪುಟಕ್ಕೆ ಸೇರಿಸಿ | Add to my page |  |
+| `listings.owner.formNote` | ಒಂದು ಫೋಟೋ, ಒಂದು ಹೆಸರು, ಒಂದು ಬೆಲೆ. ಪದಗಳು ನಿಮ್ಮ ಭಾಷೆಯಲ್ಲಿ ಮಾತ್ರ ಉಳಿಯುತ್ತವೆ. | A photo, a title, a price. The words are saved in your language only. |  |
+| `listings.owner.formPhoto` | ಫೋಟೋ | Photo |  |
+| `listings.owner.formTitle` | ಇದು ಏನು | What is it |  |
+| `listings.owner.formPrice` | ರೂಪಾಯಿಗಳಲ್ಲಿ ಬೆಲೆ (ಅಂಗಡಿಯನ್ನು ಕೇಳಿ ಎಂದರೆ ಖಾಲಿ ಬಿಡಿ) | Price in rupees (leave empty for Ask the shop) |  |
+| `listings.owner.formPriceNote` | ಒಂದಕ್ಕೆ, ಕಿಲೋಗೆ... | per piece, per kg... |  |
+| `listings.owner.formCategory` | ವರ್ಗ | Category |  |
+| `listings.owner.formSubmit` | ನನ್ನ ಪುಟದಲ್ಲಿ ತೋರಿಸಿ | Show it on my page |  |
+| `listings.owner.uploadHeading` | ಫೋಟೋಗಳು | Photos |  |
+| `listings.owner.uploadButton` | ಫೋಟೋ ಸೇರಿಸಿ | Add a photo |  |
+| `listings.owner.uploaded` | 2 ಫೋಟೋ ಸಿದ್ಧ. ಈಗ ಇದು ಏನು ಎಂದು ಅಸಿಸ್ಟೆಂಟ್‌ಗೆ ಹೇಳಿ. | 2 photos ready. Now tell the assistant what it is. |  |
+| `listings.owner.listHeading` | ನಿಮ್ಮ ಪುಟದಲ್ಲಿ | On your page |  |
+| `listings.owner.none` | ಇನ್ನೂ ಏನೂ ಇಲ್ಲ. | Nothing yet. |  |
+| `listings.owner.live` | ತೋರಿಸಲಾಗುತ್ತಿದೆ | Showing |  |
+| `listings.owner.draft` | ನಿಮ್ಮ ಟ್ಯಾಪ್‌ಗಾಗಿ ಕಾಯುತ್ತಿದೆ | Waiting for your tap |  |
+| `listings.owner.hidden` | ಮರೆಮಾಡಲಾಗಿದೆ: 30 ದಿನಗಳಿಂದ ಖಚಿತಪಡಿಸಿಲ್ಲ | Hidden: not confirmed for 30 days |  |
+| `listings.owner.remove` | ತೆಗೆಯಿರಿ | Take it off |  |
+| `listings.owner.confirmAgain` | ಮತ್ತೆ ತೋರಿಸಲು ಖಚಿತಪಡಿಸಿ | Confirm to show again |  |
+| `listings.owner.markSold` | ಮಾರಾಟವಾಯಿತು | Sold |  |
+| `listings.owner.edit` | ಬದಲಿಸಿ | Change |  |
+| `listings.owner.link` | ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಏನಿದೆ | What you have on your page |  |
+| `listings.owner.back` | ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ | Back to your shop |  |
+| `listings.refusal.protectedNote` | ಸಂರಕ್ಷಿತ ದೇಸಿ ಪ್ರಾಣಿಗಳನ್ನು ಮಾರಲು ಅನುಮತಿ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಸೇರಿಸಲಿಲ್ಲ. | Protected native animals may not be sold, so that was not added. |  |
+| `listings.refusal.protected` | ನಾನು ಇದನ್ನು ಪಟ್ಟಿ ಮಾಡಲಾರೆ: monkeys ಸಂರಕ್ಷಿತ ಪ್ರಾಣಿಗಳು, ಅವನ್ನು ಮಾರಲು ಅನುಮತಿ ಇಲ್ಲ. ದಯವಿಟ್ಟು ಅವನ್ನು ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಹಾಕಬೇಡಿ. | I cannot list that: monkeys are protected animals and may not be sold. Please do not put them on your page. |  |
+| `listings.refusal.health` | ನೀವೇ ಹೇಳಿಲ್ಲದಿದ್ದರೆ, ಪ್ರಾಣಿ ಆರೋಗ್ಯವಾಗಿದೆ, ಲಸಿಕೆ ಹಾಕಲಾಗಿದೆ ಅಥವಾ ಶುದ್ಧ ತಳಿಯದು ಎಂದು ನಾನು ಬರೆಯಲಾರೆ. ಸತ್ಯವಾಗಿದ್ದರೆ ನಿಮ್ಮ ಸ್ವಂತ ಮಾತುಗಳಲ್ಲಿ ಹೇಳಿ. | I cannot write that an animal is healthy, vaccinated or of a pure breed unless you said so yourself. Tell me in your own words if it is true. |  |
+| `listings.refusal.priceNotInWords` | ನಾನು ಬರೆಯುತ್ತಿದ್ದ ಬೆಲೆ ನೀವು ಹೇಳಿದ್ದಲ್ಲ, ಆದ್ದರಿಂದ ಲಿಸ್ಟಿಂಗ್ ಮಾಡಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಬೆಲೆಯನ್ನು ಮತ್ತೆ ಹೇಳಿ. | The price I would write is not the one you said, so I did not make the listing. Tell me the price again. |  |
+| `listings.refusal.full` | ನೀವು ಈಗಾಗಲೇ 50 ವಸ್ತುಗಳನ್ನು ತೋರಿಸುತ್ತಿದ್ದೀರಿ. ಮೊದಲು ಒಂದನ್ನು ತೆಗೆಯಿರಿ. | You already show 50 things. Take one off first. |  |
+| `listings.refusal.tooManyDrafts` | ನಿಮ್ಮ ಟ್ಯಾಪ್‌ಗಾಗಿ ಈಗಾಗಲೇ ಲಿಸ್ಟಿಂಗ್‌ಗಳು ಕಾಯುತ್ತಿವೆ. ಮೊದಲು ಅವುಗಳಿಗೆ ಉತ್ತರಿಸಿ. | There are already listings waiting for your tap. Answer those first. |  |
+| `listings.refusal.tooLong` | ಇದು ತುಂಬಾ ಉದ್ದವಾಗಿದೆ. ದಯವಿಟ್ಟು ಚಿಕ್ಕದಾಗಿ ಹೇಳಿ. | That is too long. Please say it shorter. |  |
+| `listings.refusal.badPrice` | ಆ ಬೆಲೆ ಸರಿಯಿಲ್ಲ. ರೂಪಾಯಿಗಳ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಬಳಸಿ. | That price is not valid. Use a whole number of rupees. |  |
+| `listings.refusal.badQty` | ಆ ಸಂಖ್ಯೆ ಸರಿಯಿಲ್ಲ. | That number is not valid. |  |
+| `listings.refusal.claims` | ನೀವು ಹೇಳದ ಭರವಸೆ, ರಿಯಾಯಿತಿ ಅಥವಾ ಖಾತರಿಗಳನ್ನು ನಾನು ಬರೆಯಲಾರೆ. ಉದ್ದೇಶವಿದ್ದರೆ ನೀವೇ ಹೇಳಿ. | I cannot write promises, discounts or guarantees you did not say. Say them yourself if you mean them. |  |
+| `listings.refusal.modelFailed` | ಈಗ ಅದನ್ನು ಬರೆಯಲಾಗಲಿಲ್ಲ. ನಿಮ್ಮ ಆ್ಯಪ್‌ನಲ್ಲಿ ನನ್ನ ಪುಟಕ್ಕೆ ಸೇರಿಸಿ ಫಾರ್ಮ್ ಬಳಸಿ. | I could not write that just now. Use the Add to my page form in your app. |  |
+| `listings.refusal.badCategory` | ಆ ವರ್ಗ ನನಗೆ ಗೊತ್ತಿಲ್ಲ. | That category is not one I know. |  |
+| `listings.refusal.empty` | ಮೊದಲು ಇದು ಏನು ಎಂದು ಹೇಳಿ. | Tell me what it is first. |  |
+| `listings.refusal.badPlace` | ಆ ಸ್ಥಳ ಸರಿಯಿಲ್ಲ. | That place is not valid. |  |
+| `listings.refusal.tooManyPhotos` | ಒಂದು ಲಿಸ್ಟಿಂಗ್‌ನಲ್ಲಿ 3 ಫೋಟೋ ವರೆಗೆ ಇರಬಹುದು. | A listing has up to 3 photos. |  |
+| `listings.refusal.unknown` | ನನ್ನ ಬಳಿ ಆ ಲಿಸ್ಟಿಂಗ್ ಇಲ್ಲ. | I do not have that listing. |  |
+| `listings.refusal.gone` | ಆ ಲಿಸ್ಟಿಂಗ್ ಈಗ ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಇಲ್ಲ. | That listing is not on your page now. |  |
+| `listings.refusal.photo.empty` | ಆ ಫೈಲ್ ಖಾಲಿಯಾಗಿದೆ. | That file is empty. |  |
+| `listings.refusal.photo.too_big` | ಆ ಫೋಟೋ ತುಂಬಾ ದೊಡ್ಡದಾಗಿದೆ. ಚಿಕ್ಕದನ್ನು ಪ್ರಯತ್ನಿಸಿ. | That photo is too big. Try a smaller one. |  |
+| `listings.refusal.photo.not_a_photo` | ಅದು JPEG ಅಥವಾ WebP ಫೋಟೋ ಅಲ್ಲ. | That is not a JPEG or WebP photo. |  |
+| `listings.refusal.photo.unreadable` | ನನಗೆ ಆ ಫೋಟೋ ಓದಲಾಗಲಿಲ್ಲ. | I could not read that photo. |  |
+| `listings.refusal.photo.too_large_sides` | ಆ ಫೋಟೋದ ಗಾತ್ರ ತುಂಬಾ ದೊಡ್ಡದಾಗಿದೆ. | That photo is too large in size. |  |
+| `listings.refusal.photo.animated` | ಚಲಿಸುವ ಚಿತ್ರವಲ್ಲ, ಸ್ಥಿರ ಫೋಟೋ ಬಳಸಿ. | Use a still photo, not an animation. |  |
+| `listings.refusal.photo.day` | ಇಂದಿಗೆ ಇಷ್ಟು ಫೋಟೋ ಸಾಕು. ನಾಳೆ ಪ್ರಯತ್ನಿಸಿ. | That is enough photos for today. Try tomorrow. |  |
+| `listings.priceAsk` | ಅಂಗಡಿಯನ್ನು ಕೇಳಿ | Ask the shop |  |
+| `listings.priceSet` | ₹8,000 each | ₹8,000 each |  |
 | `owner.money.cashPartLabel` | ಒಂದು ಭಾಗ ಮಾತ್ರ ಸಿಕ್ಕಿತೇ? ಎಷ್ಟು (₹) | Received only part? How much (₹) |  |
 | `owner.money.cashPartButton` | ಈ ಭಾಗ ನಗದಾಗಿ ಸಿಕ್ಕಿತು ಎಂದು ಗುರುತಿಸಿ | Mark this part received in cash |  |
 | `chat.title` | ಚಾಟ್ | Chat |  |

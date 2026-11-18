@@ -9,6 +9,8 @@ import type { OwnerAccessEvent } from "../channels/owner-signin.ts";
 import type { ChatLinkEvent } from "../channels/chat-link-send.ts";
 import type { LimitsEvent } from "../limits/runtime-limits.ts";
 import { limitsEventKey } from "../limits/runtime-limits.ts";
+import type { ListingsEvent } from "../listings/kit.ts";
+import { listingsEventKey } from "../listings/kit.ts";
 
 /** Ticks come from our own clock, never from outside. */
 export type IncomingEvent =
@@ -32,7 +34,10 @@ export type IncomingEvent =
   | ChatLinkEvent
   // "Limits, tightened by a tap" (modules/limits/runtime-limits.ts): the deployer's word that Guard has a changed limit (or that it failed), and the owner's own limits page
   // behind their passkey. Like an owner_access, never from outside: only the runtime's own HTTP layer makes them, and the core, not the agent, runs them.
-  | LimitsEvent;
+  | LimitsEvent
+  // Block S, the shop's listings (modules/listings/kit.ts): the owner took a photo in, or used their listings page. Like the limits' events, made only by the runtime's own HTTP layer
+  // after it checked the owner, and run by the core, never by the agent.
+  | ListingsEvent;
 
 /** What a runtime hands its agent: an incoming event, or time passing. */
 export type RuntimeEvent = IncomingEvent | { kind: "tick" };
@@ -50,6 +55,7 @@ export function eventKey(event: IncomingEvent): string {
   if (event.kind === "owner_access") return `owner_access:${event.id}`;
   if (event.kind === "chat_link") return `chat_link:${event.id}`;
   if (event.kind === "limit_settled" || event.kind === "owner_limit") return limitsEventKey(event);
+  if (event.kind === "owner_listing" || event.kind === "owner_photo") return listingsEventKey(event);
   // the same report sent again is one; a message's delivered and read are two
   if (event.kind === "message_status") return `message_status:${event.status.ids.join("|")}:${event.status.status}`;
   return `payment_event:${event.event.id}`;

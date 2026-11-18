@@ -1445,6 +1445,106 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.owner.back` | अपनी दुकान पर वापस | Back to your shop |  |
 | `limits.owner.never` | कभी नहीं | never |  |
 | `limits.owner.yourShop` | आपकी दुकान | Your shop |  |
+| `listings.category.pets` | पालतू जानवर | Pets |  |
+| `listings.category.food` | खाना | Food |  |
+| `listings.category.clothes` | कपड़े | Clothes |  |
+| `listings.category.home` | घर का सामान | Home |  |
+| `listings.category.electronics` | इलेक्ट्रॉनिक्स | Electronics |  |
+| `listings.category.vehicles` | गाड़ियाँ और साइकिलें | Vehicles and cycles |  |
+| `listings.category.services` | सेवाएँ | Services |  |
+| `listings.category.other` | अन्य | Other |  |
+| `listings.heading` | हमारे पास क्या है | What we have |  |
+| `listings.pageTitle` | Persian kitten: हमारे पास क्या है | Persian kitten: what we have |  |
+| `listings.askAbout` | इसके बारे में पूछें | Ask about this |  |
+| `listings.askShop` | दुकान से पूछें | Ask the shop |  |
+| `listings.confirmedToday` | आज पक्का किया गया | Confirmed today |  |
+| `listings.confirmedAgo` | 2 दिन पहले पक्का किया गया | Confirmed 2 days ago |  |
+| `listings.callToCheck` | पूछने के लिए फ़ोन करें | Call to check |  |
+| `listings.empty` | अभी कुछ सूची में नहीं है। दुकान से पूछें कि क्या है। | Nothing is listed right now. Ask the shop what is in. |  |
+| `listings.machine` | यहाँ कुछ शब्द मालिक के अपने शब्दों से मशीन ने लिखे हैं। | Some words here were written by a machine from the owner's own words. |  |
+| `listings.registration` | पंजीकरण (मालिक के अनुसार): Persian kitten | Registration (the owner says): Persian kitten |  |
+| `listings.ownerSays` | मालिक कहते हैं: Persian kitten | The owner says: Persian kitten |  |
+| `listings.quantity` | 2 उपलब्ध | 2 available |  |
+| `listings.photoOf` | फ़ोटो: Persian kitten | Photo: Persian kitten |  |
+| `listings.seeAll` | देखें हमारे पास क्या है | See what we have |  |
+| `listings.chatGreeting` | आपने इसके बारे में पूछा: Persian kitten। आप क्या जानना चाहते हैं? | You asked about: Persian kitten. What would you like to know? |  |
+| `listings.guestAsked` | इसके बारे में पूछा: Persian kitten | Asked about: Persian kitten |  |
+| `listings.card` | क्या इसे अपने पेज पर दिखाऊँ? Persian kitten। दाम: ₹8,000 each। श्रेणी: पालतू जानवर। | Show this on your page? Persian kitten. Price: ₹8,000 each. Category: Pets. |  |
+| `listings.show` | दिखाएँ | Show it |  |
+| `listings.change` | बदलें | Change |  |
+| `listings.no` | नहीं | No |  |
+| `listings.still` | क्या Persian kitten अभी भी है? | Still have Persian kitten? |  |
+| `listings.yes` | हाँ | Yes |  |
+| `listings.sold` | बिक गया | Sold |  |
+| `listings.published` | हो गया: Persian kitten अब आपके पेज पर है। हर कुछ दिन में एक टैप से इसे पक्का करते रहें, ताकि लोग जानें कि यह अभी भी है। | Done: Persian kitten is on your page now. Confirm it every few days with one tap, so people know it is still there. |  |
+| `listings.dropped` | ठीक है, मैं इसे नहीं दिखाऊँगा। | Alright, I will not show it. |  |
+| `listings.confirmed` | धन्यवाद, Persian kitten आपके पेज पर बना रहेगा। | Thanks, Persian kitten stays on your page. |  |
+| `listings.markedSold` | Persian kitten बिक गया है और आपके पेज से हट गया है। | Persian kitten is marked sold and is off your page. |  |
+| `listings.needModel` | मेरा असिस्टेंट चालू होने पर ही मैं आपके शब्दों से लिस्टिंग लिख सकता हूँ। अपने ऐप में मेरे पेज पर जोड़ें फ़ॉर्म इस्तेमाल करें: फ़ोटो, नाम और दाम। | I can only write a listing from your words when my assistant is on. Use the Add to my page form in your app: a photo, a title and a price. |  |
+| `listings.needPhoto` | पहले अपने ऐप में फ़ोटो जोड़ें, फिर मुझे बताएँ कि यह क्या है और दाम क्या है। | Add a photo first in your app, then tell me what it is and the price. |  |
+| `listings.owner.title` | आपका पेज: आपके पास क्या है | Your page: what you have |  |
+| `listings.owner.intro` | जो आपके पास है वह जोड़ें, असिस्टेंट उसे चार भाषाओं में लिखेगा। यह तभी दिखेगा जब आप दिखाएँ पर टैप करेंगे। | Add what you have and the assistant writes it in four languages. It shows only after you tap Show it. |  |
+| `listings.owner.switchLabel` | मेरी दुकान को Streetlist और सर्च में दिखाएँ | Show my shop on Streetlist and in search |  |
+| `listings.owner.switchNote` | शुरू में बंद है। चालू होने पर आपका हमारे पास क्या है पेज सर्च इंजन और Streetlist को मिल सकता है, और उसकी खुली फ़ाइल उपलब्ध होती है। कभी भी बंद करें। | Off by default. When on, your what-we-have page can be found by search engines and Streetlist, and its open file is served. Turn it off at any time. |  |
+| `listings.owner.switchOn` | चालू | On |  |
+| `listings.owner.switchOff` | बंद | Off |  |
+| `listings.owner.save` | सहेजें | Save |  |
+| `listings.owner.saved` | सहेज लिया। | Saved. |  |
+| `listings.owner.placeHeading` | आप कहाँ हैं | Where you are |  |
+| `listings.owner.town` | शहर या कस्बा | Town |  |
+| `listings.owner.pincode` | पिनकोड | Pincode |  |
+| `listings.owner.lat` | नक्शे का बिंदु: अक्षांश | Map point: latitude |  |
+| `listings.owner.lon` | नक्शे का बिंदु: देशांतर | Map point: longitude |  |
+| `listings.owner.registration` | पेट शॉप पंजीकरण (आपके अपने शब्द) | Pet shop registration (your own words) |  |
+| `listings.owner.registrationNote` | ऐसे दिखेगा: पंजीकरण (मालिक के अनुसार)। हम इसे जाँचते नहीं। | Shown as: Registration (the owner says). It is not checked by us. |  |
+| `listings.owner.formHeading` | मेरे पेज पर जोड़ें | Add to my page |  |
+| `listings.owner.formNote` | फ़ोटो, नाम, दाम। शब्द सिर्फ़ आपकी भाषा में सहेजे जाएँगे। | A photo, a title, a price. The words are saved in your language only. |  |
+| `listings.owner.formPhoto` | फ़ोटो | Photo |  |
+| `listings.owner.formTitle` | यह क्या है | What is it |  |
+| `listings.owner.formPrice` | रुपये में दाम (दुकान से पूछें के लिए खाली छोड़ें) | Price in rupees (leave empty for Ask the shop) |  |
+| `listings.owner.formPriceNote` | प्रति नग, प्रति किलो... | per piece, per kg... |  |
+| `listings.owner.formCategory` | श्रेणी | Category |  |
+| `listings.owner.formSubmit` | मेरे पेज पर दिखाएँ | Show it on my page |  |
+| `listings.owner.uploadHeading` | फ़ोटो | Photos |  |
+| `listings.owner.uploadButton` | फ़ोटो जोड़ें | Add a photo |  |
+| `listings.owner.uploaded` | 2 फ़ोटो तैयार। अब असिस्टेंट को बताएँ कि यह क्या है। | 2 photos ready. Now tell the assistant what it is. |  |
+| `listings.owner.listHeading` | आपके पेज पर | On your page |  |
+| `listings.owner.none` | अभी कुछ नहीं। | Nothing yet. |  |
+| `listings.owner.live` | दिख रहा है | Showing |  |
+| `listings.owner.draft` | आपके टैप का इंतज़ार | Waiting for your tap |  |
+| `listings.owner.hidden` | छिपा है: 30 दिन से पक्का नहीं किया | Hidden: not confirmed for 30 days |  |
+| `listings.owner.remove` | हटाएँ | Take it off |  |
+| `listings.owner.confirmAgain` | फिर दिखाने के लिए पक्का करें | Confirm to show again |  |
+| `listings.owner.markSold` | बिक गया | Sold |  |
+| `listings.owner.edit` | बदलें | Change |  |
+| `listings.owner.link` | आपके पेज पर क्या है | What you have on your page |  |
+| `listings.owner.back` | अपनी दुकान पर वापस | Back to your shop |  |
+| `listings.refusal.protectedNote` | संरक्षित देशी जानवरों को बेचा नहीं जा सकता, इसलिए यह जोड़ा नहीं गया। | Protected native animals may not be sold, so that was not added. |  |
+| `listings.refusal.protected` | मैं इसे सूची में नहीं डाल सकता: monkeys संरक्षित जानवर हैं और इन्हें बेचा नहीं जा सकता। कृपया इन्हें अपने पेज पर न रखें। | I cannot list that: monkeys are protected animals and may not be sold. Please do not put them on your page. |  |
+| `listings.refusal.health` | जब तक आपने खुद न कहा हो, मैं नहीं लिख सकता कि जानवर स्वस्थ है, टीका लगा है या शुद्ध नस्ल का है। अगर सच है तो अपने शब्दों में बताइए। | I cannot write that an animal is healthy, vaccinated or of a pure breed unless you said so yourself. Tell me in your own words if it is true. |  |
+| `listings.refusal.priceNotInWords` | मैं जो दाम लिखता वह वह नहीं था जो आपने कहा, इसलिए लिस्टिंग नहीं बनाई। कृपया दाम फिर बताइए। | The price I would write is not the one you said, so I did not make the listing. Tell me the price again. |  |
+| `listings.refusal.full` | आप पहले से 50 चीज़ें दिखा रहे हैं। पहले कोई एक हटाइए। | You already show 50 things. Take one off first. |  |
+| `listings.refusal.tooManyDrafts` | आपके टैप के इंतज़ार में पहले से लिस्टिंग हैं। पहले उनका जवाब दीजिए। | There are already listings waiting for your tap. Answer those first. |  |
+| `listings.refusal.tooLong` | यह बहुत लंबा है। कृपया छोटा करके कहें। | That is too long. Please say it shorter. |  |
+| `listings.refusal.badPrice` | यह दाम सही नहीं है। रुपये की पूरी संख्या लिखें। | That price is not valid. Use a whole number of rupees. |  |
+| `listings.refusal.badQty` | यह संख्या सही नहीं है। | That number is not valid. |  |
+| `listings.refusal.claims` | जो वादे, छूट या गारंटी आपने नहीं कहीं, वे मैं नहीं लिख सकता। मतलब हो तो खुद कहिए। | I cannot write promises, discounts or guarantees you did not say. Say them yourself if you mean them. |  |
+| `listings.refusal.modelFailed` | मैं अभी यह नहीं लिख सका। अपने ऐप में मेरे पेज पर जोड़ें फ़ॉर्म इस्तेमाल करें। | I could not write that just now. Use the Add to my page form in your app. |  |
+| `listings.refusal.badCategory` | यह श्रेणी मुझे नहीं पता। | That category is not one I know. |  |
+| `listings.refusal.empty` | पहले बताइए कि यह क्या है। | Tell me what it is first. |  |
+| `listings.refusal.badPlace` | यह जगह सही नहीं है। | That place is not valid. |  |
+| `listings.refusal.tooManyPhotos` | एक लिस्टिंग में 3 फ़ोटो तक हो सकते हैं। | A listing has up to 3 photos. |  |
+| `listings.refusal.unknown` | मेरे पास वह लिस्टिंग नहीं है। | I do not have that listing. |  |
+| `listings.refusal.gone` | वह लिस्टिंग अब आपके पेज पर नहीं है। | That listing is not on your page now. |  |
+| `listings.refusal.photo.empty` | वह फ़ाइल खाली है। | That file is empty. |  |
+| `listings.refusal.photo.too_big` | वह फ़ोटो बहुत बड़ी है। छोटी आज़माइए। | That photo is too big. Try a smaller one. |  |
+| `listings.refusal.photo.not_a_photo` | वह JPEG या WebP फ़ोटो नहीं है। | That is not a JPEG or WebP photo. |  |
+| `listings.refusal.photo.unreadable` | मैं वह फ़ोटो पढ़ नहीं सका। | I could not read that photo. |  |
+| `listings.refusal.photo.too_large_sides` | वह फ़ोटो आकार में बहुत बड़ी है। | That photo is too large in size. |  |
+| `listings.refusal.photo.animated` | स्थिर फ़ोटो इस्तेमाल करें, एनिमेशन नहीं। | Use a still photo, not an animation. |  |
+| `listings.refusal.photo.day` | आज के लिए इतनी फ़ोटो काफ़ी हैं। कल फिर आज़माइए। | That is enough photos for today. Try tomorrow. |  |
+| `listings.priceAsk` | दुकान से पूछें | Ask the shop |  |
+| `listings.priceSet` | ₹8,000 each | ₹8,000 each |  |
 | `owner.money.cashPartLabel` | सिर्फ़ कुछ हिस्सा मिला? कितना (₹) | Received only part? How much (₹) |  |
 | `owner.money.cashPartButton` | यह हिस्सा नकद मिला लिखें | Mark this part received in cash |  |
 | `chat.title` | चैट | Chat |  |
