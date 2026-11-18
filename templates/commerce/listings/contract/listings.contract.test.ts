@@ -54,7 +54,8 @@ describe("health, status and the two tokens", () => {
     assert.deepEqual(st.body.tasks, { pending: 0, done: 0, failed: 0 });
     assert.equal(st.body.recordLength, 0);
     assert.deepEqual(st.body.listings ?? {}, {});
-    assert.deepEqual(st.body.ownerAccess, { passkeys: 0, alertPhones: 0 });
+    // owner control (19 Nov 2026): `locked` says whether the owner holds a passkey (then the Operator's QR and card are closed); owner-control.contract.test.ts has the rest
+    assert.deepEqual(st.body.ownerAccess, { passkeys: 0, alertPhones: 0, locked: false });
     assert.equal(typeof st.body.ai, "object", "the month's AI counts are there");
   });
 

@@ -12,12 +12,15 @@ import type { ChildProcess } from "node:child_process";
 import { createServer } from "node:http";
 import type { Server } from "node:http";
 import { randomBytes } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../../../../modules/channels/owner-link.ts";
-import { OWNER_GRANTS_FILE, SETUP_MS, newSetupToken, setupHash } from "../../../../modules/channels/owner-grants.ts";
+import { OWNER_GRANTS_FILE, OWNER_RESET_FILE, SETUP_MS, newSetupToken, setupHash } from "../../../../modules/channels/owner-grants.ts";
+import { OWNER_SESSIONS_FILE } from "../../../../modules/channels/owner-access.ts";
+import { TEST_CLOCK_FILE, TEST_SWITCH } from "../../../../modules/runtime/test-clock.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** The repository root, found from this file's own address. */
@@ -35,6 +38,14 @@ export interface ShopOptions {
   budget?: { monthlyMicroInr: number; daily: Record<string, number> };
   /** The fake model server's port; with it, runtime.json names it as the parser. */
   modelPort?: number;
+  /** The owner's number in settings.json (left out: the owner gave none, and the runtime uses its "no number" marker). */
+  owner?: string;
+  /** runtime.json's tickSeconds (default 3600, so no tick happens in a test unless it asks: the owner-control notices are written by the tick). */
+  tickSeconds?: number;
+  /** Run the shop on the TEST clock (modules/runtime/test-clock.ts): the machine's clock plus an offset the test moves with `advance`. */
+  clock?: boolean;
+  /** runtime.json's services (default none); the push test names a push Guard. */
+  services?: Record<string, unknown>;
 }
 
 export interface Shop {
@@ -59,6 +70,25 @@ export interface Shop {
   /** The shop process's id (for measuring its memory). */
   pid(): number | undefined;
   cleanup(): void;
+  // ---- owner control (owner-control.contract.test.ts): the files the deployer writes, and the test clock ----
+  /** The shop's time now: the machine's clock plus the test clock's offset (0 without `clock`). Every time written into a file is taken from here. */
+  now(): number;
+  /** Move the shop's test clock on by `ms` (it reads the offset on every use). */
+  advance(ms: number): void;
+  /** owner-grants.json as the deployer copies the panel's file (undefined: the file is removed). */
+  writeGrants(grants: unknown): void;
+  /** owner-reset.json as the deployer copies Geometer's reset from admin/owner-reset/<shop>.json (undefined: removed). */
+  writeReset(reset: unknown): void;
+  /** owner-sessions.json: the panel's "sign out every device" at `endBefore` (an ISO time). */
+  writeSessionsEnd(endBefore: string): void;
+  /** settings.json with another owner number (the Operator's settings form). The runtime reads settings at start: restart it to take effect, as the deployer does. */
+  setOwnerNumber(owner: string | undefined): void;
+  /** runtime.json's tickSeconds (read at start). */
+  setTickSeconds(seconds: number): void;
+  /** runtime.json's mode (read at start): "live" is what the panel writes for a real shop, which must refuse the test clock. */
+  setMode(mode: "fakes" | "live"): void;
+  /** The record's lines as the store keeps them (action, outcome, refs), read from agent.db read-only. */
+  record(): { action: string; outcome: string; refs: Record<string, string> }[];
 }
 
 async function freePort(): Promise<number> {
@@ -85,8 +115,9 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   writeFileSync(join(secrets, "internal_token"), internal);
   writeFileSync(join(secrets, "channel_token"), channel);
   writeFileSync(join(secrets, "record_key"), hex(32));
-  writeFileSync(join(client, "settings.json"), JSON.stringify({ name: "Glow Pets", place: { town: "Thrissur", pincode: "680001" }, trade: "pets", timezone: "Asia/Kolkata", languages: ["en", "ml"], owner: { language: "en" }, assistant: {} }));
-  const runtime: Record<string, unknown> = { mode: "fakes", host: "127.0.0.1", port, dataDir, tickSeconds: 3600, services: {} };
+  const settings = (number: string | undefined) => JSON.stringify({ name: "Glow Pets", place: { town: "Thrissur", pincode: "680001" }, trade: "pets", timezone: "Asia/Kolkata", languages: ["en", "ml"], owner: { language: "en", ...(number ? { whatsapp: number } : {}) }, assistant: {} });
+  writeFileSync(join(client, "settings.json"), settings(o.owner));
+  const runtime: Record<string, unknown> = { mode: "fakes", host: "127.0.0.1", port, dataDir, tickSeconds: o.tickSeconds ?? 3600, services: o.services ?? {} };
   if (o.modelPort !== undefined) runtime.parser = { wire: "openai", baseUrl: `http://127.0.0.1:${o.modelPort}/v1`, model: "fake-model", timeoutMs: 5000 };
   if (o.budget) runtime.budget = o.budget;
   writeFileSync(join(client, "runtime.json"), JSON.stringify(runtime));
@@ -95,6 +126,18 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   const now = Date.now();
   writeFileSync(join(client, OWNER_GRANTS_FILE), JSON.stringify({ schema: 1, setup: { sha256: setupHash(setup), createdAt: new Date(now).toISOString(), expiresAt: new Date(now + SETUP_MS).toISOString() } }));
   writeFileSync(join(client, "pathway.lock"), `listings@${VERSION}\n`); // written last, as the deployer does
+
+  // the test clock's file: one integer, the milliseconds added to the machine's clock; written whole (a rename), so the shop never reads half a number
+  const clockFile = join(root, "clock");
+  let offset = 0;
+  const writeClock = (): void => { writeFileSync(`${clockFile}.tmp`, String(offset)); renameSync(`${clockFile}.tmp`, clockFile); };
+  if (o.clock) writeClock();
+  /** A file in the client folder, written whole as the deployer does (a rename), or removed. */
+  const put = (name: string, value: unknown): void => {
+    const file = join(client, name);
+    if (value === undefined) { rmSync(file, { force: true }); return; }
+    writeFileSync(`${file}.tmp`, JSON.stringify(value)); renameSync(`${file}.tmp`, file);
+  };
 
   let child: ChildProcess | undefined;
   let output = "";
@@ -121,7 +164,11 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
     async start(impl = IMPL) {
       const { cmd, args } = command(impl);
       output = "";
-      child = spawn(cmd, args, { env: { ...process.env, INTERNAL_TOKEN_FILE: join(secrets, "internal_token"), CHANNEL_TOKEN_FILE: join(secrets, "channel_token"), RECORD_KEY_FILE: join(secrets, "record_key") }, stdio: ["ignore", "pipe", "pipe"] });
+      // the test clock only when the test asks for it; otherwise the two variables are taken out, so a shell that has them set cannot change an ordinary test
+      const env: Record<string, string | undefined> = { ...process.env, INTERNAL_TOKEN_FILE: join(secrets, "internal_token"), CHANNEL_TOKEN_FILE: join(secrets, "channel_token"), RECORD_KEY_FILE: join(secrets, "record_key") };
+      delete env[TEST_SWITCH]; delete env[TEST_CLOCK_FILE];
+      if (o.clock) { env[TEST_SWITCH] = "1"; env[TEST_CLOCK_FILE] = clockFile; }
+      child = spawn(cmd, args, { env, stdio: ["ignore", "pipe", "pipe"] });
       child.stdout!.on("data", (d: Buffer) => { output += d.toString(); });
       child.stderr!.on("data", (d: Buffer) => { output += d.toString(); });
       const early = new Promise<never>((_, reject) => child!.once("exit", (code) => reject(new Error(`the shop exited early (${code}):\n${output}`))));
@@ -152,6 +199,24 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
     log: () => output,
     pid: () => child?.pid,
     cleanup() { void shop.stop(); rmSync(root, { recursive: true, force: true }); },
+    now: () => Date.now() + offset,
+    advance(ms) {
+      if (!o.clock) throw new Error("this shop was made without the test clock (makeShop({clock: true}))");
+      offset += ms; writeClock();
+    },
+    writeGrants: (grants) => put(OWNER_GRANTS_FILE, grants),
+    writeReset: (reset) => put(OWNER_RESET_FILE, reset),
+    writeSessionsEnd: (endBefore) => put(OWNER_SESSIONS_FILE, { schema: 1, endBefore }),
+    setOwnerNumber: (number) => { writeFileSync(join(client, "settings.json"), settings(number)); },
+    setTickSeconds: (seconds) => { runtime.tickSeconds = seconds; writeFileSync(join(client, "runtime.json"), JSON.stringify(runtime)); },
+    setMode: (mode) => { runtime.mode = mode; writeFileSync(join(client, "runtime.json"), JSON.stringify(runtime)); },
+    record() {
+      const db = new DatabaseSync(join(dataDir, "agent.db"), { readOnly: true });
+      try {
+        return (db.prepare("SELECT action, outcome, entry FROM record ORDER BY seq").all() as { action: string; outcome: string; entry: string }[])
+          .map((r) => ({ action: r.action, outcome: r.outcome, refs: (JSON.parse(r.entry) as { refs?: Record<string, string> }).refs ?? {} }));
+      } finally { db.close(); }
+    },
   };
   return shop;
 }
