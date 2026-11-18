@@ -370,6 +370,15 @@ func (s *Server) channelRoute(w http.ResponseWriter, r *http.Request, path strin
 		_, _ = w.Write(row.Bytes)
 	case "/internal/channel/shop-feed", "/internal/channel/shop-check", "/internal/channel/shop-card":
 		return s.signed(w, r, path)
+	case "/internal/channel/owner":
+		if err := only(r, "GET"); err != nil {
+			return err
+		}
+		if !s.ownerAuthorised(r) {
+			send(w, 403, errBody(ownerRefused))
+			return nil
+		}
+		send(w, 200, rt.OwnerPage())
 	case "/internal/channel/owner-listing":
 		return s.ownerListing(w, r)
 	case "/internal/channel/owner-stock":
@@ -445,8 +454,19 @@ func (s *Server) events(w http.ResponseWriter, r *http.Request) error {
 			events = append(events, map[string]any{"kind": "owner_message", "id": id, "text": t})
 		case "owner_signin":
 			events = append(events, map[string]any{"kind": "owner_signin", "id": id})
+		case "owner_action":
+			ev, msg := checkOwnerAction(e, id)
+			if msg != "" {
+				send(w, 400, errBody(msg))
+				return nil
+			}
+			if !s.ownerAuthorised(r) {
+				send(w, 403, errBody(ownerRefused))
+				return nil
+			}
+			events = append(events, ev)
 		default:
-			send(w, 400, errBody(`A listings-only shop takes the owner's "owner_message" and "owner_signin" here.`))
+			send(w, 400, errBody(`A listings-only shop takes the owner's "owner_message", "owner_action" and "owner_signin" here.`))
 			return nil
 		}
 	}
@@ -457,6 +477,42 @@ func (s *Server) events(w http.ResponseWriter, r *http.Request) error {
 	send(w, 200, map[string]any{"saved": saved, "duplicates": dup})
 	s.rt.Kick()
 	return nil
+}
+
+var (
+	ownerActions = []string{"received", "refunded", "kept", "approve", "deny", "retry", "card_yes", "card_no", "send_link", "revoke_link", "cash", "bank", "present", "absent", "answered", "got_it", "send_again", "try_now", "cancel_order"}
+	caseID       = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$`)
+	cardID       = regexp.MustCompile(`^c-\d{1,9}$`)
+	digest32     = regexp.MustCompile(`^[0-9a-f]{32}$`)
+)
+
+// checkOwnerAction is events.ts `checkChannelEvent` for an owner_action: every action name is accepted and saved (the ones a listings-only shop has no use for are ignored in the step), a
+// card's answer must name a card ("c-3") and carry the digest it was shown, and the shape is checked BEFORE the owner is (a bad shape is 400, then 403).
+func checkOwnerAction(e map[string]any, id string) (map[string]any, string) {
+	action, _ := e["action"].(string)
+	if !contains(ownerActions, action) {
+		return nil, "An owner_action's action is one of " + strings.Join(ownerActions, ", ") + "."
+	}
+	cs, _ := e["case"].(string)
+	if !caseID.MatchString(cs) {
+		return nil, `An owner_action names its case ("b-3").`
+	}
+	if (action == "card_yes" || action == "card_no") && !cardID.MatchString(cs) {
+		return nil, `A card's answer names the card ("c-3").`
+	}
+	digest, _ := e["digest"].(string)
+	if !digest32.MatchString(digest) {
+		return nil, "An owner_action carries the digest of the action as it was shown (32 hex digits)."
+	}
+	ev := map[string]any{"kind": "owner_action", "id": id, "action": action, "case": cs, "digest": digest}
+	if _, given := e["amountPaise"]; given && (action == "cash" || action == "bank") {
+		n, ok := e["amountPaise"].(float64)
+		if !ok || n != float64(int64(n)) || n < 100 || n > 10_000_000_00 || int64(n)%100 != 0 {
+			return nil, "A part marked received is a whole number of rupees, at least 1."
+		}
+		ev["amountPaise"] = int64(n)
+	}
+	return ev, ""
 }
 
 func isSpace(r rune) bool {

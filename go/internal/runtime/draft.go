@@ -1,15 +1,16 @@
 package runtime
 
-// The owner's words become a draft listing (the owner's talk box, `owner_message`): the TypeScript runtime does this in the assistant's conversation (modules/assistant/
-// conversation.ts listingFromWords, listing-draft.ts draftFromWords). This is that path and nothing around it: the words are taken as a listing when they say "put this on my page" or
-// a photo waits; the model is asked only if the shop's cap and budget allow; every number, claim and health word the model wrote must come from the owner's own words; the draft is
-// saved as a listing in state "draft", which nothing public shows. What the assistant ALSO does there (a card in the owner's talk list, the owner's reply lines, a morning
-// question, "undo") is not here: see go/TRIAL.md "left out".
+// The owner's words become a draft listing and a card (the owner's talk box, `owner_message`): the TypeScript runtime does this in the assistant's conversation (modules/assistant/
+// conversation.ts listingFromWords, listing-draft.ts draftFromWords). The words are taken as a listing when they say "put this on my page" or a photo waits, and are not an owner's
+// command; the model is asked only if the shop's cap and budget allow; every number, claim and health word the model wrote must come from the owner's own words; the draft is saved as a
+// listing in state "draft", which nothing public shows, and ONE card is made for it (assistant.go offerCard): the owner's tap on it publishes it. Whatever goes wrong is said in the
+// page's talk, as TypeScript says it (a refusal, a cap, "I can only write a listing when my assistant is on").
 
 import (
 	"strconv"
 	"time"
 
+	"github.com/GeometerLabs/agents/go/internal/assistant"
 	"github.com/GeometerLabs/agents/go/internal/budget"
 	"github.com/GeometerLabs/agents/go/internal/listings"
 )
@@ -38,23 +39,70 @@ func (r *Runtime) talkOff(snap *Snap, feature, key string) string {
 	return ""
 }
 
-func (r *Runtime) ownerMessage(snap *Snap, rec *recorder, ev map[string]any, now int64) error {
-	text, _ := ev["text"].(string)
-	id, _ := ev["id"].(string)
+func (r *Runtime) nextMonthStart(now int64) (int, int, int) {
+	t := time.UnixMilli(now).In(r.loc)
+	if t.Month() == time.December {
+		return t.Year() + 1, 1, 1
+	}
+	return t.Year(), int(t.Month()) + 1, 1
+}
+
+// tellBudget is conversation.ts `tellBudget` in the page's mode: one budget line in the talk.
+func (c *conv) tellBudget(line, feature string) {
+	if line == "day" {
+		c.say("budget.day." + feature)
+		return
+	}
+	y, m, d := c.r.nextMonthStart(c.now)
+	c.say("budget."+line, "date", c.pack.DateText(y, m, d))
+}
+
+// refusedDraft says why a draft was refused (listing-card words: the refusal lines of modules/listings/words.ts).
+func (c *conv) refusedDraft(why, animal string) {
+	key := "listing_refused." + why
+	if !c.pack.Has(key) {
+		key = "listing_refused.empty" // words.ts: every other reason is "Tell me what it is first."
+	}
+	c.say(key, "animal", animal, "n", strconv.Itoa(listings.MaxLive))
+}
+
+// listingFromWords is conversation.ts `listingFromWords`. True when the words were taken as a listing (whatever came of them); false when they are something else.
+func (c *conv) listingFromWords(text, key string) (bool, error) {
+	r, snap, rec, now := c.r, c.snap, c.rec, c.now
 	number, lang := r.owner()
 	s := snap.Touch()
 	waiting := s.PendingPhotos(now)
-	if len(waiting) == 0 && !listings.HasListingCue(text) {
-		return nil // not a listing: what else the assistant reads in the owner's words is the TypeScript runtime's
+	cue := listings.HasListingCue(text)
+	if len(waiting) == 0 && !cue {
+		return false, nil
 	}
-	key := "o:" + id
-	if off := r.talkOff(snap, "listing_draft", key); off != "" {
-		// "again": the same words delivered again, the first was answered. Over a cap or a budget the TypeScript runtime tells the owner in the app's talk list (a plain form is
-		// there to use); this runtime only does not call the model.
-		return nil
+	rules := assistant.ReadOwnerRules(text)
+	strong := false
+	for _, k := range assistant.Strong {
+		strong = strong || k == rules.Kind
+	}
+	if rules.Ref != "" || strong || (rules.Kind != "unknown" && !cue) {
+		return false, nil // an owner's command, not a listing
+	}
+	// over a cap the draft falls back to the plain form in the owner's app (the words say so); off for any other reason it is the old line
+	off := r.talkOff(snap, "listing_draft", key)
+	switch off {
+	case "again":
+		return true, nil // the same words delivered again: the first one was answered
+	case "budget":
+		c.tellBudget("listing_month", "")
+		return true, nil
+	case "day":
+		c.tellBudget("day", "listing_draft")
+		return true, nil
+	case "":
+	default:
+		c.say("listing_line.need_model")
+		return true, nil
 	}
 	if animal := listings.ProtectedAnimalIn(map[string]listings.LangText{"en": {Title: text}}); animal != "" {
-		return nil // refused before the model is asked: nothing to pay for
+		c.refusedDraft("protected_animal", animal) // refused before the model is asked: nothing to pay for
+		return true, nil
 	}
 	read := listings.ReadListingWords(text)
 	system, schema := listings.Prompt(r.o.Client.Settings.Name, nil)
@@ -102,28 +150,41 @@ func (r *Runtime) ownerMessage(snap *Snap, rec *recorder, ev map[string]any, now
 		pause := now + r.policy.PauseMinutes*60_000
 		month.PausedUntilMs = &pause
 		logLine("no_answer")
-		return nil
+		c.refusedDraft("model_failed", "")
+		return true, nil
 	}
 	answer := listings.ReadAnswer(got.Answer)
 	if answer == nil || !listings.IsCategory(answer.Category, nil) {
 		logLine("refused_shape")
-		return nil
+		c.refusedDraft("model_failed", "")
+		return true, nil
 	}
 	if why := listings.GroundedIn(text, answer.Words, answer.Claims); why != "" {
 		logLine("refused_" + string(why))
-		return nil
+		// listing-draft.ts: numbers -> price_not_in_words, health -> health_claim, anything else -> claims
+		switch why {
+		case "numbers":
+			c.refusedDraft("price_not_in_words", "")
+		case "health":
+			c.refusedDraft("health_claim", "")
+		default:
+			c.refusedDraft("claims", "")
+		}
+		return true, nil
 	}
 	logLine("checked")
 	in := listings.DraftInput{Category: answer.Category, OwnerLang: read.OwnerLang, Words: answer.Words, OwnerWords: &text, Claims: answer.Claims, PricePaise: read.PricePaise, PriceNote: read.PriceNote, Qty: read.Qty}
 	in.Photos = s.TakePhotos(photoIDs(waiting), now)
 	made, why := s.Draft(in, now)
 	if why != "" {
-		return nil
+		c.refusedDraft(string(why), "")
+		return true, nil
 	}
 	made.From = "app" // the owner wrote from their page
 	rec.append(NewLine{Conversation: number, Action: "listing", Outcome: "confirmed", Inputs: map[string]any{"listing": made.ID, "category": made.Category}, Language: lang, Refs: refsOf(made, "drafted"),
 		Notes: "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it"})
-	return nil
+	c.propose(assistant.Raw{"kind": jstring("listing"), "case": jstring(caseOfListing(made.ID))})
+	return true, nil
 }
 
 func photoIDs(p []listings.PendingPhoto) []string {
