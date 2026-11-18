@@ -89,6 +89,7 @@ test("the trade is kept in the shop's meta, never in its settings, and the shop'
   try {
     const divya = await b.account("divya", "partner", "ml");
     const fromPreset = await setUp(b, divya, [STEP1, STEP2, STEP3, STEP4], { preset: "salon" });
+    assert.equal((await divya.post(`/setup/${fromPreset.draft}/save`, {}, `/setup/${fromPreset.draft}/6`)).status, 303, "the shop is saved");
     const stores = openStores(b.config).store;
     assert.deepEqual(stores.read<{ trade?: unknown }>(`meta/${fromPreset.shop}.json`)!.trade, { preset: "salon" });
     const page = (await divya.get(`/shops/${fromPreset.shop}`)).plain;
@@ -97,6 +98,7 @@ test("the trade is kept in the shop's meta, never in its settings, and the shop'
     assert.ok(!JSON.stringify(settings).includes("trade") && !JSON.stringify(settings).includes("salon"), "the settings the agent runs are untouched by a trade");
 
     const typed = await setUp(b, divya, [{ ...STEP1, name: "Hosahalli Tailors" }, STEP2, STEP3, STEP4, CHARACTER5], { trade: "<b>tailor</b> & co", template: "bookings" });
+    assert.equal((await divya.post(`/setup/${typed.draft}/save`, {}, `/setup/${typed.draft}/6`)).status, 303, "the shop is saved");
     assert.deepEqual(stores.read<{ trade?: unknown }>(`meta/${typed.shop}.json`)!.trade, { typed: "<b>tailor</b> & co" });
     const shopPage = (await divya.get(`/shops/${typed.shop}`)).text;
     assert.ok(shopPage.includes("&lt;b&gt;tailor&lt;/b&gt; &amp; co") && !shopPage.includes("<b>tailor</b>"), "the Operator's words are escaped on the page");
