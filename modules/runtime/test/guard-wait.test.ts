@@ -96,7 +96,7 @@ test("a database written by the version before this one gets the waiting columns
   raw.close();
   const db = openStore(dir);
   try {
-    assert.equal(SCHEMA_VERSION, 4); // layout 3 (the snapshot in pieces) came after the waiting columns, and schema 4 added the listing_photos table (block S); this file still opens and keeps its task
+    assert.equal(SCHEMA_VERSION, 5); // layout 3 (the snapshot in pieces) came after the waiting columns, schema 4 added the listing_photos table and schema 5 the shop_key table (block S); this file still opens and keeps its task
     const t = db.nextPending()!;
     assert.deepEqual([t.id, t.waitingOn, t.retryAt], ["message:old", null, null]);
   } finally { db.close(); rmSync(dir, { recursive: true, force: true }); }
