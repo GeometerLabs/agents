@@ -124,12 +124,13 @@ export function withFace(backend: ChannelBackend, files: (() => CharacterFiles |
  * Batch 5: every offer's shop carries the shop's own phone and map link from its pages.json, so every customer page (the front page, a booking's, an order's, a fee's,
  * and each "not found" or "waiting" state) can show "Call the shop" and a map link without each page being handed the file. Read per request, like the face.
  */
-export function withContact(backend: ChannelBackend, pages: (() => PagesFile | undefined) | undefined, chatHref?: string): ChannelBackend {
+export function withContact(backend: ChannelBackend, pages: (() => PagesFile | undefined) | undefined, chatHref?: string, kind?: "bookings" | "orders" | "fees"): ChannelBackend {
   if (!pages) return backend;
   // `chatHref` (17 Nov 2026): the shop's chat, so every customer page has one clear "Chat with us" button (contact-bar.ts shopContact); only a shop whose runtime has a chat
-  const add = <T extends { shop: { contact?: { phone?: string; map?: string; chat?: string } } }>(o: T): T => {
+  // `kind` (19 Nov 2026): the shop's template, so the contact bar's words fit it ("Call the centre" for a tuition centre); left out, they say "shop"
+  const add = <T extends { shop: { contact?: { phone?: string; map?: string; chat?: string; kind?: "bookings" | "orders" | "fees" } } }>(o: T): T => {
     const p = pages();
-    return p && (p.phone || p.map || chatHref) ? { ...o, shop: { ...o.shop, contact: { ...(p.phone ? { phone: p.phone } : {}), ...(p.map ? { map: p.map } : {}), ...(chatHref ? { chat: chatHref } : {}) } } } : o;
+    return p && (p.phone || p.map || chatHref) ? { ...o, shop: { ...o.shop, contact: { ...(p.phone ? { phone: p.phone } : {}), ...(p.map ? { map: p.map } : {}), ...(chatHref ? { chat: chatHref } : {}), ...(kind ? { kind } : {}) } } } : o;
   };
   return {
     ...backend,
@@ -318,7 +319,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // item 11i: every offer a page is drawn from carries the shop's public face (withFace)
     const withPicture: FrontShop = found.character ? { ...doorShop, backend: withFace(doorShop.backend, found.character) } : doorShop;
     // batch 5: and the shop's phone and map link (withContact)
-    const withContacts: FrontShop = found.pages ? { ...withPicture, backend: withContact(withPicture.backend, found.pages, withPicture.backend.chat ? `${doorShop.publicUrl}/chat` : undefined) } : withPicture;
+    const withContacts: FrontShop = found.pages ? { ...withPicture, backend: withContact(withPicture.backend, found.pages, withPicture.backend.chat ? `${doorShop.publicUrl}/chat` : undefined, found.kind === "orders" || found.kind === "fees" || found.kind === "bookings" ? found.kind : undefined) } : withPicture;
     // block S: and the button to "What we have" when the shop shows listings
     const shop: FrontShop = { ...withContacts, backend: withListings(withContacts.backend, `${doorShop.publicUrl}/shop`) };
     if (pages?.partner) partnerOf.set(res, pages.partner);
