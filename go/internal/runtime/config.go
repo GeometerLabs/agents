@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,6 +45,13 @@ type Settings struct {
 		Whatsapp string
 		Language string
 		NoNumber bool
+	}
+	// Assistant is the `assistant` block's character and morning hour (modules/assistant/settings.ts, character.ts). Read leniently: this runtime does not check the block (the
+	// TypeScript validator does when the shop is made); a value it cannot read takes TypeScript's default.
+	Assistant struct {
+		Name, Style, Personality, Seed, Colour, Paint string
+		MorningOff                                    bool // "morning": false
+		MorningHour, MorningMinute                    int
 	}
 }
 
@@ -238,10 +246,42 @@ func (c *Client) readSettings(in map[string]any) error {
 			}
 		}
 	}
+	s.readAssistant(in["assistant"])
 	if len(errs) > 0 {
 		return bad("These settings need fixing (settings.json):\n- %s", strings.Join(errs, "\n- "))
 	}
 	return nil
+}
+
+var hhmm = regexp.MustCompile(`^([01]\d|2[0-3]):([0-5]\d)$`)
+
+// readAssistant takes the character and the morning hour out of the `assistant` block, with settings.ts's defaults (Clay, warm, 08:00).
+func (s *Settings) readAssistant(raw any) {
+	a := &s.Assistant
+	a.Style, a.Personality, a.MorningHour, a.MorningMinute = "clay", "warm", 8, 0
+	block, _ := raw.(map[string]any)
+	switch m := block["morning"].(type) {
+	case bool:
+		a.MorningOff = !m
+	case map[string]any:
+		if at, ok := m["at"].(string); ok {
+			if h := hhmm.FindStringSubmatch(at); h != nil {
+				a.MorningHour, _ = strconv.Atoi(h[1])
+				a.MorningMinute, _ = strconv.Atoi(h[2])
+			}
+		}
+	}
+	c, _ := block["character"].(map[string]any)
+	str := func(k string) string { v, _ := c[k].(string); return v }
+	a.Name = strings.TrimSpace(str("name"))
+	if v := str("style"); v != "" {
+		a.Style = v
+	}
+	if v := str("personality"); v == "cheerful" || v == "brief" || v == "warm" {
+		a.Personality = v
+	}
+	a.Seed, a.Paint = str("seed"), str("paint")
+	a.Colour = strings.ToLower(strings.TrimPrefix(str("colour"), "#"))
 }
 
 func contains(l []string, s string) bool {

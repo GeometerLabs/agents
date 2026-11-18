@@ -320,6 +320,8 @@ func (r *Runtime) step(ev map[string]any, taskID string) error {
 			if err := r.ownerMessage(snap, rec, ev, now); err != nil {
 				return err
 			}
+		case "owner_action":
+			r.ownerAction(snap, rec, ev, now)
 		default:
 			r.o.Log(fmt.Sprintf("An event of kind %v came for a listings-only shop run by the Go runtime, which does not take it; it was dropped.", ev["kind"]))
 		}
@@ -444,6 +446,10 @@ func (r *Runtime) beat(snap *Snap, rec *recorder, now int64) {
 				rec.append(NewLine{Conversation: number, Action: "owner_session", Outcome: "confirmed", Inputs: map[string]any{"what": "all_ended", "endBefore": before}, Language: lang, Refs: map[string]string{"what": "all_ended", "count": fmt.Sprint(n)}})
 			}
 		}
+	}
+	// the assistant's beat: cards past their time, what is no longer needed, the morning question (only once the shop has an assistant state: before that there is nothing to do)
+	if snap.A != nil {
+		r.assistantFor(snap, rec, now).onTick()
 	}
 	if now-r.lastDaily < listings.Day {
 		return

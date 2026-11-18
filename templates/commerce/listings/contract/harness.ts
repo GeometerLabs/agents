@@ -37,6 +37,12 @@ export interface ShopOptions {
   modelPort?: number;
   /** Overrides of the model line of runtime.json (the provider and model name decide the price from the rate table). */
   parser?: { provider?: string; model?: string };
+  /** The owner's language in settings.json (default "en"): the language the assistant talks to the owner in. */
+  ownerLanguage?: "en" | "hi" | "ml" | "kn";
+  /** The beat of the clock in seconds (runtime.json `tickSeconds`, at least 1; default 3600, so a test that wants a tick says so). */
+  tickSeconds?: number;
+  /** The `assistant` block of settings.json (default `{}`: the assistant on with its defaults): the character, the morning hour. */
+  assistant?: Record<string, unknown>;
 }
 
 export interface Shop {
@@ -87,8 +93,8 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   writeFileSync(join(secrets, "internal_token"), internal);
   writeFileSync(join(secrets, "channel_token"), channel);
   writeFileSync(join(secrets, "record_key"), hex(32));
-  writeFileSync(join(client, "settings.json"), JSON.stringify({ name: "Glow Pets", place: { town: "Thrissur", pincode: "680001" }, trade: "pets", timezone: "Asia/Kolkata", languages: ["en", "ml"], owner: { language: "en" }, assistant: {} }));
-  const runtime: Record<string, unknown> = { mode: "fakes", host: "127.0.0.1", port, dataDir, tickSeconds: 3600, services: {} };
+  writeFileSync(join(client, "settings.json"), JSON.stringify({ name: "Glow Pets", place: { town: "Thrissur", pincode: "680001" }, trade: "pets", timezone: "Asia/Kolkata", languages: ["en", "ml"], owner: { language: o.ownerLanguage ?? "en" }, assistant: o.assistant ?? {} }));
+  const runtime: Record<string, unknown> = { mode: "fakes", host: "127.0.0.1", port, dataDir, tickSeconds: o.tickSeconds ?? 3600, services: {} };
   if (o.modelPort !== undefined) runtime.parser = { wire: "openai", baseUrl: `http://127.0.0.1:${o.modelPort}/v1`, model: "fake-model", timeoutMs: 5000, ...(o.parser ?? {}) };
   if (o.budget) runtime.budget = o.budget;
   writeFileSync(join(client, "runtime.json"), JSON.stringify(runtime));
