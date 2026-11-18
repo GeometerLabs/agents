@@ -41,6 +41,11 @@ test("the shop's links: call and map, nothing when it has neither; the share lin
   const c = shopContact("hi", { phone: "+918012345678", map: "https://maps.app.goo.gl/AbC123" }).markup;
   assert.match(c, /tel:\+918012345678/u); assert.match(c, /maps\.app\.goo\.gl/u);
   assert.equal(shopContact("en", {}).markup, "");
+  // the call button's words fit the kind of shop (19 Nov 2026): a centre is not a shop; a caller that does not know the kind gets "shop"
+  const call = (kind?: "bookings" | "orders" | "fees") => shopContact("en", { phone: "+918012345678", ...(kind ? { kind } : {}) }).markup;
+  assert.match(call(), /Call the shop/u); assert.match(call("bookings"), /Call the shop/u); assert.match(call("orders"), /Call the shop/u);
+  assert.match(call("fees"), /Call the centre/u); assert.doesNotMatch(call("fees"), /shop/u);
+  assert.match(shopContact("hi", { phone: "+918012345678", kind: "fees" }).markup, /केंद्र/u);
   const s = sendLinkBox("en", "Glow Salon", "https://s.example/glow/b/abc").markup;
   assert.match(s, /https:\/\/wa\.me\/\?text=Glow%20Salon%3A%20https%3A%2F%2Fs\.example%2Fglow%2Fb%2Fabc/u);
 });

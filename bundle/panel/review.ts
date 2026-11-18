@@ -202,16 +202,19 @@ const cashPartFlat = (language: Language): Map<string, string> => new Map([["own
 const chatFlat = (language: Language): Map<string, string> => flatWords({ chat: { ...CHAT[language], more: CHAT_MORE[language], guest: CHAT_GUEST[language], quick: Object.fromEntries(Object.entries(QUICK).map(([kind, q]) => [kind, q.label[language]])) } }, { "chat.closed": ["10:00–20:00"], "chat.kept": [30] });
 
 /**
- * A Fees chat says "centre" where the others say "shop" (18 Nov 2026; modules/channels/words-chat.ts forKind): the chat's, the moments', the identity box's and the call button's
- * lines that change, in full, under the ids "chat.centre.*" (".more.", ".id." and ".first." as for the shop's lines), so a native reader judges each centre sentence as a whole.
+ * A Fees chat says "centre" where the others say "shop" (18 Nov 2026; modules/channels/words-chat.ts forKind), and since 19 Nov a Fees chat says "fee page" and an Orders chat
+ * "order" where the lines say "booking": the lines that change, in full, under the ids "chat.centre.*" (Fees) and "chat.orders.*" (Orders), with ".more.", ".id." and ".first." as
+ * for the shop's lines, so a native reader judges each sentence as a whole. Bookings keeps the plain lines, so it has no ids of its own.
  */
-const chatCentreFlat = (language: Language): Map<string, string> => {
+const chatKindFlat = (language: Language): Map<string, string> => {
   const out = new Map<string, string>();
-  const tables: Array<[string, object]> = [["chat.centre.", CHAT[language]], ["chat.centre.more.", CHAT_MORE[language]], ["chat.centre.id.", IDENTITY[language]], ["chat.centre.first.", { shopCall: FIRST_WORDS[language].shopCall }]];
-  for (const [prefix, table] of tables) {
-    const samples = { closed: ["10:00–20:00"], kept: [30] };
-    const was = flatWords(table, samples), now = flatWords(forKind("fees", language, table), samples);
-    for (const [id, text] of now) if (text !== was.get(id)) out.set(`${prefix}${id}`, text);
+  const tables: Array<[string, object]> = [["", CHAT[language]], ["more.", CHAT_MORE[language]], ["id.", IDENTITY[language]], ["first.", { shopCall: FIRST_WORDS[language].shopCall }]];
+  for (const [kind, name] of [["fees", "centre"], ["orders", "orders"]] as const) {
+    for (const [prefix, table] of tables) {
+      const samples = { closed: ["10:00–20:00"], kept: [30] };
+      const was = flatWords(table, samples), now = flatWords(forKind(kind, language, table), samples);
+      for (const [id, text] of now) if (text !== was.get(id)) out.set(`chat.${name}.${prefix}${id}`, text);
+    }
   }
   return out;
 };
@@ -224,8 +227,8 @@ const chatIdentityFlat = (language: Language): Map<string, string> => flatWords(
 
 // Every non-empty line of the panel's words in one language with its English meaning beside it, for the native reviewer's sheet.
 export function panelRows(language: ReviewLanguage): Row[] {
-  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...listingsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...chatCentreFlat(language), ...stockFlat(language), ...listingsShopFlat(language), ...classesFlat(language), ...presetsFlat(language), ...keepFlat(language), ...leaveFlat(language), ...budgetFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language), ...stocklineFlat(language), ...directoryFlat(language)]);
-  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...listingsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...chatCentreFlat("en"), ...stockFlat("en"), ...listingsShopFlat("en"), ...classesFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...leaveFlat("en"), ...budgetFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en"), ...stocklineFlat("en"), ...directoryFlat("en")]);
+  const mine = new Map([...flatWords(WORDS[language]), ...gatewaysFlat(language), ...healthFlat(language), ...agentsFlat(language), ...personalityFlat(language), ...memoryFlat(language), ...firstFlat(language), ...limitsFlat(language), ...listingsFlat(language), ...cashPartFlat(language), ...chatFlat(language), ...chatKindFlat(language), ...stockFlat(language), ...listingsShopFlat(language), ...classesFlat(language), ...presetsFlat(language), ...keepFlat(language), ...leaveFlat(language), ...budgetFlat(language), ...chatListFlat(language), ...chatIdentityFlat(language), ...stocklineFlat(language), ...directoryFlat(language)]);
+  const english = new Map([...flatWords(WORDS.en), ...gatewaysFlat("en"), ...healthFlat("en"), ...agentsFlat("en"), ...personalityFlat("en"), ...memoryFlat("en"), ...firstFlat("en"), ...limitsFlat("en"), ...listingsFlat("en"), ...cashPartFlat("en"), ...chatFlat("en"), ...chatKindFlat("en"), ...stockFlat("en"), ...listingsShopFlat("en"), ...classesFlat("en"), ...presetsFlat("en"), ...keepFlat("en"), ...leaveFlat("en"), ...budgetFlat("en"), ...chatListFlat("en"), ...chatIdentityFlat("en"), ...stocklineFlat("en"), ...directoryFlat("en")]);
   return [...mine].filter(([, text]) => text !== "").map(([id, text]) => ({ id, text, english: english.get(id) ?? "" }));
 }
 

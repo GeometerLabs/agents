@@ -45,7 +45,7 @@ export interface ShopInfo {
   /** Batch 5: the shop's own phone and map link, from its pages.json (the front adds them to every offer: front.ts withContact), so every customer page can show them. */
   /** Block S: the shop shows listings (the front adds this to every offer, front.ts withListings): how many, and where "What we have" is. Never from the runtime. */
   listings?: { count: number; href: string };
-  contact?: { phone?: string; map?: string; /** The shop's chat address (17 Nov 2026): the "Chat with us" button on every customer page. Added by the front, only for a shop that has a chat. */ chat?: string };
+  contact?: { phone?: string; map?: string; /** The kind of shop, added by the front (front.ts withContact), so the contact bar says centre for a tuition centre (contact-bar.ts). */ kind?: "bookings" | "orders" | "fees"; /** The shop's chat address (17 Nov 2026): the "Chat with us" button on every customer page. Added by the front, only for a shop that has a chat. */ chat?: string };
 }
 export interface Offer { shop: ShopInfo; services: OfferService[]; serviceId?: string; days?: { date: string; starts: number[] }[]; calendarUnread?: boolean }
 

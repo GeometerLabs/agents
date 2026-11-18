@@ -6,8 +6,9 @@
 // asked to say hello). The one quiet note says what a customer may rely on: the replies are written by the shop's assistant, and a booking or a payment counts only when
 // the shop's own record says so. It never says "bot", never promises anything, never says "safe" or "guaranteed".
 //
-// A tuition centre is not a shop (18 Nov 2026): on a Fees chat every line below that says "shop" says "centre" instead, through ONE small per-kind noun table (NOUN, with the
-// few case forms Malayalam and Kannada need), applied by `forKind` to any word table; the sentences are never copied per kind. Bookings, Orders and listings keep "shop".
+// A tuition centre is not a shop (18 Nov 2026): on a Fees chat every line below that says "shop" says "centre" instead, through ONE small per-kind table (NOUN, with the
+// few case forms Malayalam and Kannada need), applied by `forKind` to any word table; the sentences are never copied per kind. Since 19 Nov the same table also says "order" for an
+// Orders guest and "fee page" for a parent where the lines say "booking". Bookings keeps every line as written, and so does any shop with no chat words of its own.
 import type { Language } from "../language/languages.ts";
 
 export interface ChatWords {
@@ -99,17 +100,28 @@ export const QUICK: Record<ChatKind, { command: [string, string, string]; label:
 };
 
 /**
- * What a kind of place is called, per language, as ordered replacements of the shop noun (longest forms first, then the bare noun). Only a Fees chat has its own noun:
- * "centre" in English; in Hindi, Malayalam and Kannada the word the Fees chat's own lines already use (केंद्र, കേന്ദ്രം, ಕೇಂದ്ര). Malayalam and Kannada join their case
- * endings to the noun, so each ending the lines use has its own row. A match must start a word (never inside `{shop}`, the placeholder for a shop's name) and, for the bare
- * noun, end one. Hindi names a thing with a gender, and a centre is masculine where a shop is feminine, so the two verbs and the one "other" (दूसरी/दूसरा) the lines use around it change too.
+ * What a kind of place is called, and what its guest holds a link to, per language, as ordered replacements. Two things differ by kind and both live in this one table, so
+ * `forKind` stays the only switch:
+ *   - the place: a Fees chat says "centre" where the others say "shop" (in English; in Hindi, Malayalam and Kannada the word the Fees chat's own lines already use: केंद्र,
+ *     കേന്ദ്രം, ಕೇಂದ್ರ). Malayalam and Kannada join their case endings to the noun, so each ending the lines use has its own row.
+ *   - the work: the lines were written for a salon ("your booking link", "a booking or a payment"). An Orders guest holds an order and a Fees parent a fee page (and pays
+ *     a fee, never "books"), so those phrases are rewritten, whole phrases first (a gender or an article can change around the word), the bare word last (19 Nov 2026).
+ * A match must start a word (never inside `{shop}`, the placeholder for a shop's name) and, for the LAST rule of a list (the bare word), end one, so the bare word's rule always
+ * goes last. Hindi names a thing with a gender, and a centre is masculine where a shop is feminine, so the two verbs and the one "other" (दूसरी/दूसरा) the lines use around it
+ * change too, as does "my booking" (मेरी) against "my order" (मेरे). Bookings keeps every line as written; a kind that is not listed (and any other shop) is left alone.
  */
 const NOUN: Partial<Record<ChatKind, Record<Language, Array<[string, string]>>>> = {
+  orders: {
+    en: [["A booking or a payment", "An order or a payment"], ["a booking or a payment", "an order or a payment"], ["booking", "order"]],
+    hi: [["आपकी बुकिंग का लिंक", "आपके ऑर्डर का लिंक"], ["मेरी बुकिंग का लिंक", "मेरे ऑर्डर का लिंक"], ["बुकिंग", "ऑर्डर"]],
+    ml: [["ബുക്കിംഗോ", "ഓർഡറോ"], ["ബുക്കിംഗിനോ", "ഓർഡറിനോ"], ["ബുക്കിംഗ്", "ഓർഡർ"]],
+    kn: [["ಬುಕಿಂಗ್", "ಆರ್ಡರ್"]],
+  },
   fees: {
-    en: [["Shop", "Centre"], ["shop", "centre"]],
-    hi: [["दूसरी दुकान", "दूसरा केंद्र"], ["रखती है", "रखता है"], ["ले रही", "ले रहा"], ["दुकान", "केंद्र"]],
-    ml: [["കടയുടേത", "കേന്ദ്രത്തിന്റേത"], ["കടയുടെ", "കേന്ദ്രത്തിന്റെ"], ["കടയുമായുള്ള", "കേന്ദ്രവുമായുള്ള"], ["കടയെ", "കേന്ദ്രത്തെ"], ["കട", "കേന്ദ്രം"]],
-    kn: [["ಅಂಗಡಿಯದ", "ಕೇಂದ್ರದ್ದ"], ["ಅಂಗಡಿಯೊಂದಿಗೆ", "ಕೇಂದ್ರದೊಂದಿಗೆ"], ["ಅಂಗಡಿಯ", "ಕೇಂದ್ರದ"], ["ಅಂಗಡಿಗೆ", "ಕೇಂದ್ರಕ್ಕೆ"], ["ಅಂಗಡಿ", "ಕೇಂದ್ರ"]],
+    en: [["A booking or a payment", "A payment"], ["a booking or a payment", "a payment"], ["booking link", "fee page link"], ["Shop", "Centre"], ["shop", "centre"]],
+    hi: [["आपकी बुकिंग का लिंक", "आपके फ़ीस पेज का लिंक"], ["मेरी बुकिंग का लिंक", "मेरे फ़ीस पेज का लिंक"], ["बुकिंग या भुगतान", "भुगतान"], ["दूसरी दुकान", "दूसरा केंद्र"], ["रखती है", "रखता है"], ["ले रही", "ले रहा"], ["दुकान", "केंद्र"]],
+    ml: [["ബുക്കിംഗ് ലിങ്ക്", "ഫീസ് പേജ് ലിങ്ക്"], ["ബുക്കിംഗോ പേയ്‌മെന്റോ", "പേയ്‌മെന്റോ"], ["ബുക്കിംഗിനോ പണമടയ്ക്കലിനോ", "പണമടയ്ക്കലിനോ"], ["കടയുടേത", "കേന്ദ്രത്തിന്റേത"], ["കടയുടെ", "കേന്ദ്രത്തിന്റെ"], ["കടയുമായുള്ള", "കേന്ദ്രവുമായുള്ള"], ["കടയെ", "കേന്ദ്രത്തെ"], ["കട", "കേന്ദ്രം"]],
+    kn: [["ಬುಕಿಂಗ್ ಲಿಂಕ್", "ಶುಲ್ಕ ಪುಟದ ಲಿಂಕ್"], ["ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ", "ಪಾವತಿ"], ["ಅಂಗಡಿಯದ", "ಕೇಂದ್ರದ್ದ"], ["ಅಂಗಡಿಯೊಂದಿಗೆ", "ಕೇಂದ್ರದೊಂದಿಗೆ"], ["ಅಂಗಡಿಯ", "ಕೇಂದ್ರದ"], ["ಅಂಗಡಿಗೆ", "ಕೇಂದ್ರಕ್ಕೆ"], ["ಅಂಗಡಿ", "ಕೇಂದ್ರ"]],
   },
 };
 

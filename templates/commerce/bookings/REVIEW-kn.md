@@ -1644,17 +1644,23 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.centre.back` | ಕೇಂದ್ರದ ಪುಟ | Centre page |  |
 | `chat.centre.closed` | ಕೇಂದ್ರ ಈಗ ಮುಚ್ಚಿದೆ. ಆದರೂ ಕೇಳಬಹುದು. 10:00–20:00 | The centre is closed now. You can still ask. 10:00–20:00 |  |
 | `chat.centre.paused` | ಕೇಂದ್ರ ಈಗ ಹೊಸ ಕೆಲಸ ತೆಗೆದುಕೊಳ್ಳುತ್ತಿಲ್ಲ. ಪ್ರಶ್ನೆಗಳನ್ನು ಕೇಳಬಹುದು. | The centre is not taking new work just now. You can still ask questions. |  |
-| `chat.centre.note` | ಕೇಂದ್ರದ ಅಸಿಸ್ಟೆಂಟ್ ಇಲ್ಲಿ ಉತ್ತರಿಸುತ್ತದೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿ ಕೇಂದ್ರದ ದಾಖಲೆಯಲ್ಲಿ ಕಂಡಾಗ ಮಾತ್ರ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ. | The centre's assistant replies here. A booking or a payment counts once the centre's record shows it. |  |
+| `chat.centre.note` | ಕೇಂದ್ರದ ಅಸಿಸ್ಟೆಂಟ್ ಇಲ್ಲಿ ಉತ್ತರಿಸುತ್ತದೆ. ಪಾವತಿ ಕೇಂದ್ರದ ದಾಖಲೆಯಲ್ಲಿ ಕಂಡಾಗ ಮಾತ್ರ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ. | The centre's assistant replies here. A payment counts once the centre's record shows it. |  |
 | `chat.centre.kept` | ಕೇಂದ್ರ ಈ ಚಾಟ್ ಅನ್ನು 30 ದಿನ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. | The centre keeps this chat for 30 days. |  |
 | `chat.centre.shop` | ಕೇಂದ್ರ | Centre |  |
 | `chat.centre.alertsHead` | ಕೇಂದ್ರ ಉತ್ತರಿಸಿದಾಗ ಫೋನ್ ತಿಳಿಸಬೇಕೆ? | Want a buzz when the centre answers? |  |
 | `chat.centre.more.confirmed` | ಖಚಿತವಾಯಿತು. ಕೇಂದ್ರದ ಸ್ವಂತ ದಾಖಲೆಯಲ್ಲಿ ಇದೆ. | Confirmed. The centre's own record has it. |  |
 | `chat.centre.more.paid` | ಹಣ ಬಂದಿದೆ. ಕೇಂದ್ರದ ಸ್ವಂತ ದಾಖಲೆಯಲ್ಲಿ ಇದೆ. | Payment received. The centre's own record has it. |  |
 | `chat.centre.more.linkAbout` | ಕೇಂದ್ರದೊಂದಿಗೆ ಚಾಟ್ ತೆರೆಯುತ್ತದೆ | Opens the chat with the centre |  |
+| `chat.centre.id.keepNoLock` | ಈ ಫೋನಿಗೆ ಸ್ಕ್ರೀನ್ ಲಾಕ್ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳಲು ಆಗುವುದಿಲ್ಲ. ಅತಿಥಿಯಾಗಿ ಚಾಟ್ ಮುಂದುವರಿಸಬಹುದು, ನಿಮ್ಮ ಶುಲ್ಕ ಪುಟದ ಲಿಂಕ್ ಕೆಲಸ ಮಾಡುತ್ತಲೇ ಇರುತ್ತದೆ. | This phone has no screen lock, so it cannot keep the chat. You can still chat as a guest, and your fee page link keeps working. |  |
 | `chat.centre.id.otherShop` | ಅದು ಬೇರೆ ಕೇಂದ್ರದ್ದು. ಈ ಕೇಂದ್ರದ್ದನ್ನು ಆರಿಸಿ, ಅಥವಾ "ನನಗೆ ಹೊಸ ಫೋನ್ ಇದೆ" ಒತ್ತಿ. | That one is for another centre. Pick the one for this centre, or tap I have a new phone. |  |
-| `chat.centre.id.deleteAsk` | ಈ ಚಾಟ್ ಅಳಿಸಲೇ? ಇಲ್ಲಿನ ನಿಮ್ಮ ಸಂದೇಶಗಳನ್ನು ಮತ್ತು ಈ ಫೋನಿನಲ್ಲಿ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳುವ ಕೀಲಿಯನ್ನು ತೆಗೆಯುತ್ತೇವೆ. ಬುಕಿಂಗ್ ಅಥವಾ ಪಾವತಿಗೆ ಕಾನೂನು ಕೇಳುವುದನ್ನು ಕೇಂದ್ರ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. | Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The centre keeps what the law needs for a booking or a payment. |  |
+| `chat.centre.id.sendMyLinks` | ನನ್ನ ಶುಲ್ಕ ಪುಟದ ಲಿಂಕ್ ಕಳುಹಿಸಿ | Send me my fee page link |  |
+| `chat.centre.id.deleteAsk` | ಈ ಚಾಟ್ ಅಳಿಸಲೇ? ಇಲ್ಲಿನ ನಿಮ್ಮ ಸಂದೇಶಗಳನ್ನು ಮತ್ತು ಈ ಫೋನಿನಲ್ಲಿ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳುವ ಕೀಲಿಯನ್ನು ತೆಗೆಯುತ್ತೇವೆ. ಪಾವತಿಗೆ ಕಾನೂನು ಕೇಳುವುದನ್ನು ಕೇಂದ್ರ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. | Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The centre keeps what the law needs for a payment. |  |
 | `chat.centre.id.deleteDone` | ಅಳಿಸಲಾಗಿದೆ. ಈ ಚಾಟ್ ಇನ್ನು ಈ ಕೇಂದ್ರದ ಬಳಿ ಇಲ್ಲ. | Deleted. This chat is gone from this centre. |  |
 | `chat.centre.first.shopCall` | ಕೇಂದ್ರಕ್ಕೆ ಕರೆ ಮಾಡಿ | Call the centre |  |
+| `chat.orders.note` | ಅಂಗಡಿಯ ಅಸಿಸ್ಟೆಂಟ್ ಇಲ್ಲಿ ಉತ್ತರಿಸುತ್ತದೆ. ಆರ್ಡರ್ ಅಥವಾ ಪಾವತಿ ಅಂಗಡಿಯ ದಾಖಲೆಯಲ್ಲಿ ಕಂಡಾಗ ಮಾತ್ರ ಲೆಕ್ಕಕ್ಕೆ ಬರುತ್ತದೆ. | The shop's assistant replies here. An order or a payment counts once the shop's record shows it. |  |
+| `chat.orders.id.keepNoLock` | ಈ ಫೋನಿಗೆ ಸ್ಕ್ರೀನ್ ಲಾಕ್ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳಲು ಆಗುವುದಿಲ್ಲ. ಅತಿಥಿಯಾಗಿ ಚಾಟ್ ಮುಂದುವರಿಸಬಹುದು, ನಿಮ್ಮ ಆರ್ಡರ್ ಲಿಂಕ್ ಕೆಲಸ ಮಾಡುತ್ತಲೇ ಇರುತ್ತದೆ. | This phone has no screen lock, so it cannot keep the chat. You can still chat as a guest, and your order link keeps working. |  |
+| `chat.orders.id.sendMyLinks` | ನನ್ನ ಆರ್ಡರ್ ಲಿಂಕ್ ಕಳುಹಿಸಿ | Send me my order link |  |
+| `chat.orders.id.deleteAsk` | ಈ ಚಾಟ್ ಅಳಿಸಲೇ? ಇಲ್ಲಿನ ನಿಮ್ಮ ಸಂದೇಶಗಳನ್ನು ಮತ್ತು ಈ ಫೋನಿನಲ್ಲಿ ಚಾಟ್ ಇಟ್ಟುಕೊಳ್ಳುವ ಕೀಲಿಯನ್ನು ತೆಗೆಯುತ್ತೇವೆ. ಆರ್ಡರ್ ಅಥವಾ ಪಾವತಿಗೆ ಕಾನೂನು ಕೇಳುವುದನ್ನು ಅಂಗಡಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತದೆ. | Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The shop keeps what the law needs for an order or a payment. |  |
 | `stock.owner.tagApprove` | ಒಪ್ಪಬೇಕಾದ ಆರ್ಡರ್ | Order to approve |  |
 | `stock.owner.tagSilent` | ಸರಬರಾಜುದಾರರ ಉತ್ತರವಿಲ್ಲ | No answer from supplier |  |
 | `stock.owner.tagReceive` | ಸರಕು ಬಂದದ್ದನ್ನು ಗುರುತಿಸಿ | Delivery to mark |  |
