@@ -8,7 +8,7 @@ language for code that runs inside a shop **if this trial passes**. This file is
 | rule | result | the honest reading |
 | --- | --- | --- |
 | The Go shop passes the contract, and the contract passes against TypeScript | **Yes.** TypeScript: 36 of 36. Go: 35 of 35, with 1 test skipped on purpose (`GET /internal/channel/owner`, the owner's talk-and-cards page, which Go does not serve) | passes as the contract is written. The contract leaves that one route out for Go, and it is the route the owner's page needs: see "Left out". So this is a pass of the contract, not a drop-in replacement of the TypeScript runtime |
-| 30 MB or less idle | **Yes.** 18.5 MB after start, 20.3 MB after 50 warm-up requests | with 200 listings in the store it is 28.2 MB, and 29.2 MB after 1,500 requests: it is under the rule but with no room. TypeScript's same single shop is 130 MB (see the table) |
+| 30 MB or less idle | **Yes.** 18.5 MB after start, 20.3 MB after 50 warm-up requests | with 200 listings in the store it is 28.2 MB, and 29.2 MB after 1,200 more requests: it is under the rule but with no room. TypeScript's same single shop is 130 MB (see the table) |
 | Built within the time box, no more fix rounds than the TypeScript streams needed | **2 fix rounds** against the contract (the lead compares with the TypeScript streams' count) | listed below; neither was a design problem |
 | The demo has a working path | **Yes**: keep the demo in TypeScript, held to the contract; a Go demo needs TinyGo and a reflection-free state codec (below) | no TinyGo was downloaded |
 
@@ -52,14 +52,14 @@ One run each (the cold starts are five runs). `scripts` are in `contract/measure
 | idle RSS after start | 130.4 MB | **18.5 MB** |
 | RSS after 50 warm-up requests (feed, check, owner list) | 131.6 MB | **20.3 MB** |
 | RSS with 200 listings in the store (50 live, 150 sold) | 142.8 MB | **28.2 MB** |
-| RSS after 1,500 more requests | 145.4 MB | 29.2 MB |
+| RSS after 1,200 more requests (500 feed, 500 check, 200 owner list) | 145.4 MB | 29.2 MB |
 | cold start, fresh folder (spawn to `/healthz`), median of 5 | 267 ms (266 to 276) | **54 ms** (54 to 64) |
 | feed request (50 items, 16,002 bytes), p50 / p95 of 500 | **0.77 / 1.19 ms** | 1.27 / 1.69 ms |
 | check request (3 ids), p50 / p95 of 500 | 0.41 / 0.54 ms | **0.30 / 0.52 ms** |
 | owner list, p50 / p95 of 200 | 0.39 / 0.47 ms | **0.25 / 0.39 ms** |
 | what is shipped | the `node` executable, 147 MB, and the TypeScript source: 355 non-test files, 3.9 MB, in `modules/` and the template | one binary, 20.6 MB (14.1 MB with `-ldflags "-s -w"`) |
 | build | none (types are stripped as the file loads) | clean cache: 17.7 s wall through the heat lock, which adds 10 s of cooldown (so about 8 s of build; 34 s of CPU); a one-file change: the cooldown plus under a second |
-| lines of code | the files ported are 6.4k lines of the 10k or so in the pieces they sit in (comments included) | 7.4k lines, comments included (a third of it comments) |
+| lines of code | the TypeScript files the port was read from: 6.4k lines (comments included), of which only parts apply to a listings shop | 7.4k lines, comments included (466 are whole-line comments, and there are more at the ends of lines) |
 
 Notes on the numbers:
 
@@ -69,7 +69,7 @@ Notes on the numbers:
   the Go runtime holds many shops in one process (goroutines, one SQLite file each). I did not build or measure that.
 * The 200 listings cost Go 8 MB (SQLite's page cache and the garbage of 200 steps); setting `GOGC` to 50 or 25 changed nothing. TypeScript's cost was 11 MB.
 * Go's feed is slower than TypeScript's at p50 (it builds, canonicalises and signs on every request, as TypeScript does; V8 is quicker at the string work). Both are about a millisecond.
-* `go build` is fast because the module cache already had the three modules (downloaded once, about 30 s).
+* The build numbers include the one-time download of the three modules only in the sense that it was done before; the clean build starts from an empty build cache (`go clean -cache`), not an empty module cache.
 
 ## What was built (the Go code map is in README.md)
 
