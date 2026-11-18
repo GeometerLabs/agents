@@ -14,6 +14,8 @@ import type { FrontShop } from "../../modules/channels/front.ts";
 import { relayBackend, runtimeBackend } from "../../modules/channels/backend.ts";
 import { PAGES_FILE, pagesReader } from "../../modules/channels/pages-file.ts";
 import { CHARACTER_DIR, characterReader } from "../../modules/channels/character-files.ts";
+import { createCourier } from "./notices.ts";
+import type { Courier } from "./notices.ts";
 
 export interface InboxShopConfig {
   /** An agent someone else wrote has no runtime: its WhatsApp webhooks are checked here, the owner's replies kept, and the rest passed on to `forwardTo` (agent/inbox.ts). */
@@ -100,10 +102,25 @@ export function loadFront(config: { shops: Record<string, InboxShopConfig> }, re
   return frontHandler({ shops, sourceIpHeader: "x-forwarded-for", log: (line) => log(`[front] ${line}`) });
 }
 
+/**
+ * Block S phase B2: the courier for the shops' "my feed changed" notices (notices.ts), or undefined when this server has no directory or no shop with a page to carry for. Each shop's own
+ * internal token is read here (the inbox already holds it for the webhooks); a shop without one is left out, said once.
+ */
+export function loadCourier(config: { directoryUrl?: string; shops: Record<string, InboxShopConfig> }, read: (path: string) => string | undefined, log: (line: string) => void): Courier | undefined {
+  if (!config.directoryUrl) return undefined;
+  const shops = Object.entries(config.shops).flatMap(([name, c]) => {
+    if (!c.channel || !c.runtimeUrl || c.kind === "own-agent") return [];
+    const token = read(`${c.secretsDir}/internal_token`);
+    if (!token) { log(`${name}: no internal_token in ${c.secretsDir}, so its feed notices are not carried.`); return []; }
+    return [{ name, runtimeUrl: c.runtimeUrl, token }];
+  });
+  return shops.length > 0 ? createCourier({ shops, directoryUrl: config.directoryUrl, log: (line) => log(line) }) : undefined;
+}
+
 const readFile = (path: string): string | undefined => (existsSync(path) ? readFileSync(path, "utf8").trim() : undefined);
 
 if (import.meta.main) {
-  const config = JSON.parse(readFileSync(process.env.CONFIG ?? "/etc/geometer/inbox.json", "utf8")) as { shops: Record<string, InboxShopConfig> };
+  const config = JSON.parse(readFileSync(process.env.CONFIG ?? "/etc/geometer/inbox.json", "utf8")) as { directoryUrl?: string; shops: Record<string, InboxShopConfig> };
   let handler: Handler;
   let front: Handler | undefined;
   try { handler = loadRouter(config, readFile, (line) => console.error(line)); front = loadFront(config, readFile, (line) => console.error(line)); } catch (e) { console.error((e as Error).message); process.exit(2); }
@@ -112,5 +129,13 @@ if (import.meta.main) {
   server.requestTimeout = 10_000;
   server.headersTimeout = 5_000;
   server.listen(Number(process.env.PORT ?? 8788), process.env.HOST ?? "127.0.0.1", () => console.error(`Inbox listening for ${Object.keys(config.shops).length} shop(s) at /c/<shop>/webhooks/...`));
+  // block S phase B2: carry the shops' signed "my feed changed" notices to the directory, every 30 seconds (the first after 20: the directory may be starting too)
+  const courier = loadCourier(config, readFile, (line) => console.error(line));
+  if (courier) {
+    let running = false;
+    const carry = async (): Promise<void> => { if (running) return; running = true; try { await courier.pass(); } finally { running = false; } };
+    setTimeout(() => void carry(), 20_000).unref();
+    setInterval(() => void carry(), 30_000).unref();
+  }
   for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => { server.closeAllConnections(); server.close(() => process.exit(0)); });
 }

@@ -27,6 +27,10 @@ import type { LicenceNow } from "../licence/rules.ts";
 import type { NoticeContext } from "../licence/notice.ts";
 import type { DurableStore, PhotoRow, TaskCounts, WindowStore } from "./store.ts";
 import { PHOTO_GRACE_MS, createListingsKit } from "../listings/kit.ts";
+import { createShopProtocol } from "./shop-protocol.ts";
+import type { ShopProtocol } from "./shop-protocol.ts";
+import { loadShopKey } from "./shop-key.ts";
+import type { SigningKey } from "../signing/index.ts";
 import type { ListingOp, OwnerListingsView, PublicListingsRead } from "../listings/kit.ts";
 import type { Failure } from "../listings/listings.ts";
 import { createStockKit } from "../stock/kit.ts";
@@ -311,6 +315,8 @@ export interface RuntimeChannel {
     ownerPhoto(id: string): PhotoRow | undefined;
     putPhoto(row: Omit<PhotoRow, "atMs">): void;
     uploadsLeft(): number;
+    /** Block S phase B2: the shop's signed feed, check answer, Agent Card and "feed changed" notice (shop-protocol.ts), made with the shop's own key, which never leaves the runtime. Left out: this store keeps no key. */
+    signed?: ShopProtocol;
   };
   /**
    * Block S phase A3, the shop's one stock count (the store's `assistant.stock`, modules/stock): the owner's Stock page's data in their language, and what an owner op would do now (a
@@ -350,6 +356,16 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
   const saved = db.loadState();
   let snapshot = saved.snapshot ?? kit.serialize(kit.createStore());
   let entries: readonly RecordEntry[] = saved.record;
+  // Block S phase B2: the shop's signed feed, check answers, card and notice. The key is read from the shop's own database the first time one is needed (the start made it already, or
+  // adopted it from the owner's file; a test store with no start makes it here) and kept for the life of the process.
+  let shopKey: SigningKey | undefined;
+  const shopProtocol = createShopProtocol({
+    read: () => listings!.publicRead(kit.parse(snapshot), clock.now()),
+    key: () => (shopKey ??= loadShopKey(db, { nowMs: clock.now(), log })),
+    now: () => clock.now(),
+    name: () => (settings as { name?: string }).name,
+  });
+
   // Put back from a nightly snapshot? Then, before any step, the ids move on and the record says so (restored.ts).
   const restoreNote = readRestoreNote(db.file);
   if (restoreNote) {
@@ -583,6 +599,7 @@ export function createRuntimeCore<Store extends { ai?: AiState }, Settings exten
             ownerPhoto: (id: string) => (listings.ownerPhoto(kit.parse(snapshot), id) ? db.photos!.get(id) : undefined),
             putPhoto: (row: Omit<PhotoRow, "atMs">) => db.photos!.put({ ...row, atMs: clock.now() }),
             uploadsLeft: () => listings.uploadsLeft(kit.parse(snapshot), clock.now()),
+            ...(db.shopKey ? { signed: shopProtocol } : {}),
           },
         } : {}),
         ...(stock ? {

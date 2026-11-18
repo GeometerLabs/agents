@@ -123,7 +123,7 @@ test("one list of operations: the API's routes and the MCP tools are exactly the
   assert.deepEqual(Object.keys(API_ROUTES), [...OPERATIONS]);
   assert.deepEqual(TOOLS.map((t) => t.name), [...OPERATIONS]);
   for (const [name, r] of Object.entries(API_ROUTES)) assert.equal(apiOperation(r.method, r.path.replace("{handle}", "h".repeat(32))), name);
-  for (const t of TOOLS) assert.equal(t.annotations.readOnlyHint, ["list_services", "free_slots", "payment_instructions", "booking_status"].includes(t.name), t.name);
+  for (const t of TOOLS) assert.equal(t.annotations.readOnlyHint, ["list_services", "free_slots", "payment_instructions", "booking_status", "check_items"].includes(t.name), t.name);
 });
 
 test("times go out in the shop's own zone and a start must be a whole minute with a zone", () => {

@@ -12,10 +12,11 @@ import type { Language } from "../language/languages.ts";
 import { normaliseName, normalisePhone } from "./contact.ts";
 import { HANDLE, handleHash, newHandle } from "./handle.ts";
 import type { ChannelName } from "./handle.ts";
+import { checkIds } from "../listings/protocol.ts";
 import type { BookingView, ChannelBackend, Offer, OfferService } from "./backend.ts";
 
 /** The operations, by the names the API's paths and the MCP tools use. One list: api.ts and mcp.ts are both checked against it. */
-export const OPERATIONS = ["list_services", "free_slots", "start_booking", "payment_instructions", "booking_status", "cancel_booking"] as const;
+export const OPERATIONS = ["list_services", "free_slots", "start_booking", "payment_instructions", "booking_status", "cancel_booking", "check_items"] as const;
 export type OperationName = (typeof OPERATIONS)[number];
 
 /** A refusal with a stable code (for programs) and a plain sentence (for people). */
@@ -49,6 +50,20 @@ export interface OpsContext {
   /** How long start_booking and cancel_booking wait for the step's outcome before answering "pending". */
   waitMs?: number;
   sleep?: (ms: number) => Promise<void>;
+}
+
+/**
+ * `check_items` (specs/shop-check.md): "do you still have these?", for every kind of shop. Up to ten item ids (listing ids) in; the shop's own signed answer out, read from its record with no
+ * model. It changes nothing and writes nothing, and it takes nothing about the buyer: only ids. Bookings' and Orders' operation lists both carry it (one function, so they cannot differ), and a
+ * Fees centre's or a Stock orders shop's `/api/v1/check` calls it through the same API route. The shop's page is `publicUrl` (the runtime checks it is an address of this shop).
+ */
+export async function checkItemsOp(ctx: Pick<OpsContext, "backend" | "publicUrl">, args: { ids?: unknown; format?: unknown }): Promise<Record<string, unknown>> {
+  const asked = checkIds({ ids: args.ids, ...(args.format !== undefined ? { format: args.format } : {}) });
+  if (!asked.ok) throw new OpError("bad_request", asked.error);
+  if (!ctx.backend.shopCheck) throw new OpError("unavailable", "This shop shows no listings, so there is nothing to check.");
+  const answer = await ctx.backend.shopCheck({ page: ctx.publicUrl, ids: asked.ids });
+  if (!answer) throw new OpError("unavailable", "This shop shows no listings, so there is nothing to check.");
+  return answer;
 }
 
 const pause = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -162,6 +177,9 @@ export function createOps(ctx: OpsContext) {
       const v = await settle(handle, (x) => x.status !== before.status || ("messages" in x && x.messages.length !== before.messages.length));
       return { ...bookingOut(handle, v, offer.shop.timezone, languageOf(args.language, offer.shop)), note: "The cancellation follows the shop's rule: inside its window the deposit comes back; later, the owner decides." };
     },
+
+    /** shop-check/1: see `checkItemsOp`. */
+    check_items: (args: { ids?: unknown; format?: unknown }) => checkItemsOp(ctx, args),
 
     /** The page's "I have paid" (not an API operation for assistants): the owner is asked to look; nothing is marked paid. `upiRef`: the reference the customer typed, checked again in events.ts. */
     async say_paid(handle: string, upiRef?: string) {

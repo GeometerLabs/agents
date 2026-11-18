@@ -200,6 +200,14 @@ export interface ChannelBackend {
    */
   listings?(): Promise<PublicListingsRead | null>;
   listingPhoto?(id: string, owner?: OwnerCred): Promise<{ type: string; bytes: Buffer } | null>;
+  /**
+   * Block S phase B2, the shop's open protocol (specs/shop-feed.md, shop-check.md, agent-card.md). The runtime holds the shop's own signing key and the front never does, so the front asks the runtime
+   * for each signed document and passes it on. `page` is the shop's page without a trailing slash; the runtime refuses one that is not an address of this shop (its pages file). `null`: the shop shows
+   * no listings, or the owner's switch is off (a feed and a card are then not served; a check answers every id gone). Left out: no listings.
+   */
+  shopFeed?(q: { page: string; name: string; languages: string[]; chat?: string }): Promise<Record<string, unknown> | null>;
+  shopCheck?(q: { page: string; ids: string[] }): Promise<Record<string, unknown> | null>;
+  shopCard?(q: { page: string; card: Record<string, unknown> }): Promise<Record<string, unknown> | null>;
   ownerListings?(owner: OwnerCred, post?: { id: string; op: Record<string, unknown> }): Promise<{ status: number; body: Record<string, unknown> }>;
   ownerPhoto?(owner: OwnerCred, photo: { bytes: Buffer; type: string }): Promise<{ status: number; body: Record<string, unknown> }>;
   /**
@@ -277,6 +285,7 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
   const timeout = o.timeoutMs ?? 4_000;
   const headers = (owner?: OwnerCred, extra: Record<string, string> = {}) => ({ authorization: `Bearer ${o.token}`, "content-type": "application/json", ...ownerCredHeader(owner), ...extra });
   const json = async <T>(r: Response): Promise<T> => { if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`); return await r.json() as T; };
+  const signed = async (r: Response): Promise<Record<string, unknown> | null> => (r.status === 404 ? null : json<Record<string, unknown>>(r));
   return {
     async offer(q) {
       const p = new URLSearchParams();
@@ -400,6 +409,10 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
       if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`);
       return { type: r.headers.get("content-type") ?? "application/octet-stream", bytes: Buffer.from(await r.arrayBuffer()) };
     },
+    // block S phase B2: the runtime builds and signs; the front only asks. A 404 is "this shop shows nothing", never an error.
+    async shopFeed(q) { return signed(await call(`${o.url}/internal/channel/shop-feed`, { method: "POST", headers: headers(), body: JSON.stringify(q) }, timeout)); },
+    async shopCheck(q) { return signed(await call(`${o.url}/internal/channel/shop-check`, { method: "POST", headers: headers(), body: JSON.stringify(q) }, timeout)); },
+    async shopCard(q) { return signed(await call(`${o.url}/internal/channel/shop-card`, { method: "POST", headers: headers(), body: JSON.stringify(q) }, timeout)); },
     async ownerListings(owner, post) {
       const r = await call(`${o.url}/internal/channel/owner-listing`, { method: post ? "POST" : "GET", headers: headers(owner), ...(post ? { body: JSON.stringify(post) } : {}) }, timeout);
       if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);

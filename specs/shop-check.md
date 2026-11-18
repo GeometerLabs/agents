@@ -9,7 +9,10 @@ with no language model, and signs the answer. This is the "ask to confirm" half 
 ## Where it is
 
 One more operation of the shop's public API (`modules/channels/api.ts`) and the same tool on its MCP endpoint (`<shop page>/mcp`):
-the API, the MCP tools and the page's operations come from one list (`ops.ts`), and a test keeps the three the same.
+the API, the MCP tools and the page's operations come from one list (`ops.ts`, `order-ops.ts`), and a test keeps the three the same.
+**Every kind of shop answers it**: Bookings, Orders, a Fees centre and a Stock orders shop. A Fees centre and a Stock orders shop have no
+booking or order API and no MCP endpoint, so for them `POST <shop page>/api/v1/check` is the one route under `/api` and there is no MCP tool.
+An item id is a listing id (`l-3`): a menu item or a supplier's item is not one, and answers `gone`.
 
 ```http
 POST <shop page>/api/v1/check
@@ -40,9 +43,12 @@ MCP: the tool `check_items` with the argument `{ "ids": ["l-3", "l-7"] }`.
 |---|---|
 | `in_stock` | Live, and the owner confirmed it in the last 3 days. |
 | `call_to_check` | Live, confirmed 3 to 30 days ago. Show it with "Call to check". |
-| `gone` | Sold, removed, hidden, not confirmed for 30 days, or never shown in the feed. A directory drops it. |
+| `gone` | Sold, removed, hidden, not confirmed for 30 days, never shown in the feed, or a counted listing whose stock is 0 (`modules/stock`: the count is the quantity, and at 0 the listing sells itself). A directory drops it. |
 
-The answer says no more than the feed would say about the same items. It is signed like the feed ([shop-feed.md](shop-feed.md#the-signature)),
+The answer says no more than the feed would say about the same items (it is made by the same code from the same read of the record: the price, the quantity,
+the availability and the `confirmed` time are the feed's own). `page` is the shop page exactly as the feed writes it (`shop.page`, with its trailing slash).
+While the owner's switch "Show my shop on Streetlist and in search" is off, nothing is public, so the answer says `gone` for every id (still signed): the API and the MCP tool exist
+whatever the switch, and an answer is better than an error for a directory that is dropping the shop. The answer is sent `Cache-Control: no-store`. It is signed like the feed ([shop-feed.md](shop-feed.md#the-signature)),
 over the canonical JSON of the answer without `signature`, with the same key. The answer also says when it was made (`at`); a directory
 ignores an answer whose `at` is more than two minutes from its own clock, so a recorded "in stock" cannot be played back later. A
 directory also ignores an answer that names another page than the shop it asked, and any item it did not ask about.
@@ -53,8 +59,10 @@ directory also ignores an answer that names another page than the shop it asked,
 - **Nothing about the buyer.** The question carries item ids only: no search words, no place, no buyer, no session. A shop cannot
   tell who searched or for what.
 - **No model.** The answer is read from the shop's record. A check costs the shop nothing and cannot be talked into a different answer.
-- **Limits.** The front's per-address limits apply (the same as every public operation). A directory caches answers for 60 seconds and
-  asks with a timeout of about 1.5 seconds; a shop that does not answer in time is shown with the index's data and "Call to check".
+- **Limits.** A check is counted **per shop**, about 600 a minute (the front's limit kind `check`, under the shop's own name), and not against the caller's address: a
+  directory reaches every shop from one address, so a per-address limit would stop it after a few shops. Over the limit the shop answers `429`. A bad question (more than ten ids,
+  no ids, an id that is not an item id) is `400` with a reason. A directory caches answers for 60 seconds and asks with a timeout of about 1.5 seconds; a shop that does not
+  answer in time is shown with the index's data and "Call to check".
 - **Read only.** A check changes nothing in the shop's record and is not written in it (it is not an event of the shop's).
 
 ## Why
