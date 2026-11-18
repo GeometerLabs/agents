@@ -36,13 +36,14 @@ test("the budget grows with the messages bought, the way fleet's cap does: month
   const basic = budgetFor("basic", inForce, { bought: 1000 })!;
   assert.equal(basic.monthlyMicroInr, 40 * RUPEE, "Basic: 1,000 bought doubles INR 20, and fleet's cap is INR 40 for 2,000 messages");
   assert.deepEqual(basic.daily, { owner_talk: 30, listing_draft: 10, customer_talk: 120, router: 200 }, "customer_talk and router follow the message count; the owner's talk and drafts do not");
-  assert.equal(budgetFor("business", inForce, { bought: 500 })!.monthlyMicroInr, 70 * RUPEE, "Business: 60 x 3,500 / 3,000");
+  assert.equal(budgetFor("business", inForce, { bought: 500 })!.monthlyMicroInr, 80 * RUPEE, "Business: 500 bought counts as one step of 1,000 (BOUGHT_STEP), so 60 x 4,000 / 3,000");
+  assert.deepEqual(budgetFor("business", inForce, { bought: 100 }), budgetFor("business", inForce, { bought: 1000 }), "every block inside one step gives the same budget, so it redeploys the shop once a step");
   assert.equal(isBudgetConfig(basic), true);
   // fleet's own wall for the same shop is never below the shop's budget: ai.cap x messages / 1,000
   assert.equal(basic.monthlyMicroInr, Math.ceil((inForce.rates["ai.cap"].micro! * 2000) / 1000));
   // rounded UP: a list number that does not divide leaves the shop a hair more, never less than fleet's own rounding
   const odd = { rates: { ...inForce.rates, "ai.budget.basic": { micro: 1_000_001 } } };
-  assert.equal(budgetFor("basic", odd, { bought: 1 })!.monthlyMicroInr, Math.ceil((1_000_001 * 1001) / 1000));
+  assert.equal(budgetFor("basic", odd, { bought: 1 })!.monthlyMicroInr, Math.ceil((1_000_001 * 2000) / 1000), "1 bought is one whole step of 1,000");
   // a wrong number is ignored, never guessed at
   for (const bad of [-5, 1.5, Number.NaN]) assert.deepEqual(budgetFor("basic", inForce, { bought: bad }), budgetFor("basic", inForce), String(bad));
   // a listings-only shop is free and buys nothing
