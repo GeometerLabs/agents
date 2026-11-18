@@ -233,7 +233,7 @@ func TestSenderAgainstAFakeGuard(t *testing.T) {
 	now := int64(1_000_000)
 	snd := NewSender(SenderOptions{Store: st, Guard: &Guard{BaseURL: guard.URL + "/", AgentToken: "secret-agent"}, Subject: func() string { return "https://pages.example/glow" }, Now: func() int64 { return now }})
 	p := New(st, snd, "Glow Pets", func() int64 { return now }, true, "")
-	if ids := p.Owner("A new phone was added to your shop.", "phones"); len(ids) != 1 {
+	if ids, err := p.Owner("A new phone was added to your shop.", "phones"); err != nil || len(ids) != 1 {
 		t.Fatalf("queued %v", ids)
 	}
 	snd.Pass()
@@ -258,7 +258,7 @@ func TestSenderAgainstAFakeGuard(t *testing.T) {
 	mu.Lock()
 	status = http.StatusGone
 	mu.Unlock()
-	p.Owner("again", "")
+	_, _ = p.Owner("again", "")
 	snd.Pass()
 	if n := p.OwnerPhones(); n != 0 {
 		t.Fatalf("a gone phone is forgotten, %d left", n)
@@ -269,7 +269,7 @@ func TestSenderAgainstAFakeGuard(t *testing.T) {
 	mu.Lock()
 	status = http.StatusBadGateway
 	mu.Unlock()
-	p.Owner("later", "")
+	_, _ = p.Owner("later", "")
 	snd.Pass()
 	if due, _ := st.Due(now, 20); len(due) != 0 {
 		t.Fatal("a push that failed waits before the next try")

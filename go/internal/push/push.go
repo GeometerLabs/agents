@@ -39,10 +39,11 @@ func (p *Push) ActiveRelayKey() string {
 	return ""
 }
 
-// Owner queues an alert to the owner's phones and returns the ids queued: none means no phone allowed alerts. `tag` is the notification's tag ("owner" by default).
-func (p *Push) Owner(text, tag string) []string {
+// Owner queues an alert to the owner's phones and returns the ids queued: none means no phone allowed alerts. `tag` is the notification's tag ("owner" by default). The store's
+// error is returned: an owner-control notice whose push was not queued must not be marked told (TypeScript's throw fails the step, and the notice is said again).
+func (p *Push) Owner(text, tag string) ([]string, error) {
 	if !p.On {
-		return nil
+		return nil, nil
 	}
 	if tag == "" {
 		tag = "owner"
@@ -51,11 +52,11 @@ func (p *Push) Owner(text, tag string) []string {
 	if title == "" {
 		title = "Shop"
 	}
-	ids, _ := p.store.Enqueue("owner", "owner", title, FitNotification(text, 300), tag, p.now())
+	ids, err := p.store.Enqueue("owner", "owner", title, FitNotification(text, 300), tag, p.now())
 	if len(ids) > 0 && p.sender != nil {
 		p.sender.Kick()
 	}
-	return ids
+	return ids, err
 }
 
 // OwnerPhones is how many phones get the owner's alerts now.

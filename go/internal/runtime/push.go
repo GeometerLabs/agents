@@ -116,11 +116,11 @@ func (r *Runtime) Push() *push.Push {
 }
 
 // PushOwner queues an alert to the owner's phones when push is on (TypeScript: `push.owner(text, tag)`); `text` is already in the owner's language. It returns the ids queued (none:
-// no phone allowed alerts, or push is off). `tag` "" is the default "owner".
-func (r *Runtime) PushOwner(text, tag string) []string {
+// no phone allowed alerts, or push is off) and the store's error. `tag` "" is the default "owner".
+func (r *Runtime) PushOwner(text, tag string) ([]string, error) {
 	p := r.Push()
 	if p == nil || !p.On || text == "" {
-		return nil
+		return nil, nil
 	}
 	return p.Owner(text, tag)
 }

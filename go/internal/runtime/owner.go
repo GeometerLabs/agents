@@ -297,9 +297,9 @@ func digitsOf(s string) string {
 // ownerBeat is the owner's part of the clock's beat (owner-signin.ts tick): read the Operator's request and Geometer's reset into the store (so a request starts its wait, and a
 // due one applies, even when no page is open), watch the owner's number, say each finding once in the record (and to the owner's phones), and the panel's "sign out every
 // device" once. It returns the requests whose notice is in this step's lines: they are marked told only once the step is SAVED (Runtime.step).
-func (r *Runtime) ownerBeat(rec *recorder) (told []string) {
+func (r *Runtime) ownerBeat(rec *recorder) (told []string, err error) {
 	if r.o.Access == nil {
-		return nil
+		return nil, nil
 	}
 	r.ownerMu.Lock()
 	defer r.ownerMu.Unlock()
@@ -309,7 +309,7 @@ func (r *Runtime) ownerBeat(rec *recorder) (told []string) {
 	lang := r.o.Client.Settings.Owner.Language
 	if err := r.o.Access.Sync(r.oGrants(), now); err != nil {
 		r.o.Log("The owner's files could not be read into the store: " + err.Error())
-		return nil
+		return nil, nil
 	}
 	if w, ok := r.oSettingsWho(); ok {
 		// a different owner number in the settings after the lock is a request, not a change (access.WatchOwner)
@@ -329,25 +329,33 @@ func (r *Runtime) ownerBeat(rec *recorder) (told []string) {
 		}
 		rec.append(NewLine{Conversation: number, Action: "owner_session", Outcome: "confirmed", Inputs: in, Language: lang, Refs: inputs})
 	}
+	// a push that could not be queued fails the step (nothing of it is saved, nothing is marked told), as TypeScript's throw from setup.alert does
+	alert := func(what, by string) error { return r.alert(what, now, "", by) }
 	for _, n := range notes {
 		switch n.What {
 		case "reset":
 			line(map[string]string{"what": "owner_reset", "at": iso(n.At), "by": n.By, "reason": n.Reason})
 		case "removal_asked":
 			line(map[string]string{"what": "removal_asked", "by": n.AskedBy, "effectiveAt": iso(n.EffectiveAt)})
-			r.alert("removal_asked", now, "", n.AskedBy)
+			if err := alert("removal_asked", n.AskedBy); err != nil {
+				return nil, err
+			}
 			told = append(told, n.Key)
 		case "removal_extended":
 			line(map[string]string{"what": "removal_extended", "effectiveAt": iso(n.EffectiveAt)})
+			what, by := "removal_asked", n.AskedBy
 			if n.Kind == "owner_change" {
-				r.alert("owner_change_asked", now, "", "")
-			} else {
-				r.alert("removal_asked", now, "", n.AskedBy)
+				what, by = "owner_change_asked", ""
+			}
+			if err := alert(what, by); err != nil {
+				return nil, err
 			}
 			told = append(told, n.Key)
 		case "owner_change_asked":
 			line(map[string]string{"what": "owner_change_asked", "effectiveAt": iso(n.EffectiveAt)})
-			r.alert("owner_change_asked", now, "", "")
+			if err := alert("owner_change_asked", ""); err != nil {
+				return nil, err
+			}
 			told = append(told, n.Key)
 		default:
 			line(map[string]string{"what": "removal_applied", "at": iso(n.At)})
@@ -355,15 +363,15 @@ func (r *Runtime) ownerBeat(rec *recorder) (told []string) {
 	}
 	at := r.oEndBefore()
 	if at == nil {
-		return told
+		return told, nil
 	}
 	ended, err := r.o.Access.EndAllBefore(*at, r.o.Now())
 	if err != nil || ended < 0 {
-		return told
+		return told, nil
 	}
 	number, _ := r.oNumber()
 	rec.append(NewLine{Conversation: number, Action: "owner_session", Outcome: "confirmed", Inputs: map[string]any{"what": "all_ended", "endBefore": *at}, Language: lang, Refs: map[string]string{"what": "all_ended", "count": fmt.Sprint(ended)}})
-	return told
+	return told, nil
 }
 
 // markTold: the step that holds these requests' notice lines is saved, so they are never told again.
@@ -382,11 +390,14 @@ func (r *Runtime) markTold(keys []string) {
 
 // alert tells the owner's phones with alerts on, in the owner's language, word for word TypeScript's (assistant.Pack.OwnerAlert; the words are generated from owner-phones.ts
 // and owner-signin.ts), tagged "phones" as TypeScript tags them. Push off: nothing to tell; the phones page shows it on the next open. The language is the settings' own: this
-// runs with the owner lock held, so it must not ask r.owner(), which takes it.
-func (r *Runtime) alert(what string, at int64, label, by string) {
+// runs with the owner lock held, so it must not ask r.owner(), which takes it. A push that could not be queued is an error, as TypeScript's throw is: the route answers 500,
+// and the beat's step is not saved, so its notice is said (and pushed) again on the next beat.
+func (r *Runtime) alert(what string, at int64, label, by string) error {
 	if p := r.Push(); p != nil && p.On {
-		r.PushOwner(assistant.Words(r.o.Client.Settings.Owner.Language).OwnerAlert(what, at, label, by), "phones")
+		_, err := r.PushOwner(assistant.Words(r.o.Client.Settings.Owner.Language).OwnerAlert(what, at, label, by), "phones")
+		return err
 	}
+	return nil
 }
 
 // ---- /status ---------------------------------------------------------------------------------------------------------------------------------------------
@@ -536,7 +547,9 @@ func (r *Runtime) OwnerPasskey(body map[string]any) (int, any, error) {
 			// a new phone is announced: the owner's other phones with alerts on get a push now (the others see a banner on their next open). The first phone has no "other".
 			if p := r.Push(); p != nil && p.On {
 				if phones, err := r.oPasskeys(); err == nil && len(phones) > 1 {
-					r.alert("new_phone", r.o.Now(), label, "")
+					if err := r.alert("new_phone", r.o.Now(), label, ""); err != nil {
+						return 0, nil, err
+					}
 				}
 			}
 			return 200, map[string]any{"session": done.Session.Token, "expires_at_ms": done.Session.ExpiresAt}, nil
@@ -750,7 +763,9 @@ func (r *Runtime) OwnerPhones(session string, sessionSent bool, body map[string]
 				return 0, nil, err
 			}
 		}
-		r.alert("phone_removed", now(), removed.Label, "")
+		if err := r.alert("phone_removed", now(), removed.Label, ""); err != nil {
+			return 0, nil, err
+		}
 		return 200, map[string]any{"ok": true, "wasLast": wasLast}, nil
 	case "codes":
 		w, ok, err := r.oWho()
@@ -770,7 +785,9 @@ func (r *Runtime) OwnerPhones(session string, sessionSent bool, body map[string]
 		}
 		r.RecordAccess("codes_made", goodID, "", "")
 		// a set of codes is a way back in: the owner's other phones are told, like a new phone
-		r.alert("codes_made", now(), "", "")
+		if err := r.alert("codes_made", now(), "", ""); err != nil {
+			return 0, nil, err
+		}
 		return 200, map[string]any{"codes": codes}, nil
 	case "add_phone":
 		w, ok, err := r.oWho()
