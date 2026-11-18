@@ -10,6 +10,11 @@
 //   With the shop's assistant (item 11e), both owner addresses are also the owner's app: <owner base>/ (the page), /manifest.webmanifest, /sw.js, /talk (the talk
 //   box's words) and /voice (a hold-to-record recording, Ogg or WebM Opus); the page's one script runs by a nonce in that response's content policy (appPolicy).
 //
+// Block S phase B2, the shop's open protocol, for every kind of shop (the key is the runtime's; this front only passes signed documents on, backend.ts shopFeed/shopCheck/shopCard):
+//   GET  /s/<shop>/listings.json         the shop's feed, signed (storefront.ts)                GET /s/<shop>/agent-card.json   its A2A Agent Card, signed (shop-card.ts)
+//   POST /s/<shop>/api/v1/check          "do you still have these?" (shop-check/1, ops.ts checkItemsOp): counted per SHOP, not per address (limits.ts `check`). A Fees centre and a
+//                                         Stock orders shop answer this one route under /api and have no MCP endpoint.
+//
 // Item 11i, the shop's character: every shop's mood pictures (drawn on its server, bundle/character/render.ts) are public at stable addresses, for the shop's own
 // page, Streetlist and WhatsApp (which fetches the PNG and WebP itself):
 //   GET  /s/<shop>/character/<well|needs|wrong|closed|busy>.<svg|png|webp>   one mood's picture: an ETag (its sha256), a day's cache, `?v=` ignored (links carry it)

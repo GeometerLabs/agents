@@ -56,7 +56,7 @@ use is the reader's decision: a directory **pins the first key it saw** for a sh
 
 ## Security notes
 
-- The private key is text (`privateText`, PKCS#8 DER base64url). The caller keeps it where it keeps secrets (a shop's own folder, mode 0600). Anyone who reads
+- The private key is text (`privateText`, PKCS#8 DER base64url). The caller keeps it where it keeps secrets. A shop's runtime keeps its key in its own database (`modules/runtime/shop-key.ts`, so it is in the shop's backup) and signs there; the directory keeps its own in a 0600 file in its own folder. Anyone who reads
   it can sign as the shop. Nothing in this module writes it anywhere.
 - Checking never throws on bad input: a malformed key, a short signature, a non-canonical base64url form or a value with no canonical form all return "not valid".
 - No key rotation yet: see "Not built".
