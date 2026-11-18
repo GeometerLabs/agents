@@ -203,6 +203,11 @@ export interface ChannelBackend {
   ownerListings?(owner: OwnerCred, post?: { id: string; op: Record<string, unknown> }): Promise<{ status: number; body: Record<string, unknown> }>;
   ownerPhoto?(owner: OwnerCred, photo: { bytes: Buffer; type: string }): Promise<{ status: number; body: Record<string, unknown> }>;
   /**
+   * Block S phase A3, the shop's one stock count (modules/stock). The owner's Stock page's data in their language, or with `post` an op (the runtime refuses what the shop's rules refuse: 422
+   * with `why`). Left out: no stock (a shop with no assistant).
+   */
+  ownerStock?(owner: OwnerCred, post?: { id: string; op: Record<string, unknown> }, language?: string): Promise<{ status: number; body: Record<string, unknown> }>;
+  /**
    * Items 11d and 11e: a recording from the owner's page, passed to the runtime as it came (the runtime holds it in memory only). "off": the shop's assistant has no
    * voice service; "refused": the owner's credential is not good.
    */
@@ -397,6 +402,11 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     },
     async ownerListings(owner, post) {
       const r = await call(`${o.url}/internal/channel/owner-listing`, { method: post ? "POST" : "GET", headers: headers(owner), ...(post ? { body: JSON.stringify(post) } : {}) }, timeout);
+      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
+    },
+    async ownerStock(owner, post, language) {
+      const r = await call(`${o.url}/internal/channel/owner-stock${!post && language ? `?lang=${encodeURIComponent(language)}` : ""}`, { method: post ? "POST" : "GET", headers: headers(owner), ...(post ? { body: JSON.stringify(post) } : {}) }, timeout);
       if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
       return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },

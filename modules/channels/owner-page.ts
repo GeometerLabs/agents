@@ -62,6 +62,8 @@ export interface OwnerPageInput {
   limitsLink?: { href: string; label: string };
   /** Block S: the owner's listings page (<base>/listings) and its label. Left out: the shop has no assistant, so no listings. */
   listingsLink?: { href: string; label: string };
+  /** Block S phase A3: the owner's Stock page (<base>/stock) and its label. Left out: the shop has no assistant, so no stock count. */
+  stockLink?: { href: string; label: string };
   /** Item 11e: the script nonce of this response, when the view has the assistant's app (front.ts puts it in the content policy). */
   nonce?: string;
   /** Item 11h: the owner's "Alerts on this phone" box (modules/push/pages.ts), already drawn without its script (`bare`), when the shop has web push. */
@@ -222,6 +224,7 @@ ${coming}${parents}${cash}
 ${app ? raw(talkBox({ base: o.base, language: o.language, lines: app.talk, assistantName: app.character.name ?? ASSISTANT_OF[o.language](v.shop.name), ...(o.csrf ? { csrf: o.csrf } : {}), listen: app.listen === true, bare: true })) : ""}
 ${o.alerts && !leadAlerts ? raw(o.alerts) : ""}
 ${o.listingsLink ? html`<p><a href="${o.listingsLink.href}">${o.listingsLink.label}</a></p>` : ""}
+${o.stockLink ? html`<p><a href="${o.stockLink.href}">${o.stockLink.label}</a></p>` : ""}
 ${o.leave ? leaveSection(o, o.leave) : ""}
 ${o.limitsLink ? html`<p><a href="${o.limitsLink.href}">${o.limitsLink.label}</a></p>` : ""}
 ${o.signOut ? html`<form method="post" action="${o.signOut.action}">${o.csrf ? html`<input type="hidden" name="csrf" value="${o.csrf}">` : ""}<button class="no full" type="submit">${o.signOut.label}</button></form>` : ""}
