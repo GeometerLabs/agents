@@ -106,6 +106,9 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
    */
   const passkeysBefore = (): number | undefined => access.passkeysBefore(setup.grants?.(), clock.now());
 
+  /** The panel's "sign out every device" moment, clamped to the runtime's own clock (owner-access.ts clampEndBefore says why). */
+  const endBefore = (): number | undefined => access.clampEndBefore(setup.endBefore(), clock.now());
+
   /** Is this the owner's "open my app"? Only from the owner's own number, only the fixed phrases, and only when the shop has an owner view to open. */
   const isOpenMyApp = (m: InboundMessage): boolean => sameNumber(m.from, owner.whatsapp) && !m.reply && m.text !== "" && OPEN_MY_APP.includes(phraseOf(m.text)) && who() !== undefined;
 
@@ -186,20 +189,20 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
           } else line({ what: "removal_applied", at: new Date(n.at).toISOString() });
         }
       }
-      const endBefore = setup.endBefore();
-      if (endBefore === undefined) return;
-      const ended = access.endAllBefore(endBefore, clock.now());
+      const endAt = endBefore();
+      if (endAt === undefined) return;
+      const ended = access.endAllBefore(endAt, clock.now());
       if (ended === undefined) return;
-      ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs: { what: "all_ended", endBefore }, language: owner.language, refs: { what: "all_ended", count: String(ended) } });
+      ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs: { what: "all_ended", endBefore: endAt }, language: owner.language, refs: { what: "all_ended", count: String(ended) } });
     },
 
     /** What the runtime's HTTP layer uses: each reads the owner and the address as they are now. */
     http: {
       linkState: (token: string) => { const w = who(); return w ? access.linkState(token, w, clock.now()) : "unknown" as const; },
       consume: (token: string) => { const w = who(); return w ? access.consume(token, w, clock.now()) : { ok: false as const, state: "unknown" as const }; },
-      check: (session: string) => { const w = who(); return w ? access.check(session, w, clock.now(), setup.endBefore()) : undefined; },
+      check: (session: string) => { const w = who(); return w ? access.check(session, w, clock.now(), endBefore()) : undefined; },
       /** The same, and only when the session was made with a passkey (the owner's limits page). */
-      checkPasskey: (session: string) => { const w = who(); return w ? access.checkPasskey(session, w, clock.now(), setup.endBefore()) : undefined; },
+      checkPasskey: (session: string) => { const w = who(); return w ? access.checkPasskey(session, w, clock.now(), endBefore()) : undefined; },
       end: (session: string) => access.end(session, clock.now()),
       // ---- item 11h: passkeys (each answers "unknown" or nothing for a shop with no pages file or no grants reader) ----
       shopName: setup.shopName,
@@ -231,24 +234,24 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
       // ---- owner's item 2: the owner's phones. Each takes the owner's SESSION and checks it here (a link made in the panel opens none of them) ----
       /** The phones page's data, or undefined when the session is not good. */
       phones: (session: string) => {
-        const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), setup.endBefore()) : undefined;
+        const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), endBefore()) : undefined;
         return w && ok ? access.phonesView(ok.id, w, relyingParty(w.base), setup.grants!(), clock.now()) : undefined;
       },
-      dismissPhones: (session: string): boolean => { const w = who(); const ok = w ? access.check(session, w, clock.now(), setup.endBefore()) : undefined; if (ok) access.dismiss(ok.id); return ok !== undefined; },
+      dismissPhones: (session: string): boolean => { const w = who(); const ok = w ? access.check(session, w, clock.now(), endBefore()) : undefined; if (ok) access.dismiss(ok.id); return ok !== undefined; },
       removePhone: (session: string, phoneId: string, confirmLast: boolean) => {
-        const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), setup.endBefore()) : undefined;
+        const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), endBefore()) : undefined;
         if (!w || !ok) return { ok: false as const, why: "session" as const };
         return access.removePhone(ok.id, phoneId, w, relyingParty(w.base), setup.grants!(), clock.now(), confirmLast);
       },
       /** The owner's own codes, from a PASSKEY session only. Returned once. */
-      makeCodes: (session: string): string[] | undefined => { const w = who(); const ok = w && setup.grants ? access.checkPasskey(session, w, clock.now(), setup.endBefore()) : undefined; return ok ? access.makeOwnCodes(ok.id, setup.grants!(), clock.now()) : undefined; },
+      makeCodes: (session: string): string[] | undefined => { const w = who(); const ok = w && setup.grants ? access.checkPasskey(session, w, clock.now(), endBefore()) : undefined; return ok ? access.makeOwnCodes(ok.id, setup.grants!(), clock.now()) : undefined; },
       /** "Add a phone": the link's address for the owner's new phone (a PASSKEY session only). Returned once. */
       addPhone: (session: string): { url: string; expiresAt: number } | undefined => {
-        const w = who(); const ok = w && setup.grants ? access.checkPasskey(session, w, clock.now(), setup.endBefore()) : undefined;
+        const w = who(); const ok = w && setup.grants ? access.checkPasskey(session, w, clock.now(), endBefore()) : undefined;
         const made = ok ? access.addPhone(ok.id, setup.grants!(), clock.now()) : undefined;
         return w && made ? { url: `${w.base}/setup/${made.token}`, expiresAt: made.expiresAt } : undefined;
       },
-      cancelRemoval: (session: string): boolean => { const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), setup.endBefore()) : undefined; return ok ? access.cancelRemoval(setup.grants!(), clock.now()) : false; },
+      cancelRemoval: (session: string): boolean => { const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), endBefore()) : undefined; return ok ? access.cancelRemoval(setup.grants!(), clock.now()) : false; },
       /** For the panel's probe (/status): whether the shop is locked (the owner holds a passkey) and the Operator's pending request. Counts and times only. */
       lockState: () => { const g = setup.grants?.(); return { locked: access.locked(g, clock.now()), removal: access.pendingRemoval(g, clock.now()) }; },
     },

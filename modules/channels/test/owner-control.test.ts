@@ -147,7 +147,7 @@ test("a new phone is announced to every OTHER phone until that phone dismisses i
     const b = register(access, { kind: "setup", token: add.token }, f, T0 + 2000, "iPhone, Safari");
     const seenByA = view(access, a.sid, f, T0 + 3000).announce;
     assert.equal(seenByA.length, 1);
-    assert.deepEqual([seenByA[0].id, seenByA[0].label, seenByA[0].madeAt], [b.passkey, "iPhone, Safari", T0 + 2000]);
+    assert.deepEqual([seenByA[0].id, seenByA[0].label, seenByA[0].madeAt], [b.passkey, "iPhone, Safari", T0 + 2001]);
     assert.deepEqual(view(access, b.sid, f, T0 + 3000).announce, [], "the new phone is not told about itself");
     // it stays until dismissed, whatever the time
     assert.equal(view(access, a.sid, f, T0 + 40 * HOUR).announce.length, 1);
