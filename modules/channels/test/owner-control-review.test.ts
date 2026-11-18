@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createHash } from "node:crypto";
+import { createECDH, createHash, randomBytes } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { openOwnerAccess, ownerKey } from "../owner-access.ts";
 import type { OwnerAccess, RelyingParty } from "../owner-access.ts";
@@ -152,10 +152,12 @@ test("finding 1: if nobody cancels, the number change applies like a removal (ph
     const a = enrol(c.access, WHO, f0, { kind: "setup", token: q }, T0);
     c.access.watchOwner(NEW, T0 + HOUR);
     assert.equal(c.access.cancelRemoval(f0, T0 + 2 * HOUR), true);
-    c.access.watchOwner(NEW, T0 + 3 * DAY);
-    assert.equal(c.access.pendingRemoval(f0, T0 + 3 * DAY), undefined, "a cancelled change is not heard again");
-    assert.equal(c.access.passkeys(NEW, rp, c.access.passkeysBefore(f0, T0 + 4 * DAY)).length, 1);
-    assert.ok(c.access.check(a.session, WHO, T0 + 4 * DAY));
+    c.access.watchOwner(NEW, T0 + 3 * HOUR);
+    assert.equal(c.access.pendingRemoval(f0, T0 + 3 * HOUR), undefined, "a cancelled change is not heard again within the day");
+    c.access.watchOwner(NEW, T0 + 2 * HOUR + 25 * HOUR);
+    assert.ok(c.access.pendingRemoval(f0, T0 + 27 * HOUR + 1), "after the day's quiet it may be asked again, with its own 48 hours");
+    assert.equal(c.access.passkeys(NEW, rp, c.access.passkeysBefore(f0, T0 + 28 * HOUR)).length, 1);
+    assert.ok(c.access.check(a.session, WHO, T0 + 28 * HOUR));
   } finally { c.done(); }
 });
 
@@ -297,4 +299,75 @@ test("re-review B: once locked, the panel's sign-out of every device never ends 
     }
     assert.ok(w.access.check(tok, WHO, T0 + 2 * HOUR, w.access.clampEndBefore(T0 + HOUR + 60_000, T0 + HOUR + 60_000)));
   } finally { w.done(); }
+});
+
+// ---- re-review item 1 (residual), 7 (partly), 9 (edge), C(a) ----
+test("re-review 1: the runtime remembers the locked number's digits, says when the settings differ, and a number change shares the removal cool-down", () => {
+  const w = world(); try {
+    const rp = relyingParty(WHO.base);
+    const NEW = { ...WHO, owner: "+919000000000" };
+    const q = newSetupToken(); const f0 = f({ setup: w.qr(q, T0) });
+    enrol(w.access, WHO, f0, { kind: "setup", token: q }, T0);
+    assert.equal(w.access.boundNumber(), "919876543210", "learned at the first passkey");
+    assert.equal(w.access.numberDiffers(WHO), false);
+    assert.equal(w.access.numberDiffers(NEW), true);
+    // a removal cancelled just now: a number change is not heard in the same day (and the removal's cool-down is the same one)
+    w.access.sync(pend(T0 + HOUR), T0 + HOUR); w.access.cancelRemoval(f0, T0 + 2 * HOUR);
+    w.access.watchOwner(NEW, T0 + 3 * HOUR);
+    assert.equal(w.access.pendingRemoval(f0, T0 + 3 * HOUR), undefined);
+    w.access.watchOwner(NEW, T0 + 2 * HOUR + 25 * HOUR);
+    assert.equal(w.access.pendingRemoval(f0, T0 + 27 * HOUR + 1)?.kind, "owner_change");
+    // an existing shop learns the digits the first time its settings still agree
+    const db = new DatabaseSync(join(w.dir, "owner-access.sqlite")); db.exec("DELETE FROM meta WHERE name = 'bound_number'"); db.close();
+    assert.equal(w.access.boundNumber(), undefined);
+    w.access.learnNumber(NEW.owner); assert.equal(w.access.boundNumber(), undefined, "another number teaches nothing");
+    w.access.learnNumber(WHO.owner); assert.equal(w.access.boundNumber(), "919876543210");
+    void rp;
+  } finally { w.done(); }
+});
+
+test("re-review 9: a request is extended by a restart once, not again at every restart; C(a): a request posted in a reset window is void for good", () => {
+  const w = world(); try {
+    const q = newSetupToken(); const f0 = f({ setup: w.qr(q, T0) });
+    enrol(w.access, WHO, f0, { kind: "setup", token: q }, T0);
+    const ask = pend(T0 + HOUR);
+    w.access.sync(ask, T0 + HOUR); w.access.takeNotes();
+    w.access.noteStart(T0 + 40 * HOUR);
+    assert.deepEqual(w.access.takeNotes().map((n) => n.what), ["removal_extended"]);
+    const once = w.access.pendingRemoval(ask, T0 + 40 * HOUR + 1)!.effectiveAt;
+    w.access.noteStart(T0 + 60 * HOUR);
+    assert.deepEqual(w.access.takeNotes(), [], "a second restart does not extend it again");
+    assert.equal(w.access.pendingRemoval(ask, T0 + 60 * HOUR + 1)!.effectiveAt, once);
+    assert.equal(w.access.passkeysBefore(ask, once + 1000), once, "it applies when its time comes");
+  } finally { w.done(); }
+  const r = world(); try {
+    const q = newSetupToken(); const f0 = f({ setup: r.qr(q, T0) });
+    r.access.sync(f0, T0); r.phone("p1", T0 + 1000);
+    const R = T0 + DAY; const adminQr = newSetupToken();
+    const reset = { at: new Date(R).toISOString(), reason: "dispute", by: "geometer", setup: { sha256: setupHash(adminQr), expiresAt: new Date(R + HOUR).toISOString() } };
+    const during = f({ reset, pendingRemoval: { askedBy: "Divya", askedAt: new Date(R + 60_000).toISOString(), effectiveAt: new Date(R + 60_000 + REMOVAL_WAIT_MS).toISOString() } });
+    r.access.sync(during, R + 70_000);
+    enrol(r.access, WHO, during, { kind: "setup", token: adminQr }, R + 100_000);
+    assert.equal(r.access.pendingRemoval(during, R + 200_000), undefined, "the owner is back, and the request posted in the window never starts");
+  } finally { r.done(); }
+});
+
+test("re-review 7: the first passkey ends the owner alert subscriptions made before it; the lock is told to the push store", async () => {
+  const { openPushStore } = await import("../../push/store.ts");
+  const dir = mkdtempSync(join(tmpdir(), "owner-push-"));
+  const store = openPushStore(join(dir, "push.sqlite"));
+  try {
+    const sub = (n: string) => { const e = createECDH("prime256v1"); e.generateKeys(); return { endpoint: `https://fcm.googleapis.com/fcm/send/${n}`, keys: { p256dh: e.getPublicKey().toString("base64url"), auth: randomBytes(16).toString("base64url") } }; };
+    store.subscribe("owner", sub("operator"), T0);          // the Operator's phone, subscribed through the panel's link at setup: no phone behind it
+    store.subscribe("owner", sub("owners"), T0, "own", "pk1"); // the owner's phone, made from its passkey
+    assert.deepEqual(store.ownerSubs().map((s) => s.ref ?? null), [null, "pk1"]);
+    assert.equal(store.dropUnbound(T0 + 1000), 1);
+    assert.deepEqual(store.ownerSubs().map((s) => s.ref), ["pk1"]);
+    // the owner stops one from their phones page; a customer's is never theirs to stop
+    store.subscribe("web:c", sub("customer"), T0);
+    const cid = (store as unknown as { ownerSubs(): { id: string }[] }).ownerSubs()[0].id;
+    assert.equal(store.dropOwnerSub(cid, T0 + 2000), true);
+    assert.equal(store.ownerSubs().length, 0);
+    assert.equal(store.phones("web:c"), 1);
+  } finally { store.close?.(); rmSync(dir, { recursive: true, force: true }); }
 });

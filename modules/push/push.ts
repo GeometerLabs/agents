@@ -32,6 +32,10 @@ export interface Push {
   subscribe(who: string, s: BrowserSubscription, signer?: Signer, ref?: string): { ok: true; id: string } | { ok: false; why: string };
   /** The owner removed a phone: the alerts it asked for end (owner's item 2). */
   dropRef(ref: string): number;
+  /** The owner's alert subscriptions with the phone (passkey) each came from, the owner stopping one, and the lock ending every one that came from no phone (owner's item 2). */
+  ownerSubs(): { id: string; ref?: string; madeAt: number }[];
+  dropOwnerSub(id: string): boolean;
+  dropUnbound(): number;
   unsubscribe(who: string, endpoint: string): boolean;
   phones(who: string): number;
   /** W2, "delete my chat": the conversation's phones stop getting alerts. */
@@ -56,6 +60,9 @@ export function createPush(o: { store: PushStore; sender: PushSender; shopName: 
     setChoice: (c) => store.setChoice(c),
     ownerPhones: () => store.phones("owner"),
     dropRef: (ref) => store.dropRef(ref, clock.now()),
+    ownerSubs: () => store.ownerSubs(),
+    dropOwnerSub: (id) => store.dropOwnerSub(id, clock.now()),
+    dropUnbound: () => store.dropUnbound(clock.now()),
     subscribe: (who, s, signer = "own", ref) => {
       if (!o.on) return { ok: false, why: "push is not on for this shop" };
       if (signer === "streetlist" && !o.relayKey) return { ok: false, why: "this shop does not send through the Streetlist app" };

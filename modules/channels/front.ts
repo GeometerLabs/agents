@@ -692,7 +692,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     /** A signed-in owner's POST must carry the session's form token; the panel's link is its own secret and needs none. */
     const csrfOk = (given: unknown) => o.csrf === undefined || (typeof token === "object" && "session" in token && csrfMatches(token.session, given));
     // item 11e: the owner's app lives at the same base: the page also at "<base>/" (a service worker controls only pages inside its scope, <base>/), and its four routes
-    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/listings": "GET", "/listings/op": "POST", "/stock": "GET", "/stock/op": "POST", "/listings/photo": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST", "/leave": "POST", "/phones": "GET", "/phones/remove": "POST", "/phones/dismiss": "POST", "/phones/cancel": "POST", "/phones/codes": "POST", "/phones/add": "POST" };
+    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/listings": "GET", "/listings/op": "POST", "/stock": "GET", "/stock/op": "POST", "/listings/photo": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST", "/leave": "POST", "/phones": "GET", "/phones/remove": "POST", "/phones/dismiss": "POST", "/phones/cancel": "POST", "/phones/codes": "POST", "/phones/add": "POST", "/phones/alert-stop": "POST" };
     // the accountant's files: <owner app>/accounting/<period>/<file>, for the signed-in owner's session only (handled below, once the session is known good)
     const accounting = /^\/accounting\/([^/]+)(?:\/([^/]+))?$/u.exec(sub);
     // block S: the owner's own view of one of their photos, by its id (a draft's, a waiting one): <owner app>/listings/p/<id>
@@ -772,6 +772,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
       if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
       if (sub === "/phones/dismiss") { const through = Number(form.get("through")); await ph(ownSession, { op: "dismiss", ...(Number.isFinite(through) && through > 0 ? { through } : {}) }); return redirect(res, `${base}/?lang=${language}`); }
+      if (sub === "/phones/alert-stop") { await ph(ownSession, { op: "stop_alert", id: form.get("id") ?? "" }); return redirect(res, phonesAt()); }
       if (sub === "/phones/cancel") { await ph(ownSession, { op: "cancel_removal" }); return redirect(res, phonesAt("cancelled")); }
       if (sub === "/phones/remove") {
         const id = form.get("id") ?? "";

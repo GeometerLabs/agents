@@ -139,6 +139,8 @@ export function openOwnerAccess(file: string) {
   `);
   // A safe migration for a store made before the phones list: the label (coarse platform and browser, owner-phones.ts) is new; an old row keeps NULL and shows as "a phone".
   if (!(db.prepare("PRAGMA table_info(passkeys)").all() as { name: string }[]).some((c) => c.name === "label")) db.exec("ALTER TABLE passkeys ADD COLUMN label TEXT");
+  // at most one restart-extension per request (review item 9): a runtime restarted every few hours must not postpone a request for ever
+  if (!(db.prepare("PRAGMA table_info(removals)").all() as { name: string }[]).some((c) => c.name === "extended")) db.exec("ALTER TABLE removals ADD COLUMN extended INTEGER NOT NULL DEFAULT 0");
   for (const t of ["own_codes", "own_setups"]) if (!(db.prepare(`PRAGMA table_info(${t})`).all() as { name: string }[]).some((c) => c.name === "by_passkey")) db.exec(`ALTER TABLE ${t} ADD COLUMN by_passkey TEXT`);
   type LinkRow = { id: string; made_at: number; expires_at: number; state: string; owner_key: string; base: string };
   type SessionRow = { id: string; link_id: string; made_at: number; expires_at: number; ended_at: number | null; owner_key: string; base: string };
@@ -220,6 +222,8 @@ export function openOwnerAccess(file: string) {
   /** The reset in the file, but only the one this store has applied (so a changed file cannot swap in another QR). */
   const appliedReset = (file: OwnerGrants | undefined): NonNullable<OwnerGrants["reset"]> | undefined =>
     file?.reset && Date.parse(file.reset.at) === metaNum("reset_raw") ? file.reset : undefined;
+  /** The owner cancelled a request (of either kind) within the last day: the Operator waits before the next one is heard. */
+  const cancelledRecently = (now: number): boolean => db.prepare("SELECT 1 FROM removals WHERE state = 'cancelled' AND at > ?").get(now - 24 * 60 * 60_000) !== undefined;
   const endSessionsBefore = (t: number, now: number, why: string): void => { db.prepare("UPDATE sessions SET ended_at = ?, ended_why = ? WHERE ended_at IS NULL AND made_at < ?").run(now, why, t); };
   /** Things the runtime should write in the record once (the tick does), found while reading the files. */
   type Note = { what: "reset"; at: number; reason: string; by: string } | { what: "removal_asked"; askedBy: string; askedAt: string; effectiveAt: number } | { what: "removal_applied"; at: number } | { what: "owner_change_asked"; effectiveAt: number } | { what: "removal_extended"; kind: "removal" | "owner_change"; askedBy: string; effectiveAt: number };
@@ -284,7 +288,11 @@ export function openOwnerAccess(file: string) {
     if (applied?.setup) db.prepare("INSERT OR IGNORE INTO grants_seen (hash, kind, first_seen) VALUES (?, 'reset', ?)").run(applied.setup.sha256, now);
     const p = file?.pendingRemoval;
     // a fresh request right after the owner cancelled one waits a day first: otherwise the Operator could post again at once, every time, until the owner is not looking
-    const cooling = db.prepare("SELECT 1 FROM removals WHERE state = 'cancelled' AND asked_at NOT LIKE 'owner-change:%' AND at > ?").get(now - 24 * 60 * 60_000) !== undefined;
+    const cooling = cancelledRecently(now);
+    // a request posted while a reset window is open is void for good: it must not start its 48 hours the day the owner registers again
+    if (p && inResetWindow() && !db.prepare("SELECT 1 FROM removals WHERE asked_at = ?").get(p.askedAt)) {
+      db.prepare("INSERT INTO removals (asked_at, asked_by, seen_at, effective_at, state, at) VALUES (?, ?, ?, ?, 'withdrawn', ?)").run(p.askedAt, p.askedBy, now, now, now);
+    }
     if (p && !cooling && !db.prepare("SELECT 1 FROM removals WHERE asked_at = ?").get(p.askedAt) && lockAt() !== undefined && Date.parse(p.askedAt) > (metaNum("reset_at") ?? 0)) {
       // a request the owner has no way to have seen yet starts its wait NOW, whatever time the file says: a back-dated request must not apply at once
       db.prepare("UPDATE removals SET state = 'withdrawn', at = ? WHERE state = 'pending' AND asked_at NOT LIKE 'owner-change:%'").run(now);
@@ -343,9 +351,9 @@ export function openOwnerAccess(file: string) {
      * said again: an owner whose phones were off, or an outage nobody chose, must not lose the wait (a request must be SEEN for its whole time to count). Called once.
      */
     noteStart(now: number): void {
-      const rows = db.prepare("SELECT asked_at, asked_by, effective_at FROM removals WHERE state = 'pending' AND effective_at < ?").all(now + 24 * 60 * 60_000) as { asked_at: string; asked_by: string; effective_at: number }[];
+      const rows = db.prepare("SELECT asked_at, asked_by, effective_at FROM removals WHERE state = 'pending' AND extended = 0 AND effective_at < ?").all(now + 24 * 60 * 60_000) as { asked_at: string; asked_by: string; effective_at: number }[];
       for (const r of rows) {
-        db.prepare("UPDATE removals SET effective_at = ? WHERE asked_at = ?").run(now + 24 * 60 * 60_000, r.asked_at);
+        db.prepare("UPDATE removals SET effective_at = ?, extended = 1 WHERE asked_at = ?").run(now + 24 * 60 * 60_000, r.asked_at);
         notes.push({ what: "removal_extended", kind: r.asked_at.startsWith("owner-change:") ? "owner_change" : "removal", askedBy: r.asked_by, effectiveAt: now + 24 * 60 * 60_000 });
       }
     },
@@ -361,6 +369,15 @@ export function openOwnerAccess(file: string) {
       const r = db.prepare("SELECT asked_by, asked_at, seen_at, effective_at FROM removals WHERE state = 'pending' ORDER BY effective_at LIMIT 1").get() as { asked_by: string; asked_at: string; seen_at: number; effective_at: number } | undefined;
       return r ? { kind: r.asked_at.startsWith("owner-change:") ? "owner_change" : "removal", askedBy: r.asked_by, askedAt: r.asked_at, seenAt: r.seen_at, effectiveAt: r.effective_at } : undefined;
     },
+    /** The shop was locked with this owner's number, if the runtime knows it in plain digits (it learns it at the first passkey, or the first start where the settings still agree). */
+    boundNumber(): string | undefined { return boundKey() !== undefined && lockAt() !== undefined ? metaStr("bound_number") : undefined; },
+    /** The settings name the locked owner's number: remember it in plain digits (an existing shop, or a restored one, did not record it). */
+    learnNumber(number: string): void {
+      const b = boundKey();
+      if (b !== undefined && lockAt() !== undefined && ownerKey(number) === b && metaStr("bound_number") === undefined) db.prepare("INSERT INTO meta (name, value) VALUES ('bound_number', ?) ON CONFLICT(name) DO NOTHING").run(number.replace(/\D/gu, ""));
+    },
+    /** Does the owner number in the settings differ from the one the shop was locked with? (The owner's phones say so, and their messages keep going to the locked number.) */
+    numberDiffers(settings: OwnerNow): boolean { const b = boundKey(); return b !== undefined && lockAt() !== undefined && ownerKey(settings.owner) !== b; },
     /**
      * The owner's number in the settings, as the panel's edit form can change it, checked against the identity the shop was locked with. A DIFFERENT number after the
      * lock is not "the owner changed": it is a request with the same wait as a removal (the owner sees it on every phone and can cancel; until it applies, a session for
@@ -372,8 +389,16 @@ export function openOwnerAccess(file: string) {
       const current = ownerKey(who.owner);
       if (current === bound) { db.prepare("UPDATE removals SET state = 'withdrawn', at = ? WHERE state = 'pending' AND asked_at LIKE 'owner-change:%'").run(now); return; }
       const key = `owner-change:${current}`;
-      if (db.prepare("SELECT 1 FROM removals WHERE asked_at = ?").get(key)) return;
+      const had = db.prepare("SELECT state, at FROM removals WHERE asked_at = ?").get(key) as { state: string; at: number } | undefined;
+      // a cancelled number may be asked again after the same day's quiet as a removal (it could not be, before); a pending or applied one is not asked twice
+      if (had && !(had.state === "cancelled" && now - had.at >= 24 * 60 * 60_000 && !cancelledRecently(now))) return;
+      if (!had && cancelledRecently(now)) return;
       const effectiveAt = now + REMOVAL_WAIT_MS;
+      if (had) {
+        db.prepare("UPDATE removals SET state = 'pending', seen_at = ?, effective_at = ?, at = ?, extended = 0 WHERE asked_at = ?").run(now, effectiveAt, now, key);
+        notes.push({ what: "owner_change_asked", effectiveAt });
+        return;
+      }
       db.prepare("INSERT INTO removals (asked_at, asked_by, seen_at, effective_at, state, at) VALUES (?, 'the owner number', ?, ?, 'pending', ?)").run(key, now, effectiveAt, now);
       notes.push({ what: "owner_change_asked", effectiveAt });
     },
@@ -554,7 +579,7 @@ export function openOwnerAccess(file: string) {
      * grant used up, the credential kept and a session made for this browser. Returns the session token ONCE.
      */
     register(g: Grant, file: OwnerGrants | undefined, who: OwnerNow, rp: RelyingParty, response: RegistrationResponse, now: number, label = ""):
-      { ok: true; session: string; id: string; expiresAt: number; passkey: string } | { ok: false; state: Exclude<GrantState, "valid"> | "refused"; why?: string } {
+      { ok: true; session: string; id: string; expiresAt: number; passkey: string; firstOfLock: boolean } | { ok: false; state: Exclude<GrantState, "valid"> | "refused"; why?: string } {
       const state = api.grantState(g, file, now);
       if (state !== "valid") return { ok: false, state };
       const clientData = b64(response?.clientDataJSON, 4096); const attestation = b64(response?.attestationObject, 16_384);
@@ -578,14 +603,20 @@ export function openOwnerAccess(file: string) {
         db.prepare("INSERT INTO passkeys (id, cred_id, jwk, alg, sign_count, backed_up, made_at, owner_key, rp_id, via, label) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
           .run(id, cred.id, JSON.stringify(cred.jwk), cred.alg, cred.signCount, cred.backedUp ? 1 : 0, now, effKey(who), rp.rpId, via, label ? label.slice(0, 60) : null);
         // the first passkey of this lock binds the shop to the owner it was made for (cleared when the gate opens again)
-        if (boundKey() === undefined) setMeta("bound_owner", effKey(who));
+        const firstOfLock = boundKey() === undefined;
+        if (firstOfLock) {
+          setMeta("bound_owner", effKey(who));
+          // the plain digits too, so the runtime can keep talking to THIS number if the Operator's settings later name another (start.ts); the owner's own number, in the
+          // shop's own database, which already holds it in the settings
+          db.prepare("INSERT INTO meta (name, value) VALUES ('bound_number', ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value").run(who.owner.replace(/\D/gu, ""));
+        }
         db.prepare("INSERT INTO grants_used (hash, kind, used_at, passkey_id) VALUES (?, ?, ?, ?)").run(gh, g.kind, now, id);
         // at most MAX_PASSKEYS: the one used longest ago goes
         const kept = db.prepare("SELECT id FROM passkeys WHERE removed_at IS NULL ORDER BY coalesce(used_at, made_at) DESC").all() as { id: string }[];
         for (const old of kept.slice(MAX_PASSKEYS)) db.prepare("UPDATE passkeys SET removed_at = ?, removed_why = 'too_many' WHERE id = ?").run(now, old.id);
         const s = startSession(effKey(who), who.base, `pk-${id}`, now);
         db.exec("COMMIT");
-        return { ok: true, ...s, passkey: id };
+        return { ok: true, ...s, passkey: id, firstOfLock };
       } catch (e) { if (db.isTransaction) db.exec("ROLLBACK"); throw e; }
     },
 
@@ -759,6 +790,8 @@ export interface PhonesView {
   /** When the owner made their own recovery codes (the newest set still good), if they did. */
   ownCodesAt?: number;
   passkeySession: boolean;
+  /** The Operator's settings name another owner number than the one the shop was locked with: the owner's messages still go to the number it was locked with. */
+  numberDiffers?: boolean;
 }
 
 /**

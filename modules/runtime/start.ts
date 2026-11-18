@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { OWNER_LINK_FILE, ownerLinkReader } from "../channels/owner-link.ts";
-import { OWNER_ACCESS_FILE, OWNER_SESSIONS_FILE, openOwnerAccess, readEndBefore } from "../channels/owner-access.ts";
+import { OWNER_ACCESS_FILE, OWNER_SESSIONS_FILE, openOwnerAccess, ownerKey, readEndBefore } from "../channels/owner-access.ts";
 import { CHAT_IDENTITY_FILE, openChatIdentity } from "../channels/chat-identity.ts";
 import { createChatLinks, withChatLinks } from "../channels/chat-link-send.ts";
 import { createChatIdentity } from "../channels/chat-identity-http.ts";
@@ -229,7 +229,17 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   // the shop's addresses (pages.json) and the panel's "sign out every device" (owner-sessions.json) are read from the client folder on every use.
   const owner = (client.settings as { owner?: { whatsapp: string; language: Language } }).owner;
   const ownerAccess = channelToken && owner ? openOwnerAccess(join(client.runtime.dataDir, OWNER_ACCESS_FILE)) : undefined;
+  // Owner's item 2: once the owner holds a passkey the shop keeps talking to the number it was LOCKED with. If the Operator's settings name another number, every owner-facing
+  // WhatsApp send, "open my app" and owner message uses the locked one (the settings object is what the template reads), and the change is a request the owner can cancel.
+  // The runtime learns the locked number's digits at the first passkey, or at the first start where the settings still agree.
+  const settingsNumber = owner?.whatsapp;
+  if (ownerAccess && owner) {
+    ownerAccess.learnNumber(owner.whatsapp);
+    const locked = ownerAccess.boundNumber();
+    if (locked && ownerKey(locked) !== ownerKey(owner.whatsapp)) { owner.whatsapp = locked; log("The owner's number in the settings is not the one this shop was locked with; the owner's messages keep going to the locked number until the owner confirms the change."); }
+  }
   const ownerSigninBase = ownerAccess && owner ? createOwnerSignin({
+    ...(settingsNumber !== undefined && owner && settingsNumber !== owner.whatsapp ? { settingsOwner: settingsNumber } : {}),
     access: ownerAccess, pages: pagesReader(join(client.folder, PAGES_FILE)), endBefore: () => readEndBefore(join(client.folder, OWNER_SESSIONS_FILE)),
     // item 11h: the Operator's setup QR and recovery card, as the deployer copies the panel's file here
     // owner's item 2: Geometer's reset is a second file the panel never writes (owner-grants.ts), merged in by the reader
