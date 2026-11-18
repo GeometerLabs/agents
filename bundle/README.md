@@ -459,6 +459,14 @@ Every Bookings shop has a page with three views (plan item 11f; the design is in
 | `https://<the pages domain>/<slug>/owner` | the owner | signed in by a one-time link sent to the owner's WhatsApp (no password); then item 11d's owner page |
 | `https://<server>/s/<shop>/` and `/s/<shop>/owner` | the same views | on the server's own address, for every shop (a builder's client with `"own"` has only these) |
 
+**Who controls the owner's sign-in** (19 November 2026). The owner signs in with a passkey. Until the owner's first sign-in the Operator shows the setup QR code and prints the recovery card, as before. From the owner's first sign-in the owner holds it: the shop's runtime refuses a setup QR or a card the Operator makes after that, the panel says so ("The owner now holds their own sign-in. A new phone is added from the owner's app, or with the owner's recovery codes."), and **"Ask to remove the owner's passkeys"** becomes a request that waits 48 hours, which the owner sees at once in their app (and by push) and can cancel; if nobody cancels the runtime applies it and only then may you show a new setup QR code. In the owner's app, "Phones that can open your shop" lists every phone (platform and browser, the day added and how, last used), removes one, adds one, and makes the owner's own recovery codes. If an owner is stuck, or an Operator kept the first QR, the server's admin resets the owner's sign-in:
+
+```
+geometer owner reset <shop> --reason "owner lost every phone; checked on a video call" --by "Naval" [--qr-out qr.png]
+```
+
+It stops every phone, setup QR, recovery code (the Operator's and the owner's own) and signed-in device at once, cancels a pending request, and makes ONE new one-use setup QR (an hour): the link is printed once, and `--qr-out` also writes a PNG of it (delete it after the owner has scanned it). The shop's record and the Operator's panel say "Geometer reset the owner's sign-in on <day>: <reason>". It is a command and not a panel button on purpose: on Geometer's own Operator server only Geometer runs it (owners write to hello@geometer.dev; the owner's sign-in page says so there), and on a builder's own server the builder is the admin. Explanation.md, "Who controls the owner's sign-in", has the reasons.
+
 The Operator's line at the bottom of the customer view links to their account on geometer.dev and to the panel; nobody signs in across the two domains.
 
 **In the panel** (the shop's page, "The shop's page"): the short name (3 to 40 small letters, digits and hyphens, like `veena-salon`), the WhatsApp number the page shows, and,
