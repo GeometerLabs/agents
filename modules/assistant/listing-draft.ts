@@ -10,7 +10,7 @@
 //    health, vaccination or pure-breed word (listings.ts HEALTH_CLAIM), unless the owner's own words carry it. Then it is the owner's claim, kept as `claims` and shown as "the owner says".
 //  - Protected native animals are refused before the model is asked (listings.ts PROTECTED_ANIMALS).
 //  - The words of the other languages are machine-written; the listing records which language was the owner's (`ownerLang`), and every page marks the others.
-// The model call goes through the same metering and button-mode switches as every talk turn (talk-run.ts askMetered). Tested on the fakes only: not tested on a real model.
+// The model call goes through the same metering and button-mode switches as every talk turn (talk-run.ts askMetered), and counts against the shop's month budget and the day's cap on drafts (budget/budget.ts). Tested on the fakes only: not tested on a real model.
 import { MINUTE } from "../core/time.ts";
 import { languageOfScript, plain } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
@@ -141,20 +141,21 @@ export function groundedIn(ownerText: string, words: Partial<Record<Lang, LangTe
   return { ok: true };
 }
 
-export type DraftRefusal = Failure | "no_model" | "model_failed" | ModelRefusal | "price_not_in_words";
+export type DraftRefusal = Failure | "no_model" | "over_budget" | "over_day" | "model_failed" | ModelRefusal | "price_not_in_words";
 export type DraftOutcome = { ok: true; input: DraftInput } | { ok: false; why: DraftRefusal; animal?: string };
 
-export interface DraftDeps { env: TalkEnv; shopName: string; ownerLanguage: Language; extraCategories?: readonly string[] }
+export interface DraftDeps { env: TalkEnv; shopName: string; ownerLanguage: Language; extraCategories?: readonly string[]; /** The owner's message id, so the same words are never paid for twice (budget.ts). */ key?: string }
 
 /** Ask the talk model for the draft, check it against the owner's words, and give back the input for `draft()` (listings.ts). Never throws. Costs one model call, counted like every other. */
 export async function draftFromWords(d: DraftDeps, a: { text: string }): Promise<DraftOutcome> {
-  if (talkOff(d.env)) return { ok: false, why: "no_model" };
+  const off = talkOff(d.env, "listing_draft", d.key);
+  if (off) return { ok: false, why: off === "budget" ? "over_budget" : off === "day" || off === "again" ? "over_day" : "no_model" };
   // a protected animal is refused before the model is asked: nothing to pay for
   const owned = protectedAnimalIn({ en: { title: a.text, text: "" } });
   if (owned) return { ok: false, why: "protected_animal", animal: owned };
   const read = readListingWords(a.text);
   const { system, schema } = listingPrompt(d.shopName, []);
-  const { got, meter, month } = await askMetered(d.env, { system, user: a.text, schema, name: "listing" });
+  const { got, meter, month } = await askMetered(d.env, { system, user: a.text, schema, name: "listing" }, "listing_draft", d.key);
   const log = (result: string) => d.env.log(null, "owner", "listing_draft", "confirmed", { digest: "owner words" }, { language: d.ownerLanguage, notes: "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it", refs: { result, ...meter } });
   if (got.reason !== undefined || got.answer === undefined) {
     month.pausedUntilMs = d.env.clock.now() + (d.env.policy.pauseMinutes ?? DEFAULT_PAUSE_MINUTES) * MINUTE;
