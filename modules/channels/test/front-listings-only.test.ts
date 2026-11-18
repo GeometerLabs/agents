@@ -18,11 +18,13 @@ const backend = {
   offer: async () => ({ kind: "listings", shop: { name: "Sree Pets", timezone: "Asia/Kolkata", languages: ["en", "ml"], address: "Thrissur", paused: false } }),
   feesOffer: undefined,
   submit: async () => "saved", view: async () => null, owner: async () => VIEW, listings: async () => read, listingPhoto: async () => null,
+  // the sign-in the real runtime backend has (modules/channels/backend.ts); /owner needs these and a pages file
+  linkState: async () => "unknown", signin: async () => ({ state: "unknown" }), signout: async () => undefined,
   chat: async () => ({ lines: [], answered: false, capped: false, retentionDays: 30 }), // a backend that HAS a chat: the front must still not offer it for this kind
 } as unknown as ChannelBackend;
 
 async function serve<T>(run: (base: string) => Promise<T>): Promise<T> {
-  const server = createServer(frontHandler({ shops: { "sree-pets": { publicUrl: PUBLIC, backend, kind: "listings" } }, waitMs: 10 }));
+  const server = createServer(frontHandler({ shops: { "sree-pets": { publicUrl: PUBLIC, backend, kind: "listings", pages: () => ({ schema: 1, base: PUBLIC, ownerBase: `${PUBLIC}/owner` }) } }, waitMs: 10 }));
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   try { return await run(`http://127.0.0.1:${(server.address() as { port: number }).port}/s/sree-pets`); } finally { await new Promise<void>((r) => { server.closeAllConnections(); server.close(() => r()); }); }
 }
@@ -47,6 +49,14 @@ test("no chat is offered or served, and no customer-side route of another kind i
     for (const path of ["/chat", "/chat/font.woff2", "/api/v1/services", "/mcp", "/book", "/menu"]) assert.equal((await fetch(`${b}${path}`)).status, 404, path);
     const text = await (await fetch(`${b}/shop`)).text();
     assert.ok(!text.includes("/chat"), "no page points at the chat; 'Ask about this' is not drawn");
+  });
+});
+
+test("the owner's sign-in (the passkey way in) is served for a listings-only shop: every shop in production has a pages file, written by the deployer for every applied shop (bundle/apply.ts runPages) and read by the front", async () => {
+  await serve(async (b) => {
+    const r = await fetch(`${b}/owner`, { redirect: "manual" });
+    assert.equal(r.status, 200, "the sign-in page, not 'nothing here'");
+    assert.ok(!(await r.text()).includes("There is nothing here"));
   });
 });
 
