@@ -50,9 +50,10 @@ test("no chat is offered or served, and no customer-side route of another kind i
   });
 });
 
-test("the owner's page is still there (it asks for the owner's credential, as for any shop)", async () => {
+test("the owner's page is still there: a link opens it for a listings-only shop as for any shop (the owner's sign-in at /owner needs a pages file, which this fake front has none of)", async () => {
   await serve(async (b) => {
-    const r = await fetch(`${b}/owner`, { redirect: "manual" });
-    assert.notEqual(r.status, 404, "the owner's way in is served for a listings-only shop");
+    const r = await fetch(`${b}/o/${"A".repeat(43)}`, { redirect: "manual" });
+    assert.equal(r.status, 200, "the owner's page is served for kind listings");
+    assert.match(await r.text(), /Sree Pets/u);
   });
 });
