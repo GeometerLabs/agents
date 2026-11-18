@@ -154,7 +154,7 @@ export function screen(state: string, q: URLSearchParams, base = BASE): { html: 
     ...(state === "alerts" ? { pushKey: "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBxWqwxeKV8hxiSaI4Rc" } : {}),
     onStreetlist: q.get("streetlist") === "1", fontUrl: `${base}/font.woff2`,
     // W2: the identity part; ?parent=1 draws a Fees parent's chat note instead
-    identity: identityBlock({ language, base, ...(q.get("parent") === "1" ? { parent: { back: "http://127.0.0.1/s/glow/f/link" } } : {}) }),
+    identity: identityBlock({ kind, language, base, ...(q.get("parent") === "1" ? { parent: { back: "http://127.0.0.1/s/glow/f/link" } } : {}) }),
   });
   const dark = q.get("theme") === "dark" ? `<script nonce="${nonce}">document.documentElement.dataset.theme = "dark";</script>` : "";
   return { html: page.replace("</body>", `${dark}${seed(state, nonce, language)}</body>`), csp: chatPolicy(base, nonce, base.replace(/\/chat$/u, "")) };
