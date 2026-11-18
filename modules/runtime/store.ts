@@ -4,6 +4,9 @@
 //   state   the agent's Store as one JSON snapshot (see snapshot.ts), kept in pieces (state_shape and state_rows, below)
 //   record  the action record, append-only (the database itself refuses an update or a delete)
 //   window  when each person last messaged us, for WhatsApp's 24-hour rule
+// and (block S, schema 5) shop_key: the shop's own signing key (modules/runtime/shop-key.ts, specs/shop-feed.md "The key belongs to the shop"). It is in THIS file on purpose: the nightly
+// snapshot (VACUUM INTO) and Litestream copy this one file, so the key is in the shop's backup and a restore brings it back with the shop. It is never in the state snapshot (that is
+// written out in the shop's export at 0644) and never in the record.
 // and (block S, schema 4) listing_photos: the bytes of the photos on the shop's listings, already checked and cleaned (modules/listings/photo.ts), by their own id. They sit in the
 // shop's own database on purpose: the nightly snapshot (VACUUM INTO) and Litestream carry them with nothing new, a restore brings them back with the listings that name them,
 // and the export reads them from the same file.
@@ -56,6 +59,13 @@ export interface PhotoStore {
   prune(keep: ReadonlySet<string>, olderThanMs: number): number;
 }
 
+/** The shop's own signing key as text (PKCS#8 DER, base64url: modules/signing/keys.ts `privateText`). One row, made once. */
+export interface ShopKeyStore {
+  get(): string | undefined;
+  /** The key, made by `make` and kept if the shop has none yet. Reading and keeping happen in one transaction, so two callers can never end with two keys. */
+  ensure(make: () => string, nowMs: number): string;
+}
+
 export interface DurableStore extends WindowStore {
   readonly file: string;
   /** Save new events as pending tasks and note when each sender last wrote. All or nothing. Ids already seen are skipped. */
@@ -91,6 +101,8 @@ export interface DurableStore extends WindowStore {
   compactTurns(beforeMs: number): number;
   /** The photos of the shop's listings (block S): the cleaned bytes by id. Left out in a test double that has none. */
   photos?: PhotoStore;
+  /** The shop's own signing key (block S, schema 5). Left out in a test double that has none. */
+  shopKey?: ShopKeyStore;
   /** Throws if the database cannot be read. */
   ping(): void;
   close(): void;
@@ -170,6 +182,14 @@ const MIGRATIONS: (string | ((db: DatabaseSync) => void))[] = [
     bytes BLOB NOT NULL,
     at_ms INTEGER NOT NULL
   ) WITHOUT ROWID;
+  `,
+  // Block S (the shop's own key): one row, the private key as text. Never edit; a rotation would add a column or a table in a later entry.
+  `
+  CREATE TABLE shop_key (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    private_key TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
   `,
 ];
 
@@ -341,6 +361,8 @@ export function openStore(dataDir: string): DurableStore {
   const allPhotos = db.prepare("SELECT id FROM listing_photos");
   const oldPhotos = db.prepare("SELECT id FROM listing_photos WHERE at_ms < ?");
   const deletePhoto = db.prepare("DELETE FROM listing_photos WHERE id = ?");
+  const oneKey = db.prepare("SELECT private_key FROM shop_key WHERE id = 1");
+  const putKey = db.prepare("INSERT OR IGNORE INTO shop_key (id, private_key, created_at) VALUES (1, ?, ?)");
   const emptyOldFailed = db.prepare("UPDATE tasks SET payload = '{}' WHERE state = 'failed' AND payload <> '{}' AND received_at < ?");
 
   // The pieces as this handle last read or wrote them, so a step is compared with them without reading the whole state again. Trusted only while the stored version is
@@ -419,6 +441,16 @@ export function openStore(dataDir: string): DurableStore {
         for (const r of oldPhotos.all(olderThanMs) as { id: string }[]) if (!keep.has(r.id)) { deletePhoto.run(r.id); gone += 1; }
         return gone;
       },
+    },
+    shopKey: {
+      get: () => (oneKey.get() as { private_key: string } | undefined)?.private_key,
+      ensure: (make, nowMs) => inTransaction(db, () => {
+        const have = oneKey.get() as { private_key: string } | undefined;
+        if (have) return have.private_key;
+        const text = make();
+        putKey.run(text, nowMs);
+        return text;
+      }),
     },
     lastInboundAt: (phone) => (lastInbound.get(phone) as { last_inbound_at: number } | undefined)?.last_inbound_at,
     compactTurns: (beforeMs) => Number(emptyOldFailed.run(beforeMs).changes),

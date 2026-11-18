@@ -36,6 +36,7 @@ import type { Runtime } from "./core.ts";
 import { startServer } from "./http.ts";
 import type { RunningServer } from "./http.ts";
 import { openStore } from "./store.ts";
+import { loadShopKey } from "./shop-key.ts";
 import type { DurableStore } from "./store.ts";
 import { startTicker } from "./ticker.ts";
 
@@ -216,6 +217,9 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   const recordKey = readRecordKey(client.runtime.mode, options.recordKeyFile ?? process.env.RECORD_KEY_FILE);
 
   const store = openStore(client.runtime.dataDir);
+  // Block S: the shop's own signing key is made here on the first start (or taken from shop-key.json when the shop was restored from the owner's file), so it is there before any page asks
+  // for it. It lives in the shop's database (shop-key.ts), which is what the backup, the restore and a move to another Operator carry.
+  loadShopKey(store, { dataDir: client.runtime.dataDir, nowMs: clock.now(), log });
   // Item 11f: the owner's sign-in on the shop's page, for a shop with a page (a channel token). Its links and sessions are in a file of their own beside the store;
   // the shop's addresses (pages.json) and the panel's "sign out every device" (owner-sessions.json) are read from the client folder on every use.
   const owner = (client.settings as { owner?: { whatsapp: string; language: Language } }).owner;

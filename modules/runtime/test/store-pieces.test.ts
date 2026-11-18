@@ -102,7 +102,7 @@ test("a file of layout 2 is moved into pieces when it is opened, and the bundle'
   raw.close();
   const db = openStore(dir);
   try {
-    assert.equal(SCHEMA_VERSION, 4); // 3 was the snapshot in pieces; 4 added the listing_photos table (block S, listings)
+    assert.equal(SCHEMA_VERSION, 5); // 3 was the snapshot in pieces; 4 added the listing_photos table (block S, listings); 5 the shop_key table (the shop's own signing key)
     assert.equal(db.loadState().snapshot, old, "moved over whole");
     const check = new DatabaseSync(file, { readOnly: true });
     assert.equal(check.prepare("SELECT 1 FROM sqlite_master WHERE name = 'state'").get(), undefined, "the old table is gone, so nothing reads a stale copy of it");
