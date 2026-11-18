@@ -1,8 +1,7 @@
 # Go runtime for a listings-only shop (a trial)
 
 A listings-only shop is the smallest kind: it only shows what it has (`templates/commerce/listings`). This folder is **the shop's runtime written in Go**, built as a trial of whether code
-that runs inside a shop can be Go (decision 61, `docs` repo `plans/next-phase.md` section 1c). The results are in [TRIAL.md](TRIAL.md). It is not wired into the deployer or the
-shared process: it runs ONE shop, the way `templates/commerce/listings/server/main.ts` does, and it reads the same folder.
+that runs inside a shop can be Go (decision 61, `docs` repo `plans/next-phase.md` section 1c). The results are in [TRIAL.md](TRIAL.md). It is not wired into the deployer: `cmd/listings` runs ONE shop, the way `templates/commerce/listings/server/main.ts` does, and it reads the same folder.
 
 What stays TypeScript: the front (`modules/channels/front.ts`), the deployer, the panel, the directory. They call this runtime over HTTP and cannot tell which one answered; the
 **contract** in `templates/commerce/listings/contract/` is what both must pass.
@@ -38,10 +37,16 @@ internal/listings/       the listings: state and rules, the owner's ops, the pub
 internal/access/         the owner's sessions, sign-in links, passkeys (WebAuthn), the Operator's setup code and card, and who controls them (the gate, the Operator's requests,
                          Geometer's reset, the owner's phones and own codes, the number lock), in owner-access.sqlite, same schema (modules/channels owner-*.ts, webauthn.ts)
 internal/testclock/      the contract tests' clock (GEOMETER_TEST=1 + GEOMETER_TEST_CLOCK_FILE, a "fakes" shop only; a live shop refuses to start with it)
+internal/push/           web push: the push store (push.sqlite, the TypeScript runtime's own file), RFC 8291 encryption, VAPID, the sender to the shop's push Guard (modules/push)
+internal/assistant/      the owner's assistant: its state (cards, talk, undo, typed; unknown members stay raw), the card binding (the digest TypeScript and Go agree on, the judge), the owner's words read by rule, and the words it says, packed per language (words/*.json.gz, made by scripts/gen_words.ts from the TypeScript words and unpacked once per process per language); the runtime package runs it in a step (assistant.go, draft.go, ownerview.go)
 internal/budget/         the shop's model budget and the month's AI counts (modules/budget, modules/understanding/ai-state.ts)
+internal/shared/         the multi-shop host (the Go twin of modules/runtime/shared.ts): finds shop folders, routes /shop/<name>/..., contains a shop that panics or sticks (strikes, quarantine in a child process, pause); read its header first
+cmd/listings-shared/     main of the multi-shop host (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS, STATE_DIR; `--one <shop>` is the child it starts for a quarantined shop)
 internal/runtime/        the runtime: the folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes; owner.go is the
-                         owner's routes and the tick's owner part, under one owner lock
+                         owner's routes, the tick's owner part and the owner's side of push, under one owner lock
 scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the TypeScript word lists (talk-check.ts), so the four-language words are never retyped
+scripts/gen_words.ts       renders the owner's words (and the lists the rules read) from the TypeScript into internal/assistant/words/*.json.gz; `--check` only compares. `node go/scripts/gen_words.ts` after any change to modules/assistant/words*.ts or modules/listings/words.ts (the test words-fresh fails when it was not run)
+scripts/gen_*_vectors.ts   what the TypeScript digest, formatters and rules give on a set of cases, for the Go tests (internal/assistant/testdata)
 ```
 
 ## Dependencies, and why each
@@ -64,6 +69,6 @@ Indirect modules come in with those three (for example `golang.org/x/crypto`, `g
 
 * Every file starts with what it is and why. A choice that is not obvious says why. Where Go and JavaScript differ (UTF-16 lengths, the whitespace `\s` matches, regular expressions
   with no look-behind, `Math.round`) the comment says which TypeScript behaviour it copies.
-* The shop's state is the TypeScript runtime's JSON, field for field. What this runtime does not model (the assistant's cards, talk, notes, stock, memory) is carried through as raw
+* The shop's state is the TypeScript runtime's JSON, field for field. What this runtime does not model (the assistant's memory, the limit changes, any member a later version adds) is carried through as raw
   JSON, so a shop that goes back to the TypeScript runtime loses nothing.
 * No home-folder paths, no keys; the binary's path in tests comes from `LISTINGS_GO_BIN` or `go/bin/listings`.

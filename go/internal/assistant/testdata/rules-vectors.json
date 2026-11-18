@@ -1,0 +1,1090 @@
+[
+ {
+  "text": "help",
+  "kind": "help",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "what can you do",
+  "kind": "help",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "मदद",
+  "kind": "help",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "madad",
+  "kind": "help",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "സഹായം",
+  "kind": "help",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "ಸಹಾಯ",
+  "kind": "help",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "undo",
+  "kind": "undo",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "revert",
+  "kind": "undo",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "वापस लो",
+  "kind": "undo",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "wapas lo",
+  "kind": "undo",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "പഴയപടി",
+  "kind": "undo",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "ಹಿಂದಿನಂತೆ",
+  "kind": "undo",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "limit",
+  "kind": "limit",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "limits",
+  "kind": "limit",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "लिमिट",
+  "kind": "limit",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "പരിധി",
+  "kind": "limit",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "ಮಿತಿ",
+  "kind": "limit",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "what needs me",
+  "kind": "waiting",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "anything for me",
+  "kind": "waiting",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "approve",
+  "kind": "waiting",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "मेरे लिए क्या है",
+  "kind": "waiting",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "എനിക്ക് എന്താണ് ബാക്കി",
+  "kind": "waiting",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "ನನಗೆ ಏನು ಬಾಕಿ",
+  "kind": "waiting",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "money today",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 0
+ },
+ {
+  "text": "how much came in",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "आज कितना आया",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 0
+ },
+ {
+  "text": "ഇന്ന് എത്ര കിട്ടി",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 0
+ },
+ {
+  "text": "ಇಂದು ಎಷ್ಟು ಬಂತು",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 0
+ },
+ {
+  "text": "money tomorrow",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 1
+ },
+ {
+  "text": "money day after tomorrow",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 2
+ },
+ {
+  "text": "money yesterday",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "paisa kal",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 1
+ },
+ {
+  "text": "money on 16 nov",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money monday",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "cancel b-14",
+  "kind": "cancel",
+  "ref": "b-14",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "cancel B-14",
+  "kind": "cancel",
+  "ref": "b-14",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "b-14 रद्द करो",
+  "kind": "cancel",
+  "ref": "b-14",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "refund b-14",
+  "kind": "refund",
+  "ref": "b-14",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "refund ₹500 to b-3",
+  "kind": "refund",
+  "ref": "b-3",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "paise wapas b-1",
+  "kind": "refund",
+  "ref": "b-1",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "रिफंड b-2",
+  "kind": "refund",
+  "ref": "b-2",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "message b-14 Running 15 minutes late",
+  "kind": "message",
+  "ref": "b-14",
+  "note": "",
+  "words": "Running 15 minutes late",
+  "date": null
+ },
+ {
+  "text": "tell b-14 we are closed tomorrow",
+  "kind": "message",
+  "ref": "b-14",
+  "note": "",
+  "words": "we are closed tomorrow",
+  "date": 1
+ },
+ {
+  "text": "b-14 ko bolo ki deri hogi",
+  "kind": "message",
+  "ref": "b-14",
+  "note": "",
+  "words": "deri hogi",
+  "date": null
+ },
+ {
+  "text": "message b-14",
+  "kind": "message",
+  "ref": "b-14",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "message b-3 sorry, cancel it",
+  "kind": "message",
+  "ref": "b-3",
+  "note": "",
+  "words": "sorry, cancel it",
+  "date": null
+ },
+ {
+  "text": "tell chat guest 3 we open at ten",
+  "kind": "message",
+  "ref": "g-3",
+  "note": "",
+  "words": "we open at ten",
+  "date": null
+ },
+ {
+  "text": "tell me tomorrow's bookings",
+  "kind": "day",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 1
+ },
+ {
+  "text": "get my shop's file",
+  "kind": "leave_file",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "export",
+  "kind": "leave_file",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "Export.",
+  "kind": "leave_file",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "give me my shop's file",
+  "kind": "leave_file",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "मेरी दुकान की फाइल",
+  "kind": "leave_file",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "എന്റെ കടയുടെ ഫയൽ",
+  "kind": "leave_file",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "ನನ್ನ ಅಂಗಡಿಯ ಫೈಲ್",
+  "kind": "leave_file",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "change my operator",
+  "kind": "leave_operator",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "Operator badal do",
+  "kind": "leave_operator",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "ഓപ്പറേറ്റർ മാറ്റണം",
+  "kind": "leave_operator",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "ಬೇರೆ ಆಪರೇಟರ್",
+  "kind": "leave_operator",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "a long sentence that merely mentions the word operator and my shop's file somewhere in the middle of a rather long line of words that goes past ninety characters",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "remember we close at 6 on Saturdays",
+  "kind": "remember",
+  "ref": "",
+  "note": "",
+  "words": "we close at 6 on Saturdays",
+  "date": null
+ },
+ {
+  "text": "remember",
+  "kind": "remember",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "please remember that the shop is closed on sunday",
+  "kind": "remember",
+  "ref": "",
+  "note": "",
+  "words": "the shop is closed on sunday",
+  "date": null
+ },
+ {
+  "text": "we close at six, remember",
+  "kind": "remember",
+  "ref": "",
+  "note": "",
+  "words": "we close at six,",
+  "date": null
+ },
+ {
+  "text": "yaad rakho ki kal chutti hai",
+  "kind": "remember",
+  "ref": "",
+  "note": "",
+  "words": "kal chutti hai",
+  "date": null
+ },
+ {
+  "text": "ഓർത്തുവെക്കൂ ഞായർ അവധി",
+  "kind": "remember",
+  "ref": "",
+  "note": "",
+  "words": "ഞായർ അവധി",
+  "date": null
+ },
+ {
+  "text": "ನೆನಪಿಡಿ ಭಾನುವಾರ ರಜೆ",
+  "kind": "remember",
+  "ref": "",
+  "note": "",
+  "words": "ಭಾನುವಾರ ರಜೆ",
+  "date": null
+ },
+ {
+  "text": "remembered",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "remembering",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "what do you remember?",
+  "kind": "notes",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "notes",
+  "kind": "notes",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "my notes",
+  "kind": "notes",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "क्या याद है",
+  "kind": "notes",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "forget 3",
+  "kind": "forget",
+  "ref": "",
+  "note": "n-3",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "forget n-3",
+  "kind": "forget",
+  "ref": "",
+  "note": "n-3",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "forget note 12",
+  "kind": "forget",
+  "ref": "",
+  "note": "n-12",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "3 forget",
+  "kind": "forget",
+  "ref": "",
+  "note": "n-3",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "forget 12345",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "bhool jao 4",
+  "kind": "forget",
+  "ref": "",
+  "note": "n-4",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "മറക്കൂ 2",
+  "kind": "forget",
+  "ref": "",
+  "note": "n-2",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "ಮರೆತುಬಿಡಿ 5",
+  "kind": "forget",
+  "ref": "",
+  "note": "n-5",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "I have two Persian kittens for sale on my page, 8000 rupees",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "put this on my page: brass lamp 450 rupees",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "for sale: undo",
+  "kind": "undo",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "cancel the order for sale",
+  "kind": "open_orders",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "limit for sale ₹500",
+  "kind": "limit",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "help me put it on my page",
+  "kind": "help",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "holiday for sale",
+  "kind": "close_day",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "kittens for sale",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "tomorrow",
+  "kind": "day",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 1
+ },
+ {
+  "text": "kal",
+  "kind": "day",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 1
+ },
+ {
+  "text": "close sunday",
+  "kind": "close_day",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "close",
+  "kind": "close_day",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "orders",
+  "kind": "open_orders",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "bookings",
+  "kind": "day",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "who owes fees",
+  "kind": "owes",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "move b-14 to 5pm",
+  "kind": "move",
+  "ref": "b-14",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "hello",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "what's up",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "thanks",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "   ",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "yes ABCDE",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "no thanks",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "approve K7M2QX",
+  "kind": "waiting",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "orders b-5",
+  "kind": "open_orders",
+  "ref": "b-5",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "reopen sunday",
+  "kind": "reopen_day",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "holiday",
+  "kind": "close_day",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "money 3 may",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money may i think",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "money nov 16",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money 16th of november",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money 25 dec",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money 40 nov",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "money tuesday",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money इतवार",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "money 5 नवम्बर",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "paisa shaniwar",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "പണം ഞായറാഴ്ച",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "പണം 10 നവംബർ",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "ಹಣ ಸೋಮವಾರ",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "ಹಣ ನವೆಂಬರ್ 10",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": "other"
+ },
+ {
+  "text": "ഇന്നലെ പണം",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "money yesterday and today",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 0
+ },
+ {
+  "text": "money today 5pm",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 0
+ },
+ {
+  "text": "money day after tomorrow",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 2
+ },
+ {
+  "text": "മറ്റന്നാൾ പണം",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 2
+ },
+ {
+  "text": "ನಾಡಿದ್ದು ಹಣ",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": 2
+ },
+ {
+  "text": "refund the order",
+  "kind": "open_orders",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "message",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "tell",
+  "kind": "unknown",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "list",
+  "kind": "day",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "money",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "paisa",
+  "kind": "money",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "फीस",
+  "kind": "owes",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ },
+ {
+  "text": "ഓർഡർ",
+  "kind": "open_orders",
+  "ref": "",
+  "note": "",
+  "words": "",
+  "date": null
+ }
+]

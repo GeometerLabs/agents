@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/access"
@@ -39,6 +40,9 @@ type Options struct {
 	Now       func() int64
 	// Push is the shop's web push for the owner-control rules (owner.go OwnerPush); nil: the Go runtime serves no push yet
 	Push OwnerPush
+	// OnPanic is the shared host's: a panic in a request, in the runner (a step or the clock) or in the push sender is handed to it and the goroutine goes on, instead of the process
+	// ending. Unset (the single-shop binary): nothing is recovered in the runner, exactly as before.
+	OnPanic func(where string, v any)
 }
 
 // Runtime is one running shop.
@@ -65,9 +69,13 @@ type Runtime struct {
 	shopKey   *signing.Key
 	lastDaily int64
 
+	stepSince atomic.Int64 // when the step in hand began (ms), 0 between steps: the host's watchdog reads it
+
 	kick chan struct{}
 	stop chan struct{}
 	done chan struct{}
+
+	routes *routes // owner-limits, owner-file and push (routes.go)
 }
 
 // New builds the runtime over an open store and starts its runner.
@@ -105,9 +113,16 @@ func New(o Options) (*Runtime, error) {
 			return nil, err
 		}
 	}
+	if err := r.afterRestore(); err != nil {
+		return nil, err
+	}
 	r.proto = listings.NewProtocol(r.publicRead, r.signingKey, o.Now, func() string { return o.Client.Settings.Name })
-	// the owner's sign-in starts: the locked number learned, and a request that fell due while the runtime was down given a day more (owner.go ownerStart)
+	// the owner's sign-in starts: the locked number learned, and a request that fell due while the runtime was down given a day more (owner.go ownerStart). Before the
+	// routes, which open the push store: a failure here leaves nothing open.
 	if err := r.ownerStart(); err != nil {
+		return nil, err
+	}
+	if err := r.initRoutes(); err != nil {
 		return nil, err
 	}
 	return r, nil
@@ -115,24 +130,49 @@ func New(o Options) (*Runtime, error) {
 
 // Start runs the queue and the clock's beat until Close.
 func (r *Runtime) Start(tick time.Duration) {
+	r.startRoutes()
 	go func() {
 		defer close(r.done)
 		t := time.NewTicker(tick)
 		defer t.Stop()
-		r.drain() // anything saved but not finished when the last process stopped runs now
+		r.guarded("drain", r.drain) // anything saved but not finished when the last process stopped runs now
 		for {
 			select {
 			case <-r.stop:
 				return
 			case <-r.kick:
-				r.drain()
+				r.guarded("drain", r.drain)
 			case <-t.C:
-				r.tick()
-				r.drain()
+				r.guarded("tick", r.tick)
+				r.guarded("drain", r.drain)
 			}
 		}
 	}()
 }
+
+// guarded runs one pass of the runner's loop. With a host's OnPanic a panic is handed to it and the loop lives on (one shop's panic must not end every shop's process); without
+// one it propagates as it always did.
+func (r *Runtime) guarded(where string, f func()) {
+	if r.o.OnPanic != nil {
+		defer func() {
+			if p := recover(); p != nil {
+				r.stepSince.Store(0)
+				r.panicked(where, p)
+			}
+		}()
+	}
+	f()
+}
+
+func (r *Runtime) panicked(where string, p any) {
+	r.o.Log(fmt.Sprintf("A panic in the %s: %v", where, p))
+	if r.o.OnPanic != nil {
+		r.o.OnPanic(where, p)
+	}
+}
+
+// StepSince is when the step in hand began (Unix ms), or 0 when the runner is between steps. A step that has been going for a long time is a stuck one.
+func (r *Runtime) StepSince() int64 { return r.stepSince.Load() }
 
 // Kick lets the queue run.
 func (r *Runtime) Kick() {
@@ -146,6 +186,7 @@ func (r *Runtime) Kick() {
 func (r *Runtime) Close() {
 	close(r.stop)
 	<-r.done
+	r.closeRoutes()
 }
 
 // ---- events ----------------------------------------------------------------------------------------------------------------------------------------------
@@ -262,6 +303,8 @@ func (r *Runtime) recorder() *recorder {
 func (r *Runtime) step(ev map[string]any, taskID string) (err error) {
 	// a failure of the owner-access store inside a rule stops the step as TypeScript's throw does (access.DBError): never read as "no row", which would fail open
 	defer access.Recover(&err)
+	r.stepSince.Store(r.o.Now())
+	defer r.stepSince.Store(0)
 	r.mu.RLock()
 	text := r.snapshot
 	r.mu.RUnlock()
@@ -278,16 +321,22 @@ func (r *Runtime) step(ev map[string]any, taskID string) (err error) {
 		switch ev["kind"] {
 		case "owner_listing":
 			r.ownerListing(snap, rec, ev, now)
+		case "owner_stock":
+			r.ownerStock(snap, rec, ev, now)
 		case "owner_photo":
 			r.ownerPhoto(snap, rec, ev, now)
 		case "owner_access":
 			r.ownerAccess(rec, ev)
+		case "limit_settled", "owner_limit":
+			r.limitEvent(snap, rec, ev)
 		case "owner_signin":
 			r.ownerSignin(rec)
 		case "owner_message":
 			if err := r.ownerMessage(snap, rec, ev, now); err != nil {
 				return err
 			}
+		case "owner_action":
+			r.ownerAction(snap, rec, ev, now)
 		default:
 			r.o.Log(fmt.Sprintf("An event of kind %v came for a listings-only shop run by the Go runtime, which does not take it; it was dropped.", ev["kind"]))
 		}
@@ -352,6 +401,9 @@ func (r *Runtime) ownerListing(snap *Snap, rec *recorder, ev map[string]any, now
 		return
 	}
 	d := digestOf(ev["op"])
+	if res.Listing != nil && res.Change == "confirmed" {
+		r.restoreAfterConfirm(snap, rec, res.Listing, fmt.Sprint(ev["id"]), now) // the Confirm button's stock side, before the listing's own line (as TypeScript)
+	}
 	if res.Listing != nil {
 		r.listingLine(rec, res.Change, *res.Listing, map[string]any{"op": op.Op, "listing": res.Listing.ID, "digest": d}, "confirmed", "the owner changed their listings in their app; the record keeps the listing's id, category and who, never its words")
 		return
@@ -377,6 +429,10 @@ func (r *Runtime) ownerPhoto(snap *Snap, rec *recorder, ev map[string]any, now i
 // ownerAccess writes a sign-in event in the record (owner-signin.ts run): the session's start or end, a passkey added (with the phone's coarse label), a phone removed, codes
 // made, a request cancelled. The conversation is the owner's number as it is now (the files read first).
 func (r *Runtime) ownerAccess(rec *recorder, ev map[string]any) {
+	// "Get my shop's file": the line the deployer reads to delete its copy (ownerfile.go)
+	if r.fileTakenStep(rec, ev) {
+		return
+	}
 	number, lang := r.ownerNumberRead(), r.o.Client.Settings.Owner.Language
 	what, _ := ev["what"].(string)
 	session, _ := ev["session"].(string)
@@ -432,14 +488,27 @@ func (r *Runtime) ownerSignin(rec *recorder) {
 		Notes: "This shop has no WhatsApp, so no sign-in link is sent: the owner signs in with their passkey (or the Operator's setup QR or recovery card)."})
 }
 
-// beat is the clock's beat: the owner's part (owner.go ownerBeat: the Operator's request and Geometer's reset read, the owner's number watched, each finding said once, the
-// panel's "sign out every device" said once), then, once a day, the clean-up of drafts and of photos no listing holds. It returns the requests to mark told once the step is saved.
+// beat is the clock's beat, in TypeScript's order (core.ts: the agent's own work, then the sign-in's tick): the assistant's beat; once a day the stock's tidy and the clean-up of
+// drafts and of photos no listing holds; then the owner's part (owner.go ownerBeat: the Operator's request and Geometer's reset read, the owner's number watched, each finding
+// said once, the panel's "sign out every device" said once). It returns the requests to mark told once the step is saved.
 func (r *Runtime) beat(snap *Snap, rec *recorder, now int64) []string {
-	told := r.ownerBeat(rec)
+	// the assistant's beat: cards past their time, what is no longer needed, the morning question (only once the shop has an assistant state: before that there is nothing to do)
+	if snap.A != nil {
+		r.assistantFor(snap, rec, now).onTick()
+	}
+	r.daily(snap, now)
+	return r.ownerBeat(rec)
+}
+
+// daily is the once-a-day part of the beat.
+func (r *Runtime) daily(snap *Snap, now int64) {
 	if now-r.lastDaily < listings.Day {
-		return told
+		return
 	}
 	r.lastDaily = now
+	if snap.Stock != nil {
+		snap.Stock.Tidy(now)
+	}
 	if snap.hasList {
 		snap.Listings.Tidy(now)
 		if gone, err := r.o.Store.PrunePhotos(snap.Listings.PhotoIDs(), now-listings.PhotoGraceMs); err != nil {
@@ -448,7 +517,6 @@ func (r *Runtime) beat(snap *Snap, rec *recorder, now int64) []string {
 			r.o.Log(fmt.Sprintf("Deleted %d photo(s) no listing holds any more.", gone))
 		}
 	}
-	return told
 }
 
 // ---- reads, from the last saved state -----------------------------------------------------------------------------------------------------------------------
