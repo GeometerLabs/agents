@@ -12,10 +12,11 @@ import { canon, languageOfScript } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import { chosenProbability, isObj } from "../understanding/model.ts";
 import { readMemoryWords } from "./intents-memory.ts";
+import { readLeaveWords } from "./intents-leave.ts";
 import type { DecisionPlan, IntentBase, ParseOptionsBase, Reading } from "../understanding/model.ts";
 
 /** What the owner can ask or ask for. Which of these a shop offers depends on its skills (OwnerContext.kinds). */
-export const OWNER_KINDS = ["day", "owes", "open_orders", "waiting", "money", "close_day", "reopen_day", "move", "cancel", "refund", "message", "undo", "limit", "help", "remember", "notes", "forget"] as const;
+export const OWNER_KINDS = ["day", "owes", "open_orders", "waiting", "money", "close_day", "reopen_day", "move", "cancel", "refund", "message", "undo", "limit", "help", "remember", "notes", "forget", "leave_file", "leave_operator"] as const;
 export type OwnerKind = (typeof OWNER_KINDS)[number] | "unknown";
 
 export interface OwnerIntent extends IntentBase {
@@ -109,6 +110,9 @@ export function readOwnerRules(text: string, context: OwnerContext): OwnerIntent
   const script = languageOfScript(text);
   const language: Language | undefined = script === "en" ? undefined : script; // Latin letters may be English or Hindi typed in Latin letters: not clear
   const base = { ...(language ? { language } : {}), ...(date ? { date } : {}), ...(time ? { time } : {}), ...(ref ? { ref } : {}) };
+  // Leaving with the shop (block S): "get my shop's file", "change my Operator". By rule only and before the booking-move words, which "badal do" and "മാറ്റുക" also are.
+  const leaving = ref ? undefined : readLeaveWords(text);
+  if (leaving) return { ...(language ? { language } : {}), kind: leaving === "file" ? "leave_file" : "leave_operator" };
   // The shop's memory (block M): "remember …", "what do you remember?", "forget 3", read first and by rule only, so the owner's words are never taken for another kind.
   const memory = readMemoryWords(text);
   if (memory) return { ...(language ? { language } : {}), ...(memory.kind === "remember" ? { kind: "remember", ...(memory.words ? { words: memory.words } : {}) } : memory.kind === "forget" ? { kind: "forget", note: memory.note } : { kind: "notes" }) } as OwnerIntent;
@@ -153,10 +157,12 @@ const KIND_MEANING: Record<Exclude<OwnerKind, "unknown">, string> = {
   remember: "ask the assistant to remember something",
   notes: "see what the assistant remembers",
   forget: "ask the assistant to forget a note",
+  leave_file: "get a file with everything that is the shop's, to keep",
+  leave_operator: "ask for another Operator to look after the shop",
 };
 
-/** Only the rules read these: a model is never asked whether the owner wants something written to, or taken out of, the shop's memory. */
-const RULES_ONLY: readonly OwnerKind[] = ["remember", "notes", "forget"];
+/** Only the rules read these: a model is never asked whether the owner wants something written to, or taken out of, the shop's memory, or wants their shop's file or another Operator. */
+const RULES_ONLY: readonly OwnerKind[] = ["remember", "notes", "forget", "leave_file", "leave_operator"];
 
 const offered = (context: OwnerContext): Exclude<OwnerKind, "unknown">[] => OWNER_KINDS.filter((k) => context.kinds.includes(k) && !RULES_ONLY.includes(k));
 

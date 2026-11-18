@@ -179,7 +179,7 @@ export function pagesFileFor(server: ServerConfig, shop: string, settings: PageS
 type Fetch = typeof fetch;
 
 /** One call to fleet with the deployment key. Never throws: a failure is an answer with no `ok`. */
-async function callFleet(server: ServerConfig, dir: string, path: string, body: unknown, fetchImpl: Fetch): Promise<{ status: number; answer: Record<string, unknown> }> {
+export async function callFleet(server: ServerConfig, dir: string, path: string, body: unknown, fetchImpl: Fetch): Promise<{ status: number; answer: Record<string, unknown> }> {
   const key = readSecretFile(resolve(dir, server.fleet!.keyFile));
   if (!key) return { status: 0, answer: { error: `there is no deployment key at ${server.fleet!.keyFile}`, code: "no_key" } };
   try {

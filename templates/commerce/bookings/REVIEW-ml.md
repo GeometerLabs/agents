@@ -1492,6 +1492,106 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.owner.back` | നിങ്ങളുടെ കടയിലേക്ക് മടങ്ങുക | Back to your shop |  |
 | `limits.owner.never` | ഒരിക്കലും ഇല്ല | never |  |
 | `limits.owner.yourShop` | നിങ്ങളുടെ കട | Your shop |  |
+| `listings.category.pets` | വളർത്തുമൃഗങ്ങൾ | Pets |  |
+| `listings.category.food` | ഭക്ഷണം | Food |  |
+| `listings.category.clothes` | വസ്ത്രങ്ങൾ | Clothes |  |
+| `listings.category.home` | വീട്ടുസാധനങ്ങൾ | Home |  |
+| `listings.category.electronics` | ഇലക്ട്രോണിക്സ് | Electronics |  |
+| `listings.category.vehicles` | വാഹനങ്ങളും സൈക്കിളുകളും | Vehicles and cycles |  |
+| `listings.category.services` | സേവനങ്ങൾ | Services |  |
+| `listings.category.other` | മറ്റുള്ളവ | Other |  |
+| `listings.heading` | ഞങ്ങളുടെ പക്കലുള്ളത് | What we have |  |
+| `listings.pageTitle` | Persian kitten: ഞങ്ങളുടെ പക്കലുള്ളത് | Persian kitten: what we have |  |
+| `listings.askAbout` | ഇതിനെക്കുറിച്ച് ചോദിക്കുക | Ask about this |  |
+| `listings.askShop` | കടയോട് ചോദിക്കുക | Ask the shop |  |
+| `listings.confirmedToday` | ഇന്ന് ഉറപ്പാക്കി | Confirmed today |  |
+| `listings.confirmedAgo` | 2 ദിവസം മുമ്പ് ഉറപ്പാക്കി | Confirmed 2 days ago |  |
+| `listings.callToCheck` | ചോദിക്കാൻ വിളിക്കുക | Call to check |  |
+| `listings.empty` | ഇപ്പോൾ ഒന്നും പട്ടികയിൽ ഇല്ല. എന്തുണ്ടെന്ന് കടയോട് ചോദിക്കുക. | Nothing is listed right now. Ask the shop what is in. |  |
+| `listings.machine` | ഇവിടെ ചില വാക്കുകൾ ഉടമയുടെ സ്വന്തം വാക്കുകളിൽ നിന്ന് യന്ത്രം എഴുതിയതാണ്. | Some words here were written by a machine from the owner's own words. |  |
+| `listings.registration` | രജിസ്ട്രേഷൻ (ഉടമ പറയുന്നത്): Persian kitten | Registration (the owner says): Persian kitten |  |
+| `listings.ownerSays` | ഉടമ പറയുന്നു: Persian kitten | The owner says: Persian kitten |  |
+| `listings.quantity` | 2 ലഭ്യമാണ് | 2 available |  |
+| `listings.photoOf` | ഫോട്ടോ: Persian kitten | Photo: Persian kitten |  |
+| `listings.seeAll` | ഞങ്ങളുടെ പക്കലുള്ളത് കാണുക | See what we have |  |
+| `listings.chatGreeting` | നിങ്ങൾ ചോദിച്ചത്: Persian kitten. എന്താണ് അറിയേണ്ടത്? | You asked about: Persian kitten. What would you like to know? |  |
+| `listings.guestAsked` | ചോദിച്ചത്: Persian kitten | Asked about: Persian kitten |  |
+| `listings.card` | ഇത് നിങ്ങളുടെ പേജിൽ കാണിക്കട്ടെ? Persian kitten. വില: ₹8,000 each. വിഭാഗം: വളർത്തുമൃഗങ്ങൾ. | Show this on your page? Persian kitten. Price: ₹8,000 each. Category: Pets. |  |
+| `listings.show` | കാണിക്കുക | Show it |  |
+| `listings.change` | മാറ്റുക | Change |  |
+| `listings.no` | വേണ്ട | No |  |
+| `listings.still` | Persian kitten ഇപ്പോഴും ഉണ്ടോ? | Still have Persian kitten? |  |
+| `listings.yes` | ഉണ്ട് | Yes |  |
+| `listings.sold` | വിറ്റു | Sold |  |
+| `listings.published` | ചെയ്തു: Persian kitten ഇപ്പോൾ നിങ്ങളുടെ പേജിൽ ഉണ്ട്. ഇത് ഇപ്പോഴും ഉണ്ടെന്ന് ആളുകൾ അറിയാൻ ഓരോ ദിവസം കഴിഞ്ഞും ഒരു ടാപ്പിലൂടെ ഉറപ്പാക്കുക. | Done: Persian kitten is on your page now. Confirm it every few days with one tap, so people know it is still there. |  |
+| `listings.dropped` | ശരി, ഞാൻ ഇത് കാണിക്കില്ല. | Alright, I will not show it. |  |
+| `listings.confirmed` | നന്ദി, Persian kitten നിങ്ങളുടെ പേജിൽ തുടരും. | Thanks, Persian kitten stays on your page. |  |
+| `listings.markedSold` | Persian kitten വിറ്റതായി അടയാളപ്പെടുത്തി, നിങ്ങളുടെ പേജിൽ നിന്ന് മാറ്റി. | Persian kitten is marked sold and is off your page. |  |
+| `listings.needModel` | എന്റെ അസിസ്റ്റന്റ് ഓണായിരിക്കുമ്പോൾ മാത്രമേ നിങ്ങളുടെ വാക്കുകളിൽ നിന്ന് ലിസ്റ്റിംഗ് എഴുതാൻ കഴിയൂ. നിങ്ങളുടെ ആപ്പിലെ എന്റെ പേജിൽ ചേർക്കുക ഫോം ഉപയോഗിക്കുക: ഫോട്ടോ, പേര്, വില. | I can only write a listing from your words when my assistant is on. Use the Add to my page form in your app: a photo, a title and a price. |  |
+| `listings.needPhoto` | ആദ്യം നിങ്ങളുടെ ആപ്പിൽ ഒരു ഫോട്ടോ ചേർക്കുക, എന്നിട്ട് ഇത് എന്താണെന്നും വിലയും പറയുക. | Add a photo first in your app, then tell me what it is and the price. |  |
+| `listings.owner.title` | നിങ്ങളുടെ പേജ്: നിങ്ങളുടെ പക്കലുള്ളത് | Your page: what you have |  |
+| `listings.owner.intro` | നിങ്ങളുടെ പക്കലുള്ളത് ചേർക്കുക, അസിസ്റ്റന്റ് അത് നാല് ഭാഷകളിൽ എഴുതും. കാണിക്കുക എന്ന് ടാപ്പ് ചെയ്താൽ മാത്രമേ അത് കാണൂ. | Add what you have and the assistant writes it in four languages. It shows only after you tap Show it. |  |
+| `listings.owner.switchLabel` | എന്റെ കട Streetlist-ലും സെർച്ചിലും കാണിക്കുക | Show my shop on Streetlist and in search |  |
+| `listings.owner.switchNote` | ആദ്യം ഓഫ് ആണ്. ഓൺ ആക്കിയാൽ നിങ്ങളുടെ ഞങ്ങളുടെ പക്കലുള്ളത് പേജ് സെർച്ച് എൻജിനുകൾക്കും Streetlist-നും കണ്ടെത്താം, അതിന്റെ തുറന്ന ഫയൽ ലഭ്യമാകും. എപ്പോൾ വേണമെങ്കിലും ഓഫ് ആക്കാം. | Off by default. When on, your what-we-have page can be found by search engines and Streetlist, and its open file is served. Turn it off at any time. |  |
+| `listings.owner.switchOn` | ഓൺ | On |  |
+| `listings.owner.switchOff` | ഓഫ് | Off |  |
+| `listings.owner.save` | സേവ് ചെയ്യുക | Save |  |
+| `listings.owner.saved` | സേവ് ചെയ്തു. | Saved. |  |
+| `listings.owner.placeHeading` | നിങ്ങൾ എവിടെയാണ് | Where you are |  |
+| `listings.owner.town` | പട്ടണം | Town |  |
+| `listings.owner.pincode` | പിൻകോഡ് | Pincode |  |
+| `listings.owner.lat` | മാപ്പ് പോയിന്റ്: അക്ഷാംശം | Map point: latitude |  |
+| `listings.owner.lon` | മാപ്പ് പോയിന്റ്: രേഖാംശം | Map point: longitude |  |
+| `listings.owner.registration` | പെറ്റ് ഷോപ്പ് രജിസ്ട്രേഷൻ (നിങ്ങളുടെ സ്വന്തം വാക്കുകൾ) | Pet shop registration (your own words) |  |
+| `listings.owner.registrationNote` | ഇങ്ങനെ കാണിക്കും: രജിസ്ട്രേഷൻ (ഉടമ പറയുന്നത്). ഞങ്ങൾ ഇത് പരിശോധിക്കുന്നില്ല. | Shown as: Registration (the owner says). It is not checked by us. |  |
+| `listings.owner.formHeading` | എന്റെ പേജിൽ ചേർക്കുക | Add to my page |  |
+| `listings.owner.formNote` | ഒരു ഫോട്ടോ, ഒരു പേര്, ഒരു വില. വാക്കുകൾ നിങ്ങളുടെ ഭാഷയിൽ മാത്രം സേവ് ചെയ്യും. | A photo, a title, a price. The words are saved in your language only. |  |
+| `listings.owner.formPhoto` | ഫോട്ടോ | Photo |  |
+| `listings.owner.formTitle` | ഇത് എന്താണ് | What is it |  |
+| `listings.owner.formPrice` | രൂപയിൽ വില (കടയോട് ചോദിക്കുക എന്നതിന് ഒഴിച്ചിടുക) | Price in rupees (leave empty for Ask the shop) |  |
+| `listings.owner.formPriceNote` | ഒന്നിന്, കിലോയ്ക്ക്... | per piece, per kg... |  |
+| `listings.owner.formCategory` | വിഭാഗം | Category |  |
+| `listings.owner.formSubmit` | എന്റെ പേജിൽ കാണിക്കുക | Show it on my page |  |
+| `listings.owner.uploadHeading` | ഫോട്ടോകൾ | Photos |  |
+| `listings.owner.uploadButton` | ഫോട്ടോ ചേർക്കുക | Add a photo |  |
+| `listings.owner.uploaded` | 2 ഫോട്ടോ തയ്യാർ. ഇനി ഇത് എന്താണെന്ന് അസിസ്റ്റന്റിനോട് പറയുക. | 2 photos ready. Now tell the assistant what it is. |  |
+| `listings.owner.listHeading` | നിങ്ങളുടെ പേജിൽ | On your page |  |
+| `listings.owner.none` | ഇതുവരെ ഒന്നുമില്ല. | Nothing yet. |  |
+| `listings.owner.live` | കാണിക്കുന്നു | Showing |  |
+| `listings.owner.draft` | നിങ്ങളുടെ ടാപ്പിനായി കാത്തിരിക്കുന്നു | Waiting for your tap |  |
+| `listings.owner.hidden` | മറച്ചിരിക്കുന്നു: 30 ദിവസമായി ഉറപ്പാക്കിയിട്ടില്ല | Hidden: not confirmed for 30 days |  |
+| `listings.owner.remove` | മാറ്റുക | Take it off |  |
+| `listings.owner.confirmAgain` | വീണ്ടും കാണിക്കാൻ ഉറപ്പാക്കുക | Confirm to show again |  |
+| `listings.owner.markSold` | വിറ്റു | Sold |  |
+| `listings.owner.edit` | മാറ്റുക | Change |  |
+| `listings.owner.link` | നിങ്ങളുടെ പേജിൽ ഉള്ളത് | What you have on your page |  |
+| `listings.owner.back` | നിങ്ങളുടെ കടയിലേക്ക് മടങ്ങുക | Back to your shop |  |
+| `listings.refusal.protectedNote` | സംരക്ഷിത നാടൻ ജീവികളെ വിൽക്കാൻ പാടില്ല, അതിനാൽ അത് ചേർത്തില്ല. | Protected native animals may not be sold, so that was not added. |  |
+| `listings.refusal.protected` | എനിക്ക് ഇത് പട്ടികപ്പെടുത്താൻ കഴിയില്ല: monkeys സംരക്ഷിത ജീവികളാണ്, അവയെ വിൽക്കാൻ പാടില്ല. ദയവായി അവ നിങ്ങളുടെ പേജിൽ ഇടരുത്. | I cannot list that: monkeys are protected animals and may not be sold. Please do not put them on your page. |  |
+| `listings.refusal.health` | നിങ്ങൾ തന്നെ പറഞ്ഞിട്ടില്ലെങ്കിൽ ഒരു മൃഗം ആരോഗ്യമുള്ളതാണെന്നോ വാക്സിൻ എടുത്തതാണെന്നോ ശുദ്ധ ജാതിയാണെന്നോ എനിക്ക് എഴുതാൻ കഴിയില്ല. സത്യമാണെങ്കിൽ നിങ്ങളുടെ സ്വന്തം വാക്കുകളിൽ പറയുക. | I cannot write that an animal is healthy, vaccinated or of a pure breed unless you said so yourself. Tell me in your own words if it is true. |  |
+| `listings.refusal.priceNotInWords` | ഞാൻ എഴുതുമായിരുന്ന വില നിങ്ങൾ പറഞ്ഞതല്ല, അതിനാൽ ലിസ്റ്റിംഗ് ഉണ്ടാക്കിയില്ല. വില ഒന്നുകൂടി പറയുക. | The price I would write is not the one you said, so I did not make the listing. Tell me the price again. |  |
+| `listings.refusal.full` | നിങ്ങൾ ഇതിനകം 50 കാര്യങ്ങൾ കാണിക്കുന്നു. ആദ്യം ഒന്ന് മാറ്റുക. | You already show 50 things. Take one off first. |  |
+| `listings.refusal.tooManyDrafts` | നിങ്ങളുടെ ടാപ്പിനായി ഇതിനകം ലിസ്റ്റിംഗുകൾ കാത്തിരിക്കുന്നു. ആദ്യം അവയ്ക്ക് മറുപടി നൽകുക. | There are already listings waiting for your tap. Answer those first. |  |
+| `listings.refusal.tooLong` | ഇത് വളരെ നീണ്ടതാണ്. ദയവായി ചുരുക്കി പറയുക. | That is too long. Please say it shorter. |  |
+| `listings.refusal.badPrice` | ആ വില ശരിയല്ല. രൂപയുടെ ഒരു പൂർണ്ണസംഖ്യ ഉപയോഗിക്കുക. | That price is not valid. Use a whole number of rupees. |  |
+| `listings.refusal.badQty` | ആ സംഖ്യ ശരിയല്ല. | That number is not valid. |  |
+| `listings.refusal.claims` | നിങ്ങൾ പറയാത്ത വാഗ്ദാനങ്ങളോ ഇളവുകളോ ഉറപ്പുകളോ എനിക്ക് എഴുതാൻ കഴിയില്ല. ഉദ്ദേശിക്കുന്നെങ്കിൽ നിങ്ങൾ തന്നെ പറയുക. | I cannot write promises, discounts or guarantees you did not say. Say them yourself if you mean them. |  |
+| `listings.refusal.modelFailed` | ഇപ്പോൾ അത് എഴുതാൻ കഴിഞ്ഞില്ല. നിങ്ങളുടെ ആപ്പിലെ എന്റെ പേജിൽ ചേർക്കുക ഫോം ഉപയോഗിക്കുക. | I could not write that just now. Use the Add to my page form in your app. |  |
+| `listings.refusal.badCategory` | ആ വിഭാഗം എനിക്ക് അറിയില്ല. | That category is not one I know. |  |
+| `listings.refusal.empty` | ആദ്യം ഇത് എന്താണെന്ന് പറയുക. | Tell me what it is first. |  |
+| `listings.refusal.badPlace` | ആ സ്ഥലം ശരിയല്ല. | That place is not valid. |  |
+| `listings.refusal.tooManyPhotos` | ഒരു ലിസ്റ്റിംഗിൽ 3 ഫോട്ടോ വരെ ആകാം. | A listing has up to 3 photos. |  |
+| `listings.refusal.unknown` | എന്റെ പക്കൽ ആ ലിസ്റ്റിംഗ് ഇല്ല. | I do not have that listing. |  |
+| `listings.refusal.gone` | ആ ലിസ്റ്റിംഗ് ഇപ്പോൾ നിങ്ങളുടെ പേജിൽ ഇല്ല. | That listing is not on your page now. |  |
+| `listings.refusal.photo.empty` | ആ ഫയൽ ശൂന്യമാണ്. | That file is empty. |  |
+| `listings.refusal.photo.too_big` | ആ ഫോട്ടോ വളരെ വലുതാണ്. ചെറുത് ശ്രമിക്കുക. | That photo is too big. Try a smaller one. |  |
+| `listings.refusal.photo.not_a_photo` | അത് JPEG അല്ലെങ്കിൽ WebP ഫോട്ടോ അല്ല. | That is not a JPEG or WebP photo. |  |
+| `listings.refusal.photo.unreadable` | എനിക്ക് ആ ഫോട്ടോ വായിക്കാൻ കഴിഞ്ഞില്ല. | I could not read that photo. |  |
+| `listings.refusal.photo.too_large_sides` | ആ ഫോട്ടോയുടെ വലിപ്പം വളരെ കൂടുതലാണ്. | That photo is too large in size. |  |
+| `listings.refusal.photo.animated` | ചലിക്കുന്ന ചിത്രമല്ല, സ്ഥിര ഫോട്ടോ ഉപയോഗിക്കുക. | Use a still photo, not an animation. |  |
+| `listings.refusal.photo.day` | ഇന്നത്തേക്ക് ഇത്രയും ഫോട്ടോ മതി. നാളെ ശ്രമിക്കുക. | That is enough photos for today. Try tomorrow. |  |
+| `listings.priceAsk` | കടയോട് ചോദിക്കുക | Ask the shop |  |
+| `listings.priceSet` | ₹8,000 each | ₹8,000 each |  |
 | `owner.money.cashPartLabel` | ഒരു ഭാഗം മാത്രമാണോ കിട്ടിയത്? എത്ര (₹) | Received only part? How much (₹) |  |
 | `owner.money.cashPartButton` | ഈ ഭാഗം പണമായി കിട്ടിയെന്ന് രേഖപ്പെടുത്തുക | Mark this part received in cash |  |
 | `chat.title` | ചാറ്റ് | Chat |  |
@@ -1664,6 +1764,42 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.tuition.prefill.batches.2.names` | ഒമ്പതാം ക്ലാസ് | Class 9 |  |
 | `preset.tuition.prefill.batches.3.names` | പത്താം ക്ലാസ് | Class 10 |  |
 | `keep.lost` | Rahul-ന്റെ പഴയ കുടിശ്ശികയും മുമ്പത്തെ മറ്റ് വിവരങ്ങളും സൂക്ഷിച്ചില്ല, കാരണം രക്ഷിതാവിന്റെ നമ്പർ മാറി. അവ വീണ്ടും ചേർക്കാൻ നിങ്ങളുടെ ബിൽഡറോട് പറയുക. | Rahul's old dues and other earlier details were not kept, because the parent's number changed. Ask your builder to add them again. |  |
+| `leave.assistant.leave_file_asked` | ശരി. നിങ്ങളുടെ കടയുടെ ഫയൽ ഏകദേശം അര മണിക്കൂറിൽ നിങ്ങളുടെ ആപ്പ് പേജിൽ ഉണ്ടാകും, എടുക്കാനുള്ള ബട്ടണും. ബട്ടൺ ഒരു തവണ മാത്രം, 3 ദിവസം വരെ പ്രവർത്തിക്കും. ഇതിന് നിങ്ങളുടെ Operator വേണ്ട, അവരോട് ചോദിക്കുന്നുമില്ല. | Done. Your shop's file will be on your app page in about half an hour, with a button to take it. The button works once and for 3 days. You do not need your Operator for this, and they are not asked. |  |
+| `leave.assistant.leave_file_again` | കുറച്ചുമുമ്പ് നിങ്ങൾ കടയുടെ ഫയൽ ചോദിച്ചിരുന്നു. അത് വരുന്നുണ്ട്; കുറച്ച് കഴിഞ്ഞ് ആപ്പ് പേജ് നോക്കൂ. | You asked for your shop's file a short while ago. It is on its way; look on your app page in a little while. |  |
+| `leave.assistant.leave_operator_asked` | ശരി. മറ്റൊരു Operator വേണമെന്ന് ഞാൻ നിങ്ങളുടെ Operator-നെ അറിയിച്ചു. നിങ്ങൾ സമ്മതിക്കാതെ ഒന്നും മാറില്ല: Operator പുതിയ ആളുടെ പേര് നൽകും, നിങ്ങൾക്ക് ഒരു കോഡ് കിട്ടും, അത് "move" എന്നും കോഡും ചേർത്ത് ഇവിടെ അയയ്ക്കണം. 14 ദിവസത്തിൽ ഒന്നും നടന്നില്ലെങ്കിൽ Geometer സഹായിക്കും. | Done. I have told your Operator that you want another one. Nothing changes until you agree: your Operator names the new person, you get a code, and you send it here as "move" and the code. If nothing happens in 14 days, Geometer will help you. |  |
+| `leave.assistant.leave_operator_again` | കുറച്ചുമുമ്പ് നിങ്ങൾ Operator-നെ മാറ്റാൻ പറഞ്ഞിരുന്നു, അവരെ അറിയിച്ചിട്ടുണ്ട്. കോഡ് അയയ്ക്കുന്നതുവരെ ഒന്നും മാറില്ല. | You asked to change your Operator a short while ago, and they have been told. Nothing changes until you send the code. |  |
+| `leave.page.title` | നിങ്ങളുടെ കട നിങ്ങളുടേതാണ് | Your shop is yours |  |
+| `leave.page.intro` | നിങ്ങളുടേതായ എല്ലാം എപ്പോൾ വേണമെങ്കിലും എടുക്കാം, അല്ലെങ്കിൽ മറ്റൊരു Operator-നെ ചോദിക്കാം. നിങ്ങളുടെ Operator-ന്റെ അനുവാദം ചോദിക്കില്ല. | You can take everything that is yours, or ask for another Operator, whenever you like. Your Operator is not asked for permission. |  |
+| `leave.page.fileButton` | എന്റെ കടയുടെ ഫയൽ | Get my shop's file |  |
+| `leave.page.fileNone` | നിങ്ങളുടെ കടയുടെ സെറ്റിംഗ്സ്, രേഖകൾ, റിപ്പോർട്ടുകൾ എന്നിവയുടെ ഒരു ഫയൽ, സൂക്ഷിക്കാൻ. ഏകദേശം അര മണിക്കൂറിൽ ഇവിടെ എത്തും. | A file with your shop's settings, records and reports, to keep. It will be here in about half an hour. |  |
+| `leave.page.fileAsked` | ചോദിച്ചു. ഫയൽ ഏകദേശം അര മണിക്കൂറിൽ ഇവിടെ എത്തും. | Asked. Your file will be here in about half an hour. |  |
+| `leave.page.fileReady` | നിങ്ങളുടെ ഫയൽ തയ്യാറാണ്. താഴെയുള്ള ബട്ടൺ ഒരു തവണ മാത്രം, 21 Nov, 3:30 pm വരെ പ്രവർത്തിക്കും. | Your file is ready. The button below works once, until 21 Nov, 3:30 pm. |  |
+| `leave.page.take` | ഫയൽ എടുക്കുക | Take the file |  |
+| `leave.page.fileTaken` | നിങ്ങൾ ഫയൽ എടുത്തു. പുതിയത് വേണമെങ്കിൽ വീണ്ടും ചോദിക്കൂ. | You took your file. Ask again for a new one. |  |
+| `leave.page.fileExpired` | ആ ഫയലിന്റെ സമയം കഴിഞ്ഞു. പുതിയതിന് വീണ്ടും ചോദിക്കൂ. | That file ran out. Ask again for a new one. |  |
+| `leave.page.operatorButton` | എന്റെ Operator-നെ മാറ്റുക | Change my Operator |  |
+| `leave.page.operatorNote` | നിങ്ങളുടെ Operator-നെ ഉടൻ അറിയിക്കും. നിങ്ങൾ സമ്മതിക്കാതെ ഒന്നും മാറില്ല: കടയുടെ WhatsApp നമ്പറിലേക്ക് അയയ്ക്കാൻ ഒരു കോഡ് കിട്ടും. 14 ദിവസത്തിൽ ഒന്നും നടന്നില്ലെങ്കിൽ Geometer സഹായിക്കും. | Your Operator is told at once. Nothing changes until you agree: you will get a code to send to the shop's WhatsApp number. If nothing happens in 14 days, Geometer will help you. |  |
+| `leave.page.asked` | ശരി. ചോദിച്ചു. വിവരങ്ങൾ താഴെയുള്ള സംഭാഷണത്തിലുണ്ട്. | Done. Asked. Details are in the chat below. |  |
+| `leave.panel.heading` | ഉടമയുടെ സ്വന്തം ആവശ്യങ്ങൾ | The owner's own asks |  |
+| `leave.panel.fileAsked` | ഉടമ 18 Nov ന് തന്റെ കടയുടെ ഫയൽ ചോദിച്ചു. അത് അവർക്കായി ഉണ്ടാക്കുന്നു, അവർക്ക് മാത്രം കാണിക്കുന്നു. നിങ്ങൾ ഒന്നും ചെയ്യേണ്ടതില്ല. | The owner asked for their shop's file on 18 Nov. It is made for them and shown only to them. You do not need to do anything. |  |
+| `leave.panel.fileReady` | ഫയൽ ഉടമയുടെ ആപ്പിൽ തയ്യാറാണ്, 21 Nov വരെ. | The file is ready in the owner's app, until 21 Nov. |  |
+| `leave.panel.fileTaken` | ഉടമ തന്റെ ഫയൽ എടുത്തു. | The owner took their file. |  |
+| `leave.panel.fileExpired` | ഉടമ എടുക്കുംമുമ്പ് ഫയലിന്റെ സമയം കഴിഞ്ഞു. പുതിയ ആവശ്യത്തിൽ പുതിയത് ഉണ്ടാക്കും. | The file ran out before the owner took it. A new ask makes a new one. |  |
+| `leave.panel.fileProblem` | ഫയൽ ഇതുവരെ ഉണ്ടാക്കാനായില്ല: The record is not ready yet. കുറച്ച് മിനിറ്റിൽ വീണ്ടും ശ്രമിക്കും. | The file could not be made yet: The record is not ready yet. It is tried again in a few minutes. |  |
+| `leave.panel.fileNote` | അവരുടെ ഫയൽ അവരുടേതാണ്. നിങ്ങളുടെ അനുവാദം ചോദിക്കില്ല, തടയാനും കഴിയില്ല. | Their file is theirs. You are not asked for permission and you cannot stop it. |  |
+| `leave.panel.operatorAsked` | ഉടമ 18 Nov ന് മറ്റൊരു Operator-നെ ചോദിച്ചു. | The owner asked for another Operator on 18 Nov. |  |
+| `leave.panel.operatorDo` | താഴെയുള്ള ബട്ടൺ ഉപയോഗിച്ച് ഉടമ ആഗ്രഹിക്കുന്ന Operator-ന് കട മാറ്റിനൽകൂ. എന്തെങ്കിലും മാറുംമുമ്പ് ഉടമ സ്വന്തം കോഡ് കൊണ്ട് സമ്മതിക്കും. | Please move the shop to the Operator the owner wants, with the button below. The owner still agrees with their own code before anything changes. |  |
+| `leave.panel.operatorStart` | ഈ കട മറ്റൊരു Operator-ന് നൽകുക | Move this shop to another Operator |  |
+| `leave.panel.operatorWaiting` | ഒരു മാറ്റം ഉടമയുടെ കോഡിനായി കാത്തിരിക്കുന്നു. | A move is waiting for the owner's code. |  |
+| `leave.panel.operatorClock` | ഒന്നും ചെയ്തില്ലെങ്കിൽ 9 ദിവസത്തിൽ ഈ കട Geometer-ന് കാണിക്കും, അവർ ഉടമയെ സഹായിക്കും. | If nothing is done, Geometer is shown this shop in 9 days, and will help the owner. |  |
+| `leave.panel.strandedNote` | ഈ ഉടമകൾ 14 ദിവസത്തിലധികം മുമ്പ് മറ്റൊരു Operator-നെ ചോദിച്ചു, ഒന്നും നടന്നിട്ടില്ല. Geometer അവരെ ഒരാളെ കണ്ടെത്താൻ സഹായിക്കുന്നു, വേണമെങ്കിൽ കടയുടെ ബാക്കപ്പിൽ നിന്ന്. | These owners asked for another Operator more than 14 days ago and nothing has happened. Geometer helps them find one, from the shop's backups if needed. |  |
+| `leave.panel.strandedTitle` | മറ്റൊരു Operator-നായി കാത്തിരിക്കുന്ന ഉടമകൾ | Owners waiting for another Operator |  |
+| `leave.panel.strandedNone` | ആരും കാത്തിരിക്കുന്നില്ല. | No owner is waiting. |  |
+| `leave.panel.strandedRow` | Glow Salon: 1 Nov ന് ചോദിച്ചു. ഇപ്പോഴത്തെ Operator: Divya. | Glow Salon: asked on 1 Nov. Operator now: Divya. |  |
+| `leave.panel.fleetTold` | Geometer-ന്റെ ബില്ലിംഗിൽ ഇപ്പോൾ കട Ravi Digital-ന്റെ പക്കലാണ്. | Geometer's billing now has the shop with Ravi Digital. |  |
+| `leave.panel.fleetWaiting` | Geometer-ന്റെ ബില്ലിംഗിനെ ഇതുവരെ അറിയിക്കാനായില്ല. ഏതാനും മിനിറ്റിൽ വീണ്ടും ശ്രമിക്കും; അതുവരെ കടയുടെ ബിൽ പഴയ Operator-ക്കാണ്. | Geometer's billing has not been told yet. It is tried again every few minutes; until then the shop is still billed to the old Operator. |  |
+| `leave.panel.fleetRefused` | Geometer-ന്റെ ബില്ലിംഗ് മാറ്റം സ്വീകരിച്ചില്ല: That Operator does not serve here yet. support-ന് എഴുതൂ, അവർ കൈകൊണ്ട് ശരിയാക്കും. | Geometer's billing did not take the move: That Operator does not serve here yet. Write to support and they will fix it by hand. |  |
+| `leave.panel.fleetNoId` | Ravi Digital-ന്റെ അക്കൗണ്ടിന് Geometer-ൽ Operator ഐഡി ഇല്ല, അതിനാൽ ബില്ലിംഗിനെ അറിയിച്ചില്ല. support-ന് എഴുതൂ, അവർ കൈകൊണ്ട് ശരിയാക്കും. | Ravi Digital's account has no Operator id with Geometer, so billing was not told. Write to support and they will fix it by hand. |  |
 | `chat.list.yourChats` | നിങ്ങളുടെ ചാറ്റുകൾ | Your chats |  |
 | `chat.list.installHead` | Streetlist ഫോണിൽ സൂക്ഷിക്കൂ | Keep Streetlist on your phone |  |
 | `chat.list.installBody` | ഒറ്റ തൊടലിൽ ചാറ്റുകൾ തുറക്കാം, കട മറുപടി തന്നാൽ അറിയാം. | Open your chats in one tap, and hear when a shop replies. |  |

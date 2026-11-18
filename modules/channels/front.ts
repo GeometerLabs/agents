@@ -45,6 +45,8 @@ import { OWNER, PAGE } from "./words.ts";
 import { bookingPage, statusPage } from "./page.ts";
 import { bookingIcs } from "./ics.ts";
 import { ownerLinkGone, ownerPage } from "./owner-page.ts";
+import type { OwnerPageInput } from "./owner-page.ts";
+import { LEAVE_PAGE } from "./words-leave.ts";
 import { WORDS as LIMITS_PAGE_WORDS, ownerLimitsPage } from "./owner-limits-page.ts";
 import { listingsPolicy, ownerListingsPage } from "./owner-listings-page.ts";
 import { storefrontRoute } from "./storefront.ts";
@@ -669,14 +671,16 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     /** A signed-in owner's POST must carry the session's form token; the panel's link is its own secret and needs none. */
     const csrfOk = (given: unknown) => o.csrf === undefined || (typeof token === "object" && "session" in token && csrfMatches(token.session, given));
     // item 11e: the owner's app lives at the same base: the page also at "<base>/" (a service worker controls only pages inside its scope, <base>/), and its four routes
-    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/listings": "GET", "/listings/op": "POST", "/listings/photo": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST" };
+    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/listings": "GET", "/listings/op": "POST", "/listings/photo": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST", "/leave": "POST" };
     // the accountant's files: <owner app>/accounting/<period>/<file>, for the signed-in owner's session only (handled below, once the session is known good)
     const accounting = /^\/accounting\/([^/]+)(?:\/([^/]+))?$/u.exec(sub);
     // block S: the owner's own view of one of their photos, by its id (a draft's, a waiting one): <owner app>/listings/p/<id>
     const ownPhoto = /^\/listings\/p\/(ph-[0-9a-f]{12})$/u.exec(sub);
-    if (accounting || ownPhoto) { if (method !== "GET") return sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" }); }
+    // "Get my shop's file": <owner app>/file/<id>, the owner's SESSION only, once (handled below with the accountant's files)
+    const fileRoute = /^\/file\/([A-Za-z0-9_-]{32,64})$/u.exec(sub);
+    if (accounting || ownPhoto || fileRoute) { if (method !== "GET") return sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" }); }
     else if (routes[sub] === undefined) return json ? sendJson(res, 404, { error: { code: "not_found", message: "GET /api/v1/state or POST /api/v1/answer." } }) : sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
-    if (!accounting && !ownPhoto && routes[sub] !== method) return json ? sendJson(res, 405, { error: { code: "bad_request", message: `Use ${routes[sub]} here.` } }, { allow: routes[sub] }) : sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: routes[sub] });
+    if (!accounting && !ownPhoto && !fileRoute && routes[sub] !== method) return json ? sendJson(res, 405, { error: { code: "bad_request", message: `Use ${routes[sub]} here.` } }, { allow: routes[sub] }) : sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: routes[sub] });
     if (!limiter.take(method === "POST" ? "act" : "read", address)) return slow("300");
     if (method === "POST" && !sameOrigin(req, shop)) return json ? sendJson(res, 403, { error: { code: "bad_request", message: "Calls from another site's page are refused." } }) : sendHtml(res, 403, "<!doctype html><p>Forms from another site are refused.</p>");
     const state = await ownerState(shop, token);
@@ -704,6 +708,29 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       });
       res.end(file.content);
       return;
+    }
+    // ---- "Get my shop's file" and "Change my Operator" (block S): only a signed-in owner's SESSION may ask or take; the panel's link, which the Operator made, opens neither ----
+    const ownSession = typeof token === "object" && "session" in token ? token.session : undefined;
+    if (fileRoute) {
+      const gone404 = () => sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>", { "x-robots-tag": "noindex" });
+      if (!ownSession || !shop.backend.ownerFileBytes) return gone404();
+      const got = await shop.backend.ownerFileBytes({ session: ownSession }, fileRoute[1]);
+      if (!got) return gone404();
+      res.writeHead(200, { "content-type": "application/gzip", "content-disposition": `attachment; filename="${got.name.replace(/[^A-Za-z0-9._-]/gu, "_")}"`, "content-length": got.bytes.length, "cache-control": "no-store", "x-content-type-options": "nosniff", "x-robots-tag": "noindex", "content-security-policy": "default-src 'none'" });
+      res.end(got.bytes);
+      return;
+    }
+    if (sub === "/leave") {
+      const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
+      if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
+      const what = form.get("what");
+      if (!ownSession || !state.view.app || (what !== "file" && what !== "operator")) return redirect(res, `${base}/?lang=${language}`);
+      // the same words the owner would type: the assistant reads them by rule and writes the ask in the record (conversation.ts leave), marked as coming from the page
+      const before = JSON.stringify(state.view.app.talk);
+      const r = await shop.backend.submit([{ kind: "owner_message", id: randomUUID(), text: what === "file" ? "get my shop's file" : "change my operator" }], token);
+      if (r === "refused") return gone();
+      await settleTalk(shop, token, before, options.waitMs ?? 3_000);
+      return redirect(res, `${base}/?lang=${language}&n=leave`);
     }
     if (sub === "/api/v1/state") return sendJson(res, 200, ownerJson(state), { "x-robots-tag": "noindex" });
 
@@ -858,7 +885,13 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       return redirect(res, `${base}?lang=${language}&n=${result}`);
     }
     const n = url.searchParams.get("n");
-    const notice = n === "alerts" ? ALERT_WORDS[language].saved : n && n in w.result ? w.result[n as keyof typeof w.result] : undefined;
+    // the "leave with your shop" part of the page: for a signed-in session of a shop with the assistant only
+    let leave: OwnerPageInput["leave"];
+    if (ownSession && state.view.app) {
+      const file = shop.backend.ownerFile ? await shop.backend.ownerFile({ session: ownSession }).catch(() => null) : null;
+      leave = { file: file ?? { state: "none" }, ...(o.csrf ? { csrf: o.csrf } : {}) };
+    }
+    const notice = n === "alerts" ? ALERT_WORDS[language].saved : n === "leave" ? LEAVE_PAGE[language].asked : n && n in w.result ? w.result[n as keyof typeof w.result] : undefined;
     // item 11h: the owner's alerts box, when the shop has push (its runtime says so, and its public key)
     let pushState: { key: string; state: { choice: string; phones: number; whatsapp: boolean } } | undefined;
     if (shop.backend.push) {
@@ -874,7 +907,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), bare: true }) : undefined;
     // item 11i: the owner's app shows the character in the shop's real mood (all five moods: this is the owner's own view)
     const facePic = state.view.app ? shop.character?.()?.picture(state.view.app.face, "svg") : undefined;
-    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(typeof token === "object" && "session" in token && shop.backend.accountantFiles ? { exportLinks: { base: `${base}/accounting` } } : {}), ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(app && shop.backend.ownerListings ? { listingsLink: { href: `${base}/listings?lang=${language}`, label: LISTING_WORDS[language].owner.link } } : {}), ...(shop.backend.limits ? { limitsLink: { href: `${base}/limits?lang=${language}`, label: LIMITS_PAGE_WORDS[language].title } } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
+    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(typeof token === "object" && "session" in token && shop.backend.accountantFiles ? { exportLinks: { base: `${base}/accounting` } } : {}), ...(leave ? { leave } : {}), ...(app && shop.backend.ownerListings ? { listingsLink: { href: `${base}/listings?lang=${language}`, label: LISTING_WORDS[language].owner.link } } : {}), ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(shop.backend.limits ? { limitsLink: { href: `${base}/limits?lang=${language}`, label: LIMITS_PAGE_WORDS[language].title } } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
   }
 
   return (req, res) => {
