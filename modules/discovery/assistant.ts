@@ -262,7 +262,11 @@ export function createAssistant(config: AssistantConfig): Assistant {
 
   async function understand(input: AskInput): Promise<Understood> {
     asked += 1;
-    const fall = (why: Refused): Understood => { how.plain += 1; refused[why] = (refused[why] ?? 0) + 1; return { how: "plain", typed: null, refused: why }; };
+    const fall = (why: Refused): Understood => {
+      how.plain += 1; refused[why] = (refused[why] ?? 0) + 1;
+      config.log?.(`directory: the buyer's assistant fell back to the plain search (${why}), ${refused[why]} so far`); // a reason and a count, never the question
+      return { how: "plain", typed: null, refused: why };
+    };
     if (!config.systemOne && !config.model) return fall("no_model");
     if (!limiter.take("ask", input.who)) return fall("buyer");
     let g = allowed();
@@ -354,23 +358,32 @@ export function requestOf(typed: TypedSearch, input: Pick<AskInput, "lang" | "la
 
 // ---- the line over the results ----
 
+/**
+ * The talk-check reads "1.4" as the two numbers 1 and 4 (language/check.ts does not know decimals), so a source that states a distance also states its two parts, and a line that
+ * says "1.4 km" passes while "3 km" (not in the results) still fails.
+ */
+const distanceParts = (distanceKm: number): string => (km(distanceKm).includes(".") ? ` (${km(distanceKm).split(".").join(" and ")})` : "");
+
 /** Words a sentence may carry a name from: the shops, towns and titles of the results, and the buyer's own cleaned words. */
 const allowedNames = (results: readonly SearchResultItem[], what: string, town: string | null): Set<string> =>
   new Set([...results.flatMap((r) => [r.shop.name, r.shop.town, r.item.title]), what, town ?? ""].flatMap((t) => wordsOf(t)));
 
+/** Plain words a sentence may start with (capitalised); any other capitalised Latin word must be a name from the results or the buyer's own word. */
+const SENTENCE_STARTERS = new Set(["the", "a", "an", "there", "it", "this", "these", "here", "nearest", "shop", "shops", "we", "you", "your", "found", "see", "call", "ask", "one", "some", "all"]);
 const VERIFIED = /verified|certified|pure ?bred|champion|pedigree|सत्यापित|प्रमाणित|ശുദ്ധ ?ജാതി|പരിശോധിച്ച|സ്ഥിരീകരിച്ച|ಪರಿಶೀಲಿಸಿದ|ಪ್ರಮಾಣಿತ/iu;
 
 /**
  * Why a line is not fit to show over these results, or null when it is. The talk's own five checks (assistant/talk-check.ts: every number, price and distance is one a result states,
  * no promise, no "done" word, no link or phone number, the buyer's language, the length), then three more: nothing about health, breed quality or "verified", and every capitalised
- * Latin name in it (after the first word of a sentence) is a shop, town or item of the results or the buyer's own word.
+ * Latin word in it (but a few plain sentence starters) is a shop, town or item of the results or the buyer's own word. A shop named in another script is not caught by this last
+ * check; the line a model writes is a hook that is not wired, and the template line cannot name a shop at all.
  */
 export function groundedProblem(line: string, results: readonly SearchResultItem[], o: { lang: Lang; question: string; what: string; town: string | null; shops: number }): string | null {
   const sources: TalkSource[] = [
     { id: "r:count", kind: "record", text: `${o.shops} shops. ${results.length} results.`, literals: [o.what, ...(o.town ? [o.town] : [])] },
     ...results.map((r, i): TalkSource => ({
       id: `r:${i + 1}`, kind: "record",
-      text: `${r.shop.name}, ${r.shop.town}. ${r.item.title}.${r.item.price ? ` Price ${r.item.price.value}.` : ""}${r.shop.distanceKm !== null ? ` ${km(r.shop.distanceKm)} km away.` : ""}`,
+      text: `${r.shop.name}, ${r.shop.town}. ${r.item.title}.${r.item.price ? ` Price ${r.item.price.value}.` : ""}${r.shop.distanceKm !== null ? ` ${km(r.shop.distanceKm)} km away${distanceParts(r.shop.distanceKm)}.` : ""}`,
       amountsInr: r.item.price ? [Number(r.item.price.value)] : [], literals: [r.shop.name, r.shop.town, r.item.title],
     })),
   ];
@@ -381,10 +394,7 @@ export function groundedProblem(line: string, results: readonly SearchResultItem
   if (!checked.ok) return `check ${checked.check}`;
   if (hasHealthClaim(line) || VERIFIED.test(line)) return "a claim about health, breed or verification";
   const allowed = allowedNames(results, o.what, o.town);
-  for (const sentence of line.split(/(?<=[.!?।])\s+/u)) {
-    const tokens = sentence.match(/[\p{L}\p{M}][\p{L}\p{M}'-]*/gu) ?? [];
-    for (const t of tokens.slice(1)) if (/^\p{Lu}/u.test(t) && /^[A-Za-z]/u.test(t) && !allowed.has(normal(t))) return "a name that is not in the results";
-  }
+  for (const t of line.match(/[\p{L}\p{M}][\p{L}\p{M}'-]*/gu) ?? []) if (/^[A-Z]/u.test(t) && !allowed.has(normal(t)) && !SENTENCE_STARTERS.has(normal(t))) return "a name that is not in the results";
   return null;
 }
 
