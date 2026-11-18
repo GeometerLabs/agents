@@ -33,6 +33,12 @@
 //                                start a shop from a template of this checkout: its example settings (or the file --settings names, checked first), a pin to the template's version here, and a
 //                                runtime.json that names the WhatsApp number (and, for a template with a calendar, the calendar). The settings start as the template's made-up example: change
 //                                them to the real ones. How customers pay is never the example's (B71): the shop's own UPI ID, the default, or --payment razorpay for its own gateway account.
+//   shop budget <shop>           the shop's model budget: the plan's numbers (with any extra messages it bought this month), the shop's own override, and the result
+//   shop budget <shop> --monthly-inr N --reason "..." --set-by NAME [--daily feature=N ...]   give ONE shop a model budget of its own (a busy Basic shop): N whole rupees a month, and
+//                                optionally daily caps (feature = owner_talk, customer_talk, listing_draft or router; repeat --daily or comma-separate). Kept in shops/<shop>/budget-override.json
+//                                with the reason, who set it and the day; replaces only the numbers it names. Only here, never from the panel. If N is above fleet's cap for the shop,
+//                                it says the fleet command to raise that too (node apps/fleet/main.ts shop ai-cap ...). The deployer applies it on its next pass.
+//   shop budget <shop> --clear   remove the override: the plan's numbers hold again
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
 //                                runs the panel's read-only connection checks (WhatsApp number, Razorpay key, calendar) inside the panel container; when they all confirm
 //                                the panel records the ids in shops/<shop>/pins.json, and the next deploy or `apply` pins the Guards to them.
@@ -121,6 +127,7 @@ import { MANAGE_SUBCOMMANDS, manageCommand } from "./agent/manage-cli.ts";
 import { recordAgent } from "./agent/records.ts";
 import { exportCommand } from "./export/cli.ts";
 import { homeCommand } from "./home-cli.ts";
+import { budgetCommand } from "./budget-cli.ts";
 import { whatsappTemplatesCommand } from "./whatsapp-templates-cli.ts";
 import { paperCommand } from "./backup/papers-cli.ts";
 import { runFingerprints } from "./backup/fingerprints.ts";
@@ -170,6 +177,8 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       server: { type: "string" }, domain: { type: "string" }, id: { type: "string" }, "reviewed-by": { type: "string" }, "model-wire": { type: "string" }, model: { type: "string" },
       "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "licence-key": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, template: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" }, // stream-*: only to say they are no longer used
+      // shop budget
+      "monthly-inr": { type: "string" }, "set-by": { type: "string" }, daily: { type: "string", multiple: true }, clear: { type: "boolean" },
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
       kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" }, pairing: { type: "boolean" }, "guard-licence-kid": { type: "string" }, wait: { type: "string" }, yes: { type: "boolean" }, confirm: { type: "boolean" } /* hidden alias of --yes: the /usr/local/bin/geometer an earlier install.sh wrote passes `server stop --confirm` */,
       "prepared-by": { type: "string" }, company: { type: "string" }, "upi-id": { type: "string" }, payee: { type: "string" }, payment: { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
@@ -342,6 +351,14 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
 
     const ctx = makeContext(dir, overrides);
     const shop = positionals[0];
+
+    // `shop budget <shop>`: one shop's own model budget, set only here by the server admin (budget-cli.ts)
+    if (command === "shop" && positionals[0] === "budget") {
+      return budgetCommand(dir, positionals[1], {
+        ...(str("monthly-inr") !== undefined ? { monthlyInr: str("monthly-inr")! } : {}), ...(str("reason") !== undefined ? { reason: str("reason")! } : {}), ...(str("set-by") !== undefined ? { setBy: str("set-by")! } : {}),
+        ...(Array.isArray(values.daily) ? { daily: values.daily as unknown as string[] } : {}), ...(values.clear === true ? { clear: true } : {}),
+      }, { log: ctx.log, now: ctx.now });
+    }
 
     // an agent someone else wrote (agent add / check / deploy / show / record / report), and the shop commands when they are given an agent's name
     if (command === "agent") return await agentCommand(ctx, positionals[0], positionals[1], values);
