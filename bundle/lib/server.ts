@@ -19,7 +19,9 @@ import { parseLock } from "../../modules/runtime/config.ts";
 import { KINDS, kindFor, kindNames } from "./kinds.ts";
 import { parseAssignmentFile, parseOwner, parseReportFile, resolvePreparedBy } from "../panel/contract.ts";
 import { latestPriceList } from "../panel/cost.ts";
-import { budgetFor } from "./budget.ts";
+import { budgetFor, planBudget } from "./budget.ts";
+import { readOverride } from "./budget-override.ts";
+import type { BudgetOverride } from "./budget-override.ts";
 import type { BudgetConfig } from "../../modules/budget/budget.ts";
 import { readAnswerFile } from "./fleet.ts";
 import { serverIdProblem, shopNameProblem } from "./util.ts";
@@ -432,6 +434,15 @@ export interface ShopFolder {
    */
   budget?: BudgetConfig;
   /**
+   * The same budget as the plan alone gives it (scaled by what the shop bought this month), before the admin's override: for `geometer shop budget`, which shows the plan's numbers
+   * beside the override. Undefined in the same cases as `budget` when there is no override.
+   */
+  planBudget?: BudgetConfig;
+  /** The server admin's override for this one shop (shops/<shop>/budget-override.json, lib/budget-override.ts); already merged into `budget`. Undefined when there is none or it was not usable (then `problems` says so). */
+  budgetOverride?: BudgetOverride;
+  /** The extra messages fleet said this shop bought this month (0 when none, when fleet said nothing, or when its answer is from an earlier month). */
+  boughtThisMonth?: number;
+  /**
    * Who the owner's monthly report says set the shop up: shops/<shop>/report.json if it has one, else the panel's attribution (owner.json: "Divya, local Operator"), else
    * DEFAULT_PREPARED_BY. `preparedBySource` says which, so a deploy can tell the builder when it had to fall back.
    */
@@ -449,7 +460,7 @@ function inForceList(): { rates: Record<string, never> } | ReturnType<typeof lat
 }
 
 /** Read one shop's desired state. Never throws: what is wrong comes back as `problems`. */
-export function readShop(dir: string, name: string): ShopFolder {
+export function readShop(dir: string, name: string, now: Date = new Date()): ShopFolder {
   const folder = serverPaths(dir).shop(name);
   const problems: string[] = [];
   const nameProblem = shopNameProblem(name);
@@ -506,6 +517,16 @@ export function readShop(dir: string, name: string): ShopFolder {
   const fleetModel = answer?.model === "off" && answer.plan !== null ? "off" as const : undefined;
   // a listings-only shop is free and has no plan at fleet: its plan is the fixed id "listings-only", so the caps' budget for it applies once the list that has it is in force
   const budgetPlan = kind?.shared ? "listings-only" : answer?.plan;
-  const budget = budgetPlan ? budgetFor(budgetPlan, inForceList()) : undefined;
-  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), ...(fleetModel ? { fleetModel } : {}), ...(budget ? { budget } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
+  // Messages bought this month scale the shop's budget the way they scale fleet's cap. An answer written in an earlier month (ops stopped for days over a month's turn) is not trusted for
+  // them: fleet starts a new month with none bought, and a stale number would hold the old month's higher budget. Compared in UTC; fleet's own month is Asia/Kolkata, so at worst this
+  // ignores a number a few hours early, which only ever lowers the budget back to the plan's.
+  const bought = answer?.bought !== undefined && answer.at.slice(0, 7) === now.toISOString().slice(0, 7) ? answer.bought : 0;
+  // The admin's override for this one shop. A file that cannot be used is a problem in plain words (the deploy says so and does not guess which numbers were meant).
+  const { override, problem: overrideProblem } = readOverride(folder);
+  if (overrideProblem) problems.push(overrideProblem);
+  const list = inForceList();
+  // merged inside budgetFor, which is the one place every shop's budget (agent shops and the listings-only shop) is worked out
+  const budget = budgetPlan ? budgetFor(budgetPlan, list, { bought, ...(override ? { override } : {}) }) : override ? budgetFor(null, list, { override }) : undefined;
+  const plansOwn = override && budgetPlan ? planBudget(budgetPlan, list, bought) : undefined;
+  return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), ...(fleetModel ? { fleetModel } : {}), ...(budget ? { budget } : {}), ...(plansOwn ? { planBudget: plansOwn } : {}), ...(override ? { budgetOverride: override } : {}), ...(bought > 0 ? { boughtThisMonth: bought } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
 }

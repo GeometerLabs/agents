@@ -4,6 +4,7 @@
 import type { FleetAnswer, PlanName } from "./contract.ts";
 import { chargeOf, paiseOf } from "./cost.ts";
 import type { PriceList } from "./cost.ts";
+import type { BudgetOverride } from "../lib/budget-override.ts";
 
 export interface PlanView {
   plan: PlanName | null;
@@ -17,16 +18,21 @@ export interface PlanView {
   warn: string[];
   /** The shop's own model budget (decision 60), only while most of it or all of it is used: from the runtime's status, in whole paise. */
   budget?: { level: "warn" | "full"; usedPaise: number; limitPaise: number };
+  /**
+   * The server admin's own model budget for this shop (shops/<shop>/budget-override.json), shown READ-ONLY so the Operator knows why this shop's budget is not its plan's. Nothing in
+   * the panel can change it: on Geometer's own Operator server Geometer pays for the model, so an Operator must never raise it.
+   */
+  ownBudget?: { monthlyPaise: number; date: string; reason: string };
   /** Whole paise, before GST, from the price list in force: the plan's fee, or the builder licence (`licence`) on a builder's own server. */
   price?: { paise: number; licence: boolean };
 }
 
 // Facts about a shop's plan from fleet's last answer and the price list; undefined when fleet has said nothing, so the page says "unknown" and never invents a plan. `builder` switches the charge to the builder licence on their own server.
-export function planView(fleet: FleetAnswer | undefined, prices: PriceList | null, builder = false, budget?: unknown): PlanView | undefined {
+export function planView(fleet: FleetAnswer | undefined, prices: PriceList | null, builder = false, budget?: unknown, override?: BudgetOverride): PlanView | undefined {
   if (!fleet) return undefined;
   const charge = fleet.plan && prices ? chargeOf(prices, fleet.plan, builder) : null;
   const price = charge?.fee ? { paise: paiseOf(charge.fee.value), licence: charge.licence } : undefined;
-  return { plan: fleet.plan, allowance: fleet.allowance, innovator: fleet.innovator, buttons: fleet.ai === "buttons", ...(fleet.reason ? { reason: fleet.reason } : {}), warn: fleet.warn, ...(price ? { price } : {}), ...(budgetOf(budget) ? { budget: budgetOf(budget)! } : {}) };
+  return { plan: fleet.plan, allowance: fleet.allowance, innovator: fleet.innovator, buttons: fleet.ai === "buttons", ...(fleet.reason ? { reason: fleet.reason } : {}), warn: fleet.warn, ...(price ? { price } : {}), ...(budgetOf(budget) ? { budget: budgetOf(budget)! } : {}), ...(override ? { ownBudget: { monthlyPaise: override.monthlyInr * 100, date: override.date, reason: override.reason } } : {}) };
 }
 
 /**
