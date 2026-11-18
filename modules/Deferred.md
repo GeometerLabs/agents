@@ -376,4 +376,5 @@ The design and what was weighed are in [Explanation.md](Explanation.md#shop-memo
 | A WhatsApp tap on the morning question is recorded as coming from the app | The skill's `execute` does not know the door | `execute` is told the door |
 | Listing ids after a restore from a snapshot (the store's counter skip does not move `assistant.listings.seq`) | The assistant's counters are not in the template codecs' `count` fields (same gap as the memory's) | The skip moves optional-object counters too |
 | Photos kept as rows in the shop's SQLite file | Simple and backed up; a shop with 50 listings holds at most about 225 MB | A shop outgrows it: move them to files with their own backup object |
-| Phase B (directory and search), phase C (listings-only shops) | Next phases of the plan | Per the plan |
+| Phase B (directory and search) | Next phase of the plan (phase C, listings-only shops, is built: see bundle/Explanation.md, 18 Nov) | Per the plan |
+| A listings-only shop has no customer chat | No agent behind it to answer; the front offers none for kind `listings` and "Ask about this" shows the shop's phone | A chat answer from public listings is built (bundle/Deferred.md) |

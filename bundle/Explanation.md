@@ -1310,3 +1310,28 @@ The shop's runtime (`modules/runtime/owner-file.ts`) serves it at `<owner app>/f
 
 **Tests (written 18 Nov, not run).** `modules/approvals/test/leave.test.ts`, `modules/assistant/test/leave.test.ts`, `modules/runtime/test/owner-file.test.ts`, `modules/channels/test/owner-file-front.test.ts`, `bundle/test/owner-profile.test.ts`, `bundle/test/owner-file.test.ts`, `bundle/test/fleet-move.test.ts`, `bundle/panel/test/leave.test.ts`; monorepo `apps/fleet/test/shop-move-api.test.ts`. Not tested: a real Docker panel container staging the file (the staged path is the shop folder both mount), a real fleet.
 
+
+## 18 Nov 2026: listings-only shops on one shared process (block S, phase C)
+
+**What.** A shop that only shows what it has (template `listings`) is free and takes no money or WhatsApp. It has no Guard, so it gets no container: every such shop on a server is a folder in ONE
+container, `rt-listings` (`modules/runtime/shared.ts`, started by `templates/commerce/listings/server/shared-main.ts`), with its own store file in the shared volume, `rt-data-listings/<shop>/data/agent.db`.
+Decision 60 of the implementation plan (owner, 18 Nov).
+
+**Why this shape.** (1) Reuse: each shop in the process is the template's ordinary `startClient` with its own folder, tokens and store, so a shop run alone and a shop run here are the same code, and
+backup, "Get my shop's file" and "Change my Operator" see the same file layout. (2) The router forwards `/shop/<name>/...` to the shop's own loopback server and **the shop checks its own token**: the
+isolation is the existing per-shop token, store and owner-access file, not a new check. (3) The container's compose entry never changes when a shop is added (empty file list, folders as mounts),
+so adding a shop recreates nothing; the process looks at its folders every few seconds because file watching on a bind mount is unreliable. (4) `pathway.lock` is written last and is what makes a
+folder "whole", so a half-written shop never starts; removing it first is how a shop is let go.
+
+**Decisions to know.** `index` 0 in `state.json` means "no network address": these shops take no place in the 199-shop pool until they take an agent (`shopIndex` hands out a real one then). Their
+generated client folder is `generated/listings/`, not `generated/shops/`, so the shared process cannot read another template's shop folders (`lib/client-dir.ts`, used by every place that
+hands a file to a running shop). `Kind.papers` and `casesFile` became optional (no hand check, no go-live paper, no cases file). The shop's AI cap is the constant `LISTINGS_ALLOWANCE` in
+`generate/shop.ts` until the caps work lands. The upgrade conversion (`lib/listings-carry.ts`) rewrites only the saved state JSON, as one step with no new record line; the SQLite file is the same in
+every template. The old shared folder is kept as `.moved-<shop>-<time>`, never deleted by code. Customer chat is not offered for these shops (`modules/channels/front.ts`, kind `listings`).
+
+**Touched shared files:** `bundle/lib/kinds.ts` (`listings` row, `shared`, `storeWith`, `isShared`), `bundle/generate/{compose,configs,shop}.ts`, `bundle/deploy.ts`, `bundle/backup/{jobs,export}.ts`,
+`bundle/export/build.ts`, `bundle/lib/{state,pages,licence,terms,owner-link,owner-file}.ts`, `bundle/geometer.ts`, `bundle/services/inbox.ts`, `bundle/panel/{views,server,setup,setups,presets,keep,review,golive}.ts`
+and the four words files, `modules/channels/{front,backend,owner-page}.ts`, `modules/runtime/{start,config}.ts`.
+
+**Not tested on a real server, Docker, browser or model.** Tests written, not run: `bundle/test/listings-shop.test.ts`, `modules/runtime/test/shared.test.ts`,
+`templates/commerce/listings/test/*.test.ts`. The compose and Caddyfile tests are structural (no golden file changes: a server with no listings-only shop composes as before, and the Caddyfile does not change). The review sheets (`REVIEW-hi/ml/kn.md`) need regenerating for the new `listingsShop.panel.*` and `preset.shows-only.*` ids.
