@@ -203,6 +203,8 @@ test("withReport adds nothing to nothing, or to a config that was broken before 
 test("the name and the badge are part of what a shop is asked to be: either changing changes the desired hash, and changing back restores it", () => {
   const t = tempServer(); try {
     putOwner(t.paths);
+    // the baseline is a fleet answer with the plan and no flag: since 19 Nov the plan gives the shop a model budget, and the budget is part of the desired hash (deploy.ts desiredOf)
+    putAnswer(t.paths, answer({ innovator: false }));
     const plain = desiredHashOf(t.shop("glow-salon"));
     putAnswer(t.paths, answer({ innovator: false }));
     assert.equal(desiredHashOf(t.shop("glow-salon")), plain, "an answer that changes nothing changes nothing");
@@ -227,6 +229,8 @@ test("the deployer writes the block into the generated runtime.json, redeploys t
     const panelFile = join(w.paths.shop("glow-salon"), "runtime.json");
     const panelBefore = readFileSync(panelFile, "utf8");
     w.handIn("glow-salon");
+    // the baseline is a fleet answer with the plan and no flag: since 19 Nov the plan gives the shop a model budget, and the budget is part of the desired hash (deploy.ts desiredOf)
+    putAnswer(w.paths, answer({ innovator: false }));
     await deploy(w.ctx);
     const generated = () => JSON.parse(readFileSync(join(w.root, "generated", "shops", "glow-salon", "client", "runtime.json"), "utf8")) as { report: Record<string, unknown> };
     assert.deepEqual(generated().report, { innovator: false, pageBaseUrl: "https://shops.example.com/r/glow-salon", pagesDir: "/home/node/data/reports", preparedBy: "Divya, local Operator", source: "test-mode", tenant: "glow-salon" });

@@ -672,6 +672,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `plan.warn.ai_cap` | इस दुकान ने इस महीने की अपनी AI सीमा पूरी कर ली है। यह नियमों और मेन्यू से जवाब देती रहती है; पूरा AI अगले महीने की 1 तारीख को लौटता है। | This shop has used its AI allowance for the month. It keeps answering with rules and menus; the full AI comes back on the 1st. |  |
 | `plan.budget.warn` | इस दुकान के इस महीने के मॉडल बजट का ज़्यादातर हिस्सा खर्च हो चुका है (₹20 में से ₹16)। मालिक को बता दिया गया है। ख़त्म हुआ तो असिस्टेंट 1 तारीख तक बटन और तय जवाबों से काम करेगा। | Most of this shop's model budget for the month is used (₹16 of ₹20). The owner has been told. If it runs out, the assistant answers with buttons and fixed answers until the 1st. |  |
 | `plan.budget.full` | इस दुकान का इस महीने का मॉडल बजट (₹20) ख़त्म हो गया है। मालिक को बता दिया गया है। बटन, नियम और तय जवाब चलते रहेंगे; असिस्टेंट के अपने शब्द 1 तारीख को लौटेंगे। | This shop's model budget for the month (₹20) is used up. The owner has been told. Buttons, rules and fixed answers go on; the assistant's own words come back on the 1st. |  |
+| `plan.budget.own` | मॉडल बजट: ₹40 प्रति माह, इस दुकान के लिए 2026-11-19 को तय किया गया: busy shop, owner asked | Model budget: ₹40 a month, set for this shop on 2026-11-19: busy shop, owner asked |  |
 | `licence.heading` | लाइसेंस | Licence |  |
 | `licence.states.active` | लाइसेंस ठीक है | Licence in order |  |
 | `licence.states.reminder` | लाइसेंस का भुगतान बाकी है | Licence payment due |  |
