@@ -15,6 +15,7 @@ import { createAssistant, kindsOf } from "./conversation.ts";
 import type { Assistant, AssistantDeps } from "./conversation.ts";
 import { amountOf } from "./intents.ts";
 import { createLimits } from "./limits-card.ts";
+import { createListings } from "./listing-card.ts";
 import { createOwnerReader } from "./reading.ts";
 import type { OwnerParser } from "./reading.ts";
 import type { AssistantSettings } from "./settings.ts";
@@ -58,10 +59,15 @@ export function assistantForAgent(d: AgentAssistantDeps): Assistant | undefined 
     declared: d.limits, settings: s, store: d.store, nowMs: () => d.clock.now(),
     log: (action, outcome, inputs, refs, notes) => d.log(null, owner, action, outcome, inputs, { refs, ...(notes ? { notes } : {}), language: s.owner.language }),
   }) : undefined;
-  const skills = limits ? [d.skill, limits.skill] : [d.skill];
+  // the shop's listings (block S) are one more skill too, so a listing's card takes the same path as every other card
+  const listings = createListings({
+    store: d.store, nowMs: () => d.clock.now(), ownerLanguage: s.owner.language,
+    log: (action, outcome, inputs, refs, notes) => d.log(null, owner, action, outcome, inputs, { refs, ...(notes ? { notes } : {}), language: s.owner.language }),
+  });
+  const skills = [d.skill, ...(limits ? [limits.skill] : []), listings.skill];
   return createAssistant({
     shop: { name: s.name, timezone: s.timezone, owner: s.owner, settings: s.assistant },
-    store: d.store, skills, clock: d.clock, messaging: d.messaging, ...(limits ? { limits } : {}),
+    store: d.store, skills, clock: d.clock, messaging: d.messaging, listings, ...(limits ? { limits } : {}),
     read: createOwnerReader({
       ...(d.ownerParser ? { parser: d.ownerParser } : {}), kinds: kindsOf(skills), ...(limits ? { limitRule: limits.looksLikeRule } : {}), policy: d.policy, store: d.store, clock: d.clock, timeZone: s.timezone,
       log: (action, outcome, inputs, more) => d.log(null, owner, action, outcome, inputs, more),

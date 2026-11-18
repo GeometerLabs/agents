@@ -60,11 +60,12 @@ export type TalkResult =
   | { ok: true; text: string; facts: CheckFacts; answer: TalkAnswer }
   | { ok: false; why: "no_answer" | "check"; check?: number; detail: string };
 
-/** Ask, meter, check, record. Never throws, and never sends anything: the caller sends `text` (through the outgoing check) when `ok`. */
-export async function runTalk(env: TalkEnv, t: TalkTurn): Promise<TalkResult> {
-  const call: JsonCall = { system: t.system, user: t.user, schema: t.schema, name: "talk" };
+/**
+ * One model call and what it cost, counted in the month's AI spend whether or not the answer is usable (a call whose answer was unusable still cost tokens). The shared first
+ * half of every model step of the assistant: the talk (below) and a listing's draft (listing-draft.ts) both come through here, so the metering is the same for both.
+ */
+export async function askMetered(env: TalkEnv, call: JsonCall): Promise<{ got: Awaited<ReturnType<TalkModel["ask"]>>; meter: Record<string, string>; month: ReturnType<typeof stateFor> }> {
   const got = await env.model!.ask(call);
-  // what it cost goes in the month's AI spend, answer or not (a call whose answer was unusable still cost tokens)
   const month = stateFor(env.store, env.clock.now(), env.timeZone);
   month.model += 1;
   if (got.costMicroInr === null) month.unpriced += 1; else month.costMicroInr += got.costMicroInr;
@@ -72,6 +73,13 @@ export async function runTalk(env: TalkEnv, t: TalkTurn): Promise<TalkResult> {
     step: "model", provider: got.provider, model: got.model, inputTokens: String(got.usage.inputTokens), outputTokens: String(got.usage.outputTokens),
     ...(got.costMicroInr !== null ? { costMicroInr: String(got.costMicroInr) } : {}), ...(got.rateDate !== null ? { rateDate: got.rateDate } : {}),
   };
+  return { got, meter, month };
+}
+
+/** Ask, meter, check, record. Never throws, and never sends anything: the caller sends `text` (through the outgoing check) when `ok`. */
+export async function runTalk(env: TalkEnv, t: TalkTurn): Promise<TalkResult> {
+  const call: JsonCall = { system: t.system, user: t.user, schema: t.schema, name: "talk" };
+  const { got, meter, month } = await askMetered(env, call);
   const line = (result: string, reply: string | null, notes: string, check?: number) =>
     env.log(null, t.conversation, "talk", "confirmed", { reply }, { language: t.language, notes, refs: { role: t.role, result, ...(check !== undefined ? { check: String(check) } : {}), ...meter } });
 

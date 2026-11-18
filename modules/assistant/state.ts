@@ -7,6 +7,8 @@
 // asked to send, which goes with its card; the card closes when it is sent or refused, and the words go with it after a day (compactAssistant).
 import { DAY } from "../core/time.ts";
 import type { MemoryState } from "../memory/memory.ts";
+import { tidyListings } from "../listings/listings.ts";
+import type { ListingsState } from "../listings/listings.ts";
 import { compactChanges } from "../limits/chat-limits.ts";
 import type { LimitChange } from "../limits/chat-limits.ts";
 
@@ -89,6 +91,11 @@ export interface AssistantState {
    * was and a shop that never uses it saves the same bytes. It is a part of the assistant's state because the notes belong to the shop, not to a template.
    */
   memory?: MemoryState;
+  /**
+   * The shop's listings (modules/listings, block S): what the shop shows on its page and in the open feed, the owner's switch and place, and the photos waiting to be used. Left out
+   * until the first listing, so a store from before it loads as it was. Like the memory, it is in the shop's own state, so it is in the backup and the export with nothing new.
+   */
+  listings?: ListingsState;
   /** The owner's talk (block M): the last lines of the talk turns, for the prompt's "last six lines". Only talk turns, never a customer's words. Left out until the first talk. */
   chat?: TalkLine[];
   /**
@@ -136,6 +143,7 @@ export function compactAssistant(state: AssistantState, nowMs: number, todayIso:
   const days = state.closedDays.filter((d) => d >= todayIso);
   gone += state.closedDays.length - days.length;
   state.closedDays = days;
+  if (state.listings) tidyListings(state.listings, nowMs);
   if (state.chat && state.chat.length > CHAT_LINES) { gone += state.chat.length - CHAT_LINES; state.chat = state.chat.slice(-CHAT_LINES); }
   gone += compactChanges(state.limitChanges ??= []);
   if (state.talk.length > TALK_LINES) { gone += state.talk.length - TALK_LINES; state.talk = state.talk.slice(-TALK_LINES); }

@@ -41,9 +41,15 @@ import { dayFacts, render as renderTemplate, templateMessageFor } from "./templa
 import type { AssistantTemplateId, TemplateFacts } from "./templates.ts";
 import type { AiPolicy, AiStore } from "../understanding/ai-state.ts";
 import type { TalkModel } from "../understanding/talk.ts";
-import { MEMORY_ACTION, addNote, closeNote, memoryOf, memoryRefs, panelAuthority } from "../memory/memory.ts";
+import { MEMORY_ACTION, addNote, closeNote, memoryOf, memoryRefs, ownerAuthority, panelAuthority } from "../memory/memory.ts";
 import type { Audience, NoteKind, NoteLang } from "../memory/memory.ts";
 import { createNotes, parseNoteReply } from "./notes.ts";
+import { LISTING_ACTION, dueAsks, draft as draftListing, listingById, listingRefs, listingsOf, pendingPhotos, remove as removeListing, takePhotos } from "../listings/listings.ts";
+import { LISTING_CUE, draftFromWords } from "./listing-draft.ts";
+import { listingCase } from "./listing-card.ts";
+import type { Listings } from "./listing-card.ts";
+import { LISTING_WORDS } from "../listings/words.ts";
+import { readOwnerRules } from "./intents.ts";
 import { customerTalk } from "./talk-customer.ts";
 import { ownerTalk } from "./talk-owner.ts";
 import type { LimitHook } from "./talk-owner.ts";
@@ -116,6 +122,8 @@ export interface AssistantDeps {
   hearing?: { hear(msg: InboundMessage & { audio?: PageAudio }): Promise<Heard | null> };
   /** The shop's declared limits, tightened by a card (limits-card.ts). Its skill is also in `skills`. Left out: the owner is told limits are the Operator's. */
   limits?: Limits;
+  /** The shop's listings (block S, listing-card.ts): the drafting, the card and the morning question. Its skill is also in `skills`. Left out: no listings, as before. */
+  listings?: Listings;
 }
 
 /** Everything a message to say carries here: the words, already written for the language say() picks (the owner's, or the customer's). */
@@ -300,8 +308,10 @@ export function createAssistant(deps: AssistantDeps) {
   // ---- cards ----
   const buttonsFor = (kind: string, code: string, hasNo: boolean): Choice[] => {
     const l = CARD_LABELS[shop.owner.language];
-    const yes = kind === "message" ? l.send : l.approve;
-    const no = kind === "message" ? l.dontSend : l.refuse;
+    const lw = LISTING_WORDS[shop.owner.language];
+    // a listing's buttons are its own words: Show it / No, and for the morning question Yes / Sold (the card's no IS "sold")
+    const yes = kind === "message" ? l.send : kind === "listing" ? lw.show : kind === "listing_ask" ? lw.yes : l.approve;
+    const no = kind === "message" ? l.dontSend : kind === "listing" ? lw.no : kind === "listing_ask" ? lw.sold : l.refuse;
     return [{ id: cardButtonId("yes", code), title: yes }, ...(hasNo ? [{ id: cardButtonId("no", code), title: no }] : [])];
   };
 
@@ -382,6 +392,26 @@ export function createAssistant(deps: AssistantDeps) {
       const skill = skillNamed(card.action.skill);
       const item = card.action.kind === "answer" ? skill?.waiting().find((i) => i.case === caseId && i.kind === card.action.fields.itemKind) : undefined;
       let denied = false;
+      // a no to a drafted listing: the draft is dropped, nothing was ever public
+      if (skill && card.action.kind === "listing") {
+        const l = listingById(listingsOf(s), String(caseId).replace(/^listing:/u, ""));
+        if (l) removeListing(listingsOf(s), ownerAuthority(reply.via === "page" ? "app" : "whatsapp"), l.id, { nowMs: now });
+        closeCard(s, card, "refused", now);
+        logLine(caseId, ASSISTANT_ACTIONS.card, "confirmed", { card: card.id }, { ...refs(card, "no") }, "the owner said no; the draft listing was dropped and was never public");
+        await tell("listing_line", { line: "dropped" });
+        return;
+      }
+      // the morning question "Still have it?": its no IS "Sold", done through the skill while the listing is still the one the card showed (the same digest)
+      if (skill && card.action.kind === "listing_ask") {
+        const now2 = skill.prepare(card.proposal as unknown as Proposal);
+        if (now2.ok && actionDigest(now2.action) === card.digest) {
+          const r = await skill.execute({ ...card.action, fields: { ...card.action.fields, answer: "no" } });
+          closeCard(s, card, "refused", now);
+          logLine(caseId, ASSISTANT_ACTIONS.card, r.ok ? "confirmed" : "failed", { card: card.id }, { ...refs(card, "no"), result: r.note }, "the owner said it is sold: the listing is off the shop's page");
+          await tell("listing_line", { line: "sold", title: String(card.action.fields.title) });
+          return;
+        }
+      }
       if (skill && item?.no) {
         const now2 = skill.prepare(card.proposal as unknown as Proposal);
         if (now2.ok && actionDigest(now2.action) === card.digest) { await skill.execute({ ...card.action, fields: { ...card.action.fields, answer: "no" } }); denied = true; }
@@ -414,6 +444,13 @@ export function createAssistant(deps: AssistantDeps) {
     const executed = card.action.kind === "message" ? await sendWords(card) : await skill.execute(card.action);
     closeCard(s, card, "done", now);
     logLine(caseId, ASSISTANT_ACTIONS.card, executed.ok ? "confirmed" : "failed", { card: card.id }, { ...refs(card, "yes"), result: executed.note }, "the owner tapped yes; the skill did the card's saved action");
+    // a listing card's tap: said in the listing's own words
+    if (card.action.kind === "listing" || card.action.kind === "listing_ask") {
+      const title = card.action.kind === "listing" ? String(card.action.fields[`title_${shop.owner.language}`] ?? card.action.fields[`title_${String(card.action.fields.ownerLang)}`] ?? card.action.fields.title_en ?? caseId) : String(card.action.fields.title);
+      if (executed.ok) await tell("listing_line", { line: card.action.kind === "listing" ? "published" : "confirmed", title });
+      else await tell("listing_line", { line: "gone" });
+      return;
+    }
     // a limit's tap makes a Pending change: the owner's words say so (and say Active, or that the previous limit stays, when the deployer reports, on the beat)
     if (card.action.kind === "limit") {
       const l = deps.limits?.declared.find((x) => x.id === card.action.fields.limit);
@@ -553,6 +590,49 @@ export function createAssistant(deps: AssistantDeps) {
     await reopenDay({ year: y, month: m, day: d });
   }
 
+  // ---- listings (block S, phase A; listing-draft.ts, listing-card.ts) ----
+  /** Kinds of reading that are an act on a case or a limit or the memory: they win over a listing even with photos waiting. The weaker ones (a list, money) lose to a clear cue. */
+  const STRONG: readonly OwnerKind[] = ["remember", "notes", "forget", "undo", "help", "limit", "cancel", "refund", "message", "close_day", "reopen_day", "move"];
+
+  /**
+   * The owner's words as a listing: they have a photo waiting (put in through their app) or say "put this on my page" / "for sale". The assistant drafts it (the price, note and
+   * quantity from the words by rule, the four languages' words from the talk model, every number and claim checked against the owner's words) and offers ONE card. The owner's
+   * tap publishes it. True when the words were taken as a listing (whatever came of them); false when they are something else.
+   */
+  async function listingFromWords(text: string): Promise<boolean> {
+    const now = clock.now();
+    const ls = listingsOf(state());
+    const waiting = pendingPhotos(ls, now);
+    const cue = LISTING_CUE.test(text);
+    if (waiting.length === 0 && !cue) return false;
+    const rules = readOwnerRules(text, context);
+    if (rules.ref || STRONG.includes(rules.kind as OwnerKind) || (rules.kind !== "unknown" && !cue)) return false;
+    if (!talkEnv || talkOff(talkEnv)) { await tell("listing_line", { line: "need_model" }); return true; }
+    const out = await draftFromWords({ env: talkEnv, shopName: shop.name, ownerLanguage: shop.owner.language }, { text });
+    if (!out.ok) { await tell("listing_line", { line: "refused", why: out.why, ...(out.animal ? { animal: out.animal } : {}) }); return true; }
+    const made = draftListing(ls, { ...out.input, photos: takePhotos(ls, waiting.map((p) => p.id), now) }, { nowMs: now });
+    if (!made.ok) { await tell("listing_line", { line: "refused", why: made.why }); return true; }
+    made.value.from = toPage ? "app" : "whatsapp";
+    logLine(null, LISTING_ACTION, "confirmed", { listing: made.value.id, category: made.value.category }, listingRefs(made.value, "drafted"), "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it");
+    await propose({ kind: "listing", case: listingCase(made.value.id) });
+    return true;
+  }
+
+  /** The morning question: at most 3 a day, only after the owner's morning hour, each a card ("Still have it?" Yes / Sold) bound to the listing and the confirm the owner was last shown. */
+  async function askFresh(): Promise<void> {
+    const ls = deps.listings ? state().listings : undefined;
+    if (!ls) return;
+    const now = clock.now();
+    const day = isoDate(today());
+    const from = zonedToMs(today(), shop.settings.morningAt ?? { hour: 9, minute: 0 }, tz);
+    if (now < from + 10 * 60_000 || now > from + 8 * 3_600_000) return;
+    const askedToday = ls.items.filter((l) => l.askedMs !== undefined && isoDate(todayIn(l.askedMs, tz)) === day).length;
+    for (const l of dueAsks(ls, now, askedToday)) {
+      l.askedMs = now;
+      try { await propose({ kind: "listing_ask", case: listingCase(l.id), confirmedMs: l.confirmedMs ?? 0 }); } catch { /* the card is made first; the owner's app shows it either way */ }
+    }
+  }
+
   // ---- the owner's message ----
   /**
    * The owner's message, after the template's fixed phrases. True when the assistant took it (it always does, except a message that is not the owner's: the caller
@@ -567,6 +647,8 @@ export function createAssistant(deps: AssistantDeps) {
     // a tap on a proposed note: Remember saves it, No is final for a day (notes.ts)
     const noteTap = parseNoteReply(msg);
     if (noteTap) { await notes.onProposalReply(noteTap); return true; }
+    // the shop's listings (block S): words with a photo waiting, or words that say "put this on my page", make a draft listing and its card (never anything public)
+    if (deps.listings && (await listingFromWords(msg.text))) return true;
     const read = await deps.read(msg.text);
     const intent = read.intent;
     logLine(null, ASSISTANT_ACTIONS.read, "confirmed", { intent: intent.kind }, { intent: intent.kind, ...read.refs, ...(intent.ref ? { case: intent.ref } : {}) }, read.note);
@@ -675,6 +757,7 @@ export function createAssistant(deps: AssistantDeps) {
     const s = state();
     for (const c of expireCards(s, now)) logLine(c.action.case, ASSISTANT_ACTIONS.card, "blocked", { card: c.id }, { card: c.id, skill: c.action.skill, kind: c.action.kind, digest: c.digest, decision: "none" }, "the card ran out without a tap: nothing was done");
     compactAssistant(s, now, isoDate(today()));
+    await askFresh(); // "Still have the Persian kitten?" (listings; at most 3 a day)
     notes.tick(); // notes past their end are closed; closed notes lose their text after 30 days (modules/memory)
     // a limit change that settled since the owner was last told: Active, or failed with the previous limit still in force (the runtime's core settles it, limits/runtime-limits.ts)
     // (marked told first: a failed send, such as outside the owner's 24-hour window, is not tried again every beat; the owner's app shows the state either way)
