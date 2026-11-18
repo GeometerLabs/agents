@@ -17,6 +17,7 @@ type guard struct {
 	inner    http.Handler
 	timeout  time.Duration
 	charge   func(why string)
+	stalled  func() bool  // the host itself stalled: a deadline missed then is nobody's fault
 	inflight atomic.Int64 // handler goroutines running now (abandoned ones included)
 	abandon  atomic.Int64 // of those, the ones whose visitor was already answered 503
 }
@@ -101,7 +102,9 @@ func (g *guard) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			g.abandon.Add(-1)
 		default:
 		}
-		g.charge(fmt.Sprintf("a request took longer than %s", g.timeout))
+		if g.stalled == nil || !g.stalled() {
+			g.charge(fmt.Sprintf("a request took longer than %s", g.timeout))
+		}
 		busy(w, 503, "This shop is busy. Please try in a moment.", "2")
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -20,9 +21,10 @@ import (
 )
 
 type procChild struct {
-	cmd  *exec.Cmd
-	port int
-	done chan struct{}
+	cmd      *exec.Cmd
+	port     int
+	done     chan struct{}
+	lifeline io.WriteCloser // never written, closed when the process is gone
 }
 
 func (c *procChild) Port() int             { return c.port }
@@ -51,7 +53,13 @@ type ExecSpawner struct {
 // Spawn starts the child and waits for its `listening` line.
 func (e ExecSpawner) Spawn(name string) (Child, error) {
 	cmd := exec.Command(e.Exe, "--one", name)
-	cmd.Env = e.Env
+	// The pipe on its stdin is the child's lifeline: it stays open as long as this process lives and closes when it dies (even by a fatal fault), and the child, seeing it close,
+	// stops itself. Without it a child of a dead host would live on holding the shop's store, and the restarted host would start a second one on the same file.
+	cmd.Env = append(append([]string(nil), e.Env...), "SHARED_PARENT_PIPE=1")
+	lifeline, err := cmd.StdinPipe()
+	if err != nil {
+		return nil, err
+	}
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, err
@@ -60,7 +68,7 @@ func (e ExecSpawner) Spawn(name string) (Child, error) {
 	if err := cmd.Start(); err != nil {
 		return nil, err
 	}
-	c := &procChild{cmd: cmd, done: make(chan struct{})}
+	c := &procChild{cmd: cmd, done: make(chan struct{}), lifeline: lifeline}
 	ports := make(chan int, 1)
 	go func() {
 		defer close(c.done)
@@ -127,7 +135,13 @@ func RunOne(src Source, start Starter, name string, lim Limits, log func(string)
 		}
 	}()
 	fmt.Printf("listening %d\n", ln.Addr().(*net.TCPAddr).Port)
-	return waitSignal(func() {
+	var parentGone <-chan struct{}
+	if os.Getenv("SHARED_PARENT_PIPE") == "1" { // only a child started by a host: a hand-run `--one` has no lifeline
+		gone := make(chan struct{})
+		parentGone = gone
+		go func() { _, _ = io.Copy(io.Discard, os.Stdin); close(gone) }()
+	}
+	return waitSignal(parentGone, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		_ = srv.Shutdown(ctx)

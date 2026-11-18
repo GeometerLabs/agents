@@ -1,4 +1,4 @@
-// Measures the SHARED process (many listings-only shops in one process), TypeScript against Go, on the same machine and the same shop folders: cold start to /readyz, cold start until
+// Measures the SHARED process (many listings-only shops in one process), TypeScript against Go, on the same machine and the same shop folders: cold start to /readyz (the process answers; the first look at the folders may still be going), cold start until
 // every shop is held, and the process's resident memory after the start and after a few requests per shop. Not a test: it prints a table.
 //
 //   node templates/commerce/listings/contract/measure-shared.ts                 N = 1, 10, 100, both implementations, one process at a time
@@ -18,10 +18,7 @@ async function cell(impl: Impl, n: number) {
   const root = makeRoot();
   const shops: Record<string, ShopFolder> = {};
   for (let i = 0; i < n; i++) { const name = `shop-${String(i).padStart(3, "0")}`; shops[name] = writeShop(root, name); }
-  const t0 = performance.now();
-  // startHost returns when /readyz answered AND all n shops are held; time /readyz alone by polling a second connection is not possible before it returns, so it times both in one
   const host = await startHost(impl, root, { shops, expect: n, workers: 4, scanSeconds: 30 });
-  const heldMs = performance.now() - t0;
   try {
     await sleep(1000);
     const afterStart = rssMb(host.pid);
@@ -31,7 +28,7 @@ async function cell(impl: Impl, n: number) {
       await host.call(name, "/status");
     }
     await sleep(1000);
-    return { impl, shops: n, coldToAllHeldMs: Math.round(heldMs), rssAfterStartMb: Math.round(afterStart), rssAfterRequestsMb: Math.round(rssMb(host.pid)) };
+    return { impl, shops: n, coldToReadyzMs: Math.round(host.readyMs), coldToAllHeldMs: Math.round(host.heldMs), rssAfterStartMb: Math.round(afterStart), rssAfterRequestsMb: Math.round(rssMb(host.pid)) };
   } finally { await host.stop(); rmSync(root.dir, { recursive: true, force: true }); }
 }
 
@@ -45,5 +42,5 @@ for (const n of sizes) for (const impl of impls) {
   rows.push(r);
   console.log(JSON.stringify(r));
 }
-console.log("\nimpl  shops  cold start to all held (ms)  RSS after start (MB)  RSS after requests (MB)");
-for (const r of rows) console.log(`${r.impl.padEnd(4)}  ${String(r.shops).padStart(5)}  ${String(r.coldToAllHeldMs).padStart(28)}  ${String(r.rssAfterStartMb).padStart(20)}  ${String(r.rssAfterRequestsMb).padStart(23)}`);
+console.log("\nimpl  shops  cold to /readyz (ms)  cold to all shops held (ms)  RSS after start (MB)  RSS after requests (MB)");
+for (const r of rows) console.log(`${r.impl.padEnd(4)}  ${String(r.shops).padStart(5)}  ${String(r.coldToReadyzMs).padStart(18)}  ${String(r.coldToAllHeldMs).padStart(26)}  ${String(r.rssAfterStartMb).padStart(20)}  ${String(r.rssAfterRequestsMb).padStart(23)}`);

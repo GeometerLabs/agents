@@ -2,12 +2,13 @@ package shared
 
 // The "back soon" answer for a PAUSED shop (templates/commerce/listings/server/back-soon.ts and modules/runtime/shared.ts `backSoon`): 503, Retry-After an hour so nothing
 // hammers it, header `x-back-soon: 1` (the front, backend.ts BackendError.backSoon, reads it to say the sentence in the visitor's language), the page when the visitor asks for HTML,
-// and the front's own error shape as JSON otherwise. The sentence is the four languages of modules/channels/words-back-soon.ts (a test compares the two files). Not ported: the
-// TypeScript page also shows the Operator's name with Call and WhatsApp (shopErrorPage, contact-bar.ts); this page is the sentence alone. The front reads the header and the JSON,
-// not the page.
+// and the front's own error shape as JSON otherwise. The sentence is the four languages of modules/channels/words-back-soon.ts (a test compares the two files). The page has the
+// same parts as the front's shopErrorPage (contact-bar.ts): the machine-written note for hi, ml and kn, the sentence, and the Operator's name with Call and WhatsApp from pages.json.
+// NOT ported: the front's own stylesheet (SIGNIN_CSS, look.ts); a small stand-in is inlined. The front reads the header and the JSON, not the page.
 
 import (
 	"encoding/json"
+	"fmt"
 	"html"
 	"net/http"
 	"os"
@@ -15,6 +16,33 @@ import (
 	"regexp"
 	"strings"
 )
+
+// words of the page's other lines, by language (modules/channels/words-owner-first.ts and words.ts): the Operator's line (%s is the name), Call, WhatsApp, and the note that hi, ml and kn
+// are machine-written. en has no note.
+var pageWords = map[string]struct{ Operator, Call, WhatsApp, Machine string }{
+	"en": {"Your Operator: %s", "Call", "WhatsApp", ""},
+	"hi": {"आपके ऑपरेटर: %s", "कॉल करें", "WhatsApp", "यह हिंदी मशीन से लिखी गई है; किसी हिंदी भाषी ने अभी इसे जाँचा नहीं है।"},
+	"ml": {"നിങ്ങളുടെ ഓപ്പറേറ്റർ: %s", "വിളിക്കൂ", "WhatsApp", "ഈ മലയാളം യന്ത്രം എഴുതിയതാണ്; മലയാളം അറിയുന്ന ഒരാൾ ഇതുവരെ പരിശോധിച്ചിട്ടില്ല."},
+	"kn": {"ನಿಮ್ಮ ಆಪರೇಟರ್ ಅವರು: %s", "ಕರೆ ಮಾಡಿ", "WhatsApp", "ಈ ಕನ್ನಡವನ್ನು ಯಂತ್ರ ಬರೆದಿದೆ; ಕನ್ನಡ ಬಲ್ಲವರು ಇನ್ನೂ ಪರಿಶೀಲಿಸಿಲ್ಲ."},
+}
+
+// pageCSS is a small stand-in for the front's SIGNIN_CSS (look.ts), which is NOT ported: the page reads the same, in the same order, but is not the front's look.
+const pageCSS = `body{font:16px/1.5 system-ui,sans-serif;margin:0;background:#fffaf0;color:#222}main{max-width:36rem;margin:0 auto;padding:28px 16px 40px}.machine{background:#fff3cd;padding:8px 12px;border-radius:10px;font-size:.88rem}.notice{background:#e8f1ff;padding:10px 14px;border-radius:12px;font-weight:600}.who{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:10px 12px;border:1px solid #ddd;border-radius:14px}.who b{flex:1 1 100%}.btn{flex:1 1 auto;min-height:44px;display:inline-flex;align-items:center;justify-content:center;border-radius:24px;border:1.5px solid #bbb;color:#222;text-decoration:none}.btn.wa{background:#1a7f4b;border-color:#1a7f4b;color:#fff}`
+
+// partnerOf reads the Operator's name and phone from the shop's pages.json (`partner`), as pagesReader does; nothing when there is none.
+func partnerOf(p Paths) (name, phone string, ok bool) {
+	raw, err := os.ReadFile(filepath.Join(p.ClientFolder, "pages.json"))
+	if err != nil {
+		return "", "", false
+	}
+	var f struct {
+		Partner struct{ Name, Phone string } `json:"partner"`
+	}
+	if json.Unmarshal(raw, &f) != nil || f.Partner.Name == "" || f.Partner.Phone == "" {
+		return "", "", false
+	}
+	return f.Partner.Name, f.Partner.Phone, true
+}
 
 // BackSoon is the sentence, by language, in the order the TypeScript LANGUAGES list has them.
 var BackSoon = []struct{ Lang, Text string }{
@@ -75,8 +103,26 @@ func writeBackSoon(w http.ResponseWriter, r *http.Request, p Paths) {
 	if strings.Contains(r.Header.Get("accept"), "text/html") {
 		h.Set("content-type", "text/html; charset=utf-8")
 		w.WriteHeader(503)
-		_, _ = w.Write([]byte(`<!doctype html><html lang="` + lang + `"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>` +
-			html.EscapeString(text) + `</title></head><body><main><p role="alert">` + html.EscapeString(text) + `</p></main></body></html>`))
+		words := pageWords[lang]
+		var b strings.Builder
+		b.WriteString(`<!doctype html><html lang="` + lang + `"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>` +
+			html.EscapeString(text) + `</title><style>` + pageCSS + `</style></head><body><main>`)
+		if words.Machine != "" {
+			b.WriteString(`<p class="machine">` + html.EscapeString(words.Machine) + `</p>`)
+		}
+		b.WriteString(`<p class="notice" role="alert">` + html.EscapeString(text) + `</p>`)
+		if name, phone, ok := partnerOf(p); ok {
+			digits := strings.Map(func(r rune) rune {
+				if r >= '0' && r <= '9' {
+					return r
+				}
+				return -1
+			}, phone)
+			b.WriteString(`<div class="who" role="group"><b>` + html.EscapeString(fmt.Sprintf(words.Operator, name)) + `</b><a class="btn" href="tel:+` + digits + `">` + html.EscapeString(words.Call) +
+				`</a><a class="btn wa" href="https://wa.me/` + digits + `" rel="noopener">` + html.EscapeString(words.WhatsApp) + `</a></div>`)
+		}
+		b.WriteString(`</main></body></html>`)
+		_, _ = w.Write([]byte(b.String()))
 		return
 	}
 	h.Set("content-type", "application/json; charset=utf-8")

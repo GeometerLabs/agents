@@ -78,7 +78,11 @@ func (f *fakeShop) Handler() http.Handler {
 		_ = json.NewEncoder(w).Encode(map[string]any{"shop": f.name, "path": req.URL.RequestURI(), "auth": req.Header.Get("authorization")})
 	})
 }
-func (f *fakeShop) Ready() bool      { return true }
+func (f *fakeShop) Ready() bool {
+	f.r.mu.Lock()
+	defer f.r.mu.Unlock()
+	return f.r.behave[f.name] != "unready"
+}
 func (f *fakeShop) StepSince() int64 { return f.step.Load() }
 func (f *fakeShop) Close() {
 	f.once.Do(func() {
@@ -621,6 +625,62 @@ func TestBackSoonWordsAreTheTypeScriptOnes(t *testing.T) {
 		m := regexp.MustCompile(`(?m)^\s+` + b.Lang + `: "([^"]+)"`).FindSubmatch(raw)
 		if m == nil || string(m[1]) != b.Text {
 			t.Fatalf("%s differs from modules/channels/words-back-soon.ts", b.Lang)
+		}
+	}
+}
+
+func TestAShopNotReadyForThreeLooksIsRestartedAlone(t *testing.T) {
+	g := boot(t, []string{"sick", "well"}, func(r *registry) { r.behave["sick"] = "unready" }, nil)
+	g.h.Scan() // the start's own look was the first
+	if g.reg.count(g.reg.starts, "sick") != 1 || len(g.h.Held()) != 2 {
+		t.Fatal("two bad looks are not enough")
+	}
+	res := g.h.Scan() // the third
+	if strings.Join(res.LetGo, ",") != "sick" || g.get("/shop/sick/").status != 404 || g.get("/shop/well/").status != 200 {
+		t.Fatalf("%+v", res)
+	}
+	g.reg.mu.Lock()
+	g.reg.behave["sick"] = ""
+	g.reg.mu.Unlock()
+	time.Sleep(80 * time.Millisecond) // the back-off
+	if res := g.h.Scan(); strings.Join(res.Started, ",") != "sick" || g.reg.count(g.reg.starts, "well") != 1 {
+		t.Fatalf("it starts again, alone: %+v", res)
+	}
+}
+
+// a host that stalled (everything's timers fire late) strikes nobody; the next ordinary round judges again
+func TestAHostStallStrikesNobody(t *testing.T) {
+	clock := &atomic.Int64{}
+	clock.Store(time.Now().UnixMilli())
+	g := boot(t, []string{"spin"}, nil, func(l *Limits) { l.WatchEvery = time.Minute }, func(o *Options) { o.Now = clock.Load })
+	clock.Add(10 * 60_000) // ten minutes pass in a blink: the host was stalled
+	if g.get("/shop/spin/spin").status != 503 {
+		t.Fatal("the visitor is still answered at the deadline")
+	}
+	g.reg.mu.Lock()
+	step := g.reg.stepAt["spin"] // the one the running fake reads
+	g.reg.mu.Unlock()
+	step.Store(clock.Load() - 1000)
+	g.h.watch() // stalled: judges nobody
+	if g.logs.has("strike") {
+		t.Fatal("a stall is nobody's fault")
+	}
+	g.h.watch() // an ordinary round: the step has been going for a second, StuckAfter is 150 ms
+	if !g.logs.has("spin: strike 1") {
+		t.Fatal("judged again after the stall")
+	}
+}
+
+func TestBackSoonPageHasTheMachineNoteAndTheOperator(t *testing.T) {
+	g := boot(t, []string{"hog"}, nil, nil, func(o *Options) { o.Child = nil })
+	_ = os.WriteFile(filepath.Join(g.root, "clients", "hog", "client", "pages.json"), []byte(`{"partner":{"name":"Anu","phone":"+91 98765 43210"}}`), 0o644)
+	g.get("/shop/hog/boom")
+	g.get("/shop/hog/boom")
+	until(t, "paused", func() bool { return g.paused("hog") })
+	p := g.get("/shop/hog/?lang=ml", "accept", "text/html")
+	for _, want := range []string{`lang="ml"`, BackSoon[2].Text, pageWords["ml"].Machine, "tel:+919876543210", "https://wa.me/919876543210", "Anu"} {
+		if !strings.Contains(p.raw, want) {
+			t.Fatalf("the page lacks %q: %s", want, p.raw)
 		}
 	}
 }
