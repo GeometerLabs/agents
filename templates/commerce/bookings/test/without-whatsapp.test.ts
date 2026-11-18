@@ -333,3 +333,100 @@ test("a customer who allowed alerts gets the reminder by push; a late cancellati
     assert.match(await (await w.page(`/b/${handle}?lang=en`)).text(), /The shop has sent your refund of ₹200\./u, "and sent");
   } finally { await w.done(); }
 });
+
+// Owner's item 2 ("no Operator holds a shop hostage") through the real runtime and front: the owner's phones page, a new phone announced by a banner on the first phone and by a
+// push to its alerts, the owner's own recovery codes, and removing a phone (the last one only after a second, stronger confirm). The phones are software passkeys; the
+// browser's User-Agent only becomes a coarse label ("Android, Chrome"), which the runtime keeps and the page shows.
+test("the owner's phones: the list with labels, a new phone is announced by banner and push, own codes, remove one, and the last only after the second confirm", async () => {
+  const UA_A = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36";
+  const UA_B = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
+  const w = await world();
+  try {
+    /** Register a new phone with a setup token, from a browser with this User-Agent; the session it gets. */
+    const regPhone = async (token: string, ua: string): Promise<string> => {
+      const opts = await (await w.json(`/owner/setup/${token}/options`, {}, { "user-agent": ua })).json() as { options: never };
+      const reg = await w.json(`/owner/setup/${token}/finish`, { response: softRegister(newSoftPasskey("pages.example"), opts.options, PAGES_ORIGIN) }, { "user-agent": ua });
+      assert.equal(reg.status, 200);
+      return sessionOf(reg.headers.get("set-cookie"));
+    };
+    const A = await regPhone(w.setupToken, UA_A);
+    assert.ok(A);
+    w.setCookie(A);
+    const ownerAlerts = phone("https://fcm.googleapis.com/fcm/send/owner-phone-1");
+    assert.equal((await w.json("/owner/push/subscribe", { subscription: ownerAlerts.subscription }, { "x-owner-csrf": csrfFor(A) })).status, 200);
+
+    // the list: one phone, with its label, "this phone", and the prompt to make the owner's own codes; the page runs no script
+    const list = await w.page("/owner/phones?lang=en");
+    assert.equal(list.status, 200);
+    assert.match(list.headers.get("content-security-policy") ?? "", /^default-src 'none'; style-src 'unsafe-inline'; form-action 'self'/u);
+    const listHtml = await list.text();
+    assert.match(listHtml, /Android, Chrome/u);
+    assert.match(listHtml, /This phone/u);
+    assert.match(listHtml, /Only one phone can open your shop now/u);
+    assert.doesNotMatch(listHtml, /<script/u);
+    const home = await (await w.page("/owner/?lang=en")).text();
+    assert.match(home, /Make your own codes now, so only you hold them/u, "right after the first sign-in");
+    assert.match(home, /Phones that can open your shop/u, "the link from the owner's page");
+
+    // the owner adds a phone from this phone: a one-use address (and its QR); the new phone registers with it and is labelled by ITS browser
+    const added = await w.form("/owner/phones/add", { csrf: csrfFor(A) });
+    assert.equal(added.status, 200);
+    const token = /\/owner\/setup\/([A-Za-z0-9_-]{43})/u.exec(await added.text())?.[1] ?? "";
+    assert.ok(token, "the page shows the one-use address");
+    const before = w.pushes.length;
+    const B = await regPhone(token, UA_B);
+    assert.ok(B);
+    assert.equal((await w.page(`/owner/setup/${token}?lang=en`)).status, 410, "the owner's own link works once too");
+
+    // announced: a push to the owner's alerts says when and which phone, and the first phone's next open shows the banner; the new phone is not told about itself
+    const pushed = await w.pushedTo(before, "/v1/push/owner");
+    const alert = pushed.filter((p) => p.route === "/v1/push/owner").map((p) => ownerAlerts.open(p.call.body)).find((m) => /new phone was added/u.test(m.body));
+    assert.ok(alert, "the owner's phone with alerts on was told");
+    assert.match(alert.body, /iPhone, Safari/u);
+    assert.doesNotMatch(alert.body, /https?:/u);
+    w.setCookie(A);
+    const banner = await (await w.page("/owner/?lang=en")).text();
+    assert.match(banner, /A new phone was added on .*\(iPhone, Safari\)\. Not you\? Remove it\./u);
+    w.setCookie(B);
+    assert.doesNotMatch(await (await w.page("/owner/?lang=en")).text(), /A new phone was added/u, "the new phone is not told about itself");
+    w.setCookie(A);
+    assert.equal((await w.form("/owner/phones/dismiss", { csrf: csrfFor(A) })).status, 303);
+    assert.doesNotMatch(await (await w.page("/owner/?lang=en")).text(), /A new phone was added/u, "dismissed");
+    assert.equal((await w.form("/owner/phones/dismiss", { csrf: "x".repeat(32) })).status, 403, "the form token is needed");
+
+    // the owner's own codes: five, shown once, never cached; the prompt goes
+    const codes = await w.form("/owner/phones/codes", { csrf: csrfFor(A) });
+    assert.equal(codes.status, 200);
+    assert.equal(codes.headers.get("cache-control"), "no-store");
+    assert.equal((await codes.text()).match(/[A-HJ-KM-NP-Z2-9]{5}-[A-HJ-KM-NP-Z2-9]{5}/gu)?.length, 5);
+    assert.doesNotMatch(await (await w.page("/owner/?lang=en")).text(), /Make your own codes now/u);
+    // a session made by the panel's owner link (the Operator's) has no phones page at all
+    const opened = await w.page(`/o/${w.ownerToken}/phones?lang=en`);
+    assert.ok(opened.status === 404 || opened.status === 303, "the panel's link opens nothing here");
+
+    // two phones listed; remove the second (one confirm), and its session ends
+    const two = await (await w.page("/owner/phones?lang=en")).text();
+    const ids = [...two.matchAll(/phones\?remove=([0-9a-f]{12})/gu)].map((m) => m[1]);
+    assert.equal(ids.length, 2);
+    assert.match(await (await w.page(`/owner/phones?remove=${ids[1]}&lang=en`)).text(), /Remove this phone\?/u);
+    const gone = await w.form("/owner/phones/remove", { csrf: csrfFor(A), id: ids[1] });
+    assert.equal(gone.status, 303);
+    assert.match(gone.headers.get("location") ?? "", /n=removed/u);
+    w.setCookie(B);
+    assert.equal((await w.page("/owner/?lang=en")).status, 303, "the removed phone is signed out");
+
+    // the last phone: a plain remove is refused at the runtime and the page asks again in stronger words; only the second yes removes it
+    w.setCookie(A);
+    const ask = await w.form("/owner/phones/remove", { csrf: csrfFor(A), id: ids[0] });
+    assert.equal(ask.status, 200);
+    assert.match(await ask.text(), /This is your only phone/u);
+    assert.equal((await w.page("/owner/?lang=en")).status, 200, "still signed in: nothing was removed");
+    const done = await w.form("/owner/phones/remove", { csrf: csrfFor(A), id: ids[0], confirm_last: "yes" });
+    assert.equal(done.status, 303);
+    assert.equal((await w.page("/owner/?lang=en")).status, 303, "no phone opens the shop now");
+    // the record says each step, with the label and no secret
+    await w.client.runtime.idle();
+    const said = w.record().filter((e) => e.action === "owner_session").map((e) => `${e.refs.what}:${e.refs.label ?? ""}`);
+    assert.ok(said.includes("passkey_added:Android, Chrome") && said.includes("passkey_added:iPhone, Safari") && said.includes("codes_made:") && said.some((s) => s.startsWith("phone_removed")), said.join(" | "));
+  } finally { await w.done(); }
+});
