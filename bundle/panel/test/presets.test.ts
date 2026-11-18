@@ -1,6 +1,8 @@
 // Presets, trades as data (17 Nov 2026; presets.ts, bundle/panel/presets/*.json): every preset file is valid and what it fills in passes the base template's own checks when the
 // Operator takes it through the real steps (in all four languages); a preset naming an unknown template or variant is refused; "Something else" keeps the typed trade and starts empty;
 // the four languages have every name. The pages and routes are in presets-flow.test.ts.
+import { applyListingsBusiness, buildListingsSettings, newListingsDraft } from "../listings.ts";
+import { validateSettings as validateListings } from "../../../templates/commerce/listings/src/settings.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, readFileSync, readdirSync } from "node:fs";
@@ -36,8 +38,8 @@ test("the phone templates a preset may name are Bookings and every row of setups
   assert.deepEqual([...PHONE_TEMPLATES].sort(), ["bookings", ...Object.keys(SETUPS)].sort());
 });
 
-test("the first set is here: salon, clinic, tuition, music or dance or yoga, bakery, sweets, catering and restocking; each file is named by its id", () => {
-  assert.deepEqual(presets.map((p) => p.id), ["arts", "bakery", "catering", "clinic", "restock", "salon", "sweets", "tuition"]);
+test("the first set is here: salon, clinic, tuition, music or dance or yoga, bakery, sweets, catering and restocking, and the free listings-only shop; each file is named by its id", () => {
+  assert.deepEqual(presets.map((p) => p.id), ["arts", "bakery", "catering", "clinic", "restock", "salon", "shows-only", "sweets", "tuition"]);
   assert.deepEqual(readdirSync(PRESETS_DIR).filter((f) => f.endsWith(".json")).sort(), presets.map((p) => `${p.id}.json`));
   assert.deepEqual(presets.filter((p) => p.variant === "classes").map((p) => p.id), ["arts", "tuition"], "the two class trades use the Classes part of the Fees form");
   assert.equal(presets.some((p) => p.id === "tiffin" || p.id === "hire"), false, "tiffin and equipment hire stay hidden until their form step exists");
@@ -62,6 +64,15 @@ function throughTheSteps(preset: Preset, language: Language) {
     assert.deepEqual(applyDeposit(d, { deposit: d.form.deposit, window: d.windowHours }, w).problems, [], `${preset.id}/${language}`);
     d.ownerNumber = owner; d.payment = pay;
     return buildSettings(d, example);
+  }
+  if (preset.template === "listings") {
+    // a listings-only shop has no example values: its form starts empty, and the Operator writes the shop, the town and the languages
+    const example = must(validateListings({ name: "X", place: { town: "T" }, languages: ["en"], owner: { language: "en" } }));
+    const d = newListingsDraft("d1", "a1", tpl("listings"), example, NOW);
+    applyPreset(d, preset, language);
+    assert.deepEqual(applyListingsBusiness(d, { name: "Test Shop", town: "Thrissur", pincode: "", trade: "" }, w).problems, [], `${preset.id}/${language}`);
+    d.primaryLanguage = language; d.ownerLanguage = language;
+    return buildListingsSettings(d, example);
   }
   if (preset.template === "fees") {
     const example = must(validateFees(json("education/fees/settings/bright-tuition.example.json")));
@@ -130,7 +141,8 @@ test("every preset has its name, and every name it fills in, in all four languag
   for (const preset of presets) {
     for (const l of LANGUAGES) assert.ok(preset.names[l].trim() !== "", `${preset.id}/${l}`);
     const english = presetTexts(preset, "en");
-    assert.ok(english.size >= 4, `${preset.id}: its name and its example names are listed for review`);
+    // a preset with no example values (the listings-only shop) has only its name to review
+    assert.ok(english.size >= (Object.keys(preset.prefill).length === 0 ? 1 : 4), `${preset.id}: its name and its example names are listed for review`);
     for (const l of ["hi", "ml", "kn"] as const) {
       const mine = presetTexts(preset, l);
       assert.deepEqual([...mine.keys()], [...english.keys()], `${preset.id}/${l}: the same ids as English`);

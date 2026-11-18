@@ -27,6 +27,7 @@ const SELL_DIR: Record<CardTemplate, string> = {
   orders: "templates/commerce/orders/sell",
   fees: "templates/education/fees/sell",
   "stock-orders": "templates/commerce/stock-orders/sell",
+  listings: "templates/commerce/listings/sell",
 };
 
 export interface CardItem {
