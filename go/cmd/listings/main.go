@@ -19,6 +19,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/access"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
+	"github.com/GeometerLabs/agents/go/internal/testclock"
 )
 
 const minToken = 16
@@ -90,6 +91,12 @@ func run(folder string) error {
 	}
 	defer st.Close()
 	now := func() int64 { return time.Now().UnixMilli() }
+	// the contract tests may run the shop on a TEST clock (internal/testclock says why a real shop never can: a "live" shop refuses to start with one)
+	if test, err := testclock.FromEnv(os.Getenv, client.Config.Mode); err != nil {
+		return runtime.ClientError{Msg: err.Error()}
+	} else if test != nil {
+		now = test
+	}
 	// the shop's own signing key is made here on the first start (or taken from shop-key.json), so it is there before any page asks for it
 	if _, err := runtime.LoadShopKey(st, client.Config.DataDir, now(), log); err != nil {
 		return err

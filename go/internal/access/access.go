@@ -1,16 +1,32 @@
 package access
 
-// The owner's sessions, sign-in links and passkeys, in the file beside the store (owner-access.sqlite). The same tables as modules/channels/owner-access.ts, created the same way,
-// so either runtime opens the other's file: a session made at one is good at the other, and a passkey registered at one signs in at the other.
+// The owner's sessions, sign-in links and passkeys, and who controls them ("no Operator holds a shop hostage", owner control, 19 Nov 2026), in the file beside the store
+// (owner-access.sqlite). The Go twin of modules/channels/owner-access.ts, function for function and statement for statement: the same tables, created by the same text (so the
+// `sqlite_master` of a file made here is byte for byte the one TypeScript makes), the same safe ALTERs in the same order, the same meta keys, the same rules in the same order.
+// So a shop moves between the two runtimes, and the deployer's backup (bundle/backup/owner-keep.ts) reads and restores either's file.
+//
+// The rules, each in one place (the TypeScript header says the same; every check below says WHY where it is made):
+//   - a link is 32 random bytes, works once, for SigninLinkMs; a session is 32 random bytes, lasts SessionMs, at most MaxSessions at once (the oldest ends);
+//   - a link or a session is good only for the owner and the owner's address (`base`) it was made for; once the owner holds a passkey, "the owner" is the identity the shop
+//     was LOCKED with (meta bound_owner), never whatever number the Operator's settings say now;
+//   - a passkey challenge works once, for ChallengeMs, for one ceremony; a grant is used up only in the transaction that keeps the credential and makes the session;
+//   - the shop is LOCKED once any passkey has been made since the gate last opened (meta reopen_at). A setup QR or a recovery code works only if THIS store first saw it
+//     (grants_seen) no later than that first passkey; times from files are clamped to this runtime's clock at first sight;
+//   - the Operator's "remove the owner's passkeys", and a changed owner number after the lock, are REQUESTS this store times itself (RemovalWaitMs from first sight), which
+//     the owner can cancel; Geometer's reset (the admin's own file) reopens the gate at once and voids everything made before it.
+//
+// Concurrency: TypeScript runs each HTTP handler's owner calls without interleaving (one thread, no await between them). The Go runtime has concurrent handlers and a ticking
+// goroutine, so its caller (go/internal/runtime owner.go) holds ONE lock across each handler's whole owner sequence and the tick's owner part. Inside this package every helper
+// takes the `q` it runs on (the file, or the open transaction): the file has one connection, so a helper that used the file while a transaction or a row set is open would wait
+// for ever.
 
 import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
-	"errors"
 	"regexp"
+	"strconv"
 	"strings"
 
 	_ "modernc.org/sqlite"
@@ -27,6 +43,8 @@ const (
 	day           = 24 * 60 * 60_000
 )
 
+// schema is modules/channels/owner-access.ts's CREATE text, copied character for character (indentation, line breaks and the comment inside `removals` included): SQLite keeps
+// each statement's text in sqlite_master, and the contract (cross-restart.test.ts) compares the two runtimes' files by that text. Never tidy it.
 const schema = `
     PRAGMA journal_mode = WAL;
     CREATE TABLE IF NOT EXISTS attempts (at INTEGER NOT NULL);
@@ -48,7 +66,38 @@ const schema = `
     );
     CREATE TABLE IF NOT EXISTS grants_used (hash TEXT PRIMARY KEY, kind TEXT NOT NULL, used_at INTEGER NOT NULL, passkey_id TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS wrong_codes (at INTEGER NOT NULL);
+    -- the Operator's QR and card hashes as THIS store first saw them: the gate (see the header) compares first_seen with the first passkey
+    CREATE TABLE IF NOT EXISTS grants_seen (hash TEXT PRIMARY KEY, kind TEXT NOT NULL, first_seen INTEGER NOT NULL, voided_at INTEGER);
+    -- the owner's own recovery codes (hashes only, made from the owner's app) and "add a phone" links; the Operator's file never holds these
+    -- by_passkey: the phone that made each set of codes and each "add a phone" link, so removing that phone takes back what it made (a removed phone must not keep a way in)
+    CREATE TABLE IF NOT EXISTS own_codes (hash TEXT PRIMARY KEY, made_at INTEGER NOT NULL, voided_at INTEGER, by_passkey TEXT);
+    CREATE TABLE IF NOT EXISTS own_setups (hash TEXT PRIMARY KEY, made_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, voided_at INTEGER, by_passkey TEXT);
+    -- news the other phones are told once: codes made, a phone removed (a phone ADDED is read from the passkeys table)
+    CREATE TABLE IF NOT EXISTS news (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, kind TEXT NOT NULL CHECK (kind IN ('codes', 'removed')), label TEXT, by_id TEXT);
+    -- the Operator's removal requests as this store timed them: seen_at is when WE first saw the request, effective_at = seen_at + REMOVAL_WAIT_MS
+    CREATE TABLE IF NOT EXISTS removals (
+      asked_at TEXT PRIMARY KEY, asked_by TEXT NOT NULL, seen_at INTEGER NOT NULL, effective_at INTEGER NOT NULL,
+      state TEXT NOT NULL CHECK (state IN ('pending', 'cancelled', 'applied', 'withdrawn')), at INTEGER NOT NULL,
+      -- 1 once the owner's phones were told and the record line written (the tick does both, then sets this); see takeNotes
+      told INTEGER NOT NULL DEFAULT 1
+    );
+    -- what each phone (a passkey, or a session made by a link) has been told about: new passkeys made after "through" are announced to it until it dismisses them
+    CREATE TABLE IF NOT EXISTS phone_seen (subject TEXT PRIMARY KEY, through INTEGER NOT NULL);
   `
+
+// migrations are owner-access.ts's safe ALTERs, in its order: each adds a column only when a file made before it lacks it. Their order changes the stored CREATE text, so it is
+// the TypeScript order, not a tidier one.
+var migrations = []struct{ table, column, ddl string }{
+	// the phones list's coarse label (owner-phones.ts); an old row keeps NULL and shows as "a phone"
+	{"passkeys", "label", "ALTER TABLE passkeys ADD COLUMN label TEXT"},
+	// at most one restart-extension per request: a runtime restarted every few hours must not postpone a request for ever
+	{"removals", "extended", "ALTER TABLE removals ADD COLUMN extended INTEGER NOT NULL DEFAULT 0"},
+	// the request notice is kept in the file (a restart before the tick used to lose it); old rows count as told
+	{"removals", "told", "ALTER TABLE removals ADD COLUMN told INTEGER NOT NULL DEFAULT 1"},
+	// the phone that made each set of own codes and each "add a phone" link, so removing that phone takes them back
+	{"own_codes", "by_passkey", "ALTER TABLE own_codes ADD COLUMN by_passkey TEXT"},
+	{"own_setups", "by_passkey", "ALTER TABLE own_setups ADD COLUMN by_passkey TEXT"},
+}
 
 // Who is the owner now: their number (or the marker for none) and the address of their page. A session is good only for this pair.
 type Who struct{ Owner, Base string }
@@ -56,10 +105,14 @@ type Who struct{ Owner, Base string }
 // RelyingParty is the passkey's relying party: the host of the owner's page, and its origin.
 type RelyingParty struct{ RpID, Origin string }
 
-// Access is an open owner-access file.
-type Access struct{ db *sql.DB }
+// Access is an open owner-access file. It is NOT safe for concurrent use on its own: the runtime holds its owner lock around every sequence of calls (see the header).
+type Access struct {
+	db *sql.DB
+	// notes are what reconcile found that the record should say once and that are not a request (a reset, a request applied); a request's notice is a row (removals.told)
+	notes []Note
+}
 
-// Open opens (or makes) the file.
+// Open opens (or makes) the file, and adds the columns a file from before lacks.
 func Open(file string) (*Access, error) {
 	db, err := sql.Open("sqlite", "file:"+file+"?_txlock=immediate&_pragma=busy_timeout(5000)")
 	if err != nil {
@@ -70,21 +123,65 @@ func Open(file string) (*Access, error) {
 		db.Close()
 		return nil, err
 	}
-	return &Access{db}, nil
+	for _, m := range migrations {
+		have, err := hasColumn(db, m.table, m.column)
+		if err != nil {
+			db.Close()
+			return nil, err
+		}
+		if !have {
+			if _, err := db.Exec(m.ddl); err != nil {
+				db.Close()
+				return nil, err
+			}
+		}
+	}
+	return &Access{db: db}, nil
+}
+
+func hasColumn(db *sql.DB, table, column string) (bool, error) {
+	rows, err := db.Query("PRAGMA table_info(" + table + ")")
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	cols, _ := rows.Columns()
+	for rows.Next() {
+		vals := make([]any, len(cols))
+		ptrs := make([]any, len(cols))
+		for i := range vals {
+			ptrs[i] = &vals[i]
+		}
+		if err := rows.Scan(ptrs...); err != nil {
+			return false, err
+		}
+		for i, c := range cols {
+			if c == "name" {
+				if n, ok := vals[i].(string); ok && n == column {
+					return true, nil
+				}
+			}
+		}
+	}
+	return false, rows.Err()
 }
 
 // Close closes the file.
 func (a *Access) Close() error { return a.db.Close() }
 
-func ownerKey(number string) string {
-	var digits strings.Builder
+// digits is `number.replace(/\D/gu, "")`: JavaScript's \d is ASCII 0-9 only, even with the u flag.
+func digits(number string) string {
+	var b strings.Builder
 	for _, r := range number {
 		if r >= '0' && r <= '9' {
-			digits.WriteRune(r)
+			b.WriteRune(r)
 		}
 	}
-	return sha("owner-number:" + digits.String())
+	return b.String()
 }
+
+// OwnerKey is the owner's number kept only as a hash: enough to tell that the settings now name someone else.
+func OwnerKey(number string) string { return sha("owner-number:" + digits(number)) }
 
 func linkHash(token string) string    { return sha("owner-signin:" + token) }
 func sessionHash(token string) string { return sha("owner-session:" + token) }
@@ -95,18 +192,21 @@ func newToken() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
+// newID is a short id for the record and the panel (never the token, never its hash).
 func newID() string {
 	b := make([]byte, 6)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
 }
 
+// execer is the file or an open transaction: every helper runs on the one it is given.
 type execer interface {
 	Exec(string, ...any) (sql.Result, error)
 	QueryRow(string, ...any) *sql.Row
 	Query(string, ...any) (*sql.Rows, error)
 }
 
+// tx runs `work` in one transaction (BEGIN IMMEDIATE, from the file's _txlock); an error rolls it back.
 func (a *Access) tx(work func(x execer) error) error {
 	tx, err := a.db.Begin()
 	if err != nil {
@@ -119,6 +219,58 @@ func (a *Access) tx(work func(x execer) error) error {
 	return tx.Commit()
 }
 
+// ---- meta: the gate's own values, as TEXT, numbers written as JavaScript's String(n) writes an integer ------------------------------------------------------
+
+func metaStr(q execer, name string) (string, bool) {
+	var v string
+	if err := q.QueryRow("SELECT value FROM meta WHERE name = ?", name).Scan(&v); err != nil {
+		return "", false
+	}
+	return v, true
+}
+
+// metaNum is `Number(value)` for the values this store writes (integers). A value that does not read as a number counts as absent.
+func metaNum(q execer, name string) (int64, bool) {
+	v, ok := metaStr(q, name)
+	if !ok {
+		return 0, false
+	}
+	n, err := strconv.ParseInt(strings.TrimSpace(v), 10, 64)
+	if err != nil {
+		f, err2 := strconv.ParseFloat(strings.TrimSpace(v), 64)
+		if err2 != nil {
+			return 0, false
+		}
+		n = int64(f)
+	}
+	return n, true
+}
+
+// metaOr is `metaNum(name) ?? or`.
+func metaOr(q execer, name string, or int64) int64 {
+	if n, ok := metaNum(q, name); ok {
+		return n
+	}
+	return or
+}
+
+func setMeta(q execer, name, value string) error {
+	_, err := q.Exec("INSERT INTO meta (name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value", name, value)
+	return err
+}
+
+func setMetaNum(q execer, name string, v int64) error { return setMeta(q, name, strconv.FormatInt(v, 10)) }
+
+// raiseMeta moves a cut-off forward only, never back.
+func raiseMeta(q execer, name string, v int64) error {
+	if v > metaOr(q, name, 0) {
+		return setMetaNum(q, name, v)
+	}
+	return nil
+}
+
+// ---- links and sessions ---------------------------------------------------------------------------------------------------------------------------------
+
 // Session is a session just made: its token (given once), short id and end.
 type Session struct {
 	Token     string
@@ -126,23 +278,17 @@ type Session struct {
 	ExpiresAt int64
 }
 
+// startSession is a new session for the browser that just proved it is the owner's (a link used up, or a passkey). The token is returned ONCE.
 func startSession(x execer, key, base, from string, now int64) (Session, error) {
 	s := Session{Token: newToken(), ID: newID(), ExpiresAt: now + SessionMs}
 	if _, err := x.Exec("INSERT INTO sessions (id, hash, made_at, expires_at, owner_key, base, link_id) VALUES (?, ?, ?, ?, ?, ?, ?)", s.ID, sessionHash(s.Token), now, s.ExpiresAt, key, base, from); err != nil {
 		return s, err
 	}
-	// at most MAX_SESSIONS live at once: the oldest ends, so a phone lost long ago does not stay signed in for ever behind newer ones
-	rows, err := x.Query("SELECT id FROM sessions WHERE ended_at IS NULL AND expires_at > ? ORDER BY made_at DESC", now)
+	// at most MaxSessions live at once: the oldest ends, so a phone lost long ago does not stay signed in for ever behind newer ones
+	live, err := strings1(x, "SELECT id FROM sessions WHERE ended_at IS NULL AND expires_at > ? ORDER BY made_at DESC", now)
 	if err != nil {
 		return s, err
 	}
-	var live []string
-	for rows.Next() {
-		var id string
-		_ = rows.Scan(&id)
-		live = append(live, id)
-	}
-	rows.Close()
 	if len(live) > MaxSessions {
 		for _, old := range live[MaxSessions:] {
 			if _, err := x.Exec("UPDATE sessions SET ended_at = ?, ended_why = 'too_many' WHERE id = ?", now, old); err != nil {
@@ -153,7 +299,42 @@ func startSession(x execer, key, base, from string, now int64) (Session, error) 
 	return s, nil
 }
 
-// LinkState is what a sign-in link is now: valid, used, expired, replaced or unknown. Nothing is used up.
+// strings1 is the first column of every row, read whole before anything else runs on the one connection.
+func strings1(q execer, query string, args ...any) ([]string, error) {
+	rows, err := q.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var v string
+		if err := rows.Scan(&v); err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, rows.Err()
+}
+
+// TryAttempt counts one request for a link if the shop's limits allow it. Every attempt counts, whether or not a link then goes out, so the record's lines about links are bounded.
+func (a *Access) TryAttempt(now int64) bool {
+	_, _ = a.db.Exec("DELETE FROM attempts WHERE at <= ?", now-linkLimits[1].perMs)
+	for _, w := range linkLimits {
+		var n int64
+		_ = a.db.QueryRow("SELECT count(*) FROM attempts WHERE at > ?", now-w.perMs).Scan(&n)
+		if n >= w.max {
+			return false
+		}
+	}
+	_, _ = a.db.Exec("INSERT INTO attempts (at) VALUES (?)", now)
+	return true
+}
+
+// Link limits: 3 requests a quarter of an hour, 10 a day. A person who taps twice is served; a flood is not.
+var linkLimits = []struct{ max, perMs int64 }{{3, 15 * 60_000}, {10, day}}
+
+// LinkState is what a sign-in link is now: valid, used, expired, replaced or unknown. Nothing is used up. A link for another owner or another address is unknown.
 func (a *Access) LinkState(token string, who Who, now int64) string {
 	if !ownerToken.MatchString(token) {
 		return "unknown"
@@ -161,7 +342,8 @@ func (a *Access) LinkState(token string, who Who, now int64) string {
 	var state, key, base string
 	var expires int64
 	err := a.db.QueryRow("SELECT state, owner_key, base, expires_at FROM links WHERE hash = ?", linkHash(token)).Scan(&state, &key, &base, &expires)
-	if err != nil || key != ownerKey(who.Owner) || base != who.Base || state == "unsent" {
+	// a link names the owner by their NUMBER (ownerKey, as TypeScript's linkState does), not the locked identity: it was sent to that number
+	if err != nil || key != OwnerKey(who.Owner) || base != who.Base || state == "unsent" {
 		return "unknown"
 	}
 	if state == "used" || state == "replaced" {
@@ -179,35 +361,70 @@ func (a *Access) Consume(token string, who Who, now int64) (s Session, state str
 	if st := a.LinkState(token, who, now); st != "valid" {
 		return s, st, nil
 	}
-	err = a.tx(func(x execer) error {
-		var id, key, base string
-		if err := x.QueryRow("SELECT id, owner_key, base FROM links WHERE hash = ?", linkHash(token)).Scan(&id, &key, &base); err != nil {
-			return err
-		}
-		r, err := x.Exec("UPDATE links SET state = 'used', used_at = ? WHERE id = ? AND state = 'issued' AND expires_at > ?", now, id, now)
-		if err != nil {
-			return err
-		}
-		if n, _ := r.RowsAffected(); n != 1 {
-			state = "used"
-			return nil
-		}
-		s, err = startSession(x, key, base, id, now)
-		return err
-	})
-	return s, state, err
+	var id, key, base string
+	if err := a.db.QueryRow("SELECT id, owner_key, base FROM links WHERE hash = ?", linkHash(token)).Scan(&id, &key, &base); err != nil {
+		return s, "unknown", err
+	}
+	r, err := a.db.Exec("UPDATE links SET state = 'used', used_at = ? WHERE id = ? AND state = 'issued' AND expires_at > ?", now, id, now)
+	if err != nil {
+		return s, "unknown", err
+	}
+	if n, _ := r.RowsAffected(); n != 1 {
+		return s, "used", nil
+	}
+	s, err = startSession(a.db, key, base, id, now)
+	return s, "", err
 }
 
-// Check: is this session good now, for this owner at this address, made after the panel's last "sign out every device"? Its short id when it is.
+type sessionRow struct {
+	id, linkID, ownerKey, base string
+	madeAt, expiresAt         int64
+	ended                     bool
+}
+
+func (a *Access) sessionByHash(token string) (sessionRow, bool) {
+	var r sessionRow
+	var ended sql.NullInt64
+	if err := a.db.QueryRow("SELECT id, link_id, made_at, expires_at, ended_at, owner_key, base FROM sessions WHERE hash = ?", sessionHash(token)).Scan(&r.id, &r.linkID, &r.madeAt, &r.expiresAt, &ended, &r.ownerKey, &r.base); err != nil {
+		return r, false
+	}
+	r.ended = ended.Valid
+	return r, true
+}
+
+// Check: is this session good now, for this owner at this address, made after the panel's last "sign out every device" (endBefore, already clamped)? Its short id when it is.
 func (a *Access) Check(token string, who Who, now int64, endBefore *int64) (string, bool) {
 	if !ownerToken.MatchString(token) {
 		return "", false
 	}
-	var id, key, base string
-	var made, expires int64
-	var ended sql.NullInt64
-	err := a.db.QueryRow("SELECT id, made_at, expires_at, ended_at, owner_key, base FROM sessions WHERE hash = ?", sessionHash(token)).Scan(&id, &made, &expires, &ended, &key, &base)
-	if err != nil || ended.Valid || expires <= now || key != ownerKey(who.Owner) || base != who.Base || (endBefore != nil && made < *endBefore) {
+	r, ok := a.sessionByHash(token)
+	if !ok || r.ended || r.expiresAt <= now {
+		return "", false
+	}
+	// another owner now, or the shop's page moved. Once the owner holds a passkey, "the owner" is the identity the shop was locked with (effKey), NOT whatever number the
+	// Operator's settings form says now: a changed number must neither lock the owner out nor let a session for the new number in.
+	if r.ownerKey != a.effKey(a.db, who) || r.base != who.Base {
+		return "", false
+	}
+	// Once the owner holds a passkey the panel's "sign out every device" ends WhatsApp-link sessions only. A passkey session ends by the owner's own action, an applied removal
+	// or number change, or Geometer's reset: otherwise the button, pressed every few seconds beside a removal request, would keep the owner out for its whole 48 hours.
+	if endBefore != nil && r.madeAt < *endBefore {
+		if _, locked := lockAt(a.db); !(strings.HasPrefix(r.linkID, "pk-") && locked) {
+			return "", false
+		}
+	}
+	return r.id, true
+}
+
+// CheckPasskey: the session is good now AND was made by a PASSKEY (a sign-in or the first registration), not by a link: a link on WhatsApp is whoever holds the phone, a passkey
+// is the owner's own finger or face.
+func (a *Access) CheckPasskey(token string, who Who, now int64, endBefore *int64) (string, bool) {
+	id, ok := a.Check(token, who, now, endBefore)
+	if !ok {
+		return "", false
+	}
+	r, found := a.sessionByHash(token)
+	if !found || !strings.HasPrefix(r.linkID, "pk-") {
 		return "", false
 	}
 	return id, true
@@ -218,121 +435,53 @@ func (a *Access) End(token string, now int64) string {
 	if !ownerToken.MatchString(token) {
 		return ""
 	}
-	var id string
-	var ended sql.NullInt64
-	if err := a.db.QueryRow("SELECT id, ended_at FROM sessions WHERE hash = ?", sessionHash(token)).Scan(&id, &ended); err != nil || ended.Valid {
+	r, ok := a.sessionByHash(token)
+	if !ok || r.ended {
 		return ""
 	}
-	_, _ = a.db.Exec("UPDATE sessions SET ended_at = ?, ended_why = 'signed_out' WHERE id = ?", now, id)
-	return id
+	_, _ = a.db.Exec("UPDATE sessions SET ended_at = ?, ended_why = 'signed_out' WHERE id = ?", now, r.id)
+	return r.id
 }
 
-// EndAllBefore is the panel's "sign out every device", seen for the first time: every session made before it is marked ended, and the moment is remembered so it is said once.
-// Returns how many ended, or -1 when this moment was already handled.
+// EndAllBefore is the panel's "sign out every device", seen for the first time: every session made before it is marked ended (once locked, passkey sessions excepted, as Check
+// says why), and the moment is remembered so it is said once. Returns how many ended, or -1 when this moment was already handled.
 func (a *Access) EndAllBefore(endBefore, now int64) (int64, error) {
-	var seen string
-	err := a.db.QueryRow("SELECT value FROM meta WHERE name = 'end_before'").Scan(&seen)
-	if err == nil && seen != "" {
-		var n int64
-		for _, c := range seen {
-			n = n*10 + int64(c-'0')
-		}
-		if n >= endBefore {
-			return -1, nil
-		}
+	if seen, ok := metaNum(a.db, "end_before"); ok && seen >= endBefore {
+		return -1, nil
 	}
-	r, err := a.db.Exec("UPDATE sessions SET ended_at = ?, ended_why = 'panel' WHERE ended_at IS NULL AND made_at < ?", now, endBefore)
+	locked := 0
+	if _, ok := lockAt(a.db); ok {
+		locked = 1
+	}
+	r, err := a.db.Exec("UPDATE sessions SET ended_at = ?, ended_why = 'panel' WHERE ended_at IS NULL AND made_at < ? AND NOT (link_id LIKE 'pk-%' AND ?)", now, endBefore, locked)
 	if err != nil {
 		return 0, err
 	}
-	_, err = a.db.Exec("INSERT INTO meta (name, value) VALUES ('end_before', ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value", itoa(endBefore))
+	if err := setMetaNum(a.db, "end_before", endBefore); err != nil {
+		return 0, err
+	}
 	n, _ := r.RowsAffected()
-	return n, err
+	return n, nil
 }
 
-func itoa(n int64) string { b, _ := json.Marshal(n); return string(b) }
-
-// ---- passkeys --------------------------------------------------------------------------------------------------------------------------------------------
-
-var challengeText = regexp.MustCompile(`^[A-Za-z0-9_-]{43}$`)
-
-func challengeHash(c string) string { return sha("owner-challenge:" + c) }
-
-// userID is this shop's WebAuthn user id: 16 random bytes made once, so a phone keeps one passkey per shop even though every shop shares the RP ID.
-func (a *Access) userID() (string, error) {
-	var v string
-	if err := a.db.QueryRow("SELECT value FROM meta WHERE name = 'webauthn_user'").Scan(&v); err == nil {
-		return v, nil
+// ClampEndBefore is the panel's "sign out every device" moment, clamped to this runtime's clock the first time each value is seen. A file value in the future would refuse every
+// session, including the passkey sign-in that follows, for as long as it lasts (a total lockout by one form); clamped, it ends the sessions made before the runtime saw it and
+// never one made after.
+func (a *Access) ClampEndBefore(raw *int64, now int64) *int64 {
+	if raw == nil {
+		return nil
 	}
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	if _, err := a.db.Exec("INSERT INTO meta (name, value) VALUES ('webauthn_user', ?) ON CONFLICT(name) DO NOTHING", base64.RawURLEncoding.EncodeToString(b)); err != nil {
-		return "", err
+	if seen, ok := metaNum(a.db, "eb_raw"); !ok || seen != *raw {
+		_ = setMetaNum(a.db, "eb_raw", *raw)
+		_ = setMetaNum(a.db, "eb_val", min(*raw, now))
 	}
-	err := a.db.QueryRow("SELECT value FROM meta WHERE name = 'webauthn_user'").Scan(&v)
-	return v, err
+	if v, ok := metaNum(a.db, "eb_val"); ok {
+		return &v
+	}
+	return nil
 }
 
-// newChallenge makes a fresh challenge for one ceremony, kept as a hash; it goes to the page once. At most ChallengeKept are open: past that the OLDEST open ones go, never the new
-// one, so a flood cannot grow the file and cannot lock the owner out either.
-func (a *Access) newChallenge(kind string, now int64, grant string) (string, error) {
-	c := make([]byte, 32)
-	_, _ = rand.Read(c)
-	text := base64.RawURLEncoding.EncodeToString(c)
-	err := a.tx(func(x execer) error {
-		if _, err := x.Exec("DELETE FROM challenges WHERE expires_at <= ?", now-day); err != nil {
-			return err
-		}
-		if _, err := x.Exec("DELETE FROM challenges WHERE hash IN (SELECT hash FROM challenges WHERE used_at IS NULL ORDER BY made_at DESC LIMIT -1 OFFSET ?)", ChallengeKept-1); err != nil {
-			return err
-		}
-		var g any
-		if grant != "" {
-			g = grant
-		}
-		_, err := x.Exec("INSERT INTO challenges (hash, kind, grant_hash, made_at, expires_at) VALUES (?, ?, ?, ?, ?)", challengeHash(text), kind, g, now, now+ChallengeMs)
-		return err
-	})
-	return text, err
-}
-
-// challengeOf is the challenge a browser's client data names, if it is one of ours for this ceremony, unused and in time.
-func (a *Access) challengeOf(clientData []byte, kind string, now int64, grant string) string {
-	var cd struct {
-		Challenge any `json:"challenge"`
-	}
-	if json.Unmarshal(clientData, &cd) != nil {
-		return ""
-	}
-	c, ok := cd.Challenge.(string)
-	if !ok || !challengeText.MatchString(c) {
-		return ""
-	}
-	var k string
-	var g sql.NullString
-	var expires int64
-	var used sql.NullInt64
-	if err := a.db.QueryRow("SELECT kind, grant_hash, expires_at, used_at FROM challenges WHERE hash = ?", challengeHash(c)).Scan(&k, &g, &expires, &used); err != nil {
-		return ""
-	}
-	if k != kind || used.Valid || expires <= now || (grant != "" && g.String != grant) {
-		return ""
-	}
-	return c
-}
-
-// GrantState: a grant as it stands now: the panel's file, and this store's memory of grants used.
-func (a *Access) GrantState(g Grant, file *Grants, now int64) string {
-	in := g.InFile(file, now)
-	if in == "unknown" {
-		return "unknown"
-	}
-	var one int
-	if a.db.QueryRow("SELECT 1 FROM grants_used WHERE hash = ?", g.Hash()).Scan(&one) == nil {
-		return "used"
-	}
-	return in
-}
+// ---- the wrong recovery codes count -------------------------------------------------------------------------------------------------------------------------
 
 // CodesLocked: too many wrong recovery codes for this shop today? (Each wrong one counts; a right one does not.)
 func (a *Access) CodesLocked(now int64) bool {
@@ -343,81 +492,6 @@ func (a *Access) CodesLocked(now int64) bool {
 }
 
 // NoteWrongCode counts one wrong recovery code.
-func (a *Access) NoteWrongCode(now int64) {
-	_, _ = a.db.Exec("INSERT INTO wrong_codes (at) VALUES (?)", now)
-}
+func (a *Access) NoteWrongCode(now int64) { _, _ = a.db.Exec("INSERT INTO wrong_codes (at) VALUES (?)", now) }
 
-type passkeyRow struct {
-	ID, CredID, JWK, OwnerKey, RpID string
-	Alg                             int
-	SignCount                       uint32
-	BackedUp                        bool
-	MadeAt                          int64
-}
-
-func (a *Access) passkeyRows(where string, args ...any) ([]passkeyRow, error) {
-	rows, err := a.db.Query("SELECT id, cred_id, jwk, alg, sign_count, backed_up, made_at, owner_key, rp_id FROM passkeys WHERE removed_at IS NULL"+where, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []passkeyRow
-	for rows.Next() {
-		var r passkeyRow
-		var bu int
-		if err := rows.Scan(&r.ID, &r.CredID, &r.JWK, &r.Alg, &r.SignCount, &bu, &r.MadeAt, &r.OwnerKey, &r.RpID); err != nil {
-			return nil, err
-		}
-		r.BackedUp = bu == 1
-		out = append(out, r)
-	}
-	return out, rows.Err()
-}
-
-// good: is a passkey row good now for this owner, on this RP ID, made after the panel's "remove the owner's passkeys"?
-func good(r passkeyRow, who Who, rp RelyingParty, before *int64) bool {
-	return r.OwnerKey == ownerKey(who.Owner) && r.RpID == rp.RpID && (before == nil || r.MadeAt >= *before)
-}
-
-// Passkeys is how many passkeys the owner has here.
-func (a *Access) Passkeys(who Who, rp RelyingParty, before *int64) int {
-	rows, _ := a.passkeyRows(" ORDER BY made_at")
-	n := 0
-	for _, r := range rows {
-		if good(r, who, rp, before) {
-			n++
-		}
-	}
-	return n
-}
-
-func b64(s any, max int) ([]byte, bool) {
-	t, ok := s.(string)
-	if !ok || t == "" || len(t) > max || !regexp.MustCompile(`^[A-Za-z0-9_-]+$`).MatchString(t) {
-		return nil, false
-	}
-	b, err := base64.RawURLEncoding.DecodeString(t)
-	return b, err == nil
-}
-
-var (
-	errRefused = errors.New("refused")
-	regexp_id  = regexp.MustCompile(`^[A-Za-z0-9_-]+$`) // RE2 refuses a repeat count over 1000, so the length (16 to 1400) is checked by credID
-)
-
-// Link limits: 3 requests a quarter of an hour, 10 a day.
-var linkLimits = []struct{ max, perMs int64 }{{3, 15 * 60_000}, {10, day}}
-
-// TryAttempt counts one request for a link if the shop's limits allow it. Every attempt counts, whether or not a link then goes out, so the record's lines about links are bounded.
-func (a *Access) TryAttempt(now int64) bool {
-	_, _ = a.db.Exec("DELETE FROM attempts WHERE at <= ?", now-linkLimits[1].perMs)
-	for _, w := range linkLimits {
-		var n int64
-		_ = a.db.QueryRow("SELECT count(*) FROM attempts WHERE at > ?", now-w.perMs).Scan(&n)
-		if n >= w.max {
-			return false
-		}
-	}
-	_, _ = a.db.Exec("INSERT INTO attempts (at) VALUES (?)", now)
-	return true
-}
+var challengeText = regexp.MustCompile(`^[A-Za-z0-9_-]{43}$`)

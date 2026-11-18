@@ -5,6 +5,7 @@ go 1.27
 require (
 	github.com/go-webauthn/webauthn v0.18.2
 	github.com/gowebpki/jcs v1.0.2
+	golang.org/x/text v0.44.0
 	modernc.org/sqlite v1.62.0
 )
 
@@ -24,7 +25,6 @@ require (
 	github.com/x448/float16 v0.8.4 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
-	golang.org/x/text v0.44.0 // indirect
 	modernc.org/libc v1.80.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
