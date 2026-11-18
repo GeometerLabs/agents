@@ -185,5 +185,6 @@ export function addPhonePage(o: { base: string; language: Language; url: string;
   const w = WORDS[o.language];
   return shell(o.language, w.addTitle, html`<h1>${w.addTitle}</h1><p>${w.addHow(dayAndTime(o.expiresAt, o.language))}</p>
 <figure class="qr">${raw(textQrSvg(`${o.url}?lang=${o.language}`, { width: 280 }))}</figure>
+<p class="note"><code class="addr">${o.url}</code></p>
 <p><a class="btn quiet" href="${o.base}/phones?lang=${o.language}">${w.back}</a></p>`);
 }
