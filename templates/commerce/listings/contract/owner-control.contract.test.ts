@@ -12,7 +12,8 @@
 //   a day's quiet, then it applies after 48 hours and only a QR seen after that works; an owner-number change is a request (ATTACK), a cancel sticks for a day, it applies
 //   after 48 hours with no restart and the sale binds the NEW owner; Geometer's reset and its window, in which only the reset's own QR works (ATTACK), read only from its own
 //   file, never from the Operator's (ATTACK); a restart does not lose
-//   a request's notice and extends a request once only (ATTACK); a restore keeps the lock; and (TypeScript only: the Go runtime serves no push) the alerts follow the phone.
+//   a request's notice and extends a request once only (ATTACK); a restore keeps the lock; the alerts follow the phone (the lock ends the link's subscription, only a phone
+//   subscribes after it, removing a phone ends its alerts); and every alert to the owner's phones is TypeScript's words in the owner's language.
 //
 // Not reachable here: a session made by a WhatsApp LINK (a listings-only shop has no WhatsApp, so no link is ever sent), so "a link session may not remove a phone or make
 // codes" and "sign out every device ends link sessions" are left to modules/channels/test/owner-control*.test.ts.
@@ -27,14 +28,22 @@ import { REMOVAL_WAIT_MS, SETUP_MS, newRecoveryCode, newSetupToken, recoveryHash
 import { newSoftPasskey, softRegister, softSignin } from "../../../../modules/channels/test/soft-authenticator.ts";
 import type { SoftPasskey } from "../../../../modules/channels/test/soft-authenticator.ts";
 import { putOwnerKeep, readOwnerKeep } from "../../../../bundle/backup/owner-keep.ts";
-import { IMPL, OWNER_BASE, makeShop } from "./harness.ts";
+import { CODES_ALERT, NEW_PHONE_ALERT, REMOVED_ALERT } from "../../../../modules/channels/owner-phones.ts";
+import { OWNER_CHANGE_ALERT, REMOVAL_ALERT } from "../../../../modules/channels/owner-signin.ts";
+import { fitNotification } from "../../../../modules/push/sender.ts";
+import type { Language } from "../../../../modules/language/languages.ts";
+import { OWNER_BASE, makeShop } from "./harness.ts";
 import type { Shop, ShopOptions } from "./harness.ts";
+import { softBrowser, startFakeGuard } from "./push-harness.ts";
+import type { FakeGuard, SoftBrowser } from "./push-harness.ts";
 
 const shops: Shop[] = [];
 const servers: Server[] = [];
+const guards: FakeGuard[] = [];
 after(async () => {
   for (const s of shops) { await s.stop(); s.cleanup(); }
   for (const v of servers) await new Promise<void>((r) => { v.closeAllConnections(); v.close(() => r()); });
+  for (const g of guards) await g.close();
 });
 
 const MIN = 60_000, HOUR = 60 * MIN, DAY = 24 * HOUR;
@@ -613,7 +622,7 @@ async function fakePushGuard(): Promise<number> {
   return (server.address() as { port: number }).port;
 }
 
-describe("the owner's alerts follow the phone", { skip: IMPL !== "ts" && "the Go runtime serves no web push (go/TRIAL.md, Left out 2); its hooks (dropUnbound, dropRef) wait for the push port" }, () => {
+describe("the owner's alerts follow the phone", () => {
   test("the first passkey ends the alerts no phone holds; afterwards only a phone subscribes, the phones page lists its alert, and removing the phone ends it", async () => {
     const guard = await fakePushGuard();
     const s = await boot({ services: { push: { baseUrl: `http://127.0.0.1:${guard}` } } });
@@ -637,5 +646,62 @@ describe("the owner's alerts follow the phone", { skip: IMPL !== "ts" && "the Go
     const mine = (await list(s, p1.session)).alerts[0].id;
     assert.deepEqual((await phones(s, p1.session, { op: "stop_alert", id: mine })).body, { stopped: true });
     assert.equal((await panel(s)).alertPhones, 0);
+  });
+});
+
+// What each alert SAYS: the browser opens what the Guard was sent and it is, byte for byte, the TypeScript function's words in the owner's language (owner-phones.ts, owner-signin.ts),
+// fitted as the sender fits every notification. The moment an alert carries is the shop's clock when it was made, to the minute, so the words are matched against every minute of
+// the call's window.
+describe("every alert is TypeScript's words in the owner's language", () => {
+  /** A shop with push on (a fake Guard that keeps what it is sent), its first phone locked in, and that phone's browser subscribed to the owner's alerts. */
+  async function heard(o: ShopOptions & { ownerLanguage: Language }): Promise<{ s: Shop; guard: FakeGuard; p1: { phone: SoftPasskey; session: string }; b: SoftBrowser }> {
+    const guard = await startFakeGuard(); guards.push(guard);
+    const s = await boot({ ...o, services: { push: { baseUrl: guard.url } } });
+    const p1 = await register(s, qr(s.setup));
+    const b = softBrowser();
+    const sub = await s.call("/internal/channel/push", { session: p1.session, body: { op: "owner_subscribe", subscription: b.subscription } });
+    assert.equal(sub.status, 200, JSON.stringify(sub.body));
+    return { s, guard, p1, b };
+  }
+  /** The next push the Guard hears (after `seen` calls), opened by the phone's browser, checked against the words for some minute between `from` and now. */
+  async function says(s: Shop, guard: FakeGuard, b: SoftBrowser, seen: number, from: number, words: (at: number) => string): Promise<void> {
+    for (let i = 0; i < 200 && guard.calls.length <= seen; i++) await new Promise((r) => setTimeout(r, 50));
+    assert.equal(guard.calls.length, seen + 1, `one push to the Guard:\n${s.log()}`);
+    const said = b.open(guard.calls[seen].call);
+    assert.equal(said.title, "Glow Pets"); assert.equal(said.tag, "phones");
+    const minutes = new Set<string>();
+    for (let t = from - MIN; t <= s.now() + MIN; t += 30_000) minutes.add(fitNotification(words(t)));
+    assert.ok(minutes.has(said.body), `the alert is not TypeScript's words: ${said.body}\nexpected one of:\n${[...minutes].join("\n")}`);
+  }
+
+  test("a new phone, codes made and a phone removed, in Malayalam, with the phone's label", async () => {
+    const { s, guard, p1, b } = await heard({ ownerLanguage: "ml" });
+    let from = s.now();
+    const p2 = await register(s, qr(await addPhoneLink(s, p1.session)), IPHONE);
+    await says(s, guard, b, 0, from, (t) => NEW_PHONE_ALERT(t, "iPhone, Safari").ml);
+    from = s.now();
+    assert.equal((await phones(s, p1.session, { op: "codes" })).status, 200);
+    await says(s, guard, b, 1, from, (t) => CODES_ALERT(t, "").ml);
+    from = s.now();
+    const p2id = (await list(s, p1.session)).phones.find((p: any) => !p.mine).id;
+    assert.equal((await phones(s, p1.session, { op: "remove", id: p2id })).status, 200);
+    await says(s, guard, b, 2, from, (t) => REMOVED_ALERT(t, "iPhone, Safari").ml);
+    void p2;
+  });
+
+  test("the Operator's request to remove every phone, said on the tick, in Kannada, naming who asked", async () => {
+    const { s, guard, b } = await heard({ ownerLanguage: "kn", tickSeconds: 1 });
+    s.writeGrants(grants(s, { pending: { askedAt: s.now(), by: "Divya" } }));
+    await told(s, "removal_asked");
+    await says(s, guard, b, 0, s.now(), () => REMOVAL_ALERT("Divya").kn);
+  });
+
+  test("an owner-number change after the lock, said on the tick, in Hindi, with nothing the Operator typed", async () => {
+    const { s, guard, b } = await heard({ ownerLanguage: "hi", tickSeconds: 1 });
+    await s.stop();
+    s.setOwnerNumber(B); // the Operator's settings form; the deployer restarts the runtime with it
+    await s.start();
+    await told(s, "owner_change_asked");
+    await says(s, guard, b, 0, s.now(), () => OWNER_CHANGE_ALERT.hi);
   });
 });

@@ -9,8 +9,8 @@ package runtime
 // For a listings shop the customer_* ops have nothing to act on (no chat, no booking pages), so, as TypeScript answers it, a well-formed handle gets 404 "No page with alerts has this
 // handle." and a malformed one 400.
 //
-// The seams for the owner-control port: PushOwner (an alert to the owner's phones: the new-phone, phone-removed, recovery-codes and Operator-request alerts call it), AlertPhones (the
-// count /status reports), and the store's DropRef, OwnerSubs, DropOwnerSub and DropUnbound through Runtime.Push().
+// The owner's side (who may subscribe, the alerts to the owner's phones, what ends a subscription) is the owner's sign-in's: owner.go OwnerPushOp and alert, under the owner lock.
+// Here are the route's shape, PushOwner (one alert queued for the owner's phones) and AlertPhones (the count /status reports).
 
 import (
 	"encoding/json"
@@ -107,18 +107,22 @@ func (r *Runtime) initPush() error {
 	return nil
 }
 
-// Push is the shop's push (nil for a shop with no channel token).
-func (r *Runtime) Push() *push.Push { return r.routes.push }
-
-// PushOwner sends an alert to the owner's phones when push is on, in the owner's language (TypeScript: `push.owner(text[owner.language], tag)`); it returns the ids queued (none: no phone
-// allowed alerts, or push is off). `tag` "" is the default "owner".
-func (r *Runtime) PushOwner(text map[string]string, tag string) []string {
-	p := r.routes.push
-	_, lang := r.owner()
-	if p == nil || !p.On || text[lang] == "" {
+// Push is the shop's push (nil for a shop with no channel token, and before the routes are made).
+func (r *Runtime) Push() *push.Push {
+	if r.routes == nil {
 		return nil
 	}
-	return p.Owner(text[lang], tag)
+	return r.routes.push
+}
+
+// PushOwner queues an alert to the owner's phones when push is on (TypeScript: `push.owner(text, tag)`); `text` is already in the owner's language. It returns the ids queued (none:
+// no phone allowed alerts, or push is off). `tag` "" is the default "owner".
+func (r *Runtime) PushOwner(text, tag string) []string {
+	p := r.Push()
+	if p == nil || !p.On || text == "" {
+		return nil
+	}
+	return p.Owner(text, tag)
 }
 
 // AlertPhones is how many phones get the owner's alerts, for /status (0 when push is off).
@@ -194,83 +198,15 @@ func (s *Server) pushRoute(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+// pushOwnerOp: the owner's credential and every owner-control rule are checked in owner.go OwnerPushOp, under the owner lock.
 func (s *Server) pushOwnerOp(w http.ResponseWriter, r *http.Request, p *push.Push, op string, body map[string]any, whatsapp bool) error {
-	rt := s.rt
-	if !s.ownerAuthorised(r) {
-		send(w, 403, errBody(ownerRefused))
-		return nil
+	link, _ := header(r, access.OwnerLinkHeader)
+	session, sent := header(r, access.OwnerSessionHeader)
+	status, out, err := s.rt.OwnerPushOp(p, op, body, link, session, sent, whatsapp)
+	if err != nil {
+		return err
 	}
-	// The panel's owner link is the OPERATOR's: once the owner holds a passkey it may not subscribe a phone to the owner's alerts (which can carry what the shop says to the owner), change
-	// the owner's choice or drop a subscription. Only a signed-in session may, and a subscription is tied to the phone (passkey) it was made from.
-	session, _ := header(r, access.OwnerSessionHeader)
-	if session != "" && !rt.SessionOK(session) {
-		session = ""
-	}
-	locked := rt.PasskeysOn() && rt.routes.passkeys.Locked()
-	if session == "" && op != "owner_state" && locked {
-		send(w, 403, errBody("Sign in with the owner's phone to change alerts."))
-		return nil
-	}
-	switch op {
-	case "owner_subscribe":
-		ref := ""
-		if session != "" {
-			ref = rt.routes.passkeys.PasskeyOf(session)
-		}
-		// once locked, only a PHONE (a passkey session) may subscribe: a subscription with no phone could never be ended by removing one
-		if ref == "" && locked {
-			send(w, 403, errBody("Sign in with your phone's fingerprint to turn on alerts."))
-			return nil
-		}
-		sub, ok := subscriptionOf(body["subscription"])
-		why := push.ShapeProblem
-		if ok {
-			why = p.Subscribe("owner", sub, "own", ref)
-		}
-		if why != "" {
-			send(w, 400, errBody(why))
-			return nil
-		}
-		// the first phone with alerts: both ways for a shop with WhatsApp (the owner can then pick), push alone for one without
-		if p.OwnerPhones() == 1 && p.Choice() == "whatsapp" {
-			next := "push"
-			if whatsapp {
-				next = "both"
-			}
-			if err := p.SetChoice(next); err != nil {
-				return err
-			}
-		}
-	case "owner_unsubscribe":
-		endpoint, ok := body["endpoint"].(string)
-		if !ok {
-			send(w, 400, errBody("Send the endpoint to stop."))
-			return nil
-		}
-		p.Unsubscribe("owner", endpoint)
-	case "owner_choice":
-		choice, _ := body["choice"].(string)
-		if !validChoice(choice) {
-			send(w, 400, errBody("choice is one of "+strings.Join(push.OwnerChoices, ", ")+"."))
-			return nil
-		}
-		if !whatsapp && choice != "push" {
-			send(w, 400, errBody("This shop has no WhatsApp: alerts come by push."))
-			return nil
-		}
-		if err := p.SetChoice(choice); err != nil {
-			return err
-		}
-	case "owner_state":
-	default:
-		send(w, 400, errBody("op is not one this route knows."))
-		return nil
-	}
-	choice := "push"
-	if whatsapp {
-		choice = p.Choice()
-	}
-	send(w, 200, map[string]any{"on": true, "whatsapp": whatsapp, "choice": choice, "phones": p.OwnerPhones()})
+	send(w, status, out)
 	return nil
 }
 

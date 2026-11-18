@@ -1,7 +1,8 @@
 package runtime
 
 // The owner's sign-in as the runtime uses it, and who controls it: the Go twin of modules/channels/owner-signin.ts (its `http` object, `tick`, `followLockedNumber`) and of
-// the owner routes of modules/runtime/http.ts (owner-passkey, owner-phones, the /status lock, owner-session). The rules themselves are in go/internal/access; here is where
+// the owner routes of modules/runtime/http.ts (owner-passkey, owner-phones, the /status lock, owner-session, the owner's side of push: who may subscribe, and the alerts to
+// the owner's phones). The rules themselves are in go/internal/access; here is where
 // the files are read (on every call: the deployer may change them at any time), the owner and the address are worked out NOW, and the steps of each route run in the
 // TypeScript order.
 //
@@ -16,28 +17,15 @@ import (
 	"strings"
 
 	"github.com/GeometerLabs/agents/go/internal/access"
+	"github.com/GeometerLabs/agents/go/internal/assistant"
+	"github.com/GeometerLabs/agents/go/internal/push"
 )
 
-// OwnerPush is what the owner-control rules need of the shop's web push. The Go runtime serves no push yet (go/TRIAL.md, Left out 2), so it is nil and every call is skipped;
-// a push port must connect it, at the TypeScript call sites marked below: the first passkey ends the alerts no phone holds (DropUnbound), a removed phone's alerts end with it
-// (DropRef), the phones page lists and stops alerts (OwnerSubs, DropOwnerSub), and the owner's other phones are told (Alert: "new_phone", "codes_made", "phone_removed",
-// "removal_asked", "removal_extended", "owner_change_asked", in the owner's language, words as modules/channels/owner-phones.ts and owner-signin.ts have them).
-type OwnerPush interface {
-	On() bool
-	OwnerPhones() int
-	OwnerSubs() []OwnerSub
-	DropOwnerSub(id string) bool
-	DropRef(passkey string) int
-	DropUnbound() int
-	Alert(what string, at int64, label, by string)
-}
-
-// OwnerSub is one of the owner's alert subscriptions, with the phone (passkey) it was made from.
-type OwnerSub struct {
-	ID     string
-	Ref    string
-	MadeAt int64
-}
+// THE OWNER'S PUSH. The shop's web push (routes.go initPush, Runtime.Push) is there for every shop with a channel token, and on only when runtime.json names a push Guard. At
+// the TypeScript call sites below, what ENDS a subscription runs whenever push is there (`options.push?.dropUnbound()`: the first passkey ends the alerts no phone holds, a
+// removed phone's alerts end with it, the phones page's Stop), and what TELLS or LISTS the owner's phones only when it is on (`options.push?.on`: the alerts in the owner's
+// language, the phones page's list, /status's count). Who may subscribe is decided here too (OwnerPushOp), under the owner lock with the subscription itself, so a link's
+// subscription can never land after the first passkey's DropUnbound.
 
 func (r *Runtime) pages() *access.Pages {
 	return access.ReadPages(filepath.Join(r.o.Client.Folder, access.PagesFile))
@@ -175,15 +163,20 @@ func (r *Runtime) SessionCheck(token string) (string, bool) {
 	return id, good
 }
 
-// PasskeysOn: the shop has an owner sign-in and a pages file (owner-signin.ts passkeysOn).
-func (r *Runtime) PasskeysOn() bool {
+// PasskeySession: the session is good AND was made with a passkey (owner-signin.ts http.checkPasskey), for the owner's limits page. A store that cannot be read answers no:
+// nothing that needs a passkey is allowed.
+func (r *Runtime) PasskeySession(token string) bool {
 	if r.o.Access == nil {
 		return false
 	}
 	r.ownerMu.Lock()
 	defer r.ownerMu.Unlock()
-	on, _ := r.oPasskeysOn()
-	return on
+	_, good, err := r.oCheckPasskey(token)
+	if err != nil {
+		r.o.Log("The owner's session could not be checked: " + err.Error())
+		return false
+	}
+	return good
 }
 
 // LinkState is what a sign-in link is now.
@@ -387,10 +380,12 @@ func (r *Runtime) markTold(keys []string) {
 	}
 }
 
-// alert tells the owner's phones with alerts on (nil push: nothing to tell; the phones page shows it on the next open).
+// alert tells the owner's phones with alerts on, in the owner's language, word for word TypeScript's (assistant.Pack.OwnerAlert; the words are generated from owner-phones.ts
+// and owner-signin.ts), tagged "phones" as TypeScript tags them. Push off: nothing to tell; the phones page shows it on the next open. The language is the settings' own: this
+// runs with the owner lock held, so it must not ask r.owner(), which takes it.
 func (r *Runtime) alert(what string, at int64, label, by string) {
-	if r.o.Push != nil && r.o.Push.On() {
-		r.o.Push.Alert(what, at, label, by)
+	if p := r.Push(); p != nil && p.On {
+		r.PushOwner(assistant.Words(r.o.Client.Settings.Owner.Language).OwnerAlert(what, at, label, by), "phones")
 	}
 }
 
@@ -399,11 +394,7 @@ func (r *Runtime) alert(what string, at int64, label, by string) {
 // OwnerAccessStatus is /status's ownerAccess (http.ts): how the owner can sign in and hear (counts only), whether the shop is locked, and the Operator's pending request, for
 // the panel to SHOW; the runtime has already decided both, whatever the panel does.
 func (r *Runtime) OwnerAccessStatus() (map[string]any, error) {
-	alertPhones := 0
-	if r.o.Push != nil && r.o.Push.On() {
-		alertPhones = r.o.Push.OwnerPhones()
-	}
-	out := map[string]any{"passkeys": 0, "alertPhones": alertPhones}
+	out := map[string]any{"passkeys": 0, "alertPhones": r.AlertPhones()}
 	if r.o.Access == nil {
 		return out, nil
 	}
@@ -414,14 +405,7 @@ func (r *Runtime) OwnerAccessStatus() (map[string]any, error) {
 		return nil, err
 	}
 	if on {
-		// lockState: the settings' number watched first, then the files read for the lock and the request
-		if sw, ok := r.oSettingsWho(); ok {
-			if err := r.o.Access.WatchOwner(sw, r.o.Now()); err != nil {
-				return nil, err
-			}
-		}
-		g := r.oGrants()
-		locked, err := r.o.Access.Locked(g, r.o.Now())
+		locked, g, err := r.oLockState()
 		if err != nil {
 			return nil, err
 		}
@@ -444,6 +428,19 @@ func (r *Runtime) OwnerAccessStatus() (map[string]any, error) {
 		out["passkeys"] = len(phones)
 	}
 	return out, nil
+}
+
+// oLockState is owner-signin.ts http.lockState's lock: the settings' number watched first (a changed number after the lock becomes a request the moment anyone asks), then the
+// files read for the lock. The grants it read are handed back for the pending request.
+func (r *Runtime) oLockState() (bool, *access.Grants, error) {
+	if sw, ok := r.oSettingsWho(); ok {
+		if err := r.o.Access.WatchOwner(sw, r.o.Now()); err != nil {
+			return false, nil, err
+		}
+	}
+	g := r.oGrants()
+	locked, err := r.o.Access.Locked(g, r.o.Now())
+	return locked, g, err
 }
 
 // ---- POST /internal/channel/owner-passkey ------------------------------------------------------------------------------------------------------------------
@@ -530,12 +527,14 @@ func (r *Runtime) OwnerPasskey(body map[string]any) (int, any, error) {
 			r.RecordAccess("passkey_added", done.Passkey, grant.Kind, label)
 			// the lock: every owner alert subscription made before it (or from a link) belongs to no phone of the owner's, so the Operator who subscribed their own phone at
 			// the setup visit stops hearing the shop here (TypeScript: options.push?.dropUnbound())
-			if done.FirstOfLock && r.o.Push != nil {
-				r.o.Push.DropUnbound()
+			if p := r.Push(); done.FirstOfLock && p != nil {
+				if _, err := p.DropUnbound(); err != nil {
+					return 0, nil, err
+				}
 			}
 			r.RecordAccess("signed_in", done.Session.ID, "passkey", "")
 			// a new phone is announced: the owner's other phones with alerts on get a push now (the others see a banner on their next open). The first phone has no "other".
-			if r.o.Push != nil && r.o.Push.On() {
+			if p := r.Push(); p != nil && p.On {
 				if phones, err := r.oPasskeys(); err == nil && len(phones) > 1 {
 					r.alert("new_phone", r.o.Now(), label, "")
 				}
@@ -660,8 +659,12 @@ func (r *Runtime) OwnerPhones(session string, sessionSent bool, body map[string]
 		}
 		// the alerts that reach the owner's phones, each with the phone it came from (the phones page lists them with Stop)
 		alerts := []alertAnswer{}
-		if r.o.Push != nil && r.o.Push.On() {
-			for _, s := range r.o.Push.OwnerSubs() {
+		if p := r.Push(); p != nil && p.On {
+			subs, err := p.OwnerSubs()
+			if err != nil {
+				return 0, nil, err
+			}
+			for _, s := range subs {
 				a := alertAnswer{ID: s.ID, MadeAt: s.MadeAt}
 				for _, p := range v.Phones {
 					if p.ID == s.Ref {
@@ -680,7 +683,13 @@ func (r *Runtime) OwnerPhones(session string, sessionSent bool, body map[string]
 			return 403, map[string]any{"state": "passkey_needed"}, nil
 		}
 		id, isText := body["id"].(string)
-		done := isText && r.o.Push != nil && r.o.Push.DropOwnerSub(cut(id, 32))
+		done := false
+		if p := r.Push(); isText && p != nil {
+			var err error
+			if done, err = p.DropOwnerSub(cut(id, 32)); err != nil {
+				return 0, nil, err
+			}
+		}
 		if done {
 			return 200, map[string]any{"stopped": true}, nil
 		}
@@ -736,8 +745,10 @@ func (r *Runtime) OwnerPhones(session string, sessionSent bool, body map[string]
 		}
 		r.RecordAccess("phone_removed", removed.ID, "", removed.Label)
 		// the alerts that phone asked for end with it, and every other phone is told (banner on its next open, and a push now)
-		if r.o.Push != nil {
-			r.o.Push.DropRef(removed.ID)
+		if p := r.Push(); p != nil {
+			if _, err := p.DropRef(removed.ID); err != nil {
+				return 0, nil, err
+			}
 		}
 		r.alert("phone_removed", now(), removed.Label, "")
 		return 200, map[string]any{"ok": true, "wasLast": wasLast}, nil
@@ -838,4 +849,107 @@ func (r *Runtime) oPasskeyOf(session string) (string, error) {
 		return "", err
 	}
 	return r.o.Access.PasskeyOfSession(id), nil
+}
+
+// ---- POST /internal/channel/push, the owner's ops -----------------------------------------------------------------------------------------------------------
+
+// OwnerPushOp is the owner's side of the push route after its body is read and push is known to be on (http.ts "item 11h: web push", op owner_*): the owner's credential, then
+// who may change alerts, then the op, all under the owner lock. The panel's owner link is the OPERATOR's: once the owner holds a passkey it may read the state but not subscribe
+// a phone to the owner's alerts (which can carry what the shop says to the owner), change the owner's choice or drop a subscription; only a session made here may, and a
+// subscription is tied to the phone (passkey) its session was made from, so removing that phone ends it. The lock is held from the first check to the subscription: a link's
+// subscription that passed "not locked" can never land after the first passkey's DropUnbound, nor a phone's after that phone was removed.
+func (r *Runtime) OwnerPushOp(p *push.Push, op string, body map[string]any, link, session string, sessionSent, whatsapp bool) (int, any, error) {
+	r.ownerMu.Lock()
+	defer r.ownerMu.Unlock()
+	// ownerAuthorised: the panel-made link against the hash the folder holds now, or a session this runtime made and still holds good
+	ownerSession := ""
+	if sessionSent && r.o.Access != nil {
+		if _, good, err := r.oCheck(session); err != nil {
+			return 0, nil, err
+		} else if good {
+			ownerSession = session
+		}
+	}
+	if ownerSession == "" && !r.OwnerLinkOK(link) {
+		return 403, errBody(ownerRefused), nil
+	}
+	// passkeysOn && lockState().locked, asked only where TypeScript asks it (the lock state watches the owner's number, so asking it is not free of effect)
+	locked := func() (bool, error) {
+		if r.o.Access == nil {
+			return false, nil
+		}
+		if on, err := r.oPasskeysOn(); err != nil || !on {
+			return false, err
+		}
+		l, _, err := r.oLockState()
+		return l, err
+	}
+	if ownerSession == "" && op != "owner_state" {
+		if l, err := locked(); err != nil {
+			return 0, nil, err
+		} else if l {
+			return 403, errBody("Sign in with the owner's phone to change alerts."), nil
+		}
+	}
+	switch op {
+	case "owner_subscribe":
+		ref := ""
+		if ownerSession != "" {
+			var err error
+			if ref, err = r.oPasskeyOf(ownerSession); err != nil {
+				return 0, nil, err
+			}
+		}
+		// once locked, only a PHONE (a passkey session) may subscribe: a subscription with no phone could never be ended by removing one
+		if ref == "" {
+			if l, err := locked(); err != nil {
+				return 0, nil, err
+			} else if l {
+				return 403, errBody("Sign in with your phone's fingerprint to turn on alerts."), nil
+			}
+		}
+		sub, ok := subscriptionOf(body["subscription"])
+		why := push.ShapeProblem
+		if ok {
+			why = p.Subscribe("owner", sub, "own", ref)
+		}
+		if why != "" {
+			return 400, errBody(why), nil
+		}
+		// the first phone with alerts: both ways for a shop with WhatsApp (the owner can then pick), push alone for one without
+		if p.OwnerPhones() == 1 && p.Choice() == "whatsapp" {
+			next := "push"
+			if whatsapp {
+				next = "both"
+			}
+			if err := p.SetChoice(next); err != nil {
+				return 0, nil, err
+			}
+		}
+	case "owner_unsubscribe":
+		endpoint, ok := body["endpoint"].(string)
+		if !ok {
+			return 400, errBody("Send the endpoint to stop."), nil
+		}
+		p.Unsubscribe("owner", endpoint)
+	case "owner_choice":
+		choice, _ := body["choice"].(string)
+		if !validChoice(choice) {
+			return 400, errBody("choice is one of " + strings.Join(push.OwnerChoices, ", ") + "."), nil
+		}
+		if !whatsapp && choice != "push" {
+			return 400, errBody("This shop has no WhatsApp: alerts come by push."), nil
+		}
+		if err := p.SetChoice(choice); err != nil {
+			return 0, nil, err
+		}
+	case "owner_state":
+	default:
+		return 400, errBody("op is not one this route knows."), nil
+	}
+	choice := "push"
+	if whatsapp {
+		choice = p.Choice()
+	}
+	return 200, map[string]any{"on": true, "whatsapp": whatsapp, "choice": choice, "phones": p.OwnerPhones()}, nil
 }

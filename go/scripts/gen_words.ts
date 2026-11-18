@@ -1,5 +1,7 @@
 // Writes the words the Go runtime says to the owner, packed: internal/assistant/words/<lang>.json.gz for each of en, hi, ml, kn, and words/rules.json.gz (the word lists the owner's
-// commands are read from). Run with node from the repository root:   node go/scripts/gen_words.ts          (add --check to only compare with the committed files)
+// commands are read from). The owner-control alerts to the owner's phones (modules/channels/owner-phones.ts and owner-signin.ts: a new phone, codes made, a phone removed, the
+// Operator's request, an owner-number change) are in the same packs, with the moment they carry (`dayAndTime`) described as data.
+// Run with node from the repository root:   node go/scripts/gen_words.ts          (add --check to only compare with the committed files)
 //
 // Why a generator and not a retyped table (an idea taken from HolyArrs, ideas only: no code of theirs is used): the owner's words are written once, in TypeScript
 // (modules/assistant/words*.ts and modules/listings/words.ts, in four languages), and the Go runtime must say the same thing byte for byte. So each message is RENDERED here by the
@@ -25,6 +27,8 @@ import { LANGUAGES } from "../../modules/language/languages.ts";
 import type { Language } from "../../modules/language/languages.ts";
 import { PERSONALITIES } from "../../modules/assistant/personality.ts";
 import { WORDS } from "../../modules/language/words.ts";
+import { CODES_ALERT, NEW_PHONE_ALERT, REMOVED_ALERT, dayAndTime } from "../../modules/channels/owner-phones.ts";
+import { OWNER_CHANGE_ALERT, REMOVAL_ALERT } from "../../modules/channels/owner-signin.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "..");
@@ -48,8 +52,49 @@ function say<K extends MessageId>(language: Language, id: K, data: MessageData[K
   return slots(write(id, data, language, TZ).text);
 }
 
+/**
+ * `dayAndTime` (owner-phones.ts: "28 Nov, 3:29 pm", India's time) as data, from Intl's own parts: each month's short name, and for each hour of the day the whole moment with
+ * {d} (the day), {mon} (the month) and {mm} (the minute, two digits) as slots, so the order and every literal (the comma, the space before am/pm, which Intl may make a narrow
+ * no-break space) are Intl's. Checked here against Intl on every month, every hour and several days and minutes: a locale this data cannot reproduce stops the generator.
+ */
+function stampOf(l: Language): { months: string[]; hours: Bag } {
+  const LOCALE: Record<Language, string> = { en: "en-IN", hi: "hi-IN", ml: "ml-IN", kn: "kn-IN" };
+  const f = new Intl.DateTimeFormat(LOCALE[l], { timeZone: TZ, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  const IST = 330 * 60_000;
+  const at = (month: number, day: number, hour: number, minute: number): number => Date.UTC(2026, month - 1, day, hour, minute) - IST;
+  const months: string[] = [];
+  for (let mo = 1; mo <= 12; mo++) months.push(f.formatToParts(at(mo, 28, 9, 59)).find((p) => p.type === "month")!.value);
+  const hours: Bag = {};
+  for (let h = 0; h < 24; h++) {
+    hours[String(h)] = f.formatToParts(at(11, 28, h, 59)).map((p) => (p.type === "day" ? "{d}" : p.type === "month" ? "{mon}" : p.type === "minute" ? "{mm}" : p.value)).join("");
+  }
+  for (let mo = 1; mo <= 12; mo++) for (let h = 0; h < 24; h++) for (const d of [1, 9, 28]) for (const min of [0, 7, 59]) {
+    const want = f.format(at(mo, d, h, min));
+    const got = hours[String(h)].replace("{d}", String(d)).replace("{mon}", months[mo - 1]).replace("{mm}", String(min).padStart(2, "0"));
+    if (got !== want) throw new Error(`dayAndTime in ${l} is not reproduced: ${got} for ${want}`);
+    if (want !== dayAndTime(at(mo, d, h, min), l)) throw new Error(`owner-phones.ts dayAndTime no longer writes this format (${l}): update stampOf to match it`);
+  }
+  return { months, hours };
+}
+
+/** The owner-control alerts of one language: each rendered by the real function, the moment found again and turned into {at}, the label and the Operator's name as slots. */
+function alerts(l: Language, m: Bag): void {
+  const AT = Date.UTC(2026, 10, 28, 9, 59); // 28 Nov, 3:29 pm in India: a moment whose text is found once in each alert
+  const atText = dayAndTime(AT, l);
+  const withAt = (text: string): string => { if (!text.includes(atText)) throw new Error(`the moment is not in: ${text}`); return slots(text.replaceAll(atText, "{at}")); };
+  // a label is optional: TypeScript leaves out " (label)" when there is none, so each alert has both forms
+  for (const [key, f] of [["new_phone", NEW_PHONE_ALERT], ["codes_made", CODES_ALERT], ["phone_removed", REMOVED_ALERT]] as const) {
+    m[`alert.${key}`] = withAt(f(AT, "")[l]);
+    m[`alert.${key}.label`] = withAt(f(AT, S("label"))[l]);
+  }
+  // the Operator's request names who asked, or "Your Operator" when the panel's file names nobody
+  m["alert.removal_asked"] = slots(REMOVAL_ALERT("")[l]);
+  m["alert.removal_asked.by"] = slots(REMOVAL_ALERT(S("by"))[l]);
+  m["alert.owner_change_asked"] = slots(OWNER_CHANGE_ALERT[l]);
+}
+
 /** One language's messages. */
-function messages(l: Language): { m: Bag; date: unknown; time: Bag; cat: Bag } {
+function messages(l: Language): { m: Bag; date: unknown; time: Bag; cat: Bag; stamp: { months: string[]; hours: Bag } } {
   const m: Bag = {};
   const D = { year: 2026, month: 11, day: 18 }; // a date to be found again in the text and turned into {date}
   const dateText = formatDate(D, l);
@@ -110,7 +155,8 @@ function messages(l: Language): { m: Bag; date: unknown; time: Bag; cat: Bag } {
   for (let h = 0; h < 24; h++) time[String(h)] = formatTime({ hour: h, minute: 59 }, l).replace(":59", ":{mm}");
   const cat: Bag = {};
   for (const [k, v] of Object.entries(LISTING_WORDS[l].categories)) cat[k] = v;
-  return { m, date: { weekdays, months, comma }, time, cat };
+  alerts(l, m);
+  return { m, date: { weekdays, months, comma }, time, cat, stamp: stampOf(l) };
 }
 
 /** The word lists the rules read the owner's commands from, taken out of the TypeScript source (they are `const`s that are not exported, and the TypeScript is not changed for this). */

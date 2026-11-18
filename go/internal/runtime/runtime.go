@@ -38,8 +38,6 @@ type Options struct {
 	RecordKey []byte
 	Log       func(string)
 	Now       func() int64
-	// Push is the shop's web push for the owner-control rules (owner.go OwnerPush); nil: the Go runtime serves no push yet
-	Push OwnerPush
 	// OnPanic is the shared host's: a panic in a request, in the runner (a step or the clock) or in the push sender is handed to it and the goroutine goes on, instead of the process
 	// ending. Unset (the single-shop binary): nothing is recovered in the runner, exactly as before.
 	OnPanic func(where string, v any)
