@@ -1531,3 +1531,17 @@ The one test pass after W1, W1b, W2 and W3 were merged found these in the chat p
 **Decisions to know.** The owner's switch, place and pet-shop registration are kept in the shop's own state (not `settings.json`, which only the deployer writes), so no second settings writer exists. The storefront is its own page (`/shop`), because the booking, order and fee pages and the chat must stay `noindex`; the front page gets a button to it. "Ask about this" opens the chat with the listing's name in the greeting and in the composer, so the guest's first line tells the owner which listing; no new event field was needed. The morning question is a card ("Still have it? Yes / Sold"), not a change to the approved morning template. The feed follows `specs/shop-feed.md` (without the signature, the check and the Agent Card, which a later part adds).
 
 **Not tested on a real model or provider:** the drafting call is tested on a scripted fake only.
+
+
+## The chat after the 18 Nov design review
+
+The lead's screenshot review of the chat page (every state, 360 to 414 px, four languages, light and dark, and 200% text) found four things, now fixed. Detail for outside developers: `channels/CHAT.md`.
+
+- **Words.** The top note is shorter: "The shop's assistant replies here. A booking or a payment counts once the shop's record shows it." The retention line is its own smaller line, and no longer says "kept on the shop's phone" (the shop's server keeps it): "The shop keeps this chat for 30 days." Hindi, Malayalam and Kannada are machine-written and are on the review sheets through `chatFlat`.
+- **Nothing under the bottom bar.** The old page was a fixed-height column with a scrolling thread box; at large text the head and the bar left the conversation about 40 px. The page now scrolls as one and the bar (notices and composer) is `position: sticky; bottom: var(--kb)`; the script fills `--kb` from the visual viewport so the bar rides above the phone's keyboard. Chosen over a bar-height measurement with a `ResizeObserver` because the bar is in the flow, so its height needs no counting. The page opens at the latest line and stays there while the font, the keep box and other late parts settle, until the guest scrolls.
+- **Large text.** The head wraps (face, name and mood, light/dark switch; then "Call the shop" and the language button) with no absolute positions. The composer wraps: the box keeps 12em (or the full row on a narrower phone), the microphone and Send sit below it; the microphone moved after the box in the markup. Measured at 200%: no overlap, no sideways scroll, every tap target 44 px or more.
+- **The screens server** shows the truth: Orders and Fees have their own sample threads (Fees with `?parent=1` is a parent's own fee); `/id/state` reports `work` 1 only where the thread has a booking, an order or a fee; the alerts state gets a stand-in `/sw.js` served as script, so there is no console error; the paints page has `<html lang>`.
+- `channels/scripts/review-capture.mjs` is the review capture, now in the repository with a `--playwright-from` option.
+
+Not tested on a real phone: the keyboard offset (`--kb`) was reasoned from the visual viewport API and not seen on iOS or Android hardware.
+
