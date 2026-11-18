@@ -242,13 +242,22 @@ type execer interface {
 	Query(string, ...any) (*sql.Rows, error)
 }
 
-// tx runs `work` in one transaction (BEGIN IMMEDIATE, from the file's _txlock); an error rolls it back.
+// tx runs `work` in one transaction (BEGIN IMMEDIATE, from the file's _txlock); an error rolls it back, and so does a panic (a DBError from a helper), which then goes on:
+// a transaction left open would hold the file's one connection, and every later owner call would wait for ever instead of failing.
 func (a *Access) tx(work func(x execer) error) error {
 	tx, err := a.db.Begin()
 	if err != nil {
 		return err
 	}
-	if err := work(tx); err != nil {
+	done := false
+	defer func() {
+		if !done {
+			_ = tx.Rollback()
+		}
+	}()
+	err = work(tx)
+	done = true
+	if err != nil {
 		_ = tx.Rollback()
 		return err
 	}

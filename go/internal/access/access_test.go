@@ -421,3 +421,44 @@ func TestDismissTakesTheMomentTheBannerShowed(t *testing.T) {
 		t.Errorf("a phone added after the banner showed is still news: %+v", v.Announce)
 	}
 }
+
+func TestADatabaseFailureInsideATransactionLeavesTheFileUsable(t *testing.T) {
+	a := open(t)
+	func() {
+		defer func() {
+			if p := recover(); p == nil {
+				t.Error("the DBError goes on, as TypeScript's throw does")
+			}
+		}()
+		_ = a.tx(func(x execer) error {
+			if _, err := x.Exec("INSERT INTO wrong_codes (at) VALUES (1)"); err != nil {
+				return err
+			}
+			panic(DBError{sql.ErrConnDone})
+		})
+	}()
+	// the transaction was rolled back and the one connection given back: the next call answers (it would wait for ever otherwise)
+	finished := make(chan int, 1)
+	go func() {
+		var n int
+		_ = a.db.QueryRow("SELECT count(*) FROM wrong_codes").Scan(&n)
+		finished <- n
+	}()
+	select {
+	case n := <-finished:
+		if n != 0 {
+			t.Errorf("the half-done transaction was kept: %d rows", n)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the file's one connection is still held by the transaction")
+	}
+	// and a rule that meets a failure stops with it rather than reading it as "no row"
+	var err error
+	func() {
+		defer Recover(&err)
+		found(sql.ErrConnDone)
+	}()
+	if err == nil {
+		t.Error("found() must not read a failure as no row")
+	}
+}
