@@ -1617,6 +1617,42 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.tuition.prefill.batches.2.names` | कक्षा 9 | Class 9 |  |
 | `preset.tuition.prefill.batches.3.names` | कक्षा 10 | Class 10 |  |
 | `keep.lost` | Rahul का पुराना बकाया और पहले की दूसरी जानकारी नहीं रखी गई, क्योंकि माता-पिता का नंबर बदल गया। अपने बिल्डर से उन्हें फिर से जुड़वाएँ। | Rahul's old dues and other earlier details were not kept, because the parent's number changed. Ask your builder to add them again. |  |
+| `leave.assistant.leave_file_asked` | हो गया। आपकी दुकान की फ़ाइल करीब आधे घंटे में आपके ऐप पेज पर होगी, उसे लेने का बटन भी। बटन एक बार और 3 दिन तक चलता है। इसके लिए आपके Operator की ज़रूरत नहीं है, और उनसे पूछा भी नहीं जाता। | Done. Your shop's file will be on your app page in about half an hour, with a button to take it. The button works once and for 3 days. You do not need your Operator for this, and they are not asked. |  |
+| `leave.assistant.leave_file_again` | आपने थोड़ी देर पहले दुकान की फ़ाइल माँगी थी। वह आ रही है; थोड़ी देर में अपना ऐप पेज देखिए। | You asked for your shop's file a short while ago. It is on its way; look on your app page in a little while. |  |
+| `leave.assistant.leave_operator_asked` | हो गया। मैंने आपके Operator को बता दिया है कि आप दूसरा Operator चाहते हैं। आपकी हाँ के बिना कुछ नहीं बदलता: आपका Operator नए व्यक्ति का नाम देता है, आपको एक कोड मिलता है, और आप उसे यहाँ "move" और कोड लिखकर भेजते हैं। 14 दिन में कुछ न हुआ तो Geometer आपकी मदद करेगा। | Done. I have told your Operator that you want another one. Nothing changes until you agree: your Operator names the new person, you get a code, and you send it here as "move" and the code. If nothing happens in 14 days, Geometer will help you. |  |
+| `leave.assistant.leave_operator_again` | आपने थोड़ी देर पहले Operator बदलने को कहा था, और उन्हें बता दिया गया है। कोड भेजने तक कुछ नहीं बदलता। | You asked to change your Operator a short while ago, and they have been told. Nothing changes until you send the code. |  |
+| `leave.page.title` | आपकी दुकान आपकी है | Your shop is yours |  |
+| `leave.page.intro` | जो कुछ आपका है उसे आप कभी भी ले सकते हैं, या दूसरा Operator माँग सकते हैं। आपके Operator से इजाज़त नहीं माँगी जाती। | You can take everything that is yours, or ask for another Operator, whenever you like. Your Operator is not asked for permission. |  |
+| `leave.page.fileButton` | मेरी दुकान की फ़ाइल | Get my shop's file |  |
+| `leave.page.fileNone` | आपकी दुकान की सेटिंग, रिकॉर्ड और रिपोर्ट की एक फ़ाइल, अपने पास रखने के लिए। वह करीब आधे घंटे में यहाँ होगी। | A file with your shop's settings, records and reports, to keep. It will be here in about half an hour. |  |
+| `leave.page.fileAsked` | माँग ली गई। फ़ाइल करीब आधे घंटे में यहाँ होगी। | Asked. Your file will be here in about half an hour. |  |
+| `leave.page.fileReady` | आपकी फ़ाइल तैयार है। नीचे का बटन एक बार चलता है, 21 Nov, 3:30 pm तक। | Your file is ready. The button below works once, until 21 Nov, 3:30 pm. |  |
+| `leave.page.take` | फ़ाइल लें | Take the file |  |
+| `leave.page.fileTaken` | आपने फ़ाइल ले ली। नई चाहिए तो फिर माँगिए। | You took your file. Ask again for a new one. |  |
+| `leave.page.fileExpired` | वह फ़ाइल पुरानी हो गई। नई के लिए फिर माँगिए। | That file ran out. Ask again for a new one. |  |
+| `leave.page.operatorButton` | मेरा Operator बदलें | Change my Operator |  |
+| `leave.page.operatorNote` | आपके Operator को तुरंत बताया जाता है। आपकी हाँ के बिना कुछ नहीं बदलता: आपको एक कोड मिलेगा जिसे दुकान के WhatsApp नंबर पर भेजना है। 14 दिन में कुछ न हुआ तो Geometer आपकी मदद करेगा। | Your Operator is told at once. Nothing changes until you agree: you will get a code to send to the shop's WhatsApp number. If nothing happens in 14 days, Geometer will help you. |  |
+| `leave.page.asked` | हो गया। माँग ली गई। ब्यौरा नीचे की बातचीत में है। | Done. Asked. Details are in the chat below. |  |
+| `leave.panel.heading` | मालिक की अपनी माँगें | The owner's own asks |  |
+| `leave.panel.fileAsked` | मालिक ने 18 Nov को अपनी दुकान की फ़ाइल माँगी। वह उन्हीं के लिए बनती है और सिर्फ़ उन्हीं को दिखती है। आपको कुछ करने की ज़रूरत नहीं। | The owner asked for their shop's file on 18 Nov. It is made for them and shown only to them. You do not need to do anything. |  |
+| `leave.panel.fileReady` | फ़ाइल मालिक के ऐप में तैयार है, 21 Nov तक। | The file is ready in the owner's app, until 21 Nov. |  |
+| `leave.panel.fileTaken` | मालिक ने अपनी फ़ाइल ले ली। | The owner took their file. |  |
+| `leave.panel.fileExpired` | मालिक के लेने से पहले फ़ाइल की अवधि पूरी हो गई। नई माँग पर नई बनेगी। | The file ran out before the owner took it. A new ask makes a new one. |  |
+| `leave.panel.fileProblem` | फ़ाइल अभी बन नहीं सकी: The record is not ready yet. कुछ मिनट में फिर कोशिश होगी। | The file could not be made yet: The record is not ready yet. It is tried again in a few minutes. |  |
+| `leave.panel.fileNote` | उनकी फ़ाइल उन्हीं की है। आपसे इजाज़त नहीं माँगी जाती और आप इसे रोक नहीं सकते। | Their file is theirs. You are not asked for permission and you cannot stop it. |  |
+| `leave.panel.operatorAsked` | मालिक ने 18 Nov को दूसरा Operator माँगा। | The owner asked for another Operator on 18 Nov. |  |
+| `leave.panel.operatorDo` | कृपया नीचे के बटन से दुकान को उस Operator के पास भेजिए जो मालिक चाहते हैं। कुछ भी बदलने से पहले मालिक अपने कोड से हामी भरते हैं। | Please move the shop to the Operator the owner wants, with the button below. The owner still agrees with their own code before anything changes. |  |
+| `leave.panel.operatorStart` | इस दुकान को दूसरे Operator को दें | Move this shop to another Operator |  |
+| `leave.panel.operatorWaiting` | एक बदलाव मालिक के कोड का इंतज़ार कर रहा है। | A move is waiting for the owner's code. |  |
+| `leave.panel.operatorClock` | कुछ न हुआ तो 9 दिन में Geometer को यह दुकान दिखेगी, और वह मालिक की मदद करेगा। | If nothing is done, Geometer is shown this shop in 9 days, and will help the owner. |  |
+| `leave.panel.strandedNote` | इन मालिकों ने 14 दिन से ज़्यादा पहले दूसरा Operator माँगा था और कुछ नहीं हुआ। Geometer उन्हें Operator ढूँढने में मदद करता है, ज़रूरत हो तो दुकान के बैकअप से। | These owners asked for another Operator more than 14 days ago and nothing has happened. Geometer helps them find one, from the shop's backups if needed. |  |
+| `leave.panel.strandedTitle` | दूसरे Operator का इंतज़ार करते मालिक | Owners waiting for another Operator |  |
+| `leave.panel.strandedNone` | कोई मालिक इंतज़ार में नहीं है। | No owner is waiting. |  |
+| `leave.panel.strandedRow` | Glow Salon: 1 Nov को माँगा। अभी का Operator: Divya। | Glow Salon: asked on 1 Nov. Operator now: Divya. |  |
+| `leave.panel.fleetTold` | Geometer की बिलिंग में अब दुकान Ravi Digital के पास है। | Geometer's billing now has the shop with Ravi Digital. |  |
+| `leave.panel.fleetWaiting` | Geometer की बिलिंग को अभी बताया नहीं जा सका। हर कुछ मिनट में फिर कोशिश होती है; तब तक दुकान का बिल पुराने Operator को जाता है। | Geometer's billing has not been told yet. It is tried again every few minutes; until then the shop is still billed to the old Operator. |  |
+| `leave.panel.fleetRefused` | Geometer की बिलिंग ने बदलाव नहीं लिया: That Operator does not serve here yet. support को लिखिए, वे हाथ से ठीक कर देंगे। | Geometer's billing did not take the move: That Operator does not serve here yet. Write to support and they will fix it by hand. |  |
+| `leave.panel.fleetNoId` | Ravi Digital के खाते में Geometer के पास Operator आईडी नहीं है, इसलिए बिलिंग को नहीं बताया गया। support को लिखिए, वे हाथ से ठीक कर देंगे। | Ravi Digital's account has no Operator id with Geometer, so billing was not told. Write to support and they will fix it by hand. |  |
 | `chat.list.yourChats` | आपकी चैट | Your chats |  |
 | `chat.list.installHead` | Streetlist को अपने फ़ोन पर रखें | Keep Streetlist on your phone |  |
 | `chat.list.installBody` | एक टैप में अपनी चैट खोलें, और दुकान का जवाब आते ही जानें। | Open your chats in one tap, and hear when a shop replies. |  |
