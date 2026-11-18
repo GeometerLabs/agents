@@ -117,7 +117,8 @@ function mergeEntry(built: Obj, saved: Obj | undefined, rule: ListRule, language
       entry.names = { ...clone(Object.fromEntries(Object.entries(built.names as Obj).filter(([l]) => languages.includes(l)))), ...clone(saved.names as Obj) };
     }
   }
-  return entry;
+  // the keys stay in the order the saved entry had (new ones after), so an entry that changed nothing is the same bytes
+  return Object.fromEntries([...Object.keys(saved).filter((k) => k in entry), ...Object.keys(entry).filter((k) => !(k in saved))].map((k) => [k, entry[k]]));
 }
 
 /** The same value with every object's keys in one fixed order, so two values that say the same thing compare equal whatever order their keys came in. */
