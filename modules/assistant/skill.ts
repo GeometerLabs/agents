@@ -48,7 +48,11 @@ export type Proposal =
   | { kind: "answer"; case: string; answer: "yes" | "no"; itemKind: string }
   | { kind: "message"; case: string; words: string }
   /** Tighten a declared limit (limits-card.ts): `case` is "limit:<id>", `to` the value read from the owner's words by rule. */
-  | { kind: "limit"; case: string; to: number };
+  | { kind: "limit"; case: string; to: number }
+  /** Show a drafted listing on the shop's page (listing-card.ts): `case` is "listing:l-3". */
+  | { kind: "listing"; case: string }
+  /** "Still have it?" about a live listing the owner last confirmed at `confirmedMs`: yes renews it, no marks it sold (listing-card.ts). */
+  | { kind: "listing_ask"; case: string; confirmedMs: number };
 
 /** A proposal checked against the store as it is now: the exact action and what the card shows, or why it cannot be done. */
 export type Prepared =

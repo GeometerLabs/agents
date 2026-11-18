@@ -48,6 +48,9 @@ import { ownerLinkGone, ownerPage } from "./owner-page.ts";
 import type { OwnerPageInput } from "./owner-page.ts";
 import { LEAVE_PAGE } from "./words-leave.ts";
 import { WORDS as LIMITS_PAGE_WORDS, ownerLimitsPage } from "./owner-limits-page.ts";
+import { listingsPolicy, ownerListingsPage } from "./owner-listings-page.ts";
+import { storefrontRoute } from "./storefront.ts";
+import { LISTING_WORDS } from "../listings/words.ts";
 import type { OwnerLimitsView } from "./owner-limits-page.ts";
 import { DOCUMENT_SUB, documentHtml, receiptsBox, receiptsOf } from "./receipts.ts";
 import { exportPeriods } from "../accounting/periods.ts";
@@ -120,6 +123,26 @@ export function withContact(backend: ChannelBackend, pages: (() => PagesFile | u
   const add = <T extends { shop: { contact?: { phone?: string; map?: string; chat?: string } } }>(o: T): T => {
     const p = pages();
     return p && (p.phone || p.map || chatHref) ? { ...o, shop: { ...o.shop, contact: { ...(p.phone ? { phone: p.phone } : {}), ...(p.map ? { map: p.map } : {}), ...(chatHref ? { chat: chatHref } : {}) } } } : o;
+  };
+  return {
+    ...backend,
+    offer: async (q) => add(await backend.offer(q)),
+    ...(backend.orderOffer ? { orderOffer: async () => add(await backend.orderOffer!()) } : {}),
+    ...(backend.feesOffer ? { feesOffer: async () => add(await backend.feesOffer!()) } : {}),
+  };
+}
+
+/**
+ * Block S: a shop that shows listings has one clear button on its front page to "What we have" (shop-face.ts), with how many it shows now. Added to every offer here, like the contact
+ * (withContact), and never from the runtime: the count is what the public read says now. A shop with no listings, or whose runtime cannot be asked, gets no button.
+ */
+export function withListings(backend: ChannelBackend, href: string): ChannelBackend {
+  if (!backend.listings) return backend;
+  const add = async <T extends { shop: { listings?: { count: number; href: string } } }>(o: T): Promise<T> => {
+    try {
+      const n = (await backend.listings!())?.listings.length ?? 0;
+      return n > 0 ? { ...o, shop: { ...o.shop, listings: { count: n, href } } } : o;
+    } catch { return o; }
   };
   return {
     ...backend,
@@ -286,7 +309,9 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // item 11i: every offer a page is drawn from carries the shop's public face (withFace)
     const withPicture: FrontShop = found.character ? { ...doorShop, backend: withFace(doorShop.backend, found.character) } : doorShop;
     // batch 5: and the shop's phone and map link (withContact)
-    const shop: FrontShop = found.pages ? { ...withPicture, backend: withContact(withPicture.backend, found.pages, withPicture.backend.chat ? `${doorShop.publicUrl}/chat` : undefined) } : withPicture;
+    const withContacts: FrontShop = found.pages ? { ...withPicture, backend: withContact(withPicture.backend, found.pages, withPicture.backend.chat ? `${doorShop.publicUrl}/chat` : undefined) } : withPicture;
+    // block S: and the button to "What we have" when the shop shows listings
+    const shop: FrontShop = { ...withContacts, backend: withListings(withContacts.backend, `${doorShop.publicUrl}/shop`) };
     if (pages?.partner) partnerOf.set(res, pages.partner);
     // batch 3: name the shop's Operator for the door, whose error pages (a shop that is down) have nobody else to ask; the door keeps it and never passes it on
     if (typeof door === "string" && pages?.partner) res.setHeader(CONTACT_HEADER, Buffer.from(JSON.stringify({ n: pages.partner.name, p: pages.partner.phone }), "utf8").toString("base64url"));
@@ -309,6 +334,9 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // W1: the chat on the shop's page, for every kind of shop, before the shop's own customer routes (an Orders or Fees shop would not otherwise reach it).
     // `viaDoor`: the page is served on the Streetlist pages domain, the only place that shows the Streetlist mark.
     if (rest === "/chat" || rest.startsWith("/chat/")) return chatRoute(kit, { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}), viaDoor: doorShop !== found });
+
+    // block S: the storefront ("What we have"), its open feed and its photos, for every kind of shop (a Stock orders shop shows none by default, and these then answer not-found)
+    if (rest === "/shop" || rest === "/listings.json" || rest.startsWith("/listings/photo/")) return storefrontRoute(kit, { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}) });
 
     // item 11h: an Orders shop's and a Fees centre's customer side are their own; the owner's page and the QR code below are every shop's
     const ownerPath = /^\/o\/[^/]+(\/.*)?$/u.test(rest) || rest === "/owner" || rest.startsWith("/owner/");
@@ -631,7 +659,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const method = req.method ?? "GET";
     const token = o.cred;
     const base = o.base;
-    const json = sub.startsWith("/api/") || sub === "/voice" || sub === "/push/subscribe" || sub === "/push/unsubscribe";
+    const json = sub.startsWith("/api/") || sub === "/voice" || sub === "/listings/photo" || sub === "/push/subscribe" || sub === "/push/unsubscribe";
     const fallback: Language = (LANGUAGES.includes(url.searchParams.get("lang") as Language) ? url.searchParams.get("lang") : "en") as Language;
     const gone = () => {
       if (o.onGone) return o.onGone(); // a session that ended is not a guess: no wrong count, back to sign in
@@ -643,14 +671,16 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     /** A signed-in owner's POST must carry the session's form token; the panel's link is its own secret and needs none. */
     const csrfOk = (given: unknown) => o.csrf === undefined || (typeof token === "object" && "session" in token && csrfMatches(token.session, given));
     // item 11e: the owner's app lives at the same base: the page also at "<base>/" (a service worker controls only pages inside its scope, <base>/), and its four routes
-    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST", "/leave": "POST" };
+    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/listings": "GET", "/listings/op": "POST", "/listings/photo": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST", "/leave": "POST" };
     // the accountant's files: <owner app>/accounting/<period>/<file>, for the signed-in owner's session only (handled below, once the session is known good)
     const accounting = /^\/accounting\/([^/]+)(?:\/([^/]+))?$/u.exec(sub);
+    // block S: the owner's own view of one of their photos, by its id (a draft's, a waiting one): <owner app>/listings/p/<id>
+    const ownPhoto = /^\/listings\/p\/(ph-[0-9a-f]{12})$/u.exec(sub);
     // "Get my shop's file": <owner app>/file/<id>, the owner's SESSION only, once (handled below with the accountant's files)
     const fileRoute = /^\/file\/([A-Za-z0-9_-]{32,64})$/u.exec(sub);
-    if (accounting || fileRoute) { if (method !== "GET") return sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" }); }
+    if (accounting || ownPhoto || fileRoute) { if (method !== "GET") return sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: "GET" }); }
     else if (routes[sub] === undefined) return json ? sendJson(res, 404, { error: { code: "not_found", message: "GET /api/v1/state or POST /api/v1/answer." } }) : sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
-    if (!accounting && !fileRoute && routes[sub] !== method) return json ? sendJson(res, 405, { error: { code: "bad_request", message: `Use ${routes[sub]} here.` } }, { allow: routes[sub] }) : sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: routes[sub] });
+    if (!accounting && !ownPhoto && !fileRoute && routes[sub] !== method) return json ? sendJson(res, 405, { error: { code: "bad_request", message: `Use ${routes[sub]} here.` } }, { allow: routes[sub] }) : sendHtml(res, 405, "<!doctype html><p>Use the page's buttons.</p>", { allow: routes[sub] });
     if (!limiter.take(method === "POST" ? "act" : "read", address)) return slow("300");
     if (method === "POST" && !sameOrigin(req, shop)) return json ? sendJson(res, 403, { error: { code: "bad_request", message: "Calls from another site's page are refused." } }) : sendHtml(res, 403, "<!doctype html><p>Forms from another site are refused.</p>");
     const state = await ownerState(shop, token);
@@ -760,6 +790,59 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       if (r.status === 403 && r.body.state !== "passkey_needed") return gone();
       return redirect(res, `${base}/limits?lang=${language}&n=${r.status === 200 ? "asked" : "refused"}`);
     }
+    // ---- block S: the owner's listings page. Everything here is the owner's own: the runtime checks their link or session again on every call ----
+    if (sub === "/listings" || sub === "/listings/op" || sub === "/listings/photo" || ownPhoto) {
+      const backend = shop.backend;
+      if (!backend.ownerListings) return json ? sendJson(res, 404, { error: { code: "not_found", message: "This shop has no listings." } }) : sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+      if (ownPhoto) {
+        const got = await backend.listingPhoto?.(ownPhoto[1], token);
+        if (!got) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+        res.writeHead(200, { "content-type": got.type, "content-length": got.bytes.length, "x-content-type-options": "nosniff", "cache-control": "private, max-age=600", "content-security-policy": "default-src 'none'", "x-robots-tag": "noindex" });
+        res.end(got.bytes);
+        return;
+      }
+      if (sub === "/listings/photo") {
+        const type = String(req.headers["content-type"] ?? "").split(";")[0].trim().toLowerCase();
+        if (type !== "image/jpeg" && type !== "image/webp") return sendJson(res, 415, { error: "Send the photo as image/jpeg or image/webp." });
+        if (!csrfOk(req.headers[CSRF_HEADER])) return sendJson(res, 403, { error: `Send the session's form token in ${CSRF_HEADER}.` });
+        const bytes = await readBytes(req, 1_600_000);
+        if (!bytes || bytes.length === 0) return sendJson(res, 413, { error: LISTING_WORDS[language].refusal.photo.too_big, why: "too_big" });
+        const r = await backend.ownerPhoto!(token, { bytes, type });
+        if (r.status === 403) return gone();
+        const why = typeof r.body.why === "string" ? r.body.why : undefined;
+        return sendJson(res, r.status === 200 ? 200 : r.status, r.status === 200 ? { photo: r.body.photo } : { why, error: why && why in LISTING_WORDS[language].refusal.photo ? LISTING_WORDS[language].refusal.photo[why as "empty"] : LISTING_WORDS[language].refusal.photo.unreadable });
+      }
+      if (sub === "/listings") {
+        const got = await backend.ownerListings(token);
+        if (got.status === 403) return gone();
+        if (got.status !== 200) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+        const nonce = randomUUID().replace(/-/gu, "");
+        const n = url.searchParams.get("n") ?? undefined;
+        return sendHtml(res, 200, ownerListingsPage({ base, language, view: got.body as unknown as Parameters<typeof ownerListingsPage>[0]["view"], nonce, ...(o.csrf ? { csrf: o.csrf } : {}), ...(n && /^[a-z_]{1,30}$/u.test(n) ? { notice: n } : {}) }), { "x-robots-tag": "noindex", "content-security-policy": listingsPolicy(base, nonce) });
+      }
+      // POST /listings/op: one form, one op; the runtime checks it against the shop's rules first and says why not
+      const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
+      if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
+      const num = (k: string): number | undefined => { const v = (form.get(k) ?? "").trim(); return v === "" || !Number.isFinite(Number(v)) ? undefined : Number(v); };
+      const words = (k: string): string | null => { const v = (form.get(k) ?? "").trim(); return v === "" ? null : v; };
+      const id = form.get("id") ?? "";
+      const kind = form.get("op");
+      let op: Record<string, unknown> | undefined;
+      if (kind === "publish_form") op = { op: kind, category: form.get("category") ?? "", title: (form.get("title") ?? "").trim(), photos: form.getAll("photos").slice(0, 3), ...(num("price") !== undefined ? { priceInr: num("price") } : {}), ...(words("note") ? { priceNote: words("note") } : {}) };
+      else if (kind === "edit") op = { op: kind, id, ...(words("title") ? { title: words("title") } : {}), category: form.get("category") ?? undefined, priceInr: num("price") ?? null, priceNote: words("note") };
+      else if (kind === "confirm") op = { op: kind, id, confirmedMs: Number(form.get("confirmedMs")) };
+      else if (kind === "sold" || kind === "remove") op = { op: kind, id };
+      else if (kind === "shop") {
+        const lat = num("lat");
+        const lon = num("lon");
+        op = { op: kind, visible: form.get("visible") === "1", town: words("town"), pincode: words("pincode"), registration: words("registration"), point: lat !== undefined && lon !== undefined ? { lat, lon } : null };
+      }
+      if (!op) return redirect(res, `${base}/listings?lang=${language}&n=empty`);
+      const r = await backend.ownerListings(token, { id: randomUUID(), op });
+      if (r.status === 403) return gone();
+      const why = typeof r.body.why === "string" && /^[a-z_]{1,30}$/u.test(r.body.why) ? r.body.why : "empty";
+      return redirect(res, `${base}/listings?lang=${language}&n=${r.status === 200 ? "saved" : why}`);
+    }
     if (app && sub === "/talk") {
       const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
       if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
@@ -824,7 +907,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), bare: true }) : undefined;
     // item 11i: the owner's app shows the character in the shop's real mood (all five moods: this is the owner's own view)
     const facePic = state.view.app ? shop.character?.()?.picture(state.view.app.face, "svg") : undefined;
-    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(typeof token === "object" && "session" in token && shop.backend.accountantFiles ? { exportLinks: { base: `${base}/accounting` } } : {}), ...(leave ? { leave } : {}), ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(shop.backend.limits ? { limitsLink: { href: `${base}/limits?lang=${language}`, label: LIMITS_PAGE_WORDS[language].title } } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
+    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(typeof token === "object" && "session" in token && shop.backend.accountantFiles ? { exportLinks: { base: `${base}/accounting` } } : {}), ...(leave ? { leave } : {}), ...(app && shop.backend.ownerListings ? { listingsLink: { href: `${base}/listings?lang=${language}`, label: LISTING_WORDS[language].owner.link } } : {}), ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(shop.backend.limits ? { limitsLink: { href: `${base}/limits?lang=${language}`, label: LIMITS_PAGE_WORDS[language].title } } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
   }
 
   return (req, res) => {

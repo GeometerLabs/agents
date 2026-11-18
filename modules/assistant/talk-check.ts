@@ -15,6 +15,7 @@ import type { CheckFacts } from "../language/check.ts";
 import { languageOfScript, plain } from "../language/format.ts";
 import type { Language } from "../language/languages.ts";
 import { BANNED } from "../report/claims.ts";
+import { hasHealthClaim } from "../listings/listings.ts";
 import type { TalkAnswer, TalkSource } from "./talk-types.ts";
 
 export type CheckNumber = 1 | 2 | 3 | 4 | 5;
@@ -105,6 +106,13 @@ export function checkTalk(i: CheckInput): TalkCheck {
         const backing = s.sources.map((id) => byId.get(id)!).filter((src) => src.kind !== "record" && claimKindsOf(src.text).includes(kind));
         if (backing.length === 0) return fail(3, `a sentence makes a ${kind.replace(/_/gu, " ")} claim that no note for everyone and no setting says`);
       }
+    }
+  }
+
+  // 3b. pets (block S): where the shop lists animals, a reply never says an animal is healthy, vaccinated or of a pure breed unless a listing it names says so (as "The owner says")
+  if (i.role === "customer" && i.scope.some((x) => x.id.startsWith("s:l-") && x.text.includes("Category: pets"))) {
+    for (const s of i.answer.sentences) {
+      if (hasHealthClaim(s.text) && !s.sources.some((id) => byId.get(id)?.kind !== "record" && hasHealthClaim(byId.get(id)?.text ?? ""))) return fail(3, "a sentence says an animal is healthy, vaccinated or of a pure breed, which no listing says");
     }
   }
 

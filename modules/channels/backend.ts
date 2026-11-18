@@ -1,6 +1,7 @@
 // How the public front (front.ts) reaches a shop's runtime and its approvals relay: the shapes they answer with, and small HTTP clients for them. Used by front.ts, and
 // by tests that stand in for a runtime. The front holds the runtime's CHANNEL token (never the inbox's) and the relay's token; neither lets it act for the owner without
 // the owner's link, which the runtime and the relay each check against their own copy of its hash (owner-link.ts).
+import type { PublicListingsRead } from "../listings/kit.ts";
 import type { Language } from "../language/languages.ts";
 import type { ChannelEvent } from "./events.ts";
 import { OWNER_LINK_HEADER } from "./owner-link.ts";
@@ -42,6 +43,8 @@ export interface ShopInfo {
    */
   character?: { name?: string; face?: Face; picture?: string };
   /** Batch 5: the shop's own phone and map link, from its pages.json (the front adds them to every offer: front.ts withContact), so every customer page can show them. */
+  /** Block S: the shop shows listings (the front adds this to every offer, front.ts withListings): how many, and where "What we have" is. Never from the runtime. */
+  listings?: { count: number; href: string };
   contact?: { phone?: string; map?: string; /** The shop's chat address (17 Nov 2026): the "Chat with us" button on every customer page. Added by the front, only for a shop that has a chat. */ chat?: string };
 }
 export interface Offer { shop: ShopInfo; services: OfferService[]; serviceId?: string; days?: { date: string; starts: number[] }[]; calendarUnread?: boolean }
@@ -189,6 +192,16 @@ export interface ChannelBackend {
    * made with a passkey). With `post`, a change; the runtime refuses it (403 `passkey_needed`) unless the session was made with a passkey. Left out: no limits page.
    */
   limits?(owner: OwnerCred, post?: { id: string; limit: string; to: number }): Promise<{ status: number; body: Record<string, unknown> }>;
+  /**
+   * Block S, the shop's listings. `listings`: what the PUBLIC may see (the runtime decides: live, not hidden, none drafted or sold) and the owner's switch and place; null when the
+   * shop has no listings. `listingPhoto`: one photo's bytes, only a public listing's (or, with the owner's credential, any the shop holds). `ownerListings`: the owner's listings page's
+   * data, or with `post` an op (the runtime refuses what the shop's rules refuse: 422 with `why`). `ownerPhoto`: a photo from the owner's app, passed to the runtime, which reads the
+   * bytes, checks and cleans them (modules/listings/photo.ts). Left out: no listings.
+   */
+  listings?(): Promise<PublicListingsRead | null>;
+  listingPhoto?(id: string, owner?: OwnerCred): Promise<{ type: string; bytes: Buffer } | null>;
+  ownerListings?(owner: OwnerCred, post?: { id: string; op: Record<string, unknown> }): Promise<{ status: number; body: Record<string, unknown> }>;
+  ownerPhoto?(owner: OwnerCred, photo: { bytes: Buffer; type: string }): Promise<{ status: number; body: Record<string, unknown> }>;
   /**
    * Items 11d and 11e: a recording from the owner's page, passed to the runtime as it came (the runtime holds it in memory only). "off": the shop's assistant has no
    * voice service; "refused": the owner's credential is not good.
@@ -370,6 +383,27 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
     },
     async signout(session) {
       await json<unknown>(await call(`${o.url}/internal/channel/owner-signout`, { method: "POST", headers: headers({ session }) }, timeout));
+    },
+    async listings() {
+      const r = await call(`${o.url}/internal/channel/listings`, { headers: headers() }, timeout);
+      if (r.status === 404) return null;
+      return json<PublicListingsRead>(r);
+    },
+    async listingPhoto(id, owner) {
+      const r = await call(`${o.url}/internal/channel/listing-photo?id=${encodeURIComponent(id)}`, { headers: headers(owner) }, timeout);
+      if (r.status === 404 || r.status === 400) return null;
+      if (!r.ok) throw new BackendError(`The shop's system answered ${r.status}.`);
+      return { type: r.headers.get("content-type") ?? "application/octet-stream", bytes: Buffer.from(await r.arrayBuffer()) };
+    },
+    async ownerListings(owner, post) {
+      const r = await call(`${o.url}/internal/channel/owner-listing`, { method: post ? "POST" : "GET", headers: headers(owner), ...(post ? { body: JSON.stringify(post) } : {}) }, timeout);
+      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
+    },
+    async ownerPhoto(owner, photo) {
+      const r = await call(`${o.url}/internal/channel/owner-photo`, { method: "POST", headers: headers(owner, { "content-type": photo.type }), body: new Uint8Array(photo.bytes) }, timeout);
+      if (r.status >= 500) throw new BackendError(`The shop's system answered ${r.status}.`);
+      return { status: r.status, body: await r.json().catch(() => ({})) as Record<string, unknown> };
     },
     async ownerVoice(owner, audio) {
       const r = await call(`${o.url}/internal/channel/owner-voice`, { method: "POST", headers: headers(owner, { "content-type": audio.mime }), body: new Uint8Array(audio.bytes) }, timeout);

@@ -17,6 +17,7 @@
 //
 // What the guest can rely on is said once, quietly, under the thread: the replies come from the shop's assistant, and a booking or a payment counts only when the shop's own
 // record says so. The thread's own words are set with textContent in the script and escaped here; only the shop's lines become links, and only https and upi ones.
+import { LISTING_WORDS } from "../listings/words.ts";
 import { esc } from "../core/html.ts";
 import { greeting } from "../assistant/personality.ts";
 import type { Personality } from "../assistant/personality.ts";
@@ -55,6 +56,8 @@ const MOTION = `@media (prefers-reduced-motion: no-preference) {
 }`;
 
 export interface ChatPageArgs {
+  /** Block S: the guest came from a listing ("Ask about this"): the chat greets with it, and the composer starts with its name so the shop sees which listing was asked about. Only on an empty chat. */
+  about?: { id: string; title: string };
   shop: Pick<ShopInfo, "name" | "address" | "languages" | "character" | "contact" | "hours" | "paused">;
   kind: ChatKind;
   language: Language;
@@ -122,7 +125,8 @@ export function chatPage(a: ChatPageArgs): string {
   const last = a.thread.lines.at(-1);
   const empty = a.thread.lines.length === 0;
   const quick = QUICK[a.kind].label[a.language];
-  const hello = `${greeting(a.personality ?? "warm", a.language, a.shop.name, c?.name)} ${w.help}`;
+  const hello = a.about && empty ? LISTING_WORDS[a.language].chatGreeting(a.about.title) : `${greeting(a.personality ?? "warm", a.language, a.shop.name, c?.name)} ${w.help}`;
+  const prefill = a.about && empty ? `${LISTING_WORDS[a.language].guestAsked(a.about.title)} (${a.about.id}). ` : "";
   const closed = mood === "closed";
   const hours = a.shop.hours ? hoursLines(a.shop.hours, a.language).join(" · ") : "";
   const stamp = STAMP[a.language];
@@ -159,7 +163,7 @@ ${a.onStreetlist ? `<div id="install-slot" class="alerts-slot" hidden><p class="
 ${a.identity?.html ?? ""}</div></main>
 <div class="notes" id="notes">${a.shop.paused ? `<div class="state s-plain wrap"><span class="stamp">${esc(stamp.paused)}</span><p class="status">${esc(w.paused)}</p></div>` : closed ? `<div class="state s-plain wrap"><span class="stamp">${esc(stamp.closed)}</span><p class="status">${esc(w.closed(hours))}</p></div>` : ""}${a.notice === "rate" ? `<div class="state s-bad wrap" role="alert"><p class="status">${esc(w.rate)}</p></div>` : ""}${a.thread.capped ? `<div class="state s-info wrap"><p class="status">${esc(w.capped)}</p></div>` : ""}</div>
 ${a.listen ? `<p class="rec-hint" id="rec-hint" hidden>${ICON.mic}<span>${esc(more.hold)}</span></p>` : ""}
-<form class="comp" id="comp" method="post" action="${esc(a.base)}/send" autocomplete="off"><input type="hidden" name="lang" value="${a.language}"><input type="hidden" name="id" id="cid" value="">${a.listen ? `<button type="button" id="rec" class="rec" hidden aria-label="${esc(more.hold)}" title="${esc(more.hold)}">${ICON.mic}</button>` : ""}<label class="sr" for="box">${esc(w.label)}</label><textarea id="box" name="text" rows="1" maxlength="500" required placeholder="${esc(w.placeholder)}" enterkeyhint="send"></textarea><button type="submit" id="go">${esc(w.send)}</button></form>`;
+<form class="comp" id="comp" method="post" action="${esc(a.base)}/send" autocomplete="off"><input type="hidden" name="lang" value="${a.language}"><input type="hidden" name="id" id="cid" value="">${a.listen ? `<button type="button" id="rec" class="rec" hidden aria-label="${esc(more.hold)}" title="${esc(more.hold)}">${ICON.mic}</button>` : ""}<label class="sr" for="box">${esc(w.label)}</label><textarea id="box" name="text" rows="1" maxlength="500" required placeholder="${esc(w.placeholder)}" enterkeyhint="send">${esc(prefill)}</textarea><button type="submit" id="go">${esc(w.send)}</button></form>`;
 
   const script = `(() => {
   const root = document.documentElement;

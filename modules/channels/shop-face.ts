@@ -10,6 +10,7 @@
 // The design pass (item 11i, 14 Nov 2026) placed it: the face is the head's one bold element on every customer page (shopHead, drawn by page.ts layout), at
 // 84 px on its own DiceBear tile with one soft shadow (look.ts); the hours and WhatsApp stay on the front pages (shopFace). The face stays still: DiceBear's
 // motion would need a second, moving set of pictures per shop and twice the bytes on every page (Deferred.md).
+import { LISTING_WORDS } from "../listings/words.ts";
 import { html } from "../core/html.ts";
 import type { Raw } from "../core/html.ts";
 import { WEEKDAY_NAMES } from "../language/format.ts";
@@ -61,10 +62,11 @@ ${c ? html`<p class="mood${mood ? ` m-${mood}` : ""}">${ASSISTANT_OF[o.language]
 }
 
 /** The front page's extras under the head: "message us on WhatsApp" when the shop's number is known, and the week's hours, folded. */
-export function shopFace(o: { shop: Pick<ShopInfo, "hours">; language: Language; pages?: PagesFile }): Raw {
+export function shopFace(o: { shop: Pick<ShopInfo, "hours" | "listings">; language: Language; pages?: PagesFile }): Raw {
   const w = WORDS[o.language];
-  if (!o.pages?.whatsapp && !o.shop.hours) return html``;
-  return html`<section class="face-x">${o.pages?.whatsapp ? html`<a class="btn wa full" href="${waLink(o.pages.whatsapp)}" rel="noopener">${w.whatsapp}</a>` : ""}
+  if (!o.pages?.whatsapp && !o.shop.hours && !o.shop.listings) return html``;
+  // block S: a shop that shows listings has one clear button to "What we have" (the storefront page), in the shop's own words
+  return html`<section class="face-x">${o.shop.listings ? html`<a class="btn full" href="${o.shop.listings.href}?lang=${o.language}">${LISTING_WORDS[o.language].seeAll} (${o.shop.listings.count})</a>` : ""}${o.pages?.whatsapp ? html`<a class="btn wa full" href="${waLink(o.pages.whatsapp)}" rel="noopener">${w.whatsapp}</a>` : ""}
 ${o.shop.hours ? html`<details class="hours"><summary>${w.hours}</summary><ul>${hoursLines(o.shop.hours, o.language).map((l) => html`<li>${l}</li>`)}</ul></details>` : ""}</section>`;
 }
 

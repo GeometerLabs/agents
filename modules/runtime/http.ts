@@ -31,6 +31,14 @@
 //                                                     (x-owner-session): not the panel's link, and never the channel token alone.
 //   GET  /internal/channel/owner-limits             the owner's limits page's data (the owner's credential): the limits, the changes, and whether THIS session was made with a passkey
 //   POST /internal/channel/owner-limits  {"id","limit","to"}   a change from the owner's limits page; only with a session made by a PASSKEY (403 {"state":"passkey_needed"} otherwise)
+//   GET  /internal/channel/listings                  block S: the shop's PUBLIC listings (live, not hidden, none sold or drafted) and the owner's switch and place; the channel token alone
+//                                                     (the same things the shop's public page shows). Nothing private is in it.
+//   GET  /internal/channel/listing-photo?id=ph-<12 hex>   one photo's bytes with its own type: only a photo of a public listing now, or (with the owner's credential) any the shop holds
+//   GET  /internal/channel/owner-listing             the owner's listings page's data (the owner's credential): the listings with their state, the photos waiting, the switch and place
+//   POST /internal/channel/owner-listing  {"id","op":{...}}   an op from the owner's listings page (publish_form, edit, confirm, sold, remove, shop); the owner's credential; checked
+//                                                     against the shop's rules first (422 {"why"} when it would be refused), then saved as an event the core runs in a step
+//   POST /internal/channel/owner-photo               a photo from the owner's app (image/jpeg or image/webp, at most 1.5 MB); the owner's credential. The bytes are read, checked and
+//                                                     cleaned HERE (listings/photo.ts: kind by magic number, size, dimensions, EXIF and XMP removed); the answer is {"photo": {...}}
 //   POST /internal/channel/owner-voice               items 11d and 11e: a recording from the owner's page (audio/ogg or audio/webm, at most 256 KB), with the owner's credential;
 //                                                     held in memory only, and an owner_message carrying its reference is saved (never the audio)
 // An owner_message (the owner's talk box) needs the owner's credential too, like an owner_action.
@@ -63,6 +71,8 @@ import type { LimitsView } from "../limits/runtime-limits.ts";
 import type { IncomingEvent } from "./events.ts";
 import { checkChannelEvent } from "../channels/events.ts";
 import { MAX_VOICE_BYTES } from "../channels/owner-audio.ts";
+import { MAX_PHOTO_BYTES, PHOTO_ID, checkPhoto, photoIdOf } from "../listings/photo.ts";
+import { checkOwnerListing } from "../listings/kit.ts";
 import { HANDLE_HASH } from "../channels/handle.ts";
 import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts";
 import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "../channels/owner-access.ts";
@@ -515,6 +525,66 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       if (!checked.ok) return send(res, 400, { error: checked.error });
       const counts = runtime.submit([checked.event]);
       send(res, 200, counts);
+      runtime.kick();
+      return;
+    }
+    // ---- block S: the shop's listings ----
+    if (path === "/internal/channel/listings") {
+      only("GET");
+      if (!channel.listings) throw new HttpError(404, "There is nothing here.");
+      return send(res, 200, channel.listings.publicRead());
+    }
+    if (path === "/internal/channel/listing-photo") {
+      only("GET");
+      if (!channel.listings) throw new HttpError(404, "There is nothing here.");
+      const id = url.searchParams.get("id") ?? "";
+      if (!PHOTO_ID.test(id)) return send(res, 400, { error: "id is a photo id: ph- and 12 hex digits." });
+      // the owner (their link or session) may fetch any photo the shop holds, for the drafts on their page; everyone else only the photos of a public listing
+      const row = ownerAuthorised(req) ? channel.listings.ownerPhoto(id) ?? channel.listings.publicPhoto(id) : channel.listings.publicPhoto(id);
+      if (!row) throw new HttpError(404, "There is nothing here.");
+      res.writeHead(200, { "content-type": row.type, "content-length": row.bytes.length, "x-content-type-options": "nosniff", "cache-control": "private, max-age=3600" });
+      res.end(Buffer.from(row.bytes));
+      return;
+    }
+    if (path === "/internal/channel/owner-listing") {
+      if (!channel.listings) throw new HttpError(404, "There is nothing here.");
+      if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+      if (req.method === "GET") return send(res, 200, channel.listings.ownerView());
+      only("POST");
+      let body: unknown;
+      try { body = JSON.parse(await readBody(req, 8 * 1024)); } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        return send(res, 400, { error: "The body must be JSON." });
+      }
+      const checked = checkOwnerListing(body);
+      if (!checked.ok) return send(res, 400, { error: checked.error });
+      // the same rules the step will apply, asked now, so the page can say why before anything is saved (the step checks again: a race changes nothing the rules refuse)
+      const why = channel.listings.check(checked.event.op);
+      if (why) return send(res, 422, { why, error: `The shop's rules refuse that (${why}).` });
+      const counts = runtime.submit([checked.event]);
+      send(res, 200, counts);
+      runtime.kick();
+      return;
+    }
+    if (path === "/internal/channel/owner-photo") {
+      only("POST");
+      if (!channel.listings) throw new HttpError(404, "There is nothing here.");
+      if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+      // the type the phone says is not trusted (checkPhoto reads the bytes); only photo kinds get as far as being read
+      if (!/^image\/(jpeg|webp)\b/iu.test(header(req, "content-type") ?? "")) return send(res, 415, { error: "Send the photo as image/jpeg or image/webp." });
+      if (channel.listings.uploadsLeft() <= 0) return send(res, 429, { why: "day", error: "That is enough photos for today." });
+      let bytes: Buffer;
+      try { bytes = await readBytes(req, MAX_PHOTO_BYTES); } catch (e) {
+        if (e instanceof HttpError) { res.once("finish", () => req.destroy()); return send(res, e.status, { error: e.message }, { connection: "close" }); }
+        throw e;
+      }
+      const checked = checkPhoto(new Uint8Array(bytes));
+      if (!checked.ok) return send(res, 422, { why: checked.why, error: "That is not a photo the shop can keep." });
+      const id = photoIdOf(checked.bytes);
+      channel.listings.putPhoto({ id, type: checked.type, width: checked.width, height: checked.height, bytes: checked.bytes });
+      const photo = { id, type: checked.type, width: checked.width, height: checked.height, bytes: checked.bytes.length };
+      const counts = runtime.submit([{ kind: "owner_photo", id, photo }]);
+      send(res, 200, { photo, ...counts });
       runtime.kick();
       return;
     }

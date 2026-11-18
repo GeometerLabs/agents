@@ -31,6 +31,7 @@ import type { FrontKit, RouteArgs } from "./front.ts";
 import { checkChannelEvent } from "./events.ts";
 import type { ChannelEvent } from "./events.ts";
 import type { Language } from "../language/languages.ts";
+import { textIn } from "../listings/listings.ts";
 import type { Personality } from "../assistant/personality.ts";
 import { PERSONALITIES } from "../assistant/personality.ts";
 
@@ -223,7 +224,12 @@ export async function chatRoute(kit: FrontKit, a: RouteArgs & { viaDoor: boolean
     const art = files ? { base: `${shop.publicUrl}/character`, version: files.version, animated: files.animation?.("well") !== undefined } : undefined;
     const paint = a.pages?.paint;
     const personality = (PERSONALITIES as readonly string[]).includes(read.personality ?? "") ? read.personality as Personality : undefined;
+    // block S: "Ask about this" on a listing opens the chat with that listing named (only a listing the public can see now; anything else is ignored)
+    const aboutId = /^l-\d{1,9}$/u.exec(url.searchParams.get("about") ?? "")?.[0];
+    const aboutListing = aboutId && !parent && backend.listings ? (await backend.listings().catch(() => null))?.listings.find((l) => l.id === aboutId) : undefined;
+    const about = aboutListing ? { id: aboutListing.id, title: textIn(aboutListing, language).title } : undefined;
     const html = chatPage({
+      ...(about ? { about } : {}),
       shop: offer, kind, language, base, home: parent ? `${shop.publicUrl}/f/${parent.link}` : shop.publicUrl, nonce, thread,
       identity: identityBlock({ language, base, ...(parent ? { parent: { back: `${shop.publicUrl}/f/${parent.link}?lang=${language}` } } : {}) }),
       ...(personality ? { personality } : {}), ...(paint && isPaint(paint) ? { paint } : {}), ...(art ? { art } : {}), ...(read.listen === true ? { listen: true } : {}), ...(choice ? { pushKey: choice.key, ...(choice.via ? { pushVia: choice.via } : {}) } : {}),
