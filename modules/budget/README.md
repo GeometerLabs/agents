@@ -37,7 +37,10 @@ Until 18 Nov 2026 fleet's cap and its 50% alert did not see a listing draft (its
 
 ```
 price list  prices/<date>.json        ai.budget.<plan>  ai.daily.*          (the only place the numbers are written)
-     |  bundle/lib/budget.ts budgetFor(plan, list in force)
+fleet's answer  fleet/<shop>.json     plan, allowance, bought (extra messages bought this month)
+shops/<shop>/budget-override.json     one shop's own numbers, set by the server admin only
+     |  bundle/lib/budget.ts budgetFor(plan, list in force, { bought, override })
+     |  = the plan's numbers, scaled by the messages bought, then the override on top
      v
 runtime.json  "budget": { monthlyMicroInr, daily: { owner_talk, listing_draft, customer_talk, router } }
      |  modules/runtime/config.ts reads it, start.ts puts it in AiPolicy.budget
@@ -154,11 +157,45 @@ The customer and router caps are "per 1,000 messages of the plan's allowance", s
 
 **Margins** (`docs/product/economics-and-pricing.md`, section 6): a budget is a ceiling, and a typical shop spends well under it, but a shop that uses all of it costs more than the margin table assumed. Basic is the tight one: at 40 shops a server its margin is ₹41 (28%), and a full ₹20 would take it to about ₹26 (17%); at 25 shops it is already below zero. If Basic's margin must hold, set its budget at ₹12 (about 200 owner-talk turns a month). This is for the owner to decide with the other numbers; the list is only a proposal.
 
+## One shop's own budget
+
+Two things can make one shop's budget different from its plan's. Both are worked out in the one place every shop's budget comes from, `budgetFor` in `bundle/lib/budget.ts`, so an agent shop and a free listings-only shop behave the same way.
+
+**1. Buying more messages grows the budget.** Fleet's own wall grows when a shop buys more messages: it is `ai.cap` for each 1,000 messages of the allowance plus the ones bought. The shop's own budget used to stay at the plan's number, so a busy Basic shop that bought 1,000 more messages had a wall of ₹40 at fleet but was stopped at ₹20 by its own budget. Now fleet's answer to each heartbeat says how many extra messages the shop bought this month (`bought`; left out when none), and the bundle scales the budget the same way:
+
+```
+messages = allowance + bought
+monthly  = ai.budget.<plan> x messages / allowance          (rounded up)
+customer_talk and router a day = (the list's number per 1,000) x messages / 1,000   (rounded up)
+```
+
+Basic with nothing bought is ₹20 a month. With 1,000 bought it is ₹40, and customer questions a day go from 60 to 120. The owner's talk and drafts a day do not change. A listings-only shop is free and buys nothing, so it never scales. The answer is read when the deployer works the shop out, and the budget is part of what a shop is asked to be, so on the deployer's next pass (a minute or two while it runs) the shop is redeployed with the new numbers: a top-up bought mid-month needs no manual deploy. An answer written in an earlier month is not trusted for `bought`.
+
+**2. The server admin can give one shop a budget of its own.** For a shop the plan does not fit (the owner's example: a busy Basic shop), on the server:
+
+```
+geometer shop budget glow-salon --monthly-inr 40 --reason "busy shop, owner asked" --set-by Naval --daily owner_talk=50
+geometer shop budget glow-salon            # the plan's numbers, the shop's own, and the result
+geometer shop budget glow-salon --clear    # back to the plan's
+```
+
+This writes `shops/<shop>/budget-override.json` (never code):
+
+```json
+{ "monthlyInr": 40, "daily": { "owner_talk": 50 }, "reason": "busy shop, owner asked", "setBy": "Naval", "date": "2026-11-19" }
+```
+
+Whole numbers only, known features only (`owner_talk`, `customer_talk`, `listing_draft`, `router`), a reason and a name always. A file that cannot be used is said in plain words and the plan's budget stays until it is fixed or cleared. The override **replaces only the numbers it names**: here the month and the owner's talk; customer questions and the rest stay the plan's (with any messages bought). It replaces, so it does not grow with messages bought.
+
+- **Only the admin sets it.** The panel shows it, read-only: "Model budget: ₹40 a month, set for this shop on 2026-11-19: busy shop, owner asked." No panel page changes it. On Geometer's own Operator server Geometer pays for the model, so an Operator must never be able to raise it.
+- **Fleet has its own wall.** Fleet switches the model off for a shop at its cap whatever the shop's budget says. So a raise above fleet's cap for that shop needs fleet's cap raised too. When `--monthly-inr` is above it, the command prints one sentence with the fleet command: `node apps/fleet/main.ts shop ai-cap <deployment> <shop> --monthly-inr 40 --reason "..."` (fleet's README, "The AI cap"). Fleet needs its own deploy to know the command.
+- It works for both an agent shop (its `runtime.json`) and a listings-only shop (the shared process's config for it).
+
 ## Run and test
 
 ```
 cd modules && node --test budget/test/        # the meter, the caps, the fallbacks, the notices, the retries
-cd bundle  && node --test test/model-budget.test.ts   # the price list, the plan to budget, the runtime config, the panel line, the wall
+cd bundle  && node --test test/model-budget.test.ts test/shop-budget.test.ts   # the price list, the plan to budget, the runtime config, the panel line, the wall; the scaling, the override and its command
 ```
 
 `budget/test/budget.test.ts` is pure (no assistant). `budget/test/budget-flow.test.ts` runs the real assistant on fakes.
