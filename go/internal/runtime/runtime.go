@@ -108,6 +108,9 @@ func New(o Options) (*Runtime, error) {
 			return nil, err
 		}
 	}
+	if err := r.afterRestore(); err != nil {
+		return nil, err
+	}
 	r.proto = listings.NewProtocol(r.publicRead, r.signingKey, o.Now, func() string { return o.Client.Settings.Name })
 	if err := r.initRoutes(); err != nil {
 		return nil, err
