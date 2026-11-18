@@ -187,12 +187,17 @@ export function openOwnerAccess(file: string) {
   }
   /** Is a passkey row good now for this owner, on this RP ID, made after the panel's "remove the owner's passkeys"? */
   const passkeyGood = (r: PasskeyRow & { removed_at: number | null }, who: OwnerNow, rp: RelyingParty, passkeysBefore?: number): boolean =>
-    r.removed_at === null && r.owner_key === ownerKey(who.owner) && r.rp_id === rp.rpId && (passkeysBefore === undefined || r.made_at >= passkeysBefore);
+    r.removed_at === null && r.owner_key === effKey(who) && r.rp_id === rp.rpId && (passkeysBefore === undefined || r.made_at >= passkeysBefore);
   const b64 = (s: unknown, max: number): Buffer | undefined => (typeof s === "string" && s.length > 0 && s.length <= max && /^[A-Za-z0-9_-]+$/u.test(s) ? Buffer.from(s, "base64url") : undefined);
 
   // ---- who controls the owner's sign-in: the gate, the requests, the reset (see the header) ----
   const metaNum = (name: string): number | undefined => { const r = db.prepare("SELECT value FROM meta WHERE name = ?").get(name) as { value: string } | undefined; return r ? Number(r.value) : undefined; };
   const setMeta = (name: string, v: number): void => { db.prepare("INSERT INTO meta (name, value) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET value = excluded.value").run(name, String(v)); };
+  const metaStr = (name: string): string | undefined => (db.prepare("SELECT value FROM meta WHERE name = ?").get(name) as { value: string } | undefined)?.value;
+  /** The owner identity the shop was LOCKED with (hash of their number), set by the first passkey and cleared whenever the gate opens. */
+  const boundKey = (): string | undefined => metaStr("bound_owner");
+  const effKey = (who: OwnerNow): string => boundKey() ?? ownerKey(who.owner);
+  const unbind = (): void => { db.prepare("DELETE FROM meta WHERE name = 'bound_owner'").run(); };
   const raiseMeta = (name: string, v: number): void => { if (v > (metaNum(name) ?? 0)) setMeta(name, v); };
   /** When the shop got locked: the first passkey made since the gate last opened (rows the owner or a removal later took away still count: the owner held one). */
   const lockAt = (): number | undefined => {
@@ -201,7 +206,7 @@ export function openOwnerAccess(file: string) {
   };
   const endSessionsBefore = (t: number, now: number, why: string): void => { db.prepare("UPDATE sessions SET ended_at = ?, ended_why = ? WHERE ended_at IS NULL AND made_at < ?").run(now, why, t); };
   /** Things the runtime should write in the record once (the tick does), found while reading the files. */
-  type Note = { what: "reset"; at: number; reason: string; by: string } | { what: "removal_asked"; askedBy: string; askedAt: string; effectiveAt: number } | { what: "removal_applied"; at: number };
+  type Note = { what: "reset"; at: number; reason: string; by: string } | { what: "removal_asked"; askedBy: string; askedAt: string; effectiveAt: number } | { what: "removal_applied"; at: number } | { what: "owner_change_asked"; effectiveAt: number };
   const notes: Note[] = [];
   /** Remember the QR and the card hashes the file holds now, the first time this store sees each. */
   const noteSeen = (file: OwnerGrants | undefined, firstSeen: number): void => {
@@ -221,6 +226,9 @@ export function openOwnerAccess(file: string) {
         // clamped to now: a file value in the future would otherwise make every passkey made from now on "older" than the cutoff (a total lockout)
         if (file?.passkeysBefore) setMeta("passkeys_before", Math.min(Date.parse(file.passkeysBefore), now));
         noteSeen(file, first ?? now);
+        // a shop that is already locked is bound to the owner its first passkey was made for
+        const firstRow = first === undefined ? undefined : db.prepare("SELECT owner_key FROM passkeys WHERE made_at >= ? ORDER BY made_at LIMIT 1").get(metaNum("reopen_at") ?? 0) as { owner_key: string } | undefined;
+        if (firstRow && boundKey() === undefined) setMeta("bound_owner", firstRow.owner_key);
         setMeta("adopted", 1);
       }
     }
@@ -233,7 +241,7 @@ export function openOwnerAccess(file: string) {
       setMeta("reset_raw", resetRaw);
       db.exec("BEGIN IMMEDIATE");
       try {
-        setMeta("reset_at", at); raiseMeta("passkeys_before", at); raiseMeta("reopen_at", at);
+        setMeta("reset_at", at); raiseMeta("passkeys_before", at); raiseMeta("reopen_at", at); unbind();
         // every QR, card, own code and "add a phone" link made before the reset stops; the QR the admin makes with the reset is first seen after it and so works
         db.prepare("UPDATE grants_seen SET voided_at = ? WHERE first_seen < ? AND voided_at IS NULL").run(at, at);
         db.prepare("UPDATE own_codes SET voided_at = ? WHERE voided_at IS NULL").run(at);
@@ -248,7 +256,7 @@ export function openOwnerAccess(file: string) {
     const p = file?.pendingRemoval;
     if (p && !db.prepare("SELECT 1 FROM removals WHERE asked_at = ?").get(p.askedAt) && lockAt() !== undefined && Date.parse(p.askedAt) > (metaNum("reset_at") ?? 0)) {
       // a request the owner has no way to have seen yet starts its wait NOW, whatever time the file says: a back-dated request must not apply at once
-      db.prepare("UPDATE removals SET state = 'withdrawn', at = ? WHERE state = 'pending'").run(now);
+      db.prepare("UPDATE removals SET state = 'withdrawn', at = ? WHERE state = 'pending' AND asked_at NOT LIKE 'owner-change:%'").run(now);
       const effectiveAt = now + REMOVAL_WAIT_MS;
       db.prepare("INSERT INTO removals (asked_at, asked_by, seen_at, effective_at, state, at) VALUES (?, ?, ?, ?, 'pending', ?)").run(p.askedAt, p.askedBy, now, effectiveAt, now);
       notes.push({ what: "removal_asked", askedBy: p.askedBy, askedAt: p.askedAt, effectiveAt });
@@ -256,7 +264,7 @@ export function openOwnerAccess(file: string) {
     for (const due of db.prepare("SELECT asked_at, effective_at FROM removals WHERE state = 'pending' AND effective_at <= ?").all(now) as { asked_at: string; effective_at: number }[]) {
       // nobody cancelled in time: every passkey made before the moment stops, every session made before it ends, and the gate opens for a new QR
       db.prepare("UPDATE removals SET state = 'applied', at = ? WHERE asked_at = ?").run(due.effective_at, due.asked_at);
-      raiseMeta("passkeys_before", due.effective_at); raiseMeta("reopen_at", due.effective_at);
+      raiseMeta("passkeys_before", due.effective_at); raiseMeta("reopen_at", due.effective_at); unbind();
       endSessionsBefore(due.effective_at, now, "removal");
       notes.push({ what: "removal_applied", at: due.effective_at });
     }
@@ -300,10 +308,27 @@ export function openOwnerAccess(file: string) {
     /** Has the owner a passkey since the gate last opened? Then the Operator's QR and card are closed, and "remove the passkeys" is a request. */
     locked(file: OwnerGrants | undefined, now: number): boolean { reconcile(file, now); return lockAt() !== undefined; },
     /** The Operator's pending request as this store timed it, if one is waiting. */
-    pendingRemoval(file: OwnerGrants | undefined, now: number): { askedBy: string; askedAt: string; seenAt: number; effectiveAt: number } | undefined {
+    pendingRemoval(file: OwnerGrants | undefined, now: number): { kind: "removal" | "owner_change"; askedBy: string; askedAt: string; seenAt: number; effectiveAt: number } | undefined {
       reconcile(file, now);
-      const r = db.prepare("SELECT asked_by, asked_at, seen_at, effective_at FROM removals WHERE state = 'pending' ORDER BY seen_at DESC LIMIT 1").get() as { asked_by: string; asked_at: string; seen_at: number; effective_at: number } | undefined;
-      return r ? { askedBy: r.asked_by, askedAt: r.asked_at, seenAt: r.seen_at, effectiveAt: r.effective_at } : undefined;
+      // the one that would apply first (a removal and an owner-number change can both be waiting)
+      const r = db.prepare("SELECT asked_by, asked_at, seen_at, effective_at FROM removals WHERE state = 'pending' ORDER BY effective_at LIMIT 1").get() as { asked_by: string; asked_at: string; seen_at: number; effective_at: number } | undefined;
+      return r ? { kind: r.asked_at.startsWith("owner-change:") ? "owner_change" : "removal", askedBy: r.asked_by, askedAt: r.asked_at, seenAt: r.seen_at, effectiveAt: r.effective_at } : undefined;
+    },
+    /**
+     * The owner's number in the settings, as the panel's edit form can change it, checked against the identity the shop was locked with. A DIFFERENT number after the
+     * lock is not "the owner changed": it is a request with the same wait as a removal (the owner sees it on every phone and can cancel; until it applies, a session for
+     * the new number opens nothing). Called on the clock's beat and by every phones call. Before the lock the settings are the owner, as they always were.
+     */
+    watchOwner(who: OwnerNow, now: number): void {
+      const bound = boundKey();
+      if (bound === undefined || lockAt() === undefined) return;
+      const current = ownerKey(who.owner);
+      if (current === bound) { db.prepare("UPDATE removals SET state = 'withdrawn', at = ? WHERE state = 'pending' AND asked_at LIKE 'owner-change:%'").run(now); return; }
+      const key = `owner-change:${current}`;
+      if (db.prepare("SELECT 1 FROM removals WHERE asked_at = ?").get(key)) return;
+      const effectiveAt = now + REMOVAL_WAIT_MS;
+      db.prepare("INSERT INTO removals (asked_at, asked_by, seen_at, effective_at, state, at) VALUES (?, 'the owner number', ?, ?, 'pending', ?)").run(key, now, effectiveAt, now);
+      notes.push({ what: "owner_change_asked", effectiveAt });
     },
     /** The owner cancels the Operator's request. True when one was waiting. The same request, asked again, is not heard again (a new request needs a new `askedAt`). */
     cancelRemoval(file: OwnerGrants | undefined, now: number): boolean {
@@ -369,7 +394,9 @@ export function openOwnerAccess(file: string) {
       if (!ACCESS_TOKEN.test(token)) return undefined;
       const r = sessionByHash.get(sessionHash(token)) as SessionRow | undefined;
       if (!r || r.ended_at !== null || r.expires_at <= now) return undefined;
-      if (r.owner_key !== ownerKey(who.owner) || r.base !== who.base) return undefined; // another owner now, or the shop's page moved
+      // another owner now, or the shop's page moved. Once the owner holds a passkey, "the owner" is the identity the shop was locked with (effKey), NOT whatever number
+      // the Operator's settings form says now: a changed number must neither lock the owner out (their passkeys and sessions stay good) nor let a session for the new number in.
+      if (r.owner_key !== effKey(who) || r.base !== who.base) return undefined;
       if (endBefore !== undefined && r.made_at < endBefore) return undefined;
       return { id: r.id };
     },
@@ -446,7 +473,7 @@ export function openOwnerAccess(file: string) {
     registrationOptions(g: Grant, file: OwnerGrants | undefined, who: OwnerNow, rp: RelyingParty, shopName: string, now: number): { ok: true; options: Record<string, unknown> } | { ok: false; state: Exclude<GrantState, "valid"> } {
       const state = api.grantState(g, file, now);
       if (state !== "valid") return { ok: false, state };
-      const have = (db.prepare("SELECT cred_id FROM passkeys WHERE removed_at IS NULL AND owner_key = ? AND rp_id = ?").all(ownerKey(who.owner), rp.rpId) as { cred_id: string }[]).map((r) => r.cred_id);
+      const have = (db.prepare("SELECT cred_id FROM passkeys WHERE removed_at IS NULL AND owner_key = ? AND rp_id = ?").all(effKey(who), rp.rpId) as { cred_id: string }[]).map((r) => r.cred_id);
       let challenge: string;
       try { challenge = newChallenge("register", now, grantHash(g)); } catch (e) { if (e instanceof PasskeyError) return { ok: false, state: "locked" as never }; throw e; }
       return {
@@ -490,12 +517,14 @@ export function openOwnerAccess(file: string) {
         if (db.prepare("SELECT 1 FROM passkeys WHERE cred_id = ?").get(cred.id)) { db.exec("ROLLBACK"); return { ok: false, state: "refused", why: "This passkey is already kept here." }; }
         const id = newId();
         db.prepare("INSERT INTO passkeys (id, cred_id, jwk, alg, sign_count, backed_up, made_at, owner_key, rp_id, via, label) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-          .run(id, cred.id, JSON.stringify(cred.jwk), cred.alg, cred.signCount, cred.backedUp ? 1 : 0, now, ownerKey(who.owner), rp.rpId, via, label ? label.slice(0, 60) : null);
+          .run(id, cred.id, JSON.stringify(cred.jwk), cred.alg, cred.signCount, cred.backedUp ? 1 : 0, now, effKey(who), rp.rpId, via, label ? label.slice(0, 60) : null);
+        // the first passkey of this lock binds the shop to the owner it was made for (cleared when the gate opens again)
+        if (boundKey() === undefined) setMeta("bound_owner", effKey(who));
         db.prepare("INSERT INTO grants_used (hash, kind, used_at, passkey_id) VALUES (?, ?, ?, ?)").run(gh, g.kind, now, id);
         // at most MAX_PASSKEYS: the one used longest ago goes
         const kept = db.prepare("SELECT id FROM passkeys WHERE removed_at IS NULL ORDER BY coalesce(used_at, made_at) DESC").all() as { id: string }[];
         for (const old of kept.slice(MAX_PASSKEYS)) db.prepare("UPDATE passkeys SET removed_at = ?, removed_why = 'too_many' WHERE id = ?").run(now, old.id);
-        const s = startSession(ownerKey(who.owner), who.base, `pk-${id}`, now);
+        const s = startSession(effKey(who), who.base, `pk-${id}`, now);
         db.exec("COMMIT");
         return { ok: true, ...s, passkey: id };
       } catch (e) { if (db.isTransaction) db.exec("ROLLBACK"); throw e; }
@@ -642,7 +671,7 @@ export interface PhonesView {
   /** Phones made since this phone last dismissed the news (never this phone itself). */
   announce: PhoneEntry[];
   /** The Operator's request to remove every phone, timed by this runtime. */
-  removal?: { askedBy: string; askedAt: string; seenAt: number; effectiveAt: number };
+  removal?: { kind: "removal" | "owner_change"; askedBy: string; askedAt: string; seenAt: number; effectiveAt: number };
   /** When the owner made their own recovery codes (the newest set still good), if they did. */
   ownCodesAt?: number;
   passkeySession: boolean;

@@ -25,7 +25,7 @@ interface Words {
   codes: string; codesNone: string; codesHave: (day: string) => string; codesMake: string; codesRemake: string; codesNote: string; codesTitle: string; codesShow: string;
   needPasskey: string; back: string; onePhone: string; noPhones: string;
   bannerNew: (when: string, label: string) => string; itWasMe: string; removeIt: string; bannerRequest: (by: string, when: string) => string; cancel: string; cancelled: string;
-  bannerCodes: string; makeCodes: string; refused: string; operator: string; openPhones: string;
+  bannerOwner: (when: string) => string; bannerCodes: string; makeCodes: string; refused: string; operator: string; openPhones: string;
 }
 /** Exported so the review sheets list these lines too (review.ts, ids "phones.*"). */
 export const WORDS: Record<Language, Words> = {
@@ -45,6 +45,7 @@ export const WORDS: Record<Language, Words> = {
     onePhone: "Only one phone can open your shop now.", noPhones: "No phone can open your shop now. Use your recovery codes, or ask your Operator.",
     bannerNew: (when, label) => `A new phone was added on ${when}${label ? ` (${label})` : ""}. Not you? Remove it.`, itWasMe: "It was me", removeIt: "Remove it",
     bannerRequest: (by, when) => `${by} asked to remove every phone that can open your shop. It will happen on ${when} unless you cancel.`, cancel: "Cancel the request", cancelled: "Cancelled. Your phones stay.",
+    bannerOwner: (when) => `The owner's number for this shop was changed. Every phone that opens your shop stops working on ${when} unless you cancel.`,
     bannerCodes: "Make your own codes now, so only you hold them.", makeCodes: "Make my codes", refused: "That did not work. Sign out, sign in with your phone's fingerprint and try again.", operator: "Your Operator", openPhones: "Your phones",
   },
   hi: {
@@ -63,6 +64,7 @@ export const WORDS: Record<Language, Words> = {
     onePhone: "अभी सिर्फ़ एक फ़ोन आपकी दुकान खोल सकता है।", noPhones: "अभी कोई फ़ोन आपकी दुकान नहीं खोल सकता। अपने रिकवरी कोड इस्तेमाल कीजिए, या अपने ऑपरेटर से कहिए।",
     bannerNew: (when, label) => `${when} को एक नया फ़ोन जोड़ा गया${label ? ` (${label})` : ""}। आपने नहीं जोड़ा? उसे हटा दीजिए।`, itWasMe: "मैंने ही जोड़ा", removeIt: "हटाइए",
     bannerRequest: (by, when) => `${by} ने आपकी दुकान खोलने वाले हर फ़ोन को हटाने को कहा है। आप रद्द न करें तो यह ${when} को हो जाएगा।`, cancel: "अनुरोध रद्द करें", cancelled: "रद्द हो गया। आपके फ़ोन बने रहेंगे।",
+    bannerOwner: (when) => `इस दुकान के लिए मालिक का नंबर बदला गया है। आप रद्द न करें तो दुकान खोलने वाले सारे फ़ोन ${when} को बंद हो जाएँगे।`,
     bannerCodes: "अपने कोड अभी बनाइए, ताकि वे सिर्फ़ आपके पास रहें।", makeCodes: "मेरे कोड बनाएँ", refused: "यह नहीं हो पाया। साइन आउट करके अपने फ़ोन के फ़िंगरप्रिंट से साइन इन कीजिए और फिर कोशिश कीजिए।", operator: "आपके ऑपरेटर", openPhones: "आपके फ़ोन",
   },
   ml: {
@@ -81,6 +83,7 @@ export const WORDS: Record<Language, Words> = {
     onePhone: "ഇപ്പോൾ ഒരു ഫോണിന് മാത്രമേ നിങ്ങളുടെ കട തുറക്കാനാകൂ.", noPhones: "ഇപ്പോൾ ഒരു ഫോണിനും നിങ്ങളുടെ കട തുറക്കാനാകില്ല. റിക്കവറി കോഡുകൾ ഉപയോഗിക്കൂ, അല്ലെങ്കിൽ ഓപ്പറേറ്ററോട് ചോദിക്കൂ.",
     bannerNew: (when, label) => `${when}-ന് ഒരു പുതിയ ഫോൺ ചേർത്തു${label ? ` (${label})` : ""}. നിങ്ങളല്ലേ? അത് നീക്കൂ.`, itWasMe: "ഞാൻ തന്നെയാണ്", removeIt: "നീക്കൂ",
     bannerRequest: (by, when) => `${by} നിങ്ങളുടെ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും നീക്കാൻ ആവശ്യപ്പെട്ടു. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ ${when}-ന് അത് നടക്കും.`, cancel: "അഭ്യർത്ഥന റദ്ദാക്കൂ", cancelled: "റദ്ദാക്കി. നിങ്ങളുടെ ഫോണുകൾ അതേപടി തുടരും.",
+    bannerOwner: (when) => `ഈ കടയുടെ ഉടമയുടെ നമ്പർ മാറ്റി. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും ${when}-ന് പ്രവർത്തിക്കില്ല.`,
     bannerCodes: "നിങ്ങളുടെ സ്വന്തം കോഡുകൾ ഇപ്പോൾ ഉണ്ടാക്കൂ, അത് നിങ്ങളുടെ കയ്യിൽ മാത്രമിരിക്കട്ടെ.", makeCodes: "എന്റെ കോഡുകൾ ഉണ്ടാക്കൂ", refused: "അത് നടന്നില്ല. സൈൻ ഔട്ട് ചെയ്ത് ഫോണിന്റെ ഫിംഗർപ്രിന്റ് ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്ത് വീണ്ടും ശ്രമിക്കൂ.", operator: "നിങ്ങളുടെ ഓപ്പറേറ്റർ", openPhones: "നിങ്ങളുടെ ഫോണുകൾ",
   },
   kn: {
@@ -99,6 +102,7 @@ export const WORDS: Record<Language, Words> = {
     onePhone: "ಈಗ ಒಂದು ಫೋನ್ ಮಾತ್ರ ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಬಲ್ಲದು.", noPhones: "ಈಗ ಯಾವ ಫೋನ್ ಕೂಡ ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಲಾರದು. ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಬಳಸಿ, ಅಥವಾ ಆಪರೇಟರ್ ಅವರನ್ನು ಕೇಳಿ.",
     bannerNew: (when, label) => `${when} ರಂದು ಹೊಸ ಫೋನ್ ಸೇರಿಸಲಾಗಿದೆ${label ? ` (${label})` : ""}. ನೀವಲ್ಲವೇ? ಅದನ್ನು ತೆಗೆಯಿರಿ.`, itWasMe: "ನಾನೇ", removeIt: "ತೆಗೆಯಿರಿ",
     bannerRequest: (by, when) => `${by} ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ${when} ರಂದು ಆಗುತ್ತದೆ.`, cancel: "ಮನವಿ ರದ್ದುಗೊಳಿಸಿ", cancelled: "ರದ್ದಾಗಿದೆ. ನಿಮ್ಮ ಫೋನ್‌ಗಳು ಹಾಗೆಯೇ ಇರುತ್ತವೆ.",
+    bannerOwner: (when) => `ಈ ಅಂಗಡಿಯ ಮಾಲೀಕರ ನಂಬರ್ ಬದಲಾಯಿಸಲಾಗಿದೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳು ${when} ರಂದು ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ.`,
     bannerCodes: "ನಿಮ್ಮ ಸ್ವಂತ ಕೋಡ್‌ಗಳನ್ನು ಈಗಲೇ ಮಾಡಿ, ಅವು ನಿಮ್ಮ ಬಳಿ ಮಾತ್ರ ಇರಲಿ.", makeCodes: "ನನ್ನ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿ", refused: "ಅದು ಆಗಲಿಲ್ಲ. ಸೈನ್ ಔಟ್ ಆಗಿ, ಫೋನ್‌ನ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.", operator: "ನಿಮ್ಮ ಆಪರೇಟರ್", openPhones: "ನಿಮ್ಮ ಫೋನ್‌ಗಳು",
   },
 };
@@ -126,7 +130,7 @@ export function phonesBanner(o: { base: string; language: Language; csrf?: strin
   const w = WORDS[o.language];
   const v = o.view;
   const parts: Raw[] = [];
-  if (v.removal) parts.push(html`<div class="notice" role="alert"><p>${w.bannerRequest(v.removal.askedBy || o.operatorName || w.operator, dayAndTime(v.removal.effectiveAt, o.language))}</p>${tap(o.base, "cancel", o.csrf, w.cancel)}</div>`);
+  if (v.removal) parts.push(html`<div class="notice" role="alert"><p>${v.removal.kind === "owner_change" ? w.bannerOwner(dayAndTime(v.removal.effectiveAt, o.language)) : w.bannerRequest(v.removal.askedBy || o.operatorName || w.operator, dayAndTime(v.removal.effectiveAt, o.language))}</p>${tap(o.base, "cancel", o.csrf, w.cancel)}</div>`);
   for (const p of v.announce.slice(-3)) {
     parts.push(html`<div class="notice" role="alert"><p>${w.bannerNew(dayAndTime(p.madeAt, o.language), p.label ?? "")}</p>
 <p><a class="btn" href="${o.base}/phones?remove=${p.id}&amp;lang=${o.language}">${w.removeIt}</a></p>${tap(o.base, "dismiss", o.csrf, w.itWasMe, {}, true)}</div>`);

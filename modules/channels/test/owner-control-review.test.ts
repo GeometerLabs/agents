@@ -10,6 +10,8 @@ import { openOwnerAccess, ownerKey } from "../owner-access.ts";
 import type { OwnerAccess, RelyingParty } from "../owner-access.ts";
 import { REMOVAL_WAIT_MS, newRecoveryCode, newSetupToken, recoveryHash, setupHash } from "../owner-grants.ts";
 import type { OwnerGrants } from "../owner-grants.ts";
+import { relyingParty } from "../webauthn.ts";
+import { newSoftPasskey, softRegister } from "./soft-authenticator.ts";
 
 const OWN = "+919876543210";
 const RP: RelyingParty = { rpId: "pages.example", origin: "https://pages.example" };
@@ -77,4 +79,78 @@ test("finding 5: a future 'sign out every device' never refuses a session made a
       assert.ok((h.access.passkeysBefore(f({ passkeysBefore: "2099-01-01T00:00:00Z" }), T0) ?? 0) <= T0);
     } finally { h.done(); }
   } finally { w.done(); }
+});
+
+/** A real registration (a software passkey) with a grant, for the tests that need one. */
+function enrol(access: OwnerAccess, who: typeof WHO, file: OwnerGrants, g: Parameters<OwnerAccess["registrationOptions"]>[0], now: number, label = "Android, Chrome") {
+  const rp = relyingParty(who.base);
+  const o = access.registrationOptions(g, file, who, rp, "Glow", now);
+  assert.ok(o.ok, JSON.stringify(o));
+  const r = access.register(g, file, who, rp, softRegister(newSoftPasskey(rp.rpId), o.options as never, rp.origin), now + 1, label);
+  assert.ok(r.ok, JSON.stringify(r));
+  return { session: r.session, id: r.passkey, sid: access.check(r.session, who, now + 2)!.id };
+}
+
+// ---- finding 1: the owner's number in the settings is the Operator's to edit; it must not lock the owner out or let the Operator in ----
+test("finding 1: after the lock a changed owner number keeps the owner's passkeys and sessions, refuses sessions for the new number, and is a 48-hour request", () => {
+  const w = world(); try {
+    const NEW = { ...WHO, owner: "+919000000000" };
+    const rp = relyingParty(WHO.base);
+    const q = newSetupToken(); const f0 = f({ setup: w.qr(q, T0) });
+    const a = enrol(w.access, WHO, f0, { kind: "setup", token: q }, T0);
+    assert.equal(w.access.passkeys(WHO, rp).length, 1);
+    // the Operator saves a new owner number in the settings form
+    assert.equal(w.access.passkeys(NEW, rp).length, 1, "the owner's passkeys are still the owner's");
+    assert.equal(w.access.signinOptions(NEW, rp, T0 + HOUR).count, 1, "and still sign in");
+    assert.ok(w.access.check(a.session, NEW, T0 + HOUR), "the owner's session is still good");
+    // WhatsApp: "open my app" from the NEW number gives a link session for the new number: it opens nothing
+    const link = w.access.issue({ ...NEW, via: "whatsapp", now: T0 + HOUR });
+    const byLink = w.access.consume(link.token, NEW, T0 + HOUR + 1);
+    assert.ok(byLink.ok);
+    assert.equal(w.access.check(byLink.session, NEW, T0 + HOUR + 2), undefined, "a session for the new number is refused for owner actions");
+    // the request: seen by the runtime, shown on the owner's phone, cancellable
+    w.access.watchOwner(NEW, T0 + HOUR + 5);
+    assert.deepEqual(w.access.takeNotes().map((n) => n.what), ["owner_change_asked"]);
+    const v = w.access.phonesView(a.sid, NEW, rp, f0, T0 + HOUR + 6)!;
+    assert.deepEqual([v.removal?.kind, v.removal?.effectiveAt], ["owner_change", T0 + HOUR + 5 + REMOVAL_WAIT_MS]);
+    assert.equal(w.access.passkeys(NEW, rp, w.access.passkeysBefore(f0, T0 + HOUR + 7)).length, 1, "nothing applied yet");
+    // the same request is said once
+    w.access.watchOwner(NEW, T0 + 2 * HOUR); assert.deepEqual(w.access.takeNotes(), []);
+    // changing the number BACK withdraws the request
+    w.access.watchOwner(WHO, T0 + 3 * HOUR);
+    assert.equal(w.access.pendingRemoval(f0, T0 + 3 * HOUR + 1), undefined);
+  } finally { w.done(); }
+});
+
+test("finding 1: if nobody cancels, the number change applies like a removal (phones end, a new QR for the new number works); if the owner cancels it is never heard again", () => {
+  const w = world(); try {
+    const NEW = { ...WHO, owner: "+919000000000" };
+    const rp = relyingParty(WHO.base);
+    const q = newSetupToken(); const f0 = f({ setup: w.qr(q, T0) });
+    const a = enrol(w.access, WHO, f0, { kind: "setup", token: q }, T0);
+    w.access.watchOwner(NEW, T0 + HOUR);
+    const due = T0 + HOUR + REMOVAL_WAIT_MS;
+    assert.ok(w.access.check(a.session, WHO, due - 1000), "still the owner's until it applies");
+    const pb = w.access.passkeysBefore(f0, due + 1000);
+    assert.equal(pb, due);
+    assert.equal(w.access.check(a.session, NEW, due + 1000), undefined, "sessions ended");
+    assert.equal(w.access.passkeys(NEW, rp, pb).length, 0);
+    assert.equal(w.access.locked(f0, due + 1000), false, "the gate is open");
+    const q2 = newSetupToken();
+    const f2 = f({ setup: w.qr(q2, due + 5000) });
+    const b = enrol(w.access, NEW, f2, { kind: "setup", token: q2 }, due + 6000);
+    assert.ok(w.access.check(b.session, NEW, due + 7000), "the new number's owner holds the shop now (bound to the new number)");
+  } finally { w.done(); }
+  const c = world(); try {
+    const NEW = { ...WHO, owner: "+919000000000" };
+    const rp = relyingParty(WHO.base);
+    const q = newSetupToken(); const f0 = f({ setup: c.qr(q, T0) });
+    const a = enrol(c.access, WHO, f0, { kind: "setup", token: q }, T0);
+    c.access.watchOwner(NEW, T0 + HOUR);
+    assert.equal(c.access.cancelRemoval(f0, T0 + 2 * HOUR), true);
+    c.access.watchOwner(NEW, T0 + 3 * DAY);
+    assert.equal(c.access.pendingRemoval(f0, T0 + 3 * DAY), undefined, "a cancelled change is not heard again");
+    assert.equal(c.access.passkeys(NEW, rp, c.access.passkeysBefore(f0, T0 + 4 * DAY)).length, 1);
+    assert.ok(c.access.check(a.session, WHO, T0 + 4 * DAY));
+  } finally { c.done(); }
 });
