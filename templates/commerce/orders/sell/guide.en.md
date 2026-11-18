@@ -274,7 +274,7 @@ If the shop wants the whole price taken online, set the advance to the full amou
 
 ## 6. Price
 
-Three payments, three different people. Keep them apart. The amounts are from Geometer's price list of 14 November 2026.
+Three payments, three different people. Keep them apart. The amounts are from Geometer's price list of 19 November 2026.
 
 | Who pays | Who gets it | What for | Amount |
 | --- | --- | --- | --- |
