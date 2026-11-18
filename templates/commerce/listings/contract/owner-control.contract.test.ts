@@ -658,7 +658,8 @@ describe("the owner's alerts follow the phone", () => {
     const phone = newSoftPasskey(rp.rpId);
     // the link keeps subscribing, four at a time, from before the registration is sent until three rounds after it has answered, so some are in flight across the lock
     let registered = false;
-    const answers: { status: number; body: any }[] = [];
+    // one subscription before anything else, so the link is sure to have subscribed before the lock
+    const answers: { status: number; body: any }[] = [await push({ op: "owner_subscribe", subscription: subscription() })];
     const flooding = (async () => {
       for (let after = 0; !registered || after < 3; after += registered ? 1 : 0) {
         answers.push(...await Promise.all(Array.from({ length: 4 }, () => push({ op: "owner_subscribe", subscription: subscription() }))));

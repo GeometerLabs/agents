@@ -314,7 +314,9 @@ func (r *Runtime) step(ev map[string]any, taskID string) (err error) {
 	now := r.o.Now()
 	var told []string
 	if ev == nil {
-		told = r.beat(snap, rec, now)
+		if told, err = r.beat(snap, rec, now); err != nil {
+			return err
+		}
 	} else {
 		switch ev["kind"] {
 		case "owner_listing":
@@ -488,8 +490,8 @@ func (r *Runtime) ownerSignin(rec *recorder) {
 
 // beat is the clock's beat, in TypeScript's order (core.ts: the agent's own work, then the sign-in's tick): the assistant's beat; once a day the stock's tidy and the clean-up of
 // drafts and of photos no listing holds; then the owner's part (owner.go ownerBeat: the Operator's request and Geometer's reset read, the owner's number watched, each finding
-// said once, the panel's "sign out every device" said once). It returns the requests to mark told once the step is saved.
-func (r *Runtime) beat(snap *Snap, rec *recorder, now int64) []string {
+// said once, the panel's "sign out every device" said once). It returns the requests to mark told once the step is saved, or the error that stops the step.
+func (r *Runtime) beat(snap *Snap, rec *recorder, now int64) ([]string, error) {
 	// the assistant's beat: cards past their time, what is no longer needed, the morning question (only once the shop has an assistant state: before that there is nothing to do)
 	if snap.A != nil {
 		r.assistantFor(snap, rec, now).onTick()

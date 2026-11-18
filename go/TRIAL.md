@@ -184,7 +184,7 @@ One Go shop alone (`measure.ts`): idle 20.1 MB (was 19.5), 22.9 MB after 50 requ
 - `limitChanges` compaction.
 The TypeScript shared pool (`shared-pool.ts`, `shared-worker.ts`, `shared.ts`) is replaced by the Go host only once the deployer runs `listings-shared`.
 
-**TypeScript findings (reported, not fixed):** `http.ts` passes the session's secret token (not its short id) to `recordAccess("file_taken")`, so the `owner_file_taken` record line holds a live session token (Go writes the short id; the contract has a `todo` for TypeScript); the Stock page's pre-check and the step disagree on a listing title over 60 units (200, then a blocked line); `start` accepts a stock id of a listing that does not exist; with no declared limits "limit" answers "I can tighten: ." with an empty list; `get my shop's file for sale` is drafted as a listing; the restore entry says ids moved on by 100,000 though a listings store has no counter; `status.ownerAccess.locked` makes one existing contract test fail on TypeScript at the base. Seams left for the owner-control agent: `PasskeySessions` (`routes.go`), `Runtime.PushOwner`, `Runtime.Push().DropUnbound` on the first passkey.
+**TypeScript findings (reported, not fixed):** `http.ts` passes the session's secret token (not its short id) to `recordAccess("file_taken")`, so the `owner_file_taken` record line holds a live session token (Go writes the short id; the contract has a `todo` for TypeScript); the Stock page's pre-check and the step disagree on a listing title over 60 units (200, then a blocked line); `start` accepts a stock id of a listing that does not exist; with no declared limits "limit" answers "I can tighten: ." with an empty list; `get my shop's file for sale` is drafted as a listing; the restore entry says ids moved on by 100,000 though a listings store has no counter; `status.ownerAccess.locked` makes one existing contract test fail on TypeScript at the base. Seams left for the owner-control agent: `PasskeySessions` (`routes.go`), `Runtime.PushOwner`, `Runtime.Push().DropUnbound` on the first passkey. *(Superseded by "Wave 1 merged" below: the file-taken token is fixed in TypeScript on main and the contract's `todo` is a real test; `locked` and the schema comparison pass; the three seams are connected, `PasskeySessions` by removing it.)*
 
 ## Wave 1 merged (19 Nov 2026): owner control and the complete listings shop, in one branch
 
@@ -197,7 +197,9 @@ branches and are merged here, with main's fix to the `owner_file_taken` record l
   (`stop_alert`, a passkey session only). The check and the subscription are one sequence under the lock, so a link's subscription cannot land after the first passkey's DropUnbound.
 - **The alerts to the owner's phones** (a new phone, codes made, a phone removed, the Operator's request on the tick, an owner-number change on the tick) are TypeScript's words in
   the owner's language: `scripts/gen_words.ts` renders them from `owner-phones.ts` and `owner-signin.ts`, and the moment they carry (`dayAndTime`) is data taken from Intl's parts,
-  checked on every month and hour; the contract opens each push with a soft browser and compares it with the TypeScript function in Malayalam, Kannada and Hindi.
+  checked on every month and hour; the contract opens each push with a soft browser and compares it with the TypeScript function in Malayalam, Kannada and Hindi. A push that
+  cannot be queued fails the route, or the beat's step (its notice is then said again), as TypeScript's throw does. The packs hold Intl's output for the Node that ran the
+  generator: a Node with another ICU may write the moment differently, and `words-fresh` then reports the packs stale (generate with the Node the shops run on).
 - **The limits page's passkey check** asks the access package (the read-only reader of `owner-access.sqlite`, which skipped the store's reconcile, is gone); a store that cannot be
   read refuses. `/status` reports `locked` and the pending request from the owner control.
 - **"Get my shop's file"** names the session by the short id of the same check that let it in, on both runtimes (the contract's `todo` is a real test now).
@@ -205,7 +207,8 @@ branches and are merged here, with main's fix to the `owner_file_taken` record l
 
 **Results** (19 Nov, one run each, through the heat lock): the whole contract folder, **172 of 172 on TypeScript (179 s) and 172 of 172 on Go (97 s), none skipped**;
 the cross-runtime cases (cross-restart, differential, the owner's file and push across a change of runtime, the shared process) run inside both. No runtime process was left
-running after either run. `go vet ./...` and `go test ./...` pass, and `go test -race` on `internal/access`, `internal/runtime` and `internal/shared`. The two failures wave 1a
+running after either run. `go vet ./...` and `go test ./...` pass, and `go test -race` on `internal/access`, `internal/runtime` and `internal/shared` (unit tests only:
+the runtime package has few), so the whole contract was also run against a `-race` build of `listings` with `GORACE=halt_on_error=1`: 172 of 172, no race. The two failures wave 1a
 reported against TypeScript at its base (the `owner-access.sqlite` schema in `cross-restart.test.ts`, `/status ownerAccess.locked`) pass now: they were the owner control's.
 Binaries: `listings` 23.3 MB (16.4 MB with `-ldflags "-s -w"`), `listings-shared` 23.8 MB (16.8 MB).
 
