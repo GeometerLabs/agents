@@ -5,6 +5,7 @@ import type { Language } from "../language/languages.ts";
 import type { ChannelEvent } from "./events.ts";
 import { OWNER_LINK_HEADER } from "./owner-link.ts";
 import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "./owner-access.ts";
+import type { OwnerFileState } from "./owner-file.ts";
 import type { LinkState } from "./owner-access.ts";
 import type { OwnerAppView } from "../assistant/app/view.ts";
 import type { Face } from "../assistant/character.ts";
@@ -218,6 +219,9 @@ export interface ChannelBackend {
   documents?(key: DocumentsKey, language: Language): Promise<Document[]>;
   /** The accountant's files for a period, for a signed-in owner's SESSION only (the runtime refuses anything else); null when the session is not good. */
   accountantFiles?(owner: { session: string }, period: string): Promise<ExportFile[] | null>;
+  /** "Get my shop's file" (block S): the state of the owner's file, and (with an id) its bytes once; both for a signed-in owner's SESSION only. Null when the session is not good, or (bytes) there is no such file now. */
+  ownerFile?(owner: { session: string }): Promise<OwnerFileState | null>;
+  ownerFileBytes?(owner: { session: string }, id: string): Promise<{ name: string; bytes: Buffer } | null>;
   /** Item 11h: the same reads, for a Fees centre: its page, a parent's link by its hash (null: no parent has it now), a confirmation page by its handle's hash. */
   feesOffer?(): Promise<FeesOffer>;
   parentView?(linkHash: string): Promise<ParentView | null>;
@@ -322,6 +326,17 @@ export function runtimeBackend(o: { url: string; token: string; timeoutMs?: numb
       const r = await call(`${o.url}/internal/channel/accounting?period=${encodeURIComponent(period)}`, { headers: headers(owner) }, timeout);
       if (r.status === 403) return null;
       return (await json<{ files: ExportFile[] }>(r)).files;
+    },
+    async ownerFile(owner) {
+      const r = await call(`${o.url}/internal/channel/owner-file`, { headers: headers(owner) }, timeout);
+      if (r.status === 403) return null;
+      return json<OwnerFileState>(r);
+    },
+    async ownerFileBytes(owner, id) {
+      const r = await call(`${o.url}/internal/channel/owner-file?take=${encodeURIComponent(id)}`, { headers: headers(owner) }, 60_000);
+      if (r.status !== 200) return null;
+      const name = /filename="([^"]+)"/u.exec(r.headers.get("content-disposition") ?? "")?.[1] ?? "shop-file.tar.gz";
+      return { name, bytes: Buffer.from(await r.arrayBuffer()) };
     },
     async owner(owner) {
       const r = await call(`${o.url}/internal/channel/owner`, { headers: headers(owner) }, timeout);
