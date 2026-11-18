@@ -12,7 +12,7 @@ import type { RuntimeChannel } from "./core.ts";
 import { createOwnerSignin } from "../channels/owner-signin.ts";
 import type { OwnerSignin } from "../channels/owner-signin.ts";
 import { PAGES_FILE, pagesReader } from "../channels/pages-file.ts";
-import { OWNER_GRANTS_FILE, ownerGrantsReader } from "../channels/owner-grants.ts";
+import { OWNER_GRANTS_FILE, OWNER_RESET_FILE, ownerGrantsReader } from "../channels/owner-grants.ts";
 import { openOwnerFile } from "./owner-file.ts";
 import { PUSH_FILE, openPushStore } from "../push/store.ts";
 import { createPushSender } from "../push/sender.ts";
@@ -232,7 +232,10 @@ export async function startRuntimeClient<Settings, Rt extends StartableRuntime>(
   const ownerSigninBase = ownerAccess && owner ? createOwnerSignin({
     access: ownerAccess, pages: pagesReader(join(client.folder, PAGES_FILE)), endBefore: () => readEndBefore(join(client.folder, OWNER_SESSIONS_FILE)),
     // item 11h: the Operator's setup QR and recovery card, as the deployer copies the panel's file here
-    grants: ownerGrantsReader(join(client.folder, OWNER_GRANTS_FILE)),
+    // owner's item 2: Geometer's reset is a second file the panel never writes (owner-grants.ts), merged in by the reader
+    grants: ownerGrantsReader(join(client.folder, OWNER_GRANTS_FILE), join(client.folder, OWNER_RESET_FILE)),
+    // the Operator's request to remove every phone reaches the owner's phones with alerts on (`push` is made just below; it is only used once the runtime runs)
+    alert: (text) => { if (push?.on) push.owner(text[owner.language], "phones"); },
     owner, shopName: (client.settings as { name?: string }).name ?? "", clock, log,
   }) : undefined;
   // W2: a chat guest's identity (keys per thread, the number they gave, one-use links), in a file of its own beside the store, for a shop with a page and an owner. Its links go out through
