@@ -35,7 +35,8 @@ export const OWNER_KEEP_FILE = "runtime/owner-keep.json";
 type Row = Record<string, string | number | null>;
 export interface OwnerKeep {
   schema: 1;
-  ownerAccess: { meta: Row[]; passkeys: Row[]; grantsUsed: Row[] };
+  /** `ownCodes` (owner's item 2): the owner's own recovery codes, as hashes. Left out of a snapshot made before them. */
+  ownerAccess: { meta: Row[]; passkeys: Row[]; grantsUsed: Row[]; ownCodes?: Row[] };
   push: { meta: Row[]; subs: Row[] };
   /** W2: the customers' chat keys and ties. Left out of a snapshot made before it, and when the shop has none. */
   chatIdentity?: { creds: Row[]; users: Row[]; contact: Row[]; phones: Row[]; alias: Row[] };
@@ -43,7 +44,9 @@ export interface OwnerKeep {
 const CHAT_TABLES = ["creds", "users", "contact", "phones", "alias"] as const;
 
 /** The meta names each side keeps (anything else in meta, like the sign-out marker, is not carried). */
-const ACCESS_META = ["webauthn_user"];
+// Owner's item 2: the runtime's own gate (owner-access.ts) is carried too, so a shop moved to another server keeps "the owner holds a passkey" and the moment passkeys were
+// last cleared; without them a restored shop would take the old Operator card as new.
+const ACCESS_META = ["webauthn_user", "passkeys_before", "reopen_at", "reset_at", "adopted"];
 const PUSH_META = ["vapid", "owner_choice"];
 
 /** All rows of a query, or none when the file or the table is not there (an older shop, or no sign-in yet). */
@@ -61,7 +64,7 @@ export function readOwnerKeep(dataDir: string): OwnerKeep | null {
   const chatIdentity = { creds: rows(chat, "SELECT * FROM creds ORDER BY made_at"), users: rows(chat, "SELECT * FROM users"), contact: rows(chat, "SELECT * FROM contact"), phones: rows(chat, "SELECT * FROM phones"), alias: rows(chat, "SELECT * FROM alias") };
   const keep: OwnerKeep = {
     schema: 1,
-    ownerAccess: { meta: metaOf(access, ACCESS_META), passkeys: rows(access, "SELECT * FROM passkeys ORDER BY made_at"), grantsUsed: rows(access, "SELECT * FROM grants_used ORDER BY used_at") },
+    ownerAccess: { meta: metaOf(access, ACCESS_META), passkeys: rows(access, "SELECT * FROM passkeys ORDER BY made_at"), grantsUsed: rows(access, "SELECT * FROM grants_used ORDER BY used_at"), ownCodes: rows(access, "SELECT * FROM own_codes ORDER BY made_at") },
     push: { meta: metaOf(push, PUSH_META), subs: rows(push, "SELECT * FROM subs WHERE dead_at IS NULL ORDER BY made_at") },
   };
   if (chatIdentity.creds.length > 0 || chatIdentity.contact.length > 0) keep.chatIdentity = chatIdentity;
@@ -108,6 +111,7 @@ export function putOwnerKeep(dataDir: string, keep: OwnerKeep): Put {
     putRows(access, "meta", keep.ownerAccess.meta.filter((m) => ACCESS_META.includes(String(m.name))));
     result.passkeys = putRows(access, "passkeys", keep.ownerAccess.passkeys);
     putRows(access, "grants_used", keep.ownerAccess.grantsUsed);
+    if (keep.ownerAccess.ownCodes) putRows(access, "own_codes", keep.ownerAccess.ownCodes);
     access.exec("COMMIT");
   } finally { access.close(); }
   const push = new DatabaseSync(join(dataDir, PUSH_FILE));
