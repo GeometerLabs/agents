@@ -23,7 +23,7 @@ import type { FrontShop } from "../front.ts";
 import type { ChannelBackend } from "../backend.ts";
 import { CHAT, QUICK, forKind } from "../words-chat.ts";
 import { identityBlock } from "../chat-identity-page.ts";
-import { IDENTITY } from "../words-chat-identity.ts";
+import { CHAT_LINK_TEMPLATES, IDENTITY } from "../words-chat-identity.ts";
 import { CHAT_MORE } from "../words-chat-more.ts";
 import { FIRST_WORDS } from "../words-owner-first.ts";
 import { LANGUAGES } from "../../language/languages.ts";
@@ -308,12 +308,45 @@ test("a Fees chat never says shop: head, call button, strip, note, retention lin
     assert.doesNotMatch(all.replace(/\{shop\}/gu, ""), SHOP_WORD[language], `${language}: no table line says shop`);
   }
   assert.equal(forKind("fees", "en", FIRST_WORDS.en).shopCall, "Call the centre");
-  assert.equal(forKind("fees", "en", CHAT.en).note, "The centre's assistant replies here. A booking or a payment counts once the centre's record shows it.");
+  assert.equal(forKind("fees", "en", CHAT.en).note, "The centre's assistant replies here. A payment counts once the centre's record shows it.");
   assert.equal(forKind("fees", "en", CHAT.en).kept(30), "The centre keeps this chat for 30 days.");
   assert.equal(forKind("fees", "en", IDENTITY.en).deleteDone, "Deleted. This chat is gone from this centre.");
   // a name placeholder is a shop's name, not the word shop
   assert.match(forKind("fees", "en", { a: "Your link from {shop}: x" }).a, /\{shop\}/u);
   assert.equal(forKind("bookings", "en", CHAT.en), CHAT.en);
+});
+
+test("each kind has its own words for the link a guest holds: a booking link, an order link, a fee page link; an unknown kind keeps the booking words and the word shop", () => {
+  // what each kind's guest is told they hold, in each language (the Bookings words are the lines as written)
+  const LINK: Record<string, Record<string, string>> = {
+    bookings: { en: "booking link", hi: "बुकिंग का लिंक", ml: "ബുക്കിംഗ് ലിങ്ക്", kn: "ಬುಕಿಂಗ್ ಲಿಂಕ್" },
+    orders: { en: "order link", hi: "ऑर्डर का लिंक", ml: "ഓർഡർ ലിങ്ക്", kn: "ಆರ್ಡರ್ ಲಿಂಕ್" },
+    fees: { en: "fee page link", hi: "फ़ीस पेज का लिंक", ml: "ഫീസ് പേജ് ലിങ്ക്", kn: "ಶುಲ್ಕ ಪುಟದ ಲಿಂಕ್" },
+  };
+  const BOOKING_WORD: Record<string, RegExp> = { en: /booking/iu, hi: /बुकिंग/u, ml: /ബുക്കിംഗ്|ബുക്കിങ്/u, kn: /ಬುಕಿಂಗ್/u };
+  for (const language of LANGUAGES) {
+    for (const kind of ["bookings", "orders", "fees"] as const) {
+      const w = forKind(kind, language, IDENTITY[language]);
+      assert.ok(w.sendMyLinks.includes(LINK[kind][language]), `${language}/${kind}: the send button names its link`);
+      // the button, the no-lock line and the delete line, as the page draws them
+      const block = identityBlock({ kind, language, base: "https://p.example/glow/chat" }).html;
+      assert.ok(block.includes(esc(w.sendMyLinks)) && block.includes(esc(w.keepNoLock)) && block.includes(esc(w.deleteAsk)), `${language}/${kind}: the identity box carries the kind's words`);
+      // only a Bookings guest is told about a booking: an Orders or Fees guest never reads the word
+      const all = JSON.stringify([w, forKind(kind, language, CHAT[language]), forKind(kind, language, CHAT_MORE[language])].map((t) => Object.values(t).map((v) => (typeof v === "function" ? (v as (n: number) => string)(30) : v))));
+      if (kind === "bookings") assert.match(all, BOOKING_WORD[language], `${language}: Bookings keeps its booking words`);
+      else assert.doesNotMatch(all, BOOKING_WORD[language], `${language}/${kind}: no booking word reaches this guest`);
+    }
+    // an unknown kind (a caller that does not know, a kind with no words of its own) is the lines as written
+    assert.equal(forKind("stock" as never, language, IDENTITY[language]), IDENTITY[language]);
+  }
+  assert.equal(forKind("orders", "en", IDENTITY.en).sendMyLinks, "Send me my order link");
+  assert.equal(forKind("orders", "en", IDENTITY.en).keepNoLock, "This phone has no screen lock, so it cannot keep the chat. You can still chat as a guest, and your order link keeps working.");
+  assert.equal(forKind("orders", "en", CHAT.en).note, "The shop's assistant replies here. An order or a payment counts once the shop's record shows it.");
+  assert.equal(forKind("fees", "en", IDENTITY.en).sendMyLinks, "Send me my fee page link");
+  assert.equal(forKind("fees", "en", IDENTITY.en).deleteAsk.includes("for a payment."), true);
+  assert.equal(IDENTITY.en.sendMyLinks, "Send me my booking link");
+  // the one template for a link sent again says "link" for every kind, so one approved template serves them all
+  assert.doesNotMatch(JSON.stringify(CHAT_LINK_TEMPLATES.find((t) => t.name === "chat_my_link")?.bodies), /booking|order/iu);
 });
 
 test("every state of the review's screens draws, in four languages, with the shop's own paint", () => {
