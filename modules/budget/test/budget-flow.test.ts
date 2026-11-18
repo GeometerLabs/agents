@@ -74,8 +74,10 @@ function world(budget: BudgetConfig | undefined) {
     const sent = await assistant.talkToCustomer({ phone: CUSTOMER, text, language: "en", menu: () => ({ buttons: [{ id: "owner", title: "Talk to owner" }] }) });
     return { sent, messages: messaging.sentTo(CUSTOMER).slice(before) };
   };
-  const pend = () => { const s = listingsOf(store.assistant ??= { seq: 0, cards: [], refused: [], closedDays: [], undo: [], talk: [], limitChanges: [] }); s.pending.push({ id: `ph-0000000000${s.pending.length}`, type: "image/jpeg", atMs: clock.now() } as never); };
-  return { clock, messaging, record, store, assistant, calls, script, sayOwner, ownerTexts, customerSays, pend };
+  const pend = () => { const s = listingsOf(store.assistant ??= { seq: 0, cards: [], refused: [], closedDays: [], undo: [], talk: [], limitChanges: [] }); s.pending.push({ id: `ph-00000000000${s.pending.length}`, type: "image/jpeg", width: 800, height: 600, bytes: 1000, atMs: clock.now() }); };
+  /** What the owner's app shows: the assistant's lines in its talk list (always written, even when WhatsApp can only carry a nudge because the 24-hour window is closed). */
+  const appLines = () => (store.assistant?.talk ?? []).filter((l) => l.from === "assistant").map((l) => l.text);
+  return { clock, messaging, record, store, assistant, calls, script, sayOwner, ownerTexts, customerSays, pend, appLines };
 }
 const big = 1000 * 1_000_000;
 const count = (w: ReturnType<typeof world>, re: RegExp) => w.ownerTexts().filter((t) => re.test(t)).length;
@@ -107,9 +109,11 @@ test("a customer's open question stops at the shop's daily cap: the template's m
   assert.equal(second.sent, false, "the caller sends its own menu");
   assert.deepEqual(second.messages, [], "nothing about a cap reaches the customer");
   assert.equal(w.calls.length, 1);
-  assert.equal(count(w, /answering customers.{0,20}open questions/u), 1);
+  // a customer's message is what hits this cap, and the owner's 24-hour window is then often closed (here they never wrote): the line is in the app either way
+  const told = () => w.appLines().filter((t) => /answering customers.{0,20}open questions/u.test(t)).length;
+  assert.equal(told(), 1);
   await w.customerSays("what else?");
-  assert.equal(count(w, /answering customers.{0,20}open questions/u), 1, "once that day");
+  assert.equal(told(), 1, "once that day");
 });
 
 test("a listing draft stops at its daily cap and sends the owner to the plain form; a refused draft still used up a count", async () => {
@@ -162,10 +166,23 @@ test("a message delivered twice is paid for once", async () => {
   const w = world({ monthlyMicroInr: big, daily: { owner_talk: 50 } });
   const msg = w.messaging.receive(OWNER, "how is the shop doing");
   await w.assistant.onOwnerMessage(msg);
+  const sent = w.messaging.sentTo(OWNER).length;
   await w.assistant.onOwnerMessage(msg); // the same message again, as a retry would
   assert.equal(w.calls.length, 1);
+  assert.equal(w.messaging.sentTo(OWNER).length, sent, "and nothing is said twice");
   assert.equal(stateFor(w.store, NOW, TZ).costMicroInr, CALL, "the meter counted one call");
   assert.equal(stateFor(w.store, NOW, TZ).budget!.today.owner_talk, 1);
+});
+
+test("a capped message delivered again gets no second day line and no model call", async () => {
+  const w = world({ monthlyMicroInr: big, daily: { owner_talk: 1 } });
+  await w.sayOwner("how is the shop doing");
+  const msg = w.messaging.receive(OWNER, "how is the shop doing, take two");
+  await w.assistant.onOwnerMessage(msg); // over the cap: the fixed answer and the day's line
+  const before = w.messaging.sentTo(OWNER).length;
+  await w.assistant.onOwnerMessage(msg); // delivered again: it was answered the first time
+  assert.equal(w.messaging.sentTo(OWNER).length, before + 1, "the fixed answer only, never the day's line again");
+  assert.equal(w.calls.length, 1);
 });
 
 test("a shop with no budget talks as before: no notices, no caps, nothing kept", async () => {
@@ -181,14 +198,14 @@ test("every new line is in all four languages, passes the outgoing check, and us
   const BANNED = /\b(safe|guaranteed|proves|certified|100%|earn|income|bot|founder)\b/iu;
   const back = { year: 2026, month: 12, day: 1 };
   const lines = [{ line: "warn", backOn: back }, { line: "full", backOn: back }, { line: "listing_month", backOn: back }, ...DAY_FEATURES.map((feature) => ({ line: "day", feature }))] as const;
-  const english = new Map<string, string>();
+  const english = new Map<string, string>(lines.map((l) => [JSON.stringify(l), write("budget_line", l as never, "en", TZ).text])); // first: LANGUAGES does not start with "en"
   for (const l of lines) {
     for (const language of LANGUAGES) {
       const w = write("budget_line", l as never, language, TZ);
       assert.ok(w.text.length > 20, `${language} ${JSON.stringify(l)}`);
       assert.doesNotMatch(w.text, BANNED);
       assert.equal(checkText(w.text, w.facts).ok, true, `${language} ${JSON.stringify(l)} passes the outgoing check`);
-      if (language === "en") english.set(JSON.stringify(l), w.text); else assert.notEqual(w.text, english.get(JSON.stringify(l)), `${language} is not the English line`);
+      if (language !== "en") assert.notEqual(w.text, english.get(JSON.stringify(l)), `${language} is not the English line`);
       if (l.line !== "day" && language === "en") assert.match(w.text, /1 Dec/u, "the day it is back is in the line");
       if (l.line === "full" || l.line === "listing_month") assert.ok(/Buttons|Add to my page/u.test(english.get(JSON.stringify(l))!), "what still works is said");
     }

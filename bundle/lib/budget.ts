@@ -3,6 +3,7 @@
 // modules/budget/budget.ts reads), for the shop's plan. It is given the list IN FORCE, never a proposal, so until the owner says yes to a new list no shop gets a budget; and a
 // number the list does not have is never made up: with any needed entry missing the answer is "no budget", and the shop keeps fleet's cap alone.
 import { wallProblems } from "../../modules/budget/budget.ts";
+import { latestPriceList } from "../panel/cost.ts";
 import type { BudgetConfig } from "../../modules/budget/budget.ts";
 
 /** The part of a price list this needs (bundle/panel/cost.ts PriceList satisfies it). */
@@ -62,4 +63,12 @@ export function wallNotes(callsPerDay: number | undefined, shopBudgets: readonly
   const budgets = shopBudgets.filter((b): b is BudgetConfig => b !== undefined);
   if (budgets.length === 0) return [];
   return wallProblems({ callsPerDay: callsPerDay ?? 2000, shopBudgets: budgets, worstCallMicroInr: WORST_CALL_MICRO_INR });
+}
+
+/**
+ * A deploy's note when the price list cannot be read at all (a missing or broken prices/ folder): `readShop` then quietly gives every shop NO budget, which is right for a list
+ * with none in force but would hide a broken checkout. Empty when the list reads.
+ */
+export function priceListNotes(read: () => unknown = latestPriceList): string[] {
+  try { read(); return []; } catch (e) { return [`the price list could not be read (${(e as Error).message}), so no shop was given a model budget: only fleet's cap limits their model spend. Check that prices/ is in this checkout.`]; }
 }

@@ -152,6 +152,8 @@ The 18 Nov list is a **proposal**: it waits for the owner's yes. Until it is in 
 
 The customer and router caps are "per 1,000 messages of the plan's allowance", so they scale with the plan.
 
+**Margins** (`docs/product/economics-and-pricing.md`, section 6): a budget is a ceiling, and a typical shop spends well under it, but a shop that uses all of it costs more than the margin table assumed. Basic is the tight one: at 40 shops a server its margin is ₹41 (28%), and a full ₹20 would take it to about ₹26 (17%); at 25 shops it is already below zero. If Basic's margin must hold, set its budget at ₹12 (about 200 owner-talk turns a month). This is for the owner to decide with the other numbers; the list is only a proposal.
+
 ## Run and test
 
 ```

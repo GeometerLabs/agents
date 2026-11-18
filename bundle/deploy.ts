@@ -30,7 +30,7 @@ import { KINDS, kindFor, guardsOf, runtimeHasWhatsApp } from "./lib/kinds.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { RECORD_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, speechKeyHandedIn, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
-import { wallNotes } from "./lib/budget.ts";
+import { priceListNotes, wallNotes } from "./lib/budget.ts";
 import { placeRuntimeReportKey } from "./lib/report-key.ts";
 import { NO_MODEL, fleetIdOf, listShops, loadServer, modelChosen, readShop, serverPaths } from "./lib/server.ts";
 import type { ServerConfig, ShopFolder } from "./lib/server.ts";
@@ -506,6 +506,7 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   for (const p of prepared) for (const g of p.guards) problems.push(...await compileAndVerify(ctx, server, p.folder.name, g, { admin: sha(creds.get(p.folder.name)!.admin[g.plan.kind as "razorpay"]), agents: agentsOf(p.folder.name, g.plan.kind, creds.get(p.folder.name)!) }, licenceFor(server, licence.on, g.plan.kind, p.folder.name, ownNumbersOf(p.folder))));
   const everyShop = [...new Set([...Object.entries(state.shops).filter(([, s]) => s.applied).map(([n]) => n), ...prepared.map((p) => p.folder.name)])].sort();
   // decision 60: the model Guard's wall (a count of calls a day for the whole server) against the shops' own budgets: said, never refused
+  for (const n of priceListNotes()) ctx.log(`note: ${n}`);
   for (const n of wallNotes(server.model.callsPerDay, prepared.map((p) => p.folder.budget))) ctx.log(`note: ${n}`);
   const modelAdmin = ensureSecret(secretFile(ctx.dir, "ops", "_model", "admin_token"), mintGuardToken);
   const modelPlan = planModelGuard(server, 1);
