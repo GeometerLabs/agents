@@ -140,7 +140,7 @@ node prices/new.ts 2026-12-01     # copies the newest list to that date
 # add the file's sha256 to PINNED in bundle/panel/test/cost.test.ts
 ```
 
-The 18 Nov list is a **proposal**: it waits for the owner's yes. Until it is in force (its `status` line removed in a later dated list), no shop gets a budget and fleet's cap stays at ₹15 per 1,000 messages. The proposed numbers:
+The 18 Nov list was a **proposal**. The owner approved it as proposed on 18 Nov ("approve the budget numbers as proposed") and the list of **19 Nov** (`prices/2026-11-19.json`) puts it in force: from 19 Nov a shop with a plan gets its budget and daily caps at its next deploy, and fleet's cap is ₹20 per 1,000 messages (fleet needs its own deploy for that). A list marked `proposed` still never gives a shop a budget. The numbers:
 
 | | Month (₹) | Owner talk a day | Drafts a day | Customer questions a day | Router language step a day |
 |---|---|---|---|---|---|

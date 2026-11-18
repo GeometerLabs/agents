@@ -31,7 +31,7 @@ import { moveOutOfShared, needsMove } from "./lib/listings-move.ts";
 import { appliedPathwayDir, keptDirFor, pathwayDirFor, pinnedRuntimeCheck } from "./lib/pathways.ts";
 import type { Runner } from "./lib/runner.ts";
 import { RECORD_KEY_FILE, ensurePanelSigningKey, ensureSecret, ensureShopPersonKeys, panelUser, personKeyFile, prepareSecretsRoot, readSecretFile, secretFile, speechKeyHandedIn, takeSecrets, writeSecretFile } from "./lib/secrets.ts";
-import { priceListNotes, wallNotes } from "./lib/budget.ts";
+import { DIRECTORY_AGENT_ID, directoryAssistant, priceListNotes, wallNotes } from "./lib/budget.ts";
 import { placeRuntimeReportKey } from "./lib/report-key.ts";
 import { NO_MODEL, fleetIdOf, listShops, loadServer, modelChosen, readShop, serverPaths } from "./lib/server.ts";
 import type { ServerConfig, ShopFolder } from "./lib/server.ts";
@@ -454,7 +454,7 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   const door = doorConfig(server);
   if (door) writeAtomic(join(p.generated, "door", "door.json"), door);
   // block S: the directory of local shops beside it (no secret in its config either)
-  const directory = directoryConfig(server);
+  const directory = directoryConfig(server, directoryAssistant(server));
   if (directory) writeAtomic(join(p.generated, "directory", "directory.json"), directory);
   // the deployment key goes to the one container that sends heartbeats
   if (server.fleet) writeSecretFile(secretFile(ctx.dir, "ops", "fleet_key"), readSecretFile(resolve(ctx.dir, server.fleet.keyFile)) ?? "");
@@ -470,7 +470,7 @@ export function writeServer(ctx: Context, server: ServerConfig, state: State): C
   if (server.pages) ensureDir(p.home);
   // the speech models folder, if speech is on: made here so Docker does not make it as root; the server admin's fetch-models fills it (services/speech/README.md)
   if (server.speech?.enabled) ensureDir(server.speech.modelsDir ?? p.speechModels);
-  const composed = composeServer(server, dirsOf(ctx), shops, { opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}), ...(server.speech?.enabled ? { speech: { image: server.speech.image, modelsDir: server.speech.modelsDir ?? p.speechModels } } : {}) });
+  const composed = composeServer(server, dirsOf(ctx), shops, { opsUser: `${opsUser.uid}:${opsUser.gid}`, ...(server.panel.enabled ? { panel: preparePanel(ctx) } : {}), ...(agents.length > 0 ? { agents } : {}), ...(server.speech?.enabled ? { speech: { image: server.speech.image, modelsDir: server.speech.modelsDir ?? p.speechModels } } : {}), ...(directoryAssistant(server) ? { assistant: true } : {}) });
   writeAtomic(composeFile(ctx.dir), composed.compose);
   writeAtomic(join(p.generated, "Caddyfile"), composed.caddyfile);
   return composed;
@@ -571,6 +571,8 @@ async function deployChecked(ctx: Context, only?: string): Promise<ShopResult[]>
   // each shop is an agent of the model Guard under its own id, listings-only shops too (their credential is in the shared folder): the model Guard knows each by its own id (the daily cap at the Guard is one number for the server; each shop's own allowance limits its use)
   const sharedNow = (s: string): boolean => isShared(prepared.find((p) => p.folder.name === s)?.folder.lock?.pathway ?? state.shops[s]?.applied?.pathway.split("@")[0]);
   const modelAgents = everyShop.map((s) => ({ id: names.agentId(s), sha: sha(creds.get(s)?.agent.model ?? readSecretFile(secretFile(ctx.dir, secretsHolderOf(s, sharedNow(s)), "agent_model")) ?? "") }));
+  // decision 60: the directory's buyer assistant is one more agent of the model Guard, under its own id, with a credential only the directory container reads (secrets/directory/agent_model)
+  if (directoryAssistant(server)) modelAgents.push({ id: DIRECTORY_AGENT_ID, sha: sha(ensureSecret(secretFile(ctx.dir, "directory", "agent_model"), mintGuardToken)) });
   problems.push(...await compileAndVerify(ctx, server, undefined, model, { admin: sha(modelAdmin), agents: modelAgents }));
   if (problems.length > 0) throw new Refused(problems);
 

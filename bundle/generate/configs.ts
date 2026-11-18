@@ -5,7 +5,12 @@ import { BUNDLE_VERSION, fleetIdOf, publicUrl } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { ADMIN_FORWARD_PORT, DIRECTORY_DATA_DIR, HEALTH_PORT, INBOX_PORT, OPS_FLEET_DIR, OPS_STATUS_DIR, RELAY_PORT, REFRESHER_GUPSHUP_DIR, REFRESHER_PORT, SHOP_GUARD_KINDS, addressing } from "./compose.ts";
 import type { AgentDeploy, ShopDeploy } from "./compose.ts";
-import { GUARD_PORT, RUNTIME_PORT, SHARED, names } from "./shop.ts";
+import { GUARD_PORT, RUNTIME_PORT, SHARED, modelBaseUrl, names } from "./shop.ts";
+import type { directoryAssistant } from "../lib/budget.ts";
+import { modelProvider } from "./guards.ts";
+
+/** Where the directory container finds its credential at the model Guard (the secrets folder of the `directory` container is mounted at /run/secrets). */
+export const DIRECTORY_SECRET_FILE = "/run/secrets/agent_model";
 import { DIRECTORY_PORT, DOOR_INTERNAL_PORT } from "../services/door.ts";
 import { stableJson } from "../lib/util.ts";
 import type { ApproverPerson } from "../../modules/approvals/people.ts";
@@ -195,11 +200,18 @@ export function doorConfig(server: ServerConfig): string | undefined {
  * Block S: the directory's config (services/directory.ts), on every server that has the door (the directory is reached through it). No secret: the directory's own signing key is made in
  * its own folder. `served` are the pages domains it serves (a notice is taken for a feed under one of them), `doorUrl` is the door's own port, which reads this server's shops for it.
  */
-export function directoryConfig(server: ServerConfig): string | undefined {
+export function directoryConfig(server: ServerConfig, assistantBudget?: ReturnType<typeof directoryAssistant>): string | undefined {
   if (!server.pages || !server.fleet) return undefined;
+  // the buyer's assistant (decision 60): only with a budget in the price list in force and a model chosen; its call goes to the model Guard on the `assistant` network with its own credential
+  const assistant = assistantBudget ? {
+    monthlyMicroInr: assistantBudget.monthlyMicroInr, dailyCalls: assistantBudget.daily.buyer!, perBuyerPerDay: assistantBudget.perBuyerPerDay,
+    model: { wire: server.model.wire, baseUrl: modelBaseUrl(server.model), model: server.model.model }, ...(modelProvider(server.model) ? { provider: modelProvider(server.model) } : {}),
+    agentTokenFile: DIRECTORY_SECRET_FILE,
+  } : undefined;
   return stableJson({
     origin: `https://${server.pages.domain}`, served: [server.pages.domain, ...server.pages.extraDomains], doorUrl: `http://door:${DOOR_INTERNAL_PORT}`, dataDir: DIRECTORY_DATA_DIR,
     feeds: server.directory?.feeds ?? [], provider: { organization: "Geometer", url: `https://${server.pages.domain}` }, ...(server.directory?.area ? { area: server.directory.area } : {}),
+    ...(assistant ? { assistant } : {}),
   });
 }
 

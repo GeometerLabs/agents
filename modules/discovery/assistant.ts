@@ -330,18 +330,20 @@ export interface AssistantSettings {
   perBuyerPerDay: number;
   /** The language model, by the model Guard's address. */
   model?: ModelConfig;
+  /** The file holding the directory's own credential at the model Guard (its agent token), read by the service, never here. Left out: the call is made with no credential. */
+  agentTokenFile?: string;
   provider?: string;
   /** The decision model; its key (if it needs one) is read from this environment variable by name. */
   systemOne?: Omit<SystemOneConfig, "apiKey"> & { keyEnv?: string };
 }
 
 /** The assistant a config describes, or null (and a plain line to say why) when the numbers are not a usable budget. Off is the safe answer. */
-export function assistantFromSettings(settings: AssistantSettings | undefined, env: Record<string, string | undefined>, log: (line: string) => void = () => undefined): Assistant | null {
+export function assistantFromSettings(settings: AssistantSettings | undefined, env: Record<string, string | undefined>, log: (line: string) => void = () => undefined, fetchFn?: typeof fetch): Assistant | null {
   if (!settings) return null;
   const budget = { monthlyMicroInr: settings.monthlyMicroInr, daily: { buyer: settings.dailyCalls } };
   if (!isBudgetConfig(budget) || !Number.isSafeInteger(settings.perBuyerPerDay) || settings.perBuyerPerDay < 1) { log("directory: the assistant's budget in the config is not usable, so the assistant is off"); return null; }
   const systemOne = settings.systemOne ? systemOneFromEnv(settings.systemOne, env) : null;
-  return createAssistant({ budget, perBuyerPerDay: settings.perBuyerPerDay, ...(settings.model ? { model: settings.model } : {}), ...(settings.provider ? { provider: settings.provider } : {}), ...(systemOne ? { systemOne } : {}), log });
+  return createAssistant({ budget, perBuyerPerDay: settings.perBuyerPerDay, ...(settings.model ? { model: settings.model } : {}), ...(settings.provider ? { provider: settings.provider } : {}), ...(systemOne ? { systemOne } : {}), ...(fetchFn ? { fetch: fetchFn } : {}), log });
 }
 
 // ---- from a typed search to the directory's own search ----
