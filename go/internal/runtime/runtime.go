@@ -259,7 +259,9 @@ func (r *Runtime) recorder() *recorder {
 	return &recorder{key: r.o.RecordKey, base: len(r.entries), now: r.o.Now}
 }
 
-func (r *Runtime) step(ev map[string]any, taskID string) error {
+func (r *Runtime) step(ev map[string]any, taskID string) (err error) {
+	// a failure of the owner-access store inside a rule stops the step as TypeScript's throw does (access.DBError): never read as "no row", which would fail open
+	defer access.Recover(&err)
 	r.mu.RLock()
 	text := r.snapshot
 	r.mu.RUnlock()
@@ -281,7 +283,7 @@ func (r *Runtime) step(ev map[string]any, taskID string) error {
 		case "owner_access":
 			r.ownerAccess(rec, ev)
 		case "owner_signin":
-			r.ownerSignin(rec, now)
+			r.ownerSignin(rec)
 		case "owner_message":
 			if err := r.ownerMessage(snap, rec, ev, now); err != nil {
 				return err
@@ -405,16 +407,19 @@ func (r *Runtime) ownerNumberRead() string {
 
 // ownerSignin is a press of "send me a link" on the owner's page. A listings-only shop has no WhatsApp, so no link is sent: the owner signs in with their passkey. The attempt is
 // counted first, as every request is, so the record cannot be flooded by asking.
-func (r *Runtime) ownerSignin(rec *recorder, now int64) {
+func (r *Runtime) ownerSignin(rec *recorder) {
 	lang := r.o.Client.Settings.Owner.Language
 	if r.o.Access == nil {
 		r.o.Log("A sign-in event came for a shop with no owner sign-in (no pages file yet); it was dropped.")
 		return
 	}
-	r.ownerMu.Lock()
-	w, ok, _ := r.oWho()
-	allowed := ok && r.o.Access.TryAttempt(now)
-	r.ownerMu.Unlock()
+	w, ok, allowed := func() (access.Who, bool, bool) {
+		r.ownerMu.Lock()
+		defer r.ownerMu.Unlock()
+		w, ok, _ := r.oWho()
+		// the attempt is counted at the time read with the lock held, as sendLink reads the clock when it starts
+		return w, ok, ok && r.o.Access.TryAttempt(r.o.Now())
+	}()
 	if !ok {
 		r.o.Log("A sign-in link was asked for, but this shop has no pages file yet (its next deploy writes one): none was sent.")
 		return
@@ -430,7 +435,7 @@ func (r *Runtime) ownerSignin(rec *recorder, now int64) {
 // beat is the clock's beat: the owner's part (owner.go ownerBeat: the Operator's request and Geometer's reset read, the owner's number watched, each finding said once, the
 // panel's "sign out every device" said once), then, once a day, the clean-up of drafts and of photos no listing holds. It returns the requests to mark told once the step is saved.
 func (r *Runtime) beat(snap *Snap, rec *recorder, now int64) []string {
-	told := r.ownerBeat(rec, now)
+	told := r.ownerBeat(rec)
 	if now-r.lastDaily < listings.Day {
 		return told
 	}

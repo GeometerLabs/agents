@@ -35,9 +35,12 @@ cmd/listings/            main: the command line, the token files, start and stop
 internal/store/          the shop's SQLite file, schema 5, the same tables as modules/runtime/store.ts: the queue, the snapshot in pieces, the record, photos, the shop's key
 internal/signing/        the shop's Ed25519 key, RFC 8785 canonical JSON, the signed feed / answer / notice and the Agent Card's JWS (modules/signing)
 internal/listings/       the listings: state and rules, the owner's ops, the public and owner reads, the feed and check documents, photos, the assistant's draft and its grounding checks
-internal/access/         the owner's sessions, sign-in links, passkeys (WebAuthn) and the Operator's setup code, in owner-access.sqlite (modules/channels owner-*.ts, webauthn.ts)
+internal/access/         the owner's sessions, sign-in links, passkeys (WebAuthn), the Operator's setup code and card, and who controls them (the gate, the Operator's requests,
+                         Geometer's reset, the owner's phones and own codes, the number lock), in owner-access.sqlite, same schema (modules/channels owner-*.ts, webauthn.ts)
+internal/testclock/      the contract tests' clock (GEOMETER_TEST=1 + GEOMETER_TEST_CLOCK_FILE, a "fakes" shop only; a live shop refuses to start with it)
 internal/budget/         the shop's model budget and the month's AI counts (modules/budget, modules/understanding/ai-state.ts)
-internal/runtime/        the runtime: the folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes
+internal/runtime/        the runtime: the folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes; owner.go is the
+                         owner's routes and the tick's owner part, under one owner lock
 scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the TypeScript word lists (talk-check.ts), so the four-language words are never retyped
 ```
 
@@ -50,6 +53,7 @@ Only the three Go modules the owner approved, and what they themselves need (all
 | `modernc.org/sqlite` | the shop's store: pure Go (no cgo), so the binary is one file and cross-compiles; the same file format the TypeScript runtime writes |
 | `github.com/go-webauthn/webauthn` | the passkey ceremonies (registration and sign-in): the client data, challenge, origin, relying-party hash, user presence and verification, signature and counter are its checks, not code of ours. Its `protocol` and `webauthncose` packages also read and write the COSE keys |
 | `github.com/gowebpki/jcs` | RFC 8785 canonical JSON, which every signed document is signed over |
+| `golang.org/x/text` | Unicode: a recovery code as typed is NFKC-folded and upper-cased with the full mapping, as JavaScript's `normalize("NFKC").toUpperCase()` (owner's yes, 19 Nov) |
 
 Everything else is the standard library: `crypto/ed25519` and `crypto/x509` for the key (PKCS#8 DER, base64url, as the store keeps it), `net/http` for the server and the model call,
 `database/sql`, `encoding/json`, `regexp`, `time/tzdata` (the zone database inside the binary).

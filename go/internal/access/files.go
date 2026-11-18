@@ -110,6 +110,10 @@ func ParseJSDate(text string) (int64, bool) {
 			t = t.Add(shift)
 		}
 	}
+	// a Date holds at most 8.64e15 ms either side of 1970 (the year 275760); past that Date.parse says NaN
+	if ms := t.UnixMilli(); ms > 8_640_000_000_000_000 || ms < -8_640_000_000_000_000 {
+		return 0, false
+	}
 	return t.UnixMilli(), true
 }
 

@@ -133,13 +133,12 @@ func (a *Access) newChallenge(kind string, now int64, grant string) (string, err
 
 // challengeOf is the challenge a browser's client data names, if it is one of ours for this ceremony (and this grant), unused and in time.
 func (a *Access) challengeOf(clientData []byte, kind string, now int64, grant string) string {
-	var cd struct {
-		Challenge any `json:"challenge"`
-	}
+	// the member named exactly "challenge", as JSON.parse(...).challenge reads it (a struct field would also take "Challenge")
+	var cd map[string]any
 	if json.Unmarshal(clientData, &cd) != nil {
 		return ""
 	}
-	c, ok := cd.Challenge.(string)
+	c, ok := cd["challenge"].(string)
 	if !ok || !challengeText.MatchString(c) {
 		return ""
 	}
@@ -147,7 +146,7 @@ func (a *Access) challengeOf(clientData []byte, kind string, now int64, grant st
 	var g sql.NullString
 	var expires int64
 	var used sql.NullInt64
-	if err := a.db.QueryRow("SELECT kind, grant_hash, expires_at, used_at FROM challenges WHERE hash = ?", challengeHash(c)).Scan(&k, &g, &expires, &used); err != nil {
+	if !found(a.db.QueryRow("SELECT kind, grant_hash, expires_at, used_at FROM challenges WHERE hash = ?", challengeHash(c)).Scan(&k, &g, &expires, &used)) {
 		return ""
 	}
 	if k != kind || used.Valid || expires <= now || (grant != "" && (!g.Valid || g.String != grant)) {
@@ -235,7 +234,7 @@ func (a *Access) GrantState(g Grant, file *Grants, now int64) (string, error) {
 	if g.Kind == "setup" {
 		var expires int64
 		var voided sql.NullInt64
-		if err := q.QueryRow("SELECT expires_at, voided_at FROM own_setups WHERE hash = ?", hash).Scan(&expires, &voided); err == nil {
+		if found(q.QueryRow("SELECT expires_at, voided_at FROM own_setups WHERE hash = ?", hash).Scan(&expires, &voided)) {
 			switch {
 			case voided.Valid:
 				return "unknown", nil
@@ -249,7 +248,7 @@ func (a *Access) GrantState(g Grant, file *Grants, now int64) (string, error) {
 		}
 	} else if RecoveryShape(g.Code) {
 		var voided sql.NullInt64
-		if err := q.QueryRow("SELECT voided_at FROM own_codes WHERE hash = ?", hash).Scan(&voided); err == nil {
+		if found(q.QueryRow("SELECT voided_at FROM own_codes WHERE hash = ?", hash).Scan(&voided)) {
 			switch {
 			case voided.Valid:
 				return "unknown", nil
@@ -264,7 +263,7 @@ func (a *Access) GrantState(g Grant, file *Grants, now int64) (string, error) {
 	if act := appliedReset(q, file); g.Kind == "setup" && act != nil && act.Setup != nil && hash == act.Setup.Sha256 {
 		var firstSeen int64
 		var voided sql.NullInt64
-		if err := q.QueryRow("SELECT first_seen, voided_at FROM grants_seen WHERE hash = ?", hash).Scan(&firstSeen, &voided); err != nil || voided.Valid {
+		if !found(q.QueryRow("SELECT first_seen, voided_at FROM grants_seen WHERE hash = ?", hash).Scan(&firstSeen, &voided)) || voided.Valid {
 			return "unknown", nil
 		}
 		if used {
@@ -544,12 +543,16 @@ func (a *Access) Signin(response map[string]any, who Who, rp RelyingParty, shopN
 		return no("This passkey is not one of this shop's.")
 	}
 	row := rows[0]
-	uidText, err := a.userID()
-	if err != nil {
-		return no("The shop could not read its own user id.")
-	}
-	// any userHandle the phone sends that is not this shop's own user id (a JSON null or a number included, as TypeScript's `!== userId()` refuses them) is another shop's
+	// any userHandle the phone sends that is not this shop's own user id (a JSON null or a number included, as TypeScript's `!== userId()` refuses them) is another shop's.
+	// The id is made (userID) only here, where TypeScript's userId() makes it; otherwise it is only read, for the library's user (which needs one, and checks it against no
+	// userHandle when the phone sent none).
+	uidText, _ := metaStr(a.db, "webauthn_user")
 	if h, present := response["userHandle"]; present && h != "" {
+		made, err := a.userID()
+		if err != nil {
+			return no("The shop could not read its own user id.")
+		}
+		uidText = made
 		if text, isText := h.(string); !isText || text != uidText {
 			return no("This passkey was made for another shop.")
 		}

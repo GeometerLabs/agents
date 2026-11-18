@@ -199,6 +199,42 @@ func newID() string {
 	return hex.EncodeToString(b)
 }
 
+// DBError is a database failure inside a rule. TypeScript's node:sqlite throws on one, so the call stops (an HTTP 500, a failed step); here a helper that meets one PANICS
+// with a DBError rather than reading it as "no row" (which would fail OPEN: "not locked", "no reset window", "no cool-down"). The runtime recovers it into an error at its
+// edges (the HTTP server, the step, the start).
+type DBError struct{ Err error }
+
+func (e DBError) Error() string { return "the owner-access store failed: " + e.Err.Error() }
+
+// found is "a row came back": true for a row, false for none, and a panic (DBError) for anything else.
+func found(err error) bool {
+	if err == nil {
+		return true
+	}
+	if err == sql.ErrNoRows {
+		return false
+	}
+	panic(DBError{err})
+}
+
+// must is a statement that cannot be left half done: a failure panics (DBError), as TypeScript throws.
+func must(err error) {
+	if err != nil {
+		panic(DBError{err})
+	}
+}
+
+// Recover turns a DBError panic back into an error (deferred by the runtime at its edges); any other panic goes on.
+func Recover(err *error) {
+	if p := recover(); p != nil {
+		if d, ok := p.(DBError); ok {
+			*err = d
+			return
+		}
+		panic(p)
+	}
+}
+
 // execer is the file or an open transaction: every helper runs on the one it is given.
 type execer interface {
 	Exec(string, ...any) (sql.Result, error)
@@ -223,7 +259,7 @@ func (a *Access) tx(work func(x execer) error) error {
 
 func metaStr(q execer, name string) (string, bool) {
 	var v string
-	if err := q.QueryRow("SELECT value FROM meta WHERE name = ?", name).Scan(&v); err != nil {
+	if !found(q.QueryRow("SELECT value FROM meta WHERE name = ?", name).Scan(&v)) {
 		return "", false
 	}
 	return v, true
@@ -259,7 +295,9 @@ func setMeta(q execer, name, value string) error {
 	return err
 }
 
-func setMetaNum(q execer, name string, v int64) error { return setMeta(q, name, strconv.FormatInt(v, 10)) }
+func setMetaNum(q execer, name string, v int64) error {
+	return setMeta(q, name, strconv.FormatInt(v, 10))
+}
 
 // raiseMeta moves a cut-off forward only, never back.
 func raiseMeta(q execer, name string, v int64) error {
@@ -319,15 +357,17 @@ func strings1(q execer, query string, args ...any) ([]string, error) {
 
 // TryAttempt counts one request for a link if the shop's limits allow it. Every attempt counts, whether or not a link then goes out, so the record's lines about links are bounded.
 func (a *Access) TryAttempt(now int64) bool {
-	_, _ = a.db.Exec("DELETE FROM attempts WHERE at <= ?", now-linkLimits[1].perMs)
+	_, err := a.db.Exec("DELETE FROM attempts WHERE at <= ?", now-linkLimits[1].perMs)
+	must(err)
 	for _, w := range linkLimits {
 		var n int64
-		_ = a.db.QueryRow("SELECT count(*) FROM attempts WHERE at > ?", now-w.perMs).Scan(&n)
+		must(a.db.QueryRow("SELECT count(*) FROM attempts WHERE at > ?", now-w.perMs).Scan(&n))
 		if n >= w.max {
 			return false
 		}
 	}
-	_, _ = a.db.Exec("INSERT INTO attempts (at) VALUES (?)", now)
+	_, err = a.db.Exec("INSERT INTO attempts (at) VALUES (?)", now)
+	must(err)
 	return true
 }
 
@@ -341,9 +381,9 @@ func (a *Access) LinkState(token string, who Who, now int64) string {
 	}
 	var state, key, base string
 	var expires int64
-	err := a.db.QueryRow("SELECT state, owner_key, base, expires_at FROM links WHERE hash = ?", linkHash(token)).Scan(&state, &key, &base, &expires)
+	have := found(a.db.QueryRow("SELECT state, owner_key, base, expires_at FROM links WHERE hash = ?", linkHash(token)).Scan(&state, &key, &base, &expires))
 	// a link names the owner by their NUMBER (ownerKey, as TypeScript's linkState does), not the locked identity: it was sent to that number
-	if err != nil || key != OwnerKey(who.Owner) || base != who.Base || state == "unsent" {
+	if !have || key != OwnerKey(who.Owner) || base != who.Base || state == "unsent" {
 		return "unknown"
 	}
 	if state == "used" || state == "replaced" {
@@ -378,14 +418,14 @@ func (a *Access) Consume(token string, who Who, now int64) (s Session, state str
 
 type sessionRow struct {
 	id, linkID, ownerKey, base string
-	madeAt, expiresAt         int64
-	ended                     bool
+	madeAt, expiresAt          int64
+	ended                      bool
 }
 
 func (a *Access) sessionByHash(token string) (sessionRow, bool) {
 	var r sessionRow
 	var ended sql.NullInt64
-	if err := a.db.QueryRow("SELECT id, link_id, made_at, expires_at, ended_at, owner_key, base FROM sessions WHERE hash = ?", sessionHash(token)).Scan(&r.id, &r.linkID, &r.madeAt, &r.expiresAt, &ended, &r.ownerKey, &r.base); err != nil {
+	if !found(a.db.QueryRow("SELECT id, link_id, made_at, expires_at, ended_at, owner_key, base FROM sessions WHERE hash = ?", sessionHash(token)).Scan(&r.id, &r.linkID, &r.madeAt, &r.expiresAt, &ended, &r.ownerKey, &r.base)) {
 		return r, false
 	}
 	r.ended = ended.Valid
@@ -439,7 +479,8 @@ func (a *Access) End(token string, now int64) string {
 	if !ok || r.ended {
 		return ""
 	}
-	_, _ = a.db.Exec("UPDATE sessions SET ended_at = ?, ended_why = 'signed_out' WHERE id = ?", now, r.id)
+	_, err := a.db.Exec("UPDATE sessions SET ended_at = ?, ended_why = 'signed_out' WHERE id = ?", now, r.id)
+	must(err)
 	return r.id
 }
 
@@ -472,8 +513,8 @@ func (a *Access) ClampEndBefore(raw *int64, now int64) *int64 {
 		return nil
 	}
 	if seen, ok := metaNum(a.db, "eb_raw"); !ok || seen != *raw {
-		_ = setMetaNum(a.db, "eb_raw", *raw)
-		_ = setMetaNum(a.db, "eb_val", min(*raw, now))
+		must(setMetaNum(a.db, "eb_raw", *raw))
+		must(setMetaNum(a.db, "eb_val", min(*raw, now)))
 	}
 	if v, ok := metaNum(a.db, "eb_val"); ok {
 		return &v
@@ -485,13 +526,17 @@ func (a *Access) ClampEndBefore(raw *int64, now int64) *int64 {
 
 // CodesLocked: too many wrong recovery codes for this shop today? (Each wrong one counts; a right one does not.)
 func (a *Access) CodesLocked(now int64) bool {
-	_, _ = a.db.Exec("DELETE FROM wrong_codes WHERE at <= ?", now-day)
+	_, err := a.db.Exec("DELETE FROM wrong_codes WHERE at <= ?", now-day)
+	must(err)
 	var n int
-	_ = a.db.QueryRow("SELECT count(*) FROM wrong_codes").Scan(&n)
+	must(a.db.QueryRow("SELECT count(*) FROM wrong_codes").Scan(&n))
 	return n >= WrongCodeMax
 }
 
 // NoteWrongCode counts one wrong recovery code.
-func (a *Access) NoteWrongCode(now int64) { _, _ = a.db.Exec("INSERT INTO wrong_codes (at) VALUES (?)", now) }
+func (a *Access) NoteWrongCode(now int64) {
+	_, err := a.db.Exec("INSERT INTO wrong_codes (at) VALUES (?)", now)
+	must(err)
+}
 
 var challengeText = regexp.MustCompile(`^[A-Za-z0-9_-]{43}$`)

@@ -86,13 +86,13 @@ type subject struct {
 func subjectOf(q execer, sessionID string) (subject, bool) {
 	var linkID string
 	var madeAt int64
-	if err := q.QueryRow("SELECT link_id, made_at FROM sessions WHERE id = ?", sessionID).Scan(&linkID, &madeAt); err != nil {
+	if !found(q.QueryRow("SELECT link_id, made_at FROM sessions WHERE id = ?", sessionID).Scan(&linkID, &madeAt)) {
 		return subject{}, false
 	}
 	if strings.HasPrefix(linkID, "pk-") {
 		var pkMade int64
 		var via string
-		if q.QueryRow("SELECT made_at, via FROM passkeys WHERE id = ?", linkID[3:]).Scan(&pkMade, &via) == nil {
+		if found(q.QueryRow("SELECT made_at, via FROM passkeys WHERE id = ?", linkID[3:]).Scan(&pkMade, &via)) {
 			return subject{subject: "pk:" + linkID[3:], passkey: linkID[3:], madeAt: pkMade, via: via}, true
 		}
 	}
@@ -184,7 +184,7 @@ func (a *Access) PhonesView(sessionID string, who Who, rp RelyingParty, file *Gr
 	// `through` may be a fraction (the page posts a JSON number), so it is read and compared as SQLite and JavaScript do: a number, not an integer
 	through := float64(fresh)
 	var seen sql.NullFloat64
-	if q.QueryRow("SELECT through FROM phone_seen WHERE subject = ?", me.subject).Scan(&seen) == nil && seen.Valid {
+	if found(q.QueryRow("SELECT through FROM phone_seen WHERE subject = ?", me.subject).Scan(&seen)) && seen.Valid {
 		through = seen.Float64
 	}
 	byMe := me.passkey
@@ -217,7 +217,7 @@ func (a *Access) PhonesView(sessionID string, who Who, rp RelyingParty, file *Gr
 		return nil, err
 	}
 	var codesAt sql.NullInt64
-	_ = q.QueryRow("SELECT max(made_at) AS at FROM own_codes WHERE voided_at IS NULL").Scan(&codesAt)
+	must(q.QueryRow("SELECT max(made_at) AS at FROM own_codes WHERE voided_at IS NULL").Scan(&codesAt))
 	v := &PhonesView{Phones: []MyPhone{}, Announce: []Phone{}, News: news, Removal: removal, PasskeySession: me.passkey != ""}
 	var seenThrough int64
 	for _, r := range phones {
@@ -254,8 +254,8 @@ func (a *Access) Dismiss(sessionID string, now int64, through *float64) error {
 		latest = min(*through, float64(now))
 	} else {
 		var pk, nw sql.NullInt64
-		_ = q.QueryRow("SELECT max(made_at) AS at FROM passkeys").Scan(&pk)
-		_ = q.QueryRow("SELECT max(at) AS at FROM news").Scan(&nw)
+		must(q.QueryRow("SELECT max(made_at) AS at FROM passkeys").Scan(&pk))
+		must(q.QueryRow("SELECT max(at) AS at FROM news").Scan(&nw))
 		latest = float64(min(now, max(pk.Int64, nw.Int64)))
 	}
 	// an integral moment is written as an integer, as JavaScript's number is bound (SQLite keeps 3 and 3.0 the same in an INTEGER column anyway)
@@ -376,7 +376,7 @@ func (a *Access) MakeOwnCodes(sessionID string, file *Grants, now int64) ([]stri
 			}
 		}
 		var label sql.NullString
-		_ = x.QueryRow("SELECT label FROM passkeys WHERE id = ?", me.passkey).Scan(&label)
+		found(x.QueryRow("SELECT label FROM passkeys WHERE id = ?", me.passkey).Scan(&label))
 		var l any
 		if label.Valid {
 			l = label.String

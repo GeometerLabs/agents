@@ -86,7 +86,9 @@ func (r *Runtime) oEndBefore() *int64 {
 }
 
 // oPasskeysBefore is the moment before which no passkey works: the store's OWN value, never the Operator's file's.
-func (r *Runtime) oPasskeysBefore() (*int64, error) { return r.o.Access.PasskeysBefore(r.oGrants(), r.o.Now()) }
+func (r *Runtime) oPasskeysBefore() (*int64, error) {
+	return r.o.Access.PasskeysBefore(r.oGrants(), r.o.Now())
+}
 
 // oCheck is a session good now (owner-signin.ts http.check): who now, the clock, the clamped sign-out moment, then the store's check, in that order.
 func (r *Runtime) oCheck(session string) (string, bool, error) {
@@ -254,12 +256,13 @@ func (r *Runtime) PagesURL() (url, base string, ok bool) {
 
 // ownerStart is followLockedNumber and the start of the owner's sign-in (owner-signin.ts): the settings' number learned when it is the locked one, a line when they differ, and
 // a request that fell due while the runtime was down given a day more (access.NoteStart).
-func (r *Runtime) ownerStart() error {
+func (r *Runtime) ownerStart() (err error) {
 	if r.o.Access == nil {
 		return nil
 	}
 	r.ownerMu.Lock()
 	defer r.ownerMu.Unlock()
+	defer access.Recover(&err)
 	settings := r.settingsNumber()
 	if err := r.o.Access.LearnNumber(settings); err != nil {
 		return err
@@ -283,12 +286,15 @@ func digitsOf(s string) string {
 // ownerBeat is the owner's part of the clock's beat (owner-signin.ts tick): read the Operator's request and Geometer's reset into the store (so a request starts its wait, and a
 // due one applies, even when no page is open), watch the owner's number, say each finding once in the record (and to the owner's phones), and the panel's "sign out every
 // device" once. It returns the requests whose notice is in this step's lines: they are marked told only once the step is SAVED (Runtime.step).
-func (r *Runtime) ownerBeat(rec *recorder, now int64) (told []string) {
+func (r *Runtime) ownerBeat(rec *recorder) (told []string) {
 	if r.o.Access == nil {
 		return nil
 	}
 	r.ownerMu.Lock()
 	defer r.ownerMu.Unlock()
+	// the time is read only now, with the lock held: a time taken before the wait could be older than a passkey a route made meanwhile, and a QR first seen by this beat
+	// would then look "seen before the lock" (TypeScript reads the clock at each call too)
+	now := r.o.Now()
 	lang := r.o.Client.Settings.Owner.Language
 	if err := r.o.Access.Sync(r.oGrants(), now); err != nil {
 		r.o.Log("The owner's files could not be read into the store: " + err.Error())
