@@ -1433,6 +1433,13 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `pages.block.cardOwner` | ಫೋನ್ ಕಳೆದುಹೋಯಿತೇ? https://pages.example/glow-salon/owner/recover ತೆರೆದು ಒಂದು ಕೋಡ್ ಟೈಪ್ ಮಾಡಿ. | Lost your phone? Open https://pages.example/glow-salon/owner/recover and type one code. |  |
 | `pages.block.printNote` | ಬ್ರೌಸರ್‌ನ Print ಬಳಸಿ. | Use your browser's Print. |  |
 | `pages.block.back` | ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ | Back to the shop |  |
+| `pages.block.locked` | ಈಗ ಮಾಲೀಕರ ಬಳಿ ಅವರ ಸ್ವಂತ ಸೈನ್ ಇನ್ ಇದೆ. ಹೊಸ ಫೋನ್ ಅನ್ನು ಮಾಲೀಕರ ಆಪ್‌ನಿಂದ ಅಥವಾ ಮಾಲೀಕರ ರಿಕವರಿ ಕೋಡ್‌ಗಳಿಂದ ಸೇರಿಸಲಾಗುತ್ತದೆ. | The owner now holds their own sign-in. A new phone is added from the owner's app, or with the owner's recovery codes. |  |
+| `pages.block.askRemove` | ಮಾಲೀಕರ ಪಾಸ್‌ಕೀಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿ | Ask to remove the owner's passkeys |  |
+| `pages.block.askRemoveNote` | ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ಕಳೆದುಕೊಂಡು, ಕೋಡ್‌ಗಳೂ ಇಲ್ಲದ ಮಾಲೀಕರಿಗಾಗಿ. ಮಾಲೀಕರಿಗೆ ತಕ್ಷಣ ತಿಳಿಸಲಾಗುತ್ತದೆ, ಅವರು ರದ್ದುಗೊಳಿಸಬಹುದು; ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 48 ಗಂಟೆಗಳ ನಂತರ ಆಗುತ್ತದೆ, ಆಗ ಮಾತ್ರ ಹೊಸ ಸೆಟಪ್ QR ಕೋಡ್ ತೋರಿಸಬಹುದು. | For an owner who lost every phone and has no codes. The owner is told at once and can cancel; if they do not, it happens after 48 hours, and only then can you show a new setup QR code. |  |
+| `pages.block.requested` | ಕೇಳಲಾಗಿದೆ. ಮಾಲೀಕರಿಗೆ ಈಗ ಅವರ ಆಪ್‌ನಲ್ಲಿ ಕಾಣುತ್ತದೆ. ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 48 ಗಂಟೆಗಳಲ್ಲಿ ಆಗುತ್ತದೆ. | Asked. The owner sees it in their app now. If they do not cancel, it happens in 48 hours. |  |
+| `pages.block.pending` | Divya ಮಾಲೀಕರ ಪಾಸ್‌ಕೀಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ಮಾಲೀಕರು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 2026-11-21 10:00 UTC ರಂದು ಆಗುತ್ತದೆ. | Divya asked to remove the owner's passkeys. It happens on 2026-11-21 10:00 UTC unless the owner cancels. |  |
+| `pages.block.resetLine` | 2026-11-19 ರಂದು Geometer ಮಾಲೀಕರ ಸೈನ್ ಇನ್ ರೀಸೆಟ್ ಮಾಡಿದೆ: the owner lost every phone | Geometer reset the owner's sign-in on 2026-11-19: the owner lost every phone |  |
+| `pages.block.lockedNotice` | ಈಗ ಮಾಲೀಕರ ಬಳಿ ಅವರ ಸ್ವಂತ ಸೈನ್ ಇನ್ ಇದೆ. ಹೊಸ ಫೋನ್ ಅನ್ನು ಮಾಲೀಕರ ಆಪ್‌ನಿಂದ ಅಥವಾ ಮಾಲೀಕರ ರಿಕವರಿ ಕೋಡ್‌ಗಳಿಂದ ಸೇರಿಸಲಾಗುತ್ತದೆ. | The owner now holds their own sign-in. A new phone is added from the owner's app, or with the owner's recovery codes. |  |
 | `pages.block.shopPhone` | ಪುಟದಲ್ಲಿ ಅಂಗಡಿಯ ಫೋನ್ ನಂಬರ್ | The shop's phone number on the page |  |
 | `pages.block.shopPhoneNote` | ದೇಶದ ಕೋಡ್‌ನೊಂದಿಗೆ, ಉದಾ. +918012345678. ಪುಟದಲ್ಲಿ "ಅಂಗಡಿಗೆ ಕರೆ ಮಾಡಿ" ಕಾಣುತ್ತದೆ. ಲ್ಯಾಂಡ್‌ಲೈನ್ ಕೂಡ ಆಗುತ್ತದೆ. | With the country code, like +918012345678. The page shows "Call the shop". A landline works too. |  |
 | `pages.block.map` | ಮ್ಯಾಪ್ ಲಿಂಕ್ | Map link |  |
@@ -1497,6 +1504,65 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.owner.back` | ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ | Back to your shop |  |
 | `limits.owner.never` | ಎಂದಿಗೂ ಇಲ್ಲ | never |  |
 | `limits.owner.yourShop` | ನಿಮ್ಮ ಅಂಗಡಿ | Your shop |  |
+| `phones.title` | ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಬಲ್ಲ ಫೋನ್‌ಗಳು | Phones that can open your shop |  |
+| `phones.link` | ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಬಲ್ಲ ಫೋನ್‌ಗಳು | Phones that can open your shop |  |
+| `phones.intro` | ಈ ಫೋನ್‌ಗಳು ಮಾತ್ರ ನಿಮ್ಮ ಅಂಗಡಿಯ ಆಪ್ ತೆರೆಯಬಲ್ಲವು. ನಿಮಗೆ ಗೊತ್ತಿಲ್ಲದ ಒಂದು ಕಂಡರೆ ಅದನ್ನು ತೆಗೆಯಿರಿ. | Only these phones can open your shop's app. If you see one you do not know, remove it. |  |
+| `phones.thisPhone` | ಈ ಫೋನ್ | This phone |  |
+| `phones.aPhone` | ಒಂದು ಫೋನ್ | A phone |  |
+| `phones.added` | 19 Nov 2026 ರಂದು ಸೇರಿಸಲಾಗಿದೆ | Added 19 Nov 2026 |  |
+| `phones.via.setup` | ಸೆಟಪ್ QR ಕೋಡ್‌ನಿಂದ | with the setup QR code |  |
+| `phones.via.recovery` | ರಿಕವರಿ ಕೋಡ್‌ನಿಂದ | with a recovery code |  |
+| `phones.via.own_code` | ನಿಮ್ಮ ಸ್ವಂತ ರಿಕವರಿ ಕೋಡ್‌ನಿಂದ | with your own recovery code |  |
+| `phones.via.own_phone` | ನಿಮ್ಮ ಸ್ವಂತ ಫೋನ್‌ನಿಂದ | from your own phone |  |
+| `phones.via.reset` | Geometer ನಿಮ್ಮ ಸೈನ್ ಇನ್ ರೀಸೆಟ್ ಮಾಡಿದ ನಂತರ | after Geometer reset your sign-in |  |
+| `phones.lastUsed` | ಕೊನೆಯ ಬಳಕೆ 19 Nov, 3:42 pm | Last used 19 Nov, 3:42 pm |  |
+| `phones.neverUsed` | ಇನ್ನೂ ಬಳಸಿಲ್ಲ | Not used yet |  |
+| `phones.remove` | ತೆಗೆಯಿರಿ | Remove |  |
+| `phones.removeTitle` | ಈ ಫೋನ್ ತೆಗೆಯಬೇಕೇ? | Remove this phone? |  |
+| `phones.removeAsk` | Android, Chrome ಇನ್ನು ಮುಂದೆ ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಲು ಆಗುವುದಿಲ್ಲ. | Android, Chrome will not be able to open your shop any more. |  |
+| `phones.removeYes` | ಹೌದು, ತೆಗೆಯಿರಿ | Yes, remove it |  |
+| `phones.keep` | ಬೇಡ, ಇರಲಿ | No, keep it |  |
+| `phones.lastTitle` | ಇದು ನಿಮ್ಮ ಒಂದೇ ಫೋನ್ | This is your only phone |  |
+| `phones.lastAsk` | ಇದನ್ನು ತೆಗೆದರೆ ನಿಮ್ಮ ಸ್ವಂತ ರಿಕವರಿ ಕೋಡ್‌ಗಳಿಂದ ಅಥವಾ ಆಪರೇಟರ್ ಸಹಾಯದಿಂದ ಮಾತ್ರ ಮತ್ತೆ ಒಳಗೆ ಬರಬಹುದು; ಅದಕ್ಕೆ 2 ದಿನ ಹಿಡಿಯುತ್ತದೆ. ಆದರೂ ತೆಗೆಯಬೇಕೇ? | If you remove it, you can only get back in with your own recovery codes, or with your Operator's help, which takes 2 days. Remove it anyway? |  |
+| `phones.lastYes` | ಹೌದು, ನನ್ನ ಒಂದೇ ಫೋನ್ ತೆಗೆಯಿರಿ | Yes, remove my only phone |  |
+| `phones.removed` | ಆ ಫೋನ್ ತೆಗೆಯಲಾಗಿದೆ. | That phone is removed. |  |
+| `phones.add` | ಫೋನ್ ಸೇರಿಸಿ | Add a phone |  |
+| `phones.addNote` | ಈ ಪರದೆಯಲ್ಲಿ ಒಮ್ಮೆ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುವ ಕೋಡ್ ತೋರಿಸುತ್ತದೆ. 15 ನಿಮಿಷದೊಳಗೆ ಹೊಸ ಫೋನ್‌ನ ಕ್ಯಾಮೆರಾದಿಂದ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. | Shows a one-use code on this screen. Scan it with the new phone's camera within 15 minutes. |  |
+| `phones.addTitle` | ಹೊಸ ಫೋನ್ ಸೇರಿಸಿ | Add a new phone |  |
+| `phones.addHow` | ಇದನ್ನು ಹೊಸ ಫೋನ್‌ನ ಕ್ಯಾಮೆರಾದಿಂದ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ, ಅದರ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ರೀಡರ್ ಮುಟ್ಟಿ. ಇದು ಒಮ್ಮೆ ಮಾತ್ರ, 4:30 pm ವರೆಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ. | Scan this with the new phone's camera and touch its fingerprint reader. It works once, until 4:30 pm. |  |
+| `phones.codes` | ನಿಮ್ಮ ಸ್ವಂತ ರಿಕವರಿ ಕೋಡ್‌ಗಳು | Your own recovery codes |  |
+| `phones.codesNone` | ನೀವು ಇನ್ನೂ ಸ್ವಂತ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿಲ್ಲ. | You have not made your own codes yet. |  |
+| `phones.codesHave` | ನೀವು 19 Nov 2026 ರಂದು ಸ್ವಂತ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿದಿರಿ. ಅವು ನಿಮ್ಮ ಬಳಿ ಮಾತ್ರ ಇವೆ. | You made your own codes on 19 Nov 2026. Only you hold them. |  |
+| `phones.codesMake` | ನನ್ನ ಸ್ವಂತ ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿ | Make my own recovery codes |  |
+| `phones.codesRemake` | ಹೊಸ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿ | Make new codes |  |
+| `phones.codesNote` | ಕೋಡ್‌ಗಳು ಒಮ್ಮೆ ಮಾತ್ರ ತೋರುತ್ತವೆ. ಆಪರೇಟರ್ ಪ್ರಿಂಟ್ ಮಾಡಿದ ಕೋಡ್‌ಗಳು ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | The codes show once. The codes your Operator printed stop working. |  |
+| `phones.codesTitle` | ನಿಮ್ಮ ರಿಕವರಿ ಕೋಡ್‌ಗಳು | Your recovery codes |  |
+| `phones.codesShow` | ಇವನ್ನು ಬರೆದಿಟ್ಟು ಸುರಕ್ಷಿತವಾಗಿ ಇಡಿ. ಪ್ರತಿಯೊಂದೂ ಒಮ್ಮೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ, ಮತ್ತೆ ತೋರಿಸುವುದಿಲ್ಲ. ಆಪರೇಟರ್ ಪ್ರಿಂಟ್ ಮಾಡಿದ ಕೋಡ್‌ಗಳು ಇನ್ನು ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | Write these down and keep them safe. Each works once, and they are never shown again. The codes your Operator printed no longer work. |  |
+| `phones.needPasskey` | ಕೋಡ್ ಮಾಡಲು ಅಥವಾ ಫೋನ್ ಸೇರಿಸಲು ಸೈನ್ ಔಟ್ ಆಗಿ, ಫೋನ್‌ನ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್‌ನಿಂದ ಮತ್ತೆ ಸೈನ್ ಇನ್ ಮಾಡಿ. | To make codes or add a phone, sign out and sign in again with your phone's fingerprint or screen lock. |  |
+| `phones.back` | ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ | Back to your shop |  |
+| `phones.onePhone` | ಈಗ ಒಂದು ಫೋನ್ ಮಾತ್ರ ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಬಲ್ಲದು. | Only one phone can open your shop now. |  |
+| `phones.noPhones` | ಈಗ ಯಾವ ಫೋನ್ ಕೂಡ ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಲಾರದು. ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಬಳಸಿ, ಅಥವಾ ಆಪರೇಟರ್ ಅವರನ್ನು ಕೇಳಿ. | No phone can open your shop now. Use your recovery codes, or ask your Operator. |  |
+| `phones.bannerNew` | 19 Nov, 3:42 pm ರಂದು ಹೊಸ ಫೋನ್ ಸೇರಿಸಲಾಗಿದೆ (Android, Chrome). ನೀವಲ್ಲವೇ? ಅದನ್ನು ತೆಗೆಯಿರಿ. | A new phone was added on 19 Nov, 3:42 pm (Android, Chrome). Not you? Remove it. |  |
+| `phones.itWasMe` | ನಾನೇ | It was me |  |
+| `phones.removeIt` | ತೆಗೆಯಿರಿ | Remove it |  |
+| `phones.bannerRequest` | Divya ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 21 Nov, 10:00 am ರಂದು ಆಗುತ್ತದೆ. | Divya asked to remove every phone that can open your shop. It will happen on 21 Nov, 10:00 am unless you cancel. |  |
+| `phones.cancel` | ಮನವಿ ರದ್ದುಗೊಳಿಸಿ | Cancel the request |  |
+| `phones.cancelled` | ರದ್ದಾಗಿದೆ. ನಿಮ್ಮ ಫೋನ್‌ಗಳು ಹಾಗೆಯೇ ಇರುತ್ತವೆ. | Cancelled. Your phones stay. |  |
+| `phones.labelNote` | ಪ್ರತಿ ಫೋನ್ ಸೇರಿಸುವಾಗ ತನ್ನ ಬಗ್ಗೆ ಹೇಳಿದ ಹೆಸರುಗಳು ಇವು. | The names are what each phone said about itself when it was added. |  |
+| `phones.bannerOwner` | ಈ ಅಂಗಡಿಯ ಮಾಲೀಕರ ನಂಬರ್ ಬದಲಾಯಿಸಲಾಗಿದೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳು 21 Nov, 10:00 am ರಂದು ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | The owner's number for this shop was changed. Every phone that opens your shop stops working on 21 Nov, 10:00 am unless you cancel. |  |
+| `phones.bannerCodesMade` | 19 Nov, 3:42 pm ರಂದು ಹೊಸ ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಲಾಗಿದೆ (Android, Chrome). ನೀವಲ್ಲವೇ? ಆ ಫೋನ್ ತೆಗೆಯಿರಿ. | New recovery codes were made on 19 Nov, 3:42 pm (Android, Chrome). Not you? Remove that phone. |  |
+| `phones.bannerRemoved` | 19 Nov, 3:42 pm ರಂದು ಒಂದು ಫೋನ್ ತೆಗೆಯಲಾಗಿದೆ (Android, Chrome). | A phone was removed on 19 Nov, 3:42 pm (Android, Chrome). |  |
+| `phones.bannerCodes` | ನಿಮ್ಮ ಸ್ವಂತ ಕೋಡ್‌ಗಳನ್ನು ಈಗಲೇ ಮಾಡಿ, ಅವು ನಿಮ್ಮ ಬಳಿ ಮಾತ್ರ ಇರಲಿ. | Make your own codes now, so only you hold them. |  |
+| `phones.makeCodes` | ನನ್ನ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿ | Make my codes |  |
+| `phones.refused` | ಅದು ಆಗಲಿಲ್ಲ. ಸೈನ್ ಔಟ್ ಆಗಿ, ಫೋನ್‌ನ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | That did not work. Sign out, sign in with your phone's fingerprint and try again. |  |
+| `phones.operator` | ನಿಮ್ಮ ಆಪರೇಟರ್ | Your Operator |  |
+| `phones.openPhones` | ನಿಮ್ಮ ಫೋನ್‌ಗಳು | Your phones |  |
+| `phones.lostHelp` | ಎಲ್ಲಾ ಫೋನ್‌ಗಳು ಮತ್ತು ಕೋಡ್‌ಗಳನ್ನು ಕಳೆದುಕೊಂಡಿರಾ, ಅಥವಾ ಆಪರೇಟರ್ ಸಹಾಯ ಮಾಡುತ್ತಿಲ್ಲವೇ? hello@geometer.dev ಗೆ ಬರೆಯಿರಿ. | Lost every phone and your codes, or your Operator will not help? Write to hello@geometer.dev. |  |
+| `phones.alert.newPhone` | ನಿಮ್ಮ ಅಂಗಡಿಗೆ 19 ನವೆಂ, 3:42 PM ರಂದು ಹೊಸ ಫೋನ್ ಸೇರಿಸಲಾಗಿದೆ (Android, Chrome). ನೀವಲ್ಲವೇ? ಆಪ್ ತೆರೆದು ಇದನ್ನು ತೆಗೆಯಿರಿ. | A new phone was added to your shop on 19 Nov, 3:42 pm (Android, Chrome). Not you? Open your app and remove it. |  |
+| `phones.alert.request` | Divya ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 2 ದಿನದಲ್ಲಿ ಆಗುತ್ತದೆ. ನಿಲ್ಲಿಸಲು ನಿಮ್ಮ ಆಪ್ ತೆರೆಯಿರಿ. | Divya asked to remove every phone that opens your shop. It happens in 2 days unless you cancel. Open your app to stop it. |  |
+| `phones.alert.ownerChange` | ನಿಮ್ಮ ಅಂಗಡಿಯ ಮಾಲೀಕರ ನಂಬರ್ ಬದಲಾಯಿಸಲಾಗಿದೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳು 2 ದಿನದಲ್ಲಿ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. ನಿಲ್ಲಿಸಲು ನಿಮ್ಮ ಆಪ್ ತೆರೆಯಿರಿ. | The owner's number for your shop was changed. Every phone that opens your shop stops working in 2 days unless you cancel. Open your app to stop it. |  |
+| `phones.alert.codes` | 19 ನವೆಂ, 3:42 PM ರಂದು ಹೊಸ ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಲಾಗಿದೆ (Android, Chrome). ನೀವಲ್ಲವೇ? ಆಪ್ ತೆರೆದು ಆ ಫೋನ್ ತೆಗೆಯಿರಿ. | New recovery codes were made on 19 Nov, 3:42 pm (Android, Chrome). Not you? Open your app and remove that phone. |  |
+| `phones.alert.removed` | 19 ನವೆಂ, 3:42 PM ರಂದು ನಿಮ್ಮ ಅಂಗಡಿಯ ಸೈನ್ ಇನ್‌ನಿಂದ ಒಂದು ಫೋನ್ ತೆಗೆಯಲಾಗಿದೆ (Android, Chrome). ನೀವಲ್ಲವೇ? ಆಪ್ ತೆರೆಯಿರಿ. | A phone was removed from your shop's sign-in on 19 Nov, 3:42 pm (Android, Chrome). Not you? Open your app. |  |
 | `listings.category.pets` | ಸಾಕುಪ್ರಾಣಿಗಳು | Pets |  |
 | `listings.category.food` | ಆಹಾರ | Food |  |
 | `listings.category.clothes` | ಬಟ್ಟೆಗಳು | Clothes |  |
@@ -2032,69 +2098,3 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `directory.askPlain` | ಇಂದು ನೀವು ಬರೆದ ಪದಗಳನ್ನು ಹಾಗೆಯೇ ಹುಡುಕಲಾಗುತ್ತಿದೆ. | Searching your words as typed today. |  |
 | `directory.askLine` | Thrissur ಹತ್ತಿರದ 3 ಅಂಗಡಿಗಳಲ್ಲಿ “Persian kitten” ಇದೆ. ಹತ್ತಿರದ್ದು 1.4 ಕಿ.ಮೀ ದೂರದಲ್ಲಿದೆ. | 3 shops near Thrissur have “Persian kitten”. The nearest is 1.4 km away. |  |
 
-| `pages.block.locked` | ಈಗ ಮಾಲೀಕರ ಬಳಿ ಅವರ ಸ್ವಂತ ಸೈನ್ ಇನ್ ಇದೆ. ಹೊಸ ಫೋನ್ ಅನ್ನು ಮಾಲೀಕರ ಆಪ್‌ನಿಂದ ಅಥವಾ ಮಾಲೀಕರ ರಿಕವರಿ ಕೋಡ್‌ಗಳಿಂದ ಸೇರಿಸಲಾಗುತ್ತದೆ. | The owner now holds their own sign-in. A new phone is added from the owner's app, or with the owner's recovery codes. |  |
-| `pages.block.askRemove` | ಮಾಲೀಕರ ಪಾಸ್‌ಕೀಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿ | Ask to remove the owner's passkeys |  |
-| `pages.block.askRemoveNote` | ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ಕಳೆದುಕೊಂಡು, ಕೋಡ್‌ಗಳೂ ಇಲ್ಲದ ಮಾಲೀಕರಿಗಾಗಿ. ಮಾಲೀಕರಿಗೆ ತಕ್ಷಣ ತಿಳಿಸಲಾಗುತ್ತದೆ, ಅವರು ರದ್ದುಗೊಳಿಸಬಹುದು; ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 48 ಗಂಟೆಗಳ ನಂತರ ಆಗುತ್ತದೆ, ಆಗ ಮಾತ್ರ ಹೊಸ ಸೆಟಪ್ QR ಕೋಡ್ ತೋರಿಸಬಹುದು. | For an owner who lost every phone and has no codes. The owner is told at once and can cancel; if they do not, it happens after 48 hours, and only then can you show a new setup QR code. |  |
-| `pages.block.requested` | ಕೇಳಲಾಗಿದೆ. ಮಾಲೀಕರಿಗೆ ಈಗ ಅವರ ಆಪ್‌ನಲ್ಲಿ ಕಾಣುತ್ತದೆ. ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 48 ಗಂಟೆಗಳಲ್ಲಿ ಆಗುತ್ತದೆ. | Asked. The owner sees it in their app now. If they do not cancel, it happens in 48 hours. |  |
-| `pages.block.pending` | Divya ಮಾಲೀಕರ ಪಾಸ್‌ಕೀಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ಮಾಲೀಕರು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 2026-11-21 10:00 UTC ರಂದು ಆಗುತ್ತದೆ. | Divya asked to remove the owner's passkeys. It happens on 2026-11-21 10:00 UTC unless the owner cancels. |  |
-| `pages.block.resetLine` | 2026-11-19 ರಂದು Geometer ಮಾಲೀಕರ ಸೈನ್ ಇನ್ ರೀಸೆಟ್ ಮಾಡಿದೆ: the owner lost every phone | Geometer reset the owner's sign-in on 2026-11-19: the owner lost every phone |  |
-| `pages.block.lockedNotice` | ಈಗ ಮಾಲೀಕರ ಬಳಿ ಅವರ ಸ್ವಂತ ಸೈನ್ ಇನ್ ಇದೆ. ಹೊಸ ಫೋನ್ ಅನ್ನು ಮಾಲೀಕರ ಆಪ್‌ನಿಂದ ಅಥವಾ ಮಾಲೀಕರ ರಿಕವರಿ ಕೋಡ್‌ಗಳಿಂದ ಸೇರಿಸಲಾಗುತ್ತದೆ. | The owner now holds their own sign-in. A new phone is added from the owner's app, or with the owner's recovery codes. |  |
-| `phones.title` | ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಬಲ್ಲ ಫೋನ್‌ಗಳು | Phones that can open your shop |  |
-| `phones.link` | ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಬಲ್ಲ ಫೋನ್‌ಗಳು | Phones that can open your shop |  |
-| `phones.intro` | ಈ ಫೋನ್‌ಗಳು ಮಾತ್ರ ನಿಮ್ಮ ಅಂಗಡಿಯ ಆಪ್ ತೆರೆಯಬಲ್ಲವು. ನಿಮಗೆ ಗೊತ್ತಿಲ್ಲದ ಒಂದು ಕಂಡರೆ ಅದನ್ನು ತೆಗೆಯಿರಿ. | Only these phones can open your shop's app. If you see one you do not know, remove it. |  |
-| `phones.thisPhone` | ಈ ಫೋನ್ | This phone |  |
-| `phones.aPhone` | ಒಂದು ಫೋನ್ | A phone |  |
-| `phones.added` | 19 Nov 2026 ರಂದು ಸೇರಿಸಲಾಗಿದೆ | Added 19 Nov 2026 |  |
-| `phones.via.setup` | ಸೆಟಪ್ QR ಕೋಡ್‌ನಿಂದ | with the setup QR code |  |
-| `phones.via.recovery` | ರಿಕವರಿ ಕೋಡ್‌ನಿಂದ | with a recovery code |  |
-| `phones.via.own_phone` | ನಿಮ್ಮ ಸ್ವಂತ ಫೋನ್‌ನಿಂದ | from your own phone |  |
-| `phones.via.reset` | Geometer ನಿಮ್ಮ ಸೈನ್ ಇನ್ ರೀಸೆಟ್ ಮಾಡಿದ ನಂತರ | after Geometer reset your sign-in |  |
-| `phones.lastUsed` | ಕೊನೆಯ ಬಳಕೆ 19 Nov, 3:42 pm | Last used 19 Nov, 3:42 pm |  |
-| `phones.neverUsed` | ಇನ್ನೂ ಬಳಸಿಲ್ಲ | Not used yet |  |
-| `phones.remove` | ತೆಗೆಯಿರಿ | Remove |  |
-| `phones.removeTitle` | ಈ ಫೋನ್ ತೆಗೆಯಬೇಕೇ? | Remove this phone? |  |
-| `phones.removeAsk` | Android, Chrome ಇನ್ನು ಮುಂದೆ ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಲು ಆಗುವುದಿಲ್ಲ. | Android, Chrome will not be able to open your shop any more. |  |
-| `phones.removeYes` | ಹೌದು, ತೆಗೆಯಿರಿ | Yes, remove it |  |
-| `phones.keep` | ಬೇಡ, ಇರಲಿ | No, keep it |  |
-| `phones.lastTitle` | ಇದು ನಿಮ್ಮ ಒಂದೇ ಫೋನ್ | This is your only phone |  |
-| `phones.lastAsk` | ಇದನ್ನು ತೆಗೆದರೆ ನಿಮ್ಮ ಸ್ವಂತ ರಿಕವರಿ ಕೋಡ್‌ಗಳಿಂದ ಅಥವಾ ಆಪರೇಟರ್ ಸಹಾಯದಿಂದ ಮಾತ್ರ ಮತ್ತೆ ಒಳಗೆ ಬರಬಹುದು; ಅದಕ್ಕೆ 2 ದಿನ ಹಿಡಿಯುತ್ತದೆ. ಆದರೂ ತೆಗೆಯಬೇಕೇ? | If you remove it, you can only get back in with your own recovery codes, or with your Operator's help, which takes 2 days. Remove it anyway? |  |
-| `phones.lastYes` | ಹೌದು, ನನ್ನ ಒಂದೇ ಫೋನ್ ತೆಗೆಯಿರಿ | Yes, remove my only phone |  |
-| `phones.removed` | ಆ ಫೋನ್ ತೆಗೆಯಲಾಗಿದೆ. | That phone is removed. |  |
-| `phones.add` | ಫೋನ್ ಸೇರಿಸಿ | Add a phone |  |
-| `phones.addNote` | ಈ ಪರದೆಯಲ್ಲಿ ಒಮ್ಮೆ ಮಾತ್ರ ಕೆಲಸ ಮಾಡುವ ಕೋಡ್ ತೋರಿಸುತ್ತದೆ. 15 ನಿಮಿಷದೊಳಗೆ ಹೊಸ ಫೋನ್‌ನ ಕ್ಯಾಮೆರಾದಿಂದ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ. | Shows a one-use code on this screen. Scan it with the new phone's camera within 15 minutes. |  |
-| `phones.addTitle` | ಹೊಸ ಫೋನ್ ಸೇರಿಸಿ | Add a new phone |  |
-| `phones.addHow` | ಇದನ್ನು ಹೊಸ ಫೋನ್‌ನ ಕ್ಯಾಮೆರಾದಿಂದ ಸ್ಕ್ಯಾನ್ ಮಾಡಿ, ಅದರ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ರೀಡರ್ ಮುಟ್ಟಿ. ಇದು ಒಮ್ಮೆ ಮಾತ್ರ, 4:30 pm ವರೆಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ. | Scan this with the new phone's camera and touch its fingerprint reader. It works once, until 4:30 pm. |  |
-| `phones.codes` | ನಿಮ್ಮ ಸ್ವಂತ ರಿಕವರಿ ಕೋಡ್‌ಗಳು | Your own recovery codes |  |
-| `phones.codesNone` | ನೀವು ಇನ್ನೂ ಸ್ವಂತ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿಲ್ಲ. | You have not made your own codes yet. |  |
-| `phones.codesHave` | ನೀವು 19 Nov 2026 ರಂದು ಸ್ವಂತ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿದಿರಿ. ಅವು ನಿಮ್ಮ ಬಳಿ ಮಾತ್ರ ಇವೆ. | You made your own codes on 19 Nov 2026. Only you hold them. |  |
-| `phones.codesMake` | ನನ್ನ ಸ್ವಂತ ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿ | Make my own recovery codes |  |
-| `phones.codesRemake` | ಹೊಸ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿ | Make new codes |  |
-| `phones.codesNote` | ಕೋಡ್‌ಗಳು ಒಮ್ಮೆ ಮಾತ್ರ ತೋರುತ್ತವೆ. ಆಪರೇಟರ್ ಪ್ರಿಂಟ್ ಮಾಡಿದ ಕೋಡ್‌ಗಳು ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | The codes show once. The codes your Operator printed stop working. |  |
-| `phones.codesTitle` | ನಿಮ್ಮ ರಿಕವರಿ ಕೋಡ್‌ಗಳು | Your recovery codes |  |
-| `phones.codesShow` | ಇವನ್ನು ಬರೆದಿಟ್ಟು ಸುರಕ್ಷಿತವಾಗಿ ಇಡಿ. ಪ್ರತಿಯೊಂದೂ ಒಮ್ಮೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ, ಮತ್ತೆ ತೋರಿಸುವುದಿಲ್ಲ. ಆಪರೇಟರ್ ಪ್ರಿಂಟ್ ಮಾಡಿದ ಕೋಡ್‌ಗಳು ಇನ್ನು ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | Write these down and keep them safe. Each works once, and they are never shown again. The codes your Operator printed no longer work. |  |
-| `phones.needPasskey` | ಕೋಡ್ ಮಾಡಲು ಅಥವಾ ಫೋನ್ ಸೇರಿಸಲು ಸೈನ್ ಔಟ್ ಆಗಿ, ಫೋನ್‌ನ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್ ಅಥವಾ ಸ್ಕ್ರೀನ್ ಲಾಕ್‌ನಿಂದ ಮತ್ತೆ ಸೈನ್ ಇನ್ ಮಾಡಿ. | To make codes or add a phone, sign out and sign in again with your phone's fingerprint or screen lock. |  |
-| `phones.back` | ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ | Back to your shop |  |
-| `phones.onePhone` | ಈಗ ಒಂದು ಫೋನ್ ಮಾತ್ರ ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಬಲ್ಲದು. | Only one phone can open your shop now. |  |
-| `phones.noPhones` | ಈಗ ಯಾವ ಫೋನ್ ಕೂಡ ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಲಾರದು. ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಬಳಸಿ, ಅಥವಾ ಆಪರೇಟರ್ ಅವರನ್ನು ಕೇಳಿ. | No phone can open your shop now. Use your recovery codes, or ask your Operator. |  |
-| `phones.bannerNew` | 19 Nov, 3:42 pm ರಂದು ಹೊಸ ಫೋನ್ ಸೇರಿಸಲಾಗಿದೆ (Android, Chrome). ನೀವಲ್ಲವೇ? ಅದನ್ನು ತೆಗೆಯಿರಿ. | A new phone was added on 19 Nov, 3:42 pm (Android, Chrome). Not you? Remove it. |  |
-| `phones.itWasMe` | ನಾನೇ | It was me |  |
-| `phones.removeIt` | ತೆಗೆಯಿರಿ | Remove it |  |
-| `phones.bannerRequest` | Divya ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 21 Nov, 10:00 am ರಂದು ಆಗುತ್ತದೆ. | Divya asked to remove every phone that can open your shop. It will happen on 21 Nov, 10:00 am unless you cancel. |  |
-| `phones.cancel` | ಮನವಿ ರದ್ದುಗೊಳಿಸಿ | Cancel the request |  |
-| `phones.cancelled` | ರದ್ದಾಗಿದೆ. ನಿಮ್ಮ ಫೋನ್‌ಗಳು ಹಾಗೆಯೇ ಇರುತ್ತವೆ. | Cancelled. Your phones stay. |  |
-| `phones.bannerCodes` | ನಿಮ್ಮ ಸ್ವಂತ ಕೋಡ್‌ಗಳನ್ನು ಈಗಲೇ ಮಾಡಿ, ಅವು ನಿಮ್ಮ ಬಳಿ ಮಾತ್ರ ಇರಲಿ. | Make your own codes now, so only you hold them. |  |
-| `phones.makeCodes` | ನನ್ನ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿ | Make my codes |  |
-| `phones.refused` | ಅದು ಆಗಲಿಲ್ಲ. ಸೈನ್ ಔಟ್ ಆಗಿ, ಫೋನ್‌ನ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ. | That did not work. Sign out, sign in with your phone's fingerprint and try again. |  |
-| `phones.operator` | ನಿಮ್ಮ ಆಪರೇಟರ್ | Your Operator |  |
-| `phones.openPhones` | ನಿಮ್ಮ ಫೋನ್‌ಗಳು | Your phones |  |
-| `phones.lostHelp` | ಎಲ್ಲಾ ಫೋನ್‌ಗಳು ಮತ್ತು ಕೋಡ್‌ಗಳನ್ನು ಕಳೆದುಕೊಂಡಿರಾ, ಅಥವಾ ಆಪರೇಟರ್ ಸಹಾಯ ಮಾಡುತ್ತಿಲ್ಲವೇ? hello@geometer.dev ಗೆ ಬರೆಯಿರಿ. | Lost every phone and your codes, or your Operator will not help? Write to hello@geometer.dev. |  |
-| `phones.alert.newPhone` | ನಿಮ್ಮ ಅಂಗಡಿಗೆ 19 ನವೆಂ, 3:42 PM ರಂದು ಹೊಸ ಫೋನ್ ಸೇರಿಸಲಾಗಿದೆ (Android, Chrome). ನೀವಲ್ಲವೇ? ಆಪ್ ತೆರೆದು ಇದನ್ನು ತೆಗೆಯಿರಿ. | A new phone was added to your shop on 19 Nov, 3:42 pm (Android, Chrome). Not you? Open your app and remove it. |  |
-| `phones.alert.request` | Divya ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ 2 ದಿನದಲ್ಲಿ ಆಗುತ್ತದೆ. ನಿಲ್ಲಿಸಲು ನಿಮ್ಮ ಆಪ್ ತೆರೆಯಿರಿ. | Divya asked to remove every phone that opens your shop. It happens in 2 days unless you cancel. Open your app to stop it. |  |
-| `phones.via.own_code` | ನಿಮ್ಮ ಸ್ವಂತ ರಿಕವರಿ ಕೋಡ್‌ನಿಂದ | with your own recovery code |  |
-| `phones.labelNote` | ಪ್ರತಿ ಫೋನ್ ಸೇರಿಸುವಾಗ ತನ್ನ ಬಗ್ಗೆ ಹೇಳಿದ ಹೆಸರುಗಳು ಇವು. | The names are what each phone said about itself when it was added. |  |
-| `phones.bannerOwner` | ಈ ಅಂಗಡಿಯ ಮಾಲೀಕರ ನಂಬರ್ ಬದಲಾಯಿಸಲಾಗಿದೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳು 21 Nov, 10:00 am ರಂದು ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. | The owner's number for this shop was changed. Every phone that opens your shop stops working on 21 Nov, 10:00 am unless you cancel. |  |
-| `phones.bannerCodesMade` | 19 Nov, 3:42 pm ರಂದು ಹೊಸ ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಲಾಗಿದೆ (Android, Chrome). ನೀವಲ್ಲವೇ? ಆ ಫೋನ್ ತೆಗೆಯಿರಿ. | New recovery codes were made on 19 Nov, 3:42 pm (Android, Chrome). Not you? Remove that phone. |  |
-| `phones.bannerRemoved` | 19 Nov, 3:42 pm ರಂದು ಒಂದು ಫೋನ್ ತೆಗೆಯಲಾಗಿದೆ (Android, Chrome). | A phone was removed on 19 Nov, 3:42 pm (Android, Chrome). |  |
-| `phones.alert.ownerChange` | ನಿಮ್ಮ ಅಂಗಡಿಯ ಮಾಲೀಕರ ನಂಬರ್ ಬದಲಾಯಿಸಲಾಗಿದೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳು 2 ದಿನದಲ್ಲಿ ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ. ನಿಲ್ಲಿಸಲು ನಿಮ್ಮ ಆಪ್ ತೆರೆಯಿರಿ. | The owner's number for your shop was changed. Every phone that opens your shop stops working in 2 days unless you cancel. Open your app to stop it. |  |
-| `phones.alert.codes` | 19 ನವೆಂ, 3:42 PM ರಂದು ಹೊಸ ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಲಾಗಿದೆ (Android, Chrome). ನೀವಲ್ಲವೇ? ಆಪ್ ತೆರೆದು ಆ ಫೋನ್ ತೆಗೆಯಿರಿ. | New recovery codes were made on 19 Nov, 3:42 pm (Android, Chrome). Not you? Open your app and remove that phone. |  |
-| `phones.alert.removed` | 19 ನವೆಂ, 3:42 PM ರಂದು ನಿಮ್ಮ ಅಂಗಡಿಯ ಸೈನ್ ಇನ್‌ನಿಂದ ಒಂದು ಫೋನ್ ತೆಗೆಯಲಾಗಿದೆ (Android, Chrome). ನೀವಲ್ಲವೇ? ಆಪ್ ತೆರೆಯಿರಿ. | A phone was removed from your shop's sign-in on 19 Nov, 3:42 pm (Android, Chrome). Not you? Open your app. |  |
