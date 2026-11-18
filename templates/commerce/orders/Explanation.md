@@ -149,3 +149,7 @@ A home tiffin service sells a month of meals for one price, paid in advance. Thi
 
 A chat guest's first quick tap sends the word "menu", and the rule reader took it for an unknown sentence ("Sorry, I didn't understand"). `MENU_RE` in `src/adapters/rule-parser.ts` reads "menu" and its Hindi, Malayalam and Kannada spellings as the greeting, which shows the menu with its prices; a WhatsApp customer who types "menu" gets the same.
 
+
+## The shop's stock count (18 Nov 2026, stream `stock-18nov`)
+
+A menu item the owner counts (modules/stock, id `menu:<item>`) now has a shelf count beside the day's stock. Orders still works out what an order HOLDS from the orders (`holdsStock`, `takenOf`), unchanged. The count falls when an order stands (confirmed or completed), is given back when it is cancelled, each booked once under `sale:<order>:<item>` by `reconcileStock` (the start of every step and tick, and before each availability check). The check `countedLeft` takes what other orders hold that is not yet in the count off what is left, as a second limit with the same rule id (`within-stock`), so no report table changes. The shop's page and the ONDC catalogue show the smaller of the day's stock and the shelf. An item nobody counts has no stock line: no decision, no record line, no state is made, and the hand check and the crash-test situations are as they were (they count nothing). A low mark gives the owner one line in their app per crossing and "running low" in the morning line.

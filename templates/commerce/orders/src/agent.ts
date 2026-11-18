@@ -86,7 +86,10 @@ import type { AiPolicy } from "../../../../modules/understanding/ai-state.ts";
 import { coerceIntent } from "./adapters/model.ts";
 import type { Intent, IntentParser, ParseContext, ParseOptions } from "./adapters/model.ts";
 import { isPaidClaim, parseIntent } from "./adapters/rule-parser.ts";
-import { addLine, countOf, factsFor, fixSlot, latestOrder, moveTo, newDraft, ordersInSlot, ordersOn, register, slotMoments, takenOf, totalOf } from "./order.ts";
+import { addLine, countOf, countedLeft, factsFor, fixSlot, latestOrder, moveTo, newDraft, orderFacts, ordersInSlot, ordersOn, register, slotMoments, takenOf, totalOf } from "./order.ts";
+import { assistantOf } from "../../../../modules/assistant/state.ts";
+import { STOCK_ACTION, ackAlert, kindOf, pendingAlerts, reconcileSales, shopRecord, stockRefs } from "../../../../modules/stock/stock.ts";
+import { STOCK_LINE_WORDS } from "../../../../modules/stock/words.ts";
 import type { Order, Pending, Store } from "./order.ts";
 import { buttonsFor, intentFromReply, itemList, ownerMarkButtons, slotList } from "./language/interactive.ts";
 import type { ButtonId } from "./language/interactive.ts";
@@ -388,6 +391,7 @@ export function createAgent(deps: AgentDeps): Agent {
   /** The limits about the order itself: the cut-off, the stock of every item, and the day's count. The slot's moments are fixed first. */
   function availability(o: Order): Availability {
     const now = clock.now();
+    reconcileStock(); // the shelf count first, so what the orders so far took is in it
     const decisions: Decision[] = [];
     fixSlot(settings, o);
     const cut = checkBeforeCutoff({ nowMs: now, cutoffMs: o.cutoffMs! });
@@ -401,6 +405,14 @@ export function createAgent(deps: AgentDeps): Agent {
       if (d.verdict === "block") {
         const left = Math.max(0, item.dailyStock - taken);
         return { blocked: { id: left === 0 ? "sold_out" : "out_of_stock", more: { itemId: item.id, leftCount: left } }, decisions };
+      }
+      // an item the owner counts (modules/stock): the shelf count, less what other orders hold that is not yet in it, is a second limit. The same rule id as the day's stock ("within-stock"),
+      // so a report's table of what was stopped is unchanged. An item nobody counts adds no decision and no line: it is checked exactly as before.
+      const shelf = countedLeft(store, item.id, now, o.id);
+      if (shelf !== undefined) {
+        const dc = checkStock({ itemName: itemName(item, "en"), wanted: l.qty, taken: 0, dailyStock: shelf });
+        decisions.push(dc);
+        if (dc.verdict === "block") return { blocked: { id: shelf === 0 ? "sold_out" : "out_of_stock", more: { itemId: item.id, leftCount: shelf } }, decisions };
       }
     }
     const cap = checkDayCap({ ordersOnDay: ordersOn(store, o.date!, now, o.id), maxPerDay: settings.orders.maxPerDay });
@@ -1248,7 +1260,34 @@ export function createAgent(deps: AgentDeps): Agent {
     store.seenEvents.add(event.id); // only after it worked: a failed step can be run again with the same event
   }
 
+  /**
+   * The shop's stock count (modules/stock): for each menu item the owner counts, an order that stands (confirmed or completed) is booked once under `sale:<order>:<item>`, and a cancelled
+   * order gives back exactly what it took. Run at the start of every step and tick and again before an availability check; asking twice changes nothing (the line remembers each key).
+   * A shop that counts nothing has no stock lines and this returns at once, writing nothing and logging nothing.
+   */
+  function reconcileStock(): void {
+    const st = store.assistant?.stock;
+    if (!st || st.lines.length === 0) return;
+    const now = clock.now();
+    const before = st.lines.map((l) => l.count).join(",");
+    const changed = reconcileSales(st, shopRecord("orders"), orderFacts(store, now), { nowMs: now });
+    if (changed > 0 && st.lines.map((l) => l.count).join(",") !== before) {
+      log(null, owner, STOCK_ACTION, "confirmed", { changed }, { refs: stockRefs("menu:*", "booked_sale", "shop"), notes: "the shop's stock count was brought in line with the orders that stand and the ones cancelled (each order is booked once)" });
+    }
+    // an item that fell to its owner's low mark: Orders has no supplier to ask, so the owner gets one line in their app now (once per crossing) and "running low" in the morning line.
+    // (A supply item belongs to Stock orders, which turns its alert into a reorder.)
+    for (const a of pendingAlerts(st)) {
+      if (kindOf(a.line) === "supply") continue;
+      ackAlert(st, a.line, a.crossing);
+      const item = a.line.startsWith("menu:") ? settings.menu.find((i) => i.id === a.line.slice("menu:".length)) : undefined;
+      const name = item ? itemName(item, settings.owner.language) : st.lines.find((l) => l.id === a.line)?.name ?? a.line;
+      assistantOf(store).talk.push({ atMs: now, from: "assistant", text: STOCK_LINE_WORDS[settings.owner.language].runningLow(name, a.count) });
+      log(null, owner, STOCK_ACTION, "confirmed", { item: a.line, count: a.count, crossing: a.crossing }, { refs: stockRefs(a.line, "low", "shop"), notes: "a counted item fell to its low mark; the owner was told once for this crossing" });
+    }
+  }
+
   async function onTick(): Promise<void> {
+    reconcileStock();
     await assistant?.onTick(); // item 11e: cards past their time close; the morning line is the runtime's own job (modules/assistant/morning.ts)
     const now = clock.now();
     await announceButtonMode(); // the outside switch can change between messages; the owner hears of it on the next beat
@@ -1372,6 +1411,7 @@ export function createAgent(deps: AgentDeps): Agent {
 
   async function handle(event: AgentEvent): Promise<void> {
     noteLicence();
+    reconcileStock();
     if (event.kind === "recovery") return onRecovery(event);
     if (event.kind === "channel_request") return onChannel(event);
     if (event.kind === "owner_action") return onOwnerAction(event);

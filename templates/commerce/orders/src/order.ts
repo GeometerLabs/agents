@@ -19,6 +19,8 @@ import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { Reminder } from "../../../../modules/reminders/reminders.ts";
 import type { GuardHold, RefundIssue, RefundRetry, UntoldRefund } from "../../../../modules/payments/refunds.ts";
 import type { AssistantState } from "../../../../modules/assistant/state.ts";
+import { FACT_HORIZON_MS, isCounted, leftFor, menuStockId, unbookedHolds } from "../../../../modules/stock/stock.ts";
+import type { OrderFact } from "../../../../modules/stock/stock.ts";
 import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
 import type { AiState } from "../../../../modules/understanding/ai-state.ts";
@@ -228,6 +230,35 @@ export function takenOf(store: Store, date: LocalDate, itemId: string, nowMs: nu
   let n = 0;
   for (const o of store.orders.values()) if (o.id !== exceptId && sameDay(o.date, date) && holdsStock(o, nowMs)) n += o.lines.filter((l) => l.itemId === itemId).reduce((s, l) => s + l.qty, 0);
   return n;
+}
+
+// ---- the shop's stock count (modules/stock), for the menu items the owner chose to count ----------------------------------------------------------------
+// Orders stays the source for what an order HOLDS (above). The stock count is the shelf: it falls only for an order that STANDS (confirmed or completed) and returns what a cancelled order
+// took. What orders hold that is not yet in the count is taken off what is left, so two holds cannot both take the last unit and a booked order is never counted twice. A menu item with
+// no stock line is not counted: every function here answers "nothing to say" for it and the day's own stock is the only limit, exactly as before.
+
+/** Each item line of every order as the stock module reads it: one fact per order and item (an order with the item on two lines is one fact with both quantities added). Plan meals are not orders of the menu. */
+export function orderFacts(store: Store, nowMs: number): OrderFact[] {
+  const out: OrderFact[] = [];
+  for (const o of store.orders.values()) {
+    if (o.plan) continue;
+    // an order that ended long ago is no longer passed: its key is kept longer than this horizon (modules/stock FACT_HORIZON_MS), so it can never be booked a second time
+    if ((o.state === "completed" || o.state === "cancelled") && o.slotEndMs !== undefined && nowMs - o.slotEndMs > FACT_HORIZON_MS) continue;
+    const byItem = new Map<string, number>();
+    for (const l of o.lines) byItem.set(l.itemId, (byItem.get(l.itemId) ?? 0) + l.qty);
+    for (const [itemId, qty] of byItem) {
+      out.push({ key: `sale:${o.id}:${itemId}`, id: menuStockId(itemId), qty, standing: o.state === "confirmed" || o.state === "completed", cancelled: o.state === "cancelled", holding: holdsStock(o, nowMs), ...(o.slotEndMs !== undefined ? { endedMs: o.slotEndMs } : {}) });
+    }
+  }
+  return out;
+}
+
+/** What is left of a COUNTED menu item for a new order (the count less what other orders hold that is not yet in it), or undefined for an item nobody counts. `exceptId` is the order being checked. */
+export function countedLeft(store: Store, itemId: string, nowMs: number, exceptId = ""): number | undefined {
+  const st = store.assistant?.stock;
+  if (!st || !isCounted(st, menuStockId(itemId))) return undefined;
+  const facts = orderFacts(store, nowMs).filter((f) => exceptId === "" || !f.key.startsWith(`sale:${exceptId}:`));
+  return leftFor(st, menuStockId(itemId), unbookedHolds(st, menuStockId(itemId), facts));
 }
 
 /** How many orders hold a place in the day's count. */

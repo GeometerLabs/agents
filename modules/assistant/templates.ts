@@ -6,6 +6,7 @@
 // The text sent is ALWAYS the template's body filled in (`render`), inside the window as well, so what the outgoing check reads is what Meta approved, word for word
 // (modules/language/meta-templates.ts insists on it). Each value goes through the Writer (words.ts), so it is checked against the record's values. The bodies start
 // and end with fixed words, as Meta's review wants. Hindi, Malayalam and Kannada are machine-written and on the review list before submission.
+import { STOCK_LINE_WORDS } from "../stock/words.ts";
 import { createMetaCatalogue, fillBody, metaBody } from "../language/meta-templates.ts";
 import { LANGUAGES } from "../language/languages.ts";
 import { PERSONALITIES, SMALL_TALK } from "./personality.ts";
@@ -98,7 +99,7 @@ const MORNING_PARTS: Record<Language, { bookings: (n: string, first: string) => 
 };
 
 /** What today holds, by skill: a booking shop's day, a centre's unpaid fees, a shop's open orders. A shop with several skills has several parts. */
-export type MorningToday = { bookings: number; firstMs?: number } | { owes: number; owedPaise: number } | { open: number };
+export type MorningToday = { bookings: number; firstMs?: number } | { owes: number; owedPaise: number } | { open: number } | { low: number };
 
 /** The morning line's facts: what today holds, money recorded yesterday, and how many things wait. */
 export function morningFacts(a: { language: Language; timeZone: string; shop: string; today: LocalDate; parts: MorningToday[]; moneyPaise: number; waiting: number }): TemplateFacts {
@@ -106,7 +107,9 @@ export function morningFacts(a: { language: Language; timeZone: string; shop: st
   const p = MORNING_PARTS[a.language];
   const part = (t: MorningToday): string =>
     "bookings" in t ? (t.bookings > 0 && t.firstMs !== undefined ? p.bookings(w.n(t.bookings), w.time(t.firstMs)) : p.noBookings)
-      : "owes" in t ? (t.owes > 0 ? p.owes(w.n(t.owes), w.inr(t.owedPaise)) : p.nothing) : t.open > 0 ? p.open(w.n(t.open)) : p.nothing;
+      : "owes" in t ? (t.owes > 0 ? p.owes(w.n(t.owes), w.inr(t.owedPaise)) : p.nothing)
+        // the shop's stock (modules/stock): "running low: 2", only for items the owner counts that have fallen to their low mark and have no supplier to ask
+        : "low" in t ? STOCK_LINE_WORDS[a.language].morningLow(w.n(t.low)) : t.open > 0 ? p.open(w.n(t.open)) : p.nothing;
   const values = {
     shop: w.lit(a.shop), date: w.date(a.today),
     today: a.parts.length > 0 ? a.parts.map(part).join(", ") : p.nothing,

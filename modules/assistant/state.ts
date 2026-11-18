@@ -9,6 +9,8 @@ import { DAY } from "../core/time.ts";
 import type { MemoryState } from "../memory/memory.ts";
 import { tidyListings } from "../listings/listings.ts";
 import type { ListingsState } from "../listings/listings.ts";
+import { tidyStock } from "../stock/stock.ts";
+import type { StockState } from "../stock/stock.ts";
 import { compactChanges } from "../limits/chat-limits.ts";
 import type { LimitChange } from "../limits/chat-limits.ts";
 
@@ -96,6 +98,11 @@ export interface AssistantState {
    * until the first listing, so a store from before it loads as it was. Like the memory, it is in the shop's own state, so it is in the backup and the export with nothing new.
    */
   listings?: ListingsState;
+  /**
+   * The shop's one stock count (modules/stock, block S phase A3): a line for each item the owner chose to count (a listing, an Orders menu item, a Stock orders item), its low mark and the
+   * keys that stop a sale or a delivery being counted twice. Left out until the owner first counts something, so a store from before it loads as it was and an uncounted shop saves the same bytes.
+   */
+  stock?: StockState;
   /** The owner's talk (block M): the last lines of the talk turns, for the prompt's "last six lines". Only talk turns, never a customer's words. Left out until the first talk. */
   chat?: TalkLine[];
   /**
@@ -144,6 +151,7 @@ export function compactAssistant(state: AssistantState, nowMs: number, todayIso:
   gone += state.closedDays.length - days.length;
   state.closedDays = days;
   if (state.listings) tidyListings(state.listings, nowMs);
+  if (state.stock) tidyStock(state.stock, nowMs);
   if (state.chat && state.chat.length > CHAT_LINES) { gone += state.chat.length - CHAT_LINES; state.chat = state.chat.slice(-CHAT_LINES); }
   gone += compactChanges(state.limitChanges ??= []);
   if (state.talk.length > TALK_LINES) { gone += state.talk.length - TALK_LINES; state.talk = state.talk.slice(-TALK_LINES); }
