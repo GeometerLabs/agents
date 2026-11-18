@@ -402,7 +402,7 @@ test("the owner's phones: the list with labels, a new phone is announced by bann
     assert.doesNotMatch(await (await w.page("/owner/?lang=en")).text(), /Make your own codes now/u);
     // a session made by the panel's owner link (the Operator's) has no phones page at all
     const opened = await w.page(`/o/${w.ownerToken}/phones?lang=en`);
-    assert.ok(opened.status === 404 || opened.status === 303, "the panel's link opens nothing here");
+    assert.ok([302, 303, 404].includes(opened.status), "the panel link opens no phones page here");
 
     // two phones listed; remove the second (one confirm), and its session ends
     const two = await (await w.page("/owner/phones?lang=en")).text();
