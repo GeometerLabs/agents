@@ -29,7 +29,7 @@ export interface ListingWords {
   /** What the owner's page shows beside a chat guest who asked about a listing. */
   guestAsked: (title: string) => string;
   // ---- the card, the question and the owner's page ----
-  card: (a: { title: string; price: string; category: string; photos: number }) => string;
+  card: (a: { title: string; price: string; category: string }) => string;
   show: string;
   change: string;
   no: string;
@@ -53,7 +53,7 @@ export interface ListingWords {
   // ---- refusals, each a plain line ----
   refusal: {
     protected: (animal: string) => string; health: string; priceNotInWords: string; full: (max: number) => string; tooManyDrafts: string; tooLong: string; badPrice: string; badQty: string;
-    badCategory: string; empty: string; badPlace: string; tooManyPhotos: string; unknown: string; gone: string;
+    badCategory: string; empty: string; badPlace: string; tooManyPhotos: string; unknown: string; gone: string; claims: string; modelFailed: string;
     photo: { empty: string; too_big: string; not_a_photo: string; unreadable: string; too_large_sides: string; animated: string; day: string };
   };
 }
@@ -64,7 +64,7 @@ const EN: ListingWords = {
   callToCheck: "Call to check", empty: "Nothing is listed right now. Ask the shop what is in.", machine: "Some words here were written by a machine from the owner's own words.",
   registration: (t) => `Registration (the owner says): ${t}`, ownerSays: (t) => `The owner says: ${t}`, quantity: (n) => `${n} available`, photoOf: (t) => `Photo: ${t}`, seeAll: "See what we have",
   chatGreeting: (t) => `You asked about: ${t}. What would you like to know?`, guestAsked: (t) => `Asked about: ${t}`,
-  card: (a) => `Show this on your page? ${a.title}. Price: ${a.price}. Category: ${a.category}.${a.photos > 0 ? ` With ${a.photos} photo${a.photos === 1 ? "" : "s"}.` : ""}`,
+  card: (a) => `Show this on your page? ${a.title}. Price: ${a.price}. Category: ${a.category}.`,
   show: "Show it", change: "Change", no: "No", still: (t) => `Still have ${t}?`, yes: "Yes", sold: "Sold",
   published: (t) => `Done: ${t} is on your page now. Confirm it every few days with one tap, so people know it is still there.`, dropped: "Alright, I will not show it.",
   confirmed: (t) => `Thanks, ${t} stays on your page.`, markedSold: (t) => `${t} is marked sold and is off your page.`,
@@ -84,6 +84,7 @@ const EN: ListingWords = {
     health: "I cannot write that an animal is healthy, vaccinated or of a pure breed unless you said so yourself. Tell me in your own words if it is true.",
     priceNotInWords: "The price I would write is not the one you said, so I did not make the listing. Tell me the price again.", full: (n) => `You already show ${n} things. Take one off first.`,
     tooManyDrafts: "There are already listings waiting for your tap. Answer those first.", tooLong: "That is too long. Please say it shorter.", badPrice: "That price is not valid. Use a whole number of rupees.", badQty: "That number is not valid.",
+    claims: "I cannot write promises, discounts or guarantees you did not say. Say them yourself if you mean them.", modelFailed: "I could not write that just now. Use the Add to my page form in your app.",
     badCategory: "That category is not one I know.", empty: "Tell me what it is first.", badPlace: "That place is not valid.", tooManyPhotos: "A listing has up to 3 photos.", unknown: "I do not have that listing.", gone: "That listing is not on your page now.",
     photo: { empty: "That file is empty.", too_big: "That photo is too big. Try a smaller one.", not_a_photo: "That is not a JPEG or WebP photo.", unreadable: "I could not read that photo.", too_large_sides: "That photo is too large in size.", animated: "Use a still photo, not an animation.", day: "That is enough photos for today. Try tomorrow." },
   },
@@ -95,7 +96,7 @@ const HI: ListingWords = {
   callToCheck: "पूछने के लिए फ़ोन करें", empty: "अभी कुछ सूची में नहीं है। दुकान से पूछें कि क्या है।", machine: "यहाँ कुछ शब्द मालिक के अपने शब्दों से मशीन ने लिखे हैं।",
   registration: (t) => `पंजीकरण (मालिक के अनुसार): ${t}`, ownerSays: (t) => `मालिक कहते हैं: ${t}`, quantity: (n) => `${n} उपलब्ध`, photoOf: (t) => `फ़ोटो: ${t}`, seeAll: "देखें हमारे पास क्या है",
   chatGreeting: (t) => `आपने इसके बारे में पूछा: ${t}। आप क्या जानना चाहते हैं?`, guestAsked: (t) => `इसके बारे में पूछा: ${t}`,
-  card: (a) => `क्या इसे अपने पेज पर दिखाऊँ? ${a.title}। दाम: ${a.price}। श्रेणी: ${a.category}।${a.photos > 0 ? ` ${a.photos} फ़ोटो के साथ।` : ""}`,
+  card: (a) => `क्या इसे अपने पेज पर दिखाऊँ? ${a.title}। दाम: ${a.price}। श्रेणी: ${a.category}।`,
   show: "दिखाएँ", change: "बदलें", no: "नहीं", still: (t) => `क्या ${t} अभी भी है?`, yes: "हाँ", sold: "बिक गया",
   published: (t) => `हो गया: ${t} अब आपके पेज पर है। हर कुछ दिन में एक टैप से इसे पक्का करते रहें, ताकि लोग जानें कि यह अभी भी है।`, dropped: "ठीक है, मैं इसे नहीं दिखाऊँगा।",
   confirmed: (t) => `धन्यवाद, ${t} आपके पेज पर बना रहेगा।`, markedSold: (t) => `${t} बिक गया है और आपके पेज से हट गया है।`,
@@ -115,6 +116,7 @@ const HI: ListingWords = {
     health: "जब तक आपने खुद न कहा हो, मैं नहीं लिख सकता कि जानवर स्वस्थ है, टीका लगा है या शुद्ध नस्ल का है। अगर सच है तो अपने शब्दों में बताइए।",
     priceNotInWords: "मैं जो दाम लिखता वह वह नहीं था जो आपने कहा, इसलिए लिस्टिंग नहीं बनाई। कृपया दाम फिर बताइए।", full: (n) => `आप पहले से ${n} चीज़ें दिखा रहे हैं। पहले कोई एक हटाइए।`,
     tooManyDrafts: "आपके टैप के इंतज़ार में पहले से लिस्टिंग हैं। पहले उनका जवाब दीजिए।", tooLong: "यह बहुत लंबा है। कृपया छोटा करके कहें।", badPrice: "यह दाम सही नहीं है। रुपये की पूरी संख्या लिखें।", badQty: "यह संख्या सही नहीं है।",
+    claims: "जो वादे, छूट या गारंटी आपने नहीं कहीं, वे मैं नहीं लिख सकता। मतलब हो तो खुद कहिए।", modelFailed: "मैं अभी यह नहीं लिख सका। अपने ऐप में मेरे पेज पर जोड़ें फ़ॉर्म इस्तेमाल करें।",
     badCategory: "यह श्रेणी मुझे नहीं पता।", empty: "पहले बताइए कि यह क्या है।", badPlace: "यह जगह सही नहीं है।", tooManyPhotos: "एक लिस्टिंग में 3 फ़ोटो तक हो सकते हैं।", unknown: "मेरे पास वह लिस्टिंग नहीं है।", gone: "वह लिस्टिंग अब आपके पेज पर नहीं है।",
     photo: { empty: "वह फ़ाइल खाली है।", too_big: "वह फ़ोटो बहुत बड़ी है। छोटी आज़माइए।", not_a_photo: "वह JPEG या WebP फ़ोटो नहीं है।", unreadable: "मैं वह फ़ोटो पढ़ नहीं सका।", too_large_sides: "वह फ़ोटो आकार में बहुत बड़ी है।", animated: "स्थिर फ़ोटो इस्तेमाल करें, एनिमेशन नहीं।", day: "आज के लिए इतनी फ़ोटो काफ़ी हैं। कल फिर आज़माइए।" },
   },
@@ -126,7 +128,7 @@ const ML: ListingWords = {
   callToCheck: "ചോദിക്കാൻ വിളിക്കുക", empty: "ഇപ്പോൾ ഒന്നും പട്ടികയിൽ ഇല്ല. എന്തുണ്ടെന്ന് കടയോട് ചോദിക്കുക.", machine: "ഇവിടെ ചില വാക്കുകൾ ഉടമയുടെ സ്വന്തം വാക്കുകളിൽ നിന്ന് യന്ത്രം എഴുതിയതാണ്.",
   registration: (t) => `രജിസ്ട്രേഷൻ (ഉടമ പറയുന്നത്): ${t}`, ownerSays: (t) => `ഉടമ പറയുന്നു: ${t}`, quantity: (n) => `${n} ലഭ്യമാണ്`, photoOf: (t) => `ഫോട്ടോ: ${t}`, seeAll: "ഞങ്ങളുടെ പക്കലുള്ളത് കാണുക",
   chatGreeting: (t) => `നിങ്ങൾ ചോദിച്ചത്: ${t}. എന്താണ് അറിയേണ്ടത്?`, guestAsked: (t) => `ചോദിച്ചത്: ${t}`,
-  card: (a) => `ഇത് നിങ്ങളുടെ പേജിൽ കാണിക്കട്ടെ? ${a.title}. വില: ${a.price}. വിഭാഗം: ${a.category}.${a.photos > 0 ? ` ${a.photos} ഫോട്ടോ ഉൾപ്പെടെ.` : ""}`,
+  card: (a) => `ഇത് നിങ്ങളുടെ പേജിൽ കാണിക്കട്ടെ? ${a.title}. വില: ${a.price}. വിഭാഗം: ${a.category}.`,
   show: "കാണിക്കുക", change: "മാറ്റുക", no: "വേണ്ട", still: (t) => `${t} ഇപ്പോഴും ഉണ്ടോ?`, yes: "ഉണ്ട്", sold: "വിറ്റു",
   published: (t) => `ചെയ്തു: ${t} ഇപ്പോൾ നിങ്ങളുടെ പേജിൽ ഉണ്ട്. ഇത് ഇപ്പോഴും ഉണ്ടെന്ന് ആളുകൾ അറിയാൻ ഓരോ ദിവസം കഴിഞ്ഞും ഒരു ടാപ്പിലൂടെ ഉറപ്പാക്കുക.`, dropped: "ശരി, ഞാൻ ഇത് കാണിക്കില്ല.",
   confirmed: (t) => `നന്ദി, ${t} നിങ്ങളുടെ പേജിൽ തുടരും.`, markedSold: (t) => `${t} വിറ്റതായി അടയാളപ്പെടുത്തി, നിങ്ങളുടെ പേജിൽ നിന്ന് മാറ്റി.`,
@@ -146,6 +148,7 @@ const ML: ListingWords = {
     health: "നിങ്ങൾ തന്നെ പറഞ്ഞിട്ടില്ലെങ്കിൽ ഒരു മൃഗം ആരോഗ്യമുള്ളതാണെന്നോ വാക്സിൻ എടുത്തതാണെന്നോ ശുദ്ധ ജാതിയാണെന്നോ എനിക്ക് എഴുതാൻ കഴിയില്ല. സത്യമാണെങ്കിൽ നിങ്ങളുടെ സ്വന്തം വാക്കുകളിൽ പറയുക.",
     priceNotInWords: "ഞാൻ എഴുതുമായിരുന്ന വില നിങ്ങൾ പറഞ്ഞതല്ല, അതിനാൽ ലിസ്റ്റിംഗ് ഉണ്ടാക്കിയില്ല. വില ഒന്നുകൂടി പറയുക.", full: (n) => `നിങ്ങൾ ഇതിനകം ${n} കാര്യങ്ങൾ കാണിക്കുന്നു. ആദ്യം ഒന്ന് മാറ്റുക.`,
     tooManyDrafts: "നിങ്ങളുടെ ടാപ്പിനായി ഇതിനകം ലിസ്റ്റിംഗുകൾ കാത്തിരിക്കുന്നു. ആദ്യം അവയ്ക്ക് മറുപടി നൽകുക.", tooLong: "ഇത് വളരെ നീണ്ടതാണ്. ദയവായി ചുരുക്കി പറയുക.", badPrice: "ആ വില ശരിയല്ല. രൂപയുടെ ഒരു പൂർണ്ണസംഖ്യ ഉപയോഗിക്കുക.", badQty: "ആ സംഖ്യ ശരിയല്ല.",
+    claims: "നിങ്ങൾ പറയാത്ത വാഗ്ദാനങ്ങളോ ഇളവുകളോ ഉറപ്പുകളോ എനിക്ക് എഴുതാൻ കഴിയില്ല. ഉദ്ദേശിക്കുന്നെങ്കിൽ നിങ്ങൾ തന്നെ പറയുക.", modelFailed: "ഇപ്പോൾ അത് എഴുതാൻ കഴിഞ്ഞില്ല. നിങ്ങളുടെ ആപ്പിലെ എന്റെ പേജിൽ ചേർക്കുക ഫോം ഉപയോഗിക്കുക.",
     badCategory: "ആ വിഭാഗം എനിക്ക് അറിയില്ല.", empty: "ആദ്യം ഇത് എന്താണെന്ന് പറയുക.", badPlace: "ആ സ്ഥലം ശരിയല്ല.", tooManyPhotos: "ഒരു ലിസ്റ്റിംഗിൽ 3 ഫോട്ടോ വരെ ആകാം.", unknown: "എന്റെ പക്കൽ ആ ലിസ്റ്റിംഗ് ഇല്ല.", gone: "ആ ലിസ്റ്റിംഗ് ഇപ്പോൾ നിങ്ങളുടെ പേജിൽ ഇല്ല.",
     photo: { empty: "ആ ഫയൽ ശൂന്യമാണ്.", too_big: "ആ ഫോട്ടോ വളരെ വലുതാണ്. ചെറുത് ശ്രമിക്കുക.", not_a_photo: "അത് JPEG അല്ലെങ്കിൽ WebP ഫോട്ടോ അല്ല.", unreadable: "എനിക്ക് ആ ഫോട്ടോ വായിക്കാൻ കഴിഞ്ഞില്ല.", too_large_sides: "ആ ഫോട്ടോയുടെ വലിപ്പം വളരെ കൂടുതലാണ്.", animated: "ചലിക്കുന്ന ചിത്രമല്ല, സ്ഥിര ഫോട്ടോ ഉപയോഗിക്കുക.", day: "ഇന്നത്തേക്ക് ഇത്രയും ഫോട്ടോ മതി. നാളെ ശ്രമിക്കുക." },
   },
@@ -157,7 +160,7 @@ const KN: ListingWords = {
   callToCheck: "ಕೇಳಲು ಕರೆ ಮಾಡಿ", empty: "ಈಗ ಏನೂ ಪಟ್ಟಿಯಲ್ಲಿ ಇಲ್ಲ. ಏನಿದೆ ಎಂದು ಅಂಗಡಿಯನ್ನು ಕೇಳಿ.", machine: "ಇಲ್ಲಿನ ಕೆಲವು ಪದಗಳನ್ನು ಮಾಲೀಕರ ಸ್ವಂತ ಮಾತುಗಳಿಂದ ಯಂತ್ರ ಬರೆದಿದೆ.",
   registration: (t) => `ನೋಂದಣಿ (ಮಾಲೀಕರು ಹೇಳುವಂತೆ): ${t}`, ownerSays: (t) => `ಮಾಲೀಕರು ಹೇಳುತ್ತಾರೆ: ${t}`, quantity: (n) => `${n} ಲಭ್ಯವಿದೆ`, photoOf: (t) => `ಫೋಟೋ: ${t}`, seeAll: "ನಮ್ಮಲ್ಲಿ ಏನಿದೆ ನೋಡಿ",
   chatGreeting: (t) => `ನೀವು ಕೇಳಿದ್ದು: ${t}. ನೀವು ಏನು ತಿಳಿಯಲು ಬಯಸುತ್ತೀರಿ?`, guestAsked: (t) => `ಕೇಳಿದ್ದು: ${t}`,
-  card: (a) => `ಇದನ್ನು ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ತೋರಿಸಲೇ? ${a.title}. ಬೆಲೆ: ${a.price}. ವರ್ಗ: ${a.category}.${a.photos > 0 ? ` ${a.photos} ಫೋಟೋದೊಂದಿಗೆ.` : ""}`,
+  card: (a) => `ಇದನ್ನು ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ತೋರಿಸಲೇ? ${a.title}. ಬೆಲೆ: ${a.price}. ವರ್ಗ: ${a.category}.`,
   show: "ತೋರಿಸಿ", change: "ಬದಲಿಸಿ", no: "ಬೇಡ", still: (t) => `${t} ಇನ್ನೂ ಇದೆಯೇ?`, yes: "ಹೌದು", sold: "ಮಾರಾಟವಾಯಿತು",
   published: (t) => `ಆಯಿತು: ${t} ಈಗ ನಿಮ್ಮ ಪುಟದಲ್ಲಿದೆ. ಇದು ಇನ್ನೂ ಇದೆ ಎಂದು ಜನರಿಗೆ ತಿಳಿಯಲು ಕೆಲವು ದಿನಗಳಿಗೊಮ್ಮೆ ಒಂದು ಟ್ಯಾಪ್‌ನಿಂದ ಖಚಿತಪಡಿಸಿ.`, dropped: "ಸರಿ, ನಾನು ಇದನ್ನು ತೋರಿಸುವುದಿಲ್ಲ.",
   confirmed: (t) => `ಧನ್ಯವಾದ, ${t} ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಉಳಿಯುತ್ತದೆ.`, markedSold: (t) => `${t} ಮಾರಾಟವಾಯಿತು ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ, ನಿಮ್ಮ ಪುಟದಿಂದ ತೆಗೆಯಲಾಗಿದೆ.`,
@@ -177,6 +180,7 @@ const KN: ListingWords = {
     health: "ನೀವೇ ಹೇಳಿಲ್ಲದಿದ್ದರೆ, ಪ್ರಾಣಿ ಆರೋಗ್ಯವಾಗಿದೆ, ಲಸಿಕೆ ಹಾಕಲಾಗಿದೆ ಅಥವಾ ಶುದ್ಧ ತಳಿಯದು ಎಂದು ನಾನು ಬರೆಯಲಾರೆ. ಸತ್ಯವಾಗಿದ್ದರೆ ನಿಮ್ಮ ಸ್ವಂತ ಮಾತುಗಳಲ್ಲಿ ಹೇಳಿ.",
     priceNotInWords: "ನಾನು ಬರೆಯುತ್ತಿದ್ದ ಬೆಲೆ ನೀವು ಹೇಳಿದ್ದಲ್ಲ, ಆದ್ದರಿಂದ ಲಿಸ್ಟಿಂಗ್ ಮಾಡಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಬೆಲೆಯನ್ನು ಮತ್ತೆ ಹೇಳಿ.", full: (n) => `ನೀವು ಈಗಾಗಲೇ ${n} ವಸ್ತುಗಳನ್ನು ತೋರಿಸುತ್ತಿದ್ದೀರಿ. ಮೊದಲು ಒಂದನ್ನು ತೆಗೆಯಿರಿ.`,
     tooManyDrafts: "ನಿಮ್ಮ ಟ್ಯಾಪ್‌ಗಾಗಿ ಈಗಾಗಲೇ ಲಿಸ್ಟಿಂಗ್‌ಗಳು ಕಾಯುತ್ತಿವೆ. ಮೊದಲು ಅವುಗಳಿಗೆ ಉತ್ತರಿಸಿ.", tooLong: "ಇದು ತುಂಬಾ ಉದ್ದವಾಗಿದೆ. ದಯವಿಟ್ಟು ಚಿಕ್ಕದಾಗಿ ಹೇಳಿ.", badPrice: "ಆ ಬೆಲೆ ಸರಿಯಿಲ್ಲ. ರೂಪಾಯಿಗಳ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಬಳಸಿ.", badQty: "ಆ ಸಂಖ್ಯೆ ಸರಿಯಿಲ್ಲ.",
+    claims: "ನೀವು ಹೇಳದ ಭರವಸೆ, ರಿಯಾಯಿತಿ ಅಥವಾ ಖಾತರಿಗಳನ್ನು ನಾನು ಬರೆಯಲಾರೆ. ಉದ್ದೇಶವಿದ್ದರೆ ನೀವೇ ಹೇಳಿ.", modelFailed: "ಈಗ ಅದನ್ನು ಬರೆಯಲಾಗಲಿಲ್ಲ. ನಿಮ್ಮ ಆ್ಯಪ್‌ನಲ್ಲಿ ನನ್ನ ಪುಟಕ್ಕೆ ಸೇರಿಸಿ ಫಾರ್ಮ್ ಬಳಸಿ.",
     badCategory: "ಆ ವರ್ಗ ನನಗೆ ಗೊತ್ತಿಲ್ಲ.", empty: "ಮೊದಲು ಇದು ಏನು ಎಂದು ಹೇಳಿ.", badPlace: "ಆ ಸ್ಥಳ ಸರಿಯಿಲ್ಲ.", tooManyPhotos: "ಒಂದು ಲಿಸ್ಟಿಂಗ್‌ನಲ್ಲಿ 3 ಫೋಟೋ ವರೆಗೆ ಇರಬಹುದು.", unknown: "ನನ್ನ ಬಳಿ ಆ ಲಿಸ್ಟಿಂಗ್ ಇಲ್ಲ.", gone: "ಆ ಲಿಸ್ಟಿಂಗ್ ಈಗ ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಇಲ್ಲ.",
     photo: { empty: "ಆ ಫೈಲ್ ಖಾಲಿಯಾಗಿದೆ.", too_big: "ಆ ಫೋಟೋ ತುಂಬಾ ದೊಡ್ಡದಾಗಿದೆ. ಚಿಕ್ಕದನ್ನು ಪ್ರಯತ್ನಿಸಿ.", not_a_photo: "ಅದು JPEG ಅಥವಾ WebP ಫೋಟೋ ಅಲ್ಲ.", unreadable: "ನನಗೆ ಆ ಫೋಟೋ ಓದಲಾಗಲಿಲ್ಲ.", too_large_sides: "ಆ ಫೋಟೋದ ಗಾತ್ರ ತುಂಬಾ ದೊಡ್ಡದಾಗಿದೆ.", animated: "ಚಲಿಸುವ ಚಿತ್ರವಲ್ಲ, ಸ್ಥಿರ ಫೋಟೋ ಬಳಸಿ.", day: "ಇಂದಿಗೆ ಇಷ್ಟು ಫೋಟೋ ಸಾಕು. ನಾಳೆ ಪ್ರಯತ್ನಿಸಿ." },
   },
@@ -209,7 +213,7 @@ export function listingReviewLines(language: Language): Record<string, string> {
   for (const [k, v] of Object.entries(w)) if (k !== "categories" && k !== "owner" && k !== "refusal") flat.push([k, v as never]);
   for (const [k, v] of flat) {
     out[k] = typeof v === "string" ? v
-      : k === "card" ? (v as ListingWords["card"])({ title: "Persian kitten", price: "₹8,000 each", category: w.categories.pets, photos: 2 })
+      : k === "card" ? (v as ListingWords["card"])({ title: "Persian kitten", price: "₹8,000 each", category: w.categories.pets })
         : k === "confirmedAgo" ? w.confirmedAgo(2) : k === "quantity" ? w.quantity(2) : (v as (t: string) => string)("Persian kitten");
   }
   for (const [k, v] of Object.entries(w.owner)) out[`owner.${k}`] = typeof v === "string" ? v : (v as (n: number) => string)(2);
