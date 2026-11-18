@@ -49,6 +49,8 @@ import type { OwnerPageInput } from "./owner-page.ts";
 import { LEAVE_PAGE } from "./words-leave.ts";
 import { WORDS as LIMITS_PAGE_WORDS, ownerLimitsPage } from "./owner-limits-page.ts";
 import { listingsPolicy, ownerListingsPage } from "./owner-listings-page.ts";
+import { ownerStockPage, stockPolicy } from "./owner-stock-page.ts";
+import { STOCK_LINE_WORDS } from "../stock/words.ts";
 import { storefrontRoute } from "./storefront.ts";
 import { LISTING_WORDS } from "../listings/words.ts";
 import type { OwnerLimitsView } from "./owner-limits-page.ts";
@@ -671,7 +673,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     /** A signed-in owner's POST must carry the session's form token; the panel's link is its own secret and needs none. */
     const csrfOk = (given: unknown) => o.csrf === undefined || (typeof token === "object" && "session" in token && csrfMatches(token.session, given));
     // item 11e: the owner's app lives at the same base: the page also at "<base>/" (a service worker controls only pages inside its scope, <base>/), and its four routes
-    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/listings": "GET", "/listings/op": "POST", "/listings/photo": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST", "/leave": "POST" };
+    const routes: Record<string, string> = { "": "GET", "/": "GET", "/answer": "POST", "/api/v1/state": "GET", "/api/v1/answer": "POST", "/manifest.webmanifest": "GET", "/sw.js": "GET", "/talk": "POST", "/voice": "POST", "/limits": "GET", "/limits/set": "POST", "/listings": "GET", "/listings/op": "POST", "/stock": "GET", "/stock/op": "POST", "/listings/photo": "POST", "/push/subscribe": "POST", "/push/unsubscribe": "POST", "/push/choice": "POST", "/leave": "POST" };
     // the accountant's files: <owner app>/accounting/<period>/<file>, for the signed-in owner's session only (handled below, once the session is known good)
     const accounting = /^\/accounting\/([^/]+)(?:\/([^/]+))?$/u.exec(sub);
     // block S: the owner's own view of one of their photos, by its id (a draft's, a waiting one): <owner app>/listings/p/<id>
@@ -843,6 +845,36 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       const why = typeof r.body.why === "string" && /^[a-z_]{1,30}$/u.test(r.body.why) ? r.body.why : "empty";
       return redirect(res, `${base}/listings?lang=${language}&n=${r.status === 200 ? "saved" : why}`);
     }
+    // ---- block S phase A3: the owner's Stock page (the one shared stock count). The runtime checks the owner's link or session again on every call ----
+    if (sub === "/stock" || sub === "/stock/op") {
+      const backend = shop.backend;
+      if (!backend.ownerStock) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+      if (sub === "/stock") {
+        const got = await backend.ownerStock(token, undefined, language);
+        if (got.status === 403) return gone();
+        if (got.status !== 200) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+        const n = url.searchParams.get("n") ?? undefined;
+        return sendHtml(res, 200, ownerStockPage({ base, language, view: got.body as unknown as Parameters<typeof ownerStockPage>[0]["view"], rid: () => randomUUID(), ...(o.csrf ? { csrf: o.csrf } : {}), ...(n && /^[a-z_]{1,30}$/u.test(n) ? { notice: n } : {}) }), { "x-robots-tag": "noindex", "content-security-policy": stockPolicy(base) });
+      }
+      // POST /stock/op: one form, one op; the runtime checks it against the shop's rules first and says why not. The form's `rid` is the request id, so a double tap is one change.
+      const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
+      if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
+      const num = (k: string): number | undefined => { const v = (form.get(k) ?? "").trim(); return v === "" || !Number.isFinite(Number(v)) ? undefined : Number(v); };
+      const id = form.get("id") ?? "";
+      const kind = form.get("op");
+      const rid = /^[A-Za-z0-9-]{1,64}$/u.test(form.get("rid") ?? "") ? form.get("rid")! : randomUUID();
+      let op: Record<string, unknown> | undefined;
+      if (kind === "start") op = { op: kind, id, count: num("count") ?? -1, ...(num("low") !== undefined ? { low: num("low") } : {}) };
+      else if (kind === "correct") op = { op: kind, id, to: num("to") ?? -1, ...(num("shown") !== undefined ? { shown: num("shown") } : {}) };
+      else if (kind === "sold") op = { op: kind, id, qty: num("qty") ?? 1 };
+      else if (kind === "low") op = { op: kind, id, low: num("low") ?? null };
+      else if (kind === "stop") op = { op: kind, id };
+      if (!op) return redirect(res, `${base}/stock?lang=${language}&n=bad_count`);
+      const r = await backend.ownerStock(token, { id: rid, op });
+      if (r.status === 403) return gone();
+      const why = typeof r.body.why === "string" && /^[a-z_]{1,30}$/u.test(r.body.why) ? r.body.why : "bad_count";
+      return redirect(res, `${base}/stock?lang=${language}&n=${r.status === 200 ? "saved" : why}`);
+    }
     if (app && sub === "/talk") {
       const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
       if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
@@ -907,7 +939,7 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const alerts = pushState ? ownerAlertsBox({ base, language, key: pushState.key, state: pushState.state, ...(o.csrf ? { csrf: o.csrf } : {}), bare: true }) : undefined;
     // item 11i: the owner's app shows the character in the shop's real mood (all five moods: this is the owner's own view)
     const facePic = state.view.app ? shop.character?.()?.picture(state.view.app.face, "svg") : undefined;
-    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(typeof token === "object" && "session" in token && shop.backend.accountantFiles ? { exportLinks: { base: `${base}/accounting` } } : {}), ...(leave ? { leave } : {}), ...(app && shop.backend.ownerListings ? { listingsLink: { href: `${base}/listings?lang=${language}`, label: LISTING_WORDS[language].owner.link } } : {}), ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(shop.backend.limits ? { limitsLink: { href: `${base}/limits?lang=${language}`, label: LIMITS_PAGE_WORDS[language].title } } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
+    return sendHtml(res, 200, ownerPage({ base, language, view: state.view, relayAsks: state.relayAsks, ...(typeof token === "object" && "session" in token && shop.backend.accountantFiles ? { exportLinks: { base: `${base}/accounting` } } : {}), ...(leave ? { leave } : {}), ...(app && shop.backend.ownerStock ? { stockLink: { href: `${base}/stock?lang=${language}`, label: STOCK_LINE_WORDS[language].title } } : {}), ...(app && shop.backend.ownerListings ? { listingsLink: { href: `${base}/listings?lang=${language}`, label: LISTING_WORDS[language].owner.link } } : {}), ...(facePic ? { picture: svgDataUri(facePic.bytes) } : {}), ...(notice ? { notice } : {}), ...(o.csrf ? { csrf: o.csrf } : {}), ...(o.signOut ? { signOut: o.signOut } : {}), ...(shop.backend.limits ? { limitsLink: { href: `${base}/limits?lang=${language}`, label: LIMITS_PAGE_WORDS[language].title } } : {}), ...(nonce ? { nonce } : {}), ...(shop.pages?.()?.partner ? { partner: shop.pages()!.partner! } : {}), ...(pushState ? { alertPhones: pushState.state.phones } : {}), ...(url.searchParams.get("first") === "1" ? { firstSignIn: true } : {}), ...(alerts ? { alerts } : {}) }), { "x-robots-tag": "noindex", ...(nonce ? { "content-security-policy": appPolicy(base, nonce) } : {}) });
   }
 
   return (req, res) => {
