@@ -39,6 +39,10 @@
 //                                with the reason, who set it and the day; replaces only the numbers it names. Only here, never from the panel. If N is above fleet's cap for the shop,
 //                                it says the fleet command to raise that too (node apps/fleet/main.ts shop ai-cap ...). The deployer applies it on its next pass.
 //   shop budget <shop> --clear   remove the override: the plan's numbers hold again
+//   owner reset <shop> --reason "..." --by NAME [--qr-out <file.png>]   Geometer's reset of a shop owner's sign-in, for a dispute or an Operator who kept the first QR: every
+//                                phone, setup QR, recovery code and signed-in device of the owner stops at once, any pending removal request is cancelled, and ONE new one-use setup
+//                                QR is made. The link is printed once (and a PNG of the QR written to --qr-out when you name a file). The shop's record and the Operator's panel
+//                                say it was reset, with your reason. Only here, never from the panel: on a builder's own server the builder is the admin.
 //   check <shop>                 settings, pin, secrets, the generator's rules, compile and every tripwire, offline. Starts nothing. Once the shop is deployed it ALSO
 //                                runs the panel's read-only connection checks (WhatsApp number, Razorpay key, calendar) inside the panel container; when they all confirm
 //                                the panel records the ids in shops/<shop>/pins.json, and the next deploy or `apply` pins the Guards to them.
@@ -128,6 +132,7 @@ import { recordAgent } from "./agent/records.ts";
 import { exportCommand } from "./export/cli.ts";
 import { homeCommand } from "./home-cli.ts";
 import { budgetCommand } from "./budget-cli.ts";
+import { ownerCommand } from "./owner-cli.ts";
 import { whatsappTemplatesCommand } from "./whatsapp-templates-cli.ts";
 import { paperCommand } from "./backup/papers-cli.ts";
 import { runFingerprints } from "./backup/fingerprints.ts";
@@ -178,7 +183,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       "fleet-url": { type: "string" }, "fleet-key-file": { type: "string" }, "licence-key": { type: "string" }, "guard-image": { type: "string" }, from: { type: "string" }, template: { type: "string" }, reason: { type: "string" }, at: { type: "string" },
       tail: { type: "string" }, watch: { type: "boolean" }, interval: { type: "string" }, "stream-url": { type: "string" }, "stream-endpoint": { type: "string" }, "snapshots-url": { type: "string" }, // stream-*: only to say they are no longer used
       // shop budget
-      "monthly-inr": { type: "string" }, "set-by": { type: "string" }, daily: { type: "string", multiple: true }, clear: { type: "boolean" },
+      "monthly-inr": { type: "string" }, "set-by": { type: "string" }, by: { type: "string" }, "qr-out": { type: "string" }, daily: { type: "string", multiple: true }, clear: { type: "boolean" },
       "snapshots-endpoint": { type: "string" }, "age-recipient": { type: "string" }, "age-identity-out": { type: "string" }, "from-snapshot": { type: "string" }, identity: { type: "string" },
       kind: { type: "string" }, shop: { type: "string" }, changes: { type: "string" }, pairing: { type: "boolean" }, "guard-licence-kid": { type: "string" }, wait: { type: "string" }, yes: { type: "boolean" }, confirm: { type: "boolean" } /* hidden alias of --yes: the /usr/local/bin/geometer an earlier install.sh wrote passes `server stop --confirm` */,
       "prepared-by": { type: "string" }, company: { type: "string" }, "upi-id": { type: "string" }, payee: { type: "string" }, payment: { type: "string" }, role: { type: "string" }, note: { type: "string" }, "approval-hours": { type: "string" }, "http-port": { type: "string" }, "https-port": { type: "string" }, panel: { type: "boolean" }, "panel-mode": { type: "string" },
@@ -357,6 +362,13 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
       return budgetCommand(dir, positionals[1], {
         ...(str("monthly-inr") !== undefined ? { monthlyInr: str("monthly-inr")! } : {}), ...(str("reason") !== undefined ? { reason: str("reason")! } : {}), ...(str("set-by") !== undefined ? { setBy: str("set-by")! } : {}),
         ...(Array.isArray(values.daily) ? { daily: values.daily as unknown as string[] } : {}), ...(values.clear === true ? { clear: true } : {}),
+      }, { log: ctx.log, now: ctx.now });
+    }
+
+    // `owner reset <shop>`: Geometer's reset of a shop owner's sign-in, only here, never from the panel (owner-cli.ts)
+    if (command === "owner") {
+      return ownerCommand(dir, positionals[0], positionals[1], {
+        ...(str("reason") !== undefined ? { reason: str("reason")! } : {}), ...(str("by") !== undefined ? { by: str("by")! } : {}), ...(str("qr-out") !== undefined ? { qrOut: str("qr-out")! } : {}),
       }, { log: ctx.log, now: ctx.now });
     }
 
