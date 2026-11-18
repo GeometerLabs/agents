@@ -87,7 +87,9 @@ import { coerceIntent } from "./adapters/model.ts";
 import type { Intent, IntentParser, ParseContext, ParseOptions } from "./adapters/model.ts";
 import { isPaidClaim, parseIntent } from "./adapters/rule-parser.ts";
 import { addLine, countOf, countedLeft, factsFor, fixSlot, latestOrder, moveTo, newDraft, orderFacts, ordersInSlot, ordersOn, register, slotMoments, takenOf, totalOf } from "./order.ts";
-import { STOCK_ACTION, reconcileSales, shopRecord, stockRefs } from "../../../../modules/stock/stock.ts";
+import { assistantOf } from "../../../../modules/assistant/state.ts";
+import { STOCK_ACTION, ackAlert, kindOf, pendingAlerts, reconcileSales, shopRecord, stockRefs } from "../../../../modules/stock/stock.ts";
+import { STOCK_LINE_WORDS } from "../../../../modules/stock/words.ts";
 import type { Order, Pending, Store } from "./order.ts";
 import { buttonsFor, intentFromReply, itemList, ownerMarkButtons, slotList } from "./language/interactive.ts";
 import type { ButtonId } from "./language/interactive.ts";
@@ -1271,6 +1273,16 @@ export function createAgent(deps: AgentDeps): Agent {
     const changed = reconcileSales(st, shopRecord("orders"), orderFacts(store, now), { nowMs: now });
     if (changed > 0 && st.lines.map((l) => l.count).join(",") !== before) {
       log(null, owner, STOCK_ACTION, "confirmed", { changed }, { refs: stockRefs("menu:*", "booked_sale", "shop"), notes: "the shop's stock count was brought in line with the orders that stand and the ones cancelled (each order is booked once)" });
+    }
+    // an item that fell to its owner's low mark: Orders has no supplier to ask, so the owner gets one line in their app now (once per crossing) and "running low" in the morning line.
+    // (A supply item belongs to Stock orders, which turns its alert into a reorder.)
+    for (const a of pendingAlerts(st)) {
+      if (kindOf(a.line) === "supply") continue;
+      ackAlert(st, a.line, a.crossing);
+      const item = a.line.startsWith("menu:") ? settings.menu.find((i) => i.id === a.line.slice("menu:".length)) : undefined;
+      const name = item ? itemName(item, settings.owner.language) : st.lines.find((l) => l.id === a.line)?.name ?? a.line;
+      assistantOf(store).talk.push({ atMs: now, from: "assistant", text: STOCK_LINE_WORDS[settings.owner.language].runningLow(name, a.count) });
+      log(null, owner, STOCK_ACTION, "confirmed", { item: a.line, count: a.count, crossing: a.crossing }, { refs: stockRefs(a.line, "low", "shop"), notes: "a counted item fell to its low mark; the owner was told once for this crossing" });
     }
   }
 

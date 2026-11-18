@@ -372,13 +372,19 @@ export function unbookedHolds(s: StockState | undefined, id: StockId, facts: rea
 /** A delivery fact as the Stock orders agent reads it from a purchase order the owner marked received (a wrong item is not passed). */
 export interface DeliveryFact { key: string; id: StockId; cumulative: number; unit?: string }
 
-/** Add every delivery not yet in the count. Returns the facts the stock refused (a unit that does not match) so the agent can say so; the rest are booked once. */
+/** Add every delivery not yet in the count. Returns the facts the stock newly refused (a unit that does not match; each reported once) so the agent can say so; the rest are booked once. */
 export function reconcileDeliveries(s: StockState, src: Source, facts: readonly DeliveryFact[], c: WriteContext): DeliveryFact[] {
   requireSource(src);
   const refused: DeliveryFact[] = [];
   for (const f of facts) {
     const r = received(s, src, f.id, f.key, f.cumulative, f.unit, c);
-    if (!r.ok) refused.push(f);
+    if (r.ok) continue;
+    // a refusal is reported once per delivery quantity: the line remembers it under "refused:<key>", so the next tick does not tell the owner again
+    const l = lineOf(s, f.id);
+    if (l && l.applied[`refused:${f.key}`]?.qty !== f.cumulative) {
+      l.applied[`refused:${f.key}`] = { qty: f.cumulative, took: 0, atMs: c.nowMs };
+      refused.push(f);
+    }
   }
   return refused;
 }
