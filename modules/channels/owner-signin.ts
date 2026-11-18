@@ -22,6 +22,7 @@ import type { Language } from "../language/languages.ts";
 import type { InboundMessage, Messaging, OutboundMessage } from "../messaging/messaging.ts";
 import type { ActionRecord, Outcome } from "../record/record.ts";
 import { nothingWasSent } from "../report/monthly-job.ts";
+import { FILE_TAKEN } from "../approvals/leave.ts";
 import { whatsappOf } from "../push/push.ts";
 import type { AssertionResponse, OwnerAccess, OwnerNow, RegistrationResponse } from "./owner-access.ts";
 import type { Grant, OwnerGrants } from "./owner-grants.ts";
@@ -32,7 +33,9 @@ import { relyingParty } from "./webauthn.ts";
 export interface OwnerAccessEvent {
   kind: "owner_access"; id: string;
   /** Item 11h: "passkey_added" when the owner registered a passkey (from the Operator's QR or a recovery code); `how` says what signed them in. */
-  what: "signed_in" | "signed_out" | "passkey_added"; session: string; how?: "link" | "passkey" | "setup" | "recovery";
+  what: "signed_in" | "signed_out" | "passkey_added" | "file_taken"; session: string; how?: "link" | "passkey" | "setup" | "recovery";
+  /** "file_taken" (leave with your shop): the owner's session took the shop's file made for this ask (modules/approvals/leave.ts), so the server can delete its copy. */
+  ask?: string;
 }
 /** The page asks for a sign-in link. No number, no address: the runtime knows both. */
 export interface OwnerSigninEvent { kind: "owner_signin"; id: string }
@@ -135,6 +138,10 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
 
     /** Handle one event the core gave here (`takes` said yes). */
     async run(event: OwnerSigninEvent | OwnerAccessEvent | { kind: "message"; message: InboundMessage }, ctx: { messaging: Messaging; record: ActionRecord; store?: unknown }): Promise<void> {
+      if (event.kind === "owner_access" && event.what === "file_taken") {
+        ctx.record.append({ conversation: owner.whatsapp, action: FILE_TAKEN, outcome: "confirmed", inputs: { ask: event.ask ?? "" }, language: owner.language, refs: { ask: event.ask ?? "", session: event.session }, notes: "the owner's session took the file of their shop; the server's copy is deleted" });
+        return;
+      }
       if (event.kind === "owner_access") {
         ctx.record.append({ conversation: owner.whatsapp, action: "owner_session", outcome: "confirmed", inputs: { what: event.what, session: event.session, ...(event.how ? { how: event.how } : {}) }, language: owner.language, refs: { what: event.what, session: event.session, ...(event.how ? { how: event.how } : {}) } });
         return;

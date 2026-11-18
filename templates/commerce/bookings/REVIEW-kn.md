@@ -1492,6 +1492,106 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `limits.owner.back` | ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ | Back to your shop |  |
 | `limits.owner.never` | ಎಂದಿಗೂ ಇಲ್ಲ | never |  |
 | `limits.owner.yourShop` | ನಿಮ್ಮ ಅಂಗಡಿ | Your shop |  |
+| `listings.category.pets` | ಸಾಕುಪ್ರಾಣಿಗಳು | Pets |  |
+| `listings.category.food` | ಆಹಾರ | Food |  |
+| `listings.category.clothes` | ಬಟ್ಟೆಗಳು | Clothes |  |
+| `listings.category.home` | ಮನೆಯ ಸಾಮಾನು | Home |  |
+| `listings.category.electronics` | ಎಲೆಕ್ಟ್ರಾನಿಕ್ಸ್ | Electronics |  |
+| `listings.category.vehicles` | ವಾಹನಗಳು ಮತ್ತು ಸೈಕಲ್‌ಗಳು | Vehicles and cycles |  |
+| `listings.category.services` | ಸೇವೆಗಳು | Services |  |
+| `listings.category.other` | ಇತರೆ | Other |  |
+| `listings.heading` | ನಮ್ಮಲ್ಲಿ ಏನಿದೆ | What we have |  |
+| `listings.pageTitle` | Persian kitten: ನಮ್ಮಲ್ಲಿ ಏನಿದೆ | Persian kitten: what we have |  |
+| `listings.askAbout` | ಇದರ ಬಗ್ಗೆ ಕೇಳಿ | Ask about this |  |
+| `listings.askShop` | ಅಂಗಡಿಯನ್ನು ಕೇಳಿ | Ask the shop |  |
+| `listings.confirmedToday` | ಇಂದು ಖಚಿತಪಡಿಸಲಾಗಿದೆ | Confirmed today |  |
+| `listings.confirmedAgo` | 2 ದಿನಗಳ ಹಿಂದೆ ಖಚಿತಪಡಿಸಲಾಗಿದೆ | Confirmed 2 days ago |  |
+| `listings.callToCheck` | ಕೇಳಲು ಕರೆ ಮಾಡಿ | Call to check |  |
+| `listings.empty` | ಈಗ ಏನೂ ಪಟ್ಟಿಯಲ್ಲಿ ಇಲ್ಲ. ಏನಿದೆ ಎಂದು ಅಂಗಡಿಯನ್ನು ಕೇಳಿ. | Nothing is listed right now. Ask the shop what is in. |  |
+| `listings.machine` | ಇಲ್ಲಿನ ಕೆಲವು ಪದಗಳನ್ನು ಮಾಲೀಕರ ಸ್ವಂತ ಮಾತುಗಳಿಂದ ಯಂತ್ರ ಬರೆದಿದೆ. | Some words here were written by a machine from the owner's own words. |  |
+| `listings.registration` | ನೋಂದಣಿ (ಮಾಲೀಕರು ಹೇಳುವಂತೆ): Persian kitten | Registration (the owner says): Persian kitten |  |
+| `listings.ownerSays` | ಮಾಲೀಕರು ಹೇಳುತ್ತಾರೆ: Persian kitten | The owner says: Persian kitten |  |
+| `listings.quantity` | 2 ಲಭ್ಯವಿದೆ | 2 available |  |
+| `listings.photoOf` | ಫೋಟೋ: Persian kitten | Photo: Persian kitten |  |
+| `listings.seeAll` | ನಮ್ಮಲ್ಲಿ ಏನಿದೆ ನೋಡಿ | See what we have |  |
+| `listings.chatGreeting` | ನೀವು ಕೇಳಿದ್ದು: Persian kitten. ನೀವು ಏನು ತಿಳಿಯಲು ಬಯಸುತ್ತೀರಿ? | You asked about: Persian kitten. What would you like to know? |  |
+| `listings.guestAsked` | ಕೇಳಿದ್ದು: Persian kitten | Asked about: Persian kitten |  |
+| `listings.card` | ಇದನ್ನು ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ತೋರಿಸಲೇ? Persian kitten. ಬೆಲೆ: ₹8,000 each. ವರ್ಗ: ಸಾಕುಪ್ರಾಣಿಗಳು. | Show this on your page? Persian kitten. Price: ₹8,000 each. Category: Pets. |  |
+| `listings.show` | ತೋರಿಸಿ | Show it |  |
+| `listings.change` | ಬದಲಿಸಿ | Change |  |
+| `listings.no` | ಬೇಡ | No |  |
+| `listings.still` | Persian kitten ಇನ್ನೂ ಇದೆಯೇ? | Still have Persian kitten? |  |
+| `listings.yes` | ಹೌದು | Yes |  |
+| `listings.sold` | ಮಾರಾಟವಾಯಿತು | Sold |  |
+| `listings.published` | ಆಯಿತು: Persian kitten ಈಗ ನಿಮ್ಮ ಪುಟದಲ್ಲಿದೆ. ಇದು ಇನ್ನೂ ಇದೆ ಎಂದು ಜನರಿಗೆ ತಿಳಿಯಲು ಕೆಲವು ದಿನಗಳಿಗೊಮ್ಮೆ ಒಂದು ಟ್ಯಾಪ್‌ನಿಂದ ಖಚಿತಪಡಿಸಿ. | Done: Persian kitten is on your page now. Confirm it every few days with one tap, so people know it is still there. |  |
+| `listings.dropped` | ಸರಿ, ನಾನು ಇದನ್ನು ತೋರಿಸುವುದಿಲ್ಲ. | Alright, I will not show it. |  |
+| `listings.confirmed` | ಧನ್ಯವಾದ, Persian kitten ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಉಳಿಯುತ್ತದೆ. | Thanks, Persian kitten stays on your page. |  |
+| `listings.markedSold` | Persian kitten ಮಾರಾಟವಾಯಿತು ಎಂದು ಗುರುತಿಸಲಾಗಿದೆ, ನಿಮ್ಮ ಪುಟದಿಂದ ತೆಗೆಯಲಾಗಿದೆ. | Persian kitten is marked sold and is off your page. |  |
+| `listings.needModel` | ನನ್ನ ಅಸಿಸ್ಟೆಂಟ್ ಆನ್ ಇದ್ದಾಗ ಮಾತ್ರ ನಿಮ್ಮ ಮಾತುಗಳಿಂದ ಲಿಸ್ಟಿಂಗ್ ಬರೆಯಬಲ್ಲೆ. ನಿಮ್ಮ ಆ್ಯಪ್‌ನಲ್ಲಿ ನನ್ನ ಪುಟಕ್ಕೆ ಸೇರಿಸಿ ಫಾರ್ಮ್ ಬಳಸಿ: ಫೋಟೋ, ಹೆಸರು, ಬೆಲೆ. | I can only write a listing from your words when my assistant is on. Use the Add to my page form in your app: a photo, a title and a price. |  |
+| `listings.needPhoto` | ಮೊದಲು ನಿಮ್ಮ ಆ್ಯಪ್‌ನಲ್ಲಿ ಫೋಟೋ ಸೇರಿಸಿ, ನಂತರ ಇದು ಏನು ಮತ್ತು ಬೆಲೆ ಎಷ್ಟು ಎಂದು ಹೇಳಿ. | Add a photo first in your app, then tell me what it is and the price. |  |
+| `listings.owner.title` | ನಿಮ್ಮ ಪುಟ: ನಿಮ್ಮಲ್ಲಿ ಏನಿದೆ | Your page: what you have |  |
+| `listings.owner.intro` | ನಿಮ್ಮಲ್ಲಿರುವುದನ್ನು ಸೇರಿಸಿ, ಅಸಿಸ್ಟೆಂಟ್ ಅದನ್ನು ನಾಲ್ಕು ಭಾಷೆಗಳಲ್ಲಿ ಬರೆಯುತ್ತದೆ. ನೀವು ತೋರಿಸಿ ಎಂದು ಟ್ಯಾಪ್ ಮಾಡಿದ ನಂತರವೇ ಅದು ಕಾಣಿಸುತ್ತದೆ. | Add what you have and the assistant writes it in four languages. It shows only after you tap Show it. |  |
+| `listings.owner.switchLabel` | ನನ್ನ ಅಂಗಡಿಯನ್ನು Streetlist ಮತ್ತು ಹುಡುಕಾಟದಲ್ಲಿ ತೋರಿಸಿ | Show my shop on Streetlist and in search |  |
+| `listings.owner.switchNote` | ಆರಂಭದಲ್ಲಿ ಆಫ್ ಇರುತ್ತದೆ. ಆನ್ ಮಾಡಿದರೆ ನಿಮ್ಮ ನಮ್ಮಲ್ಲಿ ಏನಿದೆ ಪುಟವನ್ನು ಸರ್ಚ್ ಎಂಜಿನ್‌ಗಳು ಮತ್ತು Streetlist ಕಂಡುಕೊಳ್ಳಬಹುದು, ಅದರ ತೆರೆದ ಫೈಲ್ ಲಭ್ಯವಾಗುತ್ತದೆ. ಯಾವಾಗ ಬೇಕಾದರೂ ಆಫ್ ಮಾಡಿ. | Off by default. When on, your what-we-have page can be found by search engines and Streetlist, and its open file is served. Turn it off at any time. |  |
+| `listings.owner.switchOn` | ಆನ್ | On |  |
+| `listings.owner.switchOff` | ಆಫ್ | Off |  |
+| `listings.owner.save` | ಉಳಿಸಿ | Save |  |
+| `listings.owner.saved` | ಉಳಿಸಲಾಗಿದೆ. | Saved. |  |
+| `listings.owner.placeHeading` | ನೀವು ಎಲ್ಲಿದ್ದೀರಿ | Where you are |  |
+| `listings.owner.town` | ಊರು | Town |  |
+| `listings.owner.pincode` | ಪಿನ್‌ಕೋಡ್ | Pincode |  |
+| `listings.owner.lat` | ನಕ್ಷೆಯ ಬಿಂದು: ಅಕ್ಷಾಂಶ | Map point: latitude |  |
+| `listings.owner.lon` | ನಕ್ಷೆಯ ಬಿಂದು: ರೇಖಾಂಶ | Map point: longitude |  |
+| `listings.owner.registration` | ಪೆಟ್ ಶಾಪ್ ನೋಂದಣಿ (ನಿಮ್ಮ ಸ್ವಂತ ಮಾತುಗಳಲ್ಲಿ) | Pet shop registration (your own words) |  |
+| `listings.owner.registrationNote` | ಹೀಗೆ ಕಾಣಿಸುತ್ತದೆ: ನೋಂದಣಿ (ಮಾಲೀಕರು ಹೇಳುವಂತೆ). ನಾವು ಇದನ್ನು ಪರಿಶೀಲಿಸುವುದಿಲ್ಲ. | Shown as: Registration (the owner says). It is not checked by us. |  |
+| `listings.owner.formHeading` | ನನ್ನ ಪುಟಕ್ಕೆ ಸೇರಿಸಿ | Add to my page |  |
+| `listings.owner.formNote` | ಒಂದು ಫೋಟೋ, ಒಂದು ಹೆಸರು, ಒಂದು ಬೆಲೆ. ಪದಗಳು ನಿಮ್ಮ ಭಾಷೆಯಲ್ಲಿ ಮಾತ್ರ ಉಳಿಯುತ್ತವೆ. | A photo, a title, a price. The words are saved in your language only. |  |
+| `listings.owner.formPhoto` | ಫೋಟೋ | Photo |  |
+| `listings.owner.formTitle` | ಇದು ಏನು | What is it |  |
+| `listings.owner.formPrice` | ರೂಪಾಯಿಗಳಲ್ಲಿ ಬೆಲೆ (ಅಂಗಡಿಯನ್ನು ಕೇಳಿ ಎಂದರೆ ಖಾಲಿ ಬಿಡಿ) | Price in rupees (leave empty for Ask the shop) |  |
+| `listings.owner.formPriceNote` | ಒಂದಕ್ಕೆ, ಕಿಲೋಗೆ... | per piece, per kg... |  |
+| `listings.owner.formCategory` | ವರ್ಗ | Category |  |
+| `listings.owner.formSubmit` | ನನ್ನ ಪುಟದಲ್ಲಿ ತೋರಿಸಿ | Show it on my page |  |
+| `listings.owner.uploadHeading` | ಫೋಟೋಗಳು | Photos |  |
+| `listings.owner.uploadButton` | ಫೋಟೋ ಸೇರಿಸಿ | Add a photo |  |
+| `listings.owner.uploaded` | 2 ಫೋಟೋ ಸಿದ್ಧ. ಈಗ ಇದು ಏನು ಎಂದು ಅಸಿಸ್ಟೆಂಟ್‌ಗೆ ಹೇಳಿ. | 2 photos ready. Now tell the assistant what it is. |  |
+| `listings.owner.listHeading` | ನಿಮ್ಮ ಪುಟದಲ್ಲಿ | On your page |  |
+| `listings.owner.none` | ಇನ್ನೂ ಏನೂ ಇಲ್ಲ. | Nothing yet. |  |
+| `listings.owner.live` | ತೋರಿಸಲಾಗುತ್ತಿದೆ | Showing |  |
+| `listings.owner.draft` | ನಿಮ್ಮ ಟ್ಯಾಪ್‌ಗಾಗಿ ಕಾಯುತ್ತಿದೆ | Waiting for your tap |  |
+| `listings.owner.hidden` | ಮರೆಮಾಡಲಾಗಿದೆ: 30 ದಿನಗಳಿಂದ ಖಚಿತಪಡಿಸಿಲ್ಲ | Hidden: not confirmed for 30 days |  |
+| `listings.owner.remove` | ತೆಗೆಯಿರಿ | Take it off |  |
+| `listings.owner.confirmAgain` | ಮತ್ತೆ ತೋರಿಸಲು ಖಚಿತಪಡಿಸಿ | Confirm to show again |  |
+| `listings.owner.markSold` | ಮಾರಾಟವಾಯಿತು | Sold |  |
+| `listings.owner.edit` | ಬದಲಿಸಿ | Change |  |
+| `listings.owner.link` | ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಏನಿದೆ | What you have on your page |  |
+| `listings.owner.back` | ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ | Back to your shop |  |
+| `listings.refusal.protectedNote` | ಸಂರಕ್ಷಿತ ದೇಸಿ ಪ್ರಾಣಿಗಳನ್ನು ಮಾರಲು ಅನುಮತಿ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಸೇರಿಸಲಿಲ್ಲ. | Protected native animals may not be sold, so that was not added. |  |
+| `listings.refusal.protected` | ನಾನು ಇದನ್ನು ಪಟ್ಟಿ ಮಾಡಲಾರೆ: monkeys ಸಂರಕ್ಷಿತ ಪ್ರಾಣಿಗಳು, ಅವನ್ನು ಮಾರಲು ಅನುಮತಿ ಇಲ್ಲ. ದಯವಿಟ್ಟು ಅವನ್ನು ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಹಾಕಬೇಡಿ. | I cannot list that: monkeys are protected animals and may not be sold. Please do not put them on your page. |  |
+| `listings.refusal.health` | ನೀವೇ ಹೇಳಿಲ್ಲದಿದ್ದರೆ, ಪ್ರಾಣಿ ಆರೋಗ್ಯವಾಗಿದೆ, ಲಸಿಕೆ ಹಾಕಲಾಗಿದೆ ಅಥವಾ ಶುದ್ಧ ತಳಿಯದು ಎಂದು ನಾನು ಬರೆಯಲಾರೆ. ಸತ್ಯವಾಗಿದ್ದರೆ ನಿಮ್ಮ ಸ್ವಂತ ಮಾತುಗಳಲ್ಲಿ ಹೇಳಿ. | I cannot write that an animal is healthy, vaccinated or of a pure breed unless you said so yourself. Tell me in your own words if it is true. |  |
+| `listings.refusal.priceNotInWords` | ನಾನು ಬರೆಯುತ್ತಿದ್ದ ಬೆಲೆ ನೀವು ಹೇಳಿದ್ದಲ್ಲ, ಆದ್ದರಿಂದ ಲಿಸ್ಟಿಂಗ್ ಮಾಡಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಬೆಲೆಯನ್ನು ಮತ್ತೆ ಹೇಳಿ. | The price I would write is not the one you said, so I did not make the listing. Tell me the price again. |  |
+| `listings.refusal.full` | ನೀವು ಈಗಾಗಲೇ 50 ವಸ್ತುಗಳನ್ನು ತೋರಿಸುತ್ತಿದ್ದೀರಿ. ಮೊದಲು ಒಂದನ್ನು ತೆಗೆಯಿರಿ. | You already show 50 things. Take one off first. |  |
+| `listings.refusal.tooManyDrafts` | ನಿಮ್ಮ ಟ್ಯಾಪ್‌ಗಾಗಿ ಈಗಾಗಲೇ ಲಿಸ್ಟಿಂಗ್‌ಗಳು ಕಾಯುತ್ತಿವೆ. ಮೊದಲು ಅವುಗಳಿಗೆ ಉತ್ತರಿಸಿ. | There are already listings waiting for your tap. Answer those first. |  |
+| `listings.refusal.tooLong` | ಇದು ತುಂಬಾ ಉದ್ದವಾಗಿದೆ. ದಯವಿಟ್ಟು ಚಿಕ್ಕದಾಗಿ ಹೇಳಿ. | That is too long. Please say it shorter. |  |
+| `listings.refusal.badPrice` | ಆ ಬೆಲೆ ಸರಿಯಿಲ್ಲ. ರೂಪಾಯಿಗಳ ಪೂರ್ಣ ಸಂಖ್ಯೆ ಬಳಸಿ. | That price is not valid. Use a whole number of rupees. |  |
+| `listings.refusal.badQty` | ಆ ಸಂಖ್ಯೆ ಸರಿಯಿಲ್ಲ. | That number is not valid. |  |
+| `listings.refusal.claims` | ನೀವು ಹೇಳದ ಭರವಸೆ, ರಿಯಾಯಿತಿ ಅಥವಾ ಖಾತರಿಗಳನ್ನು ನಾನು ಬರೆಯಲಾರೆ. ಉದ್ದೇಶವಿದ್ದರೆ ನೀವೇ ಹೇಳಿ. | I cannot write promises, discounts or guarantees you did not say. Say them yourself if you mean them. |  |
+| `listings.refusal.modelFailed` | ಈಗ ಅದನ್ನು ಬರೆಯಲಾಗಲಿಲ್ಲ. ನಿಮ್ಮ ಆ್ಯಪ್‌ನಲ್ಲಿ ನನ್ನ ಪುಟಕ್ಕೆ ಸೇರಿಸಿ ಫಾರ್ಮ್ ಬಳಸಿ. | I could not write that just now. Use the Add to my page form in your app. |  |
+| `listings.refusal.badCategory` | ಆ ವರ್ಗ ನನಗೆ ಗೊತ್ತಿಲ್ಲ. | That category is not one I know. |  |
+| `listings.refusal.empty` | ಮೊದಲು ಇದು ಏನು ಎಂದು ಹೇಳಿ. | Tell me what it is first. |  |
+| `listings.refusal.badPlace` | ಆ ಸ್ಥಳ ಸರಿಯಿಲ್ಲ. | That place is not valid. |  |
+| `listings.refusal.tooManyPhotos` | ಒಂದು ಲಿಸ್ಟಿಂಗ್‌ನಲ್ಲಿ 3 ಫೋಟೋ ವರೆಗೆ ಇರಬಹುದು. | A listing has up to 3 photos. |  |
+| `listings.refusal.unknown` | ನನ್ನ ಬಳಿ ಆ ಲಿಸ್ಟಿಂಗ್ ಇಲ್ಲ. | I do not have that listing. |  |
+| `listings.refusal.gone` | ಆ ಲಿಸ್ಟಿಂಗ್ ಈಗ ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಇಲ್ಲ. | That listing is not on your page now. |  |
+| `listings.refusal.photo.empty` | ಆ ಫೈಲ್ ಖಾಲಿಯಾಗಿದೆ. | That file is empty. |  |
+| `listings.refusal.photo.too_big` | ಆ ಫೋಟೋ ತುಂಬಾ ದೊಡ್ಡದಾಗಿದೆ. ಚಿಕ್ಕದನ್ನು ಪ್ರಯತ್ನಿಸಿ. | That photo is too big. Try a smaller one. |  |
+| `listings.refusal.photo.not_a_photo` | ಅದು JPEG ಅಥವಾ WebP ಫೋಟೋ ಅಲ್ಲ. | That is not a JPEG or WebP photo. |  |
+| `listings.refusal.photo.unreadable` | ನನಗೆ ಆ ಫೋಟೋ ಓದಲಾಗಲಿಲ್ಲ. | I could not read that photo. |  |
+| `listings.refusal.photo.too_large_sides` | ಆ ಫೋಟೋದ ಗಾತ್ರ ತುಂಬಾ ದೊಡ್ಡದಾಗಿದೆ. | That photo is too large in size. |  |
+| `listings.refusal.photo.animated` | ಚಲಿಸುವ ಚಿತ್ರವಲ್ಲ, ಸ್ಥಿರ ಫೋಟೋ ಬಳಸಿ. | Use a still photo, not an animation. |  |
+| `listings.refusal.photo.day` | ಇಂದಿಗೆ ಇಷ್ಟು ಫೋಟೋ ಸಾಕು. ನಾಳೆ ಪ್ರಯತ್ನಿಸಿ. | That is enough photos for today. Try tomorrow. |  |
+| `listings.priceAsk` | ಅಂಗಡಿಯನ್ನು ಕೇಳಿ | Ask the shop |  |
+| `listings.priceSet` | ₹8,000 each | ₹8,000 each |  |
 | `owner.money.cashPartLabel` | ಒಂದು ಭಾಗ ಮಾತ್ರ ಸಿಕ್ಕಿತೇ? ಎಷ್ಟು (₹) | Received only part? How much (₹) |  |
 | `owner.money.cashPartButton` | ಈ ಭಾಗ ನಗದಾಗಿ ಸಿಕ್ಕಿತು ಎಂದು ಗುರುತಿಸಿ | Mark this part received in cash |  |
 | `chat.title` | ಚಾಟ್ | Chat |  |
@@ -1664,6 +1764,42 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.tuition.prefill.batches.2.names` | 9ನೇ ತರಗತಿ | Class 9 |  |
 | `preset.tuition.prefill.batches.3.names` | 10ನೇ ತರಗತಿ | Class 10 |  |
 | `keep.lost` | Rahul ಅವರ ಹಳೆಯ ಬಾಕಿ ಮತ್ತು ಇತರ ಹಿಂದಿನ ವಿವರಗಳನ್ನು ಉಳಿಸಿಕೊಳ್ಳಲಿಲ್ಲ, ಏಕೆಂದರೆ ಪೋಷಕರ ನಂಬರ್ ಬದಲಾಯಿತು. ಅವನ್ನು ಮತ್ತೆ ಸೇರಿಸಲು ನಿಮ್ಮ ಬಿಲ್ಡರ್‌ಗೆ ಹೇಳಿ. | Rahul's old dues and other earlier details were not kept, because the parent's number changed. Ask your builder to add them again. |  |
+| `leave.assistant.leave_file_asked` | ಆಯಿತು. ನಿಮ್ಮ ಅಂಗಡಿಯ ಫೈಲ್ ಸುಮಾರು ಅರ್ಧ ಗಂಟೆಯಲ್ಲಿ ನಿಮ್ಮ ಆ್ಯಪ್ ಪುಟದಲ್ಲಿ ಇರುತ್ತದೆ, ತೆಗೆದುಕೊಳ್ಳಲು ಬಟನ್ ಕೂಡ. ಬಟನ್ ಒಂದೇ ಬಾರಿ, 3 ದಿನ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಇದಕ್ಕೆ ನಿಮ್ಮ Operator ಬೇಕಿಲ್ಲ, ಅವರನ್ನು ಕೇಳುವುದೂ ಇಲ್ಲ. | Done. Your shop's file will be on your app page in about half an hour, with a button to take it. The button works once and for 3 days. You do not need your Operator for this, and they are not asked. |  |
+| `leave.assistant.leave_file_again` | ಸ್ವಲ್ಪ ಮೊದಲು ನೀವು ಅಂಗಡಿಯ ಫೈಲ್ ಕೇಳಿದ್ದೀರಿ. ಅದು ಬರುತ್ತಿದೆ; ಸ್ವಲ್ಪ ಹೊತ್ತಿನ ನಂತರ ಆ್ಯಪ್ ಪುಟ ನೋಡಿ. | You asked for your shop's file a short while ago. It is on its way; look on your app page in a little while. |  |
+| `leave.assistant.leave_operator_asked` | ಆಯಿತು. ನೀವು ಬೇರೆ Operator ಬಯಸುತ್ತೀರಿ ಎಂದು ನಿಮ್ಮ Operator ಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ನೀವು ಒಪ್ಪುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ: Operator ಹೊಸ ವ್ಯಕ್ತಿಯ ಹೆಸರು ನೀಡುತ್ತಾರೆ, ನಿಮಗೆ ಒಂದು ಕೋಡ್ ಸಿಗುತ್ತದೆ, ಅದನ್ನು ಇಲ್ಲಿ "move" ಮತ್ತು ಕೋಡ್ ಎಂದು ಕಳುಹಿಸಿ. 14 ದಿನದಲ್ಲಿ ಏನೂ ಆಗದಿದ್ದರೆ Geometer ನಿಮಗೆ ಸಹಾಯ ಮಾಡುತ್ತದೆ. | Done. I have told your Operator that you want another one. Nothing changes until you agree: your Operator names the new person, you get a code, and you send it here as "move" and the code. If nothing happens in 14 days, Geometer will help you. |  |
+| `leave.assistant.leave_operator_again` | ಸ್ವಲ್ಪ ಮೊದಲು ನೀವು Operator ಬದಲಾಯಿಸಲು ಕೇಳಿದ್ದೀರಿ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. ಕೋಡ್ ಕಳುಹಿಸುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ. | You asked to change your Operator a short while ago, and they have been told. Nothing changes until you send the code. |  |
+| `leave.page.title` | ನಿಮ್ಮ ಅಂಗಡಿ ನಿಮ್ಮದೇ | Your shop is yours |  |
+| `leave.page.intro` | ನಿಮ್ಮದಾದ ಎಲ್ಲವನ್ನೂ ಯಾವಾಗ ಬೇಕಾದರೂ ತೆಗೆದುಕೊಳ್ಳಬಹುದು, ಅಥವಾ ಬೇರೆ Operator ಕೇಳಬಹುದು. ನಿಮ್ಮ Operator ಅವರ ಅನುಮತಿ ಕೇಳುವುದಿಲ್ಲ. | You can take everything that is yours, or ask for another Operator, whenever you like. Your Operator is not asked for permission. |  |
+| `leave.page.fileButton` | ನನ್ನ ಅಂಗಡಿಯ ಫೈಲ್ | Get my shop's file |  |
+| `leave.page.fileNone` | ನಿಮ್ಮ ಅಂಗಡಿಯ ಸೆಟ್ಟಿಂಗ್‌ಗಳು, ದಾಖಲೆಗಳು ಮತ್ತು ವರದಿಗಳ ಒಂದು ಫೈಲ್, ಇಟ್ಟುಕೊಳ್ಳಲು. ಸುಮಾರು ಅರ್ಧ ಗಂಟೆಯಲ್ಲಿ ಇಲ್ಲಿ ಬರುತ್ತದೆ. | A file with your shop's settings, records and reports, to keep. It will be here in about half an hour. |  |
+| `leave.page.fileAsked` | ಕೇಳಲಾಗಿದೆ. ಫೈಲ್ ಸುಮಾರು ಅರ್ಧ ಗಂಟೆಯಲ್ಲಿ ಇಲ್ಲಿ ಬರುತ್ತದೆ. | Asked. Your file will be here in about half an hour. |  |
+| `leave.page.fileReady` | ನಿಮ್ಮ ಫೈಲ್ ಸಿದ್ಧ. ಕೆಳಗಿನ ಬಟನ್ ಒಂದೇ ಬಾರಿ, 21 Nov, 3:30 pm ವರೆಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ. | Your file is ready. The button below works once, until 21 Nov, 3:30 pm. |  |
+| `leave.page.take` | ಫೈಲ್ ತೆಗೆದುಕೊಳ್ಳಿ | Take the file |  |
+| `leave.page.fileTaken` | ನೀವು ಫೈಲ್ ತೆಗೆದುಕೊಂಡಿರಿ. ಹೊಸದು ಬೇಕಾದರೆ ಮತ್ತೆ ಕೇಳಿ. | You took your file. Ask again for a new one. |  |
+| `leave.page.fileExpired` | ಆ ಫೈಲ್‌ನ ಸಮಯ ಮುಗಿಯಿತು. ಹೊಸದಕ್ಕೆ ಮತ್ತೆ ಕೇಳಿ. | That file ran out. Ask again for a new one. |  |
+| `leave.page.operatorButton` | ನನ್ನ Operator ಬದಲಿಸಿ | Change my Operator |  |
+| `leave.page.operatorNote` | ನಿಮ್ಮ Operator ಗೆ ತಕ್ಷಣ ತಿಳಿಸಲಾಗುತ್ತದೆ. ನೀವು ಒಪ್ಪುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ: ಅಂಗಡಿಯ WhatsApp ಸಂಖ್ಯೆಗೆ ಕಳುಹಿಸಲು ನಿಮಗೆ ಒಂದು ಕೋಡ್ ಸಿಗುತ್ತದೆ. 14 ದಿನದಲ್ಲಿ ಏನೂ ಆಗದಿದ್ದರೆ Geometer ಸಹಾಯ ಮಾಡುತ್ತದೆ. | Your Operator is told at once. Nothing changes until you agree: you will get a code to send to the shop's WhatsApp number. If nothing happens in 14 days, Geometer will help you. |  |
+| `leave.page.asked` | ಆಯಿತು. ಕೇಳಲಾಗಿದೆ. ವಿವರ ಕೆಳಗಿನ ಮಾತುಕತೆಯಲ್ಲಿದೆ. | Done. Asked. Details are in the chat below. |  |
+| `leave.panel.heading` | ಮಾಲೀಕರ ಸ್ವಂತ ಕೋರಿಕೆಗಳು | The owner's own asks |  |
+| `leave.panel.fileAsked` | ಮಾಲೀಕರು 18 Nov ರಂದು ತಮ್ಮ ಅಂಗಡಿಯ ಫೈಲ್ ಕೇಳಿದ್ದಾರೆ. ಅದು ಅವರಿಗಾಗಿ ಮಾಡಲಾಗುತ್ತದೆ ಮತ್ತು ಅವರಿಗೆ ಮಾತ್ರ ತೋರಿಸಲಾಗುತ್ತದೆ. ನೀವು ಏನೂ ಮಾಡಬೇಕಿಲ್ಲ. | The owner asked for their shop's file on 18 Nov. It is made for them and shown only to them. You do not need to do anything. |  |
+| `leave.panel.fileReady` | ಫೈಲ್ ಮಾಲೀಕರ ಆ್ಯಪ್‌ನಲ್ಲಿ ಸಿದ್ಧವಾಗಿದೆ, 21 Nov ವರೆಗೆ. | The file is ready in the owner's app, until 21 Nov. |  |
+| `leave.panel.fileTaken` | ಮಾಲೀಕರು ತಮ್ಮ ಫೈಲ್ ತೆಗೆದುಕೊಂಡರು. | The owner took their file. |  |
+| `leave.panel.fileExpired` | ಮಾಲೀಕರು ತೆಗೆದುಕೊಳ್ಳುವ ಮೊದಲೇ ಫೈಲ್‌ನ ಸಮಯ ಮುಗಿಯಿತು. ಹೊಸ ಕೋರಿಕೆಗೆ ಹೊಸದನ್ನು ಮಾಡಲಾಗುತ್ತದೆ. | The file ran out before the owner took it. A new ask makes a new one. |  |
+| `leave.panel.fileProblem` | ಫೈಲ್ ಇನ್ನೂ ಮಾಡಲಾಗಲಿಲ್ಲ: The record is not ready yet. ಕೆಲವು ನಿಮಿಷಗಳಲ್ಲಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲಾಗುತ್ತದೆ. | The file could not be made yet: The record is not ready yet. It is tried again in a few minutes. |  |
+| `leave.panel.fileNote` | ಅವರ ಫೈಲ್ ಅವರದೇ. ನಿಮ್ಮ ಅನುಮತಿ ಕೇಳುವುದಿಲ್ಲ, ನೀವು ತಡೆಯಲೂ ಆಗುವುದಿಲ್ಲ. | Their file is theirs. You are not asked for permission and you cannot stop it. |  |
+| `leave.panel.operatorAsked` | ಮಾಲೀಕರು 18 Nov ರಂದು ಬೇರೆ Operator ಕೇಳಿದ್ದಾರೆ. | The owner asked for another Operator on 18 Nov. |  |
+| `leave.panel.operatorDo` | ದಯವಿಟ್ಟು ಕೆಳಗಿನ ಬಟನ್ ಬಳಸಿ ಮಾಲೀಕರು ಬಯಸುವ Operator ಗೆ ಅಂಗಡಿಯನ್ನು ವರ್ಗಾಯಿಸಿ. ಏನಾದರೂ ಬದಲಾಗುವ ಮೊದಲು ಮಾಲೀಕರು ತಮ್ಮ ಕೋಡ್‌ನಿಂದ ಒಪ್ಪುತ್ತಾರೆ. | Please move the shop to the Operator the owner wants, with the button below. The owner still agrees with their own code before anything changes. |  |
+| `leave.panel.operatorStart` | ಈ ಅಂಗಡಿಯನ್ನು ಬೇರೆ Operator ಗೆ ನೀಡಿ | Move this shop to another Operator |  |
+| `leave.panel.operatorWaiting` | ಒಂದು ಬದಲಾವಣೆ ಮಾಲೀಕರ ಕೋಡ್‌ಗಾಗಿ ಕಾಯುತ್ತಿದೆ. | A move is waiting for the owner's code. |  |
+| `leave.panel.operatorClock` | ಏನೂ ಮಾಡದಿದ್ದರೆ 9 ದಿನದಲ್ಲಿ ಈ ಅಂಗಡಿ Geometer ಗೆ ತೋರಿಸಲಾಗುತ್ತದೆ, ಅವರು ಮಾಲೀಕರಿಗೆ ಸಹಾಯ ಮಾಡುತ್ತಾರೆ. | If nothing is done, Geometer is shown this shop in 9 days, and will help the owner. |  |
+| `leave.panel.strandedNote` | ಈ ಮಾಲೀಕರು 14 ದಿನಕ್ಕಿಂತ ಹಿಂದೆ ಬೇರೆ Operator ಕೇಳಿದ್ದಾರೆ, ಏನೂ ಆಗಿಲ್ಲ. Geometer ಅವರಿಗೆ ಒಬ್ಬರನ್ನು ಹುಡುಕಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ, ಬೇಕಾದರೆ ಅಂಗಡಿಯ ಬ್ಯಾಕಪ್‌ನಿಂದ. | These owners asked for another Operator more than 14 days ago and nothing has happened. Geometer helps them find one, from the shop's backups if needed. |  |
+| `leave.panel.strandedTitle` | ಬೇರೆ Operator ಗಾಗಿ ಕಾಯುತ್ತಿರುವ ಮಾಲೀಕರು | Owners waiting for another Operator |  |
+| `leave.panel.strandedNone` | ಯಾವ ಮಾಲೀಕರೂ ಕಾಯುತ್ತಿಲ್ಲ. | No owner is waiting. |  |
+| `leave.panel.strandedRow` | Glow Salon: 1 Nov ರಂದು ಕೇಳಿದ್ದಾರೆ. ಈಗಿನ Operator: Divya. | Glow Salon: asked on 1 Nov. Operator now: Divya. |  |
+| `leave.panel.fleetTold` | Geometer ಬಿಲ್ಲಿಂಗ್‌ನಲ್ಲಿ ಈಗ ಅಂಗಡಿ Ravi Digital ಅವರ ಬಳಿ ಇದೆ. | Geometer's billing now has the shop with Ravi Digital. |  |
+| `leave.panel.fleetWaiting` | Geometer ಬಿಲ್ಲಿಂಗ್‌ಗೆ ಇನ್ನೂ ತಿಳಿಸಲಾಗಿಲ್ಲ. ಕೆಲವು ನಿಮಿಷಗಳಿಗೊಮ್ಮೆ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಲಾಗುತ್ತದೆ; ಅಲ್ಲಿಯವರೆಗೆ ಅಂಗಡಿಯ ಬಿಲ್ ಹಳೆಯ Operator ಗೆ ಹೋಗುತ್ತದೆ. | Geometer's billing has not been told yet. It is tried again every few minutes; until then the shop is still billed to the old Operator. |  |
+| `leave.panel.fleetRefused` | Geometer ಬಿಲ್ಲಿಂಗ್ ಬದಲಾವಣೆಯನ್ನು ಸ್ವೀಕರಿಸಲಿಲ್ಲ: That Operator does not serve here yet. support ಗೆ ಬರೆಯಿರಿ, ಅವರು ಕೈಯಿಂದ ಸರಿಪಡಿಸುತ್ತಾರೆ. | Geometer's billing did not take the move: That Operator does not serve here yet. Write to support and they will fix it by hand. |  |
+| `leave.panel.fleetNoId` | Ravi Digital ಅವರ ಖಾತೆಗೆ Geometer ನಲ್ಲಿ Operator ಐಡಿ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಬಿಲ್ಲಿಂಗ್‌ಗೆ ತಿಳಿಸಲಿಲ್ಲ. support ಗೆ ಬರೆಯಿರಿ, ಅವರು ಕೈಯಿಂದ ಸರಿಪಡಿಸುತ್ತಾರೆ. | Ravi Digital's account has no Operator id with Geometer, so billing was not told. Write to support and they will fix it by hand. |  |
 | `chat.list.yourChats` | ನಿಮ್ಮ ಚಾಟ್‌ಗಳು | Your chats |  |
 | `chat.list.installHead` | Streetlist ಅನ್ನು ನಿಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಇಟ್ಟುಕೊಳ್ಳಿ | Keep Streetlist on your phone |  |
 | `chat.list.installBody` | ಒಂದೇ ಒತ್ತಿನಲ್ಲಿ ಚಾಟ್‌ಗಳನ್ನು ತೆರೆಯಿರಿ, ಅಂಗಡಿ ಉತ್ತರಿಸಿದಾಗ ತಿಳಿಯಿರಿ. | Open your chats in one tap, and hear when a shop replies. |  |

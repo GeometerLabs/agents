@@ -78,6 +78,8 @@ import { OWNER_LINK_HEADER, ownerTokenMatches } from "../channels/owner-link.ts"
 import { OWNER_SESSION_HEADER, OWNER_SIGNIN_HEADER } from "../channels/owner-access.ts";
 import type { AssertionResponse, RegistrationResponse } from "../channels/owner-access.ts";
 import type { Grant } from "../channels/owner-grants.ts";
+import { OWNER_FILE_ID } from "../channels/owner-file.ts";
+import type { OwnerFileStore } from "./owner-file.ts";
 import type { Push } from "../push/push.ts";
 import { OWNER_CHOICES } from "../push/store.ts";
 import type { BrowserSubscription, OwnerChoice } from "../push/store.ts";
@@ -121,6 +123,8 @@ export interface ServerOptions {
   ownerLink?: () => OwnerLinkFile | undefined;
   /** Item 11f: the owner's sign-in (links and sessions), checked here on every call. Left out: no session is ever good, and the sign-in routes refuse. */
   ownerSignin?: OwnerSignin["http"];
+  /** "Get my shop's file": the file the server copied for the owner, given to the owner's SESSION once (owner-file.ts). Left out with the sign-in: no file is ever served. */
+  ownerFile?: OwnerFileStore;
   /** Item 11h: the shop's web push (subscriptions and the owner's choice), and whether the shop has WhatsApp (the choice is offered only then). */
   push?: Push;
   hasWhatsApp?: boolean;
@@ -211,8 +215,8 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
     return session !== undefined && options.ownerSignin?.check(session) !== undefined;
   };
   /** A session's start or end, for the record: an event of the runtime's own, saved and run as a step like any other. */
-  const recordAccess = (what: "signed_in" | "signed_out" | "passkey_added", session: string, how?: "link" | "passkey" | "setup" | "recovery"): void => {
-    runtime.submit([{ kind: "owner_access", id: randomUUID(), what, session, ...(how ? { how } : {}) }]);
+  const recordAccess = (what: "signed_in" | "signed_out" | "passkey_added" | "file_taken", session: string, how?: "link" | "passkey" | "setup" | "recovery", ask?: string): void => {
+    runtime.submit([{ kind: "owner_access", id: randomUUID(), what, session, ...(how ? { how } : {}), ...(ask ? { ask } : {}) }]);
     runtime.kick();
   };
 
@@ -612,6 +616,22 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       let files;
       try { files = channel.accountantFiles(period); } catch (e) { return send(res, 400, { error: (e as Error).message }); }
       return send(res, 200, { files });
+    }
+    // "Get my shop's file": the owner's SESSION only (a link made in the panel is the Operator's to hold and opens nothing here). No id: the state, for the owner's page.
+    // With ?take=<id>: the bytes, once. The use is written down before the bytes leave, and the record gets "owner_file_taken" so the server can delete its copy.
+    if (path === "/internal/channel/owner-file") {
+      only("GET");
+      const session = header(req, OWNER_SESSION_HEADER);
+      if (session === undefined || options.ownerSignin?.check(session) === undefined) return send(res, 403, { error: "The owner's session is not valid." });
+      if (!options.ownerFile) throw new HttpError(404, "There is nothing here.");
+      const take = url.searchParams.get("take");
+      if (take === null) return send(res, 200, options.ownerFile.state());
+      const got = OWNER_FILE_ID.test(take) ? options.ownerFile.take(take) : undefined;
+      if (!got) throw new HttpError(404, "There is nothing here.");
+      recordAccess("file_taken", session, undefined, got.meta.ask);
+      res.writeHead(200, { "content-type": "application/gzip", "content-disposition": `attachment; filename="${got.meta.name}"`, "content-length": got.bytes.length, "cache-control": "no-store", "x-content-type-options": "nosniff" });
+      res.end(got.bytes);
+      return;
     }
     throw new HttpError(404, "There is nothing here.");
   }

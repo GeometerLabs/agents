@@ -47,6 +47,9 @@ import { createGoLive } from "./golive.ts";
 import type { Unmet } from "./golive.ts";
 import { inboxAll, inboxFor, optionsFor } from "./inbox.ts";
 import { createHandover } from "./handover.ts";
+import { createLeave } from "./leave.ts";
+import { readFleetMove, readFleetMoveStatus, writeFleetMove } from "../lib/fleet-move.ts";
+import { panelLeave } from "./words-leave.ts";
 import { createTerms } from "./terms.ts";
 import { termsLinkWord, termsPage } from "./views-terms.ts";
 import { createChannels } from "./channels.ts";
@@ -90,7 +93,7 @@ import { backupKeyFile, backupKeyPage, serverPage } from "./views-server.ts";
 import { discoverTemplates } from "./templates.ts";
 import type { Template } from "./templates.ts";
 import { createVault, loadKeyFile, plainVault } from "./vault.ts";
-import { errorPage, handoverPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, resetPage, setupChecksPage, signinPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
+import { errorPage, strandedPage, handoverPage, inboxPage, invitePage, joinPage, languageName, limitList, loginPage, resetPage, setupChecksPage, signinPage, setupStepPage, shopPage, shopsPage, stopPage, when } from "./views.ts";
 import type { ChecksView, Ctx, HandoverView, ShopCardView, ShopView } from "./views.ts";
 import { WORDS, isDraftLanguage } from "./languages.ts";
 
@@ -150,7 +153,13 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
   const goLive = createGoLive(config, shops, store);
   const confirmations = createConfirmations(store, now);
   // item 11d: a shop that moves to another Operator loses the owner's link the old Operator made; the new Operator makes the owner a new one
-  const handover = createHandover(shops, accounts, store, now, (shop) => channels.revoke(shop));
+  const handover = createHandover(shops, accounts, store, now, (shop, move) => {
+    channels.revoke(shop);
+    // block S: fleet must learn who holds the shop now, or the old Operator stays billed. Written for the deployer, which alone holds the deployment key (lib/fleet-move.ts)
+    writeFleetMove(config.serverDir, shop, { codeHash: move.codeHash, partner: accounts.byId(move.to.accountId)?.fleetPartner ?? null, to: move.to.accountName, at: new Date(now()).toISOString() });
+  });
+  // block S: the owner's own asks (their file, another Operator), read from the record and the deployer's status; the Operator sees them and cannot stop them
+  const leave = createLeave(config.serverDir, shops, handover, now);
   const terms = createTerms(shops, config.serverDir); // B72: shop terms agreed on WhatsApp; off unless geometer.json says so
   const channels = createChannels(config.serverDir, config.publicUrl); // item 11d: each shop's page, MCP endpoint and the owner's approvals link (channels.ts)
   /** Item 11h: the templates whose shops have a page and an owner's page: Bookings (item 11d), Orders and Fees. */
@@ -560,6 +569,7 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
       ...(licence ? { licence } : {}),
       ...(report ? { activity: { made: report.bookings.made, cancelled: report.bookings.cancelled, moved: report.bookings.moved, deposits: report.money.deposits.count, refunds: report.money.refunds.count, saidNo: report.stopped.total, owner: report.owner } } : {}),
       inbox: inboxFor(shops, id, now(), unfinished),
+      ...(leave.view(id) ? { leave: leave.view(id)! } : {}),
       ...(counts ? { liveCounts: { bookings: counts[kindFor(kindId)!.casesName] ?? {}, waitingForOwner: Number(counts.refunds?.waitingForOwner ?? 0), needBuilder: Number(counts.refunds?.needBuilder?.total ?? 0) } } : {}),
       termsLink: terms.on() ? termsLinkWord(c.lang) : undefined,
       // item 11d: a shop whose template has a page (Bookings; item 11h: Orders and Fees too), and only a panel that knows the server's public address can show its links
@@ -769,12 +779,19 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     voicePageFor(r, ref.id);
   });
   // moving a shop to another Operator or builder (B38), with the owner's agreement from their own number
+  // block S: what fleet was told about the finished move (lib/fleet-move.ts), in the Operator's words; nothing while the deployer has not looked yet
+  const fleetNoteOf = (c: ReturnType<Req["ctx"]>, id: string): string | undefined => {
+    const st = readFleetMoveStatus(config.serverDir, id);
+    const mv = readFleetMove(config.serverDir, id);
+    const w = panelLeave(c.w);
+    return !st || !mv || st.codeHash !== mv.codeHash ? undefined : st.state === "told" ? w.fleetTold(mv.to) : st.state === "waiting" ? w.fleetWaiting : st.state === "refused" ? w.fleetRefused(st.message ?? "") : st.state === "no_id" ? w.fleetNoId(mv.to) : undefined;
+  };
   const handoverPageFor = (r: Req, id: string, extra: Partial<HandoverView> = {}): void => {
     const state = handover.check(id);
     const c = r.ctx();
     const base = { id, name: shops.settings(id)?.name ?? id, history: shops.assignment(id)?.history ?? [], values: { to: "", reason: "" } };
     const view: HandoverView =
-      state.state === "done" ? { ...base, stage: "done", to: state.assignment.current.accountName }
+      state.state === "done" ? { ...base, stage: "done", to: state.assignment.current.accountName, ...(fleetNoteOf(c, id) ? { fleetNote: fleetNoteOf(c, id)! } : {}) }
       : state.state === "waiting" ? { ...base, stage: extra.code ? "asked" : "waiting", to: state.move.to.accountName }
       : state.state === "expired" ? { ...base, stage: "expired" } : { ...base, stage: "form" };
     page(r, extra.problem ? 400 : 200, handoverPage(c, { ...view, ...extra, history: shops.assignment(id)?.history ?? [] }));
@@ -800,6 +817,9 @@ export async function startPanel(config: PanelConfig, deps: PanelDeps = {}): Pro
     handover.cancel(ref.id);
     redirect(r, `/shops/${ref.id}/handover`);
   });
+
+  // block S, decision 17: the shops whose owner asked for another Operator more than 14 days ago and nothing happened: Geometer's admin (a builder account on this server) sees them
+  on("GET", /^\/stranded$/u, "builder", (r) => page(r, 200, strandedPage(r.ctx(), leave.stranded().map((s) => ({ ...s, when: when(s.askedAt, r.ctx().lang) })))));
 
   on("GET", /^\/shops\/([a-z0-9-]{1,40})\/stop$/u, "user", (r) => {
     const ref = shops.find(r.account!, r.params[0]);

@@ -50,6 +50,8 @@ import { listingCase } from "./listing-card.ts";
 import type { Listings } from "./listing-card.ts";
 import { LISTING_WORDS } from "../listings/words.ts";
 import { readOwnerRules } from "./intents.ts";
+import { ACTION_OF, mayAskAgain, newAskId } from "../approvals/leave.ts";
+import type { AskKind } from "../approvals/leave.ts";
 import { customerTalk } from "./talk-customer.ts";
 import { ownerTalk } from "./talk-owner.ts";
 import type { LimitHook } from "./talk-owner.ts";
@@ -138,7 +140,7 @@ interface SaidFacts { language: Language; text: string; check: CheckFacts; templ
 
 /** The kinds a shop offers, from its skills: what intents.ts may read as more than "not offered". */
 export function kindsOf(skills: readonly OwnerSkill[]): OwnerKind[] {
-  const kinds: OwnerKind[] = ["waiting", "money", "cancel", "refund", "message", "undo", "limit", "help", "remember", "notes", "forget"];
+  const kinds: OwnerKind[] = ["waiting", "money", "cancel", "refund", "message", "undo", "limit", "help", "remember", "notes", "forget", "leave_file", "leave_operator"];
   if (skills.some((s) => s.day)) kinds.push("day");
   if (skills.some((s) => s.owes)) kinds.push("owes");
   if (skills.some((s) => s.open)) kinds.push("open_orders");
@@ -633,6 +635,19 @@ export function createAssistant(deps: AssistantDeps) {
     }
   }
 
+  // ---- leaving with the shop (block S): the owner asks for their file, or for another Operator, with nobody's help or approval ----
+  /**
+   * The ask goes into the shop's record and nothing else happens here: the server side that can read the shop's files builds the file, and the Operator's panel shows
+   * both asks (bundle/Explanation.md, "Leave with your shop"). An ask that came from the owner's app says so (`via`), as one from WhatsApp does. The same kind of ask is
+   * taken once an hour; a repeat is told it is already on its way. Nothing is done to the shop by an ask: a move still needs the owner's `move CODE`.
+   */
+  async function leave(kind: AskKind): Promise<void> {
+    const again = kind === "file" ? "leave_file_again" : "leave_operator_again";
+    if (!mayAskAgain(deps.entries(), kind, clock.now())) { await tell(again, {}); return; }
+    logLine(null, ACTION_OF[kind], "confirmed", { kind }, { ask: newAskId(), via: toPage ? "page" : "whatsapp" }, kind === "file" ? "the owner asked for their shop's file (no Operator needed)" : "the owner asked for another Operator; the move itself still needs the owner's code");
+    await tell(kind === "file" ? "leave_file_asked" : "leave_operator_asked", {});
+  }
+
   // ---- the owner's message ----
   /**
    * The owner's message, after the template's fixed phrases. True when the assistant took it (it always does, except a message that is not the owner's: the caller
@@ -660,6 +675,8 @@ export function createAssistant(deps: AssistantDeps) {
       case "remember": await notes.remember(intent.words); break;
       case "notes": await notes.list(); break;
       case "forget": await notes.forget(intent.note ?? ""); break;
+      case "leave_file": await leave("file"); break;
+      case "leave_operator": await leave("operator"); break;
       case "day": {
         const date = dateOf(intent) ?? today();
         const rows = skills.flatMap((s) => s.day?.(date) ?? []).sort((a, b) => a.startMs - b.startMs);
