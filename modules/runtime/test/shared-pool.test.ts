@@ -131,6 +131,7 @@ test("three more failures on its own worker pause the shop: 'back soon', named b
   const page = await fetch(`${t.p.url}/shop/a/anything`, { headers: { accept: "text/html" } });
   assert.equal(page.status, 503);
   assert.ok(Number(page.headers.get("retry-after")) > 0);
+  assert.equal(page.headers.get("x-back-soon"), "1", "the front reads this to say it in the visitor's language (backend.ts BackendError.backSoon)");
   assert.match(await page.text(), /back soon/u);
   assert.ok(t.log.some((l) => l.startsWith("a: PAUSED") && l.includes("Operator")), "the process says it, for the Operator");
   const ready = await (await fetch(`${t.p.url}/readyz`)).json() as { ok: boolean; paused: string[] };

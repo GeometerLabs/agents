@@ -232,12 +232,12 @@ export async function startShared(o: SharedOptions): Promise<SharedProcess> {
   const scan = (): Promise<ScanResult> => { const next = queue.then(scanOnce, scanOnce); queue = next.catch(() => undefined); return next; };
 
   const json = (res: ServerResponse, status: number, body: unknown, extra: Record<string, string> = {}): void => { res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...extra }); res.end(JSON.stringify(body)); };
-  /** A paused shop's pages: the template's "back soon" page (html when the visitor asks for a page, json for the front's own calls), 503 and Retry-After an hour so nothing hammers it. */
+  /** A paused shop's pages: the template's "back soon" page (html when the visitor asks for a page, json for the front's own calls), 503, Retry-After an hour so nothing hammers it, and `x-back-soon` so the front (backend.ts BackendError.backSoon) can say it in the visitor's language. */
   function backSoon(req: IncomingMessage, res: ServerResponse, name: string): void {
     const page = o.backSoon?.(o.source.paths(name), req);
-    if (!page) return json(res, 503, { error: "This shop is paused for a while. Please come back later." }, { "retry-after": "3600" });
-    if ((req.headers.accept ?? "").includes("text/html")) { res.writeHead(503, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "retry-after": "3600" }); res.end(page.html); return; }
-    json(res, 503, page.json, { "retry-after": "3600" });
+    if (!page) return json(res, 503, { error: "This shop is paused for a while. Please come back later." }, { "retry-after": "3600", "x-back-soon": "1" });
+    if ((req.headers.accept ?? "").includes("text/html")) { res.writeHead(503, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "retry-after": "3600", "x-back-soon": "1" }); res.end(page.html); return; }
+    json(res, 503, page.json, { "retry-after": "3600", "x-back-soon": "1" });
   }
 
   /** Pass the request to the shop's own server, byte for byte, with the shop's own credential still on it: the check is the shop's. */
