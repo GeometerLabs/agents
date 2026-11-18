@@ -21,7 +21,7 @@ test("the list has a card for each of its templates (that these are the bundle's
 
 test("every template has every language, and every item has all four languages with non-empty text", () => {
   for (const t of CARD_TEMPLATES) {
-    assert.ok(LIST[t].length >= 6, `${t}: the card is not empty`);
+    assert.ok(LIST[t].length >= (t === "listings" ? 4 : 6), `${t}: the card is not empty`);
     assert.equal(new Set(LIST[t].map((i) => i.id)).size, LIST[t].length, `${t}: item ids are unique`);
     for (const item of LIST[t]) {
       for (const l of LANGUAGES) {
@@ -49,12 +49,18 @@ test("a translated item is really translated, not the English copied", () => {
  * no customers (its public pages answer 404) and no payment service in its runtime (the owner pays suppliers outside the chat), so asking for a UPI ID, or a Razorpay account,
  * would send the Operator after something the agent never uses. Nothing else is exempt.
  */
-const NO_PAYMENT_CARDS = new Set<string>(["stock-orders"]);
+const NO_PAYMENT_CARDS = new Set<string>(["stock-orders", "listings"]);
+/**
+ * The second explicit exception (18 Nov 2026): a listings-only shop takes no money AND sends no WhatsApp, so none of the first block (UPI, shop number, WhatsApp login, Gupshup,
+ * Razorpay, the verification line) applies. Its card is its own four items (list.ts LISTINGS), and the owner's phone is only for the one-use first sign-in code. Nothing else is exempt.
+ */
+const NO_FIRST_BLOCK_CARDS = new Set<string>(["listings"]);
 const PAYMENT_LINES = ["upi", "razorpay"];
 
 test("every card has the always-asked items: UPI ID, shop number, owner's phone, the WhatsApp (Facebook) login, the public name and the verification line", () => {
   for (const t of CARD_TEMPLATES) {
     const ids = askCardFor(t, "en").items.map((i) => i.id);
+    if (NO_FIRST_BLOCK_CARDS.has(t)) { for (const id of ["upi", "shop-whatsapp", "meta-login", "gupshup-account", "razorpay", "verification"]) assert.ok(!ids.includes(id), `${t}: takes no money and sends no WhatsApp, so ${id} is not asked for`); continue; }
     for (const id of ["upi", "shop-whatsapp", "owner-phone", "meta-login", "public-name", "verification"]) {
       if (id === "upi" && NO_PAYMENT_CARDS.has(t)) { assert.ok(!ids.includes(id), `${t}: takes no payment, so no UPI ID is asked for`); continue; }
       assert.ok(ids.includes(id), `${t}: ${id} is on the card`);
@@ -75,6 +81,7 @@ test("the card never promises 'no documents' or 'one visit', and says the verifi
       const all = [card.title, card.intro, card.note, ...card.items.flatMap((i) => [i.what, i.why])].join("\n");
       assert.ok(!PROMISE.test(all), `${t}.${l}: a promise the facts file forbids`);
     }
+    if (NO_FIRST_BLOCK_CARDS.has(t)) continue; // no WhatsApp number to verify
     const v = askCardFor(t, "en").items.find((i) => i.id === "verification")!;
     assert.ok(/not confirmed/.test(v.why) && /verify/.test(v.what), "the verification line says Meta may ask and that the documents are not confirmed");
   }
@@ -110,7 +117,7 @@ test("Google Calendar is optional and only on Bookings; Razorpay (where the temp
     for (const id of PAYMENT_LINES) assert.equal(askCardFor(t, "en").items.some((i) => i.id === id), !NO_PAYMENT_CARDS.has(t), `${t}: the ${id} line is on the card unless the template takes no payment`);
     const optional = askCardFor(t, "en").items.filter((i) => i.optional).map((i) => i.id).sort();
     // item 11h: the shop's WhatsApp number and its login are optional too (a shop can start with its page alone)
-    assert.deepEqual(optional, ({ bookings: ["calendar", "gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], orders: ["delivery-area", "gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], fees: ["gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], "stock-orders": ["gupshup-account", "meta-login", "shop-whatsapp"] })[t]);
+    assert.deepEqual(optional, ({ bookings: ["calendar", "gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], orders: ["delivery-area", "gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], fees: ["gupshup-account", "meta-login", "razorpay", "shop-whatsapp"], "stock-orders": ["gupshup-account", "meta-login", "shop-whatsapp"], listings: ["trade"] })[t]);
   }
 });
 

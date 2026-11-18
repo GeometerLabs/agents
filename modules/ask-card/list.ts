@@ -16,8 +16,8 @@
 import type { Language } from "../language/languages.ts";
 
 /** The three templates the bundle can run (bundle/lib/kinds.ts). */
-export type CardTemplate = "bookings" | "orders" | "fees" | "stock-orders";
-export const CARD_TEMPLATES: readonly CardTemplate[] = ["bookings", "orders", "fees", "stock-orders"];
+export type CardTemplate = "bookings" | "orders" | "fees" | "stock-orders" | "listings";
+export const CARD_TEMPLATES: readonly CardTemplate[] = ["bookings", "orders", "fees", "stock-orders", "listings"];
 
 /** One piece of text in every language. A missing language is a type error, so a card can never lose one. */
 export type Words = Record<Language, string>;
@@ -538,6 +538,32 @@ const STOCK: ListItem[] = [
   },
 ];
 
+// ---- Listings only (18 Nov 2026): a shop that only shows what it has. It takes no money and sends no WhatsApp, so NONE of the first block applies (no UPI, no WhatsApp login, no Razorpay): ----
+// ---- the card is its own small list (templates/commerce/listings/src/settings.ts), and the owner's phone is only for the one-use first sign-in code. ----
+
+const LISTINGS: ListItem[] = [
+  {
+    id: "shop-name", group: "template",
+    what: w("The name the shop is known by in public (signboard, Instagram page)", "दुकान का वह नाम जिससे लोग उसे बाहर जानते हैं (बोर्ड, Instagram पेज)", "പുറത്ത് കട അറിയപ്പെടുന്ന പേര് (ബോർഡ്, Instagram പേജ്)", "ಹೊರಗೆ ಅಂಗಡಿ ಯಾವ ಹೆಸರಿನಿಂದ ಗೊತ್ತಿದೆಯೋ ಆ ಹೆಸರು (ಬೋರ್ಡ್, Instagram ಪುಟ)"),
+    why: w("It is the heading of the shop's page, \"What we have\".", "यही दुकान के पेज, \"हमारे पास क्या है\", का शीर्षक है।", "ഇതാണ് കടയുടെ പേജായ \"ഞങ്ങളുടെ പക്കലുള്ളത്\" എന്നതിന്റെ തലക്കെട്ട്.", "ಇದು ಅಂಗಡಿಯ ಪುಟ \"ನಮ್ಮಲ್ಲಿ ಏನಿದೆ\" ಅದರ ಶೀರ್ಷಿಕೆ."),
+  },
+  {
+    id: "place", group: "template",
+    what: w("The town or village, and the pincode if the owner knows it", "शहर या गाँव, और पिन कोड अगर मालिक को पता हो", "ടൗൺ അല്ലെങ്കിൽ ഗ്രാമം, അറിയാമെങ്കിൽ പിൻകോഡും", "ಊರು ಅಥವಾ ಗ್ರಾಮ, ಮತ್ತು ಮಾಲೀಕರಿಗೆ ಗೊತ್ತಿದ್ದರೆ ಪಿನ್‌ಕೋಡ್"),
+    why: w("People nearby find the shop by it. The owner can change it later in their app.", "आस-पास के लोग इसी से दुकान ढूँढते हैं। मालिक बाद में अपने ऐप में इसे बदल सकता है।", "അടുത്തുള്ളവർ ഇതിലൂടെ കട കണ്ടെത്തും. ഉടമയ്ക്ക് പിന്നീട് സ്വന്തം ആപ്പിൽ ഇത് മാറ്റാം.", "ಹತ್ತಿರದ ಜನರು ಇದರಿಂದ ಅಂಗಡಿಯನ್ನು ಹುಡುಕುತ್ತಾರೆ. ಮಾಲೀಕರು ನಂತರ ತಮ್ಮ ಆಪ್‌ನಲ್ಲಿ ಇದನ್ನು ಬದಲಿಸಬಹುದು."),
+  },
+  {
+    id: "trade", group: "template", optional: true,
+    what: w("What the shop sells, in the owner's own few words", "दुकान क्या बेचती है, मालिक के अपने कुछ शब्दों में", "കട എന്താണ് വിൽക്കുന്നത്, ഉടമയുടെ സ്വന്തം കുറച്ച് വാക്കുകളിൽ", "ಅಂಗಡಿ ಏನು ಮಾರುತ್ತದೆ, ಮಾಲೀಕರ ಸ್ವಂತ ಕೆಲವು ಪದಗಳಲ್ಲಿ"),
+    why: w("A label for you and the shop's page. Nothing is shown to anyone because of it.", "आपके और दुकान के पेज के लिए एक नाम। इसकी वजह से किसी को कुछ नहीं दिखता।", "നിങ്ങൾക്കും കടയുടെ പേജിനുമുള്ള ഒരു പേര്. ഇതുകൊണ്ട് ആർക്കും ഒന്നും കാണിക്കില്ല.", "ನಿಮಗೂ ಅಂಗಡಿಯ ಪುಟಕ್ಕೂ ಒಂದು ಹೆಸರು. ಇದರಿಂದ ಯಾರಿಗೂ ಏನನ್ನೂ ತೋರಿಸುವುದಿಲ್ಲ."),
+  },
+  {
+    id: "owner-first-signin", group: "template",
+    what: w("The owner, with their own phone, at the visit; their phone number only if they have one and want it kept", "मालिक, अपने फ़ोन के साथ, विज़िट पर; उनका फ़ोन नंबर सिर्फ़ तब जब उनके पास हो और वे उसे रखवाना चाहें", "സന്ദർശനത്തിൽ ഉടമ, സ്വന്തം ഫോണുമായി; ഫോൺ നമ്പർ അവർക്കുണ്ടെങ്കിൽ, സൂക്ഷിക്കണമെന്ന് ആഗ്രഹിക്കുന്നെങ്കിൽ മാത്രം", "ಭೇಟಿಯಲ್ಲಿ ಮಾಲೀಕರು, ತಮ್ಮ ಫೋನ್‌ನೊಂದಿಗೆ; ಫೋನ್ ಸಂಖ್ಯೆ ಅವರಿಗಿದ್ದು ಇಡಬೇಕೆಂದರೆ ಮಾತ್ರ"),
+    why: w("You show a one-use sign-in code on the shop's page and the owner scans it with their own phone to make their passkey. No WhatsApp is needed.", "आप दुकान के पेज पर एक-बार वाला साइन-इन कोड दिखाते हैं और मालिक उसे अपने फ़ोन से स्कैन करके अपनी पासकी बनाता है। WhatsApp की ज़रूरत नहीं।", "നിങ്ങൾ കടയുടെ പേജിൽ ഒരിക്കൽ മാത്രം ഉപയോഗിക്കാവുന്ന സൈൻ ഇൻ കോഡ് കാണിക്കും, ഉടമ സ്വന്തം ഫോണിൽ അത് സ്കാൻ ചെയ്ത് പാസ്കീ ഉണ്ടാക്കും. WhatsApp വേണ്ട.", "ನೀವು ಅಂಗಡಿಯ ಪುಟದಲ್ಲಿ ಒಮ್ಮೆ ಮಾತ್ರ ಬಳಸುವ ಸೈನ್ ಇನ್ ಕೋಡ್ ತೋರಿಸುತ್ತೀರಿ, ಮಾಲೀಕರು ತಮ್ಮ ಫೋನ್‌ನಲ್ಲಿ ಅದನ್ನು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ ಪಾಸ್‌ಕೀ ಮಾಡುತ್ತಾರೆ. WhatsApp ಬೇಕಿಲ್ಲ."),
+  },
+];
+
 /**
  * The whole list: every shop's items first, then the template's own. Stock orders takes no payment from anyone (the owner pays suppliers outside the chat, and its
  * runtime has no payment service), so it leaves out the two payment lines: the shop's UPI ID (customers pay it) and its own Razorpay account.
@@ -548,6 +574,8 @@ export const LIST: Record<CardTemplate, ListItem[]> = {
   orders: [...ALWAYS, ...ORDERS],
   fees: [...ALWAYS, ...FEES],
   "stock-orders": [...ALWAYS.filter((i) => !NO_PAYMENT_LINES.has(i.id)), ...STOCK],
+  // a listings-only shop asks for none of the first block (no payment, no WhatsApp): only its own few items
+  listings: LISTINGS,
 };
 
 // ---- the words around the list --------------------------------------------------------------------------------------------
@@ -558,6 +586,7 @@ export const TEMPLATE_NAMES: Record<CardTemplate, Words> = {
   orders: w("Orders", "ऑर्डर", "ഓർഡർ", "ಆರ್ಡರ್"),
   fees: w("Fees", "फीस", "ഫീസ്", "ಶುಲ್ಕ"),
   "stock-orders": w("Stock orders", "स्टॉक ऑर्डर", "സ്റ്റോക്ക് ഓർഡർ", "ಸ್ಟಾಕ್ ಆರ್ಡರ್"),
+  listings: w("Only show what the shop has", "सिर्फ़ दिखाएँ कि दुकान में क्या है", "കടയിൽ എന്തുണ്ടെന്ന് മാത്രം കാണിക്കുക", "ಅಂಗಡಿಯಲ್ಲಿ ಏನಿದೆ ಎಂದು ಮಾತ್ರ ತೋರಿಸಿ"),
 };
 
 export const TITLE: Words = w("What to ask the shop for", "दुकान से क्या माँगना है", "കടയോട് എന്തൊക്കെ ചോദിക്കണം", "ಅಂಗಡಿಯಿಂದ ಏನು ಕೇಳಬೇಕು");

@@ -177,9 +177,10 @@ test("a shop whose store throws on every step leaves the other shop answering; i
     probe: async (port) => port !== (fake.open.get("broken")?.server.address() as { port: number } | undefined)?.port,
   });
   procs.push(p);
-  assert.deepEqual(fake.starts, ["good", "broken"]);
-  await p.scan(); await p.scan();
-  assert.deepEqual(fake.starts, ["good", "broken"], "two bad looks are not yet a restart");
+  assert.deepEqual(fake.starts.sort(), ["broken", "good"]);
+  // the scan that started the shops was the first look; this one is the second
+  await p.scan();
+  assert.deepEqual(fake.starts.sort(), ["broken", "good"], "two bad looks are not yet a restart");
   const r = await p.scan();
   assert.deepEqual(r.letGo, ["broken"], "the third bad look stops that shop alone");
   assert.equal((await get(p, "/shop/good/x")).body.shop, "good", "the other shop answers throughout");
