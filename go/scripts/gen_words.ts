@@ -67,6 +67,9 @@ function messages(l: Language): { m: Bag; date: unknown; time: Bag; cat: Bag } {
   m["waiting_head.zero"] = say(l, "waiting_head", { count: 0 });
   m["waiting_head.n"] = say(l, "waiting_head", { count: N });
   m["money_in.zero"] = withDate(say(l, "money_in", { date: D, paise: 0, payments: 0 }));
+  const some = withDate(say(l, "money_in", { date: D, paise: 12345600, payments: N }));
+  if (!some.includes("₹1,23,456")) throw new Error(`the amount is not in: ${some}`);
+  m["money_in.some"] = some.replace("₹1,23,456", "{inr}");
   m["talk_fallback"] = say(l, "talk_fallback", { waiting: N });
   // the listing lines
   for (const line of ["published", "confirmed", "sold"] as const) m[`listing_line.${line}`] = say(l, "listing_line", { line, title: S("title") });

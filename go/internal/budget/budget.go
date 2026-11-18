@@ -330,3 +330,24 @@ func Summary(ai **AI, p Policy, c Clock, nowMs int64) map[string]any {
 	}
 	return out
 }
+
+// TakeNotices is budget.ts `takeNotices`: the owner's month notices due now, each once a month. "warn" at the warning line, "full" when the budget is used up (a month that jumps past both
+// says both, in order). They are marked told first, so a notice that cannot be delivered is not tried again on every beat.
+func TakeNotices(ai **AI, cfg *Config, c Clock, nowMs int64) []string {
+	l := LevelOf(ai, cfg, c, nowMs)
+	if l.Name == "ok" {
+		return nil
+	}
+	b := stateOf(ai, c, nowMs)
+	month := For(ai, c, nowMs).Month
+	var out []string
+	if b.Told.Warn != month {
+		b.Told.Warn = month
+		out = append(out, "warn")
+	}
+	if l.Name == "full" && b.Told.Full != month {
+		b.Told.Full = month
+		out = append(out, "full")
+	}
+	return out
+}
