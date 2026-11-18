@@ -1,3 +1,4 @@
+// Tests of the card binding: the digest equal to TypeScript's on node vectors, the judge, close, expire, and a state that keeps what it does not know.
 package assistant
 
 import (

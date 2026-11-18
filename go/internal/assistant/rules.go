@@ -10,6 +10,8 @@ package assistant
 //     listing check (`Strong`) and the "message first" rule look at them, but `Offered` turns them into "unknown" as TypeScript's `coerce` does;
 //   - the case reference (`b-14`), the message-first rule, the leave words ("get my shop's file", "change my Operator"), the memory words (remember, notes, forget) and the date a
 //     "money" question names (today, tomorrow, the day after tomorrow; any other date phrase is flagged, see Date);
+//   - the date of a "money" question is read only for today, tomorrow and the day after; a weekday or a written date (in any of the four languages) is FLAGGED (`DatePhrase.Other`) and
+//     the caller answers "doesn't handle that" rather than answer for the wrong day;
 //   - NOT ported: the amount ("refund b-14 ₹500": a listings-only shop has no case to refund, so the amount never matters), the time of day (only a booking move reads one), and a message's
 //     own words beyond "are there any" (a shop with no customers never sends one).
 //
@@ -18,11 +20,13 @@ package assistant
 // JavaScript's `\s` matches (U+00A0, U+FEFF and the Unicode spaces), and lengths are counted in UTF-16 units where TypeScript counts `.length`.
 
 import (
+	"encoding/json"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"unicode"
 	"unicode/utf16"
 
 	xnorm "golang.org/x/text/unicode/norm"
@@ -150,7 +154,7 @@ type compiled struct {
 	yesterday                 *regexp.Regexp
 	guest                     *regexp.Regexp
 	ref                       *regexp.Regexp
-	otherDate                 *regexp.Regexp
+	weekday, month            *regexp.Regexp
 }
 
 var (
@@ -165,8 +169,8 @@ func rules() *compiled {
 		for _, k := range w.Kinds {
 			var kind string
 			var words []string
-			_ = jsonUnmarshal(k[0], &kind)
-			_ = jsonUnmarshal(k[1], &words)
+			_ = json.Unmarshal(k[0], &kind)
+			_ = json.Unmarshal(k[1], &words)
 			c.kinds = append(c.kinds, kindRe{kind, wordRe(words, true)})
 		}
 		c.leaveFile = regexp.MustCompile(`(?i)` + fixSpace(strings.Join(w.LeaveFile, "|")))
@@ -187,8 +191,8 @@ func rules() *compiled {
 		c.tomorrow = wordRe(append([]string{"tomorrow", "tmrw", "tomorow", "कल", "kal"}, d.Tomorrow...), true)
 		c.dayAfter = wordRe(append([]string{"day after tomorrow", "परसों", "परसो", "parso", "parson", "parsoon"}, d.DayAfter...), true)
 		c.yesterday = regexp.MustCompile(`(?i)(^|` + notWord + `)(?:` + strings.Join(quoteAll(append([]string{}, d.Yesterday...)), "|") + `)(` + notWord + `|$)`)
-		// a weekday or a written date (English and Hindi names): flagged as a date this port does not read
-		c.otherDate = regexp.MustCompile(`(?i)(^|` + notWord + `)(sunday|monday|tuesday|wednesday|thursday|friday|saturday|tue|tues|thu|thur|thurs|fri|january|february|march|april|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec|रविवार|सोमवार|मंगलवार|बुधवार|गुरुवार|शुक्रवार|शनिवार|जनवरी|फरवरी|मार्च|अप्रैल|जून|जुलाई|अगस्त|सितंबर|अक्टूबर|नवंबर|दिसंबर|ravivar|somvar|mangalvar|budhvar|guruvar|shukravar|shanivar)(` + notWord + `|$)`)
+		c.weekday = wordRe(d.Weekdays, true)
+		c.month = wordRe(d.Months, false) // a month name is short and a common word: no endings
 		rx = c
 	})
 	return rx
@@ -215,25 +219,53 @@ func notLetterAfter(s string, i int) bool {
 
 func notWordRune(rest string) bool {
 	for _, r := range rest {
-		return !(isLetter(r) || isMark(r))
+		return !(unicode.IsLetter(r) || unicode.IsMark(r))
 	}
 	return true
 }
 
-// findDate is dates.ts findDatePhrase for the phrases a "money" question uses: today, tomorrow, the day after tomorrow (a weekday or a written date is flagged `Other`).
+var (
+	dayBefore = regexp.MustCompile(`(\d{1,2})(?:st|nd|rd|th)?[` + jsSpace + `]*(?:of[` + jsSpace + `]+)?$`)
+	dayAfter  = regexp.MustCompile(`^[` + jsSpace + `]*(\d{1,2})`)
+	timeWord  = regexp.MustCompile(`^[` + jsSpace + `]*(?::|am|pm|बजे|മണി|ಗಂಟೆ)`)
+)
+
+// writtenDate is dates.ts `findWrittenDate`: a month name with a day number beside it ("11 nov", "nov 11", "10 നവംബർ"), the day 1 to 31. A month name alone is just a word ("may").
+func writtenDate(c *compiled, text string) bool {
+	for _, m := range c.month.FindAllStringSubmatchIndex(text, -1) {
+		start, end := m[4], m[5]
+		var day string
+		if b := dayBefore.FindStringSubmatch(text[:start]); b != nil {
+			day = b[1]
+		} else if a := dayAfter.FindStringSubmatchIndex(text[end:]); a != nil {
+			rest := text[end+a[3]:]
+			if !(len(rest) > 0 && rest[0] >= '0' && rest[0] <= '9') && !timeWord.MatchString(rest) {
+				day = text[end+a[2] : end+a[3]]
+			}
+		}
+		if n, err := strconv.Atoi(day); err == nil && n >= 1 && n <= 31 {
+			return true
+		}
+	}
+	return false
+}
+
+// findDate is dates.ts findDatePhrase for a "money" question: a written date or a weekday is flagged `Other` (this port does not resolve them, and says so); today, tomorrow and the day after
+// tomorrow are read. The order is TypeScript's: a written date, then the relative words, then a weekday. A word for yesterday is taken out first.
 func findDate(c *compiled, raw string) *DatePhrase {
 	text := canon(raw)
 	text = c.yesterday.ReplaceAllString(text, " ")
-	if c.otherDate.MatchString(text) {
-		return &DatePhrase{Other: true}
-	}
 	switch {
+	case writtenDate(c, text):
+		return &DatePhrase{Other: true}
 	case c.dayAfter.MatchString(text):
 		return &DatePhrase{Offset: 2}
 	case c.tomorrow.MatchString(text):
 		return &DatePhrase{Offset: 1}
 	case c.today.MatchString(text):
 		return &DatePhrase{Offset: 0}
+	case c.weekday.MatchString(text):
+		return &DatePhrase{Other: true}
 	}
 	return nil
 }

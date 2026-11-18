@@ -17,6 +17,7 @@ const phrases = [
   "what do you remember?", "notes", "my notes", "क्या याद है", "forget 3", "forget n-3", "forget note 12", "3 forget", "forget 12345", "bhool jao 4", "മറക്കൂ 2", "ಮರೆತುಬಿಡಿ 5",
   "I have two Persian kittens for sale on my page, 8000 rupees", "put this on my page: brass lamp 450 rupees", "for sale: undo", "cancel the order for sale", "limit for sale ₹500", "help me put it on my page", "holiday for sale", "kittens for sale",
   "tomorrow", "kal", "close sunday", "close", "orders", "bookings", "who owes fees", "move b-14 to 5pm", "hello", "what's up", "thanks", "", "   ", "yes ABCDE", "no thanks", "approve K7M2QX", "orders b-5", "reopen sunday", "holiday",
+  "money 3 may", "money may i think", "money nov 16", "money 16th of november", "money 25 dec", "money 40 nov", "money tuesday", "money इतवार", "money 5 नवम्बर", "paisa shaniwar", "പണം ഞായറാഴ്ച", "പണം 10 നവംബർ", "ಹಣ ಸೋಮವಾರ", "ಹಣ ನವೆಂಬರ್ 10", "ഇന്നലെ പണം", "money yesterday and today", "money today 5pm", "money day after tomorrow", "മറ്റന്നാൾ പണം", "ನಾಡಿದ್ದು ಹಣ",
   "refund the order", "message", "tell", "list", "money", "paisa", "फीस", "ഓർഡർ",
 ];
 const out = phrases.map((text) => {

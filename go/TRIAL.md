@@ -88,7 +88,7 @@ copied by hand into Go, in the same four languages, and the differential test co
 
 ## Left out of the Go runtime, and why
 
-1. **The owner's talk-and-cards page** (`GET /internal/channel/owner`, `owner_action`). It is the whole assistant's view: cards, the talk list, notes and memory, the morning "Still have it?"
+1. **(Ported 18 Nov, wave 1a: GET owner, owner_action, a draft makes a card, the beat's expiry and morning question, the budget notices; the owner's memory, the router's models and the owner-talk model are NOT: see `internal/assistant` and the report of the port. The text below is what the gap was.)** **The owner's talk-and-cards page** (`GET /internal/channel/owner`, `owner_action`). It is the whole assistant's view: cards, the talk list, notes and memory, the morning "Still have it?"
    question, the budget notices, undo. It is about 4.7k lines of TypeScript plus its words, and it is not "the runtime of a listings-only shop" so much as the shop's assistant. **Without
    it a draft the Go runtime makes cannot be published by the owner** (the "Show it" tap is a card). The Go runtime does draft, check and save it as state `draft`; the owner can edit or
    remove it, and a shop that goes back to the TypeScript runtime has the draft in its list. This is the largest gap and the first thing the lead should weigh.
@@ -98,7 +98,7 @@ copied by hand into Go, in the same four languages, and the differential test co
    still work). `/status` reports `alertPhones: 0`, which is right only while the shop has no push service (TypeScript counts the owner's phones when it has one). Go answers 404 to
    these, 400 to `owner_action` and to every event kind but the two it takes, and 400 to the inbox's `POST /internal/events`. The customer-side routes (chat, voice, documents, parent,
    material, offer-with-days) are not what a listings front calls: the front hides the chat for this kind, and the TypeScript shop answers 404 to voice and documents too.
-3. **The assistant's reading of the owner's words.** The TypeScript runtime answers words that are no listing at all ("something nice") with the owner-talk model; Go asks nothing. The
+3. **(Ported 18 Nov for the rule reader; the owner-talk model and the router's models are not.)** **The assistant's reading of the owner's words.** The TypeScript runtime answers words that are no listing at all ("something nice") with the owner-talk model; Go asks nothing. The
    differential found this on one phrase. What I did **not** port and did **not** test is the other half of that reading, `readOwnerRules`, which keeps the owner's commands (undo, help,
    cancel, a refund, closing a day) from being taken as a listing when they also say "on my page". Go takes any words with a listing cue (or a photo waiting) as a listing, so an owner
    command containing "for sale" would be drafted. I have no case that shows it, one way or the other.

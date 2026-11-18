@@ -1,3 +1,4 @@
+// A test that the packed words are unpacked on demand, once per language per process.
 package assistant
 
 import (

@@ -303,7 +303,10 @@ describe("the clock's beat: a card past its time closes, and a tap on it is answ
     assert.equal((await talk(s)).filter((l) => l.from === "assistant").length, 2);
   });
 
-  test("the morning question: 'Still have it?' for a listing not confirmed in a while, a card with Yes and Sold", async () => {
+  // The morning hour these two tests use is fifteen minutes ago in the shop's zone (Asia/Kolkata); in the quarter hour after midnight that is yesterday, and the question is not due.
+  const justAfterMidnight = ((d) => d.getUTCHours() === 0 && d.getUTCMinutes() < 20)(new Date(Date.now() + 5.5 * 3600_000));
+  const NOT_NOW = { skip: justAfterMidnight && "the shop's morning hour would fall on yesterday: run these after 00:20 Asia/Kolkata" };
+  test("the morning question: 'Still have it?' for a listing not confirmed in a while, a card with Yes and Sold", NOT_NOW, async () => {
     // the owner's morning hour is ten minutes ago, so the question is due now; the listing was confirmed two and a half days ago
     const ist = new Date(Date.now() - 15 * 60_000 + 5.5 * 3600_000);
     const morning = `${String(ist.getUTCHours()).padStart(2, "0")}:${String(ist.getUTCMinutes()).padStart(2, "0")}`;
@@ -333,7 +336,7 @@ describe("the clock's beat: a card past its time closes, and a tap on it is answ
     assert.equal((await cards(s)).length, 0);
   });
 
-  test("the morning question's yes: the listing is confirmed today, and the question is not asked again for two days", async () => {
+  test("the morning question's yes: the listing is confirmed today, and the question is not asked again for two days", NOT_NOW, async () => {
     const ist = new Date(Date.now() - 15 * 60_000 + 5.5 * 3600_000);
     const morning = `${String(ist.getUTCHours()).padStart(2, "0")}:${String(ist.getUTCMinutes()).padStart(2, "0")}`;
     const { s } = await withModel({ tickSeconds: 1, assistant: { morning: { at: morning } } });
@@ -542,9 +545,9 @@ describe("the same script on a TypeScript shop and a Go shop: what the owner rea
 
   test("what is not in the Go runtime says so rather than pretend: notes (remember, what do you remember, forget) and a money question about a weekday or a written date", BOTH, async () => {
     const s = await boot({}, "go");
-    const asked = ["remember we close at six", "what do you remember?", "forget 3", "money on 16 nov", "money monday"];
+    const asked = ["remember we close at six", "what do you remember?", "forget 3", "money on 16 nov", "money monday", "പണം ഞായറാഴ്ച", "ಹಣ ನವೆಂಬರ್ 10", "money इतवार", "money 3 may"];
     for (const [i, t] of asked.entries()) { await say(s, `g-${i}`, t); assert.equal(await lastSaid(s), "This shop's assistant doesn't handle that.", t); }
-    assert.deepEqual(lines(s, "owner_assistant").map((e) => e.refs.intent), ["remember", "notes", "forget", "money", "money"]);
+    assert.deepEqual(lines(s, "owner_assistant").map((e) => e.refs.intent), ["remember", "notes", "forget", "money", "money", "money", "money", "money", "money"]);
   });
 });
 
