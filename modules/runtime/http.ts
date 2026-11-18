@@ -98,7 +98,7 @@ import type { BrowserSubscription, OwnerChoice } from "../push/store.ts";
 import { chatConversationOf, conversationOf } from "../channels/conversation.ts";
 import type { ChatIdentityRoutes } from "../channels/chat-identity-http.ts";
 import type { OwnerAccessEvent, OwnerSignin } from "../channels/owner-signin.ts";
-import { NEW_PHONE_ALERT, phoneLabel } from "../channels/owner-phones.ts";
+import { CODES_ALERT, NEW_PHONE_ALERT, REMOVED_ALERT, phoneLabel } from "../channels/owner-phones.ts";
 import type { OwnerLinkFile } from "../channels/owner-link.ts";
 import type { RuntimeChannel } from "./core.ts";
 import { LANGUAGES } from "../language/languages.ts";
@@ -444,17 +444,22 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
         const v = signin.phones(session);
         return v ? send(res, 200, { ...v, language: signin.ownerLanguage, now: signin.now() }) : send(res, 403, { state: "signed_out" });
       }
-      if (op === "dismiss") { signin.dismissPhones(session); return send(res, 200, { ok: true }); }
+      if (op === "dismiss") { signin.dismissPhones(session, typeof body.through === "number" ? body.through : undefined); return send(res, 200, { ok: true }); }
       if (op === "remove") {
         const r = signin.removePhone(session, typeof body.id === "string" ? body.id.slice(0, 32) : "", body.confirm_last === true);
         if (!r.ok) return send(res, r.why === "session" ? 403 : r.why === "last" ? 409 : 404, { state: r.why });
         recordAccess("phone_removed", r.removed.id, undefined, undefined, r.removed.label);
+        // the alerts that phone asked for end with it, and every other phone is told (banner on its next open, and a push now)
+        options.push?.dropRef(r.removed.id);
+        if (options.push?.on) options.push.owner(REMOVED_ALERT(signin.now(), r.removed.label ?? "")[signin.ownerLanguage], "phones");
         return send(res, 200, { ok: true, wasLast: r.wasLast });
       }
       if (op === "codes") {
         const codes = signin.makeCodes(session);
         if (!codes) return send(res, 403, { state: "passkey_needed" });
         recordAccess("codes_made", good.id);
+        // a set of codes is a way back in: the owner's other phones are told, like a new phone
+        if (options.push?.on) options.push.owner(CODES_ALERT(signin.now(), "")[signin.ownerLanguage], "phones");
         return send(res, 200, { codes });
       }
       if (op === "add_phone") {
@@ -489,8 +494,13 @@ export function startServer(runtime: ServedRuntime, options: ServerOptions): Pro
       const whatsapp = options.hasWhatsApp === true;
       if (op.startsWith("owner_")) {
         if (!ownerAuthorised(req)) return send(res, 403, { error: "The owner's link is not valid (it may have been revoked)." });
+        // The panel's owner link is the OPERATOR's: once the owner holds a passkey it may not subscribe a phone to the owner's alerts (which can carry what the shop says to
+        // the owner), change the owner's choice or drop a subscription. Only a signed-in session may, and a subscription is tied to the phone (passkey) it was made from.
+        const session = header(req, OWNER_SESSION_HEADER);
+        const ownerSession = session !== undefined && options.ownerSignin?.check(session) !== undefined ? session : undefined;
+        if (!ownerSession && op !== "owner_state" && options.ownerSignin?.passkeysOn() && options.ownerSignin.lockState().locked) return send(res, 403, { error: "Sign in with the owner's phone to change alerts." });
         if (op === "owner_subscribe") {
-          const r = push.subscribe("owner", body.subscription as BrowserSubscription);
+          const r = push.subscribe("owner", body.subscription as BrowserSubscription, "own", ownerSession ? options.ownerSignin?.passkeyOf(ownerSession) : undefined);
           if (!r.ok) return send(res, 400, { error: r.why });
           // the first phone with alerts: both ways for a shop with WhatsApp (the owner can then pick), push alone for one without
           if (push.ownerPhones() === 1 && push.choice() === "whatsapp") push.setChoice(whatsapp ? "both" : "push");

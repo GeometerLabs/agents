@@ -37,8 +37,8 @@ import { LEAVE_PAGE } from "../../modules/channels/words-leave.ts";
 import { PHONE_TEMPLATES, PRESETS_DIR, loadPresets, presetTexts } from "./presets.ts";
 import { WORDS as LIMITS_OWNER_WORDS } from "../../modules/channels/owner-limits-page.ts";
 import { WORDS as PHONES_WORDS } from "../../modules/channels/owner-phones-page.ts";
-import { LOST_HELP, NEW_PHONE_ALERT } from "../../modules/channels/owner-phones.ts";
-import { REMOVAL_ALERT } from "../../modules/channels/owner-signin.ts";
+import { CODES_ALERT, LOST_HELP, NEW_PHONE_ALERT, REMOVED_ALERT } from "../../modules/channels/owner-phones.ts";
+import { OWNER_CHANGE_ALERT, REMOVAL_ALERT } from "../../modules/channels/owner-signin.ts";
 import { CHAT, QUICK, forKind } from "../../modules/channels/words-chat.ts";
 import { IDENTITY } from "../../modules/channels/words-chat-identity.ts";
 import { CHAT_MORE } from "../../modules/channels/words-chat-more.ts";
@@ -201,11 +201,14 @@ const limitsFlat = (language: Language): Map<string, string> => flatWords({ limi
 const phonesFlat = (language: Language): Map<string, string> => {
   const out = flatWords({ phones: PHONES_WORDS[language] }, {
     "phones.added": ["19 Nov 2026"], "phones.lastUsed": ["19 Nov, 3:42 pm"], "phones.removeAsk": ["Android, Chrome"], "phones.addHow": ["4:30 pm"], "phones.codesHave": ["19 Nov 2026"],
-    "phones.bannerNew": ["19 Nov, 3:42 pm", "Android, Chrome"], "phones.bannerRequest": ["Divya", "21 Nov, 10:00 am"], "phones.bannerOwner": ["21 Nov, 10:00 am"],
+    "phones.bannerNew": ["19 Nov, 3:42 pm", "Android, Chrome"], "phones.bannerRequest": ["Divya", "21 Nov, 10:00 am"], "phones.bannerOwner": ["21 Nov, 10:00 am"], "phones.bannerCodesMade": ["19 Nov, 3:42 pm", "Android, Chrome"], "phones.bannerRemoved": ["19 Nov, 3:42 pm", "Android, Chrome"],
   });
   out.set("phones.lostHelp", LOST_HELP[language]);
   out.set("phones.alert.newPhone", NEW_PHONE_ALERT(Date.UTC(2026, 10, 19, 10, 12), "Android, Chrome")[language]);
   out.set("phones.alert.request", REMOVAL_ALERT("Divya")[language]);
+  out.set("phones.alert.ownerChange", OWNER_CHANGE_ALERT[language]);
+  out.set("phones.alert.codes", CODES_ALERT(Date.UTC(2026, 10, 19, 10, 12), "Android, Chrome")[language]);
+  out.set("phones.alert.removed", REMOVED_ALERT(Date.UTC(2026, 10, 19, 10, 12), "Android, Chrome")[language]);
   return out;
 };
 const firstFlat = (language: Language): Map<string, string> => flatWords({ owner: { first: FIRST_WORDS[language] }, door: DOOR_WORDS[language], pages: { block: PAGES_BLOCK_WORDS[language] } }, firstSamples);

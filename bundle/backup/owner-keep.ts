@@ -36,7 +36,7 @@ type Row = Record<string, string | number | null>;
 export interface OwnerKeep {
   schema: 1;
   /** `ownCodes` (owner's item 2): the owner's own recovery codes, as hashes. Left out of a snapshot made before them. */
-  ownerAccess: { meta: Row[]; passkeys: Row[]; grantsUsed: Row[]; ownCodes?: Row[] };
+  ownerAccess: { meta: Row[]; passkeys: Row[]; grantsUsed: Row[]; ownCodes?: Row[]; grantsSeen?: Row[]; removals?: Row[]; ownSetups?: Row[] };
   push: { meta: Row[]; subs: Row[] };
   /** W2: the customers' chat keys and ties. Left out of a snapshot made before it, and when the shop has none. */
   chatIdentity?: { creds: Row[]; users: Row[]; contact: Row[]; phones: Row[]; alias: Row[] };
@@ -64,7 +64,7 @@ export function readOwnerKeep(dataDir: string): OwnerKeep | null {
   const chatIdentity = { creds: rows(chat, "SELECT * FROM creds ORDER BY made_at"), users: rows(chat, "SELECT * FROM users"), contact: rows(chat, "SELECT * FROM contact"), phones: rows(chat, "SELECT * FROM phones"), alias: rows(chat, "SELECT * FROM alias") };
   const keep: OwnerKeep = {
     schema: 1,
-    ownerAccess: { meta: metaOf(access, ACCESS_META), passkeys: rows(access, "SELECT * FROM passkeys ORDER BY made_at"), grantsUsed: rows(access, "SELECT * FROM grants_used ORDER BY used_at"), ownCodes: rows(access, "SELECT * FROM own_codes ORDER BY made_at") },
+    ownerAccess: { meta: metaOf(access, ACCESS_META), passkeys: rows(access, "SELECT * FROM passkeys ORDER BY made_at"), grantsUsed: rows(access, "SELECT * FROM grants_used ORDER BY used_at"), ownCodes: rows(access, "SELECT * FROM own_codes ORDER BY made_at"), grantsSeen: rows(access, "SELECT * FROM grants_seen ORDER BY first_seen"), removals: rows(access, "SELECT * FROM removals ORDER BY seen_at"), ownSetups: rows(access, "SELECT * FROM own_setups ORDER BY made_at") },
     push: { meta: metaOf(push, PUSH_META), subs: rows(push, "SELECT * FROM subs WHERE dead_at IS NULL ORDER BY made_at") },
   };
   if (chatIdentity.creds.length > 0 || chatIdentity.contact.length > 0) keep.chatIdentity = chatIdentity;
@@ -111,7 +111,11 @@ export function putOwnerKeep(dataDir: string, keep: OwnerKeep): Put {
     putRows(access, "meta", keep.ownerAccess.meta.filter((m) => ACCESS_META.includes(String(m.name))));
     result.passkeys = putRows(access, "passkeys", keep.ownerAccess.passkeys);
     putRows(access, "grants_used", keep.ownerAccess.grantsUsed);
+    // the gate's memory comes back too, or a restored shop would take every QR and card in the Operator's file as new (and so as good); voided and cancelled rows stay so
     if (keep.ownerAccess.ownCodes) putRows(access, "own_codes", keep.ownerAccess.ownCodes);
+    if (keep.ownerAccess.grantsSeen) putRows(access, "grants_seen", keep.ownerAccess.grantsSeen);
+    if (keep.ownerAccess.removals) putRows(access, "removals", keep.ownerAccess.removals);
+    if (keep.ownerAccess.ownSetups) putRows(access, "own_setups", keep.ownerAccess.ownSetups);
     access.exec("COMMIT");
   } finally { access.close(); }
   const push = new DatabaseSync(join(dataDir, PUSH_FILE));

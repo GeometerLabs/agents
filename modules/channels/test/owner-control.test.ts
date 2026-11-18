@@ -152,7 +152,7 @@ test("a new phone is announced to every OTHER phone until that phone dismisses i
     assert.deepEqual(view(access, b.sid, f, T0 + 3000).announce, [], "the new phone is not told about itself");
     // it stays until dismissed, whatever the time
     assert.equal(view(access, a.sid, f, T0 + 40 * HOUR).announce.length, 1);
-    access.dismiss(a.sid);
+    access.dismiss(a.sid, T0 + 3500);
     assert.equal(view(access, a.sid, f, T0 + 41 * HOUR).announce.length, 0);
     // a third phone brings it back for the others
     const add2 = access.addPhone(a.sid, f, T0 + 50 * HOUR)!;
@@ -195,7 +195,7 @@ test("the owner's own recovery codes: shown once, made only from a passkey sessi
     assert.equal(view(access, a.sid, f, T0 + 32).ownCodesAt, T0 + 30);
     // an own code registers a phone, once
     const second = register(access, { kind: "recovery", code: own[2] }, f, T0 + 40, "iPhone, Safari");
-    assert.equal(access.passkeys(OWNER, RP).find((p) => p.id === second.passkey)!.via, "recovery");
+    assert.equal(access.passkeys(OWNER, RP).find((p) => p.id === second.passkey)!.via, "own_code", "made with the owner's own code");
     assert.equal(access.grantState({ kind: "recovery", code: own[2] }, f, T0 + 50), "used");
     // new codes void the old set
     const again = access.makeOwnCodes(a.sid, f, T0 + 60)!;
@@ -371,7 +371,7 @@ test("the runtime's reader takes Geometer's reset only from its own file: a rese
 
 test("the phones page, the banners and the confirms: every state drawn, in each language, with forms and no script", () => {
   const phone = (id: string, o: Partial<PhonesAnswer["phones"][number]> = {}) => ({ id, madeAt: T0, via: "setup", mine: false, ...o });
-  const base: PhonesAnswer = { language: "en", now: T0 + 5000, phones: [phone("aaaaaaaaaaaa", { label: "Android, Chrome", mine: true, usedAt: T0 + 1000 })], announce: [], passkeySession: true };
+  const base: PhonesAnswer = { language: "en", now: T0 + 5000, phones: [phone("aaaaaaaaaaaa", { label: "Android, Chrome", mine: true, usedAt: T0 + 1000 })], announce: [], news: [], seenThrough: 0, passkeySession: true };
   for (const lang of ["en", "hi", "ml", "kn"] as const) {
     const w = WORDS[lang];
     // one phone, no codes yet: the prompt banner, the one-phone line, "this phone", Remove, add and make-codes buttons
@@ -382,7 +382,7 @@ test("the phones page, the banners and the confirms: every state drawn, in each 
     assert.ok(!one.includes("hello@geometer.dev"), "a builder's server shows no line about Geometer");
     assert.ok(phonesPage({ base: "https://x/owner", language: lang, view: { ...base, language: lang }, hosted: true }).includes("hello@geometer.dev"), "Geometer's own server shows it");
     // many phones, an old row with no label, a pending request, a new phone to announce
-    const many: PhonesAnswer = { ...base, language: lang, phones: [phone("aaaaaaaaaaaa", { label: "Android, Chrome", mine: true }), phone("bbbbbbbbbbbb")], announce: [phone("bbbbbbbbbbbb", { label: "iPhone, Safari", madeAt: T0 + 2000 })], ownCodesAt: T0, removal: { askedBy: "Divya", askedAt: new Date(T0).toISOString(), seenAt: T0, effectiveAt: T0 + REMOVAL_WAIT_MS } };
+    const many: PhonesAnswer = { ...base, language: lang, seenThrough: T0 + 2000, phones: [phone("aaaaaaaaaaaa", { label: "Android, Chrome", mine: true }), phone("bbbbbbbbbbbb")], announce: [phone("bbbbbbbbbbbb", { label: "iPhone, Safari", madeAt: T0 + 2000 })], ownCodesAt: T0, removal: { kind: "removal", askedBy: "Divya", askedAt: new Date(T0).toISOString(), seenAt: T0, effectiveAt: T0 + REMOVAL_WAIT_MS } };
     const m = phonesPage({ base: "https://x/owner", language: lang, csrf: "c".repeat(32), view: many, hosted: false });
     assert.ok(m.includes(w.aPhone) && m.includes("iPhone, Safari") && m.includes(w.cancel) && m.includes(w.itWasMe) && m.includes('action="https://x/owner/phones/cancel"') && m.includes("Divya"));
     assert.ok(!m.includes(w.bannerCodes), "codes are made: no prompt");

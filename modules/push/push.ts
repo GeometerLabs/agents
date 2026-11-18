@@ -29,7 +29,9 @@ export interface Push {
   /** Phones that get the owner's alerts now. */
   ownerPhones(): number;
   /** `signer`: "streetlist" only for a phone that subscribed through the Streetlist app (refused when this shop has no relay). */
-  subscribe(who: string, s: BrowserSubscription, signer?: Signer): { ok: true; id: string } | { ok: false; why: string };
+  subscribe(who: string, s: BrowserSubscription, signer?: Signer, ref?: string): { ok: true; id: string } | { ok: false; why: string };
+  /** The owner removed a phone: the alerts it asked for end (owner's item 2). */
+  dropRef(ref: string): number;
   unsubscribe(who: string, endpoint: string): boolean;
   phones(who: string): number;
   /** W2, "delete my chat": the conversation's phones stop getting alerts. */
@@ -53,10 +55,11 @@ export function createPush(o: { store: PushStore; sender: PushSender; shopName: 
     choice: () => store.choice(),
     setChoice: (c) => store.setChoice(c),
     ownerPhones: () => store.phones("owner"),
-    subscribe: (who, s, signer = "own") => {
+    dropRef: (ref) => store.dropRef(ref, clock.now()),
+    subscribe: (who, s, signer = "own", ref) => {
       if (!o.on) return { ok: false, why: "push is not on for this shop" };
       if (signer === "streetlist" && !o.relayKey) return { ok: false, why: "this shop does not send through the Streetlist app" };
-      return store.subscribe(who, s, clock.now(), signer);
+      return store.subscribe(who, s, clock.now(), signer, ref);
     },
     unsubscribe: (who, endpoint) => store.unsubscribe(who, endpoint, clock.now()),
     phones: (who) => store.phones(who),

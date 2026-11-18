@@ -771,14 +771,14 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
       }
       const form = new URLSearchParams((await readBody(req, MAX_FORM)) ?? "");
       if (!csrfOk(form.get("csrf"))) return sendHtml(res, 403, "<!doctype html><p>Forms from another page are refused.</p>");
-      if (sub === "/phones/dismiss") { await ph(ownSession, { op: "dismiss" }); return redirect(res, `${base}/?lang=${language}`); }
+      if (sub === "/phones/dismiss") { const through = Number(form.get("through")); await ph(ownSession, { op: "dismiss", ...(Number.isFinite(through) && through > 0 ? { through } : {}) }); return redirect(res, `${base}/?lang=${language}`); }
       if (sub === "/phones/cancel") { await ph(ownSession, { op: "cancel_removal" }); return redirect(res, phonesAt("cancelled")); }
       if (sub === "/phones/remove") {
         const id = form.get("id") ?? "";
         const r = await ph(ownSession, { op: "remove", id, confirm_last: form.get("confirm_last") === "yes" });
         // 409: it is the LAST phone, and the owner has confirmed once; ask again, in stronger words (the runtime refuses it without the second yes)
         if (r.status === 409) return sendHtml(res, 200, removePhonePage({ base, language, ...(o.csrf ? { csrf: o.csrf } : {}), id, ...(view.phones.find((x) => x.id === id)?.label ? { label: view.phones.find((x) => x.id === id)!.label! } : {}), last: true }), noStore);
-        return redirect(res, r.status === 200 ? phonesAt("removed") : phonesAt());
+        return redirect(res, r.status === 200 ? phonesAt("removed") : r.status === 403 ? phonesAt("refused") : phonesAt());
       }
       if (sub === "/phones/codes") {
         const r = await ph(ownSession, { op: "codes" });

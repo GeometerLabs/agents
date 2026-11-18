@@ -34,6 +34,7 @@ function world() {
   return { access, db, phone, qr, dir, done: () => { db.close(); access.close(); rmSync(dir, { recursive: true, force: true }); } };
 }
 const f = (o: Partial<OwnerGrants> = {}): OwnerGrants => ({ schema: 1, ...o });
+const pend = (at: number): OwnerGrants => f({ pendingRemoval: { askedBy: "Divya", askedAt: new Date(at).toISOString(), effectiveAt: new Date(at + REMOVAL_WAIT_MS).toISOString() } });
 const recovery = (codes: string[], at: number): OwnerGrants["recovery"] => ({ codes: codes.map(recoveryHash), createdAt: new Date(at).toISOString() });
 
 // ---- finding 4: a QR or code prepared before the lock must not survive the lock or the owner's own codes ----
@@ -179,4 +180,95 @@ test("finding 2: after a reset the shop stays locked for the Operator until the 
     assert.equal(w.access.grantState({ kind: "setup", token: adminQr }, opFile, R + 100_500), "used");
     assert.ok(a.session);
   } finally { w.done(); }
+});
+
+// ---- finding 3 (a removed phone keeps no way back; codes and removals are announced), finding 8 (earlier phones are announced), finding 10 (link sessions, dismiss) ----
+test("finding 3: removing a phone takes back the codes and add-a-phone links it made, and a phone that makes codes cannot void the owner's own set", () => {
+  const w = world(); try {
+    const rp = relyingParty(WHO.base);
+    w.access.sync(f(), T0);
+    const p1 = w.phone("p1", T0 + 1000); const p9 = w.phone("p9", T0 + 2000);
+    const owned = w.access.makeOwnCodes(p1.sid, undefined, T0 + 3000)!;
+    const intruder = w.access.makeOwnCodes(p9.sid, undefined, T0 + 4000)!;
+    const link = w.access.addPhone(p9.sid, undefined, T0 + 5000)!;
+    assert.equal(w.access.grantState({ kind: "recovery", code: owned[0] }, undefined, T0 + 6000), "valid", "the owner's set survives another phone making its own");
+    assert.ok(w.access.removePhone(p1.sid, "p9", WHO, rp, undefined, T0 + 7000, false).ok);
+    assert.equal(w.access.grantState({ kind: "recovery", code: intruder[0] }, undefined, T0 + 8000), "unknown", "its codes went with it");
+    assert.equal(w.access.grantState({ kind: "setup", token: link.token }, undefined, T0 + 8000), "unknown", "and its add-a-phone link");
+    assert.equal(w.access.grantState({ kind: "recovery", code: owned[0] }, undefined, T0 + 8000), "valid", "the owner's own codes are untouched");
+  } finally { w.done(); }
+});
+
+test("finding 3: codes made and a phone removed are announced to every OTHER phone, not to the phone that did it", () => {
+  const w = world(); try {
+    const rp = relyingParty(WHO.base);
+    w.access.sync(f(), T0);
+    const a = w.phone("pa", T0 + 1000, "own_phone"); const b = w.phone("pb", T0 + 2000, "own_phone"); const c = w.phone("pc", T0 + 3000, "own_phone");
+    w.access.makeOwnCodes(a.sid, undefined, T0 + 4000);
+    assert.deepEqual(w.access.phonesView(b.sid, WHO, rp, undefined, T0 + 5000)!.news.map((n) => n.kind), ["codes"]);
+    assert.deepEqual(w.access.phonesView(a.sid, WHO, rp, undefined, T0 + 5000)!.news, [], "the phone that made them is not told");
+    assert.ok(w.access.removePhone(a.sid, "pc", WHO, rp, undefined, T0 + 6000, false).ok);
+    assert.deepEqual(w.access.phonesView(b.sid, WHO, rp, undefined, T0 + 7000)!.news.map((n) => n.kind), ["codes", "removed"]);
+    // "It was me" dismisses what the banner SHOWED; news that came after the page was drawn still shows
+    const shown = w.access.phonesView(b.sid, WHO, rp, undefined, T0 + 7000)!.seenThrough;
+    w.access.makeOwnCodes(a.sid, undefined, T0 + 8000);
+    w.access.dismiss(b.sid, T0 + 9000, shown);
+    assert.deepEqual(w.access.phonesView(b.sid, WHO, rp, undefined, T0 + 9500)!.news.map((n) => n.at), [T0 + 8000], "only the newer one is left");
+    assert.ok(c.sid);
+  } finally { w.done(); }
+});
+
+test("finding 8: a phone made by the Operator's QR or the card sees every earlier phone once; a phone the owner added themselves does not hear about older ones", () => {
+  const w = world(); try {
+    const rp = relyingParty(WHO.base);
+    w.access.sync(f(), T0);
+    w.phone("op", T0 + 1000, "setup"); // the Operator's phone, made before the owner's
+    const owner = w.phone("own", T0 + HOUR, "setup");
+    assert.deepEqual(w.access.phonesView(owner.sid, WHO, rp, undefined, T0 + 2 * HOUR)!.announce.map((p) => p.id), ["op"], "the owner's first phone is told about the one already there");
+    const added = w.phone("new", T0 + 3 * HOUR, "own_phone");
+    assert.deepEqual(w.access.phonesView(added.sid, WHO, rp, undefined, T0 + 4 * HOUR)!.announce, [], "a phone the owner added from their own phone is not told about older ones");
+    assert.deepEqual(w.access.phonesView(owner.sid, WHO, rp, undefined, T0 + 4 * HOUR)!.announce.map((p) => p.id).sort(), ["new", "op"]);
+  } finally { w.done(); }
+});
+
+test("finding 10: a session made by a WhatsApp link cannot remove a phone; and 'It was me' without a time dismisses only what existed at the tap", () => {
+  const w = world(); try {
+    const rp = relyingParty(WHO.base);
+    w.access.sync(f(), T0);
+    const a = w.phone("pa", T0 + 1000); w.phone("pb", T0 + 2000);
+    const link = w.access.issue({ ...WHO, via: "whatsapp", now: T0 + 3000 });
+    const byLink = w.access.consume(link.token, WHO, T0 + 3001);
+    assert.ok(byLink.ok);
+    assert.deepEqual(w.access.removePhone(byLink.id, "pa", WHO, rp, undefined, T0 + 3002, true), { ok: false, why: "unknown" });
+    assert.equal(w.access.passkeys(WHO, rp).length, 2, "nothing was removed");
+    assert.ok(w.access.removePhone(a.sid, "pb", WHO, rp, undefined, T0 + 3003, false).ok, "a passkey session still may");
+  } finally { w.done(); }
+});
+
+// ---- finding 9: a request that fell due while the runtime was down is not applied at once ----
+test("finding 9: after a restart a due request is moved to a day later and said again; a cancel is followed by a day's quiet before the Operator may ask again", () => {
+  const w = world(); try {
+    const q = newSetupToken(); const f0 = f({ setup: w.qr(q, T0) });
+    const a = enrol(w.access, WHO, f0, { kind: "setup", token: q }, T0);
+    const ask = pend(T0 + HOUR);
+    w.access.sync(pend(T0 + HOUR), T0 + HOUR);
+    w.access.takeNotes();
+    const down = T0 + HOUR + REMOVAL_WAIT_MS + 6 * HOUR; // the runtime was off through the whole window
+    w.access.noteStart(down);
+    assert.deepEqual(w.access.takeNotes().map((n) => n.what), ["removal_extended"]);
+    assert.equal(w.access.passkeysBefore(ask, down + 1000), undefined, "not applied the moment it came back up");
+    assert.ok(w.access.check(a.session, WHO, down + 2000));
+    assert.equal(w.access.pendingRemoval(ask, down + 3000)!.effectiveAt, down + 24 * HOUR);
+    const later = down + 24 * HOUR + 1000;
+    assert.equal(w.access.passkeysBefore(ask, later), down + 24 * HOUR, "applied after the day's extra time");
+  } finally { w.done(); }
+  const c = world(); try {
+    const q = newSetupToken(); const f0 = f({ setup: c.qr(q, T0) });
+    enrol(c.access, WHO, f0, { kind: "setup", token: q }, T0);
+    c.access.sync(pend(T0 + HOUR), T0 + HOUR);
+    assert.equal(c.access.cancelRemoval(undefined, T0 + 2 * HOUR), true);
+    const again = { schema: 1, pendingRemoval: { askedBy: "Divya", askedAt: new Date(T0 + 3 * HOUR).toISOString(), effectiveAt: new Date(T0 + 3 * HOUR + REMOVAL_WAIT_MS).toISOString() } } as OwnerGrants;
+    assert.equal(c.access.pendingRemoval(again, T0 + 3 * HOUR), undefined, "asked again an hour after the cancel: not heard yet");
+    assert.ok(c.access.pendingRemoval(again, T0 + 2 * HOUR + 25 * HOUR), "a day after the cancel it is heard, with its own 48 hours");
+  } finally { c.done(); }
 });

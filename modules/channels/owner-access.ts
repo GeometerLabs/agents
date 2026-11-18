@@ -124,8 +124,11 @@ export function openOwnerAccess(file: string) {
     -- the Operator's QR and card hashes as THIS store first saw them: the gate (see the header) compares first_seen with the first passkey
     CREATE TABLE IF NOT EXISTS grants_seen (hash TEXT PRIMARY KEY, kind TEXT NOT NULL, first_seen INTEGER NOT NULL, voided_at INTEGER);
     -- the owner's own recovery codes (hashes only, made from the owner's app) and "add a phone" links; the Operator's file never holds these
-    CREATE TABLE IF NOT EXISTS own_codes (hash TEXT PRIMARY KEY, made_at INTEGER NOT NULL, voided_at INTEGER);
-    CREATE TABLE IF NOT EXISTS own_setups (hash TEXT PRIMARY KEY, made_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, voided_at INTEGER);
+    -- by_passkey: the phone that made each set of codes and each "add a phone" link, so removing that phone takes back what it made (a removed phone must not keep a way in)
+    CREATE TABLE IF NOT EXISTS own_codes (hash TEXT PRIMARY KEY, made_at INTEGER NOT NULL, voided_at INTEGER, by_passkey TEXT);
+    CREATE TABLE IF NOT EXISTS own_setups (hash TEXT PRIMARY KEY, made_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, voided_at INTEGER, by_passkey TEXT);
+    -- news the other phones are told once: codes made, a phone removed (a phone ADDED is read from the passkeys table)
+    CREATE TABLE IF NOT EXISTS news (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, kind TEXT NOT NULL CHECK (kind IN ('codes', 'removed')), label TEXT, by_id TEXT);
     -- the Operator's removal requests as this store timed them: seen_at is when WE first saw the request, effective_at = seen_at + REMOVAL_WAIT_MS
     CREATE TABLE IF NOT EXISTS removals (
       asked_at TEXT PRIMARY KEY, asked_by TEXT NOT NULL, seen_at INTEGER NOT NULL, effective_at INTEGER NOT NULL,
@@ -136,6 +139,7 @@ export function openOwnerAccess(file: string) {
   `);
   // A safe migration for a store made before the phones list: the label (coarse platform and browser, owner-phones.ts) is new; an old row keeps NULL and shows as "a phone".
   if (!(db.prepare("PRAGMA table_info(passkeys)").all() as { name: string }[]).some((c) => c.name === "label")) db.exec("ALTER TABLE passkeys ADD COLUMN label TEXT");
+  for (const t of ["own_codes", "own_setups"]) if (!(db.prepare(`PRAGMA table_info(${t})`).all() as { name: string }[]).some((c) => c.name === "by_passkey")) db.exec(`ALTER TABLE ${t} ADD COLUMN by_passkey TEXT`);
   type LinkRow = { id: string; made_at: number; expires_at: number; state: string; owner_key: string; base: string };
   type SessionRow = { id: string; link_id: string; made_at: number; expires_at: number; ended_at: number | null; owner_key: string; base: string };
   const linkByHash = db.prepare("SELECT id, made_at, expires_at, state, owner_key, base FROM links WHERE hash = ?");
@@ -218,7 +222,7 @@ export function openOwnerAccess(file: string) {
     file?.reset && Date.parse(file.reset.at) === metaNum("reset_raw") ? file.reset : undefined;
   const endSessionsBefore = (t: number, now: number, why: string): void => { db.prepare("UPDATE sessions SET ended_at = ?, ended_why = ? WHERE ended_at IS NULL AND made_at < ?").run(now, why, t); };
   /** Things the runtime should write in the record once (the tick does), found while reading the files. */
-  type Note = { what: "reset"; at: number; reason: string; by: string } | { what: "removal_asked"; askedBy: string; askedAt: string; effectiveAt: number } | { what: "removal_applied"; at: number } | { what: "owner_change_asked"; effectiveAt: number };
+  type Note = { what: "reset"; at: number; reason: string; by: string } | { what: "removal_asked"; askedBy: string; askedAt: string; effectiveAt: number } | { what: "removal_applied"; at: number } | { what: "owner_change_asked"; effectiveAt: number } | { what: "removal_extended"; kind: "removal" | "owner_change"; askedBy: string; effectiveAt: number };
   const notes: Note[] = [];
   /** Remember the QR and the card hashes the file holds now, the first time this store sees each. */
   const noteSeen = (file: OwnerGrants | undefined, firstSeen: number): void => {
@@ -272,7 +276,9 @@ export function openOwnerAccess(file: string) {
     const applied = appliedReset(file);
     if (applied?.setup) db.prepare("INSERT OR IGNORE INTO grants_seen (hash, kind, first_seen) VALUES (?, 'reset', ?)").run(applied.setup.sha256, now);
     const p = file?.pendingRemoval;
-    if (p && !db.prepare("SELECT 1 FROM removals WHERE asked_at = ?").get(p.askedAt) && lockAt() !== undefined && Date.parse(p.askedAt) > (metaNum("reset_at") ?? 0)) {
+    // a fresh request right after the owner cancelled one waits a day first: otherwise the Operator could post again at once, every time, until the owner is not looking
+    const cooling = db.prepare("SELECT 1 FROM removals WHERE state = 'cancelled' AND asked_at NOT LIKE 'owner-change:%' AND at > ?").get(now - 24 * 60 * 60_000) !== undefined;
+    if (p && !cooling && !db.prepare("SELECT 1 FROM removals WHERE asked_at = ?").get(p.askedAt) && lockAt() !== undefined && Date.parse(p.askedAt) > (metaNum("reset_at") ?? 0)) {
       // a request the owner has no way to have seen yet starts its wait NOW, whatever time the file says: a back-dated request must not apply at once
       db.prepare("UPDATE removals SET state = 'withdrawn', at = ? WHERE state = 'pending' AND asked_at NOT LIKE 'owner-change:%'").run(now);
       const effectiveAt = now + REMOVAL_WAIT_MS;
@@ -296,10 +302,13 @@ export function openOwnerAccess(file: string) {
     return locked === undefined || r.first_seen <= locked;
   }
   /** A session's subject for the "new phone" banner, and the passkey it was made by (if any). */
-  function subjectOf(sessionId: string): { subject: string; passkey?: string; madeAt: number } | undefined {
+  function subjectOf(sessionId: string): { subject: string; passkey?: string; madeAt: number; via?: string } | undefined {
     const r = db.prepare("SELECT link_id, made_at FROM sessions WHERE id = ?").get(sessionId) as { link_id: string; made_at: number } | undefined;
     if (!r) return undefined;
-    if (r.link_id.startsWith("pk-")) { const pk = db.prepare("SELECT made_at FROM passkeys WHERE id = ?").get(r.link_id.slice(3)) as { made_at: number } | undefined; return pk ? { subject: `pk:${r.link_id.slice(3)}`, passkey: r.link_id.slice(3), madeAt: pk.made_at } : { subject: `s:${sessionId}`, madeAt: r.made_at }; }
+    if (r.link_id.startsWith("pk-")) {
+      const pk = db.prepare("SELECT made_at, via FROM passkeys WHERE id = ?").get(r.link_id.slice(3)) as { made_at: number; via: string } | undefined;
+      if (pk) return { subject: `pk:${r.link_id.slice(3)}`, passkey: r.link_id.slice(3), madeAt: pk.made_at, via: pk.via };
+    }
     return { subject: `s:${sessionId}`, madeAt: r.made_at };
   }
   type PhoneRow = PasskeyRow & { removed_at: number | null; used_at: number | null; via: string; label: string | null };
@@ -322,6 +331,18 @@ export function openOwnerAccess(file: string) {
     sync(file: OwnerGrants | undefined, now: number): void { reconcile(file, now); },
     /** What `sync` found that the record should say, once each. */
     takeNotes(): Note[] { return notes.splice(0); },
+    /**
+     * The runtime has just (re)started. A request that would fall due while it was not running, or within a day of its start, is moved to a day after the start and
+     * said again: an owner whose phones were off, or an outage nobody chose, must not lose the wait (a request must be SEEN for its whole time to count). Called once.
+     */
+    noteStart(now: number): void {
+      const rows = db.prepare("SELECT asked_at, asked_by, effective_at FROM removals WHERE state = 'pending' AND effective_at < ?").all(now + 24 * 60 * 60_000) as { asked_at: string; asked_by: string; effective_at: number }[];
+      for (const r of rows) {
+        db.prepare("UPDATE removals SET effective_at = ? WHERE asked_at = ?").run(now + 24 * 60 * 60_000, r.asked_at);
+        notes.push({ what: "removal_extended", kind: r.asked_at.startsWith("owner-change:") ? "owner_change" : "removal", askedBy: r.asked_by, effectiveAt: now + 24 * 60 * 60_000 });
+      }
+    },
+
     /** The moment before which no passkey works: this store's own, never the Operator's file's (see the header). */
     passkeysBefore(file: OwnerGrants | undefined, now: number): number | undefined { reconcile(file, now); return metaNum("passkeys_before"); },
     /** Has the owner a passkey since the gate last opened? Then the Operator's QR and card are closed, and "remove the passkeys" is a request. */
@@ -530,7 +551,7 @@ export function openOwnerAccess(file: string) {
       if (!clientData || !attestation) return { ok: false, state: "refused", why: "The browser's answer is not complete." };
       const gh = grantHash(g);
       // how this phone got in, for the owner's list: their own app's "add a phone" link, Geometer's reset QR, the Operator's QR, or a recovery code (the card's or their own)
-      const via: PhoneVia = g.kind === "recovery" ? "recovery"
+      const via: PhoneVia = g.kind === "recovery" ? (db.prepare("SELECT 1 FROM own_codes WHERE hash = ?").get(gh) ? "own_code" : "recovery")
         : db.prepare("SELECT 1 FROM own_setups WHERE hash = ?").get(gh) ? "own_phone"
         : appliedReset(file)?.setup?.sha256 === gh ? "reset" : "setup";
       const challenge = challengeOf(clientData, "register", now, gh);
@@ -613,23 +634,35 @@ export function openOwnerAccess(file: string) {
       if (!me) return undefined;
       const pb = metaNum("passkeys_before");
       const phones = goodPhones(who, rp, pb);
-      const through = (db.prepare("SELECT through FROM phone_seen WHERE subject = ?").get(me.subject) as { through: number } | undefined)?.through ?? me.madeAt;
+      // What this phone has been told. A phone the OWNER added themselves (from their own phone, or with their own code) starts from its own birth. Any other phone
+      // (the Operator's QR, the card, a reset) starts from 0 and so sees every other phone once: an Operator's phone made before the owner's must not sit unannounced.
+      const fresh = me.passkey !== undefined && me.via !== "own_phone" && me.via !== "own_code" ? 0 : me.madeAt;
+      const through = (db.prepare("SELECT through FROM phone_seen WHERE subject = ?").get(me.subject) as { through: number } | undefined)?.through ?? fresh;
+      const newsRows = (db.prepare("SELECT kind, at, label, by_id FROM news WHERE at > ? ORDER BY at").all(through) as { kind: "codes" | "removed"; at: number; label: string | null; by_id: string | null }[])
+        .filter((n) => n.by_id !== (me.passkey ?? me.subject));
       const removal = api.pendingRemoval(file, now);
       const codes = db.prepare("SELECT max(made_at) AS at FROM own_codes WHERE voided_at IS NULL").get() as { at: number | null };
       const row = (r: PhoneRow) => ({ id: r.id, madeAt: r.made_at, ...(r.used_at !== null ? { usedAt: r.used_at } : {}), via: r.via, ...(r.label ? { label: r.label } : {}) });
       return {
         phones: phones.map((r) => ({ ...row(r), mine: r.id === me.passkey })),
         announce: phones.filter((r) => r.made_at > through && r.id !== me.passkey).map(row),
+        news: newsRows.map((n) => ({ kind: n.kind, at: n.at, ...(n.label ? { label: n.label } : {}) })),
+        // the moment the banner reaches: "It was me" dismisses up to here, not up to whatever was added since the page was drawn
+        seenThrough: Math.max(0, ...phones.filter((r) => r.made_at > through && r.id !== me.passkey).map((r) => r.made_at), ...newsRows.map((n) => n.at)),
         ...(removal ? { removal } : {}),
         ownCodesAt: codes.at ?? undefined, passkeySession: me.passkey !== undefined,
       };
     },
 
+    /** The passkey id a session was made by, or undefined for a session made by a link. */
+    passkeyOfSession(sessionId: string): string | undefined { return subjectOf(sessionId)?.passkey; },
+
     /** This phone has seen the news about every phone made so far: its banner goes (a phone made later brings it back). */
-    dismiss(sessionId: string): void {
+    dismiss(sessionId: string, now: number, through?: number): void {
       const me = subjectOf(sessionId);
       if (!me) return;
-      const latest = (db.prepare("SELECT max(made_at) AS at FROM passkeys").get() as { at: number | null }).at ?? me.madeAt;
+      // up to the moment the banner SHOWED (the page posts it), never up to "the newest phone now": one added between the page and the tap must still be announced
+      const latest = through !== undefined && Number.isFinite(through) ? Math.min(through, now) : Math.min(now, Math.max((db.prepare("SELECT max(made_at) AS at FROM passkeys").get() as { at: number | null }).at ?? 0, (db.prepare("SELECT max(at) AS at FROM news").get() as { at: number | null }).at ?? 0));
       db.prepare("INSERT INTO phone_seen (subject, through) VALUES (?, ?) ON CONFLICT(subject) DO UPDATE SET through = max(through, excluded.through)").run(me.subject, latest);
     },
 
@@ -640,7 +673,9 @@ export function openOwnerAccess(file: string) {
     removePhone(sessionId: string, phoneId: string, who: OwnerNow, rp: RelyingParty, file: OwnerGrants | undefined, now: number, confirmLast: boolean):
       { ok: true; removed: { id: string; label?: string }; wasLast: boolean } | { ok: false; why: "unknown" | "last" } {
       reconcile(file, now);
-      if (!subjectOf(sessionId)) return { ok: false, why: "unknown" };
+      // only a PASSKEY session may take a phone away: a WhatsApp link is whoever holds that phone, and must not be able to strip every phone of the owner
+      const me = subjectOf(sessionId);
+      if (!me?.passkey) return { ok: false, why: "unknown" };
       const phones = goodPhones(who, rp, metaNum("passkeys_before"));
       const target = phones.find((r) => r.id === phoneId);
       if (!target) return { ok: false, why: "unknown" };
@@ -650,6 +685,10 @@ export function openOwnerAccess(file: string) {
       try {
         db.prepare("UPDATE passkeys SET removed_at = ?, removed_why = 'owner' WHERE id = ? AND removed_at IS NULL").run(now, target.id);
         db.prepare("UPDATE sessions SET ended_at = ?, ended_why = 'phone_removed' WHERE link_id = ? AND ended_at IS NULL").run(now, `pk-${target.id}`);
+        // what the removed phone made goes with it: its recovery codes and its "add a phone" links are a way back in that the owner never chose to keep
+        db.prepare("UPDATE own_codes SET voided_at = ? WHERE by_passkey = ? AND voided_at IS NULL").run(now, target.id);
+        db.prepare("UPDATE own_setups SET voided_at = ? WHERE by_passkey = ? AND voided_at IS NULL").run(now, target.id);
+        db.prepare("INSERT INTO news (at, kind, label, by_id) VALUES (?, 'removed', ?, ?)").run(now, target.label, me.passkey);
         db.exec("COMMIT");
       } catch (e) { db.exec("ROLLBACK"); throw e; }
       return { ok: true, removed: { id: target.id, ...(target.label ? { label: target.label } : {}) }, wasLast };
@@ -666,11 +705,13 @@ export function openOwnerAccess(file: string) {
       const codes = Array.from({ length: RECOVERY_CODES }, newRecoveryCode);
       db.exec("BEGIN IMMEDIATE");
       try {
-        db.prepare("UPDATE own_codes SET voided_at = ? WHERE voided_at IS NULL").run(now);
+        // an earlier set of THIS phone's goes; another phone's stays (a phone that makes codes must not be able to void the owner's real ones, and removing it takes back its own)
+        db.prepare("UPDATE own_codes SET voided_at = ? WHERE voided_at IS NULL AND by_passkey = ?").run(now, me.passkey);
         // EVERY QR and code hash the Operator's file has ever shown this store, whatever "kind" the file put it under: a card code's hash staged in the QR's slot would
         // otherwise survive the owner's own codes and come back later
         db.prepare("UPDATE grants_seen SET voided_at = ? WHERE voided_at IS NULL").run(now);
-        for (const c of codes) db.prepare("INSERT INTO own_codes (hash, made_at) VALUES (?, ?)").run(recoveryHash(c), now);
+        for (const c of codes) db.prepare("INSERT INTO own_codes (hash, made_at, by_passkey) VALUES (?, ?, ?)").run(recoveryHash(c), now, me.passkey);
+        db.prepare("INSERT INTO news (at, kind, label, by_id) VALUES (?, 'codes', ?, ?)").run(now, (db.prepare("SELECT label FROM passkeys WHERE id = ?").get(me.passkey) as { label: string | null } | undefined)?.label ?? null, me.passkey);
         db.exec("COMMIT");
       } catch (e) { db.exec("ROLLBACK"); throw e; }
       return codes;
@@ -679,10 +720,11 @@ export function openOwnerAccess(file: string) {
     /** "Add a phone": a one-use setup link made by the owner's own phone (a passkey session only), for SETUP_MS. The token is returned ONCE; the page shows it as a QR. */
     addPhone(sessionId: string, file: OwnerGrants | undefined, now: number): { token: string; expiresAt: number } | undefined {
       reconcile(file, now);
-      if (!subjectOf(sessionId)?.passkey) return undefined;
+      const me = subjectOf(sessionId);
+      if (!me?.passkey) return undefined;
       db.prepare("DELETE FROM own_setups WHERE expires_at < ?").run(now - 24 * 60 * 60_000);
       const token = newSetupToken();
-      db.prepare("INSERT INTO own_setups (hash, made_at, expires_at) VALUES (?, ?, ?)").run(setupHash(token), now, now + SETUP_MS);
+      db.prepare("INSERT INTO own_setups (hash, made_at, expires_at, by_passkey) VALUES (?, ?, ?, ?)").run(setupHash(token), now, now + SETUP_MS, me.passkey);
       return { token, expiresAt: now + SETUP_MS };
     },
 
@@ -698,6 +740,10 @@ export interface PhonesView {
   phones: (PhoneEntry & { mine: boolean })[];
   /** Phones made since this phone last dismissed the news (never this phone itself). */
   announce: PhoneEntry[];
+  /** Codes made or a phone removed by ANOTHER phone since this phone last dismissed the news. */
+  news: { kind: "codes" | "removed"; at: number; label?: string }[];
+  /** The moment the banner reaches, for "It was me" to dismiss exactly that much. */
+  seenThrough: number;
   /** The Operator's request to remove every phone, timed by this runtime. */
   removal?: { kind: "removal" | "owner_change"; askedBy: string; askedAt: string; seenAt: number; effectiveAt: number };
   /** When the owner made their own recovery codes (the newest set still good), if they did. */
