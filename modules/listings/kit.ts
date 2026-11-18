@@ -16,6 +16,7 @@ import type { ActionRecord } from "../record/record.ts";
 import { CATEGORIES, LISTING_ACTION, MAX_LIVE, MAX_PHOTOS, UPLOADS_PER_DAY, allPhotoIds, confirm, draft, edit, freshnessOf, isCategory, listingById, listingRefs, listingsOf, markSold, noteUpload, ownersListings, pendingPhotos, publicListings, publish, remove, setShop, takePhotos } from "./listings.ts";
 import type { Category, Failure, Lang, Listing, ListingChange, ListingsShop, ListingsState, Photo } from "./listings.ts";
 import { PHOTO_ID } from "./photo.ts";
+import { quantityOfListing, soldOutListings } from "../stock/stock.ts";
 
 export type ListingOp =
   | { op: "publish_form"; category: string; title: string; priceInr?: number; priceNote?: string; qty?: number; photos: string[] }
@@ -123,10 +124,18 @@ function applyOp(s: ListingsState, op: ListingOp, a: Authority, c: { nowMs: numb
 
 // ---- the reads -----------------------------------------------------------------------------------------------------------------------------------------
 
+/** The marks a counted listing carries on the owner's page (none for an uncounted one, so its row is as it was). */
+const stockMarks = (stock: Parameters<typeof quantityOfListing>[0], l: Pick<Listing, "id">): { counted?: true; soldOut?: true } => {
+  const q = quantityOfListing(stock, l.id);
+  return q === undefined ? {} : { counted: true, ...(q <= 0 ? { soldOut: true as const } : {}) };
+};
+
 /** One listing as the owner's page shows it: what to draw and which buttons make sense. Never the bytes of a photo. */
 export interface OwnerListingRow {
   id: string; state: "draft" | "live"; category: string; ownerLang: Lang; words: Listing["words"]; pricePaise?: number; priceNote?: string; qty?: number;
   photos: { id: string; type: Photo["type"]; width: number; height: number }[]; freshness: "fresh" | "check" | "hidden"; confirmedMs?: number; claims?: string[];
+  /** The owner counts this listing (modules/stock): `qty` is then the count now, and `soldOut` says the count is 0 so the listing has sold itself. */
+  counted?: true; soldOut?: true;
 }
 export interface OwnerListingsView {
   shop: ListingsShop; listings: OwnerListingRow[]; pending: Photo[]; uploadsLeft: number; maxLive: number; liveCount: number;
@@ -194,8 +203,10 @@ export function createListingsKit<Store extends { assistant?: import("../assista
     },
     ownerView(store, nowMs) {
       const s = peek(store) ?? listingsOf({});
+      const stock = store.assistant?.stock;
       const rows: OwnerListingRow[] = ownersListings(s).map((l) => ({
-        id: l.id, state: l.state as "draft" | "live", category: l.category, ownerLang: l.ownerLang, words: l.words, ...(l.pricePaise !== undefined ? { pricePaise: l.pricePaise } : {}), ...(l.priceNote ? { priceNote: l.priceNote } : {}), ...(l.qty !== undefined ? { qty: l.qty } : {}),
+        ...stockMarks(stock, l),
+        id: l.id, state: l.state as "draft" | "live", category: l.category, ownerLang: l.ownerLang, words: l.words, ...(l.pricePaise !== undefined ? { pricePaise: l.pricePaise } : {}), ...(l.priceNote ? { priceNote: l.priceNote } : {}), ...(quantityOfListing(stock, l.id) !== undefined ? { qty: quantityOfListing(stock, l.id)! } : l.qty !== undefined ? { qty: l.qty } : {}),
         photos: l.photos.map((p) => ({ id: p.id, type: p.type, width: p.width, height: p.height })), freshness: l.state === "live" ? freshnessOf(l, nowMs) : "fresh", ...(l.confirmedMs !== undefined ? { confirmedMs: l.confirmedMs } : {}), ...(l.claims ? { claims: l.claims } : {}),
       }));
       return {
@@ -208,11 +219,16 @@ export function createListingsKit<Store extends { assistant?: import("../assista
       const s = peek(store);
       if (!s) return { shop: { visible: false }, listings: [] };
       // by, from and the morning's asks are the owner's business; a copy without them is all the public side ever gets
-      const listings = publicListings(s, nowMs).map(({ by: _by, from: _from, askedMs: _askedMs, ...rest }) => ({ ...rest, by: "owner" as const, from: "app" as const }));
+      // a counted listing (modules/stock) shows its count as its quantity and leaves the page by itself at 0; nothing is written to the listing, and an uncounted one is as it was
+      const stock = store.assistant?.stock;
+      const listings = publicListings(s, nowMs, soldOutListings(stock)).map(({ by: _by, from: _from, askedMs: _askedMs, ...rest }) => {
+        const q = quantityOfListing(stock, rest.id);
+        return { ...rest, ...(q !== undefined ? { qty: q } : {}), by: "owner" as const, from: "app" as const };
+      });
       return { shop: s.shop, listings };
     },
     keepIds: (store) => new Set(peek(store) ? allPhotoIds(peek(store)!) : []),
-    publicPhoto(store, id, nowMs) { const s = peek(store); return s ? publicListings(s, nowMs).flatMap((l) => l.photos).find((p) => p.id === id) : undefined; },
+    publicPhoto(store, id, nowMs) { const s = peek(store); return s ? publicListings(s, nowMs, soldOutListings(store.assistant?.stock)).flatMap((l) => l.photos).find((p) => p.id === id) : undefined; },
     ownerPhoto(store, id) { const s = peek(store); return s ? [...s.items.flatMap((l) => l.photos), ...s.pending].find((p) => p.id === id) : undefined; },
     uploadsLeft(store, nowMs) { const s = peek(store); return !s || s.uploads.day !== dayOf(nowMs) ? UPLOADS_PER_DAY : Math.max(0, UPLOADS_PER_DAY - s.uploads.n); },
   };
