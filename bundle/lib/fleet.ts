@@ -30,6 +30,12 @@ export interface ShopAnswer {
    * fleet says "normal" again. Only for a shop on Geometer's server with a plan; left out for builders' shops, which bring their own AI key. `ai: "buttons"` outranks it.
    */
   model?: "normal" | "off";
+  /**
+   * The extra messages the shop bought this month (blocks paid x the block's size; apps/fleet/README.md, "What fleet tells each shop"). Left out when none, or from an older fleet.
+   * The deployer scales the shop's own model budget with it, the way fleet's AI cap grows (lib/budget.ts). It is read from the answer file on each deploy, so a top-up bought
+   * mid-month reaches the shop's runtime on the deployer's next pass, with no manual step (like `model`).
+   */
+  bought?: number;
   /** Codes the panel says in the shop's language: allowance_80, balance_80, whatsapp_unsettled, ai_cap, licence_due, licence_warning, licence_wind_down, licence_stopped. */
   warn: string[];
   /**
@@ -89,6 +95,8 @@ export function parseShopAnswer(raw: unknown): ShopAnswer | undefined {
     plan, allowance, innovator: raw.innovator === true, ai: raw.ai,
     ...(raw.ai === "buttons" && typeof raw.reason === "string" && CODE.test(raw.reason) ? { reason: raw.reason } : {}),
     ...(raw.model === "normal" || raw.model === "off" ? { model: raw.model } : {}),
+    // whole and above 0, or it is dropped: a wrong number must never raise a shop's budget
+    ...(typeof raw.bought === "number" && Number.isSafeInteger(raw.bought) && raw.bought > 0 && raw.bought <= 10_000_000 ? { bought: raw.bought } : {}),
     warn,
     ...(licence ? { licence } : {}),
   };

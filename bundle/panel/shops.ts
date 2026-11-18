@@ -16,6 +16,8 @@ import type { PanelConfig } from "./config.ts";
 import { SHOP_ID, companyOf, parseAssignmentFile, parseFleetAnswer, parseOwner, parseReportFile, parseStatus, parseStopRequest, resolvePreparedBy, servedByOf, serverPaths } from "./contract.ts";
 import type { AssignmentFile, FleetAnswer, HandoverReason, OwnerFile, Person, PinsFile, RuntimeProbe, SecretName, StatusRead, StopRequest } from "./contract.ts";
 import type { Store } from "./store.ts";
+import { readOverride } from "../lib/budget-override.ts";
+import type { BudgetOverride } from "../lib/budget-override.ts";
 
 /** What the panel itself remembers about a shop that is not in the shop's folder. The secrets themselves are never here: only that they arrived. */
 export interface ShopMeta {
@@ -127,6 +129,8 @@ export function createShops(config: PanelConfig, store: Store) {
     status(id: string): StatusRead { return parseStatus(readText(paths.statusFile(safe(id)))); },
     /** Fleet's last answer about the shop (written by ops), or undefined when it has said nothing readable. */
     fleet(id: string): FleetAnswer | undefined { return parseFleetAnswer(readText(paths.fleetFile(safe(id)))); },
+    /** The server admin's own model budget for the shop, or undefined (none, or not usable). READ-ONLY here: only `geometer shop budget` on the server writes it (lib/budget-override.ts). */
+    budgetOverride(id: string): BudgetOverride | undefined { return readOverride(paths.shop(safe(id))).override; },
     stopRequest(id: string): StopRequest | undefined { return parseStopRequest(readText(paths.stopFile(safe(id)))); },
     meta(id: string): ShopMeta { return store.read<ShopMeta>(`meta/${safe(id)}.json`) ?? { schema: 1, receipts: {} }; },
     saveMeta(id: string, meta: ShopMeta): void { store.write(`meta/${safe(id)}.json`, meta); },
