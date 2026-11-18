@@ -1644,17 +1644,23 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `chat.centre.back` | കേന്ദ്രത്തിന്റെ പേജ് | Centre page |  |
 | `chat.centre.closed` | കേന്ദ്രം ഇപ്പോൾ അടഞ്ഞിരിക്കുന്നു. എങ്കിലും ചോദിക്കാം. 10:00–20:00 | The centre is closed now. You can still ask. 10:00–20:00 |  |
 | `chat.centre.paused` | കേന്ദ്രം ഇപ്പോൾ പുതിയ ജോലി എടുക്കുന്നില്ല. ചോദ്യങ്ങൾ ചോദിക്കാം. | The centre is not taking new work just now. You can still ask questions. |  |
-| `chat.centre.note` | കേന്ദ്രത്തിന്റെ അസിസ്റ്റന്റ് ഇവിടെ മറുപടി നൽകും. ബുക്കിംഗോ പേയ്‌മെന്റോ കേന്ദ്രത്തിന്റെ രേഖയിൽ കാണുമ്പോൾ മാത്രം കണക്കാകും. | The centre's assistant replies here. A booking or a payment counts once the centre's record shows it. |  |
+| `chat.centre.note` | കേന്ദ്രത്തിന്റെ അസിസ്റ്റന്റ് ഇവിടെ മറുപടി നൽകും. പേയ്‌മെന്റോ കേന്ദ്രത്തിന്റെ രേഖയിൽ കാണുമ്പോൾ മാത്രം കണക്കാകും. | The centre's assistant replies here. A payment counts once the centre's record shows it. |  |
 | `chat.centre.kept` | കേന്ദ്രം ഈ ചാറ്റ് 30 ദിവസം സൂക്ഷിക്കും. | The centre keeps this chat for 30 days. |  |
 | `chat.centre.shop` | കേന്ദ്രം | Centre |  |
 | `chat.centre.alertsHead` | കേന്ദ്രം മറുപടി തന്നാൽ ഫോൺ അറിയിക്കണോ? | Want a buzz when the centre answers? |  |
 | `chat.centre.more.confirmed` | ഉറപ്പായി. കേന്ദ്രത്തിന്റെ സ്വന്തം രേഖയിൽ ഉണ്ട്. | Confirmed. The centre's own record has it. |  |
 | `chat.centre.more.paid` | പണം കിട്ടി. കേന്ദ്രത്തിന്റെ സ്വന്തം രേഖയിൽ ഉണ്ട്. | Payment received. The centre's own record has it. |  |
 | `chat.centre.more.linkAbout` | കേന്ദ്രവുമായുള്ള ചാറ്റ് തുറക്കും | Opens the chat with the centre |  |
+| `chat.centre.id.keepNoLock` | ഈ ഫോണിൽ സ്ക്രീൻ ലോക്ക് ഇല്ല, അതുകൊണ്ട് ചാറ്റ് സൂക്ഷിക്കാൻ കഴിയില്ല. അതിഥിയായി ചാറ്റ് തുടരാം, നിങ്ങളുടെ ഫീസ് പേജ് ലിങ്ക് പ്രവർത്തിക്കുകയും ചെയ്യും. | This phone has no screen lock, so it cannot keep the chat. You can still chat as a guest, and your fee page link keeps working. |  |
 | `chat.centre.id.otherShop` | അത് മറ്റൊരു കേന്ദ്രത്തിന്റേതാണ്. ഈ കേന്ദ്രത്തിന്റേത് തിരഞ്ഞെടുക്കൂ, അല്ലെങ്കിൽ "എനിക്ക് പുതിയ ഫോൺ ഉണ്ട്" തൊടൂ. | That one is for another centre. Pick the one for this centre, or tap I have a new phone. |  |
-| `chat.centre.id.deleteAsk` | ഈ ചാറ്റ് ഇല്ലാതാക്കട്ടെ? ഇവിടത്തെ നിങ്ങളുടെ സന്ദേശങ്ങളും ഈ ഫോണിൽ ചാറ്റ് സൂക്ഷിക്കുന്ന താക്കോലും നീക്കും. ബുക്കിംഗിനോ പണമടയ്ക്കലിനോ നിയമം ആവശ്യപ്പെടുന്നത് കേന്ദ്രം സൂക്ഷിക്കും. | Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The centre keeps what the law needs for a booking or a payment. |  |
+| `chat.centre.id.sendMyLinks` | എന്റെ ഫീസ് പേജ് ലിങ്ക് അയയ്ക്കൂ | Send me my fee page link |  |
+| `chat.centre.id.deleteAsk` | ഈ ചാറ്റ് ഇല്ലാതാക്കട്ടെ? ഇവിടത്തെ നിങ്ങളുടെ സന്ദേശങ്ങളും ഈ ഫോണിൽ ചാറ്റ് സൂക്ഷിക്കുന്ന താക്കോലും നീക്കും. പണമടയ്ക്കലിനോ നിയമം ആവശ്യപ്പെടുന്നത് കേന്ദ്രം സൂക്ഷിക്കും. | Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The centre keeps what the law needs for a payment. |  |
 | `chat.centre.id.deleteDone` | ഇല്ലാതാക്കി. ഈ ചാറ്റ് ഇനി ഈ കേന്ദ്രത്തിന്റെ പക്കലില്ല. | Deleted. This chat is gone from this centre. |  |
 | `chat.centre.first.shopCall` | കേന്ദ്രത്തെ വിളിക്കൂ | Call the centre |  |
+| `chat.orders.note` | കടയുടെ അസിസ്റ്റന്റ് ഇവിടെ മറുപടി നൽകും. ഓർഡറോ പേയ്‌മെന്റോ കടയുടെ രേഖയിൽ കാണുമ്പോൾ മാത്രം കണക്കാകും. | The shop's assistant replies here. An order or a payment counts once the shop's record shows it. |  |
+| `chat.orders.id.keepNoLock` | ഈ ഫോണിൽ സ്ക്രീൻ ലോക്ക് ഇല്ല, അതുകൊണ്ട് ചാറ്റ് സൂക്ഷിക്കാൻ കഴിയില്ല. അതിഥിയായി ചാറ്റ് തുടരാം, നിങ്ങളുടെ ഓർഡർ ലിങ്ക് പ്രവർത്തിക്കുകയും ചെയ്യും. | This phone has no screen lock, so it cannot keep the chat. You can still chat as a guest, and your order link keeps working. |  |
+| `chat.orders.id.sendMyLinks` | എന്റെ ഓർഡർ ലിങ്ക് അയയ്ക്കൂ | Send me my order link |  |
+| `chat.orders.id.deleteAsk` | ഈ ചാറ്റ് ഇല്ലാതാക്കട്ടെ? ഇവിടത്തെ നിങ്ങളുടെ സന്ദേശങ്ങളും ഈ ഫോണിൽ ചാറ്റ് സൂക്ഷിക്കുന്ന താക്കോലും നീക്കും. ഓർഡറിനോ പണമടയ്ക്കലിനോ നിയമം ആവശ്യപ്പെടുന്നത് കട സൂക്ഷിക്കും. | Delete this chat? Your messages here are removed, and so is the key that keeps the chat on this phone. The shop keeps what the law needs for an order or a payment. |  |
 | `stock.owner.tagApprove` | അനുവദിക്കാൻ ഓർഡർ | Order to approve |  |
 | `stock.owner.tagSilent` | സപ്ലയർ മറുപടി നൽകിയില്ല | No answer from supplier |  |
 | `stock.owner.tagReceive` | സാധനം എത്തിയത് രേഖപ്പെടുത്തുക | Delivery to mark |  |
