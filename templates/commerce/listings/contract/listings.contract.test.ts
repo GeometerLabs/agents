@@ -15,7 +15,7 @@ import { DatabaseSync } from "node:sqlite";
 import { canonicalJson, signingKeyFromText, verifyCard, verifyDocument, verifyNotice, keyIdOf } from "../../../../modules/signing/index.ts";
 import { photoIdOf } from "../../../../modules/listings/photo.ts";
 import { newSoftPasskey, softRegister, softSignin } from "../../../../modules/channels/test/soft-authenticator.ts";
-import { IMPL, OWNER_BASE, PAGE, draftAnswer, makeShop, startFakeModel, tinyJpeg } from "./harness.ts";
+import { IMPL, OWNER_BASE, PAGE, VERSION, draftAnswer, makeShop, startFakeModel, tinyJpeg } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
 
 const shops: Shop[] = [];
@@ -49,7 +49,7 @@ describe("health, status and the two tokens", () => {
     const st = await s.call("/status");
     assert.equal(st.status, 200);
     assert.equal(st.body.pathway, "listings");
-    assert.equal(typeof st.body.version, "string");
+    assert.equal(st.body.version, VERSION, "the version in templates/commerce/listings/package.json (a runtime pins the folder to it)");
     assert.deepEqual(st.body.tasks, { pending: 0, done: 0, failed: 0 });
     assert.equal(st.body.recordLength, 0);
     assert.deepEqual(st.body.listings ?? {}, {});

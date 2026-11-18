@@ -4,6 +4,7 @@
 import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import { join } from "node:path";
 import { newSoftPasskey, softRegister, softSignin } from "../../../../modules/channels/test/soft-authenticator.ts";
 import { OWNER_BASE, PAGE, REPO, makeShop, tinyJpeg } from "./harness.ts";
@@ -61,4 +62,27 @@ describe("TypeScript and Go take turns on one shop folder", { skip: !existsSync(
       assert.deepEqual((await s.call("/internal/channel/owner-listing", { owner: s.owner })).body.listings.map((l: { id: string }) => l.id), ["l-2"]);
     });
   }
+});
+
+describe("the two runtimes make the same files", { skip: !existsSync(bin) && `no Go binary at ${bin}` }, () => {
+  test("agent.db and owner-access.sqlite have the same tables, indexes, triggers, SQL text and schema version", async () => {
+    const dump = (dir: string, file: string): string => {
+      const db = new DatabaseSync(join(dir, file), { readOnly: true });
+      const version = db.prepare("PRAGMA user_version").get();
+      const rows = db.prepare("SELECT type, name, tbl_name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name").all();
+      db.close();
+      return JSON.stringify({ version, rows });
+    };
+    const made: Record<string, { store: string; access: string }> = {};
+    for (const impl of ["ts", "go"] as const) {
+      const s = await makeShop(); shops.push(s);
+      await s.start(impl);
+      // the owner's access file is made when the shop starts with a channel token; the passkey tables are used by the first ceremony
+      await s.call("/internal/channel/owner-passkey", { body: { op: "register_options", grant: { kind: "setup", token: s.setup } } });
+      await s.stop();
+      made[impl] = { store: dump(s.dataDir, "agent.db"), access: dump(s.dataDir, "owner-access.sqlite") };
+    }
+    assert.equal(made.go.store, made.ts.store, "agent.db");
+    assert.equal(made.go.access, made.ts.access, "owner-access.sqlite");
+  });
 });
