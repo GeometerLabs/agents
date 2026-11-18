@@ -52,7 +52,7 @@ export interface ListingWords {
   };
   // ---- refusals, each a plain line ----
   refusal: {
-    protected: (animal: string) => string; health: string; priceNotInWords: string; full: (max: number) => string; tooManyDrafts: string; tooLong: string; badPrice: string; badQty: string;
+    protected: (animal: string) => string; protectedNote: string; health: string; priceNotInWords: string; full: (max: number) => string; tooManyDrafts: string; tooLong: string; badPrice: string; badQty: string;
     badCategory: string; empty: string; badPlace: string; tooManyPhotos: string; unknown: string; gone: string; claims: string; modelFailed: string;
     photo: { empty: string; too_big: string; not_a_photo: string; unreadable: string; too_large_sides: string; animated: string; day: string };
   };
@@ -80,6 +80,7 @@ const EN: ListingWords = {
     link: "What you have on your page", back: "Back to your shop",
   },
   refusal: {
+    protectedNote: "Protected native animals may not be sold, so that was not added.",
     protected: (a) => `I cannot list that: ${a} are protected animals and may not be sold. Please do not put them on your page.`,
     health: "I cannot write that an animal is healthy, vaccinated or of a pure breed unless you said so yourself. Tell me in your own words if it is true.",
     priceNotInWords: "The price I would write is not the one you said, so I did not make the listing. Tell me the price again.", full: (n) => `You already show ${n} things. Take one off first.`,
@@ -112,6 +113,7 @@ const HI: ListingWords = {
     link: "आपके पेज पर क्या है", back: "अपनी दुकान पर वापस",
   },
   refusal: {
+    protectedNote: "संरक्षित देशी जानवरों को बेचा नहीं जा सकता, इसलिए यह जोड़ा नहीं गया।",
     protected: (a) => `मैं इसे सूची में नहीं डाल सकता: ${a} संरक्षित जानवर हैं और इन्हें बेचा नहीं जा सकता। कृपया इन्हें अपने पेज पर न रखें।`,
     health: "जब तक आपने खुद न कहा हो, मैं नहीं लिख सकता कि जानवर स्वस्थ है, टीका लगा है या शुद्ध नस्ल का है। अगर सच है तो अपने शब्दों में बताइए।",
     priceNotInWords: "मैं जो दाम लिखता वह वह नहीं था जो आपने कहा, इसलिए लिस्टिंग नहीं बनाई। कृपया दाम फिर बताइए।", full: (n) => `आप पहले से ${n} चीज़ें दिखा रहे हैं। पहले कोई एक हटाइए।`,
@@ -144,6 +146,7 @@ const ML: ListingWords = {
     link: "നിങ്ങളുടെ പേജിൽ ഉള്ളത്", back: "നിങ്ങളുടെ കടയിലേക്ക് മടങ്ങുക",
   },
   refusal: {
+    protectedNote: "സംരക്ഷിത നാടൻ ജീവികളെ വിൽക്കാൻ പാടില്ല, അതിനാൽ അത് ചേർത്തില്ല.",
     protected: (a) => `എനിക്ക് ഇത് പട്ടികപ്പെടുത്താൻ കഴിയില്ല: ${a} സംരക്ഷിത ജീവികളാണ്, അവയെ വിൽക്കാൻ പാടില്ല. ദയവായി അവ നിങ്ങളുടെ പേജിൽ ഇടരുത്.`,
     health: "നിങ്ങൾ തന്നെ പറഞ്ഞിട്ടില്ലെങ്കിൽ ഒരു മൃഗം ആരോഗ്യമുള്ളതാണെന്നോ വാക്സിൻ എടുത്തതാണെന്നോ ശുദ്ധ ജാതിയാണെന്നോ എനിക്ക് എഴുതാൻ കഴിയില്ല. സത്യമാണെങ്കിൽ നിങ്ങളുടെ സ്വന്തം വാക്കുകളിൽ പറയുക.",
     priceNotInWords: "ഞാൻ എഴുതുമായിരുന്ന വില നിങ്ങൾ പറഞ്ഞതല്ല, അതിനാൽ ലിസ്റ്റിംഗ് ഉണ്ടാക്കിയില്ല. വില ഒന്നുകൂടി പറയുക.", full: (n) => `നിങ്ങൾ ഇതിനകം ${n} കാര്യങ്ങൾ കാണിക്കുന്നു. ആദ്യം ഒന്ന് മാറ്റുക.`,
@@ -176,6 +179,7 @@ const KN: ListingWords = {
     link: "ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಏನಿದೆ", back: "ನಿಮ್ಮ ಅಂಗಡಿಗೆ ಹಿಂತಿರುಗಿ",
   },
   refusal: {
+    protectedNote: "ಸಂರಕ್ಷಿತ ದೇಸಿ ಪ್ರಾಣಿಗಳನ್ನು ಮಾರಲು ಅನುಮತಿ ಇಲ್ಲ, ಆದ್ದರಿಂದ ಅದನ್ನು ಸೇರಿಸಲಿಲ್ಲ.",
     protected: (a) => `ನಾನು ಇದನ್ನು ಪಟ್ಟಿ ಮಾಡಲಾರೆ: ${a} ಸಂರಕ್ಷಿತ ಪ್ರಾಣಿಗಳು, ಅವನ್ನು ಮಾರಲು ಅನುಮತಿ ಇಲ್ಲ. ದಯವಿಟ್ಟು ಅವನ್ನು ನಿಮ್ಮ ಪುಟದಲ್ಲಿ ಹಾಕಬೇಡಿ.`,
     health: "ನೀವೇ ಹೇಳಿಲ್ಲದಿದ್ದರೆ, ಪ್ರಾಣಿ ಆರೋಗ್ಯವಾಗಿದೆ, ಲಸಿಕೆ ಹಾಕಲಾಗಿದೆ ಅಥವಾ ಶುದ್ಧ ತಳಿಯದು ಎಂದು ನಾನು ಬರೆಯಲಾರೆ. ಸತ್ಯವಾಗಿದ್ದರೆ ನಿಮ್ಮ ಸ್ವಂತ ಮಾತುಗಳಲ್ಲಿ ಹೇಳಿ.",
     priceNotInWords: "ನಾನು ಬರೆಯುತ್ತಿದ್ದ ಬೆಲೆ ನೀವು ಹೇಳಿದ್ದಲ್ಲ, ಆದ್ದರಿಂದ ಲಿಸ್ಟಿಂಗ್ ಮಾಡಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಬೆಲೆಯನ್ನು ಮತ್ತೆ ಹೇಳಿ.", full: (n) => `ನೀವು ಈಗಾಗಲೇ ${n} ವಸ್ತುಗಳನ್ನು ತೋರಿಸುತ್ತಿದ್ದೀರಿ. ಮೊದಲು ಒಂದನ್ನು ತೆಗೆಯಿರಿ.`,
