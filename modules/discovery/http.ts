@@ -87,7 +87,7 @@ export function directoryHandler(deps: DirectoryHttpDeps): (req: IncomingMessage
     const url = new URL(req.url ?? "/", deps.origin);
     const method = req.method ?? "GET";
     const who = visitorOf(req);
-    const path = url.pathname;
+    const path = url.pathname.length > 1 ? url.pathname.replace(/\/+$/u, "") : url.pathname; // "/order/" is "/order"
     if (path === "/healthz" && method === "GET") return send(res, 200, "ok", "text/plain; charset=utf-8");
 
     const nonce = randomBytes(16).toString("base64url");
