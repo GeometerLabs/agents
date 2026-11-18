@@ -18,6 +18,7 @@ import type { AskEntry } from "../../modules/approvals/leave.ts";
 import { OWNER_FILE_BODY, OWNER_FILE_META, newOwnerFileId } from "../../modules/channels/owner-file.ts";
 import { serverPaths } from "./server.ts";
 import { stableJson, writeAtomic } from "./util.ts";
+import { clientDir } from "./client-dir.ts";
 
 /** What the deployer knows about one shop's file, for the panel: never the file, its link or its id. */
 export interface LeaveStatus {
@@ -48,7 +49,7 @@ export async function syncOwnerFiles(o: { dir: string; shops: readonly string[];
   const lines: string[] = [];
   const t = o.now.getTime();
   for (const shop of o.shops) {
-    const client = join(serverPaths(o.dir).generated, "shops", shop, "client");
+    const client = clientDir(o.dir, shop);
     if (!existsSync(client)) continue; // not deployed yet: nothing to hand a file to
     const metaPath = join(client, OWNER_FILE_META);
     const bodyPath = join(client, OWNER_FILE_BODY);

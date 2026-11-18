@@ -69,7 +69,7 @@ export const LISTING_SKILLS: CardSkill[] = [
 ];
 
 /** The skills of a shop of this kind: the two listing skills, then one per operation of its own API (check_items is already named above, so it is not listed twice). */
-export function skillsFor(kind: "bookings" | "orders" | "fees" | "stock"): { skills: CardSkill[]; mcp: boolean } {
+export function skillsFor(kind: "bookings" | "orders" | "fees" | "stock" | "listings"): { skills: CardSkill[]; mcp: boolean } {
   const tools = kind === "bookings" ? TOOLS : kind === "orders" ? ORDER_TOOLS : [];
   return {
     skills: [...LISTING_SKILLS, ...tools.filter((t) => t.name !== "check_items").map((t) => skill(t.name, titleOf(t.name), t.description, [kind], [EXAMPLES[t.name] ?? titleOf(t.name)]))],

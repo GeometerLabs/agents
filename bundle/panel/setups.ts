@@ -19,6 +19,7 @@ import type { Words } from "./words.ts";
 import { readGoLiveCertificate as stockGoLive } from "../../templates/commerce/stock-orders/report/go-live.ts";
 import { writeStockReport } from "../../templates/commerce/stock-orders/report/run.ts";
 import { applyStockBusiness, applyStockRules, buildStockSettings, newStockDraft, runtimeForStock, stockBusinessBody, stockDraftFromShop, stockLimitLines, stockMessageCeiling, stockRulesBody, stockWords, summaryStock } from "./stock.ts";
+import { applyListingsBusiness, applyListingsRules, buildListingsSettings, listingsBusinessBody, listingsDraftFromShop, listingsLimitLines, listingsMessageCeiling, listingsRulesBody, listingsWords, newListingsDraft, runtimeForListings, summaryListings } from "./listings.ts";
 import { feesBusinessBody, feesRulesBody, activityFees, messageCeiling, summaryFees } from "./views-fees.ts";
 import type { Helpers } from "./views-fees.ts";
 import { activityOrders, ordersBusinessBody, ordersMessageCeiling, ordersRulesBody, summaryOrders } from "./views-orders.ts";
@@ -38,6 +39,8 @@ export const REPORTS: Record<string, ReportKind> = {
   fees: { readGoLive: feesGoLive, write: ({ data, ...run }) => writeFeesReport({ ...run, entries: data.entries, dues: data.dues ?? [] }) },
   // Stock orders: a report from the export's purchase orders (Exported.stock), written by its own report (templates/commerce/stock-orders/report/run.ts)
   "stock-orders": { readGoLive: stockGoLive, write: ({ data, ...run }) => writeStockReport({ ...run, entries: data.entries, orders: (data.stock ?? []) as never }) },
+  // a listings-only shop has no monthly report (nothing counts: no bookings, orders or fees); the panel offers none for it (server.ts sets `canMakeReport` false for kind listings, so neither the report nor the papers links are drawn)
+  listings: { readGoLive: () => { throw new Error("A listings-only shop has no go-live certificate."); }, write: () => { throw new Error("A listings-only shop has no monthly report."); } },
   orders: { readGoLive: ordersGoLive, write: ({ data, ...run }) => writeOrdersReport({ ...run, entries: data.entries, orders: data.orders ?? [] }) },
 };
 // Looks up the report writer for a template; an unknown or missing kind is treated as Bookings, the original template, so an old shop still gets its report.
@@ -66,6 +69,14 @@ export interface Setup {
 }
 
 export const SETUPS: Record<string, Setup> = {
+  // a listings-only shop calls nothing: no payments, no calendar, no WhatsApp, and no go-live paper (its kind has no `papers`), so the report below is never made for it
+  listings: {
+    newDraft: newListingsDraft, draftFromShop: listingsDraftFromShop, applyBusiness: applyListingsBusiness, applyRules: applyListingsRules, build: buildListingsSettings,
+    runtime: runtimeForListings, limitLines: listingsLimitLines,
+    titles: (w) => listingsWords(w).steps, businessBody: listingsBusinessBody, rulesBody: listingsRulesBody,
+    pieces: (c, settings) => ({ summary: summaryListings(c, settings), states: {}, messages: listingsMessageCeiling(c, settings, null) }),
+    messages: listingsMessageCeiling,
+  },
   "stock-orders": {
     newDraft: newStockDraft, draftFromShop: stockDraftFromShop, applyBusiness: applyStockBusiness, applyRules: applyStockRules, build: buildStockSettings,
     // a Stock orders shop calls WhatsApp and nothing else: no payments, no calendar

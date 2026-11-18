@@ -504,6 +504,8 @@ export function readShop(dir: string, name: string): ShopFolder {
   const answer = readAnswerFile(serverPaths(dir).fleetAnswer(name));
   const fleetAi = answer?.ai === "buttons" && answer.plan !== null ? "buttons" as const : undefined;
   const fleetModel = answer?.model === "off" && answer.plan !== null ? "off" as const : undefined;
-  const budget = answer?.plan ? budgetFor(answer.plan, inForceList()) : undefined;
+  // a listings-only shop is free and has no plan at fleet: its plan is the fixed id "listings-only", so the caps' budget for it applies once the list that has it is in force
+  const budgetPlan = kind?.shared ? "listings-only" : answer?.plan;
+  const budget = budgetPlan ? budgetFor(budgetPlan, inForceList()) : undefined;
   return { name, settingsText, pinsText, pins, settings, runtime, lock, lockText, ...(fleetAi ? { fleetAi } : {}), ...(fleetModel ? { fleetModel } : {}), ...(budget ? { budget } : {}), preparedBy: by?.name ?? DEFAULT_PREPARED_BY, preparedBySource: by?.source ?? "default", innovator: answer?.innovator === true, problems };
 }

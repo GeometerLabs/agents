@@ -92,7 +92,7 @@ export interface FrontShop {
   /** Item 11f: the shop's page addresses (pages.json), read on every request. Left out: no pages domain and no owner sign-in for this shop. */
   pages?: () => PagesFile | undefined;
   /** Item 11h: the shop's template, which decides its customer side. Left out: Bookings (every shop before item 11h). */
-  kind?: "bookings" | "orders" | "fees" | "stock";
+  kind?: "bookings" | "orders" | "fees" | "stock" | "listings";
   /** Item 11i: the shop's character pictures (character-files.ts characterReader over its folder), read on every request. Left out: the shop shows no face. */
   character?: () => CharacterFiles | undefined;
 }
@@ -312,7 +312,9 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     // item 11f: through the front door, every address is written under the pages domain, but only for the slug this shop's own pages file names
     const pages = found.pages?.();
     const door = req.headers[DOOR_HEADER];
-    const doorShop: FrontShop = typeof door === "string" && pages?.slug !== undefined && pages.url !== undefined && door === pages.slug ? { ...found, publicUrl: pages.url } : found;
+    const viaDoorShop: FrontShop = typeof door === "string" && pages?.slug !== undefined && pages.url !== undefined && door === pages.slug ? { ...found, publicUrl: pages.url } : found;
+    // a listings-only shop has no chat (18 Nov 2026): the backend never offers one, so no page, contact bar or feed points at it
+    const doorShop: FrontShop = found.kind === "listings" ? { ...viaDoorShop, backend: { ...viaDoorShop.backend, chat: undefined } } : viaDoorShop;
     // item 11i: every offer a page is drawn from carries the shop's public face (withFace)
     const withPicture: FrontShop = found.character ? { ...doorShop, backend: withFace(doorShop.backend, found.character) } : doorShop;
     // batch 5: and the shop's phone and map link (withContact)
@@ -338,9 +340,12 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     if (picture && picture[2] && (picture[1] === "now" || picture[3] !== "svg")) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
     if (picture) return pictureRoute(req, res, found, picture[1] as Face | "now", picture[3] as PictureFormat, method, address, picture[2] !== undefined);
 
+    // Listings-only shops (18 Nov 2026) have no chat: there is no agent behind it to answer. "Ask about this" falls back to the shop's phone (storefront.ts), and the chat's address is not
+    // offered on any page (the contact bar's `chat` comes from `backend.chat`, which is taken away where `doorShop` is made).
+    if (shop.kind === "listings" && (rest === "/chat" || rest.startsWith("/chat/"))) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
     // W1: the chat on the shop's page, for every kind of shop, before the shop's own customer routes (an Orders or Fees shop would not otherwise reach it).
     // `viaDoor`: the page is served on the Streetlist pages domain, the only place that shows the Streetlist mark.
-    if (rest === "/chat" || rest.startsWith("/chat/")) return chatRoute(kit, { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}), viaDoor: doorShop !== found });
+    if (rest === "/chat" || rest.startsWith("/chat/")) return chatRoute(kit, { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}), viaDoor: viaDoorShop !== found });
 
     // block S: the storefront ("What we have"), its open feed and its photos, for every kind of shop (a Stock orders shop shows none by default, and these then answer not-found)
     if (rest === "/shop" || rest === "/listings.json" || rest === "/agent-card.json" || rest.startsWith("/listings/photo/")) return storefrontRoute(kit, { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}) });
@@ -349,8 +354,10 @@ export function frontHandler(options: FrontOptions): (req: IncomingMessage, res:
     const ownerPath = /^\/o\/[^/]+(\/.*)?$/u.test(rest) || rest === "/owner" || rest.startsWith("/owner/");
     // Stock orders talks to suppliers on WhatsApp and has no customers: only the owner's page (and the character's pictures above) is here, never a booking page, API or MCP
     // block S phase B2: a shop with no booking or order API still answers "do you still have these?" at /api/v1/check (and nothing else under /api): it falls through to the API block below
-    const checkOnly = rest === "/api/v1/check" && (shop.kind === "stock" || shop.kind === "fees");
-    if (shop.kind === "stock" && !ownerPath && rest !== "/qr.svg" && !checkOnly) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
+    const checkOnly = rest === "/api/v1/check" && (shop.kind === "stock" || shop.kind === "fees" || shop.kind === "listings");
+    // a listings-only shop's own address (its page link, its QR code) is its storefront: "What we have"
+    if (shop.kind === "listings" && rest === "/") return redirect(res, `${shop.publicUrl}/shop`);
+    if ((shop.kind === "stock" || shop.kind === "listings") && !ownerPath && rest !== "/qr.svg" && !checkOnly) return sendHtml(res, 404, "<!doctype html><p>There is nothing here.</p>");
     if ((shop.kind === "orders" || shop.kind === "fees") && !ownerPath && rest !== "/qr.svg" && !checkOnly) {
       const args: RouteArgs = { req, res, url, shop, name, rest, method, address, ...(pages ? { pages } : {}) };
       return shop.kind === "orders" ? orderRoute(kit, args, orderOpsOf(name, shop)) : feeRoute(kit, args);

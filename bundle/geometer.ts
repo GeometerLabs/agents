@@ -292,7 +292,8 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
         const payee = str("payee");
         const paymentFlag = str("payment");
         if (str("settings") !== undefined && (upiId !== undefined || payee !== undefined || paymentFlag !== undefined)) throw new Error("The settings file you gave says how customers pay (\"payment\"), so --upi-id, --payee and --payment mean nothing here. Change the file instead.");
-        if (str("settings") === undefined) {
+        // a listings-only shop takes no money, so nothing here asks how it is paid
+        if (str("settings") === undefined && !kind.shared) {
           if (paymentFlag !== undefined && paymentFlag !== "razorpay" && paymentFlag !== "upi") throw new Error(`--payment ${paymentFlag} is not a payment module I know. Leave it out for UPI (the default), or say --payment razorpay for a shop with its own Razorpay account.`);
           if (paymentFlag === "razorpay" && (upiId !== undefined || payee !== undefined)) throw new Error("A shop on its own Razorpay account has no UPI ID here: leave out --upi-id and --payee, or leave out --payment razorpay.");
           if (paymentFlag !== "razorpay" && (upiId === undefined || payee === undefined)) throw new Error("Say how this shop's customers pay. UPI is the default and needs no gateway account: --upi-id <the shop's own UPI ID, for example glowsalon@okicici> --payee \"<the name customers see, for example Glow Salon>\". A shop with its own Razorpay account says --payment razorpay instead.");
@@ -318,7 +319,7 @@ export async function main(argv: string[], overrides: Partial<Context> = {}): Pr
         if (numberId !== undefined && !/^\d{6,20}$/u.test(numberId)) throw new Error("--whatsapp-number-id must be the shop's WhatsApp phone number id: digits only.");
         fromTemplate = {
           settings: settingsText.endsWith("\n") ? settingsText : `${settingsText}\n`,
-          runtime: { mode: "live", tickSeconds: 30, services: { ...(guardsOf(kind, checked.settings).includes("razorpay") ? { payments: {} } : {}), ...(guardsOf(kind, checked.settings).includes("calendar") ? { calendar: calendarId !== undefined ? { calendarId } : {} } : {}), messaging: numberId !== undefined ? { phoneNumberId: numberId } : {}, timeoutMs: 20_000 } },
+          runtime: kind.shared ? { mode: "live", tickSeconds: 30, services: {} } : { mode: "live", tickSeconds: 30, services: { ...(guardsOf(kind, checked.settings).includes("razorpay") ? { payments: {} } : {}), ...(guardsOf(kind, checked.settings).includes("calendar") ? { calendar: calendarId !== undefined ? { calendarId } : {} } : {}), messaging: numberId !== undefined ? { phoneNumberId: numberId } : {}, timeoutMs: 20_000 } },
           lock: `${found.id}@${found.version}\n`,
           where: str("settings") ? "the settings file you gave" : `the ${found.id} template's example (${found.settingsExample}), which is somebody else's made-up centre: change it to the real one`,
         };

@@ -108,6 +108,8 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   const saved = state ? (JSON.parse(state.snapshot) as { bookings?: [string, Record<string, unknown>][]; dues?: [string, Record<string, unknown>][]; orders?: [string, Record<string, unknown>][] }) : {};
   // Stock orders (17 Nov 2026) also keeps an `orders` map (its purchase orders), told apart by its own counter `seq` (an Orders store has `nextOrder`): it must never be exported as Orders'
   const isStock = saved.orders !== undefined && (saved as { seq?: unknown; nextOrder?: unknown }).seq !== undefined && (saved as { nextOrder?: unknown }).nextOrder === undefined;
+  // A listings-only shop (18 Nov 2026) has a saved state (its assistant and AI counts) and none of the three maps: it has no cases, so no cases file is written for it.
+  const isListingsOnly = state !== undefined && saved.bookings === undefined && saved.dues === undefined && saved.orders === undefined;
   const isOrders = saved.orders !== undefined && !isStock;
   const isFees = !isOrders && !isStock && saved.dues !== undefined && saved.bookings === undefined;
   const casesFile = isStock ? "purchase-orders.json" : isOrders ? "orders.json" : isFees ? "dues.json" : "bookings.json";
@@ -139,7 +141,7 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
   const digests = raw.map((e) => String(e.inputsDigest ?? ""));
   const ids = raw.map((e) => (e.refs as { messageId?: string } | undefined)?.messageId).filter((m): m is string => typeof m === "string");
   const form: PersonForm = { schema: 1, form: PERSON_FORM, keyId: keyIdOf(personKey), inputs: { keyed: digests.filter((d) => d.startsWith("k-")).length, older: digests.filter((d) => !d.startsWith("k-")).length }, messageIds: { fingerprinted: ids.filter((m) => /^m-[0-9a-f]{12}$/u.test(m)).length, older: ids.filter((m) => !/^m-[0-9a-f]{12}$/u.test(m)).length } };
-  for (const [file, value] of [["record.json", entries], [casesFile, cases], ["person-form.json", form], ...(ledger ? [["ledger.json", ledger] as const] : [])] as const) {
+  for (const [file, value] of [["record.json", entries], ...(isListingsOnly ? [] : [[casesFile, cases] as const]), ["person-form.json", form], ...(ledger ? [["ledger.json", ledger] as const] : [])] as const) {
     const tmp = join(shop.out, `.${file}.tmp`);
     writeFileSync(tmp, JSON.stringify(value), { mode: 0o644 });
     renameSync(tmp, join(shop.out, file));
@@ -173,8 +175,8 @@ export function exportShop(shop: ExportJob["shops"][number], rates: UsageRates =
     renameSync(tmp, join(shop.out, "stock.json"));
   }
   let open: Record<string, number> | undefined;
-  try { open = countsByKind(obligations.detect({ template: isStock ? "stock-orders" : isOrders ? "orders" : isFees ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }
-  return { name: shop.name, ok: true, entries: entries.length, ...(isOrders || isStock ? { orders: cases.length } : isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}) };
+  if (!isListingsOnly) try { open = countsByKind(obligations.detect({ template: isStock ? "stock-orders" : isOrders ? "orders" : isFees ? "fees" : "bookings", entries: entries as unknown as RecordEntry[], cases: cases as unknown as CaseLike[], nowMs: Date.now(), options: DEFAULT_OPTIONS }).found); } catch { open = undefined; }
+  return { name: shop.name, ok: true, entries: entries.length, ...(isListingsOnly ? {} : isOrders || isStock ? { orders: cases.length } : isFees ? { dues: cases.length } : { bookings: cases.length }), usage, ...(open ? { obligations: open } : {}), ...(ledgerSaid ? { ledger: ledgerSaid } : {}) };
 }
 
 if (import.meta.main) {

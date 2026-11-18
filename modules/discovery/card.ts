@@ -21,6 +21,8 @@ export interface DirectoryCardOptions {
   /** What the card says it covers ("Kerala"). Optional. */
   area?: string;
   key: SigningKey;
+  /** The buyer's assistant is on (an approved budget): the card lists the `ask` skill. Off: the card is as it was. */
+  assistant?: boolean;
 }
 
 const JSON_ONLY = ["application/json"];
@@ -44,6 +46,7 @@ export function directoryCard(o: DirectoryCardOptions): Record<string, unknown> 
       { id: "search_listings", name: "Search what local shops have", description: `Words, a category (${CATEGORIES.join(", ")}), the buyer's map point or town and a radius in; listings in the fair order out, each confirmed by its shop where the shop answers. Also at GET /search.`, tags: ["search", "local shops", "listings"], examples: ["Persian kitten near Thrissur", "second-hand bicycle within 10 km of 10.52, 76.21"], inputModes: JSON_ONLY, outputModes: JSON_ONLY },
       { id: "get_listing", name: "One listing, confirmed", description: "One listing by its shop's page address and id, with its words in every language and the shop's own confirmation that it is still there.", tags: ["listing", "availability"], examples: ["Is l-3 at https://streetlist.in/rani-pets/ still there?"], inputModes: JSON_ONLY, outputModes: JSON_ONLY },
       { id: "shop_page", name: "One shop", description: "A shop's name, trade, town, chat address and the listings it has.", tags: ["shop"], examples: ["Tell me about https://streetlist.in/rani-pets/"], inputModes: JSON_ONLY, outputModes: JSON_ONLY },
+      ...(o.assistant ? [{ id: "ask", name: "Ask in the buyer's own words", description: "The buyer's words in (English, Hindi, Malayalam, Kannada or Latin letters); a typed search (words, category, place, radius, highest price), the listings in the fair order and a short line in the buyer's language out. Phone numbers, names and addresses are removed before any model sees the words, and a shop never receives them. Within a daily and monthly cap; over it, the words are searched as given. Also by POST /search/ask (a form, so the words are not in an address).", tags: ["search", "natural language", "local shops"], examples: ["Persian kitten near Thrissur?", "cheap second-hand bicycle within 5 km"], inputModes: JSON_ONLY, outputModes: JSON_ONLY }] : []),
     ],
   };
   return signCard(card, o.key);

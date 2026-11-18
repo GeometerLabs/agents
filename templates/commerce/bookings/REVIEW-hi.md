@@ -695,6 +695,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `licence.trial` | ट्रायल लाइसेंस: आख़िरी दिन 10 Dec 2026 है। अगले दिन से, दुकान के प्लान पर आने तक नई बुकिंग रुकी रहेगी। | Trial licence: the last day is 10 Dec 2026. From the next day, new bookings pause until the shop is on a plan. |  |
 | `setup.title` | दुकान सेट करें | Set up a shop |  |
 | `setup.chooseTemplate` | यह क्या काम करेगा? | What will it do? |  |
+| `setup.templateNames.listings` | सिर्फ़ दिखाएँ कि दुकान में क्या है (मुफ़्त) | Only show what the shop has (free) |  |
 | `setup.templateNames.stock-orders` | सप्लायर से स्टॉक मँगाना | Restocking from suppliers |  |
 | `setup.templateNames.bookings` | जमा राशि के साथ बुकिंग | Bookings with a deposit |  |
 | `setup.templateNames.fees` | कक्षाओं की फीस वसूली | Fee collection for classes |  |
@@ -1653,6 +1654,33 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `stock.panel.shop.states.send_unknown` | शायद भेजा गया | Maybe sent |  |
 | `stock.panel.shop.states.supplier_declined` | सप्लायर नहीं दे सकता | Supplier cannot supply |  |
 | `stock.panel.shop.states.cancelled` | रद्द | Cancelled |  |
+| `listingsShop.panel.steps.business` | दुकान | The shop |  |
+| `listingsShop.panel.steps.rules` | दुकान | The shop |  |
+| `listingsShop.panel.business.name` | दुकान का नाम | Shop name |  |
+| `listingsShop.panel.business.town` | शहर या गाँव | Town or village |  |
+| `listingsShop.panel.business.townHelp` | जहाँ लोग दुकान को ढूँढेंगे, जैसे थ्रिस्सूर। | Where people will find the shop, for example Thrissur. |  |
+| `listingsShop.panel.business.pincode` | पिन कोड (अगर पता हो) | Pincode (if you know it) |  |
+| `listingsShop.panel.business.pincodeHelp` | छह अंक। इससे आस-पास के लोग दुकान ढूँढ पाते हैं। | Six digits. It helps people nearby find the shop. |  |
+| `listingsShop.panel.business.trade` | दुकान क्या बेचती है, कुछ शब्दों में | What the shop sells, in a few words |  |
+| `listingsShop.panel.business.tradeHelp` | अपने शब्दों में, जैसे पुरानी साइकिलें। यह सिर्फ़ आपके और दुकान के पेज के लिए एक नाम है। | In your own words, for example second-hand cycles. It is only a label for you and the shop's page. |  |
+| `listingsShop.panel.languages.ownerNumberHelp` | मालिक का फ़ोन नंबर देश कोड के साथ, जैसे +91 98765 43210। आप इसे खाली छोड़ सकते हैं: तब मालिक पहली बार उस एक-बार वाले कोड से साइन-इन करता है जो आप उसे दुकान के पेज पर दिखाते हैं। | The owner's phone number with the country code, for example +91 98765 43210. You may leave it empty: the owner then signs in the first time with a one-use code that you show them on the shop's page. |  |
+| `listingsShop.panel.problems.townBad` | शहर या गाँव लिखिए, एक छोटी लाइन। | Write the town or village, one short line. |  |
+| `listingsShop.panel.problems.pincodeBad` | पिन कोड छह अंकों का होता है, 0 से शुरू नहीं होता। आप इसे खाली छोड़ सकते हैं। | The pincode is six digits, not starting with 0. You may leave it empty. |  |
+| `listingsShop.panel.problems.tradeBad` | दुकान क्या बेचती है, कुछ शब्दों में लिखिए, एक छोटी लाइन। | Write what the shop sells in a few words, one short line. |  |
+| `listingsShop.panel.shop.heading` | यह दुकान क्या दिखाती है | What this shop shows |  |
+| `listingsShop.panel.shop.town` | शहर | Town |  |
+| `listingsShop.panel.shop.trade` | बेचती है | Sells |  |
+| `listingsShop.panel.shop.free` | मुफ़्त: न पैसे लेती है, न WhatsApp संदेश भेजती है। | Free: it takes no money and sends no WhatsApp messages. |  |
+| `listingsShop.panel.checks.lines.1` | दुकान अपने पेज पर दिखाती है कि उसके पास क्या है। यह मुफ़्त है: न बुकिंग, न ऑर्डर, न फ़ीस, न पैसे का हिसाब, न WhatsApp संदेश। | The shop shows what it has on its own page. It is free: it takes no bookings, orders or fees, holds no money and sends no WhatsApp messages. |  |
+| `listingsShop.panel.checks.lines.2` | बाक़ी सब मालिक अपने ऐप में करता है: वह बताता है कि क्या है, असिस्टेंट लिस्टिंग लिखता है, और वह एक टैप से उसे दिखा देता है। असिस्टेंट पूछता है "अभी भी है?" और मालिक हाँ या बिक गया कहता है। | The owner does the rest in their own app: they say what they have, the assistant writes the listing, and they tap to show it. The assistant asks "Still have it?" and the owner answers Yes or Sold. |  |
+| `listingsShop.panel.checks.lines.3` | जब तक मालिक "मेरी दुकान Streetlist और सर्च में दिखाएँ" चालू नहीं करता, कुछ भी Streetlist या सर्च में नहीं दिखता। | Nothing is shown on Streetlist or in search until the owner switches "Show my shop on Streetlist and in search" on. |  |
+| `listingsShop.panel.checks.lines.4` | असिस्टेंट के मॉडल का ख़र्च Geometer उठाता है, हर महीने एक छोटी सीमा तक। | Geometer pays for the assistant's model use, up to a small limit each month. |  |
+| `listingsShop.panel.checks.saveFirst` | इसे देखिए, फिर दुकान सहेजिए। | Check this, then save the shop. |  |
+| `listingsShop.panel.checks.saved` | सहेज लिया। सर्वर एक मिनट के अंदर दुकान तैयार कर देता है। | Saved. The server sets the shop up within a minute. |  |
+| `listingsShop.panel.checks.waiting` | सर्वर ने अभी यह दुकान तैयार नहीं की है। एक मिनट बाद इस पेज पर लौटिए। | The server has not set this shop up yet. Come back to this page in a minute. |  |
+| `listingsShop.panel.checks.deployed` | दुकान सर्वर पर तैयार है। | The shop is set up on the server. |  |
+| `listingsShop.panel.checks.next` | अब मालिक को उसका पहला साइन-इन कोड दीजिए। यह दुकान के पेज पर बनता है, एक बार और कुछ ही मिनट चलता है, और मालिक इसे अपने फ़ोन पर खोलता है। | Next: give the owner their first sign-in code. It is made on the shop's page, works once and for a few minutes, and the owner opens it on their own phone. |  |
+| `listingsShop.panel.checks.openShop` | दुकान का पेज खोलें | Open the shop's page |  |
 | `classes.heading` | कक्षाएँ | Classes |  |
 | `classes.label` | कक्षाओं का समय | Class times |  |
 | `classes.help` | अगर केंद्र में कक्षा का तय समय नहीं है तो इसे खाली छोड़ें। हर लाइन में एक कक्षा: बैच, दिन, शुरू होने का समय, कितने मिनट। जैसे: कक्षा 8, Mon, 16:00, 45। दिन ऐसे लिखें: Mon, Tue, Wed, Thu, Fri, Sat, Sun। | Leave this empty if the centre has no set class times. One class on each line: the batch, the day, the start time, how many minutes. Example: Class 8, Mon, 16:00, 45. Write the day as Mon, Tue, Wed, Thu, Fri, Sat or Sun. |  |
@@ -1707,6 +1735,7 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `preset.salon.prefill.services.2.names` | फेशियल | Facial |  |
 | `preset.salon.prefill.services.3.names` | हेयर स्पा | Hair spa |  |
 | `preset.salon.prefill.services.4.names` | मैनिक्योर | Manicure |  |
+| `preset.shows-only.name` | सिर्फ़ दिखाएँ कि दुकान में क्या है (मुफ़्त) | Only show what the shop has (free) |  |
 | `preset.sweets.name` | मिठाई और नमकीन, पहले से ऑर्डर | Sweets and snacks, pre-orders |  |
 | `preset.sweets.prefill.menu.1.names` | लड्डू 500 ग्राम | Laddu 500 g |  |
 | `preset.sweets.prefill.menu.2.names` | हलवा 500 ग्राम | Halwa 500 g |  |
@@ -1928,4 +1957,9 @@ What to look for first: (1) is each line something a shop owner or a young Opera
 | `directory.foot` | स्थानीय दुकानों की एक सूची। | A directory of local shops. |  |
 | `directory.assistants` | एआई सहायकों के लिए | For AI assistants |  |
 | `directory.choices` | और विकल्प | More choices |  |
+| `directory.askLabel` | अपने शब्दों में पूछें | Ask in your own words |  |
+| `directory.askPlaceholder` | थ्रिस्सूर के पास फ़ारसी बिल्ली का बच्चा? | Persian kitten near Thrissur? |  |
+| `directory.askButton` | पूछें | Ask |  |
+| `directory.askPlain` | आज आपके शब्द जैसे लिखे हैं वैसे ही खोजे जा रहे हैं। | Searching your words as typed today. |  |
+| `directory.askLine` | Thrissur के पास 3 दुकानों में “Persian kitten” है। सबसे पास वाली 1.4 किमी दूर है। | 3 shops near Thrissur have “Persian kitten”. The nearest is 1.4 km away. |  |
 

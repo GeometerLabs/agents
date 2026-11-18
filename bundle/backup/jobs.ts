@@ -16,7 +16,7 @@
 // agent is kept in state/snapshots/<name>.json for the drill.
 import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { adminCall, compose, ops, renewRelayCredential } from "../deploy.ts";
+import { adminCall, compose, ops, renewRelayCredential, writeServer } from "../deploy.ts";
 import type { Context } from "../deploy.ts";
 import { deployAgent } from "../agent/deploy.ts";
 import { readAgent } from "../agent/folder.ts";
@@ -27,13 +27,16 @@ import { keyedDigest } from "../../modules/record/fingerprint.ts";
 import { parseKey } from "../../modules/record/key-file.ts";
 import { RELAY_STATE_VOLUME, modulesOf, nodeUser } from "../generate/compose.ts";
 import { OWNER_MARKED_KINDS } from "../generate/guards.ts";
-import { names } from "../generate/shop.ts";
+import { dataVolumeOf, dbPathOf, names, secretsHolderOf } from "../generate/shop.ts";
+import { isShared } from "../lib/kinds.ts";
+import { letGoShared } from "../lib/listings-move.ts";
 import { appliedPathwayDir } from "../lib/pathways.ts";
 import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
 import { loadServer, serverPaths } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
 import { PERSON_KEY, ensureAgentLabelKey, ensurePersonKey, ensureShopPersonKeys, keyIdOf, personKeyFile, readSecretFile, restoreAgentKey, restorePersonKey, secretFile } from "../lib/secrets.ts";
 import { loadState, saveState } from "../lib/state.ts";
+import type { State } from "../lib/state.ts";
 import { updateStatus } from "../lib/status.ts";
 import type { UsageTotals } from "../lib/usage.ts";
 import { ensureDir, writeAtomic } from "../lib/util.ts";
@@ -46,6 +49,15 @@ import type { RecordFacts, Seal, ShopSnapshot } from "./snapshot.ts";
 // The compose project name, so the job containers find the same named volumes the running server uses.
 export const project = (server: ServerConfig) => `geometer-${server.id.replace(/_/gu, "-")}`;
 const volume = (server: ServerConfig, v: string) => `${project(server)}_${v}`;
+/** Does this shop run on the shared process (a listings-only shop)? Its data is one folder of the shared volume, not a volume of its own. */
+export const sharedOf = (state: State, shop: string): boolean => isShared(state.shops[shop]?.applied?.pathway.split("@")[0]);
+/** Where the shop's database is, in a job container that has mounted its data volume at `/v/<volume>`. */
+export const dbOf = (state: State, shop: string): string => dbPathOf(`/v/${dataVolumeOf(shop, sharedOf(state, shop))}`, shop, sharedOf(state, shop));
+/** The `docker run` arguments that mount the data volumes of these shops, each volume ONCE (the shared one holds many shops) at `/v/<volume>`. */
+export function dataMounts(server: ServerConfig, state: State, shops: readonly string[]): string[] {
+  const vols = [...new Set(shops.map((n) => dataVolumeOf(n, sharedOf(state, n))))];
+  return vols.flatMap((v) => ["-v", `${volume(server, v)}:/v/${v}`]);
+}
 const stampOf = (d: Date) => d.toISOString().replace(/[-:]|\.\d{3}/gu, "");
 const GUARD_BACKUPS = "/var/lib/geo-guard/backups";
 const NO_BACKUP = "No backup is set up: `geometer init` was not given a snapshot place and a key (see bundle/README.md, 'Backups').";
@@ -115,10 +127,11 @@ export async function runBackup(ctx: Context): Promise<{ ok: boolean; lines: str
   const jobFile = join(work, `snapshot-${stamp}.json`);
   for (const [name] of [...shops, ...agents]) ensurePersonKey(ctx.dir, name); // B69: the key goes in the snapshot's manifest, so a restored shop or agent can still match its own people (`restore` puts it back)
   writeFileSync(jobFile, JSON.stringify({ stamp, keepDays: server.backup.snapshots.keepDays ?? 30, recipient: server.backup.ageRecipient, target: server.backup.snapshots,
-    shops: shops.map(([shop, s]) => ({ name: shop, runtimeDb: `/v/${names.dataVolume(shop)}/data/agent.db`, personKeyFile: `/run/person-keys/${shop}`, guards: Object.values(s.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(shop, g.kind as "razorpay")}/backups/${stamp}` })) })),
+    shops: shops.map(([shop, s]) => ({ name: shop, runtimeDb: dbOf(state, shop), personKeyFile: `/run/person-keys/${shop}`, guards: Object.values(s.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(shop, g.kind as "razorpay")}/backups/${stamp}` })) })),
     agents: agents.map(([agent, a]) => ({ name: agent, recordFile: `/run/records/${agent}.json`, personKeyFile: `/run/person-keys/${agent}`, ...(hasDesk(a) ? { deskFile: deskPath(agent) } : {}), guards: Object.values(a.applied!.guards).map((g) => ({ kind: g.kind, dir: `/v/${names.stateVolume(agent, g.kind as "razorpay")}/backups/${stamp}` })) })) }), { mode: 0o644 });
   const mounts = [
-    ...shops.flatMap(([shop, s]) => ["-v", `${volume(server, names.dataVolume(shop))}:/v/${names.dataVolume(shop)}`, ...guardMounts(server, shop, Object.values(s.applied!.guards))]),
+    ...dataMounts(server, state, shops.map(([shop]) => shop)),
+    ...shops.flatMap(([shop, s]) => guardMounts(server, shop, Object.values(s.applied!.guards))),
     ...agents.flatMap(([agent, a]) => guardMounts(server, agent, Object.values(a.applied!.guards))),
     ...(agents.length > 0 ? recordsMount(ctx.dir) : []),
     ...(agents.some(([, a]) => hasDesk(a)) ? ["-v", `${volume(server, RELAY_STATE_VOLUME)}:${RELAY_MOUNT}:ro`] : []),
@@ -153,9 +166,9 @@ export async function runExports(ctx: Context): Promise<{ ok: boolean; lines: st
   ensureDir(work);
   const jobFile = join(work, `export-${stampOf(ctx.now())}.json`);
   // B69: every shop has its fingerprint key before the job starts (a shop made before B69 gets one now, and the panel's copy with it). The job file only names the file: the key itself is mounted read-only, for this job only.
-  for (const n of shops) ensureShopPersonKeys(ctx.dir, n, names.runtime(n), server.panel.enabled);
-  writeFileSync(jobFile, JSON.stringify({ shops: shops.map((n) => ({ name: n, db: `/v/${names.dataVolume(n)}/data/agent.db`, out: `/out/${n}`, personKeyFile: `/run/person-keys/${n}` })) }), { mode: 0o644 });
-  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...shops.flatMap((n) => ["-v", `${volume(server, names.dataVolume(n))}:/v/${names.dataVolume(n)}`]), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
+  for (const n of shops) ensureShopPersonKeys(ctx.dir, n, secretsHolderOf(n, sharedOf(state, n)), server.panel.enabled);
+  writeFileSync(jobFile, JSON.stringify({ shops: shops.map((n) => ({ name: n, db: dbOf(state, n), out: `/out/${n}`, personKeyFile: `/run/person-keys/${n}` })) }), { mode: 0o644 });
+  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...dataMounts(server, state, shops), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
   rmSync(jobFile, { force: true });
   const out = lastJson(r.stdout) as { results?: { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; orders?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string }[] } | undefined;
   if (r.code !== 0 || !out?.results) return { ok: false, lines: [`The export job failed: ${r.stderr.trim().split("\n").slice(-2).join(" | ") || `exit ${r.code}`}`] };
@@ -192,10 +205,10 @@ export async function runDrill(ctx: Context): Promise<{ ok: boolean; lines: stri
     const keyId = (name: string) => { const k = readSecretFile(personKeyFile(ctx.dir, name)); return k && PERSON_KEY.test(k) ? { keyId: keyIdOf(k) } : {}; };
     writeFileSync(jobFile, JSON.stringify({ target: server.backup.snapshots, shops: shops.map((s) => (agentNames.has(s)
       ? { name: s, live: `/run/records/${s}.json`, ownAgent: true, seal: seals.get(s), ...keyId(s) }
-      : { name: s, live: `/v/${names.dataVolume(s)}/data/agent.db`, seal: seals.get(s), published: publishedOf(ctx.dir, s), ...keyId(s) })) }), { mode: 0o644 });
+      : { name: s, live: dbOf(state, s), seal: seals.get(s), published: publishedOf(ctx.dir, s), ...keyId(s) })) }), { mode: 0o644 });
     const place = snapshotPlace(ctx, server);
     const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, place.network), "-v", `${jobFile}:/job/job.json:ro`, ...place.mounts,
-      ...shops.filter((s) => !agentNames.has(s)).flatMap((s) => ["-v", `${volume(server, names.dataVolume(s))}:/v/${names.dataVolume(s)}`]), ...(shops.some((s) => agentNames.has(s)) ? recordsMount(ctx.dir) : []),
+      ...dataMounts(server, state, shops.filter((s) => !agentNames.has(s))), ...(shops.some((s) => agentNames.has(s)) ? recordsMount(ctx.dir) : []),
       server.appImage, "node", "/app/bundle/backup/drill-check.ts", "/job/job.json"], { timeoutMs: 600_000 });
     const j = lastJson(r.stdout) as { results?: DrillResult[] } | undefined;
     verdicts = j?.results ?? shops.map((s) => ({ name: s, ok: false, detail: `the drill did not run: ${r.stderr.trim().split("\n").slice(-2).join(" | ").slice(0, 200) || `exit ${r.code}`}` }));
@@ -233,7 +246,11 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
   if (!existsSync(join(modulesOf(pinned), "runtime", "restored.ts"))) throw new Error(`${shop} runs ${applied.pathway}, whose runtime does not know a restore: it would give new bookings ids that were used after the snapshot, and could take another customer's payment link for its own. Move ${shop} to a version from 9 Nov 2026 or later first (geometer update --shops ${shop}), then restore. Nothing was touched.`);
   const stamp = stampOf(ctx.now());
   const work = join(serverPaths(ctx.dir).state, "work", `restore-${shop}-${stamp}`);
-  const dataVolume = volume(server, names.dataVolume(shop));
+  // a listings-only shop's data is one folder of the shared volume; the process is not stopped (it holds other shops): THIS shop is let go, and put back by the deploy's files after
+  const shared = sharedOf(state, shop);
+  const dataVolume = volume(server, dataVolumeOf(shop, shared));
+  const at = shared ? "/data/all" : `/data/${shop}`; // where the volume is mounted in the job container
+  const folder = shared ? `/data/all/${shop}` : at; // the shop's own folder inside it: <folder>/data/agent.db
   let got: { stamp: string; record: RecordFacts };
   let keyNote = "";
   let ownerNote = "";
@@ -252,14 +269,18 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
     snapshotKey = existsSync(keyFile) ? readFileSync(keyFile, "utf8").trim() : undefined;
     if (snapshotKey !== undefined && !PERSON_KEY.test(snapshotKey)) throw new Error("No snapshot was restored; the shop was not touched and is still running. The fingerprint key in this snapshot is not a key.");
     // 2. with the runtime stopped, put it in place as the runtime's own user; the old file is kept, and restored.json tells the runtime it was restored
-    await compose(ctx, ["stop", names.runtime(shop)]);
-    const swap = await ctx.runner.run(ctx.docker, ["run", "--rm", "--user", "1000:1000", "--network", "none", "-v", `${work}/files:/in:ro`, "-v", `${dataVolume}:/data/${shop}`, "busybox:1.37.0", "sh", "-c",
-      `cd /data/${shop}/data && cp /in/agent.db agent.db.restoring && (mv agent.db agent.db.before-restore-${stamp} 2>/dev/null; mv agent.db-wal agent.db.before-restore-${stamp}-wal 2>/dev/null; true) && rm -f agent.db-shm && mv agent.db.restoring agent.db && cp /in/${RESTORE_NOTE} ${RESTORE_NOTE}`]);
+    if (shared) {
+      const kept = new Set(Object.entries(state.shops).filter(([n, x]) => n !== shop && x.applied && sharedOf(state, n)).map(([n]) => n));
+      if (!(await letGoShared(ctx, shop, { keep: kept }))) throw new Error(`${shop} was not restored: the shared process still holds it after a minute, and a database that is open is not replaced. Nothing was changed.`);
+    } else await compose(ctx, ["stop", names.runtime(shop)]);
+    const swap = await ctx.runner.run(ctx.docker, ["run", "--rm", "--user", "1000:1000", "--network", "none", "-v", `${work}/files:/in:ro`, "-v", `${dataVolume}:${at}`, "busybox:1.37.0", "sh", "-c",
+      `cd ${folder}/data && cp /in/agent.db agent.db.restoring && (mv agent.db agent.db.before-restore-${stamp} 2>/dev/null; mv agent.db-wal agent.db.before-restore-${stamp}-wal 2>/dev/null; true) && rm -f agent.db-shm && mv agent.db.restoring agent.db && cp /in/${RESTORE_NOTE} ${RESTORE_NOTE}`]);
     // B69: the snapshot's fingerprint key goes back before the runtime starts, so the shop can match the people already in its record
-    if (swap.code === 0) keyNote = keyPutBack(ctx.dir, shop, snapshotKey, server.panel.enabled, stamp);
+    if (swap.code === 0) keyNote = keyPutBack(ctx.dir, shop, snapshotKey, server.panel.enabled, stamp, shared);
     // the owner's passkeys and alert subscriptions (owner-keep.ts): files of their own beside agent.db, merged in while the runtime is still stopped, as the runtime's own user
-    if (swap.code === 0 && out.ownerKeep) ownerNote = await ownerKeepPutBack(ctx, server, shop, work);
-    await compose(ctx, ["start", names.runtime(shop)]);
+    if (swap.code === 0 && out.ownerKeep) ownerNote = await ownerKeepPutBack(ctx, server, shop, work, shared);
+    // the shop's own container starts again; a listings-only shop's folder is written back, and the shared process, which looks every few seconds, starts it
+    if (shared) writeServer(ctx, server, loadState(ctx.dir)); else await compose(ctx, ["start", names.runtime(shop)]);
     if (swap.code !== 0) throw new Error(`The restored file could not be put in place: ${swap.stderr.trim().slice(0, 200)}`);
   } finally { rmSync(work, { recursive: true, force: true }); }
   const published = lastFingerprint(ctx.dir, shop);
@@ -273,11 +294,11 @@ export async function restoreShop(ctx: Context, shop: string, o: { at?: string; 
  * The owner's passkeys and alert subscriptions from the snapshot, merged into the shop's own small files with the runtime stopped (owner-keep.ts says what is and is not carried).
  * It never throws: the database is already in place and the runtime must still start. A failure is said, with what to do by hand.
  */
-async function ownerKeepPutBack(ctx: Context, server: ServerConfig, shop: string, work: string): Promise<string> {
+async function ownerKeepPutBack(ctx: Context, server: ServerConfig, shop: string, work: string, shared = false): Promise<string> {
   const byHand = "the owner will have to sign in with a link and allow alerts again; the snapshot's runtime/owner-keep.json (restore-snapshot.ts) holds them";
   try {
-    const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false, "1000:1000"), "-v", `${work}/files:/in:ro`, "-v", `${volume(server, names.dataVolume(shop))}:/data/${shop}`, server.appImage,
-      "node", "/app/bundle/backup/owner-keep.ts", "import", `/data/${shop}/data`, "/in/owner-keep.json"], { timeoutMs: 120_000 });
+    const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false, "1000:1000"), "-v", `${work}/files:/in:ro`, "-v", `${volume(server, dataVolumeOf(shop, shared))}:${shared ? "/data/all" : `/data/${shop}`}`, server.appImage,
+      "node", "/app/bundle/backup/owner-keep.ts", "import", `${shared ? `/data/all/${shop}` : `/data/${shop}`}/data`, "/in/owner-keep.json"], { timeoutMs: 120_000 });
     const out = lastJson(r.stdout) as { ok?: boolean; passkeys?: number; subscriptions?: number; error?: string } | undefined;
     if (!out?.ok) return ` The owner's passkeys and alerts could NOT be put back (${out?.error ?? (r.stderr.trim().split("\n").slice(-1)[0] || `exit ${r.code}`).slice(0, 200)}): ${byHand}.`;
     return ` The owner's passkeys (${out.passkeys ?? 0} put back) and alert subscriptions (${out.subscriptions ?? 0}) were put back: the owner signs in with the same passkey and alerts reach the same phones.`;
@@ -285,10 +306,10 @@ async function ownerKeepPutBack(ctx: Context, server: ServerConfig, shop: string
 }
 
 /** The fingerprint key the restore job took out of the snapshot, put back; what to say about it. It never throws: the database is already in place and the runtime must still start. */
-function keyPutBack(dir: string, shop: string, key: string | undefined, panelOn: boolean, stamp: string): string {
+function keyPutBack(dir: string, shop: string, key: string | undefined, panelOn: boolean, stamp: string, shared = false): string {
   if (key === undefined) return " This snapshot holds no fingerprint key (it is older than the key), so the shop keeps the one it has.";
   try {
-    const kept = restorePersonKey(dir, shop, key, names.runtime(shop), panelOn, stamp);
+    const kept = restorePersonKey(dir, shop, key, secretsHolderOf(shop, shared), panelOn, stamp);
     return kept ? ` The shop's fingerprint key was put back from the snapshot; the one it replaced is kept as ${kept}.` : "";
   } catch (e) { return ` The shop's fingerprint key could NOT be put back (${(e as Error).message}): open the snapshot with restore-snapshot.ts and put its person_key at secrets/person-keys/${shop}, mode 0600, then deploy.`; }
 }

@@ -8,9 +8,11 @@ import { readTermsFile } from "../../modules/terms/terms.ts";
 import type { TermsFile } from "../../modules/terms/terms.ts";
 import { serverPaths } from "./server.ts";
 import { stableJson, writeAtomic } from "./util.ts";
+import { clientDir } from "./client-dir.ts";
+import type { State } from "./state.ts";
 
 export const termsSourceFile = (dir: string, shop: string): string => join(serverPaths(dir).shop(shop), "terms.json");
-const handedFile = (dir: string, shop: string): string => join(serverPaths(dir).generated, "shops", shop, "client", "terms.json");
+const handedFile = (dir: string, shop: string, state?: State): string => join(clientDir(dir, shop, state), "terms.json");
 
 /** What the Operator entered for this shop, or undefined when nothing valid is there. */
 export function readShopTerms(dir: string, shop: string): TermsFile | undefined {
@@ -18,8 +20,8 @@ export function readShopTerms(dir: string, shop: string): TermsFile | undefined 
 }
 
 /** Hand the runtime its terms, or take them away. Called for every deployed shop at every deploy. */
-export function syncTerms(dir: string, on: boolean, shop: string): void {
+export function syncTerms(dir: string, on: boolean, shop: string, state?: State): void {
   const file = on ? readShopTerms(dir, shop) : undefined;
-  if (file) writeAtomic(handedFile(dir, shop), stableJson(file));
-  else if (existsSync(handedFile(dir, shop))) rmSync(handedFile(dir, shop), { force: true });
+  if (file) writeAtomic(handedFile(dir, shop, state), stableJson(file));
+  else if (existsSync(handedFile(dir, shop, state))) rmSync(handedFile(dir, shop, state), { force: true });
 }

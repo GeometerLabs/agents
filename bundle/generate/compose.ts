@@ -47,7 +47,7 @@ import { agentNames } from "../agent/plan.ts";
 import { DESK_PORT, GUPSHUP_TOKEN_MOUNT, LICENCE_MOUNT, OWNER_MARKED_KINDS, PUSH_PORT, PUSH_SERVICE } from "./guards.ts";
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import type { GuardKind } from "./guards.ts";
-import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, names } from "./shop.ts";
+import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, SHARED, names } from "./shop.ts";
 import { DIRECTORY_PORT, DOOR_INTERNAL_PORT, DOOR_PORT, DOOR_ROBOTS_DISALLOW, NOTHING_HEADER } from "../services/door.ts";
 import { HOME_EXAMPLES_REDIRECT, HOME_MOUNT, HOME_ROBOTS_DISALLOW, HOME_SITE_ROOT } from "../lib/home.ts";
 
@@ -106,6 +106,11 @@ export interface ShopDeploy {
   pathwayDir: string;
   /** Follow-up 2: its WhatsApp Guard reads a Gupshup app token the refresher renews (from the `gupshup-auth` volume), as a Calendar Guard reads Google's. */
   gupshupRenewed?: boolean;
+  /**
+   * A listings-only shop (18 Nov 2026): no Guards, no runtime container, no door, no network of its own. It is a folder on the server's ONE shared process (SHARED.runtime), which this
+   * compose file adds once whatever the number of such shops, so adding a shop changes no service here. `guards` is empty and `pathwayDir` is not used.
+   */
+  shared?: boolean;
 }
 
 /**
@@ -244,11 +249,16 @@ export interface PanelOptions {
 // The whole server as compose services plus the files each needs. Pure: it returns text and touches neither disk nor Docker, so a deploy can be checked before anything starts.
 export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { panel?: PanelOptions; /** `uid:gid` ops runs as, so it can write the fleet folder. Left out: the node image's user. */ opsUser?: string; /** agents someone else wrote: their Guards, nothing more */ agents?: AgentDeploy[]; /** Geometer's speech service (bundle/services/speech): left out = no container and no network. */ speech?: SpeechOptions }): Composed {
   const agents = features.agents ?? [];
+  // A listings-only shop is not a container: it is a folder of the one shared process (below). Everything per shop (Guards, runtime, door, network, volume, report folder, push) is for
+  // the shops that are not. A server with no listings-only shop composes byte for byte as it did before they existed.
+  const allShops = shops;
+  const sharedShops = shops.filter((s) => s.shared === true);
+  shops = shops.filter((s) => s.shared !== true);
   const modelGuard: GuardRef = { kind: "model", service: names.modelGuard, tenant: server.id };
   const net = addressing(server);
   const services: Composed["services"] = {};
   const add = (name: string, block: Service, files: string[] = []) => { services[name] = { block, files }; };
-  const shopNets = shops.map((s) => names.net(s.name));
+  const shopNets = [...shops.map((s) => names.net(s.name)), ...(sharedShops.length > 0 ? [SHARED.net] : [])];
   const secretDir = (name: string) => `${dirs.secrets}/${name}`;
   const node = (command: string[], extra: Service): Service => ({ image: server.appImage, user: nodeUser, init: true, ...hardened, command, ...extra });
 
@@ -308,6 +318,28 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       depends_on: Object.fromEntries(own.map((s) => [s, { condition: "service_healthy" }])),
     }), [`${dirs.generated}/shops/${shop.name}/client/runtime.json`, `${dirs.generated}/shops/${shop.name}/client/settings.json`, `${dirs.generated}/shops/${shop.name}/client/pathway.lock`]);
   }
+  // The shared process for the listings-only shops: ONE container, one door, whatever their number. It has no Guard of its own (these shops take no money and send no WhatsApp); its
+  // only way out is the model Guard, on the network it shares with it alone, and each shop reaches that Guard with its own credential, so the Guard knows each by its own id; each shop's own runtime allowance limits its use (the Guard's daily cap is one number for the server).
+  //   /app                  the app, read-only: the one version of the template every shop on this process runs (a shop pinned to another is refused by the deployer)
+  //   /shops                generated/listings/: one folder per shop, `<shop>/client/` (settings.json, runtime.json, pathway.lock LAST, pages.json, owner-grants.json, ...), read-only
+  //   /run/secrets          secrets/rt-listings/: one folder per shop (internal_token, channel_token, record_key, agent_model), read-only
+  //   /home/node            the shared data volume: `<shop>/data/agent.db`, a folder and a store file of its own for each shop
+  // None of the three folders is listed per shop, and the files list is empty: a new shop's folder appears in a mount that is already there, the process finds it within seconds
+  // (SCAN_SECONDS), and nothing is restarted. The environment names no token, key or token file: every shop's are files handed to that shop alone.
+  if (sharedShops.length > 0) {
+    const doorIp = net.adminIp(undefined, "door", SHARED.index);
+    add(SHARED.door, {
+      image: FORWARDER_IMAGE, ...hardened, user: guardUser,
+      command: ["nc", "-ll", "-s", doorIp, "-p", String(RUNTIME_PORT), "-e", "nc", SHARED.runtime, String(RUNTIME_PORT)],
+      networks: { [SHARED.net]: {}, admin: { ipv4_address: doorIp } },
+    });
+    add(SHARED.runtime, node(["node", "/app/templates/commerce/listings/server/shared-main.ts"], {
+      environment: { SHOPS_DIR: "/shops", SECRETS_DIR: "/run/secrets", HOST: "0.0.0.0", PORT: String(RUNTIME_PORT), SCAN_SECONDS: "5" },
+      volumes: [`${dirs.app}:/app:ro`, `${dirs.generated}/listings:/shops:ro`, `${dirs.secrets}/${SHARED.runtime}:/run/secrets:ro`, `${SHARED.dataVolume}:${HOME_DIR}`],
+      networks: { [SHARED.net]: {} },
+      healthcheck: healthWget(RUNTIME_PORT, "/readyz"),
+    }));
+  }
   // An agent someone else wrote: the same Guards, on the `gate` network instead of a runtime's. There is no runtime, no door and no model Guard for it.
   for (const agent of agents) {
     for (const g of agent.guards) {
@@ -316,7 +348,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     }
   }
   // the model Guard serves the shops' runtimes; a server that holds only agents someone else wrote has no use for it
-  if (shops.length > 0) guard(modelGuard, shopNets, net.adminIp(undefined, "model"), []);
+  if (allShops.length > 0) guard(modelGuard, shopNets, net.adminIp(undefined, "model"), []);
 
   // -- the shared services
   const appVolume = `${dirs.app}:/app:ro`;
@@ -432,17 +464,19 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     ...(shops.length > 0 ? { [PUSH_NETWORK]: { internal: true, ipam: { config: [{ subnet: net.subnets.push }] } } } : {}),
   };
   for (const s of shops) networks[names.net(s.name)] = { internal: true, ipam: { config: [{ subnet: shopSubnet(server, s.index) }] } };
+  if (sharedShops.length > 0) networks[SHARED.net] = { internal: true, ipam: { config: [{ subnet: shopSubnet(server, SHARED.index) }] } };
   const volumes: Record<string, Y> = { "google-auth": {}, [RELAY_STATE_VOLUME]: {}, ...(door ? { [DIRECTORY_VOLUME]: {} } : {}), "caddy-data": {}, "caddy-config": {}, [names.modelStateVolume]: {}, ...(shops.some((s) => s.gupshupRenewed) ? { [GUPSHUP_AUTH_VOLUME]: {} } : {}) };
   for (const s of shops) {
     volumes[names.dataVolume(s.name)] = {};
     for (const g of s.guards) volumes[names.stateVolume(s.name, g.kind as Exclude<GuardKind, "model">)] = {};
   }
   for (const a of agents) for (const g of a.guards) volumes[names.stateVolume(a.name, g.kind as Exclude<GuardKind, "model">)] = {};
+  if (sharedShops.length > 0) volumes[SHARED.dataVolume] = {};
 
   const body: Record<string, Y> = { name: `geometer-${server.id.replace(/_/gu, "-")}`, services: Object.fromEntries(Object.entries(services).map(([n, s]) => [n, s.block as Y])), networks, volumes };
   return {
     compose: `# Written by the Geometer deploy bundle on every deploy. Do not edit: change a shop's files and deploy again.\n${yaml(body)}\n`,
-    caddyfile: caddyfile(server, agents, shops.map((s) => s.name)),
+    caddyfile: caddyfile(server, agents, shops.map((s) => s.name), allShops.length > 0),
     services,
   };
 }
@@ -490,7 +524,7 @@ function reportsHandlers(shops: readonly string[]): string[] {
 }
 
 /** Caddy: HTTPS for the builder's domain (a local certificate for localhost), and only a few places behind it: the inbox, the shops' report pages, a Guard of an agent someone else wrote, and the panel. */
-export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shops: readonly string[] = []): string {
+export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shops: readonly string[] = [], anyShop: boolean = shops.length > 0): string {
   const local = isLocalDomain(server.domain);
   return [
     `# Written by the Geometer deploy bundle. Caddy reaches the inbox, the relay and the panel (the only containers on its network), and serves each shop's report pages from a read-only folder.`,
@@ -499,7 +533,8 @@ export function caddyfile(server: ServerConfig, agents: AgentDeploy[] = [], shop
     ...(local ? [`\ttls internal`] : []),
     `\thandle /c/* {`, `\t\treverse_proxy inbox:${INBOX_PORT}`, `\t}`,
     // item 11d: each shop's public booking page, its API, its MCP endpoint and the owner's private page, served by the inbox process (modules/channels/front.ts)
-    ...(shops.length > 0 ? [`\thandle /s/* {`, `\t\treverse_proxy inbox:${INBOX_PORT}`, `\t}`] : []),
+    // /s/* is every shop's page, a listings-only shop's too (`anyShop`); only a shop with a container of its own has report pages (`shops`)
+    ...(anyShop ? [`\thandle /s/* {`, `\t\treverse_proxy inbox:${INBOX_PORT}`, `\t}`] : []),
     ...reportsHandlers([...shops].sort()),
     // an agent someone else wrote calls Guard here, not the service: each of its Guards has its own path, and only that Guard's agent port is behind it
     ...agents.flatMap((a) => a.guards.flatMap((g) => [`\thandle_path /g/${a.name}/${g.kind}/* {`, `\t\treverse_proxy ${g.service}:${GUARD_PORT}`, `\t}`])),
