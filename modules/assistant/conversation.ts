@@ -823,12 +823,12 @@ export function createAssistant(deps: AssistantDeps) {
     const s = state();
     for (const c of expireCards(s, now)) logLine(c.action.case, ASSISTANT_ACTIONS.card, "blocked", { card: c.id }, { card: c.id, skill: c.action.skill, kind: c.action.kind, digest: c.digest, decision: "none" }, "the card ran out without a tap: nothing was done");
     compactAssistant(s, now, isoDate(today()));
-    await askFresh(); // "Still have the Persian kitten?" (listings; at most 3 a day)
+    notes.tick(); // notes past their end are closed; closed notes lose their text after 30 days (modules/memory); done before any await, so a caller that does not wait still sees it
     await budgetBeat(); // most of the month's model budget used, and used up: each once
-    notes.tick(); // notes past their end are closed; closed notes lose their text after 30 days (modules/memory)
     // a limit change that settled since the owner was last told: Active, or failed with the previous limit still in force (the runtime's core settles it, limits/runtime-limits.ts)
     // (marked told first: a failed send, such as outside the owner's 24-hour window, is not tried again every beat; the owner's app shows the state either way)
     for (const u of deps.limits?.unannounced() ?? []) { try { await tell("limit", u.say); } catch { /* the app shows it */ } }
+    await askFresh(); // "Still have the Persian kitten?" (listings; at most 3 a day)
   }
 
   /** The mood now, from the skills' reads and the clock (mood.ts), and the pictures that show it (to the owner, and to the public). */
