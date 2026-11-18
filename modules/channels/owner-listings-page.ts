@@ -15,6 +15,7 @@ import type { OwnerListingRow, OwnerListingsView } from "../listings/kit.ts";
 import { textIn } from "../listings/listings.ts";
 import type { Lang } from "../listings/listings.ts";
 import { LISTING_WORDS, priceLine } from "../listings/words.ts";
+import { STOCK_LINE_WORDS } from "../stock/words.ts";
 import { OWNER_CSS } from "./look.ts";
 
 export type ListingsNotice = "saved" | string;
@@ -58,7 +59,7 @@ export function ownerListingsPage(o: OwnerListingsInput): string {
     return html`<section class="card s-${r.state === "draft" ? "wait" : r.freshness === "hidden" ? "bad" : "ok"}">
 <h3>${photo ? html`<img src="${o.base}/listings/p/${photo.id}" width="56" height="42" alt="" style="vertical-align:middle;border-radius:8px;margin-right:8px">` : ""}${t.title}</h3>
 <p>${priceLine(r.pricePaise, r.priceNote, o.language)}${r.qty !== undefined ? ` · ${W.quantity(r.qty)}` : ""} · ${catName(r.category)}</p>
-<p class="note"><strong>${FRESH_LABEL(w, r)}</strong></p>
+<p class="note"><strong>${r.soldOut ? STOCK_LINE_WORDS[o.language].soldOut : FRESH_LABEL(w, r)}</strong></p>
 <div class="acts">
 ${r.state === "live" ? form(html`${hidden("op", "confirm")}${hidden("id", r.id)}${hidden("confirmedMs", r.confirmedMs ?? 0)}`, r.freshness === "hidden" ? w.confirmAgain : W.yes) : ""}
 ${r.state === "live" ? form(html`${hidden("op", "sold")}${hidden("id", r.id)}`, w.markSold, true) : ""}

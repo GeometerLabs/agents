@@ -19,7 +19,7 @@ import type { LocalDate } from "../../../../modules/core/time.ts";
 import type { Reminder } from "../../../../modules/reminders/reminders.ts";
 import type { GuardHold, RefundIssue, RefundRetry, UntoldRefund } from "../../../../modules/payments/refunds.ts";
 import type { AssistantState } from "../../../../modules/assistant/state.ts";
-import { isCounted, leftFor, menuStockId, unbookedHolds } from "../../../../modules/stock/stock.ts";
+import { FACT_HORIZON_MS, isCounted, leftFor, menuStockId, unbookedHolds } from "../../../../modules/stock/stock.ts";
 import type { OrderFact } from "../../../../modules/stock/stock.ts";
 import type { MarkState } from "../../../../modules/payments/owner-marked/ledger.ts";
 import { ownerMarkedOf } from "../../../../modules/payments/providers/index.ts";
@@ -242,10 +242,12 @@ export function orderFacts(store: Store, nowMs: number): OrderFact[] {
   const out: OrderFact[] = [];
   for (const o of store.orders.values()) {
     if (o.plan) continue;
+    // an order that ended long ago is no longer passed: its key is kept longer than this horizon (modules/stock FACT_HORIZON_MS), so it can never be booked a second time
+    if ((o.state === "completed" || o.state === "cancelled") && o.slotEndMs !== undefined && nowMs - o.slotEndMs > FACT_HORIZON_MS) continue;
     const byItem = new Map<string, number>();
     for (const l of o.lines) byItem.set(l.itemId, (byItem.get(l.itemId) ?? 0) + l.qty);
     for (const [itemId, qty] of byItem) {
-      out.push({ key: `sale:${o.id}:${itemId}`, id: menuStockId(itemId), qty, standing: o.state === "confirmed" || o.state === "completed", cancelled: o.state === "cancelled", holding: holdsStock(o, nowMs) });
+      out.push({ key: `sale:${o.id}:${itemId}`, id: menuStockId(itemId), qty, standing: o.state === "confirmed" || o.state === "completed", cancelled: o.state === "cancelled", holding: holdsStock(o, nowMs), ...(o.slotEndMs !== undefined ? { endedMs: o.slotEndMs } : {}) });
     }
   }
   return out;

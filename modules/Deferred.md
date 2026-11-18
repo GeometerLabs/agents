@@ -382,6 +382,7 @@ The design and what was weighed are in [Explanation.md](Explanation.md#shop-memo
 
 | What | Why not now | Done when |
 |---|---|---|
+| **A purchase order part-received before counting began and finished after** | The purchase order keeps only the total received and the time of the last mark, not each piece's time, so after counting began the whole total is added | The purchase order keeps each mark's time and quantity, and the count adds only the marks after it began (until then the owner corrects the count with one tap) |
 | **Importing an item list or counts from a billing app** | Owner listed it as later; it needs a named billing app's export format and a check of each row before it becomes a count | A shop names its billing app and a sample export is read: rows become `startCounting` calls the owner confirms |
 | **Barcode scanning** | Needs the phone's camera in the owner's page and a barcode on each item; no shop asked yet | The owner's page can scan and a barcode maps to a stock id |
 | **"Sold 2" in the owner's talk** (words or voice) | The Stock page has it; the talk reading would need a new intent and its words in four languages | The assistant's reader names the item and the number by rule and makes the keyed sale with the owner's authority |

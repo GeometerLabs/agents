@@ -116,3 +116,40 @@ test("an item with two suppliers asks which one, like the owner's own 'low shamp
   assert.equal(w.store.asking?.kind, "line");
   assert.equal(w.store.asking?.lowStock, true);
 });
+
+// ---- history, and the owner in the middle of another question ----------------------------------------------------------------------------------------
+
+test("goods received BEFORE counting began are in the owner's count already; the next delivery adds only itself", async () => {
+  const w = createWorld();
+  await sentOrder(w);
+  await w.ownerSays("received po-1 4"); // 4 boxes came before the owner counted anything
+  await w.advance(60);
+  count(w, "hair-colour", 9, { unit: "box" }); // the owner counts what is on the shelf: 9, with those 4 among them
+  await w.tick();
+  assert.equal(countOf(stockOfWorld(w), supplyStockId("hair-colour")), 9, "the earlier 4 are not added again");
+  await w.advance(5);
+  await w.ownerSays("received po-1 3");
+  assert.equal(countOf(stockOfWorld(w), supplyStockId("hair-colour")), 12, "the 3 that came after");
+});
+
+test("a low-stock question waits while the owner is in the middle of another question, and is asked once that one is done", async () => {
+  const w = createWorld();
+  count(w, "hair-oil", 2, { low: 2, unit: "bottle" });
+  w.store.asking = { kind: "qty", requestId: "r-other", lowStock: false, item: "towel", options: [], askedMs: w.clock.now() } as never;
+  await w.tick();
+  assert.equal(w.orders().length, 0, "the owner's own question was not overwritten");
+  assert.equal(w.store.asking?.requestId, "r-other");
+  assert.equal(pendingAlerts(stockOfWorld(w)!, "supply").length, 1, "the alert is still queued");
+  w.store.asking = undefined;
+  await w.tick();
+  assert.equal(w.orders().length, 1, "asked once the owner was free");
+});
+
+test("an owner who never answers a low-stock question is asked a few times and then left alone", async () => {
+  const w = createWorld();
+  count(w, "towel", 1, { low: 2, unit: "piece" }); // a towel has no reorder quantity, so the owner is asked how many
+  for (let i = 0; i < 6; i++) { await w.tick(); await w.advance(60 * 24); } // each question runs out before the next tick
+  assert.equal(w.orders().length, 0);
+  assert.equal(pendingAlerts(stockOfWorld(w)!, "supply").length, 0, "given up, so the shop is not nagged every day");
+  assert.equal(stockOfWorld(w)!.lines[0].lowFlag, true, "the Stock page still shows it low");
+});

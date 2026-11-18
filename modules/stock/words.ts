@@ -19,7 +19,6 @@ export interface StockLineWords {
   newCount: string;
   save: string;
   soldOne: string;
-  soldMany: string;
   stop: string;
   stopHelp: string;
   addTitle: string;
@@ -49,7 +48,7 @@ export const STOCK_LINE_WORDS: Record<Language, StockLineWords> = {
   en: {
     title: "Stock", back: "Back", intro: "Count what you want to keep track of. An item you do not count works as before.", empty: "Nothing is counted yet.",
     left: (n, unit) => `${n}${unit ? ` ${unit}` : ""} left`, soldOut: "Sold out", low: "Running low", lowMark: (n) => `Tell me at ${n} or less`,
-    setCount: "Set the count", newCount: "How many are there now?", save: "Save", soldOne: "Sold 1", soldMany: "Sold", stop: "Stop counting", stopHelp: "The item works as before, with no count.",
+    setCount: "Set the count", newCount: "How many are there now?", save: "Save", soldOne: "Sold 1", stop: "Stop counting", stopHelp: "The item works as before, with no count.",
     addTitle: "Count another item", addItem: "Item", addCount: "How many are there now?", addLow: "Tell me when it is down to (optional)", addButton: "Start counting", nothingToAdd: "Every item is counted already.",
     history: "Lately",
     moves: { started: "Counting started", sold: "Sold", returned: "Put back", received: "Received", corrected: "Count corrected" },
@@ -69,7 +68,7 @@ export const STOCK_LINE_WORDS: Record<Language, StockLineWords> = {
   hi: {
     title: "स्टॉक", back: "वापस", intro: "जिन चीज़ों का हिसाब रखना है उनकी गिनती रखें। जिसे आप नहीं गिनते वह पहले की तरह चलता है।", empty: "अभी कुछ भी गिना नहीं गया है।",
     left: (n, unit) => `${n}${unit ? ` ${unit}` : ""} बचे`, soldOut: "बिक गया", low: "कम पड़ रहा है", lowMark: (n) => `${n} या उससे कम होने पर बताएँ`,
-    setCount: "गिनती तय करें", newCount: "अभी कितने हैं?", save: "सहेजें", soldOne: "1 बिका", soldMany: "बिका", stop: "गिनना बंद करें", stopHelp: "यह चीज़ बिना गिनती के पहले की तरह चलेगी।",
+    setCount: "गिनती तय करें", newCount: "अभी कितने हैं?", save: "सहेजें", soldOne: "1 बिका", stop: "गिनना बंद करें", stopHelp: "यह चीज़ बिना गिनती के पहले की तरह चलेगी।",
     addTitle: "एक और चीज़ गिनें", addItem: "चीज़", addCount: "अभी कितने हैं?", addLow: "कितने बचने पर बताएँ (चाहें तो)", addButton: "गिनना शुरू करें", nothingToAdd: "हर चीज़ पहले से गिनी जा रही है।",
     history: "हाल में",
     moves: { started: "गिनती शुरू हुई", sold: "बिका", returned: "वापस जोड़ा", received: "मिला", corrected: "गिनती सुधारी" },
@@ -89,7 +88,7 @@ export const STOCK_LINE_WORDS: Record<Language, StockLineWords> = {
   ml: {
     title: "സ്റ്റോക്ക്", back: "തിരികെ", intro: "കണക്ക് വയ്ക്കേണ്ട സാധനങ്ങൾ എണ്ണി വയ്ക്കുക. എണ്ണാത്ത സാധനം മുമ്പത്തെ പോലെ തന്നെ.", empty: "ഇതുവരെ ഒന്നും എണ്ണിയിട്ടില്ല.",
     left: (n, unit) => `${n}${unit ? ` ${unit}` : ""} ബാക്കി`, soldOut: "വിറ്റുതീർന്നു", low: "കുറഞ്ഞുവരുന്നു", lowMark: (n) => `${n} അല്ലെങ്കിൽ അതിൽ കുറവായാൽ അറിയിക്കുക`,
-    setCount: "എണ്ണം സജ്ജമാക്കുക", newCount: "ഇപ്പോൾ എത്രയുണ്ട്?", save: "സേവ് ചെയ്യുക", soldOne: "1 വിറ്റു", soldMany: "വിറ്റു", stop: "എണ്ണുന്നത് നിർത്തുക", stopHelp: "ഈ സാധനം എണ്ണമില്ലാതെ മുമ്പത്തെ പോലെ പ്രവർത്തിക്കും.",
+    setCount: "എണ്ണം സജ്ജമാക്കുക", newCount: "ഇപ്പോൾ എത്രയുണ്ട്?", save: "സേവ് ചെയ്യുക", soldOne: "1 വിറ്റു", stop: "എണ്ണുന്നത് നിർത്തുക", stopHelp: "ഈ സാധനം എണ്ണമില്ലാതെ മുമ്പത്തെ പോലെ പ്രവർത്തിക്കും.",
     addTitle: "മറ്റൊരു സാധനം എണ്ണുക", addItem: "സാധനം", addCount: "ഇപ്പോൾ എത്രയുണ്ട്?", addLow: "എത്രയായാൽ അറിയിക്കണം (വേണമെങ്കിൽ)", addButton: "എണ്ണിത്തുടങ്ങുക", nothingToAdd: "എല്ലാ സാധനങ്ങളും ഇപ്പോൾ തന്നെ എണ്ണുന്നുണ്ട്.",
     history: "സമീപകാലം",
     moves: { started: "എണ്ണൽ തുടങ്ങി", sold: "വിറ്റു", returned: "തിരികെ ചേർത്തു", received: "കിട്ടി", corrected: "എണ്ണം തിരുത്തി" },
@@ -109,7 +108,7 @@ export const STOCK_LINE_WORDS: Record<Language, StockLineWords> = {
   kn: {
     title: "ಸ್ಟಾಕ್", back: "ಹಿಂದಕ್ಕೆ", intro: "ಲೆಕ್ಕ ಇಡಬೇಕಾದ ವಸ್ತುಗಳನ್ನು ಎಣಿಸಿ. ಎಣಿಸದ ವಸ್ತು ಮೊದಲಿನಂತೆಯೇ ಇರುತ್ತದೆ.", empty: "ಇನ್ನೂ ಏನನ್ನೂ ಎಣಿಸಿಲ್ಲ.",
     left: (n, unit) => `${n}${unit ? ` ${unit}` : ""} ಉಳಿದಿದೆ`, soldOut: "ಮಾರಾಟವಾಗಿದೆ", low: "ಕಡಿಮೆಯಾಗುತ್ತಿದೆ", lowMark: (n) => `${n} ಅಥವಾ ಕಡಿಮೆಯಾದಾಗ ತಿಳಿಸಿ`,
-    setCount: "ಎಣಿಕೆ ಹೊಂದಿಸಿ", newCount: "ಈಗ ಎಷ್ಟಿದೆ?", save: "ಉಳಿಸಿ", soldOne: "1 ಮಾರಾಟವಾಯಿತು", soldMany: "ಮಾರಾಟವಾಯಿತು", stop: "ಎಣಿಸುವುದನ್ನು ನಿಲ್ಲಿಸಿ", stopHelp: "ಈ ವಸ್ತು ಎಣಿಕೆ ಇಲ್ಲದೆ ಮೊದಲಿನಂತೆ ನಡೆಯುತ್ತದೆ.",
+    setCount: "ಎಣಿಕೆ ಹೊಂದಿಸಿ", newCount: "ಈಗ ಎಷ್ಟಿದೆ?", save: "ಉಳಿಸಿ", soldOne: "1 ಮಾರಾಟವಾಯಿತು", stop: "ಎಣಿಸುವುದನ್ನು ನಿಲ್ಲಿಸಿ", stopHelp: "ಈ ವಸ್ತು ಎಣಿಕೆ ಇಲ್ಲದೆ ಮೊದಲಿನಂತೆ ನಡೆಯುತ್ತದೆ.",
     addTitle: "ಇನ್ನೊಂದು ವಸ್ತುವನ್ನು ಎಣಿಸಿ", addItem: "ವಸ್ತು", addCount: "ಈಗ ಎಷ್ಟಿದೆ?", addLow: "ಎಷ್ಟಕ್ಕೆ ಇಳಿದಾಗ ತಿಳಿಸಬೇಕು (ಬೇಕಿದ್ದರೆ)", addButton: "ಎಣಿಸಲು ಶುರುಮಾಡಿ", nothingToAdd: "ಎಲ್ಲ ವಸ್ತುಗಳನ್ನೂ ಈಗಾಗಲೇ ಎಣಿಸಲಾಗುತ್ತಿದೆ.",
     history: "ಇತ್ತೀಚೆಗೆ",
     moves: { started: "ಎಣಿಕೆ ಶುರುವಾಯಿತು", sold: "ಮಾರಾಟವಾಯಿತು", returned: "ವಾಪಸ್ ಸೇರಿಸಲಾಯಿತು", received: "ಬಂದಿತು", corrected: "ಎಣಿಕೆ ಸರಿಪಡಿಸಲಾಯಿತು" },

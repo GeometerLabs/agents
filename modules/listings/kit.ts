@@ -16,7 +16,7 @@ import type { ActionRecord } from "../record/record.ts";
 import { CATEGORIES, LISTING_ACTION, MAX_LIVE, MAX_PHOTOS, UPLOADS_PER_DAY, allPhotoIds, confirm, draft, edit, freshnessOf, isCategory, listingById, listingRefs, listingsOf, markSold, noteUpload, ownersListings, pendingPhotos, publicListings, publish, remove, setShop, takePhotos } from "./listings.ts";
 import type { Category, Failure, Lang, Listing, ListingChange, ListingsShop, ListingsState, Photo } from "./listings.ts";
 import { PHOTO_ID } from "./photo.ts";
-import { quantityOfListing, soldOutListings } from "../stock/stock.ts";
+import { STOCK_ACTION, listingStockId, quantityOfListing, restoreAfterYes, soldOutListings, stockRefs } from "../stock/stock.ts";
 
 export type ListingOp =
   | { op: "publish_form"; category: string; title: string; priceInr?: number; priceNote?: string; qty?: number; photos: string[] }
@@ -193,6 +193,10 @@ export function createListingsKit<Store extends { assistant?: import("../assista
         return;
       }
       const l = r.listing;
+      // the Confirm button on the page is the same "Yes, I still have it" as the morning card: for a counted listing that sold itself at 0 it sets the count (stock.ts restoreAfterYes)
+      if (l && r.change === "confirmed" && restoreAfterYes(ctx.store.assistant?.stock, a, l.id, l.qty, `confirm-${event.id}`, { nowMs: ctx.nowMs })) {
+        ctx.record.append({ conversation: o.owner.whatsapp, action: STOCK_ACTION, outcome: "confirmed", inputs: { op: "correct", item: listingStockId(l.id) }, language: o.owner.language, refs: stockRefs(listingStockId(l.id), "corrected", "owner"), notes: "the owner confirmed a listing that had sold itself at 0, so its count was set to the number they first said" });
+      }
       if (l) line(r.change, l, { op: event.op.op, listing: l.id, digest: digest(event.op) }, "confirmed", "the owner changed their listings in their app; the record keeps the listing's id, category and who, never its words");
       else line(r.change, { id: "l-0", category: "other", by: "owner", from: "app" }, { op: "shop", digest: digest(event.op) }, "confirmed", "the owner changed how the shop shows itself (the switch, the place or the registration) in their app");
     },
