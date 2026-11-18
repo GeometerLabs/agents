@@ -213,7 +213,9 @@ export function applyLanguages(draft: Draft, body: Body, w: Words): StepResult {
   const others = LANGUAGES.filter((l) => body[`lang_${l}`] === "on" && l !== primary);
   const ownerLanguage = known(text(body.ownerLanguage, 4)) ? text(body.ownerLanguage, 4) : primary;
   const phone = normalizePhone(text(body.ownerNumber, 30));
-  if (!phone) problems.push(s.ownerNumberBad);
+  // a listings-only shop may have no number for its owner (they sign in with the Operator's one-use code): empty is allowed, and a number that is typed must still be a number
+  const noNumberOk = draft.template === "listings" && text(body.ownerNumber, 30) === "";
+  if (!phone && !noNumberOk) problems.push(s.ownerNumberBad);
   if (phone && draft.whatsapp.businessNumber && digitsOf(phone) === digitsOf(draft.whatsapp.businessNumber)) problems.push(s.sameNumber);
   if (known(primary)) { draft.primaryLanguage = primary; draft.otherLanguages = others; }
   draft.ownerLanguage = known(ownerLanguage) ? ownerLanguage : draft.primaryLanguage;

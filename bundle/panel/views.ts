@@ -37,6 +37,7 @@ import type { Template } from "./templates.ts";
 import type { Unmet, StoredChecks } from "./golive.ts";
 import type { Words } from "./words.ts";
 import { setupOf } from "./setups.ts";
+import { listingsChecksPage, listingsWords } from "./listings.ts";
 import { HEALTH_WORDS } from "./words-health.ts";
 import { channelsBlock } from "./views-channels.ts";
 import { pagesBlock } from "./views-pages.ts";
@@ -596,10 +597,10 @@ export function setupStepPage(c: Ctx, v: StepView, step: "business" | "deposit" 
   <label class="field"><span>${s.main}</span><select name="primary">${options.map((o) => html`<option value="${o.code}" ${o.code === d.primaryLanguage ? raw("selected") : ""}>${o.label}</option>`)}</select></label>
   <div class="field"><span>${s.also}</span><div class="days">${options.map((o) => html`<label><input type="checkbox" name="lang_${o.code}" ${d.otherLanguages.includes(o.code) ? raw("checked") : ""}> ${o.label.split(" · ")[0]}</label>`)}</div><p class="help">${s.hint}</p></div>
   <label class="field"><span>${s.ownerLanguage}</span><select name="ownerLanguage">${options.map((o) => html`<option value="${o.code}" ${o.code === d.ownerLanguage ? raw("selected") : ""}>${o.label}</option>`)}</select></label>
-  ${text(s.ownerNumber, "ownerNumber", d.ownerNumber, { type: "tel", mode: "tel", max: 30, help: s.ownerNumberHelp })}
-  <h2>${s.approversTitle}</h2><p class="help">${s.approversHelp}</p>
+  ${text(s.ownerNumber, "ownerNumber", d.ownerNumber, { type: "tel", mode: "tel", max: 30, help: d.template === "listings" ? listingsWords(c.w).languages.ownerNumberHelp : s.ownerNumberHelp })}
+  ${d.template === "listings" ? "" : html`<h2>${s.approversTitle}</h2><p class="help">${s.approversHelp}</p>
   ${Array.from({ length: MAX_PANEL_APPROVERS }, (_, i) => { const p = d.approvers?.[i]; return html`<div class="row">${text(s.approverNumber(i + 1), `approver_${i}`, p?.whatsapp ?? "", { type: "tel", mode: "tel", max: 30 })}<label class="field"><span>${s.approverLanguage}</span><select name="approverLang_${i}">${options.map((o) => html`<option value="${o.code}" ${o.code === (p?.language ?? d.ownerLanguage) ? raw("selected") : ""}>${o.label}</option>`)}</select></label></div>`; })}
-  ${text(s.twoAbove, "twoAbove", d.twoAboveInr ?? "", { mode: "numeric", max: 9, help: s.twoAboveHelp })}
+  ${text(s.twoAbove, "twoAbove", d.twoAboveInr ?? "", { mode: "numeric", max: 9, help: s.twoAboveHelp })}`}
   ${back}${next}</form>`;
   } else {
     const a = w.accounts;
@@ -707,6 +708,8 @@ export function setupChecksPage(c: Ctx, v: ChecksView): string {
   const head = html`<p class="note">${w.progress(v.now + 1, v.steps.length)}</p>${stepsBar(c, v.steps, v.now)}<h1>${w.steps.checks}</h1>${errorsBox(c, v.problems)}${(d.lostDetails ?? []).map((n) => html`<div class="notice" role="status">${keepWords(c.w).lost(n)}</div>`)}`;
   const hand = v.checks?.hand;
   const back = html`<a class="btn" href="/setup/${d.id}/${v.now}">${c.w.common.back}</a>`;
+  // a listings-only shop has no hand check, no connections and no go-live paper: its last step says what it is, saves it, and points the Operator at the owner's first sign-in
+  if (d.template === "listings") return listingsChecksPage(c, { draft: d, saved: v.saved, deployApplied: v.deployApplied, ...(v.shopId ? { shopId: v.shopId } : {}) }, (t, b) => layout(c, t, b), { head, back, csrf: csrf(c) });
   if (!v.saved) {
     return layout(c, w.steps.checks, html`${head}<p class="big">${k.saveFirst}</p>
 <ul class="plain">${limitLines(c, d, v).map((t) => html`<li><span class="mark">✓</span><span>${t}</span></li>`)}</ul>
