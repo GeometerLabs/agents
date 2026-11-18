@@ -82,6 +82,9 @@ type Route = { whatsappRoute?: WhatsAppRoute };
 // The inbox container's config. Built from the shops (and bring-your-own agents) so one inbox routes each webhook to the right runtime; stableJson keeps the bytes identical between runs so an unchanged server is not redeployed.
 export function inboxConfig(server: ServerConfig, shops: (ShopDeploy & { webhooks: ShopWebhooks; ownerWhatsapp: string; phoneNumberId: string } & Approvers & Route)[], agents: AgentFacts[] = []): string {
   return stableJson({
+    // block S phase B2: where the inbox carries a shop's signed "my feed changed" notice (services/notices.ts). A shop's runtime has no route out, and the inbox is on the network the directory is on
+    // (compose.ts), so it is the courier. Only on a server that has the directory (the same condition as the door) and has shops to carry for.
+    ...(server.pages && server.fleet && shops.length > 0 ? { directoryUrl: `http://directory:${DIRECTORY_PORT}` } : {}),
     shops: Object.fromEntries([
       ...shops.map((s) => [s.name, {
         runtimeUrl: runtimeUrl(server, s),
