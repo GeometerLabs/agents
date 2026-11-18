@@ -46,7 +46,9 @@ const CHAT_TABLES = ["creds", "users", "contact", "phones", "alias"] as const;
 /** The meta names each side keeps (anything else in meta, like the sign-out marker, is not carried). */
 // Owner's item 2: the runtime's own gate (owner-access.ts) is carried too, so a shop moved to another server keeps "the owner holds a passkey" and the moment passkeys were
 // last cleared; without them a restored shop would take the old Operator card as new.
-const ACCESS_META = ["webauthn_user", "passkeys_before", "reopen_at", "reset_at", "adopted"];
+// Every meta value the gate's decisions rest on (owner-access.ts): a restore that dropped any of them would weaken the lock. "end_before" is left out on purpose: it only says which
+// sign-out-everything the runtime has already said once in the record.
+const ACCESS_META = ["webauthn_user", "passkeys_before", "reopen_at", "reset_at", "reset_raw", "adopted", "bound_owner", "bound_number", "eb_raw", "eb_val"];
 const PUSH_META = ["vapid", "owner_choice"];
 
 /** All rows of a query, or none when the file or the table is not there (an older shop, or no sign-in yet). */
