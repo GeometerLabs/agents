@@ -14,7 +14,7 @@
 // runtime's database, and its key. Its `restore` puts back the Guards' stores too (restoreAgent): it has no runtime that looks at the providers before acting again.
 // The snapshot job hands back each snapshot's seal (object digests, record facts, chain head, the key's id: no customer's words or numbers); the newest per shop or
 // agent is kept in state/snapshots/<name>.json for the drill.
-import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, chownSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { adminCall, compose, ops, renewRelayCredential, writeServer } from "../deploy.ts";
 import type { Context } from "../deploy.ts";
@@ -34,7 +34,7 @@ import { appliedPathwayDir } from "../lib/pathways.ts";
 import { RESTORE_NOTE } from "../../modules/runtime/restored.ts";
 import { loadServer, serverPaths } from "../lib/server.ts";
 import type { ServerConfig } from "../lib/server.ts";
-import { PERSON_KEY, ensureAgentLabelKey, ensurePersonKey, ensureShopPersonKeys, keyIdOf, personKeyFile, readSecretFile, restoreAgentKey, restorePersonKey, secretFile } from "../lib/secrets.ts";
+import { PERSON_KEY, ensureAgentLabelKey, ensurePersonKey, ensureShopPersonKeys, keyIdOf, panelUser, personKeyFile, readSecretFile, restoreAgentKey, restorePersonKey, secretFile } from "../lib/secrets.ts";
 import { loadState, saveState } from "../lib/state.ts";
 import type { State } from "../lib/state.ts";
 import { updateStatus } from "../lib/status.ts";
@@ -156,6 +156,19 @@ export async function runBackup(ctx: Context): Promise<{ ok: boolean; lines: str
   return { ok, lines };
 }
 
+/**
+ * Puts the shop's key where the builder of the owner's file reads it: exports/<shop>/shop-key.json, 0600, written HERE by the deployer's own user (not by the root export job, which cannot
+ * chown, so its file would be root's and unreadable to the panel's container or a non-root deployer). The panel's container runs as the deployer's user, or as 1000 when the deployer is root,
+ * and then the file is handed to that user, exactly as the panel's own keys are (lib/secrets.ts writeSecretFile). `text` undefined (the shop has no key yet) removes an old file, so a key that
+ * is gone is not left behind. Never 0644: this is a private key.
+ */
+export function placeShopKeyFile(dir: string, shop: string, text: string | undefined): void {
+  const file = join(serverPaths(dir).exportsOf(shop), "shop-key.json");
+  if (text === undefined) { rmSync(file, { force: true }); return; }
+  writeAtomic(file, text, 0o600);
+  if (process.getuid?.() === 0) { const { uid, gid } = panelUser(); chownSync(file, uid, gid); }
+}
+
 /** The record and the bookings of every shop, exported for the monthly report: one container, every shop, files without customers' numbers (see export.ts). */
 export async function runExports(ctx: Context): Promise<{ ok: boolean; lines: string[] }> {
   const server = loadServer(ctx.dir);
@@ -167,16 +180,23 @@ export async function runExports(ctx: Context): Promise<{ ok: boolean; lines: st
   const jobFile = join(work, `export-${stampOf(ctx.now())}.json`);
   // B69: every shop has its fingerprint key before the job starts (a shop made before B69 gets one now, and the panel's copy with it). The job file only names the file: the key itself is mounted read-only, for this job only.
   for (const n of shops) ensureShopPersonKeys(ctx.dir, n, secretsHolderOf(n, sharedOf(state, n)), server.panel.enabled);
+  // each shop's export folder is made here first, so it is the deployer's own: the root job can still write in it, and the deployer can then replace the shop's key file in it (placeShopKeyFile)
+  for (const n of shops) ensureDir(serverPaths(ctx.dir).exportsOf(n));
   writeFileSync(jobFile, JSON.stringify({ shops: shops.map((n) => ({ name: n, db: dbOf(state, n), out: `/out/${n}`, personKeyFile: `/run/person-keys/${n}` })) }), { mode: 0o644 });
-  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...dataMounts(server, state, shops), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
+  // "--log-driver none": this job's output carries each shop's PRIVATE key (shopKeyFile, read just below), so Docker must not copy it into a log file on the server's disk while
+  // the job runs (--rm deletes the log only at the end). The output still reaches this process through the attached run.
+  const r = await ctx.runner.run(ctx.docker, [...jobFlags(ctx, server, false), "--log-driver", "none", "-v", `${jobFile}:/job/job.json:ro`, "-v", `${serverPaths(ctx.dir).exports}:/out`, "-v", `${join(serverPaths(ctx.dir).secrets, "person-keys")}:/run/person-keys:ro`, ...dataMounts(server, state, shops), server.appImage, "node", "/app/bundle/backup/export.ts", "/job/job.json"], { timeoutMs: 300_000 });
   rmSync(jobFile, { force: true });
-  const out = lastJson(r.stdout) as { results?: { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; orders?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string }[] } | undefined;
+  const out = lastJson(r.stdout) as { results?: { name: string; ok: boolean; entries?: number; bookings?: number; dues?: number; orders?: number; usage?: UsageTotals; obligations?: Record<string, number>; error?: string; shopKeyFile?: string }[] } | undefined;
   if (r.code !== 0 || !out?.results) return { ok: false, lines: [`The export job failed: ${r.stderr.trim().split("\n").slice(-2).join(" | ") || `exit ${r.code}`}`] };
   // The cost meter's counts go into the shop's status file, where ops reads them for the heartbeat. They are not a confirmation of the shop, so `updatedAt` stays where it is.
   for (const x of out.results) if (x.ok && x.usage && shops.includes(x.name)) updateStatus(ctx.dir, x.name, ctx.now(), (s) => { s.usage = { ...x.usage as UsageTotals, at: ctx.now().toISOString() }; }, false);
   // the unfinished-work counts by kind, for the heartbeat's open_obligations (a gauge: the counts now, replaced at every export)
   for (const x of out.results) if (x.ok && x.obligations && shops.includes(x.name)) updateStatus(ctx.dir, x.name, ctx.now(), (s) => { s.obligations = { counts: x.obligations!, at: ctx.now().toISOString() }; }, false);
-  return { ok: out.results.every((x) => x.ok || x.error === "no database yet"), lines: out.results.map((x) => (x.ok ? `${x.name}: exported ${x.entries} record entries and ${x.orders !== undefined ? `${x.orders} orders` : x.dues !== undefined ? `${x.dues} fees` : `${x.bookings} bookings`}` : `${x.name}: not exported (${x.error})`)) };
+  // the shop's own key, for the owner's file: written by this process as its own user (see placeShopKeyFile); a failure to place it is said, and the owner's file then says it has no key
+  const keyLines: string[] = [];
+  for (const x of out.results) if (x.ok && shops.includes(x.name)) { try { placeShopKeyFile(ctx.dir, x.name, x.shopKeyFile); } catch (e) { keyLines.push(`${x.name}: the shop's key could not be put in the owner's file folder (${(e as Error).message})`); } }
+  return { ok: keyLines.length === 0 && out.results.every((x) => x.ok || x.error === "no database yet"), lines: [...out.results.map((x) => (x.ok ? `${x.name}: exported ${x.entries} record entries and ${x.orders !== undefined ? `${x.orders} orders` : x.dues !== undefined ? `${x.dues} fees` : `${x.bookings} bookings`}` : `${x.name}: not exported (${x.error})`)), ...keyLines] };
 }
 
 /** The fingerprints published for a shop (the last 60 days are enough for a snapshot kept 30); a fingerprint file that was changed by hand is a drill failure of its own. */
