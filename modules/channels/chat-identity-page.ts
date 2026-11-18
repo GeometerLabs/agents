@@ -33,15 +33,15 @@ export function identityBlock(a: IdentityBlockArgs): { html: string; script: str
 <div id="numAsk" hidden><p>${esc(w.numberAsk)}</p><label class="sr" for="num">${esc(w.numberLabel)}</label><input id="num" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91" maxlength="20"><button type="button" id="numGo" class="quiet">${esc(w.numberSave)}</button></div>
 <p class="sys" id="keepMsg" role="status"></p></div>
 <p class="sys" id="nolock" hidden>${esc(w.keepNoLock)}</p>
-<div class="card" id="before" hidden><button type="button" id="beforeGo" class="quiet" aria-expanded="false" aria-controls="beforeBox">${esc(w.beenBefore)}</button>
-<div id="beforeBox" hidden><button type="button" id="openGo" class="quiet">${esc(w.openMine)}</button><p class="sys">${esc(w.otherPhoneLine)}</p>
+<div id="before" hidden><button type="button" id="beforeGo" class="linkish" aria-expanded="false" aria-controls="beforeBox">${esc(w.beenBefore)}</button>
+<div id="beforeBox" class="card" hidden><button type="button" id="openGo" class="quiet">${esc(w.openMine)}</button><p class="sys">${esc(w.otherPhoneLine)}</p>
 <button type="button" id="newGo" class="quiet">${esc(w.newPhone)}</button>
 <div id="newBox" hidden><p>${esc(w.newPhoneBody)}</p><label class="sr" for="num2">${esc(w.numberLabel)}</label><input id="num2" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91" maxlength="20"><button type="button" id="linkGo">${esc(w.sendLink)}</button></div>
 <p class="sys" id="beforeMsg" role="status"></p></div></div>
-<div class="idfoot" id="foot" hidden><button type="button" id="linksGo" class="quiet" hidden>${esc(w.sendMyLinks)}</button><button type="button" id="delGo" class="quiet">${esc(w.deleteButton)}</button>
+<div class="idfoot" id="foot" hidden><button type="button" id="linksGo" class="quiet" hidden>${esc(w.sendMyLinks)}</button><button type="button" id="delGo" class="linkish">${esc(w.deleteButton)}</button>
 <div class="card" id="delBox" hidden><p>${esc(w.deleteAsk)}</p><button type="button" id="delYes">${esc(w.deleteYes)}</button><button type="button" id="delNo" class="quiet">${esc(w.deleteNo)}</button></div>
 <p class="sys" id="footMsg" role="status"></p></div>
-<style>.idbox{margin:14px 0}.idbox input{display:block;width:100%;min-height:48px;margin-top:10px;padding:.5em .8em;border:1.5px solid var(--line2);border-radius:14px;font:inherit;background:var(--card);color:var(--ink)}.idbox .idfoot{display:flex;flex-wrap:wrap;gap:8px 12px}.idbox .idfoot .card,.idbox .idfoot .sys{flex:1 1 100%}.idbox [hidden]{display:none}</style>
+<style>.idbox{margin:14px 0}.idbox input{display:block;width:100%;min-height:48px;margin-top:10px;padding:.5em .8em;border:1.5px solid var(--line2);border-radius:14px;font:inherit;background:var(--card);color:var(--ink)}.idbox .idfoot{display:flex;flex-wrap:wrap;gap:8px 12px}.idbox .idfoot .card,.idbox .idfoot .sys{flex:1 1 100%}.idbox [hidden]{display:none}.idbox .linkish{display:inline-flex;align-items:center;width:auto;min-height:44px;margin:0;padding:0 4px;border:0;border-radius:0;background:none;box-shadow:none;color:var(--green);font:inherit;font-size:.95rem;font-weight:600;text-decoration:underline;text-underline-offset:.2em}</style>
 </section>`;
   const words = { keepDone: w.keepDone, keepFailed: w.keepFailed, openFailed: w.openFailed, otherShop: w.otherShop, openDone: w.openDone, linkSent: w.linkSent, wait: w.wait, badNumber: w.badNumber, numberSaved: w.numberSaved, myLinksSent: w.myLinksSent, myLinksNone: w.myLinksNone, deleteDone: w.deleteDone };
   const j = (v: unknown): string => JSON.stringify(v).replace(/</gu, "\\u003c");
@@ -55,6 +55,9 @@ export function identityBlock(a: IdentityBlockArgs): { html: string; script: str
   const show = (id, on) => { const e = $(id); if (e) e.hidden = !on; };
   const lock = async () => { try { return !!(window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch { return false; } };
   let hasLock = null, last = {}, asked = false;
+  // "Delete my chat" is only for a guest who has written a line, a quiet link at the end of the thread (a first-time visitor sees none of it)
+  const showFoot = () => show("foot", (!!last.known || !!last.here) && !!document.querySelector("#lines .row-b.you"));
+  const lines = $("lines"); if (lines && window.MutationObserver) new MutationObserver(showFoot).observe(lines, { childList: true });
   async function refresh() {
     let s; try { const r = await fetch(base + "/id/state", { credentials: "same-origin", headers: { accept: "application/json" } }); if (!r.ok) return; s = await r.json(); } catch { return; }
     last = s; if (hasLock === null) hasLock = await lock();
@@ -65,7 +68,7 @@ export function identityBlock(a: IdentityBlockArgs): { html: string; script: str
     if (kept) { show("keepGo", false); $("keepBody").textContent = W.keepDone; }
     show("numAsk", (kept || s.work > 0) && !s.number && !asked);
     show("before", s.work === 0 && !kept);
-    show("foot", !!s.known || kept); show("linksGo", !!s.number);
+    showFoot(); show("linksGo", !!s.number);
   }
   async function keep() {
     say("keepMsg", ""); $("keepGo").disabled = true;

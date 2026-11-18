@@ -252,6 +252,14 @@ body.chat { display: flex; flex-direction: column; min-height: 100dvh; font-fami
 .sign-in { display: flex; flex: 1 1 0; min-width: 0; gap: 12px; align-items: center; min-height: 60px; }
 .sign-in > div { min-width: 0; }
 .sign-acts { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+/* The call strip (18 Nov 2026): shown by the page's script only while the head is out of view. A zero-height sticky holder with the bar hung inside it, so showing it moves nothing.
+   One line at any text size: the name is cut with an ellipsis (the one place words are not allowed to wrap), the call button is 48 px and never shrinks. */
+.strip { position: sticky; top: 0; z-index: 4; height: 0; }
+.strip[hidden] { display: none; }
+.strip-in { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 4px 16px; background: var(--paint, var(--head)); color: var(--paint-ink, var(--ink)); border-bottom: 1px solid var(--line2); }
+.strip-name { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--display, var(--text)); font-weight: 700; font-size: 1.1rem; }
+.strip-call { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: var(--card); color: var(--ink); border: 1px solid var(--line2); }
+.strip-call svg { width: 24px; height: 24px; }
 .sign-acts .callbtn { min-height: 44px; margin: 0; padding: .3em 1em; }
 .sign .face-c { width: 52px; height: 52px; border-radius: 14px; }
 .sign h1 { margin: 0; font-size: 1.3rem; line-height: 1.15; font-weight: 700; overflow-wrap: anywhere; }
@@ -388,5 +396,6 @@ ${parts.join("\n")}
 /** Small line icons drawn inline (the pages load no pictures but data: ones): a padlock for "this page is private", a microphone for the keyboard-mic hint. */
 export const ICON = {
   lock: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
+  phone: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 5.5a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>`,
   mic: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8.5" y="2.5" width="7" height="12" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
 };
