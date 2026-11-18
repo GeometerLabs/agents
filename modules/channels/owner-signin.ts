@@ -104,6 +104,7 @@ const sameNumber = (a: string, b: string) => a.replace(/\D/gu, "") === b.replace
 
 export function createOwnerSignin(setup: OwnerSigninSetup) {
   const { access, owner, clock } = setup;
+  access.noteStart(clock.now()); // a request that fell due while the runtime was down is given a day more, and the owner is told again (owner-access.ts noteStart)
   const log = setup.log ?? (() => undefined);
   /** The owner as the settings and the deployer say now; undefined while the shop has no pages file (no owner sign-in at all). */
   const who = (): OwnerNow | undefined => { const p = setup.pages(); return p ? { owner: owner.whatsapp, base: p.ownerBase } : undefined; };
@@ -196,6 +197,9 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
           else if (n.what === "removal_asked") {
             line({ what: "removal_asked", by: n.askedBy, effectiveAt: new Date(n.effectiveAt).toISOString() });
             setup.alert?.(REMOVAL_ALERT(n.askedBy));
+          } else if (n.what === "removal_extended") {
+            line({ what: "removal_extended", effectiveAt: new Date(n.effectiveAt).toISOString() });
+            setup.alert?.(n.kind === "owner_change" ? OWNER_CHANGE_ALERT : REMOVAL_ALERT(n.askedBy));
           } else if (n.what === "owner_change_asked") {
             line({ what: "owner_change_asked", effectiveAt: new Date(n.effectiveAt).toISOString() });
             setup.alert?.(OWNER_CHANGE_ALERT);
@@ -251,12 +255,15 @@ export function createOwnerSignin(setup: OwnerSigninSetup) {
         if (w && ok) access.watchOwner(w, clock.now());
         return w && ok ? access.phonesView(ok.id, w, relyingParty(w.base), setup.grants!(), clock.now()) : undefined;
       },
-      dismissPhones: (session: string): boolean => { const w = who(); const ok = w ? access.check(session, w, clock.now(), endBefore()) : undefined; if (ok) access.dismiss(ok.id); return ok !== undefined; },
+      dismissPhones: (session: string, through?: number): boolean => { const w = who(); const ok = w ? access.check(session, w, clock.now(), endBefore()) : undefined; if (ok) access.dismiss(ok.id, clock.now(), through); return ok !== undefined; },
+      /** Only a PASSKEY session may take a phone away (a WhatsApp link is whoever holds that phone). */
       removePhone: (session: string, phoneId: string, confirmLast: boolean) => {
-        const w = who(); const ok = w && setup.grants ? access.check(session, w, clock.now(), endBefore()) : undefined;
+        const w = who(); const ok = w && setup.grants ? access.checkPasskey(session, w, clock.now(), endBefore()) : undefined;
         if (!w || !ok) return { ok: false as const, why: "session" as const };
         return access.removePhone(ok.id, phoneId, w, relyingParty(w.base), setup.grants!(), clock.now(), confirmLast);
       },
+      /** The passkey (phone) a session was made by, if it was made by one: what a push subscription is tied to. */
+      passkeyOf: (session: string): string | undefined => { const w = who(); const ok = w ? access.checkPasskey(session, w, clock.now(), endBefore()) : undefined; return ok ? access.passkeyOfSession(ok.id) : undefined; },
       /** The owner's own codes, from a PASSKEY session only. Returned once. */
       makeCodes: (session: string): string[] | undefined => { const w = who(); const ok = w && setup.grants ? access.checkPasskey(session, w, clock.now(), endBefore()) : undefined; return ok ? access.makeOwnCodes(ok.id, setup.grants!(), clock.now()) : undefined; },
       /** "Add a phone": the link's address for the owner's new phone (a PASSKEY session only). Returned once. */

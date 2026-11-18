@@ -74,6 +74,8 @@ export function openPushStore(file: string) {
   `);
   // W3: who signs a phone's pushes. An older store has no such column and CREATE TABLE IF NOT EXISTS would not add it, so it is added once, here ("own" for what was there).
   if (!(db.prepare("PRAGMA table_info(subs)").all() as { name: string }[]).some((c) => c.name === "signer")) db.exec("ALTER TABLE subs ADD COLUMN signer TEXT NOT NULL DEFAULT 'own'");
+  // Owner's item 2: which phone (passkey) of the owner a subscription was made from, so removing that phone ends its alerts too. NULL for every older row and for a customer's.
+  if (!(db.prepare("PRAGMA table_info(subs)").all() as { name: string }[]).some((c) => c.name === "ref")) db.exec("ALTER TABLE subs ADD COLUMN ref TEXT");
   type SubRow = { id: string; who: string; host: string; path: string; p256dh: string; auth: string; made_at: number; dead_at: number | null; signer?: string };
   const asSub = (r: SubRow): Subscription => ({ id: r.id, who: r.who, host: r.host, path: r.path, p256dh: Buffer.from(r.p256dh, "base64url"), auth: Buffer.from(r.auth, "base64url"), signer: r.signer === "streetlist" ? "streetlist" : "own" });
   const live = (who: string): SubRow[] => db.prepare("SELECT * FROM subs WHERE who = ? AND dead_at IS NULL ORDER BY made_at").all(who) as SubRow[];
@@ -91,16 +93,16 @@ export function openPushStore(file: string) {
      * Keep a browser's subscription for `who` ("owner", or a customer page's conversation). The same address again is the same subscription (moved to `who` if a
      * page passed it on). Returns its short id, or why it was refused.
      */
-    subscribe(who: string, s: BrowserSubscription, now: number, signer: Signer = "own"): { ok: true; id: string } | { ok: false; why: string } {
+    subscribe(who: string, s: BrowserSubscription, now: number, signer: Signer = "own", ref?: string): { ok: true; id: string } | { ok: false; why: string } {
       const problem = subscriptionProblem(s);
       if (problem) return { ok: false, why: problem };
       const u = new URL(s.endpoint);
       const path = `${u.pathname}${u.search}`;
       const old = db.prepare("SELECT id FROM subs WHERE host = ? AND path = ?").get(u.hostname, path) as { id: string } | undefined;
       const id = old?.id ?? newId();
-      db.prepare(`INSERT INTO subs (id, who, host, path, p256dh, auth, made_at, signer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(host, path) DO UPDATE SET who = excluded.who, p256dh = excluded.p256dh, auth = excluded.auth, made_at = excluded.made_at, signer = excluded.signer, dead_at = NULL, dead_why = NULL`)
-        .run(id, who, u.hostname, path, s.keys.p256dh, s.keys.auth, now, signer);
+      db.prepare(`INSERT INTO subs (id, who, host, path, p256dh, auth, made_at, signer, ref) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(host, path) DO UPDATE SET who = excluded.who, p256dh = excluded.p256dh, auth = excluded.auth, made_at = excluded.made_at, signer = excluded.signer, ref = excluded.ref, dead_at = NULL, dead_why = NULL`)
+        .run(id, who, u.hostname, path, s.keys.p256dh, s.keys.auth, now, signer, ref ?? null);
       const max = who === "owner" ? OWNER_PHONES : CUSTOMER_PHONES;
       const rows = live(who);
       for (const r of rows.slice(0, Math.max(0, rows.length - max))) api.drop(r.id, "too_many", now);
@@ -121,6 +123,13 @@ export function openPushStore(file: string) {
     drop(id: string, why: string, now: number): void {
       db.prepare("UPDATE subs SET dead_at = ?, dead_why = ? WHERE id = ? AND dead_at IS NULL").run(now, why, id);
       db.prepare("UPDATE queue SET state = 'gone', done_at = ? WHERE sub_id = ? AND state = 'waiting'").run(now, id);
+    },
+
+    /** The owner removed a phone: every subscription made from it ends, and its waiting pushes go. Returns how many. */
+    dropRef(ref: string, now: number): number {
+      const rows = db.prepare("SELECT id FROM subs WHERE ref = ? AND dead_at IS NULL").all(ref) as { id: string }[];
+      for (const r of rows) api.drop(r.id, "phone_removed", now);
+      return rows.length;
     },
 
     /** W2, "delete my chat": every phone of `who` stops getting alerts and its waiting pushes go (the same end as an unsubscribe). Returns how many. */

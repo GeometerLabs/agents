@@ -19,20 +19,20 @@ import { printedCode } from "./owner-grants.ts";
 export type PhonesAnswer = PhonesView & { language: Language; now: number };
 
 interface Words {
-  title: string; link: string; intro: string; thisPhone: string; aPhone: string; added: (day: string) => string; via: Record<"setup" | "recovery" | "own_phone" | "reset", string>;
+  title: string; link: string; intro: string; thisPhone: string; aPhone: string; added: (day: string) => string; via: Record<"setup" | "recovery" | "own_phone" | "own_code" | "reset", string>;
   lastUsed: (day: string) => string; neverUsed: string; remove: string; removeTitle: string; removeAsk: (what: string) => string; removeYes: string; keep: string;
   lastTitle: string; lastAsk: string; lastYes: string; removed: string; add: string; addNote: string; addTitle: string; addHow: (time: string) => string;
   codes: string; codesNone: string; codesHave: (day: string) => string; codesMake: string; codesRemake: string; codesNote: string; codesTitle: string; codesShow: string;
   needPasskey: string; back: string; onePhone: string; noPhones: string;
   bannerNew: (when: string, label: string) => string; itWasMe: string; removeIt: string; bannerRequest: (by: string, when: string) => string; cancel: string; cancelled: string;
-  bannerOwner: (when: string) => string; bannerCodes: string; makeCodes: string; refused: string; operator: string; openPhones: string;
+  labelNote: string; bannerOwner: (when: string) => string; bannerCodesMade: (when: string, label: string) => string; bannerRemoved: (when: string, label: string) => string; bannerCodes: string; makeCodes: string; refused: string; operator: string; openPhones: string;
 }
 /** Exported so the review sheets list these lines too (review.ts, ids "phones.*"). */
 export const WORDS: Record<Language, Words> = {
   en: {
     title: "Phones that can open your shop", link: "Phones that can open your shop", intro: "Only these phones can open your shop's app. If you see one you do not know, remove it.",
     thisPhone: "This phone", aPhone: "A phone", added: (d) => `Added ${d}`,
-    via: { setup: "with the setup QR code", recovery: "with a recovery code", own_phone: "from your own phone", reset: "after Geometer reset your sign-in" },
+    via: { setup: "with the setup QR code", recovery: "with a recovery code", own_code: "with your own recovery code", own_phone: "from your own phone", reset: "after Geometer reset your sign-in" },
     lastUsed: (d) => `Last used ${d}`, neverUsed: "Not used yet", remove: "Remove", removeTitle: "Remove this phone?", removeAsk: (w) => `${w} will not be able to open your shop any more.`,
     removeYes: "Yes, remove it", keep: "No, keep it",
     lastTitle: "This is your only phone", lastAsk: "If you remove it, you can only get back in with your own recovery codes, or with your Operator's help, which takes 2 days. Remove it anyway?", lastYes: "Yes, remove my only phone",
@@ -45,13 +45,15 @@ export const WORDS: Record<Language, Words> = {
     onePhone: "Only one phone can open your shop now.", noPhones: "No phone can open your shop now. Use your recovery codes, or ask your Operator.",
     bannerNew: (when, label) => `A new phone was added on ${when}${label ? ` (${label})` : ""}. Not you? Remove it.`, itWasMe: "It was me", removeIt: "Remove it",
     bannerRequest: (by, when) => `${by} asked to remove every phone that can open your shop. It will happen on ${when} unless you cancel.`, cancel: "Cancel the request", cancelled: "Cancelled. Your phones stay.",
+    labelNote: "The names are what each phone said about itself when it was added.",
     bannerOwner: (when) => `The owner's number for this shop was changed. Every phone that opens your shop stops working on ${when} unless you cancel.`,
+    bannerCodesMade: (when, label) => `New recovery codes were made on ${when}${label ? ` (${label})` : ""}. Not you? Remove that phone.`, bannerRemoved: (when, label) => `A phone was removed on ${when}${label ? ` (${label})` : ""}.`,
     bannerCodes: "Make your own codes now, so only you hold them.", makeCodes: "Make my codes", refused: "That did not work. Sign out, sign in with your phone's fingerprint and try again.", operator: "Your Operator", openPhones: "Your phones",
   },
   hi: {
     title: "वे फ़ोन जो आपकी दुकान खोल सकते हैं", link: "वे फ़ोन जो आपकी दुकान खोल सकते हैं", intro: "सिर्फ़ यही फ़ोन आपकी दुकान का ऐप खोल सकते हैं। कोई फ़ोन अनजान दिखे तो उसे हटा दीजिए।",
     thisPhone: "यह फ़ोन", aPhone: "एक फ़ोन", added: (d) => `${d} को जोड़ा गया`,
-    via: { setup: "सेटअप QR कोड से", recovery: "रिकवरी कोड से", own_phone: "आपके अपने फ़ोन से", reset: "Geometer के आपका साइन-इन रीसेट करने के बाद" },
+    via: { setup: "सेटअप QR कोड से", recovery: "रिकवरी कोड से", own_code: "आपके अपने रिकवरी कोड से", own_phone: "आपके अपने फ़ोन से", reset: "Geometer के आपका साइन-इन रीसेट करने के बाद" },
     lastUsed: (d) => `आख़िरी बार ${d} को इस्तेमाल हुआ`, neverUsed: "अभी तक इस्तेमाल नहीं हुआ", remove: "हटाएँ", removeTitle: "यह फ़ोन हटाएँ?", removeAsk: (w) => `${w} अब आपकी दुकान नहीं खोल पाएगा।`,
     removeYes: "हाँ, हटाइए", keep: "नहीं, रहने दीजिए",
     lastTitle: "यह आपका अकेला फ़ोन है", lastAsk: "इसे हटाने पर आप अपने रिकवरी कोड से, या अपने ऑपरेटर की मदद से ही वापस आ पाएँगे, जिसमें 2 दिन लगते हैं। फिर भी हटाएँ?", lastYes: "हाँ, मेरा अकेला फ़ोन हटाइए",
@@ -64,13 +66,15 @@ export const WORDS: Record<Language, Words> = {
     onePhone: "अभी सिर्फ़ एक फ़ोन आपकी दुकान खोल सकता है।", noPhones: "अभी कोई फ़ोन आपकी दुकान नहीं खोल सकता। अपने रिकवरी कोड इस्तेमाल कीजिए, या अपने ऑपरेटर से कहिए।",
     bannerNew: (when, label) => `${when} को एक नया फ़ोन जोड़ा गया${label ? ` (${label})` : ""}। आपने नहीं जोड़ा? उसे हटा दीजिए।`, itWasMe: "मैंने ही जोड़ा", removeIt: "हटाइए",
     bannerRequest: (by, when) => `${by} ने आपकी दुकान खोलने वाले हर फ़ोन को हटाने को कहा है। आप रद्द न करें तो यह ${when} को हो जाएगा।`, cancel: "अनुरोध रद्द करें", cancelled: "रद्द हो गया। आपके फ़ोन बने रहेंगे।",
+    labelNote: "ये नाम वही हैं जो हर फ़ोन ने जुड़ते समय अपने बारे में बताए।",
     bannerOwner: (when) => `इस दुकान के लिए मालिक का नंबर बदला गया है। आप रद्द न करें तो दुकान खोलने वाले सारे फ़ोन ${when} को बंद हो जाएँगे।`,
+    bannerCodesMade: (when, label) => `${when} को नए रिकवरी कोड बनाए गए${label ? ` (${label})` : ""}। आपने नहीं बनाए? वह फ़ोन हटा दीजिए।`, bannerRemoved: (when, label) => `${when} को एक फ़ोन हटाया गया${label ? ` (${label})` : ""}।`,
     bannerCodes: "अपने कोड अभी बनाइए, ताकि वे सिर्फ़ आपके पास रहें।", makeCodes: "मेरे कोड बनाएँ", refused: "यह नहीं हो पाया। साइन आउट करके अपने फ़ोन के फ़िंगरप्रिंट से साइन इन कीजिए और फिर कोशिश कीजिए।", operator: "आपके ऑपरेटर", openPhones: "आपके फ़ोन",
   },
   ml: {
     title: "നിങ്ങളുടെ കട തുറക്കാവുന്ന ഫോണുകൾ", link: "നിങ്ങളുടെ കട തുറക്കാവുന്ന ഫോണുകൾ", intro: "ഈ ഫോണുകൾക്ക് മാത്രമേ നിങ്ങളുടെ കടയുടെ ആപ്പ് തുറക്കാനാകൂ. നിങ്ങൾക്ക് അറിയാത്ത ഒരെണ്ണം കണ്ടാൽ അത് നീക്കൂ.",
     thisPhone: "ഈ ഫോൺ", aPhone: "ഒരു ഫോൺ", added: (d) => `${d}-ന് ചേർത്തു`,
-    via: { setup: "സെറ്റപ്പ് QR കോഡ് ഉപയോഗിച്ച്", recovery: "റിക്കവറി കോഡ് ഉപയോഗിച്ച്", own_phone: "നിങ്ങളുടെ സ്വന്തം ഫോണിൽ നിന്ന്", reset: "Geometer നിങ്ങളുടെ സൈൻ ഇൻ റീസെറ്റ് ചെയ്ത ശേഷം" },
+    via: { setup: "സെറ്റപ്പ് QR കോഡ് ഉപയോഗിച്ച്", recovery: "റിക്കവറി കോഡ് ഉപയോഗിച്ച്", own_code: "നിങ്ങളുടെ സ്വന്തം റിക്കവറി കോഡ് ഉപയോഗിച്ച്", own_phone: "നിങ്ങളുടെ സ്വന്തം ഫോണിൽ നിന്ന്", reset: "Geometer നിങ്ങളുടെ സൈൻ ഇൻ റീസെറ്റ് ചെയ്ത ശേഷം" },
     lastUsed: (d) => `അവസാനം ഉപയോഗിച്ചത് ${d}`, neverUsed: "ഇതുവരെ ഉപയോഗിച്ചിട്ടില്ല", remove: "നീക്കുക", removeTitle: "ഈ ഫോൺ നീക്കണോ?", removeAsk: (w) => `${w}-ന് ഇനി നിങ്ങളുടെ കട തുറക്കാനാകില്ല.`,
     removeYes: "അതെ, നീക്കൂ", keep: "വേണ്ട, ഇരിക്കട്ടെ",
     lastTitle: "ഇത് നിങ്ങളുടെ ഒരേയൊരു ഫോണാണ്", lastAsk: "ഇത് നീക്കിയാൽ നിങ്ങളുടെ സ്വന്തം റിക്കവറി കോഡുകൾ കൊണ്ടോ ഓപ്പറേറ്ററുടെ സഹായം കൊണ്ടോ മാത്രമേ തിരികെ കയറാനാകൂ; അതിന് 2 ദിവസം എടുക്കും. എന്നാലും നീക്കണോ?", lastYes: "അതെ, എന്റെ ഒരേയൊരു ഫോൺ നീക്കൂ",
@@ -83,13 +87,15 @@ export const WORDS: Record<Language, Words> = {
     onePhone: "ഇപ്പോൾ ഒരു ഫോണിന് മാത്രമേ നിങ്ങളുടെ കട തുറക്കാനാകൂ.", noPhones: "ഇപ്പോൾ ഒരു ഫോണിനും നിങ്ങളുടെ കട തുറക്കാനാകില്ല. റിക്കവറി കോഡുകൾ ഉപയോഗിക്കൂ, അല്ലെങ്കിൽ ഓപ്പറേറ്ററോട് ചോദിക്കൂ.",
     bannerNew: (when, label) => `${when}-ന് ഒരു പുതിയ ഫോൺ ചേർത്തു${label ? ` (${label})` : ""}. നിങ്ങളല്ലേ? അത് നീക്കൂ.`, itWasMe: "ഞാൻ തന്നെയാണ്", removeIt: "നീക്കൂ",
     bannerRequest: (by, when) => `${by} നിങ്ങളുടെ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും നീക്കാൻ ആവശ്യപ്പെട്ടു. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ ${when}-ന് അത് നടക്കും.`, cancel: "അഭ്യർത്ഥന റദ്ദാക്കൂ", cancelled: "റദ്ദാക്കി. നിങ്ങളുടെ ഫോണുകൾ അതേപടി തുടരും.",
+    labelNote: "ഓരോ ഫോണും ചേർക്കുമ്പോൾ സ്വയം പറഞ്ഞ പേരുകളാണ് ഇവ.",
     bannerOwner: (when) => `ഈ കടയുടെ ഉടമയുടെ നമ്പർ മാറ്റി. നിങ്ങൾ റദ്ദാക്കിയില്ലെങ്കിൽ കട തുറക്കുന്ന എല്ലാ ഫോണുകളും ${when}-ന് പ്രവർത്തിക്കില്ല.`,
+    bannerCodesMade: (when, label) => `${when}-ന് പുതിയ റിക്കവറി കോഡുകൾ ഉണ്ടാക്കി${label ? ` (${label})` : ""}. നിങ്ങളല്ലേ? ആ ഫോൺ നീക്കൂ.`, bannerRemoved: (when, label) => `${when}-ന് ഒരു ഫോൺ നീക്കി${label ? ` (${label})` : ""}.`,
     bannerCodes: "നിങ്ങളുടെ സ്വന്തം കോഡുകൾ ഇപ്പോൾ ഉണ്ടാക്കൂ, അത് നിങ്ങളുടെ കയ്യിൽ മാത്രമിരിക്കട്ടെ.", makeCodes: "എന്റെ കോഡുകൾ ഉണ്ടാക്കൂ", refused: "അത് നടന്നില്ല. സൈൻ ഔട്ട് ചെയ്ത് ഫോണിന്റെ ഫിംഗർപ്രിന്റ് ഉപയോഗിച്ച് സൈൻ ഇൻ ചെയ്ത് വീണ്ടും ശ്രമിക്കൂ.", operator: "നിങ്ങളുടെ ഓപ്പറേറ്റർ", openPhones: "നിങ്ങളുടെ ഫോണുകൾ",
   },
   kn: {
     title: "ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಬಲ್ಲ ಫೋನ್‌ಗಳು", link: "ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಬಲ್ಲ ಫೋನ್‌ಗಳು", intro: "ಈ ಫೋನ್‌ಗಳು ಮಾತ್ರ ನಿಮ್ಮ ಅಂಗಡಿಯ ಆಪ್ ತೆರೆಯಬಲ್ಲವು. ನಿಮಗೆ ಗೊತ್ತಿಲ್ಲದ ಒಂದು ಕಂಡರೆ ಅದನ್ನು ತೆಗೆಯಿರಿ.",
     thisPhone: "ಈ ಫೋನ್", aPhone: "ಒಂದು ಫೋನ್", added: (d) => `${d} ರಂದು ಸೇರಿಸಲಾಗಿದೆ`,
-    via: { setup: "ಸೆಟಪ್ QR ಕೋಡ್‌ನಿಂದ", recovery: "ರಿಕವರಿ ಕೋಡ್‌ನಿಂದ", own_phone: "ನಿಮ್ಮ ಸ್ವಂತ ಫೋನ್‌ನಿಂದ", reset: "Geometer ನಿಮ್ಮ ಸೈನ್ ಇನ್ ರೀಸೆಟ್ ಮಾಡಿದ ನಂತರ" },
+    via: { setup: "ಸೆಟಪ್ QR ಕೋಡ್‌ನಿಂದ", recovery: "ರಿಕವರಿ ಕೋಡ್‌ನಿಂದ", own_code: "ನಿಮ್ಮ ಸ್ವಂತ ರಿಕವರಿ ಕೋಡ್‌ನಿಂದ", own_phone: "ನಿಮ್ಮ ಸ್ವಂತ ಫೋನ್‌ನಿಂದ", reset: "Geometer ನಿಮ್ಮ ಸೈನ್ ಇನ್ ರೀಸೆಟ್ ಮಾಡಿದ ನಂತರ" },
     lastUsed: (d) => `ಕೊನೆಯ ಬಳಕೆ ${d}`, neverUsed: "ಇನ್ನೂ ಬಳಸಿಲ್ಲ", remove: "ತೆಗೆಯಿರಿ", removeTitle: "ಈ ಫೋನ್ ತೆಗೆಯಬೇಕೇ?", removeAsk: (w) => `${w} ಇನ್ನು ಮುಂದೆ ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಲು ಆಗುವುದಿಲ್ಲ.`,
     removeYes: "ಹೌದು, ತೆಗೆಯಿರಿ", keep: "ಬೇಡ, ಇರಲಿ",
     lastTitle: "ಇದು ನಿಮ್ಮ ಒಂದೇ ಫೋನ್", lastAsk: "ಇದನ್ನು ತೆಗೆದರೆ ನಿಮ್ಮ ಸ್ವಂತ ರಿಕವರಿ ಕೋಡ್‌ಗಳಿಂದ ಅಥವಾ ಆಪರೇಟರ್ ಸಹಾಯದಿಂದ ಮಾತ್ರ ಮತ್ತೆ ಒಳಗೆ ಬರಬಹುದು; ಅದಕ್ಕೆ 2 ದಿನ ಹಿಡಿಯುತ್ತದೆ. ಆದರೂ ತೆಗೆಯಬೇಕೇ?", lastYes: "ಹೌದು, ನನ್ನ ಒಂದೇ ಫೋನ್ ತೆಗೆಯಿರಿ",
@@ -102,7 +108,9 @@ export const WORDS: Record<Language, Words> = {
     onePhone: "ಈಗ ಒಂದು ಫೋನ್ ಮಾತ್ರ ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಬಲ್ಲದು.", noPhones: "ಈಗ ಯಾವ ಫೋನ್ ಕೂಡ ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯಲಾರದು. ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಬಳಸಿ, ಅಥವಾ ಆಪರೇಟರ್ ಅವರನ್ನು ಕೇಳಿ.",
     bannerNew: (when, label) => `${when} ರಂದು ಹೊಸ ಫೋನ್ ಸೇರಿಸಲಾಗಿದೆ${label ? ` (${label})` : ""}. ನೀವಲ್ಲವೇ? ಅದನ್ನು ತೆಗೆಯಿರಿ.`, itWasMe: "ನಾನೇ", removeIt: "ತೆಗೆಯಿರಿ",
     bannerRequest: (by, when) => `${by} ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳನ್ನು ತೆಗೆಯಲು ಕೇಳಿದ್ದಾರೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ${when} ರಂದು ಆಗುತ್ತದೆ.`, cancel: "ಮನವಿ ರದ್ದುಗೊಳಿಸಿ", cancelled: "ರದ್ದಾಗಿದೆ. ನಿಮ್ಮ ಫೋನ್‌ಗಳು ಹಾಗೆಯೇ ಇರುತ್ತವೆ.",
+    labelNote: "ಪ್ರತಿ ಫೋನ್ ಸೇರಿಸುವಾಗ ತನ್ನ ಬಗ್ಗೆ ಹೇಳಿದ ಹೆಸರುಗಳು ಇವು.",
     bannerOwner: (when) => `ಈ ಅಂಗಡಿಯ ಮಾಲೀಕರ ನಂಬರ್ ಬದಲಾಯಿಸಲಾಗಿದೆ. ನೀವು ರದ್ದುಗೊಳಿಸದಿದ್ದರೆ ಅಂಗಡಿ ತೆರೆಯುವ ಎಲ್ಲಾ ಫೋನ್‌ಗಳು ${when} ರಂದು ಕೆಲಸ ಮಾಡುವುದಿಲ್ಲ.`,
+    bannerCodesMade: (when, label) => `${when} ರಂದು ಹೊಸ ರಿಕವರಿ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಲಾಗಿದೆ${label ? ` (${label})` : ""}. ನೀವಲ್ಲವೇ? ಆ ಫೋನ್ ತೆಗೆಯಿರಿ.`, bannerRemoved: (when, label) => `${when} ರಂದು ಒಂದು ಫೋನ್ ತೆಗೆಯಲಾಗಿದೆ${label ? ` (${label})` : ""}.`,
     bannerCodes: "ನಿಮ್ಮ ಸ್ವಂತ ಕೋಡ್‌ಗಳನ್ನು ಈಗಲೇ ಮಾಡಿ, ಅವು ನಿಮ್ಮ ಬಳಿ ಮಾತ್ರ ಇರಲಿ.", makeCodes: "ನನ್ನ ಕೋಡ್‌ಗಳನ್ನು ಮಾಡಿ", refused: "ಅದು ಆಗಲಿಲ್ಲ. ಸೈನ್ ಔಟ್ ಆಗಿ, ಫೋನ್‌ನ ಫಿಂಗರ್‌ಪ್ರಿಂಟ್‌ನಿಂದ ಸೈನ್ ಇನ್ ಮಾಡಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.", operator: "ನಿಮ್ಮ ಆಪರೇಟರ್", openPhones: "ನಿಮ್ಮ ಫೋನ್‌ಗಳು",
   },
 };
@@ -131,9 +139,14 @@ export function phonesBanner(o: { base: string; language: Language; csrf?: strin
   const v = o.view;
   const parts: Raw[] = [];
   if (v.removal) parts.push(html`<div class="notice" role="alert"><p>${v.removal.kind === "owner_change" ? w.bannerOwner(dayAndTime(v.removal.effectiveAt, o.language)) : w.bannerRequest(v.removal.askedBy || o.operatorName || w.operator, dayAndTime(v.removal.effectiveAt, o.language))}</p>${tap(o.base, "cancel", o.csrf, w.cancel)}</div>`);
+  // "It was me" dismisses up to the moment these banners reach (v.seenThrough), not to whatever happened after the page was drawn
+  const dismiss = tap(o.base, "dismiss", o.csrf, w.itWasMe, { through: String(v.seenThrough) }, true);
   for (const p of v.announce.slice(-3)) {
     parts.push(html`<div class="notice" role="alert"><p>${w.bannerNew(dayAndTime(p.madeAt, o.language), p.label ?? "")}</p>
-<p><a class="btn" href="${o.base}/phones?remove=${p.id}&amp;lang=${o.language}">${w.removeIt}</a></p>${tap(o.base, "dismiss", o.csrf, w.itWasMe, {}, true)}</div>`);
+<p><a class="btn" href="${o.base}/phones?remove=${p.id}&amp;lang=${o.language}">${w.removeIt}</a></p>${dismiss}</div>`);
+  }
+  for (const n of v.news.slice(-3)) {
+    parts.push(html`<div class="notice" role="alert"><p>${n.kind === "codes" ? w.bannerCodesMade(dayAndTime(n.at, o.language), n.label ?? "") : w.bannerRemoved(dayAndTime(n.at, o.language), n.label ?? "")}</p>${dismiss}</div>`);
   }
   // the prompt only for a phone that can do it (a passkey session) and once the owner holds a phone of their own: right after the first sign-in
   if (v.ownCodesAt === undefined && v.passkeySession && v.phones.length > 0) parts.push(html`<div class="notice" role="status"><p>${w.bannerCodes}</p>${tap(o.base, "codes", o.csrf, w.makeCodes)}</div>`);
@@ -150,7 +163,7 @@ export function phonesPage(o: { base: string; language: Language; csrf?: string;
   const lang = o.language;
   const rows = v.phones.map((p) => html`<section class="card"><h2>${labelOf(p, w)}${p.mine ? html` <small class="note">· ${w.thisPhone}</small>` : ""}</h2>
 <p class="note">${w.added(dayOnly(p.madeAt, lang))}, ${w.via[p.via as keyof Words["via"]] ?? w.via.setup}<br>${p.usedAt !== undefined ? w.lastUsed(dayAndTime(p.usedAt, lang)) : w.neverUsed}</p>
-<p><a class="btn quiet" href="${o.base}/phones?remove=${p.id}&amp;lang=${lang}">${w.remove}</a></p></section>`);
+${v.passkeySession ? html`<p><a class="btn quiet" href="${o.base}/phones?remove=${p.id}&amp;lang=${lang}">${w.remove}</a></p>` : ""}</section>`);
   const state = v.phones.length === 0 ? html`<p class="notice">${w.noPhones}</p>` : v.phones.length === 1 ? html`<p class="note">${w.onePhone}</p>` : "";
   const banners = phonesBanner({ base: o.base, language: lang, ...(o.csrf ? { csrf: o.csrf } : {}), view: v });
   const codes = html`<h2>${w.codes}</h2>${v.ownCodesAt !== undefined ? html`<p class="calm">${w.codesHave(dayOnly(v.ownCodesAt, lang))}</p>` : html`<p class="note">${w.codesNone}</p>`}
@@ -158,7 +171,7 @@ export function phonesPage(o: { base: string; language: Language; csrf?: string;
   const add = v.passkeySession ? html`<h2>${w.add}</h2><p class="note">${w.addNote}</p>${tap(o.base, "add", o.csrf, w.add, {}, true)}` : "";
   return shell(lang, w.title, html`<h1>${w.title}</h1>
 ${o.notice ? html`<p class="notice" role="status">${o.notice === "removed" ? w.removed : o.notice === "cancelled" ? w.cancelled : w.refused}</p>` : ""}
-${raw(banners)}<p class="note">${w.intro}</p>${state}${rows}${add}${codes}
+${raw(banners)}<p class="note">${w.intro}</p>${state}${rows}${v.phones.length > 0 ? html`<p class="note">${w.labelNote}</p>` : ""}${add}${codes}
 ${o.hosted ? html`<p class="note">${LOST_HELP[lang]}</p>` : ""}
 <p><a href="${o.base}/?lang=${lang}">${w.back}</a></p>`);
 }
