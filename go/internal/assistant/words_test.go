@@ -28,6 +28,11 @@ func TestFormattersEqualNodes(t *testing.T) {
 			H, Min int
 			Text   string
 		}
+		Moment []struct {
+			Lang string
+			Ms   int64
+			Text string
+		}
 	}
 	if err := json.Unmarshal(b, &v); err != nil {
 		t.Fatal(err)
@@ -46,6 +51,43 @@ func TestFormattersEqualNodes(t *testing.T) {
 		if got := Words(c.Lang).TimeOfDay(c.H, c.Min); got != c.Text {
 			t.Errorf("Time %s %d:%d = %q, node %q", c.Lang, c.H, c.Min, got, c.Text)
 		}
+	}
+	if len(v.Moment) == 0 {
+		t.Fatal("no moment vectors: run node go/scripts/gen_format_vectors.ts")
+	}
+	for _, c := range v.Moment {
+		if got := Words(c.Lang).Moment(c.Ms); got != c.Text {
+			t.Errorf("Moment %s %d = %q, node %q", c.Lang, c.Ms, got, c.Text)
+		}
+	}
+}
+
+// The owner-control alerts: each form fills every slot, the label and the Operator's name are optional as in TypeScript, and a value is never read as a slot.
+func TestOwnerAlerts(t *testing.T) {
+	at := int64(1_763_500_000_123)
+	for _, l := range []string{"en", "hi", "ml", "kn"} {
+		p := Words(l)
+		for _, what := range []string{"new_phone", "codes_made", "phone_removed", "removal_asked", "owner_change_asked"} {
+			for _, extra := range []string{"", "Android, Chrome"} {
+				got := p.OwnerAlert(what, at, extra, extra)
+				if strings.Contains(got, "{") {
+					t.Errorf("%s %s: a slot is left: %q", l, what, got)
+				}
+				if extra != "" && what != "owner_change_asked" && !strings.Contains(got, extra) {
+					t.Errorf("%s %s: no %q in %q", l, what, extra, got)
+				}
+			}
+		}
+	}
+	en := Words("en")
+	if got := en.OwnerAlert("new_phone", at, "iPhone, Safari", ""); got != "A new phone was added to your shop on "+en.Moment(at)+" (iPhone, Safari). Not you? Open your app and remove it." {
+		t.Error(got)
+	}
+	if got := en.OwnerAlert("removal_asked", at, "", ""); !strings.HasPrefix(got, "Your Operator asked to remove every phone") {
+		t.Error(got)
+	}
+	if got := en.OwnerAlert("removal_asked", at, "", "{at}"); !strings.HasPrefix(got, "{at} asked") {
+		t.Error("a name that looks like a slot must stay as it is:", got)
 	}
 }
 

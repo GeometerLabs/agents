@@ -3,8 +3,8 @@
 // it must pass on TypeScript first, and assertions are on statuses and machine fields, not on English sentences. The push tests turn push on through push-harness.ts (a fake push
 // Guard and a browser that opens what it is sent).
 //
-// Where TypeScript and Go are asked to differ from each other: nowhere in this file, with ONE exception that is the TypeScript runtime's mistake and is marked `todo` for it (the
-// owner's file taken: TypeScript writes the session's secret token into the record line, Go the session's short id).
+// Where TypeScript and Go are asked to differ from each other: nowhere in this file. (The one difference it once marked `todo`, TypeScript writing the session's token into the
+// owner's file-taken record line, was fixed in http.ts: both name the session by its short id.)
 import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash, randomBytes } from "node:crypto";
@@ -272,13 +272,18 @@ describe("\"Get my shop's file\": GET /internal/channel/owner-file", () => {
     assert.deepEqual((await s.call("/internal/channel/owner-file", { session })).body, { state: "none" }, "a meta with a bad id offers nothing");
   });
 
-  test("the record never holds the session's secret (a TypeScript mistake: it writes the token itself)", { todo: IMPL === "ts" && "TypeScript http.ts passes the session TOKEN to the record line; every other access line passes the short id" }, async () => {
+  test("the record never holds the session's secret: the file-taken line names the session by the short id its sign-in line gave", async () => {
     const s = await boot();
     const { session } = await passkeySession(s);
     const { meta } = leaveWithFile(s);
     assert.equal((await take(s, meta.id, { session })).status, 200);
     await s.settle();
-    for (const l of record(s)) assert.ok(!JSON.stringify(l).includes(session), `${l.action} holds the session's token`);
+    const lines = record(s);
+    for (const l of lines) assert.ok(!JSON.stringify(l).includes(session), `${l.action} holds the session's token`);
+    const signedIn = lines.filter((l) => l.action === "owner_session" && l.refs.what === "signed_in").map((l) => l.refs.session);
+    const taken = lines.filter((l) => l.action === "owner_file_taken");
+    assert.equal(taken.length, 1);
+    assert.ok(signedIn.includes(taken[0].refs.session), `the file-taken line names ${taken[0].refs.session}, the sign-in lines ${signedIn.join(", ")}`);
   });
 });
 
@@ -443,13 +448,12 @@ describe("web push on, through a fake push Guard", () => {
     try { assert.deepEqual(refs(db), [{ ref: null }]); } finally { db.close(); }
   });
 
-  test("a push alert reaches the Guard, encrypted for the phone, signed with the shop's key (the owner makes recovery codes: the other phones are told)", async (t) => {
+  test("a push alert reaches the Guard, encrypted for the phone, signed with the shop's key (the owner makes recovery codes: the other phones are told)", async () => {
     const { shop: s, guard } = await bootPush();
     const { session } = await passkeySession(s);
     const b = softBrowser();
     assert.equal((await push(s, { op: "owner_subscribe", subscription: b.subscription }, { session })).status, 200);
     const codes = await s.call("/internal/channel/owner-phones", { session, body: { op: "codes" } });
-    if (codes.status === 404) return t.skip("the owner's phones route (which makes this alert) is not in this runtime yet");
     assert.equal(codes.status, 200);
     for (let i = 0; i < 100 && guard.calls.length === 0; i++) await new Promise((r) => setTimeout(r, 50));
     assert.equal(guard.calls.length, 1);

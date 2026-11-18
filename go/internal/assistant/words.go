@@ -8,8 +8,9 @@ package assistant
 // shops holds at most four copies, and a shop in English never pays for Malayalam). The word lists of the owner's commands (rules.json.gz) are unpacked the same way, and the regular
 // expressions made from them are compiled the first time an owner's message is read (rules.go).
 //
-// The formatters a message needs are here, and small: the rupee grouping (en-IN: 12,34,567), the date (weekday and month names come from the pack) and the time of day (24 forms in
-// the pack, the day-part words of each hour). The tests prove each of them equal to Node's.
+// The formatters a message needs are here, and small: the rupee grouping (en-IN: 12,34,567), the date (weekday and month names come from the pack), the time of day (24 forms in
+// the pack, the day-part words of each hour) and the moment an owner-control alert carries (owner-phones.ts dayAndTime: the month names and 24 forms in the pack). The tests prove
+// each of them equal to Node's.
 
 import (
 	"bytes"
@@ -36,6 +37,11 @@ type Pack struct {
 	} `json:"date"`
 	Time map[string]string `json:"time"`
 	Cat  map[string]string `json:"cat"`
+	// Stamp is owner-phones.ts dayAndTime as data: the months' short names, and per hour the whole moment with {d}, {mon} and {mm} slots (gen_words.ts stampOf)
+	Stamp struct {
+		Months []string          `json:"months"`
+		Hours  map[string]string `json:"hours"`
+	} `json:"stamp"`
 }
 
 type slot struct {
@@ -166,6 +172,38 @@ func (p *Pack) TimeOfDay(hour, minute int) string {
 		mm = "0" + mm
 	}
 	return strings.Replace(p.Time[strconv.Itoa(hour)], "{mm}", mm, 1)
+}
+
+// india is India's time, the one owner-phones.ts writes every moment in (Asia/Kolkata has had no summer time since 1945, so a fixed zone is the same zone and needs no tz database).
+var india = time.FixedZone("IST", 5*3600+30*60)
+
+// Moment is owner-phones.ts dayAndTime: "28 Nov, 3:29 pm", in India's time, as an owner-control alert carries it.
+func (p *Pack) Moment(ms int64) string {
+	t := time.UnixMilli(ms).In(india)
+	mm := strconv.Itoa(t.Minute())
+	if t.Minute() < 10 {
+		mm = "0" + mm
+	}
+	return strings.NewReplacer("{d}", strconv.Itoa(t.Day()), "{mon}", p.Stamp.Months[t.Month()-1], "{mm}", mm).Replace(p.Stamp.Hours[strconv.Itoa(t.Hour())])
+}
+
+// OwnerAlert is the push alert of an owner-control notice, word for word TypeScript's (gen_words.ts renders them): "new_phone", "codes_made" and "phone_removed" carry the moment
+// and the phone's coarse label (owner-phones.ts NEW_PHONE_ALERT, CODES_ALERT, REMOVED_ALERT); "removal_asked" names who asked, "Your Operator" when nobody is named, and
+// "owner_change_asked" says nothing the Operator typed (owner-signin.ts REMOVAL_ALERT, OWNER_CHANGE_ALERT).
+func (p *Pack) OwnerAlert(what string, at int64, label, by string) string {
+	switch what {
+	case "new_phone", "codes_made", "phone_removed":
+		if label != "" {
+			return p.Say("alert."+what+".label", "at", p.Moment(at), "label", label)
+		}
+		return p.Say("alert."+what, "at", p.Moment(at))
+	case "removal_asked":
+		if by != "" {
+			return p.Say("alert.removal_asked.by", "by", by)
+		}
+		return p.Say("alert.removal_asked")
+	}
+	return p.Say("alert." + what)
 }
 
 // Category is the name of a category in this language ("Pets"); an unknown category is shown as it is.

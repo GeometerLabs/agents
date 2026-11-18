@@ -91,14 +91,17 @@ func (p *Push) Unsubscribe(who, endpoint string) bool {
 	return ok
 }
 
+// The owner-control calls below return the store's error: each one ends or lists what reaches the owner's phones, so a failure stops the route (as TypeScript's throw does) and
+// is never read as "nothing to end", which would leave the Operator's subscription alive after the lock.
+
 // DropRef: the owner removed a phone: the alerts it asked for end (owner's item 2).
-func (p *Push) DropRef(ref string) int { n, _ := p.store.DropRef(ref, p.now()); return n }
+func (p *Push) DropRef(ref string) (int, error) { return p.store.DropRef(ref, p.now()) }
 
 // OwnerSubs are the owner's alert subscriptions with the phone (passkey) each came from.
-func (p *Push) OwnerSubs() []OwnerSub { s, _ := p.store.OwnerSubs(); return s }
+func (p *Push) OwnerSubs() ([]OwnerSub, error) { return p.store.OwnerSubs() }
 
 // DropOwnerSub: the owner stops one alert subscription.
-func (p *Push) DropOwnerSub(id string) bool { ok, _ := p.store.DropOwnerSub(id, p.now()); return ok }
+func (p *Push) DropOwnerSub(id string) (bool, error) { return p.store.DropOwnerSub(id, p.now()) }
 
 // DropUnbound: the lock ends every owner subscription that came from no phone.
-func (p *Push) DropUnbound() int { n, _ := p.store.DropUnbound(p.now()); return n }
+func (p *Push) DropUnbound() (int, error) { return p.store.DropUnbound(p.now()) }
