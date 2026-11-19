@@ -332,7 +332,7 @@ Bookings shop; owner notices outside the window go by template (owner-notices) a
 
 ## 8. Status of the suite (TypeScript, 19 Nov 2026)
 
-**103 tests in 9 files.** `BOOKINGS_IMPL=ts node --test --test-concurrency=1 templates/commerce/bookings/contract/` (19 Nov 2026, through the heat lock): 99 pass, 2 skipped (the two
+**128 tests in 11 files (the last whole-folder run: 126 pass, 2 skipped, 0 fail; the numbers below are the first nine files' 103).** `BOOKINGS_IMPL=ts node --test --test-concurrency=1 templates/commerce/bookings/contract/` (19 Nov 2026, through the heat lock): 99 pass, 2 skipped (the two
 cross-restart cases, which need the Go binary), 2 failed on that pass; both were test mistakes (an offer asked for a date already past, a digest's form). Fixed, and the two files
 that hold them (`flow`, `record-licence`) run again: 26 of 26 pass. So: 101 pass, 2 skipped, 0 fail. `BOOKINGS_IMPL=go` with no binary: 103 tests,
 103 skipped, every one with "no Go Bookings runtime yet (wave 2)" (`grep -c` of the reason = 103). The listings contract after the shared move (`LISTINGS_IMPL=ts`, whole folder): 151
