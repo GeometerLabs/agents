@@ -154,8 +154,8 @@ export interface Shop {
   sent(to: string): { kind: string; templateName?: string; text: string; interactive?: any }[];
   /** POST /internal/channel/events with the channel token (and the owner's link for an owner kind). */
   channelEvents(list: unknown[], o?: { owner?: boolean | string; session?: string }): Promise<Answer>;
-  /** A customer's booking from the shop's page: returns the raw handle and its hash. Waits until handled. */
-  book(o?: { serviceId?: string; startMs?: number; name?: string; phone?: string; language?: string; id?: string }): Promise<{ handle: string; hash: string; answer: Answer }>;
+  /** A customer's booking from the shop's page: returns the raw handle and its hash. Waits until handled (unless `wait: false`). */
+  book(o?: { serviceId?: string; startMs?: number; name?: string; phone?: string; language?: string; id?: string; wait?: boolean }): Promise<{ handle: string; hash: string; answer: Answer }>;
   /** GET /internal/channel/request?handle=<hash>. */
   request(hash: string): Promise<Answer>;
   /** GET /internal/channel/owner (the owner's link). */
@@ -313,7 +313,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
       const hash = handleHash(handle);
       const startMs = b.startMs ?? openStart(shop.now());
       const answer = await shop.channelEvents([{ kind: "channel_request", id: b.id ?? uid("req"), channel: "web", op: "book", handle: hash, serviceId: b.serviceId ?? "haircut", startMs, name: b.name ?? "Asha", phone: b.phone ?? CUSTOMER, language: b.language ?? "en" }]);
-      if (answer.status === 200) await shop.settle();
+      if (answer.status === 200 && b.wait !== false) await shop.settle(); // `wait: false` for a booking whose step is meant to wait for a Guard
       return { handle, hash, answer };
     },
     request: (hash) => shop.call(`/internal/channel/request?handle=${hash}`),

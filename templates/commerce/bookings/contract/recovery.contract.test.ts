@@ -26,7 +26,7 @@ describe("a Guard that is down", () => {
   contract("the payments Guard down while a customer asks for a booking: nothing is said, and when it is back there is one hold, one link and one answer", async () => {
     const s = await boot();
     s.guards!.payments.down();
-    const { hash, answer } = await s.book();
+    const { hash, answer } = await s.book({ wait: false });
     assert.equal(answer.status, 200, "the request was saved before anything else");
     await sleep(1500);
     const st = await s.status();
@@ -61,7 +61,7 @@ describe("a Guard that is down", () => {
     s.guards!.calendar.down();
     assert.equal((await deliver(s, s.guards!.pay(link(s).id))).status, 200, "the webhook is saved even now: the inbox is told 200 and the provider does not send it again");
     await sleep(1500);
-    assert.equal((await s.request(hash)).body.status, "checking", "not confirmed while the calendar cannot say: the page says it is checking");
+    assert.equal((await s.request(hash)).body.status, "held", "not confirmed while the calendar cannot say: the page still shows the hold");
     assert.equal(s.guards!.of("calendar", "PATCH").filter((c) => c.status === 200).length, 0);
     s.guards!.calendar.up();
     await until("the booking to be confirmed", async () => (await s.request(hash)).body.status === "booked");
