@@ -65,3 +65,24 @@ The matcher (`language/regex.go`) learned three shapes these patterns have and R
 ends with (marked as an `edge` group and cut back), a look-ahead in the middle or one longer than a character ("ends" mode: the part before it is matched, and its shorter ends
 are tried longest first, as a backtracking engine does with a greedy repetition last), and a `\b` inside an alternative (matched with the character before in front, so the
 `\b` sees it). Each is proved on JavaScript's own matches over the generator's corpus, which now has customers' phrases (times next to prices, glued words, STOP, tricks).
+
+## The services wired and the agent (slice 6, 19 Nov)
+
+* **ports.go** is services.ts `buildServices`: one field per service typed with the shared package's own interface (`calendar.Calendar`, `payments.Payments`, `messaging.Messaging`).
+  `cmd/bookings` builds them ONCE at start: the stand-ins in "fakes" mode (`calendar.NewFake`, `payments.NewFake`, `messaging.NewStandIn` with every template name, which are
+  generated: `words/*.json.gz` now carry templates.ts TEMPLATE_NAMES as `generic`), the live clients in "live" mode (Razorpay, Google Calendar, the WhatsApp provider) with each
+  `agentTokenFile` read. The shop's own booking list (`calendar.module: own`, or live with no `services.calendar`) lives in the store, so it is made per step over it (`ownCal`).
+  A nil port is "no such service": no WhatsApp, a UPI shop (no payments Guard).
+* **The watch** (agent_watch.go) is guard-wait.ts `watchStep` with core.ts's decision after the agent returns: a Guard found down stops the step (`runtime.WaitingForGuard`),
+  a one-time call (a send, a refund, a held call, a write of unknown outcome) ends the task instead of re-running it (`runtime.EndTask`), and on the last try the owner's to-do line
+  is written beside the agent's own "could not confirm". The Guards given up on in an outage are the Kit's (one runtime per process).
+* **Messaging** is composed as the TypeScript composes it: the channel outbox (a `web:`/`mcp:` conversation's messages are kept for its page) over the watch over the owner's
+  route (push.ts pushMessaging: WhatsApp, push or both) over the shop's WhatsApp. Every message goes through the shared say (`messaging.Say`) with Bookings' facts, offers, the
+  generated words and the two gates (no reminder after a cancellation or STOP; "booked" only when the record holds the calendar and the deposit).
+* **The agent** (agent.go, agent_say.go, agent_offer.go, agent_money.go, agent_flow.go, agent_channel.go) follows agent.ts section by section. A booking's pending list, refund
+  issues, stopped refunds and untold refunds are the payments package's own types (state.go), so the shared refunds code changes the very lists that are saved; the agent's own
+  pending kinds ("calendar", "refund") are carried as `payments.OtherPending`. The draft members (`date`, `timePhrase`, `time`, `reschedule`) are kept in `Booking.Extra` in
+  booking.ts's JSON shapes.
+* **Reading** a customer's words: the router (`runtime.RouterFor` with this shop's `Reading`, the free times from the calendar as the decision model's slots), the month's
+  AI state (`budget`), and what it cost counted by `runtime.CountUnderstood` (the one copy the owner's reader uses too). `OnMessage(msg, MessageExtras)` is the entry the chat
+  calls (W1).

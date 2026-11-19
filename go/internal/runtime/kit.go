@@ -147,7 +147,7 @@ func (r *Runtime) licenceNow() string {
 func (r *Runtime) stepContext(snap *Snap, rec *Recorder, taskID string, lastTry bool) *StepContext {
 	return &StepContext{
 		State: snap.T, Snap: snap, Rec: rec, Settings: &r.o.Client.Settings, Now: r.o.Now, Log: r.o.Log,
-		Owner: r.owner, Licence: r.licenceNow, LastTry: lastTry, Task: taskID,
+		Owner: r.owner, Licence: r.licenceNow, LastTry: lastTry, Task: taskID, Policy: r.policy, Clock: r.clock, PaidThrough: r.LicencePaidThrough,
 	}
 }
 
