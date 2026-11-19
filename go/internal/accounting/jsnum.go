@@ -1,7 +1,7 @@
 // The few JavaScript number and date behaviours the books copy, in one place, so every file that reads a number out of a record's refs or a time out of its entry reads it the way the
 // TypeScript does. Why they matter: refs are text, and the TypeScript turns them into numbers three different ways (a strict check `Number.isSafeInteger(n) && String(n) === text`, a bare
 // `Number(text)`, and a `Number(text)` kept only if it is a safe integer), so "1e3", " 5 ", "0x10", "" and "abc" mean different things in different places. JSNumber is the ECMAScript
-// StringToNumber for what a ref can hold; JSNumberString is Number::toString (a message prints a number the way JavaScript does); parseISO is Date.parse for the form the record writes
+// StringToNumber for what a ref can hold; JSNumberString is Number::toString (a message prints a number the way JavaScript does); ParseISO is Date.parse for the form the record writes
 // (`new Date(ms).toISOString()`) and a few others. JavaScript numbers beyond 2^53 are out of scope: a figure is an int64 here, and a ref beyond 2^53 is not "safe" in either language.
 package accounting
 
@@ -130,9 +130,9 @@ func RoundHalfUp(x float64) float64 {
 	return r
 }
 
-// parseISO is Date.parse for the times the record holds: "2026-11-01T10:00:00.000Z" (what toISOString writes), the same with an offset or without milliseconds, and a bare date (UTC).
+// ParseISO is Date.parse for the times the record holds: "2026-11-01T10:00:00.000Z" (what toISOString writes), the same with an offset or without milliseconds, and a bare date (UTC).
 // ok is false where Date.parse gives NaN. Epoch milliseconds, as an int64.
-func parseISO(s string) (int64, bool) {
+func ParseISO(s string) (int64, bool) {
 	for _, layout := range []string{"2006-01-02T15:04:05.999999999Z07:00", "2006-01-02"} {
 		if t, err := time.Parse(layout, s); err == nil {
 			return t.UnixMilli(), true
@@ -143,3 +143,13 @@ func parseISO(s string) (int64, bool) {
 
 // itoa is String(n) for a whole number.
 func itoa(n int) string { return strconv.Itoa(n) }
+
+// language16Len is `s.length` (UTF-16 code units).
+func language16Len(s string) int { return language.UTF16Len(s) }
+
+// nan is JavaScript's NaN (Number(undefined), a missing ref read as a number).
+func nan() float64 { return math.NaN() }
+
+func fmtPeriod(year, month int) string {
+	return strconv.Itoa(year) + "-" + padStart(strconv.Itoa(month), 2)
+}

@@ -4,7 +4,7 @@
 // kept in a counter, because the record is the only memory saved in the same transaction as the step that issues the document: the next number is the highest one in the record for that
 // series and year, plus one. After a `restored` entry (the shop's data came back from a snapshot, so documents a customer holds may be missing from the record) each series jumps on by
 // RestoreDocGap, and the numbers skipped are listed in the accountant's export. Where Go differs from the TypeScript: `\d` is ASCII in both (the `u` flag), `$` matches only at the end in both,
-// and `Date.parse` is parseISO (jsnum.go).
+// and `Date.parse` is ParseISO (jsnum.go).
 package accounting
 
 import (
@@ -110,7 +110,7 @@ func NextNumber(entries []Entry, series Series, fy string, fyStart int64) DocNum
 		if e.Action != RestoredAction || e.Seq <= lastSeq {
 			continue
 		}
-		if t, ok := parseISO(e.Time); ok && t >= fyStart { // Date.parse gives NaN for a time it cannot read, and NaN >= x is false
+		if t, ok := ParseISO(e.Time); ok && t >= fyStart { // Date.parse gives NaN for a time it cannot read, and NaN >= x is false
 			restoredSince = true
 			break
 		}
