@@ -119,6 +119,10 @@ export interface ShopOptions {
   at?: number;
   /** Guards (live) mode: ask for the test clock ANYWAY, to see that a live shop refuses to start on it (modules/runtime/test-clock.ts). */
   forceClock?: boolean;
+  /** Guards mode: how long the Guard's approval of a held refund lasts, in seconds (60 at least: Guard's own bound; the default is 24 hours). */
+  approvalSeconds?: number;
+  /** `terms.json` as the Operator writes it (the shop terms the owner agrees to on WhatsApp). */
+  terms?: unknown;
 }
 
 export interface Shop {
@@ -175,7 +179,7 @@ export interface Shop {
   setTickSeconds(seconds: number): void;
   setMode(mode: "fakes" | "live"): void;
   /** The record's lines as the store keeps them (action, outcome, booking, refs), read from agent.db read-only. */
-  record(): { action: string; outcome: string; booking: string | null; refs: Record<string, string> }[];
+  record(): { action: string; outcome: string; booking: string | null; conversation: string; notes: string; refs: Record<string, string> }[];
   /** The task rows as the store keeps them: id, kind, state, attempts. */
   tasks(): { id: string; kind: string; state: string; attempts: number }[];
 }
@@ -214,7 +218,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   const parsed = parseSettings(settingsOf(ownerNumber));
   let guards: FakeGuards | undefined;
   const madeGuards = mode === "guards" && o.guards === undefined;
-  if (mode === "guards") guards = o.guards ?? await startGuards(parsed);
+  if (mode === "guards") guards = o.guards ?? await startGuards(parsed, o.approvalSeconds !== undefined ? { approvalTtlSeconds: o.approvalSeconds } : {});
   const runtime: Record<string, any> = { mode: mode === "guards" ? "live" : "fakes", host: "127.0.0.1", port, dataDir, tickSeconds: o.tickSeconds ?? 3600 };
   if (mode === "guards" && guards) {
     const upi = given.payment?.module === "upi";
@@ -237,6 +241,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   const now0 = Date.now();
   writeFileSync(join(client, OWNER_GRANTS_FILE), JSON.stringify({ schema: 1, setup: { sha256: setupHash(setup), createdAt: new Date(now0).toISOString(), expiresAt: new Date(now0 + SETUP_MS).toISOString() } }));
   if (o.licence !== undefined) writeFileSync(join(client, "licence.json"), JSON.stringify(o.licence));
+  if (o.terms !== undefined) writeFileSync(join(client, "terms.json"), JSON.stringify(o.terms));
   writeFileSync(join(client, "pathway.lock"), `bookings@${VERSION}\n`); // written last, as the deployer does
 
   // the test clock (fakes mode only): the machine's clock plus an offset, put at the unit tests' instant (a negative offset is accepted); the test moves it with `advance`
@@ -336,8 +341,8 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
     record() {
       const db = new DatabaseSync(join(dataDir, "agent.db"), { readOnly: true });
       try {
-        return (db.prepare("SELECT action, outcome, booking, entry FROM record ORDER BY seq").all() as { action: string; outcome: string; booking: string | null; entry: string }[])
-          .map((r) => ({ action: r.action, outcome: r.outcome, booking: r.booking, refs: (JSON.parse(r.entry) as { refs?: Record<string, string> }).refs ?? {} }));
+        return (db.prepare("SELECT action, outcome, booking, conversation, entry FROM record ORDER BY seq").all() as { action: string; outcome: string; booking: string | null; conversation: string; entry: string }[])
+          .map((r) => ({ action: r.action, outcome: r.outcome, booking: r.booking, conversation: r.conversation, notes: String((JSON.parse(r.entry) as { notes?: string }).notes ?? ""), refs: (JSON.parse(r.entry) as { refs?: Record<string, string> }).refs ?? {} }));
       } finally { db.close(); }
     },
     tasks() {
