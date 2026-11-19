@@ -9,7 +9,7 @@ import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { callName, makeShop, rawReply, slowReply, startFakeDecision, startFakeModel, statusReply } from "./harness.ts";
+import { callName, makeShop, rawReply, SKIP, slowReply, startFakeDecision, startFakeModel, statusReply } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
 import { goldenFor } from "./golden.ts";
 
@@ -69,7 +69,7 @@ const unknownKind = (_owner: string, body: any): unknown => (callName(body) === 
 const talkSays = (sentences: { text: string; sources: string[] }[], extra: Record<string, unknown> = {}) => (owner: string, body: any): unknown =>
   callName(body) === "intent" ? { kind: "unknown" } : { sentences, ask_owner: null, note: null, limit: null, ...extra };
 
-describe("the router's language model chooses only the kind; the rules give every value", () => {
+describe("the router's language model chooses only the kind; the rules give every value", { skip: SKIP }, () => {
   test("a kind the model chose is answered with the rules' date; a kind this shop does not take is unknown", async () => {
     const seen = await scripted("router: the kinds", { answer: (owner, body) => (callName(body) === "intent" ? { kind: /tuesday/u.test(owner) ? "money" : /holiday/u.test(owner) ? "close_day" : /pending/u.test(owner) ? "waiting" : "unknown" } : { sentences: [{ text: "Hello!", sources: [] }], ask_owner: null, note: null, limit: null }) }, async (s) => {
       for (const [i, t] of ["what did the shop bring in on the coming tuesday please", "take a holiday", "anything pending for me today", "ok then"].entries()) await say(s, `r-${i}`, t);
@@ -95,7 +95,7 @@ describe("the router's language model chooses only the kind; the rules give ever
   });
 });
 
-describe("the decision model: a sure answer is the kind, an unsure one goes on to the language model, a failing one is paused", () => {
+describe("the decision model: a sure answer is the kind, an unsure one goes on to the language model, a failing one is paused", { skip: SKIP }, () => {
   test("sure, unsure, a wrong reply and an error", async () => {
     const probs = (choice: string, p: number) => ({ model: "laya", answers: { want: { type: "choice", choice, confidence: p, probabilities: Object.fromEntries(["waiting", "money", "cancel", "refund", "message", "undo", "limit", "help"].map((k) => [k, k === choice ? p : (1 - p) / 7])) } }, usage: { input_tokens: 40, output_tokens: 2 } });
     const seen = await scripted("decision model", {
@@ -108,7 +108,7 @@ describe("the decision model: a sure answer is the kind, an unsure one goes on t
   });
 });
 
-describe("the owner's talk: words still unknown are answered from the shop's notes and listings, through the talk's checks", () => {
+describe("the owner's talk: words still unknown are answered from the shop's notes and listings, through the talk's checks", { skip: SKIP }, () => {
   test("a reply that passes is shown and kept for the next prompt; the notes and the listing are its sources", async () => {
     const seen = await scripted("talk: a reply that passes", { answer: talkSays([{ text: "Your Persian kittens are on your page at ₹8,000.", sources: ["s:l-1"] }, { text: "You asked me to close at 6 on Saturdays.", sources: ["n-1"] }]) }, async (s) => {
       await say(s, "t-1", "remember we close at 6 on Saturdays");

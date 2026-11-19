@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { draftAnswer, makeShop, now, startFakeModel } from "./harness.ts";
+import { draftAnswer, makeShop, now, SKIP, startFakeModel } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
 import { enablePush, softBrowser, startFakeGuard } from "../../../../modules/test/contract/push-harness.ts";
 import type { FakeGuard } from "../../../../modules/test/contract/push-harness.ts";
@@ -58,7 +58,7 @@ async function morningOf(s: Shop, guard: FakeGuard, open: (c: any) => any): Prom
   return { lines, pushes };
 }
 
-describe("the owner's morning line", () => {
+describe("the owner's morning line", { skip: SKIP }, () => {
   for (const [language, personality] of [["en", "warm"], ["hi", "cheerful"], ["ml", "brief"], ["kn", "warm"]] as const) {
     test(`one line a day to the owner's phone, in ${language}, claimed before it goes; the golden words`, async () => {
       const seen = await golden(`the line in ${language}`, async () => {
@@ -127,7 +127,7 @@ describe("the owner's morning line", () => {
 
 // Voice (modules/voice, modules/runtime/http.ts): a listings-only shop has no voice service for its assistant and no chat, so the owner's page shows no record button (`listen`
 // false) and both voice routes say voice is off, after the method and, for the owner's, the owner's credential. Nothing is held or saved.
-describe("voice, as a listings-only shop has it: off", () => {
+describe("voice, as a listings-only shop has it: off", { skip: SKIP }, () => {
   test("the voice routes answer as TypeScript's did (the golden answers); nothing is saved", async () => {
     const seen = await golden("voice off", async () => {
       const s = await makeShop({}); shops.push(s); await s.start();

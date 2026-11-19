@@ -15,7 +15,7 @@ import { gzipSync } from "node:zlib";
 import { DatabaseSync } from "node:sqlite";
 import { newSoftPasskey, softRegister } from "../../../../modules/channels/test/soft-authenticator.ts";
 import { newOwnerFileId } from "../../../../modules/channels/owner-file.ts";
-import { OWNER_BASE, makeShop } from "./harness.ts";
+import { makeShop, OWNER_BASE, SKIP } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 import { GUARD_TOKEN, enablePush, softBrowser, startFakeGuard, vapidChecks } from "../../../../modules/test/contract/push-harness.ts";
 import type { FakeGuard } from "../../../../modules/test/contract/push-harness.ts";
@@ -69,7 +69,7 @@ async function seedChanges(s: Shop, changes: Record<string, unknown>[]): Promise
   await s.start();
 }
 
-describe("the clock's beat keeps the newest 30 settled limit changes (chat-limits.ts compactChanges)", () => {
+describe("the clock's beat keeps the newest 30 settled limit changes (chat-limits.ts compactChanges)", { skip: SKIP }, () => {
   test("35 settled and 2 pending: the 5 oldest settled go on the beat, the pending ones and every member of the rest stay", async () => {
     const s = await makeShop({ tickSeconds: 1 }); shops.push(s); await s.start();
     const changes = Array.from({ length: 37 }, (_, i) => ({ ...CHANGE, id: `l-${i + 1}`, state: i === 3 || i === 20 ? "pending" : i % 2 ? "active" : "failed", settledAtMs: 1_700_000_000_000 + i, extra: { kept: i } }));
@@ -82,7 +82,7 @@ describe("the clock's beat keeps the newest 30 settled limit changes (chat-limit
   });
 });
 
-describe("the owner's limits page: GET/POST /internal/channel/owner-limits", () => {
+describe("the owner's limits page: GET/POST /internal/channel/owner-limits", { skip: SKIP }, () => {
   test("reading needs the owner's credential; a listings shop declares no limits; a link is no passkey session", async () => {
     const s = await boot();
     assert.equal((await s.call("/internal/channel/owner-limits")).status, 403);
@@ -132,7 +132,7 @@ describe("the owner's limits page: GET/POST /internal/channel/owner-limits", () 
   });
 });
 
-describe("the deployer's word about a limit change: GET/POST /internal/limit-changes", () => {
+describe("the deployer's word about a limit change: GET/POST /internal/limit-changes", { skip: SKIP }, () => {
   test("the internal token (not the channel's); GET is the view; the other methods are 405", async () => {
     const s = await boot();
     assert.equal((await s.call("/internal/limit-changes", { token: null })).status, 401);
@@ -208,7 +208,7 @@ function leaveWithFile(s: Shop, o: { ask?: string; expiresInMs?: number; tamper?
 }
 const take = (s: Shop, id: string, who: { session?: string; owner?: string }) => s.call(`/internal/channel/owner-file?take=${id}`, who);
 
-describe("\"Get my shop's file\": GET /internal/channel/owner-file", () => {
+describe("\"Get my shop's file\": GET /internal/channel/owner-file", { skip: SKIP }, () => {
   test("only the owner's SESSION: a panel link, no credential and a wrong method are refused", async () => {
     const s = await boot();
     const { session } = await passkeySession(s);
@@ -301,7 +301,7 @@ describe("\"Get my shop's file\": GET /internal/channel/owner-file", () => {
 
 
 // The shop stopped and started on one folder (as cross-restart.test.ts does): the used list is kept, and a session made before a restart is good after it.
-describe("the owner's file across restarts", () => {
+describe("the owner's file across restarts", { skip: SKIP }, () => {
   test("taken, still taken after a restart; a file left untaken is taken after a restart once", async () => {
     const s = await makeShop(); shops.push(s);
     await s.start();
@@ -334,7 +334,7 @@ const push = (s: Shop, body: Record<string, unknown>, who: { owner?: string; ses
 const refs = (db: DatabaseSync) => (db.prepare("SELECT ref FROM subs WHERE dead_at IS NULL ORDER BY made_at").all() as { ref: string | null }[]).map((r) => ({ ref: r.ref }));
 const pushDb = (s: Shop) => new DatabaseSync(join(s.dataDir, "push.sqlite"), { readOnly: true });
 
-describe("web push is off while runtime.json names no push Guard", () => {
+describe("web push is off while runtime.json names no push Guard", { skip: SKIP }, () => {
   test("the key says off, every other op is 404, a bad body is 400, a wrong method 405", async () => {
     const s = await boot();
     for (const who of [{ owner: s.owner }, {}]) {
@@ -353,7 +353,7 @@ describe("web push is off while runtime.json names no push Guard", () => {
   });
 });
 
-describe("web push on, through a fake push Guard", () => {
+describe("web push on, through a fake push Guard", { skip: SKIP }, () => {
   test("the key: made once, the same after a restart; any caller with the channel token may ask for it", async () => {
     const { shop: s } = await bootPush();
     const k = await push(s, { op: "key" }, {});
@@ -480,7 +480,7 @@ describe("web push on, through a fake push Guard", () => {
   });
 });
 
-describe("web push: the sender drains what was queued to the Guard", () => {
+describe("web push: the sender drains what was queued to the Guard", { skip: SKIP }, () => {
   // No route of this shop makes an alert yet in every runtime, so the queue is filled the way a runtime would fill it (a row in push.sqlite, for a subscribed phone) while the shop is
   // stopped; the shop's sender finds it and posts it to the Guard. Go sends at start; TypeScript on its timer (15 s), so the wait is long.
   for (const [name, answer, then] of [
@@ -524,7 +524,7 @@ describe("web push: the sender drains what was queued to the Guard", () => {
   }
 });
 
-describe("web push across restarts", () => {
+describe("web push across restarts", { skip: SKIP }, () => {
   test("a subscription and the choice made before a restart are the shop's after it, with the same key", async () => {
     const { shop: s } = await bootPush();
     const { session } = await passkeySession(s);

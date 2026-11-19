@@ -1,10 +1,9 @@
 // The harness of the SHARED-process contract (shared.contract.test.ts) and of the shared-process memory measurement (measure-shared.ts): it writes shop folders as the deployer does
 // (`<clients>/<shop>/client/...`, `<secrets>/<shop>/{internal_token,channel_token,record_key}`), starts the shared process as a SEPARATE process, and talks to it over HTTP only.
 //
-//   ts  node templates/commerce/listings/server/shared-main.ts   (SHARED_WORKERS threads, as the container runs it)
-//   go  the binary named by LISTINGS_SHARED_GO_BIN (default <repo>/go/bin/listings-shared)
-// Both read the same folders and the same environment (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS). The process is started and stopped through children.ts (its own process
-// group, so the Go host's child for a quarantined shop goes with it; stopped at the end of each test; a leak fails the run).
+// The shared process is the Go binary named by LISTINGS_SHARED_GO_BIN (default <repo>/go/bin/listings-shared), reading SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS and STATE_DIR.
+// (Until 19 Nov 2026 the TypeScript one, templates/commerce/listings/server/shared-main.ts, ran the same scenarios; it was deleted in decision 61, wave 1b.) The process is started
+// and stopped through children.ts (its own process group, so the host's child for a quarantined shop goes with it; stopped at the end of each test; a leak fails the run).
 import type { ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
@@ -15,7 +14,6 @@ import { PAGE, REPO, VERSION } from "./harness.ts";
 import { freePort } from "../../../../modules/test/contract/net.ts";
 import { spawnChild, stopChild } from "../../../../modules/test/contract/children.ts";
 
-export type Impl = "ts" | "go";
 export const GO_SHARED_BIN = process.env.LISTINGS_SHARED_GO_BIN ?? join(REPO, "go", "bin", "listings-shared");
 const hex = (n: number): string => randomBytes(n).toString("hex");
 
@@ -63,13 +61,12 @@ export interface Host {
 export const haveGo = (): boolean => existsSync(GO_SHARED_BIN);
 
 /** Start the shared process on the folders in `root` and wait until /readyz answers. */
-export async function startHost(impl: Impl, root: Root, o: { scanSeconds?: number; workers?: number; shops?: Record<string, ShopFolder>; expect?: number } = {}): Promise<Host> {
+export async function startHost(root: Root, o: { scanSeconds?: number; shops?: Record<string, ShopFolder>; expect?: number } = {}): Promise<Host> {
   const port = await freePort();
-  const env = { ...process.env, SHOPS_DIR: root.clients, SECRETS_DIR: root.secrets, HOST: "127.0.0.1", PORT: String(port), SCAN_SECONDS: String(o.scanSeconds ?? 1), SHARED_WORKERS: String(o.workers ?? 2), STATE_DIR: join(root.dir, "state") };
-  const [cmd, args] = impl === "go" ? [GO_SHARED_BIN, []] : [process.execPath, [join(REPO, "templates", "commerce", "listings", "server", "shared-main.ts")]];
+  const env = { ...process.env, SHOPS_DIR: root.clients, SECRETS_DIR: root.secrets, HOST: "127.0.0.1", PORT: String(port), SCAN_SECONDS: String(o.scanSeconds ?? 1), STATE_DIR: join(root.dir, "state") };
   const t0 = performance.now();
   let readyMs = 0;
-  const child: ChildProcess = spawnChild(cmd, args, { env, stdio: ["ignore", "pipe", "pipe"] }, `the ${impl} shared process in ${root.dir}`);
+  const child: ChildProcess = spawnChild(GO_SHARED_BIN, [], { env, stdio: ["ignore", "pipe", "pipe"] }, `the shared process in ${root.dir}`);
   let output = "";
   child.stdout!.on("data", (d: Buffer) => { output += d.toString(); });
   child.stderr!.on("data", (d: Buffer) => { output += d.toString(); });
