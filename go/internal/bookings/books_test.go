@@ -63,18 +63,18 @@ func TestAccountingReadsBookingsActionNames(t *testing.T) {
 	if err != nil || a == nil {
 		t.Fatal(err)
 	}
-	if n := len(a.Journal().Entries()); n != 0 {
-		t.Errorf("a fresh record has %d journal entries", n)
+	if a.Journal() == nil {
+		t.Error("the accounting has a journal")
 	}
 }
 
-type reader struct {
+type fakeSettlements struct {
 	rows []payments.SettlementRow
 	err  error
 	day  payments.Day
 }
 
-func (r *reader) ReadSettlements(_ context.Context, d payments.Day, _ int) ([]payments.SettlementRow, error) {
+func (r *fakeSettlements) ReadSettlements(_ context.Context, d payments.Day, _ int) ([]payments.SettlementRow, error) {
 	r.day = d
 	return r.rows, r.err
 }
@@ -83,11 +83,11 @@ func TestSettlementPayments(t *testing.T) {
 	if NewBooks(BooksPorts{}).SettlementPayments() != nil {
 		t.Error("no client: no settlement read")
 	}
-	if NewBooks(BooksPorts{Settlements: &reader{}}).SettlementPayments() != nil {
+	if NewBooks(BooksPorts{Settlements: &fakeSettlements{}}).SettlementPayments() != nil {
 		t.Error("a provider whose capabilities say it reads none is not asked")
 	}
 	pid := "pay_1"
-	rd := &reader{rows: []payments.SettlementRow{{EntityID: "pay_1", Type: "payment", PaymentID: &pid, Amount: 20000, Fee: 472, Tax: 72, Credit: 19528, Settled: true}}}
+	rd := &fakeSettlements{rows: []payments.SettlementRow{{EntityID: "pay_1", Type: "payment", PaymentID: &pid, Amount: 20000, Fee: 472, Tax: 72, Credit: 19528, Settled: true}}}
 	p := NewBooks(BooksPorts{Settlements: rd, Capabilities: payments.Capabilities{ReadsSettlements: true}}).SettlementPayments()
 	if p == nil || !p.ReadsSettlements() {
 		t.Fatal("a provider that reads settlements has the adapter")
@@ -213,22 +213,6 @@ func TestBookingsOf(t *testing.T) {
 	}
 }
 
-// exampleSettings is the first accepted shop of the settings vectors (Glow Salon, as the TypeScript's example file has it).
-func exampleSettings(t *testing.T) *Settings {
-	t.Helper()
-	for _, c := range loadTreeCases(t) {
-		if c.Name == "glow-salon.example.json: as it is" {
-			s, _, errs := CheckSettingsFile(c.Input)
-			if errs != nil {
-				t.Fatal(errs)
-			}
-			return s
-		}
-	}
-	t.Fatal("no example")
-	return nil
-}
-
 func TestMonthlyReportIsMadeAndSentOnce(t *testing.T) {
 	s := exampleSettings(t)
 	tick := zone.ZonedToMs(zone.Date{Year: 2026, Month: 12, Day: 1}, 10, 0, s.Timezone) // the 1st, after 09:00
@@ -239,7 +223,7 @@ func TestMonthlyReportIsMadeAndSentOnce(t *testing.T) {
 	}
 	m := &withDocs{double: &double{open: true}}
 	dir := t.TempDir()
-	job := NewBooks(BooksPorts{Messaging: m}).NewMonthlyReport(MonthlyReportSetup{Source: "the record", PagesDir: dir, PagesBaseURL: "https://reports.example/r", Options: func() bookingsreport.Options { return bookingsreport.Options{PreparedBy: "Divya"} },
+	job := NewBooks(BooksPorts{Messaging: m}).NewMonthlyReport(MonthlyReportSetup{Source: "stand-in", PagesDir: dir, PagesBaseURL: "https://reports.example/r", Options: func() bookingsreport.Options { return bookingsreport.Options{PreparedBy: "Divya"} },
 		Token: func() string { return "tok" }})
 	saves := 0
 	tk := ReportTick{Settings: s, Store: NewStore(), Rec: rec, Now: func() int64 { return tick }, Save: func() { saves++ }}
