@@ -1,0 +1,374 @@
+{
+ "node": "v26.10.0",
+ "cases": [
+  {
+   "language": "hi",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 200,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "मिल गया ₹200"
+    }
+   ]
+  },
+  {
+   "language": "hi",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 1250,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "मिल गया ₹1,250"
+    }
+   ]
+  },
+  {
+   "language": "hi",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 99.5,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "मिल गया ₹99.5"
+    }
+   ]
+  },
+  {
+   "language": "hi",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 0,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "मिल गया ₹0"
+    }
+   ]
+  },
+  {
+   "language": "hi",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 100000,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "मिल गया ₹1,00,000"
+    }
+   ]
+  },
+  {
+   "language": "hi",
+   "kind": "refund",
+   "code": "K7M2QX",
+   "keepAllowed": false,
+   "out": [
+    {
+     "id": "upi-refunded:K7M2QX",
+     "title": "रिफंड भेज दिया"
+    }
+   ]
+  },
+  {
+   "language": "hi",
+   "kind": "refund",
+   "code": "K7M2QX",
+   "keepAllowed": true,
+   "out": [
+    {
+     "id": "upi-refunded:K7M2QX",
+     "title": "रिफंड भेज दिया"
+    },
+    {
+     "id": "upi-kept:K7M2QX",
+     "title": "बुकिंग के लिए रखा"
+    }
+   ]
+  },
+  {
+   "language": "en",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 200,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "Received ₹200"
+    }
+   ]
+  },
+  {
+   "language": "en",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 1250,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "Received ₹1,250"
+    }
+   ]
+  },
+  {
+   "language": "en",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 99.5,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "Received ₹99.5"
+    }
+   ]
+  },
+  {
+   "language": "en",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 0,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "Received ₹0"
+    }
+   ]
+  },
+  {
+   "language": "en",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 100000,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "Received ₹1,00,000"
+    }
+   ]
+  },
+  {
+   "language": "en",
+   "kind": "refund",
+   "code": "K7M2QX",
+   "keepAllowed": false,
+   "out": [
+    {
+     "id": "upi-refunded:K7M2QX",
+     "title": "Refund sent"
+    }
+   ]
+  },
+  {
+   "language": "en",
+   "kind": "refund",
+   "code": "K7M2QX",
+   "keepAllowed": true,
+   "out": [
+    {
+     "id": "upi-refunded:K7M2QX",
+     "title": "Refund sent"
+    },
+    {
+     "id": "upi-kept:K7M2QX",
+     "title": "Kept for booking"
+    }
+   ]
+  },
+  {
+   "language": "ml",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 200,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "കിട്ടി ₹200"
+    }
+   ]
+  },
+  {
+   "language": "ml",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 1250,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "കിട്ടി ₹1,250"
+    }
+   ]
+  },
+  {
+   "language": "ml",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 99.5,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "കിട്ടി ₹99.5"
+    }
+   ]
+  },
+  {
+   "language": "ml",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 0,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "കിട്ടി ₹0"
+    }
+   ]
+  },
+  {
+   "language": "ml",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 100000,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "കിട്ടി ₹1,00,000"
+    }
+   ]
+  },
+  {
+   "language": "ml",
+   "kind": "refund",
+   "code": "K7M2QX",
+   "keepAllowed": false,
+   "out": [
+    {
+     "id": "upi-refunded:K7M2QX",
+     "title": "റീഫണ്ട് അയച്ചു"
+    }
+   ]
+  },
+  {
+   "language": "ml",
+   "kind": "refund",
+   "code": "K7M2QX",
+   "keepAllowed": true,
+   "out": [
+    {
+     "id": "upi-refunded:K7M2QX",
+     "title": "റീഫണ്ട് അയച്ചു"
+    },
+    {
+     "id": "upi-kept:K7M2QX",
+     "title": "ബുക്കിംഗിനായി വെച്ചു"
+    }
+   ]
+  },
+  {
+   "language": "kn",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 200,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "ಬಂದಿದೆ ₹200"
+    }
+   ]
+  },
+  {
+   "language": "kn",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 1250,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "ಬಂದಿದೆ ₹1,250"
+    }
+   ]
+  },
+  {
+   "language": "kn",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 99.5,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "ಬಂದಿದೆ ₹99.5"
+    }
+   ]
+  },
+  {
+   "language": "kn",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 0,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "ಬಂದಿದೆ ₹0"
+    }
+   ]
+  },
+  {
+   "language": "kn",
+   "kind": "received",
+   "code": "K7M2QX",
+   "amountInr": 100000,
+   "out": [
+    {
+     "id": "upi-received:K7M2QX",
+     "title": "ಬಂದಿದೆ ₹1,00,000"
+    }
+   ]
+  },
+  {
+   "language": "kn",
+   "kind": "refund",
+   "code": "K7M2QX",
+   "keepAllowed": false,
+   "out": [
+    {
+     "id": "upi-refunded:K7M2QX",
+     "title": "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ"
+    }
+   ]
+  },
+  {
+   "language": "kn",
+   "kind": "refund",
+   "code": "K7M2QX",
+   "keepAllowed": true,
+   "out": [
+    {
+     "id": "upi-refunded:K7M2QX",
+     "title": "ರೀಫಂಡ್ ಕಳುಹಿಸಿದೆ"
+    },
+    {
+     "id": "upi-kept:K7M2QX",
+     "title": "ಬುಕಿಂಗ್‌ಗೆ ಇಟ್ಟಿದೆ"
+    }
+   ]
+  }
+ ],
+ "ids": [
+  {
+   "kind": "received",
+   "code": "AB23CD",
+   "out": "upi-received:AB23CD"
+  },
+  {
+   "kind": "refunded",
+   "code": "AB23CD",
+   "out": "upi-refunded:AB23CD"
+  },
+  {
+   "kind": "kept",
+   "code": "AB23CD",
+   "out": "upi-kept:AB23CD"
+  }
+ ]
+}

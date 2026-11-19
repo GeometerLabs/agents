@@ -537,9 +537,16 @@ The calendar's `zonedMidnight` was NOT swapped for `internal/zone`: it copies ex
 The Bookings wave deletes, once its Go runtime uses them: `templates/commerce/bookings/src/accounting.ts` and `templates/commerce/bookings/report/*` that it ported. `modules/accounting/*` and
 `modules/report/*` STAY until Orders, Fees and Stock orders move (their runtimes import them); `check.ts`, `cli.ts`, `keys.ts` and the TypeScript `test/` stay (CLIs and tests).
 
-Left, with the reason (each package's `Deferred.md` has the detail): `validateSettings` for Bookings (the policy digest is of the validated settings, so the Bookings runtime must hand in the validated tree);
-go-live certificate builders and pages (CLI and deployer); Go PNG bytes differ from zlib's (same pixels); the Bookings adapters for `accounting.Record`, `accounting.Payments` and `report.Messaging`; refs visited in
+Left, with the reason (each package's `Deferred.md` has the detail): go-live certificate builders and pages (CLI and deployer); Go PNG bytes differ from zlib's (same pixels); refs visited in
 key order where the TypeScript uses insertion order (`BooksFaults` privacy sentences); amounts beyond 2^53.
+
+**Slice 6, the books side for Bookings (19 Nov, `go-bk-books-19nov`).** Built: `internal/bookings/books.go` (`NewBooks`: the four adapters, `accounting.Record`, `accounting.Payments`, `report.Messaging` /
+`DocumentSender`, the Booking conversion, plus the monthly job `NewMonthlyReport` / `Run`), `settings_check.go` (the rest of `validateSettings`: `readApprovers`, `readAssistantSettings`, `readCharacter`, and
+`(*Settings).Tree`, the checked tree; the policy digest equals the TypeScript's on the vector shops), `ownermark.go` (the ledger in the store, the pay link, `OwnerMarkButtons`) and the new package
+`internal/payments/ownermarked` (the UPI ledger, the owner's replies, the neutral view, the QR picture), with vectors made by running the TypeScript (`go/scripts/gen_bookings_settings.ts`,
+`gen_ownermarked_vectors.ts`; `templates/commerce/bookings/test/go-books-fresh.test.ts` fails when they are stale). Not wired: the agent core must call them (`bookings/Explanation.md`, "The books side").
+Finding: the monthly job runs after the step in `core.ts` with its own `save` (claim saved before the send, ending after); `StepContext` has no `Save` yet, so a Go step that runs it saves the claim only
+with the step (a crash between the send and the save could send a month twice): the runtime needs a mid-step save for it.
 
 TypeScript findings (reported, not fixed): a `kept` event naming an `owed` refund carries no amount, so `readNew` throws after the line is written; a settled `post()` that throws after its write leaves the row and
 is then also listed as a problem; `figures.ts` reads a refund amount with a bare `Number()` (a fraction is added); `owner-money` `tally()` counts a NaN time; `settlements.ts` `daysToRead` sorts a read line with no `refs.day`

@@ -14,6 +14,7 @@ package bookings
 // shop's own booking list, which lives IN the store and so is made per step over it (calendar.NewOwn, agent.go); a UPI shop (`payment.module: upi`) has no payments Guard.
 
 import (
+	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"fmt"
 	"os"
 	"strings"
@@ -41,16 +42,11 @@ type Ports struct {
 	// "whatsapp", "push" or "both" (push.ts ownerRoute).
 	PushOwner  func(text string) []string
 	OwnerRoute func(hasWhatsApp bool) string
-	// Books are the shop's accounting over the record (accounting.ts bookingsAccounting). TODO(go-bk-books-19nov): that stream provides the adapter; nil until then, so a money
-	// line is written with no money fields (Deferred.md says so).
-	Books Books
+	// Books are the shop's books (books.go NewBooks): every money line is posted through the step's accounting over the record (accounting.ts bookingsAccounting). nil: the line
+	// is written with no money fields.
+	Books *Books
 	// FakePayments is the stand-in gateway in fakes mode (nil live): the runtime's test hooks pay a link through it, as the TypeScript's stand-in does.
 	FakePayments *payments.Fake
-}
-
-// Books is what the agent posts to the books (modules/accounting/post.ts `books.post`): the money event, and the record line's own write, given its money fields.
-type Books interface {
-	Post(e BookEvent, write func(money map[string]string))
 }
 
 // BookEvent is accounting's MoneyEvent as the Bookings agent posts it (accounting.ts bookingsAccounting): received (a deposit or an extra payment), applied (a done booking's
@@ -69,11 +65,27 @@ type BookEvent struct {
 	RefundID    string
 }
 
-// refundBooks is Books as the refunds code needs it (payments.Accounting).
-type refundBooks struct{ b Books }
+// money is the event as internal/accounting takes it.
+func (e BookEvent) money() accounting.MoneyEvent {
+	m := accounting.MoneyEvent{Kind: accounting.MoneyKind(e.Kind), PaymentID: e.PaymentID, AmountPaise: e.AmountPaise, Method: accounting.Method(e.Method), Evidence: accounting.Evidence(e.Evidence),
+		For: accounting.ReceivedFor(e.For), Service: e.Service, Why: e.Why}
+	if e.Case != "" {
+		m.Case = &e.Case
+	}
+	if e.Owed != "" {
+		m.Owed = &e.Owed
+	}
+	if e.RefundID != "" {
+		m.RefundID = &e.RefundID
+	}
+	return m
+}
+
+// refundBooks is the step's books as the refunds code needs them (payments.Accounting).
+type refundBooks struct{ a *Agent }
 
 func (r refundBooks) Post(e payments.MoneyEvent, write func(map[string]string)) {
-	r.b.Post(BookEvent{Kind: e.Kind, Case: e.Case, PaymentID: e.PaymentID, AmountPaise: e.AmountPaise, Method: e.Method, Evidence: e.Evidence, Why: e.Why, Owed: e.Owed, RefundID: e.RefundID}, write)
+	r.a.post(BookEvent{Kind: e.Kind, Case: e.Case, PaymentID: e.PaymentID, AmountPaise: e.AmountPaise, Method: e.Method, Evidence: e.Evidence, Why: e.Why, Owed: e.Owed, RefundID: e.RefundID}, write)
 }
 
 // TemplateNames is every WhatsApp template a Bookings shop can send (services.ts: TEMPLATE_NAMES' values, META_TEMPLATE_NAMES and REPORT_TEMPLATE_NAMES), for the stand-in to

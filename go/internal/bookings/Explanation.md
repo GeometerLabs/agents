@@ -86,3 +86,17 @@ are tried longest first, as a backtracking engine does with a greedy repetition 
 * **Reading** a customer's words: the router (`runtime.RouterFor` with this shop's `Reading`, the free times from the calendar as the decision model's slots), the month's
   AI state (`budget`), and what it cost counted by `runtime.CountUnderstood` (the one copy the owner's reader uses too). `OnMessage(msg, MessageExtras)` is the entry the chat
   calls (W1).
+## The books side (slice 6, books stream, 19 Nov)
+
+* **books.go: `NewBooks(BooksPorts{Messaging, Settlements, Capabilities, Context})`** is the one constructor the agent core calls. It gives: `Accounting(rec, tz, now)` (agent.ts `bookingsAccounting`, over the very
+  record the agent's `log` appends to; every money line goes through its `Post`), `Journal(rec)`, `Record(rec)` (accounting.Record over `*runtime.Recorder`), `SettlementPayments()` and
+  `ReadSettlements(rec, acct, owner, language, nowMs, tz)` (the daily settlement read: nil/skipped for a provider that reads none), `ReportMessaging()` (report.Messaging, and report.DocumentSender
+  when the client can send a file; the messaging errors become report's faults, `reportFault`), `BookingsOf(store)` (the Booking conversion) and `NewMonthlyReport(setup)` / `MonthlyReport.Run(ReportTick)`
+  (the monthly job, plan B54, through `bookingsreport.NewMonthlyJob`; the shop's settings, record and bookings are read when a report is made).
+* **settings_check.go** finishes `validateSettings`: `readApprovers`, `readAssistantSettings` and `readCharacter` with their sentences (in the TypeScript's order of calls), and `(*Settings).Tree()`, the
+  CHECKED tree the policy digest is of (a raw settings.json gives another digest). `CheckSettingsFile(raw)` returns the settings, the tree or the problems. The character's lists are `settings_check.json`
+  (generated). `testdata/settings-tree-vectors.json` holds the tree and `bookingsreport.PolicyDigest` equal to the TypeScript's on the example shops and every mutation of them
+  (`go/scripts/gen_bookings_settings.ts`).
+* **ownermark.go** is the UPI shop's side: `Store.UpiState` / `SetUpiState` (the ledger in the store's `upi` member, `internal/payments/ownermarked`), `Settings.UpiPayLink` and `OwnerMarkButtons` (proved equal on
+  `testdata/ownermark-buttons-vectors.json`, all four languages).
+

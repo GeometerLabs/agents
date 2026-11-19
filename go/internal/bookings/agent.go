@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"regexp"
 
+	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/budget"
 	"github.com/GeometerLabs/agents/go/internal/calendar"
 	"github.com/GeometerLabs/agents/go/internal/messaging"
@@ -44,6 +45,7 @@ type Agent struct {
 	say      *messaging.Say
 	refunds  *payments.Refunds
 	can      payments.Capabilities
+	acct     accounting.Accounting // the step's books, made on the first money line
 }
 
 // newAgent is createAgent: the services of this step, watched, and the shared pieces built over them (say, refunds).
