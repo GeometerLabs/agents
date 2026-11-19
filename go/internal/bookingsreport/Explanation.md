@@ -46,7 +46,7 @@ func ReportTemplateNames() []string   // for the services' approved-templates li
 What the runtime hands in: `Settings` is `map[string]any` (settings.json decoded, numbers float64) and must be the **validated** settings (see below); `Entries` are `accounting.Entry`
 (`store.Entry`, the same JSON the TypeScript record writes); `Booking` is `{ID, State, Pending int}`, the three things data.ts reads of `src/booking.ts` Booking (`state === "needs_owner"`,
 `pending.length`, `id`); keys are `ed25519.PrivateKey` (or nil: the papers are not signed). The job also needs the shop's record as an `accounting.Record` and the messaging as a
-`report.Messaging` (the adapters are the Bookings wave's; `internal/report/Explanation.md`).
+`report.Messaging` (the adapters are `internal/bookings/books.go`; `internal/report/Explanation.md`).
 
 ## How the signed bytes are kept equal
 
@@ -91,7 +91,7 @@ Run `node go/scripts/gen_bookings_report_words.ts` and `node go/scripts/gen_book
 block). `validateSettings` is not ported, and the file on disk is not always the validated tree: `geometer deploy` (`bundle/geometer.ts`) validates the settings file and then ships its
 text as the owner wrote it; the TypeScript runtime validates on load. So the tree handed in must be what `validateSettings` returns, as JSON. A raw file that leaves a default out or pads
 the name gives another digest, the report's `policyDigest` differs from the TypeScript's, and a go-live certificate of the same settings (the CLI makes it from the validated settings)
-would be read as "different" instead of "own". The Bookings runtime must either port `validateSettings` or read settings through something that gives the validated tree. The vectors hold
+would be read as "different" instead of "own". The Bookings runtime reads settings through `bookings.CheckSettingsFile` / `(*Settings).Tree` (settings_check.go), which gives the validated tree. The vectors hold
 both digests (`policies.raw`: a padded name and a missing `bufferMinutes`) and the generator fails if the validated settings' digest changes when they go through JSON.
 
 ## What the TypeScript does that Go does not need

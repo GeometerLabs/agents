@@ -65,3 +65,18 @@ The matcher (`language/regex.go`) learned three shapes these patterns have and R
 ends with (marked as an `edge` group and cut back), a look-ahead in the middle or one longer than a character ("ends" mode: the part before it is matched, and its shorter ends
 are tried longest first, as a backtracking engine does with a greedy repetition last), and a `\b` inside an alternative (matched with the character before in front, so the
 `\b` sees it). Each is proved on JavaScript's own matches over the generator's corpus, which now has customers' phrases (times next to prices, glued words, STOP, tricks).
+
+## The books side (slice 6, books stream, 19 Nov)
+
+* **books.go: `NewBooks(BooksPorts{Messaging, Settlements, Capabilities, Context})`** is the one constructor the agent core calls. It gives: `Accounting(rec, tz, now)` (agent.ts `bookingsAccounting`, over the very
+  record the agent's `log` appends to; every money line goes through its `Post`), `Journal(rec)`, `Record(rec)` (accounting.Record over `*runtime.Recorder`), `SettlementPayments()` and
+  `ReadSettlements(rec, acct, owner, language, nowMs, tz)` (the daily settlement read: nil/skipped for a provider that reads none), `ReportMessaging()` (report.Messaging, and report.DocumentSender
+  when the client can send a file; the messaging errors become report's faults, `reportFault`), `BookingsOf(store)` (the Booking conversion) and `NewMonthlyReport(setup)` / `MonthlyReport.Run(ReportTick)`
+  (the monthly job, plan B54, through `bookingsreport.NewMonthlyJob`; the shop's settings, record and bookings are read when a report is made).
+* **settings_check.go** finishes `validateSettings`: `readApprovers`, `readAssistantSettings` and `readCharacter` with their sentences (in the TypeScript's order of calls), and `(*Settings).Tree()`, the
+  CHECKED tree the policy digest is of (a raw settings.json gives another digest). `CheckSettingsFile(raw)` returns the settings, the tree or the problems. The character's lists are `settings_check.json`
+  (generated). `testdata/settings-tree-vectors.json` holds the tree and `bookingsreport.PolicyDigest` equal to the TypeScript's on the example shops and every mutation of them
+  (`go/scripts/gen_bookings_settings.ts`).
+* **ownermark.go** is the UPI shop's side: `Store.UpiState` / `SetUpiState` (the ledger in the store's `upi` member, `internal/payments/ownermarked`), `Settings.UpiPayLink` and `OwnerMarkButtons` (proved equal on
+  `testdata/ownermark-buttons-vectors.json`, all four languages).
+
