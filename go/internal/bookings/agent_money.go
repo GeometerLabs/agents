@@ -68,12 +68,7 @@ func (a *Agent) refundDeps() payments.RefundDeps {
 	}
 }
 
-func (a *Agent) refundAccounting() payments.Accounting {
-	if a.kit.Ports.Books == nil {
-		return nil
-	}
-	return refundBooks{a.kit.Ports.Books}
-}
+func (a *Agent) refundAccounting() payments.Accounting { return refundBooks{a} }
 
 func decisionsAny(ds ...Decision) []any {
 	out := make([]any, len(ds))
@@ -83,11 +78,19 @@ func decisionsAny(ds ...Decision) []any {
 	return out
 }
 
-// post is books.post: the money event, and the line's own write with its money fields. TODO(go-bk-books-19nov): with no books handed in, the line has no money fields.
+// post is books.post: the money event, and the line's own write with its money fields (the accounting reads the line back). With no books, or books that cannot be read, the line
+// is written with no money fields, so the record is never short of the line itself.
 func (a *Agent) post(e BookEvent, write func(money map[string]string)) {
-	if a.kit.Ports.Books != nil {
-		a.kit.Ports.Books.Post(e, write)
-		return
+	if a.kit.Ports.Books != nil && a.c != nil {
+		if a.acct == nil {
+			a.acct, _ = a.kit.Ports.Books.Accounting(a.c.Rec, a.settings.Timezone, a.now)
+		}
+		if a.acct != nil {
+			wrote := false
+			if _, err := a.acct.Post(e.money(), func(refs map[string]string) error { wrote = true; write(refs); return nil }); err == nil || wrote {
+				return
+			}
+		}
 	}
 	write(map[string]string{})
 }

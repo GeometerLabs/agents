@@ -2,8 +2,8 @@
 
 ## Not built (and not asked for)
 
-* **The Bookings runtime's use of this package.** The adapters for `Payments` (the provider's settlement report) and `Record` (the shop's store), the tick that calls `ReadSettlementsOnce`, the
-  channel routes that serve `render.OwnerMoneySection`, `render.DocumentPage` and the accountant's files, and the monthly report's call of `SummaryOf`, `FiguresOf` and `render.MoneyBlock` are the
+* **The Bookings runtime's use of this package.** The adapters for `Payments` (the provider's settlement report) and `Record` (the shop's record) and the call of `ReadSettlementsOnce` are written
+  (`internal/bookings/books.go`: `Books.SettlementPayments`, `Books.Record`, `Books.ReadSettlements`); the agent core calls them from its tick. The channel routes that serve `render.OwnerMoneySection`, `render.DocumentPage` and the accountant's files, and the monthly report's call of `SummaryOf`, `FiguresOf` and `render.MoneyBlock` are the
   Bookings wave's. Orders and Fees will write their own `LegacyMap` the way `bookings.go` does.
 * **`modules/accounting/check.ts`** (the open check of a report's evidence pack, a command line) and the TypeScript `test/` of the module: the check reads a signed pack, not a shop's record, and the
   tests are held by the vectors. The open check stays TypeScript (`geometer-verify` is open and separate).

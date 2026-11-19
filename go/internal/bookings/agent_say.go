@@ -395,15 +395,6 @@ func (o *ownerMsg) isOwner(to string) bool { return sameNumber(to, o.a.owner()) 
 // sameNumber is push.ts sameNumber: the digits of two numbers are the same.
 func sameNumber(x, y string) bool { return digitsOf(x) == digitsOf(y) }
 
-func digitsOf(s string) string {
-	var b strings.Builder
-	for _, r := range s {
-		if r >= '0' && r <= '9' {
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
 
 func (o *ownerMsg) route() string {
 	if o.a.kit.Ports.OwnerRoute == nil {

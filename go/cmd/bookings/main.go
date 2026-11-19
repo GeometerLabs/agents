@@ -21,6 +21,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/access"
 	"github.com/GeometerLabs/agents/go/internal/bookings"
 	"github.com/GeometerLabs/agents/go/internal/health"
+	"github.com/GeometerLabs/agents/go/internal/payments"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
 	"github.com/GeometerLabs/agents/go/internal/testclock"
@@ -128,6 +129,9 @@ func run(folder string) error {
 		}
 		return p.Choice()
 	}
+	// the books (go-bk-books-19nov's adapters): the money lines' accounting and the settlement read. TODO(go-bk-agent): the monthly report needs a post-step save hook (TRIAL.md)
+	sr, _ := ports.Payments.(payments.SettlementReader)
+	ports.Books = bookings.NewBooks(bookings.BooksPorts{Messaging: ports.WhatsApp, Settlements: sr, Capabilities: ports.Capabilities})
 	kit.Ports = ports
 	kit.Router = runtime.RouterFor[bookings.Intent](&client.Config, bookings.Reading{S: kit.Settings}, log)
 	var acc *access.Access

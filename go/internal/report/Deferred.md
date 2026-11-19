@@ -5,7 +5,7 @@
 * **`WHAT_THIS_CHECKS_REVIEW`** (what-this-checks.ts, which language still waits for a native reader): data for the papers' tests, not for a page. Not carried.
 * **The send-once intent queue** (send-once.ts `queueSend`, `runSendOnce` and the rest): Stock orders' purchase orders. Only `RETRY_AFTER_MS`, `MAX_TRIES` and `nothingWasSent`
   are ported here (sendonce.go). The queue belongs to the Stock orders wave.
-* **The Bookings adapter of `Messaging` and `accounting.Record`**: the messaging stream's real types do not exist yet. The Bookings wave writes the adapter (see monthlyjob.go).
+* **The Bookings adapter of `Messaging` and `accounting.Record`**: written in `internal/bookings/books.go` (`Books.ReportMessaging`, `Books.Record`, with the messaging errors turned into this package's faults).
 
 ## Where Go and Node can still differ
 
