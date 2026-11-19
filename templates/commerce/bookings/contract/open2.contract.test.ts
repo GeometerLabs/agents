@@ -96,7 +96,7 @@ describe("a shop put back from a snapshot while a refund went out", () => {
 
 describe("the owner's number changes with no restart", () => {
   contract("after 48 hours the new number's messages are the owner's and the old number's are a customer's", async () => {
-    const { register, grants } = ownerKit(OWNER_BASE);
+    const { register, grants, told } = ownerKit(OWNER_BASE);
     const NEW = "+919822222222";
     const s = await boot({ tickSeconds: 1 });
     await register(s, qr(s.setup));
@@ -105,7 +105,9 @@ describe("the owner's number changes with no restart", () => {
     await s.inbound(OWNER_NUMBER, "help");
     const asOwner = actions(OWNER_NUMBER, mark);
     await s.stop(); s.setOwnerNumber(NEW); await s.start();
-    s.advance(REMOVAL_WAIT_MS + MIN); await sleep(2500);               // the sale applies: no restart
+    await told(s, "owner_change_asked");
+    s.advance(REMOVAL_WAIT_MS + MIN);                                  // the sale applies: no restart
+    await told(s, "removal_applied");
     const q = newSetupToken(); s.writeGrants(grants(s, { token: q })); await register(s, qr(q)); // the new owner's phone binds the shop to the NEW number
     mark = s.record().length;
     await s.inbound(NEW, "help");
