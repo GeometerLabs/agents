@@ -1,6 +1,6 @@
 // Where a shop's generated client folder is (settings.json, runtime.json, pathway.lock, and the files the deployer hands the running shop: pages.json, owner-grants.json,
 // licence.json, ...). For most shops that is generated/shops/<shop>/client, mounted into the shop's own container. A listings-only shop has no container of its own: it runs on the
-// server's one shared process (modules/runtime/shared.ts), which mounts ONE folder, generated/listings/, holding only listings-only shops. Keeping them in a folder of their own
+// server's one shared process (go/cmd/listings-shared), which mounts ONE folder, generated/listings/, holding only listings-only shops. Keeping them in a folder of their own
 // means the shared process can see no other shop's settings, and a new shop is a new folder in a mount that is already there (no container to change).
 //
 // The answer follows what is APPLIED (state.json), and the pin file only before the first apply, so a shop that takes an agent keeps its old folder until the deploy that moves it.

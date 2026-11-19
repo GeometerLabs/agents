@@ -2,8 +2,8 @@
 
 A listings-only shop is the smallest kind: it only shows what it has (`templates/commerce/listings`). This folder is **the shop's runtime written in Go**, begun as a trial of whether code
 that runs inside a shop can be Go (decision 61, `docs` repo `plans/next-phase.md` section 1c). The trial's results, wave 1a (the rest of the listings shop) and wave 1 merged (with the
-owner control) are in [TRIAL.md](TRIAL.md). The deployer runs it (wave 1b): a template folder that says `"runtime": "go"` in `template.json` (listings 0.2.0) is run from the programs' image, which the server builds from its own checkout (see "On a server" below). `cmd/listings` runs ONE shop, the way `templates/commerce/listings/server/main.ts` does, and it reads
-the same folder; `cmd/listings-shared` runs every shop of a server in one process, the way `server/shared-main.ts` does.
+owner control) are in [TRIAL.md](TRIAL.md). The deployer runs it (wave 1b): a template folder that says `"runtime": "go"` in `template.json` (listings 0.2.0) is run from the programs' image, which the server builds from its own checkout (see "On a server" below). `cmd/listings` runs ONE shop and `cmd/listings-shared` runs every shop of a server in one process; since 19 Nov 2026 they are the only listings runtime (the TypeScript
+`server/main.ts`, `shared-main.ts` and the shared pool they replaced are deleted: TRIAL.md, "Waves 1b and 1c finished").
 
 What stays TypeScript: the front (`modules/channels/front.ts`, with the shops' own MCP endpoints), the deployer, the panel. They call this runtime over HTTP and cannot tell which one answered;
 the **contract** in `templates/commerce/listings/contract/` is what both must pass.
@@ -23,7 +23,7 @@ INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_F
   bin/listings --client <shop folder>/client
 ```
 
-The folder, the three token files and the environment are the TypeScript runtime's (`modules/runtime/shared.ts` `folderSource` describes the layout): `client/` holds `settings.json`,
+The folder, the three token files and the environment are the ones the TypeScript runtime had, which the deployer writes (`bundle/generate/shop.ts` `sharedPaths` for the shared layout): `client/` holds `settings.json`,
 `runtime.json`, `pathway.lock` (written last), `owner-link.json`, `pages.json` and `owner-grants.json`; the secrets are `internal_token`, `channel_token` and `record_key`. `runtime.json`
 says where to listen (`host`, `port`) and where the data is (`dataDir`). Ctrl+C or SIGTERM finishes the step in hand and closes the store.
 
@@ -33,10 +33,10 @@ says where to listen (`host`, `port`) and where the data is (`dataDir`). Ctrl+C 
 
 The server compiles the programs itself, from its own checkout, in the official Go image pinned by digest in `bundle/release.json` (`go_image`, `go_image_digest`), at install (`install.sh`) and at `geometer update`; `geometer go-build` does it by hand. Source mounted read-only, `CGO_ENABLED=0`, `GOTOOLCHAIN=local`, `-trimpath -mod=readonly -buildvcs=false -ldflags "-s -w"`, a named volume `geo-go-cache` for the module and build cache. The result is `geo-go:<commit>`, an image `FROM scratch` of the programs alone (no shell, no tools; the pinned builder's certificate authorities, for the directory's https feeds), run as `1000:1000`. To add a program (`cmd/bookings`; `cmd/directory` was added so): one line in `GO_PROGRAMS` in `bundle/lib/go-build.ts`, and the template's `template.json` names it. The whole account is in `bundle/Explanation.md` ("How the Go runtimes reach a server"). Measured 19 Nov 2026 on an Apple-silicon Mac (Docker Desktop, 8 GB VM, linux/arm64): the image is **32.7 MB** (both programs); the compile took **12.3 s** from an empty build cache with the modules already in the cache volume (the first build on a server also downloads the modules, about 360 MB in the module cache, not measured here), **13.1 s** with the image made; peak memory of the compile container about **830 MB** (sampled once a second, so a floor). With the full-server settings (`-p 1`, `GOMAXPROCS=1`, `GOGC=50`, a 1536 MB wall) it is **46.7 s from an empty build cache and a peak of 1107 MB** by the container's own counter, about 730 MB of it process memory, the rest file cache. A fresh data volume came out owned by 1000:1000, and one shop's runtime and the shared process were both "healthy" 7 s after `up`, read-only, all capabilities dropped, with the `health` subcommand as their check.
 
-The contract against this binary (from the repository root; build both binaries first, the shared-process and cross-runtime tests use them):
+The contracts (from the repository root; build the binaries first, the shared-process and restart tests use them):
 
 ```
-LISTINGS_IMPL=go LISTINGS_GO_BIN=go/bin/listings node --test --test-concurrency=1 templates/commerce/listings/contract/
+node --test --test-concurrency=1 templates/commerce/listings/contract/    # the listings shop (go/bin/listings and go/bin/listings-shared, or LISTINGS_GO_BIN)
 node --test --test-concurrency=1 modules/discovery/contract/    # the directory (go/bin/directory, or DIRECTORY_GO_BIN)
 ```
 
@@ -45,7 +45,7 @@ The Go version is 1.27 (`go.mod`). No cgo: the binary needs no C library.
 ## Package map
 
 ```
-cmd/listings/            main: the command line, the token files, start and stop (the Go twin of server/main.ts + modules/runtime/start.ts)
+cmd/listings/            main: the command line, the token files, start and stop (it was the Go twin of the deleted server/main.ts + modules/runtime/start.ts)
 internal/store/          the shop's SQLite file, schema 5, the same tables as modules/runtime/store.ts: the queue, the snapshot in pieces, the record, photos, the shop's key
 internal/signing/        Ed25519 and RFC 8785 canonical JSON, both ways: the shop's key and the signed feed / answer / notice / Agent Card's JWS (modules/signing), and the reading of them (VerifyDocument, VerifyNotice: the directory's checks)
 internal/listings/       the listings: state and rules, the owner's ops, the public and owner reads, the feed and check documents, photos, the assistant's draft and its grounding checks
@@ -62,7 +62,7 @@ internal/understanding/  the model steps (modules/understanding): one JSON call 
                          answer is decoded to `any` and checked by hand
 internal/assistant/      the owner's assistant: its state (cards, talk, undo, typed; unknown members stay raw), the card binding (the digest TypeScript and Go agree on, the judge), the owner's words read by rule (rules.go), the owner's reading for the router (reading.go), the owner's talk (talk.go: prompt, answer, checks), notes from words (notes.go), and the words it says, packed per language (words/*.json.gz, made by scripts/gen_words.ts from the TypeScript words and unpacked once per process per language); the runtime package runs it in a step (assistant.go, draft.go, notes.go, talk.go, morning.go, ownerview.go)
 internal/budget/         the shop's model budget and the month's AI counts (modules/budget, modules/understanding/ai-state.ts), the decision model's breaker and the day's notices (steps.go)
-internal/shared/         the multi-shop host (the Go twin of modules/runtime/shared.ts): finds shop folders, routes /shop/<name>/..., contains a shop that panics or sticks (strikes, quarantine in a child process, pause); read its header first
+internal/shared/         the multi-shop host (it replaced modules/runtime/shared.ts, deleted): finds shop folders, routes /shop/<name>/..., contains a shop that panics or sticks (strikes, quarantine in a child process, pause); read its header first
 cmd/directory/           main of the directory of local shops (CONFIG, PORT, HOST, DIRECTORY_TICK_MS; `changes` and `accept <page>` for a key change, `health <url>`; the contract's test clock on 127.0.0.1 only)
 internal/directory/      the directory (modules/discovery): signed feeds read, checked and indexed (SQLite + FTS5, the TypeScript's own file), the fair order, search, the pages, the MCP endpoint, the signed
                          Agent Card, the buyer's assistant; the words are GENERATED from modules/discovery/words.ts (scripts/gen_directory.ts), the page's style, script, tools, card and prompt are Go source (words/); read Explanation.md and Deferred.md

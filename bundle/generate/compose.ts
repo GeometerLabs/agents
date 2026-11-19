@@ -47,7 +47,7 @@ import { agentNames } from "../agent/plan.ts";
 import { DESK_PORT, GUPSHUP_TOKEN_MOUNT, LICENCE_MOUNT, OWNER_MARKED_KINDS, PUSH_PORT, PUSH_SERVICE } from "./guards.ts";
 import { OWN_API, isGatewayKind } from "../../modules/payments/providers/index.ts";
 import type { GuardKind } from "./guards.ts";
-import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, SHARED, SHARED_GO_MEM_LIMIT_MB, SHARED_POOL, names, sharedMemLimitMb } from "./shop.ts";
+import { GUARD_PORT, HOME_DIR, REPORTS_DIR, REPORTS_ROUTE, REPORTS_SUBPATH, RUNTIME_PORT, SHARED, SHARED_GO_MEM_LIMIT_MB, names } from "./shop.ts";
 import type { GoRuntime } from "../lib/go-build.ts";
 import { DIRECTORY_PORT, DOOR_INTERNAL_PORT, DOOR_PORT, DOOR_ROBOTS_DISALLOW, NOTHING_HEADER } from "../services/door.ts";
 import { HOME_EXAMPLES_REDIRECT, HOME_MOUNT, HOME_ROBOTS_DISALLOW, HOME_SITE_ROOT } from "../lib/home.ts";
@@ -342,7 +342,6 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   }
   // The shared process for the listings-only shops: ONE container, one door, whatever their number. It has no Guard of its own (these shops take no money and send no WhatsApp); its
   // only way out is the model Guard, on the network it shares with it alone, and each shop reaches that Guard with its own credential, so the Guard knows each by its own id; each shop's own runtime allowance limits its use (the Guard's daily cap is one number for the server).
-  //   /app                  (Node only) the app, read-only: the one version of the template every shop on this process runs (a shop pinned to another is refused by the deployer); a Go process has its code inside
   //   /shops                generated/listings/: one folder per shop, `<shop>/client/` (settings.json, runtime.json, pathway.lock LAST, pages.json, owner-grants.json, ...), read-only
   //   /run/secrets          secrets/rt-listings/: one folder per shop (internal_token, channel_token, record_key, agent_model), read-only
   //   /home/node            the shared data volume: `<shop>/data/agent.db`, a folder and a store file of its own for each shop
@@ -355,23 +354,17 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
       command: ["nc", "-ll", "-s", doorIp, "-p", String(RUNTIME_PORT), "-e", "nc", SHARED.runtime, String(RUNTIME_PORT)],
       networks: { [SHARED.net]: {}, admin: { ipv4_address: doorIp } },
     });
-    // Wave 1b: when the shops' template (the checkout's) declares a Go runtime, the one process is the Go program in the programs' image, with the same mounts except /app (the program has its
-    // code inside) and no Node pool settings; the memory wall is its own number (shop.ts SHARED_GO_MEM_LIMIT_MB). Otherwise the Node process, exactly as before.
+    // The one process is the Go program (go/cmd/listings-shared) in the programs' image, named by the shops' template (the checkout's: template.json `sharedProgram`), with no /app (the
+    // program has its code inside); the memory wall is its own number (shop.ts SHARED_GO_MEM_LIMIT_MB). The Node shared process and its worker pool were deleted with the TypeScript
+    // listings runtime (wave 1b finished, 19 Nov 2026): a checkout whose listings template names no shared program cannot run listings-only shops, and says so.
     const sharedGo = sharedShops.map((s) => s.runtime?.sharedProgram).find((p) => p !== undefined);
-    const sharedMounts = [`${dirs.generated}/listings:/shops:ro`, `${dirs.secrets}/${SHARED.runtime}:/run/secrets:ro`, `${SHARED.dataVolume}:${HOME_DIR}`];
-    add(SHARED.runtime, sharedGo ? goProgram([`/${sharedGo}`], {
+    if (!sharedGo) throw new Error("Listings-only shops run on the Go shared process, and this checkout's listings template names no shared program (template.json sharedProgram).");
+    add(SHARED.runtime, goProgram([`/${sharedGo}`], {
       environment: { SHOPS_DIR: "/shops", SECRETS_DIR: "/run/secrets", HOST: "0.0.0.0", PORT: String(RUNTIME_PORT), SCAN_SECONDS: "5" },
       mem_limit: `${SHARED_GO_MEM_LIMIT_MB}m`,
-      volumes: sharedMounts,
+      volumes: [`${dirs.generated}/listings:/shops:ro`, `${dirs.secrets}/${SHARED.runtime}:/run/secrets:ro`, `${SHARED.dataVolume}:${HOME_DIR}`],
       networks: { [SHARED.net]: {} },
       healthcheck: healthGo(sharedGo, RUNTIME_PORT, "/readyz"),
-    }) : node(["node", "/app/templates/commerce/listings/server/shared-main.ts"], {
-      environment: { SHOPS_DIR: "/shops", SECRETS_DIR: "/run/secrets", HOST: "0.0.0.0", PORT: String(RUNTIME_PORT), SCAN_SECONDS: "5", SHARED_WORKERS: String(SHARED_POOL.workers), SHARED_WORKER_MB: String(SHARED_POOL.workerMb) },
-      // the outer memory wall (shop.ts SHARED_POOL): the workers' limits cap V8's heap only, so this is what stops Buffers or SQLite memory from taking the server
-      mem_limit: `${sharedMemLimitMb()}m`,
-      volumes: [`${dirs.app}:/app:ro`, ...sharedMounts],
-      networks: { [SHARED.net]: {} },
-      healthcheck: healthWget(RUNTIME_PORT, "/readyz"),
     }));
   }
   // An agent someone else wrote: the same Guards, on the `gate` network instead of a runtime's. There is no runtime, no door and no model Guard for it.

@@ -14,7 +14,7 @@ language for code that runs inside a shop **if this trial passes**. This file is
 
 ## The contract
 
-`templates/commerce/listings/contract/`: starts the shop as a **separate process** in a temp folder written as the deployer writes it, and talks to it only over HTTP. `LISTINGS_IMPL=ts|go`
+`templates/commerce/listings/contract/`: starts the shop as a **separate process** in a temp folder written as the deployer writes it, and talks to it only over HTTP. `LISTINGS_IMPL=ts|go` (until 19 Nov 2026; the contract runs Go only since the TypeScript runtime was deleted)
 picks the runtime. It covers `/healthz` `/readyz` `/status`, the token refusals (401), the public read and the offer, the owner's listing ops with the rules' refusals (422 and a `why`),
 photos, the signed feed, the signed check answer, the Agent Card and the feed notice (all verified with the **TypeScript** signing module, so Go must write byte-identical RFC 8785 JSON
 signed with Ed25519), the owner's passkey set-up and sign-in with the soft authenticator (ES256 and EdDSA), sessions, a listing drafted through a fake OpenAI-compatible model server
@@ -351,6 +351,32 @@ assistant's prompt and the fold tables are Go source now (`internal/directory/wo
 
 **Found (Go, left, Deferred.md):** a lone surrogate written as `\ud800` in a feed is read by Go's JSON decoder as U+FFFD, so the Go reader keeps a name the TypeScript refused; the shops' Go
 `Model.Cost` prices cached input tokens at the full rate where the TypeScript prices them at the cached rate (one line, left to the shop runtime's owner: it changes what a shop is charged).
+
+### The listings shop (wave 1b): the TypeScript runtime deleted
+
+**Deleted:** `templates/commerce/listings/server/` main.ts, runtime.ts, shared-main.ts, shared-start.ts, start.ts, store.ts, back-soon.ts; `src/` agent.ts, assistant.ts, channel.ts (only
+the runtime used them); the TypeScript shared process and its pool (`modules/runtime/shared.ts`, `shared-pool.ts`, `shared-worker.ts`) and their tests (`modules/runtime/test/shared.test.ts`,
+`shared-pool.test.ts`, `pool-fake-shop.ts`, `templates/commerce/listings/test/shared-pool.test.ts`, `shared-shops.test.ts`): **1,630 lines**; and the compose code of the Node shared block
+with `SHARED_POOL` (`bundle/generate/compose.ts`, `shop.ts`). Kept, because what stays TypeScript reads them: `server/config.ts` (bundle/lib/kinds.ts), `server/snapshot.ts` and `src/state.ts`
+(bundle/lib/listings-carry.ts), `src/settings.ts` and `src/chat-limits.ts` (kinds, the panel), `package.json`. Listings-only shops always run on the checkout's template, so the shared process
+is always Go; a checkout whose template names no shared program is refused when the compose file is written. Older kept versions of a single shop still run through the generic Node block.
+
+**The contract re-anchored before the deletion** (`templates/commerce/listings/contract/`, its README has the table): every test that compared the TypeScript shop with the Go shop now compares
+the Go shop with golden answers recorded from the TypeScript (`contract/golden/`, 49 answers from models, assistant, morning, differential, stock and cross-restart; recorded twice with no
+difference, and once more 37 days earlier to prove the replay at the recorded instant on the test clock really moves the dates); the turn-taking tests (TypeScript then Go on one folder) are
+Go restart tests, and the "same files" check is a golden of the three SQLite schemas. Before the change the whole folder passed 203 of 203 on TypeScript in a clean checkout (every turn-taking
+test passing both ways: the proof that Go reads TypeScript's files, since a TypeScript-written fixture would hold the shop's private key and is not committed); with the goldens in place
+196 of 196 on TypeScript and on Go; after `LISTINGS_IMPL=ts` went, **190 of 190 on Go** (7 turn-taking pairs became one restart test each, and the shared process's 6 scenarios no longer run
+a second time on TypeScript). No Go-versus-TypeScript difference was found. The listings unit tests that went: `shared-pool.test.ts` and `shared-shops.test.ts` (routing, another shop's
+token refused, a shop let go, the back-soon page: `contract/shared.contract.test.ts` and `go/internal/shared/host_test.go`; a listing and a photo staying in their own shop's feed and file are
+covered by each shop's own store and routes in the shared contract, not by a dedicated cross-shop feed check, Deferred.md); `modules/runtime/test/shared*.test.ts` (the TypeScript pool:
+`host_test.go` holds the Go host's strikes, quarantine, pause and restarts). `first-signin.test.ts` and `settings.test.ts` stay (they test `src/settings.ts`, which stays).
+
+**TypeScript behaviour the goldens pin** (reported, not changed): asked on Thu 19 Nov, "money on 16 nov" is answered for 16 Nov of next year, not three days ago; Go does the same.
+
+**Size of the two phases** (this branch's own commits, the main merge left out): Go +1,651 / -596 lines (+546 / -569 outside tests: the joins removed more than the switch added; +1,105 of
+tests); TypeScript -4,556 / +596 for the directory and -2,253 / +656 for the listings shop (the contract re-anchoring is most of the TypeScript added): **about 5,560 lines of TypeScript
+fewer**.
 
 ## Wave 2 preparation (19 Nov 2026): the Bookings contract, before any Go
 

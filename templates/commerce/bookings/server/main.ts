@@ -6,7 +6,7 @@
 // Ctrl+C (or send SIGTERM) to stop: the step in hand finishes, the rest waits in the store for the next start. The command line is the same for every template
 // (modules/runtime/main.ts).
 // The runtime contract (templates/commerce/bookings/contract/) may ask for a TEST clock through the environment, the same seam the listings-only shop has
-// (templates/commerce/listings/server/main.ts); modules/runtime/test-clock.ts says why that can never be on for a real shop (a "live" shop refuses to start with it).
+// (the listings shop, now go/cmd/listings, did it first); modules/runtime/test-clock.ts says why that can never be on for a real shop (a "live" shop refuses to start with it).
 // With neither variable set nothing here changes.
 import { runMain } from "../../../../modules/runtime/main.ts";
 import { testClock } from "../../../../modules/runtime/test-clock.ts";
