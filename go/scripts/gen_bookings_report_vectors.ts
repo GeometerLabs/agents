@@ -126,6 +126,11 @@ function upiWorld(): RecordEntry[] {
   w.add(D(10, 9), "cancel_booking", "confirmed", "b-6");
   w.pay(D(10, 9, 5), { kind: "refund_owed", case: "b-6", owed: "upr-6", paymentId: "bank-6", amountPaise: 12000 }, "upi_refund_owed", "held_for_owner", "b-6", { refs: { refundId: "upr-6" } });
   w.pay(D(11, 9), { kind: "kept", case: "b-6", owed: "upr-6", why: "late_mark_kept" }, "upi_refund_kept", "confirmed", "b-6", { refs: { refundId: "upr-6", amountPaise: "12000" } });
+  // b-8: a refund owed and marked sent, neither line naming a refund id (undefined is undefined); b-9: the same, the mark naming one that is not the same
+  w.add(D(11, 12), "upi_refund_owed", "held_for_owner", "b-8");
+  w.add(D(11, 13), "upi_refund_marked_done", "confirmed", "b-8");
+  w.add(D(11, 14), "upi_refund_owed", "held_for_owner", "b-9", { refs: { refundId: "upr-9" } });
+  w.add(D(11, 15), "upi_refund_marked_done", "confirmed", "b-9", { refs: { refundId: "upr-other" } });
   // b-7: the owner answers a refund by hand, a message to the owner and one to the customer
   w.add(D(12, 9), "owner_decision", "confirmed", "b-7", { refs: { command: "approve" } });
   w.add(D(12, 10), "send_message", "confirmed", null, { refs: { to: "owner" }, language: "hi" });
@@ -225,6 +230,11 @@ function rulesWorld(): { entries: RecordEntry[]; bookings: { id: string; state: 
   for (const [i, id] of ["b-10", "b-2", "x-5", "b-1e2", "b-0x10", "q", "b-", "b-0", "b-007"].entries()) w.add(D(15, 5 + i), "hold_slot", "confirmed", id);
   w.add(D(16, 5), "restored", "confirmed", null);
   w.add(D(16, 6), "licence", "confirmed", null, { refs: { state: "grace" } });
+  // a refund with no payment id is settled by a later one with none (undefined is undefined); an empty payment id is not "none"
+  w.add(D(17, 5), "refund", "unconfirmed", "b-16");
+  w.add(D(17, 6), "refund", "confirmed", "b-16");
+  w.add(D(17, 7), "refund", "unconfirmed", "b-17", { refs: { paymentId: "" } });
+  w.add(D(17, 8), "refund", "confirmed", "b-17");
   // after the month: December
   w.add(D(1, 5, 0, 12), "hold_slot", "confirmed", "b-90");
   w.add(D(1, 6, 0, 12), "confirm_booking", "confirmed", "b-90");
@@ -322,6 +332,10 @@ const CASES: Case[] = [
   { ...base, name: "long-name-420", settings: longName(420), entries: rules.entries, bookings: [], month: "2026-11", preparedBy: "Meena", pages: ["ml"] },
   { ...base, name: "long-name-600", settings: longName(600), entries: rules.entries, bookings: [], month: "2026-11", preparedBy: "Meena", pages: ["kn"] },
   { ...base, name: "long-name-unsigned", settings: longName(500), entries: rules.entries, bookings: [], month: "2026-11", preparedBy: "Meena", signed: false, pages: [] },
+  // the owner's marks on a gateway shop: the books count them, the rows above do not, and the page says why (booksOnly)
+  { ...base, name: "gateway-with-owner-marks", settings: gateway, entries: upiEntries, bookings: [], month: "2026-11", preparedBy: "Asha", pages: ["en", "hi"] },
+  // text that reaches the page and the message is escaped or put on one line
+  { ...base, name: "escapes", settings: { ...gateway, name: "Glow & <b>Salon</b> \"A's\"\n  line two" } as Settings, entries: rules.entries, bookings: [], month: "2026-11", preparedBy: "Meena\n  S\t<x>&", innovator: true, pages: ["en", "kn"] },
   // a record that is not a chain: the report cannot be anchored, and says why
   { ...base, name: "ledger-gap", settings: gateway, entries: rules.entries.filter((e) => e.seq !== 5), bookings: [], month: "2026-11", preparedBy: "Divya", tenant: "gap", pages: [] },
   { ...base, name: "ledger-bad-time", settings: gateway, entries: rules.entries.map((e) => (e.seq === 3 ? { ...e, time: "not a time" } : e)), bookings: [], month: "2026-11", preparedBy: "Divya", tenant: "bad-time", pages: [] },
