@@ -11,28 +11,29 @@ export interface RuntimeProcess {
   stop(): Promise<void>;
 }
 
-/** Start `cmd args` and wait up to 10 s for `<url>/healthz` to answer 200. A process that exits early, or never answers, is stopped and the error carries what it printed. */
-export async function startRuntimeProcess(cmd: string, args: string[], env: Record<string, string | undefined>, url: string, what: string): Promise<RuntimeProcess> {
-  let output = "";
+/** Start `cmd args` and wait up to 10 s for `<url>/healthz` to answer 200. A process that exits early, or never answers, is stopped and the error carries what it printed (also in `log`). */
+export async function startRuntimeProcess(cmd: string, args: string[], env: Record<string, string | undefined>, url: string, what: string, log: { text: string } = { text: "" }): Promise<RuntimeProcess> {
+  // `log` is the caller's own, so what the process printed is still there after it stopped, or failed to start (a failure message wants it)
+  log.text = "";
   const c = spawnChild(cmd, args, { env, stdio: ["ignore", "pipe", "pipe"] }, what);
-  c.stdout!.on("data", (d: Buffer) => { output += d.toString(); });
-  c.stderr!.on("data", (d: Buffer) => { output += d.toString(); });
+  c.stdout!.on("data", (d: Buffer) => { log.text += d.toString(); });
+  c.stderr!.on("data", (d: Buffer) => { log.text += d.toString(); });
   let exitedEarly: ((e: Error) => void) | undefined;
-  const onExit = (code: number | null): void => { exitedEarly?.(new Error(`the shop exited early (${code}):\n${output}`)); };
+  const onExit = (code: number | null): void => { exitedEarly?.(new Error(`the shop exited early (${code}):\n${log.text}`)); };
   const early = new Promise<never>((_, reject) => { exitedEarly = reject; c.once("exit", onExit); });
   const ready = (async () => {
     for (let i = 0; i < 200; i++) {
-      if (c.exitCode !== null || c.signalCode !== null) throw new Error(`the shop exited early (${c.exitCode ?? c.signalCode}):\n${output}`);
+      if (c.exitCode !== null || c.signalCode !== null) throw new Error(`the shop exited early (${c.exitCode ?? c.signalCode}):\n${log.text}`);
       try { if ((await fetch(`${url}/healthz`)).status === 200) return; } catch { /* not listening yet */ }
       await new Promise((r) => setTimeout(r, 50));
     }
-    throw new Error(`the shop did not answer /healthz in 10 s:\n${output}`);
+    throw new Error(`the shop did not answer /healthz in 10 s:\n${log.text}`);
   })();
   try { await Promise.race([ready, early]); } catch (e) {
     await stopChild(c); // a shop that never answered is not left running
     throw e;
   } finally { c.removeListener("exit", onExit); }
-  return { child: c, output: () => output, stop: () => stopChild(c) };
+  return { child: c, output: () => log.text, stop: () => stopChild(c) };
 }
 
 export interface CallOptions {
