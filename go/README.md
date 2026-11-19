@@ -18,6 +18,7 @@ cd go
 go build -o bin/listings ./cmd/listings                 # 23.3 MB; with -ldflags "-s -w" 16.4 MB (19 Nov, wave 1 merged)
 go build -o bin/listings-shared ./cmd/listings-shared   # 23.8 MB; with -ldflags "-s -w" 16.8 MB
 go build -o bin/directory ./cmd/directory               # the directory of local shops (size: TRIAL.md, Wave 1c)
+go build -o bin/bookings ./cmd/bookings                 # one Bookings shop (wave 2, in progress: TRIAL.md "Wave 2: the Bookings runtime")
 INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_FILE=record_key \
   bin/listings --client <shop folder>/client
 ```
@@ -37,6 +38,7 @@ The contract against this binary (from the repository root; build both binaries 
 ```
 LISTINGS_IMPL=go LISTINGS_GO_BIN=go/bin/listings node --test --test-concurrency=1 templates/commerce/listings/contract/
 DIRECTORY_IMPL=go DIRECTORY_GO_BIN=go/bin/directory node --test --test-concurrency=1 modules/discovery/contract/    # the directory
+BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1 templates/commerce/bookings/contract/  # Bookings (wave 2)
 ```
 
 The Go version is 1.27 (`go.mod`). No cgo: the binary needs no C library.
@@ -45,6 +47,10 @@ The Go version is 1.27 (`go.mod`). No cgo: the binary needs no C library.
 
 ```
 cmd/listings/            main: the command line, the token files, start and stop (the Go twin of server/main.ts + modules/runtime/start.ts)
+cmd/bookings/            main of ONE Bookings shop (wave 2): the same command line, token files, environment and test clock as cmd/listings; the shared runtime with the Bookings Kit
+internal/bookings/       the Bookings template (wave 2): the settings checked with the TypeScript's sentences, the store read and written field for field (unknown members kept raw), the
+                         agent over one step, the channel's reads, the pure rules (hours, double booking with units, refund limit, reminders), the ports to the services; read
+                         Explanation.md and Deferred.md (what is not ported yet: every step that calls a service)
 internal/store/          the shop's SQLite file, schema 5, the same tables as modules/runtime/store.ts: the queue, the snapshot in pieces, the record, photos, the shop's key
 internal/signing/        Ed25519 and RFC 8785 canonical JSON, both ways: the shop's key and the signed feed / answer / notice / Agent Card's JWS (modules/signing), and the reading of them (VerifyDocument, VerifyNotice: the directory's checks)
 internal/listings/       the listings: state and rules, the owner's ops, the public and owner reads, the feed and check documents, photos, the assistant's draft and its grounding checks
@@ -67,7 +73,8 @@ internal/directory/      the directory (modules/discovery): signed feeds read, c
                          Agent Card, the buyer's assistant; the words, style sheet, tool definitions and card text are GENERATED from the TypeScript (scripts/gen_directory.ts); read Explanation.md and Deferred.md
 internal/health/         the `health` subcommand both programs share (one GET of an address, exit 0 or 1)
 cmd/listings-shared/     main of the multi-shop host (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS, STATE_DIR; `--one <shop>` is the child it starts for a quarantined shop)
-internal/runtime/        the runtime: the folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes; owner.go is the
+internal/runtime/        the runtime every shop shares; template.go is the seam a template plugs into (Kit, the twin of core.ts RuntimeKit: kit.go, kitserver.go, events.go, statuses.go
+                         are the parts only a template uses), and with no Kit it is the listings shop. The folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes; owner.go is the
                          owner's sign-in routes, the tick's owner part and the owner's side of push (who may subscribe, what ends a subscription, the alerts to the
                          owner's phones), all under one owner lock; push.go, limits.go, ownerfile.go, stock.go and assistant.go are the other owner routes
 scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the TypeScript word lists (talk-check.ts), so the four-language words are never retyped

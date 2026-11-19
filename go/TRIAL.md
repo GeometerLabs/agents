@@ -316,3 +316,22 @@ The HTTP contract suite for the Bookings shop runtime is written in TypeScript a
 tracker, fake model, fake push Guard, test-clock file, process starter, HTTP caller, owner-control helpers) moved to `modules/test/contract/` and the listings contract uses them.
 One runtime file changed: `templates/commerce/bookings/server/main.ts` takes the test clock the way the listings shop's main does (nothing changes without the two variables, and a
 live shop refuses them). The Go Bookings binary must honour the same two variables for a "fakes" shop (`go/internal/testclock`).
+
+## Wave 2: the Bookings runtime (19 Nov 2026, `go-bookings-19nov`, in progress)
+
+**What is built.** One shop runtime for every template: `internal/runtime/template.go` is the seam (`Kit`, the Go twin of `modules/runtime/core.ts` `RuntimeKit` and `ChannelKit`),
+and `internal/bookings` is the first template plugged into it; `cmd/bookings` runs one Bookings shop with the same command line, token files, environment and test clock as
+`cmd/listings` (a live shop refuses the test clock). Nothing of the listings runtime was copied: the owner's sign-in, passkeys, phones, push, the limits page, the owner's file,
+the record and the queue are the same code for both shops. A runtime with no Kit is the listings shop exactly as before (the listings contract on Go: 201 of 201 before the seam
+and after it). The parts only a template uses: the inbox's events, the panel's recovery and the front's channel events checked whole with the TypeScript's sentences and task
+keys (`events.go`), WhatsApp's delivery reports in the record (`statuses.go`), a task parked while its Guard is down and run once more when the wait is over, a task ended failed
+with its to-do line keeping the thrown-away step's id counters (`kit.go`), the template's routes in http.ts's order of checks (`kitserver.go`), and in the store the columns
+that were always there (`waiting_on`, `retry_at`, the window, a task's state by key). The Bookings store is read and written field for field, every member it does not model kept
+raw in its place (`internal/bookings/state.go`); `nextBooking` moves on by 100000 after a restore.
+
+**What is left, and why.** Every step that calls a service: a customer's message, a booking from the page, a payment, an approval, cancel and change, the beat's holds, reminders
+and completion, the free starts in the offer. The services are the other streams' (go-guards-19nov: payments, messaging, calendar, stand-ins; go-books-19nov: the books, the
+report), so the domain code waits on them; `internal/bookings/ports.go` holds the interfaces, mirroring theirs. Such a step ends its task FAILED at once with a sentence
+(`runtime.Unported`), never a silent "done". The pure rules it will use are ported and proved on the TypeScript's vectors (hours, double booking with units and resources, the
+refund limit, the price floor, STOP, every move between states, reminders; the settings' refusals word for word; the task runner's cases). Slices 4 and 5 (the customer's chat
+and talk, the owner's side for Bookings, the assistant's Bookings skill, the limits Bookings declares) are not started. `internal/bookings/Deferred.md` is the list.
