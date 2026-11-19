@@ -32,3 +32,24 @@ by 100000 after a restore and is kept where a thrown-away step left it, so a boo
 The services a step calls (calendar, payments, messaging, books) are the other streams' packages, typed with the TypeScript's method sets there; this package does not
 define a second copy of their interfaces (`ports.go` says how they will be handed in). Until they land, a step that needs one ends with `runtime.Unported` and its sentence.
 See Deferred.md.
+
+## Reading a customer's message (slice 1 of the second part)
+
+A customer's words are read cheapest first by the shared router (`understanding.Router`), as `src/adapters/understanding.ts` does, with Bookings' reading (`reading.go`) given to it:
+
+* **The rules** (`parser.go`, rule-parser.ts `parseIntent`). The readers every template shares are in the shared packages: a date and a time of day (`language/dates.go`
+  `FindDatePhrase`, `FindTimePhrase`, `BlankWrittenDate`), STOP, a trick, the language and a price (`understanding/rules.go`). Only Bookings' own part is here: a service by its
+  names (the longest name wins), then reschedule, cancel, book, a short no or yes, a greeting, in the TypeScript's order. Every fixed pattern is the TypeScript's own: the shared
+  ones in `language/patterns.json` (`go/scripts/gen_patterns.ts`), Bookings' cancel, reschedule and book in `reading.json` (`go/scripts/gen_bookings_reading.ts`). Only a
+  service's names, which a shop gives at run time, are built here, with `language.WordRe`, whose sources are proved equal to dates.ts `wordRe`.
+* **When the rules are sure** (`Sure`, reading.ts `rulesAreSure`) no model is asked: STOP, yes, no, cancel, a greeting, a trick, a booking with its service, day and time.
+* **The decision model** is asked what the customer wants, which service, and (when the rules found no day and time) which of the next free times (`Reading.Slots`, from the
+  calendar once it is wired). The questions and labels are reading.ts's, in the order its objects have them; the rules' values win over the model's.
+* **The language model** gets the shop's prompt and answer schema (model-prompt.ts, rendered by the generator for a sentinel shop and filled here with the shop's services). Its
+  answer is untrusted: `Shape` (toIntentShape) keeps only an Intent's own fields (a null period dropped, "18:00 pm" read as 18:00, `ask` never passed), and `CoerceIntent` checks
+  every type by hand. The router asks a reading for its own `Shape` (`understanding.Shaper`); the owner's reading has none and keeps the generic one.
+
+The matcher (`language/regex.go`) learned three shapes these patterns have and RE2 does not: a one-character look-ahead at the end of a word in the word list an alternative
+ends with (marked as an `edge` group and cut back), a look-ahead in the middle or one longer than a character ("ends" mode: the part before it is matched, and its shorter ends
+are tried longest first, as a backtracking engine does with a greedy repetition last), and a `\b` inside an alternative (matched with the character before in front, so the
+`\b` sees it). Each is proved on JavaScript's own matches over the generator's corpus, which now has customers' phrases (times next to prices, glued words, STOP, tricks).

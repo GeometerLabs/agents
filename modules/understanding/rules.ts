@@ -17,11 +17,11 @@ export const NO_RE = wordRe(["no", "nope", "nahi", "nahin", "नहीं", "न
 export const GREETING_RE = wordRe(["hi", "hello", "hey", "namaste", "namaskar", "नमस्ते", "नमस्कार", "हैलो", "हेलो", "हाय", ...inBoth((w) => w.greeting)], "u", false);
 export const FREE_RE = wordRe(["free", "complimentary", "free of charge", "no charge", "for nothing", "मुफ्त", "मुफ़्त", "फ्री", "फ़्री", "बिना पैसे", "muft", "bina paise", ...inBoth((w) => w.free)]);
 // "stop" on its own, or a few words around it; never a sentence that merely contains the word
-const STOP_WORDS_RE = wordRe(["stop", "unsubscribe", "स्टॉप", "opt out", "optout", ...inBoth((w) => w.stop)], "u", false);
-const STOP_HINDI_RE = new RegExp(nfc("(?:मैसेज|संदेश|msg|message).{0,12}बंद|बंद.{0,12}(?:मैसेज|संदेश)"), "u");
-const STOP_DRAVIDIAN_RE = phraseRe(inBoth((w) => w.stopPhrases));
+export const STOP_WORDS_RE = wordRe(["stop", "unsubscribe", "स्टॉप", "opt out", "optout", ...inBoth((w) => w.stop)], "u", false);
+export const STOP_HINDI_RE = new RegExp(nfc("(?:मैसेज|संदेश|msg|message).{0,12}बंद|बंद.{0,12}(?:मैसेज|संदेश)"), "u");
+export const STOP_DRAVIDIAN_RE = phraseRe(inBoth((w) => w.stopPhrases));
 
-const OVERRIDE_PATTERNS = [
+export const OVERRIDE_PATTERNS = [
   "(?:ignore|forget|disregard|override|bypass)\\b[^.!?]{0,40}\\b(?:rules?|instructions?|prompts?|polic(?:y|ies)|limits?|guidelines)",
   "\\b(?:you are now|system prompt|developer mode|jailbreak)\\b",
   "(?:नियम|निर्देश|इंस्ट्रक्शन|पॉलिसी)[^.!?]{0,30}(?:भूल|नजरअंदाज|छोड़|तोड़)",
@@ -32,11 +32,11 @@ const topics = inBoth((w) => w.overrideTopics).map((x) => canon(x)).join("|");
 const verbs = inBoth((w) => w.overrideVerbs).map((x) => canon(x)).join("|");
 OVERRIDE_PATTERNS.push(new RegExp(`(?:${topics})[^.!?]{0,30}(?:${verbs})`, "u"), new RegExp(`(?:${verbs})[^.!?]{0,30}(?:${topics})`, "u"));
 
-const ENGLISH_WORDS_RE = wordRe(["the", "please", "can", "could", "would", "i", "my", "want", "like", "book", "tomorrow", "today", "next", "cancel", "for", "at", "to", "you", "your", "free", "ignore", "reschedule", "hello", "appointment", "rules", "it"]);
-const ROMAN_HINDI_RE = wordRe(["kal", "aaj", "parso", "baje", "bje", "shaam", "subah", "raat", "haan", "nahi", "chahiye", "karna", "karwana", "kar do", "mein", "hai", "kitna", "kya", "bhai", "didi", "muft"]);
+export const ENGLISH_WORDS_RE = wordRe(["the", "please", "can", "could", "would", "i", "my", "want", "like", "book", "tomorrow", "today", "next", "cancel", "for", "at", "to", "you", "your", "free", "ignore", "reschedule", "hello", "appointment", "rules", "it"]);
+export const ROMAN_HINDI_RE = wordRe(["kal", "aaj", "parso", "baje", "bje", "shaam", "subah", "raat", "haan", "nahi", "chahiye", "karna", "karwana", "kar do", "mein", "hai", "kitna", "kya", "bhai", "didi", "muft"]);
 
-const ROMAN_MALAYALAM_RE = wordRe(WORDS.ml.hints, "u", false);
-const ROMAN_KANNADA_RE = wordRe(WORDS.kn.hints, "u", false);
+export const ROMAN_MALAYALAM_RE = wordRe(WORDS.ml.hints, "u", false);
+export const ROMAN_KANNADA_RE = wordRe(WORDS.kn.hints, "u", false);
 
 /** The language a message is written in: by script first (Devanagari, Malayalam, Kannada), then by Latin-letter words. */
 export function detectLanguage(text: string): Language | undefined {
@@ -57,17 +57,20 @@ const toRupees = (digits: string) => Number(digits.replace(/,/g, ""));
 const RUPEE_AFTER = inBoth((w) => w.rupee).map(canon).sort((a, b) => b.length - a.length)
   .map((w) => (/[a-z]/u.test(w) ? `${w}(?![a-z])` : `${w}[\\p{L}\\p{M}]*`)).join("|");
 
+// The price patterns, tried in turn (exported, as the other patterns here, so go/scripts/gen_patterns.ts hands the Go runtime these exact sources): the pattern, the
+// smallest number it may give, and whether a written date is blanked out first.
+export const OFFER_TESTS: [RegExp, number, boolean?][] = [
+  [/(?:₹|rs\.?|inr|रु\.?|रुपये|रुपए)\s*(\d[\d,]*)/u, 1],
+  [/(?<![\d:.])(\d[\d,]*)\s*(?:₹|rs\b|rupees?|रुपये|रुपए|रुपया|रु\b|में|मे|मैं|mein|only|का\b|ka\b|के लिए|ke liye)/u, 10],
+  [new RegExp(`(?<![\\d:.])(\\d[\\d,]*)\\s*(?:${RUPEE_AFTER})`, "u"), 10],
+  [/(?<![\d:.])(\d[\d,]*)\s*(?:ಕ್ಕ[ೆೇ]|ಗ[ೆೇ]|ಕ[ೆೇ])(?![\p{L}\p{M}])/u, 25, true], // Kannada "300ಕ್ಕೆ" (for 300); a smaller number with ಕ್ಕೆ is a time, "6ಕ್ಕೆ"
+  [/(?:\bfor|@)\s*₹?\s*(\d[\d,]*)(?!\s*(?::|am\b|pm\b|baje|बजे|o'?clock|mani|gante|മണി|ಗಂಟೆ))/u, 10],
+  [/\bat\s*₹?\s*(\d[\d,]*)(?!\s*(?::|am\b|pm\b|baje|बजे|o'?clock|mani|gante|മണി|ಗಂಟೆ))/u, 100],
+];
+
 /** A price the customer proposed. Cues are explicit (₹, Rs, "में", "for"), so a time like "6 बजे" is never read as a price. */
 export function findOffer(t: string): number | undefined {
-  const tests: [RegExp, number, boolean?][] = [
-    [/(?:₹|rs\.?|inr|रु\.?|रुपये|रुपए)\s*(\d[\d,]*)/u, 1],
-    [/(?<![\d:.])(\d[\d,]*)\s*(?:₹|rs\b|rupees?|रुपये|रुपए|रुपया|रु\b|में|मे|मैं|mein|only|का\b|ka\b|के लिए|ke liye)/u, 10],
-    [new RegExp(`(?<![\\d:.])(\\d[\\d,]*)\\s*(?:${RUPEE_AFTER})`, "u"), 10],
-    [/(?<![\d:.])(\d[\d,]*)\s*(?:ಕ್ಕ[ೆೇ]|ಗ[ೆೇ]|ಕ[ೆೇ])(?![\p{L}\p{M}])/u, 25, true], // Kannada "300ಕ್ಕೆ" (for 300); a smaller number with ಕ್ಕೆ is a time, "6ಕ್ಕೆ"
-    [/(?:\bfor|@)\s*₹?\s*(\d[\d,]*)(?!\s*(?::|am\b|pm\b|baje|बजे|o'?clock|mani|gante|മണി|ಗಂಟೆ))/u, 10],
-    [/\bat\s*₹?\s*(\d[\d,]*)(?!\s*(?::|am\b|pm\b|baje|बजे|o'?clock|mani|gante|മണി|ಗಂಟೆ))/u, 100],
-  ];
-  for (const [re, minimum, skipWrittenDate] of tests) {
+  for (const [re, minimum, skipWrittenDate] of OFFER_TESTS) {
     // The first match that is big enough: in "ಸಂಜೆ 6ಕ್ಕೆ ... 300ಕ್ಕೆ" the 6 is an hour and the 300 is the price.
     for (const m of (skipWrittenDate ? blankWrittenDate(t) : t).matchAll(new RegExp(re.source, `${re.flags}g`))) { // "ನವೆಂಬರ್ 28ಕ್ಕೆ" is a date, not a price of 28
       if (toRupees(m[1]) >= minimum && toRupees(m[1]) <= 1_000_000) return toRupees(m[1]);

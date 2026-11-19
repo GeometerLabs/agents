@@ -385,3 +385,16 @@ wired with the refunds, which wait for the payments package.
 tapped button or row read with no model (`intentFromReply`: the 13 `reply` cases of `templates-vectors.json`, equal). Not ported yet, with no Go test: the rule parser
 (`parser-vectors.json`, the coerce file's `sure`, `prompt`, `schema`), the customer's words (`templates-vectors.json` render, meta, labels, lists, buttons: they need a generator over
 `src/language/templates.ts` and the four languages' date, time, rupee and phone formats), the agent's scenarios, ONDC, the report.
+
+
+**Slice 1 (second part): reading a customer's message (19 Nov).** The rule parser (`internal/bookings/parser.go`, rule-parser.ts `parseIntent`) and Bookings' reading for the
+shared router (`reading.go`: rulesAreSure, toIntentShape, the prompt, the schema, the decision model's questions and how its answers are read, merge). The shared readers are in the
+shared packages: `language.FindTimePhrase`, `BlankWrittenDate`, `WordRe` (dates.ts), `understanding.DetectLanguage`, `FindOffer`, `IsStop`, `IsOverrideAttempt` (rules.ts). Every
+fixed pattern is generated: the shared ones into `language/patterns.json` (gen_patterns.ts, 52 more), Bookings' own and the prompt, schema and questions into
+`internal/bookings/reading.json` (new `go/scripts/gen_bookings_reading.ts`, its freshness test `templates/commerce/bookings/test/go-reading-fresh.test.ts`). To hand them over,
+TypeScript constants that were private became exported (rules.ts, dates.ts, rule-parser.ts, reading.ts) and findOffer's and findTimePhrase's inline patterns became named
+constants (`OFFER_TESTS`, `CLOCK_TIME_RE` ...): the same patterns in the same order, no change of behaviour. The JavaScript-regex matcher (`language/regex.go`) gained the three
+shapes these patterns need (an edge on a word of a final word list, a look-ahead in the middle or longer than a character, a `\b` inside an alternative); Explanation.md says how.
+The router takes a reading's own `Shape` (`understanding.Shaper`). Proved: parser-vectors.json (114 phrases, equal), coerce-vectors.json's sure (8), prompt (1, byte for byte) and
+schema (1), the corpus's readers (offer, time, date, blanked date, language, STOP, trick, wordRe sources) for every phrase of gen_patterns' corpus, and toIntentShape on
+model-llm.test.ts's cases (no vectors exist for it: a gap reported to the contract stream). Not wired yet: the router into the customer's message step (that step needs the services).

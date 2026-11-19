@@ -12,7 +12,10 @@ package language
 //   - its trailing negative look-ahead of one character `(?!X)` becomes part of the RE2 pattern as "a character not in X, or the end", and the match is then cut back to before
 //     that character. Because the edge is in the pattern, RE2 backtracks into the alternative exactly as JavaScript does when the edge fails (Go's regexp prefers what a
 //     backtracking engine would choose: "leftmost-first");
-//   - a trailing look-ahead longer than one character is checked by hand after the match, and is taken only where the part before it is plain text (no choice to backtrack into);
+//   - a one-character look-ahead that ends a word of the word list the alternative ends with (`(?:ಗಂಟೆ(?![\p{L}\p{M}])|बजे)`) is the same edge, marked (markEdges);
+//   - any other look-ahead (in the middle, or longer than one character) splits the alternative: the part before it is matched, and its shorter ends are tried longest first
+//     until the look-ahead does not match after one ("ends" mode, in `alt`);
+//   - an alternative with a `\b` inside it is matched with the character before the position in front, so the `\b` sees it;
 //   - a leading `^` or `\b` is checked by hand (the alternative is matched on the text from the position on, which has lost what came before); a look-behind that opens
 //     the alternative's first capture group is the same look-behind before the group;
 //   - JavaScript's `\s`, `.` and `\uXXXX` are written in RE2's words.
@@ -38,13 +41,25 @@ type Regex struct {
 }
 
 type alt struct {
-	start    bool           // a leading `^`
-	wordB    bool           // a leading `\b`
-	before   *regexp.Regexp // (?<!X): the character before must not match this
-	re       *regexp.Regexp // ^(body)(?:edge|$): group 1 is the match
-	notAfter *regexp.Regexp // a longer (?!X) after a plain-text body, checked by hand
-	groups   int            // the body's own capture groups
-	first    int            // the JavaScript number of its first group
+	start  bool           // a leading `^`
+	wordB  bool           // a leading `\b`
+	before *regexp.Regexp // (?<!X): the character before must not match this
+	// re is ^(body)(?:edge|$) (group 1 is the match), or in "ends" mode ^(head). re[1] is the same with the character before the position in front, `^(?s:.)(...)`, for a
+	// body with a `\b` in it, which must see that character (re[1] == re[0] otherwise).
+	re [2]*regexp.Regexp
+	// "ends" mode, for a look-ahead `(?!X)` that RE2 cannot have: in the middle of the alternative, or longer than one character after a body with choices. The head (what comes
+	// before it) is matched; if the look-ahead matches after it, the head's shorter ends are tried, longest first (what a backtracking engine tries first when the head's last
+	// choice is a greedy repetition, the shape these patterns have: `(\d[\d,]*)`, `(\d{2})`), each checked whole by `exact`; then the rest, `tail`, is matched after it.
+	// A head whose last choice is an alternation with the shorter choice first (`(?:a|ab)`) is not that shape: JavaScript would try the longer one next, this does not; no
+	// generated pattern has it, and the vector tests would show one that did.
+	exact  [2]*regexp.Regexp // ^(head)$
+	look   *regexp.Regexp    // ^(?:X)
+	tail   *regexp.Regexp    // ^(rest), nil when the look-ahead ends the alternative
+	ctx    bool
+	js     []int // for each RE2 group from 2 on (of re and exact): its number among the alternative's JavaScript groups, or -1 for an edge marker (`(?P<edge>...)`)
+	tailN  int   // the tail's own capture groups (numbered after the head's)
+	groups int   // the alternative's JavaScript capture groups
+	first  int   // the JavaScript number of its first group
 }
 
 // MustCompile is Compile that panics: the patterns come from the TypeScript source and are compiled by the tests.
@@ -117,62 +132,135 @@ func compileAlt(a, prefix string, dotAll bool) (alt, string, error) {
 	}
 	edge := ""
 	if i := lastGroup(a); i >= 0 && strings.HasPrefix(a[i:], "(?!") {
-		inner := a[i+3 : len(a)-1]
-		body := a[:i]
-		if neg, ok := negateOne(inner); ok {
+		if neg, ok := negateOne(a[i+3 : len(a)-1]); ok {
 			conv, err := convert(neg, dotAll)
 			if err != nil {
 				return x, "", err
 			}
-			edge = conv
-		} else {
-			if !isPlain(body) {
-				return x, "", fmt.Errorf("a look-ahead of more than one character after a pattern with choices is not supported: %s", a)
-			}
-			conv, err := convert(inner, dotAll)
-			if err != nil {
-				return x, "", err
-			}
-			if x.notAfter, err = regexp.Compile(prefix + `^(?:` + conv + `)`); err != nil {
-				return x, "", err
-			}
+			edge, a = conv, a[:i]
 		}
-		a = body
+	}
+	a = markEdges(a)
+	// what is left of a look-ahead is the "ends" mode's: the first one splits the alternative into head, look-ahead and rest
+	rest, look := "", ""
+	if i := firstLookAhead(a); i >= 0 {
+		end := groupEnd(a, i)
+		look, rest, a = a[i+3:end-1], a[end:], a[:i]
+		if edge != "" || strings.HasSuffix(a, `\b`) || strings.Contains(rest, "(?") || strings.Contains(rest, `\b`) {
+			return x, "", fmt.Errorf("this look-ahead is not supported: %s", a+"(?!"+look+")"+rest)
+		}
 	}
 	if strings.Contains(a, "(?<") && !strings.Contains(a, "(?<=") && !strings.Contains(a, "(?<!") {
 		// a named group: allowed
 	} else if strings.Contains(a, "(?<") {
 		return x, "", fmt.Errorf("a look-behind that is not at the start is not supported: %s", a)
 	}
-	if strings.Contains(a, "(?=") || strings.Contains(a, "(?!") {
-		return x, "", fmt.Errorf("a look-ahead that is not at the end is not supported: %s", a)
-	}
 	body, err := convert(a, dotAll)
 	if err != nil {
 		return x, "", err
 	}
+	x.ctx = strings.Contains(a, `\b`) || strings.Contains(a, `\B`)
 	tail := ""
 	if edge != "" {
 		tail = `(?:` + edge + `|$)`
 	}
-	if x.re, err = regexp.Compile(prefix + `^(` + body + `)` + tail); err != nil {
-		return x, "", err
+	for k, lead := range []string{"", `(?s:.)`} {
+		if k == 1 && !x.ctx {
+			x.re[1], x.exact[1] = x.re[0], x.exact[0]
+			break
+		}
+		if x.re[k], err = regexp.Compile(prefix + `^` + lead + `(` + body + `)` + tail); err != nil {
+			return x, "", err
+		}
+		if look != "" {
+			if x.exact[k], err = regexp.Compile(prefix + `^` + lead + `(` + body + `)$`); err != nil {
+				return x, "", err
+			}
+		}
 	}
-	x.groups = x.re.NumSubexp() - 1
+	for i, name := range x.re[0].SubexpNames()[2:] {
+		if name == "edge" {
+			x.js = append(x.js, -1)
+		} else {
+			x.js = append(x.js, i-countEdges(x.js))
+		}
+	}
+	x.groups = len(x.js) - countEdges(x.js)
+	if look != "" {
+		conv, err := convert(look, dotAll)
+		if err != nil {
+			return x, "", err
+		}
+		if x.look, err = regexp.Compile(prefix + `^(?:` + conv + `)`); err != nil {
+			return x, "", err
+		}
+		if rest != "" {
+			conv, err := convert(rest, dotAll)
+			if err != nil {
+				return x, "", err
+			}
+			if x.tail, err = regexp.Compile(prefix + `^(` + conv + `)`); err != nil {
+				return x, "", err
+			}
+			x.tailN = x.tail.NumSubexp() - 1
+			x.groups += x.tailN
+		}
+	}
 	return x, body, nil
 }
 
-// isPlain: text with no choice in it (no class, group, alternation or repetition), so a look-ahead after it has nothing to backtrack into.
-func isPlain(s string) bool {
-	for i := 0; i < len(s); i++ {
-		switch s[i] {
-		case '\\':
-			i++
-		case '[', '(', '|', '*', '+', '?', '{', '.':
-			return false
+func countEdges(js []int) int {
+	n := 0
+	for _, j := range js {
+		if j < 0 {
+			n++
 		}
 	}
-	return true
+	return n
+}
+
+// markEdges: an alternative that ends with a group `(?:...)` whose own alternatives end with a one-character look-ahead (`(?:ಗಂಟೆ(?![\p{L}\p{M}])|बजे)`, the shape of a word
+// list with an edge on some words): each such look-ahead becomes "that character, or the end", as a group named `edge`, and the match is cut back to where that group starts.
+// Because the edge is in the pattern, RE2 tries the next word when it fails, as JavaScript does. Nothing follows the group, so consuming the character takes it from nothing.
+func markEdges(a string) string {
+	i := lastGroup(a)
+	if i < 0 || !strings.HasPrefix(a[i:], "(?:") || !strings.Contains(a[i:], "(?!") {
+		return a
+	}
+	parts := splitTop(a[i+3 : len(a)-1])
+	for k, part := range parts {
+		if j := lastGroup(part); j >= 0 && strings.HasPrefix(part[j:], "(?!") {
+			if neg, ok := negateOne(part[j+3 : len(part)-1]); ok {
+				parts[k] = part[:j] + `(?:(?P<edge>` + neg + `)|$)`
+			}
+		}
+	}
+	return a[:i] + "(?:" + strings.Join(parts, "|") + ")"
+}
+
+// firstLookAhead is where the first `(?!` at the top level of the alternative opens, or -1 (one inside a group is refused when the rest is compiled).
+func firstLookAhead(s string) int {
+	depth := 0
+	for i := 0; i < len(s); {
+		switch s[i] {
+		case '\\':
+			i += 2
+		case '[':
+			i = classEnd(s, i)
+		case '(':
+			if depth == 0 && strings.HasPrefix(s[i:], "(?!") {
+				return i
+			}
+			depth++
+			i++
+		case ')':
+			depth--
+			i++
+		default:
+			i++
+		}
+	}
+	return -1
 }
 
 // splitTop splits a source at its top-level `|` (not inside a group or a class).
@@ -376,7 +464,8 @@ func (r *Regex) FindFrom(s string, from int) *Match {
 
 // at tries each alternative at byte p, in JavaScript's order.
 func (r *Regex) at(s string, p int) *Match {
-	for _, a := range r.alts {
+	for i := range r.alts {
+		a := &r.alts[i]
 		if a.start && p != 0 {
 			continue
 		}
@@ -386,27 +475,91 @@ func (r *Regex) at(s string, p int) *Match {
 		if a.before != nil && p > 0 && a.before.MatchString(string(runeBefore(s, p))) {
 			continue
 		}
-		loc := a.re.FindStringSubmatchIndex(s[p:])
-		if loc == nil {
-			continue
+		if m := a.match(s, p, r.groups); m != nil {
+			return m
 		}
-		end := p + loc[3]
-		if a.notAfter != nil && a.notAfter.MatchString(s[end:]) {
-			continue
-		}
-		idx := make([]int, 2+2*r.groups)
-		for i := range idx {
-			idx[i] = -1
-		}
-		idx[0], idx[1] = p, end
-		for g := 0; g < a.groups; g++ {
-			if loc[4+2*g] >= 0 {
-				idx[2*(a.first+g)], idx[2*(a.first+g)+1] = p+loc[4+2*g], p+loc[5+2*g]
-			}
-		}
-		return &Match{Index: idx, text: s}
 	}
 	return nil
+}
+
+// run matches one of the alternative's anchored patterns at byte p of s[:limit], with the character before p in front when the pattern needs it; the places are absolute.
+func (a *alt) run(re [2]*regexp.Regexp, s string, p, limit int) []int {
+	q, k := p, 0
+	if a.ctx && p > 0 {
+		_, size := utf8.DecodeLastRuneInString(s[:p])
+		q, k = p-size, 1
+	}
+	loc := re[k].FindStringSubmatchIndex(s[q:limit])
+	for i := range loc {
+		if loc[i] >= 0 {
+			loc[i] += q
+		}
+	}
+	return loc
+}
+
+// match is the alternative's match at p, its groups numbered as JavaScript numbers them across the whole pattern (`total` groups).
+func (a *alt) match(s string, p, total int) *Match {
+	loc := a.run(a.re, s, p, len(s))
+	if loc == nil {
+		return nil
+	}
+	var tail []int
+	if a.look != nil {
+		// "ends" mode: the head's preferred end, then its shorter ends, until the look-ahead does not match after one (and the rest matches after it)
+		e0 := loc[3]
+		found := false
+		for e := e0; e >= p; e-- {
+			if e < len(s) && !utf8.RuneStart(s[e]) {
+				continue
+			}
+			if e < e0 {
+				if loc = a.run(a.exact, s, p, e); loc == nil {
+					continue
+				}
+			}
+			if a.look.MatchString(s[e:]) {
+				continue
+			}
+			if a.tail != nil {
+				if tail = a.tail.FindStringSubmatchIndex(s[e:]); tail == nil {
+					continue
+				}
+			}
+			found = true
+			break
+		}
+		if !found {
+			return nil
+		}
+	}
+	end := loc[3]
+	idx := make([]int, 2+2*total)
+	for i := range idx {
+		idx[i] = -1
+	}
+	for g, j := range a.js {
+		at := 4 + 2*g
+		if loc[at] < 0 {
+			continue
+		}
+		if j < 0 {
+			end = loc[at] // an edge marker: the match ends before the character it took
+			continue
+		}
+		idx[2*(a.first+j)], idx[2*(a.first+j)+1] = loc[at], loc[at+1]
+	}
+	if tail != nil {
+		for g := 0; g < a.tailN; g++ {
+			if tail[4+2*g] >= 0 {
+				n := a.first + a.groups - a.tailN + g
+				idx[2*n], idx[2*n+1] = end+tail[4+2*g], end+tail[5+2*g]
+			}
+		}
+		end += tail[3]
+	}
+	idx[0], idx[1] = p, end
+	return &Match{Index: idx, text: s}
 }
 
 func firstRune(s string, p int) (rune, bool) {

@@ -49,7 +49,8 @@ The Go version is 1.27 (`go.mod`). No cgo: the binary needs no C library.
 cmd/listings/            main: the command line, the token files, start and stop (the Go twin of server/main.ts + modules/runtime/start.ts)
 cmd/bookings/            main of ONE Bookings shop (wave 2): the same command line, token files, environment and test clock as cmd/listings; the shared runtime with the Bookings Kit
 internal/bookings/       the Bookings template (wave 2): the settings checked with the TypeScript's sentences, the store read and written field for field (unknown members kept raw), the
-                         agent over one step, the channel's reads, the pure rules (hours, double booking with units, refund limit, reminders), the ports to the services; read
+                         agent over one step, the channel's reads, the pure rules (hours, double booking with units, refund limit, reminders), a customer's message read (parser.go, reading.go: the
+                         rule parser and the reading the shared router is given), the ports to the services; read
                          Explanation.md and Deferred.md (what is not ported yet: every step that calls a service)
 internal/store/          the shop's SQLite file, schema 5, the same tables as modules/runtime/store.ts: the queue, the snapshot in pieces, the record, photos, the shop's key
 internal/signing/        Ed25519 and RFC 8785 canonical JSON, both ways: the shop's key and the signed feed / answer / notice / Agent Card's JWS (modules/signing), and the reading of them (VerifyDocument, VerifyNotice: the directory's checks)
@@ -78,6 +79,7 @@ internal/runtime/        the runtime every shop shares; template.go is the seam 
                          owner's sign-in routes, the tick's owner part and the owner's side of push (who may subscribe, what ends a subscription, the alerts to the
                          owner's phones), all under one owner lock; push.go, limits.go, ownerfile.go, stock.go and assistant.go are the other owner routes
 scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the TypeScript word lists (talk-check.ts), so the four-language words are never retyped
+scripts/gen_bookings_reading.ts  writes internal/bookings/reading.json: the Bookings rule parser's patterns, the decision model's questions, the model's prompt and schema as templates
 scripts/gen_patterns.ts    writes internal/language/patterns.json from the TypeScript's built RegExps (`.source`, `.flags`) and testdata/pattern-vectors.json (what JavaScript finds with each
                            in a corpus); `--check` only compares; the test words-fresh fails when it was not run after a change to a pattern it names
 scripts/gen_words.ts       renders the owner's words (and the lists the rules read, and the owner-control alerts with the moment they carry) from the TypeScript into internal/assistant/words/*.json.gz; `--check` only compares. `node go/scripts/gen_words.ts` after any change to modules/assistant/words*.ts, modules/listings/words.ts or the alerts in modules/channels/owner-phones.ts and owner-signin.ts (the test words-fresh fails when it was not run)
