@@ -1,0 +1,2992 @@
+{
+ "cases": [
+  {
+   "name": "guard answer: held",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 202,
+     "headers": {
+      "content-type": "application/json",
+      "guard-held": "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3"
+     },
+     "body": {
+      "error": "held by the Guard: refund-needs-owner: above the threshold: a person must approve this exact call",
+      "guard": {
+       "decision": "hold",
+       "code": "held_for_approval",
+       "sent": "no",
+       "retry": "after_approval",
+       "reason": "refund-needs-owner: above the threshold: a person must approve this exact call",
+       "detail": {
+        "approval": "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3",
+        "status": "pending",
+        "expires_at_ms": 1793712060824
+       }
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardHeldError",
+     "message": "held by the Guard: refund-needs-owner: above the threshold: a person must approve this exact call",
+     "status": 202,
+     "guard": {
+      "decision": "hold",
+      "code": "held_for_approval",
+      "sent": "no",
+      "retry": "after_approval",
+      "reason": "refund-needs-owner: above the threshold: a person must approve this exact call",
+      "detail": {
+       "approval": "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3",
+       "status": "pending",
+       "expires_at_ms": 1793712060824
+      }
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "approval": "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3",
+     "expiresAtMs": 1793712060824
+    }
+   }
+  },
+  {
+   "name": "guard answer: held_uncertain",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 202,
+     "headers": {
+      "content-type": "application/json",
+      "guard-held": ""
+     },
+     "body": {
+      "error": "held by the Guard: an earlier attempt of intent intent:fa8690f73eaf has an unknown outcome and the provider could not be asked (no receipt lookup declared); the Guard will not repeat it (fail-open does not apply to an uncertain irreversible action)",
+      "guard": {
+       "decision": "hold",
+       "code": "held_for_approval",
+       "sent": "no",
+       "retry": "after_approval",
+       "detail": {
+        "approval": null,
+        "status": "pending",
+        "expires_at_ms": null
+       }
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardHeldError",
+     "message": "held by the Guard: an earlier attempt of intent intent:fa8690f73eaf has an unknown outcome and the provider could not be asked (no receipt lookup declared); the Guard will not repeat it (fail-open does not apply to an uncertain irreversible action)",
+     "status": 202,
+     "guard": {
+      "decision": "hold",
+      "code": "held_for_approval",
+      "sent": "no",
+      "retry": "after_approval",
+      "detail": {
+       "approval": null,
+       "status": "pending",
+       "expires_at_ms": null
+      }
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "approval": null,
+     "expiresAtMs": null
+    }
+   }
+  },
+  {
+   "name": "guard answer: refused_rule",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 403,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: deposit-amount: amount 300000 is above the highest allowed value, 200000",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "sent": "no",
+       "retry": "no",
+       "reason": "deposit-amount: amount 300000 is above the highest allowed value, 200000",
+       "detail": null
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardRefusedError",
+     "message": "refused by the Guard: deposit-amount: amount 300000 is above the highest allowed value, 200000",
+     "status": 403,
+     "guard": {
+      "decision": "deny",
+      "code": "refused_by_policy",
+      "sent": "no",
+      "retry": "no",
+      "reason": "deposit-amount: amount 300000 is above the highest allowed value, 200000",
+      "detail": null
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "kind": "rule",
+     "ruleId": "deposit-amount"
+    }
+   }
+  },
+  {
+   "name": "guard answer: refused_limit",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 403,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: limit refund-paise-per-day would be exceeded (90000.00 of 100000.00 already reserved for this scope); refused before dispatch",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "sent": "no",
+       "retry": "no",
+       "reason": "limit refund-paise-per-day would be exceeded (90000.00 of 100000.00 already reserved for this scope); refused before dispatch",
+       "detail": null
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardRefusedError",
+     "message": "refused by the Guard: limit refund-paise-per-day would be exceeded (90000.00 of 100000.00 already reserved for this scope); refused before dispatch",
+     "status": 403,
+     "guard": {
+      "decision": "deny",
+      "code": "refused_by_policy",
+      "sent": "no",
+      "retry": "no",
+      "reason": "limit refund-paise-per-day would be exceeded (90000.00 of 100000.00 already reserved for this scope); refused before dispatch",
+      "detail": null
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "kind": "limit",
+     "ruleId": "refund-paise-per-day"
+    }
+   }
+  },
+  {
+   "name": "guard answer: refused_unlisted",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 403,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: GET /v1/orders is not a route this policy covers: the Guard does not guess what it does",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "sent": "no",
+       "retry": "no",
+       "reason": "GET /v1/orders is not a route this policy covers: the Guard does not guess what it does",
+       "detail": null
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardRefusedError",
+     "message": "refused by the Guard: GET /v1/orders is not a route this policy covers: the Guard does not guess what it does",
+     "status": 403,
+     "guard": {
+      "decision": "deny",
+      "code": "refused_by_policy",
+      "sent": "no",
+      "retry": "no",
+      "reason": "GET /v1/orders is not a route this policy covers: the Guard does not guess what it does",
+      "detail": null
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "kind": "rule"
+    }
+   }
+  },
+  {
+   "name": "guard answer: refused_no_payouts",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 403,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: no-payouts: razorpay.payout is never to be called",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "sent": "no",
+       "retry": "no",
+       "reason": "no-payouts: razorpay.payout is never to be called",
+       "detail": null
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardRefusedError",
+     "message": "refused by the Guard: no-payouts: razorpay.payout is never to be called",
+     "status": 403,
+     "guard": {
+      "decision": "deny",
+      "code": "refused_by_policy",
+      "sent": "no",
+      "retry": "no",
+      "reason": "no-payouts: razorpay.payout is never to be called",
+      "detail": null
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "kind": "rule",
+     "ruleId": "no-payouts"
+    }
+   }
+  },
+  {
+   "name": "guard answer: conflict",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 409,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: intent intent:f67fdc2d753a was already carried out with different arguments; the same business action is not repeated",
+      "guard": {
+       "decision": "deny",
+       "code": "conflict",
+       "sent": "no",
+       "retry": "no",
+       "reason": "intent intent:f67fdc2d753a was already carried out with different arguments; the same business action is not repeated",
+       "detail": null
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardConflictError",
+     "message": "refused by the Guard: intent intent:f67fdc2d753a was already carried out with different arguments; the same business action is not repeated",
+     "status": 409,
+     "guard": {
+      "decision": "deny",
+      "code": "conflict",
+      "sent": "no",
+      "retry": "no",
+      "reason": "intent intent:f67fdc2d753a was already carried out with different arguments; the same business action is not repeated",
+      "detail": null
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     }
+    }
+   }
+  },
+  {
+   "name": "guard answer: already_done",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 409,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: intent intent:fa8690f73eaf already reconciled (confirmed by operator:owner); nothing is sent again, and there is no provider reply to return",
+      "guard": {
+       "decision": "deny",
+       "code": "conflict",
+       "reason_code": "already_done",
+       "sent": "no",
+       "retry": "no",
+       "reason": "intent intent:fa8690f73eaf already reconciled (confirmed by operator:owner); nothing is sent again, and there is no provider reply to return",
+       "detail": {
+        "intent": "intent:fa8690f73eaf",
+        "state": "reconciled",
+        "confirmed_by": "operator:owner",
+        "provider_status": 500
+       }
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardAlreadyDoneError",
+     "message": "refused by the Guard: intent intent:fa8690f73eaf already reconciled (confirmed by operator:owner); nothing is sent again, and there is no provider reply to return",
+     "status": 409,
+     "guard": {
+      "decision": "deny",
+      "code": "conflict",
+      "sent": "no",
+      "retry": "no",
+      "reason_code": "already_done",
+      "reason": "intent intent:fa8690f73eaf already reconciled (confirmed by operator:owner); nothing is sent again, and there is no provider reply to return",
+      "detail": {
+       "intent": "intent:fa8690f73eaf",
+       "state": "reconciled",
+       "confirmed_by": "operator:owner",
+       "provider_status": 500
+      }
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "confirmedBy": "operator:owner",
+     "intent": "intent:fa8690f73eaf"
+    }
+   }
+  },
+  {
+   "name": "guard answer: denied_by_approver",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 403,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: the person asked to approve this exact call said no (approval ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3): it is refused without asking anyone again for 24 hours after the no; a call with other arguments is a new request",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "sent": "no",
+       "retry": "no",
+       "reason_code": "denied_by_approver",
+       "reason": "the person asked to approve this exact call said no (approval ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3): it is refused without asking anyone again for 24 hours after the no; a call with other arguments is a new request",
+       "detail": {
+        "approval": "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3",
+        "status": "denied",
+        "denied_at_ms": 1793712060824,
+        "until_ms": 1793798460824
+       }
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardDeniedError",
+     "message": "refused by the Guard: the person asked to approve this exact call said no (approval ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3): it is refused without asking anyone again for 24 hours after the no; a call with other arguments is a new request",
+     "status": 403,
+     "guard": {
+      "decision": "deny",
+      "code": "refused_by_policy",
+      "sent": "no",
+      "retry": "no",
+      "reason_code": "denied_by_approver",
+      "reason": "the person asked to approve this exact call said no (approval ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3): it is refused without asking anyone again for 24 hours after the no; a call with other arguments is a new request",
+      "detail": {
+       "approval": "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3",
+       "status": "denied",
+       "denied_at_ms": 1793712060824,
+       "until_ms": 1793798460824
+      }
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "kind": "rule",
+     "approval": "ap-glow-salon-razorpay-458e6ca42acc3cfc99494f529cd77ae5-3",
+     "deniedAtMs": 1793712060824,
+     "untilMs": 1793798460824
+    }
+   }
+  },
+  {
+   "name": "guard answer: unauthenticated",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 401,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "authentication required: a per-agent credential issued by this Guard",
+      "guard": {
+       "decision": "deny",
+       "code": "unauthenticated",
+       "sent": "no",
+       "retry": "no"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardUnauthenticatedError",
+     "message": "authentication required: a per-agent credential issued by this Guard",
+     "status": 401,
+     "guard": {
+      "decision": "deny",
+      "code": "unauthenticated",
+      "sent": "no",
+      "retry": "no"
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     }
+    }
+   }
+  },
+  {
+   "name": "guard answer: kill_switch",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 503,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: kill switch engaged: test",
+      "guard": {
+       "decision": "deny",
+       "code": "guard_unavailable",
+       "sent": "no",
+       "retry": "later",
+       "reason": "kill switch engaged: test",
+       "detail": null
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardUnavailableError",
+     "message": "refused by the Guard: kill switch engaged: test",
+     "status": 503,
+     "guard": {
+      "decision": "deny",
+      "code": "guard_unavailable",
+      "sent": "no",
+      "retry": "later",
+      "reason": "kill switch engaged: test",
+      "detail": null
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     }
+    }
+   }
+  },
+  {
+   "name": "guard answer: busy",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 503,
+     "headers": {
+      "content-type": "application/json",
+      "retry-after": "1"
+     },
+     "body": {
+      "error": "Guard is busy; nothing was sent",
+      "guard": {
+       "decision": "deny",
+       "code": "busy",
+       "sent": "no",
+       "retry": "later",
+       "reason": "too many calls in flight; try again shortly"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardUnavailableError",
+     "message": "Guard is busy; nothing was sent",
+     "status": 503,
+     "guard": {
+      "decision": "deny",
+      "code": "busy",
+      "sent": "no",
+      "retry": "later",
+      "reason": "too many calls in flight; try again shortly"
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "retryAfterSeconds": 1
+    }
+   }
+  },
+  {
+   "name": "guard answer: provider_unreachable",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 502,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: the provider is unreachable (Connection refused (os error 61)); nothing was sent",
+      "guard": {
+       "decision": "deny",
+       "code": "provider_unreachable",
+       "sent": "no",
+       "retry": "later",
+       "reason": "the provider is unreachable (Connection refused (os error 61)); nothing was sent",
+       "detail": null
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardUnavailableError",
+     "message": "refused by the Guard: the provider is unreachable (Connection refused (os error 61)); nothing was sent",
+     "status": 502,
+     "guard": {
+      "decision": "deny",
+      "code": "provider_unreachable",
+      "sent": "no",
+      "retry": "later",
+      "reason": "the provider is unreachable (Connection refused (os error 61)); nothing was sent",
+      "detail": null
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     }
+    }
+   }
+  },
+  {
+   "name": "guard answer: outcome_unknown",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 504,
+     "headers": {
+      "content-type": "application/json",
+      "guard-outcome": "unknown"
+     },
+     "body": {
+      "error": "refused by the Guard: outcome unknown: the request may or may not have reached the provider: connection closed before message completed. The action may have happened; it is not repeated automatically",
+      "guard": {
+       "decision": "unknown",
+       "code": "outcome_unknown",
+       "sent": "unknown",
+       "retry": "do_not_repeat",
+       "reason": "outcome unknown: the request may or may not have reached the provider: connection closed before message completed. The action may have happened; it is not repeated automatically",
+       "detail": null
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardOutcomeUnknownError",
+     "message": "refused by the Guard: outcome unknown: the request may or may not have reached the provider: connection closed before message completed. The action may have happened; it is not repeated automatically",
+     "status": 504,
+     "guard": {
+      "decision": "unknown",
+      "code": "outcome_unknown",
+      "sent": "unknown",
+      "retry": "do_not_repeat",
+      "reason": "outcome unknown: the request may or may not have reached the provider: connection closed before message completed. The action may have happened; it is not repeated automatically",
+      "detail": null
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     }
+    }
+   }
+  },
+  {
+   "name": "guard answer: suspended",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 402,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: subscription_suspended: the licence for shop glow-salon is in its wind-down, so create_link (new work) is refused. Refunds, cancellations, reads and existing bookings still go through",
+      "guard": {
+       "decision": "deny",
+       "code": "subscription_suspended",
+       "reason_code": "subscription_suspended",
+       "sent": "no",
+       "retry": "no",
+       "reason": "subscription_suspended: the licence for shop glow-salon is in its wind-down, so create_link (new work) is refused. Refunds, cancellations, reads and existing bookings still go through",
+       "detail": {
+        "state": "wind_down",
+        "shop": "glow-salon",
+        "operation": "create_link",
+        "lease_serial": "1796700000",
+        "judged_at": 1797746400,
+        "stop_at": 1799260200,
+        "export_until": null
+       }
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardSuspendedError",
+     "message": "refused by the Guard: subscription_suspended: the licence for shop glow-salon is in its wind-down, so create_link (new work) is refused. Refunds, cancellations, reads and existing bookings still go through",
+     "status": 402,
+     "guard": {
+      "decision": "deny",
+      "code": "subscription_suspended",
+      "sent": "no",
+      "retry": "no",
+      "reason_code": "subscription_suspended",
+      "reason": "subscription_suspended: the licence for shop glow-salon is in its wind-down, so create_link (new work) is refused. Refunds, cancellations, reads and existing bookings still go through",
+      "detail": {
+       "state": "wind_down",
+       "shop": "glow-salon",
+       "operation": "create_link",
+       "lease_serial": "1796700000",
+       "judged_at": 1797746400,
+       "stop_at": 1799260200,
+       "export_until": null
+      }
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "state": "wind_down",
+     "operation": "create_link"
+    }
+   }
+  },
+  {
+   "name": "guard answer: provider_500",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 500,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": {
+       "code": "SERVER_ERROR",
+       "description": "forced by the test"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 500,
+     "body": {
+      "error": {
+       "code": "SERVER_ERROR",
+       "description": "forced by the test"
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "guard answer: replayed",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "headers": {
+      "content-type": "application/json",
+      "guard-replayed": "true",
+      "guard-reason": "intent intent:fa8690f73eaf already confirmed: the recorded reply is returned and nothing is sent again"
+     },
+     "body": {
+      "id": "rfnd_Nx1",
+      "entity": "refund",
+      "amount": 60000,
+      "currency": "INR",
+      "payment_id": "pay_Nx1",
+      "status": "processed",
+      "receipt": "b-1:pay_Nx1",
+      "created_at": 1793711200
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {
+      "id": "rfnd_Nx1",
+      "entity": "refund",
+      "amount": 60000,
+      "currency": "INR",
+      "payment_id": "pay_Nx1",
+      "status": "processed",
+      "receipt": "b-1:pay_Nx1",
+      "created_at": 1793711200
+     },
+     "replayed": true
+    }
+   }
+  },
+  {
+   "name": "guard shape: a guard object with no code is the service's own",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "guard": {
+       "decision": "deny"
+      },
+      "id": 1
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {
+      "guard": {
+       "decision": "deny"
+      },
+      "id": 1
+     }
+    }
+   }
+  },
+  {
+   "name": "guard shape: a guard object that is not an object is the service's own",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "guard": "yes"
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {
+      "guard": "yes"
+     }
+    }
+   }
+  },
+  {
+   "name": "guard shape: an unknown code is still a Guard error",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 403,
+     "body": {
+      "error": "no",
+      "guard": {
+       "decision": "deny",
+       "code": "something_new",
+       "reason": "r"
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardError",
+     "message": "no",
+     "status": 403,
+     "guard": {
+      "decision": "deny",
+      "code": "something_new",
+      "sent": "no",
+      "retry": "no",
+      "reason": "r"
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     }
+    }
+   }
+  },
+  {
+   "name": "guard shape: hold with the approval in the header only",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 202,
+     "headers": {
+      "guard-held": " ap-1 "
+     },
+     "body": {
+      "guard": {
+       "decision": "hold",
+       "code": "held_for_approval"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardHeldError",
+     "message": "Guard answered 202.",
+     "status": 202,
+     "guard": {
+      "decision": "hold",
+      "code": "held_for_approval",
+      "sent": "no",
+      "retry": "no"
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "approval": "ap-1",
+     "expiresAtMs": null
+    }
+   }
+  },
+  {
+   "name": "guard shape: hold with expires_at_ms as a digit string",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 202,
+     "body": {
+      "guard": {
+       "decision": "hold",
+       "code": "held_for_approval",
+       "detail": {
+        "approval": "ap-2",
+        "expires_at_ms": "1793712060824"
+       }
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardHeldError",
+     "message": "Guard answered 202.",
+     "status": 202,
+     "guard": {
+      "decision": "hold",
+      "code": "held_for_approval",
+      "sent": "no",
+      "retry": "no",
+      "detail": {
+       "approval": "ap-2",
+       "expires_at_ms": "1793712060824"
+      }
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "approval": "ap-2",
+     "expiresAtMs": 1793712060824
+    }
+   }
+  },
+  {
+   "name": "guard shape: hold with a bad expires_at_ms",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 202,
+     "body": {
+      "guard": {
+       "decision": "hold",
+       "code": "held_for_approval",
+       "detail": {
+        "approval": "ap-2",
+        "expires_at_ms": -5
+       }
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardHeldError",
+     "message": "Guard answered 202.",
+     "status": 202,
+     "guard": {
+      "decision": "hold",
+      "code": "held_for_approval",
+      "sent": "no",
+      "retry": "no",
+      "detail": {
+       "approval": "ap-2",
+       "expires_at_ms": -5
+      }
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "approval": "ap-2",
+     "expiresAtMs": null
+    }
+   }
+  },
+  {
+   "name": "guard shape: hold with an empty approval and no header",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 202,
+     "body": {
+      "guard": {
+       "decision": "hold",
+       "code": "held_for_approval",
+       "detail": {
+        "approval": ""
+       }
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardHeldError",
+     "message": "Guard answered 202.",
+     "status": 202,
+     "guard": {
+      "decision": "hold",
+      "code": "held_for_approval",
+      "sent": "no",
+      "retry": "no",
+      "detail": {
+       "approval": ""
+      }
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "approval": null,
+     "expiresAtMs": null
+    }
+   }
+  },
+  {
+   "name": "guard shape: outcome unknown by the header alone",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 502,
+     "headers": {
+      "guard-outcome": "Unknown"
+     },
+     "body": {
+      "guard": {
+       "decision": "deny",
+       "code": "other"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardOutcomeUnknownError",
+     "message": "Guard answered 502.",
+     "status": 502,
+     "guard": {
+      "decision": "deny",
+      "code": "other",
+      "sent": "no",
+      "retry": "no"
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     }
+    }
+   }
+  },
+  {
+   "name": "guard shape: busy with a retry-after that is not a number",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 503,
+     "headers": {
+      "retry-after": "soon"
+     },
+     "body": {
+      "guard": {
+       "decision": "deny",
+       "code": "busy"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardUnavailableError",
+     "message": "Guard answered 503.",
+     "status": 503,
+     "guard": {
+      "decision": "deny",
+      "code": "busy",
+      "sent": "no",
+      "retry": "no"
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     }
+    }
+   }
+  },
+  {
+   "name": "guard shape: busy with retry-after 2.5",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 503,
+     "headers": {
+      "retry-after": " 2.5 "
+     },
+     "body": {
+      "guard": {
+       "decision": "deny",
+       "code": "busy"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardUnavailableError",
+     "message": "Guard answered 503.",
+     "status": 503,
+     "guard": {
+      "decision": "deny",
+      "code": "busy",
+      "sent": "no",
+      "retry": "no"
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "retryAfterSeconds": 2.5
+    }
+   }
+  },
+  {
+   "name": "guard shape: a refusal by rule id in the reason",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 403,
+     "body": {
+      "error": "refused",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "reason": "deposit-amount: amount 5 is below the lowest allowed value, 10"
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardRefusedError",
+     "message": "refused",
+     "status": 403,
+     "guard": {
+      "decision": "deny",
+      "code": "refused_by_policy",
+      "sent": "no",
+      "retry": "no",
+      "reason": "deposit-amount: amount 5 is below the lowest allowed value, 10"
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "kind": "rule",
+     "ruleId": "deposit-amount"
+    }
+   }
+  },
+  {
+   "name": "guard shape: a refusal with a limit reason in capitals",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 403,
+     "body": {
+      "error": "refused",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "reason": "LIMIT links-per-hour WOULD BE EXCEEDED (60 of 60)"
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardRefusedError",
+     "message": "refused",
+     "status": 403,
+     "guard": {
+      "decision": "deny",
+      "code": "refused_by_policy",
+      "sent": "no",
+      "retry": "no",
+      "reason": "LIMIT links-per-hour WOULD BE EXCEEDED (60 of 60)"
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "kind": "limit",
+     "ruleId": "links-per-hour"
+    }
+   }
+  },
+  {
+   "name": "guard shape: a refusal with no reason uses the error words",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 403,
+     "body": {
+      "error": "refused by the Guard: x",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy"
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardRefusedError",
+     "message": "refused by the Guard: x",
+     "status": 403,
+     "guard": {
+      "decision": "deny",
+      "code": "refused_by_policy",
+      "sent": "no",
+      "retry": "no"
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "kind": "rule"
+    }
+   }
+  },
+  {
+   "name": "guard shape: no error and no reason: the status in words",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 418,
+     "body": {
+      "guard": {
+       "decision": "deny",
+       "code": "something_else"
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardError",
+     "message": "Guard answered 418.",
+     "status": 418,
+     "guard": {
+      "decision": "deny",
+      "code": "something_else",
+      "sent": "no",
+      "retry": "no"
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     }
+    }
+   }
+  },
+  {
+   "name": "guard shape: an empty reason is a reason",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 403,
+     "body": {
+      "error": 5,
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "reason": ""
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardRefusedError",
+     "message": "",
+     "status": 403,
+     "guard": {
+      "decision": "deny",
+      "code": "refused_by_policy",
+      "sent": "no",
+      "retry": "no",
+      "reason": ""
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "kind": "rule"
+    }
+   }
+  },
+  {
+   "name": "guard shape: denied with a detail",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 403,
+     "body": {
+      "error": "no",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "reason_code": "denied_by_approver",
+       "detail": {
+        "approval": "ap-9",
+        "denied_at_ms": 1793700000000,
+        "until_ms": 1793786400000
+       }
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardDeniedError",
+     "message": "no",
+     "status": 403,
+     "guard": {
+      "decision": "deny",
+      "code": "refused_by_policy",
+      "sent": "no",
+      "retry": "no",
+      "reason_code": "denied_by_approver",
+      "detail": {
+       "approval": "ap-9",
+       "denied_at_ms": 1793700000000,
+       "until_ms": 1793786400000
+      }
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "kind": "rule",
+     "approval": "ap-9",
+     "deniedAtMs": 1793700000000,
+     "untilMs": 1793786400000
+    }
+   }
+  },
+  {
+   "name": "guard shape: already done with a long intent",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 409,
+     "body": {
+      "error": "done",
+      "guard": {
+       "decision": "deny",
+       "code": "conflict",
+       "reason_code": "already_done",
+       "detail": {
+        "confirmed_by": "operator:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "intent": "intent:abc"
+       }
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardAlreadyDoneError",
+     "message": "done",
+     "status": 409,
+     "guard": {
+      "decision": "deny",
+      "code": "conflict",
+      "sent": "no",
+      "retry": "no",
+      "reason_code": "already_done",
+      "detail": {
+       "confirmed_by": "operator:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+       "intent": "intent:abc"
+      }
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "confirmedBy": "operator:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "intent": "intent:abc"
+    }
+   }
+  },
+  {
+   "name": "guard shape: suspended by reason_code only",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/payments/pay_1/refund",
+     "body": {
+      "amount": 100
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 402,
+     "body": {
+      "error": "off",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "reason_code": "subscription_suspended",
+       "detail": {
+        "state": "wind_down",
+        "operation": "create_link"
+       }
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/payments/pay_1/refund",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":100}"
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "GuardSuspendedError",
+     "message": "off",
+     "status": 402,
+     "guard": {
+      "decision": "deny",
+      "code": "refused_by_policy",
+      "sent": "no",
+      "retry": "no",
+      "reason_code": "subscription_suspended",
+      "detail": {
+       "state": "wind_down",
+       "operation": "create_link"
+      }
+     },
+     "call": {
+      "method": "POST",
+      "path": "/v1/payments/pay_1/refund",
+      "body": "{\"amount\":100}"
+     },
+     "state": "wind_down",
+     "operation": "create_link"
+    }
+   }
+  },
+  {
+   "name": "a plain 200 with a JSON body",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "id": "x",
+      "n": 12,
+      "f": 1.5
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {
+      "id": "x",
+      "n": 12,
+      "f": 1.5
+     }
+    }
+   }
+  },
+  {
+   "name": "a 204 with no body",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 204
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 204
+    }
+   }
+  },
+  {
+   "name": "a 404 with a JSON error",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 404,
+     "body": {
+      "error": {
+       "description": "gone"
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 404,
+     "body": {
+      "error": {
+       "description": "gone"
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "a non-JSON 502 is cut at 200 characters",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 502,
+     "text": "<html>éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀</html>"
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 502,
+     "body": {
+      "raw": "<html>éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+     }
+    }
+   }
+  },
+  {
+   "name": "a non-JSON 200 is a lost reply",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "text": "OK, done"
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "TimeoutError",
+     "message": "Test: no reply (timed out)"
+    }
+   }
+  },
+  {
+   "name": "a half-read JSON 200 (two values) is a lost reply",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "text": "{} {}"
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "TimeoutError",
+     "message": "Test: no reply (timed out)"
+    }
+   }
+  },
+  {
+   "name": "a JSON array body",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": [
+      1,
+      2,
+      3
+     ],
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": [
+      1,
+      2,
+      3
+     ]
+    }
+   }
+  },
+  {
+   "name": "a reply that never comes is a timeout",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 150,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "hang": true
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "TimeoutError",
+     "message": "Test: no reply (timed out)"
+    }
+   }
+  },
+  {
+   "name": "a cut connection is a timeout",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "cut": true
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "error": {
+     "name": "TimeoutError",
+     "message": "Test: no reply (timed out)"
+    }
+   }
+  },
+  {
+   "name": "nothing listens: not sent",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": true
+   },
+   "replies": [],
+   "requests": [],
+   "outcome": {
+    "error": {
+     "name": "NotSentError",
+     "message": "Test: could not connect (ECONNREFUSED).",
+     "status": 503,
+     "code": "ECONNREFUSED"
+    }
+   }
+  },
+  {
+   "name": "an agent token is sent as a bearer",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 0,
+    "agentToken": "agent-secret",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {},
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x",
+     "headers": {
+      "authorization": "Bearer agent-secret",
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {}
+    }
+   }
+  },
+  {
+   "name": "no agent token, no Authorization",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {},
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {}
+    }
+   }
+  },
+  {
+   "name": "a path prefix on the base URL is kept",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/payments/pay_1"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "/razorpay/",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {},
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/razorpay/v1/payments/pay_1",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {}
+    }
+   }
+  },
+  {
+   "name": "the query keeps its order and encodes as a form",
+   "config": {
+    "request": {
+     "method": "GET",
+     "path": "/v1/x",
+     "query": [
+      [
+       "z",
+       "1"
+      ],
+      [
+       "a",
+       "x y"
+      ],
+      [
+       "m",
+       "a&b=c~*'()!é"
+      ],
+      [
+       "empty",
+       ""
+      ]
+     ]
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {},
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/x?z=1&a=x+y&m=a%26b%3Dc%7E*%27%28%29%21%C3%A9&empty=",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {}
+    }
+   }
+  },
+  {
+   "name": "a JSON body",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/p",
+     "body": {
+      "amount": 60000,
+      "description": "Cut & colour <b>é</b>     \b ",
+      "n": null
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {},
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/p",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"description\":\"Cut & colour <b>é</b>     \\b \",\"n\":null}"
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {}
+    }
+   }
+  },
+  {
+   "name": "a raw body is sent as it is",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/p",
+     "bodyText": "{\"amount\":\"60000\" }"
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {},
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/p",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":\"60000\" }"
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {}
+    }
+   }
+  },
+  {
+   "name": "a form body",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/p",
+     "form": [
+      [
+       "a",
+       "1 2"
+      ],
+      [
+       "b",
+       "é&"
+      ]
+     ]
+    },
+    "timeoutMs": 0,
+    "agentToken": "",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {},
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/p",
+     "headers": {
+      "content-type": "application/x-www-form-urlencoded",
+      "accept": "application/json"
+     },
+     "body": "a=1+2&b=%C3%A9%26"
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {}
+    }
+   }
+  },
+  {
+   "name": "reserved headers are ignored, others lower-cased",
+   "config": {
+    "request": {
+     "method": "POST",
+     "path": "/v1/p",
+     "body": {},
+     "headers": {
+      "Authorization": "Bearer x",
+      "Content-Type": "text/plain",
+      "Accept": "x",
+      "Geo-Requested-By": "a,b",
+      "X-Test": "1",
+      "Host": "evil"
+     }
+    },
+    "timeoutMs": 0,
+    "agentToken": "tok",
+    "baseSuffix": "",
+    "closed": false
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {},
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "POST",
+     "uri": "/v1/p",
+     "headers": {
+      "authorization": "Bearer tok",
+      "geo-requested-by": "a,b",
+      "content-type": "application/json",
+      "accept": "application/json",
+      "x-test": "1"
+     },
+     "body": "{}"
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "status": 200,
+     "body": {}
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,1191 @@
+{
+ "cases": [
+  {
+   "name": "a link, paid in full, then refunded in two parts",
+   "steps": [
+    {
+     "op": "createRequest",
+     "args": [
+      {
+       "amount": 60000,
+       "reference_id": "b-1",
+       "description": "Deposit"
+      }
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1"
+     ]
+    },
+    {
+     "op": "listRequests",
+     "args": [
+      {
+       "reference_id": "b-1"
+      }
+     ]
+    },
+    {
+     "op": "fetchPayment",
+     "args": [
+      "pmt_3"
+     ]
+    },
+    {
+     "op": "refund",
+     "args": [
+      "pmt_3",
+      {
+       "amount": 20000,
+       "receipt": "b-1:pmt_3"
+      }
+     ]
+    },
+    {
+     "op": "refund",
+     "args": [
+      "pmt_3",
+      {
+       "amount": 40000
+      }
+     ]
+    },
+    {
+     "op": "refund",
+     "args": [
+      "pmt_3",
+      {
+       "amount": 1,
+       "receipt": "x"
+      }
+     ]
+    },
+    {
+     "op": "listRefunds",
+     "args": [
+      "pmt_3"
+     ]
+    },
+    {
+     "op": "fetchPayment",
+     "args": [
+      "pmt_3"
+     ]
+    },
+    {
+     "op": "listRequests",
+     "args": [
+      {
+       "payment_id": "pmt_3"
+      }
+     ]
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "req_1",
+      "reference_id": "b-1",
+      "amount": 60000,
+      "currency": "INR",
+      "description": "Deposit",
+      "status": "created",
+      "pay_url": "https://pay.example/req_1",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1793700000
+     }
+    },
+    {
+     "ok": {
+      "id": "pmt_2",
+      "request_id": "req_1",
+      "amount": 60000,
+      "currency": "INR",
+      "status": "received",
+      "amount_refunded": 0,
+      "created_at": 1793700000
+     }
+    },
+    {
+     "ok": [
+      {
+       "id": "req_1",
+       "reference_id": "b-1",
+       "amount": 60000,
+       "currency": "INR",
+       "description": "Deposit",
+       "status": "paid",
+       "pay_url": "https://pay.example/req_1",
+       "amount_paid": 60000,
+       "payments": [
+        {
+         "id": "pmt_2",
+         "request_id": "req_1",
+         "amount": 60000,
+         "currency": "INR",
+         "status": "received",
+         "amount_refunded": 0,
+         "created_at": 1793700000
+        }
+       ],
+       "created_at": 1793700000
+      }
+     ]
+    },
+    {
+     "ok": null
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "No such payment.",
+      "status": 404
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "No such payment.",
+      "status": 404
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "No such payment.",
+      "status": 404
+     }
+    },
+    {
+     "ok": []
+    },
+    {
+     "ok": null
+    },
+    {
+     "ok": []
+    }
+   ],
+   "links": [
+    {
+     "id": "req_1",
+     "reference_id": "b-1",
+     "amount": 60000,
+     "currency": "INR",
+     "description": "Deposit",
+     "status": "paid",
+     "pay_url": "https://pay.example/req_1",
+     "amount_paid": 60000,
+     "payments": [
+      {
+       "id": "pmt_2",
+       "request_id": "req_1",
+       "amount": 60000,
+       "currency": "INR",
+       "status": "received",
+       "amount_refunded": 0,
+       "created_at": 1793700000
+      }
+     ],
+     "created_at": 1793700000
+    }
+   ],
+   "refunds": [],
+   "events": [
+    {
+     "id": "evt_3",
+     "event": "payment.received",
+     "created_at": 1793700000,
+     "payload": {
+      "payment": {
+       "id": "pmt_2",
+       "request_id": "req_1"
+      }
+     }
+    },
+    {
+     "id": "evt_4",
+     "event": "request.paid",
+     "created_at": 1793700000,
+     "payload": {
+      "request": {
+       "id": "req_1",
+       "reference_id": "b-1"
+      },
+      "payment": {
+       "id": "pmt_2",
+       "request_id": "req_1"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "the same reference twice is refused",
+   "steps": [
+    {
+     "op": "createRequest",
+     "args": [
+      {
+       "amount": 100,
+       "reference_id": "b-2",
+       "description": "d"
+      }
+     ]
+    },
+    {
+     "op": "createRequest",
+     "args": [
+      {
+       "amount": 100,
+       "reference_id": "b-2",
+       "description": "d"
+      }
+     ]
+    },
+    {
+     "op": "listRequests",
+     "args": []
+    },
+    {
+     "op": "fetchRequest",
+     "args": [
+      "req_1"
+     ]
+    },
+    {
+     "op": "fetchRequest",
+     "args": [
+      "nope"
+     ]
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "req_1",
+      "reference_id": "b-2",
+      "amount": 100,
+      "currency": "INR",
+      "description": "d",
+      "status": "created",
+      "pay_url": "https://pay.example/req_1",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1793700000
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "A payment link with reference_id b-2 already exists.",
+      "status": 400
+     }
+    },
+    {
+     "ok": [
+      {
+       "id": "req_1",
+       "reference_id": "b-2",
+       "amount": 100,
+       "currency": "INR",
+       "description": "d",
+       "status": "created",
+       "pay_url": "https://pay.example/req_1",
+       "amount_paid": 0,
+       "payments": [],
+       "created_at": 1793700000
+      }
+     ]
+    },
+    {
+     "ok": {
+      "id": "req_1",
+      "reference_id": "b-2",
+      "amount": 100,
+      "currency": "INR",
+      "description": "d",
+      "status": "created",
+      "pay_url": "https://pay.example/req_1",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1793700000
+     }
+    },
+    {
+     "ok": null
+    }
+   ],
+   "links": [
+    {
+     "id": "req_1",
+     "reference_id": "b-2",
+     "amount": 100,
+     "currency": "INR",
+     "description": "d",
+     "status": "created",
+     "pay_url": "https://pay.example/req_1",
+     "amount_paid": 0,
+     "payments": [],
+     "created_at": 1793700000
+    }
+   ],
+   "refunds": [],
+   "events": []
+  },
+  {
+   "name": "cancel, then pay a cancelled link",
+   "steps": [
+    {
+     "op": "createRequest",
+     "args": [
+      {
+       "amount": 100,
+       "reference_id": "b-3",
+       "description": "d"
+      }
+     ]
+    },
+    {
+     "op": "cancelRequest",
+     "args": [
+      "req_1"
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1"
+     ]
+    },
+    {
+     "op": "cancelRequest",
+     "args": [
+      "nope"
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "nope"
+     ]
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "req_1",
+      "reference_id": "b-3",
+      "amount": 100,
+      "currency": "INR",
+      "description": "d",
+      "status": "created",
+      "pay_url": "https://pay.example/req_1",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1793700000
+     }
+    },
+    {
+     "ok": {
+      "id": "req_1",
+      "reference_id": "b-3",
+      "amount": 100,
+      "currency": "INR",
+      "description": "d",
+      "status": "cancelled",
+      "pay_url": "https://pay.example/req_1",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1793700000
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "This payment link is cancelled.",
+      "status": 400
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "No such payment link.",
+      "status": 404
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "No such payment link.",
+      "status": 404
+     }
+    }
+   ],
+   "links": [
+    {
+     "id": "req_1",
+     "reference_id": "b-3",
+     "amount": 100,
+     "currency": "INR",
+     "description": "d",
+     "status": "cancelled",
+     "pay_url": "https://pay.example/req_1",
+     "amount_paid": 0,
+     "payments": [],
+     "created_at": 1793700000
+    }
+   ],
+   "refunds": [],
+   "events": []
+  },
+  {
+   "name": "two phones pay the same link",
+   "steps": [
+    {
+     "op": "createRequest",
+     "args": [
+      {
+       "amount": 500,
+       "reference_id": "b-4",
+       "description": "d"
+      }
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1"
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1"
+     ]
+    },
+    {
+     "op": "fetchRequest",
+     "args": [
+      "req_1"
+     ]
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "req_1",
+      "reference_id": "b-4",
+      "amount": 500,
+      "currency": "INR",
+      "description": "d",
+      "status": "created",
+      "pay_url": "https://pay.example/req_1",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1793700000
+     }
+    },
+    {
+     "ok": {
+      "id": "pmt_2",
+      "request_id": "req_1",
+      "amount": 500,
+      "currency": "INR",
+      "status": "received",
+      "amount_refunded": 0,
+      "created_at": 1793700000
+     }
+    },
+    {
+     "ok": {
+      "id": "pmt_5",
+      "request_id": "req_1",
+      "amount": 500,
+      "currency": "INR",
+      "status": "received",
+      "amount_refunded": 0,
+      "created_at": 1793700000
+     }
+    },
+    {
+     "ok": {
+      "id": "req_1",
+      "reference_id": "b-4",
+      "amount": 500,
+      "currency": "INR",
+      "description": "d",
+      "status": "paid",
+      "pay_url": "https://pay.example/req_1",
+      "amount_paid": 1000,
+      "payments": [
+       {
+        "id": "pmt_2",
+        "request_id": "req_1",
+        "amount": 500,
+        "currency": "INR",
+        "status": "received",
+        "amount_refunded": 0,
+        "created_at": 1793700000
+       },
+       {
+        "id": "pmt_5",
+        "request_id": "req_1",
+        "amount": 500,
+        "currency": "INR",
+        "status": "received",
+        "amount_refunded": 0,
+        "created_at": 1793700000
+       }
+      ],
+      "created_at": 1793700000
+     }
+    }
+   ],
+   "links": [
+    {
+     "id": "req_1",
+     "reference_id": "b-4",
+     "amount": 500,
+     "currency": "INR",
+     "description": "d",
+     "status": "paid",
+     "pay_url": "https://pay.example/req_1",
+     "amount_paid": 1000,
+     "payments": [
+      {
+       "id": "pmt_2",
+       "request_id": "req_1",
+       "amount": 500,
+       "currency": "INR",
+       "status": "received",
+       "amount_refunded": 0,
+       "created_at": 1793700000
+      },
+      {
+       "id": "pmt_5",
+       "request_id": "req_1",
+       "amount": 500,
+       "currency": "INR",
+       "status": "received",
+       "amount_refunded": 0,
+       "created_at": 1793700000
+      }
+     ],
+     "created_at": 1793700000
+    }
+   ],
+   "refunds": [],
+   "events": [
+    {
+     "id": "evt_3",
+     "event": "payment.received",
+     "created_at": 1793700000,
+     "payload": {
+      "payment": {
+       "id": "pmt_2",
+       "request_id": "req_1"
+      }
+     }
+    },
+    {
+     "id": "evt_4",
+     "event": "request.paid",
+     "created_at": 1793700000,
+     "payload": {
+      "request": {
+       "id": "req_1",
+       "reference_id": "b-4"
+      },
+      "payment": {
+       "id": "pmt_2",
+       "request_id": "req_1"
+      }
+     }
+    },
+    {
+     "id": "evt_6",
+     "event": "payment.received",
+     "created_at": 1793700000,
+     "payload": {
+      "payment": {
+       "id": "pmt_5",
+       "request_id": "req_1"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "part payments",
+   "steps": [
+    {
+     "op": "createRequest",
+     "args": [
+      {
+       "amount": 1000,
+       "reference_id": "b-5",
+       "description": "d",
+       "part_payments": true,
+       "min_first_payment": 300
+      }
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1",
+      {
+       "amount": 200
+      }
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1",
+      {
+       "amount": 300
+      }
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1",
+      {
+       "amount": 900
+      }
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1",
+      {
+       "amount": 700
+      }
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1"
+     ]
+    },
+    {
+     "op": "fetchRequest",
+     "args": [
+      "req_1"
+     ]
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "req_1",
+      "reference_id": "b-5",
+      "amount": 1000,
+      "currency": "INR",
+      "description": "d",
+      "status": "created",
+      "pay_url": "https://pay.example/req_1",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1793700000,
+      "part_payments": true,
+      "min_first_payment": 300
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The amount is not allowed for this payment link.",
+      "status": 400
+     }
+    },
+    {
+     "ok": {
+      "id": "pmt_2",
+      "request_id": "req_1",
+      "amount": 300,
+      "currency": "INR",
+      "status": "received",
+      "amount_refunded": 0,
+      "created_at": 1793700000
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The amount is not allowed for this payment link.",
+      "status": 400
+     }
+    },
+    {
+     "ok": {
+      "id": "pmt_4",
+      "request_id": "req_1",
+      "amount": 700,
+      "currency": "INR",
+      "status": "received",
+      "amount_refunded": 0,
+      "created_at": 1793700000
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "This payment link is already paid.",
+      "status": 400
+     }
+    },
+    {
+     "ok": {
+      "id": "req_1",
+      "reference_id": "b-5",
+      "amount": 1000,
+      "currency": "INR",
+      "description": "d",
+      "status": "paid",
+      "pay_url": "https://pay.example/req_1",
+      "amount_paid": 1000,
+      "payments": [
+       {
+        "id": "pmt_2",
+        "request_id": "req_1",
+        "amount": 300,
+        "currency": "INR",
+        "status": "received",
+        "amount_refunded": 0,
+        "created_at": 1793700000
+       },
+       {
+        "id": "pmt_4",
+        "request_id": "req_1",
+        "amount": 700,
+        "currency": "INR",
+        "status": "received",
+        "amount_refunded": 0,
+        "created_at": 1793700000
+       }
+      ],
+      "created_at": 1793700000,
+      "part_payments": true,
+      "min_first_payment": 300
+     }
+    }
+   ],
+   "links": [
+    {
+     "id": "req_1",
+     "reference_id": "b-5",
+     "amount": 1000,
+     "currency": "INR",
+     "description": "d",
+     "status": "paid",
+     "pay_url": "https://pay.example/req_1",
+     "amount_paid": 1000,
+     "payments": [
+      {
+       "id": "pmt_2",
+       "request_id": "req_1",
+       "amount": 300,
+       "currency": "INR",
+       "status": "received",
+       "amount_refunded": 0,
+       "created_at": 1793700000
+      },
+      {
+       "id": "pmt_4",
+       "request_id": "req_1",
+       "amount": 700,
+       "currency": "INR",
+       "status": "received",
+       "amount_refunded": 0,
+       "created_at": 1793700000
+      }
+     ],
+     "created_at": 1793700000,
+     "part_payments": true,
+     "min_first_payment": 300
+    }
+   ],
+   "refunds": [],
+   "events": [
+    {
+     "id": "evt_3",
+     "event": "payment.received",
+     "created_at": 1793700000,
+     "payload": {
+      "payment": {
+       "id": "pmt_2",
+       "request_id": "req_1"
+      }
+     }
+    },
+    {
+     "id": "evt_5",
+     "event": "payment.received",
+     "created_at": 1793700000,
+     "payload": {
+      "payment": {
+       "id": "pmt_4",
+       "request_id": "req_1"
+      }
+     }
+    },
+    {
+     "id": "evt_6",
+     "event": "request.paid",
+     "created_at": 1793700000,
+     "payload": {
+      "request": {
+       "id": "req_1",
+       "reference_id": "b-5"
+      },
+      "payment": {
+       "id": "pmt_4",
+       "request_id": "req_1"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "part payments, default minimum, the rest is paid by default",
+   "steps": [
+    {
+     "op": "createRequest",
+     "args": [
+      {
+       "amount": 1000,
+       "reference_id": "b-6",
+       "description": "d",
+       "part_payments": true
+      }
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1",
+      {
+       "amount": 400
+      }
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1"
+     ]
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "req_1",
+      "reference_id": "b-6",
+      "amount": 1000,
+      "currency": "INR",
+      "description": "d",
+      "status": "created",
+      "pay_url": "https://pay.example/req_1",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1793700000,
+      "part_payments": true,
+      "min_first_payment": 100
+     }
+    },
+    {
+     "ok": {
+      "id": "pmt_2",
+      "request_id": "req_1",
+      "amount": 400,
+      "currency": "INR",
+      "status": "received",
+      "amount_refunded": 0,
+      "created_at": 1793700000
+     }
+    },
+    {
+     "ok": {
+      "id": "pmt_4",
+      "request_id": "req_1",
+      "amount": 600,
+      "currency": "INR",
+      "status": "received",
+      "amount_refunded": 0,
+      "created_at": 1793700000
+     }
+    }
+   ],
+   "links": [
+    {
+     "id": "req_1",
+     "reference_id": "b-6",
+     "amount": 1000,
+     "currency": "INR",
+     "description": "d",
+     "status": "paid",
+     "pay_url": "https://pay.example/req_1",
+     "amount_paid": 1000,
+     "payments": [
+      {
+       "id": "pmt_2",
+       "request_id": "req_1",
+       "amount": 400,
+       "currency": "INR",
+       "status": "received",
+       "amount_refunded": 0,
+       "created_at": 1793700000
+      },
+      {
+       "id": "pmt_4",
+       "request_id": "req_1",
+       "amount": 600,
+       "currency": "INR",
+       "status": "received",
+       "amount_refunded": 0,
+       "created_at": 1793700000
+      }
+     ],
+     "created_at": 1793700000,
+     "part_payments": true,
+     "min_first_payment": 100
+    }
+   ],
+   "refunds": [],
+   "events": [
+    {
+     "id": "evt_3",
+     "event": "payment.received",
+     "created_at": 1793700000,
+     "payload": {
+      "payment": {
+       "id": "pmt_2",
+       "request_id": "req_1"
+      }
+     }
+    },
+    {
+     "id": "evt_5",
+     "event": "payment.received",
+     "created_at": 1793700000,
+     "payload": {
+      "payment": {
+       "id": "pmt_4",
+       "request_id": "req_1"
+      }
+     }
+    },
+    {
+     "id": "evt_6",
+     "event": "request.paid",
+     "created_at": 1793700000,
+     "payload": {
+      "request": {
+       "id": "req_1",
+       "reference_id": "b-6"
+      },
+      "payment": {
+       "id": "pmt_4",
+       "request_id": "req_1"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "name": "refund errors",
+   "steps": [
+    {
+     "op": "refund",
+     "args": [
+      "pmt_none",
+      {
+       "amount": 100
+      }
+     ]
+    },
+    {
+     "op": "createRequest",
+     "args": [
+      {
+       "amount": 500,
+       "reference_id": "b-7",
+       "description": "d"
+      }
+     ]
+    },
+    {
+     "op": "customerPays",
+     "args": [
+      "req_1"
+     ]
+    },
+    {
+     "op": "refund",
+     "args": [
+      "pmt_3",
+      {
+       "amount": 0
+      }
+     ]
+    },
+    {
+     "op": "refund",
+     "args": [
+      "pmt_3",
+      {
+       "amount": 501
+      }
+     ]
+    },
+    {
+     "op": "resendRefund",
+     "args": [
+      "pmt_3",
+      "{\"amount\":200,\"receipt\":\"r\"}"
+     ]
+    },
+    {
+     "op": "resendRefund",
+     "args": [
+      "pmt_3",
+      "{\"amount\":100}"
+     ]
+    },
+    {
+     "op": "listRefunds",
+     "args": [
+      "pmt_3"
+     ]
+    }
+   ],
+   "results": [
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "No such payment.",
+      "status": 404
+     }
+    },
+    {
+     "ok": {
+      "id": "req_1",
+      "reference_id": "b-7",
+      "amount": 500,
+      "currency": "INR",
+      "description": "d",
+      "status": "created",
+      "pay_url": "https://pay.example/req_1",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1793700000
+     }
+    },
+    {
+     "ok": {
+      "id": "pmt_2",
+      "request_id": "req_1",
+      "amount": 500,
+      "currency": "INR",
+      "status": "received",
+      "amount_refunded": 0,
+      "created_at": 1793700000
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "No such payment.",
+      "status": 404
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "No such payment.",
+      "status": 404
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "No such payment.",
+      "status": 404
+     }
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "No such payment.",
+      "status": 404
+     }
+    },
+    {
+     "ok": []
+    }
+   ],
+   "links": [
+    {
+     "id": "req_1",
+     "reference_id": "b-7",
+     "amount": 500,
+     "currency": "INR",
+     "description": "d",
+     "status": "paid",
+     "pay_url": "https://pay.example/req_1",
+     "amount_paid": 500,
+     "payments": [
+      {
+       "id": "pmt_2",
+       "request_id": "req_1",
+       "amount": 500,
+       "currency": "INR",
+       "status": "received",
+       "amount_refunded": 0,
+       "created_at": 1793700000
+      }
+     ],
+     "created_at": 1793700000
+    }
+   ],
+   "refunds": [],
+   "events": [
+    {
+     "id": "evt_3",
+     "event": "payment.received",
+     "created_at": 1793700000,
+     "payload": {
+      "payment": {
+       "id": "pmt_2",
+       "request_id": "req_1"
+      }
+     }
+    },
+    {
+     "id": "evt_4",
+     "event": "request.paid",
+     "created_at": 1793700000,
+     "payload": {
+      "request": {
+       "id": "req_1",
+       "reference_id": "b-7"
+      },
+      "payment": {
+       "id": "pmt_2",
+       "request_id": "req_1"
+      }
+     }
+    }
+   ]
+  }
+ ]
+}
