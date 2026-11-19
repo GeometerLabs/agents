@@ -61,9 +61,7 @@ test("a Node shop of an older version is composed exactly as before, and a serve
   assert.ok((b.volumes as string[]).includes("/repo/templates/commerce/bookings:/pathway:ro"));
   assert.deepEqual(b.healthcheck.test, ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8780/readyz"]);
   assert.ok(!c.compose.includes("geo-go"));
-  const s = build([shared("sree-pets")]);
-  assert.equal(block(s, "rt-listings").command[0], "node", "listings shops pinned to a version with no runtime field run on the Node shared process");
-  assert.equal(block(s, "rt-listings").mem_limit, "1536m");
+  assert.throws(() => build([shared("sree-pets")], IMAGE), /names no shared program/u, "listings-only shops run on the Go shared process only: the Node one went with the TypeScript runtime");
   assert.throws(() => build([goShop("glow-salon", 1)]), /no image of the Go programs/u, "a Go shop with no image to run is a mistake, not a compose file");
 });
 

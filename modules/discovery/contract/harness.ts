@@ -15,7 +15,7 @@ import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawnChild, stopChild } from "../../../templates/commerce/listings/contract/children.ts";
+import { spawnChild, stopChild } from "../../test/contract/children.ts";
 import { generateSigningKey } from "../../signing/keys.ts";
 import { signAnswer, signFeed, signNotice } from "../../signing/sign.ts";
 import type { SigningKey } from "../../signing/keys.ts";

@@ -72,7 +72,7 @@ const hasGuard = (a: AgentDeploy, kind: string) => a.guards.some((g) => g.kind =
 
 /** Where the shared services reach a shop's runtime: its door, on the admin network. */
 const runtimeUrl = (server: ServerConfig, shop: ShopDeploy) => shop.shared
-  // a listings-only shop is one folder on the shared process: its own door is the shared one, and the shop's name is the first part of every path (modules/runtime/shared.ts)
+  // a listings-only shop is one folder on the shared process: its own door is the shared one, and the shop's name is the first part of every path (go/internal/shared.ts)
   ? `${url(addressing(server).adminIp(undefined, "door", SHARED.index), RUNTIME_PORT)}/shop/${shop.name}`
   : url(addressing(server).adminIp(shop.name, "door", shop.index), RUNTIME_PORT);
 

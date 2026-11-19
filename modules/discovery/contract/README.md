@@ -10,7 +10,7 @@ cd go && go build -o bin/directory ./cmd/directory && cd ..
 node --test --test-concurrency=1 modules/discovery/contract/        # DIRECTORY_GO_BIN names another binary (default go/bin/directory)
 ```
 
-With no binary every test that needs one is skipped and says why. Every process the harness starts goes through `templates/commerce/listings/contract/children.ts` (its own process group,
+With no binary every test that needs one is skipped and says why. Every process the harness starts goes through `modules/test/contract/children.ts` (its own process group,
 stopped at the end of every test, a leak fails the run).
 
 ## The inventory

@@ -540,6 +540,11 @@ The service is `bundle/services/speech/` (README there). It was written and test
 
 ## Listings-only shops (18 Nov 2026, block S phase C)
 
+- [ ] **A cross-shop check of feeds and photos on the Go shared process.** The deleted `templates/commerce/listings/test/shared-shops.test.ts` ran two real TypeScript shops on one process and
+  checked that a listing of one is in that shop's feed only and a photo in that shop's file only. The Go shared contract checks each shop's own tokens, routes and store, and
+  `go/internal/shared` keeps one runtime (and one store file) per shop by construction, but no test lists a listing in one shop and reads the other's feed. Done when
+  `templates/commerce/listings/contract/shared.contract.test.ts` gains that scenario (a few lines: publish in one shop, read both feeds and both owner photos).
+
 - [ ] **An owner signing up alone.** Today an Operator sets the shop up on a visit and shows the owner the one-use code. Done when: an owner can start the shop alone from their own phone, with a phone check (a code to their number) and the shop marked **"not visited yet"** on its page until an Operator or a trusted person has seen it, so a listing of someone else's shop or a made-up one is not shown as visited.
 - [ ] **Push alerts for listings-only shops.** They have no push Guard (no container), so "Still have it?" is a card in the owner's app only, and the morning line is off. Done when: the shared process gets a push path (one push Guard for the shared process, counted per shop) or the owner's app asks on its own.
 - [ ] **"Ask about this" on a listings-only shop** falls back to the shop's phone; the chat is not offered (no agent answers it). Done when: a small chat answer for listings (from the public listings) is built on the shop's talk, with the customer's number kept as a digest only.
