@@ -1,0 +1,9097 @@
+{
+ "cases": [
+  {
+   "name": "request: made, read back from the list",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 60000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "refund": [
+     {
+      "ok": {
+       "id": "rfnd_1",
+       "payment_id": "pay_1",
+       "amount": 60000,
+       "status": "processed",
+       "receipt": "b-3:pay_1",
+       "created_at": 1793700000
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    },
+    {
+     "op": "after",
+     "result": "done",
+     "amountInr": 300
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1"
+        }
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_done"
+       ],
+       "refundInr": 300
+      }
+     }
+    ],
+    "results": [
+     "done",
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "request: with accounting",
+   "accounting": true,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 30000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "refund": [
+     {
+      "ok": {
+       "id": "rfnd_1",
+       "payment_id": "pay_1",
+       "amount": 30000,
+       "status": "processed",
+       "receipt": "b-3:pay_1",
+       "created_at": 1793700000
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "post": {
+       "kind": "refund_owed",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "paymentId": "pay_1",
+       "amountPaise": 30000
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "money": "posted"
+        }
+       }
+      }
+     },
+     {
+      "post": {
+       "kind": "refund_made",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "paymentId": "pay_1",
+       "amountPaise": 30000,
+       "method": "gateway",
+       "evidence": "provider",
+       "refundId": "rfnd_1"
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1",
+         "money": "posted"
+        }
+       }
+      }
+     }
+    ],
+    "results": [
+     "done"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "request: already on the list (look first)",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 60000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 600,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": true
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 600
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "60000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 600
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "60000",
+         "refundId": "rfnd_1"
+        }
+       }
+      }
+     }
+    ],
+    "results": [
+     "done"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "request: the reply says replayed",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 60000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "refund": [
+     {
+      "ok": {
+       "id": "rfnd_1",
+       "payment_id": "pay_1",
+       "amount": 60000,
+       "status": "processed",
+       "receipt": "b-3:pay_1",
+       "created_at": 1793700000,
+       "replayed": true
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 600,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": true
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 60000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 600
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "60000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 600
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "60000",
+         "refundId": "rfnd_1"
+        },
+        "notes": "Guard answered from its record; nothing was sent again"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 600
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "60000"
+        },
+        "notes": "A refund of ₹600 is above the ₹500 limit but Guard sent it without holding it for the owner. Guard's threshold does not match these settings: check the gateway's limits spec."
+       }
+      }
+     }
+    ],
+    "results": [
+     "done"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unheld",
+       "note": "A refund of ₹600 is above the ₹500 limit but Guard sent it without holding it for the owner. Guard's threshold does not match these settings: check the gateway's limits spec.",
+       "atMs": 1793700000000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: sent above the limit and not held (unheld)",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 60000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "refund": [
+     {
+      "ok": {
+       "id": "rfnd_1",
+       "payment_id": "pay_1",
+       "amount": 60000,
+       "status": "processed",
+       "receipt": "b-3:pay_1",
+       "created_at": 1793700000
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 600,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": true
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 60000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 600
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "60000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 600
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "60000",
+         "refundId": "rfnd_1"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 600
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "60000"
+        },
+        "notes": "A refund of ₹600 is above the ₹500 limit but Guard sent it without holding it for the owner. Guard's threshold does not match these settings: check the gateway's limits spec."
+       }
+      }
+     }
+    ],
+    "results": [
+     "done"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unheld",
+       "note": "A refund of ₹600 is above the ₹500 limit but Guard sent it without holding it for the owner. Guard's threshold does not match these settings: check the gateway's limits spec.",
+       "atMs": 1793700000000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: accepted, the list does not show it (unconfirmed)",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "ok": {
+       "id": "rfnd_1",
+       "payment_id": "pay_1",
+       "amount": 60000,
+       "status": "processed",
+       "receipt": "b-3:pay_1",
+       "created_at": 1793700000
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1"
+        },
+        "notes": "the payments service accepted the refund, but its own list does not show it yet. It is NOT sent again"
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unconfirmed",
+       "note": "the payments service accepted the refund, but its own list does not show it yet. It is NOT sent again",
+       "atMs": 1793700000000,
+       "amountPaise": 30000,
+       "refundId": "rfnd_1"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: stopped payment is not asked again",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "stoppedRefunds": [
+     "pay_1"
+    ]
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "blocked",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "an earlier try at this refund ended with a no, an unclear outcome, a failure, or Guard's word that a person settled it as made, so Guard is not asked again"
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: held for the owner",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "held",
+       "approval": "ap-1",
+       "expiresAtMs": 1793800000000,
+       "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 900,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": true
+    },
+    {
+     "op": "after",
+     "result": "held",
+     "amountInr": 900
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 90000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "held_for_owner",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1"
+        },
+        "notes": "Guard is holding this refund for the owner. The approvals relay asks the owner, once; the agent does not."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_held"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     "held",
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "guard_hold",
+       "amountInr": 900,
+       "paymentId": "pay_1",
+       "receipt": "b-3:pay_1",
+       "approval": "ap-1",
+       "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+       "expiresAtMs": 1793800000000,
+       "heldAtMs": 1793700000000
+      }
+     ],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "request: held with who asked",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "held",
+       "approval": "ap-1",
+       "expiresAtMs": null,
+       "body": "{\"amount\":90000}"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 900,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": true,
+     "requestedBy": [
+      "owner",
+      "op:7"
+     ]
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 90000,
+       "receipt": "b-3:pay_1",
+       "requestedBy": [
+        "owner",
+        "op:7"
+       ]
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "held_for_owner",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1"
+        },
+        "notes": "Guard is holding this refund for the owner. The approvals relay asks the owner, once; the agent does not."
+       }
+      }
+     }
+    ],
+    "results": [
+     "held"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "guard_hold",
+       "amountInr": 900,
+       "paymentId": "pay_1",
+       "receipt": "b-3:pay_1",
+       "approval": "ap-1",
+       "body": "{\"amount\":90000}",
+       "expiresAtMs": null,
+       "heldAtMs": 1793700000000,
+       "requestedBy": [
+        "owner",
+        "op:7"
+       ]
+      }
+     ],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "request: held with no approval (uncertain)",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "held",
+       "approval": null,
+       "body": "{}"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 900,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": true
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 90000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000"
+        },
+        "notes": "Guard is holding this refund with no approval to give: an earlier attempt has an unknown outcome, and only a person at the server can settle it, not the owner on WhatsApp. It was NOT sent again. Check the payment gateway's own records for payment pay_1, then tell Guard (POST /admin/intents/resolve)."
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "uncertain",
+       "note": "Guard is holding this refund with no approval to give: an earlier attempt has an unknown outcome, and only a person at the server can settle it, not the owner on WhatsApp. It was NOT sent again. Check the payment gateway's own records for payment pay_1, then tell Guard (POST /admin/intents/resolve).",
+       "atMs": 1793700000000,
+       "amountPaise": 90000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: held but no body to keep (uncertain)",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "held",
+       "approval": "ap-9"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 900,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": true
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 90000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000"
+        },
+        "notes": "Guard is holding this refund with no approval to give: an earlier attempt has an unknown outcome, and only a person at the server can settle it, not the owner on WhatsApp. It was NOT sent again. Check the payment gateway's own records for payment pay_1, then tell Guard (POST /admin/intents/resolve)."
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "uncertain",
+       "note": "Guard is holding this refund with no approval to give: an earlier attempt has an unknown outcome, and only a person at the server can settle it, not the owner on WhatsApp. It was NOT sent again. Check the payment gateway's own records for payment pay_1, then tell Guard (POST /admin/intents/resolve).",
+       "atMs": 1793700000000,
+       "amountPaise": 90000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: already done by a person",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "alreadyDone"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    },
+    {
+     "op": "after",
+     "result": "done",
+     "amountInr": 300,
+     "doneOwner": "owner_done"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "confirmedBy": "operator:owner",
+         "intent": "intent:abc"
+        },
+        "notes": "Guard says operator:owner settled this refund as made (already_done): it is done by that person's word, not by the payments service's own list, which did not show it. It is not sent again"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "owner",
+       "templates": [
+        "refund_settled"
+       ],
+       "refundInr": 300
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_done"
+       ],
+       "refundInr": 300
+      }
+     },
+     {
+      "tell": {
+       "who": "owner",
+       "templates": [
+        "owner_done"
+       ],
+       "refundInr": 300
+      }
+     }
+    ],
+    "results": [
+     "done",
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: already done, nobody named",
+   "accounting": true,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "alreadyDoneBare"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "post": {
+       "kind": "refund_owed",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "paymentId": "pay_1",
+       "amountPaise": 30000
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "money": "posted"
+        }
+       }
+      }
+     },
+     {
+      "post": {
+       "kind": "refund_made",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "paymentId": "pay_1",
+       "amountPaise": 30000,
+       "method": "gateway",
+       "evidence": "person_word"
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "confirmedBy": "a person at the server",
+         "money": "posted"
+        },
+        "notes": "Guard says a person at the server settled this refund as made (already_done): it is done by that person's word, not by the payments service's own list, which did not show it. It is not sent again"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "owner",
+       "templates": [
+        "refund_settled"
+       ],
+       "refundInr": 300
+      }
+     }
+    ],
+    "results": [
+     "done"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: the owner's no on record",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "denied"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 900,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": true
+    },
+    {
+     "op": "after",
+     "result": "denied",
+     "amountInr": 900
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 90000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "confirmed",
+       "inputs": {
+        "approval": "ap-denied",
+        "decision": "deny"
+       },
+       "more": {
+        "refs": {
+         "command": "deny",
+         "approval": "ap-denied"
+        },
+        "notes": "Guard's record says the person asked denied this exact refund, so Guard refused it when it was sent again and asked nobody again"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "blocked",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-denied"
+        },
+        "notes": "the owner declined the refund (Guard: denied_by_approver). Nothing was refunded"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_denied"
+       ],
+       "refundInr": null
+      }
+     }
+    ],
+    "results": [
+     "denied",
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: refused by a rule",
+   "accounting": true,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "refused",
+       "ruleId": "refund-at-most-deposit"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 900,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": true
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 90000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "post": {
+       "kind": "refund_owed",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "paymentId": "pay_1",
+       "amountPaise": 90000
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "money": "posted"
+        }
+       }
+      }
+     },
+     {
+      "post": {
+       "kind": "refund_cancelled",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "why": "refused"
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "blocked",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "money": "posted"
+        },
+        "notes": "Guard refused the refund (a rule: refund-at-most-deposit): refund-at-most-deposit: amount 90000 is above the highest allowed value, 60000. Nothing was refunded."
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "refused",
+       "note": "Guard refused the refund (a rule: refund-at-most-deposit): refund-at-most-deposit: amount 90000 is above the highest allowed value, 60000. Nothing was refunded.",
+       "atMs": 1793700000000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: refused by a limit",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "refused",
+       "limit": true,
+       "ruleId": "refund-paise-per-day"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 900,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": true
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 90000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "blocked",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000"
+        },
+        "notes": "Guard refused the refund (a limit: refund-paise-per-day): refund-at-most-deposit: amount 90000 is above the highest allowed value, 60000. Nothing was refunded."
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "refused",
+       "note": "Guard refused the refund (a limit: refund-paise-per-day): refund-at-most-deposit: amount 90000 is above the highest allowed value, 60000. Nothing was refunded.",
+       "atMs": 1793700000000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: another conflict is no good",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "conflict"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "Guard did not take the refund and will not on a retry: refused by the Guard: other arguments. Nothing was refunded."
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "failed",
+       "note": "Guard did not take the refund and will not on a retry: refused by the Guard: other arguments. Nothing was refunded.",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: unauthenticated is no good",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "unauthenticated"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "Guard did not take the refund and will not on a retry: refused by the Guard: no credential. Nothing was refunded."
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "failed",
+       "note": "Guard did not take the refund and will not on a retry: refused by the Guard: no credential. Nothing was refunded.",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: suspended is no good",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "suspended"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "Guard did not take the refund and will not on a retry: refused by the Guard: suspended. Nothing was refunded."
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "failed",
+       "note": "Guard did not take the refund and will not on a retry: refused by the Guard: suspended. Nothing was refunded.",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: outcome unknown, the list shows it",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 30000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "unknown"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1"
+        },
+        "notes": "Guard says the outcome is unknown; the payments service's own list shows the refund, and it is not sent again"
+       }
+      }
+     }
+    ],
+    "results": [
+     "done"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "request: outcome unknown, the list does not",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "unknown"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "Guard says the outcome is unknown. The refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve)."
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unknown",
+       "note": "Guard says the outcome is unknown. The refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: the list cannot be read after outcome unknown",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "err": {
+       "kind": "timeout"
+      }
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "unknown"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "Guard says the outcome is unknown. The refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve)."
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unknown",
+       "note": "Guard says the outcome is unknown. The refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: a 500 may have happened",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "api",
+       "status": 500
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "the payments service answered 500. The refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve)."
+       }
+      }
+     }
+    ],
+    "results": [
+     "stopped"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unknown",
+       "note": "the payments service answered 500. The refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "request: a 400 sent nothing, tried again, then retry",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "api",
+       "status": 400,
+       "message": "bad"
+      }
+     },
+     {
+      "err": {
+       "kind": "api",
+       "status": 400,
+       "message": "bad"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    },
+    {
+     "op": "after",
+     "result": "retry",
+     "amountInr": 300,
+     "doneCust": "refund_done",
+     "doneOwner": "owner_done",
+     "held": "refund_held",
+     "requestedBy": [
+      "owner"
+     ]
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "bad; it will be tried again"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_checking"
+       ],
+       "refundInr": 300
+      }
+     }
+    ],
+    "results": [
+     "retry",
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "refund_retry",
+       "amountInr": 300,
+       "paymentId": "pay_1",
+       "tries": 0,
+       "retryAtMs": 1793700060000,
+       "then": {
+        "customer": "refund_done",
+        "owner": "owner_done",
+        "held": "refund_held"
+       },
+       "requestedBy": [
+        "owner"
+       ]
+      }
+     ],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "request: lost reply, then found on the second look",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 30000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "timeout"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1"
+        }
+       }
+      }
+     }
+    ],
+    "results": [
+     "done"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "request: Guard cannot decide twice",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "unavailable"
+      }
+     },
+     {
+      "err": {
+       "kind": "unavailable"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "refused by the Guard: kill switch engaged: test; it will be tried again"
+       }
+      }
+     }
+    ],
+    "results": [
+     "retry"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "request: nothing listens",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "notsent"
+      }
+     },
+     {
+      "err": {
+       "kind": "notsent"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "Razorpay: could not connect (ECONNREFUSED).; it will be tried again"
+       }
+      }
+     }
+    ],
+    "results": [
+     "retry"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "request: the first look cannot be read, so nothing is sent",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "err": {
+       "kind": "timeout"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "could not look at the existing refunds first (Razorpay: no reply (timed out)), so nothing was sent; it will be tried again"
+       }
+      }
+     }
+    ],
+    "results": [
+     "retry"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "request: the first look fails with an ApiError",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "err": {
+       "kind": "api",
+       "status": 500,
+       "message": "boom"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "request",
+     "paymentId": "pay_1",
+     "amountInr": 300,
+     "decisions": [
+      {
+       "rule": "refund-limit",
+       "ok": true
+      }
+     ],
+     "expectHold": false
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [
+         {
+          "rule": "refund-limit",
+          "ok": true
+         }
+        ],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "could not look at the existing refunds first (boom), so nothing was sent; it will be tried again"
+       }
+      }
+     }
+    ],
+    "results": [
+     "retry"
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "retry: tried again and done",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "refund_retry",
+      "amountInr": 300,
+      "paymentId": "pay_1",
+      "tries": 0,
+      "retryAtMs": 1793700000000,
+      "then": {
+       "customer": "refund_done",
+       "owner": "owner_done",
+       "held": "refund_held"
+      }
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 30000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "refund": [
+     {
+      "ok": {
+       "id": "rfnd_1",
+       "payment_id": "pay_1",
+       "amount": 30000,
+       "status": "processed",
+       "receipt": "b-3:pay_1",
+       "created_at": 1793700000
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1"
+        }
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_done"
+       ],
+       "refundInr": 300
+      }
+     },
+     {
+      "tell": {
+       "who": "owner",
+       "templates": [
+        "owner_done"
+       ],
+       "refundInr": 300
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "retry: not yet due",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "refund_retry",
+      "amountInr": 300,
+      "paymentId": "pay_1",
+      "tries": 0,
+      "retryAtMs": 1793700000001,
+      "then": {
+       "customer": "refund_done",
+       "owner": "owner_done",
+       "held": "refund_held"
+      }
+     }
+    ]
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "refund_retry",
+       "amountInr": 300,
+       "paymentId": "pay_1",
+       "tries": 0,
+       "retryAtMs": 1793700000001,
+       "then": {
+        "customer": "refund_done",
+        "owner": "owner_done",
+        "held": "refund_held"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "retry: fails again, a later try is kept",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "refund_retry",
+      "amountInr": 300,
+      "paymentId": "pay_1",
+      "tries": 1,
+      "retryAtMs": 1793700000000,
+      "then": {
+       "customer": "refund_done",
+       "owner": "owner_done",
+       "held": "refund_held"
+      }
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "notsent"
+      }
+     },
+     {
+      "err": {
+       "kind": "notsent"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "Razorpay: could not connect (ECONNREFUSED).; it will be tried again"
+       }
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "refund_retry",
+       "amountInr": 300,
+       "paymentId": "pay_1",
+       "tries": 2,
+       "retryAtMs": 1793700300000,
+       "then": {
+        "customer": "refund_done",
+        "owner": "owner_done",
+        "held": "refund_held"
+       }
+      }
+     ],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "retry: the last try fails and the builder is told",
+   "accounting": true,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "refund_retry",
+      "amountInr": 300,
+      "paymentId": "pay_1",
+      "tries": 5,
+      "retryAtMs": 1793700000000,
+      "then": {
+       "customer": "refund_done",
+       "owner": "owner_done",
+       "held": "refund_held"
+      }
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "notsent"
+      }
+     },
+     {
+      "err": {
+       "kind": "notsent"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 30000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "post": {
+       "kind": "refund_owed",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "paymentId": "pay_1",
+       "amountPaise": 30000
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "decisions": [],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "money": "posted"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000"
+        },
+        "notes": "Razorpay: could not connect (ECONNREFUSED).; it will be tried again"
+       }
+      }
+     },
+     {
+      "post": {
+       "kind": "refund_cancelled",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "why": "failed"
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 300
+       },
+       "more": {
+        "notes": "The refund of ₹300 for payment pay_1 could not be sent after 7 tries. Nothing was refunded.",
+        "refs": {
+         "paymentId": "pay_1",
+         "money": "posted"
+        }
+       }
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "failed",
+       "note": "The refund of ₹300 for payment pay_1 could not be sent after 7 tries. Nothing was refunded.",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "retry: held this time",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "refund_retry",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "tries": 0,
+      "retryAtMs": 1793700000000,
+      "then": {
+       "customer": "refund_done",
+       "owner": "owner_done",
+       "held": "refund_held"
+      }
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "held",
+       "approval": "ap-2",
+       "expiresAtMs": 5,
+       "body": "{}"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 90000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "held_for_owner",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-2"
+        },
+        "notes": "Guard is holding this refund for the owner. The approvals relay asks the owner, once; the agent does not."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_held"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "guard_hold",
+       "amountInr": 900,
+       "paymentId": "pay_1",
+       "receipt": "b-3:pay_1",
+       "approval": "ap-2",
+       "body": "{}",
+       "expiresAtMs": 5,
+       "heldAtMs": 1793700000000
+      }
+     ],
+     "stoppedRefunds": []
+    }
+   }
+  },
+  {
+   "name": "retry: denied this time",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "refund_retry",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "tries": 0,
+      "retryAtMs": 1793700000000,
+      "then": {
+       "customer": "refund_done",
+       "owner": "owner_done",
+       "held": "refund_held"
+      }
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "refund": [
+     {
+      "err": {
+       "kind": "denied"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "refund",
+      "id": "pay_1",
+      "r": {
+       "amount": 90000,
+       "receipt": "b-3:pay_1"
+      }
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "attempted",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "decisions": [],
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000"
+        }
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "confirmed",
+       "inputs": {
+        "approval": "ap-denied",
+        "decision": "deny"
+       },
+       "more": {
+        "refs": {
+         "command": "deny",
+         "approval": "ap-denied"
+        },
+        "notes": "Guard's record says the person asked denied this exact refund, so Guard refused it when it was sent again and asked nobody again"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "blocked",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-denied"
+        },
+        "notes": "the owner declined the refund (Guard: denied_by_approver). Nothing was refunded"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_denied"
+       ],
+       "refundInr": null
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "retry: another pending kind of the template is left alone",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "template_thing",
+      "note": "x"
+     },
+     {
+      "kind": "refund_retry",
+      "amountInr": 300,
+      "paymentId": "pay_1",
+      "tries": 0,
+      "retryAtMs": 1793700000005,
+      "then": {
+       "customer": "refund_done",
+       "owner": "owner_done",
+       "held": "refund_held"
+      }
+     }
+    ]
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "template_thing",
+       "note": "x"
+      },
+      {
+       "kind": "refund_retry",
+       "amountInr": 300,
+       "paymentId": "pay_1",
+       "tries": 0,
+       "retryAtMs": 1793700000005,
+       "then": {
+        "customer": "refund_done",
+        "owner": "owner_done",
+        "held": "refund_held"
+       }
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "approval: unknown approval",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-zzz",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [
+     {
+      "log": {
+       "case": null,
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "blocked",
+       "inputs": {
+        "approval": "ap-zzz",
+        "decision": "approve"
+       },
+       "more": {
+        "notes": "no refund is waiting on this approval, so nothing is done (it may be answered already, expired, or not ours)",
+        "refs": {
+         "approval": "ap-zzz"
+        }
+       }
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "guard_hold",
+       "amountInr": 900,
+       "paymentId": "pay_1",
+       "receipt": "b-3:pay_1",
+       "approval": "ap-1",
+       "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+       "expiresAtMs": 1793800000000,
+       "heldAtMs": 1793700000000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "approval: deny",
+   "accounting": true,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "deny"
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "deny"
+       },
+       "more": {
+        "refs": {
+         "command": "deny",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "confirmed",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "deny"
+       },
+       "more": {
+        "refs": {
+         "command": "deny",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay reported that the owner denied the refund"
+       }
+      }
+     },
+     {
+      "post": {
+       "kind": "refund_cancelled",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "why": "owner_said_no"
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "blocked",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "approval": "ap-1",
+         "money": "posted"
+        },
+        "notes": "the owner declined the refund"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_denied"
+       ],
+       "refundInr": null
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approval: approve, sent, read back",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 90000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "resendRefund": [
+     {
+      "ok": {
+       "id": "rfnd_1",
+       "payment_id": "pay_1",
+       "amount": 90000,
+       "status": "processed",
+       "receipt": "b-3:pay_1",
+       "created_at": 1793700000
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "confirmed",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "Guard released the held refund, so the owner's approval is on Guard's record"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1",
+         "refundId": "rfnd_1"
+        }
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_approved"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": []
+    }
+   }
+  },
+  {
+   "name": "approve: it was on the list already",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 90000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1",
+         "refundId": "rfnd_1"
+        },
+        "notes": "the refund was already on the payments service's own list, so it was not sent again"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_approved"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": []
+    }
+   }
+  },
+  {
+   "name": "approve: the look cannot be made, tried later",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "err": {
+       "kind": "timeout"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1"
+        },
+        "notes": "the approved refund could not be sent yet (could not look at the existing refunds first: Razorpay: no reply (timed out)); it is tried again"
+       }
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "guard_hold",
+       "amountInr": 900,
+       "paymentId": "pay_1",
+       "receipt": "b-3:pay_1",
+       "approval": "ap-1",
+       "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+       "expiresAtMs": 1793800000000,
+       "heldAtMs": 1793700000000,
+       "approved": true,
+       "tries": 1,
+       "retryAtMs": 1793700060000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: accepted but not on the list",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "ok": {
+       "id": "rfnd_1",
+       "payment_id": "pay_1",
+       "amount": 90000,
+       "status": "processed",
+       "receipt": "b-3:pay_1",
+       "created_at": 1793700000
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "confirmed",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "Guard released the held refund, so the owner's approval is on Guard's record"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1",
+         "refundId": "rfnd_1"
+        },
+        "notes": "the payments service accepted the approved refund, but its own list does not show it yet. It is NOT sent again"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_checking"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unconfirmed",
+       "note": "the payments service accepted the approved refund, but its own list does not show it yet. It is NOT sent again",
+       "atMs": 1793700000000,
+       "amountPaise": 90000,
+       "refundId": "rfnd_1"
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: not sent yet, then the sweep tries again",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000,
+      "requestedBy": [
+       "owner"
+      ]
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     },
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 90000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "notsent"
+      }
+     },
+     {
+      "ok": {
+       "id": "rfnd_1",
+       "payment_id": "pay_1",
+       "amount": 90000,
+       "status": "processed",
+       "receipt": "b-3:pay_1",
+       "created_at": 1793700000
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    },
+    {
+     "op": "sweep",
+     "now": 1793700061000
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": [
+       "owner"
+      ]
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": [
+       "owner"
+      ]
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1"
+        },
+        "notes": "the approved refund could not be sent yet (Razorpay: could not connect (ECONNREFUSED).); it is tried again"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "confirmed",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "Guard released the held refund, so the owner's approval is on Guard's record"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1",
+         "refundId": "rfnd_1"
+        },
+        "notes": "the payments service accepted the approved refund, but its own list does not show it yet. It is NOT sent again"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_checking"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null,
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unconfirmed",
+       "note": "the payments service accepted the approved refund, but its own list does not show it yet. It is NOT sent again",
+       "atMs": 1793700061000,
+       "amountPaise": 90000,
+       "refundId": "rfnd_1"
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: never sent, the tries run out",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000,
+      "tries": 5,
+      "approved": true,
+      "retryAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "unavailable"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1"
+        },
+        "notes": "The owner approved the refund, but it could not be sent after 6 tries (refused by the Guard: kill switch engaged: test). Nothing was refunded."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_checking"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "failed",
+       "note": "The owner approved the refund, but it could not be sent after 6 tries (refused by the Guard: kill switch engaged: test). Nothing was refunded.",
+       "atMs": 1793700000000,
+       "amountPaise": 90000
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: held with no approval",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "held",
+       "approval": null
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1"
+        },
+        "notes": "After the owner approved, Guard holds the refund with no approval to give (an earlier attempt has an unknown outcome). It was NOT sent again. Check the payment gateway's own records for payment pay_1, then tell Guard (POST /admin/intents/resolve)."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_checking"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "uncertain",
+       "note": "After the owner approved, Guard holds the refund with no approval to give (an earlier attempt has an unknown outcome). It was NOT sent again. Check the payment gateway's own records for payment pay_1, then tell Guard (POST /admin/intents/resolve).",
+       "atMs": 1793700000000,
+       "amountPaise": 90000
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: held again under the same approval",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "held",
+       "approval": "ap-1",
+       "expiresAtMs": 5
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "held_for_owner",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1"
+        },
+        "notes": "Guard still holds the refund: its record does not show the owner's approval. It waits; the owner is not asked again"
+       }
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "guard_hold",
+       "amountInr": 900,
+       "paymentId": "pay_1",
+       "receipt": "b-3:pay_1",
+       "approval": "ap-1",
+       "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+       "expiresAtMs": 1793800000000,
+       "heldAtMs": 1793700000000,
+       "approved": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: held again under a new approval",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "held",
+       "approval": "ap-2",
+       "expiresAtMs": 77
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "held_for_owner",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-2"
+        },
+        "notes": "Guard held the call again under a new approval (the first was used up or no longer valid). The relay will ask the owner about the new one"
+       }
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "guard_hold",
+       "amountInr": 900,
+       "paymentId": "pay_1",
+       "receipt": "b-3:pay_1",
+       "approval": "ap-2",
+       "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+       "expiresAtMs": 77,
+       "heldAtMs": 1793700000000,
+       "approved": false
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: a person had settled it",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "alreadyDone"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1",
+         "confirmedBy": "operator:owner",
+         "intent": "intent:abc"
+        },
+        "notes": "Guard says operator:owner settled this refund as made (already_done): it is done by that person's word, not by the payments service's own list, which did not show it. It is not sent again"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "owner",
+       "templates": [
+        "refund_settled"
+       ],
+       "refundInr": 900
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_approved"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: Guard's record says no",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "denied"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "confirmed",
+       "inputs": {
+        "approval": "ap-denied",
+        "decision": "deny"
+       },
+       "more": {
+        "refs": {
+         "command": "deny",
+         "approval": "ap-denied"
+        },
+        "notes": "Guard's record says the person asked denied this exact refund, so Guard refused it when it was sent again and asked nobody again"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "blocked",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-denied"
+        },
+        "notes": "the owner declined the refund (Guard: denied_by_approver). Nothing was refunded"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_denied"
+       ],
+       "refundInr": null
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: refused because it expired",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "refused",
+       "reason": "approval ap-1 has expired"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "approval": "ap-1"
+        },
+        "notes": "approval ap-1 has expired. Nothing was refunded. A new request for payment pay_1 has to be made by the builder."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_expired"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "expired",
+       "note": "approval ap-1 has expired. Nothing was refunded. A new request for payment pay_1 has to be made by the builder.",
+       "atMs": 1793700000000
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: refused by a rule",
+   "accounting": true,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "refused",
+       "ruleId": "refund-at-most-deposit"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "post": {
+       "kind": "refund_cancelled",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "why": "refused"
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "blocked",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1",
+         "money": "posted"
+        },
+        "notes": "Guard refused the approved refund (a rule: refund-at-most-deposit): refund-at-most-deposit: amount 90000 is above the highest allowed value, 60000. Nothing was refunded."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_checking"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "refused",
+       "note": "Guard refused the approved refund (a rule: refund-at-most-deposit): refund-at-most-deposit: amount 90000 is above the highest allowed value, 60000. Nothing was refunded.",
+       "atMs": 1793700000000,
+       "amountPaise": 90000
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: another conflict",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "conflict"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1"
+        },
+        "notes": "Guard did not take the approved refund and will not on a retry: refused by the Guard: other arguments. Nothing was refunded."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_checking"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "failed",
+       "note": "Guard did not take the approved refund and will not on a retry: refused by the Guard: other arguments. Nothing was refunded.",
+       "atMs": 1793700000000,
+       "amountPaise": 90000
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: outcome unknown, on the list",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 90000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "unknown"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "confirmed",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "Guard released the held refund, so the owner's approval is on Guard's record"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1",
+         "refundId": "rfnd_1"
+        },
+        "notes": "Guard says the outcome is unknown; the payments service's own list shows the refund, and it is not sent again"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_approved"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": []
+    }
+   }
+  },
+  {
+   "name": "approve: outcome unknown, not on the list",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "unknown"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "confirmed",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "Guard released the held refund, so the owner's approval is on Guard's record"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1"
+        },
+        "notes": "Guard says the outcome is unknown. The approved refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve)."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_checking"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unknown",
+       "note": "Guard says the outcome is unknown. The approved refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).",
+       "atMs": 1793700000000,
+       "amountPaise": 90000
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: lost reply",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "timeout"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "confirmed",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "Guard released the held refund, so the owner's approval is on Guard's record"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1"
+        },
+        "notes": "Razorpay: no reply (timed out). The approved refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve)."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_checking"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unknown",
+       "note": "Razorpay: no reply (timed out). The approved refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).",
+       "atMs": 1793700000000,
+       "amountPaise": 90000
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "approve: a 500 from the service",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     },
+     {
+      "ok": []
+     }
+    ],
+    "resendRefund": [
+     {
+      "err": {
+       "kind": "api",
+       "status": 502
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "approval",
+     "approval": "ap-1",
+     "decision": "approve"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "resendRefund",
+      "id": "pay_1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "by": null
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "attempted",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "the approvals relay says the owner decided"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500000",
+       "action": "owner_decision",
+       "outcome": "confirmed",
+       "inputs": {
+        "approval": "ap-1",
+        "decision": "approve"
+       },
+       "more": {
+        "refs": {
+         "command": "approve",
+         "approval": "ap-1"
+        },
+        "notes": "Guard released the held refund, so the owner's approval is on Guard's record"
+       }
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "90000",
+         "approval": "ap-1"
+        },
+        "notes": "the payments service answered 502. The approved refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve)."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_checking"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unknown",
+       "note": "the payments service answered 502. The approved refund may or may not have been made. It was NOT sent again. Check the payment gateway's own records for payment pay_1; if Guard holds it as uncertain, tell Guard what happened (POST /admin/intents/resolve).",
+       "atMs": 1793700000000,
+       "amountPaise": 90000
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "sweep: an unanswered hold waits and sends nothing",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793703600000
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "guard_hold",
+       "amountInr": 900,
+       "paymentId": "pay_1",
+       "receipt": "b-3:pay_1",
+       "approval": "ap-1",
+       "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+       "expiresAtMs": 1793800000000,
+       "heldAtMs": 1793700000000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "sweep: an approved hold not yet due waits",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000,
+      "approved": true,
+      "tries": 1,
+      "retryAtMs": 1793700000099
+     }
+    ]
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "guard_hold",
+       "amountInr": 900,
+       "paymentId": "pay_1",
+       "receipt": "b-3:pay_1",
+       "approval": "ap-1",
+       "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+       "expiresAtMs": 1793800000000,
+       "heldAtMs": 1793700000000,
+       "approved": true,
+       "tries": 1,
+       "retryAtMs": 1793700000099
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "sweep: a hold whose approval ran out",
+   "accounting": true,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793699999999,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "post": {
+       "kind": "refund_cancelled",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "why": "expired"
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "approval": "ap-1",
+         "money": "posted"
+        },
+        "notes": "the owner did not answer before Guard's approval ran out. Nothing was refunded. A new request for payment pay_1 has to be made by the builder."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_expired"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "expired",
+       "note": "the owner did not answer before Guard's approval ran out. Nothing was refunded. A new request for payment pay_1 has to be made by the builder.",
+       "atMs": 1793700000000
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "sweep: a hold that ran out but the refund was made",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793699999999,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 90000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "approval": "ap-1",
+         "refundId": "rfnd_1"
+        },
+        "notes": "the hold's time ran out here, but the payments service's own list shows the refund: it was made. It is not sent again"
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_approved"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": []
+    }
+   }
+  },
+  {
+   "name": "sweep: a hold with no end",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": null,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1893699999999
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [
+      {
+       "kind": "guard_hold",
+       "amountInr": 900,
+       "paymentId": "pay_1",
+       "receipt": "b-3:pay_1",
+       "approval": "ap-1",
+       "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+       "expiresAtMs": null,
+       "heldAtMs": 1793700000000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "expire: the words given",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [
+     {
+      "kind": "guard_hold",
+      "amountInr": 900,
+      "paymentId": "pay_1",
+      "receipt": "b-3:pay_1",
+      "approval": "ap-1",
+      "body": "{\"amount\":90000,\"receipt\":\"b-3:pay_1\"}",
+      "expiresAtMs": 1793800000000,
+      "heldAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "expire",
+     "index": 0,
+     "why": "Guard said so"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "failed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "amountInr": 900
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "approval": "ap-1"
+        },
+        "notes": "Guard said so. Nothing was refunded. A new request for payment pay_1 has to be made by the builder."
+       }
+      }
+     },
+     {
+      "tell": {
+       "who": "customer",
+       "templates": [
+        "refund_expired"
+       ],
+       "refundInr": 900
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "expired",
+       "note": "Guard said so. Nothing was refunded. A new request for payment pay_1 has to be made by the builder.",
+       "atMs": 1793700000000
+      }
+     ],
+     "stoppedRefunds": [
+      "pay_1"
+     ]
+    }
+   }
+  },
+  {
+   "name": "recheck: the list now shows it and the customer is told",
+   "accounting": true,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 30000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "recheck"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "post": {
+       "kind": "refund_made",
+       "case": "b-3",
+       "owed": "b-3:pay_1",
+       "paymentId": "pay_1",
+       "amountPaise": 30000,
+       "method": "gateway",
+       "evidence": "provider",
+       "refundId": "rfnd_1"
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1",
+         "money": "posted"
+        },
+        "notes": "looked again: the payments service's own list now shows the refund. It was not sent again"
+       }
+      }
+     },
+     {
+      "tellOutcome": {
+       "template": "refund_confirmed",
+       "refundInr": 300,
+       "answered": "accepted"
+      }
+     }
+    ],
+    "results": [
+     {
+      "settled": 1,
+      "looked": 1,
+      "told": 1
+     }
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [],
+     "refundsUntold": []
+    }
+   }
+  },
+  {
+   "name": "recheck: shows it but the message is not sent, then the sweep retries",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 30000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "tellOutcome": [
+     "not_sent",
+     "accepted"
+    ]
+   },
+   "steps": [
+    {
+     "op": "recheck"
+    },
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1"
+        },
+        "notes": "looked again: the payments service's own list now shows the refund. It was not sent again"
+       }
+      }
+     },
+     {
+      "tellOutcome": {
+       "template": "refund_confirmed",
+       "refundInr": 300,
+       "answered": "not_sent"
+      }
+     },
+     {
+      "tellOutcome": {
+       "template": "refund_confirmed",
+       "refundInr": 300,
+       "answered": "accepted"
+      }
+     }
+    ],
+    "results": [
+     {
+      "settled": 1,
+      "looked": 1,
+      "told": 0
+     },
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [],
+     "refundsUntold": []
+    }
+   }
+  },
+  {
+   "name": "recheck: the message may have gone (never sent again)",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 30000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "tellOutcome": [
+     "maybe"
+    ]
+   },
+   "steps": [
+    {
+     "op": "recheck"
+    },
+    {
+     "op": "sweep",
+     "now": 1793799999999
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1"
+        },
+        "notes": "looked again: the payments service's own list now shows the refund. It was not sent again"
+       }
+      }
+     },
+     {
+      "tellOutcome": {
+       "template": "refund_confirmed",
+       "refundInr": 300,
+       "answered": "maybe"
+      }
+     }
+    ],
+    "results": [
+     {
+      "settled": 1,
+      "looked": 1,
+      "told": 0
+     },
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [],
+     "refundsUntold": [
+      {
+       "paymentId": "pay_1",
+       "refundId": "rfnd_1",
+       "amountInr": 300,
+       "sinceMs": 1793700000000,
+       "tries": 1,
+       "lastAtMs": 1793700000000,
+       "last": "maybe"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "recheck: the message was held back",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 30000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "tellOutcome": [
+     "held_back"
+    ]
+   },
+   "steps": [
+    {
+     "op": "recheck"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1"
+        },
+        "notes": "looked again: the payments service's own list now shows the refund. It was not sent again"
+       }
+      }
+     },
+     {
+      "tellOutcome": {
+       "template": "refund_confirmed",
+       "refundInr": 300,
+       "answered": "held_back"
+      }
+     }
+    ],
+    "results": [
+     {
+      "settled": 1,
+      "looked": 1,
+      "told": 0
+     }
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [],
+     "refundsUntold": [
+      {
+       "paymentId": "pay_1",
+       "refundId": "rfnd_1",
+       "amountInr": 300,
+       "sinceMs": 1793700000000,
+       "tries": 1,
+       "lastAtMs": 1793700000000,
+       "last": "held_back"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "recheck: still not on the list",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": []
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "recheck"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1"
+        },
+        "notes": "looked again: the payments service's own list still does not show the refund. It was not sent again; check the payment gateway's own records"
+       }
+      }
+     }
+    ],
+    "results": [
+     {
+      "settled": 0,
+      "looked": 1,
+      "told": 0
+     }
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unknown",
+       "note": "n",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "recheck: the list cannot be read",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "err": {
+       "kind": "timeout"
+      }
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "recheck"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1"
+        },
+        "notes": "looked again, but the payments service's list could not be read (Razorpay: no reply (timed out)). Nothing was sent"
+       }
+      }
+     }
+    ],
+    "results": [
+     {
+      "settled": 0,
+      "looked": 1,
+      "told": 0
+     }
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unknown",
+       "note": "n",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "recheck: a refused issue is not looked at",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "refused",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     }
+    ]
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "recheck"
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [],
+    "results": [
+     {
+      "settled": 0,
+      "looked": 0,
+      "told": 0
+     }
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "refused",
+       "note": "n",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "recheck: matched by receipt, not by amount",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 12345,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "recheck"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "12345",
+         "refundId": "rfnd_1"
+        },
+        "notes": "looked again: the payments service's own list now shows the refund. It was not sent again"
+       }
+      }
+     },
+     {
+      "tellOutcome": {
+       "template": "refund_confirmed",
+       "refundInr": 123.45,
+       "answered": "accepted"
+      }
+     }
+    ],
+    "results": [
+     {
+      "settled": 1,
+      "looked": 1,
+      "told": 1
+     }
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [],
+     "refundsUntold": []
+    }
+   }
+  },
+  {
+   "name": "recheck: matched by refund id",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000,
+      "refundId": "rfnd_9"
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_8",
+        "payment_id": "pay_1",
+        "amount": 60000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       },
+       {
+        "id": "rfnd_9",
+        "payment_id": "pay_1",
+        "amount": 60000,
+        "status": "processed",
+        "receipt": "other",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "recheck"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "60000",
+         "refundId": "rfnd_9"
+        },
+        "notes": "looked again: the payments service's own list now shows the refund. It was not sent again"
+       }
+      }
+     },
+     {
+      "tellOutcome": {
+       "template": "refund_confirmed",
+       "refundInr": 600,
+       "answered": "accepted"
+      }
+     }
+    ],
+    "results": [
+     {
+      "settled": 1,
+      "looked": 1,
+      "told": 1
+     }
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [],
+     "refundsUntold": []
+    }
+   }
+  },
+  {
+   "name": "recheck: a refund for another amount is not the one",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 99,
+        "status": "processed",
+        "receipt": "other",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "recheck"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1"
+        },
+        "notes": "looked again: the payments service's own list still does not show the refund. It was not sent again; check the payment gateway's own records"
+       }
+      }
+     }
+    ],
+    "results": [
+     {
+      "settled": 0,
+      "looked": 1,
+      "told": 0
+     }
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "unknown",
+       "note": "n",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "recheck: two issues, one settled",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     },
+     {
+      "paymentId": "pay_2",
+      "kind": "failed",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 30000,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     },
+     {
+      "ok": []
+     }
+    ]
+   },
+   "steps": [
+    {
+     "op": "recheck"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     },
+     {
+      "op": "listRefunds",
+      "id": "pay_2"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1"
+        },
+        "notes": "looked again: the payments service's own list now shows the refund. It was not sent again"
+       }
+      }
+     },
+     {
+      "tellOutcome": {
+       "template": "refund_confirmed",
+       "refundInr": 300,
+       "answered": "accepted"
+      }
+     },
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "unconfirmed",
+       "inputs": {
+        "paymentId": "pay_2",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_2"
+        },
+        "notes": "looked again: the payments service's own list still does not show the refund. It was not sent again; check the payment gateway's own records"
+       }
+      }
+     }
+    ],
+    "results": [
+     {
+      "settled": 1,
+      "looked": 2,
+      "told": 1
+     }
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_2",
+       "kind": "failed",
+       "note": "n",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ],
+     "refundsUntold": []
+    }
+   }
+  },
+  {
+   "name": "event: settles the open issue",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     }
+    ]
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "settleEvent",
+     "refund": {
+      "id": "rfnd_1",
+      "payment_id": "pay_1",
+      "amount": 30000,
+      "status": "processed",
+      "receipt": "b-3:pay_1",
+      "created_at": 1793700000
+     },
+     "eventId": "evt_1"
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "event": "evt_1"
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "30000",
+         "refundId": "rfnd_1",
+         "eventId": "evt_1"
+        },
+        "notes": "the payments service's own refund.done event names this refund, and its own list shows it: the attempt whose outcome was unknown is settled by the provider. It was not sent again"
+       }
+      }
+     },
+     {
+      "tellOutcome": {
+       "template": "refund_confirmed",
+       "refundInr": 300,
+       "answered": "accepted"
+      }
+     }
+    ],
+    "results": [
+     true
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [],
+     "refundsUntold": []
+    }
+   }
+  },
+  {
+   "name": "event: no issue open",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": []
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "settleEvent",
+     "refund": {
+      "id": "rfnd_1",
+      "payment_id": "pay_1",
+      "amount": 60000,
+      "status": "processed",
+      "receipt": "b-3:pay_1",
+      "created_at": 1793700000
+     },
+     "eventId": "evt_1"
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [],
+    "results": [
+     false
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": []
+    }
+   }
+  },
+  {
+   "name": "event: an issue the list cannot answer",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "expired",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 30000
+     }
+    ]
+   },
+   "script": {},
+   "steps": [
+    {
+     "op": "settleEvent",
+     "refund": {
+      "id": "rfnd_1",
+      "payment_id": "pay_1",
+      "amount": 30000,
+      "status": "processed",
+      "receipt": "b-3:pay_1",
+      "created_at": 1793700000
+     },
+     "eventId": "evt_1"
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [],
+    "results": [
+     false
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [
+      {
+       "paymentId": "pay_1",
+       "kind": "expired",
+       "note": "n",
+       "atMs": 1793700000000,
+       "amountPaise": 30000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "untold: a fractional rupee amount",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundIssues": [
+     {
+      "paymentId": "pay_1",
+      "kind": "unknown",
+      "note": "n",
+      "atMs": 1793700000000,
+      "amountPaise": 1250
+     }
+    ]
+   },
+   "script": {
+    "listRefunds": [
+     {
+      "ok": [
+       {
+        "id": "rfnd_1",
+        "payment_id": "pay_1",
+        "amount": 1250,
+        "status": "processed",
+        "receipt": "b-3:pay_1",
+        "created_at": 1793700000
+       }
+      ]
+     }
+    ],
+    "tellOutcome": [
+     "not_sent"
+    ]
+   },
+   "steps": [
+    {
+     "op": "recheck"
+    }
+   ],
+   "outcome": {
+    "calls": [
+     {
+      "op": "listRefunds",
+      "id": "pay_1"
+     }
+    ],
+    "lines": [
+     {
+      "log": {
+       "case": "b-3",
+       "phone": "+919876500001",
+       "action": "refund",
+       "outcome": "confirmed",
+       "inputs": {
+        "paymentId": "pay_1",
+        "recheck": true
+       },
+       "more": {
+        "refs": {
+         "paymentId": "pay_1",
+         "amountPaise": "1250",
+         "refundId": "rfnd_1"
+        },
+        "notes": "looked again: the payments service's own list now shows the refund. It was not sent again"
+       }
+      }
+     },
+     {
+      "tellOutcome": {
+       "template": "refund_confirmed",
+       "refundInr": 12.5,
+       "answered": "not_sent"
+      }
+     }
+    ],
+    "results": [
+     {
+      "settled": 1,
+      "looked": 1,
+      "told": 0
+     }
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundIssues": [],
+     "refundsUntold": [
+      {
+       "paymentId": "pay_1",
+       "refundId": "rfnd_1",
+       "amountInr": 12.5,
+       "sinceMs": 1793700000000,
+       "tries": 1,
+       "lastAtMs": 1793700000000,
+       "last": "not_sent",
+       "retryAtMs": 1793700000000
+      }
+     ]
+    }
+   }
+  },
+  {
+   "name": "untold: the retry waits grow",
+   "accounting": false,
+   "now": 1793700000000,
+   "case": {
+    "id": "b-3",
+    "customer": "+919876500001",
+    "pending": [],
+    "refundsUntold": [
+     {
+      "paymentId": "pay_1",
+      "refundId": "r",
+      "amountInr": 12.05,
+      "sinceMs": 1793700000000,
+      "tries": 6,
+      "lastAtMs": 1793700000000,
+      "last": "not_sent",
+      "retryAtMs": 1793700000000
+     }
+    ]
+   },
+   "script": {
+    "tellOutcome": [
+     "not_sent"
+    ]
+   },
+   "steps": [
+    {
+     "op": "sweep",
+     "now": 1793700000000
+    }
+   ],
+   "outcome": {
+    "calls": [],
+    "lines": [
+     {
+      "tellOutcome": {
+       "template": "refund_confirmed",
+       "refundInr": 12.05,
+       "answered": "not_sent"
+      }
+     }
+    ],
+    "results": [
+     null
+    ],
+    "final": {
+     "id": "b-3",
+     "customer": "+919876500001",
+     "pending": [],
+     "refundsUntold": [
+      {
+       "paymentId": "pay_1",
+       "refundId": "r",
+       "amountInr": 12.05,
+       "sinceMs": 1793700000000,
+       "tries": 7,
+       "lastAtMs": 1793700000000,
+       "last": "not_sent",
+       "retryAtMs": 1793721600000
+      }
+     ]
+    }
+   }
+  }
+ ]
+}

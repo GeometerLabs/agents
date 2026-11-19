@@ -1,0 +1,1592 @@
+{
+ "cases": [
+  {
+   "name": "ensureLink: none yet, create, read back",
+   "config": {
+    "req": {
+     "reference": "b-3",
+     "amountPaise": 60000,
+     "description": "Deposit"
+    },
+    "agentToken": "t"
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "accept_partial": true,
+      "amount": 60000,
+      "amount_paid": 0,
+      "callback_method": "get",
+      "callback_url": "https://example-callback-url.com/",
+      "cancelled_at": 0,
+      "created_at": 1591097057,
+      "currency": "INR",
+      "customer": {
+       "contact": "<phone>",
+       "email": "<email>",
+       "name": "<name>"
+      },
+      "description": "Payment for policy no #23456",
+      "expire_by": 1691097057,
+      "expired_at": 0,
+      "first_min_partial_amount": 100,
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "notes": {
+       "policy_name": "Jeevan Bima"
+      },
+      "notify": {
+       "email": true,
+       "sms": true
+      },
+      "payments": null,
+      "reference_id": "b-3",
+      "reminder_enable": true,
+      "reminders": [],
+      "short_url": "https://rzp.io/i/nxrHnLJ",
+      "status": "created",
+      "updated_at": 1591097057,
+      "user_id": ""
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": [
+       {
+        "accept_partial": true,
+        "amount": 60000,
+        "amount_paid": 0,
+        "callback_method": "get",
+        "callback_url": "https://example-callback-url.com/",
+        "cancelled_at": 0,
+        "created_at": 1591097057,
+        "currency": "INR",
+        "customer": {
+         "contact": "<phone>",
+         "email": "<email>",
+         "name": "<name>"
+        },
+        "description": "Payment for policy no #23456",
+        "expire_by": 1691097057,
+        "expired_at": 0,
+        "first_min_partial_amount": 100,
+        "id": "plink_ExjpAUN3gVHrPJ",
+        "notes": {
+         "policy_name": "Jeevan Bima"
+        },
+        "notify": {
+         "email": true,
+         "sms": true
+        },
+        "payments": null,
+        "reference_id": "b-3",
+        "reminder_enable": true,
+        "reminders": [],
+        "short_url": "https://rzp.io/i/nxrHnLJ",
+        "status": "created",
+        "updated_at": 1591097057,
+        "user_id": ""
+       }
+      ]
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "authorization": "Bearer t",
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "authorization": "Bearer t",
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":false,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "authorization": "Bearer t",
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "link": {
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "reference_id": "b-3",
+      "amount": 60000,
+      "currency": "INR",
+      "description": "Payment for policy no #23456",
+      "status": "created",
+      "pay_url": "https://rzp.io/i/nxrHnLJ",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1591097057,
+      "part_payments": true,
+      "min_first_payment": 100
+     }
+    }
+   }
+  },
+  {
+   "name": "ensureLink: an open link for the amount already exists",
+   "config": {
+    "req": {
+     "reference": "b-3",
+     "amountPaise": 60000,
+     "description": "Deposit"
+    },
+    "agentToken": ""
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "payment_links": [
+       {
+        "accept_partial": true,
+        "amount": 60000,
+        "amount_paid": 0,
+        "callback_method": "get",
+        "callback_url": "https://example-callback-url.com/",
+        "cancelled_at": 0,
+        "created_at": 1591097057,
+        "currency": "INR",
+        "customer": {
+         "contact": "<phone>",
+         "email": "<email>",
+         "name": "<name>"
+        },
+        "description": "Payment for policy no #23456",
+        "expire_by": 1691097057,
+        "expired_at": 0,
+        "first_min_partial_amount": 100,
+        "id": "plink_ExjpAUN3gVHrPJ",
+        "notes": {
+         "policy_name": "Jeevan Bima"
+        },
+        "notify": {
+         "email": true,
+         "sms": true
+        },
+        "payments": null,
+        "reference_id": "b-3",
+        "reminder_enable": true,
+        "reminders": [],
+        "short_url": "https://rzp.io/i/nxrHnLJ",
+        "status": "created",
+        "updated_at": 1591097057,
+        "user_id": ""
+       }
+      ]
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "link": {
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "reference_id": "b-3",
+      "amount": 60000,
+      "currency": "INR",
+      "description": "Payment for policy no #23456",
+      "status": "created",
+      "pay_url": "https://rzp.io/i/nxrHnLJ",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1591097057,
+      "part_payments": true,
+      "min_first_payment": 100
+     }
+    }
+   }
+  },
+  {
+   "name": "ensureLink: a cancelled link and one for another amount do not count",
+   "config": {
+    "req": {
+     "reference": "b-3",
+     "amountPaise": 60000,
+     "description": "Deposit"
+    },
+    "agentToken": ""
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "payment_links": [
+       {
+        "accept_partial": true,
+        "amount": 60000,
+        "amount_paid": 0,
+        "callback_method": "get",
+        "callback_url": "https://example-callback-url.com/",
+        "cancelled_at": 0,
+        "created_at": 1591097057,
+        "currency": "INR",
+        "customer": {
+         "contact": "<phone>",
+         "email": "<email>",
+         "name": "<name>"
+        },
+        "description": "Payment for policy no #23456",
+        "expire_by": 1691097057,
+        "expired_at": 0,
+        "first_min_partial_amount": 100,
+        "id": "plink_ExjpAUN3gVHrPJ",
+        "notes": {
+         "policy_name": "Jeevan Bima"
+        },
+        "notify": {
+         "email": true,
+         "sms": true
+        },
+        "payments": null,
+        "reference_id": "b-3",
+        "reminder_enable": true,
+        "reminders": [],
+        "short_url": "https://rzp.io/i/nxrHnLJ",
+        "status": "expired",
+        "updated_at": 1591097057,
+        "user_id": ""
+       },
+       {
+        "accept_partial": true,
+        "amount": 100,
+        "amount_paid": 0,
+        "callback_method": "get",
+        "callback_url": "https://example-callback-url.com/",
+        "cancelled_at": 0,
+        "created_at": 1591097057,
+        "currency": "INR",
+        "customer": {
+         "contact": "<phone>",
+         "email": "<email>",
+         "name": "<name>"
+        },
+        "description": "Payment for policy no #23456",
+        "expire_by": 1691097057,
+        "expired_at": 0,
+        "first_min_partial_amount": 100,
+        "id": "plink_ExjpAUN3gVHrPJ",
+        "notes": {
+         "policy_name": "Jeevan Bima"
+        },
+        "notify": {
+         "email": true,
+         "sms": true
+        },
+        "payments": null,
+        "reference_id": "b-3",
+        "reminder_enable": true,
+        "reminders": [],
+        "short_url": "https://rzp.io/i/nxrHnLJ",
+        "status": "created",
+        "updated_at": 1591097057,
+        "user_id": ""
+       }
+      ]
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "accept_partial": true,
+      "amount": 60000,
+      "amount_paid": 0,
+      "callback_method": "get",
+      "callback_url": "https://example-callback-url.com/",
+      "cancelled_at": 0,
+      "created_at": 1591097057,
+      "currency": "INR",
+      "customer": {
+       "contact": "<phone>",
+       "email": "<email>",
+       "name": "<name>"
+      },
+      "description": "Payment for policy no #23456",
+      "expire_by": 1691097057,
+      "expired_at": 0,
+      "first_min_partial_amount": 100,
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "notes": {
+       "policy_name": "Jeevan Bima"
+      },
+      "notify": {
+       "email": true,
+       "sms": true
+      },
+      "payments": null,
+      "reference_id": "b-3",
+      "reminder_enable": true,
+      "reminders": [],
+      "short_url": "https://rzp.io/i/nxrHnLJ",
+      "status": "created",
+      "updated_at": 1591097057,
+      "user_id": ""
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": [
+       {
+        "accept_partial": true,
+        "amount": 60000,
+        "amount_paid": 0,
+        "callback_method": "get",
+        "callback_url": "https://example-callback-url.com/",
+        "cancelled_at": 0,
+        "created_at": 1591097057,
+        "currency": "INR",
+        "customer": {
+         "contact": "<phone>",
+         "email": "<email>",
+         "name": "<name>"
+        },
+        "description": "Payment for policy no #23456",
+        "expire_by": 1691097057,
+        "expired_at": 0,
+        "first_min_partial_amount": 100,
+        "id": "plink_ExjpAUN3gVHrPJ",
+        "notes": {
+         "policy_name": "Jeevan Bima"
+        },
+        "notify": {
+         "email": true,
+         "sms": true
+        },
+        "payments": null,
+        "reference_id": "b-3",
+        "reminder_enable": true,
+        "reminders": [],
+        "short_url": "https://rzp.io/i/nxrHnLJ",
+        "status": "expired",
+        "updated_at": 1591097057,
+        "user_id": ""
+       },
+       {
+        "accept_partial": true,
+        "amount": 60000,
+        "amount_paid": 0,
+        "callback_method": "get",
+        "callback_url": "https://example-callback-url.com/",
+        "cancelled_at": 0,
+        "created_at": 1591097057,
+        "currency": "INR",
+        "customer": {
+         "contact": "<phone>",
+         "email": "<email>",
+         "name": "<name>"
+        },
+        "description": "Payment for policy no #23456",
+        "expire_by": 1691097057,
+        "expired_at": 0,
+        "first_min_partial_amount": 100,
+        "id": "plink_ExjpAUN3gVHrPJ",
+        "notes": {
+         "policy_name": "Jeevan Bima"
+        },
+        "notify": {
+         "email": true,
+         "sms": true
+        },
+        "payments": null,
+        "reference_id": "b-3",
+        "reminder_enable": true,
+        "reminders": [],
+        "short_url": "https://rzp.io/i/nxrHnLJ",
+        "status": "created",
+        "updated_at": 1591097057,
+        "user_id": ""
+       }
+      ]
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":false,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "link": {
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "reference_id": "b-3",
+      "amount": 60000,
+      "currency": "INR",
+      "description": "Payment for policy no #23456",
+      "status": "created",
+      "pay_url": "https://rzp.io/i/nxrHnLJ",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1591097057,
+      "part_payments": true,
+      "min_first_payment": 100
+     }
+    }
+   }
+  },
+  {
+   "name": "ensureLink: part payments with a minimum",
+   "config": {
+    "req": {
+     "reference": "b-3",
+     "amountPaise": 60000,
+     "description": "Deposit",
+     "acceptPartial": true,
+     "minPartialPaise": 25000
+    },
+    "agentToken": ""
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "accept_partial": true,
+      "amount": 60000,
+      "amount_paid": 0,
+      "callback_method": "get",
+      "callback_url": "https://example-callback-url.com/",
+      "cancelled_at": 0,
+      "created_at": 1591097057,
+      "currency": "INR",
+      "customer": {
+       "contact": "<phone>",
+       "email": "<email>",
+       "name": "<name>"
+      },
+      "description": "Payment for policy no #23456",
+      "expire_by": 1691097057,
+      "expired_at": 0,
+      "first_min_partial_amount": 100,
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "notes": {
+       "policy_name": "Jeevan Bima"
+      },
+      "notify": {
+       "email": true,
+       "sms": true
+      },
+      "payments": null,
+      "reference_id": "b-3",
+      "reminder_enable": true,
+      "reminders": [],
+      "short_url": "https://rzp.io/i/nxrHnLJ",
+      "status": "created",
+      "updated_at": 1591097057,
+      "user_id": ""
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": [
+       {
+        "accept_partial": true,
+        "amount": 60000,
+        "amount_paid": 0,
+        "callback_method": "get",
+        "callback_url": "https://example-callback-url.com/",
+        "cancelled_at": 0,
+        "created_at": 1591097057,
+        "currency": "INR",
+        "customer": {
+         "contact": "<phone>",
+         "email": "<email>",
+         "name": "<name>"
+        },
+        "description": "Payment for policy no #23456",
+        "expire_by": 1691097057,
+        "expired_at": 0,
+        "first_min_partial_amount": 100,
+        "id": "plink_ExjpAUN3gVHrPJ",
+        "notes": {
+         "policy_name": "Jeevan Bima"
+        },
+        "notify": {
+         "email": true,
+         "sms": true
+        },
+        "payments": null,
+        "reference_id": "b-3",
+        "reminder_enable": true,
+        "reminders": [],
+        "short_url": "https://rzp.io/i/nxrHnLJ",
+        "status": "created",
+        "updated_at": 1591097057,
+        "user_id": ""
+       }
+      ]
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":true,\"first_min_partial_amount\":25000,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "link": {
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "reference_id": "b-3",
+      "amount": 60000,
+      "currency": "INR",
+      "description": "Payment for policy no #23456",
+      "status": "created",
+      "pay_url": "https://rzp.io/i/nxrHnLJ",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1591097057,
+      "part_payments": true,
+      "min_first_payment": 100
+     }
+    }
+   }
+  },
+  {
+   "name": "ensureLink: part payments, default minimum",
+   "config": {
+    "req": {
+     "reference": "b-3",
+     "amountPaise": 60000,
+     "description": "Deposit",
+     "acceptPartial": true
+    },
+    "agentToken": ""
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "accept_partial": true,
+      "amount": 60000,
+      "amount_paid": 0,
+      "callback_method": "get",
+      "callback_url": "https://example-callback-url.com/",
+      "cancelled_at": 0,
+      "created_at": 1591097057,
+      "currency": "INR",
+      "customer": {
+       "contact": "<phone>",
+       "email": "<email>",
+       "name": "<name>"
+      },
+      "description": "Payment for policy no #23456",
+      "expire_by": 1691097057,
+      "expired_at": 0,
+      "first_min_partial_amount": 100,
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "notes": {
+       "policy_name": "Jeevan Bima"
+      },
+      "notify": {
+       "email": true,
+       "sms": true
+      },
+      "payments": null,
+      "reference_id": "b-3",
+      "reminder_enable": true,
+      "reminders": [],
+      "short_url": "https://rzp.io/i/nxrHnLJ",
+      "status": "created",
+      "updated_at": 1591097057,
+      "user_id": ""
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": [
+       {
+        "accept_partial": true,
+        "amount": 60000,
+        "amount_paid": 0,
+        "callback_method": "get",
+        "callback_url": "https://example-callback-url.com/",
+        "cancelled_at": 0,
+        "created_at": 1591097057,
+        "currency": "INR",
+        "customer": {
+         "contact": "<phone>",
+         "email": "<email>",
+         "name": "<name>"
+        },
+        "description": "Payment for policy no #23456",
+        "expire_by": 1691097057,
+        "expired_at": 0,
+        "first_min_partial_amount": 100,
+        "id": "plink_ExjpAUN3gVHrPJ",
+        "notes": {
+         "policy_name": "Jeevan Bima"
+        },
+        "notify": {
+         "email": true,
+         "sms": true
+        },
+        "payments": null,
+        "reference_id": "b-3",
+        "reminder_enable": true,
+        "reminders": [],
+        "short_url": "https://rzp.io/i/nxrHnLJ",
+        "status": "created",
+        "updated_at": 1591097057,
+        "user_id": ""
+       }
+      ]
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":true,\"first_min_partial_amount\":100,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "link": {
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "reference_id": "b-3",
+      "amount": 60000,
+      "currency": "INR",
+      "description": "Payment for policy no #23456",
+      "status": "created",
+      "pay_url": "https://rzp.io/i/nxrHnLJ",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1591097057,
+      "part_payments": true,
+      "min_first_payment": 100
+     }
+    }
+   }
+  },
+  {
+   "name": "ensureLink: the reply to the create was lost, the second try finds it",
+   "config": {
+    "req": {
+     "reference": "b-3",
+     "amountPaise": 60000,
+     "description": "Deposit"
+    },
+    "agentToken": ""
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "cut": true
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": [
+       {
+        "accept_partial": true,
+        "amount": 60000,
+        "amount_paid": 0,
+        "callback_method": "get",
+        "callback_url": "https://example-callback-url.com/",
+        "cancelled_at": 0,
+        "created_at": 1591097057,
+        "currency": "INR",
+        "customer": {
+         "contact": "<phone>",
+         "email": "<email>",
+         "name": "<name>"
+        },
+        "description": "Payment for policy no #23456",
+        "expire_by": 1691097057,
+        "expired_at": 0,
+        "first_min_partial_amount": 100,
+        "id": "plink_ExjpAUN3gVHrPJ",
+        "notes": {
+         "policy_name": "Jeevan Bima"
+        },
+        "notify": {
+         "email": true,
+         "sms": true
+        },
+        "payments": null,
+        "reference_id": "b-3",
+        "reminder_enable": true,
+        "reminders": [],
+        "short_url": "https://rzp.io/i/nxrHnLJ",
+        "status": "created",
+        "updated_at": 1591097057,
+        "user_id": ""
+       }
+      ]
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":false,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "link": {
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "reference_id": "b-3",
+      "amount": 60000,
+      "currency": "INR",
+      "description": "Payment for policy no #23456",
+      "status": "created",
+      "pay_url": "https://rzp.io/i/nxrHnLJ",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1591097057,
+      "part_payments": true,
+      "min_first_payment": 100
+     }
+    }
+   }
+  },
+  {
+   "name": "ensureLink: read back shows nothing twice, then the last look finds it",
+   "config": {
+    "req": {
+     "reference": "b-3",
+     "amountPaise": 60000,
+     "description": "Deposit"
+    },
+    "agentToken": ""
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "accept_partial": true,
+      "amount": 60000,
+      "amount_paid": 0,
+      "callback_method": "get",
+      "callback_url": "https://example-callback-url.com/",
+      "cancelled_at": 0,
+      "created_at": 1591097057,
+      "currency": "INR",
+      "customer": {
+       "contact": "<phone>",
+       "email": "<email>",
+       "name": "<name>"
+      },
+      "description": "Payment for policy no #23456",
+      "expire_by": 1691097057,
+      "expired_at": 0,
+      "first_min_partial_amount": 100,
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "notes": {
+       "policy_name": "Jeevan Bima"
+      },
+      "notify": {
+       "email": true,
+       "sms": true
+      },
+      "payments": null,
+      "reference_id": "b-3",
+      "reminder_enable": true,
+      "reminders": [],
+      "short_url": "https://rzp.io/i/nxrHnLJ",
+      "status": "created",
+      "updated_at": 1591097057,
+      "user_id": ""
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "accept_partial": true,
+      "amount": 60000,
+      "amount_paid": 0,
+      "callback_method": "get",
+      "callback_url": "https://example-callback-url.com/",
+      "cancelled_at": 0,
+      "created_at": 1591097057,
+      "currency": "INR",
+      "customer": {
+       "contact": "<phone>",
+       "email": "<email>",
+       "name": "<name>"
+      },
+      "description": "Payment for policy no #23456",
+      "expire_by": 1691097057,
+      "expired_at": 0,
+      "first_min_partial_amount": 100,
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "notes": {
+       "policy_name": "Jeevan Bima"
+      },
+      "notify": {
+       "email": true,
+       "sms": true
+      },
+      "payments": null,
+      "reference_id": "b-3",
+      "reminder_enable": true,
+      "reminders": [],
+      "short_url": "https://rzp.io/i/nxrHnLJ",
+      "status": "created",
+      "updated_at": 1591097057,
+      "user_id": ""
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": [
+       {
+        "accept_partial": true,
+        "amount": 60000,
+        "amount_paid": 0,
+        "callback_method": "get",
+        "callback_url": "https://example-callback-url.com/",
+        "cancelled_at": 0,
+        "created_at": 1591097057,
+        "currency": "INR",
+        "customer": {
+         "contact": "<phone>",
+         "email": "<email>",
+         "name": "<name>"
+        },
+        "description": "Payment for policy no #23456",
+        "expire_by": 1691097057,
+        "expired_at": 0,
+        "first_min_partial_amount": 100,
+        "id": "plink_ExjpAUN3gVHrPJ",
+        "notes": {
+         "policy_name": "Jeevan Bima"
+        },
+        "notify": {
+         "email": true,
+         "sms": true
+        },
+        "payments": null,
+        "reference_id": "b-3",
+        "reminder_enable": true,
+        "reminders": [],
+        "short_url": "https://rzp.io/i/nxrHnLJ",
+        "status": "created",
+        "updated_at": 1591097057,
+        "user_id": ""
+       }
+      ]
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":false,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":false,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "link": {
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "reference_id": "b-3",
+      "amount": 60000,
+      "currency": "INR",
+      "description": "Payment for policy no #23456",
+      "status": "created",
+      "pay_url": "https://rzp.io/i/nxrHnLJ",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1591097057,
+      "part_payments": true,
+      "min_first_payment": 100
+     }
+    }
+   }
+  },
+  {
+   "name": "ensureLink: nothing ever shows",
+   "config": {
+    "req": {
+     "reference": "b-3",
+     "amountPaise": 60000,
+     "description": "Deposit"
+    },
+    "agentToken": ""
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "accept_partial": true,
+      "amount": 60000,
+      "amount_paid": 0,
+      "callback_method": "get",
+      "callback_url": "https://example-callback-url.com/",
+      "cancelled_at": 0,
+      "created_at": 1591097057,
+      "currency": "INR",
+      "customer": {
+       "contact": "<phone>",
+       "email": "<email>",
+       "name": "<name>"
+      },
+      "description": "Payment for policy no #23456",
+      "expire_by": 1691097057,
+      "expired_at": 0,
+      "first_min_partial_amount": 100,
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "notes": {
+       "policy_name": "Jeevan Bima"
+      },
+      "notify": {
+       "email": true,
+       "sms": true
+      },
+      "payments": null,
+      "reference_id": "b-3",
+      "reminder_enable": true,
+      "reminders": [],
+      "short_url": "https://rzp.io/i/nxrHnLJ",
+      "status": "created",
+      "updated_at": 1591097057,
+      "user_id": ""
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "accept_partial": true,
+      "amount": 60000,
+      "amount_paid": 0,
+      "callback_method": "get",
+      "callback_url": "https://example-callback-url.com/",
+      "cancelled_at": 0,
+      "created_at": 1591097057,
+      "currency": "INR",
+      "customer": {
+       "contact": "<phone>",
+       "email": "<email>",
+       "name": "<name>"
+      },
+      "description": "Payment for policy no #23456",
+      "expire_by": 1691097057,
+      "expired_at": 0,
+      "first_min_partial_amount": 100,
+      "id": "plink_ExjpAUN3gVHrPJ",
+      "notes": {
+       "policy_name": "Jeevan Bima"
+      },
+      "notify": {
+       "email": true,
+       "sms": true
+      },
+      "payments": null,
+      "reference_id": "b-3",
+      "reminder_enable": true,
+      "reminders": [],
+      "short_url": "https://rzp.io/i/nxrHnLJ",
+      "status": "created",
+      "updated_at": 1591097057,
+      "user_id": ""
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":false,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":false,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "link": null
+    }
+   }
+  },
+  {
+   "name": "ensureLink: Guard says the licence is suspended",
+   "config": {
+    "req": {
+     "reference": "b-3",
+     "amountPaise": 60000,
+     "description": "Deposit"
+    },
+    "agentToken": ""
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 402,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: subscription_suspended: the licence for shop glow-salon is in its wind-down, so create_link (new work) is refused. Refunds, cancellations, reads and existing bookings still go through",
+      "guard": {
+       "decision": "deny",
+       "code": "subscription_suspended",
+       "reason_code": "subscription_suspended",
+       "sent": "no",
+       "retry": "no",
+       "reason": "subscription_suspended: the licence for shop glow-salon is in its wind-down, so create_link (new work) is refused. Refunds, cancellations, reads and existing bookings still go through",
+       "detail": {
+        "state": "wind_down",
+        "shop": "glow-salon",
+        "operation": "create_link",
+        "lease_serial": "1796700000",
+        "judged_at": 1797746400,
+        "stop_at": 1799260200,
+        "export_until": null
+       }
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":false,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "link": null,
+     "error": "refused by the Guard: subscription_suspended: the licence for shop glow-salon is in its wind-down, so create_link (new work) is refused. Refunds, cancellations, reads and existing bookings still go through",
+     "suspended": true
+    }
+   }
+  },
+  {
+   "name": "ensureLink: Guard refuses the amount",
+   "config": {
+    "req": {
+     "reference": "b-3",
+     "amountPaise": 60000,
+     "description": "Deposit"
+    },
+    "agentToken": ""
+   },
+   "replies": [
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 403,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: deposit-amount: amount 300000 is above the highest allowed value, 200000",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "sent": "no",
+       "retry": "no",
+       "reason": "deposit-amount: amount 300000 is above the highest allowed value, 200000",
+       "detail": null
+      }
+     }
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    },
+    {
+     "status": 403,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "error": "refused by the Guard: deposit-amount: amount 300000 is above the highest allowed value, 200000",
+      "guard": {
+       "decision": "deny",
+       "code": "refused_by_policy",
+       "sent": "no",
+       "retry": "no",
+       "reason": "deposit-amount: amount 300000 is above the highest allowed value, 200000",
+       "detail": null
+      }
+     }
+    },
+    {
+     "status": 200,
+     "body": {
+      "payment_links": []
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":false,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "POST",
+     "uri": "/v1/payment_links",
+     "headers": {
+      "content-type": "application/json",
+      "accept": "application/json"
+     },
+     "body": "{\"amount\":60000,\"currency\":\"INR\",\"reference_id\":\"b-3\",\"description\":\"Deposit\",\"accept_partial\":false,\"notify\":{\"sms\":false,\"email\":false},\"reminder_enable\":false}"
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "link": null,
+     "error": "refused by the Guard: deposit-amount: amount 300000 is above the highest allowed value, 200000"
+    }
+   }
+  },
+  {
+   "name": "ensureLink: the service is down (500)",
+   "config": {
+    "req": {
+     "reference": "b-3",
+     "amountPaise": 60000,
+     "description": "Deposit"
+    },
+    "agentToken": ""
+   },
+   "replies": [
+    {
+     "status": 500,
+     "body": {
+      "error": {
+       "description": "boom"
+      }
+     },
+     "headers": {}
+    },
+    {
+     "status": 500,
+     "body": {
+      "error": {
+       "description": "boom"
+      }
+     },
+     "headers": {}
+    },
+    {
+     "status": 500,
+     "body": {
+      "error": {
+       "description": "boom"
+      }
+     },
+     "headers": {}
+    }
+   ],
+   "requests": [
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    },
+    {
+     "method": "GET",
+     "uri": "/v1/payment_links?reference_id=b-3",
+     "headers": {
+      "accept": "application/json"
+     },
+     "body": ""
+    }
+   ],
+   "outcome": {
+    "ok": {
+     "link": null,
+     "error": "boom"
+    }
+   }
+  }
+ ]
+}
