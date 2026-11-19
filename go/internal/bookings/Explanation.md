@@ -29,5 +29,6 @@ by 100000 after a restore and is kept where a thrown-away step left it, so a boo
 
 ## The ports
 
-`ports.go` holds the services a step calls (calendar, payments, messaging, books) as small interfaces mirroring the TypeScript ones and the names the guards stream gives its
-packages. Until those land, a step that needs one ends with `runtime.Unported` and its sentence. See Deferred.md.
+The services a step calls (calendar, payments, messaging, books) are the other streams' packages, typed with the TypeScript's method sets there; this package does not
+define a second copy of their interfaces (`ports.go` says how they will be handed in). Until they land, a step that needs one ends with `runtime.Unported` and its sentence.
+See Deferred.md.

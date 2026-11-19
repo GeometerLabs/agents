@@ -256,29 +256,6 @@ func (s *Store) TaskState(key string) (string, error) {
 	return state, err
 }
 
-// LastInboundAt is when this number last wrote (the 24-hour window), or nil.
-func (s *Store) LastInboundAt(phone string) (*int64, error) {
-	var at int64
-	err := s.db.QueryRow("SELECT last_inbound_at FROM window WHERE phone = ?", phone).Scan(&at)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &at, nil
-}
-
-// CompactTurns empties the payload of failed tasks that arrived before `beforeMs` (store.ts compactTurns: a failed message's words go with the retention; the row stays).
-func (s *Store) CompactTurns(beforeMs int64) (int, error) {
-	r, err := s.db.Exec("UPDATE tasks SET payload = '{}' WHERE state = 'failed' AND payload <> '{}' AND received_at < ?", beforeMs)
-	if err != nil {
-		return 0, err
-	}
-	n, _ := r.RowsAffected()
-	return int(n), nil
-}
-
 // StartAttempt counts one more attempt, saved at once, and returns the new number.
 func (s *Store) StartAttempt(id string) (int, error) {
 	var n int

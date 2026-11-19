@@ -1,9 +1,9 @@
 package bookings
 
 // A Bookings shop's settings.json, checked: the Go twin of templates/commerce/bookings/src/settings.ts `validateSettings`. Every problem is said in plain words, all at once, with
-// the TypeScript's sentences, so a builder reads the same refusal from either runtime. The blocks other modules own are read for what the runtime uses and checked for their
-// shape (`payment`: the module and a UPI shop's ID and payee; `approvers` and `assistant`: kept raw for the parts not ported yet); go/internal/bookings/Deferred.md lists what of
-// their own checks is not repeated here (the deployer checks the folder with the TypeScript readers before it writes it).
+// the TypeScript's sentences, so a builder reads the same refusal from either runtime (proved on testdata/settings-vectors.json). `payment` is checked as the providers' readers
+// check it (upi/link.ts vpaProblem, payeeProblem); `approvers` and `assistant` are checked for their shape and kept raw (Deferred.md: the deployer checks a folder with the
+// TypeScript readers before it writes it).
 //
 // Where Go and JavaScript differ: `name.trim()` is language.TrimJS (JavaScript's white space), a key's order in an error is the order the file names them (JavaScript's
 // Object.keys keeps insertion order; Go's map does not, so the unknown keys are read in the file's order by readOrdered).

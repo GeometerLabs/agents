@@ -12,7 +12,17 @@ still has every part, and a shop can be moved back to it.
 | The free starts of one service in the offer | `freeStarts` | they read the calendar; until it is wired the offer answers `calendarUnread: true`, the TypeScript's answer when its calendar cannot be read | the calendar port; `FreeOnDay` is ported |
 | A UPI shop's pay block on the page, "I have paid", and the owner's UPI items | `channel.ts`, `modules/payments/owner-marked` | the owner-marked ledger (`upi`) is carried raw, not modelled | the ledger in Go |
 | The owner page's Money section, the page's documents, the accountant's files | `modules/accounting` | the books are another stream's (go/internal/accounting, branch go-books-19nov); the documents route answers 404 and the accounting route 404 after the session check | the books package |
-| The `payment` block's own checks of a UPI ID and payee (`vpaProblem`, `payeeProblem`, `normaliseVpa`), the `approvers` block (`readApprovers`) and the `assistant` block (`readAssistantSettings`) | `modules/payments/providers/upi`, `modules/approvals/people.ts`, `modules/assistant/settings.ts` | those modules are not ported; their shapes are checked here and their blocks kept raw. The deployer checks a folder with the TypeScript readers before it writes it | ports of those readers |
+| The `approvers` block's checks (`readApprovers`) and the `assistant` block's (`readAssistantSettings`); the `payment` block's are ported (`vpaProblem`, `payeeProblem`, word for word) | `modules/approvals/people.ts`, `modules/assistant/settings.ts` | those modules are not ported; the blocks' shapes are checked here and the blocks kept raw. The deployer checks a folder with the TypeScript readers before it writes it | ports of those readers |
 | The shop's assistant for Bookings (its skill, cards, the morning line), the limits Bookings declares (`CHAT_LIMITS`) | `src/assistant.ts`, `src/chat-limits.ts` | slice 5 | the shared assistant package grown for a second template |
 | The customer's chat on the page (`/internal/channel/chat`, `chat-id`, `chat-voice`) | `modules/channels/chat*.ts` | slice 4 | the chat's state and the customer's talk with the model |
 | The monthly report and the licence notices | `report/`, `server/licence.ts` | the report is another stream's (go/internal/report) | the report package |
+| The day's compact of finished conversations' words (`core.ts compact`, `compactStore`, `store.compactTurns`) | `modules/runtime/core.ts` | the words it removes (channel outbox, a page's typed name) are in blocks not modelled yet | the channel state in Go |
+
+## Reads that answer 200 with LESS than the TypeScript (said here so nobody reads them as equal)
+
+| Route | Go answers now | TypeScript also gives |
+|-------|----------------|-----------------------|
+| `GET /internal/channel/owner-limits`, `GET /internal/limit-changes` | `limits: []` (the listings shop's empty declaration) and the saved changes | the limits Bookings declares (`src/chat-limits.ts` CHAT_LIMITS) with their values in force; the owner's changes to them |
+| `GET /internal/channel/owner` | the shop, the services, the late-cancellation and calendar items, the coming week | the UPI items (deposit, late deposit, refund owed), the Money section (`money`), the assistant's `app` view |
+| `GET /internal/channel/request` | status, ref, service, times, deposit, a gateway's link, the flags, the page's messages, an asked refund | a UPI shop's `pay` block (and so `canSayPaid` true), a refund owed or sent on a UPI shop |
+| `GET /internal/channel/offer?service=` | the shop and its services, `days: []`, `calendarUnread: true` | the free starts per day |

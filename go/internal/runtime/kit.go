@@ -15,7 +15,6 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/access"
 	"github.com/GeometerLabs/agents/go/internal/budget"
-	"github.com/GeometerLabs/agents/go/internal/signing"
 	"github.com/GeometerLabs/agents/go/internal/store"
 )
 
@@ -237,9 +236,6 @@ func (r *Runtime) endTask(ev map[string]any, taskID string, end *EndTask) error 
 	return nil
 }
 
-// GivenUp says whether the runtime gave up waiting for this service's Guard in this outage (core.ts givenUp).
-func (r *Runtime) GivenUp(service string) bool { return r.kitRun.givenUp[service] }
-
 // SubmitKit saves events as tasks with the TypeScript's keys (events.go EventKey), and opens the 24-hour window for a message (store.ts saveEvents), all or nothing.
 func (r *Runtime) SubmitKit(events []map[string]any) (saved, duplicates int, err error) {
 	keys, kinds, payloads := make([]string, len(events)), make([]string, len(events)), make([]string, len(events))
@@ -326,10 +322,4 @@ func (r *Runtime) TaskState(key string) string {
 		r.o.Log("A task's state could not be read: " + err.Error())
 	}
 	return st
-}
-
-// rawJSON is a value written as the codec writes it.
-func rawJSON(v any) json.RawMessage {
-	b, _ := signing.Marshal(v)
-	return b
 }
