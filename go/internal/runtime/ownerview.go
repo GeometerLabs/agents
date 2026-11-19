@@ -9,6 +9,8 @@ package runtime
 import (
 	"encoding/json"
 	"strings"
+
+	"github.com/GeometerLabs/agents/go/internal/memory"
 )
 
 type characterView struct {
@@ -60,29 +62,13 @@ type appView struct {
 	Listen      bool          `json:"listen"`
 }
 
-// inScopeNotes is memory.ts `inScope` for the owner: open, not past their end, with their text. Read only: this runtime keeps no notes of its own (go/TRIAL.md), but the ones the
-// TypeScript runtime kept in the same state are shown.
-func inScopeNotes(memory json.RawMessage, now int64) []noteView {
+// inScopeNotes is notes.ts `forApp`: memory.ts `inScope` for the owner (open, not past their end, with their text), as the page lists them.
+func inScopeNotes(raw json.RawMessage, now int64) []noteView {
 	out := []noteView{}
-	var m struct {
-		Notes []struct {
-			ID       string          `json:"id"`
-			Kind     string          `json:"kind"`
-			Text     string          `json:"text"`
-			Audience string          `json:"audience"`
-			UntilMs  *int64          `json:"untilMs"`
-			Closed   json.RawMessage `json:"closed"`
-			TextGone bool            `json:"textGone"`
-		} `json:"notes"`
-	}
-	if len(memory) == 0 || json.Unmarshal(memory, &m) != nil {
+	if len(raw) == 0 {
 		return out
 	}
-	for _, n := range m.Notes {
-		closed := len(n.Closed) > 0 && string(n.Closed) != "null"
-		if closed || n.TextGone || n.Text == "" || (n.UntilMs != nil && *n.UntilMs <= now) {
-			continue
-		}
+	for _, n := range memory.Parse(raw).InScope("owner", now) {
 		out = append(out, noteView{ID: n.ID, Text: n.Text, Kind: n.Kind, Audience: n.Audience, UntilMs: n.UntilMs})
 	}
 	return out

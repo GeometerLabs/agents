@@ -169,6 +169,32 @@ describe("the owner's listings: create, edit, confirm, sold, remove", () => {
     assert.equal((await s.call("/internal/channel/owner-listing", { owner: s.owner, body: { id: "r-8", op: { op: "remove", id: "l-2" } } })).status, 422);
   });
 
+  test("the Operator's place from setup is written into the listings on the first step that reaches the assistant, once; the owner's own place is never overwritten", async () => {
+    const s = await boot();
+    assert.deepEqual((await s.call("/internal/channel/listings")).body.shop, { visible: false }, "nothing is seeded before a step");
+    const r = await s.call("/internal/channel/events", { owner: s.owner, body: { events: [{ kind: "owner_message", id: "p-1", text: "help" }] } });
+    assert.equal(r.status, 200); await s.settle();
+    assert.deepEqual((await s.call("/internal/channel/listings")).body.shop, { visible: false, town: "Thrissur", pincode: "680001" });
+    const seeded = s.record().filter((e) => e.action === "listing");
+    assert.equal(seeded.length, 1);
+    await publish(s, "r-1", { op: "shop", visible: true, town: "Kochi" });
+    const again = await s.call("/internal/channel/events", { owner: s.owner, body: { events: [{ kind: "owner_message", id: "p-2", text: "help" }] } });
+    assert.equal(again.status, 200); await s.settle();
+    assert.deepEqual((await s.call("/internal/channel/listings")).body.shop, { visible: true, town: "Kochi", pincode: "680001" }, "the owner's place stays");
+    assert.equal(s.record().filter((e) => e.action === "listing").length, 2, "seeded once; the owner's own change is the second line");
+  });
+
+  test("the clock's beat seeds the place too, and makes the assistant", async () => {
+    const s = await makeShop({ tickSeconds: 1 }); await s.start();
+    try {
+      let shop: { town?: string } = {};
+      for (let i = 0; i < 60 && shop.town === undefined; i++) { await new Promise((r) => setTimeout(r, 100)); shop = (await s.call("/internal/channel/listings")).body.shop; }
+      assert.deepEqual(shop, { visible: false, town: "Thrissur", pincode: "680001" });
+      const line = s.record().find((e) => e.action === "listing");
+      assert.deepEqual(line, { action: "listing", outcome: "confirmed", refs: {} });
+    } finally { await s.stop(); s.cleanup(); }
+  });
+
   test("the switch and the place: the public read follows the switch", async () => {
     const s = await boot();
     await publish(s, "r-1");

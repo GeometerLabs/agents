@@ -70,6 +70,19 @@ async function seedChanges(s: Shop, changes: Record<string, unknown>[]): Promise
   await s.start();
 }
 
+describe("the clock's beat keeps the newest 30 settled limit changes (chat-limits.ts compactChanges)", () => {
+  test("35 settled and 2 pending: the 5 oldest settled go on the beat, the pending ones and every member of the rest stay", async () => {
+    const s = await makeShop({ tickSeconds: 1 }); shops.push(s); await s.start();
+    const changes = Array.from({ length: 37 }, (_, i) => ({ ...CHANGE, id: `l-${i + 1}`, state: i === 3 || i === 20 ? "pending" : i % 2 ? "active" : "failed", settledAtMs: 1_700_000_000_000 + i, extra: { kept: i } }));
+    await seedChanges(s, changes);
+    let left: { id: string }[] = [];
+    for (let i = 0; i < 80; i++) { left = (await s.call("/internal/limit-changes")).body.changes; if (left.length < 37) break; await new Promise((r) => setTimeout(r, 100)); }
+    assert.deepEqual(left.map((c) => c.id), changes.filter((c, i) => c.state === "pending" || i > 5).map((c) => c.id));
+    // every kept change is as it was, a settled one marked told on the beat (limits-card.ts unannounced: the shop declares no limit, so nothing is said)
+    assert.deepEqual(left, changes.filter((c, i) => c.state === "pending" || i > 5).map((c) => (c.state === "pending" ? c : { ...c, told: true })));
+  });
+});
+
 describe("the owner's limits page: GET/POST /internal/channel/owner-limits", () => {
   test("reading needs the owner's credential; a listings shop declares no limits; a link is no passkey session", async () => {
     const s = await boot();

@@ -20,6 +20,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
 	"github.com/GeometerLabs/agents/go/internal/testclock"
+	"github.com/GeometerLabs/agents/go/internal/understanding"
 )
 
 func main() {
@@ -91,7 +92,7 @@ func run(folder string) error {
 		}
 		defer acc.Close()
 	}
-	rt, err := runtime.New(runtime.Options{Client: client, Store: st, Access: acc, Model: runtime.NewModel(client.Config.Talk, log), RecordKey: key, Log: log, Now: now})
+	rt, err := runtime.New(runtime.Options{Client: client, Store: st, Access: acc, Model: understanding.NewModel(client.Config.Talk, log, "The talk is off", understanding.TalkTimeoutMs, understanding.TalkMaxTokens), RecordKey: key, Log: log, Now: now})
 	if err != nil {
 		return err
 	}
