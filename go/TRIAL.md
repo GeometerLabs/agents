@@ -298,3 +298,12 @@ parts move to `go-runtime.test.ts`; their directory-behaviour parts are the cont
 **TypeScript findings** (nothing changed): a feed's `updated` is never judged for age; `lang=` on `/search` falls back silently, so the `lang must be en, hi, ml or kn` refusal exists only over MCP;
 `rebuildIndex` has no caller; `Date.parse` of a date-time with no zone is local time (the container runs in UTC, so equal in production).
 **Found while porting** (Go, fixed): a response with a second, differently spelled `Content-Length` is refused by Node's client (curl accepts it).
+
+## Wave 1b, the deployer half (19 Nov 2026, `go-deploy-switch-19nov`)
+
+The deployer now runs listings shops on the Go programs: the listings template is **0.2.0** and its `template.json` says `"runtime": "go"`. The server compiles the programs from its own checkout in the Go image
+pinned by digest in `bundle/release.json` and runs them from a tiny `FROM scratch` image (`geo-go:<commit>`), so a shop container no longer carries Node. `listings` and `listings-shared` gained a `health <url>`
+and a `get <url>` subcommand (`internal/health`) because that image has no shell, wget or `test`. The whole account, and the real build numbers, are in `bundle/Explanation.md` ("How the Go runtimes reach a
+server") and `go/README.md`. **Not done in this stream:** the TypeScript listings runtime is still in the repository (kept versions run on it; the differential test needs it); the deletion follows the port
+of the last AI parts. TypeScript finding: `bundle/deploy.ts` used `HOME_DIR` in the check "is a new listings shop's name already in the shared volume" without importing it, so the first deploy of a new
+listings-only shop would have stopped on a ReferenceError; the check now asks the data volume itself (`sharedHasFolder`, `bundle/lib/listings-move.ts`) and the name is gone.
