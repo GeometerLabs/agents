@@ -25,7 +25,7 @@ const cancel = async (s: Shop, hash: string): Promise<void> => { await s.channel
 
 describe("the Guard's other answers to a refund", () => {
   for (const [name, builder] of [["refused_rule", true], ["provider_500", true], ["held_uncertain", true], ["unauthenticated", false], ["provider_unreachable", false]] as const) {
-    contract(`${name}: nothing is refunded, ${builder ? "it is not sent again and the builder is told" : "it is either tried again by itself or handed to the builder, and the owner is not asked"}`, async () => {
+    contract(`${name}: ${name === "provider_unreachable" ? "" : "nothing is refunded, "}${builder ? "it is not sent again and the builder is told" : name === "provider_unreachable" ? "the shop tries again by itself and the second try goes through, once" : "it is tried again by itself or handed to the builder, and the owner is not asked"}`, async () => {
       const { s, hash } = await paid();
       s.guards!.payments.answer(fixture("guard-responses.json")[name], { times: 1, match: refundMatch });
       await cancel(s, hash);
@@ -35,7 +35,8 @@ describe("the Guard's other answers to a refund", () => {
       assert.equal(st.refunds.waitingForOwner, 0, `the owner is not asked: ${JSON.stringify(st.refunds)}`);
       if (builder) { assert.equal(st.refunds.needBuilder.total, 1, JSON.stringify(st.refunds)); assert.equal(refundCalls(s).length, 1, "not sent again"); }
       else if (name !== "provider_unreachable") assert.ok(st.refunds.beingSentAgain + st.refunds.needBuilder.total >= 1, JSON.stringify(st.refunds));
-      assert.equal(s.guards!.standins.fakes.payments.refunds().length, 0, "and nothing was refunded");
+      if (name === "provider_unreachable") { assert.equal(refundCalls(s).length, 2, "tried again by itself"); assert.equal(s.guards!.standins.fakes.payments.refunds().length, 1, "and the second try went through: once"); }
+      else assert.equal(s.guards!.standins.fakes.payments.refunds().length, 0, "and nothing was refunded");
     });
   }
 });
