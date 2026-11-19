@@ -24,7 +24,10 @@ import (
 )
 
 // ExportFile is export.ts ExportFile.
-type ExportFile struct{ Name, Content string }
+type ExportFile struct {
+	Name    string `json:"name"`
+	Content string `json:"content"`
+}
 
 // ExportInput is export.ts ExportInput. Tally non-nil (even empty) makes the two best-effort Tally files. OldDueOf (Fees only) says a record entry belongs to an old due and which month ("" for none).
 type ExportInput struct {
@@ -119,9 +122,9 @@ func ExtraNamesOf(period string) ExtraNames {
 
 // The record's action names for the settlement job's lines. Persisted, so never renamed.
 const (
-	SettlementRead   = "settlements_read"
-	SettlementRow    = "settlement_row"
-	SettlementListed = "settlement_listed"
+	SettlementRead      = "settlements_read"
+	SettlementRowAction = "settlement_row"
+	SettlementListed    = "settlement_listed"
 )
 
 type settlementAcc struct {

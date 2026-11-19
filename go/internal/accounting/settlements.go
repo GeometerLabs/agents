@@ -45,7 +45,7 @@ type Payments interface {
 }
 
 // SettlementActions are the record's action names for these lines. Persisted, so never renamed.
-var SettlementActions = struct{ Read, Row, Listed string }{SettlementRead, SettlementRow, SettlementListed}
+var SettlementActions = struct{ Read, Row, Listed string }{SettlementRead, SettlementRowAction, SettlementListed}
 
 // SettlementsInput is SettlementsInput: the payments adapter, the books, the agent's own record (read for the days already read and the rows already listed, and appended to), who a system line is
 // filed under (no customer is ever named) and its language, the moment and the shop's time zone.
@@ -205,7 +205,7 @@ func readDay(i SettlementsInput, day zone.Date) SettlementsResult {
 			if len(money) == 0 {
 				notes = "already counted"
 			}
-			i.line(known, SettlementRow, "confirmed", notes, map[string]any{"settlement": *row.SettlementID, "entity": row.EntityID}, money)
+			i.line(known, SettlementRowAction, "confirmed", notes, map[string]any{"settlement": *row.SettlementID, "entity": row.EntityID}, money)
 			return nil
 		})
 		if err != nil {
