@@ -312,4 +312,43 @@ Bookings shop; owner notices outside the window go by template (owner-notices) a
 
 ## 8. Status of the suite (TypeScript, 19 Nov 2026)
 
-STATUS_PLACEHOLDER
+RESULT_PLACEHOLDER
+
+**Written and passing on TypeScript (the class "a" files they stand for):** accounting-pages (the documents route, the accountant's files route), approvals-runtime, channels, chat, guard-outage,
+last-slot (two customers for one time), licence (wind-down, the paid-before link, final stop, the owner's notice, Guard's 402, a torn file), limits-runtime, model-llm (the OpenAI
+wire request and the untrusted answer), owner-number-live (the 48-hour rule), page-link, payment-events, recovery, refund-held, restored (the id gap), server, store (the file's format
+and the record's trigger), ticker (hold expiry, completion and a reminder on the beat), unknown-outcome (the 504), upi (the owner's mark; the customer's claim), own-calendar, record-decisions
+(no customer words in the record).
+
+**Class "a" still to WRITE before the TypeScript unit tests are deleted (a later wave's first task; nothing here is lost until then, because the TypeScript tests still exist):**
+
+| Left | Why it was not done in this stream | What it needs |
+|------|------------------------------------|---------------|
+| voice-note, voice-notes, voice-notes-shared (C) | needs a fake speech Guard (runtime.json `speech`) | a 40-line fake in `guards.ts` |
+| assistant (O): the owner's fixed phrases on WhatsApp, own words, cards by tap with the digest | only the page's talk box is covered | `inbound(OWNER_NUMBER, ...)` plus the cards in `ownerView().app` |
+| buttons (F): the exact `interactive` payload (3 buttons, 10 rows, 20-character titles) and a tap read without a model | `tap()` exists in the harness and is not used yet | assert on `s.sent()` payloads |
+| capacity (F): two chairs / resources over HTTP, a move | needs settings with `resources` | a settings override |
+| talk, terms (O/C): the talk model's answer for a customer's words; the shop terms agreed on WhatsApp | no `talk` block or terms.json written by the harness yet | `runtime.talk`, `terms.json` |
+| step-breaker, ai-mode (C): a decision model that is down, the month's allowance | needs a second fake model and `allowance` in runtime.json | `runtime.decision`, `runtime.allowance` |
+| guard-responses (L, R): unauthenticated 401, provider_unreachable 502, provider 500, replayed, refused_rule, held_uncertain, denied_by_approver | the fixtures are there (`CapturedAnswer`), each needs its case | `payments.answer(fixture(...))` |
+| refund-held (L): expiry of the approval, "no longer honoured", "a hold with no approval id goes to the builder", "the deposit lowered after a booking paid" | need a clock for the Guard's 24-hour approval (the stub Guard runs on the real clock) | the stub Guard on the test clock, or a settings spec with a short approval time |
+| unknown-outcome, restored (R): kept through a restart, a refund that went out after the snapshot is not sent twice | multi-step restart cases | stop/start with `failNext("outcome_unknown")` |
+| recovery (R): `recheck_refund`, `ask_owner_again`'s notice | | owner notices on the WhatsApp stand-in |
+| owner-notices (O): every notice of the agent, by template, in each language | only "outside the window is a template" is covered | `s.sent(OWNER_NUMBER)` per scenario |
+| owner-signin (O): the WhatsApp link route (`owner_signin` event, `/internal/channel/owner-signin` GET and POST with `x-owner-signin`) | the passkey route is covered, the link route is not | `channelEvents([{kind:"owner_signin"}])` and the link read from the WhatsApp stand-in |
+| money-clarity, upi (M): the late claim windows (48 hours, 14 days), the refund the owner owes (`refund_owed`, "kept"), a screenshot | UPI marks only | UPI shop on the test clock |
+| report-monthly (D): the owner's WhatsApp message, the certificate and signed summary files, the quiet month, the licence's final stop | only the data file's making, once, is covered | read the WhatsApp stand-in |
+| runtime (R): steps one at a time in order, a failing step tried again then failed, a step that fails after its work saves nothing | the step seam is in-process only (`aroundStep`); no HTTP route makes a step throw | **unit** (the task runner of `modules/runtime/core.ts`: vectors), listed here so it is not dropped |
+| server (S): "readyz turns 503 when the store cannot be read" | needs a store that fails | **unit** for the Go store |
+| web push (route 24), chat identity (route 12), `owner-voice`, `chat-voice`, `owner-file`: | shared with the listings contract (push, owner-file) or need speech | the listings contract proves the shared code; run it against the Bookings shop in the port |
+
+The classes "b" (unit) are NOT started: their vectors (inputs and outputs made from the TypeScript) must be generated before the TypeScript is deleted; that is the port's first step per
+package. The list in section 6 is the checklist.
+
+## 9. TypeScript behaviour this suite found worth knowing (nothing was changed)
+
+* `templates/commerce/bookings/server/main.ts` did not take the test clock; it does now (the one runtime file touched; behaviour without the two variables is unchanged).
+* A payment of less than the link (the stand-in's `customerPays(amount)` escape hatch, which real Razorpay cannot do on a link that does not accept part payments) is accepted as the
+  deposit by the agent (`depositInr` becomes the amount paid). Only the stand-in can make it; recorded here so a port does not copy it by accident or "fix" it unasked.
+* A Guard's kill switch is deliberately NOT waited for (modules/core/faults.ts `waitsForGuard`); a Guard that is "busy" or unreachable is. The fake Guards model both (`down()`, `stopped()`).
+* `GET /internal/channel/request` answers `status: "not_held"` (not "refused") for a time that was taken, and "refused" with a reason for a request that never became a booking.
