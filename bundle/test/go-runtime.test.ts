@@ -11,7 +11,7 @@ import type { ShopDeploy } from "../generate/compose.ts";
 import { names } from "../generate/shop.ts";
 import { deploy } from "../deploy.ts";
 import { main } from "../geometer.ts";
-import { GO_CACHE_VOLUME, GO_PROGRAMS, ensureGoRuntimes, goBuilderOf, goImageFor, goRuntimeOf } from "../lib/go-build.ts";
+import { GO_BUILD_MEMORY_MB, GO_CACHE_VOLUME, GO_PROGRAMS, ensureGoRuntimes, goBuilderOf, goImageFor, goRuntimeOf, pruneGoImages } from "../lib/go-build.ts";
 import { fakeRunner, failed, ok } from "../lib/runner.ts";
 import type { RunOptions } from "../lib/runner.ts";
 import { loadState } from "../lib/state.ts";
@@ -138,7 +138,10 @@ test("the build: the pinned Go image by digest, the source read-only, the settin
   assert.ok(run.includes(`${join(REPO, "go")}:/src:ro`), "the source is mounted read-only");
   assert.ok(run.includes(`${GO_CACHE_VOLUME}:/go`), "a named volume keeps the modules and the build cache");
   for (const e of ["CGO_ENABLED=0", "GOTOOLCHAIN=local"]) assert.ok(run.includes(e), e);
+  assert.ok(run.includes(`${GO_BUILD_MEMORY_MB}m`) && run.includes("--memory") && run.includes("--memory-swap"), "the compile runs under a memory wall, swap off");
+  for (const e of ["GOMAXPROCS=1", "GOGC=50"]) assert.ok(run.includes(e), e);
   const script = run[run.indexOf("-c") + 1];
+  assert.ok(script.includes("go build -p 1 "), "one package at a time");
   for (const flag of ["-trimpath", "-mod=readonly", '-ldflags "-s -w"']) assert.ok(script.includes(flag), flag);
   assert.deepEqual(run.slice(run.indexOf("-c") + 3), [...GO_PROGRAMS], "every program of GO_PROGRAMS is built by the same command");
   assert.deepEqual(s.seen.context!.sort(), ["Dockerfile", "root/", "root/home/", "root/home/node/", ...GO_PROGRAMS.map((p) => `root/${p}`)].sort(), "the programs and the empty home folder, nothing else");
@@ -286,4 +289,32 @@ test("the deployer asks the Go shared process through its own program (the image
   assert.equal(await sharedHasFolder({ ...ctxGo, runner: there }, server, "new-shop"), false);
   const run = there.calls.find((c) => c.args[0] === "run")!.args;
   assert.ok(run.includes(`${volume}:/v:ro`) && run.includes("--network") && run.includes("none") && run.includes("--read-only"), run.join(" "));
+});
+
+test("a compile stopped by its memory wall says so and changes nothing", async () => {
+  const runner = fakeRunner((_c, args) => (args[0] === "image" ? failed("none", 1) : args[0] === "run" ? failed("Killed", 137) : ok()));
+  const r = await ensureGoRuntimes({ appDir: REPO, runner, docker: "docker", log: () => undefined });
+  assert.ok(!r.ok && new RegExp(`stopped at its memory limit of ${GO_BUILD_MEMORY_MB} MB so the shops keep running`, "u").test(r.reason) && /Nothing was changed/u.test(r.reason), JSON.stringify(r));
+  assert.ok(!runner.calls.some((c) => c.args[0] === "build"));
+});
+
+test("old geo-go images are removed, except this checkout's, any a container uses and any the deployed compose file names; a dry run only lists them", async () => {
+  const mine = goImageFor(REPO);
+  const lines: string[] = [];
+  const make = () => fakeRunner((_c, args) => {
+    if (args[0] === "image" && args[1] === "ls") return ok([mine, "geo-go:old1", "geo-go:running2", "geo-go:kept3", "geo-go:stale4", "geo-go:<none>"].join("\n"));
+    if (args[0] === "ps") return ok("geo-go:running2\nnode:26-alpine\n");
+    return ok();
+  });
+  const compose = 'rt-x:\n  image: "geo-go:kept3"\n';
+  const dry = make();
+  const d = await pruneGoImages({ appDir: REPO, runner: dry, docker: "docker", log: (l) => lines.push(l) }, { dryRun: true, composeText: compose });
+  assert.deepEqual(d.removed.sort(), ["geo-go:old1", "geo-go:stale4"]);
+  assert.ok(!dry.calls.some((c) => c.args[1] === "rm"), "a dry run removes nothing");
+  assert.match(lines[0], /^Would remove old shop-program images: geo-go:old1, geo-go:stale4\.$/u);
+  const real = make();
+  const r = await pruneGoImages({ appDir: REPO, runner: real, docker: "docker", log: () => undefined }, { composeText: compose });
+  assert.deepEqual(r.removed.sort(), ["geo-go:old1", "geo-go:stale4"]);
+  assert.deepEqual(real.calls.filter((c) => c.args[1] === "rm").map((c) => c.args[2]).sort(), ["geo-go:old1", "geo-go:stale4"]);
+  assert.deepEqual(r.kept.sort(), [mine, "geo-go:kept3", "geo-go:running2"].sort());
 });
