@@ -14,6 +14,7 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/access"
 	"github.com/GeometerLabs/agents/go/internal/runtime"
 	"github.com/GeometerLabs/agents/go/internal/store"
+	"github.com/GeometerLabs/agents/go/internal/understanding"
 )
 
 type goShop struct {
@@ -81,7 +82,7 @@ func StartGoShop(p Paths, h Hooks) (Shop, error) {
 			return fail(err, nil)
 		}
 	}
-	rt, err := runtime.New(runtime.Options{Client: client, Store: st, Access: acc, Model: runtime.NewModel(client.Config.Talk, h.Log), RecordKey: key, Log: h.Log, Now: now, OnPanic: h.OnPanic})
+	rt, err := runtime.New(runtime.Options{Client: client, Store: st, Access: acc, Model: understanding.NewModel(client.Config.Talk, h.Log, "The talk is off", understanding.TalkTimeoutMs, understanding.TalkMaxTokens), RecordKey: key, Log: h.Log, Now: now, OnPanic: h.OnPanic})
 	if err != nil {
 		return fail(err, acc)
 	}

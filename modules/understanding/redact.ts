@@ -10,9 +10,10 @@
 // only when it is a capitalised Latin word (a surname), because what follows a name in these languages is usually the request itself. A name written some other way gets through; this is a best effort for names and an exact rule for numbers. The caller's own
 // number (the `from` of a message) never reaches here at all: only the words do.
 const DIGITS = "0-9०-९൦-൯೦-೯";
-const PHONE = new RegExp(`\\+?\\(?[${DIGITS}][${DIGITS}\\s().\\-]{8,}[${DIGITS}]`, "gu");
-const EMAIL = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.[\p{L}]{2,}/gu;
-const LINK = /\b(?:https?:\/\/|www\.)\S+/giu;
+// PHONE, EMAIL, LINK, NAME_AFTER_INTRO and SURNAME are exported for go/scripts/gen_patterns.ts: the Go runtime redacts with these same sources.
+export const PHONE = new RegExp(`\\+?\\(?[${DIGITS}][${DIGITS}\\s().\\-]{8,}[${DIGITS}]`, "gu");
+export const EMAIL = /[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.[\p{L}]{2,}/gu;
+export const LINK = /\b(?:https?:\/\/|www\.)\S+/giu;
 
 // "my name is", "myself", "मेरा नाम" ... then one name-like word, and a second one only if it starts with a capital letter (letters, not digits).
 // Plain "I am" and "this is" are left out on purpose: "I am free tomorrow" and "this is urgent" are not names, and taking them out would change what the customer asked.
@@ -23,10 +24,10 @@ const INTRO = [
   "(?:എന്റെ\\s+പേര്|എൻ്റെ\\s+പേര്|പേര്)",
   "(?:ನನ್ನ\\s+ಹೆಸರು|ಹೆಸರು)",
 ].join("|");
-const NAME_AFTER_INTRO = new RegExp(`((?<![\\p{L}\\p{M}])(?:${INTRO}))\\s+${WORD}`, "giu");
+export const NAME_AFTER_INTRO = new RegExp(`((?<![\\p{L}\\p{M}])(?:${INTRO}))\\s+${WORD}`, "giu");
 // A surname is the next word only when it starts with a capital letter, so this one is case-sensitive: a separate pattern, because an inline switch
 // for the "i" flag, (?-i:...), is not in every Node version we run on (Node 22 refuses the whole pattern, and with it the module).
-const SURNAME = /\s+[A-Z][a-z.'-]*/y;
+export const SURNAME = /\s+[A-Z][a-z.'-]*/y;
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 

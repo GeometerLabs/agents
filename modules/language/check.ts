@@ -36,17 +36,18 @@ const periodsOf = (language: "hi" | "ml" | "kn") => alternation(Object.values(DA
 
 // A date is "Tue 10 Nov", "मंगलवार, 10 नवंबर", "ചൊവ്വ, 10 നവംബർ" or "ಮಂಗಳವಾರ, 10 ನವೆಂಬರ್"; a time is "6:00 pm", "शाम 6:00 बजे",
 // "വൈകുന്നേരം 6:00" or "ಸಂಜೆ 6:00". Exactly what the formatters write; the period word is part of the time, so a wrong one is caught.
-const DATE_RE = new RegExp(`(?:${WEEKDAYS})\\s*,?\\s*\\d{1,2}\\s+(?:${MONTHS})`, "giu");
-const TIME_RE = new RegExp(`(?:${periodsOf("hi")})\\s+\\d{1,2}:\\d{2}\\s+बजे|(?:${periodsOf("ml")}|${periodsOf("kn")})\\s+\\d{1,2}:\\d{2}|\\d{1,2}:\\d{2}\\s*(?:am|pm)`, "giu");
+// DATE_RE, TIME_RE, TRAILING_PUNCTUATION, URL_RE, UPI_RE, AMOUNT_RE and the two QUANTITY patterns are exported for go/scripts/gen_patterns.ts: the Go runtime checks with these same sources.
+export const DATE_RE = new RegExp(`(?:${WEEKDAYS})\\s*,?\\s*\\d{1,2}\\s+(?:${MONTHS})`, "giu");
+export const TIME_RE = new RegExp(`(?:${periodsOf("hi")})\\s+\\d{1,2}:\\d{2}\\s+बजे|(?:${periodsOf("ml")}|${periodsOf("kn")})\\s+\\d{1,2}:\\d{2}|\\d{1,2}:\\d{2}\\s*(?:am|pm)`, "giu");
 /** Sentence punctuation that may follow a link and is not part of it, including the Hindi danda ("।", "॥"), which Hindi text puts straight after a link (17 Nov 2026: Fees' Hindi family reminder ended its last link with "।" and was held back). */
-const TRAILING_PUNCTUATION = /[.,;:!?।॥]+$/u;
-const URL_RE = /(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}\/[^\s)]*/giu;
+export const TRAILING_PUNCTUATION = /[.,;:!?।॥]+$/u;
+export const URL_RE = /(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}\/[^\s)]*/giu;
 /** A UPI payment request (modules/payments/providers/upi/link.ts). It holds the shop's UPI ID and an amount, so it is read before anything else and must be the record's own, whole. */
-const UPI_RE = /upi:\/\/[^\s)]*/giu;
-const AMOUNT_RE = /₹\s*(\d[\d,]*(?:\.\d+)?)/gu;
-const QUANTITY_WORD_RE = wordRe(["hundred", "thousand", "lakh", "crore", "सौ", "हज़ार", "हजार", "लाख", "करोड़"], "iu");
+export const UPI_RE = /upi:\/\/[^\s)]*/giu;
+export const AMOUNT_RE = /₹\s*(\d[\d,]*(?:\.\d+)?)/gu;
+export const QUANTITY_WORD_RE = wordRe(["hundred", "thousand", "lakh", "crore", "सौ", "हज़ार", "हजार", "लाख", "करोड़"], "iu");
 // Malayalam and Kannada join number words into one ("ഇരുന്നൂറ്" is 200), so these are looked for inside words, not only as words.
-const QUANTITY_STEM_RE = new RegExp(["നൂറ", "ആയിരം", "ലക്ഷം", "കോടി", "ನೂರ", "ಸಾವಿರ", "ಲಕ್ಷ", "ಕೋಟಿ"].map(plain).join("|"), "u");
+export const QUANTITY_STEM_RE = new RegExp(["നൂറ", "ആയിരം", "ലക്ഷം", "കോടി", "ನೂರ", "ಸಾವಿರ", "ಲಕ್ಷ", "ಕೋಟಿ"].map(plain).join("|"), "u");
 
 /** Whitespace, commas and case vary in what is written; the values do not. */
 const normaliseDate = (s: string) => plain(s).toLowerCase().replace(/,/gu, " ").replace(/\s+/gu, " ").trim();

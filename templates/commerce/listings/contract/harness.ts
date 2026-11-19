@@ -39,8 +39,10 @@ export interface ShopOptions {
   budget?: { monthlyMicroInr: number; daily: Record<string, number> };
   /** The fake model server's port; with it, runtime.json names it as the parser. */
   modelPort?: number;
-  /** Overrides of the model line of runtime.json (the provider and model name decide the price from the rate table). */
-  parser?: { provider?: string; model?: string };
+  /** Overrides of the model line of runtime.json (the provider and model name decide the price from the rate table; a short timeoutMs lets a test time a model out). */
+  parser?: { provider?: string; model?: string; timeoutMs?: number };
+  /** A fake System One decision model's port (startFakeDecision): runtime.json `decision` names it (provider laya, no key), with these overrides. */
+  decision?: { port: number; threshold?: number; languages?: string[]; timeoutMs?: number };
   /** The owner's number in settings.json (left out: the owner gave none, and the runtime uses its "no number" marker). */
   owner?: string;
   /** The owner's language in settings.json (default "en"): the language the assistant talks to the owner in, and the owner's alerts are written in. */
@@ -127,6 +129,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   writeFileSync(join(client, "settings.json"), settings(o.owner));
   const runtime: Record<string, unknown> = { mode: "fakes", host: "127.0.0.1", port, dataDir, tickSeconds: o.tickSeconds ?? 3600, services: o.services ?? {} };
   if (o.modelPort !== undefined) runtime.parser = { wire: "openai", baseUrl: `http://127.0.0.1:${o.modelPort}/v1`, model: "fake-model", timeoutMs: 5000, ...(o.parser ?? {}) };
+  if (o.decision) { const { port: dp, ...rest } = o.decision; runtime.decision = { provider: "laya", baseUrl: `http://127.0.0.1:${dp}`, model: "laya", ...rest }; }
   if (o.budget) runtime.budget = o.budget;
   writeFileSync(join(client, "runtime.json"), JSON.stringify(runtime));
   writeFileSync(join(client, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(owner, new Date())));
@@ -239,28 +242,72 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
 
 // ---- a fake OpenAI-compatible model server --------------------------------------------------------------------------------------------------------------------
 
-export interface FakeModel { port: number; calls: number; requests: any[]; answer: (owner: string) => unknown; close(): Promise<void> }
+export interface FakeModel { port: number; calls: number; requests: any[]; answer: (owner: string, body: any) => unknown; close(): Promise<void> }
+
+/** What a fake's `answer` may return instead of JSON: raw text as the model's content (not JSON, say), an HTTP status, or a wait before the answer (to time a model out). */
+const FAKE = Symbol("fake reply");
+type FakeReply = { [FAKE]: true; content?: string; status?: number; delayMs?: number; then?: unknown };
+export const rawReply = (content: string): FakeReply => ({ [FAKE]: true, content });
+export const statusReply = (status: number): FakeReply => ({ [FAKE]: true, status });
+export const slowReply = (delayMs: number, then: unknown): FakeReply => ({ [FAKE]: true, delayMs, then });
+const isFake = (v: unknown): v is FakeReply => typeof v === "object" && v !== null && FAKE in v;
 
 /** A listing's draft as the model writes it: what `listingPrompt`'s schema asks for. `words` is the one title and text used for all four languages. */
 export const draftAnswer = (title = "Persian kittens", text = "Playful kittens, looking for a home.", category = "pets", claims: string[] = []): unknown => ({
   category, titles: { en: title, hi: title, ml: title, kn: title }, texts: { en: text, hi: text, ml: text, kn: text }, claims,
 });
 
-/** Start the fake. `answer` gets the owner's words (the last user message) and returns the JSON the model would write. Every call is counted. */
-export async function startFakeModel(answer: (owner: string) => unknown = () => draftAnswer()): Promise<FakeModel> {
+/** Which call a request is: "intent" (the router's language step), "talk" (the owner's talk) or "listing" (a draft), from the schema's name the runtime sends. */
+export const callName = (body: any): string => body?.response_format?.json_schema?.name ?? "";
+
+/**
+ * Start the fake. `answer` gets the owner's words (the last user message) and the whole request, and returns the JSON the model would write (or a rawReply, statusReply or
+ * slowReply). Every call is counted.
+ */
+export async function startFakeModel(answer: (owner: string, body: any) => unknown = () => draftAnswer()): Promise<FakeModel> {
   const fake: FakeModel = { port: 0, calls: 0, requests: [], answer, close: async () => undefined };
   const server: Server = createServer((req, res) => {
     const chunks: Buffer[] = [];
     req.on("data", (c: Buffer) => chunks.push(c));
-    req.on("end", () => {
+    req.on("end", async () => {
       fake.calls += 1;
       let body: any = {};
       try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { /* leave empty */ }
       fake.requests.push({ url: req.url, authorization: req.headers.authorization, body });
       const user = (body.messages ?? []).filter((m: { role: string }) => m.role === "user").at(-1)?.content ?? "";
-      const reply = JSON.stringify({ id: "fake", choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: JSON.stringify(fake.answer(user)) } }], usage: { prompt_tokens: 100, completion_tokens: 50 } });
+      let got = fake.answer(user, body);
+      if (isFake(got) && got.delayMs !== undefined) { await new Promise((r) => setTimeout(r, got.delayMs)); got = (got as FakeReply).then; }
+      if (isFake(got) && got.status !== undefined) { res.writeHead(got.status, { "content-type": "application/json" }); res.end("{}"); return; }
+      const content = isFake(got) ? got.content : JSON.stringify(got);
+      const reply = JSON.stringify({ id: "fake", choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content } }], usage: { prompt_tokens: 100, completion_tokens: 50 } });
+      if (res.destroyed) return;
       res.writeHead(200, { "content-type": "application/json" });
       res.end(reply);
+    });
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  fake.port = (server.address() as { port: number }).port;
+  fake.close = () => new Promise<void>((r) => { server.closeAllConnections(); server.close(() => r()); });
+  return fake;
+}
+
+/** A fake System One decision model (POST /v1/systemone). `answer` gets the state (the words, redacted) and the questions, and returns the reply body (or a FakeReply). */
+export async function startFakeDecision(answer: (state: string, questions: any) => unknown): Promise<FakeModel> {
+  const fake: FakeModel = { port: 0, calls: 0, requests: [], answer: answer as FakeModel["answer"], close: async () => undefined };
+  const server: Server = createServer((req, res) => {
+    const chunks: Buffer[] = [];
+    req.on("data", (c: Buffer) => chunks.push(c));
+    req.on("end", async () => {
+      fake.calls += 1;
+      let body: any = {};
+      try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { /* leave empty */ }
+      fake.requests.push({ url: req.url, body });
+      let got = fake.answer(body.state ?? "", body.questions);
+      if (isFake(got) && got.delayMs !== undefined) { await new Promise((r) => setTimeout(r, got.delayMs)); got = (got as FakeReply).then; }
+      if (isFake(got) && got.status !== undefined) { res.writeHead(got.status, { "content-type": "application/json" }); res.end("{}"); return; }
+      if (res.destroyed) return;
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(isFake(got) ? got.content : JSON.stringify(got));
     });
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
