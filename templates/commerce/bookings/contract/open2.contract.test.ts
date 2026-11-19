@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { cpSync, existsSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { AGREE_PREFIX, TERMS_AGREED_ACTION, TERMS_SENT_ACTION, termsDigest, termsText } from "../../../../modules/terms/terms.ts";
-import { REMOVAL_WAIT_MS } from "../../../../modules/channels/owner-grants.ts";
+import { REMOVAL_WAIT_MS, newSetupToken } from "../../../../modules/channels/owner-grants.ts";
 import { ownerKit, qr } from "../../../../modules/test/contract/owner-kit.ts";
 import { CUSTOMER, MIN, OTHER_CUSTOMER, OWNER_BASE, OWNER_NUMBER, TZ, contract, makeShop, openStart, sleep, startFakeModel } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
@@ -39,7 +39,7 @@ describe("the Guard's approval runs out", () => {
     const st = await s.status();
     assert.equal(st.refunds.needBuilder.total, 1, JSON.stringify(st.refunds));
     assert.equal(st.refunds.needBuilder.expired, 1, "the builder sees it as expired");
-    assert.match((await s.request(hash)).body.messages.at(-1).text, /expired|ran out|did not|no refund|not refund/iu);
+    assert.match((await s.request(hash)).body.messages.at(-1).text, /didn.t answer in time about your ₹200 refund, so it hasn.t been sent/u);
     assert.ok(s.record().some((r) => r.action === "refund" && r.outcome === "expired" || r.action === "refund" && r.outcome === "failed"), JSON.stringify(s.record().filter((r) => r.action === "refund").map((r) => r.outcome)));
     assert.equal(refundCalls(s).length, 1, "and the call was never sent again");
   });
@@ -96,16 +96,17 @@ describe("a shop put back from a snapshot while a refund went out", () => {
 
 describe("the owner's number changes with no restart", () => {
   contract("after 48 hours the new number's messages are the owner's and the old number's are a customer's", async () => {
-    const { register } = ownerKit(OWNER_BASE);
+    const { register, grants } = ownerKit(OWNER_BASE);
     const NEW = "+919822222222";
     const s = await boot({ tickSeconds: 1 });
     await register(s, qr(s.setup));
-    const actions = (who: string, from: number): string[] => s.record().slice(from).filter((r) => r.conversation === who).map((r) => `${r.action}:${r.outcome}`);
+    const actions = (who: string, from: number): string[] => s.record().slice(from).filter((r) => r.conversation === who && r.action !== "owner_session").map((r) => `${r.action}:${r.outcome}`);
     let mark = s.record().length;
     await s.inbound(OWNER_NUMBER, "help");
     const asOwner = actions(OWNER_NUMBER, mark);
     await s.stop(); s.setOwnerNumber(NEW); await s.start();
     s.advance(REMOVAL_WAIT_MS + MIN); await sleep(2500);               // the sale applies: no restart
+    const q = newSetupToken(); s.writeGrants(grants(s, { token: q })); await register(s, qr(q)); // the new owner's phone binds the shop to the NEW number
     mark = s.record().length;
     await s.inbound(NEW, "help");
     assert.deepEqual(actions(NEW, mark), asOwner, "the new number is answered as the owner");
@@ -307,10 +308,10 @@ describe("voice notes", () => {
       assert.equal((await s.events([{ kind: "message", message: { id: "wamid.bad", from: CUSTOMER, timestamp: s.now(), ...bad } }])).status, 400, JSON.stringify(bad));
     }
   });
-  contract("with voice off, a voice note gets the one plain line and the speech service is never asked", async () => {
+  contract("with voice off, a voice note gets the one plain line (in the shop's first language, Hindi, for a customer who has not written yet) and the speech service is never asked", async () => {
     const s = await boot({ mode: "guards" });
     await s.inbound(CUSTOMER, "", { extra: { voiceNote: true } });
-    assert.match(s.sent(CUSTOMER).at(-1)!.text, /can.t listen to voice notes/iu);
+    assert.match(s.sent(CUSTOMER).at(-1)!.text, /वॉइस नोट/u);
   });
 });
 
