@@ -2,8 +2,7 @@ package bookings
 
 // A Bookings shop's settings.json, checked: the Go twin of templates/commerce/bookings/src/settings.ts `validateSettings`. Every problem is said in plain words, all at once, with
 // the TypeScript's sentences, so a builder reads the same refusal from either runtime (proved on testdata/settings-vectors.json). `payment` is checked as the providers' readers
-// check it (upi/link.ts vpaProblem, payeeProblem); `approvers` and `assistant` are checked for their shape and kept raw (Deferred.md: the deployer checks a folder with the
-// TypeScript readers before it writes it).
+// check it (upi/link.ts vpaProblem, payeeProblem); `approvers` and `assistant` are checked by settings_check.go (readApprovers, readAssistantSettings and readCharacter, with their sentences).
 //
 // Where Go and JavaScript differ: `name.trim()` is language.TrimJS (JavaScript's white space), a key's order in an error is the order the file names them (JavaScript's
 // Object.keys keeps insertion order; Go's map does not, so the unknown keys are read in the file's order by readOrdered).
@@ -75,9 +74,12 @@ type Settings struct {
 	Reminders     []int64 // hours before, largest first
 	Payment       Payment
 	Calendar      string // "own" or "google" (calendarModule: left out is "google")
-	// Approvers and Assistant are the raw blocks (modules/approvals/people.ts, modules/assistant/settings.ts), nil when left out.
+	// Approvers and Assistant are the blocks as the TypeScript's readers hand them back, CHECKED (modules/approvals/people.ts readApprovers, modules/assistant/settings.ts
+	// readAssistantSettings: defaults filled, unknown keys refused), as JSON values; nil when left out. Tree writes them into the validated tree as they are.
 	Approvers map[string]any
 	Assistant map[string]any
+	// calendarGiven: the file had a "calendar" block (a validated tree has one only then); refundLimitOK: the cancellation block was read (approvers' two-above check needs it).
+	calendarGiven, refundLimitOK bool
 	// HoursJSON is `openingHours` as the page shows it (shopInfo `hours`): every weekday key, null for a closed day, in WEEKDAY_KEYS order.
 	HoursJSON json.RawMessage
 }
@@ -312,13 +314,7 @@ func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 	r.deposit(in["deposit"], keys("/deposit"), s)
 	r.cancellation(in["cancellation"], keys("/cancellation"), s)
 	r.owner(in["owner"], keys("/owner"), s)
-	if ap, given := in["approvers"]; given {
-		if m, ok := isObj(ap); ok {
-			s.Approvers = m
-		} else {
-			r.add(`"approvers" must be an object: {"people": [...], "twoAboveInr": ...}.`)
-		}
-	}
+	r.approvers(in["approvers"], hasKey(in, "approvers"), keys, s)
 	s.Reminders = r.reminders(in["reminders"], keys("/reminders"))
 	r.payment(in["payment"], keys("/payment"), keys("/payment/upi"), s)
 	s.Calendar = "google"
@@ -327,16 +323,10 @@ func ReadSettings(in map[string]any, raw []byte) (*Settings, []string) {
 		if mod, _ := m["module"].(string); !ok || (mod != "own" && mod != "google") {
 			r.add(`"calendar" must be {"module": "own"} (the shop's own booking list, no Google Calendar) or {"module": "google"}.`)
 		} else {
-			s.Calendar = mod
+			s.Calendar, s.calendarGiven = mod, true
 		}
 	}
-	if a, given := in["assistant"]; given {
-		if m, ok := isObj(a); ok {
-			s.Assistant = m
-		} else {
-			r.add(`The shop's assistant ("assistant") must be an object.`)
-		}
-	}
+	r.assistant(in["assistant"], hasKey(in, "assistant"), keys, s)
 	return s, r.errs
 }
 
@@ -592,6 +582,7 @@ func (r *reader) cancellation(v any, order []string, s *Settings) {
 	l, lOK := r.whole(m["refundLimitInr"], `the refund limit ("cancellation.refundLimitInr")`, 0, 1_000_000)
 	if wOK && lOK {
 		s.Cancellation.WindowHours, s.Cancellation.RefundLimitInr = w, l
+		s.refundLimitOK = true
 	}
 }
 

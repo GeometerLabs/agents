@@ -1,0 +1,4681 @@
+{
+ "node": "v26.10.0",
+ "alphabet": "ABCDEFGHJKMNPQRSTUVWXYZ23456789",
+ "scenarios": [
+  {
+   "name": "a deposit paid in full by one mark",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 20000,
+      "reference_id": "b-1",
+      "description": "Deposit for b-1"
+     },
+     "now": 1000,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-1",
+      "amountPaise": 20000,
+      "description": "Deposit for b-1",
+      "link": "upi://pay?am=20000&tn=b-1",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1000,
+      "marks": []
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-1",
+        "amountPaise": 20000,
+        "description": "Deposit for b-1",
+        "link": "upi://pay?am=20000&tn=b-1",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "now": 2000,
+     "result": {
+      "kind": "marked",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-1",
+       "amountPaise": 20000,
+       "description": "Deposit for b-1",
+       "link": "upi://pay?am=20000&tn=b-1",
+       "code": null,
+       "usedCodes": [
+        "ABCDEF"
+       ],
+       "status": "paid",
+       "createdAtMs": 1000,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 20000,
+         "atMs": 2000
+        }
+       ]
+      },
+      "mark": {
+       "id": "upi-pay-2",
+       "amountPaise": 20000,
+       "atMs": 2000
+      },
+      "full": true,
+      "afterClose": false
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-1",
+        "amountPaise": 20000,
+        "description": "Deposit for b-1",
+        "link": "upi://pay?am=20000&tn=b-1",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "now": 3000,
+     "result": {
+      "kind": "already",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-1",
+       "amountPaise": 20000,
+       "description": "Deposit for b-1",
+       "link": "upi://pay?am=20000&tn=b-1",
+       "code": null,
+       "usedCodes": [
+        "ABCDEF"
+       ],
+       "status": "paid",
+       "createdAtMs": 1000,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 20000,
+         "atMs": 2000
+        }
+       ]
+      }
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-1",
+        "amountPaise": 20000,
+        "description": "Deposit for b-1",
+        "link": "upi://pay?am=20000&tn=b-1",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ZZZZZZ",
+     "now": 3500,
+     "result": {
+      "kind": "unknown"
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-1",
+        "amountPaise": 20000,
+        "description": "Deposit for b-1",
+        "link": "upi://pay?am=20000&tn=b-1",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": []
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 0
+    }
+   ]
+  },
+  {
+   "name": "a deposit paid in two marks, the second asked by its new code",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 20000,
+      "reference_id": "b-2",
+      "description": "Deposit for b-2",
+      "part_payments": true
+     },
+     "now": 1000,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-2",
+      "amountPaise": 20000,
+      "description": "Deposit for b-2",
+      "link": "upi://pay?am=20000&tn=b-2",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1000,
+      "marks": [],
+      "acceptPartial": true
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-2",
+        "amountPaise": 20000,
+        "description": "Deposit for b-2",
+        "link": "upi://pay?am=20000&tn=b-2",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": [],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "amountPaise": 5000,
+     "now": 2000,
+     "result": {
+      "kind": "marked",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-2",
+       "amountPaise": 20000,
+       "description": "Deposit for b-2",
+       "link": "upi://pay?am=20000&tn=b-2",
+       "code": "GHJKMN",
+       "usedCodes": [
+        "ABCDEF"
+       ],
+       "status": "partially_paid",
+       "createdAtMs": 1000,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 5000,
+         "atMs": 2000
+        }
+       ],
+       "acceptPartial": true
+      },
+      "mark": {
+       "id": "upi-pay-2",
+       "amountPaise": 5000,
+       "atMs": 2000
+      },
+      "full": false,
+      "afterClose": false
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-2",
+        "amountPaise": 20000,
+        "description": "Deposit for b-2",
+        "link": "upi://pay?am=20000&tn=b-2",
+        "code": "GHJKMN",
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "partially_paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 5000,
+          "atMs": 2000
+         }
+        ],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "now": 2500,
+     "result": {
+      "kind": "already",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-2",
+       "amountPaise": 20000,
+       "description": "Deposit for b-2",
+       "link": "upi://pay?am=20000&tn=b-2",
+       "code": "GHJKMN",
+       "usedCodes": [
+        "ABCDEF"
+       ],
+       "status": "partially_paid",
+       "createdAtMs": 1000,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 5000,
+         "atMs": 2000
+        }
+       ],
+       "acceptPartial": true
+      }
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-2",
+        "amountPaise": 20000,
+        "description": "Deposit for b-2",
+        "link": "upi://pay?am=20000&tn=b-2",
+        "code": "GHJKMN",
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "partially_paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 5000,
+          "atMs": 2000
+         }
+        ],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "GHJKMN",
+     "now": 3000,
+     "result": {
+      "kind": "marked",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-2",
+       "amountPaise": 20000,
+       "description": "Deposit for b-2",
+       "link": "upi://pay?am=20000&tn=b-2",
+       "code": null,
+       "usedCodes": [
+        "ABCDEF",
+        "GHJKMN"
+       ],
+       "status": "paid",
+       "createdAtMs": 1000,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 5000,
+         "atMs": 2000
+        },
+        {
+         "id": "upi-pay-3",
+         "amountPaise": 15000,
+         "atMs": 3000
+        }
+       ],
+       "acceptPartial": true
+      },
+      "mark": {
+       "id": "upi-pay-3",
+       "amountPaise": 15000,
+       "atMs": 3000
+      },
+      "full": true,
+      "afterClose": false
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-2",
+        "amountPaise": 20000,
+        "description": "Deposit for b-2",
+        "link": "upi://pay?am=20000&tn=b-2",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF",
+         "GHJKMN"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 5000,
+          "atMs": 2000
+         },
+         {
+          "id": "upi-pay-3",
+          "amountPaise": 15000,
+          "atMs": 3000
+         }
+        ],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "fetchRequest",
+     "id": "upi-1",
+     "now": 3100,
+     "result": {
+      "id": "upi-1",
+      "reference_id": "b-2",
+      "amount": 20000,
+      "currency": "INR",
+      "description": "Deposit for b-2",
+      "status": "paid",
+      "pay_url": "upi://pay?am=20000&tn=b-2",
+      "amount_paid": 20000,
+      "payments": [
+       {
+        "id": "upi-pay-2",
+        "request_id": "upi-1",
+        "amount": 5000,
+        "currency": "INR",
+        "status": "received",
+        "amount_refunded": 0,
+        "created_at": 2
+       },
+       {
+        "id": "upi-pay-3",
+        "request_id": "upi-1",
+        "amount": 15000,
+        "currency": "INR",
+        "status": "received",
+        "amount_refunded": 0,
+        "created_at": 3
+       }
+      ],
+      "created_at": 1,
+      "part_payments": true,
+      "min_first_payment": 100
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-2",
+        "amountPaise": 20000,
+        "description": "Deposit for b-2",
+        "link": "upi://pay?am=20000&tn=b-2",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF",
+         "GHJKMN"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 5000,
+          "atMs": 2000
+         },
+         {
+          "id": "upi-pay-3",
+          "amountPaise": 15000,
+          "atMs": 3000
+         }
+        ],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "listRequests",
+     "query": {
+      "payment_id": "upi-pay-2"
+     },
+     "now": 3100,
+     "result": [
+      {
+       "id": "upi-1",
+       "reference_id": "b-2",
+       "amount": 20000,
+       "currency": "INR",
+       "description": "Deposit for b-2",
+       "status": "paid",
+       "pay_url": "upi://pay?am=20000&tn=b-2",
+       "amount_paid": 20000,
+       "payments": [
+        {
+         "id": "upi-pay-2",
+         "request_id": "upi-1",
+         "amount": 5000,
+         "currency": "INR",
+         "status": "received",
+         "amount_refunded": 0,
+         "created_at": 2
+        },
+        {
+         "id": "upi-pay-3",
+         "request_id": "upi-1",
+         "amount": 15000,
+         "currency": "INR",
+         "status": "received",
+         "amount_refunded": 0,
+         "created_at": 3
+        }
+       ],
+       "created_at": 1,
+       "part_payments": true,
+       "min_first_payment": 100
+      }
+     ],
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-2",
+        "amountPaise": 20000,
+        "description": "Deposit for b-2",
+        "link": "upi://pay?am=20000&tn=b-2",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF",
+         "GHJKMN"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 5000,
+          "atMs": 2000
+         },
+         {
+          "id": "upi-pay-3",
+          "amountPaise": 15000,
+          "atMs": 3000
+         }
+        ],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "fetchPayment",
+     "id": "upi-pay-2",
+     "now": 3100,
+     "result": {
+      "id": "upi-pay-2",
+      "request_id": "upi-1",
+      "amount": 5000,
+      "currency": "INR",
+      "status": "received",
+      "amount_refunded": 0,
+      "created_at": 2
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-2",
+        "amountPaise": 20000,
+        "description": "Deposit for b-2",
+        "link": "upi://pay?am=20000&tn=b-2",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF",
+         "GHJKMN"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 5000,
+          "atMs": 2000
+         },
+         {
+          "id": "upi-pay-3",
+          "amountPaise": 15000,
+          "atMs": 3000
+         }
+        ],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "fetchPayment",
+     "id": "nope",
+     "now": 3100,
+     "result": null,
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-2",
+        "amountPaise": 20000,
+        "description": "Deposit for b-2",
+        "link": "upi://pay?am=20000&tn=b-2",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF",
+         "GHJKMN"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 5000,
+          "atMs": 2000
+         },
+         {
+          "id": "upi-pay-3",
+          "amountPaise": 15000,
+          "atMs": 3000
+         }
+        ],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 0
+    }
+   ]
+  },
+  {
+   "name": "a bad amount: nothing, a negative one, over ten times the request, exactly ten times",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 10000,
+      "reference_id": "b-3",
+      "description": "Deposit for b-3"
+     },
+     "now": 1000,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-3",
+      "amountPaise": 10000,
+      "description": "Deposit for b-3",
+      "link": "upi://pay?am=10000&tn=b-3",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1000,
+      "marks": []
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-3",
+        "amountPaise": 10000,
+        "description": "Deposit for b-3",
+        "link": "upi://pay?am=10000&tn=b-3",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "amountPaise": 0,
+     "now": 2000,
+     "result": {
+      "kind": "bad_amount",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-3",
+       "amountPaise": 10000,
+       "description": "Deposit for b-3",
+       "link": "upi://pay?am=10000&tn=b-3",
+       "code": "ABCDEF",
+       "usedCodes": [],
+       "status": "created",
+       "createdAtMs": 1000,
+       "marks": []
+      }
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-3",
+        "amountPaise": 10000,
+        "description": "Deposit for b-3",
+        "link": "upi://pay?am=10000&tn=b-3",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "amountPaise": -5,
+     "now": 2000,
+     "result": {
+      "kind": "bad_amount",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-3",
+       "amountPaise": 10000,
+       "description": "Deposit for b-3",
+       "link": "upi://pay?am=10000&tn=b-3",
+       "code": "ABCDEF",
+       "usedCodes": [],
+       "status": "created",
+       "createdAtMs": 1000,
+       "marks": []
+      }
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-3",
+        "amountPaise": 10000,
+        "description": "Deposit for b-3",
+        "link": "upi://pay?am=10000&tn=b-3",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "amountPaise": 100001,
+     "now": 2000,
+     "result": {
+      "kind": "bad_amount",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-3",
+       "amountPaise": 10000,
+       "description": "Deposit for b-3",
+       "link": "upi://pay?am=10000&tn=b-3",
+       "code": "ABCDEF",
+       "usedCodes": [],
+       "status": "created",
+       "createdAtMs": 1000,
+       "marks": []
+      }
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-3",
+        "amountPaise": 10000,
+        "description": "Deposit for b-3",
+        "link": "upi://pay?am=10000&tn=b-3",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "amountPaise": 100000,
+     "now": 2100,
+     "result": {
+      "kind": "marked",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-3",
+       "amountPaise": 10000,
+       "description": "Deposit for b-3",
+       "link": "upi://pay?am=10000&tn=b-3",
+       "code": null,
+       "usedCodes": [
+        "ABCDEF"
+       ],
+       "status": "paid",
+       "createdAtMs": 1000,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 100000,
+         "atMs": 2100
+        }
+       ]
+      },
+      "mark": {
+       "id": "upi-pay-2",
+       "amountPaise": 100000,
+       "atMs": 2100
+      },
+      "full": true,
+      "afterClose": false
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-3",
+        "amountPaise": 10000,
+        "description": "Deposit for b-3",
+        "link": "upi://pay?am=10000&tn=b-3",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 100000,
+          "atMs": 2100
+         }
+        ]
+       }
+      ],
+      "refunds": []
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 0
+    }
+   ]
+  },
+  {
+   "name": "a request the agent closed still takes a late mark, recorded as after the close",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 15000,
+      "reference_id": "b-4",
+      "description": "Deposit for b-4"
+     },
+     "now": 1000,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-4",
+      "amountPaise": 15000,
+      "description": "Deposit for b-4",
+      "link": "upi://pay?am=15000&tn=b-4",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1000,
+      "marks": []
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-4",
+        "amountPaise": 15000,
+        "description": "Deposit for b-4",
+        "link": "upi://pay?am=15000&tn=b-4",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "close",
+     "id": "upi-1",
+     "now": 1500,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-4",
+      "amountPaise": 15000,
+      "description": "Deposit for b-4",
+      "link": "upi://pay?am=15000&tn=b-4",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "cancelled",
+      "createdAtMs": 1000,
+      "marks": [],
+      "closedAtMs": 1500
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-4",
+        "amountPaise": 15000,
+        "description": "Deposit for b-4",
+        "link": "upi://pay?am=15000&tn=b-4",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "cancelled",
+        "createdAtMs": 1000,
+        "marks": [],
+        "closedAtMs": 1500
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "close",
+     "id": "upi-1",
+     "now": 1600,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-4",
+      "amountPaise": 15000,
+      "description": "Deposit for b-4",
+      "link": "upi://pay?am=15000&tn=b-4",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "cancelled",
+      "createdAtMs": 1000,
+      "marks": [],
+      "closedAtMs": 1500
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-4",
+        "amountPaise": 15000,
+        "description": "Deposit for b-4",
+        "link": "upi://pay?am=15000&tn=b-4",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "cancelled",
+        "createdAtMs": 1000,
+        "marks": [],
+        "closedAtMs": 1500
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "now": 2000,
+     "result": {
+      "kind": "marked",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-4",
+       "amountPaise": 15000,
+       "description": "Deposit for b-4",
+       "link": "upi://pay?am=15000&tn=b-4",
+       "code": null,
+       "usedCodes": [
+        "ABCDEF"
+       ],
+       "status": "cancelled",
+       "createdAtMs": 1000,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 15000,
+         "atMs": 2000,
+         "afterClose": true
+        }
+       ],
+       "closedAtMs": 1500
+      },
+      "mark": {
+       "id": "upi-pay-2",
+       "amountPaise": 15000,
+       "atMs": 2000,
+       "afterClose": true
+      },
+      "full": true,
+      "afterClose": true
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-4",
+        "amountPaise": 15000,
+        "description": "Deposit for b-4",
+        "link": "upi://pay?am=15000&tn=b-4",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "cancelled",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 15000,
+          "atMs": 2000,
+          "afterClose": true
+         }
+        ],
+        "closedAtMs": 1500
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "listRequests",
+     "query": {
+      "reference_id": "b-4"
+     },
+     "now": 2100,
+     "result": [
+      {
+       "id": "upi-1",
+       "reference_id": "b-4",
+       "amount": 15000,
+       "currency": "INR",
+       "description": "Deposit for b-4",
+       "status": "cancelled",
+       "pay_url": "upi://pay?am=15000&tn=b-4",
+       "amount_paid": 15000,
+       "payments": [
+        {
+         "id": "upi-pay-2",
+         "request_id": "upi-1",
+         "amount": 15000,
+         "currency": "INR",
+         "status": "received",
+         "amount_refunded": 0,
+         "created_at": 2
+        }
+       ],
+       "created_at": 1
+      }
+     ],
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-4",
+        "amountPaise": 15000,
+        "description": "Deposit for b-4",
+        "link": "upi://pay?am=15000&tn=b-4",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "cancelled",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 15000,
+          "atMs": 2000,
+          "afterClose": true
+         }
+        ],
+        "closedAtMs": 1500
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "close",
+     "id": "upi-1",
+     "now": 2200,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-4",
+      "amountPaise": 15000,
+      "description": "Deposit for b-4",
+      "link": "upi://pay?am=15000&tn=b-4",
+      "code": null,
+      "usedCodes": [
+       "ABCDEF"
+      ],
+      "status": "cancelled",
+      "createdAtMs": 1000,
+      "marks": [
+       {
+        "id": "upi-pay-2",
+        "amountPaise": 15000,
+        "atMs": 2000,
+        "afterClose": true
+       }
+      ],
+      "closedAtMs": 1500
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-4",
+        "amountPaise": 15000,
+        "description": "Deposit for b-4",
+        "link": "upi://pay?am=15000&tn=b-4",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "cancelled",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 15000,
+          "atMs": 2000,
+          "afterClose": true
+         }
+        ],
+        "closedAtMs": 1500
+       }
+      ],
+      "refunds": []
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 0
+    }
+   ]
+  },
+  {
+   "name": "a closed part-paid request, then the rest",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 30000,
+      "reference_id": "b-5",
+      "description": "Deposit for b-5",
+      "part_payments": true
+     },
+     "now": 1000,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-5",
+      "amountPaise": 30000,
+      "description": "Deposit for b-5",
+      "link": "upi://pay?am=30000&tn=b-5",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1000,
+      "marks": [],
+      "acceptPartial": true
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-5",
+        "amountPaise": 30000,
+        "description": "Deposit for b-5",
+        "link": "upi://pay?am=30000&tn=b-5",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": [],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "amountPaise": 10000,
+     "now": 2000,
+     "result": {
+      "kind": "marked",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-5",
+       "amountPaise": 30000,
+       "description": "Deposit for b-5",
+       "link": "upi://pay?am=30000&tn=b-5",
+       "code": "GHJKMN",
+       "usedCodes": [
+        "ABCDEF"
+       ],
+       "status": "partially_paid",
+       "createdAtMs": 1000,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 10000,
+         "atMs": 2000
+        }
+       ],
+       "acceptPartial": true
+      },
+      "mark": {
+       "id": "upi-pay-2",
+       "amountPaise": 10000,
+       "atMs": 2000
+      },
+      "full": false,
+      "afterClose": false
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-5",
+        "amountPaise": 30000,
+        "description": "Deposit for b-5",
+        "link": "upi://pay?am=30000&tn=b-5",
+        "code": "GHJKMN",
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "partially_paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 10000,
+          "atMs": 2000
+         }
+        ],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "close",
+     "id": "upi-1",
+     "now": 2500,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-5",
+      "amountPaise": 30000,
+      "description": "Deposit for b-5",
+      "link": "upi://pay?am=30000&tn=b-5",
+      "code": "GHJKMN",
+      "usedCodes": [
+       "ABCDEF"
+      ],
+      "status": "cancelled",
+      "createdAtMs": 1000,
+      "marks": [
+       {
+        "id": "upi-pay-2",
+        "amountPaise": 10000,
+        "atMs": 2000
+       }
+      ],
+      "acceptPartial": true,
+      "closedAtMs": 2500
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-5",
+        "amountPaise": 30000,
+        "description": "Deposit for b-5",
+        "link": "upi://pay?am=30000&tn=b-5",
+        "code": "GHJKMN",
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "cancelled",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 10000,
+          "atMs": 2000
+         }
+        ],
+        "acceptPartial": true,
+        "closedAtMs": 2500
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "GHJKMN",
+     "amountPaise": 20000,
+     "now": 3000,
+     "result": {
+      "kind": "marked",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-5",
+       "amountPaise": 30000,
+       "description": "Deposit for b-5",
+       "link": "upi://pay?am=30000&tn=b-5",
+       "code": null,
+       "usedCodes": [
+        "ABCDEF",
+        "GHJKMN"
+       ],
+       "status": "cancelled",
+       "createdAtMs": 1000,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 10000,
+         "atMs": 2000
+        },
+        {
+         "id": "upi-pay-3",
+         "amountPaise": 20000,
+         "atMs": 3000,
+         "afterClose": true
+        }
+       ],
+       "acceptPartial": true,
+       "closedAtMs": 2500
+      },
+      "mark": {
+       "id": "upi-pay-3",
+       "amountPaise": 20000,
+       "atMs": 3000,
+       "afterClose": true
+      },
+      "full": true,
+      "afterClose": true
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-5",
+        "amountPaise": 30000,
+        "description": "Deposit for b-5",
+        "link": "upi://pay?am=30000&tn=b-5",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF",
+         "GHJKMN"
+        ],
+        "status": "cancelled",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 10000,
+          "atMs": 2000
+         },
+         {
+          "id": "upi-pay-3",
+          "amountPaise": 20000,
+          "atMs": 3000,
+          "afterClose": true
+         }
+        ],
+        "acceptPartial": true,
+        "closedAtMs": 2500
+       }
+      ],
+      "refunds": []
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 0
+    }
+   ]
+  },
+  {
+   "name": "a refund owed, reminded, and marked done; a second mark of the same code is already",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 20000,
+      "reference_id": "b-6",
+      "description": "Deposit for b-6"
+     },
+     "now": 1000,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-6",
+      "amountPaise": 20000,
+      "description": "Deposit for b-6",
+      "link": "upi://pay?am=20000&tn=b-6",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1000,
+      "marks": []
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "now": 2000,
+     "result": {
+      "kind": "marked",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-6",
+       "amountPaise": 20000,
+       "description": "Deposit for b-6",
+       "link": "upi://pay?am=20000&tn=b-6",
+       "code": null,
+       "usedCodes": [
+        "ABCDEF"
+       ],
+       "status": "paid",
+       "createdAtMs": 1000,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 20000,
+         "atMs": 2000
+        }
+       ]
+      },
+      "mark": {
+       "id": "upi-pay-2",
+       "amountPaise": 20000,
+       "atMs": 2000
+      },
+      "full": true,
+      "afterClose": false
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "owe",
+     "refund": {
+      "caseId": "b-6",
+      "customer": "+919800000001",
+      "paymentId": "upi-pay-2",
+      "amountPaise": 20000,
+      "why": "cancelled"
+     },
+     "now": 3000,
+     "result": {
+      "id": "upr-3",
+      "caseId": "b-6",
+      "customer": "+919800000001",
+      "paymentId": "upi-pay-2",
+      "amountPaise": 20000,
+      "why": "cancelled",
+      "state": "owed",
+      "code": "GHJKMN",
+      "usedCodes": [],
+      "owedAtMs": 3000,
+      "reminders": 0,
+      "nextReminderAtMs": 86403000
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 0,
+        "nextReminderAtMs": 86403000
+       }
+      ]
+     }
+    },
+    {
+     "op": "owedOn",
+     "paymentId": "upi-pay-2",
+     "result": 20000,
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 0,
+        "nextReminderAtMs": 86403000
+       }
+      ]
+     }
+    },
+    {
+     "op": "requestOfMark",
+     "paymentId": "upi-pay-2",
+     "result": {
+      "id": "upi-1",
+      "reference": "b-6",
+      "amountPaise": 20000,
+      "description": "Deposit for b-6",
+      "link": "upi://pay?am=20000&tn=b-6",
+      "code": null,
+      "usedCodes": [
+       "ABCDEF"
+      ],
+      "status": "paid",
+      "createdAtMs": 1000,
+      "marks": [
+       {
+        "id": "upi-pay-2",
+        "amountPaise": 20000,
+        "atMs": 2000
+       }
+      ]
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 0,
+        "nextReminderAtMs": 86403000
+       }
+      ]
+     }
+    },
+    {
+     "op": "due",
+     "now": 3000,
+     "result": [],
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 0,
+        "nextReminderAtMs": 86403000
+       }
+      ]
+     }
+    },
+    {
+     "op": "due",
+     "now": 86403000,
+     "result": [
+      "upr-3"
+     ],
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 0,
+        "nextReminderAtMs": 86403000
+       }
+      ]
+     }
+    },
+    {
+     "op": "reminded",
+     "id": "upr-3",
+     "now": 86403000,
+     "result": {
+      "id": "upr-3",
+      "caseId": "b-6",
+      "customer": "+919800000001",
+      "paymentId": "upi-pay-2",
+      "amountPaise": 20000,
+      "why": "cancelled",
+      "state": "owed",
+      "code": "GHJKMN",
+      "usedCodes": [],
+      "owedAtMs": 3000,
+      "reminders": 1,
+      "nextReminderAtMs": 172803000
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 1,
+        "nextReminderAtMs": 172803000
+       }
+      ]
+     }
+    },
+    {
+     "op": "due",
+     "now": 86403000,
+     "result": [],
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 1,
+        "nextReminderAtMs": 172803000
+       }
+      ]
+     }
+    },
+    {
+     "op": "due",
+     "now": 172803000,
+     "result": [
+      "upr-3"
+     ],
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 1,
+        "nextReminderAtMs": 172803000
+       }
+      ]
+     }
+    },
+    {
+     "op": "reminded",
+     "id": "upr-3",
+     "now": 172803000,
+     "result": {
+      "id": "upr-3",
+      "caseId": "b-6",
+      "customer": "+919800000001",
+      "paymentId": "upi-pay-2",
+      "amountPaise": 20000,
+      "why": "cancelled",
+      "state": "owed",
+      "code": "GHJKMN",
+      "usedCodes": [],
+      "owedAtMs": 3000,
+      "reminders": 2,
+      "nextReminderAtMs": 259203000
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 2,
+        "nextReminderAtMs": 259203000
+       }
+      ]
+     }
+    },
+    {
+     "op": "reminded",
+     "id": "upr-3",
+     "now": 259203000,
+     "result": {
+      "id": "upr-3",
+      "caseId": "b-6",
+      "customer": "+919800000001",
+      "paymentId": "upi-pay-2",
+      "amountPaise": 20000,
+      "why": "cancelled",
+      "state": "owed",
+      "code": "GHJKMN",
+      "usedCodes": [],
+      "owedAtMs": 3000,
+      "reminders": 3,
+      "nextReminderAtMs": 345603000
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 3,
+        "nextReminderAtMs": 345603000
+       }
+      ]
+     }
+    },
+    {
+     "op": "due",
+     "now": 777603000,
+     "result": [],
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 3,
+        "nextReminderAtMs": 345603000
+       }
+      ]
+     }
+    },
+    {
+     "op": "view",
+     "call": "listRefunds",
+     "id": "upi-pay-2",
+     "now": 4000,
+     "result": [
+      {
+       "id": "upr-3",
+       "payment_id": "upi-pay-2",
+       "amount": 20000,
+       "status": "pending",
+       "receipt": "b-6:upi-pay-2",
+       "created_at": 3
+      }
+     ],
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 3,
+        "nextReminderAtMs": 345603000
+       }
+      ]
+     }
+    },
+    {
+     "op": "markRefund",
+     "code": "GHJKMN",
+     "how": "kept",
+     "now": 5000,
+     "result": {
+      "kind": "not_allowed",
+      "refund": {
+       "id": "upr-3",
+       "caseId": "b-6",
+       "customer": "+919800000001",
+       "paymentId": "upi-pay-2",
+       "amountPaise": 20000,
+       "why": "cancelled",
+       "state": "owed",
+       "code": "GHJKMN",
+       "usedCodes": [],
+       "owedAtMs": 3000,
+       "reminders": 3,
+       "nextReminderAtMs": 345603000
+      }
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 3,
+        "nextReminderAtMs": 345603000
+       }
+      ]
+     }
+    },
+    {
+     "op": "markRefund",
+     "code": "GHJKMN",
+     "how": "done",
+     "now": 6000,
+     "result": {
+      "kind": "done",
+      "refund": {
+       "id": "upr-3",
+       "caseId": "b-6",
+       "customer": "+919800000001",
+       "paymentId": "upi-pay-2",
+       "amountPaise": 20000,
+       "why": "cancelled",
+       "state": "done",
+       "code": null,
+       "usedCodes": [
+        "GHJKMN"
+       ],
+       "owedAtMs": 3000,
+       "reminders": 3,
+       "nextReminderAtMs": 345603000,
+       "doneAtMs": 6000
+      }
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "done",
+        "code": null,
+        "usedCodes": [
+         "GHJKMN"
+        ],
+        "owedAtMs": 3000,
+        "reminders": 3,
+        "nextReminderAtMs": 345603000,
+        "doneAtMs": 6000
+       }
+      ]
+     }
+    },
+    {
+     "op": "markRefund",
+     "code": "GHJKMN",
+     "how": "done",
+     "now": 7000,
+     "result": {
+      "kind": "already",
+      "refund": {
+       "id": "upr-3",
+       "caseId": "b-6",
+       "customer": "+919800000001",
+       "paymentId": "upi-pay-2",
+       "amountPaise": 20000,
+       "why": "cancelled",
+       "state": "done",
+       "code": null,
+       "usedCodes": [
+        "GHJKMN"
+       ],
+       "owedAtMs": 3000,
+       "reminders": 3,
+       "nextReminderAtMs": 345603000,
+       "doneAtMs": 6000
+      }
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "done",
+        "code": null,
+        "usedCodes": [
+         "GHJKMN"
+        ],
+        "owedAtMs": 3000,
+        "reminders": 3,
+        "nextReminderAtMs": 345603000,
+        "doneAtMs": 6000
+       }
+      ]
+     }
+    },
+    {
+     "op": "markRefund",
+     "code": "QQQQQQ",
+     "how": "done",
+     "now": 7000,
+     "result": {
+      "kind": "unknown"
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "done",
+        "code": null,
+        "usedCodes": [
+         "GHJKMN"
+        ],
+        "owedAtMs": 3000,
+        "reminders": 3,
+        "nextReminderAtMs": 345603000,
+        "doneAtMs": 6000
+       }
+      ]
+     }
+    },
+    {
+     "op": "mark",
+     "code": "GHJKMN",
+     "now": 8000,
+     "result": {
+      "kind": "already_refund",
+      "refund": {
+       "id": "upr-3",
+       "caseId": "b-6",
+       "customer": "+919800000001",
+       "paymentId": "upi-pay-2",
+       "amountPaise": 20000,
+       "why": "cancelled",
+       "state": "done",
+       "code": null,
+       "usedCodes": [
+        "GHJKMN"
+       ],
+       "owedAtMs": 3000,
+       "reminders": 3,
+       "nextReminderAtMs": 345603000,
+       "doneAtMs": 6000
+      }
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "done",
+        "code": null,
+        "usedCodes": [
+         "GHJKMN"
+        ],
+        "owedAtMs": 3000,
+        "reminders": 3,
+        "nextReminderAtMs": 345603000,
+        "doneAtMs": 6000
+       }
+      ]
+     }
+    },
+    {
+     "op": "view",
+     "call": "listRefunds",
+     "id": "upi-pay-2",
+     "now": 9000,
+     "result": [
+      {
+       "id": "upr-3",
+       "payment_id": "upi-pay-2",
+       "amount": 20000,
+       "status": "processed",
+       "receipt": "b-6:upi-pay-2",
+       "created_at": 3
+      }
+     ],
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "done",
+        "code": null,
+        "usedCodes": [
+         "GHJKMN"
+        ],
+        "owedAtMs": 3000,
+        "reminders": 3,
+        "nextReminderAtMs": 345603000,
+        "doneAtMs": 6000
+       }
+      ]
+     }
+    },
+    {
+     "op": "view",
+     "call": "fetchPayment",
+     "id": "upi-pay-2",
+     "now": 9000,
+     "result": {
+      "id": "upi-pay-2",
+      "request_id": "upi-1",
+      "amount": 20000,
+      "currency": "INR",
+      "status": "received",
+      "amount_refunded": 20000,
+      "created_at": 2
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-6",
+        "amountPaise": 20000,
+        "description": "Deposit for b-6",
+        "link": "upi://pay?am=20000&tn=b-6",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-6",
+        "customer": "+919800000001",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "cancelled",
+        "state": "done",
+        "code": null,
+        "usedCodes": [
+         "GHJKMN"
+        ],
+        "owedAtMs": 3000,
+        "reminders": 3,
+        "nextReminderAtMs": 345603000,
+        "doneAtMs": 6000
+       }
+      ]
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 0
+    }
+   ]
+  },
+  {
+   "name": "a refund the owner keeps, where that is allowed",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 20000,
+      "reference_id": "b-7",
+      "description": "Deposit for b-7"
+     },
+     "now": 1000,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-7",
+      "amountPaise": 20000,
+      "description": "Deposit for b-7",
+      "link": "upi://pay?am=20000&tn=b-7",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1000,
+      "marks": []
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-7",
+        "amountPaise": 20000,
+        "description": "Deposit for b-7",
+        "link": "upi://pay?am=20000&tn=b-7",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "now": 2000,
+     "result": {
+      "kind": "marked",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-7",
+       "amountPaise": 20000,
+       "description": "Deposit for b-7",
+       "link": "upi://pay?am=20000&tn=b-7",
+       "code": null,
+       "usedCodes": [
+        "ABCDEF"
+       ],
+       "status": "paid",
+       "createdAtMs": 1000,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 20000,
+         "atMs": 2000
+        }
+       ]
+      },
+      "mark": {
+       "id": "upi-pay-2",
+       "amountPaise": 20000,
+       "atMs": 2000
+      },
+      "full": true,
+      "afterClose": false
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-7",
+        "amountPaise": 20000,
+        "description": "Deposit for b-7",
+        "link": "upi://pay?am=20000&tn=b-7",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "owe",
+     "refund": {
+      "caseId": "b-7",
+      "customer": "+919800000002",
+      "paymentId": "upi-pay-2",
+      "amountPaise": 20000,
+      "why": "paid twice",
+      "keepAllowed": true
+     },
+     "now": 3000,
+     "result": {
+      "id": "upr-3",
+      "caseId": "b-7",
+      "customer": "+919800000002",
+      "paymentId": "upi-pay-2",
+      "amountPaise": 20000,
+      "why": "paid twice",
+      "state": "owed",
+      "code": "GHJKMN",
+      "usedCodes": [],
+      "owedAtMs": 3000,
+      "reminders": 0,
+      "nextReminderAtMs": 86403000,
+      "keepAllowed": true
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-7",
+        "amountPaise": 20000,
+        "description": "Deposit for b-7",
+        "link": "upi://pay?am=20000&tn=b-7",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-7",
+        "customer": "+919800000002",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "paid twice",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 3000,
+        "reminders": 0,
+        "nextReminderAtMs": 86403000,
+        "keepAllowed": true
+       }
+      ]
+     }
+    },
+    {
+     "op": "markRefund",
+     "code": "GHJKMN",
+     "how": "kept",
+     "now": 4000,
+     "result": {
+      "kind": "kept",
+      "refund": {
+       "id": "upr-3",
+       "caseId": "b-7",
+       "customer": "+919800000002",
+       "paymentId": "upi-pay-2",
+       "amountPaise": 20000,
+       "why": "paid twice",
+       "state": "kept",
+       "code": null,
+       "usedCodes": [
+        "GHJKMN"
+       ],
+       "owedAtMs": 3000,
+       "reminders": 0,
+       "nextReminderAtMs": 86403000,
+       "keepAllowed": true,
+       "doneAtMs": 4000
+      }
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-7",
+        "amountPaise": 20000,
+        "description": "Deposit for b-7",
+        "link": "upi://pay?am=20000&tn=b-7",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-7",
+        "customer": "+919800000002",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "paid twice",
+        "state": "kept",
+        "code": null,
+        "usedCodes": [
+         "GHJKMN"
+        ],
+        "owedAtMs": 3000,
+        "reminders": 0,
+        "nextReminderAtMs": 86403000,
+        "keepAllowed": true,
+        "doneAtMs": 4000
+       }
+      ]
+     }
+    },
+    {
+     "op": "owedOn",
+     "paymentId": "upi-pay-2",
+     "result": 0,
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-7",
+        "amountPaise": 20000,
+        "description": "Deposit for b-7",
+        "link": "upi://pay?am=20000&tn=b-7",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-7",
+        "customer": "+919800000002",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "paid twice",
+        "state": "kept",
+        "code": null,
+        "usedCodes": [
+         "GHJKMN"
+        ],
+        "owedAtMs": 3000,
+        "reminders": 0,
+        "nextReminderAtMs": 86403000,
+        "keepAllowed": true,
+        "doneAtMs": 4000
+       }
+      ]
+     }
+    },
+    {
+     "op": "view",
+     "call": "listRefunds",
+     "id": "upi-pay-2",
+     "now": 4100,
+     "result": [],
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-7",
+        "amountPaise": 20000,
+        "description": "Deposit for b-7",
+        "link": "upi://pay?am=20000&tn=b-7",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1000,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 20000,
+          "atMs": 2000
+         }
+        ]
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-7",
+        "customer": "+919800000002",
+        "paymentId": "upi-pay-2",
+        "amountPaise": 20000,
+        "why": "paid twice",
+        "state": "kept",
+        "code": null,
+        "usedCodes": [
+         "GHJKMN"
+        ],
+        "owedAtMs": 3000,
+        "reminders": 0,
+        "nextReminderAtMs": 86403000,
+        "keepAllowed": true,
+        "doneAtMs": 4000
+       }
+      ]
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 0
+    }
+   ]
+  },
+  {
+   "name": "a code already held is drawn again",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 10000,
+      "reference_id": "b-8",
+      "description": "Deposit for b-8"
+     },
+     "now": 1000,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-8",
+      "amountPaise": 10000,
+      "description": "Deposit for b-8",
+      "link": "upi://pay?am=10000&tn=b-8",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1000,
+      "marks": []
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-8",
+        "amountPaise": 10000,
+        "description": "Deposit for b-8",
+        "link": "upi://pay?am=10000&tn=b-8",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "open",
+     "req": {
+      "amount": 12000,
+      "reference_id": "b-9",
+      "description": "Deposit for b-9"
+     },
+     "now": 1100,
+     "result": {
+      "id": "upi-2",
+      "reference": "b-9",
+      "amountPaise": 12000,
+      "description": "Deposit for b-9",
+      "link": "upi://pay?am=12000&tn=b-9",
+      "code": "GHJKMN",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1100,
+      "marks": []
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-8",
+        "amountPaise": 10000,
+        "description": "Deposit for b-8",
+        "link": "upi://pay?am=10000&tn=b-8",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       },
+       {
+        "id": "upi-2",
+        "reference": "b-9",
+        "amountPaise": 12000,
+        "description": "Deposit for b-9",
+        "link": "upi://pay?am=12000&tn=b-9",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1100,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "owe",
+     "refund": {
+      "caseId": "b-8",
+      "customer": "+919800000003",
+      "paymentId": "upi-pay-9",
+      "amountPaise": 100,
+      "why": "test"
+     },
+     "now": 1200,
+     "result": {
+      "id": "upr-3",
+      "caseId": "b-8",
+      "customer": "+919800000003",
+      "paymentId": "upi-pay-9",
+      "amountPaise": 100,
+      "why": "test",
+      "state": "owed",
+      "code": "GHJKMN",
+      "usedCodes": [],
+      "owedAtMs": 1200,
+      "reminders": 0,
+      "nextReminderAtMs": 86401200
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-8",
+        "amountPaise": 10000,
+        "description": "Deposit for b-8",
+        "link": "upi://pay?am=10000&tn=b-8",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       },
+       {
+        "id": "upi-2",
+        "reference": "b-9",
+        "amountPaise": 12000,
+        "description": "Deposit for b-9",
+        "link": "upi://pay?am=12000&tn=b-9",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1100,
+        "marks": []
+       }
+      ],
+      "refunds": [
+       {
+        "id": "upr-3",
+        "caseId": "b-8",
+        "customer": "+919800000003",
+        "paymentId": "upi-pay-9",
+        "amountPaise": 100,
+        "why": "test",
+        "state": "owed",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "owedAtMs": 1200,
+        "reminders": 0,
+        "nextReminderAtMs": 86401200
+       }
+      ]
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 10000
+    },
+    {
+     "id": "upi-2",
+     "left": 12000
+    }
+   ]
+  },
+  {
+   "name": "fifty-one draws that all collide give the last code, as the loop ends",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 10000,
+      "reference_id": "b-10",
+      "description": "Deposit for b-10"
+     },
+     "now": 1000,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-10",
+      "amountPaise": 10000,
+      "description": "Deposit for b-10",
+      "link": "upi://pay?am=10000&tn=b-10",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1000,
+      "marks": []
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-10",
+        "amountPaise": 10000,
+        "description": "Deposit for b-10",
+        "link": "upi://pay?am=10000&tn=b-10",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "open",
+     "req": {
+      "amount": 10000,
+      "reference_id": "b-11",
+      "description": "Deposit for b-11"
+     },
+     "now": 1100,
+     "result": {
+      "id": "upi-2",
+      "reference": "b-11",
+      "amountPaise": 10000,
+      "description": "Deposit for b-11",
+      "link": "upi://pay?am=10000&tn=b-11",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1100,
+      "marks": []
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-10",
+        "amountPaise": 10000,
+        "description": "Deposit for b-10",
+        "link": "upi://pay?am=10000&tn=b-10",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       },
+       {
+        "id": "upi-2",
+        "reference": "b-11",
+        "amountPaise": 10000,
+        "description": "Deposit for b-11",
+        "link": "upi://pay?am=10000&tn=b-11",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1100,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 10000
+    },
+    {
+     "id": "upi-2",
+     "left": 10000
+    }
+   ]
+  },
+  {
+   "name": "a link that cannot be made counts the number and writes nothing",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 10000,
+      "reference_id": "b-12",
+      "description": "Deposit for b-12"
+     },
+     "now": 1000,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-12",
+      "amountPaise": 10000,
+      "description": "Deposit for b-12",
+      "link": "upi://pay?am=10000&tn=b-12",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1000,
+      "marks": []
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-12",
+        "amountPaise": 10000,
+        "description": "Deposit for b-12",
+        "link": "upi://pay?am=10000&tn=b-12",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "open",
+     "req": {
+      "amount": 10000,
+      "reference_id": "b-BAD",
+      "description": "Deposit for b-BAD"
+     },
+     "now": 1100,
+     "result": {
+      "threw": "The note is not one a UPI app would take.",
+      "class": "Error"
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-12",
+        "amountPaise": 10000,
+        "description": "Deposit for b-12",
+        "link": "upi://pay?am=10000&tn=b-12",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "open",
+     "req": {
+      "amount": 10000,
+      "reference_id": "b-13",
+      "description": "Deposit for b-13"
+     },
+     "now": 1200,
+     "result": {
+      "id": "upi-3",
+      "reference": "b-13",
+      "amountPaise": 10000,
+      "description": "Deposit for b-13",
+      "link": "upi://pay?am=10000&tn=b-13",
+      "code": "GHJKMN",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1200,
+      "marks": []
+     },
+     "state": {
+      "seq": 3,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-12",
+        "amountPaise": 10000,
+        "description": "Deposit for b-12",
+        "link": "upi://pay?am=10000&tn=b-12",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       },
+       {
+        "id": "upi-3",
+        "reference": "b-13",
+        "amountPaise": 10000,
+        "description": "Deposit for b-13",
+        "link": "upi://pay?am=10000&tn=b-13",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1200,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "createRequest",
+     "req": {
+      "amount": 5000,
+      "reference_id": "b-14",
+      "description": "Deposit for b-14",
+      "part_payments": true
+     },
+     "now": 1300,
+     "result": {
+      "id": "upi-4",
+      "reference_id": "b-14",
+      "amount": 5000,
+      "currency": "INR",
+      "description": "Deposit for b-14",
+      "status": "created",
+      "pay_url": "upi://pay?am=5000&tn=b-14",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1,
+      "part_payments": true,
+      "min_first_payment": 100
+     },
+     "state": {
+      "seq": 4,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-12",
+        "amountPaise": 10000,
+        "description": "Deposit for b-12",
+        "link": "upi://pay?am=10000&tn=b-12",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       },
+       {
+        "id": "upi-3",
+        "reference": "b-13",
+        "amountPaise": 10000,
+        "description": "Deposit for b-13",
+        "link": "upi://pay?am=10000&tn=b-13",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1200,
+        "marks": []
+       },
+       {
+        "id": "upi-4",
+        "reference": "b-14",
+        "amountPaise": 5000,
+        "description": "Deposit for b-14",
+        "link": "upi://pay?am=5000&tn=b-14",
+        "code": "PQRSTU",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1300,
+        "marks": [],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "createRequest",
+     "req": {
+      "amount": 5000,
+      "reference_id": "b-BAD",
+      "description": "Deposit for b-BAD"
+     },
+     "now": 1400,
+     "result": {
+      "threw": "The note is not one a UPI app would take.",
+      "class": "Error"
+     },
+     "state": {
+      "seq": 5,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-12",
+        "amountPaise": 10000,
+        "description": "Deposit for b-12",
+        "link": "upi://pay?am=10000&tn=b-12",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       },
+       {
+        "id": "upi-3",
+        "reference": "b-13",
+        "amountPaise": 10000,
+        "description": "Deposit for b-13",
+        "link": "upi://pay?am=10000&tn=b-13",
+        "code": "GHJKMN",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1200,
+        "marks": []
+       },
+       {
+        "id": "upi-4",
+        "reference": "b-14",
+        "amountPaise": 5000,
+        "description": "Deposit for b-14",
+        "link": "upi://pay?am=5000&tn=b-14",
+        "code": "PQRSTU",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1300,
+        "marks": [],
+        "acceptPartial": true
+       }
+      ],
+      "refunds": []
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 10000
+    },
+    {
+     "id": "upi-3",
+     "left": 10000
+    },
+    {
+     "id": "upi-4",
+     "left": 5000
+    }
+   ]
+  },
+  {
+   "name": "what the neutral view cannot do",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 10000,
+      "reference_id": "b-15",
+      "description": "Deposit for b-15"
+     },
+     "now": 1000,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-15",
+      "amountPaise": 10000,
+      "description": "Deposit for b-15",
+      "link": "upi://pay?am=10000&tn=b-15",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1000,
+      "marks": []
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-15",
+        "amountPaise": 10000,
+        "description": "Deposit for b-15",
+        "link": "upi://pay?am=10000&tn=b-15",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "refund",
+     "id": "upi-pay-9",
+     "now": 1100,
+     "result": {
+      "threw": "Here the agent never sends a refund: the owner pays it from their own payment app, and the agent tracks it (oweRefund).",
+      "class": "OwnerPaysError"
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-15",
+        "amountPaise": 10000,
+        "description": "Deposit for b-15",
+        "link": "upi://pay?am=10000&tn=b-15",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "resendRefund",
+     "id": "upi-pay-9",
+     "now": 1100,
+     "result": {
+      "threw": "There is no held refund to send again: the owner pays refunds.",
+      "class": "OwnerPaysError"
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-15",
+        "amountPaise": 10000,
+        "description": "Deposit for b-15",
+        "link": "upi://pay?am=10000&tn=b-15",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "cancelRequest",
+     "id": "upi-9",
+     "now": 1100,
+     "result": {
+      "threw": "No request upi-9.",
+      "class": "OwnerPaysError"
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-15",
+        "amountPaise": 10000,
+        "description": "Deposit for b-15",
+        "link": "upi://pay?am=10000&tn=b-15",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1000,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "cancelRequest",
+     "id": "upi-1",
+     "now": 1200,
+     "result": {
+      "id": "upi-1",
+      "reference_id": "b-15",
+      "amount": 10000,
+      "currency": "INR",
+      "description": "Deposit for b-15",
+      "status": "cancelled",
+      "pay_url": "upi://pay?am=10000&tn=b-15",
+      "amount_paid": 0,
+      "payments": [],
+      "created_at": 1
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-15",
+        "amountPaise": 10000,
+        "description": "Deposit for b-15",
+        "link": "upi://pay?am=10000&tn=b-15",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "cancelled",
+        "createdAtMs": 1000,
+        "marks": [],
+        "closedAtMs": 1200
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "fetchRequest",
+     "id": "upi-9",
+     "now": 1300,
+     "result": null,
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-15",
+        "amountPaise": 10000,
+        "description": "Deposit for b-15",
+        "link": "upi://pay?am=10000&tn=b-15",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "cancelled",
+        "createdAtMs": 1000,
+        "marks": [],
+        "closedAtMs": 1200
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "listRequests",
+     "query": {},
+     "now": 1300,
+     "result": [
+      {
+       "id": "upi-1",
+       "reference_id": "b-15",
+       "amount": 10000,
+       "currency": "INR",
+       "description": "Deposit for b-15",
+       "status": "cancelled",
+       "pay_url": "upi://pay?am=10000&tn=b-15",
+       "amount_paid": 0,
+       "payments": [],
+       "created_at": 1
+      }
+     ],
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-15",
+        "amountPaise": 10000,
+        "description": "Deposit for b-15",
+        "link": "upi://pay?am=10000&tn=b-15",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "cancelled",
+        "createdAtMs": 1000,
+        "marks": [],
+        "closedAtMs": 1200
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "listRequests",
+     "query": {
+      "reference_id": "nothing"
+     },
+     "now": 1300,
+     "result": [],
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-15",
+        "amountPaise": 10000,
+        "description": "Deposit for b-15",
+        "link": "upi://pay?am=10000&tn=b-15",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "cancelled",
+        "createdAtMs": 1000,
+        "marks": [],
+        "closedAtMs": 1200
+       }
+      ],
+      "refunds": []
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 10000
+    }
+   ]
+  },
+  {
+   "name": "a request time that is not a whole second",
+   "rolls": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30
+   ],
+   "steps": [
+    {
+     "op": "open",
+     "req": {
+      "amount": 10000,
+      "reference_id": "b-16",
+      "description": "Deposit for b-16"
+     },
+     "now": 1999,
+     "result": {
+      "id": "upi-1",
+      "reference": "b-16",
+      "amountPaise": 10000,
+      "description": "Deposit for b-16",
+      "link": "upi://pay?am=10000&tn=b-16",
+      "code": "ABCDEF",
+      "usedCodes": [],
+      "status": "created",
+      "createdAtMs": 1999,
+      "marks": []
+     },
+     "state": {
+      "seq": 1,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-16",
+        "amountPaise": 10000,
+        "description": "Deposit for b-16",
+        "link": "upi://pay?am=10000&tn=b-16",
+        "code": "ABCDEF",
+        "usedCodes": [],
+        "status": "created",
+        "createdAtMs": 1999,
+        "marks": []
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "mark",
+     "code": "ABCDEF",
+     "now": 2999,
+     "result": {
+      "kind": "marked",
+      "request": {
+       "id": "upi-1",
+       "reference": "b-16",
+       "amountPaise": 10000,
+       "description": "Deposit for b-16",
+       "link": "upi://pay?am=10000&tn=b-16",
+       "code": null,
+       "usedCodes": [
+        "ABCDEF"
+       ],
+       "status": "paid",
+       "createdAtMs": 1999,
+       "marks": [
+        {
+         "id": "upi-pay-2",
+         "amountPaise": 10000,
+         "atMs": 2999
+        }
+       ]
+      },
+      "mark": {
+       "id": "upi-pay-2",
+       "amountPaise": 10000,
+       "atMs": 2999
+      },
+      "full": true,
+      "afterClose": false
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-16",
+        "amountPaise": 10000,
+        "description": "Deposit for b-16",
+        "link": "upi://pay?am=10000&tn=b-16",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1999,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 10000,
+          "atMs": 2999
+         }
+        ]
+       }
+      ],
+      "refunds": []
+     }
+    },
+    {
+     "op": "view",
+     "call": "fetchRequest",
+     "id": "upi-1",
+     "now": 3000,
+     "result": {
+      "id": "upi-1",
+      "reference_id": "b-16",
+      "amount": 10000,
+      "currency": "INR",
+      "description": "Deposit for b-16",
+      "status": "paid",
+      "pay_url": "upi://pay?am=10000&tn=b-16",
+      "amount_paid": 10000,
+      "payments": [
+       {
+        "id": "upi-pay-2",
+        "request_id": "upi-1",
+        "amount": 10000,
+        "currency": "INR",
+        "status": "received",
+        "amount_refunded": 0,
+        "created_at": 2
+       }
+      ],
+      "created_at": 1
+     },
+     "state": {
+      "seq": 2,
+      "requests": [
+       {
+        "id": "upi-1",
+        "reference": "b-16",
+        "amountPaise": 10000,
+        "description": "Deposit for b-16",
+        "link": "upi://pay?am=10000&tn=b-16",
+        "code": null,
+        "usedCodes": [
+         "ABCDEF"
+        ],
+        "status": "paid",
+        "createdAtMs": 1999,
+        "marks": [
+         {
+          "id": "upi-pay-2",
+          "amountPaise": 10000,
+          "atMs": 2999
+         }
+        ]
+       }
+      ],
+      "refunds": []
+     }
+    }
+   ],
+   "leftOn": [
+    {
+     "id": "upi-1",
+     "left": 0
+    }
+   ]
+  }
+ ],
+ "replies": [
+  {
+   "text": "",
+   "id": "upi-received:K7M2QX",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "",
+   "id": "upi-refunded:k7m2qx",
+   "out": {
+    "kind": "refunded",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "",
+   "id": "upi-kept:K7M2",
+   "out": {
+    "kind": "kept",
+    "code": "K7M2"
+   }
+  },
+  {
+   "text": "",
+   "id": "upi-received:K7M2QXY",
+   "out": null
+  },
+  {
+   "text": "",
+   "id": "upi-received:K70M2Q",
+   "out": null
+  },
+  {
+   "text": "",
+   "id": "upi-other:K7M2QX",
+   "out": null
+  },
+  {
+   "text": "words",
+   "id": "bogus",
+   "out": null
+  },
+  {
+   "text": "received K7M2QX",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "Received k7m2qx",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "RECEIVED K7M2QX 150",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 15000
+   }
+  },
+  {
+   "text": "received K7M2QX 1,500",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 150000
+   }
+  },
+  {
+   "text": "received K7M2QX rs 150",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 15000
+   }
+  },
+  {
+   "text": "received K7M2QX Rs. 150",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 15000
+   }
+  },
+  {
+   "text": "received K7M2QX inr 150.5",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 15050
+   }
+  },
+  {
+   "text": "received K7M2QX ₹150.50",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 15050
+   }
+  },
+  {
+   "text": "received K7M2QX ₹ 150",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 15000
+   }
+  },
+  {
+   "text": "received K7M2QX 150.555",
+   "out": null
+  },
+  {
+   "text": "received K7M2QX 1,50,000",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 15000000
+   }
+  },
+  {
+   "text": "received K7M2QX 12,34",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 123400
+   }
+  },
+  {
+   "text": "received K7M2QX 99999999999999999999",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 1e+22
+   }
+  },
+  {
+   "text": "received K7M2QX 0",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 0
+   }
+  },
+  {
+   "text": "received K7M2QX 0.05",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 5
+   }
+  },
+  {
+   "text": "recieved K7M2QX",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "got K7M2QX 200",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 20000
+   }
+  },
+  {
+   "text": "paid K7M2QX",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "  paid   K7M2QX   ",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "paid K7M2QX",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "paid K7M2QX 100",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 10000
+   }
+  },
+  {
+   "text": "paid K7M2QX 100 rupees",
+   "out": null
+  },
+  {
+   "text": "paid K7M2Q",
+   "out": {
+    "kind": "received",
+    "code": "K7M2Q"
+   }
+  },
+  {
+   "text": "paid K7M",
+   "out": null
+  },
+  {
+   "text": "paid K7M2QXY",
+   "out": null
+  },
+  {
+   "text": "paid O0O0O0",
+   "out": null
+  },
+  {
+   "text": "refunded K7M2QX",
+   "out": {
+    "kind": "refunded",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "Returned k7m2qx",
+   "out": {
+    "kind": "refunded",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "kept K7M2QX",
+   "out": {
+    "kind": "kept",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "KEPT k7m2qx",
+   "out": {
+    "kind": "kept",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "refunded K7M2QX now",
+   "out": null
+  },
+  {
+   "text": "refund K7M2QX",
+   "out": null
+  },
+  {
+   "text": "approve K7M2QX",
+   "out": null
+  },
+  {
+   "text": "received",
+   "out": null
+  },
+  {
+   "text": "received 150",
+   "out": null
+  },
+  {
+   "text": "yes",
+   "out": null
+  },
+  {
+   "text": "ſ",
+   "out": null
+  },
+  {
+   "text": "paid K7M2QX",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX"
+   }
+  },
+  {
+   "text": "received K7M2QX 150\n",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX",
+    "amountPaise": 15000
+   }
+  },
+  {
+   "text": "received\nK7M2QX",
+   "out": {
+    "kind": "received",
+    "code": "K7M2QX"
+   }
+  }
+ ],
+ "noGateway": {
+  "createRequest": "This shop's payments are marked paid by the owner: it has no gateway account, so \"createRequest\" cannot be called.",
+  "fetchRequest": "This shop's payments are marked paid by the owner: it has no gateway account, so \"fetchRequest\" cannot be called.",
+  "listRequests": "This shop's payments are marked paid by the owner: it has no gateway account, so \"listRequests\" cannot be called.",
+  "cancelRequest": "This shop's payments are marked paid by the owner: it has no gateway account, so \"cancelRequest\" cannot be called.",
+  "fetchPayment": "This shop's payments are marked paid by the owner: it has no gateway account, so \"fetchPayment\" cannot be called.",
+  "refund": "This shop's payments are marked paid by the owner: it has no gateway account, so \"refund\" cannot be called.",
+  "resendRefund": "This shop's payments are marked paid by the owner: it has no gateway account, so \"resendRefund\" cannot be called.",
+  "listRefunds": "This shop's payments are marked paid by the owner: it has no gateway account, so \"listRefunds\" cannot be called."
+ }
+}

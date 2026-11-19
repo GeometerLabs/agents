@@ -1,8 +1,7 @@
 # Deferred in the Go Bookings monthly report, and why
 
-* **`validateSettings` is not ported, and this matters.** The report digests the validated settings; the file on disk can be raw (`geometer deploy` ships the owner's text), so a Go runtime
-  that hands in the file as read gives a policy digest the TypeScript would not give, and a go-live certificate then reads as "different" (Explanation.md, "Settings"). The Bookings
-  runtime's settings loader must port it (or the runtime must read settings through a validator); it is the one known way for the two runtimes to disagree.
+* **`validateSettings`**: ported in `internal/bookings` (settings_check.go: `CheckSettingsFile` and `(*Settings).Tree`, the checked tree this package digests; its policy digest equals the
+  TypeScript's on `bookings/testdata/settings-tree-vectors.json`). A caller must hand in that tree, never the raw file (Explanation.md, "Settings").
 * **The go-live certificate's builder and pages** (`buildGoLiveCertificate`, `goLivePage`, `goLiveText`, `limitLines`, `summariseRun`, `summariseHandCheck`, `notTestedFor`,
   `writeGoLiveCertificate`) are the CLI's and the deployer's, which stay TypeScript; the runtime only reads a certificate (`ReadGoLive`, ported).
 * **The Meta submission list and the example message** (`exampleValues`, `sampleMessage`, `reportSubmissions`, `report/review.ts`, `sample-shop.ts`, `example-month.ts`, `papers.ts`): not

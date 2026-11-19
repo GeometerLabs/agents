@@ -16,6 +16,7 @@ The Go twin of `modules/payments`. What a Bookings, Orders, Fees or Stock-orders
 - **fake.go**: the in-memory stand-in gateway a "fakes" shop uses (`NewFake`), with `fake-vectors.json` for its ids, answers and events.
 - **rupees.go**: `RupeesToPaise` (the refund limit and Guard's threshold are one number).
 - **upi/**: the `upi://pay` link (link.go) with its exact problem words.
+- **ownermarked/**: the UPI shop's ledger (requests, the owner's one-use marks, refunds the owner owes), the owner's replies, the neutral `Payments` view over them and the QR picture; see its Explanation.md.
 
 Differences from TypeScript, all recorded: a fractional amount in a reply is "no amount" (money is integers); `UntoldRefund.amountInr` is kept in paise and written as the exact decimal
 (`rupeesText`), not a float; the Go fake has no fault plans and no Guard model.
