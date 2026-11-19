@@ -208,6 +208,7 @@ describe("the monthly report", () => {
     const made = folders(dir);
     assert.equal(made.length, 1, "one report");
     assert.match(made[0], /^[A-Za-z0-9_-]{16,}$/u, "the folder is named by a random token, so the page is not guessable");
+    for (let i = 0; i < 40 && readdirSync(join(dir, made[0])).length < 6; i++) await sleep(250); // the folder appears before its files are all written
     const files = readdirSync(join(dir, made[0]));
     assert.deepEqual([...files].sort(), ["certificate-2026-11-en.html", "certificate-2026-11-en.txt", "certificate-2026-11.json", "owner-2026-11-en.txt", "report-2026-11-en.html", "report-2026-11.json"], "November's report in a folder of its own: the page, the certificate, the owner's lines and the data");
     assert.match(readFileSync(join(dir, made[0], "report-2026-11-en.html"), "utf8"), /Glow Salon/u);
