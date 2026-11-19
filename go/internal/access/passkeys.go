@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"regexp"
 
 	"github.com/go-webauthn/webauthn/protocol"
@@ -420,7 +421,7 @@ func (a *Access) Register(g Grant, file *Grants, who Who, rp RelyingParty, shopN
 	id := newID()
 	var stored any // the label, at most 60 UTF-16 units, or NULL (the page then says "a phone")
 	if label != "" {
-		stored = cut(label, 60)
+		stored = language.UTF16SliceFFFD(label, 60)
 	}
 	res := RegisterResult{State: "refused"}
 	err = a.tx(func(x execer) error {

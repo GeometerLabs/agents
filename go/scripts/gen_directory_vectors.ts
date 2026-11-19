@@ -2,7 +2,9 @@
 // Run from the repository root:   node go/scripts/gen_directory_vectors.ts      (--check compares with the committed file)
 // The inputs are chosen to be the ones the two languages could disagree on: scripts and marks, lower-casing, UTF-16 lengths, hostile addresses, dates V8 reads loosely, numbers JavaScript
 // reads from text, a model's answer that is nearly right.
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { gunzipSync, gzipSync } from "node:zlib";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { skeleton } from "../../modules/discovery/romanise.ts";
@@ -12,7 +14,7 @@ import { readFeed } from "../../modules/discovery/feed.ts";
 import { feedAllowed } from "../../modules/discovery/notices.ts";
 import { cleanQuestion, readRules, readTypedSearch, requestOf } from "../../modules/discovery/assistant.ts";
 import { readRequest, dayOf } from "../../modules/discovery/search.ts";
-import { freshness, km, link } from "../../modules/discovery/page.ts";
+import { EMPTY_FORM, freshness, km, link, orderPage, searchPage } from "../../modules/discovery/page.ts";
 import { DIRECTORY_WORDS } from "../../modules/discovery/words.ts";
 import { languageOf } from "../../modules/discovery/http.ts";
 
@@ -74,9 +76,98 @@ out.requestOf = TYPED.map((r) => readTypedSearch(r)).filter(Boolean).flatMap((t)
 out.freshness = [["2026-11-19T01:00:00.000Z", 1_763_513_000_000], ["2026-11-18T01:00:00.000Z", 1_763_513_000_000], ["2026-11-10T20:00:00.000Z", 1_763_513_000_000], ["2026-11-19T20:00:00.000Z", 1_763_513_000_000], ["2025-01-01T00:00:00.000Z", 1_763_513_000_000]].flatMap(([c, now]) => (["en", "hi", "ml", "kn"] as const).map((l) => ({ confirmed: c, now, lang: l, text: freshness(DIRECTORY_WORDS[l], c as string, now as number) })));
 out.link = [["/search", { q: "a b", category: "", lang: "hi" }], ["/search", { q: "ಬೆಕ್ಕು&x=1", town: "St. Mary's", lat: "10.5" }], ["/order", { lang: undefined }], ["/search", { q: "*-._~!'()" }]].map(([p, o]) => ({ path: p, params: Object.entries(o as object), link: link(p as string, o as Record<string, string | undefined>) }));
 
+// ---- feeds: a good feed and one change at a time, read by the TypeScript reader (feed.test.ts's cases, and the edges it did not try). Written 19 Nov 2026, before the TypeScript
+// directory was deleted (decision 61, wave 1c): from then on this file is the source.
+const FP = "https://pages.example/rani-pets/";
+const goodItem = (id: string, o: Record<string, unknown> = {}): Record<string, unknown> => ({
+  id, page: `${FP}#${id}`, category: "pets", title: { en: "Persian kitten", ml: "പേർഷ്യൻ പൂച്ചക്കുട്ടി" }, text: { en: "Two kittens." }, ownerLanguage: "ml", machineWritten: ["en"],
+  price: { value: "8000.00", currency: "INR", note: "each" }, quantity: 2, photos: [{ url: `${FP}photo/ph-9.jpg`, type: "image/jpeg", width: 1200, height: 900 }], availability: "in_stock", confirmed: "2026-11-18T10:00:00.000Z", ...o,
+});
+const goodFeed = (shop: Record<string, unknown> = {}, items: unknown[] = [goodItem("l-3")], top: Record<string, unknown> = {}): Record<string, unknown> => ({
+  format: "shop-feed/1", updated: "2026-11-18T10:00:00.000Z",
+  shop: { name: "Rani Pets", page: FP, trade: "pet shop", languages: ["ml", "en", "fr"], place: { town: "Thrissur", pincode: "680001", lat: "10.527642", lon: "76.214435" }, chat: `${FP}chat`, check: `${FP}api/v1/check`, agentCard: `${FP}agent-card.json`, registration: { kind: "GSTIN", number: "32ABCDE1234F1Z5", source: "checked" }, ...shop },
+  items, signature: { alg: "Ed25519", keyId: "k", key: "x", sig: "y" }, ...top,
+});
+const place = (o: Record<string, unknown>) => ({ place: { town: "Thrissur", ...o } });
+const FEEDS: [string, unknown, string?][] = [
+  ["good", goodFeed()], ["not an object", [1]], ["format 2", goodFeed({}, undefined, { format: "shop-feed/2" })], ["no updated", goodFeed({}, undefined, { updated: "yesterday" })], ["updated no Z", goodFeed({}, undefined, { updated: "2026-11-18T10:00:00" })],
+  ["updated 4 fraction digits", goodFeed({}, undefined, { updated: "2026-11-18T10:00:00.1234Z" })], ["updated 30 Feb", goodFeed({}, undefined, { updated: "2026-02-30T10:00:00Z" })],
+  ["no shop", goodFeed({}, undefined, { shop: "x" })], ["http page", goodFeed({ page: "http://pages.example/rani-pets/" })], ["page no slash", goodFeed({ page: "https://pages.example/rani-pets" })], ["page query", goodFeed({ page: `${FP}?a=1` })],
+  ["no name", goodFeed({ name: "" })], ["long name", goodFeed({ name: "n".repeat(121) })], ["name 120", goodFeed({ name: "n".repeat(120) })], ["lone surrogate name", goodFeed({ name: "Rani \ud800" })],
+  ["no place", goodFeed({ place: undefined })], ["no town", goodFeed(place({ town: "" }))], ["pincode 4", goodFeed(place({ pincode: "6800" }))], ["pincode number", goodFeed(place({ pincode: 680001 }))],
+  ["lat no lon", goodFeed(place({ lat: "10.5" }))], ["lat 7 places", goodFeed(place({ lat: "10.5276421", lon: "76.2" }))], ["lat 91", goodFeed(place({ lat: "91", lon: "76.2" }))], ["lat words", goodFeed(place({ lat: "ten", lon: "76.2" }))],
+  ["lat number", goodFeed(place({ lat: 10.5, lon: 76.2 }))], ["lon 180", goodFeed(place({ lat: "-90", lon: "-180.000000" }))],
+  ["chat elsewhere", goodFeed({ chat: "https://evil.example/chat" })], ["chat sibling", goodFeed({ chat: "https://pages.example/other-shop/chat" })], ["chat http", goodFeed({ chat: "http://pages.example/rani-pets/chat" })],
+  ["chat dot-dot", goodFeed({ chat: `${FP}../other/chat` })], ["check elsewhere", goodFeed({ check: "https://evil.example/check" })], ["no check", goodFeed({ check: undefined })],
+  ["card elsewhere", goodFeed({ agentCard: "https://evil.example/card" })], ["no card", goodFeed({ agentCard: undefined })], ["no trade", goodFeed({ trade: undefined })], ["empty trade", goodFeed({ trade: "" })],
+  ["registration half", goodFeed({ registration: { kind: "GSTIN" } })], ["no registration", goodFeed({ registration: undefined })], ["languages junk", goodFeed({ languages: "ml" })],
+  ["not at its address", goodFeed({ page: "https://pages.example/other-shop/" })], ["items not a list", goodFeed({}, undefined, { items: {} })],
+  ["200 items", goodFeed({}, Array.from({ length: 200 }, (_, i) => goodItem(`i-${i}`)))], ["201 items", goodFeed({}, Array.from({ length: 201 }, (_, i) => goodItem(`i-${i}`)))],
+  ["bad items dropped", goodFeed({}, [
+    goodItem("ok-1"), "junk", goodItem("../x"), goodItem("i-page", { page: "https://evil.example/#x" }), goodItem("i-cat", { category: "weapons" }), goodItem("i-title", { title: {} }), goodItem("i-title-fr", { title: { fr: "chaton" } }),
+    goodItem("i-title-empty", { title: { en: "" } }), goodItem("i-text", { text: { en: 5 } }), goodItem("i-owner", { ownerLanguage: "fr" }), goodItem("i-mw", { machineWritten: ["fr"] }), goodItem("i-price-int", { price: { value: "8000", currency: "INR" } }),
+    goodItem("i-price-80.5", { price: { value: "80.5", currency: "INR" } }), goodItem("i-price-num", { price: { value: 8000, currency: "INR" } }), goodItem("i-price-usd", { price: { value: "8000.00", currency: "USD" } }),
+    goodItem("i-price-note", { price: { value: "8000.00", currency: "INR", note: "" } }), goodItem("i-price-null", { price: null }), goodItem("i-price-gone", { price: undefined }), goodItem("i-4-photos", { photos: Array.from({ length: 4 }, (_, j) => ({ url: `${FP}photo/${j}.jpg`, type: "image/jpeg" })) }),
+    goodItem("i-png", { photos: [{ url: `${FP}photo/a.png`, type: "image/png" }] }), goodItem("i-photo-off", { photos: [{ url: "https://cdn.example/a.jpg", type: "image/jpeg" }] }), goodItem("i-webp", { photos: [{ url: `${FP}photo/a.webp`, type: "image/webp", width: 1.5, height: -1 }] }),
+    goodItem("i-gone", { availability: "gone" }), goodItem("i-unknown", { availability: "maybe" }), goodItem("i-ctc", { availability: "call_to_check" }), goodItem("i-no-confirmed", { confirmed: "yesterday" }),
+    goodItem("i-qty-neg", { quantity: -1 }), goodItem("i-qty-frac", { quantity: 1.5 }), goodItem("i-qty-max", { quantity: 1_000_000 }), goodItem("i-qty-over", { quantity: 1_000_001 }), goodItem("i-no-qty", { quantity: undefined }), goodItem("ok-1"),
+    goodItem("i-long-title", { title: { en: "t".repeat(201) } }), goodItem("i-title-200", { title: { en: "t".repeat(200) } }), goodItem("i-no-text", { text: undefined }),
+  ])],
+];
+const feeds = FEEDS.map(([name, doc]) => {
+  const r = readFeed(JSON.parse(JSON.stringify(doc ?? null)), `${FP}listings.json`);
+  return { name, doc: JSON.parse(JSON.stringify(doc ?? null)), ...(r.ok ? { ok: true, feed: r.feed, dropped: r.dropped } : { ok: false, reason: r.reason }) };
+});
+
+// ---- pages: the search page in every state and the order page, rendered by the TypeScript (page.test.ts's cases), at a fixed instant with a fixed nonce. The style sheet is the
+// same on every page and is kept as its hash (the Go test hashes its own the same way). Written 19 Nov 2026 with the feeds above; from then on this file is the source.
+const NOW = Date.parse("2026-11-19T06:00:00.000Z");
+const R = (o: Record<string, any>) => ({
+  shop: { name: "Rani Pets", page: FP, town: "Thrissur", distanceKm: 1.4, ...o.shop },
+  item: { id: "l-3", title: "Persian kitten", lang: "en", machineWritten: false, price: { value: "8000.00", currency: "INR", note: "each" }, photo: `${FP}photo/ph-9.jpg`, availability: "in_stock", confirmed: "2026-11-19T01:00:00.000Z", category: "pets", ...o.item },
+  chat: `${FP}chat?about=${o.item?.id ?? "l-3"}`, checked: true, ...o.top,
+});
+const RESULTS = [
+  R({}),
+  R({ item: { id: "l-4", title: "പേർഷ്യൻ പൂച്ചക്കുട്ടി", lang: "ml", machineWritten: true, photo: null, price: { value: "1234567.50", currency: "INR" } } }),
+  R({ shop: { name: "Silent Tailor", page: "https://pages.example/silent-tailor/", town: "Thrissur", distanceKm: null }, item: { id: "s-1", title: "Cotton kurta", category: "clothes", availability: "call_to_check", confirmed: "2026-11-16T01:00:00.000Z", photo: null }, top: { checked: false, chat: "https://pages.example/silent-tailor/chat?about=s-1" } }),
+  R({ item: { id: "l-5", price: null, photo: null, category: "food", confirmed: "2026-11-18T01:00:00.000Z" } }),
+  R({ shop: { name: "<script>alert(1)</script> & \"Co\"", page: "https://pages.example/gone-shop/", town: "Kunnamkulam <b>", distanceKm: 24.36 }, item: { id: "g-2", title: "Parrot <img src=x onerror=alert(1)>", price: { value: "999.00", currency: "INR", note: "<b>each</b>" }, photo: null, category: "other" }, top: { chat: "https://pages.example/gone-shop/chat?about=g-2" } }),
+  R({ shop: { distanceKm: null }, item: { id: "m-1", category: "vehicles_and_cycles", photo: null, confirmed: "2025-01-01T00:00:00.000Z" } }),
+];
+const answer = (results: unknown[], next: string | null) => ({ format: "directory-search/1", results, order: "https://pages.example/order", next });
+const FORM_FULL = { q: "kitten <b>", category: "pets", town: "", lat: "10.52", lon: "76.21", radius_km: "10" };
+const VIEWS: [string, Record<string, unknown>, Record<string, unknown>, { line: string | null; notice: string | null } | undefined, boolean][] = [
+  ["start", EMPTY_FORM, { state: "start" }, undefined, false], ["start with the assistant", EMPTY_FORM, { state: "start" }, undefined, true],
+  ["results", FORM_FULL, { state: "results", answer: answer(RESULTS, "10") }, undefined, false],
+  ["results by town", { ...EMPTY_FORM, q: "kurta", town: "Thrissur <i>", category: "clothes" }, { state: "results", answer: answer(RESULTS.slice(2, 4), null) }, undefined, false],
+  ["results with the assistant's line", { ...FORM_FULL, ask: "Persian kitten near me <b>?" }, { state: "results", answer: answer(RESULTS.slice(0, 2), null) }, { line: "2 listings of \"kitten\" <b> at 1 shop.", notice: null }, true],
+  ["results searched as typed", { ...EMPTY_FORM, q: "kitten", ask: "kitten" }, { state: "results", answer: answer(RESULTS.slice(0, 1), null) }, { line: null, notice: "Your words were searched as typed." }, true],
+  ["none", { ...EMPTY_FORM, q: "zebra" }, { state: "none" }, undefined, false], ["bad", { ...EMPTY_FORM, q: "x", category: "weapons" }, { state: "bad", message: "category must be one of <b>pets</b>" }, undefined, false],
+  ["busy", { ...EMPTY_FORM, q: "kitten" }, { state: "busy" }, undefined, false], ["down", { ...EMPTY_FORM, q: "kitten" }, { state: "down" }, undefined, true],
+];
+const styleHash = (html: string): string => html.replace(/<style>([\s\S]*?)<\/style>/u, (_m, css: string) => `<style>sha256:${createHash("sha256").update(css).digest("hex")}</style>`);
+const pages: unknown[] = [];
+for (const lang of ["en", "hi", "ml", "kn"] as const) {
+  const ctx = { origin: "https://pages.example", lang, now: NOW, nonce: "NONCE", fontUrl: "/search/font.woff2" };
+  for (const [name, form, view, assist, assistant] of VIEWS) pages.push({ name, lang, assistant, form, view, assist: assist ?? null, html: styleHash(searchPage({ ...ctx, assistant }, form as never, view as never, assist)) });
+  pages.push({ name: "order", lang, assistant: false, form: null, view: null, assist: null, html: styleHash(orderPage(ctx)) });
+}
+const pagesFile = join(here, "..", "internal", "directory", "testdata", "pages.json.gz");
+const pagesText = JSON.stringify({ now: NOW, pages });
+const feedsFile = join(here, "..", "internal", "directory", "testdata", "feeds.json.gz");
+const feedsText = JSON.stringify({ url: `${FP}listings.json`, feeds });
+
 mkdirSync(dirname(file), { recursive: true });
 const text = `${JSON.stringify(out, (_k, v) => (typeof v === "number" && !Number.isFinite(v) ? String(v) : v === undefined ? null : v))}\n`;
 if (process.argv.includes("--check")) {
-  if (!existsSync(file) || readFileSync(file, "utf8") !== text) { console.error("stale: testdata/vectors.json"); process.exit(1); }
+  let stale = false;
+  if (!existsSync(file) || readFileSync(file, "utf8") !== text) { console.error("stale: testdata/vectors.json"); stale = true; }
+  if (!existsSync(pagesFile) || gunzipSync(readFileSync(pagesFile)).toString("utf8") !== pagesText) { console.error("stale: testdata/pages.json.gz"); stale = true; }
+  if (!existsSync(feedsFile) || gunzipSync(readFileSync(feedsFile)).toString("utf8") !== feedsText) { console.error("stale: testdata/feeds.json.gz"); stale = true; }
+  if (stale) process.exit(1);
   console.log("fresh");
-} else { writeFileSync(file, text); console.log(`wrote ${text.length} bytes`); }
+} else {
+  writeFileSync(file, text); writeFileSync(pagesFile, gzipSync(Buffer.from(pagesText), { level: 9 })); writeFileSync(feedsFile, gzipSync(Buffer.from(feedsText), { level: 9 }));
+  console.log(`wrote ${text.length} bytes, ${pagesText.length} bytes of pages and ${feedsText.length} bytes of feeds`);
+}

@@ -9,6 +9,7 @@ package directory
 
 import (
 	"fmt"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"math"
 	"strconv"
 	"strings"
@@ -75,9 +76,9 @@ func rupees(value string) string {
 
 // Freshness is "Confirmed today", "Confirmed yesterday", "Confirmed 3 days ago", from the date the shop last confirmed, counted in India's days.
 func Freshness(w *Words, confirmed string, now int64) string {
-	at, _ := jsDateParse(confirmed)
-	today, _ := jsDateParse(DayOf(now) + "T00:00:00Z")
-	then, _ := jsDateParse(DayOf(at) + "T00:00:00Z")
+	at, _ := language.ParseJSDate(confirmed)
+	today, _ := language.ParseJSDate(DayOf(now) + "T00:00:00Z")
+	then, _ := language.ParseJSDate(DayOf(at) + "T00:00:00Z")
 	days := int(math.Round(float64(today-then) / 86_400_000))
 	switch {
 	case days <= 0:
@@ -305,10 +306,10 @@ func SearchPage(ctx PageContext, f FormValues, view SearchView, assist *AssistBi
 			}
 		}
 		var count string
-		if jsTrim(f.Q) == "" {
+		if language.TrimJS(f.Q) == "" {
 			count = w.Fn("resultsNoWords", len(results), "", nil)
 		} else {
-			count = w.Fn("resultsFor", len(results), "", map[string]string{"q": jsTrim(f.Q)})
+			count = w.Fn("resultsFor", len(results), "", map[string]string{"q": language.TrimJS(f.Q)})
 		}
 		note := ""
 		if unanswered > 0 {
@@ -345,7 +346,7 @@ func SearchPage(ctx PageContext, f FormValues, view SearchView, assist *AssistBi
 		}
 		main = n + l + main
 	}
-	title := jsTrim(f.Q)
+	title := language.TrimJS(f.Q)
 	if title == "" {
 		title = w.S("title")
 	}

@@ -5,13 +5,17 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { composeServer } from "../generate/compose.ts";
+import { dirname, join } from "node:path";
+import { ASSISTANT_NETWORK, DIRECTORY_DATA_DIR, DIRECTORY_VOLUME, addressing, caddyfile, composeServer, hasDirectory } from "../generate/compose.ts";
 import type { ShopDeploy } from "../generate/compose.ts";
-import { names } from "../generate/shop.ts";
+import { DIRECTORY_SECRET_FILE, directoryConfig } from "../generate/configs.ts";
+import { guardUrl, names } from "../generate/shop.ts";
 import { deploy } from "../deploy.ts";
 import { main } from "../geometer.ts";
-import { GO_BUILD_MEMORY_MB, GO_CACHE_VOLUME, GO_PROGRAMS, ensureGoRuntimes, goBuilderOf, goImageFor, goRuntimeOf, pruneGoImages } from "../lib/go-build.ts";
+import { GO_BUILD_MEMORY_MB, GO_CACHE_VOLUME, GO_CA_FILE, GO_PROGRAMS, dockerfileOf, ensureGoRuntimes, goBuilderOf, goImageFor, goRuntimeOf, pruneGoImages } from "../lib/go-build.ts";
+import { DIRECTORY_AGENT_ID, directoryAssistant, discoveryBudgetFor } from "../lib/budget.ts";
+import { parseServer } from "../lib/server.ts";
+import { PRICES_DIR, latestPriceList, loadPriceList } from "../panel/cost.ts";
 import { fakeRunner, failed, ok } from "../lib/runner.ts";
 import type { RunOptions } from "../lib/runner.ts";
 import { loadState } from "../lib/state.ts";
@@ -94,13 +98,13 @@ test("the current listings template is on Go (version 0.2.0, matching the progra
     writeFileSync(join(dir, "template.json"), JSON.stringify({ schema: 1, runtime: "node", program: "listings" }));
     assert.equal(goRuntimeOf(dir), undefined);
   } finally { rmSync(dir, { recursive: true, force: true }); }
-  assert.ok(GO_PROGRAMS.includes("listings") && GO_PROGRAMS.includes("listings-shared"));
+  assert.ok(GO_PROGRAMS.includes("listings") && GO_PROGRAMS.includes("listings-shared") && GO_PROGRAMS.includes("directory"));
 });
 
 // ---- the build ----------------------------------------------------------------------------------------------------------------------------------
 
 /** A stand-in Docker: `image inspect` says whether the image is there; `run` writes the programs into the folder mounted at /out (or fails); `build` records the Dockerfile and context. */
-function stand(opts: { have?: boolean; compileFails?: boolean; buildFails?: boolean } = {}) {
+function stand(opts: { have?: boolean; compileFails?: boolean; buildFails?: boolean; noCertificates?: boolean } = {}) {
   const seen: { dockerfile?: string; context?: string[]; mounts?: string[] } = {};
   let have = opts.have === true;
   const runner = fakeRunner((_command, args, _o: RunOptions) => {
@@ -110,6 +114,7 @@ function stand(opts: { have?: boolean; compileFails?: boolean; buildFails?: bool
       const out = args[args.indexOf("-v", args.indexOf("-v") + 2) + 1].replace(/:\/out$/u, "");
       seen.mounts = args.filter((_a, i) => args[i - 1] === "-v");
       for (const p of GO_PROGRAMS) writeFileSync(join(out, p), `binary ${p}`, { mode: 0o755 });
+      if (!opts.noCertificates) { mkdirSync(join(out, dirname(GO_CA_FILE)), { recursive: true }); writeFileSync(join(out, GO_CA_FILE), "-----BEGIN CERTIFICATE-----\n"); }
       return ok();
     }
     if (args[0] === "build") {
@@ -144,7 +149,8 @@ test("the build: the pinned Go image by digest, the source read-only, the settin
   assert.ok(script.includes("go build -p 1 "), "one package at a time");
   for (const flag of ["-trimpath", "-mod=readonly", '-ldflags "-s -w"']) assert.ok(script.includes(flag), flag);
   assert.deepEqual(run.slice(run.indexOf("-c") + 3), [...GO_PROGRAMS], "every program of GO_PROGRAMS is built by the same command");
-  assert.deepEqual(s.seen.context!.sort(), ["Dockerfile", "root/", "root/home/", "root/home/node/", ...GO_PROGRAMS.map((p) => `root/${p}`)].sort(), "the programs and the empty home folder, nothing else");
+  assert.ok(script.endsWith(`cp /${GO_CA_FILE} /out/${GO_CA_FILE}`), "the builder image's certificate authorities are copied, for the directory's https calls");
+  assert.deepEqual(s.seen.context!.sort(), ["Dockerfile", "root/", "root/home/", "root/home/node/", "root/etc/", "root/etc/ssl/", "root/etc/ssl/certs/", `root/${GO_CA_FILE}`, ...GO_PROGRAMS.map((p) => `root/${p}`)].sort(), "the programs, the empty home folder and the certificate authorities, nothing else");
   assert.match(s.seen.dockerfile!, /^FROM scratch$/mu);
   assert.match(s.seen.dockerfile!, /^COPY --chown=1000:1000 root\/ \/$/mu, "the programs and /home/node belong to the user the shops run as, so a new data volume does too");
   assert.deepEqual(s.runner.calls.filter((c) => c.args[0] === "build").map((c) => c.args.slice(0, 3)), [["build", "-t", r.image]]);
@@ -317,4 +323,137 @@ test("old geo-go images are removed, except this checkout's, any a container use
   assert.deepEqual(r.removed.sort(), ["geo-go:old1", "geo-go:stale4"]);
   assert.deepEqual(real.calls.filter((c) => c.args[1] === "rm").map((c) => c.args[2]).sort(), ["geo-go:old1", "geo-go:stale4"]);
   assert.deepEqual(r.kept.sort(), [mine, "geo-go:kept3", "geo-go:running2"].sort());
+});
+
+// ---- the directory of local shops on Go (wave 1c) -------------------------------------------------------------------------------------------------
+// The deployer's side of the directory (moved here from directory-service.test.ts and directory-assistant.test.ts when the TypeScript service was deleted: their checks of the service
+// itself are the directory contract, modules/discovery/contract/, and the Go tests in go/internal/directory and go/cmd/directory).
+
+const DDIRS = { app: "/repo", generated: "/srv/generated", secrets: "/srv/secrets", status: "/srv/status", fleet: "/srv/fleet", shops: "/srv/shops", secretsInbox: "/srv/secrets-inbox", requests: "/srv/requests", exports: "/srv/exports", panelData: "/srv/panel", config: "/srv/geometer.json", licence: "/srv/state/licence", home: "/srv/home" };
+const hosted = (extra: Record<string, unknown> = {}) => serverConfig({ panel: { enabled: true, mode: "hosted" }, fleet: { url: "https://fleet.example", keyFile: "fleet.key" }, pages: { domain: "pages.example", extraDomains: ["old.example"] }, ...extra });
+const nets = (c: ReturnType<typeof composeServer>, svc: string): string[] => Object.keys((c.services[svc].block.networks as Record<string, unknown> | undefined) ?? {}).sort();
+
+test("the directory runs the Go program in the programs' image: its own container on the pages and egress networks, its own volume at the folder existing servers have it in, no secret, no app mount, the program's health check, and exactly CONFIG, PORT and HOST", () => {
+  const c = composeServer(hosted(), DDIRS, [], { goImage: IMAGE });
+  const d = c.services.directory.block as Record<string, any>;
+  assert.equal(d.image, IMAGE);
+  assert.deepEqual(d.command, ["/directory"]);
+  assert.equal(d.user, "1000:1000");
+  assert.equal(d.read_only, true);
+  for (const key of ["init", "cap_drop", "security_opt", "tmpfs", "restart"]) assert.ok(d[key] !== undefined, `${key}: the hardening every service has`);
+  assert.deepEqual(d.environment, { CONFIG: "/etc/geometer/directory.json", PORT: "8799", HOST: "0.0.0.0" }, "nothing else is passed: never the contract's test clock (GEOMETER_TEST, GEOMETER_TEST_CLOCK_FILE)");
+  assert.deepEqual(d.volumes, ["/srv/generated/directory:/etc/geometer:ro", `${DIRECTORY_VOLUME}:/home/node`], "the config and its own volume; no /app (the program has its code inside), no secret");
+  assert.equal(DIRECTORY_DATA_DIR, "/home/node/directory", "the index and the key stay where the Node service kept them, so an existing server's volume is read as it is");
+  assert.deepEqual(d.healthcheck.test, ["CMD", "/directory", "health", "http://127.0.0.1:8799/healthz"], "no wget in the image: the program asks its own /healthz");
+  assert.deepEqual(Object.keys(d.networks).sort(), ["egress", "pages"], "no admin, front, panel or shop network: it reaches no runtime, Guard, relay or panel");
+  assert.match(c.compose, new RegExp(`\\n  ${DIRECTORY_VOLUME}:`, "u"), "the volume is declared");
+  assert.deepEqual(c.services.directory.files, ["/srv/generated/directory/directory.json"], "a changed config restarts it");
+  const door = c.services.door.block as { environment: Record<string, string>; networks: Record<string, unknown>; image: string };
+  assert.equal(door.environment.INTERNAL_PORT, "8798");
+  assert.deepEqual(Object.keys(door.networks).sort(), ["egress", "pages"]);
+  assert.equal(door.image, "node:26-alpine", "the door stays on Node");
+  assert.ok(!caddyfile(hosted(), [], ["veena"]).includes("directory"), "Caddy does not name the directory: everything under the pages domain goes to the door");
+  assert.ok(GO_PROGRAMS.includes("directory"), "the programs' image holds it");
+  assert.throws(() => composeServer(hosted(), DDIRS, [], {}), /no image of the Go programs/u, "a server with the directory needs the programs' image");
+});
+
+test("the programs' image gives /home/node to 1000:1000, so a NEW directory volume is the directory's user's and an existing one keeps its owner", () => {
+  assert.match(dockerfileOf("abc", "golang@sha256:x"), /^COPY --chown=1000:1000 root\/ \/$/mu);
+});
+
+test("a server with no pages domain has no directory, no volume, no door and never needs the image", () => {
+  const builder = serverConfig({ panel: { enabled: true } });
+  const c = composeServer(builder, DDIRS, [], {});
+  assert.equal(c.services.directory, undefined);
+  assert.equal(c.services.door, undefined);
+  assert.ok(!c.compose.includes(DIRECTORY_VOLUME));
+  assert.ok(!c.compose.includes("geo-go"));
+  assert.equal(directoryConfig(builder), undefined);
+  assert.equal(hasDirectory(builder), false);
+  assert.equal(hasDirectory(hosted()), true);
+});
+
+test("the directory's volume is a cache that no backup copies", () => {
+  const jobs = readFileSync(new URL("../backup/jobs.ts", import.meta.url), "utf8");
+  assert.ok(!jobs.includes(DIRECTORY_VOLUME) && !/directory-data|DIRECTORY_VOLUME/u.test(jobs), "backup/jobs.ts names the volumes it copies, and this is not one");
+  assert.match(readFileSync(new URL("../generate/compose.ts", import.meta.url), "utf8"), /that no backup copies/u);
+});
+
+test("the directory's config: the pages domains it serves, the door's own port, its folder, the feeds named in geometer.json, who runs it; no secret", () => {
+  const text = directoryConfig(hosted({ directory: { feeds: ["https://shops.example/s/ravi/listings.json"], area: "Kerala" } }))!;
+  assert.deepEqual(JSON.parse(text), { origin: "https://pages.example", served: ["pages.example", "old.example"], doorUrl: "http://door:8798", dataDir: DIRECTORY_DATA_DIR, feeds: ["https://shops.example/s/ravi/listings.json"], provider: { organization: "Geometer", url: "https://pages.example" }, area: "Kerala" });
+  assert.deepEqual(JSON.parse(directoryConfig(hosted())!).feeds, []);
+  assert.ok(!/key|secret|token|password/iu.test(text.replace("dataDir", "")));
+});
+
+test("geometer.json `directory`: feeds are https addresses, at most 200, and it needs the pages domain", () => {
+  const base = { schema: 1, id: "partner-1", domain: "partners.example", reviewedBy: "t", panel: { enabled: true, mode: "hosted" }, fleet: { url: "https://fleet.example", keyFile: "fleet.key" }, pages: { domain: "pages.example", extraDomains: [] } };
+  const errors = (directory: unknown, withPages = true) => parseServer({ ...base, ...(withPages ? {} : { pages: undefined }), directory }).errors.join(" ");
+  assert.equal(errors({ feeds: ["https://shops.example/s/ravi/listings.json"], area: "Kerala" }), "");
+  assert.equal(errors({}), "", "both parts are optional");
+  assert.match(errors({ feeds: ["http://shops.example/x/listings.json"] }), /"directory" must say/u);
+  assert.match(errors({ feeds: ["not an address"] }), /"directory" must say/u);
+  assert.match(errors({ feeds: Array.from({ length: 201 }, (_, i) => `https://x.example/${i}/listings.json`) }), /"directory" must say/u);
+  assert.match(errors({ feeds: [], extra: 1 }), /"directory" must say/u);
+  assert.match(errors("yes"), /"directory" must say/u);
+  assert.match(errors({ feeds: [] }, false), /needs "pages"/u);
+  assert.deepEqual(parseServer({ ...base, directory: { feeds: ["https://a.example/b/listings.json"], area: "Kerala" } }).config.directory, { feeds: ["https://a.example/b/listings.json"], area: "Kerala" });
+});
+
+const inForce = latestPriceList();
+const before = loadPriceList(new URL("2026-11-14.json", PRICES_DIR).pathname);
+
+test("the directory's assistant is on only where the server has the directory and a model, and the price list in force has its budget", () => {
+  const b = directoryAssistant(hosted(), inForce)!;
+  assert.deepEqual([b.monthlyMicroInr, b.daily.buyer, b.perBuyerPerDay], [2_500_000_000, 1500, 12]);
+  assert.deepEqual(b, discoveryBudgetFor(inForce));
+  assert.equal(directoryAssistant(hosted(), before), undefined, "a list with no budget: off");
+  assert.equal(directoryAssistant(serverConfig({ panel: { enabled: true } }), inForce), undefined, "no pages domain, no directory");
+  assert.equal(directoryAssistant({ ...hosted(), model: { ...hosted().model, model: "" } }, inForce), undefined, "no model chosen");
+  assert.deepEqual(directoryAssistant(hosted()), directoryAssistant(hosted(), inForce), "by default it reads the list in force");
+});
+
+test("the assistant's config: the budget, the model by the Guard's address, the credential's file name and never the credential; with no budget there is no block", () => {
+  const server = hosted();
+  const withIt = JSON.parse(directoryConfig(server, directoryAssistant(server, inForce))!);
+  assert.deepEqual(withIt.assistant, {
+    monthlyMicroInr: 2_500_000_000, dailyCalls: 1500, perBuyerPerDay: 12,
+    model: { wire: "openai", baseUrl: `${guardUrl("g-model")}/v1`, model: "gpt-4o-mini" }, agentTokenFile: DIRECTORY_SECRET_FILE,
+    ...(withIt.assistant.provider ? { provider: withIt.assistant.provider } : {}),
+  });
+  assert.equal(DIRECTORY_SECRET_FILE, "/run/secrets/agent_model");
+  assert.equal(JSON.parse(directoryConfig(server)!).assistant, undefined, "no budget: the assistant is off and the search page has no box");
+  assert.equal(JSON.parse(directoryConfig(server, directoryAssistant(server, before))!).assistant, undefined);
+  assert.ok(!/Bearer|"[A-Za-z0-9_-]{40,}"/u.test(JSON.stringify(withIt)), "no credential in the file");
+});
+
+test("compose with the assistant: the model Guard and the directory share one internal network of their own; the directory still reaches only the door, the feeds and that Guard; its credential folder only", () => {
+  const c = composeServer(hosted(), DDIRS, [node("glow-salon", 1)], { assistant: true, goImage: IMAGE });
+  assert.deepEqual(nets(c, "directory"), ["assistant", "egress", "pages"]);
+  assert.ok(nets(c, "fwd-model").includes(ASSISTANT_NETWORK), "the Guard is reachable there");
+  assert.deepEqual(Object.keys(c.services).filter((s) => nets(c, s).includes(ASSISTANT_NETWORK)).sort(), ["directory", "fwd-model"], "nobody else is on it");
+  assert.match(c.compose, /\n  assistant:\n    internal: true/u, "it has no way out");
+  const subnets = addressing(hosted()).subnets;
+  assert.equal(new Set(Object.values(subnets)).size, Object.keys(subnets).length, "its subnet overlaps none");
+  const d = c.services.directory.block as { volumes: string[] };
+  assert.ok(d.volumes.includes("/srv/secrets/directory:/run/secrets:ro"), "its own credential folder, read-only");
+  assert.ok(!d.volumes.some((v) => v.includes("/secrets/") && !v.includes("/secrets/directory")), "no other secret");
+  for (const n of ["admin", "front", "panel", "net-glow-salon"]) assert.ok(!nets(c, "directory").includes(n), `the directory is not on ${n}`);
+  assert.ok(nets(c, "fwd-model").includes("net-glow-salon"), "the shops still reach the Guard as before");
+  // without the assistant: as it was; and with no shop there is no model Guard to reach
+  const plain = composeServer(hosted(), DDIRS, [node("glow-salon", 1)], { goImage: IMAGE });
+  assert.deepEqual(nets(plain, "directory"), ["egress", "pages"]);
+  assert.doesNotMatch(plain.compose, /\n  assistant:\n    internal/u);
+  assert.ok(!(plain.services.directory.block.volumes as string[]).some((v) => v.includes("/secrets")));
+  const noShops = composeServer(hosted(), DDIRS, [], { assistant: true, goImage: IMAGE });
+  assert.deepEqual(nets(noShops, "directory"), ["egress", "pages"]);
+  assert.equal(noShops.services["g-model"], undefined);
+  const noPages = composeServer(serverConfig({ panel: { enabled: true } }), DDIRS, [node("glow-salon", 1)], { assistant: true });
+  assert.ok(!noPages.compose.includes(`\n  ${ASSISTANT_NETWORK}:`), "no directory, no network");
+});
+
+test("the directory is one more agent of the model Guard under its own id, which no shop's id can be", () => {
+  assert.equal(DIRECTORY_AGENT_ID, "directory-assistant");
+  assert.notEqual(DIRECTORY_AGENT_ID, names.agentId("directory-assistant"), "a shop named so is `runtime-directory-assistant`");
+  assert.ok(!names.agentId("x").startsWith(DIRECTORY_AGENT_ID));
 });

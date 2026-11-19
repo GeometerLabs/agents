@@ -22,7 +22,7 @@
 // the inbox too, where the shops' public booking pages and the owners' private pages are served (modules/channels/front.ts), each shop's with its own channel token.
 // Item 11f, on a server that answers for the pages domain (geometer.json `pages`): one more container, `door` (services/door.ts), on `pages` (internal: Caddy, the door
 // and the inbox only) and `egress` (fleet's lookups and builders' servers). It holds no secret and reaches no panel, relay or Guard.
-// Block S (18 Nov 2026), on the same servers: one more, `directory` (services/directory.ts), the directory of local shops, on `pages` and `egress`, reached only through the
+// Block S (18 Nov 2026), on the same servers: one more, `directory` (the Go program go/cmd/directory since wave 1c), the directory of local shops, on `pages` and `egress`, reached only through the
 // door (which forwards /search and the other directory paths to it) and keeping its cache in a volume of its own (DIRECTORY_VOLUME) that no backup copies.
 //
 // The monthly report pages. The runtime writes them into <data volume>/data/reports/<32 random hex digits>/. Caddy mounts that one folder of each shop's data volume,
@@ -228,6 +228,8 @@ export const RELAY_STATE_VOLUME = "relay-state";
  * only the directory's card's, so losing it only changes the card's key id.
  */
 export const DIRECTORY_VOLUME = "directory-data";
+/** Item 11f and block S: a server with a pages domain and fleet has the door and the directory. The directory is a Go program (wave 1c), so such a server needs the programs' image. */
+export const hasDirectory = (server: Pick<ServerConfig, "pages" | "fleet">): boolean => Boolean(server.pages && server.fleet);
 export const DIRECTORY_DATA_DIR = "/home/node/directory";
 const guardUser = "65532:65532"; // the user the Guard image runs as
 /** The health check of a Go program: the program itself asks its own /readyz (`/<program> health <url>`), because the scratch image has no shell and no wget. Same timings as healthWget. */
@@ -260,7 +262,7 @@ export interface PanelOptions {
 }
 
 // The whole server as compose services plus the files each needs. Pure: it returns text and touches neither disk nor Docker, so a deploy can be checked before anything starts.
-export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { panel?: PanelOptions; /** `uid:gid` ops runs as, so it can write the fleet folder. Left out: the node image's user. */ opsUser?: string; /** agents someone else wrote: their Guards, nothing more */ agents?: AgentDeploy[]; /** Geometer's speech service (bundle/services/speech): left out = no container and no network. */ speech?: SpeechOptions; /** Decision 60: the directory's buyer assistant is on (the price list in force has its budget and a model is chosen): the model Guard and the directory share the `assistant` network, and the directory has its credential folder. */ assistant?: boolean; /** Wave 1b: the image of the Go shop programs (lib/go-build.ts goImageFor), for every shop whose template declares a Go runtime. Needed when any does. */ goImage?: string }): Composed {
+export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeploy[], features: { panel?: PanelOptions; /** `uid:gid` ops runs as, so it can write the fleet folder. Left out: the node image's user. */ opsUser?: string; /** agents someone else wrote: their Guards, nothing more */ agents?: AgentDeploy[]; /** Geometer's speech service (bundle/services/speech): left out = no container and no network. */ speech?: SpeechOptions; /** Decision 60: the directory's buyer assistant is on (the price list in force has its budget and a model is chosen): the model Guard and the directory share the `assistant` network, and the directory has its credential folder. */ assistant?: boolean; /** Wave 1b: the image of the Go programs (lib/go-build.ts goImageFor), for every shop whose template declares a Go runtime and for the directory (wave 1c). Needed when either is there (a server with a pages domain and fleet always has the directory). */ goImage?: string }): Composed {
   const agents = features.agents ?? [];
   // A listings-only shop is not a container: it is a folder of the one shared process (below). Everything per shop (Guards, runtime, door, network, volume, report folder, push) is for
   // the shops that are not. A server with no listings-only shop composes byte for byte as it did before they existed.
@@ -276,7 +278,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
   const node = (command: string[], extra: Service): Service => ({ image: server.appImage, user: nodeUser, init: true, ...hardened, command, ...extra });
   // a Go program: the same hardening and the same user, in the image of the programs alone (no node, no shell). A shop on Go needs the image named, or there is nothing to run.
   const goProgram = (command: string[], extra: Service): Service => {
-    if (!features.goImage) throw new Error("A shop runs on a Go program but no image of the Go programs was given (lib/go-build.ts goImageFor).");
+    if (!features.goImage) throw new Error("A shop or the directory runs on a Go program but no image of the Go programs was given (lib/go-build.ts goImageFor).");
     return { image: features.goImage, user: nodeUser, init: true, ...hardened, command, ...extra };
   };
 
@@ -446,7 +448,7 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     });
   }
   // item 11f: the pages domain's front door, only where geometer.json names a pages domain and fleet is known (it asks fleet where each slug lives)
-  const door = server.pages && server.fleet;
+  const door = hasDirectory(server);
   if (door) {
     add("door", node(["node", "/app/bundle/services/door.ts"], {
       environment: { CONFIG: "/etc/geometer/door.json", PORT: String(DOOR_PORT), INTERNAL_PORT: String(DOOR_INTERNAL_PORT), HOST: "0.0.0.0" },
@@ -456,10 +458,13 @@ export function composeServer(server: ServerConfig, dirs: Dirs, shops: ShopDeplo
     // block S: the directory of local shops. Reached only through the door (the door forwards /search, /order, /feed-changed, /mcp and the Agent Card to it; Caddy does not name it).
     // On `pages` (to reach the door's own port, which reads this server's shops for it) and `egress` (only to read the feeds of builders' servers named in geometer.json: it reaches
     // no panel, relay, Guard or runtime, none of which share a network with it). Its own volume holds its cache; it holds no secret and no shop's data.
-    add("directory", node(["node", "/app/bundle/services/directory.ts"], {
+    // Wave 1c (decision 61): the Go program `/directory` in the programs' image (go/cmd/directory), the same user, config, volume and networks the Node service had; no /app mount (the
+    // program has its code inside). The volume stays at /home/node, where existing servers have the index and the key (the image carries that folder, owned by 1000:1000, so a NEW volume
+    // is the same user's). The environment is exactly CONFIG, PORT and HOST: the test clock the contract uses (GEOMETER_TEST_CLOCK_FILE) is never passed to a container.
+    add("directory", goProgram(["/directory"], {
       environment: { CONFIG: "/etc/geometer/directory.json", PORT: String(DIRECTORY_PORT), HOST: "0.0.0.0" },
-      volumes: [appVolume, `${dirs.generated}/directory:/etc/geometer:ro`, `${DIRECTORY_VOLUME}:/home/node`, ...(assistantOn ? [`${secretDir("directory")}:/run/secrets:ro`] : [])],
-      networks: { [PAGES_NETWORK]: {}, egress: {}, ...(assistantOn ? { [ASSISTANT_NETWORK]: {} } : {}) }, healthcheck: healthWget(DIRECTORY_PORT, "/healthz"),
+      volumes: [`${dirs.generated}/directory:/etc/geometer:ro`, `${DIRECTORY_VOLUME}:${HOME_DIR}`, ...(assistantOn ? [`${secretDir("directory")}:/run/secrets:ro`] : [])],
+      networks: { [PAGES_NETWORK]: {}, egress: {}, ...(assistantOn ? { [ASSISTANT_NETWORK]: {} } : {}) }, healthcheck: healthGo("directory", DIRECTORY_PORT, "/healthz"),
     }), [`${dirs.generated}/directory/directory.json`]);
   }
   // -- the speech service (optional). It sits alone on `speech`, a network with no route out, and publishes no port: the speech Guard joins that network and is the only caller. It has no
