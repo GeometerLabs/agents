@@ -4,6 +4,8 @@ package qr
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"image/png"
 	"os"
@@ -29,8 +31,12 @@ type vectors struct {
 		Width  int    `json:"width"`
 		Svg    string `json:"svg"`
 	} `json:"options"`
-	Masks   []vecCase `json:"masks"`
-	TooLong string    `json:"tooLong"`
+	Masks    []vecCase `json:"masks"`
+	Versions []struct {
+		Version, Length, Mask, Size int
+		RowsSha256                  string
+	} `json:"versions"`
+	TooLong string `json:"tooLong"`
 }
 
 func load(t *testing.T) vectors {
@@ -143,5 +149,18 @@ func TestPngDecodesToTheSameModules(t *testing.T) {
 	}
 	if _, err := Png(c, -3, 4); err == nil {
 		t.Error("a negative scale is refused")
+	}
+}
+
+func TestEveryVersionAtItsCapacity(t *testing.T) {
+	for _, v := range load(t).Versions {
+		c, err := EncodeWith(strings.Repeat("Q", v.Length), Options{MinVersion: v.Version, Mask: -1})
+		if err != nil {
+			t.Fatal(err)
+		}
+		sum := sha256.Sum256([]byte(strings.Join(rowsOf(c), "\n")))
+		if c.Version != v.Version || c.Size != v.Size || c.Mask != v.Mask || hex.EncodeToString(sum[:]) != v.RowsSha256 {
+			t.Errorf("version %d: version %d mask %d (TypeScript %d), matrix equal %v", v.Version, c.Version, c.Mask, v.Mask, hex.EncodeToString(sum[:]) == v.RowsSha256)
+		}
 	}
 }
