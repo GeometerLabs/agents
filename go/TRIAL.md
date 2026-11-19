@@ -485,3 +485,19 @@ deleted (its callers in accounting, render, report and bookingsreport use langua
 passes; before, `time.Date`, which could differ in a summer-time gap). Kept apart, with the reason: `calendar`'s `zonedMidnight` (Date.UTC's years 0 to 99 and its fall back to UTC
 for a zone Intl refuses, where `zone` panics on a zone the settings check already refused: different inputs, different answers), and `slots.Fill` (the positional `{0}` filler of the
 books' and the report's words: not a format, and no other copy of it exists; the Meta `{{1}}` filler and the assistant's `{name}` filler are other syntaxes).
+**What is left of wave 2 for Bookings (19 Nov, end of this stream's run; the next agent starts here).** Measured after the merges and the join: the Bookings contract on Go is
+**25 of 143** (the contract stream added 15 tests; the same 25 pass as before), the listings contract on Go **210 of 210**, `go test ./...` 26 packages ok. Done on this branch: slices 1 and 2's first part (runtime, store, events,
+the shared seam), the pure rules, the declared limits, a customer's intent from a model and from a tap, the rule parser and the reading for the router, the merges of main (Guard
+clients, books) and of go-bookings-words-19nov (the customer's words), and the formatting join. Not started, in the order they unblock contract tests:
+1. **Slice 6, the services wired (unblocks most of the 103 failing Bookings contract tests).** `internal/bookings/ports.go` gets one field per service typed with THEIR interfaces
+   (`calendar.Calendar`, `payments.Payments`, `messaging.Messaging`), `cmd/bookings` hands in the live clients or the stand-ins by runtime.json's mode (`payments.NewFake`,
+   `messaging.NewStandIn`, the calendar's fake or own list), and agent.ts (1,790 lines: onMessage, onPayment, onApproval, onChannel, onRecovery, onTick) is ported over them, using
+   `Reading` with `understanding.Router` for a customer's words (`Reading.Slots` from the calendar's free times) and the words branch's `Render`, `ButtonsFor`, `ServiceList`, `SlotList`
+   for every reply. The books need four adapters (`accounting.Record`, `accounting.Payments`, `report.Messaging` / `DocumentSender`, the Booking conversion for `bookingsreport`) and
+   Bookings `validateSettings`'s checked tree for the policy digest. The owner-marked UPI ledger, obligations and desk (`modules/payments/owner-marked/*`) are this runtime's state to port.
+2. **Slice 2, the chat** (`/internal/channel/chat`, `chat-id`, `chat-voice`; `modules/channels/chat.ts`, `chat-identity*.ts`, the channel state's `outbox`, `chat`, `seq` block, kept raw
+   today) and the chat limits and rates (`CHAT_LIMITS`, `createRate`). A send runs onMessage, so it needs slice 6.
+3. **Slice 3, the customer's talk** (`modules/understanding/talk*` for a customer's turn, its claims checks) and `scenarios-vectors.json` (14 conversations; they run the agent).
+4. **Slice 4's rest**: the owner's page items (UPI, Money: `render.OwnerMoneySection` is on main), approvals and their decisions, the owner's notices, the assistant's Bookings skill,
+   the licence's final stop.
+Findings for the contract stream: `toIntentShape` has no vectors (Go tests take model-llm.test.ts's cases); the limits page's test only tightens a limit `if` one is listed.
