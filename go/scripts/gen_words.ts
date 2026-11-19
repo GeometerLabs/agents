@@ -31,6 +31,7 @@ import { OWNER_CHANGE_ALERT, REMOVAL_ALERT } from "../../modules/channels/owner-
 import { KIND_MEANING, OWNER_KINDS, RULES_ONLY, WANT_INSTRUCTIONS, ownerReading } from "../../modules/assistant/intents.ts";
 import type { OwnerKind } from "../../modules/assistant/intents.ts";
 import { ownerPrompt } from "../../modules/assistant/talk-prompt.ts";
+import { MORNING_TEMPLATE_OF, morningFacts, render, templateNameOf } from "../../modules/assistant/templates.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "..");
@@ -176,6 +177,15 @@ function messages(l: Language): { m: Bag; date: unknown; time: Bag; cat: Bag; st
     if (!system.endsWith("\n[SRC] SRC")) throw new Error("the sources are not the prompt's last lines");
     m[`talk.system.${p}.${named ? "named" : "plain"}`] = slots(system.slice(0, -"[SRC] SRC".length)) + "{sources}";
   }
+  // the morning line (morning.ts, templates.ts): each personality's template filled with slots; "nothing" and the running-low part as morningFacts writes them; the template's name
+  for (const p of PERSONALITIES) {
+    const id = MORNING_TEMPLATE_OF[p];
+    m[`morning.${p}`] = slots(render(id, { language: l, values: { shop: S("shop"), date: S("date"), today: S("today"), money: S("money"), waiting: S("waiting") }, check: undefined as never }));
+    m[`morning.${p}.name`] = templateNameOf(id);
+  }
+  const quiet = morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [], moneyPaise: 0, waiting: 0 }).values as Bag;
+  m["morning.nothing"] = quiet.today;
+  m["morning.low"] = slots((morningFacts({ language: l, timeZone: TZ, shop: "x", today: D, parts: [{ low: N }], moneyPaise: 0, waiting: 0 }).values as Bag).today);
   alerts(l, m);
   return { m, date: { weekdays, months, comma }, time, cat, stamp: stampOf(l) };
 }

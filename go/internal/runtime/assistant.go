@@ -10,10 +10,9 @@ package runtime
 //   - the owner's other words, read by rule (onOwnerMessage, readIntent): help, what needs me, undo, a limit, the leave asks, a cancel or refund or message of a case (none here), money;
 //   - the clock's beat (onTick): cards past their time closed, what is no longer needed taken off, the morning question.
 //
-// What is NOT here (and answers with "this shop's assistant doesn't handle that" or "Sorry, I didn't get that" instead of pretending): the shop's memory (remember, notes, forget: they
-// need modules/memory), the router's decision and language models that TypeScript asks to place a message the rules could not, and the owner's free talk with the model (talk-owner.ts).
-// go/TRIAL.md lists them. Also not here: the outgoing check TypeScript runs over every line it says (language/check.ts): the lines here are written from the shop's own saved values
-// by the packed words, so the check has nothing to catch.
+// The rest of the owner's assistant is beside this file: the shop's memory (notes.go), the router's reading and the owner's talk with the model (talk.go), the morning line
+// (morning.go). The lines said here are written from the shop's own saved values by the packed words, so the outgoing check TypeScript runs over each has nothing to catch; the
+// one line a model writes (the talk's reply) goes through it (talk.go).
 //
 // Differences from TypeScript, on purpose: lines are written to the talk list only (TypeScript's `toPage` mode); the owner's own talk line is added first, as `onPageMessage` does.
 

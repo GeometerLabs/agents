@@ -14,7 +14,7 @@ import { GUEST_WORDS, KIND_RES, REF_RE } from "../../modules/assistant/intents.t
 import { COMPLETION, LINK as TALK_LINK, LONG_DIGITS, NUMBER_WORDS, PERCENT } from "../../modules/assistant/talk-check.ts";
 import { AMOUNT_RE, DATE_RE, QUANTITY_STEM_RE, QUANTITY_WORD_RE, TIME_RE, TRAILING_PUNCTUATION, UPI_RE, URL_RE } from "../../modules/language/check.ts";
 import { FOR_CUSTOMERS, GOAL_WORDS, INSTRUCTION_WORDS } from "../../modules/assistant/notes.ts";
-import { EMAIL, LINK, NAME_AFTER_INTRO, PHONE, SURNAME } from "../../modules/understanding/redact.ts";
+import { EMAIL, LINK, NAME_AFTER_INTRO, PHONE, SURNAME, redact } from "../../modules/understanding/redact.ts";
 import { canon } from "../../modules/language/format.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -84,7 +84,8 @@ function vectors(): string {
     }
     out[name] = rows;
   }
-  return JSON.stringify({ corpus: texts, vectors: out }) + "\n";
+  // and what redact.ts makes of each phrase (understanding/redact.go is proved on the same)
+  return JSON.stringify({ corpus: texts, vectors: out, redact: texts.map((t) => [t, redact(t).text]) }) + "\n";
 }
 
 /** Every generated file's text, by its path under internal/language. */

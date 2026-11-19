@@ -50,6 +50,17 @@ func (r *recorder) append(l NewLine) {
 	if refs == nil {
 		refs = map[string]string{}
 	}
+	// record.ts: a message id is kept only as its keyed fingerprint (fingerprint.ts messageFingerprint, B69)
+	if id, ok := refs["messageId"]; ok && r.key != nil {
+		m := hmac.New(sha256.New, r.key)
+		m.Write([]byte("geometer/message/1\n" + id))
+		cp := make(map[string]string, len(refs))
+		for k, v := range refs {
+			cp[k] = v
+		}
+		cp["messageId"] = "m-" + hex.EncodeToString(m.Sum(nil))[:12]
+		refs = cp
+	}
 	r.fresh = append(r.fresh, store.Entry{
 		Seq: r.base + len(r.fresh) + 1, Time: time.UnixMilli(r.now()).UTC().Format("2006-01-02T15:04:05.000Z"), Conversation: l.Conversation, Action: l.Action, InputsDigest: digest,
 		Outcome: l.Outcome, Decisions: []json.RawMessage{}, Language: l.Language, Notes: l.Notes, Refs: refs,
