@@ -223,7 +223,8 @@ test("a dry run runs the hand checks and says what would happen, and changes not
     assert.match(r.out, /Would move 2, held back 1/);
     assert.equal(asked.length, 6, "the hand checks did run");
     assert.deepEqual(tree(w.root), before, "every file under the server folder is byte for byte as it was");
-    assert.deepEqual(w.calls, [], "and docker was not asked anything");
+    // the only questions Docker is asked are the two read-only ones that list old shop-program images (image ls, ps -a); nothing is started, stopped or removed
+    assert.deepEqual(w.calls.map((c) => c.args.slice(0, 2).join(" ")), ["image ls", "ps -a"], "and docker was only asked what old shop-program images exist");
     const back = await rollback(w, "--dry-run");
     assert.match(back.err, /nothing to roll back/);
   } finally { w.done(); }

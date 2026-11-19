@@ -212,9 +212,101 @@ the runtime package has few), so the whole contract was also run against a `-rac
 reported against TypeScript at its base (the `owner-access.sqlite` schema in `cross-restart.test.ts`, `/status ownerAccess.locked`) pass now: they were the owner control's.
 Binaries: `listings` 23.3 MB (16.4 MB with `-ldflags "-s -w"`), `listings-shared` 23.8 MB (16.8 MB).
 
-**Not ported (wave 1b cannot delete these TypeScript parts yet):** the owner-talk model's answer for words no rule reads; the router's decision and language models; memory
-writes (remember, notes, forget); the morning line and with it the licence's final stop; voice; date phrases in money questions (flagged, not answered); first-step seeding of the
-Operator's town; `limitChanges` compaction.
+**Not ported (wave 1b cannot delete these TypeScript parts yet):** *(all ported since: see "The AI core ported" below)* the owner-talk model's answer for words no rule reads; the
+router's decision and language models; memory writes (remember, notes, forget); the morning line and with it the licence's final stop; voice; date phrases in money questions
+(flagged, not answered); first-step seeding of the Operator's town; `limitChanges` compaction.
+
+## The AI core ported (19 Nov 2026): the owner's words read by models, the talk, memory, the morning line
+
+Everything wave 1 listed as not ported is now Go, held to the same contract on both runtimes:
+
+- **The `language` package** (`internal/language`): JavaScript's regular expressions matched as JavaScript matches them. RE2 has no look-behind or look-ahead, and the old way
+  (consume the edge character) is wrong for `matchAll` and `replace` ("ten twenty" is two matches in JavaScript, one that way). `regex.go` splits a source at its top-level `|`, tries
+  each alternative in JavaScript's order at each place, checks a leading `(?<!X)` by hand and puts a trailing `(?!X)` into the RE2 pattern as "not X, or the end" (so RE2 backtracks
+  as JavaScript does), and refuses what it cannot copy. The patterns are not retyped: `scripts/gen_patterns.ts` takes each TypeScript RegExp's own `.source` and `.flags` (a few
+  consts were exported for it, no behaviour change) and writes vectors by running them; `words-fresh` checks both. `rules.go`'s `plain`, `canon` and `wordRe` are gone: one
+  implementation each, in `language` (wordRe's output comes generated).
+- **Date phrases in money questions** (`language/dates.go`): findDatePhrase and resolveDate (next/this/plain weekday, a written date, the day after tomorrow), proved on 150 phrases at
+  four instants against TypeScript (`testdata/rules-vectors.json`).
+- **Memory writes** (`internal/memory`, `runtime/notes.go`): remember (undoable for a day), the list, forget, undo of a remember, the beat's end of notes and loss of closed notes'
+  text; `assistant.memory` field for field, so notes move between the runtimes.
+- **`limitChanges` on the beat**: the newest 30 settled kept (compactChanges), and a settled change marked told (limits-card.ts `unannounced`: a listings shop declares no limit,
+  so nothing is said).
+- **The Operator's place seeded** on the first step that reaches the agent (the beat, the owner's words, a card's tap), once, never over the owner's own.
+- **The router** (`internal/understanding`): rules, then the System One decision model, then the language model, each only when the month's AI state allows (button mode, the
+  decision model's breaker, fleet's cap, the shop's budget, the router's daily cap); every answer decoded to `any` and checked by hand (`ReadDecision`, `readOpenAI`, `Coerce`).
+- **The owner's talk** (`assistant/talk.go`, `runtime/talk.go`): the owner's notes and public listings as sources, the TypeScript's prompt (rendered by gen_words.ts), the four checks
+  an owner's turn has and the outgoing check (`language/check.go`), the fixed line when a check fails or the model does not answer, the fault pause, the day's notice once.
+- **The morning line and the licence's final stop** (`runtime/morning.go`): with push on, once a day from the owner's morning hour for four hours, claimed in the record before the
+  push and ended after, silent with nothing waiting, never in the final stop (client/licence.json, rules.ts `licenceNow`); on the contract's test clock a failed send is tried
+  again an hour later, the next day has its own line, and nothing goes after the four hours. (The "unconfirmed" ending, for a process that died mid-send, is ported but not run
+  by the contract: it needs a process killed between the claim and the push.)
+- **Voice**: a listings shop has none; the two voice routes answer as TypeScript's do (method, the owner's credential, then "voice is not on").
+
+**Results** (19 Nov, through the heat lock, one run each): the whole contract folder, **201 of 201 on TypeScript (241 s) and 201 of 201 on Go (159 s), none skipped** (172 before
+this stream; the new cases compare a TypeScript shop and a Go shop line for line, so both runs start both). `go build`, `go vet` and `go test ./...` pass; the language package's
+vectors (every generated pattern on a corpus, the dates at four instants, Redact) equal JavaScript's. The touched TypeScript modules' own unit tests pass (dates, check-links,
+intents, intents-memory, talk-check, talk-flow, morning, understanding/talk). Binaries: `listings` 23.7 MB, `listings-shared` 24.2 MB.
+
+**Not ported, and why (none of it is reachable in a listings-only shop):** a customer's talk and the claims checks only a customer's turn has (no customers); a note the talk
+proposes (Remember / No buttons, which the owner's page does not have, so TypeScript never makes one there either); the outgoing check's moments (a booking's time, free times: no
+source of a listings shop carries one); the "anthropic" model wire (the model Guard speaks "openai" for every provider the deployer uses, as before); the morning line's template
+header and sticker (the push-only messaging sends words). `runtime.json`'s `decision` is checked for its provider, address and model; its other fields' ranges are TypeScript's to
+refuse (the deployer writes them).
+
+**TypeScript findings (reported, not fixed):** `notes.ts` GOAL_WORDS ends `\b` after Devanagari/Malayalam/Kannada words ("लक्ष्य", "ലക്ഷ്യം", "ಗುರಿ"), and JavaScript's `\b` only
+sees ASCII letters, so a goal written in those scripts is filed as a fact unless an ASCII letter follows; `historyText` cuts at 300 UTF-16 units and can leave a lone surrogate
+(Go drops the half character); `COMPLETION` holds `बुक ചെയ്തു` (Devanagari and Malayalam mixed), carried as it is.
+
+## Wave 1c (19 Nov 2026): the directory of local shops in Go
+
+`cmd/directory` + `internal/directory` (6.0k lines of Go with the tests, 5.7k without; `internal/signing` gained the reading side, 146 lines) do what `bundle/services/directory.ts` does: read and
+check the shops' signed feeds, keep the index (the TypeScript's own `directory.sqlite`, FTS5 with the same tokenizer through `modernc.org/sqlite`), ask the shops about the ten results,
+the fair order, search, the pages in four languages, the MCP endpoint, the signed Agent Card, the buyer's assistant. Words, style sheet, tool definitions, card text, the assistant's prompt
+and the Latin-fold tables are GENERATED from the TypeScript (`scripts/gen_directory.ts`); read `internal/directory/Explanation.md` and `Deferred.md`.
+
+**The contract** (`modules/discovery/contract/`, README there): 34 tests, 34 pass on TypeScript and 34 pass on Go (`DIRECTORY_IMPL=ts|go`, one at a time under the heat lock). They include the
+two that need both runtimes: `differential.test.ts` (the same requests over the same shops: every page state in four languages, the JSON, the MCP answers, the assistant's answers,
+compared whole) and `cross-restart.test.ts` (TypeScript then Go then TypeScript on one folder: the index, the pins, a held key change, the key and so the card's key id). Unit tests with
+vectors made from the TypeScript (`internal/directory/vectors_test.go`, 356 lines): the Latin fold, text helpers, the order and its hash, the address reader, dates, numbers, the buyer's
+request, cleaning and the patterns, a model's typed answer. `go build ./... && go vet ./... && go test ./...` pass.
+
+| 40 shops of 20 listings (800 items), measured with `contract/measure.ts` | TypeScript (Node 26) | Go 1.27 |
+| --- | --- | --- |
+| idle RSS, feeds read | 133.3 MB | **29.5 MB** |
+| RSS after 200 searches / after 500 | 171.3 / 168.6 MB | **30.9 / 31.7 MB** |
+| cold start, fresh folder (spawn to `/healthz`), median of 5 | 161 ms | **55 ms** |
+| search (10 shops asked), p50 / p95 of 300 | **6.2 / 7.4 ms** | 14.0 / 15.1 ms |
+| binary | `node` + 4.3k lines of TypeScript | 18.5 MB (one file) |
+
+The Go search is slower because each search opens a connection to every shop it asks (the checker's client does not keep connections); not tuned.
+
+**What the deployer switch will change** (not done: how the Go binaries reach a server is the owner's decision). In `bundle/generate/compose.ts` the `directory` block (`add("directory", node([...]))`):
+the service becomes `goProgram(["/directory"], ...)` in the programs' image (the wave 1b `features.goImage`, which then also needs `directory` built into it: `go build -o bin/directory ./cmd/directory`); the
+health check `healthWget(DIRECTORY_PORT, "/healthz")` becomes `healthGo("directory", DIRECTORY_PORT, "/healthz")` with the `health` subcommand (`internal/health` of the deploy-switch branch: `cmd/directory/main.go` takes it at the merge); the user stays `nodeUser`
+but the image has no `/home/node`: the volume `directory-data` mounted at `/home/node` needs that folder, owned by that user, in the image (or the data folder moves); no `appVolume` mount (the program has its code inside); the environment
+(`CONFIG`, `PORT`, `HOST`), the config file (`directoryConfig`, unchanged: the Go service reads the same JSON) and the networks (`pages`, `egress`, `assistant`) stay. The model's wire must be "openai"
+(a server whose model speaks "anthropic" runs the directory with the assistant off and a line saying so). `docker exec <directory> node /app/bundle/services/directory.ts changes|accept` becomes `docker exec <directory> /directory changes|accept <page>`
+(docs and `bundle/Explanation.md`).
+**What the switch deletes**, in the same change: `bundle/services/directory.ts`; `modules/discovery/` except `words.ts` (the review sheet `bundle/panel/review.ts` still reads `DIRECTORY_WORDS` and
+`DIRECTORY_SAMPLES`; and `gen_directory.ts` reads `words.ts`, `page.ts`, `mcp.ts`, `card.ts`, `assistant.ts`, `romanise.ts` to make the packed files: after the switch the generated files in
+`go/internal/directory` become the source, the generator and `words-fresh.test.ts` go, and the review sheet reads the packed words, or `words.ts` stays as the words' source and is the one file kept);
+`modules/discovery/test/` (10 files, 1,676 lines: each is a contract test or a Go unit test above); `bundle/test/directory-service.test.ts` and `directory-assistant.test.ts` (their compose and config
+parts move to `go-runtime.test.ts`; their directory-behaviour parts are the contract); the `DIRECTORY_TICK_MS` line in nothing (it goes with the file). The contract keeps `modules/signing` (it signs the fake shops) and
+`templates/commerce/listings/contract/children.ts`. What stays TypeScript and is not touched: the shops' own MCP endpoint (`modules/channels/mcp.ts`, `shop-card.ts`) and `modules/channels/look.ts` (the shops' pages).
+
+**TypeScript findings** (nothing changed): a feed's `updated` is never judged for age; `lang=` on `/search` falls back silently, so the `lang must be en, hi, ml or kn` refusal exists only over MCP;
+`rebuildIndex` has no caller; `Date.parse` of a date-time with no zone is local time (the container runs in UTC, so equal in production).
+**Found while porting** (Go, fixed): a response with a second, differently spelled `Content-Length` is refused by Node's client (curl accepts it).
+
+## Wave 1b, the deployer half (19 Nov 2026, `go-deploy-switch-19nov`)
+
+The deployer now runs listings shops on the Go programs: the listings template is **0.2.0** and its `template.json` says `"runtime": "go"`. The server compiles the programs from its own checkout in the Go image
+pinned by digest in `bundle/release.json` and runs them from a tiny `FROM scratch` image (`geo-go:<commit>`), so a shop container no longer carries Node. `listings` and `listings-shared` gained a `health <url>`
+and a `get <url>` subcommand (`internal/health`) because that image has no shell, wget or `test`. The whole account, and the real build numbers, are in `bundle/Explanation.md` ("How the Go runtimes reach a
+server") and `go/README.md`. **Not done in this stream:** the TypeScript listings runtime is still in the repository (kept versions run on it; the differential test needs it); the deletion follows the port
+of the last AI parts. TypeScript finding: `bundle/deploy.ts` used `HOME_DIR` in the check "is a new listings shop's name already in the shared volume" without importing it, so the first deploy of a new
+listings-only shop would have stopped on a ReferenceError; the check now asks the data volume itself (`sharedHasFolder`, `bundle/lib/listings-move.ts`) and the name is gone.
 
 ## Wave 2 preparation (19 Nov 2026): the Bookings contract, before any Go
 

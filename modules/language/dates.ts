@@ -73,7 +73,8 @@ const WEEKDAY_WORDS: string[][] = [
   ["saturday", "शनिवार", "shanivar", "shaniwar", "shanivaar"],
 ];
 for (let d = 0; d < 7; d++) WEEKDAY_WORDS[d].push(...WORDS.ml.weekdays[d], ...WORDS.kn.weekdays[d]);
-const WEEKDAY_RES = WEEKDAY_WORDS.map((w) => wordRe(w));
+// The patterns below are exported (and KIND_RES, REF_RE, GUEST_WORDS in assistant/intents.ts) so go/scripts/gen_patterns.ts hands the Go runtime these exact sources.
+export const WEEKDAY_RES = WEEKDAY_WORDS.map((w) => wordRe(w));
 
 const MONTH_WORDS: string[][] = [
   ["january", "jan", "जनवरी"], ["february", "feb", "फरवरी"], ["march", "mar", "मार्च"], ["april", "apr", "अप्रैल"],
@@ -81,15 +82,15 @@ const MONTH_WORDS: string[][] = [
   ["september", "sep", "sept", "सितंबर", "सितम्बर"], ["october", "oct", "अक्टूबर", "अक्तूबर"], ["november", "nov", "नवंबर", "नवम्बर"], ["december", "dec", "दिसंबर", "दिसम्बर"],
 ];
 for (let m = 0; m < 12; m++) MONTH_WORDS[m].push(...WORDS.ml.months[m], ...WORDS.kn.months[m]);
-const MONTH_RES = MONTH_WORDS.map((w) => wordRe(w, "u", false)); // a month name is short and a common word: no endings
+export const MONTH_RES = MONTH_WORDS.map((w) => wordRe(w, "u", false)); // a month name is short and a common word: no endings
 
-const DAY_AFTER_RE = wordRe(["day after tomorrow", "परसों", "परसो", "parso", "parson", "parsoon", ...inBoth((w) => w.dayAfterTomorrow)]);
-const TOMORROW_RE = wordRe(["tomorrow", "tmrw", "tomorow", "कल", "kal", ...inBoth((w) => w.tomorrow)]);
-const TODAY_RE = wordRe(["today", "आज", "aaj", ...inBoth((w) => w.today)]);
-const YESTERDAY_RE = wordRe(inBoth((w) => w.yesterday), "gu");
+export const DAY_AFTER_RE = wordRe(["day after tomorrow", "परसों", "परसो", "parso", "parson", "parsoon", ...inBoth((w) => w.dayAfterTomorrow)]);
+export const TOMORROW_RE = wordRe(["tomorrow", "tmrw", "tomorow", "कल", "kal", ...inBoth((w) => w.tomorrow)]);
+export const TODAY_RE = wordRe(["today", "आज", "aaj", ...inBoth((w) => w.today)]);
+export const YESTERDAY_RE = wordRe(inBoth((w) => w.yesterday), "gu");
 const BEFORE_WEEKDAY = (words: string[]) => new RegExp(`${NOT_LETTER_BEFORE}(?:${words.map(canon).map(escapeRe).join("|")})\\s+$`, "u");
-const NEXT_RE = BEFORE_WEEKDAY(["next", "अगले", "अगला", "अगली", "agle", "agla", ...inBoth((w) => w.next)]);
-const THIS_RE = BEFORE_WEEKDAY(["this", "इस", ...inBoth((w) => w.thisWeek)]);
+export const NEXT_RE = BEFORE_WEEKDAY(["next", "अगले", "अगला", "अगली", "agle", "agla", ...inBoth((w) => w.next)]);
+export const THIS_RE = BEFORE_WEEKDAY(["this", "इस", ...inBoth((w) => w.thisWeek)]);
 
 const PERIOD_WORD_LISTS = {
   morning: ["सुबह", "सवेरे", "subah", "savere", "morning", ...inBoth((w) => w.morning)],
