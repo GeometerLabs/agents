@@ -74,6 +74,12 @@ export const SHARED = { runtime: "rt-listings", door: "door-listings", dataVolum
  */
 export const SHARED_POOL = { workers: 4, workerMb: 256, marginMb: 512 } as const;
 export const sharedMemLimitMb = (): number => SHARED_POOL.workers * SHARED_POOL.workerMb + SHARED_POOL.marginMb;
+/**
+ * The same wall for the shared process on Go (wave 1b): no worker pool, so the number is not workers x limit. Measured 19 Nov (go/TRIAL.md): 100 shops held in one Go process are about
+ * 104 MB (the Node pool: 391 MB), and a quarantined shop runs as a child of the same binary at about 20 to 30 MB. 1024 MB is ten times the 100-shop figure: room for many hundreds of
+ * shops and a few children, and still a wall that stops a leak from taking the server. (The Node figure above stays for the older versions that run on Node.)
+ */
+export const SHARED_GO_MEM_LIMIT_MB = 1024;
 /** The compose volume that holds a shop's data: its own, or the shared one. */
 export const dataVolumeOf = (shop: string, shared: boolean): string => (shared ? SHARED.dataVolume : names.dataVolume(shop));
 /** A shop's database inside a mount of its data volume (the backup jobs mount the volume at `mount`): `<mount>/data/agent.db`, or one folder down for a shared shop. */

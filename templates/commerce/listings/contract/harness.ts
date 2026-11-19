@@ -19,7 +19,7 @@ import { OWNER_SESSIONS_FILE } from "../../../../modules/channels/owner-access.t
 import { TEST_CLOCK_FILE, TEST_SWITCH } from "../../../../modules/runtime/test-clock.ts";
 import { startRuntimeProcess, callRuntime } from "../../../../modules/test/contract/runtime-process.ts";
 import type { RuntimeProcess } from "../../../../modules/test/contract/runtime-process.ts";
-import { startFakeModel as startSharedFakeModel } from "../../../../modules/test/contract/fake-model.ts";
+import { callName, rawReply, slowReply, startFakeDecision, startFakeModel as startSharedFakeModel, statusReply } from "../../../../modules/test/contract/fake-model.ts";
 import type { FakeModel } from "../../../../modules/test/contract/fake-model.ts";
 import { freePort, hex, sleep } from "../../../../modules/test/contract/net.ts";
 import { makeTestClockFile } from "../../../../modules/test/contract/test-clock-file.ts";
@@ -38,8 +38,10 @@ export interface ShopOptions {
   budget?: { monthlyMicroInr: number; daily: Record<string, number> };
   /** The fake model server's port; with it, runtime.json names it as the parser. */
   modelPort?: number;
-  /** Overrides of the model line of runtime.json (the provider and model name decide the price from the rate table). */
-  parser?: { provider?: string; model?: string };
+  /** Overrides of the model line of runtime.json (the provider and model name decide the price from the rate table; a short timeoutMs lets a test time a model out). */
+  parser?: { provider?: string; model?: string; timeoutMs?: number };
+  /** A fake System One decision model's port (startFakeDecision): runtime.json `decision` names it (provider laya, no key), with these overrides. */
+  decision?: { port: number; threshold?: number; languages?: string[]; timeoutMs?: number };
   /** The owner's number in settings.json (left out: the owner gave none, and the runtime uses its "no number" marker). */
   owner?: string;
   /** The owner's language in settings.json (default "en"): the language the assistant talks to the owner in, and the owner's alerts are written in. */
@@ -118,6 +120,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   writeFileSync(join(client, "settings.json"), settings(o.owner));
   const runtime: Record<string, unknown> = { mode: "fakes", host: "127.0.0.1", port, dataDir, tickSeconds: o.tickSeconds ?? 3600, services: o.services ?? {} };
   if (o.modelPort !== undefined) runtime.parser = { wire: "openai", baseUrl: `http://127.0.0.1:${o.modelPort}/v1`, model: "fake-model", timeoutMs: 5000, ...(o.parser ?? {}) };
+  if (o.decision) { const { port: dp, ...rest } = o.decision; runtime.decision = { provider: "laya", baseUrl: `http://127.0.0.1:${dp}`, model: "laya", ...rest }; }
   if (o.budget) runtime.budget = o.budget;
   writeFileSync(join(client, "runtime.json"), JSON.stringify(runtime));
   writeFileSync(join(client, OWNER_LINK_FILE), JSON.stringify(ownerLinkFile(owner, new Date())));
@@ -197,17 +200,18 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   return shop;
 }
 
-// ---- a fake OpenAI-compatible model server --------------------------------------------------------------------------------------------------------------------
+// ---- the fake model servers: modules/test/contract/fake-model.ts (one for listings and Bookings) --------------------------------------------------------------------------
 
 export type { FakeModel };
+export { callName, rawReply, slowReply, startFakeDecision, statusReply };
 
 /** A listing's draft as the model writes it: what `listingPrompt`'s schema asks for. `words` is the one title and text used for all four languages. */
 export const draftAnswer = (title = "Persian kittens", text = "Playful kittens, looking for a home.", category = "pets", claims: string[] = []): unknown => ({
   category, titles: { en: title, hi: title, ml: title, kn: title }, texts: { en: text, hi: text, ml: text, kn: text }, claims,
 });
 
-/** Start the shared fake model (modules/test/contract/fake-model.ts); without an `answer` it writes a listing's draft. */
-export const startFakeModel = (answer: (owner: string) => unknown = () => draftAnswer()): Promise<FakeModel> => startSharedFakeModel(answer);
+/** Start the shared fake model; without an `answer` it writes a listing's draft. */
+export const startFakeModel = (answer: (owner: string, body: any) => unknown = () => draftAnswer()): Promise<FakeModel> => startSharedFakeModel(answer);
 
 // ---- a tiny JPEG ---------------------------------------------------------------------------------------------------------------------------------------------
 

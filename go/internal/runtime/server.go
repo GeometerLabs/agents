@@ -16,7 +16,8 @@ package runtime
 // The owner routes (owner-signin, owner-passkey, owner-phones, owner-signout, the owner's credential on every owner route, /status's lock, owner-session, and the owner's side of
 // push) check everything in owner.go, under the owner lock, in the order modules/runtime/http.ts checks it.
 //
-// The routes of other kinds of shop (a chat, bookings, orders, fees, voice) are not this shop's: they answer 404.
+// The routes of other kinds of shop (a chat, bookings, orders, fees) are not this shop's: they answer 404. The two voice routes answer as TypeScript's do for a shop with no voice
+// service (the method first, then the owner's credential for the owner's, then 404 with "voice is not on").
 
 import (
 	"context"
@@ -391,6 +392,23 @@ func (s *Server) channelRoute(w http.ResponseWriter, r *http.Request, path strin
 		_, _ = w.Write(row.Bytes)
 	case "/internal/channel/shop-feed", "/internal/channel/shop-check", "/internal/channel/shop-card":
 		return s.signed(w, r, path)
+	case "/internal/channel/owner-voice":
+		// modules/runtime/http.ts: a recording from the owner's page; a listings-only shop has no voice service for its assistant (templates/commerce/listings/server/runtime.ts
+		// gives no ownerVoice), so after the method and the owner's credential the route says voice is off, and nothing is held or saved
+		if err := only(r, "POST"); err != nil {
+			return err
+		}
+		if !s.ownerAuthorised(r) {
+			send(w, 403, errBody(ownerRefused))
+			return nil
+		}
+		send(w, 404, errBody("Voice is not on for this shop's assistant."))
+	case "/internal/channel/chat-voice":
+		// W1 hold-to-talk: a chat guest's recording; a listings-only shop has no chat and no voice service
+		if err := only(r, "POST"); err != nil {
+			return err
+		}
+		send(w, 404, errBody("Voice is not on for this shop."))
 	case "/internal/channel/owner":
 		if err := only(r, "GET"); err != nil {
 			return err

@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	xnorm "golang.org/x/text/unicode/norm"
+	"github.com/GeometerLabs/agents/go/internal/language"
 )
 
 // A cue is a piece of a pattern with the edges it needs.
@@ -272,7 +272,7 @@ func mustAll(fold bool, patterns ...string) []*regexp.Regexp {
 
 // fold makes a text and a word list the same form before they are compared: decomposed (NFD), with the Devanagari nukta (U+093C) dropped, so "मुफ़्त" and "मुफ्त" (typed either way)
 // are the same word. It is exactly modules/assistant/talk-check.ts `fold`: x/text's NFD splits the eight precomposed nukta letters (U+0958 to U+095F) itself, so nothing is hand-folded.
-func fold(s string) string { return strings.ReplaceAll(xnorm.NFD.String(s), "\u093c", "") }
+func fold(s string) string { return language.Fold(s) }
 
 func norm(s string) string { return fold(plain(s)) }
 

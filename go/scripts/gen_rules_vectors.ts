@@ -20,11 +20,12 @@ const phrases = [
   "money 3 may", "money may i think", "money nov 16", "money 16th of november", "money 25 dec", "money 40 nov", "money tuesday", "money इतवार", "money 5 नवम्बर", "paisa shaniwar", "പണം ഞായറാഴ്ച", "പണം 10 നവംബർ", "ಹಣ ಸೋಮವಾರ", "ಹಣ ನವೆಂಬರ್ 10", "ഇന്നലെ പണം", "money yesterday and today", "money today 5pm", "money day after tomorrow", "മറ്റന്നാൾ പണം", "ನಾಡಿದ್ದು ಹಣ",
   "refund the order", "message", "tell", "list", "money", "paisa", "फीस", "ഓർഡർ",
 ];
+// the date each phrase names, resolved (dates.ts resolveDate) from a few instants in India: a Sunday, a Wednesday, a Saturday night, 31 December
+const NOWS = [Date.UTC(2026, 10, 15, 6, 0), Date.UTC(2026, 10, 18, 6, 0), Date.UTC(2026, 10, 21, 17, 0), Date.UTC(2026, 11, 31, 6, 0)];
+phrases.push("money next tuesday", "money this friday", "money this sunday", "money next sunday", "money 31 nov", "money 29 feb", "money 1 jan", "money 31 dec", "अगले मंगलवार कितना आया", "इस शनिवार", "അടുത്ത ചൊവ്വാഴ്ച പണം", "ಮುಂದಿನ ಮಂಗಳವಾರ ಹಣ", "ഈ വെള്ളിയാഴ്ച", "money yesterday and monday");
 const out = phrases.map((text) => {
   const r = readOwnerRules(text, { kinds: [...KINDS] });
-  let offset: number | null | "other" = null;
-  if (r.date) offset = r.date.kind === "relative" ? r.date.offsetDays : "other";
-  return { text, kind: r.kind, ref: r.ref ?? "", note: r.note ?? "", words: r.words ?? "", date: offset };
+  const resolved = r.date ? NOWS.map((now) => { const d = resolveDate(r.date!, now, "Asia/Kolkata"); return d ? `${d.date.year}-${d.date.month}-${d.date.day}` : null; }) : null;
+  return { text, kind: r.kind, ref: r.ref ?? "", note: r.note ?? "", words: r.words ?? "", date: r.date ?? null, nows: NOWS, resolved };
 });
-void resolveDate;
 writeFileSync(new URL("../internal/assistant/testdata/rules-vectors.json", import.meta.url), JSON.stringify(out, null, 1) + "\n");

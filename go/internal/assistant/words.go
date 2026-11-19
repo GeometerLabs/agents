@@ -216,13 +216,21 @@ func (p *Pack) Category(c string) string {
 
 // ---- the rules' word lists --------------------------------------------------------------------------------------------------------------------------------
 
-// RuleWords are the lists the owner's commands are read from (modules/assistant/intents*.ts), taken from the TypeScript source by the generator.
+// RuleWords are the lists the owner's memory and leave words are read from (modules/assistant/intents-memory.ts, intents-leave.ts), taken from the TypeScript source by the
+// generator. The kinds' and the dates' patterns are not here: they are the TypeScript's built patterns themselves (internal/language, patterns.json).
 type RuleWords struct {
-	Kinds          [][]json.RawMessage `json:"kinds"` // each [kind, [words...]]
-	LeaveFile      []string            `json:"leaveFile"`
-	LeaveOperator  []string            `json:"leaveOperator"`
+	LeaveFile      []string `json:"leaveFile"`
+	LeaveOperator  []string `json:"leaveOperator"`
 	Remember, List []string
-	Dates          struct{ Today, Tomorrow, DayAfter, Yesterday, Weekdays, Months []string }
+	// Router is the router's reading for this shop's kinds (intents.ts ownerReading): the language model's prompt and schema, the decision model's question.
+	Router struct {
+		Prompt       string         `json:"prompt"`
+		Schema       map[string]any `json:"schema"`
+		Instructions string         `json:"instructions"`
+		Criteria     [][2]string    `json:"criteria"`
+	} `json:"router"`
+	// TalkSchema is the owner's talk's answer schema (talk-prompt.ts ownerPrompt with no limits).
+	TalkSchema map[string]any `json:"talkSchema"`
 }
 
 var (
@@ -233,21 +241,10 @@ var (
 // Rules is the rules' word lists, unpacked the first time they are needed.
 func Rules() *RuleWords {
 	rulesOnce.Do(func() {
-		var raw struct {
-			Kinds         [][]json.RawMessage `json:"kinds"`
-			LeaveFile     []string            `json:"leaveFile"`
-			LeaveOperator []string            `json:"leaveOperator"`
-			Remember      []string            `json:"remember"`
-			List          []string            `json:"list"`
-			Dates         struct {
-				Today, Tomorrow, DayAfter, Yesterday, Weekdays, Months []string
-			} `json:"dates"`
-		}
-		if err := json.NewDecoder(bytes.NewReader(gunzip("rules.json.gz"))).Decode(&raw); err != nil {
+		rulesWords = &RuleWords{}
+		if err := json.NewDecoder(bytes.NewReader(gunzip("rules.json.gz"))).Decode(rulesWords); err != nil {
 			panic("the packed rules are not JSON")
 		}
-		rulesWords = &RuleWords{Kinds: raw.Kinds, LeaveFile: raw.LeaveFile, LeaveOperator: raw.LeaveOperator, Remember: raw.Remember, List: raw.List}
-		rulesWords.Dates = raw.Dates
 	})
 	return rulesWords
 }

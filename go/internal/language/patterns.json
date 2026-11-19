@@ -1,0 +1,268 @@
+{
+ "kinds": [
+  "undo",
+  "limit",
+  "help",
+  "open_orders",
+  "reopen_day",
+  "close_day",
+  "move",
+  "cancel",
+  "refund",
+  "message",
+  "owes",
+  "waiting",
+  "money",
+  "day"
+ ],
+ "patterns": {
+  "dates.weekday.0": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:njayarazhcha|bhanuvaara|bhanuvara|ravivaar|ഞായറാഴ്ച[\\p{L}\\p{M}]*|ravivara|ravivar|njaayar|ಭಾನುವಾರ[\\p{L}\\p{M}]*|sunday|रविवार|njayar|ರವಿವಾರ[\\p{L}\\p{M}]*|इतवार|itwar|itvar|ഞായ[ർരറ][\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.weekday.1": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:thinkalazhcha|തിങ്കളാഴ്ച[\\p{L}\\p{M}]*|somavaara|somavara|somvaar|thinkal|monday|सोमवार|somvar|somwar|തിങ്ക[ൾള][\\p{L}\\p{M}]*|ಸೋಮವಾರ[\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.weekday.2": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:chovvaazhcha|mangalavaara|chovvazhcha|mangalavara|mangalvaar|mangalvar|mangalwar|ചൊവ്വാഴ്ച[\\p{L}\\p{M}]*|tuesday|मंगलवार|ಮಂಗಳವಾರ[\\p{L}\\p{M}]*|chovva|ചൊവ്വ[\\p{L}\\p{M}]*|tues|tue)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.weekday.3": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:budhanazhcha|budhavaara|wednesday|budhavara|budhvaar|ബുധനാഴ്ച[\\p{L}\\p{M}]*|budhvar|budhwar|बुधवार|budhan|ಬುಧವಾರ[\\p{L}\\p{M}]*|ബുധ[ൻന][\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.weekday.4": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:brihaspativar|बृहस्पतिवार|vyazhazhcha|വ്യാഴാഴ്ച[\\p{L}\\p{M}]*|guruvaara|thursday|guruvara|गुरुवार|guruvar|guruwar|veervar|vyazham|ಗುರುವಾರ[\\p{L}\\p{M}]*|वीरवार|വ്യാഴം[\\p{L}\\p{M}]*|thurs|thur|thu)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.weekday.5": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:velliyazhcha|വെള്ളിയാഴ്ച[\\p{L}\\p{M}]*|shukravaara|shukravaar|shukravara|shukravar|shukrawar|शुक्रवार|ಶುಕ್ರವಾರ[\\p{L}\\p{M}]*|friday|വെള്ളി[\\p{L}\\p{M}]*|velli|fri)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.weekday.6": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:shaniyazhcha|shanivaara|shanivaar|shanivara|saturday|shanivar|shaniwar|ശനിയാഴ്ച[\\p{L}\\p{M}]*|शनिवार|ಶನಿವಾರ[\\p{L}\\p{M}]*|shani|ശനി[\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.1": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:january|ജനുവരി|जनवरी|ಜನವರಿ|jan)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.2": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:ഫെബ്രുവരി|february|ಫೆಬ್ರವರಿ|फरवरी|feb)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.3": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:മാർച്ച്|ಮಾರ್ಚ್|march|मार्च|mar)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.4": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:ಏಪ್ರಿಲ್|अप्रैल|ഏപ്രിൽ|april|apr)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.5": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:മേയ്|മെയ്|may|मई|ಮೇ)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.6": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:june|ಜೂನ್|jun|जून|ജൂൺ)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.7": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:जुलाई|july|ജൂലൈ|ಜುಲೈ|jul)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.8": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:ഓഗസ്റ്റ്|ആഗസ്റ്റ്|august|ಆಗಸ್ಟ್|अगस्त|aug)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.9": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:സെപ്റ്റംബർ|ಸೆಪ್ಟೆಂಬರ್|september|सितम्बर|सितंबर|sept|sep)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.10": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:ಅಕ್ಟೋಬರ್|october|अक्टूबर|अक्तूबर|ഒക്ടോബർ|oct)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.11": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:november|ನವೆಂಬರ್|नवम्बर|नवंबर|നവംബർ|nov)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.month.12": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:december|ಡಿಸೆಂಬರ್|दिसम्बर|दिसंबर|ഡിസംബർ|dec)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.day_after": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:day after tomorrow|മറ്റെന്നാ[ൾള][\\p{L}\\p{M}]*|mattannaal|ನಾಡಿದ್ದಿಗೆ[\\p{L}\\p{M}]*|മറ്റന്നാ[ൾള][\\p{L}\\p{M}]*|mattannal|ನಾಡಿದ್ದಿನ[\\p{L}\\p{M}]*|matannal|ನಾಡಿದ್ದು[\\p{L}\\p{M}]*|naadiddu|naadidhu|parsoon|nadiddu|parson|परसों|parso|परसो)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.tomorrow": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:നാളത്തേക്ക[\\p{L}\\p{M}]*|tomorrow|naalathe|tomorow|നാളത്തെ[\\p{L}\\p{M}]*|naale|naale|tmrw|നാളെ[\\p{L}\\p{M}]*|nale|ನಾಳೆ[\\p{L}\\p{M}]*|nale|kal|कल)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.today": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:ഇന്നത്തേക്ക[\\p{L}\\p{M}]*|ഇന്നത്തെ[\\p{L}\\p{M}]*|ಇವತ್ತಿಗೆ[\\p{L}\\p{M}]*|innathe|ಇವತ್ತಿನ[\\p{L}\\p{M}]*|ಇಂದಿಗೆ[\\p{L}\\p{M}]*|ಇವತ್ತು[\\p{L}\\p{M}]*|ivattu|today|ഇന്ന[\\p{L}\\p{M}]*|ഇന്നു[\\p{L}\\p{M}]*|ಇಂದಿನ[\\p{L}\\p{M}]*|innu|ಇಂದು[\\p{L}\\p{M}]*|indu|aaj|आज)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.yesterday": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:ഇന്നലെ[\\p{L}\\p{M}]*|innale|ನಿನ್ನೆ[\\p{L}\\p{M}]*|ninne)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "gu"
+  },
+  "dates.next": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:next|अगले|अगला|अगली|agle|agla|അടുത്ത|adutha|ಮುಂದಿನ|mundina)\\s+$",
+   "flags": "u"
+  },
+  "dates.this": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:this|इस|ഈ|ee|ಈ|ee)\\s+$",
+   "flags": "u"
+  },
+  "intents.kind.undo": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:take that back|pehle jaisa|पहले जैसा|ಹಿಂದಿನಂತೆ[\\p{L}\\p{M}]*|wapas lo|वापस लो|പഴയപോലെ[\\p{L}\\p{M}]*|revert|പഴയപടി[\\p{L}\\p{M}]*|undo)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.limit": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:ലിമിറ്റ[\\p{L}\\p{M}]*|limits|ಲಿಮಿಟ[\\p{L}\\p{M}]*|limit|लिमिट|പരിധി[\\p{L}\\p{M}]*|सीमा|ಮಿತಿ[\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.help": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:what can you do|सहायता|madad|സഹായം[\\p{L}\\p{M}]*|help|ಸಹಾಯ[\\p{L}\\p{M}]*|मदद)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.open_orders": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:open orders|orders|ಆರ್ಡರ[\\p{L}\\p{M}]*|order|ऑर्डर|आर्डर|ഓർഡ[ർരറ][\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.reopen_day": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:വീണ്ടും തുറ[\\p{L}\\p{M}]*|open again|फिर से खोल|ಮತ್ತೆ ತೆರೆ[\\p{L}\\p{M}]*|khol do|reopen|खोल दो|kholo)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.close_day": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:holiday|day off|chhutti|അടച്ചിട[\\p{L}\\p{M}]*|അടയ്ക്ക[\\p{L}\\p{M}]*|closed|छुट्टी|chutti|close|ಮುಚ್ಚ[\\p{L}\\p{M}]*|shut|band|അവധി[\\p{L}\\p{M}]*|बंद|ರಜೆ[\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.move": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:change the time|ಸಮಯ ಬದಲಾಯಿಸ[\\p{L}\\p{M}]*|reschedule|time badlo|സമയം മാറ്റ[\\p{L}\\p{M}]*|postpone|badal do|prepone|समय बदल|മാറ്റുക[\\p{L}\\p{M}]*|ಶಿಫ್ಟ[\\p{L}\\p{M}]*|shift|शिफ्ट|move)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.cancel": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:ಕ್ಯಾನ್ಸಲ[\\p{L}\\p{M}]*|റദ്ദാക്ക[\\p{L}\\p{M}]*|ക്യാൻസ[ൽല][\\p{L}\\p{M}]*|cancel|कैंसल|ರದ್ದು[\\p{L}\\p{M}]*|रद्द)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.refund": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:paise wapas|wapas karo|തിരികെ നൽക[\\p{L}\\p{M}]*|ಹಿಂತಿರುಗಿಸ[\\p{L}\\p{M}]*|give back|pay back|वापस करो|wapas do|वापस दो|റീഫണ്ട[\\p{L}\\p{M}]*|refund|ರೀಫಂಡ[\\p{L}\\p{M}]*|रिफंड)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.message": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:let know|മെസ്സേജ[\\p{L}\\p{M}]*|അറിയിക്ക[\\p{L}\\p{M}]*|message|bata do|സന്ദേശം[\\p{L}\\p{M}]*|inform|बोल दो|बता दो|bol do|ಮೆಸೇಜ[\\p{L}\\p{M}]*|ತಿಳಿಸಿ[\\p{L}\\p{M}]*|मैसेज|संदेश|batao|ಸಂದೇಶ[\\p{L}\\p{M}]*|tell|बोलो|बताओ|bolo|ಹೇಳಿ[\\p{L}\\p{M}]*|msg|പറയ[\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.owes": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:kisne nahi diya|fees baki|കുടിശ്ശിക[\\p{L}\\p{M}]*|not paid|unpaid|बकाया|ಶುಲ್ಕ[\\p{L}\\p{M}]*|owes|dues|fees|ഫീസ[\\p{L}\\p{M}]*|ಫೀಸ[\\p{L}\\p{M}]*|owe|fee|फीस)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.waiting": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:anything for me|കാത്തിരിക്കുന്ന[\\p{L}\\p{M}]*|ಕಾಯುತ್ತಿದೆ[\\p{L}\\p{M}]*|approvals|क्या बाकी|mere liye|needs me|मेरे लिए|kya baki|need me|waiting|pending|approve|बाकी है|എനിക്ക[\\p{L}\\p{M}]*|ബാക്കി[\\p{L}\\p{M}]*|ನನಗೆ[\\p{L}\\p{M}]*|ಬಾಕಿ[\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.money": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:എത്ര കിട്ടി[\\p{L}\\p{M}]*|kitna aaya|ಎಷ್ಟು ಬಂತು[\\p{L}\\p{M}]*|collected|कितना आया|how much|came in|takings|money|paisa|paise|पैसे|पैसा|പണം[\\p{L}\\p{M}]*|ಹಣ[\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.kind.day": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:who is coming|appointments|kaun aa raha|appointment|ബുക്കിംഗ[\\p{L}\\p{M}]*|bookings|schedule|ബുക്കിങ[\\p{L}\\p{M}]*|ലിസ്റ്റ[\\p{L}\\p{M}]*|booking|ಬುಕಿಂಗ[\\p{L}\\p{M}]*|बुकिंग|लिस्ट|ಪಟ್ಟಿ[\\p{L}\\p{M}]*|list)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.ref": {
+   "source": "(?<![\\p{L}\\p{N}])([bfqog])-(\\d{1,6})(?![\\p{N}])",
+   "flags": "iu"
+  },
+  "intents.guest": {
+   "source": "(?<![\\p{L}\\p{N}])chat\\s+guest\\s+(\\d{1,6})(?![\\p{N}])",
+   "flags": "giu"
+  },
+  "talk.number_words": {
+   "source": "(?<![\\p{L}\\p{M}])(?:half|quarter|double|twice|triple|ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|dozen)(?![\\p{L}\\p{M}])|आधा|आधी|दोगुना|दुगना|दस|बीस|तीस|चालीस|पचास|साठ|सत्तर|अस्सी|नब्बे|പകുതി|ഇരട്ടി|പത്ത്|ഇരുപത്|മുപ്പത്|നാൽപ്പത്|അമ്പത്|അറുപത്|ഏഴുപത്|എൺപത്|തൊണ്ണൂറ്|ಅರ್ಧ|ದುಪ್ಪಟ್ಟು|ಹತ್ತು|ಇಪ್ಪತ್ತು|ಮೂವತ್ತು|ನಲವತ್ತು|ಐವತ್ತು|ಅರವತ್ತು|ಎಪ್ಪತ್ತು|ಎಂಭತ್ತು|ತೊಂಬತ್ತು",
+   "flags": "iu"
+  },
+  "talk.completion": {
+   "source": "(?<![\\p{L}\\p{M}])(?:booked|confirmed|paid|refunded|cancell?ed|canceled|sent|scheduled|reserved|completed|done|processed|credited|rescheduled|moved)(?![\\p{L}\\p{M}])|बुक हो|बुक कर दि|बुक कर लि|कन्फर्म हो|कन्फर्म कर|पक्की हो|भुगतान हो|भुगतान कर दि|पेमेंट हो|रिफंड हो|रिफंड कर दि|रद्द हो|रद्द कर दि|रद्द कर दी|भेज दि|भेज दी|बुक ചെയ്തു|ബുക്ക് ചെയ്തു|ബുക്ക് ആയി|ഉറപ്പിച്ചു|ഉറപ്പായി|പണമടച്ചു|പേയ്മെന്റ് ലഭിച്ചു|റീഫണ്ട് ചെയ്തു|റദ്ദാക്കി|റദ്ദായി|അയച്ചു|ಬುಕ್ ಮಾಡಲಾಗಿದೆ|ಬುಕ್ ಆಗಿದೆ|ದೃಢಪಡಿಸಲಾಗಿದೆ|ಖಚಿತವಾಗಿದೆ|ಪಾವತಿಸಲಾಗಿದೆ|ಪಾವತಿ ಆಗಿದೆ|ರೀಫಂಡ್ ಮಾಡಲಾಗಿದೆ|ರದ್ದುಮಾಡಲಾಗಿದೆ|ರದ್ದಾಗಿದೆ|ಕಳುಹಿಸಲಾಗಿದೆ",
+   "flags": "iu"
+  },
+  "talk.percent": {
+   "source": "(\\d+(?:\\.\\d+)?)\\s*(?:%|per ?cent|प्रतिशत|ശതമാനം|ಶೇಕಡಾ|ಪ್ರತಿಶತ|ಶೇ\\.?)",
+   "flags": "giu"
+  },
+  "talk.link": {
+   "source": "(?:https?:\\/\\/|www\\.)[^\\s)]+|\\b(?:[a-z0-9-]+\\.)+(?:com|in|dev|co|org|net|app|io|me|link)(?:\\/[^\\s)]*)?",
+   "flags": "giu"
+  },
+  "talk.long_digits": {
+   "source": "\\d[\\d\\s().+-]{6,}\\d",
+   "flags": "gu"
+  },
+  "check.date": {
+   "source": "(?:रविवार|सोमवार|मंगलवार|बुधवार|गुरुवार|शुक्रवार|शनिवार|Sun|Mon|Tue|Wed|Thu|Fri|Sat|ഞായർ|തിങ്കൾ|ചൊവ്വ|ബുധൻ|വ്യാഴം|വെള്ളി|ശനി|ಭಾನುವಾರ|ಸೋಮವಾರ|ಮಂಗಳವಾರ|ಬುಧವಾರ|ಗುರುವಾರ|ಶುಕ್ರವಾರ|ಶನಿವಾರ)\\s*,?\\s*\\d{1,2}\\s+(?:जनवरी|फरवरी|मार्च|अप्रैल|मई|जून|जुलाई|अगस्त|सितंबर|अक्टूबर|नवंबर|दिसंबर|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|ജനുവരി|ഫെബ്രുവരി|മാർച്ച്|ഏപ്രിൽ|മേയ്|ജൂൺ|ജൂലൈ|ഓഗസ്റ്റ്|സെപ്റ്റംബർ|ഒക്ടോബർ|നവംബർ|ഡിസംബർ|ಜನವರಿ|ಫೆಬ್ರವರಿ|ಮಾರ್ಚ್|ಏಪ್ರಿಲ್|ಮೇ|ಜೂನ್|ಜುಲೈ|ಆಗಸ್ಟ್|ಸೆಪ್ಟೆಂಬರ್|ಅಕ್ಟೋಬರ್|ನವೆಂಬರ್|ಡಿಸೆಂಬರ್)",
+   "flags": "giu"
+  },
+  "check.time": {
+   "source": "(?:सुबह|दोपहर|शाम|रात)\\s+\\d{1,2}:\\d{2}\\s+बजे|(?:രാവിലെ|ഉച്ചയ്ക്ക്|വൈകുന്നേരം|രാത്രി|ಬೆಳಿಗ್ಗೆ|ಮಧ್ಯಾಹ್ನ|ಸಂಜೆ|ರಾತ್ರಿ)\\s+\\d{1,2}:\\d{2}|\\d{1,2}:\\d{2}\\s*(?:am|pm)",
+   "flags": "giu"
+  },
+  "check.trailing": {
+   "source": "[.,;:!?।॥]+$",
+   "flags": "u"
+  },
+  "check.url": {
+   "source": "(?:https?:\\/\\/)?(?:[a-z0-9-]+\\.)+[a-z]{2,}\\/[^\\s)]*",
+   "flags": "giu"
+  },
+  "check.upi": {
+   "source": "upi:\\/\\/[^\\s)]*",
+   "flags": "giu"
+  },
+  "check.amount": {
+   "source": "₹\\s*(\\d[\\d,]*(?:\\.\\d+)?)",
+   "flags": "gu"
+  },
+  "check.quantity_word": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:thousand|hundred|crore|हज़ार|करोड़|lakh|हजार|लाख|सौ)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "iu"
+  },
+  "check.quantity_stem": {
+   "source": "നൂറ|ആയിരം|ലക്ഷം|കോടി|ನೂರ|ಸಾವಿರ|ಲಕ್ಷ|ಕೋಟಿ",
+   "flags": "u"
+  },
+  "notes.for_customers": {
+   "source": "^\\s*(?:for customers|customers (?:can|may) be told|tell customers|ग्राहकों के लिए|ग्राहकों को बताना|ഉപഭോക്താക്കൾക്ക്|ಗ್ರಾಹಕರಿಗೆ)\\s*[:,\\-–]?\\s*",
+   "flags": "iu"
+  },
+  "notes.goal": {
+   "source": "^\\s*(?:my goal|goal|lakshya|लक्ष्य|ലക്ഷ്യം|ಗುರಿ)\\b",
+   "flags": "iu"
+  },
+  "notes.instruction": {
+   "source": "^\\s*(?:always|never|offer|do not|don't|please)\\b|^\\s*(?:हमेशा|कभी नहीं)",
+   "flags": "iu"
+  },
+  "redact.email": {
+   "source": "[\\p{L}\\p{N}._%+-]+@[\\p{L}\\p{N}.-]+\\.[\\p{L}]{2,}",
+   "flags": "gu"
+  },
+  "redact.link": {
+   "source": "\\b(?:https?:\\/\\/|www\\.)\\S+",
+   "flags": "giu"
+  },
+  "redact.phone": {
+   "source": "\\+?\\(?[0-9०-९൦-൯೦-೯][0-9०-९൦-൯೦-೯\\s().\\-]{8,}[0-9०-९൦-൯೦-೯]",
+   "flags": "gu"
+  },
+  "redact.name": {
+   "source": "((?<![\\p{L}\\p{M}])(?:(?:my\\s+name\\s+is|name\\s+is|name\\s*[:-]|myself|mera\\s+naam|mera\\s+name|naam)|(?:मेरा\\s+नाम|नाम)|(?:എന്റെ\\s+പേര്|എൻ്റെ\\s+പേര്|പേര്)|(?:ನನ್ನ\\s+ಹೆಸರು|ಹೆಸರು)))\\s+[\\p{L}\\p{M}][\\p{L}\\p{M}.'-]*",
+   "flags": "giu"
+  },
+  "redact.surname": {
+   "source": "^(?:\\s+[A-Z][a-z.'-]*)",
+   "flags": ""
+  }
+ }
+}
