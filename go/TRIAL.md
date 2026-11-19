@@ -401,7 +401,7 @@ tapped button or row read with no model (`intentFromReply`: the 13 `reply` cases
 **Slice 1 (second part): reading a customer's message (19 Nov).** The rule parser (`internal/bookings/parser.go`, rule-parser.ts `parseIntent`) and Bookings' reading for the
 shared router (`reading.go`: rulesAreSure, toIntentShape, the prompt, the schema, the decision model's questions and how its answers are read, merge). The shared readers are in the
 shared packages: `language.FindTimePhrase`, `BlankWrittenDate`, `WordRe` (dates.ts), `understanding.DetectLanguage`, `FindOffer`, `IsStop`, `IsOverrideAttempt` (rules.ts). Every
-fixed pattern is generated: the shared ones into `language/patterns.json` (gen_patterns.ts, 52 more), Bookings' own and the prompt, schema and questions into
+fixed pattern is generated: the shared ones into `language/patterns.json` (gen_patterns.ts, 35 more), Bookings' own and the prompt, schema and questions into
 `internal/bookings/reading.json` (new `go/scripts/gen_bookings_reading.ts`, its freshness test `templates/commerce/bookings/test/go-reading-fresh.test.ts`). To hand them over,
 TypeScript constants that were private became exported (rules.ts, dates.ts, rule-parser.ts, reading.ts) and findOffer's and findTimePhrase's inline patterns became named
 constants (`OFFER_TESTS`, `CLOCK_TIME_RE` ...): the same patterns in the same order, no change of behaviour. The JavaScript-regex matcher (`language/regex.go`) gained the three
@@ -484,12 +484,13 @@ deleted (its callers in accounting, render, report and bookingsreport use langua
 `language.FormatInr`, and `internal/bookings` has no time helpers of its own: `LocalDate` and `LocalParts` are `zone`'s, and a booking's minute is `zone.ZonedToMs` (time.ts's two
 passes; before, `time.Date`, which could differ in a summer-time gap). Kept apart, with the reason: `calendar`'s `zonedMidnight` (Date.UTC's years 0 to 99 and its fall back to UTC
 for a zone Intl refuses, where `zone` panics on a zone the settings check already refused: different inputs, different answers), and `slots.Fill` (the positional `{0}` filler of the
-books' and the report's words: not a format, and no other copy of it exists; the Meta `{{1}}` filler and the assistant's `{name}` filler are other syntaxes).
+books' and the report's words: not a format, and no other copy of it exists; the Meta `{{1}}` filler and the assistant's `{name}` filler are other syntaxes). The directory's page
+(`directory/page.go rupees`, toLocaleString with two decimals) keeps its own decimals and uses the one grouping, `language.GroupIN`.
 **What is left of wave 2 for Bookings (19 Nov, end of this stream's run; the next agent starts here).** Measured after the merges and the join: the Bookings contract on Go is
 **25 of 143** (the contract stream added 15 tests; the same 25 pass as before), the listings contract on Go **210 of 210**, `go test ./...` 26 packages ok. Done on this branch: slices 1 and 2's first part (runtime, store, events,
 the shared seam), the pure rules, the declared limits, a customer's intent from a model and from a tap, the rule parser and the reading for the router, the merges of main (Guard
 clients, books) and of go-bookings-words-19nov (the customer's words), and the formatting join. Not started, in the order they unblock contract tests:
-1. **Slice 6, the services wired (unblocks most of the 103 failing Bookings contract tests).** `internal/bookings/ports.go` gets one field per service typed with THEIR interfaces
+1. **Slice 6, the services wired (unblocks most of the 118 failing Bookings contract tests).** `internal/bookings/ports.go` gets one field per service typed with THEIR interfaces
    (`calendar.Calendar`, `payments.Payments`, `messaging.Messaging`), `cmd/bookings` hands in the live clients or the stand-ins by runtime.json's mode (`payments.NewFake`,
    `messaging.NewStandIn`, the calendar's fake or own list), and agent.ts (1,790 lines: onMessage, onPayment, onApproval, onChannel, onRecovery, onTick) is ported over them, using
    `Reading` with `understanding.Router` for a customer's words (`Reading.Slots` from the calendar's free times) and the words branch's `Render`, `ButtonsFor`, `ServiceList`, `SlotList`

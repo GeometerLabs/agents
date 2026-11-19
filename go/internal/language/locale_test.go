@@ -56,4 +56,3 @@ func TestFormatsEqualLocaleVectors(t *testing.T) {
 		}
 	}
 }
-

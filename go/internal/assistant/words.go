@@ -8,8 +8,7 @@ package assistant
 // shops holds at most four copies, and a shop in English never pays for Malayalam). The word lists of the owner's commands (rules.json.gz) are unpacked the same way, and the regular
 // expressions made from them are compiled the first time an owner's message is read (rules.go).
 //
-// The formatters a message needs are here, and small: the rupee grouping (en-IN: 12,34,567), the date (weekday and month names come from the pack), the time of day (24 forms in
-// the pack, the day-part words of each hour) and the moment an owner-control alert carries (owner-phones.ts dayAndTime: the month names and 24 forms in the pack). The tests prove
+// The rupee, the date and the time of day are language's (FormatInr, Formats: the one writing every Go runtime shares); what is here is the moment an owner-control alert carries (owner-phones.ts dayAndTime: the month names and 24 forms in the pack). The tests prove
 // each of them equal to Node's.
 
 import (
@@ -127,10 +126,14 @@ func (p *Pack) Has(key string) bool { _, ok := p.M[key]; return ok }
 func INR(paise int64) string { return language.FormatInr(float64(paise) / 100) }
 
 // DateText is format.ts formatDate: "Wed 18 Nov", or "बुधवार, 18 नवंबर".
-func (p *Pack) DateText(year, month, day int) string { return language.Formats(p.lang).Date(year, month, day) }
+func (p *Pack) DateText(year, month, day int) string {
+	return language.Formats(p.lang).Date(year, month, day)
+}
 
 // TimeOfDay is format.ts formatTime: "6:05 pm", "शाम 6:05 बजे".
-func (p *Pack) TimeOfDay(hour, minute int) string { return language.Formats(p.lang).TimeOfDay(hour, minute) }
+func (p *Pack) TimeOfDay(hour, minute int) string {
+	return language.Formats(p.lang).TimeOfDay(hour, minute)
+}
 
 // india is India's time, the one owner-phones.ts writes every moment in (Asia/Kolkata has had no summer time since 1945, so a fixed zone is the same zone and needs no tz database).
 var india = time.FixedZone("IST", 5*3600+30*60)
