@@ -10,7 +10,7 @@ import (
 	"strconv"
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
-	"github.com/GeometerLabs/agents/go/internal/locale"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/slots"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
@@ -21,7 +21,7 @@ var errBadTime = errors.New("Invalid time value")
 // englishDate is the date as "15 Nov 2026": the English fixed field, written the same in every language.
 func englishDate(ms int64, tz string) string {
 	p := zone.LocalParts(ms, tz)
-	return strconv.Itoa(p.Day) + " " + locale.Month("en", p.Month) + " " + strconv.Itoa(p.Year)
+	return strconv.Itoa(p.Day) + " " + language.Formats("en").Months[p.Month-1] + " " + strconv.Itoa(p.Year)
 }
 
 // DocumentPage is documentPage: the whole page for one document. A time the document carries that cannot be read, or an amount that is not whole paise, is the TypeScript's thrown error.
@@ -51,14 +51,14 @@ func DocumentPage(d accounting.Document) (string, error) {
 		}
 	}
 	when := zone.LocalParts(ms, d.TimeZone)
-	dateText := locale.FormatDate(when.Date, d.Language) + " " + strconv.Itoa(when.Year) + ", " + locale.FormatTime(when.Hour, when.Minute, d.Language)
+	dateText := language.Formats(d.Language).Date(when.Date.Year, when.Date.Month, when.Date.Day) + " " + strconv.Itoa(when.Year) + ", " + language.Formats(d.Language).TimeOfDay(when.Hour, when.Minute)
 	citeDate := func(iso string) (string, error) {
 		t, ok := accounting.ParseISO(iso)
 		if !ok {
 			return "", errBadTime
 		}
 		p := zone.LocalParts(t, d.TimeZone)
-		return locale.FormatDate(p.Date, d.Language) + " " + strconv.Itoa(p.Year), nil
+		return language.Formats(d.Language).Date(p.Date.Year, p.Date.Month, p.Date.Day) + " " + strconv.Itoa(p.Year), nil
 	}
 	title := w.Title[d.Kind] + " " + d.Number
 	amount, err := accounting.FormatPaise(d.AmountPaise)

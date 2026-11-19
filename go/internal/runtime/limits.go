@@ -35,13 +35,13 @@ type limitsView struct {
 	Passkey *bool           `json:"passkey,omitempty"`
 }
 
-// LimitsView is modules/limits runtime-limits.ts `view`: no declared limits, the saved changes untouched (a copy of the list, so a caller never changes the state).
+// LimitsView is modules/limits runtime-limits.ts `view`: the declared limits (none for a listings shop; limitsdecl.go), the saved changes untouched (a copy of the list, so a caller never changes the state).
 func (r *Runtime) limitsView() limitsView {
 	changes := json.RawMessage("[]")
 	if c, ok := r.current().assistant["limitChanges"]; ok && len(bytes.TrimSpace(c)) > 0 && string(bytes.TrimSpace(c)) != "null" {
 		changes = c
 	}
-	return limitsView{Limits: []any{}, Changes: changes}
+	return limitsView{Limits: r.limitRows(changes), Changes: changes}
 }
 
 // squash is JavaScript's `text.replace(/\s+/gu, " ").trim()`.
@@ -179,7 +179,8 @@ func (s *Snap) ensureAssistant() {
 func (r *Runtime) limitEvent(snap *Snap, rec *recorder, ev map[string]any) {
 	snap.ensureAssistant() // TypeScript's run opens with assistantOf(store), whatever the event is
 	if ev["kind"] != "limit_settled" {
-		return // an owner_limit names a limit this shop does not declare: nothing is changed and nothing is said
+		r.ownerLimit(snap, rec, ev) // a limit the template declares (limitsdecl.go); one it does not changes nothing and says nothing
+		return
 	}
 	number, lang := r.owner()
 	id, _ := ev["change"].(string)

@@ -15,7 +15,7 @@ import (
 
 	"github.com/GeometerLabs/agents/go/internal/accounting"
 	"github.com/GeometerLabs/agents/go/internal/accounting/render"
-	"github.com/GeometerLabs/agents/go/internal/locale"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"github.com/GeometerLabs/agents/go/internal/report"
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
@@ -120,7 +120,7 @@ func ReportSection(sr SealedReport, lang, check string) (string, error) {
 	depositsLabel, givenBackLabel := moneyLabels(lang, r.UPI())
 	madeMs, _ := accounting.ParseISO(r.MadeAt)
 	made := zone.LocalParts(madeMs, r.TimeZone)
-	madeOn := fmt.Sprintf("%s %d", locale.FormatDate(made.Date, lang), made.Year)
+	madeOn := fmt.Sprintf("%s %d", language.Formats(lang).Date(made.Date.Year, made.Date.Month, made.Date.Day), made.Year)
 
 	rowsNumbers := [][]string{
 		{e(s.Label.BookingsMade), fign(r.Bookings.Made), ""},

@@ -316,6 +316,100 @@ The HTTP contract suite for the Bookings shop runtime is written in TypeScript a
 tracker, fake model, fake push Guard, test-clock file, process starter, HTTP caller, owner-control helpers) moved to `modules/test/contract/` and the listings contract uses them.
 One runtime file changed: `templates/commerce/bookings/server/main.ts` takes the test clock the way the listings shop's main does (nothing changes without the two variables, and a
 live shop refuses them). The Go Bookings binary must honour the same two variables for a "fakes" shop (`go/internal/testclock`).
+
+## Wave 2: the Bookings runtime (19 Nov 2026, `go-bookings-19nov`, in progress)
+
+**What is built.** One shop runtime for every template: `internal/runtime/template.go` is the seam (`Kit`, the Go twin of `modules/runtime/core.ts` `RuntimeKit` and `ChannelKit`),
+and `internal/bookings` is the first template plugged into it; `cmd/bookings` runs one Bookings shop with the same command line, token files, environment and test clock as
+`cmd/listings` (a live shop refuses the test clock). Nothing of the listings runtime was copied: the owner's sign-in, passkeys, phones, push, the limits page, the owner's file,
+the record and the queue are the same code for both shops. A runtime with no Kit is the listings shop exactly as before (the listings contract on Go: 201 of 201 before the seam
+and after it). The parts only a template uses: the inbox's events, the panel's recovery and the front's channel events checked whole with the TypeScript's sentences and task
+keys (`events.go`), WhatsApp's delivery reports in the record (`statuses.go`), a task parked while its Guard is down and run once more when the wait is over, a task ended failed
+with its to-do line keeping the thrown-away step's id counters (`kit.go`), the template's routes in http.ts's order of checks (`kitserver.go`), and in the store the columns
+that were always there (`waiting_on`, `retry_at`, the window, a task's state by key). The Bookings store is read and written field for field, every member it does not model kept
+raw in its place (`internal/bookings/state.go`); `nextBooking` moves on by 100000 after a restore.
+
+**What is left, and why.** Every step that calls a service: a customer's message, a booking from the page, a payment, an approval, cancel and change, the beat's holds, reminders
+and completion, the free starts in the offer. The services are the other streams' (go-guards-19nov: payments, messaging, calendar, stand-ins; go-books-19nov: the books, the
+report), so the domain code waits on them; `internal/bookings/ports.go` holds the interfaces, mirroring theirs. Such a step ends its task FAILED at once with a sentence
+(`runtime.Unported`), never a silent "done". The pure rules it will use are ported and proved on the TypeScript's vectors (hours, double booking with units and resources, the
+refund limit, the price floor, STOP, every move between states, reminders; the settings' refusals word for word; the task runner's cases). Slices 4 and 5 (the customer's chat
+and talk, the owner's side for Bookings, the assistant's Bookings skill, the limits Bookings declares) are not started. `internal/bookings/Deferred.md` is the list.
+
+**The customer-facing words (slice 4, part; branch `go-bookings-words-19nov`).** Every message the Bookings agent sends (96 per language, four languages), the WhatsApp templates'
+bodies and how each slot is filled, the labels and Meta's limits, and the owner's day list are DATA made from the TypeScript by `go/scripts/gen_bookings_words.ts` (each template is
+rendered with probe facts and each probe turned back into a `{slot}`; which facts a message needs is found by taking each away from the real function, so Go refuses the same
+messages with the same sentence; `--check` and `words-fresh.test.ts` fail when a file is stale). The formats are shared (`internal/language/format.go` + `formats.json`, made by the
+same script from format.ts's own tables: format.ts writes dates and times from tables, not Intl; the zone is Go's database and the rupee grouping `language.FormatInr`, both proved
+equal; the data was made with Node v26.10.0). `internal/language` check.go now carries the moments (the booking's slot and a list's free times) and its problem sentences, so
+the outgoing check of a Bookings message equals the TypeScript's. `internal/bookings/templates.go`, `meta.go`, `interactive.go` render a message, the WhatsApp parameters, the
+templates submitted to Meta, the lists and buttons. Proved on every case of `templates-vectors.json` (384 renders and their checks, 136 WhatsApp templates, the 13 replies, labels,
+lists, buttons and the 136 submissions) plus the language package's equal-to-Node cases for rupees, dates and times (`go test ./internal/bookings/... ./internal/language/...`).
+Not done: the UPI owner's buttons (`ownerMarkButtons`), see Deferred.md. TypeScript findings: none changed.
+
+**What passes (19 Nov, through the heat lock).**
+
+* The Bookings contract on Go, whole folder (`BOOKINGS_IMPL=go BOOKINGS_GO_BIN=go/bin/bookings node --test --test-concurrency=1 templates/commerce/bookings/contract/`): **128 tests, 23
+  pass, 105 fail**. The 23: all 12 of `smoke` (health, readyz, status, every token refusal, 405s, 404s for the listings and Fees routes, the recovery and events checks, the status
+  reports, the data across a restart, the folder refusals, a live shop refusing the test clock, a Guards shop that calls no Guard at start), the shared owner control on a Bookings
+  shop (the lock with the first passkey, the Operator's QR and card refused after it, the 48-hour number change and a sale, the limits page), a newer schema refused, the shop's key
+  kept across restarts, a torn licence file, a malformed chat or approval event refused, a stranger's "approve". Three of them pass because nothing happens on Go (STOP with a
+  voice note, a stranger's "approve", the torn licence file: the step ends failed as not ported, and the test only checks that nothing went out), so they are not evidence yet;
+  and the limits page's test passes with Go's `limits: []` because it only tightens a limit `if` one is listed (a weak test: reported to the contract stream below). The 105
+  failures, read by their first error: no payment link or booking was made (the booking flow), the free starts (`calendarUnread`), the chat's thread and rates, the customer's
+  words and the model, the owner's assistant, the licence notices and the report: every one a step or a read that is not ported (Deferred.md), none a wrong answer of a ported part.
+  On TypeScript `smoke` is 12 of 12 (unchanged: no TypeScript was touched).
+* The listings contract on Go after the seam: **202 of 202** (the same command as before; one test more than the baseline of 201, from main).
+* "Loses nothing", by a scratch check (not a contract file): a TypeScript Guards shop books and pays and stops; the Go runtime starts on the folder, reads the booking as
+  `booked`, counts it, takes one `message_status` (which rewrites the whole state in the Go codec's text) and stops; the TypeScript runtime starts again and the page's read, the
+  record line for line and the queue are what they were, and a cancellation goes on to one refund. `cross-restart.test.ts` itself needs the Go booking flow and fails until it lands.
+* The record lines are the TypeScript's, by a scratch check on one folder (the same record key): a recovery for a booking that is not there and a status report for a message
+  no line sent, written by TypeScript and then by Go, are equal member for member (the recovery's `inputsDigest` too), in a fakes shop and a Guards shop.
+* Go unit tests (`go test ./internal/bookings`): the limits vectors (1,718 cases: hours, double booking, refund limit, STOP, moves, reminders, price), the settings vectors (22,
+  word for word), the task runner vectors (6). The other vector files on main (templates, coerce, ondc, scenarios, report, parser, guard-spec) have no Go test yet: their
+  functions are not ported (the customer's words, the rule parser, the agent, the report), on the TypeScript's own inputs.
+
+**Memory, one idle Bookings shop** (a fakes shop from the contract's harness, `ps -o rss=`, as the listings trial measured, one run each):
+
+| | TypeScript (Node 26) | Go |
+| --- | --- | --- |
+| idle RSS 3 s after start | 139.5 MB | **23.2 MB** |
+| after 150 requests (offer, status, owner page) | 149.8 MB | **26.8 MB** |
+| spawn to `/healthz` | 327 ms | **55 ms** |
+
+The Go shop does less than the TypeScript one yet (no in-memory stand-ins, no booking flow), so its number will grow as the services land; the listings shop's 18.5 MB is the floor
+the shared runtime itself costs.
+
+**Contract findings (for the contract stream; nothing changed there).** `owner.contract.test.ts` "a passkey session reads the limits ..." checks the tightening only `if` the view
+lists a limit, so a runtime that declares none passes it; Bookings declares CHAT_LIMITS, so the test could assert the list is not empty.
+
+**TypeScript findings.** None that change behaviour. Noted for the port: the contract's `smoke` passes a `message` step on Go by ending the task failed (not ported); the test does
+not look at the outcome, so it cannot tell a handled message from an unhandled one.
+
+**Slice 5, first part: the limits Bookings declares (19 Nov).** `internal/runtime/limitsdecl.go` is the declared half of `modules/limits` (inForce, judgeChange, the view's rows, the
+owner's own change from the page), and a template declares its limits through `Kit.Limits` (Bookings: the refund limit, 0 to min(₹5,000, the deposit)). The words are generated
+from `modules/limits/chat-limit-kinds.ts` by `go/scripts/gen_limit_words.ts`. The limits page and `/internal/limit-changes` now answer what TypeScript answers: the three limits tests
+pass on Go and on TypeScript, the Bookings contract on Go is 25 of 128, the listings contract on Go 202 of 202. What the agent reads in force (the refund limit before a refund) is
+wired with the refunds, which wait for the payments package.
+
+**Slice 4, first part: a customer's intent (19 Nov).** `internal/bookings/intent.go`: a model's answer checked by hand (`coerceIntent`: 34 cases of `coerce-vectors.json`, equal) and a
+tapped button or row read with no model (`intentFromReply`: the 13 `reply` cases of `templates-vectors.json`, equal). Not ported yet, with no Go test: the rule parser
+(`parser-vectors.json`, the coerce file's `sure`, `prompt`, `schema`), the customer's words (`templates-vectors.json` render, meta, labels, lists, buttons: they need a generator over
+`src/language/templates.ts` and the four languages' date, time, rupee and phone formats), the agent's scenarios, ONDC, the report.
+
+
+**Slice 1 (second part): reading a customer's message (19 Nov).** The rule parser (`internal/bookings/parser.go`, rule-parser.ts `parseIntent`) and Bookings' reading for the
+shared router (`reading.go`: rulesAreSure, toIntentShape, the prompt, the schema, the decision model's questions and how its answers are read, merge). The shared readers are in the
+shared packages: `language.FindTimePhrase`, `BlankWrittenDate`, `WordRe` (dates.ts), `understanding.DetectLanguage`, `FindOffer`, `IsStop`, `IsOverrideAttempt` (rules.ts). Every
+fixed pattern is generated: the shared ones into `language/patterns.json` (gen_patterns.ts, 35 more), Bookings' own and the prompt, schema and questions into
+`internal/bookings/reading.json` (new `go/scripts/gen_bookings_reading.ts`, its freshness test `templates/commerce/bookings/test/go-reading-fresh.test.ts`). To hand them over,
+TypeScript constants that were private became exported (rules.ts, dates.ts, rule-parser.ts, reading.ts) and findOffer's and findTimePhrase's inline patterns became named
+constants (`OFFER_TESTS`, `CLOCK_TIME_RE` ...): the same patterns in the same order, no change of behaviour. The JavaScript-regex matcher (`language/regex.go`) gained the three
+shapes these patterns need (an edge on a word of a final word list, a look-ahead in the middle or longer than a character, a `\b` inside an alternative); Explanation.md says how.
+The router takes a reading's own `Shape` (`understanding.Shaper`). Proved: parser-vectors.json (114 phrases, equal), coerce-vectors.json's sure (8), prompt (1, byte for byte) and
+schema (1), the corpus's readers (offer, time, date, blanked date, language, STOP, trick, wordRe sources) for every phrase of gen_patterns' corpus, and toIntentShape on
+model-llm.test.ts's cases (no vectors exist for it: a gap reported to the contract stream). Not wired yet: the router into the customer's message step (that step needs the services).
+
 ## Wave 2: Guard clients (19 Nov 2026): the shared building blocks of the Bookings, Orders, Fees and Stock-orders runtimes
 
 Ported to Go as shared packages, each proved against vectors made by RUNNING the TypeScript client against a recording HTTP server (`go/scripts/gen_guard_vectors.ts`, cases in
@@ -381,3 +475,30 @@ TypeScript findings (reported, not fixed): a `kept` event naming an `owed` refun
 is then also listed as a problem; `figures.ts` reads a refund amount with a bare `Number()` (a fraction is added); `owner-money` `tally()` counts a NaN time; `settlements.ts` `daysToRead` sorts a read line with no `refs.day`
 last; `invariants.ts` privacy faults depend on refs insertion order; `fitText` folds whitespace before stripping zero-width characters (so a name can turn a signed summary into the older link); `settledWho` slices at
 UTF-16 and can leave half an emoji; `workOf` leaves a refund settled by a person's word "waiting for owner" in every later month unless an `owner_decision` follows; a rule id like `constructor` would throw in `STOP_SITES`.
+
+**The formatting join (19 Nov, after merging main and go-bookings-words-19nov).** Three copies wrote the same dates, times and rupees: `internal/locale` (books stream), `language/format.go`
+with `formats.json` (words branch) and the assistant's packed date and time tables with its own `INR`. Their tables were identical (checked month for month, weekday for weekday, hour for
+hour), so there is now ONE: `language.Formats(lang).Date / TimeOfDay`, `language.FormatInr` and its exact integer twin `FormatInrWhole`, with one en-IN grouping. `internal/locale` is
+deleted (its callers in accounting, render, report and bookingsreport use language; owner-money-render's own `inr` moved to `accounting/render`, its only user; its vectors are
+`language/testdata/locale-vectors.json`, still written by gen_locale.ts), the assistant's packs no longer carry date and time tables (gen_words.ts), `assistant.INR` is one line over
+`language.FormatInr`, and `internal/bookings` has no time helpers of its own: `LocalDate` and `LocalParts` are `zone`'s, and a booking's minute is `zone.ZonedToMs` (time.ts's two
+passes; before, `time.Date`, which could differ in a summer-time gap). Kept apart, with the reason: `calendar`'s `zonedMidnight` (Date.UTC's years 0 to 99 and its fall back to UTC
+for a zone Intl refuses, where `zone` panics on a zone the settings check already refused: different inputs, different answers), and `slots.Fill` (the positional `{0}` filler of the
+books' and the report's words: not a format, and no other copy of it exists; the Meta `{{1}}` filler and the assistant's `{name}` filler are other syntaxes). The directory's page
+(`directory/page.go rupees`, toLocaleString with two decimals) keeps its own decimals and uses the one grouping, `language.GroupIN`.
+**What is left of wave 2 for Bookings (19 Nov, end of this stream's run; the next agent starts here).** Measured after the merges and the join: the Bookings contract on Go is
+**25 of 143** (the contract stream added 15 tests; the same 25 pass as before), the listings contract on Go **210 of 210**, `go test ./...` 26 packages ok. Done on this branch: slices 1 and 2's first part (runtime, store, events,
+the shared seam), the pure rules, the declared limits, a customer's intent from a model and from a tap, the rule parser and the reading for the router, the merges of main (Guard
+clients, books) and of go-bookings-words-19nov (the customer's words), and the formatting join. Not started, in the order they unblock contract tests:
+1. **Slice 6, the services wired (unblocks most of the 118 failing Bookings contract tests).** `internal/bookings/ports.go` gets one field per service typed with THEIR interfaces
+   (`calendar.Calendar`, `payments.Payments`, `messaging.Messaging`), `cmd/bookings` hands in the live clients or the stand-ins by runtime.json's mode (`payments.NewFake`,
+   `messaging.NewStandIn`, the calendar's fake or own list), and agent.ts (1,790 lines: onMessage, onPayment, onApproval, onChannel, onRecovery, onTick) is ported over them, using
+   `Reading` with `understanding.Router` for a customer's words (`Reading.Slots` from the calendar's free times) and the words branch's `Render`, `ButtonsFor`, `ServiceList`, `SlotList`
+   for every reply. The books need four adapters (`accounting.Record`, `accounting.Payments`, `report.Messaging` / `DocumentSender`, the Booking conversion for `bookingsreport`) and
+   Bookings `validateSettings`'s checked tree for the policy digest. The owner-marked UPI ledger, obligations and desk (`modules/payments/owner-marked/*`) are this runtime's state to port.
+2. **Slice 2, the chat** (`/internal/channel/chat`, `chat-id`, `chat-voice`; `modules/channels/chat.ts`, `chat-identity*.ts`, the channel state's `outbox`, `chat`, `seq` block, kept raw
+   today) and the chat limits and rates (`CHAT_LIMITS`, `createRate`). A send runs onMessage, so it needs slice 6.
+3. **Slice 3, the customer's talk** (`modules/understanding/talk*` for a customer's turn, its claims checks) and `scenarios-vectors.json` (14 conversations; they run the agent).
+4. **Slice 4's rest**: the owner's page items (UPI, Money: `render.OwnerMoneySection` is on main), approvals and their decisions, the owner's notices, the assistant's Bookings skill,
+   the licence's final stop.
+Findings for the contract stream: `toIntentShape` has no vectors (Go tests take model-llm.test.ts's cases); the limits page's test only tightens a limit `if` one is listed.

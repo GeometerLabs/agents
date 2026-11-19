@@ -1,10 +1,10 @@
-// Writes what the books and the report need of modules/language/format.ts and modules/core/time.ts as DATA for Go: internal/locale/names.json (the month and weekday names and the
-// day-part words, in four languages) and the test vectors of the formatters (internal/locale/testdata/vectors.json) and of the time helpers (internal/zone/testdata/vectors.json),
-// made by RUNNING the TypeScript on Node (Intl). The names are never retyped. Run from the repository root:  node go/scripts/gen_locale.ts   (--check only compares)
+// Writes the test vectors of modules/language/format.ts's formatters (internal/language/testdata/locale-vectors.json: the dates, times and rupees the books and the report write; the
+// names themselves are in internal/language/formats.json, written by gen_bookings_words.ts) and of modules/core/time.ts's helpers (internal/zone/testdata/vectors.json), made by
+// RUNNING the TypeScript on Node (Intl). Run from the repository root:  node go/scripts/gen_locale.ts   (--check only compares)
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DAY_PART_WORDS, MONTH_NAMES, WEEKDAY_NAMES, formatDate, formatInr, formatTime } from "../../modules/language/format.ts";
+import { formatDate, formatInr, formatTime } from "../../modules/language/format.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
 import { addDays, daysBetween, localParts, weekdayOf, zonedToMs } from "../../modules/core/time.ts";
 
@@ -13,10 +13,9 @@ const INTERNAL = join(here, "..", "internal");
 
 export function generate(): Map<string, string> {
   const out = new Map<string, string>();
-  out.set("locale/names.json", JSON.stringify({ months: MONTH_NAMES, weekdays: WEEKDAY_NAMES, dayParts: DAY_PART_WORDS }, null, 1) + "\n");
   const dates = [[2026, 1, 1], [2026, 2, 28], [2026, 11, 18], [2026, 12, 31], [2027, 5, 9], [2028, 2, 29]];
   const inr = [0, 1, 7, 99, 100, 150, 12050, 99999, 100000, 800000, 1234567, 12345600, 123456789, 100000000000];
-  out.set("locale/testdata/vectors.json", JSON.stringify({
+  out.set("language/testdata/locale-vectors.json", JSON.stringify({
     inr: inr.flatMap((r) => [r, -r].map((rupees) => ({ rupees, text: formatInr(rupees) }))),
     date: LANGUAGES.flatMap((l) => dates.map(([y, m, d]) => ({ lang: l, y, m, d, text: formatDate({ year: y, month: m, day: d }, l) }))),
     time: LANGUAGES.flatMap((l) => [0, 5, 6, 11, 12, 13, 17, 18, 21, 23].flatMap((h) => [0, 5, 30, 59].map((min) => ({ lang: l, h, min, text: formatTime({ hour: h, minute: min }, l) })))),

@@ -17,22 +17,51 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/store"
 )
 
-// NewLine is a line to write.
+// NewLine is a line to write. Booking is the case it is about ("b-3"; "" for none, written as null). Decisions are the limits' decisions the line carries (record.ts
+// `decisions`), each already JSON; nil is an empty list.
 type NewLine struct {
 	Conversation string
+	Booking      string
 	Action       string
 	Outcome      string
 	Inputs       any
 	Language     string
 	Notes        string
 	Refs         map[string]string
+	Decisions    []json.RawMessage
 }
 
 type recorder struct {
 	key   []byte
 	base  int
+	saved []store.Entry // the record as the last saved step left it (read-only): what a template reads back
 	fresh []store.Entry
 	now   func() int64
+}
+
+// Recorder is one step's record writer, for a template's agent: Append writes a line, Entries is the whole record as this step sees it (the saved lines, then this step's own).
+type Recorder = recorder
+
+// Append writes one line (record.ts append).
+func (r *recorder) Append(l NewLine) store.Entry {
+	r.append(l)
+	return r.fresh[len(r.fresh)-1]
+}
+
+// Entries is the saved record followed by this step's lines (record.ts entries()).
+func (r *recorder) Entries() []store.Entry {
+	out := make([]store.Entry, 0, len(r.saved)+len(r.fresh))
+	return append(append(out, r.saved...), r.fresh...)
+}
+
+// Fingerprint is a message id as the record keeps it: under the shop's key "m-" and 12 hex digits (fingerprint.ts messageFingerprint, B69), else the id itself.
+func (r *recorder) Fingerprint(id string) string {
+	if r.key == nil {
+		return id
+	}
+	m := hmac.New(sha256.New, r.key)
+	m.Write([]byte("geometer/message/1\n" + id))
+	return "m-" + hex.EncodeToString(m.Sum(nil))[:12]
 }
 
 func (r *recorder) append(l NewLine) {
@@ -52,18 +81,25 @@ func (r *recorder) append(l NewLine) {
 	}
 	// record.ts: a message id is kept only as its keyed fingerprint (fingerprint.ts messageFingerprint, B69)
 	if id, ok := refs["messageId"]; ok && r.key != nil {
-		m := hmac.New(sha256.New, r.key)
-		m.Write([]byte("geometer/message/1\n" + id))
 		cp := make(map[string]string, len(refs))
 		for k, v := range refs {
 			cp[k] = v
 		}
-		cp["messageId"] = "m-" + hex.EncodeToString(m.Sum(nil))[:12]
+		cp["messageId"] = r.Fingerprint(id)
 		refs = cp
 	}
+	var booking *string
+	if l.Booking != "" {
+		b := l.Booking
+		booking = &b
+	}
+	decisions := l.Decisions
+	if decisions == nil {
+		decisions = []json.RawMessage{}
+	}
 	r.fresh = append(r.fresh, store.Entry{
-		Seq: r.base + len(r.fresh) + 1, Time: time.UnixMilli(r.now()).UTC().Format("2006-01-02T15:04:05.000Z"), Conversation: l.Conversation, Action: l.Action, InputsDigest: digest,
-		Outcome: l.Outcome, Decisions: []json.RawMessage{}, Language: l.Language, Notes: l.Notes, Refs: refs,
+		Seq: r.base + len(r.fresh) + 1, Time: time.UnixMilli(r.now()).UTC().Format("2006-01-02T15:04:05.000Z"), Conversation: l.Conversation, Booking: booking, Action: l.Action, InputsDigest: digest,
+		Outcome: l.Outcome, Decisions: decisions, Language: l.Language, Notes: l.Notes, Refs: refs,
 	})
 }
 

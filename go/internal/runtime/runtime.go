@@ -7,6 +7,7 @@ package runtime
 
 import (
 	"crypto/rand"
+	"errors"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -43,6 +44,13 @@ type Options struct {
 	// OnPanic is the shared host's: a panic in a request, in the runner (a step or the clock) or in the push sender is handed to it and the goroutine goes on, instead of the process
 	// ending. Unset (the single-shop binary): nothing is recovered in the runner, exactly as before.
 	OnPanic func(where string, v any)
+	// Kit is a template's part (template.go); nil is the listings-only shop.
+	Kit Kit
+	// RetryDelays are the waits before each retry of a failed step (nil: 1 s, 5 s, 30 s; tasks.ts retryDelaysMs). Empty but not nil: one try.
+	RetryDelays []time.Duration
+	// GuardWaitMs and GuardLookAgainMs are guard-wait.ts GUARD_WAIT_MS and GUARD_LOOK_AGAIN_MS (zero: those).
+	GuardWaitMs      int64
+	GuardLookAgainMs []int64
 }
 
 // Runtime is one running shop.
@@ -81,6 +89,8 @@ type Runtime struct {
 	done chan struct{}
 
 	routes *routes // owner-limits, owner-file and push (routes.go)
+
+	kitRun kitRunner // a template's runner state (kit.go): the Guard being waited for, the looks, the Guards given up on
 }
 
 // New builds the runtime over an open store and starts its runner.
@@ -111,7 +121,7 @@ func New(o Options) (*Runtime, error) {
 		return nil, err
 	}
 	r.snapshot, r.entries = snapshot, entries
-	if r.snap, err = ParseSnap(snapshot); err != nil {
+	if r.snap, err = ParseSnapKit(snapshot, o.Kit); err != nil {
 		return nil, err
 	}
 	if r.snapshot == "" {
@@ -240,11 +250,20 @@ func (r *Runtime) drain() {
 		if task == nil {
 			return
 		}
-		maxAttempts := len(retryDelays) + 1
+		delays := retryDelays
+		if r.o.RetryDelays != nil {
+			delays = r.o.RetryDelays
+		}
+		maxAttempts := len(delays) + 1
 		if task.Attempts >= maxAttempts { // it was already tried that many times and the process died each time
 			_ = r.o.Store.FailTask(task.ID, "The process stopped while this task was running, too many times.", true)
 			r.fail("Task "+task.ID+" is marked failed: it was running each time the process stopped", fmt.Errorf("too many interrupted tries"))
 			continue
+		}
+		// a task waiting for its Guard (kit.go; a listings shop never parks one): its last try once the wait is over, else only when its time to look again has come
+		lastTry, wait := r.waitingTask(task)
+		if wait {
+			return
 		}
 		attempt, err := r.o.Store.StartAttempt(task.ID) // saved before the step runs: a step that kills the process still counts
 		if err != nil {
@@ -253,23 +272,27 @@ func (r *Runtime) drain() {
 		}
 		var ev map[string]any
 		if err := json.Unmarshal([]byte(task.Payload), &ev); err == nil {
-			err = r.step(ev, task.ID)
+			err = r.stepTask(ev, task.ID, lastTry)
 		}
 		if err == nil {
 			r.mu.Lock()
 			r.steps++
 			r.lastStep = r.o.Now()
 			r.mu.Unlock()
+			r.guardBack()
 			continue
 		}
-		last := attempt >= maxAttempts
+		if r.parked(task.ID, err) {
+			continue
+		}
+		last := attempt >= maxAttempts || errors.Is(err, ErrUnported)
 		_ = r.o.Store.FailTask(task.ID, err.Error(), last)
 		r.fail(fmt.Sprintf("Task %s failed (try %d of %d)", task.ID, attempt, maxAttempts), err)
 		if last {
 			continue
 		}
 		select {
-		case <-time.After(retryDelays[attempt-1]):
+		case <-time.After(delays[attempt-1]):
 		case <-r.stop:
 			return
 		}
@@ -290,7 +313,10 @@ func (r *Runtime) tick() {
 		r.fail("A tick failed", err)
 		return
 	}
-	// the owner's morning line rides on the beat after its step, and saves around its send (core.ts `daily`)
+	// the owner's morning line rides on the beat after its step, and saves around its send (core.ts `daily`); a template's comes with its assistant (not ported yet)
+	if r.o.Kit != nil {
+		return
+	}
 	if err := r.morning(); err != nil {
 		r.o.Log("The owner's morning line could not be made: " + err.Error())
 	}
@@ -308,10 +334,13 @@ func (r *Runtime) owner() (string, string) {
 func (r *Runtime) recorder() *recorder {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return &recorder{key: r.o.RecordKey, base: len(r.entries), now: r.o.Now}
+	return &recorder{key: r.o.RecordKey, base: len(r.entries), saved: r.entries, now: r.o.Now}
 }
 
 func (r *Runtime) step(ev map[string]any, taskID string) (err error) {
+	if r.o.Kit != nil {
+		return r.kitStep(ev, taskID, false)
+	}
 	// a failure of the owner-access store inside a rule stops the step as TypeScript's throw does (access.DBError): never read as "no row", which would fail open
 	defer access.Recover(&err)
 	r.stepSince.Store(r.o.Now())
@@ -703,6 +732,9 @@ func iso(ms int64) string { return time.UnixMilli(ms).UTC().Format("2006-01-02T1
 
 // Status is counts only, never a title or a word the owner said.
 func (r *Runtime) Status() (map[string]any, error) {
+	if r.o.Kit != nil {
+		return r.kitStatus()
+	}
 	counts, err := r.o.Store.TaskCounts()
 	if err != nil {
 		return nil, err
