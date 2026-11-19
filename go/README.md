@@ -70,6 +70,12 @@ cmd/listings-shared/     main of the multi-shop host (SHOPS_DIR, SECRETS_DIR, HO
 internal/runtime/        the runtime: the folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes; owner.go is the
                          owner's sign-in routes, the tick's owner part and the owner's side of push (who may subscribe, what ends a subscription, the alerts to the
                          owner's phones), all under one owner lock; push.go, limits.go, ownerfile.go, stock.go and assistant.go are the other owner routes
+internal/guard/          the shared core of every Guard client (modules/core faults.ts, http.ts, json.ts): the errors, the one HTTP client that sends no key, Guard's answers told apart in one place, the bytes JavaScript writes (JSON.stringify, encodeURIComponent, URLSearchParams); guardtest/ is the vector harness
+internal/payments/       payments for every provider (modules/payments): the neutral types and interface, ensureLink, the careful refunds (held refunds never re-sent, the sweep), the in-memory stand-in gateway; razorpay/ the live client and webhook reader; upi/ the upi://pay link. The owner-marked UPI ledger is left for the Bookings wave
+internal/messaging/      the WhatsApp clients (Meta, Gupshup partner and self-serve), the stand-in and fake, send-once, say, statuses, the webhook readers (modules/messaging)
+internal/calendar/       the Google Calendar v3 client through the calendar Guard, the in-memory fake and the shop's own booking list (templates/commerce/bookings src/adapters)
+internal/qr/             the UPI QR: matrix, SVG and PNG (modules/qr); see its Explanation.md for the overlap with the books branch
+internal/terms/          the shop's terms: text and digest generated from the TypeScript words, the file check, the reader, the owner's side (modules/terms)
 scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the TypeScript word lists (talk-check.ts), so the four-language words are never retyped
 scripts/gen_patterns.ts    writes internal/language/patterns.json from the TypeScript's built RegExps (`.source`, `.flags`) and testdata/pattern-vectors.json (what JavaScript finds with each
                            in a corpus); `--check` only compares; the test words-fresh fails when it was not run after a change to a pattern it names
@@ -77,6 +83,7 @@ scripts/gen_words.ts       renders the owner's words (and the lists the rules re
 scripts/gen_directory.ts   writes internal/directory/romanise_gen.go and words/pack.json.gz (+ the font) from the TypeScript directory; `--check` only compares (modules/discovery/contract/words-fresh.test.ts runs it)
 scripts/gen_directory_vectors.ts   what the TypeScript directory gives on hostile and awkward inputs (addresses, dates, numbers, the Latin fold, the order, the assistant's cleaning), for internal/directory/vectors_test.go
 scripts/sync_rates.sh      copies the dated rate tables (modules/understanding/rates) into internal/budget/rates, which the binary embeds (a test keeps them equal)
+scripts/gen_guard_vectors.ts  runs the TypeScript Guard clients against a recording HTTP server (lib/record.ts) and writes what they sent and made of each answer to internal/*/testdata (cases in scripts/vectors/); `--check` only compares; the words-fresh test fails when it is stale
 scripts/gen_*_vectors.ts   what the TypeScript digest, formatters and rules give on a set of cases, for the Go tests (internal/assistant/testdata)
 ```
 

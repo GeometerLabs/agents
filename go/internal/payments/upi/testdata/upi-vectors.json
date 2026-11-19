@@ -1,0 +1,712 @@
+{
+ "vpa": [
+  {
+   "v": "glowsalon@okicici",
+   "problem": null,
+   "normal": "glowsalon@okicici"
+  },
+  {
+   "v": "  GlowSalon@OkICICI ",
+   "problem": null,
+   "normal": "glowsalon@okicici"
+  },
+  {
+   "v": "",
+   "problem": "Add the shop's UPI ID, for example glowsalon@okicici.",
+   "normal": ""
+  },
+  {
+   "v": "   ",
+   "problem": "Add the shop's UPI ID, for example glowsalon@okicici.",
+   "normal": ""
+  },
+  {
+   "v": "nope",
+   "problem": "\"nope\" is not a UPI ID: it needs an @ and the app's or bank's name after it, for example glowsalon@okicici.",
+   "normal": "nope"
+  },
+  {
+   "v": "a@b",
+   "problem": "\"a@b\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter.",
+   "normal": "a@b"
+  },
+  {
+   "v": "ab@c1",
+   "problem": null,
+   "normal": "ab@c1"
+  },
+  {
+   "v": "ab@cd",
+   "problem": null,
+   "normal": "ab@cd"
+  },
+  {
+   "v": "a.b-c_d@oksbi",
+   "problem": null,
+   "normal": "a.b-c_d@oksbi"
+  },
+  {
+   "v": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@ok",
+   "problem": null,
+   "normal": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@ok"
+  },
+  {
+   "v": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@ok",
+   "problem": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@ok\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter.",
+   "normal": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@ok"
+  },
+  {
+   "v": "ab@okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+   "problem": null,
+   "normal": "ab@okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"
+  },
+  {
+   "v": "ab@okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+   "problem": "\"ab@okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter.",
+   "normal": "ab@okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"
+  },
+  {
+   "v": "ab@1bank",
+   "problem": "\"ab@1bank\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter.",
+   "normal": "ab@1bank"
+  },
+  {
+   "v": "é@okicici",
+   "problem": "\"é@okicici\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter.",
+   "normal": "é@okicici"
+  },
+  {
+   "v": "ab@ok@icici",
+   "problem": "\"ab@ok@icici\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter.",
+   "normal": "ab@ok@icici"
+  },
+  {
+   "v": "ab cd@okicici",
+   "problem": "\"ab cd@okicici\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter.",
+   "normal": "ab cd@okicici"
+  },
+  {
+   "v": "AB@OKİ",
+   "problem": "\"AB@OKİ\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter.",
+   "normal": "ab@oki̇"
+  }
+ ],
+ "payee": [
+  {
+   "n": "Glow Salon",
+   "problem": null
+  },
+  {
+   "n": "  Glow Salon  ",
+   "problem": null
+  },
+  {
+   "n": "",
+   "problem": "Add the name the customer should see in their UPI app (the payee name), for example Glow Salon."
+  },
+  {
+   "n": "  ",
+   "problem": "Add the name the customer should see in their UPI app (the payee name), for example Glow Salon."
+  },
+  {
+   "n": "Glow\nSalon",
+   "problem": "The payee name must be on one line."
+  },
+  {
+   "n": "Glow\tSalon",
+   "problem": "The payee name must be on one line."
+  },
+  {
+   "n": "Glow\u0007Salon",
+   "problem": "The payee name must be on one line."
+  },
+  {
+   "n": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "problem": null
+  },
+  {
+   "n": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "problem": "The payee name is longer than 50 characters. Use the short name the shop's UPI app shows."
+  },
+  {
+   "n": "éééééééééééééééééééééééééééééééééééééééééééééééééé",
+   "problem": null
+  },
+  {
+   "n": "ééééééééééééééééééééééééééééééééééééééééééééééééééé",
+   "problem": "The payee name is longer than 50 characters. Use the short name the shop's UPI app shows."
+  },
+  {
+   "n": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+   "problem": null
+  },
+  {
+   "n": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+   "problem": "The payee name is longer than 50 characters. Use the short name the shop's UPI app shows."
+  },
+  {
+   "n": "Salon & Spa (Main)!",
+   "problem": null
+  },
+  {
+   "n": " Glow ",
+   "problem": null
+  }
+ ],
+ "amount": [
+  {
+   "a": 1,
+   "out": {
+    "ok": "0.01"
+   }
+  },
+  {
+   "a": 99,
+   "out": {
+    "ok": "0.99"
+   }
+  },
+  {
+   "a": 100,
+   "out": {
+    "ok": "1.00"
+   }
+  },
+  {
+   "a": 20000,
+   "out": {
+    "ok": "200.00"
+   }
+  },
+  {
+   "a": 100000,
+   "out": {
+    "ok": "1000.00"
+   }
+  },
+  {
+   "a": 100001,
+   "out": {
+    "ok": "1000.01"
+   }
+  },
+  {
+   "a": 10000000,
+   "out": {
+    "ok": "100000.00"
+   }
+  },
+  {
+   "a": 10000001,
+   "out": {
+    "ok": "100000.01"
+   }
+  },
+  {
+   "a": 0,
+   "out": {
+    "error": "A UPI request is for a whole number of paise above zero."
+   }
+  },
+  {
+   "a": -5,
+   "out": {
+    "error": "A UPI request is for a whole number of paise above zero."
+   }
+  },
+  {
+   "a": 150.5,
+   "out": {
+    "error": "A UPI request is for a whole number of paise above zero."
+   }
+  }
+ ],
+ "link": [
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 60000,
+   "note": "Glow Salon b-3",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=600.00&tn=Glow%20Salon%20b-3&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 60000,
+   "note": "",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=600.00&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 60000,
+   "note": "  a   b\t\nc  ",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=600.00&tn=a%20b%20c&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 60000,
+   "note": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=600.00&tn=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 60000,
+   "note": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=600.00&tn=%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 60000,
+   "note": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=600.00&tn=%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 60000,
+   "note": "a&b=c",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=600.00&tn=a%26b%3Dc&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 60000,
+   "note": "50% off ~ (x) *y* !z '",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=600.00&tn=50%25%20off%20~%20%28x%29%20%2Ay%2A%20%21z%20%27&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 60000,
+   "note": " a b",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=600.00&tn=a%20b&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 1,
+   "note": "b-3",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=0.01&tn=b-3&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 99,
+   "note": "b-3",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=0.99&tn=b-3&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "b-3",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=1.00&tn=b-3&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 20000,
+   "note": "b-3",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=200.00&tn=b-3&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 100000,
+   "note": "b-3",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=1000.00&tn=b-3&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 100001,
+   "note": "b-3",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=1000.01&tn=b-3&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 10000000,
+   "note": "b-3",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=100000.00&tn=b-3&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 10000001,
+   "note": "b-3",
+   "out": {
+    "error": "A UPI request here is for at most ₹100000."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 0,
+   "note": "b-3",
+   "out": {
+    "error": "A UPI request is for a whole number of paise above zero."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": -5,
+   "note": "b-3",
+   "out": {
+    "error": "A UPI request is for a whole number of paise above zero."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 150.5,
+   "note": "b-3",
+   "out": {
+    "error": "A UPI request is for a whole number of paise above zero."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "  GlowSalon@OkICICI ",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "Add the shop's UPI ID, for example glowsalon@okicici."
+   }
+  },
+  {
+   "vpa": "   ",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "Add the shop's UPI ID, for example glowsalon@okicici."
+   }
+  },
+  {
+   "vpa": "nope",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "\"nope\" is not a UPI ID: it needs an @ and the app's or bank's name after it, for example glowsalon@okicici."
+   }
+  },
+  {
+   "vpa": "a@b",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "\"a@b\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter."
+   }
+  },
+  {
+   "vpa": "ab@c1",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=ab@c1&pn=Glow%20Salon&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "ab@cd",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=ab@cd&pn=Glow%20Salon&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "a.b-c_d@oksbi",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=a.b-c_d@oksbi&pn=Glow%20Salon&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@ok",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@ok&pn=Glow%20Salon&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@ok",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@ok\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter."
+   }
+  },
+  {
+   "vpa": "ab@okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=ab@okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk&pn=Glow%20Salon&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "ab@okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "\"ab@okkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter."
+   }
+  },
+  {
+   "vpa": "ab@1bank",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "\"ab@1bank\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter."
+   }
+  },
+  {
+   "vpa": "é@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "\"é@okicici\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter."
+   }
+  },
+  {
+   "vpa": "ab@ok@icici",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "\"ab@ok@icici\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter."
+   }
+  },
+  {
+   "vpa": "ab cd@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "\"ab cd@okicici\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter."
+   }
+  },
+  {
+   "vpa": "AB@OKİ",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "\"AB@OKİ\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "  Glow Salon  ",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow%20Salon&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "Add the name the customer should see in their UPI app (the payee name), for example Glow Salon."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "  ",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "Add the name the customer should see in their UPI app (the payee name), for example Glow Salon."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow\nSalon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "The payee name must be on one line."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow\tSalon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "The payee name must be on one line."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Glow\u0007Salon",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "The payee name must be on one line."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "The payee name is longer than 50 characters. Use the short name the shop's UPI app shows."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "éééééééééééééééééééééééééééééééééééééééééééééééééé",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9%C3%A9&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "ééééééééééééééééééééééééééééééééééééééééééééééééééé",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "The payee name is longer than 50 characters. Use the short name the shop's UPI app shows."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "error": "The payee name is longer than 50 characters. Use the short name the shop's UPI app shows."
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": "Salon & Spa (Main)!",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Salon%20%26%20Spa%20%28Main%29%21&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "glowsalon@okicici",
+   "payee": " Glow ",
+   "amountPaise": 100,
+   "note": "n",
+   "out": {
+    "ok": "upi://pay?pa=glowsalon@okicici&pn=Glow&am=1.00&tn=n&cu=INR"
+   }
+  },
+  {
+   "vpa": "Glow.Salon@OkICICI",
+   "payee": " Salon & Spa (Main)! ",
+   "amountPaise": 123456,
+   "note": "Case b-3 ✓",
+   "out": {
+    "ok": "upi://pay?pa=glow.salon@okicici&pn=Salon%20%26%20Spa%20%28Main%29%21&am=1234.56&tn=Case%20b-3%20%E2%9C%93&cu=INR"
+   }
+  }
+ ]
+}
