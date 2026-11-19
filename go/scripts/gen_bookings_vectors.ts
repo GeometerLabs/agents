@@ -8,6 +8,10 @@
 //   limits-vectors.json        src/limits.ts (price, hours, no-double-booking, refund limit, stop) and src/booking.ts canMove, reminderSchedule  (test/limits.test.ts, booking.test.ts, capacity.test.ts)
 //   guard-spec-vectors.json    src/guard-limits.ts gatewayLimitsSpec and the paise numbers    (test/guard-limits.test.ts)
 //   settings-vectors.json      src/settings.ts validateSettings: what is accepted and the plain-words errors for each mutation of the example   (test/settings.test.ts, config.test.ts)
+//   templates-vectors.json     src/language (templates.ts render, meta-templates.ts bodies and parameters, check.ts checkMessage, interactive.ts lists and buttons)  (test/language.test.ts, meta-templates.test.ts, buttons.test.ts)
+//   coerce-vectors.json        src/adapters (model.ts coerceIntent over what a model may say, reading.ts rulesAreSure, model-prompt.ts the prompt and schema)   (test/parser.test.ts, understanding.test.ts, model-llm.test.ts)
+//   ondc-vectors.json          src/ondc.ts through modules/ondc: the catalogue and every booking state at every stage, for two shops   (test/ondc.test.ts)
+//   scenarios-vectors.json     the agent run on scripted conversations with the in-memory stand-ins: what each message answers and what the record writes   (test/booking, adapters, record-decisions, language)
 //   runner-vectors.json        modules/runtime/tasks.ts createRunner over the real store: the queue's cases, and /readyz's store reason  (test/runtime.test.ts, server.test.ts)
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -24,6 +28,21 @@ import { zonedToMs } from "../../modules/core/time.ts";
 import { createRunner } from "../../modules/runtime/tasks.ts";
 import { openStore } from "../../modules/runtime/store.ts";
 import { LANGUAGES } from "../../modules/language/languages.ts";
+import { TEMPLATES, render } from "../../templates/commerce/bookings/src/language/templates.ts";
+import type { TemplateId } from "../../templates/commerce/bookings/src/language/templates.ts";
+import { META_TEMPLATES, exampleFacts, metaSubmissions, parametersFor } from "../../templates/commerce/bookings/src/language/meta-templates.ts";
+import { checkMessage } from "../../templates/commerce/bookings/src/language/check.ts";
+import { LABELS, serviceList, slotList, intentFromReply, buttonsFor } from "../../templates/commerce/bookings/src/language/interactive.ts";
+import { fillBody, metaBody } from "../../modules/language/meta-templates.ts";
+import { coerceIntent } from "../../templates/commerce/bookings/src/adapters/model.ts";
+import { rulesAreSure } from "../../templates/commerce/bookings/src/adapters/reading.ts";
+import { intentSchema, systemPrompt } from "../../templates/commerce/bookings/src/adapters/model-prompt.ts";
+import { catalogueOf, bookingIn } from "../../templates/commerce/bookings/src/ondc.ts";
+import { services as ondcServices } from "../../modules/ondc/index.ts";
+import { statesOf, statusOf } from "../../modules/ondc/states.ts";
+import { SAMPLE_CALLER } from "../../modules/ondc/verify.ts";
+import { createStore, newDraft, register } from "../../templates/commerce/bookings/src/booking.ts";
+import { createWorld, glowSalon } from "../../templates/commerce/bookings/src/harness.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "..");
@@ -122,6 +141,111 @@ function settingsVectors(): unknown {
   });
 }
 
+function templatesVectors(): unknown {
+  const out: unknown[] = [];
+  for (const language of LANGUAGES) {
+    const facts = exampleFacts(settings, language);
+    for (const id of Object.keys(TEMPLATES[language]) as TemplateId[]) {
+      let text: string | null = null;
+      try { text = render(id, facts); } catch { /* a template that needs facts the example does not carry */ }
+      out.push({ area: "render", name: `${language} ${id}`, input: { id, language }, output: { text, check: text === null ? null : checkMessage(text, facts) } });
+    }
+    for (const t of META_TEMPLATES) {
+      const parameters = parametersFor(t, language, facts);
+      out.push({ area: "meta", name: `${language} ${t.name}`, input: { name: t.name, language }, output: { body: metaBody(t.bodies[language]), parameters, filled: fillBody(metaBody(t.bodies[language]), parameters) } });
+    }
+    out.push({ area: "labels", name: `${language} labels`, input: { language }, output: clean(LABELS[language]) });
+    out.push({ area: "serviceList", name: `${language} service list`, input: { language }, output: clean(serviceList(settings, language)) });
+    const slots = [10, 10.5, 11, 15].map((h) => zonedToMs({ year: 2026, month: 11, day: 4 }, { hour: Math.floor(h), minute: (h % 1) * 60 }, TZ));
+    out.push({ area: "slotList", name: `${language} slot list`, input: { language, slots }, output: clean(slotList(slots, TZ, language)) });
+    out.push({ area: "buttons", name: `${language} buttons`, input: { language }, output: clean(buttonsFor(language, ["yes", "no"])) });
+  }
+  for (const id of ["svc:haircut", "svc:massage", `slot:${zonedToMs({ year: 2026, month: 11, day: 4 }, { hour: 11, minute: 0 }, TZ)}`, "yes", "no", "cancel", "cancel_yes", "keep", "menu", "owner", "paid", "nonsense", ""]) out.push({ area: "reply", name: `reply ${id}`, input: { id }, output: clean(intentFromReply(id, settings)) });
+  out.push({ area: "submissions", name: "meta submissions", input: {}, output: clean(metaSubmissions(settings)) });
+  return out;
+}
+
+function coerceVectors(): unknown {
+  const ctx = { services: settings.services, languages: settings.languages };
+  const raws: unknown[] = [
+    null, "book it", 7, [], {}, { kind: "teleport" }, { kind: "book" }, { kind: "book", serviceId: "haircut", offerInr: 300 }, { kind: "book", serviceId: "massage" },
+    { kind: "book", serviceId: "haircut", offerInr: -5 }, { kind: "book", serviceId: "haircut", offerInr: 0, overrideAttempt: true }, { kind: "book", serviceId: "haircut", offerInr: 1.5 }, { kind: "book", serviceId: "haircut", offerInr: "300" },
+    { kind: "book", serviceId: "haircut", time: { hour: 6, minute: 0, period: "pm" } }, { kind: "book", serviceId: "haircut", time: { hour: 99, minute: 0, period: "am" } }, { kind: "book", serviceId: "haircut", time: { hour: 6, minute: 75, period: "pm" } },
+    { kind: "book", serviceId: "haircut", time: { hour: 18, minute: 0, period: null } }, { kind: "book", serviceId: "haircut", time: { hour: 6, minute: 0, period: "noon" } },
+    { kind: "book", serviceId: "haircut", date: { kind: "relative", offsetDays: 1 } }, { kind: "book", serviceId: "haircut", date: { kind: "relative", offsetDays: 9 } }, { kind: "book", serviceId: "haircut", date: { kind: "weekday", weekday: 2, which: "next" } },
+    { kind: "book", serviceId: "haircut", date: { kind: "weekday", weekday: 9, which: "next" } }, { kind: "book", serviceId: "haircut", date: { kind: "calendar", day: 11, month: 11 } }, { kind: "book", serviceId: "haircut", date: { kind: "calendar", day: 32, month: 1 } },
+    { kind: "cancel", language: "hi" }, { kind: "cancel", language: "fr" }, { kind: "yes" }, { kind: "no" }, { kind: "stop" }, { kind: "reschedule", date: { kind: "relative", offsetDays: 2 } }, { kind: "greeting", language: "en" }, { kind: "unknown" },
+    { kind: "book", serviceId: "haircut", extra: "ignored" }, { kind: "book", serviceId: null, offerInr: null, date: null, time: null, language: null, overrideAttempt: false },
+  ];
+  const out: unknown[] = raws.map((raw) => ({ area: "coerce", name: JSON.stringify(raw) ?? "undefined", input: raw ?? null, output: clean(coerceIntent(raw, ctx)) }));
+  for (const phrase of ["I want a haircut tomorrow at 6pm", "haircut", "hello", "tomorrow", "cancel my booking", "asdf qwer zxcv", "300 mein kar do", "STOP"]) {
+    const intent = parseIntent(phrase, ctx);
+    out.push({ area: "sure", name: phrase, input: phrase, output: { intent: clean(intent), rulesAreSure: rulesAreSure(intent) } });
+  }
+  out.push({ area: "prompt", name: "the shop's system prompt", input: {}, output: systemPrompt(ctx) });
+  out.push({ area: "schema", name: "the shop's answer schema", input: {}, output: clean(intentSchema(ctx)) });
+  return out;
+}
+
+function ondcVectors(): unknown {
+  const NOW = Date.UTC(2026, 10, 17, 6, 30);
+  const rental = parseSettings(JSON.parse(readFileSync(join(BOOKINGS, "settings", "equipment-rental.example.json"), "utf8")));
+  const states = [...statesOf("bookings")].sort();
+  const out: unknown[] = [];
+  for (const [name, s] of [["glow salon", glowSalon()], ["equipment rental", rental]] as const) {
+    out.push({ name: `${name} catalogue`, input: { shop: name, now: NOW }, output: clean(ondcServices.onSearch(catalogueOf(s, "client-1", NOW), SAMPLE_CALLER)) });
+    for (const state of states) {
+      const b = register(createStore(), newDraft("+919800000009", "en"));
+      b.state = state as never; b.serviceId = s.services[0].id; b.startMs = Date.UTC(2026, 10, 18, 5, 0); b.endMs = b.startMs + s.services[0].durationMinutes * 60_000;
+      const view = bookingIn(s, b, "client-1", NOW);
+      const stage = statusOf("bookings", state).stage;
+      const stages = state === "cancelled" || state === "expired" ? ["on_cancel"] : ["on_select", "on_init", "on_confirm", "on_status"];
+      out.push({ name: `${name} ${state}`, input: { shop: name, state }, output: clean({ view, stage, messages: view ? stages.map((st) => ondcServices.bookingMessage(view, st as never, SAMPLE_CALLER)) : null }) });
+    }
+  }
+  return out;
+}
+
+type Step = ["say", string, string?] | ["tap", string, string?] | ["pay"] | ["advance", number] | ["owner", string];
+const SCENARIOS: { name: string; steps: Step[]; settings?: Record<string, unknown> }[] = [
+  { name: "a booking in English, paid, confirmed", steps: [["say", "I want a haircut tomorrow at 6pm"], ["pay"]] },
+  { name: "a booking in Hindi", steps: [["say", SAYS.hi.book], ["pay"]] },
+  { name: "a booking in Malayalam", steps: [["say", SAYS.ml.book], ["pay"]] },
+  { name: "a booking in Kannada", steps: [["say", SAYS.kn.book], ["pay"]] },
+  { name: "a customer haggles, then pushes", steps: [["say", SAYS.en.haggle], ["say", SAYS.en.push], ["say", SAYS.en.cantGoLower]] },
+  { name: "a customer tries to override the rules", steps: [["say", SAYS.en.trick], ["say", SAYS.en.trickFollowUp]] },
+  { name: "hello, then a service tap, then a time tap", steps: [["say", "hello"], ["tap", "svc:haircut"]] },
+  { name: "cancelled in time: the deposit comes back", steps: [["say", "I want a haircut day after tomorrow at 6pm"], ["pay"], ["say", "please cancel my booking"]] },
+  { name: "cancelled late: the owner is asked", steps: [["say", "I want a haircut tomorrow at 6pm"], ["pay"], ["advance", 20 * 60], ["say", "please cancel my booking"]] },
+  { name: "a hold nobody pays ends", steps: [["say", "I want a haircut tomorrow at 6pm"], ["advance", 20]] },
+  { name: "a reminder before the booking, then the booking is over", steps: [["say", "I want a haircut tomorrow at 6pm"], ["pay"], ["advance", 16 * 60], ["advance", 24 * 60]] },
+  { name: "STOP ends every message", steps: [["say", "hello"], ["say", "STOP"], ["say", "hello again"], ["advance", 60]] },
+  { name: "the owner's words are not a customer's", steps: [["say", "hello"], ["owner", "help"]] },
+  { name: "a refund limit of 100 holds a refund for the owner", steps: [["say", "I want a haircut day after tomorrow at 6pm"], ["pay"], ["say", "please cancel my booking"]], settings: { cancellation: { windowHours: 24, refundLimitInr: 100 } } },
+];
+function scenarioVectors(): unknown {
+  return SCENARIOS.map((sc) => {
+    const w = createWorld(sc.settings ? { settings: parseSettings({ ...example, ...sc.settings }) } : {});
+    const seen = new Map<string, number>();
+    const cursor = { record: 0 };
+    const sentSince = (who: string): unknown[] => { const all = w.messaging.sentTo(who); const from = seen.get(who) ?? 0; seen.set(who, all.length); return all.slice(from).map((m) => clean({ kind: m.kind, templateName: m.templateName ?? null, text: m.text, interactive: m.interactive ?? null })) as unknown[]; };
+    const results: unknown[] = [];
+    const run = async () => {
+      for (const step of sc.steps) {
+        if (step[0] === "say") await w.say(step[1], step[2] ? { from: step[2] } : {});
+        else if (step[0] === "tap") await w.tap(step[1], step[2] ? { from: step[2] } : {});
+        else if (step[0] === "pay") { const l = w.payments.links().at(-1)!; w.payments.customerPays(l.id); await w.deliverPaymentEvents(); }
+        else if (step[0] === "advance") await w.advance(step[1]);
+        else await w.say(step[1], { from: w.owner });
+        const entries = w.record.entries().slice(cursor.record); cursor.record = w.record.entries().length;
+        results.push({ step, customer: sentSince("+919811111111"), owner: sentSince(w.owner),
+          record: entries.map((e) => clean({ action: e.action, outcome: e.outcome, booking: e.booking, decisions: (e.decisions ?? []).map((d: { ruleId: string; verdict: string }) => ({ ruleId: d.ruleId, verdict: d.verdict })), refs: Object.fromEntries(Object.entries(e.refs ?? {}).filter(([k]) => !/id$|Id$|digest|fingerprint/u.test(k))) })) });
+      }
+    };
+    return run().then(() => ({ name: sc.name, input: { steps: sc.steps, settings: sc.settings ?? null }, output: results, finalBookings: [...w.store.bookings.values()].map((b) => ({ id: b.id, state: b.state })) }));
+  });
+}
+
 /** The queue's cases over the real store (modules/runtime/tasks.ts): each scenario scripts what a step does on each try of each task and records the order of tries and the final rows. */
 async function runnerVectors(): Promise<unknown> {
   const out: unknown[] = [];
@@ -150,7 +274,19 @@ async function runnerVectors(): Promise<unknown> {
   await scenario("a failing step is tried again, then failed, and the queue moves on", [msg("m1", "poison"), msg("m2", "hello")], [1, 1], { "message:m1": "fail" });
   await scenario("tasks run one at a time in the order they arrived", [msg("m1", "a"), msg("m2", "b"), msg("m3", "c")], [1], {});
   await scenario("a task whose try was started when the process died is tried again (the try was counted first), and the queue finishes", [msg("m1", "a"), msg("m2", "b")], [1, 1], {}, true);
+  await scenario("a task whose only try was started when the process died is failed, not run again: it cannot loop across restarts", [msg("m1", "a"), msg("m2", "b")], [], {}, true);
   await scenario("a task that always fails with no retries is failed after one try", [msg("m1", "a")], [], { "message:m1": "fail" });
+  {
+    const data2 = join(dir, "saves-nothing"); mkdirSync(data2, { recursive: true });
+    const db2 = openStore(data2);
+    db2.saveEvents([msg("m1", "poison")], 1000);
+    let tries = 0;
+    const runner2 = createRunner({ db: db2, retryDelaysMs: [1], log: () => undefined, now: () => 1000, step: async () => { tries++; throw new Error("fails after the work"); } });
+    runner2.kick(); await runner2.idle();
+    const state = db2.loadState();
+    out.push({ name: "a step that fails after its work saves nothing: no state, no record line, the task is failed", input: { retryDelaysMs: [1] }, output: { tries, counts: db2.taskCounts(), snapshot: state.snapshot, record: state.record.length } });
+    db2.close();
+  }
   // /readyz: the store's own answer when it cannot be read (modules/runtime/core.ts ready())
   const data = join(dir, "ready"); mkdirSync(data, { recursive: true });
   const db = openStore(data);
@@ -169,6 +305,10 @@ export async function generate(): Promise<Map<string, string>> {
   put("limits-vectors.json", limitsVectors());
   put("guard-spec-vectors.json", guardSpecVectors());
   put("settings-vectors.json", settingsVectors());
+  put("templates-vectors.json", templatesVectors());
+  put("coerce-vectors.json", coerceVectors());
+  put("ondc-vectors.json", ondcVectors());
+  put("scenarios-vectors.json", await Promise.all(scenarioVectors() as Promise<unknown>[]));
   put("runner-vectors.json", await runnerVectors());
   return files;
 }
