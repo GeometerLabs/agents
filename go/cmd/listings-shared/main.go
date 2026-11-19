@@ -10,6 +10,7 @@
 //
 // The environment sets NO token and NO key: every shop's are files, handed to that shop's own start, so a shop with a missing file is not started instead of running on another
 // shop's token. `listings-shared --one <shop>` is the child the host starts for a quarantined shop: it serves that one shop on a loopback port and is not run by hand.
+// `listings-shared health <url>` is the container's health check (the image has no wget): one GET, exit 0 on a 200, else 1.
 // Ctrl+C or SIGTERM stops: each shop's step in hand finishes and its store is closed.
 package main
 
@@ -21,6 +22,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/GeometerLabs/agents/go/internal/health"
 	"github.com/GeometerLabs/agents/go/internal/shared"
 )
 
@@ -35,6 +37,9 @@ func main() {
 	log := func(line string) { fmt.Println(line) }
 	src := shared.FolderSource{ClientsDir: env("SHOPS_DIR", "/shops"), SecretsDir: env("SECRETS_DIR", "/run/secrets")}
 	args := os.Args[1:]
+	if len(args) == 2 && args[0] == "health" {
+		os.Exit(health.Check(args[1], func(line string) { fmt.Fprintln(os.Stderr, line) }))
+	}
 	if len(args) == 2 && args[0] == "--one" {
 		if err := shared.RunOne(src, shared.StartGoShop, args[1], shared.Limits{}, log); err != nil {
 			fmt.Fprintln(os.Stderr, "The shop could not start: "+err.Error())
