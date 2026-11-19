@@ -90,7 +90,7 @@ The deployer's side is `bundle/generate/shop.ts` (`planShop`: runtime.json) and 
   `listing_photos` (unused by Bookings); `shop_key(id=1, private_key, created_at)` (the shop's own Ed25519 key, made once). A newer schema is refused, another format is refused in
   plain words. **The Go runtime must write the same file** (a shop moves between the two runtimes and loses nothing).
 * A customer's number is in the record in ONE place: the `conversation` column and member of each line; no other member of a line holds it, and no customer words or name are in a line
-  at all (`inputsDigest` is a keyed digest of what was said when RECORD_KEY_FILE is given, and a message id is kept as a fingerprint). Pinned by `record-licence.contract.test.ts`.
+  at all (`inputsDigest` is `k-` and 16 hex digits of a keyed digest of what was said when RECORD_KEY_FILE is given, 16 plain hex digits without it, and a message id is kept as a fingerprint). Pinned by `record-licence.contract.test.ts`.
 * `restored.json` beside the database (the deployer's `restore` writes it): at the next start every id counter moves on by 100000 (the next booking is `b-100002` after `b-1`), one
   `restored` line goes into the record, and the note is renamed `restored.json.done-<time>` (modules/runtime/restored.ts).
 * the monthly report, in `report.pagesDir/<random token>/`: `report-<month>.json`, `report-<month>-<lang>.html`, `certificate-<month>.json`, `certificate-<month>-<lang>.html`,

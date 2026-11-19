@@ -70,7 +70,7 @@ describe("the store's file", () => {
         const rest = JSON.stringify({ ...entry, conversation: undefined });
         assert.ok(!rest.includes(CUSTOMER.slice(1)), `the number is nowhere else in a line: ${rest.slice(0, 200)}`);
         assert.ok(!rest.includes("hello there") && !rest.includes("Asha"), "no customer words or name");
-        assert.match(String(entry.inputsDigest), /^[0-9a-f]{16,64}$/u, "what was said is a digest");
+        assert.match(String(entry.inputsDigest), /^k-[0-9a-f]{16}$/u, "what was said is a KEYED digest (k- and 16 hex digits; without the record key it would be 16 plain hex digits)");
       }
       assert.ok(named > 0, "the entry's own `conversation` member carries it");
       assert.ok(!rows.map((r) => r.entry).join("").includes("wamid"), "a WhatsApp message id is kept as a fingerprint only");

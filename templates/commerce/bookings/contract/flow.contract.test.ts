@@ -107,12 +107,14 @@ describe("the last slot, the buffer and someone else's event", () => {
 
   contract("a calendar that cannot be read: the offer says so and lists no day, rather than showing times that may be taken", async () => {
     const s = await boot({ mode: "guards", tickSeconds: 1 });
+    const start = openStart(s.now());
+    const date = new Date(start + 5.5 * HOUR).toISOString().slice(0, 10);   // the open day, in India
     s.guards!.calendar.down();
-    const o = await offer(s, "2026-11-07", 2);
+    const o = await offer(s, date, 2);
     assert.equal(o.calendarUnread, true);
     assert.deepEqual(o.days, []);
     s.guards!.calendar.up();
-    assert.ok(startsOf(await offer(s, "2026-11-07", 2), "2026-11-07").length > 0, "and when it is back the times are offered again");
+    assert.ok(startsOf(await offer(s, date, 2), date).includes(start), "and when it is back the times are offered again");
   });
 
   contract("a hold nobody pays ends by itself: on the beat of the clock the booking expires, the calendar hold is let go, and the time is free again", async () => {
