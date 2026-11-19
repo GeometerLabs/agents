@@ -212,6 +212,41 @@ the runtime package has few), so the whole contract was also run against a `-rac
 reported against TypeScript at its base (the `owner-access.sqlite` schema in `cross-restart.test.ts`, `/status ownerAccess.locked`) pass now: they were the owner control's.
 Binaries: `listings` 23.3 MB (16.4 MB with `-ldflags "-s -w"`), `listings-shared` 23.8 MB (16.8 MB).
 
-**Not ported (wave 1b cannot delete these TypeScript parts yet):** the owner-talk model's answer for words no rule reads; the router's decision and language models; memory
-writes (remember, notes, forget); the morning line and with it the licence's final stop; voice; date phrases in money questions (flagged, not answered); first-step seeding of the
-Operator's town; `limitChanges` compaction.
+**Not ported (wave 1b cannot delete these TypeScript parts yet):** *(all ported since: see "The AI core ported" below)* the owner-talk model's answer for words no rule reads; the
+router's decision and language models; memory writes (remember, notes, forget); the morning line and with it the licence's final stop; voice; date phrases in money questions
+(flagged, not answered); first-step seeding of the Operator's town; `limitChanges` compaction.
+
+## The AI core ported (19 Nov 2026): the owner's words read by models, the talk, memory, the morning line
+
+Everything wave 1 listed as not ported is now Go, held to the same contract on both runtimes:
+
+- **The `language` package** (`internal/language`): JavaScript's regular expressions matched as JavaScript matches them. RE2 has no look-behind or look-ahead, and the old way
+  (consume the edge character) is wrong for `matchAll` and `replace` ("ten twenty" is two matches in JavaScript, one that way). `regex.go` splits a source at its top-level `|`, tries
+  each alternative in JavaScript's order at each place, checks a leading `(?<!X)` by hand and puts a trailing `(?!X)` into the RE2 pattern as "not X, or the end" (so RE2 backtracks
+  as JavaScript does), and refuses what it cannot copy. The patterns are not retyped: `scripts/gen_patterns.ts` takes each TypeScript RegExp's own `.source` and `.flags` (a few
+  consts were exported for it, no behaviour change) and writes vectors by running them; `words-fresh` checks both. `rules.go`'s `plain`, `canon` and `wordRe` are gone: one
+  implementation each, in `language` (wordRe's output comes generated).
+- **Date phrases in money questions** (`language/dates.go`): findDatePhrase and resolveDate (next/this/plain weekday, a written date, the day after tomorrow), proved on 150 phrases at
+  four instants against TypeScript (`testdata/rules-vectors.json`).
+- **Memory writes** (`internal/memory`, `runtime/notes.go`): remember (undoable for a day), the list, forget, undo of a remember, the beat's end of notes and loss of closed notes'
+  text; `assistant.memory` field for field, so notes move between the runtimes.
+- **`limitChanges` on the beat**: the newest 30 settled kept (compactChanges), and a settled change marked told (limits-card.ts `unannounced`: a listings shop declares no limit,
+  so nothing is said).
+- **The Operator's place seeded** on the first step that reaches the agent (the beat, the owner's words, a card's tap), once, never over the owner's own.
+- **The router** (`internal/understanding`): rules, then the System One decision model, then the language model, each only when the month's AI state allows (button mode, the
+  decision model's breaker, fleet's cap, the shop's budget, the router's daily cap); every answer decoded to `any` and checked by hand (`ReadDecision`, `readOpenAI`, `Coerce`).
+- **The owner's talk** (`assistant/talk.go`, `runtime/talk.go`): the owner's notes and public listings as sources, the TypeScript's prompt (rendered by gen_words.ts), the four checks
+  an owner's turn has and the outgoing check (`language/check.go`), the fixed line when a check fails or the model does not answer, the fault pause, the day's notice once.
+- **The morning line and the licence's final stop** (`runtime/morning.go`): with push on, once a day from the owner's morning hour for four hours, claimed in the record before the
+  push and ended after, silent with nothing waiting, never in the final stop (client/licence.json, rules.ts `licenceNow`).
+- **Voice**: a listings shop has none; the two voice routes answer as TypeScript's do (method, the owner's credential, then "voice is not on").
+
+**Not ported, and why (none of it is reachable in a listings-only shop):** a customer's talk and the claims checks only a customer's turn has (no customers); a note the talk
+proposes (Remember / No buttons, which the owner's page does not have, so TypeScript never makes one there either); the outgoing check's moments (a booking's time, free times: no
+source of a listings shop carries one); the "anthropic" model wire (the model Guard speaks "openai" for every provider the deployer uses, as before); the morning line's template
+header and sticker (the push-only messaging sends words). `runtime.json`'s `decision` is checked for its provider, address and model; its other fields' ranges are TypeScript's to
+refuse (the deployer writes them).
+
+**TypeScript findings (reported, not fixed):** `notes.ts` GOAL_WORDS ends `\b` after Devanagari/Malayalam/Kannada words ("लक्ष्य", "ലക്ഷ്യം", "ಗುರಿ"), and JavaScript's `\b` only
+sees ASCII letters, so a goal written in those scripts is filed as a fact unless an ASCII letter follows; `historyText` cuts at 300 UTF-16 units and can leave a lone surrogate
+(Go drops the half character); `COMPLETION` holds `बुक ചെയ്തു` (Devanagari and Malayalam mixed), carried as it is.

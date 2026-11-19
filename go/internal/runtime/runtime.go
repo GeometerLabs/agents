@@ -47,13 +47,17 @@ type Options struct {
 
 // Runtime is one running shop.
 type Runtime struct {
-	router  *understanding.Router[assistant.Intent] // the owner's router (nil: the rules alone read the owner's words)
-	o       Options
-	loc     *time.Location
-	policy  budget.Policy
-	clock   budget.Clock
-	proto   *listings.Protocol
-	started int64
+	router *understanding.Router[assistant.Intent] // the owner's router (nil: the rules alone read the owner's words)
+	// the morning line's day already done (morning.go), and the last good licence.json read and its modified time
+	morningDone string
+	licence     *licenceFile
+	licenceSeen int64
+	o           Options
+	loc         *time.Location
+	policy      budget.Policy
+	clock       budget.Clock
+	proto       *listings.Protocol
+	started     int64
 
 	// ownerMu is the owner lock (owner.go): every owner sequence, the tick's owner part and every read of the owner's number hold it, so none interleaves with another
 	ownerMu sync.Mutex
@@ -284,6 +288,11 @@ func (r *Runtime) fail(what string, err error) {
 func (r *Runtime) tick() {
 	if err := r.step(nil, ""); err != nil {
 		r.fail("A tick failed", err)
+		return
+	}
+	// the owner's morning line rides on the beat after its step, and saves around its send (core.ts `daily`)
+	if err := r.morning(); err != nil {
+		r.o.Log("The owner's morning line could not be made: " + err.Error())
 	}
 }
 
