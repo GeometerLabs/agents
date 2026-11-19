@@ -8,8 +8,9 @@ the same folder; `cmd/listings-shared` runs every shop of a server in one proces
 What stays TypeScript: the front (`modules/channels/front.ts`, with the shops' own MCP endpoints), the deployer, the panel. They call this runtime over HTTP and cannot tell which one answered;
 the **contract** in `templates/commerce/listings/contract/` is what both must pass.
 
-Wave 1c adds the **directory of local shops** (`cmd/directory`, `internal/directory`): the service `bundle/services/directory.ts` starts, in Go, reading the same config and the same data
-folder, passing the directory contract in `modules/discovery/contract/` on TypeScript and on Go (see TRIAL.md, "Wave 1c"). It is not wired into the deployer yet either.
+Wave 1c adds the **directory of local shops** (`cmd/directory`, `internal/directory`): since 19 Nov 2026 THE directory. The deployer runs it from the programs' image as the `directory`
+container (its health check `/directory health`, a person's commands `docker exec <directory> /directory changes|accept <shop page>`), it passes the directory contract in
+`modules/discovery/contract/`, and the TypeScript directory it replaced is deleted (TRIAL.md, "Waves 1b and 1c finished").
 
 ## Build and run
 
@@ -17,7 +18,7 @@ folder, passing the directory contract in `modules/discovery/contract/` on TypeS
 cd go
 go build -o bin/listings ./cmd/listings                 # 23.3 MB; with -ldflags "-s -w" 16.4 MB (19 Nov, wave 1 merged)
 go build -o bin/listings-shared ./cmd/listings-shared   # 23.8 MB; with -ldflags "-s -w" 16.8 MB
-go build -o bin/directory ./cmd/directory               # the directory of local shops (size: TRIAL.md, Wave 1c)
+go build -o bin/directory ./cmd/directory               # the directory of local shops (size: TRIAL.md, "Waves 1b and 1c finished")
 INTERNAL_TOKEN_FILE=internal_token CHANNEL_TOKEN_FILE=channel_token RECORD_KEY_FILE=record_key \
   bin/listings --client <shop folder>/client
 ```
@@ -30,13 +31,13 @@ says where to listen (`host`, `port`) and where the data is (`dataDir`). Ctrl+C 
 
 ### On a server (wave 1b)
 
-The server compiles the programs itself, from its own checkout, in the official Go image pinned by digest in `bundle/release.json` (`go_image`, `go_image_digest`), at install (`install.sh`) and at `geometer update`; `geometer go-build` does it by hand. Source mounted read-only, `CGO_ENABLED=0`, `GOTOOLCHAIN=local`, `-trimpath -mod=readonly -buildvcs=false -ldflags "-s -w"`, a named volume `geo-go-cache` for the module and build cache. The result is `geo-go:<commit>`, an image `FROM scratch` of the programs alone (no shell, no tools, no certificates), run as `1000:1000`. To add a program (`cmd/directory`, `cmd/bookings`): one line in `GO_PROGRAMS` in `bundle/lib/go-build.ts`, and the template's `template.json` names it. The whole account is in `bundle/Explanation.md` ("How the Go runtimes reach a server"). Measured 19 Nov 2026 on an Apple-silicon Mac (Docker Desktop, 8 GB VM, linux/arm64): the image is **32.7 MB** (both programs); the compile took **12.3 s** from an empty build cache with the modules already in the cache volume (the first build on a server also downloads the modules, about 360 MB in the module cache, not measured here), **13.1 s** with the image made; peak memory of the compile container about **830 MB** (sampled once a second, so a floor). With the full-server settings (`-p 1`, `GOMAXPROCS=1`, `GOGC=50`, a 1536 MB wall) it is **46.7 s from an empty build cache and a peak of 1107 MB** by the container's own counter, about 730 MB of it process memory, the rest file cache. A fresh data volume came out owned by 1000:1000, and one shop's runtime and the shared process were both "healthy" 7 s after `up`, read-only, all capabilities dropped, with the `health` subcommand as their check.
+The server compiles the programs itself, from its own checkout, in the official Go image pinned by digest in `bundle/release.json` (`go_image`, `go_image_digest`), at install (`install.sh`) and at `geometer update`; `geometer go-build` does it by hand. Source mounted read-only, `CGO_ENABLED=0`, `GOTOOLCHAIN=local`, `-trimpath -mod=readonly -buildvcs=false -ldflags "-s -w"`, a named volume `geo-go-cache` for the module and build cache. The result is `geo-go:<commit>`, an image `FROM scratch` of the programs alone (no shell, no tools; the pinned builder's certificate authorities, for the directory's https feeds), run as `1000:1000`. To add a program (`cmd/bookings`; `cmd/directory` was added so): one line in `GO_PROGRAMS` in `bundle/lib/go-build.ts`, and the template's `template.json` names it. The whole account is in `bundle/Explanation.md` ("How the Go runtimes reach a server"). Measured 19 Nov 2026 on an Apple-silicon Mac (Docker Desktop, 8 GB VM, linux/arm64): the image is **32.7 MB** (both programs); the compile took **12.3 s** from an empty build cache with the modules already in the cache volume (the first build on a server also downloads the modules, about 360 MB in the module cache, not measured here), **13.1 s** with the image made; peak memory of the compile container about **830 MB** (sampled once a second, so a floor). With the full-server settings (`-p 1`, `GOMAXPROCS=1`, `GOGC=50`, a 1536 MB wall) it is **46.7 s from an empty build cache and a peak of 1107 MB** by the container's own counter, about 730 MB of it process memory, the rest file cache. A fresh data volume came out owned by 1000:1000, and one shop's runtime and the shared process were both "healthy" 7 s after `up`, read-only, all capabilities dropped, with the `health` subcommand as their check.
 
 The contract against this binary (from the repository root; build both binaries first, the shared-process and cross-runtime tests use them):
 
 ```
 LISTINGS_IMPL=go LISTINGS_GO_BIN=go/bin/listings node --test --test-concurrency=1 templates/commerce/listings/contract/
-DIRECTORY_IMPL=go DIRECTORY_GO_BIN=go/bin/directory node --test --test-concurrency=1 modules/discovery/contract/    # the directory
+node --test --test-concurrency=1 modules/discovery/contract/    # the directory (go/bin/directory, or DIRECTORY_GO_BIN)
 ```
 
 The Go version is 1.27 (`go.mod`). No cgo: the binary needs no C library.
@@ -52,20 +53,20 @@ internal/access/         the owner's sessions, sign-in links, passkeys (WebAuthn
                          Geometer's reset, the owner's phones and own codes, the number lock), in owner-access.sqlite, same schema (modules/channels owner-*.ts, webauthn.ts)
 internal/testclock/      the contract tests' clock (GEOMETER_TEST=1 + GEOMETER_TEST_CLOCK_FILE, a "fakes" shop only; a live shop refuses to start with it)
 internal/push/           web push: the push store (push.sqlite, the TypeScript runtime's own file), RFC 8291 encryption, VAPID, the sender to the shop's push Guard (modules/push)
-internal/language/       the bottom layer of reading words (modules/language): plain, canon, JavaScript's string length and whitespace; regex.go matches a JavaScript pattern the way
+internal/language/       the bottom layer of reading words (modules/language): plain, canon, JavaScript's string length, slices and whitespace, toLowerCase, NFC, TextDecoder, Date.parse (js.go, shared by the directory, access and listings); regex.go matches a JavaScript pattern the way
                          JavaScript does (each top-level alternative tried in turn at each place, the look-behind and look-ahead edges checked by hand, since RE2 has neither), over the
                          TypeScript's own built patterns (patterns.json, written by scripts/gen_patterns.ts); dates.go (findDatePhrase, resolveDate); check.go (the outgoing check)
 internal/memory/         the shop's memory (modules/memory): notes with who, where, when and an audience, forget, the end of a note, recall within a scope; `assistant.memory`, field for field
-internal/understanding/  the model steps (modules/understanding): one JSON call over the OpenAI-compatible wire (model.go), the System One decision model (systemone.go), the router
+internal/understanding/  the model steps (modules/understanding): one JSON call over the OpenAI-compatible wire (model.go; the directory's assistant uses it too, `Open` + `AskContext`), the System One decision model (systemone.go), the router
                          that reads cheapest first over any template's reading (router.go, generic), and the details taken out before a model sees words (redact.go); every model
                          answer is decoded to `any` and checked by hand
 internal/assistant/      the owner's assistant: its state (cards, talk, undo, typed; unknown members stay raw), the card binding (the digest TypeScript and Go agree on, the judge), the owner's words read by rule (rules.go), the owner's reading for the router (reading.go), the owner's talk (talk.go: prompt, answer, checks), notes from words (notes.go), and the words it says, packed per language (words/*.json.gz, made by scripts/gen_words.ts from the TypeScript words and unpacked once per process per language); the runtime package runs it in a step (assistant.go, draft.go, notes.go, talk.go, morning.go, ownerview.go)
 internal/budget/         the shop's model budget and the month's AI counts (modules/budget, modules/understanding/ai-state.ts), the decision model's breaker and the day's notices (steps.go)
 internal/shared/         the multi-shop host (the Go twin of modules/runtime/shared.ts): finds shop folders, routes /shop/<name>/..., contains a shop that panics or sticks (strikes, quarantine in a child process, pause); read its header first
-cmd/directory/           main of the directory of local shops (the Go twin of bundle/services/directory.ts: CONFIG, PORT, HOST, DIRECTORY_TICK_MS; `changes` and `accept <page>` for a key change)
+cmd/directory/           main of the directory of local shops (CONFIG, PORT, HOST, DIRECTORY_TICK_MS; `changes` and `accept <page>` for a key change, `health <url>`; the contract's test clock on 127.0.0.1 only)
 internal/directory/      the directory (modules/discovery): signed feeds read, checked and indexed (SQLite + FTS5, the TypeScript's own file), the fair order, search, the pages, the MCP endpoint, the signed
-                         Agent Card, the buyer's assistant; the words, style sheet, tool definitions and card text are GENERATED from the TypeScript (scripts/gen_directory.ts); read Explanation.md and Deferred.md
-internal/health/         the `health` subcommand both programs share (one GET of an address, exit 0 or 1)
+                         Agent Card, the buyer's assistant; the words are GENERATED from modules/discovery/words.ts (scripts/gen_directory.ts), the page's style, script, tools, card and prompt are Go source (words/); read Explanation.md and Deferred.md
+internal/health/         the `health` subcommand the programs share (one GET of an address, exit 0 or 1)
 cmd/listings-shared/     main of the multi-shop host (SHOPS_DIR, SECRETS_DIR, HOST, PORT, SCAN_SECONDS, STATE_DIR; `--one <shop>` is the child it starts for a quarantined shop)
 internal/runtime/        the runtime: the folder read and checked, the one-at-a-time step runner, the owner_message draft, the model call, the HTTP routes; owner.go is the
                          owner's sign-in routes, the tick's owner part and the owner's side of push (who may subscribe, what ends a subscription, the alerts to the
@@ -74,8 +75,7 @@ scripts/gen_claimwords.py  writes internal/listings/claimwords_gen.go from the T
 scripts/gen_patterns.ts    writes internal/language/patterns.json from the TypeScript's built RegExps (`.source`, `.flags`) and testdata/pattern-vectors.json (what JavaScript finds with each
                            in a corpus); `--check` only compares; the test words-fresh fails when it was not run after a change to a pattern it names
 scripts/gen_words.ts       renders the owner's words (and the lists the rules read, and the owner-control alerts with the moment they carry) from the TypeScript into internal/assistant/words/*.json.gz; `--check` only compares. `node go/scripts/gen_words.ts` after any change to modules/assistant/words*.ts, modules/listings/words.ts or the alerts in modules/channels/owner-phones.ts and owner-signin.ts (the test words-fresh fails when it was not run)
-scripts/gen_directory.ts   writes internal/directory/romanise_gen.go and words/pack.json.gz (+ the font) from the TypeScript directory; `--check` only compares (modules/discovery/contract/words-fresh.test.ts runs it)
-scripts/gen_directory_vectors.ts   what the TypeScript directory gives on hostile and awkward inputs (addresses, dates, numbers, the Latin fold, the order, the assistant's cleaning), for internal/directory/vectors_test.go
+scripts/gen_directory.ts   writes internal/directory/words/pack.json.gz (+ the font) from modules/discovery/words.ts and modules/channels (look, paints, MCP versions); `--check` only compares (modules/discovery/contract/words-fresh.test.ts runs it). The directory's vectors (testdata/) were made by a generator deleted with the TypeScript directory: they are the source
 scripts/sync_rates.sh      copies the dated rate tables (modules/understanding/rates) into internal/budget/rates, which the binary embeds (a test keeps them equal)
 scripts/gen_*_vectors.ts   what the TypeScript digest, formatters and rules give on a set of cases, for the Go tests (internal/assistant/testdata)
 ```

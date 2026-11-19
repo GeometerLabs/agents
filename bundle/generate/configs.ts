@@ -197,7 +197,7 @@ export function doorConfig(server: ServerConfig): string | undefined {
 }
 
 /**
- * Block S: the directory's config (services/directory.ts), on every server that has the door (the directory is reached through it). No secret: the directory's own signing key is made in
+ * Block S: the directory's config (go/cmd/directory reads it), on every server that has the door (the directory is reached through it). No secret: the directory's own signing key is made in
  * its own folder. `served` are the pages domains it serves (a notice is taken for a feed under one of them), `doorUrl` is the door's own port, which reads this server's shops for it.
  */
 export function directoryConfig(server: ServerConfig, assistantBudget?: ReturnType<typeof directoryAssistant>): string | undefined {

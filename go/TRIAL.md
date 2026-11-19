@@ -307,3 +307,47 @@ and a `get <url>` subcommand (`internal/health`) because that image has no shell
 server") and `go/README.md`. **Not done in this stream:** the TypeScript listings runtime is still in the repository (kept versions run on it; the differential test needs it); the deletion follows the port
 of the last AI parts. TypeScript finding: `bundle/deploy.ts` used `HOME_DIR` in the check "is a new listings shop's name already in the shared volume" without importing it, so the first deploy of a new
 listings-only shop would have stopped on a ReferenceError; the check now asks the data volume itself (`sharedHasFolder`, `bundle/lib/listings-move.ts`) and the name is gone.
+
+## Waves 1b and 1c finished (19 Nov 2026, `go-wave1b-finish-19nov`)
+
+### The directory (wave 1c): switched, joined, deleted
+
+**Deployer.** The `directory` service runs `/directory` from the programs' image (`GO_PROGRAMS` gained `directory`), with `/directory health` as its check, user 1000:1000, the same config,
+networks and credential folder, no `/app`; its volume stays at `/home/node` (the image carries that folder owned by 1000:1000), so an existing server's index and key are read as they are. Its
+environment is exactly `CONFIG`, `PORT`, `HOST` (pinned by a bundle test). A server with a pages domain and fleet always has the directory, so `deploy` makes (and `bringUp` checks) the image
+there even with no Go shop. **Found while switching:** the scratch image had no certificate authorities, and the directory reads builders' feeds over https (Node carries its own list; Go reads
+the system's), so every configured remote feed would have failed; the build now copies the pinned builder image's `/etc/ssl/certs/ca-certificates.crt` into the image. The person's commands are
+`docker exec <directory> /directory changes|accept <shop page>` (`bundle/Explanation.md`, `bundle/Deferred.md`). **One real build** (19 Nov, this Mac, the pinned golang image and module cache already here, `GOPROXY=off`, the full-server settings): the three programs built, the certificate file copied
+(182 KB), the image **45.9 MB** (was 32.7 MB with two programs; `directory` is 12.5 MB stripped); the directory started read-only, all capabilities dropped, as 1000:1000 on a fresh volume:
+`/directory health` exit 0, `/directory changes` answered, and the volume's `directory/` folder, index and key (0600) belong to 1000:1000.
+
+**Joined.** The directory's `AskJSON` is gone: `understanding.Model` is the one call (`Open` for a caller that read its own credential, `AskContext` for the caller's context; the defaults of each
+use are options), now writing the body in model-llm.ts's member order without HTML escaping, the schema as given (the directory's raw JSON keeps its order) and reading cached input tokens
+(model-llm.ts does). The directory's `redact` is `understanding.Redact` (vector-proven); its `CleanQuestion` stays the directory's (`clean.go`: the address patterns are only its). UTF-16
+slicing with U+FFFD at a cut pair (three copies: directory, access, listings), `LowerJS`, `NFC`, TextDecoder's reading and `Date.parse` (access's and the directory's) are one each in
+`internal/language/js.go`. Behaviour: the vectors and the contract pass unchanged; the directory now also reads the date forms V8 reads that its own copy refused (a lower-case t, a space
+for the T, an offset without a colon), and a model reply with a member of the wrong type is read by hand as model-llm.ts reads it instead of failing struct decoding.
+
+**Search speed.** The brief's guess (a new connection to every shop per search) was half of it: the fetcher now keeps connections (32 idle a host, 4 s, under the door's 5), but the
+measurement did not move (13.9 ms). A probe showed a search with no match takes 0.4 ms and one of 800 candidates 13.8 ms with every check answered from memory: the time went into reading each
+candidate with its own query, which database/sql over modernc compiles every time. The candidates are now read 500 to a query and the shop read is a prepared statement.
+
+| 40 shops of 20 listings, `contract/measure.ts`, HEAVY_FAST, same machine and hour | Go before | Go after | TypeScript (last run) |
+| --- | --- | --- | --- |
+| search p50 / p95 of 300 | 13.9 / 14.7 ms | **6.3 / 6.7 ms** | 6.2 / 7.4 ms (wave 1c's figure; under background priority today TS 46.3 ms against Go 100.4 ms before) |
+| idle RSS / after 500 searches | 29.5 / 32.0 MB | 28.9 / 32.8 MB | 133.3 / 168.6 MB |
+| cold start, median of 5 | 54.9 ms | 54.9 ms | 161 ms |
+
+**Deleted:** `bundle/services/directory.ts` and `modules/discovery/` but `words.ts` (the words' source for the generator and the review sheet) and `types.ts` (cut to the languages and kinds),
+its ten unit-test files, `bundle/test/directory-service.test.ts` and `directory-assistant.test.ts`, `go/scripts/gen_directory_vectors.ts`: **4,327 lines of TypeScript** (plus 241 of the
+module's README and 52 of `types.ts`). Before deleting, every check was given a place (the table in `modules/discovery/contract/README.md`): the TypeScript's answers to 456 requests were
+recorded (`contract/golden/differential.json.gz`, recorded twice and identical, both runtimes matched it; replayed at the recorded instant on the directory's test clock, which refuses to start
+unless it listens on 127.0.0.1), the TypeScript reader's answers to a good feed and 46 changes (`testdata/feeds.json.gz`) and its pages in every state and language (`testdata/pages.json.gz`)
+became Go tests, the cross-runtime restart test became a Go restart test, `modules/listings/test/protocol.test.ts`'s four checks with the directory's reader became
+`contract/shop-protocol.contract.test.ts` (the shops' own protocol code against the directory), the deployer's checks moved to `bundle/test/go-runtime.test.ts`, and the TypeScript tests' rules
+that need a clock or a network became `fetcher_test.go`, `check_test.go`, `limits_test.go`, `refresh_test.go`, `notices_test.go` and `cmd/directory/main_test.go`. The generator keeps only
+what still has a TypeScript source (the words, the shops' style sheet and paints, the MCP versions, the font); the page's own style, its script, the MCP tools, the card bodies, the
+assistant's prompt and the fold tables are Go source now (`internal/directory/words/`, `romanise_tables.go`), cut byte for byte from what it made.
+
+**Found (Go, left, Deferred.md):** a lone surrogate written as `\ud800` in a feed is read by Go's JSON decoder as U+FFFD, so the Go reader keeps a name the TypeScript refused; the shops' Go
+`Model.Cost` prices cached input tokens at the full rate where the TypeScript prices them at the cached rate (one line, left to the shop runtime's owner: it changes what a shop is charged).

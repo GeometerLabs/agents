@@ -1,8 +1,7 @@
 // Measures the directory service from the outside, on the same machine and the same data: cold start (spawn until /healthz answers, on a fresh folder), idle resident memory with 40 fake
 // shops of 20 listings each read, memory after 200 searches, and the latency of 300 searches (shops answering at once). Not a test: it prints one JSON line.
 //
-//   DIRECTORY_IMPL=ts node modules/discovery/contract/measure.ts
-//   DIRECTORY_IMPL=go node modules/discovery/contract/measure.ts
+//   node modules/discovery/contract/measure.ts      (the binary at DIRECTORY_GO_BIN, default go/bin/directory; the TypeScript service it was compared with is gone)
 //
 // RSS comes from `ps -o rss=` (the service's own process). The requests are made one after another by Node's fetch, the same client for both runtimes.
 import { execFileSync } from "node:child_process";

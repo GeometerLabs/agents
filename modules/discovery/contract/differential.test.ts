@@ -3,10 +3,11 @@
 // assistant's answers to scripted model replies, and the headers that matter. A difference here is a difference a buyer, an assistant or a shop could see.
 //
 // Where the golden answers come from: until 19 Nov 2026 this test ran the TypeScript service and the Go service side by side and compared them. Before the TypeScript directory was
-// deleted (decision 61, wave 1c), its answers were RECORDED here (`DIRECTORY_GOLDEN=write` with DIRECTORY_IMPL=ts, at the agents commit named in the file), so the Go directory is now
-// held to what the TypeScript said. After an intended change to what the directory says (a word in modules/discovery/words.ts, a page change), record again with the Go directory:
+// deleted (decision 61, wave 1c), its answers were RECORDED here (`DIRECTORY_GOLDEN=write` with the TypeScript service, at the agents commit named in the file, impl "ts"; recorded twice,
+// identical; the TypeScript and the Go service both matched it), so the Go directory is now held to what the TypeScript said. After an intended change to what the directory says (a word
+// in modules/discovery/words.ts, a page change), record again with the Go directory and read the difference before committing it:
 //
-//   DIRECTORY_GOLDEN=write DIRECTORY_IMPL=go node --test --test-concurrency=1 modules/discovery/contract/differential.test.ts
+//   DIRECTORY_GOLDEN=write node --test --test-concurrency=1 modules/discovery/contract/differential.test.ts
 //
 // and read the difference before committing it. Time: the order turns by the day (India's), the pages say "Confirmed today", and a shop's answer counts only when it is from just now.
 // So the golden file keeps the instant it was recorded, and a replay runs the fake shops (harness `now()`) and the Go directory (its test clock) at that instant; the few dates that
@@ -48,7 +49,6 @@ function norm(r: { status: number; text: string; headers: Headers }, raw?: Array
 
 /** India's time of day, in minutes. */
 const istMinutes = (ms: number): number => Math.floor(((ms + 19_800_000) % 86_400_000) / 60_000);
-const istDay = (ms: number): string => new Date(ms + 19_800_000).toISOString().slice(0, 10);
 
 // ---- the world: the same shops, items and model every run --------------------------------------------------------------------------------------------------
 
@@ -172,13 +172,8 @@ async function world(clock: boolean): Promise<{ d: Directory; door: FakeDoor; mo
 }
 
 const golden = (): Golden | undefined => (existsSync(GOLDEN) ? JSON.parse(gunzipSync(readFileSync(GOLDEN)).toString("utf8")) as Golden : undefined);
-const tsReplaySkip = (): string | false => {
-  if (WRITE || IMPL !== "ts") return false;
-  const g = golden();
-  return g && istDay(g.recordedAt) !== istDay(Date.now()) ? "the TypeScript service has no test clock, so it can be compared with the golden answers only on the day they were recorded" : false;
-};
 
-test(WRITE ? "record the directory's answers as the golden file" : "the same requests, the same answers as the golden file", { skip: SKIP || tsReplaySkip() }, async () => {
+test(WRITE ? "record the directory's answers as the golden file" : "the same requests, the same answers as the golden file", { skip: SKIP }, async () => {
   let g: Golden | undefined;
   if (WRITE) {
     const m = istMinutes(Date.now());
@@ -186,11 +181,11 @@ test(WRITE ? "record the directory's answers as the golden file" : "the same req
   } else {
     g = golden();
     assert.ok(g, `there is no golden file at ${GOLDEN}`);
-    // the Go directory runs on its test clock at the recorded instant; the TypeScript one has none, so it runs now (same day, checked above)
-    if (IMPL === "go") setClockOffset(g.recordedAt - Date.now());
+    // the directory runs on its test clock at the recorded instant, and the fake shops with it
+    setClockOffset(g.recordedAt - Date.now());
   }
   const recordedAt = now();
-  const { d, door, model, list } = await world(!WRITE && IMPL === "go");
+  const { d, door, model, list } = await world(!WRITE);
   try {
     const got: Golden["answers"] = [];
     const differences: string[] = [];

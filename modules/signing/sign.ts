@@ -8,7 +8,7 @@
 //   notice    { ..., keyId, sig }                                       a "my feed changed" notice
 //
 // Checking a signature proves only that the holder of that key wrote these exact bytes. WHICH key a shop may use is a separate decision (a reader pins
-// the first key it saw for a shop page: modules/discovery/keys), so these functions return the key id and leave the trust to the caller.
+// the first key it saw for a shop page: go/internal/directory trust.go), so these functions return the key id and leave the trust to the caller.
 import { sign as edSign, verify as edVerify } from "node:crypto";
 import { canonicalBytes } from "./canonical.ts";
 import { keyIdOf, publicKeyObject, rawOfPublic } from "./keys.ts";

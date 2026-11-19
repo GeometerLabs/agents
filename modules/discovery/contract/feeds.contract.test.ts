@@ -1,6 +1,6 @@
 // Feeds, checks and notices as the directory's outside sees them: what a good feed does, every way a feed is refused, what a shop's answer to "do you still have these?" must be to
 // be believed, the "my feed changed" notice, a feed that disappears, and a key that changes. Fake shops serve signed documents (signed with the TypeScript signing module) through a
-// fake door; the directory is a separate process (DIRECTORY_IMPL=ts|go) reached over HTTP, plus its index file read only (what a person could not see over HTTP).
+// fake door; the directory is a separate process (the Go directory, go/cmd/directory) reached over HTTP, plus its index file read only (what a person could not see over HTTP).
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { sign as edSign } from "node:crypto";
