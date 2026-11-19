@@ -84,6 +84,6 @@ Indirect modules come in with those four (for example `golang.org/x/crypto`, `gi
 * Layering, one way only: `language` <- `memory` <- `understanding` <- `assistant` <- `runtime`; the Bookings, Orders and Fees runtimes reuse the first three.
 * Every file starts with what it is and why. A choice that is not obvious says why. Where Go and JavaScript differ (UTF-16 lengths, the whitespace `\s` matches, regular expressions
   with no look-behind, `Math.round`) the comment says which TypeScript behaviour it copies.
-* The shop's state is the TypeScript runtime's JSON, field for field. What this runtime does not model (the assistant's memory, the limit changes, which the limits routes read and write as they are, any member a later version adds) is carried through as raw
-  JSON, so a shop that goes back to the TypeScript runtime loses nothing.
+* The shop's state is the TypeScript runtime's JSON, field for field. What this runtime does not model (the limit changes, of which only `id`, `state` and `told` are read, any member a later version adds, and any member of a note it does not know)
+  is carried through as raw JSON, so a shop that goes back to the TypeScript runtime loses nothing. The shop's memory is modelled field for field (internal/memory).
 * No home-folder paths, no keys; the binary's path in tests comes from `LISTINGS_GO_BIN` or `go/bin/listings`.

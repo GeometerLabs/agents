@@ -360,9 +360,14 @@ func (s *State) MarkChangesTold() {
 		changes[i] = setMember(c, "told", json.RawMessage("true"))
 		touched = true
 	}
-	if touched {
-		b, _ := json.Marshal(changes)
-		s.Rest["limitChanges"] = b
+	if touched { // written as compactChanges writes them: each change's bytes as they are (json.Marshal would escape <, > and & in them)
+		s.Rest["limitChanges"] = json.RawMessage(append(append([]byte("["), bytes.Join(func() [][]byte {
+			out := make([][]byte, len(changes))
+			for i, c := range changes {
+				out[i] = bytes.TrimSpace(c)
+			}
+			return out
+		}(), []byte(","))...), ']'))
 	}
 }
 
