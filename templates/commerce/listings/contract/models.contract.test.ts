@@ -90,7 +90,8 @@ describe("the router's language model chooses only the kind; the rules give ever
     ];
     const notes: string[] = [];
     for (const [name, reply] of replies) {
-      const seen = await both({ listing: false, parser: { timeoutMs: 600 }, answer: (_owner, body) => (callName(body) === "intent" ? reply : rawReply("{")) }, async (s) => { await say(s, "u-1", `the words are ${name}`); });
+      // only the slow one has a short timeout: the others keep the harness's, so a busy machine cannot time them out
+      const seen = await both({ listing: false, ...(name === "too slow" ? { parser: { timeoutMs: 600 } } : {}), answer: (_owner, body) => (callName(body) === "intent" ? reply : rawReply("{")) }, async (s) => { await say(s, "u-1", `the words are ${name}`); });
       assert.deepEqual(seen.go, seen.ts, name);
       notes.push(...seen.ts.record.filter((r: any) => r[0] === "owner_assistant").map((r: any) => r[3]));
     }
