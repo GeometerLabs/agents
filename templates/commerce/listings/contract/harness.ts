@@ -136,6 +136,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   };
 
   let running: RuntimeProcess | undefined;
+  const printed = { text: "" }; // what the process printed, kept after it stops
   const url = `http://127.0.0.1:${port}`;
   const command = (impl: "ts" | "go"): { cmd: string; args: string[] } => {
     if (impl === "go") return { cmd: process.env.LISTINGS_GO_BIN ?? join(REPO, "go", "bin", "listings"), args: ["--client", client] };
@@ -156,7 +157,7 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
       const env: Record<string, string | undefined> = { ...process.env, INTERNAL_TOKEN_FILE: join(secrets, "internal_token"), CHANNEL_TOKEN_FILE: join(secrets, "channel_token"), RECORD_KEY_FILE: join(secrets, "record_key") };
       delete env[TEST_SWITCH]; delete env[TEST_CLOCK_FILE];
       if (clock) { env[TEST_SWITCH] = "1"; env[TEST_CLOCK_FILE] = clock.file; }
-      running = await startRuntimeProcess(cmd, args, env, url, `the ${impl} listings shop in ${root}`);
+      running = await startRuntimeProcess(cmd, args, env, url, `the ${impl} listings shop in ${root}`, printed);
     },
     async stop() {
       await running?.stop();
@@ -168,9 +169,9 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
         if (s.status === 200 && s.body.tasks.pending === 0) return s.body;
         await new Promise((r) => setTimeout(r, 25));
       }
-      throw new Error(`the queue did not drain in 5 s:\n${running?.output() ?? ""}`);
+      throw new Error(`the queue did not drain in 5 s:\n${printed.text}`);
     },
-    log: () => running?.output() ?? "",
+    log: () => printed.text,
     pid: () => running?.child.pid,
     // after stop(): the folder goes (a process still running here is children.ts's to stop and report)
     cleanup() { rmSync(root, { recursive: true, force: true }); },
