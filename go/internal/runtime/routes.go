@@ -19,12 +19,18 @@ type routes struct {
 	sender  *push.Sender
 	pushCfg pushConfig
 	fileMu  sync.Mutex // the owner's file is taken once: one request at a time checks and marks it
+	// chatRate is the chat's rates, in memory (chat.go Rate): a restart forgetting them costs nothing; what must survive a restart is the saved day's caps
+	chatRate *Rate
+	chatID   *chatIdentity // who a chat guest is (chatid.go); nil: every guest is the cookie alone
 }
 
 // initRoutes opens what the routes keep (the push store, when the shop has a channel token).
 func (r *Runtime) initRoutes() error {
-	r.routes = &routes{}
-	return r.initPush()
+	r.routes = &routes{chatRate: NewRate(r.o.Now)}
+	if err := r.initPush(); err != nil {
+		return err
+	}
+	return r.initChatIdentity()
 }
 
 // startRoutes starts what runs on its own: the push sender, when push is on.
@@ -36,6 +42,7 @@ func (r *Runtime) startRoutes() {
 
 // closeRoutes stops the sender and closes what was opened.
 func (r *Runtime) closeRoutes() {
+	r.closeChatIdentity()
 	if r.routes.sender != nil {
 		r.routes.sender.Stop()
 	}
