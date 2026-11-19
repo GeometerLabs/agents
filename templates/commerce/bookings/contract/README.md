@@ -337,7 +337,26 @@ Bookings shop; owner notices outside the window go by template (owner-notices) a
 
 ## 8. Status of the suite (TypeScript, 19 Nov 2026)
 
-RESULT_PLACEHOLDER
+**103 tests in 9 files.** `BOOKINGS_IMPL=ts node --test --test-concurrency=1 templates/commerce/bookings/contract/` (19 Nov 2026, through the heat lock): 99 pass, 2 skipped (the two
+cross-restart cases, which need the Go binary), 2 failed on that pass; both were test mistakes (an offer asked for a date already past, a digest's form). Fixed, and the two files
+that hold them (`flow`, `record-licence`) run again: 26 of 26 pass. So: 101 pass, 2 skipped, 0 fail. `BOOKINGS_IMPL=go` with no binary: 103 tests,
+103 skipped, every one with "no Go Bookings runtime yet (wave 2)" (`grep -c` of the reason = 103). The listings contract after the shared move (`LISTINGS_IMPL=ts`, whole folder): 151
+tests, 136 pass, 0 fail, 15 skipped (the ones that need the Go listings binary).
+
+| File | Tests | Group | Complete? |
+|------|------:|-------|-----------|
+| `smoke.contract.test.ts` | 12 | S | yes for the routes' credentials and checks; the refusals of one route each |
+| `money.contract.test.ts` | 11 | M | partial: the gateway path and UPI marks; section 6b lists what is not written |
+| `limits-approvals.contract.test.ts` | 15 | L | partial: the hold, the approval and the refusals that were captured; the approval's expiry is not |
+| `flow.contract.test.ts` | 14 | F | partial: one unit of capacity, the 4 languages are in `chat` |
+| `owner.contract.test.ts` | 9 | O | partial: the shared owner-control rules are the listings contract's |
+| `chat.contract.test.ts` | 17 | C | partial: no voice, no allowance, no talk model |
+| `recovery.contract.test.ts` | 11 | R | partial |
+| `record-licence.contract.test.ts` | 12 | D | partial: the report's WhatsApp message is not seen |
+| `cross-restart.test.ts` | 2 | | skipped until the Go binary exists |
+
+No group is complete: every one has its own list of what is left in 6b and below.
+
 
 **Written and passing on TypeScript (the class "a" files they stand for):** accounting-pages (the documents route, the accountant's files route), approvals-runtime, channels, chat, guard-outage,
 last-slot (two customers for one time), licence (wind-down, the paid-before link, final stop, the owner's notice, Guard's 402, a torn file), limits-runtime, model-llm (the OpenAI
