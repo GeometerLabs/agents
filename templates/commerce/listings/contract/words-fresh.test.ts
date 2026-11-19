@@ -40,3 +40,16 @@ test("words-fresh: the committed patterns and their vectors equal a fresh render
     assert.deepEqual(patterns.staleFiles(dir), ["patterns.json"], "the check is not vacuous");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("words-fresh: the Guard-client vectors (payments, messaging, calendar, qr, terms, the shared core) equal a fresh run of the TypeScript clients", async () => {
+  const guardVectors = await import("../../../../go/scripts/gen_guard_vectors.ts");
+  const fresh = await guardVectors.generate();
+  assert.ok(fresh.size >= 20, "the generator writes the vector files of every Guard client package");
+  assert.deepEqual(await guardVectors.staleFiles(guardVectors.OUT, fresh), [], "a vector file is out of date: run  node go/scripts/gen_guard_vectors.ts  and commit the result");
+  // the check is not vacuous: a file that is missing is reported
+  const dir = mkdtempSync(join(tmpdir(), "guard-vectors-"));
+  try {
+    const stale = await guardVectors.staleFiles(dir, fresh);
+    assert.equal(stale.length, fresh.size);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
