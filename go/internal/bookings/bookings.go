@@ -151,3 +151,16 @@ func (k *Kit) KeepCounters(st runtime.KitState, taken runtime.KitState) bool {
 
 // Channel is the Bookings channel's reads (channel.go).
 func (k *Kit) Channel() runtime.ChannelKit { return &channelKit{kit: k} }
+
+// MostRefundRupees is chat-limits.ts MOST_RUPEES: a refund limit is never set above one deposit, and never above ₹5,000 from a phone.
+const MostRefundRupees = 5_000
+
+// Limits is src/chat-limits.ts CHAT_LIMITS: the refund the agent makes without asking (refundLimit over cancellation.refundLimitInr), bounded 0 to min(₹5,000, the deposit).
+func (k *Kit) Limits() []runtime.LimitDecl {
+	s := k.Settings
+	if s == nil {
+		return nil
+	}
+	return []runtime.LimitDecl{{ID: "refund_limit", Path: "cancellation.refundLimitInr", Unit: "inr", Tighter: "lower", Kind: "refund", File: s.Cancellation.RefundLimitInr,
+		Min: 0, Max: min(MostRefundRupees, max(1, s.Deposit.AmountInr))}}
+}

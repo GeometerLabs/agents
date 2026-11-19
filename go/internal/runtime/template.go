@@ -44,6 +44,8 @@ type Kit interface {
 	KeepCounters(s KitState, taken KitState) bool
 	// Channel is the template's channel reads (ChannelKit); nil: the shop has no booking page, API or owner's page beyond the shared routes.
 	Channel() ChannelKit
+	// Limits are the limits the owner may change (the template's chat-limits.ts declaration), with their values in the settings file (limitsdecl.go).
+	Limits() []LimitDecl
 }
 
 // KitState is a template's store, parsed. Members writes it back in the codec's order; the members named "ai" and "assistant" are placeholders where the runtime puts the shared

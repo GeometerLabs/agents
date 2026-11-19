@@ -374,3 +374,9 @@ lists a limit, so a runtime that declares none passes it; Bookings declares CHAT
 
 **TypeScript findings.** None that change behaviour. Noted for the port: the contract's `smoke` passes a `message` step on Go by ending the task failed (not ported); the test does
 not look at the outcome, so it cannot tell a handled message from an unhandled one.
+
+**Slice 5, first part: the limits Bookings declares (19 Nov).** `internal/runtime/limitsdecl.go` is the declared half of `modules/limits` (inForce, judgeChange, the view's rows, the
+owner's own change from the page), and a template declares its limits through `Kit.Limits` (Bookings: the refund limit, 0 to min(₹5,000, the deposit)). The words are generated
+from `modules/limits/chat-limit-kinds.ts` by `go/scripts/gen_limit_words.ts`. The limits page and `/internal/limit-changes` now answer what TypeScript answers: the three limits tests
+pass on Go and on TypeScript, the Bookings contract on Go is 25 of 128, the listings contract on Go 202 of 202. What the agent reads in force (the refund limit before a refund) is
+wired with the refunds, which wait for the payments package.
