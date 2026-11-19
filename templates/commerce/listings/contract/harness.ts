@@ -8,10 +8,6 @@
 //   LISTINGS_IMPL=go              the built binary named by LISTINGS_GO_BIN (default <repo>/go/bin/listings) with the same arguments
 // Both read the same folder, the same token files (INTERNAL_TOKEN_FILE, CHANNEL_TOKEN_FILE, RECORD_KEY_FILE) and the same runtime.json, so one folder serves both.
 // Every process is started and stopped through children.ts, which stops it at the end of each test and fails the run if one is still alive when the run ends.
-import type { ChildProcess } from "node:child_process";
-import { createServer } from "node:http";
-import type { Server } from "node:http";
-import { randomBytes } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { tmpdir } from "node:os";
@@ -21,7 +17,12 @@ import { OWNER_LINK_FILE, newOwnerToken, ownerLinkFile } from "../../../../modul
 import { OWNER_GRANTS_FILE, OWNER_RESET_FILE, SETUP_MS, newSetupToken, setupHash } from "../../../../modules/channels/owner-grants.ts";
 import { OWNER_SESSIONS_FILE } from "../../../../modules/channels/owner-access.ts";
 import { TEST_CLOCK_FILE, TEST_SWITCH } from "../../../../modules/runtime/test-clock.ts";
-import { spawnChild, stopChild } from "./children.ts";
+import { startRuntimeProcess, callRuntime } from "../../../../modules/test/contract/runtime-process.ts";
+import type { RuntimeProcess } from "../../../../modules/test/contract/runtime-process.ts";
+import { callName, rawReply, slowReply, startFakeDecision, startFakeModel as startSharedFakeModel, statusReply } from "../../../../modules/test/contract/fake-model.ts";
+import type { FakeModel } from "../../../../modules/test/contract/fake-model.ts";
+import { freePort, hex, sleep } from "../../../../modules/test/contract/net.ts";
+import { makeTestClockFile } from "../../../../modules/test/contract/test-clock-file.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** The repository root, found from this file's own address. */
@@ -31,8 +32,6 @@ export const PAGE = "https://pages.example/glow-pets";
 export const OWNER_BASE = "https://pages.example/owner";
 /** The pathway version the TS runtime pins a folder to (package.json), so a folder written here starts on both implementations. */
 export const VERSION = (JSON.parse(readFileSync(join(REPO, "templates", "commerce", "listings", "package.json"), "utf8")) as { version: string }).version;
-
-const hex = (n: number): string => randomBytes(n).toString("hex");
 
 export interface ShopOptions {
   /** The shop's model budget (runtime.json `budget`). */
@@ -101,14 +100,6 @@ export interface Shop {
   record(): { action: string; outcome: string; refs: Record<string, string> }[];
 }
 
-async function freePort(): Promise<number> {
-  const s = createServer();
-  await new Promise<void>((r) => s.listen(0, "127.0.0.1", r));
-  const port = (s.address() as { port: number }).port;
-  await new Promise<void>((r) => s.close(() => r()));
-  return port;
-}
-
 /** Write a shop's folder as the deployer would, and return a handle that starts it. */
 export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   const root = mkdtempSync(join(tmpdir(), "listings-contract-"));
@@ -138,11 +129,8 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   writeFileSync(join(client, OWNER_GRANTS_FILE), JSON.stringify({ schema: 1, setup: { sha256: setupHash(setup), createdAt: new Date(now).toISOString(), expiresAt: new Date(now + SETUP_MS).toISOString() } }));
   writeFileSync(join(client, "pathway.lock"), `listings@${VERSION}\n`); // written last, as the deployer does
 
-  // the test clock's file: one integer, the milliseconds added to the machine's clock; written whole (a rename), so the shop never reads half a number
-  const clockFile = join(root, "clock");
-  let offset = 0;
-  const writeClock = (): void => { writeFileSync(`${clockFile}.tmp`, String(offset)); renameSync(`${clockFile}.tmp`, clockFile); };
-  if (o.clock) writeClock();
+  // the test clock's file (modules/test/contract/test-clock-file.ts): one integer, the milliseconds added to the machine's clock
+  const clock = o.clock ? makeTestClockFile(join(root, "clock")) : undefined;
   /** A file in the client folder, written whole as the deployer does (a rename), or removed. */
   const put = (name: string, value: unknown): void => {
     const file = join(client, name);
@@ -150,8 +138,8 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
     writeFileSync(`${file}.tmp`, JSON.stringify(value)); renameSync(`${file}.tmp`, file);
   };
 
-  let child: ChildProcess | undefined;
-  let output = "";
+  let running: RuntimeProcess | undefined;
+  const printed = { text: "" }; // what the process printed, kept after it stops
   const url = `http://127.0.0.1:${port}`;
   const command = (impl: "ts" | "go"): { cmd: string; args: string[] } => {
     if (impl === "go") return { cmd: process.env.LISTINGS_GO_BIN ?? join(REPO, "go", "bin", "listings"), args: ["--client", client] };
@@ -162,49 +150,21 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
     root, client, dataDir, internal, channel, owner, setup, port,
     async call(path, c = {}) {
       const channelRoute = path.startsWith("/internal/channel/");
-      const token = c.token === undefined ? (channelRoute ? channel : internal) : c.token;
-      const headers: Record<string, string> = { ...(token ? { authorization: `Bearer ${token}` } : {}), ...(c.owner ? { "x-owner-link": c.owner } : {}), ...(c.session ? { "x-owner-session": c.session } : {}), ...(c.headers ?? {}) };
-      if (c.body !== undefined) headers["content-type"] = "application/json";
-      if (c.raw !== undefined) headers["content-type"] = c.type ?? "application/octet-stream";
-      const r = await fetch(`${url}${path}`, { method: c.method ?? (c.body !== undefined || c.raw !== undefined ? "POST" : "GET"), headers, ...(c.body !== undefined ? { body: JSON.stringify(c.body) } : c.raw !== undefined ? { body: c.raw as BodyInit } : {}) });
-      const bytes = new Uint8Array(await r.arrayBuffer());
-      let body: any = null;
-      try { body = JSON.parse(new TextDecoder().decode(bytes)); } catch { /* not JSON: bytes are there */ }
-      return { status: r.status, body, headers: r.headers, bytes };
+      return callRuntime(url, path, { ...c, token: c.token === undefined ? (channelRoute ? channel : internal) : c.token });
     },
     async start(impl = IMPL) {
       // a start while the last process still runs would lose the only handle to it: it is stopped first
-      await stopChild(child);
+      await running?.stop(); running = undefined;
       const { cmd, args } = command(impl);
-      output = "";
       // the test clock only when the test asks for it; otherwise the two variables are taken out, so a shell that has them set cannot change an ordinary test
       const env: Record<string, string | undefined> = { ...process.env, INTERNAL_TOKEN_FILE: join(secrets, "internal_token"), CHANNEL_TOKEN_FILE: join(secrets, "channel_token"), RECORD_KEY_FILE: join(secrets, "record_key") };
       delete env[TEST_SWITCH]; delete env[TEST_CLOCK_FILE];
-      if (o.clock) { env[TEST_SWITCH] = "1"; env[TEST_CLOCK_FILE] = clockFile; }
-      const c = spawnChild(cmd, args, { env, stdio: ["ignore", "pipe", "pipe"] }, `the ${impl} listings shop in ${root}`);
-      child = c;
-      c.stdout!.on("data", (d: Buffer) => { output += d.toString(); });
-      c.stderr!.on("data", (d: Buffer) => { output += d.toString(); });
-      const onExit = (code: number | null): void => { exitedEarly?.(new Error(`the shop exited early (${code}):\n${output}`)); };
-      let exitedEarly: ((e: Error) => void) | undefined;
-      const early = new Promise<never>((_, reject) => { exitedEarly = reject; c.once("exit", onExit); });
-      const ready = (async () => {
-        for (let i = 0; i < 200; i++) {
-          if (c.exitCode !== null || c.signalCode !== null) throw new Error(`the shop exited early (${c.exitCode ?? c.signalCode}):\n${output}`);
-          try { if ((await fetch(`${url}/healthz`)).status === 200) return; } catch { /* not listening yet */ }
-          await new Promise((r) => setTimeout(r, 50));
-        }
-        throw new Error(`the shop did not answer /healthz in 10 s:\n${output}`);
-      })();
-      try { await Promise.race([ready, early]); } catch (e) {
-        await stopChild(c); // a shop that never answered is not left running
-        child = undefined;
-        throw e;
-      } finally { c.removeListener("exit", onExit); }
+      if (clock) { env[TEST_SWITCH] = "1"; env[TEST_CLOCK_FILE] = clock.file; }
+      running = await startRuntimeProcess(cmd, args, env, url, `the ${impl} listings shop in ${root}`, printed);
     },
     async stop() {
-      await stopChild(child);
-      child = undefined;
+      await running?.stop();
+      running = undefined;
     },
     async settle() {
       for (let i = 0; i < 200; i++) {
@@ -212,16 +172,16 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
         if (s.status === 200 && s.body.tasks.pending === 0) return s.body;
         await new Promise((r) => setTimeout(r, 25));
       }
-      throw new Error(`the queue did not drain in 5 s:\n${output}`);
+      throw new Error(`the queue did not drain in 5 s:\n${printed.text}`);
     },
-    log: () => output,
-    pid: () => child?.pid,
+    log: () => printed.text,
+    pid: () => running?.child.pid,
     // after stop(): the folder goes (a process still running here is children.ts's to stop and report)
     cleanup() { rmSync(root, { recursive: true, force: true }); },
-    now: () => Date.now() + offset,
+    now: () => clock?.now() ?? Date.now(),
     advance(ms) {
-      if (!o.clock) throw new Error("this shop was made without the test clock (makeShop({clock: true}))");
-      offset += ms; writeClock();
+      if (!clock) throw new Error("this shop was made without the test clock (makeShop({clock: true}))");
+      clock.advance(ms);
     },
     writeGrants: (grants) => put(OWNER_GRANTS_FILE, grants),
     writeReset: (reset) => put(OWNER_RESET_FILE, reset),
@@ -240,81 +200,18 @@ export async function makeShop(o: ShopOptions = {}): Promise<Shop> {
   return shop;
 }
 
-// ---- a fake OpenAI-compatible model server --------------------------------------------------------------------------------------------------------------------
+// ---- the fake model servers: modules/test/contract/fake-model.ts (one for listings and Bookings) --------------------------------------------------------------------------
 
-export interface FakeModel { port: number; calls: number; requests: any[]; answer: (owner: string, body: any) => unknown; close(): Promise<void> }
-
-/** What a fake's `answer` may return instead of JSON: raw text as the model's content (not JSON, say), an HTTP status, or a wait before the answer (to time a model out). */
-const FAKE = Symbol("fake reply");
-type FakeReply = { [FAKE]: true; content?: string; status?: number; delayMs?: number; then?: unknown };
-export const rawReply = (content: string): FakeReply => ({ [FAKE]: true, content });
-export const statusReply = (status: number): FakeReply => ({ [FAKE]: true, status });
-export const slowReply = (delayMs: number, then: unknown): FakeReply => ({ [FAKE]: true, delayMs, then });
-const isFake = (v: unknown): v is FakeReply => typeof v === "object" && v !== null && FAKE in v;
+export type { FakeModel };
+export { callName, rawReply, slowReply, startFakeDecision, statusReply };
 
 /** A listing's draft as the model writes it: what `listingPrompt`'s schema asks for. `words` is the one title and text used for all four languages. */
 export const draftAnswer = (title = "Persian kittens", text = "Playful kittens, looking for a home.", category = "pets", claims: string[] = []): unknown => ({
   category, titles: { en: title, hi: title, ml: title, kn: title }, texts: { en: text, hi: text, ml: text, kn: text }, claims,
 });
 
-/** Which call a request is: "intent" (the router's language step), "talk" (the owner's talk) or "listing" (a draft), from the schema's name the runtime sends. */
-export const callName = (body: any): string => body?.response_format?.json_schema?.name ?? "";
-
-/**
- * Start the fake. `answer` gets the owner's words (the last user message) and the whole request, and returns the JSON the model would write (or a rawReply, statusReply or
- * slowReply). Every call is counted.
- */
-export async function startFakeModel(answer: (owner: string, body: any) => unknown = () => draftAnswer()): Promise<FakeModel> {
-  const fake: FakeModel = { port: 0, calls: 0, requests: [], answer, close: async () => undefined };
-  const server: Server = createServer((req, res) => {
-    const chunks: Buffer[] = [];
-    req.on("data", (c: Buffer) => chunks.push(c));
-    req.on("end", async () => {
-      fake.calls += 1;
-      let body: any = {};
-      try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { /* leave empty */ }
-      fake.requests.push({ url: req.url, authorization: req.headers.authorization, body });
-      const user = (body.messages ?? []).filter((m: { role: string }) => m.role === "user").at(-1)?.content ?? "";
-      let got = fake.answer(user, body);
-      if (isFake(got) && got.delayMs !== undefined) { await new Promise((r) => setTimeout(r, got.delayMs)); got = (got as FakeReply).then; }
-      if (isFake(got) && got.status !== undefined) { res.writeHead(got.status, { "content-type": "application/json" }); res.end("{}"); return; }
-      const content = isFake(got) ? got.content : JSON.stringify(got);
-      const reply = JSON.stringify({ id: "fake", choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content } }], usage: { prompt_tokens: 100, completion_tokens: 50 } });
-      if (res.destroyed) return;
-      res.writeHead(200, { "content-type": "application/json" });
-      res.end(reply);
-    });
-  });
-  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
-  fake.port = (server.address() as { port: number }).port;
-  fake.close = () => new Promise<void>((r) => { server.closeAllConnections(); server.close(() => r()); });
-  return fake;
-}
-
-/** A fake System One decision model (POST /v1/systemone). `answer` gets the state (the words, redacted) and the questions, and returns the reply body (or a FakeReply). */
-export async function startFakeDecision(answer: (state: string, questions: any) => unknown): Promise<FakeModel> {
-  const fake: FakeModel = { port: 0, calls: 0, requests: [], answer: answer as FakeModel["answer"], close: async () => undefined };
-  const server: Server = createServer((req, res) => {
-    const chunks: Buffer[] = [];
-    req.on("data", (c: Buffer) => chunks.push(c));
-    req.on("end", async () => {
-      fake.calls += 1;
-      let body: any = {};
-      try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { /* leave empty */ }
-      fake.requests.push({ url: req.url, body });
-      let got = fake.answer(body.state ?? "", body.questions);
-      if (isFake(got) && got.delayMs !== undefined) { await new Promise((r) => setTimeout(r, got.delayMs)); got = (got as FakeReply).then; }
-      if (isFake(got) && got.status !== undefined) { res.writeHead(got.status, { "content-type": "application/json" }); res.end("{}"); return; }
-      if (res.destroyed) return;
-      res.writeHead(200, { "content-type": "application/json" });
-      res.end(isFake(got) ? got.content : JSON.stringify(got));
-    });
-  });
-  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
-  fake.port = (server.address() as { port: number }).port;
-  fake.close = () => new Promise<void>((r) => { server.closeAllConnections(); server.close(() => r()); });
-  return fake;
-}
+/** Start the shared fake model; without an `answer` it writes a listing's draft. */
+export const startFakeModel = (answer: (owner: string, body: any) => unknown = () => draftAnswer()): Promise<FakeModel> => startSharedFakeModel(answer);
 
 // ---- a tiny JPEG ---------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -327,5 +224,4 @@ export function tinyJpeg(w = 64, h = 48, withExif = true): Uint8Array {
   return Uint8Array.from([0xff, 0xd8, ...exif, ...sof, ...sos, 1, 2, 3, 4, 5, 6, 7, 8, 0xff, 0xd9]);
 }
 
-/** Wait a moment: used where a clock must move on (a draft's day). */
-export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+export { sleep };

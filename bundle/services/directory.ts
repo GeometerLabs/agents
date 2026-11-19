@@ -145,5 +145,6 @@ if (import.meta.main) {
     } catch (e) { log(`directory: a refresh failed (${(e as Error).name})`); } finally { running = false; }
   };
   void tick();
-  setInterval(() => void tick(), 20_000).unref();
+  // DIRECTORY_TICK_MS shortens the beat for the contract tests (modules/discovery/contract); the service's own value is 20 s
+  setInterval(() => void tick(), Number(process.env.DIRECTORY_TICK_MS ?? 20_000)).unref();
 }

@@ -331,6 +331,18 @@ get_guard_image() {
   GUARD_STATE="missing"
 }
 
+# ---- the Go shop programs --------------------------------------------------------------------------------------------------------------------------------
+
+# Wave 1b (decision 61): the shop programs written in Go are built here, from this copy of the repository, in the official Go image pinned by its digest in release.json, and put in a
+# tiny image of their own (bundle/lib/go-build.ts does the work; `geometer update` runs the same code). Built from this copy, they always match the code beside them, also for a
+# copy that is not a release. Run again, it finds the image for this commit and does nothing. If it fails nothing is changed and the install stops with the reason.
+build_go_programs() {
+  step "Building the shop programs (Go)"
+  [ -n "$(release_get go_image_digest)" ] || die "release.json pins no Go builder image (go_image_digest is empty), so the shop programs cannot be built. Nothing was changed."
+  say "From this copy, in $(release_get go_image) (pinned by its digest); the modules are checked against go.sum."
+  geo go-build || die "The shop programs could not be built (the reason is above). Nothing was changed; run the install again once it is fixed."
+}
+
 # ---- pairing and the server folder -----------------------------------------------------------------------------------------------------------------------
 
 geo() { with_docker env GEOMETER_SERVER="$SERVER_DIR" "$NODE_BIN" "$APP_DIR/bundle/geometer.ts" "$@"; }
@@ -709,6 +721,7 @@ show_plan() {
   say "  - Docker Engine: $(docker_ready && printf 'already here, kept' || printf 'install from Docker'"'"'s apt repository (key checked against Docker'"'"'s fingerprint)')"
   say "  - Node: $( (have node && [ "$(node --version | sed 's/^v\([0-9]*\).*/\1/')" -ge 26 ]) && printf 'already here (%s), kept' "$(node --version)" || printf 'install %s from nodejs.org (checksum checked twice)' "$(release_get node_version)")"
   say "  - the agents code: this copy, $APP_DIR"
+  say "  - the shop programs (Go): built from this copy in $(release_get go_image) (pinned by digest), the image kept on this machine; nothing to download but Go's modules"
   say "  - the Guard image $(release_get guard_image): $([ -n "${GUARD_FILE:-}" ] && printf 'load %s after checking its sha256' "$GUARD_FILE" || printf 'use the one on this machine, if any')"
   case "$PAIR_MODE" in
     code) say "  - pair with Geometer's fleet at $FLEET_URL: the code is sent once, and this server's key is kept in $SERVER_DIR/fleet_key" ;;
@@ -753,6 +766,7 @@ main() {
   docker_access
   install_node
   get_guard_image
+  build_go_programs
   pair_server
   make_server_folder
   step "The deployer's service and the geometer command"

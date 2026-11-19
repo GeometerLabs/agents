@@ -1,0 +1,183 @@
+[
+ {
+  "label": "a timed event",
+  "raw": {
+   "id": "x",
+   "start": {
+    "dateTime": "2026-11-10T10:00:00+05:30"
+   },
+   "end": {
+    "dateTime": "2026-11-10T11:00:00+05:30"
+   }
+  },
+  "zone": null,
+  "event": {
+   "id": "x",
+   "summary": "",
+   "start": 1794285000000,
+   "end": 1794288600000,
+   "status": "confirmed",
+   "bookingRef": "foreign"
+  }
+ },
+ {
+  "label": "tentative with a hold",
+  "raw": {
+   "id": "x",
+   "start": {
+    "dateTime": "2026-11-10T10:00:00+05:30"
+   },
+   "end": {
+    "dateTime": "2026-11-10T11:00:00+05:30"
+   },
+   "status": "tentative",
+   "extendedProperties": {
+    "private": {
+     "bookingRef": "b-1",
+     "holdExpiresAt": "1793000000000"
+    }
+   }
+  },
+  "zone": null,
+  "event": {
+   "id": "x",
+   "summary": "",
+   "start": 1794285000000,
+   "end": 1794288600000,
+   "status": "tentative",
+   "bookingRef": "b-1",
+   "holdExpiresAt": 1793000000000
+  }
+ },
+ {
+  "label": "cancelled",
+  "raw": {
+   "id": "x",
+   "start": {
+    "dateTime": "2026-11-10T10:00:00+05:30"
+   },
+   "end": {
+    "dateTime": "2026-11-10T11:00:00+05:30"
+   },
+   "status": "cancelled"
+  },
+  "zone": null,
+  "event": null
+ },
+ {
+  "label": "a summary",
+  "raw": {
+   "id": "x",
+   "start": {
+    "dateTime": "2026-11-10T10:00:00+05:30"
+   },
+   "end": {
+    "dateTime": "2026-11-10T11:00:00+05:30"
+   },
+   "summary": "Dentist"
+  },
+  "zone": null,
+  "event": {
+   "id": "x",
+   "summary": "Dentist",
+   "start": 1794285000000,
+   "end": 1794288600000,
+   "status": "confirmed",
+   "bookingRef": "foreign"
+  }
+ },
+ {
+  "label": "all-day in Kolkata",
+  "raw": {
+   "id": "d",
+   "start": {
+    "date": "2026-11-11"
+   },
+   "end": {
+    "date": "2026-11-12"
+   }
+  },
+  "zone": "Asia/Kolkata",
+  "event": {
+   "id": "d",
+   "summary": "",
+   "start": 1794335400000,
+   "end": 1794421800000,
+   "status": "confirmed",
+   "bookingRef": "foreign"
+  }
+ },
+ {
+  "label": "all-day, no zone",
+  "raw": {
+   "id": "d",
+   "start": {
+    "date": "2026-11-11"
+   },
+   "end": {
+    "date": "2026-11-12"
+   }
+  },
+  "zone": null,
+  "event": {
+   "id": "d",
+   "summary": "",
+   "start": 1794355200000,
+   "end": 1794441600000,
+   "status": "confirmed",
+   "bookingRef": "foreign"
+  }
+ },
+ {
+  "label": "no id",
+  "raw": {
+   "start": {
+    "dateTime": "2026-11-10T10:00:00+05:30"
+   },
+   "end": {
+    "dateTime": "2026-11-10T10:00:00+05:30"
+   }
+  },
+  "zone": null,
+  "event": null
+ },
+ {
+  "label": "no end",
+  "raw": {
+   "id": "x",
+   "start": {
+    "dateTime": "2026-11-10T10:00:00+05:30"
+   }
+  },
+  "zone": null,
+  "event": null
+ },
+ {
+  "label": "a hold end of a negative number",
+  "raw": {
+   "id": "x",
+   "start": {
+    "dateTime": "2026-11-10T10:00:00+05:30"
+   },
+   "end": {
+    "dateTime": "2026-11-10T11:00:00+05:30"
+   },
+   "extendedProperties": {
+    "private": {
+     "bookingRef": "b",
+     "holdExpiresAt": "-5"
+    }
+   }
+  },
+  "zone": null,
+  "event": {
+   "id": "x",
+   "summary": "",
+   "start": 1794285000000,
+   "end": 1794288600000,
+   "status": "confirmed",
+   "bookingRef": "b",
+   "holdExpiresAt": -5
+  }
+ }
+]

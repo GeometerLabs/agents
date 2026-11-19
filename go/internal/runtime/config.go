@@ -22,7 +22,7 @@ import (
 // Pathway and Version are what a folder's pathway.lock must name. Version is the number in templates/commerce/listings/package.json; the contract suite checks they agree.
 const (
 	Pathway = "listings"
-	Version = "0.1.0"
+	Version = "0.2.0"
 	// NoNumber stands for "the owner" when the owner gave no number: a plus and eleven zeros.
 	NoNumber = "+00000000000"
 )

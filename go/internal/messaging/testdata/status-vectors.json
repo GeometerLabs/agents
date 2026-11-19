@@ -1,0 +1,2427 @@
+{
+ "cases": [
+  {
+   "name": "delivered, matched to its send line (no key)",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "delivered, matched under the shop's key",
+   "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "m-7d18e0b0640c",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "k-a92b898e619b49c7",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "m-7d18e0b0640c",
+      "status": "delivered",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "read",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "read",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "read",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message read on the person's phone.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "read",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "fbbef1f1c318ef7e",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message read on the person's phone.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "read",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "failed with a code and a title, a booking's message is listed",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "failed",
+    "timestamp": 1750263773000,
+    "error": {
+     "code": 131047,
+     "title": "Re-engagement message"
+    }
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "failed",
+     "ids": [
+      "wamid.1"
+     ],
+     "error": {
+      "code": 131047,
+      "title": "Re-engagement message"
+     }
+    },
+    "outcome": "failed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message failed (code 131047: Re-engagement message): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "failed",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z",
+     "errorCode": "131047"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "6ae2b82b8235e95d",
+     "outcome": "failed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message failed (code 131047: Re-engagement message): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "failed",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z",
+      "errorCode": "131047"
+     }
+    }
+   }
+  },
+  {
+   "name": "failed with a title only",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "failed",
+    "timestamp": 1750263773000,
+    "error": {
+     "title": "Only a title"
+    }
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "failed",
+     "ids": [
+      "wamid.1"
+     ],
+     "error": {
+      "title": "Only a title"
+     }
+    },
+    "outcome": "failed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message failed (Only a title): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "failed",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "b3d4ff5ebd0ffee8",
+     "outcome": "failed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message failed (Only a title): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "failed",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "failed with a code only",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "failed",
+    "timestamp": 1750263773000,
+    "error": {
+     "code": 5
+    }
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "failed",
+     "ids": [
+      "wamid.1"
+     ],
+     "error": {
+      "code": 5
+     }
+    },
+    "outcome": "failed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message failed (code 5): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "failed",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z",
+     "errorCode": "5"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "c0df725c4e34cb8b",
+     "outcome": "failed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message failed (code 5): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "failed",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z",
+      "errorCode": "5"
+     }
+    }
+   }
+  },
+  {
+   "name": "failed with no code and no title",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "failed",
+    "timestamp": 1750263773000,
+    "error": {}
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "failed",
+     "ids": [
+      "wamid.1"
+     ],
+     "error": {}
+    },
+    "outcome": "failed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message failed: it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "failed",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "40a0534fdc0319cd",
+     "outcome": "failed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message failed: it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "failed",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "failed on a message with no case and to the customer: not listed",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": null,
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "failed",
+    "timestamp": 1750263773000,
+    "error": {
+     "code": 1
+    }
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "failed",
+     "ids": [
+      "wamid.1"
+     ],
+     "error": {
+      "code": 1
+     }
+    },
+    "outcome": "failed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message failed (code 1): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "failed",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z",
+     "errorCode": "1"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "0f7ae1fa048c571b",
+     "outcome": "failed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message failed (code 1): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "failed",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z",
+      "errorCode": "1"
+     }
+    }
+   }
+  },
+  {
+   "name": "failed on a message to the owner with no case is listed",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": null,
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "owner"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "failed",
+    "timestamp": 1750263773000,
+    "error": {
+     "code": 1
+    }
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "failed",
+     "ids": [
+      "wamid.1"
+     ],
+     "error": {
+      "code": 1
+     }
+    },
+    "outcome": "failed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message failed (code 1): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "failed",
+     "to": "owner",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z",
+     "errorCode": "1"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "0f7ae1fa048c571b",
+     "outcome": "failed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message failed (code 1): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "failed",
+      "to": "owner",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z",
+      "errorCode": "1"
+     }
+    }
+   }
+  },
+  {
+   "name": "a report with no send line: said so, the owner's language",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.other",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000,
+    "to": "+919811111111"
+   },
+   "ctx": {
+    "owner": {
+     "whatsapp": "+919822222222",
+     "language": "ml"
+    }
+   },
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "ml",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "ml",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "a report with no send line and no owner: English, and the number as the conversation",
+   "key": null,
+   "entries": [],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000,
+    "to": "+919811111111"
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "en",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "a report with no send line and no number: unknown",
+   "key": null,
+   "entries": [],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "unknown",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "en",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "unknown",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "unknown",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "unknown",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "a report for the owner's number, found by digits",
+   "key": null,
+   "entries": [],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "failed",
+    "timestamp": 1750263773000,
+    "to": "+919822222222",
+    "error": {
+     "code": 2
+    }
+   },
+   "ctx": {
+    "owner": {
+     "whatsapp": "+91 98222-22222",
+     "language": "en"
+    }
+   },
+   "captured": {
+    "conversation": "+919822222222",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "failed",
+     "ids": [
+      "wamid.1"
+     ],
+     "error": {
+      "code": 2
+     }
+    },
+    "outcome": "failed",
+    "language": "en",
+    "notes": "WhatsApp reported this message failed (code 2): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "failed",
+     "to": "owner",
+     "reportedAt": "2025-06-18T16:22:53.000Z",
+     "errorCode": "2"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919822222222",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "730c50c48b4ac49c",
+     "outcome": "failed",
+     "decisions": [],
+     "language": "en",
+     "notes": "WhatsApp reported this message failed (code 2): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "failed",
+      "to": "owner",
+      "reportedAt": "2025-06-18T16:22:53.000Z",
+      "errorCode": "2"
+     }
+    }
+   }
+  },
+  {
+   "name": "a report for an approver's number",
+   "key": null,
+   "entries": [],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "failed",
+    "timestamp": 1750263773000,
+    "to": "+919833333333",
+    "error": {
+     "code": 2
+    }
+   },
+   "ctx": {
+    "owner": {
+     "whatsapp": "+919822222222",
+     "language": "en"
+    },
+    "approvers": [
+     "+91 98333 33333"
+    ]
+   },
+   "captured": {
+    "conversation": "+919833333333",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "failed",
+     "ids": [
+      "wamid.1"
+     ],
+     "error": {
+      "code": 2
+     }
+    },
+    "outcome": "failed",
+    "language": "en",
+    "notes": "WhatsApp reported this message failed (code 2): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "failed",
+     "to": "approver",
+     "reportedAt": "2025-06-18T16:22:53.000Z",
+     "errorCode": "2"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919833333333",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "730c50c48b4ac49c",
+     "outcome": "failed",
+     "decisions": [],
+     "language": "en",
+     "notes": "WhatsApp reported this message failed (code 2): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself. It is listed on the shop's to-do list for a person to follow up. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "failed",
+      "to": "approver",
+      "reportedAt": "2025-06-18T16:22:53.000Z",
+      "errorCode": "2"
+     }
+    }
+   }
+  },
+  {
+   "name": "a report for a customer's number",
+   "key": null,
+   "entries": [],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000,
+    "to": "+919844444444"
+   },
+   "ctx": {
+    "owner": {
+     "whatsapp": "+919822222222",
+     "language": "en"
+    },
+    "approvers": [
+     "+919833333333"
+    ]
+   },
+   "captured": {
+    "conversation": "+919844444444",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "en",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919844444444",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "the number comes from the send line's conversation when the report names none",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "someone"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {
+    "owner": {
+     "whatsapp": "+919811111111",
+     "language": "en"
+    }
+   },
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "owner",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "owner",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "the send line has a conversation that is not a number",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "web:0123456789abcdef",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "someone"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "web:0123456789abcdef",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "unknown",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "web:0123456789abcdef",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "unknown",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "the same report twice writes one line",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    },
+    {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": null,
+   "result": {
+    "wrote": false,
+    "line": null
+   }
+  },
+  {
+   "name": "the same report twice under the key writes one line",
+   "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "m-7d18e0b0640c",
+      "to": "customer"
+     }
+    },
+    {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "m-7d18e0b0640c",
+      "status": "delivered",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": null,
+   "result": {
+    "wrote": false,
+    "line": null
+   }
+  },
+  {
+   "name": "read after delivered is another line",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    },
+    {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "read",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "read",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message read on the person's phone.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "read",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 3,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "fbbef1f1c318ef7e",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message read on the person's phone.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "read",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "the newest line that sent the id wins",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+911",
+     "booking": "b-old",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    },
+    {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+912",
+     "booking": "b-new",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+912",
+    "booking": "b-new",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "sent": "2",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 3,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+912",
+     "booking": "b-new",
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer",
+      "sent": "2",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "a received message and an earlier report with the id are not a send",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "receive_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1"
+     }
+    },
+    {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "read",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "unknown",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "en",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "unknown",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 3,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "unknown",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "unknown",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "ids in another order: Gupshup's own id, then the wamid; the record has the wamid",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.9",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "gs-1",
+     "wamid.9"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "gs-1",
+      "wamid.9"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.9",
+     "status": "delivered",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "e6765cd40c7c9015",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "wamid.9",
+      "status": "delivered",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "ids: the record has Gupshup's id",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "gs-1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "gs-1",
+     "wamid.9"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "gs-1",
+      "wamid.9"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "gs-1",
+     "status": "delivered",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "e6765cd40c7c9015",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "gs-1",
+      "status": "delivered",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "a time of zero leaves reportedAt out",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 0
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "sent": "1"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer",
+      "sent": "1"
+     }
+    }
+   }
+  },
+  {
+   "name": "a time with milliseconds",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773123
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.123Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.123Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "a time in the year 10000 is written with a sign",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 253402300800000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "+010000-01-01T00:00:00.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "+010000-01-01T00:00:00.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "a time past what a Date can hold throws a RangeError (a TypeScript bug, copied)",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "failed",
+    "timestamp": 100000000000000000,
+    "error": {
+     "code": 1
+    }
+   },
+   "ctx": {},
+   "captured": null,
+   "result": {
+    "thrown": {
+     "name": "RangeError",
+     "message": "Invalid time value"
+    }
+   }
+  },
+  {
+   "name": "a time at the edge of a Date",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 8640000000000000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "+275760-09-13T00:00:00.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "+275760-09-13T00:00:00.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "a time one past the edge of a Date",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 8640000000000001
+   },
+   "ctx": {},
+   "captured": null,
+   "result": {
+    "thrown": {
+     "name": "RangeError",
+     "message": "Invalid time value"
+    }
+   }
+  },
+  {
+   "name": "a message to an approver that failed is listed",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": null,
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "approver"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "failed",
+    "timestamp": 1750263773000,
+    "error": {
+     "code": 3
+    }
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "failed",
+     "ids": [
+      "wamid.1"
+     ],
+     "error": {
+      "code": 3
+     }
+    },
+    "outcome": "failed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message failed (code 3): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "failed",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z",
+     "errorCode": "3"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "5efdf7f1878a760e",
+     "outcome": "failed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message failed (code 3): it never reached the person's phone, although it was accepted when it was sent. Nothing is sent again by itself.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "failed",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z",
+      "errorCode": "3"
+     }
+    }
+   }
+  },
+  {
+   "name": "the send line's language is copied",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "kn",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "read",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": "b-1",
+    "action": "message_status",
+    "inputs": {
+     "status": "read",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "kn",
+    "notes": "WhatsApp reported this message read on the person's phone.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "read",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "message_status",
+     "inputsDigest": "fbbef1f1c318ef7e",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "kn",
+     "notes": "WhatsApp reported this message read on the person's phone.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "read",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "a send line that has no booking null",
+   "key": null,
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": null,
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "+919811111111",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "hi",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "customer",
+     "sent": "1",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "950b3c0500eb6ab4",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report.",
+     "refs": {
+      "messageId": "wamid.1",
+      "status": "delivered",
+      "to": "customer",
+      "sent": "1",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  },
+  {
+   "name": "a key that does not match the saved ids",
+   "key": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+   "entries": [
+    {
+     "seq": 1,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "+919811111111",
+     "booking": "b-1",
+     "action": "send_message",
+     "inputsDigest": "k-0123456789abcdef",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "hi",
+     "notes": "",
+     "refs": {
+      "messageId": "wamid.1",
+      "to": "customer"
+     }
+    }
+   ],
+   "status": {
+    "ids": [
+     "wamid.1"
+    ],
+    "status": "delivered",
+    "timestamp": 1750263773000
+   },
+   "ctx": {},
+   "captured": {
+    "conversation": "unknown",
+    "booking": null,
+    "action": "message_status",
+    "inputs": {
+     "status": "delivered",
+     "ids": [
+      "wamid.1"
+     ]
+    },
+    "outcome": "confirmed",
+    "language": "en",
+    "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+    "refs": {
+     "messageId": "wamid.1",
+     "status": "delivered",
+     "to": "unknown",
+     "reportedAt": "2025-06-18T16:22:53.000Z"
+    }
+   },
+   "result": {
+    "wrote": true,
+    "line": {
+     "seq": 2,
+     "time": "2026-11-03T10:00:00.000Z",
+     "conversation": "unknown",
+     "booking": null,
+     "action": "message_status",
+     "inputsDigest": "k-a92b898e619b49c7",
+     "outcome": "confirmed",
+     "decisions": [],
+     "language": "en",
+     "notes": "WhatsApp reported this message delivered to the person's phone. When it was sent, WhatsApp had only accepted it; this is the later delivery report. No line in this record sent a message with this id: something else on the shop's server sent it (the approvals relay sends its own messages to the owner), or it was sent before this record began.",
+     "refs": {
+      "messageId": "m-7d18e0b0640c",
+      "status": "delivered",
+      "to": "unknown",
+      "reportedAt": "2025-06-18T16:22:53.000Z"
+     }
+    }
+   }
+  }
+ ]
+}
