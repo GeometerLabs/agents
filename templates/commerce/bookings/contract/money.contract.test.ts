@@ -158,6 +158,28 @@ describe("a refund", () => {
   });
 });
 
+describe("the documents of a booking's page", () => {
+  contract("a paid booking has a receipt and a refund has its note, newest first, only for the page that holds the handle; a handle nobody holds has none", async () => {
+    const s = await boot();
+    const { hash } = await s.book();
+    const docs = async (h: string, lang = "en") => (await s.call(`/internal/channel/documents?handle=${h}&lang=${lang}`));
+    assert.deepEqual((await docs(hash)).body, { documents: [] }, "nothing is owed or paid yet");
+    await deliver(s, s.guards!.pay(link(s).id));
+    const paid = (await docs(hash)).body.documents;
+    assert.equal(paid.length, 1, JSON.stringify(paid));
+    await s.channelEvents([{ kind: "channel_request", id: "cancel-1", channel: "web", op: "cancel", handle: hash }]); await s.settle();
+    const after = (await docs(hash)).body.documents;
+    assert.equal(after.length, 2, "the refund note is the second");
+    assert.notDeepEqual(after[0], paid[0], "newest first");
+    assert.deepEqual((await docs("f".repeat(64))).body, { documents: [] });
+    assert.equal((await s.call("/internal/channel/documents")).status, 400, "send handle or link");
+    assert.equal((await s.call(`/internal/channel/documents?handle=${hash}&link=${hash}`)).status, 400, "not both");
+    assert.equal((await s.call("/internal/channel/documents?handle=zz")).status, 400);
+    assert.equal((await s.call(`/internal/channel/documents?handle=${hash}&lang=fr`)).status, 400);
+    for (const lang of ["hi", "ml", "kn"]) assert.equal((await docs(hash, lang)).status, 200, lang);
+  });
+});
+
 describe("the amounts nobody can change", () => {
   contract("a price or deposit typed into the page's request is never read: the link is the settings' deposit", async () => {
     const s = await boot();

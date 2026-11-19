@@ -90,6 +90,23 @@ describe("the shop answers and refuses", () => {
   });
 });
 
+describe("what WhatsApp says later about a message the shop sent", () => {
+  contract("a status report (delivered, read, failed) is saved once by its ids and kind, and a malformed one refuses the whole request", async () => {
+    const s = await boot();
+    const status = (o: Record<string, unknown>) => ({ kind: "message_status", status: { ids: ["wamid.out_1"], status: "delivered", timestamp: s.now(), ...o } });
+    const first = await s.events([status({})]);
+    assert.deepEqual([first.status, first.body.saved, first.body.duplicates], [200, 1, 0]);
+    assert.deepEqual((await s.events([status({})])).body.duplicates, 1, "delivered twice is one");
+    assert.deepEqual((await s.events([status({ status: "read" })])).body.saved, 1, "delivered and read are two");
+    assert.equal((await s.events([status({ status: "failed", error: { code: 131047, title: "Re-engagement message" } })])).status, 200);
+    await s.settle();
+    for (const bad of [{ ids: [] }, { ids: ["a", "b", "c", "d"] }, { status: "seen" }, { timestamp: "now" }, { to: "98111" }, { status: "read", error: { code: 1 } }, { ids: ["bad id"] }]) {
+      assert.equal((await s.events([status(bad)])).status, 400, JSON.stringify(bad));
+    }
+    assert.equal((await s.status()).tasks.failed, 0);
+  });
+});
+
 describe("the shop keeps its data and refuses a folder it cannot run", () => {
   contract("a message is saved before the 200 is sent, a repeat of its id is a no-op, and the data survives a stop and a start", async () => {
     const s = await boot();

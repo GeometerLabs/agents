@@ -6,10 +6,12 @@
 // test/refund-held, approvals-runtime, guard-limits, limits-runtime and guard-responses; the Guard's answers are the captured ones in test/fixtures/guard-responses.json.
 import { after, describe } from "node:test";
 import assert from "node:assert/strict";
-import { ALWAYS_OPEN, MIN, contract, makeShop, soonStart, sleep } from "./harness.ts";
+import { ALWAYS_OPEN, MIN, OWNER_BASE, contract, makeShop, soonStart, sleep } from "./harness.ts";
 import type { Shop } from "./harness.ts";
 import { fixture } from "./guards.ts";
+import { ownerKit, qr } from "../../../../modules/test/contract/owner-kit.ts";
 
+const { register } = ownerKit(OWNER_BASE);
 const shops: Shop[] = [];
 after(async () => { for (const s of shops) { await s.stop(); await s.cleanup(); } });
 async function boot(o: Parameters<typeof makeShop>[0] = {}): Promise<Shop> { const s = await makeShop({ mode: "guards", ...o }); shops.push(s); await s.start(); return s; }
@@ -226,18 +228,50 @@ describe("what needs the owner", () => {
 });
 
 describe("the limits the owner may tighten", () => {
-  contract("the limits page lists the limits and their values; a change needs the owner's passkey session and nothing is changed without one", async () => {
+  const limits = async (s: Shop): Promise<any> => (await s.call("/internal/limit-changes")).body;
+  const tighten = (s: Shop, session: string, id: string, limit: string, to: number) => s.call("/internal/channel/owner-limits", { session, body: { id, limit, to } });
+
+  contract("a change needs the owner's passkey session: the panel's link may read the page but not change it", async () => {
     const s = await boot();
-    const view = await s.call("/internal/channel/owner-limits", { owner: s.owner });
-    assert.equal(view.status, 200);
-    assert.equal(view.body.passkey, false, "a panel-made link is not a passkey session");
-    assert.ok(Array.isArray(view.body.limits ?? view.body.items ?? []));
-    const change = await s.call("/internal/channel/owner-limits", { owner: s.owner, body: { id: "l-1", limit: "refund-limit-inr", to: 50 } });
-    assert.equal(change.status, 403);
-    assert.equal(change.body.state, "passkey_needed");
-    const through = await s.call("/internal/limit-changes");
-    assert.equal(through.status, 200, "the deployer's side reads the limits");
-    assert.equal((await s.call("/internal/limit-changes", { body: { id: "x" } })).status, 400);
+    const read = await s.call("/internal/channel/owner-limits", { owner: s.owner });
+    assert.equal(read.status, 200);
+    assert.equal(read.body.passkey, false, "a panel-made link is not a passkey session");
+    assert.deepEqual(read.body.limits.map((l: { id: string; inForce: number; file: number }) => [l.id, l.inForce, l.file]), [["refund_limit", 200, 200]]);
+    const refused = await s.call("/internal/channel/owner-limits", { owner: s.owner, body: { id: "x-1", limit: "refund_limit", to: 50 } });
+    assert.deepEqual([refused.status, refused.body.state], [403, "passkey_needed"]);
+    assert.equal((await s.call("/internal/channel/owner-limits", { session: "made-up", body: { id: "x-1", limit: "refund_limit", to: 50 } })).status, 403);
+    assert.deepEqual((await limits(s)).changes, [], "nothing was changed");
+    assert.equal((await s.call("/internal/limit-changes", { token: null })).status, 401);
+  });
+
+  contract("tightened by a tap: pending at once, the deployer's word settles it (failed puts the old limit back, active keeps the new), a loosening or an undeclared limit changes nothing", async () => {
+    const s = await boot({ clock: false });
+    const { session } = await register(s, qr(s.setup));
+    const row = async () => (await limits(s)).limits[0] as { id: string; inForce: number; file: number };
+    assert.deepEqual(await row(), { ...(await row()), id: "refund_limit", inForce: 200, file: 200 });
+    assert.equal((await tighten(s, session, "o-1", "refund_limit", 100)).status, 200); await s.settle();
+    const v1 = await limits(s);
+    assert.deepEqual(v1.changes.map((c: any) => [c.id, c.state, c.direction, c.by, c.from, c.to]), [["l-1", "pending", "tighten", "owner_app", 200, 100]]);
+    assert.equal(v1.limits[0].inForce, 100, "obeyed at once");
+    assert.equal(v1.limits[0].file, 200, "the file's own value is what the runtime started with");
+    // the deployer could not finish it
+    const failed = await s.call("/internal/limit-changes", { body: { id: "r-1", change: "l-1", result: "failed", why: "the deploy did not go through" } });
+    assert.equal(failed.status, 200); await s.settle();
+    assert.deepEqual([(await limits(s)).changes[0].state, (await row()).inForce], ["failed", 200]);
+    // a second try, settled active; the same word twice is one
+    await tighten(s, session, "o-2", "refund_limit", 150); await s.settle();
+    for (let i = 0; i < 2; i++) await s.call("/internal/limit-changes", { body: { id: "r-2", change: "l-2", result: "active" } });
+    await s.settle();
+    assert.deepEqual((await limits(s)).changes.map((c: any) => [c.id, c.state]), [["l-1", "failed"], ["l-2", "active"]]);
+    assert.equal((await row()).inForce, 150);
+    // loosening past the template's bound, and a limit that is not declared
+    await tighten(s, session, "o-3", "refund_limit", 900); await tighten(s, session, "o-4", "deposit", 1); await s.settle();
+    assert.equal((await limits(s)).changes.length, 2, "no third change");
+    assert.equal((await row()).inForce, 150);
+    assert.deepEqual(s.record().filter((r) => r.action === "limit_change" && r.outcome === "blocked").length >= 1, true, "the refusal is in the record");
+    for (const bad of [{ id: "x", limit: "refund_limit" }, { id: "x y", limit: "refund_limit", to: 1 }, { id: "x", limit: "Refund", to: 1 }, { id: "x", limit: "refund_limit", to: 1.5 }]) {
+      assert.equal((await s.call("/internal/channel/owner-limits", { session, body: bad })).status, 400, JSON.stringify(bad));
+    }
+    assert.equal((await s.call("/internal/limit-changes", { body: { id: "r-9", change: "l-1", result: "maybe" } })).status, 400);
   });
 });
-

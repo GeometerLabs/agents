@@ -200,9 +200,10 @@ describe("the monthly report", () => {
     assert.equal(made.length, 1, "one report");
     assert.match(made[0], /^[A-Za-z0-9_-]{16,}$/u, "the folder is named by a random token, so the page is not guessable");
     const files = readdirSync(join(dir, made[0]));
-    const page = files.find((f) => f.endsWith(".html"));
-    assert.ok(page, files.join(","));
-    assert.match(readFileSync(join(dir, made[0], page!), "utf8"), /Glow Salon/u);
+    assert.deepEqual(files, ["report-2026-11.json"], "the report's data for November, in a folder of its own");
+    const data = readFileSync(join(dir, made[0], files[0]), "utf8");
+    assert.match(data, /Glow Salon/u);
+    assert.match(data, /2026-11/u);
     await sleep(2500);
     assert.equal(folders(dir).length, 1, "not again on the next beats");
     await s.stop(); await s.start();
