@@ -280,6 +280,36 @@ Bookings shop; owner notices outside the window go by template (owner-notices) a
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-## 7. The harness
+## 7. The harness and the suite
 
-(written with the harness, see section 8)
+* `harness.ts` writes the folder as the deployer does (settings.json, runtime.json, owner-link.json, pages.json, owner-grants.json, optionally licence.json, the secrets; **pathway.lock
+  last**), starts the shop (`node templates/commerce/bookings/server/main.ts --client <folder>`, or the Go binary with the same arguments and the same token files), and gives the
+  tests `shop.call`, `events`, `inbound` (a customer's WhatsApp message as the inbox hands it on), `tap`, `channelEvents`, `book`, `request`, `ownerView`, `chat`, `record()` and
+  `tasks()` (read from agent.db), `stop`/`start` on the same data, and the files the panel writes (`writeGrants`, `writeReset`, `writeSessionsEnd`, `writeLicence`,
+  `setOwnerNumber`). **Two kinds of shop**, because the test clock (`GEOMETER_TEST=1`, `GEOMETER_TEST_CLOCK_FILE`) is honoured for a `"fakes"` shop only:
+  * `mode: "fakes"` (default): in-memory services, on the TEST clock put at Tue 3 Nov 2026, 10:00 in India (the unit tests' instant); observed through the channel routes,
+    `/status`, agent.db and the report folder. The Go runtime must reproduce the in-memory stand-ins (calendar, payments, WhatsApp) for these.
+  * `mode: "guards"`: `runtime.json` live, the real clock, the fake Guards below; observed through what the Guards were sent.
+* `guards.ts` is the three fake Guards (payments, calendar, WhatsApp): small recording HTTP proxies in front of the stand-ins (`templates/commerce/bookings/standins`: the providers'
+  wire formats over in-memory fakes) and the stub Guard (`modules/standins/guard.ts`: Guard's documented hold and refusal behaviour, built from the limits spec the deployer
+  generates from the shop's own settings). Every request is recorded (method, path, query, headers that matter, body, answer); faults are plans (`down`, `answer(<a captured Guard
+  answer from test/fixtures/guard-responses.json>)`, `drop`, `loseReply`, `delay`). Payment webhooks are read as the inbox reads them (`parseRazorpayEvent`).
+* The fake model, the process starter and tracker (`children.ts`: no process outlives a run), the test-clock file, the fake push Guard and the owner-control helpers are shared
+  with the listings contract from `modules/test/contract/`.
+* **Every test goes through `contract()`** (harness.ts): with `BOOKINGS_IMPL=go` and no binary every test is skipped with "no Go Bookings runtime yet (wave 2)".
+
+| File | Group | Shop | What it holds the runtime to |
+|------|-------|------|-----------------------------|
+| `smoke.contract.test.ts` | S | fakes, guards | /healthz /readyz /status, every token refusal, the 404s of routes a Bookings shop must not have, the checks of /internal/events and /internal/recover, the data kept across a restart, a folder it refuses |
+| `money.contract.test.ts` | M | guards (+ UPI) | the hold and the link (exact bodies), the paid webhook (checked at the provider, once), a forged or unknown one, a second payment refunded, a cancellation refunded, amounts nobody can change, UPI marks by the owner |
+| `limits-approvals.contract.test.ts` | L | guards | the refund limit boundary, the hold, the relay's approval, forged/duplicate/denied/expired answers, the Guard's refusals (captured answers), what needs the owner, the limits page |
+| `flow.contract.test.ts` | F | fakes, guards | free times, hours and grid, the last slot, the buffer, someone else's event, an unreadable calendar, hold expiry, completion and reminders on the beat, cancel, a booking from WhatsApp text, STOP, the page link |
+| `owner.contract.test.ts` | O | fakes, guards | the lock, the Operator's files after it, a changed number (48 hours), the accountant's files, the owner's limits page, the assistant's talk, the owner told by template, no WhatsApp |
+| `chat.contract.test.ts` | C | fakes | the chat's thread and limits, the four languages, the model's answer as untrusted input |
+| `recovery.contract.test.ts` | R | guards | a Guard down, the process killed mid-step, a lost reply, the to-do list's recovery steps, a restored snapshot |
+| `record-licence.contract.test.ts` | D | fakes, guards | agent.db's format, the append-only record without a customer's number, the licence's wind-down and final stop, the owner's notice, the monthly report |
+| `cross-restart.test.ts` | | guards | the TypeScript and Go runtimes in turn on one folder, both ways (skipped without the Go binary) |
+
+## 8. Status of the suite (TypeScript, 19 Nov 2026)
+
+STATUS_PLACEHOLDER
