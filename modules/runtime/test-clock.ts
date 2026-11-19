@@ -1,4 +1,4 @@
-// A clock for the runtime CONTRACT tests only (templates/commerce/listings/contract/): the owner-control rules wait 48 hours, a day, 15 minutes, and a test that starts the
+// A clock for the runtime CONTRACT tests only (templates/commerce/listings/contract/ and templates/commerce/bookings/contract/): the owner-control rules wait 48 hours, a day, 15 minutes, and a test that starts the
 // shop as a separate process cannot pass it a fake clock object. So a test may ask, through the environment, for the machine's clock PLUS an offset read from a file it writes;
 // moving the offset moves the shop's time while time itself keeps running (so made_at and first_seen keep their order, as they do in production).
 //
@@ -9,8 +9,9 @@
 //      RECORD_KEY_FILE, CHANNEL_TOKEN_FILE for a shop; SHOPS_DIR, SECRETS_DIR, HOST, PORT, ... for the shared process), nothing is passed through from the server's own shell;
 //   2. a shop the panel makes is "mode": "live" (bundle/panel/listings.ts runtimeForListings, and every other template's), and a test clock asked for in a live shop, or with
 //      NODE_ENV=production, or without GEOMETER_TEST=1, STOPS THE START with a sentence: it is never quietly ignored, and never quietly honoured;
-//   3. it is wired only into the single-shop command line (templates/commerce/listings/server/main.ts), not into modules/runtime/start.ts nor the shared process
-//      (shared-main.ts), so a listings shop on the shared process has no code path that reads the file at all, and every other template's start never asks.
+//   3. it is wired only into the single-shop command lines of the templates whose contract needs it (templates/commerce/listings/server/main.ts and
+//      templates/commerce/bookings/server/main.ts), not into modules/runtime/start.ts nor the shared process (shared-main.ts), so a listings shop on the shared process has no
+//      code path that reads the file at all, and every other template's start never asks.
 // The Go runtime (go/internal/testclock) applies the same rule, word for word, so the contract drives both the same way.
 import { readFileSync } from "node:fs";
 import type { Clock } from "../core/clock.ts";

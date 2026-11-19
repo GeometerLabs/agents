@@ -1,0 +1,2785 @@
+{
+ "cases": [
+  {
+   "name": "a message before the person wrote is a closed window",
+   "standIn": null,
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "hi"
+     ]
+    },
+    {
+     "op": "isWindowOpen",
+     "args": [
+      "+919811111111"
+     ]
+    }
+   ],
+   "results": [
+    {
+     "error": {
+      "name": "WindowClosedError",
+      "message": "The customer's 24-hour window is closed: send an approved template instead.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "the window opens when they write and is strict at 24 hours",
+   "standIn": null,
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "hello"
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "one"
+     ]
+    },
+    {
+     "op": "isWindowOpen",
+     "args": [
+      "+919811111111"
+     ]
+    },
+    {
+     "op": "advance",
+     "advanceMs": 86399999
+    },
+    {
+     "op": "isWindowOpen",
+     "args": [
+      "+919811111111"
+     ]
+    },
+    {
+     "op": "advance",
+     "advanceMs": 1
+    },
+    {
+     "op": "isWindowOpen",
+     "args": [
+      "+919811111111"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "late"
+     ]
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "wamid.in_1",
+      "from": "+919811111111",
+      "text": "hello",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "one",
+      "id": "wamid.out_1",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "WindowClosedError",
+      "message": "The customer's 24-hour window is closed: send an approved template instead.",
+      "status": 400
+     },
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "ids count up and a copy is read back",
+   "standIn": null,
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "a"
+    },
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "b"
+    },
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "c",
+     "options": {
+      "id": "wamid.mine"
+     }
+    },
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "d"
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "x"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "y"
+     ]
+    },
+    {
+     "op": "getMessage",
+     "args": [
+      "wamid.out_1"
+     ]
+    },
+    {
+     "op": "getMessage",
+     "args": [
+      "wamid.out_2"
+     ]
+    },
+    {
+     "op": "getMessage",
+     "args": [
+      "wamid.out_3"
+     ]
+    },
+    {
+     "op": "outbox"
+    },
+    {
+     "op": "sentTo",
+     "number": "+919811111111"
+    },
+    {
+     "op": "sentTo",
+     "number": "+910"
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "wamid.in_1",
+      "from": "+919811111111",
+      "text": "a",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_2",
+      "from": "+919811111111",
+      "text": "b",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.mine",
+      "from": "+919811111111",
+      "text": "c",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_3",
+      "from": "+919811111111",
+      "text": "d",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "x",
+      "id": "wamid.out_1",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "y",
+      "id": "wamid.out_2",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "x",
+      "id": "wamid.out_1",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "y",
+      "id": "wamid.out_2",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "ok": [
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "x",
+       "id": "wamid.out_1",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "y",
+       "id": "wamid.out_2",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      }
+     ],
+     "said": []
+    },
+    {
+     "ok": [
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "x",
+       "id": "wamid.out_1",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "y",
+       "id": "wamid.out_2",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      }
+     ],
+     "said": []
+    },
+    {
+     "ok": [],
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "STOP, in any case, with spaces, and by its ligature",
+   "standIn": null,
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "stop"
+    },
+    {
+     "op": "isOptedOut",
+     "number": "+919811111111"
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "after"
+     ]
+    },
+    {
+     "op": "receive",
+     "from": "+919822222222",
+     "text": " Stop\n"
+    },
+    {
+     "op": "isOptedOut",
+     "number": "+919822222222"
+    },
+    {
+     "op": "receive",
+     "from": "+911",
+     "text": "ﬆop"
+    },
+    {
+     "op": "isOptedOut",
+     "number": "+911"
+    },
+    {
+     "op": "receive",
+     "from": "+912",
+     "text": "ſtop"
+    },
+    {
+     "op": "isOptedOut",
+     "number": "+912"
+    },
+    {
+     "op": "receive",
+     "from": "+913",
+     "text": "STOP please"
+    },
+    {
+     "op": "isOptedOut",
+     "number": "+913"
+    },
+    {
+     "op": "receive",
+     "from": "+914",
+     "text": " STOP "
+    },
+    {
+     "op": "isOptedOut",
+     "number": "+914"
+    },
+    {
+     "op": "receive",
+     "from": "+915",
+     "text": "stoP​"
+    },
+    {
+     "op": "isOptedOut",
+     "number": "+915"
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked."
+      }
+     ]
+    },
+    {
+     "op": "approve",
+     "name": "booking_confirmed",
+     "language": "en"
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked."
+      }
+     ]
+    },
+    {
+     "op": "outbox"
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "wamid.in_1",
+      "from": "+919811111111",
+      "text": "stop",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "after",
+      "id": "wamid.out_1",
+      "sentAt": 1793700000000,
+      "afterOptOut": true
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_2",
+      "from": "+919822222222",
+      "text": " Stop\n",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_3",
+      "from": "+911",
+      "text": "ﬆop",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_4",
+      "from": "+912",
+      "text": "ſtop",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_5",
+      "from": "+913",
+      "text": "STOP please",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_6",
+      "from": "+914",
+      "text": " STOP ",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_7",
+      "from": "+915",
+      "text": "stoP​",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The template booking_confirmed (en) is not approved.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "template",
+      "text": "Booked.",
+      "templateName": "booking_confirmed",
+      "language": "en",
+      "id": "wamid.out_2",
+      "sentAt": 1793700000000,
+      "afterOptOut": true
+     },
+     "said": []
+    },
+    {
+     "ok": [
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "after",
+       "id": "wamid.out_1",
+       "sentAt": 1793700000000,
+       "afterOptOut": true
+      },
+      {
+       "to": "+919811111111",
+       "kind": "template",
+       "text": "Booked.",
+       "templateName": "booking_confirmed",
+       "language": "en",
+       "id": "wamid.out_2",
+       "sentAt": 1793700000000,
+       "afterOptOut": true
+      }
+     ],
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "receive options: a button reply, a picture, a voice note with media",
+   "standIn": null,
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "Yes",
+     "options": {
+      "reply": {
+       "id": "yes",
+       "kind": "button"
+      }
+     }
+    },
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "",
+     "options": {
+      "image": true
+     }
+    },
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "",
+     "options": {
+      "voiceNote": true,
+      "media": {
+       "id": "m1",
+       "mime": "audio/ogg"
+      }
+     }
+    },
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "x",
+     "options": {
+      "image": false,
+      "voiceNote": false
+     }
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "wamid.in_1",
+      "from": "+919811111111",
+      "text": "Yes",
+      "timestamp": 1793700000000,
+      "reply": {
+       "id": "yes",
+       "kind": "button"
+      }
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_2",
+      "from": "+919811111111",
+      "text": "",
+      "timestamp": 1793700000000,
+      "image": true
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_3",
+      "from": "+919811111111",
+      "text": "",
+      "timestamp": 1793700000000,
+      "voiceNote": true,
+      "media": {
+       "id": "m1",
+       "mime": "audio/ogg"
+      }
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "id": "wamid.in_4",
+      "from": "+919811111111",
+      "text": "x",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "templates: only approved ones, in their language, with a header picture check",
+   "standIn": null,
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked."
+      }
+     ]
+    },
+    {
+     "op": "approve",
+     "name": "booking_confirmed",
+     "language": "en"
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked."
+      }
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "hi",
+       "text": "Booked."
+      }
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked.",
+       "headerImage": "https://example.com/h.png"
+      }
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked.",
+       "headerImage": "http://example.com/h.png"
+      }
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked.",
+       "headerImage": ""
+      }
+     ]
+    },
+    {
+     "op": "outbox"
+    }
+   ],
+   "results": [
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The template booking_confirmed (en) is not approved.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "template",
+      "text": "Booked.",
+      "templateName": "booking_confirmed",
+      "language": "en",
+      "id": "wamid.out_1",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The template booking_confirmed (hi) is not approved.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "template",
+      "text": "Booked.",
+      "templateName": "booking_confirmed",
+      "language": "en",
+      "headerImage": "https://example.com/h.png",
+      "id": "wamid.out_2",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The template's header picture must be an https link.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The template's header picture must be an https link.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "ok": [
+      {
+       "to": "+919811111111",
+       "kind": "template",
+       "text": "Booked.",
+       "templateName": "booking_confirmed",
+       "language": "en",
+       "id": "wamid.out_1",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "template",
+       "text": "Booked.",
+       "templateName": "booking_confirmed",
+       "language": "en",
+       "headerImage": "https://example.com/h.png",
+       "id": "wamid.out_2",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      }
+     ],
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "every kind goes through its own check and keeps a copy",
+   "standIn": null,
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "hi"
+    },
+    {
+     "op": "sendInteractive",
+     "args": [
+      "+919811111111",
+      {
+       "body": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+       "buttons": [
+        {
+         "id": "b1",
+         "title": "Yes"
+        },
+        {
+         "id": "b2",
+         "title": "No"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "op": "sendInteractive",
+     "args": [
+      "+919811111111",
+      {
+       "body": "Pick a time",
+       "list": {
+        "button": "Times",
+        "rows": [
+         {
+          "id": "t0",
+          "title": "9:00 am",
+          "description": "Slot 1"
+         },
+         {
+          "id": "t1",
+          "title": "10:00 am"
+         }
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "op": "sendInteractive",
+     "args": [
+      "+919811111111",
+      {
+       "body": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+       "buttons": [
+        {
+         "id": "b1",
+         "title": "Yes"
+        },
+        {
+         "id": "b2",
+         "title": "No"
+        },
+        {
+         "id": "b3",
+         "title": "Talk to the owner"
+        },
+        {
+         "id": "b4",
+         "title": "Option 3"
+        },
+        {
+         "id": "b5",
+         "title": "Option 4"
+        },
+        {
+         "id": "b6",
+         "title": "Option 5"
+        },
+        {
+         "id": "b7",
+         "title": "Option 6"
+        },
+        {
+         "id": "b8",
+         "title": "Option 7"
+        },
+        {
+         "id": "b9",
+         "title": "Option 8"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "op": "sendDocument",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.pdf",
+       "filename": "a.pdf",
+       "caption": "c"
+      }
+     ]
+    },
+    {
+     "op": "sendDocument",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.pdf",
+       "filename": "a.pdf"
+      }
+     ]
+    },
+    {
+     "op": "sendDocument",
+     "args": [
+      "+919811111111",
+      {
+       "link": "http://example.com/a.pdf",
+       "filename": "a.pdf"
+      }
+     ]
+    },
+    {
+     "op": "sendImage",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.png",
+       "caption": "q"
+      }
+     ]
+    },
+    {
+     "op": "sendImage",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.png"
+      }
+     ]
+    },
+    {
+     "op": "sendImage",
+     "args": [
+      "+919811111111",
+      {
+       "link": "x"
+      }
+     ]
+    },
+    {
+     "op": "sendSticker",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.webp"
+      }
+     ]
+    },
+    {
+     "op": "sendSticker",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.png"
+      }
+     ]
+    },
+    {
+     "op": "outbox"
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "wamid.in_1",
+      "from": "+919811111111",
+      "text": "hi",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "interactive",
+      "text": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+      "interactive": {
+       "body": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+       "buttons": [
+        {
+         "id": "b1",
+         "title": "Yes"
+        },
+        {
+         "id": "b2",
+         "title": "No"
+        }
+       ]
+      },
+      "id": "wamid.out_1",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "interactive",
+      "text": "Pick a time\n9:00 am: Slot 1\n10:00 am",
+      "interactive": {
+       "body": "Pick a time",
+       "list": {
+        "button": "Times",
+        "rows": [
+         {
+          "id": "t0",
+          "title": "9:00 am",
+          "description": "Slot 1"
+         },
+         {
+          "id": "t1",
+          "title": "10:00 am"
+         }
+        ]
+       }
+      },
+      "id": "wamid.out_2",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "interactive",
+      "text": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+      "interactive": {
+       "body": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+       "buttons": [
+        {
+         "id": "b1",
+         "title": "Yes"
+        },
+        {
+         "id": "b2",
+         "title": "No"
+        },
+        {
+         "id": "b3",
+         "title": "Talk to the owner"
+        },
+        {
+         "id": "b4",
+         "title": "Option 3"
+        },
+        {
+         "id": "b5",
+         "title": "Option 4"
+        },
+        {
+         "id": "b6",
+         "title": "Option 5"
+        },
+        {
+         "id": "b7",
+         "title": "Option 6"
+        },
+        {
+         "id": "b8",
+         "title": "Option 7"
+        },
+        {
+         "id": "b9",
+         "title": "Option 8"
+        }
+       ]
+      },
+      "id": "wamid.out_3",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "document",
+      "text": "c",
+      "document": {
+       "link": "https://example.com/a.pdf",
+       "filename": "a.pdf",
+       "caption": "c"
+      },
+      "id": "wamid.out_4",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "document",
+      "text": "a.pdf",
+      "document": {
+       "link": "https://example.com/a.pdf",
+       "filename": "a.pdf"
+      },
+      "id": "wamid.out_5",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The document cannot be sent: the link must start with https:// and hold no spaces.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "image",
+      "text": "q",
+      "image": {
+       "link": "https://example.com/a.png",
+       "caption": "q"
+      },
+      "id": "wamid.out_6",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "image",
+      "text": "",
+      "image": {
+       "link": "https://example.com/a.png"
+      },
+      "id": "wamid.out_7",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The image cannot be sent: the link must start with https:// and hold no spaces.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "sticker",
+      "text": "",
+      "sticker": {
+       "link": "https://example.com/a.webp"
+      },
+      "id": "wamid.out_8",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The sticker cannot be sent: the link must start with https://, hold no spaces and name a .webp file.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "ok": [
+      {
+       "to": "+919811111111",
+       "kind": "interactive",
+       "text": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+       "interactive": {
+        "body": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+        "buttons": [
+         {
+          "id": "b1",
+          "title": "Yes"
+         },
+         {
+          "id": "b2",
+          "title": "No"
+         }
+        ]
+       },
+       "id": "wamid.out_1",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "interactive",
+       "text": "Pick a time\n9:00 am: Slot 1\n10:00 am",
+       "interactive": {
+        "body": "Pick a time",
+        "list": {
+         "button": "Times",
+         "rows": [
+          {
+           "id": "t0",
+           "title": "9:00 am",
+           "description": "Slot 1"
+          },
+          {
+           "id": "t1",
+           "title": "10:00 am"
+          }
+         ]
+        }
+       },
+       "id": "wamid.out_2",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "interactive",
+       "text": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+       "interactive": {
+        "body": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+        "buttons": [
+         {
+          "id": "b1",
+          "title": "Yes"
+         },
+         {
+          "id": "b2",
+          "title": "No"
+         },
+         {
+          "id": "b3",
+          "title": "Talk to the owner"
+         },
+         {
+          "id": "b4",
+          "title": "Option 3"
+         },
+         {
+          "id": "b5",
+          "title": "Option 4"
+         },
+         {
+          "id": "b6",
+          "title": "Option 5"
+         },
+         {
+          "id": "b7",
+          "title": "Option 6"
+         },
+         {
+          "id": "b8",
+          "title": "Option 7"
+         },
+         {
+          "id": "b9",
+          "title": "Option 8"
+         }
+        ]
+       },
+       "id": "wamid.out_3",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "document",
+       "text": "c",
+       "document": {
+        "link": "https://example.com/a.pdf",
+        "filename": "a.pdf",
+        "caption": "c"
+       },
+       "id": "wamid.out_4",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "document",
+       "text": "a.pdf",
+       "document": {
+        "link": "https://example.com/a.pdf",
+        "filename": "a.pdf"
+       },
+       "id": "wamid.out_5",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "image",
+       "text": "q",
+       "image": {
+        "link": "https://example.com/a.png",
+        "caption": "q"
+       },
+       "id": "wamid.out_6",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "image",
+       "text": "",
+       "image": {
+        "link": "https://example.com/a.png"
+       },
+       "id": "wamid.out_7",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "sticker",
+       "text": "",
+       "sticker": {
+        "link": "https://example.com/a.webp"
+       },
+       "id": "wamid.out_8",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      }
+     ],
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "every kind refuses outside the window",
+   "standIn": null,
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "sendInteractive",
+     "args": [
+      "+919811111111",
+      {
+       "body": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+       "buttons": [
+        {
+         "id": "b1",
+         "title": "Yes"
+        },
+        {
+         "id": "b2",
+         "title": "No"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "op": "sendDocument",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.pdf",
+       "filename": "a.pdf"
+      }
+     ]
+    },
+    {
+     "op": "sendImage",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.png"
+      }
+     ]
+    },
+    {
+     "op": "sendSticker",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.webp"
+      }
+     ]
+    }
+   ],
+   "results": [
+    {
+     "error": {
+      "name": "WindowClosedError",
+      "message": "The customer's 24-hour window is closed: send an approved template instead.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "WindowClosedError",
+      "message": "The customer's 24-hour window is closed: send an approved template instead.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "WindowClosedError",
+      "message": "The customer's 24-hour window is closed: send an approved template instead.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "WindowClosedError",
+      "message": "The customer's 24-hour window is closed: send an approved template instead.",
+      "status": 400
+     },
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "faults: error and lostReply, once, twice, after one, per operation",
+   "standIn": null,
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "receive",
+     "from": "+919811111111",
+     "text": "hi"
+    },
+    {
+     "op": "inject",
+     "opName": "sendText",
+     "mode": "error"
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "1"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "2"
+     ]
+    },
+    {
+     "op": "inject",
+     "opName": "sendText",
+     "mode": "lostReply"
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "3"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "4"
+     ]
+    },
+    {
+     "op": "outbox"
+    },
+    {
+     "op": "inject",
+     "opName": "sendText",
+     "mode": "error",
+     "options": {
+      "times": 2
+     }
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "5"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "6"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "7"
+     ]
+    },
+    {
+     "op": "inject",
+     "opName": "sendText",
+     "mode": "error",
+     "options": {
+      "after": 1
+     }
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "8"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "9"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "10"
+     ]
+    },
+    {
+     "op": "inject",
+     "opName": "sendText",
+     "mode": "error",
+     "options": {
+      "after": 1,
+      "times": 2
+     }
+    },
+    {
+     "op": "inject",
+     "opName": "sendText",
+     "mode": "lostReply"
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "11"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "12"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "13"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "14"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "15"
+     ]
+    },
+    {
+     "op": "inject",
+     "opName": "sendText",
+     "mode": "error",
+     "options": {
+      "times": 0
+     }
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "16"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "17"
+     ]
+    },
+    {
+     "op": "inject",
+     "opName": "sendTemplate",
+     "mode": "lostReply"
+    },
+    {
+     "op": "approve",
+     "name": "booking_confirmed",
+     "language": "en"
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked."
+      }
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked."
+      }
+     ]
+    },
+    {
+     "op": "inject",
+     "opName": "sendInteractive",
+     "mode": "lostReply"
+    },
+    {
+     "op": "sendInteractive",
+     "args": [
+      "+919811111111",
+      {
+       "body": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+       "buttons": [
+        {
+         "id": "b1",
+         "title": "Yes"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "op": "inject",
+     "opName": "sendDocument",
+     "mode": "lostReply"
+    },
+    {
+     "op": "sendDocument",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.pdf",
+       "filename": "a.pdf"
+      }
+     ]
+    },
+    {
+     "op": "inject",
+     "opName": "sendImage",
+     "mode": "lostReply"
+    },
+    {
+     "op": "sendImage",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.png"
+      }
+     ]
+    },
+    {
+     "op": "inject",
+     "opName": "sendSticker",
+     "mode": "lostReply"
+    },
+    {
+     "op": "sendSticker",
+     "args": [
+      "+919811111111",
+      {
+       "link": "https://example.com/a.webp"
+      }
+     ]
+    },
+    {
+     "op": "outbox"
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "id": "wamid.in_1",
+      "from": "+919811111111",
+      "text": "hi",
+      "timestamp": 1793700000000
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The provider could not take the message.",
+      "status": 500
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "2",
+      "id": "wamid.out_1",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "TimeoutError",
+      "message": "send message: no reply (timed out)"
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "4",
+      "id": "wamid.out_3",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": [
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "2",
+       "id": "wamid.out_1",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "3",
+       "id": "wamid.out_2",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "4",
+       "id": "wamid.out_3",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      }
+     ],
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The provider could not take the message.",
+      "status": 500
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The provider could not take the message.",
+      "status": 500
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "7",
+      "id": "wamid.out_4",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "8",
+      "id": "wamid.out_5",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The provider could not take the message.",
+      "status": 500
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "10",
+      "id": "wamid.out_6",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "11",
+      "id": "wamid.out_7",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The provider could not take the message.",
+      "status": 500
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The provider could not take the message.",
+      "status": 500
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "TimeoutError",
+      "message": "send message: no reply (timed out)"
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "15",
+      "id": "wamid.out_9",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The provider could not take the message.",
+      "status": 500
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "text",
+      "text": "17",
+      "id": "wamid.out_10",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "TimeoutError",
+      "message": "send template: no reply (timed out)"
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "template",
+      "text": "Booked.",
+      "templateName": "booking_confirmed",
+      "language": "en",
+      "id": "wamid.out_12",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "TimeoutError",
+      "message": "send interactive message: no reply (timed out)"
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "TimeoutError",
+      "message": "send document: no reply (timed out)"
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "TimeoutError",
+      "message": "send image: no reply (timed out)"
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "TimeoutError",
+      "message": "send sticker: no reply (timed out)"
+     },
+     "said": []
+    },
+    {
+     "ok": [
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "2",
+       "id": "wamid.out_1",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "3",
+       "id": "wamid.out_2",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "4",
+       "id": "wamid.out_3",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "7",
+       "id": "wamid.out_4",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "8",
+       "id": "wamid.out_5",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "10",
+       "id": "wamid.out_6",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "11",
+       "id": "wamid.out_7",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "14",
+       "id": "wamid.out_8",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "15",
+       "id": "wamid.out_9",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "text",
+       "text": "17",
+       "id": "wamid.out_10",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "template",
+       "text": "Booked.",
+       "templateName": "booking_confirmed",
+       "language": "en",
+       "id": "wamid.out_11",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "template",
+       "text": "Booked.",
+       "templateName": "booking_confirmed",
+       "language": "en",
+       "id": "wamid.out_12",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "interactive",
+       "text": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+       "interactive": {
+        "body": "Shall I book Haircut on Sat 21 Nov at 11:00?",
+        "buttons": [
+         {
+          "id": "b1",
+          "title": "Yes"
+         }
+        ]
+       },
+       "id": "wamid.out_13",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "document",
+       "text": "a.pdf",
+       "document": {
+        "link": "https://example.com/a.pdf",
+        "filename": "a.pdf"
+       },
+       "id": "wamid.out_14",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "image",
+       "text": "",
+       "image": {
+        "link": "https://example.com/a.png"
+       },
+       "id": "wamid.out_15",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      },
+      {
+       "to": "+919811111111",
+       "kind": "sticker",
+       "text": "",
+       "sticker": {
+        "link": "https://example.com/a.webp"
+       },
+       "id": "wamid.out_16",
+       "sentAt": 1793700000000,
+       "afterOptOut": false
+      }
+     ],
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "a fault on a closed window: the error is first, a lost reply is not reached",
+   "standIn": null,
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "inject",
+     "opName": "sendText",
+     "mode": "error"
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "x"
+     ]
+    },
+    {
+     "op": "inject",
+     "opName": "sendText",
+     "mode": "lostReply"
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "y"
+     ]
+    },
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "z"
+     ]
+    }
+   ],
+   "results": [
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The provider could not take the message.",
+      "status": 500
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "error": {
+      "name": "WindowClosedError",
+      "message": "The customer's 24-hour window is closed: send an approved template instead.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "error": {
+      "name": "WindowClosedError",
+      "message": "The customer's 24-hour window is closed: send an approved template instead.",
+      "status": 400
+     },
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "the stand-in: a text is a closed window, a template is spoken",
+   "standIn": [
+    "booking_confirmed"
+   ],
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "sendText",
+     "args": [
+      "+919811111111",
+      "hello"
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Your booking is confirmed."
+      }
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "other",
+       "language": "en",
+       "text": "x"
+      }
+     ]
+    },
+    {
+     "op": "isWindowOpen",
+     "args": [
+      "+919811111111"
+     ]
+    },
+    {
+     "op": "getMessage",
+     "args": [
+      "wamid.out_1"
+     ]
+    },
+    {
+     "op": "getMessage",
+     "args": [
+      "wamid.out_2"
+     ]
+    }
+   ],
+   "results": [
+    {
+     "error": {
+      "name": "WindowClosedError",
+      "message": "The customer's 24-hour window is closed: send an approved template instead.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "template",
+      "text": "Your booking is confirmed.",
+      "templateName": "booking_confirmed",
+      "language": "en",
+      "id": "wamid.out_1",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": [
+      "[stand-in WhatsApp] to +919811111111: Your booking is confirmed."
+     ]
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The template other (en) is not approved.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "template",
+      "text": "Your booking is confirmed.",
+      "templateName": "booking_confirmed",
+      "language": "en",
+      "id": "wamid.out_1",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "the stand-in approves every template in every language",
+   "standIn": [
+    "booking_confirmed",
+    "x_other"
+   ],
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "hi",
+       "text": "नमस्ते"
+      }
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "ml",
+       "text": "ശരി"
+      }
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "kn",
+       "text": "ಸರಿ"
+      }
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "fr",
+       "text": "oui"
+      }
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked.",
+       "headerImage": "https://example.com/h.png"
+      }
+     ]
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked.",
+       "headerImage": "ftp://x"
+      }
+     ]
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "template",
+      "text": "नमस्ते",
+      "templateName": "booking_confirmed",
+      "language": "hi",
+      "id": "wamid.out_1",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": [
+      "[stand-in WhatsApp] to +919811111111: नमस्ते"
+     ]
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "template",
+      "text": "ശരി",
+      "templateName": "booking_confirmed",
+      "language": "ml",
+      "id": "wamid.out_2",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": [
+      "[stand-in WhatsApp] to +919811111111: ശരി"
+     ]
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "template",
+      "text": "ಸರಿ",
+      "templateName": "booking_confirmed",
+      "language": "kn",
+      "id": "wamid.out_3",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": [
+      "[stand-in WhatsApp] to +919811111111: ಸರಿ"
+     ]
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The template booking_confirmed (fr) is not approved.",
+      "status": 400
+     },
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "template",
+      "text": "Booked.",
+      "templateName": "booking_confirmed",
+      "language": "en",
+      "headerImage": "https://example.com/h.png",
+      "id": "wamid.out_4",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": [
+      "[stand-in WhatsApp] to +919811111111: Booked."
+     ]
+    },
+    {
+     "error": {
+      "name": "ApiError",
+      "message": "The template's header picture must be an https link.",
+      "status": 400
+     },
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "the stand-in has only the four core methods",
+   "standIn": [],
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "has",
+     "method": "sendText"
+    },
+    {
+     "op": "has",
+     "method": "sendTemplate"
+    },
+    {
+     "op": "has",
+     "method": "isWindowOpen"
+    },
+    {
+     "op": "has",
+     "method": "getMessage"
+    },
+    {
+     "op": "has",
+     "method": "sendInteractive"
+    },
+    {
+     "op": "has",
+     "method": "sendDocument"
+    },
+    {
+     "op": "has",
+     "method": "sendImage"
+    },
+    {
+     "op": "has",
+     "method": "sendSticker"
+    },
+    {
+     "op": "has",
+     "method": "ping"
+    },
+    {
+     "op": "has",
+     "method": "receive"
+    },
+    {
+     "op": "has",
+     "method": "outbox"
+    }
+   ],
+   "results": [
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": true,
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    },
+    {
+     "ok": false,
+     "said": []
+    }
+   ]
+  },
+  {
+   "name": "the stand-in's copy and its own clock",
+   "standIn": [
+    "booking_confirmed"
+   ],
+   "nowMs": 1793700000000,
+   "steps": [
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919811111111",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Booked."
+      }
+     ]
+    },
+    {
+     "op": "advance",
+     "advanceMs": 5000
+    },
+    {
+     "op": "sendTemplate",
+     "args": [
+      "+919822222222",
+      {
+       "name": "booking_confirmed",
+       "language": "en",
+       "text": "Owner copy"
+      }
+     ]
+    },
+    {
+     "op": "getMessage",
+     "args": [
+      "wamid.out_2"
+     ]
+    },
+    {
+     "op": "getMessage",
+     "args": [
+      "nope"
+     ]
+    }
+   ],
+   "results": [
+    {
+     "ok": {
+      "to": "+919811111111",
+      "kind": "template",
+      "text": "Booked.",
+      "templateName": "booking_confirmed",
+      "language": "en",
+      "id": "wamid.out_1",
+      "sentAt": 1793700000000,
+      "afterOptOut": false
+     },
+     "said": [
+      "[stand-in WhatsApp] to +919811111111: Booked."
+     ]
+    },
+    {
+     "ok": null,
+     "said": []
+    },
+    {
+     "ok": {
+      "to": "+919822222222",
+      "kind": "template",
+      "text": "Owner copy",
+      "templateName": "booking_confirmed",
+      "language": "en",
+      "id": "wamid.out_2",
+      "sentAt": 1793700005000,
+      "afterOptOut": false
+     },
+     "said": [
+      "[stand-in WhatsApp] to +919822222222: Owner copy"
+     ]
+    },
+    {
+     "ok": {
+      "to": "+919822222222",
+      "kind": "template",
+      "text": "Owner copy",
+      "templateName": "booking_confirmed",
+      "language": "en",
+      "id": "wamid.out_2",
+      "sentAt": 1793700005000,
+      "afterOptOut": false
+     },
+     "said": []
+    },
+    {
+     "ok": null,
+     "said": []
+    }
+   ]
+  }
+ ]
+}

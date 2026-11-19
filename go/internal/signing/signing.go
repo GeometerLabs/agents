@@ -180,3 +180,149 @@ func (k *Key) SignCard(card map[string]any) (map[string]any, error) {
 	body["signatures"] = []map[string]string{{"protected": header, "signature": b64.EncodeToString(ed25519.Sign(k.private, []byte(input)))}}
 	return body, nil
 }
+
+// ---- reading: checking what another program signed (the directory is the reader of every shop's feed, answer and notice) ----
+
+// Verified is what a successful check says: whose key signed (its id).
+type Verified struct{ KeyID string }
+
+// ErrReason is why a document is not accepted; its text is the TypeScript reader's `reason` (modules/signing/sign.ts Verified), so a refusal reads the same in both runtimes.
+type ErrReason string
+
+func (e ErrReason) Error() string { return string(e) }
+
+// sigText is an Ed25519 signature as the formats write it: 64 bytes, 86 base64url characters, no padding, and nothing else (sign.ts SIG and the round-trip check).
+func sigBytes(sig string) ([]byte, bool) {
+	if len(sig) != 86 {
+		return nil, false
+	}
+	raw, err := base64.RawURLEncoding.Strict().DecodeString(sig)
+	if err != nil || len(raw) != 64 {
+		return nil, false
+	}
+	return raw, true
+}
+
+// RawOfPublic is the 32 raw bytes of a public key given as SPKI DER base64url, or nil when the text is not exactly that (keys.ts rawOfPublic).
+func RawOfPublic(pub string) []byte {
+	der, err := base64.RawURLEncoding.Strict().DecodeString(pub)
+	if err != nil || len(der) != 44 || !bytes.Equal(der[:12], spkiPrefix) {
+		return nil
+	}
+	return der[12:]
+}
+
+// KeyIDOf is the id of a public key (keys.ts keyIdOf), or "" when it is not an Ed25519 public key.
+func KeyIDOf(pub string) string {
+	raw := RawOfPublic(pub)
+	if raw == nil {
+		return ""
+	}
+	sum := sha256.Sum256(raw)
+	return b64.EncodeToString(sum[:])
+}
+
+// verifyBody checks `sig` against the canonical form of the members of `members` (a JSON object's members, each kept as the bytes it came as, so a member this code does not know
+// is signed over exactly as written). A body with no canonical form (a number that is not a safe integer, as canonical.ts refuses) was never signed.
+func verifyBody(members map[string]json.RawMessage, sig, pub string) bool {
+	raw := RawOfPublic(pub)
+	s, ok := sigBytes(sig)
+	if raw == nil || !ok {
+		return false
+	}
+	whole, err := json.Marshal(members)
+	if err != nil {
+		return false
+	}
+	canon, err := canonicalRaw(whole)
+	if err != nil {
+		return false
+	}
+	return ed25519.Verify(ed25519.PublicKey(raw), canon, s)
+}
+
+// canonicalRaw is Canonical for text that is already JSON.
+func canonicalRaw(raw []byte) ([]byte, error) {
+	if err := wholeNumbersOnly(raw); err != nil {
+		return nil, err
+	}
+	return jcs.Transform(raw)
+}
+
+// VerifyDocument checks a feed or an answer: `signature` against `publicKey` (the key the reader pinned) or, when the reader holds none and the signature carries one (a feed on
+// first sight), against the key it carries. `members` is the document's top-level members as received (json.Unmarshal into map[string]json.RawMessage), so nothing the reader does
+// not model is lost. It is sign.ts verifyDocument; the reasons are its reasons.
+func VerifyDocument(members map[string]json.RawMessage, publicKey string) (Verified, error) {
+	rawSig, has := members["signature"]
+	if !has {
+		return Verified{}, ErrReason("no_signature")
+	}
+	var s map[string]any
+	if json.Unmarshal(rawSig, &s) != nil || s == nil {
+		return Verified{}, ErrReason("bad_shape")
+	}
+	keyID, ok1 := s["keyId"].(string)
+	sig, ok2 := s["sig"].(string)
+	carried, hasKey := s["key"]
+	if !ok1 || !ok2 {
+		return Verified{}, ErrReason("bad_shape")
+	}
+	carriedText, carriedIsText := carried.(string)
+	if hasKey && !carriedIsText {
+		return Verified{}, ErrReason("bad_shape")
+	}
+	if s["alg"] != "Ed25519" {
+		return Verified{}, ErrReason("wrong_alg")
+	}
+	key := publicKey
+	if key == "" {
+		if !hasKey {
+			return Verified{}, ErrReason("no_key")
+		}
+		key = carriedText
+	}
+	if RawOfPublic(key) == nil {
+		return Verified{}, ErrReason("bad_shape")
+	}
+	if KeyIDOf(key) != keyID {
+		return Verified{}, ErrReason("key_mismatch")
+	}
+	if publicKey != "" && carriedIsText && carriedText != publicKey {
+		return Verified{}, ErrReason("key_mismatch")
+	}
+	body := make(map[string]json.RawMessage, len(members))
+	for k, v := range members {
+		if k != "signature" {
+			body[k] = v
+		}
+	}
+	if !verifyBody(body, sig, key) {
+		return Verified{}, ErrReason("bad_signature")
+	}
+	return Verified{KeyID: keyID}, nil
+}
+
+// VerifyNotice checks a "my feed changed" notice against the public key held for the shop (sign.ts verifyNotice): `keyId` and `sig` are members of the notice and the signature covers
+// the notice without `sig`.
+func VerifyNotice(members map[string]json.RawMessage, publicKey string) (Verified, error) {
+	var sig, keyID string
+	if json.Unmarshal(members["sig"], &sig) != nil || json.Unmarshal(members["keyId"], &keyID) != nil {
+		return Verified{}, ErrReason("no_signature")
+	}
+	if RawOfPublic(publicKey) == nil {
+		return Verified{}, ErrReason("bad_shape")
+	}
+	if KeyIDOf(publicKey) != keyID {
+		return Verified{}, ErrReason("key_mismatch")
+	}
+	body := make(map[string]json.RawMessage, len(members))
+	for k, v := range members {
+		if k != "sig" {
+			body[k] = v
+		}
+	}
+	if !verifyBody(body, sig, publicKey) {
+		return Verified{}, ErrReason("bad_signature")
+	}
+	return Verified{KeyID: keyID}, nil
+}

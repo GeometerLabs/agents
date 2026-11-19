@@ -1,5 +1,5 @@
 {
-  "about": "What install.sh installs, pinned. One flat object of strings, one per line, so the installer reads it before Node is on the machine. An empty value means not released yet: the installer refuses it rather than skip the check. The release runbook fills it in.",
+  "about": "What install.sh installs, pinned. One flat object of strings, one per line, so the installer reads it before Node is on the machine. An empty value means not released yet: the installer refuses it rather than skip the check. The release runbook fills it in. go_image and go_image_digest name the official Go image the server compiles the shop programs in (bundle/lib/go-build.ts): the digest is the multi-arch index digest of go_image, looked up with `docker buildx imagetools inspect <go_image>`, and the tag is for people to read (what runs is golang@<digest>). Raise it only when the Go version in go/go.mod needs it.",
   "schema": "1",
   "release": "0.1.0-alpha.3",
   "agents_repository": "https://github.com/GeometerLabs/agents.git",
@@ -12,6 +12,8 @@
   "guard_digest_arm64": "sha256:f94e25010e0557b60f4b60f2fb6c48d3d94c65b7c634852ef5a4b3667a05da81",
   "guard_file_sha256_amd64": "",
   "guard_file_sha256_arm64": "",
+  "go_image": "golang:1.27.1-alpine",
+  "go_image_digest": "sha256:8a5910f31396cd4d89662f56c68b3ae31d374308270a1c3bd96672ee5ed43414",
   "node_version": "26.13.0",
   "node_sha256_linux_x64": "d28a96af6c38596f6d9d97c0ee531c13d238d757742387d1928de822d959e997",
   "node_sha256_linux_arm64": "406fe3fbde1c054adff8b297c16fdb5af6659db327c1ac8acd46b56ef1af9a92",

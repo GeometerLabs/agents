@@ -7,20 +7,22 @@
 // this file reuses both. An update takes the clients one at a time, in order:
 //
 //   1. run the template's hand check on THIS client's own settings at the version it runs now, and again at the new version
-//   2. a client that holds everything it held before moves: write the new pin, then the same checked deploy as `geometer deploy` (only what changed is restarted)
-//   3. a client with any situation that held before and fails now (or is not run now) is held back, on the version it runs, with the situation names and the first failed check
+//   2. a version that runs on a Go program (template.json "runtime": "go") is built from this checkout first (lib/go-build.ts); a build that fails holds the client back
+//   3. a client that holds everything it held before moves: write the new pin, then the same checked deploy as `geometer deploy` (only what changed is restarted)
+//   4. a client with any situation that held before and fails now (or is not run now) is held back, on the version it runs, with the situation names and the first failed check
 //
 // Every step is written to state/state.json (`update`, `rollback`). "moving" is written before a pin is touched, so a run that was stopped in the middle carries on from
 // where it stopped when the same command is run again: clients that are done are not checked or deployed a second time, and the one that was half-way is finished.
 // A deploy that is refused puts that client's earlier pin back and stops the rollout there (one client at most is affected); the rest wait for the next run.
 // Agents someone else wrote have no template and no hand check yet: they are skipped, with a plain note.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { listAgents } from "./agent/folder.ts";
 import { updateAgent } from "./agent/update.ts";
-import { Refused, deploy } from "./deploy.ts";
+import { Refused, composeFile, deploy } from "./deploy.ts";
 import type { Context } from "./deploy.ts";
 import { compare, runHandCheck, savedDataLayout } from "./handcheck.ts";
+import { ensureGoRuntimes, goRuntimeOf, pruneGoImages } from "./lib/go-build.ts";
 import { appliedPathwayDir, checkoutDirOf, keptDirFor, pathwayDirFor } from "./lib/pathways.ts";
 import { listShops, readShop, serverPaths } from "./lib/server.ts";
 import { loadState, saveState } from "./lib/state.ts";
@@ -106,7 +108,11 @@ export async function runUpdate(ctx: Context, opts: UpdateOptions = {}): Promise
   const dryRun = opts.dryRun === true;
   const run = start(ctx, "update", { to: opts.to ?? null, shops: opts.shops ? names : null }, names, dryRun);
   if (dryRun) run.dryRun = true;
-  return walk(ctx, run, dryRun, (shop, earlier, save) => updateOne(ctx, shop, opts, earlier, save));
+  const done = await walk(ctx, run, dryRun, (shop, earlier, save) => updateOne(ctx, shop, opts, earlier, save));
+  // after the shops have moved: the old shop-program images nothing uses are removed (a dry run lists them); an image a container or the deployed compose file names is never one of them
+  const composePath = composeFile(ctx.dir);
+  await pruneGoImages(ctx, { dryRun, composeText: existsSync(composePath) ? readFileSync(composePath, "utf8") : "" });
+  return done;
 }
 
 async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlier: Step | undefined, save: Save): Promise<Outcome> {
@@ -163,6 +169,14 @@ async function updateOne(ctx: Context, shop: string, opts: UpdateOptions, earlie
     return heldBack(`Moving to ${to} is refused. ${running} changed how this client's saved data is laid out (layout ${layout.to} to ${layout.from}), and ${to} cannot read it, so its runtime would not start. It stays on ${running}.`, { ...result, ...known });
   }
   if (opts.dryRun) return { step: { status: "moved", at, ...result, ...known } };
+
+  // wave 1b: a version that runs on a Go program needs the programs built from this checkout (the image is kept, so only the first shop of a run waits). A build that fails leaves the
+  // shop on the version it runs: it is never left with no runtime to start.
+  if (goRuntimeOf(toDir)) {
+    ctx.log(`${shop}: ${to} runs on a Go program; making sure it is built from this checkout...`);
+    const built = await ensureGoRuntimes(ctx);
+    if (!built.ok) return heldBack(`${to} runs on a Go program, and it could not be built here: ${built.reason} It stays on ${running}.`, result);
+  }
 
   // written BEFORE the pin is touched: if this stops now, the next run finishes this client and does not check it again
   const step: Step = { status: "moving", at, ...result, ...known, fromLock: folder.lockText, toLock: `${to}\n`, historyBefore: [...(loadState(ctx.dir).shops[shop]?.lockHistory ?? [])] };

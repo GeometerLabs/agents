@@ -257,3 +257,127 @@ refuse (the deployer writes them).
 **TypeScript findings (reported, not fixed):** `notes.ts` GOAL_WORDS ends `\b` after Devanagari/Malayalam/Kannada words ("लक्ष्य", "ലക്ഷ്യം", "ಗುರಿ"), and JavaScript's `\b` only
 sees ASCII letters, so a goal written in those scripts is filed as a fact unless an ASCII letter follows; `historyText` cuts at 300 UTF-16 units and can leave a lone surrogate
 (Go drops the half character); `COMPLETION` holds `बुक ചെയ്തു` (Devanagari and Malayalam mixed), carried as it is.
+
+## Wave 1c (19 Nov 2026): the directory of local shops in Go
+
+`cmd/directory` + `internal/directory` (6.0k lines of Go with the tests, 5.7k without; `internal/signing` gained the reading side, 146 lines) do what `bundle/services/directory.ts` does: read and
+check the shops' signed feeds, keep the index (the TypeScript's own `directory.sqlite`, FTS5 with the same tokenizer through `modernc.org/sqlite`), ask the shops about the ten results,
+the fair order, search, the pages in four languages, the MCP endpoint, the signed Agent Card, the buyer's assistant. Words, style sheet, tool definitions, card text, the assistant's prompt
+and the Latin-fold tables are GENERATED from the TypeScript (`scripts/gen_directory.ts`); read `internal/directory/Explanation.md` and `Deferred.md`.
+
+**The contract** (`modules/discovery/contract/`, README there): 34 tests, 34 pass on TypeScript and 34 pass on Go (`DIRECTORY_IMPL=ts|go`, one at a time under the heat lock). They include the
+two that need both runtimes: `differential.test.ts` (the same requests over the same shops: every page state in four languages, the JSON, the MCP answers, the assistant's answers,
+compared whole) and `cross-restart.test.ts` (TypeScript then Go then TypeScript on one folder: the index, the pins, a held key change, the key and so the card's key id). Unit tests with
+vectors made from the TypeScript (`internal/directory/vectors_test.go`, 356 lines): the Latin fold, text helpers, the order and its hash, the address reader, dates, numbers, the buyer's
+request, cleaning and the patterns, a model's typed answer. `go build ./... && go vet ./... && go test ./...` pass.
+
+| 40 shops of 20 listings (800 items), measured with `contract/measure.ts` | TypeScript (Node 26) | Go 1.27 |
+| --- | --- | --- |
+| idle RSS, feeds read | 133.3 MB | **29.5 MB** |
+| RSS after 200 searches / after 500 | 171.3 / 168.6 MB | **30.9 / 31.7 MB** |
+| cold start, fresh folder (spawn to `/healthz`), median of 5 | 161 ms | **55 ms** |
+| search (10 shops asked), p50 / p95 of 300 | **6.2 / 7.4 ms** | 14.0 / 15.1 ms |
+| binary | `node` + 4.3k lines of TypeScript | 18.5 MB (one file) |
+
+The Go search is slower because each search opens a connection to every shop it asks (the checker's client does not keep connections); not tuned.
+
+**What the deployer switch will change** (not done: how the Go binaries reach a server is the owner's decision). In `bundle/generate/compose.ts` the `directory` block (`add("directory", node([...]))`):
+the service becomes `goProgram(["/directory"], ...)` in the programs' image (the wave 1b `features.goImage`, which then also needs `directory` built into it: `go build -o bin/directory ./cmd/directory`); the
+health check `healthWget(DIRECTORY_PORT, "/healthz")` becomes `healthGo("directory", DIRECTORY_PORT, "/healthz")` with the `health` subcommand (`internal/health` of the deploy-switch branch: `cmd/directory/main.go` takes it at the merge); the user stays `nodeUser`
+but the image has no `/home/node`: the volume `directory-data` mounted at `/home/node` needs that folder, owned by that user, in the image (or the data folder moves); no `appVolume` mount (the program has its code inside); the environment
+(`CONFIG`, `PORT`, `HOST`), the config file (`directoryConfig`, unchanged: the Go service reads the same JSON) and the networks (`pages`, `egress`, `assistant`) stay. The model's wire must be "openai"
+(a server whose model speaks "anthropic" runs the directory with the assistant off and a line saying so). `docker exec <directory> node /app/bundle/services/directory.ts changes|accept` becomes `docker exec <directory> /directory changes|accept <page>`
+(docs and `bundle/Explanation.md`).
+**What the switch deletes**, in the same change: `bundle/services/directory.ts`; `modules/discovery/` except `words.ts` (the review sheet `bundle/panel/review.ts` still reads `DIRECTORY_WORDS` and
+`DIRECTORY_SAMPLES`; and `gen_directory.ts` reads `words.ts`, `page.ts`, `mcp.ts`, `card.ts`, `assistant.ts`, `romanise.ts` to make the packed files: after the switch the generated files in
+`go/internal/directory` become the source, the generator and `words-fresh.test.ts` go, and the review sheet reads the packed words, or `words.ts` stays as the words' source and is the one file kept);
+`modules/discovery/test/` (10 files, 1,676 lines: each is a contract test or a Go unit test above); `bundle/test/directory-service.test.ts` and `directory-assistant.test.ts` (their compose and config
+parts move to `go-runtime.test.ts`; their directory-behaviour parts are the contract); the `DIRECTORY_TICK_MS` line in nothing (it goes with the file). The contract keeps `modules/signing` (it signs the fake shops) and
+`templates/commerce/listings/contract/children.ts`. What stays TypeScript and is not touched: the shops' own MCP endpoint (`modules/channels/mcp.ts`, `shop-card.ts`) and `modules/channels/look.ts` (the shops' pages).
+
+**TypeScript findings** (nothing changed): a feed's `updated` is never judged for age; `lang=` on `/search` falls back silently, so the `lang must be en, hi, ml or kn` refusal exists only over MCP;
+`rebuildIndex` has no caller; `Date.parse` of a date-time with no zone is local time (the container runs in UTC, so equal in production).
+**Found while porting** (Go, fixed): a response with a second, differently spelled `Content-Length` is refused by Node's client (curl accepts it).
+
+## Wave 1b, the deployer half (19 Nov 2026, `go-deploy-switch-19nov`)
+
+The deployer now runs listings shops on the Go programs: the listings template is **0.2.0** and its `template.json` says `"runtime": "go"`. The server compiles the programs from its own checkout in the Go image
+pinned by digest in `bundle/release.json` and runs them from a tiny `FROM scratch` image (`geo-go:<commit>`), so a shop container no longer carries Node. `listings` and `listings-shared` gained a `health <url>`
+and a `get <url>` subcommand (`internal/health`) because that image has no shell, wget or `test`. The whole account, and the real build numbers, are in `bundle/Explanation.md` ("How the Go runtimes reach a
+server") and `go/README.md`. **Not done in this stream:** the TypeScript listings runtime is still in the repository (kept versions run on it; the differential test needs it); the deletion follows the port
+of the last AI parts. TypeScript finding: `bundle/deploy.ts` used `HOME_DIR` in the check "is a new listings shop's name already in the shared volume" without importing it, so the first deploy of a new
+listings-only shop would have stopped on a ReferenceError; the check now asks the data volume itself (`sharedHasFolder`, `bundle/lib/listings-move.ts`) and the name is gone.
+
+## Wave 2 preparation (19 Nov 2026): the Bookings contract, before any Go
+
+The HTTP contract suite for the Bookings shop runtime is written in TypeScript and passes on the TypeScript runtime; no Go for Bookings exists yet. It is
+`templates/commerce/bookings/contract/` (its README is the inventory a port starts from: every route, file, Guard call and timed job, and every one of the 85 unit test files mapped to
+"contract", "unit", "demo" or "other component"). `BOOKINGS_IMPL=go` with no binary skips every test with "no Go Bookings runtime yet (wave 2)". The generic harness pieces (process
+tracker, fake model, fake push Guard, test-clock file, process starter, HTTP caller, owner-control helpers) moved to `modules/test/contract/` and the listings contract uses them.
+One runtime file changed: `templates/commerce/bookings/server/main.ts` takes the test clock the way the listings shop's main does (nothing changes without the two variables, and a
+live shop refuses them). The Go Bookings binary must honour the same two variables for a "fakes" shop (`go/internal/testclock`).
+## Wave 2: Guard clients (19 Nov 2026): the shared building blocks of the Bookings, Orders, Fees and Stock-orders runtimes
+
+Ported to Go as shared packages, each proved against vectors made by RUNNING the TypeScript client against a recording HTTP server (`go/scripts/gen_guard_vectors.ts`, cases in
+`go/scripts/vectors/`; `--check` and the `words-fresh` test keep them fresh). The Go tests read only the vector files and replay each script from a Go server; the requests (method, target,
+the headers that matter, body bytes) and the outcomes (result, or error name, words and carried fields) must be equal.
+
+| package | what | TypeScript it replaces once the Go runtime uses it |
+| --- | --- | --- |
+| `internal/guard` | the errors, the one HTTP client, Guard's answers told apart, the JavaScript byte helpers | `modules/core/{faults,http,json}.ts` (shared: stay until the last wave) |
+| `internal/payments` (+ `razorpay`, `upi`) | the neutral payments, careful links, the refund logic, the stand-in gateway, the Razorpay client and webhook reader, the `upi://pay` link | `modules/payments/{payments,links,refunds}.ts`, `providers/razorpay/{api,webhook}.ts`, `providers/upi/link.ts` |
+| `internal/messaging` | Meta and Gupshup clients, stand-in, send-once, say, statuses, webhook readers | `modules/messaging/*`, `standInMessaging` in `modules/runtime/services.ts` |
+| `internal/calendar` | Google Calendar v3 through the calendar Guard, the fake, the shop's own list | `templates/commerce/bookings/src/adapters/{calendar,own-calendar}.ts`, `live/google-calendar.ts` |
+| `internal/qr`, `internal/terms` | the UPI QR; the shop's terms | `modules/qr/*`, `modules/terms/*` |
+
+What the Bookings wave may delete: the Bookings-only files (the three calendar adapters, the calendar part of `live/index.ts`). What must STAY until the Orders, Fees and Stock-orders waves:
+every `modules/*` file above (their runtimes import them), the deployer's and panel's reads of `providers/*` and `gupshup-selfserve.ts`, and `modules/standins/*` (the HTTP stand-in
+servers the contract tests start; test infrastructure). `go/scripts/vectors/fixtures.ts` reads `templates/commerce/bookings/test/fixtures/*`: if the Bookings TypeScript goes, those
+fixtures need a new home.
+
+**Results** (19 Nov, through the heat lock): `go build ./...`, `go vet` and `go test -count=1 ./internal/{guard,payments,messaging,calendar,qr,terms}/...` pass (guard, payments, razorpay, upi,
+messaging, calendar, qr, terms: 8 packages ok); `node go/scripts/gen_guard_vectors.ts --check`: 23 vector files fresh; `words-fresh`: 4 of 4. Refund logic: 78 scenarios covering every
+`sortRefundError` arm in `requestRefund` and `releaseHeld`, both retry exhaustions, both `expireGuardHold` arms, the `recheck` arms, the four `tellConfirmed` outcomes and a sweep proving an
+unanswered hold sends nothing.
+
+**Not ported, and why** (each package's `Deferred.md` has the detail): the owner-marked UPI ledger, obligations and desk (state the Bookings runtime owns, uses the approvals codes; goes with
+that runtime); the deployer's limits spec (`guard-limits.ts` beyond `rupeesToPaise`), `guard-model.ts`, the provider declarations and panel words; the HTTP stand-in servers; the inbox's HTTP
+side (only the webhook readers and signature checks are ported); `internal/standins` was not made as a package: the stand-ins live beside what they stand in for (`payments.Fake`,
+`calendar` fake, `messaging.NewFake/NewStandIn`), one source of truth.
+
+**Merge notes:** `go/internal/qr` exists on `go-books-19nov` too (a different API): keep one. `internal/payments` declares a narrow `Accounting` poster and `LogMore` of its own; the books
+stream's `internal/accounting` needs an adapter of a few lines. `go/internal/zone` of the books branch could replace the calendar's `zonedMidnight`.
+
+**Differences from TypeScript, recorded:** money and times read from a reply are whole numbers only (a fractional amount reads as absent, where `num` passes it); `UntoldRefund.amountInr`
+is kept in paise and written as the exact decimal; the Go fake gateway has no fault plans; keep-alive is off in the Guard client (net/http would send a GET again on a cut connection).
+
+**TypeScript findings (reported, not fixed):** `refunds.ts` line 429 `amountInr: r.amount / 100` can be fractional (a refund of 12.5 rupees), while every other amount in the file is whole rupees;
+the 24 hour hold and the limit are whole-rupee settings, so it cannot happen with these settings, but nothing enforces it. `recordMessageStatus` throws `RangeError` for a failed status with a
+timestamp past 8.64e15 ms, which a forged webhook could cause; `say.ts` falls back from buttons to text after any ApiError under 500, a Guard hold or refusal included; `interactiveProblem`
+counts code points while the document checks count UTF-16 units; STOP uses `toUpperCase`, so `"ﬆop"` opts a customer out; `own-calendar.ts` creates `store.ownCalendar` on a read; and the
+messaging and calendar reports in their `Explanation.md` list more.
+
+## Wave 2: books and report (19 Nov)
+
+Ported as SHARED packages, each proved byte for byte against vectors made by running the TypeScript (Node v26.10.0; every generator has `--check` and a test in `words-fresh.test.ts`):
+`internal/zone`, `internal/locale`, `internal/slots`, `internal/accounting` (+ `render`), `internal/report`, `internal/bookingsreport`, and the QR encoder (main's `internal/qr` kept; the
+SVG and PNG helpers are its `image.go`). `internal/payments/books.go` adapts the books to refunds' narrow `Accounting` poster (a failed post panics with `BooksError`, as post.ts throws).
+The calendar's `zonedMidnight` was NOT swapped for `internal/zone`: it copies extra oddities (years 0 to 99, UTC fallback for a zone Intl rejects) that `zone` does not have.
+
+| Go | TypeScript it replaces |
+| --- | --- |
+| `internal/accounting` | `modules/accounting/{accounts,journal,post,numbers,periods,documents,case-documents,document-page,figures,invariants,settlements,summary,tally,export,owner-money,owner-money-render,report-block,words-documents,words-owner}.ts`, `templates/commerce/bookings/src/accounting.ts` (+ `obligations.ts` as far as owner-money reads it) |
+| `internal/report` | `modules/report/{summary,summary-sign,sign,digest,months,page,text,claims,settled-by-word,verify-link,monthly-job,what-this-checks,go-live}.ts`, `modules/qr/svg.ts` |
+| `internal/bookingsreport` | `templates/commerce/bookings/report/{data,run,html,text,whatsapp,certificate (monthly part),summary,strings,monthly-job,go-live}.ts` |
+
+The Bookings wave deletes, once its Go runtime uses them: `templates/commerce/bookings/src/accounting.ts` and `templates/commerce/bookings/report/*` that it ported. `modules/accounting/*` and
+`modules/report/*` STAY until Orders, Fees and Stock orders move (their runtimes import them); `check.ts`, `cli.ts`, `keys.ts` and the TypeScript `test/` stay (CLIs and tests).
+
+Left, with the reason (each package's `Deferred.md` has the detail): `validateSettings` for Bookings (the policy digest is of the validated settings, so the Bookings runtime must hand in the validated tree);
+go-live certificate builders and pages (CLI and deployer); Go PNG bytes differ from zlib's (same pixels); the Bookings adapters for `accounting.Record`, `accounting.Payments` and `report.Messaging`; refs visited in
+key order where the TypeScript uses insertion order (`BooksFaults` privacy sentences); amounts beyond 2^53.
+
+TypeScript findings (reported, not fixed): a `kept` event naming an `owed` refund carries no amount, so `readNew` throws after the line is written; a settled `post()` that throws after its write leaves the row and
+is then also listed as a problem; `figures.ts` reads a refund amount with a bare `Number()` (a fraction is added); `owner-money` `tally()` counts a NaN time; `settlements.ts` `daysToRead` sorts a read line with no `refs.day`
+last; `invariants.ts` privacy faults depend on refs insertion order; `fitText` folds whitespace before stripping zero-width characters (so a name can turn a signed summary into the older link); `settledWho` slices at
+UTF-16 and can leave half an emoji; `workOf` leaves a refund settled by a person's word "waiting for owner" in every later month unless an `owner_decision` follows; a rule id like `constructor` would throw in `STOP_SITES`.

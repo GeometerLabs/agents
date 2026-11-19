@@ -259,6 +259,29 @@ test("a Guard image file is loaded only when its sha256 is the one release.json 
   } finally { s.done(); }
 });
 
+test("the Go shop programs are built from this copy: the build is run through `geometer go-build`, a missing pin or a failed build stops the install with the reason, and a dry run only says it", async () => {
+  const s = sandbox({ docker: "exit 0", node: 'case "$1" in --version) echo v26.13.0;; *) [ -z "${BUILD_FAILS:-}" ] || { echo "go: no route to host"; exit 1; };; esac' });
+  try {
+    const vars = "APP_DIR=/home/builder/geometer/agents SERVER_DIR=/home/builder/geometer-server DOCKER_DIRECT=1";
+    let r = await s.run(`${vars} NODE_BIN=node; build_go_programs`, { RELEASE_FILE: RELEASE });
+    assert.equal(r.code, 0, r.out);
+    assert.match(r.out, /Building the shop programs \(Go\)[\s\S]*golang:1\.27\.1-alpine \(pinned by its digest\)/u);
+    assert.ok(s.calls().some((c) => /^node \/home\/builder\/geometer\/agents\/bundle\/geometer\.ts go-build$/u.test(c)), s.calls().join("\n"));
+    r = await s.run(`${vars} NODE_BIN=node; build_go_programs`, { RELEASE_FILE: RELEASE, BUILD_FAILS: "1" });
+    assert.equal(r.code, 1);
+    assert.match(r.out, /Stopped: The shop programs could not be built \(the reason is above\)\. Nothing was changed/u);
+    const none = releaseWith(s.root, { go_image_digest: "" });
+    r = await s.run(`${vars} NODE_BIN=node; build_go_programs`, { RELEASE_FILE: none });
+    assert.equal(r.code, 1);
+    assert.match(r.out, /pins no Go builder image \(go_image_digest is empty\).*Nothing was changed/u);
+    const before = s.calls().length;
+    r = await s.run(`${vars} DRY_RUN=1 NODE_BIN=node; build_go_programs`, { RELEASE_FILE: RELEASE });
+    assert.equal(r.code, 0, r.out);
+    assert.match(r.out, /would run: env GEOMETER_SERVER=\/home\/builder\/geometer-server node .*bundle\/geometer\.ts go-build/u);
+    assert.equal(s.calls().length, before, "a dry run runs nothing");
+  } finally { s.done(); }
+});
+
 test("system files are written only when new or the install's own, never over someone else's; the geometer command keeps one shop's stop apart from the server's", async () => {
   const s = sandbox({ id: 'if [ "$1" = -u ]; then echo "${ID_U:-1000}"; else /usr/bin/id "$@"; fi' });
   try {
@@ -376,7 +399,7 @@ test("a whole dry run says each step and changes nothing: no root command, no se
     assert.equal(r.code, 0, r.out);
     for (const said of [/Dry run: each step is printed, nothing is changed, and no code is sent/u, /NOT A RELEASE/u, /What the install will do/u, /no pairing: the panel starts, but no alerts from outside and no licence lease/u,
       /would run: env GEOMETER_SERVER=.*geometer-server .*bundle\/geometer\.ts init .*geometer-server --domain localhost --reviewed-by builder@.* --guard-image geo-guard:0\.1\.0-alpha\.3 --panel --http-port 8080 --https-port 8443 --licence-key (ab){32}/u,
-      /would run: .*bundle\/geometer\.ts up/u, /Left for the panel's first run/u, /Not paired: nobody outside hears if this server goes down/u]) assert.match(r.out, said);
+      /Building the shop programs \(Go\)/u, /would run: .*bundle\/geometer\.ts go-build/u, /would run: .*bundle\/geometer\.ts up/u, /Left for the panel's first run/u, /Not paired: nobody outside hears if this server goes down/u]) assert.match(r.out, said);
     assert.ok(!s.calls().some((c) => c.startsWith("sudo")), `no root command: ${s.calls().filter((c) => c.startsWith("sudo")).join("; ")}`);
     assert.ok(!existsSync(join(s.root, "home", "geometer-server")), "no server folder");
   } finally { s.done(); }

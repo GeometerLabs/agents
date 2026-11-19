@@ -4,5 +4,8 @@
   "setup": "listings",
   "steps": ["business", "languages", "checks"],
   "accounts": [],
-  "settingsExample": "settings/shop.example.json"
+  "settingsExample": "settings/shop.example.json",
+  "runtime": "go",
+  "program": "listings",
+  "sharedProgram": "listings-shared"
 }
