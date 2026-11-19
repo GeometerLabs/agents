@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/GeometerLabs/agents/go/internal/budget"
+	"github.com/GeometerLabs/agents/go/internal/language"
 )
 
 // ModelConfig is runtime.json's `parser` (or `talk`): which model, reached how.
@@ -116,10 +117,8 @@ func NewModel(cfg *ModelConfig, log func(string), off string, timeoutMs, maxToke
 	return m
 }
 
-var fence = regexp.MustCompile("(?s)^```(?:json)?[" + jsSpace + "]*(.*?)[" + jsSpace + "]*```$")
+var fence = regexp.MustCompile("(?s)^```(?:json)?[" + language.JSSpace + "]*(.*?)[" + language.JSSpace + "]*```$")
 var think = regexp.MustCompile(`(?s)<think>.*?</think>`)
-
-const jsSpace = `\t\n\x0b\f\r \x{00a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}`
 
 // Ask makes the one call.
 func (m *Model) Ask(c Call) Answer {
@@ -193,7 +192,7 @@ func readOpenAI(body any) Answer {
 		out.Reason = "its reply had no answer in it"
 		return out
 	}
-	bare := strings.TrimFunc(think.ReplaceAllString(text, ""), isJSSpace)
+	bare := language.TrimJS(think.ReplaceAllString(text, ""))
 	if f := fence.FindStringSubmatch(bare); f != nil {
 		bare = f[1]
 	}
@@ -210,14 +209,6 @@ func asNumber(v any) int64 {
 		return int64(f)
 	}
 	return 0
-}
-
-func isJSSpace(r rune) bool {
-	switch r {
-	case '\t', '\n', 0x0b, '\f', '\r', ' ', 0xa0, 0x1680, 0x2028, 0x2029, 0x202f, 0x205f, 0x3000, 0xfeff:
-		return true
-	}
-	return r >= 0x2000 && r <= 0x200a
 }
 
 // ---- what a call cost ---------------------------------------------------------------------------------------------------------------------------------

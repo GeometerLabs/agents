@@ -72,6 +72,50 @@ describe("the owner's morning line", () => {
     });
   }
 
+  test("on the test clock: no phone, so the send fails and is tried again an hour later; the next day's line; nothing after the four hours", { skip: BOTH.skip && !String(BOTH.skip).startsWith("the morning") ? BOTH.skip : false }, async () => {
+    const IST = 330 * 60_000;
+    /** Move the shop's clock to the next hh:mm in India. */
+    const to = (s: Shop, hh: number, mm: number): void => {
+      const now = s.now(); const d = new Date(now + IST);
+      let t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hh, mm) - IST;
+      if (t <= now) t += 86_400_000;
+      s.advance(t - now);
+    };
+    const draft = async (s: Shop, id: string) => {
+      const r = await s.call("/internal/channel/events", { owner: s.owner, body: { events: [{ kind: "owner_message", id, text: `item ${id} for sale on my page, 450 rupees` }] } });
+      assert.equal(r.status, 200); await s.settle();
+    };
+    const beats = () => new Promise((r) => setTimeout(r, 2500));
+    const seen: Record<string, any> = {};
+    await Promise.all((["ts", "go"] as const).map(async (impl) => {
+      const fake = await startFakeModel(() => draftAnswer()); others.push(fake);
+      const guard = await startFakeGuard(); others.push(guard);
+      const s = await makeShop({ clock: true, tickSeconds: 1, modelPort: fake.port, budget: { monthlyMicroInr: 50_000_000, daily: { listing_draft: 20 } }, assistant: { morning: { at: "09:00" } } });
+      shops.push(s);
+      enablePush(s, guard);
+      to(s, 8, 30); // before the hour: nothing is due
+      await s.start(impl);
+      await draft(s, "d-1");
+      to(s, 9, 1); await beats(); // the hour: no phone has alerts on, so nothing goes ("failed")
+      const b = softBrowser();
+      assert.equal((await s.call("/internal/channel/push", { owner: s.owner, body: { op: "owner_subscribe", subscription: b.subscription } })).status, 200);
+      s.advance(30 * 60_000); await beats(); // half an hour on: not tried again yet
+      s.advance(31 * 60_000); await beats(); // an hour after the failure: tried again, and it goes
+      s.advance(60 * 60_000); await beats(); // once a day: nothing more today
+      to(s, 8, 45); await draft(s, "d-2"); // the next day, a new card before the hour
+      to(s, 9, 5); await beats();          // the next day's line
+      to(s, 13, 10); await draft(s, "d-3"); // the day after, a card, but only after the four hours
+      await beats(); await beats();
+      const lines = record(s).filter((e) => e.action === "send_message" && e.refs.morning).map((e) => [e.outcome, { ...e.refs, ...(e.refs.messageId ? { messageId: "m-" } : {}), morning: "day" }, e.notes ?? ""]);
+      const days = [...new Set(record(s).filter((e) => e.action === "send_message" && e.refs.morning).map((e) => e.refs.morning))];
+      seen[impl] = { lines, days: days.length, pushes: guard.calls.map((c) => b.open(c.call)).filter((p) => p.tag === "owner").map((p) => p.body.replace(/\d+ \w+:/u, "D:")) };
+    }));
+    assert.deepEqual(seen.go, seen.ts);
+    assert.deepEqual(seen.ts.lines.map((l: any) => l[0]), ["attempted", "failed", "attempted", "confirmed", "attempted", "confirmed"]);
+    assert.equal(seen.ts.days, 2);
+    assert.equal(seen.ts.pushes.length, 2);
+  });
+
   test("silent with nothing to say, and never in the licence's final stop", BOTH, async () => {
     const stopped = { schema: 1, shop: { id: "glow-pets", plan: "basic", state: "stopped", paid_through: 1_700_000_000, grace_days: 30, expires: 1_700_000_000, stop_at: 1_700_000_000, export_until: 1_800_000_000, notice: "stop" }, newest_issued_at: 1_700_000_000, extension_until: 0, partner: "Divya" };
     const seen: Record<string, any> = {};

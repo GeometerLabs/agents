@@ -30,6 +30,11 @@ LISTINGS_IMPL=go LISTINGS_GO_BIN=go/bin/listings node --test --test-concurrency=
   `stock.contract.test.ts`, `assistant.contract.test.ts` (the owner's talk-and-cards page, the same scripts on both runtimes compared line for line), `unicode.contract.test.ts`,
   `rates.contract.test.ts`, `restored.contract.test.ts` and `shared.contract.test.ts` (the shared process, `shared-harness.ts`) cover the rest of a listings shop; `words-fresh.test.ts`
   fails when the Go runtime's packed words (go/scripts/gen_words.ts) are stale.
+* `models.contract.test.ts` covers the owner's words no rule reads: the router's decision model (a fake System One server, `startFakeDecision`) and language model, then the
+  owner's talk with its checks, with every kind of untrusted answer the fakes can give (`rawReply`, `statusReply`, `slowReply`: malformed JSON, an HTTP error, a model too slow
+  for its timeout; wrong types, extra members) and the day's and month's caps; `morning.contract.test.ts` covers the owner's morning line (push on, on the TEST clock: a failed
+  send tried again after an hour, the next day's line, the four-hour cut-off, silent with nothing to say, never in the licence's final stop) and voice as a listings shop has
+  it (off). Both run a TypeScript shop and a Go shop at once and compare them line for line.
 * `differential.test.ts` gives both runtimes the SAME requests and compares the answers: the owner's form (whitespace, rounding, UTF-16 lengths), the place, the feed, and which of 21 model drafts the
   grounding checks let through.
 * `measure.ts` is not a test: it prints cold start, resident memory and request latency for the runtime named by `LISTINGS_IMPL`.

@@ -212,8 +212,8 @@ func CheckOwnerTalk(a *TalkAnswer, scope []TalkSource, speakerText, speakerLangu
 		}
 		ownText := strings.Join(own, " \n ")
 		for _, m := range language.P("talk.percent").All(language.Plain(s.Text)) {
-			same := language.MustCompile(strings.ReplaceAll(m.Group(1), ".", `\.`)+`\s*(?:%|per ?cent|प्रतिशत|ശതമാനം|ಶೇಕಡಾ|ಪ್ರತಿಶತ|ಶೇ)`, "iu")
-			if !same.Test(ownText) {
+			same, err := language.Compile(strings.ReplaceAll(m.Group(1), ".", `\.`)+`\s*(?:%|per ?cent|प्रतिशत|ശതമാനം|ಶೇಕಡಾ|ಪ್ರತಿಶತ|ಶೇ)`, "iu")
+			if err != nil || !same.Test(ownText) { // (digits only: it always compiles; if not, the check fails closed)
 				return fail(2, fmt.Sprintf("a sentence says %s%%, which none of its sources states", m.Group(1)))
 			}
 		}

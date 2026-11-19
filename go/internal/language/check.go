@@ -61,7 +61,12 @@ func CheckText(final string, f Facts) []string {
 	}
 	text = mask(text, upi)
 	for _, lit := range lits {
-		text = MustCompile(jsEscape(lit), "giu").ReplaceFunc(text, func(m *Match) string { return strings.Repeat(" ", UTF16Len(m.Group(0))) })
+		re, err := Compile(jsEscape(lit), "giu")
+		if err != nil { // never for an escaped literal; if it were, the check fails closed rather than stop the step
+			problems = append(problems, "The message could not be checked against the record.")
+			continue
+		}
+		text = re.ReplaceFunc(text, func(m *Match) string { return strings.Repeat(" ", UTF16Len(m.Group(0))) })
 	}
 	links := P("check.url").All(text)
 	for _, u := range links {
