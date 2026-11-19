@@ -23,13 +23,16 @@ type Store struct {
 	held *stored
 }
 
-// Task is one saved event.
+// Task is one saved event. WaitingOn and RetryAt are a task parked for a Guard that is down (modules/runtime/tasks.ts parkTask): the service it waits for and when to look
+// again (nil while the task is not waiting). A listings-only shop never parks one.
 type Task struct {
-	ID       string
-	Kind     string
-	Payload  string
-	Received int64
-	Attempts int
+	ID        string
+	Kind      string
+	Payload   string
+	Received  int64
+	Attempts  int
+	WaitingOn *string
+	RetryAt   *int64
 }
 
 // TaskCounts is what /status says of the queue.
@@ -39,7 +42,8 @@ type TaskCounts struct {
 	Failed  int `json:"failed"`
 }
 
-// Entry is one line of the action record: the same members, in the same order, as the TypeScript record writes (modules/record/record.ts RecordEntry). Booking is always null here.
+// Entry is one line of the action record: the same members, in the same order, as the TypeScript record writes (modules/record/record.ts RecordEntry). Booking is the case id
+// ("b-3") a template's line names, nil for a line about no case (every listings line).
 type Entry struct {
 	Seq          int               `json:"seq"`
 	Time         string            `json:"time"`
@@ -176,8 +180,20 @@ func (s *Store) Ping() error {
 	return s.db.QueryRow("SELECT count(*) FROM sqlite_master").Scan(&n)
 }
 
+// Inbound is a customer's message's number and time, for the 24-hour window (the `window` table).
+type Inbound struct {
+	Phone string
+	AtMs  int64
+}
+
 // SaveEvents saves new events as pending tasks, all or nothing; ids already seen are skipped. `keys` and `kinds` and `payloads` are parallel.
 func (s *Store) SaveEvents(keys, kinds, payloads []string, nowMs int64) (saved, duplicates int, err error) {
+	return s.SaveEventsInbound(keys, kinds, payloads, nil, nowMs)
+}
+
+// SaveEventsInbound is SaveEvents with the WhatsApp window: `inbound[i]`, when it is not nil, is a message's sender and time, and the window opens when the task is new (store.ts
+// saveEvents: "the window opens when the person wrote, not when the step runs", at the earlier of the message's time and now, and never moves back).
+func (s *Store) SaveEventsInbound(keys, kinds, payloads []string, inbound []*Inbound, nowMs int64) (saved, duplicates int, err error) {
 	err = s.inTx(func(x exec) error {
 		for i := range keys {
 			r, err := x.Exec("INSERT OR IGNORE INTO tasks (id, kind, payload, received_at) VALUES (?, ?, ?, ?)", keys[i], kinds[i], payloads[i], nowMs)
@@ -186,6 +202,12 @@ func (s *Store) SaveEvents(keys, kinds, payloads []string, nowMs int64) (saved, 
 			}
 			if n, _ := r.RowsAffected(); n > 0 {
 				saved++
+				if i < len(inbound) && inbound[i] != nil {
+					at := min(inbound[i].AtMs, nowMs)
+					if _, err := x.Exec("INSERT INTO window (phone, last_inbound_at) VALUES (?, ?) ON CONFLICT (phone) DO UPDATE SET last_inbound_at = max(last_inbound_at, excluded.last_inbound_at)", inbound[i].Phone, at); err != nil {
+						return err
+					}
+				}
 			}
 		}
 		duplicates = len(keys) - saved
@@ -197,11 +219,64 @@ func (s *Store) SaveEvents(keys, kinds, payloads []string, nowMs int64) (saved, 
 // NextPending is the oldest task still pending.
 func (s *Store) NextPending() (*Task, error) {
 	var t Task
-	err := s.db.QueryRow("SELECT id, kind, payload, received_at, attempts FROM tasks WHERE state = 'pending' ORDER BY seq LIMIT 1").Scan(&t.ID, &t.Kind, &t.Payload, &t.Received, &t.Attempts)
+	var on sql.NullString
+	var at sql.NullInt64
+	err := s.db.QueryRow("SELECT id, kind, payload, received_at, attempts, waiting_on, retry_at FROM tasks WHERE state = 'pending' ORDER BY seq LIMIT 1").Scan(&t.ID, &t.Kind, &t.Payload, &t.Received, &t.Attempts, &on, &at)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
+	if on.Valid {
+		t.WaitingOn = &on.String
+	}
+	if at.Valid {
+		t.RetryAt = &at.Int64
+	}
 	return &t, err
+}
+
+// ParkTask keeps a task waiting for a Guard that is down: the service, when to look again, why, and the try given back (store.ts parkTask: waiting is not a failure).
+func (s *Store) ParkTask(id, on string, retryAt int64, msg string) error {
+	_, err := s.db.Exec("UPDATE tasks SET waiting_on = ?, retry_at = ?, last_error = ?, attempts = max(attempts - 1, 0) WHERE id = ?", on, retryAt, truncate(msg, 500), id)
+	return err
+}
+
+// PostponeTask moves a waiting task's next look (store.ts postponeTask).
+func (s *Store) PostponeTask(id string, retryAt int64) error {
+	_, err := s.db.Exec("UPDATE tasks SET retry_at = ? WHERE id = ?", retryAt, id)
+	return err
+}
+
+// TaskState is one task's state by its key ("pending", "done", "failed"), or "" when there is no such task (store.ts taskState).
+func (s *Store) TaskState(key string) (string, error) {
+	var state string
+	err := s.db.QueryRow("SELECT state FROM tasks WHERE id = ?", key).Scan(&state)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return state, err
+}
+
+// LastInboundAt is when this number last wrote (the 24-hour window), or nil.
+func (s *Store) LastInboundAt(phone string) (*int64, error) {
+	var at int64
+	err := s.db.QueryRow("SELECT last_inbound_at FROM window WHERE phone = ?", phone).Scan(&at)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &at, nil
+}
+
+// CompactTurns empties the payload of failed tasks that arrived before `beforeMs` (store.ts compactTurns: a failed message's words go with the retention; the row stays).
+func (s *Store) CompactTurns(beforeMs int64) (int, error) {
+	r, err := s.db.Exec("UPDATE tasks SET payload = '{}' WHERE state = 'failed' AND payload <> '{}' AND received_at < ?", beforeMs)
+	if err != nil {
+		return 0, err
+	}
+	n, _ := r.RowsAffected()
+	return int(n), nil
 }
 
 // StartAttempt counts one more attempt, saved at once, and returns the new number.
@@ -297,12 +372,14 @@ func (s *Store) LoadState() (snapshot string, record []Entry, err error) {
 	return snapshot, record, rows.Err()
 }
 
-// Step is what one step saves.
+// Step is what one step saves. FailedWith (store.ts commitStep `failedWith`): the task ends WITHOUT its work done, marked failed with this sentence, in the same transaction as the
+// to-do line the step wrote (a task that gave up waiting for its Guard).
 type Step struct {
-	TaskID   string // empty for a tick
-	Snapshot string
-	Entries  []Entry
-	NowMs    int64
+	TaskID     string // empty for a tick
+	Snapshot   string
+	Entries    []Entry
+	NowMs      int64
+	FailedWith string
 }
 
 // CommitStep saves one step: snapshot, new record entries and the task's done mark, in one transaction.
@@ -330,7 +407,11 @@ func (s *Store) CommitStep(step Step) error {
 				return err
 			}
 		}
-		if step.TaskID != "" {
+		if step.TaskID != "" && step.FailedWith != "" {
+			if _, err := x.Exec("UPDATE tasks SET last_error = ?, state = 'failed', waiting_on = NULL, retry_at = NULL WHERE id = ?", truncate(step.FailedWith, 500), step.TaskID); err != nil {
+				return err
+			}
+		} else if step.TaskID != "" {
 			if _, err := x.Exec("UPDATE tasks SET state = 'done', payload = '{}', last_error = NULL, waiting_on = NULL, retry_at = NULL WHERE id = ?", step.TaskID); err != nil {
 				return err
 			}
