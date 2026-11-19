@@ -206,7 +206,7 @@ var (
 	clockRe = regexp.MustCompile(`^(\d{1,2}):(\d{2})$`)
 	idRe    = regexp.MustCompile(`^[a-z0-9-]+$`)
 	ownerRe = regexp.MustCompile(`^\+\d{10,15}$`)
-	vpaRe   = regexp.MustCompile(`^[A-Za-z0-9.\-_]{2,256}@[A-Za-z][A-Za-z0-9.\-]{1,63}$`)
+	vpaRe   = regexp.MustCompile(`^[a-z0-9._-]{2,256}@[a-z][a-z0-9]{1,64}$`) // upi/link.ts VPA_RE
 )
 
 // ParseClock is time.ts parseClock: "10:00" as minutes since midnight, or -1.
@@ -700,21 +700,51 @@ func (r *reader) payment(v any, order, upiOrder []string, s *Settings) {
 				r.add(`I don't know what %q means in "payment.upi". Allowed: id, payee.`, k)
 			}
 		}
-		id, _ := u["id"].(string)
-		payee, _ := u["payee"].(string)
-		bad := false
-		if !vpaRe.MatchString(language.TrimJS(id)) {
-			r.add(`"payment.upi.id": a UPI ID looks like name@bank, for example glowsalon@okicici.`)
-			bad = true
+		idIssue, payeeIssue := vpaProblem(u["id"]), payeeProblem(u["payee"])
+		if idIssue != "" {
+			r.add(`"payment.upi.id": %s`, idIssue)
 		}
-		if language.TrimJS(payee) == "" {
-			r.add(`"payment.upi.payee": the name customers see when they pay, for example Glow Salon.`)
-			bad = true
+		if payeeIssue != "" {
+			r.add(`"payment.upi.payee": %s`, payeeIssue)
 		}
-		if !bad {
-			s.Payment = Payment{Module: "upi", UpiID: strings.ToLower(language.TrimJS(id)), Payee: language.TrimJS(payee)}
+		if idIssue == "" && payeeIssue == "" {
+			s.Payment = Payment{Module: "upi", UpiID: normaliseVpa(u["id"].(string)), Payee: language.TrimJS(u["payee"].(string))}
 		}
 	default:
 		r.add(`The payment module %s is not one I know. Use "upi" or "razorpay": %s.`, jsJSON(m["module"]), examples)
 	}
+}
+
+// normaliseVpa, vpaProblem and payeeProblem are modules/payments/providers/upi/link.ts's, with its sentences.
+func normaliseVpa(v string) string { return strings.ToLower(language.TrimJS(v)) }
+
+func vpaProblem(raw any) string {
+	v, ok := raw.(string)
+	if !ok || language.TrimJS(v) == "" {
+		return "Add the shop's UPI ID, for example glowsalon@okicici."
+	}
+	n := normaliseVpa(v)
+	if !strings.Contains(n, "@") {
+		return fmt.Sprintf("\"%s\" is not a UPI ID: it needs an @ and the app's or bank's name after it, for example glowsalon@okicici.", language.TrimJS(v))
+	}
+	if !vpaRe.MatchString(n) {
+		return fmt.Sprintf("\"%s\" is not a UPI ID. Before the @: letters, digits, dots, dashes or underscores (at least 2). After the @: the app's or bank's name, letters and digits, starting with a letter.", language.TrimJS(v))
+	}
+	return ""
+}
+
+func payeeProblem(raw any) string {
+	n, ok := raw.(string)
+	if !ok || language.TrimJS(n) == "" {
+		return "Add the name the customer should see in their UPI app (the payee name), for example Glow Salon."
+	}
+	for _, c := range n {
+		if unicode.IsControl(c) { // /[\p{Cc}\n\r\t]/u
+			return "The payee name must be on one line."
+		}
+	}
+	if len([]rune(language.TrimJS(n))) > 50 {
+		return "The payee name is longer than 50 characters. Use the short name the shop's UPI app shows."
+	}
+	return ""
 }
