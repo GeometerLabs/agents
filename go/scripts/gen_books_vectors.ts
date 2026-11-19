@@ -4,7 +4,7 @@
 // sheets are a different file (gen_books_words.ts): the page vectors here carry the style sheets as a placeholder so they stay small, and the words file is held equal to the TypeScript
 // by its own freshness test.
 // Run from the repository root:  node go/scripts/gen_books_vectors.ts   (--check only compares; the test words-fresh fails when it was not run after a change to modules/accounting)
-// The vectors name the Node that made them (`node` in each file) and that member is left out of the freshness comparison, so a newer Node that writes the same figures is not "stale".
+// The committed vectors were made with Node v26.10.0 (19 Nov 2026). The vectors name the Node that made them (`node` in each file) and that member is left out of the freshness comparison, so a newer Node that writes the same figures is not "stale".
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -252,7 +252,7 @@ function derive(run: Run): { core: unknown; files: unknown; pages: unknown } {
   const sectionLinks = [{ base: "/owner/accounting" }, undefined, { base: "/o/acc&unt'ing \"x\"" }];
   const sections = views.flatMap((v, vi) => LANGS.flatMap((lang, li) => {
     const picks = vi === 0 ? sectionLinks : [sectionLinks[(vi + li) % 2]];
-    return picks.map((links) => ({ view: v.key, lang, links: links ?? null, html: ownerMoneySection(v.view, lang as never, links, tz) }));
+    return picks.map((links) => ({ view: v.key, lang, links: links ?? null, html: ownerMoneySection(v.view, lang as never, links, tz).toString() }));
   }));
   const boStd = { paidTwicePaise: 12345, markedReceivedPaise: 700, markedGivenBackPaise: 5 };
   const blocks = summaries.flatMap((s) => LANGS.flatMap((lang) => {
@@ -291,7 +291,10 @@ function misc(): unknown {
     const noCase = { ...cn, number: "CN/26-27/0003", seq: 4, case: null, paymentId: undefined };
     return { ...o, docs: [rct, cn, cn2, noCase].map((doc) => ({ doc: jsonSafe(doc), out: makeDocument({ doc: doc as never, documents: [rct, cn, cn2, noCase] as never, shop: { ...SHOP, timezone: "Asia/Kolkata", ...(o.status ? { status: o.status } : {}) }, language: o.language as never, whatFor, person }) })) };
   });
+  // localeCompare, which the settlements sheet and the obligations sort by: ids that mix case, "_", "-", digits and other scripts
+  const ids = ["setl_a", "setl_A", "setl-1", "setl_10", "setl_9", "setl_1", "Setl_b", "SETL_B", "setl b", "setl.1", "1", "10", "9", "a", "B", "é", "e", "f", "Z", "z", "_x", "-x", "x_", "ക", "क", "setl_ä", "ä", "ab", "aB", "Ab", "AB", "a-b", "a_b", "a b", "a.b", "upi-3", "upr-10", "upr-5", "upr-1", "2026-11-09T05:00:00.000Z", "2026-11-09T05:00:00.001Z", "2026-11-10T00:00:00.000Z", "", " ", "a1", "a10", "a2"];
   return {
+    collation: { ids, sorted: [...ids].sort((a, b) => a.localeCompare(b)) },
     xml: xmlTexts.map((t) => ({ text: t, out: xml(t) })), csv: csvs.map((t) => ({ text: t, out: csvField(t) })),
     rupees: rup.map((p) => ({ paise: p, out: tryIt(() => rupees(p)) })), formatPaise: fmt.map((p) => ({ paise: p, out: tryIt(() => formatPaise(p)) })),
     yesterdays, docMisc, css: { customer: CUSTOMER_CSS.length, doc: DOC_CSS.length },

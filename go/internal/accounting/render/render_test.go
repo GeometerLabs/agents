@@ -117,7 +117,7 @@ func TestPages(t *testing.T) {
 			for _, pg := range p.Pages {
 				var doc accounting.DocRef
 				for _, d := range j.Documents {
-					if d.Number == pg.Number {
+					if d.Number == pg.Number && d.At == pg.Document.At {
 						doc = d
 					}
 				}
