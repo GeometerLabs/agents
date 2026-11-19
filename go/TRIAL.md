@@ -398,3 +398,69 @@ shapes these patterns need (an edge on a word of a final word list, a look-ahead
 The router takes a reading's own `Shape` (`understanding.Shaper`). Proved: parser-vectors.json (114 phrases, equal), coerce-vectors.json's sure (8), prompt (1, byte for byte) and
 schema (1), the corpus's readers (offer, time, date, blanked date, language, STOP, trick, wordRe sources) for every phrase of gen_patterns' corpus, and toIntentShape on
 model-llm.test.ts's cases (no vectors exist for it: a gap reported to the contract stream). Not wired yet: the router into the customer's message step (that step needs the services).
+
+## Wave 2: Guard clients (19 Nov 2026): the shared building blocks of the Bookings, Orders, Fees and Stock-orders runtimes
+
+Ported to Go as shared packages, each proved against vectors made by RUNNING the TypeScript client against a recording HTTP server (`go/scripts/gen_guard_vectors.ts`, cases in
+`go/scripts/vectors/`; `--check` and the `words-fresh` test keep them fresh). The Go tests read only the vector files and replay each script from a Go server; the requests (method, target,
+the headers that matter, body bytes) and the outcomes (result, or error name, words and carried fields) must be equal.
+
+| package | what | TypeScript it replaces once the Go runtime uses it |
+| --- | --- | --- |
+| `internal/guard` | the errors, the one HTTP client, Guard's answers told apart, the JavaScript byte helpers | `modules/core/{faults,http,json}.ts` (shared: stay until the last wave) |
+| `internal/payments` (+ `razorpay`, `upi`) | the neutral payments, careful links, the refund logic, the stand-in gateway, the Razorpay client and webhook reader, the `upi://pay` link | `modules/payments/{payments,links,refunds}.ts`, `providers/razorpay/{api,webhook}.ts`, `providers/upi/link.ts` |
+| `internal/messaging` | Meta and Gupshup clients, stand-in, send-once, say, statuses, webhook readers | `modules/messaging/*`, `standInMessaging` in `modules/runtime/services.ts` |
+| `internal/calendar` | Google Calendar v3 through the calendar Guard, the fake, the shop's own list | `templates/commerce/bookings/src/adapters/{calendar,own-calendar}.ts`, `live/google-calendar.ts` |
+| `internal/qr`, `internal/terms` | the UPI QR; the shop's terms | `modules/qr/*`, `modules/terms/*` |
+
+What the Bookings wave may delete: the Bookings-only files (the three calendar adapters, the calendar part of `live/index.ts`). What must STAY until the Orders, Fees and Stock-orders waves:
+every `modules/*` file above (their runtimes import them), the deployer's and panel's reads of `providers/*` and `gupshup-selfserve.ts`, and `modules/standins/*` (the HTTP stand-in
+servers the contract tests start; test infrastructure). `go/scripts/vectors/fixtures.ts` reads `templates/commerce/bookings/test/fixtures/*`: if the Bookings TypeScript goes, those
+fixtures need a new home.
+
+**Results** (19 Nov, through the heat lock): `go build ./...`, `go vet` and `go test -count=1 ./internal/{guard,payments,messaging,calendar,qr,terms}/...` pass (guard, payments, razorpay, upi,
+messaging, calendar, qr, terms: 8 packages ok); `node go/scripts/gen_guard_vectors.ts --check`: 23 vector files fresh; `words-fresh`: 4 of 4. Refund logic: 78 scenarios covering every
+`sortRefundError` arm in `requestRefund` and `releaseHeld`, both retry exhaustions, both `expireGuardHold` arms, the `recheck` arms, the four `tellConfirmed` outcomes and a sweep proving an
+unanswered hold sends nothing.
+
+**Not ported, and why** (each package's `Deferred.md` has the detail): the owner-marked UPI ledger, obligations and desk (state the Bookings runtime owns, uses the approvals codes; goes with
+that runtime); the deployer's limits spec (`guard-limits.ts` beyond `rupeesToPaise`), `guard-model.ts`, the provider declarations and panel words; the HTTP stand-in servers; the inbox's HTTP
+side (only the webhook readers and signature checks are ported); `internal/standins` was not made as a package: the stand-ins live beside what they stand in for (`payments.Fake`,
+`calendar` fake, `messaging.NewFake/NewStandIn`), one source of truth.
+
+**Merge notes:** `go/internal/qr` exists on `go-books-19nov` too (a different API): keep one. `internal/payments` declares a narrow `Accounting` poster and `LogMore` of its own; the books
+stream's `internal/accounting` needs an adapter of a few lines. `go/internal/zone` of the books branch could replace the calendar's `zonedMidnight`.
+
+**Differences from TypeScript, recorded:** money and times read from a reply are whole numbers only (a fractional amount reads as absent, where `num` passes it); `UntoldRefund.amountInr`
+is kept in paise and written as the exact decimal; the Go fake gateway has no fault plans; keep-alive is off in the Guard client (net/http would send a GET again on a cut connection).
+
+**TypeScript findings (reported, not fixed):** `refunds.ts` line 429 `amountInr: r.amount / 100` can be fractional (a refund of 12.5 rupees), while every other amount in the file is whole rupees;
+the 24 hour hold and the limit are whole-rupee settings, so it cannot happen with these settings, but nothing enforces it. `recordMessageStatus` throws `RangeError` for a failed status with a
+timestamp past 8.64e15 ms, which a forged webhook could cause; `say.ts` falls back from buttons to text after any ApiError under 500, a Guard hold or refusal included; `interactiveProblem`
+counts code points while the document checks count UTF-16 units; STOP uses `toUpperCase`, so `"ﬆop"` opts a customer out; `own-calendar.ts` creates `store.ownCalendar` on a read; and the
+messaging and calendar reports in their `Explanation.md` list more.
+
+## Wave 2: books and report (19 Nov)
+
+Ported as SHARED packages, each proved byte for byte against vectors made by running the TypeScript (Node v26.10.0; every generator has `--check` and a test in `words-fresh.test.ts`):
+`internal/zone`, `internal/locale`, `internal/slots`, `internal/accounting` (+ `render`), `internal/report`, `internal/bookingsreport`, and the QR encoder (main's `internal/qr` kept; the
+SVG and PNG helpers are its `image.go`). `internal/payments/books.go` adapts the books to refunds' narrow `Accounting` poster (a failed post panics with `BooksError`, as post.ts throws).
+The calendar's `zonedMidnight` was NOT swapped for `internal/zone`: it copies extra oddities (years 0 to 99, UTC fallback for a zone Intl rejects) that `zone` does not have.
+
+| Go | TypeScript it replaces |
+| --- | --- |
+| `internal/accounting` | `modules/accounting/{accounts,journal,post,numbers,periods,documents,case-documents,document-page,figures,invariants,settlements,summary,tally,export,owner-money,owner-money-render,report-block,words-documents,words-owner}.ts`, `templates/commerce/bookings/src/accounting.ts` (+ `obligations.ts` as far as owner-money reads it) |
+| `internal/report` | `modules/report/{summary,summary-sign,sign,digest,months,page,text,claims,settled-by-word,verify-link,monthly-job,what-this-checks,go-live}.ts`, `modules/qr/svg.ts` |
+| `internal/bookingsreport` | `templates/commerce/bookings/report/{data,run,html,text,whatsapp,certificate (monthly part),summary,strings,monthly-job,go-live}.ts` |
+
+The Bookings wave deletes, once its Go runtime uses them: `templates/commerce/bookings/src/accounting.ts` and `templates/commerce/bookings/report/*` that it ported. `modules/accounting/*` and
+`modules/report/*` STAY until Orders, Fees and Stock orders move (their runtimes import them); `check.ts`, `cli.ts`, `keys.ts` and the TypeScript `test/` stay (CLIs and tests).
+
+Left, with the reason (each package's `Deferred.md` has the detail): `validateSettings` for Bookings (the policy digest is of the validated settings, so the Bookings runtime must hand in the validated tree);
+go-live certificate builders and pages (CLI and deployer); Go PNG bytes differ from zlib's (same pixels); the Bookings adapters for `accounting.Record`, `accounting.Payments` and `report.Messaging`; refs visited in
+key order where the TypeScript uses insertion order (`BooksFaults` privacy sentences); amounts beyond 2^53.
+
+TypeScript findings (reported, not fixed): a `kept` event naming an `owed` refund carries no amount, so `readNew` throws after the line is written; a settled `post()` that throws after its write leaves the row and
+is then also listed as a problem; `figures.ts` reads a refund amount with a bare `Number()` (a fraction is added); `owner-money` `tally()` counts a NaN time; `settlements.ts` `daysToRead` sorts a read line with no `refs.day`
+last; `invariants.ts` privacy faults depend on refs insertion order; `fitText` folds whitespace before stripping zero-width characters (so a name can turn a signed summary into the older link); `settledWho` slices at
+UTF-16 and can leave half an emoji; `workOf` leaves a refund settled by a person's word "waiting for owner" in every later month unless an `owner_decision` follows; a rule id like `constructor` would throw in `STOP_SITES`.

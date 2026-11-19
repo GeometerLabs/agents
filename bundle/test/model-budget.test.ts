@@ -23,7 +23,7 @@ const RUPEE = 1_000_000;
 
 test("the 18 Nov proposal is superseded by the 19 Nov list in force, with the same numbers; a proposed list never gives a shop a budget", () => {
   assert.equal(proposed.status, "proposed", "the 18 Nov file stays what it was");
-  assert.equal(latestProposedPriceList(), null, "nothing is waiting any more");
+  assert.equal(latestProposedPriceList()?.date, "2026-11-20", "only the 20 Nov proposal (decision 62) waits");
   assert.equal(inForce.date, "2026-11-19");
   assert.equal(inForce.status, "in-force");
   for (const [id, r] of Object.entries(proposed.rates)) {
@@ -53,6 +53,28 @@ test("the proposed numbers: a budget for each plan, equal to ai.cap for the plan
   }
   assert.ok(r["ai.budget.listings-only"].micro! < r["ai.budget.basic"].micro!);
   assert.ok(r["ai.budget.discovery"].micro! > 0 && r["ai.daily.discovery.per-buyer"].count! > 0);
+});
+
+// Decision 62 (owner, 19 Nov: "yeah do higher chat caps"): the 20 Nov list is PROPOSED. It holds the new numbers (and the per-guest turns that used to be a code constant); until the
+// owner's yes with the fleet and bundle deploys it is not the list in force, so no shop gets them. These numbers are the list's: they changed from the 19 Nov list on purpose.
+const raised = loadPriceList(new URL("2026-11-20.json", PRICES_DIR).pathname);
+test("the 20 Nov proposal: chat caps raised, still equal to ai.cap for the plan's allowance, and no shop gets them while it is only proposed", () => {
+  assert.equal(raised.status, "proposed");
+  assert.equal(raised.rates["ai.cap"].micro, 30 * RUPEE);
+  for (const plan of ["basic", "business", "operations"] as const) {
+    assert.equal(raised.rates[`ai.budget.${plan}`].micro, (raised.rates["ai.cap"].micro! * raised.rates[`plan.${plan}.allowance`].count!) / 1000, plan);
+    assert.equal(raised.rates[`plan.${plan}.fee`].micro, inForce.rates[`plan.${plan}.fee`].micro, `${plan}: no plan fee moves`);
+  }
+  const basic = budgetFor("basic", raised)!;
+  assert.deepEqual([basic.monthlyMicroInr, basic.guestTurnsPerDay, basic.daily.customer_talk], [30 * RUPEE, 40, 120]);
+  assert.deepEqual([budgetFor("business", raised)!.monthlyMicroInr, budgetFor("business", raised)!.daily.customer_talk], [90 * RUPEE, 360]);
+  assert.deepEqual([budgetFor("operations", raised)!.monthlyMicroInr, budgetFor("operations", raised)!.daily.customer_talk], [300 * RUPEE, 1200]);
+  assert.deepEqual(budgetFor("listings-only", raised), { monthlyMicroInr: 6 * RUPEE, daily: { owner_talk: 10, listing_draft: 10, customer_talk: 60 }, });
+  assert.equal(isBudgetConfig(basic), true);
+  assert.equal(budgetFor("basic", inForce)!.guestTurnsPerDay, undefined, "the list in force has no per-guest number: the chat's fallback is used, nothing is made up here");
+  const dir = mkdtempSync(join(tmpdir(), "geo-prices-"));
+  for (const f of ["2026-11-19.json", "2026-11-20.json"]) copyFileSync(new URL(f, PRICES_DIR).pathname, join(dir, f));
+  assert.equal(latestPriceList(dir).date, "2026-11-19", "a proposal never prices or caps anything");
 });
 
 test("a shop's budget is worked out from its plan and the list; a number the list lacks is never made up", () => {

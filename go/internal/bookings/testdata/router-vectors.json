@@ -1,0 +1,2862 @@
+[
+ {
+  "name": "no decision model / no language model / hello",
+  "input": {
+   "decision": "no decision model",
+   "model": "no language model",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / no language model / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "no decision model",
+   "model": "no language model",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / no language model / asdf qwer zxcv",
+  "input": {
+   "decision": "no decision model",
+   "model": "no language model",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "unknown",
+    "language": "en"
+   },
+   "fallbackReason": "the connection failed",
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": [
+     "decision"
+    ]
+   }
+  }
+ },
+ {
+  "name": "no decision model / no language model / 300 mein kar do",
+  "input": {
+   "decision": "no decision model",
+   "model": "no language model",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "hi",
+    "offerInr": 300
+   },
+   "fallbackReason": "the connection failed",
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": [
+     "decision"
+    ]
+   }
+  }
+ },
+ {
+  "name": "no decision model / no language model / cancel my booking",
+  "input": {
+   "decision": "no decision model",
+   "model": "no language model",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / no language model / STOP",
+  "input": {
+   "decision": "no decision model",
+   "model": "no language model",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that says book / hello",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that says book",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that says book / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that says book",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that says book / asdf qwer zxcv",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that says book",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "model",
+    "provider": "deepinfra",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+    "inputTokens": 2000,
+    "outputTokens": 150,
+    "costMicroInr": 34104,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": [
+     "decision"
+    ]
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that says book / 300 mein kar do",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that says book",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "model",
+    "provider": "deepinfra",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+    "inputTokens": 2000,
+    "outputTokens": 150,
+    "costMicroInr": 34104,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": [
+     "decision"
+    ]
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that says book / cancel my booking",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that says book",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that says book / STOP",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that says book",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that is down / hello",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that is down",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that is down / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that is down",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that is down / asdf qwer zxcv",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that is down",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "unknown",
+    "language": "en"
+   },
+   "fallbackReason": "the connection failed",
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": [
+     "decision",
+     "model"
+    ]
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that is down / 300 mein kar do",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that is down",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "hi",
+    "offerInr": 300
+   },
+   "fallbackReason": "the connection failed",
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": [
+     "decision",
+     "model"
+    ]
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that is down / cancel my booking",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that is down",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that is down / STOP",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that is down",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that talks nonsense / hello",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that talks nonsense",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that talks nonsense / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that talks nonsense",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that talks nonsense / asdf qwer zxcv",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that talks nonsense",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "unknown",
+    "language": "en"
+   },
+   "fallbackReason": "its answer was not JSON",
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 2000,
+    "outputTokens": 150,
+    "costMicroInr": 34104,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": [
+     "decision",
+     "model"
+    ]
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that talks nonsense / 300 mein kar do",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that talks nonsense",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "hi",
+    "offerInr": 300
+   },
+   "fallbackReason": "its answer was not JSON",
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 2000,
+    "outputTokens": 150,
+    "costMicroInr": 34104,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": [
+     "decision",
+     "model"
+    ]
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that talks nonsense / cancel my booking",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that talks nonsense",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "no decision model / a language model that talks nonsense / STOP",
+  "input": {
+   "decision": "no decision model",
+   "model": "a language model that talks nonsense",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / no language model / hello",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "no language model",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / no language model / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "no language model",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / no language model / asdf qwer zxcv",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "no language model",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / no language model / 300 mein kar do",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "no language model",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "hi",
+    "offerInr": 300
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / no language model / cancel my booking",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "no language model",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / no language model / STOP",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "no language model",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that says book / hello",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that says book",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that says book / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that says book",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that says book / asdf qwer zxcv",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that says book",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that says book / 300 mein kar do",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that says book",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "hi",
+    "offerInr": 300
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that says book / cancel my booking",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that says book",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that says book / STOP",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that says book",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that is down / hello",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that is down",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that is down / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that is down",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that is down / asdf qwer zxcv",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that is down",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that is down / 300 mein kar do",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that is down",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "hi",
+    "offerInr": 300
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that is down / cancel my booking",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that is down",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that is down / STOP",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that is down",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that talks nonsense / hello",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that talks nonsense",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that talks nonsense / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that talks nonsense",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that talks nonsense / asdf qwer zxcv",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that talks nonsense",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that talks nonsense / 300 mein kar do",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that talks nonsense",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "hi",
+    "offerInr": 300
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that talks nonsense / cancel my booking",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that talks nonsense",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: greeting / a language model that talks nonsense / STOP",
+  "input": {
+   "decision": "sure: greeting",
+   "model": "a language model that talks nonsense",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / no language model / hello",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "no language model",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / no language model / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "no language model",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / no language model / asdf qwer zxcv",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "no language model",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / no language model / 300 mein kar do",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "no language model",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "hi",
+    "offerInr": 300,
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / no language model / cancel my booking",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "no language model",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / no language model / STOP",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "no language model",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that says book / hello",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that says book",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that says book / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that says book",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that says book / asdf qwer zxcv",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that says book",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that says book / 300 mein kar do",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that says book",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "hi",
+    "offerInr": 300,
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that says book / cancel my booking",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that says book",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that says book / STOP",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that says book",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that is down / hello",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that is down",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that is down / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that is down",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that is down / asdf qwer zxcv",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that is down",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that is down / 300 mein kar do",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that is down",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "hi",
+    "offerInr": 300,
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that is down / cancel my booking",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that is down",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that is down / STOP",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that is down",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that talks nonsense / hello",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that talks nonsense",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that talks nonsense / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that talks nonsense",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that talks nonsense / asdf qwer zxcv",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that talks nonsense",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that talks nonsense / 300 mein kar do",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that talks nonsense",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "hi",
+    "offerInr": 300,
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "decision",
+    "provider": "laya",
+    "model": "laya",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that talks nonsense / cancel my booking",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that talks nonsense",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "sure: book a haircut / a language model that talks nonsense / STOP",
+  "input": {
+   "decision": "sure: book a haircut",
+   "model": "a language model that talks nonsense",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / no language model / hello",
+  "input": {
+   "decision": "unsure",
+   "model": "no language model",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / no language model / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "unsure",
+   "model": "no language model",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / no language model / asdf qwer zxcv",
+  "input": {
+   "decision": "unsure",
+   "model": "no language model",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "unknown",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / no language model / 300 mein kar do",
+  "input": {
+   "decision": "unsure",
+   "model": "no language model",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "hi",
+    "offerInr": 300
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / no language model / cancel my booking",
+  "input": {
+   "decision": "unsure",
+   "model": "no language model",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / no language model / STOP",
+  "input": {
+   "decision": "unsure",
+   "model": "no language model",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that says book / hello",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that says book",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that says book / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that says book",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that says book / asdf qwer zxcv",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that says book",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "model",
+    "provider": "deepinfra",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+    "inputTokens": 2044,
+    "outputTokens": 150,
+    "costMicroInr": 34104,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that says book / 300 mein kar do",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that says book",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut"
+   },
+   "understood": {
+    "step": "model",
+    "provider": "deepinfra",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+    "inputTokens": 2044,
+    "outputTokens": 150,
+    "costMicroInr": 34104,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that says book / cancel my booking",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that says book",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that says book / STOP",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that says book",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that is down / hello",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that is down",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that is down / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that is down",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that is down / asdf qwer zxcv",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that is down",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "unknown",
+    "language": "en"
+   },
+   "fallbackReason": "the connection failed",
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": [
+     "model"
+    ]
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that is down / 300 mein kar do",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that is down",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "hi",
+    "offerInr": 300
+   },
+   "fallbackReason": "the connection failed",
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 44,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": [
+     "model"
+    ]
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that is down / cancel my booking",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that is down",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that is down / STOP",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that is down",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that talks nonsense / hello",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that talks nonsense",
+   "text": "hello"
+  },
+  "output": {
+   "intent": {
+    "kind": "greeting",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that talks nonsense / I want a haircut tomorrow at 6pm",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that talks nonsense",
+   "text": "I want a haircut tomorrow at 6pm"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "en",
+    "serviceId": "haircut",
+    "date": {
+     "kind": "relative",
+     "offsetDays": 1
+    },
+    "time": {
+     "hour": 6,
+     "minute": 0,
+     "period": "pm"
+    }
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that talks nonsense / asdf qwer zxcv",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that talks nonsense",
+   "text": "asdf qwer zxcv"
+  },
+  "output": {
+   "intent": {
+    "kind": "unknown",
+    "language": "en"
+   },
+   "fallbackReason": "its answer was not JSON",
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 2044,
+    "outputTokens": 150,
+    "costMicroInr": 34104,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": [
+     "model"
+    ]
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that talks nonsense / 300 mein kar do",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that talks nonsense",
+   "text": "300 mein kar do"
+  },
+  "output": {
+   "intent": {
+    "kind": "book",
+    "language": "hi",
+    "offerInr": 300
+   },
+   "fallbackReason": "its answer was not JSON",
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 2044,
+    "outputTokens": 150,
+    "costMicroInr": 34104,
+    "rateDate": "2026-11-05",
+    "tried": [
+     "rules",
+     "decision",
+     "model"
+    ],
+    "failed": [
+     "model"
+    ]
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that talks nonsense / cancel my booking",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that talks nonsense",
+   "text": "cancel my booking"
+  },
+  "output": {
+   "intent": {
+    "kind": "cancel",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ },
+ {
+  "name": "unsure / a language model that talks nonsense / STOP",
+  "input": {
+   "decision": "unsure",
+   "model": "a language model that talks nonsense",
+   "text": "STOP"
+  },
+  "output": {
+   "intent": {
+    "kind": "stop",
+    "language": "en"
+   },
+   "understood": {
+    "step": "rules",
+    "provider": "rules",
+    "model": "rule-parser",
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "costMicroInr": 0,
+    "rateDate": null,
+    "tried": [
+     "rules"
+    ],
+    "failed": []
+   }
+  }
+ }
+]

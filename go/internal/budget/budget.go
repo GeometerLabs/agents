@@ -15,6 +15,9 @@ var Features = []string{"owner_talk", "customer_talk", "listing_draft", "router"
 type Config struct {
 	MonthlyMicroInr      int64            `json:"monthlyMicroInr"`
 	Daily                map[string]int64 `json:"daily"`
+	// GuestTurnsPerDay is the most model answers one chat guest may have in a day (price list ai.daily.customer-talk.per-guest). Only the TypeScript chat
+	// (modules/channels/chat.ts) uses it; Go has no customer chat yet, but must accept and carry the key so a shop can move between the runtimes.
+	GuestTurnsPerDay     *int64           `json:"guestTurnsPerDay,omitempty"`
 	UnpricedCallMicroInr *int64           `json:"unpricedCallMicroInr,omitempty"`
 	WarnBasisPoints      *int64           `json:"warnBasisPoints,omitempty"`
 }
@@ -51,6 +54,9 @@ func Valid(raw map[string]any) bool {
 			return false
 		}
 	}
+	if v, ok := raw["guestTurnsPerDay"]; ok && !whole(v, 1) {
+		return false
+	}
 	if v, ok := raw["unpricedCallMicroInr"]; ok && !whole(v, 0) {
 		return false
 	}
@@ -58,7 +64,7 @@ func Valid(raw map[string]any) bool {
 		return false
 	}
 	for k := range raw {
-		if k != "monthlyMicroInr" && k != "daily" && k != "unpricedCallMicroInr" && k != "warnBasisPoints" {
+		if k != "monthlyMicroInr" && k != "daily" && k != "guestTurnsPerDay" && k != "unpricedCallMicroInr" && k != "warnBasisPoints" {
 			return false
 		}
 	}

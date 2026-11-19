@@ -19,7 +19,7 @@ import type { Document } from "./documents.ts";
 import { DOC } from "./words-documents.ts";
 
 /** Screen additions and the whole print sheet. Print: white paper, black ink, no head and no hint, a margin, and no card shadow. */
-const DOC_CSS = `
+export const DOC_CSS = `
 .doc { padding: 16px; }
 .doc h1 { margin: 0 0 4px; }
 .doc .en { display: block; color: var(--soft); font-size: .85rem; font-weight: 400; }

@@ -28,6 +28,8 @@ export interface BudgetConfig {
   monthlyMicroInr: number;
   /** The most calls a day for each feature, for the whole shop (a customer's own daily turns are the chat's: channels/chat.ts). A feature left out has no daily cap. */
   daily: Partial<Record<Feature, number>>;
+  /** The most typed sends that may ask the model for ONE chat guest in a day (price list `ai.daily.customer-talk.per-guest`, decision 62); read by modules/channels/chat.ts. Left out: chat.ts's fallback. */
+  guestTurnsPerDay?: number;
   /** What a call with no price in the rate table counts as against the budget. Default `DEFAULT_UNPRICED_CALL_MICRO_INR`. */
   unpricedCallMicroInr?: number;
   /** Where the first notice is sent, in basis points of the budget (10,000 = all of it). Default 8,000. */
@@ -64,9 +66,10 @@ export function isBudgetConfig(v: unknown): v is BudgetConfig {
   if (!whole(o.monthlyMicroInr, 0)) return false;
   if (typeof o.daily !== "object" || o.daily === null || Array.isArray(o.daily)) return false;
   for (const [k, n] of Object.entries(o.daily)) if (!(FEATURES as readonly string[]).includes(k) || !whole(n, 1)) return false;
+  if (o.guestTurnsPerDay !== undefined && !whole(o.guestTurnsPerDay, 1)) return false;
   if (o.unpricedCallMicroInr !== undefined && !whole(o.unpricedCallMicroInr, 0)) return false;
   if (o.warnBasisPoints !== undefined && !(whole(o.warnBasisPoints, 1) && (o.warnBasisPoints as number) <= 10_000)) return false;
-  return Object.keys(o).every((k) => ["monthlyMicroInr", "daily", "unpricedCallMicroInr", "warnBasisPoints"].includes(k));
+  return Object.keys(o).every((k) => ["monthlyMicroInr", "daily", "guestTurnsPerDay", "unpricedCallMicroInr", "warnBasisPoints"].includes(k));
 }
 
 /** The budget's state for now: this month's (ai-state.ts starts a month), and today's counts, started again when the day changed. Created on first use. */
