@@ -131,9 +131,13 @@ func CountUnderstood(ai **budget.AI, policy budget.Policy, clock budget.Clock, n
 // askMetered is talk-run.ts `askMetered`: one call of the talk model and what it cost, counted in the month's AI spend whether or not the answer is usable, and against its
 // feature's daily cap and the month's budget. `meter` is the record's refs for the call.
 func (c *conv) askMetered(feature, key string, call understanding.Call) (understanding.Answer, map[string]string, *budget.AI) {
-	r, now := c.r, c.now
+	return c.r.askMetered(c.snap, c.now, feature, key, call)
+}
+
+// askMetered is the same call over any step's state: the owner's talk (above) and a customer's (talkcustomer.go) both come through here, so the metering is the same for both.
+func (r *Runtime) askMetered(snap *Snap, now int64, feature, key string, call understanding.Call) (understanding.Answer, map[string]string, *budget.AI) {
 	got := r.o.Model.Ask(call)
-	month := budget.For(&c.snap.AI, r.clock, now)
+	month := budget.For(&snap.AI, r.clock, now)
 	month.Model++
 	cost, rateDate := r.o.Model.Cost(got, now)
 	if cost == nil {
@@ -141,7 +145,7 @@ func (c *conv) askMetered(feature, key string, call understanding.Call) (underst
 	} else {
 		month.CostMicroInr += *cost
 	}
-	budget.Record(&c.snap.AI, r.policy.Budget, feature, cost, key, r.clock, now)
+	budget.Record(&snap.AI, r.policy.Budget, feature, cost, key, r.clock, now)
 	meter := map[string]string{"step": "model", "provider": r.o.Model.Provider, "model": r.o.Model.Cfg.Model, "inputTokens": strconv.FormatInt(got.InputTokens, 10), "outputTokens": strconv.FormatInt(got.OutputTokens, 10)}
 	if cost != nil {
 		meter["costMicroInr"] = strconv.FormatInt(*cost, 10)
@@ -149,7 +153,7 @@ func (c *conv) askMetered(feature, key string, call understanding.Call) (underst
 	if rateDate != "" {
 		meter["rateDate"] = rateDate
 	}
-	return got, meter, budget.For(&c.snap.AI, r.clock, now)
+	return got, meter, budget.For(&snap.AI, r.clock, now)
 }
 
 // capNotice is conversation.ts `capNotice`: a feature stopped for the day is told to the owner once that day (only under a budget).

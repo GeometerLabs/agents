@@ -49,7 +49,8 @@ test("the proposed numbers: a budget for each plan, equal to ai.cap for the plan
   assert.equal(r["ai.cap"].micro, 20 * RUPEE);
   for (const plan of ["basic", "business", "operations"] as const) {
     assert.equal(r[`ai.budget.${plan}`].micro, (r["ai.cap"].micro! * r[`plan.${plan}.allowance`].count!) / 1000, `${plan}: the shop's own budget is the same rupee as fleet's outer wall`);
-    assert.ok(r[`ai.budget.${plan}`].micro! < r[`plan.${plan}.fee`].micro! / 4, `${plan}: a budget well under a quarter of the plan's fee`);
+    // owner, 19 Nov: "Change the rule to one third" (decision 62's budgets are 30% of the Business and Operations fees): a plan's model budget stays under a third of its fee
+    assert.ok(r[`ai.budget.${plan}`].micro! < r[`plan.${plan}.fee`].micro! / 3, `${plan}: a budget under a third of the plan's fee`);
   }
   assert.ok(r["ai.budget.listings-only"].micro! < r["ai.budget.basic"].micro!);
   assert.ok(r["ai.budget.discovery"].micro! > 0 && r["ai.daily.discovery.per-buyer"].count! > 0);
@@ -64,6 +65,7 @@ test("the 20 Nov proposal: chat caps raised, still equal to ai.cap for the plan'
   for (const plan of ["basic", "business", "operations"] as const) {
     assert.equal(raised.rates[`ai.budget.${plan}`].micro, (raised.rates["ai.cap"].micro! * raised.rates[`plan.${plan}.allowance`].count!) / 1000, plan);
     assert.equal(raised.rates[`plan.${plan}.fee`].micro, inForce.rates[`plan.${plan}.fee`].micro, `${plan}: no plan fee moves`);
+    assert.ok(raised.rates[`ai.budget.${plan}`].micro! < raised.rates[`plan.${plan}.fee`].micro! / 3, `${plan}: the raised budget is under a third of the plan's fee`);
   }
   const basic = budgetFor("basic", raised)!;
   assert.deepEqual([basic.monthlyMicroInr, basic.guestTurnsPerDay, basic.daily.customer_talk], [30 * RUPEE, 40, 120]);

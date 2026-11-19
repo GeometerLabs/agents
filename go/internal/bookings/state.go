@@ -153,7 +153,8 @@ type Store struct {
 	// own is `ownCalendar` once a step used the shop's own booking list (agent_offer.go ownCal), and channel the `channel` block once a step changed it (agent_channel.go);
 	// Members writes each back. nil: the raw member as read is kept.
 	own     *calendar.OwnState
-	channel *ChannelState
+	channel *runtime.ChannelState
+	reqs    *chanRequests
 }
 
 // NewStore is booking.ts createStore.
@@ -584,7 +585,10 @@ func (s *Store) Members() ([]runtime.Member, error) {
 		s.OwnCalendar, _ = json.Marshal(s.own)
 	}
 	if s.channel != nil {
-		s.Channel = s.channel.json()
+		if s.reqs != nil {
+			s.channel.Requests = s.reqs.json()
+		}
+		s.Channel = s.channel.Marshal()
 	}
 	out := []runtime.Member{
 		{Name: "bookings", Raw: pairs(ids, s.Bookings, (*Booking).json)},

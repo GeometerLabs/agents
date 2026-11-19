@@ -8,6 +8,7 @@
 package bookings
 
 import (
+	"encoding/json"
 	"context"
 
 	"github.com/GeometerLabs/agents/go/internal/understanding"
@@ -189,3 +190,6 @@ func (k *Kit) Limits() []runtime.LimitDecl {
 	return []runtime.LimitDecl{{ID: "refund_limit", Path: "cancellation.refundLimitInr", Unit: "inr", Tighter: "lower", Kind: "refund", File: s.Cancellation.RefundLimitInr,
 		Min: 0, Max: min(MostRefundRupees, max(1, s.Deposit.AmountInr))}}
 }
+
+// ChannelRaw is the saved state's `channel` member as read (runtime chatroutes.go ChannelStater): the chat's thread read needs no other member.
+func (k *Kit) ChannelRaw(st runtime.KitState) json.RawMessage { return st.(*Store).Channel }

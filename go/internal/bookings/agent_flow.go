@@ -24,20 +24,6 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
-// MessageExtras is what a caller other than the WhatsApp inbox hands with a message (messaging.ts InboundMessage's `audio` and `onHeard`, which never come from a webhook): a chat
-// guest's recording, held in memory for this one step, and the callback that shows the guest the words heard. More members may be added; the zero value is a WhatsApp message.
-type MessageExtras struct {
-	Audio   *PageAudio
-	OnHeard func(text string)
-}
-
-// PageAudio is voice/turn.ts PageAudio: a recording by its reference, its bytes and type.
-type PageAudio struct {
-	Ref   string
-	Bytes []byte
-	Mime  string
-}
-
 var (
 	// approvals/code.ts RELAY_CODE_REPLY and buttons.ts's button id: the approvals relay's replies, typed or tapped (`\s` is JavaScript's)
 	relayCode   = regexp.MustCompile(`(?i)^[` + language.JSSpace + `]*(approve|deny)[` + language.JSSpace + `]+([A-HJKMNP-Za-hjkmnp-z2-9]{4,6})[` + language.JSSpace + `]*$`)
@@ -84,8 +70,8 @@ func (a *Agent) coerce(in Intent) Intent {
 	return Intent{Kind: "unknown"}
 }
 
-// OnMessage is agent.ts onMessage: a customer's (or the owner's) WhatsApp message, or a chat guest's send.
-func (a *Agent) OnMessage(msg messaging.InboundMessage, x MessageExtras) error {
+// OnMessage is agent.ts onMessage: a customer's (or the owner's) WhatsApp message, or a chat guest's send (runtime.ChatTurn runs it under the guest's conversation).
+func (a *Agent) OnMessage(msg messaging.InboundMessage) error {
 	if contains(a.store.SeenMessages, msg.ID) {
 		a.log(nil, msg.From, "receive_message", "blocked", map[string]any{"id": msg.ID}, logMore{notes: "the same WhatsApp message was delivered again, so it is ignored"})
 		return nil
@@ -194,7 +180,10 @@ func (a *Agent) OnMessage(msg messaging.InboundMessage, x MessageExtras) error {
 		a.pausedReply(phone, "menu", nil)
 		return nil
 	}
-	// TODO(go-bk-chat-19nov): block M's customer talk (assistant.talkToCustomer) answers here first when the shop's talk is on
+	// block M: the shop's assistant may answer, from what customers may be told (false: the talk is off, a check failed, or nothing was said; the menu goes as before)
+	if msg.Reply == nil && !msg.NoModel && a.talkToCustomer(phone, msg.Text, in.OverrideAttempt != nil && *in.OverrideAttempt) {
+		return nil
+	}
 	a.tellCustomer(nil, phone, []string{"didnt_understand"}, sayOpts{offer: servicesOffer("didnt_understand")})
 	return nil
 }

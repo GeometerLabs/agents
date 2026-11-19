@@ -123,6 +123,8 @@ type StepContext struct {
 	// customers' words (CountUnderstood, budget.Buttons over Snap.AI).
 	Policy budget.Policy
 	Clock  budget.Clock
+	// rt is the runtime that made the step: a customer's talk (talkcustomer.go) asks it for the model, the budget and the clock. Unset in a step a test builds by hand.
+	rt *Runtime
 }
 
 // ErrUnported is a kind of event this Go runtime does not take yet. The task ends failed at once (no retries: it would fail the same way), with the sentence in the task's error.

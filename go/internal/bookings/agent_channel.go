@@ -5,11 +5,9 @@ package bookings
 // differs is its own conversation ("web:<16 hex>"), its messages kept for its page (never sent to the typed number), the exact service and start (no words are read), and the
 // per-number and per-shop limits.
 //
-// ChannelState models the members this file changes (seq, outbox, requests) and keeps the rest raw in its own order (`chat`, `guests`: the chat's, go-bk-chat-19nov), so a shop
-// moves between the runtimes and loses nothing. TODO(go-bk-chat-19nov): the chat's thread lines (choices, the CHAT_THREAD_MAX cap) use this same outbox.
+// The channel block is the shared runtime's ChannelState (internal/runtime chatstate.go: the outbox, the chat's guests); only its `requests` are the template's own, modelled here.
 
 import (
-	"regexp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -21,26 +19,14 @@ import (
 	"github.com/GeometerLabs/agents/go/internal/zone"
 )
 
-// channels/state.ts CHANNEL_LIMITS and OUTBOX_PER_CONVERSATION.
+// channels/state.ts CHANNEL_LIMITS (the outbox's caps are the runtime's: runtime.OutboxPerConversation, ChatThreadMax).
 const (
-	holdsPerPhone          = 2
-	startsPerPhonePerDay   = 5
-	unpaidHoldsPerShop     = 6
-	outboxPerConversation  = 20
-	chatThreadMax          = 60
+	holdsPerPhone        = 2
+	startsPerPhonePerDay = 5
+	unpaidHoldsPerShop   = 6
 )
 
-// OutboxMessage is state.ts OutboxMessage; Rest keeps the members this file does not model (a chat line's `choices`).
-type OutboxMessage struct {
-	ID     string `json:"id"`
-	To     string `json:"to"`
-	Text   string `json:"text"`
-	AtMs   int64  `json:"atMs"`
-	Moment string `json:"moment,omitempty"`
-	Rest   map[string]json.RawMessage
-}
-
-// ChannelRequest is state.ts ChannelRequestRecord.
+// ChannelRequest is state.ts ChannelRequestRecord: the template's own part of the shared channel state (runtime.ChannelState keeps `requests` raw for the template).
 type ChannelRequest struct {
 	AtMs    int64  `json:"atMs"`
 	Channel string `json:"channel"`
@@ -49,117 +35,59 @@ type ChannelRequest struct {
 	Phone   string `json:"phone,omitempty"`
 }
 
-// ChannelState is the store's `channel` block as a step changes it. Requests keep their keys' order (a JS object's).
-type ChannelState struct {
-	Seq      int64
-	Outbox   []*OutboxMessage
-	keys     []string
-	Requests map[string]*ChannelRequest
-	rest     []runtime.Member // chat, guests and anything newer, in order
+// chanRequests are the requests by their handle's hash, in their keys' order (a JS object's).
+type chanRequests struct {
+	keys []string
+	m    map[string]*ChannelRequest
 }
 
-// chan_ is the store's channel block, parsed on first use in a step (`store.channel ??= emptyChannelState()`).
-func (s *Store) chanState() *ChannelState {
-	if s.channel != nil {
-		return s.channel
-	}
-	c := &ChannelState{Requests: map[string]*ChannelRequest{}, Outbox: []*OutboxMessage{}}
-	if s.Channel != nil {
-		if ms, ok := members(s.Channel); ok {
-			for _, m := range ms {
-				switch m.Name {
-				case "seq":
-					var f float64
-					_ = json.Unmarshal(m.Raw, &f)
-					c.Seq = int64(f)
-				case "outbox":
-					var list []json.RawMessage
-					_ = json.Unmarshal(m.Raw, &list)
-					for _, raw := range list {
-						o := &OutboxMessage{}
-						_ = json.Unmarshal(raw, o)
-						var all map[string]json.RawMessage
-						_ = json.Unmarshal(raw, &all)
-						for _, k := range []string{"id", "to", "text", "atMs", "moment"} {
-							delete(all, k)
-						}
-						if len(all) > 0 {
-							o.Rest = all
-						}
-						c.Outbox = append(c.Outbox, o)
-					}
-				case "requests":
-					if rs, ok := members(m.Raw); ok {
-						for _, r := range rs {
-							x := &ChannelRequest{}
-							_ = json.Unmarshal(r.Raw, x)
-							c.keys = append(c.keys, r.Name)
-							c.Requests[r.Name] = x
-						}
-					}
-				default:
-					c.rest = append(c.rest, m)
-				}
-			}
-		}
-	}
-	s.channel = c
-	return c
-}
-
-func (c *ChannelState) setRequest(hash string, r *ChannelRequest) {
-	if _, ok := c.Requests[hash]; !ok {
+func (c *chanRequests) set(hash string, r *ChannelRequest) {
+	if _, ok := c.m[hash]; !ok {
 		c.keys = append(c.keys, hash)
 	}
-	c.Requests[hash] = r
+	c.m[hash] = r
 }
 
-func (c *ChannelState) markMoment(id, moment string) {
-	for _, m := range c.Outbox {
-		if m.ID == id {
-			m.Moment = moment
-		}
-	}
-}
-
-// json writes the block back in state.ts's member order (seq, outbox, requests, then the rest as read).
-func (c *ChannelState) json() json.RawMessage {
+func (c *chanRequests) json() json.RawMessage {
 	var o object
-	o.put("seq", c.Seq)
-	out := make([]json.RawMessage, 0, len(c.Outbox))
-	for _, m := range c.Outbox {
-		var x object
-		x.put("id", m.ID)
-		x.put("to", m.To)
-		x.put("text", m.Text)
-		x.put("atMs", m.AtMs)
-		for k, v := range m.Rest {
-			x.put(k, v)
-		}
-		if m.Moment != "" {
-			x.put("moment", m.Moment)
-		}
-		out = append(out, x.done())
-	}
-	o.put("outbox", out)
-	var rs object
 	for _, k := range c.keys {
-		rs.put(k, c.Requests[k])
-	}
-	o.put("requests", rs.done())
-	for _, m := range c.rest {
-		o.put(m.Name, m.Raw)
+		o.put(k, c.m[k])
 	}
 	return o.done()
 }
 
-var (
-	channelConversationRe = regexp.MustCompile(`^(?:web|mcp|chat):[0-9a-f]{16}$`) // channels/conversation.ts isChannelConversation
-	chatConversationRe    = regexp.MustCompile(`^chat:[0-9a-f]{16}$`)
-)
+// chanState is the store's `channel` block for this step (`store.channel ??= emptyChannelState()`), the runtime's own ChannelState (the chat's part included), parsed once; Members
+// writes it back. A block this version cannot read is started fresh only in memory: it is written back only if the step changes it.
+func (s *Store) chanState() *runtime.ChannelState {
+	if s.channel == nil {
+		cs, err := runtime.ParseChannel(s.Channel)
+		if err != nil {
+			cs = runtime.EmptyChannel()
+		}
+		s.channel = cs
+	}
+	return s.channel
+}
 
-func isChannelConversation(to string) bool { return channelConversationRe.MatchString(to) }
-func isChatConversation(to string) bool    { return chatConversationRe.MatchString(to) }
+// requests are the channel's requests, parsed on first use.
+func (s *Store) requests() *chanRequests {
+	if s.reqs == nil {
+		s.reqs = &chanRequests{m: map[string]*ChannelRequest{}}
+		if raw := s.chanState().Requests; raw != nil {
+			if rs, ok := members(raw); ok {
+				for _, r := range rs {
+					x := &ChannelRequest{}
+					_ = json.Unmarshal(r.Raw, x)
+					s.reqs.set(r.Name, x)
+				}
+			}
+		}
+	}
+	return s.reqs
+}
+
+func isChannelConversation(to string) bool { return runtime.IsChannelConversation(to) }
+func isChatConversation(to string) bool    { return runtime.IsChatConversation(to) }
 
 // ---- outbox.ts channelMessaging: a message to a channel's conversation is kept for its page, never sent to the typed number ------------------------------------------
 
@@ -169,38 +97,11 @@ type chanMsg struct {
 }
 
 func (a *Agent) channelMessaging(base messaging.Messaging) messaging.Messaging {
-	c := &chanMsg{a, base}
-	return chanInteractive{c}
+	return chanInteractive{&chanMsg{a, base}}
 }
 
-func (c *chanMsg) keep(to, kind, text string) messaging.OutboundMessage {
-	s := c.a.store.chanState()
-	s.Seq++
-	m := &OutboxMessage{ID: fmt.Sprintf("ch-%d", s.Seq), To: to, Text: text, AtMs: c.a.now()}
-	s.Outbox = append(s.Outbox, m)
-	limit := outboxPerConversation
-	if isChatConversation(to) {
-		limit = chatThreadMax
-	}
-	var mine []*OutboxMessage
-	for _, x := range s.Outbox {
-		if x.To == to {
-			mine = append(mine, x)
-		}
-	}
-	if len(mine) > limit {
-		drop := map[*OutboxMessage]bool{}
-		for _, x := range mine[:len(mine)-limit] {
-			drop[x] = true
-		}
-		keep := s.Outbox[:0]
-		for _, x := range s.Outbox {
-			if !drop[x] {
-				keep = append(keep, x)
-			}
-		}
-		s.Outbox = keep
-	}
+func (c *chanMsg) keep(to, kind, text string, choices []runtime.ChatChoice) messaging.OutboundMessage {
+	m := c.a.store.chanState().Keep(to, text, choices, c.a.now())
 	// TODO(go-bk-agent): onKeep, the customer's web push of the page's message (push.customer), is not wired yet
 	return messaging.OutboundMessage{ID: m.ID, To: to, Kind: kind, Text: text, SentAt: m.AtMs}
 }
@@ -211,7 +112,7 @@ func noChannelWhatsApp() error {
 
 func (c *chanMsg) SendText(ctx context.Context, to, text string) (messaging.OutboundMessage, error) {
 	if isChannelConversation(to) {
-		return c.keep(to, "text", text), nil
+		return c.keep(to, "text", text, nil), nil
 	}
 	if c.base == nil {
 		return messaging.OutboundMessage{}, noChannelWhatsApp()
@@ -221,7 +122,7 @@ func (c *chanMsg) SendText(ctx context.Context, to, text string) (messaging.Outb
 
 func (c *chanMsg) SendTemplate(ctx context.Context, to string, t messaging.TemplateMessage) (messaging.OutboundMessage, error) {
 	if isChannelConversation(to) {
-		return c.keep(to, "text", t.Text), nil
+		return c.keep(to, "text", t.Text, nil), nil
 	}
 	if c.base == nil {
 		return messaging.OutboundMessage{}, noChannelWhatsApp()
@@ -256,10 +157,23 @@ func (c *chanMsg) GetMessage(ctx context.Context, id string) (*messaging.Outboun
 
 type chanInteractive struct{ *chanMsg }
 
-// SendInteractive: buttons and lists are WhatsApp's; a booking's page has its own, so only the words above them are kept.
+// SendInteractive: buttons and lists are WhatsApp's; a booking's page has its own, so only the words above them are kept; a chat thread keeps the choices too (outbox.ts choicesOf).
 func (c chanInteractive) SendInteractive(ctx context.Context, to string, m messaging.InteractiveMessage) (messaging.OutboundMessage, error) {
 	if isChannelConversation(to) {
-		return c.keep(to, "text", m.Body), nil
+		var buttons, rows []runtime.ChatChoice
+		for _, b := range m.Buttons {
+			buttons = append(buttons, runtime.ChatChoice{ID: b.ID, Title: b.Title})
+		}
+		if m.List != nil {
+			for _, r := range m.List.Rows {
+				ch := runtime.ChatChoice{ID: r.ID, Title: r.Title, List: true}
+				if r.Description != nil {
+					ch.Hint = *r.Description
+				}
+				rows = append(rows, ch)
+			}
+		}
+		return c.keep(to, "text", m.Body, runtime.ChoicesOf(buttons, rows)), nil
 	}
 	if c.base == nil {
 		return messaging.OutboundMessage{}, noChannelWhatsApp()
@@ -308,7 +222,7 @@ func (a *Agent) onChannel(ev map[string]any) error {
 		return nil
 	}
 	var b *Booking
-	if r := a.store.chanState().Requests[handle]; r != nil && r.Booking != "" {
+	if r := a.store.requests().m[handle]; r != nil && r.Booking != "" {
 		b = a.store.Booking(r.Booking)
 	}
 	if b == nil || b.Handle != handle {
@@ -330,8 +244,8 @@ func (a *Agent) onChannel(ev map[string]any) error {
 }
 
 func (a *Agent) onChannelBook(ev map[string]any, channel, handle string) error {
-	state := a.store.chanState()
-	if state.Requests[handle] != nil {
+	state := a.store.requests()
+	if state.m[handle] != nil {
 		return nil // the same request again (its task key is the handle): one booking, however often it is sent
 	}
 	now := a.now()
@@ -349,7 +263,7 @@ func (a *Agent) onChannelBook(ev map[string]any, channel, handle string) error {
 	// the name and number are inputs only: the record keeps their keyed digest, never the words
 	inputs := map[string]any{"channel": channel, "serviceId": serviceID, "startMs": ev["startMs"], "name": name, "phone": phone}
 	refuse := func(reason, notes string) error {
-		state.setRequest(handle, &ChannelRequest{AtMs: now, Channel: channel, Refused: reason, Phone: digits})
+		state.set(handle, &ChannelRequest{AtMs: now, Channel: channel, Refused: reason, Phone: digits})
 		a.log(nil, conversation, "channel_booking", "blocked", inputs, logMore{refs: map[string]string{"channel": channel, "reason": reason}, notes: notes})
 		return nil
 	}
@@ -384,7 +298,7 @@ func (a *Agent) onChannelBook(ev map[string]any, channel, handle string) error {
 	}
 	today := 0
 	for _, k := range state.keys {
-		if r := state.Requests[k]; r.Phone == digits && now-r.AtMs < Day {
+		if r := state.m[k]; r.Phone == digits && now-r.AtMs < Day {
 			today++
 		}
 	}
@@ -404,7 +318,7 @@ func (a *Agent) onChannelBook(ev map[string]any, channel, handle string) error {
 	p := zone.LocalParts(start, a.settings.Timezone)
 	b.setDate(p.Date)
 	b.setExtra("time", clockTime{p.Hour, p.Minute})
-	state.setRequest(handle, &ChannelRequest{AtMs: now, Channel: channel, Booking: b.ID, Phone: digits})
+	state.set(handle, &ChannelRequest{AtMs: now, Channel: channel, Booking: b.ID, Phone: digits})
 	where := "shop's booking page or its API"
 	if channel == "mcp" {
 		where = "MCP endpoint, by an AI assistant for its user"
