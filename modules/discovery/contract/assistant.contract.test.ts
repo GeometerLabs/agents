@@ -1,6 +1,6 @@
 // The buyer's assistant ("Ask in your own words") as the directory's outside sees it, against a fake OpenAI-compatible model (decision 60: the call goes through the model Guard with
 // the directory's own credential; a model's answer is untrusted input and one thing wrong anywhere drops the whole answer). The directory is a separate process
-// (DIRECTORY_IMPL=ts|go); everything is a scripted fake: no model, no provider. NOT TESTED ON A REAL MODEL OR PROVIDER.
+// (the Go directory, go/cmd/directory); everything is a scripted fake: no model, no provider. NOT TESTED ON A REAL MODEL OR PROVIDER.
 import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { SKIP, directoryWith, fakeShop, item, startFakeModel, typed } from "./harness.ts";

@@ -1,5 +1,5 @@
 // Search, the order, the pages, the Agent Card, the MCP endpoint and the per-address limits as the directory's outside sees them. The directory is a separate process
-// (DIRECTORY_IMPL=ts|go); the shops are fakes behind a fake door. The order rotates by day, so the tests check the order's PROPERTIES (fit, distance bands, in stock first, shops
+// (the Go directory, go/cmd/directory); the shops are fakes behind a fake door. The order rotates by day, so the tests check the order's PROPERTIES (fit, distance bands, in stock first, shops
 // taking turns, at most three of one shop in the first ten, the same answer twice), never a fixed sequence.
 import { after, test } from "node:test";
 import assert from "node:assert/strict";

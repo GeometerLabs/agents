@@ -3,12 +3,10 @@
 // stands in for the door's own port (so no test touches DNS or a private address), and a fake OpenAI-compatible model. The directory itself is only ever reached over HTTP, plus
 // its two files read-only (directory.sqlite for what a person could not see over HTTP, and directory.key).
 //
-// Which implementation runs is chosen by the environment:
-//   DIRECTORY_IMPL=ts   (default)  node bundle/services/directory.ts
-//   DIRECTORY_IMPL=go              the built binary named by DIRECTORY_GO_BIN (default <repo>/go/bin/directory)
-// Both read the same CONFIG file, PORT and HOST variables and the same data folder. With `go` and no binary every test skips and says why (`SKIP`).
-// Shops are signed with the TypeScript signing module (modules/signing), the one the TypeScript shops use; a small independent checker (spec.ts) tests the directory's own
-// signed card against the spec, so a reader does not depend on the module it checks.
+// The directory is the Go program (go/cmd/directory) named by DIRECTORY_GO_BIN (default <repo>/go/bin/directory); with no binary every test skips and says why (`SKIP`). Until
+// 19 Nov 2026 DIRECTORY_IMPL=ts ran the TypeScript service the Go one replaced; it was deleted after its answers were recorded (golden/, differential.test.ts).
+// Shops are signed with the TypeScript signing module (modules/signing), the one the TypeScript shops use; the search contract checks the directory's own signed card with an
+// independent RFC 8785 reader, so a reader does not depend on the module it checks.
 import type { ChildProcess } from "node:child_process";
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
@@ -24,13 +22,14 @@ import type { SigningKey } from "../../signing/keys.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const REPO = join(here, "..", "..", "..");
-export const IMPL = (process.env.DIRECTORY_IMPL ?? "ts") as "ts" | "go";
+/** What runs: only the Go directory is left (the name stays so a recording says what made it). */
+export const IMPL = "go" as const;
 export const GO_BIN = process.env.DIRECTORY_GO_BIN ?? join(REPO, "go", "bin", "directory");
 /** The pages domain the fake shops and the directory share. */
 export const DOMAIN = "pages.example";
 export const ORIGIN = `https://${DOMAIN}`;
 /** Set (with the reason) when this run cannot happen: pass it as the test option `{ skip: SKIP }`. */
-export const SKIP: string | false = IMPL === "go" && !existsSync(GO_BIN) ? `DIRECTORY_IMPL=go but there is no binary at ${GO_BIN} (build it: cd go && go build -o bin/directory ./cmd/directory)` : false;
+export const SKIP: string | false = !existsSync(GO_BIN) ? `there is no directory binary at ${GO_BIN} (build it: cd go && go build -o bin/directory ./cmd/directory)` : false;
 
 export const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
@@ -203,7 +202,7 @@ export interface DirectoryOptions {
   area?: string;
   /** How often the service reads the feeds that are due, in ms (the service's DIRECTORY_TICK_MS; default 200 here, 20 000 in service). */
   tickMs?: number;
-  /** An existing data folder (to start again on it, or on it with the other runtime). */
+  /** An existing data folder (to start again on it). */
   dataDir?: string;
   /** Run the directory on the fake shops' clock (`now()`, the machine's plus the offset): GEOMETER_TEST=1 and GEOMETER_TEST_CLOCK_FILE, the Go directory's test clock. */
   clock?: boolean;
@@ -216,7 +215,7 @@ export interface Directory {
   /** A fresh visitor address. */
   visitor(): string;
   stop(): Promise<void>;
-  start(impl?: "ts" | "go"): Promise<void>;
+  start(): Promise<void>;
   log(): string;
   pid(): number | undefined;
   /** The index file, read only (a person's side: what is pinned, what is held, how each feed went). */
@@ -259,10 +258,7 @@ export async function makeDirectory(o: DirectoryOptions): Promise<Directory> {
   writeFileSync(configFile, JSON.stringify(config));
   let child: ChildProcess | undefined;
   let output = "";
-  let current: "ts" | "go" = IMPL; // the implementation started last: the person's sub-commands are run with it
   const base = `http://127.0.0.1:${port}`;
-  const command = (impl: "ts" | "go", args: string[] = []): { cmd: string; args: string[] } =>
-    impl === "go" ? { cmd: GO_BIN, args } : { cmd: process.execPath, args: [join(REPO, "bundle", "services", "directory.ts"), ...args] };
   const clockFile = join(root, "clock");
   if (o.clock) writeFileSync(clockFile, String(offsetMs));
   const env = (): Record<string, string | undefined> => ({
@@ -284,12 +280,10 @@ export async function makeDirectory(o: DirectoryOptions): Promise<Directory> {
       return { status: r.status, body: parsed, text, headers: r.headers };
     },
     searchJson: async (q, who) => { const r = await d.call(`/search?${new URLSearchParams({ format: "json", ...q })}`, { who }); return { status: r.status, body: r.body }; },
-    async start(impl = IMPL) {
+    async start() {
       await stopChild(child);
-      current = impl;
-      const { cmd, args } = command(impl);
       output = "";
-      const c = spawnChild(cmd, args, { env: env(), stdio: ["ignore", "pipe", "pipe"], cwd: REPO }, `the ${impl} directory in ${root}`);
+      const c = spawnChild(GO_BIN, [], { env: env(), stdio: ["ignore", "pipe", "pipe"], cwd: REPO }, `the directory in ${root}`);
       child = c;
       c.stdout!.on("data", (x: Buffer) => { output += x.toString(); });
       c.stderr!.on("data", (x: Buffer) => { output += x.toString(); });
@@ -308,8 +302,7 @@ export async function makeDirectory(o: DirectoryOptions): Promise<Directory> {
     db: () => new DatabaseSync(join(dataDir, "directory.sqlite"), { readOnly: true }),
     makeDue(url) { const w = new DatabaseSync(join(dataDir, "directory.sqlite")); w.prepare("UPDATE feeds SET checked_at = NULL WHERE url = ?").run(url); w.close(); },
     async cli(...args) {
-      const { cmd, args: a } = command(current, args);
-      const c = spawnChild(cmd, a, { env: env(), stdio: ["ignore", "pipe", "pipe"], cwd: REPO }, `the ${current} directory's ${args[0]} command`);
+      const c = spawnChild(GO_BIN, args, { env: env(), stdio: ["ignore", "pipe", "pipe"], cwd: REPO }, `the directory's ${args[0]} command`);
       let out = "";
       c.stdout!.on("data", (x: Buffer) => { out += x.toString(); });
       c.stderr!.on("data", (x: Buffer) => { out += x.toString(); });

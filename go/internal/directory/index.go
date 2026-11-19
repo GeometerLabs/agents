@@ -96,6 +96,9 @@ type Hit struct {
 type Index struct {
 	db *sql.DB
 	mu sync.Mutex
+	// The read of a shop, prepared once (database/sql over modernc compiles a statement on every QueryRow). The candidates' rows are read in batches (itemsOf): a search of 800
+	// candidates read them one query each and spent most of its time there (14 ms at p50 against the TypeScript's 6.2 ms). Same rows, same order, same answers.
+	shopByPage *sql.Stmt
 }
 
 // OpenIndex opens (and if need be makes) the index file; ":memory:" for a test.
@@ -130,11 +133,17 @@ func OpenIndex(path string) (*Index, error) {
 	if _, err := db.Exec(fmt.Sprintf("PRAGMA user_version = %d", SchemaVersion)); err != nil {
 		return nil, err
 	}
+	if x.shopByPage, err = db.Prepare("SELECT " + shopColumns + " FROM shops WHERE page = ?"); err != nil {
+		return nil, err
+	}
 	return x, nil
 }
 
 // Close closes the file.
-func (x *Index) Close() error { return x.db.Close() }
+func (x *Index) Close() error {
+	x.shopByPage.Close()
+	return x.db.Close()
+}
 
 const schema = `
       CREATE TABLE IF NOT EXISTS feeds (url TEXT PRIMARY KEY, source TEXT NOT NULL, etag TEXT, fetched_at INTEGER, checked_at INTEGER, wanted_at INTEGER, gone_since INTEGER, added_at INTEGER NOT NULL, error TEXT, body TEXT);
@@ -503,7 +512,7 @@ func scanItem(r interface{ Scan(...any) error }) (ItemRow, error) {
 
 // Shop is one shop by page, or nil.
 func (x *Index) Shop(page string) *ShopRow {
-	s, err := scanShop(x.db.QueryRow("SELECT "+shopColumns+" FROM shops WHERE page = ?", page))
+	s, err := scanShop(x.shopByPage.QueryRow(page))
 	if err != nil {
 		return nil
 	}
@@ -599,6 +608,38 @@ func anyTerm(word string) string {
 
 var errNoMatch = errors.New("no match")
 
+// rowScanner reads the rowid in front of an item's columns, so scanItem reads the rest as it always does.
+type rowScanner struct {
+	rows *sql.Rows
+	rid  *int64
+}
+
+func (r rowScanner) Scan(dest ...any) error { return r.rows.Scan(append([]any{r.rid}, dest...)...) }
+
+// itemsOf reads the items of these rowids, 500 to a query (SQLite allows far more variables; 500 keeps a statement small), by rowid. A row that cannot be read is left out, as before.
+func (x *Index) itemsOf(rids []int64) map[int64]ItemRow {
+	out := make(map[int64]ItemRow, len(rids))
+	for from := 0; from < len(rids); from += 500 {
+		chunk := rids[from:min(from+500, len(rids))]
+		args := make([]any, len(chunk))
+		for i, r := range chunk {
+			args[i] = r
+		}
+		rows, err := x.db.Query("SELECT rowid, "+itemColumns+" FROM items WHERE rowid IN (?"+strings.Repeat(",?", len(chunk)-1)+")", args...)
+		if err != nil {
+			continue
+		}
+		for rows.Next() {
+			var rid int64
+			if item, err := scanItem(rowScanner{rows, &rid}); err == nil {
+				out[rid] = item
+			}
+		}
+		rows.Close()
+	}
+	return out
+}
+
 func (x *Index) rowids(match, filter string, extra []any) []int64 {
 	args := append([]any{match}, extra...)
 	rows, err := x.db.Query("SELECT items.rowid FROM items_fts JOIN items ON items.rowid = items_fts.rowid JOIN shops ON shops.page = items.shop_page WHERE items_fts MATCH ? AND shops.status = 'ok'"+filter+" LIMIT "+strconv.Itoa(MaxCandidates), args...)
@@ -673,9 +714,10 @@ func (x *Index) Candidates(q IndexQuery) []Hit {
 	}
 	shops := map[string]*ShopRow{}
 	var hits []Hit
+	items := x.itemsOf(anyIDs)
 	for _, rid := range anyIDs {
-		item, err := scanItem(x.db.QueryRow("SELECT "+itemColumns+" FROM items WHERE rowid = ?", rid))
-		if err != nil {
+		item, ok := items[rid]
+		if !ok {
 			continue
 		}
 		shop := shops[item.Shop]
