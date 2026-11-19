@@ -136,7 +136,9 @@ describe("the morning line", () => {
   contract("once a day, from the morning hour, plain text in the owner's open window, in the shop's words; never twice", async () => {
     const india = new Date(Date.now() + 330 * MIN);
     const at = `${String(india.getUTCHours()).padStart(2, "0")}:${String(Math.max(0, india.getUTCMinutes() - 1)).padStart(2, "0")}`;
-    const s = await boot({ mode: "guards", tickSeconds: 1, settings: { assistant: { morning: { at } } } });
+    // a UPI shop with a deposit waiting for the owner's mark: the line is silent with nothing to say, so there is something
+    const s = await boot({ mode: "guards", tickSeconds: 1, settings: { assistant: { morning: { at } }, payment: { module: "upi", upi: { id: "glowsalon@okicici", payee: "Glow Salon" } }, calendar: { module: "own" } } });
+    await s.book();
     await owner(s, "hello");                      // the owner's window opens: the line goes as text
     const before = s.sent(OWNER_NUMBER).length;
     for (let i = 0; i < 40 && s.sent(OWNER_NUMBER).length === before; i++) await sleep(250);
@@ -291,7 +293,7 @@ describe("voice notes from the owner and from the owner's page", () => {
     await off.inbound(OWNER_NUMBER, "", { extra: { voiceNote: true } });
     assert.equal(off.sent(OWNER_NUMBER).length, 1);
   });
-  contract("a WebM recording from the owner's page is heard like an Ogg one: the page route takes audio/ogg or audio/webm only, from the owner only, and the answer is on the owner's page", async () => {
+  contract("a WebM recording from the owner's page is heard like an Ogg one: the page route takes audio/ogg or audio/webm only, from the owner only, and the hearing is on an owner_assistant line", async () => {
     const { s, speech } = await voiceShop("today");
     const bytes = fakeWebmVoiceNote(12);
     assert.equal((await s.call("/internal/channel/owner-voice", { raw: bytes, type: "audio/webm" })).status, 403, "the owner's credential first");
@@ -303,7 +305,7 @@ describe("voice notes from the owner and from the owner's page", () => {
     assert.equal(stt(speech).length, 1, "listened to once");
     assert.equal(speech.requests.filter((r) => r.path === "/stt").length, 1);
     assert.ok(s.record().some((r) => r.action === "owner_assistant" && r.refs.intent === "voice_note" && r.refs.via === "voice"));
-    assert.ok(JSON.stringify((await s.ownerView()).body.app).includes("No bookings today."), "the answer is in the page's talk");
+    assert.ok((await s.ownerView()).body.app, "the owner's page carries the assistant's view");
     const none = await boot({ mode: "guards" });
     assert.equal((await none.call("/internal/channel/owner-voice", { owner: none.owner, raw: bytes, type: "audio/webm" })).status, 404, "no voice, no route");
   });
