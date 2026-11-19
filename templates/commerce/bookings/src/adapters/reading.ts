@@ -8,7 +8,7 @@ import type { CandidateSlot, Intent, IntentKind, ParseContext, ParseOptions } fr
 import { intentSchema, systemPrompt, toIntentShape } from "./model-prompt.ts";
 import { parseIntent } from "./rule-parser.ts";
 
-const INTENT_LABELS: Record<string, string> = {
+export const INTENT_LABELS: Record<string, string> = {
   book: "wants to book an appointment, or asks about a service, a price or a time",
   cancel: "wants to cancel a booking",
   reschedule: "wants a different day or time for a booking they already have",
@@ -18,10 +18,10 @@ const INTENT_LABELS: Record<string, string> = {
   owner: "asks to talk to the owner or to a person",
   other: "anything else",
 };
-const NO_SERVICE = "no_service"; // a label with an underscore: a service id never has one
-const NO_SLOT = "no_slot";
+export const NO_SERVICE = "no_service"; // a label with an underscore: a service id never has one
+export const NO_SLOT = "no_slot";
 
-const WHAT = "A customer wrote this WhatsApp message to a small shop that takes bookings, in Hindi, English, Malayalam or Kannada (in their own script or in Latin letters). ";
+export const WHAT = "A customer wrote this WhatsApp message to a small shop that takes bookings, in Hindi, English, Malayalam or Kannada (in their own script or in Latin letters). ";
 
 /** Is the rule parser's reading enough on its own? A booking with no service or no time is not: the next step may know. */
 export function rulesAreSure(i: Intent): boolean {

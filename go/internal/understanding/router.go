@@ -33,6 +33,12 @@ type Reading[I any] interface {
 	Merge(model, ruled I) I
 }
 
+// Shaper is a reading with its own `shape` (model.ts Reading.shape): the model's answer put in the shape `Coerce` expects. A reading without one has the nulls of the answer's
+// top level taken out (the owner's shape).
+type Shaper interface {
+	Shape(answer any) any
+}
+
 // Router is the three steps, with the steps this shop has (nil: not configured, or its key is not in the environment).
 type Router[I any] struct {
 	Reading   Reading[I]
@@ -156,7 +162,11 @@ func (r *Router[I]) Parse(text string, o Options, nowMs int64) (I, Understood, s
 		spends = append(spends, sp)
 		why := got.Reason
 		if why == "" {
-			if intent, ok := r.Reading.Coerce(shape(got.Answer)); ok {
+			shaped := shape(got.Answer)
+			if sh, ok := any(r.Reading).(Shaper); ok {
+				shaped = sh.Shape(got.Answer)
+			}
+			if intent, ok := r.Reading.Coerce(shaped); ok {
 				return finish(r.Reading.Merge(intent, ruled), sp, "")
 			}
 			why = "its answer was not a valid intent"

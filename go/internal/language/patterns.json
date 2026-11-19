@@ -15,6 +15,32 @@
   "money",
   "day"
  ],
+ "offers": [
+  {
+   "minimum": 1,
+   "skipWrittenDate": false
+  },
+  {
+   "minimum": 10,
+   "skipWrittenDate": false
+  },
+  {
+   "minimum": 10,
+   "skipWrittenDate": false
+  },
+  {
+   "minimum": 25,
+   "skipWrittenDate": true
+  },
+  {
+   "minimum": 10,
+   "skipWrittenDate": false
+  },
+  {
+   "minimum": 100,
+   "skipWrittenDate": false
+  }
+ ],
  "patterns": {
   "dates.weekday.0": {
    "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:njayarazhcha|bhanuvaara|bhanuvara|ravivaar|ഞായറാഴ്ച[\\p{L}\\p{M}]*|ravivara|ravivar|njaayar|ಭಾನುವಾರ[\\p{L}\\p{M}]*|sunday|रविवार|njayar|ರವಿವಾರ[\\p{L}\\p{M}]*|इतवार|itwar|itvar|ഞായ[ർരറ][\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
@@ -114,6 +140,146 @@
   },
   "dates.this": {
    "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:this|इस|ഈ|ee|ಈ|ee)\\s+$",
+   "flags": "u"
+  },
+  "dates.time.clock": {
+   "source": "(?<![\\d:.])(\\d{1,2}):(\\d{2})(?!\\d)\\s*(am|pm|a\\.m\\.|p\\.m\\.)?",
+   "flags": "u"
+  },
+  "dates.time.ampm": {
+   "source": "(?<![\\d:.])(\\d{1,2})\\s*(am|pm|a\\.m\\.|p\\.m\\.)(?![\\p{L}])",
+   "flags": "u"
+  },
+  "dates.time.clock_word": {
+   "source": "(?<![\\d:.])(\\d{1,2})(?::(\\d{2}))?\\s*(?:बजे|baje|bje|o'?clock|മണിക്ക്(?![\\p{L}\\p{M}])|മണിയോടെ(?![\\p{L}\\p{M}])|manikku(?![\\p{L}\\p{M}])|gantege(?![\\p{L}\\p{M}])|ಗಂಟೆಗೆ(?![\\p{L}\\p{M}])|ಗಂಟೆಯ(?![\\p{L}\\p{M}])|gante(?![\\p{L}\\p{M}])|mani(?![\\p{L}\\p{M}])|ಗಂಟೆ(?![\\p{L}\\p{M}])|മണി(?![\\p{L}\\p{M}]))",
+   "flags": "u"
+  },
+  "dates.time.kannada_hour": {
+   "source": "(?<![\\d:.])(1[0-2]|[1-9])(?::(\\d{2}))?\\s*(?:ಕ್ಕ[ೆೇ]|ಗ[ೆೇ])(?![\\p{L}\\p{M}])",
+   "flags": "u"
+  },
+  "dates.time.period_then_hour": {
+   "source": "(?:വൈകുന്നേരത്തേക്ക്|വൈകുന്നേരത്തെ|ഉച്ചകഴിഞ്ഞ്|vaikunneram|ഉച്ചയ്ക്ക്|madhyaanha|വൈകുന്നേരം|സന്ധ്യക്ക്|രാവിലത്തെ|afternoon|madhyahna|പുലർച്ചെ|ಬೆಳಿಗ್ಗೆ|ഉച്ചക്ക്|ಮಧ್ಯಾಹ್ನ|വൈകീട്ട്|വൈകിട്ട്|vaikittu|morning|raavile|ಬೆಳಗ್ಗೆ|belagge|beligge|dopahar|uchakku|evening|tonight|raathri|savere|രാവിലെ|ravile|uchaku|രാത്രി|rathri|ರಾತ್ರಿ|raatri|सवेरे|subah|दोपहर|shaam|sanje|night|ratri|सुबह|noon|sham|ಸಂಜೆ|raat|शाम|रात)\\s*(?:को\\s*|ko\\s*|at\\s*)?(\\d{1,2})(?::(\\d{2}))?(?![\\d])",
+   "flags": "u"
+  },
+  "dates.time.hour_then_period": {
+   "source": "(?<![\\d:.])(\\d{1,2})\\s*(?:in the |at )?(?:വൈകുന്നേരത്തേക്ക്|വൈകുന്നേരത്തെ|ഉച്ചകഴിഞ്ഞ്|vaikunneram|ഉച്ചയ്ക്ക്|madhyaanha|വൈകുന്നേരം|സന്ധ്യക്ക്|രാവിലത്തെ|afternoon|madhyahna|പുലർച്ചെ|ಬೆಳಿಗ್ಗೆ|ഉച്ചക്ക്|ಮಧ್ಯಾಹ್ನ|വൈകീട്ട്|വൈകിട്ട്|vaikittu|morning|raavile|ಬೆಳಗ್ಗೆ|belagge|beligge|dopahar|uchakku|evening|tonight|raathri|savere|രാവിലെ|ravile|uchaku|രാത്രി|rathri|ರಾತ್ರಿ|raatri|सवेरे|subah|दोपहर|shaam|sanje|night|ratri|सुबह|noon|sham|ಸಂಜೆ|raat|शाम|रात)",
+   "flags": "u"
+  },
+  "dates.time.at_hour": {
+   "source": "(?<![\\d:.])\\bat\\s+(\\d{1,2})(?::(\\d{2}))?\\b(?!\\d)",
+   "flags": "u"
+  },
+  "dates.greeting_with_time": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:good\\s+afternoon|ಗುಡ್\\s+ಮಾರ್ನಿಂಗ್|ഗുഡ്\\s+മോർണിംഗ്|ಗುಡ್\\s+ಈವ್ನಿಂಗ್|good\\s+morning|good\\s+evening|ശുഭ\\s+സായാഹ്നം|ഗുഡ്\\s+ഈവനിംഗ്|ಶುಭ\\s+ಮಧ್ಯಾಹ್ನ|ഗുഡ്\\s+നൈറ്റ്|good\\s+night|शुभ\\s+रात्रि|ശുഭ\\s+രാത്രി|ಶುಭ\\s+ರಾತ್ರಿ|സുപ്രഭാതം|ശുഭരാത്രി|ಗುಡ್\\s+ನೈಟ್|सुप्रभात|ಶುಭ\\s+ಸಂಜೆ|ಶುಭೋದಯ)",
+   "flags": "gu"
+  },
+  "dates.period.morning": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:രാവിലത്തെ[\\p{L}\\p{M}]*|പുലർച്ചെ[\\p{L}\\p{M}]*|ಬೆಳಿಗ್ಗೆ[\\p{L}\\p{M}]*|morning|raavile|ಬೆಳಗ್ಗೆ[\\p{L}\\p{M}]*|belagge|beligge|savere|രാവിലെ[\\p{L}\\p{M}]*|ravile|सवेरे|subah|सुबह)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.period.afternoon": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:ഉച്ചകഴിഞ്ഞ[\\p{L}\\p{M}]*|ഉച്ചയ്ക്ക[\\p{L}\\p{M}]*|madhyaanha|afternoon|madhyahna|ഉച്ചക്ക[\\p{L}\\p{M}]*|ಮಧ್ಯಾಹ್ನ[\\p{L}\\p{M}]*|dopahar|uchakku|uchaku|दोपहर|noon)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.period.evening": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:വൈകുന്നേരത്തേക്ക[\\p{L}\\p{M}]*|വൈകുന്നേരത്തെ[\\p{L}\\p{M}]*|vaikunneram|വൈകുന്നേരം[\\p{L}\\p{M}]*|സന്ധ്യക്ക[\\p{L}\\p{M}]*|വൈകീട്ട[\\p{L}\\p{M}]*|വൈകിട്ട[\\p{L}\\p{M}]*|vaikittu|evening|shaam|sanje|sham|ಸಂಜೆ[\\p{L}\\p{M}]*|शाम)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "dates.period.night": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:tonight|raathri|രാത്രി[\\p{L}\\p{M}]*|rathri|ರಾತ್ರಿ[\\p{L}\\p{M}]*|raatri|night|ratri|raat|रात)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "rules.yes": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:confirmed|theek hai|ಸರಿಯಾಗಿದೆ|thik hai|confirm|correct|ശരിയാണ്|ಒಪ್ಪಿಗೆ|ठीक है|സമ്മതം|ayithu|पक्का|ഓക്കെ|ഓക്കേ|ഉവ്വ്|sheri|ಆಯ್ತು|houdu|agali|yeah|okay|sure|haan|ശെരി|seri|athe|aanu|ಹೌದು|ಆಗಲಿ|sari|aytu|yes|yep|yup|han|haa|हाँ|हां|ठीक|ओके|सही|ശരി|അതെ|ആണ്|ഓകെ|ಸರಿ|ಓಕೆ|ok|हा|जी|y)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "rules.no": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:വേണ്ടാ|nahin|wrong|വേണ്ട|venda|nope|nahi|नहीं|അല്ല|ഇല്ല|alla|illa|ಇಲ್ಲ|ಅಲ್ಲ|beda|illa|alla|नही|गलत|ಬೇಡ|no)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "rules.greeting": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:namaskaram|namaskara|namaskar|നമസ്കാരം|namaste|नमस्कार|ನಮಸ್ಕಾರ|नमस्ते|hello|हैलो|हेलो|ഹായ്|ಹಾಯ್|hey|हाय|ഹലോ|ಹಲೋ|hi)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "rules.free": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:free of charge|complimentary|for nothing|bina paise|കാശ് വേണ്ട[\\p{L}\\p{M}]*|ದುಡ್ಡು ಬೇಡ[\\p{L}\\p{M}]*|no charge|बिना पैसे|പൈസ വേണ്ട[\\p{L}\\p{M}]*|സൗജന്യം[\\p{L}\\p{M}]*|मुफ़्त|ಹಣ ಬೇಡ[\\p{L}\\p{M}]*|मुफ्त|फ़्री|free|फ्री|muft|ഫ്രീ[\\p{L}\\p{M}]*|ಉಚಿತ[\\p{L}\\p{M}]*|ಫ್ರೀ[\\p{L}\\p{M}]*)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "rules.stop_words": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:unsubscribe|സ്റ്റോപ്പ്|നിർത്തുക|ನಿಲ್ಲಿಸಿ|ನಿಲ್ಲಿಸು|opt out|നിർത്തൂ|optout|ಸ್ಟಾಪ್|स्टॉप|stop)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "rules.stop_hindi": {
+   "source": "(?:मैसेज|संदेश|msg|message).{0,12}बंद|बंद.{0,12}(?:मैसेज|संदेश)",
+   "flags": "u"
+  },
+  "rules.stop_dravidian": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:മെസ്സേജ്\\s+അയയ്ക്കരുത്|മെസ്സേജ്\\s+അയക്കരുത്|ಮೆಸೇಜ್\\s+ಕಳುಹಿಸಬೇಡ|മെസ്സേജ്\\s+നിർത്ത|message\\s+nillisi|സന്ദേശം\\s+നിർത്ത|മെസ്സേജ്\\s+വേണ്ട|ಮೆಸೇಜ್\\s+ನಿಲ್ಲಿಸ|മെസേജ്\\s+നിർത്ത|സന്ദേശം\\s+വേണ്ട|message\\s+venda|ಸಂದೇಶ\\s+ನಿಲ್ಲಿಸ|message\\s+beda|ಮೆಸೇಜ್\\s+ಬೇಡ|msg\\s+venda|ಸಂದೇಶ\\s+ಬೇಡ)",
+   "flags": "u"
+  },
+  "rules.override.0": {
+   "source": "(?:ignore|forget|disregard|override|bypass)\\b[^.!?]{0,40}\\b(?:rules?|instructions?|prompts?|polic(?:y|ies)|limits?|guidelines)",
+   "flags": "u"
+  },
+  "rules.override.1": {
+   "source": "\\b(?:you are now|system prompt|developer mode|jailbreak)\\b",
+   "flags": "u"
+  },
+  "rules.override.2": {
+   "source": "(?:नियम|निर्देश|इंस्ट्रक्शन|पॉलिसी)[^.!?]{0,30}(?:भूल|नजरअंदाज|छोड़|तोड़)",
+   "flags": "u"
+  },
+  "rules.override.3": {
+   "source": "(?:भूल|नजरअंदाज|छोड़|तोड़)[^.!?]{0,30}(?:नियम|निर्देश|इंस्ट्रक्शन|पॉलिसी)",
+   "flags": "u"
+  },
+  "rules.override.4": {
+   "source": "(?:നിയമ|നിർദ്ദേശ|ചട്ട|ನಿಯಮ|ನಿರ್ದೇಶನ|ಸೂಚನೆ)[^.!?]{0,30}(?:മറ|അവഗണി|ലംഘി|ഒഴിവാക്ക|ಮರೆ|ಮರೆತ|ನಿರ್ಲಕ್ಷಿಸ|ಉಲ್ಲಂಘಿಸ|ಬಿಡ)",
+   "flags": "u"
+  },
+  "rules.override.5": {
+   "source": "(?:മറ|അവഗണി|ലംഘി|ഒഴിവാക്ക|ಮರೆ|ಮರೆತ|ನಿರ್ಲಕ್ಷಿಸ|ಉಲ್ಲಂಘಿಸ|ಬಿಡ)[^.!?]{0,30}(?:നിയമ|നിർദ്ദേശ|ചട്ട|ನಿಯಮ|ನಿರ್ದೇಶನ|ಸೂಚನೆ)",
+   "flags": "u"
+  },
+  "rules.english": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:appointment|reschedule|tomorrow|please|cancel|ignore|could|would|today|hello|rules|want|like|book|next|your|free|the|can|for|you|my|at|to|it|i)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "rules.roman_hindi": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:chahiye|karwana|kar do|parso|shaam|subah|karna|kitna|baje|raat|haan|nahi|mein|bhai|didi|muft|kal|aaj|bje|hai|kya)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "rules.roman_malayalam": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:chovvazhcha|vaikunneram|ningalude|mattannal|cheyyamo|manikku|cheyyan|pattumo|raavile|uchakku|enikku|ningal|pattum|adutha|rathri|venam|venda|sheri|innu|mani|aanu|ente|njan|athe)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "rules.roman_kannada": {
+   "source": "(?<![\\p{L}\\p{M}\\p{N}])(?:bekagilla|maaditira|naadiddu|gantege|belagge|mundina|madtira|ivattu|nanage|gante|maadi|houdu|sanje|naanu|nimma|indu|beku|madi|sari|aytu|beda)(?![\\p{L}\\p{M}\\p{N}])",
+   "flags": "u"
+  },
+  "rules.offer.0": {
+   "source": "(?:₹|rs\\.?|inr|रु\\.?|रुपये|रुपए)\\s*(\\d[\\d,]*)",
+   "flags": "u"
+  },
+  "rules.offer.1": {
+   "source": "(?<![\\d:.])(\\d[\\d,]*)\\s*(?:₹|rs\\b|rupees?|रुपये|रुपए|रुपया|रु\\b|में|मे|मैं|mein|only|का\\b|ka\\b|के लिए|ke liye)",
+   "flags": "u"
+  },
+  "rules.offer.2": {
+   "source": "(?<![\\d:.])(\\d[\\d,]*)\\s*(?:rupayakku(?![a-z])|roopakku(?![a-z])|rupayige(?![a-z])|ruppayi(?![a-z])|rupaya(?![a-z])|ರೂಪಾಯಿ[\\p{L}\\p{M}]*|rupayi(?![a-z])|roopa(?![a-z])|rupa(?![a-z])|രൂപ[\\p{L}\\p{M}]*|രൂ[\\p{L}\\p{M}]*|ರೂ[\\p{L}\\p{M}]*)",
+   "flags": "u"
+  },
+  "rules.offer.3": {
+   "source": "(?<![\\d:.])(\\d[\\d,]*)\\s*(?:ಕ್ಕ[ೆೇ]|ಗ[ೆೇ]|ಕ[ೆೇ])(?![\\p{L}\\p{M}])",
+   "flags": "u"
+  },
+  "rules.offer.4": {
+   "source": "(?:\\bfor|@)\\s*₹?\\s*(\\d[\\d,]*)(?!\\s*(?::|am\\b|pm\\b|baje|बजे|o'?clock|mani|gante|മണി|ಗಂಟೆ))",
+   "flags": "u"
+  },
+  "rules.offer.5": {
+   "source": "\\bat\\s*₹?\\s*(\\d[\\d,]*)(?!\\s*(?::|am\\b|pm\\b|baje|बजे|o'?clock|mani|gante|മണി|ಗಂಟೆ))",
    "flags": "u"
   },
   "intents.kind.undo": {
