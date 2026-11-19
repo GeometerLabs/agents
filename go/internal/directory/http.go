@@ -21,6 +21,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"io"
 	"net"
 	"net/http"
@@ -56,8 +57,8 @@ func LanguageOf(param string, has bool, acceptLanguage string) string {
 		return param
 	}
 	for _, part := range strings.Split(acceptLanguage, ",") {
-		tag := jsLower(jsTrim(strings.SplitN(part, ";", 2)[0]))
-		tag = sliceUTF16(tag, 2)
+		tag := language.LowerJS(language.TrimJS(strings.SplitN(part, ";", 2)[0]))
+		tag = language.UTF16SliceFFFD(tag, 2)
 		if isLang(tag) {
 			return tag
 		}
@@ -117,7 +118,7 @@ func requestPath(target string) (path, query string) {
 func visitorOf(r *http.Request) string {
 	var last string
 	for _, p := range strings.Split(strings.Join(r.Header.Values("X-Forwarded-For"), ", "), ",") {
-		if t := jsTrim(p); t != "" {
+		if t := language.TrimJS(p); t != "" {
 			last = t
 		}
 	}
@@ -255,7 +256,7 @@ func NewHandler(deps HTTPDeps) http.Handler {
 				f, _ := q.get("format")
 				return f == "json" || (reJSON.MatchString(accept) && !reHTML.MatchString(accept))
 			}()
-			val := func(n string, max int) string { v, _ := get(n); return sliceUTF16(v, max) }
+			val := func(n string, max int) string { v, _ := get(n); return language.UTF16SliceFFFD(v, max) }
 			rk, _ := get("radius_km")
 			cat, _ := get("category")
 			f := FormValues{Q: val("q", 200), Category: cat, Town: val("town", 80), Lat: val("lat", 12), Lon: val("lon", 12), RadiusKm: rk}
@@ -319,10 +320,10 @@ func NewHandler(deps HTTPDeps) http.Handler {
 			lp, hasL := body.get("lang")
 			askLang := LanguageOf(lp, hasL, acceptLang)
 			askRaw, _ := body.get("ask")
-			ask := sliceUTF16(jsTrim(askRaw), MaxQuestion)
+			ask := language.UTF16SliceFFFD(language.TrimJS(askRaw), MaxQuestion)
 			la, _ := body.get("lat")
 			lo, _ := body.get("lon")
-			lat, lon := sliceUTF16(la, 12), sliceUTF16(lo, 12)
+			lat, lon := language.UTF16SliceFFFD(la, 12), language.UTF16SliceFFFD(lo, 12)
 			f := FormValues{Lat: lat, Lon: lon, Ask: ask}
 			if !limiter.Take("search", who) {
 				if wantsJSON {

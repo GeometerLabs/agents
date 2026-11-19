@@ -6,6 +6,7 @@ package directory
 
 import (
 	"encoding/json"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"math"
 	"os"
 	"reflect"
@@ -135,7 +136,7 @@ func TestAddresses(t *testing.T) {
 func TestDatesAndNumbers(t *testing.T) {
 	for _, v := range loadVectors(t, "dates") {
 		in := v["in"].(string)
-		got, ok := jsDateParse(in)
+		got, ok := language.ParseJSDate(in)
 		want, has := v["ms"].(float64)
 		if strings.Contains(in, "T") && !strings.HasSuffix(in, "Z") && !strings.Contains(in, "+") {
 			continue // a date-time with no zone is local time in JavaScript (the machine's zone); the service runs in UTC and Go reads it as UTC

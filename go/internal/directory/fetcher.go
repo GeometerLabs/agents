@@ -7,6 +7,7 @@ package directory
 import (
 	"context"
 	"errors"
+	"github.com/GeometerLabs/agents/go/internal/language"
 	"io"
 	"net"
 	"net/http"
@@ -94,16 +95,32 @@ func guardedDial(ctx context.Context, network, addr string) (net.Conn, error) {
 	return nil, last
 }
 
+// Connections are KEPT and reused, as Node's global agent keeps them for the TypeScript service (keep-alive is on by default since Node 19). A search asks up to ten shops at once,
+// and every shop of this server is behind ONE host, the door's own port: Go's default transport keeps only two idle connections a host, so each search opened eight new ones (the
+// Go search measured 14 ms at p50 against the TypeScript's 6.2 ms, go/TRIAL.md "Wave 1c"). An idle connection is closed after idleFor, under the 5 seconds a Node server (the door)
+// keeps one open: a check is a POST, which Go does not send again on a connection the server closed under it, so the client must give the connection up first.
+const (
+	idlePerHost = 32
+	idleFor     = 4 * time.Second
+)
+
+// noRedirect: a redirect is never followed (a shop that answers one has not answered).
+func noRedirect(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+
 // NewFetcher is the directory's Fetcher: this server's own shops through the door's own port, anything else directly and guarded. local and remote may be given (tests); nil means the
 // real ones.
 func NewFetcher(served []string, doorURL string, local, remote *http.Client) Fetcher {
 	if local == nil {
-		local = &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+		local = &http.Client{
+			Transport:     &http.Transport{MaxIdleConns: 2 * idlePerHost, MaxIdleConnsPerHost: idlePerHost, IdleConnTimeout: idleFor},
+			CheckRedirect: noRedirect,
+		}
 	}
 	if remote == nil {
+		// a kept connection was made to an address guardedDial checked, and the pool is per host and port, so reusing it reaches no address that was not checked
 		remote = &http.Client{
-			Transport:     &http.Transport{DialContext: guardedDial, TLSHandshakeTimeout: 10 * time.Second, DisableKeepAlives: true},
-			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+			Transport:     &http.Transport{DialContext: guardedDial, TLSHandshakeTimeout: 10 * time.Second, MaxIdleConns: 2 * idlePerHost, MaxIdleConnsPerHost: 4, IdleConnTimeout: idleFor},
+			CheckRedirect: noRedirect,
 		}
 	}
 	return func(rawURL string, in FetchRequest) (FetchResponse, error) {
@@ -164,6 +181,6 @@ func NewFetcher(served []string, doorURL string, local, remote *http.Client) Fet
 			}
 			headers[strings.ToLower(k)] = strings.Join(v, ", ")
 		}
-		return FetchResponse{Status: resp.StatusCode, Headers: headers, Body: replaceBadBytes(raw)}, nil
+		return FetchResponse{Status: resp.StatusCode, Headers: headers, Body: language.DecodeUTF8JS(raw)}, nil
 	}
 }

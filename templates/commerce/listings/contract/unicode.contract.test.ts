@@ -4,7 +4,7 @@
 // is aimed at a place where normalisation decides the answer, and each decomposed input is asserted to REALLY be decomposed (so the case cannot pass by accident).
 import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { draftAnswer, makeShop, startFakeModel } from "./harness.ts";
+import { draftAnswer, makeShop, SKIP, startFakeModel } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
 
 const shops: Shop[] = [];
@@ -23,7 +23,7 @@ async function draft(owner: string, answer: (o: string) => unknown): Promise<any
   return (await s.call("/internal/channel/owner-listing", { owner: s.owner })).body.listings;
 }
 
-describe("normalisation: composed and decomposed text are judged the same", () => {
+describe("normalisation: composed and decomposed text are judged the same", { skip: SKIP }, () => {
   const KANNADA_CERTIFIED = "ಪ್ರಮಾಣೀಕೃತ"; // contains U+0CC0, which decomposes to U+0CBF U+0CD5
   const SPEC = "Kittens for sale on my page, 500 rupees";
 

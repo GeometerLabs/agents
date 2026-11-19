@@ -1,15 +1,15 @@
-// The two runtimes given the SAME requests, their answers compared. The contract (listings.contract.test.ts) says what each must do; this catches the places where a port can drift
-// without the contract looking: whitespace and rounding in the owner's form, the four languages' lengths, the place and the registration, the feed's items, and which of the model's
-// drafts are let through by the grounding checks (the number, claim and health words in four languages). Signatures are replaced (the keys differ by design) and times by a mark.
-// Skipped when no Go binary is built.
+// The shop given fixed requests, its answers compared WHOLE with the GOLDEN answers (golden.ts, golden/differential.json). The contract (listings.contract.test.ts) says what a shop
+// must do; this catches the places where a port can drift without the contract looking: whitespace and rounding in the owner's form, the four languages' lengths, the place and the
+// registration, the feed's items, and which of the model's drafts are let through by the grounding checks (the number, claim and health words in four languages). Signatures are
+// replaced (the keys differ by design) and times by a mark. Until 19 Nov 2026 the TypeScript and Go runtimes were given the requests side by side; the TypeScript answers were
+// recorded before its runtime was deleted (decision 61, wave 1b), so the Go shop is now held to them.
 import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { PAGE, REPO, draftAnswer, makeShop, startFakeModel } from "./harness.ts";
+import { draftAnswer, makeShop, PAGE, SKIP, startFakeModel } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
+import { goldenFor } from "./golden.ts";
 
-const bin = process.env.LISTINGS_GO_BIN ?? join(REPO, "go", "bin", "listings");
+const golden = goldenFor(import.meta.url);
 const shops: Shop[] = [];
 const fakes: FakeModel[] = [];
 after(async () => { for (const s of shops) { await s.stop(); s.cleanup(); } for (const f of fakes) await f.close(); });
@@ -57,17 +57,14 @@ const DRAFTS: [string, string, string, string[]?][] = [
   ["put it on my page: rice", "Rice", "Fresh rice."],
 ];
 
-// The one phrase left out of the comparison: words that are no listing at all ("something nice") are, in the TypeScript runtime, answered with the assistant's talk model (one call, and a
-// call whose answer cannot be used then puts the shop's model on a 5-minute pause, ai-state.ts). Go does not port the talk, so it asks nothing. It is left out because that pause
-// would also change what comes after it in a shared shop. Checked alone in fresh shops: TypeScript 1 call, no draft, mode "buttons"; Go 0 calls, mode "ai".
-// (Two phrases that first looked different, "put it on my page: 5 kg rice, 60 rupees per kg" and "put it on my page: rice", differed only because that pause was in force; in fresh
-// shops both runtimes agree, so they are compared below.)
+// The one phrase left out: words that are no listing at all ("something nice") are answered with the assistant's talk model (one call, and a call whose answer cannot be used then puts
+// the shop's model on a 5-minute pause, ai-state.ts), which would change what comes after it in a shared shop; models.contract.test.ts covers the talk. ("put it on my page: 5 kg
+// rice, 60 rupees per kg" and "put it on my page: rice" once looked different only because that pause was in force; in fresh shops they are compared below.)
 
-describe("TypeScript and Go answer the same", { skip: !existsSync(bin) && `no Go binary at ${bin}` }, () => {
+describe("the shop answers as the TypeScript runtime did (the golden answers)", { skip: SKIP }, () => {
   test("the owner's form, the place, the public read and the signed feed's items", async () => {
-    const seen: Record<string, unknown[]> = {};
-    for (const impl of ["ts", "go"] as const) {
-      const s = await makeShop(); shops.push(s); await s.start(impl);
+    const seen = await golden("the owner's form, the place, the public read and the feed", async () => {
+      const s = await makeShop(); shops.push(s); await s.start();
       const log: unknown[] = [];
       let i = 0;
       for (const op of OPS) {
@@ -80,17 +77,16 @@ describe("TypeScript and Go answer the same", { skip: !existsSync(bin) && `no Go
       log.push(norm((await s.call("/internal/channel/shop-feed", { body: { page: PAGE, name: "Glow", languages: ["ml", "en"] } })).body));
       const st = (await s.call("/status")).body;
       log.push(norm({ listings: st.listings, tasks: st.tasks, recordLength: st.recordLength }));
-      seen[impl] = log;
-    }
-    for (let k = 0; k < seen.ts.length; k++) assert.deepEqual(seen.go[k], seen.ts[k], `step ${k} ${k < OPS.length ? JSON.stringify(OPS[k]) : ""}`);
+      return log;
+    });
+    assert.equal(seen.length, OPS.length + 4);
   });
 
   test("which of the model's drafts the grounding checks let through", async () => {
-    const outcome: Record<string, string[]> = {};
-    for (const impl of ["ts", "go"] as const) {
+    const results = await golden("which drafts the grounding checks let through", async () => {
       let next = draftAnswer();
       const fake = await startFakeModel(() => next); fakes.push(fake);
-      const s = await makeShop({ modelPort: fake.port, budget: { monthlyMicroInr: 500_000_000, daily: { listing_draft: 500 } } }); shops.push(s); await s.start(impl);
+      const s = await makeShop({ modelPort: fake.port, budget: { monthlyMicroInr: 500_000_000, daily: { listing_draft: 500 } } }); shops.push(s); await s.start();
       const results: string[] = [];
       let n = 0;
       for (const [words, title, text, claims] of DRAFTS) {
@@ -104,8 +100,8 @@ describe("TypeScript and Go answer the same", { skip: !existsSync(bin) && `no Go
         for (const l of v.listings) await s.call("/internal/channel/owner-listing", { owner: s.owner, body: { id: `rm-${n}-${l.id}`, op: { op: "remove", id: l.id } } });
         await s.settle();
       }
-      outcome[impl] = results;
-    }
-    assert.deepEqual(outcome.go, outcome.ts, DRAFTS.map(([w, t, x], i) => `${i}: ${w} / ${t} / ${x}\n  ts: ${outcome.ts[i]}\n  go: ${outcome.go[i]}`).filter((_, i) => outcome.go[i] !== outcome.ts[i]).join("\n"));
+      return DRAFTS.map(([w, t, x], i) => `${i}: ${w} / ${t} / ${x} => ${results[i]}`);
+    });
+    assert.equal(results.length, DRAFTS.length);
   });
 });

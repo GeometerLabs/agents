@@ -1,0 +1,4469 @@
+{
+ "about": "What assistant.contract.test.ts saw, recorded by golden.ts (LISTINGS_GOLDEN=write); masked: signatures, ISO instants, epoch ms.",
+ "impl": "ts",
+ "commit": "b253982ec2fd479af935472d9c1769855c1d58b0",
+ "entries": {
+  "commands in en": {
+   "at": 1795076382903,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "help"
+     ],
+     [
+      "assistant",
+      "I'm Glow Pets's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "undo"
+     ],
+     [
+      "assistant",
+      "There is nothing to undo."
+     ],
+     [
+      "owner",
+      "what needs me"
+     ],
+     [
+      "assistant",
+      "Nothing needs you right now."
+     ],
+     [
+      "owner",
+      "limit"
+     ],
+     [
+      "assistant",
+      "Which limit do you mean? I can tighten: . For anything else, I'll keep it as a note instead."
+     ],
+     [
+      "owner",
+      "get my shop's file"
+     ],
+     [
+      "assistant",
+      "Done. Your shop's file will be on your app page in about half an hour, with a button to take it. The button works once and for 3 days. You do not need your Operator for this, and they are not asked."
+     ],
+     [
+      "owner",
+      "get my shop's file"
+     ],
+     [
+      "assistant",
+      "You asked for your shop's file a short while ago. It is on its way; look on your app page in a little while."
+     ],
+     [
+      "owner",
+      "change my operator"
+     ],
+     [
+      "assistant",
+      "Done. I have told your Operator that you want another one. Nothing changes until you agree: your Operator names the new person, you get a code, and you send it here as \"move\" and the code. If nothing happens in 14 days, Geometer will help you."
+     ],
+     [
+      "owner",
+      "change my operator"
+     ],
+     [
+      "assistant",
+      "You asked to change your Operator a short while ago, and they have been told. Nothing changes until you send the code."
+     ],
+     [
+      "owner",
+      "money today"
+     ],
+     [
+      "assistant",
+      "Nothing recorded on Thu 19 Nov yet."
+     ],
+     [
+      "owner",
+      "money tomorrow"
+     ],
+     [
+      "assistant",
+      "Nothing recorded on Fri 20 Nov yet."
+     ],
+     [
+      "owner",
+      "money yesterday"
+     ],
+     [
+      "assistant",
+      "Nothing recorded on Thu 19 Nov yet."
+     ],
+     [
+      "owner",
+      "cancel b-14"
+     ],
+     [
+      "assistant",
+      "Nothing has the number b-14."
+     ],
+     [
+      "owner",
+      "refund b-3"
+     ],
+     [
+      "assistant",
+      "Nothing has the number b-3."
+     ],
+     [
+      "owner",
+      "message b-3"
+     ],
+     [
+      "assistant",
+      "What should I tell them? For example: message b-3 Running 15 minutes late."
+     ],
+     [
+      "owner",
+      "message b-3 hello"
+     ],
+     [
+      "assistant",
+      "Nothing has the number b-3."
+     ],
+     [
+      "owner",
+      "tomorrow"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "hello there"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "for sale: undo"
+     ],
+     [
+      "assistant",
+      "There is nothing to undo."
+     ],
+     [
+      "owner",
+      "help me put it on my page"
+     ],
+     [
+      "assistant",
+      "I'm Glow Pets's assistant. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "limit for sale 500"
+     ],
+     [
+      "assistant",
+      "Which limit do you mean? I can tighten: . For anything else, I'll keep it as a note instead."
+     ],
+     [
+      "owner",
+      "approve K7M2QX"
+     ],
+     [
+      "owner",
+      "no thanks"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "yes ABCDE"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ]
+    ],
+    "cards": [],
+    "mood": [
+     "quiet",
+     "well",
+     false
+    ],
+    "record": [
+     [
+      "listing",
+      "confirmed",
+      {},
+      "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "undo",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "waiting",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "limit",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_file",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_file_asked",
+      "confirmed",
+      {
+       "ask": "ask_",
+       "via": "page"
+      },
+      "the owner asked for their shop's file (no Operator needed)",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_file",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_operator",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "operator_change_asked",
+      "confirmed",
+      {
+       "ask": "ask_",
+       "via": "page"
+      },
+      "the owner asked for another Operator; the move itself still needs the owner's code",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_operator",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "cancel",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "case": "b-14"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "refund",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "case": "b-3"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "message",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "case": "b-3"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "message",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "case": "b-3"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "undo",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "limit",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ]
+    ],
+    "public": [],
+    "owner": [],
+    "ai": {
+     "rules": 22,
+     "decision": 0,
+     "model": 0
+    }
+   }
+  },
+  "commands in hi": {
+   "at": 1795076383305,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "मदद"
+     ],
+     [
+      "assistant",
+      "मैं Glow Pets का असिस्टेंट हूँ। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• b-14 रद्द करो\n• b-14 को बोलो 15 मिनट देर होगी\n• वापस लो"
+     ],
+     [
+      "owner",
+      "वापस लो"
+     ],
+     [
+      "assistant",
+      "वापस लेने को कुछ नहीं है।"
+     ],
+     [
+      "owner",
+      "मेरे लिए क्या है"
+     ],
+     [
+      "assistant",
+      "अभी आपके लिए कुछ बाकी नहीं है।"
+     ],
+     [
+      "owner",
+      "लिमिट"
+     ],
+     [
+      "assistant",
+      "आप कौन सी सीमा की बात कर रहे हैं? मैं ये कस सकता हूँ: । बाकी के लिए मैं उसे नोट के रूप में रख लूँगा।"
+     ],
+     [
+      "owner",
+      "मेरी दुकान की फाइल"
+     ],
+     [
+      "assistant",
+      "हो गया। आपकी दुकान की फ़ाइल करीब आधे घंटे में आपके ऐप पेज पर होगी, उसे लेने का बटन भी। बटन एक बार और 3 दिन तक चलता है। इसके लिए आपके Operator की ज़रूरत नहीं है, और उनसे पूछा भी नहीं जाता।"
+     ],
+     [
+      "owner",
+      "मेरी दुकान की फाइल"
+     ],
+     [
+      "assistant",
+      "आपने थोड़ी देर पहले दुकान की फ़ाइल माँगी थी। वह आ रही है; थोड़ी देर में अपना ऐप पेज देखिए।"
+     ],
+     [
+      "owner",
+      "ऑपरेटर बदल दो"
+     ],
+     [
+      "assistant",
+      "हो गया। मैंने आपके Operator को बता दिया है कि आप दूसरा Operator चाहते हैं। आपकी हाँ के बिना कुछ नहीं बदलता: आपका Operator नए व्यक्ति का नाम देता है, आपको एक कोड मिलता है, और आप उसे यहाँ \"move\" और कोड लिखकर भेजते हैं। 14 दिन में कुछ न हुआ तो Geometer आपकी मदद करेगा।"
+     ],
+     [
+      "owner",
+      "ऑपरेटर बदल दो"
+     ],
+     [
+      "assistant",
+      "आपने थोड़ी देर पहले Operator बदलने को कहा था, और उन्हें बता दिया गया है। कोड भेजने तक कुछ नहीं बदलता।"
+     ],
+     [
+      "owner",
+      "आज कितना आया"
+     ],
+     [
+      "assistant",
+      "गुरुवार, 19 नवंबर को अभी कुछ दर्ज नहीं हुआ।"
+     ],
+     [
+      "owner",
+      "कल कितना आया"
+     ],
+     [
+      "assistant",
+      "शुक्रवार, 20 नवंबर को अभी कुछ दर्ज नहीं हुआ।"
+     ],
+     [
+      "owner",
+      "b-14 रद्द करो"
+     ],
+     [
+      "assistant",
+      "b-14 नंबर का कुछ नहीं मिला।"
+     ],
+     [
+      "owner",
+      "रिफंड b-3"
+     ],
+     [
+      "assistant",
+      "b-3 नंबर का कुछ नहीं मिला।"
+     ],
+     [
+      "owner",
+      "b-3 ko bolo ki hello"
+     ],
+     [
+      "assistant",
+      "b-3 नंबर का कुछ नहीं मिला।"
+     ],
+     [
+      "owner",
+      "नमस्ते जी"
+     ],
+     [
+      "assistant",
+      "माफ़ कीजिए, समझ नहीं आया। आप ऐसे कह सकते हैं:\n• मेरे लिए क्या है\n• आज कितना आया\n• b-14 रद्द करो\n• b-14 को बोलो 15 मिनट देर होगी\n• वापस लो"
+     ],
+     [
+      "owner",
+      "बिक्री के लिए: वापस लो"
+     ],
+     [
+      "assistant",
+      "वापस लेने को कुछ नहीं है।"
+     ]
+    ],
+    "cards": [],
+    "mood": [
+     "quiet",
+     "well",
+     false
+    ],
+    "record": [
+     [
+      "listing",
+      "confirmed",
+      {},
+      "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "undo",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "waiting",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "limit",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_file",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_file_asked",
+      "confirmed",
+      {
+       "ask": "ask_",
+       "via": "page"
+      },
+      "the owner asked for their shop's file (no Operator needed)",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_file",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_operator",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "operator_change_asked",
+      "confirmed",
+      {
+       "ask": "ask_",
+       "via": "page"
+      },
+      "the owner asked for another Operator; the move itself still needs the owner's code",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_operator",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "cancel",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "case": "b-14"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "refund",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "case": "b-3"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "message",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "case": "b-3"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "undo",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ]
+    ],
+    "public": [],
+    "owner": [],
+    "ai": {
+     "rules": 15,
+     "decision": 0,
+     "model": 0
+    }
+   }
+  },
+  "commands in ml": {
+   "at": 1795076383807,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "സഹായം"
+     ],
+     [
+      "assistant",
+      "ഞാൻ Glow Pets-ന്റെ അസിസ്റ്റന്റ്. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• b-14 റദ്ദാക്കുക\n• b-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• പഴയപടി"
+     ],
+     [
+      "owner",
+      "പഴയപടി"
+     ],
+     [
+      "assistant",
+      "പഴയപടിയാക്കാൻ ഒന്നുമില്ല."
+     ],
+     [
+      "owner",
+      "എനിക്ക് എന്താണ് ബാക്കി"
+     ],
+     [
+      "assistant",
+      "ഇപ്പോൾ നിങ്ങൾക്കായി ഒന്നും കാത്തിരിക്കുന്നില്ല."
+     ],
+     [
+      "owner",
+      "പരിധി"
+     ],
+     [
+      "assistant",
+      "ഏത് പരിധിയാണ് ഉദ്ദേശിക്കുന്നത്? എനിക്ക് ഇവ കർശനമാക്കാം: . മറ്റെന്തിനും ഞാൻ അത് ഒരു കുറിപ്പായി സൂക്ഷിക്കാം."
+     ],
+     [
+      "owner",
+      "എന്റെ കടയുടെ ഫയൽ"
+     ],
+     [
+      "assistant",
+      "ശരി. നിങ്ങളുടെ കടയുടെ ഫയൽ ഏകദേശം അര മണിക്കൂറിൽ നിങ്ങളുടെ ആപ്പ് പേജിൽ ഉണ്ടാകും, എടുക്കാനുള്ള ബട്ടണും. ബട്ടൺ ഒരു തവണ മാത്രം, 3 ദിവസം വരെ പ്രവർത്തിക്കും. ഇതിന് നിങ്ങളുടെ Operator വേണ്ട, അവരോട് ചോദിക്കുന്നുമില്ല."
+     ],
+     [
+      "owner",
+      "എന്റെ കടയുടെ ഫയൽ"
+     ],
+     [
+      "assistant",
+      "കുറച്ചുമുമ്പ് നിങ്ങൾ കടയുടെ ഫയൽ ചോദിച്ചിരുന്നു. അത് വരുന്നുണ്ട്; കുറച്ച് കഴിഞ്ഞ് ആപ്പ് പേജ് നോക്കൂ."
+     ],
+     [
+      "owner",
+      "ഓപ്പറേറ്റർ മാറ്റണം"
+     ],
+     [
+      "assistant",
+      "ശരി. മറ്റൊരു Operator വേണമെന്ന് ഞാൻ നിങ്ങളുടെ Operator-നെ അറിയിച്ചു. നിങ്ങൾ സമ്മതിക്കാതെ ഒന്നും മാറില്ല: Operator പുതിയ ആളുടെ പേര് നൽകും, നിങ്ങൾക്ക് ഒരു കോഡ് കിട്ടും, അത് \"move\" എന്നും കോഡും ചേർത്ത് ഇവിടെ അയയ്ക്കണം. 14 ദിവസത്തിൽ ഒന്നും നടന്നില്ലെങ്കിൽ Geometer സഹായിക്കും."
+     ],
+     [
+      "owner",
+      "ഓപ്പറേറ്റർ മാറ്റണം"
+     ],
+     [
+      "assistant",
+      "കുറച്ചുമുമ്പ് നിങ്ങൾ Operator-നെ മാറ്റാൻ പറഞ്ഞിരുന്നു, അവരെ അറിയിച്ചിട്ടുണ്ട്. കോഡ് അയയ്ക്കുന്നതുവരെ ഒന്നും മാറില്ല."
+     ],
+     [
+      "owner",
+      "ഇന്ന് എത്ര കിട്ടി"
+     ],
+     [
+      "assistant",
+      "വ്യാഴം, 19 നവംബർ-ന് ഇതുവരെ ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല."
+     ],
+     [
+      "owner",
+      "നാളെ എത്ര കിട്ടി"
+     ],
+     [
+      "assistant",
+      "വെള്ളി, 20 നവംബർ-ന് ഇതുവരെ ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല."
+     ],
+     [
+      "owner",
+      "b-14 റദ്ദാക്കുക"
+     ],
+     [
+      "assistant",
+      "b-14 എന്ന നമ്പറിൽ ഒന്നുമില്ല."
+     ],
+     [
+      "owner",
+      "റീഫണ്ട് b-3"
+     ],
+     [
+      "assistant",
+      "b-3 എന്ന നമ്പറിൽ ഒന്നുമില്ല."
+     ],
+     [
+      "owner",
+      "ഹലോ"
+     ],
+     [
+      "assistant",
+      "ക്ഷമിക്കണം, മനസ്സിലായില്ല. ഇങ്ങനെ പറയാം:\n• എനിക്ക് എന്താണ് ബാക്കി\n• ഇന്ന് എത്ര കിട്ടി\n• b-14 റദ്ദാക്കുക\n• b-14 നോട് പറയുക 15 മിനിറ്റ് വൈകും\n• പഴയപടി"
+     ]
+    ],
+    "cards": [],
+    "mood": [
+     "quiet",
+     "well",
+     false
+    ],
+    "record": [
+     [
+      "listing",
+      "confirmed",
+      {},
+      "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "undo",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "waiting",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "limit",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_file",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_file_asked",
+      "confirmed",
+      {
+       "ask": "ask_",
+       "via": "page"
+      },
+      "the owner asked for their shop's file (no Operator needed)",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_file",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_operator",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "operator_change_asked",
+      "confirmed",
+      {
+       "ask": "ask_",
+       "via": "page"
+      },
+      "the owner asked for another Operator; the move itself still needs the owner's code",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_operator",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "cancel",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "case": "b-14"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "refund",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "case": "b-3"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ]
+    ],
+    "public": [],
+    "owner": [],
+    "ai": {
+     "rules": 13,
+     "decision": 0,
+     "model": 0
+    }
+   }
+  },
+  "commands in kn": {
+   "at": 1795076384257,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "ಸಹಾಯ"
+     ],
+     [
+      "assistant",
+      "ನಾನು Glow Pets ನ ಸಹಾಯಕ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• b-14 ರದ್ದು\n• b-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಹಿಂದಿನಂತೆ"
+     ],
+     [
+      "owner",
+      "ಹಿಂದಿನಂತೆ"
+     ],
+     [
+      "assistant",
+      "ಹಿಂದಿನಂತೆ ಮಾಡಲು ಏನೂ ಇಲ್ಲ."
+     ],
+     [
+      "owner",
+      "ನನಗೆ ಏನು ಬಾಕಿ"
+     ],
+     [
+      "assistant",
+      "ಈಗ ನಿಮಗಾಗಿ ಏನೂ ಕಾಯುತ್ತಿಲ್ಲ."
+     ],
+     [
+      "owner",
+      "ಮಿತಿ"
+     ],
+     [
+      "assistant",
+      "ಯಾವ ಮಿತಿಯನ್ನು ಹೇಳುತ್ತಿದ್ದೀರಿ? ನಾನು ಇವನ್ನು ಬಿಗಿಗೊಳಿಸಬಲ್ಲೆ: . ಉಳಿದದ್ದಕ್ಕೆ ಅದನ್ನು ಟಿಪ್ಪಣಿಯಾಗಿ ಇಟ್ಟುಕೊಳ್ಳುತ್ತೇನೆ."
+     ],
+     [
+      "owner",
+      "ನನ್ನ ಅಂಗಡಿಯ ಫೈಲ್"
+     ],
+     [
+      "assistant",
+      "ಆಯಿತು. ನಿಮ್ಮ ಅಂಗಡಿಯ ಫೈಲ್ ಸುಮಾರು ಅರ್ಧ ಗಂಟೆಯಲ್ಲಿ ನಿಮ್ಮ ಆ್ಯಪ್ ಪುಟದಲ್ಲಿ ಇರುತ್ತದೆ, ತೆಗೆದುಕೊಳ್ಳಲು ಬಟನ್ ಕೂಡ. ಬಟನ್ ಒಂದೇ ಬಾರಿ, 3 ದಿನ ಕೆಲಸ ಮಾಡುತ್ತದೆ. ಇದಕ್ಕೆ ನಿಮ್ಮ Operator ಬೇಕಿಲ್ಲ, ಅವರನ್ನು ಕೇಳುವುದೂ ಇಲ್ಲ."
+     ],
+     [
+      "owner",
+      "ನನ್ನ ಅಂಗಡಿಯ ಫೈಲ್"
+     ],
+     [
+      "assistant",
+      "ಸ್ವಲ್ಪ ಮೊದಲು ನೀವು ಅಂಗಡಿಯ ಫೈಲ್ ಕೇಳಿದ್ದೀರಿ. ಅದು ಬರುತ್ತಿದೆ; ಸ್ವಲ್ಪ ಹೊತ್ತಿನ ನಂತರ ಆ್ಯಪ್ ಪುಟ ನೋಡಿ."
+     ],
+     [
+      "owner",
+      "ಬೇರೆ ಆಪರೇಟರ್"
+     ],
+     [
+      "assistant",
+      "ಆಯಿತು. ನೀವು ಬೇರೆ Operator ಬಯಸುತ್ತೀರಿ ಎಂದು ನಿಮ್ಮ Operator ಗೆ ತಿಳಿಸಿದ್ದೇನೆ. ನೀವು ಒಪ್ಪುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ: Operator ಹೊಸ ವ್ಯಕ್ತಿಯ ಹೆಸರು ನೀಡುತ್ತಾರೆ, ನಿಮಗೆ ಒಂದು ಕೋಡ್ ಸಿಗುತ್ತದೆ, ಅದನ್ನು ಇಲ್ಲಿ \"move\" ಮತ್ತು ಕೋಡ್ ಎಂದು ಕಳುಹಿಸಿ. 14 ದಿನದಲ್ಲಿ ಏನೂ ಆಗದಿದ್ದರೆ Geometer ನಿಮಗೆ ಸಹಾಯ ಮಾಡುತ್ತದೆ."
+     ],
+     [
+      "owner",
+      "ಬೇರೆ ಆಪರೇಟರ್"
+     ],
+     [
+      "assistant",
+      "ಸ್ವಲ್ಪ ಮೊದಲು ನೀವು Operator ಬದಲಾಯಿಸಲು ಕೇಳಿದ್ದೀರಿ, ಅವರಿಗೆ ತಿಳಿಸಲಾಗಿದೆ. ಕೋಡ್ ಕಳುಹಿಸುವವರೆಗೆ ಏನೂ ಬದಲಾಗುವುದಿಲ್ಲ."
+     ],
+     [
+      "owner",
+      "ಇಂದು ಎಷ್ಟು ಬಂತು"
+     ],
+     [
+      "assistant",
+      "ಗುರುವಾರ, 19 ನವೆಂಬರ್ ರಂದು ಇನ್ನೂ ಏನೂ ದಾಖಲಾಗಿಲ್ಲ."
+     ],
+     [
+      "owner",
+      "ನಾಳೆ ಎಷ್ಟು ಬಂತು"
+     ],
+     [
+      "assistant",
+      "ಶುಕ್ರವಾರ, 20 ನವೆಂಬರ್ ರಂದು ಇನ್ನೂ ಏನೂ ದಾಖಲಾಗಿಲ್ಲ."
+     ],
+     [
+      "owner",
+      "b-14 ರದ್ದು"
+     ],
+     [
+      "assistant",
+      "b-14 ಸಂಖ್ಯೆಯಲ್ಲಿ ಏನೂ ಇಲ್ಲ."
+     ],
+     [
+      "owner",
+      "ರೀಫಂಡ್ b-3"
+     ],
+     [
+      "assistant",
+      "b-3 ಸಂಖ್ಯೆಯಲ್ಲಿ ಏನೂ ಇಲ್ಲ."
+     ],
+     [
+      "owner",
+      "ನಮಸ್ಕಾರ"
+     ],
+     [
+      "assistant",
+      "ಕ್ಷಮಿಸಿ, ಅರ್ಥವಾಗಲಿಲ್ಲ. ನೀವು ಹೀಗೆ ಹೇಳಬಹುದು:\n• ನನಗೆ ಏನು ಬಾಕಿ\n• ಇಂದು ಎಷ್ಟು ಬಂತು\n• b-14 ರದ್ದು\n• b-14 ಗೆ ಹೇಳಿ 15 ನಿಮಿಷ ತಡ\n• ಹಿಂದಿನಂತೆ"
+     ]
+    ],
+    "cards": [],
+    "mood": [
+     "quiet",
+     "well",
+     false
+    ],
+    "record": [
+     [
+      "listing",
+      "confirmed",
+      {},
+      "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "help",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "undo",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "waiting",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "limit",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_file",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_file_asked",
+      "confirmed",
+      {
+       "ask": "ask_",
+       "via": "page"
+      },
+      "the owner asked for their shop's file (no Operator needed)",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_file",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_operator",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "operator_change_asked",
+      "confirmed",
+      {
+       "ask": "ask_",
+       "via": "page"
+      },
+      "the owner asked for another Operator; the move itself still needs the owner's code",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "leave_operator",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "money",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "cancel",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "case": "b-14"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "refund",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules",
+       "case": "b-3"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "unknown",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ]
+    ],
+    "public": [],
+    "owner": [],
+    "ai": {
+     "rules": 13,
+     "decision": 0,
+     "model": 0
+    }
+   }
+  },
+  "a draft and its card in en": {
+   "at": 1795076384712,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "I have two Persian kittens for sale on my page, 8000 rupees"
+     ],
+     [
+      "owner",
+      "what needs me"
+     ],
+     [
+      "assistant",
+      "Things that need you: 1. Each one is below."
+     ],
+     [
+      "assistant",
+      "That card was already answered."
+     ],
+     [
+      "assistant",
+      "I have no card with that code."
+     ],
+     [
+      "assistant",
+      "This changed since that card, so nothing was done. Here is the card as it is now:"
+     ],
+     [
+      "owner",
+      "a lamp for sale on my page, 450 rupees each"
+     ],
+     [
+      "assistant",
+      "Alright, I will not show it."
+     ],
+     [
+      "assistant",
+      "Done: Kitten pair is on your page now. Confirm it every few days with one tap, so people know it is still there."
+     ],
+     [
+      "assistant",
+      "That card was already answered."
+     ]
+    ],
+    "cards": [],
+    "mood": [
+     "quiet",
+     "well",
+     false
+    ],
+    "record": [
+     [
+      "listing",
+      "confirmed",
+      {},
+      "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+      "en",
+      "number"
+     ],
+     [
+      "listing_draft",
+      "confirmed",
+      {
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+      "en",
+      "owner"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "drafted"
+      },
+      "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-1",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "en",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "waiting",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-2",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-1",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the card is already void: nothing was done",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-2",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the owner's page posted a card that is not one the assistant holds with that digest: nothing was done",
+      "en",
+      "number"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "edited"
+      },
+      "the owner changed their listings in their app; the record keeps the listing's id, category and who, never its words",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-2",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "decision": "yes",
+       "via": "page"
+      },
+      "what the card showed is not what the store holds now (a changed amount, payment or customer): nothing was done, and a new card was made",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "en",
+      "number"
+     ],
+     [
+      "listing_draft",
+      "confirmed",
+      {
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+      "en",
+      "owner"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-2",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "drafted"
+      },
+      "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-4",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "0838a3a8ab9f2c3a1090859954e23952",
+       "case": "listing:l-2",
+       "amountPaise": "45000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "confirmed",
+      {
+       "card": "c-4",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "0838a3a8ab9f2c3a1090859954e23952",
+       "decision": "no",
+       "via": "page"
+      },
+      "the owner said no; the draft listing was dropped and was never public",
+      "en",
+      "number"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "published"
+      },
+      "the owner tapped Show it; the listing is on the shop's page now, with the fields the card showed",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "confirmed",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "decision": "yes",
+       "via": "page",
+       "result": "done"
+      },
+      "the owner tapped yes; the skill did the card's saved action",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the card is already done: nothing was done",
+      "en",
+      "number"
+     ]
+    ],
+    "public": [
+     "l-1"
+    ],
+    "owner": [
+     [
+      "l-1",
+      "live"
+     ]
+    ],
+    "ai": {
+     "rules": 1,
+     "decision": 0,
+     "model": 2
+    }
+   }
+  },
+  "a draft and its card in hi": {
+   "at": 1795076385148,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "I have two Persian kittens for sale on my page, 8000 rupees"
+     ],
+     [
+      "owner",
+      "what needs me"
+     ],
+     [
+      "assistant",
+      "आपके लिए बाकी काम: 1। हर एक नीचे है।"
+     ],
+     [
+      "assistant",
+      "उस कार्ड का जवाब पहले ही दिया जा चुका है।"
+     ],
+     [
+      "assistant",
+      "उस कोड का कोई कार्ड मेरे पास नहीं है।"
+     ],
+     [
+      "assistant",
+      "उस कार्ड के बाद यह बदल गया, इसलिए कुछ नहीं किया। अभी का कार्ड यह है:"
+     ],
+     [
+      "owner",
+      "a lamp for sale on my page, 450 rupees each"
+     ],
+     [
+      "assistant",
+      "ठीक है, मैं इसे नहीं दिखाऊँगा।"
+     ],
+     [
+      "assistant",
+      "हो गया: Kitten pair अब आपके पेज पर है। हर कुछ दिन में एक टैप से इसे पक्का करते रहें, ताकि लोग जानें कि यह अभी भी है।"
+     ],
+     [
+      "assistant",
+      "उस कार्ड का जवाब पहले ही दिया जा चुका है।"
+     ]
+    ],
+    "cards": [],
+    "mood": [
+     "quiet",
+     "well",
+     false
+    ],
+    "record": [
+     [
+      "listing",
+      "confirmed",
+      {},
+      "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+      "hi",
+      "number"
+     ],
+     [
+      "listing_draft",
+      "confirmed",
+      {
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+      "hi",
+      "owner"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "drafted"
+      },
+      "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-1",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "waiting",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-2",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-1",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the card is already void: nothing was done",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-2",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the owner's page posted a card that is not one the assistant holds with that digest: nothing was done",
+      "hi",
+      "number"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "edited"
+      },
+      "the owner changed their listings in their app; the record keeps the listing's id, category and who, never its words",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-2",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "decision": "yes",
+       "via": "page"
+      },
+      "what the card showed is not what the store holds now (a changed amount, payment or customer): nothing was done, and a new card was made",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "hi",
+      "number"
+     ],
+     [
+      "listing_draft",
+      "confirmed",
+      {
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+      "hi",
+      "owner"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-2",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "drafted"
+      },
+      "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-4",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "0838a3a8ab9f2c3a1090859954e23952",
+       "case": "listing:l-2",
+       "amountPaise": "45000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_card",
+      "confirmed",
+      {
+       "card": "c-4",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "0838a3a8ab9f2c3a1090859954e23952",
+       "decision": "no",
+       "via": "page"
+      },
+      "the owner said no; the draft listing was dropped and was never public",
+      "hi",
+      "number"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "published"
+      },
+      "the owner tapped Show it; the listing is on the shop's page now, with the fields the card showed",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_card",
+      "confirmed",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "decision": "yes",
+       "via": "page",
+       "result": "done"
+      },
+      "the owner tapped yes; the skill did the card's saved action",
+      "hi",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the card is already done: nothing was done",
+      "hi",
+      "number"
+     ]
+    ],
+    "public": [
+     "l-1"
+    ],
+    "owner": [
+     [
+      "l-1",
+      "live"
+     ]
+    ],
+    "ai": {
+     "rules": 1,
+     "decision": 0,
+     "model": 2
+    }
+   }
+  },
+  "a draft and its card in ml": {
+   "at": 1795076385587,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "I have two Persian kittens for sale on my page, 8000 rupees"
+     ],
+     [
+      "owner",
+      "what needs me"
+     ],
+     [
+      "assistant",
+      "നിങ്ങൾക്കായി കാത്തിരിക്കുന്നവ: 1. ഓരോന്നും താഴെ."
+     ],
+     [
+      "assistant",
+      "ആ കാർഡിന് ഇതിനകം മറുപടി നൽകി."
+     ],
+     [
+      "assistant",
+      "ആ കോഡുള്ള കാർഡ് എന്റെ പക്കലില്ല."
+     ],
+     [
+      "assistant",
+      "ആ കാർഡിന് ശേഷം ഇത് മാറി, അതിനാൽ ഒന്നും ചെയ്തില്ല. ഇപ്പോഴത്തെ കാർഡ് ഇതാ:"
+     ],
+     [
+      "owner",
+      "a lamp for sale on my page, 450 rupees each"
+     ],
+     [
+      "assistant",
+      "ശരി, ഞാൻ ഇത് കാണിക്കില്ല."
+     ],
+     [
+      "assistant",
+      "ചെയ്തു: Kitten pair ഇപ്പോൾ നിങ്ങളുടെ പേജിൽ ഉണ്ട്. ഇത് ഇപ്പോഴും ഉണ്ടെന്ന് ആളുകൾ അറിയാൻ ഓരോ ദിവസം കഴിഞ്ഞും ഒരു ടാപ്പിലൂടെ ഉറപ്പാക്കുക."
+     ],
+     [
+      "assistant",
+      "ആ കാർഡിന് ഇതിനകം മറുപടി നൽകി."
+     ]
+    ],
+    "cards": [],
+    "mood": [
+     "quiet",
+     "well",
+     false
+    ],
+    "record": [
+     [
+      "listing",
+      "confirmed",
+      {},
+      "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+      "ml",
+      "number"
+     ],
+     [
+      "listing_draft",
+      "confirmed",
+      {
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+      "ml",
+      "owner"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "drafted"
+      },
+      "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-1",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "waiting",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-2",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-1",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the card is already void: nothing was done",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-2",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the owner's page posted a card that is not one the assistant holds with that digest: nothing was done",
+      "ml",
+      "number"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "edited"
+      },
+      "the owner changed their listings in their app; the record keeps the listing's id, category and who, never its words",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-2",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "decision": "yes",
+       "via": "page"
+      },
+      "what the card showed is not what the store holds now (a changed amount, payment or customer): nothing was done, and a new card was made",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "ml",
+      "number"
+     ],
+     [
+      "listing_draft",
+      "confirmed",
+      {
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+      "ml",
+      "owner"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-2",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "drafted"
+      },
+      "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-4",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "0838a3a8ab9f2c3a1090859954e23952",
+       "case": "listing:l-2",
+       "amountPaise": "45000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_card",
+      "confirmed",
+      {
+       "card": "c-4",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "0838a3a8ab9f2c3a1090859954e23952",
+       "decision": "no",
+       "via": "page"
+      },
+      "the owner said no; the draft listing was dropped and was never public",
+      "ml",
+      "number"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "published"
+      },
+      "the owner tapped Show it; the listing is on the shop's page now, with the fields the card showed",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_card",
+      "confirmed",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "decision": "yes",
+       "via": "page",
+       "result": "done"
+      },
+      "the owner tapped yes; the skill did the card's saved action",
+      "ml",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the card is already done: nothing was done",
+      "ml",
+      "number"
+     ]
+    ],
+    "public": [
+     "l-1"
+    ],
+    "owner": [
+     [
+      "l-1",
+      "live"
+     ]
+    ],
+    "ai": {
+     "rules": 1,
+     "decision": 0,
+     "model": 2
+    }
+   }
+  },
+  "a draft and its card in kn": {
+   "at": 1795076386022,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "I have two Persian kittens for sale on my page, 8000 rupees"
+     ],
+     [
+      "owner",
+      "what needs me"
+     ],
+     [
+      "assistant",
+      "ನಿಮಗಾಗಿ ಕಾಯುತ್ತಿರುವವು: 1. ಪ್ರತಿಯೊಂದೂ ಕೆಳಗಿದೆ."
+     ],
+     [
+      "assistant",
+      "ಆ ಕಾರ್ಡ್‌ಗೆ ಈಗಾಗಲೇ ಉತ್ತರಿಸಲಾಗಿದೆ."
+     ],
+     [
+      "assistant",
+      "ಆ ಕೋಡ್‌ನ ಕಾರ್ಡ್ ನನ್ನ ಬಳಿ ಇಲ್ಲ."
+     ],
+     [
+      "assistant",
+      "ಆ ಕಾರ್ಡ್ ನಂತರ ಇದು ಬದಲಾಗಿದೆ, ಹಾಗಾಗಿ ಏನೂ ಮಾಡಿಲ್ಲ. ಈಗಿನ ಕಾರ್ಡ್ ಇಲ್ಲಿದೆ:"
+     ],
+     [
+      "owner",
+      "a lamp for sale on my page, 450 rupees each"
+     ],
+     [
+      "assistant",
+      "ಸರಿ, ನಾನು ಇದನ್ನು ತೋರಿಸುವುದಿಲ್ಲ."
+     ],
+     [
+      "assistant",
+      "ಆಯಿತು: Kitten pair ಈಗ ನಿಮ್ಮ ಪುಟದಲ್ಲಿದೆ. ಇದು ಇನ್ನೂ ಇದೆ ಎಂದು ಜನರಿಗೆ ತಿಳಿಯಲು ಕೆಲವು ದಿನಗಳಿಗೊಮ್ಮೆ ಒಂದು ಟ್ಯಾಪ್‌ನಿಂದ ಖಚಿತಪಡಿಸಿ."
+     ],
+     [
+      "assistant",
+      "ಆ ಕಾರ್ಡ್‌ಗೆ ಈಗಾಗಲೇ ಉತ್ತರಿಸಲಾಗಿದೆ."
+     ]
+    ],
+    "cards": [],
+    "mood": [
+     "quiet",
+     "well",
+     false
+    ],
+    "record": [
+     [
+      "listing",
+      "confirmed",
+      {},
+      "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+      "kn",
+      "number"
+     ],
+     [
+      "listing_draft",
+      "confirmed",
+      {
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+      "kn",
+      "owner"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "drafted"
+      },
+      "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-1",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_assistant",
+      "confirmed",
+      {
+       "intent": "waiting",
+       "step": "rules",
+       "provider": "rules",
+       "model": "rule-parser",
+       "inputTokens": "0",
+       "outputTokens": "0",
+       "costMicroInr": "0",
+       "tried": "rules"
+      },
+      "",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-2",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-1",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the card is already void: nothing was done",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-2",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the owner's page posted a card that is not one the assistant holds with that digest: nothing was done",
+      "kn",
+      "number"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "edited"
+      },
+      "the owner changed their listings in their app; the record keeps the listing's id, category and who, never its words",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-2",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "39bb75f9d3167d7f4a8f3e71eb4df101",
+       "decision": "yes",
+       "via": "page"
+      },
+      "what the card showed is not what the store holds now (a changed amount, payment or customer): nothing was done, and a new card was made",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "case": "listing:l-1",
+       "amountPaise": "800000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "kn",
+      "number"
+     ],
+     [
+      "listing_draft",
+      "confirmed",
+      {
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+      "kn",
+      "owner"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-2",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "drafted"
+      },
+      "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-4",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "0838a3a8ab9f2c3a1090859954e23952",
+       "case": "listing:l-2",
+       "amountPaise": "45000"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_card",
+      "confirmed",
+      {
+       "card": "c-4",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "0838a3a8ab9f2c3a1090859954e23952",
+       "decision": "no",
+       "via": "page"
+      },
+      "the owner said no; the draft listing was dropped and was never public",
+      "kn",
+      "number"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "published"
+      },
+      "the owner tapped Show it; the listing is on the shop's page now, with the fields the card showed",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_card",
+      "confirmed",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "decision": "yes",
+       "via": "page",
+       "result": "done"
+      },
+      "the owner tapped yes; the skill did the card's saved action",
+      "kn",
+      "number"
+     ],
+     [
+      "owner_card",
+      "blocked",
+      {
+       "card": "c-3",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "4960f9210ed4f2ef1de1a29aa19e4877",
+       "decision": "yes",
+       "via": "page"
+      },
+      "the card is already done: nothing was done",
+      "kn",
+      "number"
+     ]
+    ],
+    "public": [
+     "l-1"
+    ],
+    "owner": [
+     [
+      "l-1",
+      "live"
+     ]
+    ],
+    "ai": {
+     "rules": 1,
+     "decision": 0,
+     "model": 2
+    }
+   }
+  },
+  "refused, off, over the cap": {
+   "at": 1795076386460,
+   "value": [
+    [
+     "numbers",
+     {
+      "talk": [
+       [
+        "owner",
+        "two kittens for sale on my page, 800 rupees"
+       ],
+       [
+        "assistant",
+        "The price I would write is not the one you said, so I did not make the listing. Tell me the price again."
+       ]
+      ],
+      "cards": [],
+      "mood": [
+       "quiet",
+       "well",
+       false
+      ],
+      "record": [
+       [
+        "listing",
+        "confirmed",
+        {},
+        "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+        "en",
+        "number"
+       ],
+       [
+        "listing_draft",
+        "confirmed",
+        {
+         "result": "refused_numbers",
+         "step": "model",
+         "provider": "127.0.0.1",
+         "model": "fake-model",
+         "inputTokens": "100",
+         "outputTokens": "50"
+        },
+        "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+        "en",
+        "owner"
+       ]
+      ],
+      "public": [],
+      "owner": [],
+      "ai": {
+       "rules": 0,
+       "decision": 0,
+       "model": 1
+      }
+     }
+    ],
+    [
+     "claims",
+     {
+      "talk": [
+       [
+        "owner",
+        "two kittens for sale on my page, 800 rupees"
+       ],
+       [
+        "assistant",
+        "The price I would write is not the one you said, so I did not make the listing. Tell me the price again."
+       ]
+      ],
+      "cards": [],
+      "mood": [
+       "quiet",
+       "well",
+       false
+      ],
+      "record": [
+       [
+        "listing",
+        "confirmed",
+        {},
+        "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+        "en",
+        "number"
+       ],
+       [
+        "listing_draft",
+        "confirmed",
+        {
+         "result": "refused_numbers",
+         "step": "model",
+         "provider": "127.0.0.1",
+         "model": "fake-model",
+         "inputTokens": "100",
+         "outputTokens": "50"
+        },
+        "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+        "en",
+        "owner"
+       ]
+      ],
+      "public": [],
+      "owner": [],
+      "ai": {
+       "rules": 0,
+       "decision": 0,
+       "model": 1
+      }
+     }
+    ],
+    [
+     "health",
+     {
+      "talk": [
+       [
+        "owner",
+        "two kittens for sale on my page, 800 rupees"
+       ],
+       [
+        "assistant",
+        "I cannot write that an animal is healthy, vaccinated or of a pure breed unless you said so yourself. Tell me in your own words if it is true."
+       ]
+      ],
+      "cards": [],
+      "mood": [
+       "quiet",
+       "well",
+       false
+      ],
+      "record": [
+       [
+        "listing",
+        "confirmed",
+        {},
+        "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+        "en",
+        "number"
+       ],
+       [
+        "listing_draft",
+        "confirmed",
+        {
+         "result": "refused_health",
+         "step": "model",
+         "provider": "127.0.0.1",
+         "model": "fake-model",
+         "inputTokens": "100",
+         "outputTokens": "50"
+        },
+        "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+        "en",
+        "owner"
+       ]
+      ],
+      "public": [],
+      "owner": [],
+      "ai": {
+       "rules": 0,
+       "decision": 0,
+       "model": 1
+      }
+     }
+    ],
+    [
+     "shape",
+     {
+      "talk": [
+       [
+        "owner",
+        "two kittens for sale on my page, 800 rupees"
+       ],
+       [
+        "assistant",
+        "I could not write that just now. Use the Add to my page form in your app."
+       ]
+      ],
+      "cards": [],
+      "mood": [
+       "quiet",
+       "well",
+       false
+      ],
+      "record": [
+       [
+        "listing",
+        "confirmed",
+        {},
+        "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+        "en",
+        "number"
+       ],
+       [
+        "listing_draft",
+        "confirmed",
+        {
+         "result": "refused_shape",
+         "step": "model",
+         "provider": "127.0.0.1",
+         "model": "fake-model",
+         "inputTokens": "100",
+         "outputTokens": "50"
+        },
+        "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+        "en",
+        "owner"
+       ]
+      ],
+      "public": [],
+      "owner": [],
+      "ai": {
+       "rules": 0,
+       "decision": 0,
+       "model": 1
+      }
+     }
+    ],
+    [
+     "protected",
+     {
+      "talk": [
+       [
+        "owner",
+        "a monkey for sale on my page, 800 rupees"
+       ],
+       [
+        "assistant",
+        "I cannot list that: monkeys are protected animals and may not be sold. Please do not put them on your page."
+       ]
+      ],
+      "cards": [],
+      "mood": [
+       "quiet",
+       "well",
+       false
+      ],
+      "record": [
+       [
+        "listing",
+        "confirmed",
+        {},
+        "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+        "en",
+        "number"
+       ]
+      ],
+      "public": [],
+      "owner": [],
+      "ai": {
+       "rules": 0,
+       "decision": 0,
+       "model": 0
+      }
+     },
+     0
+    ],
+    [
+     "no model",
+     {
+      "talk": [
+       [
+        "owner",
+        "two kittens for sale on my page"
+       ],
+       [
+        "assistant",
+        "I can only write a listing from your words when my assistant is on. Use the Add to my page form in your app: a photo, a title and a price."
+       ]
+      ],
+      "cards": [],
+      "mood": [
+       "quiet",
+       "well",
+       false
+      ],
+      "record": [
+       [
+        "listing",
+        "confirmed",
+        {},
+        "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+        "en",
+        "number"
+       ]
+      ],
+      "public": [],
+      "owner": [],
+      "ai": {
+       "rules": 0,
+       "decision": 0,
+       "model": 0
+      }
+     }
+    ],
+    [
+     "day cap",
+     {
+      "talk": [
+       [
+        "owner",
+        "a lamp for sale on my page, 450 rupees"
+       ],
+       [
+        "owner",
+        "a bowl for sale on my page, 100 rupees"
+       ],
+       [
+        "assistant",
+        "Today's limit for writing listings is reached. Use the Add to my page form in your app: a photo, a title and a price. Writing is back tomorrow."
+       ]
+      ],
+      "cards": [
+       [
+        "c-1",
+        "9efdd66d329a7f494ff78d963cdfc02c",
+        "listings",
+        "listing",
+        "listing:l-1",
+        0,
+        "listing:l-1",
+        true,
+        "Show this on your page? Persian kittens. Price: ₹450. Category: Pets."
+       ]
+      ],
+      "mood": [
+       "waiting_for_owner",
+       "needs",
+       false
+      ],
+      "record": [
+       [
+        "listing",
+        "confirmed",
+        {},
+        "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+        "en",
+        "number"
+       ],
+       [
+        "listing_draft",
+        "confirmed",
+        {
+         "result": "checked",
+         "step": "model",
+         "provider": "127.0.0.1",
+         "model": "fake-model",
+         "inputTokens": "100",
+         "outputTokens": "50"
+        },
+        "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+        "en",
+        "owner"
+       ],
+       [
+        "listing",
+        "confirmed",
+        {
+         "listing": "l-1",
+         "category": "pets",
+         "by": "owner",
+         "from": "app",
+         "change": "drafted"
+        },
+        "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+        "en",
+        "number"
+       ],
+       [
+        "owner_card",
+        "held_for_owner",
+        {
+         "card": "c-1",
+         "skill": "listings",
+         "kind": "listing",
+         "digest": "9efdd66d329a7f494ff78d963cdfc02c",
+         "case": "listing:l-1",
+         "amountPaise": "45000"
+        },
+        "a card with the exact change was shown to the owner; nothing is done until they tap it",
+        "en",
+        "number"
+       ]
+      ],
+      "public": [],
+      "owner": [
+       [
+        "l-1",
+        "draft"
+       ]
+      ],
+      "ai": {
+       "rules": 0,
+       "decision": 0,
+       "model": 1
+      }
+     },
+     1
+    ],
+    [
+     "month budget",
+     {
+      "talk": [
+       [
+        "owner",
+        "item number 1 for sale on my page"
+       ],
+       [
+        "owner",
+        "item number 2 for sale on my page"
+       ],
+       [
+        "owner",
+        "item number 3 for sale on my page"
+       ],
+       [
+        "assistant",
+        "Your assistant's thinking budget for this month is used up, so I cannot write the listing. Use the Add to my page form in your app: a photo, a title and a price. I am back on Tue 1 Dec."
+       ]
+      ],
+      "cards": [
+       [
+        "c-1",
+        "a350ee2a791f9bd3fd635135f2733bb0",
+        "listings",
+        "listing",
+        "listing:l-1",
+        0,
+        "listing:l-1",
+        true,
+        "Show this on your page? Persian kittens. Price: Ask the shop. Category: Pets."
+       ],
+       [
+        "c-2",
+        "fcdad66706522e7df3f7ea73156c8519",
+        "listings",
+        "listing",
+        "listing:l-2",
+        0,
+        "listing:l-2",
+        true,
+        "Show this on your page? Persian kittens. Price: Ask the shop. Category: Pets."
+       ]
+      ],
+      "mood": [
+       "waiting_for_owner",
+       "needs",
+       false
+      ],
+      "record": [
+       [
+        "listing",
+        "confirmed",
+        {},
+        "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+        "en",
+        "number"
+       ],
+       [
+        "listing_draft",
+        "confirmed",
+        {
+         "result": "checked",
+         "step": "model",
+         "provider": "127.0.0.1",
+         "model": "fake-model",
+         "inputTokens": "100",
+         "outputTokens": "50"
+        },
+        "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+        "en",
+        "owner"
+       ],
+       [
+        "listing",
+        "confirmed",
+        {
+         "listing": "l-1",
+         "category": "pets",
+         "by": "owner",
+         "from": "app",
+         "change": "drafted"
+        },
+        "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+        "en",
+        "number"
+       ],
+       [
+        "owner_card",
+        "held_for_owner",
+        {
+         "card": "c-1",
+         "skill": "listings",
+         "kind": "listing",
+         "digest": "a350ee2a791f9bd3fd635135f2733bb0",
+         "case": "listing:l-1"
+        },
+        "a card with the exact change was shown to the owner; nothing is done until they tap it",
+        "en",
+        "number"
+       ],
+       [
+        "listing_draft",
+        "confirmed",
+        {
+         "result": "checked",
+         "step": "model",
+         "provider": "127.0.0.1",
+         "model": "fake-model",
+         "inputTokens": "100",
+         "outputTokens": "50"
+        },
+        "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+        "en",
+        "owner"
+       ],
+       [
+        "listing",
+        "confirmed",
+        {
+         "listing": "l-2",
+         "category": "pets",
+         "by": "owner",
+         "from": "app",
+         "change": "drafted"
+        },
+        "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+        "en",
+        "number"
+       ],
+       [
+        "owner_card",
+        "held_for_owner",
+        {
+         "card": "c-2",
+         "skill": "listings",
+         "kind": "listing",
+         "digest": "fcdad66706522e7df3f7ea73156c8519",
+         "case": "listing:l-2"
+        },
+        "a card with the exact change was shown to the owner; nothing is done until they tap it",
+        "en",
+        "number"
+       ]
+      ],
+      "public": [],
+      "owner": [
+       [
+        "l-2",
+        "draft"
+       ],
+       [
+        "l-1",
+        "draft"
+       ]
+      ],
+      "ai": {
+       "rules": 0,
+       "decision": 0,
+       "model": 2
+      }
+     },
+     2
+    ]
+   ]
+  },
+  "budget notices on the beat": {
+   "at": 1795076389336,
+   "value": {
+    "talk": [
+     [
+      "owner",
+      "item number 1 for sale on my page"
+     ],
+     [
+      "owner",
+      "item number 2 for sale on my page"
+     ],
+     [
+      "assistant",
+      "A heads-up: most of my thinking budget for this month is used. If it runs out, buttons and my fixed answers keep working, and I am back on Tue 1 Dec."
+     ],
+     [
+      "assistant",
+      "Your assistant's thinking budget for this month is used up. Buttons still work; it is back on Tue 1 Dec."
+     ]
+    ],
+    "cards": [
+     [
+      "c-1",
+      "a350ee2a791f9bd3fd635135f2733bb0",
+      "listings",
+      "listing",
+      "listing:l-1",
+      0,
+      "listing:l-1",
+      true,
+      "Show this on your page? Persian kittens. Price: Ask the shop. Category: Pets."
+     ],
+     [
+      "c-2",
+      "fcdad66706522e7df3f7ea73156c8519",
+      "listings",
+      "listing",
+      "listing:l-2",
+      0,
+      "listing:l-2",
+      true,
+      "Show this on your page? Persian kittens. Price: Ask the shop. Category: Pets."
+     ]
+    ],
+    "mood": [
+     "waiting_for_owner",
+     "needs",
+     false
+    ],
+    "record": [
+     [
+      "listing",
+      "confirmed",
+      {},
+      "the Operator's place from setup was written into the shop's listings; the owner can change it in their app",
+      "en",
+      "number"
+     ],
+     [
+      "listing_draft",
+      "confirmed",
+      {
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+      "en",
+      "owner"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-1",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "drafted"
+      },
+      "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-1",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "a350ee2a791f9bd3fd635135f2733bb0",
+       "case": "listing:l-1"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "en",
+      "number"
+     ],
+     [
+      "listing_draft",
+      "confirmed",
+      {
+       "result": "checked",
+       "step": "model",
+       "provider": "127.0.0.1",
+       "model": "fake-model",
+       "inputTokens": "100",
+       "outputTokens": "50"
+      },
+      "the assistant drafted a listing from the owner's words; nothing is public until the owner taps Show it",
+      "en",
+      "owner"
+     ],
+     [
+      "listing",
+      "confirmed",
+      {
+       "listing": "l-2",
+       "category": "pets",
+       "by": "owner",
+       "from": "app",
+       "change": "drafted"
+      },
+      "the assistant drafted a listing from the owner's words; it is not public until the owner taps Show it",
+      "en",
+      "number"
+     ],
+     [
+      "owner_card",
+      "held_for_owner",
+      {
+       "card": "c-2",
+       "skill": "listings",
+       "kind": "listing",
+       "digest": "fcdad66706522e7df3f7ea73156c8519",
+       "case": "listing:l-2"
+      },
+      "a card with the exact change was shown to the owner; nothing is done until they tap it",
+      "en",
+      "number"
+     ],
+     [
+      "send_message",
+      "failed",
+      {
+       "to": "owner"
+      },
+      "this reply has no approved WhatsApp template, so it goes only while the person's 24-hour window is open",
+      "en",
+      "number"
+     ],
+     [
+      "ai_mode",
+      "confirmed",
+      {
+       "mode": "budget_warn",
+       "reason": "budget",
+       "month": "2026-11"
+      },
+      "the owner was told that most of this month's model budget is used",
+      "en",
+      "number"
+     ],
+     [
+      "send_message",
+      "failed",
+      {
+       "to": "owner"
+      },
+      "this reply has no approved WhatsApp template, so it goes only while the person's 24-hour window is open",
+      "en",
+      "number"
+     ],
+     [
+      "ai_mode",
+      "confirmed",
+      {
+       "mode": "budget_full",
+       "reason": "budget",
+       "month": "2026-11"
+      },
+      "the owner was told that this month's model budget is used up: the language model is off until the 1st; buttons, rules and fixed answers go on",
+      "en",
+      "number"
+     ]
+    ],
+    "public": [],
+    "owner": [
+     [
+      "l-2",
+      "draft"
+     ],
+     [
+      "l-1",
+      "draft"
+     ]
+    ],
+    "ai": {
+     "rules": 0,
+     "decision": 0,
+     "model": 2
+    }
+   }
+  },
+  "memory": {
+   "at": 1795076390675,
+   "value": {
+    "said": [
+     [
+      "owner",
+      "remember we close at 6 on Saturdays"
+     ],
+     [
+      "assistant",
+      "Remembered (n-1): \"we close at 6 on Saturdays\". Only I use it, when I talk with you. Say \"undo\" within a day, or \"forget n-1\"."
+     ],
+     [
+      "owner",
+      "remember for customers: we deliver on Sundays"
+     ],
+     [
+      "assistant",
+      "Remembered (n-2): \"we deliver on Sundays\". Customers' answers may use it too. Say \"undo\" within a day, or \"forget n-2\"."
+     ],
+     [
+      "owner",
+      "remember my goal is ten sales a day"
+     ],
+     [
+      "assistant",
+      "Remembered (n-3): \"my goal is ten sales a day\". Only I use it, when I talk with you. Say \"undo\" within a day, or \"forget n-3\"."
+     ],
+     [
+      "owner",
+      "please remember that always greet in Malayalam"
+     ],
+     [
+      "assistant",
+      "Remembered (n-4): \"always greet in Malayalam\". Only I use it, when I talk with you. Say \"undo\" within a day, or \"forget n-4\"."
+     ],
+     [
+      "owner",
+      "what do you remember?"
+     ],
+     [
+      "assistant",
+      "I remember 4:\n• n-1 [you only] we close at 6 on Saturdays\n• n-2 [customers too] we deliver on Sundays\n• n-3 [you only] my goal is ten sales a day\n• n-4 [you only] always greet in Malayalam\nSay \"forget n-3\" to remove one."
+     ],
+     [
+      "owner",
+      "forget n-1"
+     ],
+     [
+      "assistant",
+      "Forgotten: n-1. The words are gone from the shop's store; backups age out on their own schedule."
+     ],
+     [
+      "owner",
+      "forget 9"
+     ],
+     [
+      "assistant",
+      "I have no note n-9. Say \"what do you remember?\" to see them."
+     ],
+     [
+      "owner",
+      "forget n-1"
+     ],
+     [
+      "assistant",
+      "I have no note n-1. Say \"what do you remember?\" to see them."
+     ],
+     [
+      "owner",
+      "undo"
+     ],
+     [
+      "assistant",
+      "Undone: I no longer remember n-4."
+     ],
+     [
+      "owner",
+      "notes"
+     ],
+     [
+      "assistant",
+      "I remember 2:\n• n-2 [customers too] we deliver on Sundays\n• n-3 [you only] my goal is ten sales a day\nSay \"forget n-3\" to remove one."
+     ],
+     [
+      "owner",
+      "remember"
+     ],
+     [
+      "assistant",
+      "What shall I remember? For example: remember we close at 6 on Saturdays."
+     ],
+     [
+      "owner",
+      "remember long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words long words"
+     ],
+     [
+      "assistant",
+      "That is too long for one note (at most 280 characters). Please say it shorter."
+     ],
+     [
+      "owner",
+      "ഓർത്തുവെക്കൂ ഞായർ അവധി"
+     ],
+     [
+      "assistant",
+      "Remembered (n-5): \"ഞായർ അവധി\". Only I use it, when I talk with you. Say \"undo\" within a day, or \"forget n-5\"."
+     ],
+     [
+      "owner",
+      "ನೆನಪಿಡಿ ಭಾನುವಾರ ರಜೆ"
+     ],
+     [
+      "assistant",
+      "Remembered (n-6): \"ಭಾನುವಾರ ರಜೆ\". Only I use it, when I talk with you. Say \"undo\" within a day, or \"forget n-6\"."
+     ],
+     [
+      "owner",
+      "യാദ് രഖോ"
+     ],
+     [
+      "assistant",
+      "Sorry, I didn't get that. You can say, for example:\n• what needs me\n• money today\n• cancel b-14\n• message b-14 Running 15 minutes late\n• undo"
+     ],
+     [
+      "owner",
+      "yaad rakho ki kal chutti hai"
+     ],
+     [
+      "assistant",
+      "Remembered (n-7): \"kal chutti hai\". Only I use it, when I talk with you. Say \"undo\" within a day, or \"forget n-7\"."
+     ],
+     [
+      "owner",
+      "क्या याद है"
+     ],
+     [
+      "assistant",
+      "I remember 5:\n• n-2 [customers too] we deliver on Sundays\n• n-3 [you only] my goal is ten sales a day\n• n-5 [you only] ഞായർ അവധി\n• n-6 [you only] ಭಾನುವಾರ ರಜೆ\n• n-7 [you only] kal chutti hai\nSay \"forget n-3\" to remove one."
+     ],
+     [
+      "owner",
+      "undo"
+     ],
+     [
+      "assistant",
+      "Undone: I no longer remember n-7."
+     ],
+     [
+      "owner",
+      "undo"
+     ],
+     [
+      "assistant",
+      "Undone: I no longer remember n-6."
+     ]
+    ],
+    "memory": [
+     [
+      "confirmed",
+      {
+       "note": "n-1",
+       "kind": "fact",
+       "by": "owner",
+       "from": "app",
+       "audience": "owner",
+       "change": "added"
+      },
+      "a note was saved to the shop's memory by the owner, the Operator or the builder; the record keeps its id, kind and who, never its words"
+     ],
+     [
+      "confirmed",
+      {
+       "note": "n-2",
+       "kind": "public",
+       "by": "owner",
+       "from": "app",
+       "audience": "everyone",
+       "change": "added"
+      },
+      "a note was saved to the shop's memory by the owner, the Operator or the builder; the record keeps its id, kind and who, never its words"
+     ],
+     [
+      "confirmed",
+      {
+       "note": "n-3",
+       "kind": "goal",
+       "by": "owner",
+       "from": "app",
+       "audience": "owner",
+       "change": "added"
+      },
+      "a note was saved to the shop's memory by the owner, the Operator or the builder; the record keeps its id, kind and who, never its words"
+     ],
+     [
+      "confirmed",
+      {
+       "note": "n-4",
+       "kind": "instruction",
+       "by": "owner",
+       "from": "app",
+       "audience": "owner",
+       "change": "added"
+      },
+      "a note was saved to the shop's memory by the owner, the Operator or the builder; the record keeps its id, kind and who, never its words"
+     ],
+     [
+      "confirmed",
+      {
+       "note": "n-1",
+       "kind": "fact",
+       "by": "owner",
+       "from": "app",
+       "audience": "owner",
+       "change": "forgotten"
+      },
+      "a note's words were removed from the shop's state; its id, dates and digest stay"
+     ],
+     [
+      "confirmed",
+      {
+       "note": "n-4",
+       "kind": "instruction",
+       "by": "owner",
+       "from": "app",
+       "audience": "owner",
+       "change": "undone"
+      },
+      "the owner undid a note they had just saved"
+     ],
+     [
+      "confirmed",
+      {
+       "note": "n-5",
+       "kind": "fact",
+       "by": "owner",
+       "from": "app",
+       "audience": "owner",
+       "change": "added"
+      },
+      "a note was saved to the shop's memory by the owner, the Operator or the builder; the record keeps its id, kind and who, never its words"
+     ],
+     [
+      "confirmed",
+      {
+       "note": "n-6",
+       "kind": "fact",
+       "by": "owner",
+       "from": "app",
+       "audience": "owner",
+       "change": "added"
+      },
+      "a note was saved to the shop's memory by the owner, the Operator or the builder; the record keeps its id, kind and who, never its words"
+     ],
+     [
+      "confirmed",
+      {
+       "note": "n-7",
+       "kind": "fact",
+       "by": "owner",
+       "from": "app",
+       "audience": "owner",
+       "change": "added"
+      },
+      "a note was saved to the shop's memory by the owner, the Operator or the builder; the record keeps its id, kind and who, never its words"
+     ],
+     [
+      "confirmed",
+      {
+       "note": "n-7",
+       "kind": "fact",
+       "by": "owner",
+       "from": "app",
+       "audience": "owner",
+       "change": "undone"
+      },
+      "the owner undid a note they had just saved"
+     ],
+     [
+      "confirmed",
+      {
+       "note": "n-6",
+       "kind": "fact",
+       "by": "owner",
+       "from": "app",
+       "audience": "owner",
+       "change": "undone"
+      },
+      "the owner undid a note they had just saved"
+     ]
+    ],
+    "notes": [
+     {
+      "id": "n-2",
+      "text": "we deliver on Sundays",
+      "kind": "public",
+      "audience": "everyone"
+     },
+     {
+      "id": "n-3",
+      "text": "my goal is ten sales a day",
+      "kind": "goal",
+      "audience": "owner"
+     },
+     {
+      "id": "n-5",
+      "text": "ഞായർ അവധി",
+      "kind": "fact",
+      "audience": "owner"
+     }
+    ],
+    "intents": [
+     "remember",
+     "remember",
+     "remember",
+     "remember",
+     "notes",
+     "forget",
+     "forget",
+     "forget",
+     "undo",
+     "notes",
+     "remember",
+     "remember",
+     "remember",
+     "remember",
+     "unknown",
+     "remember",
+     "notes",
+     "undo",
+     "undo"
+    ]
+   }
+  },
+  "money on a day": {
+   "at": 1795076392126,
+   "value": {
+    "said": [
+     [
+      "money on 16 nov",
+      "Nothing recorded on Tue 16 Nov yet."
+     ],
+     [
+      "money monday",
+      "Nothing recorded on Mon 23 Nov yet."
+     ],
+     [
+      "money next tuesday",
+      "Nothing recorded on Tue 24 Nov yet."
+     ],
+     [
+      "money this friday",
+      "Nothing recorded on Fri 20 Nov yet."
+     ],
+     [
+      "money sunday",
+      "Nothing recorded on Sun 22 Nov yet."
+     ],
+     [
+      "പണം ഞായറാഴ്ച",
+      "Nothing recorded on Sun 22 Nov yet."
+     ],
+     [
+      "ಹಣ ನವೆಂಬರ್ 10",
+      "Nothing recorded on Wed 10 Nov yet."
+     ],
+     [
+      "money इतवार",
+      "Nothing recorded on Sun 22 Nov yet."
+     ],
+     [
+      "money 3 may",
+      "Nothing recorded on Mon 3 May yet."
+     ],
+     [
+      "money 31 nov",
+      "Nothing recorded on Thu 19 Nov yet."
+     ],
+     [
+      "money 29 feb",
+      "Nothing recorded on Thu 19 Nov yet."
+     ],
+     [
+      "money nov 16",
+      "Nothing recorded on Tue 16 Nov yet."
+     ],
+     [
+      "अगले मंगलवार कितना आया",
+      "Nothing recorded on Tue 24 Nov yet."
+     ],
+     [
+      "इस शनिवार कितना आया",
+      "Nothing recorded on Sat 21 Nov yet."
+     ],
+     [
+      "അടുത്ത ചൊവ്വാഴ്ച പണം",
+      "Nothing recorded on Tue 24 Nov yet."
+     ],
+     [
+      "ಮುಂದಿನ ಮಂಗಳವಾರ ಹಣ",
+      "Nothing recorded on Tue 24 Nov yet."
+     ],
+     [
+      "money yesterday and monday",
+      "Nothing recorded on Mon 23 Nov yet."
+     ]
+    ],
+    "refs": [
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     },
+     {
+      "intent": "money",
+      "step": "rules",
+      "provider": "rules",
+      "model": "rule-parser",
+      "inputTokens": "0",
+      "outputTokens": "0",
+      "costMicroInr": "0",
+      "tried": "rules"
+     }
+    ]
+   }
+  }
+ }
+}

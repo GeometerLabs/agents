@@ -9,9 +9,9 @@
 //      RECORD_KEY_FILE, CHANNEL_TOKEN_FILE for a shop; SHOPS_DIR, SECRETS_DIR, HOST, PORT, ... for the shared process), nothing is passed through from the server's own shell;
 //   2. a shop the panel makes is "mode": "live" (bundle/panel/listings.ts runtimeForListings, and every other template's), and a test clock asked for in a live shop, or with
 //      NODE_ENV=production, or without GEOMETER_TEST=1, STOPS THE START with a sentence: it is never quietly ignored, and never quietly honoured;
-//   3. it is wired only into the single-shop command lines of the templates whose contract needs it (templates/commerce/listings/server/main.ts and
-//      templates/commerce/bookings/server/main.ts), not into modules/runtime/start.ts nor the shared process (shared-main.ts), so a listings shop on the shared process has no
-//      code path that reads the file at all, and every other template's start never asks.
+//   3. it is wired only into the single-shop command lines of the templates whose contract needs it (templates/commerce/bookings/server/main.ts;
+//      the listings shop's TypeScript command line, which read it too, is deleted: its Go twin is go/internal/testclock), not into modules/runtime/start.ts, so every other template's
+//      start never asks.
 // The Go runtime (go/internal/testclock) applies the same rule, word for word, so the contract drives both the same way.
 import { readFileSync } from "node:fs";
 import type { Clock } from "../core/clock.ts";

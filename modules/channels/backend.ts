@@ -275,7 +275,7 @@ export interface RelayBackend {
   decide(owner: OwnerCred, approval: string, digest: string, decision: "approve" | "deny"): Promise<RelayDecision | "refused">;
 }
 
-/** `backSoon`: the shop's shared process has PAUSED it (modules/runtime/shared.ts answers 503 with the header x-back-soon): the front shows the "back soon" sentence, not a generic error. */
+/** `backSoon`: the shop's shared process has PAUSED it (go/internal/shared answers 503 with the header x-back-soon): the front shows the "back soon" sentence, not a generic error. */
 export class BackendError extends Error { backSoon = false; }
 const answered = (r: Response): BackendError => { const e = new BackendError(`The shop's system answered ${r.status}.`); e.backSoon = r.status === 503 && r.headers.get("x-back-soon") === "1"; return e; };
 

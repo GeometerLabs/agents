@@ -12,7 +12,7 @@
 //                                 A builder's client: the customer view, the API and MCP forwarded to https://<their server>/s/<shop>/<rest> as a pure
 //                                 pass-through; the owner's view (/owner..., /o/...) redirected to their own domain, so no owner sign-in crosses this door.
 //   /search, /search/..., /order, /feed-changed, /mcp, /.well-known/agent-card.json
-//                                 the directory of local shops (modules/discovery, the `directory` service, bundle/services/directory.ts): forwarded to it BEFORE any name is taken for a
+//                                 the directory of local shops (the `directory` service, the Go program go/cmd/directory): forwarded to it BEFORE any name is taken for a
 //                                 shop's, so these names can never be a shop here (fleet reserves them too, so none is ever made). Without a directory on this server they are the friendly 404.
 //   any host that is an extra domain: redirected to the primary domain, the path kept (an old or a country domain keeps every printed link working).
 //
@@ -44,7 +44,7 @@ export const DOOR_PORT = 8797;
  * and it needs no Host header. It reaches nothing a visitor cannot: the same routes, the same refusals of private addresses.
  */
 export const DOOR_INTERNAL_PORT = 8798;
-/** Where the directory service (bundle/services/directory.ts) listens: the door forwards the directory's paths to http://directory:8799, and the directory's own health check asks here. */
+/** Where the directory service (go/cmd/directory) listens: the door forwards the directory's paths to http://directory:8799, and the directory's own health check asks here. */
 export const DIRECTORY_PORT = 8799;
 export const DOOR_HEADER = "x-geometer-door";
 /**

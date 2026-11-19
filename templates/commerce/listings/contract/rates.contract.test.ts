@@ -4,21 +4,21 @@ import { after, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { REPO, makeShop, startFakeModel } from "./harness.ts";
+import { makeShop, REPO, SKIP, startFakeModel } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
 import { rateFor, costMicroInr, dayOf } from "../../../../modules/understanding/rates.ts";
 
 const shops: Shop[] = []; const fakes: FakeModel[] = [];
 after(async () => { for (const s of shops) { await s.stop(); s.cleanup(); } for (const f of fakes) await f.close(); });
 
-test("the Go copy of the rate tables is the TypeScript tables", () => {
+test("the Go copy of the rate tables is the TypeScript tables", { skip: SKIP }, () => {
   const ts = join(REPO, "modules", "understanding", "rates"); const go = join(REPO, "go", "internal", "budget", "rates");
   const names = readdirSync(ts).filter((n) => n.endsWith(".json")).sort();
   assert.deepEqual(readdirSync(go).filter((n) => n.endsWith(".json")).sort(), names, "run go/scripts/sync_rates.sh");
   for (const n of names) assert.equal(readFileSync(join(go, n), "utf8"), readFileSync(join(ts, n), "utf8"), n);
 });
 
-test("a draft through a priced model counts its cost from the table; an unknown model is unpriced", async () => {
+test("a draft through a priced model counts its cost from the table; an unknown model is unpriced", { skip: SKIP }, async () => {
   const fake = await startFakeModel(); fakes.push(fake);
   // the fake answers usage 100 in / 50 out; pick the provider and model of any line of the table with a price and no pattern
   const raw = JSON.parse(readFileSync(join(REPO, "modules", "understanding", "rates", "2026-11-07.json"), "utf8")).rates.find((l: any) => l.model !== "*" && !l.modelPattern && l.inputUsdPerMillion > 0);

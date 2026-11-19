@@ -1,34 +1,35 @@
 // The CONTRACT of the owner's talk-and-cards page of a listings-only shop (modules/assistant, templates/commerce/listings): `GET /internal/channel/owner`, the owner's `owner_action` taps on a
 // card, the cards a drafted listing makes, the words the assistant says back, and the clock's beat. Like listings.contract.test.ts it talks to the shop ONLY over HTTP (the process of
-// harness.ts), and must pass on the TypeScript runtime first (LISTINGS_IMPL=ts) and then on the Go one (LISTINGS_IMPL=go).
+// harness.ts).
 //
 // Two kinds of assertion. The first suites check machine fields (a card's id, kind and digest, the record's refs, the state of a listing); where a sentence is checked it is only that it
-// names the owner's own title or price. The last suites run the SAME script on a TypeScript shop and on a Go shop and compare what the owner would read, line for line, in each of
-// the four owner languages: that is what proves the Go words (packed from the TypeScript ones by go/scripts/gen_words.ts) are the TypeScript words. Those need both runtimes, so they
-// start both whatever LISTINGS_IMPL says, and are skipped (with the reason) when there is no Go binary.
+// names the owner's own title or price. The last suites run fixed scripts and compare what the owner would read, line for line, in each of the four owner languages, with the GOLDEN
+// answers (golden.ts, golden/assistant.contract.json): until 19 Nov 2026 a TypeScript shop and a Go shop ran each script and were compared, which proved the Go words (packed from the
+// TypeScript ones by go/scripts/gen_words.ts) are the TypeScript words; the TypeScript answers were recorded before its runtime was deleted (decision 61, wave 1b). The cards and notes
+// that one runtime made and the other answered (TypeScript and Go in turn on one folder) are now the shop stopped and started again on its folder; that the digests are the
+// TypeScript's is in the goldens (every card's id and digest).
 import { after, describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { IMPL, REPO, draftAnswer, makeShop, startFakeModel, tinyJpeg } from "./harness.ts";
+import { draftAnswer, makeShop, SKIP, startFakeModel, tinyJpeg } from "./harness.ts";
 import type { FakeModel, Shop } from "./harness.ts";
+import { goldenFor } from "./golden.ts";
 
 const shops: Shop[] = [];
 const fakes: FakeModel[] = [];
 after(async () => { for (const s of shops) { await s.stop(); s.cleanup(); } for (const f of fakes) await f.close(); });
 
-const GO_BIN = process.env.LISTINGS_GO_BIN ?? join(REPO, "go", "bin", "listings");
-const BOTH = { skip: !existsSync(GO_BIN) && "there is no Go binary (LISTINGS_GO_BIN or go/bin/listings), so the two runtimes cannot be compared" };
+const golden = goldenFor(import.meta.url);
 
-async function boot(o: Parameters<typeof makeShop>[0] = {}, impl?: "ts" | "go"): Promise<Shop> { const s = await makeShop(o); shops.push(s); await s.start(impl); return s; }
+async function boot(o: Parameters<typeof makeShop>[0] = {}): Promise<Shop> { const s = await makeShop(o); shops.push(s); await s.start(); return s; }
 
 const BUDGET = { monthlyMicroInr: 50_000_000, daily: { listing_draft: 20 } };
 const KITTENS = "I have two Persian kittens for sale on my page, 8000 rupees";
 /** A shop with a fake model that writes the one draft. */
-async function withModel(o: Parameters<typeof makeShop>[0] = {}, answer?: (owner: string) => unknown, impl?: "ts" | "go"): Promise<{ s: Shop; fake: FakeModel }> {
+async function withModel(o: Parameters<typeof makeShop>[0] = {}, answer?: (owner: string) => unknown): Promise<{ s: Shop; fake: FakeModel }> {
   const fake = await startFakeModel(answer); fakes.push(fake);
-  return { s: await boot({ modelPort: fake.port, budget: BUDGET, ...o }, impl), fake };
+  return { s: await boot({ modelPort: fake.port, budget: BUDGET, ...o }), fake };
 }
 
 const say = async (s: Shop, id: string, text: string): Promise<void> => {
@@ -64,7 +65,7 @@ function editCards(s: Shop, edit: (card: any) => void): void {
 /** Draft the kittens and return the one card. */
 async function draft(s: Shop, id = "m-1", text = KITTENS): Promise<any> { await say(s, id, text); const c = await cards(s); assert.equal(c.length, 1, JSON.stringify(c)); return c[0]; }
 
-describe("the owner's page: who may read it, and what it shows a shop with nothing yet", () => {
+describe("the owner's page: who may read it, and what it shows a shop with nothing yet", { skip: SKIP }, () => {
   test("it needs the owner's link: no link, a wrong link and the channel token alone are refused", async () => {
     const s = await boot();
     assert.equal((await s.call("/internal/channel/owner")).status, 403);
@@ -88,7 +89,7 @@ describe("the owner's page: who may read it, and what it shows a shop with nothi
   });
 });
 
-describe("a drafted listing makes ONE card, and the owner's tap on it publishes the listing", () => {
+describe("a drafted listing makes ONE card, and the owner's tap on it publishes the listing", { skip: SKIP }, () => {
   test("the draft: a card with its id, digest and question, the owner's line in the talk, a waiting face, and the record's lines", async () => {
     const { s } = await withModel();
     const c = await draft(s);
@@ -226,7 +227,7 @@ describe("a drafted listing makes ONE card, and the owner's tap on it publishes 
   });
 });
 
-describe("owner_action: the shape is checked before the owner is, and what a listings-only shop has no use for is ignored", () => {
+describe("owner_action: the shape is checked before the owner is, and what a listings-only shop has no use for is ignored", { skip: SKIP }, () => {
   const post = (s: Shop, e: Record<string, unknown>, owner = true) => s.call("/internal/channel/events", { ...(owner ? { owner: s.owner } : {}), body: { events: [{ kind: "owner_action", id: "x-1", ...e }] } });
   const ok = { action: "card_yes", case: "c-1", digest: "a".repeat(32) };
   test("400 for a bad shape (even with no owner), 403 for a good shape with no owner, 200 with the owner", async () => {
@@ -248,7 +249,7 @@ describe("owner_action: the shape is checked before the owner is, and what a lis
   });
 });
 
-describe("the clock's beat: a card past its time closes, and a tap on it is answered", () => {
+describe("the clock's beat: a card past its time closes, and a tap on it is answered", { skip: SKIP }, () => {
   test("the tap on a card that ran out: nothing is published, the card closes as expired, the owner is told", async () => {
     const { s } = await withModel();
     const c = await draft(s);
@@ -391,7 +392,7 @@ const COMMANDS: Record<string, string[]> = {
   kn: ["ಸಹಾಯ", "ಹಿಂದಿನಂತೆ", "ನನಗೆ ಏನು ಬಾಕಿ", "ಮಿತಿ", "ನನ್ನ ಅಂಗಡಿಯ ಫೈಲ್", "ನನ್ನ ಅಂಗಡಿಯ ಫೈಲ್", "ಬೇರೆ ಆಪರೇಟರ್", "ಬೇರೆ ಆಪರೇಟರ್", "ಇಂದು ಎಷ್ಟು ಬಂತು", "ನಾಳೆ ಎಷ್ಟು ಬಂತು", "b-14 ರದ್ದು", "ರೀಫಂಡ್ b-3", "ನಮಸ್ಕಾರ"],
 };
 
-describe("the owner's commands are not listings, and each is answered", () => {
+describe("the owner's commands are not listings, and each is answered", { skip: SKIP }, () => {
   test("a command that says 'for sale' or 'on my page' is a command: nothing is drafted, the model is never asked", async () => {
     const { s, fake } = await withModel();
     await say(s, "c-1", "for sale: undo");
@@ -454,28 +455,23 @@ describe("the owner's commands are not listings, and each is answered", () => {
   });
 });
 
-describe("the same script on a TypeScript shop and a Go shop: what the owner reads is the same, line for line, in each language", () => {
+describe("fixed scripts: what the owner reads is the TypeScript's (the golden answers), line for line, in each language", { skip: SKIP }, () => {
   for (const lang of ["en", "hi", "ml", "kn"] as const) {
-    test(`the owner's commands in ${lang}`, BOTH, async () => {
-      const seen: Record<string, any> = {};
-      for (const impl of ["ts", "go"] as const) {
-        const s = await boot({ ownerLanguage: lang }, impl);
+    test(`the owner's commands in ${lang}`, async () => {
+      const seen = await golden(`commands in ${lang}`, async () => {
+        const s = await boot({ ownerLanguage: lang });
         const all = await sayAll(s, COMMANDS[lang]);
-        seen[impl] = { ...(await observe(s)), talk: all };
-      }
-      assert.deepEqual(seen.go.talk, seen.ts.talk, "the talk");
-      assert.deepEqual(seen.go.record, seen.ts.record, "the record");
-      assert.deepEqual(seen.go, seen.ts);
-      assert.equal(seen.ts.talk.length, COMMANDS[lang].length * 2 - (lang === "en" ? 1 : 0) - (lang === "hi" ? 0 : 0), "the owner's line, then one answer for each; no answer for a relay's reply");
-      assert.ok(seen.ts.record.some((r: any) => r[0] === "owner_file_asked") && seen.ts.record.some((r: any) => r[0] === "operator_change_asked"));
+        return { ...(await observe(s)), talk: all };
+      });
+      assert.equal(seen.talk.length, COMMANDS[lang].length * 2 - (lang === "en" ? 1 : 0) - (lang === "hi" ? 0 : 0), "the owner's line, then one answer for each; no answer for a relay's reply");
+      assert.ok(seen.record.some((r: any) => r[0] === "owner_file_asked") && seen.record.some((r: any) => r[0] === "operator_change_asked"));
     });
   }
 
   for (const lang of ["en", "hi", "ml", "kn"] as const) {
-    test(`a draft, its card and every way to answer it, in ${lang}`, BOTH, async () => {
-      const seen: Record<string, any> = {};
-      for (const impl of ["ts", "go"] as const) {
-        const { s } = await withModel({ ownerLanguage: lang }, () => draftAnswer("Kittens <b> & \"co\" \\ 🐱", "Playful kittens, looking for a home."), impl);
+    test(`a draft, its card and every way to answer it, in ${lang}`, async () => {
+      const seen = await golden(`a draft and its card in ${lang}`, async () => {
+        const { s } = await withModel({ ownerLanguage: lang }, () => draftAnswer("Kittens <b> & \"co\" \\ 🐱", "Playful kittens, looking for a home."));
         const c1 = await draft(s);
         await say(s, "q-1", "what needs me");                    // c-2 replaces c-1
         await tap(s, "a-1", "card_yes", c1);                       // the voided one: already answered
@@ -488,135 +484,124 @@ describe("the same script on a TypeScript shop and a Go shop: what the owner rea
         await tap(s, "a-4", "card_no", (await cards(s)).find((c: any) => c.case === "listing:l-2"));
         await tap(s, "a-5", "card_yes", c3);                       // published
         await tap(s, "a-6", "card_yes", c3);                       // closed
-        seen[impl] = await observe(s);
-      }
-      assert.deepEqual(seen.go, seen.ts);
-      assert.equal(seen.ts.public.length, 1);
-      assert.ok(seen.ts.talk.length >= 8);
+        return observe(s);
+      });
+      assert.equal(seen.public.length, 1);
+      assert.ok(seen.talk.length >= 8);
     });
   }
 
-  test("what the assistant says when a draft is refused, or the model is off or over its cap (English)", BOTH, async () => {
-    const seen: Record<string, any> = {};
+  test("what the assistant says when a draft is refused, or the model is off or over its cap (English)", async () => {
     const answers: Record<string, (o: string) => unknown> = {
       numbers: () => draftAnswer("Kittens", "Two lovely kittens, 12 weeks."), claims: () => draftAnswer("Kittens", "A 100% guarantee."), health: () => draftAnswer("Kittens", "Healthy and vaccinated kittens."),
       shape: () => ({ nonsense: true }),
     };
-    for (const impl of ["ts", "go"] as const) {
+    const out = await golden("refused, off, over the cap", async () => {
       const out: any[] = [];
       for (const [name, answer] of Object.entries(answers)) {
-        const { s } = await withModel({}, answer, impl);
+        const { s } = await withModel({}, answer);
         await say(s, "m-1", "two kittens for sale on my page, 800 rupees");
         out.push([name, await observe(s)]);
       }
       { // a protected animal, before the model is asked; an owner with no model at all; a cap of one a day; a month's budget for two
-        const { s, fake } = await withModel({}, undefined, impl);
+        const { s, fake } = await withModel({}, undefined);
         await say(s, "p-1", "a monkey for sale on my page, 800 rupees");
         out.push(["protected", await observe(s), fake.calls]);
       }
-      { const s = await boot({}, impl); await say(s, "n-1", "two kittens for sale on my page"); out.push(["no model", await observe(s)]); }
-      { const { s, fake } = await withModel({ budget: { monthlyMicroInr: 50_000_000, daily: { listing_draft: 1 } } }, undefined, impl);
+      { const s = await boot({}); await say(s, "n-1", "two kittens for sale on my page"); out.push(["no model", await observe(s)]); }
+      { const { s, fake } = await withModel({ budget: { monthlyMicroInr: 50_000_000, daily: { listing_draft: 1 } } }, undefined);
         await say(s, "d-1", "a lamp for sale on my page, 450 rupees"); await say(s, "d-2", "a bowl for sale on my page, 100 rupees"); out.push(["day cap", await observe(s), fake.calls]); }
-      { const { s, fake } = await withModel({ budget: { monthlyMicroInr: 150_000, daily: { listing_draft: 50 } } }, undefined, impl);
+      { const { s, fake } = await withModel({ budget: { monthlyMicroInr: 150_000, daily: { listing_draft: 50 } } }, undefined);
         for (const i of [1, 2, 3]) await say(s, `b-${i}`, `item number ${i} for sale on my page`); out.push(["month budget", await observe(s), fake.calls]); }
-      seen[impl] = out;
-    }
-    assert.deepEqual(seen.go, seen.ts);
-    const said = (name: string) => seen.ts.find((o: any) => o[0] === name)[1].talk.filter((l: any) => l[0] === "assistant").map((l: any) => l[1]);
+      return out;
+    });
+    const said = (name: string) => out.find((o: any) => o[0] === name)[1].talk.filter((l: any) => l[0] === "assistant").map((l: any) => l[1]);
     assert.ok(said("numbers")[0].includes("price"), said("numbers")[0]);
     assert.ok(said("protected")[0].includes("monkey"));
     assert.ok(said("no model")[0].includes("when my assistant is on"));
-    assert.equal(seen.ts.find((o: any) => o[0] === "day cap")[2], 1);
-    assert.equal(seen.ts.find((o: any) => o[0] === "month budget")[2], 2);
+    assert.equal(out.find((o: any) => o[0] === "day cap")[2], 1);
+    assert.equal(out.find((o: any) => o[0] === "month budget")[2], 2);
     assert.match(said("month budget").at(-1), /back on \w+ \d+ \w+/u, "the month's line names the date it is back");
   });
 
-  test("the month's budget notices on the beat are the same on both runtimes", BOTH, async () => {
-    const seen: Record<string, any> = {};
-    for (const impl of ["ts", "go"] as const) {
-      const { s } = await withModel({ tickSeconds: 1, budget: { monthlyMicroInr: 150_000, daily: { listing_draft: 50 } } }, undefined, impl);
+  test("the month's budget notices on the beat are the golden ones", async () => {
+    const seen = await golden("budget notices on the beat", async () => {
+      const { s } = await withModel({ tickSeconds: 1, budget: { monthlyMicroInr: 150_000, daily: { listing_draft: 50 } } }, undefined);
       await say(s, "m-1", "item number 1 for sale on my page"); await say(s, "m-2", "item number 2 for sale on my page");
       for (let i = 0; i < 60 && lines(s, "ai_mode").length < 2; i++) await new Promise((r) => setTimeout(r, 100));
-      seen[impl] = await observe(s);
-    }
-    assert.deepEqual(seen.go, seen.ts);
-    assert.ok(seen.ts.record.some((r: any) => r[0] === "send_message"));
+      return observe(s);
+    });
+    assert.ok(seen.record.some((r: any) => r[0] === "send_message"));
   });
 
-  test("the shop's memory: remember, the list, forget, undo and the refusals say and record the same on both runtimes, and the page shows the same notes", BOTH, async () => {
+  test("the shop's memory: remember, the list, forget, undo and the refusals say and record the golden words, and the page shows the golden notes", async () => {
     const asked = ["remember we close at 6 on Saturdays", "remember for customers: we deliver on Sundays", "remember my goal is ten sales a day", "please remember that always greet in Malayalam",
       "what do you remember?", "forget n-1", "forget 9", "forget n-1", "undo", "notes", "remember", `remember ${"long words ".repeat(30)}`, "ഓർത്തുവെക്കൂ ഞായർ അവധി", "ನೆನಪಿಡಿ ಭಾನುವಾರ ರಜೆ", "യാദ് രഖോ", "yaad rakho ki kal chutti hai", "क्या याद है", "undo", "undo"];
-    const seen: Record<string, any> = {};
-    for (const impl of ["ts", "go"] as const) {
-      const s = await boot({}, impl);
+    const seen = await golden("memory", async () => {
+      const s = await boot({});
       const said = await sayAll(s, asked, "n");
       const memory = record(s).filter((e) => e.action === "memory").map((e) => [e.outcome, e.refs, e.notes]);
-      seen[impl] = { said, memory, notes: (await page(s)).app.notes, intents: lines(s, "owner_assistant").map((e) => e.refs.intent) };
-    }
-    assert.deepEqual(seen.go, seen.ts);
-    assert.ok(seen.ts.said.some(([, t]: [string, string]) => t.startsWith("Remembered (n-1)")), "a note is said back");
-    assert.ok(seen.ts.memory.length >= 6, "the record has the memory lines");
-    assert.ok(seen.ts.notes.length >= 2, "the page lists the open notes");
+      return { said, memory, notes: (await page(s)).app.notes, intents: lines(s, "owner_assistant").map((e) => e.refs.intent) };
+    });
+    assert.ok(seen.said.some(([, t]: [string, string]) => t.startsWith("Remembered (n-1)")), "a note is said back");
+    assert.ok(seen.memory.length >= 6, "the record has the memory lines");
+    assert.ok(seen.notes.length >= 2, "the page lists the open notes");
   });
 
-  test("notes saved by one runtime are listed, forgotten and undone by the other", BOTH, async () => {
-    for (const [first, second] of [["ts", "go"], ["go", "ts"]] as const) {
-      const s = await boot({}, first);
-      await say(s, "a-1", "remember we close at 6 on Saturdays"); await say(s, "a-2", "remember for customers: parking is free behind the shop");
-      await s.stop(); await s.start(second);
-      await say(s, "a-3", "what do you remember?");
-      assert.match(await lastSaid(s), /n-1 \[you only\] we close at 6 on Saturdays\n• n-2 \[customers too\] parking is free behind the shop/u, `${second} lists what ${first} saved`);
-      await say(s, "a-4", "undo");
-      assert.equal(await lastSaid(s), "Undone: I no longer remember n-2.");
-      await say(s, "a-5", "forget 1");
-      await s.stop(); await s.start(first);
-      await say(s, "a-6", "notes");
-      assert.match(await lastSaid(s), /^I do not remember anything yet/u, `${first} sees what ${second} forgot`);
-      await say(s, "a-7", "remember the third one");
-      assert.match(await lastSaid(s), /^Remembered \(n-3\)/u, "the numbering goes on");
-    }
+  test("notes saved before a restart are listed, forgotten and undone after it, on the same folder", async () => {
+    const s = await boot({});
+    await say(s, "a-1", "remember we close at 6 on Saturdays"); await say(s, "a-2", "remember for customers: parking is free behind the shop");
+    await s.stop(); await s.start();
+    await say(s, "a-3", "what do you remember?");
+    assert.match(await lastSaid(s), /n-1 \[you only\] we close at 6 on Saturdays\n• n-2 \[customers too\] parking is free behind the shop/u, "the restarted shop lists what it saved");
+    await say(s, "a-4", "undo");
+    assert.equal(await lastSaid(s), "Undone: I no longer remember n-2.");
+    await say(s, "a-5", "forget 1");
+    await s.stop(); await s.start();
+    await say(s, "a-6", "notes");
+    assert.match(await lastSaid(s), /^I do not remember anything yet/u, "what was forgotten stays forgotten");
+    await say(s, "a-7", "remember the third one");
+    assert.match(await lastSaid(s), /^Remembered \(n-3\)/u, "the numbering goes on");
   });
 
-  test("a money question about a weekday or a written date is answered for that day, the same on both runtimes", BOTH, async () => {
-    // both shops run at once, so the same clock decides "next Tuesday" for both
-    const ts = await boot({}, "ts"); const go = await boot({}, "go");
+  test("a money question about a weekday or a written date is answered for that day, as the golden answers say", async () => {
+    // the shop runs at the recorded instant (golden.ts), so "next Tuesday" is the recorded one
     const asked = ["money on 16 nov", "money monday", "money next tuesday", "money this friday", "money sunday", "പണം ഞായറാഴ്ച", "ಹಣ ನವೆಂಬರ್ 10", "money इतवार", "money 3 may", "money 31 nov",
       "money 29 feb", "money nov 16", "अगले मंगलवार कितना आया", "इस शनिवार कितना आया", "അടുത്ത ചൊവ്വാഴ്ച പണം", "ಮುಂದಿನ ಮಂಗಳವಾರ ಹಣ", "money yesterday and monday"];
-    for (const [i, t] of asked.entries()) {
-      await say(ts, `d-${i}`, t); await say(go, `d-${i}`, t);
-      assert.equal(await lastSaid(go), await lastSaid(ts), t);
-      assert.match(await lastSaid(ts), /^Nothing recorded on \w+ \d+ \w+ yet\.$/u, t);
-    }
-    assert.deepEqual(lines(go, "owner_assistant").map((e) => e.refs), lines(ts, "owner_assistant").map((e) => e.refs));
+    const seen = await golden("money on a day", async () => {
+      const s = await boot({});
+      const said: [string, string][] = [];
+      for (const [i, t] of asked.entries()) { await say(s, `d-${i}`, t); said.push([t, await lastSaid(s)]); }
+      return { said, refs: lines(s, "owner_assistant").map((e) => e.refs) };
+    });
+    for (const [t, line] of seen.said) assert.match(line, /^Nothing recorded on \w+ \d+ \w+ yet\.$/u, t);
   });
 });
 
-describe("TypeScript and Go take turns on one folder: a card one made is answered by the other, so the digests agree", () => {
-  for (const [first, second] of [["ts", "go"], ["go", "ts"]] as const) {
-    test(`a card made by ${first} is answered by ${second}`, BOTH, async () => {
-      const { s } = await withModel({}, () => draftAnswer("Kittens <b> & \"co\" \\ 🐱", "Playful kittens <i> & more."), first);
-      const c = await draft(s);
-      await s.stop(); await s.start(second);
-      const again = (await cards(s))[0];
-      assert.deepEqual(again, c, `${second} reads the card ${first} made`);
-      await say(s, "q-1", "what needs me");                       // the second runtime makes a card of its own for the same listing
-      const c2 = (await cards(s))[0];
-      assert.equal(c2.id, "c-2"); assert.equal(c2.digest, c.digest, `the two runtimes digest the same fields to the same value`);
-      await tap(s, "a-1", "card_yes", c2);
-      assert.equal((await publicListings(s)).length, 1);
-      await s.stop(); await s.start(first);
-      await tap(s, "a-2", "card_yes", c2);                         // the first runtime finds it closed
-      assert.equal(lines(s, "owner_card").at(-1).notes, "the card is already done: nothing was done");
-      assert.equal((await publicListings(s)).length, 1);
-    });
-    test(`a card made by ${first}, tapped by ${second} after the draft was edited, is voided`, BOTH, async () => {
-      const { s } = await withModel({}, undefined, first);
-      const c = await draft(s);
-      await s.stop(); await s.start(second);
-      await s.call("/internal/channel/owner-listing", { owner: s.owner, body: { id: "e-1", op: { op: "edit", id: "l-1", title: "Other kittens" } } }); await s.settle();
-      await tap(s, "a-1", "card_yes", c);
-      assert.equal((await publicListings(s)).length, 0);
-      assert.equal((await cards(s))[0].id, "c-2");
-    });
-  }
+describe("the shop stopped and started on one folder: a card made before is answered after, with the same digest", { skip: SKIP }, () => {
+  test("a card made before a restart is answered after it", async () => {
+    const { s } = await withModel({}, () => draftAnswer("Kittens <b> & \"co\" \\ 🐱", "Playful kittens <i> & more."));
+    const c = await draft(s);
+    await s.stop(); await s.start();
+    const again = (await cards(s))[0];
+    assert.deepEqual(again, c, "the restarted shop reads the card it made");
+    await say(s, "q-1", "what needs me");                       // a new card for the same listing
+    const c2 = (await cards(s))[0];
+    assert.equal(c2.id, "c-2"); assert.equal(c2.digest, c.digest, "the same fields digest to the same value");
+    await tap(s, "a-1", "card_yes", c2);
+    assert.equal((await publicListings(s)).length, 1);
+    await s.stop(); await s.start();
+    await tap(s, "a-2", "card_yes", c2);                         // found closed after another restart
+    assert.equal(lines(s, "owner_card").at(-1).notes, "the card is already done: nothing was done");
+    assert.equal((await publicListings(s)).length, 1);
+  });
+  test("a card made before a restart, tapped after it once the draft was edited, is voided", async () => {
+    const { s } = await withModel({}, undefined);
+    const c = await draft(s);
+    await s.stop(); await s.start();
+    await s.call("/internal/channel/owner-listing", { owner: s.owner, body: { id: "e-1", op: { op: "edit", id: "l-1", title: "Other kittens" } } }); await s.settle();
+    await tap(s, "a-1", "card_yes", c);
+    assert.equal((await publicListings(s)).length, 0);
+    assert.equal((await cards(s))[0].id, "c-2");
+  });
 });
