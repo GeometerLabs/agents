@@ -12,6 +12,7 @@
 //   coerce-vectors.json        src/adapters (model.ts coerceIntent over what a model may say, reading.ts rulesAreSure, model-prompt.ts the prompt and schema)   (test/parser.test.ts, understanding.test.ts, model-llm.test.ts)
 //   ondc-vectors.json          src/ondc.ts through modules/ondc: the catalogue and every booking state at every stage, for two shops   (test/ondc.test.ts)
 //   scenarios-vectors.json     the agent run on scripted conversations with the in-memory stand-ins: what each message answers and what the record writes   (test/booking, adapters, record-decisions, language)
+//   report-vectors.json        templates/commerce/bookings/report: the busy month's report data from the record, the owner's lines, the printable page, the WhatsApp message and the monthly certificate, in every language  (test/report-*.test.ts)
 //   runner-vectors.json        modules/runtime/tasks.ts createRunner over the real store: the queue's cases, and /readyz's store reason  (test/runtime.test.ts, server.test.ts)
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -43,6 +44,14 @@ import { statesOf, statusOf } from "../../modules/ondc/states.ts";
 import { SAMPLE_CALLER } from "../../modules/ondc/verify.ts";
 import { createStore, newDraft, register } from "../../templates/commerce/bookings/src/booking.ts";
 import { createWorld, glowSalon } from "../../templates/commerce/bookings/src/harness.ts";
+import { buildMonthlyReport } from "../../templates/commerce/bookings/report/data.ts";
+import { at, runBusyMonth } from "../../templates/commerce/bookings/report/example-month.ts";
+import { reportPage } from "../../templates/commerce/bookings/report/html.ts";
+import { ownerText } from "../../templates/commerce/bookings/report/text.ts";
+import { monthlyReportMessage, reportSubmissions } from "../../templates/commerce/bookings/report/whatsapp.ts";
+import { buildMonthlyCertificate, monthlyCertificateText } from "../../templates/commerce/bookings/report/certificate.ts";
+import { monthRange } from "../../modules/report/months.ts";
+import { seal } from "../../modules/report/sign.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(here, "..", "..");
@@ -246,6 +255,28 @@ function scenarioVectors(): unknown {
   });
 }
 
+/** The busy month of the report tests (report/example-month.ts) made into a report, and every layer of it drawn: data, owner's lines, page, WhatsApp message, certificate. */
+async function reportVectors(): Promise<unknown> {
+  const { world } = await runBusyMonth();
+  const { from, to } = monthRange("2026-11", settings.timezone);
+  const out: unknown[] = [];
+  for (const source of ["stand-in", "test-mode", "live"] as const) {
+    const report = buildMonthlyReport({ settings, entries: world.record.entries(), bookings: [...world.store.bookings.values()], from, to, source, madeAt: at(12, 2, 10), preparedBy: "Divya, local Operator", innovator: false } as never);
+    out.push({ area: "data", name: `report data, ${source}`, input: { month: "2026-11", source }, output: clean(report) });
+    if (source !== "stand-in") continue;
+    const env = seal(report);
+    for (const l of LANGUAGES) {
+      out.push({ area: "owner", name: `owner's lines ${l}`, input: { language: l }, output: ownerText(report, l) });
+      out.push({ area: "page", name: `page ${l}`, input: { language: l }, output: reportPage(env, l) });
+      out.push({ area: "whatsapp", name: `whatsapp ${l}`, input: { language: l, link: "https://reports.example/r/abc" }, output: clean(monthlyReportMessage(env, l, { link: "https://reports.example/r/abc" })) });
+      out.push({ area: "certificate", name: `monthly certificate ${l}`, input: { language: l }, output: monthlyCertificateText(seal(buildMonthlyCertificate(env, at(12, 2, 10))), l) });
+    }
+    out.push({ area: "certificate", name: "monthly certificate data", input: {}, output: clean(buildMonthlyCertificate(env, at(12, 2, 10))) });
+  }
+  out.push({ area: "submissions", name: "report template submissions", input: {}, output: clean(reportSubmissions()) });
+  return out;
+}
+
 /** The queue's cases over the real store (modules/runtime/tasks.ts): each scenario scripts what a step does on each try of each task and records the order of tries and the final rows. */
 async function runnerVectors(): Promise<unknown> {
   const out: unknown[] = [];
@@ -309,6 +340,7 @@ export async function generate(): Promise<Map<string, string>> {
   put("coerce-vectors.json", coerceVectors());
   put("ondc-vectors.json", ondcVectors());
   put("scenarios-vectors.json", await Promise.all(scenarioVectors() as Promise<unknown>[]));
+  put("report-vectors.json", await reportVectors());
   put("runner-vectors.json", await runnerVectors());
   return files;
 }
